@@ -743,6 +743,12 @@ PluginVC::process_timeout(Event **e, int event_to_send)
 {
   ink_assert(*e == inactive_event || *e == active_event);
 
+  if (closed) {
+    // already closed, ignore the timeout event
+    // to avoid handle_event asserting use-after-free
+    return;
+  }
+
   if (read_state.vio.op == VIO::READ && !read_state.shutdown && read_state.vio.ntodo() > 0) {
     MUTEX_TRY_LOCK(lock, read_state.vio.mutex, (*e)->ethread);
     if (!lock.is_locked()) {
