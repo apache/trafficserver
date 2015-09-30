@@ -781,7 +781,7 @@ Here is an example:
 `TOP <#ts-lua-plugin>`_
 
 ts.http.get_cache_lookup_url
----------------------
+----------------------------
 **syntax:** *ts.http.get_cache_lookup_url()*
 
 **context:** do_global_cache_lookup_complete
@@ -806,7 +806,7 @@ Here is an example
 `TOP <#ts-lua-plugin>`_
 
 ts.http.set_cache_lookup_url
----------------------
+----------------------------
 **syntax:** *ts.http.set_cache_lookup_url()*
 
 **context:** do_global_cache_lookup_complete
