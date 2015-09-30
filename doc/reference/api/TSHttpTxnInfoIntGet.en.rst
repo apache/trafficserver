@@ -66,6 +66,6 @@ The :c:type:`TSHttpTxnInfoKey` currently supports the below integer-based info a
          for the cache object associated with the transaction.
 
 Return values
-=============
+-------------
 
 The API returns :c:data:`TS_SUCCESS`, if the requested info is supported, :c:data:`TS_ERROR` otherwise.
