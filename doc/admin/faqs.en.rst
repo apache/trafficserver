@@ -172,6 +172,7 @@ Value             Meaning
 A     in cache, not acceptable (a cache "MISS")
 H     in cache, fresh (a cache "HIT")
 M     miss (a cache "MISS")
+R     in cache, fresh Ram hit (a cache "HIT")
 S     in cache, stale (a cache "MISS")
 blank no cache lookup performed
 ===== ==========================
@@ -228,6 +229,7 @@ D     dns failure
 F     request forbidden
 H     header syntax unacceptable
 N     no error
+R     cache read error
 S     server related error
 T     connection timed out
 ===== ==========================
@@ -241,8 +243,10 @@ Proxy-only service operation. Value is one of:
 ===== ==========================
 Value             Meaning
 ===== ==========================
+A     tunnel authorization
 F     tunneling due to a header field (such as presence of If-Range header)
 M     tunneling due to a method (e.g. CONNECT)
+N     tunneling due to no forward
 O     tunneling because cache is turned off
 U     tunneling because of url (url suggests dynamic content)
 blank no tunneling
@@ -259,6 +263,9 @@ Value             Meaning
 ===== ==========================
 C     cache
 I     icp
+L     cluster, (not used)
+P     parent
+S     server
 blank cache miss or no cache lookup
 ===== ==========================
 
@@ -271,6 +278,7 @@ C     cache hit, but config forces revalidate
 D     cache hit, but method forces revalidated (e.g. ftp, not anonymous)
 H     cache hit
 I     conditional miss (client sent conditional, fresh in cache, returned 412)
+K     cookie miss
 M     cache miss (url not in cache)
 N     conditional hit (client sent conditional, doc fresh in cache, returned 304)
 S     cache hit, but expired
