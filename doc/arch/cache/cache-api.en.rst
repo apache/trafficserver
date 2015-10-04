@@ -36,7 +36,6 @@ Cache Related API functions
 
 .. c:function:: TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc offset)
 
-
    Get the current cache key URL, also referred to as the lookup URL. This must
    be stored in a properly allocated URL object, typically created with a
    :c:func:`TSUrlCreate()`.
