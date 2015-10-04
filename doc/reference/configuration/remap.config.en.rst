@@ -98,7 +98,7 @@ Traffic Server recognizes three space-delimited fields: ``type``,
 
         scheme://host:port/path_prefix
 
-    where ``scheme`` is ``http``.
+    where ``scheme`` is ``http`` or ``https``.
 
 .. _remap-config-format-replacement:
 
