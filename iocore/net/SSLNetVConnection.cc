@@ -894,11 +894,13 @@ SSLNetVConnection::free(EThread *t)
   this->con.close();
   flags = 0;
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
+
   if (nh) {
     nh->read_ready_list.remove(this);
     nh->write_ready_list.remove(this);
     nh = NULL;
   }
+
   read.triggered = 0;
   write.triggered = 0;
   read.enabled = 0;
