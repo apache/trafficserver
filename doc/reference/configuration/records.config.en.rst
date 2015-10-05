@@ -2941,8 +2941,7 @@ Sockets
 ===== ====================
 Value Effect
 ===== ====================
-0     Decouple inbound connections and cache initialization. Connections will be accepted as soon as
-      possible and Traffic Server will run regardless of the results of cache initialization.
+0     Decouple inbound connections and cache initialization. Connections will be accepted as soon as possible and Traffic Server will run regardless of the results of cache initialization.
 
 1     Do not accept inbound connections until cache initialization has finished. Traffic server will run
       regardless of the results of cache initialization.
