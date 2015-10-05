@@ -204,7 +204,15 @@ ServerSessionPool::eventHandler(int event, void *data)
   if (!found) {
     // We failed to find our session.  This can only be the result
     //  of a programming flaw
-    Warning("Connection leak from http keep-alive system");
+    UnixNetVConnection *unix_net_vc = dynamic_cast<UnixNetVConnection *>(net_vc);
+    char peer_ip[INET6_ADDRPORTSTRLEN];
+    if (unix_net_vc) {
+      ats_ip_nptop(unix_net_vc->get_remote_addr(), peer_ip, sizeof(peer_ip));
+    } else {
+      peer_ip[0] = '\0';
+    }
+    Warning("Connection leak from http keep-alive system fd=%d closed=%d peer_ip_port=%s", unix_net_vc->con.fd, unix_net_vc->closed,
+            peer_ip);
     ink_assert(0);
   }
   return 0;
