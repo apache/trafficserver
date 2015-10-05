@@ -136,8 +136,7 @@ private:
 };
 
 extern SSLSessionCache *session_cache; // for SSL/TLS-client connection to ATS as a server
-extern TicketCache *ticket_cache; // for TLS-ATS-client connection to origin server 
-
+extern TicketCache *ticket_cache;      // for TLS-ATS-client connection to origin server
 
 
 #endif

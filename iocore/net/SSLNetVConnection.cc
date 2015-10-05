@@ -1109,17 +1109,16 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 #endif
   char *hostname = options.sni_servername.get();
   if (hostname) {
-     unsigned char ticket[ST_SESSION_TICKET_MAX_LENGTH+1];
-     size_t ticketLength;
-     if (0 < (ticketLength = ticket_cache->lookup(hostname, ticket, ST_SESSION_TICKET_MAX_LENGTH))) {
-         // We have a non-expired TLS ticket for this host.
-         SSL_set_session_ticket_ext(this->ssl, ticket, ticketLength); // attach to TLS Client-Hello
-         Debug("ssl.ticket", "Ticket cache lookup success for %s", hostname);
-         }
-     else {
-         Debug("ssl.ticket", "No TLS ticket in cache for origin server host %s", hostname);
-         }
-     }
+    unsigned char ticket[ST_SESSION_TICKET_MAX_LENGTH + 1];
+    size_t ticketLength;
+    if (0 < (ticketLength = ticket_cache->lookup(hostname, ticket, ST_SESSION_TICKET_MAX_LENGTH))) {
+      // We have a non-expired TLS ticket for this host.
+      SSL_set_session_ticket_ext(this->ssl, ticket, ticketLength); // attach to TLS Client-Hello
+      Debug("ssl.ticket", "Ticket cache lookup success for %s", hostname);
+    } else {
+      Debug("ssl.ticket", "No TLS ticket in cache for origin server host %s", hostname);
+    }
+  }
 
   SSL_set_ex_data(ssl, get_ssl_client_data_index(), this);
   ssl_error_t ssl_error = SSLConnect(ssl);
@@ -1127,11 +1126,10 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   case SSL_ERROR_NONE:
     if (is_debug_tag_set("ssl")) {
       if (hostname && (0 != SSL_get_session_ticket_length(this))) {
-          // Store ticket in cache if server sent one 
-          ticket_cache->store(hostname, SSL_get_session_ticket_lifetime_hint(this),
-                                        SSL_get_session_ticket(this),
-                                        SSL_get_session_ticket_length(this));
-          Debug("ssl.ticket", "TLS ticket stored for origin server host %s", hostname);
+        // Store ticket in cache if server sent one
+        ticket_cache->store(hostname, SSL_get_session_ticket_lifetime_hint(this), SSL_get_session_ticket(this),
+                            SSL_get_session_ticket_length(this));
+        Debug("ssl.ticket", "TLS ticket stored for origin server host %s", hostname);
       }
 
       X509 *cert = SSL_get_peer_certificate(ssl);

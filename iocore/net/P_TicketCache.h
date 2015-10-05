@@ -30,41 +30,40 @@
 #include <unordered_map>
 #include <string>
 
-/* ST_SESSION_TICKET_MAX_LENGTH: For most implementations this should be excessive, 
+/* ST_SESSION_TICKET_MAX_LENGTH: For most implementations this should be excessive,
                 though it's a servers perogative, and max is technically not defined in protocol */
-#define ST_SESSION_TICKET_MAX_LENGTH  1024 
+#define ST_SESSION_TICKET_MAX_LENGTH 1024
 
 //----
-/* ST_HOSTNAME_MAX_SIZE: this is just a threshold number for bucket collisions, and not meant 
+/* ST_HOSTNAME_MAX_SIZE: this is just a threshold number for bucket collisions, and not meant
                                         to necessarily hold whole hostname */
-#define ST_HOSTNAME_MAX_SIZE    32 
+#define ST_HOSTNAME_MAX_SIZE 32
 
-//using namespace std;
+// using namespace std;
 
-class TicketCache {
-
+class TicketCache
+{
 private:
-	typedef struct {
-	    char hostname[ST_HOSTNAME_MAX_SIZE+1]; /* hostname stored enough for bucket collision check */
-            time_t expTime; /* current time of storage + expiration hint => when it expires */
-            unsigned int ticketLength;
-            unsigned char ticket[ST_SESSION_TICKET_MAX_LENGTH];
-        } SessionTicket;
+  typedef struct {
+    char hostname[ST_HOSTNAME_MAX_SIZE + 1]; /* hostname stored enough for bucket collision check */
+    time_t expTime;                          /* current time of storage + expiration hint => when it expires */
+    unsigned int ticketLength;
+    unsigned char ticket[ST_SESSION_TICKET_MAX_LENGTH];
+  } SessionTicket;
 
-        std::unordered_map<std::string, SessionTicket *> cache;
+  std::unordered_map<std::string, SessionTicket *> cache;
 
-	void clear(SessionTicket *s);
-	void save(SessionTicket *s, const char *hostname, time_t expTime, const unsigned char *ticket, unsigned int ticketLength);
-	bool enabled;
+  void clear(SessionTicket *s);
+  void save(SessionTicket *s, const char *hostname, time_t expTime, const unsigned char *ticket, unsigned int ticketLength);
+  bool enabled;
+  pthread_mutex_t ticket_cache_mutex;
 
 public:
+  TicketCache(bool enable);
+  ~TicketCache();
 
-	TicketCache(bool enable);
-	~TicketCache();
-
-	void enableCache(bool enable);
-	int lookup(const char *hostname, unsigned char *ticketBuff, unsigned int ticketBuffSize);
-	void store(const char *hostname, uint64_t expireHint, const unsigned char *ticket, unsigned int ticketLength);
-
+  void enableCache(bool enable);
+  int lookup(const char *hostname, unsigned char *ticketBuff, unsigned int ticketBuffSize);
+  void store(const char *hostname, uint64_t expireHint, const unsigned char *ticket, unsigned int ticketLength);
 };
 #endif
