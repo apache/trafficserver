@@ -510,3 +510,40 @@ ink_file_namemax(const char *path)
   return 255;
 #endif
 }
+
+int
+ink_fileperm_parse(const char *perms)
+{
+  if (perms && strlen(perms) == 9) {
+    int re = 0;
+    char *c = (char *)perms;
+    if (*c == 'r')
+      re |= S_IRUSR;
+    c++;
+    if (*c == 'w')
+      re |= S_IWUSR;
+    c++;
+    if (*c == 'x')
+      re |= S_IXUSR;
+    c++;
+    if (*c == 'r')
+      re |= S_IRGRP;
+    c++;
+    if (*c == 'w')
+      re |= S_IWGRP;
+    c++;
+    if (*c == 'x')
+      re |= S_IXGRP;
+    c++;
+    if (*c == 'r')
+      re |= S_IROTH;
+    c++;
+    if (*c == 'w')
+      re |= S_IWOTH;
+    c++;
+    if (*c == 'x')
+      re |= S_IXOTH;
+    return re;
+  }
+  return -1;
+}

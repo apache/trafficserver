@@ -40,6 +40,8 @@
 #define DEFAULT_LOCAL_STATE_DIRECTORY "var/trafficserver"
 #define DEFAULT_SYSTEM_CONFIG_DIRECTORY "etc/trafficserver"
 #define DEFAULT_LOG_DIRECTORY "var/log/trafficserver"
+#define DEFAULT_BIND_STDOUT ""
+#define DEFAULT_BIND_STDERR ""
 
 //
 // Global Data

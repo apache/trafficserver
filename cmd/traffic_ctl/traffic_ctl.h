@@ -30,6 +30,7 @@
 #include "mgmtapi.h"
 #include "ts/ink_args.h"
 #include "ts/I_Version.h"
+#include "ts/BaseLogFile.h"
 
 #include <vector>
 #include <string>
