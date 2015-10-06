@@ -5217,18 +5217,24 @@ HttpSM::handle_server_setup_error(int event, void *data)
       c = tunnel.get_consumer(post_transform_info.vc);
       // c->handler_state = HTTP_SM_TRANSFORM_FAIL;
 
-      HttpTunnelProducer *ua_producer = c->producer;
-      ink_assert(ua_entry->vc == ua_producer->vc);
+      // No point in proceeding if there is no consumer
+      // Do we need to do additional clean up in the c == NULL case?
+      if (c != NULL) {
+        HttpTunnelProducer *ua_producer = c->producer;
+        ink_assert(ua_entry->vc == ua_producer->vc);
 
-      ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
-      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
-      ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+        ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
+        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
+        ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
 
-      ua_producer->alive = false;
-      ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
-      tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
+        ua_producer->alive = false;
+        ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
+        tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
+      }
     } else {
-      tunnel.handleEvent(event, c->write_vio);
+      // c could be null here as well
+      if (c != NULL)
+        tunnel.handleEvent(event, c->write_vio);
     }
     return;
   } else {
