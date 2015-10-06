@@ -31,8 +31,6 @@
 Parser::Parser(const std::string &line) : _cond(false), _empty(false)
 {
   TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Parser");
-  std::vector<std::string> tokens;
-
   bool inquote = false;
   bool extracting_token = false;
   off_t cur_token_start = 0;
@@ -45,13 +43,13 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
         cur_token_length = i - cur_token_start;
 
         if (cur_token_length) {
-          tokens.push_back(line.substr(cur_token_start, cur_token_length));
+          _tokens.push_back(line.substr(cur_token_start, cur_token_length));
         }
 
         extracting_token = false;
       } else if (!std::isspace(line[i])) {
         /* we got a standalone =, > or < */
-        tokens.push_back(std::string(1, line[i]));
+        _tokens.push_back(std::string(1, line[i]));
       }
       continue; /* always eat whitespace */
     } else if (line[i] == '"') {
@@ -62,20 +60,21 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
         continue;
       } else if (inquote && extracting_token) {
         cur_token_length = i - cur_token_start;
-        tokens.push_back(line.substr(cur_token_start, cur_token_length));
+        _tokens.push_back(line.substr(cur_token_start, cur_token_length));
         inquote = false;
         extracting_token = false;
       } else {
         /* malformed */
         TSError("[%s] malformed line \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
-        tokens.clear();
-        break;
+        _tokens.clear();
+        _empty = true;
+        return;
       }
     } else if (!extracting_token) {
       if (inquote)
         continue; /* just keep eating until we hit the closing quote */
 
-      if (tokens.empty() && line[i] == '#') {
+      if (_tokens.empty() && line[i] == '#') {
         // this is a comment line (it may have had leading whitespace before the #)
         _empty = true;
         break;
@@ -83,7 +82,7 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
 
       if (line[i] == '=' || line[i] == '>' || line[i] == '<') {
         /* these are always a seperate token */
-        tokens.push_back(std::string(1, line[i]));
+        _tokens.push_back(std::string(1, line[i]));
         continue;
       }
 
@@ -96,23 +95,25 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
     if (inquote) {
       // unterminated quote, error case.
       TSError("[%s] malformed line, unterminated quotation: \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
-      tokens.clear();
+      _tokens.clear();
+      _empty = true;
+      return;
     } else {
       /* we hit the end of the line while parsing a token, let's add it */
-      tokens.push_back(line.substr(cur_token_start));
+      _tokens.push_back(line.substr(cur_token_start));
     }
   }
 
-  if (tokens.empty()) {
+  if (_tokens.empty()) {
     _empty = true;
   } else {
-    preprocess(tokens);
+    preprocess(_tokens);
   }
 }
 
 // This is the core "parser", parsing rule sets
 void
-Parser::preprocess(std::vector<std::string> &tokens)
+Parser::preprocess(std::vector<std::string> tokens)
 {
   // Special case for "conditional" values
   if (tokens[0].substr(0, 2) == "%{") {
