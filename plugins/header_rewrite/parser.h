@@ -81,7 +81,7 @@ public:
   }
 
 private:
-  void preprocess(std::vector<std::string> &tokens);
+  void preprocess(std::vector<std::string> tokens);
   DISALLOW_COPY_AND_ASSIGN(Parser);
 
   bool _cond;
@@ -90,6 +90,9 @@ private:
   std::string _op;
   std::string _arg;
   std::string _val;
+
+protected:
+  std::vector<std::string> _tokens;
 };
 
 
