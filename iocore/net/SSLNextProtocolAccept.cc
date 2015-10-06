@@ -85,6 +85,8 @@ struct SSLNextProtocolTrampoline : public Continuation {
     case VC_EVENT_ERROR:
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
+      // Cancel the read before we have a chance to delete the continuation
+      netvc->do_io_read(NULL, 0, NULL);
       netvc->do_io(VIO::CLOSE);
       delete this;
       return EVENT_ERROR;
@@ -94,6 +96,8 @@ struct SSLNextProtocolTrampoline : public Continuation {
       return EVENT_ERROR;
     }
 
+    // Cancel the read before we have a chance to delete the continuation
+    netvc->do_io_read(NULL, 0, NULL);
     plugin = netvc->endpoint();
     if (plugin) {
       send_plugin_event(plugin, NET_EVENT_ACCEPT, netvc);
