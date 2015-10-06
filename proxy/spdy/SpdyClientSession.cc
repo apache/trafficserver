@@ -198,7 +198,14 @@ SpdyClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBu
   sm->resp_buffer = reinterpret_cast<TSIOBuffer>(new_empty_MIOBuffer());
   sm->resp_reader = TSIOBufferReaderAlloc(sm->resp_buffer);
 
-  eventProcessor.schedule_imm(sm, ET_NET);
+  // Block on the mutex.  We just allocated the object, so the lock should be available.
+  EThread *thread(this_ethread());
+  MUTEX_TAKE_LOCK(sm->mutex, thread);
+  // Call state_session_start directly rather than scheduling the event
+  // and leaving a half-setup session around.  It seems like there are some
+  // degenerate cases when event re-ordering causes problems (TS-3957)
+  sm->state_session_start(ET_NET, NULL);
+  MUTEX_UNTAKE_LOCK(sm->mutex, thread);
 }
 
 int
