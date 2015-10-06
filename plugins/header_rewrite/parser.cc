@@ -69,9 +69,6 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
         return;
       }
     } else if (!extracting_token) {
-      if (inquote)
-        continue; /* just keep eating until we hit the closing quote */
-
       if (_tokens.empty() && line[i] == '#') {
         // this is a comment line (it may have had leading whitespace before the #)
         _empty = true;

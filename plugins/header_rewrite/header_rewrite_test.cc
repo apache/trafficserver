@@ -37,6 +37,7 @@ TSError(const char *fmt, ...)
   if ((bytes = vsnprintf(buf, sizeof(buf), fmt, args)) > 0) {
     fprintf(stderr, "TSError: %s: %.*s\n", PLUGIN_NAME, bytes, buf);
   }
+  va_end(args);
 }
 
 extern "C" void
@@ -49,6 +50,7 @@ TSDebug(const char *tag, const char *fmt, ...)
   if ((bytes = vsnprintf(buf, sizeof(buf), fmt, args)) > 0) {
     fprintf(stdout, "TSDebug: %s: %.*s\n", PLUGIN_NAME, bytes, buf);
   }
+  va_end(args);
 }
 
 #define CHECK_EQ(x, y)                   \
