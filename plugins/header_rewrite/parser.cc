@@ -36,9 +36,7 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
   off_t cur_token_start = 0;
   size_t cur_token_length = 0;
   for (size_t i = 0; i < line.size(); ++i) {
-
-    if (!inquote &&
-        (std::isspace(line[i]) || (line[i] == '=' || line[i] == '>' || line[i] == '<'))) {
+    if (!inquote && (std::isspace(line[i]) || (line[i] == '=' || line[i] == '>' || line[i] == '<'))) {
       if (extracting_token) {
         cur_token_length = i - cur_token_start;
 
@@ -129,9 +127,8 @@ Parser::preprocess(std::vector<std::string> tokens)
       std::string s = tokens[0].substr(2, tokens[0].size() - 3);
 
       _op = s;
-      if (tokens.size() > 2
-          && (tokens[1][0] == '=' || tokens[1][0] == '>' || tokens[1][0] == '<')) { // cond + (=/</>) + argument
-         _arg = tokens[1] + tokens[2];
+      if (tokens.size() > 2 && (tokens[1][0] == '=' || tokens[1][0] == '>' || tokens[1][0] == '<')) { // cond + (=/</>) + argument
+        _arg = tokens[1] + tokens[2];
       } else if (tokens.size() > 1) {
         _arg = tokens[1];
       } else

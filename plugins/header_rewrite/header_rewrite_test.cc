@@ -27,45 +27,53 @@
 const char PLUGIN_NAME[] = "TEST_header_rewrite";
 const char PLUGIN_NAME_DBG[] = "TEST_dbg_header_rewrite";
 
-extern "C" void TSError(const char* fmt, ...) {
+extern "C" void
+TSError(const char *fmt, ...)
+{
   char buf[2048];
   int bytes = 0;
   va_list args;
-  va_start (args, fmt);
-  if((bytes = vsnprintf (buf, sizeof(buf), fmt, args)) > 0) {
+  va_start(args, fmt);
+  if ((bytes = vsnprintf(buf, sizeof(buf), fmt, args)) > 0) {
     fprintf(stderr, "TSError: %s: %.*s\n", PLUGIN_NAME, bytes, buf);
   }
 }
 
-extern "C" void TSDebug(const char *tag, const char* fmt, ...) {
+extern "C" void
+TSDebug(const char *tag, const char *fmt, ...)
+{
   char buf[2048];
   int bytes = 0;
   va_list args;
-  va_start (args, fmt);
-  if((bytes = vsnprintf (buf, sizeof(buf), fmt, args)) > 0) {
+  va_start(args, fmt);
+  if ((bytes = vsnprintf(buf, sizeof(buf), fmt, args)) > 0) {
     fprintf(stdout, "TSDebug: %s: %.*s\n", PLUGIN_NAME, bytes, buf);
   }
 }
 
-#define CHECK_EQ(x, y) \
-  do { \
-   if ( (x) != (y) ) { \
-    fprintf(stderr, "CHECK FAILED\n"); \
-    return 1; \
-   } \
+#define CHECK_EQ(x, y)                   \
+  do {                                   \
+    if ((x) != (y)) {                    \
+      fprintf(stderr, "CHECK FAILED\n"); \
+      return 1;                          \
+    }                                    \
   } while (false);
 
-class ParserTest : public Parser {
+class ParserTest : public Parser
+{
 public:
-  ParserTest(std::string line) : Parser(line) { }
+  ParserTest(std::string line) : Parser(line) {}
 
-  std::vector<std::string> getTokens() {
+  std::vector<std::string>
+  getTokens()
+  {
     return _tokens;
   }
 };
 
-int test_parsing() {
-
+int
+test_parsing()
+{
   {
     ParserTest p("cond      %{READ_REQUEST_HDR_HOOK}");
     CHECK_EQ(p.getTokens().size(), 2);
@@ -177,8 +185,9 @@ int test_parsing() {
   return 0;
 }
 
-int test_processing() {
-
+int
+test_processing()
+{
   /*
    * These tests are designed to verify that the processing of the parsed input is correct.
    */
@@ -210,16 +219,18 @@ int test_processing() {
   return 0;
 }
 
-int tests() {
-  if (test_parsing() ||
-      test_processing()) {
+int
+tests()
+{
+  if (test_parsing() || test_processing()) {
     return 1;
   }
 
   return 0;
 }
 
-int main () {
+int
+main()
+{
   return tests();
 }
-
