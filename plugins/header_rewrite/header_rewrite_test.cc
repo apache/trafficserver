@@ -50,7 +50,7 @@ extern "C" void TSDebug(const char *tag, const char* fmt, ...) {
 #define CHECK_EQ(x, y) \
   do { \
    if ( (x) != (y) ) { \
-    fprintf(stderr, "CHECK FAILED " #x " != " #y "\n"); \
+    fprintf(stderr, "CHECK FAILED\n"); \
     return 1; \
    } \
   } while (false);
