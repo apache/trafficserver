@@ -14,21 +14,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Add new plugins in alphabetic order, but keep experimental always at the bottom.
+include $(top_srcdir)/build/plugins.mk
 
-SUBDIRS = \
-  cacheurl \
-  conf_remap \
-  gzip \
-  header_rewrite \
-  libloader \
-  multiplexer \
-  regex_remap \
-  stats_over_http \
-  tcpinfo
+PLUGIN_TAG ?= multiplexer
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS += experimental
-endif
+AM_CPPFLAGS += -DPLUGIN_TAG=\"$(PLUGIN_TAG)\"
 
-DIST_SUBDIRS = $(SUBDIRS)
+pkglib_LTLIBRARIES = multiplexer.la
+
+multiplexer_SOURCES = \
+  ats-multiplexer.cc \
+  chunk-decoder.cc \
+  dispatch.cc \
+  fetcher.cc \
+  original-request.cc \
+  post.cc \
+  ts.cc
+
+multiplexer_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
