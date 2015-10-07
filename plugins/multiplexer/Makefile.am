@@ -16,13 +16,11 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-PLUGIN_TAG ?= multiplexer
-
-AM_CPPFLAGS += -DPLUGIN_TAG=\"$(PLUGIN_TAG)\"
+AM_CPPFLAGS += -DPLUGIN_TAG=\"multiplexer\"
 
 pkglib_LTLIBRARIES = multiplexer.la
 
-multiplexer_SOURCES = \
+multiplexer_la_SOURCES = \
   ats-multiplexer.cc \
   chunk-decoder.cc \
   dispatch.cc \
@@ -31,4 +29,4 @@ multiplexer_SOURCES = \
   post.cc \
   ts.cc
 
-multiplexer_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+multiplexer_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)

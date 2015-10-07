@@ -1867,6 +1867,7 @@ AC_CONFIG_FILES([
   plugins/gzip/Makefile
   plugins/header_rewrite/Makefile
   plugins/libloader/Makefile
+  plugins/multiplexer//Makefile
   plugins/regex_remap/Makefile
   plugins/stats_over_http/Makefile
   plugins/tcpinfo/Makefile
