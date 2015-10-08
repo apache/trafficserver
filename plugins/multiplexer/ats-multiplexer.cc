@@ -150,7 +150,7 @@ TSRemapStatus TSRemapDoRemap(void * i, TSHttpTxn t, TSRemapRequestInfo * r) {
   const Instance * const instance = static_cast< const Instance * >(i);
 
   if ( ! instance->origins.empty()
-      && TSHttpIsInternalRequest(t) != TS_SUCCESS) {
+      && TSHttpTxnIsInternal(t) != TS_SUCCESS) {
     DoRemap(*instance, t);
   } else {
     TSDebug(PLUGIN_TAG, "Skipping transaction %p", t);
