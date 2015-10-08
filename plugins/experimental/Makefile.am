@@ -32,6 +32,7 @@ SUBDIRS = \
  healthchecks \
  hipes \
  metalink \
+ multiplexer \
  regex_revalidate \
  remap_stats \
  s3_auth \

@@ -22,7 +22,6 @@ SUBDIRS = \
   gzip \
   header_rewrite \
   libloader \
-  multiplexer \
   regex_remap \
   stats_over_http \
   tcpinfo
