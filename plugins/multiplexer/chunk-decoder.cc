@@ -48,15 +48,11 @@ int ChunkDecoder::parseSize(const char * p, const int64_t s) {
     assert(state_ < State::kUpperBound); //VALID RANGE
     switch (state_) {
     case State::kUnknown:
-      assert(false); //UNKNOWN
-      break;
-
-    case State::kInvalid:
-      assert(false); //INVALID
-      break;
-
     case State::kData:
-      assert(false); //SHOULD NOT MAKE PART OF THIS LOOP
+    case State::kInvalid:
+    case State::kEnd:
+    case State::kUpperBound:
+      assert(false);
       break;
 
     case State::kDataN:
