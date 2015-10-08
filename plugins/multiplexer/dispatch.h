@@ -60,7 +60,7 @@ struct Instance {
   Origins origins;
 };
 
-static size_t timeout;
+extern size_t timeout;
 
 void generateRequests(const Origins &, const TSMBuffer, const TSMLoc, Requests &);
 void addBody(Requests &, const TSIOBufferReader);
