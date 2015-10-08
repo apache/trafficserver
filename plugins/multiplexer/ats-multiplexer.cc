@@ -24,7 +24,6 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 #include "dispatch.h"

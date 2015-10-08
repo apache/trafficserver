@@ -27,7 +27,6 @@
 #include <iostream>
 #include <limits>
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 #include "chunk-decoder.h"
