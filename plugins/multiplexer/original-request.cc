@@ -32,7 +32,7 @@ std::string get(const TSMBuffer & b, const TSMLoc & l, const T & t) {
 
   assert(buffer != NULL);
   assert(length > 0);
-  assert(strlen(buffer) >= length);
+  assert(strlen(buffer) >= static_cast< unsigned int >(length));
 
   return std::string(buffer, length);
 }
