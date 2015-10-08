@@ -210,7 +210,7 @@ void dispatch(Requests & r, const int t) {
           iterator->length, iterator->host.c_str());
       std::string b;
       read(iterator->io->reader, b);
-      assert(b.size() == iterator->length);
+      assert(b.size() == static_cast< uint64_t >(iterator->length));
       TSDebug(PLUGIN_TAG, "%s", b.c_str());
     }
     ats::get(iterator->io, iterator->length, Handler(iterator->host), t);
