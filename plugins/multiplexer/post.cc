@@ -104,7 +104,6 @@ int handlePost(TSCont c, TSEvent e, void * data) {
   assert(state != NULL);
   if (TSVConnClosedGet(c)) {
     assert(data != NULL);
-    const TSHttpTxn transaction = static_cast< TSHttpTxn >(data);
     if (state->reader != NULL) {
       addBody(state->requests, state->reader);
     }
