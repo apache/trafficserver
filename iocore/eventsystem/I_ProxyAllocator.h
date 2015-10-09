@@ -39,7 +39,7 @@ extern int thread_freelist_high_watermark;
 extern int thread_freelist_low_watermark;
 
 struct ProxyAllocator {
-  unsigned allocated;
+  int allocated;
   void *freelist;
 
   ProxyAllocator() : allocated(0), freelist(0) {}
