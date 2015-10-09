@@ -219,7 +219,7 @@ freelist_new(InkFreeList *f)
         for (int j = 0; j < (int)type_size; j++)
           a[j] = str[j % 4];
 #endif
-        ink_freelist_free(f, a);
+        freelist_free(f, a);
       }
 
     } else {
