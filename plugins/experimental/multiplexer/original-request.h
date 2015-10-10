@@ -31,7 +31,8 @@
  * on dispatch we get one parsed request.
  * So we want to alter and modify it back the way it was originally.
  */
-class OriginalRequest {
+class OriginalRequest
+{
   TSMBuffer buffer_;
   TSMLoc location_;
   TSMLoc url_;
@@ -39,7 +40,7 @@ class OriginalRequest {
   TSMLoc xMultiplexerHeader_;
 
   OriginalRequest(const OriginalRequest &);
-  OriginalRequest & operator = (const OriginalRequest &);
+  OriginalRequest &operator=(const OriginalRequest &);
 
 public:
   struct {
@@ -59,4 +60,4 @@ public:
   bool xMultiplexerHeader(const std::string &);
 };
 
-#endif //ORIGINAL_REQUEST_H
+#endif // ORIGINAL_REQUEST_H

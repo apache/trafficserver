@@ -25,7 +25,9 @@
 
 #include "chunk-decoder.h"
 
-void ChunkDecoder::parseSizeCharacter(const char a) {
+void
+ChunkDecoder::parseSizeCharacter(const char a)
+{
   assert(state_ == State::kSize);
   if (a >= '0' && a <= '9') {
     size_ = (size_ << 4) | (a - '0');
@@ -36,16 +38,18 @@ void ChunkDecoder::parseSizeCharacter(const char a) {
   } else if (a == '\r') {
     state_ = size_ == 0 ? State::kEndN : State::kDataN;
   } else {
-    assert(false); //invalid input
+    assert(false); // invalid input
   }
 }
 
-int ChunkDecoder::parseSize(const char * p, const int64_t s) {
+int
+ChunkDecoder::parseSize(const char *p, const int64_t s)
+{
   assert(p != NULL);
   assert(s > 0);
   int length = 0;
   while (state_ != State::kData && *p != '\0' && length < s) {
-    assert(state_ < State::kUpperBound); //VALID RANGE
+    assert(state_ < State::kUpperBound); // VALID RANGE
     switch (state_) {
     case State::kUnknown:
     case State::kData:
@@ -86,15 +90,16 @@ int ChunkDecoder::parseSize(const char * p, const int64_t s) {
   return length;
 }
 
-bool ChunkDecoder::isSizeState(void) const {
-  return state_ == State::kDataN
-    || state_ == State::kEndN
-    || state_ == State::kSize
-    || state_ == State::kSizeN
-    || state_ == State::kSizeR;
+bool
+ChunkDecoder::isSizeState(void) const
+{
+  return state_ == State::kDataN || state_ == State::kEndN || state_ == State::kSize || state_ == State::kSizeN ||
+         state_ == State::kSizeR;
 }
 
-int ChunkDecoder::decode(const TSIOBufferReader & r) {
+int
+ChunkDecoder::decode(const TSIOBufferReader &r)
+{
   assert(r != NULL);
 
   if (state_ == State::kEnd) {
@@ -114,7 +119,7 @@ int ChunkDecoder::decode(const TSIOBufferReader & r) {
 
   if (isSizeState()) {
     while (block != NULL && size_ == 0) {
-      const char * p = TSIOBufferBlockReadStart(block, r, &size);
+      const char *p = TSIOBufferBlockReadStart(block, r, &size);
       assert(p != NULL);
       const int i = parseSize(p, size);
       size -= i;
@@ -134,7 +139,7 @@ int ChunkDecoder::decode(const TSIOBufferReader & r) {
 
   while (block != NULL && state_ == State::kData) {
     assert(size_ > 0);
-    const char * p = TSIOBufferBlockReadStart(block, r, &size);
+    const char *p = TSIOBufferBlockReadStart(block, r, &size);
     if (p != NULL) {
       if (size > size_) {
         length += size_;

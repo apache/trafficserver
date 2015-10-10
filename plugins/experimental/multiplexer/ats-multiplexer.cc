@@ -35,15 +35,17 @@
 #error Please define a PLUGIN_TAG before including this file.
 #endif
 
-//1s
+// 1s
 const size_t DEFAULT_TIMEOUT = 1000000000000;
 
 Statistics statistics;
 
-TSReturnCode TSRemapInit(TSRemapInterface *, char *, int) {
+TSReturnCode
+TSRemapInit(TSRemapInterface *, char *, int)
+{
   {
     timeout = 0;
-    const char * const timeoutEnv = getenv(PLUGIN_TAG "__timeout");
+    const char *const timeoutEnv = getenv(PLUGIN_TAG "__timeout");
     if (timeoutEnv != NULL) {
       timeout = atol(timeoutEnv);
     }
@@ -53,47 +55,46 @@ TSReturnCode TSRemapInit(TSRemapInterface *, char *, int) {
     TSDebug(PLUGIN_TAG, "timeout is set to: %zu", timeout);
   }
 
-  statistics.failures = TSStatCreate(PLUGIN_TAG ".failures",
-      TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  statistics.failures = TSStatCreate(PLUGIN_TAG ".failures", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
 
-  statistics.hits = TSStatCreate(PLUGIN_TAG ".hits", TS_RECORDDATATYPE_INT,
-      TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  statistics.hits = TSStatCreate(PLUGIN_TAG ".hits", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
 
-  statistics.time = TSStatCreate(PLUGIN_TAG ".time",
-      TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_AVG);
+  statistics.time = TSStatCreate(PLUGIN_TAG ".time", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_AVG);
 
-  statistics.requests = TSStatCreate(PLUGIN_TAG ".requests",
-      TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  statistics.requests = TSStatCreate(PLUGIN_TAG ".requests", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
 
-  statistics.timeouts = TSStatCreate(PLUGIN_TAG ".timeouts",
-      TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  statistics.timeouts = TSStatCreate(PLUGIN_TAG ".timeouts", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
 
-  statistics.size = TSStatCreate(PLUGIN_TAG ".size", TS_RECORDDATATYPE_INT,
-      TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_AVG);
+  statistics.size = TSStatCreate(PLUGIN_TAG ".size", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_AVG);
 
   return TS_SUCCESS;
 }
 
-TSReturnCode TSRemapNewInstance(int argc, char * * argv, void * * i, char *, int) {
+TSReturnCode
+TSRemapNewInstance(int argc, char **argv, void **i, char *, int)
+{
   assert(i != NULL);
-  Instance * instance = new Instance;
+  Instance *instance = new Instance;
 
   if (argc > 2) {
-    std::copy(argv + 2, argv + argc,
-        std::back_inserter(instance->origins));
+    std::copy(argv + 2, argv + argc, std::back_inserter(instance->origins));
   }
 
-  *i = static_cast< void * >(instance);
+  *i = static_cast<void *>(instance);
 
   return TS_SUCCESS;
 }
 
-void TSRemapDeleteInstance(void * i) {
+void
+TSRemapDeleteInstance(void *i)
+{
   assert(i != NULL);
-  delete static_cast< Instance * >(i);
+  delete static_cast<Instance *>(i);
 }
 
-void DoRemap(const Instance & i, TSHttpTxn t) {
+void
+DoRemap(const Instance &i, TSHttpTxn t)
+{
   assert(t != NULL);
   /*
   if (POST || PUT) {
@@ -114,8 +115,7 @@ void DoRemap(const Instance & i, TSHttpTxn t) {
     CHECK(TSMimeHdrFieldCreateNamed(buffer, location, "X-Multiplexer", 13, &field));
     assert(field != NULL);
 
-    CHECK(TSMimeHdrFieldValueStringSet(buffer,
-          location, field, -1, "original", 8));
+    CHECK(TSMimeHdrFieldValueStringSet(buffer, location, field, -1, "original", 8));
 
     CHECK(TSMimeHdrFieldAppend(buffer, location, field));
   }
@@ -125,7 +125,7 @@ void DoRemap(const Instance & i, TSHttpTxn t) {
   assert(requests.size() == i.origins.size());
 
   int length;
-  const char * const method = TSHttpHdrMethodGet(buffer, location, &length);
+  const char *const method = TSHttpHdrMethodGet(buffer, location, &length);
 
   TSDebug(PLUGIN_TAG, "Method is %s.", std::string(method, length).c_str());
 
@@ -144,13 +144,14 @@ void DoRemap(const Instance & i, TSHttpTxn t) {
   TSStatIntIncrement(statistics.requests, 1);
 }
 
-TSRemapStatus TSRemapDoRemap(void * i, TSHttpTxn t, TSRemapRequestInfo * r) {
+TSRemapStatus
+TSRemapDoRemap(void *i, TSHttpTxn t, TSRemapRequestInfo *r)
+{
   assert(i != NULL);
   assert(t != NULL);
-  const Instance * const instance = static_cast< const Instance * >(i);
+  const Instance *const instance = static_cast<const Instance *>(i);
 
-  if ( ! instance->origins.empty()
-      && TSHttpTxnIsInternal(t) != TS_SUCCESS) {
+  if (!instance->origins.empty() && TSHttpTxnIsInternal(t) != TS_SUCCESS) {
     DoRemap(*instance, t);
   } else {
     TSDebug(PLUGIN_TAG, "Skipping transaction %p", t);

@@ -40,4 +40,4 @@ struct PostState {
 
 int handlePost(TSCont, TSEvent, void *);
 
-#endif //POST_H
+#endif // POST_H

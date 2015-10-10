@@ -29,20 +29,23 @@
 #error Please define a PLUGIN_TAG before including this file.
 #endif
 
-PostState::~PostState() {
+PostState::~PostState()
+{
   if (buffer != NULL) {
     TSIOBufferDestroy(buffer);
     buffer = NULL;
   }
 }
 
-PostState::PostState(Requests & r) :
-  buffer(NULL), reader(NULL), vio(NULL) {
-  assert( ! r.empty());
+PostState::PostState(Requests &r) : buffer(NULL), reader(NULL), vio(NULL)
+{
+  assert(!r.empty());
   requests.swap(r);
 }
 
-static void postTransform(const TSCont c, PostState & s) {
+static void
+postTransform(const TSCont c, PostState &s)
+{
   assert(c != NULL);
 
   const TSVConn vconnection = TSTransformOutputVConnGet(c);
@@ -51,7 +54,7 @@ static void postTransform(const TSCont c, PostState & s) {
   const TSVIO vio = TSVConnWriteVIOGet(c);
   assert(vio != NULL);
 
-  if ( ! s.buffer) {
+  if (!s.buffer) {
     s.buffer = TSIOBufferCreate();
     assert(s.buffer != NULL);
 
@@ -61,11 +64,11 @@ static void postTransform(const TSCont c, PostState & s) {
     s.reader = TSIOBufferReaderClone(reader);
     assert(s.reader != NULL);
 
-    s.vio = TSVConnWrite(vconnection, c, reader, std::numeric_limits< int64_t >::max());
+    s.vio = TSVConnWrite(vconnection, c, reader, std::numeric_limits<int64_t>::max());
     assert(s.vio != NULL);
   }
 
-  if ( ! TSVIOBufferGet(vio)) {
+  if (!TSVIOBufferGet(vio)) {
     TSVIONBytesSet(s.vio, TSVIONDoneGet(vio));
     TSVIOReenable(s.vio);
     return;
@@ -97,10 +100,12 @@ static void postTransform(const TSCont c, PostState & s) {
   }
 }
 
-int handlePost(TSCont c, TSEvent e, void * data) {
+int
+handlePost(TSCont c, TSEvent e, void *data)
+{
   assert(c != NULL);
-  //TODO(dmorilha): assert on possible events.
-  PostState * const state = static_cast< PostState * >(TSContDataGet(c));
+  // TODO(dmorilha): assert on possible events.
+  PostState *const state = static_cast<PostState *>(TSContDataGet(c));
   assert(state != NULL);
   if (TSVConnClosedGet(c)) {
     assert(data != NULL);
@@ -114,13 +119,11 @@ int handlePost(TSCont c, TSEvent e, void * data) {
     return 0;
   } else {
     switch (e) {
-    case TS_EVENT_ERROR:
-      {
-        const TSVIO vio = TSVConnWriteVIOGet(c);
-        assert(vio != NULL);
-        CHECK(TSContCall(TSVIOContGet(vio), TS_EVENT_ERROR, vio));
-      }
-      break;
+    case TS_EVENT_ERROR: {
+      const TSVIO vio = TSVConnWriteVIOGet(c);
+      assert(vio != NULL);
+      CHECK(TSContCall(TSVIOContGet(vio), TS_EVENT_ERROR, vio));
+    } break;
     case TS_EVENT_VCONN_WRITE_COMPLETE:
       TSVConnShutdown(TSTransformOutputVConnGet(c), 0, 1);
       break;

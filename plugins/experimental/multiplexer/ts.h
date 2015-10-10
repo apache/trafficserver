@@ -30,44 +30,38 @@
 #include <string>
 #include <ts/ts.h>
 
-namespace ats {
-namespace io {
-struct IO {
-  TSIOBuffer buffer;
-  TSIOBufferReader reader;
-  TSVIO vio;
+namespace ats
+{
+namespace io
+{
+  struct IO {
+    TSIOBuffer buffer;
+    TSIOBufferReader reader;
+    TSVIO vio;
 
-  ~IO() {
-    assert(buffer != NULL);
-    assert(reader != NULL);
-    const int64_t available = TSIOBufferReaderAvail(reader);
-    if (available > 0) {
-      TSIOBufferReaderConsume(reader, available);
+    ~IO()
+    {
+      assert(buffer != NULL);
+      assert(reader != NULL);
+      const int64_t available = TSIOBufferReaderAvail(reader);
+      if (available > 0) {
+        TSIOBufferReaderConsume(reader, available);
+      }
+      TSIOBufferReaderFree(reader);
+      TSIOBufferDestroy(buffer);
     }
-    TSIOBufferReaderFree(reader);
-    TSIOBufferDestroy(buffer);
-  }
 
-  IO(void):
-    buffer(TSIOBufferCreate()),
-    reader(TSIOBufferReaderAlloc(buffer)),
-    vio(NULL) { }
+    IO(void) : buffer(TSIOBufferCreate()), reader(TSIOBufferReaderAlloc(buffer)), vio(NULL) {}
+    IO(const TSIOBuffer &b) : buffer(b), reader(TSIOBufferReaderAlloc(buffer)), vio(NULL) { assert(buffer != NULL); }
+    static IO *read(TSVConn, TSCont, const int64_t);
 
-  IO(const TSIOBuffer & b):
-    buffer(b),
-    reader(TSIOBufferReaderAlloc(buffer)),
-    vio(NULL) {
-    assert(buffer != NULL);
-  }
+    static IO *
+    read(TSVConn v, TSCont c)
+    {
+      return IO::read(v, c, std::numeric_limits<int64_t>::max());
+    }
+  };
 
-  static IO * read(TSVConn, TSCont, const int64_t);
-
-  static IO * read(TSVConn v, TSCont c) {
-    return IO::read(v, c,
-        std::numeric_limits< int64_t >::max());
-  }
-};
-
-} //end of io namespace
-} //end of ats namespace
-#endif //TS_H
+} // end of io namespace
+} // end of ats namespace
+#endif // TS_H

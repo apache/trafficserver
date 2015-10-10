@@ -22,8 +22,11 @@
  */
 #include "fetcher.h"
 
-namespace ats {
-void HttpParser::destroyParser(void) {
+namespace ats
+{
+void
+HttpParser::destroyParser(void)
+{
   if (parser_ != NULL) {
     TSHttpParserClear(parser_);
     TSHttpParserDestroy(parser_);
@@ -31,19 +34,19 @@ void HttpParser::destroyParser(void) {
   }
 }
 
-bool HttpParser::parse(io::IO & io) {
+bool
+HttpParser::parse(io::IO &io)
+{
   if (parsed_) {
     return true;
   }
   TSIOBufferBlock block = TSIOBufferReaderStart(io.reader);
   while (block != NULL) {
     int64_t size = 0;
-    const char * const begin = TSIOBufferBlockReadStart(
-        block, io.reader, &size);
-    const char * iterator = begin;
+    const char *const begin = TSIOBufferBlockReadStart(block, io.reader, &size);
+    const char *iterator = begin;
 
-    parsed_ = (TSHttpHdrParseResp(parser_, buffer_, location_,
-          &iterator, iterator + size) == TS_PARSE_DONE);
+    parsed_ = (TSHttpHdrParseResp(parser_, buffer_, location_, &iterator, iterator + size) == TS_PARSE_DONE);
     TSIOBufferReaderConsume(io.reader, iterator - begin);
 
     if (parsed_) {
@@ -58,4 +61,4 @@ bool HttpParser::parse(io::IO & io) {
   return false;
 }
 
-} //end of ats namespace
+} // end of ats namespace

@@ -30,31 +30,32 @@
 
 #include "ts.h"
 
-#define CHECK(X) { \
-  const TSReturnCode r = static_cast< TSReturnCode >(X); \
-  assert(r == TS_SUCCESS); \
-}
+#define CHECK(X)                                         \
+  {                                                      \
+    const TSReturnCode r = static_cast<TSReturnCode>(X); \
+    assert(r == TS_SUCCESS);                             \
+  }
 
 struct Statistics {
   int failures;
   int hits;
-  int time; //average
+  int time; // average
   int requests;
   int timeouts;
-  int size; //average
+  int size; // average
 };
 
-typedef std::vector< std::string > Origins;
+typedef std::vector<std::string> Origins;
 
 struct Request {
   std::string host;
   int length;
-  ats::io::IO * io;
+  ats::io::IO *io;
 
   Request(const std::string &, const TSMBuffer, const TSMLoc);
 };
 
-typedef std::vector< Request > Requests;
+typedef std::vector<Request> Requests;
 
 struct Instance {
   Origins origins;
@@ -66,4 +67,4 @@ void generateRequests(const Origins &, const TSMBuffer, const TSMLoc, Requests &
 void addBody(Requests &, const TSIOBufferReader);
 void dispatch(Requests &, const int timeout = 0);
 
-#endif //DISPATCH_H
+#endif // DISPATCH_H
