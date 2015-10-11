@@ -381,16 +381,19 @@ static void
 malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
 {
   void *item = head;
+  void *next;
 
   // Avoid compiler warnings
   (void)tail;
 
   if (f->alignment) {
-    for (size_t i = 0; i < num_item && item; ++i, item = *(void **)item) {
+    for (size_t i = 0; i < num_item && item; ++i, item = next) {
+      next = *(void **)item; // find next item before freeing current item
       ats_memalign_free(item);
     }
   } else {
-    for (size_t i = 0; i < num_item && item; ++i, item = *(void **)item) {
+    for (size_t i = 0; i < num_item && item; ++i, item = next) {
+      next = *(void **)item; // find next item before freeing current item
       ats_free(item);
     }
   }
