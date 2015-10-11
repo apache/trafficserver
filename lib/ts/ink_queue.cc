@@ -345,16 +345,19 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
   ink_atomic_increment(&fastalloc_mem_in_use, -(int64_t)f->type_size * num_item);
 #else  /* !TS_USE_FREELIST */
   void *item = head;
+  void *next;
 
   // Avoid compiler warnings
   (void)tail;
 
   if (f->alignment) {
-    for (size_t i = 0; i < num_item && item; ++i, item = *(void **)item) {
+    for (size_t i = 0; i < num_item && item; ++i, item = next) {
+      next = *(void **)item; // find next item before freeing current item
       ats_memalign_free(item);
     }
   } else {
-    for (size_t i = 0; i < num_item && item; ++i, item = *(void **)item) {
+    for (size_t i = 0; i < num_item && item; ++i, item = next) {
+      next = *(void **)item; // find next item before freeing current item
       ats_free(item);
     }
   }
