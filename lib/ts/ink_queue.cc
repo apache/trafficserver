@@ -172,7 +172,7 @@ int fake_global_for_ink_queue = 0;
 void *
 ink_freelist_new(InkFreeList *f)
 {
-  void * ptr;
+  void *ptr;
 
   if (likely(ptr = freelist_freelist_ops->fl_new(f))) {
     ink_atomic_increment((int *)&f->used, 1);
@@ -310,7 +310,6 @@ freelist_free(InkFreeList *f, void *item)
     result = ink_atomic_cas((int64_t *)&f->head, h.data, item_pair.data);
 #endif
   }
-
 }
 
 static void
