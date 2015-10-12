@@ -105,7 +105,7 @@ public:
   {
     _thread = this_ethread();
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
-    _start_time = ink_hrtime();
+    _start_time = Thread::get_hrtime();
     // FIXME: Are you sure? every "stream" needs _req_header?
     _req_header.create(HTTP_TYPE_REQUEST);
   }
@@ -113,7 +113,7 @@ public:
   ~Http2Stream()
   {
     HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
-    ink_hrtime end_time = ink_hrtime();
+    ink_hrtime end_time = Thread::get_hrtime();
     HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);
     _req_header.destroy();
 
