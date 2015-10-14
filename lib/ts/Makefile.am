@@ -117,8 +117,6 @@ libtsutil_la_SOURCES = \
   ink_assert.cc \
   ink_assert.h \
   ink_atomic.h \
-  ink_auth_api.cc \
-  ink_auth_api.h \
   ink_base64.cc \
   ink_base64.h \
   ink_cap.cc \
