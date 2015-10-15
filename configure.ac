@@ -408,6 +408,12 @@ AC_MSG_RESULT([$enable_experimental_plugins])
 AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
 
 #
+# Enable experimental/memcached_remap plugin
+#
+PKG_CHECK_MODULES([LIBMEMCACHED], [libmemcached >= 1.0], [have_libmemcached=yes], [have_libmemcached=no])
+AM_CONDITIONAL([BUILD_MEMCACHED_REMAP_PLUGIN], [test "x${have_libmemcached}" = "xyes"])
+
+#
 # Example plugins. The example plugins are always built, but not always installed. Installing
 # them is useful for QA, but not useful for most users, so we default this to disabled.
 #
@@ -1905,6 +1911,7 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/header_normalize/Makefile
     plugins/experimental/healthchecks/Makefile
     plugins/experimental/hipes/Makefile
+    plugins/experimental/memcached_remap/Makefile
     plugins/experimental/metalink/Makefile
     plugins/experimental/mysql_remap/Makefile
     plugins/experimental/regex_revalidate/Makefile
