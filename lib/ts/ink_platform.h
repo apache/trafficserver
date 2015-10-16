@@ -177,11 +177,10 @@ typedef unsigned int in_addr_t;
 #include <sys/sysinfo.h>
 #endif
 
-#if !defined(darwin)
 #ifdef HAVE_SYS_SYSCTL_H
 #include <sys/sysctl.h>
 #endif
-#endif
+
 #ifdef HAVE_SYS_SYSTEMINFO_H
 #include <sys/systeminfo.h>
 #endif

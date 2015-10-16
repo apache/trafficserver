@@ -984,12 +984,10 @@ LocalManager::listenForProxy()
     }
 
     // read backlong configuration value and overwrite the default value if found
-    int backlog = 1024;
     bool found;
-    RecInt config_backlog = REC_readInteger("proxy.config.net.listen_backlog", &found);
-    if (found) {
-      backlog = config_backlog;
-    }
+    RecInt backlog = REC_readInteger("proxy.config.net.listen_backlog", &found);
+    backlog = (found && backlog >= 0) ? backlog : ats_tcp_somaxconn();
+
     if ((listen(p.m_fd, backlog)) < 0) {
       mgmt_fatal(stderr, errno, "[LocalManager::listenForProxy] Unable to listen on port: %d (%s)\n", p.m_port,
                  ats_ip_family_name(p.m_family));
