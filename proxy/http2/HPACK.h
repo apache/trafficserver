@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  [RFC 7541] HPACK: Header Compression for HTTP/2
 
   @section license License
 
@@ -48,11 +48,11 @@ const static int HPACK_ERROR_COMPRESSION_ERROR = -1;
 const static int HPACK_ERROR_HTTP2_PROTOCOL_ERROR = -2;
 
 enum HpackFieldType {
-  HPACK_FIELD_INDEX,              // HPACK 7.1 Indexed Header Field Representation
-  HPACK_FIELD_INDEXED_LITERAL,    // HPACK 7.2.1 Literal Header Field with Incremental Indexing
-  HPACK_FIELD_NOINDEX_LITERAL,    // HPACK 7.2.2 Literal Header Field without Indexing
-  HPACK_FIELD_NEVERINDEX_LITERAL, // HPACK 7.2.3 Literal Header Field never Indexed
-  HPACK_FIELD_TABLESIZE_UPDATE,   // HPACK 7.3 Header Table Size Update
+  HPACK_FIELD_INDEX,              // [RFC 7541] 6.1. Indexed Header Field Representation
+  HPACK_FIELD_INDEXED_LITERAL,    // [RFC 7541] 6.2.1. Literal Header Field with Incremental Indexing
+  HPACK_FIELD_NOINDEX_LITERAL,    // [RFC 7541] 6.2.2. Literal Header Field without Indexing
+  HPACK_FIELD_NEVERINDEX_LITERAL, // [RFC 7541] 6.2.3. Literal Header Field never Indexed
+  HPACK_FIELD_TABLESIZE_UPDATE,   // [RFC 7541] 6.3. Dynamic Table Size Update
 };
 
 class MIMEFieldWrapper
@@ -96,7 +96,7 @@ private:
   MIMEHdrImpl *_mh;
 };
 
-// 2.3.2. Dynamic Table
+// [RFC 7541] 2.3.2. Dynamic Table
 class Http2DynamicTable
 {
 public:
