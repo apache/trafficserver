@@ -344,21 +344,6 @@ AC_ARG_ENABLE([tproxy],
 AC_MSG_RESULT([$enable_tproxy])
 
 #
-# Disable our freelist implementation, reverting it to whatever
-# allocator (malloc, tcmalloc or jemalloc) that is in use. This is
-# useful for debugging.
-#
-AC_MSG_CHECKING([whether to disable freelist])
-AC_ARG_ENABLE([freelist],
-  [AS_HELP_STRING([--disable-freelist],[turn off freelist and use allocators])],
-  [],
-  [enable_freelist="yes"]
-)
-AC_MSG_RESULT([$enable_freelist])
-TS_ARG_ENABLE_VAR([use], [freelist])
-AC_SUBST(use_freelist)
-
-#
 # Options for SPDY
 #
 AC_MSG_CHECKING([whether to enable spdy])
@@ -421,6 +406,12 @@ AC_ARG_ENABLE([experimental-plugins],
 )
 AC_MSG_RESULT([$enable_experimental_plugins])
 AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
+
+#
+# Enable experimental/memcached_remap plugin
+#
+PKG_CHECK_MODULES([LIBMEMCACHED], [libmemcached >= 1.0], [have_libmemcached=yes], [have_libmemcached=no])
+AM_CONDITIONAL([BUILD_MEMCACHED_REMAP_PLUGIN], [test "x${have_libmemcached}" = "xyes"])
 
 #
 # Example plugins. The example plugins are always built, but not always installed. Installing
@@ -1920,6 +1911,7 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/header_normalize/Makefile
     plugins/experimental/healthchecks/Makefile
     plugins/experimental/hipes/Makefile
+    plugins/experimental/memcached_remap/Makefile
     plugins/experimental/metalink/Makefile
     plugins/experimental/multiplexer/Makefile
     plugins/experimental/mysql_remap/Makefile

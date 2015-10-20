@@ -49,7 +49,6 @@ template <class C>
 inline C *
 thread_alloc(ClassAllocator<C> &a, ProxyAllocator &l)
 {
-#if TS_USE_FREELIST
   if (l.freelist) {
     C *v = (C *)l.freelist;
     l.freelist = *(C **)l.freelist;
@@ -57,9 +56,6 @@ thread_alloc(ClassAllocator<C> &a, ProxyAllocator &l)
     *(void **)v = *(void **)&a.proto.typeObject;
     return v;
   }
-#else
-  (void)l;
-#endif
   return a.alloc();
 }
 
@@ -67,7 +63,6 @@ template <class C>
 inline C *
 thread_alloc_init(ClassAllocator<C> &a, ProxyAllocator &l)
 {
-#if TS_USE_FREELIST
   if (l.freelist) {
     C *v = (C *)l.freelist;
     l.freelist = *(C **)l.freelist;
@@ -75,9 +70,6 @@ thread_alloc_init(ClassAllocator<C> &a, ProxyAllocator &l)
     memcpy((void *)v, (void *)&a.proto.typeObject, sizeof(C));
     return v;
   }
-#else
-  (void)l;
-#endif
   return a.alloc();
 }
 
@@ -122,7 +114,6 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
 
 #define THREAD_ALLOC(_a, _t) thread_alloc(::_a, _t->_a)
 #define THREAD_ALLOC_INIT(_a, _t) thread_alloc_init(::_a, _t->_a)
-#if TS_USE_FREELIST
 #define THREAD_FREE(_p, _a, _t)                            \
   do {                                                     \
     *(char **)_p = (char *)_t->_a.freelist;                \
@@ -131,12 +122,5 @@ void thread_freeup(Allocator &a, ProxyAllocator &l);
     if (_t->_a.allocated > thread_freelist_high_watermark) \
       thread_freeup(::_a, _t->_a);                         \
   } while (0)
-#else /* !TS_USE_FREELIST */
-#define THREAD_FREE(_p, _a, _t) \
-  do {                          \
-    (void) _t;                  \
-    thread_free(::_a, _p);      \
-  } while (0)
-#endif
 
 #endif /* _ProxyAllocator_h_ */

@@ -636,6 +636,27 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.client_request.client_addr.get_incoming_port
+-----------------------------------------------
+**syntax:** *ts.client_request.client_addr.get_incoming_port()*
+
+**context:** do_remap or do_global_* or later
+
+**description**: This function can be used to get incoming port of the request.
+
+The ts.client_request.client_addr.get_incoming_port function returns incoming port as number.
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        port = ts.client_request.client_addr.get_incoming_port()
+        print(port)             -- 80
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.client_request.get_url_host
 ------------------------------
 **syntax:** *host = ts.client_request.get_url_host()*
