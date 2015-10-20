@@ -793,15 +793,14 @@ const static int MAX_TEST_FIELD_NUM = 8;
 
 /***********************************************************************************
  *                                                                                 *
- *                   Test cases for regression test *
+ *                       Regression test for HPACK                                 *
  *                                                                                 *
- * Some test cases are based on examples of specification. *
- * http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-09#appendix-D
- **
+ *  Some test cases are based on examples of specification.                        *
+ *  - https://tools.ietf.org/html/rfc7541#appendix-C                               *
  *                                                                                 *
  ***********************************************************************************/
 
-// D.1.  Integer Representation Examples
+// [RFC 7541] C.1. Integer Representation Examples
 const static struct {
   uint32_t raw_integer;
   uint8_t *encoded_field;
@@ -822,7 +821,7 @@ const static struct {
                                                                "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
                          9}};
 
-// D.2.4.  Indexed Header Field
+// [RFC 7541] C.2.4. Indexed Header Field
 const static struct {
   int index;
   char *raw_name;
@@ -831,7 +830,7 @@ const static struct {
   int encoded_field_len;
 } indexed_test_case[] = {{2, (char *) ":method", (char *) "GET", (uint8_t *) "\x82", 1}};
 
-// D.2.  Header Field Representation Examples
+// [RFC 7541] C.2. Header Field Representation Examples
 const static struct {
   char *raw_name;
   char *raw_value;
@@ -874,7 +873,7 @@ const static struct {
                                                                                          "secret",
    17}};
 
-// D.3.  Request Examples without Huffman Coding - D.3.1.  First Request
+// [RFC 7541] C.3. Request Examples without Huffman Coding - C.3.1. First Request
 const static struct {
   char *raw_name;
   char *raw_value;
@@ -904,7 +903,7 @@ const static struct {
 
 /***********************************************************************************
  *                                                                                 *
- *                                Regression test codes *
+ *                                Regression test codes                            *
  *                                                                                 *
  ***********************************************************************************/
 

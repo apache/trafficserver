@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  [RFC 7541] HPACK: Header Compression for HTTP/2
 
   @section license License
 
@@ -37,10 +37,9 @@ const unsigned HPACK_LEN_AUTHORITY = countof(":authority") - 1;
 const unsigned HPACK_LEN_PATH = countof(":path") - 1;
 const unsigned HPACK_LEN_STATUS = countof(":status") - 1;
 
-// 5.1.  Maximum Table Size
-// The size of an entry is the sum of its name's length in octets (as
-// defined in Section 6.2), its value's length in octets (see
-// Section 6.2), plus 32.
+// [RFC 7541] 4.1. Calculating Table Size
+// The size of an entry is the sum of its name's length in octets (as defined in Section 5.2),
+// its value's length in octets, and 32.
 const static unsigned ADDITIONAL_OCTETS = 32;
 
 typedef enum {
@@ -195,7 +194,7 @@ Http2DynamicTable::get_header_from_indexing_tables(uint32_t index, MIMEFieldWrap
     field.name_set(name, name_len);
     field.value_set(value, value_len);
   } else {
-    // 3.3.3.  Index Address Space
+    // [RFC 7541] 2.3.3. Index Address Space
     // Indices strictly greater than the sum of the lengths of both tables
     // MUST be treated as a decoding error.
     return HPACK_ERROR_COMPRESSION_ERROR;
@@ -204,10 +203,13 @@ Http2DynamicTable::get_header_from_indexing_tables(uint32_t index, MIMEFieldWrap
   return 0;
 }
 
-// 5.2.  Entry Eviction when Header Table Size Changes
+//
+// [RFC 7541] 4.3. Entry Eviction when Header Table Size Changes
+//
 // Whenever the maximum size for the header table is reduced, entries
 // are evicted from the end of the header table until the size of the
 // header table is less than or equal to the maximum size.
+//
 bool
 Http2DynamicTable::set_dynamic_table_size(uint32_t new_size)
 {
@@ -239,10 +241,10 @@ Http2DynamicTable::add_header_field(const MIMEField *field)
   uint32_t header_size = ADDITIONAL_OCTETS + name_len + value_len;
 
   if (header_size > _settings_dynamic_table_size) {
-    // 5.3. It is not an error to attempt to add an entry that is larger than
-    // the maximum size; an
-    // attempt to add an entry larger than the entire table causes the table to
-    // be emptied of all existing entries.
+    // [RFC 7541] 4.4. Entry Eviction When Adding New Entries
+    // It is not an error to attempt to add an entry that is larger than
+    // the maximum size; an attempt to add an entry larger than the entire
+    // table causes the table to be emptied of all existing entries.
     _headers.clear();
     _mhdr->fields_clear();
     _current_size = 0;
@@ -267,9 +269,11 @@ Http2DynamicTable::add_header_field(const MIMEField *field)
   }
 }
 
+//
 // The first byte of an HPACK field unambiguously tells us what
 // kind of field it is. Field types are specified in the high 4 bits
 // and all bits are defined, so there's no way to get an invalid field type.
+//
 HpackFieldType
 hpack_parse_field_type(uint8_t ftype)
 {
@@ -293,18 +297,9 @@ hpack_parse_field_type(uint8_t ftype)
   return HPACK_FIELD_NOINDEX_LITERAL;
 }
 
-/*
- * Pseudo code
- *
- * if I < 2^N - 1, encode I on N bits
- * else
- *   encode (2^N - 1) on N bits
- *   I = I - (2^N - 1)
- *   while I >= 128
- *     encode (I % 128 + 128) on 8 bits
- *     I = I / 128
- *   encode I on 8 bits
- */
+//
+// [RFC 7541] 5.1. Integer representation
+//
 int64_t
 encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n)
 {
@@ -481,23 +476,9 @@ encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MI
   return p - buf_start;
 }
 
-/*
- * 6.1.  Integer representation
- *
- * Pseudo code
- *
- * decode I from the next N bits
- *    if I < 2^N - 1, return I
- *    else
- *        M = 0
- *        repeat
- *            B = next octet
- *            I = I + (B & 127) * 2^M
- *            M = M + 7
- *        while B & 128 == 128
- *        return I
- *
- */
+//
+// [RFC 7541] 5.1. Integer representation
+//
 int64_t
 decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n)
 {
@@ -528,8 +509,10 @@ decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, 
   return p - buf_start + 1;
 }
 
-// 6.2 return content from String Data (Length octets)
-// with huffman decoding if it is encoded
+//
+// [RFC 7541] 5.2. String Literal Representation
+// return content from String Data (Length octets) with huffman decoding if it is encoded
+//
 int64_t
 decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end)
 {
@@ -570,7 +553,9 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
   return p + encoded_string_len - buf_start;
 }
 
-// 7.1. Indexed Header Field Representation
+//
+// [RFC 7541] 6.1. Indexed Header Field Representation
+//
 int64_t
 decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
                             Http2DynamicTable &dynamic_table)
@@ -600,7 +585,10 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   return len;
 }
 
-// 7.2.  Literal Header Field Representation
+//
+// [RFC 7541] 6.2. Literal Header Field Representation
+// Decode Literal Header Field Representation based on HpackFieldType
+//
 int64_t
 decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
                             Http2DynamicTable &dynamic_table)
@@ -612,15 +600,11 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   HpackFieldType ftype = hpack_parse_field_type(*p);
 
   if (ftype == HPACK_FIELD_INDEXED_LITERAL) {
-    // 7.2.1. index extraction based on Literal Header Field with Incremental
-    // Indexing
     len = decode_integer(index, p, buf_end, 6);
     isIncremental = true;
   } else if (ftype == HPACK_FIELD_NEVERINDEX_LITERAL) {
-    // 7.2.3. index extraction Literal Header Field Never Indexed
     len = decode_integer(index, p, buf_end, 4);
   } else {
-    // 7.2.2. index extraction Literal Header Field without Indexing
     ink_assert(ftype == HPACK_FIELD_NOINDEX_LITERAL);
     len = decode_integer(index, p, buf_end, 4);
   }
@@ -684,7 +668,9 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   return p - buf_start;
 }
 
-// 7.3. Header Table Size Update
+//
+// [RFC 7541] 6.3. Dynamic Table Size Update
+//
 int64_t
 update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Http2DynamicTable &dynamic_table)
 {
