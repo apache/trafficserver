@@ -97,17 +97,31 @@ OperatorSetStatus::initialize_hooks()
 {
   add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
+  add_allowed_hook(TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK);
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
 
 void
 OperatorSetStatus::exec(const Resources &res) const
 {
-  if (res.bufp && res.hdr_loc) {
-    TSHttpHdrStatusSet(res.bufp, res.hdr_loc, (TSHttpStatus)_status.get_int_value());
-    if (_reason && _reason_len > 0)
-      TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
+  switch (get_hook()) {
+  case TS_HTTP_READ_RESPONSE_HDR_HOOK:
+  case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
+    if (res.bufp && res.hdr_loc) {
+      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, (TSHttpStatus)_status.get_int_value());
+      if (_reason && _reason_len > 0) {
+        TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
+      }
+    }
+    break;
+  default:
+    TSHttpTxnSetHttpRetStatus(res.txnp, (TSHttpStatus)_status.get_int_value());
+    break;
   }
+
+  TSDebug(PLUGIN_NAME, "OperatorSetStatus::exec() invoked with status=%d", _status.get_int_value());
 }
 
 
