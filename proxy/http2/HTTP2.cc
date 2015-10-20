@@ -285,18 +285,6 @@ http2_write_ping(const uint8_t *opaque_data, IOVec iov)
   return true;
 }
 
-// 6.8. GOAWAY
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |R|                  Last-Stream-ID (31)                        |
-// +-+-------------------------------------------------------------+
-// |                      Error Code (32)                          |
-// +---------------------------------------------------------------+
-// |                  Additional Debug Data (*)                    |
-// +---------------------------------------------------------------+
-
 bool
 http2_write_goaway(const Http2Goaway &goaway, IOVec iov)
 {
@@ -330,16 +318,6 @@ http2_parse_headers_parameter(IOVec iov, Http2HeadersParameter &params)
   return true;
 }
 
-// 6.3.  PRIORITY
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |E|                  Stream Dependency (31)                     |
-// +-+-------------+-----------------------------------------------+
-// |   Weight (8)  |
-// +-+-------------+
-
 bool
 http2_parse_priority_parameter(IOVec iov, Http2Priority &params)
 {
@@ -354,14 +332,6 @@ http2_parse_priority_parameter(IOVec iov, Http2Priority &params)
   return true;
 }
 
-// 6.4.  RST_STREAM
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |                        Error Code (32)                        |
-// +---------------------------------------------------------------+
-
 bool
 http2_parse_rst_stream(IOVec iov, Http2RstStream &rst_stream)
 {
@@ -374,16 +344,6 @@ http2_parse_rst_stream(IOVec iov, Http2RstStream &rst_stream)
 
   return true;
 }
-
-// 6.5.1.  SETTINGS Format
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |       Identifier (16)         |
-// +-------------------------------+-------------------------------+
-// |                        Value (32)                             |
-// +---------------------------------------------------------------+
 
 bool
 http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter &param)
@@ -405,18 +365,6 @@ http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter &param)
   return true;
 }
 
-// 6.8.  GOAWAY
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |R|                  Last-Stream-ID (31)                        |
-// +-+-------------------------------------------------------------+
-// |                      Error Code (32)                          |
-// +---------------------------------------------------------------+
-// |                  Additional Debug Data (*)                    |
-// +---------------------------------------------------------------+
-
 bool
 http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
 {
@@ -431,14 +379,6 @@ http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
   goaway.error_code = ntohl(ec.value);
   return true;
 }
-
-// 6.9.  WINDOW_UPDATE
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |R|              Window Size Increment (31)                     |
-// +-+-------------------------------------------------------------+
 
 bool
 http2_parse_window_update(IOVec iov, uint32_t &size)
@@ -506,7 +446,7 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
       return PARSE_ERROR;
     }
 
-    // 8.1.2.5 Combine Cookie headers
+    // Combine Cookie headers ([RFC 7540] 8.1.2.5.)
     field = headers->field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
     if (field) {
       headers->field_combine_dups(field, true, ';');
