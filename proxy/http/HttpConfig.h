@@ -595,10 +595,6 @@ struct OverridableHttpConfigParams {
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
   MgmtInt cache_open_write_fail_action;
-<<<<<<< HEAD
-  MgmtString simple_retry_response_codes_string;
-  MgmtString dead_server_retry_response_codes_string;
-=======
 
   //##############################################################################
   //#
@@ -612,6 +608,8 @@ struct OverridableHttpConfigParams {
 
   MgmtByte redirection_enabled;
   MgmtInt number_of_redirections;
+  MgmtString simple_retry_response_codes_string;
+  MgmtString dead_server_retry_response_codes_string;
 };
 
 
