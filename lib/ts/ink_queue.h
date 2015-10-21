@@ -156,12 +156,12 @@ inkcoreapi extern volatile int64_t fastalloc_mem_in_use;
 inkcoreapi extern volatile int64_t fastalloc_mem_total;
 inkcoreapi extern volatile int64_t freelist_allocated_mem;
 
-typedef struct _InkFreeList InkFreeList, *PInkFreeList;
-typedef struct _ink_freelist_list {
-  InkFreeList *fl;
-  struct _ink_freelist_list *next;
-} ink_freelist_list;
-extern ink_freelist_list *freelists;
+typedef struct ink_freelist_ops InkFreeListOps;
+typedef struct _InkFreeList InkFreeList;
+
+const InkFreeListOps *ink_freelist_malloc_ops();
+const InkFreeListOps *ink_freelist_freelist_ops();
+void ink_freelist_init_ops(const InkFreeListOps *);
 
 /*
  * alignment must be a power of 2

@@ -84,15 +84,15 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
 
   snprintf(ikey, 1024, "%.*s://%.*s:%d/", request_scheme_length, request_scheme, request_host_length, request_host, request_port);
 
-  TSDebug(PLUGIN_NAME, "querying for the key %s\n", ikey);
+  TSDebug(PLUGIN_NAME, "querying for the key %s", ikey);
   m_result = memcached_get(memc, ikey, strlen(ikey), &oval_length, &flags, &lrc);
 
   char oscheme[1024], ohost[1024];
   int oport;
 
   if (lrc == MEMCACHED_SUCCESS) {
-    TSDebug(PLUGIN_NAME, "got the response from server : %s\n", m_result);
-    TSDebug(PLUGIN_NAME, "scanf result : %d\n", sscanf(m_result, "%[a-zA-Z]://%[^:]:%d", oscheme, ohost, &oport));
+    TSDebug(PLUGIN_NAME, "got the response from server : %s", m_result);
+    TSDebug(PLUGIN_NAME, "scanf result : %d", sscanf(m_result, "%[a-zA-Z]://%[^:]:%d", oscheme, ohost, &oport));
     if (sscanf(m_result, "%[a-zA-Z]://%[^:]:%d", oscheme, ohost, &oport) == 3) {
       if (m_result)
         free(m_result);
@@ -109,7 +109,7 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
       goto not_found;
     }
   } else {
-    TSDebug(PLUGIN_NAME, "didn't get any response from the server %d, %d, %d\n", lrc, flags, oval_length);
+    TSDebug(PLUGIN_NAME, "didn't get any response from the server %d, %d, %d", lrc, flags, (int)oval_length);
     goto not_found;
   }
 
@@ -171,9 +171,9 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name = const_cast<char *>("Apache Software Foundation");
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
-  TSDebug(PLUGIN_NAME, "about to init memcached\n");
+  TSDebug(PLUGIN_NAME, "about to init memcached");
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[memcached_remap] Plugin registration failed.\n");
+    TSError("[memcached_remap] Plugin registration failed.");
     return;
   }
 

@@ -1726,6 +1726,11 @@ all the different user-agent versions of documents it encounters.
 
     The number of times to attempt fetching an object from cache if there was an equivalent request in flight.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.max_open_write_retries INT 1
+   :reloadable:
+
+    The number of times to attempt a cache open write upon failure to get a write lock.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
 
@@ -2606,6 +2611,28 @@ Client-Related Configuration
    Specifies the location of the certificate authority file against
    which the origin server will be verified.
 
+OCSP Stapling Configuration
+===========================
+
+.. ts:cv:: CONFIG proxy.config.ssl.ocsp.enabled INT 0
+
+   Enable OCSP stapling.
+
+   -  ``0`` = disables OCSP Stapling
+   -  ``1`` = allows Traffic Server to request SSL certificate revocation status from an OCSP responder.
+
+.. ts:cv:: CONFIG proxy.config.ssl.ocsp.cache_timeout INT 3600
+
+   Number of seconds before an OCSP response expires in the stapling cache.
+
+.. ts:cv:: CONFIG proxy.config.ssl.ocsp.request_timeout INT 10
+
+   Timeout (in seconds) for queries to OCSP responders.
+
+.. ts:cv:: CONFIG proxy.config.ssl.ocsp.update_period INT 60
+
+   Update period (in seconds) for stapling caches.
+
 ICP Configuration
 =================
 
@@ -2962,19 +2989,18 @@ Sockets
 ===== ====================
 Value Effect
 ===== ====================
-0     Decouple inbound connections and cache initialization. Connections will be accepted as soon as
-      possible and Traffic Server will run regardless of the results of cache initialization.
+0     Decouple inbound connections and cache initialization. Connections will be accepted as soon as possible and Traffic Server will run regardless of the results of cache initialization.
 
 1     Do not accept inbound connections until cache initialization has finished. Traffic server will run
       regardless of the results of cache initialization.
 
 2     Do not accept inbound connections until cache initialization has finished and been sufficiently
       successful that cache is enabled. This means at least one cache span is usable. If there are no
-      spans in :configfile:`storage.config` or none of the spans can be successfully parsed and
+      spans in :file:`storage.config` or none of the spans can be successfully parsed and
       initialized then Traffic Server will shut down.
 
 3     Do not accept inbound connections until cache initialization has finished and been completely
-      successful. This requires at least one cache span in :configfile:`storage.config` and that every
+      successful. This requires at least one cache span in :file:`storage.config` and that every
       span specified is valid and successfully initialized. Any error will cause Traffic Server to shut
       down.
 ===== ====================

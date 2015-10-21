@@ -275,3 +275,51 @@ a ticket key file as a reverse queue in 48-byte chunks.
 #. Touch :file:`ssl_multicert.config` to indicate that the SSL configuration is stale.
 
 #. Run the command :option:`traffic_ctl config reload` to apply the new ticket key.
+
+OCSP Stapling
+============================================
+
+OCSP Stapling is an alternative approach to checking the revocation
+status of an SSL certificate using the Online Certificate Status
+Protocol.
+
+Under the original OCSP implementation, clients requested a
+certificate's revocation status directly from the Certificate
+Authority (CA) that issued the certificate.  This could cause
+significant load on the CA servers since they were required to
+provide a response to every client of a given certificate in real
+time.
+
+Enabling OCSP Stapling instructs Traffic Server to retrieve and cache the
+revocation status of all configured SSL certificates, and present them to the
+client when the client requests the status.  Traffic Server will automatically
+query the OCSP responder specified in the SSL certificate to gather the latest
+revocation status.  Traffic Server will then cache the results for each
+configured certifcate.  The location of the OCSP responder is taken from the
+Authority Information Access field of the signed certificate. For example::
+
+    Authority Information Access:
+                OCSP - URI:http://ocsp.digicert.com
+                CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2SecureServerCA.crt
+
+Support for OCSP Stapling can be tested using the -status option of the OpenSSL client::
+
+    $ openssl s_client -connect mozillalabs.com:443 -status
+    ...
+    ======================================
+    OCSP Response Data:
+        OCSP Response Status: successful (0x0)
+        Response Type: Basic OCSP Response
+        Version: 1 (0x0)
+    ...
+
+Details of the OCSP Stapling TLS extension can be found in :rfc:`6961`.
+
+To configure Traffic Server to use OCSP Stapling, edit the following variables
+in :file:`records.config` file:
+
+* :ts:cv:`proxy.config.ssl.ocsp.enabled`
+* :ts:cv:`proxy.config.ssl.ocsp.cache_timeout`
+* :ts:cv:`proxy.config.ssl.ocsp.request_timeout`
+* :ts:cv:`proxy.config.ssl.ocsp.update_period`
+

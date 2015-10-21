@@ -278,9 +278,9 @@ HttpSM::HttpSM()
     server_response_hdr_bytes(0), server_response_body_bytes(0), client_response_hdr_bytes(0), client_response_body_bytes(0),
     cache_response_hdr_bytes(0), cache_response_body_bytes(0), pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
     client_tcp_reused(false), client_ssl_reused(false), client_connection_is_ssl(false), client_sec_protocol("-"),
-    client_cipher_suite("-"), server_transact_count(0), plugin_tag(0), plugin_id(0), hooks_set(false),
-    cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL), cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT), terminate_sm(false),
-    kill_this_async_done(false), parse_range_done(false)
+    client_cipher_suite("-"), server_transact_count(0), server_connection_is_ssl(false), plugin_tag(0), plugin_id(0),
+    hooks_set(false), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL), cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT),
+    terminate_sm(false), kill_this_async_done(false), parse_range_done(false)
 {
   memset(&history, 0, sizeof(history));
   memset(&vc_table, 0, sizeof(vc_table));
@@ -5217,18 +5217,24 @@ HttpSM::handle_server_setup_error(int event, void *data)
       c = tunnel.get_consumer(post_transform_info.vc);
       // c->handler_state = HTTP_SM_TRANSFORM_FAIL;
 
-      HttpTunnelProducer *ua_producer = c->producer;
-      ink_assert(ua_entry->vc == ua_producer->vc);
+      // No point in proceeding if there is no consumer
+      // Do we need to do additional clean up in the c == NULL case?
+      if (c != NULL) {
+        HttpTunnelProducer *ua_producer = c->producer;
+        ink_assert(ua_entry->vc == ua_producer->vc);
 
-      ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
-      ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
-      ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+        ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
+        ua_entry->read_vio = ua_producer->vc->do_io_read(this, INT64_MAX, c->producer->read_buffer);
+        ua_producer->vc->do_io_shutdown(IO_SHUTDOWN_READ);
 
-      ua_producer->alive = false;
-      ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
-      tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
+        ua_producer->alive = false;
+        ua_producer->handler_state = HTTP_SM_POST_SERVER_FAIL;
+        tunnel.handleEvent(VC_EVENT_ERROR, c->write_vio);
+      }
     } else {
-      tunnel.handleEvent(event, c->write_vio);
+      // c could be null here as well
+      if (c != NULL)
+        tunnel.handleEvent(event, c->write_vio);
     }
     return;
   } else {
@@ -5627,6 +5633,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
   server_entry->vc_type = HTTP_SERVER_VC;
   server_entry->vc_handler = &HttpSM::state_send_server_request_header;
 
+
   // es - is this a concern here in HttpSM?  Does it belong somewhere else?
   // Get server and client connections
   UnixNetVConnection *server_vc = (UnixNetVConnection *)(server_session->get_netvc());
@@ -5650,6 +5657,12 @@ HttpSM::attach_server_session(HttpServerSession *s)
     server_vc->setOriginTrace(false);
     server_vc->setOriginTraceAddr(NULL);
     server_vc->setOriginTracePort(0);
+  }
+
+  // set flag for server session is SSL
+  SSLNetVConnection *server_ssl_vc = dynamic_cast<SSLNetVConnection *>(server_vc);
+  if (server_ssl_vc) {
+    server_connection_is_ssl = true;
   }
 
   // Initiate a read on the session so that the SM and not

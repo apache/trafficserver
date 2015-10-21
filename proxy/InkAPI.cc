@@ -4833,7 +4833,7 @@ TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup)
 }
 
 TSReturnCode
-TSHttpTxnInfoGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
+TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)value) == TS_SUCCESS);
@@ -7938,6 +7938,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->max_cache_open_read_retries;
     break;
+  case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->max_cache_open_write_retries;
+    break;
   case TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->cache_open_write_fail_action;
@@ -8486,6 +8490,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 's':
       if (!strncmp(name, "proxy.config.http.connect_attempts_max_retries", length))
         cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES;
+      else if (!strncmp(name, "proxy.config.http.cache.max_open_write_retries", length))
+        cnf = TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES;
       break;
     case 't':
       if (!strncmp(name, "proxy.config.http.forward.proxy_auth_to_parent", length))

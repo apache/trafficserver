@@ -1,0 +1,7 @@
+
+1.1 Fri Sep 18 2015
+	Modified the plugin to add back the Range request header at the TS_HTTP_SEND_RESPONSE_HDR_HOOK
+	so that custom logging of range requests works properly.
+
+1.1 Fri Sep 18 2015
+	Removed version information from TSPluginRegister() due to an API change.

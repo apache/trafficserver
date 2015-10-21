@@ -636,6 +636,27 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.client_request.client_addr.get_incoming_port
+-----------------------------------------------
+**syntax:** *ts.client_request.client_addr.get_incoming_port()*
+
+**context:** do_remap or do_global_* or later
+
+**description**: This function can be used to get incoming port of the request.
+
+The ts.client_request.client_addr.get_incoming_port function returns incoming port as number.
+
+Here is an example:
+
+::
+
+    function do_global_read_request()
+        port = ts.client_request.client_addr.get_incoming_port()
+        print(port)             -- 80
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.client_request.get_url_host
 ------------------------------
 **syntax:** *host = ts.client_request.get_url_host()*
@@ -781,7 +802,7 @@ Here is an example:
 `TOP <#ts-lua-plugin>`_
 
 ts.http.get_cache_lookup_url
----------------------
+----------------------------
 **syntax:** *ts.http.get_cache_lookup_url()*
 
 **context:** do_global_cache_lookup_complete
@@ -806,7 +827,7 @@ Here is an example
 `TOP <#ts-lua-plugin>`_
 
 ts.http.set_cache_lookup_url
----------------------
+----------------------------
 **syntax:** *ts.http.set_cache_lookup_url()*
 
 **context:** do_global_cache_lookup_complete
@@ -2445,7 +2466,7 @@ Http config constants
     TS_LUA_CONFIG_HTTP_KEEP_ALIVE_ENABLED_IN
     TS_LUA_CONFIG_HTTP_KEEP_ALIVE_ENABLED_OUT
     TS_LUA_CONFIG_HTTP_KEEP_ALIVE_POST_OUT
-    TS_LUA_CONFIG_HTTP_SHARE_SERVER_SESSIONS
+    TS_LUA_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH
     TS_LUA_CONFIG_NET_SOCK_RECV_BUFFER_SIZE_OUT
     TS_LUA_CONFIG_NET_SOCK_SEND_BUFFER_SIZE_OUT
     TS_LUA_CONFIG_NET_SOCK_OPTION_FLAG_OUT
@@ -2493,12 +2514,43 @@ Http config constants
     TS_LUA_CONFIG_HTTP_CACHE_FUZZ_TIME
     TS_LUA_CONFIG_HTTP_CACHE_FUZZ_MIN_TIME
     TS_LUA_CONFIG_HTTP_DOC_IN_CACHE_SKIP_DNS
+    TS_LUA_CONFIG_HTTP_BACKGROUND_FILL_ACTIVE_TIMEOUT
     TS_LUA_CONFIG_HTTP_RESPONSE_SERVER_STR
     TS_LUA_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR
     TS_LUA_CONFIG_HTTP_CACHE_FUZZ_PROBABILITY
+    TS_LUA_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD
     TS_LUA_CONFIG_NET_SOCK_PACKET_MARK_OUT
     TS_LUA_CONFIG_NET_SOCK_PACKET_TOS_OUT
-
+    TS_LUA_CONFIG_HTTP_INSERT_AGE_IN_RESPONSE
+    TS_LUA_CONFIG_HTTP_CHUNKING_SIZE
+    TS_LUA_CONFIG_HTTP_FLOW_CONTROL_ENABLED
+    TS_LUA_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER_MARK
+    TS_LUA_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER_MARK
+    TS_LUA_CONFIG_HTTP_CACHE_RANGE_LOOKUP
+    TS_LUA_CONFIG_HTTP_NORMALIZE_AE_GZIP
+    TS_LUA_CONFIG_HTTP_DEFAULT_BUFFER_SIZE
+    TS_LUA_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK
+    TS_LUA_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE
+    TS_LUA_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE
+    TS_LUA_CONFIG_HTTP_NEGATIVE_REVALIDATING_ENABLED
+    TS_LUA_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIFETIME
+    TS_LUA_CONFIG_HTTP_ACCEPT_ENCODING_FILTER_ENABLED
+    TS_LUA_CONFIG_SSL_HSTS_MAX_AGE
+    TS_LUA_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS
+    TS_LUA_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME
+    TS_LUA_CONFIG_HTTP_CACHE_MAX_OPEN_READ_RETRIES
+    TS_LUA_CONFIG_HTTP_CACHE_RANGE_WRITE
+    TS_LUA_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED
+    TS_LUA_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER
+    TS_LUA_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE
+    TS_LUA_CONFIG_HTTP_SLOW_LOG_THRESHOLD
+    TS_LUA_CONFIG_HTTP_CACHE_GENERATION
+    TS_LUA_CONFIG_BODY_FACTORY_TEMPLATE_BASE
+    TS_LUA_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION
+    TS_LUA_CONFIG_HTTP_ENABLE_REDIRECTION
+    TS_LUA_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS
+    TS_LUA_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES
+    TS_LUA_CONFIG_LAST_ENTRY
 
 `TOP <#ts-lua-plugin>`_
 
@@ -2682,6 +2734,7 @@ Milestone constants
 ::
 
     TS_LUA_MILESTONE_UA_BEGIN
+    TS_LUA_MILESTONE_UA_FIRST_READ
     TS_LUA_MILESTONE_UA_READ_HEADER_DONE
     TS_LUA_MILESTONE_UA_BEGIN_WRITE
     TS_LUA_MILESTONE_UA_CLOSE

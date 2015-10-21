@@ -156,6 +156,8 @@ struct NetVCOptions {
   static uint32_t const SOCK_OPT_KEEP_ALIVE = 2;
   /// Value for linger on for @c sockopt_flags
   static uint32_t const SOCK_OPT_LINGER_ON = 4;
+  /// Value for TCP Fast open @c sockopt_flags
+  static uint32_t const SOCK_OPT_TCP_FAST_OPEN = 8;
 
   uint32_t packet_mark;
   uint32_t packet_tos;

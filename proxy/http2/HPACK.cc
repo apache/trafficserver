@@ -501,6 +501,10 @@ encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MI
 int64_t
 decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n)
 {
+  if (buf_start >= buf_end) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
+
   const uint8_t *p = buf_start;
 
   dst = (*p & ((1 << n) - 1));
@@ -529,6 +533,10 @@ decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, 
 int64_t
 decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end)
 {
+  if (buf_start >= buf_end) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
+
   const uint8_t *p = buf_start;
   bool isHuffman = *p & 0x80;
   uint32_t encoded_string_len = 0;

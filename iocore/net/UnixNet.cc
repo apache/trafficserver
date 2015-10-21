@@ -675,7 +675,7 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
     // create a dummy event
     Event event;
     event.ethread = this_ethread();
-    keep_alive_queue.head->handleEvent(EVENT_IMMEDIATE, &event);
+    vc->handleEvent(EVENT_IMMEDIATE, &event);
     ++handle_event;
   }
 }

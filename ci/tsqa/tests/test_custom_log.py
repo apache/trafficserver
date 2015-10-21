@@ -25,9 +25,9 @@ import logging
 import random
 import tsqa.test_cases
 import helpers
-import json
 
 log = logging.getLogger(__name__)
+
 
 class TestCustomLogField(helpers.EnvironmentCase):
     '''
@@ -41,7 +41,7 @@ class TestCustomLogField(helpers.EnvironmentCase):
         )
         cls.log_file_name = 'test_log_field'
         cls.configs['records.config']['CONFIG'].update({
-          'proxy.config.log.custom_logs_enabled': 1,
+            'proxy.config.log.custom_logs_enabled': 1,
         })
 
         cls.log_file_path = os.path.join(cls.environment.layout.prefix, 'var/log/test_log_field.log')
@@ -60,8 +60,8 @@ class TestCustomLogField(helpers.EnvironmentCase):
       for i in xrange(times):
         request_ip = "127.%d.%d.%d" % (random.randint(1, 255), random.randint(1, 255), random.randint(1, 255))
         url = 'http://%s:%s' % (request_ip, self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        r = requests.get(url)
-        #get the last line of the log file
+        requests.get(url)
+        # get the last line of the log file
         time.sleep(10)
         with open(self.log_file_path) as f:
           for line in f:

@@ -341,7 +341,11 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
 
     if (!http2_frame_header_is_valid(this->current_hdr,
                                      this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
-      // XXX nuke it with HTTP2_ERROR_PROTOCOL_ERROR!
+      SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
+      if (!this->connection_state.is_state_closed()) {
+        this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
+      }
+      return 0;
     }
 
     // If we know up front that the payload is too long, nuke this connection.

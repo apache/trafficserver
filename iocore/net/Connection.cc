@@ -154,8 +154,13 @@ int
 Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)
 {
   int res = 0;
-  int sockopt_flag_in;
+  int sockopt_flag_in = 0;
   REC_ReadConfigInteger(sockopt_flag_in, "proxy.config.net.sock_option_flag_in");
+
+#ifdef TCP_FASTOPEN
+  int tfo_queue_length = 0;
+  REC_ReadConfigInteger(tfo_queue_length, "proxy.config.net.sock_option_tfo_queue_size_in");
+#endif
 
   ink_assert(fd != NO_FD);
 
@@ -243,6 +248,13 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
       (res = safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int))) < 0) {
     goto Lerror;
   }
+
+#ifdef TCP_FASTOPEN
+  if ((sockopt_flag_in & NetVCOptions::SOCK_OPT_TCP_FAST_OPEN) &&
+      (res = safe_setsockopt(fd, IPPROTO_TCP, TCP_FASTOPEN, (char *)&tfo_queue_length, sizeof(int)))) {
+    goto Lerror;
+  }
+#endif
 
   if (transparent) {
 #if TS_USE_TPROXY

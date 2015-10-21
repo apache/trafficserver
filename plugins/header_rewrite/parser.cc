@@ -28,9 +28,87 @@
 
 #include "parser.h"
 
+Parser::Parser(const std::string &line) : _cond(false), _empty(false)
+{
+  TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Parser");
+  bool inquote = false;
+  bool extracting_token = false;
+  off_t cur_token_start = 0;
+  size_t cur_token_length = 0;
+  for (size_t i = 0; i < line.size(); ++i) {
+    if (!inquote && (std::isspace(line[i]) || (line[i] == '=' || line[i] == '>' || line[i] == '<'))) {
+      if (extracting_token) {
+        cur_token_length = i - cur_token_start;
+
+        if (cur_token_length) {
+          _tokens.push_back(line.substr(cur_token_start, cur_token_length));
+        }
+
+        extracting_token = false;
+      } else if (!std::isspace(line[i])) {
+        /* we got a standalone =, > or < */
+        _tokens.push_back(std::string(1, line[i]));
+      }
+      continue; /* always eat whitespace */
+    } else if (line[i] == '"') {
+      if (!inquote && !extracting_token) {
+        inquote = true;
+        extracting_token = true;
+        cur_token_start = i + 1; /* eat the leading quote */
+        continue;
+      } else if (inquote && extracting_token) {
+        cur_token_length = i - cur_token_start;
+        _tokens.push_back(line.substr(cur_token_start, cur_token_length));
+        inquote = false;
+        extracting_token = false;
+      } else {
+        /* malformed */
+        TSError("[%s] malformed line \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
+        _tokens.clear();
+        _empty = true;
+        return;
+      }
+    } else if (!extracting_token) {
+      if (_tokens.empty() && line[i] == '#') {
+        // this is a comment line (it may have had leading whitespace before the #)
+        _empty = true;
+        break;
+      }
+
+      if (line[i] == '=' || line[i] == '>' || line[i] == '<') {
+        /* these are always a seperate token */
+        _tokens.push_back(std::string(1, line[i]));
+        continue;
+      }
+
+      extracting_token = true;
+      cur_token_start = i;
+    }
+  }
+
+  if (extracting_token) {
+    if (inquote) {
+      // unterminated quote, error case.
+      TSError("[%s] malformed line, unterminated quotation: \"%s\" ignoring...", PLUGIN_NAME, line.c_str());
+      _tokens.clear();
+      _empty = true;
+      return;
+    } else {
+      /* we hit the end of the line while parsing a token, let's add it */
+      _tokens.push_back(line.substr(cur_token_start));
+    }
+  }
+
+  if (_tokens.empty()) {
+    _empty = true;
+  } else {
+    preprocess(_tokens);
+  }
+}
+
 // This is the core "parser", parsing rule sets
 void
-Parser::preprocess(std::vector<std::string> &tokens)
+Parser::preprocess(std::vector<std::string> tokens)
 {
   // Special case for "conditional" values
   if (tokens[0].substr(0, 2) == "%{") {
@@ -46,9 +124,11 @@ Parser::preprocess(std::vector<std::string> &tokens)
       std::string s = tokens[0].substr(2, tokens[0].size() - 3);
 
       _op = s;
-      if (tokens.size() > 1)
+      if (tokens.size() > 2 && (tokens[1][0] == '=' || tokens[1][0] == '>' || tokens[1][0] == '<')) { // cond + (=/</>) + argument
+        _arg = tokens[1] + tokens[2];
+      } else if (tokens.size() > 1) {
         _arg = tokens[1];
-      else
+      } else
         _arg = "";
     } else {
       TSError("[%s] conditions must be embraced in %%{}", PLUGIN_NAME);
@@ -90,55 +170,6 @@ Parser::preprocess(std::vector<std::string> &tokens)
         TSError("[%s] mods have to be embraced in []", PLUGIN_NAME);
         return;
       }
-    }
-  }
-}
-
-
-Parser::Parser(const std::string &line) : _cond(false), _empty(false)
-{
-  TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Parser");
-
-  if (line[0] == '#') {
-    _empty = true;
-  } else {
-    std::string tmp = line;
-    std::vector<std::string> tokens;
-    bool in_quotes = false;
-    int t = 0;
-
-    for (unsigned int i = 0; i < tmp.size(); i++) {
-      if (tmp[i] == '\\') {
-        tmp.erase(i, 1);
-        i++;
-      }
-
-      if (tmp[i] == '\"') {
-        tmp.erase(i, 1);
-
-        if (in_quotes) {
-          in_quotes = false;
-        } else {
-          in_quotes = true;
-        }
-      }
-
-      if ((tmp[i] == ' ' || i >= tmp.size() - 1) && !in_quotes) {
-        if (i == tmp.size() - 1) {
-          i++;
-        }
-        std::string s = tmp.substr(t, i - t);
-        t = i + 1;
-        if (s.size() > 0) {
-          tokens.push_back(s);
-        }
-      }
-    }
-
-    if (tokens.empty()) {
-      _empty = true;
-    } else {
-      preprocess(tokens);
     }
   }
 }

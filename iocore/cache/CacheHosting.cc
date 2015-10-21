@@ -825,12 +825,12 @@ int saved_cp_list_len;
 ConfigVolumes saved_config_volumes;
 int saved_gnvol;
 
-int ClearConfigVol(ConfigVolumes *configp);
-int ClearCacheVolList(Queue<CacheVol> *cpl, int len);
-int create_config(RegressionTest *t, int i);
-int execute_and_verify(RegressionTest *t);
-void save_state();
-void restore_state();
+static int ClearConfigVol(ConfigVolumes *configp);
+static int ClearCacheVolList(Queue<CacheVol> *cpl, int len);
+static int create_config(RegressionTest *t, int i);
+static int execute_and_verify(RegressionTest *t);
+static void save_state();
+static void restore_state();
 
 EXCLUSIVE_REGRESSION_TEST(Cache_vol)(RegressionTest *t, int /* atype ATS_UNUSED */, int *status)
 {

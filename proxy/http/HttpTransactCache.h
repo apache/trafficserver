@@ -129,7 +129,8 @@ public:
                                        HTTPHdr *obj_origin_server_response                                 // in
                                        );
 
-  static HTTPStatus match_response_to_request_conditionals(HTTPHdr *ua_request, HTTPHdr *c_response);
+  static HTTPStatus match_response_to_request_conditionals(HTTPHdr *ua_request, HTTPHdr *c_response,
+                                                           ink_time_t response_received_time);
 };
 
 #endif

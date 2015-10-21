@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <assert.h>
+#include <string.h>
 
 using namespace std;
 
@@ -141,6 +142,34 @@ values_test()
   }
 }
 
+// NOTE: Test data from "C.6.1 First Response" in RFC 7541.
+const static struct {
+  uint8_t *src;
+  int64_t src_len;
+  uint8_t *expect;
+  int64_t expect_len;
+} huffman_encode_test_data[] = {
+  {(uint8_t *)"302", 3, (uint8_t *) "\x64\x02", 2},
+  {(uint8_t *)"private", 7, (uint8_t *) "\xae\xc3\x77\x1a\x4b", 5},
+  {(uint8_t *)"Mon, 21 Oct 2013 20:13:21 GMT", 29,
+   (uint8_t *) "\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66\xe0\x82\xa6\x2d\x1b\xff", 22},
+  {(uint8_t *)"https://www.example.com", 23, (uint8_t *) "\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3",
+   17}};
+
+void
+encode_test()
+{
+  for (uint64_t i = 0; i < sizeof(huffman_encode_test_data) / sizeof(huffman_encode_test_data[0]); ++i) {
+    uint8_t *dst = static_cast<uint8_t *>(malloc(huffman_encode_test_data[i].expect_len));
+    int64_t encoded_len = huffman_encode(dst, huffman_encode_test_data[i].src, huffman_encode_test_data[i].src_len);
+
+    assert(encoded_len == huffman_encode_test_data[i].expect_len);
+    assert(memcmp(huffman_encode_test_data[i].expect, dst, encoded_len) == 0);
+
+    free(dst);
+  }
+}
+
 int
 main()
 {
@@ -152,5 +181,7 @@ main()
   values_test();
 
   hpack_huffman_fin();
+
+  encode_test();
   return 0;
 }

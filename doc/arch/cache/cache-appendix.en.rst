@@ -113,11 +113,11 @@ These collisions are not by themselves good or bad. An administrator needs to
 decide which is appropriate for their situation and set the value correspondingly.
 
 If a greater degree of control is desired, a plugin must be used to invoke the
-API call :c:func:`TSCacheUrlSet()` to provide a specific :term:`cache key`. The
-:c:func:`TSCacheUrlSet()` API can be called as early as
-``TS_HTTP_READ_REQUEST_HDR_HOOK`` but no later than ``TS_HTTP_POST_REMAP_HOOK``.
-It can be called only once per transaction; calling it multiple times has no
-additional effect.
+API calls :c:func:`TSHttpTxnCacheLookupUrlSet()` or  :c:func:`TSCacheUrlSet()`
+to provide a specific :term:`cache key`. The :c:func:`TSCacheUrlSet()` API can
+be called as early as ``TS_HTTP_READ_REQUEST_HDR_HOOK`` but no later than
+``TS_HTTP_POST_REMAP_HOOK``. It can be called only once per transaction;
+calling it multiple times has no additional effect.
 
 A plugin that changes the cache key must do so consistently for both cache hit
 and cache miss requests because two different requests that map to the same

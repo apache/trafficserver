@@ -125,13 +125,13 @@ update:``RecUpdateT``
       This can be updated via command line tools.
 
    ``RECD_RESTART_TS``
-      The :ref:`traffic_server` process must be restarted for a new value to take effect.
+      The :program:`traffic_server` process must be restarted for a new value to take effect.
 
    ``RECD_RESTART_TM``
-      The :ref:`traffic_manager` process must be restarted for a new value to take effect.
+      The :program:`traffic_manager` process must be restarted for a new value to take effect.
 
    ``RECD_RESTART_TC``
-      The :ref:`traffic_cop` process must be restarted for a new value to take effect.
+      The :program:`traffic_cop` process must be restarted for a new value to take effect.
 
 required:``RecordRequiredType``
    Effectively a boolean that specifies if the record is required to be present,

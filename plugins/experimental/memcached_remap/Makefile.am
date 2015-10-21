@@ -16,24 +16,13 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-pkglib_LTLIBRARIES = header_rewrite.la
-header_rewrite_la_SOURCES = \
-  condition.cc \
-  conditions.cc \
-  expander.cc \
-  factory.cc \
-  header_rewrite.cc \
-  lulu.cc \
-  operator.cc \
-  operators.cc \
-  parser.cc \
-  regex_helper.cc \
-  resources.cc \
-  ruleset.cc \
-  statement.cc
-  
-header_rewrite_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+if BUILD_MEMCACHED_REMAP_PLUGIN
 
-bin_PROGRAMS = header_rewrite_test
-header_rewrite_test_SOURCES = parser.cc header_rewrite_test.cc
-header_rewrite_test_CXXFLAGS = $(AM_CXXFLAGS)
+AM_CXXFLAGS += $(LIBMEMCACHED_CFLAGS)
+
+pkglib_LTLIBRARIES = memcached_remap.la
+memcached_remap_la_SOURCES = memcached_remap.cc
+memcached_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+memcached_remap_la_LIBADD = $(LIBMEMCACHED_LIBS)
+
+endif

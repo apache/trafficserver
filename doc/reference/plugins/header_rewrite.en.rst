@@ -151,7 +151,7 @@ Note that for configurations that are global, i.e. setup via
 ``plugin.config``, the default hook is READ_RESPONSE_HDR_HOOK.
 
 CLIENT-URL, URL, URL-FROM, and URL-TO
--------------------------
+-------------------------------------
 URL adapts to the hook it's running in and CLIENT-URL will always give you
 the client URL.  FROM-URL and TO-URL are from the remap rule that matched and
 can only be used if the plugin is a being run as a remap plugin.  An option
@@ -212,21 +212,20 @@ Examples
 
 .. note:: Notes about header conditionals
 
-  In HTTP multple headers can be consolidated into a single comma separated string.
+  In HTTP multiple headers can be consolidated into a single comma separated string.
   To avoid complex markup within header-rewrite all header conditionals are
   evaluated against all values of the header normalized into a single comma separated string.
   Some examples:
 
-  Conditions
-  ::
+  Conditions::
+
      # rule 1
     cond %{HEADER:foo} /bar/
 
      # rule 2
     cond %{HEADER:foo} =bar
 
-  Examples
-  ::
+  Examples::
 
     # matches 1 and 2
     foo: bar

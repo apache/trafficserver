@@ -63,7 +63,7 @@ static void ts_lua_inject_client_request_header_size_api(lua_State *L);
 static int ts_lua_client_request_client_addr_get_ip(lua_State *L);
 static int ts_lua_client_request_client_addr_get_port(lua_State *L);
 static int ts_lua_client_request_client_addr_get_addr(lua_State *L);
-
+static int ts_lua_client_request_client_addr_get_incoming_port(lua_State *L);
 
 void
 ts_lua_inject_client_request_api(lua_State *L)
@@ -104,6 +104,9 @@ ts_lua_inject_client_request_client_addr_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_client_request_client_addr_get_addr);
   lua_setfield(L, -2, "get_addr");
+
+  lua_pushcfunction(L, ts_lua_client_request_client_addr_get_incoming_port);
+  lua_setfield(L, -2, "get_incoming_port");
 
   lua_setfield(L, -2, "client_addr");
 }
@@ -614,6 +617,33 @@ ts_lua_client_request_client_addr_get_port(lua_State *L)
     }
 
     lua_pushnumber(L, port);
+  }
+
+  return 1;
+}
+
+static int
+ts_lua_client_request_client_addr_get_incoming_port(lua_State *L)
+{
+  struct sockaddr const *incoming_addr;
+  ts_lua_http_ctx *http_ctx;
+  int port;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  incoming_addr = TSHttpTxnIncomingAddrGet(http_ctx->txnp);
+
+  if (incoming_addr == NULL) {
+    lua_pushnil(L);
+
+  } else {
+    if (incoming_addr->sa_family == AF_INET) {
+      port = ((struct sockaddr_in *)incoming_addr)->sin_port;
+    } else {
+      port = ((struct sockaddr_in6 *)incoming_addr)->sin6_port;
+    }
+
+    lua_pushnumber(L, ntohs(port));
   }
 
   return 1;

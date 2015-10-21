@@ -843,7 +843,7 @@ Http2ConnectionState::restart_streams()
   Http2Stream *s = stream_list.head;
   while (s) {
     Http2Stream *next = s->link.next;
-    if (min(this->client_rwnd, s->client_rwnd) > 0) {
+    if (s->get_fetcher() != NULL && min(this->client_rwnd, s->client_rwnd) > 0) {
       this->send_data_frame(s->get_fetcher());
     }
     s = next;

@@ -108,7 +108,7 @@ public:
   void release();
   void attach_hostname(const char *hostname);
   NetVConnection *
-  get_netvc()
+  get_netvc() const
   {
     return server_vc;
   };

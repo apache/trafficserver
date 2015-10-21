@@ -83,6 +83,10 @@ protected:
     static Key
     key(Value const *value)
     {
+      // Might be better to just fetch the comparing address from the
+      // netvc.  That is what the event_handler will be using to
+      // looking elements in the m_ip_pool
+      // return value->get_netvc()->get_remote_addr();
       return &value->server_ip.sa;
     }
     static bool

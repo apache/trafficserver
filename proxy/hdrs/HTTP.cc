@@ -1532,12 +1532,12 @@ HTTPHdr::_fill_target_cache() const
     m_port_in_header = 0 != url->port_get_raw();
     m_host_mime = NULL;
   } else if (0 != (m_host_mime = const_cast<HTTPHdr *>(this)->get_host_port_values(0, &m_host_length, &port_ptr, 0))) {
+    m_port = 0;
     if (port_ptr) {
-      m_port = 0;
       for (; is_digit(*port_ptr); ++port_ptr)
         m_port = m_port * 10 + *port_ptr - '0';
-      m_port_in_header = (0 != m_port);
     }
+    m_port_in_header = (0 != m_port);
     m_port = url_canonicalize_port(url->m_url_impl->m_url_type, m_port);
   }
 

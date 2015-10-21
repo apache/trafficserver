@@ -23,6 +23,11 @@ server too (please change things accordingly, if any)
 
 sudo yum install memcached python-memcached
 
+NOTE 14-OCT-2015:
+  To build this with the ATS configure script when
+  --enable-experimental-plugins is used, you must
+  have libmemcached version 1.0 or greater installed.
+
 2. Compile and Install the memcached_remap plugin
 
 [user@ memcached_remap]$ gmake
@@ -53,7 +58,7 @@ sudo service httpd start
 5. Add some keys into the memcached for testing (via python shell)
 
 [user@ memcached_remap]$ python
-Python 2.7 (r27:82500, Sep 16 2010, 18:02:00) 
+Python 2.7 (r27:82500, Sep 16 2010, 18:02:00)
 [GCC 4.5.1 20100907 (Red Hat 4.5.1-3)] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import memcache
@@ -66,7 +71,7 @@ http://localhost:8080/
 True
 >>> print mc.get("http://127.0.0.1:80/")
 http://127.0.0.1:8080
->>> 
+>>>
 
 6. Do sample query on localhost port 80
 
@@ -79,7 +84,7 @@ http://127.0.0.1:8080
 > NSS/3.12.8.0 zlib/1.2.5 libidn/1.18 libssh2/1.2.4
 > Host: 127.0.0.1
 > Accept: */*
-> 
+>
 < HTTP/1.1 200 OK
 < Date: Wed, 09 Mar 2011 15:48:25 GMT
 < Server: ATS/2.1.6-unstable
@@ -90,7 +95,7 @@ http://127.0.0.1:8080
 < Content-Type: text/html; charset=UTF-8
 < Age: 0
 < Connection: keep-alive
-< 
+<
 { [data not shown]
 * Connection #0 to host 127.0.0.1 left intact
 * Closing connection #0

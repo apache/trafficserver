@@ -199,7 +199,7 @@ tsapi void TSCacheHttpInfoDestroy(TSCacheHttpInfo infop);
    @return @c TS_SUCCESS if the requested info is supported, TS_ERROR otherwise
 
 */
-tsapi TSReturnCode TSHttpTxnInfoGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value);
+tsapi TSReturnCode TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value);
 
 
 /* =====  ICP =====  */

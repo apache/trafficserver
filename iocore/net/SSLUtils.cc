@@ -25,6 +25,7 @@
 #include "ts/I_Layout.h"
 #include "P_Net.h"
 #include "ts/ink_cap.h"
+#include "ts/ink_mutex.h"
 #include "P_OCSPStapling.h"
 #include "SSLSessionCache.h"
 #include "SSLDynlock.h"
@@ -121,7 +122,7 @@ static int ssl_session_ticket_index = -1;
 #endif
 
 
-static pthread_mutex_t *mutex_buf = NULL;
+static ink_mutex *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
 
 RecRawStatBlock *ssl_rsb = NULL;
@@ -152,9 +153,9 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
 #endif
 
   if (mode & CRYPTO_LOCK) {
-    pthread_mutex_lock(&mutex_buf[type]);
+    ink_mutex_acquire(&mutex_buf[type]);
   } else if (mode & CRYPTO_UNLOCK) {
-    pthread_mutex_unlock(&mutex_buf[type]);
+    ink_mutex_release(&mutex_buf[type]);
   } else {
     Debug("ssl", "invalid SSL locking mode 0x%x", mode);
     ink_assert(0);
@@ -806,10 +807,10 @@ SSLInitializeLibrary()
     Debug("ssl", "FIPS_mode: %d", mode);
 #endif
 
-    mutex_buf = (pthread_mutex_t *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(pthread_mutex_t));
+    mutex_buf = (ink_mutex *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ink_mutex));
 
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
-      pthread_mutex_init(&mutex_buf[i], NULL);
+      ink_mutex_init(&mutex_buf[i], NULL);
     }
 
     CRYPTO_set_locking_callback(SSL_locking_callback);

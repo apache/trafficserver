@@ -1279,7 +1279,7 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig *http_config_params, HT
 
 */
 HTTPStatus
-HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTPHdr *response)
+HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTPHdr *response, ink_time_t response_received_time)
 {
   HTTPStatus response_code = HTTP_STATUS_NONE;
 
@@ -1292,23 +1292,39 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
                           MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_RANGE))) {
     return response->status_get();
   }
-  // return NOT_MODIFIED only if both If-modified-since and If-none-match fail
 
   // If-Modified-Since //
   if (request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE)) {
-    // lm_value is zero if Last-modified not exists
-    ink_time_t lm_value = response->get_last_modified();
+    if (response->presence(MIME_PRESENCE_LAST_MODIFIED)) {
+      ink_time_t lm_value = response->get_last_modified();
 
-    // we won't return NOT_MODIFIED if Last-modified not exists
-    if ((lm_value == 0) || (request->get_if_modified_since() < lm_value)) {
-      return response->status_get();
-    } else {
-      // we cannot return NOT_MODIFIED yet, need to check If-none-match
-      response_code = HTTP_STATUS_NOT_MODIFIED;
-
-      if (!request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
-        return response_code;
+      // we won't return NOT_MODIFIED if Last-modified is too recent
+      if ((lm_value == 0) || (request->get_if_modified_since() < lm_value)) {
+        return response->status_get();
       }
+
+      response_code = HTTP_STATUS_NOT_MODIFIED;
+    } else if (response->presence(MIME_PRESENCE_DATE)) {
+      ink_time_t date_value = response->get_date();
+
+      // we won't return NOT_MODIFIED if Date is too recent
+      if ((date_value == 0) || (request->get_if_modified_since() < date_value)) {
+        return response->status_get();
+      }
+
+      response_code = HTTP_STATUS_NOT_MODIFIED;
+    } else {
+      // we won't return NOT_MODIFIED if received time is too recent
+      if (request->get_if_modified_since() < response_received_time) {
+        return response->status_get();
+      }
+
+      response_code = HTTP_STATUS_NOT_MODIFIED;
+    }
+
+    // we cannot return NOT_MODIFIED yet, need to check If-none-match
+    if (!request->presence(MIME_PRESENCE_IF_NONE_MATCH)) {
+      return response_code;
     }
   }
 
@@ -1320,35 +1336,25 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
     if (raw_etags) {
       comma_sep_tag_list = request->value_get(MIME_FIELD_IF_NONE_MATCH, MIME_LEN_IF_NONE_MATCH, &comma_sep_tag_list_len);
-    } else {
-      // no Etag in the response, so there is nothing to match
-      // against those in If-none-match
-      goto L1;
-    }
+      if (!comma_sep_tag_list) {
+        comma_sep_tag_list = "";
+        comma_sep_tag_list_len = 0;
+      }
 
-    if (!comma_sep_tag_list) {
-      comma_sep_tag_list = "";
-      comma_sep_tag_list_len = 0;
-    }
-
-    if (!raw_etags) {
-      raw_etags = "";
-      raw_etags_len = 0;
-    }
-    ////////////////////////////////////////////////////////////////////////
-    // If we have an etag and a if-none-match, we are talking to someone  //
-    // who is doing a 1.1 revalidate. Since this is a GET request with no //
-    // sub-ranges, we can do a weak validation.                           //
-    ////////////////////////////////////////////////////////////////////////
-    if (do_strings_match_weakly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
-      // the response already failed If-modified-since (if one exists)
-      return HTTP_STATUS_NOT_MODIFIED;
-    } else {
-      return response->status_get();
+      ////////////////////////////////////////////////////////////////////////
+      // If we have an etag and a if-none-match, we are talking to someone  //
+      // who is doing a 1.1 revalidate. Since this is a GET request with no //
+      // sub-ranges, we can do a weak validation.                           //
+      ////////////////////////////////////////////////////////////////////////
+      if (do_strings_match_weakly(raw_etags, raw_etags_len, comma_sep_tag_list, comma_sep_tag_list_len)) {
+        // the response already failed If-modified-since (if one exists)
+        return HTTP_STATUS_NOT_MODIFIED;
+      } else {
+        return response->status_get();
+      }
     }
   }
 
-L1:
   // There is no If-none-match, and If-modified-since failed,
   // so return NOT_MODIFIED
   if (response_code != HTTP_STATUS_NONE) {
