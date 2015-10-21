@@ -1642,6 +1642,16 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
 void
 TSPluginInit(int argc, const char *argv[])
 {
+  TSPluginRegistrationInfo info;
+  info.plugin_name = (char *)"esi";
+  info.vendor_name = (char *)"Apache Software Foundation";
+  info.support_email = (char *)"dev@trafficserver.apache.org";
+
+  if (TSPluginRegister(&info) != TS_SUCCESS) {
+    TSError("[esi][%s] plugin registration failed.", __FUNCTION__);
+    return;
+  }
+
   struct OptionInfo *pOptionInfo = (struct OptionInfo *)TSmalloc(sizeof(struct OptionInfo));
   if (pOptionInfo == NULL) {
     TSError("[esi][%s] malloc %d bytes fail", __FUNCTION__, (int)sizeof(struct OptionInfo));
