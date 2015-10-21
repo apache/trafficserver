@@ -24,7 +24,7 @@
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
-struct {
+static struct {
   const char *str;
   int len;
 } xDebugHeader = {NULL, 0};
