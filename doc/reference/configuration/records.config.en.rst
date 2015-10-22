@@ -1311,9 +1311,9 @@ Cache Control
    Specifies how many retries trafficserver attempts to trigger read_while_writer on failing
    to obtain the write VC mutex or until the first fragment is downloaded for the
    object being downloaded. The retry duration is specified using the setting
-   :ts:cv:`proxy.config.cache.read_while_writer.delay`
+   :ts:cv:`proxy.config.cache.read_while_writer_retry.delay`
 
-.. ts:cv:: CONFIG proxy.config.cache.read_while_writer.delay INT 50
+.. ts:cv:: CONFIG proxy.config.cache.read_while_writer_retry.delay INT 50
    :reloadable:
 
    Specifies the delay in msec, trafficserver waits to reattempt read_while_writer
