@@ -48,6 +48,8 @@ static InkHashTable *accepted_con; // a list of all accepted client connections
 
 static TSMgmtError handle_control_message(int fd, void *msg, size_t msglen);
 
+static RecInt disable_modification = 0;
+
 /*********************************************************************
  * create_client
  *
@@ -139,6 +141,8 @@ ts_ctrl_main(void *arg)
   InkHashTableIteratorState con_state; // used to iterate through hash table
   int fds_ready;                       // stores return value for select
   struct timeval timeout;
+
+  RecGetRecordInt("proxy.config.disable_configuration_modification", &disable_modification);
 
   // loops until TM dies; waits for and processes requests from clients
   while (1) {
@@ -1193,6 +1197,11 @@ handle_control_message(int fd, void *req, size_t reqlen)
 
   if (optype < 0 || static_cast<unsigned>(optype) >= countof(handlers)) {
     goto fail;
+  }
+
+  if (optype == RECORD_SET && disable_modification == 1) {
+    Debug("ts_main", "Trying to set a record when disable configuration modification is on, returning permission denied");
+    return send_mgmt_error(fd, optype, TS_ERR_PERMISSION_DENIED);
   }
 
   if (handlers[optype].handler == NULL) {
