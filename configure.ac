@@ -1454,6 +1454,19 @@ AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlcli
 AC_SUBST(has_mysql)
 AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
 
+AC_CHECK_HEADERS([kclangc.h], [
+  AC_CHECK_LIB([kyotocabinet], [kcdbopen], [
+    AC_SUBST([LIB_KYOTOCABINET], ["-lkyotocabinet"])
+    has_kyotocabinet=1
+  ], [
+    has_kyotocabinet=0
+  ])
+],
+[has_kyotocabinet=0]
+)
+AC_SUBST(has_kyotocabinet)
+AM_CONDITIONAL([HAS_KYOTOCABINET], [ test "x${has_kyotocabinet}" = "x1" ])
+
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
@@ -1930,6 +1943,7 @@ AC_CONFIG_FILES([
   plugins/experimental/background_fetch/Makefile
   plugins/experimental/balancer/Makefile
   plugins/experimental/buffer_upload/Makefile
+  plugins/experimental/cache_key_genid/Makefile
   plugins/experimental/cache_promote/Makefile
   plugins/experimental/cache_range_requests/Makefile
   plugins/experimental/cachekey/Makefile
