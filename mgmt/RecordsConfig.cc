@@ -611,9 +611,10 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.cache.generation", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  // Enabling this setting allows the proxy to cache empty documents. This currently requires
-  // that the response has a Content-Length: header, with a value of "0".
-  {RECT_CONFIG, "proxy.config.http.cache.allow_empty_doc", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-1]", RECA_NULL }
+  // 0 - Never cache empty responses.
+  // 1 - Cache empty responses if they have a content-length header
+  // 2 - Use normal caching logic for empty responses
+  {RECT_CONFIG, "proxy.config.http.cache.allow_empty_doc", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, "[0-2]", RECA_NULL }
   ,
   {RECT_CONFIG, "proxy.config.http.cache.cluster_cache_local", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,

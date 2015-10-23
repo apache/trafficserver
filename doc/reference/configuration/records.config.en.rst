@@ -1366,10 +1366,11 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 1
    :reloadable:
 
-   Enables (``1``) or disables (``0``) caching objects that have an empty
+   Enables or disable caching objects that have an empty
    response body. This is particularly useful for caching 301 or 302 responses
-   with a ``Location`` header but no document body. This only works if the
-   origin response also has a ``Content-Length`` header.
+   with a ``Location`` header but no document body. If set to ``1``, this only
+   works if the origin response also has a ``Content-Length`` header.  If set
+   to 2, empty documents will follow the normal caching logic.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_no_cache INT 1
    :reloadable:
