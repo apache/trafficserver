@@ -1365,6 +1365,7 @@ Cache Control
 
 .. ts:cv:: CONFIG proxy.config.http.cache.allow_empty_doc INT 1
    :reloadable:
+   :deprecated:
 
    Enables (``1``) or disables (``0``) caching objects that have an empty
    response body. This is particularly useful for caching 301 or 302 responses
