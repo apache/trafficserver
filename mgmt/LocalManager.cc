@@ -695,9 +695,8 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
     if (!(configFiles && configFiles->getRollbackObj(fname, &rb)) &&
         (strcmp(data_raw, "proxy.config.cluster.cluster_configuration") != 0) &&
         (strcmp(data_raw, "proxy.config.body_factory.template_sets_dir") != 0)) {
-      mgmt_elog(stderr, 0, "[LocalManager::sendMgmtMsgToProcesses] "
+      mgmt_fatal(stderr, 0, "[LocalManager::sendMgmtMsgToProcesses] "
                            "Invalid 'data_raw' for MGMT_EVENT_CONFIG_FILE_UPDATE\n");
-      ink_assert(false);
     }
     ats_free(fname);
     break;
