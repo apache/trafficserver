@@ -103,7 +103,7 @@ stapling_get_issuer(SSL_CTX *ssl_ctx, X509 *x)
 }
 
 bool
-ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, char *certname)
+ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
 {
   certinfo *cinf;
   scoped_X509 issuer;
