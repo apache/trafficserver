@@ -696,7 +696,7 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
         (strcmp(data_raw, "proxy.config.cluster.cluster_configuration") != 0) &&
         (strcmp(data_raw, "proxy.config.body_factory.template_sets_dir") != 0)) {
       mgmt_fatal(stderr, 0, "[LocalManager::sendMgmtMsgToProcesses] "
-                           "Invalid 'data_raw' for MGMT_EVENT_CONFIG_FILE_UPDATE\n");
+                            "Invalid 'data_raw' for MGMT_EVENT_CONFIG_FILE_UPDATE\n");
     }
     ats_free(fname);
     break;
