@@ -1913,6 +1913,7 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/hipes/Makefile
     plugins/experimental/memcached_remap/Makefile
     plugins/experimental/metalink/Makefile
+    plugins/experimental/multiplexer/Makefile
     plugins/experimental/mysql_remap/Makefile
     plugins/experimental/regex_revalidate/Makefile
     plugins/experimental/remap_stats/Makefile

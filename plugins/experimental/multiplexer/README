@@ -1,0 +1,34 @@
+ATS (Apache Traffic Server) Multiplexer plug-in
+-----------------------------------------------
+
+This is a remap plug-in that allows a request to be multiplexed one or more times
+ and sent to different remap entries. Both headers and body (in case of POST or
+ PUT methods, only) are copied into the new requests.
+
+Multiplexer:
+ 1. adds "X-Multiplexer: original" header into client's request.
+ 2. copies client's request (bodies are copied by transforming the request)
+ 3. changes Host header of the copy according to pparam.
+ 4. changes X-Multiplexer header to "copy".
+ 5. sends the copied request with TSHttpConnect.
+
+Multiplexer dispatches the request in background without blocking the original
+ request. Multiplexed responses are drained and discarded.
+
+A global timeout can be overwritten through "multiplexer__timeout" environment variable representing how many nanoseconds to wait. A default 1s timeout is hard-coded.
+
+Please use "mutiplexer" tag for debugging purposes. While debugging, multiplexed requests and responses are printed into the logs.
+
+Multiplexer produces the following statistics consumed with traffic_line:
+ - failures: number of failed multiplexed requests
+ - hits: number of successful multiplexed requests
+ - requests: total number of multiplexed requests
+ - time(avg): average time taken between multiplexed requests and their responses
+ - timeouts: number of multiplexed requests which timed-out
+ - size(avg): average size of multiplexed responses
+
+Example remap.config:
+    map http://www.example.com/a http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com
+    map http://www.example.com/b http://www.example.com/ @plugin=multiplexer.so @pparam=host2.example.com
+    map http://www.example.com/c http://www.example.com/ @plugin=multiplexer.so @pparam=host1.example.com @pparam=host2.example.com
+
