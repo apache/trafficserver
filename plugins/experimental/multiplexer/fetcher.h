@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <limits>
+#include <netinet/in.h>
 
 #include <inttypes.h>
 
@@ -286,7 +287,7 @@ get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const in
   Transaction *transaction = new Transaction(vconn, contp, i, l, t);
   TSContDataSet(contp, transaction);
   if (ti > 0) {
-    TSDebug(PLUGIN_TAG, "ats::get Setting active timeout to: %zu", ti);
+    TSDebug(PLUGIN_TAG, "ats::get Setting active timeout to: %" PRId64, ti);
     transaction->timeout(ti);
   }
   return true;
