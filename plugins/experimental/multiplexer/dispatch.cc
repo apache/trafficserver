@@ -21,6 +21,7 @@
   limitations under the License.
  */
 #include <inttypes.h>
+#include <sys/time.h>
 
 #include "dispatch.h"
 #include "fetcher.h"
@@ -109,7 +110,7 @@ read(const TSIOBuffer &b, std::string &o, const int64_t l = 0)
 class Handler
 {
   int64_t length;
-  struct timespec start;
+  struct timeval start;
   std::string response;
 
 public:
@@ -119,7 +120,7 @@ public:
   {
     assert(!u.empty());
     const_cast<std::string &>(url).swap(u);
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    gettimeofday(&start, NULL);
   }
 
   void
@@ -164,15 +165,15 @@ public:
   void
   done(void)
   {
-    struct timespec end;
+    struct timeval end;
 
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    gettimeofday(&end, NULL);
 
     if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
       TSDebug(PLUGIN_TAG, "Response for \"%s\" was:\n%s", url.c_str(), response.c_str());
     }
 
-    const long diff = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+    const long diff = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
 
     TSStatIntIncrement(statistics.hits, 1);
     TSStatIntIncrement(statistics.time, diff);
