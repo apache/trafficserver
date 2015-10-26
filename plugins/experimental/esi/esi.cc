@@ -887,7 +887,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
 
   if (!cont_data->initialized) {
     if (!cont_data->init()) {
-      TSError("[esi][%s] Could not initialize continuation data; shutting down transformation", __FUNCTION__);
+      TSDebug(DEBUG_TAG, "[%s] Could not initialize continuation data; shutting down transformation", __FUNCTION__);
       goto lShutdown;
     }
     TSDebug(cont_data->debug_tag, "[%s] initialized continuation data", __FUNCTION__);
