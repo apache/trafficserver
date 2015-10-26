@@ -887,7 +887,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
 
   if (!cont_data->initialized) {
     if (!cont_data->init()) {
-      TSError("[esi][%s] Could not initialize continuation data; shutting down transformation", __FUNCTION__);
+      TSDebug(DEBUG_TAG, "[%s] Could not initialize continuation data; shutting down transformation", __FUNCTION__);
       goto lShutdown;
     }
     TSDebug(cont_data->debug_tag, "[%s] initialized continuation data", __FUNCTION__);
@@ -1082,7 +1082,7 @@ modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
         } else if (Utils::areEqual(name, name_len, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH)) {
           if (mod_data->head_only) {
             destroy_header = true;
-            TSError("[esi][%s] remove Content-Length", __FUNCTION__);
+            TSDebug(DEBUG_TAG, "[%s] remove Content-Length", __FUNCTION__);
           }
         } else {
           int n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
