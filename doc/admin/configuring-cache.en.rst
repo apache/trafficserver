@@ -380,8 +380,7 @@ To access the Cache Inspector utility:
       map http://yourhost.com/myCI/ http://{cache} @action=allow @src_ip=172.28.56.1-172.28.56.254
 
 #. Reload the Traffic Server configuration by running :option:`traffic_ctl config reload`.
-#. Open your web browser and configure it to use your Traffic Server as
-   a proxy server. Type the following URL::
+#. Open your web browser and go to the the following URL::
 
       http://yourhost/myCI/
 
