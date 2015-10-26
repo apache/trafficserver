@@ -553,7 +553,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   /* This will update the global configuration file, and is not reloaded at run time */
-  /* ToDo: Support reloading with traffic_line -x  ? */
+  /* ToDo: Support reloading with traffic_ctl config reload ? */
   if (NULL == (g_config = parse_configs(argv[1]))) {
     TSError("[healthchecks] Unable to read / parse %s config file", argv[1]);
     return;

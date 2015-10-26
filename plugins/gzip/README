@@ -24,8 +24,8 @@ in this case, the plugin will use a default behaviour:
 alternatively, a configuration can also be specified:
 gzip.so <path-to-plugin>/sample.gzip.config
 
-after modifying plugin.config, restart traffic server (sudo traffic_line -L)
-the configuration is re-read when a management update is given (sudo traffic_line -x)
+after modifying plugin.config, restart traffic server (sudo traffic_ctl server restart)
+the configuration is re-read when a management update is given (sudo traffic_ctl config reload)
 
 a sample configuration (sample.gzip.config):
 
