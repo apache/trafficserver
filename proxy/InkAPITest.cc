@@ -298,6 +298,8 @@ server_handler(TSCont contp, TSEvent event, void *data)
     SDK_RPRINT(params->test, params->api, "ServerEvent EOS", TC_PASS, "ok");
     *params->pstatus = REGRESSION_TEST_PASSED;
     delete params;
+  } else if (event == TS_EVENT_VCONN_READ_READY) {
+    SDK_RPRINT(params->test, params->api, "ServerEvent READ_READY", TC_PASS, "ok");
   } else {
     SDK_RPRINT(params->test, params->api, "ServerEvent", TC_FAIL, "received unexpected event %d", event);
     *params->pstatus = REGRESSION_TEST_FAILED;
@@ -321,9 +323,15 @@ client_handler(TSCont contp, TSEvent event, void *data)
     // Fix me: how to deal with server side cont?
     TSContDestroy(contp);
     return 1;
-  } else {
+  } else if (TS_EVENT_NET_CONNECT == event) {
     sockaddr const *addr = TSNetVConnRemoteAddrGet(static_cast<TSVConn>(data));
     uint16_t input_server_port = ats_ip_port_host_order(addr);
+
+    // If DEFER_ACCEPT is enabled in the OS then the user space accept() doesn't
+    // happen until data arrives on the socket. Because we're just testing the accept()
+    // we write a small amount of ignored data to make sure this gets triggered.
+    UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(data);
+    ::write(vc->con.fd, "Bob's your uncle", 16);
 
     sleep(1); // XXX this sleep ensures the server end gets the accept event.
 
