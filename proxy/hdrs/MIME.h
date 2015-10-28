@@ -907,6 +907,7 @@ public:
   void field_delete(const char *name, int name_length);
 
   MIMEField *iter_get_first(MIMEFieldIter *iter);
+  MIMEField *iter_get(MIMEFieldIter *iter);
   MIMEField *iter_get_next(MIMEFieldIter *iter);
 
   uint64_t presence(uint64_t mask);
@@ -1143,17 +1144,17 @@ inline MIMEField *
 MIMEHdr::iter_get_first(MIMEFieldIter *iter)
 {
   iter->m_block = &m_mime->m_first_fblock;
-  iter->m_slot = (unsigned int)-1;
-  return iter_get_next(iter);
+  iter->m_slot = 0;
+  return iter_get(iter);
 }
 
 inline MIMEField *
-MIMEHdr::iter_get_next(MIMEFieldIter *iter)
+MIMEHdr::iter_get(MIMEFieldIter *iter)
 {
   MIMEField *f;
   MIMEFieldBlockImpl *b = iter->m_block;
 
-  int slot = iter->m_slot + 1;
+  int slot = iter->m_slot;
 
   while (b) {
     for (; slot < (int)b->m_freetop; slot++) {
@@ -1170,6 +1171,13 @@ MIMEHdr::iter_get_next(MIMEFieldIter *iter)
 
   iter->m_block = NULL;
   return NULL;
+}
+
+inline MIMEField *
+MIMEHdr::iter_get_next(MIMEFieldIter *iter)
+{
+  iter->m_slot++;
+  return iter_get(iter);
 }
 
 /*-------------------------------------------------------------------------

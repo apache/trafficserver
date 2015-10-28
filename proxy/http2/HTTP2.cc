@@ -536,7 +536,7 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
   if (!field_iter.m_block) {
     field = in->iter_get_first(&field_iter);
   } else {
-    field = in->iter_get_next(&field_iter);
+    field = in->iter_get(&field_iter);
   }
 
   // Set mime headers
@@ -553,13 +553,15 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
       continue;
     }
 
-    MIMEFieldIter current_iter = field_iter;
     MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
     if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
+      if (p == out) {
+        // no progress was made, header was too big for the buffer, skipping for now
+        continue;
+      }
       if (!cont) {
         // Parsing a part of headers is done
         cont = true;
-        field_iter = current_iter;
         return p - out;
       } else {
         // Parse error
