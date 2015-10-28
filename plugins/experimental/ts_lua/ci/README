@@ -1,0 +1,27 @@
+Notes on Unit Testing Lua scripts for ATS Lua Plugin
+
+Follow the steps below to use busted framework to run some unit tests on sample scripts and modules
+
+1) Build and install lua 5.1.5 using the source code from here - http://www.lua.org/ftp/lua-5.1.tar.gz
+
+2) Build and install luarocks 2.2.2 from here - https://github.com/keplerproject/luarocks/wiki/Download
+
+3) Run "sudo luarocks install busted"
+
+4) Run "sudo luarocks install luacov"
+
+5) "cd trafficserver/plugins/experimental/ts_lua/ci" 
+
+6) Run "busted -c module_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage on
+"module.lua" 
+
+7) Run "busted -c script_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage on
+"script.lua"
+
+Reference for further information
+1) Busted - http://olivinelabs.com/busted/
+
+2) Specifications for asserts/mocks/stubs/etc inside busted framework -
+https://github.com/Olivine-Labs/luassert/tree/master/spec 
+
+3) luacov - https://luarocks.org/modules/hisham/luacov
