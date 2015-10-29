@@ -142,7 +142,8 @@ Changing Cache Capacity
 
 You can increase or reduce the total amount of disk space allocated to
 the cache without clearing the content. To check the size of the cache
-(in bytes), enter the command :option:`traffic_ctl metric get` ``proxy.process.cache.bytes_total``.
+(in bytes), enter the command :option:`traffic_ctl metric get`
+``proxy.process.cache.bytes_total``.
 
 Increasing Cache Capacity
 -------------------------
