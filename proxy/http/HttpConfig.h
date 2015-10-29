@@ -573,6 +573,12 @@ struct OverridableHttpConfigParams {
   MgmtInt default_buffer_water_mark;
   MgmtInt slow_log_threshold;
 
+  ////////////////////////////////////
+  // origin server connect attempts //
+  ////////////////////////////////////
+  MgmtInt parent_connect_attempts;
+  MgmtInt per_parent_connect_attempts;
+
   ///////////////////////////////////////////////////
   // parent origin server load balancing variables //
   ///////////////////////////////////////////////////
@@ -611,6 +617,10 @@ struct OverridableHttpConfigParams {
 
   MgmtByte redirection_enabled;
   MgmtInt number_of_redirections;
+  
+  ///////////////////////////////////////////////////
+  // parent origin server load balancing variables //
+  ///////////////////////////////////////////////////
   MgmtString simple_retry_response_codes_string;
   MgmtString dead_server_retry_response_codes_string;
 };
@@ -682,17 +692,17 @@ public:
   MgmtInt transaction_active_timeout_in;
   MgmtInt accept_no_activity_timeout;
 
-  ////////////////////////////////////
-  // origin server connect attempts //
-  ////////////////////////////////////
-  MgmtInt parent_connect_attempts;
-  MgmtInt per_parent_connect_attempts;
-  MgmtInt parent_connect_timeout;
-
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
   ///////////////////////////////////////////////////////////////////
   char *anonymize_other_header_list;
+
+  ////////////////////////////////////
+  // origin server connect timeout //
+  ////////////////////////////////////
+  MgmtInt parent_connect_attempts;
+  MgmtInt per_parent_connect_attempts;
+  MgmtInt parent_connect_timeout;
 
   MgmtByte enable_http_stats; // Can be "slow"
 
@@ -875,7 +885,7 @@ inline HttpConfigParams::HttpConfigParams()
     use_client_source_port(0), proxy_request_via_string(NULL), proxy_request_via_string_len(0), proxy_response_via_string(NULL),
     proxy_response_via_string_len(0), url_expansions_string(NULL), url_expansions(NULL), num_url_expansions(0),
     session_auth_cache_keep_alive_enabled(1), transaction_active_timeout_in(900), accept_no_activity_timeout(120),
-    parent_connect_attempts(4), per_parent_connect_attempts(2), parent_connect_timeout(30), anonymize_other_header_list(NULL),
+    anonymize_other_header_list(NULL), per_parent_connect_attempts(2), parent_connect_timeout(30),
     enable_http_stats(1), icp_enabled(0), stale_icp_enabled(0), cache_vary_default_text(NULL), cache_vary_default_images(NULL),
     cache_vary_default_other(NULL), cache_enable_default_vary_headers(0), cache_post_method(0), connect_ports_string(NULL),
     connect_ports(NULL), push_method_enabled(0), referer_filter_enabled(0), referer_format_redirect(0), reverse_proxy_enabled(0),

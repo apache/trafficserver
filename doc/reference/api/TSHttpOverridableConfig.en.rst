@@ -135,6 +135,12 @@ The following configurations (from ``records.config``) are overridable.
 |   :ts:cv:`proxy.config.http.cache.range.write`
 |   :ts:cv:`proxy.config.http.global_user_agent_header`
 |   :ts:cv:`proxy.config.http.slow.log.threshold`
+|   :ts:cv:`proxy.config.http.parent_proxy.per_parent_connect_attemptsr`
+|   :ts:cv:`proxy.config.http.parent_proxy.total_connect_attempts`
+|   :ts:cv:`proxy.config.http.parent_origin.simple_retry_enabled`
+|   :ts:cv:`proxy.config.http.parent_origin.simple_retry_response_codes`
+|   :ts:cv:`proxy.config.http.parent_origin.dead_server_retry_enabled`
+|   :ts:cv:`proxy.config.http.parent_origin.dead_server_retry_response_codes`
 
 Examples
 ========
