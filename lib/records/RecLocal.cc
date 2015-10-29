@@ -209,9 +209,14 @@ RecLocalInitMessage()
 int
 RecLocalStart(FileManager *configFiles)
 {
-  ink_thread_create(sync_thr, configFiles);
-  ink_thread_create(config_update_thr, NULL);
-
+  RecInt disable_modification = 0;
+  RecGetRecordInt("proxy.config.disable_configuration_modification", &disable_modification);
+  if (disable_modification == 1) {
+    RecDebug(DL_Debug, "Disable configuration modification");
+  } else {
+    ink_thread_create(sync_thr, configFiles);
+    ink_thread_create(config_update_thr, NULL);
+  }
   return REC_ERR_OKAY;
 }
 

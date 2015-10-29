@@ -471,9 +471,9 @@ NetHandler::mainNetEvent(int event, Event *e)
       vc = epd->data.vc;
       if (get_ev_events(pd, x) & (EVENTIO_READ | EVENTIO_ERROR)) {
         vc->read.triggered = 1;
-        if (!read_ready_list.in(vc))
+        if (!read_ready_list.in(vc)) {
           read_ready_list.enqueue(vc);
-        else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
+        } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
           // check for unhandled epoll events that should be handled
           Debug("iocore_net_main", "Unhandled epoll event on read: 0x%04x read.enabled=%d closed=%d read.netready_queue=%d",
                 get_ev_events(pd, x), vc->read.enabled, vc->closed, read_ready_list.in(vc));
@@ -482,14 +482,14 @@ NetHandler::mainNetEvent(int event, Event *e)
       vc = epd->data.vc;
       if (get_ev_events(pd, x) & (EVENTIO_WRITE | EVENTIO_ERROR)) {
         vc->write.triggered = 1;
-        if (!write_ready_list.in(vc))
+        if (!write_ready_list.in(vc)) {
           write_ready_list.enqueue(vc);
-        else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
+        } else if (get_ev_events(pd, x) & EVENTIO_ERROR) {
           // check for unhandled epoll events that should be handled
           Debug("iocore_net_main", "Unhandled epoll event on write: 0x%04x write.enabled=%d closed=%d write.netready_queue=%d",
                 get_ev_events(pd, x), vc->write.enabled, vc->closed, write_ready_list.in(vc));
         }
-      } else if (!(get_ev_events(pd, x) & EVENTIO_ERROR)) {
+      } else if (!(get_ev_events(pd, x) & EVENTIO_READ)) {
         Debug("iocore_net_main", "Unhandled epoll event: 0x%04x", get_ev_events(pd, x));
       }
     } else if (epd->type == EVENTIO_DNS_CONNECTION) {

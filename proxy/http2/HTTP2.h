@@ -34,9 +34,8 @@ class HTTPHdr;
 
 typedef unsigned Http2StreamId;
 
-// 6.9.2 Initial Flow Control Window Size - the flow control window can be come
-// negative
-// so we need to track it with a signed type.
+// [RFC 7540] 6.9.2. Initial Flow Control Window Size
+// the flow control window can be come negative so we need to track it with a signed type.
 typedef int32_t Http2WindowSize;
 
 extern const char *const HTTP2_CONNECTION_PREFACE;
@@ -79,17 +78,17 @@ enum {
 #define HTTP2_SUM_THREAD_DYN_STAT(_s, _t, _v) RecIncrRawStat(http2_rsb, _t, (int)_s, _v);
 extern RecRawStatBlock *http2_rsb; // Container for statistics.
 
-// 6.9.1 The Flow Control Window
+// [RFC 7540] 6.9.1. The Flow Control Window
 static const Http2WindowSize HTTP2_MAX_WINDOW_SIZE = 0x7FFFFFFF;
 
-// 5.4.  Error Handling
+// [RFC 7540] 5.4. Error Handling
 enum Http2ErrorClass {
   HTTP2_ERROR_CLASS_NONE,
   HTTP2_ERROR_CLASS_CONNECTION,
   HTTP2_ERROR_CLASS_STREAM,
 };
 
-// 7.  Error Codes
+// [RFC 7540] 7. Error Codes
 enum Http2ErrorCode {
   HTTP2_ERROR_NO_ERROR = 0,
   HTTP2_ERROR_PROTOCOL_ERROR = 1,
@@ -109,7 +108,7 @@ enum Http2ErrorCode {
   HTTP2_ERROR_MAX,
 };
 
-// 5.1. Stream States
+// [RFC 7540] 5.1. Stream States
 enum Http2StreamState {
   HTTP2_STREAM_STATE_IDLE,
   HTTP2_STREAM_STATE_RESERVED_LOCAL,
@@ -135,7 +134,7 @@ enum Http2FrameType {
   HTTP2_FRAME_TYPE_MAX,
 };
 
-// 6.1 Data
+// [RFC 7540] 6.1. Data
 enum Http2FrameFlagsData {
   HTTP2_FLAGS_DATA_END_STREAM = 0x01,
   HTTP2_FLAGS_DATA_PADDED = 0x08,
@@ -143,7 +142,7 @@ enum Http2FrameFlagsData {
   HTTP2_FLAGS_DATA_MASK = 0x09,
 };
 
-// 6.2 Headers
+// [RFC 7540] 6.2. Headers
 enum Http2FrameFlagsHeaders {
   HTTP2_FLAGS_HEADERS_END_STREAM = 0x01,
   HTTP2_FLAGS_HEADERS_END_HEADERS = 0x04,
@@ -153,24 +152,24 @@ enum Http2FrameFlagsHeaders {
   HTTP2_FLAGS_HEADERS_MASK = 0x2D,
 };
 
-// 6.3 Priority
+// [RFC 7540] 6.3. Priority
 enum Http2FrameFlagsPriority {
   HTTP2_FLAGS_PRIORITY_MASK = 0x00,
 };
 
-// 6.3 Rst Stream
+// [RFC 7540] 6.4. Rst Stream
 enum Http2FrameFlagsRstStream {
   HTTP2_FLAGS_RST_STREAM_MASK = 0x00,
 };
 
-// 6.4 Settings
+// [RFC 7540] 6.5. Settings
 enum Http2FrameFlagsSettings {
   HTTP2_FLAGS_SETTINGS_ACK = 0x01,
 
   HTTP2_FLAGS_SETTINGS_MASK = 0x01
 };
 
-// 6.6 Push Promise
+// [RFC 7540] 6.6. Push Promise
 enum Http2FrameFlagsPushPromise {
   HTTP2_FLAGS_PUSH_PROMISE_END_HEADERS = 0x04,
   HTTP2_FLAGS_PUSH_PROMISE_PADDED = 0x08,
@@ -178,31 +177,31 @@ enum Http2FrameFlagsPushPromise {
   HTTP2_FLAGS_PUSH_PROMISE_MASK = 0x0C,
 };
 
-// 6.7 Ping
+// [RFC 7540] 6.7. Ping
 enum Http2FrameFlagsPing {
   HTTP2_FLAGS_PING_ACK = 0x01,
 
   HTTP2_FLAGS_PING_MASK = 0x01
 };
 
-// 6.8 Goaway
+// [RFC 7540] 6.8. Goaway
 enum Http2FrameFlagsGoaway {
   HTTP2_FLAGS_GOAWAY_MASK = 0x00,
 };
 
-// 6.9 Window Update
+// [RFC 7540] 6.9. Window Update
 enum Http2FrameFlagsWindowUpdate {
   HTTP2_FLAGS_WINDOW_UPDATE_MASK = 0x00,
 };
 
-// 6.10 Continuation
+// [RFC 7540] 6.10. Continuation
 enum Http2FrameFlagsContinuation {
   HTTP2_FLAGS_CONTINUATION_END_HEADERS = 0x04,
 
   HTTP2_FLAGS_CONTINUATION_MASK = 0x04,
 };
 
-// 6.5.2 Defined SETTINGS Parameters
+// [RFC 7540] 6.5.2. Defined SETTINGS Parameters
 enum Http2SettingsIdentifier {
   HTTP2_SETTINGS_HEADER_TABLE_SIZE = 1,
   HTTP2_SETTINGS_ENABLE_PUSH = 2,
@@ -214,7 +213,7 @@ enum Http2SettingsIdentifier {
   HTTP2_SETTINGS_MAX
 };
 
-// 4.1. Frame Format
+// [RFC 7540] 4.1. Frame Format
 struct Http2FrameHeader {
   uint32_t length;
   uint8_t type;
@@ -222,7 +221,7 @@ struct Http2FrameHeader {
   Http2StreamId streamid;
 };
 
-// 5.4.  Error Handling
+// [RFC 7540] 5.4. Error Handling
 struct Http2Error {
   Http2Error(const Http2ErrorClass error_class = HTTP2_ERROR_CLASS_NONE, const Http2ErrorCode error_code = HTTP2_ERROR_NO_ERROR)
   {
@@ -234,13 +233,13 @@ struct Http2Error {
   Http2ErrorCode code;
 };
 
-// 6.5.1. SETTINGS Format
+// [RFC 7540] 6.5.1. SETTINGS Format
 struct Http2SettingsParameter {
   uint16_t id;
   uint32_t value;
 };
 
-// 6.3 PRIORITY
+// [RFC 7540] 6.3 PRIORITY Format
 struct Http2Priority {
   Http2Priority() : stream_dependency(0), weight(15) {}
 
@@ -248,7 +247,7 @@ struct Http2Priority {
   uint8_t weight;
 };
 
-// 6.2 HEADERS Format
+// [RFC 7540] 6.2 HEADERS Format
 struct Http2HeadersParameter {
   Http2HeadersParameter() : pad_length(0) {}
 
@@ -256,7 +255,7 @@ struct Http2HeadersParameter {
   Http2Priority priority;
 };
 
-// 6.8 GOAWAY Format
+// [RFC 7540] 6.8 GOAWAY Format
 struct Http2Goaway {
   Http2Goaway() : last_streamid(0), error_code(0) {}
 
@@ -270,7 +269,7 @@ struct Http2Goaway {
   // just complicates memory management.
 };
 
-// 6.4 RST_STREAM Format
+// [RFC 7540] 6.4 RST_STREAM Format
 struct Http2RstStream {
   uint32_t error_code;
 };

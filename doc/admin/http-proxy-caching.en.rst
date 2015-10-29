@@ -785,13 +785,13 @@ Once these are enabled, you have something that is very close, but not quite
 the same, to Squid's Collapsed Forwarding.
 
 In addition to the above settings, the settings :ts:cv:`proxy.config.cache.read_while_writer.max_retries`
-and :ts:cv:`proxy.config.cache.read_while_writer.delay` allow to control the number
+and :ts:cv:`proxy.config.cache.read_while_writer_retry.delay` allow to control the number
 of retries TS attempts to trigger read-while-writer until the download of first fragment
 of the object is completed::
 
     CONFIG proxy.config.cache.read_while_writer.max_retries INT 10
 
-    CONFIG proxy.config.cache.read_while_writer.delay INT 50
+    CONFIG proxy.config.cache.read_while_writer_retry.delay INT 50
 
 .. _fuzzy-revalidation:
 

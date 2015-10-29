@@ -1,5 +1,7 @@
 /** @file
 
+  Multiplexes request to other origins.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -18,20 +20,47 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#ifndef CHUNK_DECODER_H
+#define CHUNK_DECODER_H
 
-#ifndef __P_OCSPSTAPLING_H__
-#define __P_OCSPSTAPLING_H__
+#include <ts/ts.h>
+#include <inttypes.h>
 
-#include <openssl/ssl.h>
+class ChunkDecoder
+{
+  struct State {
+    enum STATES {
+      kUnknown,
 
-#ifdef sk_OPENSSL_STRING_pop
-#ifdef SSL_CTX_set_tlsext_status_cb
-#define HAVE_OPENSSL_OCSP_STAPLING 1
-void ssl_stapling_ex_init();
-bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname);
-void ocsp_update();
-int ssl_callback_ocsp_stapling(SSL *);
-#endif /* SSL_CTX_set_tlsext_status_cb */
-#endif /* sk_OPENSSL_STRING_pop */
+      kInvalid,
 
-#endif /* __P_OCSPSTAPLING_H__ */
+      kData,
+      kDataN,
+      kEnd,
+      kEndN,
+      kSize,
+      kSizeN,
+      kSizeR,
+
+      kUpperBound,
+    };
+  };
+
+  State::STATES state_;
+  int64_t size_;
+
+public:
+  ChunkDecoder(void) : state_(State::kSize), size_(0) {}
+  void parseSizeCharacter(const char);
+  int parseSize(const char *, const int64_t);
+  int decode(const TSIOBufferReader &);
+  bool isSizeState(void) const;
+
+  inline bool
+  isEnd(void) const
+  {
+    return state_ == State::kEnd;
+  }
+};
+
+#endif // CHUNK_DECODER_H

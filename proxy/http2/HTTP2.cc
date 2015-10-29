@@ -285,18 +285,6 @@ http2_write_ping(const uint8_t *opaque_data, IOVec iov)
   return true;
 }
 
-// 6.8. GOAWAY
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |R|                  Last-Stream-ID (31)                        |
-// +-+-------------------------------------------------------------+
-// |                      Error Code (32)                          |
-// +---------------------------------------------------------------+
-// |                  Additional Debug Data (*)                    |
-// +---------------------------------------------------------------+
-
 bool
 http2_write_goaway(const Http2Goaway &goaway, IOVec iov)
 {
@@ -330,16 +318,6 @@ http2_parse_headers_parameter(IOVec iov, Http2HeadersParameter &params)
   return true;
 }
 
-// 6.3.  PRIORITY
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |E|                  Stream Dependency (31)                     |
-// +-+-------------+-----------------------------------------------+
-// |   Weight (8)  |
-// +-+-------------+
-
 bool
 http2_parse_priority_parameter(IOVec iov, Http2Priority &params)
 {
@@ -354,14 +332,6 @@ http2_parse_priority_parameter(IOVec iov, Http2Priority &params)
   return true;
 }
 
-// 6.4.  RST_STREAM
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |                        Error Code (32)                        |
-// +---------------------------------------------------------------+
-
 bool
 http2_parse_rst_stream(IOVec iov, Http2RstStream &rst_stream)
 {
@@ -374,16 +344,6 @@ http2_parse_rst_stream(IOVec iov, Http2RstStream &rst_stream)
 
   return true;
 }
-
-// 6.5.1.  SETTINGS Format
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |       Identifier (16)         |
-// +-------------------------------+-------------------------------+
-// |                        Value (32)                             |
-// +---------------------------------------------------------------+
 
 bool
 http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter &param)
@@ -405,18 +365,6 @@ http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter &param)
   return true;
 }
 
-// 6.8.  GOAWAY
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |R|                  Last-Stream-ID (31)                        |
-// +-+-------------------------------------------------------------+
-// |                      Error Code (32)                          |
-// +---------------------------------------------------------------+
-// |                  Additional Debug Data (*)                    |
-// +---------------------------------------------------------------+
-
 bool
 http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
 {
@@ -431,14 +379,6 @@ http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
   goaway.error_code = ntohl(ec.value);
   return true;
 }
-
-// 6.9.  WINDOW_UPDATE
-//
-// 0                   1                   2                   3
-// 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-// |R|              Window Size Increment (31)                     |
-// +-+-------------------------------------------------------------+
 
 bool
 http2_parse_window_update(IOVec iov, uint32_t &size)
@@ -506,7 +446,7 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
       return PARSE_ERROR;
     }
 
-    // 8.1.2.5 Combine Cookie headers
+    // Combine Cookie headers ([RFC 7540] 8.1.2.5.)
     field = headers->field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
     if (field) {
       headers->field_combine_dups(field, true, ';');
@@ -596,7 +536,7 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
   if (!field_iter.m_block) {
     field = in->iter_get_first(&field_iter);
   } else {
-    field = in->iter_get_next(&field_iter);
+    field = in->iter_get(&field_iter);
   }
 
   // Set mime headers
@@ -613,13 +553,15 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
       continue;
     }
 
-    MIMEFieldIter current_iter = field_iter;
     MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
     if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
+      if (p == out) {
+        // no progress was made, header was too big for the buffer, skipping for now
+        continue;
+      }
       if (!cont) {
         // Parsing a part of headers is done
         cont = true;
-        field_iter = current_iter;
         return p - out;
       } else {
         // Parse error
@@ -793,15 +735,14 @@ const static int MAX_TEST_FIELD_NUM = 8;
 
 /***********************************************************************************
  *                                                                                 *
- *                   Test cases for regression test *
+ *                       Regression test for HPACK                                 *
  *                                                                                 *
- * Some test cases are based on examples of specification. *
- * http://tools.ietf.org/html/draft-ietf-httpbis-header-compression-09#appendix-D
- **
+ *  Some test cases are based on examples of specification.                        *
+ *  - https://tools.ietf.org/html/rfc7541#appendix-C                               *
  *                                                                                 *
  ***********************************************************************************/
 
-// D.1.  Integer Representation Examples
+// [RFC 7541] C.1. Integer Representation Examples
 const static struct {
   uint32_t raw_integer;
   uint8_t *encoded_field;
@@ -822,7 +763,7 @@ const static struct {
                                                                "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
                          9}};
 
-// D.2.4.  Indexed Header Field
+// [RFC 7541] C.2.4. Indexed Header Field
 const static struct {
   int index;
   char *raw_name;
@@ -831,7 +772,7 @@ const static struct {
   int encoded_field_len;
 } indexed_test_case[] = {{2, (char *) ":method", (char *) "GET", (uint8_t *) "\x82", 1}};
 
-// D.2.  Header Field Representation Examples
+// [RFC 7541] C.2. Header Field Representation Examples
 const static struct {
   char *raw_name;
   char *raw_value;
@@ -874,7 +815,7 @@ const static struct {
                                                                                          "secret",
    17}};
 
-// D.3.  Request Examples without Huffman Coding - D.3.1.  First Request
+// [RFC 7541] C.3. Request Examples without Huffman Coding - C.3.1. First Request
 const static struct {
   char *raw_name;
   char *raw_value;
@@ -904,7 +845,7 @@ const static struct {
 
 /***********************************************************************************
  *                                                                                 *
- *                                Regression test codes *
+ *                                Regression test codes                            *
  *                                                                                 *
  ***********************************************************************************/
 

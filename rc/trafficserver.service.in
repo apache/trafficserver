@@ -24,7 +24,7 @@ Type=simple
 EnvironmentFile=-/etc/sysconfig/trafficserver
 PIDFile=@exp_runtimedir@/cop.pid
 ExecStart=@exp_bindir@/traffic_cop $TC_DAEMON_ARGS
-ExecReload=@exp_bindir@/traffic_line -x
+ExecReload=@exp_bindir@/traffic_ctl config reload
 
 [Install]
 WantedBy=multi-user.target

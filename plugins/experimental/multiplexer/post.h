@@ -1,5 +1,7 @@
 /** @file
 
+  Multiplexes request to other origins.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -18,20 +20,24 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#ifndef POST_H
+#define POST_H
 
-#ifndef __P_OCSPSTAPLING_H__
-#define __P_OCSPSTAPLING_H__
+#include <ts/ts.h>
 
-#include <openssl/ssl.h>
+#include "dispatch.h"
 
-#ifdef sk_OPENSSL_STRING_pop
-#ifdef SSL_CTX_set_tlsext_status_cb
-#define HAVE_OPENSSL_OCSP_STAPLING 1
-void ssl_stapling_ex_init();
-bool ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname);
-void ocsp_update();
-int ssl_callback_ocsp_stapling(SSL *);
-#endif /* SSL_CTX_set_tlsext_status_cb */
-#endif /* sk_OPENSSL_STRING_pop */
+struct PostState {
+  Requests requests;
 
-#endif /* __P_OCSPSTAPLING_H__ */
+  TSIOBuffer buffer;
+  TSIOBufferReader reader;
+  TSVIO vio;
+
+  ~PostState();
+  PostState(Requests &);
+};
+
+int handlePost(TSCont, TSEvent, void *);
+
+#endif // POST_H
