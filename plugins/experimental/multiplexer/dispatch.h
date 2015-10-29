@@ -53,7 +53,6 @@ struct Request {
   ats::io::IO *io;
 
   Request(const std::string &, const TSMBuffer, const TSMLoc);
-  ~Request();
 };
 
 typedef std::vector<Request> Requests;
