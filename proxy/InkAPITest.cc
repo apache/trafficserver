@@ -7209,7 +7209,9 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.auth_server_session_private", "proxy.config.http.slow.log.threshold", "proxy.config.http.cache.generation",
   "proxy.config.body_factory.template_base", "proxy.config.http.cache.open_write_fail_action",
   "proxy.config.http.redirection_enabled", "proxy.config.http.number_of_redirections",
-  "proxy.config.http.cache.max_open_write_retries"};
+  "proxy.config.http.cache.max_open_write_retries", "proxy.config.http.parent_proxy.per_parent_connect_attempts",
+  "proxy.config.http.parent_origin.simple_retry_enabled", "proxy.config.http.parent_origin.simple_retry_response_codes",
+  "proxy.config.http.parent_origin.dead_server_retry_enabled", "proxy.config.http.parent_origin.dead_server_retry_response_codes"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {

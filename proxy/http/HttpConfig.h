@@ -355,6 +355,17 @@ struct HttpConfigPortRange {
   }
 };
 
+//////////////////////////////////////////////////////////////
+// Container for simple retry and dead server retry http
+// response codes.
+/////////////////////////////////////////////////////////////
+class ResponseCodes
+{
+public:
+  ResponseCodes(){};
+  bool contains(int, MgmtString);
+};
+
 /////////////////////////////////////////////////////////////
 // This is a little helper class, used by the HttpConfigParams
 // and State (txn) structure. It allows for certain configs
@@ -382,14 +393,14 @@ struct OverridableHttpConfigParams {
       connect_attempts_max_retries_dead_server(3), connect_attempts_rr_retries(3), connect_attempts_timeout(30),
       post_connect_attempts_timeout(1800), down_server_timeout(300), client_abort_threshold(10), freshness_fuzz_time(240),
       freshness_fuzz_min_time(0), max_cache_open_read_retries(-1), cache_open_read_retry_time(10), cache_generation_number(-1),
-      max_cache_open_write_retries(1), background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0),
-      flow_low_water_mark(0), default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
-
+      max_cache_open_write_retries(1), background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0), 
+      flow_low_water_mark(0), default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0), 
+      simple_retry_enabled(0), dead_server_retry_enabled(0),
       // Strings / floats must come last
       body_factory_template_base(NULL), body_factory_template_base_len(0), proxy_response_server_string(NULL),
       proxy_response_server_string_len(0), global_user_agent_header(NULL), global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005), background_fill_threshold(0.5), cache_open_write_fail_action(0),
-      redirection_enabled(0), number_of_redirections(1)
+      redirection_enabled(0), number_of_redirections(1), simple_retry_response_codes_string(NULL), dead_server_retry_response_codes_string(NULL)
   {
   }
 
@@ -561,6 +572,18 @@ struct OverridableHttpConfigParams {
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
   MgmtInt slow_log_threshold;
+
+  ////////////////////////////////////
+  // origin server connect attempts //
+  ////////////////////////////////////
+  MgmtInt parent_connect_attempts;
+  MgmtInt per_parent_connect_attempts;
+
+  ///////////////////////////////////////////////////
+  // parent origin server load balancing variables //
+  ///////////////////////////////////////////////////
+  MgmtInt simple_retry_enabled;
+  MgmtInt dead_server_retry_enabled;
   // IMPORTANT: Here comes all strings / floats configs.
 
   ///////////////////////////////////////////////////////////////////
@@ -594,6 +617,12 @@ struct OverridableHttpConfigParams {
 
   MgmtByte redirection_enabled;
   MgmtInt number_of_redirections;
+  
+  ///////////////////////////////////////////////////
+  // parent origin server load balancing variables //
+  ///////////////////////////////////////////////////
+  MgmtString simple_retry_response_codes_string;
+  MgmtString dead_server_retry_response_codes_string;
 };
 
 
@@ -663,17 +692,17 @@ public:
   MgmtInt transaction_active_timeout_in;
   MgmtInt accept_no_activity_timeout;
 
-  ////////////////////////////////////
-  // origin server connect attempts //
-  ////////////////////////////////////
-  MgmtInt parent_connect_attempts;
-  MgmtInt per_parent_connect_attempts;
-  MgmtInt parent_connect_timeout;
-
   ///////////////////////////////////////////////////////////////////
   // Privacy: fields which are removed from the user agent request //
   ///////////////////////////////////////////////////////////////////
   char *anonymize_other_header_list;
+
+  ////////////////////////////////////
+  // origin server connect timeout //
+  ////////////////////////////////////
+  MgmtInt parent_connect_attempts;
+  MgmtInt per_parent_connect_attempts;
+  MgmtInt parent_connect_timeout;
 
   MgmtByte enable_http_stats; // Can be "slow"
 
@@ -698,6 +727,11 @@ public:
   ////////////////////////////////////////////
   char *connect_ports_string;
   HttpConfigPortRange *connect_ports;
+
+  /////////////////////////////////////////////////////////
+  // simple retry and dead server retry response codes. //
+  ///////////////////////////////////////////////////////
+  ResponseCodes *response_codes;
 
   //////////
   // Push //
@@ -851,7 +885,7 @@ inline HttpConfigParams::HttpConfigParams()
     use_client_source_port(0), proxy_request_via_string(NULL), proxy_request_via_string_len(0), proxy_response_via_string(NULL),
     proxy_response_via_string_len(0), url_expansions_string(NULL), url_expansions(NULL), num_url_expansions(0),
     session_auth_cache_keep_alive_enabled(1), transaction_active_timeout_in(900), accept_no_activity_timeout(120),
-    parent_connect_attempts(4), per_parent_connect_attempts(2), parent_connect_timeout(30), anonymize_other_header_list(NULL),
+    anonymize_other_header_list(NULL), per_parent_connect_attempts(2), parent_connect_timeout(30),
     enable_http_stats(1), icp_enabled(0), stale_icp_enabled(0), cache_vary_default_text(NULL), cache_vary_default_images(NULL),
     cache_vary_default_other(NULL), cache_enable_default_vary_headers(0), cache_post_method(0), connect_ports_string(NULL),
     connect_ports(NULL), push_method_enabled(0), referer_filter_enabled(0), referer_format_redirect(0), reverse_proxy_enabled(0),

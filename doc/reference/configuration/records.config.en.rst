@@ -964,6 +964,32 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.dead_server_retry_enabled INT 0
+
+   When parent selection is used, this setting enables retries using another parent if an HTTP 503
+   response is received from a parent. The parent that returns the 503 response or any response
+   listed in dead_server_retry_response_codes, will be marked down and a new parent will be selected
+   for retry.  If all parents return a response from the dead_server_retry_response_codes list,
+   the response will finally be sent to the client.  This is off (``0``) by default.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.dead_server_retry_response_codes STRING 503
+
+   The response code(s) received from an origin server that will trigger a retry if dead_server_retry_enabled
+   is on.  This defaults to 503 but it may be a comma separated list of response codes.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.simple_retry_enabled INT 0
+
+   When parent selection is used, this setting enables retries using another parent if an HTTP 404
+   response is received from a parent. The parent that returns a 404 response or any response
+   listed in simple_retry_response_codes, will not be marked,  A new parent is simply chosen
+   for retry.  If all parents return a response from the simple_retry_response_codes list,
+   the response will finally be sent to the client.  This is off (``0``) by default.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.simple_retry_response_codes STRING 503
+
+   The response code(s) received from an origin server that will trigger a retry if simple_retry_enabled
+   is on.  This defaults to 404 but it may be a comma separated list of response codes.
+
 HTTP Connection Timeouts
 ========================
 

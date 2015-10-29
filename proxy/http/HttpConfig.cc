@@ -961,8 +961,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_rr_retries, "proxy.config.http.connect_attempts_rr_retries");
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_timeout, "proxy.config.http.connect_attempts_timeout");
   HttpEstablishStaticConfigLongLong(c.oride.post_connect_attempts_timeout, "proxy.config.http.post_connect_attempts_timeout");
-  HttpEstablishStaticConfigLongLong(c.parent_connect_attempts, "proxy.config.http.parent_proxy.total_connect_attempts");
-  HttpEstablishStaticConfigLongLong(c.per_parent_connect_attempts, "proxy.config.http.parent_proxy.per_parent_connect_attempts");
+  HttpEstablishStaticConfigLongLong(c.oride.parent_connect_attempts, "proxy.config.http.parent_proxy.total_connect_attempts");
+  HttpEstablishStaticConfigLongLong(c.oride.per_parent_connect_attempts, "proxy.config.http.parent_proxy.per_parent_connect_attempts");
   HttpEstablishStaticConfigLongLong(c.parent_connect_timeout, "proxy.config.http.parent_proxy.connect_attempts_timeout");
 
   HttpEstablishStaticConfigLongLong(c.oride.sock_recv_buffer_size_out, "proxy.config.net.sock_recv_buffer_size_out");
@@ -1115,6 +1115,14 @@ HttpConfig::startup()
   // Local Manager
   HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
 
+  // parent origin.
+  HttpEstablishStaticConfigLongLong(c.oride.simple_retry_enabled, "proxy.config.http.parent_origin.simple_retry_enabled");
+  HttpEstablishStaticConfigStringAlloc(c.oride.simple_retry_response_codes_string,
+                                       "proxy.config.http.parent_origin.simple_retry_response_codes");
+  HttpEstablishStaticConfigLongLong(c.oride.dead_server_retry_enabled, "proxy.config.http.parent_origin.dead_server_retry_enabled");
+  HttpEstablishStaticConfigStringAlloc(c.oride.dead_server_retry_response_codes_string,
+                                       "proxy.config.http.parent_origin.dead_server_retry_response_codes");
+
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
   c.cluster_time_delta = 0;
@@ -1226,8 +1234,8 @@ HttpConfig::reconfigure()
   params->oride.connect_attempts_rr_retries = m_master.oride.connect_attempts_rr_retries;
   params->oride.connect_attempts_timeout = m_master.oride.connect_attempts_timeout;
   params->oride.post_connect_attempts_timeout = m_master.oride.post_connect_attempts_timeout;
-  params->parent_connect_attempts = m_master.parent_connect_attempts;
-  params->per_parent_connect_attempts = m_master.per_parent_connect_attempts;
+  params->oride.parent_connect_attempts = m_master.oride.parent_connect_attempts;
+  params->oride.per_parent_connect_attempts = m_master.oride.per_parent_connect_attempts;
   params->parent_connect_timeout = m_master.parent_connect_timeout;
 
   params->oride.sock_recv_buffer_size_out = m_master.oride.sock_recv_buffer_size_out;
@@ -1319,6 +1327,7 @@ HttpConfig::reconfigure()
 
   params->connect_ports_string = ats_strdup(m_master.connect_ports_string);
   params->connect_ports = parse_ports_list(params->connect_ports_string);
+  params->response_codes = new ResponseCodes();
 
   params->oride.request_hdr_max_size = m_master.oride.request_hdr_max_size;
   params->oride.response_hdr_max_size = m_master.oride.response_hdr_max_size;
@@ -1373,6 +1382,11 @@ HttpConfig::reconfigure()
 
   // Local Manager
   params->synthetic_port = m_master.synthetic_port;
+
+  params->oride.simple_retry_enabled = m_master.oride.simple_retry_enabled;
+  params->oride.dead_server_retry_enabled = m_master.oride.dead_server_retry_enabled;
+  params->oride.simple_retry_response_codes_string = m_master.oride.simple_retry_response_codes_string;
+  params->oride.dead_server_retry_response_codes_string = m_master.oride.dead_server_retry_response_codes_string;
 
   m_id = configProcessor.set(m_id, params);
 
@@ -1480,6 +1494,27 @@ HttpConfig::parse_ports_list(char *ports_string)
     }
   }
   return (ports_list);
+}
+
+///////////////////////////////////////////////////////
+// ResponseCodes implementation.
+// ///////////////////////////////////////////////////
+bool
+ResponseCodes::contains(int code, MgmtString r_codes)
+{
+  char *c = r_codes, *p = NULL;
+
+  do {
+    if (atoi(c) == code) {
+      return true;
+    }
+    p = strchr(c, ',');
+    if (p != NULL) {
+      c = (p + 1);
+    }
+  } while (p != NULL);
+
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////
