@@ -47,6 +47,13 @@ Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l)
   assert(length == TSIOBufferReaderAvail(io->reader));
 }
 
+Request::~Request()
+{
+  if (io != NULL) {
+    delete io;
+  }
+}
+
 uint64_t
 copy(const TSIOBufferReader &r, const TSIOBuffer b)
 {
