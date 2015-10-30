@@ -39,6 +39,5 @@ Configuration Files
    splitdns.config.en
    ssl_multicert.config.en
    storage.config.en
-   update.config.en
    volume.config.en
 
