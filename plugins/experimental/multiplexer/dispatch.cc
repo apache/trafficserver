@@ -239,8 +239,7 @@ dispatch(Requests &r, const int t)
       assert(b.size() == static_cast<uint64_t>(iterator->length));
       TSDebug(PLUGIN_TAG, "%s", b.c_str());
     }
-    ats::get(iterator->io, iterator->length, Handler(iterator->host), t);
     // forwarding iterator->io pointer ownership
-    iterator->io = NULL;
+    ats::get(iterator->io.release(), iterator->length, Handler(iterator->host), t);
   }
 }
