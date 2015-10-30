@@ -112,6 +112,10 @@ if os.environ.get('READTHEDOCS') == 'True':
           po = polib.pofile(po_file)
           po.save_as_mofile(fpath=mo_file)
   print "done"
+else:
+  import sphinx_rtd_theme
+  html_theme = 'sphinx_rtd_theme'
+  html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 ## End of HACK
 
 # There are two options for replacing |today|: either, you set today to some
@@ -220,6 +224,14 @@ html_favicon = 'static/images/favicon.ico'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['static']
+
+# Include a stylesheet that overrides default table styling, to provide
+# content wrapping.
+html_context = {
+  'css_files': [
+    '_static/override.css',  # overrides for wide tables in RTD theme
+  ],
+}
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
