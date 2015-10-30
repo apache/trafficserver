@@ -45,6 +45,11 @@ libhttp2_a_SOURCES = \
   HuffmanCodec.cc \
   HuffmanCodec.h
 
+if BUILD_TESTS
+  libhttp2_a_SOURCES += \
+	  RegressionHPACK.cc
+endif
+
 noinst_PROGRAMS = \
   test_Huffmancode
 
