@@ -15,10 +15,41 @@
    specific language governing permissions and limitations
    under the License.
 
-.. Global definitions
+.. |ASF| replace:: Apache Software Foundation
 
 .. |ATS| replace:: Apache Traffic Server™
 
+.. |AW| replace:: Acme Widgets
+
+.. |RTD| replace:: Read the Docs
+
 .. |TS| replace:: Traffic Server
 
-.. |AW| replace:: Acme Widgets
+.. |RST| replace:: reStructuredText
+
+.. Files in github.
+.. TODO: Should write a custom domain so we can do :ts:git:`iocore/cache/P_CacheDir.h`
+
+.. |HTTP.h| replace:: ``HTTP.h``
+
+.. _HTTP.h: https://github.com/apache/trafficserver/blob/master/proxy/hdrs/HTTP.h
+
+.. |HttpCacheSM.h| replace:: ``HttpCacheSM.h``
+
+.. _HttpCacheSM.h: https://github.com/apache/trafficserver/blob/master/proxy/http/HttpCacheSM.h
+
+.. |HttpCacheSM.cc| replace:: ``HttpCacheSM.cc``
+
+.. _HttpCacheSM.cc: https://github.com/apache/trafficserver/blob/master/proxy/http/HttpCacheSM.cc
+
+.. |P-CacheDir.h| replace:: ``P_CacheDir.h``
+
+.. _P-CacheDir.h: https://github.com/apache/trafficserver/blob/master/iocore/cache/P_CacheDir.h
+
+.. |P-CacheHttp.h| replace:: ``P_CacheHttp.h``
+
+.. _P-CacheHttp.h: https://github.com/apache/trafficserver/blob/master/iocore/cache/P_CacheHttp.h
+
+.. |P-CacheVol.h| replace:: ``P_CacheVol.h``
+
+.. _P-CacheVol.h: https://github.com/apache/trafficserver/blob/master/iocore/cache/P_CacheVol.h

@@ -1,6 +1,3 @@
-Apache Traffic Server
-*********************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
    distributed with this work for additional information
@@ -18,34 +15,21 @@ Apache Traffic Server
    specific language governing permissions and limitations
    under the License.
 
+.. include:: common.defs
 
-Apache Traffic Server™ speeds Internet access, enhances website
-performance, and delivers unprecedented web hosting capabilities.
+.. _manual-toc:
 
-What Is Apache Traffic Server?
-==============================
-
-Traffic Server is a high-performance web proxy cache that improves
-network efficiency and performance by caching frequently-accessed
-information at the edge of the network. This brings content physically
-closer to end users, while enabling faster delivery and reduced
-bandwidth use. Traffic Server is designed to improve content delivery
-for enterprises, Internet service providers (ISPs), backbone
-providers, and large intranets by maximizing existing and available
-bandwidth.
+Apache Traffic Server Manual
+****************************
 
 .. toctree::
-  :maxdepth: 1
+  :maxdepth: 2
 
-  getting-started.en
-  admin/index.en
-  sdk/index.en
-  reference/configuration/index.en
-  reference/commands/index.en
-  reference/plugins/index.en
-  reference/api/index.en
-  arch/index.en
-  glossary.en
+  preface/index.en
+  getting-started/index.en
+  admin-guide/index.en
+  developer-guide/index.en
+  appendices/index.en
 
 Indices and tables
 ==================
