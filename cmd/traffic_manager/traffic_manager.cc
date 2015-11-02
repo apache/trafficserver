@@ -616,20 +616,20 @@ main(int argc, const char **argv)
   // we do it so TS is able to create BaseLogFiles for each value
   if (*bind_stdout != 0) {
     size_t l = strlen(lmgmt->proxy_options);
-    size_t n = 3 /* " --" */
-      + sizeof(TM_OPT_BIND_STDOUT) /* nul accounted for here */
-      + 1 /* space */
-      + strlen(bind_stdout);
+    size_t n = 3                            /* " --" */
+               + sizeof(TM_OPT_BIND_STDOUT) /* nul accounted for here */
+               + 1                          /* space */
+               + strlen(bind_stdout);
     lmgmt->proxy_options = static_cast<char *>(ats_realloc(lmgmt->proxy_options, n + l));
     snprintf(lmgmt->proxy_options + l, n, " --%s %s", TM_OPT_BIND_STDOUT, bind_stdout);
   }
 
   if (*bind_stderr != 0) {
     size_t l = strlen(lmgmt->proxy_options);
-    size_t n = 3 /* space dash dash */
-      + sizeof(TM_OPT_BIND_STDERR) /* nul accounted for here */
-      + 1 /* space */
-      + strlen(bind_stderr);
+    size_t n = 3                            /* space dash dash */
+               + sizeof(TM_OPT_BIND_STDERR) /* nul accounted for here */
+               + 1                          /* space */
+               + strlen(bind_stderr);
     lmgmt->proxy_options = static_cast<char *>(ats_realloc(lmgmt->proxy_options, n + l));
     snprintf(lmgmt->proxy_options + l, n, " --%s %s", TM_OPT_BIND_STDERR, bind_stderr);
   }
