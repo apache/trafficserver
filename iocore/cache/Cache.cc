@@ -474,14 +474,26 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
     ainfo->object_key_set(earliest_key);
     // don't know the total len yet
   }
-  if (enable_cache_empty_http_doc) {
-    MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
+  switch (enable_cache_empty_http_doc) {
+  case 0:
+    f.allow_empty_doc = 0;
+    break;
+
+  case 1:
     if (field && !field->value_get_int64())
       f.allow_empty_doc = 1;
     else
       f.allow_empty_doc = 0;
-  } else
-    f.allow_empty_doc = 0;
+    break;
+
+  case 2:
+    if (!field || !field->value_get_int64())
+      f.allow_empty_doc = 1;
+    else
+      f.allow_empty_doc = 0;
+    break;
+  }
   alternate.copy_shallow(ainfo);
   ainfo->clear();
 }
