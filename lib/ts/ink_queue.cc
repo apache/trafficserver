@@ -96,6 +96,10 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   f->name = name;
   /* quick test for power of 2 */
   ink_assert(!(alignment & (alignment - 1)));
+  // It is never useful to have alignment requirement looser than a page size
+  // so clip it. This makes the item alignment checks in the actual allocator simpler.
+  if (alignment > ats_pagesize())
+    alignment = ats_pagesize();
   f->alignment = alignment;
   // Make sure we align *all* the objects in the allocation, not just the first one
   f->type_size = INK_ALIGN(type_size, alignment);
