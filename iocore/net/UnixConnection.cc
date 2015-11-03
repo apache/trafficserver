@@ -323,6 +323,9 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
 
   this->setRemote(target);
 
+  // apply dynamic options with this.addr initialized
+  apply_options(opt);
+
   cleaner<Connection> cleanup(this, &Connection::_cleanup); // mark for close until we succeed.
 
   res = ::connect(fd, target, ats_ip_size(target));
