@@ -129,6 +129,17 @@ The following list shows the possible actions and their allowed values.
     origin server. You can specify either a hostname or an IP address,
     but; you must specify the port number.
 
+.. _parent-config-format-secondary_parent-parent:
+
+``secondary_parent``
+    An optional ordered list of secondary parent servers using the same format
+    as the ``parent`` list.  A ``secondary_parent`` list only applies
+    when ``round_robin`` is set to ``consistent_hash``.  When using
+    ``consistent_hash``, if the server chosen from the primary list fails,
+    a parent is selected from a secondary consistent hash ring. This feature
+    works best in a multi-tiered cache hierarchy where one might take advantage
+    of the content affinint built up on a secondary list of parents.
+
 .. _parent-config-format-round-robin:
 
 ``round_robin``
@@ -145,7 +156,24 @@ The following list shows the possible actions and their allowed values.
        would go to the down parent is rehashed amongst the remaining parents.
        The other traffic is unaffected. Once the downed parent becomes
        available, the traffic distribution returns to the pre-down
-       state.
+       state. If a ``secondary_parent`` list is used, the url hashed against
+       a parent in the ``secondary_parent`` list. Use this to take advantage
+       of content affinity built up in a secondary group of parents.
+
+.. _parent-config-format-parent_is_proxy:
+
+``parent_is_proxy``
+    One of the following values:
+
+    - ``true`` - Specifies that the parents are ATS cache proxies, within
+                 a hierarchy.  This is the default value, if ``parent_is_proxy``
+                 is not specified in the configuration.
+
+    - ``false`` - Specifies that the parents are origin servers. The request
+                  url's are modified so they are appropriate for origin
+                  requests.  Normal Parent Selection behaviour applies to
+                  the origins listed.  Since these would be a list of origin
+                  servers, set go_direct described below to ``false``.
 
 .. _parent-config-format-go-direct:
 
