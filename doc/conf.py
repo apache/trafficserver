@@ -113,9 +113,14 @@ if os.environ.get('READTHEDOCS') == 'True':
           po.save_as_mofile(fpath=mo_file)
   print "done"
 else:
-  import sphinx_rtd_theme
-  html_theme = 'sphinx_rtd_theme'
-  html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+  # On RedHat-based distributions, install the python-sphinx_rtd_theme package
+  # to get an end result tht looks more like readthedoc.org.
+  try:
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+  except:
+    pass
 ## End of HACK
 
 # There are two options for replacing |today|: either, you set today to some
