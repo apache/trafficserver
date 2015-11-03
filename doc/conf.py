@@ -234,9 +234,17 @@ html_static_path = ['static']
 # content wrapping.
 html_context = {
   'css_files': [
-    '_static/override.css',  # overrides for wide tables in RTD theme
-  ],
+    '_static/override.css'
+  ]
 }
+if os.environ.get('READTHEDOCS', None) == 'True':
+  html_context = {
+    'css_files': [
+      'https://media.readthedocs.org/css/sphinx_rtd_theme.css',
+      'https://media.readthedocs.org/css/readthedocs-doc-embed.css',
+      '_static/override.css'
+    ]
+  }
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
