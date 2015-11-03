@@ -1117,12 +1117,12 @@ HttpConfig::startup()
 
   // parent origin.
   HttpEstablishStaticConfigLongLong(c.oride.simple_retry_enabled, "proxy.config.http.parent_origin.simple_retry_enabled");
-  HttpEstablishStaticConfigStringAlloc(c.oride.simple_retry_response_codes_string, 
-      "proxy.config.http.parent_origin.simple_retry_response_codes");
+  HttpEstablishStaticConfigStringAlloc(c.oride.simple_retry_response_codes_string,
+                                       "proxy.config.http.parent_origin.simple_retry_response_codes");
 
   HttpEstablishStaticConfigLongLong(c.oride.dead_server_retry_enabled, "proxy.config.http.parent_origin.dead_server_retry_enabled");
   HttpEstablishStaticConfigStringAlloc(c.oride.dead_server_retry_response_codes_string,
-      "proxy.config.http.parent_origin.dead_server_retry_response_codes");
+                                       "proxy.config.http.parent_origin.dead_server_retry_response_codes");
 
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
