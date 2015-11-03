@@ -39,14 +39,14 @@ was originated within Traffic Server.
 
 .. admonition:: Deprecated
 
-   Deprecated
+   Deprecated in favor of :func:`TSHttpTxnIsInternal`.
 
 :func:`TSHttpIsInternalSession` tests whether a HTTP session
 was originated within Traffic Server.
 
 .. admonition:: Deprecated
 
-   Deprecated
+   Deprecated in favor of :func:`TSHttpSsnIsInternal`.
 
 Return Values
 =============
@@ -54,17 +54,9 @@ Return Values
 Both these APIs returns a :type:`TSReturnCode`, indicating whether the
 object was internal (:data:`TS_SUCCESS`) or not (:data:`TS_ERROR`).
 
-Examples
-========
-
-The ESI plugin uses :func:`TSHttpIsInternalRequest` to ignore requests that it
-had generated while fetching portions of an ESI document:
-
-.. literalinclude:: ../../../plugins/experimental/esi/esi.cc
-  :language: c
-  :lines: 1395-1398
-
 See Also
 ========
 
-:manpage:`TSAPI(3ts)`
+:manpage:`TSAPI(3ts)`,
+:manpage:`TSHttpSsnIsInternal(3ts)`,
+:manpage:`TSHttpTxnIsInternal(3ts)`
