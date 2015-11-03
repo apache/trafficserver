@@ -355,6 +355,13 @@ struct HttpConfigPortRange {
   }
 };
 
+class ResponseCodes
+{
+  public:
+    ResponseCodes() {};
+    bool contains(int, MgmtString);
+};
+
 /////////////////////////////////////////////////////////////
 // This is a little helper class, used by the HttpConfigParams
 // and State (txn) structure. It allows for certain configs
@@ -384,12 +391,13 @@ struct OverridableHttpConfigParams {
       freshness_fuzz_min_time(0), max_cache_open_read_retries(-1), cache_open_read_retry_time(10), cache_generation_number(-1),
       max_cache_open_write_retries(1), background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0),
       flow_low_water_mark(0), default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
-
+      parent_connect_attempts(4), per_parent_connect_attempts(2), simple_retry_enabled(0), dead_server_retry_enabled(0),
       // Strings / floats must come last
       body_factory_template_base(NULL), body_factory_template_base_len(0), proxy_response_server_string(NULL),
       proxy_response_server_string_len(0), global_user_agent_header(NULL), global_user_agent_header_size(0),
-      cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005), background_fill_threshold(0.5), cache_open_write_fail_action(0),
-      redirection_enabled(0), number_of_redirections(1)
+      cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005), background_fill_threshold(0.5), cache_open_write_fail_action(0), 
+      redirection_enabled(0), number_of_redirections(1), simple_retry_response_codes_string(NULL), 
+      dead_server_retry_response_codes_string(NULL)
   {
   }
 
@@ -561,6 +569,19 @@ struct OverridableHttpConfigParams {
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
   MgmtInt slow_log_threshold;
+
+  ////////////////////////////////////
+  // origin server connect attempts //
+  ////////////////////////////////////
+  MgmtInt parent_connect_attempts;
+  MgmtInt per_parent_connect_attempts;
+
+  ///////////////////////////////////////////////////
+  // parent origin server load balancing variables //
+  ///////////////////////////////////////////////////
+  MgmtInt simple_retry_enabled;
+  MgmtInt dead_server_retry_enabled;
+
   // IMPORTANT: Here comes all strings / floats configs.
 
   ///////////////////////////////////////////////////////////////////
@@ -594,6 +615,14 @@ struct OverridableHttpConfigParams {
 
   MgmtByte redirection_enabled;
   MgmtInt number_of_redirections;
+  
+  //##################################################
+  //#
+  //# simple and dead server retry response codes.
+  //#
+  //##################################################
+  MgmtString simple_retry_response_codes_string;
+  MgmtString dead_server_retry_response_codes_string;
 };
 
 
@@ -698,6 +727,11 @@ public:
   ////////////////////////////////////////////
   char *connect_ports_string;
   HttpConfigPortRange *connect_ports;
+
+  ///////////////////////////////////////////////////////
+  // simple retry and dead server retry response codes.//
+  // ///////////////////////////////////////////////////
+  ResponseCodes *response_codes;
 
   //////////
   // Push //

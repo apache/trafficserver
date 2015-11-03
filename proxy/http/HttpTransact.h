@@ -351,6 +351,8 @@ public:
     HTTP_TRANSACT_MAGIC_SEPARATOR = 0x12345678
   };
 
+  enum ParentOriginRetry_t { UNDEFINED_RETRY, SIMPLE_RETRY, DEAD_SERVER_RETRY };
+
   enum LookingUp_t {
     ORIGIN_SERVER,
     UNDEFINED_LOOKUP,
@@ -704,9 +706,13 @@ public:
     ink_time_t now;
     ServerState_t state;
     int attempts;
+    int simple_retry_attempts;
+    int dead_server_retry_attempts;
+    ParentOriginRetry_t retry_type;
 
     _CurrentInfo()
-      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1){};
+      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1),
+        simple_retry_attempts(0), dead_server_retry_attempts(0), retry_type(UNDEFINED_RETRY){};
   } CurrentInfo;
 
   typedef struct _DNSLookupInfo {
@@ -829,23 +835,23 @@ public:
     bool cdn_remap_complete;
     bool first_dns_lookup;
 
-    bool backdoor_request; // internal
-    bool cop_test_page;    // internal
-    HttpRequestData request_data;
     ParentConfigParams *parent_params;
     ParentResult parent_result;
+    HttpRequestData request_data;
     CacheControlResult cache_control;
     CacheLookupResult_t cache_lookup_result;
     // FilterResult             content_control;
+    bool backdoor_request; // internal
+    bool cop_test_page;    // internal
 
     StateMachineAction_t next_action;                      // out
     StateMachineAction_t api_next_action;                  // out
     void (*transact_return_point)(HttpTransact::State *s); // out
 
     // We keep this so we can jump back to the upgrade handler after remap is complete
+    bool is_upgrade_request;
     void (*post_remap_upgrade_return_point)(HttpTransact::State *s); // out
     const char *upgrade_token_wks;
-    bool is_upgrade_request;
 
     // Some WebSocket state
     bool is_websocket;
@@ -971,9 +977,9 @@ public:
         is_revalidation_necessary(false), request_will_not_selfloop(false), // YTS Team, yamsat
         source(SOURCE_NONE), pre_transform_source(SOURCE_NONE), req_flavor(REQ_FLAVOR_FWDPROXY), pending_work(NULL),
         cdn_saved_next_action(SM_ACTION_UNDEFINED), cdn_saved_transact_return_point(NULL), cdn_remap_complete(false),
-        first_dns_lookup(true), backdoor_request(false), cop_test_page(false), parent_params(NULL),
-        cache_lookup_result(CACHE_LOOKUP_NONE), next_action(SM_ACTION_UNDEFINED), api_next_action(SM_ACTION_UNDEFINED),
-        transact_return_point(NULL), post_remap_upgrade_return_point(NULL), upgrade_token_wks(NULL), is_upgrade_request(false),
+        first_dns_lookup(true), parent_params(NULL), cache_lookup_result(CACHE_LOOKUP_NONE), backdoor_request(false),
+        cop_test_page(false), next_action(SM_ACTION_UNDEFINED), api_next_action(SM_ACTION_UNDEFINED),
+        transact_return_point(NULL), is_upgrade_request(false), post_remap_upgrade_return_point(NULL), upgrade_token_wks(NULL),
         is_websocket(false), did_upgrade_succeed(false), internal_msg_buffer(NULL), internal_msg_buffer_type(NULL),
         internal_msg_buffer_size(0), internal_msg_buffer_fast_allocator_size(-1), icp_lookup_success(false), scheme(-1),
         next_hop_scheme(scheme), orig_scheme(scheme), method(0), cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),

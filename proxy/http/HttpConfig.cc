@@ -1115,6 +1115,15 @@ HttpConfig::startup()
   // Local Manager
   HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
 
+  // parent origin.
+  HttpEstablishStaticConfigLongLong(c.oride.simple_retry_enabled, "proxy.config.http.parent_origin.simple_retry_enabled");
+  HttpEstablishStaticConfigStringAlloc(c.oride.simple_retry_response_codes_string, 
+      "proxy.config.http.parent_origin.simple_retry_response_codes");
+
+  HttpEstablishStaticConfigLongLong(c.oride.dead_server_retry_enabled, "proxy.config.http.parent_origin.dead_server_retry_enabled");
+  HttpEstablishStaticConfigStringAlloc(c.oride.dead_server_retry_response_codes_string,
+      "proxy.config.http.parent_origin.dead_server_retry_response_codes");
+
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
   c.cluster_time_delta = 0;
@@ -1319,6 +1328,7 @@ HttpConfig::reconfigure()
 
   params->connect_ports_string = ats_strdup(m_master.connect_ports_string);
   params->connect_ports = parse_ports_list(params->connect_ports_string);
+  params->response_codes = new ResponseCodes();
 
   params->oride.request_hdr_max_size = m_master.oride.request_hdr_max_size;
   params->oride.response_hdr_max_size = m_master.oride.response_hdr_max_size;
@@ -1373,6 +1383,12 @@ HttpConfig::reconfigure()
 
   // Local Manager
   params->synthetic_port = m_master.synthetic_port;
+
+  // simple and dead server retry.
+  params->oride.simple_retry_enabled = m_master.oride.simple_retry_enabled;
+  params->oride.dead_server_retry_enabled = m_master.oride.dead_server_retry_enabled;
+  params->oride.simple_retry_response_codes_string = m_master.oride.simple_retry_response_codes_string;
+  params->oride.dead_server_retry_response_codes_string = m_master.oride.dead_server_retry_response_codes_string;
 
   m_id = configProcessor.set(m_id, params);
 
@@ -1480,6 +1496,27 @@ HttpConfig::parse_ports_list(char *ports_string)
     }
   }
   return (ports_list);
+}
+
+///////////////////////////////////////////////////////
+// ResponseCodes implementation.
+// ///////////////////////////////////////////////////
+bool
+ResponseCodes::contains(int code, MgmtString r_codes)
+{
+  char *c = r_codes, *p = NULL;
+
+  do {
+    if (atoi(c) == code) {
+      return true;
+    }
+    p = strchr(c, ',');
+    if (p != NULL) {
+      c = (p + 1);
+    }
+  } while (p != NULL);
+
+  return false;
 }
 
 ////////////////////////////////////////////////////////////////

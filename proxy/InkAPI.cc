@@ -7976,6 +7976,30 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->number_of_redirections;
     break;
+  case TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->per_parent_connect_attempts;
+    break;
+  case TS_CONFIG_HTTP_PARENT_TOTAL_CONNECT_ATTEMPTS:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->parent_connect_attempts;
+    break;
+  case TS_CONFIG_HTTP_SIMPLE_RETRY_ENABLED:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->simple_retry_enabled;
+    break;
+  case TS_CONFIG_HTTP_SIMPLE_RETRY_RESPONSE_CODES:
+    ret = &overridableHttpConfig->simple_retry_response_codes_string;
+    typ = OVERRIDABLE_TYPE_STRING;
+    break;
+  case TS_CONFIG_HTTP_DEAD_SERVER_RETRY_ENABLED:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->dead_server_retry_enabled;
+    break;
+  case TS_CONFIG_HTTP_DEAD_SERVER_RETRY_RESPONSE_CODES:
+    ret = &overridableHttpConfig->dead_server_retry_response_codes_string;
+    typ = OVERRIDABLE_TYPE_STRING;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8128,6 +8152,20 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     } else {
       s->t_state.txn_conf->body_factory_template_base = NULL;
       s->t_state.txn_conf->body_factory_template_base_len = 0;
+    }
+    break;
+  case TS_CONFIG_HTTP_SIMPLE_RETRY_RESPONSE_CODES:
+    if (value && length > 0) {
+      s->t_state.txn_conf->simple_retry_response_codes_string = const_cast<char *>(value); // The "core" likes non-const char*
+    } else {
+      s->t_state.txn_conf->simple_retry_response_codes_string = NULL;
+    }
+    break;
+  case TS_CONFIG_HTTP_DEAD_SERVER_RETRY_RESPONSE_CODES:
+    if (value && length > 0) {
+      s->t_state.txn_conf->dead_server_retry_response_codes_string = const_cast<char *>(value); // The "core" likes non-const char*
+    } else {
+      s->t_state.txn_conf->dead_server_retry_response_codes_string = NULL;
     }
     break;
   default:
@@ -8579,6 +8617,10 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       if (!strncmp(name, "proxy.config.http.cache.cache_urls_that_look_dynamic", length))
         cnf = TS_CONFIG_HTTP_CACHE_CACHE_URLS_THAT_LOOK_DYNAMIC;
       break;
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.parent_origin.simple_retry_enabled", length))
+        cnf = TS_CONFIG_HTTP_SIMPLE_RETRY_ENABLED;
+      break;
     case 'n':
       if (!strncmp(name, "proxy.config.http.transaction_no_activity_timeout_in", length))
         cnf = TS_CONFIG_HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_IN;
@@ -8605,9 +8647,37 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     }
     break;
 
+  case 57:
+    if (!strncmp(name, "proxy.config.http.parent_origin.dead_server_retry_enabled", length)) {
+      cnf = TS_CONFIG_HTTP_DEAD_SERVER_RETRY_ENABLED;
+    }
+    break;
+
   case 58:
-    if (!strncmp(name, "proxy.config.http.connect_attempts_max_retries_dead_server", length))
-      cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER;
+    switch (name[length - 1]) {
+    case 'r':
+      if (!strncmp(name, "proxy.config.http.connect_attempts_max_retries_dead_server", length))
+        cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER;
+      break;
+    case 's':
+      if (!strncmp(name, "proxy.config.http.parent_proxy.per_parent_connect_attempts", length))
+        cnf = TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS;
+      break;
+    }
+    break;
+
+  case 59:
+    if (!strncmp(name, "proxy.config.http.parent_origin.simple_retry_response_codes", length)) {
+      cnf = TS_CONFIG_HTTP_SIMPLE_RETRY_RESPONSE_CODES;
+      typ = TS_RECORDDATATYPE_STRING;
+    }
+    break;
+
+  case 64:
+    if (!strncmp(name, "proxy.config.http.parent_origin.dead_server_retry_response_codes", length)) {
+      cnf = TS_CONFIG_HTTP_DEAD_SERVER_RETRY_RESPONSE_CODES;
+      typ = TS_RECORDDATATYPE_STRING;
+    }
     break;
   }
 
