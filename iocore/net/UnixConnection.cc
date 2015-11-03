@@ -322,6 +322,8 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
   int res;
 
   this->setRemote(target);
+  // apply dynamic options with this.addr initialized
+  apply_options(opt);
 
   cleaner<Connection> cleanup(this, &Connection::_cleanup); // mark for close until we succeed.
 
