@@ -147,6 +147,9 @@ LogFile::change_header(const char *header)
 int
 LogFile::open_file()
 {
+  // whatever we want to open should have a name
+  ink_assert(m_name != NULL);
+
   // is_open() takes into account if we're using BaseLogFile or a naked fd
   if (is_open()) {
     return LOG_FILE_NO_ERROR;

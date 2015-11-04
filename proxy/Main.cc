@@ -308,7 +308,6 @@ class DiagsLogContinuation : public Continuation
 {
 public:
   DiagsLogContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&DiagsLogContinuation::periodic); }
-
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {

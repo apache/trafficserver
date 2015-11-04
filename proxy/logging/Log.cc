@@ -1242,7 +1242,15 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
           break;
         }
 
+        int logfilefd = logfile->get_fd();
+        if (logfilefd < 0) {
+          Error("Failed to write log to %s. Invalid file descriptor: [tried %d, wrote %d]", logfile->get_name(),
+                total_bytes - bytes_written, bytes_written);
+          break;
+        }
+
         len = ::write(logfile->get_fd(), &buf[bytes_written], total_bytes - bytes_written);
+
         if (len < 0) {
           Error("Failed to write log to %s: [tried %d, wrote %d, %s]", logfile->get_name(), total_bytes - bytes_written,
                 bytes_written, strerror(errno));
