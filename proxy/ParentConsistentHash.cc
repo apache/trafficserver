@@ -213,7 +213,11 @@ ParentConsistentHash::lookupParent(bool first_call, ParentResult *result, Reques
     ink_assert(result->port != 0);
     Debug("parent_select", "Chosen parent: %s.%d", result->hostname, result->port);
   } else {
-    result->r = PARENT_FAIL;
+    if (parent_record->go_direct == true && parent_record->parent_is_proxy) {
+      result->r = PARENT_DIRECT;
+    } else {
+      result->r = PARENT_FAIL;
+    }
     result->hostname = NULL;
     result->port = 0;
     result->retry = false;
