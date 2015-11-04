@@ -41,6 +41,7 @@
 #include "ts/ink_assert.h"
 #include "ts/ink_time.h"
 #include "ts/ink_hrtime.h"
+#include "ts/ink_thread.h"
 #include "ts/Diags.h"
 
 int diags_on_for_plugins = 0;
@@ -48,6 +49,18 @@ bool DiagsConfigState::enabled[2] = {false, false};
 
 // Global, used for all diagnostics
 inkcoreapi Diags *diags = NULL;
+
+template<unsigned Size> static void
+vprintline(FILE * fp, char (&buffer)[Size], va_list ap)
+{
+    int nbytes;
+
+    nbytes = vfprintf(fp, buffer, ap);
+    if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
+      ink_assert(nbytes < Size);
+      putc('\n', fp);
+    }
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -240,8 +253,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
   *end_of_format = NUL;
 
   // add the thread id
-  pthread_t id = pthread_self();
-  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{0x%" PRIx64 "} ", (uint64_t)id);
+  end_of_format += snprintf(end_of_format, sizeof(format_buf), "{0x%" PRIx64 "} ", (uint64_t)ink_thread_self());
 
   //////////////////////////////////////
   // start with the diag level prefix //
@@ -316,46 +328,25 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
   lock();
   if (config.outputs[diags_level].to_diagslog) {
     if (diags_log && diags_log->m_fp) {
-      va_list ap_scratch;
-      va_copy(ap_scratch, ap);
-      buffer = format_buf_w_ts;
-      vfprintf(diags_log->m_fp, buffer, ap_scratch);
-      {
-        int len = strlen(buffer);
-        if (len > 0 && buffer[len - 1] != '\n') {
-          putc('\n', diags_log->m_fp);
-        }
-      }
+      va_list tmp;
+      va_copy(tmp, ap);
+      vprintline(diags_log->m_fp, format_buf_w_ts, tmp);
     }
   }
 
   if (config.outputs[diags_level].to_stdout) {
     if (stdout_log && stdout_log->m_fp) {
-      va_list ap_scratch;
-      va_copy(ap_scratch, ap);
-      buffer = format_buf_w_ts;
-      vfprintf(stdout_log->m_fp, buffer, ap_scratch);
-      {
-        int len = strlen(buffer);
-        if (len > 0 && buffer[len - 1] != '\n') {
-          putc('\n', stdout_log->m_fp);
-        }
-      }
+      va_list tmp;
+      va_copy(tmp, ap);
+      vprintline(stdout_log->m_fp, format_buf_w_ts, tmp);
     }
   }
 
   if (config.outputs[diags_level].to_stderr) {
     if (stderr_log && stderr_log->m_fp) {
-      va_list ap_scratch;
-      va_copy(ap_scratch, ap);
-      buffer = format_buf_w_ts;
-      vfprintf(stderr_log->m_fp, buffer, ap_scratch);
-      {
-        int len = strlen(buffer);
-        if (len > 0 && buffer[len - 1] != '\n') {
-          putc('\n', stderr_log->m_fp);
-        }
-      }
+      va_list tmp;
+      va_copy(tmp, ap);
+      vprintline(stderr_log->m_fp, format_buf_w_ts, tmp);
     }
   }
 
@@ -401,9 +392,11 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
     vsnprintf(syslog_buffer, sizeof(syslog_buffer) - 1, format_buf, ap);
     syslog(priority, "%s", syslog_buffer);
   }
+
 #if defined(freebsd)
   unlock();
 #endif
+
 }
 
 
