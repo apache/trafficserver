@@ -266,7 +266,7 @@ DiagsConfig::RegisterDiagConfig()
 }
 
 
-DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *actions, bool use_records)
+DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *actions, bool use_records) : diags_log(NULL)
 {
   char diags_logpath[PATH_NAME_MAX];
   ats_scoped_str logpath;
@@ -281,7 +281,7 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
   ////////////////////////////////////////////////////////////////////
 
   if (!use_records) {
-    diags = new Diags(tags, actions, NULL);
+    diags = new Diags(tags, actions, diags_log);
     config_diags_norecords();
     return;
   }

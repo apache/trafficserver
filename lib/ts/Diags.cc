@@ -650,8 +650,11 @@ Diags::should_roll_diagslog()
   // Roll diags_log if necessary
   if (diags_log && diags_log->is_init()) {
     if (diagslog_rolling_enabled == RollingEnabledValues::ROLL_ON_SIZE) {
+      // if we can't even check the file, we can forget about rotating
       struct stat buf;
-      fstat(fileno(diags_log->m_fp), &buf);
+      if (fstat(fileno(diags_log->m_fp), &buf) != 0)
+        return false;
+
       int size = buf.st_size;
       if (diagslog_rolling_size != -1 && size >= (diagslog_rolling_size * BYTES_IN_MB)) {
         fflush(diags_log->m_fp);
@@ -700,6 +703,10 @@ Diags::should_roll_diagslog()
 bool
 Diags::should_roll_outputlog()
 {
+  // stdout_log and stderr_log should never be NULL as this point in time
+  ink_assert(stdout_log != NULL);
+  ink_assert(stderr_log != NULL);
+
   bool ret_val = false;
   bool need_consider_stderr = true;
 
@@ -713,15 +720,18 @@ Diags::should_roll_outputlog()
   */
 
   // Roll stdout_log if necessary
-  if (stdout_log && stdout_log->is_init()) {
+  if (stdout_log->is_init()) {
     if (outputlog_rolling_enabled == RollingEnabledValues::ROLL_ON_SIZE) {
+      // if we can't even check the file, we can forget about rotating
       struct stat buf;
-      fstat(fileno(stdout_log->m_fp), &buf);
+      if (fstat(fileno(stdout_log->m_fp), &buf) != 0)
+        return false;
+
       int size = buf.st_size;
       if (outputlog_rolling_size != -1 && size >= outputlog_rolling_size * BYTES_IN_MB) {
         // since usually stdout and stderr are the same file on disk, we should just
         // play it safe and just flush both BaseLogFiles
-        if (stderr_log && stderr_log->is_init())
+        if (stderr_log->is_init())
           fflush(stderr_log->m_fp);
         fflush(stdout_log->m_fp);
 
@@ -746,7 +756,7 @@ Diags::should_roll_outputlog()
       if (outputlog_rolling_interval != -1 && (now - outputlog_time_last_roll) >= outputlog_rolling_interval) {
         // since usually stdout and stderr are the same file on disk, we should just
         // play it safe and just flush both BaseLogFiles
-        if (stderr_log && stderr_log->is_init())
+        if (stderr_log->is_init())
           fflush(stderr_log->m_fp);
         fflush(stdout_log->m_fp);
 
