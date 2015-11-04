@@ -1419,25 +1419,26 @@ change_uid_gid(const char *user)
  * has elevated file access.
  */
 void
-bind_outputs(const char *_bind_stdout, const char *_bind_stderr)
+bind_outputs(const char *bind_stdout, const char *bind_stderr)
 {
   int log_fd;
-  if (*_bind_stdout != 0) {
-    Debug("log", "binding stdout to %s", _bind_stdout);
-    log_fd = open(_bind_stdout, O_WRONLY | O_APPEND | O_CREAT, 0644);
+  ElevateAccess access;
+  if (*bind_stdout != 0) {
+    Debug("log", "binding stdout to %s", bind_stdout);
+    log_fd = open(bind_stdout, O_WRONLY | O_APPEND | O_CREAT | O_SYNC, 0644);
     if (log_fd < 0) {
-      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", _bind_stdout, errno, strerror(errno));
+      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stdout, errno, strerror(errno));
     } else {
       Debug("log", "duping stdout");
       dup2(log_fd, STDOUT_FILENO);
       close(log_fd);
     }
   }
-  if (*_bind_stderr != 0) {
-    Debug("log", "binding stderr to %s", _bind_stderr);
-    log_fd = open(_bind_stderr, O_WRONLY | O_APPEND | O_CREAT, 0644);
+  if (*bind_stderr != 0) {
+    Debug("log", "binding stderr to %s", bind_stderr);
+    log_fd = open(bind_stderr, O_WRONLY | O_APPEND | O_CREAT | O_SYNC, 0644);
     if (log_fd < 0) {
-      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", _bind_stderr, errno, strerror(errno));
+      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stderr, errno, strerror(errno));
     } else {
       Debug("log", "duping stderr");
       dup2(log_fd, STDERR_FILENO);
