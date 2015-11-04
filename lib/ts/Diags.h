@@ -269,7 +269,6 @@ private:
   RollingEnabledValues diagslog_rolling_enabled;
   int diagslog_rolling_interval;
   int diagslog_rolling_size;
-  time_t start_time; // time since Diags was constructed
   time_t outputlog_time_last_roll;
   time_t diagslog_time_last_roll;
 
