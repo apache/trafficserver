@@ -50,16 +50,11 @@ DiagsConfig::reconfigure_diags()
   static struct {
     const char *config_name;
     DiagsLevel level;
-  } output_records[] = {{"proxy.config.diags.output.diag", DL_Diag},
-                        {"proxy.config.diags.output.debug", DL_Debug},
-                        {"proxy.config.diags.output.status", DL_Status},
-                        {"proxy.config.diags.output.note", DL_Note},
-                        {"proxy.config.diags.output.warning", DL_Warning},
-                        {"proxy.config.diags.output.error", DL_Error},
-                        {"proxy.config.diags.output.fatal", DL_Fatal},
-                        {"proxy.config.diags.output.alert", DL_Alert},
-                        {"proxy.config.diags.output.emergency", DL_Emergency},
-                        {NULL, DL_Undefined}};
+  } output_records[] = {{"proxy.config.diags.output.diag", DL_Diag},           {"proxy.config.diags.output.debug", DL_Debug},
+                        {"proxy.config.diags.output.status", DL_Status},       {"proxy.config.diags.output.note", DL_Note},
+                        {"proxy.config.diags.output.warning", DL_Warning},     {"proxy.config.diags.output.error", DL_Error},
+                        {"proxy.config.diags.output.fatal", DL_Fatal},         {"proxy.config.diags.output.alert", DL_Alert},
+                        {"proxy.config.diags.output.emergency", DL_Emergency}, {NULL, DL_Undefined}};
 
   if (!callbacks_established) {
     register_diags_callbacks();
@@ -281,7 +276,8 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
   ////////////////////////////////////////////////////////////////////
 
   if (!use_records) {
-    diags = new Diags(tags, actions, NULL);
+    diags_log = NULL;
+    diags = new Diags(tags, actions, diags_log);
     config_diags_norecords();
     return;
   }
