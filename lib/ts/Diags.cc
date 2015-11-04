@@ -50,16 +50,17 @@ bool DiagsConfigState::enabled[2] = {false, false};
 // Global, used for all diagnostics
 inkcoreapi Diags *diags = NULL;
 
-template<unsigned Size> static void
-vprintline(FILE * fp, char (&buffer)[Size], va_list ap)
+template <unsigned Size>
+static void
+vprintline(FILE *fp, char(&buffer)[Size], va_list ap)
 {
-    int nbytes;
+  int nbytes;
 
-    nbytes = vfprintf(fp, buffer, ap);
-    if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
-      ink_assert(nbytes < Size);
-      putc('\n', fp);
-    }
+  nbytes = vfprintf(fp, buffer, ap);
+  if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
+    ink_assert(nbytes < Size);
+    putc('\n', fp);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -396,7 +397,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
 #if defined(freebsd)
   unlock();
 #endif
-
 }
 
 
