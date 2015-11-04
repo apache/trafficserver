@@ -326,7 +326,9 @@ BaseLogFile::open_file(int perm)
   m_fp = fopen(m_name.get(), "a+");
 
   // error check
-  if (!m_fp) {
+  if (m_fp) {
+    setlinebuf(m_fp);
+  } else {
     log_log_error("Error opening log file %s: %s\n", m_name.get(), strerror(errno));
     log_log_error("Actual error: %s\n", (errno == EINVAL ? "einval" : "something else"));
     return LOG_FILE_COULD_NOT_OPEN_FILE;
