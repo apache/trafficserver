@@ -50,7 +50,7 @@ bool DiagsConfigState::enabled[2] = {false, false};
 // Global, used for all diagnostics
 inkcoreapi Diags *diags = NULL;
 
-template <unsigned Size>
+template <int Size>
 static void
 vprintline(FILE *fp, char(&buffer)[Size], va_list ap)
 {
