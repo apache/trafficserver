@@ -1071,6 +1071,11 @@ HTTP Redirection
    This setting enables Trafficserver to not include the port in the Host header in the redirect follow request for default/standard ports
    (e.g. 80 for HTTP and 443 for HTTPS). Note that the port is still included in the Host header if it's non-default.
 
+.. ts:cv:: CONFIG proxy.config.http.redirect_use_orig_cache_key INT 0
+
+   This setting enables Trafficserver to allow using original request cache key (for example, set using a TS API) during a 3xx redirect follow.
+   The default behavior (0) is to use the URL specified by Location header in the 3xx response as the cache key.
+
 Origin Server Connect Attempts
 ==============================
 
