@@ -4394,7 +4394,7 @@ HttpSM::do_cache_lookup_and_read()
   // Changed the lookup_url to c_url which enables even
   // the new redirect url to perform a CACHE_LOOKUP
   URL *c_url;
-  if (t_state.redirect_info.redirect_in_process)
+  if (t_state.redirect_info.redirect_in_process && !t_state.txn_conf->redirect_use_orig_cache_key)
     c_url = t_state.hdr_info.client_request.url_get();
   else
     c_url = t_state.cache_info.lookup_url;

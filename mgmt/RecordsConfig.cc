@@ -169,12 +169,15 @@ static const RecordElement RecordsConfig[] =
   //#
   //# 1. redirection_enabled: if set to 1, redirection is enabled.
   //# 2. number_of_redirectionse: The maximum number of redirections TS permits
-  //# 3. post_copy_size: The maximum POST data size TS permits to copy
+  //# 3. proxy.config.http.redirect_use_orig_cache_key: Location Header if set to 0 (default), else use original request cache key
+  //# 4. post_copy_size: The maximum POST data size TS permits to copy
   //#
   //##############################################################################
   {RECT_CONFIG, "proxy.config.http.redirection_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.number_of_redirections", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.redirect_use_orig_cache_key", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.redirect_host_no_port", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
