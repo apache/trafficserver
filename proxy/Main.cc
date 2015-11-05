@@ -1409,23 +1409,41 @@ change_uid_gid(const char *user)
 #endif
 }
 
+/** Open a file, elevating privilege only if needed.
+
+    @internal This is necessary because the CI machines run the regression tests
+    as a normal user, not as root, so attempts to get privilege fail even though
+    the @c open would succeed without elevation. So, try that first and ask for
+    elevation only on an explicit permission failure.
+*/
+static int
+elevating_open(char const* path, unsigned int flags, unsigned int fperms)
+{
+  int fd = open(path, flags, fperms);
+  if (fd < 0 && EPERM == errno) {
+    ElevateAccess access;
+    fd = open(path, flags, fperms);
+  }
+  return fd;
+}
+
 /*
  * Binds stdout and stderr to files specified by the parameters
  *
  * On failure to bind, emits a warning and whatever is being bound
  * just isn't bound
  *
- * This depends on being called before the switch to the ATS user occurs so that it
- * has elevated file access.
+ * This must work without the ability to elevate privilege if the files are accessible without.
  */
 void
 bind_outputs(const char *bind_stdout, const char *bind_stderr)
 {
   int log_fd;
-  ElevateAccess access;
+  unsigned int flags = O_WRONLY | O_APPEND | O_CREAT | O_SYNC;
+
   if (*bind_stdout != 0) {
     Debug("log", "binding stdout to %s", bind_stdout);
-    log_fd = open(bind_stdout, O_WRONLY | O_APPEND | O_CREAT | O_SYNC, 0644);
+    log_fd = elevating_open(bind_stdout, flags, 0644);
     if (log_fd < 0) {
       fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stdout, errno, strerror(errno));
     } else {
@@ -1436,7 +1454,7 @@ bind_outputs(const char *bind_stdout, const char *bind_stderr)
   }
   if (*bind_stderr != 0) {
     Debug("log", "binding stderr to %s", bind_stderr);
-    log_fd = open(bind_stderr, O_WRONLY | O_APPEND | O_CREAT | O_SYNC, 0644);
+    log_fd = elevating_open(bind_stderr, O_WRONLY | O_APPEND | O_CREAT | O_SYNC, 0644);
     if (log_fd < 0) {
       fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stderr, errno, strerror(errno));
     } else {
