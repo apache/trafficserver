@@ -37,16 +37,38 @@ extern size_t timeout;
 
 Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l)
   : host(h), length(TSHttpHdrLengthGet(b, l)),
-    // coverity[ctor_dtor_leak]
     io(new ats::io::IO())
 {
   assert(!host.empty());
   assert(b != NULL);
   assert(l != NULL);
-  assert(io != NULL);
   assert(length > 0);
+  assert(io.get() != NULL);
   TSHttpHdrPrint(b, l, io->buffer);
   assert(length == TSIOBufferReaderAvail(io->reader));
+}
+
+Request::Request(const Request &r)
+  : host(r.host), length(r.length),
+    io(const_cast< Request & >(r).io)
+{
+  assert(!host.empty());
+  assert(length > 0);
+  assert(io.get() != NULL);
+  assert(r.io.get() != NULL);
+}
+
+Request &
+Request::operator=(const Request &r)
+{
+  host = r.host;
+  length = r.length;
+  io = const_cast< Request & >(r).io;
+  assert(!host.empty());
+  assert(length > 0);
+  assert(io.get() != NULL);
+  assert(r.io.get() == NULL);
+  return *this;
 }
 
 uint64_t
@@ -218,7 +240,7 @@ addBody(Requests &r, const TSIOBufferReader re)
   }
   assert(length > 0);
   for (; iterator != end; ++iterator) {
-    assert(iterator->io != NULL);
+    assert(iterator->io.get() != NULL);
     const int64_t size = copy(re, iterator->io->buffer);
     assert(size == length);
     iterator->length += size;
@@ -231,7 +253,7 @@ dispatch(Requests &r, const int t)
   Requests::iterator iterator = r.begin();
   const Requests::iterator end = r.end();
   for (; iterator != end; ++iterator) {
-    assert(iterator->io != NULL);
+    assert(iterator->io.get() != NULL);
     if (TSIsDebugTagSet(PLUGIN_TAG) > 0) {
       TSDebug(PLUGIN_TAG, "Dispatching %i bytes to \"%s\"", iterator->length, iterator->host.c_str());
       std::string b;

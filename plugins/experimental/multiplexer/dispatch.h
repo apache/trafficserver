@@ -54,6 +54,8 @@ struct Request {
   std::auto_ptr<ats::io::IO> io;
 
   Request(const std::string &, const TSMBuffer, const TSMLoc);
+  Request(const Request &);
+  Request &operator=(const Request &);
 };
 
 typedef std::vector<Request> Requests;
