@@ -1485,20 +1485,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (cmd_disable_freelist) {
     ink_freelist_init_ops(ink_freelist_malloc_ops());
   }
-  // Bind stdout and stderr to specified switches
-  // Still needed despite the set_std{err,out}_output() calls later since there are
-  // fprintf's before those calls
-  bind_outputs(bind_stdout, bind_stderr);
-
   // Specific validity checks.
   if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {
     fprintf(stderr, "-D option can only be used with the %s command\n", CMD_VERIFY_CONFIG);
     _exit(1);
   }
-
-  // Set stdout/stdin to be unbuffered
-  setbuf(stdout, NULL);
-  setbuf(stdin, NULL);
 
   // Bootstrap syslog.  Since we haven't read records.config
   //   yet we do not know where
@@ -1513,6 +1504,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // re-start Diag completely) because at initialize, TM only has 1 thread.
   // In TS, some threads have already created, so if we delete Diag and
   // re-start it again, TS will crash.
+  // This is also needed for log rotation - setting up the file can cause privilege
+  // related errors and if diagsConfig isn't get up yet that will crash on a NULL pointer.
   diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
   diags = diagsConfig->diags;
   diags->prefix_str = "Server ";
@@ -1520,6 +1513,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   diags->set_stderr_output(bind_stderr);
   if (is_debug_tag_set("diags"))
     diags->dump();
+
+  // Bind stdout and stderr to specified switches
+  // Still needed despite the set_std{err,out}_output() calls later since there are
+  // fprintf's before those calls
+  bind_outputs(bind_stdout, bind_stderr);
 
   // Local process manager
   initialize_process_manager();

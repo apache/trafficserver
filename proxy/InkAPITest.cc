@@ -2179,6 +2179,7 @@ checkHttpTxnServerRespGet(SocketTest *test, void *data)
 
 // This func is called both by us when scheduling EVENT_IMMEDIATE
 // And by HTTP SM for registered hooks
+// Depending on the timing of the DNS response, OS_DNS can happen before or after CACHE_LOOKUP.
 static int
 mytest_handler(TSCont contp, TSEvent event, void *data)
 {
@@ -2215,7 +2216,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     break;
 
   case TS_EVENT_HTTP_OS_DNS:
-    if (test->hook_mask == 7) {
+    if (test->hook_mask == 3 || test->hook_mask == 7) {
       test->hook_mask |= 8;
     }
 
@@ -2230,7 +2231,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     break;
 
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    if (test->hook_mask == 3) {
+    if (test->hook_mask == 3 || test->hook_mask == 11) {
       test->hook_mask |= 4;
     }
     TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
