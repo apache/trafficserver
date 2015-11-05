@@ -230,11 +230,7 @@ freelist_new(InkFreeList *f)
 
     } else {
       SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), 0), FREELIST_VERSION(item) + 1);
-#if TS_HAS_128BIT_CAS
-      result = ink_atomic_cas((__int128_t *)&f->head.data, item.data, next.data);
-#else
-      result = ink_atomic_cas((int64_t *)&f->head.data, item.data, next.data);
-#endif
+      result = ink_atomic_cas(&f->head.data, item.data, next.data);
 
 #ifdef SANITY
       if (result) {
@@ -310,11 +306,7 @@ freelist_free(InkFreeList *f, void *item)
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
     INK_MEMORY_BARRIER;
-#if TS_HAS_128BIT_CAS
-    result = ink_atomic_cas((__int128_t *)&f->head, h.data, item_pair.data);
-#else
-    result = ink_atomic_cas((int64_t *)&f->head, h.data, item_pair.data);
-#endif
+    result = ink_atomic_cas(&f->head.data, h.data, item_pair.data);
   }
 }
 
@@ -375,11 +367,7 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));
     INK_MEMORY_BARRIER;
-#if TS_HAS_128BIT_CAS
-    result = ink_atomic_cas((__int128_t *)&f->head, h.data, item_pair.data);
-#else  /* !TS_HAS_128BIT_CAS */
-    result = ink_atomic_cas((int64_t *)&f->head, h.data, item_pair.data);
-#endif /* TS_HAS_128BIT_CAS */
+    result = ink_atomic_cas(&f->head.data, h.data, item_pair.data);
   }
 }
 
@@ -485,11 +473,7 @@ ink_atomiclist_pop(InkAtomicList *l)
     if (TO_PTR(FREELIST_POINTER(item)) == NULL)
       return NULL;
     SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset), FREELIST_VERSION(item) + 1);
-#if TS_HAS_128BIT_CAS
-    result = ink_atomic_cas((__int128_t *)&l->head.data, item.data, next.data);
-#else
-    result = ink_atomic_cas((int64_t *)&l->head.data, item.data, next.data);
-#endif
+    result = ink_atomic_cas(&l->head.data, item.data, next.data);
   } while (result == 0);
   {
     void *ret = TO_PTR(FREELIST_POINTER(item));
@@ -509,11 +493,7 @@ ink_atomiclist_popall(InkAtomicList *l)
     if (TO_PTR(FREELIST_POINTER(item)) == NULL)
       return NULL;
     SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
-#if TS_HAS_128BIT_CAS
-    result = ink_atomic_cas((__int128_t *)&l->head.data, item.data, next.data);
-#else
-    result = ink_atomic_cas((int64_t *)&l->head.data, item.data, next.data);
-#endif
+    result = ink_atomic_cas(&l->head.data, item.data, next.data);
   } while (result == 0);
   {
     void *ret = TO_PTR(FREELIST_POINTER(item));
@@ -543,11 +523,7 @@ ink_atomiclist_push(InkAtomicList *l, void *item)
     ink_assert(item != TO_PTR(h));
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
     INK_MEMORY_BARRIER;
-#if TS_HAS_128BIT_CAS
-    result = ink_atomic_cas((__int128_t *)&l->head, head.data, item_pair.data);
-#else
-    result = ink_atomic_cas((int64_t *)&l->head, head.data, item_pair.data);
-#endif
+    result = ink_atomic_cas(&l->head.data, head.data, item_pair.data);
   } while (result == 0);
 
   return TO_PTR(h);
@@ -569,11 +545,7 @@ ink_atomiclist_remove(InkAtomicList *l, void *item)
   while (TO_PTR(FREELIST_POINTER(head)) == item) {
     head_p next;
     SET_FREELIST_POINTER_VERSION(next, item_next, FREELIST_VERSION(head) + 1);
-#if TS_HAS_128BIT_CAS
-    result = ink_atomic_cas((__int128_t *)&l->head.data, head.data, next.data);
-#else
-    result = ink_atomic_cas((int64_t *)&l->head.data, head.data, next.data);
-#endif
+    result = ink_atomic_cas(&l->head.data, head.data, next.data);
 
     if (result) {
       *addr_next = NULL;
