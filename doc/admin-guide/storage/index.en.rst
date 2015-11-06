@@ -332,10 +332,10 @@ In the following example, Traffic Server is running on the domain
 from cache. Because by default we do not permit ``PURGE`` requests from
 any other IP, we connect to the daemon via localhost: ::
 
-      $ curl -X PURGE -H 'Host: example.com' -v "http://localhost/remove_me.jpg"
-      * About to connect() to localhost port 80 (#0)
+      $ curl -vX PURGE --resolve example.com:80:127.0.0.1 http://example.com/remove_me.jpg
+      * About to connect() to example.com port 80 (#0)
       * Trying 127.0.0.1... connected
-      * Connected to localhost (127.0.0.1) port 80 (#0)
+      * Connected to example.com (127.0.0.1) port 80 (#0)
 
       > PURGE /remove_me.jpg HTTP/1.1
       > User-Agent: curl/7.19.7

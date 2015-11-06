@@ -308,7 +308,6 @@ class DiagsLogContinuation : public Continuation
 {
 public:
   DiagsLogContinuation() : Continuation(new_ProxyMutex()) { SET_HANDLER(&DiagsLogContinuation::periodic); }
-
   int
   periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   {
@@ -1410,35 +1409,54 @@ change_uid_gid(const char *user)
 #endif
 }
 
+/** Open a file, elevating privilege only if needed.
+
+    @internal This is necessary because the CI machines run the regression tests
+    as a normal user, not as root, so attempts to get privilege fail even though
+    the @c open would succeed without elevation. So, try that first and ask for
+    elevation only on an explicit permission failure.
+*/
+static int
+elevating_open(char const* path, unsigned int flags, unsigned int fperms)
+{
+  int fd = open(path, flags, fperms);
+  if (fd < 0 && EPERM == errno) {
+    ElevateAccess access;
+    fd = open(path, flags, fperms);
+  }
+  return fd;
+}
+
 /*
  * Binds stdout and stderr to files specified by the parameters
  *
  * On failure to bind, emits a warning and whatever is being bound
  * just isn't bound
  *
- * This depends on being called before the switch to the ATS user occurs so that it
- * has elevated file access.
+ * This must work without the ability to elevate privilege if the files are accessible without.
  */
 void
-bind_outputs(const char *_bind_stdout, const char *_bind_stderr)
+bind_outputs(const char *bind_stdout, const char *bind_stderr)
 {
   int log_fd;
-  if (*_bind_stdout != 0) {
-    Debug("log", "binding stdout to %s", _bind_stdout);
-    log_fd = open(_bind_stdout, O_WRONLY | O_APPEND | O_CREAT, 0644);
+  unsigned int flags = O_WRONLY | O_APPEND | O_CREAT | O_SYNC;
+
+  if (*bind_stdout != 0) {
+    Debug("log", "binding stdout to %s", bind_stdout);
+    log_fd = elevating_open(bind_stdout, flags, 0644);
     if (log_fd < 0) {
-      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", _bind_stdout, errno, strerror(errno));
+      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stdout, errno, strerror(errno));
     } else {
       Debug("log", "duping stdout");
       dup2(log_fd, STDOUT_FILENO);
       close(log_fd);
     }
   }
-  if (*_bind_stderr != 0) {
-    Debug("log", "binding stderr to %s", _bind_stderr);
-    log_fd = open(_bind_stderr, O_WRONLY | O_APPEND | O_CREAT, 0644);
+  if (*bind_stderr != 0) {
+    Debug("log", "binding stderr to %s", bind_stderr);
+    log_fd = elevating_open(bind_stderr, O_WRONLY | O_APPEND | O_CREAT | O_SYNC, 0644);
     if (log_fd < 0) {
-      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", _bind_stderr, errno, strerror(errno));
+      fprintf(stdout, "[Warning]: TS unable to open log file \"%s\" [%d '%s']\n", bind_stderr, errno, strerror(errno));
     } else {
       Debug("log", "duping stderr");
       dup2(log_fd, STDERR_FILENO);
@@ -1485,20 +1503,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (cmd_disable_freelist) {
     ink_freelist_init_ops(ink_freelist_malloc_ops());
   }
-  // Bind stdout and stderr to specified switches
-  // Still needed despite the set_std{err,out}_output() calls later since there are
-  // fprintf's before those calls
-  bind_outputs(bind_stdout, bind_stderr);
-
   // Specific validity checks.
   if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {
     fprintf(stderr, "-D option can only be used with the %s command\n", CMD_VERIFY_CONFIG);
     _exit(1);
   }
-
-  // Set stdout/stdin to be unbuffered
-  setbuf(stdout, NULL);
-  setbuf(stdin, NULL);
 
   // Bootstrap syslog.  Since we haven't read records.config
   //   yet we do not know where
@@ -1513,6 +1522,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // re-start Diag completely) because at initialize, TM only has 1 thread.
   // In TS, some threads have already created, so if we delete Diag and
   // re-start it again, TS will crash.
+  // This is also needed for log rotation - setting up the file can cause privilege
+  // related errors and if diagsConfig isn't get up yet that will crash on a NULL pointer.
   diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
   diags = diagsConfig->diags;
   diags->prefix_str = "Server ";
@@ -1520,6 +1531,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   diags->set_stderr_output(bind_stderr);
   if (is_debug_tag_set("diags"))
     diags->dump();
+
+  // Bind stdout and stderr to specified switches
+  // Still needed despite the set_std{err,out}_output() calls later since there are
+  // fprintf's before those calls
+  bind_outputs(bind_stdout, bind_stderr);
 
   // Local process manager
   initialize_process_manager();

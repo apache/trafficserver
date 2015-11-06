@@ -109,7 +109,7 @@ public:
     _read_from_file();
   }
 
-  BaseMetaInfo(char *filename, time_t creation) : _creation_time(creation), _flags(VALID_CREATION_TIME)
+  BaseMetaInfo(char *filename, time_t creation) : _creation_time(creation), _log_object_signature(0), _flags(VALID_CREATION_TIME)
   {
     _build_name(filename);
     _write_to_file();
@@ -123,7 +123,6 @@ public:
   }
 
   ~BaseMetaInfo() { ats_free(_filename); }
-
   bool
   get_creation_time(time_t *time)
   {

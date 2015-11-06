@@ -1793,9 +1793,6 @@ iocore_include_dirs="-I\$(top_srcdir)/iocore/eventsystem \
 -I\$(top_srcdir)/iocore/utils \
 -I\$(top_srcdir)/iocore/dns"
 
-# Testing Framework suffix generation hack
-TFW_PACKAGE_SUFFIX=$os_type
-
 AC_SUBST([CC])
 AC_SUBST([CFLAGS])
 AC_SUBST([CXX])
@@ -1810,7 +1807,6 @@ AC_SUBST([SHARED_CFLAGS])
 AC_SUBST([SHARED_CXXFLAGS])
 AC_SUBST([SHARED_CXXLINKFLAGS])
 AC_SUBST([SHARED_LDFLAGS])
-AC_SUBST([TFW_PACKAGE_SUFFIX])
 
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES

@@ -22,7 +22,7 @@ man_pages = [
   ('developer-guide/api/' + filename[:-4], filename.split('.', 1)[0], '', None, '3ts') for filename in os.listdir('developer-guide/api') if filename != 'index.en.rst' and filename.endswith('.rst')] + [
 
   ('appendices/command-line/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
-  ('appendices/command-line/traffic_ctl.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
+  ('appendices/command-line/traffic_ctl.en', 'traffic_ctl', u'Traffic Server command line tool', None, '8'),
   ('appendices/command-line/traffic_crashlog.en', 'traffic_crashlog', u'Traffic Server crash log helper', None, '8'),
   ('appendices/command-line/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
   ('appendices/command-line/traffic_logcat.en', 'traffic_logcat', u'Traffic Server log spooler', None, '8'),

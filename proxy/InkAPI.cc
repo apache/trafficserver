@@ -7976,6 +7976,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->number_of_redirections;
     break;
+  case TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->redirect_use_orig_cache_key;
+    break;
   case TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->per_parent_connect_attempts;
@@ -8503,6 +8507,10 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'e':
       if (0 == strncmp(name, "proxy.config.http.auth_server_session_private", length))
         cnf = TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE;
+      break;
+    case 'y':
+      if (!strncmp(name, "proxy.config.http.redirect_use_orig_cache_key", length))
+        cnf = TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY;
       break;
     }
     break;

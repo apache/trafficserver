@@ -120,6 +120,9 @@ SpdyClientSession::init(NetVConnection *netvc)
 void
 SpdyClientSession::clear()
 {
+  if (!mutex)
+    return; // this object wasn't initialized.
+
   int last_event = event;
 
   SPDY_DECREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);

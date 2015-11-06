@@ -1230,6 +1230,10 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
         continue;
       }
 
+      int logfilefd = logfile->get_fd();
+      // This should always be true because we just checked it.
+      ink_assert(logfilefd >= 0);
+
       // write *all* data to target file as much as possible
       //
       while (total_bytes - bytes_written) {
@@ -1242,7 +1246,8 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
           break;
         }
 
-        len = ::write(logfile->get_fd(), &buf[bytes_written], total_bytes - bytes_written);
+        len = ::write(logfilefd, &buf[bytes_written], total_bytes - bytes_written);
+
         if (len < 0) {
           Error("Failed to write log to %s: [tried %d, wrote %d, %s]", logfile->get_name(), total_bytes - bytes_written,
                 bytes_written, strerror(errno));

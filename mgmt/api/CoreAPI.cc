@@ -362,7 +362,7 @@ ServerBacktrace(unsigned /* options */, char **trace)
   // Unfortunately, we need to be privileged here. We either need to be root or to be holding
   // the CAP_SYS_PTRACE capability. Even though we are the parent traffic_manager, it is not
   // traceable without privilege because the process credentials do not match.
-  ElevateAccess access(true, ElevateAccess::TRACE_PRIVILEGE);
+  ElevateAccess access(ElevateAccess::TRACE_PRIVILEGE);
   threadlist threads(threads_for_process(lmgmt->watched_process_pid));
   textBuffer text(0);
 

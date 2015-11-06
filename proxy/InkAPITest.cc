@@ -2179,6 +2179,7 @@ checkHttpTxnServerRespGet(SocketTest *test, void *data)
 
 // This func is called both by us when scheduling EVENT_IMMEDIATE
 // And by HTTP SM for registered hooks
+// Depending on the timing of the DNS response, OS_DNS can happen before or after CACHE_LOOKUP.
 static int
 mytest_handler(TSCont contp, TSEvent event, void *data)
 {
@@ -2215,7 +2216,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     break;
 
   case TS_EVENT_HTTP_OS_DNS:
-    if (test->hook_mask == 7) {
+    if (test->hook_mask == 3 || test->hook_mask == 7) {
       test->hook_mask |= 8;
     }
 
@@ -2230,7 +2231,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
     break;
 
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    if (test->hook_mask == 3) {
+    if (test->hook_mask == 3 || test->hook_mask == 11) {
       test->hook_mask |= 4;
     }
     TSHttpTxnReenable((TSHttpTxn)data, TS_EVENT_HTTP_CONTINUE);
@@ -7209,7 +7210,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.auth_server_session_private", "proxy.config.http.slow.log.threshold", "proxy.config.http.cache.generation",
   "proxy.config.body_factory.template_base", "proxy.config.http.cache.open_write_fail_action",
   "proxy.config.http.redirection_enabled", "proxy.config.http.number_of_redirections",
-  "proxy.config.http.cache.max_open_write_retries"};
+  "proxy.config.http.cache.max_open_write_retries", "proxy.config.http.redirect_use_orig_cache_key"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
