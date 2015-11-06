@@ -188,6 +188,9 @@ public:
   //      to clear the bits indicating the parent is down
   //
   virtual void recordRetrySuccess(ParentResult *result) = 0;
+
+  // virtual destructor.
+  virtual ~ParentSelectionStrategy() {};
 };
 
 struct config_params {
