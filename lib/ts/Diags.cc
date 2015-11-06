@@ -589,20 +589,10 @@ Diags::setup_diagslog(BaseLogFile *blf)
   if (!diags_log)
     return;
 
-  // get file stream from BaseLogFile filedes
-  if (blf->open_file() == BaseLogFile::LOG_FILE_NO_ERROR) {
-    if (blf->m_fp) {
-      int status;
-      status = setvbuf(blf->m_fp, NULL, _IOLBF, 512);
-      if (status != 0) {
-        log_log_error("Could not setvbuf() for %s\n", blf->get_name());
-        blf->close_file();
-        delete blf;
-        diags_log = NULL;
-      }
-    } else {
+  if (blf->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
+      delete blf;
+	  diags_log = NULL;
       log_log_error("Could not open diags log file: %s\n", strerror(errno));
-    }
   }
   log_log_trace("Exiting setup_diagslog, name=%s, this=%p\n", blf->get_name(), this);
 }
