@@ -590,9 +590,9 @@ Diags::setup_diagslog(BaseLogFile *blf)
     return;
 
   if (blf->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
-      delete blf;
-	  diags_log = NULL;
-      log_log_error("Could not open diags log file: %s\n", strerror(errno));
+    delete blf;
+    diags_log = NULL;
+    log_log_error("Could not open diags log file: %s\n", strerror(errno));
   }
   log_log_trace("Exiting setup_diagslog, name=%s, this=%p\n", blf->get_name(), this);
 }
