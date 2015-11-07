@@ -319,6 +319,10 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
   void *edata = pristine_edata;
 
   InterceptPlugin::State *state = static_cast<InterceptPlugin::State *>(TSContDataGet(cont));
+  if(!state ) { // plugin is done, return.
+  	return 0;
+  }
+
   ScopedSharedMutexTryLock scopedTryLock(state->plugin_mutex_);
   if (!scopedTryLock.hasLock()) {
     LOG_ERROR("Couldn't get plugin lock. Will retry");
@@ -345,6 +349,7 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
   } else {                             // plugin was destroyed before intercept was completed; cleaning up here
     LOG_DEBUG("Cleaning up as intercept plugin is already destroyed");
     destroyCont(state);
+    TSContDataSet(cont, NULL);
     delete state;
   }
   return 0;
