@@ -319,8 +319,8 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
   void *edata = pristine_edata;
 
   InterceptPlugin::State *state = static_cast<InterceptPlugin::State *>(TSContDataGet(cont));
-  if(!state ) { // plugin is done, return.
-  	return 0;
+  if (!state) { // plugin is done, return.
+    return 0;
   }
 
   ScopedSharedMutexTryLock scopedTryLock(state->plugin_mutex_);
