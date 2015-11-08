@@ -169,7 +169,7 @@ LocalManager::clusterOk()
 bool
 LocalManager::processRunning()
 {
-  if (watched_process_fd != -1 && watched_process_pid != -1) {
+  if (watched_process_fd != ts::NO_FD && watched_process_pid != -1) {
     return true;
   } else {
     return false;
@@ -193,11 +193,6 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
   mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
   proxy_running = 0;
   RecSetRecordInt("proxy.node.proxy_running", 0, REC_SOURCE_DEFAULT);
-  mgmt_sync_key = REC_readInteger("proxy.config.lm.sem_id", &found);
-  if (!found || mgmt_sync_key <= 0) {
-    mgmt_log("Bad or missing proxy.config.lm.sem_id value; using default id %d\n", MGMT_SEMID_DEFAULT);
-    mgmt_sync_key = MGMT_SEMID_DEFAULT;
-  }
 
   virt_map = NULL;
 
@@ -403,7 +398,7 @@ LocalManager::pollMgmtProcessServer()
     timeout.tv_usec = process_server_timeout_msecs * 1000;
     FD_ZERO(&fdlist);
     FD_SET(process_server_sockfd, &fdlist);
-    if (watched_process_fd != -1)
+    if (watched_process_fd != ts::NO_FD)
       FD_SET(watched_process_fd, &fdlist);
 
 #if TS_HAS_WCCP
@@ -432,8 +427,6 @@ LocalManager::pollMgmtProcessServer()
         struct sockaddr_in clientAddr;
         socklen_t clientLen = sizeof(clientAddr);
         int new_sockfd = mgmt_accept(process_server_sockfd, (struct sockaddr *)&clientAddr, &clientLen);
-        MgmtMessageHdr *mh;
-        int data_len;
 
         mgmt_log(stderr, "[LocalManager::pollMgmtProcessServer] New process connecting fd '%d'\n", new_sockfd);
 
@@ -441,16 +434,6 @@ LocalManager::pollMgmtProcessServer()
           mgmt_elog(stderr, errno, "[LocalManager::pollMgmtProcessServer] ==> ");
         } else if (!processRunning()) {
           watched_process_fd = new_sockfd;
-          data_len = sizeof(mgmt_sync_key);
-          mh = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + data_len);
-          mh->msg_id = MGMT_EVENT_SYNC_KEY;
-          mh->data_len = data_len;
-          memcpy((char *)mh + sizeof(MgmtMessageHdr), &mgmt_sync_key, data_len);
-          if (mgmt_write_pipe(new_sockfd, (char *)mh, sizeof(MgmtMessageHdr) + data_len) <= 0) {
-            mgmt_elog(errno, "[LocalManager::pollMgmtProcessServer] Error writing sync key message!\n");
-            close_socket(new_sockfd);
-            watched_process_fd = watched_process_pid = -1;
-          }
         } else {
           close_socket(new_sockfd);
         }

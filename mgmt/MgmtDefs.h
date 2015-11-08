@@ -31,14 +31,14 @@
  *
  */
 
-#ifndef _MGMT_DEF_H
-#define _MGMT_DEF_H
+#ifndef _MGMT_DEFS_H
+#define _MGMT_DEFS_H
 
 /*
  * Type definitions.
  */
 #include "ts/ink_defs.h"
-#include "ts/ink_hrtime.h"
+//#include "ts/ink_hrtime.h"
 
 typedef int64_t MgmtIntCounter;
 typedef int64_t MgmtInt;
@@ -61,28 +61,6 @@ typedef enum {
  */
 typedef void *(*MgmtCallback)(void *opaque_cb_data, char *data_raw, int data_len);
 
-#define MGMT_SEMID_DEFAULT 11452
-#define MGMT_DB_FILENAME "mgmt_db"
 #define LM_CONNECTION_SERVER "processerver.sock"
 
-/* Structs used in Average Statistics calculations */
-struct StatTwoIntSamples {
-  const char *lm_record_name;
-  ink_hrtime previous_time;
-  ink_hrtime current_time;
-  MgmtInt previous_value;
-  MgmtInt current_value;
-
-  MgmtInt
-  diff_value()
-  {
-    return (current_value - previous_value);
-  }
-  ink_hrtime
-  diff_time()
-  {
-    return (current_time - previous_time);
-  }
-};
-
-#endif /* _MGMT_DEF_H */
+#endif /* _MGMT_DEFS_H */

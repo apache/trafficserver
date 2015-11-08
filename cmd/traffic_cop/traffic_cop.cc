@@ -136,7 +136,6 @@ static const int kill_timeout = 1 * 60; //  1 min
 
 static int child_pid = 0;
 static int child_status = 0;
-static int sem_id = 11452;
 
 AppVersionInfo appVersionInfo;
 
@@ -660,7 +659,6 @@ config_reload_records()
   config_read_int("proxy.config.process_manager.mgmt_port", &http_backdoor_port, true);
   config_read_int("proxy.config.admin.synthetic_port", &synthetic_port, true);
   config_read_int("proxy.config.cluster.rsport", &rs_port, true);
-  config_read_int("proxy.config.lm.sem_id", &sem_id, true);
   config_read_int("proxy.config.cop.init_sleep_time", &init_sleep_time, true);
 
 #if defined(linux)
@@ -731,34 +729,10 @@ spawn_manager()
   char *options[OPTIONS_MAX];
   char *last;
   char *tok;
-  int err;
-  int key;
 
   ats_scoped_str bindir(config_read_bin_dir());
 
   cop_log_trace("Entering spawn_manager()\n");
-  // Clean up shared memory segments.
-  if (sem_id > 0) {
-    key = sem_id;
-  } else {
-    key = 11452;
-  }
-  for (;; key++) {
-    err = semget(key, 1, 0666);
-    if (err < 0) {
-      break;
-    }
-#if defined(solaris) || defined(kfreebsd) || defined(unknown)
-    err = semctl(err, 1, IPC_RMID);
-#else
-    union semun dummy_semun;
-    memset(&dummy_semun, 0, sizeof(dummy_semun));
-    err = semctl(err, 1, IPC_RMID, dummy_semun);
-#endif
-    if (err < 0) {
-      break;
-    }
-  }
 
   Layout::relative_to(prog, sizeof(prog), bindir, manager_binary);
   if (access(prog, R_OK | X_OK) == -1) {
@@ -801,14 +775,14 @@ spawn_manager()
     }
   }
 
-  err = fork();
-  if (err == 0) {
+  pid_t child = fork();
+  if (child == 0) {
     EnableDeathSignal(SIGTERM);
 
-    err = execv(prog, options);
-    cop_log_trace("Somehow execv(%s, options, NULL) failed (%d)!\n", prog, err);
+    execv(prog, options);
+    cop_log_trace("Somehow execv(%s, options, NULL) failed: %s (%d)!\n", prog, strerror(errno), errno);
     exit(1);
-  } else if (err == -1) {
+  } else if (child == -1) {
     cop_log(COP_FATAL, "unable to fork [%d '%s']\n", errno, strerror(errno));
     exit(1);
   }
