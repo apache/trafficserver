@@ -747,15 +747,16 @@ spawn_manager()
     char old_log_file[PATH_NAME_MAX];
     snprintf(old_log_file, sizeof(old_log_file), "%s.old", log_file);
     // coverity[toctou]
-    rename(log_file, old_log_file);
-    cop_log(COP_WARNING, "rename %s to %s as it is not accessible.\n", log_file, old_log_file);
+    if (rename(log_file, old_log_file) != 0)
+      cop_log(COP_WARNING, "unable to rename() \"%s\" to \"%s\" [%d '%s']\n", log_file, old_log_file, errno, strerror(errno));
+    else
+      cop_log(COP_WARNING, "rename %s to %s as it is not accessible.\n", log_file, old_log_file);
   }
 
   // Bind stdout and stderr of traffic_manager to traffic.out
-  int max_opts_len = OPTIONS_LEN_MAX - strlen(manager_options);
-  char tm_opt_buf[max_opts_len];
-  int cx = snprintf(tm_opt_buf, max_opts_len, " --%s %s --%s %s", TM_OPT_BIND_STDOUT, log_file, TM_OPT_BIND_STDERR, log_file);
-  if (cx >= 0 && cx < max_opts_len)
+  char tm_opt_buf[OPTIONS_LEN_MAX];
+  int cx = snprintf(tm_opt_buf, OPTIONS_LEN_MAX, " --%s %s --%s %s", TM_OPT_BIND_STDOUT, log_file, TM_OPT_BIND_STDERR, log_file);
+  if (cx >= 0 && cx < OPTIONS_LEN_MAX && (strlen(manager_options) + strlen(tm_opt_buf) < OPTIONS_LEN_MAX))
     strcat(manager_options, tm_opt_buf);
   else
     cop_log(COP_WARNING, "bind_stdout and bind_stderr flags are too long, not binding anything\n");
