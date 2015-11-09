@@ -94,7 +94,6 @@ static gid_t admin_gid;
 static bool admin_user_p = false;
 static char manager_binary[PATH_NAME_MAX] = "traffic_manager";
 static char server_binary[PATH_NAME_MAX] = "traffic_server";
-static char manager_options[OPTIONS_LEN_MAX] = "";
 
 static char log_file[PATH_NAME_MAX] = "traffic.out";
 
@@ -726,10 +725,6 @@ static void
 spawn_manager()
 {
   char prog[PATH_NAME_MAX];
-  char *options[OPTIONS_MAX];
-  char *last;
-  char *tok;
-
   ats_scoped_str bindir(config_read_bin_dir());
 
   cop_log_trace("Entering spawn_manager()\n");
@@ -746,40 +741,21 @@ spawn_manager()
   if (access(log_file, W_OK) < 0 && errno == EACCES) {
     char old_log_file[PATH_NAME_MAX];
     snprintf(old_log_file, sizeof(old_log_file), "%s.old", log_file);
+    cop_log(COP_NOTICE, "renaming %s to %s as it is not writeable\n", log_file, old_log_file);
     // coverity[toctou]
-    rename(log_file, old_log_file);
-    cop_log(COP_WARNING, "rename %s to %s as it is not accessible.\n", log_file, old_log_file);
-  }
-
-  // Bind stdout and stderr of traffic_manager to traffic.out
-  int max_opts_len = OPTIONS_LEN_MAX - strlen(manager_options);
-  char tm_opt_buf[max_opts_len];
-  int cx = snprintf(tm_opt_buf, max_opts_len, " --%s %s --%s %s", TM_OPT_BIND_STDOUT, log_file, TM_OPT_BIND_STDERR, log_file);
-  if (cx >= 0 && cx < max_opts_len)
-    strcat(manager_options, tm_opt_buf);
-  else
-    cop_log(COP_WARNING, "bind_stdout and bind_stderr flags are too long, not binding anything\n");
-
-  cop_log_trace("spawn_manager: Launching %s with options '%s'\n", prog, manager_options);
-  int i;
-  for (i = 0; i < OPTIONS_MAX; i++) {
-    options[i] = NULL;
-  }
-  options[0] = prog;
-  i = 1;
-  tok = strtok_r(manager_options, " ", &last);
-  options[i++] = tok;
-  if (tok != NULL) {
-    while (i < OPTIONS_MAX && (tok = strtok_r(NULL, " ", &last))) {
-      options[i++] = tok;
+    if (rename(log_file, old_log_file) != 0) {
+      cop_log(COP_WARNING, "unable to rename \"%s\" to \"%s\" [%d '%s']\n", log_file, old_log_file, errno, strerror(errno));
     }
   }
+
+  cop_log_trace("launching %s'\n", prog);
 
   pid_t child = fork();
   if (child == 0) {
     EnableDeathSignal(SIGTERM);
 
-    execv(prog, options);
+    // Bind stdout and stderr of traffic_manager to traffic.out
+    execl(prog, prog, "--" TM_OPT_BIND_STDOUT, log_file, "--" TM_OPT_BIND_STDERR, log_file, NULL);
     cop_log_trace("Somehow execv(%s, options, NULL) failed: %s (%d)!\n", prog, strerror(errno), errno);
     exit(1);
   } else if (child == -1) {
