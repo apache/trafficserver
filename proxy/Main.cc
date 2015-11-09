@@ -1417,7 +1417,7 @@ change_uid_gid(const char *user)
     elevation only on an explicit permission failure.
 */
 static int
-elevating_open(char const* path, unsigned int flags, unsigned int fperms)
+elevating_open(char const *path, unsigned int flags, unsigned int fperms)
 {
   int fd = open(path, flags, fperms);
   if (fd < 0 && EPERM == errno) {

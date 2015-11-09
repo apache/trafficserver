@@ -40,6 +40,8 @@ libhttp2_a_SOURCES = \
   Http2ClientSession.h \
   Http2ConnectionState.cc \
   Http2ConnectionState.h \
+  Http2Stream.cc \
+  Http2Stream.h \
   Http2SessionAccept.cc \
   Http2SessionAccept.h \
   HuffmanCodec.cc \
