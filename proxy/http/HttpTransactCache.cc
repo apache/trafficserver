@@ -1371,7 +1371,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
     ink_time_t lm_value = response->get_last_modified();
 
     // Condition fails if Last-modified not exists
-    if ((request->get_if_unmodified_since() < lm_value) || (lm_value == 0)) {
+    if ((lm_value == 0) || (request->get_if_unmodified_since() < lm_value)) {
       return HTTP_STATUS_PRECONDITION_FAILED;
     } else {
       // we cannot return yet, need to check If-match
