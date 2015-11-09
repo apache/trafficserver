@@ -1299,7 +1299,7 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
       ink_time_t lm_value = response->get_last_modified();
 
       // we won't return NOT_MODIFIED if Last-modified is too recent
-      if ((lm_value == 0) || (request->get_if_modified_since() < lm_value)) {
+      if ((lm_value == 0) || (request->get_if_modified_since() <= lm_value)) {
         return response->status_get();
       }
 
