@@ -843,7 +843,7 @@ Http2ConnectionState::restart_streams()
   Http2Stream *s = stream_list.head;
   while (s) {
     Http2Stream *next = s->link.next;
-    if (s->get_fetcher() != NULL && min(this->client_rwnd, s->client_rwnd) > 0) {
+    if (min(this->client_rwnd, s->client_rwnd) > 0) {
       this->send_data_frame(s->get_fetcher());
     }
     s = next;
@@ -893,6 +893,10 @@ void
 Http2ConnectionState::send_data_frame(FetchSM *fetch_sm)
 {
   DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send DATA frame", this->ua_session->connection_id());
+
+  if (fetch_sm == NULL) {
+    return;
+  }
 
   size_t buf_len = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]) - HTTP2_FRAME_HEADER_LEN;
   uint8_t payload_buffer[buf_len];
