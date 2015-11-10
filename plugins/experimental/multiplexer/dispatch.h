@@ -55,7 +55,7 @@ struct Request {
 
   Request(const std::string &, const TSMBuffer, const TSMLoc);
   Request(const Request &);
-  Request &operator=(Request &);
+  Request &operator=(const Request &);
 };
 
 typedef std::vector<Request> Requests;

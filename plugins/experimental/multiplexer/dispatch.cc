@@ -55,11 +55,11 @@ Request::Request(const Request &r) : host(r.host), length(r.length), io(const_ca
   assert(r.io.get() != NULL);
 }
 
-Request &Request::operator=(Request &r)
+Request &Request::operator=(const Request &r)
 {
   host = r.host;
   length = r.length;
-  io = r.io;
+  io = const_cast<Request &>(r).io;
   assert(!host.empty());
   assert(length > 0);
   assert(io.get() != NULL);
