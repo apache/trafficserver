@@ -24,6 +24,7 @@
 #define DISPATCH_H
 
 #include <assert.h>
+#include <memory>
 #include <string>
 #include <ts/ts.h>
 #include <vector>
@@ -50,9 +51,11 @@ typedef std::vector<std::string> Origins;
 struct Request {
   std::string host;
   int length;
-  ats::io::IO *io;
+  std::auto_ptr<ats::io::IO> io;
 
   Request(const std::string &, const TSMBuffer, const TSMLoc);
+  Request(const Request &);
+  Request &operator=(const Request &);
 };
 
 typedef std::vector<Request> Requests;
