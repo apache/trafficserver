@@ -408,3 +408,9 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
     }
   }
 }
+
+void
+forceLinkRegressionHPACK()
+{
+  // NOTE: Do Nothing
+}
