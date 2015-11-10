@@ -1853,6 +1853,7 @@ AC_CONFIG_FILES([
   plugins/conf_remap/Makefile
   plugins/gzip/Makefile
   plugins/header_rewrite/Makefile
+  plugins/healthchecks/Makefile
   plugins/libloader/Makefile
   plugins/regex_remap/Makefile
   plugins/stats_over_http/Makefile
@@ -1905,7 +1906,6 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/generator/Makefile
     plugins/experimental/geoip_acl/Makefile
     plugins/experimental/header_normalize/Makefile
-    plugins/experimental/healthchecks/Makefile
     plugins/experimental/hipes/Makefile
     plugins/experimental/memcached_remap/Makefile
     plugins/experimental/metalink/Makefile
