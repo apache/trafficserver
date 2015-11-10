@@ -328,7 +328,7 @@ CacheDisk::delete_volume(int number)
       free_blocks->size += disk_vols[i]->size;
 
       delete disk_vols[i];
-      disk_vols[i] = NULL;
+
       /* move all the other disk vols */
       for (unsigned int j = i; j < (header->num_volumes - 1); j++) {
         disk_vols[j] = disk_vols[j + 1];
