@@ -166,7 +166,7 @@ HttpBodyFactory *body_factory = NULL;
 static int accept_mss = 0;
 static int cmd_line_dprintf_level = 0; // default debug output level from ink_dprintf function
 static int poll_timeout = -1;          // No value set.
-static bool cmd_disable_freelist = 0;
+static int cmd_disable_freelist = 0;
 
 static volatile bool sigusr1_received = false;
 static volatile bool sigusr2_received = false;
