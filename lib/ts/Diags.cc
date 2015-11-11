@@ -54,9 +54,9 @@ template <int Size>
 static void
 vprintline(FILE *fp, char(&buffer)[Size], va_list ap)
 {
-  int nbytes;
+  int nbytes = strlen(buffer);
 
-  nbytes = vfprintf(fp, buffer, ap);
+  vfprintf(fp, buffer, ap);
   if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
     ink_assert(nbytes < Size);
     putc('\n', fp);
