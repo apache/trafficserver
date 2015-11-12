@@ -251,6 +251,12 @@ public:
   bool setCacheUrl(const std::string &);
 
   /**
+   * Ability to skip the remap phase of the State Machine
+   * This only really makes sense in TS_HTTP_READ_REQUEST_HDR_HOOK
+   */
+  void setSkipRemapping(int);
+
+  /**
    * The available types of timeouts you can set on a Transaction.
    */
   enum TimeoutType {

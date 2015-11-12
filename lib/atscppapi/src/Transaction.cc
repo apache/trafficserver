@@ -288,6 +288,12 @@ Transaction::setCacheUrl(const string &cache_url)
   return (res == TS_SUCCESS);
 }
 
+void
+Transaction::setSkipRemapping(int flag)
+{
+  TSSkipRemappingSet(state_->txn_, flag);
+}
+
 const sockaddr *
 Transaction::getIncomingAddress() const
 {
