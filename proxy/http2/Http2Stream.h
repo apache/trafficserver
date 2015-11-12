@@ -61,7 +61,7 @@ public:
   }
 
   // Operate FetchSM
-  void init_fetcher(Http2ConnectionState &cstate);
+  bool init_fetcher(Http2ConnectionState &cstate);
   void set_body_to_fetcher(const void *data, size_t len);
   FetchSM *
   get_fetcher()
