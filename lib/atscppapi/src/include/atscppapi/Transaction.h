@@ -225,6 +225,21 @@ public:
   Response &getClientResponse();
 
   /**
+   * Returns a Request object which is the cached request
+   *
+   * @return Request object
+   */
+  Request &getCachedRequest();
+
+  /**
+   * Returns a Response object which is the cached response
+   *
+   * @return Response object
+   */
+  Response &getCachedResponse();
+
+
+  /**
    * Returns the Effective URL for this transaction taking into account host.
    */
   std::string getEffectiveUrl();
@@ -361,6 +376,22 @@ private:
    * @private
    */
   void initClientResponse();
+
+  /**
+   * Used to initialize the Request object for the cache.
+   *
+   * @private
+   */
+
+  void initCachedRequest();
+
+  /**
+   * Used to initialize the Response object for the cache.
+   *
+   * @private
+   */
+
+  void initCachedResponse();
 
   /**
    * Returns a list of TransactionPlugin pointers bound to the current Transaction

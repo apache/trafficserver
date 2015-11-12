@@ -69,6 +69,10 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     utils::internal::initTransactionClientResponse(transaction);
     break;
+  case TS_EVENT_HTTP_READ_CACHE_HDR:
+    utils::internal::initTransactionCachedRequest(transaction);
+    utils::internal::initTransactionCachedResponse(transaction);
+    break;
   case TS_EVENT_HTTP_TXN_CLOSE: { // opening scope to declare plugins variable below
     const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
     for (std::list<TransactionPlugin *>::const_iterator iter = plugins.begin(), end = plugins.end(); iter != end; ++iter) {
@@ -99,6 +103,7 @@ setupTransactionManagement()
   TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
+  TSHttpHookAdd(TS_HTTP_READ_CACHE_HDR_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, cont);
 }
 

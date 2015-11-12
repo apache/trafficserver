@@ -89,6 +89,18 @@ namespace utils
       transaction.initClientResponse();
     }
 
+    static void
+    initTransactionCachedRequest(Transaction &transaction)
+    {
+      transaction.initCachedRequest();
+    }
+
+    static void
+    initTransactionCachedResponse(Transaction &transaction)
+    {
+      transaction.initCachedResponse();
+    }
+
     static const std::list<TransactionPlugin *> &
     getTransactionPlugins(const Transaction &transaction)
     {
