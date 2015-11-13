@@ -39,7 +39,7 @@
 #include "MgmtUtils.h"
 #include "BaseManager.h"
 #include "ts/ink_sock.h"
-
+#include "ts/Vec.h"
 #include "ts/ink_apidefs.h"
 
 class ConfigUpdateCbTable;
@@ -72,6 +72,7 @@ public:
     close_socket(local_manager_sockfd);
   }
 
+  inkcoreapi void signalConfigFileChild(const char *parent, const char *child);
   inkcoreapi void signalManager(int msg_id, const char *data_str);
   inkcoreapi void signalManager(int msg_id, const char *data_raw, int data_len);
 

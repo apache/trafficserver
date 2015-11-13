@@ -156,7 +156,8 @@ struct versionInfo {
 class Rollback
 {
 public:
-  Rollback(const char *baseFileName, bool root_access_needed);
+  // fileName_ should be rooted or a base file name.
+  Rollback(const char *fileName_, bool root_access_needed, Rollback *parentRollback = NULL);
   ~Rollback();
 
   // Manual take out of lock required
@@ -211,9 +212,23 @@ public:
   const char *
   getBaseName()
   {
-    return fileName;
+    return fileBaseName;
   };
-
+  const char *
+  getFileName()
+  {
+    return fileName;
+  }
+  bool
+  isFileNameRooted() const
+  {
+    return *fileName == '/';
+  }
+  Rollback *
+  getParentRollback()
+  {
+    return parentRollback;
+  }
   FileManager *configFiles; // Manager to notify on an update.
 
 private:
@@ -224,9 +239,14 @@ private:
   char *createPathStr(version_t version);
   RollBackCodes internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChange = true, bool incVersion = true);
   ink_mutex fileAccessLock;
+  char *fileBaseName;
+  char *fileDir;
   char *fileName;
+  size_t fileBaseNameLen;
   size_t fileNameLen;
+  size_t fileDirLen;
   bool root_access_needed;
+  Rollback *parentRollback;
   version_t currentVersion;
   time_t fileLastModified;
   int numVersions;

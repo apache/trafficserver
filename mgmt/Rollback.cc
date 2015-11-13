@@ -43,7 +43,8 @@
 const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version was out of date", "System Call Error",
                                  "Invalid Version - Version Numbers Must Increase"};
 
-Rollback::Rollback(const char *baseFileName, bool root_access_needed_) : configFiles(NULL), root_access_needed(root_access_needed_)
+Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *parentRollback_)
+  : configFiles(NULL), root_access_needed(root_access_needed_), parentRollback(parentRollback_)
 {
   version_t highestSeen;             // the highest backup version
   ExpandingArray existVer(25, true); // Exsisting versions
@@ -60,20 +61,43 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_) : configF
   char *activeVerStr;
   bool needZeroLength;
 
-  ink_assert(baseFileName != NULL);
-
+  ink_assert(fileName_ != NULL);
   // Copy the file name
-  fileNameLen = strlen(baseFileName);
+  fileNameLen = strlen(fileName_);
   fileName = (char *)ats_malloc(fileNameLen + 1);
-  ink_strlcpy(fileName, baseFileName, fileNameLen + 1);
+  ink_strlcpy(fileName, fileName_, fileNameLen + 1);
+
+  // extract the file base name
+  fileBaseName = strrchr(fileName, '/');
+  if (fileBaseName) {
+    fileBaseName++;
+  } else {
+    fileBaseName = fileName;
+  }
+  fileBaseNameLen = strlen(fileBaseName);
+  // For the parent files, the fileName is baseName,
+  // otherwise it's a child file with rooted name.
+  ink_assert(isFileNameRooted() || fileBaseName == fileName);
+
+  // extract the file dir name
+  if (isFileNameRooted()) {
+    fileDirLen = fileBaseName - fileName;
+    fileDir = (char *)ats_malloc(fileDirLen + 1);
+    ink_strlcpy(fileDir, fileName_, fileDirLen + 1);
+  }
 
   // TODO: Use the runtime directory for storing mutable data
   // XXX: Sysconfdir should be imutable!!!
-
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
-  if (access(sysconfdir, F_OK) < 0) {
-    mgmt_fatal(0, "[Rollback::Rollback] unable to access() directory '%s': %d, %s\n", (const char *)sysconfdir, errno,
-               strerror(errno));
+  if (!isFileNameRooted()) {
+    ats_scoped_str sysconfdir(RecConfigReadConfigDir());
+    if (access(sysconfdir, F_OK) < 0) {
+      mgmt_fatal(0, "[Rollback::Rollback] unable to access() directory '%s': %d, %s\n", (const char *)sysconfdir, errno,
+                 strerror(errno));
+    }
+  } else {
+    if (access(fileName, F_OK) < 0) {
+      mgmt_fatal(0, "[Rollback::Rollback] unable to access() file '%s': %d, %s\n", (const char *)fileName, errno, strerror(errno));
+    }
   }
 
   if (varIntFromName("proxy.config.admin.number_config_bak", &numBak) == true) {
@@ -206,6 +230,7 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_) : configF
 Rollback::~Rollback()
 {
   ats_free(fileName);
+  ats_free(fileDir);
 }
 
 
@@ -216,12 +241,12 @@ Rollback::~Rollback()
 char *
 Rollback::createPathStr(version_t version)
 {
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
-  int bufSize = strlen(sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
-  char *buffer = (char *)ats_malloc(bufSize);
-
-  Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileName);
-
+  int bufSize = 0;
+  char *buffer = NULL;
+  ats_scoped_str sysconfdir(isFileNameRooted() ? ats_strdup(fileDir) : RecConfigReadConfigDir());
+  bufSize = strlen(sysconfdir) + fileBaseNameLen + MAX_VERSION_DIGITS + 1;
+  buffer = (char *)ats_malloc(bufSize);
+  Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileBaseName);
   if (version != ACTIVE_VERSION) {
     size_t pos = strlen(buffer);
     snprintf(buffer + pos, bufSize - pos, "_%d", version);
@@ -389,7 +414,6 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   currentVersion_local = createPathStr(this->currentVersion);
   activeVersion = createPathStr(ACTIVE_VERSION);
   nextVersion = createPathStr(newVersion);
-
   // Create the new configuration file
   // TODO: Make sure they are not created in Sysconfigdir!
   diskFD = openFile(newVersion, O_WRONLY | O_CREAT | O_TRUNC);
@@ -466,7 +490,8 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   returnCode = OK_ROLLBACK;
 
   // Post the change to the config file manager
-  if (notifyChange && configFiles) {
+  // rooted file (child file) should not post a change
+  if (notifyChange && configFiles && !isFileNameRooted()) {
     configFiles->fileChanged(fileName, incVersion);
   }
 

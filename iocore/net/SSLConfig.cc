@@ -389,7 +389,12 @@ SSLCertificateConfig::reconfigure()
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  SSLParseCertificateConfiguration(params, lookup);
+  Vec<char *> cert_files_vec;
+  SSLParseCertificateConfiguration(params, lookup, cert_files_vec);
+  for (size_t i = 0; i < cert_files_vec.n; i++) {
+    pmgmt->signalConfigFileChild("ssl_multicert.config", cert_files_vec[i]);
+  }
+  cert_files_vec.free_and_clear();
 
   if (!lookup->is_valid) {
     retStatus = false;
