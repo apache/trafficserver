@@ -405,19 +405,19 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
     int scheme_len, authority_len, path_len, method_len;
 
     // Get values of :scheme, :authority and :path to assemble requested URL
-    if ((field = headers->field_find(HPACK_VALUE_SCHEME, HPACK_LEN_SCHEME)) != NULL && field->value_validate()) {
+    if ((field = headers->field_find(HPACK_VALUE_SCHEME, HPACK_LEN_SCHEME)) != NULL && field->value_is_valid()) {
       scheme = field->value_get(&scheme_len);
     } else {
       return PARSE_ERROR;
     }
 
-    if ((field = headers->field_find(HPACK_VALUE_AUTHORITY, HPACK_LEN_AUTHORITY)) != NULL && field->value_validate()) {
+    if ((field = headers->field_find(HPACK_VALUE_AUTHORITY, HPACK_LEN_AUTHORITY)) != NULL && field->value_is_valid()) {
       authority = field->value_get(&authority_len);
     } else {
       return PARSE_ERROR;
     }
 
-    if ((field = headers->field_find(HPACK_VALUE_PATH, HPACK_LEN_PATH)) != NULL && field->value_validate()) {
+    if ((field = headers->field_find(HPACK_VALUE_PATH, HPACK_LEN_PATH)) != NULL && field->value_is_valid()) {
       path = field->value_get(&path_len);
     } else {
       return PARSE_ERROR;
@@ -437,7 +437,7 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
     arena.str_free(url);
 
     // Get value of :method
-    if ((field = headers->field_find(HPACK_VALUE_METHOD, HPACK_LEN_METHOD)) != NULL && field->value_validate()) {
+    if ((field = headers->field_find(HPACK_VALUE_METHOD, HPACK_LEN_METHOD)) != NULL && field->value_is_valid()) {
       method = field->value_get(&method_len);
 
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
@@ -448,7 +448,7 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
 
     // Combine Cookie headers ([RFC 7540] 8.1.2.5.)
     field = headers->field_find(MIME_FIELD_COOKIE, MIME_LEN_COOKIE);
-    if (field && field->value_validate()) {
+    if (field) {
       headers->field_combine_dups(field, true, ';');
     }
 
@@ -461,15 +461,6 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
     headers->field_delete(HPACK_VALUE_METHOD, HPACK_LEN_METHOD);
     headers->field_delete(HPACK_VALUE_AUTHORITY, HPACK_LEN_AUTHORITY);
     headers->field_delete(HPACK_VALUE_PATH, HPACK_LEN_PATH);
-
-    // Check validity of all names and values
-    MIMEFieldIter iter;
-    for (const MIMEField *field = headers->iter_get_first(&iter); field != NULL; field = headers->iter_get_next(&iter)) {
-      if (!field->name_validate() || !field->value_validate()) {
-        return PARSE_ERROR;
-      }
-    }
-
   } else {
     int status_len;
     const char *status;
@@ -483,13 +474,13 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
 
     // Remove HTTP/2 style headers
     headers->field_delete(HPACK_VALUE_STATUS, HPACK_LEN_STATUS);
+  }
 
-    // Check validity of all names and values
-    MIMEFieldIter iter;
-    for (const MIMEField *field = headers->iter_get_first(&iter); field != NULL; field = headers->iter_get_next(&iter)) {
-      if (!field->name_validate() || !field->value_validate()) {
-        return PARSE_ERROR;
-      }
+  // Check validity of all names and values
+  MIMEFieldIter iter;
+  for (const MIMEField *field = headers->iter_get_first(&iter); field != NULL; field = headers->iter_get_next(&iter)) {
+    if (!field->name_is_valid() || !field->value_is_valid()) {
+      return PARSE_ERROR;
     }
   }
 

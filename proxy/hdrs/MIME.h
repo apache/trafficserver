@@ -165,7 +165,7 @@ struct MIMEField {
   int value_get_comma_list(StrList *list) const;
 
   void name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length);
-  bool name_validate() const;
+  bool name_is_valid() const;
 
   void value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length);
   void value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, int32_t value);
@@ -177,7 +177,7 @@ struct MIMEField {
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length, bool prepend_comma = false,
                     const char separator = ',');
-  bool value_validate() const;
+  bool value_is_valid() const;
   int has_dups() const;
 };
 
@@ -769,7 +769,7 @@ MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length
   -------------------------------------------------------------------------*/
 
 inline bool
-MIMEField::name_validate() const
+MIMEField::name_is_valid() const
 {
   const char *name;
   int length;
@@ -876,7 +876,7 @@ MIMEField::value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int l
   -------------------------------------------------------------------------*/
 
 inline bool
-MIMEField::value_validate() const
+MIMEField::value_is_valid() const
 {
   const char *value;
   int length;
