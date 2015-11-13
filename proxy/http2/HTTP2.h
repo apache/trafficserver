@@ -322,7 +322,7 @@ bool http2_parse_window_update(IOVec, uint32_t &);
 
 int64_t http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint8_t *, Http2DynamicTable &);
 
-MIMEParseResult convert_from_2_to_1_1_header(HTTPHdr *);
+MIMEParseResult convert_from_2_to_1_1_header(HTTPHdr *, int num_requests);
 
 int64_t http2_write_psuedo_headers(HTTPHdr *, uint8_t *, uint64_t, Http2DynamicTable &);
 

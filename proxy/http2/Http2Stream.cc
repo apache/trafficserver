@@ -34,7 +34,8 @@ Http2Stream::init_fetcher(Http2ConnectionState &cstate)
   extern ClassAllocator<FetchSM> FetchSMAllocator;
 
   // Convert header to HTTP/1.1 format
-  convert_from_2_to_1_1_header(&_req_header);
+  cstate.increment_stream_requests();
+  convert_from_2_to_1_1_header(&_req_header, cstate.get_stream_requests());
 
   // Get null-terminated URL and method
   Arena arena;

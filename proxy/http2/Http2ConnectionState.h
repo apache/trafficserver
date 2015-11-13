@@ -106,7 +106,7 @@ class Http2ConnectionState : public Continuation
 public:
   Http2ConnectionState()
     : Continuation(NULL), ua_session(NULL), client_rwnd(Http2::initial_window_size), server_rwnd(Http2::initial_window_size),
-      stream_list(), latest_streamid(0), client_streams_count(0), continued_stream_id(0)
+      stream_list(), latest_streamid(0), stream_requests(0), client_streams_count(0), continued_stream_id(0)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
@@ -160,6 +160,18 @@ public:
     return latest_streamid;
   }
 
+  int
+  get_stream_requests() const
+  {
+    return stream_requests;
+  }
+
+  void
+  increment_stream_requests()
+  {
+    stream_requests++;
+  }
+
   // Continuated header decoding
   Http2StreamId
   get_continued_stream_id() const
@@ -207,6 +219,7 @@ private:
   //   than latest_streamid, the state of Stream is IDLE.
   DLL<Http2Stream> stream_list;
   Http2StreamId latest_streamid;
+  int stream_requests;
 
   // Counter for current acive streams which is started by client
   uint32_t client_streams_count;
