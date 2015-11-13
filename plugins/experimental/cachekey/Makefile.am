@@ -14,41 +14,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- cachekey \
- cache_range_requests \
- cache_promote \
- collapsed_connection \
- custom_redirect \
- epic \
- escalate \
- esi \
- generator \
- geoip_acl \
- header_normalize \
- hipes \
- metalink \
- multiplexer \
- memcached_remap \
- regex_revalidate \
- remap_stats \
- s3_auth \
- ssl_cert_loader \
- sslheaders \
- stale_while_revalidate \
- url_sig \
- xdebug \
- mp4 \
- stream_editor
+include $(top_srcdir)/build/plugins.mk
 
-if HAS_MYSQL
-  SUBDIRS += mysql_remap
-endif
+pkglib_LTLIBRARIES = cachekey.la
+cachekey_la_SOURCES = cachekey.cc common.cc configs.cc pattern.cc plugin.cc
+cachekey_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
-if BUILD_LUAJIT
-  SUBDIRS += ts_lua
-endif
+VIRTUALENV_DIR = ../../../ci/tsqa/virtualenv
+tsqa: $(VIRTUALENV_DIR)
+	@. $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/nosetests --with-xunit -sv --logging-level=INFO
