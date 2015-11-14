@@ -29,6 +29,7 @@
 #include "ts/ink_assert.h"
 #include "ts/ink_apidefs.h"
 #include "ts/ink_string++.h"
+#include "ts/ParseRules.h"
 #include "HdrHeap.h"
 #include "HdrToken.h"
 
@@ -164,6 +165,7 @@ struct MIMEField {
   int value_get_comma_list(StrList *list) const;
 
   void name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length);
+  bool name_is_valid() const;
 
   void value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length);
   void value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, int32_t value);
@@ -175,6 +177,7 @@ struct MIMEField {
   // Other separators (e.g. ';' in Set-cookie/Cookie) are also possible
   void value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length, bool prepend_comma = false,
                     const char separator = ',');
+  bool value_is_valid() const;
   int has_dups() const;
 };
 
@@ -765,6 +768,23 @@ MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+inline bool
+MIMEField::name_is_valid() const
+{
+  const char *name;
+  int length;
+
+  for (name = name_get(&length); length > 0; length--) {
+    if (ParseRules::is_control(name[length - 1])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 inline const char *
 MIMEField::value_get(int *length) const
 {
@@ -850,6 +870,23 @@ inline void
 MIMEField::value_append(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length, bool prepend_comma, const char separator)
 {
   mime_field_value_append(heap, mh, this, value, length, prepend_comma, separator);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline bool
+MIMEField::value_is_valid() const
+{
+  const char *value;
+  int length;
+
+  for (value = value_get(&length); length > 0; length--) {
+    if (ParseRules::is_control(value[length - 1])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 inline int

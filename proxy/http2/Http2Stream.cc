@@ -28,13 +28,15 @@
 // Currently use only HTTP/1.1 for requesting to origin server
 const static char *HTTP2_FETCHING_HTTP_VERSION = "HTTP/1.1";
 
-void
+bool
 Http2Stream::init_fetcher(Http2ConnectionState &cstate)
 {
   extern ClassAllocator<FetchSM> FetchSMAllocator;
 
   // Convert header to HTTP/1.1 format
-  convert_from_2_to_1_1_header(&_req_header);
+  if (convert_from_2_to_1_1_header(&_req_header) == PARSE_ERROR) {
+    return false;
+  }
 
   // Get null-terminated URL and method
   Arena arena;
@@ -61,6 +63,7 @@ Http2Stream::init_fetcher(Http2ConnectionState &cstate)
 
   _fetch_sm->ext_set_user_data(this);
   _fetch_sm->ext_launch();
+  return true;
 }
 
 void
