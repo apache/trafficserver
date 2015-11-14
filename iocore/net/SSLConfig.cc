@@ -307,10 +307,10 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 
   // SSL Wire Trace configurations
-  REC_ReadConfigInteger(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");
+  REC_EstablishStaticConfigInt32(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");
   if (ssl_wire_trace_enabled) {
     // wire trace specific source ip
-    REC_ReadConfigStringAlloc(ssl_wire_trace_addr, "proxy.config.ssl.wire_trace_addr");
+    REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_addr, "proxy.config.ssl.wire_trace_addr");
     if (ssl_wire_trace_addr) {
       ssl_wire_trace_ip = new IpAddr();
       ssl_wire_trace_ip->load(ssl_wire_trace_addr);
@@ -318,8 +318,8 @@ SSLConfigParams::initialize()
       ssl_wire_trace_ip = NULL;
     }
     // wire trace percentage of requests
-    REC_ReadConfigInteger(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
-    REC_ReadConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
+    REC_EstablishStaticConfigInt32(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
+    REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
   } else {
     ssl_wire_trace_addr = NULL;
     ssl_wire_trace_ip = NULL;

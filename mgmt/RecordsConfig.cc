@@ -1304,13 +1304,13 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.handshake_timeout_in", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-65535]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.wire_trace_enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.wire_trace_addr", RECD_STRING, NULL , RECU_RESTART_TS, RR_NULL, RECC_IP, "[0-255]\\.[0-255]\\.[0-255]\\.[0-255]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_addr", RECD_STRING, NULL , RECU_DYNAMIC, RR_NULL, RECC_IP, "[0-255]\\.[0-255]\\.[0-255]\\.[0-255]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.wire_trace_percentage", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_percentage", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.wire_trace_server_name", RECD_STRING, NULL , RECU_RESTART_TS, RR_NULL, RECC_STR, ".*", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.wire_trace_server_name", RECD_STRING, NULL , RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
   //##############################################################################
   //#
