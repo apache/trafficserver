@@ -223,6 +223,7 @@ static int ts_lua_http_client_packet_tos_set(lua_State *L);
 static int ts_lua_http_server_packet_tos_set(lua_State *L);
 static int ts_lua_http_client_packet_dscp_set(lua_State *L);
 static int ts_lua_http_server_packet_dscp_set(lua_State *L);
+static int ts_lua_http_enable_redirect(lua_State *L);
 
 void
 ts_lua_inject_http_config_api(lua_State *L)
@@ -267,6 +268,9 @@ ts_lua_inject_http_config_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_server_packet_dscp_set);
   lua_setfield(L, -2, "server_packet_dscp_set");
+
+  lua_pushcfunction(L, ts_lua_http_enable_redirect);
+  lua_setfield(L, -2, "enable_redirect");
 }
 
 static void
@@ -480,6 +484,23 @@ ts_lua_http_client_packet_tos_set(lua_State *L)
 
   return 0;
 }
+
+static int
+ts_lua_http_enable_redirect(lua_State *L)
+{
+  int value;
+  ts_lua_http_ctx *http_ctx;
+
+  http_ctx = ts_lua_get_http_ctx(L);
+
+  value = luaL_checkinteger(L, 1);
+
+  TSDebug(TS_LUA_DEBUG_TAG, "enable redirect");
+  TSHttpTxnFollowRedirect(http_ctx->txnp, value);
+
+  return 0;
+}
+
 
 static int
 ts_lua_http_server_packet_tos_set(lua_State *L)
