@@ -150,6 +150,7 @@ public:
   spdy::SessionVersion version;
   uint64_t total_size;
   TSHRTime start_time;
+  int stream_requests;
 
   NetVConnection *vc;
 

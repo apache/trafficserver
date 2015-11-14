@@ -394,7 +394,7 @@ http2_parse_window_update(IOVec iov, uint32_t &size)
 }
 
 MIMEParseResult
-convert_from_2_to_1_1_header(HTTPHdr *headers)
+convert_from_2_to_1_1_header(HTTPHdr *headers, int num_requests)
 {
   MIMEField *field;
 
@@ -461,6 +461,11 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
     headers->field_delete(HPACK_VALUE_METHOD, HPACK_LEN_METHOD);
     headers->field_delete(HPACK_VALUE_AUTHORITY, HPACK_LEN_AUTHORITY);
     headers->field_delete(HPACK_VALUE_PATH, HPACK_LEN_PATH);
+
+    // Add internal header to track latest_streamid
+    MIMEField *internal_count_header = headers->field_create(MIME_FIELD_HTTP2_NUM_REQUESTS, MIME_LEN_HTTP2_NUM_REQUESTS);
+    headers->field_value_set_int(internal_count_header, num_requests);
+    headers->field_attach(internal_count_header);
   } else {
     int status_len;
     const char *status;

@@ -388,6 +388,7 @@ extern const char *MIME_FIELD_X_FORWARDED_FOR;
 extern const char *MIME_FIELD_SEC_WEBSOCKET_KEY;
 extern const char *MIME_FIELD_SEC_WEBSOCKET_VERSION;
 extern const char *MIME_FIELD_HTTP2_SETTINGS;
+extern const char *MIME_FIELD_HTTP2_NUM_REQUESTS;
 
 extern const char *MIME_VALUE_BYTES;
 extern const char *MIME_VALUE_CHUNKED;
@@ -516,6 +517,7 @@ extern int MIME_LEN_SEC_WEBSOCKET_KEY;
 extern int MIME_LEN_SEC_WEBSOCKET_VERSION;
 
 extern int MIME_LEN_HTTP2_SETTINGS;
+extern int MIME_LEN_HTTP2_NUM_REQUESTS;
 
 extern int MIME_WKSIDX_ACCEPT;
 extern int MIME_WKSIDX_ACCEPT_CHARSET;
@@ -593,6 +595,7 @@ extern int MIME_WKSIDX_X_ID;
 extern int MIME_WKSIDX_SEC_WEBSOCKET_KEY;
 extern int MIME_WKSIDX_SEC_WEBSOCKET_VERSION;
 extern int MIME_WKSIDX_HTTP2_SETTINGS;
+extern int MIME_WKSIDX_HTTP2_NUM_REQUESTS;
 
 /***********************************************************************
  *                                                                     *

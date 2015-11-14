@@ -125,6 +125,7 @@ SpdyClientSession::init(NetVConnection *netvc)
   sm_id = atomic_inc(g_sm_id);
   total_size = 0;
   start_time = TShrtime();
+  stream_requests = 0;
 
   this->vc->set_inactivity_timeout(HRTIME_SECONDS(spdy_accept_no_activity_timeout));
   vc->add_to_keep_alive_queue();

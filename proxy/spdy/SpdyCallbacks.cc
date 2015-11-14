@@ -293,6 +293,12 @@ spdy_process_syn_stream_frame(SpdyClientSession *sm, SpdyRequest *req)
     Debug("spdy", "Accept-Encoding header not received, adding gzip for method %s", req->method.c_str());
     req->headers.push_back(make_pair("accept-encoding", "gzip, deflate"));
   }
+  
+  // add header for request count
+  sm->stream_requests++;
+  char request_buf[16];
+  ink_fast_itoa(sm->stream_requests, request_buf, sizeof(request_buf));
+  req->headers.push_back(make_pair(MIME_FIELD_HTTP2_NUM_REQUESTS, request_buf));
 
   spdy_fetcher_launch(req);
 }

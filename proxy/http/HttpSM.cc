@@ -768,6 +768,15 @@ HttpSM::state_read_client_request_header(int event, void *data)
         (t_state.method == HTTP_WKSIDX_POST && HttpConfig::m_master.post_copy_size))
       enable_redirection = t_state.txn_conf->redirection_enabled;
 
+    // Update Connection Reuse Info for HTTP2
+    MIMEField *nrequests_field;
+    int nrequests;
+    if ((nrequests_field = t_state.hdr_info.client_request.field_find(MIME_FIELD_HTTP2_NUM_REQUESTS, MIME_LEN_HTTP2_NUM_REQUESTS)) != NULL) {
+      nrequests = nrequests_field->value_get_int();
+      client_tcp_reused = (1 < nrequests) ? true : false;
+      DebugSM("http_seq", "http2 nrequests = %d", nrequests);
+    }
+
     call_transact_and_set_next_state(HttpTransact::ModifyRequest);
 
     break;
