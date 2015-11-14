@@ -584,6 +584,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
   const uint8_t *cursor = buf_start;
   HdrHeap *heap = hdr->m_heap;
   HTTPHdrImpl *hh = hdr->m_http;
+  bool header_field_started = false;
 
   while (cursor < buf_end) {
     int64_t read_bytes = 0;
@@ -600,6 +601,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor += read_bytes;
+	  header_field_started = true;
       break;
     case HPACK_FIELD_INDEXED_LITERAL:
     case HPACK_FIELD_NOINDEX_LITERAL:
@@ -609,8 +611,12 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
       cursor += read_bytes;
+	  header_field_started = true;
       break;
     case HPACK_FIELD_TABLESIZE_UPDATE:
+      if (header_field_started) {
+        return HPACK_ERROR_COMPRESSION_ERROR;
+      }
       read_bytes = update_dynamic_table_size(cursor, buf_end, dynamic_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
