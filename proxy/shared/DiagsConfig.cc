@@ -281,7 +281,7 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
   ////////////////////////////////////////////////////////////////////
 
   if (!use_records) {
-    diags = new Diags(tags, actions, diags_log);
+    diags = new Diags(tags, actions, NULL);
     config_diags_norecords();
     return;
   }

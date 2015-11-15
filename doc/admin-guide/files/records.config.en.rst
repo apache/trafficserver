@@ -459,10 +459,6 @@ this be local"
 Local Manager
 =============
 
-.. ts:cv:: CONFIG proxy.config.lm.sem_id INT 11452
-
-   The semaphore ID for the local manager.
-
 .. ts:cv:: CONFIG proxy.config.admin.synthetic_port INT 8083
 
    The synthetic healthcheck port.

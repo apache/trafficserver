@@ -309,7 +309,7 @@ spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type, sp
   switch (type) {
   case SPDYLAY_SYN_STREAM:
     stream_id = frame->syn_stream.stream_id;
-    req = spdyRequestAllocator.alloc();
+    req = SpdyRequest::alloc();
     req->init(sm, stream_id);
     req->append_nv(frame->syn_stream.nv);
     sm->req_map[stream_id] = req;

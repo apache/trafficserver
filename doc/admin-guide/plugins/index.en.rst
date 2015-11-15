@@ -49,6 +49,7 @@ Plugins that are considered stable are installed by default in |TS| releases.
   Configuration Remap: allows you to override configuration directives dependent on actual remapping rules <conf_remap.en>
   GZip: gzips or deflates responses <gzip.en>
   Header Rewrite: allows you to modify various headers based on defined rules (operations) on a request or response <header_rewrite.en>
+  Health Checks: allows you to define health check links <healthchecks.en>
   Regex Remap: allows you to configure mapping rules based on regular expressions <regex_remap.en>
   Stats over HTTP: implements an HTTP interface to all Traffic Server statistics <stats_over_http.en>
   TCPInfo: logs TCP metrics at various points in the HTTP processing pipeline <tcpinfo.en>

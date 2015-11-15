@@ -126,8 +126,6 @@ public:
   volatile int watched_process_fd;
   volatile pid_t proxy_launch_pid;
 
-  int mgmt_sync_key;
-
   Alarms *alarm_keeper;
   VMap *virt_map;
   FileManager *configFiles;

@@ -54,9 +54,9 @@ template <int Size>
 static void
 vprintline(FILE *fp, char(&buffer)[Size], va_list ap)
 {
-  int nbytes;
+  int nbytes = strlen(buffer);
 
-  nbytes = vfprintf(fp, buffer, ap);
+  vfprintf(fp, buffer, ap);
   if (nbytes > 0 && buffer[nbytes - 1] != '\n') {
     ink_assert(nbytes < Size);
     putc('\n', fp);
@@ -116,7 +116,8 @@ SrcLoc::str(char *buf, int buflen) const
 //////////////////////////////////////////////////////////////////////////////
 
 Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
-  : stdout_log(NULL), stderr_log(NULL), magic(DIAGS_MAGIC), show_location(0), base_debug_tags(NULL), base_action_tags(NULL)
+  : diags_log(NULL), stdout_log(NULL), stderr_log(NULL), magic(DIAGS_MAGIC), show_location(0), base_debug_tags(NULL),
+    base_action_tags(NULL)
 {
   int i;
 
@@ -585,25 +586,16 @@ Diags::error_va(DiagsLevel level, const char *file, const char *func, const int 
 void
 Diags::setup_diagslog(BaseLogFile *blf)
 {
-  diags_log = blf;
-  if (!diags_log)
-    return;
+  ink_assert(diags_log == NULL);
 
-  // get file stream from BaseLogFile filedes
-  if (blf->open_file() == BaseLogFile::LOG_FILE_NO_ERROR) {
-    if (blf->m_fp) {
-      int status;
-      status = setvbuf(blf->m_fp, NULL, _IOLBF, 512);
-      if (status != 0) {
-        log_log_error("Could not setvbuf() for %s\n", blf->get_name());
-        blf->close_file();
-        delete blf;
-        diags_log = NULL;
-      }
-    } else {
-      log_log_error("Could not open diags log file: %s\n", strerror(errno));
-    }
+  if (blf != NULL && blf->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
+    delete blf;
+
+    log_log_error("Could not open diags log file: %s\n", strerror(errno));
+    return;
   }
+
+  diags_log = blf;
   log_log_trace("Exiting setup_diagslog, name=%s, this=%p\n", blf->get_name(), this);
 }
 

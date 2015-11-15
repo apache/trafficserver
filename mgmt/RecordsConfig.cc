@@ -241,8 +241,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.lm.pserver_timeout_msecs", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.lm.sem_id", RECD_INT, "11452", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
-  ,                             // needed by cop
   {RECT_CONFIG, "proxy.config.cluster.delta_thresh", RECD_INT, "30", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.cluster.peer_timeout", RECD_INT, "30", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}

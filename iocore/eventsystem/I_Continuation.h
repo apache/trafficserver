@@ -109,7 +109,7 @@ public:
 #endif
 
   /**
-    The Contination's lock.
+    The Continuation's lock.
 
     A reference counted pointer to the Continuation's lock. This
     lock is initialized in the constructor and should not be set
