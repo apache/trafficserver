@@ -92,7 +92,7 @@ Installation
 ============
 
 As with many other software packages, you may have the option of installing
-|ATS| from your operating system disttribution's packages, or compiling and
+|ATS| from your operating system distribution's packages, or compiling and
 installing from the source code yourself. Distribution packages may lag behind
 the current stable release of |TS|, sometimes by a significant amount. While
 we will cover briefly the packages required for common operating system
@@ -278,7 +278,7 @@ Configure Origin Location
 
 The previous settings enable reverse proxying (and prevent flagrant abuse of
 it), but now |TS| needs to know what to proxy. This is achieved by writing remap
-rules, which make use of the core :ref:`conf-remap-plugin`. For our Geting
+rules, which make use of the core :ref:`conf-remap-plugin`. For our Getting
 Started guide's |AW| example scenario, we have very simple needs and want little
 more than to proxy all requests to our single origin server. This is
 accomplished with the following rule added to the :file:`remap.config`
