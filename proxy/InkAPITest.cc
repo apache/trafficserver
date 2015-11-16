@@ -6981,7 +6981,7 @@ cont_test_handler(TSCont contp, TSEvent event, void *edata)
   TSReleaseAssert(data->magic == MAGIC_ALIVE);
   TSReleaseAssert((data->test_case == TEST_CASE_CONNECT_ID1) || (data->test_case == TEST_CASE_CONNECT_ID2));
 
-  TSDebug(UTDBG_TAG, "Calling cont_test_handler with event %d", event);
+  TSDebug(UTDBG_TAG, "Calling cont_test_handler with event %s (%d)", TSHttpEventNameLookup(event), event);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
