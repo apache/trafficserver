@@ -640,7 +640,7 @@ int
 ats_tcp_somaxconn()
 {
   int fd;
-  int value;
+  int value = 0;
 
 /* Darwin version ... */
 #if HAVE_SYSCTLBYNAME
