@@ -623,6 +623,7 @@ Rule::socksParse(char *rule)
         // Every token must have a '=' sign
         if (numSubRuleTok < 2) {
           setErrorHint("'=' is expected in space-delimited token");
+          delete m_tokenList;
           return NULL;
         }
 
