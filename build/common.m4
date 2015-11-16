@@ -137,12 +137,17 @@ AC_DEFUN([TS_ADDTO], [
 ])dnl
 
 dnl
-dnl TS_ADD_RPATH_TO(variable, path)
+dnl TS_ADDTO_RPATH(path)
 dnl
 dnl   Adds path to variable with the '-rpath' directive.
 dnl
-AC_DEFUN([TS_ADD_RPATH_TO], [
-    $1="-rpath $2 $$1"
+AC_DEFUN([TS_ADDTO_RPATH], [
+  if test "x$LIBTOOL_LINK_FLAGS" = "x"; then
+    AC_MSG_NOTICE([init RPATH with -Wl,-rpath=$RPATH])
+    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-Wl,-rpath=$RPATH])
+  fi
+  AC_MSG_NOTICE([add $1 to RPATH])
+  TS_ADDTO(LIBTOOL_LINK_FLAGS, [-Wl,-rpath=$1])
 ])dnl
 
 dnl

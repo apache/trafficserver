@@ -1808,10 +1808,6 @@ AC_SUBST([SHARED_LDFLAGS])
 AC_SUBST([TFW_PACKAGE_SUFFIX])
 AC_SUBST([RPATH])
 
-AS_IF([test "x$RPATH" != "x"], [
-       TS_ADD_RPATH_TO(LIBTOOL_LINK_FLAGS, $RPATH)
-])
-
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES
 
