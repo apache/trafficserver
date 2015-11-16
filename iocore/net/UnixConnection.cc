@@ -322,6 +322,8 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
   int res;
 
   this->setRemote(target);
+  // apply dynamic options with this.addr initialized
+  apply_options(opt);
 
   // apply dynamic options with this.addr initialized
   apply_options(opt);
