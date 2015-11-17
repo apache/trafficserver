@@ -96,19 +96,6 @@ ink_init_MMH()
 }
 #endif /* TEST */
 
-
-#ifndef __GNUC__
-// these are short < 16 bytes, help by permitting inlining
-static inline void
-_memcpy(void *dest, const void *src, int nbytes)
-{
-  for (int i = 0; i < nbytes; i++)
-    ((char *)dest)[i] = ((char *)src)[i];
-}
-
-#define memcpy _memcpy
-#endif
-
 int
 ink_code_incr_MMH_init(MMH_CTX *ctx)
 {
