@@ -122,6 +122,7 @@ static const long MAX_LOGIN = ink_login_name_max();
 
 static void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void *mgmt_storage_device_cmd_callback(void *x, char *data, int len);
+static void *mgmt_lifecycle_msg_callback(void *x, char *data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
 
@@ -1900,6 +1901,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // just to be safe because the value is a #define, not a typed value.
     pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, mgmt_storage_device_cmd_callback,
                                 reinterpret_cast<void *>(static_cast<int>(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE)));
+    pmgmt->registerMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, mgmt_lifecycle_msg_callback, NULL);
 
     // The main thread also becomes a net thread.
     ink_set_thread_name("[ET_NET 0]");
@@ -1962,6 +1964,31 @@ mgmt_storage_device_cmd_callback(void *data, char *arg, int len)
       Debug("server", "Marking %.*s offline", len, arg);
       cacheProcessor.mark_storage_offline(d);
       break;
+    }
+  }
+  return NULL;
+}
+
+static void *
+mgmt_lifecycle_msg_callback(void *, char *data, int len)
+{
+  APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
+  TSPluginMsg msg;
+  MgmtInt op;
+  MgmtMarshallString tag;
+  MgmtMarshallData payload;
+  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA};
+
+  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &tag, &payload) == -1) {
+    Error("Plugin message - RPC parsing error - message discarded.");
+  } else {
+    msg.tag = tag;
+    msg.data = payload.ptr;
+    msg.data_size = payload.len;
+    while (hook) {
+      TSPluginMsg tmp(msg); // Just to make sure plugins don't mess this up for others.
+      hook->invoke(TS_EVENT_LIFECYCLE_MSG, &tmp);
+      hook = hook->next();
     }
   }
   return NULL;

@@ -1150,6 +1150,29 @@ done:
   ats_free(name);
   return ret;
 }
+/**************************************************************************
+ * handle_lifecycle_message
+ *
+ * purpose: handle lifecyle message to plugins
+ * output: TS_ERR_xx
+ * note: None
+ *************************************************************************/
+static TSMgmtError
+handle_lifecycle_message(int fd, void *req, size_t reqlen)
+{
+  MgmtMarshallInt optype;
+  MgmtMarshallInt err;
+  MgmtMarshallString tag;
+  MgmtMarshallData data;
+
+  err = recv_mgmt_request(req, reqlen, LIFECYCLE_MESSAGE, &optype, &tag, &data);
+  if (err == TS_ERR_OKAY) {
+    lmgmt->signalEvent(MGMT_EVENT_LIFECYCLE_MESSAGE, static_cast<char *>(req), reqlen);
+  }
+
+  return send_mgmt_response(fd, LIFECYCLE_MESSAGE, &err);
+}
+/**************************************************************************/
 
 struct control_message_handler {
   unsigned flags;
@@ -1183,7 +1206,9 @@ static const control_message_handler handlers[] = {
   /* RECORD_MATCH_GET           */ {0, handle_record_match},
   /* API_PING                   */ {0, handle_api_ping},
   /* SERVER_BACKTRACE           */ {MGMT_API_PRIVILEGED, handle_server_backtrace},
-  /* RECORD_DESCRIBE_CONFIG     */ {0, handle_record_describe}};
+  /* RECORD_DESCRIBE_CONFIG     */ {0, handle_record_describe},
+  /* LIFECYCLE_MESSAGE          */ {MGMT_API_PRIVILEGED, handle_lifecycle_message},
+};
 
 // This should use countof(), but we need a constexpr :-/
 #define NUM_OP_HANDLERS (sizeof(handlers) / sizeof(handlers[0]))

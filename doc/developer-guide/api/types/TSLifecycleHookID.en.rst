@@ -41,6 +41,8 @@ Enumeration Members
 .. c:member:: TSLifecycleHookID TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK
 
 .. c:member:: TSLifecycleHookID TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK
+	      
+.. c:member:: TSLifecycleHookID MSG_HOOK
 
 .. c:member:: TSLifecycleHookID TS_LIFECYCLE_LAST_HOOK
 
