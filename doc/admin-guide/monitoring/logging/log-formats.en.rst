@@ -320,7 +320,7 @@ saving your changes to :file:`logs_xml.config`.
 Custom Logging Fields
 ---------------------
 
-The following list describes Traffic Server custom logging fields.
+The following list describes |TS| custom logging fields.
 
 .. _cqh:
 
@@ -330,7 +330,7 @@ The following list describes Traffic Server custom logging fields.
     ``Accept-Language:`` field in client request headers.
 
     .. note::
-        ecqh is the escaped version of this map
+        ecqh is the URL-encoded version of this map
 
 .. _pqh:
 
@@ -340,7 +340,7 @@ The following list describes Traffic Server custom logging fields.
     the ``Authorization:`` field in proxy request headers.
 
     .. note::
-        epqh is the escaped version of this map
+        epqh is the URL-encoded version of this map
 
 .. _psh:
 
@@ -350,7 +350,7 @@ The following list describes Traffic Server custom logging fields.
     ``Retry-After:`` field in proxy response headers.
 
     .. note::
-        epsh is the escaped version of this map
+        epsh is the URL-encoded version of this map
 
 .. _ssh:
 
@@ -360,7 +360,7 @@ The following list describes Traffic Server custom logging fields.
     server response headers.
 
     .. note::
-        essh is the escaped version of this map
+        essh is the URL-encoded version of this map
 
 .. _cssh:
 
@@ -370,7 +370,7 @@ The following list describes Traffic Server custom logging fields.
     the cached server response headers.
 
     .. note::
-        ecssh is the escaped version of this map
+        ecssh is the URL-encoded version of this map
 
 .. _caun:
 
@@ -382,7 +382,7 @@ The following list describes Traffic Server custom logging fields.
 
 ``cfsc``
     The client finish status code; specifies whether the client request
-    to Traffic Server was successfully completed (``FIN``) or
+    to |TS| was successfully completed (``FIN``) or
     interrupted (``INTR``).
 
 .. _chi:
@@ -395,39 +395,49 @@ The following list describes Traffic Server custom logging fields.
 ``chih``
     The IP address of the client's host machine in hexadecimal.
 
+.. _hii:
+
+``hii``
+    This is the incoming (interface) IP address for |TS|, in
+    otherwords this is the IP address the client connected to.
+
+.. _hiih:
+
+``hiih``
+    The the incoming (interface) IP address in hexadecimal.
+
 .. _chp:
 
 ``chp``
     The port number of the client's host machine.
 
-.. _cps:
-
-``cps``
-    Client Protocol Stack, the output would be the conjunction of
-    protocol names in the stack spliced with '+', such as "TLS+SPDY".
-
 .. _cqbl:
 
 ``cqbl``
     The client request transfer length; the body length in the client
-    request to Traffic Server (in bytes).
+    request to |TS| (in bytes).
 
 .. _cqhl:
 
 ``cqhl``
     The client request header length; the header length in the client
-    request to Traffic Server.
+    request to |TS|.
 
 .. _cqhm:
 
 ``cqhm``
-    The HTTP method in the client request to Traffic Server: ``GET``,
+    The HTTP method in the client request to |TS|: ``GET``,
     ``POST``, and so on (subset of ``cqtx``).
 
 .. _cqhv:
 
 ``cqhv``
     The client request HTTP version.
+
+.. _cqpv:
+
+``cqpv``
+    The client request protocol and version.
 
 .. _cqtd:
 
@@ -445,14 +455,13 @@ The following list describes Traffic Server custom logging fields.
 .. _cqtq:
 
 ``cqtq``
-    The client request timestamp, with millisecond resolution.
+    The time of the client request since January 1, 1970 UTC (epoch),
+    with millisecond resolution.
 
 .. _cqts:
 
 ``cqts``
-    The client-request timestamp in Squid format; the time of the client
-    request since January 1, 1970 UTC. Time is expressed in seconds,
-    with millisecond resolution.
+    The time of the client request since January 1, 1970 UTC (EPOCH), with second resolution.
 
 .. _cqtt:
 
@@ -462,6 +471,34 @@ The following list describes Traffic Server custom logging fields.
     mm is the two-digit minutes value, and ss is the 2-digit seconds
     value (for example, 16:01:19).
 
+.. _cqtr:
+
+``cqtr``
+    The TCP reused status; indicates if this client request went through
+    an already established connection.
+
+.. _cqssl:
+
+``cqssl``
+    The SSL client request status indicates if this client connection
+    is over SSL.
+
+.. _cqssr:
+
+``cqssr``
+    The SSL session ticket reused status; indicates if this request hit
+    the SSL session ticket and avoided a full SSL handshake.
+
+.. _cqssv:
+
+``cqssv``
+    The SSL version used to communicate with the client.
+
+.. _cqssc:
+
+``cqssc``
+    The cipher used by |TS| to communicate with the client over SSL.
+
 .. _cqtx:
 
 ``cqtx``
@@ -469,7 +506,7 @@ The following list describes Traffic Server custom logging fields.
 
          GET http://www.company.com HTTP/1.0
 
-    In reverse proxy mode, Traffic Server logs the rewritten/mapped URL
+    In reverse proxy mode, |TS| logs the rewritten/mapped URL
     (according to the rules in :file:`remap.config`), _not_ the
     pristine/unmapped URL.
 
@@ -477,9 +514,9 @@ The following list describes Traffic Server custom logging fields.
 
 ``cqu``
     The universal resource identifier (URI) of the request from client
-    to Traffic Server (subset of ``cqtx`` ).
+    to |TS| (subset of ``cqtx`` ).
 
-    In reverse proxy mode, Traffic Server logs the rewritten/mapped URL
+    In reverse proxy mode, |TS| logs the rewritten/mapped URL
     (according to the rules in :file:`remap.config`), _not_ the
     pristine/unmapped URL.
 
@@ -527,6 +564,12 @@ The following list describes Traffic Server custom logging fields.
     The client request unmapped URL host. This field records a URL's
     host before it is remapped (reverse proxy mode).
 
+.. _cluc:
+
+``cluc``
+    The cache lookup URL, or cache key, for the client request. This URL is
+    canonicalized as well.
+
 .. _crat:
 
 ``crat``
@@ -537,6 +580,15 @@ The following list describes Traffic Server custom logging fields.
 ``crc``
     The cache result code; specifies how the cache responded to the
     request (``HIT``, ``MISS``, and so on).
+
+.. _chm:
+
+``chm``
+    The cache hit-miss status, specifying which level of the cache this
+    was served out of. This is useful for example to show whether it was a
+    RAM cache vs disk cache hit. Future versions of the cache will support
+    more levels, but right now it only supports RAM (``HIT_RAM``) vs
+    rotational disk (``HIT_DISK``).
 
 .. _csscl:
 
@@ -576,41 +628,52 @@ The following list describes Traffic Server custom logging fields.
 ``fsiz``
     The size of the file (*n* bytes) as seen by the origin server.
 
+.. _ms:
+
+``{Milestone field name}ms``
+    The timestamp in milliseconds of a specific milestone for this request.
+    see :c:func:`TSHttpTxnMilestoneGet` for milestone names.
+
+.. _msdms
+
+``{Milestone field name1-Milestone field name2}msdms``
+    The difference in milliseconds of between two milestones.
+    see :c:func:`TSHttpTxnMilestoneGet` for milestone names.
+
 .. _pfsc:
 
 ``pfsc``
-    The proxy finish status code; specifies whether the Traffic Server
+    The proxy finish status code; specifies whether the |TS|
     request to the origin server was successfully completed (``FIN``),
     interrupted (``INTR``) or timed out (``TIMEOUT``).
 
 .. _phn:
 
 ``phn``
-    The hostname of the Traffic Server that generated the log entry in
+    The hostname of the |TS| that generated the log entry in
     collated log files.
 
 .. _phi:
 
 ``phi``
-    The IP of the Traffic Server that generated the log entry in
+    The IP of the |TS| that generated the log entry in
     collated log files.
 
 .. _phr:
 
 ``phr``
-    The proxy hierarchy route; the route Traffic Server used to retrieve
+    The proxy hierarchy route; the route |TS| used to retrieve
     the object.
 
 .. _php:
 
 ``php``
-    The TCP port number that Traffic Server served this request from.
+    The TCP port number that |TS| served this request from.
 
 .. _piid:
 
 ``piid``
-   The plugin ID for the transaction. This is set for plugin driven
-   transactions via :c:func:`TSHttpConnectWithPluginId`.
+   The plugin ID for the transaction. This is set for plugin driven transactions via :c:func:`TSHttpConnectWithPluginId`.
 
 .. _pitag:
 
@@ -645,7 +708,7 @@ The following list describes Traffic Server custom logging fields.
 .. _pscl:
 
 ``pscl``
-    The length of the Traffic Server response to the client (in bytes).
+    The length of the |TS| response to the client (in bytes).
 
 .. _psct:
 
@@ -656,7 +719,7 @@ The following list describes Traffic Server custom logging fields.
 .. _pshl:
 
 ``pshl``
-    The header length in Traffic Server's response to the client.
+    The header length in |TS|'s response to the client.
 
 .. _psql:
 
@@ -667,7 +730,13 @@ The following list describes Traffic Server custom logging fields.
 .. _pssc:
 
 ``pssc``
-    The HTTP response status code from Traffic Server to the client.
+    The HTTP response status code from |TS| to the client.
+
+.. _pqssl:
+
+``pqssl``
+    Indicates whether the connection from |TS| to the origin
+    was over SSL or not.
 
 .. _shi:
 
@@ -690,12 +759,12 @@ The following list describes Traffic Server custom logging fields.
 .. _sscl:
 
 ``sscl``
-    The response length (in bytes) from origin server to Traffic Server.
+    The response length (in bytes) from origin server to |TS|.
 
 .. _sshl:
 
 ``sshl``
-    The header length (in bytes) in the origin server response to Traffic Server.
+    The header length (in bytes) in the origin server response to |TS|.
 
 .. _sshv:
 
@@ -705,7 +774,7 @@ The following list describes Traffic Server custom logging fields.
 .. _sssc:
 
 ``sssc``
-    The HTTP response status code from origin server to Traffic Server.
+    The HTTP response status code from origin server to |TS|.
 
 .. _stms:
 
@@ -722,7 +791,7 @@ The following list describes Traffic Server custom logging fields.
 .. _stmsf:
 
 ``stmsf``
-    The time Traffic Server spends accessing the origin as a fractional
+    The time |TS| spends accessing the origin as a fractional
     number of seconds. That is, the time is formated as a floating-point
     number, instead of an integer as in ``stms``.
 
@@ -733,14 +802,21 @@ The following list describes Traffic Server custom logging fields.
 .. _sts:
 
 ``sts``
-    The time Traffic Server spends accessing the origin, in seconds.
+    The time |TS| spends accessing the origin, in seconds.
+
+.. _sstc:
+
+``sstc``
+    The number of transactions between |TS| and the origin server
+    from a single server session. A value greater than 0 indicates connection
+    reuse.
 
 .. _ttms:
 
 ``ttms``
-    The time Traffic Server spends processing the client request; the
+    The time |TS| spends processing the client request; the
     number of milliseconds between the time the client establishes the
-    connection with Traffic Server and the time Traffic Server sends the
+    connection with |TS| and the time |TS| sends the
     last byte of the response back to the client.
 
 .. _ttmsh:
@@ -751,7 +827,7 @@ The following list describes Traffic Server custom logging fields.
 .. _ttmsf:
 
 ``ttmsf``
-    The time Traffic Server spends processing the client request as a
+    The time |TS| spends processing the client request as a
     fractional number of seconds. Time is specified in millisecond
     resolution; however, instead of formatting the output as an integer
     (as with ``ttms``), the display is formatted as a floating-point
@@ -764,9 +840,9 @@ The following list describes Traffic Server custom logging fields.
 .. _tts:
 
 ``tts``
-    The time Traffic Server spends processing the client request; the
+    The time |TS| spends processing the client request; the
     number of seconds between the time at which the client establishes
-    the connection with Traffic Server and the time at which Traffic
+    the connection with |TS| and the time at which Traffic
     Server sends the last byte of the response back to the client.
 
 .. _logging-format-cross-reference:
@@ -812,7 +888,7 @@ Netscape Common
 ~~~~~~~~~~~~~~~
 
 The following is a list of the Netscape Common logging fields and the
-corresponding Traffic Server logging field symbols.
+corresponding |TS| logging field symbols.
 
 =============== =============
 Netscape Common Field Symbols
@@ -838,7 +914,7 @@ Netscape Extended
 ~~~~~~~~~~~~~~~~~
 
 The following table lists the Netscape Extended logging fields and the
-corresponding Traffic Server logging field symbols.
+corresponding |TS| logging field symbols.
 
 ================= =============
 Netscape Extended Field Symbols
@@ -864,7 +940,7 @@ This is the equivalent XML configuration for the log above::
 
     <LogFormat>
       <Name = "extended"/>
-      <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> 
+      <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>
          %<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>"/>
     </LogFormat>
 
@@ -874,7 +950,7 @@ Netscape Extended-2
 ~~~~~~~~~~~~~~~~~~~
 
 The following is a list of the Netscape Extended-2 logging fields and
-the corresponding Traffic Server logging field symbols.
+the corresponding |TS| logging field symbols.
 
 =================== =============
 Netscape Extended-2 Field Symbols
@@ -904,7 +980,7 @@ This is the equivalent XML configuration for the log above::
 
     <LogFormat>
       <Name = "extended2"/>
-      <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl> 
+      <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>
                  %<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>"/>
     </LogFormat>
 
@@ -958,47 +1034,47 @@ Netscape log files.
     Server sent the object to the client.
 
 ``TCP_MISS``
-    The requested object was not in cache, so Traffic Server retrieved
+    The requested object was not in cache, so |TS| retrieved
     the object from the origin server (or a parent proxy) and sent it to
     the client.
 
 ``TCP_REFRESH_HIT``
-    The object was in the cache, but it was stale. Traffic Server made an
+    The object was in the cache, but it was stale. |TS| made an
     ``if-modified-since`` request to the origin server and the
     origin server sent a ``304`` not-modified response. Traffic
     Server sent the cached object to the client.
 
 ``TCP_REF_FAIL_HIT``
-    The object was in the cache but was stale. Traffic Server made an
+    The object was in the cache but was stale. |TS| made an
     ``if-modified-since`` request to the origin server but the server
-    did not respond. Traffic Server sent the cached object to the
+    did not respond. |TS| sent the cached object to the
     client.
 
 ``TCP_REFRESH_MISS``
-    The object was in the cache but was stale. Traffic Server made an
+    The object was in the cache but was stale. |TS| made an
     ``if-modified-since`` request to the origin server and the server
-    returned a new object. Traffic Server served the new object to the
+    returned a new object. |TS| served the new object to the
     client.
 
 ``TCP_CLIENT_REFRESH``
     The client issued a request with a ``no-cache`` header. Traffic
     Server obtained the requested object from the origin server and sent
-    a copy to the client. Traffic Server deleted the previous copy of
+    a copy to the client. |TS| deleted the previous copy of
     the object from cache.
 
 ``TCP_IMS_HIT``
     The client issued an ``if-modified-since`` request and the object
     was in cache and fresher than the IMS date, or an
     ``if-modified-since`` request to the origin server revealed the
-    cached object was fresh. Traffic Server served the cached object to
+    cached object was fresh. |TS| served the cached object to
     the client.
 
 ``TCP_IMS_MISS``
     The client issued an
     ``if-modified-since request`` and the object was either not in
-    cache or was stale in cache. Traffic Server sent an
+    cache or was stale in cache. |TS| sent an
     ``if-modified-since request`` to the origin server and received the
-    new object. Traffic Server sent the updated object to the client.
+    new object. |TS| sent the updated object to the client.
 
 ``TCP_SWAPFAIL``
     The object was in the cache but could not be accessed. The client
@@ -1008,18 +1084,18 @@ Netscape log files.
     The client disconnected before the complete object was sent.
 
 ``ERR_CONNECT_FAIL``
-    Traffic Server could not reach the origin server.
+    |TS| could not reach the origin server.
 
 ``ERR_DNS_FAIL``
     The Domain Name Server (DNS) could not resolve the origin server
     name, or no DNS could be reached.
 
 ``ERR_INVALID_REQ``
-    The client HTTP request was invalid. (Traffic Server forwards
+    The client HTTP request was invalid. (|TS| forwards
     requests with unknown methods to the origin server.)
 
 ``ERR_READ_TIMEOUT``
-    The origin server did not respond to Traffic Server's request within
+    The origin server did not respond to |TS|'s request within
     the timeout interval.
 
 ``ERR_PROXY_DENIED``
@@ -1028,4 +1104,3 @@ Netscape log files.
 ``ERR_UNKNOWN``
     The client connected, but subsequently disconnected without sending
     a request.
-
