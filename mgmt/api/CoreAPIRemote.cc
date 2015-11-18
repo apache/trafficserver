@@ -459,6 +459,22 @@ StorageDeviceCmdOffline(char const *dev)
   return (ret == TS_ERR_OKAY) ? parse_generic_response(STORAGE_DEVICE_CMD_OFFLINE, main_socket_fd) : ret;
 }
 
+/*-------------------------------------------------------------------------
+ * LIfecycle Alert
+ *-------------------------------------------------------------------------
+ * Send alert to plugins
+ */
+TSMgmtError
+LifecycleAlert(char const *data)
+{
+  TSMgmtError ret;
+  MgmtMarshallInt optype = LIFECYCLE_ALERT;
+  MgmtMarshallString  tag = const_cast<MgmtMarshallString>(data);
+
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, LIFECYCLE_ALERT, &optype, &tag);
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(LIFECYCLE_ALERT, main_socket_fd) : ret;
+}
+
 /***************************************************************************
  * Record Operations
  ***************************************************************************/

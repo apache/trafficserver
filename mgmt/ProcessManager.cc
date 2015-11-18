@@ -299,6 +299,9 @@ ProcessManager::handleMgmtMsgFromLM(MgmtMessageHdr *mh)
   case MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE:
     signalMgmtEntity(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, data_raw, mh->data_len);
     break;
+  case MGMT_EVENT_LIFECYCLE_ALERT:
+    signalMgmtEntity(MGMT_EVENT_LIFECYCLE_ALERT, data_raw, mh->data_len);
+    break;
   default:
     mgmt_elog(stderr, 0, "[ProcessManager::pollLMConnection] unknown type %d\n", mh->msg_id);
     break;

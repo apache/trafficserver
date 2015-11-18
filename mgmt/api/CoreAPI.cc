@@ -472,6 +472,17 @@ StorageDeviceCmdOffline(const char *dev)
   lmgmt->signalEvent(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, dev);
   return TS_ERR_OKAY;
 }
+/*-------------------------------------------------------------------------
+ * LIfecycle Alert
+ *-------------------------------------------------------------------------
+ * Signal plugins.
+ */
+TSMgmtError
+LifecycleAlert(const char *tag)
+{
+  lmgmt->signalEvent(MGMT_EVENT_LIFECYCLE_ALERT, tag);
+  return TS_ERR_OKAY;
+}
 /**************************************************************************
  * RECORD OPERATIONS
  *************************************************************************/

@@ -67,6 +67,7 @@ static const struct NetCmdOperation requests[] = {
   /* API_PING                   */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
   /* SERVER_BACKTRACE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
   /* RECORD_DESCRIBE_CONFIG     */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT}},
+  /* LIFECYCLE_ALERT */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
 };
 
 // Responses always begin with a TSMgmtError code, followed by additional fields.
@@ -108,6 +109,7 @@ static const struct NetCmdOperation responses[] = {
                                      MGMT_MARSHALL_INT /* order */, MGMT_MARSHALL_INT /* access */, MGMT_MARSHALL_INT /* update */,
                                      MGMT_MARSHALL_INT /* updatetype */, MGMT_MARSHALL_INT /* checktype */,
                                      MGMT_MARSHALL_INT /* source */, MGMT_MARSHALL_STRING /* checkexpr */}},
+  /* LIFECYCLE_ALERT */ {1, {MGMT_MARSHALL_INT}},
 };
 
 #define GETCMD(ops, optype, cmd)                                       \
@@ -215,6 +217,7 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
   case STATS_RESET_NODE:
   case STATS_RESET_CLUSTER:
   case STORAGE_DEVICE_CMD_OFFLINE:
+  case LIFECYCLE_ALERT:
     ink_release_assert(responses[optype].nfields == 1);
     return send_mgmt_response(fd, optype, &ecode);
 

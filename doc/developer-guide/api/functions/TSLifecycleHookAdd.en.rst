@@ -60,6 +60,15 @@ once during the execution of the Traffic Server process and therefore should be 
 
    Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_CACHE_READY` and :c:data:`NULL` data.
 
+.. c:var:: TS_LIFECYCLE_ALERT_HOOK
+
+   Called when triggered by an external process, such as :program:`traffic_ctl`.
+
+   Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_ALERT`. The data is a null terminated string. This string
+   is provided by the external agent when the event is triggered. The purpose is to enable passing commands
+   to plugins from the command line.
+
+
 Ordering
 ========
 

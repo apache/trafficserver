@@ -942,11 +942,17 @@ tsapi TSMgmtError TSActionDo(TSActionNeedT action);
  */
 tsapi TSMgmtError TSBounce(unsigned options);
 
-/* TSStorageDeviceOp: Request an operation on a storage device.
+/* TSStorageDeviceCmdOffline: Request to make a cache storage device offline.
  * @arg dev Target device, specified by path to device.
  * @return Success.
  */
 tsapi TSMgmtError TSStorageDeviceCmdOffline(char const *dev);
+
+/* TSLifecycleAlert: Send a lifecycle alert to the plugins.
+ * @arg tag Alert tag string (null-terminated)
+ * @return Success
+ */
+tsapi TSMgmtError TSLifecycleAlert(char const* tag);
 
 /*--- diags output operations ---------------------------------------------*/
 /* TSDiags: enables users to manipulate run-time diagnostics, and print

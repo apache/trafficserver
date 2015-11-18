@@ -30,10 +30,9 @@
 #include <ts/ts.h>
 
 int
-CallbackHandler(TSCont this, TSEvent id, void *no_data)
+CallbackHandler(TSCont this, TSEvent id, void *data)
 {
   (void)this;
-  (void)no_data;
   switch (id) {
   case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
     TSDebug("lifecycle-plugin", "Proxy ports initialized");
@@ -43,6 +42,9 @@ CallbackHandler(TSCont this, TSEvent id, void *no_data)
     break;
   case TS_EVENT_LIFECYCLE_CACHE_READY:
     TSDebug("lifecycle-plugin", "Cache ready");
+    break;
+  case TS_EVENT_LIFECYCLE_ALERT:
+    TSDebug("lifecycle-plugin", "Alert! '%s'", (char*)data);
     break;
   default:
     TSDebug("lifecycle-plugin", "Unexpected event %d", id);
@@ -105,6 +107,7 @@ TSPluginInit(int argc, const char *argv[])
   TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, cb);
   TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_READY_HOOK, cb);
   TSLifecycleHookAdd(TS_LIFECYCLE_CACHE_READY_HOOK, cb);
+  TSLifecycleHookAdd(TS_LIFECYCLE_ALERT_HOOK, cb);
 
   TSDebug("lifecycle-plugin", "online");
 

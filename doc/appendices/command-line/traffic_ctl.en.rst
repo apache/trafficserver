@@ -45,6 +45,8 @@ of subcommands that control different aspects of Traffic Server:
     Stop, restart and examine the server
 :program:`traffic_ctl storage`
     Manipulate cache storage
+:program:`traffic_ctl plugin`
+    Interact with plugins.
 
 Options
 =======
@@ -231,6 +233,15 @@ traffic_ctl storage
    storage. This has exactly the same effect as a disk failure for
    that storage. This does not persist across restarts of the
    :program:`traffic_server` process.
+
+traffic_ctl plugin
+-------------------
+.. program:: traffic_ctl plugin
+.. option:: alert TAG [TAG ...]
+
+    Generate an alert for plugins. All plugins that have hooked the :c:member:`TS_LIFECYCLE_ALERT_HOOK`
+    will receive a callback for that hook. The data value for the callback will be the `TAG`. If multiple
+    tags are used then an alert is sent for each one.
 
 Examples
 ========
