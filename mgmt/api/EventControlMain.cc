@@ -544,6 +544,7 @@ static const event_message_handler handlers[] = {
   NULL,                        // STATS_RESET_CLUSTER
   NULL,                        // STORAGE_DEVICE_CMD_OFFLINE
   NULL,                        // RECORD_MATCH_GET
+  NULL,                        // LIFECYCLE_MESSAGE
 };
 
 static TSMgmtError

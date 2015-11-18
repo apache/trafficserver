@@ -70,6 +70,7 @@
 // so it's easier to do this than to try to encode an opcode and yet another
 // case statement.
 #define MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE 10011
+#define MGMT_EVENT_LIFECYCLE_MESSAGE 10012
 
 /***********************************************************************
  *

@@ -29,6 +29,7 @@ traffic_ctl_SOURCES = \
   alarm.cc \
   config.cc \
   metric.cc \
+  plugin.cc \
   server.cc \
   storage.cc \
   traffic_ctl.cc
