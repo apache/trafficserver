@@ -16,7 +16,7 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-AM_CPPFLAGS += -I$(top_srcdir)/lib
+AM_CPPFLAGS += @OPENSSL_INCLUDES@ -I$(top_srcdir)/lib
 
 noinst_LTLIBRARIES = libsslhdr.la
 pkglib_LTLIBRARIES = sslheaders.la
@@ -30,6 +30,9 @@ sslheaders_la_LIBADD = libsslhdr.la
 
 test_sslheaders_SOURCES = test_sslheaders.cc sslheaders.h
 test_sslheaders_LDADD = \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LIBS@ \
+  @OPENSSL_LDFLAGS@ \
   libsslhdr.la \
   $(top_builddir)/lib/ts/libtsutil.la \
   @OPENSSL_LIBS@
