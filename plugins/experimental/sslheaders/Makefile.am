@@ -29,10 +29,9 @@ sslheaders_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 sslheaders_la_LIBADD = libsslhdr.la
 
 test_sslheaders_SOURCES = test_sslheaders.cc sslheaders.h
+test_sslheaders_LDFLAGS = @OPENSSL_LDFLAGS@
 test_sslheaders_LDADD = \
   @LIBTOOL_LINK_FLAGS@ \
-  @OPENSSL_LIBS@ \
-  @OPENSSL_LDFLAGS@ \
   libsslhdr.la \
   $(top_builddir)/lib/ts/libtsutil.la \
   @OPENSSL_LIBS@
