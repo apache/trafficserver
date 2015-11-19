@@ -195,7 +195,10 @@ enum ParentRR_t {
 class ParentRecord : public ControlBase
 {
 public:
-  ParentRecord() : parents(NULL), num_parents(0), round_robin(P_NO_ROUND_ROBIN), rr_next(0), go_direct(true), chash(NULL) {}
+  ParentRecord()
+    : parents(NULL), num_parents(0), round_robin(P_NO_ROUND_ROBIN), ignore_query(false), rr_next(0), go_direct(true), chash(NULL)
+  {
+  }
 
   ~ParentRecord();
 
@@ -203,6 +206,7 @@ public:
   bool DefaultInit(char *val);
   void UpdateMatch(ParentResult *result, RequestData *rdata);
   void FindParent(bool firstCall, ParentResult *result, RequestData *rdata, ParentConfigParams *config);
+  uint64_t getPathHash(HttpRequestData *hrdata, ATSHash64 *h);
   void Print();
   pRecord *parents;
   int num_parents;
@@ -218,6 +222,7 @@ public:
   const char *ProcessParents(char *val);
   void buildConsistentHash(void);
   ParentRR_t round_robin;
+  bool ignore_query;
   volatile uint32_t rr_next;
   bool go_direct;
   ATSConsistentHash *chash;

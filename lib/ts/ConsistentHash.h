@@ -52,6 +52,7 @@ struct ATSConsistentHash {
   ATSConsistentHashNode *lookup(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL, ATSHash64 *h = NULL);
   ATSConsistentHashNode *lookup_available(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL,
                                           ATSHash64 *h = NULL);
+  ATSConsistentHashNode *lookup_by_hashval(uint64_t hashval, ATSConsistentHashIter *i = NULL, bool *w = NULL);
   ~ATSConsistentHash();
 
 private:
