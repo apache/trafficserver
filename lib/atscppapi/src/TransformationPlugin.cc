@@ -24,7 +24,7 @@
 
 #include <ts/ts.h>
 #include <cstddef>
-#include <inttypes.h>
+#include <cinttypes>
 #include "utils_internal.h"
 #include "logging_internal.h"
 #include "atscppapi/noncopyable.h"

@@ -76,7 +76,7 @@ Url::getUrlString() const
     int length;
     char *memptr = TSUrlStringGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      ret_str = std::string(memptr, length);
+      ret_str.assign(memptr, length);
       TSfree(memptr);
       LOG_DEBUG("Got URL [%s]", ret_str.c_str());
     } else {
@@ -95,7 +95,7 @@ Url::getPath() const
     int length;
     const char *memptr = TSUrlPathGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      ret_str = std::string(memptr, length);
+      ret_str.assign(memptr, length);
     }
     LOG_DEBUG("Using path [%s]", ret_str.c_str());
   }
@@ -110,7 +110,7 @@ Url::getQuery() const
     int length;
     const char *memptr = TSUrlHttpQueryGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      ret_str = std::string(memptr, length);
+      ret_str.assign(memptr, length);
     }
     LOG_DEBUG("Using query [%s]", ret_str.c_str());
   }
@@ -125,7 +125,7 @@ Url::getScheme() const
     int length;
     const char *memptr = TSUrlSchemeGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      ret_str = std::string(memptr, length);
+      ret_str.assign(memptr, length);
     }
     LOG_DEBUG("Using scheme [%s]", ret_str.c_str());
   }
@@ -140,7 +140,7 @@ Url::getHost() const
     int length;
     const char *memptr = TSUrlHostGet(state_->hdr_buf_, state_->url_loc_, &length);
     if (memptr && length) {
-      ret_str = std::string(memptr, length);
+      ret_str.assign(memptr, length);
     }
     LOG_DEBUG("Using host [%s]", ret_str.c_str());
   }
@@ -193,7 +193,6 @@ Url::setScheme(const std::string &scheme)
 {
   if (!isInitialized()) {
     LOG_ERROR("Url %p not initialized", this);
-    ;
     return;
   }
 

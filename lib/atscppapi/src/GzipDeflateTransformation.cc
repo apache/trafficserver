@@ -23,7 +23,7 @@
 #include <cstring>
 #include <vector>
 #include <zlib.h>
-#include <inttypes.h>
+#include <cinttypes>
 #include "atscppapi/TransformationPlugin.h"
 #include "atscppapi/GzipDeflateTransformation.h"
 #include "logging_internal.h"
