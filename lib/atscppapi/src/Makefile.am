@@ -34,7 +34,6 @@ libatscppapi_la_SOURCES = GlobalPlugin.cc \
 			  TransactionPlugin.cc \
 			  Headers.cc \
 			  Request.cc \
-			  CaseInsensitiveStringComparator.cc \
 			  ClientRequest.cc \
 			  Url.cc \
 			  HttpVersion.cc \
@@ -63,7 +62,6 @@ library_include_HEADERS = $(base_include_folder)/GlobalPlugin.h \
 			  $(base_include_folder)/HttpVersion.h \
 			  $(base_include_folder)/Headers.h \
 			  $(base_include_folder)/Request.h \
-			  $(base_include_folder)/CaseInsensitiveStringComparator.h \
 			  $(base_include_folder)/ClientRequest.h \
 	 		  $(base_include_folder)/Url.h \
 		 	  $(base_include_folder)/Response.h \
