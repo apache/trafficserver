@@ -422,6 +422,7 @@ public:
       case SQUID_LOG_ERR_INVALID_REQ:
       case SQUID_LOG_ERR_UNKNOWN:
       case SQUID_LOG_ERR_READ_TIMEOUT:
+      case SQUID_LOG_ERR_REQUESTBUFFER_TIMEOUT:
         ++(l->errors);
         break;
       }
@@ -491,6 +492,7 @@ public:
       case SQUID_LOG_ERR_INVALID_REQ:
       case SQUID_LOG_ERR_UNKNOWN:
       case SQUID_LOG_ERR_READ_TIMEOUT:
+      case SQUID_LOG_ERR_REQUESTBUFFER_TIMEOUT:
         l->errors = 1;
         break;
       }

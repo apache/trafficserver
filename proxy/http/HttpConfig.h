@@ -233,6 +233,8 @@ enum {
 
   http_total_x_redirect_stat,
 
+  http_request_body_receive_timeout_stat,
+  http_total_request_buffer_memory,
   // Times
   http_total_transactions_time_stat,
   http_parent_proxy_transaction_time_stat,
@@ -384,6 +386,7 @@ struct OverridableHttpConfigParams {
       freshness_fuzz_min_time(0), max_cache_open_read_retries(-1), cache_open_read_retry_time(10), cache_generation_number(-1),
       max_cache_open_write_retries(1), background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0),
       flow_low_water_mark(0), default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
+      request_buffer_enabled(0),
 
       // Strings / floats must come last
       body_factory_template_base(NULL), body_factory_template_base_len(0), proxy_response_server_string(NULL),
@@ -561,6 +564,8 @@ struct OverridableHttpConfigParams {
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
   MgmtInt slow_log_threshold;
+
+  MgmtByte request_buffer_enabled;
   // IMPORTANT: Here comes all strings / floats configs.
 
   ///////////////////////////////////////////////////////////////////

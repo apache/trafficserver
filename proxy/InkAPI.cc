@@ -7964,6 +7964,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->slow_log_threshold;
     break;
+  case TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED:
+    ret = &overridableHttpConfig->request_buffer_enabled;
+    break;
   case TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE:
     typ = OVERRIDABLE_TYPE_STRING;
     ret = &overridableHttpConfig->body_factory_template_base;
@@ -8319,6 +8322,10 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 
   case 40:
     switch (name[length - 1]) {
+    case 'd':
+      if (!strncmp(name, "proxy.config.http.request_buffer_enabled", length))
+        cnf = TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED;
+      break;
     case 'e':
       if (!strncmp(name, "proxy.config.http.down_server.cache_time", length))
         cnf = TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME;
@@ -8902,4 +8909,47 @@ TSVConnReenable(TSVConn vconn)
       ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
     }
   }
+}
+
+tsapi char *
+TSHttpTxnGetClientRequestBody(TSHttpTxn txnp, int *len)
+{
+  char *ret = NULL;
+
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *)txnp;
+  int64_t read_avail = sm->ua_buffer_reader->read_avail();
+  if (read_avail == 0 || sm->t_state.hdr_info.request_content_length <= 0)
+    return NULL;
+
+  ret = (char *)TSmalloc(sizeof(char) * read_avail);
+
+  int64_t consumed = 0;
+  int64_t data_len = 0;
+  const char *char_data = NULL;
+  TSIOBufferBlock block = TSIOBufferReaderStart((TSIOBufferReader)sm->ua_buffer_reader);
+  while (block != NULL) {
+    char_data = TSIOBufferBlockReadStart(block, (TSIOBufferReader)sm->ua_buffer_reader, &data_len);
+    memcpy(ret + consumed, char_data, data_len);
+    consumed += data_len;
+    block = TSIOBufferBlockNext(block);
+  }
+
+  *len = (int)consumed;
+
+  return ret;
+}
+
+tsapi TSIOBufferReader
+TSHttpTxnGetClientRequestBufferReader(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *)txnp;
+  return (TSIOBufferReader)sm->ua_buffer_reader;
+}
+
+tsapi int64_t
+TSHttpTxnGetClientRequestContentLength(TSHttpTxn txnp)
+{
+  return ((HttpSM *)txnp)->t_state.hdr_info.request_content_length;
 }

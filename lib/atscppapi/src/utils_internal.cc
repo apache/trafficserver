@@ -141,7 +141,12 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
   case TS_EVENT_HTTP_SELECT_ALT:
     plugin->handleSelectAlt(transaction);
     break;
-
+  case TS_EVENT_HTTP_REQUEST_BUFFER_READ:
+    plugin->handleHttpRequestBufferRead(transaction);
+    break;
+  case TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE:
+    plugin->handleHttpRequestBufferReadComplete(transaction);
+    break;
   default:
     assert(false); /* we should never get here */
     break;
