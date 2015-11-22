@@ -2667,6 +2667,26 @@ ts.http.server_packet_dscp_set
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.enable_redirect
+-----------------------
+**syntax:** *ts.http.enable_redirect(NUMBER)*
+
+**context:** do_remap or do_global_* or later.
+
+**decription:** This function can be used to make transaction follow redirect
+
+Here is an example:
+
+::
+
+    function do_remap()
+        ts.http.enable_redirect(1)
+        return 0
+    end
+ 
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.cntl_get
 ----------------
 **syntax:** *val = ts.http.cntl_get(CNTL_TYPE)*
