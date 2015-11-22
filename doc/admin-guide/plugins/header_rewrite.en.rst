@@ -64,6 +64,7 @@ The following operators are available::
   set-config overridable-config <value>      [operator_flags]
   set-conn-dscp <value>                      [operator_flags]
   skip-remap <value>                         [operator_flags]
+  set-debug                                  [operator_flags]
   counter counter-name                       [operator_flags]
   no-op                                      [operator_flags]
 
