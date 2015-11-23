@@ -333,6 +333,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
       va_list tmp;
       va_copy(tmp, ap);
       vprintline(diags_log->m_fp, format_buf_w_ts, tmp);
+      va_end(tmp);
     }
   }
 
@@ -341,6 +342,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
       va_list tmp;
       va_copy(tmp, ap);
       vprintline(stdout_log->m_fp, format_buf_w_ts, tmp);
+      va_end(tmp);
     }
   }
 
@@ -349,6 +351,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
       va_list tmp;
       va_copy(tmp, ap);
       vprintline(stderr_log->m_fp, format_buf_w_ts, tmp);
+      va_end(tmp);
     }
   }
 
@@ -577,6 +580,8 @@ Diags::error_va(DiagsLevel level, const char *file, const char *func, const int 
     }
     ink_fatal_va(format_string, ap2);
   }
+
+  va_end(ap2);
 }
 
 /*
