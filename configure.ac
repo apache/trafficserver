@@ -797,7 +797,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -819,7 +819,7 @@ case $host_os_def in
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ], [
       AC_MSG_WARN([clang is the only supported compiler on Darwin])
     ])
@@ -840,7 +840,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -911,7 +911,10 @@ AC_SUBST(AM_CXXFLAGS)
 
 # Special compiler flag hacks for various pieces of the code
 AC_SUBST([FLEX_CFLAGS], $flex_cflags)
-AC_SUBST([LUAJIT_CFLAGS], $luajit_cflags)
+
+# Flags for buildit LuaJIT itself.
+AC_SUBST(LUA_LDFLAGS)
+AC_SUBST([LUA_CFLAGS], $lua_cflags)
 
 SHARED_CFLAGS=-fPIC
 SHARED_LDFLAGS=-shared
@@ -1393,12 +1396,15 @@ AX_LIB_READLINE
 # http://luajit.org/install.html.
 case $host_os_def in
   darwin)
-    TS_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
+    LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     ;;
 esac
 
-AC_SUBST(TS_LUAJIT_LDFLAGS)
-AC_SUBST(LUA_LDFLAGS)
+# Flags for building and linking against our internal copy of LuaJIT.
+AC_SUBST([LUAJIT_LDFLAGS])
+AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(top_srcdir)/lib/luajit/src'])
+AC_SUBST([LUAJIT_LIBS], ['$(top_builddir)/lib/luajit/src/libluajit.a'])
+
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])

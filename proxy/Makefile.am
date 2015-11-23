@@ -240,7 +240,7 @@ if BUILD_LUAJIT
 
   # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
   # http://luajit.org/install.html.
-  traffic_server_LDFLAGS += $(TS_LUAJIT_LDFLAGS)
+  traffic_server_LDFLAGS += $(LUAJIT_LDFLAGS)
 endif
 
 traffic_logcat_SOURCES = logcat.cc
