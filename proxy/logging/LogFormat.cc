@@ -570,7 +570,7 @@ LogFormat::parse_escape_string(const char *str, int len)
   b = (unsigned char)str[start + 2];
   c = (unsigned char)str[start + 3];
 
-  if (isdigit(a) && isdigit(b) && isdigit(b)) {
+  if (isdigit(a) && isdigit(b)) {
     sum = (a - '0') * 64 + (b - '0') * 8 + (c - '0');
 
     if (sum == 0 || sum >= 255) {
