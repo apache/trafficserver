@@ -22,18 +22,16 @@
  */
 
 #include <stdio.h>
-
-#include "ts/ts.h"
-#include "ts/ink_defs.h"
+#include <ts/ts.h>
 
 void
-TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
+TSPluginInit(int argc, const char *argv[])
 {
-  TSPluginRegistrationInfo info;
+  (void)argc; // unused
+  (void)argv; // unused
 
   // Get the version:
   const char *ts_version = TSTrafficServerVersionGet();
-
   if (!ts_version) {
     TSError("[version] Can't get Traffic Server verion.\n");
     return;
@@ -49,10 +47,10 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
     return;
   }
 
+  TSPluginRegistrationInfo info;
   info.plugin_name = "version-plugin";
   info.vendor_name = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
-
 
 // partial compilation
 #if (TS_VERSION_NUMBER < 3000000)
