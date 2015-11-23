@@ -161,6 +161,14 @@ is_digit(char c)
   return ((c <= '9') && (c >= '0'));
 }
 
+// test to see if a character is a valid character for a host in a URI according to
+// RFC 2396
+inline static int
+is_host_char(char c)
+{
+	return (ParseRules::is_alpha(c) || ParseRules::is_digit(c) || (c == '-') || (c == '.'));
+}
+
 /***********************************************************************
  *                                                                     *
  *                         M A I N    C O D E                          *
@@ -1124,8 +1132,13 @@ validate_hdr_host(HTTPHdrImpl *hh)
           if (port.size() > 5)
             return PARSE_ERROR;
           int port_i = ink_atoi(port.data(), port.size());
-          if (port.size() > 5 || port_i >= 65536 || port_i <= 0)
+          if (port_i >= 65536 || port_i <= 0)
             return PARSE_ERROR;
+        }
+        while (addr && PARSE_DONE == ret) {
+          if (!(is_host_char(*addr)))
+            return PARSE_ERROR;
+          ++addr;
         }
         while (rest && PARSE_DONE == ret) {
           if (!ParseRules::is_ws(*rest))
