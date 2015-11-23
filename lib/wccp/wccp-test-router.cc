@@ -51,6 +51,7 @@ Error(char const *fmt, ...)
   va_start(args, fmt);
   vfprintf(stderr, fmt, args);
   Ready = false;
+  va_end(args);
 }
 
 int
