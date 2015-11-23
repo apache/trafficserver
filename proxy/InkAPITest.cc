@@ -331,7 +331,7 @@ client_handler(TSCont contp, TSEvent event, void *data)
     // happen until data arrives on the socket. Because we're just testing the accept()
     // we write a small amount of ignored data to make sure this gets triggered.
     UnixNetVConnection *vc = static_cast<UnixNetVConnection *>(data);
-    (void) ::write(vc->con.fd, "Bob's your uncle", 16);
+    (void)::write(vc->con.fd, "Bob's your uncle", 16);
 
     sleep(1); // XXX this sleep ensures the server end gets the accept event.
 
