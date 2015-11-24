@@ -49,6 +49,8 @@ libtsutil_la_SOURCES = \
   Bitops.h \
   ConsistentHash.cc \
   ConsistentHash.h \
+  ContFlags.cc \
+  ContFlags.h \
   Cryptohash.h \
   Diags.cc \
   Diags.h \
