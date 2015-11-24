@@ -113,8 +113,12 @@ http2_are_frame_flags_valid(uint8_t ftype, uint8_t fflags)
     HTTP2_FLAGS_WINDOW_UPDATE_MASK, HTTP2_FLAGS_CONTINUATION_MASK,
   };
 
-  // The frame flags are valid for this frame if nothing outside the defined
-  // bits is set.
+  if (ftype >= HTTP2_FRAME_TYPE_MAX) {
+    // Skip validation for Unkown frame type - [RFC 7540] 5.5. Extending HTTP/2
+    return true;
+  }
+
+  // The frame flags are valid for this frame if nothing outside the defined bits is set.
   return (fflags & ~mask[ftype]) == 0;
 }
 
@@ -122,8 +126,7 @@ bool
 http2_frame_header_is_valid(const Http2FrameHeader &hdr, unsigned max_frame_size)
 {
   if (!http2_are_frame_flags_valid(hdr.type, hdr.flags)) {
-    // XXX not working right now
-    // return false;
+    return false;
   }
 
   // 6.1 If a DATA frame is received whose stream identifier field is 0x0, the recipient MUST
@@ -849,7 +852,16 @@ const static struct {
                                    {HTTP2_FRAME_TYPE_CONTINUATION, 0x10, false},
                                    {HTTP2_FRAME_TYPE_CONTINUATION, 0x20, false},
                                    {HTTP2_FRAME_TYPE_CONTINUATION, 0x40, false},
-                                   {HTTP2_FRAME_TYPE_CONTINUATION, 0x80, false}};
+                                   {HTTP2_FRAME_TYPE_CONTINUATION, 0x80, false},
+                                   {HTTP2_FRAME_TYPE_MAX, 0x00, true},
+                                   {HTTP2_FRAME_TYPE_MAX, 0x01, true},
+                                   {HTTP2_FRAME_TYPE_MAX, 0x02, true},
+                                   {HTTP2_FRAME_TYPE_MAX, 0x04, true},
+                                   {HTTP2_FRAME_TYPE_MAX, 0x08, true},
+                                   {HTTP2_FRAME_TYPE_MAX, 0x10, true},
+                                   {HTTP2_FRAME_TYPE_MAX, 0x20, true},
+                                   {HTTP2_FRAME_TYPE_MAX, 0x40, true},
+                                   {HTTP2_FRAME_TYPE_MAX, 0x80, true}};
 
 REGRESSION_TEST(HTTP2_FRAME_FLAGS)(RegressionTest *t, int, int *pstatus)
 {
