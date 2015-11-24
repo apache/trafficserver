@@ -36,7 +36,6 @@
 #include "I_NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
-#include "ts/Diags.h"
 
 class UnixNetVConnection;
 class NetHandler;
