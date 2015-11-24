@@ -36,6 +36,7 @@
 #include "I_NetVConnection.h"
 #include "P_UnixNetState.h"
 #include "P_Connection.h"
+#include "ts/Diags.h"
 
 class UnixNetVConnection;
 class NetHandler;
@@ -323,6 +324,7 @@ TS_INLINE void
 UnixNetVConnection::set_remote_addr()
 {
   ats_ip_copy(&remote_addr, &con.addr);
+  this->control_flags.set_flag(ContFlags::DEBUG_OVERRIDE, diags->test_override_ip(remote_addr));
 }
 
 TS_INLINE void
