@@ -39,6 +39,7 @@
 #include "ts/ink_platform.h"
 #include "ts/List.h"
 #include "I_Lock.h"
+#include "ts/ContFlags.h"
 
 class Continuation;
 class ContinuationQueue;
@@ -128,6 +129,12 @@ public:
   LINK(Continuation, link);
 
   /**
+    Contains values for debug_override and future flags that
+    needs to be thread local while this continuation is running
+  */
+  ContFlags control_flags;
+
+  /**
     Receives the event code and data for an Event.
 
     This function receives the event code and data for an event and
@@ -191,6 +198,8 @@ inline Continuation::Continuation(ProxyMutex *amutex)
 #endif
     mutex(amutex)
 {
+  // Pick up the control flags from the creating thread
+  this->control_flags.set_flags(get_cont_flags().get_flags());
 }
 
 #endif /*_Continuation_h_*/
