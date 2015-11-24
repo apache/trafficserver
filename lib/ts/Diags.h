@@ -39,6 +39,8 @@
 #include "ink_mutex.h"
 #include "Regex.h"
 #include "ink_apidefs.h"
+#include "ContFlags.h"
+#include "ink_inet.h"
 #include "BaseLogFile.h"
 
 #define DIAGS_MAGIC 0x12345678
@@ -84,7 +86,7 @@ typedef void (*DiagsCleanupFunc)();
 
 struct DiagsConfigState {
   // this is static to eliminate many loads from the critical path
-  static bool enabled[2];                    // one debug, one action
+  static int enabled[2];                     // one debug, one action
   DiagsModeOutput outputs[DiagsLevel_Count]; // where each level prints
 };
 
@@ -165,16 +167,29 @@ public:
   // conditional debugging //
   ///////////////////////////
 
+
+  bool
+  get_override() const
+  {
+    return get_cont_flag(ContFlags::DEBUG_OVERRIDE);
+  }
+
+  bool
+  test_override_ip(IpEndpoint const &test_ip)
+  {
+    return this->debug_client_ip == test_ip;
+  }
+
   bool
   on(DiagsTagType mode = DiagsTagType_Debug) const
   {
-    return (config.enabled[mode]);
+    return ((config.enabled[mode] == 1) || (config.enabled[mode] == 2 && this->get_override()));
   }
 
   bool
   on(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const
   {
-    return (config.enabled[mode] && tag_activated(tag, mode));
+    return this->on(mode) && tag_activated(tag, mode);
   }
 
   /////////////////////////////////////
@@ -255,6 +270,8 @@ public:
 
   const char *base_debug_tags;  // internal copy of default debug tags
   const char *base_action_tags; // internal copy of default action tags
+
+  IpAddr debug_client_ip;
 
 private:
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
