@@ -28,7 +28,7 @@ Proxy Cache Configuration
    session-protocol.en
    cache-basics.en
    redirecting-http-requests.en
-   reverse-proxying.en
    explicit-forward-proxying.en
    transparent-forward-proxying.en
    multi-server-caches.en
+   hierachical-caching.en

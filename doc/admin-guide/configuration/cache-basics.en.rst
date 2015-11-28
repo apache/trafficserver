@@ -53,7 +53,7 @@ overview illustrates how Traffic Server serves a request.
    Server serves it to the client as a *cache hit* (see the figure
    below).
 
-   .. figure:: ../static/images/admin/cache_hit.jpg
+   .. figure:: /static/images/admin/cache_hit.jpg
       :align: center
       :alt: A cache hit
 
