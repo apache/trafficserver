@@ -35,6 +35,7 @@ Table of Contents:
    storage/index.en
    plugins/index.en
    monitoring/index.en
+   configuring-traffic-server.en
    performance/index.en
    files/index.en
    troubleshooting.en
