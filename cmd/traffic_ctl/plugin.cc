@@ -32,7 +32,7 @@ plugin_msg(unsigned argc, const char **argv)
 
   TSMgmtError error;
 
-  error = TSLifecycleMessage(file_arguments[0], file_arguments[1], strlen(file_arguments[1])+1);
+  error = TSLifecycleMessage(file_arguments[0], file_arguments[1], strlen(file_arguments[1]) + 1);
   if (error != TS_ERR_OKAY) {
     CtrlMgmtError(error, "message '%s' not sent", file_arguments[0]);
     return CTRL_EX_ERROR;

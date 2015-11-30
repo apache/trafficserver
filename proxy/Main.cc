@@ -123,7 +123,7 @@ static const long MAX_LOGIN = ink_login_name_max();
 
 static void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void *mgmt_storage_device_cmd_callback(void *x, char *data, int len);
-static void *mgmt_lifecycle_msg_callback(void* x, char* data, int len);
+static void *mgmt_lifecycle_msg_callback(void *x, char *data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 
 static int num_of_net_threads = ink_number_of_processors();
@@ -1966,13 +1966,15 @@ mgmt_storage_device_cmd_callback(void *data, char *arg, int len)
   return NULL;
 }
 
-static void*
-mgmt_lifecycle_msg_callback(void*, char *data, int len)
+static void *
+mgmt_lifecycle_msg_callback(void *, char *data, int len)
 {
   APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
-  TSPluginMsg* msg = reinterpret_cast<TSPluginMsg*>(data);
+  TSPluginMsg *msg = reinterpret_cast<TSPluginMsg *>(data);
   // unswizzle pointers, which are sent as offsets from the base address.
-  Debug("amc", "plugin msg base = %" PRIu64 " payload = %" PRIu64 " with tag offset of %p and data size %" PRIu64 " and offset of %p", sizeof(*msg), len - sizeof(*msg), msg->tag, msg->data_size, msg->data);
+  Debug("amc",
+        "plugin msg base = %" PRIu64 " payload = %" PRIu64 " with tag offset of %p and data size %" PRIu64 " and offset of %p",
+        sizeof(*msg), len - sizeof(*msg), msg->tag, msg->data_size, msg->data);
   msg->tag = (data + reinterpret_cast<intptr_t>(msg->tag));
   msg->data = (data + reinterpret_cast<intptr_t>(msg->data));
   while (hook) {

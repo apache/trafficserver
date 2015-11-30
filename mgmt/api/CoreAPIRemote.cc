@@ -465,12 +465,12 @@ StorageDeviceCmdOffline(char const *dev)
  * Send alert to plugins
  */
 TSMgmtError
-LifecycleMessage(char const *tag, void const* data, size_t data_size)
+LifecycleMessage(char const *tag, void const *data, size_t data_size)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = LIFECYCLE_MESSAGE;
-  MgmtMarshallString  mtag = const_cast<MgmtMarshallString>(tag);
-  MgmtMarshallData  mdata =  { const_cast<void*>(data), data_size };
+  MgmtMarshallString mtag = const_cast<MgmtMarshallString>(tag);
+  MgmtMarshallData mdata = {const_cast<void *>(data), data_size};
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, LIFECYCLE_MESSAGE, &optype, &mtag, &mdata);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(LIFECYCLE_MESSAGE, main_socket_fd) : ret;

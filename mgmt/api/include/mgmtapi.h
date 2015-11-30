@@ -953,7 +953,7 @@ tsapi TSMgmtError TSStorageDeviceCmdOffline(char const *dev);
  * @arg tag Alert tag string (null-terminated)
  * @return Success
  */
-tsapi TSMgmtError TSLifecycleMessage(char const* tag, void const* data, size_t data_size);
+tsapi TSMgmtError TSLifecycleMessage(char const *tag, void const *data, size_t data_size);
 
 /*--- diags output operations ---------------------------------------------*/
 /* TSDiags: enables users to manipulate run-time diagnostics, and print

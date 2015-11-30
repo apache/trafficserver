@@ -1773,7 +1773,7 @@ TSStorageDeviceCmdOffline(char const *dev)
 }
 
 tsapi TSMgmtError
-TSLifecycleMessage(char const *tag, void const* data, size_t data_size)
+TSLifecycleMessage(char const *tag, void const *data, size_t data_size)
 {
   return LifecycleMessage(tag, data, data_size);
 }

@@ -1169,10 +1169,10 @@ handle_lifecycle_message(int fd, void *req, size_t reqlen)
   if (err == TS_ERR_OKAY) {
     size_t tag_size = strlen(tag) + 1;
     size_t n = sizeof(TSPluginMsg) + tag_size + data.len;
-    TSPluginMsg* msg = NULL;
+    TSPluginMsg *msg = NULL;
     char buffer[n];
-    msg = reinterpret_cast<TSPluginMsg*>(buffer);
-    
+    msg = reinterpret_cast<TSPluginMsg *>(buffer);
+
     // forward to server
     /* This is very ugly because the marshalling support is not available in
        traffic_server so we have to pack up the data in the final form used by
@@ -1180,13 +1180,12 @@ handle_lifecycle_message(int fd, void *req, size_t reqlen)
        do that by sending the pointers as offsets to be unswizzled by the
        receiver.
     */
-    msg->tag = reinterpret_cast<char const*>(sizeof(*msg));
-    msg->data = reinterpret_cast<void const*>(msg->tag + tag_size);
+    msg->tag = reinterpret_cast<char const *>(sizeof(*msg));
+    msg->data = reinterpret_cast<void const *>(msg->tag + tag_size);
     msg->data_size = data.len;
     memcpy(msg + 1, tag, tag_size);
-    memcpy(reinterpret_cast<char*>(msg + 1) + tag_size, data.ptr, data.len);
-    Debug("amc", "Handling msg of size %" PRIu64 " with tag=%s and payload of size %" PRIu64 ,
-	  n, tag, data.len);
+    memcpy(reinterpret_cast<char *>(msg + 1) + tag_size, data.ptr, data.len);
+    Debug("amc", "Handling msg of size %" PRIu64 " with tag=%s and payload of size %" PRIu64, n, tag, data.len);
     lmgmt->signalEvent(MGMT_EVENT_LIFECYCLE_MESSAGE, buffer, n);
   }
 
