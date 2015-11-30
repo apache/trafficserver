@@ -237,12 +237,12 @@ traffic_ctl storage
 traffic_ctl plugin
 -------------------
 .. program:: traffic_ctl plugin
-.. option:: alert TAG [TAG ...]
+.. option:: msg TAG DATA
 
-    Generate an alert for plugins. All plugins that have hooked the :c:member:`TS_LIFECYCLE_ALERT_HOOK`
-    will receive a callback for that hook. The data value for the callback will be the `TAG`. If multiple
-    tags are used then an alert is sent for each one.
-
+    Send a message to plugins. All plugins that have hooked the :c:member:`TS_LIFECYCLE_MSG_HOOK`
+    will receive a callback for that hook. The :arg:`TAG` and :arg:`DATA` will be available to the
+    plugin hook processing.
+    
 Examples
 ========
 

@@ -24,20 +24,18 @@
 #include "traffic_ctl.h"
 
 static int
-plugin_alert(unsigned argc, const char **argv)
+plugin_msg(unsigned argc, const char **argv)
 {
-  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments == 0) {
-    return CtrlCommandUsage("plugin alert TAG");
+  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 2) {
+    return CtrlCommandUsage("plugin msg TAG DATA");
   }
 
-  for (unsigned i = 0; i < n_file_arguments; ++i) {
-    TSMgmtError error;
+  TSMgmtError error;
 
-    error = TSLifecycleAlert(file_arguments[i]);
-    if (error != TS_ERR_OKAY) {
-      CtrlMgmtError(error, "alert '%s' not sent", file_arguments[i]);
-      return CTRL_EX_ERROR;
-    }
+  error = TSLifecycleMessage(file_arguments[0], file_arguments[1], strlen(file_arguments[1])+1);
+  if (error != TS_ERR_OKAY) {
+    CtrlMgmtError(error, "message '%s' not sent", file_arguments[0]);
+    return CTRL_EX_ERROR;
   }
 
   return CTRL_EX_OK;
@@ -47,7 +45,7 @@ int
 subcommand_plugin(unsigned argc, const char **argv)
 {
   const subcommand commands[] = {
-    {plugin_alert, "alert", "Send alerts to plugins"},
+    {plugin_msg, "msg", "Send message to plugins - a TAG and the message DATA"},
   };
 
   return CtrlGenericSubcommand("plugin", commands, countof(commands), argc, argv);

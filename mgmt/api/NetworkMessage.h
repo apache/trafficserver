@@ -60,7 +60,7 @@ typedef enum {
   API_PING,
   SERVER_BACKTRACE,
   RECORD_DESCRIBE_CONFIG,
-  LIFECYCLE_ALERT,
+  LIFECYCLE_MESSAGE,
   UNDEFINED_OP /* This must be last */
 } OpType;
 
