@@ -46,7 +46,6 @@ from manpages import man_pages
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-  'doxygen',
   'sphinx.ext.graphviz',
   'sphinx.ext.intersphinx',
   'sphinx.ext.autodoc',
@@ -56,6 +55,12 @@ extensions = [
   'sphinx.ext.viewcode',
   'traffic-server',
 ]
+
+# XXX Disabling docxygen for now, since it make RTD documentation builds time
+# out, eg. https://readthedocs.org/projects/trafficserver/builds/3525976/
+# extensions += [
+#   'doxygen',
+# ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
