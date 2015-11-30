@@ -71,7 +71,7 @@ public:
   HttpServerSession()
     : VConnection(NULL), hostname_hash(), con_id(0), transact_count(0), state(HSS_INIT), to_parent_proxy(false),
       server_trans_stat(0), private_session(false), sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
-      sharing_pool(TS_SERVER_SESSION_SHARING_POOL_GLOBAL), enable_origin_connection_limiting(false), connection_count(NULL),
+      sharing_pool(TS_SERVER_SESSION_SHARING_POOL_GLOBAL), enable_origin_connection_tracking(false), connection_count(NULL),
       read_buffer(NULL), server_vc(NULL), magic(HTTP_SS_MAGIC_DEAD), buf_reader(NULL)
   {
     ink_zero(server_ip);
@@ -151,7 +151,7 @@ public:
 
   // Keep track of connection limiting and a pointer to the
   // singleton that keeps track of the connection counts.
-  bool enable_origin_connection_limiting;
+  bool enable_origin_connection_tracking;
   ConnectionCount *connection_count;
 
   // The ServerSession owns the following buffer which use

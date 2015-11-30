@@ -115,6 +115,7 @@ public:
   virtual int marshal_server_resp_time_s(char *);       // INT
   virtual int marshal_server_transact_count(char *);    // INT
   virtual int marshal_server_connect_attempts(char *);  // INT
+  virtual int marshal_server_connection_count(char *);  // INT
 
   //
   // cache -> client fields

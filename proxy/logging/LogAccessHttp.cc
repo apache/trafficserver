@@ -1157,6 +1157,20 @@ LogAccessHttp::marshal_server_connect_attempts(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_server_connection_count(char *buf)
+{
+  if (buf) {
+    int64_t count;
+    count = m_http_sm->server_connection_count;
+    marshal_int(buf, count);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessHttp::marshal_cache_resp_status_code(char *buf)
 {
   if (buf) {

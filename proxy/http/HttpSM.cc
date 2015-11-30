@@ -272,7 +272,7 @@ HttpSM::HttpSM()
     server_response_hdr_bytes(0), server_response_body_bytes(0), client_response_hdr_bytes(0), client_response_body_bytes(0),
     cache_response_hdr_bytes(0), cache_response_body_bytes(0), pushed_response_hdr_bytes(0), pushed_response_body_bytes(0),
     client_tcp_reused(false), client_ssl_reused(false), client_connection_is_ssl(false), client_sec_protocol("-"),
-    client_cipher_suite("-"), server_transact_count(0), server_connection_is_ssl(false), plugin_tag(0), plugin_id(0),
+    client_cipher_suite("-"), server_transact_count(0), server_connection_is_ssl(false), server_connection_count(0), plugin_tag(0), plugin_id(0),
     hooks_set(false), cur_hook_id(TS_HTTP_LAST_HOOK), cur_hook(NULL), cur_hooks(0), callout_state(HTTP_API_NO_CALLOUT),
     terminate_sm(false), kill_this_async_done(false), parse_range_done(false)
 {
@@ -1678,9 +1678,9 @@ HttpSM::state_http_server_open(int event, void *data)
     // of connections per host.  Set enable_origin_connection_limiting
     // to true in the server session so it will increment and decrement
     // the connection count.
-    if (t_state.txn_conf->origin_max_connections > 0 || t_state.http_config_param->origin_min_keep_alive_connections > 0) {
+    if (t_state.txn_conf->origin_max_connections > 0 || t_state.http_config_param->origin_min_keep_alive_connections > 0 || t_state.reverse_proxy) {
       DebugSM("http_ss", "[%" PRId64 "] max number of connections: %" PRIu64, sm_id, t_state.txn_conf->origin_max_connections);
-      session->enable_origin_connection_limiting = true;
+      session->enable_origin_connection_tracking = true;
     }
     /*UnixNetVConnection * vc = (UnixNetVConnection*)(ua_session->client_vc);
        UnixNetVConnection *server_vc = (UnixNetVConnection*)data;
@@ -4656,7 +4656,14 @@ HttpSM::do_http_server_open(bool raw)
   }
 
   DebugSM("http_seq", "[HttpSM::do_http_server_open] Sending request to server");
-
+  ConnectionCount *connections = ConnectionCount::getInstance();
+  INK_MD5 hostname_hash;
+  MD5Context md5_ctx;
+  md5_ctx.hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
+        strlen(t_state.current.server->name));
+  server_connection_count = connections->getCount(t_state.current.server->dst_addr, hostname_hash,
+        (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match); 
+  
   milestones[TS_MILESTONE_SERVER_CONNECT] = Thread::get_hrtime();
   if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] == 0) {
     milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] = milestones[TS_MILESTONE_SERVER_CONNECT];
@@ -4802,13 +4809,6 @@ HttpSM::do_http_server_open(bool raw)
   // Check to see if we have reached the max number of connections on this
   // host.
   if (t_state.txn_conf->origin_max_connections > 0) {
-    ConnectionCount *connections = ConnectionCount::getInstance();
-
-    INK_MD5 hostname_hash;
-    MD5Context md5_ctx;
-    md5_ctx.hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
-                           strlen(t_state.current.server->name));
-
     ip_port_text_buffer addrbuf;
     if (connections->getCount(t_state.current.server->dst_addr, hostname_hash,
                               (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match) >=

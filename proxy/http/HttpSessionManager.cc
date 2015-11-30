@@ -170,7 +170,7 @@ ServerSessionPool::eventHandler(int event, void *data)
       // to the origin and we are below the min number of keep alive connections to this
       // origin, then reset the timeouts on our end and do not close the connection
       if ((event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) && s->state == HSS_KA_SHARED &&
-          s->enable_origin_connection_limiting) {
+          s->enable_origin_connection_tracking) {
         bool connection_count_below_min = s->connection_count->getCount(s->server_ip, s->hostname_hash, s->sharing_match) <=
                                           http_config_params->origin_min_keep_alive_connections;
 

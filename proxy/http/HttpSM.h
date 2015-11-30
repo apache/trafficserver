@@ -499,6 +499,7 @@ public:
   const char *client_cipher_suite;
   int server_transact_count;
   bool server_connection_is_ssl;
+  int server_connection_count;
 
   TransactionMilestones milestones;
   ink_hrtime api_timer;
