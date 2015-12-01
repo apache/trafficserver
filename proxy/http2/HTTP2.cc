@@ -105,27 +105,21 @@ memcpy_and_advance(uint8_t(&dst), byte_pointer &src)
 }
 
 static bool
-http2_are_frame_flags_valid(uint8_t ftype, uint8_t fflags)
+http2_frame_flags_are_valid(uint8_t ftype, uint8_t fflags)
 {
-  static const uint8_t mask[HTTP2_FRAME_TYPE_MAX] = {
-    HTTP2_FLAGS_DATA_MASK,          HTTP2_FLAGS_HEADERS_MASK,      HTTP2_FLAGS_PRIORITY_MASK, HTTP2_FLAGS_RST_STREAM_MASK,
-    HTTP2_FLAGS_SETTINGS_MASK,      HTTP2_FLAGS_PUSH_PROMISE_MASK, HTTP2_FLAGS_PING_MASK,     HTTP2_FLAGS_GOAWAY_MASK,
-    HTTP2_FLAGS_WINDOW_UPDATE_MASK, HTTP2_FLAGS_CONTINUATION_MASK,
-  };
-
   if (ftype >= HTTP2_FRAME_TYPE_MAX) {
     // Skip validation for Unkown frame type - [RFC 7540] 5.5. Extending HTTP/2
     return true;
   }
 
   // The frame flags are valid for this frame if nothing outside the defined bits is set.
-  return (fflags & ~mask[ftype]) == 0;
+  return (fflags & ~HTTP2_FRAME_FLAGS_MASKS[ftype]) == 0;
 }
 
 bool
 http2_frame_header_is_valid(const Http2FrameHeader &hdr, unsigned max_frame_size)
 {
-  if (!http2_are_frame_flags_valid(hdr.type, hdr.flags)) {
+  if (!http2_frame_flags_are_valid(hdr.type, hdr.flags)) {
     return false;
   }
 
@@ -869,7 +863,7 @@ REGRESSION_TEST(HTTP2_FRAME_FLAGS)(RegressionTest *t, int, int *pstatus)
   box = REGRESSION_TEST_PASSED;
 
   for (unsigned int i = 0; i < sizeof(http2_frame_flags_test_case) / sizeof(http2_frame_flags_test_case[0]); ++i) {
-    box.check(http2_are_frame_flags_valid(http2_frame_flags_test_case[i].ftype, http2_frame_flags_test_case[i].fflags) ==
+    box.check(http2_frame_flags_are_valid(http2_frame_flags_test_case[i].ftype, http2_frame_flags_test_case[i].fflags) ==
                 http2_frame_flags_test_case[i].valid,
               "Validation of frame flags (type: %d, flags: %d) are expected %d, but not", http2_frame_flags_test_case[i].ftype,
               http2_frame_flags_test_case[i].fflags, http2_frame_flags_test_case[i].valid);
