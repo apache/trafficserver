@@ -20,17 +20,16 @@
  * @file CaseInsensitiveStringComparator.cc
  */
 
+#include <cstring>
 #include "atscppapi/CaseInsensitiveStringComparator.h"
-
-namespace
-{
-static char NORMALIZED_CHARACTERS[256];
-static volatile bool normalizer_initialized(false);
-}
 
 using atscppapi::CaseInsensitiveStringComparator;
 using std::string;
 
+/**
+ * This class should eventually be removed, but because it's in a public API we cannot remove
+ * it until the next major release.
+ */
 bool CaseInsensitiveStringComparator::operator()(const string &lhs, const string &rhs) const
 {
   return (compare(lhs, rhs) < 0);
@@ -39,36 +38,5 @@ bool CaseInsensitiveStringComparator::operator()(const string &lhs, const string
 int
 CaseInsensitiveStringComparator::compare(const string &lhs, const string &rhs) const
 {
-  if (!normalizer_initialized) {
-    // this initialization is safe to execute in concurrent threads - hence no locking
-    for (int i = 0; i < 256; ++i) {
-      NORMALIZED_CHARACTERS[i] = static_cast<unsigned char>(i);
-    }
-    for (unsigned char i = 'A'; i < 'Z'; ++i) {
-      NORMALIZED_CHARACTERS[i] = 'a' + (i - 'A');
-    }
-    normalizer_initialized = true;
-  }
-  size_t lhs_size = lhs.size();
-  size_t rhs_size = rhs.size();
-  if ((lhs_size > 0) && (rhs_size > 0)) {
-    size_t num_chars_to_compare = (lhs_size < rhs_size) ? lhs_size : rhs_size;
-    for (size_t i = 0; i < num_chars_to_compare; ++i) {
-      unsigned char normalized_lhs_char = NORMALIZED_CHARACTERS[static_cast<const unsigned char>(lhs[i])];
-      unsigned char normalized_rhs_char = NORMALIZED_CHARACTERS[static_cast<const unsigned char>(rhs[i])];
-      if (normalized_lhs_char < normalized_rhs_char) {
-        return -1;
-      }
-      if (normalized_lhs_char > normalized_rhs_char) {
-        return 1;
-      }
-    }
-  }
-  if (lhs_size < rhs_size) {
-    return -1;
-  }
-  if (lhs_size > rhs_size) {
-    return 1;
-  }
-  return 0; // both strings are equal
+  return strcasecmp(lhs.c_str(), rhs.c_str());
 }

@@ -91,7 +91,6 @@ public:
 
   bool require_lm;
   time_t timeout;
-  int mgmt_sync_key;
 
   LLQ *mgmt_signal_queue;
 

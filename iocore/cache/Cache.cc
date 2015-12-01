@@ -2723,6 +2723,7 @@ cplist_update()
                 config_vol->cachep = cp;
               } else {
                 cp->disk_vols[d_no]->disk->delete_volume(cp->vol_number);
+                cp->disk_vols[d_no] = NULL;
               }
             }
           }

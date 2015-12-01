@@ -47,6 +47,20 @@ static int spdy_process_fetch_header(TSEvent event, SpdyClientSession *sm, TSFet
 static int spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm, SpdyRequest *req);
 static uint64_t g_sm_id = 1;
 
+SpdyRequest *
+SpdyRequest::alloc()
+{
+  return spdyRequestAllocator.alloc();
+}
+
+void
+SpdyRequest::destroy()
+{
+  this->clear();
+  spdyRequestAllocator.free(this);
+}
+
+
 void
 SpdyRequest::init(SpdyClientSession *sm, int id)
 {
@@ -120,6 +134,9 @@ SpdyClientSession::init(NetVConnection *netvc)
 void
 SpdyClientSession::clear()
 {
+  if (!mutex)
+    return; // this object wasn't initialized.
+
   int last_event = event;
 
   SPDY_DECREMENT_THREAD_DYN_STAT(SPDY_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
@@ -133,8 +150,7 @@ SpdyClientSession::clear()
   for (; iter != endIter; ++iter) {
     SpdyRequest *req = iter->second;
     if (req) {
-      req->clear();
-      spdyRequestAllocator.free(req);
+      req->destroy();
     } else {
       Error("req null in SpdSM::clear");
     }

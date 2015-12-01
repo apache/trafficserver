@@ -571,7 +571,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.io.max_buffer_size
  proxy.config.lm.pserver_timeout_msecs
  proxy.config.lm.pserver_timeout_secs
- proxy.config.lm.sem_id
  proxy.config.local_state_dir
  proxy.config.log.ascii_buffer_size
  proxy.config.log.auto_delete_rolled_files

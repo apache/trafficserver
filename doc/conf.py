@@ -46,7 +46,6 @@ from manpages import man_pages
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-  'doxygen',
   'sphinx.ext.graphviz',
   'sphinx.ext.intersphinx',
   'sphinx.ext.autodoc',
@@ -56,6 +55,12 @@ extensions = [
   'sphinx.ext.viewcode',
   'traffic-server',
 ]
+
+# XXX Disabling docxygen for now, since it make RTD documentation builds time
+# out, eg. https://readthedocs.org/projects/trafficserver/builds/3525976/
+# extensions += [
+#   'doxygen',
+# ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -112,6 +117,15 @@ if os.environ.get('READTHEDOCS') == 'True':
           po = polib.pofile(po_file)
           po.save_as_mofile(fpath=mo_file)
   print "done"
+else:
+  # On RedHat-based distributions, install the python-sphinx_rtd_theme package
+  # to get an end result tht looks more like readthedoc.org.
+  try:
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+  except:
+    pass
 ## End of HACK
 
 # There are two options for replacing |today|: either, you set today to some
@@ -220,6 +234,22 @@ html_favicon = 'static/images/favicon.ico'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['static']
+
+# Include a stylesheet that overrides default table styling, to provide
+# content wrapping.
+html_context = {
+  'css_files': [
+    '_static/override.css'
+  ]
+}
+if os.environ.get('READTHEDOCS', None) == 'True':
+  html_context = {
+    'css_files': [
+      'https://media.readthedocs.org/css/sphinx_rtd_theme.css',
+      'https://media.readthedocs.org/css/readthedocs-doc-embed.css',
+      '_static/override.css'
+    ]
+  }
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.

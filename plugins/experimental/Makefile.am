@@ -29,9 +29,10 @@ SUBDIRS = \
  generator \
  geoip_acl \
  header_normalize \
- healthchecks \
  hipes \
  metalink \
+ multiplexer \
+ memcached_remap \
  regex_revalidate \
  remap_stats \
  s3_auth \

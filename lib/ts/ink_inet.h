@@ -149,6 +149,9 @@ struct hostent *ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data *da
 */
 struct hostent *ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyaddr_r_data *data);
 
+/** Return the detected maximum listen(2) backlog for TCP. */
+int ats_tcp_somaxconn();
+
 /** Parse a string for pieces of an IP address.
 
     This doesn't parse the actual IP address, but picks it out from @a

@@ -40,6 +40,7 @@
 #ifndef _Allocator_h_
 #define _Allocator_h_
 
+#include <new>
 #include <stdlib.h>
 #include "ts/ink_queue.h"
 #include "ts/ink_defs.h"
@@ -193,11 +194,12 @@ public:
   */
   ClassAllocator(const char *name, unsigned int chunk_size = 128, unsigned int alignment = 16)
   {
+    ::new ((void *)&proto.typeObject) C();
     ink_freelist_init(&this->fl, name, RND16(sizeof(C)), chunk_size, RND16(alignment));
   }
 
   struct {
-    C typeObject;
+    uint8_t typeObject[sizeof(C)];
     int64_t space_holder;
   } proto;
 };

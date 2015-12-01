@@ -491,15 +491,22 @@ RecProcessStart(void)
 
   Debug("statsproc", "Starting sync continuations:");
   raw_stat_sync_cont *rssc = new raw_stat_sync_cont(new_ProxyMutex());
-  Debug("statsproc", "\traw-stat syncer");
+  Debug("statsproc", "raw-stat syncer");
   raw_stat_sync_cont_event = eventProcessor.schedule_every(rssc, HRTIME_MSECONDS(g_rec_raw_stat_sync_interval_ms), ET_TASK);
 
-  config_update_cont *cuc = new config_update_cont(new_ProxyMutex());
-  Debug("statsproc", "\tconfig syncer");
-  config_update_cont_event = eventProcessor.schedule_every(cuc, HRTIME_MSECONDS(g_rec_config_update_interval_ms), ET_TASK);
+  RecInt disable_modification = 0;
+  RecGetRecordInt("proxy.config.disable_configuration_modification", &disable_modification);
+  // Schedule continuation to call the configuration callbacks if we are allowed to modify configuration in RAM
+  if (disable_modification == 1) {
+    Debug("statsproc", "Disabled configuration modification");
+  } else {
+    config_update_cont *cuc = new config_update_cont(new_ProxyMutex());
+    Debug("statsproc", "config syncer");
+    config_update_cont_event = eventProcessor.schedule_every(cuc, HRTIME_MSECONDS(g_rec_config_update_interval_ms), ET_TASK);
+  }
 
   sync_cont *sc = new sync_cont(new_ProxyMutex());
-  Debug("statsproc", "\tremote syncer");
+  Debug("statsproc", "remote syncer");
   sync_cont_event = eventProcessor.schedule_every(sc, HRTIME_MSECONDS(g_rec_remote_sync_interval_ms), ET_TASK);
 
   g_started = true;

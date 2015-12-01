@@ -89,6 +89,7 @@ configure() {
       --enable-example-plugins \
       --enable-test-tools \
       --enable-experimental-plugins \
+      --enable-cppapi \
       $(extras) \
       CC="$CC" \
       CXX="$CXX" \

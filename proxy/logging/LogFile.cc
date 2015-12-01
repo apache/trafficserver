@@ -42,6 +42,7 @@
 #include "I_Machine.h"
 #include "LogSock.h"
 
+#include "ts/BaseLogFile.h"
 #include "LogField.h"
 #include "LogFilter.h"
 #include "LogFormat.h"
@@ -62,15 +63,17 @@
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size,
                  size_t max_line_size)
-  : m_file_format(format), m_name(ats_strdup(name)), m_header(ats_strdup(header)), m_signature(signature), m_meta_info(NULL),
+  : m_file_format(format), m_name(ats_strdup(name)), m_header(ats_strdup(header)), m_signature(signature),
     m_max_line_size(max_line_size)
 {
-  delete m_meta_info;
-  m_meta_info = NULL;
+  if (m_file_format != LOG_FILE_PIPE) {
+    m_log = new BaseLogFile(name, m_signature);
+    m_log->set_hostname(Machine::instance()->hostname);
+  } else {
+    m_log = NULL;
+  }
+
   m_fd = -1;
-  m_start_time = 0L;
-  m_end_time = 0L;
-  m_bytes_written = 0;
   m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
 
   Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
@@ -84,10 +87,16 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
 
 LogFile::LogFile(const LogFile &copy)
   : m_file_format(copy.m_file_format), m_name(ats_strdup(copy.m_name)), m_header(ats_strdup(copy.m_header)),
-    m_signature(copy.m_signature), m_meta_info(NULL), m_ascii_buffer_size(copy.m_ascii_buffer_size),
-    m_max_line_size(copy.m_max_line_size), m_fd(-1), m_start_time(0L), m_end_time(0L), m_bytes_written(0)
+    m_signature(copy.m_signature), m_ascii_buffer_size(copy.m_ascii_buffer_size), m_max_line_size(copy.m_max_line_size),
+    m_fd(copy.m_fd)
 {
   ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
+
+  if (copy.m_log) {
+    m_log = new BaseLogFile(*(copy.m_log));
+  } else {
+    m_log = NULL;
+  }
 
   Debug("log-file", "exiting LogFile copy constructor, m_name=%s, this=%p", m_name, this);
 }
@@ -98,25 +107,10 @@ LogFile::LogFile(const LogFile &copy)
 LogFile::~LogFile()
 {
   Debug("log-file", "entering LogFile destructor, this=%p", this);
-  close_file();
-
-  ats_free(m_name);
+  delete m_log;
   ats_free(m_header);
-  delete m_meta_info;
+  ats_free(m_name);
   Debug("log-file", "exiting LogFile destructor, this=%p", this);
-}
-
-/*-------------------------------------------------------------------------
-  LogFile::exists
-
-  Returns true if the logfile already exists; false otherwise.
-  -------------------------------------------------------------------------*/
-
-bool
-LogFile::exists(const char *pathname)
-{
-  ink_assert(pathname != NULL);
-  return (pathname && ::access(pathname, F_OK) == 0);
 }
 
 /*-------------------------------------------------------------------------
@@ -127,6 +121,8 @@ void
 LogFile::change_name(const char *new_name)
 {
   ats_free(m_name);
+  if (m_log)
+    m_log->change_name(new_name);
   m_name = ats_strdup(new_name);
 }
 
@@ -151,37 +147,18 @@ LogFile::change_header(const char *header)
 int
 LogFile::open_file()
 {
+  // whatever we want to open should have a name
+  ink_assert(m_name != NULL);
+
+  // is_open() takes into account if we're using BaseLogFile or a naked fd
   if (is_open()) {
     return LOG_FILE_NO_ERROR;
   }
 
-  if (m_name && !strcmp(m_name, "stdout")) {
-    m_fd = STDOUT_FILENO;
-    return LOG_FILE_NO_ERROR;
-  }
-  //
-  // Check to see if the file exists BEFORE we try to open it, since
-  // opening it will also create it.
-  //
   bool file_exists = LogFile::exists(m_name);
 
-  if (file_exists) {
-    if (!m_meta_info) {
-      // This object must be fresh since it has not built its MetaInfo
-      // so we create a new MetaInfo object that will read right away
-      // (in the constructor) the corresponding metafile
-      //
-      m_meta_info = new MetaInfo(m_name);
-    }
-  } else {
-    // The log file does not exist, so we create a new MetaInfo object
-    //  which will save itself to disk right away (in the constructor)
-    m_meta_info = new MetaInfo(m_name, LogUtils::timestamp(), m_signature);
-  }
-
-  int flags, perms;
-
   if (m_file_format == LOG_FILE_PIPE) {
+    // setup pipe
     if (mkfifo(m_name, S_IRUSR | S_IWUSR) < 0) {
       if (errno != EEXIST) {
         Error("Could not create named pipe %s for logging: %s", m_name, strerror(errno));
@@ -190,38 +167,31 @@ LogFile::open_file()
     } else {
       Debug("log-file", "Created named pipe %s for logging", m_name);
     }
-    flags = O_WRONLY | O_NDELAY;
-    perms = 0;
+
+    // now open the pipe
+    Debug("log-file", "attempting to open pipe %s", m_name);
+    m_fd = ::open(m_name, O_WRONLY | O_NDELAY, 0);
+    if (m_fd < 0) {
+      Debug("log-file", "no readers for pipe %s", m_name);
+      return LOG_FILE_NO_PIPE_READERS;
+    }
   } else {
-    flags = O_WRONLY | O_APPEND | O_CREAT;
-    perms = Log::config->logfile_perm;
-  }
-
-  Debug("log-file", "attempting to open %s", m_name);
-  m_fd = ::open(m_name, flags, perms);
-
-  if (m_fd < 0) {
-    // if error happened because no process is reading the pipe don't
-    // complain, otherwise issue an error message
-    //
-    if (errno != ENXIO) {
-      Error("Error opening log file %s: %s", m_name, strerror(errno));
+    if (m_log) {
+      int status = m_log->open_file(Log::config->logfile_perm);
+      if (status == BaseLogFile::LOG_FILE_COULD_NOT_OPEN_FILE)
+        return LOG_FILE_COULD_NOT_OPEN_FILE;
+    } else {
       return LOG_FILE_COULD_NOT_OPEN_FILE;
     }
-    Debug("log-file", "no readers for pipe %s", m_name);
-    return LOG_FILE_NO_PIPE_READERS;
   }
 
   int e = do_filesystem_checks();
   if (e != 0) {
     m_fd = -1; // reset to error condition
+    delete m_log;
+    m_log = NULL;
     return LOG_FILE_FILESYSTEM_CHECKS_FAILED;
   }
-
-  // set m_bytes_written to force the rolling based on filesize.
-  m_bytes_written = lseek(m_fd, 0, SEEK_CUR);
-
-  Debug("log-file", "LogFile %s is now open (fd=%d)", m_name, m_fd);
 
   //
   // If we've opened the file and it didn't already exist, then this is a
@@ -230,14 +200,15 @@ LogFile::open_file()
   // file.
   //
   if (!file_exists) {
-    if (m_file_format != LOG_FILE_BINARY && m_header != NULL) {
+    if (m_file_format != LOG_FILE_BINARY && m_header && m_log) {
       Debug("log-file", "writing header to LogFile %s", m_name);
-      writeln(m_header, strlen(m_header), m_fd, m_name);
+      writeln(m_header, strlen(m_header), fileno(m_log->m_fp), m_name);
     }
   }
 
   RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, 1);
 
+  Debug("log", "exiting LogFile::open_file(), file=%s presumably open", m_name);
   return LOG_FILE_NO_ERROR;
 }
 
@@ -251,171 +222,37 @@ void
 LogFile::close_file()
 {
   if (is_open()) {
-    ::close(m_fd);
-    Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
-    m_fd = -1;
-
-    RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
-  }
-}
-
-/*-------------------------------------------------------------------------
-  LogFile::rolled_logfile
-
-  This function will return true if the given filename corresponds to a
-  rolled logfile.  We make this determination based on the file extension.
-  -------------------------------------------------------------------------*/
-
-bool
-LogFile::rolled_logfile(char *path)
-{
-  const int target_len = (int)strlen(LOGFILE_ROLLED_EXTENSION);
-  int len = (int)strlen(path);
-  if (len > target_len) {
-    char *str = &path[len - target_len];
-    if (!strcmp(str, LOGFILE_ROLLED_EXTENSION)) {
-      return true;
+    if (m_file_format == LOG_FILE_PIPE) {
+      ::close(m_fd);
+      Debug("log-file", "LogFile %s (fd=%d) is closed", m_name, m_fd);
+      m_fd = -1;
+    } else if (m_log) {
+      m_log->close_file();
+      Debug("log-file", "LogFile %s is closed", m_log->get_name());
+      delete m_log;
+      m_log = NULL;
+    } else {
+      Warning("LogFile %s is open but was not closed", m_name);
     }
   }
-  return false;
+
+  RecIncrRawStat(log_rsb, this_thread()->mutex->thread_holding, log_stat_log_files_open_stat, -1);
 }
 
 /*-------------------------------------------------------------------------
-  LogFile::roll
-
-  This function is called by a LogObject to roll its files.  The
-  tricky part to this routine is in coming up with the new file name,
-  which contains the bounding timestamp interval for the entries
-  within the file.
-
-  Under normal operating conditions, this LogFile object was in existence
-  for all writes to the file.  In this case, the LogFile members m_start_time
-  and m_end_time will have the starting and ending times for the actual
-  entries written to the file.
-
-  On restart situations, it is possible to re-open an existing logfile,
-  which means that the m_start_time variable will be later than the actual
-  entries recorded in the file.  In this case, we'll use the creation time
-  of the file, which should be recorded in the meta-information located on
-  disk.
-
-  If we can't use the meta-file, either because it's not there or because
-  it's not valid, then we'll use timestamp 0 (Jan 1, 1970) as the starting
-  bound.
-
-  Return 1 if file rolled, 0 otherwise
-  -------------------------------------------------------------------------*/
-
+ * LogFile::roll
+ * This function is called by a LogObject to roll its files.
+ *
+ * Return 1 if file rolled, 0 otherwise
+-------------------------------------------------------------------------*/
 int
 LogFile::roll(long interval_start, long interval_end)
 {
-  //
-  // First, let's see if a roll is even needed.
-  //
-  if (m_name == NULL || !LogFile::exists(m_name)) {
-    Debug("log-file", "Roll not needed for %s; file doesn't exist", (m_name) ? m_name : "no_name");
-    return 0;
-  }
-  // Read meta info if needed (if file was not opened)
-  //
-  if (!m_meta_info) {
-    m_meta_info = new MetaInfo(m_name);
-  }
-  //
-  // Create the new file name, which consists of a timestamp and rolled
-  // extension added to the previous file name.  The timestamp format is
-  // ".%Y%m%d.%Hh%Mm%Ss-%Y%m%d.%Hh%Mm%Ss", where the two date/time values
-  // represent the starting and ending times for entries in the rolled
-  // log file.  In addition, we add the hostname.  So, the entire rolled
-  // format is something like:
-  //
-  //    "squid.log.mymachine.19980712.12h00m00s-19980713.12h00m00s.old"
-  //
-  char roll_name[MAXPATHLEN];
-  char start_time_ext[64];
-  char end_time_ext[64];
-  time_t start, end;
-
-  //
-  // Make sure the file is closed so we don't leak any descriptors.
-  //
-  close_file();
-
-  //
-  // Start with conservative values for the start and end bounds, then
-  // try to refine.
-  //
-  start = 0L;
-  end = (interval_end >= m_end_time) ? interval_end : m_end_time;
-
-  if (m_meta_info->data_from_metafile()) {
-    //
-    // If the metadata came from the metafile, this means that
-    // the file was preexisting, so we can't use m_start_time for
-    // our starting bounds.  Instead, we'll try to use the file
-    // creation time stored in the metafile (if it's valid and we can
-    // read it).  If all else fails, we'll use 0 for the start time.
-    //
-    m_meta_info->get_creation_time(&start);
-  } else {
-    //
-    // The logfile was not preexisting (normal case), so we'll use
-    // earlier of the interval start time and the m_start_time.
-    //
-    // note that m_start_time is not the time of the first
-    // transaction, but the time of the creation of the first log
-    // buffer used by the file. These times may be different,
-    // especially under light load, and using the m_start_time may
-    // produce overlapping filenames (the problem is that we have
-    // no easy way of keeping track of the timestamp of the first
-    // transaction
-    //
-    start = (m_start_time < interval_start) ? m_start_time : interval_start;
+  if (m_log) {
+    return m_log->roll(interval_start, interval_end);
   }
 
-  //
-  // Now that we have our timestamp values, convert them to the proper
-  // timestamp formats and create the rolled file name.
-  //
-  LogUtils::timestamp_to_str((long)start, start_time_ext, 64);
-  LogUtils::timestamp_to_str((long)end, end_time_ext, 64);
-  snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s%s", m_name, LOGFILE_SEPARATOR_STRING, Machine::instance()->hostname, start_time_ext,
-           end_time_ext, LOGFILE_ROLLED_EXTENSION);
-
-  //
-  // It may be possible that the file we want to roll into already
-  // exists.  If so, then we need to add a version tag to the rolled
-  // filename as well so that we don't clobber existing files.
-  //
-
-  int version = 1;
-  while (LogFile::exists(roll_name)) {
-    Note("The rolled file %s already exists; adding version "
-         "tag %d to avoid clobbering the existing file.",
-         roll_name, version);
-    snprintf(roll_name, MAXPATHLEN, "%s%s%s.%s-%s.%d%s", m_name, LOGFILE_SEPARATOR_STRING, Machine::instance()->hostname,
-             start_time_ext, end_time_ext, version, LOGFILE_ROLLED_EXTENSION);
-    version++;
-  }
-
-  //
-  // It's now safe to rename the file.
-  //
-
-  if (::rename(m_name, roll_name) < 0) {
-    Warning("Traffic Server could not rename logfile %s to %s, error %d: "
-            "%s.",
-            m_name, roll_name, errno, strerror(errno));
-    return 0;
-  }
-  // reset m_start_time
-  //
-  m_start_time = 0;
-  m_bytes_written = 0;
-
-  Debug("log-file", "The logfile %s was rolled to %s.", m_name, roll_name);
-
-  return 1;
+  return 0;
 }
 
 /*-------------------------------------------------------------------------
@@ -452,9 +289,9 @@ LogFile::preproc_and_try_delete(LogBuffer *lb)
   // the low_timestamp from the given LogBuffer.  Then, we always set the
   // end time to the high_timestamp, so it's always up to date.
   //
-  if (!m_start_time)
-    m_start_time = buffer_header->low_timestamp;
-  m_end_time = buffer_header->high_timestamp;
+  if (!m_log->m_start_time)
+    m_log->m_start_time = buffer_header->low_timestamp;
+  m_log->m_end_time = buffer_header->high_timestamp;
 
   if (m_file_format == LOG_FILE_BINARY) {
     //
@@ -661,6 +498,18 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
   return total_bytes;
 }
 
+bool
+LogFile::rolled_logfile(char *file)
+{
+  return BaseLogFile::rolled_logfile(file);
+}
+
+bool
+LogFile::exists(const char *pathname)
+{
+  return BaseLogFile::exists(pathname);
+}
+
 /*-------------------------------------------------------------------------
   LogFile::writeln
 
@@ -754,115 +603,33 @@ LogFile::display(FILE *fd)
   fprintf(fd, "Logfile: %s, %s\n", get_name(), (is_open()) ? "file is open" : "file is not open");
 }
 
+bool
+LogFile::is_open()
+{
+  if (m_file_format == LOG_FILE_PIPE)
+    return m_fd >= 0;
+  else
+    return m_log && m_log->is_open();
+}
+
+/*
+ * Returns the fd of the entity (pipe or regular file ) that this object is
+ * representing
+ *
+ * Returns -1 on error, the correct fd otherwise
+ */
+int
+LogFile::get_fd()
+{
+  if (m_file_format == LOG_FILE_PIPE) {
+    return m_fd;
+  } else if (m_log && m_log->m_fp) {
+    return fileno(m_log->m_fp);
+  } else {
+    return -1;
+  }
+}
+
 /***************************************************************************
  LogFileList IS NOT USED
 ****************************************************************************/
-
-
-/****************************************************************************
-
-  MetaInfo methods
-
-*****************************************************************************/
-
-void
-MetaInfo::_build_name(const char *filename)
-{
-  int i = -1, l = 0;
-  char c;
-  while (c = filename[l], c != 0) {
-    if (c == '/') {
-      i = l;
-    }
-    ++l;
-  }
-
-  // 7 = 1 (dot at beginning) + 5 (".meta") + 1 (null terminating)
-  //
-  _filename = (char *)ats_malloc(l + 7);
-
-  if (i < 0) {
-    ink_string_concatenate_strings(_filename, ".", filename, ".meta", NULL);
-  } else {
-    memcpy(_filename, filename, i + 1);
-    ink_string_concatenate_strings(&_filename[i + 1], ".", &filename[i + 1], ".meta", NULL);
-  }
-}
-
-void
-MetaInfo::_read_from_file()
-{
-  _flags |= DATA_FROM_METAFILE;
-  int fd = open(_filename, O_RDONLY);
-  if (fd < 0) {
-    Warning("Could not open metafile %s for reading: %s", _filename, strerror(errno));
-  } else {
-    _flags |= FILE_OPEN_SUCCESSFUL;
-    SimpleTokenizer tok('=', SimpleTokenizer::OVERWRITE_INPUT_STRING);
-    int line_number = 1;
-    while (ink_file_fd_readline(fd, BUF_SIZE, _buffer) > 0) {
-      tok.setString(_buffer);
-      char *t = tok.getNext();
-      if (t) {
-        if (strcmp(t, "creation_time") == 0) {
-          t = tok.getNext();
-          if (t) {
-            _creation_time = (time_t)ink_atoi64(t);
-            _flags |= VALID_CREATION_TIME;
-          }
-        } else if (strcmp(t, "object_signature") == 0) {
-          t = tok.getNext();
-          if (t) {
-            _log_object_signature = ink_atoi64(t);
-            _flags |= VALID_SIGNATURE;
-            Debug("log-meta", "MetaInfo::_read_from_file\n"
-                              "\tfilename = %s\n"
-                              "\tsignature string = %s\n"
-                              "\tsignature value = %" PRIu64 "",
-                  _filename, t, _log_object_signature);
-          }
-        } else if (line_number == 1) {
-          ink_release_assert(!"no panda support");
-        }
-      }
-      ++line_number;
-    }
-    close(fd);
-  }
-}
-
-void
-MetaInfo::_write_to_file()
-{
-  int fd = open(_filename, O_WRONLY | O_CREAT | O_TRUNC, Log::config->logfile_perm);
-  if (fd < 0) {
-    Warning("Could not open metafile %s for writing: %s", _filename, strerror(errno));
-    return;
-  }
-
-  int n;
-  if (_flags & VALID_CREATION_TIME) {
-    n = snprintf(_buffer, BUF_SIZE, "creation_time = %lu\n", (unsigned long)_creation_time);
-    // TODO modify this runtime check so that it is not an assertion
-    ink_release_assert(n <= BUF_SIZE);
-    if (write(fd, _buffer, n) == -1) {
-      Warning("Could not write creation_time");
-    }
-  }
-
-  if (_flags & VALID_SIGNATURE) {
-    n = snprintf(_buffer, BUF_SIZE, "object_signature = %" PRIu64 "\n", _log_object_signature);
-    // TODO modify this runtime check so that it is not an assertion
-    ink_release_assert(n <= BUF_SIZE);
-    if (write(fd, _buffer, n) == -1) {
-      Warning("Could not write object_signaure");
-    }
-    Debug("log-meta", "MetaInfo::_write_to_file\n"
-                      "\tfilename = %s\n"
-                      "\tsignature value = %" PRIu64 "\n"
-                      "\tsignature string = %s",
-          _filename, _log_object_signature, _buffer);
-  }
-
-  close(fd);
-}

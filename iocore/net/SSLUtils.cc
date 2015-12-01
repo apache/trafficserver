@@ -1208,10 +1208,9 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
 }
 
 static int
-SSLCheckServerCertNow(X509 *myCert, char *certname)
+SSLCheckServerCertNow(X509 *cert, const char *certname)
 {
   int timeCmpValue;
-  time_t currentTime;
 
   // SSLCheckServerCertNow() -  returns 0 on OK or negative value on failure
   // and update log as appropriate.
@@ -1221,34 +1220,37 @@ SSLCheckServerCertNow(X509 *myCert, char *certname)
   // - current time is between notBefore and notAfter dates of certificate
   // if anything is not kosher, a negative value is returned and appropriate error logged.
 
-  if (!myCert) {
+  if (!cert) {
     // a truncated certificate would fall into here
-    Error("Checking NULL certificate from %s", certname);
+    Error("invalid certificate %s: file is truncated or corrupted", certname);
     return -3;
   }
 
-  time(&currentTime);
-  if (!(timeCmpValue = X509_cmp_time(X509_get_notBefore(myCert), &currentTime))) {
+  // XXX we should log the notBefore and notAfter dates in the errors ...
+
+  timeCmpValue = X509_cmp_current_time(X509_get_notBefore(cert));
+  if (timeCmpValue == 0) {
     // an error occured parsing the time, which we'll call a bogosity
-    Error("Error occured while parsing server certificate notBefore time. %s", certname);
+    Error("invalid certificate %s: unable to parse notBefore time", certname);
     return -3;
-  } else if (0 < timeCmpValue) {
+  } else if (timeCmpValue > 0) {
     // cert contains a date before the notBefore
-    Error("Server certificate notBefore date is in the future - INVALID CERTIFICATE %s", certname);
+    Error("invalid certificate %s: notBefore date is in the future", certname);
     return -4;
   }
 
-  if (!(timeCmpValue = X509_cmp_time(X509_get_notAfter(myCert), &currentTime))) {
+  timeCmpValue = X509_cmp_current_time(X509_get_notAfter(cert));
+  if (timeCmpValue == 0) {
     // an error occured parsing the time, which we'll call a bogosity
-    Error("Error occured while parsing server certificate notAfter time.");
+    Error("invalid certificate %s: unable to parse notAfter time", certname);
     return -3;
-  } else if (0 > timeCmpValue) {
+  } else if (timeCmpValue < 0) {
     // cert is expired
-    Error("Server certificate EXPIRED - INVALID CERTIFICATE %s", certname);
+    Error("invalid certificate %s: certificate expired", certname);
     return -5;
   }
 
-  Debug("ssl", "Server certificate %s passed accessibility and date checks", certname);
+  Debug("ssl", "server certificate %s passed accessibility and date checks", certname);
   return 0; // all good
 
 } /* CheckServerCertNow() */
@@ -1540,7 +1542,7 @@ asn1_strdup(ASN1_STRING *s)
 // table aliases for subject CN and subjectAltNames DNS without wildcard,
 // insert trie aliases for those with wildcard.
 static bool
-ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, char *certname)
+ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname)
 {
   X509_NAME *subject = NULL;
   bool inserted = false;
@@ -1668,13 +1670,13 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
 #if TS_USE_TLS_ALPN
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
 #endif /* TS_USE_TLS_ALPN */
-  char *certname = sslMultCertSettings.cert.get();
 
+  const char *certname = sslMultCertSettings.cert.get();
   for (unsigned i = 0; i < cert_list.length(); ++i) {
     if (0 > SSLCheckServerCertNow(cert_list[i], certname)) {
       /* At this point, we know cert is bad, and we've already printed a
          descriptive reason as to why cert is bad to the log file */
-      Debug("ssl", "Marking certificate as NOT VALID: %s", (certname) ? (const char *)certname : "(null)");
+      Debug("ssl", "Marking certificate as NOT VALID: %s", certname);
       lookup->is_valid = false;
     }
   }

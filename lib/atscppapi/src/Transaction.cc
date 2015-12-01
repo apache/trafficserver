@@ -52,13 +52,20 @@ struct atscppapi::TransactionState : noncopyable {
   TSMBuffer client_response_hdr_buf_;
   TSMLoc client_response_hdr_loc_;
   Response client_response_;
+  TSMBuffer cached_response_hdr_buf_;
+  TSMLoc cached_response_hdr_loc_;
+  Response cached_response_;
+  TSMBuffer cached_request_hdr_buf_;
+  TSMLoc cached_request_hdr_loc_;
+  Request cached_request_;
   map<string, shared_ptr<Transaction::ContextValue> > context_values_;
 
   TransactionState(TSHttpTxn txn, TSMBuffer client_request_hdr_buf, TSMLoc client_request_hdr_loc)
     : txn_(txn), client_request_hdr_buf_(client_request_hdr_buf), client_request_hdr_loc_(client_request_hdr_loc),
       client_request_(txn, client_request_hdr_buf, client_request_hdr_loc), server_request_hdr_buf_(NULL),
       server_request_hdr_loc_(NULL), server_response_hdr_buf_(NULL), server_response_hdr_loc_(NULL), client_response_hdr_buf_(NULL),
-      client_response_hdr_loc_(NULL){};
+      client_response_hdr_loc_(NULL), cached_response_hdr_buf_(NULL), cached_response_hdr_loc_(NULL), cached_request_hdr_buf_(NULL),
+      cached_request_hdr_loc_(NULL){};
 };
 
 Transaction::Transaction(void *raw_txn)
@@ -92,6 +99,14 @@ Transaction::~Transaction()
   if (state_->client_response_hdr_buf_ && state_->client_response_hdr_loc_) {
     LOG_DEBUG("Releasing client response");
     TSHandleMLocRelease(state_->client_response_hdr_buf_, NULL_PARENT_LOC, state_->client_response_hdr_loc_);
+  }
+  if (state_->cached_request_hdr_buf_ && state_->cached_request_hdr_loc_) {
+    LOG_DEBUG("Releasing cached request");
+    TSHandleMLocRelease(state_->cached_request_hdr_buf_, NULL_PARENT_LOC, state_->cached_request_hdr_loc_);
+  }
+  if (state_->cached_response_hdr_buf_ && state_->cached_response_hdr_loc_) {
+    LOG_DEBUG("Releasing cached response");
+    TSHandleMLocRelease(state_->cached_response_hdr_buf_, NULL_PARENT_LOC, state_->cached_response_hdr_loc_);
   }
   delete state_;
 }
@@ -238,6 +253,18 @@ Transaction::getClientResponse()
   return state_->client_response_;
 }
 
+Request &
+Transaction::getCachedRequest()
+{
+  return state_->cached_request_;
+}
+
+Response &
+Transaction::getCachedResponse()
+{
+  return state_->cached_response_;
+}
+
 string
 Transaction::getEffectiveUrl()
 {
@@ -259,6 +286,12 @@ Transaction::setCacheUrl(const string &cache_url)
 {
   TSReturnCode res = TSCacheUrlSet(state_->txn_, cache_url.c_str(), cache_url.length());
   return (res == TS_SUCCESS);
+}
+
+void
+Transaction::setSkipRemapping(int flag)
+{
+  TSSkipRemappingSet(state_->txn_, flag);
 }
 
 const sockaddr *
@@ -448,5 +481,27 @@ Transaction::initClientResponse()
                                       "client response")) {
     LOG_DEBUG("Initializing client response");
     state_->client_response_.init(state_->client_response_hdr_buf_, state_->client_response_hdr_loc_);
+  }
+}
+
+void
+Transaction::initCachedRequest()
+{
+  static initializeHandles initializeCachedRequestHandles(TSHttpTxnCachedReqGet);
+  if (initializeCachedRequestHandles(state_->txn_, state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_,
+                                     "cached request")) {
+    LOG_DEBUG("Initializing cached request");
+    state_->cached_request_.init(state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_);
+  }
+}
+
+void
+Transaction::initCachedResponse()
+{
+  static initializeHandles initializeCachedResponseHandles(TSHttpTxnCachedRespGet);
+  if (initializeCachedResponseHandles(state_->txn_, state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_,
+                                      "cached response")) {
+    LOG_DEBUG("Initializing cached response");
+    state_->cached_response_.init(state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_);
   }
 }

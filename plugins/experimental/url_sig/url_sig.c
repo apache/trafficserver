@@ -88,7 +88,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   return TS_SUCCESS;
 }
 
-// To force a config file reload touch remap.config and do a "traffic_line -x"
+// To force a config file reload touch remap.config and do a "traffic_ctl config reload"
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size)
 {

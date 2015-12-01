@@ -408,6 +408,12 @@ AC_MSG_RESULT([$enable_experimental_plugins])
 AM_CONDITIONAL([BUILD_EXPERIMENTAL_PLUGINS], [ test "x${enable_experimental_plugins}" = "xyes" ])
 
 #
+# Enable experimental/memcached_remap plugin
+#
+PKG_CHECK_MODULES([LIBMEMCACHED], [libmemcached >= 1.0], [have_libmemcached=yes], [have_libmemcached=no])
+AM_CONDITIONAL([BUILD_MEMCACHED_REMAP_PLUGIN], [test "x${have_libmemcached}" = "xyes"])
+
+#
 # Example plugins. The example plugins are always built, but not always installed. Installing
 # them is useful for QA, but not useful for most users, so we default this to disabled.
 #
@@ -792,7 +798,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -814,7 +820,7 @@ case $host_os_def in
       debug_opt="-g $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ], [
       AC_MSG_WARN([clang is the only supported compiler on Darwin])
     ])
@@ -835,7 +841,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing"
       cxx_opt="-Wno-invalid-offsetof"
-      luajit_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -906,7 +912,10 @@ AC_SUBST(AM_CXXFLAGS)
 
 # Special compiler flag hacks for various pieces of the code
 AC_SUBST([FLEX_CFLAGS], $flex_cflags)
-AC_SUBST([LUAJIT_CFLAGS], $luajit_cflags)
+
+# Flags for buildit LuaJIT itself.
+AC_SUBST(LUA_LDFLAGS)
+AC_SUBST([LUA_CFLAGS], $lua_cflags)
 
 SHARED_CFLAGS=-fPIC
 SHARED_LDFLAGS=-shared
@@ -1144,7 +1153,7 @@ if test "x${enable_xml}" != "xyes"; then
 fi
 
 AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate inotify_init])
-AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf getpagesize])
+AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf sysctlbyname getpagesize])
 AC_CHECK_FUNCS([getreuid getresuid getresgid setreuid setresuid getpeereid getpeerucred])
 AC_CHECK_FUNCS([strsignal psignal psiginfo])
 
@@ -1388,12 +1397,15 @@ AX_LIB_READLINE
 # http://luajit.org/install.html.
 case $host_os_def in
   darwin)
-    TS_LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
+    LUAJIT_LDFLAGS="-Wl,-pagezero_size,10000 -Wl,-image_base,100000000"
     ;;
 esac
 
-AC_SUBST(TS_LUAJIT_LDFLAGS)
-AC_SUBST(LUA_LDFLAGS)
+# Flags for building and linking against our internal copy of LuaJIT.
+AC_SUBST([LUAJIT_LDFLAGS])
+AC_SUBST([LUAJIT_CPPFLAGS], ['-I$(top_srcdir)/lib/luajit/src'])
+AC_SUBST([LUAJIT_LIBS], ['$(top_builddir)/lib/luajit/src/libluajit.a'])
+
 
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
@@ -1788,9 +1800,6 @@ iocore_include_dirs="-I\$(top_srcdir)/iocore/eventsystem \
 -I\$(top_srcdir)/iocore/utils \
 -I\$(top_srcdir)/iocore/dns"
 
-# Testing Framework suffix generation hack
-TFW_PACKAGE_SUFFIX=$os_type
-
 AC_SUBST([CC])
 AC_SUBST([CFLAGS])
 AC_SUBST([CXX])
@@ -1805,7 +1814,6 @@ AC_SUBST([SHARED_CFLAGS])
 AC_SUBST([SHARED_CXXFLAGS])
 AC_SUBST([SHARED_CXXLINKFLAGS])
 AC_SUBST([SHARED_LDFLAGS])
-AC_SUBST([TFW_PACKAGE_SUFFIX])
 AC_SUBST([RPATH])
 
 # -----------------------------------------------------------------------------
@@ -1853,6 +1861,7 @@ AC_CONFIG_FILES([
   plugins/conf_remap/Makefile
   plugins/gzip/Makefile
   plugins/header_rewrite/Makefile
+  plugins/healthchecks/Makefile
   plugins/libloader/Makefile
   plugins/regex_remap/Makefile
   plugins/stats_over_http/Makefile
@@ -1905,9 +1914,10 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/generator/Makefile
     plugins/experimental/geoip_acl/Makefile
     plugins/experimental/header_normalize/Makefile
-    plugins/experimental/healthchecks/Makefile
     plugins/experimental/hipes/Makefile
+    plugins/experimental/memcached_remap/Makefile
     plugins/experimental/metalink/Makefile
+    plugins/experimental/multiplexer/Makefile
     plugins/experimental/mysql_remap/Makefile
     plugins/experimental/regex_revalidate/Makefile
     plugins/experimental/remap_stats/Makefile

@@ -19,7 +19,7 @@ traffic.out, typically in /usr/local/var/logs/trafficserver/traffic.out.
 In order to force a profile dump, you can do
 
     $ sudo touch /usr/local/etc/trafficserver/remap.config
-    $ sudo traffic_line -x
+    $ sudo traffic_ctl config reload
 
 
 By default, only the path and query string of the URL is

@@ -18,11 +18,9 @@ include $(top_srcdir)/build/plugins.mk
 
 tslua_la_CPPFLAGS = \
   $(AM_CPPFLAGS) \
-  -I$(top_srcdir)/lib/luajit/src
+  $(LUAJIT_CPPFLAGS)
 
 pkglib_LTLIBRARIES = tslua.la
-
-#tslua_la_LIBADD = $(top_builddir)/lib/luajit/src/libluajit.a
 
 tslua_la_SOURCES = \
   ts_lua.c \

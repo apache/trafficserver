@@ -69,6 +69,7 @@ check_signals(signal_handler_t handler)
   signal_check_handler(SIGTERM, handler);
   signal_check_handler(SIGINT, handler);
   signal_check_handler(SIGUSR1, handler);
+  signal_check_handler(SIGUSR2, handler);
 }
 
 static void

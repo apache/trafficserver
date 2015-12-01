@@ -266,13 +266,12 @@ DiagsConfig::RegisterDiagConfig()
 }
 
 
-DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *actions, bool use_records)
+DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *actions, bool use_records) : diags_log(NULL)
 {
   char diags_logpath[PATH_NAME_MAX];
   ats_scoped_str logpath;
 
   callbacks_established = false;
-  diags_log_fp = (FILE *)NULL;
   diags = NULL;
 
   ////////////////////////////////////////////////////////////////////
@@ -299,24 +298,21 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
 
   ink_filepath_make(diags_logpath, sizeof(diags_logpath), logpath, filename);
 
-  // open write append
-  // diags_log_fp = fopen(diags_logpath,"w");
-  diags_log_fp = fopen(diags_logpath, "a+");
-  if (diags_log_fp) {
-    int status;
-    status = setvbuf(diags_log_fp, NULL, _IOLBF, 512);
-    if (status != 0) {
-      fclose(diags_log_fp);
-      diags_log_fp = NULL;
-    }
-  }
+  // Grab rolling intervals from configuration
+  // TODO error check these values
+  int output_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec");
+  int output_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
+  int output_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled");
+  int diags_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
+  int diags_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
+  int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
 
-  diags = new Diags(tags, actions, diags_log_fp);
-  if (diags_log_fp == NULL) {
-    diags->print(NULL, DTA(DL_Warning), "couldn't open diags log file '%s', "
-                                        "will not log to this file",
-                 diags_logpath);
-  }
+  // Set up diags, FILE streams are opened in Diags constructor
+  diags_log = new BaseLogFile(diags_logpath);
+  diags = new Diags(tags, actions, diags_log);
+  diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
+  diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
+
   diags->print(NULL, DTA(DL_Status), "opened %s", diags_logpath);
 
   register_diags_callbacks();
@@ -370,9 +366,5 @@ DiagsConfig::register_diags_callbacks()
 
 DiagsConfig::~DiagsConfig()
 {
-  if (diags_log_fp) {
-    fclose(diags_log_fp);
-    diags_log_fp = NULL;
-  }
   delete diags;
 }

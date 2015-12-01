@@ -29,6 +29,7 @@
 #include "ts/ink_syslog.h"
 #include "I_RecProcess.h"
 #include "RecordsConfig.h"
+#include "ts/BaseLogFile.h"
 
 static int syslog_mode = false;
 static int debug_mode = false;
@@ -91,7 +92,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   crashlog_target target;
   pid_t parent = getppid();
 
-  diags = new Diags("" /* tags */, "" /* actions */, stderr);
+  diags = new Diags("" /* tags */, "" /* actions */, new BaseLogFile("stderr"));
 
   appVersionInfo.setup(PACKAGE_NAME, "traffic_crashlog", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 

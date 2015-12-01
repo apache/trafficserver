@@ -149,39 +149,11 @@ LogConfig::read_configuration_variables()
     max_space_mb_headroom = val;
   }
 
-  // TODO: We should mover this "parser" to lib/ts
   ptr = REC_ConfigReadString("proxy.config.log.logfile_perm");
-  if (ptr && strlen(ptr) == 9) {
-    logfile_perm = 0;
-    char *c = ptr;
-    if (*c == 'r')
-      logfile_perm |= S_IRUSR;
-    c++;
-    if (*c == 'w')
-      logfile_perm |= S_IWUSR;
-    c++;
-    if (*c == 'x')
-      logfile_perm |= S_IXUSR;
-    c++;
-    if (*c == 'r')
-      logfile_perm |= S_IRGRP;
-    c++;
-    if (*c == 'w')
-      logfile_perm |= S_IWGRP;
-    c++;
-    if (*c == 'x')
-      logfile_perm |= S_IXGRP;
-    c++;
-    if (*c == 'r')
-      logfile_perm |= S_IROTH;
-    c++;
-    if (*c == 'w')
-      logfile_perm |= S_IWOTH;
-    c++;
-    if (*c == 'x')
-      logfile_perm |= S_IXOTH;
-    ats_free(ptr);
-  }
+  int logfile_perm_parsed = ink_fileperm_parse(ptr);
+  if (logfile_perm_parsed != -1)
+    logfile_perm = logfile_perm_parsed;
+  ats_free(ptr);
 
   ptr = REC_ConfigReadString("proxy.config.log.hostname");
   if (ptr != NULL) {

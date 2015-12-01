@@ -35,35 +35,6 @@
 #include <stdio.h>
 #include <strings.h>
 
-//////////////////////////////////////////////////////////////////////////////
-//
-//      mem_copy
-//
-//////////////////////////////////////////////////////////////////////////////
-
-static inline void
-_memcpy(char *dest, const char *src, int nbytes)
-{
-  for (int i = 0; i < nbytes; i++)
-    dest[i] = src[i];
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      mem_len
-//
-//////////////////////////////////////////////////////////////////////////////
-
-static inline int
-_strlen(const char *src)
-{
-  const char *old_src = src;
-  while (*src)
-    src++;
-  return (int)(src - old_src);
-}
-
 /***********************************************************************
  *                                                                     *
  *                     Str (string/length list cell)                   *

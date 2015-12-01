@@ -359,7 +359,6 @@ SSLCertificateConfig::startup()
 {
   sslCertUpdate = new ConfigUpdateHandler<SSLCertificateConfig>();
   sslCertUpdate->attach("proxy.config.ssl.server.multicert.filename");
-  sslCertUpdate->attach("proxy.config.ssl.server.multicert.exit_on_load_fail");
   sslCertUpdate->attach("proxy.config.ssl.server.ticket_key.filename");
   sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");

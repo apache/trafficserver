@@ -37,9 +37,9 @@ Edge cache debugging
 		CONFIG proxy.config.diags.debug.enabled INT 1
 		CONFIG proxy.config.diags.debug.tags STRING url_sig
 
-	and do a traffic_line -x; Debug output will go to traffic.out.
-	Failed transactions (signature check fails that is) will be logged
-	in to error.log.
+	and do a traffic_ctl config reload; Debug output will go
+	to traffic.out.  Failed transactions (signature check fails
+	that is) will be logged in to error.log.
 
 Signing a URL
 	At the signing portal take the full URL, without any query string, and
@@ -110,7 +110,7 @@ Example
 
 		map http://test-remap.domain.com http://google.com @plugin=url_sig.so @pparam=sign_test.config
 
-	Restart traffic server or traffic_line -x - verify there are no errors in diags.log
+	Restart traffic server or "traffic_ctl config reload" - verify there are no errors in diags.log
 
 	Try the path unsigned:
 

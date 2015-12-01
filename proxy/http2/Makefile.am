@@ -40,10 +40,17 @@ libhttp2_a_SOURCES = \
   Http2ClientSession.h \
   Http2ConnectionState.cc \
   Http2ConnectionState.h \
+  Http2Stream.cc \
+  Http2Stream.h \
   Http2SessionAccept.cc \
   Http2SessionAccept.h \
   HuffmanCodec.cc \
   HuffmanCodec.h
+
+if BUILD_TESTS
+  libhttp2_a_SOURCES += \
+	  RegressionHPACK.cc
+endif
 
 noinst_PROGRAMS = \
   test_Huffmancode

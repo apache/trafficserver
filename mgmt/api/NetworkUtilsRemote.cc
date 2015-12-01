@@ -117,7 +117,6 @@ ts_connect()
   // create a socket
   main_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (main_socket_fd < 0) {
-    // fprintf(stderr, "[connect] ERROR: can't open socket\n");
     goto ERROR; // ERROR - can't open socket
   }
   // setup Unix domain socket
@@ -131,7 +130,6 @@ ts_connect()
 #endif
   // connect call
   if (connect(main_socket_fd, (struct sockaddr *)&client_sock, sockaddr_len) < 0) {
-    fprintf(stderr, "[connect] ERROR (main_socket_fd %d): %s\n", main_socket_fd, strerror(int(errno)));
     close(main_socket_fd);
     main_socket_fd = -1;
     goto ERROR; // connection is down
@@ -140,7 +138,6 @@ ts_connect()
   // create a socket
   event_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (event_socket_fd < 0) {
-    // fprintf(stderr, "[connect] ERROR: can't open event socket\n");
     close(main_socket_fd); // close the other socket too!
     main_socket_fd = -1;
     goto ERROR; // ERROR - can't open socket
@@ -156,7 +153,6 @@ ts_connect()
 #endif
   // connect call
   if (connect(event_socket_fd, (struct sockaddr *)&client_event_sock, sockaddr_len) < 0) {
-    // fprintf(stderr, "[connect] ERROR (event_socket_fd %d): %s\n", event_socket_fd, strerror(int(errno)));
     close(event_socket_fd);
     close(main_socket_fd);
     event_socket_fd = -1;
@@ -264,13 +260,11 @@ reconnect_loop(int num_attempts)
     numTries++;
     err = reconnect();
     if (err == TS_ERR_OKAY) {
-      // fprintf(stderr, "[reconnect_loop] Successful reconnction; Leave loop\n");
       return TS_ERR_OKAY; // successful connection
     }
     sleep(1); // to make it slower
   }
 
-  // fprintf(stderr, "[reconnect_loop] FAIL TO CONNECT after %d tries\n", num_attempts);
   return err; // unsuccessful connection after num_attempts
 }
 
@@ -412,9 +406,7 @@ socket_test_thread(void *)
       // reconnect will return an "ALREADY CONNECTED" error when it
       // tries to connect, and on the next loop iteration, the socket_test
       // will actually pass because main_socket_fd is valid!!
-      if (reconnect() == TS_ERR_OKAY) {
-        // fprintf(stderr, "[socket_test_thread] reconnect succeeds\n");
-      }
+      reconnect();
     }
 
     sleep(5);

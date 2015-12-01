@@ -21,6 +21,7 @@ SUBDIRS = \
   conf_remap \
   gzip \
   header_rewrite \
+  healthchecks \
   libloader \
   regex_remap \
   stats_over_http \

@@ -50,6 +50,9 @@ extern "C" {
 #define TS_RES_MEM_PATH TS_RES_PATH("memory/")
 #endif
 
+#define TM_OPT_BIND_STDOUT "bind_stdout"
+#define TM_OPT_BIND_STDERR "bind_stderr"
+
 /***************************************************************************
  * Error and Return Values
  ***************************************************************************/
@@ -939,7 +942,7 @@ tsapi TSMgmtError TSActionDo(TSActionNeedT action);
  */
 tsapi TSMgmtError TSBounce(unsigned options);
 
-/* TSStorageDeviceOp: Request an operation on a storage device.
+/* TSStorageDeviceCmdOffline: Request to make a cache storage device offline.
  * @arg dev Target device, specified by path to device.
  * @return Success.
  */
