@@ -89,11 +89,7 @@ ts_lua_client_response_header_get(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   /*  we skip the first argument that is the table */
   key = luaL_checklstring(L, 2, &key_len);
@@ -136,11 +132,7 @@ ts_lua_client_response_header_set(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   remove = 0;
   val = NULL;
@@ -204,11 +196,7 @@ ts_lua_client_response_get_headers(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_CLIENT_RESPONSE_HDR(http_ctx);
 
@@ -259,11 +247,7 @@ ts_lua_client_response_get_status(lua_State *L)
   int status;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_CLIENT_RESPONSE_HDR(http_ctx);
 
@@ -283,11 +267,7 @@ ts_lua_client_response_set_status(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_CLIENT_RESPONSE_HDR(http_ctx);
 
@@ -311,11 +291,7 @@ ts_lua_client_response_get_version(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_CLIENT_RESPONSE_HDR(http_ctx);
 
@@ -340,11 +316,7 @@ ts_lua_client_response_set_version(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_CLIENT_RESPONSE_HDR(http_ctx);
 
@@ -371,11 +343,7 @@ ts_lua_client_response_set_error_resp(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_CLIENT_RESPONSE_HDR(http_ctx);
 

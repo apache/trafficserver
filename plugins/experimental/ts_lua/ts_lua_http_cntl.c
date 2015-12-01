@@ -68,11 +68,7 @@ ts_lua_http_cntl_set(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   cntl_type = luaL_checkinteger(L, 1);
   value = luaL_checkinteger(L, 2);
@@ -89,11 +85,7 @@ ts_lua_http_cntl_get(lua_State *L)
   int64_t value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   cntl_type = luaL_checkinteger(L, 1);
 

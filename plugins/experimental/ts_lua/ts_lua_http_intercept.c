@@ -70,11 +70,7 @@ ts_lua_http_intercept(lua_State *L)
   ts_lua_http_ctx *http_ctx;
   ts_lua_http_intercept_ctx *ictx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   n = lua_gettop(L);
 
@@ -107,11 +103,7 @@ ts_lua_http_server_intercept(lua_State *L)
   ts_lua_http_ctx *http_ctx;
   ts_lua_http_intercept_ctx *ictx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   n = lua_gettop(L);
 

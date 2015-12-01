@@ -137,11 +137,7 @@ ts_lua_server_request_header_get(lua_State *L)
   TSMLoc field_loc;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   /*  we skip the first argument that is the table */
   key = luaL_checklstring(L, 2, &key_len);
@@ -184,11 +180,7 @@ ts_lua_server_request_header_set(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   remove = 0;
   val = NULL;
@@ -252,11 +244,7 @@ ts_lua_server_request_get_headers(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_SERVER_REQUEST_HDR(http_ctx);
 
@@ -294,11 +282,7 @@ ts_lua_server_request_get_header_size(lua_State *L)
   int header_size;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   header_size = TSHttpTxnServerReqHdrBytesGet(http_ctx->txnp);
   lua_pushnumber(L, header_size);
@@ -319,11 +303,7 @@ ts_lua_server_request_get_body_size(lua_State *L)
   int64_t body_size;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   body_size = TSHttpTxnServerReqBodyBytesGet(http_ctx->txnp);
   lua_pushnumber(L, body_size);
@@ -351,11 +331,7 @@ ts_lua_server_request_get_uri(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
 
@@ -380,11 +356,7 @@ ts_lua_server_request_set_uri(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
 
@@ -418,11 +390,7 @@ ts_lua_server_request_set_uri_args(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
 
@@ -440,11 +408,7 @@ ts_lua_server_request_get_uri_args(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
 
@@ -467,11 +431,7 @@ ts_lua_server_request_server_addr_get_ip(lua_State *L)
   char sip[128];
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   server_ip = TSHttpTxnServerAddrGet(http_ctx->txnp);
 
@@ -498,11 +458,7 @@ ts_lua_server_request_server_addr_get_port(lua_State *L)
   ts_lua_http_ctx *http_ctx;
   int port;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   server_ip = TSHttpTxnServerAddrGet(http_ctx->txnp);
 
@@ -529,11 +485,7 @@ ts_lua_server_request_server_addr_get_outgoing_port(lua_State *L)
   ts_lua_http_ctx *http_ctx;
   int port;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   outgoing_addr = TSHttpTxnOutgoingAddrGet(http_ctx->txnp);
 
@@ -562,11 +514,7 @@ ts_lua_server_request_server_addr_get_addr(lua_State *L)
   int family;
   char sip[128];
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   server_ip = TSHttpTxnServerAddrGet(http_ctx->txnp);
 

@@ -300,11 +300,7 @@ ts_lua_http_config_int_set(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   conf = luaL_checkinteger(L, 1);
   value = luaL_checkinteger(L, 2);
@@ -321,11 +317,7 @@ ts_lua_http_config_int_get(lua_State *L)
   int64_t value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   conf = luaL_checkinteger(L, 1);
 
@@ -343,11 +335,7 @@ ts_lua_http_config_float_set(lua_State *L)
   float value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   conf = luaL_checkinteger(L, 1);
   value = luaL_checknumber(L, 2);
@@ -364,11 +352,7 @@ ts_lua_http_config_float_get(lua_State *L)
   float value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   conf = luaL_checkinteger(L, 1);
 
@@ -387,11 +371,7 @@ ts_lua_http_config_string_set(lua_State *L)
   size_t value_len;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   conf = luaL_checkinteger(L, 1);
   value = luaL_checklstring(L, 2, &value_len);
@@ -409,11 +389,7 @@ ts_lua_http_config_string_get(lua_State *L)
   int value_len;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   conf = luaL_checkinteger(L, 1);
 
@@ -431,11 +407,7 @@ ts_lua_http_timeout_set(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   conf = luaL_checkinteger(L, 1);
   value = luaL_checkinteger(L, 2);
@@ -475,11 +447,7 @@ ts_lua_http_client_packet_mark_set(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   value = luaL_checkinteger(L, 1);
 
@@ -495,11 +463,7 @@ ts_lua_http_server_packet_mark_set(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   value = luaL_checkinteger(L, 1);
 
@@ -515,11 +479,7 @@ ts_lua_http_client_packet_tos_set(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   value = luaL_checkinteger(L, 1);
 
@@ -535,11 +495,7 @@ ts_lua_http_enable_redirect(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   value = luaL_checkinteger(L, 1);
 
@@ -555,11 +511,7 @@ ts_lua_http_set_debug(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   value = luaL_checkinteger(L, 1);
 
@@ -575,11 +527,7 @@ ts_lua_http_server_packet_tos_set(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   value = luaL_checkinteger(L, 1);
 
@@ -595,11 +543,7 @@ ts_lua_http_client_packet_dscp_set(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   value = luaL_checkinteger(L, 1);
 
@@ -615,11 +559,7 @@ ts_lua_http_server_packet_dscp_set(lua_State *L)
   int value;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
-  if (http_ctx == NULL) {
-    TSError("[ts_lua] missing http_ctx");
-    return 0;
-  }
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   value = luaL_checkinteger(L, 1);
 
