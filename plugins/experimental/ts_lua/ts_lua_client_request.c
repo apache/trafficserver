@@ -146,6 +146,10 @@ ts_lua_client_request_header_get(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   /*  we skip the first argument that is the table */
   key = luaL_checklstring(L, 2, &key_len);
@@ -182,6 +186,10 @@ ts_lua_client_request_header_set(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   remove = 0;
   val = NULL;
@@ -240,6 +248,10 @@ ts_lua_client_request_get_headers(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   lua_newtable(L);
 
@@ -306,6 +318,10 @@ ts_lua_client_request_get_url(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   url = TSHttpTxnEffectiveUrlStringGet(http_ctx->txnp, &url_len);
 
@@ -332,6 +348,10 @@ ts_lua_client_request_get_pristine_url(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   if (TSHttpTxnPristineUrlGet(http_ctx->txnp, &bufp, &url_loc) != TS_SUCCESS)
     return 0;
@@ -360,6 +380,10 @@ ts_lua_client_request_get_url_host(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   host = TSUrlHostGet(http_ctx->client_request_bufp, http_ctx->client_request_url, &len);
 
@@ -399,6 +423,10 @@ ts_lua_client_request_set_url_host(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   host = luaL_checklstring(L, 1, &len);
 
@@ -415,6 +443,10 @@ ts_lua_client_request_get_url_port(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   port = TSUrlPortGet(http_ctx->client_request_bufp, http_ctx->client_request_url);
 
@@ -431,6 +463,10 @@ ts_lua_client_request_set_url_port(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   port = luaL_checkint(L, 1);
 
@@ -448,6 +484,10 @@ ts_lua_client_request_get_url_scheme(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   scheme = TSUrlSchemeGet(http_ctx->client_request_bufp, http_ctx->client_request_url, &len);
 
@@ -465,6 +505,10 @@ ts_lua_client_request_set_url_scheme(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   scheme = luaL_checklstring(L, 1, &len);
 
@@ -484,6 +528,10 @@ ts_lua_client_request_get_uri(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   path = TSUrlPathGet(http_ctx->client_request_bufp, http_ctx->client_request_url, &path_len);
 
@@ -507,6 +555,10 @@ ts_lua_client_request_set_uri(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   path = luaL_checklstring(L, 1, &path_len);
 
@@ -540,6 +592,10 @@ ts_lua_client_request_get_uri_args(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   param = TSUrlHttpQueryGet(http_ctx->client_request_bufp, http_ctx->client_request_url, &param_len);
 
@@ -561,6 +617,10 @@ ts_lua_client_request_set_uri_args(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   param = luaL_checklstring(L, 1, &param_len);
   TSUrlHttpQuerySet(http_ctx->client_request_bufp, http_ctx->client_request_url, param, param_len);
@@ -576,6 +636,10 @@ ts_lua_client_request_client_addr_get_ip(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   client_ip = TSHttpTxnClientAddrGet(http_ctx->txnp);
 
@@ -603,6 +667,10 @@ ts_lua_client_request_client_addr_get_port(lua_State *L)
   int port;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   client_ip = TSHttpTxnClientAddrGet(http_ctx->txnp);
 
@@ -630,6 +698,10 @@ ts_lua_client_request_client_addr_get_incoming_port(lua_State *L)
   int port;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   incoming_addr = TSHttpTxnIncomingAddrGet(http_ctx->txnp);
 
@@ -659,6 +731,10 @@ ts_lua_client_request_client_addr_get_addr(lua_State *L)
   char cip[128];
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   client_ip = TSHttpTxnClientAddrGet(http_ctx->txnp);
 
@@ -705,6 +781,10 @@ ts_lua_client_request_get_method(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   method = TSHttpHdrMethodGet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, &method_len);
 
@@ -726,6 +806,10 @@ ts_lua_client_request_set_method(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   method = luaL_checklstring(L, 1, &method_len);
 
@@ -750,6 +834,10 @@ ts_lua_client_request_get_body_size(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   body_size = TSHttpTxnClientReqBodyBytesGet(http_ctx->txnp);
   lua_pushnumber(L, body_size);
@@ -777,6 +865,10 @@ ts_lua_client_request_get_version(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   version = TSHttpHdrVersionGet(http_ctx->client_request_bufp, http_ctx->client_request_hdrp);
 
@@ -800,6 +892,10 @@ ts_lua_client_request_set_version(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   version = luaL_checklstring(L, 1, &len);
 
@@ -824,6 +920,10 @@ ts_lua_client_request_get_header_size(lua_State *L)
   ts_lua_http_ctx *http_ctx;
 
   http_ctx = ts_lua_get_http_ctx(L);
+  if (http_ctx == NULL) {
+    TSError("[ts_lua] missing http_ctx");
+    return 0;
+  }
 
   header_size = TSHttpTxnClientReqHdrBytesGet(http_ctx->txnp);
   lua_pushnumber(L, header_size);

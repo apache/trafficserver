@@ -2687,6 +2687,26 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.http.set_debug
+-----------------
+**syntax:** *ts.http.set_debug(NUMBER)*
+
+**context:** do_remap or do_global_* or later.
+
+**decription:** This function can be used to enable debug log for the transaction
+
+Here is an example:
+
+::
+
+    function do_remap()
+        ts.http.set_debug(1)
+        return 0
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.cntl_get
 ----------------
 **syntax:** *val = ts.http.cntl_get(CNTL_TYPE)*
