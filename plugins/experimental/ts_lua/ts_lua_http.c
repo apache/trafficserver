@@ -347,7 +347,7 @@ ts_lua_http_set_server_resp_no_store(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   status = luaL_checknumber(L, 1);
 
