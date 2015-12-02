@@ -1,3 +1,19 @@
+Changes with Apache Traffic Server 6.0.1
+
+Bug:
+  *) [TS-3883] ats_madvise() has no effect on Linux (including MADV_DONTDUMP)
+  *) [TS-3921] HTTP/2 send protocol error on invalid data frame
+  *) [TS-3945] ASAN error in HTTP/2 when trying to decode 0 length buffer
+  *) [TS-3952] SSLNetVConnection::free crashes when "nh" is not initialized
+  *) [TS-3953] When closing a connection from the active queue it uses the keep-alive queue
+  *) [TS-3954] Latency with SPDY/HTTP/2 when chunking disabled (not default setting)
+  *) [TS-3958] HTTP/2 coredump with NULL FetchSM
+  *) [TS-3962] CID 1325824:    (USE_AFTER_FREE) in malloc_bulkfree()
+  *) [TS-3963] Response headers are not completely transferred when over 4KB
+  *) [TS-3964] Stat for total time spent for HTTP/2 is 0
+  *) [TS-3975] ESI plugin missing TSPluginRegister
+  *) [TS-4011] HTTP/2 coredump with NULL FetchSM, another one
+
 Changes with Apache Traffic Server 6.0.0
 
 Bug:
