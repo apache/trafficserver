@@ -92,7 +92,7 @@ ts_lua_http_milestone_get(lua_State *L)
   TSHRTime epoch;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   milestone_type = luaL_checkinteger(L, 1);
 

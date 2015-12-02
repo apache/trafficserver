@@ -70,7 +70,8 @@ ts_lua_http_intercept(lua_State *L)
   ts_lua_http_ctx *http_ctx;
   ts_lua_http_intercept_ctx *ictx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
+
   n = lua_gettop(L);
 
   if (n < 1) {
@@ -102,7 +103,8 @@ ts_lua_http_server_intercept(lua_State *L)
   ts_lua_http_ctx *http_ctx;
   ts_lua_http_intercept_ctx *ictx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
+
   n = lua_gettop(L);
 
   if (n < 1) {
@@ -354,6 +356,11 @@ ts_lua_say(lua_State *L)
   ts_lua_http_intercept_ctx *ictx;
 
   ictx = ts_lua_get_http_intercept_ctx(L);
+  if (ictx == NULL) {
+    TSError("[ts_lua] missing ictx");
+    return 0;
+  }
+
   data = luaL_checklstring(L, 1, &len);
 
   if (len > 0) {
@@ -371,6 +378,11 @@ ts_lua_flush(lua_State *L)
   ts_lua_http_intercept_ctx *ictx;
 
   ictx = ts_lua_get_http_intercept_ctx(L);
+  if (ictx == NULL) {
+    TSError("[ts_lua] missing ictx");
+    return 0;
+  }
+
   avail = TSIOBufferReaderAvail(ictx->output.reader);
 
   if (avail > 0) {

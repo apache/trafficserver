@@ -489,8 +489,8 @@ ts_lua_fill_one_result(lua_State *L, ts_lua_fetch_info *fi)
     TSfree(dst);
   }
 
-  // truncked
-  lua_pushlstring(L, "truncked", sizeof("truncked") - 1);
+  // truncated
+  lua_pushlstring(L, "truncated", sizeof("truncated") - 1);
   if (fi->failed) {
     lua_pushboolean(L, 1);
 
