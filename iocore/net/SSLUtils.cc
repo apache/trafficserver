@@ -1194,6 +1194,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
       SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
       return false;
     }
+    SSLConfigParams::load_ssl_file_cb(completeServerKeyPath);
   } else {
     SSLError("empty SSL private key path in records.config");
     return false;
@@ -1257,8 +1258,7 @@ SSLCheckServerCertNow(X509 *cert, const char *certname)
 
 
 SSL_CTX *
-SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings, Vec<X509 *> &certList,
-                     Vec<char *> &cert_files_vec)
+SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings, Vec<X509 *> &certList)
 {
   int server_verify_client;
   ats_scoped_str completeServerCertPath;
@@ -1377,7 +1377,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         goto fail;
       }
       certList.push_back(cert);
-      cert_files_vec.push_back(ats_strdup(completeServerCertPath));
+      SSLConfigParams::load_ssl_file_cb(completeServerCertPath);
       // Load up any additional chain certificates
       X509 *ca;
       while ((ca = PEM_read_bio_X509(bio.get(), NULL, 0, NULL))) {
@@ -1400,6 +1400,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
         goto fail;
       }
+      SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath);
     }
 
     // Now, load any additional certificate chains specified in this entry.
@@ -1409,6 +1410,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
         goto fail;
       }
+      SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath);
     }
   }
 
@@ -1648,11 +1650,10 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
 }
 
 static SSL_CTX *
-ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, const ssl_user_config &sslMultCertSettings,
-                      Vec<char *> &cert_files_vec)
+ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, const ssl_user_config &sslMultCertSettings)
 {
   Vec<X509 *> cert_list;
-  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list, cert_files_vec);
+  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
   ssl_ticket_key_block *keyblock = NULL;
   bool inserted = false;
 
@@ -1842,7 +1843,7 @@ ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultC
 }
 
 bool
-SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup, Vec<char *> &cert_files_vec)
+SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup)
 {
   char *tok_state = NULL;
   char *line = NULL;
@@ -1890,7 +1891,7 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
                          line_num, errPtr);
       } else {
         if (ssl_extract_certificate(&line_info, sslMultiCertSettings)) {
-          ssl_store_ssl_context(params, lookup, sslMultiCertSettings, cert_files_vec);
+          ssl_store_ssl_context(params, lookup, sslMultiCertSettings);
         }
       }
     }
@@ -1904,7 +1905,7 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
   if (lookup->ssl_default == NULL) {
     ssl_user_config sslMultiCertSettings;
     sslMultiCertSettings.addr = ats_strdup("*");
-    if (ssl_store_ssl_context(params, lookup, sslMultiCertSettings, cert_files_vec) == NULL) {
+    if (ssl_store_ssl_context(params, lookup, sslMultiCertSettings) == NULL) {
       Error("failed set default context");
       return false;
     }

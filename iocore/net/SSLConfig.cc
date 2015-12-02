@@ -53,6 +53,7 @@ size_t SSLConfigParams::session_cache_number_buckets = 1024;
 bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
+load_ssl_file_func SSLConfigParams::load_ssl_file_cb = NULL;
 
 // TS-3534 Wiretracing for SSL Connections
 int SSLConfigParams::ssl_wire_trace_enabled = 0;
@@ -389,12 +390,7 @@ SSLCertificateConfig::reconfigure()
     ink_hrtime_sleep(HRTIME_SECONDS(secs));
   }
 
-  Vec<char *> cert_files_vec;
-  SSLParseCertificateConfiguration(params, lookup, cert_files_vec);
-  for (size_t i = 0; i < cert_files_vec.n; i++) {
-    pmgmt->signalConfigFileChild("ssl_multicert.config", cert_files_vec[i]);
-  }
-  cert_files_vec.free_and_clear();
+  SSLParseCertificateConfiguration(params, lookup);
 
   if (!lookup->is_valid) {
     retStatus = false;

@@ -39,7 +39,7 @@
 #include "MgmtUtils.h"
 #include "BaseManager.h"
 #include "ts/ink_sock.h"
-#include "ts/Vec.h"
+
 #include "ts/ink_apidefs.h"
 
 class ConfigUpdateCbTable;

@@ -62,6 +62,10 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
   bool needZeroLength;
 
   ink_assert(fileName_ != NULL);
+  // parent must not also have a parent
+  if (parentRollback) {
+    ink_assert(parentRollback->parentRollback == NULL);
+  }
   // Copy the file name
   fileNameLen = strlen(fileName_);
   fileName = (char *)ats_malloc(fileNameLen + 1);
@@ -77,10 +81,10 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
   fileBaseNameLen = strlen(fileBaseName);
   // For the parent files, the fileName is baseName,
   // otherwise it's a child file with rooted name.
-  ink_assert(isFileNameRooted() || fileBaseName == fileName);
+  ink_assert(isChildRollback() || fileBaseName == fileName);
 
   // extract the file dir name
-  if (isFileNameRooted()) {
+  if (isChildRollback()) {
     fileDirLen = fileBaseName - fileName;
     fileDir = (char *)ats_malloc(fileDirLen + 1);
     ink_strlcpy(fileDir, fileName_, fileDirLen + 1);
@@ -88,7 +92,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
 
   // TODO: Use the runtime directory for storing mutable data
   // XXX: Sysconfdir should be imutable!!!
-  if (!isFileNameRooted()) {
+  if (!isChildRollback()) {
     ats_scoped_str sysconfdir(RecConfigReadConfigDir());
     if (access(sysconfdir, F_OK) < 0) {
       mgmt_fatal(0, "[Rollback::Rollback] unable to access() directory '%s': %d, %s\n", (const char *)sysconfdir, errno,
@@ -100,6 +104,15 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
     }
   }
 
+  ink_mutex_init(&fileAccessLock, "RollBack Mutex");
+
+  if (isChildRollback()) {
+    currentVersion = 0;
+    setLastModifiedTime();
+    numberBackups = 0;
+    return;
+  }
+
   if (varIntFromName("proxy.config.admin.number_config_bak", &numBak) == true) {
     if (numBak > 1) {
       numberBackups = (int)numBak;
@@ -109,8 +122,6 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
   } else {
     numberBackups = DEFAULT_BACKUPS;
   }
-
-  ink_mutex_init(&fileAccessLock, "RollBack Mutex");
 
   currentVersion = 0; // Prevent UMR with stat file
   highestSeen = findVersions_ml(versionQ);
@@ -243,7 +254,7 @@ Rollback::createPathStr(version_t version)
 {
   int bufSize = 0;
   char *buffer = NULL;
-  ats_scoped_str sysconfdir(isFileNameRooted() ? ats_strdup(fileDir) : RecConfigReadConfigDir());
+  ats_scoped_str sysconfdir(isChildRollback() ? ats_strdup(fileDir) : RecConfigReadConfigDir());
   bufSize = strlen(sysconfdir) + fileBaseNameLen + MAX_VERSION_DIGITS + 1;
   buffer = (char *)ats_malloc(bufSize);
   Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileBaseName);
@@ -490,8 +501,7 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   returnCode = OK_ROLLBACK;
 
   // Post the change to the config file manager
-  // rooted file (child file) should not post a change
-  if (notifyChange && configFiles && !isFileNameRooted()) {
+  if (notifyChange && configFiles) {
     configFiles->fileChanged(fileName, incVersion);
   }
 

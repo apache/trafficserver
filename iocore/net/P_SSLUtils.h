@@ -154,7 +154,7 @@ const char *SSLErrorName(int ssl_error);
 void SSLDebugBufferPrint(const char *tag, const char *buffer, unsigned buflen, const char *message);
 
 // Load the SSL certificate configuration.
-bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup, Vec<char *> &cert_files_vec);
+bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup);
 
 namespace ssl
 {

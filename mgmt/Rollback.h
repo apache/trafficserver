@@ -220,9 +220,9 @@ public:
     return fileName;
   }
   bool
-  isFileNameRooted() const
+  isChildRollback() const
   {
-    return *fileName == '/';
+    return parentRollback != NULL;
   }
   Rollback *
   getParentRollback()

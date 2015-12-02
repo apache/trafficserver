@@ -138,14 +138,21 @@ FileManager::registerCallback(FileCallbackFunc func)
 void
 FileManager::addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback)
 {
+  ink_mutex_acquire(&accessLock);
+  addFileHelper(fileName, root_access_needed, parentRollback);
+  ink_mutex_release(&accessLock);
+}
+
+// caller must hold the lock
+void
+FileManager::addFileHelper(const char *fileName, bool root_access_needed, Rollback *parentRollback)
+{
   ink_assert(fileName != NULL);
 
   Rollback *rb = new Rollback(fileName, root_access_needed, parentRollback);
   rb->configFiles = this;
 
-  ink_mutex_acquire(&accessLock);
   ink_hash_table_insert(bindings, fileName, rb);
-  ink_mutex_release(&accessLock);
 }
 
 // bool FileManager::getRollbackObj(char* fileName, Rollback** rbPtr)
@@ -628,33 +635,34 @@ FileManager::rereadConfig()
 
   Vec<Rollback *> changedFiles;
   Vec<Rollback *> parentFileNeedChange;
-  Vec<Rollback *> parentFiles;
   ink_mutex_acquire(&accessLock);
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
     rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
-    if (rb->isFileNameRooted()) {
-      parentFiles.add_exclusive(rb->getParentRollback());
-    }
-    if (rb->checkForUserUpdate(ROLLBACK_CHECK_AND_UPDATE)) {
+    if (rb->checkForUserUpdate(rb->isChildRollback() ? ROLLBACK_CHECK_ONLY : ROLLBACK_CHECK_AND_UPDATE)) {
       changedFiles.push_back(rb);
-      if (rb->isFileNameRooted()) {
+      if (rb->isChildRollback()) {
         parentFileNeedChange.add_exclusive(rb->getParentRollback());
       }
     }
   }
-  // for each parentFile, if it is changed, then delete all its children
-  for (size_t i = 0; i < parentFiles.n; i++) {
-    if (changedFiles.in(parentFiles[i])) {
-      for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
-           entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-        rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
-        if (rb->getParentRollback() == parentFiles[i]) {
-          ink_hash_table_delete(bindings, rb->getFileName());
-          delete rb;
-        }
+
+  Vec<Rollback *> childFileNeedDelete;
+  for (size_t i = 0; i < changedFiles.n; i++) {
+    if (changedFiles[i]->isChildRollback())
+      continue;
+    // for each parent file, if it is changed, then delete all its children
+    for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
+         entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
+      rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+      if (rb->getParentRollback() == changedFiles[i]) {
+        childFileNeedDelete.add_exclusive(rb);
       }
     }
+  }
+  for (size_t i = 0; i < childFileNeedDelete.n; i++) {
+    ink_hash_table_delete(bindings, childFileNeedDelete[i]->getFileName());
+    delete childFileNeedDelete[i];
   }
   ink_mutex_release(&accessLock);
 
@@ -759,10 +767,10 @@ FileManager::configFileChild(const char *parent, const char *child)
   if (htfound) {
     parentRollback = (Rollback *)lookup;
   }
-  ink_mutex_release(&accessLock);
   if (htfound) {
-    addFile(child, true, parentRollback);
+    addFileHelper(child, true, parentRollback);
   }
+  ink_mutex_release(&accessLock);
 }
 
 // bool checkValidName(const char* name)

@@ -35,9 +35,8 @@
 
 #include "ts/ink_hash_table.h"
 #include "ts/List.h"
-#include "ts/ink_string++.h"
-#include "ts/Vec.h"
 #include "Rollback.h"
+#include "ts/Vec.h"
 #include "MultiFile.h"
 
 class Rollback;
@@ -137,8 +136,8 @@ public:
 
 private:
   void doRollbackLocks(lockAction_t action);
-  ink_mutex accessLock;    // Protects bindings hashtable
-  ink_mutex cbListLock;    // Protects the CallBack List
+  ink_mutex accessLock; // Protects bindings hashtable
+  ink_mutex cbListLock; // Protects the CallBack List
   DLL<callbackListable> cblist;
   InkHashTable *bindings;
   // InkHashTable* g_snapshot_directory_ht;
@@ -151,6 +150,7 @@ private:
   void generateRestoreConfirm(char *snapName, textBuffer *output);
   bool checkValidName(const char *name);
   const char *getParentFileName(const char *fileName);
+  void addFileHelper(const char *fileName, bool root_access_needed, Rollback *parentRollback = NULL);
 };
 
 int snapEntryCmpFunc(const void *e1, const void *e2);
