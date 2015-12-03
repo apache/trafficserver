@@ -102,9 +102,10 @@ build() {
   ( cd $OBJROOT && $MAKE install )
 }
 
+# Run extended (level 3) regressions.
 regress() {
   ( cd $OBJROOT && $MAKE check ) && \
-  $DSTROOT/bin/traffic_server -R 1
+  $DSTROOT/bin/traffic_server -R 3
 }
 
 CC=${CC:-$(prog cc)}

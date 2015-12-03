@@ -43,6 +43,7 @@ struct RamCacheLRU : public RamCache {
   int get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0);
   int put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool copy = false, uint32_t auxkey1 = 0, uint32_t auxkey2 = 0);
   int fixup(const INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey2, uint32_t new_auxkey1, uint32_t new_auxkey2);
+  int64_t size() const;
 
   void init(int64_t max_bytes, Vol *vol);
 
@@ -59,6 +60,19 @@ struct RamCacheLRU : public RamCache {
 
   RamCacheLRU() : bytes(0), objects(0), seen(0), bucket(0), nbuckets(0), ibuckets(0), vol(NULL) {}
 };
+
+int64_t
+RamCacheLRU::size() const
+{
+  int64_t s = 0;
+  forl_LL(RamCacheLRUEntry, e, lru)
+  {
+    s += sizeof(e);
+    s += sizeof(*e->data);
+    s += e->data->block_size();
+  }
+  return s;
+}
 
 ClassAllocator<RamCacheLRUEntry> ramCacheLRUEntryAllocator("RamCacheLRUEntry");
 
