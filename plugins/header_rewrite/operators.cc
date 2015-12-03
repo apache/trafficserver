@@ -656,6 +656,7 @@ OperatorSetConnDSCP::exec(const Resources &res) const
 {
   if (res.txnp) {
     TSHttpTxnClientPacketDscpSet(res.txnp, _ds_value.get_int_value());
+    TSDebug(PLUGIN_NAME, "   Setting DSCP to %d", _ds_value.get_int_value());
   }
 }
 
