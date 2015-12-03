@@ -332,18 +332,41 @@ int64_t
 encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, size_t value_len)
 {
   uint8_t *p = buf_start;
+  bool use_huffman = true;
+  char *data = NULL;
+  int64_t data_len = 0;
+
+  // TODO Choose whether to use Huffman encoding wisely
+
+  if (use_huffman) {
+    data = static_cast<char *>(ats_malloc(value_len * 4));
+    if (data == NULL)
+      return -1;
+    data_len = huffman_encode(reinterpret_cast<uint8_t *>(data), reinterpret_cast<const uint8_t *>(value), value_len);
+  } else {
+    data = const_cast<char *>(value);
+    data_len = value_len;
+  }
 
   // Length
-  const int64_t len = encode_integer(p, buf_end, value_len, 7);
+  const int64_t len = encode_integer(p, buf_end, data_len, 7);
   if (len == -1)
     return -1;
+  if (use_huffman) {
+    *p |= 0x80;
+  }
   p += len;
-  if (buf_end < p || static_cast<size_t>(buf_end - p) < value_len)
+  if (buf_end < p || buf_end - p < data_len)
     return -1;
 
-  // Value String
-  memcpy(p, value, value_len);
-  p += value_len;
+  // Value
+  memcpy(p, data, data_len);
+  p += data_len;
+
+  if (use_huffman) {
+    ats_free(data);
+  }
+
   return p - buf_start;
 }
 
