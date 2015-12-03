@@ -32,6 +32,7 @@
 #include "ts/remap.h"
 #include "ts/ink_config.h"
 
+#define MINIMUM_BUCKET_SIZE 10
 
 static const char *PLUGIN_NAME = "cache_promote";
 TSCont gNocacheCont;
@@ -209,6 +210,11 @@ public:
     switch (opt) {
     case 'b':
       _buckets = static_cast<unsigned>(strtol(optarg, NULL, 10));
+      if (_buckets < MINIMUM_BUCKET_SIZE) {
+        TSError("%s: Enforcing minimum LRU bucket size of %d", PLUGIN_NAME, MINIMUM_BUCKET_SIZE);
+        TSDebug(PLUGIN_NAME, "Enforcing minimum bucket size of %d", MINIMUM_BUCKET_SIZE);
+        _buckets = MINIMUM_BUCKET_SIZE;
+      }
       break;
     case 'h':
       _hits = static_cast<unsigned>(strtol(optarg, NULL, 10));
@@ -249,6 +255,7 @@ public:
     map_it = _map.find(&hash);
     if (_map.end() != map_it) {
       // We have an entry in the LRU
+      TSAssert(_list.size() > 0); // mismatch in the LRUs hash and list, shouldn't happen
       if (++(map_it->second->second) >= _hits) {
         // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
         TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
