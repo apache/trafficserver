@@ -32,6 +32,7 @@
 #include "ts/remap.h"
 #include "ts/ink_config.h"
 
+#define DEFAULT_BUCKET_SIZE 10
 
 static const char *PLUGIN_NAME = "cache_promote";
 TSCont gNocacheCont;
@@ -138,8 +139,8 @@ public:
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-// The LRU based policy keeps track of <bucket> number of URLs, with a counter for each slot.
-// Objects are not promoted unless the counter reaches <hits> before it gets evicted. An
+// The LRU basedo policy keeps track of <bucket> number of URLs, with a counter for each slot.
+// Objects are not promted unless the counter reaches <hits> before it gets evicted. An
 // optional <chance> parameter can be used to sample hits, this can reduce contention and
 // churning in the LRU as well.
 //
@@ -209,6 +210,12 @@ public:
     switch (opt) {
     case 'b':
       _buckets = static_cast<unsigned>(strtol(optarg, NULL, 10));
+      if (_buckets <= 0) {
+        // buckets size of 0 doesn't make sense and is not supported. Set to default value of 10.
+        TSDebug(PLUGIN_NAME, "buckets size of 0 is not allowed. Use buckets size >= 10");
+        TSDebug(PLUGIN_NAME, "Setting to default bucket size of 10");
+        _buckets = DEFAULT_BUCKET_SIZE;
+      }
       break;
     case 'h':
       _hits = static_cast<unsigned>(strtol(optarg, NULL, 10));
@@ -252,13 +259,19 @@ public:
       if (++(map_it->second->second) >= _hits) {
         // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
         TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
-        _freelist.splice(_freelist.begin(), _list, map_it->second);
+        // Check if list is not empty
+        if (!_list.empty()) {
+          _freelist.splice(_freelist.begin(), _list, map_it->second);
+        }
         _map.erase(map_it->first);
         ret = true;
       } else {
         // It's still not promoted, make sure it's moved to the front of the list
         TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far", map_it->second->second);
-        _list.splice(_list.begin(), _list, map_it->second);
+        // Check if list is not empty
+        if (!_list.empty()) {
+          _list.splice(_list.begin(), _list, map_it->second);
+        }
       }
     } else {
       // New LRU entry for the URL, try to repurpose the list entry as much as possible
