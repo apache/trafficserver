@@ -591,9 +591,13 @@ Diags::error_va(DiagsLevel level, const char *file, const char *func, const int 
 void
 Diags::setup_diagslog(BaseLogFile *blf)
 {
-  ink_assert(diags_log == NULL);
+  // We don't want to ink_assert here because the correct behavior is to just
+  // do nothing, not crash TS
+  if (blf == NULL) {
+    return;
+  }
 
-  if (blf != NULL && blf->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
+  if (blf->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
     delete blf;
 
     log_log_error("Could not open diags log file: %s\n", strerror(errno));
