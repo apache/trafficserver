@@ -593,9 +593,8 @@ Diags::setup_diagslog(BaseLogFile *blf)
 {
   // We don't want to ink_assert here because the correct behavior is to just
   // do nothing, not crash TS
-  if (blf == NULL) {
+  if (blf == NULL)
     return;
-  }
 
   if (blf->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
     delete blf;
