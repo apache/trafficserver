@@ -256,22 +256,17 @@ public:
     map_it = _map.find(&hash);
     if (_map.end() != map_it) {
       // We have an entry in the LRU
+      TSReleaseAssert(_list.size() > 0);
       if (++(map_it->second->second) >= _hits) {
         // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
         TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
-        // Check if list is not empty
-        if (!_list.empty()) {
-          _freelist.splice(_freelist.begin(), _list, map_it->second);
-        }
+        _freelist.splice(_freelist.begin(), _list, map_it->second);
         _map.erase(map_it->first);
         ret = true;
       } else {
         // It's still not promoted, make sure it's moved to the front of the list
         TSDebug(PLUGIN_NAME, "still not promoted, got %d hits so far", map_it->second->second);
-        // Check if list is not empty
-        if (!_list.empty()) {
-          _list.splice(_list.begin(), _list, map_it->second);
-        }
+        _list.splice(_list.begin(), _list, map_it->second);
       }
     } else {
       // New LRU entry for the URL, try to repurpose the list entry as much as possible
