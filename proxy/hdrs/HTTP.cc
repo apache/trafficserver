@@ -162,11 +162,13 @@ is_digit(char c)
 }
 
 // test to see if a character is a valid character for a host in a URI according to
-// RFC 2396
+// RFC 3986 and RFC 1034
 inline static int
 is_host_char(char c)
 {
-	return (ParseRules::is_alpha(c) || ParseRules::is_digit(c) || (c == '-') || (c == '.'));
+	return (ParseRules::is_alnum(c) || (c == '-') || (c == '.')
+			|| (c == '[') || (c == ']') || (c == '_') || (c == ':') 
+			|| (c == '~') || (c == '%'));
 }
 
 /***********************************************************************
