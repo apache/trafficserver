@@ -15,26 +15,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
-	helloworld \
-	globalhook \
-	transactionhook \
-	request_buffer \
-	multiple_transaction_hooks \
-	clientrequest \
-	serverresponse \
-	clientredirect \
-	customresponse \
-	null_transformation_plugin \
-	post_buffer \
-	logger_example \
-	boom \
-	stat_example \
-	remap_plugin \
-	async_http_fetch \
-	gzip_transformation \
-	timeout_example \
-	internal_transaction_handling \
-	async_timer \
-	intercept \
-        async_http_fetch_streaming
+include $(top_srcdir)/build/plugins.mk
+
+AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
+
+target=RequestBufferPlugin.so
+pkglib_LTLIBRARIES = RequestBufferPlugin.la
+RequestBufferPlugin_la_SOURCES = RequestBufferPlugin.cc
+RequestBufferPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi  $(TS_PLUGIN_LDFLAGS)

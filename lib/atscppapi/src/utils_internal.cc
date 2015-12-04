@@ -197,6 +197,10 @@ utils::internal::convertInternalHookToTsHook(Plugin::HookType hooktype)
     return TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
   case Plugin::HOOK_SELECT_ALT:
     return TS_HTTP_SELECT_ALT_HOOK;
+  case Plugin::HOOK_HTTP_REQUEST_BUFFER_READ:
+    return TS_HTTP_REQUEST_BUFFER_READ_HOOK;
+  case Plugin::HOOK_HTTP_REQUEST_BUFFER_READ_COMPLETE:
+    return TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK;
   default:
     assert(false); // shouldn't happen, let's catch it early
     break;
