@@ -256,7 +256,7 @@ public:
     map_it = _map.find(&hash);
     if (_map.end() != map_it) {
       // We have an entry in the LRU
-      TSReleaseAssert(_list.size() > 0);
+      TSReleaseAssert(_list.size() > 0); // mismatch in the LRUs hash and list
       if (++(map_it->second->second) >= _hits) {
         // Promoted! Cleanup the LRU, and signal success. Save the promoted entry on the freelist.
         TSDebug(PLUGIN_NAME, "saving the LRUEntry to the freelist");
