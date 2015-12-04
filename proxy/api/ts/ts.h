@@ -2397,7 +2397,7 @@ tsapi const char *TSHttpEventNameLookup(TSEvent event);
    @return char * that contains the entire buffered request body, this
        must be freed by the caller using TSFree!
 */
-tsapi char *TSHttpTxnGetClientPequestBody(TSHttpTxn txnp, int *length);
+tsapi char *TSHttpTxnGetClientRequestBody(TSHttpTxn txnp, int *length);
 
 /**
    Get the IOBufferReader (if applicable) from a client request. It's easy to
