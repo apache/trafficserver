@@ -1816,6 +1816,10 @@ AC_SUBST([SHARED_CXXLINKFLAGS])
 AC_SUBST([SHARED_LDFLAGS])
 AC_SUBST([RPATH])
 
+AS_IF([test "x$RPATH" != "x"], [
+       TS_ADDTO_RPATH($RPATH)
+])
+
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES
 
