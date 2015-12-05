@@ -108,7 +108,7 @@ ts_lua_remap_get_from_url_host(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     host = TSUrlHostGet(http_ctx->client_request_bufp, http_ctx->rri->mapFromUrl, &len);
@@ -132,7 +132,7 @@ ts_lua_remap_get_from_url_port(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     port = TSUrlPortGet(http_ctx->client_request_bufp, http_ctx->rri->mapFromUrl);
@@ -153,7 +153,7 @@ ts_lua_remap_get_from_url_scheme(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     scheme = TSUrlSchemeGet(http_ctx->client_request_bufp, http_ctx->rri->mapFromUrl, &len);
@@ -180,7 +180,7 @@ ts_lua_remap_get_from_uri(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     path = TSUrlPathGet(http_ctx->client_request_bufp, http_ctx->rri->mapFromUrl, &path_len);
@@ -209,7 +209,7 @@ ts_lua_remap_get_from_url(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     url = TSUrlStringGet(http_ctx->client_request_bufp, http_ctx->rri->mapFromUrl, &url_len);
@@ -238,7 +238,7 @@ ts_lua_remap_get_to_url_host(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     host = TSUrlHostGet(http_ctx->client_request_bufp, http_ctx->rri->mapToUrl, &len);
@@ -262,7 +262,7 @@ ts_lua_remap_get_to_url_port(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     port = TSUrlPortGet(http_ctx->client_request_bufp, http_ctx->rri->mapToUrl);
@@ -283,7 +283,7 @@ ts_lua_remap_get_to_url_scheme(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     scheme = TSUrlSchemeGet(http_ctx->client_request_bufp, http_ctx->rri->mapToUrl, &len);
@@ -310,7 +310,7 @@ ts_lua_remap_get_to_uri(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     path = TSUrlPathGet(http_ctx->client_request_bufp, http_ctx->rri->mapToUrl, &path_len);
@@ -339,7 +339,7 @@ ts_lua_remap_get_to_url(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (http_ctx->rri != NULL) {
     url = TSUrlStringGet(http_ctx->client_request_bufp, http_ctx->rri->mapToUrl, &url_len);

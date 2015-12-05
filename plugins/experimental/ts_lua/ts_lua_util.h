@@ -42,6 +42,13 @@ ts_lua_cont_info *ts_lua_get_cont_info(lua_State *L);
 void ts_lua_set_http_ctx(lua_State *L, ts_lua_http_ctx *ctx);
 ts_lua_http_ctx *ts_lua_get_http_ctx(lua_State *L);
 
+#define GET_HTTP_CONTEXT(ctx, list)       \
+  ctx = ts_lua_get_http_ctx(list);        \
+  if (ctx == NULL) {                      \
+    TSError("[ts_lua] missing http_ctx"); \
+    return 0;                             \
+  }
+
 ts_lua_http_ctx *ts_lua_create_http_ctx(ts_lua_main_ctx *mctx, ts_lua_instance_conf *conf);
 void ts_lua_destroy_http_ctx(ts_lua_http_ctx *http_ctx);
 

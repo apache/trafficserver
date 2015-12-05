@@ -171,7 +171,7 @@ ts_lua_http_set_retstatus(lua_State *L)
   int status;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   status = luaL_checkinteger(L, 1);
   TSHttpTxnSetHttpRetStatus(http_ctx->txnp, status);
@@ -185,7 +185,7 @@ ts_lua_http_set_retbody(lua_State *L)
   size_t body_len;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   body = luaL_checklstring(L, 1, &body_len);
   TSHttpTxnErrorBodySet(http_ctx->txnp, TSstrdup(body), body_len, NULL); // Defaults to text/html
@@ -200,7 +200,7 @@ ts_lua_http_set_resp(lua_State *L)
   size_t body_len;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   n = lua_gettop(L);
 
@@ -222,7 +222,7 @@ ts_lua_http_get_cache_lookup_status(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (TSHttpTxnCacheLookupStatusGet(http_ctx->txnp, &status) == TS_ERROR) {
     lua_pushnil(L);
@@ -240,7 +240,7 @@ ts_lua_http_set_cache_lookup_status(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   status = luaL_checknumber(L, 1);
 
@@ -260,7 +260,7 @@ ts_lua_http_get_cache_lookup_url(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   if (TSUrlCreate(http_ctx->client_request_bufp, &url) != TS_SUCCESS) {
     lua_pushnil(L);
@@ -301,7 +301,7 @@ ts_lua_http_set_cache_lookup_url(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   url = luaL_checklstring(L, 1, &url_len);
 
@@ -329,7 +329,7 @@ ts_lua_http_set_cache_url(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   url = luaL_checklstring(L, 1, &url_len);
 
@@ -347,7 +347,7 @@ ts_lua_http_set_server_resp_no_store(lua_State *L)
 
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   status = luaL_checknumber(L, 1);
 
@@ -362,7 +362,7 @@ ts_lua_http_resp_cache_transformed(lua_State *L)
   int action;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   action = luaL_checkinteger(L, 1);
 
@@ -377,7 +377,7 @@ ts_lua_http_resp_cache_untransformed(lua_State *L)
   int action;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   action = luaL_checkinteger(L, 1);
 
@@ -392,7 +392,7 @@ ts_lua_http_is_internal_request(lua_State *L)
   TSReturnCode ret;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   ret = TSHttpTxnIsInternal(http_ctx->txnp);
 
@@ -412,7 +412,7 @@ ts_lua_http_skip_remapping_set(lua_State *L)
   int action;
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   action = luaL_checkinteger(L, 1);
 
@@ -426,7 +426,7 @@ ts_lua_http_transaction_count(lua_State *L)
 {
   ts_lua_http_ctx *http_ctx;
 
-  http_ctx = ts_lua_get_http_ctx(L);
+  GET_HTTP_CONTEXT(http_ctx, L);
 
   TSHttpSsn ssn = TSHttpTxnSsnGet(http_ctx->txnp);
   if (ssn) {
@@ -445,6 +445,10 @@ ts_lua_http_resp_transform_get_upstream_bytes(lua_State *L)
   ts_lua_http_transform_ctx *transform_ctx;
 
   transform_ctx = ts_lua_get_http_transform_ctx(L);
+  if (transform_ctx == NULL) {
+    TSError("[ts_lua] missing transform_ctx");
+    return 0;
+  }
 
   lua_pushnumber(L, transform_ctx->upstream_bytes);
 
@@ -458,6 +462,10 @@ ts_lua_http_resp_transform_set_downstream_bytes(lua_State *L)
   ts_lua_http_transform_ctx *transform_ctx;
 
   transform_ctx = ts_lua_get_http_transform_ctx(L);
+  if (transform_ctx == NULL) {
+    TSError("[ts_lua] missing transform_ctx");
+    return 0;
+  }
 
   n = luaL_checkinteger(L, 1);
 
