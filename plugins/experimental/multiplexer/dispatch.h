@@ -28,6 +28,7 @@
 #include <string>
 #include <ts/ts.h>
 #include <vector>
+#include <atscppapi/shared_ptr.h>
 
 #include "ts.h"
 
@@ -51,7 +52,7 @@ typedef std::vector<std::string> Origins;
 struct Request {
   std::string host;
   int length;
-  std::auto_ptr<ats::io::IO> io;
+  atscppapi::unique_ptr<ats::io::IO> io;
 
   Request(const std::string &, const TSMBuffer, const TSMLoc);
   Request(const Request &);
