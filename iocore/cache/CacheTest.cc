@@ -22,6 +22,7 @@
 
  */
 
+#include <stdlib.h>
 #include "P_Cache.h"
 #include "P_CacheTest.h"
 #include "api/ts/ts.h"
@@ -387,8 +388,8 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   r_sequential(t, write_test.clone(), lookup_test.clone(), r_sequential(t, 10, read_test.clone()), remove_test.clone(),
                lookup_fail_test.clone(), read_fail_test.clone(), remove_fail_test.clone(), replace_write_test.clone(),
-               replace_test.clone(), replace_read_test.clone(), large_write_test.clone(), pread_test.clone(), NULL_PTR)
-    ->run(pstatus);
+               replace_test.clone(), replace_read_test.clone(), large_write_test.clone(), pread_test.clone(),
+               NULL_PTR)->run(pstatus);
   return;
 }
 
@@ -469,15 +470,55 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   hr2.vols = 0;
 }
 
+double zipf_alpha = 1.2;
+int64_t zipf_bucket_size = 1;
+
+#define ZIPF_SIZE (1 << 20)
+
+double *zipf_table = NULL;
+
+void
+build_zipf()
+{
+  if (zipf_table)
+    return;
+  zipf_table = (double *)malloc(ZIPF_SIZE * sizeof(double));
+  for (int i = 0; i < ZIPF_SIZE; i++)
+    zipf_table[i] = 1.0 / pow(i + 2, zipf_alpha);
+  for (int i = 1; i < ZIPF_SIZE; i++)
+    zipf_table[i] = zipf_table[i - 1] + zipf_table[i];
+  double x = zipf_table[ZIPF_SIZE - 1];
+  for (int i = 0; i < ZIPF_SIZE; i++)
+    zipf_table[i] = zipf_table[i] / x;
+}
+
+int
+get_zipf(double v)
+{
+  int l = 0, r = ZIPF_SIZE - 1, m;
+  do {
+    m = (r + l) / 2;
+    if (v < zipf_table[m])
+      r = m - 1;
+    else
+      l = m + 1;
+  } while (l < r);
+  if (zipf_bucket_size == 1)
+    return m;
+  double x = zipf_table[m], y = zipf_table[m + 1];
+  m += static_cast<int>((v - x) / (y - x));
+  return m;
+}
+
 bool
-test_RamCache(RegressionTest *t, RamCache *cache)
+test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cache_size)
 {
   bool pass = true;
   CacheKey key;
   Vol *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
   vector<Ptr<IOBufferData> > data;
 
-  cache->init(1 << 20, vol);
+  cache->init(cache_size, vol);
 
   for (int l = 0; l < 10; l++) {
     for (int i = 0; i < 200; i++) {
@@ -511,7 +552,62 @@ test_RamCache(RegressionTest *t, RamCache *cache)
       pass = false;
     }
   }
-  rprintf(t, "RamCache Test Done");
+
+  int sample_size = cache_size >> 6;
+  build_zipf();
+  srand48(13);
+  int *r = (int *)::malloc(sample_size * sizeof(int));
+  for (int i = 0; i < sample_size; i++)
+    r[i] = get_zipf(drand48());
+  data.clear();
+  int misses = 0;
+  for (int i = 0; i < sample_size; i++) {
+    INK_MD5 md5;
+    md5.u64[0] = ((uint64_t)r[i] << 32) + r[i];
+    md5.u64[1] = ((uint64_t)r[i] << 32) + r[i];
+    Ptr<IOBufferData> get_data;
+    if (!cache->get(&md5, &get_data)) {
+      IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
+      d->alloc(BUFFER_SIZE_INDEX_16K);
+      data.push_back(make_ptr(d));
+      cache->put(&md5, data.back(), 1 << 15);
+      if (i >= sample_size / 2)
+        misses++; // Sample last half of the gets.
+    }
+  }
+  double fixed_hit_rate = 1.0 - (((double)(misses)) / (sample_size / 2));
+  rprintf(t, "RamCache %s Fixed Size Hit Rate %f\n", name, fixed_hit_rate);
+
+  data.clear();
+  misses = 0;
+  for (int i = 0; i < sample_size; i++) {
+    INK_MD5 md5;
+    md5.u64[0] = ((uint64_t)r[i] << 32) + r[i];
+    md5.u64[1] = ((uint64_t)r[i] << 32) + r[i];
+    Ptr<IOBufferData> get_data;
+    if (!cache->get(&md5, &get_data)) {
+      IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
+      d->alloc(BUFFER_SIZE_INDEX_8K + (r[i] % 3));
+      data.push_back(make_ptr(d));
+      cache->put(&md5, data.back(), d->block_size());
+      if (i >= sample_size / 2)
+        misses++; // Sample last half of the gets.
+    }
+  }
+  double variable_hit_rate = 1.0 - (((double)(misses)) / (sample_size / 2));
+  rprintf(t, "RamCache %s Variable Size Hit Rate %f\n", name, variable_hit_rate);
+
+  rprintf(t, "RamCache %s Nominal Size %lld Size %lld\n", name, cache_size, cache->size());
+
+  if (fixed_hit_rate < 0.55 || variable_hit_rate < 0.55)
+    return false;
+  if (abs(cache_size - cache->size()) > 0.02 * cache_size)
+    return false;
+
+  free(r);
+
+  rprintf(t, "RamCache Test Done\r");
+
   return pass;
 }
 
@@ -522,8 +618,10 @@ REGRESSION_TEST(ram_cache)(RegressionTest *t, int /* level ATS_UNUSED */, int *p
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
-  if (!test_RamCache(t, new_RamCacheLRU()) || !test_RamCache(t, new_RamCacheCLFUS()))
-    *pstatus = REGRESSION_TEST_FAILED;
-  else
+  for (int s = 20; s <= 28; s += 4) {
+    int64_t cache_size = 1LL << s;
     *pstatus = REGRESSION_TEST_PASSED;
+    if (!test_RamCache(t, new_RamCacheLRU(), "LRU", cache_size) || !test_RamCache(t, new_RamCacheCLFUS(), "CLFUS", cache_size))
+      *pstatus = REGRESSION_TEST_FAILED;
+  }
 }
