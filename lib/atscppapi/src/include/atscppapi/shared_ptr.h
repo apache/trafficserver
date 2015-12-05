@@ -42,8 +42,10 @@ namespace atscppapi
  */
 #if HAVE_STD_SHARED_PTR
 using std::shared_ptr;
+using std::unique_ptr;
 #else
 using std::tr1::shared_ptr;
+using std::tr1::unique_ptr;
 #endif
 
 } /* atscppapi */

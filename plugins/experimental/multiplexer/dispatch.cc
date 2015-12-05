@@ -47,7 +47,7 @@ Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l)
   assert(length == TSIOBufferReaderAvail(io->reader));
 }
 
-Request::Request(const Request &r) : host(r.host), length(r.length), io(const_cast<Request &>(r).io)
+Request::Request(const Request &r) : host(r.host), length(r.length), io(const_cast<Request &>(r).io.release())
 {
   assert(!host.empty());
   assert(length > 0);
@@ -59,7 +59,7 @@ Request &Request::operator=(const Request &r)
 {
   host = r.host;
   length = r.length;
-  io = const_cast<Request &>(r).io;
+  io.reset(const_cast<Request &>(r).io.release());
   assert(!host.empty());
   assert(length > 0);
   assert(io.get() != NULL);
