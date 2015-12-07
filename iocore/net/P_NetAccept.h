@@ -80,7 +80,6 @@ struct NetAcceptAction : public Action, public RefCountObj {
 struct NetAccept : public Continuation {
   ink_hrtime period;
   Server server;
-  void *alloc_cache;
   AcceptFunctionPtr accept_fn;
   int ifd;
   bool callback_on_open;
