@@ -92,7 +92,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
-    if ((res = na->server.accept(&vc->con)) < 0) {
+    if ((res = na->server.accept(&con)) < 0) {
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE)
         goto Ldone;
       if (na->server.fd != NO_FD && !na->action_->cancelled) {
