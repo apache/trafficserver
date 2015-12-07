@@ -137,6 +137,16 @@ AC_DEFUN([TS_ADDTO], [
 ])dnl
 
 dnl
+dnl TS_ADDTO_RPATH(path)
+dnl
+dnl   Adds path to variable with the '-rpath' directive.
+dnl
+AC_DEFUN([TS_ADDTO_RPATH], [
+  AC_MSG_NOTICE([adding $1 to RPATH])
+  TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R$1])
+])dnl
+
+dnl
 dnl TS_REMOVEFROM(variable, value)
 dnl
 dnl Remove a value from a variable

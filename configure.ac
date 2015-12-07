@@ -667,6 +667,7 @@ AM_PATH_PYTHON([2.4], [
   :
 ])
 
+AC_ARG_VAR(RPATH, [path to be added to rpath])
 AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
 AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
 AC_CHECK_PROG([SPHINXBUILD], [sphinx-build], [sphinx-build], [false])
@@ -1813,6 +1814,10 @@ AC_SUBST([SHARED_CFLAGS])
 AC_SUBST([SHARED_CXXFLAGS])
 AC_SUBST([SHARED_CXXLINKFLAGS])
 AC_SUBST([SHARED_LDFLAGS])
+
+AS_IF([test "x$RPATH" != "x"], [
+       TS_ADDTO_RPATH([$RPATH])
+])
 
 # -----------------------------------------------------------------------------
 # 6. OUTPUT FILES
