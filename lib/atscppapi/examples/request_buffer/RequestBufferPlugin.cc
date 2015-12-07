@@ -67,7 +67,7 @@ public:
   handleHttpRequestBufferReadComplete(Transaction &transaction)
   {
     std::cout << "request buffer complete!" << transaction.getClientRequestBody().size() << std::endl;
-    reached_min_speed(transaction) ? transaction.resume() : transaction.error();
+    transaction.resume();
   }
 
 private:

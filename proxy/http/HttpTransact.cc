@@ -1250,12 +1250,20 @@ HttpTransact::HandleRequest(State *s)
     // client keep-alive, cache action, etc.
     initialize_state_variables_from_request(s, &s->hdr_info.client_request);
   }
-
-  if (s->txn_conf->request_buffer_enabled && s->hdr_info.request_content_length > 0) {
+  if (s->txn_conf->request_buffer_enabled &&
+      (s->hdr_info.request_content_length > 0 || s->client_info.transfer_encoding == CHUNKED_ENCODING)) {
     // Let's check if we've already fully received the request.
-    if (s->hdr_info.request_content_length <= s->state_machine->ua_buffer_reader->read_avail()) {
-      s->state_machine->request_fully_received = true;
+    if (s->client_info.transfer_encoding == CHUNKED_ENCODING) {
+      if (s->state_machine->chunked_handler.chunked_reader == NULL) {
+        s->state_machine->chunked_handler.init_by_action(s->state_machine->ua_buffer_reader, ChunkedHandler::ACTION_PASSTHRU);
+        s->state_machine->chunked_handler.state = s->state_machine->chunked_handler.CHUNK_READ_SIZE;
+      }
+      s->state_machine->request_fully_received = s->state_machine->chunked_handler.process_chunked_content();
+    } else {
+      s->state_machine->request_fully_received =
+        s->hdr_info.request_content_length <= s->state_machine->ua_buffer_reader->read_avail();
     }
+    s->state_machine->client_request_body_bytes = s->state_machine->ua_buffer_reader->read_avail();
 
     int len = 0;
     const char *expect = s->hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
@@ -1271,13 +1279,12 @@ HttpTransact::HandleRequest(State *s)
       //    dispatching plugins need a place to reenable to, so we’ll reenable to a noop and
       //    activity on the VConn will ensure the transaction doesn’t get lost.
       TRANSACT_RETURN(SM_ACTION_WAIT_FOR_FULL_BODY, HttpTransact::HandleRequestNoOp);
-      return;
     } else {
       // We set the return point to NoOp so we don’t recursively call into HandleRequest and
       //    once all plugins have been fully dispatched we’ll continue exectuing through handle request (which
       //    at some point later sets the trasact return point). So if a plugin decides not to reenable, when it finally
       //    does reenable it will continue executing at the next state which will be determined later in this method.
-      s->transact_return_point = HttpTransact::HandleRequestNoOp;
+      TRANSACT_SETUP_RETURN(SM_ACTION_WAIT_FOR_FULL_BODY, HttpTransact::HandleRequestNoOp);
       APIHook *hook = s->state_machine->txn_hook_get(TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK);
       while (hook) {
         hook->invoke(TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE, s->state_machine);

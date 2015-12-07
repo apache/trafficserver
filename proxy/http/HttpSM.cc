@@ -310,6 +310,8 @@ HttpSM::cleanup()
   magic = HTTP_SM_MAGIC_DEAD;
   debug_on = false;
   request_fully_received = false;
+
+  // need not to call chunked_handler.clear() because the ACTION_PASSTHRU mode is using
 }
 
 void
@@ -836,6 +838,17 @@ HttpSM::state_drain_client_request_body(int event, void *data)
 void
 HttpSM::wait_for_full_body()
 {
+  if (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+    ua_buffer_reader->mbuf->size_index = BUFFER_SIZE_INDEX_32K;
+    // if you have less than 4k remaining in your write avail add a new buffer block that's 32kb
+    if (ua_buffer_reader->mbuf->block_write_avail() <= BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_4K)) {
+      ua_buffer_reader->mbuf->add_block();
+    }
+    ua_entry->vc_handler = &HttpSM::state_wait_for_full_body;
+    ua_entry->read_vio = ua_entry->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
+
+    return;
+  }
   int64_t request_bytes = t_state.hdr_info.request_content_length; // handy save
   int64_t avail = ua_buffer_reader->read_avail();
 
@@ -875,16 +888,21 @@ HttpSM::state_wait_for_full_body(int event, void *data)
   ink_assert(ua_entry->read_vio == (VIO *)data);
   ink_assert(ua_entry->vc == ua_session);
 
+  int64_t avail_for_write = ua_buffer_reader->mbuf->block_write_avail();
   int64_t avail = ua_buffer_reader->read_avail();
   int64_t left = t_state.hdr_info.request_content_length - client_request_body_bytes;
-  int64_t avail_for_write = ua_buffer_reader->mbuf->block_write_avail();
-
-  DebugSM("http_request_wait", "[%" PRId64 "] event %d, data %p, current buffer avail: %" PRId64 ", remaining: %" PRId64
-                               ", block available for write: %" PRId64 ", block count: %d",
-          sm_id, event, data, avail, left, avail_for_write, ua_buffer_reader->block_count());
-  if (event == VC_EVENT_READ_READY && avail_for_write <= left) {
-    ua_buffer_reader->mbuf->add_block();
-    DebugSM("http_request_wait", "[%" PRId64 "] adding block for request body", sm_id);
+  if (t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING) {
+    DebugSM("http_request_wait", "[%" PRId64 "] event %d, data %p, current buffer avail: %" PRId64 ", remaining: %" PRId64
+                                 ", block available for write: %" PRId64 ", block count: %d",
+            sm_id, event, data, avail, left, avail_for_write, ua_buffer_reader->block_count());
+    if (event == VC_EVENT_READ_READY && avail_for_write <= left) {
+      ua_buffer_reader->mbuf->add_block();
+      DebugSM("http_request_wait", "[%" PRId64 "] adding block for request body", sm_id);
+    }
+  } else {
+    if (event == VC_EVENT_READ_READY && avail_for_write <= BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_4K)) {
+      ua_buffer_reader->mbuf->add_block();
+    }
   }
 
   switch (event) {
@@ -906,6 +924,16 @@ HttpSM::state_wait_for_full_body(int event, void *data)
     break;
   }
   case VC_EVENT_READ_READY: {
+    if (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+      bool done = chunked_handler.process_chunked_content();
+      DebugSM("http_request_wait", "[%" PRId64 "] VC_EVENT_READ_READY: chunked_handler.state = [%d]", sm_id, chunked_handler.state);
+      if (done) {
+        ua_entry->read_vio->done();
+        state_wait_for_full_body(VC_EVENT_READ_COMPLETE, data);
+        break;
+      }
+    }
+
     client_request_body_bytes = avail; // since we're never consuming.
     DebugSM("http_request_wait", "[%" PRId64 "] VC_EVENT_READ_READY: Post wait for full body: received: %" PRId64
                                  " bytes expecting %" PRId64 " dest buffer=%p",
@@ -929,8 +957,9 @@ HttpSM::state_wait_for_full_body(int event, void *data)
 
     client_request_body_bytes = avail; // since we're never consuming.
 
-    ink_assert(client_request_body_bytes == t_state.hdr_info.request_content_length);
-
+    if (t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING) {
+      ink_assert(client_request_body_bytes == t_state.hdr_info.request_content_length);
+    }
     // At this point if an expect: 100-continue header existed it can be removed
     // as we are going to send the full request body to the origin now
     int len = 0;

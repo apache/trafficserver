@@ -278,7 +278,7 @@ public:
   bool debug_on;            // Transaction specific debug flag
 
   bool request_fully_received;
-  bool request_fully_received_invoked;
+  ChunkedHandler chunked_handler;
 
   // Tunneling request to plugin
   HttpPluginTunnel_t plugin_tunnel_type;

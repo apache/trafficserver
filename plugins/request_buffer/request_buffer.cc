@@ -66,7 +66,7 @@ hook_handler(TSCont contp, TSEvent event, void *edata)
     TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, TSContCreate(hook_handler, TSMutexCreate()));
   } else if (event == TS_EVENT_HTTP_REQUEST_BUFFER_READ || event == TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE) {
     int64_t ret_len = TSHttpTxnClientReqBodyBytesGet(txnp);
-    if (!reached_min_speed(txnp, ret_len)) {
+    if (event == TS_EVENT_HTTP_REQUEST_BUFFER_READ && !reached_min_speed(txnp, ret_len)) {
       TSError("[hook_handler] Error : reached_min_speed checking failed\n");
       TSHttpTxnReenable(txnp, TS_EVENT_ERROR);
       return 0;
