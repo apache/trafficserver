@@ -84,6 +84,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   int count = 0;
   int loop = accept_till_done;
   UnixNetVConnection *vc = NULL;
+  Connection con;
 
   if (!blockable)
     if (!MUTEX_TAKE_TRY_LOCK_FOR(na->action_->mutex, e->ethread, na->action_->continuation))
@@ -91,13 +92,6 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
-    vc = (UnixNetVConnection *)na->alloc_cache;
-    if (!vc) {
-      vc = (UnixNetVConnection *)na->getNetProcessor()->allocate_vc(e->ethread);
-      NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
-      vc->id = net_next_connection_number();
-      na->alloc_cache = vc;
-    }
     if ((res = na->server.accept(&vc->con)) < 0) {
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE)
         goto Ldone;
@@ -112,9 +106,17 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       count = res;
       goto Ldone;
     }
+    
+    vc = (UnixNetVConnection *)na->getNetProcessor()->allocate_vc(e->ethread);
+    if (!vc) {
+      con.close();
+      goto Ldone;
+    }
+    
     count++;
-    na->alloc_cache = NULL;
-
+    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+    vc->id = net_next_connection_number();
+    vc->con = con;
     vc->submit_time = Thread::get_hrtime();
     ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->mutex = new_ProxyMutex();
@@ -283,7 +285,6 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->apply_options();
     vc->from_accept_thread = true;
     vc->id = net_next_connection_number();
-    alloc_cache = NULL;
 
     check_emergency_throttle(con);
 
@@ -507,7 +508,7 @@ NetAccept::acceptLoopEvent(int event, Event *e)
 //
 
 NetAccept::NetAccept()
-  : Continuation(NULL), period(0), alloc_cache(0), ifd(-1), callback_on_open(false), backdoor(false), recv_bufsize(0),
+  : Continuation(NULL), period(0), ifd(-1), callback_on_open(false), backdoor(false), recv_bufsize(0),
     send_bufsize(0), sockopt_flags(0), packet_mark(0), packet_tos(0), etype(0)
 {
 }
