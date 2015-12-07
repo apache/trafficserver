@@ -23,7 +23,6 @@
 
 #include "ts/ink_defs.h"
 #include "ts/ink_platform.h"
-#include "ts/TsBuffer.h"
 #include "ts/ink_inet.h"
 #include <assert.h>
 #include <stdio.h>
@@ -166,9 +165,8 @@ is_digit(char c)
 inline static int
 is_host_char(char c)
 {
-	return (ParseRules::is_alnum(c) || (c == '-') || (c == '.')
-			|| (c == '[') || (c == ']') || (c == '_') || (c == ':') 
-			|| (c == '~') || (c == '%'));
+  return (ParseRules::is_alnum(c) || (c == '-') || (c == '.') || (c == '[') || (c == ']') || (c == '_') || (c == ':') ||
+          (c == '~') || (c == '%'));
 }
 
 /***********************************************************************
@@ -1137,11 +1135,8 @@ validate_hdr_host(HTTPHdrImpl *hh)
           if (port_i >= 65536 || port_i <= 0)
             return PARSE_ERROR;
         }
-        while (addr && PARSE_DONE == ret) {
-          if (!(is_host_char(*addr)))
-            return PARSE_ERROR;
-          ++addr;
-        }
+        if (!validate_hdr_field(addr))
+          return PARSE_ERROR;
         while (rest && PARSE_DONE == ret) {
           if (!ParseRules::is_ws(*rest))
             return PARSE_ERROR;
@@ -1151,6 +1146,19 @@ validate_hdr_host(HTTPHdrImpl *hh)
         ret = PARSE_ERROR;
       }
     }
+  }
+  return ret;
+}
+
+// Checks if `addr` is a valid FQDN string
+bool
+validate_hdr_field(ts::ConstBuffer &addr)
+{
+  bool ret = true;
+  while (addr) {
+    if (!(is_host_char(*addr)))
+      ret = false;
+    ++addr;
   }
   return ret;
 }
@@ -2203,3 +2211,45 @@ HTTPInfo::push_frag_offset(FragOffset offset)
 
   m_alt->m_frag_offsets[m_alt->m_frag_offset_count++] = offset;
 }
+
+
+/*-------------------------------------------------------------------------
+ * Regression tests
+  -------------------------------------------------------------------------*/
+#if TS_HAS_TESTS
+#include "ts/TestBox.h"
+
+const static struct {
+  const char *const text;
+  bool valid;
+} http_validate_hdr_field_test_case[] = {{"yahoo", true},
+                                         {"yahoo.com", true},
+                                         {"yahoo.wow.com", true},
+                                         {"yahoo.wow.much.amaze.com", true},
+                                         {"209.131.52.50", true},
+                                         {"192.168.0.1", true},
+                                         {"localhost", true},
+                                         {"3ffe:1900:4545:3:200:f8ff:fe21:67cf", true},
+                                         {"fe80:0:0:0:200:f8ff:fe21:67cf", true},
+                                         {"fe80::200:f8ff:fe21:67cf", true},
+                                         {"<svg onload=alert(1)>", false}, // Sample host header XSS attack
+                                         {"jlads;f8-9349*(D&F*D(234jD*(FSD*(VKLJ#(*$@()#$)))))", false},
+                                         {"\"\t\n", false},
+                                         {"!@#$%^ &*(*&^%$#@#$%^&*(*&^%$#))", false},
+                                         {":):(:O!!!!!!", false}};
+
+REGRESSION_TEST(VALIDATE_HDR_FIELD)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  for (unsigned int i = 0; i < sizeof(http_validate_hdr_field_test_case) / sizeof(http_validate_hdr_field_test_case[0]); ++i) {
+    const char *const txt = http_validate_hdr_field_test_case[i].text;
+    ts::ConstBuffer tmp = ts::ConstBuffer(txt, strlen(txt));
+    box.check(validate_hdr_field(tmp) == http_validate_hdr_field_test_case[i].valid,
+              "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
+              (http_validate_hdr_field_test_case[i].valid ? "true" : "false"));
+  }
+}
+
+#endif // TS_HAS_TESTS
