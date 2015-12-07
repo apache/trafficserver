@@ -557,6 +557,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   srand48(13);
   int *r = (int *)ats_malloc(sample_size * sizeof(int));
   for (int i = 0; i < sample_size; i++)
+    // coverity[dont_call]
     r[i] = get_zipf(drand48());
   data.clear();
   int misses = 0;
