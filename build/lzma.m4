@@ -82,7 +82,7 @@ if test "$enable_lzma" != "no"; then
   if test "$lzma_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${lzma_include}])
     TS_ADDTO(LDFLAGS, [-L${lzma_ldflags}])
-    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${lzma_ldflags}])
+    TS_ADDTO_RPATH(${lzma_ldflags})
   fi
   AC_SEARCH_LIBS([lzma_code], [lzma], [lzma_have_libs=1])
   if test "$lzma_have_libs" != "0"; then
