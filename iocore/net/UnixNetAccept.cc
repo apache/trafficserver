@@ -92,7 +92,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
-    if ((res = na->server.accept(&vc->con)) < 0) {
+    if ((res = na->server.accept(&con)) < 0) {
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE)
         goto Ldone;
       if (na->server.fd != NO_FD && !na->action_->cancelled) {
@@ -106,17 +106,14 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       count = res;
       goto Ldone;
     }
-    
-    vc = (UnixNetVConnection *)na->getNetProcessor()->allocate_vc(e->ethread);
-    if (!vc) {
-      con.close();
-      goto Ldone;
-    }
-    
-    count++;
+
+    vc = static_cast<UnixNetVConnection *>(na->getNetProcessor()->allocate_vc(e->ethread));
+    if (!vc) goto Ldone;
+
+    ++count;
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
-    vc->con = con;
+    vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
     ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->mutex = new_ProxyMutex();
@@ -360,7 +357,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
   do {
     if (!backdoor && check_net_throttle(ACCEPT, Thread::get_hrtime())) {
-      ifd = -1;
+      ifd = NO_FD;
       return EVENT_CONT;
     }
 
@@ -508,8 +505,8 @@ NetAccept::acceptLoopEvent(int event, Event *e)
 //
 
 NetAccept::NetAccept()
-  : Continuation(NULL), period(0), ifd(-1), callback_on_open(false), backdoor(false), recv_bufsize(0),
-    send_bufsize(0), sockopt_flags(0), packet_mark(0), packet_tos(0), etype(0)
+  : Continuation(NULL), period(0), ifd(NO_FD), callback_on_open(false), backdoor(false), recv_bufsize(0), send_bufsize(0),
+    sockopt_flags(0), packet_mark(0), packet_tos(0), etype(0)
 {
 }
 
