@@ -1420,7 +1420,7 @@ static int
 elevating_open(char const *path, unsigned int flags, unsigned int fperms)
 {
   int fd = open(path, flags, fperms);
-  if (fd < 0 && EPERM == errno) {
+  if (fd < 0 && (EPERM == errno || EACCES == errno)) {
     ElevateAccess access;
     fd = open(path, flags, fperms);
   }
