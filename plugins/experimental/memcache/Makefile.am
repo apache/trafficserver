@@ -13,42 +13,23 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+include $(top_srcdir)/build/plugins.mk
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- cache_range_requests \
- cache_promote \
- collapsed_connection \
- custom_redirect \
- epic \
- escalate \
- esi \
- generator \
- geoip_acl \
- header_normalize \
- hipes \
- metalink \
- multiplexer \
- memcache \
- memcached_remap \
- regex_revalidate \
- remap_stats \
- s3_auth \
- ssl_cert_loader \
- sslheaders \
- stale_while_revalidate \
- url_sig \
- xdebug \
- mp4 \
- stream_editor
+tsmemcache_la_CPPFLAGS = \
+  $(AM_CPPFLAGS) \
+  -I$(top_srcdir)/proxy/api/ts \
+  -I$(top_srcdir)/iocore/aio \
+  -I$(top_srcdir)/iocore/cache \
+  -I$(top_srcdir)/iocore/eventsystem \
+  -I$(top_srcdir)/iocore/net \
+  -I$(top_srcdir)/iocore/utils \
+  -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/lib/records \
+  -I$(top_srcdir)/lib/ts
 
-if HAS_MYSQL
-  SUBDIRS += mysql_remap
-endif
+pkglib_LTLIBRARIES = tsmemcache.la
 
-if BUILD_LUAJIT
-  SUBDIRS += ts_lua
-endif
+tsmemcache_la_SOURCES = \
+  tsmemcache.cc
+
+tsmemcache_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
