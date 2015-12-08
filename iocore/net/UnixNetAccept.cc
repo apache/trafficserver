@@ -117,6 +117,9 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
     vc->con = con;
+    // the con.fd has copy to vc->con.fd
+    // set con.fd to NO_FD to avoid con.fd closed by ~Connection()
+    con.fd = NO_FD;
     vc->submit_time = Thread::get_hrtime();
     ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->mutex = new_ProxyMutex();
