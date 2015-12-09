@@ -347,14 +347,26 @@ encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, siz
 
   // Length
   const int64_t len = encode_integer(p, buf_end, data_len, 7);
-  if (len == -1)
+  if (len == -1) {
+    if (use_huffman) {
+      ats_free(data);
+    }
+
     return -1;
+  }
+
   if (use_huffman) {
     *p |= 0x80;
   }
   p += len;
-  if (buf_end < p || buf_end - p < data_len)
+
+  if (buf_end < p || buf_end - p < data_len) {
+    if (use_huffman) {
+      ats_free(data);
+    }
+
     return -1;
+  }
 
   // Value
   memcpy(p, data, data_len);
