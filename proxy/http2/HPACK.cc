@@ -343,9 +343,6 @@ encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, siz
     if (data == NULL)
       return -1;
     data_len = huffman_encode(reinterpret_cast<uint8_t *>(data), reinterpret_cast<const uint8_t *>(value), value_len);
-  } else {
-    data = const_cast<char *>(value);
-    data_len = value_len;
   }
 
   // Length
