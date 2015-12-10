@@ -110,19 +110,65 @@ const static struct {
   {(char *)"password", (char *) "secret", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *) "\x10\x08"
                                                                                          "password\x06"
                                                                                          "secret",
-   17}};
+   17},
+  // with Huffman Coding
+  {(char *)"custom-key", (char *) "custom-header", 0, HPACK_FIELD_INDEXED_LITERAL,
+   (uint8_t *) "\x40"
+               "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+               "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+   20},
+  {(char *)"custom-key", (char *) "custom-header", 0, HPACK_FIELD_NOINDEX_LITERAL,
+   (uint8_t *) "\x00"
+               "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+               "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+   20},
+  {(char *)"custom-key", (char *) "custom-header", 0, HPACK_FIELD_NEVERINDEX_LITERAL,
+   (uint8_t *) "\x10"
+               "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+               "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+   20},
+  {(char *)":path", (char *) "/sample/path", 4, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *) "\x44"
+                                                                                         "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+   11},
+  {(char *)":path", (char *) "/sample/path", 4, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *) "\x04"
+                                                                                         "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+   11},
+  {(char *)":path", (char *) "/sample/path", 4, HPACK_FIELD_NEVERINDEX_LITERAL,
+   (uint8_t *) "\x14"
+               "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+   11},
+  {(char *)"password", (char *) "secret", 0, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *) "\x40"
+                                                                                      "\x86\xac\x68\x47\x83\xd9\x27"
+                                                                                      "\x84\x41\x49\x61\x53",
+   13},
+  {(char *)"password", (char *) "secret", 0, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *) "\x00"
+                                                                                      "\x86\xac\x68\x47\x83\xd9\x27"
+                                                                                      "\x84\x41\x49\x61\x53",
+   13},
+  {(char *)"password", (char *) "secret", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *) "\x10"
+                                                                                         "\x86\xac\x68\x47\x83\xd9\x27"
+                                                                                         "\x84\x41\x49\x61\x53",
+   13}};
 
 // [RFC 7541] C.3. Request Examples without Huffman Coding - C.3.1. First Request
+// [RFC 7541] C.4. Request Examples with Huffman Coding - C.4.1. First Request
 const static struct {
   char *raw_name;
   char *raw_value;
 } raw_field_test_case[][MAX_TEST_FIELD_NUM] = {{
-  {(char *)":method", (char *) "GET"},
-  {(char *)":scheme", (char *) "http"},
-  {(char *)":path", (char *) "/"},
-  {(char *)":authority", (char *) "www.example.com"},
-  {(char *)"", (char *) ""} // End of this test case
-}};
+                                                 {(char *)":method", (char *) "GET"},
+                                                 {(char *)":scheme", (char *) "http"},
+                                                 {(char *)":path", (char *) "/"},
+                                                 {(char *)":authority", (char *) "www.example.com"},
+                                                 {(char *)"", (char *) ""} // End of this test case
+                                               },
+                                               {
+                                                 {(char *)":method", (char *) "GET"},
+                                                 {(char *)":scheme", (char *) "http"},
+                                                 {(char *)":path", (char *) "/"},
+                                                 {(char *)":authority", (char *) "www.example.com"},
+                                                 {(char *)"", (char *) ""} // End of this test case
+                                               }};
 const static struct {
   uint8_t *encoded_field;
   int encoded_field_len;
@@ -138,7 +184,21 @@ const static struct {
                                            "\x40"
                                            "\xa:authority"
                                            "\xfwww.example.com",
-                                64}};
+                                64},
+                               {(uint8_t *)"\x40"
+                                           "\x85\xb9\x49\x53\x39\xe4"
+                                           "\x83\xc5\x83\x7f"
+                                           "\x40"
+                                           "\x85\xb8\x82\x4e\x5a\x4b"
+                                           "\x83\x9d\x29\xaf"
+                                           "\x40"
+                                           "\x84\xb9\x58\xd3\x3f"
+                                           "\x81\x63"
+                                           "\x40"
+                                           "\x88\xb8\x3b\x53\x39\xec\x32\x7d\x7f"
+                                           "\x8c\xf1\xe3\xc2\xe5\xf2\x3a\x6b\xa0\xab\x90\xf4\xff",
+                                53}};
+
 
 /***********************************************************************************
  *                                                                                 *
@@ -171,8 +231,8 @@ REGRESSION_TEST(HPACK_EncodeString)(RegressionTest *t, int, int *pstatus)
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
   int len;
 
-  // FIXME Current encoder don't support huffman conding.
-  for (unsigned int i = 0; i < 1; i++) {
+  // FIXME Current encoder support only huffman conding.
+  for (unsigned int i = 1; i < 2; i++) {
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
     len = encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string, string_test_case[i].raw_string_len);
@@ -209,7 +269,7 @@ REGRESSION_TEST(HPACK_EncodeLiteralHeaderField)(RegressionTest *t, int, int *pst
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
   int len;
 
-  for (unsigned int i = 0; i < sizeof(literal_test_case) / sizeof(literal_test_case[0]); i++) {
+  for (unsigned int i = 9; i < sizeof(literal_test_case) / sizeof(literal_test_case[0]); i++) {
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
@@ -241,7 +301,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
   Http2DynamicTable dynamic_table;
 
   // FIXME Current encoder don't support indexing.
-  for (unsigned int i = 0; i < sizeof(encoded_field_test_case) / sizeof(encoded_field_test_case[0]); i++) {
+  for (unsigned int i = 1; i < sizeof(encoded_field_test_case) / sizeof(encoded_field_test_case[0]); i++) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
 
