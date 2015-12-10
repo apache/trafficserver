@@ -205,6 +205,18 @@ Enumeration Members
 
 .. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_GLOBAL_USER_AGENT_HEADER
 
+.. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS
+
+.. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_PARENT_TOTAL_CONNECT_ATTEMPTS
+
+.. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_SIMPLE_RETRY_ENABLED
+
+.. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_SIMPLE_RETRY_RESPONSE_CODES
+
+.. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_DEAD_SERVER_RETRY_ENABLED
+
+.. c:member:: TSOverridableConfigKey TS_CONFIG_HTTP_DEAD_SERVER_RETRY_RESPONSE_CODES
+
 .. c:member:: TSOverridableConfigKey TS_CONFIG_LAST_ENTRY
 
 Description

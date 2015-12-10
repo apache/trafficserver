@@ -982,6 +982,26 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.simple_retry_enabled INT 0
+
+   Enable the simple retry feature, This is off (``0``) by default.  simple retry is only used for
+   parent origin servers, see configuration information for parent.config.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.simple_retry_response_codes STRING 0
+
+   This is a comma separated list of response codes that will trigger a simple retry on a parent
+   origin server if ``simple_retry`` above is enabled.  This is a ``404`` by default.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.dead_server_retry_enabled INT 0
+
+   Enable the dead_server retry feature, This is off (``0``) by default.  dead server retry
+   is only used for parent origin servers, see configuration information for parent.config.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.dead_server_retry_response_codes STRING 0
+
+   This is a comma separated list of response codes that will trigger a dead server retry on
+   a parent origin server if ``dead_server_retry`` above is enabled.  This is a ``503`` by default.
+
 HTTP Connection Timeouts
 ========================
 

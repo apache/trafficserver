@@ -209,6 +209,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
   int host_len;
   const char *host = s->hdr_info.client_request.host_get(&host_len);
 
+  DebugTxn("http_trans", "starting find_server_and_update_current_info()");
   if (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) {
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
@@ -232,6 +233,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       s->parent_params->findParent(&s->request_data, &s->parent_result);
       break;
     case PARENT_SPECIFIED:
+    case PARENT_ORIGIN:
       s->parent_params->nextParent(&s->request_data, &s->parent_result);
 
       // Hack!
@@ -250,7 +252,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       //   2) the config permits us
       //   3) the config permitted us to dns the origin server
       if (!s->parent_params->apiParentExists(&s->request_data) && s->parent_result.rec->bypass_ok() &&
-          s->http_config_param->no_dns_forward_to_parent == 0) {
+          s->http_config_param->no_dns_forward_to_parent == 0 && s->parent_result.rec->isParentProxy()) {
         s->parent_result.r = PARENT_DIRECT;
       }
       break;
@@ -266,14 +268,15 @@ find_server_and_update_current_info(HttpTransact::State *s)
   }
 
   switch (s->parent_result.r) {
+  case PARENT_ORIGIN:
   case PARENT_SPECIFIED:
     s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
     update_current_info(&s->current, &s->parent_info, HttpTransact::PARENT_PROXY, (s->current.attempts)++);
     update_dns_info(&s->dns_info, &s->current, 0, &s->arena);
     ink_assert(s->dns_info.looking_up == HttpTransact::PARENT_PROXY);
     s->next_hop_scheme = URL_WKSIDX_HTTP;
-
     return HttpTransact::PARENT_PROXY;
+
   case PARENT_FAIL:
     // No more parents - need to return an error message
     s->current.request_to = HttpTransact::HOST_NONE;
@@ -413,7 +416,7 @@ how_to_open_connection(HttpTransact::State *s)
     break;
   }
 
-  if (s->method == HTTP_WKSIDX_CONNECT && s->parent_result.r != PARENT_SPECIFIED) {
+  if (s->method == HTTP_WKSIDX_CONNECT && (s->parent_result.r != PARENT_SPECIFIED || s->parent_result.r != PARENT_ORIGIN)) {
     s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN;
   } else {
     s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
@@ -1360,7 +1363,7 @@ HttpTransact::HandleRequest(State *s)
   // if the newly added varible doc_in_cache_skip_dns is not enabled
   if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' &&
       (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
-      s->parent_params->ParentTable->hostMatch) {
+      s->parent_params->parent_table->hostMatch) {
     s->force_dns = 1;
   }
   /* A redirect means we need to check some things again.
@@ -1772,7 +1775,7 @@ HttpTransact::OSDNSLookup(State *s)
     // we've come back after already trying the server to get a better address
     // and finished with all backtracking - return to trying the server.
     TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
-  } else if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' && s->parent_params->ParentTable->hostMatch &&
+  } else if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' && s->parent_params->parent_table->hostMatch &&
              !s->http_config_param->no_dns_forward_to_parent) {
     // note, broken logic: ACC fudges the OR stmt to always be true,
     // 'AuthHttpAdapter' should do the rev-dns if needed, not here .
@@ -2668,6 +2671,21 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         update_current_info(&s->current, NULL, UNDEFINED_LOOKUP, 0);
         DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
       }
+      // This case results if Parent Selection cannot find an available parent and 
+      // go_direct is false.  In this case, return the cached response if we can, otherwise
+      // send a 502 (handle_parent_died()).
+      else if (s->current.request_to == HOST_NONE && s->parent_result.r == PARENT_FAIL) {
+        if (is_server_negative_cached(s) && response_returnable == true &&
+          is_stale_cache_response_returnable(s) == true) {
+          server_up = false;
+          update_current_info(&s->current, NULL, UNDEFINED_LOOKUP, 0);
+          DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
+        }
+        else {
+          handle_parent_died(s);
+          return;
+        }
+      }
     }
 
     if (server_up || s->stale_icp_lookup) {
@@ -3104,6 +3122,11 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
 
   if (!h->is_cache_control_set(HTTP_VALUE_ONLY_IF_CACHED)) {
     find_server_and_update_current_info(s);
+    // parent_result.r could come back set as PARENT_FAIL, need to check this.
+    if (s->parent_result.r == PARENT_FAIL) {
+      handle_parent_died(s);
+      return;
+    }
     if (!s->current.server->dst_addr.isValid()) {
       ink_release_assert(s->current.request_to == PARENT_PROXY || s->http_config_param->no_dns_forward_to_parent != 0);
       if (s->current.request_to == PARENT_PROXY) {
@@ -3529,23 +3552,53 @@ HttpTransact::handle_response_from_parent(State *s)
       return;
     }
 
-    if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
+    // try a simple retry if we received a simple retryable response from the parent.
+    if (s->current.retry_type == SIMPLE_RETRY || s->current.retry_type == DEAD_SERVER_RETRY) {
+      if (s->current.retry_type == SIMPLE_RETRY) {
+        if (s->current.simple_retry_attempts >= (int)s->parent_params->numParents(&s->parent_result) - 1) {
+          DebugTxn("http_trans", "SIMPLE_RETRY: retried all parents, send error to client.\n");
+          s->current.retry_type = UNDEFINED_RETRY;
+        } else {
+          s->current.simple_retry_attempts++;
+          DebugTxn("http_trans", "SIMPLE_RETRY: try another parent.\n");
+          s->current.retry_type = UNDEFINED_RETRY;
+          next_lookup = find_server_and_update_current_info(s);
+        }
+      } else { // DEAD_SERVER_RETRY
+        if (s->current.dead_server_retry_attempts >= (int)s->parent_params->numParents(&s->parent_result) - 1) {
+          DebugTxn("http_trans", "DEAD_SERVER_RETRY: retried all parents, send error to client.\n");
+          s->current.retry_type = UNDEFINED_RETRY;
+        } else {
+          s->current.dead_server_retry_attempts++;
+          DebugTxn("http_trans", "DEAD_SERVER_RETRY: marking parent down and trying another.\n");
+          s->current.retry_type = UNDEFINED_RETRY;
+          s->parent_params->markParentDown(&s->parent_result);
+          next_lookup = find_server_and_update_current_info(s);
+        }
+      }
+    }
+    // parent_connect_attempts is set from proxy.config.http.parent_proxy.total_connect_attempts in
+    // records.config.
+    else if (s->current.attempts < s->txn_conf->parent_connect_attempts) {
       s->current.attempts++;
 
       // Are we done with this particular parent?
-      if ((s->current.attempts - 1) % s->http_config_param->per_parent_connect_attempts != 0) {
+      // per_parent_connect_attempts should be less than proxy.config.http.parent_proxy.total_connect_attempts
+      // so that a new parent is tried.
+      if ((s->current.attempts - 1) % s->txn_conf->per_parent_connect_attempts != 0) {
         // No we are not done with this parent so retry
         s->next_action = how_to_open_connection(s);
         DebugTxn("http_trans", "%s Retrying parent for attempt %d, max %" PRId64, "[handle_response_from_parent]",
-                 s->current.attempts, s->http_config_param->per_parent_connect_attempts);
+                 s->current.attempts, s->txn_conf->per_parent_connect_attempts);
         return;
       } else {
-        DebugTxn("http_trans", "%s %d per parent attempts exhausted", "[handle_response_from_parent]", s->current.attempts);
+        DebugTxn("http_trans", "%s %d per parent attempts exhausted, s->current.state: %d", "[handle_response_from_parent]",
+                 s->current.attempts, s->current.state);
 
         // Only mark the parent down if we failed to connect
         //  to the parent otherwise slow origin servers cause
         //  us to mark the parent down
-        if (s->current.state == CONNECTION_ERROR) {
+        if (s->current.state != ACTIVE_TIMEOUT && s->current.state != CONNECTION_ALIVE && s->current.state != CONNECTION_CLOSED) {
           s->parent_params->markParentDown(&s->parent_result);
         }
         // We are done so look for another parent if any
@@ -6417,6 +6470,8 @@ HttpTransact::is_request_retryable(State *s)
 bool
 HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
 {
+  int server_response = 0;
+
   if (s->current.state != CONNECTION_ALIVE) {
     ink_assert((s->current.state == CONNECTION_ERROR) || (s->current.state == OPEN_RAW_ERROR) ||
                (s->current.state == PARSE_ERROR) || (s->current.state == CONNECTION_CLOSED) ||
@@ -6425,6 +6480,42 @@ HttpTransact::is_response_valid(State *s, HTTPHdr *incoming_response)
 
     s->hdr_info.response_error = CONNECTION_OPEN_FAILED;
     return false;
+  }
+
+  // is this response is from a load balanced parent.
+  if (s->current.request_to == PARENT_PROXY && s->parent_result.r == PARENT_ORIGIN) {
+    server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
+    DebugTxn("http_trans", "[is_response_valid] server_response = %d, simple_retry_attempts: %d, numParents:%d \n", server_response,
+             s->current.simple_retry_attempts, s->parent_params->numParents(&s->parent_result));
+    // is a simple retry required.
+    if (s->txn_conf->simple_retry_enabled &&
+        (s->current.simple_retry_attempts < (int)s->parent_params->numParents(&s->parent_result) - 1) &&
+        s->http_config_param->response_codes->contains(server_response, s->txn_conf->simple_retry_response_codes_string)) {
+      DebugTxn("parent_select", "GOT A SIMPLE RETRY RESPONSE");
+      // initiate a retry if we have not already tried all parents, otherwise the response is sent to the client as is.
+      // see SIMPLE_RETRY in handle_response_from_parent().
+      if (s->current.simple_retry_attempts < (int)s->parent_params->numParents(&s->parent_result)) {
+        s->current.state = BAD_INCOMING_RESPONSE;
+        s->current.retry_type = SIMPLE_RETRY;
+      } else {
+        DebugTxn("http_trans", "SIMPLE_RETRY: retried all parents, send error to client.\n");
+      }
+    }
+    // is a dead server retry required.
+    else if (s->txn_conf->dead_server_retry_enabled &&
+             (s->current.dead_server_retry_attempts < (int)s->parent_params->numParents(&s->parent_result) - 1) &&
+             s->http_config_param->response_codes->contains(server_response,
+                                                            s->txn_conf->dead_server_retry_response_codes_string)) {
+      DebugTxn("parent_select", "GOT A DEAD_SERVER RETRY RESPONSE");
+      // initiate a dead server retry if we have not already tried all parents, otherwise the response is sent to the client as is.
+      // see DEAD_SERVER_RETRY in handle_response_from_parent().
+      if (s->current.dead_server_retry_attempts < (int)s->parent_params->numParents(&s->parent_result)) {
+        s->current.state = BAD_INCOMING_RESPONSE;
+        s->current.retry_type = DEAD_SERVER_RETRY;
+      } else {
+        DebugTxn("http_trans", "DEAD_SERVER_RETRY: retried all parents, send error to client.\n");
+      }
+    }
   }
 
   s->hdr_info.response_error = check_response_validity(s, incoming_response);
@@ -7780,6 +7871,13 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
     // No worry about HTTP/0.9 because we reject forward proxy requests that
     // don't have a host anywhere.
     outgoing_request->set_url_target_from_host_field();
+  }
+  // In this case, the parent is actually the origin.  We utilized parent selection
+  // to pick a load balanced origin server using round robin, or consistent hash.
+  else if (s->current.request_to == PARENT_PROXY && !s->parent_result.rec->isParentProxy() &&
+           outgoing_request->is_target_in_url()) {
+    DebugTxn("http_trans", "[build_request] removing target from URL for parent origin");
+    HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
   }
 
   // If the response is most likely not cacheable, eg, request with Authorization,
