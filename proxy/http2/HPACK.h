@@ -96,6 +96,14 @@ private:
   MIMEHdrImpl *_mh;
 };
 
+// Result of looking for a header field in IndexingTable
+struct Http2LookupIndexResult {
+  Http2LookupIndexResult() : index(0), value_is_indexed(false) {}
+
+  int index;
+  bool value_is_indexed;
+};
+
 // [RFC 7541] 2.3.2. Dynamic Table
 class Http2DynamicTable
 {
@@ -116,6 +124,10 @@ public:
 
   void add_header_field(const MIMEField *field);
   int get_header_from_indexing_tables(uint32_t index, MIMEFieldWrapper &header_field) const;
+  Http2LookupIndexResult get_index(const MIMEFieldWrapper &field) const;
+  bool is_header_in_dynamic_table(const char *target_name, const char *target_value) const;
+
+  uint32_t get_dynamic_table_size() const;
   bool set_dynamic_table_size(uint32_t new_size);
 
 private:
@@ -153,9 +165,9 @@ int64_t decode_string(Arena &arena, char **str, uint32_t &str_length, const uint
 
 int64_t encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index);
 int64_t encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header, uint32_t index,
-                                    HpackFieldType type);
+                                    Http2DynamicTable &dynamic_table, HpackFieldType type);
 int64_t encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
-                                    HpackFieldType type);
+                                    Http2DynamicTable &dynamic_table, HpackFieldType type);
 
 // When these functions returns minus value, any error occurs
 // TODO Separate error code and length of processed buffer

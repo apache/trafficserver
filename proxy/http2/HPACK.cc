@@ -263,10 +263,78 @@ Http2DynamicTable::add_header_field(const MIMEField *field)
     }
 
     MIMEField *new_field = _mhdr->field_create(name, name_len);
+    new_field->name_set(_mhdr->m_heap, _mhdr->m_mime, name, name_len);
     new_field->value_set(_mhdr->m_heap, _mhdr->m_mime, value, value_len);
+    mime_hdr_field_attach(_mhdr->m_mime, new_field, 1, NULL);
     // XXX Because entire Vec instance is copied, Its too expensive!
     _headers.insert(0, new_field);
   }
+}
+
+uint32_t
+Http2DynamicTable::get_dynamic_table_size() const
+{
+  return _current_size;
+}
+
+Http2LookupIndexResult
+Http2DynamicTable::get_index(const MIMEFieldWrapper &field) const
+{
+  Http2LookupIndexResult result;
+  int target_name_len = 0, target_value_len = 0;
+  const char *target_name = field.name_get(&target_name_len);
+  const char *target_value = field.value_get(&target_value_len);
+  const int entry_num = TS_HPACK_STATIC_TABLE_ENTRY_NUM + get_current_entry_num();
+
+  for (int index = 1; index < entry_num; ++index) {
+    const char *table_name, *table_value;
+    int table_name_len = 0, table_value_len = 0;
+
+    if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
+      // static table
+      table_name = STATIC_TABLE[index].name;
+      table_value = STATIC_TABLE[index].value;
+      table_name_len = strlen(table_name);
+      table_value_len = strlen(table_value);
+    } else {
+      // dynamic table
+      const MIMEField *m_field = get_header(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM + 1);
+      table_name = m_field->name_get(&table_name_len);
+      table_value = m_field->value_get(&table_value_len);
+    }
+
+    // Check whether name (and value) are matched
+    if (ptr_len_casecmp(target_name, target_name_len, table_name, table_name_len) == 0) {
+      if (ptr_len_casecmp(target_value, target_value_len, table_value, table_value_len) == 0) {
+        result.index = index;
+        result.value_is_indexed = true;
+        break;
+      } else if (!result.index) {
+        result.index = index;
+      }
+    }
+  }
+
+  return result;
+}
+
+bool
+Http2DynamicTable::is_header_in_dynamic_table(const char *target_name, const char *target_value) const
+{
+  const MIMEField *field = _mhdr->field_find(target_name, strlen(target_name));
+
+  if (field) {
+    do {
+      int target_value_len = strlen(target_value);
+      int table_value_len = 0;
+      const char *table_value = field->value_get(&table_value_len);
+      if (ptr_len_casecmp(target_value, target_value_len, table_value, table_value_len) == 0) {
+        return true;
+      }
+    } while (field->has_dups() && (field = field->m_next_dup) != NULL);
+  }
+
+  return false;
 }
 
 //
@@ -400,12 +468,13 @@ encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t
   *p |= 0x80;
   p += len;
 
+  Debug("http2_hpack_encode", "Encoded field: %d", index);
   return p - buf_start;
 }
 
 int64_t
 encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header, uint32_t index,
-                            HpackFieldType type)
+                            Http2DynamicTable &dynamic_table, HpackFieldType type)
 {
   uint8_t *p = buf_start;
   int64_t len;
@@ -415,6 +484,7 @@ encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MI
 
   switch (type) {
   case HPACK_FIELD_INDEXED_LITERAL:
+    dynamic_table.add_header_field(header.field_get());
     prefix = 6;
     flag = 0x40;
     break;
@@ -450,11 +520,13 @@ encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MI
     return -1;
   p += len;
 
+  Debug("http2_hpack_encode", "Encoded field: %d: %.*s", index, value_len, value);
   return p - buf_start;
 }
 
 int64_t
-encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header, HpackFieldType type)
+encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
+                            Http2DynamicTable &dynamic_table, HpackFieldType type)
 {
   uint8_t *p = buf_start;
   int64_t len;
@@ -464,6 +536,7 @@ encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MI
 
   switch (type) {
   case HPACK_FIELD_INDEXED_LITERAL:
+    dynamic_table.add_header_field(header.field_get());
     flag = 0x40;
     break;
   case HPACK_FIELD_NOINDEX_LITERAL:
