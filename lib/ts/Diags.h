@@ -115,9 +115,7 @@ public:
   }
 
   SrcLoc(const SrcLoc &rhs) : file(rhs.file), func(rhs.func), line(rhs.line) {}
-
   SrcLoc(const char *_file, const char *_func, int _line) : file(_file), func(_func), line(_line) {}
-
   SrcLoc &operator=(const SrcLoc &rhs)
   {
     this->file = rhs.file;
@@ -272,7 +270,6 @@ private:
   time_t outputlog_time_last_roll;
   time_t diagslog_time_last_roll;
 
-  void setup_diagslog(BaseLogFile *blf);
   bool rebind_stdout(int new_fd);
   bool rebind_stderr(int new_fd);
   void
