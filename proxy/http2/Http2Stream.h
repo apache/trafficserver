@@ -92,10 +92,10 @@ public:
   bool change_state(uint8_t type, uint8_t flags);
 
   int64_t
-  decode_header_blocks(Http2DynamicTable &dynamic_table)
+  decode_header_blocks(Http2IndexingTable &indexing_table)
   {
     return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks,
-                                      (const uint8_t *)header_blocks + header_blocks_length, dynamic_table);
+                                      (const uint8_t *)header_blocks + header_blocks_length, indexing_table);
   }
 
   // Check entire DATA payload length if content-length: header is exist

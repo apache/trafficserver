@@ -251,7 +251,7 @@ rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Ht
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
 
-    const int64_t decoded_bytes = stream->decode_header_blocks(*cstate.local_dynamic_table);
+    const int64_t decoded_bytes = stream->decode_header_blocks(*cstate.local_indexing_table);
 
     if (decoded_bytes == 0 || decoded_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
@@ -644,7 +644,7 @@ rcv_continuation_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, con
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
 
-    const int64_t decoded_bytes = stream->decode_header_blocks(*cstate.local_dynamic_table);
+    const int64_t decoded_bytes = stream->decode_header_blocks(*cstate.local_indexing_table);
 
     if (decoded_bytes == 0 || decoded_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
@@ -962,7 +962,7 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
   HTTPHdr *resp_header = reinterpret_cast<HTTPHdr *>(fetch_sm->resp_hdr_bufp());
 
   // Write pseudo headers
-  payload_length += http2_write_psuedo_headers(resp_header, payload_buffer, buf_len, *(this->remote_dynamic_table));
+  payload_length += http2_write_psuedo_headers(resp_header, payload_buffer, buf_len, *(this->remote_indexing_table));
 
   // If response body is empty, set END_STREAM flag to HEADERS frame
   // Must check to ensure content-length is there.  Otherwise the value defaults
@@ -979,7 +979,7 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
 
     // Encode by HPACK naive
     payload_length += http2_write_header_fragment(resp_header, field_iter, payload_buffer + payload_length,
-                                                  buf_len - payload_length, *(this->remote_dynamic_table), cont);
+                                                  buf_len - payload_length, *(this->remote_indexing_table), cont);
 
     // If buffer size is enough to send rest of headers, set END_HEADERS flag
     if (buf_len >= payload_length && !cont) {

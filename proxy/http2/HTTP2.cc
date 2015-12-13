@@ -484,8 +484,37 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
   return PARSE_DONE;
 }
 
+static int64_t
+http2_write_header_field(uint8_t *out, const uint8_t *end, MIMEFieldWrapper &header, Http2IndexingTable &indexing_table)
+{
+  HpackFieldType field_type = HPACK_FIELD_INDEXED_LITERAL;
+
+  // Cookie less that 20 bytes and Authorization are never indexed
+  // This policy is refer to Firefox and nghttp2
+  int name_len = 0, value_len = 0;
+  const char *name = header.name_get(&name_len);
+  header.value_get(&value_len);
+  if ((ptr_len_casecmp(name, name_len, MIME_FIELD_COOKIE, MIME_LEN_COOKIE) == 0 && value_len < 20) ||
+      (ptr_len_casecmp(name, name_len, MIME_FIELD_AUTHORIZATION, MIME_LEN_AUTHORIZATION) == 0)) {
+    field_type = HPACK_FIELD_NEVERINDEX_LITERAL;
+  }
+
+  // TODO Enable to configure selecting header field representation
+
+  const Http2LookupIndexResult &result = indexing_table.get_index(header);
+  if (result.index > 0) {
+    if (result.value_is_indexed) {
+      return encode_indexed_header_field(out, end, result.index);
+    } else {
+      return encode_literal_header_field_with_indexed_name(out, end, header, result.index, indexing_table, field_type);
+    }
+  } else {
+    return encode_literal_header_field_with_new_name(out, end, header, indexing_table, field_type);
+  }
+}
+
 int64_t
-http2_write_psuedo_headers(HTTPHdr *in, uint8_t *out, uint64_t out_len, Http2DynamicTable & /* dynamic_table */)
+http2_write_psuedo_headers(HTTPHdr *in, uint8_t *out, uint64_t out_len, Http2IndexingTable &indexing_table)
 {
   uint8_t *p = out;
   uint8_t *end = out + out_len;
@@ -508,7 +537,8 @@ http2_write_psuedo_headers(HTTPHdr *in, uint8_t *out, uint64_t out_len, Http2Dyn
 
     // Encode psuedo headers by HPACK
     MIMEFieldWrapper header(status_field, in->m_heap, in->m_http->m_fields_impl);
-    len = encode_literal_header_field(p, end, header, HPACK_FIELD_NEVERINDEX_LITERAL);
+
+    len = http2_write_header_field(p, end, header, indexing_table);
     if (len == -1)
       return -1;
     p += len;
@@ -522,7 +552,7 @@ http2_write_psuedo_headers(HTTPHdr *in, uint8_t *out, uint64_t out_len, Http2Dyn
 
 int64_t
 http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out, uint64_t out_len,
-                            Http2DynamicTable & /* dynamic_table */, bool &cont)
+                            Http2IndexingTable &indexing_table, bool &cont)
 {
   uint8_t *p = out;
   uint8_t *end = out + out_len;
@@ -559,7 +589,7 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
     }
 
     MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
-    if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
+    if ((len = http2_write_header_field(p, end, header, indexing_table)) == -1) {
       if (p == out) {
         // no progress was made, header was too big for the buffer, skipping for now
         continue;
@@ -584,7 +614,7 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
  * Decode Header Blocks to Header List.
  */
 int64_t
-http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t *buf_end, Http2DynamicTable &dynamic_table)
+http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t *buf_end, Http2IndexingTable &indexing_table)
 {
   const uint8_t *cursor = buf_start;
   HdrHeap *heap = hdr->m_heap;
@@ -601,7 +631,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
 
     switch (ftype) {
     case HPACK_FIELD_INDEX:
-      read_bytes = decode_indexed_header_field(header, cursor, buf_end, dynamic_table);
+      read_bytes = decode_indexed_header_field(header, cursor, buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
@@ -611,7 +641,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
     case HPACK_FIELD_INDEXED_LITERAL:
     case HPACK_FIELD_NOINDEX_LITERAL:
     case HPACK_FIELD_NEVERINDEX_LITERAL:
-      read_bytes = decode_literal_header_field(header, cursor, buf_end, dynamic_table);
+      read_bytes = decode_literal_header_field(header, cursor, buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
@@ -622,7 +652,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
       if (header_field_started) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
-      read_bytes = update_dynamic_table_size(cursor, buf_end, dynamic_table);
+      read_bytes = update_dynamic_table_size(cursor, buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
