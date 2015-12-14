@@ -139,9 +139,9 @@ AC_ARG_WITH([build-number],
 #
 # Build environment
 #
-build_person="`id -nu`"
-build_group="`id -ng`"
-build_machine="`uname -n`"
+build_person="`id -nu | sed -e 's/\\\\/\\\\\\\\/g'`"
+build_group="`id -ng | sed -e 's/\\\\/\\\\\\\\/g'`"
+build_machine="`uname -n | sed -e 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST([build_machine])
 AC_SUBST([build_person])
 AC_SUBST([build_group])
