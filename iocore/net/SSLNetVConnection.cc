@@ -1042,6 +1042,11 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     }
   }
 
+  // handle SNI Hooks after PreAccept Hooks
+  if (HANDSHAKE_HOOKS_DONE != sslHandshakeHookState && HANDSHAKE_HOOKS_PRE != sslHandshakeHookState) {
+    return SSL_WAIT_FOR_HOOK;
+  }
+
   // If a blind tunnel was requested in the pre-accept calls, convert.
   // Again no data has been exchanged, so we can go directly
   // without data replay.
@@ -1387,10 +1392,9 @@ SSLNetVConnection::select_next_protocol(SSL *ssl, const unsigned char **out, uns
 void
 SSLNetVConnection::reenable(NetHandler *nh)
 {
-  if (this->sslPreAcceptHookState != SSL_HOOKS_DONE) {
-    this->sslPreAcceptHookState = SSL_HOOKS_INVOKE;
-    this->readReschedule(nh);
-  } else {
+  if (sslPreAcceptHookState != SSL_HOOKS_DONE) {
+    sslPreAcceptHookState = SSL_HOOKS_INVOKE;
+  } else if (sslHandshakeHookState == HANDSHAKE_HOOKS_INVOKE) {
     // Reenabling from the handshake callback
     //
     // Originally, we would wait for the callback to go again to execute additinonal
@@ -1400,16 +1404,17 @@ SSLNetVConnection::reenable(NetHandler *nh)
     // here in the reenable.
     if (curHook != NULL) {
       curHook = curHook->next();
-      if (curHook != NULL) {
-        // Invoke the hook
-        curHook->invoke(TS_SSL_CERT_HOOK, this);
-      }
     }
-    if (curHook == NULL) {
+    if (curHook != NULL) {
+      // Invoke the hook and return, wait for next reenable
+      curHook->invoke(TS_SSL_CERT_HOOK, this);
+      return;
+    } else { // curHook == NULL
+      // empty, set state to HOOKS_DONE
       this->sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
-      this->readReschedule(nh);
     }
   }
+  this->readReschedule(nh);
 }
 
 bool
@@ -1433,34 +1438,33 @@ SSLNetVConnection::callHooks(TSHttpHookID eventId)
   // Only dealing with the SNI/CERT hook so far.
   // TS_SSL_SNI_HOOK and TS_SSL_CERT_HOOK are the same value
   ink_assert(eventId == TS_SSL_CERT_HOOK);
+  Debug("ssl", "callHooks sslHandshakeHookState=%d", this->sslHandshakeHookState);
 
-  // First time through, set the type of the hook that is currently
-  // being invoked
-  if (this->sslHandshakeHookState == HANDSHAKE_HOOKS_PRE) {
+  // First time through, set the type of the hook that is currently being invoked
+  if (HANDSHAKE_HOOKS_PRE == sslHandshakeHookState) {
+    // the previous hook should be DONE and set curHook to NULL before trigger the sni hook.
+    ink_assert(curHook == NULL);
+    // set to HOOKS_CERT means CERT/SNI hooks has called by SSL_accept()
     this->sslHandshakeHookState = HANDSHAKE_HOOKS_CERT;
-  }
-
-  if (this->sslHandshakeHookState == HANDSHAKE_HOOKS_CERT && eventId == TS_SSL_CERT_HOOK) {
-    if (curHook != NULL) {
-      curHook = curHook->next();
-    } else {
-      curHook = ssl_hooks->get(TS_SSL_CERT_INTERNAL_HOOK);
-    }
+    // get Hooks
+    curHook = ssl_hooks->get(TS_SSL_CERT_INTERNAL_HOOK);
   } else {
-    // Not in the right state, or no plugins registered for this hook
+    // Not in the right state
     // reenable and continue
     return true;
   }
 
   bool reenabled = true;
-  SSLHandshakeHookState holdState = this->sslHandshakeHookState;
   if (curHook != NULL) {
     // Otherwise, we have plugin hooks to run
     this->sslHandshakeHookState = HANDSHAKE_HOOKS_INVOKE;
     curHook->invoke(eventId, this);
     reenabled = (this->sslHandshakeHookState != HANDSHAKE_HOOKS_INVOKE);
+  } else {
+    // no SNI-Hooks set, set state to HOOKS_DONE
+    // no plugins registered for this hook, return (reenabled == true)
+    sslHandshakeHookState = HANDSHAKE_HOOKS_DONE;
   }
-  this->sslHandshakeHookState = holdState;
   return reenabled;
 }
 
