@@ -67,7 +67,7 @@ RamCacheLRU::size() const
   int64_t s = 0;
   forl_LL(RamCacheLRUEntry, e, lru)
   {
-    s += sizeof(e);
+    s += sizeof(*e);
     s += sizeof(*e->data);
     s += e->data->block_size();
   }
