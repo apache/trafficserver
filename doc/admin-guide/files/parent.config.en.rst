@@ -156,6 +156,14 @@ The following list shows the possible actions and their allowed values.
        the origin server.
     -  ``false`` - requests do not bypass parent hierarchies.
 
+.. _parent-config-format-qstring:
+
+``qstring``
+    One of the following values:
+
+    -  ``consider`` - Use the query string when finding a parent.
+    -  ``ignore`` - Do not consider the query string when finding a parent.
+
 Examples
 ========
 
