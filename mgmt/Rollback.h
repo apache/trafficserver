@@ -157,7 +157,7 @@ class Rollback
 {
 public:
   // fileName_ should be rooted or a base file name.
-  Rollback(const char *fileName_, bool root_access_needed, Rollback *parentRollback = NULL);
+  Rollback(const char *fileName_, bool root_access_needed, Rollback *parentRollback = NULL, bool versioned = true);
   ~Rollback();
 
   // Manual take out of lock required
@@ -229,6 +229,11 @@ public:
   {
     return parentRollback;
   }
+  const bool
+  getVersioned()
+  {
+    return versioned;
+  }
   FileManager *configFiles; // Manager to notify on an update.
 
 private:
@@ -247,6 +252,7 @@ private:
   size_t fileDirLen;
   bool root_access_needed;
   Rollback *parentRollback;
+  bool versioned;
   version_t currentVersion;
   time_t fileLastModified;
   int numVersions;

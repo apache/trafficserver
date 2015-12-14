@@ -606,12 +606,14 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
   // Congestion Control - end
   case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
     static const MgmtMarshallType fields[] = {
-      MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING,
+      MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT
     };
     char *parent = NULL;
     char *child = NULL;
-    if (-1 != mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child)) {
-      configFiles->configFileChild(parent, child);
+    int option = 0;
+    if (-1 != mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &option)) {
+      bool versioned = (bool)option;
+      configFiles->configFileChild(parent, child, versioned);
       ats_free_null(parent);
       ats_free_null(child);
     } else {

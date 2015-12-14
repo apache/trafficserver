@@ -136,20 +136,20 @@ FileManager::registerCallback(FileCallbackFunc func)
 //  Pointers to the new objects are stored in the bindings hashtable
 //
 void
-FileManager::addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback)
+FileManager::addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback, bool versioned)
 {
   ink_mutex_acquire(&accessLock);
-  addFileHelper(fileName, root_access_needed, parentRollback);
+  addFileHelper(fileName, root_access_needed, parentRollback, versioned);
   ink_mutex_release(&accessLock);
 }
 
 // caller must hold the lock
 void
-FileManager::addFileHelper(const char *fileName, bool root_access_needed, Rollback *parentRollback)
+FileManager::addFileHelper(const char *fileName, bool root_access_needed, Rollback *parentRollback, bool versioned)
 {
   ink_assert(fileName != NULL);
 
-  Rollback *rb = new Rollback(fileName, root_access_needed, parentRollback);
+  Rollback *rb = new Rollback(fileName, root_access_needed, parentRollback, versioned);
   rb->configFiles = this;
 
   ink_hash_table_insert(bindings, fileName, rb);
@@ -639,7 +639,7 @@ FileManager::rereadConfig()
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
     rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
-    if (rb->checkForUserUpdate(rb->isChildRollback() ? ROLLBACK_CHECK_ONLY : ROLLBACK_CHECK_AND_UPDATE)) {
+    if (rb->checkForUserUpdate(!rb->getVersioned() ? ROLLBACK_CHECK_ONLY : ROLLBACK_CHECK_AND_UPDATE)) {
       changedFiles.push_back(rb);
       if (rb->isChildRollback()) {
         parentFileNeedChange.add_exclusive(rb->getParentRollback());
@@ -758,7 +758,7 @@ FileManager::createSelect(char *action, textBuffer *output, ExpandingArray *opti
 //
 // Add child to the bindings with parentRollback
 void
-FileManager::configFileChild(const char *parent, const char *child)
+FileManager::configFileChild(const char *parent, const char *child, bool versioned)
 {
   InkHashTableValue lookup;
   Rollback *parentRollback = NULL;
@@ -768,7 +768,7 @@ FileManager::configFileChild(const char *parent, const char *child)
     parentRollback = (Rollback *)lookup;
   }
   if (htfound) {
-    addFileHelper(child, true, parentRollback);
+    addFileHelper(child, true, parentRollback, versioned);
   }
   ink_mutex_release(&accessLock);
 }

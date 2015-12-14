@@ -117,7 +117,7 @@ class FileManager : public MultiFile
 public:
   FileManager();
   ~FileManager();
-  void addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback = NULL);
+  void addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback = NULL, bool versioned = true);
   bool getRollbackObj(const char *fileName, Rollback **rbPtr);
   void registerCallback(FileCallbackFunc func);
   void fileChanged(const char *fileName, bool incVersion);
@@ -132,7 +132,7 @@ public:
   SnapResult removeSnap(const char *snapName, const char *snapDir);
   void displaySnapOption(textBuffer *output);
   SnapResult WalkSnaps(ExpandingArray *snapList);
-  void configFileChild(const char *parent, const char *child);
+  void configFileChild(const char *parent, const char *child, bool versioned);
 
 private:
   void doRollbackLocks(lockAction_t action);
@@ -150,7 +150,7 @@ private:
   void generateRestoreConfirm(char *snapName, textBuffer *output);
   bool checkValidName(const char *name);
   const char *getParentFileName(const char *fileName);
-  void addFileHelper(const char *fileName, bool root_access_needed, Rollback *parentRollback = NULL);
+  void addFileHelper(const char *fileName, bool root_access_needed, Rollback *parentRollback, bool versioned);
 };
 
 int snapEntryCmpFunc(const void *e1, const void *e2);

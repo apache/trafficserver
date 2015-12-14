@@ -47,7 +47,7 @@ struct SSLCertLookup;
 
 
 typedef void (*init_ssl_ctx_func)(void *, bool);
-typedef void (*load_ssl_file_func)(const char *);
+typedef void (*load_ssl_file_func)(const char *, bool);
 
 struct SSLConfigParams : public ConfigInfo {
   enum SSL_SESSION_CACHE_MODE {
