@@ -47,12 +47,18 @@ struct SSLCertLookup;
 
 
 typedef void (*init_ssl_ctx_func)(void *, bool);
+typedef void (*load_ssl_file_func)(const char *, unsigned int);
 
 struct SSLConfigParams : public ConfigInfo {
   enum SSL_SESSION_CACHE_MODE {
     SSL_SESSION_CACHE_MODE_OFF = 0,
     SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL = 1,
     SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL = 2
+  };
+
+  enum SSL_CONFIG_VERISON_MODE {
+    SSL_CONFIG_UNVERISONED = 0,
+    SSL_CONFIG_VERISONED = 1
   };
 
   SSLConfigParams();
@@ -107,6 +113,7 @@ struct SSLConfigParams : public ConfigInfo {
   static char *ssl_wire_trace_server_name;
 
   static init_ssl_ctx_func init_ssl_ctx_cb;
+  static load_ssl_file_func load_ssl_file_cb;
 
   void initialize();
   void cleanup();

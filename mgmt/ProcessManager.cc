@@ -88,6 +88,18 @@ ProcessManager::reconfigure()
   return;
 } /* End ProcessManager::reconfigure */
 
+void
+ProcessManager::signalConfigFileChild(const char *parent, const char *child, unsigned int options)
+{
+  static const MgmtMarshallType fields[] = {
+    MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT
+  };
+  size_t len = mgmt_message_length(fields, countof(fields), &parent, &child, (MgmtMarshallInt *)&options);
+  void *buffer = ats_malloc(len);
+  mgmt_message_marshall(buffer, len, fields, countof(fields), &parent, &child, (MgmtMarshallInt *)&options);
+  signalManager(MGMT_SIGNAL_CONFIG_FILE_CHILD, (char *)buffer, len);
+  ats_free(buffer);
+}
 
 void
 ProcessManager::signalManager(int msg_id, const char *data_str)

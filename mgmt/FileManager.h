@@ -36,6 +36,7 @@
 #include "ts/ink_hash_table.h"
 #include "ts/List.h"
 #include "Rollback.h"
+#include "ts/Vec.h"
 #include "MultiFile.h"
 
 class Rollback;
@@ -80,11 +81,11 @@ class ExpandingArray;
 //       is also created
 //
 //  getRollbckObj(char* , RollbackPtr**) - sets *rbPtr to Rollback
-//       object bound to baseFileName.  Returns true if there is
+//       object bound to fileName.  Returns true if there is
 //       a binding and false otherwise
 //
 //  getWFEObj(char*, WebFileEdit**)  - sets *wfePtr to WebFileEdit
-//       object bound to baseFileName.  Returns true if there is
+//       object bound to fileName.  Returns true if there is
 //       a binding and false otherwise
 //
 //  registerCallback(FileCallbackFunc) - registers a callback function
@@ -92,7 +93,7 @@ class ExpandingArray;
 //       callback function should NOT use the calling thread to
 //       access any Rollback objects or block for a long time
 //
-//  fileChanged(const char* baseFileName) - called by Rollback objects
+//  fileChanged(const char* fileName) - called by Rollback objects
 //       when their contents change.  Triggers callbacks to FileCallbackFuncs
 //
 //  filesManaged() - returns a textBuffer that contains a new line separated
@@ -110,16 +111,16 @@ class ExpandingArray;
 //
 //  rereadConfig() - Checks all managed files to see if they have been
 //       updated
-//
+//  addConfigFileGroup(char* data_str, int data_size) - update config file group infos
 class FileManager : public MultiFile
 {
 public:
   FileManager();
   ~FileManager();
-  void addFile(const char *baseFileName, bool root_access_needed);
-  bool getRollbackObj(const char *baseFileName, Rollback **rbPtr);
+  void addFile(const char *fileName, bool root_access_needed, Rollback *parentRollback = NULL, RollBackVersionType version_type = ROLLBACK_VERSIONED);
+  bool getRollbackObj(const char *fileName, Rollback **rbPtr);
   void registerCallback(FileCallbackFunc func);
-  void fileChanged(const char *baseFileName, bool incVersion);
+  void fileChanged(const char *fileName, bool incVersion);
   textBuffer *filesManaged();
   void rereadConfig();
   bool isConfigStale();
@@ -131,6 +132,7 @@ public:
   SnapResult removeSnap(const char *snapName, const char *snapDir);
   void displaySnapOption(textBuffer *output);
   SnapResult WalkSnaps(ExpandingArray *snapList);
+  void configFileChild(const char *parent, const char *child, unsigned int options);
 
 private:
   void doRollbackLocks(lockAction_t action);
@@ -147,6 +149,8 @@ private:
   void snapSuccessResponse(char *action, textBuffer *output);
   void generateRestoreConfirm(char *snapName, textBuffer *output);
   bool checkValidName(const char *name);
+  const char *getParentFileName(const char *fileName);
+  void addFileHelper(const char *fileName, bool root_access_needed, Rollback *parentRollback, RollBackVersionType version_type);
 };
 
 int snapEntryCmpFunc(const void *e1, const void *e2);
