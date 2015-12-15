@@ -13,6 +13,7 @@ Bug:
   *) [TS-3964] Stat for total time spent for HTTP/2 is 0
   *) [TS-3975] ESI plugin missing TSPluginRegister
   *) [TS-4011] HTTP/2 coredump with NULL FetchSM, another one
+  *) [TS-4055] Coredump when closing a transaction with a stalled connection to the origin
 
 Changes with Apache Traffic Server 6.0.0
 
