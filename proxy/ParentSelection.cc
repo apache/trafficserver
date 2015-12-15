@@ -555,7 +555,7 @@ ParentRecord::FindParent(bool first_call, ParentResult *result, RequestData *rda
       // Fall through to round robin
       case P_STRICT_ROUND_ROBIN:
         cur_index = ink_atomic_increment((int32_t *)&rr_next, 1);
-        cur_index = cur_index % num_parents;
+        cur_index = result->start_parent = cur_index % num_parents;
         break;
       case P_NO_ROUND_ROBIN:
         cur_index = result->start_parent = 0;
