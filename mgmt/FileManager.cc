@@ -640,7 +640,7 @@ FileManager::rereadConfig()
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
     rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
-    if (rb->checkForUserUpdate(rb->isVersioned() ? ROLLBACK_CHECK_ONLY : ROLLBACK_CHECK_AND_UPDATE)) {
+    if (rb->checkForUserUpdate(rb->isVersioned() ? ROLLBACK_CHECK_AND_UPDATE : ROLLBACK_CHECK_ONLY)) {
       changedFiles.push_back(rb);
       if (rb->isChildRollback()) {
         parentFileNeedChange.add_exclusive(rb->getParentRollback());
