@@ -605,9 +605,7 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     break;
   // Congestion Control - end
   case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
-    static const MgmtMarshallType fields[] = {
-      MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT
-    };
+    static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
     char *parent = NULL;
     char *child = NULL;
     MgmtMarshallInt options = 0;
