@@ -66,6 +66,11 @@ enum RollBackCheckType {
   ROLLBACK_CHECK_ONLY,
 };
 
+enum RollBackVersionType {
+  ROLLBACK_UNVERSIONED,
+  ROLLBACK_VERSIONED,
+};
+
 class ExpandingArray;
 
 // Stores info about a backup version
@@ -157,7 +162,7 @@ class Rollback
 {
 public:
   // fileName_ should be rooted or a base file name.
-  Rollback(const char *fileName_, bool root_access_needed, Rollback *parentRollback = NULL, bool versioned = true);
+  Rollback(const char *fileName_, bool root_access_needed, Rollback *parentRollback = NULL, RollBackVersionType versionType = ROLLBACK_VERSIONED);
   ~Rollback();
 
   // Manual take out of lock required
@@ -229,10 +234,10 @@ public:
   {
     return parentRollback;
   }
-  const bool
-  getVersioned()
+  const RollBackVersionType
+  getVersionType()
   {
-    return versioned;
+    return versionType;
   }
   FileManager *configFiles; // Manager to notify on an update.
 
@@ -252,7 +257,7 @@ private:
   size_t fileDirLen;
   bool root_access_needed;
   Rollback *parentRollback;
-  bool versioned;
+  RollBackVersionType versionType;
   version_t currentVersion;
   time_t fileLastModified;
   int numVersions;

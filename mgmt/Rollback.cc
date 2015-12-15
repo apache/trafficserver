@@ -43,8 +43,8 @@
 const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version was out of date", "System Call Error",
                                  "Invalid Version - Version Numbers Must Increase"};
 
-Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *parentRollback_, bool versioned_)
-  : configFiles(NULL), root_access_needed(root_access_needed_), parentRollback(parentRollback_), versioned(versioned_)
+Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *parentRollback_, RollBackVersionType versionType_)
+  : configFiles(NULL), root_access_needed(root_access_needed_), parentRollback(parentRollback_), versionType(versionType_)
 {
   version_t highestSeen;             // the highest backup version
   ExpandingArray existVer(25, true); // Exsisting versions
@@ -106,7 +106,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
 
   ink_mutex_init(&fileAccessLock, "RollBack Mutex");
 
-  if (!versioned) {
+  if (versionType == ROLLBACK_UNVERSIONED) {
     currentVersion = 0;
     setLastModifiedTime();
     numberBackups = 0;

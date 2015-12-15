@@ -610,16 +610,16 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     };
     char *parent = NULL;
     char *child = NULL;
-    int option = 0;
-    if (-1 != mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &option)) {
-      bool versioned = (bool)option;
-      configFiles->configFileChild(parent, child, versioned);
-      ats_free_null(parent);
-      ats_free_null(child);
+    MgmtMarshallInt options = 0;
+    if (-1 != mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &options)) {
+      configFiles->configFileChild(parent, child, (unsigned int)options);
     } else {
       mgmt_elog(stderr, 0, "[LocalManager::handleMgmtMsgFromProcesses] "
                            "MGMT_SIGNAL_CONFIG_FILE_CHILD mgmt_message_parse error\n");
     }
+    //Output pointers are guaranteed to be NULL or valid
+    ats_free_null(parent);
+    ats_free_null(child);
   } break;
   case MGMT_SIGNAL_SAC_SERVER_DOWN:
     alarm_keeper->signalAlarm(MGMT_ALARM_SAC_SERVER_DOWN, data_raw);

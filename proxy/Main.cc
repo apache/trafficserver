@@ -124,8 +124,7 @@ static const long MAX_LOGIN = ink_login_name_max();
 static void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void *mgmt_storage_device_cmd_callback(void *x, char *data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
-// if @versioned is enabled, the file will be made backup copies
-static void load_ssl_file_callback(const char *ssl_file, bool versioned);
+static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
 
 static int num_of_net_threads = ink_number_of_processors();
 static int num_of_udp_threads = 0;
@@ -1981,7 +1980,7 @@ init_ssl_ctx_callback(void *ctx, bool server)
 }
 
 static void
-load_ssl_file_callback(const char *ssl_file, bool versioned)
+load_ssl_file_callback(const char *ssl_file, unsigned int options)
 {
-  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file, versioned);
+  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file, options);
 }
