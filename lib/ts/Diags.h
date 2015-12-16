@@ -256,7 +256,6 @@ public:
 
 private:
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
-  mutable ink_mutex rotate_lock;    // prevents rotation races
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
 
 
