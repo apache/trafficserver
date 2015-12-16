@@ -125,7 +125,6 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
 
   cleanup_func = NULL;
   ink_mutex_init(&tag_table_lock, "Diags::tag_table_lock");
-  ink_mutex_init(&rotate_lock, "Diags::rotate_lock");
 
   ////////////////////////////////////////////////////////
   // initialize the default, base debugging/action tags //
