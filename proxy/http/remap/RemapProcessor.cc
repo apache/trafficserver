@@ -87,8 +87,8 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
   Debug("url_rewrite", "[lookup] attempting %s lookup", proxy_request ? "proxy" : "normal");
 
   if (rewrite_table->num_rules_forward_with_recv_port) {
-    Debug("url_rewrite", "[lookup] forward mappings with recv port found; Using recv port %d", s->client_info.src_addr.port());
-    if (rewrite_table->forwardMappingWithRecvPortLookup(request_url, s->client_info.src_addr.host_order_port(), request_host,
+    Debug("url_rewrite", "[lookup] forward mappings with recv port found; Using recv port %d", s->client_info.dst_addr.port());
+    if (rewrite_table->forwardMappingWithRecvPortLookup(request_url, s->client_info.dst_addr.port(), request_host,
                                                         request_host_len, s->url_map)) {
       Debug("url_rewrite", "Found forward mapping with recv port");
       mapping_found = true;
