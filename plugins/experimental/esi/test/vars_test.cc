@@ -401,6 +401,20 @@ main()
     assert(esi_vars.getValue("HTTP_COOKIE{Y;intl}") == "");
   }
 
+  {
+    cout << endl << "===================== Test 5" << endl;
+    Variables esi_vars("vars_test", &Debug, &Error);
+    esi_vars.populate(HttpHeader("hdr1", -1, "hval1", -1));
+    esi_vars.populate(HttpHeader("Hdr2", -1, "hval2", -1));
+    esi_vars.populate(HttpHeader("@Intenal-hdr1", -1, "internal-hval1", -1));
+
+    assert(esi_vars.getValue("HTTP_HEADER{hdr1}") == "hval1");
+    assert(esi_vars.getValue("HTTP_HEADER{hdr2}") == "");
+    assert(esi_vars.getValue("HTTP_HEADER{Hdr2}") == "hval2");
+    assert(esi_vars.getValue("HTTP_HEADER{non-existent}") == "");
+    assert(esi_vars.getValue("HTTP_HEADER{@Intenal-hdr1}") == "internal-hval1");
+  }
+
   cout << endl << "All tests passed!" << endl;
   return 0;
 }
