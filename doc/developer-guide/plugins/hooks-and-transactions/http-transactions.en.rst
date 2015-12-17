@@ -179,6 +179,8 @@ The HTTP transaction functions are:
 
 -  :c:func:`TSHttpTxnNextHopAddrGet`
 
+-  :c:func:`TSHttpTxnNextHopAddrSet`
+
 -  :c:func:`TSHttpTxnParentProxySet`
 
 -  :c:func:`TSHttpTxnReenable`
