@@ -283,9 +283,17 @@ public:
     baseline_taken = 0;
   }
 
+  ~TrackerContinuation() { mutex = NULL; }
+
   int
-  periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+  periodic(int event, Event * /* e ATS_UNUSED */)
   {
+    if (event == EVENT_IMMEDIATE) {
+      // rescheduled from periodic to immediate event
+      // this is the indication to terminate this tracker.
+      delete this;
+      return EVENT_DONE;
+    }
     if (use_baseline) {
       // TODO: TS-567 Integrate with debugging allocators "dump" features?
       ink_freelists_dump_baselinerel(stderr);
@@ -337,7 +345,11 @@ static int
 init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecData data, void * /* cookie ATS_UNUSED */)
 {
   static Event *tracker_event = NULL;
+  Event *preE;
   int dump_mem_info_frequency = 0;
+
+  // set tracker_event to NULL, and return previous value
+  preE = ink_atomic_swap(&tracker_event, static_cast<Event *>(NULL));
 
   if (config_var) {
     dump_mem_info_frequency = data.rec_int;
@@ -345,11 +357,11 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
     dump_mem_info_frequency = REC_ConfigReadInteger("proxy.config.dump_mem_info_frequency");
   }
 
-  Debug("tracker", "init_tracker called [%d]\n", dump_mem_info_frequency);
+  Debug("tracker", "init_memory_tracker called [%d]\n", dump_mem_info_frequency);
 
-  if (tracker_event) {
-    tracker_event->cancel();
-    tracker_event = NULL;
+  if (preE) {
+    eventProcessor.schedule_imm(preE->continuation, ET_CALL);
+    preE->cancel();
   }
 
   if (dump_mem_info_frequency > 0) {
