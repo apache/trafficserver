@@ -176,7 +176,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
 }
 
 uint32_t
-ParentRoundRobin::numParents(ParentResult *result)
+ParentRoundRobin::numParents(ParentResult *result) const
 {
   return result->rec->num_parents;
 }

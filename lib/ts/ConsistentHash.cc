@@ -67,18 +67,12 @@ ATSConsistentHash::insert(ATSConsistentHashNode *node, float weight, ATSHash64 *
 }
 
 ATSConsistentHashNode *
-ATSConsistentHash::lookup(const char *url, size_t url_len, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
+ATSConsistentHash::lookup(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
 {
   uint64_t url_hash;
   ATSConsistentHashIter NodeMapIterUp, *iter;
   ATSHash64 *thash;
   bool *wptr, wrapped = false;
-
-  if (url_len <= 0 && url) {
-    url_len = strlen(url);
-  } else {
-    url_len = 0;
-  }
 
   if (h) {
     thash = h;
@@ -101,7 +95,7 @@ ATSConsistentHash::lookup(const char *url, size_t url_len, ATSConsistentHashIter
   }
 
   if (url) {
-    thash->update(url, url_len);
+    thash->update(url, strlen(url));
     thash->final();
     url_hash = thash->get();
     thash->clear();
@@ -129,18 +123,12 @@ ATSConsistentHash::lookup(const char *url, size_t url_len, ATSConsistentHashIter
 }
 
 ATSConsistentHashNode *
-ATSConsistentHash::lookup_available(const char *url, size_t url_len, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
+ATSConsistentHash::lookup_available(const char *url, ATSConsistentHashIter *i, bool *w, ATSHash64 *h)
 {
   uint64_t url_hash;
   ATSConsistentHashIter NodeMapIterUp, *iter;
   ATSHash64 *thash;
   bool *wptr, wrapped = false;
-
-  if (url_len <= 0 && url) {
-    url_len = strlen(url);
-  } else {
-    url_len = 0;
-  }
 
   if (h) {
     thash = h;
@@ -163,7 +151,7 @@ ATSConsistentHash::lookup_available(const char *url, size_t url_len, ATSConsiste
   }
 
   if (url) {
-    thash->update(url, url_len);
+    thash->update(url, strlen(url));
     thash->final();
     url_hash = thash->get();
     thash->clear();

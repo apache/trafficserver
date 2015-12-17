@@ -41,7 +41,7 @@ public:
   ~ParentRoundRobin();
   void selectParent(const ParentSelectionPolicy *policy, bool firstCall, ParentResult *result, RequestData *rdata);
   void markParentDown(const ParentSelectionPolicy *policy, ParentResult *result);
-  uint32_t numParents(ParentResult *result);
+  uint32_t numParents(ParentResult *result) const;
   void markParentUp(ParentResult *result);
 };
 

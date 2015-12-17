@@ -179,7 +179,7 @@ public:
   //
   // Returns the number of parent records in a strategy.
   //
-  virtual uint32_t numParents(ParentResult *result) = 0;
+  virtual uint32_t numParents(ParentResult *result) const = 0;
 
   // void markParentUp
   //
@@ -197,7 +197,7 @@ class ParentConfigParams : public ConfigInfo
 public:
   P_table *parent_table;
   ParentRecord *DefaultParent;
-  ParentConfigParams(P_table *_parent_table);
+  explicit ParentConfigParams(P_table *_parent_table);
   ParentSelectionPolicy *policy;
   ~ParentConfigParams(){};
 
