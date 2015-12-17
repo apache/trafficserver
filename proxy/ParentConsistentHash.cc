@@ -30,7 +30,7 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   parents[PRIMARY] = parent_record->parents;
   parents[SECONDARY] = parent_record->secondary_parents;
   ignore_query = parent_record->ignore_query;
-  memset(foundParents, 0, sizeof(foundParents));
+  ink_zero(foundParents);
 
   chash[PRIMARY] = new ATSConsistentHash();
 
@@ -54,12 +54,8 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
 
 ParentConsistentHash::~ParentConsistentHash()
 {
-  if (chash[PRIMARY]) {
-    delete chash[PRIMARY];
-  }
-  if (chash[SECONDARY]) {
-    delete chash[SECONDARY];
-  }
+  delete chash[PRIMARY];
+  delete chash[SECONDARY];
 }
 
 
@@ -135,16 +131,14 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
       last_lookup = SECONDARY;
       fhash = chash[SECONDARY];
       path_hash = getPathHash(request_info, (ATSHash64 *)&hash);
-      if (path_hash) {
-        prtmp = (pRecord *)fhash->lookup_by_hashval(path_hash, &chashIter[last_lookup], &wrap_around[last_lookup]);
-        if (prtmp)
-          pRec = (parents[last_lookup] + prtmp->idx);
-      }
+      prtmp = (pRecord *)fhash->lookup_by_hashval(path_hash, &chashIter[last_lookup], &wrap_around[last_lookup]);
+      if (prtmp)
+        pRec = (parents[last_lookup] + prtmp->idx);
     } else {
       last_lookup = PRIMARY;
       fhash = chash[PRIMARY];
       do { // search until we've selected a different parent.
-        prtmp = (pRecord *)fhash->lookup(NULL, 0, &chashIter[last_lookup], &wrap_around[last_lookup], &hash);
+        prtmp = (pRecord *)fhash->lookup(NULL, &chashIter[last_lookup], &wrap_around[last_lookup], &hash);
         if (prtmp)
           pRec = (parents[last_lookup] + prtmp->idx);
       } while (prtmp && strcmp(prtmp->hostname, result->hostname) == 0);
@@ -184,7 +178,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
           prtmp = (pRecord *)fhash->lookup_by_hashval(path_hash, &chashIter[last_lookup], &wrap_around[last_lookup]);
           firstCall = false;
         } else {
-          prtmp = (pRecord *)fhash->lookup(NULL, 0, &chashIter[last_lookup], &wrap_around[last_lookup], &hash);
+          prtmp = (pRecord *)fhash->lookup(NULL, &chashIter[last_lookup], &wrap_around[last_lookup], &hash);
         }
 
         if (prtmp) {
@@ -291,7 +285,7 @@ ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, Parent
 }
 
 uint32_t
-ParentConsistentHash::numParents(ParentResult *result)
+ParentConsistentHash::numParents(ParentResult *result) const
 {
   uint32_t n = 0;
 
