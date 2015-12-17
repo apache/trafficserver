@@ -149,6 +149,8 @@ const static struct {
   uint8_t *expect;
   int64_t expect_len;
 } huffman_encode_test_data[] = {
+  {(uint8_t *)"", 0, (uint8_t *) "", 0},
+  {(uint8_t *)"0", 1, (uint8_t *) "\x07", 1},
   {(uint8_t *)"302", 3, (uint8_t *) "\x64\x02", 2},
   {(uint8_t *)"private", 7, (uint8_t *) "\xae\xc3\x77\x1a\x4b", 5},
   {(uint8_t *)"Mon, 21 Oct 2013 20:13:21 GMT", 29,

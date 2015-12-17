@@ -124,6 +124,7 @@ static const long MAX_LOGIN = ink_login_name_max();
 static void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void *mgmt_storage_device_cmd_callback(void *x, char *data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
+static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
 
 static int num_of_net_threads = ink_number_of_processors();
 static int num_of_udp_threads = 0;
@@ -1801,6 +1802,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     (void)plugin_init(); // plugin.config
 
     SSLConfigParams::init_ssl_ctx_cb = init_ssl_ctx_callback;
+    SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(getNumSSLThreads(), stacksize);
 
     pmgmt->registerPluginCallbacks(global_config_cbs);
@@ -1975,4 +1977,10 @@ init_ssl_ctx_callback(void *ctx, bool server)
     hook->invoke(event, ctx);
     hook = hook->next();
   }
+}
+
+static void
+load_ssl_file_callback(const char *ssl_file, unsigned int options)
+{
+  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file, options);
 }
