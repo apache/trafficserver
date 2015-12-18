@@ -45,7 +45,9 @@ ParentRoundRobin::ParentRoundRobin(ParentRecord *parent_record, ParentRR_t _roun
   }
 }
 
-ParentRoundRobin::~ParentRoundRobin() { }
+ParentRoundRobin::~ParentRoundRobin()
+{
+}
 
 void
 ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_call, ParentResult *result, RequestData *rdata)
@@ -129,8 +131,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
   do {
     Debug("parent_select", "cur_index: %d, result->start_parent: %d", cur_index, result->start_parent);
     // DNS ParentOnly inhibits bypassing the parent so always return that t
-    if ((result->rec->parents[cur_index].failedAt == 0) ||
-        (result->rec->parents[cur_index].failCount < policy->FailThreshold)) {
+    if ((result->rec->parents[cur_index].failedAt == 0) || (result->rec->parents[cur_index].failCount < policy->FailThreshold)) {
       Debug("parent_select", "FailThreshold = %d", policy->FailThreshold);
       Debug("parent_select", "Selecting a parent due to little failCount (faileAt: %u failCount: %d)",
             (unsigned)result->rec->parents[cur_index].failedAt, result->rec->parents[cur_index].failCount);

@@ -836,8 +836,8 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
                             ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); \
   ParentTable->BuildTableFromString(tbl);                                                                                \
   params = new ParentConfigParams(ParentTable);                                                                          \
-  params->policy->FailThreshold = 1;                                                                                   \
-  params->policy->ParentEnable = true;                                                                                 \
+  params->policy->FailThreshold = 1;                                                                                     \
+  params->policy->ParentEnable = true;                                                                                   \
   params->policy->ParentRetryTime = 5;
   HttpRequestData *request = NULL;
   ParentResult *result = NULL;
