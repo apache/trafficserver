@@ -35,8 +35,7 @@ extern Statistics statistics;
 
 extern size_t timeout;
 
-Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l)
-  : host(h), length(0), io(new ats::io::IO())
+Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l) : host(h), length(0), io(new ats::io::IO())
 {
   assert(!host.empty());
   assert(b != NULL);
