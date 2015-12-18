@@ -24,6 +24,7 @@
 
 #include <openssl/ssl.h>
 
+// TODO: This should be moved to autoconf
 #ifdef sk_OPENSSL_STRING_pop
 #ifdef SSL_CTX_set_tlsext_status_cb
 #define HAVE_OPENSSL_OCSP_STAPLING 1

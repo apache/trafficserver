@@ -39,6 +39,11 @@
 void SSL_set_rbio(SSL *ssl, BIO *rbio);
 #endif
 
+// This is missing from BoringSSL
+#ifndef BIO_eof
+#define BIO_eof(b) (int) BIO_ctrl(b, BIO_CTRL_EOF, 0, NULL)
+#endif
+
 #define SSL_READ_ERROR_NONE 0
 #define SSL_READ_ERROR 1
 #define SSL_READ_READY 2
