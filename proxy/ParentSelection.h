@@ -195,10 +195,7 @@ public:
 class ParentConfigParams : public ConfigInfo
 {
 public:
-  P_table *parent_table;
-  ParentRecord *DefaultParent;
   explicit ParentConfigParams(P_table *_parent_table);
-  ParentSelectionPolicy *policy;
   ~ParentConfigParams(){};
 
   bool apiParentExists(HttpRequestData *rdata);
@@ -211,14 +208,14 @@ public:
   selectParent(bool firstCall, ParentResult *result, RequestData *rdata)
   {
     ink_release_assert(result->rec->selection_strategy != NULL);
-    return result->rec->selection_strategy->selectParent(policy, firstCall, result, rdata);
+    return result->rec->selection_strategy->selectParent(&policy, firstCall, result, rdata);
   }
 
   void
   markParentDown(ParentResult *result)
   {
     ink_release_assert(result->rec->selection_strategy != NULL);
-    result->rec->selection_strategy->markParentDown(policy, result);
+    result->rec->selection_strategy->markParentDown(&policy, result);
   }
 
   uint32_t
@@ -234,6 +231,10 @@ public:
     ink_release_assert(result != NULL);
     result->rec->selection_strategy->markParentUp(result);
   }
+
+  P_table *parent_table;
+  ParentRecord *DefaultParent;
+  ParentSelectionPolicy policy;
 };
 
 class HttpRequestData;

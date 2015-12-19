@@ -88,11 +88,9 @@ ParentSelectionPolicy::ParentSelectionPolicy()
 }
 
 ParentConfigParams::ParentConfigParams(P_table *_parent_table)
+  : parent_table(_parent_table), DefaultParent(NULL), policy()
 {
   char *default_val = NULL;
-  parent_table = _parent_table;
-
-  policy = new ParentSelectionPolicy();
 
   // Handle default parent
   PARENT_ReadConfigStringAlloc(default_val, default_var);
@@ -117,8 +115,8 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
   ink_assert(result->r == PARENT_UNDEFINED);
 
   // Check to see if we are enabled
-  Debug("parent_select", "policy->ParentEnable: %d", policy->ParentEnable);
-  if (policy->ParentEnable == 0) {
+  Debug("parent_select", "policy.ParentEnable: %d", policy.ParentEnable);
+  if (policy.ParentEnable == 0) {
     result->r = PARENT_DIRECT;
     return;
   }
@@ -313,8 +311,8 @@ ParentConfig::print()
   ParentConfigParams *params = ParentConfig::acquire();
 
   printf("Parent Selection Config\n");
-  printf("\tEnabled %d\tRetryTime %d\tParent DNS Only %d\n", params->policy->ParentEnable, params->policy->ParentRetryTime,
-         params->policy->DNS_ParentOnly);
+  printf("\tEnabled %d\tRetryTime %d\tParent DNS Only %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime,
+         params->policy.DNS_ParentOnly);
   if (params->DefaultParent == NULL) {
     printf("\tNo Default Parent\n");
   } else {
@@ -749,19 +747,19 @@ SocksServerConfig::reconfigure()
 
   // Handle parent timeout
   PARENT_ReadConfigInteger(retry_time, "proxy.config.socks.server_retry_time");
-  params->policy->ParentRetryTime = retry_time;
+  params->policy.ParentRetryTime = retry_time;
 
   // Handle parent enable
   // enable is always true for use. We will come here only if socks is enabled
-  params->policy->ParentEnable = 1;
+  params->policy.ParentEnable = 1;
 
   // Handle the fail threshold
   PARENT_ReadConfigInteger(fail_threshold, "proxy.config.socks.server_fail_threshold");
-  params->policy->FailThreshold = fail_threshold;
+  params->policy.FailThreshold = fail_threshold;
 
   // Handle dns parent only
   // PARENT_ReadConfigInteger(dns_parent_only, dns_parent_only_var);
-  params->policy->DNS_ParentOnly = 0;
+  params->policy.DNS_ParentOnly = 0;
 
   m_id = configProcessor.set(m_id, params);
 
@@ -776,8 +774,8 @@ SocksServerConfig::print()
   ParentConfigParams *params = SocksServerConfig::acquire();
 
   printf("Parent Selection Config for Socks Server\n");
-  printf("\tEnabled %d\tRetryTime %d\tParent DNS Only %d\n", params->policy->ParentEnable, params->policy->ParentRetryTime,
-         params->policy->DNS_ParentOnly);
+  printf("\tEnabled %d\tRetryTime %d\tParent DNS Only %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime,
+         params->policy.DNS_ParentOnly);
   if (params->DefaultParent == NULL) {
     printf("\tNo Default Parent\n");
   } else {
@@ -836,9 +834,9 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
                             ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); \
   ParentTable->BuildTableFromString(tbl);                                                                                \
   params = new ParentConfigParams(ParentTable);                                                                          \
-  params->policy->FailThreshold = 1;                                                                                     \
-  params->policy->ParentEnable = true;                                                                                   \
-  params->policy->ParentRetryTime = 5;
+  params->policy.FailThreshold = 1;                                                                                     \
+  params->policy.ParentEnable = true;                                                                                   \
+  params->policy.ParentRetryTime = 5;
   HttpRequestData *request = NULL;
   ParentResult *result = NULL;
 #define REINIT                            \
@@ -1024,7 +1022,7 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   }
 
   // sleep(5); // parents should come back up; they don't
-  sleep(params->policy->ParentRetryTime + 1);
+  sleep(params->policy.ParentRetryTime + 1);
 
   // Fix: The following tests failed because
   // br() should set xact_start correctly instead of 0.
