@@ -363,7 +363,7 @@ HttpSM::init()
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based ACL in
   // cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
   // TODO: This probably doesn't honor this as a per-transaction overridable config.
-  t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->ParentTable->ipMatch ||
+  t_state.force_dns = (ip_rule_in_CacheControlTable() || t_state.parent_params->parent_table->ipMatch ||
                        !(t_state.txn_conf->doc_in_cache_skip_dns) || !(t_state.txn_conf->cache_http));
 
   http_parser.m_allow_non_http = t_state.http_config_param->parser_allow_non_http;
@@ -5271,7 +5271,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
     // In case of TIMEOUT, the iocore sends back
     // server_entry->read_vio instead of the write_vio
     // if (vio->op == VIO::WRITE && vio->ndone == 0) {
-    if (server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
+    if (server_entry->write_vio && server_entry->write_vio->nbytes > 0 && server_entry->write_vio->ndone == 0) {
       t_state.current.state = HttpTransact::CONNECTION_ERROR;
     } else {
       t_state.current.state = HttpTransact::INACTIVE_TIMEOUT;

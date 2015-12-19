@@ -112,6 +112,7 @@ private:
     HTTP_COOKIE = 1,
     HTTP_USER_AGENT = 2,
     QUERY_STRING = 3,
+    HTTP_HEADER = 4,
   };
   static const std::string SPECIAL_HEADERS[]; // indices should map to enum values above
 
@@ -120,7 +121,7 @@ private:
   static const std::string NORM_SPECIAL_HEADERS[]; // indices should again map to enum values
 
   static const int N_SIMPLE_HEADERS = HTTP_REFERER + 1;
-  static const int N_SPECIAL_HEADERS = QUERY_STRING + 1;
+  static const int N_SPECIAL_HEADERS = HTTP_HEADER + 1;
 
   StringHash _simple_data;
   StringHash _dict_data[N_SPECIAL_HEADERS];

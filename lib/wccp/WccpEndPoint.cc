@@ -367,7 +367,7 @@ CacheImpl::RouterData::waitTime(time_t now) const
 }
 
 inline uint32_t
-CacheImpl::CacheData::idAddr() const
+detail::cache::CacheData::idAddr() const
 {
   return m_id.getAddr();
 }
@@ -909,7 +909,7 @@ CacheImpl::handleRemovalQuery(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buff
 }
 // ------------------------------------------------------
 inline uint32_t
-RouterImpl::CacheData::idAddr() const
+detail::router::CacheData::idAddr() const
 {
   return m_id.getAddr();
 }

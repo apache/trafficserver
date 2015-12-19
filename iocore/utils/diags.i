@@ -22,8 +22,7 @@
  */
 
 
-
-//Diags *diags;
+// Diags *diags;
 #define DIAGS_LOG_FILE "diags.log"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -53,7 +52,6 @@ reconfigure_diags()
 
   // read output routing values
   for (i = 0; i < DiagsLevel_Count; i++) {
-
     c.outputs[i].to_stdout = 0;
     c.outputs[i].to_stderr = 1;
     c.outputs[i].to_syslog = 1;
@@ -68,7 +66,7 @@ reconfigure_diags()
   diags->deactivate_all(DiagsTagType_Action);
 
   //////////////////////////////////////////////////////////////////////
-  //                     add new tag tables 
+  //                     add new tag tables
   //////////////////////////////////////////////////////////////////////
 
   if (diags->base_debug_tags)
@@ -76,46 +74,25 @@ reconfigure_diags()
   if (diags->base_action_tags)
     diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
 
-  ////////////////////////////////////
-  // change the diags config values //
-  ////////////////////////////////////
+////////////////////////////////////
+// change the diags config values //
+////////////////////////////////////
 #if !defined(__GNUC__) && !defined(hpux)
   diags->config = c;
 #else
-  memcpy(((void *) &diags->config), ((void *) &c), sizeof(DiagsConfigState));
+  memcpy(((void *)&diags->config), ((void *)&c), sizeof(DiagsConfigState));
 #endif
-
 }
 
 
-
 static void
-init_diags(char *bdt, char *bat)
+init_diags(const char *bdt, const char *bat)
 {
-  FILE *diags_log_fp;
   char diags_logpath[500];
   strcpy(diags_logpath, DIAGS_LOG_FILE);
 
-  diags_log_fp = fopen(diags_logpath, "w");
-  if (diags_log_fp) {
-    int status;
-    status = setvbuf(diags_log_fp, NULL, _IOLBF, 512);
-    if (status != 0) {
-      fclose(diags_log_fp);
-      diags_log_fp = NULL;
-    }
-  }
+  diags = new Diags(bdt, bat, new BaseLogFile(diags_logpath));
+  Status("opened %s", diags_logpath);
 
-  diags = new Diags(bdt, bat, diags_log_fp);
-
-  if (diags_log_fp == NULL) {
-    SrcLoc loc(__FILE__, __FUNCTION__, __LINE__);
-
-    diags->print(NULL, DL_Warning, NULL, &loc,
-                 "couldn't open diags log file '%s', " "will not log to this file", diags_logpath);
-  }
-
-  diags->print(NULL, DL_Status, "STATUS", NULL, "opened %s", diags_logpath);
   reconfigure_diags();
-
 }

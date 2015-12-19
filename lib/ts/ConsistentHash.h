@@ -22,7 +22,7 @@
 #ifndef __CONSISTENT_HASH_H__
 #define __CONSISTENT_HASH_H__
 
-#include "ts/Hash.h"
+#include "Hash.h"
 #include <stdint.h>
 #include <iostream>
 #include <map>
@@ -52,6 +52,7 @@ struct ATSConsistentHash {
   ATSConsistentHashNode *lookup(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL, ATSHash64 *h = NULL);
   ATSConsistentHashNode *lookup_available(const char *url = NULL, ATSConsistentHashIter *i = NULL, bool *w = NULL,
                                           ATSHash64 *h = NULL);
+  ATSConsistentHashNode *lookup_by_hashval(uint64_t hashval, ATSConsistentHashIter *i = NULL, bool *w = NULL);
   ~ATSConsistentHash();
 
 private:

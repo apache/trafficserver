@@ -1908,6 +1908,7 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/buffer_upload/Makefile
     plugins/experimental/cache_range_requests/Makefile
     plugins/experimental/channel_stats/Makefile
+    plugins/experimental/cachekey/Makefile
     plugins/experimental/cache_promote/Makefile
     plugins/experimental/collapsed_connection/Makefile
     plugins/experimental/custom_redirect/Makefile
@@ -1918,6 +1919,7 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/geoip_acl/Makefile
     plugins/experimental/header_normalize/Makefile
     plugins/experimental/hipes/Makefile
+    plugins/experimental/memcache/Makefile
     plugins/experimental/memcached_remap/Makefile
     plugins/experimental/metalink/Makefile
     plugins/experimental/multiplexer/Makefile
