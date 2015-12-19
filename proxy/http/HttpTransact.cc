@@ -7299,12 +7299,8 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 {
   bool heuristic, do_revalidate = false;
   int age_limit;
-  // These aren't used.
-  // HTTPValCacheControl *cc;
-  // const char *cc_val;
   int fresh_limit;
   ink_time_t current_age, response_date;
-  ;
   uint32_t cc_mask, cooked_cc_mask;
   uint32_t os_specifies_revalidate;
 
