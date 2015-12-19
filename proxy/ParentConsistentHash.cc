@@ -155,7 +155,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
           parentRetry = true;
           // make sure that the proper state is recorded in the result structure
           // so that markParentUp() finds the proper record.
-          result->last_parent = prtmp->idx;
+          result->last_parent = pRec->idx;
           result->last_lookup = last_lookup;
           result->retry = parentRetry;
           result->r = PARENT_SPECIFIED;
