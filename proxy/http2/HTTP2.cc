@@ -614,12 +614,14 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
  * Decode Header Blocks to Header List.
  */
 int64_t
-http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t *buf_end, Http2IndexingTable &indexing_table)
+http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t *buf_end, Http2IndexingTable &indexing_table,
+                           bool &trailing_header)
 {
   const uint8_t *cursor = buf_start;
   HdrHeap *heap = hdr->m_heap;
   HTTPHdrImpl *hh = hdr->m_http;
   bool header_field_started = false;
+  bool is_trailing_header = trailing_header;
 
   while (cursor < buf_end) {
     int64_t read_bytes = 0;
@@ -684,22 +686,29 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
       }
     }
 
-    // when The TE header field is received, it MUST NOT contain any
-    // value other than "trailers".
+    // when The TE header field is received, it MUST NOT contain any value other than "trailers".
     if (name_len == MIME_LEN_TE && strncmp(name, MIME_FIELD_TE, name_len) == 0) {
       int value_len = 0;
       const char *value = field->value_get(&value_len);
-      char trailers[] = "trailers";
+      const char trailers[] = "trailers";
       if (!(value_len == (sizeof(trailers) - 1) && memcmp(value, trailers, value_len) == 0)) {
         return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
       }
     }
 
+    // turn on that we have a trailer header
+    const char trailer_name[] = "trailer";
+    if (name_len == (sizeof(trailer_name) - 1) && strncmp(name, trailer_name, sizeof(trailer_name) - 1) == 0) {
+      trailing_header = true;
+    }
+
     // Store to HdrHeap
     mime_hdr_field_attach(hh->m_fields_impl, field, 1, NULL);
+  }
 
+  if (!is_trailing_header) {
     // Check psuedo headers
-    if (hdr->fields_count() == 4) {
+    if (hdr->fields_count() >= 4) {
       if (hdr->field_find(HPACK_VALUE_SCHEME, HPACK_LEN_SCHEME) == NULL ||
           hdr->field_find(HPACK_VALUE_METHOD, HPACK_LEN_METHOD) == NULL ||
           hdr->field_find(HPACK_VALUE_PATH, HPACK_LEN_PATH) == NULL ||
@@ -707,12 +716,10 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
         // Decoded header field is invalid
         return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
       }
+    } else {
+      // Psuedo headers is insufficient
+      return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
     }
-  }
-
-  // Psuedo headers is insufficient
-  if (hdr->fields_count() < 4) {
-    return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
   }
 
   // Parsing all headers is done
