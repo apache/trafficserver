@@ -34,8 +34,8 @@ class Http2Stream
 public:
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size)
     : client_rwnd(initial_rwnd), server_rwnd(Http2::initial_window_size), header_blocks(NULL), header_blocks_length(0),
-      request_header_length(0), end_stream(false), _id(sid), _state(HTTP2_STREAM_STATE_IDLE), _fetch_sm(NULL), body_done(false),
-      data_length(0)
+      request_header_length(0), end_stream(false), _id(sid), _state(HTTP2_STREAM_STATE_IDLE), _fetch_sm(NULL),
+      trailing_header(false), body_done(false), data_length(0)
   {
     _thread = this_ethread();
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
@@ -90,12 +90,17 @@ public:
     return _state;
   }
   bool change_state(uint8_t type, uint8_t flags);
+  bool
+  has_trailing_header() const
+  {
+    return trailing_header;
+  }
 
   int64_t
   decode_header_blocks(Http2IndexingTable &indexing_table)
   {
     return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks,
-                                      (const uint8_t *)header_blocks + header_blocks_length, indexing_table);
+                                      (const uint8_t *)header_blocks + header_blocks_length, indexing_table, trailing_header);
   }
 
   // Check entire DATA payload length if content-length: header is exist
@@ -131,6 +136,7 @@ private:
 
   HTTPHdr _req_header;
   FetchSM *_fetch_sm;
+  bool trailing_header;
   bool body_done;
   uint64_t data_length;
 };

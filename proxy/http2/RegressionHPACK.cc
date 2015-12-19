@@ -559,14 +559,16 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
   box = REGRESSION_TEST_PASSED;
 
   Http2IndexingTable indexing_table;
+  bool trailing_header = false;
 
   for (unsigned int i = 0; i < sizeof(encoded_field_request_test_case) / sizeof(encoded_field_request_test_case[0]); i++) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
 
-    http2_decode_header_blocks(
-      headers, encoded_field_request_test_case[i].encoded_field,
-      encoded_field_request_test_case[i].encoded_field + encoded_field_request_test_case[i].encoded_field_len, indexing_table);
+    http2_decode_header_blocks(headers, encoded_field_request_test_case[i].encoded_field,
+                               encoded_field_request_test_case[i].encoded_field +
+                                 encoded_field_request_test_case[i].encoded_field_len,
+                               indexing_table, trailing_header);
 
     for (unsigned int j = 0; j < sizeof(raw_field_request_test_case[i]) / sizeof(raw_field_request_test_case[i][0]); j++) {
       const char *expected_name = raw_field_request_test_case[i][j].raw_name;
