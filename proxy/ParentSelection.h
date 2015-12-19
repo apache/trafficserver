@@ -199,7 +199,7 @@ public:
   ParentRecord *DefaultParent;
   explicit ParentConfigParams(P_table *_parent_table);
   ParentSelectionPolicy *policy;
-  ~ParentConfigParams(){};
+  ~ParentConfigParams() { delete policy; }
 
   bool apiParentExists(HttpRequestData *rdata);
   void findParent(HttpRequestData *rdata, ParentResult *result);
