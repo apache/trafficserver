@@ -96,6 +96,7 @@ foreach my $key (sort keys %{ $changelog })
   print "\n$key:\n";
   foreach my $issue (@{ $changelog->{$key} })
   {
+    chomp $issue->{summary};
     print "  *) [$issue->{key}] ";
     if (length($issue->{summary}) <= (131 - 15)) {
       print "$issue->{summary}\n";
