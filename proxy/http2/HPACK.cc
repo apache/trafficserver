@@ -338,7 +338,7 @@ encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, siz
 
   // TODO Choose whether to use Huffman encoding wisely
 
-  if (use_huffman) {
+  if (use_huffman && value_len) {
     data = static_cast<char *>(ats_malloc(value_len * 4));
     if (data == NULL)
       return -1;
@@ -369,8 +369,10 @@ encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, siz
   }
 
   // Value
-  memcpy(p, data, data_len);
-  p += data_len;
+  if (data_len) {
+    memcpy(p, data, data_len);
+    p += data_len;
+  }
 
   if (use_huffman) {
     ats_free(data);

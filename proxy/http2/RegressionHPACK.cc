@@ -53,9 +53,15 @@ const static struct {
   uint32_t raw_string_len;
   uint8_t *encoded_field;
   int encoded_field_len;
-} string_test_case[] = {{(char *)"custom-key", 10, (uint8_t *) "\xA"
+} string_test_case[] = {{(char *)"", 0,            (uint8_t *) "\x0"
+                                                               "",
+                         1},
+                        {(char *)"custom-key", 10, (uint8_t *) "\xA"
                                                                "custom-key",
                          11},
+                        {(char *)"", 0,            (uint8_t *) "\x80"
+                                                               "",
+                         1},
                         {(char *)"custom-key", 10, (uint8_t *) "\x88"
                                                                "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
                          9}};
@@ -232,13 +238,13 @@ REGRESSION_TEST(HPACK_EncodeString)(RegressionTest *t, int, int *pstatus)
   int len;
 
   // FIXME Current encoder support only huffman conding.
-  for (unsigned int i = 1; i < 2; i++) {
+  for (unsigned int i = 2; i < sizeof(string_test_case) / sizeof(string_test_case[0]); i++) {
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
 
     len = encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string, string_test_case[i].raw_string_len);
 
     box.check(len == string_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,
-              integer_test_case[i].encoded_field_len);
+              string_test_case[i].encoded_field_len);
     box.check(len > 0 && memcmp(buf, string_test_case[i].encoded_field, len) == 0, "encoded string was invalid");
   }
 }
