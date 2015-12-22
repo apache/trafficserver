@@ -295,6 +295,9 @@ PluginVC::reenable(VIO *vio)
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
   ink_assert(vio->mutex->thread_holding == this_ethread());
 
+  Ptr<ProxyMutex> sm_mutex = vio->mutex;
+  MUTEX_LOCK(lock, sm_mutex, this_ethread());
+
   Debug("pvc", "[%u] %s: reenable %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
   if (vio->op == VIO::WRITE) {
@@ -358,6 +361,11 @@ PluginVC::do_io_close(int /* flag ATS_UNUSED */)
 
   Debug("pvc", "[%u] %s: do_io_close", core_obj->id, PVC_TYPE);
 
+  MUTEX_LOCK(lock, mutex, this_ethread());
+  if (closed == true) {
+    return;
+  }
+
   if (reentrancy_count > 0) {
     // Do nothing since dealloacting ourselves
     //  now will lead to us running on a dead
@@ -367,17 +375,9 @@ PluginVC::do_io_close(int /* flag ATS_UNUSED */)
     return;
   }
 
-  MUTEX_TRY_LOCK(lock, mutex, this_ethread());
+  setup_event_cb(PVC_LOCK_RETRY_TIME, &sm_lock_retry_event);
+  closed = true;
 
-  if (!lock.is_locked()) {
-    setup_event_cb(PVC_LOCK_RETRY_TIME, &sm_lock_retry_event);
-    closed = true;
-    return;
-  } else {
-    closed = true;
-  }
-
-  process_close();
 }
 
 void
