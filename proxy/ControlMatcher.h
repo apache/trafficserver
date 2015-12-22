@@ -127,17 +127,6 @@ public:
 
   virtual sockaddr const *get_client_ip() = 0;
 
-  enum RD_Type {
-    RD_NULL,
-    RD_HTTP,
-    RD_CONGEST_ENTRY,
-  };
-
-  virtual RD_Type
-  data_type(void)
-  {
-    return RD_NULL;
-  }
 };
 
 class HttpRequestData : public RequestData
