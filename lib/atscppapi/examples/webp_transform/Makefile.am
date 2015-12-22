@@ -14,34 +14,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 
-SUBDIRS = \
-	helloworld \
-	globalhook \
-	transactionhook \
-	multiple_transaction_hooks \
-	clientrequest \
-	serverresponse \
-	clientredirect \
-	customresponse \
-	null_transformation_plugin \
-	post_buffer \
-	logger_example \
-	boom \
-	stat_example \
-	remap_plugin \
-	async_http_fetch \
-	gzip_transformation \
-	timeout_example \
-	internal_transaction_handling \
-	async_timer \
-	intercept \
-        async_http_fetch_streaming
+target=WebpTransform.so
+pkglibdir = ${pkglibexecdir}
+pkglib_LTLIBRARIES = WebpTransform.la
+WebpTransform_la_SOURCES = ImageTransform.cc jpegdec.cc pngdec.cc metadata.cc compress.cc
+WebpTransform_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi -lwebp -ljpeg -lpng
 
-if HAS_WEBP
-if HAS_JPEG
-if HAS_PNG
-  SUBDIRS += webp_transform
-endif
-endif
-endif
+all:
+	ln -sf .libs/$(target)
+
+clean-local:
+	rm -f $(target)
