@@ -33,15 +33,15 @@ std::string ImageTransform::FIELD_USER_AGENT("User-Agent");
 std::string ImageTransform::FIELD_CONTENT_TYPE("Content-Type");
 std::string ImageTransform::FIELD_TRANSFORM_IMAGE("@X-Transform-Image");
 std::string ImageTransform::CONTEXT_IMG_TRANSFORM("Transform-Image");
-std::string ImageTransform::USER_AGENT_CROME("Chrome");
+std::string ImageTransform::USER_AGENT_CHROME("Chrome");
+std::string ImageTransform::FIELD_VARY("Vary");
+std::string ImageTransform::IMAGE_TYPE("image/webp");
 
 
-ImageTransform::ImageTransform(Transaction &transaction, TransformationPlugin::Type xformType)
-: TransformationPlugin(transaction, xformType),
+ImageTransform::ImageTransform(Transaction &transaction)
+: TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION),
   webp_transform_(){
-	TransactionPlugin::registerHook(HOOK_SEND_REQUEST_HEADERS);
-	TransformationPlugin::registerHook((xformType == TransformationPlugin::REQUEST_TRANSFORMATION) ?
-			HOOK_SEND_REQUEST_HEADERS : HOOK_READ_RESPONSE_HEADERS);
+	TransformationPlugin::registerHook(HOOK_READ_RESPONSE_HEADERS);
 }
 
 ImageTransform::~ImageTransform() {
@@ -51,9 +51,8 @@ ImageTransform::~ImageTransform() {
 void
 ImageTransform::handleReadResponseHeaders(Transaction &transaction)
 {
-	Headers& headers = transaction.getServerResponse().getHeaders();
-	headers.set("Vary", ImageTransform::FIELD_TRANSFORM_IMAGE);
-	headers.set(ImageTransform::FIELD_CONTENT_TYPE, "image/webp");
+  transaction.getClientResponse().getHeaders()[ImageTransform::FIELD_CONTENT_TYPE] = ImageTransform::IMAGE_TYPE;
+  transaction.getClientResponse().getHeaders()[ImageTransform::FIELD_VARY] = ImageTransform::ImageTransform::FIELD_CONTENT_TYPE;
 
 	TS_DEBUG(TAG, "Image Transformation Plugin for url %s", transaction.getServerRequest().getUrl().getUrlString().c_str() );
 	transaction.resume();
@@ -73,34 +72,18 @@ ImageTransform::handleInputComplete() {
 	setOutputComplete();
 }
 
-
 GlobalHookPlugin::GlobalHookPlugin() {
-	registerHook(HOOK_READ_REQUEST_HEADERS);
 	registerHook(HOOK_READ_RESPONSE_HEADERS);
-}
-
-void
-GlobalHookPlugin::handleReadRequestHeaders(Transaction &transaction) {
-	//add transformation only for jpeg files
-	Headers& hdrs = transaction.getClientRequest().getHeaders();
-	string uagent = hdrs.values(ImageTransform::FIELD_USER_AGENT);
-	if(uagent.find(ImageTransform::USER_AGENT_CROME) != string::npos) {
-		TS_DEBUG(TAG, "Setting Context for useragent chrome.");
-		transaction.setContextValue(ImageTransform::CONTEXT_IMG_TRANSFORM, shared_ptr<Transaction::ContextValue>(new ImageValue(true)));
-		transaction.getClientRequest().getHeaders().set(ImageTransform::FIELD_TRANSFORM_IMAGE, "1");
-	}
-	transaction.resume();
 }
 
 void
 GlobalHookPlugin::handleReadResponseHeaders(Transaction &transaction) {
 	//add transformation only for jpeg files
-	Headers& hdrs = transaction.getServerResponse().getHeaders();
-	string ctype = hdrs.values(ImageTransform::FIELD_CONTENT_TYPE);
-	ImageValue* img_context = dynamic_cast<ImageValue *>(transaction.getContextValue(ImageTransform::CONTEXT_IMG_TRANSFORM).get());
-	if(img_context && (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos)) {
-		//modify clientrequest at this point. Lets see if this will effect the caching.
-		transaction.addPlugin(new ImageTransform(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
+	string ctype = transaction.getServerResponse().getHeaders().values(ImageTransform::FIELD_CONTENT_TYPE);
+	string user_agent = transaction.getServerRequest().getHeaders().values(ImageTransform::FIELD_USER_AGENT) ;
+	if(user_agent.find(ImageTransform::USER_AGENT_CHROME) != string::npos &&
+	    (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos))  {
+    transaction.addPlugin(new ImageTransform(transaction));
 	}
 	transaction.resume();
 }

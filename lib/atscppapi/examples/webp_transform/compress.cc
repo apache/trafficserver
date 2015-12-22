@@ -1,3 +1,26 @@
+/** @file
+
+    ATSCPPAPI plugin to do webp transform.
+
+    @section license License
+
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,8 +88,6 @@ WebpTransform::GetImageType(std::stringstream& input_img) {
     format = PNG_;
   } else if (magic1 >= 0xFFD8FF00U && magic1 <= 0xFFD8FFFFU) {
     format = JPEG_;
-  } else if (magic1 == 0x49492A00 || magic1 == 0x4D4D002A) {
-    format = TIFF_;
   } else if (magic1 == 0x52494646 && magic2 == 0x57454250) {
     format = WEBP_;
   }
@@ -92,14 +113,12 @@ WebpTransform::ReadImage(std::stringstream& input_img) {
       	return 0;
       }
       ok = jpeg_dec_.ReadImage(&picture_, &metadata_);
-    } else if (format == TIFF_) {
-    	TS_DEBUG(TAG, "Cannot read tiff files.");
     } else if (format == WEBP_) {
     	TS_DEBUG(TAG, "Already webp file. Nothing to be done.");
     }
   }
   if (!ok)
-  	TS_DEBUG(TAG, "failed to read image.");
+  	TS_DEBUG(TAG, "Unsupported image format. Failed to read image.");
 
   return ok;
 }
