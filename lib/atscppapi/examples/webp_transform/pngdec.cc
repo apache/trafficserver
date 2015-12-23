@@ -31,7 +31,7 @@
 #include "Common.h"
 
 void
-PngDec::ErrorFunction(png_structp png, png_const_charp error)
+PngDec::_errorFunction(png_structp png, png_const_charp error)
 {
   if (error != NULL)
     TS_DEBUG("img_transform_png", "libpng error: %s\n", error);
@@ -39,26 +39,26 @@ PngDec::ErrorFunction(png_structp png, png_const_charp error)
 }
 
 void
-PngDec::ReadFunction(png_structp pngPtr, png_bytep data, png_size_t length)
+PngDec::_readFunction(png_structp pngPtr, png_bytep data, png_size_t length)
 {
   PngDec *png_dec = reinterpret_cast<PngDec *>(png_get_io_ptr(pngPtr));
-  png_dec->ReadData(data, length);
+  png_dec->_readData(data, length);
 }
 
-PngDec::PNGMetadataMap PngDec::png_metadata_map_[] = {
+PngDec::PNGMetadataMap PngDec::_png_metadata_map[] = {
   // http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/PNG.html#TextualData
   // See also: ExifTool on CPAN.
-  {"Raw profile type exif", PngDec::ProcessRawProfile, METADATA_OFFSET(exif)},
-  {"Raw profile type xmp", PngDec::ProcessRawProfile, METADATA_OFFSET(xmp)},
+  {"Raw profile type exif", PngDec::_processRawProfile, METADATA_OFFSET(exif)},
+  {"Raw profile type xmp", PngDec::_processRawProfile, METADATA_OFFSET(xmp)},
   // Exiftool puts exif data in APP1 chunk, too.
-  {"Raw profile type APP1", PngDec::ProcessRawProfile, METADATA_OFFSET(exif)},
+  {"Raw profile type APP1", PngDec::_processRawProfile, METADATA_OFFSET(exif)},
   // XMP Specification Part 3, Section 3 #PNG
   {"XML:com.adobe.xmp", MetadataCopy, METADATA_OFFSET(xmp)},
   {NULL, NULL, 0},
 };
 
 int
-PngDec::ProcessRawProfile(const char *profile, size_t profile_len, MetadataPayload *const payload)
+PngDec::_processRawProfile(const char *profile, size_t profile_len, MetadataPayload *const payload)
 {
   const char *src = profile;
   char *end;
@@ -85,9 +85,9 @@ PngDec::ProcessRawProfile(const char *profile, size_t profile_len, MetadataPaylo
   ++end;
 
   // 'end' now points to the profile payload.
-  payload->bytes = HexStringToBytes(end, expected_length);
+  payload->bytes = _hexStringToBytes(end, expected_length);
   if (payload->bytes == NULL) {
-    TS_DEBUG(TAG, "HexStringToBytes failed");
+    TS_DEBUG(TAG, " failed");
     return 0;
   }
   payload->size = expected_length;
@@ -104,7 +104,7 @@ PngDec::ProcessRawProfile(const char *profile, size_t profile_len, MetadataPaylo
 // 'expected_length' or any character aside from those above is encountered.
 // The returned buffer must be freed by the caller.
 uint8_t *
-PngDec::HexStringToBytes(const char *hexstring, size_t expected_length)
+PngDec::_hexStringToBytes(const char *hexstring, size_t expected_length)
 {
   const char *src = hexstring;
   size_t actual_length = 0;
@@ -140,20 +140,20 @@ PngDec::HexStringToBytes(const char *hexstring, size_t expected_length)
 // Returns true on success. The caller must use MetadataFree() on 'metadata' in
 // all cases.
 int
-PngDec::ExtractMetadataFromPNG(Metadata *const metadata)
+PngDec::_extractMetadataFromPNG(Metadata *const metadata)
 {
   int p;
   for (p = 0; p < 2; ++p) {
-    png_infop const info = (p == 0) ? info_ : end_info_;
+    png_infop const info = (p == 0) ? _info : _end_info;
     png_textp text = NULL;
-    const int num = png_get_text(png_, info, &text, NULL);
+    const int num = png_get_text(_png, info, &text, NULL);
     int i;
     // Look for EXIF / XMP metadata.
     for (i = 0; i < num; ++i, ++text) {
       int j;
-      for (j = 0; png_metadata_map_[j].name != NULL; ++j) {
-        if (!strcmp(text->key, png_metadata_map_[j].name)) {
-          MetadataPayload *const payload = (MetadataPayload *)((uint8_t *)metadata + png_metadata_map_[j].storage_offset);
+      for (j = 0; _png_metadata_map[j].name != NULL; ++j) {
+        if (!strcmp(text->key, _png_metadata_map[j].name)) {
+          MetadataPayload *const payload = (MetadataPayload *)((uint8_t *)metadata + _png_metadata_map[j].storage_offset);
           png_size_t text_length;
           switch (text->compression) {
 #ifdef PNG_iTXt_SUPPORTED
@@ -170,7 +170,7 @@ PngDec::ExtractMetadataFromPNG(Metadata *const metadata)
           }
           if (payload->bytes != NULL) {
             TS_DEBUG(TAG, "Ignoring additional '%s'\n", text->key);
-          } else if (!png_metadata_map_[j].process(text->text, text_length, payload)) {
+          } else if (!_png_metadata_map[j].process(text->text, text_length, payload)) {
             TS_DEBUG(TAG, "Failed to process: '%s'\n", text->key);
             return 0;
           }
@@ -189,7 +189,7 @@ PngDec::ExtractMetadataFromPNG(Metadata *const metadata)
 #endif
       png_uint_32 len;
 
-      if (png_get_iCCP(png_, info, &name, &comp_type, &profile, &len) == PNG_INFO_iCCP) {
+      if (png_get_iCCP(_png, info, &name, &comp_type, &profile, &len) == PNG_INFO_iCCP) {
         if (!MetadataCopy((const char *)profile, len, &metadata->iccp))
           return 0;
       }
@@ -200,51 +200,51 @@ PngDec::ExtractMetadataFromPNG(Metadata *const metadata)
 }
 
 bool
-PngDec::Init(std::stringstream *img)
+PngDec::init(std::stringstream *img)
 {
-  input_img_ = img;
-  png_ = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
-  if (png_ == NULL) {
+  _input_img = img;
+  _png = png_create_read_struct(PNG_LIBPNG_VER_STRING, 0, 0, 0);
+  if (_png == NULL) {
     TS_DEBUG(TAG, "Error! Unable to create read structure");
     return false;
   }
 
-  png_set_error_fn(png_, 0, PngDec::ErrorFunction, NULL);
-  if (setjmp(png_jmpbuf(png_))) {
+  png_set_error_fn(_png, 0, PngDec::_errorFunction, NULL);
+  if (setjmp(png_jmpbuf(_png))) {
     TS_DEBUG(TAG, "Error! setjmp failed");
     return false;
   }
 
-  info_ = png_create_info_struct(png_);
-  if (info_ == NULL) {
+  _info = png_create_info_struct(_png);
+  if (_info == NULL) {
     TS_DEBUG(TAG, "Error! could not create info struct for info_");
     return false;
   }
-  end_info_ = png_create_info_struct(png_);
-  if (end_info_ == NULL) {
+  _end_info = png_create_info_struct(_png);
+  if (_end_info == NULL) {
     TS_DEBUG(TAG, "Error! could not create info struct for info_");
     return false;
   }
 
   // png_init_io(png, in_file);
-  png_set_read_fn(png_, (void *)this, PngDec::ReadFunction);
-  png_read_info(png_, info_);
-  init_ = true;
+  png_set_read_fn(_png, (void *)this, PngDec::_readFunction);
+  png_read_info(_png, _info);
+  _init = true;
   return true;
 }
 
 void
-PngDec::Finalize()
+PngDec::finalize()
 {
-  if (init_ && png_ != NULL) {
-    png_destroy_read_struct((png_structpp)&png_, (png_infopp)&info_, (png_infopp)&end_info_);
-    png_ = NULL;
-    info_ = end_info_ = NULL;
+  if (_init && _png != NULL) {
+    png_destroy_read_struct((png_structpp)&_png, (png_infopp)&_info, (png_infopp)&_end_info);
+    _png = NULL;
+    _info = _end_info = NULL;
   }
 }
 
 int
-PngDec::ReadImage(WebPPicture *const pic, Metadata *const metadata)
+PngDec::readImage(WebPPicture *const pic, Metadata *const metadata)
 {
   int color_type, bit_depth, interlaced;
   int has_alpha;
@@ -256,31 +256,31 @@ PngDec::ReadImage(WebPPicture *const pic, Metadata *const metadata)
   uint8_t *volatile rgb = NULL;
 
 
-  if (!png_get_IHDR(png_, info_, &width, &height, &bit_depth, &color_type, &interlaced, NULL, NULL)) {
+  if (!png_get_IHDR(_png, _info, &width, &height, &bit_depth, &color_type, &interlaced, NULL, NULL)) {
     TS_DEBUG(TAG, "failed to get IHDR");
     return false;
   }
 
-  png_set_strip_16(png_);
-  png_set_packing(png_);
+  png_set_strip_16(_png);
+  png_set_packing(_png);
   if (color_type == PNG_COLOR_TYPE_PALETTE) {
-    png_set_palette_to_rgb(png_);
+    png_set_palette_to_rgb(_png);
   }
   if (color_type == PNG_COLOR_TYPE_GRAY || color_type == PNG_COLOR_TYPE_GRAY_ALPHA) {
     if (bit_depth < 8) {
-      png_set_expand_gray_1_2_4_to_8(png_);
+      png_set_expand_gray_1_2_4_to_8(_png);
     }
-    png_set_gray_to_rgb(png_);
+    png_set_gray_to_rgb(_png);
   }
-  if (png_get_valid(png_, info_, PNG_INFO_tRNS)) {
-    png_set_tRNS_to_alpha(png_);
+  if (png_get_valid(_png, _info, PNG_INFO_tRNS)) {
+    png_set_tRNS_to_alpha(_png);
     has_alpha = 1;
   } else {
     has_alpha = !!(color_type & PNG_COLOR_MASK_ALPHA);
   }
 
-  num_passes = png_set_interlace_handling(png_);
-  png_read_update_info(png_, info_);
+  num_passes = png_set_interlace_handling(_png);
+  png_read_update_info(_png, _info);
   stride = (has_alpha ? 4 : 3) * width * sizeof(*rgb);
   rgb = (uint8_t *)malloc(stride * height);
   if (rgb == NULL)
@@ -288,12 +288,12 @@ PngDec::ReadImage(WebPPicture *const pic, Metadata *const metadata)
   for (p = 0; p < num_passes; ++p) {
     for (y = 0; y < height; ++y) {
       png_bytep row = (png_bytep)(rgb + y * stride);
-      png_read_rows(png_, &row, NULL, 1);
+      png_read_rows(_png, &row, NULL, 1);
     }
   }
-  png_read_end(png_, end_info_);
+  png_read_end(_png, _end_info);
 
-  if (metadata != NULL && !ExtractMetadataFromPNG(metadata)) {
+  if (metadata != NULL && !_extractMetadataFromPNG(metadata)) {
     TS_DEBUG(TAG, "Error!! extracting PNG metadata!");
     free(rgb);
     return false;
@@ -310,8 +310,8 @@ PngDec::ReadImage(WebPPicture *const pic, Metadata *const metadata)
 
 
 bool
-PngDec::ReadData(png_bytep data, png_size_t length)
+PngDec::_readData(png_bytep data, png_size_t length)
 {
-  input_img_->read((char *)data, length);
+   _input_img->read((char *)data, length);
   return true;
 }

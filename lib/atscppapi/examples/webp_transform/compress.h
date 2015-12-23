@@ -38,19 +38,18 @@
 class WebpTransform
 {
 public:
-  WebpTransform() : init_(false), png_dec_(), jpeg_dec_() {}
+  WebpTransform() : _init(false), _png_dec(), _jpeg_dec() {}
 
   ~WebpTransform() {}
 
-  bool Init();
-  bool Transform(std::stringstream &stream);
-  void Finalize();
-  std::stringstream &
-  getTransformedImage()
-  {
-    return stream_;
+  bool init();
+  bool transform(std::stringstream &stream);
+  void finalize();
+  std::stringstream &getTransformedImage() {
+    return _stream;
   }
-  void WriteImage(const char *data, size_t data_size);
+
+  void writeImage(const char *data, size_t data_size);
 
 private:
   typedef enum { PNG_ = 0, JPEG_, WEBP_, UNSUPPORTED } InputFileFormat;
@@ -62,22 +61,21 @@ private:
     METADATA_ALL = METADATA_EXIF | METADATA_ICC | METADATA_XMP
   };
 
-  InputFileFormat GetImageType(std::stringstream &input_msg);
-  int ReadImage(std::stringstream &input_img);
-  void AllocExtraInfo();
+  InputFileFormat _getImageType(std::stringstream &input_msg);
+  int _readImage(std::stringstream &input_img);
+  void _allocExtraInfo();
+  void _webpMemoryWriterClear();
 
-  void WebPMemoryWriterClear();
-
-  static const std::string errors_[];
-  bool init_;
-  WebPMemoryWriter writer_;
-  std::stringstream stream_;
-  WebPPicture picture_;
-  WebPConfig config_;
-  Metadata metadata_;
-  std::string debug_tag_;
-  PngDec png_dec_;
-  JpegDec jpeg_dec_;
+  static const std::string _errors[];
+  bool              _init;
+  WebPMemoryWriter  _writer;
+  std::stringstream _stream;
+  WebPPicture       _picture;
+  WebPConfig        _config;
+  Metadata          _metadata;
+  std::string       _debug_tag;
+  PngDec            _png_dec;
+  JpegDec           _jpeg_dec;
 };
 
 #endif //WEBPTRANSFORM_H_ 

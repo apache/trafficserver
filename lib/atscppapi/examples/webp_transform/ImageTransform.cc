@@ -39,14 +39,14 @@ std::string ImageTransform::IMAGE_TYPE("image/webp");
 
 
 ImageTransform::ImageTransform(Transaction &transaction)
-  : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION), webp_transform_()
+  : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION), _webp_transform()
 {
   TransformationPlugin::registerHook(HOOK_READ_RESPONSE_HEADERS);
 }
 
 ImageTransform::~ImageTransform()
 {
-  webp_transform_.Finalize();
+  _webp_transform.finalize();
 }
 
 void
@@ -62,15 +62,15 @@ ImageTransform::handleReadResponseHeaders(Transaction &transaction)
 void
 ImageTransform::consume(const string &data)
 {
-  img_.write(data.data(), data.size());
+  _img.write(data.data(), data.size());
 }
 
 void
 ImageTransform::handleInputComplete()
 {
-  webp_transform_.Init();
-  webp_transform_.Transform(img_);
-  produce(webp_transform_.getTransformedImage().str());
+  _webp_transform.init();
+  _webp_transform.transform(_img);
+  produce(_webp_transform.getTransformedImage().str());
 
   setOutputComplete();
 }

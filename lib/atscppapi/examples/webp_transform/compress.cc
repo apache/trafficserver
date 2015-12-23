@@ -40,11 +40,11 @@ static int
 StreamWriter(const uint8_t *data, size_t data_size, const WebPPicture *const pic)
 {
   WebpTransform *webp_transform = static_cast<WebpTransform *>(pic->custom_ptr);
-  webp_transform->WriteImage(reinterpret_cast<const char *>(data), data_size);
+  webp_transform->writeImage(reinterpret_cast<const char *>(data), data_size);
   return data_size ? data_size : 1;
 }
 
-const string WebpTransform::errors_[] = {
+const string WebpTransform::_errors[] = {
   "OK", "OUT_OF_MEMORY: Out of memory allocating objects", "BITSTREAM_OUT_OF_MEMORY: Out of memory re-allocating byte buffer",
   "NULL_PARAMETER: NULL parameter passed to function", "INVALID_CONFIGURATION: configuration is invalid",
   "BAD_DIMENSION: Bad picture dimension. Maximum width and height "
@@ -58,19 +58,19 @@ const string WebpTransform::errors_[] = {
   "FILE_TOO_BIG: File would be too big to fit in 4G", "USER_ABORT: encoding abort requested by user"};
 
 void
-WebpTransform::WebPMemoryWriterClear()
+WebpTransform::_webpMemoryWriterClear()
 {
-  if (writer_.mem != NULL) {
-    free(writer_.mem);
-    writer_.mem = NULL;
-    writer_.size = 0;
-    writer_.max_size = 0;
+  if (_writer.mem != NULL) {
+    free(_writer.mem);
+    _writer.mem = NULL;
+    _writer.size = 0;
+    _writer.max_size = 0;
   }
 }
 
 
 WebpTransform::InputFileFormat
-WebpTransform::GetImageType(std::stringstream &input_img)
+WebpTransform::_getImageType(std::stringstream &input_img)
 {
   InputFileFormat format = UNSUPPORTED;
   uint32_t magic1, magic2;
@@ -91,25 +91,25 @@ WebpTransform::GetImageType(std::stringstream &input_img)
 }
 
 int
-WebpTransform::ReadImage(std::stringstream &input_img)
+WebpTransform::_readImage(std::stringstream &input_img)
 {
   int ok = 0;
 
-  if (picture_.width == 0 || picture_.height == 0) {
+  if (_picture.width == 0 || _picture.height == 0) {
     // If no size specified, try to decode it as PNG/JPEG (as appropriate).
-    const InputFileFormat format = GetImageType(input_img);
+    const InputFileFormat format = _getImageType(input_img);
     if (format == PNG_) {
-      if (!png_dec_.Init(&input_img)) {
-        png_dec_.Finalize();
+      if (!_png_dec.init(&input_img)) {
+        _png_dec.finalize();
         return 0;
       }
-      ok = png_dec_.ReadImage(&picture_, &metadata_);
+      ok = _png_dec.readImage(&_picture, &_metadata);
     } else if (format == JPEG_) {
-      if (!jpeg_dec_.Init(&input_img)) {
-        jpeg_dec_.Finalize();
+      if (!_jpeg_dec.init(&input_img)) {
+        _jpeg_dec.finalize();
         return 0;
       }
-      ok = jpeg_dec_.ReadImage(&picture_, &metadata_);
+      ok = _jpeg_dec.readImage(&_picture, &_metadata);
     } else if (format == WEBP_) {
       TS_DEBUG(TAG, "Already webp file. Nothing to be done.");
     }
@@ -122,77 +122,77 @@ WebpTransform::ReadImage(std::stringstream &input_img)
 
 
 void
-WebpTransform::AllocExtraInfo()
+WebpTransform::_allocExtraInfo()
 {
-  const int mb_w = (picture_.width + 15) / 16;
-  const int mb_h = (picture_.height + 15) / 16;
-  picture_.extra_info = (uint8_t *)malloc(mb_w * mb_h * sizeof(picture_.extra_info));
+  const int mb_w = (_picture.width + 15) / 16;
+  const int mb_h = (_picture.height + 15) / 16;
+  _picture.extra_info = (uint8_t *)malloc(mb_w * mb_h * sizeof(_picture.extra_info));
 }
 
 bool
-WebpTransform::Init()
+WebpTransform::init()
 {
-  MetadataInit(&metadata_);
-  WebPMemoryWriterInit(&writer_);
-  if (!WebPPictureInit(&picture_) || !WebPConfigInit(&config_)) {
+  MetadataInit(&_metadata);
+  WebPMemoryWriterInit(&_writer);
+  if (!WebPPictureInit(&_picture) || !WebPConfigInit(&_config)) {
     TS_DEBUG(TAG, "DEBUG! Version mismatch");
     return false;
   }
   WebPPreset preset = WEBP_PRESET_PICTURE;
-  if (!WebPConfigPreset(&config_, preset, config_.quality)) {
+  if (!WebPConfigPreset(&_config, preset, _config.quality)) {
     TS_DEBUG(TAG, "DEBUG! Could initialize configuration with preset.");
     return false;
   }
 
-  if (!WebPValidateConfig(&config_)) {
+  if (!WebPValidateConfig(&_config)) {
     TS_DEBUG(TAG, "DEBUG! Invalid configuration.");
     return false;
   }
-  init_ = true;
+  _init = true;
   return true;
 }
 
 
 bool
-WebpTransform::Transform(std::stringstream &input_img)
+WebpTransform::transform(std::stringstream &input_img)
 {
-  if (!ReadImage(input_img)) {
+  if (!_readImage(input_img)) {
     TS_DEBUG(TAG, "Cannot read input picture file .");
     return false;
   }
-  picture_.progress_hook = NULL;
+  _picture.progress_hook = NULL;
 
-  picture_.writer = StreamWriter;
-  picture_.custom_ptr = (void *)this;
+  _picture.writer = StreamWriter;
+  _picture.custom_ptr = (void *)this;
 
-  if (picture_.extra_info_type > 0) {
-    AllocExtraInfo();
+  if (_picture.extra_info_type > 0) {
+    _allocExtraInfo();
   }
 
-  if (!WebPEncode(&config_, &picture_)) {
-    TS_DEBUG(TAG, "DEBUG! Cannot encode picture as WebP. Error code: %d (%s)", picture_.error_code,
-             WebpTransform::errors_[picture_.error_code].c_str());
+  if (!WebPEncode(&_config, &_picture)) {
+    TS_DEBUG(TAG, "DEBUG! Cannot encode picture as WebP. Error code: %d (%s)", _picture.error_code,
+             WebpTransform::_errors[_picture.error_code].c_str());
     return false;
   }
   return true;
 }
 
 void
-WebpTransform::Finalize()
+WebpTransform::finalize()
 {
-  if (init_) {
-    WebPMemoryWriterClear();
-    free(picture_.extra_info);
-    MetadataFree(&metadata_);
-    WebPPictureFree(&picture_);
+  if (_init) {
+    _webpMemoryWriterClear();
+    free(_picture.extra_info);
+    MetadataFree(&_metadata);
+    WebPPictureFree(&_picture);
 
-    png_dec_.Finalize();
-    jpeg_dec_.Finalize();
+    _png_dec.finalize();
+    _jpeg_dec.finalize();
   }
 }
 
 void
-WebpTransform::WriteImage(const char *data, size_t data_size)
+WebpTransform::writeImage(const char *data, size_t data_size)
 {
-  stream_.write(data, data_size);
+  _stream.write(data, data_size);
 }

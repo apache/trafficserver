@@ -32,44 +32,44 @@ struct WebPPicture;
 
 typedef struct {
   const uint8_t *data;
-  size_t data_length;
-  int seq; // this segment's sequence number [1, 255] for use in reassembly.
+  size_t         data_length;
+  int            seq; // this segment's sequence number [1, 255] for use in reassembly.
 } ICCPSegment;
 
 class JpegDec
 {
 public:
-  JpegDec() : init_(false) {}
+  JpegDec() : _init(false) {}
   ~JpegDec() {}
-  bool Init(std::stringstream *img);
-  int ReadImage(struct WebPPicture *const pic, struct Metadata *const metadata);
-  void Finalize();
+  bool init(std::stringstream *img);
+  int readImage(struct WebPPicture *const pic, struct Metadata *const metadata);
+  void finalize();
 
 private:
   struct ErrorMgr {
     struct jpeg_error_mgr pub;
-    jmp_buf setjmp_buffer;
+    jmp_buf               setjmp_buffer;
   };
 
   struct JpegMetadataMap {
-    int marker;
+    int        marker;
     const char *signature;
-    size_t signature_length;
-    size_t storage_offset;
+    size_t     signature_length;
+    size_t     storage_offset;
   };
 
-  static int CompareICCPSegments(const void *a, const void *b);
-  int StoreICCP(MetadataPayload *const iccp);
-  int ExtractMetadataFromJPEG(Metadata *const metadata);
-  void SaveMetadataMarkers();
+  static int _compareICCPSegments(const void *a, const void *b);
+  int _storeICCP(MetadataPayload *const iccp);
+  int _extractMetadataFromJPEG(Metadata *const metadata);
+  void _saveMetadataMarkers();
 
-  static void Error(j_common_ptr dinfo);
+  static void _error(j_common_ptr dinfo);
 
-  bool init_;
-  std::stringstream *input_img_;
-  volatile struct jpeg_decompress_struct dinfo_;
-  struct ErrorMgr jerr_;
-  static JpegMetadataMap jpeg_metadata_map_[];
+  bool                                   _init;
+  std::stringstream *                    _input_img;
+  volatile struct jpeg_decompress_struct _dinfo;
+  struct ErrorMgr                        _jerr;
+  static JpegMetadataMap                 _jpeg_metadata_map[];
 };
 
 #endif // JPEGDEC_H_

@@ -32,7 +32,7 @@
 #define JPEG_APP2 (JPEG_APP0 + 2)
 
 
-JpegDec::JpegMetadataMap JpegDec::jpeg_metadata_map_[] = {
+JpegDec::JpegMetadataMap JpegDec::_jpeg_metadata_map[] = {
   // Exif 2.2 Section 4.7.2 Interoperability Structure of APP1 ...
   {JPEG_APP1, "Exif\0", 6, METADATA_OFFSET(exif)},
   // XMP Specification Part 3 Section 3 Embedding XMP Metadata ... #JPEG
@@ -42,15 +42,15 @@ JpegDec::JpegMetadataMap JpegDec::jpeg_metadata_map_[] = {
 };
 
 void
-JpegDec::SaveMetadataMarkers()
+JpegDec::_saveMetadataMarkers()
 {
   const unsigned int max_marker_length = 0xffff;
-  jpeg_save_markers((j_decompress_ptr)&dinfo_, JPEG_APP1, max_marker_length); // Exif/XMP
-  jpeg_save_markers((j_decompress_ptr)&dinfo_, JPEG_APP2, max_marker_length); // ICC profile
+  jpeg_save_markers((j_decompress_ptr)&_dinfo, JPEG_APP1, max_marker_length); // Exif/XMP
+  jpeg_save_markers((j_decompress_ptr)&_dinfo, JPEG_APP2, max_marker_length); // ICC profile
 }
 
 int
-JpegDec::CompareICCPSegments(const void *a, const void *b)
+JpegDec::_compareICCPSegments(const void *a, const void *b)
 {
   const ICCPSegment *s1 = (const ICCPSegment *)a;
   const ICCPSegment *s2 = (const ICCPSegment *)b;
@@ -59,7 +59,7 @@ JpegDec::CompareICCPSegments(const void *a, const void *b)
 
 
 int
-JpegDec::StoreICCP(MetadataPayload *const iccp)
+JpegDec::_storeICCP(MetadataPayload *const iccp)
 {
   // ICC.1:2010-12 (4.3.0.0) Annex B.4 Embedding ICC Profiles in JPEG files
   static const char kICCPSignature[] = "ICC_PROFILE";
@@ -73,7 +73,7 @@ JpegDec::StoreICCP(MetadataPayload *const iccp)
   jpeg_saved_marker_ptr marker;
 
   memset(iccp_segments, 0, sizeof(iccp_segments));
-  for (marker = dinfo_.marker_list; marker != NULL; marker = marker->next) {
+  for (marker = _dinfo.marker_list; marker != NULL; marker = marker->next) {
     if (marker->marker == JPEG_APP2 && marker->data_length > kICCPSkipLength &&
         !memcmp(marker->data, kICCPSignature, kICCPSignatureLength)) {
       // ICC_PROFILE\0<seq><count>; 'seq' starts at 1.
@@ -122,7 +122,7 @@ JpegDec::StoreICCP(MetadataPayload *const iccp)
 
   // The segments may appear out of order in the file, sort them based on
   // sequence number before assembling the payload.
-  qsort(iccp_segments, actual_count, sizeof(*iccp_segments), JpegDec::CompareICCPSegments);
+  qsort(iccp_segments, actual_count, sizeof(*iccp_segments), JpegDec::_compareICCPSegments);
 
   iccp->bytes = (uint8_t *)malloc(total_size);
   if (iccp->bytes == NULL)
@@ -143,27 +143,27 @@ JpegDec::StoreICCP(MetadataPayload *const iccp)
 // Returns true on success and false for memory errors and corrupt profiles.
 // The caller must use MetadataFree() on 'metadata' in all cases.
 int
-JpegDec::ExtractMetadataFromJPEG(Metadata *const metadata)
+JpegDec::_extractMetadataFromJPEG(Metadata *const metadata)
 {
   jpeg_saved_marker_ptr marker;
   // Treat ICC profiles separately as they may be segmented and out of order.
-  if (!StoreICCP(&metadata->iccp))
+  if (!_storeICCP(&metadata->iccp))
     return 0;
 
-  for (marker = dinfo_.marker_list; marker != NULL; marker = marker->next) {
+  for (marker = _dinfo.marker_list; marker != NULL; marker = marker->next) {
     int i;
-    for (i = 0; jpeg_metadata_map_[i].marker != 0; ++i) {
-      if (marker->marker == jpeg_metadata_map_[i].marker && marker->data_length > jpeg_metadata_map_[i].signature_length &&
-          !memcmp(marker->data, jpeg_metadata_map_[i].signature, jpeg_metadata_map_[i].signature_length)) {
-        MetadataPayload *const payload = (MetadataPayload *)((uint8_t *)metadata + jpeg_metadata_map_[i].storage_offset);
+    for (i = 0; _jpeg_metadata_map[i].marker != 0; ++i) {
+      if (marker->marker == _jpeg_metadata_map[i].marker && marker->data_length > _jpeg_metadata_map[i].signature_length &&
+          !memcmp(marker->data, _jpeg_metadata_map[i].signature, _jpeg_metadata_map[i].signature_length)) {
+        MetadataPayload *const payload = (MetadataPayload *)((uint8_t *)metadata + _jpeg_metadata_map[i].storage_offset);
 
         if (payload->bytes == NULL) {
-          const char *marker_data = (const char *)marker->data + jpeg_metadata_map_[i].signature_length;
-          const size_t marker_data_length = marker->data_length - jpeg_metadata_map_[i].signature_length;
+          const char *marker_data = (const char *)marker->data + _jpeg_metadata_map[i].signature_length;
+          const size_t marker_data_length = marker->data_length - _jpeg_metadata_map[i].signature_length;
           if (!MetadataCopy(marker_data, marker_data_length, payload))
             return 0;
         } else {
-          TS_DEBUG(TAG, "Ignoring additional '%s' marker\n", jpeg_metadata_map_[i].signature);
+          TS_DEBUG(TAG, "Ignoring additional '%s' marker\n", _jpeg_metadata_map[i].signature);
         }
       }
     }
@@ -179,7 +179,7 @@ JpegDec::ExtractMetadataFromJPEG(Metadata *const metadata)
 
 
 void
-JpegDec::Error(j_common_ptr dinfo)
+JpegDec::_error(j_common_ptr dinfo)
 {
   struct JpegDec::ErrorMgr *err = (struct JpegDec::ErrorMgr *)dinfo->err;
   dinfo->err->output_message(dinfo);
@@ -187,54 +187,54 @@ JpegDec::Error(j_common_ptr dinfo)
 }
 
 bool
-JpegDec::Init(std::stringstream *img)
+JpegDec::init(std::stringstream *img)
 {
-  input_img_ = img;
+  _input_img = img;
 
-  memset((j_decompress_ptr)&dinfo_, 0, sizeof(dinfo_)); // for setjmp sanity
-  dinfo_.err = jpeg_std_error(&jerr_.pub);
-  jerr_.pub.error_exit = JpegDec::Error;
+  memset((j_decompress_ptr)&_dinfo, 0, sizeof(_dinfo)); // for setjmp sanity
+  _dinfo.err = jpeg_std_error(&_jerr.pub);
+  _jerr.pub.error_exit = JpegDec::_error;
 
-  if (setjmp(jerr_.setjmp_buffer)) {
+  if (setjmp(_jerr.setjmp_buffer)) {
     TS_DEBUG(TAG, " setjmp failed");
-    jpeg_destroy_decompress((j_decompress_ptr)&dinfo_);
+    jpeg_destroy_decompress((j_decompress_ptr)&_dinfo);
     return false;
   }
 
-  jpeg_create_decompress((j_decompress_ptr)&dinfo_);
-  init_ = true;
+  jpeg_create_decompress((j_decompress_ptr)&_dinfo);
+  _init = true;
   return true;
 }
 
 int
-JpegDec::ReadImage(WebPPicture *const pic, Metadata *const metadata)
+JpegDec::readImage(WebPPicture *const pic, Metadata *const metadata)
 {
   int ok = 0;
   int stride, width, height;
   uint8_t *volatile rgb = NULL;
   JSAMPROW buffer[1];
 
-  std::string img_str = input_img_->str();
+  std::string img_str = _input_img->str();
   // TODO: Can this copy be avoided.
-  jpeg_mem_src((j_decompress_ptr)&dinfo_, (unsigned char *)img_str.data(), img_str.size());
+  jpeg_mem_src((j_decompress_ptr)&_dinfo, (unsigned char *)img_str.data(), img_str.size());
 
   if (metadata != NULL)
-    SaveMetadataMarkers();
-  jpeg_read_header((j_decompress_ptr)&dinfo_, TRUE);
+    _saveMetadataMarkers();
+  jpeg_read_header((j_decompress_ptr)&_dinfo, TRUE);
 
-  dinfo_.out_color_space = JCS_RGB;
-  dinfo_.do_fancy_upsampling = TRUE;
+  _dinfo.out_color_space = JCS_RGB;
+  _dinfo.do_fancy_upsampling = TRUE;
 
-  jpeg_start_decompress((j_decompress_ptr)&dinfo_);
+  jpeg_start_decompress((j_decompress_ptr)&_dinfo);
 
-  if (dinfo_.output_components != 3) {
+  if (_dinfo.output_components != 3) {
     TS_DEBUG(TAG, "not enought output componenets available.");
     return 0;
   }
 
-  width = dinfo_.output_width;
-  height = dinfo_.output_height;
-  stride = dinfo_.output_width * dinfo_.output_components * sizeof(*rgb);
+  width = _dinfo.output_width;
+  height = _dinfo.output_height;
+  stride = _dinfo.output_width * _dinfo.output_components * sizeof(*rgb);
 
   rgb = (uint8_t *)malloc(stride * height);
   if (rgb == NULL) {
@@ -243,8 +243,8 @@ JpegDec::ReadImage(WebPPicture *const pic, Metadata *const metadata)
   }
   buffer[0] = (JSAMPLE *)rgb;
 
-  while (dinfo_.output_scanline < dinfo_.output_height) {
-    if (jpeg_read_scanlines((j_decompress_ptr)&dinfo_, buffer, 1) != 1) {
+  while (_dinfo.output_scanline < _dinfo.output_height) {
+    if (jpeg_read_scanlines((j_decompress_ptr)&_dinfo, buffer, 1) != 1) {
       free(rgb);
       return 0;
     }
@@ -252,7 +252,7 @@ JpegDec::ReadImage(WebPPicture *const pic, Metadata *const metadata)
   }
 
   if (metadata != NULL) {
-    ok = ExtractMetadataFromJPEG(metadata);
+    ok = _extractMetadataFromJPEG(metadata);
     if (!ok) {
       TS_DEBUG(TAG, "Error extracting JPEG metadata!");
       free(rgb);
@@ -260,8 +260,8 @@ JpegDec::ReadImage(WebPPicture *const pic, Metadata *const metadata)
     }
   }
 
-  jpeg_finish_decompress((j_decompress_ptr)&dinfo_);
-  jpeg_destroy_decompress((j_decompress_ptr)&dinfo_);
+  jpeg_finish_decompress((j_decompress_ptr)&_dinfo);
+  jpeg_destroy_decompress((j_decompress_ptr)&_dinfo);
 
   // WebP conversion.
   pic->width = width;
@@ -277,8 +277,8 @@ JpegDec::ReadImage(WebPPicture *const pic, Metadata *const metadata)
 }
 
 void
-JpegDec::Finalize()
+JpegDec::finalize()
 {
-  if (init_)
-    jpeg_destroy_decompress((j_decompress_ptr)&dinfo_);
+  if (_init)
+    jpeg_destroy_decompress((j_decompress_ptr)&_dinfo);
 }
