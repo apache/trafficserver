@@ -48,9 +48,7 @@ public:
 	std::stringstream& getTransformedImage() { return stream_; }
 	void WriteImage(const char* data, size_t data_size);
 
-#ifndef UNIT_TESTING
 private:
-#endif
 	typedef enum {
 	  PNG_ = 0,
 	  JPEG_,

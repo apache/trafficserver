@@ -38,9 +38,7 @@ public:
 	int ReadImage(struct WebPPicture* const pic, struct Metadata* const metadata);
 	void Finalize();
 
-#ifndef UNIT_TESTING
 private:
-#endif
 
 	struct PNGMetadataMap {
 	  const char* name;
