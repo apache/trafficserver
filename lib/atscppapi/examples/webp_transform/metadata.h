@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 typedef struct MetadataPayload {
-  uint8_t* bytes;
+  uint8_t *bytes;
   size_t size;
 } MetadataPayload;
 
@@ -38,16 +38,15 @@ typedef struct Metadata {
 
 #define METADATA_OFFSET(x) offsetof(Metadata, x)
 
-void MetadataInit(Metadata* const metadata);
-void MetadataPayloadDelete(MetadataPayload* const payload);
-void MetadataFree(Metadata* const metadata);
+void MetadataInit(Metadata *const metadata);
+void MetadataPayloadDelete(MetadataPayload *const payload);
+void MetadataFree(Metadata *const metadata);
 
 // Stores 'metadata' to 'payload->bytes', returns false on allocation error.
-int MetadataCopy(const char* metadata, size_t metadata_len,
-                 MetadataPayload* const payload);
+int MetadataCopy(const char *metadata, size_t metadata_len, MetadataPayload *const payload);
 
 #ifdef __cplusplus
-}    // extern "C"
+} // extern "C"
 #endif
 
-#endif  // METADATA_H_
+#endif // METADATA_H_

@@ -39,13 +39,14 @@ std::string ImageTransform::IMAGE_TYPE("image/webp");
 
 
 ImageTransform::ImageTransform(Transaction &transaction)
-: TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION),
-  webp_transform_(){
-	TransformationPlugin::registerHook(HOOK_READ_RESPONSE_HEADERS);
+  : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION), webp_transform_()
+{
+  TransformationPlugin::registerHook(HOOK_READ_RESPONSE_HEADERS);
 }
 
-ImageTransform::~ImageTransform() {
-	webp_transform_.Finalize();
+ImageTransform::~ImageTransform()
+{
+  webp_transform_.Finalize();
 }
 
 void
@@ -54,41 +55,47 @@ ImageTransform::handleReadResponseHeaders(Transaction &transaction)
   transaction.getClientResponse().getHeaders()[ImageTransform::FIELD_CONTENT_TYPE] = ImageTransform::IMAGE_TYPE;
   transaction.getClientResponse().getHeaders()[ImageTransform::FIELD_VARY] = ImageTransform::ImageTransform::FIELD_CONTENT_TYPE;
 
-	TS_DEBUG(TAG, "Image Transformation Plugin for url %s", transaction.getServerRequest().getUrl().getUrlString().c_str() );
-	transaction.resume();
+  TS_DEBUG(TAG, "Image Transformation Plugin for url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
+  transaction.resume();
 }
 
 void
-ImageTransform::consume(const string &data) {
-	img_.write(data.data(), data.size());
+ImageTransform::consume(const string &data)
+{
+  img_.write(data.data(), data.size());
 }
 
 void
-ImageTransform::handleInputComplete() {
-	webp_transform_.Init();
-	webp_transform_.Transform(img_);
-	produce(webp_transform_.getTransformedImage().str());
+ImageTransform::handleInputComplete()
+{
+  webp_transform_.Init();
+  webp_transform_.Transform(img_);
+  produce(webp_transform_.getTransformedImage().str());
 
-	setOutputComplete();
+  setOutputComplete();
 }
 
-GlobalHookPlugin::GlobalHookPlugin() {
-	registerHook(HOOK_READ_RESPONSE_HEADERS);
+GlobalHookPlugin::GlobalHookPlugin()
+{
+  registerHook(HOOK_READ_RESPONSE_HEADERS);
 }
 
 void
-GlobalHookPlugin::handleReadResponseHeaders(Transaction &transaction) {
-	//add transformation only for jpeg files
-	string ctype = transaction.getServerResponse().getHeaders().values(ImageTransform::FIELD_CONTENT_TYPE);
-	string user_agent = transaction.getServerRequest().getHeaders().values(ImageTransform::FIELD_USER_AGENT) ;
-	if(user_agent.find(ImageTransform::USER_AGENT_CHROME) != string::npos &&
-	    (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos))  {
+GlobalHookPlugin::handleReadResponseHeaders(Transaction &transaction)
+{
+  // add transformation only for jpeg files
+  string ctype = transaction.getServerResponse().getHeaders().values(ImageTransform::FIELD_CONTENT_TYPE);
+  string user_agent = transaction.getServerRequest().getHeaders().values(ImageTransform::FIELD_USER_AGENT);
+  if (user_agent.find(ImageTransform::USER_AGENT_CHROME) != string::npos &&
+      (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos)) {
     transaction.addPlugin(new ImageTransform(transaction));
-	}
-	transaction.resume();
+  }
+  transaction.resume();
 }
 
-void TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED) {
-	TS_DEBUG(TAG, "TSPluginInit");
-	new GlobalHookPlugin();
+void
+TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
+{
+  TS_DEBUG(TAG, "TSPluginInit");
+  new GlobalHookPlugin();
 }

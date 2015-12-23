@@ -35,50 +35,49 @@
 #include "metadata.h"
 
 
-class WebpTransform {
+class WebpTransform
+{
 public:
-	WebpTransform() :init_(false), png_dec_(), jpeg_dec_()
-	{ }
+  WebpTransform() : init_(false), png_dec_(), jpeg_dec_() {}
 
-	~WebpTransform() { }
+  ~WebpTransform() {}
 
-	bool Init();
-	bool Transform(std::stringstream& stream);
-	void Finalize();
-	std::stringstream& getTransformedImage() { return stream_; }
-	void WriteImage(const char* data, size_t data_size);
+  bool Init();
+  bool Transform(std::stringstream &stream);
+  void Finalize();
+  std::stringstream &
+  getTransformedImage()
+  {
+    return stream_;
+  }
+  void WriteImage(const char *data, size_t data_size);
 
 private:
-	typedef enum {
-	  PNG_ = 0,
-	  JPEG_,
-	  WEBP_,
-	  UNSUPPORTED
-	} InputFileFormat;
+  typedef enum { PNG_ = 0, JPEG_, WEBP_, UNSUPPORTED } InputFileFormat;
 
-	enum {
-	  METADATA_EXIF = (1 << 0),
-	  METADATA_ICC  = (1 << 1),
-	  METADATA_XMP  = (1 << 2),
-	  METADATA_ALL  = METADATA_EXIF | METADATA_ICC | METADATA_XMP
-	};
+  enum {
+    METADATA_EXIF = (1 << 0),
+    METADATA_ICC = (1 << 1),
+    METADATA_XMP = (1 << 2),
+    METADATA_ALL = METADATA_EXIF | METADATA_ICC | METADATA_XMP
+  };
 
-	InputFileFormat GetImageType(std::stringstream& input_msg);
-	int ReadImage(std::stringstream& input_img);
-	void AllocExtraInfo();
+  InputFileFormat GetImageType(std::stringstream &input_msg);
+  int ReadImage(std::stringstream &input_img);
+  void AllocExtraInfo();
 
-	void WebPMemoryWriterClear();
+  void WebPMemoryWriterClear();
 
-	static const std::string errors_[];
-	bool                init_;
-	WebPMemoryWriter    writer_;
-	std::stringstream   stream_;
-  WebPPicture         picture_;
-  WebPConfig          config_;
-	Metadata            metadata_;
-	std::string         debug_tag_;
-	PngDec              png_dec_;
-	JpegDec             jpeg_dec_;
+  static const std::string errors_[];
+  bool init_;
+  WebPMemoryWriter writer_;
+  std::stringstream stream_;
+  WebPPicture picture_;
+  WebPConfig config_;
+  Metadata metadata_;
+  std::string debug_tag_;
+  PngDec png_dec_;
+  JpegDec jpeg_dec_;
 };
 
-#endif  // COMPRESS_H_
+#endif //WEBPTRANSFORM_H_ 

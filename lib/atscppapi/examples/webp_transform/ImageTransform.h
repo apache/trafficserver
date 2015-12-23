@@ -31,9 +31,10 @@
 #include <atscppapi/Transaction.h>
 
 
-class ImageTransform : public atscppapi::TransformationPlugin {
+class ImageTransform : public atscppapi::TransformationPlugin
+{
 public:
-	ImageTransform(atscppapi::Transaction &transaction);
+  ImageTransform(atscppapi::Transaction &transaction);
 
   void handleReadResponseHeaders(atscppapi::Transaction &transaction);
   void consume(const std::string &data);
@@ -53,12 +54,12 @@ private:
   WebpTransform webp_transform_;
 };
 
-class GlobalHookPlugin : public atscppapi::GlobalPlugin {
+class GlobalHookPlugin : public atscppapi::GlobalPlugin
+{
 public:
   GlobalHookPlugin();
   virtual void handleReadResponseHeaders(atscppapi::Transaction &transaction);
 };
-
 
 
 #endif /* IMAGETRANSFROM_H_ */
