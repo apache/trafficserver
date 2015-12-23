@@ -244,7 +244,7 @@ REGRESSION_TEST(HPACK_EncodeString)(RegressionTest *t, int, int *pstatus)
     len = encode_string(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, string_test_case[i].raw_string, string_test_case[i].raw_string_len);
 
     box.check(len == string_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,
-              integer_test_case[i].encoded_field_len);
+              string_test_case[i].encoded_field_len);
     box.check(len > 0 && memcmp(buf, string_test_case[i].encoded_field, len) == 0, "encoded string was invalid");
   }
 }
