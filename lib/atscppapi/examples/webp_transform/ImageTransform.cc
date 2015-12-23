@@ -96,6 +96,6 @@ GlobalHookPlugin::handleReadResponseHeaders(Transaction &transaction)
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
-  TS_DEBUG(TAG, "TSPluginInit");
+  RegisterGlobalPlugin("CPP_Webp_Transform", "apache", "dev@trafficserver.apache.org");
   new GlobalHookPlugin();
 }
