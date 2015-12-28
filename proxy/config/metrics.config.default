@@ -858,12 +858,6 @@ integer 'proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups' [
   end)
 ]]
 
-integer 'proxy.node.http.transaction_counts_avg_10s.errors.early_hangups' [[
-  return interval_delta_of_10s(..., function()
-    return proxy.process.http.transaction_counts.errors.early_hangups
-  end)
-]]
-
 integer 'proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups' [[
   return interval_delta_of_10s(..., function()
     return proxy.process.http.transaction_counts.errors.empty_hangups
@@ -892,7 +886,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.hit_fresh' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -914,7 +907,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.hit_revalidated' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -936,7 +928,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.miss_cold' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -957,7 +948,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.miss_changed' [[
     proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
     proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
     proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-    proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
     proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
     proxy.node.http.transaction_counts_avg_10s.errors.other
     )
@@ -979,7 +969,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1001,7 +990,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1023,7 +1011,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.errors.connect_failed' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1045,7 +1032,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.errors.aborts' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1067,7 +1053,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1089,29 +1074,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
-      proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
-      proxy.node.http.transaction_counts_avg_10s.errors.other
-      )
-    end)
-]]
-
-float 'proxy.node.http.transaction_frac_avg_10s.errors.early_hangups' [[
-  return interval_of_10s(..., function()
-    return
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups /
-      (
-      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
-      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
-      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
-      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
-      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
-      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
-      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
-      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
-      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
-      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1133,7 +1095,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1155,7 +1116,6 @@ float 'proxy.node.http.transaction_frac_avg_10s.errors.other' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1202,10 +1162,6 @@ integer 'proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups_int_
   return proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups * 100
 ]]
 
-integer 'proxy.node.http.transaction_frac_avg_10s.errors.early_hangups_int_pct' [[
-  return proxy.node.http.transaction_frac_avg_10s.errors.early_hangups * 100
-]]
-
 integer 'proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups_int_pct' [[
   return proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups * 100
 ]]
@@ -1233,7 +1189,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.hit_fresh' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1259,7 +1214,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.hit_revalidated' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1285,7 +1239,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.miss_cold' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1311,7 +1264,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.miss_changed' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1337,7 +1289,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.miss_client_no_cache' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1363,7 +1314,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.miss_not_cacheable' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1389,7 +1339,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.errors.connect_failed' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1415,7 +1364,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.errors.aborts' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1441,7 +1389,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.errors.possible_aborts' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1467,33 +1414,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.errors.pre_accept_hangups' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
-      proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
-      proxy.node.http.transaction_counts_avg_10s.errors.other
-      )
-    end)
-]]
-
-integer 'proxy.node.http.transaction_msec_avg_10s.errors.early_hangups' [[
-  local self = ...
-  return interval_of_10s(self, function()
-    return
-      sec_to_msec              *
-      delta_of(self, function()
-        self proxy.process.http.transaction_totaltime.errors.early_hangups
-      end) /
-      (
-      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
-      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
-      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
-      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
-      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
-      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
-      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
-      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
-      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
-      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1519,7 +1439,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.errors.empty_hangups' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
@@ -1545,7 +1464,6 @@ integer 'proxy.node.http.transaction_msec_avg_10s.errors.other' [[
       proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
       proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
       proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-      proxy.node.http.transaction_counts_avg_10s.errors.early_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups      +
       proxy.node.http.transaction_counts_avg_10s.errors.other
       )
