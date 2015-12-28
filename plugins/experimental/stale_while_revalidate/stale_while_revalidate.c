@@ -392,7 +392,7 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 
   if (state) {
     TSDebug(PLUGIN_NAME, "Lets do the lookup");
-    consume_cont = TSContCreate(consume_resource, NULL);
+    consume_cont = TSContCreate(consume_resource, TSMutexCreate());
     TSContDataSet(consume_cont, (void *)state);
 
     if (state->async_req) {
@@ -528,7 +528,7 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
           state->async_req = true;
           TSHttpTxnCacheLookupStatusSet(txn, TS_CACHE_LOOKUP_HIT_FRESH);
           // TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
-          fetch_cont = TSContCreate(fetch_resource, NULL);
+          fetch_cont = TSContCreate(fetch_resource, TSMutexCreate());
           TSContDataSet(fetch_cont, (void *)state);
           TSContSchedule(fetch_cont, 0, TS_THREAD_POOL_TASK);
           TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
@@ -541,7 +541,7 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
           state->async_req = false;
           state->txn = txn;
           state->main_cont = cont; // we need this for the warning header callback. not sure i like it, but it works.
-          fetch_cont = TSContCreate(fetch_resource, NULL);
+          fetch_cont = TSContCreate(fetch_resource, TSMutexCreate());
           TSContDataSet(fetch_cont, (void *)state);
           TSContSchedule(fetch_cont, 0, TS_THREAD_POOL_NET);
         } else {
