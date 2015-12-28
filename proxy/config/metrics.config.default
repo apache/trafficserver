@@ -870,9 +870,9 @@ integer 'proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups' [[
   end)
 ]]
 
-integer 'proxy.node.http.transaction_counts_avg_10s.errors.errors' [[
+integer 'proxy.node.http.transaction_counts_avg_10s.errors.other' [[
   return interval_delta_of_10s(..., function()
-    return proxy.process.http.transaction_counts.errors.errors
+    return proxy.process.http.transaction_counts.errors.other
   end)
 ]]
 
