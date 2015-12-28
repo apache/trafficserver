@@ -1952,6 +1952,11 @@ AC_CHECK_LIB([png],[png_set_read_fn],[AC_SUBST([LIB_PNG],["-lpng"])],[has_png=0]
 AC_SUBST(has_png)
 AM_CONDITIONAL([HAS_PNG], [ test "x${has_png}" = "x1" ])
 
+AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
+  AS_IF([test "x$enable_cppapi" = "xyes"], [
+    AC_CONFIG_FILES([plugins/experimental/webp_transform/Makefile])
+  ])])
+
 AS_IF([test "x$enable_cppapi" = "xyes"], [
   AC_CONFIG_FILES([
   lib/atscppapi/Makefile
@@ -1977,7 +1982,6 @@ AS_IF([test "x$enable_cppapi" = "xyes"], [
   lib/atscppapi/examples/timeout_example/Makefile
   lib/atscppapi/examples/transactionhook/Makefile
   lib/atscppapi/examples/async_http_fetch_streaming/Makefile
-  lib/atscppapi/examples/webp_transform/Makefile
   lib/atscppapi/src/Makefile
 ])])
 

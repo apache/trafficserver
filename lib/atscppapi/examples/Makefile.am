@@ -37,11 +37,3 @@ SUBDIRS = \
 	async_timer \
 	intercept \
         async_http_fetch_streaming
-
-if HAS_WEBP
-if HAS_JPEG
-if HAS_PNG
-  SUBDIRS += webp_transform
-endif
-endif
-endif

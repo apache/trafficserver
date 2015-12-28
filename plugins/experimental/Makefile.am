@@ -53,3 +53,12 @@ endif
 if BUILD_LUAJIT
   SUBDIRS += ts_lua
 endif
+
+if HAS_WEBP
+if HAS_JPEG
+if HAS_PNG
+  SUBDIRS += webp_transform
+endif
+endif
+endif
+
