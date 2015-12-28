@@ -21,15 +21,18 @@ WebpTransform Plugin
   under the License.
 
 This plugin converts jpeg and png images and transforms them into webp format.
+All response with content-type 'image/jpeg' or 'image/png' will go through the transform. 
+Content-type is changed to 'image/webp' on successful transformation. 
 
+Installation
+============
 
-This plugin is a global plugin. 
+Add the following line to :file:`plugin.config`::
 
-  add webp_transform.so in plugin.config file.
+    webp_transform.so
 
 
 Note
 ===================
 
 This plugin only supports jpeg and png and require libjpeg > 1.9 and libpng > 1.6.16
- 
