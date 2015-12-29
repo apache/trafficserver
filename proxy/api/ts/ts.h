@@ -1225,8 +1225,12 @@ tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
 // Fetch a SSL context from the global lookup table
 tsapi TSSslContext TSSslContextFindByName(const char *name);
 tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const *);
+// Create a new SSL context based on the settings in records.config
+tsapi TSSslContext TSSslContextCreate();
+
 // Returns 1 if the sslp argument refers to a SSL connection
 tsapi int TSVConnIsSsl(TSVConn sslp);
+
 
 /* --------------------------------------------------------------------------
    HTTP transactions */
