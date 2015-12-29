@@ -117,6 +117,9 @@ extern RecRawStatBlock *ssl_rsb;
 // Create a default SSL server context.
 SSL_CTX *SSLDefaultServerContext();
 
+// Create a new SSL server context fully configured.
+SSL_CTX *SSLCreateServerContext(const SSLConfigParams *params);
+
 // Initialize the SSL library.
 void SSLInitializeLibrary();
 

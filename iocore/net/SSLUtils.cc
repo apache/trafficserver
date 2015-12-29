@@ -1685,6 +1685,47 @@ ssl_set_handshake_callbacks(SSL_CTX *ctx)
 #endif
 }
 
+SSL_CTX *
+SSLCreateServerContext(const SSLConfigParams *params) {
+  Vec<X509 *> cert_list;
+  const ssl_user_config sslMultCertSettings;
+  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
+
+  // The certificate callbacks are set by the caller only
+  // for the default certificate
+  SSL_CTX_set_info_callback(ctx, ssl_callback_info);
+
+#if TS_USE_TLS_NPN
+  SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
+#endif /* TS_USE_TLS_NPN */
+
+#if TS_USE_TLS_ALPN
+  SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
+#endif /* TS_USE_TLS_ALPN */
+
+  // TODO: Allow control over tickets and ticket path when using SSLCreateServerContext
+  ssl_context_enable_tickets(ctx, NULL);
+
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Debug("ssl", "ssl ocsp stapling is enabled");
+    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+  } else {
+    Debug("ssl", "ssl ocsp stapling is disabled");
+  }
+#else
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Warning("fail to enable ssl ocsp stapling, this openssl version does not support it");
+  }
+#endif /* HAVE_OPENSSL_OCSP_STAPLING */
+
+
+  if (SSLConfigParams::init_ssl_ctx_cb) {
+    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+  }
+  return ctx;
+}
+
 static SSL_CTX *
 ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, const ssl_user_config &sslMultCertSettings)
 {
