@@ -51,7 +51,7 @@ public:
 
 private:
   std::stringstream _img;
-  WebpTransform     _webp_transform;
+  WebpTransform _webp_transform;
 };
 
 class GlobalHookPlugin : public atscppapi::GlobalPlugin

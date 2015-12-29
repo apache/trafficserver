@@ -45,7 +45,9 @@ public:
   bool init();
   bool transform(std::stringstream &stream);
   void finalize();
-  std::stringstream &getTransformedImage() {
+  std::stringstream &
+  getTransformedImage()
+  {
     return _stream;
   }
 
@@ -67,15 +69,15 @@ private:
   void _webpMemoryWriterClear();
 
   static const std::string _errors[];
-  bool              _init;
-  WebPMemoryWriter  _writer;
+  bool _init;
+  WebPMemoryWriter _writer;
   std::stringstream _stream;
-  WebPPicture       _picture;
-  WebPConfig        _config;
-  Metadata          _metadata;
-  std::string       _debug_tag;
-  PngDec            _png_dec;
-  JpegDec           _jpeg_dec;
+  WebPPicture _picture;
+  WebPConfig _config;
+  Metadata _metadata;
+  std::string _debug_tag;
+  PngDec _png_dec;
+  JpegDec _jpeg_dec;
 };
 
-#endif //WEBPTRANSFORM_H_ 
+#endif // WEBPTRANSFORM_H_

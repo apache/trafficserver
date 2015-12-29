@@ -27,7 +27,7 @@ extern "C" {
 
 typedef struct MetadataPayload {
   uint8_t *bytes;
-  size_t   size;
+  size_t size;
 } MetadataPayload;
 
 typedef struct Metadata {

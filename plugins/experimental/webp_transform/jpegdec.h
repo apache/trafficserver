@@ -32,8 +32,8 @@ struct WebPPicture;
 
 typedef struct {
   const uint8_t *data;
-  size_t         data_length;
-  int            seq; // this segment's sequence number [1, 255] for use in reassembly.
+  size_t data_length;
+  int seq; // this segment's sequence number [1, 255] for use in reassembly.
 } ICCPSegment;
 
 class JpegDec
@@ -48,14 +48,14 @@ public:
 private:
   struct ErrorMgr {
     struct jpeg_error_mgr pub;
-    jmp_buf               setjmp_buffer;
+    jmp_buf setjmp_buffer;
   };
 
   struct JpegMetadataMap {
-    int        marker;
+    int marker;
     const char *signature;
-    size_t     signature_length;
-    size_t     storage_offset;
+    size_t signature_length;
+    size_t storage_offset;
   };
 
   static int _compareICCPSegments(const void *a, const void *b);
@@ -65,11 +65,11 @@ private:
 
   static void _error(j_common_ptr dinfo);
 
-  bool                                   _init;
-  std::stringstream *                    _input_img;
+  bool _init;
+  std::stringstream *_input_img;
   volatile struct jpeg_decompress_struct _dinfo;
-  struct ErrorMgr                        _jerr;
-  static JpegMetadataMap                 _jpeg_metadata_map[];
+  struct ErrorMgr _jerr;
+  static JpegMetadataMap _jpeg_metadata_map[];
 };
 
 #endif // JPEGDEC_H_

@@ -312,6 +312,6 @@ PngDec::readImage(WebPPicture *const pic, Metadata *const metadata)
 bool
 PngDec::_readData(png_bytep data, png_size_t length)
 {
-   _input_img->read((char *)data, length);
+  _input_img->read((char *)data, length);
   return true;
 }

@@ -32,7 +32,7 @@ struct WebPPicture;
 class PngDec
 {
 public:
-  PngDec() : _init(false),  _input_img(NULL), _info(NULL), _end_info(NULL) {}
+  PngDec() : _init(false), _input_img(NULL), _info(NULL), _end_info(NULL) {}
   ~PngDec() {}
   bool init(std::stringstream *img);
   int readImage(struct WebPPicture *const pic, struct Metadata *const metadata);
@@ -55,11 +55,11 @@ private:
   bool _readData(png_bytep data, png_size_t len);
 
 
-  bool                  _init;
-  std::stringstream *   _input_img;
-  volatile png_structp  _png;
-  volatile png_infop    _info;
-  volatile png_infop    _end_info;
+  bool _init;
+  std::stringstream *_input_img;
+  volatile png_structp _png;
+  volatile png_infop _info;
+  volatile png_infop _end_info;
   static PNGMetadataMap _png_metadata_map[];
 };
 #endif // PNGDEC_H_
