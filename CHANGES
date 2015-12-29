@@ -68,6 +68,7 @@ Bug:
   *) [TS-4005] Disable freelist command line option fails under ASAN
   *) [TS-4007] ClassAllocator: don't attempt to destruct the prototype object when ClassAllocator goes out of scope.
   *) [TS-4008] Cleanup SPDY ClientSessionSession / SpdyRequest Allocate and Deallocate code
+  *) [TS-4009] stale_while_revalidate crash
   *) [TS-4011] HTTP/2 coredump with NULL FetchSM, another one
   *) [TS-4013] coredump in diag debug
   *) [TS-4019] Headers passed via HTTP/2 should be validated before passing to FetchSM
