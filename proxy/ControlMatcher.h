@@ -126,7 +126,6 @@ public:
   virtual sockaddr const *get_ip() = 0;
 
   virtual sockaddr const *get_client_ip() = 0;
-
 };
 
 class HttpRequestData : public RequestData
