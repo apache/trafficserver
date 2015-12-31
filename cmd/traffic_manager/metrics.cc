@@ -127,7 +127,7 @@ private:
 };
 
 struct EvaluatorList {
-  EvaluatorList() : passes(0) {}
+  EvaluatorList() : update(true), passes(0) {}
   ~EvaluatorList()
   {
     forv_Vec(Evaluator, e, this->evaluators) { delete e; }
@@ -147,14 +147,26 @@ struct EvaluatorList {
 
     forv_Vec(Evaluator, e, this->evaluators) { e->eval(L); }
 
-
     elapsed = ink_hrtime_diff(ink_get_hrtime_internal(), start);
     Debug("lua", "evaluated %u metrics in %fmsec", evaluators.length(), ink_hrtime_to_usec(elapsed) / 1000.0);
   }
 
+  bool update;
   int64_t passes;
   Vec<Evaluator *> evaluators;
 };
+
+static int
+update_metrics_namespace(lua_State *L)
+{
+  lua_Integer count;
+
+  lua_metrics_install(L);
+  count = lua_tointeger(L, 1);
+  lua_pop(L, 1);
+
+  return count;
+}
 
 static int64_t
 timestamp_now_msec()
@@ -305,46 +317,6 @@ metrics_cluster_sum(lua_State *L)
   return 1;
 }
 
-static void
-register_metrics_namespace(BindingInstance &binding)
-{
-  // XXX Currently known metrics namespace prefixes. Figure out a way to
-  // add new metrics nodes as new prefixes are added.
-  const char *prefixes[] = {
-    "proxy.cluster", "proxy.cluster.cache", "proxy.cluster.cache.contents", "proxy.cluster.dns", "proxy.cluster.hostdb",
-    "proxy.cluster.http", "proxy.cluster.log", "proxy.node", "proxy.node.cache", "proxy.node.cache.contents", "proxy.node.cluster",
-    "proxy.node.config", "proxy.node.config.restart_required", "proxy.node.dns", "proxy.node.hostdb", "proxy.node.http",
-    "proxy.node.http.transaction_counts_avg_10s", "proxy.node.http.transaction_counts_avg_10s.errors",
-    "proxy.node.http.transaction_counts_avg_10s.other", "proxy.node.http.transaction_frac_avg_10s",
-    "proxy.node.http.transaction_frac_avg_10s.errors", "proxy.node.http.transaction_frac_avg_10s.other",
-    "proxy.node.http.transaction_msec_avg_10s", "proxy.node.http.transaction_msec_avg_10s.errors",
-    "proxy.node.http.transaction_msec_avg_10s.other", "proxy.node.log", "proxy.node.restarts.manager", "proxy.node.restarts.proxy",
-    "proxy.node.version.manager", "proxy.process.cache", "proxy.process.cache.direntries", "proxy.process.cache.evacuate",
-    "proxy.process.cache.frags_per_doc", "proxy.process.cache.frags_per_doc.3+", "proxy.process.cache.lookup",
-    "proxy.process.cache.ram_cache", "proxy.process.cache.read", "proxy.process.cache.read_busy", "proxy.process.cache.remove",
-    "proxy.process.cache.scan", "proxy.process.cache.sync", "proxy.process.cache.update", "proxy.process.cache.write",
-    "proxy.process.cache.write.backlog", "proxy.process.cluster", "proxy.process.congestion", "proxy.process.dns",
-    "proxy.process.hostdb", "proxy.process.http", "proxy.process.http.milestone", "proxy.process.http.transaction_counts",
-    "proxy.process.http.transaction_counts.errors", "proxy.process.http.transaction_counts.hit_fresh",
-    "proxy.process.http.transaction_counts.other", "proxy.process.http.transaction_totaltime",
-    "proxy.process.http.transaction_totaltime.errors", "proxy.process.http.transaction_totaltime.hit_fresh",
-    "proxy.process.http.transaction_totaltime.other", "proxy.process.http.websocket", "proxy.process.http2", "proxy.process.https",
-    "proxy.process.log", "proxy.process.net", "proxy.process.socks", "proxy.process.ssl", "proxy.process.ssl.cipher.user_agent",
-    "proxy.process.version.server",
-  };
-
-  // Register the metrics userdata type.
-  lua_metrics_register(binding.lua);
-
-  // Bind metric nodes to all the metrics namespace prefixes.
-  for (unsigned i = 0; i < countof(prefixes); ++i) {
-    if (lua_metrics_new(prefixes[i], binding.lua) == 1) {
-      binding.bind_value(prefixes[i], -1);
-      lua_pop(binding.lua, 1);
-    }
-  }
-}
-
 bool
 metrics_binding_initialize(BindingInstance &binding)
 {
@@ -355,8 +327,9 @@ metrics_binding_initialize(BindingInstance &binding)
     mgmt_fatal(stderr, 0, "failed to initialize Lua runtime\n");
   }
 
-  // Register the metrics bindings.
-  register_metrics_namespace(binding);
+  // Register the metrics userdata type.
+  lua_metrics_register(binding.lua);
+  update_metrics_namespace(binding.lua);
 
   // Register our own API.
   binding.bind_function("integer", metrics_create_integer);
@@ -371,7 +344,11 @@ metrics_binding_initialize(BindingInstance &binding)
   binding.attach_ptr("evaluators", new EvaluatorList());
 
   // Finally, execute the config file.
-  return binding.require(config.get());
+  if (binding.require(config.get())) {
+    return true;
+  }
+
+  return false;
 }
 
 void
@@ -392,7 +369,17 @@ metrics_binding_evaluate(BindingInstance &binding)
   evaluators = (EvaluatorList *)binding.retrieve_ptr("evaluators");
   ink_release_assert(evaluators != NULL);
 
+  // Keep updating the namespace until it settles (ie. we make 0 updates).
+  if (evaluators->update) {
+    evaluators->update = update_metrics_namespace(binding.lua) ? true : false;
+  }
+
   binding.bind_constant("metrics.now.msec", timestamp_now_msec());
   binding.bind_constant("metrics.update.pass", ++evaluators->passes);
   evaluators->evaluate(binding.lua);
+
+  // Periodically refresh the namespace to catch newly added metrics.
+  if (evaluators->passes % 10 == 0) {
+    evaluators->update = true;
+  }
 }

@@ -26,6 +26,7 @@
 #include "P_RecCore.h"
 #include "ts/ink_memory.h"
 #include <map>
+#include <set>
 
 #define BINDING "lua.metrics"
 
@@ -198,4 +199,45 @@ lua_metrics_register(lua_State *L)
   static const luaL_reg metatable[] = {{"__gc", metrics_gc}, {"__index", metrics_index}, {"__newindex", metrics_newindex}, {0, 0}};
 
   BindingInstance::register_metatable(L, BINDING, metatable);
+}
+
+static void
+install_metrics_object(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum)
+{
+  std::set<std::string> *prefixes = (std::set<std::string> *)edata;
+
+  if (likely(registered)) {
+    const char *end = strrchr(name, '.');
+    ptrdiff_t len = end - name;
+    prefixes->insert(std::string(name, len));
+  }
+}
+
+int
+lua_metrics_install(lua_State *L)
+{
+  int count = 0;
+  int metrics_type = RECT_NODE | RECT_PROCESS | RECT_CLUSTER | RECT_PLUGIN;
+  BindingInstance *binding = BindingInstance::self(L);
+  std::set<std::string> prefixes;
+
+  // Gather all the metrics namespace prefixes into a sorted set. We want to install
+  // metrics objects as the last branch of the namespace so that leaf metrics lookup
+  // end up indexing metrics objects.
+  RecDumpRecords((RecT)metrics_type, install_metrics_object, &prefixes);
+
+  for (std::set<std::string>::const_iterator p = prefixes.cbegin(); p != prefixes.cend(); ++p) {
+    if (lua_metrics_new(p->c_str(), binding->lua) == 1) {
+      if (binding->bind_value(p->c_str(), -1)) {
+        Debug("lua", "installed metrics object at prefix %s", p->c_str());
+        ++count;
+      }
+
+      lua_pop(binding->lua, 1);
+    }
+  }
+
+  // Return the number of metrics we installed;
+  lua_pushinteger(L, count);
+  return 1;
 }

@@ -41,10 +41,10 @@ struct BindingInstance {
   // Bind values to the specified global name. If the name contains '.'
   // separators, intermediate tables are constucted and the value is bound
   // to the final path component.
-  void bind_constant(const char *name, lua_Integer value);
-  void bind_constant(const char *name, const char *value);
-  void bind_function(const char *name, int (*value)(lua_State *));
-  void bind_value(const char *name, int value);
+  bool bind_constant(const char *name, lua_Integer value);
+  bool bind_constant(const char *name, const char *value);
+  bool bind_function(const char *name, int (*value)(lua_State *));
+  bool bind_value(const char *name, int value);
 
   // Attach a named pointer that we can later fish out from a Lua state.
   void attach_ptr(const char *, void *);
