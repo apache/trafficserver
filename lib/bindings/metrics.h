@@ -30,4 +30,11 @@ int lua_metrics_new(const char *prefix, lua_State *L);
 // Register metrics binding type metatable.
 void lua_metrics_register(lua_State *L);
 
+// Install new metrics objects into the global namespace. This function
+// iterates over all the registered metrics and installs a metrics
+// object at the global name given by the metric's prefix. For example,
+// if the metric is named "proxy.my.great.counter", it would install
+// a metrics object at the global name "proxy.my.great".
+int lua_metrics_install(lua_State *L);
+
 #endif /* METRICS_H_FED1F5EA_9EDE_48E6_B05A_5DCAFD8DC319 */

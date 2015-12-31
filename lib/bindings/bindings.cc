@@ -56,36 +56,49 @@ BindingInstance::retrieve_ptr(const char *name)
   return (ptr == this->attachments.end()) ? NULL : ptr->second;
 }
 
-void
+bool
 BindingInstance::bind_constant(const char *name, lua_Integer value)
 {
+  bool bound;
+
   lua_pushinteger(this->lua, value);
-  this->bind_value(name, -1);
+  bound = this->bind_value(name, -1);
   lua_pop(this->lua, 1);
+
+  return bound;
 }
 
-void
+bool
 BindingInstance::bind_constant(const char *name, const char *value)
 {
+  bool bound;
+
   lua_pushlstring(this->lua, value, strlen(value));
-  this->bind_value(name, -1);
+  bound = this->bind_value(name, -1);
   lua_pop(this->lua, 1);
+
+  return bound;
 }
 
-void
+bool
 BindingInstance::bind_function(const char *name, int (*value)(lua_State *))
 {
+  bool bound;
+
   lua_pushcfunction(this->lua, value);
-  this->bind_value(name, -1);
+  bound = this->bind_value(name, -1);
   lua_pop(this->lua, 1);
+
+  return bound;
 }
 
 // Bind an arbitrary Lua value from the give stack position.
-void
+bool
 BindingInstance::bind_value(const char *name, int value)
 {
-  const char * start = name;
-  const char * end = name;
+  const char *start = name;
+  const char *end = name;
+  bool bound = false;
 
   int depth = 0;
 
@@ -161,18 +174,48 @@ BindingInstance::bind_value(const char *name, int value)
   // If we pushed a series of tables onto the stack, bind the name to a table
   // entry. otherwise bind it as a global name.
   if (depth) {
+    bool isnil;
+
+    // At this point the top of stack should be something indexable.
+    ink_assert(is_indexable(this->lua, -1));
+
+    Debug("lua", "stack depth is %d (expected %d)\n", lua_gettop(this->lua), depth);
+    // Push the index name.
     lua_pushstring(this->lua, start);
-    lua_pushvalue(this->lua, value);
 
-    ink_assert(is_indexable(this->lua, -3));
+    Debug("lua", "stack depth is %d (expected %d)\n", lua_gettop(this->lua), depth);
+    // Fetch the index (without metamethods);
+    lua_gettable(this->lua, -2);
 
-    lua_settable(this->lua, -3);
+    // Only push the value if it is currently nil.
+    isnil = lua_isnil(this->lua, -1);
+    lua_pop(this->lua, 1);
+    Debug("lua", "isnil? %s", isnil ? "yes" : "no");
+
+    if (isnil) {
+      lua_pushstring(this->lua, start);
+      lua_pushvalue(this->lua, value);
+      lua_settable(this->lua, -3);
+      bound = true;
+    }
+
     Debug("lua", "stack depth is %d (expected %d)\n", lua_gettop(this->lua), depth);
     lua_pop(this->lua, depth);
   } else {
-    lua_pushvalue(this->lua, value);
-    lua_setglobal(this->lua, start);
+    bool isnil;
+
+    lua_getglobal(this->lua, start);
+    isnil = lua_isnil(this->lua, -1);
+    lua_pop(this->lua, 1);
+
+    if (isnil) {
+      lua_pushvalue(this->lua, value);
+      lua_setglobal(this->lua, start);
+      bound = true;
+    }
   }
+
+  return bound;
 }
 
 bool
@@ -271,5 +314,3 @@ BindingInstance::register_metatable(lua_State *lua, const char *name, const luaL
 
   ink_assert(lua_gettop(lua) == 0);
 }
-
-/* vim: set sw=4 ts=4 tw=79 et: */
