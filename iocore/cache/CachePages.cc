@@ -126,7 +126,7 @@ struct ShowCache : public ShowCont {
           q = strstr(p, "%0D%0A" /* \r\n */); // we used this in the JS to separate urls
           if (!q)
             q = t;
-          ink_strlcpy(show_cache_urlstrs[s], p, sizeof(show_cache_urlstrs[s]));
+          ink_strlcpy(show_cache_urlstrs[s], p, q ? q - p + 1: sizeof(show_cache_urlstrs[s]));
           p = q + 6; // +6 ==> strlen(%0D%0A)
         }
       }
