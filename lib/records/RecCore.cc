@@ -969,7 +969,7 @@ RecDumpRecords(RecT rec_type, RecDumpEntryCb callback, void *edata)
     RecRecord *r = &(g_records[i]);
     if ((rec_type == RECT_NULL) || (rec_type & r->rec_type)) {
       rec_mutex_acquire(&(r->lock));
-      callback(rec_type, edata, r->registered, r->name, r->data_type, &r->data);
+      callback(r->rec_type, edata, r->registered, r->name, r->data_type, &r->data);
       rec_mutex_release(&(r->lock));
     }
   }
