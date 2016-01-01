@@ -927,20 +927,21 @@ float 'proxy.node.http.transaction_frac_avg_10s.miss_cold' [[
 
 float 'proxy.node.http.transaction_frac_avg_10s.miss_changed' [[
   return interval_of_10s(..., function()
-    proxy.node.http.transaction_counts_avg_10s.miss_changed /
-    (
-    proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
-    proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
-    proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
-    proxy.node.http.transaction_counts_avg_10s.miss_changed              +
-    proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
-    proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
-    proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
-    proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
-    proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
-    proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
-    proxy.node.http.transaction_counts_avg_10s.errors.other
-    )
+    return
+      proxy.node.http.transaction_counts_avg_10s.miss_changed /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
   end)
 ]]
 
@@ -1182,7 +1183,7 @@ integer 'proxy.node.http.transaction_msec_avg_10s.miss_cold' [[
     return
       sec_to_msec   *
       delta_of(self, function()
-        proxy.process.http.transaction_totaltime.miss_cold
+        return proxy.process.http.transaction_totaltime.miss_cold
       end) /
       (
       proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
@@ -1253,7 +1254,7 @@ integer 'proxy.node.http.transaction_msec_avg_10s.miss_not_cacheable' [[
   return interval_of_10s(self, function()
     return
       sec_to_msec            *
-      delta_of)self, function()
+      delta_of(self, function()
         return proxy.process.http.transaction_totaltime.miss_not_cacheable
       end) /
       (
@@ -1637,6 +1638,6 @@ integer 'proxy.cluster.log.bytes_received_from_network_avg_10s' [[
   return cluster('proxy.node.log.bytes_received_from_network_avg_10s')
 ]]
 
-counter 'proxy.process.ssl.total_success_handshake_count_in' [[
-  return proxy.process.ssl.total_success_handshake_count
+counter 'proxy.process.ssl.total_success_handshake_count' [[
+  return proxy.process.ssl.total_success_handshake_count_in
 ]]
