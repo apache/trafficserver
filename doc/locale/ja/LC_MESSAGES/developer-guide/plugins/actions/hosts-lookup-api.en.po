@@ -18,19 +18,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../developer-guide/plugins/actions/hosts-lookup-api.en.rst:23
+msgid "Hosts Lookup API"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../developer-guide/plugins/actions/hosts-lookup-api.en.rst:25
+msgid ""
+"The hosts lookup enables plugins to ask Traffic Server to do a host "
+"lookup of a host name, much like a DNS lookup."
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
+#: ../../developer-guide/plugins/actions/hosts-lookup-api.en.rst:28
+msgid "The hosts lookup functions are as follows:"
 msgstr ""
 
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../developer-guide/plugins/actions/hosts-lookup-api.en.rst:30
+msgid ":c:func:`TSHostLookup`"
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/hosts-lookup-api.en.rst:31
+msgid ":c:func:`TSHostLookupResultAddrGet`"
 msgstr ""
 

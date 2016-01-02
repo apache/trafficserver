@@ -18,19 +18,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../admin-guide/monitoring/statistics/core/ssl-cipher.en.rst:23
+msgid "SSL Cipher"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
-msgstr ""
-
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ""
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../admin-guide/monitoring/statistics/core/ssl-cipher.en.rst:25
+msgid ""
+"The following statistics provide individual counters for the number of "
+"client requests which were satisfied using the given SSL cipher."
 msgstr ""
 

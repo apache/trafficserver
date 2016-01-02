@@ -18,19 +18,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../developer-guide/api/index.en.rst:23
+msgid "API Reference"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
-msgstr ""
-
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ""
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../developer-guide/api/index.en.rst:25
+msgid ""
+"For an introduction to the |TS| API, how to link it to your plugin, and "
+"the methods of passing parameters to your plugin at runetime, please "
+"refer to :func:`TSAPI`."
 msgstr ""
 

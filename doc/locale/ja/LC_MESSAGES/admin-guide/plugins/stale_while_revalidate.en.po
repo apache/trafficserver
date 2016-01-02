@@ -18,19 +18,11 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../admin-guide/plugins/stale_while_revalidate.en.rst:4
+msgid "Stale While Revalidate Plugin (undocumented)"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
-msgstr ""
-
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ""
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../admin-guide/plugins/stale_while_revalidate.en.rst:23
+msgid "refresh content asynchronously while serving stale data"
 msgstr ""
 

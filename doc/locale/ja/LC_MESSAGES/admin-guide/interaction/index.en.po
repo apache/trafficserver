@@ -18,19 +18,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../admin-guide/interaction/index.en.rst:23
+msgid "Interacting with |TS|"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../admin-guide/interaction/index.en.rst:29
+msgid "Traffic Line"
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
+#: ../../admin-guide/interaction/index.en.rst:32
+msgid "Stats Over HTTP"
 msgstr ""
 
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../admin-guide/interaction/index.en.rst:35
+msgid "Cache Inspector"
 msgstr ""
 

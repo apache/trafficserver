@@ -18,19 +18,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../developer-guide/plugins/hooks-and-transactions/initiate-http-connection.en.rst:23
+msgid "Initiate HTTP Connection"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../developer-guide/plugins/hooks-and-transactions/initiate-http-connection.en.rst:25
+msgid ""
+"This function enables plugins to initiate HTTP transactions. The initiate"
+" HTTP connection function is:"
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ""
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../developer-guide/plugins/hooks-and-transactions/initiate-http-connection.en.rst:28
+msgid ":c:func:`TSHttpConnect`"
 msgstr ""
 

@@ -18,19 +18,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../developer-guide/api/functions/TSHttpHdrReasonLookup.en.rst:19
+msgid "TSHttpHdrReasonLookup"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../developer-guide/api/functions/TSHttpHdrReasonLookup.en.rst:22
+msgid "Synopsis"
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
+#: ../../developer-guide/api/functions/TSHttpHdrReasonLookup.en.rst:24
+msgid "`#include <ts/ts.h>`"
 msgstr ""
 
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../developer-guide/api/functions/TSHttpHdrReasonLookup.en.rst:30
+msgid "Description"
 msgstr ""
 

@@ -1,0 +1,63 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/conf_remap.en.rst:21
+msgid "conf_remap Plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/conf_remap.en.rst:23
+msgid ""
+"The `conf_remap` plugin allows you to override configuration directives "
+"dependent on actual remapping rules. The plugin is built and installed as"
+" part of the normal Apache Traffic Server installation process."
+msgstr ""
+
+#: ../../admin-guide/plugins/conf_remap.en.rst:28
+msgid ""
+"The `conf_remap` plugin accepts configuration directives in the arguments"
+" list or in a separate configuration file. In both cases, only string and"
+" integer directives are supported."
+msgstr ""
+
+#: ../../admin-guide/plugins/conf_remap.en.rst:32
+msgid ""
+"When using a separate configuration file, the standard "
+":file:`records.config` syntax is used, for example::"
+msgstr ""
+
+#: ../../admin-guide/plugins/conf_remap.en.rst:38
+msgid "where `cdn.conf` contains::"
+msgstr ""
+
+#: ../../admin-guide/plugins/conf_remap.en.rst:42
+msgid ""
+"When using inline arguments, the `conf_remap` plugin accepts a "
+"``key=value`` syntax, where the ``KEY`` is the name of the configuration "
+"directive and ``VALUE`` is the desired value, for example::"
+msgstr ""
+
+#: ../../admin-guide/plugins/conf_remap.en.rst:49
+msgid ""
+"Doing this, you will override your global default configuration on a per "
+"mapping rule. For more details on the APIs, functionality, and a complete"
+" list of all overridable configurations, see :ref:`ts-overridable-"
+"config`."
+msgstr ""
+

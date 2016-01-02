@@ -1,0 +1,248 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:24
+msgid "TSAPI"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:26
+msgid "Introduction to the Apache Traffic Server API."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:29
+msgid "Synopsis"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:31
+msgid "`#include <ts/ts.h>` `#include <ts/remap.h>`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:35
+msgid "Description"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:37
+msgid ""
+"The Apache Traffic Server API enables you to create plugins, using the C "
+"programming language, that customize the behavior of your Traffic Server "
+"installation."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:41
+msgid ""
+"Traffic Server enables sophisticated caching and processing of web-"
+"related traffic, such as DNS and HTTP requests and responses. Traffic "
+"Server itself consists of an event-driven loop that can be simplified as "
+"follows::"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:51
+msgid ""
+"You compile your plugin source code to create a shared library that "
+"Traffic Server loads when it is started. Your plugin contains callback "
+"functions that are registered for specific Traffic Server events. When "
+"Traffic Server needs to process an event, it invokes any and all call-"
+"back functions you've registered for that event type."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:58
+msgid "Possible uses for plugins include the following:"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:60
+msgid ""
+"HTTP processing plugins can filter, blacklist, authorize users or "
+"transform content."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:62
+msgid ""
+"Protocol plugins can enable Traffic Server to proxy-cache new protocol "
+"content."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:64
+msgid ""
+"A blacklisting plugin denies attempts to access web sites that are off-"
+"limits."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:66
+msgid "Append transform plugins add data to HTTP response content."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:68
+msgid "An image conversion plugin transforms JPEG images to GIF images."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:70
+msgid ""
+"Compression plugins send response content to a compression server that "
+"compresses the data (alternatively, a compression library local to the "
+"Traffic Server host machine could do the compression)."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:74
+msgid ""
+"Authorization plugins check a user's permissions to access particular web"
+" sites. The plugin could consult a local authorization program or send "
+"queries to an authorization server."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:78
+msgid ""
+"A plugin that gathers client information from request headers and enters "
+"this information in a database."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:81
+msgid ""
+"A protocol plugin listen for specific protocol requests on a designated "
+"port and then uses Traffic Server's proxy server and cache to serve "
+"client requests."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:88
+msgid "Naming Conventions"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:90
+msgid "The Traffic Server API adheres to the following naming conventions:"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:92
+msgid ""
+"The TS prefix is used for all function and variable names defined in the "
+"Traffic Server API. For example, :data:`TS_EVENT_NONE`, :type:`TSMutex`, "
+"and :func:`TSContCreate`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:96
+msgid ""
+"Enumerated values are always written in all uppercase letters. For "
+"example, :data:`TS_EVENT_NONE` and :data:`TS_VC_CLOSE_ABORT`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:99
+msgid ""
+"Constant values are all uppercase; enumerated values can be seen as a "
+"subset of constants. For example, :data:`TS_URL_SCHEME_FILE` and "
+":data:`TS_MIME_FIELD_ACCEPT`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:103
+msgid ""
+"The names of defined types are mixed-case. For example, :type:`TSHttpSsn`"
+" and :func:`TSHttpTxn`. :func:`TSDebug`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:106
+msgid ""
+"Function names are mixed-case. For example, :func:`TSUrlCreate` and "
+":func:`TSContDestroy`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:109
+msgid ""
+"Function names use the following subject-verb naming style: "
+"TS-<subject>-<verb>, where <subject> goes from general to specific. This "
+"makes it easier to determine what a function does by reading its name. "
+"For example, the function to retrieve the password field (the specific "
+"subject) from a URL (the general subject) is :func:`TSUrlPasswordGet`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:116
+msgid ""
+"Common verbs like Create, Destroy, Get, Set, Copy, Find, Retrieve, "
+"Insert, Remove, and Delete are used only when appropriate."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:122
+msgid "Plugin Loading and Configuration"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:124
+msgid ""
+"When Traffic Server is first started, it consults the plugin.config file "
+"to determine the names of all shared plugin libraries that need to be "
+"loaded. The plugin.config file also defines arguments that are to be "
+"passed to each plugin's initialization function, :func:`TSPluginInit`. "
+"The :file:`records.config` file defines the path to each plugin shared "
+"library."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:131
+msgid ""
+"The sample :file:`plugin.config` file below contains a comment line, a "
+"blank line, and two plugin configurations::"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:138
+msgid ""
+"Each plugin configuration in the :file:`plugin.config` file resembles a "
+"UNIX or DOS shell command; each line in :file:`plugin.config` cannot "
+"exceed 1023 characters."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:142
+msgid ""
+"The first plugin configuration is for a plugin named my-plugin.so. It "
+"contains three arguments that are to be passed to that plugin's "
+"initialization routine. The second configuration is for a plugin named "
+"some-plugin.so; it contains three arguments. The last argument, "
+"$proxy.config.http.cache.on, is actually a configuration variable. "
+"Traffic Server will look up the specified configuration variable and "
+"substitute its value."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:150
+msgid ""
+"Plugins are loaded and initialized by Traffic Server in the order they "
+"appear in the :file:`plugin.config` file."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:156
+msgid "Plugin Initialization"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:158
+msgid ""
+"Each plugin must define an initialization function named "
+":func:`TSPluginInit` that Traffic Server invokes when the plugin is "
+"loaded. :func:`TSPluginInit` is commonly used to read configuration "
+"information and register hooks for event notification."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:165
+msgid "Files"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:167
+msgid ":file:`plugin.config`, :file:`records.config`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:171
+msgid "See Also"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSAPI.en.rst:173
+msgid ":manpage:`TSPluginInit(3ts)`"
+msgstr ""
+

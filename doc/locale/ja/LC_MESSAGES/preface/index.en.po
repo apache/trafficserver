@@ -1,0 +1,217 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../preface/index.en.rst:23
+msgid "Preface"
+msgstr ""
+
+#: ../../preface/index.en.rst:29
+msgid "What is Apache Traffic Server?"
+msgstr ""
+
+#: ../../preface/index.en.rst:31
+msgid ""
+"|ATS| is a high-performance web proxy cache that improves network "
+"efficiency and performance by caching frequently-accessed information at "
+"the edge of the network. This brings content physically closer to end "
+"users, while enabling faster delivery and reduced bandwidth use. |TS| is "
+"designed to improve content delivery for enterprises, Internet service "
+"providers (ISPs), backbone providers, and large intranets by maximizing "
+"existing and available bandwidth."
+msgstr ""
+
+#: ../../preface/index.en.rst:38
+msgid ""
+"This manual will explore every aspect of installing, managing, extending,"
+" and troubleshooting |TS|."
+msgstr ""
+
+#: ../../preface/index.en.rst:42
+msgid "Typographic Conventions"
+msgstr ""
+
+#: ../../preface/index.en.rst:44
+msgid "This documentation uses the following typographic conventions:"
+msgstr ""
+
+#: ../../preface/index.en.rst:53
+msgid "Italic"
+msgstr ""
+
+#: ../../preface/index.en.rst:47
+msgid "Used to introduce new terms on their initial appearance."
+msgstr ""
+
+#: ../../preface/index.en.rst:53 ../../preface/index.en.rst:60
+#: ../../preface/index.en.rst:69
+msgid "Example:"
+msgstr ""
+
+#: ../../preface/index.en.rst:50
+msgid ""
+"The |ATS| object storage is based on a *cyclone buffer* architecture. "
+"Cyclone buffers are a form of storage addressing in which a single writer"
+" continually reclaims the oldest allocations for use by new updates."
+msgstr ""
+
+#: ../../preface/index.en.rst:60
+msgid "Monospace"
+msgstr ""
+
+#: ../../preface/index.en.rst:56
+msgid ""
+"Represents C/C++ language statements, commands, file paths, file content,"
+" and computer output."
+msgstr ""
+
+#: ../../preface/index.en.rst:60
+msgid "The default installation prefix for |TS| is ``/usr/local/ts``."
+msgstr ""
+
+#: ../../preface/index.en.rst:69
+msgid "Bracketed Monospace"
+msgstr ""
+
+#: ../../preface/index.en.rst:63
+msgid ""
+"Represents variables for which you should substitute a value in file "
+"content or commands."
+msgstr ""
+
+#: ../../preface/index.en.rst:67
+msgid ""
+"Running the command ``traffic_line -r <name>`` will display the current "
+"value of a performance statistic, where ``<name>`` is the statistic whose"
+" value you wish to view."
+msgstr ""
+
+#: ../../preface/index.en.rst:72
+msgid "Ellipsis"
+msgstr ""
+
+#: ../../preface/index.en.rst:72
+msgid "Indicates the omission of irrelevant or unimportant information."
+msgstr ""
+
+#: ../../preface/index.en.rst:77
+msgid "Other Resources"
+msgstr ""
+
+#: ../../preface/index.en.rst:80
+msgid "Websites"
+msgstr ""
+
+#: ../../preface/index.en.rst:87
+msgid "Official Website"
+msgstr ""
+
+#: ../../preface/index.en.rst:83
+msgid "https://trafficserver.apache.org/"
+msgstr ""
+
+#: ../../preface/index.en.rst:85
+msgid ""
+"The official |ATS| project website is hosted by the |ASF|. Documentation,"
+" software downloads, community resource links, security announcements, "
+"and more are located, or linked to, at the site."
+msgstr ""
+
+#: ../../preface/index.en.rst:94
+msgid "Online Documentation"
+msgstr ""
+
+#: ../../preface/index.en.rst:90
+msgid "https://docs.trafficserver.apache.org/"
+msgstr ""
+
+#: ../../preface/index.en.rst:92
+msgid ""
+"The most up to date version of the documentation is hosted at |RTD|, with"
+" built-in search functionality. Documentation for past releases is also "
+"available."
+msgstr ""
+
+#: ../../preface/index.en.rst:101
+msgid "Jira Bug Tracker"
+msgstr ""
+
+#: ../../preface/index.en.rst:97
+msgid "https://issues.apache.org/jira/browse/TS"
+msgstr ""
+
+#: ../../preface/index.en.rst:99
+msgid ""
+"If you wish to report bugs, or look for open issues on which you may help"
+" contribute to the |TS| project, please visit the public Jira bug tracker"
+" site."
+msgstr ""
+
+#: ../../preface/index.en.rst:104
+msgid "Mailing Lists"
+msgstr ""
+
+#: ../../preface/index.en.rst:111
+msgid "User List"
+msgstr ""
+
+#: ../../preface/index.en.rst:107
+msgid ""
+"The user's mailing list offers support and discussions oriented to users "
+"and administrators of the |TS| software."
+msgstr ""
+
+#: ../../preface/index.en.rst:110
+msgid ""
+"Send an email to ``users-subscribe@trafficserver.apache.org`` to join the"
+" list."
+msgstr ""
+
+#: ../../preface/index.en.rst:120
+msgid "Developer List"
+msgstr ""
+
+#: ../../preface/index.en.rst:114
+msgid ""
+"If you have questions about, or wish to discuss, the development of |TS|,"
+" plugins for the server, or other developer-oriented matters, the "
+"developer list offers an active list of both core project members and "
+"external contributors."
+msgstr ""
+
+#: ../../preface/index.en.rst:119
+msgid ""
+"Send an email to ``dev-subscribe@trafficserver.apache.org`` to join the "
+"list."
+msgstr ""
+
+#: ../../preface/index.en.rst:123
+msgid "Internet Relay Chat (IRC)"
+msgstr ""
+
+#: ../../preface/index.en.rst:125
+msgid ""
+"The ``#traffic-server`` channel on ``irc.freenode.net`` is the official "
+"IRC resource for the |TS| project, and boasts active discussions."
+msgstr ""
+
+#: ../../preface/index.en.rst:129
+msgid "Community Forums"
+msgstr ""
+

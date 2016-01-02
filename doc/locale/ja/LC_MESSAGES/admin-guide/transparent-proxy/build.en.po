@@ -1,0 +1,77 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/transparent-proxy/build.en.rst:4
+msgid "Building ATS for transparency"
+msgstr ""
+
+#: ../../admin-guide/transparent-proxy/build.en.rst:24
+msgid ""
+"In most cases, if your environment supports transparency then "
+"``configure`` will automatically enable it. For other environments you "
+"may need to twiddle the ``configure`` options."
+msgstr ""
+
+#: ../../admin-guide/transparent-proxy/build.en.rst:34
+msgid "--enable-posix-cap"
+msgstr ""
+
+#: ../../admin-guide/transparent-proxy/build.en.rst:29
+msgid ""
+"This enables POSIX capabilities, which are required for transparency. "
+"These are compiled in by default. To check your system, look for the "
+"header file ``sys/capability.h`` and the system library ``libcap``. These"
+" are in the packages ``libcap`` and ``libcap-devel`` or ``libcap-dev`` "
+"(depending on the Distribution) contra-respectively."
+msgstr ""
+
+#: ../../admin-guide/transparent-proxy/build.en.rst:52
+msgid "--enable-tproxy[=value]"
+msgstr ""
+
+#: ../../admin-guide/transparent-proxy/build.en.rst:37
+msgid ""
+"Enable TPROXY support, which is the Linux kernel feature used for "
+"transparency. This should be present in the base installation, there is "
+"no package associated with it. \\* ``auto`` Do automatic checks for the "
+"the TPROXY header file (``linux/in.h``) and enable TPROXY support if the "
+"``IP_TRANSPARENT`` definition is present. This is the default if this "
+"option is not specified or ``value`` is omitted. \\* ``no`` Do not check "
+"for TPROXY support, disable support for it. \\* ``force`` Do not check "
+"for TPROXY support, enable it using the $ats@ built in value for "
+"``IP_TRANSPARENT``. This is useful for systems that have it in the kernel"
+" for but some reason do not have the appropriate system header file. \\* "
+"*number* Do not check for TPROXY support, use *number* as the "
+"``IP_TRANSPARENT`` value. There are, at present, no known standard "
+"distributions of Linux that support TPROXY but use a value different from"
+" the built in ATS default. However, a custom built kernel may do so and "
+"in that case the specific value can be specified."
+msgstr ""
+
+#: ../../admin-guide/transparent-proxy/build.en.rst:54
+msgid ""
+"In the default case, ATS configuration will automatically check for "
+"TPROXY support via the presence of the ``linux/in.h`` header file and "
+"compile in TPROXY support if it is available. If that fails, you may be "
+"able to recover by using one of the options above. Note that transparency"
+" may be built in by default but it is not active unless explicitly "
+"enabled in the ATS configuration files."
+msgstr ""
+
