@@ -18,19 +18,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../appendices/command-line/traffic_top.en.rst:23
+msgid "traffic_top"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../appendices/command-line/traffic_top.en.rst:26
+msgid "Description"
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ""
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../appendices/command-line/traffic_top.en.rst:29
+msgid "Options"
 msgstr ""
 

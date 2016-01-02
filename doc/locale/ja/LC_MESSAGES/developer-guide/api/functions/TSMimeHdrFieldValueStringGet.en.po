@@ -1,0 +1,109 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:22
+msgid "TSMimeHdrFieldValueStringGet"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:24
+msgid "Get HTTP MIME header values."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:27
+msgid "Synopsis"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:29
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:38
+msgid "Description"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:40
+msgid ""
+"MIME headers and fields can be components of request headers, response "
+"headers, or standalone headers created within a Traffic Server plugin. "
+"The functions here are all used to access header values of specific "
+"types, but it is up to the caller to know if a header has appropriate "
+"semantics for the API used. For all but "
+":func:`TSMimeHdrFieldValueStringGet`, an appropriate data conversion "
+"algorithm is applied to the header field string."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:48
+msgid ""
+"All the APIs take a :type:`TSMBuffer` marshal buffer argument "
+":arg:`bufp`, and a :type:`TSMLoc` argument :arg:`hdr` indicating the "
+"location of the HTTP headers. The required :arg:`field` argument is the "
+"locator of a specific header value, as returned by an accessor function "
+"such as :func:`TSMimeHdrFieldFind`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:54
+msgid ""
+"Within the header field, comma-separated values can be retrieved with an "
+"index :arg:`idx` ranging from :literal:`0` to the maximum number of "
+"fields for this value; this maximum is retrieved using "
+":func:`TSMimeHdrFieldValuesCount`. An :arg:`idx` value of :literal:`-1` "
+"has the semantics of retrieving the entire header value, regardless of "
+"how many comma-separated values there are. If a header is not comma-"
+"separated, an :arg:`idx` of :literal:`0` or :literal:`-1` are the same, "
+"but the latter is preferred."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:62
+msgid ""
+":func:`TSMimeHdrFieldValueStringGet` returns a pointer to the header "
+"value, and populated :arg:`value_len_ptr` with the length of the value in"
+" bytes. The returned header value is not NUL-terminated."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:67
+msgid "Return Values"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:69
+msgid ""
+"All functions returns the header value with a type matching the "
+"respective function name. Using :func:`TSMimeHdrFieldValueDateGet` on a "
+"header which does not have date-time semantics always returns "
+":literal:`0`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:74
+msgid "Examples"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:76
+msgid "This examples show how to retrieve and copy a specific header. ::"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:107
+msgid "See Slso"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:109
+msgid ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSMBufferCreate(3ts)`, "
+":manpage:`TSMimeHdrFieldValuesCount(3ts)`"
+msgstr ""
+

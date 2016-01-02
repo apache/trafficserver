@@ -18,19 +18,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../developer-guide/api/functions/TSMimeHdrDestroy.en.rst:22
+msgid "TSMimeHdrDestroy"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../developer-guide/api/functions/TSMimeHdrDestroy.en.rst:25
+msgid "Synopsis"
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
+#: ../../developer-guide/api/functions/TSMimeHdrDestroy.en.rst:27
+msgid "`#include <ts/ts.h>`"
 msgstr ""
 
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../developer-guide/api/functions/TSMimeHdrDestroy.en.rst:32
+msgid "Description"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrDestroy.en.rst:34
+msgid "Destroys the MIME header located at :arg:`hdr_loc` within :arg:`bufp`."
 msgstr ""
 

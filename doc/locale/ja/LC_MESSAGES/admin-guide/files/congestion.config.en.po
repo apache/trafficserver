@@ -1,0 +1,319 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/files/congestion.config.en.rst:20
+msgid "congestion.config"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:24
+msgid ""
+"The :file:`congestion.config` file (by default, located in "
+"``/usr/local/etc/trafficserver/``) enables you to configure Traffic "
+"Server to stop forwarding HTTP requests to origin servers when they "
+"become congested, and then send the client a message to retry the "
+"congested origin server later. After you modify the "
+":file:`congestion.config` file, navigate to the Traffic Server bin "
+"directory; then run the :option:`traffic_ctl config reload` command to "
+"apply changes. When you apply the changes to a node in a cluster, Traffic"
+" Server automatically applies the changes to all other nodes in the "
+"cluster. Traffic Server uses the :file:`congestion.config` file only if "
+"you enable the :ts:cv:`proxy.config.http.congestion_control.enabled` "
+"option."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:36
+msgid "You can create rules in the congestion.config file to specify:"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:38
+msgid "Which origin servers Traffic Server tracks for congestion."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:39
+msgid ""
+"The timeouts Traffic Server uses, depending on whether a server is "
+"congested."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:41
+msgid ""
+"The page Traffic Server sends to the client when a server becomes "
+"congested."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:43
+msgid ""
+"If Traffic Server tracks the origin servers per IP address or per "
+"hostname."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:47
+msgid "Format"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:49
+msgid ""
+"Each line in :file:`congestion.config` must follow the format below. "
+"Traffic Server applies the rules in the order listed, starting at the top"
+" of the file. Traffic Server recognizes three space-delimited tags::"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:55
+msgid ""
+"The following list shows possible primary destinations with allowed "
+"values."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:59
+msgid "dest_domain"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:59
+msgid "A requested domain name."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:62
+msgid "dest_host"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:62
+msgid "A requested hostname."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:65
+msgid "dest_ip"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:65
+msgid "A requested IP address."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:68
+msgid "url_regex"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:68
+msgid "A regular expression (regex) to be found in a URL."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:70
+msgid ""
+"The secondary specifiers are optional in the congestion.config file. The "
+"following list shows possible secondary specifiers with allowed values. "
+"You can use more than one secondary specifier in a rule; however, you "
+"cannot repeat a secondary specifier."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:76
+msgid "port"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:76
+msgid "A requested URL port or range of ports."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:79
+msgid "prefix"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:79
+msgid "A prefix in the path part of a URL."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:81
+msgid "The following list shows the possible tags and their allowed values."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:87
+msgid "max_connection_failures"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:84
+msgid ""
+"Default: ``5`` The maximum number of connection failures allowed within "
+"the fail window described below before Traffic Server marks the origin "
+"server as congested."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:93
+msgid "fail_window"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:90
+msgid ""
+"Default: ``120`` seconds. The time period during which the maximum number"
+" of connection failures can occur before Traffic Server marks the origin "
+"server as congested."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:98
+msgid "proxy_retry_interval"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:96
+msgid ""
+"Default: ``10`` seconds. The number of seconds that Traffic Server waits "
+"before contacting a congested origin server again."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:103
+msgid "client_wait_interval"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:101
+msgid ""
+"Default: ``300`` seconds. The number of seconds that the client is "
+"advised to wait before retrying the congested origin server."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:108
+msgid "wait_interval_alpha"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:106
+msgid ""
+"Default: ``30`` seconds The upper limit for a random number that is added"
+" to the wait interval."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:114
+msgid "live_os_conn_timeout"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:111
+msgid ""
+"Default: ``60`` seconds. The connection timeout to the live (uncongested)"
+" origin server. If a client stops a request before the timeout occurs, "
+"then Traffic Server does not record a connection failure."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:119
+msgid "live_os_conn_retries"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:117
+msgid ""
+"Default: ``2`` The maximum number of retries allowed to the live "
+"(uncongested) origin server."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:123
+msgid "dead_os_conn_timeout"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:122
+msgid ""
+"Default: ``15`` seconds. The connection timeout to the congested origin "
+"server."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:128
+msgid "dead_os_conn_retries"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:126
+msgid ""
+"Default: ``1`` The maximum number of retries allowed to the congested "
+"origin server."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:133
+msgid "max_connection"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:131
+msgid ""
+"Default: ``-1`` The maximum number of connections allowed from Traffic "
+"Server to the origin server."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:138
+msgid "error_page"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:136
+msgid ""
+"Default: ``\"congestion#retryAfter\"`` The error page sent to the client "
+"when a server is congested. You must enclose the value in quotes;"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:151
+msgid "congestion_scheme"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:141
+msgid ""
+"Default: ``\"per_ip\"`` Specifies if Traffic Server applies the rule on a"
+" per-host (``\"per_host\"``) or per-IP basis (``\"per_ip\"``). You must "
+"enclose the value in quotes."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:146
+msgid ""
+"For example: if the server ``www.host1.com`` has two IP addresses and you"
+" use the tag value ``\"per_ip\"``, then each IP address has its own "
+"number of connection failures and is marked as congested independently. "
+"If you use the tag value ``\"per_host\"`` and the server "
+"``www.host1.com`` is marked as congested, then both IP addresses are "
+"marked as congested."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:154
+msgid "Examples"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:156
+msgid ""
+"The following :file:`congestion.config` rule configures Traffic Server to"
+" stop forwarding requests to the server ``www.host.com`` on port 80 (HTTP"
+" traffic) if the server is congested, according to the timeouts "
+"specified. Traffic Server uses the default tag values because no tag has "
+"been specified."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:166
+msgid ""
+"You can use one or more tags in a rule, but each tag must have one value "
+"only. If you specify no tags in the rule, then Traffic Server uses the "
+"default values."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:170
+msgid ""
+"You can override any of the default tag values by adding configuration "
+"variables at the end of :file:`records.config` as follows:"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:177
+msgid ""
+"where tag is one of the tags described in the list under "
+":file:`congestion.config` and value is the value you want to use."
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:181
+msgid "For example::"
+msgstr ""
+
+#: ../../admin-guide/files/congestion.config.en.rst:187
+msgid ""
+"Rules in the :file:`congestion.config` file override the following "
+"variables in the :file:`records.config` file:"
+msgstr ""
+

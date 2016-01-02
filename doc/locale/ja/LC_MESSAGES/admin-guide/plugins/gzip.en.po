@@ -1,0 +1,141 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/gzip.en.rst:4
+msgid "gzip / deflate Plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:24
+msgid ""
+"This plugin gzips or deflates responses, whichever is applicable. It can "
+"compress origin respones as well as cached responses. The plugin is built"
+" and installed as part of the normal Apache Traffic Server installation "
+"process."
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:30
+msgid "Installation"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:32
+msgid "Add the following line to :file:`plugin.config`::"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:36
+msgid "In this case, the plugin will use the default behaviour:"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:38
+msgid "Enable caching"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:39
+msgid "Compress text/\\* for every origin"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:40
+msgid ""
+"Don't hide accept encoding from origin servers (for an offloading reverse"
+" proxy)"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:42
+msgid "No urls are disallowed from compression"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:43
+msgid "Disable flush (flush gzipped content to client)"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:46
+msgid "Configuration"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:48
+msgid "Alternatively, a configuration can also be specified::"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:52
+msgid ""
+"After modifying plugin.config, restart traffic server (sudo traffic_ctl "
+"server restart) the configuration is also re-read when a management "
+"update is given (sudo traffic_ctl config reload)"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:57
+msgid "Options"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:59
+msgid "Flags and options are:"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:61
+msgid ""
+"``enabled``: (``true`` or ``false``) Enable or disable compression for a "
+"host."
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:64
+msgid ""
+"``remove-accept-encoding``: (``true`` or ``false``) Sets whether the "
+"plugin should hide the accept encoding from origin servers:"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:67
+msgid "To ease the load on the origins."
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:68
+msgid ""
+"For when the proxy parses responses, and the resulting "
+"compression/decompression is wasteful."
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:71
+msgid ""
+"``cache``: (``true`` or ``false``) When set, the plugin stores the "
+"uncompressed and compressed response as alternates."
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:74
+msgid ""
+"``compressible-content-type``: Wildcard pattern for matching compressible"
+" content types."
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:77
+msgid "``disallow``: Wildcard pattern for disabling compression on urls."
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:79
+msgid ""
+"``flush``: (``true`` or ``false``) Enable or disable flushing of gzipped "
+"content."
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:81
+msgid "Options can be set globally or on a per-site basis, as such::"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:97
+msgid "See example.gzip.config for example configurations."
+msgstr ""
+

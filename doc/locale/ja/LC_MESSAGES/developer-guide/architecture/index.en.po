@@ -18,19 +18,22 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../developer-guide/architecture/index.en.rst:23
+msgid "Cache Architecture"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../developer-guide/architecture/index.en.rst:25
+msgid ""
+"The original architectural documents for Traffic Server were lost in the "
+"transition to an open source project. The documents in this section are "
+"provisional and were written based on the existing code. The purpose is "
+"to have a high level description of aspects of Traffic Server to better "
+"inform ongoing work."
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ""
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../developer-guide/architecture/index.en.rst:31
+msgid ""
+"In the final section on \"hacking\" we try to document our approaches to "
+"understanding and modifying the source."
 msgstr ""
 

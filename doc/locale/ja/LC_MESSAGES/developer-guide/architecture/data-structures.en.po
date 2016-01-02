@@ -1,0 +1,234 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:23
+msgid "Data Structures"
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:27
+msgid ""
+"An open directory entry. It contains all the information of a "
+":cpp:class:`Dir` plus additional information from the first "
+":cpp:class:`Doc`."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:32
+msgid "A virtual connection class which accepts input for writing to cache."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:36
+msgid "Performs the initial read for a cached object."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:40
+msgid "Performs the initial read for an :term:`alternate` of an object."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:44
+msgid ""
+"Data transfer driver. This contains a set of *producers*. Each producer "
+"is connected to one or more *consumers*. The tunnel handles events and "
+"buffers so that data moves from producers to consumers. The data, as much"
+" as possible, is kept in reference counted buffers so that copies are "
+"done only when the data is modified or for sources (which acquire data "
+"from outside |TS|) and sinks (which move data to outside |TS|)."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:53
+msgid "Holds the data from a line in :file:`cache.config`."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:57
+msgid ""
+"Defined in |P-CacheHttp.h|_. This is an array of :cpp:class:`HTTPInfo` "
+"objects and serves as the respository of information about alternates of "
+"an object. It is marshaled as part of the metadata for an object in the "
+"cache."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:63
+#: ../../developer-guide/architecture/data-structures.en.rst:75
+msgid "Defined in |HTTP.h|_."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:65
+msgid ""
+"This class is a wrapper for :cpp:class:`HTTPCacheAlt`. It provides the "
+"external API for accessing data in the wrapped class. It contains only a "
+"pointer (possibly ``NULL``) to an instance of the wrapped class."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:71
+msgid "A typedef for :cpp:class:`HTTPInfo`."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:77
+msgid ""
+"This is the metadata for a single :term:`alternate` for a cached object. "
+"It contains, among other data, the following:"
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:80
+msgid "The key for the earliest ``Doc`` of the alternate."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:82
+msgid "The request and response headers."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:84
+msgid "The fragment offset table.[#fragment-offset-table]_"
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:86
+msgid "Timestamps for request and response from :term:`origin server`."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:90
+msgid "Record for evacuation."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:94
+msgid "This represents a :term:`storage unit` inside a :term:`cache volume`."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:98
+msgid ""
+"The number of segments in the volume. This will be roughly the total "
+"number of entries divided by the number of entries in a segment. It will "
+"be rounded up to cover all entries."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:104
+msgid ""
+"The number of buckets in the volume. This will be roughly the number of "
+"entries in a segment divided by ``DIR_DEPTH``. For currently defined "
+"values this is around 16,384 (2^16 / 4). Buckets are used as the targets "
+"of the index hash."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:111
+msgid ""
+"Array of of :cpp:class:`EvacuationBlock` buckets. This is sized so there "
+"is one bucket for every evacuation span."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:116
+msgid "Length of stripe in bytes."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:120
+msgid ""
+"Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the "
+"range from :arg:`low` to :arg:`high`. Return ``0`` if no evacuation was "
+"started, non-zero otherwise."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:126
+msgid "A :term:`cache volume` as described in :file:`volume.config`."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:130
+msgid "Defined in |P-CacheVol.h|_."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:134
+msgid "Validity check value. Set to ``DOC_MAGIC`` for a valid document."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:138
+msgid ""
+"The length of this segment including the header length, fragment table, "
+"and this structure."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:143
+msgid ""
+"Total length of the entire document not including meta data but including"
+" headers."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:148
+msgid ""
+"First index key in the document (the index key used to locate this object"
+" in the volume index)."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:153
+msgid ""
+"The index key for this fragment. Fragment keys are computationally "
+"chained so that the key for the next and previous fragments can be "
+"computed from this key."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:159
+msgid ""
+"Document header (metadata) length. This is not the length of the HTTP "
+"headers."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:164
+msgid ""
+"Fragment type. Currently only ``CACHE_FRAG_TYPE_HTTP`` is used. Other "
+"types may be used for cache extensions if those are ever implemented."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:169
+msgid ""
+"Fragment table length, if any. Only the first ``Doc`` in an object should"
+" contain a fragment table."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:172
+msgid ""
+"The fragment table is a list of offsets relative to the HTTP content (not"
+" counting metadata or HTTP headers). Each offset is the byte offset of "
+"the first byte in the fragment. The first element in the table is the "
+"second fragment (what would be index 1 for an array). The offset for the "
+"first fragment is of course always zero and so not stored. The purpose of"
+" this is to enable a fast seek for range requests. Given the first "
+"``Doc`` the fragment containing the first byte in the range can be "
+"computed and loaded directly without further disk access."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:181
+msgid "Removed as of version 3.3.0."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:185
+#: ../../developer-guide/architecture/data-structures.en.rst:189
+#: ../../developer-guide/architecture/data-structures.en.rst:197
+msgid "Unknown."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:193
+msgid "Flag and timer for pinned objects."
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:202
+msgid "Footnotes"
+msgstr ""
+
+#: ../../developer-guide/architecture/data-structures.en.rst:205
+msgid ""
+"Changed in version 3.2.0. This previously resided in the first ``Doc`` "
+"but that caused different alternates to share the same fragment table."
+msgstr ""
+

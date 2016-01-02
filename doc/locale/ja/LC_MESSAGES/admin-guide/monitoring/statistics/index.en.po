@@ -18,19 +18,16 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../admin-guide/monitoring/statistics/index.en.rst:23
+msgid "Statistics"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
-msgstr ""
-
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ""
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../admin-guide/monitoring/statistics/index.en.rst:25
+msgid ""
+"Statistics provide a live view into the current state of |TS| and many of"
+" the plugins which may be usd with it. They can, and generally should be,"
+" used as a core piece in any performance and operational monitoring "
+"infrastructure as they expose a much greater detail about the workings of"
+" |TS| than can reliably be obtained through any other means."
 msgstr ""
 

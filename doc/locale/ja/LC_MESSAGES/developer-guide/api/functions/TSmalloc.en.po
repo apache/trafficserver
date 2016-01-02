@@ -1,0 +1,104 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:23
+msgid "TSmalloc"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:25
+msgid "Traffic Server memory allocation API."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:28
+msgid "Synopsis"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:30
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:41
+msgid "Description"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:43
+msgid ""
+"Traffic Server provides a number of routines for allocating and freeing "
+"memory. These routines correspond to similar routines in the C library. "
+"For example, :func:`TSrealloc` behaves like the C library routine "
+":func:`realloc`. There are two reasons to use the routines provided by "
+"Traffic Server. The first is portability. The Traffic Server API routines"
+" behave the same on all of Traffic Servers supported platforms. For "
+"example, :func:`realloc` does not accept an argument of ``NULL`` on some "
+"platforms. The second reason is that the Traffic Server routines actually"
+" track the memory allocations by file and line number. This tracking is "
+"very efficient, is always turned on, and is useful for tracking down "
+"memory leaks."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:54
+msgid ""
+":func:`TSmalloc` returns a pointer to size bytes of memory allocated from"
+" the heap. Traffic Server uses :func:`TSmalloc` internally for memory "
+"allocations. Always use :func:`TSfree` to release memory allocated by "
+":func:`TSmalloc`; do not use :func:`free`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:59
+msgid ""
+":func:`TSstrdup` returns a pointer to a new string that is a duplicate of"
+" the string pointed to by str. The memory for the new string is allocated"
+" using :func:`TSmalloc` and should be freed by a call to :func:`TSfree`."
+"  :func:`TSstrndup` returns a pointer to a new string that is a duplicate"
+" of the string pointed to by str and size bytes long. The new string will"
+" be NUL-terminated. This API is very useful for transforming non NUL-"
+"terminated string values returned by APIs such as "
+":func:`TSMimeHdrFieldValueStringGet` into NUL-terminated string values. "
+"The memory for the new string is allocated using :func:`TSmalloc` and "
+"should be freed by a call to :func:`TSfree`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:70
+msgid ""
+":func:`TSstrlcpy` copies up to size - 1 characters from the NUL-"
+"terminated string src to dst, NUL-terminating the result."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:73
+msgid ""
+":func:`TSstrlcat` appends the NUL-terminated string src to the end of "
+"dst. It will append at most size - strlen(dst) - 1 bytes, NUL-terminating"
+" the result."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:77
+msgid ""
+":func:`TSfree` releases the memory allocated by :func:`TSmalloc` or "
+":func:`TSrealloc`. If ptr is ``NULL``, :func:`TSfree` does no operation."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:81
+msgid "See also"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSmalloc.en.rst:83
+msgid ":manpage:`TSAPI(3ts)`"
+msgstr ""
+

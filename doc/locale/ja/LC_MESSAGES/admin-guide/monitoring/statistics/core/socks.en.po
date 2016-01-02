@@ -18,19 +18,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../admin-guide/monitoring/statistics/core/socks.en.rst:23
+msgid "SOCKS"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../admin-guide/monitoring/statistics/core/socks.en.rst:29
+msgid ""
+"Provides the number of SOCKS proxy connections currently opened with the "
+"running instance of |TS|."
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
+#: ../../admin-guide/monitoring/statistics/core/socks.en.rst:36
+msgid ""
+"Indicates the number of SOCKS connections to |TS| which have succeeded "
+"since statistics collection began."
 msgstr ""
 
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../admin-guide/monitoring/statistics/core/socks.en.rst:43
+msgid ""
+"Indicates the number of attempted SOCKS connections to |TS| which have "
+"failed since statistics collection began."
 msgstr ""
 

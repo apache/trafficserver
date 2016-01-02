@@ -18,19 +18,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../developer-guide/api/types/TSLookingUpType.en.rst:20
+msgid "TSLookingUpType"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../developer-guide/api/types/TSLookingUpType.en.rst:23
+msgid "Synopsis"
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
+#: ../../developer-guide/api/types/TSLookingUpType.en.rst:25
+msgid "`#include <ts/apidefs.h>`"
 msgstr ""
 
-#: ../../index.rst:54
-msgid ":ref:`search`"
+#: ../../developer-guide/api/types/TSLookingUpType.en.rst:29
+msgid "Enum typedef."
+msgstr ""
+
+#: ../../developer-guide/api/types/TSLookingUpType.en.rst:32
+msgid "Enumeration Members"
+msgstr ""
+
+#: ../../developer-guide/api/types/TSLookingUpType.en.rst:47
+msgid "Description"
 msgstr ""
 
