@@ -3,21 +3,21 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 15:05+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/introduction.en.rst:241
 msgid ":program:`traffic_ctl` enables you to collect and process statistics obtained from network traffic information."
@@ -109,7 +109,7 @@ msgstr ":program:`traffic_cop` プロセスは :program:`traffic_server` と :pr
 
 #: ../../admin-guide/introduction.en.rst:220
 msgid "The :program:`traffic_ctl` command-line interface is a text-based interface from which you can monitor Traffic Server performance and network traffic, as well as configure the Traffic Server system. From Traffic Line, you can execute individual commands or script a series of commands in a shell."
-msgstr ""
+msgstr ":program:`traffic_ctl ` コマンドラインインターフェイスはテキストベースのインターフェースです。Traffic Server のパフォーマンスとネットワークトラフィックを監視できます。また同じように、Traffic Server システムを設定することもできます。Traffic Line によって独立したコマンドや一連のコマンドのスクリプトをシェルで実行することができます。"
 
 #: ../../admin-guide/introduction.en.rst:183
 msgid "The :program:`traffic_manager` process is the command and control facility of the Traffic Server, responsible for launching, monitoring, and reconfiguring the :program:`traffic_server` process. The :program:`traffic_manager` process is also responsible for the proxy autoconfiguration port, the statistics interface, cluster administration, and virtual IP failover."
@@ -225,7 +225,7 @@ msgstr "Traffic Server はハイパフォーマンスなウェブプロキシー
 
 #: ../../admin-guide/introduction.en.rst:128
 msgid "Traffic Server is designed to tolerate total disk failures on any of the cache disks. If the disk fails completely, then Traffic Server marks the entire disk as corrupt and continues to use remaining disks. If all of the cache disks fail, then Traffic Server switches to proxy-only mode. You can partition the cache to reserve a certain amount of disk space for storing data for specific protocols and origin servers. For more information about the cache, see :ref:`http-proxy-caching`."
-msgstr ""
+msgstr "Traffic Server はすべてのキャッシュディスクのあらゆるディスク不良を許容するようにデザインされています。完全にディスクが壊れてしまった場合、Traffic Server はそのディスクを破損したと印をつけ、残りのディスクを使い続けます。すべてのディスクが壊れた場合、Traffic Server は proxy-only モードに切り替わります。特定のプロトコルやオリジンサーバーのデータを保存するための一定のディスクスペースを予約するためにキャッシュを分割することができます。キャッシュに関するより詳しい情報は :ref:`http-proxy-caching` を参照してください。"
 
 #: ../../admin-guide/introduction.en.rst:261
 msgid "Traffic Server logging options are described in :ref:`working-with-log-files`."
@@ -253,7 +253,7 @@ msgstr "Traffic Server はネットワークトラフィックの分析と監視
 
 #: ../../admin-guide/introduction.en.rst:289
 msgid "Traffic Server security options are described in more detail in :ref:`admin-security`."
-msgstr ""
+msgstr "Traffic Server セキュリティオプションは :ref:`admin-security` に詳しく述べられています。"
 
 #: ../../admin-guide/introduction.en.rst:95
 msgid "Traffic Server supports ICP (Internet Cache Protocol) peering. Hierarchical caching is described in more detail in :ref:`admin-hierarchical-caching`."
@@ -278,4 +278,3 @@ msgstr "Traffic Server のチューニング"
 #: ../../admin-guide/introduction.en.rst:226
 msgid "Various configuration files enable you to configure Traffic Server through a simple file-editing and signal-handling interface. Any changes you make through Traffic Line is automatically made to the configuration files as well."
 msgstr ""
-

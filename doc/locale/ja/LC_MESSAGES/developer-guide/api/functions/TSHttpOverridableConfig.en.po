@@ -3,21 +3,21 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 15:27+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:162
 msgid ":manpage:`TSAPI(3ts)`"
@@ -361,7 +361,7 @@ msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:147
 msgid "Enable :ref:`transaction buffer control <transaction-buffering-control>` with a high water mark of :literal:`262144` and a low water mark of :literal:`65536`. ::"
-msgstr ""
+msgstr ":ref:`transaction-buffering-control` を high water マーク :literal:`262144` と low water マーク :literal:`65536` で有効化します。\\ ::"
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:145
 msgid "Examples"
@@ -386,4 +386,3 @@ msgstr "値は列挙型 :type:`TSOverridableConfigKey` で特定されます。�
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:28
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

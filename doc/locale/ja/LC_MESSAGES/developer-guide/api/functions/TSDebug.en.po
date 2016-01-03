@@ -3,29 +3,29 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 15:26+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:65
 msgid ":func:`TSDebugSpecific` emits a debug line even if the debug :arg:`tag` is turned off, as long as debug flag is enabled. This can be used in conjunction with :func:`TSHttpTxnDebugSet`, :func:`TSHttpSsnDebugSet`, :func:`TSHttpTxnDebugGet` and :func:`TSHttpSsnDebugGet` to enable debugging on specific session and transaction objects."
-msgstr ""
+msgstr ":func:`TSDebugSpecific` はデバッグ :arg:`tag` がオフにされていてもデバッグフラグが有効化されてさえいればデバッグ行を出力します。これは特定のセッションとトランザクションオブジェクトでデバッグを有効化するために :func:`TSHttpTxnDebugSet` 、:func:`TSHttpSsnDebugSet` 、:func:`TSHttpTxnDebugGet` 、:func:`TSHttpSsnDebugGet` と組み合わせて使用されることがあります。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:52
 msgid ":func:`TSDebug` is the same as :func:`TSError` except that it only logs the debug message if the given debug :arg:`tag` is enabled. It writes output to the Traffic Server debug log."
-msgstr ""
+msgstr ":func:`TSDebug` は与えられたデバッグ :arg:`tag` が有効化されている場合にのみログメッセージを出力する点を除いて :func:`TSError` と同じです。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:48
 msgid ":func:`TSError` is similar to :func:`printf` except that instead of writing the output to the C standard output, it writes output to the Traffic Server error log."
@@ -49,7 +49,7 @@ msgstr "TSDebug"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:56
 msgid ":func:`TSIsDebugTagSet` returns non-zero if the given debug :arg:`tag` is enabled."
-msgstr ""
+msgstr ":func:`TSIsDebugTagSet` は与えられたデバッグ :arg:`tag`が有効化されている場合に非ゼロを返します。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:96
 msgid ":manpage:`TSAPI(3ts)`, :manpage:`printf(3)`"
@@ -78,4 +78,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSDebug.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

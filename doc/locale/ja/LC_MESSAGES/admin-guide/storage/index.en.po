@@ -3,21 +3,21 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 14:20+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/storage/index.en.rst:103
 msgid "*fastlz* compression"
@@ -185,7 +185,7 @@ msgstr "パーティションサイズとプロトコルを変更する"
 
 #: ../../admin-guide/storage/index.en.rst:384
 msgid "Open your web browser and go to the the following URL::"
-msgstr ""
+msgstr "ブラウザーを開き、次の URL へ移動。"
 
 #: ../../admin-guide/storage/index.en.rst:62
 msgid "Override cache directives for a requested domain name, regex on a url, hostname or ip, with extra filters for time, port, method of the request, and more. ATS can be configured to never cache, always cache, ignore no-cache directives, etc. These are configured in :file:`cache.config`."
@@ -215,7 +215,9 @@ msgstr ""
 msgid "Regex Delete"
 msgstr ""
 
-#: ../../admin-guide/storage/index.en.rst:161 ../../admin-guide/storage/index.en.rst:176 ../../admin-guide/storage/index.en.rst:206
+#: ../../admin-guide/storage/index.en.rst:161
+#: ../../admin-guide/storage/index.en.rst:176
+#: ../../admin-guide/storage/index.en.rst:206
 msgid "Restart Traffic Server."
 msgstr "Traffic Server を再起動。"
 
@@ -227,7 +229,9 @@ msgstr "Traffic Server を再起動。RAM キャッシュのサイズを 1GB 以
 msgid "Set the variable :ts:cv:`proxy.config.cache.ram_cache.size` to specify the size of the RAM cache. The default value of ``-1`` means that the RAM cache is automatically sized at approximately 1MB per gigabyte of disk."
 msgstr ""
 
-#: ../../admin-guide/storage/index.en.rst:129 ../../admin-guide/storage/index.en.rst:154 ../../admin-guide/storage/index.en.rst:169
+#: ../../admin-guide/storage/index.en.rst:129
+#: ../../admin-guide/storage/index.en.rst:154
+#: ../../admin-guide/storage/index.en.rst:169
 msgid "Stop Traffic Server."
 msgstr "Traffic Server を停止"
 
@@ -279,7 +283,8 @@ msgstr "キャッシュからオブジェクトを削除する"
 msgid "Restart Traffic Server (see :ref:`start-traffic-server`)."
 msgstr ""
 
-#: ../../admin-guide/storage/index.en.rst:277 ../../admin-guide/storage/index.en.rst:290
+#: ../../admin-guide/storage/index.en.rst:277
+#: ../../admin-guide/storage/index.en.rst:290
 msgid "Run the command :option:`traffic_ctl config reload` to apply the configuration changes."
 msgstr ""
 
@@ -417,7 +422,7 @@ msgstr ""
 
 #: ../../admin-guide/storage/index.en.rst:143
 msgid "You can increase or reduce the total amount of disk space allocated to the cache without clearing the content. To check the size of the cache (in bytes), enter the command :option:`traffic_ctl metric get` ``proxy.process.cache.bytes_total``."
-msgstr ""
+msgstr "コンテンツをクリアすることなくキャッシュに割り当てられたディスク領域の総量を増加もしくは削減することができます。キャッシュのサイズ ( バイト ) を確認するには、:option:`traffic_ctl metric get` ``proxy.process.cache.bytes_total`` コマンドを実行してください。"
 
 #: ../../admin-guide/storage/index.en.rst:120
 msgid "You can increase the RAM cache size for better cache hit performance. However, if you increase the size of the RAM cache and observe a decrease in performance (such as increased latencies), then it's possible that the operating system requires more memory for network resources. In such instances, you should return the RAM cache size to its previous value."
@@ -442,4 +447,3 @@ msgstr "キャッシュボリュームのサイズとプロトコルの割り当
 #: ../../admin-guide/storage/index.en.rst:388
 msgid "You will now be presented with the Cache Inspector interface."
 msgstr ""
-
