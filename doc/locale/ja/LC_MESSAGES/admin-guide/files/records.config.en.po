@@ -3,21 +3,21 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 16:08+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/files/records.config.en.rst:2263
 msgid "'E' = Log to standard error"
@@ -47,7 +47,10 @@ msgstr "**N/I**"
 msgid "**Required**"
 msgstr "**必須**"
 
-#: ../../admin-guide/files/records.config.en.rst:558 ../../admin-guide/files/records.config.en.rst:559 ../../admin-guide/files/records.config.en.rst:560 ../../admin-guide/files/records.config.en.rst:561
+#: ../../admin-guide/files/records.config.en.rst:558
+#: ../../admin-guide/files/records.config.en.rst:559
+#: ../../admin-guide/files/records.config.en.rst:560
+#: ../../admin-guide/files/records.config.en.rst:561
 msgid "**Value**"
 msgstr "**値**"
 
@@ -59,17 +62,28 @@ msgstr ""
 msgid "*number*"
 msgstr "*number*"
 
-#: ../../admin-guide/files/records.config.en.rst:274 ../../admin-guide/files/records.config.en.rst:678 ../../admin-guide/files/records.config.en.rst:697 ../../admin-guide/files/records.config.en.rst:1929 ../../admin-guide/files/records.config.en.rst:2150 ../../admin-guide/files/records.config.en.rst:3018
+#: ../../admin-guide/files/records.config.en.rst:274
+#: ../../admin-guide/files/records.config.en.rst:678
+#: ../../admin-guide/files/records.config.en.rst:697
+#: ../../admin-guide/files/records.config.en.rst:1929
+#: ../../admin-guide/files/records.config.en.rst:2150
+#: ../../admin-guide/files/records.config.en.rst:3018
 msgid "0"
 msgstr "0"
 
-#: ../../admin-guide/files/records.config.en.rst:275 ../../admin-guide/files/records.config.en.rst:415 ../../admin-guide/files/records.config.en.rst:679 ../../admin-guide/files/records.config.en.rst:698 ../../admin-guide/files/records.config.en.rst:1930 ../../admin-guide/files/records.config.en.rst:2151 ../../admin-guide/files/records.config.en.rst:3020
+#: ../../admin-guide/files/records.config.en.rst:275
+#: ../../admin-guide/files/records.config.en.rst:415
+#: ../../admin-guide/files/records.config.en.rst:679
+#: ../../admin-guide/files/records.config.en.rst:698
+#: ../../admin-guide/files/records.config.en.rst:1930
+#: ../../admin-guide/files/records.config.en.rst:2151
+#: ../../admin-guide/files/records.config.en.rst:3020
 msgid "1"
 msgstr "1"
 
 #: ../../admin-guide/files/records.config.en.rst:2397
 msgid "1 = client certificates are optional. If a client has a"
-msgstr ""
+msgstr "1 = クライアント証明書は任意です。"
 
 #: ../../admin-guide/files/records.config.en.rst:2307
 msgid "1 = enables diagnostics log rolling at specific intervals (specified with the"
@@ -85,9 +99,15 @@ msgstr ""
 
 #: ../../admin-guide/files/records.config.en.rst:2391
 msgid "0 = no client certificates are required. Traffic Server does"
-msgstr ""
+msgstr "0 = クライアント証明書を必要としません。"
 
-#: ../../admin-guide/files/records.config.en.rst:276 ../../admin-guide/files/records.config.en.rst:416 ../../admin-guide/files/records.config.en.rst:680 ../../admin-guide/files/records.config.en.rst:699 ../../admin-guide/files/records.config.en.rst:1931 ../../admin-guide/files/records.config.en.rst:2152 ../../admin-guide/files/records.config.en.rst:3023
+#: ../../admin-guide/files/records.config.en.rst:276
+#: ../../admin-guide/files/records.config.en.rst:416
+#: ../../admin-guide/files/records.config.en.rst:680
+#: ../../admin-guide/files/records.config.en.rst:699
+#: ../../admin-guide/files/records.config.en.rst:1931
+#: ../../admin-guide/files/records.config.en.rst:2152
+#: ../../admin-guide/files/records.config.en.rst:3023
 msgid "2"
 msgstr "2"
 
@@ -97,9 +117,15 @@ msgstr ""
 
 #: ../../admin-guide/files/records.config.en.rst:2400
 msgid "2 = client certificates are required. The client must be"
-msgstr ""
+msgstr "2 = クライアント証明書が必要です。"
 
-#: ../../admin-guide/files/records.config.en.rst:277 ../../admin-guide/files/records.config.en.rst:417 ../../admin-guide/files/records.config.en.rst:681 ../../admin-guide/files/records.config.en.rst:700 ../../admin-guide/files/records.config.en.rst:1932 ../../admin-guide/files/records.config.en.rst:2153 ../../admin-guide/files/records.config.en.rst:3028
+#: ../../admin-guide/files/records.config.en.rst:277
+#: ../../admin-guide/files/records.config.en.rst:417
+#: ../../admin-guide/files/records.config.en.rst:681
+#: ../../admin-guide/files/records.config.en.rst:700
+#: ../../admin-guide/files/records.config.en.rst:1932
+#: ../../admin-guide/files/records.config.en.rst:2153
+#: ../../admin-guide/files/records.config.en.rst:3028
 msgid "3"
 msgstr "3"
 
@@ -107,7 +133,8 @@ msgstr "3"
 msgid "3 = return a 502 error on a cache miss or serve stale on a cache revalidate"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:278 ../../admin-guide/files/records.config.en.rst:2154
+#: ../../admin-guide/files/records.config.en.rst:278
+#: ../../admin-guide/files/records.config.en.rst:2154
 msgid "4"
 msgstr ""
 
@@ -339,7 +366,8 @@ msgstr ""
 msgid "Do not match, do not re-use server sessions."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:678 ../../admin-guide/files/records.config.en.rst:697
+#: ../../admin-guide/files/records.config.en.rst:678
+#: ../../admin-guide/files/records.config.en.rst:697
 msgid "Do not modify / set this via header"
 msgstr "via ヘッダーを変更または設定しない"
 
@@ -359,7 +387,12 @@ msgstr ""
 msgid "Each variable has the following format::"
 msgstr "それぞれの変数は次のフォーマットとなっています"
 
-#: ../../admin-guide/files/records.config.en.rst:272 ../../admin-guide/files/records.config.en.rst:413 ../../admin-guide/files/records.config.en.rst:676 ../../admin-guide/files/records.config.en.rst:695 ../../admin-guide/files/records.config.en.rst:2148 ../../admin-guide/files/records.config.en.rst:3016
+#: ../../admin-guide/files/records.config.en.rst:272
+#: ../../admin-guide/files/records.config.en.rst:413
+#: ../../admin-guide/files/records.config.en.rst:676
+#: ../../admin-guide/files/records.config.en.rst:695
+#: ../../admin-guide/files/records.config.en.rst:2148
+#: ../../admin-guide/files/records.config.en.rst:3016
 msgid "Effect"
 msgstr "効果"
 
@@ -914,7 +947,7 @@ msgstr ""
 
 #: ../../admin-guide/files/records.config.en.rst:113
 msgid "Overriding a variable from the environment is permanent and will not be affected by future configuration changes made in :file:`records.config` or applied with :program:`traffic_ctl`."
-msgstr ""
+msgstr "環境からの変数の再定義は恒久的であり、:file:`records.config` の変更や :program:`traffic_ctl ` での適用による将来的な設定変更の影響を受けません。"
 
 #: ../../admin-guide/files/records.config.en.rst:941
 msgid "Parent Proxy Configuration"
@@ -1002,7 +1035,7 @@ msgstr "この値の再読み込みは新しい SPDY のコネクションでの
 
 #: ../../admin-guide/files/records.config.en.rst:587
 msgid "Require SSL termination for inbound connections. SSL :ref:`must be configured <admin-ssl-termination>` for this option to provide a functional server port."
-msgstr ""
+msgstr "インバウンドコネクション用の SSL ターミネーションの要求。このオプションを使って機能するサーバーポートを提供するには SSL が :ref:`設定されていなければなりません <admin-ssl-termination>` 。"
 
 #: ../../admin-guide/files/records.config.en.rst:2013
 msgid "Resolve only to IPv4. ::"
@@ -1420,7 +1453,8 @@ msgstr "(リバースプロキシーで) host ヘッダーが無いリクエス�
 msgid "The ``2`` option is useful to avoid delaying requests which can not easily be satisfied by the partially written response."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:686 ../../admin-guide/files/records.config.en.rst:705
+#: ../../admin-guide/files/records.config.en.rst:686
+#: ../../admin-guide/files/records.config.en.rst:705
 msgid "The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_."
 msgstr "``Via`` ヘッダーは `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_ でデコードできます。"
 
@@ -1600,7 +1634,8 @@ msgstr "トランザクションのバッファー制御用の high water マー
 msgid "The hostname of the log collation server."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:2712 ../../admin-guide/files/records.config.en.rst:2749
+#: ../../admin-guide/files/records.config.en.rst:2712
+#: ../../admin-guide/files/records.config.en.rst:2749
 msgid "The initial window size for inbound connections."
 msgstr ""
 
@@ -1684,7 +1719,8 @@ msgstr ""
 msgid "The maximum number of alternates that are allowed for any given URL. Disable by setting to 0."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:2704 ../../admin-guide/files/records.config.en.rst:2754
+#: ../../admin-guide/files/records.config.en.rst:2704
+#: ../../admin-guide/files/records.config.en.rst:2754
 msgid "The maximum number of concurrent streams per inbound connection."
 msgstr ""
 
@@ -2053,7 +2089,8 @@ msgstr ""
 msgid "This implentation should perform much better than the OpenSSL implementation."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:2878 ../../admin-guide/files/records.config.en.rst:2904
+#: ../../admin-guide/files/records.config.en.rst:2878
+#: ../../admin-guide/files/records.config.en.rst:2904
 msgid "This is a bitmask and you need to decide what bits to set.  Therefore, you must set the value to ``3`` if you want to enable nodelay and keepalive options above."
 msgstr ""
 
@@ -2145,11 +2182,13 @@ msgstr "透過的なパススルー。このオプションはインバウンド
 msgid "Unless explicitly specified in `proxy.config.http.server_ports`_ the server port will be bound to one of these addresses, selected by IP address family. The built in default is any address. This is used if no address for a family is specified. This setting is useful if most or all server ports should be bound to the same address."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:680 ../../admin-guide/files/records.config.en.rst:699
+#: ../../admin-guide/files/records.config.en.rst:680
+#: ../../admin-guide/files/records.config.en.rst:699
 msgid "Update the via, with higher verbosity"
 msgstr "より高い冗長さで via ヘッダーを更新"
 
-#: ../../admin-guide/files/records.config.en.rst:679 ../../admin-guide/files/records.config.en.rst:698
+#: ../../admin-guide/files/records.config.en.rst:679
+#: ../../admin-guide/files/records.config.en.rst:698
 msgid "Update the via, with normal verbosity"
 msgstr "通常の冗長さで via ヘッダーを更新"
 
@@ -2169,7 +2208,13 @@ msgstr ""
 msgid "This style is used as a convenience for the administrator. During a resolution the *resolution order* will be one family, then possibly the other. This is determined by changing ``client`` to ``ipv4`` or ``ipv6`` based on the client IP address and then removing duplicates."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:272 ../../admin-guide/files/records.config.en.rst:413 ../../admin-guide/files/records.config.en.rst:676 ../../admin-guide/files/records.config.en.rst:695 ../../admin-guide/files/records.config.en.rst:1927 ../../admin-guide/files/records.config.en.rst:2148 ../../admin-guide/files/records.config.en.rst:3016
+#: ../../admin-guide/files/records.config.en.rst:272
+#: ../../admin-guide/files/records.config.en.rst:413
+#: ../../admin-guide/files/records.config.en.rst:676
+#: ../../admin-guide/files/records.config.en.rst:695
+#: ../../admin-guide/files/records.config.en.rst:1927
+#: ../../admin-guide/files/records.config.en.rst:2148
+#: ../../admin-guide/files/records.config.en.rst:3016
 msgid "Value"
 msgstr "値"
 
@@ -2265,7 +2310,8 @@ msgstr ""
 msgid "Update period (in seconds) for stapling caches."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:681 ../../admin-guide/files/records.config.en.rst:700
+#: ../../admin-guide/files/records.config.en.rst:681
+#: ../../admin-guide/files/records.config.en.rst:700
 msgid "Update the via, with highest verbosity"
 msgstr "もっとも高い冗長さで via ヘッダーを更新"
 
@@ -2429,7 +2475,8 @@ msgstr ""
 msgid "While not technically reloadable, the value is read every time the file is to be checked so that if changed the new value will be used on the next check and the file will be treated as modified."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:710 ../../admin-guide/files/records.config.en.rst:719
+#: ../../admin-guide/files/records.config.en.rst:710
+#: ../../admin-guide/files/records.config.en.rst:719
 msgid "You can specify one of the following:"
 msgstr "次のうち 1 つを指定できます。"
 
@@ -2449,7 +2496,10 @@ msgstr "``1`` : Server ヘッダーは追加されます。( 後述の文字列�
 msgid "``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)"
 msgstr "``T`` テラバイト (1024^4 または 1,099,511,627,776 バイト)"
 
-#: ../../admin-guide/files/records.config.en.rst:2922 ../../admin-guide/files/records.config.en.rst:2930 ../../admin-guide/files/records.config.en.rst:2937 ../../admin-guide/files/records.config.en.rst:2945
+#: ../../admin-guide/files/records.config.en.rst:2922
+#: ../../admin-guide/files/records.config.en.rst:2930
+#: ../../admin-guide/files/records.config.en.rst:2937
+#: ../../admin-guide/files/records.config.en.rst:2945
 msgid "`Traffic Shaping`_"
 msgstr ""
 
@@ -2513,7 +2563,8 @@ msgstr ""
 msgid "``0`` = never read while writing"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:755 ../../admin-guide/files/records.config.en.rst:775
+#: ../../admin-guide/files/records.config.en.rst:755
+#: ../../admin-guide/files/records.config.en.rst:775
 msgid "``0`` Never"
 msgstr ""
 
@@ -2589,7 +2640,9 @@ msgstr "マシーンにスレッドを割り当てます"
 msgid "both"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:556 ../../admin-guide/files/records.config.en.rst:581 ../../admin-guide/files/records.config.en.rst:1990
+#: ../../admin-guide/files/records.config.en.rst:556
+#: ../../admin-guide/files/records.config.en.rst:581
+#: ../../admin-guide/files/records.config.en.rst:1990
 msgid "ipv4"
 msgstr "ipv4"
 
@@ -2629,7 +2682,8 @@ msgstr ""
 msgid "``1`` = stale if heuristic"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:756 ../../admin-guide/files/records.config.en.rst:776
+#: ../../admin-guide/files/records.config.en.rst:756
+#: ../../admin-guide/files/records.config.en.rst:776
 msgid "``1`` Always"
 msgstr ""
 
@@ -2729,7 +2783,8 @@ msgstr ""
 msgid "``2`` the Server: header is added only if the response from origin does not have one already."
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:558 ../../admin-guide/files/records.config.en.rst:618
+#: ../../admin-guide/files/records.config.en.rst:558
+#: ../../admin-guide/files/records.config.en.rst:618
 msgid "ip-in"
 msgstr "ip-in"
 
@@ -2837,7 +2892,8 @@ msgstr "スレッドをソケットに割り当てます"
 msgid "authenticated during the SSL handshake. Clients without a certificate are not allowed to access Traffic Server."
 msgstr "クライアントは SSL ハンドシェイクの中で認証されなければなりません。証明書を持たないクライアントは Traffic Server へのアクセスが許可されません。"
 
-#: ../../admin-guide/files/records.config.en.rst:554 ../../admin-guide/files/records.config.en.rst:575
+#: ../../admin-guide/files/records.config.en.rst:554
+#: ../../admin-guide/files/records.config.en.rst:575
 msgid "blind"
 msgstr "blind"
 
@@ -2853,7 +2909,8 @@ msgstr ""
 msgid "collation is disabled"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:555 ../../admin-guide/files/records.config.en.rst:578
+#: ../../admin-guide/files/records.config.en.rst:555
+#: ../../admin-guide/files/records.config.en.rst:578
 msgid "compress"
 msgstr "compress"
 
@@ -2893,11 +2950,13 @@ msgstr ""
 msgid "ip"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:559 ../../admin-guide/files/records.config.en.rst:625
+#: ../../admin-guide/files/records.config.en.rst:559
+#: ../../admin-guide/files/records.config.en.rst:625
 msgid "ip-out"
 msgstr "ip-out"
 
-#: ../../admin-guide/files/records.config.en.rst:560 ../../admin-guide/files/records.config.en.rst:630
+#: ../../admin-guide/files/records.config.en.rst:560
+#: ../../admin-guide/files/records.config.en.rst:630
 msgid "ip-resolve"
 msgstr "ip-resolve"
 
@@ -2905,7 +2964,9 @@ msgstr "ip-resolve"
 msgid "the value of :ts:cv:`proxy.config.alarm_email`"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:557 ../../admin-guide/files/records.config.en.rst:584 ../../admin-guide/files/records.config.en.rst:1991
+#: ../../admin-guide/files/records.config.en.rst:557
+#: ../../admin-guide/files/records.config.en.rst:584
+#: ../../admin-guide/files/records.config.en.rst:1991
 msgid "ipv6"
 msgstr "ipv6"
 
@@ -2933,7 +2994,8 @@ msgstr ""
 msgid "no clustering"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:796 ../../admin-guide/files/records.config.en.rst:1993
+#: ../../admin-guide/files/records.config.en.rst:796
+#: ../../admin-guide/files/records.config.en.rst:1993
 msgid "none"
 msgstr ""
 
@@ -2949,7 +3011,8 @@ msgstr ""
 msgid "privileges"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:561 ../../admin-guide/files/records.config.en.rst:595
+#: ../../admin-guide/files/records.config.en.rst:561
+#: ../../admin-guide/files/records.config.en.rst:595
 msgid "proto"
 msgstr ""
 
@@ -2957,7 +3020,9 @@ msgstr ""
 msgid "records.config"
 msgstr "records.config"
 
-#: ../../admin-guide/files/records.config.en.rst:562 ../../admin-guide/files/records.config.en.rst:589 ../../admin-guide/files/records.config.en.rst:2294
+#: ../../admin-guide/files/records.config.en.rst:562
+#: ../../admin-guide/files/records.config.en.rst:589
+#: ../../admin-guide/files/records.config.en.rst:2294
 msgid "ssl"
 msgstr "ssl"
 
@@ -2993,23 +3058,26 @@ msgstr ""
 msgid "time if the file is of the specified size)"
 msgstr ""
 
-#: ../../admin-guide/files/records.config.en.rst:563 ../../admin-guide/files/records.config.en.rst:600
+#: ../../admin-guide/files/records.config.en.rst:563
+#: ../../admin-guide/files/records.config.en.rst:600
 msgid "tr-full"
 msgstr "tr-full"
 
-#: ../../admin-guide/files/records.config.en.rst:564 ../../admin-guide/files/records.config.en.rst:605
+#: ../../admin-guide/files/records.config.en.rst:564
+#: ../../admin-guide/files/records.config.en.rst:605
 msgid "tr-in"
 msgstr "tr-in"
 
-#: ../../admin-guide/files/records.config.en.rst:565 ../../admin-guide/files/records.config.en.rst:610
+#: ../../admin-guide/files/records.config.en.rst:565
+#: ../../admin-guide/files/records.config.en.rst:610
 msgid "tr-out"
 msgstr "tr-out"
 
-#: ../../admin-guide/files/records.config.en.rst:566 ../../admin-guide/files/records.config.en.rst:613
+#: ../../admin-guide/files/records.config.en.rst:566
+#: ../../admin-guide/files/records.config.en.rst:613
 msgid "tr-pass"
 msgstr "tr-pass"
 
 #: ../../admin-guide/files/records.config.en.rst:41
 msgid "where"
 msgstr "この中の"
-

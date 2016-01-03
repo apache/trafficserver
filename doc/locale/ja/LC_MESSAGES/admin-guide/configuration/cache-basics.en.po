@@ -3,21 +3,21 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 15:00+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:139
 msgid "**Checking revalidate rules in** :file:`cache.config`"
@@ -496,11 +496,25 @@ msgstr ""
 msgid "Revalidate rules apply freshness limits to specific HTTP objects. You can set freshness limits for objects originating from particular domains or IP addresses, objects with URLs that contain specified regular expressions, objects requested by particular clients, and so on. Refer to :file:`cache.config`."
 msgstr ""
 
-#: ../../admin-guide/configuration/cache-basics.en.rst:160 ../../admin-guide/configuration/cache-basics.en.rst:176 ../../admin-guide/configuration/cache-basics.en.rst:195 ../../admin-guide/configuration/cache-basics.en.rst:281
+#: ../../admin-guide/configuration/cache-basics.en.rst:160
+#: ../../admin-guide/configuration/cache-basics.en.rst:176
+#: ../../admin-guide/configuration/cache-basics.en.rst:195
+#: ../../admin-guide/configuration/cache-basics.en.rst:281
 msgid "Run the :option:`traffic_ctl config reload` command to apply the configuration changes."
-msgstr ""
+msgstr "設定変更を適用するために :option:`traffic_ctl config reload` コマンドを実行してください。"
 
-#: ../../admin-guide/configuration/cache-basics.en.rst:305 ../../admin-guide/configuration/cache-basics.en.rst:360 ../../admin-guide/configuration/cache-basics.en.rst:413 ../../admin-guide/configuration/cache-basics.en.rst:457 ../../admin-guide/configuration/cache-basics.en.rst:483 ../../admin-guide/configuration/cache-basics.en.rst:520 ../../admin-guide/configuration/cache-basics.en.rst:541 ../../admin-guide/configuration/cache-basics.en.rst:568 ../../admin-guide/configuration/cache-basics.en.rst:584 ../../admin-guide/configuration/cache-basics.en.rst:612 ../../admin-guide/configuration/cache-basics.en.rst:640 ../../admin-guide/configuration/cache-basics.en.rst:672
+#: ../../admin-guide/configuration/cache-basics.en.rst:305
+#: ../../admin-guide/configuration/cache-basics.en.rst:360
+#: ../../admin-guide/configuration/cache-basics.en.rst:413
+#: ../../admin-guide/configuration/cache-basics.en.rst:457
+#: ../../admin-guide/configuration/cache-basics.en.rst:483
+#: ../../admin-guide/configuration/cache-basics.en.rst:520
+#: ../../admin-guide/configuration/cache-basics.en.rst:541
+#: ../../admin-guide/configuration/cache-basics.en.rst:568
+#: ../../admin-guide/configuration/cache-basics.en.rst:584
+#: ../../admin-guide/configuration/cache-basics.en.rst:612
+#: ../../admin-guide/configuration/cache-basics.en.rst:640
+#: ../../admin-guide/configuration/cache-basics.en.rst:672
 msgid "Run the command :option:`traffic_ctl config reload` to apply the configuration changes."
 msgstr ""
 
@@ -574,7 +588,7 @@ msgstr ""
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:705
 msgid "The buffer size calculations include all elements in the transaction, including any buffers associated with :ref:`transform plugins <developer-plugins-http-transformations>`."
-msgstr ""
+msgstr "バッファーサイズの計算はトランザクションの全ての要素を含んでいます。これは :ref:`transform plugins <developer-plugins-http-transformations>` に紐づけられているどんなバッファーも含みます。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:129
 msgid "The computed freshness limit is bound by a minimum and maximum value. Refer to `Setting Absolute Freshness Limits`_ for more information."
@@ -849,11 +863,13 @@ msgstr ""
 msgid "``Authorization``"
 msgstr ""
 
-#: ../../admin-guide/configuration/cache-basics.en.rst:384 ../../admin-guide/configuration/cache-basics.en.rst:432
+#: ../../admin-guide/configuration/cache-basics.en.rst:384
+#: ../../admin-guide/configuration/cache-basics.en.rst:432
 msgid "``Cache-Control: no-cache``"
 msgstr ""
 
-#: ../../admin-guide/configuration/cache-basics.en.rst:382 ../../admin-guide/configuration/cache-basics.en.rst:421
+#: ../../admin-guide/configuration/cache-basics.en.rst:382
+#: ../../admin-guide/configuration/cache-basics.en.rst:421
 msgid "``Cache-Control: no-store``"
 msgstr ""
 
@@ -884,4 +900,3 @@ msgstr ""
 #: ../../admin-guide/configuration/cache-basics.en.rst:122
 msgid "where *date* is the date in the object's server response header and *last_modified* is the date in the ``Last-Modified`` header. If there is no ``Last-Modified`` header, then Traffic Server uses the date the object was written to cache. The value ``0.10`` (10 percent) can be increased or reduced to better suit your needs. Refer to `Modifying Aging Factor for Freshness Computations`_."
 msgstr ""
-

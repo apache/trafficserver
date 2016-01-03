@@ -3,21 +3,21 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 14:22+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:61
 msgid "As an alternative to using Traffic Line, you can change Traffic Server configuration options by manually editing specific variables in :file:`records.config`."
@@ -61,7 +61,7 @@ msgstr "Traffic Line はコマンドラインインターフェースで手早�
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:65
 msgid "Traffic Server must reread the configuration files for any changes to take effect. This is done with :option:`traffic_ctl config reload`. Some configuration changes require a full restart of Traffic Server."
-msgstr ""
+msgstr "変更を有効にするためには Traffic Server で設定の再読み込みを行わなければなりません。これは :option:`traffic_ctl config reload` によって行えます。いくつかの設定では Traffic Server の完全な再起動が必要となります。"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:23
 msgid "Traffic Server provides several options for configuring the system."
@@ -81,5 +81,4 @@ msgstr "*var* の部分は設定項目に対応する変数です。変数の一
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:77
 msgid "In addition to :file:`records.config`, Traffic Server provides other configuration files that are used to configure specific features. You can manually edit all configuration files as described in :ref:`admin-configuration-files`."
-msgstr ""
-
+msgstr "file:`records.config` ファイルに加え、Traffic Server は特定の機能を設定するために使用されるその他の複数の設定ファイルを提供します。:ref:`admin-configuration-files` で説明されているように、すべての設定ファイルを手動で編集することができます。"

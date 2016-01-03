@@ -3,21 +3,21 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 14:56+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../appendices/faq.en.rst:463
 msgid "'DrainIncomingChannel' message in the system log file"
@@ -59,7 +59,8 @@ msgstr ""
 msgid "<via-codes>"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:171 ../../appendices/faq.en.rst:225 ../../appendices/faq.en.rst:245
+#: ../../appendices/faq.en.rst:171 ../../appendices/faq.en.rst:225
+#: ../../appendices/faq.en.rst:245
 msgid "A"
 msgstr ""
 
@@ -88,7 +89,8 @@ msgstr ""
 msgid "By default, the Traffic Server host database observes the time-to-live (``ttl``) values set by name servers. You can reconfigure Traffic Server to ignore the ``ttl`` set by name servers and use a specific Traffic Server setting instead. Alternatively, you can configure Traffic Server to compare the ``ttl`` value set by the name server with the ``ttl`` value set by Traffic Server, and then use either the lower or the higher value."
 msgstr "デフォルトでは、Traffic Server のホストデータベースはネームサーバーによりセットされた time-to-live (``ttl``) を監視します。ネームサーバーによってセットされた ``ttl`` を無視して指定した設定を使用するように Traffic Server を再設定することも可能です。もしくは、ネームサーバーによってセットされた ``ttl`` の値と Traffic Server の設定値を比較し、低いものか高いものかどちらかを使用するように Traffic Serverを設定することも可能です。"
 
-#: ../../appendices/faq.en.rst:157 ../../appendices/faq.en.rst:226 ../../appendices/faq.en.rst:263 ../../appendices/faq.en.rst:276
+#: ../../appendices/faq.en.rst:157 ../../appendices/faq.en.rst:226
+#: ../../appendices/faq.en.rst:263 ../../appendices/faq.en.rst:276
 msgid "C"
 msgstr ""
 
@@ -160,7 +162,8 @@ msgstr "オリジンサーバーとの接続タイムアウト"
 msgid "Create a large file on filesystem (with :manpage:`dd(1)`) and mount it as loopback device. This is accomplished with :manpage:`losetup(8)` on Linux, :manpage:`lofiadm(1m)` on Solaris and Illumos, and :manpage:`mdconfig(8)` on FreeBSD."
 msgstr "ファイルシステム上に大きなファイルを ( :manpage:`dd(1)` を使って ) 作成し、それをループバックデバイスとしてマウントしてください。これは Linux 上では  :manpage:`losetup(8)` で、Solaris と Illumos 上では :manpage:`lofiadm(1m)` 、FreeBSD 上では :manpage:`mdconfig(8)` を使って行えます。"
 
-#: ../../appendices/faq.en.rst:199 ../../appendices/faq.en.rst:227 ../../appendices/faq.en.rst:277
+#: ../../appendices/faq.en.rst:199 ../../appendices/faq.en.rst:227
+#: ../../appendices/faq.en.rst:277
 msgid "D"
 msgstr ""
 
@@ -176,7 +179,9 @@ msgstr "Traffic Server はホストデータベース内のエントリーが一
 msgid "E"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:228 ../../appendices/faq.en.rst:246 ../../appendices/faq.en.rst:296 ../../appendices/faq.en.rst:308 ../../appendices/faq.en.rst:320
+#: ../../appendices/faq.en.rst:228 ../../appendices/faq.en.rst:246
+#: ../../appendices/faq.en.rst:296 ../../appendices/faq.en.rst:308
+#: ../../appendices/faq.en.rst:320
 msgid "F"
 msgstr ""
 
@@ -188,7 +193,8 @@ msgstr ""
 msgid "Frequently Asked Questions"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:172 ../../appendices/faq.en.rst:229 ../../appendices/faq.en.rst:278
+#: ../../appendices/faq.en.rst:172 ../../appendices/faq.en.rst:229
+#: ../../appendices/faq.en.rst:278
 msgid "H"
 msgstr ""
 
@@ -208,7 +214,8 @@ msgstr "ディスク I/O エラーはキャッシュにどのように影響し�
 msgid "How do you create a raw disk for the cache if all your disks have mounted file systems?"
 msgstr "全ディスクがファイルシステムにマウントされている場合、キャッシュ用の raw ディスクの作成はどうすればいいですか？"
 
-#: ../../appendices/faq.en.rst:159 ../../appendices/faq.en.rst:264 ../../appendices/faq.en.rst:279
+#: ../../appendices/faq.en.rst:159 ../../appendices/faq.en.rst:264
+#: ../../appendices/faq.en.rst:279
 msgid "I"
 msgstr ""
 
@@ -272,7 +279,8 @@ msgstr ""
 msgid "L"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:173 ../../appendices/faq.en.rst:247 ../../appendices/faq.en.rst:281
+#: ../../appendices/faq.en.rst:173 ../../appendices/faq.en.rst:247
+#: ../../appendices/faq.en.rst:281
 msgid "M"
 msgstr ""
 
@@ -280,11 +288,19 @@ msgstr ""
 msgid "Make sure you're looking in the correct directory. By default, Traffic Server creates log files in the ``logs`` directory. This can be modified by changing :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config`."
 msgstr ""
 
-#: ../../appendices/faq.en.rst:128 ../../appendices/faq.en.rst:155 ../../appendices/faq.en.rst:169 ../../appendices/faq.en.rst:184 ../../appendices/faq.en.rst:197 ../../appendices/faq.en.rst:210 ../../appendices/faq.en.rst:223 ../../appendices/faq.en.rst:243 ../../appendices/faq.en.rst:261 ../../appendices/faq.en.rst:274 ../../appendices/faq.en.rst:294 ../../appendices/faq.en.rst:306 ../../appendices/faq.en.rst:318
+#: ../../appendices/faq.en.rst:128 ../../appendices/faq.en.rst:155
+#: ../../appendices/faq.en.rst:169 ../../appendices/faq.en.rst:184
+#: ../../appendices/faq.en.rst:197 ../../appendices/faq.en.rst:210
+#: ../../appendices/faq.en.rst:223 ../../appendices/faq.en.rst:243
+#: ../../appendices/faq.en.rst:261 ../../appendices/faq.en.rst:274
+#: ../../appendices/faq.en.rst:294 ../../appendices/faq.en.rst:306
+#: ../../appendices/faq.en.rst:318
 msgid "Meaning"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:160 ../../appendices/faq.en.rst:187 ../../appendices/faq.en.rst:212 ../../appendices/faq.en.rst:230 ../../appendices/faq.en.rst:248 ../../appendices/faq.en.rst:282
+#: ../../appendices/faq.en.rst:160 ../../appendices/faq.en.rst:187
+#: ../../appendices/faq.en.rst:212 ../../appendices/faq.en.rst:230
+#: ../../appendices/faq.en.rst:248 ../../appendices/faq.en.rst:282
 msgid "N"
 msgstr ""
 
@@ -332,7 +348,8 @@ msgstr ""
 msgid "Proxy-only service operation. Value is one of:"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:174 ../../appendices/faq.en.rst:213 ../../appendices/faq.en.rst:231
+#: ../../appendices/faq.en.rst:174 ../../appendices/faq.en.rst:213
+#: ../../appendices/faq.en.rst:231
 msgid "R"
 msgstr ""
 
@@ -356,7 +373,11 @@ msgstr ""
 msgid "Result of document write to cache. Value is one of:"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:161 ../../appendices/faq.en.rst:175 ../../appendices/faq.en.rst:188 ../../appendices/faq.en.rst:214 ../../appendices/faq.en.rst:232 ../../appendices/faq.en.rst:267 ../../appendices/faq.en.rst:283 ../../appendices/faq.en.rst:297 ../../appendices/faq.en.rst:309 ../../appendices/faq.en.rst:321
+#: ../../appendices/faq.en.rst:161 ../../appendices/faq.en.rst:175
+#: ../../appendices/faq.en.rst:188 ../../appendices/faq.en.rst:214
+#: ../../appendices/faq.en.rst:232 ../../appendices/faq.en.rst:267
+#: ../../appendices/faq.en.rst:283 ../../appendices/faq.en.rst:297
+#: ../../appendices/faq.en.rst:309 ../../appendices/faq.en.rst:321
 msgid "S"
 msgstr ""
 
@@ -468,7 +489,8 @@ msgstr "Traffic Server がネットワーク接続が多すぎることを示す
 msgid "Traffic Server supports the below command to validate the config offline, inorder to allow the config to be pre-checked for possible service disruptions due to synatx errors::"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:200 ../../appendices/faq.en.rst:250 ../../appendices/faq.en.rst:284
+#: ../../appendices/faq.en.rst:200 ../../appendices/faq.en.rst:250
+#: ../../appendices/faq.en.rst:284
 msgid "U"
 msgstr ""
 
@@ -480,7 +502,13 @@ msgstr "Traffic Server はスループットの統計をオブジェクト全体
 msgid "Under heavy load, the Linux kernel can run out of RAM. This low memory condition can cause slow performance and a variety of other system problems. In fact, RAM exhaustion can occur even if the system has plenty of free swap space."
 msgstr "高負荷な状態において、Linux カーネルは RAM を使い切る可能性があります。このメモリの少ない状態はパフォーマンスの低下とその他様々なシステムの問題を引き起こします。事実、RAM の枯渇 はシステムが豊富な空きスワップ領域を持っていたとしても発生し得ます。"
 
-#: ../../appendices/faq.en.rst:128 ../../appendices/faq.en.rst:155 ../../appendices/faq.en.rst:169 ../../appendices/faq.en.rst:184 ../../appendices/faq.en.rst:197 ../../appendices/faq.en.rst:210 ../../appendices/faq.en.rst:223 ../../appendices/faq.en.rst:243 ../../appendices/faq.en.rst:261 ../../appendices/faq.en.rst:274 ../../appendices/faq.en.rst:294 ../../appendices/faq.en.rst:306 ../../appendices/faq.en.rst:318
+#: ../../appendices/faq.en.rst:128 ../../appendices/faq.en.rst:155
+#: ../../appendices/faq.en.rst:169 ../../appendices/faq.en.rst:184
+#: ../../appendices/faq.en.rst:197 ../../appendices/faq.en.rst:210
+#: ../../appendices/faq.en.rst:223 ../../appendices/faq.en.rst:243
+#: ../../appendices/faq.en.rst:261 ../../appendices/faq.en.rst:274
+#: ../../appendices/faq.en.rst:294 ../../appendices/faq.en.rst:306
+#: ../../appendices/faq.en.rst:318
 msgid "Value"
 msgstr "値"
 
@@ -510,7 +538,7 @@ msgstr "カスタムログファイル内の ``cqtx`` フィールドには何�
 
 #: ../../appendices/faq.en.rst:46
 msgid "When a client disconnects during an HTTP operation, Traffic Server can continue to download the object from the origin server, using the :ref:`background fill feature <background_fill>`. It will continue downloading based on the :ts:cv:`proxy.config.http.background_fill_active_timeout` and :ts:cv:`proxy.config.http.background_fill_completed_threshold` settings."
-msgstr ""
+msgstr "HTTP の処理中にクライアントが接続を閉じたとき、Traffic Server は :ref:`background fill feature <background_fill>` を使ってオリジンサーバーからのオブジェクトのダウンロードを継続します。 :ts:cv:`proxy.config.http.background_fill_active_timeout` と :ts:cv:`proxy.config.http.background_fill_completed_threshold` の設定に従ってダウンロードを継続します。"
 
 #: ../../appendices/faq.en.rst:377
 msgid "When the traffic_manager process is not running"
@@ -568,7 +596,11 @@ msgstr ""
 msgid "authorization failure"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:176 ../../appendices/faq.en.rst:189 ../../appendices/faq.en.rst:202 ../../appendices/faq.en.rst:251 ../../appendices/faq.en.rst:268 ../../appendices/faq.en.rst:285 ../../appendices/faq.en.rst:298 ../../appendices/faq.en.rst:310 ../../appendices/faq.en.rst:322
+#: ../../appendices/faq.en.rst:176 ../../appendices/faq.en.rst:189
+#: ../../appendices/faq.en.rst:202 ../../appendices/faq.en.rst:251
+#: ../../appendices/faq.en.rst:268 ../../appendices/faq.en.rst:285
+#: ../../appendices/faq.en.rst:298 ../../appendices/faq.en.rst:310
+#: ../../appendices/faq.en.rst:322
 msgid "blank"
 msgstr ""
 
@@ -644,11 +676,13 @@ msgstr ""
 msgid "conditional miss (client sent conditional, fresh in cache, returned 412)"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:296 ../../appendices/faq.en.rst:308 ../../appendices/faq.en.rst:320
+#: ../../appendices/faq.en.rst:296 ../../appendices/faq.en.rst:308
+#: ../../appendices/faq.en.rst:320
 msgid "connection open failed"
 msgstr ""
 
-#: ../../appendices/faq.en.rst:297 ../../appendices/faq.en.rst:309 ../../appendices/faq.en.rst:321
+#: ../../appendices/faq.en.rst:297 ../../appendices/faq.en.rst:309
+#: ../../appendices/faq.en.rst:321
 msgid "connection opened successfully"
 msgstr ""
 
@@ -867,4 +901,3 @@ msgstr ""
 #: ../../appendices/faq.en.rst:201
 msgid "written into cache (new copy)"
 msgstr ""
-

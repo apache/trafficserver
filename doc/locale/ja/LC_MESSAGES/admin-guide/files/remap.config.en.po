@@ -3,21 +3,21 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 16:10+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/files/remap.config.en.rst:296
 msgid "'redirect-URL' is a redirection URL specified according to RFC 2616 and can contain special formatting instructions for run-time modifications of the resulting redirection URL.  All regexes Perl compatible  regular expressions, which describes the content of the \"Referer\" header which must be verified. In case an actual request does not have \"Referer\" header or it does not match with referer regular expression, the HTTP request will be redirected to 'redirect-URL'."
@@ -37,13 +37,18 @@ msgstr ""
 
 #: ../../admin-guide/files/remap.config.en.rst:46
 msgid "After you modify the :file:`remap.config` run the :option:`traffic_ctl config reload` to apply the changes. When you apply the changes to one node in a cluster, Traffic Server automatically applies the changes to all other nodes in the cluster."
-msgstr ""
+msgstr ":file:`remap.config` ファイルを修正した後は :option:`traffic_ctl config reload` を実行し変更を適用してください。クラスター内の1つのノードに変更を適用すると Traffic Server は自動的にクラスター内の他のすべてのノードに変更を適用します。"
 
 #: ../../admin-guide/files/remap.config.en.rst:304
 msgid "At least one regular expressions must be specified in order to activate 'deep linking protection'.  There are limitations for the number of referer regular expression strings - 2048.  In order to enable the 'deep linking protection' feature in Traffic Server, configure records.config with::"
 msgstr "'直リンク禁止機能' を動作させるためには少なくとも一つの正規表現が指定されていなければ成りません。リファラー正規表現の数には制限があり 2048 です。Traffic Server で '直リンク禁止機能' を有効化するためには records.config の次の変数を設定してください。"
 
-#: ../../admin-guide/files/remap.config.en.rst:157 ../../admin-guide/files/remap.config.en.rst:178 ../../admin-guide/files/remap.config.en.rst:195 ../../admin-guide/files/remap.config.en.rst:214 ../../admin-guide/files/remap.config.en.rst:228 ../../admin-guide/files/remap.config.en.rst:236
+#: ../../admin-guide/files/remap.config.en.rst:157
+#: ../../admin-guide/files/remap.config.en.rst:178
+#: ../../admin-guide/files/remap.config.en.rst:195
+#: ../../admin-guide/files/remap.config.en.rst:214
+#: ../../admin-guide/files/remap.config.en.rst:228
+#: ../../admin-guide/files/remap.config.en.rst:236
 msgid "Client Request"
 msgstr "クライアントリクエスト"
 
@@ -55,11 +60,17 @@ msgstr ":file:`remap.config` ファイルの各行はマッピングルールを
 msgid "Enter one of the following:"
 msgstr "次のうち一つを入力してください"
 
-#: ../../admin-guide/files/remap.config.en.rst:97 ../../admin-guide/files/remap.config.en.rst:106
+#: ../../admin-guide/files/remap.config.en.rst:97
+#: ../../admin-guide/files/remap.config.en.rst:106
 msgid "Enter the origin (\"from\") URL. You can enter up to four components: ::"
 msgstr "オリジン(\"from\")の URL を入力してください。4 つの構成要素を入力できます。 ::"
 
-#: ../../admin-guide/files/remap.config.en.rst:140 ../../admin-guide/files/remap.config.en.rst:280 ../../admin-guide/files/remap.config.en.rst:366 ../../admin-guide/files/remap.config.en.rst:388 ../../admin-guide/files/remap.config.en.rst:425 ../../admin-guide/files/remap.config.en.rst:471
+#: ../../admin-guide/files/remap.config.en.rst:140
+#: ../../admin-guide/files/remap.config.en.rst:280
+#: ../../admin-guide/files/remap.config.en.rst:366
+#: ../../admin-guide/files/remap.config.en.rst:388
+#: ../../admin-guide/files/remap.config.en.rst:425
+#: ../../admin-guide/files/remap.config.en.rst:471
 msgid "Examples"
 msgstr "例"
 
@@ -93,7 +104,7 @@ msgstr "この例では、トップレベルの :file:`remap.config` ファイ�
 
 #: ../../admin-guide/files/remap.config.en.rst:465
 msgid "Included remap files are not currently tracked by the configuration subsystem. Changes to included remap files will not be noticed by online configuration changes applied by :option:`traffic_ctl config reload` unless :file:`remap.config` has also changed."
-msgstr ""
+msgstr "取り込まれたリマップファイルは現在は設定サブシステムによって監視されていません。取り込まれたリマップファイルの変更は :file:`remap.config` も変更されない限りは :option:`traffic_ctl config reload` で適用されるオンラインでの設定の変更によって通知されません。"
 
 #: ../../admin-guide/files/remap.config.en.rst:449
 msgid "Including Additional Remap Files"
@@ -315,7 +326,12 @@ msgstr ""
 msgid "This will pass \"1\" and \"2\" to plugin1.so and \"3\" to plugin2.so"
 msgstr "これは \"1\" と \"2\" を plugin1.so に \"3\" を plugin2.so に渡します。"
 
-#: ../../admin-guide/files/remap.config.en.rst:157 ../../admin-guide/files/remap.config.en.rst:178 ../../admin-guide/files/remap.config.en.rst:195 ../../admin-guide/files/remap.config.en.rst:214 ../../admin-guide/files/remap.config.en.rst:228 ../../admin-guide/files/remap.config.en.rst:236
+#: ../../admin-guide/files/remap.config.en.rst:157
+#: ../../admin-guide/files/remap.config.en.rst:178
+#: ../../admin-guide/files/remap.config.en.rst:195
+#: ../../admin-guide/files/remap.config.en.rst:214
+#: ../../admin-guide/files/remap.config.en.rst:228
+#: ../../admin-guide/files/remap.config.en.rst:236
 msgid "Translated Request"
 msgstr "変換されたリクエスト"
 
@@ -391,7 +407,8 @@ msgstr "``http://www.x.com/Widgets/``"
 msgid "``http://www.x.com/Widgets/index.html``"
 msgstr "``http://www.x.com/Widgets/index.html``"
 
-#: ../../admin-guide/files/remap.config.en.rst:230 ../../admin-guide/files/remap.config.en.rst:238
+#: ../../admin-guide/files/remap.config.en.rst:230
+#: ../../admin-guide/files/remap.config.en.rst:238
 msgid "``http://www.x.com/Widgets``"
 msgstr "``http://www.x.com/Widgets``"
 
@@ -443,11 +460,11 @@ msgstr "フォーマットは次のとおりです。"
 msgid "type"
 msgstr ""
 
-#: ../../admin-guide/files/remap.config.en.rst:101 ../../admin-guide/files/remap.config.en.rst:110
+#: ../../admin-guide/files/remap.config.en.rst:101
+#: ../../admin-guide/files/remap.config.en.rst:110
 msgid "where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``."
 msgstr ""
 
 #: ../../admin-guide/files/remap.config.en.rst:374
 msgid "will pass \"1\" and \"2\" to plugin1.so and \"3\" to plugin2.so."
 msgstr "これは \"1\" と \"2\" を plugin1.so に \"3\" を plugin2.so に渡します。"
-

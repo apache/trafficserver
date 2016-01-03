@@ -3,21 +3,21 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
-#, fuzzy
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-03 15:12+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/monitoring/alarms.en.rst:30
 msgid "Email Alarms"
@@ -33,7 +33,7 @@ msgstr ":file:`records.config` の :ts:cv:`proxy.config.alarm_email` にアラ�
 
 #: ../../admin-guide/monitoring/alarms.en.rst:32
 msgid "To configure |TS| to send an email to a specific address whenever an alarm occurs, follow the steps below:"
-msgstr ""
+msgstr "アラームが発生したときに |TS| が指定したアドレスに E メールを送信するように設定するには、以下の手順に従ってください。"
 
 #: ../../admin-guide/monitoring/alarms.en.rst:23
 msgid "Traffic Manager Alarms"
@@ -45,7 +45,7 @@ msgstr "アラームにスクリプトファイルを使用する"
 
 #: ../../admin-guide/monitoring/alarms.en.rst:25
 msgid "|TS| signals an alarm when it detects a problem. For example, the space allocated to event logs could be full or |TS| may not be able to write to a configuration file."
-msgstr ""
+msgstr "|TS| は問題を検出するとアラームを発します。例えば、イベントログに割り当てたスペースに空きがないときや Traffic Server が設定ファイルに書き込めないときです。"
 
 #: ../../admin-guide/monitoring/alarms.en.rst:45
 msgid "Alarm messages are built into Traffic Server and cannot be changed. However, you can write a script file to execute certain actions when an alarm is signaled. Traffic Server provides a sample script file named ``example_alarm_bin.sh`` in the ``bin`` directory which can serve as the basis for your custom alarm scripts."
@@ -57,7 +57,7 @@ msgstr "例えば、次のコマンドは Traffic Server ノードのドキュ�
 
 #: ../../admin-guide/monitoring/alarms.en.rst:76
 msgid "If the Traffic Server ``bin`` directory is not in your path, then prepend the Traffic Line command with ``./`` (for example: :option:`traffic_ctl metric get` ``VARIABLE``)."
-msgstr ""
+msgstr "Traffic Server ``bin`` ディレクトリが path に無い場合は、``./`` を Traffic Line コマンドの前に付けてください ( 例: :option:`traffic_ctl metric get` ``VARIABLE``) 。"
 
 #: ../../admin-guide/monitoring/alarms.en.rst:63
 msgid "To view a statistic, enter the following command:::"
@@ -69,9 +69,8 @@ msgstr "Traffic Line で統計を見る"
 
 #: ../../admin-guide/monitoring/alarms.en.rst:54
 msgid "You can use the Traffic Line command-line interface to view statistics about Traffic Server performance and web traffic. In addition to viewing statistics, you can also configure, stop, and restart the Traffic Server system. For additional information, refer to :ref:`configure-using-traffic-line` and :program:`traffic_line`. You can view specific information about a Traffic Server node or cluster by specifying the variable that corresponds to the statistic you want to see."
-msgstr ""
+msgstr "Traffic Line コマンドラインインターフェースを Traffic Server のパフォーマンスや Web トラフィックの統計を見るために使用することができます。統計を見ることに加え、Traffic Server システムを設定、停止、起動、再起動することもできます。追加の情報については :ref:`configure-using-traffic-line` と :program:`traffic_line` を参照してください。見たい統計に対応する変数を指定することで Traffic Server の特定のノードまたはクラスターに関する特定の情報を見ることができます。"
 
 #: ../../admin-guide/monitoring/alarms.en.rst:67
 msgid "where ``variable`` is the variable representing the information you want to view. For a list of variables you can specify, refer to :ref:`Traffic Server Metrics <traffic-line-performance-statistics>`."
-msgstr ""
-
+msgstr "``variable`` の部分は見たい情報を示す変数です。指定できる変数の一覧については :ref:`Traffic Line メトリクス <traffic-line-performance-statistics>` を参照してください。"
