@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
@@ -13,35 +13,30 @@ msgstr ""
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/stats_over_http.en.rst:36
+msgid "After starting Traffic Server, the JSON metrics are now available on the default URL::"
+msgstr "Traffic Server を開始すると、次のデフォルト URL で JSON 形式のメトリクスが利用可能になっています。"
+
+#: ../../admin-guide/plugins/stats_over_http.en.rst:30
+msgid "Enabling Stats Over HTTP"
+msgstr ""
 
 #: ../../admin-guide/plugins/stats_over_http.en.rst:23
 msgid "Stats Over HTTP Plugin"
 msgstr ""
 
 #: ../../admin-guide/plugins/stats_over_http.en.rst:25
-msgid ""
-"This plugin implements an HTTP interface to all Traffic Server "
-"statistics. The metrics returned are in a JSON format, for easy "
-"processing. This plugin is now part of the standard ATS build process, "
-"and should be available after install."
-msgstr ""
-
-#: ../../admin-guide/plugins/stats_over_http.en.rst:30
-msgid "Enabling Stats Over HTTP"
-msgstr ""
+msgid "This plugin implements an HTTP interface to all Traffic Server statistics. The metrics returned are in a JSON format, for easy processing. This plugin is now part of the standard ATS build process, and should be available after install."
+msgstr "このプラグインはすべての Traffic Server の統計情報にアクセスするための HTTP インターフェースを実装しています。返されるメトリクスは処理の行いやすい JSON 形式です。このプラグインは ATS 標準ビルド処理の一部となったので、インストールすれば利用可能なはずです。"
 
 #: ../../admin-guide/plugins/stats_over_http.en.rst:32
 msgid "To enable this plugin, add to the :file:`plugin.conf` file::"
-msgstr ""
-
-#: ../../admin-guide/plugins/stats_over_http.en.rst:36
-msgid ""
-"After starting Traffic Server, the JSON metrics are now available on the "
-"default URL::"
 msgstr ""
 
 #: ../../admin-guide/plugins/stats_over_http.en.rst:41
@@ -52,34 +47,23 @@ msgstr ""
 msgid "Plugin Options"
 msgstr ""
 
+#: ../../admin-guide/plugins/stats_over_http.en.rst:68
+msgid "This is weak security at best, since the secret could possibly leak if you are careless and send it over clear text."
+msgstr "不注意により秘密を平文で送った場合それが漏れる可能性があるので、これはせいぜい弱いセキュリティでしかありません。"
+
 #: ../../admin-guide/plugins/stats_over_http.en.rst:48
-msgid ""
-"This option causes the plugin to emit floating point and integral metric "
-"values as JSON numbers, rather then JSON strings. This can cause "
-"interoperability problems since integer metrics have a 64-bit unsigned "
-"range."
+msgid "This option causes the plugin to emit floating point and integral metric values as JSON numbers, rather then JSON strings. This can cause interoperability problems since integer metrics have a 64-bit unsigned range."
 msgstr ""
 
 #: ../../admin-guide/plugins/stats_over_http.en.rst:55
-msgid ""
-"This option wraps 64-bit unsigned values to the 64-bit signed range. This"
-" aids interoperability with Java, since prior to the Java SE 8 release, "
-"Java did not have a 64-bit unsigned type."
+msgid "This option wraps 64-bit unsigned values to the 64-bit signed range. This aids interoperability with Java, since prior to the Java SE 8 release, Java did not have a 64-bit unsigned type."
 msgstr ""
 
 #: ../../admin-guide/plugins/stats_over_http.en.rst:59
-msgid ""
-"You can optionally modify the path to use, and this is highly recommended"
-" in a public facing server. For example::"
+msgid "You can optionally modify the path to use, and this is highly recommended in a public facing server. For example::"
 msgstr ""
 
 #: ../../admin-guide/plugins/stats_over_http.en.rst:64
 msgid "and the URL would then be e.g.::"
-msgstr ""
-
-#: ../../admin-guide/plugins/stats_over_http.en.rst:68
-msgid ""
-"This is weak security at best, since the secret could possibly leak if "
-"you are careless and send it over clear text."
-msgstr ""
+msgstr "URL は例えば次のようになるでしょう。"
 
