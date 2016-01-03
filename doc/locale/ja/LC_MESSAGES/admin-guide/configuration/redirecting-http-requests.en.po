@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
@@ -13,452 +13,281 @@ msgstr ""
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:4
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:24
-msgid "Reverse Proxy and HTTP Redirects"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:26
-msgid ""
-"As a reverse proxy cache, Traffic Server serves requests on behalf of "
-"origin servers. Traffic Server is configured in such a way that it "
-"appears to clients like a normal origin server."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:34
-msgid "Understanding Reverse Proxy Caching"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:36
-msgid ""
-"With *forward proxy caching*, Traffic Server handles web requests to "
-"origin servers on behalf of the clients requesting the content. *Reverse "
-"proxy caching* (also known as *server acceleration*) is different because"
-" Traffic Server acts as a proxy cache on behalf of the origin servers "
-"that store the content. Traffic Server is configured to behave outwardly "
-"as origin server which the client is trying to connect to. In a typical "
-"scenario the advertised hostname of the origin server resolves to Traffic"
-" Server, which serves client requests directly, fetching content from the"
-" true origin server when necessary."
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:201
+msgid "A *map rule* translates the URL in client requests into the URL where the content is located. When Traffic Server is in reverse proxy mode and receives an HTTP client request, it first constructs a complete request URL from the relative URL and its headers. Traffic Server then looks for a match by comparing the complete request URL with its list of target URLs in :file:`remap.config`. For the request URL to match a target URL, the following conditions must be true:"
 msgstr ""
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:46
 msgid "Reverse Proxy Solutions"
-msgstr ""
+msgstr "リバースプロキシーによる対応策"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:48
-msgid ""
-"There are many ways to use Traffic Server as a reverse proxy. Below are a"
-" few example scenarios."
+msgid "There are many ways to use Traffic Server as a reverse proxy. Below are a few example scenarios."
+msgstr "Traffic Server をリバースプロキシーとして使う方法はたくさんあります。以下はいくつかの例です。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:34
+msgid "Understanding Reverse Proxy Caching"
+msgstr "リバースプロキシーキャッシュを理解する"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:232
+msgid "A *reverse-map rule* translates the URL in origin server redirect responses to point to Traffic Server so that clients are redirected to Traffic Server instead of accessing an origin server directly. For example, if there is a directory ``/pub`` on an origin server at ``www.molasses.com`` and a client sends a request to that origin server for ``/pub``, then the origin server might reply with a redirect by sending the Header ``Location: http://realhost.com/pub/`` to let the client know that it was a directory it had requested, not a document (a common use of redirects is to normalize URLs so that clients can bookmark documents properly)."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:139
+msgid "A client browser sends an HTTP request addressed to a host called ``www.host.com`` on port 80. Traffic Server receives the request because it is acting as the origin server (the origin server’s advertised hostname resolves to Traffic Server)."
+msgstr "クライアントブラウザが ``www.host.com`` の 80 番ポートに HTTP リクエストを送信します。Traffic Server はオリジンサーバーとして振る舞っているのでこのリクエストを受け取ります(オリジンサーバーの広告されたホスト名は Traffic Server へ解決されるように広告されています)。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:26
+msgid "As a reverse proxy cache, Traffic Server serves requests on behalf of origin servers. Traffic Server is configured in such a way that it appears to clients like a normal origin server."
+msgstr "リバースプロキシーキャッシュとして、Traffic Server はオリジンサーバーの代わりにリクエストに応えます。Traffic Server はクライアントには通常のオリジンサーバーに見えるように設定されます。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:250
+msgid "Both map and reverse-map rules consist of a *target* (origin) URL and a *replacement* (destination) URL. In a *map rule*, the target URL points to Traffic Server and the replacement URL specifies where the original content is located. In a *reverse-map rule*, the target URL specifies where the original content is located and the replacement URL points to Traffic Server. Traffic Server stores mapping rules in :file:`remap.config` located in the Traffic Server ``config`` directory."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:284
+msgid "Configure Traffic Server to retain the client host header information in a request during translation. See :ts:cv:`proxy.config.url_remap.pristine_host_hdr`."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:288
+msgid "Configure Traffic Server to serve requests only to the origin servers listed in the mapping rules. As a result, requests to origin servers not listed in the mapping rules are not served. See :ts:cv:`proxy.config.url_remap.remap_required`."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:167
+msgid "Create mapping rules in the :file:`remap.config` file (refer to `Creating Mapping Rules for HTTP Requests`_). ::"
+msgstr ":file:`remap.config` ファイルにマッピングルールを作成する (`HTTP リクエスト用マッピングルールの作成`_\\ を参照してください) 。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:53
+msgid "Deliver content efficiently in geographically distant areas."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:75
+msgid "Delivering Content in Geographically-Dispersed Areas"
+msgstr "分散した地域でのコンテンツの配信"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:172
+msgid "Enable the reverse proxy option (refer to `Enabling HTTP Reverse Proxy`_)."
+msgstr "リバースプロキシーオプションを有効にする(`HTTP リバースプロキシーの有効化`_\\ を参照してください)。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:268
+msgid "Enabling HTTP Reverse Proxy"
+msgstr "HTTP リバースプロキシーの有効化"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:263
+msgid "Enter the map and reverse-map rules into :file:`remap.config`."
 msgstr ""
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:51
 msgid "Offload heavily-used origin servers."
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:53
-msgid "Deliver content efficiently in geographically distant areas."
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:259
+msgid "Creating Mapping Rules for HTTP Requests"
+msgstr "HTTP リクエスト用マッピングルールの作成"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:272
+msgid "Edit :ts:cv:`proxy.config.reverse_proxy.enabled` in :file:`records.config`. ::"
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:324
+msgid "Example"
+msgstr "例"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:319
+msgid "For each redirect you want to set enter a mapping rule in :file:`remap.config`."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:123
+msgid "HTTP Reverse Proxy"
+msgstr "HTTP リバースプロキシー"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:133
+msgid "HTTP reverse proxy"
+msgstr "HTTP リバースプロキシー"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:177
+msgid "Handling Origin Server Redirect Responses"
+msgstr "オリジンサーバーのリダイレクトレスポンスを扱う"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:106
+msgid "How Does Reverse Proxy Work?"
+msgstr "リバースプロキシーの動作"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:221
+msgid "If Traffic Server finds a match, then it translates the request URL into the replacement URL listed in the map rule: it sets the host and path of the request URL to match the replacement URL. If the URL contains path prefixes, then Traffic Server removes the prefix of the path that matches the target URL path and substitutes it with the path from the replacement URL. If two mappings match a request URL, then Traffic Server applies the first mapping listed in :file:`remap.config`."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:147
+msgid "If the request cannot be served from cache, Traffic Server opens a connection to the origin server (or more likely, uses an existing connection it has pre-established), retrieves the content, and optionally caches it for future use."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:152
+msgid "If the request was a cache hit and the content is still fresh in the cache, or the content is now available through Traffic Server because of step 3, Traffic Server sends the requested object to the client from the cache directly."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:174
+msgid "In addition to the tasks above, you can also `Setting Optional HTTP Reverse Proxy Options`_."
+msgstr "上のタスクに加え、\\ `省略可能な HTTP リバースプロキシーオプションの設定`_\\ を行うこともできます。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:58
+msgid "Offloading Heavily-Used Origin Servers"
+msgstr "使用頻度の高いオリジンサーバーの負荷の軽減"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:179
+msgid "Origin servers often send redirect responses back to browsers redirecting them to different pages. For example, if an origin server is overloaded, then it might redirect browsers to a less loaded server. Origin servers also redirect when web pages have moved to different locations. When Traffic Server is configured as a reverse proxy, it must readdress redirects from origin servers so that browsers are redirected to Traffic Server and not to another origin server."
 msgstr ""
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:55
 msgid "Provide security for origin servers that contain sensitive information."
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:58
-msgid "Offloading Heavily-Used Origin Servers"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:60
-msgid ""
-"Traffic Server can accept requests on behalf of the origin server and "
-"improve the speed and quality of web serving by reducing load and hot "
-"spots on backup origin servers. For example, a web hoster can maintain a "
-"scalable Traffic Server system with a set of low-cost, low-performance, "
-"less-reliable PC origin servers as backup servers. In fact, a single "
-"Traffic Server can act as the virtual origin server for multiple backup "
-"origin servers, as shown in the figure below."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:72
-msgid "Traffic Server as reverse proxy for a pair of origin servers"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:75
-msgid "Delivering Content in Geographically-Dispersed Areas"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:77
-msgid ""
-"Traffic Server can be used in reverse proxy mode to accelerate origin "
-"servers that provide content to areas not located within close "
-"geographical proximity. Caches are typically easier to manage and are "
-"more cost-effective than replicating data. For example, Traffic Server "
-"can be used as a mirror site on the far side of a trans-Atlantic link to "
-"serve users without having to fetch the request and content across "
-"expensive, or higher latency, international connections. Unlike "
-"replication, for which hardware must be configured to replicate all data "
-"and to handle peak capacity, Traffic Server dynamically adjusts to "
-"optimally use the serving and storing capacity of the hardware. Traffic "
-"Server is also designed to keep content fresh automatically, thereby "
-"eliminating the complexity of updating remote origin servers."
-msgstr ""
-
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:91
 msgid "Providing Security for an Origin Server"
-msgstr ""
+msgstr "オリジンサーバーへのセキュリティの提供"
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:93
-msgid ""
-"Traffic Server can be used in reverse proxy mode to provide security for "
-"an origin server. If an origin server contains sensitive information that"
-" you want to keep secure inside your firewall, then you can use a Traffic"
-" Server outside the firewall as a reverse proxy for that origin server. "
-"When outside clients try to access the origin server, the requests "
-"instead go to Traffic Server. If the desired content is not sensitive, "
-"then it can be served from the cache. If the content is sensitive and not"
-" cacheable, then Traffic Server obtains the content from the origin "
-"server (the firewall allows only Traffic Server access to the origin "
-"server). The sensitive content resides on the origin server, safely "
-"inside the firewall."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:106
-msgid "How Does Reverse Proxy Work?"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:108
-msgid ""
-"When a browser makes a request, it normally sends that request directly "
-"to the origin server. When Traffic Server is in reverse proxy mode, it "
-"intercepts the request before it reaches the origin server. Typically, "
-"this is done by setting up the DNS entry for the origin server (i.e., the"
-" origin server's advertised hostname) so it resolves to the Traffic "
-"Server IP address. When Traffic Server is configured as the origin "
-"server, the browser connects to Traffic Server rather than the origin "
-"server. For additional information, see `HTTP Reverse Proxy`_."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:119
-msgid ""
-"To avoid a DNS conflict, the origin server’s hostname and its advertised "
-"hostname must not be the same."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:123
-msgid "HTTP Reverse Proxy"
-msgstr ""
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:4 ../../admin-guide/configuration/redirecting-http-requests.en.rst:24
+msgid "Reverse Proxy and HTTP Redirects"
+msgstr "リバースプロキシーと HTTP リダイレクト"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:125
-msgid ""
-"In reverse proxy mode, Traffic Server serves HTTP requests on behalf of a"
-" web server. The figure below illustrates how Traffic Server in reverse "
-"proxy mode serves an HTTP request from a client browser."
+msgid "In reverse proxy mode, Traffic Server serves HTTP requests on behalf of a web server. The figure below illustrates how Traffic Server in reverse proxy mode serves an HTTP request from a client browser."
+msgstr "リバースプロキシーモードでは、Traffic Server は HTTP リクエストをウェブサーバーの代わりに受け取ります。下の図は リバースプロキシーモードの Traffic Server がどのようにクライアントからの HTTP リクエストを受け取るのかを説明しています。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:301
+msgid "Redirecting HTTP Requests"
+msgstr "HTTP リクエストのリダイレクト"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:297
+msgid "Run the command :option:`traffic_ctl config reload` to apply any of these configuration changes."
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:133
-msgid "HTTP reverse proxy"
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:265 ../../admin-guide/configuration/redirecting-http-requests.en.rst:276 ../../admin-guide/configuration/redirecting-http-requests.en.rst:321
+msgid "Run the command :option:`traffic_ctl config reload` to apply the configuration changes."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:279
+msgid "Setting Optional HTTP Reverse Proxy Options"
+msgstr "省略可能な HTTP リバースプロキシーオプションの設定"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:293
+msgid "Specify an alternate URL to which incoming requests from older clients ,such as ones that do not provide ``Host`` headers, are directed. See :ts:cv:`proxy.config.header.parse.no_host_url_redirect`."
 msgstr ""
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:135
 msgid "The figure above demonstrates the following steps:"
+msgstr "上の図は次のステップを説明しています。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:218
+msgid "The path portion of the target URL must match a prefix of the request URL path."
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:139
-msgid ""
-"A client browser sends an HTTP request addressed to a host called "
-"``www.host.com`` on port 80. Traffic Server receives the request because "
-"it is acting as the origin server (the origin server’s advertised "
-"hostname resolves to Traffic Server)."
-msgstr ""
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:215
+msgid "The ports in both URLs must be the same. If no port is specified in a URL, then the default port for the scheme of the URL is used."
+msgstr "ポートが同じであること。もし URL にポートが指定されていない場合、その URL スキームのデフォルトのポートが使用されます。"
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:144
-msgid ""
-"Traffic Server locates a map rule in the :file:`remap.config` file and "
-"remaps the request to the specified origin server (``realhost.com``)."
-msgstr ""
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:326
+msgid "The following permanently redirects all HTTP requests for ``www.server1.com`` to ``www.server2.com``: ::"
+msgstr "次の設定は ``www.server1.com`` へのすべての HTTP リクエストを恒久的に ``www.server2.com`` へリダイレクトします。 ::"
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:147
-msgid ""
-"If the request cannot be served from cache, Traffic Server opens a "
-"connection to the origin server (or more likely, uses an existing "
-"connection it has pre-established), retrieves the content, and optionally"
-" caches it for future use."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:152
-msgid ""
-"If the request was a cache hit and the content is still fresh in the "
-"cache, or the content is now available through Traffic Server because of "
-"step 3, Traffic Server sends the requested object to the client from the "
-"cache directly."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:159
-msgid ""
-"Traffic Server, when updating its own cache from the origin server, will "
-"simultaneously deliver that content to the client while updating its "
-"cache database. The response to the client containing the requested "
-"object will begin as soon as Traffic Server has received and processed "
-"the full response headers from the origin server."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:165
-msgid "To configure HTTP reverse proxy, you must perform the following tasks:"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:167
-msgid ""
-"Create mapping rules in the :file:`remap.config` file (refer to `Creating"
-" Mapping Rules for HTTP Requests`_). ::"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:172
-msgid "Enable the reverse proxy option (refer to `Enabling HTTP Reverse Proxy`_)."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:174
-msgid ""
-"In addition to the tasks above, you can also `Setting Optional HTTP "
-"Reverse Proxy Options`_."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:177
-msgid "Handling Origin Server Redirect Responses"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:179
-msgid ""
-"Origin servers often send redirect responses back to browsers redirecting"
-" them to different pages. For example, if an origin server is overloaded,"
-" then it might redirect browsers to a less loaded server. Origin servers "
-"also redirect when web pages have moved to different locations. When "
-"Traffic Server is configured as a reverse proxy, it must readdress "
-"redirects from origin servers so that browsers are redirected to Traffic "
-"Server and not to another origin server."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:187
-msgid ""
-"To readdress redirects, Traffic Server uses reverse-map rules. Unless you"
-" have :ts:cv:`proxy.config.url_remap.pristine_host_hdr` enabled (the "
-"default) you should generally set up a reverse-map rule for each map "
-"rule. To create reverse-map rules, refer to `Using Mapping Rules for HTTP"
-" Requests`_."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:194
-msgid "Using Mapping Rules for HTTP Requests"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:196
-msgid "Traffic Server uses two types of mapping rules for HTTP reverse proxy."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:199
-msgid "map rule"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:201
-msgid ""
-"A *map rule* translates the URL in client requests into the URL where the"
-" content is located. When Traffic Server is in reverse proxy mode and "
-"receives an HTTP client request, it first constructs a complete request "
-"URL from the relative URL and its headers. Traffic Server then looks for "
-"a match by comparing the complete request URL with its list of target "
-"URLs in :file:`remap.config`. For the request URL to match a target URL, "
-"the following conditions must be true:"
-msgstr ""
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:211
+msgid "The host in both URLs must be the same. If the request URL contains an unqualified hostname, then it will never match a target URL with a fully-qualified hostname."
+msgstr "URL のホストが同じであること。もしリクエスト URL が修飾されていないホスト名を含んでいる場合、完全修飾されたホスト名を含むターゲット URL にはマッチしません。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:209
 msgid "The scheme of both URLs must be the same."
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:211
-msgid ""
-"The host in both URLs must be the same. If the request URL contains an "
-"unqualified hostname, then it will never match a target URL with a fully-"
-"qualified hostname."
-msgstr ""
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:119
+msgid "To avoid a DNS conflict, the origin server’s hostname and its advertised hostname must not be the same."
+msgstr "DNS の衝突を避けるため、オリジンサーバーのホスト名とその広告されたホスト名は同じであってはなりません。"
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:215
-msgid ""
-"The ports in both URLs must be the same. If no port is specified in a "
-"URL, then the default port for the scheme of the URL is used."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:218
-msgid ""
-"The path portion of the target URL must match a prefix of the request URL"
-" path."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:221
-msgid ""
-"If Traffic Server finds a match, then it translates the request URL into "
-"the replacement URL listed in the map rule: it sets the host and path of "
-"the request URL to match the replacement URL. If the URL contains path "
-"prefixes, then Traffic Server removes the prefix of the path that matches"
-" the target URL path and substitutes it with the path from the "
-"replacement URL. If two mappings match a request URL, then Traffic Server"
-" applies the first mapping listed in :file:`remap.config`."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:230
-msgid "reverse-map rule"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:232
-msgid ""
-"A *reverse-map rule* translates the URL in origin server redirect "
-"responses to point to Traffic Server so that clients are redirected to "
-"Traffic Server instead of accessing an origin server directly. For "
-"example, if there is a directory ``/pub`` on an origin server at "
-"``www.molasses.com`` and a client sends a request to that origin server "
-"for ``/pub``, then the origin server might reply with a redirect by "
-"sending the Header ``Location: http://realhost.com/pub/`` to let the "
-"client know that it was a directory it had requested, not a document (a "
-"common use of redirects is to normalize URLs so that clients can bookmark"
-" documents properly)."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:243
-msgid ""
-"Traffic Server uses ``reverse_map`` rules to prevent clients (that "
-"receive redirects from origin servers) from bypassing Traffic Server and "
-"directly accessing the origin servers. In many cases the client would be "
-"hitting a wall because ``realhost.com`` actually does not resolve for the"
-" client. (E.g.: Because it's running on a port shielded by a firewall, or"
-" because it's running on a non-routable LAN IP)"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:250
-msgid ""
-"Both map and reverse-map rules consist of a *target* (origin) URL and a "
-"*replacement* (destination) URL. In a *map rule*, the target URL points "
-"to Traffic Server and the replacement URL specifies where the original "
-"content is located. In a *reverse-map rule*, the target URL specifies "
-"where the original content is located and the replacement URL points to "
-"Traffic Server. Traffic Server stores mapping rules in "
-":file:`remap.config` located in the Traffic Server ``config`` directory."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:259
-msgid "Creating Mapping Rules for HTTP Requests"
-msgstr ""
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:165
+msgid "To configure HTTP reverse proxy, you must perform the following tasks:"
+msgstr "HTTP リバースプロキシーを設定するためには、次のタスクを行う必要があります"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:261
 msgid "To create mapping rules:"
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:263
-msgid "Enter the map and reverse-map rules into :file:`remap.config`."
-msgstr ""
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:187
+msgid "To readdress redirects, Traffic Server uses reverse-map rules. Unless you have :ts:cv:`proxy.config.url_remap.pristine_host_hdr` enabled (the default) you should generally set up a reverse-map rule for each map rule. To create reverse-map rules, refer to `Using Mapping Rules for HTTP Requests`_."
+msgstr "リダイレクト先を書き直すために、Traffic Server はリバースマップルールを使用します。 :ts:cv:`proxy.config.url_remap.pristine_host_hdr` を有効にしていない限り(それがデフォルトです)、一般的には各マップルールに対してリバースマップルールを用意すべきです。リバースマップルールを作成するには `HTTP リクエスト用マッピングルールの使用`_\\ を参照してください。"
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:265
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:276
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:321
-msgid ""
-"Run the command :option:`traffic_ctl config reload` to apply the "
-"configuration changes."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:268
-msgid "Enabling HTTP Reverse Proxy"
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:77
+msgid "Traffic Server can be used in reverse proxy mode to accelerate origin servers that provide content to areas not located within close geographical proximity. Caches are typically easier to manage and are more cost-effective than replicating data. For example, Traffic Server can be used as a mirror site on the far side of a trans-Atlantic link to serve users without having to fetch the request and content across expensive, or higher latency, international connections. Unlike replication, for which hardware must be configured to replicate all data and to handle peak capacity, Traffic Server dynamically adjusts to optimally use the serving and storing capacity of the hardware. Traffic Server is also designed to keep content fresh automatically, thereby eliminating the complexity of updating remote origin servers."
 msgstr ""
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:270
 msgid "To enable HTTP reverse proxy:"
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:272
-msgid ""
-"Edit :ts:cv:`proxy.config.reverse_proxy.enabled` in "
-":file:`records.config`. ::"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:279
-msgid "Setting Optional HTTP Reverse Proxy Options"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:281
-msgid ""
-"Traffic Server provides several reverse proxy configuration options in "
-":file:`records.config` that enable you to:"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:284
-msgid ""
-"Configure Traffic Server to retain the client host header information in "
-"a request during translation. See "
-":ts:cv:`proxy.config.url_remap.pristine_host_hdr`."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:288
-msgid ""
-"Configure Traffic Server to serve requests only to the origin servers "
-"listed in the mapping rules. As a result, requests to origin servers not "
-"listed in the mapping rules are not served. See "
-":ts:cv:`proxy.config.url_remap.remap_required`."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:293
-msgid ""
-"Specify an alternate URL to which incoming requests from older clients "
-",such as ones that do not provide ``Host`` headers, are directed. See "
-":ts:cv:`proxy.config.header.parse.no_host_url_redirect`."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:297
-msgid ""
-"Run the command :option:`traffic_ctl config reload` to apply any of these"
-" configuration changes."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:301
-msgid "Redirecting HTTP Requests"
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:303
-msgid ""
-"You can configure Traffic Server to redirect HTTP requests without having"
-" to contact any origin servers. For example, if you redirect all requests"
-" for ``http://www.ultraseek.com`` to "
-"``http://www.server1.com/products/portal/search/``, then all HTTP "
-"requests for ``www.ultraseek.com`` go directly to "
-"``www.server1.com/products/portal/search``."
-msgstr ""
-
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:310
-msgid ""
-"You can configure Traffic Server to perform permanent or temporary "
-"redirects. *Permanent redirects* notify the browser of the URL change (by"
-" returning the HTTP status code ``301``) so that the browser can update "
-"bookmarks. *Temporary redirects* notify the browser of the URL change for"
-" the current request only (by returning the HTTP status code ``307`` )."
-msgstr ""
-
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:317
 msgid "To set redirect rules:"
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:319
-msgid ""
-"For each redirect you want to set enter a mapping rule in "
-":file:`remap.config`."
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:72
+msgid "Traffic Server as reverse proxy for a pair of origin servers"
+msgstr "1組のオリジンサーバーのリバースプロキシーとして動く Traffic Server"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:60
+msgid "Traffic Server can accept requests on behalf of the origin server and improve the speed and quality of web serving by reducing load and hot spots on backup origin servers. For example, a web hoster can maintain a scalable Traffic Server system with a set of low-cost, low-performance, less-reliable PC origin servers as backup servers. In fact, a single Traffic Server can act as the virtual origin server for multiple backup origin servers, as shown in the figure below."
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:324
-msgid "Example"
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:93
+msgid "Traffic Server can be used in reverse proxy mode to provide security for an origin server. If an origin server contains sensitive information that you want to keep secure inside your firewall, then you can use a Traffic Server outside the firewall as a reverse proxy for that origin server. When outside clients try to access the origin server, the requests instead go to Traffic Server. If the desired content is not sensitive, then it can be served from the cache. If the content is sensitive and not cacheable, then Traffic Server obtains the content from the origin server (the firewall allows only Traffic Server access to the origin server). The sensitive content resides on the origin server, safely inside the firewall."
 msgstr ""
 
-#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:326
-msgid ""
-"The following permanently redirects all HTTP requests for "
-"``www.server1.com`` to ``www.server2.com``: ::"
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:144
+msgid "Traffic Server locates a map rule in the :file:`remap.config` file and remaps the request to the specified origin server (``realhost.com``)."
 msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:159
+msgid "Traffic Server, when updating its own cache from the origin server, will simultaneously deliver that content to the client while updating its cache database. The response to the client containing the requested object will begin as soon as Traffic Server has received and processed the full response headers from the origin server."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:194
+msgid "Using Mapping Rules for HTTP Requests"
+msgstr "HTTP リクエスト用マッピングルールの使用"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:281
+msgid "Traffic Server provides several reverse proxy configuration options in :file:`records.config` that enable you to:"
+msgstr "Traffic Server は :file:`records.config` でいくつかのリバースプロキシー設定オプションを提供し次のことを可能にします。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:243
+msgid "Traffic Server uses ``reverse_map`` rules to prevent clients (that receive redirects from origin servers) from bypassing Traffic Server and directly accessing the origin servers. In many cases the client would be hitting a wall because ``realhost.com`` actually does not resolve for the client. (E.g.: Because it's running on a port shielded by a firewall, or because it's running on a non-routable LAN IP)"
+msgstr "Traffic Server は (オリジンサーバーからリダイレクト指示を受けた) クライアントが Traffic Server をバイパスしてオリジンサーバーに直接アクセスすることを防ぐために ``reverse_map`` ルールを使用します。クライアントが壁にぶつかる多くのケースは ``realhost.com`` が実際にはクライアントには解決できない場合です。(例: ファイアーウォールでポートが塞がれている、到達不可能な LAN の IP で動いている)"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:196
+msgid "Traffic Server uses two types of mapping rules for HTTP reverse proxy."
+msgstr "Traffic Server は HTTP リバースプロキシー用に2タイプのマッピングルールを使用します。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:108
+msgid "When a browser makes a request, it normally sends that request directly to the origin server. When Traffic Server is in reverse proxy mode, it intercepts the request before it reaches the origin server. Typically, this is done by setting up the DNS entry for the origin server (i.e., the origin server's advertised hostname) so it resolves to the Traffic Server IP address. When Traffic Server is configured as the origin server, the browser connects to Traffic Server rather than the origin server. For additional information, see `HTTP Reverse Proxy`_."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:36
+msgid "With *forward proxy caching*, Traffic Server handles web requests to origin servers on behalf of the clients requesting the content. *Reverse proxy caching* (also known as *server acceleration*) is different because Traffic Server acts as a proxy cache on behalf of the origin servers that store the content. Traffic Server is configured to behave outwardly as origin server which the client is trying to connect to. In a typical scenario the advertised hostname of the origin server resolves to Traffic Server, which serves client requests directly, fetching content from the true origin server when necessary."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:310
+msgid "You can configure Traffic Server to perform permanent or temporary redirects. *Permanent redirects* notify the browser of the URL change (by returning the HTTP status code ``301``) so that the browser can update bookmarks. *Temporary redirects* notify the browser of the URL change for the current request only (by returning the HTTP status code ``307`` )."
+msgstr ""
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:303
+msgid "You can configure Traffic Server to redirect HTTP requests without having to contact any origin servers. For example, if you redirect all requests for ``http://www.ultraseek.com`` to ``http://www.server1.com/products/portal/search/``, then all HTTP requests for ``www.ultraseek.com`` go directly to ``www.server1.com/products/portal/search``."
+msgstr "Traffic Server をどのオリジンサーバーにもコンタクトさせることなく HTTP リクエストをリダイレクトするように設定できます。例えば、``http://www.ultraseek.com`` へのすべてのリクエストを```http://www.server1.com/products/portal/search/`` にリダイレクトする場合はすべての ``www.ultraseek.com`` への HTTP リクエストは直接 ``www.server1.com/products/portal/search`` に向かいます。"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:199
+msgid "map rule"
+msgstr "マップルール"
+
+#: ../../admin-guide/configuration/redirecting-http-requests.en.rst:230
+msgid "reverse-map rule"
+msgstr "リバースマップルール"
 

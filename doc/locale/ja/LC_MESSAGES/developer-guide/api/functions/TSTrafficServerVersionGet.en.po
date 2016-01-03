@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
@@ -13,14 +13,15 @@ msgstr ""
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:22
-msgid "TSTrafficServerVersionGet"
-msgstr ""
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:37
+msgid "Description"
+msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:24
 msgid "Return Traffic Server version information."
@@ -28,38 +29,33 @@ msgstr ""
 
 #: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:27
 msgid "Synopsis"
-msgstr ""
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:22
+msgid "TSTrafficServerVersionGet"
+msgstr "TSTrafficServerVersionGet"
 
 #: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:29
 msgid "`#include <ts/ts.h>`"
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:37
-msgid "Description"
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:39
-msgid ""
-":func:`TSTrafficServerVersionGet` returns a pointer to a string of "
-"characters that indicates the Traffic Server release version. This string"
-" must not be modified."
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:43
-msgid ""
-"The other APIs return an integer from the relevant component of the "
-"version number string."
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:47
-msgid "Example"
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:100
-msgid "See Also"
-msgstr ""
+msgid ":func:`TSTrafficServerVersionGet` returns a pointer to a string of characters that indicates the Traffic Server release version. This string must not be modified."
+msgstr ":func:`TSTrafficServerVersionGet` は Traffic Server のリリースバージョンを示す文字列へのポインターを返します。この文字列は変更してはいけません。"
 
 #: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:102
 msgid ":manpage:`TSAPI(3ts)`"
+msgstr ":manpage:`TSAPI(3ts)`"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:47
+msgid "Example"
+msgstr "例"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:100
+msgid "See Also"
+msgstr "参照"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:43
+msgid "The other APIs return an integer from the relevant component of the version number string."
 msgstr ""
 

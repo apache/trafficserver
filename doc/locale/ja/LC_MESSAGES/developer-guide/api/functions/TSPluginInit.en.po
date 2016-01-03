@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
@@ -13,74 +13,61 @@ msgstr ""
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:37
+msgid ":func:`TSPluginInit` must be defined by all plugins. Traffic Server calls this initialization routine when it loads the plugin and sets :arg:`argc` and :arg:`argv` appropriately based on the values in :file:`plugin.config`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:35
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:27
+msgid "Synopsis"
+msgstr "概要"
+
 #: ../../developer-guide/api/functions/TSPluginInit.en.rst:22
 msgid "TSPluginInit"
-msgstr ""
+msgstr "TSPluginInit"
 
 #: ../../developer-guide/api/functions/TSPluginInit.en.rst:24
 msgid "Traffic Server plugin loading and registration."
 msgstr ""
 
-#: ../../developer-guide/api/functions/TSPluginInit.en.rst:27
-msgid "Synopsis"
-msgstr ""
-
 #: ../../developer-guide/api/functions/TSPluginInit.en.rst:29
 msgid "`#include <ts/ts.h>`"
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSPluginInit.en.rst:35
-msgid "Description"
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSPluginInit.en.rst:37
-msgid ""
-":func:`TSPluginInit` must be defined by all plugins. Traffic Server calls"
-" this initialization routine when it loads the plugin and sets "
-":arg:`argc` and :arg:`argv` appropriately based on the values in "
-":file:`plugin.config`."
-msgstr ""
+msgstr "`#include <ts/ts.h>`"
 
 #: ../../developer-guide/api/functions/TSPluginInit.en.rst:42
-msgid ""
-":arg:`argc` is a count of the number of arguments in the argument vector,"
-" :arg:`argv`. The count is at least one because the first argument in the"
-" argument vector is the plugins name, which must exist in order for the "
-"plugin to be loaded."
+msgid ":arg:`argc` is a count of the number of arguments in the argument vector, :arg:`argv`. The count is at least one because the first argument in the argument vector is the plugins name, which must exist in order for the plugin to be loaded."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSPluginInit.en.rst:47
-msgid ""
-":func:`TSPluginRegister` registers the appropriate SDK version specific "
-"in :arg:`sdk_version` for your plugin. Use this function to make sure "
-"that the version of Traffic Server on which your plugin is running "
-"supports the plugin."
+msgid ":func:`TSPluginRegister` registers the appropriate SDK version specific in :arg:`sdk_version` for your plugin. Use this function to make sure that the version of Traffic Server on which your plugin is running supports the plugin."
 msgstr ""
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:54
+msgid ":func:`TSPluginRegister` returns :const:`TS_ERROR` if the plugin registration failed."
+msgstr ":func:`TSPluginRegister` はプラグインの登録に失敗すると :const:`TS_ERROR` を返します。"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:80
+msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSInstallDirGet(3ts)`"
+msgstr ":manpage:`TSAPI(3ts)`, :manpage:`TSInstallDirGet(3ts)`"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:58
+msgid "Examples"
+msgstr "例"
 
 #: ../../developer-guide/api/functions/TSPluginInit.en.rst:52
 msgid "Return Values"
 msgstr ""
 
-#: ../../developer-guide/api/functions/TSPluginInit.en.rst:54
-msgid ""
-":func:`TSPluginRegister` returns :const:`TS_ERROR` if the plugin "
-"registration failed."
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSPluginInit.en.rst:58
-msgid "Examples"
-msgstr ""
-
 #: ../../developer-guide/api/functions/TSPluginInit.en.rst:78
 msgid "See Also"
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSPluginInit.en.rst:80
-msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSInstallDirGet(3ts)`"
-msgstr ""
+msgstr "参照"
 

@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-#
+# 
 #, fuzzy
 msgid ""
 msgstr ""
@@ -13,10 +13,23 @@ msgstr ""
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/index.en.rst:36
+msgid "All other functionality can be moved into plugins and by offering a consistent C API, everyone can implement their own functionality, without having to touch the core."
+msgstr ""
+
+#: ../../admin-guide/plugins/index.en.rst:58
+msgid "Experimental plugins"
+msgstr "実験的なプラグイン"
+
+#: ../../admin-guide/plugins/index.en.rst:31
+msgid "One of the key features of |ATS| is its modularity. Features that aren't needed in the core simply aren't there. This helps to provide an additional guarantee that our core can remain fast by concentrating on the things that we always provide: caching and proxying."
+msgstr ""
 
 #: ../../admin-guide/plugins/index.en.rst:23
 msgid "Plugins"
@@ -24,44 +37,17 @@ msgstr ""
 
 #: ../../admin-guide/plugins/index.en.rst:29
 msgid "Overview"
+msgstr "概要"
+
+#: ../../admin-guide/plugins/index.en.rst:60
+msgid "Plugins that are considered experimental are located in the `plugins/experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_ directory of the Apache Traffic Server source tree. Experimental plugins can be compiled by passing the `--enable-experimental-plugins` option to `configure`::"
 msgstr ""
 
-#: ../../admin-guide/plugins/index.en.rst:31
-msgid ""
-"One of the key features of |ATS| is its modularity. Features that aren't "
-"needed in the core simply aren't there. This helps to provide an "
-"additional guarantee that our core can remain fast by concentrating on "
-"the things that we always provide: caching and proxying."
-msgstr ""
-
-#: ../../admin-guide/plugins/index.en.rst:36
-msgid ""
-"All other functionality can be moved into plugins and by offering a "
-"consistent C API, everyone can implement their own functionality, without"
-" having to touch the core."
+#: ../../admin-guide/plugins/index.en.rst:43
+msgid "Plugins that are considered stable are installed by default in |TS| releases."
 msgstr ""
 
 #: ../../admin-guide/plugins/index.en.rst:41
 msgid "Stable plugins"
-msgstr ""
-
-#: ../../admin-guide/plugins/index.en.rst:43
-msgid ""
-"Plugins that are considered stable are installed by default in |TS| "
-"releases."
-msgstr ""
-
-#: ../../admin-guide/plugins/index.en.rst:58
-msgid "Experimental plugins"
-msgstr ""
-
-#: ../../admin-guide/plugins/index.en.rst:60
-msgid ""
-"Plugins that are considered experimental are located in the "
-"`plugins/experimental <https://git-wip-"
-"us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_"
-" directory of the Apache Traffic Server source tree. Experimental plugins"
-" can be compiled by passing the `--enable-experimental-plugins` option to"
-" `configure`::"
-msgstr ""
+msgstr "安定したプラグイン"
 
