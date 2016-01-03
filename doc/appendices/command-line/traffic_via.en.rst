@@ -36,7 +36,7 @@ square brackets are optional.
 
 If the argument is '-', :program:`traffic_via` will filter standard
 input for Via headers. This modes supports only supports Via headers
-taht are enclosed by square brackets.
+that are enclosed by square brackets.
 
 Options
 =======
