@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:139
 msgid "**Checking revalidate rules in** :file:`cache.config`"
-msgstr ""
+msgstr ":file:`cache.config` 内の再検証ルールを確認"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:132
 msgid "**Checking the absolute freshness limit**"
@@ -370,6 +370,8 @@ msgid ""
 "Change the value for :ts:cv:`proxy.config.http.cache.required_headers` in :"
 "file:`records.config`."
 msgstr ""
+":file:`records.config` 内の :ts:cv:`proxy.config.http.cache."
+"required_headers` の値を変更してください。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:375
 msgid "Client Directives"
@@ -472,6 +474,9 @@ msgid ""
 "and :ts:cv:`proxy.config.http.cache.heuristic_max_lifetime` in :file:"
 "`records.config`."
 msgstr ""
+":file:`records.config` 内の :ts:cv:`proxy.config.http.cache."
+"heuristic_min_lifetime` 変数と :ts:cv:`proxy.config.http.cache."
+"heuristic_max_lifetime` 変数を編集してください。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:714
 msgid "Enable buffering"
@@ -489,6 +494,11 @@ msgid ""
 "from a cache, or if it does allow cache retrieval, then it cannot have been "
 "cached for more than 10 minutes."
 msgstr ""
+"キャッシュ内のオブジェクトが新鮮であっても、クライアントかサーバーがキャッ"
+"シュからオブジェクトを取得することを妨げるような自身の制約を課すことがしばし"
+"ばあります。例えば、クライアントがキャッシュから取得したのではないオブジェク"
+"トをリクエストするかもしれませんし、キャッシュの取得を許可したとしてもオブ"
+"ジェクト10分より長くキャッシュされることは許可しないかもしれません。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:801
 msgid "Fuzzy Revalidation"
@@ -509,6 +519,10 @@ msgid ""
 "``Last-Modified`` and ``Date`` headers, Traffic Server uses a maximum and "
 "minimum freshness limit. Refer to `Setting Absolute Freshness Limits`_."
 msgstr ""
+"``Expires`` ヘッダーを持たない HTTP オブジェクトまたは  ``Last-Modified`` "
+"ヘッダーと ``Date`` ヘッダーの両方を持たない HTTP オブジェクトに対して "
+"Traffic Server は最大と最小のフレッシュネスリミットを使用します。 `絶対フ"
+"レッシュネスリミットの設定`_ を参照してください。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:810
 msgid ""
@@ -530,6 +544,10 @@ msgid ""
 "information to users on demand. It improves performance and frees up "
 "Internet bandwidth for other tasks."
 msgstr ""
+"HTTPプロキシーキャッシュは頻繁にアクセスされる（ドキュメント、イメージや記事"
+"などの）ウェブオブジェクトのコピーを保管することを可能にし、この情報を必要に"
+"応じてユーザに配信することを可能にします。これによりパフォーマンスを改善しイ"
+"ンターネットのバンド幅を開放して他の作業に使えるようにします。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:116
 msgid ""
@@ -597,6 +615,9 @@ msgid ""
 "object is fresh enough to serve. If it is fresh, then Traffic Server serves "
 "it to the client as a *cache hit* (see the figure below)."
 msgstr ""
+"オブジェクトがキャッシュにある場合は、Traffic Serverはオブジェクトが提供する"
+"のに十分新鮮かどうかを確認します。新鮮な場合、Traffic Serverはそれを*キャッ"
+"シュヒット*としてクライアントに提供します（下図参照）。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:67
 msgid ""
@@ -687,6 +708,15 @@ msgid ""
 "Server proxy. The following overview illustrates how Traffic Server serves "
 "a request."
 msgstr ""
+"インターネットのユーザーはインターネットのいたるところに有るウェブサーバにリ"
+"クエストを送ります。キャッシュサーバーはこれらのリクエストに応答できるように"
+"*ウェブプロキシサーバー*として振る舞わなければなりません。ウェブプロキシサー"
+"バーはウェブオブジェクトへのリクエストを受け取った後、リクエストに応答するか"
+"オリジンサーバー（リクエストされた情報の原本を保管しているウェブサーバー）に"
+"転送します。Traffic Serverのプロキシーは*明示的なプロキシーキャッシュ*をサ"
+"ポートし、ユーザーのクライアントソフトウェアはTraffic Serverプロキシーに直接"
+"リクエストを送るように設定されなければいけません。以降の概要ではTraffic "
+"Serverがリクエストにどのように応答するかを説明します。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:877
 msgid ""
@@ -741,7 +771,7 @@ msgstr "HTTP オブジェクトの再検証"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:163
 msgid "Setting Absolute Freshness Limits"
-msgstr ""
+msgstr "絶対フレッシュネスリミットの設定"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:494
 msgid "Not cache any HTTP objects. Refer to `Disabling HTTP Object Caching`_."
@@ -800,6 +830,11 @@ msgid ""
 "objects requested by particular clients, and so on. Refer to :file:`cache."
 "config`."
 msgstr ""
+"再検証ルールは特定の HTTP オブジェクトにフレッシュネスリミットを適用します。"
+"特定のドメインやIPアドレスから取得されたオブジェクト、特定の正規表現にURLが"
+"マッチするオブジェクト、特定のクライアントからリクエストされたオブジェクト、"
+"などに対してフレッシュネスリミットを設定することが出来ます。 :file:`cache."
+"config` を参照してください。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:160
 #: ../../admin-guide/configuration/cache-basics.en.rst:176
@@ -828,6 +863,8 @@ msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the "
 "configuration changes."
 msgstr ""
+"設定変更を適用するために :option:`traffic_ctl config reload` を実行してくだ"
+"さい。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:654
 msgid ""
@@ -875,6 +912,8 @@ msgid ""
 "Modified`` and ``Date`` headers. To control how long these objects are "
 "considered fresh in the cache, specify an *absolute freshness limit*."
 msgstr ""
+"いくつかのオブジェクトは ``Expires`` ヘッダーを持っていない、あるいは "
+"``Last-Modified`` ヘッダーと ``Date`` ヘッダーの両方を持っていません。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:589
 msgid ""
@@ -925,6 +964,9 @@ msgid ""
 "the age is less than ``max-age``, then the object is fresh and can be "
 "served from the Traffic Server cache."
 msgstr ""
+"サーバーからの ``max-age``  ヘッダーはオブジェクトの年齢と比べられます。年齢"
+"が ``max-age`` より小さければオブジェクトは新鮮であり、 Traffic Server の"
+"キャッシュから提供することが出来ます。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:226
 msgid ""
@@ -945,6 +987,10 @@ msgid ""
 "fresh. Unless a cached object remains fresh at least this long in the "
 "future, it is revalidated."
 msgstr ""
+"クライアントからの ``min-fresh`` ヘッダーは*受け入れ可能な新鮮さの範囲*で"
+"す。これはクライアントがオブジェクトは最低でもこの新鮮さを持つことを要求して"
+"いることを意味します。キャッシュされたオブジェクトが将来最低でもこの新鮮さを"
+"保持していなければ、再検証されます。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:210
 msgid ""
@@ -955,6 +1001,12 @@ msgid ""
 "cache`` headers. Refer to `Configuring Traffic Server to Ignore Client no-"
 "cache Headers`_ for more information."
 msgstr ""
+"クライアントからの ``no-cache`` ヘッダーは Traffic Server にどんなオブジェク"
+"トもキャッシュから直接提供すべきでないことを伝えます。クライアントリクエスト"
+"に含まれる場合は、 Traffic Server は常にオブジェクトをオリジンサーバーから取"
+"得します。 Traffic Server がクライアントの ``no-cache`` ヘッダーを無視するよ"
+"うに設定することも出来ます。詳細は `Traffic Server がクライアントの no-"
+"cache ヘッダーを無視するように設定する`_ を参照してください。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:771
 msgid ""
@@ -982,6 +1034,8 @@ msgid ""
 "The computed freshness limit is bound by a minimum and maximum value. Refer "
 "to `Setting Absolute Freshness Limits`_ for more information."
 msgstr ""
+"計算されたフレッシュネスリミットは最小値と最大値に制約されます。詳細は `絶対"
+"フレッシュネスリミットの設定`_ を参照してください。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:887
 msgid "The configurations are (with defaults)::"
@@ -1073,6 +1127,8 @@ msgstr ""
 #: ../../admin-guide/configuration/cache-basics.en.rst:190
 msgid "To configure Traffic Server to cache objects with specific headers:"
 msgstr ""
+"Traffic Server に特定のヘッダを持つオブジェクトをキャッシュするように設定す"
+"るには:"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:427
 msgid ""
@@ -1165,7 +1221,7 @@ msgstr ""
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:156
 msgid "To modify the aging factor for freshness computations:"
-msgstr ""
+msgstr "新鮮さの計算のための期間要素を変更するには："
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:349
 msgid "To set cache pinning rules:"
@@ -1173,7 +1229,7 @@ msgstr ""
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:170
 msgid "To specify an absolute freshness limit:"
-msgstr ""
+msgstr "絶対フレッシュネスリミットを指定するには："
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:333
 msgid "Tools that will help manage pushing"
@@ -1185,6 +1241,9 @@ msgid ""
 "freshness criteria. For example, an object might be considered fresh but "
 "will not be served if its age is greater than its ``max-age``."
 msgstr ""
+"Traffic Server は ``Cache-Control`` による提供可能解析を HTTP フレッシュネス"
+"解析の後に行います。例えば、オブジェクトが新鮮だと判定されても年齢が ``max-"
+"age`` より大きければ提供されないでしょう。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:206
 msgid ""
@@ -1193,6 +1252,10 @@ msgid ""
 "The following ``Cache-Control`` headers affect whether objects are served "
 "from cache:"
 msgstr ""
+"Traffic Server はキャッシュされたオブジェクトを提供か判定するためにクライア"
+"ントのリクエストヘッダーとサーバーのレスポンスヘッダーの両方に含まれる "
+"``Cache-Control`` ヘッダーを調べます。 ``Cache-Control`` ヘッダーはオブジェ"
+"クトをキャッシュから提供するかどうかに以下のように作用します。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:803
 msgid ""
@@ -1226,6 +1289,8 @@ msgid ""
 "Traffic Server determines whether an HTTP object in the cache is fresh by "
 "checking the following conditions in order:"
 msgstr ""
+"Traffic Server はキャッシュにある HTTP オブジェクトが新鮮かどうかを下記の条"
+"件で順番に判定します。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:702
 msgid ""
@@ -1299,6 +1364,9 @@ msgid ""
 "Using the object address, Traffic Server tries to locate the requested "
 "object in its object database (*cache*)."
 msgstr ""
+"オブジェクトのアドレスを用いてTraffic Serverはリクエストされたオブジェクトが"
+"オブジェクトデータベース（*キャッシュ*）内に存在するかどうかと、存在する場合"
+"はその位置を特定しようとします。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:712
 msgid "Value"
@@ -1357,6 +1425,10 @@ msgid ""
 "server to check if the object is unchanged. The result of a revalidation is "
 "one of the following:"
 msgstr ""
+"クライアントがリクエストした HTTP オブジェクトがキャッシュにあるが新鮮ではな"
+"い場合、 Traffic Server はオブジェクトを再検証します。*再検証*とはオリジン"
+"サーバーでオブジェクトが変更されていないことを問い合わせることです。再検証の"
+"結果は以下のいずれかです:"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:730
 msgid ""
@@ -1503,3 +1575,9 @@ msgid ""
 "reduced to better suit your needs. Refer to `Modifying Aging Factor for "
 "Freshness Computations`_."
 msgstr ""
+"ここで*date*はオブジェクトのサーバーレスポンスヘッダー内の日時で、"
+"*last_modified*は ``Last-Modified`` の日時です。 ``Last-Modified`` ヘッダー"
+"が無い場合は、 Traffic Server はオブジェクトがキャッシュに書かれた日時を使用"
+"します。 ``0.10`` （10パーセント）という値はあなたのニーズにより適合するよう"
+"に増やしたり減らしたりすることができます。 `Modifying Aging Factor for "
+"Freshness Computations`_ を参照してください。"
