@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,8 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSVConnSslConnectionGet.en.rst:34
-msgid "Get the SSL (per connection) object from the SSl connection :arg:`svc`."
+msgid ""
+"Get the SSL (per connection) object from the SSl connection :arg:`svc`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSVConnSslConnectionGet.en.rst:25
@@ -36,7 +37,9 @@ msgid "TSVConnSslConnectionGet"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSVConnSslConnectionGet.en.rst:41
-msgid "The SSL (per connection) object. This is an opaque type that can be cast to the appropriate type (SSL * for the OpenSSL library)."
+msgid ""
+"The SSL (per connection) object. This is an opaque type that can be cast to "
+"the appropriate type (SSL * for the OpenSSL library)."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSVConnSslConnectionGet.en.rst:37
@@ -46,4 +49,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSVConnSslConnectionGet.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

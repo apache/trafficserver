@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -48,7 +48,10 @@ msgid "memcache Plugin"
 msgstr ""
 
 #: ../../admin-guide/plugins/memcache.en.rst:45
-msgid "After modifying plugin.config, restart traffic server (sudo traffic_ctl server restart) the configuration is also re-read when a management update is given (sudo traffic_ctl config reload)"
+msgid ""
+"After modifying plugin.config, restart traffic server (sudo traffic_ctl "
+"server restart) the configuration is also re-read when a management update "
+"is given (sudo traffic_ctl config reload)"
 msgstr ""
 
 #: ../../admin-guide/plugins/memcache.en.rst:39
@@ -64,7 +67,9 @@ msgid "Options"
 msgstr "オプション"
 
 #: ../../admin-guide/plugins/memcache.en.rst:56
-msgid "Options in the code: ``TSMEMCACHE_WRITE_SYNC`` whether or not to wait for the write to complete."
+msgid ""
+"Options in the code: ``TSMEMCACHE_WRITE_SYNC`` whether or not to wait for "
+"the write to complete."
 msgstr ""
 
 #: ../../admin-guide/plugins/memcache.en.rst:36
@@ -74,4 +79,3 @@ msgstr ""
 #: ../../admin-guide/plugins/memcache.en.rst:54
 msgid "``port``: A single port to listen on for memcache protocol commands."
 msgstr ""
-

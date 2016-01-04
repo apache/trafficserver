@@ -31,27 +31,27 @@ msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:29
 msgid ""
-"As described in the section on HTTP sessions, an **HTTP transaction** is "
-"an object defined for the lifetime of a single request from a client and "
-"the corresponding response from Traffic Server. The **``TSHttpTxn``** "
-"structure is the main handle given to a plugin for manipulating a "
-"transaction's internal state. Additionally, an HTTP transaction has a "
-"reference back to the HTTP session that created it."
+"As described in the section on HTTP sessions, an **HTTP transaction** is an "
+"object defined for the lifetime of a single request from a client and the "
+"corresponding response from Traffic Server. The **``TSHttpTxn``** structure "
+"is the main handle given to a plugin for manipulating a transaction's "
+"internal state. Additionally, an HTTP transaction has a reference back to "
+"the HTTP session that created it."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:36
 msgid ""
-"The sample code below illustrates how to register locally to a "
-"transaction and associate data to the transaction."
+"The sample code below illustrates how to register locally to a transaction "
+"and associate data to the transaction."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:155
 msgid ""
 "See :ref:`developer-plugins-hooks-adding` for background on HTTP "
-"transactions and HTTP hooks, as well as :ref:`developer-plugins-hooks-"
-"and-transactions`. See also the :ref:`HTTP Transaction State Diagram "
-"<http-txn-state-diagram>` for an illustration of the steps involved in a "
-"typical HTTP transaction."
+"transactions and HTTP hooks, as well as :ref:`developer-plugins-hooks-and-"
+"transactions`. See also the :ref:`HTTP Transaction State Diagram <http-txn-"
+"state-diagram>` for an illustration of the steps involved in a typical HTTP "
+"transaction."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:160
@@ -64,8 +64,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:164
 msgid ""
-":c:func:`TSHttpTxnCachedReqGet` - Note that it is an error to modify "
-"cached headers."
+":c:func:`TSHttpTxnCachedReqGet` - Note that it is an error to modify cached "
+"headers."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:167
@@ -135,4 +135,3 @@ msgstr ""
 #: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:200
 msgid ":c:func:`TSHttpTxnUntransformedRespCache`"
 msgstr ""
-

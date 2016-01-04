@@ -24,8 +24,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/actions/hosts-lookup-api.en.rst:25
 msgid ""
-"The hosts lookup enables plugins to ask Traffic Server to do a host "
-"lookup of a host name, much like a DNS lookup."
+"The hosts lookup enables plugins to ask Traffic Server to do a host lookup "
+"of a host name, much like a DNS lookup."
 msgstr ""
 
 #: ../../developer-guide/plugins/actions/hosts-lookup-api.en.rst:28
@@ -39,4 +39,3 @@ msgstr ""
 #: ../../developer-guide/plugins/actions/hosts-lookup-api.en.rst:31
 msgid ":c:func:`TSHostLookupResultAddrGet`"
 msgstr ""
-

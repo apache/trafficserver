@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,11 +20,21 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:47
-msgid ":func:`TSHttpHdrParseReq` parses an HTTP request header. The HTTP header :arg:`offset` must already be created, and must reside inside the marshal buffer :arg:`bufp`. The :arg:`start` argument points to the current position of the string buffer being parsed and the :arg:`end` argument points to one byte after the end of the buffer to be parsed. On return, :arg:`start` is modified to point past the last character parsed."
+msgid ""
+":func:`TSHttpHdrParseReq` parses an HTTP request header. The HTTP header :"
+"arg:`offset` must already be created, and must reside inside the marshal "
+"buffer :arg:`bufp`. The :arg:`start` argument points to the current "
+"position of the string buffer being parsed and the :arg:`end` argument "
+"points to one byte after the end of the buffer to be parsed. On return, :"
+"arg:`start` is modified to point past the last character parsed."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:41
-msgid ":func:`TSHttpParserCreate` creates an HTTP parser object. The parser's data structure contains information about the header being parsed. A single HTTP parser can be used multiple times, though not simultaneously. Before being used again, the parser must be cleared by calling :func:`TSHttpParserClear`."
+msgid ""
+":func:`TSHttpParserCreate` creates an HTTP parser object. The parser's data "
+"structure contains information about the header being parsed. A single HTTP "
+"parser can be used multiple times, though not simultaneously. Before being "
+"used again, the parser must be cleared by calling :func:`TSHttpParserClear`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:39
@@ -48,23 +58,41 @@ msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:55
-msgid "It is possible to parse an HTTP request header a single byte at a time using repeated calls to :func:`TSHttpHdrParseReq`. As long as an error does not occur, the :func:`TSHttpHdrParseReq` function will consume that single byte and ask for more. :func:`TSHttpHdrParseReq` should be called after :data:`TS_HTTP_READ_REQUEST_HDR_HOOK`."
+msgid ""
+"It is possible to parse an HTTP request header a single byte at a time "
+"using repeated calls to :func:`TSHttpHdrParseReq`. As long as an error does "
+"not occur, the :func:`TSHttpHdrParseReq` function will consume that single "
+"byte and ask for more. :func:`TSHttpHdrParseReq` should be called after :"
+"data:`TS_HTTP_READ_REQUEST_HDR_HOOK`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:61
-msgid ":func:`TSHttpHdrParseResp` operates in the same manner as :func:`TSHttpHdrParseReq` except it parses an HTTP response header. It should be called after :data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`."
+msgid ""
+":func:`TSHttpHdrParseResp` operates in the same manner as :func:"
+"`TSHttpHdrParseReq` except it parses an HTTP response header. It should be "
+"called after :data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:65
-msgid ":func:`TSHttpParserClear` clears the specified HTTP parser so it may be used again."
+msgid ""
+":func:`TSHttpParserClear` clears the specified HTTP parser so it may be "
+"used again."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:74
-msgid ":func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp` both return a :type:`TSParseResult` value. :data:`TS_PARSE_ERROR` is returned on error, :data:`TS_PARSE_CONT` is returned if parsing of the header stopped because the end of the buffer was reached, and :data:`TS_PARSE_DONE` or :data:`TS_PARSE_OK` when a \\\\r\\\\n\\\\r\\\\n pattern is encountered, indicating the end of the header."
+msgid ""
+":func:`TSHttpHdrParseReq` and :func:`TSHttpHdrParseResp` both return a :"
+"type:`TSParseResult` value. :data:`TS_PARSE_ERROR` is returned on error, :"
+"data:`TS_PARSE_CONT` is returned if parsing of the header stopped because "
+"the end of the buffer was reached, and :data:`TS_PARSE_DONE` or :data:"
+"`TS_PARSE_OK` when a \\\\r\\\\n\\\\r\\\\n pattern is encountered, "
+"indicating the end of the header."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:68
-msgid ":func:`TSHttpParserDestroy` destroys the TSHttpParser object pointed to by :arg:`parser`. The :arg:`parser` pointer must not be NULL."
+msgid ""
+":func:`TSHttpParserDestroy` destroys the TSHttpParser object pointed to by :"
+"arg:`parser`. The :arg:`parser` pointer must not be NULL."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:72
@@ -80,10 +108,12 @@ msgid "See Also"
 msgstr "参照"
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:84
-msgid "The distinction between the :data:`TS_PARSE_DONE` and :data:`TS_PARSE_OK` results is not well-defined. Plugins should expect both status codes and treat them equivalently."
+msgid ""
+"The distinction between the :data:`TS_PARSE_DONE` and :data:`TS_PARSE_OK` "
+"results is not well-defined. Plugins should expect both status codes and "
+"treat them equivalently."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpParserCreate.en.rst:91
 msgid ":manpage:`TSAPI(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)`"
-

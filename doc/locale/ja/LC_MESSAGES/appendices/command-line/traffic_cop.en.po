@@ -20,16 +20,34 @@ msgstr ""
 "X-Generator: Poedit 1.8.6\n"
 
 #: ../../appendices/command-line/traffic_cop.en.rst:67
-msgid ":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:`traffic_server(8)`"
-msgstr ":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:`traffic_server(8)`"
+msgid ""
+":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:"
+"`traffic_server(8)`"
+msgstr ""
+":manpage:`syslog(1)`, :manpage:`traffic_manager(8)`, :manpage:"
+"`traffic_server(8)`"
 
 #: ../../appendices/command-line/traffic_cop.en.rst:28
-msgid ":program:`traffic_cop` is a watchdog program that is responsible for starting :ref:`traffic_manager` and :ref:`traffic_server` and monitoring them for responsiveness. If either of these processes are determined to be unresponsive, :program:`traffic_cop` will kill and restart them."
-msgstr ":program:`traffic_cop` は :ref:`traffic_manager` と :ref:`traffic_server` の起動とレスポンスによりそれらを監視することに責任を持つ番犬プログラムです。どちらかのプロセスがレスポンスがないと判断された場合、:program:`traffic_cop` はそれらをキルしてリスタートします。"
+msgid ""
+":program:`traffic_cop` is a watchdog program that is responsible for "
+"starting :ref:`traffic_manager` and :ref:`traffic_server` and monitoring "
+"them for responsiveness. If either of these processes are determined to be "
+"unresponsive, :program:`traffic_cop` will kill and restart them."
+msgstr ""
+":program:`traffic_cop` は :ref:`traffic_manager` と :ref:`traffic_server` の"
+"起動とレスポンスによりそれらを監視することに責任を持つ番犬プログラムです。ど"
+"ちらかのプロセスがレスポンスがないと判断された場合、:program:`traffic_cop` "
+"はそれらをキルしてリスタートします。"
 
 #: ../../appendices/command-line/traffic_cop.en.rst:51
-msgid ":program:`traffic_cop` ordinarily logs to syslog, however for debugging purposes, this option causes it to print messages to standard output instead."
-msgstr ":program:`traffic_cop` は通常 syslog にログを取りますが、デバッグを目的としてこのオプションを使用することで代わりに標準出力にメッセージを出力するようになります。"
+msgid ""
+":program:`traffic_cop` ordinarily logs to syslog, however for debugging "
+"purposes, this option causes it to print messages to standard output "
+"instead."
+msgstr ""
+":program:`traffic_cop` は通常 syslog にログを取りますが、デバッグを目的とし"
+"てこのオプションを使用することで代わりに標準出力にメッセージを出力するように"
+"なります。"
 
 #: ../../appendices/command-line/traffic_cop.en.rst:26
 msgid "Description"
@@ -40,12 +58,26 @@ msgid "Emit debugging messages."
 msgstr "デバッグメッセージの発行。"
 
 #: ../../appendices/command-line/traffic_cop.en.rst:57
-msgid "Kill children using ``SIGSTOP`` instead of ``SIGKILL``. This option is primarily for debugging."
-msgstr "``SIGKILL`` の代わりに ``SIGSTOP`` を使用して子プロセスをキルします。このオプションは主にデバッグ用です。"
+msgid ""
+"Kill children using ``SIGSTOP`` instead of ``SIGKILL``. This option is "
+"primarily for debugging."
+msgstr ""
+"``SIGKILL`` の代わりに ``SIGSTOP`` を使用して子プロセスをキルします。このオ"
+"プションは主にデバッグ用です。"
 
 #: ../../appendices/command-line/traffic_cop.en.rst:34
-msgid "On Linux, :program:`traffic_cop` will also monitor available memory and swap space, restarting the watched processes if the available memory falls below a minimum threshold. The memory thresholds can be configured with the :ts:cv:`proxy.config.cop.linux_min_swapfree_kb` and :ts:cv:`proxy.config.cop.linux_min_memfree_kb` variables."
-msgstr "Linux では :program:`traffic_cop` は使用可能なメモリーとスワップスペースも監視し、使用可能なメモリが最小閾値を下回った場合、監視しているプロセスを再起動します。メモリーの閾値は :ts:cv:`proxy.config.cop.linux_min_swapfree_kb` と :ts:cv:`proxy.config.cop.linux_min_memfree_kb` 変数で設定することができます。"
+msgid ""
+"On Linux, :program:`traffic_cop` will also monitor available memory and "
+"swap space, restarting the watched processes if the available memory falls "
+"below a minimum threshold. The memory thresholds can be configured with "
+"the :ts:cv:`proxy.config.cop.linux_min_swapfree_kb` and :ts:cv:`proxy."
+"config.cop.linux_min_memfree_kb` variables."
+msgstr ""
+"Linux では :program:`traffic_cop` は使用可能なメモリーとスワップスペースも監"
+"視し、使用可能なメモリが最小閾値を下回った場合、監視しているプロセスを再起動"
+"します。メモリーの閾値は :ts:cv:`proxy.config.cop.linux_min_swapfree_kb` "
+"と :ts:cv:`proxy.config.cop.linux_min_memfree_kb` 変数で設定することができま"
+"す。"
 
 #: ../../appendices/command-line/traffic_cop.en.rst:41
 msgid "Options"

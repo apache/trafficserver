@@ -25,15 +25,13 @@ msgstr ""
 #: ../../developer-guide/plugins/hooks-and-transactions/intercepting-http-transactions.en.rst:25
 msgid ""
 "The intercepting HTTP transaction functions enable plugins to intercept "
-"transactions either after the request is received or upon contact with "
-"the origin server. The plugin then acts as the origin server using the "
-"``TSVConn`` interface. The intercepting HTTP transaction function allow "
-"for reading ``POST`` bodies in plugins as well as using alternative "
-"transports to the origin server.The intercepting HTTP transaction "
-"functions are:"
+"transactions either after the request is received or upon contact with the "
+"origin server. The plugin then acts as the origin server using the "
+"``TSVConn`` interface. The intercepting HTTP transaction function allow for "
+"reading ``POST`` bodies in plugins as well as using alternative transports "
+"to the origin server.The intercepting HTTP transaction functions are:"
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/intercepting-http-transactions.en.rst:33
 msgid ":c:func:`TSHttpTxnIntercept`"
 msgstr ""
-

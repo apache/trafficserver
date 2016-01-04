@@ -24,21 +24,21 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:25
 msgid ""
-"The statistics documented in this section provide counters for the number"
-" of incoming requests to the |TS| instance, broken down by the HTTP "
-"method of the request."
+"The statistics documented in this section provide counters for the number "
+"of incoming requests to the |TS| instance, broken down by the HTTP method "
+"of the request."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:32
 msgid ""
-"Represents the total number of HTTP :literal:`DELETE` requests received "
-"by the |TS| instance since statistics collection began."
+"Represents the total number of HTTP :literal:`DELETE` requests received by "
+"the |TS| instance since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:41
 msgid ""
-"Represents the total number of HTTP :literal:`GET` requests received by "
-"the |TS| instance since statistics collection began."
+"Represents the total number of HTTP :literal:`GET` requests received by the "
+"|TS| instance since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:47
@@ -56,8 +56,8 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:59
 msgid ""
-"Represents the total number of HTTP :literal:`OPTIONS` requests received "
-"by the |TS| instance since statistics collection began."
+"Represents the total number of HTTP :literal:`OPTIONS` requests received by "
+"the |TS| instance since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:68
@@ -68,8 +68,8 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:74
 msgid ""
-"Represents the total number of HTTP :literal:`PURGE` requests received by"
-" the |TS| instance since statistics collection began."
+"Represents the total number of HTTP :literal:`PURGE` requests received by "
+"the |TS| instance since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:80
@@ -80,13 +80,12 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:86
 msgid ""
-"Represents the total number of HTTP :literal:`PUT` requests received by "
-"the |TS| instance since statistics collection began."
+"Represents the total number of HTTP :literal:`PUT` requests received by the "
+"|TS| instance since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:92
 msgid ""
-"Represents the total number of HTTP :literal:`TRACE` requests received by"
-" the |TS| instance since statistics collection began."
+"Represents the total number of HTTP :literal:`TRACE` requests received by "
+"the |TS| instance since statistics collection began."
 msgstr ""
-

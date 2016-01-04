@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,9 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSHttpTxnIsInternal.en.rst:35
-msgid ":func:`TSHttpTxnIsInternal` tests whether a HTTP transaction was originated within Traffic Server."
+msgid ""
+":func:`TSHttpTxnIsInternal` tests whether a HTTP transaction was originated "
+"within Traffic Server."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnIsInternal.en.rst:33
@@ -44,7 +46,9 @@ msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
 #: ../../developer-guide/api/functions/TSHttpTxnIsInternal.en.rst:38
-msgid ":func:`TSHttpSsnIsInternal` tests whether a HTTP session was originated within Traffic Server."
+msgid ""
+":func:`TSHttpSsnIsInternal` tests whether a HTTP session was originated "
+"within Traffic Server."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnIsInternal.en.rst:59
@@ -52,7 +56,9 @@ msgid ":manpage:`TSAPI(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)`"
 
 #: ../../developer-guide/api/functions/TSHttpTxnIsInternal.en.rst:44
-msgid "Both these APIs returns a :type:`TSReturnCode`, indicating whether the object was internal (:data:`TS_SUCCESS`) or not (:data:`TS_ERROR`)."
+msgid ""
+"Both these APIs returns a :type:`TSReturnCode`, indicating whether the "
+"object was internal (:data:`TS_SUCCESS`) or not (:data:`TS_ERROR`)."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnIsInternal.en.rst:48
@@ -68,6 +74,7 @@ msgid "See also"
 msgstr "参考"
 
 #: ../../developer-guide/api/functions/TSHttpTxnIsInternal.en.rst:50
-msgid "The ESI plugin uses :func:`TSHttpTxnIsInternal` to ignore requests that is had generated while fetching portions of an ESI document:"
+msgid ""
+"The ESI plugin uses :func:`TSHttpTxnIsInternal` to ignore requests that is "
+"had generated while fetching portions of an ESI document:"
 msgstr ""
-

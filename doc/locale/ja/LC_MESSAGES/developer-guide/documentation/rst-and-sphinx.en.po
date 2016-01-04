@@ -24,8 +24,8 @@ msgstr ""
 
 #: ../../developer-guide/documentation/rst-and-sphinx.en.rst:25
 msgid ""
-"The |TS| documentation source files are written using |RST| (RST) markup."
-" This is a plain-text format intended to be easily readable both in its "
+"The |TS| documentation source files are written using |RST| (RST) markup. "
+"This is a plain-text format intended to be easily readable both in its "
 "source and final rendered forms. While not entirely dissimilar to other "
 "plain text markup formats like Markdown, RST provides additional "
 "functionality for defining internal links between documents, producing "
@@ -39,14 +39,14 @@ msgid ""
 "Both |RST| and Sphinx have official documentation resources which detail "
 "their full capabilities and all markup options, as well as methods of "
 "extending them with custom markup. This section will explain the most "
-"common markup features used, but the following resources may be consulted"
-" for further details."
+"common markup features used, but the following resources may be consulted "
+"for further details."
 msgstr ""
 
 #: ../../developer-guide/documentation/rst-and-sphinx.en.rst:38
 msgid ""
-"`reStructuredText Markup Specification "
-"<http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html>`_"
+"`reStructuredText Markup Specification <http://docutils.sourceforge.net/"
+"docs/ref/rst/restructuredtext.html>`_"
 msgstr ""
 
 #: ../../developer-guide/documentation/rst-and-sphinx.en.rst:40
@@ -56,4 +56,3 @@ msgstr ""
 #: ../../developer-guide/documentation/rst-and-sphinx.en.rst:42
 msgid "`RST Primary by Sphinx <http://sphinx-doc.org/rest.html>`_"
 msgstr ""
-

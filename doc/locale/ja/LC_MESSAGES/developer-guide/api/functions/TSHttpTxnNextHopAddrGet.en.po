@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -36,10 +36,11 @@ msgid "TSHttpTxnNextHopAddrGet"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnNextHopAddrGet.en.rst:38
-msgid "The pointer is valid only for the current callback. Clients that need to keep the value across callbacks must maintain their own storage."
+msgid ""
+"The pointer is valid only for the current callback. Clients that need to "
+"keep the value across callbacks must maintain their own storage."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnNextHopAddrGet.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

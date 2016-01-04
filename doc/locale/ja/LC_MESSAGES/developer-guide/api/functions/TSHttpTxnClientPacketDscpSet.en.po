@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -50,4 +50,3 @@ msgstr "参照"
 #: ../../developer-guide/api/functions/TSHttpTxnClientPacketDscpSet.en.rst:42
 msgid "`Traffic Shaping`_"
 msgstr ""
-

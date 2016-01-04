@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -42,4 +42,3 @@ msgstr ""
 #: ../../developer-guide/api/types/TSRecordAccessType.en.rst:25
 msgid "`#include <ts/apidefs.h>`"
 msgstr ""
-

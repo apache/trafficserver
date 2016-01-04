@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -44,7 +44,10 @@ msgid "Generator Plugin"
 msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:58
-msgid "Notice that although the remap target is never contacted because the `Generator` plugin intercepts the request and acts as the origin server, it must be syntactically valid and resolvable in DNS."
+msgid ""
+"Notice that although the remap target is never contacted because the "
+"`Generator` plugin intercepts the request and acts as the origin server, it "
+"must be syntactically valid and resolvable in DNS."
 msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:30
@@ -52,11 +55,18 @@ msgid "Path component"
 msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:23
-msgid "The `Generator` allows testing of synthetic workloads by generating HTTP responses of various sizes. The size and cacheability of the response is specified by the first two coomponents of the requested URL path. This plugin only supports the ``GET`` and ``HEAD`` HTTP methods."
+msgid ""
+"The `Generator` allows testing of synthetic workloads by generating HTTP "
+"responses of various sizes. The size and cacheability of the response is "
+"specified by the first two coomponents of the requested URL path. This "
+"plugin only supports the ``GET`` and ``HEAD`` HTTP methods."
 msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:38
-msgid "Path components after the first 2 are ignored. This means that the trailing path components can be manipulated to create unique URLs following any covenient convention."
+msgid ""
+"Path components after the first 2 are ignored. This means that the trailing "
+"path components can be manipulated to create unique URLs following any "
+"covenient convention."
 msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:66
@@ -68,7 +78,9 @@ msgid "The `Generator` plugin publishes the following metrics:"
 msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:52
-msgid "The most common way to use the `Generator` plugin is to configure it as a remap plugin in :file:`remap.config`::"
+msgid ""
+"The most common way to use the `Generator` plugin is to configure it as a "
+"remap plugin in :file:`remap.config`::"
 msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:47
@@ -80,7 +92,10 @@ msgid "The total number of bytes emitted"
 msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:32
-msgid "``cache`` or ``nocache``. If ``cache`` is specifed, the `Generator` plugin will respond with ``Cache-Control`` headers marking the response as cacheable for 24 hours. Integral number of bytes to return in the response."
+msgid ""
+"``cache`` or ``nocache``. If ``cache`` is specifed, the `Generator` plugin "
+"will respond with ``Cache-Control`` headers marking the response as "
+"cacheable for 24 hours. Integral number of bytes to return in the response."
 msgstr ""
 
 #: ../../admin-guide/plugins/generator.en.rst:44
@@ -90,4 +105,3 @@ msgstr ""
 #: ../../admin-guide/plugins/generator.en.rst:47
 msgid "generator.response_count:"
 msgstr ""
-

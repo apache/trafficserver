@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -36,7 +36,11 @@ msgid "TSHttpType"
 msgstr ""
 
 #: ../../developer-guide/api/types/TSHttpType.en.rst:29
-msgid "Enum typedef which defines the possible HTTP types assigned to an HTTP header, as returned by :c:func:`TSHttpHdrTypeGet`. Headers created by :c:func:`TSHttpHdrCreate` receive :c:member:`TS_HTTP_TYPE_UNKNOWN` by default and may be modified once by using :c:func:`TSHttpHdrTypeSet`."
+msgid ""
+"Enum typedef which defines the possible HTTP types assigned to an HTTP "
+"header, as returned by :c:func:`TSHttpHdrTypeGet`. Headers created by :c:"
+"func:`TSHttpHdrCreate` receive :c:member:`TS_HTTP_TYPE_UNKNOWN` by default "
+"and may be modified once by using :c:func:`TSHttpHdrTypeSet`."
 msgstr ""
 
 #: ../../developer-guide/api/types/TSHttpType.en.rst:35
@@ -54,4 +58,3 @@ msgstr ""
 #: ../../developer-guide/api/types/TSHttpType.en.rst:25
 msgid "`#include <ts/apidefs.h>`"
 msgstr ""
-

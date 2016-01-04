@@ -31,11 +31,13 @@ msgid "The average number of DNS lookups performance per second."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/dns.en.rst:42
-msgid "Total number of DNS lookups performance since statistics collection began."
+msgid ""
+"Total number of DNS lookups performance since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/dns.en.rst:49
-msgid "The average time per DNS lookup, in milliseconds, which ultimately failed."
+msgid ""
+"The average time per DNS lookup, in milliseconds, which ultimately failed."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/dns.en.rst:55
@@ -60,17 +62,17 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/dns.en.rst:82
 msgid ""
-"The number of DNS lookups which have been failed due to the maximum "
-"number of retries being exceeded."
+"The number of DNS lookups which have been failed due to the maximum number "
+"of retries being exceeded."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/dns.en.rst:94
-msgid "The average time per DNS lookup, in milliseconds, which have succeeded."
+msgid ""
+"The average time per DNS lookup, in milliseconds, which have succeeded."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/dns.en.rst:100
 msgid ""
-"The total number of DNS lookups which have been performed since "
-"statistics collection began."
+"The total number of DNS lookups which have been performed since statistics "
+"collection began."
 msgstr ""
-

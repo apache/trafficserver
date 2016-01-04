@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,10 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSVConnFdCreate.en.rst:36
-msgid ":func:`TSVConnFdCreate` accepts a network socket :arg:`fd` and returns a new :type:`TSVConn` constructed from the socket. The socket descriptor must be an already connected socket. It will be placed into non-blocking mode."
+msgid ""
+":func:`TSVConnFdCreate` accepts a network socket :arg:`fd` and returns a "
+"new :type:`TSVConn` constructed from the socket. The socket descriptor must "
+"be an already connected socket. It will be placed into non-blocking mode."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSVConnFdCreate.en.rst:62
@@ -48,7 +51,10 @@ msgid "Examples"
 msgstr "例"
 
 #: ../../developer-guide/api/functions/TSVConnFdCreate.en.rst:43
-msgid "On success, the returned :type:`TSVConn` object owns the socket and the caller must not close it. If :func:`TSVConnFdCreate` fails, :literal:`NULL` is returned, the socket is unchanged and the caller must close it."
+msgid ""
+"On success, the returned :type:`TSVConn` object owns the socket and the "
+"caller must not close it. If :func:`TSVConnFdCreate` fails, :literal:`NULL` "
+"is returned, the socket is unchanged and the caller must close it."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSVConnFdCreate.en.rst:41
@@ -60,10 +66,12 @@ msgid "See Also"
 msgstr "参照"
 
 #: ../../developer-guide/api/functions/TSVConnFdCreate.en.rst:50
-msgid "The example below is excerpted from `example/intercept/intercept.cc` in the Traffic Server source distribution. It demonstrates how to use :func:`TSVConnFdCreate` to construct a :type:`TSVConn` from a connected socket."
+msgid ""
+"The example below is excerpted from `example/intercept/intercept.cc` in the "
+"Traffic Server source distribution. It demonstrates how to use :func:"
+"`TSVConnFdCreate` to construct a :type:`TSVConn` from a connected socket."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSVConnFdCreate.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

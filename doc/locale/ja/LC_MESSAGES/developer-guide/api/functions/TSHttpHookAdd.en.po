@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,12 +24,31 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSHttpHookAdd.en.rst:45
-msgid "HTTP :term:`transaction` hooks are set on a global basis using the function :func:`TSHttpHookAdd`. This means that the continuation specified as the parameter to :func:`TSHttpHookAdd` is called for every transaction. :func:`TSHttpHookAdd` is typically called from :func:`TSPluginInit` or :func:`TSRemapInit`."
-msgstr "HTTP :term:`transaction` フックは関数 :func:`TSHttpHookAdd` を使いグローバルにセットされます。これは :func:`TSHttpHookAdd` のパラメーターとして指定された継続は全トランザクションで呼ばれるということを意味します。:func:`TSHttpHookAdd` は一般的に :func:`TSPluginInit` もしくは :func:`TSRemapInit` から呼ばれます。"
+msgid ""
+"HTTP :term:`transaction` hooks are set on a global basis using the "
+"function :func:`TSHttpHookAdd`. This means that the continuation specified "
+"as the parameter to :func:`TSHttpHookAdd` is called for every transaction. :"
+"func:`TSHttpHookAdd` is typically called from :func:`TSPluginInit` or :func:"
+"`TSRemapInit`."
+msgstr ""
+"HTTP :term:`transaction` フックは関数 :func:`TSHttpHookAdd` を使いグローバル"
+"にセットされます。これは :func:`TSHttpHookAdd` のパラメーターとして指定され"
+"た継続は全トランザクションで呼ばれるということを意味します。:func:"
+"`TSHttpHookAdd` は一般的に :func:`TSPluginInit` もしくは :func:"
+"`TSRemapInit` から呼ばれます。"
 
 #: ../../developer-guide/api/functions/TSHttpHookAdd.en.rst:39
-msgid "Hooks are points in Apache Traffic Server transaction HTTP processing where plugins can step in and do some work. Registering a plugin function for callback amounts to adding the function to a hook. You can register your plugin to be called back for every single transaction, or for specific transactions only."
-msgstr "フックは Apache Traffic Server の HTTP 処理の中でプラグインが入り込み何かできる場所です。コールバックのためのプラグインの関数を登録することはフックに関数を追加することと同じです。一つずつすべてのトランザクション、もしくは特定のトランザクションのみにコールバックされるプラグインを登録することができます。"
+msgid ""
+"Hooks are points in Apache Traffic Server transaction HTTP processing where "
+"plugins can step in and do some work. Registering a plugin function for "
+"callback amounts to adding the function to a hook. You can register your "
+"plugin to be called back for every single transaction, or for specific "
+"transactions only."
+msgstr ""
+"フックは Apache Traffic Server の HTTP 処理の中でプラグインが入り込み何かで"
+"きる場所です。コールバックのためのプラグインの関数を登録することはフックに関"
+"数を追加することと同じです。一つずつすべてのトランザクション、もしくは特定の"
+"トランザクションのみにコールバックされるプラグインを登録することができます。"
 
 #: ../../developer-guide/api/functions/TSHttpHookAdd.en.rst:25
 msgid "Intercept Traffic Server events."
@@ -48,16 +67,42 @@ msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
 #: ../../developer-guide/api/functions/TSHttpHookAdd.en.rst:51
-msgid ":func:`TSHttpSsnHookAdd` adds :arg:`contp` to the end of the list of HTTP :term:`session` hooks specified by :arg:`id`. This means that :arg:`contp` is called back for every transaction within the session, at the point specified by the hook ID. Since :arg:`contp` is added to a session, it is not possible to call :func:`TSHttpSsnHookAdd` from the plugin initialization routine; the plugin needs a handle to an HTTP session."
-msgstr ":func:`TSHttpSsnHookAdd` は :arg:`contp` を :arg:`id` で指定された HTTP :term:`session` フックのリストの最後に追加します。これは :arg:`contp` がフック ID で指定された場所において、セッション中のすべてのトランザクションで呼び出されることを意味します。:arg:`contp` がセッションに追加されるので、プラグインの初期化ルーチンから :func:`TSHttpSsnHookAdd` を呼び出すことはできません。プラグインは HTTP セッションを取り扱う必要があります。"
+msgid ""
+":func:`TSHttpSsnHookAdd` adds :arg:`contp` to the end of the list of HTTP :"
+"term:`session` hooks specified by :arg:`id`. This means that :arg:`contp` "
+"is called back for every transaction within the session, at the point "
+"specified by the hook ID. Since :arg:`contp` is added to a session, it is "
+"not possible to call :func:`TSHttpSsnHookAdd` from the plugin "
+"initialization routine; the plugin needs a handle to an HTTP session."
+msgstr ""
+":func:`TSHttpSsnHookAdd` は :arg:`contp` を :arg:`id` で指定された HTTP :"
+"term:`session` フックのリストの最後に追加します。これは :arg:`contp` がフッ"
+"ク ID で指定された場所において、セッション中のすべてのトランザクションで呼び"
+"出されることを意味します。:arg:`contp` がセッションに追加されるので、プラグ"
+"インの初期化ルーチンから :func:`TSHttpSsnHookAdd` を呼び出すことはできませ"
+"ん。プラグインは HTTP セッションを取り扱う必要があります。"
 
 #: ../../developer-guide/api/functions/TSHttpHookAdd.en.rst:59
-msgid ":func:`TSHttpTxnHookAdd` adds :arg:`contp` to the end of the list of HTTP transaction hooks specified by :arg:`id`. Since :arg:`contp` is added to a transaction, it is not possible to call :func:`TSHttpTxnHookAdd` from the plugin initialization routine but only when the plugin has a handle to an HTTP transaction."
-msgstr ":func:`TSHttpTxnHookAdd` は :arg:`contp` を :arg:`id` で指定された HTTP トランザクションフックのリストの最後に追加します。:arg:`contp` がトランザクションに追加されるので、プラグインの初期化ルーチンから :func:`TSHttpTxnHookAdd` を呼び出すことはできず、プラグインが HTTP トランザクションを取り扱うときのみ呼び出せます。"
+msgid ""
+":func:`TSHttpTxnHookAdd` adds :arg:`contp` to the end of the list of HTTP "
+"transaction hooks specified by :arg:`id`. Since :arg:`contp` is added to a "
+"transaction, it is not possible to call :func:`TSHttpTxnHookAdd` from the "
+"plugin initialization routine but only when the plugin has a handle to an "
+"HTTP transaction."
+msgstr ""
+":func:`TSHttpTxnHookAdd` は :arg:`contp` を :arg:`id` で指定された HTTP トラ"
+"ンザクションフックのリストの最後に追加します。:arg:`contp` がトランザクショ"
+"ンに追加されるので、プラグインの初期化ルーチンから :func:`TSHttpTxnHookAdd` "
+"を呼び出すことはできず、プラグインが HTTP トランザクションを取り扱うときのみ"
+"呼び出せます。"
 
 #: ../../developer-guide/api/functions/TSHttpHookAdd.en.rst:116
-msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`, :manpage:`TSLifecycleHookAdd(3ts)`"
-msgstr ":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`, :manpage:`TSLifecycleHookAdd(3ts)`"
+msgid ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`, :manpage:"
+"`TSLifecycleHookAdd(3ts)`"
+msgstr ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSContCreate(3ts)`, :manpage:"
+"`TSLifecycleHookAdd(3ts)`"
 
 #: ../../developer-guide/api/functions/TSHttpHookAdd.en.rst:72
 msgid "Examples"
@@ -76,6 +121,9 @@ msgid "See Also"
 msgstr "参照"
 
 #: ../../developer-guide/api/functions/TSHttpHookAdd.en.rst:74
-msgid "The following example demonstrates how to add global, session and transaction hooks::"
-msgstr "次の例はどのようにグローバル、セッション、トランザクションフックを追加するかを紹介しています。"
-
+msgid ""
+"The following example demonstrates how to add global, session and "
+"transaction hooks::"
+msgstr ""
+"次の例はどのようにグローバル、セッション、トランザクションフックを追加するか"
+"を紹介しています。"

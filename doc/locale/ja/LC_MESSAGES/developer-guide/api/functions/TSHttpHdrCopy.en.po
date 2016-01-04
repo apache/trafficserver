@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,15 +20,24 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:43
-msgid ":c:func:`TSHttpHdrCopy` appends the port number to the domain of the URL portion of the header. For example, a copy of http://www.example.com appears as http://www.example.com:80 in the destination buffer."
+msgid ""
+":c:func:`TSHttpHdrCopy` appends the port number to the domain of the URL "
+"portion of the header. For example, a copy of http://www.example.com "
+"appears as http://www.example.com:80 in the destination buffer."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:37
-msgid ":c:func:`TSHttpHdrCopy` works correctly even if :arg:`src_bufp` and :arg:`dest_bufp` point to different :ref:`developer-plugins-marshal-buffers`. Make sure that you create the destination HTTP header before copying into it."
+msgid ""
+":c:func:`TSHttpHdrCopy` works correctly even if :arg:`src_bufp` and :arg:"
+"`dest_bufp` point to different :ref:`developer-plugins-marshal-buffers`. "
+"Make sure that you create the destination HTTP header before copying into "
+"it."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:24
-msgid "Copies the contents of the HTTP header located at src_loc within src_bufp to the HTTP header located at dest_loc within dest_bufp."
+msgid ""
+"Copies the contents of the HTTP header located at src_loc within src_bufp "
+"to the HTTP header located at dest_loc within dest_bufp."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:35
@@ -46,4 +55,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:30
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

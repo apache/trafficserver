@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,10 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSMimeHdrClone.en.rst:34
-msgid "Copies a specified MIME header to a specified marshal buffer, and returns the location of the copied MIME header within the destination marshal buffer."
+msgid ""
+"Copies a specified MIME header to a specified marshal buffer, and returns "
+"the location of the copied MIME header within the destination marshal "
+"buffer."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrClone.en.rst:32
@@ -36,10 +39,12 @@ msgid "TSMimeHdrClone"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrClone.en.rst:40
-msgid "Unlike :c:func:`TSMimeHdrCopy`, you do not have to create the destination MIME header before cloning.  Release the returned :c:type:`TSMLoc` handle with a call to :c:func:`TSHandleMLocRelease`."
+msgid ""
+"Unlike :c:func:`TSMimeHdrCopy`, you do not have to create the destination "
+"MIME header before cloning.  Release the returned :c:type:`TSMLoc` handle "
+"with a call to :c:func:`TSHandleMLocRelease`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrClone.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

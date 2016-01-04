@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -32,7 +32,12 @@ msgid "TSUrlPercentEncode"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlPercentEncode.en.rst:39
-msgid "The URL data structure is a parsed version of a standard internet URL. The Traffic Server URL API provides access to URL data stored in marshal buffers. The URL functions can create, copy, retrieve or delete entire URLs, and retrieve or modify parts of URLs, such as their host, port or scheme information."
+msgid ""
+"The URL data structure is a parsed version of a standard internet URL. The "
+"Traffic Server URL API provides access to URL data stored in marshal "
+"buffers. The URL functions can create, copy, retrieve or delete entire "
+"URLs, and retrieve or modify parts of URLs, such as their host, port or "
+"scheme information."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlPercentEncode.en.rst:25
@@ -44,19 +49,34 @@ msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
 #: ../../developer-guide/api/functions/TSUrlPercentEncode.en.rst:52
-msgid ":func:`TSStringPercentDecode` perform percent-decoding of the string in the :arg:`str` buffer, writing to the :arg:`dst` buffer. The source and destination can be the same, in which case they overwrite. The decoded string is always guaranteed to be no longer than the source string."
+msgid ""
+":func:`TSStringPercentDecode` perform percent-decoding of the string in "
+"the :arg:`str` buffer, writing to the :arg:`dst` buffer. The source and "
+"destination can be the same, in which case they overwrite. The decoded "
+"string is always guaranteed to be no longer than the source string."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlPercentEncode.en.rst:45
-msgid ":func:`TSUrlPercentEncode` performs percent-encoding of the URL object, storing the new string in the :arg:`dst` buffer. The :arg:`length` parameter will be set to the new (encoded) string length, or :literal:`0` if the encoding failed.  :func:`TSStringPercentEncode` is similar but operates on a string. If the optional :arg:`map` parameter is provided (not :literal:`NULL`) , it should be a map of characters to encode."
+msgid ""
+":func:`TSUrlPercentEncode` performs percent-encoding of the URL object, "
+"storing the new string in the :arg:`dst` buffer. The :arg:`length` "
+"parameter will be set to the new (encoded) string length, or :literal:`0` "
+"if the encoding failed.  :func:`TSStringPercentEncode` is similar but "
+"operates on a string. If the optional :arg:`map` parameter is provided "
+"(not :literal:`NULL`) , it should be a map of characters to encode."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlPercentEncode.en.rst:66
-msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSUrlCreate(3ts)`, :manpage:`TSUrlHostGet(3ts)`, :manpage:`TSUrlHostSet(3ts)`, :manpage:`TSUrlStringGet(3ts)`"
+msgid ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSUrlCreate(3ts)`, :manpage:"
+"`TSUrlHostGet(3ts)`, :manpage:`TSUrlHostSet(3ts)`, :manpage:"
+"`TSUrlStringGet(3ts)`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlPercentEncode.en.rst:60
-msgid "All these APIs returns a :type:`TSReturnCode`, indicating success (:data:`TS_SUCCESS`) or failure (:data:`TS_ERROR`) of the operation."
+msgid ""
+"All these APIs returns a :type:`TSReturnCode`, indicating success (:data:"
+"`TS_SUCCESS`) or failure (:data:`TS_ERROR`) of the operation."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlPercentEncode.en.rst:58
@@ -66,4 +86,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSUrlPercentEncode.en.rst:64
 msgid "See Also"
 msgstr "参照"
-

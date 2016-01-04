@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,11 +24,19 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSCacheRemove.en.rst:36
-msgid "If the object was removed successfully, the cache calls :arg:`contp` back with the event :data:`TS_EVENT_CACHE_REMOVE`. If the object was not found in the cache, the cache calls :arg:`contp` back with the event :data:`TS_EVENT_CACHE_REMOVE_FAILED`."
+msgid ""
+"If the object was removed successfully, the cache calls :arg:`contp` back "
+"with the event :data:`TS_EVENT_CACHE_REMOVE`. If the object was not found "
+"in the cache, the cache calls :arg:`contp` back with the event :data:"
+"`TS_EVENT_CACHE_REMOVE_FAILED`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSCacheRemove.en.rst:41
-msgid "In both of these callbacks, the user (:arg:`contp`) does not have to do anything.  The user does not get any vconnection from the cache, since no data needs to be transferred.  When the cache calls :arg:`contp` back with :data:`TS_EVENT_CACHE_REMOVE`, the remove has already been commited."
+msgid ""
+"In both of these callbacks, the user (:arg:`contp`) does not have to do "
+"anything.  The user does not get any vconnection from the cache, since no "
+"data needs to be transferred.  When the cache calls :arg:`contp` back with :"
+"data:`TS_EVENT_CACHE_REMOVE`, the remove has already been commited."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSCacheRemove.en.rst:34
@@ -46,4 +54,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSCacheRemove.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

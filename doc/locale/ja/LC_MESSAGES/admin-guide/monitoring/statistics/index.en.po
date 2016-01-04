@@ -24,10 +24,9 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/index.en.rst:25
 msgid ""
-"Statistics provide a live view into the current state of |TS| and many of"
-" the plugins which may be usd with it. They can, and generally should be,"
-" used as a core piece in any performance and operational monitoring "
-"infrastructure as they expose a much greater detail about the workings of"
-" |TS| than can reliably be obtained through any other means."
+"Statistics provide a live view into the current state of |TS| and many of "
+"the plugins which may be usd with it. They can, and generally should be, "
+"used as a core piece in any performance and operational monitoring "
+"infrastructure as they expose a much greater detail about the workings of |"
+"TS| than can reliably be obtained through any other means."
 msgstr ""
-

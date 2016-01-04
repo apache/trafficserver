@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,9 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSfwrite.en.rst:34
-msgid "Attempts to write :arg:`length` bytes of data from the buffer :arg:`buf` to the file :arg:`filep`."
+msgid ""
+"Attempts to write :arg:`length` bytes of data from the buffer :arg:`buf` to "
+"the file :arg:`filep`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSfwrite.en.rst:32
@@ -28,7 +30,11 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSfwrite.en.rst:37
-msgid "Make sure that :arg:`filep` is open for writing.  You might want to check the number of bytes written (:c:func:`TSfwrite` returns this value) against the value of :arg:`length`.  If it is less, there might be insufficient space on disk, for example."
+msgid ""
+"Make sure that :arg:`filep` is open for writing.  You might want to check "
+"the number of bytes written (:c:func:`TSfwrite` returns this value) against "
+"the value of :arg:`length`.  If it is less, there might be insufficient "
+"space on disk, for example."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSfwrite.en.rst:25
@@ -42,4 +48,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSfwrite.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

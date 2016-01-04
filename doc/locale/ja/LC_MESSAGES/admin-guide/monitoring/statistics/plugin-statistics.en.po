@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/monitoring/statistics/plugin-statistics.en.rst:23
 msgid "Plugin Specific Statistics"
 msgstr ""
-

@@ -25,8 +25,7 @@ msgstr ""
 #: ../../admin-guide/monitoring/logging/log-builder.en.rst:23
 msgid ""
 "If you need any assistance building your event log, you can try out our "
-"`online log builder <http://trafficserver.apache.org/logbuilder/>`_. This"
-" is a work in progress, so any comments, critique or suggestions are most"
-" welcome."
+"`online log builder <http://trafficserver.apache.org/logbuilder/>`_. This "
+"is a work in progress, so any comments, critique or suggestions are most "
+"welcome."
 msgstr ""
-

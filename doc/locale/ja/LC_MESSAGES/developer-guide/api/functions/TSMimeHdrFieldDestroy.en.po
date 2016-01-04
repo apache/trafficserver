@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,8 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldDestroy.en.rst:34
-msgid "Destroys the MIME :arg:`field` located at :arg:`field` within :arg:`bufp`."
+msgid ""
+"Destroys the MIME :arg:`field` located at :arg:`field` within :arg:`bufp`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldDestroy.en.rst:25
@@ -36,10 +37,11 @@ msgid "TSMimeHdrFieldDestroy"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldDestroy.en.rst:36
-msgid "You must release the :c:type:`TSMLoc` field with a call to :c:func:`TSHandleMLocRelease`."
+msgid ""
+"You must release the :c:type:`TSMLoc` field with a call to :c:func:"
+"`TSHandleMLocRelease`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldDestroy.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

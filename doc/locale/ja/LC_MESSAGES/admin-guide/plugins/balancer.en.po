@@ -24,8 +24,8 @@ msgstr ""
 
 #: ../../admin-guide/plugins/balancer.en.rst:24
 msgid ""
-"The ``balancer`` balances requests across multiple origin servers. To use"
-" this plugin, configure it in a :file:`remap.config` rule, specifying a "
+"The ``balancer`` balances requests across multiple origin servers. To use "
+"this plugin, configure it in a :file:`remap.config` rule, specifying a "
 "balancing policy and a set of origin servers. For example::"
 msgstr ""
 
@@ -33,15 +33,15 @@ msgstr ""
 msgid ""
 "The ``replacement`` URL in the mapping rule is not used. The argument to "
 "the ``--policy`` option is a comma-separated list of keywords. The first "
-"keyword is the name of a balancing policy. The subsequent keywords are "
-"used to refine the requested policy."
+"keyword is the name of a balancing policy. The subsequent keywords are used "
+"to refine the requested policy."
 msgstr ""
 
 #: ../../admin-guide/plugins/balancer.en.rst:36
 msgid ""
-"The remaining plugin arguments are balancer targets. Typically, these "
-"will be the host names of origin servers that requests should be balanced"
-" across. The target name may contain a colon-separated port number."
+"The remaining plugin arguments are balancer targets. Typically, these will "
+"be the host names of origin servers that requests should be balanced "
+"across. The target name may contain a colon-separated port number."
 msgstr ""
 
 #: ../../admin-guide/plugins/balancer.en.rst:42
@@ -50,11 +50,11 @@ msgstr ""
 
 #: ../../admin-guide/plugins/balancer.en.rst:44
 msgid ""
-"The ``hash`` balancing policy performs a consistent hash across the set "
-"of origins. This minimizes the number of hash entries that must be moved "
-"when the set of origin servers changes. An optional list of hash fields "
-"follows the ``hash`` keyword. Each specified hash field is hashed to "
-"select an outbound origin server."
+"The ``hash`` balancing policy performs a consistent hash across the set of "
+"origins. This minimizes the number of hash entries that must be moved when "
+"the set of origin servers changes. An optional list of hash fields follows "
+"the ``hash`` keyword. Each specified hash field is hashed to select an "
+"outbound origin server."
 msgstr ""
 
 #: ../../admin-guide/plugins/balancer.en.rst:50
@@ -67,8 +67,8 @@ msgstr ""
 
 #: ../../admin-guide/plugins/balancer.en.rst:53
 msgid ""
-"The request cache key. Note that the cache key will only be set if you "
-"have already chained a plugin that sets a custom cache key."
+"The request cache key. Note that the cache key will only be set if you have "
+"already chained a plugin that sets a custom cache key."
 msgstr ""
 
 #: ../../admin-guide/plugins/balancer.en.rst:59
@@ -104,8 +104,8 @@ msgstr ""
 #: ../../admin-guide/plugins/balancer.en.rst:70
 msgid ""
 "The ``roundrobin`` balancing policy simply allocates requests to origin "
-"servers in order. Over time, the number of requests received by each "
-"origin should be approximately the same."
+"servers in order. Over time, the number of requests received by each origin "
+"should be approximately the same."
 msgstr ""
 
 #: ../../admin-guide/plugins/balancer.en.rst:75
@@ -115,11 +115,10 @@ msgstr ""
 #: ../../admin-guide/plugins/balancer.en.rst:77
 msgid ""
 "The ``balancer`` plugin does not check the health of the origin servers, "
-"however the plugin is fully reloadable so health checking is usualy "
-"simple to implement. Most production environments already have mechanisms"
-" to check service health. It is recommended that you write a simple "
-"script to monitor this information and rewrite :file:`remap.config` when "
-"appropriate. Running :option:`traffic_ctl config reload` will reload the "
-"``balancer`` plugin with the new set of origin servers."
+"however the plugin is fully reloadable so health checking is usualy simple "
+"to implement. Most production environments already have mechanisms to check "
+"service health. It is recommended that you write a simple script to monitor "
+"this information and rewrite :file:`remap.config` when appropriate. "
+"Running :option:`traffic_ctl config reload` will reload the ``balancer`` "
+"plugin with the new set of origin servers."
 msgstr ""
-

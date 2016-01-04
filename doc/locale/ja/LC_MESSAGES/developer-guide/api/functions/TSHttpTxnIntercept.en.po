@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,9 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:24
-msgid "Allows a plugin take over the servicing of the request as though it was the origin server."
+msgid ""
+"Allows a plugin take over the servicing of the request as though it was the "
+"origin server."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:35
@@ -36,11 +38,21 @@ msgid "TSHttpTxnIntercept"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:37
-msgid ":arg:`contp` will be sent :data:`TS_EVENT_NET_ACCEPT`. The edata passed with :data:`TS_NET_EVENT_ACCEPT` is an :c:type:`TSVConn` just as it would be for a normal accept. The plugin must act as if it is an HTTP server and read the HTTP request and body off the :c:type:`TSVConn` and send an HTTP response header and body."
+msgid ""
+":arg:`contp` will be sent :data:`TS_EVENT_NET_ACCEPT`. The edata passed "
+"with :data:`TS_NET_EVENT_ACCEPT` is an :c:type:`TSVConn` just as it would "
+"be for a normal accept. The plugin must act as if it is an HTTP server and "
+"read the HTTP request and body off the :c:type:`TSVConn` and send an HTTP "
+"response header and body."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:43
-msgid ":func:`TSHttpTxnIntercept` must be called be called from only :data:`TS_HTTP_READ_REQUEST_HOOK`.  Using :type:`TSHttpTxnIntercept` will bypass the Traffic Server cache.  If response sent by the plugin should be cached, use :func:`TSHttpTxnServerIntercept` instead. :func:`TSHttpTxnIntercept` primary use is allow plugins to serve data about their functioning directly."
+msgid ""
+":func:`TSHttpTxnIntercept` must be called be called from only :data:"
+"`TS_HTTP_READ_REQUEST_HOOK`.  Using :type:`TSHttpTxnIntercept` will bypass "
+"the Traffic Server cache.  If response sent by the plugin should be cached, "
+"use :func:`TSHttpTxnServerIntercept` instead. :func:`TSHttpTxnIntercept` "
+"primary use is allow plugins to serve data about their functioning directly."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:51
@@ -50,4 +62,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:30
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

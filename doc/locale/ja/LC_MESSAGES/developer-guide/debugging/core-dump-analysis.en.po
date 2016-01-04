@@ -21,4 +21,3 @@ msgstr ""
 #: ../../developer-guide/debugging/core-dump-analysis.en.rst:23
 msgid "Core Dump Analysis"
 msgstr ""
-

@@ -21,4 +21,3 @@ msgstr ""
 #: ../../developer-guide/plugins/building-plugins.en.rst:23
 msgid "Building Plugins"
 msgstr ""
-

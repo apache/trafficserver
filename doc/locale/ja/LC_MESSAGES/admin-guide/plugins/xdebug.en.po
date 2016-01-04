@@ -32,12 +32,29 @@ msgid "Diags"
 msgstr ""
 
 #: ../../admin-guide/plugins/xdebug.en.rst:51
-msgid "If the ``Diags`` header is requested, the `XDebug` plugin enables the transaction specific diagnostics for the transaction. This also requires that :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``."
+msgid ""
+"If the ``Diags`` header is requested, the `XDebug` plugin enables the "
+"transaction specific diagnostics for the transaction. This also requires "
+"that :ts:cv:`proxy.config.diags.debug.enabled` is set to ``1``."
 msgstr ""
 
 #: ../../admin-guide/plugins/xdebug.en.rst:23
-msgid "The `XDebug` plugin allows HTTP clients to debug the operation of the Traffic Server cache using the default ``X-Debug`` header. The plugin is triggered by the presence of the ``X-Debug`` or the configured header in the client request. The contents of this header should be the names of the debug headers that are desired in the response. The `XDebug` plugin will remove the ``X-Debug`` header from the client request and inject the desired headers into the client response."
-msgstr "`XDebug` プラグインは HTTP クライアントがデフォルトでは ``X-Deubg`` ヘッダーを使用して Traffic Server キャッシュの操作をデバッグすることを可能にします。このプラグインはクライアントからのリクエストに ``X-Debug`` ヘッダーあるいはクライアントリクエスト内で設定されたヘッダーが含まれることによって動作を開始します。このヘッダーの内容はレスポンスに要望するデバッグヘッダーの名前です。`XDebug` プラグインはクライアントからのリクエストから ``X-Debug`` ヘッダーを取り除き、クライアントへのレスポンスに要望されたヘッダーを注入します。"
+msgid ""
+"The `XDebug` plugin allows HTTP clients to debug the operation of the "
+"Traffic Server cache using the default ``X-Debug`` header. The plugin is "
+"triggered by the presence of the ``X-Debug`` or the configured header in "
+"the client request. The contents of this header should be the names of the "
+"debug headers that are desired in the response. The `XDebug` plugin will "
+"remove the ``X-Debug`` header from the client request and inject the "
+"desired headers into the client response."
+msgstr ""
+"`XDebug` プラグインは HTTP クライアントがデフォルトでは ``X-Deubg`` ヘッダー"
+"を使用して Traffic Server キャッシュの操作をデバッグすることを可能にします。"
+"このプラグインはクライアントからのリクエストに ``X-Debug`` ヘッダーあるいは"
+"クライアントリクエスト内で設定されたヘッダーが含まれることによって動作を開始"
+"します。このヘッダーの内容はレスポンスに要望するデバッグヘッダーの名前です。"
+"`XDebug` プラグインはクライアントからのリクエストから ``X-Debug`` ヘッダーを"
+"取り除き、クライアントへのレスポンスに要望されたヘッダーを注入します。"
 
 #: ../../admin-guide/plugins/xdebug.en.rst:37
 msgid "This overrides the default ``X-Debug`` header name."
@@ -52,19 +69,29 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../admin-guide/plugins/xdebug.en.rst:46
-msgid "If the ``Via`` header is requested, the `XDebug` plugin sets the :ts:cv:`proxy.config.http.insert_response_via_str` configuration variable to ``3`` for the request."
-msgstr "``Via`` ヘッダーがリクエストされた場合、`XDebug` プラグインはそのリクエストの :ts:cv:`proxy.config.http.insert_response_via_str` 設定変数に ``3`` を設定します。"
+msgid ""
+"If the ``Via`` header is requested, the `XDebug` plugin sets the :ts:cv:"
+"`proxy.config.http.insert_response_via_str` configuration variable to ``3`` "
+"for the request."
+msgstr ""
+"``Via`` ヘッダーがリクエストされた場合、`XDebug` プラグインはそのリクエスト"
+"の :ts:cv:`proxy.config.http.insert_response_via_str` 設定変数に ``3`` を設"
+"定します。"
 
 #: ../../admin-guide/plugins/xdebug.en.rst:66
 msgid "No cache lookup was attempted."
 msgstr ""
 
 #: ../../admin-guide/plugins/xdebug.en.rst:43
-msgid "The `XDebug` plugin is able to generate the following debugging headers:"
+msgid ""
+"The `XDebug` plugin is able to generate the following debugging headers:"
 msgstr "`XDebug` プラグインは次のデバッグヘッダーを生成することができます。"
 
 #: ../../admin-guide/plugins/xdebug.en.rst:56
-msgid "The ``X-Cache-Key`` header contains the URL that identifies the HTTP object in the Traffic Server cache. This header is particularly useful if a custom cache key is being used."
+msgid ""
+"The ``X-Cache-Key`` header contains the URL that identifies the HTTP object "
+"in the Traffic Server cache. This header is particularly useful if a custom "
+"cache key is being used."
 msgstr ""
 
 #: ../../admin-guide/plugins/xdebug.en.rst:61
@@ -72,11 +99,18 @@ msgid "The ``X-Cache`` header contains the results of any cache lookup."
 msgstr ""
 
 #: ../../admin-guide/plugins/xdebug.en.rst:78
-msgid "The ``X-Milestones`` header contains detailed information about how long the transaction took to traverse portions of the HTTP state machine. The timing information is obtained from the :c:func:`TSHttpTxnMilestoneGet` API. Each milestone value is a fractional number of seconds since the beginning of the transaction."
+msgid ""
+"The ``X-Milestones`` header contains detailed information about how long "
+"the transaction took to traverse portions of the HTTP state machine. The "
+"timing information is obtained from the :c:func:`TSHttpTxnMilestoneGet` "
+"API. Each milestone value is a fractional number of seconds since the "
+"beginning of the transaction."
 msgstr ""
 
 #: ../../admin-guide/plugins/xdebug.en.rst:74
-msgid "The cache generation ID for this transaction, as specified by the :ts:cv:`proxy.config.http.cache.generation` configuration variable."
+msgid ""
+"The cache generation ID for this transaction, as specified by the :ts:cv:"
+"`proxy.config.http.cache.generation` configuration variable."
 msgstr ""
 
 #: ../../admin-guide/plugins/xdebug.en.rst:70
@@ -120,8 +154,14 @@ msgid "X-Milestones"
 msgstr ""
 
 #: ../../admin-guide/plugins/xdebug.en.rst:31
-msgid "`XDebug` is a global plugin. It is installed by adding it to the :file:`plugin.config` file. It currently takes a single, optional configuration option, ``--header``. E.g."
-msgstr "`XDebug` はグローバルなプラグインです。:file:`plugin.config` ファイルに追加することでインストールされます。現時点では単一の省略可能な設定オプション ``--header`` を受け取ります。例えば"
+msgid ""
+"`XDebug` is a global plugin. It is installed by adding it to the :file:"
+"`plugin.config` file. It currently takes a single, optional configuration "
+"option, ``--header``. E.g."
+msgstr ""
+"`XDebug` はグローバルなプラグインです。:file:`plugin.config` ファイルに追加"
+"することでインストールされます。現時点では単一の省略可能な設定オプション "
+"``--header`` を受け取ります。例えば"
 
 #: ../../admin-guide/plugins/xdebug.en.rst:69
 msgid "hit-fresh"

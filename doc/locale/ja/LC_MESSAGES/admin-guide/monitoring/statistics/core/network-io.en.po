@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/monitoring/statistics/core/network-io.en.rst:23
 msgid "Network I/O"
 msgstr ""
-

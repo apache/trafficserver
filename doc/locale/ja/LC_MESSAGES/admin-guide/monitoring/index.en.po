@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/monitoring/index.en.rst:23
 msgid "Event and Error Monitoring"
 msgstr ""
-

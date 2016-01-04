@@ -24,9 +24,9 @@ msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.rst:25
 msgid ""
-"If you need you make a plugin that will load against multiple versions of"
-" Traffic Server, you can check the API version at both compilation time "
-"and run time."
+"If you need you make a plugin that will load against multiple versions of "
+"Traffic Server, you can check the API version at both compilation time and "
+"run time."
 msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.rst:29
@@ -43,7 +43,6 @@ msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.rst:34
 msgid ""
-"The plugin registers the plugin and ensures it's running with a "
-"compatible version of Traffic Server."
+"The plugin registers the plugin and ensures it's running with a compatible "
+"version of Traffic Server."
 msgstr ""
-

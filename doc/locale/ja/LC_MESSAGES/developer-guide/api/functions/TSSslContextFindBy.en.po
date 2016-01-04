@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -23,11 +23,13 @@ msgstr ""
 msgid "Corresponds to the SSL_CTX * value in openssl."
 msgstr ""
 
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:32 ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:48
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:32
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:48
 msgid "Description"
 msgstr "解説"
 
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:25 ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:41
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:25
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:41
 msgid "Synopsis"
 msgstr "概要"
 
@@ -36,11 +38,15 @@ msgid "TSSslContextFindByName"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:50
-msgid "Look for a SSL context created from :file:`ssl_multicert.config`.  Use the server address to search."
+msgid ""
+"Look for a SSL context created from :file:`ssl_multicert.config`.  Use the "
+"server address to search."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:34
-msgid "Look for a SSL context created from :file:`ssl_multicert.config`. Use the server :arg:`name` to search."
+msgid ""
+"Look for a SSL context created from :file:`ssl_multicert.config`. Use the "
+"server :arg:`name` to search."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:38
@@ -51,7 +57,7 @@ msgstr ""
 msgid "Type"
 msgstr "型"
 
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:27 ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:43
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:27
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:43
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

@@ -38,47 +38,47 @@ msgstr ""
 msgid ""
 "**Transaction hooks** Transaction hooks can be used to call plugins back "
 "for a specific HTTP transaction. You cannot add transaction hooks in "
-"``TSPluginInit``; you first need a handle to a transaction. See :ref"
-":`developer-plugins-blacklist-access-process-txn`."
+"``TSPluginInit``; you first need a handle to a transaction. See :ref:"
+"`developer-plugins-blacklist-access-process-txn`."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:38
 msgid ""
 "**Transformation hooks** Transformation hooks are a special case of "
 "transaction hooks. See :c:func:`TSVConnCacheObjectSizeGet` for more "
-"information about transformation hooks. You add a transformation hook "
-"using ``TSHttpTxnHookAdd``, as described in :ref:`developer-plugins-"
-"hooks-http-transactions`."
+"information about transformation hooks. You add a transformation hook using "
+"``TSHttpTxnHookAdd``, as described in :ref:`developer-plugins-hooks-http-"
+"transactions`."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:45
 msgid ""
-"**Session hooks** An HTTP session starts when a client opens a connection"
-" to Traffic Server and ends when the connection closes. A session can "
+"**Session hooks** An HTTP session starts when a client opens a connection "
+"to Traffic Server and ends when the connection closes. A session can "
 "consist of several transactions. Session hooks enable you to hook your "
 "plugin to a particular point in every transaction within a specified "
 "session (see :doc:`HTTP Sessions <http-sessions.en>`). Session hooks are "
-"added in a manner similar to transaction hooks (ie, you first need a "
-"handle to an HTTP session)."
+"added in a manner similar to transaction hooks (ie, you first need a handle "
+"to an HTTP session)."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:53
 msgid ""
-"**HTTP select alternate hook** Alternate selection hooks enable you to "
-"hook on to the alternate selection state. These hooks must be added "
-"globally, since Traffic Server does not have a handle to a transaction or"
-" session when alternate selection is taking place. See :doc:`HTTP "
-"Alternate Selection <http-alternate-selection.en>` for information on the"
-" alternate selection mechanism."
+"**HTTP select alternate hook** Alternate selection hooks enable you to hook "
+"on to the alternate selection state. These hooks must be added globally, "
+"since Traffic Server does not have a handle to a transaction or session "
+"when alternate selection is taking place. See :doc:`HTTP Alternate "
+"Selection <http-alternate-selection.en>` for information on the alternate "
+"selection mechanism."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:60
 msgid ""
-"All of the hook addition functions (:c:func:`TSHttpHookAdd`, "
-":c:func:`TSHttpSsnHookAdd`, :c:func:`TSHttpSsnReenable`) take "
-"``TSHttpHookID`` (identifies the hook to add on to) and ``TSCont`` (the "
-"basic callback mechanism in Traffic Server). A single ``TSCont`` can be "
-"added to any number of hooks at a time."
+"All of the hook addition functions (:c:func:`TSHttpHookAdd`, :c:func:"
+"`TSHttpSsnHookAdd`, :c:func:`TSHttpSsnReenable`) take ``TSHttpHookID`` "
+"(identifies the hook to add on to) and ``TSCont`` (the basic callback "
+"mechanism in Traffic Server). A single ``TSCont`` can be added to any "
+"number of hooks at a time."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:68
@@ -97,9 +97,9 @@ msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:74
 msgid ""
-"Called after the HTTP state machine has completed the cache lookup for "
-"the document requested in the ongoing transaction. Register this hook via"
-" ``TSHttpTxnHookAdd`` or ``TSHttpHookAdd``. Corresponds to the event "
+"Called after the HTTP state machine has completed the cache lookup for the "
+"document requested in the ongoing transaction. Register this hook via "
+"``TSHttpTxnHookAdd`` or ``TSHttpHookAdd``. Corresponds to the event "
 "``TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE``."
 msgstr ""
 
@@ -109,9 +109,9 @@ msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:80
 msgid ""
-"Called immediately after the HTTP state machine has completed a DNS "
-"lookup of the origin server. The HTTP state machine will know the origin "
-"server's IP address at this point, which is useful for performing both "
+"Called immediately after the HTTP state machine has completed a DNS lookup "
+"of the origin server. The HTTP state machine will know the origin server's "
+"IP address at this point, which is useful for performing both "
 "authentication and blacklisting. Corresponds to the event "
 "``TS_EVENT_HTTP_OS_DNS``."
 msgstr ""
@@ -122,8 +122,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:87
 msgid ""
-"Called immediately after remapping occurs, before cache lookup. "
-"Corresponds to the event ``TS_EVENT_HTTP_POST_REMAP``."
+"Called immediately after remapping occurs, before cache lookup. Corresponds "
+"to the event ``TS_EVENT_HTTP_POST_REMAP``."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:93
@@ -144,8 +144,8 @@ msgstr ""
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:96
 msgid ""
 "Called immediately after the request and response header of a previously-"
-"cached object is read from cache. This hook is only called if the "
-"document is being served from cache. Corresponds to the event "
+"cached object is read from cache. This hook is only called if the document "
+"is being served from cache. Corresponds to the event "
 "``TS_EVENT_HTTP_READ_CACHE_HDR``."
 msgstr ""
 
@@ -155,8 +155,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:102
 msgid ""
-"Called immediately after the response header is read from the origin "
-"server or parent proxy. Corresponds to the event "
+"Called immediately after the response header is read from the origin server "
+"or parent proxy. Corresponds to the event "
 "``TS_EVENT_HTTP_READ_RESPONSE_HDR``."
 msgstr ""
 
@@ -191,8 +191,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:119
 msgid ""
-"See :doc:`\"HTTP Alternate Selection\" <http-alternate-selection.en>` for"
-" information about the alternate selection mechanism."
+"See :doc:`\"HTTP Alternate Selection\" <http-alternate-selection.en>` for "
+"information about the alternate selection mechanism."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:126
@@ -212,11 +212,11 @@ msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:129
 msgid ""
-"Called immediately before the proxy's request header is sent to the "
-"origin server or the parent proxy. This hook is not called if the "
-"document is being served from cache. This hook is usually used for "
-"modifying the proxy's request header before it is sent to the origin "
-"server or parent proxy."
+"Called immediately before the proxy's request header is sent to the origin "
+"server or the parent proxy. This hook is not called if the document is "
+"being served from cache. This hook is usually used for modifying the "
+"proxy's request header before it is sent to the origin server or parent "
+"proxy."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:137
@@ -225,8 +225,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:136
 msgid ""
-"Called when an HTTP session ends. A session ends when the client "
-"connection is closed. You can only add this hook as a global hook"
+"Called when an HTTP session ends. A session ends when the client connection "
+"is closed. You can only add this hook as a global hook"
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:142
@@ -260,6 +260,6 @@ msgid ""
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:153
-msgid "The function you use to add a global HTTP hook is :c:func:`TSHttpHookAdd`."
+msgid ""
+"The function you use to add a global HTTP hook is :c:func:`TSHttpHookAdd`."
 msgstr ""
-

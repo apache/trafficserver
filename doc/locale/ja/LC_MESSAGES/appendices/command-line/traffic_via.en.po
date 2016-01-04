@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,11 +24,16 @@ msgid ":program:`traffic_via` [OPTIONS] [VIA ...]"
 msgstr ""
 
 #: ../../appendices/command-line/traffic_via.en.rst:33
-msgid ":program:`traffic_via` decodes the Traffic Server Via header codes. Via header strings are passed as command-line options. The enclosing square brackets are optional."
+msgid ""
+":program:`traffic_via` decodes the Traffic Server Via header codes. Via "
+"header strings are passed as command-line options. The enclosing square "
+"brackets are optional."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_via.en.rst:75
-msgid "Decode the Via header from a curl request, using the :ref:`X-Debug <_xdebug_plugin>` plugin::"
+msgid ""
+"Decode the Via header from a curl request, using the :ref:`X-Debug "
+"<_xdebug_plugin>` plugin::"
 msgstr ""
 
 #: ../../appendices/command-line/traffic_via.en.rst:57
@@ -48,7 +53,10 @@ msgid "Examples"
 msgstr "例"
 
 #: ../../appendices/command-line/traffic_via.en.rst:37
-msgid "If the argument is '-', :program:`traffic_via` will filter standard input for Via headers. This modes supports only supports Via headers taht are enclosed by square brackets."
+msgid ""
+"If the argument is '-', :program:`traffic_via` will filter standard input "
+"for Via headers. This modes supports only supports Via headers taht are "
+"enclosed by square brackets."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_via.en.rst:42
@@ -66,4 +74,3 @@ msgstr ""
 #: ../../appendices/command-line/traffic_via.en.rst:23
 msgid "traffic_via"
 msgstr ""
-

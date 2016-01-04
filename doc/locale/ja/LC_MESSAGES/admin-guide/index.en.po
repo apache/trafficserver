@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -28,7 +28,10 @@ msgid "Audience"
 msgstr ""
 
 #: ../../admin-guide/index.en.rst:54
-msgid "Should you encounter problems, or find any of the instructions unclear or lacking, please seek help through one of the avenues listed in :ref:`intro-other-resources`."
+msgid ""
+"Should you encounter problems, or find any of the instructions unclear or "
+"lacking, please seek help through one of the avenues listed in :ref:`intro-"
+"other-resources`."
 msgstr ""
 
 #: ../../admin-guide/index.en.rst:25
@@ -36,6 +39,12 @@ msgid "Table of Contents:"
 msgstr "目次:"
 
 #: ../../admin-guide/index.en.rst:46
-msgid "This section of the |ATS| Manual is aimed at those individuals looking to install and configure |TS| for use as a caching proxy server. The section assumes basic knowledge of the command line and system administration tasks. Detailed steps are provided on how to build and configure the software, so even if you have never used a compiler or looked at a Makefile before, you will find everything you need in the following chapters to get you up and running with your own instance of |TS|. Or so is our hope."
+msgid ""
+"This section of the |ATS| Manual is aimed at those individuals looking to "
+"install and configure |TS| for use as a caching proxy server. The section "
+"assumes basic knowledge of the command line and system administration "
+"tasks. Detailed steps are provided on how to build and configure the "
+"software, so even if you have never used a compiler or looked at a Makefile "
+"before, you will find everything you need in the following chapters to get "
+"you up and running with your own instance of |TS|. Or so is our hope."
 msgstr ""
-

@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/monitoring/statistics/core/http-document-size.en.rst:23
 msgid "HTTP Document Size"
 msgstr ""
-

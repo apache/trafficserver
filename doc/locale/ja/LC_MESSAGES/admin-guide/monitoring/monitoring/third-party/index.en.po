@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/monitoring/monitoring/third-party/index.en.rst:23
 msgid "Integrating Third-Party Tools"
 msgstr ""
-

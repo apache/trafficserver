@@ -20,8 +20,16 @@ msgstr ""
 "X-Generator: Poedit 1.8.6\n"
 
 #: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:39
-msgid ":func:`TSInstallDirGet` returns the path to the root of the Traffic Server installation. :func:`TSConfigDirGet` and :func:`TSPluginDirGet` return the complete, absolute path to the configuration directory and the plugin installation directory, respectively."
-msgstr ":func:`TSInstallDirGet` は インストール済みの Traffic Server のルートディレクトリのパスを返します。:func:`TSConfigDirGet` と :func:`TSPluginDirGet` はそれぞれ設定ディレクトリとインストール済みのプラグインディレクトリへの完全な絶対パスを返します。"
+msgid ""
+":func:`TSInstallDirGet` returns the path to the root of the Traffic Server "
+"installation. :func:`TSConfigDirGet` and :func:`TSPluginDirGet` return the "
+"complete, absolute path to the configuration directory and the plugin "
+"installation directory, respectively."
+msgstr ""
+":func:`TSInstallDirGet` は インストール済みの Traffic Server のルートディレ"
+"クトリのパスを返します。:func:`TSConfigDirGet` と :func:`TSPluginDirGet` は"
+"それぞれ設定ディレクトリとインストール済みのプラグインディレクトリへの完全な"
+"絶対パスを返します。"
 
 #: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:64
 msgid ":manpage:`TSAPI(3ts)`"
@@ -56,11 +64,16 @@ msgid "See Slso"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:47
-msgid "These functions all return a NUL-terminated string that must not be modified or freed."
-msgstr "これらの関数はすべて変更や解放をしてはならない NULL 終端文字列を返します。"
+msgid ""
+"These functions all return a NUL-terminated string that must not be "
+"modified or freed."
+msgstr ""
+"これらの関数はすべて変更や解放をしてはならない NULL 終端文字列を返します。"
 
 #: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:53
-msgid "To load a file that is located in the Traffic Server configuration directory::"
+msgid ""
+"To load a file that is located in the Traffic Server configuration "
+"directory::"
 msgstr "Traffic Server 設定ディレクトリにあるファイルを読み込むためには::"
 
 #: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:30

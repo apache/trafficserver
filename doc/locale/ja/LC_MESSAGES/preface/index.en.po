@@ -39,8 +39,8 @@ msgstr ""
 
 #: ../../preface/index.en.rst:38
 msgid ""
-"This manual will explore every aspect of installing, managing, extending,"
-" and troubleshooting |TS|."
+"This manual will explore every aspect of installing, managing, extending, "
+"and troubleshooting |TS|."
 msgstr ""
 
 #: ../../preface/index.en.rst:42
@@ -67,8 +67,8 @@ msgstr ""
 #: ../../preface/index.en.rst:50
 msgid ""
 "The |ATS| object storage is based on a *cyclone buffer* architecture. "
-"Cyclone buffers are a form of storage addressing in which a single writer"
-" continually reclaims the oldest allocations for use by new updates."
+"Cyclone buffers are a form of storage addressing in which a single writer "
+"continually reclaims the oldest allocations for use by new updates."
 msgstr ""
 
 #: ../../preface/index.en.rst:60
@@ -77,8 +77,8 @@ msgstr ""
 
 #: ../../preface/index.en.rst:56
 msgid ""
-"Represents C/C++ language statements, commands, file paths, file content,"
-" and computer output."
+"Represents C/C++ language statements, commands, file paths, file content, "
+"and computer output."
 msgstr ""
 
 #: ../../preface/index.en.rst:60
@@ -98,8 +98,8 @@ msgstr ""
 #: ../../preface/index.en.rst:67
 msgid ""
 "Running the command ``traffic_line -r <name>`` will display the current "
-"value of a performance statistic, where ``<name>`` is the statistic whose"
-" value you wish to view."
+"value of a performance statistic, where ``<name>`` is the statistic whose "
+"value you wish to view."
 msgstr ""
 
 #: ../../preface/index.en.rst:72
@@ -128,9 +128,9 @@ msgstr ""
 
 #: ../../preface/index.en.rst:85
 msgid ""
-"The official |ATS| project website is hosted by the |ASF|. Documentation,"
-" software downloads, community resource links, security announcements, "
-"and more are located, or linked to, at the site."
+"The official |ATS| project website is hosted by the |ASF|. Documentation, "
+"software downloads, community resource links, security announcements, and "
+"more are located, or linked to, at the site."
 msgstr ""
 
 #: ../../preface/index.en.rst:94
@@ -143,8 +143,8 @@ msgstr ""
 
 #: ../../preface/index.en.rst:92
 msgid ""
-"The most up to date version of the documentation is hosted at |RTD|, with"
-" built-in search functionality. Documentation for past releases is also "
+"The most up to date version of the documentation is hosted at |RTD|, with "
+"built-in search functionality. Documentation for past releases is also "
 "available."
 msgstr ""
 
@@ -158,9 +158,9 @@ msgstr ""
 
 #: ../../preface/index.en.rst:99
 msgid ""
-"If you wish to report bugs, or look for open issues on which you may help"
-" contribute to the |TS| project, please visit the public Jira bug tracker"
-" site."
+"If you wish to report bugs, or look for open issues on which you may help "
+"contribute to the |TS| project, please visit the public Jira bug tracker "
+"site."
 msgstr ""
 
 #: ../../preface/index.en.rst:104
@@ -179,8 +179,8 @@ msgstr ""
 
 #: ../../preface/index.en.rst:110
 msgid ""
-"Send an email to ``users-subscribe@trafficserver.apache.org`` to join the"
-" list."
+"Send an email to ``users-subscribe@trafficserver.apache.org`` to join the "
+"list."
 msgstr ""
 
 #: ../../preface/index.en.rst:120
@@ -189,10 +189,10 @@ msgstr ""
 
 #: ../../preface/index.en.rst:114
 msgid ""
-"If you have questions about, or wish to discuss, the development of |TS|,"
-" plugins for the server, or other developer-oriented matters, the "
-"developer list offers an active list of both core project members and "
-"external contributors."
+"If you have questions about, or wish to discuss, the development of |TS|, "
+"plugins for the server, or other developer-oriented matters, the developer "
+"list offers an active list of both core project members and external "
+"contributors."
 msgstr ""
 
 #: ../../preface/index.en.rst:119
@@ -207,11 +207,10 @@ msgstr ""
 
 #: ../../preface/index.en.rst:125
 msgid ""
-"The ``#traffic-server`` channel on ``irc.freenode.net`` is the official "
-"IRC resource for the |TS| project, and boasts active discussions."
+"The ``#traffic-server`` channel on ``irc.freenode.net`` is the official IRC "
+"resource for the |TS| project, and boasts active discussions."
 msgstr ""
 
 #: ../../preface/index.en.rst:129
 msgid "Community Forums"
 msgstr ""
-

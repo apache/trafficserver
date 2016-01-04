@@ -24,14 +24,14 @@ msgstr ""
 
 #: ../../developer-guide/plugins/example-plugins/basic-authorization/index.en.rst:25
 msgid ""
-"The sample basic authorization plugin, ``basic-auth.c``, checks for basic"
-" HTTP proxy authorization. In HTTP basic proxy authorization, client user"
-" names and passwords are contained in the ``Proxy-Authorization`` header."
-" The password is encoded using base64 encoding. The plugin checks all "
-"incoming requests for the authorization header, user name, and password. "
-"If the plugin does not find all of the these, then it reenables with an "
-"error (effectively stopping the transaction) and adds a transaction hook "
-"to the send response header event."
+"The sample basic authorization plugin, ``basic-auth.c``, checks for basic "
+"HTTP proxy authorization. In HTTP basic proxy authorization, client user "
+"names and passwords are contained in the ``Proxy-Authorization`` header. "
+"The password is encoded using base64 encoding. The plugin checks all "
+"incoming requests for the authorization header, user name, and password. If "
+"the plugin does not find all of the these, then it reenables with an error "
+"(effectively stopping the transaction) and adds a transaction hook to the "
+"send response header event."
 msgstr ""
 
 #: ../../developer-guide/plugins/example-plugins/basic-authorization/index.en.rst:36
@@ -43,6 +43,6 @@ msgid "The parent continuation and global hook are created as follows:"
 msgstr ""
 
 #: ../../developer-guide/plugins/example-plugins/basic-authorization/index.en.rst:40
-msgid "``TSHttpHookAdd (TS_HTTP_OS_DNS_HOOK, TSContCreate (auth_plugin, NULL));``"
+msgid ""
+"``TSHttpHookAdd (TS_HTTP_OS_DNS_HOOK, TSContCreate (auth_plugin, NULL));``"
 msgstr ""
-

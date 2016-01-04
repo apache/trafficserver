@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -28,7 +28,10 @@ msgid ":program:`traffic_ctl` [OPTIONS] SUBCOMMAND [OPTIONS]"
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:32
-msgid ":program:`traffic_ctl` is used to display and manipulate configure a running Traffic Server. :program:`traffic_ctl` includes a number of subcommands that control different aspects of Traffic Server:"
+msgid ""
+":program:`traffic_ctl` is used to display and manipulate configure a "
+"running Traffic Server. :program:`traffic_ctl` includes a number of "
+"subcommands that control different aspects of Traffic Server:"
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:74
@@ -36,7 +39,10 @@ msgid "Clear (acknowledge) all current alarms."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:79
-msgid "Clear (acknowledge) an alarm event. The arguments are a specific alarm number (e.g. ''1''), or an alarm string identifier (e.g. ''MGMT_ALARM_PROXY_CONFIG_ERROR'')."
+msgid ""
+"Clear (acknowledge) an alarm event. The arguments are a specific alarm "
+"number (e.g. ''1''), or an alarm string identifier (e.g. "
+"''MGMT_ALARM_PROXY_CONFIG_ERROR'')."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:30
@@ -48,7 +54,10 @@ msgid "Configure Traffic Server to log in Squid format::"
 msgstr "Squid フォーマットでログを取るように Traffic Server を設定するには"
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:109
-msgid "Display all the known information about a configuration record. This includes the current and default values, the data type, the record class and syntax checking expression."
+msgid ""
+"Display all the known information about a configuration record. This "
+"includes the current and default values, the data type, the record class "
+"and syntax checking expression."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:37
@@ -56,11 +65,16 @@ msgid "Display and manipulate Traffic Server alarms"
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:116
-msgid "Display configuration records that have non-default values. The *--records* flag has the same behavior as :option:`traffic_ctl config get --records`."
+msgid ""
+"Display configuration records that have non-default values. The *--records* "
+"flag has the same behavior as :option:`traffic_ctl config get --records`."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:160
-msgid "Display detailed status about the Traffic Server configuration system. This includes version information, whether the internal configuration store is current and whether any daemon processes should be restarted."
+msgid ""
+"Display detailed status about the Traffic Server configuration system. This "
+"includes version information, whether the internal configuration store is "
+"current and whether any daemon processes should be restarted."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:123
@@ -72,19 +86,28 @@ msgid "Display the current value of the specifies statistics."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:134
-msgid "Display the current values of all configuration variables whose names match the given regular expression. The *--records* flag has the same behavior as :option:`traffic_ctl config get --records`."
+msgid ""
+"Display the current values of all configuration variables whose names match "
+"the given regular expression. The *--records* flag has the same behavior "
+"as :option:`traffic_ctl config get --records`."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:181
-msgid "Display the current values of all statistics whose names match the given regular expression."
+msgid ""
+"Display the current values of all statistics whose names match the given "
+"regular expression."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:102
-msgid "Display the default values for all configuration records. The *--records* flag has the same behavior as :option:`traffic_ctl config get --records`."
+msgid ""
+"Display the default values for all configuration records. The *--records* "
+"flag has the same behavior as :option:`traffic_ctl config get --records`."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:141
-msgid "Initiate a Traffic Server configuration reload. Use this command to update the running configuration after any configuration file modification."
+msgid ""
+"Initiate a Traffic Server configuration reload. Use this command to update "
+"the running configuration after any configuration file modification."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:69
@@ -104,7 +127,9 @@ msgid "Examples"
 msgstr "例"
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:128
-msgid "If this flag is provided, :option:`traffic_ctl config get` will emit results in :file:`records.config` format."
+msgid ""
+"If this flag is provided, :option:`traffic_ctl config get` will emit "
+"results in :file:`records.config` format."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:47
@@ -124,19 +149,35 @@ msgid "Manipulate performance and status metrics"
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:227
-msgid "Mark a cache storage device as offline. The storage is identified by a *path* which must match exactly a path specified in :file:`storage.config`. This removes the storage from the cache and redirects requests that would have used this storage to other storage. This has exactly the same effect as a disk failure for that storage. This does not persist across restarts of the :program:`traffic_server` process."
-msgstr "キャッシュストレージデバイスをオフラインとしてマークします。ストレージは :file:`storage.config` 内で指定されているパスと完全に一致している \\ *パス*\\ によって特定されます。これはストレージをキャッシュから取り除き、このストレージではなく他のストレージを使うようにリクエストをリダイレクトします。これはそのストレージが故障したときとまったく同じ効果を持っています。これは :program:`traffic_server` プロセスのリスタートをまたいで持続しません。"
+msgid ""
+"Mark a cache storage device as offline. The storage is identified by a "
+"*path* which must match exactly a path specified in :file:`storage.config`. "
+"This removes the storage from the cache and redirects requests that would "
+"have used this storage to other storage. This has exactly the same effect "
+"as a disk failure for that storage. This does not persist across restarts "
+"of the :program:`traffic_server` process."
+msgstr ""
+"キャッシュストレージデバイスをオフラインとしてマークします。ストレージは :"
+"file:`storage.config` 内で指定されているパスと完全に一致している \\ *パス*"
+"\\ によって特定されます。これはストレージをキャッシュから取り除き、このスト"
+"レージではなく他のストレージを使うようにリクエストをリダイレクトします。これ"
+"はそのストレージが故障したときとまったく同じ効果を持っています。これは :"
+"program:`traffic_server` プロセスのリスタートをまたいで持続しません。"
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:59
 msgid "Print version information and exit."
 msgstr "バージョン情報を表示して終了します。"
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:170
-msgid "Reset all statistics to zero. The *--cluster* option applies this across all cluster nodes."
+msgid ""
+"Reset all statistics to zero. The *--cluster* option applies this across "
+"all cluster nodes."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:187
-msgid "Reset the named statistics to zero. The *--cluster* option applies this across all cluster nodes."
+msgid ""
+"Reset the named statistics to zero. The *--cluster* option applies this "
+"across all cluster nodes."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:245
@@ -152,8 +193,10 @@ msgid "Show the current cluster status."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:215
-msgid "Show the current proxy server status, indicating if we're running or not."
-msgstr "プロキシーサーバーが実行中かどうかを示している現在の状態を表示します。"
+msgid ""
+"Show the current proxy server status, indicating if we're running or not."
+msgstr ""
+"プロキシーサーバーが実行中かどうかを示している現在の状態を表示します。"
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:39
 msgid "Stop, restart and examine the cluster"
@@ -168,7 +211,10 @@ msgid "Synopsis"
 msgstr "概要"
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:152
-msgid "Set the named configuration record to the specified value. Refer to the :file:`records.config` documentation for a list of the configuration variables you can specify. Note that this is not a synchronous operation."
+msgid ""
+"Set the named configuration record to the specified value. Refer to the :"
+"file:`records.config` documentation for a list of the configuration "
+"variables you can specify. Note that this is not a synchronous operation."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:195
@@ -176,15 +222,23 @@ msgid "Shut down and immediately restart Traffic Server"
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:88
-msgid "Shut down and immediately restart Traffic Server, node by node across the cluster. The *--drain* and *--manager* options have the same behavior as for the :option:`traffic_ctl server restart` subcommand."
+msgid ""
+"Shut down and immediately restart Traffic Server, node by node across the "
+"cluster. The *--drain* and *--manager* options have the same behavior as "
+"for the :option:`traffic_ctl server restart` subcommand."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:208
-msgid "The default behavior of :option:`traffic_ctl server restart` is to restart :program:`traffic_server`. If this option is specified, :program:`traffic_manager` is also restarted."
+msgid ""
+"The default behavior of :option:`traffic_ctl server restart` is to restart :"
+"program:`traffic_server`. If this option is specified, :program:"
+"`traffic_manager` is also restarted."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:145
-msgid "The timestamp of the last reconfiguration event (in seconds since epoch) is published in the `proxy.node.config.reconfigure_time` metric."
+msgid ""
+"The timestamp of the last reconfiguration event (in seconds since epoch) is "
+"published in the `proxy.node.config.reconfigure_time` metric."
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:20
@@ -192,30 +246,39 @@ msgid "traffic_ctl"
 msgstr ""
 
 #: ../../appendices/command-line/traffic_ctl.en.rst:200
-msgid "This option modifies the behavior of :option:`traffic_ctl server restart` such that :program:`traffic_server` is not shut down until the number of active client connections drops to the number given by the :ts:cv:`proxy.config.restart.active_client_threshold` configuration variable."
+msgid ""
+"This option modifies the behavior of :option:`traffic_ctl server restart` "
+"such that :program:`traffic_server` is not shut down until the number of "
+"active client connections drops to the number given by the :ts:cv:`proxy."
+"config.restart.active_client_threshold` configuration variable."
 msgstr ""
 
-#: ../../appendices/command-line/traffic_ctl.en.rst:36 ../../appendices/command-line/traffic_ctl.en.rst:65
+#: ../../appendices/command-line/traffic_ctl.en.rst:36
+#: ../../appendices/command-line/traffic_ctl.en.rst:65
 msgid "traffic_ctl alarm"
 msgstr ""
 
-#: ../../appendices/command-line/traffic_ctl.en.rst:38 ../../appendices/command-line/traffic_ctl.en.rst:84
+#: ../../appendices/command-line/traffic_ctl.en.rst:38
+#: ../../appendices/command-line/traffic_ctl.en.rst:84
 msgid "traffic_ctl cluster"
 msgstr ""
 
-#: ../../appendices/command-line/traffic_ctl.en.rst:40 ../../appendices/command-line/traffic_ctl.en.rst:98
+#: ../../appendices/command-line/traffic_ctl.en.rst:40
+#: ../../appendices/command-line/traffic_ctl.en.rst:98
 msgid "traffic_ctl config"
 msgstr ""
 
-#: ../../appendices/command-line/traffic_ctl.en.rst:42 ../../appendices/command-line/traffic_ctl.en.rst:166
+#: ../../appendices/command-line/traffic_ctl.en.rst:42
+#: ../../appendices/command-line/traffic_ctl.en.rst:166
 msgid "traffic_ctl metric"
 msgstr ""
 
-#: ../../appendices/command-line/traffic_ctl.en.rst:44 ../../appendices/command-line/traffic_ctl.en.rst:191
+#: ../../appendices/command-line/traffic_ctl.en.rst:44
+#: ../../appendices/command-line/traffic_ctl.en.rst:191
 msgid "traffic_ctl server"
 msgstr ""
 
-#: ../../appendices/command-line/traffic_ctl.en.rst:47 ../../appendices/command-line/traffic_ctl.en.rst:223
+#: ../../appendices/command-line/traffic_ctl.en.rst:47
+#: ../../appendices/command-line/traffic_ctl.en.rst:223
 msgid "traffic_ctl storage"
 msgstr ""
-

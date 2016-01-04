@@ -20,7 +20,10 @@ msgstr ""
 "X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:61
-msgid "As an alternative to using Traffic Line, you can change Traffic Server configuration options by manually editing specific variables in :file:`records.config`."
+msgid ""
+"As an alternative to using Traffic Line, you can change Traffic Server "
+"configuration options by manually editing specific variables in :file:"
+"`records.config`."
 msgstr ""
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:47
@@ -48,7 +51,9 @@ msgid "The following is a sample portion of :file:`records.config`:"
 msgstr "以下は :file:`records.config` ファイルの部分的なサンプルです"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:49
-msgid "To change the value of a configuration setting, enter the following command::"
+msgid ""
+"To change the value of a configuration setting, enter the following "
+"command::"
 msgstr "設定内容の値を変更するには次のコマンドを入力してください。"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:39
@@ -56,29 +61,57 @@ msgid "To view a configuration setting, enter the following command::"
 msgstr "設定内容を見るには次のコマンドを入力してください"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:33
-msgid "Traffic Line enables you to quickly and easily change your Traffic Server configuration via command-line interface."
-msgstr "Traffic Line はコマンドラインインターフェースで手早く簡単に Traffic Server の設定を変更することを可能にします。あるいは Traffic Server を設定するため"
+msgid ""
+"Traffic Line enables you to quickly and easily change your Traffic Server "
+"configuration via command-line interface."
+msgstr ""
+"Traffic Line はコマンドラインインターフェースで手早く簡単に Traffic Server "
+"の設定を変更することを可能にします。あるいは Traffic Server を設定するため"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:65
-msgid "Traffic Server must reread the configuration files for any changes to take effect. This is done with :option:`traffic_ctl config reload`. Some configuration changes require a full restart of Traffic Server."
-msgstr "変更を有効にするためには Traffic Server で設定の再読み込みを行わなければなりません。これは :option:`traffic_ctl config reload` によって行えます。いくつかの設定では Traffic Server の完全な再起動が必要となります。"
+msgid ""
+"Traffic Server must reread the configuration files for any changes to take "
+"effect. This is done with :option:`traffic_ctl config reload`. Some "
+"configuration changes require a full restart of Traffic Server."
+msgstr ""
+"変更を有効にするためには Traffic Server で設定の再読み込みを行わなければなり"
+"ません。これは :option:`traffic_ctl config reload` によって行えます。いくつ"
+"かの設定では Traffic Server の完全な再起動が必要となります。"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:23
 msgid "Traffic Server provides several options for configuring the system."
-msgstr "Traffic Server はシステムを設定するためのいくつかの方法を提供しています。"
+msgstr ""
+"Traffic Server はシステムを設定するためのいくつかの方法を提供しています。"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:37
 msgid "View Configuration Options in Traffic Line"
 msgstr "Traffic Line で設定項目を見る"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:54
-msgid "where *var* is the variable associated with the configuration option and *value* is the value you want to use. For a list of the variables, see :ref:`configuration-variables`."
-msgstr "*var* の部分は設定項目に対応する変数、*value* は設定したい値です。変数の一覧については :ref:`configuration-variables` を見てください。"
+msgid ""
+"where *var* is the variable associated with the configuration option and "
+"*value* is the value you want to use. For a list of the variables, see :ref:"
+"`configuration-variables`."
+msgstr ""
+"*var* の部分は設定項目に対応する変数、*value* は設定したい値です。変数の一覧"
+"については :ref:`configuration-variables` を見てください。"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:43
-msgid "where *var* is the variable associated with the configuration option. For a list of variables, refer to :ref:`configuration-variables`."
-msgstr "*var* の部分は設定項目に対応する変数です。変数の一覧については :ref:`configuration-variables` を参照してください。"
+msgid ""
+"where *var* is the variable associated with the configuration option. For a "
+"list of variables, refer to :ref:`configuration-variables`."
+msgstr ""
+"*var* の部分は設定項目に対応する変数です。変数の一覧については :ref:"
+"`configuration-variables` を参照してください。"
 
 #: ../../admin-guide/configuring-traffic-server.en.rst:77
-msgid "In addition to :file:`records.config`, Traffic Server provides other configuration files that are used to configure specific features. You can manually edit all configuration files as described in :ref:`admin-configuration-files`."
-msgstr "file:`records.config` ファイルに加え、Traffic Server は特定の機能を設定するために使用されるその他の複数の設定ファイルを提供します。:ref:`admin-configuration-files` で説明されているように、すべての設定ファイルを手動で編集することができます。"
+msgid ""
+"In addition to :file:`records.config`, Traffic Server provides other "
+"configuration files that are used to configure specific features. You can "
+"manually edit all configuration files as described in :ref:`admin-"
+"configuration-files`."
+msgstr ""
+"file:`records.config` ファイルに加え、Traffic Server は特定の機能を設定する"
+"ために使用されるその他の複数の設定ファイルを提供します。:ref:`admin-"
+"configuration-files` で説明されているように、すべての設定ファイルを手動で編"
+"集することができます。"

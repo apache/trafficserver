@@ -48,15 +48,14 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:52
 msgid ""
-"The number of SSL connections to origin servers which encountered "
-"otherwise uncategorized errors, since statistics collection began."
+"The number of SSL connections to origin servers which encountered otherwise "
+"uncategorized errors, since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:58
 msgid ""
 "The number of SSL connections to origin servers during which a revoked "
-"certificate was presented by the origin, since statistics collection "
-"began."
+"certificate was presented by the origin, since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:64
@@ -68,9 +67,8 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:74
 msgid ""
-"The number of SSL connections to origin servers which were terminated due"
-" to unsupported SSL/TLS protocol versions, since statistics collection "
-"began."
+"The number of SSL connections to origin servers which were terminated due "
+"to unsupported SSL/TLS protocol versions, since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:120
@@ -87,14 +85,14 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:150
 msgid ""
-"Incoming client SSL connections which have presented invalid data in lieu"
-" of a client certificate, since statistics collection began."
+"Incoming client SSL connections which have presented invalid data in lieu "
+"of a client certificate, since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:156
 msgid ""
-"Incoming client SSL connections which presented a client certificate that"
-" did not pass verification, since statistics collection began."
+"Incoming client SSL connections which presented a client certificate that "
+"did not pass verification, since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:162
@@ -105,20 +103,20 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:168
 msgid ""
-"Incoming client SSL connections which presented a client certificate that"
-" had already expired, since statistics collection began."
+"Incoming client SSL connections which presented a client certificate that "
+"had already expired, since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:174
 msgid ""
-"Incoming client SSL connections which experienced otherwise uncategorized"
-" errors, since statistics collection began."
+"Incoming client SSL connections which experienced otherwise uncategorized "
+"errors, since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:180
 msgid ""
-"Incoming client SSL connections which presented a client certificate that"
-" had been revoked, since statistics collection began."
+"Incoming client SSL connections which presented a client certificate that "
+"had been revoked, since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:186
@@ -141,15 +139,14 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:204
 msgid ""
-"Incoming client SSL connections which terminated with an expired session,"
-" since statistics collection began."
+"Incoming client SSL connections which terminated with an expired session, "
+"since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:210
 msgid ""
-"Incoming client SSL connections which presented a client certificate "
-"signed by an unrecognized Certificate Authority, since statistics "
-"collection began."
+"Incoming client SSL connections which presented a client certificate signed "
+"by an unrecognized Certificate Authority, since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:219
@@ -157,4 +154,3 @@ msgid ""
 "Incoming client SSL connections terminated due to an unsupported or "
 "disabled version of SSL/TLS, since staistics collection began."
 msgstr ""
-

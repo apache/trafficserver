@@ -40,8 +40,13 @@ msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
 #: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:39
-msgid ":func:`TSTrafficServerVersionGet` returns a pointer to a string of characters that indicates the Traffic Server release version. This string must not be modified."
-msgstr ":func:`TSTrafficServerVersionGet` は Traffic Server のリリースバージョンを示す文字列へのポインターを返します。この文字列は変更してはいけません。"
+msgid ""
+":func:`TSTrafficServerVersionGet` returns a pointer to a string of "
+"characters that indicates the Traffic Server release version. This string "
+"must not be modified."
+msgstr ""
+":func:`TSTrafficServerVersionGet` は Traffic Server のリリースバージョンを示"
+"す文字列へのポインターを返します。この文字列は変更してはいけません。"
 
 #: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:102
 msgid ":manpage:`TSAPI(3ts)`"
@@ -56,5 +61,9 @@ msgid "See Also"
 msgstr "参照"
 
 #: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:43
-msgid "The other APIs return an integer from the relevant component of the version number string."
-msgstr "その他の API は関連のあるコンポーネントのバージョン番号文字列から整数のバージョン番号を返します。"
+msgid ""
+"The other APIs return an integer from the relevant component of the version "
+"number string."
+msgstr ""
+"その他の API は関連のあるコンポーネントのバージョン番号文字列から整数のバー"
+"ジョン番号を返します。"

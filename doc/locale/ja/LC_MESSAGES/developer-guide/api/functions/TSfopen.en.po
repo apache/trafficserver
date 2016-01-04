@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,9 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSfopen.en.rst:34
-msgid "Opens a file for reading or writing and returns a descriptor for accessing the file."
+msgid ""
+"Opens a file for reading or writing and returns a descriptor for accessing "
+"the file."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSfopen.en.rst:25
@@ -36,10 +38,11 @@ msgid "TSfopen"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSfopen.en.rst:37
-msgid "The current implementation cannot open a file for both reading and writing. See :ref:`developer-plugins-tsfopen-family` for examples."
+msgid ""
+"The current implementation cannot open a file for both reading and writing. "
+"See :ref:`developer-plugins-tsfopen-family` for examples."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSfopen.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

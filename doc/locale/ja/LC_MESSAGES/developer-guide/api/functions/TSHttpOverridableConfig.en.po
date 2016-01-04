@@ -172,8 +172,13 @@ msgid ":ts:cv:`proxy.config.http.negative_caching_lifetime`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:50
-msgid "All of the ``...Get`` functions store the internal value in the storage indicated by the :arg:`value` argument. For strings :arg:`length*` will receive the length of the string."
-msgstr "すべての ``...Get`` 関数は :arg:`value` 引数で示された記憶領域に内部値を格納します。文字列では :arg:`length*` は文字列の長さを受け取ります。"
+msgid ""
+"All of the ``...Get`` functions store the internal value in the storage "
+"indicated by the :arg:`value` argument. For strings :arg:`length*` will "
+"receive the length of the string."
+msgstr ""
+"すべての ``...Get`` 関数は :arg:`value` 引数で示された記憶領域に内部値を格納"
+"します。文字列では :arg:`length*` は文字列の長さを受け取ります。"
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:60
 msgid "Configurations"
@@ -200,7 +205,13 @@ msgid ":ts:cv:`proxy.config.url_remap.pristine_host_hdr`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:43
-msgid "Some of the values that are set in :file:`records.config` can be changed for a specific transaction. It is important to note that these functions change the configuration values stored for the transation, which is not quite the same as changing the actual operating values of the transaction. The critical effect is the value must be changed before it is used by the transaction - after that, changes will not have any effect."
+msgid ""
+"Some of the values that are set in :file:`records.config` can be changed "
+"for a specific transaction. It is important to note that these functions "
+"change the configuration values stored for the transation, which is not "
+"quite the same as changing the actual operating values of the transaction. "
+"The critical effect is the value must be changed before it is used by the "
+"transaction - after that, changes will not have any effect."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:134
@@ -360,8 +371,13 @@ msgid ":ts:cv:`proxy.config.net.sock_recv_buffer_size_out`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:147
-msgid "Enable :ref:`transaction buffer control <transaction-buffering-control>` with a high water mark of :literal:`262144` and a low water mark of :literal:`65536`. ::"
-msgstr ":ref:`transaction-buffering-control` を high water マーク :literal:`262144` と low water マーク :literal:`65536` で有効化します。\\ ::"
+msgid ""
+"Enable :ref:`transaction buffer control <transaction-buffering-control>` "
+"with a high water mark of :literal:`262144` and a low water mark of :"
+"literal:`65536`. ::"
+msgstr ""
+":ref:`transaction-buffering-control` を high water マーク :literal:`262144` "
+"と low water マーク :literal:`65536` で有効化します。\\ ::"
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:145
 msgid "Examples"
@@ -376,12 +392,20 @@ msgid "Synopsis"
 msgstr "概要"
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:62
-msgid "The following configurations (from ``records.config``) are overridable."
+msgid ""
+"The following configurations (from ``records.config``) are overridable."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:54
-msgid "The values are identified by the enumeration :type:`TSOverridableConfigKey`. String values can be used indirectly by first passing them to :func:`TSHttpTxnConfigFind` which, if the string matches an overridable value, return the key and data type."
-msgstr "値は列挙型 :type:`TSOverridableConfigKey` で特定されます。文字列値は最初に :func:`TSHttpTxnConfigFind` に渡すことで間接的に使用でき、この関数は文字列が上書き可能な値に一致した場合にキーとデータ型を返します。"
+msgid ""
+"The values are identified by the enumeration :type:"
+"`TSOverridableConfigKey`. String values can be used indirectly by first "
+"passing them to :func:`TSHttpTxnConfigFind` which, if the string matches an "
+"overridable value, return the key and data type."
+msgstr ""
+"値は列挙型 :type:`TSOverridableConfigKey` で特定されます。文字列値は最初に :"
+"func:`TSHttpTxnConfigFind` に渡すことで間接的に使用でき、この関数は文字列が"
+"上書き可能な値に一致した場合にキーとデータ型を返します。"
 
 #: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:28
 msgid "`#include <ts/ts.h>`"

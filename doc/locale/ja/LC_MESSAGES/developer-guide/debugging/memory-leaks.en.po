@@ -24,15 +24,14 @@ msgstr ""
 
 #: ../../developer-guide/debugging/memory-leaks.en.rst:25
 msgid ""
-"Memory leaks in a plugin can be detected using e.g. an MRTG graph related"
-" to memory - you can use memory dump information. Enable ``mem dump`` in "
-":file:`records.config` as follows:"
+"Memory leaks in a plugin can be detected using e.g. an MRTG graph related "
+"to memory - you can use memory dump information. Enable ``mem dump`` in :"
+"file:`records.config` as follows:"
 msgstr ""
 
 #: ../../developer-guide/debugging/memory-leaks.en.rst:33
 msgid ""
-"This causes Traffic Server to dump memory information to ``traffic.out`` "
-"at ``<value>`` (intervals are in seconds). A zero value means that it is "
+"This causes Traffic Server to dump memory information to ``traffic.out`` at "
+"``<value>`` (intervals are in seconds). A zero value means that it is "
 "disabled."
 msgstr ""
-

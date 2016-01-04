@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,9 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSMimeHdrLengthGet.en.rst:34
-msgid "Calculates the length of the MIME header located at :arg:`hdr_loc` in buffer :arg:`bufp` if it were returned as a string, in its unparsed form."
+msgid ""
+"Calculates the length of the MIME header located at :arg:`hdr_loc` in "
+"buffer :arg:`bufp` if it were returned as a string, in its unparsed form."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrLengthGet.en.rst:32
@@ -38,4 +40,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSMimeHdrLengthGet.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

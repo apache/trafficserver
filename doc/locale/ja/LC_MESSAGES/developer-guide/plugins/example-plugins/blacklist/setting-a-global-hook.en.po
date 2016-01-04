@@ -24,23 +24,22 @@ msgstr ""
 
 #: ../../developer-guide/plugins/example-plugins/blacklist/setting-a-global-hook.en.rst:23
 msgid ""
-"Global hooks are always added in ``TSPluginInit`` using "
-"``TSHttpHookAdd``. The two arguments of ``TSHttpHookAdd`` are the hook ID"
-" and the continuation to call when processing the event corresponding to "
-"the hook. In ``blacklist-1.c``, the global hook is added as follows:"
+"Global hooks are always added in ``TSPluginInit`` using ``TSHttpHookAdd``. "
+"The two arguments of ``TSHttpHookAdd`` are the hook ID and the continuation "
+"to call when processing the event corresponding to the hook. In "
+"``blacklist-1.c``, the global hook is added as follows:"
 msgstr ""
 
 #: ../../developer-guide/plugins/example-plugins/blacklist/setting-a-global-hook.en.rst:32
 msgid ""
-"Above, ``TS_HTTP_OS_DNS_HOOK`` is the ID for the origin server DNS lookup"
-" hook and ``contp`` is the parent continuation created earlier."
+"Above, ``TS_HTTP_OS_DNS_HOOK`` is the ID for the origin server DNS lookup "
+"hook and ``contp`` is the parent continuation created earlier."
 msgstr ""
 
 #: ../../developer-guide/plugins/example-plugins/blacklist/setting-a-global-hook.en.rst:35
 msgid ""
-"This means that the Blacklist plugin is called at every origin server DNS"
-" lookup. When it is called, the handler functio ``blacklist_plugin`` "
+"This means that the Blacklist plugin is called at every origin server DNS "
+"lookup. When it is called, the handler functio ``blacklist_plugin`` "
 "receives ``TS_EVENT_HTTP_OS_DNS`` and calls ``handle_dns`` to see if the "
 "request is forbidden."
 msgstr ""
-

@@ -25,19 +25,18 @@ msgstr ""
 #: ../../developer-guide/plugins/io/vios.en.rst:25
 msgid ""
 "A **VIO**, or **virtual IO**, is a description of an IO operation that's "
-"currently in progress. The VIO data structure is used by vconnection "
-"users to determine how much progress has been made on a particular IO "
-"operation and to re-enable an IO operation when it stalls due to buffer "
-"space issues. VIOs are used by vconnection implementors to determine the "
-"buffer for an IO operation, how much work to do on the IO operation, and "
-"which continuation to call back when progress on the IO operation is "
-"made."
+"currently in progress. The VIO data structure is used by vconnection users "
+"to determine how much progress has been made on a particular IO operation "
+"and to re-enable an IO operation when it stalls due to buffer space issues. "
+"VIOs are used by vconnection implementors to determine the buffer for an IO "
+"operation, how much work to do on the IO operation, and which continuation "
+"to call back when progress on the IO operation is made."
 msgstr ""
 
 #: ../../developer-guide/plugins/io/vios.en.rst:34
 msgid ""
-"The ``TSVIO`` data structure itself is opaque, but it could be defined as"
-" follows:"
+"The ``TSVIO`` data structure itself is opaque, but it could be defined as "
+"follows:"
 msgstr ""
 
 #: ../../developer-guide/plugins/io/vios.en.rst:48
@@ -89,4 +88,3 @@ msgstr ""
 #: ../../developer-guide/plugins/io/vios.en.rst:61
 msgid ":c:func:`TSVIOReenable`"
 msgstr ""
-

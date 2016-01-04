@@ -30,14 +30,14 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/log.en.rst:179
 msgid ""
-"Indicates the number of times |TS| has been unable to log an event to the"
-" access logs facility due to insufficient space."
+"Indicates the number of times |TS| has been unable to log an event to the "
+"access logs facility due to insufficient space."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/log.en.rst:185
 msgid ""
-"Indicates the number of times |TS| has successfully logged an event to "
-"the access logs facility."
+"Indicates the number of times |TS| has successfully logged an event to the "
+"access logs facility."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/log.en.rst:191
@@ -54,14 +54,14 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/log.en.rst:206
 msgid ""
-"Indicates the number of times |TS| has been unable to log an event to the"
-" error logs facility due to insufficient space."
+"Indicates the number of times |TS| has been unable to log an event to the "
+"error logs facility due to insufficient space."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/log.en.rst:212
 msgid ""
-"Indicates the number of times |TS| has successfully logged an event to "
-"the error logs facility."
+"Indicates the number of times |TS| has successfully logged an event to the "
+"error logs facility."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/log.en.rst:218
@@ -83,4 +83,3 @@ msgid ""
 "The number of events |TS| has flushed to log files on disk, since "
 "statistics collection began."
 msgstr ""
-

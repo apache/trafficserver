@@ -25,10 +25,10 @@ msgstr ""
 #: ../../admin-guide/monitoring/statistics/core/cluster.en.rst:25
 msgid ""
 "The statistics documented in this section relate to |TS| clusters, which "
-"are synchronized sets of |TS| instances running across multiple hosts. "
-"For more information on configuring and using the clustering feature, "
-"please refer to the :ref:`traffic-server-cluster` chapter of the :ref"
-":`admin-guide`."
+"are synchronized sets of |TS| instances running across multiple hosts. For "
+"more information on configuring and using the clustering feature, please "
+"refer to the :ref:`traffic-server-cluster` chapter of the :ref:`admin-"
+"guide`."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/cluster.en.rst:33
@@ -36,4 +36,3 @@ msgid ""
 "Represents the number of |TS| instances which are members of the same "
 "cluster as this node."
 msgstr ""
-

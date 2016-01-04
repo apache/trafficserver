@@ -27,8 +27,8 @@ msgid ""
 "The logging API enables your plugin to log entries in a custom text log "
 "file that you create with the call :c:func:`TSTextLogObjectCreate`. This "
 "log file is part of Traffic Server's logging system; by default, it is "
-"stored in the logging directory. Once you have created the log object, "
-"you can set log properties."
+"stored in the logging directory. Once you have created the log object, you "
+"can set log properties."
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:31
@@ -37,62 +37,62 @@ msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:33
 msgid ""
-"Establish a custom text log for your plugin: see "
-":c:func:`TSTextLogObjectCreate`"
+"Establish a custom text log for your plugin: see :c:func:"
+"`TSTextLogObjectCreate`"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:36
 msgid ""
-"Set the log header for your custom text log: see "
-":c:func:`TSTextLogObjectHeaderSet`"
+"Set the log header for your custom text log: see :c:func:"
+"`TSTextLogObjectHeaderSet`"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:39
 msgid ""
-"Enable or disable rolling your custom text log: see "
-":c:func:`TSTextLogObjectRollingEnabledSet`"
+"Enable or disable rolling your custom text log: see :c:func:"
+"`TSTextLogObjectRollingEnabledSet`"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:42
 msgid ""
-"Set the rolling interval (in seconds) for your custom text log: see "
-":c:func:`TSTextLogObjectRollingIntervalSecSet`"
+"Set the rolling interval (in seconds) for your custom text log: see :c:func:"
+"`TSTextLogObjectRollingIntervalSecSet`"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:45
 msgid ""
-"Set the rolling offset for your custom text log: see "
-":c:func:`TSTextLogObjectRollingOffsetHrSet`"
+"Set the rolling offset for your custom text log: see :c:func:"
+"`TSTextLogObjectRollingOffsetHrSet`"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:48
 msgid ""
-"Set the rolling size for your custom text log: see "
-":c:func:`TSTextLogObjectRollingSizeMbSet`"
+"Set the rolling size for your custom text log: see :c:func:"
+"`TSTextLogObjectRollingSizeMbSet`"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:51
 msgid ""
-"Write text entries to the custom text log: see "
-":c:func:`TSTextLogObjectWrite`"
+"Write text entries to the custom text log: see :c:func:"
+"`TSTextLogObjectWrite`"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:54
 msgid ""
-"Flush the contents of the custom text log's write buffer to disk: see "
-":c:func:`TSTextLogObjectFlush`"
+"Flush the contents of the custom text log's write buffer to disk: see :c:"
+"func:`TSTextLogObjectFlush`"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:57
 msgid ""
-"Destroy custom text logs when you are done with them: see "
-":c:func:`TSTextLogObjectDestroy`"
+"Destroy custom text logs when you are done with them: see :c:func:"
+"`TSTextLogObjectDestroy`"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:60
 msgid ""
-"The steps below show how the logging API is used in the ``blacklist-1.c``"
-" sample plugin. For the complete source code, see the :ref:`developer-"
+"The steps below show how the logging API is used in the ``blacklist-1.c`` "
+"sample plugin. For the complete source code, see the :ref:`developer-"
 "plugins-examples-blacklist-code` section."
 msgstr ""
 
@@ -106,11 +106,11 @@ msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:77
 msgid ""
-"The new log is named ``blacklist.log``. Each entry written to the log "
-"will have a timestamp. The ``NULL`` argument specifies that the new log "
-"does not have a log header. The error argument stores the result of the "
-"log creation; if the log is created successfully, then an error will be "
-"equal to ``TS_LOG_ERROR_NO_ERROR``."
+"The new log is named ``blacklist.log``. Each entry written to the log will "
+"have a timestamp. The ``NULL`` argument specifies that the new log does not "
+"have a log header. The error argument stores the result of the log "
+"creation; if the log is created successfully, then an error will be equal "
+"to ``TS_LOG_ERROR_NO_ERROR``."
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:83
@@ -121,9 +121,9 @@ msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:92
 msgid ""
-"The :ref:`developer-plugins-examples-blacklist` matches the host portion "
-"of the URL (in each client request) with a list of blacklisted sites "
-"(stored in the array ``sites[]``):"
+"The :ref:`developer-plugins-examples-blacklist` matches the host portion of "
+"the URL (in each client request) with a list of blacklisted sites (stored "
+"in the array ``sites[]``):"
 msgstr ""
 
 #: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:101
@@ -141,4 +141,3 @@ msgid ""
 "The log is not flushed or destroyed in the ``blacklist-1`` plugin - it "
 "lives for the life of the plugin."
 msgstr ""
-

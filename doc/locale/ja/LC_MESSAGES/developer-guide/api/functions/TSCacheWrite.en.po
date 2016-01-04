@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -36,18 +36,34 @@ msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
 #: ../../developer-guide/api/functions/TSCacheWrite.en.rst:34
-msgid "Asks the Traffic Server cache if :arg:`contp` can start writing the object corresponding to :arg:`key` to the cache."
+msgid ""
+"Asks the Traffic Server cache if :arg:`contp` can start writing the object "
+"corresponding to :arg:`key` to the cache."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSCacheWrite.en.rst:37
-msgid "If the object can be written, the cache calls :arg:`contp` back with the event :data:`TS_EVENT_CACHE_OPEN_WRITE`.  In this case, the cache also passes :arg:`contp` a cache vconnection and :arg:`contp` can then initiate a write operation on that vconnection using :type:`TSVConnWrite`.  The object is not committed to the cache until the vconnection is closed. When all data has been transferred, the user (:arg:`contp`) must do an :type:`TSVConnClose`.  In case of any errors, the user must do an ``TSVConnAbort(contp, 0)``."
+msgid ""
+"If the object can be written, the cache calls :arg:`contp` back with the "
+"event :data:`TS_EVENT_CACHE_OPEN_WRITE`.  In this case, the cache also "
+"passes :arg:`contp` a cache vconnection and :arg:`contp` can then initiate "
+"a write operation on that vconnection using :type:`TSVConnWrite`.  The "
+"object is not committed to the cache until the vconnection is closed. When "
+"all data has been transferred, the user (:arg:`contp`) must do an :type:"
+"`TSVConnClose`.  In case of any errors, the user must do an "
+"``TSVConnAbort(contp, 0)``."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSCacheWrite.en.rst:46
-msgid "If the object cannot be written, the cache calls :arg:`contp` back with the event :data:`TS_EVENT_CACHE_OPEN_WRITE_FAILED`.  This can happen, for example, if there is another object with the same :arg:`key` being written to the cache.  The user (:arg:`contp`) has the option to cancel the action returned by :type:`TSCacheWrite`."
+msgid ""
+"If the object cannot be written, the cache calls :arg:`contp` back with the "
+"event :data:`TS_EVENT_CACHE_OPEN_WRITE_FAILED`.  This can happen, for "
+"example, if there is another object with the same :arg:`key` being written "
+"to the cache.  The user (:arg:`contp`) has the option to cancel the action "
+"returned by :type:`TSCacheWrite`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSCacheWrite.en.rst:52
-msgid "Note that reentrant calls are possible, i.e. the cache can call back the user (:arg:`contp`) in the same call."
+msgid ""
+"Note that reentrant calls are possible, i.e. the cache can call back the "
+"user (:arg:`contp`) in the same call."
 msgstr ""
-

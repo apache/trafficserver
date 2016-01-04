@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,9 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSHttpTxnServerAddrSet.en.rst:41
-msgid "An error value is returned if :arg:`addr` does not contain a valid IPv4 or IPv6 address with a valid (non-zero) port."
+msgid ""
+"An error value is returned if :arg:`addr` does not contain a valid IPv4 or "
+"IPv6 address with a valid (non-zero) port."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnServerAddrSet.en.rst:32
@@ -28,7 +30,11 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSHttpTxnServerAddrSet.en.rst:34
-msgid "Set the origin server address for transaction :arg:`txnp`. This includes the port in :arg:`addr`. The address family is also set by the contents of :arg:`addr`. The address data is copied out of :arg:`addr` so there is no dependency on the lifetime of that object."
+msgid ""
+"Set the origin server address for transaction :arg:`txnp`. This includes "
+"the port in :arg:`addr`. The address family is also set by the contents of :"
+"arg:`addr`. The address data is copied out of :arg:`addr` so there is no "
+"dependency on the lifetime of that object."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnServerAddrSet.en.rst:25
@@ -40,10 +46,12 @@ msgid "TSHttpTxnServerAddrSet"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnServerAddrSet.en.rst:38
-msgid "This hook must be called no later than TS_HTTP_OS_DNS_HOOK. If this is called then DNS resolution will not be done as the address of the server is already know."
+msgid ""
+"This hook must be called no later than TS_HTTP_OS_DNS_HOOK. If this is "
+"called then DNS resolution will not be done as the address of the server is "
+"already know."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnServerAddrSet.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

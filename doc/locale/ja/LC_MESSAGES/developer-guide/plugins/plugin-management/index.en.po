@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -26,4 +26,3 @@ msgstr ""
 #: ../../developer-guide/plugins/plugin-management/index.en.rst:25
 msgid "This chapter covers the following topics:"
 msgstr "この章では下記のトピックをカバーします。"
-
