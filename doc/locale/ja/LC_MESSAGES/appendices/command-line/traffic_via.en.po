@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../appendices/command-line/traffic_via.en.rst:28
 msgid ":program:`traffic_via` [OPTIONS] [VIA ...]"
-msgstr ""
+msgstr ":program:`traffic_via` [OPTIONS] [VIA ...]"
 
 #: ../../appendices/command-line/traffic_via.en.rst:33
 msgid ""
@@ -29,16 +29,21 @@ msgid ""
 "header strings are passed as command-line options. The enclosing square "
 "brackets are optional."
 msgstr ""
+":program:`traffic_via` は Traffic Server の Via ヘッダー内のコードをデコード"
+"します。 Via ヘッダーの文字列はコマンドラインオプションとして渡します。文字列"
+"を囲む角括弧は省略可能です。"
 
 #: ../../appendices/command-line/traffic_via.en.rst:75
 msgid ""
 "Decode the Via header from a curl request, using the :ref:`X-Debug "
 "<_xdebug_plugin>` plugin::"
 msgstr ""
+":ref:`X-Debug <_xdebug_plugin>` プラグインを使って、curlのリクエストからの "
+"Via ヘッダーをデコードします::"
 
 #: ../../appendices/command-line/traffic_via.en.rst:57
 msgid "Decode the Via header from command-line arguments::"
-msgstr ""
+msgstr "コマンドライン引数から Via ヘッダーをデコードします::"
 
 #: ../../appendices/command-line/traffic_via.en.rst:31
 msgid "Description"
@@ -58,6 +63,8 @@ msgid ""
 "for Via headers. This modes supports only supports Via headers taht are "
 "enclosed by square brackets."
 msgstr ""
+"引数が ‘-‘ の場合、 :program:`traffic_via` は Via ヘッダーを標準入力から読み"
+"込みます。このモードは角括弧で囲まれた Via ヘッダーのみをサポートします。"
 
 #: ../../appendices/command-line/traffic_via.en.rst:42
 msgid "Options"
@@ -69,8 +76,8 @@ msgstr "使い方の情報を表示して終了します。"
 
 #: ../../appendices/command-line/traffic_via.en.rst:52
 msgid "Print version."
-msgstr ""
+msgstr "バージョンを表示します。"
 
 #: ../../appendices/command-line/traffic_via.en.rst:23
 msgid "traffic_via"
-msgstr ""
+msgstr "traffic_via"
