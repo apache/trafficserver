@@ -65,7 +65,7 @@ ts_lua_debug(lua_State *L)
   size_t len = 0;
 
   msg = luaL_checklstring(L, 1, &len);
-  TSDebug(TS_LUA_DEBUG_TAG, "[%.*s]", (int)len, msg);
+  TSDebug(TS_LUA_DEBUG_TAG, "%.*s", (int)len, msg);
   return 0;
 }
 
@@ -76,7 +76,7 @@ ts_lua_error(lua_State *L)
   size_t len = 0;
 
   msg = luaL_checklstring(L, 1, &len);
-  TSError("[%.*s]", (int) len, msg);
+  TSError("%.*s", (int) len, msg);
   return 0;
 }
 
