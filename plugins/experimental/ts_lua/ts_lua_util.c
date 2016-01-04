@@ -339,6 +339,71 @@ ts_lua_get_cont_info(lua_State *L)
 }
 
 void
+ts_lua_set_async_ctx(lua_State *L, ts_lua_http_ctx *ctx)
+{
+  lua_pushliteral(L, "__ts_async_ctx");
+  lua_pushlightuserdata(L, ctx);
+  lua_rawset(L, LUA_GLOBALSINDEX);
+}
+
+ts_lua_http_ctx *
+ts_lua_get_async_ctx(lua_State *L)
+{
+  ts_lua_http_ctx *ctx;
+
+  lua_pushliteral(L, "__ts_async_ctx");
+  lua_rawget(L, LUA_GLOBALSINDEX);
+  ctx = lua_touserdata(L, -1);
+
+  lua_pop(L, 1);
+  
+  return ctx;
+}
+
+ts_lua_http_ctx *
+ts_lua_create_async_ctx(lua_State *L, ts_lua_cont_info *hci, int n)
+{
+  int i;
+  lua_State *l;
+  ts_lua_coroutine *crt;
+  ts_lua_http_ctx *actx;
+ 
+  actx = TSmalloc(sizeof(ts_lua_http_ctx));
+  memset(actx, 0, sizeof(ts_lua_http_ctx));
+
+  // create lua_thread
+  l = lua_newthread(L);
+  
+  // init the coroutine
+  crt = &actx->cinfo.routine;
+  crt->mctx = hci->routine.mctx;
+  crt->lua = l;
+  crt->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+
+  // replace the param; start with 2 because first two params are not needed
+  for(i = 2;i < n; i++) {
+    lua_pushvalue(L, i + 1);
+  }
+
+  lua_xmove(L, l, n - 2); 
+
+  ts_lua_set_async_ctx(l, actx);
+
+  return actx;
+}
+
+void 
+ts_lua_destroy_async_ctx(ts_lua_http_ctx *http_ctx)
+{
+  ts_lua_cont_info *ci;
+
+  ci = &http_ctx->cinfo;
+
+  ts_lua_release_cont_info(ci);
+  TSfree(http_ctx);
+}
+
+void
 ts_lua_set_http_ctx(lua_State *L, ts_lua_http_ctx *ctx)
 {
   lua_pushliteral(L, "__ts_http_ctx");
