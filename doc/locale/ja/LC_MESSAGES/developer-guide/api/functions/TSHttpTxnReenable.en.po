@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,9 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSHttpTxnReenable.en.rst:24
-msgid "Notifies the HTTP transaction txnp that the plugin is finished processing the current hook."
+msgid ""
+"Notifies the HTTP transaction txnp that the plugin is finished processing "
+"the current hook."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnReenable.en.rst:28
@@ -36,14 +38,18 @@ msgid "TSHttpTxnReenable"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnReenable.en.rst:37
-msgid "The plugin tells the transaction :arg:`txnp` to either continue (:data:`TS_EVENT_HTTP_CONTINUE`) or stop (:data:`TS_EVENT_HTTP_ERROR`)."
+msgid ""
+"The plugin tells the transaction :arg:`txnp` to either continue (:data:"
+"`TS_EVENT_HTTP_CONTINUE`) or stop (:data:`TS_EVENT_HTTP_ERROR`)."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnReenable.en.rst:42
-msgid "You must always reenable the HTTP transaction after the processing of each transaction event.  However, never reenable twice.  Reenabling twice is a serious error."
+msgid ""
+"You must always reenable the HTTP transaction after the processing of each "
+"transaction event.  However, never reenable twice.  Reenabling twice is a "
+"serious error."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnReenable.en.rst:30
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

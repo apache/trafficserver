@@ -24,8 +24,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:25
 msgid ""
-"The append-transform plugin appends text to the body of an HTTP response."
-" It obtains this text from a file; the name of the file containing the "
+"The append-transform plugin appends text to the body of an HTTP response. "
+"It obtains this text from a file; the name of the file containing the "
 "append text is a parameter you specify in ``plugin.config``, as follows:"
 msgstr ""
 
@@ -39,8 +39,8 @@ msgstr ""
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:38
 msgid ""
 "Below is a list of the functions in ``append-transform.c``, in the order "
-"they appear in the source code. Below each entry is a description of what"
-" the function does:"
+"they appear in the source code. Below each entry is a description of what "
+"the function does:"
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:42
@@ -55,10 +55,10 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:56
 msgid ""
-"The ``MyData`` structure is used to represent data that the "
-"transformation (vconnection) needs. The transformation's data pointer is "
-"set to a ``MyData`` pointer using ``TSContDataSet`` in the "
-"``handle_transform`` routine."
+"The ``MyData`` structure is used to represent data that the transformation "
+"(vconnection) needs. The transformation's data pointer is set to a "
+"``MyData`` pointer using ``TSContDataSet`` in the ``handle_transform`` "
+"routine."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:61
@@ -68,8 +68,8 @@ msgstr ""
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:63
 msgid ""
 "Destroys objects of type ``MyData``. To deallocate the transform's data, "
-"the ``append_transform`` routine (see below) calls ``my_data_destroy`` "
-"when the transformation is complete."
+"the ``append_transform`` routine (see below) calls ``my_data_destroy`` when "
+"the transformation is complete."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:67
@@ -79,8 +79,8 @@ msgstr ""
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:69
 msgid ""
 "This function does the actual data transformation. The transformation is "
-"created in ``transform_add`` (see below). ``handle_transform`` is called "
-"by ``append_transform``."
+"created in ``transform_add`` (see below). ``handle_transform`` is called by "
+"``append_transform``."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:73
@@ -89,8 +89,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:75
 msgid ""
-"This is the handler function for the transformation vconnection created "
-"in ``transform_add``. It is the implementation of the vconnection."
+"This is the handler function for the transformation vconnection created in "
+"``transform_add``. It is the implementation of the vconnection."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:79
@@ -114,8 +114,8 @@ msgstr ""
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:90
 msgid ""
 "If it receives a ``WRITE_READY`` or any other event (such as "
-"``TS_HTTP_RESPONSE_TRANSFORM_HOOK``), then it calls ``handle_transform`` "
-"to attempt to transform more data."
+"``TS_HTTP_RESPONSE_TRANSFORM_HOOK``), then it calls ``handle_transform`` to "
+"attempt to transform more data."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:94
@@ -124,10 +124,10 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:96
 msgid ""
-"The plugin transforms only documents that have a content type of "
-"``text/html``. This function examines the ``Content-Type`` MIME header "
-"field in the response header. If the value of the MIME field is "
-"``text/html``, then the function returns 1; otherwise, it returns zero."
+"The plugin transforms only documents that have a content type of ``text/"
+"html``. This function examines the ``Content-Type`` MIME header field in "
+"the response header. If the value of the MIME field is ``text/html``, then "
+"the function returns 1; otherwise, it returns zero."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:102
@@ -158,14 +158,14 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:116
 msgid ""
-"Calls ``transformable`` to determine whether the response document "
-"content is of type ``text/html``"
+"Calls ``transformable`` to determine whether the response document content "
+"is of type ``text/html``"
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:119
 msgid ""
-"If the content is transformable, then it calls ``transform_add`` to "
-"create the transformation."
+"If the content is transformable, then it calls ``transform_add`` to create "
+"the transformation."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:122
@@ -178,8 +178,8 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:126
 msgid ""
-"Opens the file containing the text to be appended and loads the contents "
-"of the file into an ``TSIOBuffer`` called ``append_buffer``."
+"Opens the file containing the text to be appended and loads the contents of "
+"the file into an ``TSIOBuffer`` called ``append_buffer``."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:129
@@ -192,18 +192,19 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:133
 msgid ""
-"Checks to make sure that the required configuration information (the "
-"append text filename) is entered in ``plugin.config`` correctly."
+"Checks to make sure that the required configuration information (the append "
+"text filename) is entered in ``plugin.config`` correctly."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:137
-msgid "If there is a filename, then ``TSPluginInit`` calls load to load the text."
+msgid ""
+"If there is a filename, then ``TSPluginInit`` calls load to load the text."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:140
 msgid ""
-"Creates a continuation for the plugin. The handler for this continuation "
-"is ``transform_plugin``."
+"Creates a continuation for the plugin. The handler for this continuation is "
+"``transform_plugin``."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-transformations/append-transform-plugin.en.rst:143
@@ -212,4 +213,3 @@ msgid ""
 "other words, it sets up a callback of the plugin's continuation when "
 "Traffic Server reads HTTP response headers."
 msgstr ""
-

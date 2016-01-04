@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,9 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/types/TSLifecycleHookID.en.rst:29
-msgid "Enum typedef used to indicate the event hook being called during a continuation invocation."
+msgid ""
+"Enum typedef used to indicate the event hook being called during a "
+"continuation invocation."
 msgstr ""
 
 #: ../../developer-guide/api/types/TSLifecycleHookID.en.rst:33
@@ -42,4 +44,3 @@ msgstr ""
 #: ../../developer-guide/api/types/TSLifecycleHookID.en.rst:25
 msgid "`#include <ts/apidefs.h>`"
 msgstr ""
-

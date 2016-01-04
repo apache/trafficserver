@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,19 +20,27 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:37
-msgid ":func:`TSHttpIsInternalRequest` tests whether a HTTP transaction was originated within Traffic Server."
+msgid ""
+":func:`TSHttpIsInternalRequest` tests whether a HTTP transaction was "
+"originated within Traffic Server."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:44
-msgid ":func:`TSHttpIsInternalSession` tests whether a HTTP session was originated within Traffic Server."
+msgid ""
+":func:`TSHttpIsInternalSession` tests whether a HTTP session was originated "
+"within Traffic Server."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:60
-msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSHttpSsnIsInternal(3ts)`, :manpage:`TSHttpTxnIsInternal(3ts)`"
+msgid ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSHttpSsnIsInternal(3ts)`, :manpage:"
+"`TSHttpTxnIsInternal(3ts)`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:54
-msgid "Both these APIs returns a :type:`TSReturnCode`, indicating whether the object was internal (:data:`TS_SUCCESS`) or not (:data:`TS_ERROR`)."
+msgid ""
+"Both these APIs returns a :type:`TSReturnCode`, indicating whether the "
+"object was internal (:data:`TS_SUCCESS`) or not (:data:`TS_ERROR`)."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:27
@@ -47,7 +55,8 @@ msgstr ""
 msgid "Test whether a request is internally-generated."
 msgstr ""
 
-#: ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:40 ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:47
+#: ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:40
+#: ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:47
 msgid "Deprecated"
 msgstr ""
 
@@ -74,4 +83,3 @@ msgstr "参照"
 #: ../../developer-guide/api/functions/TSHttpIsInternalRequest.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

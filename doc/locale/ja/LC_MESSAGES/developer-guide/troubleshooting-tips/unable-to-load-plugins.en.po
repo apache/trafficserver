@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,9 @@ msgid "Compile your plugin source code, creating a shared library."
 msgstr ""
 
 #: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:27
-msgid "Make sure that your plugin source code contains an ``TSPluginInit`` initialization function."
+msgid ""
+"Make sure that your plugin source code contains an ``TSPluginInit`` "
+"initialization function."
 msgstr ""
 
 #: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:25
@@ -40,14 +42,17 @@ msgid "Add an entry to the ``plugin.config`` file for your plugin."
 msgstr ""
 
 #: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:34
-msgid "Add the path to your plugin shared library to the :file:`records.config` file."
+msgid ""
+"Add the path to your plugin shared library to the :file:`records.config` "
+"file."
 msgstr ""
 
 #: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:39
-msgid "For detailed information about each step above, refer to :ref:`developer-plugins-getting-started-simple-plugin`."
+msgid ""
+"For detailed information about each step above, refer to :ref:`developer-"
+"plugins-getting-started-simple-plugin`."
 msgstr ""
 
 #: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:37
 msgid "Restart Traffic Server."
 msgstr "Traffic Server を再起動。"
-

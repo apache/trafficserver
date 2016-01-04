@@ -24,8 +24,7 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core-statistics.en.rst:25
 msgid ""
-"Core statistics are available regardless of which plugins are enabled. "
-"This section breaks them down into categories based on the general |TS| "
-"function or component to which they're related."
+"Core statistics are available regardless of which plugins are enabled. This "
+"section breaks them down into categories based on the general |TS| function "
+"or component to which they're related."
 msgstr ""
-

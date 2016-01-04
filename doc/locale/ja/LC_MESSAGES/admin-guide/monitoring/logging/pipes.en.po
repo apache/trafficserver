@@ -24,18 +24,17 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/logging/pipes.en.rst:25
 msgid ""
-"In addition to ``ASCII`` and ``BINARY`` file modes for custom log "
-"formats, |TS| can output log entries in ``ASCII_PIPE`` mode. This mode "
-"writes the log entries to a UNIX named pipe (a buffer in memory). Other "
-"processes may read from this named pipe using standard I/O functions."
+"In addition to ``ASCII`` and ``BINARY`` file modes for custom log formats, |"
+"TS| can output log entries in ``ASCII_PIPE`` mode. This mode writes the log "
+"entries to a UNIX named pipe (a buffer in memory). Other processes may read "
+"from this named pipe using standard I/O functions."
 msgstr ""
 
 #: ../../admin-guide/monitoring/logging/pipes.en.rst:30
 msgid ""
-"The advantage of this mode is that |TS| does not need to write the "
-"entries to disk, which frees disk space and bandwidth for other tasks. "
-"When the buffer is full, |TS| drops log entries and issues an error "
-"message indicating how many entries were dropped. Because |TS| only "
-"writes complete log entries to the pipe, only full records are dropped."
+"The advantage of this mode is that |TS| does not need to write the entries "
+"to disk, which frees disk space and bandwidth for other tasks. When the "
+"buffer is full, |TS| drops log entries and issues an error message "
+"indicating how many entries were dropped. Because |TS| only writes complete "
+"log entries to the pipe, only full records are dropped."
 msgstr ""
-

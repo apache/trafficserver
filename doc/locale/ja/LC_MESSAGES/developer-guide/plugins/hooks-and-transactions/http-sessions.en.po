@@ -26,12 +26,12 @@ msgstr ""
 msgid ""
 "An **HTTP session** is an object that is defined for the lifetime of a "
 "client's TCP session. The Traffic Server API enables you to add a global "
-"hook to the start or end of an HTTP session, as well as add session hooks"
-" that call back your plugin for every transaction within a given session."
-" When a client connects to Traffic Server, it opens up a TCP connection "
-"and sends one or more HTTP requests. An individual request and its "
-"response comprise the HTTP transaction. The **HTTP session** begins when "
-"the client opens the connection and ends when the connection closes."
+"hook to the start or end of an HTTP session, as well as add session hooks "
+"that call back your plugin for every transaction within a given session. "
+"When a client connects to Traffic Server, it opens up a TCP connection and "
+"sends one or more HTTP requests. An individual request and its response "
+"comprise the HTTP transaction. The **HTTP session** begins when the client "
+"opens the connection and ends when the connection closes."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:35
@@ -41,15 +41,15 @@ msgstr ""
 #: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:37
 msgid ""
 "``TS_HTTP_SSN_START_HOOK`` Called when an HTTP session is started (a "
-"session starts when a client connects to Traffic Server). This hook must "
-"be added as a global hook."
+"session starts when a client connects to Traffic Server). This hook must be "
+"added as a global hook."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:41
 msgid ""
-"``TS_HTTP_SSN_CLOSE_HOOK`` Called when an HTTP session ends (a session "
-"ends when the client connection is closed). This hook must be added as a "
-"global hook."
+"``TS_HTTP_SSN_CLOSE_HOOK`` Called when an HTTP session ends (a session ends "
+"when the client connection is closed). This hook must be added as a global "
+"hook."
 msgstr ""
 
 #: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:45
@@ -76,4 +76,3 @@ msgstr ""
 #: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:55
 msgid ":c:func:`TSHttpSsnReenable`"
 msgstr ""
-

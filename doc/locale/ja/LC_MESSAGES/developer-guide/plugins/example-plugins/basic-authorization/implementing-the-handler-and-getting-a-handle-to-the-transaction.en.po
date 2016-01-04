@@ -24,7 +24,6 @@ msgstr ""
 
 #: ../../developer-guide/plugins/example-plugins/basic-authorization/implementing-the-handler-and-getting-a-handle-to-the-transaction.en.rst:23
 msgid ""
-"The handler function for the plugin's parent continuation is implemented "
-"as follows:"
+"The handler function for the plugin's parent continuation is implemented as "
+"follows:"
 msgstr ""
-

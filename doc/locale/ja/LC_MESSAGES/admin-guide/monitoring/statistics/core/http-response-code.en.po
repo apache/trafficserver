@@ -24,10 +24,8 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/http-response-code.en.rst:25
 msgid ""
-"The statistics documented in this section provide counters for the number"
-" of HTTP responses delivered to user agents by your |TS| instance, "
-"grouped by the HTTP status code of the response. Please refer to the :ref"
-":`appendix-http-status-codes` appendix for more details on what each "
-"status code means."
+"The statistics documented in this section provide counters for the number "
+"of HTTP responses delivered to user agents by your |TS| instance, grouped "
+"by the HTTP status code of the response. Please refer to the :ref:`appendix-"
+"http-status-codes` appendix for more details on what each status code means."
 msgstr ""
-

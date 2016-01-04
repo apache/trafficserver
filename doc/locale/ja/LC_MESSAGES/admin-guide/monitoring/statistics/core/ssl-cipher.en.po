@@ -27,4 +27,3 @@ msgid ""
 "The following statistics provide individual counters for the number of "
 "client requests which were satisfied using the given SSL cipher."
 msgstr ""
-

@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,12 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSHttpHdrHostGet.en.rst:34
-msgid "Get the host for the request. :arg:`bufp` and :arg:`offset` must reference an HTTP request header. A pointer to the host is returned and the length is stored in the ``int`` pointed at by :arg:`length`. Note the returned text may not be null terminated. The URL in the request is checked first then the ``Host`` header field."
+msgid ""
+"Get the host for the request. :arg:`bufp` and :arg:`offset` must reference "
+"an HTTP request header. A pointer to the host is returned and the length is "
+"stored in the ``int`` pointed at by :arg:`length`. Note the returned text "
+"may not be null terminated. The URL in the request is checked first then "
+"the ``Host`` header field."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpHdrHostGet.en.rst:25
@@ -36,10 +41,11 @@ msgid "TSHttpHdrHostGet"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpHdrHostGet.en.rst:42
-msgid "This is much faster than calling :c:func:`TSHttpEffectiveUrlStringGet` and extracting the host from the result."
+msgid ""
+"This is much faster than calling :c:func:`TSHttpEffectiveUrlStringGet` and "
+"extracting the host from the result."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpHdrHostGet.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

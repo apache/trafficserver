@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -36,11 +36,20 @@ msgid "The ``URI-path`` can *not* be \"/\" only."
 msgstr ""
 
 #: ../../admin-guide/plugins/healthchecks.en.rst:45
-msgid "The content of the file specified in the ``file-path``, if any, is sent as the body of the response. The existence of the file is sufficient to get an \"OK\" status.  Performance wise, everything is served out of memory, and it only stats / opens files as necessary. However, the content of the status file is limited to 16KB, so this is not a generic static file serving plugin."
+msgid ""
+"The content of the file specified in the ``file-path``, if any, is sent as "
+"the body of the response. The existence of the file is sufficient to get an "
+"\"OK\" status.  Performance wise, everything is served out of memory, and "
+"it only stats / opens files as necessary. However, the content of the "
+"status file is limited to 16KB, so this is not a generic static file "
+"serving plugin."
 msgstr ""
 
 #: ../../admin-guide/plugins/healthchecks.en.rst:34
-msgid "The required ``<healthcheck-configuration-file>`` may reference either an absolute or relative path to the file containing the healthcheck configuration."
+msgid ""
+"The required ``<healthcheck-configuration-file>`` may reference either an "
+"absolute or relative path to the file containing the healthcheck "
+"configuration."
 msgstr ""
 
 #: ../../admin-guide/plugins/healthchecks.en.rst:43
@@ -52,14 +61,23 @@ msgid "This configuration may contain one or more lines of the format::"
 msgstr ""
 
 #: ../../admin-guide/plugins/healthchecks.en.rst:23
-msgid "This is a simple plugin, to provide basic (but configurable) health checks. This is a server intercept plugin, and it takes one single configuration option in plugin.config, the configuration file name."
+msgid ""
+"This is a simple plugin, to provide basic (but configurable) health checks. "
+"This is a server intercept plugin, and it takes one single configuration "
+"option in plugin.config, the configuration file name."
 msgstr ""
 
 #: ../../admin-guide/plugins/healthchecks.en.rst:54
-msgid "This line would define a health check link available at http://www.example.com/__hc that would check if the file ``/var/run/ts-alive`` existed on the server.  If the file exists, a response is built with the contents of the ``ts-alive`` file, a mime type of ``text/plain`` and a status code of ``200``.  If the file does not exist, a ``403`` response is sent::"
+msgid ""
+"This line would define a health check link available at http://www.example."
+"com/__hc that would check if the file ``/var/run/ts-alive`` existed on the "
+"server.  If the file exists, a response is built with the contents of the "
+"``ts-alive`` file, a mime type of ``text/plain`` and a status code of "
+"``200``.  If the file does not exist, a ``403`` response is sent::"
 msgstr ""
 
 #: ../../admin-guide/plugins/healthchecks.en.rst:29
-msgid "To enable the healthchecks plugin, insert the following line in :file:`plugin.config`::"
+msgid ""
+"To enable the healthchecks plugin, insert the following line in :file:"
+"`plugin.config`::"
 msgstr ""
-

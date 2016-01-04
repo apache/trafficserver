@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -32,7 +32,12 @@ msgid "TSUrlHostSet"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlHostSet.en.rst:45
-msgid "The URL data structure is a parsed version of a standard internet URL. The Traffic Server URL API provides access to URL data stored in marshal buffers. The URL functions can create, copy, retrieve or delete entire URLs, and retrieve or modify parts of URLs, such as their host, port or scheme information."
+msgid ""
+"The URL data structure is a parsed version of a standard internet URL. The "
+"Traffic Server URL API provides access to URL data stored in marshal "
+"buffers. The URL functions can create, copy, retrieve or delete entire "
+"URLs, and retrieve or modify parts of URLs, such as their host, port or "
+"scheme information."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlHostSet.en.rst:25
@@ -44,19 +49,35 @@ msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
 
 #: ../../developer-guide/api/functions/TSUrlHostSet.en.rst:60
-msgid ":func:`TSUrlPortSet` sets the port number portion of the URL located at :arg:`offset` within the marshal buffer :arg:`bufp` to the value port. Normal canonicalization based on the URL scheme still applies."
+msgid ""
+":func:`TSUrlPortSet` sets the port number portion of the URL located at :"
+"arg:`offset` within the marshal buffer :arg:`bufp` to the value port. "
+"Normal canonicalization based on the URL scheme still applies."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlHostSet.en.rst:51
-msgid ":func:`TSUrlSchemeSet`, :func:`TSUrlUserSet`, :func:`TSUrlPasswordSet`, :func:`TSUrlHostSet`, :func:`TSUrlHttpParamsSet`, :func:`TSUrlHttpQuerySet` and :func:`TSUrlHttpFragmentSet` each set the specified portion of the URL located at offset within the marshal buffer :arg:`bufp` to the string value. If :arg:`length` is :literal:`-1` then these functions assume that value is NULL-terminated. Otherwise, the length of the :arg:`string` value is taken to be the value of :arg:`length`. These functions copy the string to within :arg:`bufp`, so it can be subsequently modified or deleted."
+msgid ""
+":func:`TSUrlSchemeSet`, :func:`TSUrlUserSet`, :func:`TSUrlPasswordSet`, :"
+"func:`TSUrlHostSet`, :func:`TSUrlHttpParamsSet`, :func:`TSUrlHttpQuerySet` "
+"and :func:`TSUrlHttpFragmentSet` each set the specified portion of the URL "
+"located at offset within the marshal buffer :arg:`bufp` to the string "
+"value. If :arg:`length` is :literal:`-1` then these functions assume that "
+"value is NULL-terminated. Otherwise, the length of the :arg:`string` value "
+"is taken to be the value of :arg:`length`. These functions copy the string "
+"to within :arg:`bufp`, so it can be subsequently modified or deleted."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlHostSet.en.rst:73
-msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSUrlCreate(3ts)`, :manpage:`TSUrlHostGet(3ts)`, :manpage:`TSUrlStringGet(3ts)`, :manpage:`TSUrlPercentEncode(3ts)`"
+msgid ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSUrlCreate(3ts)`, :manpage:"
+"`TSUrlHostGet(3ts)`, :manpage:`TSUrlStringGet(3ts)`, :manpage:"
+"`TSUrlPercentEncode(3ts)`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlHostSet.en.rst:67
-msgid "All these APIs returns a :type:`TSReturnCode`, indicating success (:data:`TS_SUCCESS`) or failure (:data:`TS_ERROR`) of the operation."
+msgid ""
+"All these APIs returns a :type:`TSReturnCode`, indicating success (:data:"
+"`TS_SUCCESS`) or failure (:data:`TS_ERROR`) of the operation."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlHostSet.en.rst:65
@@ -66,4 +87,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSUrlHostSet.en.rst:71
 msgid "See Also"
 msgstr "参照"
-

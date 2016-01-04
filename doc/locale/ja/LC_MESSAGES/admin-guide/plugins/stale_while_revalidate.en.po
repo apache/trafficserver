@@ -25,4 +25,3 @@ msgstr ""
 #: ../../admin-guide/plugins/stale_while_revalidate.en.rst:23
 msgid "refresh content asynchronously while serving stale data"
 msgstr ""
-

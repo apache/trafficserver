@@ -25,8 +25,7 @@ msgstr ""
 #: ../../admin-guide/monitoring/logging/index.en.rst:25
 msgid ""
 "|TS| generates log files that contain information about every request it "
-"receives and every error it detects. This chapter will examine the "
-"various log features, the configuration formats and also examine the "
-"various pre-defined log formats that are available."
+"receives and every error it detects. This chapter will examine the various "
+"log features, the configuration formats and also examine the various pre-"
+"defined log formats that are available."
 msgstr ""
-

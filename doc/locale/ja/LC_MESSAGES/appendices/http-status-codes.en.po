@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -36,7 +36,9 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../appendices/http-status-codes.en.rst:25
-msgid "The following standard HTTP response messages are provided for your information."
+msgid ""
+"The following standard HTTP response messages are provided for your "
+"information."
 msgstr "次の標準的な HTTP レスポンスメッセージが参考情報として提供されます。"
 
 #: ../../appendices/http-status-codes.en.rst:33
@@ -184,7 +186,10 @@ msgid "Method Not Allowed"
 msgstr "Method Not Allowed"
 
 #: ../../appendices/http-status-codes.en.rst:53
-msgid "More detail can be found in `RFC2616 <http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html>`_ which defines the full range of standardized HTTP/1.1 response codes."
+msgid ""
+"More detail can be found in `RFC2616 <http://www.w3.org/Protocols/rfc2616/"
+"rfc2616-sec10.html>`_ which defines the full range of standardized HTTP/1.1 "
+"response codes."
 msgstr ""
 
 #: ../../appendices/http-status-codes.en.rst:43
@@ -198,4 +203,3 @@ msgstr "Not Implemented"
 #: ../../appendices/http-status-codes.en.rst:46
 msgid "Request Timeout"
 msgstr "Request Timeout"
-

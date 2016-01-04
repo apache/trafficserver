@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -40,11 +40,15 @@ msgid "Deprecated"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlDestroy.en.rst:34
-msgid "Destroys the URL located at :arg:`url_loc` within the marshal buffer :arg:`bufp`."
+msgid ""
+"Destroys the URL located at :arg:`url_loc` within the marshal buffer :arg:"
+"`bufp`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlDestroy.en.rst:37
-msgid "Do not forget to release the :type:`TSMLoc` url_loc with a call to :func:`TSHandleMLocRelease`."
+msgid ""
+"Do not forget to release the :type:`TSMLoc` url_loc with a call to :func:"
+"`TSHandleMLocRelease`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlDestroy.en.rst:44
@@ -52,6 +56,6 @@ msgid "Should be removed for v5.0.0"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSUrlDestroy.en.rst:42
-msgid "There is no reason to destroy the URL, just release the marshal buffers."
+msgid ""
+"There is no reason to destroy the URL, just release the marshal buffers."
 msgstr ""
-

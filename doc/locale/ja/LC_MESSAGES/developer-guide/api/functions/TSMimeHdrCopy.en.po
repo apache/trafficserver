@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,11 +20,16 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSMimeHdrCopy.en.rst:38
-msgid ":c:func:`TSMimeHdrCopy` works correctly even if :arg:`src_bufp` and :arg:`dest_bufp` point to different marshal buffers."
+msgid ""
+":c:func:`TSMimeHdrCopy` works correctly even if :arg:`src_bufp` and :arg:"
+"`dest_bufp` point to different marshal buffers."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrCopy.en.rst:34
-msgid "Copies the contents of the MIME header located at :arg:`src_loc` within :arg:`src_bufp` to the MIME header located at :arg:`dest_loc` within :arg:`dest_bufp`."
+msgid ""
+"Copies the contents of the MIME header located at :arg:`src_loc` within :"
+"arg:`src_bufp` to the MIME header located at :arg:`dest_loc` within :arg:"
+"`dest_bufp`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrCopy.en.rst:32
@@ -40,10 +45,11 @@ msgid "TSMimeHdrCopy"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrCopy.en.rst:43
-msgid "You must create the destination MIME header before copying into it, using :c:func:`TSMimeHdrCreate`."
+msgid ""
+"You must create the destination MIME header before copying into it, using :"
+"c:func:`TSMimeHdrCreate`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrCopy.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

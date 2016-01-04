@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,11 +24,17 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSfgets.en.rst:37
-msgid "Lines are terminated by a line feed character, ' '.  The line placed in the buffer includes the line feed character and is terminated with a ``NULL``.  If the line is longer than length bytes then only the first length-minus-1 bytes are placed in :arg:`buf`."
+msgid ""
+"Lines are terminated by a line feed character, ' '.  The line placed in the "
+"buffer includes the line feed character and is terminated with a ``NULL``.  "
+"If the line is longer than length bytes then only the first length-minus-1 "
+"bytes are placed in :arg:`buf`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSfgets.en.rst:34
-msgid "Reads a line from the file pointed to by :arg:`filep` into the buffer :arg:`buf`."
+msgid ""
+"Reads a line from the file pointed to by :arg:`filep` into the buffer :arg:"
+"`buf`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSfgets.en.rst:25
@@ -42,4 +48,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSfgets.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/monitoring/statistics/core/http-header.en.rst:23
 msgid "HTTP Header"
 msgstr ""
-

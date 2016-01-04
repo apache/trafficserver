@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/monitoring/statistics/core/misc.en.rst:23
 msgid "Miscellaneous"
 msgstr ""
-

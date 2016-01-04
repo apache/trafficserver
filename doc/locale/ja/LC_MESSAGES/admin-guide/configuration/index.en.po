@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/configuration/index.en.rst:23
 msgid "Proxy Cache Configuration"
 msgstr ""
-

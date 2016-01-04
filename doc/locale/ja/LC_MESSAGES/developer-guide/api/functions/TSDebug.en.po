@@ -20,20 +20,48 @@ msgstr ""
 "X-Generator: Poedit 1.8.6\n"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:65
-msgid ":func:`TSDebugSpecific` emits a debug line even if the debug :arg:`tag` is turned off, as long as debug flag is enabled. This can be used in conjunction with :func:`TSHttpTxnDebugSet`, :func:`TSHttpSsnDebugSet`, :func:`TSHttpTxnDebugGet` and :func:`TSHttpSsnDebugGet` to enable debugging on specific session and transaction objects."
-msgstr ":func:`TSDebugSpecific` はデバッグ :arg:`tag` がオフにされていてもデバッグフラグが有効化されてさえいればデバッグ行を出力します。これは特定のセッションとトランザクションオブジェクトでデバッグを有効化するために :func:`TSHttpTxnDebugSet` 、:func:`TSHttpSsnDebugSet` 、:func:`TSHttpTxnDebugGet` 、:func:`TSHttpSsnDebugGet` と組み合わせて使用されることがあります。"
+msgid ""
+":func:`TSDebugSpecific` emits a debug line even if the debug :arg:`tag` is "
+"turned off, as long as debug flag is enabled. This can be used in "
+"conjunction with :func:`TSHttpTxnDebugSet`, :func:`TSHttpSsnDebugSet`, :"
+"func:`TSHttpTxnDebugGet` and :func:`TSHttpSsnDebugGet` to enable debugging "
+"on specific session and transaction objects."
+msgstr ""
+":func:`TSDebugSpecific` はデバッグ :arg:`tag` がオフにされていてもデバッグフ"
+"ラグが有効化されてさえいればデバッグ行を出力します。これは特定のセッションと"
+"トランザクションオブジェクトでデバッグを有効化するために :func:"
+"`TSHttpTxnDebugSet` 、:func:`TSHttpSsnDebugSet` 、:func:"
+"`TSHttpTxnDebugGet` 、:func:`TSHttpSsnDebugGet` と組み合わせて使用されること"
+"があります。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:52
-msgid ":func:`TSDebug` is the same as :func:`TSError` except that it only logs the debug message if the given debug :arg:`tag` is enabled. It writes output to the Traffic Server debug log."
-msgstr ":func:`TSDebug` は与えられたデバッグ :arg:`tag` が有効化されている場合にのみログメッセージを出力する点を除いて :func:`TSError` と同じです。"
+msgid ""
+":func:`TSDebug` is the same as :func:`TSError` except that it only logs the "
+"debug message if the given debug :arg:`tag` is enabled. It writes output to "
+"the Traffic Server debug log."
+msgstr ""
+":func:`TSDebug` は与えられたデバッグ :arg:`tag` が有効化されている場合にのみ"
+"ログメッセージを出力する点を除いて :func:`TSError` と同じです。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:48
-msgid ":func:`TSError` is similar to :func:`printf` except that instead of writing the output to the C standard output, it writes output to the Traffic Server error log."
-msgstr ":func:`TSError` は C 標準出力に書き込む代わりに Traffic Server のエラーログに書き込むことを除けば :func:`printf` に似ています。"
+msgid ""
+":func:`TSError` is similar to :func:`printf` except that instead of writing "
+"the output to the C standard output, it writes output to the Traffic Server "
+"error log."
+msgstr ""
+":func:`TSError` は C 標準出力に書き込む代わりに Traffic Server のエラーログ"
+"に書き込むことを除けば :func:`printf` に似ています。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:71
-msgid ":func:`TSHttpServerStateNameLookup`, :func:`TSHttpHookNameLookup` and :func:`TSHttpEventNameLookup` converts the respective internal state to a string representation. This can be useful in debugging (:func:`TSDebug`), logging and other types notifications."
-msgstr ":func:`TSHttpServerStateNameLookup` 、:func:`TSHttpHookNameLookup` そして :func:`TSHttpEventNameLookup` はそれぞれの内部状態を文字列表現に変換します。これはデバッグ、ロギング、その他のタイプの通知を行う際に便利です。"
+msgid ""
+":func:`TSHttpServerStateNameLookup`, :func:`TSHttpHookNameLookup` and :func:"
+"`TSHttpEventNameLookup` converts the respective internal state to a string "
+"representation. This can be useful in debugging (:func:`TSDebug`), logging "
+"and other types notifications."
+msgstr ""
+":func:`TSHttpServerStateNameLookup` 、:func:`TSHttpHookNameLookup` そして :"
+"func:`TSHttpEventNameLookup` はそれぞれの内部状態を文字列表現に変換します。"
+"これはデバッグ、ロギング、その他のタイプの通知を行う際に便利です。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:46
 msgid "Description"
@@ -48,8 +76,12 @@ msgid "TSDebug"
 msgstr "TSDebug"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:56
-msgid ":func:`TSIsDebugTagSet` returns non-zero if the given debug :arg:`tag` is enabled."
-msgstr ":func:`TSIsDebugTagSet` は与えられたデバッグ :arg:`tag`が有効化されている場合に非ゼロを返します。"
+msgid ""
+":func:`TSIsDebugTagSet` returns non-zero if the given debug :arg:`tag` is "
+"enabled."
+msgstr ""
+":func:`TSIsDebugTagSet` は与えられたデバッグ :arg:`tag`が有効化されている場"
+"合に非ゼロを返します。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:96
 msgid ":manpage:`TSAPI(3ts)`, :manpage:`printf(3)`"
@@ -60,16 +92,30 @@ msgid "Examples"
 msgstr "例"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:59
-msgid "In debug mode, :macro:`TSAssert` Traffic Server to prints the file name, line number and expression, and then aborts. In release mode, the expression is not removed but the effects of printing an error message and aborting are. :macro:`TSReleaseAssert` prints an error message and aborts in both release and debug mode."
-msgstr "デバッグモードでは、:macro:`TSAssert` は Traffic Server にファイル名、行番号、式を出力させ、処理を中断します。リリースモードでは、式の出力は残りますが、エラーメッセージの出力と処理の中断は行われません。:macro:`TSReleaseAssert` はリリースモードとデバッグモードのどちらでもエラーメッセージの出力と処理の中断を行います。"
+msgid ""
+"In debug mode, :macro:`TSAssert` Traffic Server to prints the file name, "
+"line number and expression, and then aborts. In release mode, the "
+"expression is not removed but the effects of printing an error message and "
+"aborting are. :macro:`TSReleaseAssert` prints an error message and aborts "
+"in both release and debug mode."
+msgstr ""
+"デバッグモードでは、:macro:`TSAssert` は Traffic Server にファイル名、行番"
+"号、式を出力させ、処理を中断します。リリースモードでは、式の出力は残ります"
+"が、エラーメッセージの出力と処理の中断は行われません。:macro:"
+"`TSReleaseAssert` はリリースモードとデバッグモードのどちらでもエラーメッセー"
+"ジの出力と処理の中断を行います。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:94
 msgid "See Also"
 msgstr "参照"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:79
-msgid "This example uses :func:`TSDebugSpecific` to log a message when a specific debugging flag is enabled::"
-msgstr "この例は特定のデバッグフラグが有効になっている場合にメッセージをログに出力するために :func:`TSDebugSpecific` を使用しています。"
+msgid ""
+"This example uses :func:`TSDebugSpecific` to log a message when a specific "
+"debugging flag is enabled::"
+msgstr ""
+"この例は特定のデバッグフラグが有効になっている場合にメッセージをログに出力す"
+"るために :func:`TSDebugSpecific` を使用しています。"
 
 #: ../../developer-guide/api/functions/TSDebug.en.rst:24
 msgid "Traffic Server Debugging APIs."

@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,9 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSHttpTxnClientFdGet.en.rst:31
-msgid "Get the socket descriptor for the client socket in :arg:`fdp` for the transaction :arg:`txnp`."
+msgid ""
+"Get the socket descriptor for the client socket in :arg:`fdp` for the "
+"transaction :arg:`txnp`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnClientFdGet.en.rst:22
@@ -38,4 +40,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSHttpTxnClientFdGet.en.rst:24
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

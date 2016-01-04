@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,14 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:45
-msgid ":func:`TSTextLogObjectRollingEnabledSet` sets the log rolling mode for the given object. This API must be used once the object is created and before writing into logs. The :arg:`rolling_enabled` argument must be a valid :ts:cv:`proxy.config.log.rolling_enabled` values. If :func:`TSTextLogObjectRollingEnabledSet` is never called, the log object takes it's log rolling mode from the global :ts:cv:`proxy.config.log.rolling_enabled` setting."
+msgid ""
+":func:`TSTextLogObjectRollingEnabledSet` sets the log rolling mode for the "
+"given object. This API must be used once the object is created and before "
+"writing into logs. The :arg:`rolling_enabled` argument must be a valid :ts:"
+"cv:`proxy.config.log.rolling_enabled` values. If :func:"
+"`TSTextLogObjectRollingEnabledSet` is never called, the log object takes "
+"it's log rolling mode from the global :ts:cv:`proxy.config.log."
+"rolling_enabled` setting."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:28
@@ -44,7 +51,11 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:53
-msgid "It's also important to call :func:`TSTextLogObjectRollingEnabledSet` before any of the other APIs that modifies the rolling object. This is due to the fact that this API dictates which rolling mode should be used, and therefore affects further modifications of the logging object."
+msgid ""
+"It's also important to call :func:`TSTextLogObjectRollingEnabledSet` before "
+"any of the other APIs that modifies the rolling object. This is due to the "
+"fact that this API dictates which rolling mode should be used, and "
+"therefore affects further modifications of the logging object."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:59
@@ -54,4 +65,3 @@ msgstr "参照"
 #: ../../developer-guide/api/functions/TSTextLogObjectCreate.en.rst:30
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

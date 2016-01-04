@@ -31,8 +31,8 @@ msgid ""
 "The sample blacklisting plugin included in the Traffic Server SDK is "
 "``blacklist-1.c``. This plugin checks every incoming HTTP client request "
 "against a list of blacklisted web sites. If the client requests a "
-"blacklisted site, then the plugin returns an ``Access forbidden`` message"
-" to the client."
+"blacklisted site, then the plugin returns an ``Access forbidden`` message "
+"to the client."
 msgstr ""
 
 #: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:36
@@ -54,4 +54,3 @@ msgstr ""
 #: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:44
 msgid "How to use the plugin configuration management interface"
 msgstr ""
-

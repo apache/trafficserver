@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -31,7 +31,8 @@ msgstr ""
 msgid "A new TCP connection is accepted."
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:67 ../../admin-guide/plugins/tcpinfo.en.rst:79
+#: ../../admin-guide/plugins/tcpinfo.en.rst:67
+#: ../../admin-guide/plugins/tcpinfo.en.rst:79
 msgid "Description"
 msgstr "解説"
 
@@ -43,15 +44,18 @@ msgstr ""
 msgid "Plugin Options"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:71 ../../admin-guide/plugins/tcpinfo.en.rst:83
+#: ../../admin-guide/plugins/tcpinfo.en.rst:71
+#: ../../admin-guide/plugins/tcpinfo.en.rst:83
 msgid "Client IP address"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:73 ../../admin-guide/plugins/tcpinfo.en.rst:85
+#: ../../admin-guide/plugins/tcpinfo.en.rst:73
+#: ../../admin-guide/plugins/tcpinfo.en.rst:85
 msgid "Estimated round trip time"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:70 ../../admin-guide/plugins/tcpinfo.en.rst:82
+#: ../../admin-guide/plugins/tcpinfo.en.rst:70
+#: ../../admin-guide/plugins/tcpinfo.en.rst:82
 msgid "Event name (one of the names listed above)"
 msgstr ""
 
@@ -67,15 +71,18 @@ msgstr ""
 msgid "The following options may be specified in :file:`plugin.config`:"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:69 ../../admin-guide/plugins/tcpinfo.en.rst:81
+#: ../../admin-guide/plugins/tcpinfo.en.rst:69
+#: ../../admin-guide/plugins/tcpinfo.en.rst:81
 msgid "Event timestamp"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:67 ../../admin-guide/plugins/tcpinfo.en.rst:79
+#: ../../admin-guide/plugins/tcpinfo.en.rst:67
+#: ../../admin-guide/plugins/tcpinfo.en.rst:79
 msgid "Field Name"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:72 ../../admin-guide/plugins/tcpinfo.en.rst:84
+#: ../../admin-guide/plugins/tcpinfo.en.rst:72
+#: ../../admin-guide/plugins/tcpinfo.en.rst:84
 msgid "Server IP address"
 msgstr ""
 
@@ -88,7 +95,12 @@ msgid "The file ``tcp-metrics.log`` will contain the following log format::"
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:23
-msgid "This global plugin logs TCP metrics at various points in the HTTP processing pipeline. The TCP information is retrieved by the :manpage:`getsockopt(2)` function using the ``TCP_INFO`` option. This is only supported on systems that support the ``TCP_INFO`` option, currently Linux and BSD."
+msgid ""
+"This global plugin logs TCP metrics at various points in the HTTP "
+"processing pipeline. The TCP information is retrieved by the :manpage:"
+"`getsockopt(2)` function using the ``TCP_INFO`` option. This is only "
+"supported on systems that support the ``TCP_INFO`` option, currently Linux "
+"and BSD."
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:64
@@ -100,7 +112,9 @@ msgid "The following fields are logged when the log level is ``2``:"
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:61
-msgid "The log level can be either ``1`` to log only the round trip time estimate, or ``2`` to log the complete set of TCP information."
+msgid ""
+"The log level can be either ``1`` to log only the round trip time estimate, "
+"or ``2`` to log the complete set of TCP information."
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:47
@@ -108,22 +122,30 @@ msgid "The server begins sending an HTTP response."
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:39
-msgid "This option specifies when TCP information should be logged. The argument is a comma-separated list of the event names listed below. TCP information will be sampled and logged each time the specified set of events occurs."
+msgid ""
+"This option specifies when TCP information should be logged. The argument "
+"is a comma-separated list of the event names listed below. TCP information "
+"will be sampled and logged each time the specified set of events occurs."
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:55
-msgid "This specifies the base name of the file where TCP information should be logged. If this option is not specified, the name ``tcpinfo`` is used. Traffic Server will automatically append the ``.log`` suffix."
+msgid ""
+"This specifies the base name of the file where TCP information should be "
+"logged. If this option is not specified, the name ``tcpinfo`` is used. "
+"Traffic Server will automatically append the ``.log`` suffix."
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:45
 msgid "Triggered when"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:71 ../../admin-guide/plugins/tcpinfo.en.rst:83
+#: ../../admin-guide/plugins/tcpinfo.en.rst:71
+#: ../../admin-guide/plugins/tcpinfo.en.rst:83
 msgid "client"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:70 ../../admin-guide/plugins/tcpinfo.en.rst:82
+#: ../../admin-guide/plugins/tcpinfo.en.rst:70
+#: ../../admin-guide/plugins/tcpinfo.en.rst:82
 msgid "event"
 msgstr ""
 
@@ -140,18 +162,26 @@ msgid "send_resp_hdr"
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:109
-msgid "This example logs the simple TCP information to ``tcp-metrics.log`` at the start of a TCP connection and once for each HTTP transaction thereafter::"
+msgid ""
+"This example logs the simple TCP information to ``tcp-metrics.log`` at the "
+"start of a TCP connection and once for each HTTP transaction thereafter::"
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:100
-msgid "This is the number of times per 1000 requests that the data will be logged.  A pseudo-random number generator is used to determine if a request will be logged.  The default value is 1000 and this option is not required to be in the configuration file.  To achieve a log rate of 1% you would set this value to 10."
+msgid ""
+"This is the number of times per 1000 requests that the data will be "
+"logged.  A pseudo-random number generator is used to determine if a request "
+"will be logged.  The default value is 1000 and this option is not required "
+"to be in the configuration file.  To achieve a log rate of 1% you would set "
+"this value to 10."
 msgstr ""
 
 #: ../../admin-guide/plugins/tcpinfo.en.rst:87
 msgid "last_sent"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:72 ../../admin-guide/plugins/tcpinfo.en.rst:84
+#: ../../admin-guide/plugins/tcpinfo.en.rst:72
+#: ../../admin-guide/plugins/tcpinfo.en.rst:84
 msgid "server"
 msgstr ""
 
@@ -171,7 +201,8 @@ msgstr ""
 msgid "retrans"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:73 ../../admin-guide/plugins/tcpinfo.en.rst:85
+#: ../../admin-guide/plugins/tcpinfo.en.rst:73
+#: ../../admin-guide/plugins/tcpinfo.en.rst:85
 msgid "rtt"
 msgstr ""
 
@@ -195,7 +226,8 @@ msgstr ""
 msgid "ssn_close"
 msgstr ""
 
-#: ../../admin-guide/plugins/tcpinfo.en.rst:69 ../../admin-guide/plugins/tcpinfo.en.rst:81
+#: ../../admin-guide/plugins/tcpinfo.en.rst:69
+#: ../../admin-guide/plugins/tcpinfo.en.rst:81
 msgid "timestamp"
 msgstr ""
 
@@ -210,4 +242,3 @@ msgstr ""
 #: ../../admin-guide/plugins/tcpinfo.en.rst:92
 msgid "unacked"
 msgstr ""
-

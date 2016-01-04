@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -36,10 +36,11 @@ msgid "TSHttpTxnParentProxySet"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnParentProxySet.en.rst:36
-msgid "The string :arg:`hostname` is copied into the :c:type:`TSHttpTxn`. You can modify or delete the string after calling :c:func:`TSHttpTxnParentProxySet`."
+msgid ""
+"The string :arg:`hostname` is copied into the :c:type:`TSHttpTxn`. You can "
+"modify or delete the string after calling :c:func:`TSHttpTxnParentProxySet`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnParentProxySet.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

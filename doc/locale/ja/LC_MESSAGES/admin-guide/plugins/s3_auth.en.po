@@ -66,8 +66,8 @@ msgstr ""
 
 #: ../../admin-guide/plugins/s3_auth.en.rst:69
 msgid ""
-"This is a pretty barebone start for the S3 services, it is missing a "
-"number of features:"
+"This is a pretty barebone start for the S3 services, it is missing a number "
+"of features:"
 msgstr ""
 
 #: ../../admin-guide/plugins/s3_auth.en.rst:71
@@ -75,7 +75,8 @@ msgid "It does not do UTF8 encoding (as required)"
 msgstr ""
 
 #: ../../admin-guide/plugins/s3_auth.en.rst:73
-msgid "It only implements the v2 authentication mechanism. For details on v4, see"
+msgid ""
+"It only implements the v2 authentication mechanism. For details on v4, see"
 msgstr ""
 
 #: ../../admin-guide/plugins/s3_auth.en.rst:75
@@ -99,4 +100,3 @@ msgstr ""
 #: ../../admin-guide/plugins/s3_auth.en.rst:84
 msgid "Contributions to any of these would be appreciated."
 msgstr ""
-

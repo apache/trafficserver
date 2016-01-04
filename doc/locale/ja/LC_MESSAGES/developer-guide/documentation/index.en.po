@@ -21,4 +21,3 @@ msgstr ""
 #: ../../developer-guide/documentation/index.en.rst:23
 msgid "Documentation"
 msgstr ""
-

@@ -24,32 +24,32 @@ msgstr ""
 
 #: ../../developer-guide/architecture/api-functions.en.rst:27
 msgid ""
-"Set a flag that marks a request as cacheable. This is a positive override"
-" only, setting :arg:`flag` to ``0`` restores the default behavior, it "
-"does not force the request to be uncacheable."
+"Set a flag that marks a request as cacheable. This is a positive override "
+"only, setting :arg:`flag` to ``0`` restores the default behavior, it does "
+"not force the request to be uncacheable."
 msgstr ""
 
 #: ../../developer-guide/architecture/api-functions.en.rst:33
 msgid ""
-"Set the cache key for the transaction :arg:`txnp` as the string pointed "
-"at by :arg:`url` of :arg:`length` characters. It need not be NUL-"
-"terminated. This should be called from ``TS_HTTP_READ_REQUEST_HDR_HOOK`` "
-"which is before cache lookup but late enough that the HTTP request header"
-" is available."
+"Set the cache key for the transaction :arg:`txnp` as the string pointed at "
+"by :arg:`url` of :arg:`length` characters. It need not be NUL-terminated. "
+"This should be called from ``TS_HTTP_READ_REQUEST_HDR_HOOK`` which is "
+"before cache lookup but late enough that the HTTP request header is "
+"available."
 msgstr ""
 
 #: ../../developer-guide/architecture/api-functions.en.rst:40
 msgid ""
 "Get the current cache key URL, also referred to as the lookup URL. This "
-"must be stored in a properly allocated URL object, typically created with"
-" a :c:func:`TSUrlCreate()`."
+"must be stored in a properly allocated URL object, typically created with "
+"a :c:func:`TSUrlCreate()`."
 msgstr ""
 
 #: ../../developer-guide/architecture/api-functions.en.rst:46
 msgid ""
 "Set the current cache key URL, also referred to as the lookup URL. This "
-"must be stored in a properly allocated URL object, typically created with"
-" a :c:func:`TSUrlCreate()` or :c:func:`TSUrlClone()`."
+"must be stored in a properly allocated URL object, typically created with "
+"a :c:func:`TSUrlCreate()` or :c:func:`TSUrlClone()`."
 msgstr ""
 
 #: ../../developer-guide/architecture/api-functions.en.rst:51
@@ -67,14 +67,13 @@ msgstr ""
 
 #: ../../developer-guide/architecture/api-functions.en.rst:62
 msgid ""
-"A preprocessor macro which computes the maximum size of a fragment based "
-"on the value of :arg:`big`. This is computed as if the argument where the"
-" value of the :arg:`big` field in a struct :cpp:class:`Dir`."
+"A preprocessor macro which computes the maximum size of a fragment based on "
+"the value of :arg:`big`. This is computed as if the argument where the "
+"value of the :arg:`big` field in a struct :cpp:class:`Dir`."
 msgstr ""
 
 #: ../../developer-guide/architecture/api-functions.en.rst:68
 msgid ""
-"A preprocessor macro which computes the block size multiplier for a "
-"struct :cpp:class:`Dir` where :arg:`big` is the :arg:`big` field value."
+"A preprocessor macro which computes the block size multiplier for a struct :"
+"cpp:class:`Dir` where :arg:`big` is the :arg:`big` field value."
 msgstr ""
-

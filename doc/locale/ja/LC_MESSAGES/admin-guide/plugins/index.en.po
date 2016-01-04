@@ -20,16 +20,28 @@ msgstr ""
 "X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/plugins/index.en.rst:36
-msgid "All other functionality can be moved into plugins and by offering a consistent C API, everyone can implement their own functionality, without having to touch the core."
-msgstr "他の全ての機能はプラグインに移すことができます。安定した C API を使うことにより、コアに触ること無く、誰でも独自の機能を実装することができます。"
+msgid ""
+"All other functionality can be moved into plugins and by offering a "
+"consistent C API, everyone can implement their own functionality, without "
+"having to touch the core."
+msgstr ""
+"他の全ての機能はプラグインに移すことができます。安定した C API を使うことに"
+"より、コアに触ること無く、誰でも独自の機能を実装することができます。"
 
 #: ../../admin-guide/plugins/index.en.rst:58
 msgid "Experimental plugins"
 msgstr "実験的なプラグイン"
 
 #: ../../admin-guide/plugins/index.en.rst:31
-msgid "One of the key features of |ATS| is its modularity. Features that aren't needed in the core simply aren't there. This helps to provide an additional guarantee that our core can remain fast by concentrating on the things that we always provide: caching and proxying."
-msgstr "|ATS| の重要な機能の一つはモジュール性です。コアに不要な機能はコアの中には存在しません。これは良いことです。なぜならば、それはコアが常に提供するキャッシュとプロキシーに集中することにより、速い状態を保つことができるからです。"
+msgid ""
+"One of the key features of |ATS| is its modularity. Features that aren't "
+"needed in the core simply aren't there. This helps to provide an additional "
+"guarantee that our core can remain fast by concentrating on the things that "
+"we always provide: caching and proxying."
+msgstr ""
+"|ATS| の重要な機能の一つはモジュール性です。コアに不要な機能はコアの中には存"
+"在しません。これは良いことです。なぜならば、それはコアが常に提供するキャッ"
+"シュとプロキシーに集中することにより、速い状態を保つことができるからです。"
 
 #: ../../admin-guide/plugins/index.en.rst:23
 msgid "Plugins"
@@ -40,12 +52,21 @@ msgid "Overview"
 msgstr "概要"
 
 #: ../../admin-guide/plugins/index.en.rst:60
-msgid "Plugins that are considered experimental are located in the `plugins/experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_ directory of the Apache Traffic Server source tree. Experimental plugins can be compiled by passing the `--enable-experimental-plugins` option to `configure`::"
+msgid ""
+"Plugins that are considered experimental are located in the `plugins/"
+"experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"
+"a=tree;f=plugins/experimental;hb=HEAD>`_ directory of the Apache Traffic "
+"Server source tree. Experimental plugins can be compiled by passing the `--"
+"enable-experimental-plugins` option to `configure`::"
 msgstr ""
 
 #: ../../admin-guide/plugins/index.en.rst:43
-msgid "Plugins that are considered stable are installed by default in |TS| releases."
-msgstr "安定的なプラグインです。これらは |TS| のリリースにデフォルトでインストールされれています。"
+msgid ""
+"Plugins that are considered stable are installed by default in |TS| "
+"releases."
+msgstr ""
+"安定的なプラグインです。これらは |TS| のリリースにデフォルトでインストールさ"
+"れれています。"
 
 #: ../../admin-guide/plugins/index.en.rst:41
 msgid "Stable plugins"

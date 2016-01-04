@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -52,7 +52,13 @@ msgid ":const:`TS_MILESTONE_PLUGIN_ACTIVE`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:85
-msgid ":const:`TS_MILESTONE_PLUGIN_ACTIVE` and :const:`TS_MILESTONE_PLUGIN_TOTAL` are different from the other milestones as they measure elapsed time, not event time. The value is the elapsed time *plus* :const:`TS_MILESTONE_SM_START`. This was decided to be more convenient because then these milestones can be handled / displayed in the same way as the other milestones, as offsets from :const:`TS_MILESTONE_SM_START`."
+msgid ""
+":const:`TS_MILESTONE_PLUGIN_ACTIVE` and :const:`TS_MILESTONE_PLUGIN_TOTAL` "
+"are different from the other milestones as they measure elapsed time, not "
+"event time. The value is the elapsed time *plus* :const:"
+"`TS_MILESTONE_SM_START`. This was decided to be more convenient because "
+"then these milestones can be handled / displayed in the same way as the "
+"other milestones, as offsets from :const:`TS_MILESTONE_SM_START`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:53
@@ -76,7 +82,12 @@ msgid ":const:`TS_MILESTONE_UA_CLOSE`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:37
-msgid ":func:`TSHttpTxnMilestoneGet` will fetch a specific :arg:`milestone` timer value for the transaction :arg:`txnp`. These timers are calculated during the lifetime of a transaction and are measured in nanoseconds from the beginning of the transaction. :arg:`time` is used a pointer to storage to update if the call is successful."
+msgid ""
+":func:`TSHttpTxnMilestoneGet` will fetch a specific :arg:`milestone` timer "
+"value for the transaction :arg:`txnp`. These timers are calculated during "
+"the lifetime of a transaction and are measured in nanoseconds from the "
+"beginning of the transaction. :arg:`time` is used a pointer to storage to "
+"update if the call is successful."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:35
@@ -88,11 +99,14 @@ msgid "First byte is read from connection to origin server."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:52
-msgid "First time origin server connect attempted or shared shared session attached."
+msgid ""
+"First time origin server connect attempted or shared shared session "
+"attached."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:25
-msgid "Get a specified :arg:`milestone` timer value for the current transaction."
+msgid ""
+"Get a specified :arg:`milestone` timer value for the current transaction."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:51
@@ -112,7 +126,13 @@ msgid "TSHttpTxnMilestoneGet"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:90
-msgid ":const:`TS_MILESTONE_PLUGIN_ACTIVE` value is the amount of time the plugin was active, that is performing computation. :const:`TS_MILESTONE_PLUGIN_TOTAL` is the wall time which includes any time the transaction was blocked while a plugin was active. For instance if a plugin waits on an external event, that waiting time will be in :const:`TS_MILESTONE_PLUGIN_TOTAL` but not in :const:`TS_MILESTONE_PLUGIN_ACTIVE`."
+msgid ""
+":const:`TS_MILESTONE_PLUGIN_ACTIVE` value is the amount of time the plugin "
+"was active, that is performing computation. :const:"
+"`TS_MILESTONE_PLUGIN_TOTAL` is the wall time which includes any time the "
+"transaction was blocked while a plugin was active. For instance if a plugin "
+"waits on an external event, that waiting time will be in :const:"
+"`TS_MILESTONE_PLUGIN_TOTAL` but not in :const:`TS_MILESTONE_PLUGIN_ACTIVE`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:55
@@ -156,7 +176,11 @@ msgid ":const:`TS_MILESTONE_UA_BEGIN`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:77
-msgid ":const:`TS_MILESTONE_UA_CLOSE` and :const:`TS_MILESTONE_SERVER_CLOSE` are updated continuously during the life of the transaction, every time there is I/O activity. The updating stops when the corresponding connection is closed, leaving the last I/O time as the final value."
+msgid ""
+":const:`TS_MILESTONE_UA_CLOSE` and :const:`TS_MILESTONE_SERVER_CLOSE` are "
+"updated continuously during the life of the transaction, every time there "
+"is I/O activity. The updating stops when the corresponding connection is "
+"closed, leaving the last I/O time as the final value."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:49
@@ -164,7 +188,9 @@ msgid ":const:`TS_MILESTONE_UA_READ_HEADER_DONE`"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:98
-msgid ":const:`TS_SUCCESS` if successful and :arg:`time` was updated, otherwise :const:`TS_ERROR`."
+msgid ""
+":const:`TS_SUCCESS` if successful and :arg:`time` was updated, otherwise :"
+"const:`TS_ERROR`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:104
@@ -172,7 +198,9 @@ msgid ":manpage:`TSAPI(3ts)`"
 msgstr ":manpage:`TSAPI(3ts)`"
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:74
-msgid "A connection attempt is resolved when no more connection related activity remains to be done, and the connection is either established or has failed."
+msgid ""
+"A connection attempt is resolved when no more connection related activity "
+"remains to be done, and the connection is either established or has failed."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:67
@@ -208,7 +236,8 @@ msgid "Last I/O activity on origin server connection."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:53
-msgid "Most recent time origin server connect attempted or shared session attached."
+msgid ""
+"Most recent time origin server connect attempted or shared session attached."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:57
@@ -232,11 +261,15 @@ msgid "Start open for cache write."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:82
-msgid "The cache :literal:`OPEN` milestones time only the initial setup, the *open*, not the full read or write."
+msgid ""
+"The cache :literal:`OPEN` milestones time only the initial setup, the "
+"*open*, not the full read or write."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:71
-msgid "The server connect times predate the transmission of the `:literal:`SYN` packet. That is, before a connection to the origin server is completed."
+msgid ""
+"The server connect times predate the transmission of the `:literal:`SYN` "
+"packet. That is, before a connection to the origin server is completed."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:66
@@ -258,4 +291,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSHttpTxnMilestoneGet.en.rst:30
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

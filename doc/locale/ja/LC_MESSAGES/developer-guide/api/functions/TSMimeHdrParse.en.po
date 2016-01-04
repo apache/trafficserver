@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -36,10 +36,14 @@ msgid "TSMimeHdrParse"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrParse.en.rst:36
-msgid "The MIME header must have already been allocated and both :arg:`bufp` and :arg:`hdr_loc` must point within that header.  It is possible to parse a MIME header a single byte at a time using repeated calls to :c:func:`TSMimeHdrParse`.  As long as an error does not occur, :c:func:`TSMimeHdrParse` consumes each single byte and asks for more."
+msgid ""
+"The MIME header must have already been allocated and both :arg:`bufp` and :"
+"arg:`hdr_loc` must point within that header.  It is possible to parse a "
+"MIME header a single byte at a time using repeated calls to :c:func:"
+"`TSMimeHdrParse`.  As long as an error does not occur, :c:func:"
+"`TSMimeHdrParse` consumes each single byte and asks for more."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrParse.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

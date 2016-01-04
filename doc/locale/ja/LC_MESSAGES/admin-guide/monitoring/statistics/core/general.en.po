@@ -33,7 +33,8 @@ msgid "Fully-qualified domain name for the host on which |TS| is running."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/general.en.rst:49
-msgid "The hostname only, without domain, for the host on which |TS| is running."
+msgid ""
+"The hostname only, without domain, for the host on which |TS| is running."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/general.en.rst:54
@@ -48,8 +49,8 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/general.en.rst:66
 msgid ""
-"Unix epoch-time value indicating the time at which the currently-running "
-":program:`traffic_manager` process was started."
+"Unix epoch-time value indicating the time at which the currently-running :"
+"program:`traffic_manager` process was started."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/general.en.rst:95
@@ -64,8 +65,7 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/general.en.rst:104
 msgid ""
-"The string representation of the |TS| build number for the running "
-"instance."
+"The string representation of the |TS| build number for the running instance."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/general.en.rst:108
@@ -78,14 +78,13 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/general.en.rst:116
 msgid ""
-"A string representing the build information of the running instance of "
-"|TS|. Includes the software name, primary binary name, release number, "
-"build number, build date, and build time."
+"A string representing the build information of the running instance of |"
+"TS|. Includes the software name, primary binary name, release number, build "
+"number, build date, and build time."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/general.en.rst:122
 msgid ""
-"A shortened string containing the release number of the running instance "
-"of |TS|."
+"A shortened string containing the release number of the running instance of "
+"|TS|."
 msgstr ""
-

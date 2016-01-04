@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -48,6 +48,8 @@ msgid "See Also"
 msgstr "参照"
 
 #: ../../developer-guide/api/functions/TSHttpTxnClientPacketTosSet.en.rst:41
-msgid "TOS is deprecated and replaced by DSCP. This is still used to set DSCP, however the first 2 bits of this value will be ignored as they now belong to the ECN field."
+msgid ""
+"TOS is deprecated and replaced by DSCP. This is still used to set DSCP, "
+"however the first 2 bits of this value will be ignored as they now belong "
+"to the ECN field."
 msgstr ""
-

@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -34,4 +34,3 @@ msgstr "使い方の情報を表示して終了します。"
 #: ../../appendices/command-line/tsxs.en.rst:23
 msgid "tsxs"
 msgstr ""
-

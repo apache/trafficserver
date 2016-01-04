@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/files/index.en.rst:23
 msgid "Configuration Files"
 msgstr ""
-

@@ -28,15 +28,15 @@ msgid ""
 "generate many events and the event logs can quickly grow to very large "
 "sizes.  Using SQL-like aggregate operators, you can configure |TS| to "
 "create summary log files that summarize a set of log entries over a "
-"specified period of time. This can significantly reduce the size of the "
-"log files generated."
+"specified period of time. This can significantly reduce the size of the log "
+"files generated."
 msgstr ""
 
 #: ../../admin-guide/monitoring/logging/summary-logs.en.rst:31
 msgid ""
-"To generate a summary log file, create a :ref:`LogFormat` object in the "
-"XML-based logging configuration :file:`logs_xml.config` using the SQL-"
-"like aggregate operators below. You can apply each of these operators to "
+"To generate a summary log file, create a :ref:`LogFormat` object in the XML-"
+"based logging configuration :file:`logs_xml.config` using the SQL-like "
+"aggregate operators below. You can apply each of these operators to "
 "specific fields, over a specified interval."
 msgstr ""
 
@@ -65,15 +65,16 @@ msgid "To create a summary log file format:"
 msgstr ""
 
 #: ../../admin-guide/monitoring/logging/summary-logs.en.rst:44
-msgid "Define the format of the log file in :file:`logs_xml.config` as follows:"
+msgid ""
+"Define the format of the log file in :file:`logs_xml.config` as follows:"
 msgstr ""
 
 #: ../../admin-guide/monitoring/logging/summary-logs.en.rst:54
 msgid ""
 "Where ``operator`` is one of the five aggregate operators (``COUNT``, "
-"``SUM``, ``AVERAGE``, ``FIRST``, ``LAST``); ``field`` is the logging "
-"field you want to aggregate; and ``n`` is the interval (in seconds) "
-"between summary log entries."
+"``SUM``, ``AVERAGE``, ``FIRST``, ``LAST``); ``field`` is the logging field "
+"you want to aggregate; and ``n`` is the interval (in seconds) between "
+"summary log entries."
 msgstr ""
 
 #: ../../admin-guide/monitoring/logging/summary-logs.en.rst:59
@@ -83,15 +84,16 @@ msgid ""
 msgstr ""
 
 #: ../../admin-guide/monitoring/logging/summary-logs.en.rst:62
-msgid "Run the command :option:`traffic_line -x` to apply configuration changes ."
+msgid ""
+"Run the command :option:`traffic_line -x` to apply configuration changes ."
 msgstr ""
 
 #: ../../admin-guide/monitoring/logging/summary-logs.en.rst:64
 msgid ""
 "The following example format generates one entry every 10 seconds. Each "
-"entry contains the timestamp of the last entry of the interval, a count "
-"of the number of entries seen within that 10-second interval, and the sum"
-" of all bytes sent to the client:"
+"entry contains the timestamp of the last entry of the interval, a count of "
+"the number of entries seen within that 10-second interval, and the sum of "
+"all bytes sent to the client:"
 msgstr ""
 
 #: ../../admin-guide/monitoring/logging/summary-logs.en.rst:79
@@ -100,4 +102,3 @@ msgid ""
 "operators and regular fields. For example, the following specification "
 "would be invalid: ::"
 msgstr ""
-

@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/monitoring/statistics/core/hierarchical.en.rst:23
 msgid "Hierarchical Cache"
 msgstr ""
-

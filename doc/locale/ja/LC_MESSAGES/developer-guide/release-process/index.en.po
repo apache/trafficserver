@@ -25,8 +25,8 @@ msgstr ""
 #: ../../developer-guide/release-process/index.en.rst:25
 msgid ""
 "Managing a release is easiest in an environment that is as clean as "
-"possible. For this reason, cloning the code base in to a new directory "
-"for the release process is recommended."
+"possible. For this reason, cloning the code base in to a new directory for "
+"the release process is recommended."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:30
@@ -39,9 +39,9 @@ msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:34
 msgid ""
-"A cryptographic key that has been signed by at least two other PMC "
-"members. This should be preferentially associated with your "
-"``apache.org`` email address but that is not required."
+"A cryptographic key that has been signed by at least two other PMC members. "
+"This should be preferentially associated with your ``apache.org`` email "
+"address but that is not required."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:41
@@ -61,25 +61,25 @@ msgstr ""
 #: ../../developer-guide/release-process/index.en.rst:49
 msgid ""
 "Gather up information about the changes for the release. The ``CHANGES`` "
-"file is a good starting point. You may also want to check the commits "
-"since the last release. The primary purpose of this is to generate a list"
-" of the important changes since the last release."
+"file is a good starting point. You may also want to check the commits since "
+"the last release. The primary purpose of this is to generate a list of the "
+"important changes since the last release."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:54
 msgid ""
 "Create or update a page on the Wiki for the release. If it is a major or "
-"minor release it should have its own page. Use the previous release page "
-"as a template. Point releases should get a section at the end of the "
+"minor release it should have its own page. Use the previous release page as "
+"a template. Point releases should get a section at the end of the "
 "corresponding release page."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:59
 msgid ""
-"Write an announcement for the release. This will contain much of the same"
-" information that is on the Wiki page but more concisely. Check the "
-"`mailing list archives <http://mail-archives.apache.org/mod_mbox"
-"/trafficserver-dev/>`_ for examples to use as a base."
+"Write an announcement for the release. This will contain much of the same "
+"information that is on the Wiki page but more concisely. Check the `mailing "
+"list archives <http://mail-archives.apache.org/mod_mbox/trafficserver-dev/"
+">`_ for examples to use as a base."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:65
@@ -93,14 +93,14 @@ msgstr ""
 #: ../../developer-guide/release-process/index.en.rst:69
 msgid ""
 "Check the version in ``configure.ac``. There are two values near the top "
-"that need to be set, ``TS_VERSION_S`` and ``TS_VERSION_N``. These are the"
-" release version number in different encodings."
+"that need to be set, ``TS_VERSION_S`` and ``TS_VERSION_N``. These are the "
+"release version number in different encodings."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:73
 msgid ""
-"Check the variable ``RC`` in the top level ``Makefile.am``. This should "
-"be the point release value. This needs to be changed for every release "
+"Check the variable ``RC`` in the top level ``Makefile.am``. This should be "
+"the point release value. This needs to be changed for every release "
 "candidate. The first release candidate is ``0`` (zero)."
 msgstr ""
 
@@ -111,15 +111,14 @@ msgstr ""
 #: ../../developer-guide/release-process/index.en.rst:83
 msgid ""
 "These steps will create the distribution files and sign them using your "
-"key. Expect to be prompted twice for your passphrase unless you use an "
-"ssh key agent. If you have multiple keys you will need to set the default"
-" appropriately beforehand, as no option will be provided to select the "
-"signing key. The files should have names that start with "
-"``trafficserver-X.Y.Z-rcA.tar.bz2`` where ``X.Y.Z`` is the version and "
-"``A`` is the release candidate counter. There should be four such files, "
-"one with no extension and three others with the extensions ``asc``, "
-"``md5``, and ``sha1``. This will also create a signed git tag of the form"
-" ``X.Y.Z-rcA``."
+"key. Expect to be prompted twice for your passphrase unless you use an ssh "
+"key agent. If you have multiple keys you will need to set the default "
+"appropriately beforehand, as no option will be provided to select the "
+"signing key. The files should have names that start with ``trafficserver-X."
+"Y.Z-rcA.tar.bz2`` where ``X.Y.Z`` is the version and ``A`` is the release "
+"candidate counter. There should be four such files, one with no extension "
+"and three others with the extensions ``asc``, ``md5``, and ``sha1``. This "
+"will also create a signed git tag of the form ``X.Y.Z-rcA``."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:94
@@ -128,25 +127,23 @@ msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:96
 msgid ""
-"The release candidate files should be uploaded to some public storage. "
-"Your personal storage on *people.apach.org* is a reasonable location to "
-"use."
+"The release candidate files should be uploaded to some public storage. Your "
+"personal storage on *people.apach.org* is a reasonable location to use."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:99
 msgid ""
-"Send the release candiate announcement to the *users* and *dev* "
-"mailinging lists, noting that it is a release *candidate* and providing a"
-" link to the distribution files you uploaded. This announcement should "
-"also call for a vote on the candidate, generally with a 72 hours time "
-"limit."
+"Send the release candiate announcement to the *users* and *dev* mailinging "
+"lists, noting that it is a release *candidate* and providing a link to the "
+"distribution files you uploaded. This announcement should also call for a "
+"vote on the candidate, generally with a 72 hours time limit."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:104
 msgid ""
 "If the voting was successful (at least three \"+1\" votes and no \"-1\" "
-"votes), proceed to :ref:`release-management-official-release`. Otherwise,"
-" repeat the :ref:`release-management-release-candidate` process."
+"votes), proceed to :ref:`release-management-official-release`. Otherwise, "
+"repeat the :ref:`release-management-release-candidate` process."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:111
@@ -159,16 +156,16 @@ msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:117
 msgid ""
-"Be sure to not have changed anything since the release candidate was "
-"built so the checksums are identical. This will create a signed git tag "
-"of the form ``X.Y.Z`` and produce the distribution files. Push the tag to"
-" the ASF repository with the command ::"
+"Be sure to not have changed anything since the release candidate was built "
+"so the checksums are identical. This will create a signed git tag of the "
+"form ``X.Y.Z`` and produce the distribution files. Push the tag to the ASF "
+"repository with the command ::"
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:124
 msgid ""
-"This presumes ``origin`` is the name for the ASF remote repository which "
-"is correct if you originally clone from the ASF repository."
+"This presumes ``origin`` is the name for the ASF remote repository which is "
+"correct if you originally clone from the ASF repository."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:127
@@ -180,15 +177,15 @@ msgstr ""
 #: ../../developer-guide/release-process/index.en.rst:132
 msgid ""
 "All four of the distribution files go here. If you are making a point "
-"release then you should also remove the distribution files for the "
-"previous release. Allow 24 hours for the files to be distributed through "
-"the ASF infrastructure."
+"release then you should also remove the distribution files for the previous "
+"release. Allow 24 hours for the files to be distributed through the ASF "
+"infrastructure."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:136
 msgid ""
-"The Traffic Server website must be updated. This is an SVN repository "
-"which you can access with ::"
+"The Traffic Server website must be updated. This is an SVN repository which "
+"you can access with ::"
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:141
@@ -232,8 +229,8 @@ msgid ""
 "Update the announcement, if needed, to refer to the release distribution "
 "files and remove the comments concerning the release candidate. This "
 "announcement should be sent to the *users* and *dev* mailing lists. It "
-"should also be sent to the ASF announcement list, which must be done "
-"using an ``apache.org`` email address."
+"should also be sent to the ASF announcement list, which must be done using "
+"an ``apache.org`` email address."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:165
@@ -242,8 +239,8 @@ msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:167
 msgid ""
-"The ``STATUS`` file for master and for the release branch to include this"
-" version."
+"The ``STATUS`` file for master and for the release branch to include this "
+"version."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:169
@@ -255,6 +252,6 @@ msgid "``configure.ac`` to be set to the next version."
 msgstr ""
 
 #: ../../developer-guide/release-process/index.en.rst:173
-msgid "In the top level ``Makefile.am`` change ``RC`` to have the value ``0``."
+msgid ""
+"In the top level ``Makefile.am`` change ``RC`` to have the value ``0``."
 msgstr ""
-

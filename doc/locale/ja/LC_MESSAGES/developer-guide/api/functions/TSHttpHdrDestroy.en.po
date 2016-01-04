@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,11 +24,15 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSHttpHdrDestroy.en.rst:34
-msgid "Destroys the HTTP header located at :arg:`hdr_loc` within the marshal buffer :arg:`bufp`."
+msgid ""
+"Destroys the HTTP header located at :arg:`hdr_loc` within the marshal "
+"buffer :arg:`bufp`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpHdrDestroy.en.rst:39
-msgid "Do not forget to release the handle :arg:`hdr_loc` with a call to :c:func:`TSHandleMLocRelease`."
+msgid ""
+"Do not forget to release the handle :arg:`hdr_loc` with a call to :c:func:"
+"`TSHandleMLocRelease`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpHdrDestroy.en.rst:25
@@ -42,4 +46,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSHttpHdrDestroy.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

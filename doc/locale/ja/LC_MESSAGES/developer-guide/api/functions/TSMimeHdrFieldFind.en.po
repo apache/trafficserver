@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,9 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldFind.en.rst:34
-msgid "Retrieves the :c:type:`TSMLoc` location of a specified MIME field from within the MIME header located at :arg:`hdr`."
+msgid ""
+"Retrieves the :c:type:`TSMLoc` location of a specified MIME field from "
+"within the MIME header located at :arg:`hdr`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldFind.en.rst:25
@@ -36,10 +38,15 @@ msgid "TSMimeHdrFieldFind"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldFind.en.rst:37
-msgid "The :arg:`name` and :arg:`length` parameters specify which field to retrieve. For each MIME field in the MIME header, a case insensitive string comparison is done between the field name and :arg:`name`. If :c:func:`TSMimeHdrFieldFind` cannot find the requested field, it returns :c:data:`TS_NULL_MLOC`.  Release the returned :c:type:`TSMLoc` handle with a call to :c:func:`TSHandleMLocRelease`."
+msgid ""
+"The :arg:`name` and :arg:`length` parameters specify which field to "
+"retrieve. For each MIME field in the MIME header, a case insensitive string "
+"comparison is done between the field name and :arg:`name`. If :c:func:"
+"`TSMimeHdrFieldFind` cannot find the requested field, it returns :c:data:"
+"`TS_NULL_MLOC`.  Release the returned :c:type:`TSMLoc` handle with a call "
+"to :c:func:`TSHandleMLocRelease`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldFind.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

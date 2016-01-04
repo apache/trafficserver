@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,9 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../developer-guide/api/functions/TSfread.en.rst:34
-msgid "Attempts to read :arg:`length` bytes of data from the file pointed to by :arg:`filep` into the buffer :arg:`buf`."
+msgid ""
+"Attempts to read :arg:`length` bytes of data from the file pointed to by :"
+"arg:`filep` into the buffer :arg:`buf`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSfread.en.rst:32
@@ -38,4 +40,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSfread.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

@@ -39,4 +39,3 @@ msgid ""
 "Indicates the number of attempted SOCKS connections to |TS| which have "
 "failed since statistics collection began."
 msgstr ""
-

@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -36,10 +36,13 @@ msgid "TSMimeParserCreate"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeParserCreate.en.rst:36
-msgid "The parser's data structure contains information about the header being parsed.  A single MIME parser can be used multiple times, though not simultaneously.  Before being used again, the parser must be cleared by calling :c:func:`TSMimeParserClear`."
+msgid ""
+"The parser's data structure contains information about the header being "
+"parsed.  A single MIME parser can be used multiple times, though not "
+"simultaneously.  Before being used again, the parser must be cleared by "
+"calling :c:func:`TSMimeParserClear`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeParserCreate.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

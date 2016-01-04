@@ -24,7 +24,6 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/websocket.en.rst:29
 msgid ""
-"Indicates the number of WebSockets connections to |TS| from clients which"
-" are currently active."
+"Indicates the number of WebSockets connections to |TS| from clients which "
+"are currently active."
 msgstr ""
-

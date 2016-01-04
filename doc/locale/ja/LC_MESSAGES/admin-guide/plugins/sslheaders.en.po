@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -20,7 +20,9 @@ msgstr ""
 "Generated-By: Babel 2.1.1\n"
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:43
-msgid "A list of `KEY=VALUE` pairs follows any options. The `KEY` names the HTTP header to inject, and `VALUE` names the SSL session field."
+msgid ""
+"A list of `KEY=VALUE` pairs follows any options. The `KEY` names the HTTP "
+"header to inject, and `VALUE` names the SSL session field."
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:47
@@ -32,7 +34,11 @@ msgid "Examples:"
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:86
-msgid "In this example, we have set :ts:cv:`proxy.config.ssl.client.certification_level` to request SSL client certificates. We can then configure ``sslheaders`` to populate the client certificate subject globally by adding it to :file:`plugin.config`::"
+msgid ""
+"In this example, we have set :ts:cv:`proxy.config.ssl.client."
+"certification_level` to request SSL client certificates. We can then "
+"configure ``sslheaders`` to populate the client certificate subject "
+"globally by adding it to :file:`plugin.config`::"
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:28
@@ -40,11 +46,19 @@ msgid "Plugin Options"
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:69
-msgid "If the ``sslheaders`` plugin activtes on non-SSL connections, it will delete all the configured HTTP header names so that malicious clients cannot inject misleading information. If any of the SSL fields expand to an empty string, those headers are also deleted."
+msgid ""
+"If the ``sslheaders`` plugin activtes on non-SSL connections, it will "
+"delete all the configured HTTP header names so that malicious clients "
+"cannot inject misleading information. If any of the SSL fields expand to an "
+"empty string, those headers are also deleted."
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:77
-msgid "In this example, the origin server is interested in the subject of the server certificate that was used to accept a client connetion. We can apply the ``sslheaders`` plugin to a generic remap rule to provide this information. The :file:`remap.config` configuration would be::"
+msgid ""
+"In this example, the origin server is interested in the subject of the "
+"server certificate that was used to accept a client connetion. We can apply "
+"the ``sslheaders`` plugin to a generic remap rule to provide this "
+"information. The :file:`remap.config` configuration would be::"
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:47
@@ -56,7 +70,9 @@ msgid "SSLHeaders Plugin"
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:23
-msgid "The ``sslheaders`` plugins injects SSL session information into HTTP request headers. It can operate as a global plugin or as a remap plugin."
+msgid ""
+"The ``sslheaders`` plugins injects SSL session information into HTTP "
+"request headers. It can operate as a global plugin or as a remap plugin."
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:49
@@ -88,7 +104,9 @@ msgid "The client certificate validity start time"
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:30
-msgid "The following options may be specified when loading the plugin in :file:`plugin.config` or :file:`remap.config`:"
+msgid ""
+"The following options may be specified when loading the plugin in :file:"
+"`plugin.config` or :file:`remap.config`:"
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:56
@@ -120,15 +138,24 @@ msgid "The server certificate validity start time"
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:33
-msgid "This option specifies which HTTP request the SSL headers are attached to."
+msgid ""
+"This option specifies which HTTP request the SSL headers are attached to."
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:36
-msgid "``client`` causes the headers to be injected into the client request. This is primarily useful if another plugin should inspect then. ``server`` is the default and injects the headers into the origin server request. ``both`` injects the headers into both the client request and the origin server request."
+msgid ""
+"``client`` causes the headers to be injected into the client request. This "
+"is primarily useful if another plugin should inspect then. ``server`` is "
+"the default and injects the headers into the origin server request. "
+"``both`` injects the headers into both the client request and the origin "
+"server request."
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:65
-msgid "The `client.certificate` and `server.certificate` fields emit the corresponding certificate in PEM format, with newline characters replaced by spaces."
+msgid ""
+"The `client.certificate` and `server.certificate` fields emit the "
+"corresponding certificate in PEM format, with newline characters replaced "
+"by spaces."
 msgstr ""
 
 #: ../../admin-guide/plugins/sslheaders.en.rst:49
@@ -186,4 +213,3 @@ msgstr ""
 #: ../../admin-guide/plugins/sslheaders.en.rst:57
 msgid "server.subject"
 msgstr ""
-

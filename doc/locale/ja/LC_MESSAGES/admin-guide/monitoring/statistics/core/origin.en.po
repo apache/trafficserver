@@ -21,4 +21,3 @@ msgstr ""
 #: ../../admin-guide/monitoring/statistics/core/origin.en.rst:23
 msgid "Origin Server"
 msgstr ""
-

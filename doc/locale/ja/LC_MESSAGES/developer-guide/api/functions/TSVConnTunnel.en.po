@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,11 +24,17 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSVConnTunnel.en.rst:37
-msgid "For this to work from the :data:`TS_SSL_SNI_HOOK` or :data:`TS_SSL_CERT_HOOK`, either the server must be running OpenSSL 1.0.2 or a version of OpenSSL 1.0.1 with the appropriate patch installed."
+msgid ""
+"For this to work from the :data:`TS_SSL_SNI_HOOK` or :data:"
+"`TS_SSL_CERT_HOOK`, either the server must be running OpenSSL 1.0.2 or a "
+"version of OpenSSL 1.0.1 with the appropriate patch installed."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSVConnTunnel.en.rst:34
-msgid "Set the SSL connection :arg:`svc` to convert to a blind tunnel. Can be called from :data:`TS_VCONN_PRE_ACCEPT_HOOK` or :data:`TS_SSL_SNI_HOOK/TS_SSL_CERT_HOOK`."
+msgid ""
+"Set the SSL connection :arg:`svc` to convert to a blind tunnel. Can be "
+"called from :data:`TS_VCONN_PRE_ACCEPT_HOOK` or :data:`TS_SSL_SNI_HOOK/"
+"TS_SSL_CERT_HOOK`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSVConnTunnel.en.rst:25
@@ -42,4 +48,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSVConnTunnel.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

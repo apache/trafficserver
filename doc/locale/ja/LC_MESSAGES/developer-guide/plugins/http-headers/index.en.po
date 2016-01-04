@@ -69,8 +69,7 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-headers/index.en.rst:67
 msgid ""
-"The **response header** for the above request might look like the "
-"following:"
+"The **response header** for the above request might look like the following:"
 msgstr ""
 
 #: ../../developer-guide/plugins/http-headers/index.en.rst:83
@@ -102,8 +101,8 @@ msgstr ""
 #: ../../developer-guide/plugins/http-headers/index.en.rst:102
 msgid ""
 "The marshal buffer or ``TSMBuffer`` is a heap data structure that stores "
-"parsed URLs, MIME headers, and HTTP headers. You can allocate new objects"
-" out of marshal buffers and change the values within the marshal buffer. "
+"parsed URLs, MIME headers, and HTTP headers. You can allocate new objects "
+"out of marshal buffers and change the values within the marshal buffer. "
 "Whenever you manipulate an object, you must require the handle to the "
 "object (``TSMLoc``) and the marshal buffer containing the object "
 "(``TSMBuffer``)."
@@ -150,11 +149,10 @@ msgstr ""
 #: ../../developer-guide/plugins/http-headers/index.en.rst:131
 msgid ""
 "The diagram also shows that an HTTP header contains pointers to the URL "
-"location and the MIME header location. You can obtain the URL location "
-"from an HTTP header using the function ``TSHttpHdrUrlGet``. To work with "
-"MIME headers, you can pass either a MIME header location or an HTTP "
-"header location to MIME header functions . If you pass an HTTP header to "
-"a MIME header function, then the system locates the associated MIME "
-"header and executes the MIME header function on the MIME header location."
+"location and the MIME header location. You can obtain the URL location from "
+"an HTTP header using the function ``TSHttpHdrUrlGet``. To work with MIME "
+"headers, you can pass either a MIME header location or an HTTP header "
+"location to MIME header functions . If you pass an HTTP header to a MIME "
+"header function, then the system locates the associated MIME header and "
+"executes the MIME header function on the MIME header location."
 msgstr ""
-

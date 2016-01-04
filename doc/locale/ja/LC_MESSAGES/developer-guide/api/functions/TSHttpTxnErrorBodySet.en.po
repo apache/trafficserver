@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,11 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSHttpTxnErrorBodySet.en.rst:36
-msgid "Note that both string arguments must be allocated with :c:func:`TSmalloc` or :c:func:`TSstrdup`.  The :arg:`mimetype` is optional, and if not provided it defaults to :literal:`text/html`. Sending an empty string would prevent setting a content type header (but that is not adviced)."
+msgid ""
+"Note that both string arguments must be allocated with :c:func:`TSmalloc` "
+"or :c:func:`TSstrdup`.  The :arg:`mimetype` is optional, and if not "
+"provided it defaults to :literal:`text/html`. Sending an empty string would "
+"prevent setting a content type header (but that is not adviced)."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnErrorBodySet.en.rst:24
@@ -42,4 +46,3 @@ msgstr ""
 #: ../../developer-guide/api/functions/TSHttpTxnErrorBodySet.en.rst:29
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

@@ -24,10 +24,10 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/cache-volume.en.rst:25
 msgid ""
-"Each configured :ref:`cache-volume` receives a complete set of statistics"
-" from |TS|. They are differentiated from each other by the incrementing "
-"number that is part of the statistic name. The volume number begins at "
-":literal:`0` and increments by :literal:`1` for each additional volume."
+"Each configured :ref:`cache-volume` receives a complete set of statistics "
+"from |TS|. They are differentiated from each other by the incrementing "
+"number that is part of the statistic name. The volume number begins at :"
+"literal:`0` and increments by :literal:`1` for each additional volume."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/cache-volume.en.rst:30
@@ -42,19 +42,18 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/cache-volume.en.rst:43
 msgid ""
-"Represents the number of bytes in this cache volume which are occupied by"
-" cache objects."
+"Represents the number of bytes in this cache volume which are occupied by "
+"cache objects."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/cache-volume.en.rst:52
 msgid ""
-"Represents the total number of directory entries which have been "
-"allocated in this cache volume."
+"Represents the total number of directory entries which have been allocated "
+"in this cache volume."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/cache-volume.en.rst:58
 msgid ""
-"Represents the number of allocated directory entries in this cache volume"
-" which are in use."
+"Represents the number of allocated directory entries in this cache volume "
+"which are in use."
 msgstr ""
-

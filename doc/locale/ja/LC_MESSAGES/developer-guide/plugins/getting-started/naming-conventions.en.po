@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -28,30 +28,49 @@ msgid "The Traffic Server API adheres to the following naming conventions:"
 msgstr "Traffic Server API は次の命名規則に従います。"
 
 #: ../../developer-guide/plugins/getting-started/naming-conventions.en.rst:34
-msgid "Constant values are all uppercase; enumerated values can be seen as a subset of constants. **Examples**: ``TS_URL_SCHEME_FILE`` and ``TS_MIME_FIELD_ACCEPT``"
+msgid ""
+"Constant values are all uppercase; enumerated values can be seen as a "
+"subset of constants. **Examples**: ``TS_URL_SCHEME_FILE`` and "
+"``TS_MIME_FIELD_ACCEPT``"
 msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/naming-conventions.en.rst:51
-msgid "Common verbs like ``Create``, ``Destroy``, ``Get``, ``Set``, ``Copy``, ``Find``, ``Retrieve``, ``Insert``, ``Remove``, and ``Delete`` are used only when appropriate."
+msgid ""
+"Common verbs like ``Create``, ``Destroy``, ``Get``, ``Set``, ``Copy``, "
+"``Find``, ``Retrieve``, ``Insert``, ``Remove``, and ``Delete`` are used "
+"only when appropriate."
 msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/naming-conventions.en.rst:31
-msgid "Enumerated values are always written in all uppercase letters. **Examples**: ``TS_EVENT_NONE`` and ``TS_VC_CLOSE_ABORT``"
+msgid ""
+"Enumerated values are always written in all uppercase letters. "
+"**Examples**: ``TS_EVENT_NONE`` and ``TS_VC_CLOSE_ABORT``"
 msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/naming-conventions.en.rst:41
-msgid "Function names are mixed-case. **Examples**: ``TSUrlCreate`` and ``TSContDestroy``"
+msgid ""
+"Function names are mixed-case. **Examples**: ``TSUrlCreate`` and "
+"``TSContDestroy``"
 msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/naming-conventions.en.rst:44
-msgid "Function names use the following subject-verb naming style: ``TS-<subject>-<verb>``, where ``<subject>`` goes from general to specific. This makes it easier to determine what a function does by reading its name. **For** **example**: the function to retrieve the password field (the specific subject) from a URL (the general subject) is ``TSUrlPasswordGet``."
+msgid ""
+"Function names use the following subject-verb naming style: ``TS-<subject>-"
+"<verb>``, where ``<subject>`` goes from general to specific. This makes it "
+"easier to determine what a function does by reading its name. **For** "
+"**example**: the function to retrieve the password field (the specific "
+"subject) from a URL (the general subject) is ``TSUrlPasswordGet``."
 msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/naming-conventions.en.rst:27
-msgid "The ``TS`` prefix is used for all function and variable names defined in the Traffic Server API. **Examples**: ``TS_EVENT_NONE``,\\ ``TSMutex``, and ``TSContCreate``"
+msgid ""
+"The ``TS`` prefix is used for all function and variable names defined in "
+"the Traffic Server API. **Examples**: ``TS_EVENT_NONE``,\\ ``TSMutex``, and "
+"``TSContCreate``"
 msgstr ""
 
 #: ../../developer-guide/plugins/getting-started/naming-conventions.en.rst:38
-msgid "The names of defined types are mixed-case. **Examples**: ``TSHttpSsn`` and ``TSHttpTxn``"
+msgid ""
+"The names of defined types are mixed-case. **Examples**: ``TSHttpSsn`` and "
+"``TSHttpTxn``"
 msgstr ""
-

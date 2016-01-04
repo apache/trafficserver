@@ -21,4 +21,3 @@ msgstr ""
 #: ../../appendices/index.en.rst:21
 msgid "Appendices"
 msgstr ""
-

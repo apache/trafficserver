@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -24,7 +24,9 @@ msgid "Description"
 msgstr "解説"
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldAppend.en.rst:34
-msgid "Returns the :c:type:`TSMLoc` location of a specified MIME field from within the MIME header located at :arg:`hdr`."
+msgid ""
+"Returns the :c:type:`TSMLoc` location of a specified MIME field from within "
+"the MIME header located at :arg:`hdr`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldAppend.en.rst:25
@@ -36,10 +38,17 @@ msgid "TSMimeHdrFieldAppend"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldAppend.en.rst:37
-msgid "The retrieved_str parameter specifies which field to retrieve.  For each MIME field in the MIME header, a pointer comparison is done between the field name and retrieved_str.  This is a much quicker retrieval function than :c:func:`TSMimeHdrFieldFind` since it obviates the need for a string comparison.  However, retrieved_str must be one of the predefined field names of the form :c:data:`TS_MIME_FIELD_XXX` for the call to succeed.  Release the returned :c:type:`TSMLoc` handle with a call to :c:func:`TSHandleMLocRelease`."
+msgid ""
+"The retrieved_str parameter specifies which field to retrieve.  For each "
+"MIME field in the MIME header, a pointer comparison is done between the "
+"field name and retrieved_str.  This is a much quicker retrieval function "
+"than :c:func:`TSMimeHdrFieldFind` since it obviates the need for a string "
+"comparison.  However, retrieved_str must be one of the predefined field "
+"names of the form :c:data:`TS_MIME_FIELD_XXX` for the call to succeed.  "
+"Release the returned :c:type:`TSMLoc` handle with a call to :c:func:"
+"`TSHandleMLocRelease`."
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSMimeHdrFieldAppend.en.rst:27
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

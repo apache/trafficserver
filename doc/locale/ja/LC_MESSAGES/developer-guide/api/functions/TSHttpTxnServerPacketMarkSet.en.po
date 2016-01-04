@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the Apache Traffic
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -40,10 +40,12 @@ msgid "TSHttpTxnServerPacketMarkSet"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnServerPacketMarkSet.en.rst:37
-msgid "The change takes effect immediately. If no OS connection has been made, then this sets the mark that will be used. If an OS connection is established"
+msgid ""
+"The change takes effect immediately. If no OS connection has been made, "
+"then this sets the mark that will be used. If an OS connection is "
+"established"
 msgstr ""
 
 #: ../../developer-guide/api/functions/TSHttpTxnServerPacketMarkSet.en.rst:28
 msgid "`#include <ts/ts.h>`"
 msgstr "`#include <ts/ts.h>`"
-

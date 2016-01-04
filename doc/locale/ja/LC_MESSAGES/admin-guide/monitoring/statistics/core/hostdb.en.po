@@ -24,29 +24,28 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/hostdb.en.rst:25
 msgid ""
-"The HostDB component of |TS| manages origin server name resolution and "
-"host health checks. The statistics documented here can help to ensure "
-"that your |TS| instances are not spending an unreasonable amount of "
-"timing resolving your origin servers' hostnames prior to object "
-"revalidation or retrieval."
+"The HostDB component of |TS| manages origin server name resolution and host "
+"health checks. The statistics documented here can help to ensure that your |"
+"TS| instances are not spending an unreasonable amount of timing resolving "
+"your origin servers' hostnames prior to object revalidation or retrieval."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/hostdb.en.rst:34
 msgid ""
-"Represents the ratio of origin server name resolutions which were "
-"satisfied by the HostDB lookup cache over the last 10 seconds."
+"Represents the ratio of origin server name resolutions which were satisfied "
+"by the HostDB lookup cache over the last 10 seconds."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/hostdb.en.rst:41
 msgid ""
-"Represents the ratio of origin server name resolutions which were "
-"satisfied by the HostDB lookup cache since statistics collection began."
+"Represents the ratio of origin server name resolutions which were satisfied "
+"by the HostDB lookup cache since statistics collection began."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/hostdb.en.rst:48
 msgid ""
-"The value of :ts:stat:`proxy.node.hostdb.hit_ratio` converted to an "
-"integer percent."
+"The value of :ts:stat:`proxy.node.hostdb.hit_ratio` converted to an integer "
+"percent."
 msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/hostdb.en.rst:54
@@ -84,7 +83,6 @@ msgstr ""
 
 #: ../../admin-guide/monitoring/statistics/core/hostdb.en.rst:90
 msgid ""
-"Represents the total number of host entries currently in the HostDB "
-"lookup cache."
+"Represents the total number of host entries currently in the HostDB lookup "
+"cache."
 msgstr ""
-

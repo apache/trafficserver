@@ -24,32 +24,32 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-headers/header-functions.en.rst:25
 msgid ""
-"The Traffic Server API HTTP header functions enable you to work with HTTP"
-" header data stored in marshal buffers."
+"The Traffic Server API HTTP header functions enable you to work with HTTP "
+"header data stored in marshal buffers."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-headers/header-functions.en.rst:28
 msgid ""
 "The HTTP header data structure is a parsed version of the HTTP header "
-"defined in the HTTP protocol specification. An HTTP header is composed of"
-" a request or response line followed by zero or more MIME fields. In "
-"fact, an HTTP header is a subclass of a MIME header; all of the MIME "
-"header routines operate on HTTP headers."
+"defined in the HTTP protocol specification. An HTTP header is composed of a "
+"request or response line followed by zero or more MIME fields. In fact, an "
+"HTTP header is a subclass of a MIME header; all of the MIME header routines "
+"operate on HTTP headers."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-headers/header-functions.en.rst:34
 msgid ""
 "An HTTP **request line** is composed of a method, a URL, and version. A "
-"**response line** is composed of a version, status code, and reason "
-"phrase. See `About HTTP Headers <../http-headers#AboutHTTPHeaders>`__ for"
-" additional details and examples."
+"**response line** is composed of a version, status code, and reason phrase. "
+"See `About HTTP Headers <../http-headers#AboutHTTPHeaders>`__ for "
+"additional details and examples."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-headers/header-functions.en.rst:39
 msgid ""
 "To facilitate fast comparisons and reduce storage size, Traffic Server "
-"defines several pre-allocated method names. These names correspond to the"
-" methods defined in the HTTP 1.1 specification"
+"defines several pre-allocated method names. These names correspond to the "
+"methods defined in the HTTP 1.1 specification"
 msgstr ""
 
 #: ../../developer-guide/plugins/http-headers/header-functions.en.rst:44
@@ -316,16 +316,16 @@ msgstr ""
 
 #: ../../developer-guide/plugins/http-headers/header-functions.en.rst:142
 msgid ""
-"The method names and header values above are defined in ``ts.h`` as "
-"``const char*`` strings. When Traffic Server sets a method or a header "
-"value, it checks to make sure that the new value is one of the known "
-"values. If it is, then it stores a pointer into a global table (instead "
-"of storing the known value in the marshal buffer). The method names and "
-"header values listed above are also pointers into this table. This allows"
-" simple pointer comparison of the value returned from ``TSHttpMethodGet``"
-" with one of the values listed above. It is also recommended that you use"
-" the above values when referring to one of the known schemes, since this "
-"removes the possibility of a spelling error."
+"The method names and header values above are defined in ``ts.h`` as ``const "
+"char*`` strings. When Traffic Server sets a method or a header value, it "
+"checks to make sure that the new value is one of the known values. If it "
+"is, then it stores a pointer into a global table (instead of storing the "
+"known value in the marshal buffer). The method names and header values "
+"listed above are also pointers into this table. This allows simple pointer "
+"comparison of the value returned from ``TSHttpMethodGet`` with one of the "
+"values listed above. It is also recommended that you use the above values "
+"when referring to one of the known schemes, since this removes the "
+"possibility of a spelling error."
 msgstr ""
 
 #: ../../developer-guide/plugins/http-headers/header-functions.en.rst:153
@@ -427,4 +427,3 @@ msgstr ""
 #: ../../developer-guide/plugins/http-headers/header-functions.en.rst:178
 msgid ":c:func:`TSHttpHdrParseResp`"
 msgstr ""
-
