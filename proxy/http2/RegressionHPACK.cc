@@ -53,14 +53,14 @@ const static struct {
   uint32_t raw_string_len;
   uint8_t *encoded_field;
   int encoded_field_len;
-} string_test_case[] = {{(char *)"", 0,            (uint8_t *) "\x0"
-                                                               "",
+} string_test_case[] = {{(char *)"", 0, (uint8_t *) "\x0"
+                                                    "",
                          1},
                         {(char *)"custom-key", 10, (uint8_t *) "\xA"
                                                                "custom-key",
                          11},
-                        {(char *)"", 0,            (uint8_t *) "\x80"
-                                                               "",
+                        {(char *)"", 0, (uint8_t *) "\x80"
+                                                    "",
                          1},
                         {(char *)"custom-key", 10, (uint8_t *) "\x88"
                                                                "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
