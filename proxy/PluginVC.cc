@@ -907,6 +907,12 @@ PluginVC::set_tcp_init_cwnd(int /* init_cwnd ATS_UNUSED */)
   return -1;
 }
 
+int
+PluginVC::set_tcp_congestion_control(const char *ATS_UNUSED, int ATS_UNUSED)
+{
+  return -1;
+}
+
 void
 PluginVC::apply_options()
 {

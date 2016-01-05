@@ -200,6 +200,14 @@ HttpClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBu
 
   DebugHttpSsn("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
+  RecString congestion_control_in;
+  if (REC_ReadConfigStringAlloc(congestion_control_in, "proxy.config.net.tcp_congestion_control_in") == REC_ERR_OKAY) {
+    int len = strlen(congestion_control_in);
+    if (len > 0) {
+      client_vc->set_tcp_congestion_control(congestion_control_in, len);
+    }
+    ats_free(congestion_control_in);
+  }
   if (!iobuf) {
     SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(new_vc);
     if (ssl_vc) {
