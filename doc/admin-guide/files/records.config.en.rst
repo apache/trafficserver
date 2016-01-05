@@ -2857,6 +2857,18 @@ Sockets
   If it is set to -1, Traffic Server will automatically set this
   to a platform-specific maximum.
 
+.. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_in STRING ""
+
+   This directive will override the congestion control algorithm for incoming
+   connections (accept sockets). On linux the allowed values are typically
+   specified in a space seperated list in /proc/sys/net/ipv4/tcp_allowed_congestion_control
+
+.. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_out STRING ""
+
+   This directive will override the congestion control algorithm for outgoing 
+   connections (connect sockets). On linux the allowed values are typically
+   specified in a space seperated list in /proc/sys/net/ipv4/tcp_allowed_congestion_control
+
 .. ts:cv:: CONFIG proxy.config.net.sock_send_buffer_size_in INT 0
 
    Sets the send buffer size for connections from the client to Traffic Server.
