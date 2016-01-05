@@ -19,13 +19,13 @@
   limitations under the License.
  */
 
-#include <openssl/ocsp.h>
 #include "P_OCSPStapling.h"
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
+
+#include <openssl/ocsp.h>
 #include "P_Net.h"
 #include "P_SSLConfig.h"
 #include "P_SSLUtils.h"
-
-#ifdef HAVE_OPENSSL_OCSP_STAPLING
 
 // Maxiumum OCSP stapling response size.
 // This should be the response for a single certificate and will typically include the responder certificate chain,
