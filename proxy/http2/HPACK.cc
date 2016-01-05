@@ -303,8 +303,8 @@ Http2DynamicTable::get_index(const MIMEFieldWrapper &field) const
     }
 
     // Check whether name (and value) are matched
-    if (ptr_len_casecmp(target_name, target_name_len, table_name, table_name_len) == 0) {
-      if (ptr_len_casecmp(target_value, target_value_len, table_value, table_value_len) == 0) {
+    if (ptr_len_cmp(target_name, target_name_len, table_name, table_name_len) == 0) {
+      if (ptr_len_cmp(target_value, target_value_len, table_value, table_value_len) == 0) {
         result.index = index;
         result.value_is_indexed = true;
         break;
@@ -327,7 +327,7 @@ Http2DynamicTable::is_header_in_dynamic_table(const char *target_name, const cha
       int target_value_len = strlen(target_value);
       int table_value_len = 0;
       const char *table_value = field->value_get(&table_value_len);
-      if (ptr_len_casecmp(target_value, target_value_len, table_value, table_value_len) == 0) {
+      if (ptr_len_cmp(target_value, target_value_len, table_value, table_value_len) == 0) {
         return true;
       }
     } while (field->has_dups() && (field = field->m_next_dup) != NULL);
