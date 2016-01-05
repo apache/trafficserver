@@ -506,10 +506,10 @@ http2_write_header_field(uint8_t *out, const uint8_t *end, MIMEFieldWrapper &hea
     if (result.value_is_indexed) {
       return encode_indexed_header_field(out, end, result.index);
     } else {
-      return encode_literal_header_field(out, end, header, result.index, dynamic_table, field_type);
+      return encode_literal_header_field_with_indexed_name(out, end, header, result.index, dynamic_table, field_type);
     }
   } else {
-    return encode_literal_header_field(out, end, header, dynamic_table, field_type);
+    return encode_literal_header_field_with_new_name(out, end, header, dynamic_table, field_type);
   }
 }
 

@@ -369,11 +369,12 @@ REGRESSION_TEST(HPACK_EncodeLiteralHeaderField)(RegressionTest *t, int, int *pst
     header.name_set(literal_test_case[i].raw_name, strlen(literal_test_case[i].raw_name));
     header.value_set(literal_test_case[i].raw_value, strlen(literal_test_case[i].raw_value));
     if (literal_test_case[i].index > 0) {
-      len = encode_literal_header_field(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, header, literal_test_case[i].index, dynamic_table,
-                                        literal_test_case[i].type);
+      len = encode_literal_header_field_with_indexed_name(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, header,
+                                                          literal_test_case[i].index, dynamic_table, literal_test_case[i].type);
     } else {
       header.name_set(literal_test_case[i].raw_name, strlen(literal_test_case[i].raw_name));
-      len = encode_literal_header_field(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, header, dynamic_table, literal_test_case[i].type);
+      len = encode_literal_header_field_with_new_name(buf, buf + BUFSIZE_FOR_REGRESSION_TEST, header, dynamic_table,
+                                                      literal_test_case[i].type);
     }
 
     box.check(len == literal_test_case[i].encoded_field_len, "encoded length was %d, expecting %d", len,

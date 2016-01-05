@@ -263,9 +263,8 @@ Http2DynamicTable::add_header_field(const MIMEField *field)
     }
 
     MIMEField *new_field = _mhdr->field_create(name, name_len);
-    new_field->name_set(_mhdr->m_heap, _mhdr->m_mime, name, name_len);
     new_field->value_set(_mhdr->m_heap, _mhdr->m_mime, value, value_len);
-    mime_hdr_field_attach(_mhdr->m_mime, new_field, 1, NULL);
+    _mhdr->field_attach(new_field);
     // XXX Because entire Vec instance is copied, Its too expensive!
     _headers.insert(0, new_field);
   }
@@ -473,8 +472,8 @@ encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t
 }
 
 int64_t
-encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header, uint32_t index,
-                            Http2DynamicTable &dynamic_table, HpackFieldType type)
+encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
+                                              uint32_t index, Http2DynamicTable &dynamic_table, HpackFieldType type)
 {
   uint8_t *p = buf_start;
   int64_t len;
@@ -525,8 +524,8 @@ encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MI
 }
 
 int64_t
-encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
-                            Http2DynamicTable &dynamic_table, HpackFieldType type)
+encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
+                                          Http2DynamicTable &dynamic_table, HpackFieldType type)
 {
   uint8_t *p = buf_start;
   int64_t len;

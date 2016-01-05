@@ -164,10 +164,10 @@ int64_t encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *va
 int64_t decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end);
 
 int64_t encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index);
-int64_t encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header, uint32_t index,
-                                    Http2DynamicTable &dynamic_table, HpackFieldType type);
-int64_t encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
-                                    Http2DynamicTable &dynamic_table, HpackFieldType type);
+int64_t encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
+                                                      uint32_t index, Http2DynamicTable &dynamic_table, HpackFieldType type);
+int64_t encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
+                                                  Http2DynamicTable &dynamic_table, HpackFieldType type);
 
 // When these functions returns minus value, any error occurs
 // TODO Separate error code and length of processed buffer
