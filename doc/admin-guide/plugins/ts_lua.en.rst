@@ -137,13 +137,14 @@ ts.now
 
 **context:** global
 
-**description:** This function returns the time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
+**description:** This function returns the time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds. It
+includes milliseconds as the decimal part.
 
 Here is an example:
 
 ::
 
-    local nt = ts.now()  -- 1395221053
+    local nt = ts.now()  -- 1395221053.123
 
 `TOP <#ts-lua-plugin>`_
 
