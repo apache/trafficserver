@@ -593,7 +593,7 @@ load on Traffic Server.
 Config checker
 --------------
 
-Traffic Server supports the below command to validate the config offline, inorder to
+Traffic Server supports the below command to validate the config offline, in order to
 allow the config to be pre-checked for possible service disruptions due to synatx errors::
 
    traffic_server -Cverify_config -D<config_dir>
