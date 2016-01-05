@@ -8868,6 +8868,19 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
   return ret;
 }
 
+tsapi TSSslContext
+TSSslContextCreate()
+{
+  TSSslContext ret = NULL;
+  SSLConfigParams *config = SSLConfig::acquire();
+  if (config != NULL) {
+    ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config));
+    SSLConfig::release(config);
+  }
+  return ret;
+}
+
+
 tsapi int
 TSVConnIsSsl(TSVConn sslp)
 {
