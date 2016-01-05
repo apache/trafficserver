@@ -794,7 +794,10 @@ void
 SSLInitializeLibrary()
 {
   if (!open_ssl_initialized) {
+// BoringSSL does not have the memory functions
+#ifndef OPENSSL_IS_BORINGSSL
     CRYPTO_set_mem_functions(ats_malloc, ats_realloc, ats_free);
+#endif
 
     SSL_load_error_strings();
     SSL_library_init();
@@ -972,8 +975,9 @@ SSLInitializeStatistics()
   ssl = SSL_new(ctx);
   ciphers = SSL_get_ciphers(ssl);
 
-  for (int index = 0; index < sk_SSL_CIPHER_num(ciphers); index++) {
-    SSL_CIPHER *cipher = sk_SSL_CIPHER_value(ciphers, index);
+  // BoringSSL has sk_SSL_CIPHER_num() return a size_t (well, sk_num() is)
+  for (int index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
+    SSL_CIPHER *cipher = const_cast<SSL_CIPHER *>(sk_SSL_CIPHER_value(ciphers, index));
     const char *cipherName = SSL_CIPHER_get_name(cipher);
     std::string statName = "proxy.process.ssl.cipher.user_agent." + std::string(cipherName);
 
@@ -1617,7 +1621,13 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
       SSLConfigParams::ssl_allow_client_renegotiation == false) {
     int state = SSL_get_state(ssl);
 
+// TODO: ifdef can be removed in the future
+// Support for SSL23 only if we have it
+#ifdef SSL23_ST_SR_CLNT_HELLO_A
     if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
+#else
+    if (state == SSL3_ST_SR_CLNT_HELLO_A) {
+#endif
       netvc->setSSLClientRenegotiationAbort(true);
       Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
     }

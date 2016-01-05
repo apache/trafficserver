@@ -27,12 +27,12 @@
 #include "P_SSLClientUtils.h"
 
 #define OPENSSL_THREAD_DEFINES
-#include <openssl/opensslconf.h>
-#include <openssl/ssl.h>
 
-#if !defined(OPENSSL_THREADS)
-#error Traffic Server requires a OpenSSL library that support threads
+// BoringSSL does not have this include file
+#ifndef OPENSSL_IS_BORINGSSL
+#include <openssl/opensslconf.h>
 #endif
+#include <openssl/ssl.h>
 
 struct SSLConfigParams;
 struct SSLCertLookup;

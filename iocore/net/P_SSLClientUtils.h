@@ -27,8 +27,12 @@
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 
-#include <openssl/opensslconf.h>
 #include <openssl/ssl.h>
+
+// BoringSSL does not have this include file
+#ifndef OPENSSL_IS_BORINGSSL
+#include <openssl/opensslconf.h>
+#endif
 
 // Create and initialize a SSL client context.
 SSL_CTX *SSLInitClientContext(const struct SSLConfigParams *param);
