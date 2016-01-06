@@ -93,6 +93,7 @@ Bug:
   *) [TS-4084] Empty README.md file
   *) [TS-4089] CID 1343608, 1343607: Parent selection Coverity issues
   *) [TS-4091] [ats-multiplexer] multiplexer breaks in the presence of internal headers
+  *) [TS-4097] HPACK encoder doesn't handle empty value
 
 Improvement:
   *) [TS-306] enable log rotation for diags.log
@@ -139,6 +140,7 @@ Improvement:
   *) [TS-4045] Improvement for ts_lua plugin
   *) [TS-4053] Add hit rate and memory usage regressions for RAM cache, tune CLFUS.
   *) [TS-4073] remove duplicated diagnostics
+  *) [TS-4088] Add support for BoringSSL
 
 New Feature:
   *) [TS-2520] Add TCP fastopen support for incoming TCP connections
