@@ -1771,7 +1771,7 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_NODE, "proxy.node.log.bytes_lost_before_written_to_disk", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_NODE, "proxy.process.ssl.total_success_handshake_count_in", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
 
   //#
