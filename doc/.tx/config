@@ -1,0 +1,2209 @@
+[main]
+host = https://www.transifex.com
+type = PO
+
+[apache-traffic-server-6x.index]
+file_filter = locale/<lang>/LC_MESSAGES/index.po
+source_file = _build/locale/pot/index.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuring-traffic-server_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuring-traffic-server.en.po
+source_file = _build/locale/pot/admin-guide/configuring-traffic-server.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/index.en.po
+source_file = _build/locale/pot/admin-guide/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--introduction_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/introduction.en.po
+source_file = _build/locale/pot/admin-guide/introduction.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--transparent-proxy_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/transparent-proxy.en.po
+source_file = _build/locale/pot/admin-guide/transparent-proxy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--cache-basics_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/cache-basics.en.po
+source_file = _build/locale/pot/admin-guide/configuration/cache-basics.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--explicit-forward-proxying_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/explicit-forward-proxying.en.po
+source_file = _build/locale/pot/admin-guide/configuration/explicit-forward-proxying.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--hierachical-caching_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/hierachical-caching.en.po
+source_file = _build/locale/pot/admin-guide/configuration/hierachical-caching.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/index.en.po
+source_file = _build/locale/pot/admin-guide/configuration/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--multi-server-caches_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/multi-server-caches.en.po
+source_file = _build/locale/pot/admin-guide/configuration/multi-server-caches.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--redirecting-http-requests_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/redirecting-http-requests.en.po
+source_file = _build/locale/pot/admin-guide/configuration/redirecting-http-requests.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--session-protocol_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/session-protocol.en.po
+source_file = _build/locale/pot/admin-guide/configuration/session-protocol.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-forward-proxying_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-forward-proxying.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-forward-proxying.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--cache_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/cache.config.en.po
+source_file = _build/locale/pot/admin-guide/files/cache.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--congestion_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/congestion.config.en.po
+source_file = _build/locale/pot/admin-guide/files/congestion.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--hosting_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/hosting.config.en.po
+source_file = _build/locale/pot/admin-guide/files/hosting.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--icp_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/icp.config.en.po
+source_file = _build/locale/pot/admin-guide/files/icp.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/index.en.po
+source_file = _build/locale/pot/admin-guide/files/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--ip_allow_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/ip_allow.config.en.po
+source_file = _build/locale/pot/admin-guide/files/ip_allow.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--log_hosts_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/log_hosts.config.en.po
+source_file = _build/locale/pot/admin-guide/files/log_hosts.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--logs_xml_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/logs_xml.config.en.po
+source_file = _build/locale/pot/admin-guide/files/logs_xml.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--parent_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/parent.config.en.po
+source_file = _build/locale/pot/admin-guide/files/parent.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--plugin_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/plugin.config.en.po
+source_file = _build/locale/pot/admin-guide/files/plugin.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--records_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/records.config.en.po
+source_file = _build/locale/pot/admin-guide/files/records.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--remap_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/remap.config.en.po
+source_file = _build/locale/pot/admin-guide/files/remap.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--splitdns_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/splitdns.config.en.po
+source_file = _build/locale/pot/admin-guide/files/splitdns.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--ssl_multicert_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/ssl_multicert.config.en.po
+source_file = _build/locale/pot/admin-guide/files/ssl_multicert.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--storage_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/storage.config.en.po
+source_file = _build/locale/pot/admin-guide/files/storage.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--files--volume_config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/files/volume.config.en.po
+source_file = _build/locale/pot/admin-guide/files/volume.config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--installation--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/installation/index.en.po
+source_file = _build/locale/pot/admin-guide/installation/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--interaction--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/interaction/index.en.po
+source_file = _build/locale/pot/admin-guide/interaction/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--alarms_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/alarms.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/alarms.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--error-messages_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/error-messages.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/error-messages.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/index.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--logging--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/index.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/logging/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--logging--log-builder_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-builder.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/logging/log-builder.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--logging--log-collation_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-collation.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/logging/log-collation.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--logging--log-formats_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/log-formats.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/logging/log-formats.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--logging--managing-logs_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/managing-logs.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/logging/managing-logs.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--logging--pipes_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/pipes.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/logging/pipes.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--logging--summary-logs_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/summary-logs.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/logging/summary-logs.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--logging--understanding_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/logging/understanding.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/logging/understanding.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--monitoring--builtin_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/monitoring/builtin.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/monitoring/builtin.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--monitoring--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/monitoring/index.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/monitoring/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--monitoring--third-party--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/monitoring/third-party/index.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/monitoring/third-party/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--accessing_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/accessing.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/accessing.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core-statistics_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core-statistics.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core-statistics.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/index.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--plugin-statistics_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/plugin-statistics.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/plugin-statistics.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--bandwidth_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/bandwidth.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/bandwidth.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--cache-volume_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/cache-volume.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cache-volume.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--cache_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/cache.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cache.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--cluster_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/cluster.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/cluster.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--congestion_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/congestion.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/congestion.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--dns_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/dns.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/dns.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--general_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/general.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/general.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--hierarchical_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/hierarchical.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/hierarchical.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--hostdb_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/hostdb.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/hostdb.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--http-connection_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/http-connection.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/http-connection.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--http-document-size_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/http-document-size.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/http-document-size.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--http-header_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/http-header.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/http-header.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--http-request-method_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/http-request-method.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/http-request-method.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--http-response-code_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/http-response-code.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/http-response-code.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--http-transaction_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/http-transaction.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/http-transaction.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--log_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/log.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/log.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--misc_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/misc.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/misc.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--network-io_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/network-io.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/network-io.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--origin_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/origin.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/origin.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--socks_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/socks.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/socks.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--ssl-cipher_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/ssl-cipher.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/ssl-cipher.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--ssl_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/ssl.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/ssl.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--monitoring--statistics--core--websocket_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/monitoring/statistics/core/websocket.en.po
+source_file = _build/locale/pot/admin-guide/monitoring/statistics/core/websocket.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--performance--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/performance/index.en.po
+source_file = _build/locale/pot/admin-guide/performance/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--authproxy_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/authproxy.en.po
+source_file = _build/locale/pot/admin-guide/plugins/authproxy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--background_fetch_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/background_fetch.en.po
+source_file = _build/locale/pot/admin-guide/plugins/background_fetch.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--balancer_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/balancer.en.po
+source_file = _build/locale/pot/admin-guide/plugins/balancer.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--buffer_upload_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/buffer_upload.en.po
+source_file = _build/locale/pot/admin-guide/plugins/buffer_upload.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--cache_promote_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/cache_promote.en.po
+source_file = _build/locale/pot/admin-guide/plugins/cache_promote.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--cachekey_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/cachekey.en.po
+source_file = _build/locale/pot/admin-guide/plugins/cachekey.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--cacheurl_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/cacheurl.en.po
+source_file = _build/locale/pot/admin-guide/plugins/cacheurl.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--combo_handler_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/combo_handler.en.po
+source_file = _build/locale/pot/admin-guide/plugins/combo_handler.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--conf_remap_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/conf_remap.en.po
+source_file = _build/locale/pot/admin-guide/plugins/conf_remap.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--epic_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/epic.en.po
+source_file = _build/locale/pot/admin-guide/plugins/epic.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--esi_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/esi.en.po
+source_file = _build/locale/pot/admin-guide/plugins/esi.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--generator_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/generator.en.po
+source_file = _build/locale/pot/admin-guide/plugins/generator.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--geoip_acl_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/geoip_acl.en.po
+source_file = _build/locale/pot/admin-guide/plugins/geoip_acl.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--gzip_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/gzip.en.po
+source_file = _build/locale/pot/admin-guide/plugins/gzip.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--header_rewrite_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/header_rewrite.en.po
+source_file = _build/locale/pot/admin-guide/plugins/header_rewrite.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--healthchecks_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/healthchecks.en.po
+source_file = _build/locale/pot/admin-guide/plugins/healthchecks.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--hipes_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/hipes.en.po
+source_file = _build/locale/pot/admin-guide/plugins/hipes.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/index.en.po
+source_file = _build/locale/pot/admin-guide/plugins/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--memcache_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/memcache.en.po
+source_file = _build/locale/pot/admin-guide/plugins/memcache.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--metalink_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/metalink.en.po
+source_file = _build/locale/pot/admin-guide/plugins/metalink.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--mp4_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/mp4.en.po
+source_file = _build/locale/pot/admin-guide/plugins/mp4.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--mysql_remap_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/mysql_remap.en.po
+source_file = _build/locale/pot/admin-guide/plugins/mysql_remap.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--regex_remap_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/regex_remap.en.po
+source_file = _build/locale/pot/admin-guide/plugins/regex_remap.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--s3_auth_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/s3_auth.en.po
+source_file = _build/locale/pot/admin-guide/plugins/s3_auth.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--sslheaders_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/sslheaders.en.po
+source_file = _build/locale/pot/admin-guide/plugins/sslheaders.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--stale_while_revalidate_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/stale_while_revalidate.en.po
+source_file = _build/locale/pot/admin-guide/plugins/stale_while_revalidate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--stats_over_http_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/stats_over_http.en.po
+source_file = _build/locale/pot/admin-guide/plugins/stats_over_http.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--tcpinfo_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/tcpinfo.en.po
+source_file = _build/locale/pot/admin-guide/plugins/tcpinfo.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--ts_lua_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/ts_lua.en.po
+source_file = _build/locale/pot/admin-guide/plugins/ts_lua.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--plugins--xdebug_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/xdebug.en.po
+source_file = _build/locale/pot/admin-guide/plugins/xdebug.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--security--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/security/index.en.po
+source_file = _build/locale/pot/admin-guide/security/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--storage--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/storage/index.en.po
+source_file = _build/locale/pot/admin-guide/storage/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--transparent-proxy--bridge_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/transparent-proxy/bridge.en.po
+source_file = _build/locale/pot/admin-guide/transparent-proxy/bridge.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--transparent-proxy--build_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/transparent-proxy/build.en.po
+source_file = _build/locale/pot/admin-guide/transparent-proxy/build.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--transparent-proxy--router-inline_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/transparent-proxy/router-inline.en.po
+source_file = _build/locale/pot/admin-guide/transparent-proxy/router-inline.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--transparent-proxy--wccp-configuration_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/transparent-proxy/wccp-configuration.en.po
+source_file = _build/locale/pot/admin-guide/transparent-proxy/wccp-configuration.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--transparent-proxy--wccp-service-config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/transparent-proxy/wccp-service-config.en.po
+source_file = _build/locale/pot/admin-guide/transparent-proxy/wccp-service-config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--faq_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/faq.en.po
+source_file = _build/locale/pot/appendices/faq.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--glossary_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/glossary.en.po
+source_file = _build/locale/pot/appendices/glossary.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--http-status-codes_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/http-status-codes.en.po
+source_file = _build/locale/pot/appendices/http-status-codes.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/index.en.po
+source_file = _build/locale/pot/appendices/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/index.en.po
+source_file = _build/locale/pot/appendices/command-line/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_cop_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_cop.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_cop.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_crashlog_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_crashlog.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_crashlog.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_ctl_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_ctl.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_ctl.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_line_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_line.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_line.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_logcat_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_logcat.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_logcat.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_logstats_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_logstats.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_logstats.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_manager_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_manager.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_manager.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_server_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_server.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_server.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_top_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_top.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_top.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_via_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_via.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_via.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--traffic_wccp_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_wccp.en.po
+source_file = _build/locale/pot/appendices/command-line/traffic_wccp.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--tspush_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/tspush.en.po
+source_file = _build/locale/pot/appendices/command-line/tspush.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.appendices--command-line--tsxs_en]
+file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/tsxs.en.po
+source_file = _build/locale/pot/appendices/command-line/tsxs.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--config-vars_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/config-vars.en.po
+source_file = _build/locale/pot/developer-guide/config-vars.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--host-resolution-proposal_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/host-resolution-proposal.en.po
+source_file = _build/locale/pot/developer-guide/host-resolution-proposal.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/index.en.po
+source_file = _build/locale/pot/developer-guide/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--troubleshooting-tips_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/troubleshooting-tips.en.po
+source_file = _build/locale/pot/developer-guide/troubleshooting-tips.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/index.en.po
+source_file = _build/locale/pot/developer-guide/api/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/index.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSActionCancel_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSActionCancel.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSActionCancel.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSActionDone_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSActionDone.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSActionDone.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSAPI_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSAPI.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSAPI.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSCacheRead_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSCacheRead.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSCacheRead.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSCacheRemove_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSCacheRemove.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSCacheRemove.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSCacheWrite_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSCacheWrite.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSCacheWrite.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSConfigDataGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSConfigDataGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSConfigDataGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSConfigGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSConfigGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSConfigGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSConfigRelease_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSConfigRelease.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSConfigRelease.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSConfigSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSConfigSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSConfigSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSContCall_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContCall.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContCall.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSContCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSContDataGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContDataGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContDataGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSContDataSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContDataSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContDataSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSContDestroy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContDestroy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContDestroy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSContMutexGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContMutexGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContMutexGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSContSchedule_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSContSchedule.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSContSchedule.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSDebug_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSDebug.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSDebug.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSfclose_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSfclose.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSfclose.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSfflush_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSfflush.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSfflush.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSfgets_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSfgets.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSfgets.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSfopen_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSfopen.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSfopen.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSfread_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSfread.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSfread.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSfwrite_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSfwrite.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSfwrite.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHostLookup_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHostLookup.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHostLookup.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHostLookupResultAddrGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHostLookupResultAddrGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHostLookupResultAddrGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpConnect_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConnect.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnect.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpConnectWithPluginId_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpConnectWithPluginId.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpConnectWithPluginId.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrClone_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrClone.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrClone.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrCopy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrCopy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrCopy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrDestroy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrDestroy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrDestroy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrHostGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrHostGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrHostGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrLengthGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrLengthGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrLengthGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrMethodGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrMethodGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrMethodGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrMethodSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrMethodSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrMethodSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrPrint_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrPrint.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrPrint.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrReasonGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrReasonGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrReasonGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrReasonLookup_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrReasonLookup.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrReasonLookup.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrReasonSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrReasonSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrReasonSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrStatusGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrStatusGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrStatusGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrStatusSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrStatusSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrStatusSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrTypeGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrTypeGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrTypeGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrTypeSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrTypeSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrTypeSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrUrlGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrUrlGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrUrlGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrUrlSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrUrlSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrUrlSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrVersionGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrVersionGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrVersionGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHdrVersionSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHdrVersionSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHdrVersionSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpHookAdd_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpHookAdd.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpHookAdd.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpIsInternalRequest_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpIsInternalRequest.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpIsInternalRequest.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpOverridableConfig_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpOverridableConfig.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpOverridableConfig.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpParserCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpParserCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpParserCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpSsnClientFdGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpSsnClientFdGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpSsnClientFdGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpSsnReenable_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpSsnReenable.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpSsnReenable.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnCachedReqGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnCachedReqGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnCachedReqGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnCachedRespGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnCachedRespGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnCachedRespGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnCacheLookupStatusGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnCacheLookupStatusGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnCacheLookupStatusGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnCacheLookupUrlGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnCacheLookupUrlGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnCacheLookupUrlGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnClientFdGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnClientFdGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnClientFdGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnClientPacketDscpSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnClientPacketDscpSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnClientPacketDscpSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnClientPacketMarkSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnClientPacketMarkSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnClientPacketMarkSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnClientPacketTosSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnClientPacketTosSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnClientPacketTosSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnClientReqGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnClientReqGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnClientReqGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnClientRespGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnClientRespGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnClientRespGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnErrorBodySet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnErrorBodySet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnErrorBodySet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnIncomingAddrGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnIncomingAddrGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnIncomingAddrGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnInfoIntGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnInfoIntGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnInfoIntGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnIntercept_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnIntercept.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnIntercept.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnIsInternal_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnIsInternal.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnIsInternal.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnMilestoneGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnMilestoneGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnMilestoneGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnNextHopAddrGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnNextHopAddrGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnNextHopAddrGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnOutgoingAddrGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnOutgoingAddrGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnOutgoingAddrGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnParentProxySet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnParentProxySet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnParentProxySet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnReenable_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnReenable.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnReenable.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnServerAddrGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnServerAddrGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnServerAddrGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnServerAddrSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnServerAddrSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnServerAddrSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnServerFdGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnServerFdGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnServerFdGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnServerIntercept_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnServerIntercept.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnServerIntercept.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnServerPacketDscpSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnServerPacketDscpSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnServerPacketDscpSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnServerPacketMarkSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnServerPacketMarkSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnServerPacketMarkSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnServerPacketTosSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnServerReqGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnServerReqGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnServerReqGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnServerRespGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnServerRespGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnServerRespGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnSsnGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnSsnGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnSsnGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnTransformedRespCache_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnTransformedRespCache.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnTransformedRespCache.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnTransformRespGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnTransformRespGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnTransformRespGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSHttpTxnUntransformedRespCache_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSHttpTxnUntransformedRespCache.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSHttpTxnUntransformedRespCache.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSInstallDirGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSInstallDirGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSInstallDirGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSIOBufferBlockReadStart_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSIOBufferBlockReadStart.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSIOBufferBlockReadStart.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSIOBufferCopy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSIOBufferCopy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSIOBufferCopy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSIOBufferCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSIOBufferCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSIOBufferCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSLifecycleHookAdd_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSLifecycleHookAdd.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSLifecycleHookAdd.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSmalloc_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSmalloc.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSmalloc.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMBufferCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMBufferCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMBufferCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMgmtCounterGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMgmtCounterGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMgmtCounterGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMgmtFloatGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMgmtFloatGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMgmtFloatGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMgmtIntGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMgmtIntGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMgmtIntGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMgmtStringGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMgmtStringGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMgmtStringGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMgmtUpdateRegister_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMgmtUpdateRegister.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMgmtUpdateRegister.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrClone_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrClone.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrClone.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrCopy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrCopy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrCopy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrDestroy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrDestroy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrDestroy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldAppend_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldAppend.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldAppend.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldClone_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldClone.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldClone.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldCopy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldCopy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldCopy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldCopyValues_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldCopyValues.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldCopyValues.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldDestroy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldDestroy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldDestroy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldFind_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldFind.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldFind.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldLengthGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldLengthGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldLengthGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldNameGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldNameGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldNameGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldNameSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldNameSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldNameSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldNext_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldNext.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldNext.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldNextDup_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldNextDup.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldNextDup.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldRemove_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldRemove.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldRemove.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldsClear_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldsClear.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldsClear.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldsCount_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldsCount.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldsCount.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValueAppend_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValueAppend.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValueAppend.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValueDateInsert_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValueDateInsert.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValueDateInsert.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValueDateSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValueDateSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValueDateSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValueIntSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValueIntSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValueIntSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValuesClear_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValuesClear.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValuesClear.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValuesCount_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValuesCount.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValuesCount.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValueStringGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValueStringInsert_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValueStringInsert.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValueStringInsert.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValueStringSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValueStringSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValueStringSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValueUintInsert_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValueUintInsert.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValueUintInsert.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrFieldValueUintSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrFieldValueUintSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrFieldValueUintSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrLengthGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrLengthGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrLengthGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrParse_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrParse.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrParse.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeHdrPrint_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeHdrPrint.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeHdrPrint.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeParserClear_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeParserClear.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeParserClear.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeParserCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeParserCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeParserCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMimeParserDestroy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMimeParserDestroy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMimeParserDestroy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMutexCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMutexCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMutexCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMutexDestroy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMutexDestroy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMutexDestroy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMutexLock_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMutexLock.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMutexLock.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMutexLockTry_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMutexLockTry.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMutexLockTry.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSMutexUnlock_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSMutexUnlock.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSMutexUnlock.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSNetAccept_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSNetAccept.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSNetAccept.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSNetAcceptNamedProtocol_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSNetAcceptNamedProtocol.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSNetAcceptNamedProtocol.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSNetConnect_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSNetConnect.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSNetConnect.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSPluginInit_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSPluginInit.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSPluginInit.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSRemap_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSRemap.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSRemap.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSSslContextFindBy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSSslContextFindBy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSSslContextFindBy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSTextLogObjectCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSTextLogObjectCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSTextLogObjectCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSThreadCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSThreadCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSThreadCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSThreadDestroy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSThreadDestroy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSThreadDestroy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSThreadInit_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSThreadInit.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSThreadInit.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSThreadSelf_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSThreadSelf.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSThreadSelf.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSTrafficServerVersionGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSTrafficServerVersionGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSTrafficServerVersionGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSTransformCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSTransformCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSTransformCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSTransformOutputVConnGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSTransformOutputVConnGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSTransformOutputVConnGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSTypes_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSTypes.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSTypes.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSUrlCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSUrlCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSUrlDestroy_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlDestroy.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSUrlDestroy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSUrlFtpTypeGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlFtpTypeGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSUrlFtpTypeGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSUrlFtpTypeSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlFtpTypeSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSUrlFtpTypeSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSUrlHostGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlHostGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSUrlHostGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSUrlHostSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlHostSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSUrlHostSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSUrlPercentEncode_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlPercentEncode.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSUrlPercentEncode.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSUrlStringGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSUrlStringGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSUrlStringGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnAbort_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnAbort.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnAbort.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnCacheObjectSizeGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnCacheObjectSizeGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnCacheObjectSizeGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnClose_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnClose.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnClose.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnClosedGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnClosedGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnClosedGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnFdCreate_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnFdCreate.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnFdCreate.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnIsSsl_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnIsSsl.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnIsSsl.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnRead_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnRead.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnRead.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnReadVIOGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnReadVIOGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnReadVIOGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnReenable_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnReenable.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnReenable.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnShutdown_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnShutdown.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnShutdown.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnSslConnectionGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnSslConnectionGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnSslConnectionGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnTunnel_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnTunnel.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnTunnel.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnWrite_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnWrite.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnWrite.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVConnWriteVIOGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVConnWriteVIOGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVConnWriteVIOGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIOBufferGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIOBufferGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIOBufferGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIOContGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIOContGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIOContGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIOMutexGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIOMutexGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIOMutexGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIONBytesGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIONBytesGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIONBytesGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIONBytesSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIONBytesSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIONBytesSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIONDoneGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIONDoneGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIONDoneGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIONDoneSet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIONDoneSet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIONDoneSet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIONTodoGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIONTodoGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIONTodoGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIOReaderGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIOReaderGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIOReaderGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIOReenable_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIOReenable.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIOReenable.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--functions--TSVIOVConnGet_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/functions/TSVIOVConnGet.en.po
+source_file = _build/locale/pot/developer-guide/api/functions/TSVIOVConnGet.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/index.en.po
+source_file = _build/locale/pot/developer-guide/api/types/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSCacheDataType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSCacheDataType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSCacheDataType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSCacheError_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSCacheError.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSCacheError.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSCacheLookupResult_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSCacheLookupResult.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSCacheLookupResult.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSCacheScanResult_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSCacheScanResult.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSCacheScanResult.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSEvent_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSEvent.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSEvent.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSFetchWakeUpOptions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSFetchWakeUpOptions.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSFetchWakeUpOptions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSHttpHookID_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSHttpHookID.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSHttpHookID.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSHttpStatus_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSHttpStatus.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSHttpStatus.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSHttpType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSHttpType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSHttpType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSIOBuffersSizeIndex_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSIOBuffersSizeIndex.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSIOBuffersSizeIndex.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSLifecycleHookID_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSLifecycleHookID.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSLifecycleHookID.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSLookingUpType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSLookingUpType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSLookingUpType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSMilestonesType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSMilestonesType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSMilestonesType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSOverridableConfigKey_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSOverridableConfigKey.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSOverridableConfigKey.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSParseResult_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSParseResult.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSParseResult.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSRecordAccessType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSRecordAccessType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSRecordAccessType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSRecordCheckType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSRecordCheckType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSRecordCheckType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSRecordDataType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSRecordDataType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSRecordDataType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSRecordModeType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSRecordModeType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSRecordModeType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSRecordPersistType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSRecordPersistType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSRecordPersistType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSRecordType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSRecordType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSRecordType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSRecordUpdateType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSRecordUpdateType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSRecordUpdateType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSReturnCode_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSReturnCode.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSReturnCode.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSSDKVersion_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSSDKVersion.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSSDKVersion.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSServerSessionSharingMatchType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSServerSessionSharingMatchType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSServerSessionSharingMatchType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSServerSessionSharingPoolType_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSServerSessionSharingPoolType.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSServerSessionSharingPoolType.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSServerState_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSServerState.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSServerState.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSSslVConnOp_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSSslVConnOp.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSSslVConnOp.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSThreadPool_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSThreadPool.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSThreadPool.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--api--types--TSVConnCloseFlags_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/api/types/TSVConnCloseFlags.en.po
+source_file = _build/locale/pot/developer-guide/api/types/TSVConnCloseFlags.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--architecture--api-functions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/architecture/api-functions.en.po
+source_file = _build/locale/pot/developer-guide/architecture/api-functions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--architecture--architecture_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/architecture/architecture.en.po
+source_file = _build/locale/pot/developer-guide/architecture/architecture.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--architecture--consistency_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/architecture/consistency.en.po
+source_file = _build/locale/pot/developer-guide/architecture/consistency.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--architecture--data-structures_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/architecture/data-structures.en.po
+source_file = _build/locale/pot/developer-guide/architecture/data-structures.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--architecture--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/architecture/index.en.po
+source_file = _build/locale/pot/developer-guide/architecture/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--architecture--ram-cache_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/architecture/ram-cache.en.po
+source_file = _build/locale/pot/developer-guide/architecture/ram-cache.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--architecture--tiered-storage_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/architecture/tiered-storage.en.po
+source_file = _build/locale/pot/developer-guide/architecture/tiered-storage.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--continuous-integration--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/continuous-integration/index.en.po
+source_file = _build/locale/pot/developer-guide/continuous-integration/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--contributing--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/contributing/index.en.po
+source_file = _build/locale/pot/developer-guide/contributing/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--debugging--core-dump-analysis_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/debugging/core-dump-analysis.en.po
+source_file = _build/locale/pot/developer-guide/debugging/core-dump-analysis.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--debugging--debug-builds_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/debugging/debug-builds.en.po
+source_file = _build/locale/pot/developer-guide/debugging/debug-builds.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--debugging--debug-tags_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/debugging/debug-tags.en.po
+source_file = _build/locale/pot/developer-guide/debugging/debug-tags.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--debugging--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/debugging/index.en.po
+source_file = _build/locale/pot/developer-guide/debugging/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--debugging--memory-leaks_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/debugging/memory-leaks.en.po
+source_file = _build/locale/pot/developer-guide/debugging/memory-leaks.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--debugging--profiling_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/debugging/profiling.en.po
+source_file = _build/locale/pot/developer-guide/debugging/profiling.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--debugging--using-tsassert_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/debugging/using-tsassert.en.po
+source_file = _build/locale/pot/developer-guide/debugging/using-tsassert.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--documentation--adding-domains_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/adding-domains.en.po
+source_file = _build/locale/pot/developer-guide/documentation/adding-domains.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--documentation--building_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/building.en.po
+source_file = _build/locale/pot/developer-guide/documentation/building.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--documentation--conventions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/conventions.en.po
+source_file = _build/locale/pot/developer-guide/documentation/conventions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--documentation--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/index.en.po
+source_file = _build/locale/pot/developer-guide/documentation/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--documentation--rst-and-sphinx_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/rst-and-sphinx.en.po
+source_file = _build/locale/pot/developer-guide/documentation/rst-and-sphinx.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--documentation--structure_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/structure.en.po
+source_file = _build/locale/pot/developer-guide/documentation/structure.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--documentation--ts-markup_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/ts-markup.en.po
+source_file = _build/locale/pot/developer-guide/documentation/ts-markup.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--introduction--audience_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/introduction/audience.en.po
+source_file = _build/locale/pot/developer-guide/introduction/audience.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--introduction--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/introduction/index.en.po
+source_file = _build/locale/pot/developer-guide/introduction/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--adding-statistics_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/adding-statistics.en.po
+source_file = _build/locale/pot/developer-guide/plugins/adding-statistics.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--building-plugins_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/building-plugins.en.po
+source_file = _build/locale/pot/developer-guide/plugins/building-plugins.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--configuration_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/configuration.en.po
+source_file = _build/locale/pot/developer-guide/plugins/configuration.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--introduction_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/introduction.en.po
+source_file = _build/locale/pot/developer-guide/plugins/introduction.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--mutexes_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/mutexes.en.po
+source_file = _build/locale/pot/developer-guide/plugins/mutexes.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--new-protocol-plugins_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/new-protocol-plugins.en.po
+source_file = _build/locale/pot/developer-guide/plugins/new-protocol-plugins.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--plugin-interfaces_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/plugin-interfaces.en.po
+source_file = _build/locale/pot/developer-guide/plugins/plugin-interfaces.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--actions--hosts-lookup-api_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/actions/hosts-lookup-api.en.po
+source_file = _build/locale/pot/developer-guide/plugins/actions/hosts-lookup-api.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--actions--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/actions/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/actions/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--continuations--activating-continuations_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/continuations/activating-continuations.en.po
+source_file = _build/locale/pot/developer-guide/plugins/continuations/activating-continuations.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--continuations--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/continuations/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/continuations/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--continuations--writing-handler-functions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/continuations/writing-handler-functions.en.po
+source_file = _build/locale/pot/developer-guide/plugins/continuations/writing-handler-functions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--basic-authorization--implementing-the-handler-and-getting-a-handle-to-the-transaction_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/basic-authorization/implementing-the-handler-and-getting-a-handle-to-the-transaction.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/basic-authorization/implementing-the-handler-and-getting-a-handle-to-the-transaction.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--basic-authorization--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/basic-authorization/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/basic-authorization/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--basic-authorization--setting-a-transaction-hook_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/basic-authorization/setting-a-transaction-hook.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/basic-authorization/setting-a-transaction-hook.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--basic-authorization--working-with-http-headers_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/basic-authorization/working-with-http-headers.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/basic-authorization/working-with-http-headers.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--accessing-the-transaction-being-processed_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/accessing-the-transaction-being-processed.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/accessing-the-transaction-being-processed.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--setting-a-global-hook_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/setting-a-global-hook.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/setting-a-global-hook.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--setting-up-a-transaction-hook_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--source-code_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/source-code.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/source-code.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--blacklist--working-with-http-header-functions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/blacklist/working-with-http-header-functions.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/blacklist/working-with-http-header-functions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--query-remap--example-query-remap_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/query-remap/example-query-remap.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/query-remap/example-query-remap.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--example-plugins--query-remap--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/example-plugins/query-remap/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/example-plugins/query-remap/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--getting-started--a-simple-plugin_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/getting-started/a-simple-plugin.en.po
+source_file = _build/locale/pot/developer-guide/plugins/getting-started/a-simple-plugin.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--getting-started--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/getting-started/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/getting-started/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--getting-started--naming-conventions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/getting-started/naming-conventions.en.po
+source_file = _build/locale/pot/developer-guide/plugins/getting-started/naming-conventions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--getting-started--plugin-registration-and-version-checking_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.po
+source_file = _build/locale/pot/developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--hooks-and-transactions--adding-hooks_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transactions/adding-hooks.en.po
+source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/adding-hooks.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--hooks-and-transactions--http-alternate-selection_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transactions/http-alternate-selection.en.po
+source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/http-alternate-selection.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--hooks-and-transactions--http-sessions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transactions/http-sessions.en.po
+source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/http-sessions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--hooks-and-transactions--http-transactions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transactions/http-transactions.en.po
+source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/http-transactions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--hooks-and-transactions--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transactions/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--hooks-and-transactions--initiate-http-connection_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transactions/initiate-http-connection.en.po
+source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/initiate-http-connection.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--hooks-and-transactions--intercepting-http-transactions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transactions/intercepting-http-transactions.en.po
+source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/intercepting-http-transactions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-headers--header-functions_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-headers/header-functions.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-headers/header-functions.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-headers--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-headers/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-headers/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-headers--marshal-buffers_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-headers/marshal-buffers.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-headers/marshal-buffers.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-headers--mime-headers_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-headers/mime-headers.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-headers/mime-headers.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-headers--trafficserver-http-header-system_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-headers/trafficserver-http-header-system.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-headers/trafficserver-http-header-system.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-headers--urls_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-headers/urls.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-headers/urls.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-transformations--append-transform-plugin_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-transformations/append-transform-plugin.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-transformations/append-transform-plugin.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-transformations--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-transformations/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-transformations/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-transformations--sample-buffered-null-transformation-plugin_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-transformations/sample-buffered-null-transformation-plugin.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-transformations/sample-buffered-null-transformation-plugin.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--http-transformations--sample-null-transformation-plugin_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/http-transformations/sample-null-transformation-plugin.en.po
+source_file = _build/locale/pot/developer-guide/plugins/http-transformations/sample-null-transformation-plugin.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--io--cache-api_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/io/cache-api.en.po
+source_file = _build/locale/pot/developer-guide/plugins/io/cache-api.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--io--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/io/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/io/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--io--io-buffers_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/io/io-buffers.en.po
+source_file = _build/locale/pot/developer-guide/plugins/io/io-buffers.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--io--net-vconnections_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/io/net-vconnections.en.po
+source_file = _build/locale/pot/developer-guide/plugins/io/net-vconnections.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--io--transformations_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/io/transformations.en.po
+source_file = _build/locale/pot/developer-guide/plugins/io/transformations.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--io--vios_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/io/vios.en.po
+source_file = _build/locale/pot/developer-guide/plugins/io/vios.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--plugin-management--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/plugin-management/index.en.po
+source_file = _build/locale/pot/developer-guide/plugins/plugin-management/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--plugin-management--logging-api_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/plugin-management/logging-api.en.po
+source_file = _build/locale/pot/developer-guide/plugins/plugin-management/logging-api.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--plugin-management--settings-and-statistics_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/plugin-management/settings-and-statistics.en.po
+source_file = _build/locale/pot/developer-guide/plugins/plugin-management/settings-and-statistics.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--release-process--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/release-process/index.en.po
+source_file = _build/locale/pot/developer-guide/release-process/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--testing-with-vagrant--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/testing-with-vagrant/index.en.po
+source_file = _build/locale/pot/developer-guide/testing-with-vagrant/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--troubleshooting-tips--unable-to-load-plugins_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/troubleshooting-tips/unable-to-load-plugins.en.po
+source_file = _build/locale/pot/developer-guide/troubleshooting-tips/unable-to-load-plugins.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.getting-started--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/getting-started/index.en.po
+source_file = _build/locale/pot/getting-started/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.preface--index_en]
+file_filter = locale/<lang>/LC_MESSAGES/preface/index.en.po
+source_file = _build/locale/pot/preface/index.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.sdk--trafficserver-timers_en]
+file_filter = locale/<lang>/LC_MESSAGES/sdk/trafficserver-timers.en.po
+source_file = _build/locale/pot/sdk/trafficserver-timers.en.pot
+source_lang = en
+
