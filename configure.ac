@@ -1937,6 +1937,11 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/stream_editor/Makefile
 ])])
 
+AC_CHECK_HEADERS([gmock/gmock.h], [has_gmock=1],[has_gmock=0])
+AC_CHECK_LIB([gmock],[InitGoogleMock],[AC_SUBST([LIB_GMOCK],["-lgmock -lgtest"])],[has_gmock=0])
+AC_SUBST(has_gmock)
+AM_CONDITIONAL([HAS_GMOCK], [ test "x${has_gmock}" = "x1" ])
+
 AS_IF([test "x$enable_cppapi" = "xyes"], [
   AC_CONFIG_FILES([
   lib/atscppapi/Makefile
@@ -1963,6 +1968,7 @@ AS_IF([test "x$enable_cppapi" = "xyes"], [
   lib/atscppapi/examples/transactionhook/Makefile
   lib/atscppapi/examples/async_http_fetch_streaming/Makefile
   lib/atscppapi/src/Makefile
+  lib/atscppapi/mocks/Makefile
 ])])
 
 # -----------------------------------------------------------------------------

@@ -15,3 +15,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 SUBDIRS = src examples
+
+if HAS_GMOCK
+  SUBDIRS += mocks
+endif
