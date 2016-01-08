@@ -112,8 +112,8 @@ public:
   }
 
   Http2ClientSession *ua_session;
-  Http2DynamicTable *local_dynamic_table;
-  Http2DynamicTable *remote_dynamic_table;
+  Http2IndexingTable *local_indexing_table;
+  Http2IndexingTable *remote_indexing_table;
 
   // Settings.
   Http2ConnectionSettings server_settings;
@@ -122,8 +122,8 @@ public:
   void
   init()
   {
-    local_dynamic_table = new Http2DynamicTable();
-    remote_dynamic_table = new Http2DynamicTable();
+    local_indexing_table = new Http2IndexingTable();
+    remote_indexing_table = new Http2IndexingTable();
 
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len = 0;
@@ -135,8 +135,8 @@ public:
     cleanup_streams();
 
     mutex = NULL; // magic happens - assigning to NULL frees the ProxyMutex
-    delete local_dynamic_table;
-    delete remote_dynamic_table;
+    delete local_indexing_table;
+    delete remote_indexing_table;
 
     ats_free(continued_buffer.iov_base);
   }

@@ -326,13 +326,13 @@ bool http2_parse_goaway(IOVec, Http2Goaway &);
 
 bool http2_parse_window_update(IOVec, uint32_t &);
 
-int64_t http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint8_t *, Http2DynamicTable &);
+int64_t http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint8_t *, Http2IndexingTable &);
 
 MIMEParseResult convert_from_2_to_1_1_header(HTTPHdr *);
 
-int64_t http2_write_psuedo_headers(HTTPHdr *, uint8_t *, uint64_t, Http2DynamicTable &);
+int64_t http2_write_psuedo_headers(HTTPHdr *, uint8_t *, uint64_t, Http2IndexingTable &);
 
-int64_t http2_write_header_fragment(HTTPHdr *, MIMEFieldIter &, uint8_t *, uint64_t, Http2DynamicTable &, bool &);
+int64_t http2_write_header_fragment(HTTPHdr *, MIMEFieldIter &, uint8_t *, uint64_t, Http2IndexingTable &, bool &);
 
 // Not sure where else to put this, but figure this is as good of a start as
 // anything else.
