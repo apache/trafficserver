@@ -4,20 +4,20 @@
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-11 16:34+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: Hiroaki Nakamura <hnakamur@gmail.com>\n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:201
 msgid ""
@@ -29,6 +29,12 @@ msgid ""
 "in :file:`remap.config`. For the request URL to match a target URL, the "
 "following conditions must be true:"
 msgstr ""
+"*マップルール* はクライアントのリクエストに含まれる URL をコンテンツが存在す"
+"る場所に変換します。 Traffic Server がリバースプロキシーモードで HTTP クライ"
+"アントリクエストを受け取ると、相対 URL とヘッダーから完全な URL を組み立てま"
+"す。そしてその完全な URL と :file:`remap.config` ファイル内のターゲット URL "
+"とを比較し、マッチするものを探します。ターゲット URL にマッチするリクエスト "
+"URL は次の条件を満たさなければなりません。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:46
 msgid "Reverse Proxy Solutions"
@@ -58,6 +64,16 @@ msgid ""
 "requested, not a document (a common use of redirects is to normalize URLs "
 "so that clients can bookmark documents properly)."
 msgstr ""
+"*リバースマップルール* はクライアントがオリジンサーバーに直接アクセスする代"
+"わりに Traffic Server にリダイレクトされるようにするために、オリジンサーバー"
+"のリダイレクトレスポンス内の URL を Traffic Server に向かうように変換しま"
+"す。例えば、 ``www.molasses.com`` というオリジンサーバーに ``/pub`` という"
+"ディレクトリがあり、クライアントがそのオリジンサーバーに ``/pub`` のリクエス"
+"トを送信すると、オリジンサーバーはリクエストされたものがドキュメントではなく"
+"ディレクトリであることを知らせるために ``Loacation http://realhost.com/pub/"
+"`` ヘッダーによるリダイレクトで応答するかもしれません。 (リダイレクトの一般"
+"的な使われ方はクライアントがドキュメントを正しくブックマークできるようにす"
+"る URL の正規化です。)"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:139
 msgid ""
@@ -91,6 +107,13 @@ msgid ""
 "Server. Traffic Server stores mapping rules in :file:`remap.config` located "
 "in the Traffic Server ``config`` directory."
 msgstr ""
+"マップルールとリバースマップルールはどちらも *ターゲット* (オリジン) URL と "
+"*置換* (宛先) URL で構成されます。 *マップルール*  では、ターゲット URL は "
+"Traffic Server を指し、置換 URL はオリジナルコンテントがある場所を指していま"
+"す。 *リバースマップルール* では、ターゲット URL はオリジナルコンテントがあ"
+"る場所を指し、置換 URL は Traffic Server を指しています。 Traffic Server は"
+"マッピングルールを Traffic Server の ``config`` ディレクトリにある :file:"
+"``remap.config` に保存します。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:284
 msgid ""
@@ -98,6 +121,9 @@ msgid ""
 "request during translation. See :ts:cv:`proxy.config.url_remap."
 "pristine_host_hdr`."
 msgstr ""
+"Traffic Server がリクエストを変換する際にホストヘッダーの情報を維持するよう"
+"に設定する。 :ts:cv:`proxy.config.url_remap.pristine_host_hdr` を参照してく"
+"ださい。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:288
 msgid ""
@@ -106,6 +132,10 @@ msgid ""
 "listed in the mapping rules are not served. See :ts:cv:`proxy.config."
 "url_remap.remap_required`."
 msgstr ""
+"Traffic Server がマッピングルールのリストに存在するオリジンサーバーへのリク"
+"エストのみに応えるように設定する。結果として、リストに存在しないオリジンサー"
+"バーへのリクエストは処理されません。 :ts:cv:`proxy.config.url_remap."
+"remap_required` を参照してください。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:167
 msgid ""
@@ -117,7 +147,7 @@ msgstr ""
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:53
 msgid "Deliver content efficiently in geographically distant areas."
-msgstr ""
+msgstr "地理的に離れた地域に効率的にコンテントを配信する。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:75
 msgid "Delivering Content in Geographically-Dispersed Areas"
@@ -127,8 +157,8 @@ msgstr "分散した地域でのコンテンツの配信"
 msgid ""
 "Enable the reverse proxy option (refer to `Enabling HTTP Reverse Proxy`_)."
 msgstr ""
-"リバースプロキシーオプションを有効にする(`HTTP リバースプロキシーの有効化`_"
-"\\ を参照してください)。"
+"リバースプロキシーオプションを有効にする ( `HTTP リバースプロキシーの有効化"
+"`_\\ を参照してください)。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:268
 msgid "Enabling HTTP Reverse Proxy"
@@ -137,10 +167,12 @@ msgstr "HTTP リバースプロキシーの有効化"
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:263
 msgid "Enter the map and reverse-map rules into :file:`remap.config`."
 msgstr ""
+":file:`remap.config` ファイルにマップルールとリバースマップルールを入力して"
+"ください。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:51
 msgid "Offload heavily-used origin servers."
-msgstr ""
+msgstr "使用頻度の高いオリジンサーバーの負荷を軽減する"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:259
 msgid "Creating Mapping Rules for HTTP Requests"
@@ -151,6 +183,8 @@ msgid ""
 "Edit :ts:cv:`proxy.config.reverse_proxy.enabled` in :file:`records."
 "config`. ::"
 msgstr ""
+":file:`records.config` にある :ts:cv:`proxy.config.reverse_proxy.enabled` を"
+"編集してください ::"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:324
 msgid "Example"
@@ -161,6 +195,8 @@ msgid ""
 "For each redirect you want to set enter a mapping rule in :file:`remap."
 "config`."
 msgstr ""
+"各リダイレクトごとに :file:`remap.config` ファイルにマッピングルールを入力し"
+"てください。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:123
 msgid "HTTP Reverse Proxy"
@@ -188,6 +224,13 @@ msgid ""
 "URL. If two mappings match a request URL, then Traffic Server applies the "
 "first mapping listed in :file:`remap.config`."
 msgstr ""
+"Traffic Server がマッチするものを見つけた場合、リクエスト URL をマップルール"
+"の置換 URL に変換します。リクエスト URL のホストとパスを置換 URL に一致する"
+"ようにセットします。もし URL がパスのプレフィックスを持っている場合、 "
+"Traffic Server はターゲット URL のパスからプレフィックスを取り除き、置換 "
+"URL のパス部分と置き換えます。もしリクエスト URL にマッチするものが 2 つあっ"
+"た場合、 Traffic Server は :file:`remap.config` ファイル内で先にマッチするほ"
+"うを適用します。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:147
 msgid ""
@@ -196,6 +239,10 @@ msgid ""
 "connection it has pre-established), retrieves the content, and optionally "
 "caches it for future use."
 msgstr ""
+"もしリクエストにキャッシュから応えられなかった場合、 Traffic Server は オリ"
+"ジンサーバーへの HTTP コネクションを開き (あるいはもっとありそうなことは、事"
+"前に確立済みの既存の接続を使い)、コンテンツを取得し、場合によってはコンテン"
+"ツを将来使用するためにキャッシュします。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:152
 msgid ""
@@ -204,6 +251,9 @@ msgid ""
 "Traffic Server sends the requested object to the client from the cache "
 "directly."
 msgstr ""
+"もしリクエストがキャッシュにヒットしコンテンツが新鮮であるか、ステップ 3 の"
+"ためにコンテンツが Traffic Server から配信可能な場合は、 Traffic Server はリ"
+"クエストされたオブジェクトをキャッシュからクライアントに直接送信します。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:174
 msgid ""
@@ -215,7 +265,7 @@ msgstr ""
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:58
 msgid "Offloading Heavily-Used Origin Servers"
-msgstr "使用頻度の高いオリジンサーバーの負荷の軽減"
+msgstr "使用頻度の高いオリジンサーバーの負荷を軽減する。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:179
 msgid ""
@@ -227,11 +277,18 @@ msgid ""
 "redirects from origin servers so that browsers are redirected to Traffic "
 "Server and not to another origin server."
 msgstr ""
+"オリジンサーバーはしばしばブラウザーを他のページにリダイレクトするためにリダ"
+"イレクトレスポンスを返します。例えば、オリジンサーバーが過負荷になった場合に"
+"は負荷の少ないサーバーへブラウザーをリダイレクトするかもしれません。オリジン"
+"サーバーはウェブページが異なる場所に移動された場合にもリダイレクトを行いま"
+"す。 Traffic Server がリバースプロキシーとして設定されている場合、ブラウザー"
+"が他のオリジンサーバーではなく Traffic Server にリダイレクトされるように、リ"
+"ダイレクト先をオリジンサーバーから書き換えなければなりません。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:55
 msgid ""
 "Provide security for origin servers that contain sensitive information."
-msgstr ""
+msgstr "センシティブな情報を含むオリジンサーバーにセキュリティを提供する。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:91
 msgid "Providing Security for an Origin Server"
@@ -262,6 +319,8 @@ msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply any of these "
 "configuration changes."
 msgstr ""
+"これらの設定の変更を反映するにはコマンド :option:`traffic_ctl config "
+"reload` を実行してください。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:265
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:276
@@ -270,6 +329,8 @@ msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the "
 "configuration changes."
 msgstr ""
+"設定の変更を反映するにはコマンド :option:`traffic_ctl config reload` を実行"
+"してください。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:279
 msgid "Setting Optional HTTP Reverse Proxy Options"
@@ -281,6 +342,9 @@ msgid ""
 "such as ones that do not provide ``Host`` headers, are directed. See :ts:cv:"
 "`proxy.config.header.parse.no_host_url_redirect`."
 msgstr ""
+"古めのクライアントから届くリクエスト (例 ``Host`` ヘッダーを含まないもの) の"
+"リダイレクト先となる代替 URL を指定する。 :ts:cv:`proxy.config.header.parse."
+"no_host_url_redirect` を参照してください。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:135
 msgid "The figure above demonstrates the following steps:"
@@ -291,6 +355,7 @@ msgid ""
 "The path portion of the target URL must match a prefix of the request URL "
 "path."
 msgstr ""
+"ターゲット URL のパス部分がリクエスト URL のパスの先頭と一致すること。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:215
 msgid ""
@@ -320,7 +385,7 @@ msgstr ""
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:209
 msgid "The scheme of both URLs must be the same."
-msgstr ""
+msgstr "URL のスキームが同じであること。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:119
 msgid ""
@@ -337,7 +402,7 @@ msgstr ""
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:261
 msgid "To create mapping rules:"
-msgstr ""
+msgstr "マッピングルールを作成するには :"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:187
 msgid ""
@@ -368,14 +433,24 @@ msgid ""
 "fresh automatically, thereby eliminating the complexity of updating remote "
 "origin servers."
 msgstr ""
+"Traffic Server は地理的に近接していないエリアにコンテンツを提供するオリジン"
+"サーバーを加速するためにリバースプロキシーモードで使用できます。キャッシュは"
+"レプリケーションよりもたいていは管理が簡単でコストパフォーマンスが良いです。"
+"例えば、高価な、国をまたぐコネクションを使ってリクエストやコンテンツを取得す"
+"ることなく大西洋の向こう側のミラーサイトとして Traffic Server を利用すること"
+"ができます。全データを複製しピークキャパシティを処理する用に構成しなければな"
+"らないレプリケーションとは異なり、 Traffic Server はハードウェアの配信と保存"
+"のキャパシティを最適に利用するよう動的に順応します。 Traffic Server は自動的"
+"にコンテンツを新鮮に保つようにも設計されているので、リモートオリジンサーバー"
+"をアップデートする複雑さも除去できます。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:270
 msgid "To enable HTTP reverse proxy:"
-msgstr ""
+msgstr "リバースプロキシーを有効にするには :"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:317
 msgid "To set redirect rules:"
-msgstr ""
+msgstr "リダイレクトルールをセットするには :"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:72
 msgid "Traffic Server as reverse proxy for a pair of origin servers"
@@ -391,6 +466,14 @@ msgid ""
 "Server can act as the virtual origin server for multiple backup origin "
 "servers, as shown in the figure below."
 msgstr ""
+"raffic Server は主となるオリジンサーバーの代わりにリクエストを受け付けること"
+"が出来るほか、バックアップオリジンサーバーの負荷とホットスポットを低減するこ"
+"とで Web の提供スピードと品質を向上させます。例えば、 Web をホストする人は低"
+"コストで低パフォーマンスで信頼性の低い PC によるオリジンサーバーをバックアッ"
+"プサーバーとしたスケーラブルな Traffic Server のシステムを維持することができ"
+"ます。実際、下記の図に示すように、 1 台の Traffic Server は複数のバックアッ"
+"プオリジンサーバーのために仮想的なオリジンサーバーとして振る舞うことが可能で"
+"す。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:93
 msgid ""
@@ -405,12 +488,26 @@ msgid ""
 "allows only Traffic Server access to the origin server). The sensitive "
 "content resides on the origin server, safely inside the firewall."
 msgstr ""
+"Traffic Server はオリジンサーバーにセキュリティを提供するためにリバースプロ"
+"キシーモードで使用できます。もしファイアーウォールの内側にあるオリジンサー"
+"バーが安全にしておきたいセンシティブな情報を持っている場合、 Traffic Server "
+"をファイアーウォールの外側におき、そのオリジンサーバーのためのリバースプロキ"
+"シーとして使用できます。外部のクライアントがそのオリジンサーバーにアクセスを"
+"試みるとリクエストは Traffic Server に向かいます。もし求められたコンテンツが"
+"センシティブではない場合、それはキャッシュから提供されます。もしコンテンツが"
+"センシティブでありキャッシュ不可能な場合、Traffic Server はオリジンサーバー"
+"からコンテンツを取得します (ファイアーウォールはオリジンサーバーへのアクセス"
+"を Traffic Server にのみ許します)。センシティブなコンテンツは安全なファイ"
+"アーウォールの内側のオリジンサーバー上にあります。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:144
 msgid ""
 "Traffic Server locates a map rule in the :file:`remap.config` file and "
 "remaps the request to the specified origin server (``realhost.com``)."
 msgstr ""
+"Traffic Server は :file:``remap.config` ファイル内にあるマップルールを見つ"
+"け、リクエストを指定されたオリジンサーバー (``realhost.com``) にリマップしま"
+"す。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:159
 msgid ""
@@ -420,6 +517,11 @@ msgid ""
 "begin as soon as Traffic Server has received and processed the full "
 "response headers from the origin server."
 msgstr ""
+"Traffic Server はオリジンサーバーからの自身のキャッシュを更新する際、キャッ"
+"シュデータベースを更新しながら同時にクライアントにコンテンツを配信します。リ"
+"クエストされたオブジェクトを含むクライアントへのレスポンスは Traffic Server "
+"がオリジンサーバーからの完全なレスポンスヘッダーを受信したらすぐに開始されま"
+"す。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:194
 msgid "Using Mapping Rules for HTTP Requests"
@@ -466,6 +568,14 @@ msgid ""
 "browser connects to Traffic Server rather than the origin server. For "
 "additional information, see `HTTP Reverse Proxy`_."
 msgstr ""
+"ブラウザーがリクエストを行うとき、通常はリクエストを直接オリジンサーバーに送"
+"信します。 Traffic Server がリバースプロキシーモードになっているときはリクエ"
+"ストがオリジンサーバーに届く前に Traffic Server が横取りします。通常これはオ"
+"リジンサーバーの DNS エントリー (オリジンサーバーの広告されたホスト名) を "
+"Traffic Server の IP アドレスに解決されるように設定すれば完了です。 Traffic "
+"Server がオリジンサーバーとして設定されている場合、ブラウザーはオリジンサー"
+"バーではなく Traffic Server に接続します。より詳しくは `HTTP リバースプロキ"
+"シー`_ を見てください。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:36
 msgid ""
@@ -479,6 +589,16 @@ msgid ""
 "serves client requests directly, fetching content from the true origin "
 "server when necessary."
 msgstr ""
+"*フォワードプロキシーキャッシュ* の場合、Traffic Server はコンテンツをリクエ"
+"ストしたクライアントに代わってオリジンサーバーへのリクエストを取り扱いま"
+"す。 *リバースプロキシーキャッシュ* ( *サーバーアクセラレーション* としても"
+"知られています) では Traffic Server がコンテンツを持っているオリジンサーバー"
+"に代わってプロキシーキャッシュとして振る舞う点が異なります。 Traffic Server "
+"はクライアントが接続しようとしているオリジンサーバーとなるように設定されま"
+"す。典型的なシナリオとしては、オリジンサーバーの広告されたホスト名が本当のオ"
+"リジンサーバーのように振る舞う Traffic Server へ解決され、 Traffic Server  "
+"は必要に応じて本当のオリジンサーバーからコンテンツを取得した上で、クライアン"
+"トのリクエストに直接応えます。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:310
 msgid ""
@@ -488,6 +608,11 @@ msgid ""
 "bookmarks. *Temporary redirects* notify the browser of the URL change for "
 "the current request only (by returning the HTTP status code ``307`` )."
 msgstr ""
+"Traffic Server を恒久的または一時的なリダイレクトを行うように設定できます。 "
+"*恒久的なリダイレクト* はブラウザーがブックマークを更新できるように URL の変"
+"更を (HTTP ステータスコード ``301`` を返すことで) ブラウザーに通知します。 *"
+"一時的なリダイレクト* は今回のリクエストに限った URL の変更を (HTTP ステータ"
+"スコード ``307`` を返すことで)ブラウザーに通知します。"
 
 #: ../../admin-guide/configuration/redirecting-http-requests.en.rst:303
 msgid ""
