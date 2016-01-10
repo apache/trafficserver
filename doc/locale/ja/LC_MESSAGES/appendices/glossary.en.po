@@ -9,13 +9,13 @@ msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: 2016-01-03 15:20+0900\n"
+"PO-Revision-Date: 2016-01-10 15:40+0900\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
-"Last-Translator: \n"
+"Last-Translator: Hiroaki Nakamura <hnakamur@gmail.com>\n"
 "Language-Team: \n"
 "X-Generator: Poedit 1.8.6\n"
 
@@ -46,7 +46,7 @@ msgid ""
 "are alternate forms of the same stream. The most common example is having "
 "normal and compressed versions of the stream."
 msgstr ""
-"term:`キャッシュオブジェクト` の変形です。元々は `VARY メカニズム <http://"
+":term:`キャッシュオブジェクト` の変形です。元々は `VARY メカニズム <http://"
 "www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.44>`_ を処理するために"
 "作られましたが、以来他の目的のためにも使われています。オブジェクトの全ての代"
 "替は何らかの方法で同質にならなければならず、同じストリームの形式に変化しま"
@@ -189,7 +189,7 @@ msgstr ":term:`キャッシュフラグメント` を指すメモリに置かれ
 
 #: ../../appendices/glossary.en.rst:130
 msgid "The database of :term:`cache objects <cache object>`."
-msgstr ""
+msgstr ":term:`キャッシュオブジェクト` のデータベース。"
 
 #: ../../appendices/glossary.en.rst:105
 msgid "The location in a :term:`cache stripe` where new data is written."
@@ -214,7 +214,7 @@ msgstr "キャッシュオブジェクト"
 
 #: ../../appendices/glossary.en.rst:147
 msgid "cache partition"
-msgstr ""
+msgstr "キャッシュパーティション"
 
 #: ../../appendices/glossary.en.rst:59
 msgid "cache span"
@@ -225,6 +225,8 @@ msgid ""
 "An HTTP server which provides the original source of content being cached "
 "by Traffic Server."
 msgstr ""
+"Traffic Server にキャッシュされるコンテンツの元の発信源を提供する HTTP サー"
+"バー。"
 
 #: ../../appendices/glossary.en.rst:95
 msgid "Obsolete term for :term:`cache span`."
@@ -237,6 +239,10 @@ msgid ""
 "passed their :term:`origin server` defined expiration time, nor have they "
 "reached the algorithmically determined :term:`stale` age."
 msgstr ""
+"クライアントのリクエストに応じてキャッシュから直接配信することができる :"
+"term:`キャッシュオブジェクト` の状態。新鮮なオブジェクトは :term:`オリジン"
+"サーバー` で定義された有効期限を超えておらず、アルゴリズムで決定された :"
+"term:`新鮮でない` 経過時間にも達していません。"
 
 #: ../../appendices/glossary.en.rst:139
 msgid ""
@@ -245,6 +251,10 @@ msgid ""
 "server` will be contacted to :term:`revalidate <revalidation>` the "
 "freshness of the object. Contrast with :term:`fresh`."
 msgstr ""
+"期限切れにはなっていないが、アルゴリズムで決定された経過時間には達した :"
+"term:`キャッシュオブジェクト` の状態。その経過時間に達した状態ではオブジェク"
+"トの新鮮さを :term:`再確認` するために :term:`オリジンサーバー` に接続される"
+"でしょう。 :term:`新鮮な` の対義語です。"
 
 #: ../../appendices/glossary.en.rst:98
 msgid ""
@@ -288,15 +298,15 @@ msgstr "ディレクトリセグメント"
 
 #: ../../appendices/glossary.en.rst:131
 msgid "fresh"
-msgstr ""
+msgstr "新鮮な"
 
 #: ../../appendices/glossary.en.rst:128
 msgid "object store"
-msgstr ""
+msgstr "オブジェクトストア"
 
 #: ../../appendices/glossary.en.rst:143
 msgid "origin server"
-msgstr ""
+msgstr "オリジンサーバー"
 
 #: ../../appendices/glossary.en.rst:96
 msgid "revalidation"
@@ -308,7 +318,7 @@ msgstr "セッション"
 
 #: ../../appendices/glossary.en.rst:137
 msgid "stale"
-msgstr ""
+msgstr "新鮮でない"
 
 #: ../../appendices/glossary.en.rst:93
 msgid "storage unit"
