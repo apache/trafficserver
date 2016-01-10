@@ -4,24 +4,24 @@
 # Server package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"PO-Revision-Date: 2016-01-10 15:44+0900\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
+"Last-Translator: Hiroaki Nakamura <hnakamur@gmail.com>\n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:71
 msgid "A typedef for :cpp:class:`HTTPInfo`."
-msgstr ":cpp:class:`HTTPInfo` の typedef 。"
+msgstr ":cpp:class:`HTTPInfo` の 型定義。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:32
 msgid "A virtual connection class which accepts input for writing to cache."
@@ -37,7 +37,7 @@ msgstr ""
 
 #: ../../developer-guide/architecture/data-structures.en.rst:23
 msgid "Data Structures"
-msgstr ""
+msgstr "データ構造"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:44
 msgid ""
@@ -51,9 +51,9 @@ msgstr ""
 "データ転送ドライバ。これは *プロデューサ* のセットを含みます。各プロデューサ"
 "は一つ以上の *コンシューマ* に接続されます。トンネルは、プロデューサからコン"
 "シューマへデータを移動させる為に、イベントとバッファを扱います。データは、"
-"データが修正される時のみ、またはソース(|TS| の外からデータを取得するもの)と"
-"シンク(|TS| の外へデータを移動するもの)のためにコピーが実行されるため、可能"
-"な限り参照カウントバッファに維持されます。"
+"データが修正される時のみ、またはソース ( |TS| の外からデータを取得するもの)"
+"とシンク ( |TS| の外へデータを移動するもの)のためにコピーが実行されるため、"
+"可能な限り参照カウントバッファに維持されます。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:63
 #: ../../developer-guide/architecture/data-structures.en.rst:75
@@ -66,11 +66,11 @@ msgstr ":file:`cache.config` のある行からデータを保持します。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:36
 msgid "Performs the initial read for a cached object."
-msgstr ""
+msgstr "キャッシュオブジェクトの最初の読み込みを実行する。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:40
 msgid "Performs the initial read for an :term:`alternate` of an object."
-msgstr ""
+msgstr "オブジェクトの :term:`代替` の最初の読み込みを実行する。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:57
 msgid ""
@@ -88,7 +88,7 @@ msgstr "退避のためのレコード。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:80
 msgid "The key for the earliest ``Doc`` of the alternate."
-msgstr "代替の earliest ``Doc`` のキー。"
+msgstr "代替の最古の ``Doc`` のキー。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:65
 msgid ""
@@ -105,10 +105,12 @@ msgid ""
 "This is the metadata for a single :term:`alternate` for a cached object. It "
 "contains, among other data, the following:"
 msgstr ""
+"キャッシュオブジェクトの単一の :term:`代替` のメタデータです。下記の他データ"
+"を含みます。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:126
 msgid "A :term:`cache volume` as described in :file:`volume.config`."
-msgstr ""
+msgstr ":file:`volume.config` で記述される :term:`キャッシュボリューム` 。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:120
 msgid ""
@@ -116,10 +118,13 @@ msgid ""
 "range from :arg:`low` to :arg:`high`. Return ``0`` if no evacuation was "
 "started, non-zero otherwise."
 msgstr ""
+":arg:`low` から :arg:`high` の範囲に任意の :cpp:class:`EvacuationBlock` があ"
+"る場合、退避を開始します。退避が開始されなかった場合は ``0`` を、それ以外は"
+"非 0 を返します。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:84
 msgid "The fragment offset table.[#fragment-offset-table]_"
-msgstr ""
+msgstr "フラグメントオフセットテーブル。[#fragment-offset-table]_"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:82
 msgid "The request and response headers."
@@ -128,6 +133,7 @@ msgstr "リクエストヘッダとレスポンスヘッダ。"
 #: ../../developer-guide/architecture/data-structures.en.rst:86
 msgid "Timestamps for request and response from :term:`origin server`."
 msgstr ""
+":term:`オリジンサーバー` からのリクエストとレスポンスのタイムスタンプ。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:111
 msgid ""
@@ -199,6 +205,8 @@ msgid ""
 "Fragment type. Currently only ``CACHE_FRAG_TYPE_HTTP`` is used. Other types "
 "may be used for cache extensions if those are ever implemented."
 msgstr ""
+"フラグメントタイプ。現在、 ``CACHE_FRAG_TYPE_HTTP`` のみ使用されます。キャッ"
+"シュ拡張がいつか使用/実装されれば、他のタイプが使用されるかもしれません。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:181
 msgid "Removed as of version 3.3.0."
@@ -215,6 +223,14 @@ msgid ""
 "fragment containing the first byte in the range can be computed and loaded "
 "directly without further disk access."
 msgstr ""
+"フラグメントテーブルは、 HTTP コンテンツ (メタデータや HTTP ヘッダは含みませ"
+"ん)に関係したオフセットのリストです。各オフセットは、フラグメントの最初のバ"
+"イトのバイトオフセットです。テーブルの最初の要素は、二番目のフラグメントで"
+"す。(配列のインデックス 1 となるでしょう) 最初のフラグメントのオフセットはも"
+"ちろん常にゼロであり、保存されません。この目的は、レンジリクエストの高速な検"
+"索を可能にすることです。先頭の ``Doc`` が指定されると、範囲の最初のバイトを"
+"含むフラグメントはそれ以上のディスクアクセス無しに、直接計算して読み込むこと"
+"ができます。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:153
 msgid ""
@@ -244,6 +260,8 @@ msgstr ""
 #: ../../developer-guide/architecture/data-structures.en.rst:94
 msgid "This represents a :term:`storage unit` inside a :term:`cache volume`."
 msgstr ""
+":term:`キャッシュボリューム` 内において :term:`ストレージユニット` を表しま"
+"す。"
 
 #: ../../developer-guide/architecture/data-structures.en.rst:143
 msgid ""
