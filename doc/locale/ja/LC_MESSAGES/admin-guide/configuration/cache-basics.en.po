@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-01-02 21:32+0000\n"
-"PO-Revision-Date: 2016-01-10 15:47+0900\n"
+"PO-Revision-Date: 2016-01-11 18:15+0900\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -21,7 +21,7 @@ msgstr ""
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:139
 msgid "**Checking revalidate rules in** :file:`cache.config`"
-msgstr ":file:`cache.config` 内の再確認ルールを確認"
+msgstr ":file:`cache.config` 内の **再確認ルールを確認**"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:132
 msgid "**Checking the absolute freshness limit**"
@@ -37,19 +37,19 @@ msgstr "``Last-Modified`` **/** ``Date`` **ヘッダーの確認**"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:714
 msgid ":c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`"
-msgstr ""
+msgstr ":c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_ENABLED`"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:715
 msgid ":c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER`"
-msgstr ""
+msgstr ":c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_HIGH_WATER`"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:716
 msgid ":c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER`"
-msgstr ""
+msgstr ":c:data:`TS_CONFIG_HTTP_FLOW_CONTROL_LOW_WATER`"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:712
 msgid ":c:func:`TSHttpTxnConfigIntSet` key"
-msgstr ""
+msgstr ":c:func:`TSHttpTxnConfigIntSet` キー"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:766
 msgid ""
@@ -537,6 +537,8 @@ msgid ""
 "Edit the variable :ts:cv:`proxy.config.http.cache.when_to_revalidate` in :"
 "file:`records.config`."
 msgstr ""
+":file:`records.config` の :ts:cv:`proxy.config.http.cache."
+"when_to_revalidate` を編集してください。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:172
 msgid ""
@@ -568,7 +570,7 @@ msgstr ""
 "シュからオブジェクトを取得することを妨げるような自身の制約を課すことがしばし"
 "ばあります。例えば、クライアントがキャッシュから取得したのではないオブジェク"
 "トをリクエストするかもしれませんし、キャッシュの取得を許可したとしてもオブ"
-"ジェクト10分より長くキャッシュされることは許可しないかもしれません。"
+"ジェクトは 10 分より長くキャッシュされることは許可されません。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:801
 msgid "Fuzzy Revalidation"
@@ -903,16 +905,16 @@ msgid ""
 "Once these are enabled, you have something that is very close, but not "
 "quite the same, to Squid's Collapsed Forwarding."
 msgstr ""
-"一度これらが有効化されると、Squid の Collapesd Forwarding にとても近い、ただ"
-"し同じではない、ものができます。"
+"一度これらが有効化されると、Squid の Collapesd Forwarding にとても近いが異な"
+"るものものができます。"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:855
 msgid "Open Read Retry Timeout"
-msgstr "Open Read Retry Timeout"
+msgstr "Open Read リトライタイムアウト"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:897
 msgid "Open Write Fail Action"
-msgstr ""
+msgstr "Open Write 失敗時のアクション"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:340
 msgid "Pinning Content in the Cache"
@@ -1741,21 +1743,21 @@ msgstr ""
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:380
 msgid "``Authorization``"
-msgstr ""
+msgstr "``Authorization``"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:384
 #: ../../admin-guide/configuration/cache-basics.en.rst:432
 msgid "``Cache-Control: no-cache``"
-msgstr ""
+msgstr "``Cache-Control: no-cache``"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:382
 #: ../../admin-guide/configuration/cache-basics.en.rst:421
 msgid "``Cache-Control: no-store``"
-msgstr ""
+msgstr "``Cache-Control: no-store``"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:423
 msgid "``Cache-Control: private``"
-msgstr ""
+msgstr "``Cache-Control: private``"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:389
 msgid "``Cookie`` (for text objects)"
@@ -1777,11 +1779,11 @@ msgstr ""
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:430
 msgid "``Set-Cookie``"
-msgstr ""
+msgstr "``Set-Cookie``"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:425
 msgid "``WWW-Authenticate``"
-msgstr ""
+msgstr "``WWW-Authenticate``"
 
 #: ../../admin-guide/configuration/cache-basics.en.rst:122
 msgid ""
