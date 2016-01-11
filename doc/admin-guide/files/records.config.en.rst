@@ -685,6 +685,12 @@ Value Effect
 
    The ``Via`` header string can be decoded with the `Via Decoder Ring <http://trafficserver.apache.org/tools/via>`_.
 
+.. ts:cv:: CONFIG proxy.config.http.request_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
+   :reloadable:
+   :overridable:
+
+   Set the server and version string in the ``Via`` request header to the origin server which is inserted when the value of :ts:cv:`proxy.config.http.insert_request_via_str` is not ``0``.  Note that the actual default value is defined with ``"ApacheTrafficServer/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ApacheTrafficServer/6.0.0`` if you really set a value with the version in :file:`records.config` file. If you want to hide the version, you can set this value to ``ApacheTrafficServer``.
+
 .. ts:cv:: CONFIG proxy.config.http.insert_response_via_str INT 0
    :reloadable:
    :overridable:
