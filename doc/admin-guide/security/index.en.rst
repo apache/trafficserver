@@ -69,7 +69,7 @@ Server (and between Traffic Server and an origin server) when the SSL
 termination option is enabled and configured for Client/Traffic
 Server connections only.
 
-.. figure:: ../static/images/admin/ssl_c.jpg
+.. figure:: ../../static/images/admin/ssl_c.jpg
    :align: center
    :alt: Client and Traffic Server communication using SSL termination
 
@@ -163,7 +163,7 @@ The figure below illustrates communication between Traffic Server and an
 origin server when the SSL termination option is enabled for Traffic
 Server/origin server connections.
 
-.. figure:: ../static/images/admin/ssl_os.jpg
+.. figure:: ../../static/images/admin/ssl_os.jpg
    :align: center
    :alt: Traffic Server and origin server communication using SSL termination
 
