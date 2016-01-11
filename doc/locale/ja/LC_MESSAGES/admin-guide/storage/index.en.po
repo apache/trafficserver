@@ -19,7 +19,7 @@ msgstr ""
 
 #: ../../../admin-guide/storage/index.en.rst:21
 msgid "Cache Storage"
-msgstr ""
+msgstr "キャッシュストレージ"
 
 #: ../../../admin-guide/storage/index.en.rst:23
 msgid ""
@@ -27,6 +27,9 @@ msgid ""
 "the :term:`object store` that indexes :term:`cache objects <cache object>` "
 "according to URLs and their associated headers."
 msgstr ""
+"Traffic Server のキャッシュは URL と関連するヘッダーにより :term:`キャッシュ"
+"オブジェクト` をインデックスする :term:`オブジェクトストア` と呼ばれる高速な"
+"オブジェクトデータベースで構成されています。"
 
 #: ../../../admin-guide/storage/index.en.rst:31
 msgid "The Traffic Server Cache"
@@ -46,6 +49,17 @@ msgid ""
 "cache is full, Traffic Server removes :term:`stale` data to ensure the most "
 "requested objects are kept readily available and fresh."
 msgstr ""
+"Traffic Server のキャッシュは URL と関連するヘッダーにより :term:`キャッシュ"
+"オブジェクト` をインデックスする :term:`オブジェクトストア` と呼ばれる高速な"
+"オブジェクトデータベースで構成されています。これは Traffic Server が Web "
+"ページだけでなく最適な帯域の節約をする部分的な Web ページも格納、取得、提供"
+"を可能とします。洗練されたオブジェクト管理により、オブジェクトストアは同じオ"
+"ブジェクトの :term:`代替` バージョン ( バージョンは異なる言語やエンコーディ"
+"ングにより異なります ) をキャッシュできます。またとても小さいオブジェクトも"
+"とても大きいドキュメントも効率よく格納できるので、無駄な領域を最小限にできま"
+"す。キャッシュがいっぱいのとき、 Traffic Server は一番リクエストされたオブ"
+"ジェクトが容易に利用可能で新鮮な状態であることを維持するために :term:`新鮮で"
+"ない` データを削除します。"
 
 #: ../../../admin-guide/storage/index.en.rst:45
 msgid ""
@@ -70,6 +84,8 @@ msgid ""
 "Change the total amount of disk space allocated to the cache; refer to "
 "`Changing Cache Capacity`_."
 msgstr ""
+"キャッシュに割り当てられたディスク領域の総量を変更する。 `キャッシュキャパシ"
+"ティの変更`_ を参照。"
 
 #: ../../../admin-guide/storage/index.en.rst:56
 msgid ""
@@ -77,10 +93,14 @@ msgid ""
 "and :term:`origin servers/domains <origin server>`; refer to `Partitioning "
 "the Cache`_."
 msgstr ""
+"特定のプロトコルと :term:`オリジンサーバー/ドメイン <オリジンサーバー>` 用に"
+"キャッシュディスクの領域を予約してキャッシュを区分けする。 `キャッシュの区分"
+"け`_ を参照。"
 
 #: ../../../admin-guide/storage/index.en.rst:60
 msgid "Delete all data in the cache; refer to `Clearing the Cache`_."
 msgstr ""
+"キャッシュ内のすべてのデータを削除する。 `キャッシュのクリア`_ を参照。"
 
 #: ../../../admin-guide/storage/index.en.rst:62
 msgid ""
@@ -89,6 +109,11 @@ msgid ""
 "and more. ATS can be configured to never cache, always cache, ignore no-"
 "cache directives, etc. These are configured in :file:`cache.config`."
 msgstr ""
+"時間、ポート、リクエストのメソッド ( など ) に対する追加のフィルターによるリ"
+"クエストされたドメイン名、URL の正規表現、ホスト名または IP に対するキャッ"
+"シュディレクティブの上書き。 ATS は、キャッシュしないようにも、常にキャッ"
+"シュするようにも、 no-cache ディレクティブを無視するようにも、他にもいろいろ"
+"と設定できます。これらは :file:`cache.config` で設定されます。"
 
 #: ../../../admin-guide/storage/index.en.rst:68
 msgid "The RAM Cache"
@@ -117,6 +142,12 @@ msgid ""
 "default is to use *CLFUS*, and this is controlled via :ts:cv:`proxy.config."
 "cache.ram_cache.algorithm`."
 msgstr ""
+"RAM キャッシュは二つのキャッシュ削除アルゴリズム、通常の *LRU* (Least "
+"Recently Used) とより進んだ *CLFUS* (Clocked Least Frequently Used by Size; "
+"ヒット率を最大化するために新しさ、頻度、サイズのバランスをとるもので、most "
+"frequently used アルゴリズムに似ています ) に対応しています。デフォルトでは "
+"*CLFUS* を使用し、これは :ts:cv:`proxy.config.cache.ram_cache.algorithm` で"
+"制御されます。"
 
 #: ../../../admin-guide/storage/index.en.rst:83
 msgid ""
@@ -126,6 +157,11 @@ msgid ""
 "option :ts:cv:`proxy.config.cache.ram_cache.use_seen_filter` can be set to "
 "add some resistance against this problem."
 msgstr ""
+"*LRU* と *CLFUS* RAM キャッシュはスキャン耐性を増加する設定に対応していま"
+"す。典型的な *LRU* では、存在しうるすべてのオブジェクトに順にリクエストを行"
+"うと、リクエストのたびにキャッシュを churn することになるでしょう。この問題"
+"に対してある程度の耐性を追加するために :ts:cv:`proxy.config.cache.ram_cache."
+"use_seen_filter` オプションを設定することができます。"
 
 #: ../../../admin-guide/storage/index.en.rst:89
 msgid ""
@@ -137,10 +173,16 @@ msgid ""
 "compression is enabled with the option :ts:cv:`proxy.config.cache.ram_cache."
 "compress`."
 msgstr ""
+"さらに、*CLFUS* は RAM キャッシュ自体の圧縮にも対応しています。これはコンテ"
+"ンツ自体が圧縮されていない場合 ( 例えば画像 ) に便利です。これを ``Content-"
+"Encoding: gzip`` と混同しないでください。この機能は RAM キャッシュ自体の領域"
+"を内部的に節約するだけの機能です。それ自体、 User-Agent に対して完全に透明で"
+"す。 RAM キャッシュの圧縮は :ts:cv:`proxy.config.cache.ram_cache.compress` "
+"オプションで有効化されます。"
 
 #: ../../../admin-guide/storage/index.en.rst:97
 msgid "Possible values are:"
-msgstr ""
+msgstr "取りうる値は :"
 
 #: ../../../admin-guide/storage/index.en.rst:100
 msgid "Value"
@@ -148,7 +190,7 @@ msgstr "値"
 
 #: ../../../admin-guide/storage/index.en.rst:100
 msgid "Meaning"
-msgstr ""
+msgstr "意味"
 
 #: ../../../admin-guide/storage/index.en.rst:102
 msgid "0"
@@ -156,7 +198,7 @@ msgstr "0"
 
 #: ../../../admin-guide/storage/index.en.rst:102
 msgid "No compression (*default*)"
-msgstr ""
+msgstr "圧縮しない (*デフォルト*)"
 
 #: ../../../admin-guide/storage/index.en.rst:103
 msgid "1"
@@ -164,7 +206,7 @@ msgstr "1"
 
 #: ../../../admin-guide/storage/index.en.rst:103
 msgid "*fastlz* compression"
-msgstr ""
+msgstr "*fastlz* 圧縮"
 
 #: ../../../admin-guide/storage/index.en.rst:104
 msgid "2"
@@ -172,7 +214,7 @@ msgstr "2"
 
 #: ../../../admin-guide/storage/index.en.rst:104
 msgid "*libz* compression"
-msgstr ""
+msgstr "*libz* 圧縮"
 
 #: ../../../admin-guide/storage/index.en.rst:105
 msgid "3"
@@ -180,7 +222,7 @@ msgstr "3"
 
 #: ../../../admin-guide/storage/index.en.rst:105
 msgid "*liblzma* compression"
-msgstr ""
+msgstr "*liblzma* 圧縮"
 
 #: ../../../admin-guide/storage/index.en.rst:111
 msgid "Changing the Size of the RAM Cache"
@@ -195,6 +237,11 @@ msgid ""
 "and/or hosts, then the size of the RAM cache for each partition is "
 "proportional to the size of that partition."
 msgstr ""
+"Traffic Server は人気のある小さなオブジェクトを速く取得するために専用の RAM "
+"キャッシュを提供します。デフォルトの RAM キャッシュサイズは設定した :term:`"
+"キャッシュパーティション` の数とサイズをもとに自動的に計算されます。キャッ"
+"シュをプロトコルやホストで区分けした場合、各パーティションの RAM キャッシュ"
+"のサイズはそのパーティションのサイズに比例します。"
 
 #: ../../../admin-guide/storage/index.en.rst:120
 msgid ""
@@ -226,6 +273,9 @@ msgid ""
 "size of the RAM cache. The default value of ``-1`` means that the RAM cache "
 "is automatically sized at approximately 1MB per gigabyte of disk."
 msgstr ""
+"RAM キャッシュのサイズを指定するために :ts:cv:`proxy.config.cache.ram_cache."
+"size` 変数を設定。デフォルト値の ``-1`` はディスク 1 ギガバイトにつきおおよ"
+"そ 1 MB で RAM キャッシュのサイズが自動的に決まります。"
 
 #: ../../../admin-guide/storage/index.en.rst:136
 msgid ""
@@ -262,6 +312,8 @@ msgid ""
 "To increase the total amount of disk space allocated to the cache on "
 "existing disks, or to add new disks to a Traffic Server node:"
 msgstr ""
+"既存のディスク上のキャッシュに割り当てられたディスク領域の総量を増加させる、"
+"もしくは Traffic Server のノードに新しくディスクを追加するには :"
 
 #: ../../../admin-guide/storage/index.en.rst:156
 msgid "Add hardware, if necessary."
@@ -290,6 +342,8 @@ msgid ""
 "To reduce the total amount of disk space allocated to the cache on an "
 "existing disk, or to remove disks from a Traffic Server node:"
 msgstr ""
+"既存のディスク上のキャッシュに割り当てられたディスク領域の総量を削減する、も"
+"しくは Traffic Server のノードからディスクを取り外すには :"
 
 #: ../../../admin-guide/storage/index.en.rst:171
 msgid "Remove hardware, if necessary."
@@ -325,6 +379,12 @@ msgid ""
 "volume configuration must be the same on all nodes in a :ref:`cluster "
 "<traffic-server-cluster>`."
 msgstr ""
+"キャッシュ領域をより効率的に管理し、特定のプロトコル用に異なるサイズで :"
+"term:`キャッシュボリューム` を作成することでディスクの使用量を制限することが"
+"できます。そのうえ特定の :term:`オリジンサーバー` やドメインからのデータを格"
+"納するためにこれらのボリュームを設定することができます。このボリューム設定"
+"は :ref:`クラスター <traffic-server-cluster>` 内のすべてのノードで同じでなけ"
+"ればなりません。"
 
 #: ../../../admin-guide/storage/index.en.rst:192
 msgid "Creating Cache Partitions for Specific Protocols"
@@ -337,6 +397,11 @@ msgid ""
 "certain amount of disk space is always available for a particular protocol. "
 "Traffic Server currently supports only the ``http`` partition type."
 msgstr ""
+"プロトコルに応じてコンテンツを格納するために、キャッシュのためのサイズの異な"
+"る分割された :term:`ボリューム <キャシュボリューム>` を作成することができま"
+"す。これは一定のディスク領域が常に特定のプロトコル用に利用可能であることを保"
+"証します。 Traffic Server は今のところ HTTP オブジェクト用の ``http`` パー"
+"ティションタイプのみを対応しています。"
 
 #: ../../../admin-guide/storage/index.en.rst:199
 msgid "To partition the cache according to protocol:"
@@ -345,11 +410,12 @@ msgstr "プロトコルによってキャッシュを区分けするには"
 #: ../../../admin-guide/storage/index.en.rst:201
 msgid ""
 "Enter a line in :file:`volume.config` for each volume you want to create. ::"
-msgstr ""
+msgstr ":file:`volume.config` ファイルに作成したいボリュームごとに一行入力 ::"
 
 #: ../../../admin-guide/storage/index.en.rst:210
 msgid "Volume definitions must be the same across all nodes in a cluster."
 msgstr ""
+"ボリューム定義はクラスター内の全てのノードで同じでなければなりません。"
 
 #: ../../../admin-guide/storage/index.en.rst:213
 msgid "Making Changes to Partition Sizes and Protocols"
@@ -404,6 +470,10 @@ msgid ""
 "affects performance and cache hit rate. You should clear the cache before "
 "making many changes to cache volume sizes (refer to `Clearing the Cache`_)."
 msgstr ""
+"ボリュームサイズの相当な変更はディスクの断片化を起こすかもしれません。これは"
+"パフォーマンスとヒット率に影響を及ぼします。キャッシュボリュームサイズへの多"
+"くの変更を行う前にキャッシュをクリアすべきです ( `キャッシュのクリア`_\\ を"
+"参照 ) 。"
 
 #: ../../../admin-guide/storage/index.en.rst:237
 msgid "Partitioning the Cache According to Origin Server or Domain"
@@ -424,6 +494,17 @@ msgid ""
 "If you do not assign a generic volume, then Traffic Server will run in "
 "proxy-only mode."
 msgstr ""
+"サイズとプロトコルによってキャッシュを区分けした後、作成したボリュームを特定"
+"のオリジンサーバーやドメインに割り当てることができます。ボリュームを一つのオ"
+"リジンサーバーにも複数のオリジンサーバーにも割り当てられます。しかしながら、"
+"ボリュームを複数のオリジンサーバーに割り当てると、ボリューム上で各オリジン"
+"サーバー用の空き領域の保証はありません。コンテンツは人気度によってボリューム"
+"内に格納されます。ボリュームを特定のオリジンサーバーとドメインに割り当てるこ"
+"とに加え、一覧に記載していないすべてのオリジンサーバーとドメインからのコンテ"
+"ンツを格納するための汎用ボリュームを割り当てなければなりません。この汎用ボ"
+"リュームは特定のオリジンサーバーもしくはドメイン用のパーティションが壊れた際"
+"にも使用されます。汎用ボリュームを割り当てないと、 Traffic Server はプロキ"
+"シー限定モードで動作します。"
 
 #: ../../../admin-guide/storage/index.en.rst:256
 msgid ""
@@ -432,6 +513,10 @@ msgid ""
 "consuming and can cause a spike in memory usage. Therefore, it's best to "
 "configure partition assignment during periods of low traffic."
 msgstr ""
+"特定のホストやドメインにボリュームを割り当てる前に Traffic Server を停止する"
+"必要はありません。しかし、このタイプの設定は時間がかかり、メモリ使用量のスパ"
+"イクを引き起こすかもしれません。したがって、トラッフィクが少ない時間帯にパー"
+"ティション割り当ての設定を行うのが最適です。"
 
 #: ../../../admin-guide/storage/index.en.rst:262
 msgid "To partition the cache according to hostname and domain:"
@@ -461,6 +546,8 @@ msgid ""
 "Enter a line in the :file:`hosting.config` file to allocate the volume(s) "
 "used for each origin server and/or domain."
 msgstr ""
+"各オリジンサーバーやドメインで使用されるボリュームを割り当てるための行を :"
+"file:`hosting.config` ファイルに入力。"
 
 #: ../../../admin-guide/storage/index.en.rst:272
 msgid ""
@@ -481,6 +568,8 @@ msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the "
 "configuration changes."
 msgstr ""
+"設定の変更を反映するためにコマンド :option:`traffic_ctl config reload` を実"
+"行。"
 
 #: ../../../admin-guide/storage/index.en.rst:281
 msgid "Configuring the Cache Object Size Limit"
@@ -502,6 +591,9 @@ msgid ""
 "bytes allowed for objects in the cache. A setting of ``0`` (zero) will "
 "permit cache objects to be unlimited in size."
 msgstr ""
+"キャッシュ内で許されるオブジェクトの最大サイズをバイト単位で指定するために :"
+"ts:cv:`proxy.config.cache.max_doc_size` を設定。 ``0`` ( ゼロ ) を設定すると"
+"キャッシュオブジェクトのサイズは無制限になります。"
 
 #: ../../../admin-guide/storage/index.en.rst:296
 msgid "Clearing the Cache"
@@ -514,6 +606,10 @@ msgid ""
 "performing certain cache configuration tasks such as partitioning. You "
 "cannot clear the cache when Traffic Server is running."
 msgstr ""
+"キャッシュをクリアすると、キャッシュ全体からすべてのデータを削除します。これ"
+"にはホストデータベースのデータも含まれます。区分けのような確実なキャッシュの"
+"設定作業を行う前にはキャッシュをクリアすべきです。 Traffic Server が動作して"
+"いる間はキャッシュのクリアは行えません。"
 
 #: ../../../admin-guide/storage/index.en.rst:303
 msgid "To clear the cache:"
@@ -522,10 +618,12 @@ msgstr "キャッシュをクリアするには:"
 #: ../../../admin-guide/storage/index.en.rst:305
 msgid "Stop Traffic Server (see :ref:`stop-traffic-server`)"
 msgstr ""
+"Traffic Server を停止 (:ref:`Traffic Server の停止 <stop-traffic-server>`\\ "
+"を参照 )。"
 
 #: ../../../admin-guide/storage/index.en.rst:306
 msgid "Enter the following command to clear the cache::"
-msgstr ""
+msgstr "キャッシュをクリアするために次のコマンドを入力 ::"
 
 #: ../../../admin-guide/storage/index.en.rst:310
 msgid ""
@@ -538,6 +636,8 @@ msgstr ""
 #: ../../../admin-guide/storage/index.en.rst:314
 msgid "Restart Traffic Server (see :ref:`start-traffic-server`)."
 msgstr ""
+"Traffic Server を再起動 (:ref:`Traffic Server の起動 <start-traffic-server>`"
+"\\ を参照 ) 。"
 
 #: ../../../admin-guide/storage/index.en.rst:317
 msgid "Removing an Object From the Cache"
@@ -561,6 +661,8 @@ msgid ""
 "By default, the PURGE request method is only processed if received on the "
 "localhost interface."
 msgstr ""
+"デフォルトでは PURGE リクエストメソッドは localhost インターフェースで受信し"
+"た時のみ処理されます。"
 
 #: ../../../admin-guide/storage/index.en.rst:330
 msgid ""
@@ -580,6 +682,9 @@ msgid ""
 "will contact the origin server to retrieve a new copy, which will replace "
 "the previously cached version in Traffic Server."
 msgstr ""
+"次に Traffic Server が取り除かれたオブジェクトへのリクエストを受け取ったとき"
+"は、新しいコピーを取得するためにオリジンサーバーに接続します。新しいコピー"
+"は Traffic Server で以前にキャッシュされていたバージョンを置き換えます。"
 
 #: ../../../admin-guide/storage/index.en.rst:353
 msgid ""
@@ -587,6 +692,10 @@ msgid ""
 "Users may still see the old (removed) content if it was cached by "
 "intermediary caches or by the end-users' web browser."
 msgstr ""
+"上記の手続きは特定の Traffic Server のキャッシュからオブジェクトを取り除くだ"
+"けです。もし途中でキャッシュされていたりエンドユーザーの Web ブラウザーに"
+"よってキャッシュされている場合、ユーザーは古い ( 取り除かれた ) コンテンツを"
+"見るかもしれません。"
 
 #: ../../../admin-guide/storage/index.en.rst:360
 msgid "Inspecting the Cache"
@@ -609,7 +718,7 @@ msgstr "キャッシュ検査ユーティリティにアクセスする"
 
 #: ../../../admin-guide/storage/index.en.rst:373
 msgid "To access the Cache Inspector utility:"
-msgstr ""
+msgstr "キャッシュ検査ユーティリティにアクセスするには :"
 
 #: ../../../admin-guide/storage/index.en.rst:375
 msgid "Set :ts:cv:`proxy.config.http_ui_enabled` to ``1``."
@@ -633,6 +742,8 @@ msgid ""
 "Reload the Traffic Server configuration by running :option:`traffic_ctl "
 "config reload`."
 msgstr ""
+":option:`traffic_ctl config reload` を実行して Traffic Server の設定をリロー"
+"ドしてください。"
 
 #: ../../../admin-guide/storage/index.en.rst:384
 msgid "Open your web browser and go to the the following URL::"
@@ -640,21 +751,23 @@ msgstr "ブラウザーを開き、次の URL へ移動。"
 
 #: ../../../admin-guide/storage/index.en.rst:388
 msgid "You will now be presented with the Cache Inspector interface."
-msgstr ""
+msgstr "キャッシュ検査機能の画面が表示されます。"
 
 #: ../../../admin-guide/storage/index.en.rst:391
 msgid "Using the Cache Inspector Utility"
-msgstr ""
+msgstr "キャッシュ検査ユーティリティを使用する"
 
 #: ../../../admin-guide/storage/index.en.rst:393
 msgid ""
 "The Cache Inspector Utility provides several options that enable you to "
 "view and delete the contents of your cache."
 msgstr ""
+"キャッシュ検査ユーティリティはキャッシュのコンテンツを見たり削除したりできる"
+"いくつかのオプションを提供します。"
 
 #: ../../../admin-guide/storage/index.en.rst:400
 msgid "Lookup URL"
-msgstr ""
+msgstr "Lookup URL (URL を指定しての検索)"
 
 #: ../../../admin-guide/storage/index.en.rst:397
 msgid ""
@@ -663,38 +776,44 @@ msgid ""
 "URL (e.g. header length and number of alternates). The option to delete the "
 "URL from the cache will be presented."
 msgstr ""
+"キャッシュ内で特定の URL を検索します。 Traffic Server がキャッシュ内で URL "
+"を見つけると、URL に対応するそのオブジェクトの詳細 ( 例: ヘッダー長や代替の"
+"数 ) を表示します。キャッシュからその URL を削除するためのオプションが表示さ"
+"れます。"
 
 #: ../../../admin-guide/storage/index.en.rst:404
 msgid "Delete URL"
-msgstr ""
+msgstr "Delete URL (URL を指定しての削除)"
 
 #: ../../../admin-guide/storage/index.en.rst:403
 msgid ""
 "Delete the object from the cache which corresponds to the given URL. "
 "Success or failure will be indicated after a delete has been attempted."
 msgstr ""
+"キャッシュから特定の URL に対応するオブジェクトを削除します。削除を試みた後"
+"成功または失敗が表示されます。"
 
 #: ../../../admin-guide/storage/index.en.rst:407
 msgid "Regex Lookup"
-msgstr ""
+msgstr "Regex Lookup (正規表現を指定しての検索)"
 
 #: ../../../admin-guide/storage/index.en.rst:407
 msgid "Search URLs within the cache using one or more regular expressions."
-msgstr ""
+msgstr "一つ以上の正規表現にマッチする URL を検索します。"
 
 #: ../../../admin-guide/storage/index.en.rst:411
 msgid "Regex Delete"
-msgstr ""
+msgstr "Regex Delete (正規表現を指定しての削除)"
 
 #: ../../../admin-guide/storage/index.en.rst:410
 msgid ""
 "Deletes all objects from the cache which match the provided regular "
 "expressions."
-msgstr ""
+msgstr "指定した正規表現にマッチするすべての URL を削除します。"
 
 #: ../../../admin-guide/storage/index.en.rst:417
 msgid "Regex Invalidate"
-msgstr ""
+msgstr "Regex Invalidate (正規表現を指定しての無効化)"
 
 #: ../../../admin-guide/storage/index.en.rst:414
 msgid ""
@@ -703,6 +822,10 @@ msgid ""
 "the validity and freshness of the cached object, updating the cached object "
 "if necessary."
 msgstr ""
+"キャッシュ内で指定した正規表現にマッチするオブジェクトを新鮮でないと印付けま"
+"す。 Traffic Server はキャッシュオブジェクトの有効性と新鮮さを確認するために"
+"関係のあるオリジンサーバーに接続し、必要ならばキャッシュオブジェクトを更新し"
+"ます。"
 
 #: ../../../admin-guide/storage/index.en.rst:421
 msgid ""
@@ -710,3 +833,6 @@ msgid ""
 "Cache Inspector at any point in time. Changes made by multiple "
 "administrators at the same time can lead to unpredictable results."
 msgstr ""
+"いかなる時でも、一人の管理者だけがキャッシュ検査機能からキャッシュエントリの"
+"削除と無効化を行うべきです。複数の管理者による同時の変更は予想外の結果を引き"
+"起こすかもしれません。"
