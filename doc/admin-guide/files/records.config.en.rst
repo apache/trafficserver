@@ -732,12 +732,11 @@ Value Effect
    -  ``0`` no ``Age`` header is added
    -  ``1`` the ``Age`` header is added
 
-.. ts:cv:: CONFIG proxy.config.http.response_server_str STRING ATS/
+.. ts:cv:: CONFIG proxy.config.http.response_server_str STRING ATS/${PACKAGE_VERSION}
    :reloadable:
    :overridable:
 
-   The Server: string that ATS will insert in a response header (if requested, see above). Note that the current version number is
-   always appended to this string.
+   The Server: string that ATS will insert in a response header (if requested, see above). Note that the actual default value is defined with ``"ATS/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ATS/6.0.0`` if you really set a value with the version in :file:`records.config` file. If you want to hide the version, you can set this value to ``ATS``.
 
 .. ts:cv:: CONFIG proxy.config.http.enable_url_expandomatic INT 0
    :reloadable:
