@@ -1422,6 +1422,7 @@ Cache Control
    -  ``1`` = cache for any content-type
    -  ``2`` = cache only for image types
    -  ``3`` = cache for all but text content-types
+   -  ``4`` = cache for all but text content-types except OS response without "Set-Cookie" or with "Cache-Control: public"
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_authentication INT 0
    :overridable:
