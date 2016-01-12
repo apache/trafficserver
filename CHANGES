@@ -2,10 +2,6 @@ Changes with Apache Traffic Server 6.1.0
 
 Bug:
   *) [TS-2118] memcached plugin is in the source tree but does not build
-  *) [TS-2427] xdebug: Trigger should be configurable
-  *) [TS-2523] automatically max out the listen backlog
-  *) [TS-2861] traffic_ctl option to find differences from defaults
-  *) [TS-3208] clang warnings on || 1
   *) [TS-3234] "crc" field shows "TCP_REFRESH_HIT" though ATS dosen't cache
   *) [TS-3363] core dump in HttpSM::handle_server_setup_error when handling inactivity timer expiry
   *) [TS-3490] mysql_remap Plugin compile fails on Mac OS X 10.10
@@ -18,6 +14,7 @@ Bug:
   *) [TS-3813] Correct responses when half-closed stream receive frames
   *) [TS-3815] traffic_ctl should filter record searches
   *) [TS-3821] Segmentation fault possibly due leaks in atscppapi
+  *) [TS-3841] LogAccess.cc assert failed when enabling custom log and stats_over_http plugin
   *) [TS-3847] Rejects Dynamic Table Size if it does not appear at the beginning of the first header block
   *) [TS-3848] ATS runs without cache or partial cache on disk errors
   *) [TS-3859] regex_remap can have pcre_study() fail on some platforms for simple regex
@@ -93,11 +90,16 @@ Bug:
   *) [TS-4084] Empty README.md file
   *) [TS-4089] CID 1343608, 1343607: Parent selection Coverity issues
   *) [TS-4091] [ats-multiplexer] multiplexer breaks in the presence of internal headers
-  *) [TS-4097] HPACK encoder doesn't handle empty value
+  *) [TS-4106] Cache Inspector fails to split multiline URLs
+  *) [TS-4111] Typo: Fix a typo in traffic_via command reference
+  *) [TS-4125] Wrong non-active conditions check
 
 Improvement:
-  *) [TS-306] enable log rotation for diags.log
+  *) [TS-306] Enable log rotation for diags.log
   *) [TS-315] Add switch to disable config file generation/runtime behavior changing
+  *) [TS-2427] xdebug: Trigger should be configurable
+  *) [TS-2523] Automatically max out the listen backlog
+  *) [TS-2861] traffic_ctl option to find differences from defaults
   *) [TS-3827] Cleanup code only depends on drafts of HTTP/2
   *) [TS-3833] healthecks plugin should use PATH_NAME_MAX
   *) [TS-3835] Make open_write_fail_action setting overridable and do not apply the setting for 3xx redirect follow.
