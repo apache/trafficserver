@@ -5641,7 +5641,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(client_vc);
   bool associated_connection = false;
   if (server_vc) { // if server_vc isn't a PluginVC
-    if (ssl_vc) { // if incoming connection is SSL
+    if (ssl_vc) {  // if incoming connection is SSL
       bool client_trace = ssl_vc->getSSLTrace();
       if (client_trace) {
         // get remote address and port to mark corresponding traces
