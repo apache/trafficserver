@@ -423,6 +423,11 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
     int64_t len = http2_write_psuedo_headers(headers, buf, buf_len, indexing_table);
     buf_len -= len;
 
+    if (len < 0) {
+      box.check(false, "http2_write_psuedo_headers returned negative value: %d", len);
+      break;
+    }
+
     MIMEFieldIter field_iter;
     bool cont = false;
     len += http2_write_header_fragment(headers, field_iter, buf + len, buf_len, indexing_table, cont);
