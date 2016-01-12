@@ -39,33 +39,35 @@ void
 init_cont_flags()
 {
   ContFlags new_flags;
-  ink_thread_setspecific(flags_data_key, (void *)new_flags.get_flags());
+  void *val = reinterpret_cast<void *>(static_cast<intptr_t>((new_flags.get_flags())));
+  ink_thread_setspecific(flags_data_key, val);
 }
 
 void
 set_cont_flags(const ContFlags &flags)
 {
-  ink_thread_setspecific(flags_data_key, (void *)flags.get_flags());
+  void *val = reinterpret_cast<void *>(static_cast<intptr_t>((flags.get_flags())));
+  ink_thread_setspecific(flags_data_key, val);
 }
 
 void
 set_cont_flag(ContFlags::flags flag_bit, bool value)
 {
-  u_int64_t flags = (u_int64_t)ink_thread_getspecific(flags_data_key);
-  ContFlags new_flags(flags);
+  ContFlags new_flags(reinterpret_cast<intptr_t>(ink_thread_getspecific(flags_data_key)));
   new_flags.set_flag(flag_bit, value);
-  ink_thread_setspecific(flags_data_key, (void *)new_flags.get_flags());
+  void *val = reinterpret_cast<void *>(static_cast<intptr_t>((new_flags.get_flags())));
+  ink_thread_setspecific(flags_data_key, val);
 }
 
 ContFlags
 get_cont_flags()
 {
-  return ContFlags((u_int64_t)ink_thread_getspecific(flags_data_key));
+  return ContFlags(reinterpret_cast<intptr_t>(ink_thread_getspecific(flags_data_key)));
 }
 
 bool
 get_cont_flag(ContFlags::flags flag_bit)
 {
-  ContFlags flags((u_int64_t)ink_thread_getspecific(flags_data_key));
+  ContFlags flags(reinterpret_cast<intptr_t>(ink_thread_getspecific(flags_data_key)));
   return flags.get_flag(flag_bit);
 }
