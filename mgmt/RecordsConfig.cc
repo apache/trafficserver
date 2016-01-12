@@ -1755,11 +1755,11 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_NODE, "proxy.node.log.bytes_lost_before_sent_to_network", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_NODE, "proxy.node.log.bytes_sent_to_network_avg_10s", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_NODE, "proxy.node.log.bytes_sent_to_network_avg_10s", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.log.bytes_received_from_network", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_NODE, "proxy.node.log.bytes_received_from_network_avg_10s", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_NODE, "proxy.node.log.bytes_received_from_network_avg_10s", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_NODE, "proxy.node.log.bytes_flush_to_disk", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
@@ -1922,11 +1922,11 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CLUSTER, "proxy.cluster.log.bytes_lost_before_sent_to_network", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CLUSTER, "proxy.cluster.log.bytes_sent_to_network_avg_10s", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CLUSTER, "proxy.cluster.log.bytes_sent_to_network_avg_10s", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CLUSTER, "proxy.cluster.log.bytes_received_from_network", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CLUSTER, "proxy.cluster.log.bytes_received_from_network_avg_10s", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CLUSTER, "proxy.cluster.log.bytes_received_from_network_avg_10s", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CLUSTER, "proxy.cluster.log.bytes_flush_to_disk", RECD_COUNTER, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
