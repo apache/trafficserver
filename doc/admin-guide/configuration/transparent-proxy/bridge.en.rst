@@ -57,7 +57,7 @@ bridge is functional.
 Once the bridge is verified to work, this is the basic traffic pattern
 of interest.
 
-.. figure:: ../../static/images/admin/ats-traffic-bridge.png
+.. figure:: ../../../static/images/admin/ats-traffic-bridge.png
    :align: center
    :alt: Picture of traffic flow through a bridge with ATS
 

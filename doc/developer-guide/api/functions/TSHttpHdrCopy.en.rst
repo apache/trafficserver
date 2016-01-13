@@ -21,8 +21,9 @@
 TSHttpHdrCopy
 *************
 
-Copies the contents of the HTTP header located at src_loc within
-src_bufp to the HTTP header located at dest_loc within dest_bufp.
+Copies the contents of the HTTP header located at :arg:`src_loc` within
+:arg:`src_bufp` to the HTTP header located at :arg:`dest_loc` within
+:arg:`dest_bufp`.
 
 Synopsis
 ========
@@ -34,9 +35,9 @@ Synopsis
 Description
 ===========
 
-:c:func:`TSHttpHdrCopy` works correctly even if :arg:`src_bufp` and
-:arg:`dest_bufp` point to different :ref:`developer-plugins-marshal-buffers`.
-Make sure that you create the destination HTTP header before copying into it.
+:c:func:`TSHttpHdrCopy` works correctly even if :arg:`src_bufp` and :arg:`dest_bufp`
+point to different :ref:`developer-plugins-http-headers-marshal-buffers`. Make
+sure that you create the destination HTTP header before copying into it.
 
 .. note::
 

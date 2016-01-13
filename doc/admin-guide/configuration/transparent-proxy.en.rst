@@ -35,7 +35,7 @@ intercept connections between clients and servers without being visible.
 The general network structure that will be used in this documentation is
 shown in the following figure.
 
-.. figure:: ../static/images/admin/ats-basic-traffic.png
+.. figure:: ../../static/images/admin/ats-basic-traffic.png
    :align: center
    :alt: ATS basic traffic flow of Transparent Proxy
 

@@ -72,7 +72,7 @@ Decode the Via header from command-line arguments::
     Parent proxy connection status                         :no parent proxy or unknown
     Origin server connection status                        :connection open failed
 
-Decode the Via header from a curl request, using the :ref:`X-Debug <_xdebug_plugin>` plugin::
+Decode the Via header from a curl request, using the :ref:`X-Debug <xdebug-plugin>` plugin::
 
     $ curl -H  "X-Debug: Via" -I http://test.example.com | traffic_via -
     Via header is uScMsSf pSeN:t cCMi p sS, Length is 24

@@ -97,36 +97,36 @@ Bandwidth and Transfer
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_100 integer
    :type: derivative
-   :unit; bytes
+   :unit: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_100K integer
    :type: derivative
-   :unit; bytes
+   :unit: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_100M integer
    :type: derivative
-   :unit; bytes
+   :unit: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_10K integer
    :type: derivative
-   :unit; bytes
+   :unit: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_10M integer
    :type: derivative
-   :unit; bytes
+   :unit: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_1K integer
    :type: derivative
-   :unit; bytes
+   :unit: bytes
    :ungathered:
 
 .. ts:stat:: global proxy.process.http.user_agent_speed_bytes_per_sec_1M integer
    :type: derivative
-   :unit; bytes
+   :unit: bytes
    :ungathered:
 

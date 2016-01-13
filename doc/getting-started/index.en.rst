@@ -422,7 +422,7 @@ Extended-2* format you may wish to enable that logging format in addition to,
 or instead of, the default |TS| logs.
 
 The Administrator's Guide discusses logging options in great detail in
-:ref:`working-with-log-files`.
+:ref:`admin-monitoring-logging`.
 
 Using Traffic Top
 -----------------

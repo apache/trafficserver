@@ -29,6 +29,7 @@ Proxy Cache Configuration
    cache-basics.en
    redirecting-http-requests.en
    explicit-forward-proxying.en
+   transparent-proxy.en
    transparent-forward-proxying.en
    multi-server-caches.en
    hierachical-caching.en
