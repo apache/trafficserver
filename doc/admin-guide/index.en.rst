@@ -38,7 +38,6 @@ Table of Contents:
    configuring-traffic-server.en
    performance/index.en
    files/index.en
-   troubleshooting.en
 
 Audience
 ========

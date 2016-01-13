@@ -147,3 +147,5 @@ Glossary
 
    cache partition
 
+   global plugin
+

@@ -119,7 +119,7 @@ Definition
 
 Collection
     The key name of the collection in the returned JSON data from the
-    :ref:`plugin-stats-over-http` plugin. For most statistics, this is the
+    :ref:`admin-plugins-stats-over-http` plugin. For most statistics, this is the
     literal sting :literal:`global`. *Required*
 
 Statistic Name
@@ -189,9 +189,10 @@ deprecated
 
 ungathered
     A simple flag option, without any associated values, indicating that while
-    the statistic is included in the output of plugins like :ref:`plugin-stats-over-http`
-    there is no underlying data gathered for the statistic. If a statistic is
-    thus marked, it should be assumed to be invalid or simply unimplemented.
+    the statistic is included in the output of plugins like
+    :ref:`admin-plugins-stats-over-http` there is no underlying data gathered
+    for the statistic. If a statistic is thus marked, it should be assumed to
+    be invalid or simply unimplemented.
 
 References
 ~~~~~~~~~~

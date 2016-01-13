@@ -79,7 +79,7 @@ cached.  In future, the plugin should also check if the URL is fresh
 or not.
 
 The plugin implements the :c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK`
-hook and :doc:`a null transformation <../../sdk/http-transformation-plugin/sample-null-transformation-plugin.en>` 
+hook and :ref:`a null transformation <developer-plugins-http-transformations-null-transform>`
 to compute the SHA-256 digest for
 content as it's added to the cache.  It uses SHA256_Init(),
 SHA256_Update(), and SHA256_Final() from OpenSSL to compute the

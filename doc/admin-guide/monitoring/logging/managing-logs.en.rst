@@ -226,56 +226,6 @@ above.
 Separating Logs by Origin
 =========================
 
-HTTP host log splitting enables you to record HTTP transactions for different
-origin servers in separate log files. When HTTP host log splitting is enabled,
-|TS| creates a separate log file for each origin server that's listed in
-:file:`log_hosts.config`.
-
-To enable host log splitting, perform the following steps:
-
--  Adjust the setting :ts:cv:`proxy.config.log.separate_host_logs` in
-   :file:`records.config`::
-
-    CONFIG proxy.config.log.separate_host_logs INT 1
-
--  Run the command :option:`traffic_line -x` to apply the changes, or restart
-   |TS|.
-
-When both ICP (covered in :ref:`admin-monitoring-logging-icp-split`) and HTTP
-host log splitting are enabled, |TS| generates separate log files for HTTP
-transactions (based on the origin server) and places all ICP transactions in
-their own respective log files. For example, if :file:`log_hosts.config`
-contains the two origin servers ``uni.edu`` and ``company.com`` and Squid
-format is enabled, then |TS| generates the following log files:
-
-=========================== ============================================
-Log File                    Contents
-=========================== ============================================
-``squid-uni.edu.log``       All HTTP transactions for ``uni.edu``.
-``squid-company.com.log``   All HTTP transactions for ``company.com``.
-``squid-icp.log``           All ICP transactions for all hosts.
-``squid.log``               All HTTP transactions for other hosts.
-=========================== ============================================
-
-If you disable ICP log splitting, then ICP transactions are placed in the same
-log file as HTTP transactions. Using the hosts and log format from the previous
-example, |TS| generates the log files below:
-
-=========================== ============================================
-Log File                    Contents
-=========================== ============================================
-``squid-uni.edu.log``       All entries for ``uni.edu``.
-``squid-company.com.log``   All entries for ``company.com``.
-``squid.log``               All other entries.
-=========================== ============================================
-
-|TS| also enables you to create XML-based
-:ref:`admin-monitoring-logging-custom-formats` that offer even greater control
-over log file generation.
-
-Defining Hosts in log_hosts.config
-----------------------------------
-
 The default :file:`log_hosts.config` file is located in the |TS| ``config``
 directory. To record HTTP transactions for different origin servers in separate
 log files, you must specify the hostname of each origin server on a separate
@@ -286,7 +236,7 @@ line in :file:`log_hosts.config`. For example, if you specify the keyword
 
 .. important::
 
-   If Traffic Server is clustered and you enable log file collation, then you
+   If |TS| is clustered and you enable log file collation, then you
    should use the same :file:`log_hosts.config` file on every |TS| node in the
    cluster.
 
@@ -299,32 +249,5 @@ To edit the log hosts list:
        webserver2
        webserver3
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
-   changes.
-
-.. _admin-monitoring-logging-icp-split:
-
-ICP Log Splitting
-=================
-
-By default, |TS| uses standard log formats and generates log
-files that contain HTTP and ICP transactions in the same file. However,
-you can enable log splitting if you prefer to log transactions for
-different protocols in separate log files.
-
-When ICP log splitting is enabled, |TS| records ICP transactions in a
-separate log file with a name that contains ``icp``. For example, if you enable
-the Squid format, then all ICP transactions are recorded in the
-``squid-icp.log`` file. When you disable ICP log splitting, |TS|
-records all ICP transactions in the same log file as HTTP transactions.
-
-To enable ICP log splitting, perform the following steps:
-
--  Adjust the setting :ts:cv:`proxy.config.log.separate_icp_logs` in
-   :file:`records.config`::
-
-    CONFIG proxy.config.log.separate_icp_logs INT 1
-
--  Run the command :option:`traffic_line -x` to apply the changes, or restart
-   |TS|.
+#. Run the command :option:`traffic_ctl config reload` to apply the changes.
 

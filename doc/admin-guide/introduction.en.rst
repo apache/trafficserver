@@ -256,9 +256,8 @@ monitoring:
    help with log file analysis, you can separate log files so that they
    contain information specific to protocol or hosts.
 
-Traffic analysis options are described in more detail in :ref:`monitoring-traffic`.
-
-Traffic Server logging options are described in :ref:`working-with-log-files`.
+|TS| event and error logging, monitoring, and analysis is covered in greater
+detail in :ref:`admin-monitoring`.
 
 Traffic Server Security Options
 ===============================

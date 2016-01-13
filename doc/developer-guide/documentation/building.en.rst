@@ -27,8 +27,8 @@ All documentation and related files are located in the source tree under the
 script. For simplicity's sake, it is recommended that contributors new to the
 documentation make use of the included Vagrant configurations, as these will
 take care of providing all dependencies. Please refer to the
-:ref:`dev-testing-with-vagrant` chapter for complete details on using Vagrant to
-build and test the |TS| source tree.
+:ref:`developer-testing-with-vagrant` chapter for complete details on using
+Vagrant to build and test the |TS| source tree.
 
 With a configured source tree, building the documentation requires only the
 invocation ``make html`` from within ``doc/``. For repeated builds while working

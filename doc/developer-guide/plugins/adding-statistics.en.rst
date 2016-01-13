@@ -31,13 +31,6 @@ would any other Traffic Server statistic, using Traffic Line (Traffic
 Server's command line interface). This chapter contains the following
 topics:
 
-.. toctree::
-   :maxdepth: 2
-
-   adding-statistics/coupled-statistics.en
-   adding-statistics/viewing-statistics-using-traffic-line.en
-
-
 Uncoupled Statistics
 ====================
 

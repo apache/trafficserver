@@ -38,8 +38,8 @@ discussed only to the extent needed to understand the internal mechanisms. This
 document will be useful primarily to |TS| developers working on the |TS|
 codebase or plugins for |TS|. It is assumed the reader is already familiar with
 the :ref:`admin-guide` and specifically with :ref:`http-proxy-caching` and
-:ref:`configuring-the-cache` along with the associated configuration files and
-values.
+:ref:`admin-configuration` along with the associated :ref:`configuration files
+<admin-configuration-files>`.
 
 Unfortunately, the internal terminology is not particularly consistent, so this
 document will frequently use terms in different ways than they are used in the

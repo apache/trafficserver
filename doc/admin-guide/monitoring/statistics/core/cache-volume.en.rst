@@ -22,7 +22,7 @@
 Cache Volume
 ************
 
-Each configured :ref:`cache-volume` receives a complete set of statistics from
+Each configured :term:`cache volume` receives a complete set of statistics from
 |TS|. They are differentiated from each other by the incrementing number that is
 part of the statistic name. The volume number begins at :literal:`0` and
 increments by :literal:`1` for each additional volume.

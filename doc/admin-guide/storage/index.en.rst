@@ -365,7 +365,7 @@ Inspector utility is a powerful tool that's capable of deleting all
 the objects in your cache. Therefore, make sure that only authorized
 administrators are allowed to access this utility through proper use
 of the ``@src_ip`` option in :file:`remap.config` and the instructions
-detailed in :ref:`controlling-client-access-to-cache`.
+detailed in :ref:`admin-controlling-access`.
 
 Accessing the Cache Inspector Utility
 -------------------------------------
@@ -418,7 +418,6 @@ Regex Invalidate
 
 .. note::
 
-    Only one administrator should delete and invalidate cache
-    entries from the Cache Inspector at any point in time. Changes made by
-    multiple administrators at the same time can lead to unpredictable
-    results.
+    Only one administrator should delete and invalidate cache entries from the
+    Cache Inspector at any point in time. Changes made by multiple
+    administrators at the same time can lead to unpredictable results.

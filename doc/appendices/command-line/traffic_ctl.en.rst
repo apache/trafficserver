@@ -15,9 +15,12 @@
   specific language governing permissions and limitations
   under the License.
 
-===========
+.. include:: ../../common.defs
+
+.. _traffic_ctl:
+
 traffic_ctl
-===========
+***********
 
 Synopsis
 ========

@@ -1,30 +1,39 @@
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
+
+.. include:: ../../../common.defs
+
+.. _admin-wccp-service-config:
+
 WCCP Service Configuration
 **************************
 
-.. Licensed to the Apache Software Foundation (ASF) under one
-   or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+The service definition file is used by :program:`traffic_wccp` and
+:program:`traffic_server` directly.
 
-.. _wccp-service-configuration:
+The elements in the security definition file are inspired by the
+`WCCP RFC (8/2012) <http://tools.ietf.org/html/draft-mclaggan-wccp-v2rev1-00>`_.
+There is also an older version of the RFC that shows up commonly in search results,
+`WCCP (4/2001) <https://tools.ietf.org/id/draft-wilson-wrec-wccp-v2-01.txt>`_,
+and was the RFC reference used in the original WCCP support for |TS| several
+years ago.
 
-The service definition file is used by
-:ref:`traffic_wccp` and :ref:`traffic-server` directly.
-The elements in the security definition file are inspired by the `WCCP RFC (8/2012) <http://tools.ietf.org/html/draft-mclaggan-wccp-v2rev1-00>`_.  There is also an older version of the RFC that shows up commonly in search results, `WCCP (4/2001) <https://tools.ietf.org/id/draft-wilson-wrec-wccp-v2-01.txt>`_, and was the RFC reference used in the original WCCP support for Traffic Server several years ago.
-
-A sample service group file is included in the source tree under cmd/traffic_wccp.
+A sample service group file is included in the source tree under
+:program:`traffic_wccp`.
 
 Security Section
 ================

@@ -29,7 +29,7 @@ part of the standard ATS build process, and should be available after install.
 Enabling Stats Over HTTP
 ========================
 
-To enable this plugin, add to the :file:`plugin.conf` file::
+To enable this plugin, add to the :file:`plugin.config` file::
 
     stats_over_http.so
 
