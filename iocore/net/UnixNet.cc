@@ -591,6 +591,7 @@ NetHandler::manage_active_queue()
   int total_idle_time = 0;
   int total_idle_count = 0;
   for (; vc != NULL; vc = vc_next) {
+    vc_next = vc->active_queue_link.next;
     if ((vc->next_inactivity_timeout_at <= now) || (vc->next_activity_timeout_at <= now)) {
       _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);
     }
@@ -635,7 +636,7 @@ NetHandler::manage_keep_alive_queue()
   int total_idle_time = 0;
   int total_idle_count = 0;
   for (UnixNetVConnection *vc = keep_alive_queue.head; vc != NULL; vc = vc_next) {
-    vc_next = vc->active_queue_link.next;
+    vc_next = vc->keep_alive_queue_link.next;
     _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);
 
     total_connections_in = active_queue_size + keep_alive_queue_size;
