@@ -30,8 +30,8 @@ msgid ""
 "brackets are optional."
 msgstr ""
 ":program:`traffic_via` は Traffic Server の Via ヘッダー内のコードをデコード"
-"します。 Via ヘッダーの文字列はコマンドラインオプションとして渡します。文字列"
-"を囲む角括弧は省略可能です。"
+"します。 Via ヘッダーの文字列はコマンドラインオプションとして渡します。文字"
+"列を囲む角括弧は省略可能です。"
 
 #: ../../appendices/command-line/traffic_via.en.rst:75
 msgid ""
