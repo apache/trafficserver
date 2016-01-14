@@ -9,45 +9,42 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.1.1\n"
+"Generated-By: Babel 2.2.0\n"
 
-#: ../../developer-guide/introduction/index.en.rst:47
-msgid "Below is a section-by-section breakdown of this guide:"
+#: ../../../developer-guide/introduction/index.en.rst:23
+msgid "Introduction"
+msgstr "導入"
+
+#: ../../../developer-guide/introduction/index.en.rst:25
+msgid "This guide has the following basic components:"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:94
+#: ../../../developer-guide/introduction/index.en.rst:27
+msgid "Introduction and overview."
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:29
 msgid ""
-"Continuations provide the basic callback mechanism and data abstractions "
-"used in Traffic Server."
+"Tutorials about writing specific kinds of plugins: HTTP header-based "
+"plugins, content transformation plugins, and protocol plugins."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:44
-msgid ""
-"For a reference to the C API functions and types that your plugin will use, "
-"refer to the :ref:`developer-api-reference`."
+#: ../../../developer-guide/introduction/index.en.rst:32
+msgid "Guides about specific interfaces."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:27
-msgid "Introduction and overview"
+#: ../../../developer-guide/introduction/index.en.rst:34
+msgid "Reference material."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:25
-msgid "This book has the following basic components:"
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:32
-msgid "Guides about specific interfaces"
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:36
+#: ../../../developer-guide/introduction/index.en.rst:36
 msgid ""
 "If you're new to writing |TS| plugins, :ref:`developer-plugins-getting-"
 "started` should be your starting point. :ref:`developer-plugins-header-"
@@ -58,23 +55,21 @@ msgid ""
 "you want to support your own protocol on |TS|."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:29
+#: ../../../developer-guide/introduction/index.en.rst:44
 msgid ""
-"Tutorials about writing specific kinds of plugins: HTTP header-based "
-"plugins, content transformation plugins, and protocol plugins"
+"For a reference to the C API functions and types that your plugin will use, "
+"refer to the :ref:`developer-api-reference`."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:34
-msgid "Reference material"
+#: ../../../developer-guide/introduction/index.en.rst:47
+msgid "Below is a section-by-section breakdown of this guide:"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:65
-msgid ""
-"Detailed explanation of the null-transform example; also discusses "
-"``VConnections``, ``VIOs``, and IO buffers."
+#: ../../../developer-guide/introduction/index.en.rst:53
+msgid "developer-plugins-getting-started"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:50
+#: ../../../developer-guide/introduction/index.en.rst:50
 msgid ""
 "How to compile and load plugins. Walks through a simple \"hello world\" "
 "example; explains how to initialize and register plugins. Basic structures "
@@ -82,56 +77,78 @@ msgid ""
 "processes. Detailed explication of a sample blacklisting plugin."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:97
-msgid ":ref:`developer-plugins-configuration`"
+#: ../../../developer-guide/introduction/index.en.rst:57
+msgid "developer-plugins-examples-query-remap"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:56
+#: ../../../developer-guide/introduction/index.en.rst:56
 msgid ""
 "This chapter demonstrates on a practical example how you can exploit the "
 "Traffic Server remap API for your plugins."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:57
-msgid "developer-plugins-examples-query-remap"
+#: ../../../developer-guide/introduction/index.en.rst:62
+msgid "developer-plugins-header-based-examples"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:53
-msgid "developer-plugins-getting-started"
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:60
+#: ../../../developer-guide/introduction/index.en.rst:60
 msgid ""
 "Detailed explanation about writing plugins that work on HTTP headers; "
 "discusses sample blacklisting and basic authorization plugins."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:69
+#: ../../../developer-guide/introduction/index.en.rst:66
+msgid "developer-plugins-http-transformations"
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:65
+msgid ""
+"Detailed explanation of the null-transform example; also discusses "
+"``VConnections``, ``VIOs``, and IO buffers."
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:71
+msgid "developer-plugins-new-protocol-plugins"
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:69
 msgid ""
 "Detailed explanation of a sample protocol plugin that supports a synthetic "
 "protocol. Discusses ``VConnections`` and mutexes, as well as the new "
 "``NetConnection``, DNS lookup, logging, and cache APIs."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:23
-msgid "Introduction"
-msgstr "導入"
-
-#: ../../developer-guide/introduction/index.en.rst:73
+#: ../../../developer-guide/introduction/index.en.rst:73
 msgid ""
 "The remaining sections comprise the API function reference and are "
 "organized by function type:"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:62
-msgid "developer-plugins-header-based-examples"
+#: ../../../developer-guide/introduction/index.en.rst:79
+msgid "developer-plugins-interfaces"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:91
-msgid ":ref:`developer-plugins-mutexes`"
+#: ../../../developer-guide/introduction/index.en.rst:77
+msgid ""
+"Details error-writing and tracing functions, thread functions, and |TS| API "
+"versions of the ``malloc`` and ``fopen`` families. The |TS| API versions "
+"overcome various C library limitations."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:85
+#: ../../../developer-guide/introduction/index.en.rst:82
+msgid "developer-plugins-hooks-and-transactions"
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:82
+msgid ""
+"Functions in this chapter hook your plugin to Traffic Server HTTP processes."
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:89
+msgid "developer-plugins-http-headers"
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:85
 msgid ""
 "Contains instructions for implementing performance enhancements for all "
 "plugins that manipulate HTTP headers. These functions examine and modify "
@@ -140,82 +157,64 @@ msgid ""
 "this chapter."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:100
-msgid "Describes how to use ``TSActions`` and the ``TSDNSLookup`` API."
+#: ../../../developer-guide/introduction/index.en.rst:91
+msgid ":ref:`developer-plugins-mutexes`"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:77
-msgid ""
-"Details error-writing and tracing functions, thread functions, and |TS| API "
-"versions of the ``malloc`` and ``fopen`` families. The |TS| API versions "
-"overcome various C library limitations."
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:82
-msgid ""
-"Functions in this chapter hook your plugin to Traffic Server HTTP processes."
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:100
-msgid "developer-plugins-actions"
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:95
+#: ../../../developer-guide/introduction/index.en.rst:95
 msgid "developer-plugins-continuations"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:82
-msgid "developer-plugins-hooks-and-transactions"
+#: ../../../developer-guide/introduction/index.en.rst:94
+msgid ""
+"Continuations provide the basic callback mechanism and data abstractions "
+"used in Traffic Server."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:89
-msgid "developer-plugins-http-headers"
+#: ../../../developer-guide/introduction/index.en.rst:97
+msgid ":ref:`developer-plugins-configuration`"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:66
-msgid "developer-plugins-http-transformations"
+#: ../../../developer-guide/introduction/index.en.rst:100
+msgid "developer-plugins-actions"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:103
+#: ../../../developer-guide/introduction/index.en.rst:100
+msgid "Describes how to use ``TSActions`` and the ``TSDNSLookup`` API."
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:105
+msgid "developer-plugins-io"
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:103
 msgid ""
 "Describes how to use the Traffic Server IO interfaces: ``TSVConnection``, "
 "``TSVIO``, ``TSIOBuffer``, ``TSNetVConnection``, the Cache API."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:79
-msgid "developer-plugins-interfaces"
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:105
-msgid "developer-plugins-io"
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:109
+#: ../../../developer-guide/introduction/index.en.rst:109
 msgid "developer-plugins-management"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:71
-msgid "developer-plugins-new-protocol-plugins"
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:112
-msgid "These functions add statistics to your plugin."
-msgstr ""
-
-#: ../../developer-guide/introduction/index.en.rst:108
+#: ../../../developer-guide/introduction/index.en.rst:108
 msgid ""
 "These functions enable you to set up a configuration interface for plugins, "
 "access installed plugin files, and set up plugin licensing."
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:115
-msgid "Traffic Server API Function Documentation."
+#: ../../../developer-guide/introduction/index.en.rst:112
+msgid "developer-plugins-add-statistics"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:116
+#: ../../../developer-guide/introduction/index.en.rst:112
+msgid "These functions add statistics to your plugin."
+msgstr ""
+
+#: ../../../developer-guide/introduction/index.en.rst:116
 msgid "developer-api-ref-functions"
 msgstr ""
 
-#: ../../developer-guide/introduction/index.en.rst:112
-msgid "developer-plugins-add-statistics"
+#: ../../../developer-guide/introduction/index.en.rst:115
+msgid "Traffic Server API Function Documentation."
 msgstr ""
