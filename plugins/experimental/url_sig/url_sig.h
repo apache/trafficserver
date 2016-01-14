@@ -45,6 +45,7 @@
 #define MAX_REQ_LEN 8192
 #define MAX_KEY_LEN 256
 #define MAX_KEY_NUM 16
+#define MAX_QUERY_LEN 4096
 
 #define USIG_HMAC_SHA1 1
 #define USIG_HMAC_MD5 2

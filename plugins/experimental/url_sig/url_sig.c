@@ -245,6 +245,60 @@ err_log(char *url, char *msg)
   }
 }
 
+// See the README.  All Signing parameters must be concatenated to the end
+// of the url and any application query parameters.
+static char *
+getAppQueryString(char *query_string, int query_length)
+{
+  int done = 0;
+  char *p;
+  char buf[MAX_QUERY_LEN];
+
+  if (query_length > MAX_QUERY_LEN) {
+    TSDebug(PLUGIN_NAME, "Cannot process the query string as the length exceeds %d bytes.", MAX_QUERY_LEN);
+    return NULL;
+  }
+  memset(buf, 0, MAX_QUERY_LEN);
+  strncpy(buf, query_string, query_length);
+  p = buf;
+
+  TSDebug(PLUGIN_NAME, "query_string: %s, query_length: %d", query_string, query_length);
+  if (p == NULL) {
+    return NULL;
+  }
+
+  do {
+    switch (*p) {
+    case 'A':
+    case 'C':
+    case 'E':
+    case 'K':
+    case 'P':
+    case 'S':
+      done = 1;
+      if (*(p - 1) == '&') {
+        *(p - 1) = '\0';
+      } else
+        (*p = '\0');
+      break;
+    default:
+      p = strchr(p, '&');
+      if (p == NULL)
+        done = 1;
+      else
+        p++;
+      break;
+    }
+  } while (!done);
+
+  if (strlen(buf) > 0) {
+    p = TSstrdup(buf);
+    return p;
+  } else {
+    return NULL;
+  }
+}
+
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
@@ -275,7 +329,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   char *parts = NULL;
   char *part = NULL;
   char *p = NULL, *pp = NULL;
-  char *query = NULL;
+  char *query = NULL, *app_qry = NULL;
 
   int retval, sockfd;
   socklen_t peer_len;
@@ -510,11 +564,18 @@ deny:
 
 /* ********* Allow ********* */
 allow:
+  app_qry = getAppQueryString(query, strlen(query));
+
   TSfree(url);
   /* drop the query string so we can cache-hit */
-  rval = TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, NULL, 0);
+  if (app_qry != NULL) {
+    rval = TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, app_qry, strlen(app_qry));
+    TSfree(app_qry);
+  } else {
+    rval = TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, NULL, 0);
+  }
   if (rval != TS_SUCCESS) {
-    TSError("[url_sig] Error stripping query string: %d.", rval);
+    TSError("[url_sig] Error setting the query string: %d.", rval);
   }
   return TSREMAP_NO_REMAP;
 }

@@ -65,12 +65,24 @@ foreach my $part ( split( /\//, $url ) ) {
 	}
 	$j++;
 }
+my $urlHasParams = index($string,"?");
+
 chop($string);
 if ( defined($client) ) {
-	$string .= "?C=" . $client . "&E=" . ( time() + $duration ) . "&A=" . $algorithm . "&K=" . $keyindex . "&P=" . $useparts . "&S=";
+  if ($urlHasParams > 0) {
+	  $string .= "&C=" . $client . "&E=" . ( time() + $duration ) . "&A=" . $algorithm . "&K=" . $keyindex . "&P=" . $useparts . "&S=";
+  }
+  else {
+	  $string .= "?C=" . $client . "&E=" . ( time() + $duration ) . "&A=" . $algorithm . "&K=" . $keyindex . "&P=" . $useparts . "&S=";
+  }
 }
 else {
-	$string .= "?E=" . ( time() + $duration ) . "&A=" . $algorithm . "&K=" . $keyindex . "&P=" . $useparts . "&S=";
+  if ($urlHasParams > 0) {
+	  $string .= "&E=" . ( time() + $duration ) . "&A=" . $algorithm . "&K=" . $keyindex . "&P=" . $useparts . "&S=";
+  }
+  else {
+	  $string .= "?E=" . ( time() + $duration ) . "&A=" . $algorithm . "&K=" . $keyindex . "&P=" . $useparts . "&S=";
+  }
 }
 
 $verbose && print "signed string = " . $string . "\n";
@@ -82,9 +94,17 @@ if ( $algorithm == 1 ) {
 else {
 	$digest = hmac_md5_hex( $string, $key );
 }
-my $qstring = ( split( /\?/, $string ) )[1];
+if ($urlHasParams == -1) {
+  my $qstring = ( split( /\?/, $string ) )[1];
 
-print "curl -s -o /dev/null -v --max-redirs 0 'http://" . $url . "?" . $qstring . $digest . "'\n";
+  print "curl -s -o /dev/null -v --max-redirs 0 'http://" . $url . "?" . $qstring . $digest . "'\n";
+}
+else {
+  my $url_noparams = ( split( /\?/, $url ) )[0];
+  my $qstring = ( split( /\?/, $string ) )[1];
+
+  print "curl -s -o /dev/null -v --max-redirs 0 'http://" . $url_noparams . "?" . $qstring . $digest . "'\n";
+}
 
 sub help {
 	print "sign.pl - Example signing utility in perl for signed URLs\n";
