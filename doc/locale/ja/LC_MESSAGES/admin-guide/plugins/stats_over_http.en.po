@@ -8,34 +8,20 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
 "PO-Revision-Date: 2016-01-03 16:18+0900\n"
-"Language: en\n"
+"Last-Translator: \n"
+"Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.1.1\n"
-"Last-Translator: \n"
-"Language-Team: \n"
-"X-Generator: Poedit 1.8.6\n"
+"Generated-By: Babel 2.2.0\n"
 
-#: ../../admin-guide/plugins/stats_over_http.en.rst:36
-msgid ""
-"After starting Traffic Server, the JSON metrics are now available on the "
-"default URL::"
-msgstr ""
-"Traffic Server を開始すると、次のデフォルト URL で JSON 形式のメトリクスが利"
-"用可能になっています。"
-
-#: ../../admin-guide/plugins/stats_over_http.en.rst:30
-msgid "Enabling Stats Over HTTP"
-msgstr ""
-
-#: ../../admin-guide/plugins/stats_over_http.en.rst:23
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:23
 msgid "Stats Over HTTP Plugin"
 msgstr "HTTP統計プラグイン"
 
-#: ../../admin-guide/plugins/stats_over_http.en.rst:25
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:25
 msgid ""
 "This plugin implements an HTTP interface to all Traffic Server statistics. "
 "The metrics returned are in a JSON format, for easy processing. This plugin "
@@ -47,29 +33,34 @@ msgstr ""
 "形式です。このプラグインは ATS 標準ビルド処理の一部となったので、インストー"
 "ルすれば利用可能なはずです。"
 
-#: ../../admin-guide/plugins/stats_over_http.en.rst:32
-msgid "To enable this plugin, add to the :file:`plugin.conf` file::"
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:30
+msgid "Enabling Stats Over HTTP"
+msgstr ""
+
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:32
+#, fuzzy
+msgid "To enable this plugin, add to the :file:`plugin.config` file::"
 msgstr ""
 "このプラグインを使用するには :file:`plugin.conf` ファイルに追加してくださ"
 "い。"
 
-#: ../../admin-guide/plugins/stats_over_http.en.rst:41
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:36
+msgid ""
+"After starting Traffic Server, the JSON metrics are now available on the "
+"default URL::"
+msgstr ""
+"Traffic Server を開始すると、次のデフォルト URL で JSON 形式のメトリクスが利"
+"用可能になっています。"
+
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:41
 msgid "where host and port is the hostname/IP and port number of the server."
 msgstr ""
 
-#: ../../admin-guide/plugins/stats_over_http.en.rst:44
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:44
 msgid "Plugin Options"
 msgstr ""
 
-#: ../../admin-guide/plugins/stats_over_http.en.rst:68
-msgid ""
-"This is weak security at best, since the secret could possibly leak if you "
-"are careless and send it over clear text."
-msgstr ""
-"不注意により秘密を平文で送った場合それが漏れる可能性があるので、これはせいぜ"
-"い弱いセキュリティでしかありません。"
-
-#: ../../admin-guide/plugins/stats_over_http.en.rst:48
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:48
 msgid ""
 "This option causes the plugin to emit floating point and integral metric "
 "values as JSON numbers, rather then JSON strings. This can cause "
@@ -77,19 +68,27 @@ msgid ""
 "range."
 msgstr ""
 
-#: ../../admin-guide/plugins/stats_over_http.en.rst:55
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:55
 msgid ""
 "This option wraps 64-bit unsigned values to the 64-bit signed range. This "
 "aids interoperability with Java, since prior to the Java SE 8 release, Java "
 "did not have a 64-bit unsigned type."
 msgstr ""
 
-#: ../../admin-guide/plugins/stats_over_http.en.rst:59
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:59
 msgid ""
 "You can optionally modify the path to use, and this is highly recommended "
 "in a public facing server. For example::"
 msgstr ""
 
-#: ../../admin-guide/plugins/stats_over_http.en.rst:64
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:64
 msgid "and the URL would then be e.g.::"
 msgstr "URL は例えば次のようになるでしょう。"
+
+#: ../../../admin-guide/plugins/stats_over_http.en.rst:68
+msgid ""
+"This is weak security at best, since the secret could possibly leak if you "
+"are careless and send it over clear text."
+msgstr ""
+"不注意により秘密を平文で送った場合それが漏れる可能性があるので、これはせいぜ"
+"い弱いセキュリティでしかありません。"
