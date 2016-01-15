@@ -2207,3 +2207,38 @@ file_filter = locale/<lang>/LC_MESSAGES/sdk/trafficserver-timers.en.po
 source_file = _build/locale/pot/sdk/trafficserver-timers.en.pot
 source_lang = en
 
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--bridge_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/bridge.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/bridge.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--build_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/build.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/build.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--router-inline_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/router-inline.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/router-inline.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--wccp-configuration_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/wccp-configuration.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/wccp-configuration.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.admin-guide--configuration--transparent-proxy--wccp-service-config_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/configuration/transparent-proxy/wccp-service-config.en.po
+source_file = _build/locale/pot/admin-guide/configuration/transparent-proxy/wccp-service-config.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--plugins--hooks-and-transactions--trafficserver-timers_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transactions/trafficserver-timers.en.po
+source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/trafficserver-timers.en.pot
+source_lang = en
+
