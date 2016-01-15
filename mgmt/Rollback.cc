@@ -260,7 +260,7 @@ Rollback::statFile(version_t version, struct stat *buf)
   }
 
   ats_scoped_str filePath(createPathStr(version));
-  ElevateAccess access(root_access_needed);
+  ElevateAccess access(root_access_needed ? ElevateAccess::FILE_PRIVILEGE : 0);
 
   statResult = stat(filePath, buf);
 
@@ -278,7 +278,7 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
   int fd;
 
   ats_scoped_str filePath(createPathStr(version));
-  ElevateAccess access(root_access_needed);
+  ElevateAccess access(root_access_needed ? ElevateAccess::FILE_PRIVILEGE : 0);
 
   // TODO: Use the original permissions
   //       Anyhow the _1 files should not be created inside Syconfdir.

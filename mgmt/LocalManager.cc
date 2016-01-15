@@ -1021,8 +1021,9 @@ void
 LocalManager::bindProxyPort(HttpProxyPort &port)
 {
   int one = 1;
+  int priv = (port.m_port < 1024 && 0 != geteuid()) ? ElevateAccess::LOW_PORT_PRIVILEGE : 0;
 
-  ElevateAccess access(port.m_port < 1024 && geteuid() != 0);
+  ElevateAccess access(priv);
 
   /* Setup reliable connection, for large config changes */
   if ((port.m_fd = socket(port.m_family, SOCK_STREAM, 0)) < 0) {

@@ -821,9 +821,6 @@ Diags::set_stdout_output(const char *_bind_stdout)
     stdout_log = NULL;
   }
 
-  // get root
-  ElevateAccess elevate;
-
   // create backing BaseLogFile for stdout
   stdout_log = new BaseLogFile(_bind_stdout);
 
@@ -860,9 +857,7 @@ Diags::set_stderr_output(const char *_bind_stderr)
     delete stderr_log;
     stderr_log = NULL;
   }
-  // get root
-  ElevateAccess elevate;
-
+  
   // create backing BaseLogFile for stdout
   stderr_log = new BaseLogFile(_bind_stderr);
 

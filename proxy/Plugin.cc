@@ -94,11 +94,9 @@ plugin_load(int argc, char *argv[], bool validateOnly)
   // elevate the access to read files as root if compiled with capabilities, if not
   // change the effective user to root
   {
-#if TS_USE_POSIX_CAP
     uint32_t elevate_access = 0;
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
-    ElevateAccess access(elevate_access != 0);
-#endif /* TS_USE_POSIX_CAP */
+    ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     void *handle = dlopen(path, RTLD_NOW);
     if (!handle) {
