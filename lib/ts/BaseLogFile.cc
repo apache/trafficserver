@@ -323,7 +323,8 @@ BaseLogFile::open_file(int perm)
 
   // open actual log file (not metainfo)
   log_log_trace("BaseLogFile: attempting to open %s\n", m_name.get());
-  m_fp = fopen(m_name.get(), "a+");
+
+  m_fp = elevating_fopen(m_name.get(), "a+");
 
   // error check
   if (m_fp) {
@@ -478,7 +479,7 @@ void
 BaseMetaInfo::_read_from_file()
 {
   _flags |= DATA_FROM_METAFILE; // mark attempt
-  int fd = open(_filename, O_RDONLY);
+  int fd = elevating_open(_filename, O_RDONLY);
   if (fd < 0) {
     log_log_error("Could not open metafile %s for reading: %s\n", _filename, strerror(errno));
   } else {
@@ -522,7 +523,7 @@ BaseMetaInfo::_read_from_file()
 void
 BaseMetaInfo::_write_to_file()
 {
-  int fd = open(_filename, O_WRONLY | O_CREAT | O_TRUNC, LOGFILE_DEFAULT_PERMS);
+  int fd = elevating_open(_filename, O_WRONLY | O_CREAT | O_TRUNC, LOGFILE_DEFAULT_PERMS);
   if (fd < 0) {
     log_log_error("Could not open metafile %s for writing: %s\n", _filename, strerror(errno));
     return;

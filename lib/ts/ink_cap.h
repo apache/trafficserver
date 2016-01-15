@@ -38,6 +38,18 @@ extern bool PreserveCapabilities();
 /// Initialize and restrict the capabilities of a thread.
 /// @return true on success
 extern bool RestrictCapabilities();
+/** Open a file, elevating privilege only if needed.
+
+    @internal This is necessary because the CI machines run the regression tests
+    as a normal user, not as root, so attempts to get privilege fail even though
+    the @c open would succeed without elevation. So, try that first and ask for
+    elevation only on an explicit permission failure.
+*/
+extern int elevating_open(char const *path, unsigned int flags, unsigned int fperms);
+/// Open a file, elevating privilege only if needed.
+extern int elevating_open(char const *path, unsigned int flags);
+/// Open a file, elevating privilege only if needed.
+extern FILE* elevating_fopen(char const *path, const char* mode);
 
 /** Control generate of core file on crash.
     @a flag sets whether core files are enabled on crash.
@@ -60,8 +72,9 @@ class ElevateAccess
 {
 public:
   typedef enum {
-    FILE_PRIVILEGE = 0x1u, // Access filesystem objects with privilege
-    TRACE_PRIVILEGE = 0x2u // Trace other processes with privilege
+    FILE_PRIVILEGE = 0x1u,    ///< Access filesystem objects with privilege
+    TRACE_PRIVILEGE = 0x2u,   ///< Trace other processes with privilege
+    LOW_PORT_PRIVILEGE = 0x4u ///< Bind to privilege ports.
   } privilege_level;
 
   ElevateAccess(unsigned level = FILE_PRIVILEGE);
@@ -75,8 +88,10 @@ private:
   uid_t saved_uid;
   unsigned level;
 
-  void acquireFileAccessCap(unsigned level);
-  void releaseFileAccessCap();
+  /// Acquire the privileges marked in @a mask for this process.
+  void acquirePrivilege(unsigned priv_mask);
+  /// Restore the privilege set to the state before acquiring them.
+  void releasePrivilege();
 #if !TS_USE_POSIX_CAP
   static ink_mutex lock; // only one thread at a time can elevate
 #else
