@@ -79,8 +79,11 @@ Bug:
   *) [TS-4084] Empty README.md file
   *) [TS-4089] CID 1343608, 1343607: Parent selection Coverity issues
   *) [TS-4091] [ats-multiplexer] multiplexer breaks in the presence of internal headers
+  *) [TS-4097] HPACK encoder doesn't handle empty value
   *) [TS-4106] Cache Inspector fails to split multiline URLs
+  *) [TS-4118] CID 1347871:  Memory - illegal accesses in RegressionHPACK.cc
   *) [TS-4125] Wrong non-active conditions check
+  *) [TS-4130] Wrong LRU pool used when managing queue
 
 Improvement:
   *) [TS-306] Enable log rotation for diags.log
@@ -90,6 +93,7 @@ Improvement:
   *) [TS-2523] Automatically max out the listen backlog
   *) [TS-2861] traffic_ctl option to find differences from defaults
   *) [TS-3072] Debug logging for a single connection in production traffic.
+  *) [TS-3478] Indexing header representations on HPACK encoder
   *) [TS-3827] Cleanup code only depends on drafts of HTTP/2
   *) [TS-3833] healthecks plugin should use PATH_NAME_MAX
   *) [TS-3835] Make open_write_fail_action setting overridable and do not apply the setting for 3xx redirect follow.
@@ -109,6 +113,7 @@ Improvement:
   *) [TS-3924] Simplify debugging macros in cache_range_requests plugin
   *) [TS-3928] TSRemapNewInstance should not be required
   *) [TS-3966] header_rewrite does not allow to deny requests in remap / read-request-her hook
+  *) [TS-3967] Set stream state to close after a RST_STEAM has been sent
   *) [TS-3968] Remove dead ink_auth_api code
   *) [TS-3972] Supporting get incoming port of the client request in ts_lua
   *) [TS-3983] traffic_ctl should not exit if manager is not running
