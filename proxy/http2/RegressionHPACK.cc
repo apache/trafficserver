@@ -424,7 +424,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
     buf_len -= len;
 
     if (len < 0) {
-      box.check(false, "http2_write_psuedo_headers returned negative value: %d", len);
+      box.check(false, "http2_write_psuedo_headers returned negative value: %" PRId64, len);
       break;
     }
 
