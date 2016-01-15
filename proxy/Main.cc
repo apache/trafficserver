@@ -1422,24 +1422,6 @@ change_uid_gid(const char *user)
 #endif
 }
 
-/** Open a file, elevating privilege only if needed.
-
-    @internal This is necessary because the CI machines run the regression tests
-    as a normal user, not as root, so attempts to get privilege fail even though
-    the @c open would succeed without elevation. So, try that first and ask for
-    elevation only on an explicit permission failure.
-*/
-static int
-elevating_open(char const *path, unsigned int flags, unsigned int fperms)
-{
-  int fd = open(path, flags, fperms);
-  if (fd < 0 && (EPERM == errno || EACCES == errno)) {
-    ElevateAccess access;
-    fd = open(path, flags, fperms);
-  }
-  return fd;
-}
-
 /*
  * Binds stdout and stderr to files specified by the parameters
  *

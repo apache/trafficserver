@@ -1874,12 +1874,10 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
     return false;
   }
 
-#if TS_USE_POSIX_CAP
   // elevate/allow file access to root read only files/certs
   uint32_t elevate_setting = 0;
   REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
-  ElevateAccess elevate_access(elevate_setting != 0); // destructor will demote for us
-#endif                                                /* TS_USE_POSIX_CAP */
+  ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0); // destructor will demote for us
 
   line = tokLine(file_buf, &tok_state);
   while (line != NULL) {
