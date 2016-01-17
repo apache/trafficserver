@@ -24,7 +24,14 @@
 #ifndef PLUGINS_EXPERIMENTAL_CACHEKEY_PATTERN_H_
 #define PLUGINS_EXPERIMENTAL_CACHEKEY_PATTERN_H_
 
-#include <pcre.h> /* pcre, pcre_extra, pcre_exec */
+#include "ts/ink_defs.h"
+
+#ifdef HAVE_PCRE_PCRE_H
+#include <pcre/pcre.h>
+#else
+#include <pcre.h>
+#endif
+
 #include "common.h"
 
 /**
