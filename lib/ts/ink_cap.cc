@@ -329,10 +329,10 @@ elevating_open(char const *path, unsigned int flags)
   return fd;
 }
 
-FILE*
-elevating_fopen(char const *path, const char* mode)
+FILE *
+elevating_fopen(char const *path, const char *mode)
 {
-  FILE* f = fopen(path, mode);
+  FILE *f = fopen(path, mode);
   if (NULL == f && (EPERM == errno || EACCES == errno)) {
     ElevateAccess access(ElevateAccess::FILE_PRIVILEGE);
     f = fopen(path, mode);

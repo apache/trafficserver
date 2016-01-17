@@ -49,7 +49,7 @@ extern int elevating_open(char const *path, unsigned int flags, unsigned int fpe
 /// Open a file, elevating privilege only if needed.
 extern int elevating_open(char const *path, unsigned int flags);
 /// Open a file, elevating privilege only if needed.
-extern FILE* elevating_fopen(char const *path, const char* mode);
+extern FILE *elevating_fopen(char const *path, const char *mode);
 
 /** Control generate of core file on crash.
     @a flag sets whether core files are enabled on crash.
