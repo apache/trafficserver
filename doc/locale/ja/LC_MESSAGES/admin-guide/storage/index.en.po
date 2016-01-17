@@ -159,8 +159,8 @@ msgid ""
 msgstr ""
 "*LRU* と *CLFUS* RAM キャッシュはスキャン耐性を増加する設定に対応していま"
 "す。典型的な *LRU* では、存在しうるすべてのオブジェクトに順にリクエストを行"
-"うと、リクエストのたびにキャッシュを churn することになるでしょう。この問題"
-"に対してある程度の耐性を追加するために :ts:cv:`proxy.config.cache.ram_cache."
+"うと、リクエストのたびにキャッシュを撹拌することになるでしょう。この問題に対"
+"してある程度の耐性を追加するために :ts:cv:`proxy.config.cache.ram_cache."
 "use_seen_filter` オプションを設定することができます。"
 
 #: ../../../admin-guide/storage/index.en.rst:89
