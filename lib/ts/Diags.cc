@@ -857,7 +857,7 @@ Diags::set_stderr_output(const char *_bind_stderr)
     delete stderr_log;
     stderr_log = NULL;
   }
-  
+
   // create backing BaseLogFile for stdout
   stderr_log = new BaseLogFile(_bind_stderr);
 
