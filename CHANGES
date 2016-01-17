@@ -84,6 +84,7 @@ Bug:
   *) [TS-4118] CID 1347871:  Memory - illegal accesses in RegressionHPACK.cc
   *) [TS-4125] Wrong non-active conditions check
   *) [TS-4130] Wrong LRU pool used when managing queue
+  *) [TS-4134] Traffic Manager aborts on attempted privilege escalation when non-root.
 
 Improvement:
   *) [TS-306] Enable log rotation for diags.log
