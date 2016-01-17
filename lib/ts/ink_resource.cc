@@ -69,7 +69,7 @@ public:
   setName(const void *symbol, const char *name)
   {
     Dl_info info;
-    dladdr(symbol, &info);
+    dladdr(const_cast<void *>(symbol), &info);
     snprintf(_name, sizeof(_name), "%s/%s", name, info.dli_sname);
   }
   const char *
