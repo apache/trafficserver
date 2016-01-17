@@ -1040,7 +1040,10 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   // change state to closed
   Http2Stream *stream = find_stream(id);
   if (stream != NULL) {
-    stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0);
+    if (!stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0)) {
+      this->send_goaway_frame(stream->get_id(), HTTP2_ERROR_PROTOCOL_ERROR);
+      return;
+    }
   }
 
   // xmit event
