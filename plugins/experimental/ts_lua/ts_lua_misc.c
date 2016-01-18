@@ -155,7 +155,7 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
   lua_State *L;
   ts_lua_cont_info *ci;
   ts_lua_coroutine *crt;
-  int event, n,ret, rc, t ;
+  int event, n,ret, rc;
   ts_lua_http_ctx * actx;
   ts_lua_main_ctx * main_ctx;
 
@@ -185,38 +185,20 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
     ret = lua_resume(L, n - 1);
   }
 
-  switch (ret) {
-  case 0: // coroutine succeed
-    TSDebug(TS_LUA_DEBUG_TAG, "ret is successful");
-    t = lua_gettop(L);
-    if (t > 0) {
-      rc = lua_tointeger(L, -1);
-      lua_pop(L, 1);
-      TSDebug(TS_LUA_DEBUG_TAG, "ret is %d", rc);
-    }
-    // reset rc to 0 to end the coroutine properly
-    rc = 0;
-    break;
+  if (ret == LUA_YIELD) {
+    TSMutexUnlock(main_ctx->mutexp);
+    goto done;
+  }
 
-  case LUA_YIELD: // coroutine yield
-    TSDebug(TS_LUA_DEBUG_TAG, "ret is yield");
-    rc = 1;
-    break;
-
-  default: // coroutine failed
-    TSDebug(TS_LUA_DEBUG_TAG, "ret fails");
+  if (ret != 0) {
     TSError("[ts_lua] lua_resume failed: %s", lua_tostring(L, -1));
-    rc = -1;
-    lua_pop(L, 1);
-    break;
   }
 
+  lua_pop(L, lua_gettop(L));
   TSMutexUnlock(main_ctx->mutexp);
+  ts_lua_destroy_async_ctx(actx);
 
-  if((rc == 0) || (rc < 0)) {
-    ts_lua_destroy_async_ctx(actx);
-  }
-
+done:
   return 0;
 }
 
