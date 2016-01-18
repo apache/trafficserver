@@ -338,28 +338,6 @@ ts_lua_get_cont_info(lua_State *L)
   return ci;
 }
 
-void
-ts_lua_set_async_ctx(lua_State *L, ts_lua_http_ctx *ctx)
-{
-  lua_pushliteral(L, "__ts_async_ctx");
-  lua_pushlightuserdata(L, ctx);
-  lua_rawset(L, LUA_GLOBALSINDEX);
-}
-
-ts_lua_http_ctx *
-ts_lua_get_async_ctx(lua_State *L)
-{
-  ts_lua_http_ctx *ctx;
-
-  lua_pushliteral(L, "__ts_async_ctx");
-  lua_rawget(L, LUA_GLOBALSINDEX);
-  ctx = lua_touserdata(L, -1);
-
-  lua_pop(L, 1);
-  
-  return ctx;
-}
-
 ts_lua_http_ctx *
 ts_lua_create_async_ctx(lua_State *L, ts_lua_cont_info *hci, int n)
 {
@@ -386,8 +364,6 @@ ts_lua_create_async_ctx(lua_State *L, ts_lua_cont_info *hci, int n)
   }
 
   lua_xmove(L, l, n - 2); 
-
-  ts_lua_set_async_ctx(l, actx);
 
   return actx;
 }

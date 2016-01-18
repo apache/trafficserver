@@ -39,7 +39,6 @@ ts_lua_instance_conf *ts_lua_get_instance_conf(lua_State *L);
 void ts_lua_set_cont_info(lua_State *L, ts_lua_cont_info *ci);
 ts_lua_cont_info *ts_lua_get_cont_info(lua_State *L);
 
-ts_lua_http_ctx *ts_lua_get_async_ctx(lua_State *L);
 ts_lua_http_ctx *ts_lua_create_async_ctx(lua_State *L, ts_lua_cont_info *hci, int n);
 void ts_lua_destroy_async_ctx(ts_lua_http_ctx *http_ctx);
 

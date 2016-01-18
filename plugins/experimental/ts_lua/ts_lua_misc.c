@@ -187,12 +187,15 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
 
   switch (ret) {
   case 0: // coroutine succeed
-    TSDebug(TS_LUA_DEBUG_TAG, "ret is 0");
+    TSDebug(TS_LUA_DEBUG_TAG, "ret is successful");
     t = lua_gettop(L);
     if (t > 0) {
       rc = lua_tointeger(L, -1);
       lua_pop(L, 1);
+      TSDebug(TS_LUA_DEBUG_TAG, "ret is %d", rc);
     }
+    // reset rc to 0 to end the coroutine properly
+    rc = 0;
     break;
 
   case LUA_YIELD: // coroutine yield
