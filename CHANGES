@@ -85,6 +85,10 @@ Bug:
   *) [TS-4125] Wrong non-active conditions check
   *) [TS-4130] Wrong LRU pool used when managing queue
   *) [TS-4134] Traffic Manager aborts on attempted privilege escalation when non-root.
+  *) [TS-4139] CID 1348542: Unchecked return value in Http2ConnectionState
+  *) [TS-4140] CID 1348541:  Control flow issues  (DEADCODE)
+  *) [TS-4141] CID 1348540:  Null pointer dereferences
+  *) [TS-4142] Compile errors on OmniOS
 
 Improvement:
   *) [TS-306] Enable log rotation for diags.log
