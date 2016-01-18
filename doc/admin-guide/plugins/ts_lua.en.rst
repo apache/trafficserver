@@ -2378,6 +2378,36 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.schedule
+-----------
+**syntax:** *ts.schedule(THREAD_TYPE, sec, FUNCTION, param1?, param2?, ...)*
+
+**context:** *after do_remap*
+
+**description:** Schedule function to be run after specified seconds without blocking.
+
+Behind the scene, this method makes use of the ATS event model.
+
+Here is an example:
+
+::
+
+    function schedule()
+        ts.debug('test schedule starts')
+    end
+
+    function cache_lookup()
+        ts.debug('cache-lookup')
+        ts.schedule(TS_LUA_THREAD_POOL_NET, 0, schedule)
+        return 0
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.config_int_get
 ----------------------
 **syntax:** *val = ts.http.config_int_get(CONFIG)*
