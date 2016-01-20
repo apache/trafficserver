@@ -46,4 +46,4 @@ mkdir -p BUILDS && cd BUILDS
     ${enable_werror} \
     ${enable_debug}
 
-${ATS_MAKE} -j6 V=1 Q=
+${ATS_MAKE} ${ATS_MAKE_FLAGS} V=1 Q=
