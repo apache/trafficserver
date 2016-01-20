@@ -281,7 +281,7 @@ struct CacheVC : public CacheVConnection {
   is_compressed_in_ram() const
   {
     ink_assert(vio.op == VIO::READ);
-    return !f.compressed_in_ram;
+    return f.compressed_in_ram;
   }
 
   bool writer_done();
