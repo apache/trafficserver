@@ -158,7 +158,7 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
   lua_State *L;
   ts_lua_cont_info *ci;
   ts_lua_coroutine *crt;
-  int event, n, ret, rc;
+  int event, n, ret;
   ts_lua_http_ctx *actx;
   ts_lua_main_ctx *main_ctx;
 
@@ -173,7 +173,7 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
   main_ctx = crt->mctx;
   L = crt->lua;
 
-  rc = ret = 0;
+  ret = 0;
 
   TSMutexLock(main_ctx->mutexp);
   ts_lua_set_cont_info(L, ci);
