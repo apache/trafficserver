@@ -73,6 +73,7 @@ Bug:
   *) [TS-4059] Default value for proxy.config.bin_path does not use value from config.layout
   *) [TS-4062] CID 1341764, 1341763 Control flow issues and resource leak in H2
   *) [TS-4063] Regression Test for HPACK Encoder is failed
+  *) [TS-4070] RemapProcessor Forward Mapping with Recv Port failing with TS-2157 changes
   *) [TS-4071] Unused mutex Diags::rotate_lock
   *) [TS-4078] CID 1343334:  Uninitialized members in Rollback.cc
   *) [TS-4082] Huffman Encoder can not encode "0"
@@ -84,6 +85,7 @@ Bug:
   *) [TS-4118] CID 1347871:  Memory - illegal accesses in RegressionHPACK.cc
   *) [TS-4125] Wrong non-active conditions check
   *) [TS-4130] Wrong LRU pool used when managing queue
+  *) [TS-4131] InactivityCop doesn't close active connections that have timed out
   *) [TS-4134] Traffic Manager aborts on attempted privilege escalation when non-root.
   *) [TS-4139] CID 1348542: Unchecked return value in Http2ConnectionState
   *) [TS-4140] CID 1348541:  Control flow issues  (DEADCODE)
