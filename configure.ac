@@ -1938,6 +1938,26 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/stream_editor/Makefile
 ])])
 
+AC_CHECK_HEADERS([webp/encode.h], [has_webp=1],[has_webp=0])
+AC_CHECK_LIB([webp],[WebPEncode],[AC_SUBST([LIB_WEBP],["-lwebp"])],[has_webp=0])
+AC_SUBST(has_webp)
+AM_CONDITIONAL([HAS_WEBP], [ test "x${has_webp}" = "x1" ])
+
+AC_CHECK_HEADERS([jpeglib.h], [has_jpeg=1],[has_jpeg=0])
+AC_CHECK_LIB([jpeg],[jpeg_mem_src],[AC_SUBST([LIB_JPEG],["-ljpeg"])],[has_jpeg=0])
+AC_SUBST(has_jpeg)
+AM_CONDITIONAL([HAS_JPEG], [ test "x${has_jpeg}" = "x1" ])
+
+AC_CHECK_HEADERS([png.h], [has_png=1],[has_png=0])
+AC_CHECK_LIB([png],[png_set_read_fn],[AC_SUBST([LIB_PNG],["-lpng"])],[has_png=0])
+AC_SUBST(has_png)
+AM_CONDITIONAL([HAS_PNG], [ test "x${has_png}" = "x1" ])
+
+AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
+  AS_IF([test "x$enable_cppapi" = "xyes"], [
+    AC_CONFIG_FILES([plugins/experimental/webp_transform/Makefile])
+  ])])
+
 AS_IF([test "x$enable_cppapi" = "xyes"], [
   AC_CONFIG_FILES([
   lib/atscppapi/Makefile
