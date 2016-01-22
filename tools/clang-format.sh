@@ -19,8 +19,9 @@
 #  limitations under the License.
 
 DIR=${1:-.}
+FORMAT=${FORMAT:-clang-format}
 
 for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc); do
     echo $file
-    clang-format -i $file
+    $FORMAT -i $file
 done
