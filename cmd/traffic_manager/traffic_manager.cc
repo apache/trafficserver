@@ -51,6 +51,10 @@
 #include "StatProcessor.h"
 #include "P_RecLocal.h"
 
+#include "bindings/bindings.h"
+#include "bindings/metrics.h"
+#include "metrics.h"
+
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
 #endif
@@ -87,8 +91,10 @@ static const char *recs_conf = "records.config";
 
 static int fds_limit;
 
+static int metrics_version;
+
 // TODO: Use positive instead negative selection
-//       Thsis should just be #if defined(solaris)
+//       This should just be #if defined(solaris)
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 static void SignalHandler(int sig, siginfo_t *t, void *f);
 static void SignalAlrmHandler(int sig, siginfo_t *t, void *f);
@@ -437,10 +443,14 @@ main(int argc, const char **argv)
   int proxy_backdoor = -1;
   char *group_addr = NULL, *tsArgs = NULL;
   bool disable_syslog = false;
+  RecBool enable_lua = false;
   char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
   time_t ticker;
   ink_thread synthThrId;
+
+  int binding_version = 0;
+  BindingInstance *binding = NULL;
 
   ArgumentDescription argument_descriptions[] = {
     {"proxyOff", '-', "Disable proxy", "F", &proxy_off, NULL, NULL},
@@ -508,6 +518,7 @@ main(int argc, const char **argv)
   }
 
   RecGetRecordInt("proxy.config.net.connections_throttle", &fds_throttle);
+  RecGetRecordBool("proxy.config.stats.enable_lua", &enable_lua);
 
   set_process_limits(fds_throttle); // as root
 
@@ -727,11 +738,27 @@ main(int argc, const char **argv)
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.cop", 0, RECP_NON_PERSISTENT);
 
+  if (enable_lua) {
+    binding = new BindingInstance;
+    metrics_binding_initialize(*binding);
+  }
+
   int sleep_time = 0; // sleep_time given in sec
 
   for (;;) {
     lmgmt->processEventQueue();
     lmgmt->pollMgmtProcessServer();
+
+    if (enable_lua) {
+      if (binding_version != metrics_version) {
+        metrics_binding_destroy(*binding);
+        delete binding;
+
+        binding = new BindingInstance;
+        metrics_binding_initialize(*binding);
+        binding_version = metrics_version;
+      }
+    }
 
     // Handle rotation of output log (aka traffic.out) as well as DIAGS_LOG_FILENAME (aka manager.log)
     rotateLogs();
@@ -762,8 +789,12 @@ main(int argc, const char **argv)
     lmgmt->ccom->checkPeers(&ticker);
     overviewGenerator->checkForUpdates();
 
-    if (statProcessor) {
-      statProcessor->processStat();
+    if (enable_lua) {
+      metrics_binding_evaluate(*binding);
+    } else {
+      if (statProcessor) {
+        statProcessor->processStat();
+      }
     }
 
     if (lmgmt->mgmt_shutdown_outstanding != MGMT_PENDING_NONE) {
@@ -834,8 +865,13 @@ main(int argc, const char **argv)
     }
   }
 
+  if (binding) {
+    metrics_binding_destroy(*binding);
+    delete binding;
+  }
+
   if (statProcessor) {
-    delete (statProcessor);
+    delete statProcessor;
   }
 
 #ifndef MGMT_SERVICE
@@ -1020,6 +1056,9 @@ fileUpdated(char *fname, bool incVersion)
       statProcessor->rereadConfig(configFiles);
     }
     mgmt_log(stderr, "[fileUpdated] stats.config.xml file has been modified\n");
+  } else if (strcmp(fname, "metrics.config") == 0) {
+    ink_atomic_increment(&metrics_version, 1);
+    mgmt_log(stderr, "[fileUpdated] metrics.config file has been modified\n");
   } else if (strcmp(fname, "congestion.config") == 0) {
     lmgmt->signalFileChange("proxy.config.http.congestion_control.filename");
   } else {

@@ -1,0 +1,1643 @@
+-- Dynamic metrics.
+-- This file is processed by Traffic Manager to evaluate dynamic metric definitions.
+
+-- XML Transliteration Notes:
+--
+-- The 'minimum' and 'maximum' XML elements effectively do nothing.
+-- These are called to set the initial value during XML parsing, so
+-- the net effect is to set the value to 'minimum. Since we always
+-- zero metrice on creation there's nothing to do there.
+--
+-- In the cluster-based statistics, the aggregation is further
+-- divided into two types: sum and re-calculate. Sum refers calculating
+-- the proxy.cluster.* variable by simply summing all required
+-- proxy.node.* variables from nodes in the cluster. Re-calculate
+-- refers to summing all proxy.nodes.* variables that are used in the
+-- process of calculation before performing the calculation.  An analogy
+-- would be, summing all open connection in the cluster vs. the average
+-- hit rate in the cluster.
+--
+-- The "operation" attribute ends up in StatExprToken::m_sum_var. For "sum"
+-- and default, m_sum_var is true. For "sum" operations, the cluster metric
+-- don't evaluate expression, then just sum the associated node metric across
+-- the cluster.
+
+-- Handling periodic updates.
+--
+-- Some metrics calculate periodic updates using the interval_of()
+-- and delta_of() APIs. These rely on the fact that the metric name
+-- is passed as the first argument to each evaluation function (so
+-- we can use it as a unique table key), and that if the evaluation
+-- function returns nil, no value is stored (ie. the metric simply
+-- retains its previous value. We combine these characteristics to
+-- run the evaluators on every update cycle but to only store the
+-- value or calculate a delta when the desired interval has passed.
+
+-- Lua API.
+--
+-- VALUE metrics.cluster.sum(METRIC)
+--    Sum the named METRIC across the cluster. METRIC must be a string naming a node
+--    metric since only node metrics are shared across the cluster.
+--
+-- metrics.now.msec
+--    Wall-clock time in milliseconds.
+--
+-- metrics.update.pass
+--    Count of metric updates passes performed in this Lua state
+--
+-- integer(NAME, FUNC), counter(NAME, FUNC), float(NAME, FUNC)
+--    These global functions register a metric of the corresponding name. Each
+--    registered metric will be periodically recalculated by evaluating the 
+--    given function.
+--
+--    The scope of a metric is derived from the name. 'proxy.cluster.*' metrics
+--    are placed in CLUSTER scope and 'proxy.node.*' metrics are placed in NODE
+--    scope.
+--
+--    The name of the metric is passed to evaluation function on each invocation.
+--    This can be used to greate a unique key for persisting data in global tables.
+
+-- Multiplier to convert seconds to milliseconds
+sec_to_msec = 1000
+
+-- Return the sum of the given metric across all cluster nodes. metrics.cluster.sum()
+-- will memoize its result so that summing the same value multiple times in the same
+-- metrics pass is not too expensive. The metric name should always be a node metric.
+function cluster(name)
+  return metrics.cluster.sum(name)
+end
+
+-- Convert bytes to megabits.
+function mbits(bytes)
+  return bytes * 8 / 1000000
+end
+
+-- Convert bytes to mebibytes.
+function mbytes(bytes)
+  return bytes / (1024 * 1024)
+end
+
+-- Return the current time in milliseconds.
+function now()
+  return metrics.now.msec
+end
+
+-- interval_of(msec, key, fn)
+--
+-- Call a function after an interval (in milliseconds) elapses.
+-- The function is called with a single argument of the elapsed
+-- time in milliseconds.
+--
+-- key: unique persistence key
+-- fn: function to call after the interval elapses
+interval_of = (function()
+
+  function __interval_of(msec, fn)
+    local previous = now()
+    return function()
+      local current = now()
+      local elapsed = current - previous
+      if elapsed > msec then
+        previous = current
+        return fn(elapsed)
+      else
+        return nil
+      end
+    end
+  end
+
+  local intervals = {}
+
+  return function(msec, scope, fn)
+    if intervals[scope] == nil then
+      intervals[scope] = __interval_of(msec, fn)
+    end
+    return intervals[scope]()
+  end
+end)()
+
+function interval_of_10s(key, fn)
+  return interval_of(10 * 1000, key, fn)
+end
+
+-- Register a function that returns the delta in every call.
+delta_of = (function ()
+
+  function __delta_of(fn)
+    local previous = fn()
+    return function()
+      local current = fn()
+      local difference = current - previous
+      previous = current
+      return difference
+    end
+  end
+
+  local deltas = {}
+
+  return function(key, fn)
+    if deltas[key] == nil then
+      deltas[key] = __delta_of(fn)
+    end
+
+    return deltas[key]()
+  end
+end)()
+
+-- Wrap delta_of() over an interval to find the rate of change
+-- for a value over the given interval in milliseconds.
+--
+-- msec: interval in milliseconds
+-- key: unique persistence key
+-- fn: function that returns the value
+function rate_of(msec, key, fn)
+  return interval_of(msec, key,
+    function(elapsed)
+      return delta_of(key, fn) * 1000 / elapsed
+    end
+  )
+end
+
+-- Find the per-second rate of change for a value over 10sec.
+function rate_of_10s(key, fn)
+  return rate_of(10 * 1000, key, fn)
+end
+
+-- Return the change over an interval. Most of the metrics that use
+-- this don't really make sense. It's not an average in the way that
+-- people would reasonably expect it to be.
+function interval_delta_of_10s(key, fn)
+  return interval_of_10s(key, function()
+    return delta_of(key, fn)
+  end)
+end
+
+counter 'proxy.node.http.user_agents_total_documents_served' [[
+  return proxy.process.http.incoming_requests
+]]
+
+counter 'proxy.cluster.http.user_agents_total_documents_served' [[
+  return cluster('proxy.node.http.user_agents_total_documents_served')
+]]
+
+counter 'proxy.node.http.user_agents_total_transactions_count' [[
+  return proxy.process.http.incoming_requests
+]]
+
+counter 'proxy.cluster.http.user_agents_total_transactions_count' [[
+  return cluster('proxy.node.http.user_agents_total_transactions_count')
+]]
+
+counter 'proxy.node.http.origin_server_total_transactions_count' [[
+  return proxy.process.http.outgoing_requests
+]]
+
+counter 'proxy.cluster.http.origin_server_total_transactions_count' [[
+  return cluster('proxy.node.http.origin_server_total_transactions_count')
+]]
+
+counter 'proxy.node.http.cache_current_connections_count' [[
+  return proxy.process.http.current_cache_connections
+]]
+
+counter 'proxy.cluster.http.cache_current_connections_count' [[
+  return cluster('proxy.node.http.cache_current_connections_count')
+]]
+
+counter 'proxy.node.http.user_agent_current_connections_count' [[
+  return proxy.process.http.current_client_connections
+]]
+
+counter 'proxy.cluster.http.user_agent_current_connections_count' [[
+  return cluster('proxy.node.http.user_agent_current_connections_count')
+]]
+
+counter 'proxy.node.http.origin_server_current_connections_count' [[
+  return proxy.process.http.current_server_connections
+]]
+
+counter 'proxy.cluster.http.origin_server_current_connections_count' [[
+  return cluster('proxy.node.http.origin_server_current_connections_count')
+]]
+
+--
+-- Cache metrics.
+--
+
+integer 'proxy.node.cache.bytes_total' [[
+  return proxy.process.cache.bytes_total
+]]
+
+--
+-- DNS metrics.
+--
+
+counter 'proxy.node.dns.total_dns_lookups' [[
+  return proxy.process.dns.total_dns_lookups
+]]
+
+counter 'proxy.cluster.dns.total_dns_lookups' [[
+  return cluster('proxy.node.dns.total_dns_lookups')
+]]
+
+--
+-- HostDB metrics.
+--
+
+counter 'proxy.node.hostdb.total_lookups' [[
+  return proxy.process.hostdb.total_lookups
+]]
+
+counter 'proxy.node.hostdb.total_hits' [[
+  return proxy.process.hostdb.total_hits
+]]
+
+--
+-- Cluster metrics.
+--
+
+integer 'proxy.node.cluster.nodes' [[
+  return proxy.process.cluster.nodes
+]]
+
+--
+-- HTTP Cache.
+--
+
+counter 'proxy.node.http.cache_lookups' [[
+  return proxy.process.http.cache_lookups
+]]
+
+counter 'proxy.node.http.cache_writes' [[
+  return proxy.process.http.cache_writes
+]]
+
+counter 'proxy.node.http.cache_updates' [[
+  return proxy.process.http.cache_updates
+]]
+
+counter 'proxy.node.http.cache_deletes' [[
+  return proxy.process.http.cache_deletes
+]]
+
+counter 'proxy.node.http.cache_hit_fresh' [[
+  return proxy.process.http.cache_hit_fresh
+]]
+
+counter 'proxy.node.http.cache_hit_mem_fresh' [[
+  return proxy.process.http.cache_hit_mem_fresh
+]]
+
+counter 'proxy.node.http.cache_hit_revalidated' [[
+  return proxy.process.http.cache_hit_revalidated
+]]
+
+counter 'proxy.node.http.cache_hit_ims' [[
+  return proxy.process.http.cache_hit_ims
+]]
+
+counter 'proxy.node.http.cache_hit_stale_served' [[
+  return proxy.process.http.cache_hit_stale_served
+]]
+
+counter 'proxy.node.http.cache_miss_cold' [[
+  return proxy.process.http.cache_miss_cold
+]]
+
+counter 'proxy.node.http.cache_miss_changed' [[
+  return proxy.process.http.cache_miss_changed
+]]
+
+counter 'proxy.node.http.cache_miss_client_no_cache' [[
+  return proxy.process.http.cache_miss_client_no_cache
+]]
+
+counter 'proxy.node.http.cache_miss_client_not_cacheable' [[
+  return proxy.process.http.cache_miss_client_not_cacheable
+]]
+
+counter 'proxy.node.http.cache_miss_ims' [[
+  return proxy.process.http.cache_miss_ims
+]]
+
+counter 'proxy.node.http.cache_read_error' [[
+  return proxy.process.http.cache_read_error
+]]
+
+counter 'proxy.node.http.cache_write_errors' [[
+  return proxy.process.http.cache_write_errors
+]]
+
+counter 'proxy.node.http.cache_read_errors' [[
+  return proxy.process.http.cache_read_errors
+]]
+
+-- StatAggregation::Ag_XactsPerSecond() -->
+integer 'proxy.node.http.user_agent_xacts_per_second' [[
+  local self = ...
+
+  return rate_of_10s(self,
+    function() return proxy.process.http.incoming_requests end
+  )
+]]
+
+integer'proxy.cluster.http.user_agent_xacts_per_second' [[
+  return cluster('proxy.node.http.user_agent_xacts_per_second')
+]]
+
+integer 'proxy.node.user_agent_xacts_per_second' [[
+  return proxy.node.http.user_agent_xacts_per_second
+]]
+
+integer 'proxy.cluster.user_agent_xacts_per_second' [[
+  return cluster('proxy.cluster.http.user_agent_xacts_per_second')
+]]
+
+counter 'proxy.node.user_agents_total_documents_served' [[
+  return proxy.node.http.user_agents_total_documents_served
+]]
+
+-- StatAggregation::Ag_DnsLookupsPerSecond()
+integer 'proxy.node.dns.lookups_per_second' [[
+  local self = ...
+
+  return rate_of_10s(self,
+    function() return proxy.process.dns.total_dns_lookups end
+  )
+]]
+
+integer 'proxy.cluster.dns.lookups_per_second' [[
+  return cluster('proxy.node.dns.lookups_per_second')
+]]
+
+-- StatAggregation::Ag_HostdbHitRate() -->
+integer 'proxy.node.hostdb.total_lookups_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.hostdb.total_lookups
+  end)
+]]
+
+integer 'proxy.cluster.hostdb.total_lookups_avg_10s' [[
+  return cluster('proxy.node.hostdb.total_lookups_avg_10s')
+]]
+
+integer 'proxy.node.hostdb.total_hits_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.hostdb.total_hits
+  end)
+]]
+
+integer 'proxy.cluster.hostdb.total_hits_avg_10s' [[
+  return cluster('proxy.node.hostdb.total_hits_avg_10s')
+]]
+
+float 'proxy.node.hostdb.hit_ratio_avg_10s' [[
+  local self = ...
+
+  return interval_of_10s(self, function()
+    return
+      proxy.node.hostdb.total_hits_avg_10s    /
+      proxy.node.hostdb.total_lookups_avg_10s
+  end)
+]]
+
+float 'proxy.cluster.hostdb.hit_ratio_avg_10s' [[
+  local self = ...
+
+  return interval_of_10s(self, function()
+    return
+      cluster('proxy.node.hostdb.total_hits_avg_10s')    /
+      cluster('proxy.node.hostdb.total_lookups_avg_10s')
+  end)
+]]
+
+float 'proxy.node.hostdb.hit_ratio' [[
+  return proxy.process.hostdb.total_hits / proxy.process.hostdb.total_lookups
+]]
+
+counter 'proxy.node.http.user_agent_total_request_bytes' [[
+  return proxy.process.http.user_agent_request_document_total_size +
+    proxy.process.http.user_agent_request_header_total_size
+]]
+
+counter 'proxy.cluster.http.user_agent_total_request_bytes' [[
+  return cluster('proxy.node.http.user_agent_total_request_bytes')
+]]
+
+counter 'proxy.node.http.user_agent_total_response_bytes' [[
+  return proxy.process.http.user_agent_response_document_total_size +
+    proxy.process.http.user_agent_response_header_total_size
+]]
+
+counter 'proxy.cluster.http.user_agent_total_response_bytes' [[
+  return cluster('proxy.node.http.user_agent_total_response_bytes')
+]]
+
+counter 'proxy.node.http.origin_server_total_request_bytes' [[
+  return proxy.process.http.origin_server_request_document_total_size +
+    proxy.process.http.origin_server_request_header_total_size
+]]
+
+counter 'proxy.cluster.http.origin_server_total_request_bytes' [[
+  return cluster('proxy.node.http.origin_server_total_request_bytes')
+]]
+
+counter 'proxy.node.http.origin_server_total_response_bytes' [[
+  return proxy.process.http.origin_server_response_document_total_size +
+    proxy.process.http.origin_server_response_header_total_size
+]]
+
+counter 'proxy.cluster.http.origin_server_total_response_bytes' [[
+  return cluster('proxy.node.http.origin_server_total_response_bytes')
+]]
+
+-- Add up the downstream (client <-> proxy) traffic volume.
+counter 'proxy.node.user_agent_total_bytes' [[
+  return proxy.node.http.user_agent_total_request_bytes +
+    proxy.node.http.user_agent_total_response_bytes
+]]
+
+-- Add up the upstream (client <-> proxy) traffic volume.
+counter 'proxy.node.origin_server_total_bytes' [[
+  return proxy.node.http.origin_server_total_request_bytes +
+    proxy.node.http.origin_server_total_response_bytes +
+    proxy.node.http.parent_proxy_total_request_bytes +
+    proxy.node.http.parent_proxy_total_response_bytes
+]]
+
+float 'proxy.node.bandwidth_hit_ratio' [[
+  return (proxy.node.user_agent_total_bytes - proxy.node.origin_server_total_bytes)
+      / proxy.node.user_agent_total_bytes
+]]
+
+float 'proxy.cluster.bandwidth_hit_ratio' [[
+  return (cluster('proxy.node.user_agent_total_bytes') - cluster('proxy.node.origin_server_total_bytes'))
+      / cluster('proxy.node.user_agent_total_bytes')
+]]
+
+float 'proxy.node.user_agent_total_bytes_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.node.user_agent_total_bytes
+  end)
+]]
+
+float 'proxy.cluster.user_agent_total_bytes_avg_10s' [[
+  return cluster('proxy.node.user_agent_total_bytes_avg_10s')
+]]
+
+float 'proxy.node.origin_server_total_bytes_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.node.origin_server_total_bytes
+  end)
+]]
+
+float 'proxy.cluster.origin_server_total_bytes_avg_10s' [[
+  return cluster('proxy.node.origin_server_total_bytes_avg_10s')
+]]
+
+float 'proxy.node.bandwidth_hit_ratio_avg_10s' [[
+  local self = ...
+
+  return interval_of_10s(self, function()
+    return (
+      proxy.node.user_agent_total_bytes_avg_10s -
+      proxy.node.origin_server_total_bytes_avg_10s
+    ) / proxy.node.user_agent_total_bytes_avg_10s
+  end)
+]]
+
+float 'proxy.cluster.bandwidth_hit_ratio_avg_10s' [[
+  return (
+    cluster('proxy.node.user_agent_total_bytes_avg_10s') -
+    cluster('proxy.node.origin_server_total_bytes_avg_10s')
+  ) / cluster('proxy.node.user_agent_total_bytes_avg_10s')
+]]
+
+integer 'proxy.node.bandwidth_hit_ratio_avg_10s_int_pct' [[
+  return proxy.node.bandwidth_hit_ratio_avg_10s * 100
+]]
+
+-- StatAggregation::Ag_Throughput()
+integer 'proxy.node.http.throughput' [[
+  local self = ...
+
+  return rate_of_10s(self,
+    function() return proxy.node.http.user_agent_total_response_bytes end
+  )
+]]
+
+integer 'proxy.cluster.http.throughput' [[
+  return cluster('proxy.cluster.http.throughput')
+]]
+
+float 'proxy.node.client_throughput_out' [[
+  return mbits(proxy.node.http.throughput)
+]]
+
+float 'proxy.cluster.client_throughput_out' [[
+  return cluster('proxy.node.client_throughput_out')
+]]
+
+-- StatAggregation::Ag_cacheHits()
+float 'proxy.node.http.cache_hit_fresh_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_hit_fresh
+  end)
+]]
+
+float 'proxy.node.http.cache_hit_mem_fresh_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_hit_mem_fresh
+  end)
+]]
+
+float 'proxy.node.http.cache_hit_revalidated_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_hit_revalidated
+  end)
+]]
+
+float 'proxy.node.http.cache_hit_ims_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_hit_ims
+  end)
+]]
+
+float 'proxy.node.http.cache_hit_stale_served_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_hit_stale_served
+  end)
+]]
+
+float 'proxy.node.http.cache_miss_cold_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_miss_cold
+  end)
+]]
+
+float 'proxy.node.http.cache_miss_changed_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_miss_changed
+  end)
+]]
+
+float 'proxy.node.http.cache_miss_client_no_cache_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_miss_client_no_cache
+  end)
+]]
+
+float 'proxy.node.http.cache_miss_ims_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_miss_ims
+  end)
+]]
+
+float 'proxy.node.http.cache_read_error_avg_10s' [[
+  local self = ...
+
+  return interval_delta_of_10s(self, function()
+    return proxy.process.http.cache_read_error
+  end)
+]]
+
+float 'proxy.node.cache_total_hits_avg_10s' [[
+  return
+    proxy.node.http.cache_hit_fresh_avg_10s        +
+    proxy.node.http.cache_hit_revalidated_avg_10s  +
+    proxy.node.http.cache_hit_ims_avg_10s          +
+    proxy.node.http.cache_hit_stale_served_avg_10s
+]]
+
+float 'proxy.cluster.cache_total_hits_avg_10s' [[
+  return cluster('proxy.node.cache_total_hits_avg_10s')
+]]
+
+float 'proxy.node.cache_total_hits_mem_avg_10s' [[
+  return proxy.node.http.cache_hit_mem_fresh_avg_10s
+]]
+
+float 'proxy.cluster.cache_total_hits_mem_avg_10s' [[
+  return cluster('proxy.node.cache_total_hits_mem_avg_10s')
+]]
+
+float 'proxy.node.cache_total_misses_avg_10s' [[
+  return
+    proxy.node.http.cache_miss_cold_avg_10s            +
+    proxy.node.http.cache_miss_changed_avg_10s         +
+    proxy.node.http.cache_miss_client_no_cache_avg_10s +
+    proxy.node.http.cache_miss_ims_avg_10s             +
+    proxy.node.http.cache_read_error_avg_10s
+]]
+
+float 'proxy.cluster.cache_total_misses_avg_10s' [[
+  return cluster('proxy.node.cache_total_misses_avg_10s')
+]]
+
+float 'proxy.node.cache_hit_ratio_avg_10s' [[
+  return
+    proxy.node.cache_total_hits_avg_10s   /
+    (
+    proxy.node.cache_total_hits_avg_10s   +
+    proxy.node.cache_total_misses_avg_10s
+    )
+]]
+
+float 'proxy.cluster.cache_hit_ratio_avg_10s' [[
+  return
+    cluster('proxy.node.cache_total_hits_avg_10s')   /
+    (
+    cluster('proxy.node.cache_total_hits_avg_10s')   +
+    cluster('proxy.node.cache_total_misses_avg_10s')
+    )
+]]
+
+float 'proxy.node.cache_hit_mem_ratio_avg_10s' [[
+  return
+    proxy.node.cache_total_hits_mem_avg_10s   /
+    (
+    proxy.node.cache_total_hits_avg_10s   +
+    proxy.node.cache_total_misses_avg_10s
+    )
+]]
+
+float 'proxy.cluster.cache_hit_mem_ratio_avg_10s' [[
+  return
+    cluster('proxy.node.cache_total_hits_mem_avg_10s')   /
+    (
+    cluster('proxy.node.cache_total_hits_avg_10s')   +
+    cluster('proxy.node.cache_total_misses_avg_10s')
+    )
+]]
+
+integer 'proxy.node.cache_hit_ratio_avg_10s_int_pct' [[
+  return proxy.node.cache_hit_ratio_avg_10s * 100
+]]
+
+integer 'proxy.node.cache_hit_mem_ratio_avg_10s_int_pct' [[
+  return proxy.node.cache_hit_mem_ratio_avg_10s * 100
+]]
+
+counter 'proxy.node.cache_total_hits' [[
+  return proxy.process.http.cache_hit_fresh +
+    proxy.process.http.cache_hit_revalidated +
+    proxy.process.http.cache_hit_ims +
+    proxy.process.http.cache_hit_stale_served
+]]
+
+counter 'proxy.cluster.cache_total_hits' [[
+  return cluster('proxy.node.cache_total_hits')
+]]
+
+counter 'proxy.node.cache_total_hits_mem' [[
+  return proxy.process.http.cache_hit_mem_fresh
+]]
+
+counter 'proxy.cluster.cache_total_hits_mem' [[
+  return cluster('proxy.node.cache_total_hits_mem')
+]]
+
+counter 'proxy.node.cache_total_misses' [[
+  return
+    proxy.process.http.cache_miss_cold            +
+    proxy.process.http.cache_miss_changed         +
+    proxy.process.http.cache_miss_client_no_cache +
+    proxy.process.http.cache_miss_ims             +
+    proxy.process.http.cache_read_error
+]]
+
+counter 'proxy.cluster.cache_total_misses' [[
+  return
+    cluster('proxy.node.http.cache_miss_cold')            +
+    cluster('proxy.node.http.cache_miss_changed')         +
+    cluster('proxy.node.http.cache_miss_client_no_cache') +
+    cluster('proxy.node.http.cache_miss_ims')             +
+    cluster('proxy.node.http.cache_read_error')
+]]
+
+float 'proxy.node.cache_hit_ratio' [[
+  return
+    proxy.node.cache_total_hits   /
+    (
+      proxy.node.cache_total_hits   +
+      proxy.node.cache_total_misses
+    )
+]]
+
+float 'proxy.cluster.cache_hit_ratio' [[
+  return
+    cluster('proxy.node.cache_total_hits')   /
+    (
+      cluster('proxy.node.cache_total_hits')   +
+      cluster('proxy.node.cache_total_misses')
+    )
+]]
+
+float 'proxy.node.cache_hit_mem_ratio' [[
+  return
+    proxy.node.cache_total_hits_mem   /
+    (
+    proxy.node.cache_total_hits   +
+    proxy.node.cache_total_misses
+    )
+]]
+
+float 'proxy.cluster.cache_hit_mem_ratio' [[
+  return
+    cluster('proxy.node.cache_total_hits_mem')   /
+    (
+    cluster('proxy.node.cache_total_hits')   +
+    cluster('proxy.node.cache_total_misses')
+    )
+]]
+
+-- StatAggregation::Ag_cachePercent().
+integer 'proxy.node.cache.bytes_free' [[
+  return
+    proxy.process.cache.bytes_total -
+    proxy.process.cache.bytes_used
+]]
+
+float 'proxy.node.cache.percent_free' [[
+  return
+    proxy.node.cache.bytes_free /
+    proxy.process.cache.bytes_total
+]]
+
+float 'proxy.cluster.cache.percent_free' [[
+  return
+    cluster('proxy.node.cache.bytes_free') /
+    cluster('proxy.node.cache.bytes_total')
+]]
+
+-- StatAggregation::Ag_TransactionPercentsAndMeanTimes()
+
+integer 'proxy.node.http.transaction_counts_avg_10s.hit_fresh' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.hit_fresh
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.hit_revalidated' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.hit_revalidated
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.miss_cold' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.miss_cold
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.miss_changed' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.miss_changed
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.miss_client_no_cache
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.miss_not_cacheable
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.errors.connect_failed' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.errors.connect_failed
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.errors.aborts' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.errors.aborts
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.errors.possible_aborts
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.errors.pre_accept_hangups
+  end)
+]]
+
+integer 'proxy.node.http.transaction_counts_avg_10s.errors.other' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.http.transaction_counts.errors.other
+  end)
+]]
+
+-- StatAggregation.cc::frac_names()
+float 'proxy.node.http.transaction_frac_avg_10s.hit_fresh' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+  end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.hit_revalidated' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+  end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.miss_cold' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.miss_cold /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+  end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.miss_changed' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.miss_changed /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+  end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+  end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+  end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.errors.connect_failed' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.errors.aborts' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+float 'proxy.node.http.transaction_frac_avg_10s.errors.other' [[
+  return interval_of_10s(..., function()
+    return
+      proxy.node.http.transaction_counts_avg_10s.errors.other /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.hit_fresh_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.hit_fresh * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.miss_cold_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.miss_cold * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.hit_revalidated_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.hit_revalidated * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.miss_changed_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.miss_changed * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.errors.connect_failed_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.errors.connect_failed * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.errors.aborts_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.errors.aborts * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups * 100
+]]
+
+integer 'proxy.node.http.transaction_frac_avg_10s.errors.other_int_pct' [[
+  return proxy.node.http.transaction_frac_avg_10s.errors.other * 100
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.hit_fresh' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec                  *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.hit_fresh
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.hit_revalidated' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec         *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.hit_revalidated
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.miss_cold' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec   *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.miss_cold
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.miss_changed' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec   *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.miss_changed
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.miss_client_no_cache' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec              *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.miss_client_no_cache
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.miss_not_cacheable' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec            *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.miss_not_cacheable
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.errors.connect_failed' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec               *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.errors.connect_failed
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.errors.aborts' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec       *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.errors.aborts
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.errors.possible_aborts' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec                *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.errors.possible_aborts
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.errors.pre_accept_hangups' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec                   *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.errors.pre_accept_hangups
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+integer 'proxy.node.http.transaction_msec_avg_10s.errors.other' [[
+  local self = ...
+  return interval_of_10s(self, function()
+    return
+      sec_to_msec      *
+      delta_of(self, function()
+        return proxy.process.http.transaction_totaltime.errors.other
+      end) /
+      (
+      proxy.node.http.transaction_counts_avg_10s.hit_fresh                 +
+      proxy.node.http.transaction_counts_avg_10s.hit_revalidated           +
+      proxy.node.http.transaction_counts_avg_10s.miss_cold                 +
+      proxy.node.http.transaction_counts_avg_10s.miss_changed              +
+      proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache      +
+      proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable        +
+      proxy.node.http.transaction_counts_avg_10s.errors.connect_failed     +
+      proxy.node.http.transaction_counts_avg_10s.errors.aborts             +
+      proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts    +
+      proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups +
+      proxy.node.http.transaction_counts_avg_10s.errors.other
+      )
+    end)
+]]
+
+-- StatAggregation::Ag_Connections().
+
+integer 'proxy.node.current_client_connections' [[
+  return proxy.node.http.user_agent_current_connections_count
+]]
+
+integer 'proxy.cluster.current_client_connections' [[
+  return cluster('proxy.node.current_client_connections')
+]]
+
+integer 'proxy.node.current_server_connections' [[
+  return
+    proxy.node.http.origin_server_current_connections_count +
+    proxy.node.http.current_parent_proxy_connections
+]]
+
+integer 'proxy.cluster.current_server_connections' [[
+  return cluster('proxy.node.current_server_connections')
+]]
+
+integer 'proxy.node.current_cache_connections' [[
+  return
+    proxy.node.http.cache_current_connections_count
+]]
+
+integer 'proxy.cluster.current_cache_connections' [[
+  return cluster('proxy.node.current_cache_connections')
+]]
+
+integer 'proxy.node.client_throughput_out_kbit' [[
+  -- Convert Mbit/sec to Kbit/sec.
+  return proxy.node.client_throughput_out * 1000
+]]
+
+integer 'proxy.cluster.client_throughput_out_kbit' [[
+  return cluster('proxy.node.client_throughput_out_kbit')
+]]
+
+-- If proxy.node.cache_hit_ratio represents 100% as 1.0, this
+-- represents it as 100.
+integer 'proxy.node.cache_hit_ratio_int_pct' [[
+    return proxy.node.cache_hit_ratio * 100
+]]
+
+integer 'proxy.cluster.cache_hit_ratio_int_pct' [[
+  return proxy.cluster.cache_hit_ratio * 100
+]]
+
+integer 'proxy.node.cache_hit_mem_ratio_int_pct' [[
+  return proxy.node.cache_hit_mem_ratio * 100
+]]
+
+integer 'proxy.cluster.cache_hit_mem_ratio_int_pct' [[
+  return proxy.node.cache_hit_mem_ratio * 100
+]]
+
+integer 'proxy.node.bandwidth_hit_ratio_int_pct' [[
+  return proxy.node.bandwidth_hit_ratio * 100
+]]
+
+integer 'proxy.cluster.bandwidth_hit_ratio_int_pct' [[
+  return proxy.cluster.bandwidth_hit_ratio * 100
+]]
+
+integer 'proxy.node.cache.percent_free_int_pct' [[
+  return proxy.node.cache.percent_free * 100
+]]
+
+integer 'proxy.cluster.cache.percent_free_int_pct' [[
+  return proxy.cluster.cache.percent_free * 100
+]]
+
+integer 'proxy.node.hostdb.hit_ratio_int_pct' [[
+  return proxy.node.hostdb.hit_ratio * 100
+]]
+
+integer 'proxy.cluster.hostdb.hit_ratio_int_pct' [[
+  return proxy.cluster.hostdb.hit_ratio * 100
+]]
+
+integer 'proxy.node.cache.bytes_total_mb' [[
+  return mbytes(proxy.process.cache.bytes_total)
+]]
+
+integer 'proxy.node.cache.bytes_free_mb' [[
+  return mbytes(proxy.node.cache.bytes_free)
+]]
+
+integer 'proxy.cluster.cache.bytes_free_mb' [[
+  return mbytes(proxy.cluster.cache.bytes_free)
+]]
+
+integer 'proxy.cluster.http.current_parent_proxy_connections' [[
+  return cluster('proxy.node.http.current_parent_proxy_connections')
+]]
+
+counter 'proxy.cluster.http.parent_proxy_total_request_bytes' [[
+  return cluster('proxy.node.http.parent_proxy_total_request_bytes')
+]]
+
+counter 'proxy.cluster.http.parent_proxy_total_response_bytes' [[
+  return cluster('proxy.node.http.parent_proxy_total_response_bytes')
+]]
+
+-- Logging.
+counter 'proxy.node.log.event_log_access_ok' [[
+  return proxy.process.log.event_log_access_ok
+]]
+
+counter 'proxy.cluster.log.event_log_access_ok' [[
+  return cluster('proxy.node.log.event_log_access_ok')
+]]
+
+counter 'proxy.node.log.event_log_access_skip' [[
+  return proxy.process.log.event_log_access_skip
+]]
+
+counter 'proxy.cluster.log.event_log_access_skip' [[
+  return cluster('proxy.node.log.event_log_access_skip')
+]]
+
+counter 'proxy.node.log.event_log_access_aggr' [[
+  return proxy.process.log.event_log_access_aggr
+]]
+
+counter 'proxy.cluster.log.event_log_access_aggr' [[
+  return cluster('proxy.node.log.event_log_access_aggr')
+]]
+
+counter 'proxy.node.log.event_log_access_full' [[
+  return proxy.process.log.event_log_access_full
+]]
+
+counter 'proxy.cluster.log.event_log_access_full' [[
+  return cluster('proxy.node.log.event_log_access_full')
+]]
+
+counter 'proxy.node.log.event_log_access_fail' [[
+  return proxy.process.log.event_log_access_fail
+]]
+
+counter 'proxy.cluster.log.event_log_access_fail' [[
+  return cluster('proxy.node.log.event_log_access_fail')
+]]
+
+counter 'proxy.node.log.num_lost_before_sent_to_network' [[
+  return proxy.process.log.num_lost_before_sent_to_network
+]]
+
+counter 'proxy.cluster.log.num_lost_before_sent_to_network' [[
+  return cluster('proxy.node.log.num_lost_before_sent_to_network')
+]]
+
+counter 'proxy.node.log.num_sent_to_network' [[
+  return proxy.process.log.num_sent_to_network
+]]
+
+counter 'proxy.cluster.log.num_sent_to_network' [[
+  return cluster('proxy.node.log.num_sent_to_network')
+]]
+
+counter 'proxy.node.log.bytes_lost_before_sent_to_network' [[
+  return proxy.process.log.bytes_lost_before_sent_to_network
+]]
+
+counter 'proxy.cluster.log.bytes_lost_before_sent_to_network' [[
+  return cluster('proxy.node.log.bytes_lost_before_sent_to_network')
+]]
+
+counter 'proxy.node.log.bytes_sent_to_network' [[
+  return proxy.process.log.bytes_sent_to_network
+]]
+
+counter 'proxy.cluster.log.bytes_sent_to_network' [[
+  return cluster('proxy.node.log.bytes_sent_to_network')
+]]
+
+counter 'proxy.node.log.num_received_from_network' [[
+  return proxy.process.log.num_received_from_network
+]]
+
+counter 'proxy.cluster.log.num_received_from_network' [[
+  return cluster('proxy.node.log.num_received_from_network')
+]]
+
+counter 'proxy.node.log.bytes_received_from_network' [[
+  return proxy.process.log.bytes_received_from_network
+]]
+
+counter 'proxy.cluster.log.bytes_received_from_network' [[
+  return cluster('proxy.node.log.bytes_received_from_network')
+]]
+
+counter 'proxy.node.log.bytes_lost_before_preproc' [[
+  return proxy.process.log.bytes_lost_before_preproc
+]]
+
+counter 'proxy.cluster.log.bytes_lost_before_preproc' [[
+  return cluster('proxy.node.log.bytes_lost_before_preproc')
+]]
+
+counter 'proxy.node.log.num_lost_before_flush_to_disk' [[
+  return proxy.process.log.num_lost_before_flush_to_disk
+]]
+
+counter 'proxy.cluster.log.num_lost_before_flush_to_disk' [[
+  return cluster('proxy.node.log.bytes_lost_before_preproc')
+]]
+
+counter 'proxy.node.log.bytes_lost_before_flush_to_disk' [[
+  return proxy.process.log.bytes_lost_before_flush_to_disk
+]]
+
+counter 'proxy.cluster.log.bytes_lost_before_flush_to_disk' [[
+  return cluster('proxy.node.log.bytes_lost_before_preproc')
+]]
+
+counter 'proxy.node.log.bytes_lost_before_written_to_disk' [[
+  return proxy.process.log.bytes_lost_before_written_to_disk
+]]
+
+counter 'proxy.cluster.log.bytes_lost_before_written_to_disk' [[
+  return cluster('proxy.node.log.bytes_lost_before_written_to_disk')
+]]
+
+integer 'proxy.node.log.bytes_sent_to_network_avg_10s' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.log.bytes_sent_to_network
+  end)
+]]
+
+integer 'proxy.cluster.log.bytes_sent_to_network_avg_10s' [[
+  return cluster(' proxy.node.log.bytes_sent_to_network_avg_10s')
+]]
+
+integer 'proxy.node.log.bytes_received_from_network_avg_10s' [[
+  return interval_delta_of_10s(..., function()
+    return proxy.process.log.bytes_received_from_network
+  end)
+]]
+
+integer 'proxy.cluster.log.bytes_received_from_network_avg_10s' [[
+  return cluster('proxy.node.log.bytes_received_from_network_avg_10s')
+]]
+
+counter 'proxy.process.ssl.total_success_handshake_count' [[
+  return proxy.process.ssl.total_success_handshake_count_in
+]]
