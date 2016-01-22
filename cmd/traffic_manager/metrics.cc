@@ -182,7 +182,7 @@ metrics_register_evaluator(lua_State *L)
   const char *chunk;
   Evaluator *eval;
   EvaluatorList *evaluators;
-  BindingInstance *binding = BindingInstance::self(L);
+  BindingInstance *binding;
 
   // The metric name is the first upvalue (from the record creation closure).
   metric = lua_tostring(L, lua_upvalueindex(1));

@@ -62,7 +62,7 @@ lua_newuserobject(lua_State *L)
     return new (ptr) T();
   }
 
-  return nullptr;
+  return (T *)NULL;
 }
 
 #endif /* LUA_H_7A9F5CCE_01C6_45C3_987A_FDCC1F437AA2 */
