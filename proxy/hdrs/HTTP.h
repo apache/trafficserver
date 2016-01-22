@@ -29,7 +29,6 @@
 #include "ts/INK_MD5.h"
 #include "MIME.h"
 #include "URL.h"
-#include "ts/TsBuffer.h"
 
 #include "ts/ink_apidefs.h"
 
@@ -455,7 +454,6 @@ void http_parser_clear(HTTPParser *parser);
 MIMEParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                       bool must_copy_strings, bool eof);
 MIMEParseResult validate_hdr_host(HTTPHdrImpl *hh);
-bool validate_host_name(ts::ConstBuffer addr);
 MIMEParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                        bool must_copy_strings, bool eof);
 
