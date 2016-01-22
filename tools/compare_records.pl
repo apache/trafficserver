@@ -70,10 +70,6 @@ sub usage
   exit;
 }
 
-if (defined $diff_metrics) {
-  $diff_metrics = 1;
-}
-
 my @file_list = @$in_files;
 die "\nProvide only two files to compare\n" if (scalar(@file_list) != 2);
 my $in_file1 = $file_list[0];
@@ -91,7 +87,7 @@ if (defined $in_file2) {
 while (my $setting = <$file1>) {
   chomp $setting;
   my($record, $value) = split(/:/, $setting);
-  if ($diff_metrics == 1) {
+  if (defined $diff_metrics) {
     #Obtain only metrics, excluding configs
     if ($record !~ /proxy.config/) {
       $file1_settings{$record} = $value;
@@ -108,7 +104,7 @@ close $file1;
 while (my $setting = <$file2>) {
   chomp $setting;
   my($record, $value) = split(/:/, $setting);
-  if ($diff_metrics == 1) {
+  if (defined $diff_metrics) {
     #Obtain only metrics, excluding configs
     if ($record !~ /proxy.config/) {
       $file2_settings{$record} = $value;
