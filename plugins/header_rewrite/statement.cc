@@ -19,8 +19,6 @@
 // statement.cc: Implementation of the statement base class.
 //
 //
-#include "ts/ts.h"
-
 #include "statement.h"
 
 void
@@ -74,10 +72,55 @@ Statement::initialize_hooks()
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
 
+// Time related functionality for statements. We return an int64_t here, to assure that
+// gettimeofday() / Epoch does not lose bits.
+int64_t
+Statement::get_now_qualified(NowQualifiers qual) const
+{
+  time_t now;
+
+  // First short circuit for the Epoch qualifier, since it needs less data
+  time(&now);
+  if (NOW_QUAL_EPOCH == qual) {
+    return static_cast<int64_t>(now);
+  } else {
+    struct tm res;
+
+    localtime_r(&now, &res);
+    switch (qual) {
+    case NOW_QUAL_EPOCH:
+      TSReleaseAssert(!"EPOCH should have been handled before");
+      break;
+    case NOW_QUAL_YEAR:
+      return static_cast<int64_t>(res.tm_year + 1900); // This makes more sense
+      break;
+    case NOW_QUAL_MONTH:
+      return static_cast<int64_t>(res.tm_mon);
+      break;
+    case NOW_QUAL_DAY:
+      return static_cast<int64_t>(res.tm_mday);
+      break;
+    case NOW_QUAL_HOUR:
+      return static_cast<int64_t>(res.tm_hour);
+      break;
+    case NOW_QUAL_MINUTE:
+      return static_cast<int64_t>(res.tm_min);
+      break;
+    case NOW_QUAL_WEEKDAY:
+      return static_cast<int64_t>(res.tm_wday);
+      break;
+    case NOW_QUAL_YEARDAY:
+      return static_cast<int64_t>(res.tm_yday);
+      break;
+    }
+  }
+  return 0;
+}
+
 
 // Parse URL qualifiers
 UrlQualifiers
-Statement::parse_url_qualifier(const std::string &q)
+Statement::parse_url_qualifier(const std::string &q) const
 {
   UrlQualifiers qual = URL_QUAL_NONE;
 
@@ -95,6 +138,34 @@ Statement::parse_url_qualifier(const std::string &q)
     qual = URL_QUAL_SCHEME;
   else if (q == "URL")
     qual = URL_QUAL_URL;
+
+  return qual;
+}
+
+
+// Parse NOW qualifiers
+NowQualifiers
+Statement::parse_now_qualifier(const std::string &q) const
+{
+  NowQualifiers qual = NOW_QUAL_EPOCH; // Default is seconds since epoch
+
+  if (q == "EPOCH") {
+    qual = NOW_QUAL_EPOCH;
+  } else if (q == "YEAR") {
+    qual = NOW_QUAL_YEAR;
+  } else if (q == "MONTH") {
+    qual = NOW_QUAL_MONTH;
+  } else if (q == "DAY") {
+    qual = NOW_QUAL_DAY;
+  } else if (q == "HOUR") {
+    qual = NOW_QUAL_HOUR;
+  } else if (q == "MINUTE") {
+    qual = NOW_QUAL_MINUTE;
+  } else if (q == "WEEKDAY") {
+    qual = NOW_QUAL_WEEKDAY;
+  } else if (q == "YEARDAY") {
+    qual = NOW_QUAL_YEARDAY;
+  }
 
   return qual;
 }
