@@ -1957,6 +1957,7 @@ AS_IF([test "x$enable_cppapi" = "xyes"], [
   lib/atscppapi/examples/null_transformation_plugin/Makefile
   lib/atscppapi/examples/post_buffer/Makefile
   lib/atscppapi/examples/remap_plugin/Makefile
+  lib/atscppapi/examples/custom_error_remap_plugin/Makefile
   lib/atscppapi/examples/serverresponse/Makefile
   lib/atscppapi/examples/stat_example/Makefile
   lib/atscppapi/examples/timeout_example/Makefile

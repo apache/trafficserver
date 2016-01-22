@@ -186,6 +186,20 @@ Transaction::setErrorBody(const std::string &page)
   TSHttpTxnErrorBodySet(state_->txn_, TSstrdup(page.c_str()), page.length(), NULL); // Default to text/html
 }
 
+void
+Transaction::setErrorBody(const std::string &page, const std::string &mimetype)
+{
+  LOG_DEBUG("Transaction tshttptxn=%p setting error body page: %s", state_->txn_, page.c_str());
+  TSHttpTxnErrorBodySet(state_->txn_, TSstrdup(page.c_str()), page.length(), TSstrdup(mimetype.c_str()));
+}
+
+void
+Transaction::setStatusCode(HttpStatus code)
+{
+  LOG_DEBUG("Transaction tshttptxn=%p setting status code: %d", state_->txn_, code);
+  TSHttpTxnSetHttpRetStatus(state_->txn_, static_cast<TSHttpStatus>(code));
+}
+
 bool
 Transaction::isInternalRequest() const
 {
