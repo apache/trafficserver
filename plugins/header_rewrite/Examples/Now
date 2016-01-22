@@ -1,0 +1,10 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+cond %{NOW} >1453484915
+     set-header X-Now %{NOW}
+     set-header X-Now-Year %{NOW:YEAR}
+     set-header X-Now-Month %{NOW:MONTH}
+     set-header X-Now-Day %{NOW:DAY}
+     set-header X-Now-Hour %{NOW:HOUR}
+     set-header X-Now-Min %{NOW:MINUTE}
+     set-header X-Now-WEEKDAY %{NOW:WEEKDAY}
+     set-header X-Now-YEARDAY %{NOW:YEARDAY}

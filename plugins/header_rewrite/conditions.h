@@ -392,4 +392,23 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionTransactCount);
 };
 
+// now: Keeping track of current time / day / hour etc.
+class ConditionNow : public Condition
+{
+public:
+  explicit ConditionNow() : _now_qual(NOW_QUAL_EPOCH) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); };
+
+  void initialize(Parser &p);
+  void set_qualifier(const std::string &q);
+  void append_value(std::string &s, const Resources &res);
+
+protected:
+  bool eval(const Resources &res);
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionNow);
+  NowQualifiers _now_qual;
+};
+
+
 #endif // __CONDITIONS_H

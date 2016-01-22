@@ -24,6 +24,7 @@
 #define __STATEMENT_H__ 1
 
 #include <string>
+#include <time.h>
 #include <vector>
 
 #include "ts/ts.h"
@@ -43,6 +44,18 @@ enum UrlQualifiers {
   URL_QUAL_MATRIX,
   URL_QUAL_SCHEME,
   URL_QUAL_URL
+};
+
+// NOW data
+enum NowQualifiers {
+  NOW_QUAL_EPOCH,
+  NOW_QUAL_YEAR,
+  NOW_QUAL_MONTH,
+  NOW_QUAL_DAY,
+  NOW_QUAL_HOUR,
+  NOW_QUAL_MINUTE,
+  NOW_QUAL_WEEKDAY,
+  NOW_QUAL_YEARDAY
 };
 
 
@@ -114,7 +127,10 @@ public:
 protected:
   virtual void initialize_hooks();
 
-  UrlQualifiers parse_url_qualifier(const std::string &q);
+  UrlQualifiers parse_url_qualifier(const std::string &q) const;
+  NowQualifiers parse_now_qualifier(const std::string &q) const;
+  int64_t get_now_qualified(NowQualifiers qual) const;
+
   void
   require_resources(const ResourceIDs ids)
   {
