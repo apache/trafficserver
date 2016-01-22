@@ -309,6 +309,25 @@ Value Effect
   This setting specifies the number of active client connections
   for use by :option:`traffic_ctl server restart --drain`.
 
+Metrics Variables
+-----------------
+
+.. ts:cv:: CONFIG proxy.config.stats.snap_frequency INT 60
+
+  Interval (in seconds) at which to snapshot persistent metrics.
+
+.. ts:cv:: CONFIG proxy.config.stats.snap_file STRING "stats.snap"
+
+  Name of the file to use for snapshots of persistent metrics.
+
+.. ts:cv:: proxy.config.stats.enable_lua INT 0
+
+  Whether to enable execution of the Lua-based custom metrics from
+  :file:`metrics.config` in preference to the deprecated
+  :file:`stats.config.xml`.
+
+  This setting will default to ``1`` in a future release.
+
 Network
 =======
 
