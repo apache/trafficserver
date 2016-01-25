@@ -1143,6 +1143,19 @@ LogAccessHttp::marshal_server_transact_count(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccessHttp::marshal_server_connect_attempts(char *buf)
+{
+  if (buf) {
+    int64_t attempts = m_http_sm->t_state.current.attempts;
+    marshal_int(buf, attempts);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccessHttp::marshal_cache_resp_status_code(char *buf)
 {
   if (buf) {
