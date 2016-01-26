@@ -201,7 +201,7 @@ printViaHeader(const char *header)
 
   // Loop through input via header flags
   for (const char *c = header; *c; ++c) {
-    if (*c == ':') {
+    if (*c == ';') {
       isDetail = true;
       continue;
     }
