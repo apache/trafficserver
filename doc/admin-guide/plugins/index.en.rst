@@ -90,3 +90,4 @@ directory of the Apache Traffic Server source tree. Experimental plugins can be 
   hipes.en
   stale_while_revalidate.en
   ts-lua: allows plugins to be written in Lua instead of C code <ts_lua.en>
+  Signed URLs: adds support for verifying URL signatures for incoming requests to either deny or redirect access <url_sig.en>
