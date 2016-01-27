@@ -361,6 +361,7 @@ get_pristine_host(TSHttpTxn txnp, TSMBuffer bufp, std::string &host)
   }
 
   pristine_port = TSUrlPortGet(bufp, purl_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, purl_loc);
   host = std::string(pristine_host, pristine_host_len);
   if (pristine_port != 80) {
     char buf[12];

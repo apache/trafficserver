@@ -129,13 +129,12 @@ EscalateResponse(TSCont cont, TSEvent event, void *edata)
     if (es->use_pristine) {
       if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txn, &mbuf, &url)) {
         url_str = MakeEscalateUrl(mbuf, url, entry->second.target.c_str(), entry->second.target.size(), url_len);
-        printf("STRING is %.*s\n", url_len, url_str);
+        TSHandleMLocRelease(mbuf, TS_NULL_MLOC, url);
       }
     } else {
       if (TS_SUCCESS == TSHttpTxnClientReqGet(txn, &mbuf, &hdrp)) {
         if (TS_SUCCESS == TSHttpHdrUrlGet(mbuf, hdrp, &url)) {
           url_str = MakeEscalateUrl(mbuf, url, entry->second.target.c_str(), entry->second.target.size(), url_len);
-          printf("Old code STRING is %.*s\n", url_len, url_str);
         }
         // Release the request MLoc
         TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdrp);

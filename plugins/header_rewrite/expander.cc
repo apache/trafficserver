@@ -66,6 +66,7 @@ VariableExpander::expand(const Resources &res)
       if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url_loc) == TS_SUCCESS) {
         int len;
         resolved_variable = TSUrlSchemeGet(bufp, url_loc, &len);
+        TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
       }
     } else if (variable == "%<port>") {
       // Original port of the incoming request
