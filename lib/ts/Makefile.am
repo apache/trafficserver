@@ -70,7 +70,6 @@ libtsutil_la_SOURCES = \
   I_Layout.h \
   I_Version.h \
   InkErrno.h \
-  InkPool.h \
   IntrusiveDList.h \
   IpMap.cc \
   IpMap.h \
