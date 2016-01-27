@@ -1969,7 +1969,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 
     Debug("ssl", "create ticket for a new session.");
     SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
-    return 0;
+    return 1;
   } else if (enc == 0) {
     for (unsigned i = 0; i < keyblock->num_keys; ++i) {
       if (memcmp(keyname, keyblock->keys[i].key_name, sizeof(keyblock->keys[i].key_name)) == 0) {
