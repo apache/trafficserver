@@ -552,7 +552,7 @@ removeCacheKey(TSHttpTxn txnp)
   }
 
   TSHandleMLocRelease(req_bufp, req_hdr_loc, url_loc);
-  if (url_loc != NULL) {
+  if (req_hdr_loc != NULL) {
     TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr_loc);
   }
 
