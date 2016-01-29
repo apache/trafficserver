@@ -431,68 +431,46 @@ void
 Transaction::initServerRequest()
 {
   static initializeHandles initializeServerRequestHandles(TSHttpTxnServerReqGet);
-  if (initializeServerRequestHandles(state_->txn_, state_->server_request_hdr_buf_, state_->server_request_hdr_loc_,
-                                     "server request")) {
-    LOG_DEBUG("Initializing server request");
-    state_->server_request_.init(state_->server_request_hdr_buf_, state_->server_request_hdr_loc_);
-  } else {
-    LOG_DEBUG("Reset server request");
-    state_->server_request_.reset();
-  }
+  initializeServerRequestHandles(state_->txn_, state_->server_request_hdr_buf_, state_->server_request_hdr_loc_, "server request");
+  LOG_DEBUG("Initializing server request");
+  state_->server_request_.init(state_->server_request_hdr_buf_, state_->server_request_hdr_loc_);
 }
 
 void
 Transaction::initServerResponse()
 {
   static initializeHandles initializeServerResponseHandles(TSHttpTxnServerRespGet);
-  if (initializeServerResponseHandles(state_->txn_, state_->server_response_hdr_buf_, state_->server_response_hdr_loc_,
-                                      "server response")) {
-    LOG_DEBUG("Initializing server response");
-    state_->server_response_.init(state_->server_response_hdr_buf_, state_->server_response_hdr_loc_);
-  } else {
-    LOG_DEBUG("Reset server response");
-    state_->server_response_.reset();
-  }
+  initializeServerResponseHandles(state_->txn_, state_->server_response_hdr_buf_, state_->server_response_hdr_loc_,
+                                  "server response");
+  LOG_DEBUG("Initializing server response");
+  state_->server_response_.init(state_->server_response_hdr_buf_, state_->server_response_hdr_loc_);
 }
 
 void
 Transaction::initClientResponse()
 {
   static initializeHandles initializeClientResponseHandles(TSHttpTxnClientRespGet);
-  if (initializeClientResponseHandles(state_->txn_, state_->client_response_hdr_buf_, state_->client_response_hdr_loc_,
-                                      "client response")) {
-    LOG_DEBUG("Initializing client response");
-    state_->client_response_.init(state_->client_response_hdr_buf_, state_->client_response_hdr_loc_);
-  } else {
-    LOG_DEBUG("Reset client response");
-    state_->client_response_.reset();
-  }
+  initializeClientResponseHandles(state_->txn_, state_->client_response_hdr_buf_, state_->client_response_hdr_loc_,
+                                  "client response");
+  LOG_DEBUG("Initializing client response");
+  state_->client_response_.init(state_->client_response_hdr_buf_, state_->client_response_hdr_loc_);
 }
 
 void
 Transaction::initCachedRequest()
 {
   static initializeHandles initializeCachedRequestHandles(TSHttpTxnCachedReqGet);
-  if (initializeCachedRequestHandles(state_->txn_, state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_,
-                                     "cached request")) {
-    LOG_DEBUG("Initializing cached request");
-    state_->cached_request_.init(state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_);
-  } else {
-    LOG_DEBUG("Reset cached request");
-    state_->cached_request_.reset();
-  }
+  initializeCachedRequestHandles(state_->txn_, state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_, "cached request");
+  LOG_DEBUG("Initializing cached request");
+  state_->cached_request_.init(state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_);
 }
 
 void
 Transaction::initCachedResponse()
 {
   static initializeHandles initializeCachedResponseHandles(TSHttpTxnCachedRespGet);
-  if (initializeCachedResponseHandles(state_->txn_, state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_,
-                                      "cached response")) {
-    LOG_DEBUG("Initializing cached response");
-    state_->cached_response_.init(state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_);
-  } else {
-    LOG_DEBUG("Reset cached response");
-    state_->cached_response_.reset();
-  }
+  initializeCachedResponseHandles(state_->txn_, state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_,
+                                  "cached response");
+  LOG_DEBUG("Initializing cached response");
+  state_->cached_response_.init(state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_);
 }
