@@ -84,11 +84,6 @@ Request::Request(const string &url_str, HttpMethod method, HttpVersion version)
 void
 Request::init(void *hdr_buf, void *hdr_loc)
 {
-  if (state_->hdr_buf_ || state_->hdr_loc_) {
-    LOG_ERROR("Reinitialization; (hdr_buf, hdr_loc) current(%p, %p), attempted(%p, %p)", state_->hdr_buf_, state_->hdr_loc_,
-              hdr_buf, hdr_loc);
-    return;
-  }
   state_->hdr_buf_ = static_cast<TSMBuffer>(hdr_buf);
   state_->hdr_loc_ = static_cast<TSMLoc>(hdr_loc);
   state_->headers_.reset(state_->hdr_buf_, state_->hdr_loc_);
