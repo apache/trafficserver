@@ -86,28 +86,6 @@ Transaction::Transaction(void *raw_txn)
 Transaction::~Transaction()
 {
   LOG_DEBUG("Transaction tshttptxn=%p destroying Transaction object %p", state_->txn_, this);
-  static const TSMLoc NULL_PARENT_LOC = NULL;
-  TSHandleMLocRelease(state_->client_request_hdr_buf_, NULL_PARENT_LOC, state_->client_request_hdr_loc_);
-  if (state_->server_request_hdr_buf_ && state_->server_request_hdr_loc_) {
-    LOG_DEBUG("Releasing server request");
-    TSHandleMLocRelease(state_->server_request_hdr_buf_, NULL_PARENT_LOC, state_->server_request_hdr_loc_);
-  }
-  if (state_->server_response_hdr_buf_ && state_->server_response_hdr_loc_) {
-    LOG_DEBUG("Releasing server response");
-    TSHandleMLocRelease(state_->server_response_hdr_buf_, NULL_PARENT_LOC, state_->server_response_hdr_loc_);
-  }
-  if (state_->client_response_hdr_buf_ && state_->client_response_hdr_loc_) {
-    LOG_DEBUG("Releasing client response");
-    TSHandleMLocRelease(state_->client_response_hdr_buf_, NULL_PARENT_LOC, state_->client_response_hdr_loc_);
-  }
-  if (state_->cached_request_hdr_buf_ && state_->cached_request_hdr_loc_) {
-    LOG_DEBUG("Releasing cached request");
-    TSHandleMLocRelease(state_->cached_request_hdr_buf_, NULL_PARENT_LOC, state_->cached_request_hdr_loc_);
-  }
-  if (state_->cached_response_hdr_buf_ && state_->cached_response_hdr_loc_) {
-    LOG_DEBUG("Releasing cached response");
-    TSHandleMLocRelease(state_->cached_response_hdr_buf_, NULL_PARENT_LOC, state_->cached_response_hdr_loc_);
-  }
   delete state_;
 }
 
@@ -433,14 +411,12 @@ public:
   initializeHandles(GetterFunction getter) : getter_(getter) {}
   bool operator()(TSHttpTxn txn, TSMBuffer &hdr_buf, TSMLoc &hdr_loc, const char *handles_name)
   {
-    if (!hdr_buf && !hdr_loc) {
-      if (getter_(txn, &hdr_buf, &hdr_loc) == TS_SUCCESS) {
-        return true;
-      } else {
-        LOG_ERROR("Could not get %s", handles_name);
-      }
+    hdr_buf = NULL;
+    hdr_loc = NULL;
+    if (getter_(txn, &hdr_buf, &hdr_loc) == TS_SUCCESS) {
+      return true;
     } else {
-      LOG_ERROR("%s already initialized", handles_name);
+      LOG_ERROR("Could not get %s", handles_name);
     }
     return false;
   }
