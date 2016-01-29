@@ -97,6 +97,16 @@ Request::init(void *hdr_buf, void *hdr_loc)
   }
 }
 
+void
+Request::reset()
+{
+  state_->hdr_buf_ = NULL;
+  state_->hdr_loc_ = NULL;
+  state_->headers_.reset(NULL, NULL);
+  state_->url_loc_ = NULL;
+  LOG_DEBUG("Reset request %p", this);
+}
+
 HttpMethod
 Request::getMethod() const
 {
