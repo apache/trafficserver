@@ -350,6 +350,7 @@ public:
   static uint32_t max_request_header_size;
   static uint32_t accept_no_activity_timeout;
   static uint32_t no_activity_timeout_in;
+  static uint32_t active_timeout_in;
 
   static void init();
 };
