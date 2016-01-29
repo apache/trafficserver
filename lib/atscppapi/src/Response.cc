@@ -54,6 +54,15 @@ Response::init(void *hdr_buf, void *hdr_loc)
   LOG_DEBUG("Initializing response %p with hdr_buf=%p and hdr_loc=%p", this, state_->hdr_buf_, state_->hdr_loc_);
 }
 
+void
+Response::reset()
+{
+  state_->hdr_buf_ = NULL;
+  state_->hdr_loc_ = NULL;
+  state_->headers_.reset(NULL, NULL);
+  LOG_DEBUG("Reset response %p", this);
+}
+
 HttpVersion
 Response::getVersion() const
 {

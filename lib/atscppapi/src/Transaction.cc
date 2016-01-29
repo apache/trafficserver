@@ -435,6 +435,9 @@ Transaction::initServerRequest()
                                      "server request")) {
     LOG_DEBUG("Initializing server request");
     state_->server_request_.init(state_->server_request_hdr_buf_, state_->server_request_hdr_loc_);
+  } else {
+    LOG_DEBUG("Reset server request");
+    state_->server_request_.reset();
   }
 }
 
@@ -446,6 +449,9 @@ Transaction::initServerResponse()
                                       "server response")) {
     LOG_DEBUG("Initializing server response");
     state_->server_response_.init(state_->server_response_hdr_buf_, state_->server_response_hdr_loc_);
+  } else {
+    LOG_DEBUG("Reset server response");
+    state_->server_response_.reset();
   }
 }
 
@@ -457,6 +463,9 @@ Transaction::initClientResponse()
                                       "client response")) {
     LOG_DEBUG("Initializing client response");
     state_->client_response_.init(state_->client_response_hdr_buf_, state_->client_response_hdr_loc_);
+  } else {
+    LOG_DEBUG("Reset client response");
+    state_->client_response_.reset();
   }
 }
 
@@ -468,6 +477,9 @@ Transaction::initCachedRequest()
                                      "cached request")) {
     LOG_DEBUG("Initializing cached request");
     state_->cached_request_.init(state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_);
+  } else {
+    LOG_DEBUG("Reset cached request");
+    state_->cached_request_.reset();
   }
 }
 
@@ -479,5 +491,8 @@ Transaction::initCachedResponse()
                                       "cached response")) {
     LOG_DEBUG("Initializing cached response");
     state_->cached_response_.init(state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_);
+  } else {
+    LOG_DEBUG("Reset cached response");
+    state_->cached_response_.reset();
   }
 }
