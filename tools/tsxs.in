@@ -102,7 +102,7 @@ compile() {
 			MY_CFLAGS="$CPPFLAGS $CXXFLAGS"
 			MY_CC=$CXX
 			;;
-		lo)
+		lo|o|a)
 			OBJS="${OBJS} ${SRC}"
 			return
 			;;
