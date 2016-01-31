@@ -102,6 +102,10 @@ compile() {
 			MY_CFLAGS="$CPPFLAGS $CXXFLAGS"
 			MY_CC=$CXX
 			;;
+		lo)
+			OBJS="${OBJS} ${SRC}"
+			return
+			;;
 		*)
 			bail "unrecognized input file: $SRC"
 			;;
