@@ -479,7 +479,6 @@ Transaction::initCachedResponse(TSEvent event)
   static initializeHandles initializeCachedResponseHandles(TSHttpTxnCachedRespGet);
   initializeCachedResponseHandles(state_->txn_, state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_,
                                   "cached response");
-  LOG_DEBUG("Initializing cached response");
   LOG_DEBUG("Initializing cached response, event %d", event);
   state_->cached_response_.init(state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_);
 }
