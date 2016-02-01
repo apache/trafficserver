@@ -1,3 +1,11 @@
+Changes with Apache Traffic Server 6.1.1
+
+Bug:
+  *) [TS-4142] Compile errors on OmniOS
+  *) [TS-4165] Logging breaks if changing log format
+  *) [TS-4168] Only close inactive and active connections that have a non-zero timeout
+
+
 Changes with Apache Traffic Server 6.1.0
 
 Bug:
