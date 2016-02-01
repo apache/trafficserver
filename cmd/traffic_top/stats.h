@@ -266,6 +266,7 @@ public:
             assert(TSRecordGetString(item.name, &strValue) == TS_ERR_OKAY);
             string key = item.name;
             (*_stats)[key] = strValue;
+            TSfree(strValue);
           } else {
             if (TSRecordGetInt(item.name, &value) != TS_ERR_OKAY) {
               fprintf(stderr, "Error getting stat: %s when calling TSRecordGetInt() failed: file \"%s\", line %d\n\n", item.name,
