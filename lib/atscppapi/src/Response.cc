@@ -48,10 +48,23 @@ Response::Response()
 void
 Response::init(void *hdr_buf, void *hdr_loc)
 {
+  reset();
+  if (!hdr_buf || !hdr_loc) {
+    return;
+  }
   state_->hdr_buf_ = static_cast<TSMBuffer>(hdr_buf);
   state_->hdr_loc_ = static_cast<TSMLoc>(hdr_loc);
   state_->headers_.reset(state_->hdr_buf_, state_->hdr_loc_);
   LOG_DEBUG("Initializing response %p with hdr_buf=%p and hdr_loc=%p", this, state_->hdr_buf_, state_->hdr_loc_);
+}
+
+void
+Response::reset()
+{
+  state_->hdr_buf_ = NULL;
+  state_->hdr_loc_ = NULL;
+  state_->headers_.reset(NULL, NULL);
+  LOG_DEBUG("Reset response %p", this);
 }
 
 HttpVersion
