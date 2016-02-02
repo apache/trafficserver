@@ -4,6 +4,7 @@ Bug:
   *) [TS-4142] Compile errors on OmniOS
   *) [TS-4165] Logging breaks if changing log format
   *) [TS-4168] Only close inactive and active connections that have a non-zero timeout
+  *) [TS-4170] Error receiving data frame on closed connection for HTTP/2
 
 
 Changes with Apache Traffic Server 6.1.0
