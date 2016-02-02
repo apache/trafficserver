@@ -367,21 +367,21 @@ private:
    *
    * @private
    */
-  void initServerRequest();
+  void initServerRequest(TSEvent event);
 
   /**
    * Used to initialize the Response object for the Server.
    *
    * @private
    */
-  void initServerResponse();
+  void initServerResponse(TSEvent event);
 
   /**
    * Used to initialize the Response object for the Client.
    *
    * @private
    */
-  void initClientResponse();
+  void initClientResponse(TSEvent event);
 
   /**
    * Used to initialize the Request object for the cache.
@@ -389,7 +389,7 @@ private:
    * @private
    */
 
-  void initCachedRequest();
+  void initCachedRequest(TSEvent event);
 
   /**
    * Used to initialize the Response object for the cache.
@@ -397,7 +397,7 @@ private:
    * @private
    */
 
-  void initCachedResponse();
+  void initCachedResponse(TSEvent event);
 
   /**
    * Returns a list of TransactionPlugin pointers bound to the current Transaction

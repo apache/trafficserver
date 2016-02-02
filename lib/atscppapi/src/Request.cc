@@ -84,9 +84,8 @@ Request::Request(const string &url_str, HttpMethod method, HttpVersion version)
 void
 Request::init(void *hdr_buf, void *hdr_loc)
 {
-  if (state_->hdr_buf_ || state_->hdr_loc_) {
-    LOG_ERROR("Reinitialization; (hdr_buf, hdr_loc) current(%p, %p), attempted(%p, %p)", state_->hdr_buf_, state_->hdr_loc_,
-              hdr_buf, hdr_loc);
+  reset();
+  if (!hdr_buf || !hdr_loc) {
     return;
   }
   state_->hdr_buf_ = static_cast<TSMBuffer>(hdr_buf);
@@ -100,6 +99,16 @@ Request::init(void *hdr_buf, void *hdr_loc)
     state_->url_.init(state_->hdr_buf_, state_->url_loc_);
     LOG_DEBUG("Initialized url");
   }
+}
+
+void
+Request::reset()
+{
+  state_->hdr_buf_ = NULL;
+  state_->hdr_loc_ = NULL;
+  state_->headers_.reset(NULL, NULL);
+  state_->url_loc_ = NULL;
+  LOG_DEBUG("Reset request %p", this);
 }
 
 HttpMethod
