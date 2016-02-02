@@ -925,7 +925,7 @@ msgid ""
 "executing the Traffic Line command from the active Traffic Server path "
 "specified in ``/etc/trafficserver``**"
 msgstr ""
-"**複数のインストール済み Traffic Server が存在し、``/etc/trafficserver`` で"
+"**複数のインストール済み Traffic Server が存在し、 ``/etc/trafficserver`` で"
 "指定された Traffic Server のパスから Traffic Line コマンドが実行されていない"
 "場合。**"
 
