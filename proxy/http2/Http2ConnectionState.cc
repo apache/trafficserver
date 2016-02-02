@@ -85,6 +85,11 @@ rcv_data_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2
     }
   }
 
+  // Check to see if FetchSM is NULL
+  if (stream->get_fetcher() == NULL) {
+    return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_STREAM_CLOSED);
+  }
+
   // If a DATA frame is received whose stream is not in "open" or "half closed
   // (local)" state,
   // the recipient MUST respond with a stream error of type STREAM_CLOSED.
