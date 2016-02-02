@@ -356,7 +356,6 @@ instead.
 
 Hook point constants
 --------------------
-**context:** do_remap or later
 
 ::
 
@@ -375,6 +374,31 @@ Hook point constants
     TS_LUA_RESPONSE_TRANSFORM
 
 These constants are usually used in ts.hook method call.
+
+Additional Information:
+::
+
+   +------------------------------------+------------------------------------+----------------------+---------------------+
+   |           Hook Point               |     Lua Hook Point constant        |   Hook function be   |   Hook function be  |
+   |                                    |                                    |   registered  within |   registered within |
+   |                                    |                                    |   do_remap() via     |   global context via| 
+   |                                    |                                    |   ts.hook()?         |   ts.hook()?        |
+   +------------------------------------+------------------------------------+----------------------+---------------------+
+   | TS_HTTP_TXN_START_HOOK             |  TS_LUA_HOOK_TXN_START             |     NO               |    YES              |
+   | TS_HTTP_READ_REQUEST_HDR_HOOK      |  TS_LUA_HOOK_READ_REQUEST_HDR      |     NO               |    YES              |
+   | TS_HTTP_PRE_REMAP_HOOK             |  TS_LUA_HOOK_PRE_REMAP             |     NO               |    YES              |
+   | TS_HTTP_POST_REMAP_HOOK            |  TS_LUA_HOOK_POST_REMAP            |     YES              |    YES              |
+   | TS_HTTP_SELECT_ALT_HOOK            |  TS_LUA_HOOK_SELECT_ALT            |     NO               |    NO               |
+   | TS_HTTP_READ_CACHE_HDR_HOOK        |  TS_LUA_HOOK_READ_CACHE_HDR        |     YES              |    YES              |
+   | TS_HTTP_OS_DNS_HOOK                |  TS_LUA_HOOK_OS_DNS                |     YES              |    YES              |
+   | TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK |  TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE |     YES              |    YES              |
+   | TS_HTTP_SEND_REQUEST_HDR_HOOK      |  TS_LUA_HOOK_SEND_REQUEST_HDR      |     YES              |    YES              |
+   | TS_HTTP_READ_RESPONSE_HDR_HOOK     |  TS_LUA_HOOK_READ_RESPONSE_HDR     |     YES              |    YES              |
+   | TS_HTTP_SEND_RESPONSE_HDR_HOOK     |  TS_LUA_HOOK_SEND_RESPONSE_HDR     |     YES              |    YES              |
+   | TS_HTTP_REQUEST_TRANSFORM_HOOK     |  TS_LUA_REQUEST_TRANSFORM          |     NO               |    NO               |
+   | TS_HTTP_RESPONSE_TRANSFORM_HOOK    |  TS_LUA_RESPONSE_TRANSFORM         |     YES              |    YES              |
+   | TS_HTT_TXN_CLOSE_HOOK              |  TS_LUA_HOOK_TXN_CLOSE             |     YES              |    YES              |
+   +------------------------------------+------------------------------------+----------------------+---------------------+
 
 `TOP <#ts-lua-plugin>`_
 
