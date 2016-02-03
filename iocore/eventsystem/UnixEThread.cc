@@ -39,6 +39,8 @@ struct AIOCallback;
 #define THREAD_MAX_HEARTBEAT_MSECONDS 60
 #define NO_ETHREAD_ID -1
 
+bool shutdown_event_system = false;
+
 EThread::EThread()
   : generator((uint64_t)ink_get_hrtime_internal() ^ (uint64_t)(uintptr_t) this), ethreads_to_be_signalled(NULL),
     n_ethreads_to_be_signalled(0), main_accept_index(-1), id(NO_ETHREAD_ID), event_types(0), signal_hook(0), tt(REGULAR)
@@ -168,6 +170,9 @@ EThread::execute()
 
     // give priority to immediate events
     for (;;) {
+      if (shutdown_event_system == true) {
+        return;
+      }
       // execute all the available external events that have
       // already been dequeued
       cur_time = ink_get_based_hrtime_internal();

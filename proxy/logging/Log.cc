@@ -1153,6 +1153,8 @@ Log::preproc_thread_main(void *args)
   Log::preproc_notify[idx].lock();
 
   while (true) {
+    if (shutdown_event_system)
+      return NULL;
     size_t buffers_preproced = 0;
     LogConfig *current = (LogConfig *)configProcessor.get(log_configid);
 
@@ -1195,6 +1197,8 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   Log::flush_notify->lock();
 
   while (true) {
+    if (shutdown_event_system)
+      return NULL;
     fdata = (LogFlushData *)ink_atomiclist_popall(flush_data_list);
 
     // invert the list
