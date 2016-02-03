@@ -170,7 +170,7 @@ EThread::execute()
 
     // give priority to immediate events
     for (;;) {
-      if (shutdown_event_system == true) {
+      if (unlikely(shutdown_event_system == true)) {
         return;
       }
       // execute all the available external events that have

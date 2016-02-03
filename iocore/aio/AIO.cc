@@ -458,7 +458,7 @@ aio_thread_main(void *arg)
   ink_mutex_acquire(&my_aio_req->aio_mutex);
   for (;;) {
     do {
-      if (shutdown_event_system) {
+      if (unlikely(shutdown_event_system == true)) {
         ink_mutex_release(&my_aio_req->aio_mutex);
         return 0;
       }
