@@ -1092,6 +1092,33 @@ Parent Proxy Configuration
 
    Don't try to resolve DNS, forward all DNS requests to the parent. This is off (``0``) by default.
 
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.retry_enabled INT 0
+   :reloadable:
+   :overridable:
+
+   Enable simple and or dead server retry.  Defaults to 0, (disabled).  To enable simple retry, set
+   to 1.  To enable dead server retry, set to 2.  To enable both simple and dead server retry, set
+   to 3.  This setting is overridable using header_rewrite.
+
+   simple retry is used to retry a request using a new parent origin server, see `parent.config`, if 
+   a 404 response is received on the first attempt.  This is useful in the case where IP video is being
+   assembled for delivery accross multiple load balanced origin servers and the file may not yet be
+   available on the first parent selected for the request.
+
+   dead server retry is used to retry a request using a new parent if a parent origin server, see 
+   `parent.config`, responds with a 503.  The parent that returns the 503 will be marked down for
+   a period of time specified in the ``proxy.config.http.parent_proxy.retry_time`` setting.  By
+   default, a 503 response will trigger a dead server retry but, a list of response codes may be
+   specified in the ``proxy.config.http.parent_orign.dead_server_retry_response_codes`` setting.
+
+.. ts:cv:: CONFIG proxy.config.http.parent_origin.dead_server_retry_response_codes STRING 503
+   :reloadable:
+   :overridable:
+
+   A comma separated list of response codes that will initiate a transaction retry using another parent
+   origin server when ``proxy.config.http.parent_origin.dead_server_retry_enabled`` is enabled.  Defaults to
+   503.  This setting is overridable using header_rewrite.
+
 HTTP Connection Timeouts
 ========================
 

@@ -142,6 +142,8 @@ The following configurations (from ``records.config``) are overridable.
 |   :ts:cv:`proxy.config.http.cache.range.write`
 |   :ts:cv:`proxy.config.http.global_user_agent_header`
 |   :ts:cv:`proxy.config.http.slow.log.threshold`
+|   :ts:cv:`proxy.config.http.parent_origin.retry_enabled`
+|   :ts:cv:`proxy.config.http.parent_origin.dead_server_retry_response_codes`
 
 Examples
 ========

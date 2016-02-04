@@ -478,6 +478,7 @@ ParentRecord::DefaultInit(char *val)
   this->go_direct = true;
   this->ignore_query = false;
   this->scheme = NULL;
+  this->parent_is_proxy = true;
   errPtr = ProcessParents(val, true);
 
   if (errPtr != NULL) {
@@ -558,6 +559,13 @@ ParentRecord::Init(matcher_line *line_info)
         this->ignore_query = true;
       } else {
         this->ignore_query = false;
+      }
+      used = true;
+    } else if (strcasecmp(label, "parent_is_proxy") == 0) {
+      if (strcasecmp(val, "false") == 0) {
+        parent_is_proxy = false;
+      } else {
+        parent_is_proxy = true;
       }
       used = true;
     }
@@ -647,6 +655,7 @@ ParentRecord::Print()
     printf(" %s:%d ", parents[i].hostname, parents[i].port);
   }
   printf(" direct=%s\n", (go_direct == true) ? "true" : "false");
+  printf(" parent_is_proxy=%s\n", ((parent_is_proxy == true) ? "true" : "false"));
 }
 
 // ParentRecord* createDefaultParent(char* val)
