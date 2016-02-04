@@ -56,6 +56,9 @@ startProcessManager(void *arg)
   }
 
   for (;;) {
+    if (unlikely(shutdown_event_system == true)) {
+      return NULL;
+    }
     if (pmgmt->require_lm) {
       pmgmt->pollLMConnection();
     }

@@ -458,6 +458,10 @@ aio_thread_main(void *arg)
   ink_mutex_acquire(&my_aio_req->aio_mutex);
   for (;;) {
     do {
+      if (unlikely(shutdown_event_system == true)) {
+        ink_mutex_release(&my_aio_req->aio_mutex);
+        return 0;
+      }
       current_req = my_aio_req;
       /* check if any pending requests on the atomic list */
       if (!INK_ATOMICLIST_EMPTY(my_aio_req->aio_temp_list))
