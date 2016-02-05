@@ -34,7 +34,6 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Some constants.
 //
@@ -216,7 +215,6 @@ class S3Request
 {
 public:
   S3Request(TSHttpTxn txnp) : _txnp(txnp), _bufp(NULL), _hdr_loc(TS_NULL_MLOC), _url_loc(TS_NULL_MLOC) {}
-
   ~S3Request()
   {
     TSHandleMLocRelease(_bufp, _hdr_loc, _url_loc);
@@ -295,6 +293,18 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
   return ret;
 }
 
+// dst poinsts to starting offset of dst buffer
+// dst_len remaining space in buffer
+static size_t
+str_concat(char *dst, size_t dst_len, const char *src, size_t src_len)
+{
+  size_t to_copy = (src_len < dst_len) ? src_len : dst_len;
+
+  if (to_copy > 0)
+    (void)strncat(dst, src, to_copy);
+
+  return to_copy;
+}
 
 // Method to authorize the S3 request:
 //
@@ -317,9 +327,9 @@ TSHttpStatus
 S3Request::authorize(S3Config *s3)
 {
   TSHttpStatus status = TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
-  TSMLoc host_loc = TS_NULL_MLOC;
-  int method_len = 0, path_len = 0, host_len = 0, date_len = 0;
-  const char *method = NULL, *path = NULL, *host = NULL, *host_endp = NULL;
+  TSMLoc host_loc = TS_NULL_MLOC, md5_loc = TS_NULL_MLOC, contype_loc = TS_NULL_MLOC;
+  int method_len = 0, path_len = 0, param_len = 0, host_len = 0, con_md5_len = 0, con_type_len = 0, date_len = 0;
+  const char *method = NULL, *path = NULL, *param = NULL, *host = NULL, *con_md5 = NULL, *con_type = NULL, *host_endp = NULL;
   char date[128]; // Plenty of space for a Date value
   time_t now = time(NULL);
   struct tm now_tm;
@@ -331,6 +341,9 @@ S3Request::authorize(S3Config *s3)
   if (NULL == (path = TSUrlPathGet(_bufp, _url_loc, &path_len))) {
     return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
   }
+
+  // get matrix parameters
+  param = TSUrlHttpParamsGet(_bufp, _url_loc, &param_len);
 
   // Next, setup the Date: header, it's required.
   if (NULL == gmtime_r(&now, &now_tm)) {
@@ -355,17 +368,50 @@ S3Request::authorize(S3Config *s3)
     }
   }
 
+  // Just in case we add Content-MD5 if present
+  md5_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_CONTENT_MD5, TS_MIME_LEN_CONTENT_MD5);
+  if (md5_loc) {
+    con_md5 = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, md5_loc, -1, &con_md5_len);
+  }
+
+  // get the Content-Type if available - (buggy) clients may send it
+  // for GET requests too
+  contype_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
+  if (contype_loc) {
+    con_type = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, contype_loc, -1, &con_type_len);
+  }
+
   // For debugging, lets produce some nice output
   if (TSIsDebugTagSet(PLUGIN_NAME)) {
     TSDebug(PLUGIN_NAME, "Signature string is:");
     // ToDo: This should include the Content-MD5 and Content-Type (for POST)
-    fprintf(stderr, "%.*s\n\n\n%.*s\n/", method_len, method, date_len, date);
+    TSDebug(PLUGIN_NAME, "%.*s", method_len, method);
+    if (con_md5)
+      TSDebug(PLUGIN_NAME, "%.*s", con_md5_len, con_md5);
+
+    if (con_type)
+      TSDebug(PLUGIN_NAME, "%.*s", con_type_len, con_type);
+
+    TSDebug(PLUGIN_NAME, "%.*s", date_len, date);
+
+    const size_t left_size = 1024;
+    char left[left_size + 1] = "/";
+    size_t loff = 1;
 
     // ToDo: What to do with the CanonicalizedAmzHeaders ...
     if (host && host_endp) {
-      fprintf(stderr, "%.*s/", static_cast<int>(host_endp - host), host);
+      loff += str_concat(&left[loff], (left_size - loff), host, static_cast<int>(host_endp - host));
+      loff += str_concat(&left[loff], (left_size - loff), "/", 1);
     }
-    fprintf(stderr, "%.*s\n", path_len, path);
+
+    loff += str_concat(&left[loff], (left_size - loff), path, path_len);
+
+    if (param) {
+      loff += str_concat(&left[loff], (left_size - loff), ";", 1);
+      loff += str_concat(&left[loff], (left_size - loff), param, param_len);
+    }
+
+    TSDebug(PLUGIN_NAME, "%s", left);
   }
 
   // Produce the SHA1 MAC digest
@@ -378,7 +424,11 @@ S3Request::authorize(S3Config *s3)
   HMAC_CTX_init(&ctx);
   HMAC_Init_ex(&ctx, s3->secret(), s3->secret_len(), EVP_sha1(), NULL);
   HMAC_Update(&ctx, (unsigned char *)method, method_len);
-  HMAC_Update(&ctx, (unsigned char *)"\n\n\n", 3); // ToDo: This should be POST info (see above)
+  HMAC_Update(&ctx, (unsigned char *)"\n", 1);
+  HMAC_Update(&ctx, (unsigned char *)con_md5, con_md5_len);
+  HMAC_Update(&ctx, (unsigned char *)"\n", 1);
+  HMAC_Update(&ctx, (unsigned char *)con_type, con_type_len);
+  HMAC_Update(&ctx, (unsigned char *)"\n", 1);
   HMAC_Update(&ctx, (unsigned char *)date, date_len);
   HMAC_Update(&ctx, (unsigned char *)"\n/", 2);
 
@@ -388,6 +438,11 @@ S3Request::authorize(S3Config *s3)
   }
 
   HMAC_Update(&ctx, (unsigned char *)path, path_len);
+  if (param) {
+    HMAC_Update(&ctx, (unsigned char *)";", 1); // TSUrlHttpParamsGet() does not include ';'
+    HMAC_Update(&ctx, (unsigned char *)param, param_len);
+  }
+
   HMAC_Final(&ctx, hmac, &hmac_len);
   HMAC_CTX_cleanup(&ctx);
 
@@ -403,11 +458,12 @@ S3Request::authorize(S3Config *s3)
   }
 
   // Cleanup
+  TSHandleMLocRelease(_bufp, _hdr_loc, contype_loc);
+  TSHandleMLocRelease(_bufp, _hdr_loc, md5_loc);
   TSHandleMLocRelease(_bufp, _hdr_loc, host_loc);
 
   return status;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main continuation.
@@ -463,12 +519,10 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  static const struct option longopt[] = {{const_cast<char *>("access_key"), required_argument, NULL, 'a'},
-                                          {const_cast<char *>("config"), required_argument, NULL, 'c'},
-                                          {const_cast<char *>("secret_key"), required_argument, NULL, 's'},
-                                          {const_cast<char *>("version"), required_argument, NULL, 'v'},
-                                          {const_cast<char *>("virtual_host"), no_argument, NULL, 'h'},
-                                          {NULL, no_argument, NULL, '\0'}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("access_key"), required_argument, NULL, 'a'}, {const_cast<char *>("config"), required_argument, NULL, 'c'},
+    {const_cast<char *>("secret_key"), required_argument, NULL, 's'}, {const_cast<char *>("version"), required_argument, NULL, 'v'},
+    {const_cast<char *>("virtual_host"), no_argument, NULL, 'h'},     {NULL, no_argument, NULL, '\0'}};
 
   S3Config *s3 = new S3Config();
 
