@@ -395,7 +395,7 @@ Additional Information:
    | TS_HTTP_SEND_REQUEST_HDR_HOOK      |  TS_LUA_HOOK_SEND_REQUEST_HDR      |     YES              |    YES              |
    | TS_HTTP_READ_RESPONSE_HDR_HOOK     |  TS_LUA_HOOK_READ_RESPONSE_HDR     |     YES              |    YES              |
    | TS_HTTP_SEND_RESPONSE_HDR_HOOK     |  TS_LUA_HOOK_SEND_RESPONSE_HDR     |     YES              |    YES              |
-   | TS_HTTP_REQUEST_TRANSFORM_HOOK     |  TS_LUA_REQUEST_TRANSFORM          |     NO               |    NO               |
+   | TS_HTTP_REQUEST_TRANSFORM_HOOK     |  TS_LUA_REQUEST_TRANSFORM          |     YES              |    YES              |
    | TS_HTTP_RESPONSE_TRANSFORM_HOOK    |  TS_LUA_RESPONSE_TRANSFORM         |     YES              |    YES              |
    | TS_HTT_TXN_CLOSE_HOOK              |  TS_LUA_HOOK_TXN_CLOSE             |     YES              |    YES              |
    +------------------------------------+------------------------------------+----------------------+---------------------+
