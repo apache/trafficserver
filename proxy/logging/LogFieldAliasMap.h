@@ -111,6 +111,12 @@ struct LogFieldAliasTableEntry {
   size_t length; // the length of the string
 
   LogFieldAliasTableEntry() : valid(false), name(NULL), length(0) {}
+  ~LogFieldAliasTableEntry()
+  {
+    if (name) {
+      free(name);
+    }
+  }
 };
 
 class LogFieldAliasTable : public LogFieldAliasMap
