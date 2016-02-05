@@ -138,6 +138,8 @@ Request::getMethod() const
         state_->method_ = HTTP_METHOD_PUT;
       } else if (method_str == TS_HTTP_METHOD_TRACE) {
         state_->method_ = HTTP_METHOD_TRACE;
+      } else if (method_str == TS_HTTP_METHOD_PUSH) {
+        state_->method_ = HTTP_METHOD_PUSH;
       }
       LOG_DEBUG("Request method=%d [%s] on hdr_buf=%p, hdr_loc=%p", state_->method_, HTTP_METHOD_STRINGS[state_->method_].c_str(),
                 state_->hdr_buf_, state_->hdr_loc_);
