@@ -97,6 +97,9 @@ SplitDNS::~SplitDNS()
   if (m_DNSSrvrTable) {
     delete m_DNSSrvrTable;
   }
+  if (splitDNSUpdate) {
+    delete splitDNSUpdate;
+  }
 }
 
 
