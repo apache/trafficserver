@@ -383,7 +383,7 @@ Additional Information:
    |                                    |                                    |   registered  within |   registered within |
    |                                    |                                    |   do_remap() via     |   global context via| 
    |                                    |                                    |   ts.hook()?         |   ts.hook()?        |
-   +------------------------------------+------------------------------------+----------------------+---------------------+
+   +====================================+====================================+======================+=====================+
    | TS_HTTP_TXN_START_HOOK             |  TS_LUA_HOOK_TXN_START             |     NO               |    YES              |
    | TS_HTTP_READ_REQUEST_HDR_HOOK      |  TS_LUA_HOOK_READ_REQUEST_HDR      |     NO               |    YES              |
    | TS_HTTP_PRE_REMAP_HOOK             |  TS_LUA_HOOK_PRE_REMAP             |     NO               |    YES              |
