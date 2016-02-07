@@ -104,6 +104,7 @@ compile() {
 			;;
 		lo|o|a)
 			OBJS="${OBJS} ${SRC}"
+			BUILD=1
 			return
 			;;
 		*)
