@@ -30,6 +30,7 @@
 #include "atscppapi/shared_ptr.h"
 #include "atscppapi/ClientRequest.h"
 #include "atscppapi/Response.h"
+#include "atscppapi/HttpStatus.h"
 #include <ts/apidefs.h>
 namespace atscppapi
 {
@@ -133,6 +134,25 @@ public:
    * @param content the error page content.
    */
   void setErrorBody(const std::string &content);
+
+  /**
+   * Sets the error body page with mimetype.
+   * This method does not advance the state machine to the error state.
+   * To do that you must explicitally call error().
+   *
+   * @param content the error page content.
+   * @param mimetype the error page's content-type.
+   */
+  void setErrorBody(const std::string &content, const std::string &mimetype);
+
+  /**
+   * Sets the status code.
+   * This is usable before transaction has the response of client like a remap state.
+   * A remap logic may advance the state machine to the error state depending on status code.
+   *
+   * @param code the status code.
+   */
+  void setStatusCode(HttpStatus code);
 
   /**
    * Get the clients address
@@ -367,21 +387,21 @@ private:
    *
    * @private
    */
-  void initServerRequest();
+  void initServerRequest(TSEvent event);
 
   /**
    * Used to initialize the Response object for the Server.
    *
    * @private
    */
-  void initServerResponse();
+  void initServerResponse(TSEvent event);
 
   /**
    * Used to initialize the Response object for the Client.
    *
    * @private
    */
-  void initClientResponse();
+  void initClientResponse(TSEvent event);
 
   /**
    * Used to initialize the Request object for the cache.
@@ -389,7 +409,7 @@ private:
    * @private
    */
 
-  void initCachedRequest();
+  void initCachedRequest(TSEvent event);
 
   /**
    * Used to initialize the Response object for the cache.
@@ -397,7 +417,7 @@ private:
    * @private
    */
 
-  void initCachedResponse();
+  void initCachedResponse(TSEvent event);
 
   /**
    * Returns a list of TransactionPlugin pointers bound to the current Transaction

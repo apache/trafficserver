@@ -379,6 +379,7 @@ private:
   static bool _has_internal_filename_conflict(const char *filename, LogObjectList &objects);
   int _solve_filename_conflicts(LogObject *log_obj, int maxConflicts);
   int _solve_internal_filename_conflicts(LogObject *log_obj, int maxConflicts, int fileNum = 0);
+  void _filename_resolution_abort(const char *fname);
 
 public:
   LogObjectManager();

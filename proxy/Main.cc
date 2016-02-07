@@ -404,7 +404,10 @@ proxy_signal_handler(int signo, siginfo_t *info, void *)
     return;
   }
 
-  _exit(signo);
+  shutdown_event_system = true;
+  sleep(1);
+
+  exit(signo);
 }
 
 //
