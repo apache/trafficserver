@@ -384,19 +384,38 @@ Additional Information:
 |                                    |                                    |   ts.hook()?         |   ts.hook()?        |
 +====================================+====================================+======================+=====================+
 | TS_HTTP_TXN_START_HOOK             |  TS_LUA_HOOK_TXN_START             |     NO               |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
 | TS_HTTP_READ_REQUEST_HDR_HOOK      |  TS_LUA_HOOK_READ_REQUEST_HDR      |     NO               |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
 | TS_HTTP_PRE_REMAP_HOOK             |  TS_LUA_HOOK_PRE_REMAP             |     NO               |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
 | TS_HTTP_POST_REMAP_HOOK            |  TS_LUA_HOOK_POST_REMAP            |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
 | TS_HTTP_SELECT_ALT_HOOK            |  TS_LUA_HOOK_SELECT_ALT            |     NO               |    NO               |
++------------------------------------+------------------------------------+----------------------+---------------------+
 | TS_HTTP_READ_CACHE_HDR_HOOK        |  TS_LUA_HOOK_READ_CACHE_HDR        |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
 | TS_HTTP_OS_DNS_HOOK                |  TS_LUA_HOOK_OS_DNS                |     YES              |    YES              |
-| TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK |  TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE |     YES              |    YES              |
-| TS_HTTP_SEND_REQUEST_HDR_HOOK      |  TS_LUA_HOOK_SEND_REQUEST_HDR      |     YES              |    YES              |
-| TS_HTTP_READ_RESPONSE_HDR_HOOK     |  TS_LUA_HOOK_READ_RESPONSE_HDR     |     YES              |    YES              |
-| TS_HTTP_SEND_RESPONSE_HDR_HOOK     |  TS_LUA_HOOK_SEND_RESPONSE_HDR     |     YES              |    YES              |
-| TS_HTTP_REQUEST_TRANSFORM_HOOK     |  TS_LUA_REQUEST_TRANSFORM          |     YES              |    YES              |
-| TS_HTTP_RESPONSE_TRANSFORM_HOOK    |  TS_LUA_RESPONSE_TRANSFORM         |     YES              |    YES              |
-| TS_HTT_TXN_CLOSE_HOOK              |  TS_LUA_HOOK_TXN_CLOSE             |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _CACHE_LOOKUP_COMPLETE_HOOK        |  _CACHE_LOOKUP_COMPLETE            |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _SEND_REQUEST_HDR_HOOK             |  _SEND_REQUEST_HDR                 |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _READ_RESPONSE_HDR_HOOK            |  _READ_RESPONSE_HDR                |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _SEND_RESPONSE_HDR_HOOK            |  _SEND_RESPONSE_HDR                |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_REQUEST_TRANSFORM          |     YES              |    YES              |
+| _REQUEST_TRANSFORM_HOOK            |                                    |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_RESPONSE_TRANSFORM         |     YES              |    YES              |
+| _RESPONSE_TRANSFORM_HOOK           |                                    |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_TXN_CLOSE_HOOK             |  TS_LUA_HOOK_TXN_CLOSE             |     YES              |    YES              |
 +------------------------------------+------------------------------------+----------------------+---------------------+
 
 `TOP <#ts-lua-plugin>`_
