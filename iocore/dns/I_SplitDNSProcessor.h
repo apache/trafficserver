@@ -52,6 +52,7 @@ struct SplitDNSConfig {
   static Ptr<ProxyMutex> dnsHandler_mutex;
 
   static int gsplit_dns_enabled;
+  static ConfigUpdateHandler<SplitDNSConfig> *splitDNSUpdate;
 };
 
 #endif
