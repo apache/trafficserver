@@ -53,11 +53,6 @@ struct SplitDNSConfig {
 
   static int gsplit_dns_enabled;
   static ConfigUpdateHandler<SplitDNSConfig> *splitDNSUpdate;
-  ~SplitDNSConfig()
-  {
-    delete splitDNSUpdate;
-    dnsHandler_mutex = NULL;
-  }
 };
 
 #endif
