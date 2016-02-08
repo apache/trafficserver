@@ -98,11 +98,11 @@ public:
     return trailing_header;
   }
 
-  int64_t
-  decode_header_blocks(Http2IndexingTable &indexing_table)
+  Http2ErrorCode
+  decode_header_blocks(HpackHandle &hpack_handle)
   {
-    return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks,
-                                      (const uint8_t *)header_blocks + header_blocks_length, indexing_table, trailing_header);
+    return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks, header_blocks_length, NULL, hpack_handle,
+                                      trailing_header);
   }
 
   // Check entire DATA payload length if content-length: header is exist

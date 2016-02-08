@@ -34,7 +34,7 @@ Http2Stream::init_fetcher(Http2ConnectionState &cstate)
   extern ClassAllocator<FetchSM> FetchSMAllocator;
 
   // Convert header to HTTP/1.1 format
-  if (convert_from_2_to_1_1_header(&_req_header) == PARSE_ERROR) {
+  if (http2_convert_header_from_2_to_1_1(&_req_header) == PARSE_ERROR) {
     return false;
   }
 
