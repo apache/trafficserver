@@ -112,8 +112,8 @@ public:
   }
 
   Http2ClientSession *ua_session;
-  Http2IndexingTable *local_indexing_table;
-  Http2IndexingTable *remote_indexing_table;
+  HpackHandle *local_hpack_handle;
+  HpackHandle *remote_hpack_handle;
 
   // Settings.
   Http2ConnectionSettings server_settings;
@@ -122,8 +122,8 @@ public:
   void
   init()
   {
-    local_indexing_table = new Http2IndexingTable();
-    remote_indexing_table = new Http2IndexingTable();
+    local_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
+    remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
 
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len = 0;
@@ -135,8 +135,8 @@ public:
     cleanup_streams();
 
     mutex = NULL; // magic happens - assigning to NULL frees the ProxyMutex
-    delete local_indexing_table;
-    delete remote_indexing_table;
+    delete local_hpack_handle;
+    delete remote_hpack_handle;
 
     ats_free(continued_buffer.iov_base);
   }

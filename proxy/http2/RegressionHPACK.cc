@@ -21,7 +21,6 @@
  *  limitations under the License.
  */
 
-#include "HTTP2.h"
 #include "HPACK.h"
 #include "HuffmanCodec.h"
 #include "ts/TestBox.h"
@@ -362,7 +361,7 @@ REGRESSION_TEST(HPACK_EncodeLiteralHeaderField)(RegressionTest *t, int, int *pst
 
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
   int len;
-  Http2IndexingTable indexing_table;
+  HpackIndexingTable indexing_table(4096);
 
   for (unsigned int i = 9; i < sizeof(literal_test_case) / sizeof(literal_test_case[0]); i++) {
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
@@ -395,8 +394,8 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
   box = REGRESSION_TEST_PASSED;
 
   uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
-  Http2IndexingTable indexing_table;
-  indexing_table.set_dynamic_table_size(DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST);
+  HpackIndexingTable indexing_table(4096);
+  indexing_table.update_maximum_size(DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST);
 
   for (unsigned int i = 0; i < sizeof(encoded_field_response_test_case) / sizeof(encoded_field_response_test_case[0]); i++) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
@@ -408,29 +407,20 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
       if (strlen(expected_name) == 0)
         break;
 
-      if (strlen(expected_name) == HPACK_LEN_STATUS && strncasecmp(expected_name, HPACK_VALUE_STATUS, HPACK_LEN_STATUS) == 0) {
-        headers->status_set(http_parse_status(expected_value, expected_value + strlen(expected_value)));
-      } else {
-        MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
-        field->name_set(headers->m_heap, headers->m_http->m_fields_impl, expected_name, strlen(expected_name));
-        field->value_set(headers->m_heap, headers->m_http->m_fields_impl, expected_value, strlen(expected_value));
-        mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, NULL);
-      }
+      MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
+      field->name_set(headers->m_heap, headers->m_http->m_fields_impl, expected_name, strlen(expected_name));
+      field->value_set(headers->m_heap, headers->m_http->m_fields_impl, expected_value, strlen(expected_value));
+      mime_hdr_field_attach(headers->m_http->m_fields_impl, field, 1, NULL);
     }
 
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
     uint64_t buf_len = BUFSIZE_FOR_REGRESSION_TEST;
-    int64_t len = http2_write_psuedo_headers(headers, buf, buf_len, indexing_table);
-    buf_len -= len;
+    int64_t len = hpack_encode_header_block(indexing_table, buf, buf_len, headers);
 
     if (len < 0) {
-      box.check(false, "http2_write_psuedo_headers returned negative value: %" PRId64, len);
+      box.check(false, "hpack_encode_header_blocks returned negative value: %" PRId64, len);
       break;
     }
-
-    MIMEFieldIter field_iter;
-    bool cont = false;
-    len += http2_write_header_fragment(headers, field_iter, buf + len, buf_len, indexing_table, cont);
 
     box.check(len == encoded_field_response_test_case[i].encoded_field_len, "encoded length was %" PRId64 ", expecting %d", len,
               encoded_field_response_test_case[i].encoded_field_len);
@@ -442,16 +432,19 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
          j++) {
       const char *expected_name = dynamic_table_response_test_case[i][j].name;
       const char *expected_value = dynamic_table_response_test_case[i][j].value;
+      int expected_name_len = strlen(expected_name);
+      int expected_value_len = strlen(expected_value);
 
-      if (strlen(expected_name) == 0)
+      if (expected_name_len == 0)
         break;
 
-      box.check(indexing_table.is_header_in_dynamic_table(expected_name, expected_value), "dynamic table has unexpected entries");
+      HpackLookupResult lookupResult = indexing_table.lookup(expected_name, expected_name_len, expected_value, expected_value_len);
+      box.check(lookupResult.match_type == HPACK_EXACT_MATCH && lookupResult.index_type == HPACK_INDEX_TYPE_DYNAMIC,
+                "the header field is not indexed");
 
       expected_dynamic_table_size += dynamic_table_response_test_case[i][j].size;
     }
-    box.check(indexing_table.get_dynamic_table_size() == expected_dynamic_table_size, "dynamic table is unexpected size: %d",
-              indexing_table.get_dynamic_table_size());
+    box.check(indexing_table.size() == expected_dynamic_table_size, "dynamic table is unexpected size: %d", indexing_table.size());
   }
 }
 
@@ -502,7 +495,7 @@ REGRESSION_TEST(HPACK_DecodeIndexedHeaderField)(RegressionTest *t, int, int *pst
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  Http2IndexingTable indexing_table;
+  HpackIndexingTable indexing_table(4096);
 
   for (unsigned int i = 0; i < sizeof(indexed_test_case) / sizeof(indexed_test_case[0]); i++) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
@@ -532,7 +525,7 @@ REGRESSION_TEST(HPACK_DecodeLiteralHeaderField)(RegressionTest *t, int, int *pst
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  Http2IndexingTable indexing_table;
+  HpackIndexingTable indexing_table(4096);
 
   for (unsigned int i = 0; i < sizeof(literal_test_case) / sizeof(literal_test_case[0]); i++) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
@@ -563,17 +556,14 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  Http2IndexingTable indexing_table;
-  bool trailing_header = false;
+  HpackIndexingTable indexing_table(4096);
 
   for (unsigned int i = 0; i < sizeof(encoded_field_request_test_case) / sizeof(encoded_field_request_test_case[0]); i++) {
     ats_scoped_obj<HTTPHdr> headers(new HTTPHdr);
     headers->create(HTTP_TYPE_REQUEST);
 
-    http2_decode_header_blocks(headers, encoded_field_request_test_case[i].encoded_field,
-                               encoded_field_request_test_case[i].encoded_field +
-                                 encoded_field_request_test_case[i].encoded_field_len,
-                               indexing_table, trailing_header);
+    hpack_decode_header_block(indexing_table, headers, encoded_field_request_test_case[i].encoded_field,
+                              encoded_field_request_test_case[i].encoded_field_len);
 
     for (unsigned int j = 0; j < sizeof(raw_field_request_test_case[i]) / sizeof(raw_field_request_test_case[i][0]); j++) {
       const char *expected_name = raw_field_request_test_case[i][j].raw_name;
