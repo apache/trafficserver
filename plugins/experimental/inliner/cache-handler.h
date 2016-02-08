@@ -267,7 +267,7 @@ namespace inliner
     {
       assert(v != nullptr);
 
-      TSDebug(PLUGIN_TAG, "cache hit for %s (%lli bytes)", src_.c_str(), TSVConnCacheObjectSizeGet(v));
+      TSDebug(PLUGIN_TAG, "cache hit for %s (" PRId64 " bytes)", src_.c_str(), TSVConnCacheObjectSizeGet(v));
 
       assert(sink_);
 
