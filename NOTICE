@@ -78,6 +78,9 @@ Copyright (C) 2014 Yahoo! Inc.  All rights reserved.
 multiplexer: Plugin for request multiplixing
 Copyright (C) 2015 Yahoo! Inc.  All rights reserved.
 
+inliner: Plugin for inlining base64 images
+Copyright (C) 2016 Yahoo! Inc.  All rights reserved.
+
 ~~~
 
 healthchecks: Plugin for ATS healthchecks.

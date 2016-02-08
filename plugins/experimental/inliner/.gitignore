@@ -1,0 +1,5 @@
+*.o
+*.debug*
+*.so
+.*.sw?
+Makefile.local
