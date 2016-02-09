@@ -514,6 +514,18 @@ HttpTransact::BadRequest(State *s)
 }
 
 void
+HttpTransact::ClientRequestTimeout(State *s)
+{
+  DebugTxn("http_trans", "[ClientRequestTimeout]"
+                         "client timeout while requesting.");
+  HTTP_INCREMENT_TRANS_STAT(http_request_body_receive_timeout_stat);
+  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
+  build_error_response(s, HTTP_STATUS_REQUEST_TIMEOUT, "Request Timeout", "timeout#activity", NULL);
+  s->squid_codes.log_code = SQUID_LOG_ERR_REQUESTBUFFER_TIMEOUT;
+  TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
+}
+
+void
 HttpTransact::HandleBlindTunnel(State *s)
 {
   bool inbound_transparent_p = s->state_machine->ua_session->get_netvc()->get_is_transparent();
@@ -1197,42 +1209,90 @@ HttpTransact::handleIfRedirect(State *s)
   return false;
 }
 
+
+void
+HttpTransact::HandleRequestNoOp(State *s)
+{
+}
+
 void
 HttpTransact::HandleRequest(State *s)
 {
   DebugTxn("http_trans", "START HttpTransact::HandleRequest");
+  if (!s->request_data.hdr) { // we haven't initialized
+    ink_assert(!s->hdr_info.server_request.valid());
 
-  ink_assert(!s->hdr_info.server_request.valid());
+    HTTP_INCREMENT_TRANS_STAT(http_incoming_requests_stat);
 
-  HTTP_INCREMENT_TRANS_STAT(http_incoming_requests_stat);
+    if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
+      HTTP_INCREMENT_TRANS_STAT(https_incoming_requests_stat);
+    }
 
-  if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
-    HTTP_INCREMENT_TRANS_STAT(https_incoming_requests_stat);
+    ///////////////////////////////////////////////
+    // if request is bad, return error response  //
+    ///////////////////////////////////////////////
+
+    if (!(is_request_valid(s, &s->hdr_info.client_request))) {
+      HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
+      DebugTxn("http_seq", "[HttpTransact::HandleRequest] request invalid.");
+      s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
+      //  s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
+      return;
+    }
+    DebugTxn("http_seq", "[HttpTransact::HandleRequest] request valid.");
+
+    if (is_debug_tag_set("http_chdr_describe")) {
+      obj_describe(s->hdr_info.client_request.m_http, 1);
+    }
+
+    // at this point we are guaranteed that the request is good and acceptable.
+    // initialize some state variables from the request (client version,
+    // client keep-alive, cache action, etc.
+    initialize_state_variables_from_request(s, &s->hdr_info.client_request);
   }
+  if (s->txn_conf->request_buffer_enabled &&
+      (s->hdr_info.request_content_length > 0 || s->client_info.transfer_encoding == CHUNKED_ENCODING)) {
+    // Let's check if we've already fully received the request.
+    if (s->client_info.transfer_encoding == CHUNKED_ENCODING) {
+      if (s->state_machine->chunked_handler.chunked_reader == NULL) {
+        s->state_machine->chunked_handler.init_by_action(s->state_machine->ua_buffer_reader, ChunkedHandler::ACTION_PASSTHRU);
+        s->state_machine->chunked_handler.state = s->state_machine->chunked_handler.CHUNK_READ_SIZE;
+      }
+      s->state_machine->request_fully_received = s->state_machine->chunked_handler.process_chunked_content();
+    } else {
+      s->state_machine->request_fully_received =
+        s->hdr_info.request_content_length <= s->state_machine->ua_buffer_reader->read_avail();
+    }
+    s->state_machine->client_request_body_bytes = s->state_machine->ua_buffer_reader->read_avail();
 
-  ///////////////////////////////////////////////
-  // if request is bad, return error response  //
-  ///////////////////////////////////////////////
+    int len = 0;
+    const char *expect = s->hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
 
-  if (!(is_request_valid(s, &s->hdr_info.client_request))) {
-    HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
-    DebugTxn("http_seq", "[HttpTransact::HandleRequest] request invalid.");
-    s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
-    //  s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
-    return;
+    if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
+      s->hdr_info.client_request.field_delete(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
+    }
+
+    if (!s->state_machine->request_fully_received) {
+      DebugTxn("http_trans", "Waiting for full request body of length: %" PRId64, s->hdr_info.request_content_length);
+      // We set the transact return point to HttpTransaction::handlerequestnoop because
+      //    we only want to advance the state machine when the body is fully received and
+      //    dispatching plugins need a place to reenable to, so we’ll reenable to a noop and
+      //    activity on the VConn will ensure the transaction doesn’t get lost.
+      TRANSACT_RETURN(SM_ACTION_WAIT_FOR_FULL_BODY, HttpTransact::HandleRequestNoOp);
+    } else {
+      // We set the return point to NoOp so we don’t recursively call into HandleRequest and
+      //    once all plugins have been fully dispatched we’ll continue exectuing through handle request (which
+      //    at some point later sets the trasact return point). So if a plugin decides not to reenable, when it finally
+      //    does reenable it will continue executing at the next state which will be determined later in this method.
+      TRANSACT_SETUP_RETURN(SM_ACTION_WAIT_FOR_FULL_BODY, HttpTransact::HandleRequestNoOp);
+      APIHook *hook = s->state_machine->txn_hook_get(TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK);
+      while (hook) {
+        hook->invoke(TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE, s->state_machine);
+        hook = hook->m_link.next;
+      }
+      DebugTxn("http_trans", "Finished receiving request body of length %" PRId64, s->hdr_info.request_content_length);
+    }
   }
-  DebugTxn("http_seq", "[HttpTransact::HandleRequest] request valid.");
-
-  if (is_debug_tag_set("http_chdr_describe")) {
-    obj_describe(s->hdr_info.client_request.m_http, 1);
-  }
-
-  // at this point we are guaranteed that the request is good and acceptable.
-  // initialize some state variables from the request (client version,
-  // client keep-alive, cache action, etc.
-  initialize_state_variables_from_request(s, &s->hdr_info.client_request);
-
-
   // The following chunk of code will limit the maximum number of websocket connections (TS-3659)
   if (s->is_upgrade_request && s->is_websocket && s->http_config_param->max_websocket_connections >= 0) {
     int64_t val = 0;

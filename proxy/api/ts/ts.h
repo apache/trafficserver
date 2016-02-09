@@ -2387,6 +2387,37 @@ tsapi const char *TSHttpHookNameLookup(TSHttpHookID hook);
 */
 tsapi const char *TSHttpEventNameLookup(TSEvent event);
 
+/**
+   Get the body (if applicable) from a client request. YOU MUST
+   free the pointer returned from this call. This call will return
+   NULL if no body exists. Changes to this string will not affect
+   the request body. The second parameter will contain the length
+   of the string returned.
+
+   @return char * that contains the entire buffered request body, this
+       must be freed by the caller using TSFree!
+*/
+tsapi char *TSHttpTxnGetClientRequestBody(TSHttpTxn txnp, int *length);
+
+/**
+   Get the IOBufferReader (if applicable) from a client request. It's easy to
+   get the request body from the returned IOBufferReader.
+
+   @param txnp the transaction pointer
+
+   @return TSIOBufferReader the IOBufferReader
+*/
+tsapi TSIOBufferReader TSHttpTxnGetClientRequestBufferReader(TSHttpTxn txnp);
+
+
+/**
+   Get the content length of a client request.
+
+   @param txnp the transaction pointer
+
+   @return int64_t the content length
+*/
+tsapi int64_t TSHttpTxnGetClientRequestContentLength(TSHttpTxn txnp);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

@@ -1868,6 +1868,7 @@ AC_CONFIG_FILES([
   plugins/healthchecks/Makefile
   plugins/libloader/Makefile
   plugins/regex_remap/Makefile
+  plugins/request_buffer/Makefile
   plugins/stats_over_http/Makefile
   plugins/tcpinfo/Makefile
   proxy/Makefile
@@ -1963,6 +1964,7 @@ AS_IF([test "x$enable_cppapi" = "xyes"], [
   lib/atscppapi/examples/stat_example/Makefile
   lib/atscppapi/examples/timeout_example/Makefile
   lib/atscppapi/examples/transactionhook/Makefile
+  lib/atscppapi/examples/request_buffer/Makefile
   lib/atscppapi/examples/async_http_fetch_streaming/Makefile
   lib/atscppapi/src/Makefile
 ])])

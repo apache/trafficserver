@@ -2037,7 +2037,6 @@ static const RecordElement RecordsConfig[] =
   //#
   //###########
   {RECT_CONFIG, "proxy.config.cache.http.compatibility.4-2-0-fixup", RECD_INT, "1", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL},
-
 };
 // clang-format on
 

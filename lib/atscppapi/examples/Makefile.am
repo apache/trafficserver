@@ -19,6 +19,7 @@ SUBDIRS = \
 	helloworld \
 	globalhook \
 	transactionhook \
+	request_buffer \
 	multiple_transaction_hooks \
 	clientrequest \
 	serverresponse \

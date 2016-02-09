@@ -815,6 +815,10 @@ register_stat_callbacks()
                      (int)https_incoming_requests_stat, RecRawStatSyncCount);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.https.total_client_connections", RECD_COUNTER, RECP_PERSISTENT,
                      (int)https_total_client_connections_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.request_body_receive_timeout", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_request_body_receive_timeout_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.total_request_buffer_memory", RECD_INT, RECP_NON_PERSISTENT,
+                     (int)http_total_request_buffer_memory, RecRawStatSyncSum);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.post_body_too_large", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_post_body_too_large, RecRawStatSyncCount);
   // milestones
@@ -1091,6 +1095,9 @@ HttpConfig::startup()
   // Buffer size and watermark
   HttpEstablishStaticConfigLongLong(c.oride.default_buffer_size_index, "proxy.config.http.default_buffer_size");
   HttpEstablishStaticConfigLongLong(c.oride.default_buffer_water_mark, "proxy.config.http.default_buffer_water_mark");
+
+  // Request buffering
+  HttpEstablishStaticConfigByte(c.oride.request_buffer_enabled, "proxy.config.http.request_buffer_enabled");
 
   // Stat Page Info
   HttpEstablishStaticConfigByte(c.enable_http_info, "proxy.config.http.enable_http_info");

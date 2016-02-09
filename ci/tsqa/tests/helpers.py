@@ -46,6 +46,7 @@ class EnvironmentCase(tsqa.test_cases.EnvironmentCase):
         ef = tsqa.environment.EnvironmentFactory(SOURCE_DIR,
                                                  os.path.join(TMP_DIR, 'base_envs'),
                                                  default_configure={'enable-experimental-plugins': None,
+                                                                    'enable-cppapi' : None,
                                                                     'enable-example-plugins': None,
                                                                     'enable-test-tools': None,
                                                                     'disable-dependency-tracking': None,

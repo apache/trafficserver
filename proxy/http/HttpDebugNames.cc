@@ -386,6 +386,8 @@ HttpDebugNames::get_action_name(HttpTransact::StateMachineAction_t e)
     return ("SM_ACTION_API_POST_REMAP");
   case HttpTransact::SM_ACTION_POST_REMAP_SKIP:
     return ("SM_ACTION_POST_REMAP_SKIP");
+  case HttpTransact::SM_ACTION_WAIT_FOR_FULL_BODY:
+    return ("SM_ACTION_WAIT_FOR_FULL_BODY");
   }
 
   return ("unknown state name");
@@ -483,6 +485,10 @@ HttpDebugNames::get_api_hook_name(TSHttpHookID t)
     return "TS_VCONN_PRE_ACCEPT_HOOK";
   case TS_SSL_CERT_HOOK:
     return "TS_SSL_CERT_HOOK";
+  case TS_HTTP_REQUEST_BUFFER_READ_HOOK:
+    return "TS_HTTP_REQUEST_BUFFER_READ_HOOK";
+  case TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK:
+    return "TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK";
   }
 
   return "unknown hook";

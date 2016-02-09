@@ -1,3 +1,4 @@
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,22 +15,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Add new plugins in alphabetic order, but keep experimental always at the bottom.
+include $(top_srcdir)/build/plugins.mk
 
-SUBDIRS = \
-  cacheurl \
-  conf_remap \
-  gzip \
-  header_rewrite \
-  healthchecks \
-  libloader \
-  regex_remap \
-  request_buffer \
-  stats_over_http \
-  tcpinfo
+AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable
 
-if BUILD_EXPERIMENTAL_PLUGINS
-SUBDIRS += experimental
-endif
-
-DIST_SUBDIRS = $(SUBDIRS)
+target=RequestBufferPlugin.so
+pkglib_LTLIBRARIES = RequestBufferPlugin.la
+RequestBufferPlugin_la_SOURCES = RequestBufferPlugin.cc
+RequestBufferPlugin_la_LDFLAGS = -module -avoid-version -shared -L$(top_builddir)/lib/atscppapi/src/ -latscppapi  $(TS_PLUGIN_LDFLAGS)

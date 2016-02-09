@@ -346,6 +346,12 @@ Transaction::getServerResponseHeaderSize()
 }
 
 size_t
+Transaction::getClientRequestBodySize()
+{
+  return static_cast<size_t>(TSHttpTxnClientReqBodyBytesGet(state_->txn_));
+}
+
+size_t
 Transaction::getClientResponseBodySize()
 {
   return static_cast<size_t>(TSHttpTxnClientRespBodyBytesGet(state_->txn_));
@@ -408,6 +414,34 @@ Transaction::redirectTo(std::string const &url)
   char *s = ats_strdup(url.c_str());
   // Must re-alloc the string locally because ownership is transferred to the transaction.
   TSHttpTxnRedirectUrlSet(state_->txn_, s, url.length());
+}
+
+std::string
+Transaction::getClientRequestBody()
+{
+  std::string ret;
+  TSIOBufferReader buffer_reader = TSHttpTxnGetClientRequestBufferReader(state_->txn_);
+  int64_t read_avail = TSIOBufferReaderAvail(buffer_reader);
+  if (read_avail == 0)
+    return ret;
+
+  int64_t consumed = 0;
+  int64_t data_len = 0;
+  const char *char_data = NULL;
+  TSIOBufferBlock block = TSIOBufferReaderStart(buffer_reader);
+  while (block != NULL) {
+    char_data = TSIOBufferBlockReadStart(block, buffer_reader, &data_len);
+    ret.append(char_data, data_len);
+    block = TSIOBufferBlockNext(block);
+  }
+
+  return ret;
+}
+
+int64_t
+Transaction::getClientRequestContentLength()
+{
+  return TSHttpTxnGetClientRequestContentLength(state_->txn_);
 }
 
 namespace

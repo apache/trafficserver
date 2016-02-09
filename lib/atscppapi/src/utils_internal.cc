@@ -148,7 +148,12 @@ void inline invokePluginForEvent(Plugin *plugin, TSHttpTxn ats_txn_handle, TSEve
   case TS_EVENT_HTTP_SELECT_ALT:
     plugin->handleSelectAlt(transaction);
     break;
-
+  case TS_EVENT_HTTP_REQUEST_BUFFER_READ:
+    plugin->handleHttpRequestBufferRead(transaction);
+    break;
+  case TS_EVENT_HTTP_REQUEST_BUFFER_COMPLETE:
+    plugin->handleHttpRequestBufferReadComplete(transaction);
+    break;
   default:
     assert(false); /* we should never get here */
     break;
@@ -199,6 +204,10 @@ utils::internal::convertInternalHookToTsHook(Plugin::HookType hooktype)
     return TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK;
   case Plugin::HOOK_SELECT_ALT:
     return TS_HTTP_SELECT_ALT_HOOK;
+  case Plugin::HOOK_HTTP_REQUEST_BUFFER_READ:
+    return TS_HTTP_REQUEST_BUFFER_READ_HOOK;
+  case Plugin::HOOK_HTTP_REQUEST_BUFFER_READ_COMPLETE:
+    return TS_HTTP_REQUEST_BUFFER_READ_COMPLETE_HOOK;
   default:
     assert(false); // shouldn't happen, let's catch it early
     break;

@@ -476,6 +476,8 @@ public:
     SM_ACTION_DRAIN_REQUEST_BODY,
 #endif /* PROXY_DRAIN */
 
+    SM_ACTION_WAIT_FOR_FULL_BODY,
+
     SM_ACTION_SERVE_FROM_CACHE,
     SM_ACTION_SERVER_READ,
     SM_ACTION_SERVER_PARSE_NEXT_HDR,
@@ -1115,12 +1117,14 @@ public:
   static void PerformRemap(State *s);
   static void ModifyRequest(State *s);
   static void HandleRequest(State *s);
+  static void HandleRequestNoOp(State *s);
   static bool handleIfRedirect(State *s);
 
   static void StartAccessControl(State *s);
   static void StartAuth(State *s);
   static void HandleRequestAuthorized(State *s);
   static void BadRequest(State *s);
+  static void ClientRequestTimeout(State *s);
   static void HandleFiltering(State *s);
   static void DecideCacheLookup(State *s);
   static void LookupSkipOpenServer(State *s);

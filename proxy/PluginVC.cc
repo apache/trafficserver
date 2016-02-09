@@ -622,7 +622,8 @@ PluginVC::process_read_side(bool other_side_call)
   water_mark = MAX(water_mark, PVC_DEFAULT_MAX_BYTES);
   int64_t buf_space = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {
-    Debug("pvc", "[%u] %s: process_read_side no buffer space", core_obj->id, PVC_TYPE);
+    Debug("pvc", "[%u] %s: process_read_side no buffer space, output_buffer=%p, water_mark=%lld, max_read_available=%lld",
+          core_obj->id, PVC_TYPE, output_buffer, water_mark, output_buffer->max_read_avail());
     return;
   }
   act_on = MIN(act_on, buf_space);

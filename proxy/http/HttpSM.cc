@@ -268,11 +268,12 @@ HttpSM::HttpSM()
   : Continuation(NULL), sm_id(-1), magic(HTTP_SM_MAGIC_DEAD),
     // YTS Team, yamsat Plugin
     enable_redirection(false), redirect_url(NULL), redirect_url_len(0), redirection_tries(0), transfered_bytes(0),
-    post_failed(false), debug_on(false), plugin_tunnel_type(HTTP_NO_PLUGIN_TUNNEL), plugin_tunnel(NULL), reentrancy_count(0),
-    history_pos(0), tunnel(), ua_entry(NULL), ua_session(NULL), background_fill(BACKGROUND_FILL_NONE), ua_raw_buffer_reader(NULL),
-    server_entry(NULL), server_session(NULL), will_be_private_ss(false), shared_session_retries(0), server_buffer_reader(NULL),
-    transform_info(), post_transform_info(), has_active_plugin_agents(false), second_cache_sm(NULL), default_handler(NULL),
-    pending_action(NULL), historical_action(NULL), last_action(HttpTransact::SM_ACTION_UNDEFINED),
+    post_failed(false), debug_on(false), request_fully_received(false), plugin_tunnel_type(HTTP_NO_PLUGIN_TUNNEL),
+    plugin_tunnel(NULL), reentrancy_count(0), history_pos(0), tunnel(), ua_entry(NULL), ua_session(NULL),
+    background_fill(BACKGROUND_FILL_NONE), ua_raw_buffer_reader(NULL), server_entry(NULL), server_session(NULL),
+    will_be_private_ss(false), shared_session_retries(0), server_buffer_reader(NULL), transform_info(), post_transform_info(),
+    has_active_plugin_agents(false), second_cache_sm(NULL), default_handler(NULL), pending_action(NULL), historical_action(NULL),
+    last_action(HttpTransact::SM_ACTION_UNDEFINED),
     // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
     client_request_hdr_bytes(0), client_request_body_bytes(0), server_request_hdr_bytes(0), server_request_body_bytes(0),
     server_response_hdr_bytes(0), server_response_body_bytes(0), client_response_hdr_bytes(0), client_response_body_bytes(0),
@@ -308,6 +309,9 @@ HttpSM::cleanup()
   }
   magic = HTTP_SM_MAGIC_DEAD;
   debug_on = false;
+  request_fully_received = false;
+
+  // need not to call chunked_handler.clear() because the ACTION_PASSTHRU mode is using
 }
 
 void
@@ -830,6 +834,154 @@ HttpSM::state_drain_client_request_body(int event, void *data)
   return EVENT_DONE;
 }
 #endif /* PROXY_DRAIN */
+
+void
+HttpSM::wait_for_full_body()
+{
+  if (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+    ua_buffer_reader->mbuf->size_index = BUFFER_SIZE_INDEX_32K;
+    // if you have less than 4k remaining in your write avail add a new buffer block that's 32kb
+    if (ua_buffer_reader->mbuf->block_write_avail() <= BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_4K)) {
+      ua_buffer_reader->mbuf->add_block();
+    }
+    ua_entry->vc_handler = &HttpSM::state_wait_for_full_body;
+    ua_entry->read_vio = ua_entry->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
+
+    return;
+  }
+  int64_t request_bytes = t_state.hdr_info.request_content_length; // handy save
+  int64_t avail = ua_buffer_reader->read_avail();
+
+  client_request_body_bytes = (avail < request_bytes) ? avail : request_bytes;
+
+  ua_buffer_reader->mbuf->size_index = buffer_size_to_index(request_bytes, MAX_BUFFER_SIZE_INDEX);
+
+  // we shouldn't pre-allocate large blocks just because the client sent a large content-length (basic DoS)
+  if (ua_buffer_reader->mbuf->size_index > BUFFER_SIZE_INDEX_32K) {
+    // If you need more than 32kb, just use a 256kb buffer, anything below 32kb will use the best fit.
+    // Since this would likely be a file post (such as a profile image) and not a form submission.
+    // We do this to prevent fragmentation for larger buckets.
+    ua_buffer_reader->mbuf->size_index = BUFFER_SIZE_INDEX_256K;
+  }
+
+  DebugSM("http_request_wait", "[%" PRId64 "] buffer size to index changed: %" PRId64, sm_id, ua_buffer_reader->mbuf->size_index);
+
+  // keep track of the total memory we will use for requests (even if it's never actually allocated).
+  // Tis is just the total memory that we could possibly use for request buffer.
+  HTTP_SUM_DYN_STAT(http_total_request_buffer_memory, request_bytes);
+
+  ua_buffer_reader->mbuf->water_mark = request_bytes;
+  int64_t avail_for_write = ua_buffer_reader->mbuf->block_write_avail();
+  if (avail_for_write < (request_bytes - client_request_body_bytes)) {
+    ua_buffer_reader->mbuf->add_block();
+  }
+
+  ua_entry->vc_handler = &HttpSM::state_wait_for_full_body;
+  ua_entry->read_vio = ua_entry->vc->do_io_read(this, request_bytes - client_request_body_bytes, ua_buffer_reader->mbuf);
+}
+
+int
+HttpSM::state_wait_for_full_body(int event, void *data)
+{
+  STATE_ENTER(&HttpSM::state_wait_for_full_body, event);
+
+  ink_assert(ua_entry->read_vio == (VIO *)data);
+  ink_assert(ua_entry->vc == ua_session);
+
+  int64_t avail_for_write = ua_buffer_reader->mbuf->block_write_avail();
+  int64_t avail = ua_buffer_reader->read_avail();
+  int64_t left = t_state.hdr_info.request_content_length - client_request_body_bytes;
+  if (t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING) {
+    DebugSM("http_request_wait", "[%" PRId64 "] event %d, data %p, current buffer avail: %" PRId64 ", remaining: %" PRId64
+                                 ", block available for write: %" PRId64 ", block count: %d",
+            sm_id, event, data, avail, left, avail_for_write, ua_buffer_reader->block_count());
+    if (event == VC_EVENT_READ_READY && avail_for_write <= left) {
+      ua_buffer_reader->mbuf->add_block();
+      DebugSM("http_request_wait", "[%" PRId64 "] adding block for request body", sm_id);
+    }
+  } else {
+    if (event == VC_EVENT_READ_READY && avail_for_write <= BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_4K)) {
+      ua_buffer_reader->mbuf->add_block();
+    }
+  }
+
+  switch (event) {
+  case VC_EVENT_EOS:
+  case VC_EVENT_ERROR: {
+    // Nothing we can do
+    HTTP_SUM_DYN_STAT(http_total_request_buffer_memory, -t_state.hdr_info.request_content_length);
+    set_ua_abort(HttpTransact::ABORTED, event);
+    terminate_sm = true;
+    break;
+  }
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT: {
+    // Handle timeout case.
+    HTTP_SUM_DYN_STAT(http_total_request_buffer_memory, -t_state.hdr_info.request_content_length);
+    ua_entry->vc->do_io_shutdown(IO_SHUTDOWN_READ);
+    set_ua_abort(HttpTransact::ABORTED, event);
+    call_transact_and_set_next_state(HttpTransact::ClientRequestTimeout);
+    break;
+  }
+  case VC_EVENT_READ_READY: {
+    if (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
+      bool done = chunked_handler.process_chunked_content();
+      DebugSM("http_request_wait", "[%" PRId64 "] VC_EVENT_READ_READY: chunked_handler.state = [%d]", sm_id, chunked_handler.state);
+      if (done) {
+        ua_entry->read_vio->done();
+        state_wait_for_full_body(VC_EVENT_READ_COMPLETE, data);
+        break;
+      }
+    }
+
+    client_request_body_bytes = avail; // since we're never consuming.
+    DebugSM("http_request_wait", "[%" PRId64 "] VC_EVENT_READ_READY: Post wait for full body: received: %" PRId64
+                                 " bytes expecting %" PRId64 " dest buffer=%p",
+            sm_id, avail, t_state.hdr_info.request_content_length, ua_buffer_reader->mbuf);
+    APIHook *hook = api_hooks.get(TS_HTTP_REQUEST_BUFFER_READ_HOOK);
+    while (hook) {
+      hook->invoke(TS_EVENT_HTTP_REQUEST_BUFFER_READ, this);
+      hook = hook->m_link.next;
+    }
+    ua_entry->read_vio->reenable();
+    break;
+  }
+  case VC_EVENT_READ_COMPLETE: {
+    // We've finished draing the REQUEST body
+    HTTP_SUM_DYN_STAT(http_total_request_buffer_memory, -t_state.hdr_info.request_content_length);
+    int64_t avail = ua_buffer_reader->read_avail();
+
+    DebugSM("http_request_wait", "[%" PRId64 "] VC_EVENT_READ_COMPLETE: Request wait for full body is complete, received: %" PRId64
+                                 " bytes expecting %" PRId64,
+            sm_id, avail, t_state.hdr_info.request_content_length);
+
+    client_request_body_bytes = avail; // since we're never consuming.
+
+    if (t_state.client_info.transfer_encoding != HttpTransact::CHUNKED_ENCODING) {
+      ink_assert(client_request_body_bytes == t_state.hdr_info.request_content_length);
+    }
+    // At this point if an expect: 100-continue header existed it can be removed
+    // as we are going to send the full request body to the origin now
+    int len = 0;
+    const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
+
+    if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
+      t_state.hdr_info.client_request.field_delete(MIME_FIELD_EXPECT, MIME_LEN_EXPECT);
+    }
+
+    request_fully_received = true;
+    ua_buffer_reader->mbuf->size_index = HTTP_HEADER_BUFFER_SIZE_INDEX;
+    ua_entry->vc_handler = &HttpSM::state_watch_for_client_abort;
+    ua_entry->read_vio = ua_entry->vc->do_io_read(this, INT64_MAX, ua_buffer_reader->mbuf);
+    call_transact_and_set_next_state(HttpTransact::HandleRequest);
+    break;
+  }
+  default:
+    ink_release_assert(0);
+  }
+
+  return EVENT_DONE;
+}
 
 
 int
@@ -7340,6 +7492,11 @@ HttpSM::set_next_state()
     break;
   }
 #endif /* PROXY_DRAIN */
+
+  case HttpTransact::SM_ACTION_WAIT_FOR_FULL_BODY: {
+    wait_for_full_body();
+    break;
+  }
 
   case HttpTransact::SM_ACTION_CONTINUE: {
     ink_release_assert(!"Not implemented");

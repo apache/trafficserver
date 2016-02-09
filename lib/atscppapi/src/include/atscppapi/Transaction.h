@@ -344,6 +344,12 @@ public:
   size_t getServerResponseHeaderSize();
 
   /**
+   * Get the nubmber of bytes for the client reques
+   *
+   * @return client request body size */
+  size_t getClientRequestBodySize();
+
+  /**
    * Get the number of bytes for the client response.
    * This can differ from the server response size because of transformations.
    *
@@ -361,6 +367,17 @@ public:
    * Redirect the transaction a different @a url.
    */
   void redirectTo(std::string const &url);
+
+
+  /**
+   * Get the body (if applicable) from a client request.
+   */
+  std::string getClientRequestBody();
+
+  /**
+   * Get the content length from a client request.
+   */
+  int64_t getClientRequestContentLength();
 
   bool configIntSet(TSOverridableConfigKey conf, int value);
   bool configIntGet(TSOverridableConfigKey conf, int *value);
