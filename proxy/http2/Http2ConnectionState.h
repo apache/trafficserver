@@ -105,7 +105,7 @@ class Http2ConnectionState : public Continuation
 {
 public:
   Http2ConnectionState()
-    : Continuation(NULL), ua_session(NULL), client_rwnd(Http2::initial_window_size), server_rwnd(Http2::initial_window_size),
+    : Continuation(NULL), ua_session(NULL), client_rwnd(HTTP2_INITIAL_WINDOW_SIZE), server_rwnd(Http2::initial_window_size),
       stream_list(), latest_streamid(0), client_streams_count(0), continued_stream_id(0)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
