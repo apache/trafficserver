@@ -1,7 +1,7 @@
 ATS (Apache Traffic Server) Inliner plug-in
 -----------------------------------------------
 
-This is transformation plug-in that inlines base64 images on text/html responses.
+This is a global transformation plug-in that inlines base64 images on text/html responses.
 
 Inliner:
    1. Detects the response to have header "Content-Type" set to "text/html".
