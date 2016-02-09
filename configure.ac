@@ -1920,6 +1920,7 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/geoip_acl/Makefile
     plugins/experimental/header_normalize/Makefile
     plugins/experimental/hipes/Makefile
+    plugins/experimental/inliner/Makefile
     plugins/experimental/memcache/Makefile
     plugins/experimental/memcached_remap/Makefile
     plugins/experimental/metalink/Makefile
