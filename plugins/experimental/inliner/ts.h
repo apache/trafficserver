@@ -238,10 +238,10 @@ namespace io
 
     ~BufferNode()
     {
-      assert(buffer_ != nullptr);
-      TSIOBufferDestroy(buffer_);
       assert(reader_ != nullptr);
       TSIOBufferReaderFree(reader_);
+      assert(buffer_ != nullptr);
+      TSIOBufferDestroy(buffer_);
     }
 
     BufferNode(void) : buffer_(TSIOBufferCreate()), reader_(TSIOBufferReaderAlloc(buffer_))

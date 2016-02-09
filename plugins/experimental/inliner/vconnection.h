@@ -37,8 +37,8 @@ namespace io
     {
       typedef Read<T> Self;
       TSVConn vconnection_;
-      T t_;
       io::IO in_;
+      T t_;
 
       Read(TSVConn v, T &&t, const int64_t s) : vconnection_(v), t_(std::forward<T>(t))
       {
