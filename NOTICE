@@ -9,6 +9,7 @@ This product includes software developed at
   - Comcast
   - LinkedIn
   - Mike Pall
+  - GoDaddy
 
 ~~~
 
@@ -44,8 +45,8 @@ Copyright (C) 2012 Oregon Health & Science University
 
 ~~~
 
-healthcheck Plugin developed by GoDaddy.
-Copyright (C) 2012 GoDaddy.
+cache-key-genid Plugin developed by GoDaddy
+Copyright (C) 2013 GoDaddy Operating Company, LLC
 
 ~~~
 
@@ -81,7 +82,7 @@ Copyright (C) 2015 Yahoo! Inc.  All rights reserved.
 ~~~
 
 healthchecks: Plugin for ATS healthchecks.
-Copyright (C) 2012 Go Daddy Operating Company, LLC
+Copyright (C) 2012 GoDaddy Operating Company, LLC
 
 ~~~
 
