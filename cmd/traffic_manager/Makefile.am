@@ -41,23 +41,20 @@ AM_LDFLAGS = \
   @EXPAT_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
-AM_LDFLAGS += \
-  $(LUAJIT_LDFLAGS)
-
 traffic_manager_SOURCES = \
   AddConfigFilesHere.cc \
-  traffic_manager.cc \
-  metrics.cc \
+  MgmtHandlers.cc \
+  MgmtHandlers.h \
   StatProcessor.cc \
   StatProcessor.h \
   StatType.cc \
   StatType.h \
   StatXML.cc \
   StatXML.h \
-  MgmtHandlers.cc \
-  MgmtHandlers.h \
   WebOverview.cc \
-  WebOverview.h
+  WebOverview.h \
+  metrics.h \
+  traffic_manager.cc
 
 traffic_manager_LDADD = \
   $(top_builddir)/mgmt/api/libmgmtapilocal.la \
@@ -70,6 +67,12 @@ traffic_manager_LDADD = \
   $(top_builddir)/proxy/shared/libdiagsconfig.a
 
 if BUILD_LUAJIT
+AM_LDFLAGS += \
+  $(LUAJIT_LDFLAGS)
+
+traffic_manager_SOURCES += \
+  metrics.cc
+
 traffic_manager_LDADD += \
   $(top_builddir)/lib/bindings/libbindings.la \
   $(top_builddir)/lib/luajit/src/libluajit.a

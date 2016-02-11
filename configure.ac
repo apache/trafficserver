@@ -466,7 +466,8 @@ AC_ARG_ENABLE([luajit],
 )
 AC_MSG_RESULT([$enable_luajit])
 AM_CONDITIONAL([BUILD_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
-
+TS_ARG_ENABLE_VAR([use], [luajit])
+AC_SUBST(use_luajit)
 
 #
 # Check if we should allow builds on 32-bit platforms
