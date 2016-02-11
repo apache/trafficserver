@@ -31,4 +31,5 @@ Documentation
    rst-and-sphinx.en
    ts-markup.en
    adding-domains.en
+   plugins.en
 
