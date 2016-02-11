@@ -197,7 +197,6 @@ AC_ARG_ENABLE([fast-sdk],
 )
 AC_MSG_RESULT([$enable_fast_sdk])
 TS_ARG_ENABLE_VAR([use], [fast-sdk])
-AC_SUBST(use_fast_sdk)
 
 #
 # Diags
@@ -211,7 +210,6 @@ AC_ARG_ENABLE([diags],
 )
 AC_MSG_RESULT([$enable_diags])
 TS_ARG_ENABLE_VAR([use], [diags])
-AC_SUBST(use_diags)
 
 #
 # Build regression tests?
@@ -225,7 +223,6 @@ AC_ARG_ENABLE([tests],
 )
 AC_MSG_RESULT([$enable_tests])
 TS_ARG_ENABLE_VAR([has], [tests])
-AC_SUBST(has_tests)
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
@@ -266,7 +263,6 @@ AC_ARG_ENABLE([wccp],
 )
 AC_MSG_RESULT([$enable_wccp])
 TS_ARG_ENABLE_VAR([has],[wccp])
-AC_SUBST(has_wccp)
 AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
 
 # Google profiler
@@ -353,7 +349,6 @@ AC_ARG_ENABLE([spdy],
         [enable_spdy="no"])
 AC_MSG_RESULT([$enable_spdy])
 TS_ARG_ENABLE_VAR([has], [spdy])
-AC_SUBST(has_spdy)
 AM_CONDITIONAL([BUILD_SPDY], [test 0 -ne $has_spdy])
 
 #
@@ -467,7 +462,6 @@ AC_ARG_ENABLE([luajit],
 AC_MSG_RESULT([$enable_luajit])
 AM_CONDITIONAL([BUILD_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
 TS_ARG_ENABLE_VAR([use], [luajit])
-AC_SUBST(use_luajit)
 
 #
 # Check if we should allow builds on 32-bit platforms
@@ -1203,7 +1197,6 @@ AS_IF([test "$host_os_def" = "linux"], [
   ])
 ])
 TS_ARG_ENABLE_VAR([use], [remote_unwinding])
-AC_SUBST(use_remote_unwinding)
 
 use_epoll=0
 use_kqueue=0
@@ -1328,7 +1321,6 @@ AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
 
 AC_MSG_RESULT([$enable_linux_native_aio])
 TS_ARG_ENABLE_VAR([use], [linux_native_aio])
-AC_SUBST(use_linux_native_aio)
 
 # Check for hwloc library.
 # If we don't find it, disable checking for header.
