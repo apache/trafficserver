@@ -229,17 +229,36 @@ CacheKey::append(const char *s, unsigned n)
   ::appendEncoded(_key, s, n);
 }
 
+static String
+getUri(TSMBuffer buf, TSMLoc url)
+{
+  String uri;
+  int uriLen;
+  const char *uriPtr = TSUrlStringGet(buf, url, &uriLen);
+  if (NULL != uriPtr && 0 != uriLen) {
+    uri.assign(uriPtr, uriLen);
+    TSfree((void *)uriPtr);
+  } else {
+    CacheKeyError("failed to get URI");
+  }
+  return uri;
+}
+
 /**
- * @brief Append a custom prefix or the host:port part of the URI to the cache key.
+ * @brief Append to the cache key a custom prefix, capture from hots:port, capture from URI or default to host:port part of the URI.
  * @note This is the only cache key component from the key which is always available.
- * @param prefix if not empty string the method will append the static prefix to the cache key.
- * @param pattern if not empty the method will append the result of regex capturing and/or replacement to the cache key.
+ * @param prefix if not empty string will append the static prefix to the cache key.
+ * @param prefixCapture if not empty will append regex capture/replacement from the host:port.
+ * @param prefixCaptureUri if not empty will append regex capture/replacement from the whole URI.
  * @note if both prefix and pattern are not empty prefix will be added first, followed by the results from pattern.
  */
 void
-CacheKey::appendPrefix(const String &prefix, Pattern &pattern)
+CacheKey::appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &prefixCaptureUri)
 {
+  // "true" would mean that the plugin config meant to override the default prefix (host:port).
   bool customPrefix = false;
+  String host;
+  int port = 0;
 
   if (!prefix.empty()) {
     customPrefix = true;
@@ -247,48 +266,106 @@ CacheKey::appendPrefix(const String &prefix, Pattern &pattern)
     CacheKeyDebug("added static prefix, key: '%s'", _key.c_str());
   }
 
-  int len;
-  const char *ptr = TSUrlHostGet(_buf, _url, &len);
-  int port = TSUrlPortGet(_buf, _url);
+  int hostLen;
+  const char *hostPtr = TSUrlHostGet(_buf, _url, &hostLen);
+  if (NULL != hostPtr && 0 != hostLen) {
+    host.assign(hostPtr, hostLen);
+  } else {
+    CacheKeyError("failed to get host");
+  }
+  port = TSUrlPortGet(_buf, _url);
 
-  if (!pattern.empty()) {
+  if (!prefixCapture.empty()) {
     customPrefix = true;
 
     String hostAndPort;
-    hostAndPort.append(ptr, len).append(":");
+    hostAndPort.append(host).append(":");
     ::append(hostAndPort, port);
 
     StringVector captures;
-    if (pattern.process(hostAndPort, captures)) {
+    if (prefixCapture.process(hostAndPort, captures)) {
       for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
         append(*it);
       }
-      CacheKeyDebug("added capture prefix, key: '%s'", _key.c_str());
+      CacheKeyDebug("added host:port capture prefix, key: '%s'", _key.c_str());
+    }
+  }
+
+  if (!prefixCaptureUri.empty()) {
+    customPrefix = true;
+
+    String uri = getUri(_buf, _url);
+    if (!uri.empty()) {
+      StringVector captures;
+      if (prefixCaptureUri.process(uri, captures)) {
+        for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
+          append(*it);
+        }
+        CacheKeyDebug("added URI capture prefix, key: '%s'", _key.c_str());
+      }
     }
   }
 
   if (!customPrefix) {
-    _key.append("/").append(ptr, len).append("/");
-    ::append(_key, port);
+    append(host);
+    append(port);
     CacheKeyDebug("added default prefix, key: '%s'", _key.c_str());
   }
 }
 
 /**
- * @brief Appends the path from the URI to the cache key.
+ * @brief Appends to the cache key the path from the URI (default), regex capture/replacement from the URI path,
+ * regex capture/replacement from URI as whole.
  * @note A path is always defined for a URI, though the defined path may be empty (zero length) (RFC 3986)
+ * @param pathCapture if not empty will append regex capture/replacement from the URI path
+ * @param pathCaptureUri if not empty will append regex capture/replacement from the URI as a whole
  * @todo enhance, i.e. /<regex>/<replace>/
  */
 void
-CacheKey::appendPath()
+CacheKey::appendPath(Pattern &pathCapture, Pattern &pathCaptureUri)
 {
-  const char *ptr;
-  int len;
+  // "true" would mean that the plugin config meant to override the default path.
+  bool customPath = false;
+  String path;
 
-  ptr = TSUrlPathGet(_buf, _url, &len);
-  if (NULL != ptr && 0 != len) {
-    _key.append("/");
-    _key.append(ptr, len);
+  int pathLen;
+  const char *pathPtr = TSUrlPathGet(_buf, _url, &pathLen);
+  if (NULL != pathPtr && 0 != pathLen) {
+    path.assign(pathPtr, pathLen);
+  }
+
+  if (!pathCaptureUri.empty()) {
+    customPath = true;
+
+    String uri = getUri(_buf, _url);
+    if (!uri.empty()) {
+      StringVector captures;
+      if (pathCaptureUri.process(uri, captures)) {
+        for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
+          append(*it);
+        }
+        CacheKeyDebug("added URI capture (path), key: '%s'", _key.c_str());
+      }
+    }
+  }
+
+  if (!pathCapture.empty()) {
+    customPath = true;
+
+    // If path is empty don't even try to capture/replace.
+    if (!path.empty()) {
+      StringVector captures;
+      if (pathCapture.process(path, captures)) {
+        for (StringVector::iterator it = captures.begin(); it != captures.end(); it++) {
+          append(*it);
+        }
+        CacheKeyDebug("added path capture, key: '%s'", _key.c_str());
+      }
+    }
+  }
+
+  if (!customPath && !path.empty()) {
+    append(path);
   }
 }
 
