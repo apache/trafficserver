@@ -47,6 +47,7 @@
 #include <cstring>
 #include <iostream>
 #include <limits>
+#include <netinet/in.h>
 
 #include <inttypes.h>
 
