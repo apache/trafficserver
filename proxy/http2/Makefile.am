@@ -42,6 +42,7 @@ libhttp2_a_SOURCES = \
   Http2ConnectionState.h \
   Http2DebugNames.cc \
   Http2DebugNames.h \
+  Http2DependencyTree.h \
   Http2Stream.cc \
   Http2Stream.h \
   Http2SessionAccept.cc \
@@ -55,9 +56,12 @@ if BUILD_TESTS
 endif
 
 noinst_PROGRAMS = \
-  test_Huffmancode
+  test_Huffmancode \
+  test_Http2DependencyTree
 
-TESTS = test_Huffmancode
+TESTS = \
+  test_Huffmancode \
+  test_Http2DependencyTree
 
 test_Huffmancode_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la
@@ -66,3 +70,10 @@ test_Huffmancode_SOURCES = \
   test_Huffmancode.cc \
   HuffmanCodec.cc \
   HuffmanCodec.h
+
+test_Http2DependencyTree_LDADD = \
+  $(top_builddir)/lib/ts/libtsutil.la
+
+test_Http2DependencyTree_SOURCES = \
+  test_Http2DependencyTree.cc \
+  Http2DependencyTree.h

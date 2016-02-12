@@ -60,6 +60,12 @@ const uint32_t HTTP2_MAX_FRAME_SIZE = 16384;
 const uint32_t HTTP2_HEADER_TABLE_SIZE = 4096;
 const uint32_t HTTP2_MAX_HEADER_LIST_SIZE = UINT_MAX;
 
+// [RFC 7540] 5.3.5 Default Priorities
+// The RFC says weight value is 1 to 256, but the value in TS is between 0 to 255
+// to use uint8_t. So the default weight is 16 minus 1.
+const uint32_t HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY = 0;
+const uint8_t HTTP2_PRIORITY_DEFAULT_WEIGHT = 15;
+
 // Statistics
 enum {
   HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT,  // Current # of active HTTP2
@@ -253,9 +259,14 @@ struct Http2SettingsParameter {
 
 // [RFC 7540] 6.3 PRIORITY Format
 struct Http2Priority {
-  Http2Priority() : stream_dependency(0), weight(15) {}
-  uint32_t stream_dependency;
+  Http2Priority()
+    : exclusive_flag(false), weight(HTTP2_PRIORITY_DEFAULT_WEIGHT), stream_dependency(HTTP2_PRIORITY_DEFAULT_STREAM_DEPENDENCY)
+  {
+  }
+
+  bool exclusive_flag;
   uint8_t weight;
+  uint32_t stream_dependency;
 };
 
 // [RFC 7540] 6.2 HEADERS Format
@@ -348,6 +359,7 @@ public:
   static uint32_t min_concurrent_streams_in;
   static uint32_t max_active_streams_in;
   static bool throttling;
+  static uint32_t stream_priority_enabled;
   static uint32_t initial_window_size;
   static uint32_t max_frame_size;
   static uint32_t header_table_size;
