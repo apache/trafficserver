@@ -54,7 +54,7 @@ const size_t HTTP2_SETTINGS_PARAMETER_LEN = 6;
 // SETTINGS initial values. NOTE: These should not be modified
 // unless the protocol changes! Do not change this thinking you
 // are changing server defaults. that is done via RecordsConfig.cc
-const uint32_t HTTP2_MAX_CONCURRENT_STREAMS = 100;
+const uint32_t HTTP2_MAX_CONCURRENT_STREAMS = UINT_MAX;
 const uint32_t HTTP2_INITIAL_WINDOW_SIZE = 65535;
 const uint32_t HTTP2_MAX_FRAME_SIZE = 16384;
 const uint32_t HTTP2_HEADER_TABLE_SIZE = 4096;
