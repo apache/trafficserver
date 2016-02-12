@@ -1919,6 +1919,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #endif
 
   this_thread()->execute();
+  delete main_thread;
 }
 
 
