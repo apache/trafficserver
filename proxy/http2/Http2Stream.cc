@@ -255,7 +255,7 @@ Http2Stream::do_io_close(int /* flags */)
 
     if (parent) {
       // Make sure any trailing end of stream frames are sent
-      static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frame(this);
+      static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
 
       // Remove ourselves from the stream list
       static_cast<Http2ClientSession *>(parent)->connection_state.delete_stream(this);
@@ -444,7 +444,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
             retval = false;
           }
           // Send the data frame
-          parent->connection_state.send_data_frame(this);
+          send_response_body();
         }
         break;
       }
@@ -459,11 +459,11 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         // Defer sending the write complete until the send_data_frame has sent it all
         // this_ethread()->schedule_imm(this, send_event, &write_vio);
         this->mark_body_done();
-        parent->connection_state.send_data_frame(this);
+        send_response_body();
         retval = false;
       } else {
         this_ethread()->schedule_imm(this, VC_EVENT_WRITE_READY, &write_vio);
-        parent->connection_state.send_data_frame(this);
+        send_response_body();
         // write_vio._cont->handleEvent(send_event, &write_vio);
       }
     }
@@ -471,6 +471,19 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     Debug("http2_stream", "write update stream_id=%d event=%d", this->get_id(), send_event);
   }
   return retval;
+}
+
+void
+Http2Stream::send_response_body()
+{
+  Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
+
+  if (Http2::stream_priority_enabled) {
+    parent->connection_state.schedule_stream(this);
+  } else {
+    // Send DATA frames directly
+    parent->connection_state.send_data_frames(this);
+  }
 }
 
 void

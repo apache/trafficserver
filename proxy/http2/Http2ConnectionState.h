@@ -27,8 +27,15 @@
 #include "HTTP2.h"
 #include "HPACK.h"
 #include "Http2Stream.h"
+#include "Http2DependencyTree.h"
 
 class Http2ClientSession;
+
+enum Http2SendADataFrameResult {
+  HTTP2_SEND_A_DATA_FRAME_NO_ERROR = 0,
+  HTTP2_SEND_A_DATA_FRAME_NO_WINDOW = 1,
+  HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD = 2,
+};
 
 class Http2ConnectionSettings
 {
@@ -106,12 +113,14 @@ public:
   Http2ConnectionState()
     : Continuation(NULL),
       ua_session(NULL),
+      dependency_tree(NULL),
       client_rwnd(HTTP2_INITIAL_WINDOW_SIZE),
       server_rwnd(Http2::initial_window_size),
       stream_list(),
       latest_streamid(0),
       client_streams_count(0),
-      continued_stream_id(0)
+      continued_stream_id(0),
+      _scheduled(false)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
@@ -119,6 +128,7 @@ public:
   Http2ClientSession *ua_session;
   HpackHandle *local_hpack_handle;
   HpackHandle *remote_hpack_handle;
+  DependencyTree *dependency_tree;
 
   // Settings.
   Http2ConnectionSettings server_settings;
@@ -132,6 +142,8 @@ public:
 
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len = 0;
+
+    dependency_tree = new DependencyTree();
   }
 
   void
@@ -144,6 +156,8 @@ public:
     delete remote_hpack_handle;
 
     ats_free(continued_buffer.iov_base);
+
+    delete dependency_tree;
   }
 
   // Event handlers
@@ -186,7 +200,10 @@ public:
   ssize_t client_rwnd, server_rwnd;
 
   // HTTP/2 frame sender
-  void send_data_frame(Http2Stream *stream);
+  void schedule_stream(Http2Stream *stream);
+  void send_data_frames_depends_on_priority();
+  void send_data_frames(Http2Stream *stream);
+  Http2SendADataFrameResult send_a_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(Http2Stream *stream);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_settings_frame(const Http2ConnectionSettings &new_settings);
@@ -227,6 +244,7 @@ private:
   //     another CONTINUATION frame."
   Http2StreamId continued_stream_id;
   IOVec continued_buffer;
+  bool _scheduled;
 };
 
 #endif // __HTTP2_CONNECTION_STATE_H__
