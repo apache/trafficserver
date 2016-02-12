@@ -87,6 +87,8 @@ iocore/eventsystem/test_Event
 proxy/config/records.config.default
 proxy/config/storage.config.default
 proxy/http2/test_Huffmancode
+proxy/http2/test_Http2DependencyTree
+proxy/http2/test_Http2PriorityQueue
 
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/esi/*_test
