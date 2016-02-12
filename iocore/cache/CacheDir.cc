@@ -1001,6 +1001,15 @@ CacheSync::mainEvent(int event, Event *e)
 Lrestart:
   if (vol_idx >= gnvol) {
     vol_idx = 0;
+    if (buf) {
+      if (buf_huge)
+        ats_free_hugepage(buf, buflen);
+      else
+        ats_memalign_free(buf);
+      buflen = 0;
+      buf = NULL;
+      buf_huge = false;
+    }
     Debug("cache_dir_sync", "sync done");
     if (event == EVENT_INTERVAL)
       trigger = e->ethread->schedule_in(this, HRTIME_SECONDS(cache_config_dir_sync_frequency));
