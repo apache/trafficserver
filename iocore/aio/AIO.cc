@@ -188,6 +188,7 @@ struct AIOThreadInfo : public Continuation {
     (void)event;
     (void)e;
     aio_thread_main(this);
+    delete this;
     return EVENT_DONE;
   }
 
