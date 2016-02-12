@@ -94,7 +94,7 @@ namespace inliner
   {
     std::string src;
 
-    for (Attributes::const_iterator item = a.begin() ; item != a.end(); ++item) {
+    for (Attributes::const_iterator item = a.begin(); item != a.end(); ++item) {
       if (!item->first.empty()) {
         src = item->second;
       }
@@ -105,7 +105,7 @@ namespace inliner
 
     if (isTagged) {
       std::string classes, original = " ";
-      for (Attributes::const_iterator item = a.begin() ; item != a.end(); ++item) {
+      for (Attributes::const_iterator item = a.begin(); item != a.end(); ++item) {
         if (!item->first.empty()) {
           if (!item->second.empty()) {
             if (item->first == "class") {

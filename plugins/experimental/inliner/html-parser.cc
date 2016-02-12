@@ -34,7 +34,7 @@ namespace inliner
   Attributes::operator std::string(void) const
   {
     std::string result;
-    for (Attributes::const_iterator item = begin() ; item != end(); ++item) {
+    for (Attributes::const_iterator item = begin(); item != end(); ++item) {
       if (!item->first.empty()) {
         if (!item->second.empty()) {
           result += item->first + "=\"" + item->second += "\" ";
