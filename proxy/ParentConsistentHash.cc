@@ -154,12 +154,10 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
         if ((pRec->failedAt + policy->ParentRetryTime) < request_info->xact_start) {
           parentRetry = true;
           // make sure that the proper state is recorded in the result structure
-          // so that markParentUp() finds the proper record.
           result->last_parent = pRec->idx;
           result->last_lookup = last_lookup;
           result->retry = parentRetry;
           result->r = PARENT_SPECIFIED;
-          markParentUp(result);
           Debug("parent_select", "Down parent %s is now retryable, marked it available.", pRec->hostname);
           break;
         }
@@ -197,8 +195,8 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
     } while (!prtmp || !pRec->available);
   }
 
-  // use the available parent.
-  if (pRec && pRec->available) {
+  // use the available or marked for retry parent.
+  if ((pRec && pRec->available) || result->retry) {
     result->r = PARENT_SPECIFIED;
     result->hostname = pRec->hostname;
     result->port = pRec->port;
@@ -277,9 +275,9 @@ ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, Parent
     new_fail_count = old_count + 1;
   }
 
-  if (new_fail_count > 0 && new_fail_count == policy->FailThreshold) {
+  if (new_fail_count > 0 && new_fail_count >= policy->FailThreshold) {
     Note("Failure threshold met, http parent proxy %s:%d marked down", pRec->hostname, pRec->port);
-    pRec->available = false;
+    ink_atomic_swap(&pRec->available, false);
     Debug("parent_select", "Parent %s:%d marked unavailable, pRec->available=%d", pRec->hostname, pRec->port, pRec->available);
   }
 }
@@ -322,7 +320,7 @@ ParentConsistentHash::markParentUp(ParentResult *result)
 
   ink_assert((result->last_parent) < numParents(result));
   pRec = parents[result->last_lookup] + result->last_parent;
-  pRec->available = true;
+  ink_atomic_swap(&pRec->available, true);
   Debug("parent_select", "%s:%s(): marked %s:%d available.", __FILE__, __func__, pRec->hostname, pRec->port);
 
   ink_atomic_swap(&pRec->failedAt, (time_t)0);
