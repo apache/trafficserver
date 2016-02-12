@@ -2997,6 +2997,11 @@ HTTP/2 Configuration
    that the sender is prepared to accept blocks. The default value, which is
    the unsigned int maximum value in Traffic Server, implies unlimited size.
 
+.. ts:cv:: CONFIG proxy.config.http2.stream_priority_enabled INT 0
+   :reloadable:
+
+   Enable the experimental HTTP/2 Stream Priority feature.
+
 SPDY Configuration
 ==================
 

@@ -28,8 +28,12 @@
 #include "../ProxyClientTransaction.h"
 #include "Http2DebugNames.h"
 #include "../http/HttpTunnel.h" // To get ChunkedHandler
+#include "Http2DependencyTree.h"
 
+class Http2Stream;
 class Http2ConnectionState;
+
+typedef Http2DependencyTree<Http2Stream *> DependencyTree;
 
 class Http2Stream : public ProxyClientTransaction
 {
@@ -45,6 +49,7 @@ public:
       response_reader(NULL),
       request_reader(NULL),
       request_buffer(CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX),
+      priority_node(NULL),
       _id(sid),
       _state(HTTP2_STREAM_STATE_IDLE),
       trailing_header(false),
@@ -156,6 +161,7 @@ public:
   void update_read_request(int64_t read_len, bool send_update);
   bool update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
   void reenable(VIO *vio);
+  void send_response_body();
 
   // Stream level window size
   ssize_t client_rwnd, server_rwnd;
@@ -177,6 +183,7 @@ public:
   IOBufferReader *response_reader;
   IOBufferReader *request_reader;
   MIOBuffer request_buffer;
+  DependencyTree::Node *priority_node;
 
   EThread *
   get_thread()
