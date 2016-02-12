@@ -50,6 +50,9 @@
 #include "ts/ink_assert.h"
 #include "ts/ink_align.h"
 #include "ts/hugepages.h"
+#include "ts/Diags.h"
+
+#define DEBUG_TAG "freelist"
 
 inkcoreapi volatile int64_t fastalloc_mem_in_use = 0;
 inkcoreapi volatile int64_t fastalloc_mem_total = 0;
@@ -135,16 +138,19 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   ink_assert(!(alignment & (alignment - 1)));
   // It is never useful to have alignment requirement looser than a page size
   // so clip it. This makes the item alignment checks in the actual allocator simpler.
-  if (alignment > ats_pagesize())
-    alignment = ats_pagesize();
   f->alignment = alignment;
+  if (f->alignment > ats_pagesize())
+    f->alignment = ats_pagesize();
+  Debug(DEBUG_TAG "_init", "<%s> Alignment request/actual (%" PRIu32 "/%" PRIu32 ")", name, alignment, f->alignment);
   // Make sure we align *all* the objects in the allocation, not just the first one
-  f->type_size = INK_ALIGN(type_size, alignment);
+  f->type_size = INK_ALIGN(type_size, f->alignment);
+  Debug(DEBUG_TAG "_init", "<%s> Type Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, type_size, f->type_size);
   if (ats_hugepage_enabled()) {
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_hugepage_size()) / f->type_size;
   } else {
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_pagesize()) / f->type_size;
   }
+  Debug(DEBUG_TAG "_init", "<%s> Chunk Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, chunk_size, f->chunk_size);
   SET_FREELIST_POINTER_VERSION(f->head, FROM_PTR(0), 0);
 
   *fl = f;
