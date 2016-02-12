@@ -16,7 +16,7 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-AM_CPPFLAGS += -DPLUGIN_TAG=\"inliner\" -std=c++11
+AM_CPPFLAGS += -DPLUGIN_TAG=\"inliner\"
 
 pkglib_LTLIBRARIES = inliner.la
 
