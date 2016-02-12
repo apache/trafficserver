@@ -94,9 +94,9 @@ namespace inliner
   {
     std::string src;
 
-    for (const auto &item : a) {
-      if (!item.first.empty()) {
-        src = item.second;
+    for (Attributes::const_iterator item = a.begin() ; item != a.end(); ++item) {
+      if (!item->first.empty()) {
+        src = item->second;
       }
     }
 
@@ -105,17 +105,17 @@ namespace inliner
 
     if (isTagged) {
       std::string classes, original = " ";
-      for (const auto &item : a) {
-        if (!item.first.empty()) {
-          if (!item.second.empty()) {
-            if (item.first == "class") {
-              classes = item.second;
-            } else if (item.first.find("src") == std::string::npos) {
-              original += item.first + "=\"" + item.second += "\" ";
+      for (Attributes::const_iterator item = a.begin() ; item != a.end(); ++item) {
+        if (!item->first.empty()) {
+          if (!item->second.empty()) {
+            if (item->first == "class") {
+              classes = item->second;
+            } else if (item->first.find("src") == std::string::npos) {
+              original += item->first + "=\"" + item->second += "\" ";
             }
           }
         } else {
-          original += item.first + " ";
+          original += item->first + " ";
         }
       }
 

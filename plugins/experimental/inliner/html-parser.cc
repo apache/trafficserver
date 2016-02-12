@@ -34,12 +34,12 @@ namespace inliner
   Attributes::operator std::string(void) const
   {
     std::string result;
-    for (const auto &item : *this) {
-      if (!item.first.empty()) {
-        if (!item.second.empty()) {
-          result += item.first + "=\"" + item.second += "\" ";
+    for (Attributes::const_iterator item = begin() ; item != end(); ++item) {
+      if (!item->first.empty()) {
+        if (!item->second.empty()) {
+          result += item->first + "=\"" + item->second += "\" ";
         } else {
-          result += item.first;
+          result += item->first;
         }
       }
     }
