@@ -2,7 +2,7 @@ Changes with Apache Traffic Server 6.1.2
 
 Bug:
   *) [TS-4188] Client initial window size is set incorrectly in HTTP/2
-
+  *) [TS-4198] Excessive memory allocations from HostDB with huge tables enabled
 
 Changes with Apache Traffic Server 6.1.1
 
