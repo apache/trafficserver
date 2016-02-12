@@ -52,10 +52,10 @@ getHeader(TSMBuffer buffer, TSMLoc location, const std::string &name, std::strin
 {
   bool result = false;
   const TSMLoc field = TSMimeHdrFieldFind(buffer, location, name.c_str(), name.size());
-  if (field != nullptr) {
+  if (field != NULL) {
     int length = 0;
     const char *const content = TSMimeHdrFieldValueStringGet(buffer, location, field, -1, &length);
-    if (content != nullptr && length > 0) {
+    if (content != NULL && length > 0) {
       value = std::string(content, length);
       result = true;
     }
@@ -75,7 +75,7 @@ namespace inliner
     int64_t
     data(const TSIOBufferReader r, int64_t l)
     {
-      assert(r != nullptr);
+      assert(r != NULL);
       TSIOBufferBlock block = TSIOBufferReaderStart(r);
 
       assert(l >= 0);
@@ -89,7 +89,7 @@ namespace inliner
       for (; block && l > 0; block = TSIOBufferBlockNext(block)) {
         int64_t size = 0;
         const char *const pointer = TSIOBufferBlockReadStart(block, r, &size);
-        if (pointer != nullptr && size > 0) {
+        if (pointer != NULL && size > 0) {
           size = std::min(size, l);
           std::copy(pointer, pointer + size, std::back_inserter(content_));
           length += size;
@@ -180,7 +180,7 @@ namespace inliner
   uint64_t
   read(const TSIOBufferReader &r, std::string &o, int64_t l = 0)
   {
-    assert(r != nullptr);
+    assert(r != NULL);
     TSIOBufferBlock block = TSIOBufferReaderStart(r);
 
     assert(l >= 0);
@@ -194,7 +194,7 @@ namespace inliner
     for (; block && l > 0; block = TSIOBufferBlockNext(block)) {
       int64_t size = 0;
       const char *const pointer = TSIOBufferBlockReadStart(block, r, &size);
-      if (pointer != nullptr && size > 0) {
+      if (pointer != NULL && size > 0) {
         size = std::min(size, l);
         o.append(pointer, size);
         length += size;
@@ -216,27 +216,27 @@ namespace inliner
 
     ~CacheHandler()
     {
-      if (reader_ != nullptr) {
+      if (reader_ != NULL) {
         TSIOBufferReaderConsume(reader_, TSIOBufferReaderAvail(reader_));
         assert(TSIOBufferReaderAvail(reader_) == 0);
         TSIOBufferReaderFree(reader_);
-        reader_ = nullptr;
+        reader_ = NULL;
       }
     }
 
     template <class T1, class T2>
     CacheHandler(const std::string &s, const std::string &o, const std::string c, const std::string &i, T1 &&si, T2 &&si2)
-      : src_(s), original_(o), classes_(c), id_(i), sink_(std::forward<T1>(si)), sink2_(std::forward<T2>(si2)), reader_(nullptr)
+      : src_(s), original_(o), classes_(c), id_(i), sink_(std::forward<T1>(si)), sink2_(std::forward<T2>(si2)), reader_(NULL)
     {
-      assert(sink_ != nullptr);
-      assert(sink2_ != nullptr);
+      assert(sink_ != NULL);
+      assert(sink2_ != NULL);
     }
 
     CacheHandler(CacheHandler &&h)
       : src_(std::move(h.src_)), original_(std::move(h.original_)), classes_(std::move(h.classes_)), id_(std::move(h.id_)),
         sink_(std::move(h.sink_)), sink2_(std::move(h.sink2_)), reader_(h.reader_)
     {
-      h.reader_ = nullptr;
+      h.reader_ = NULL;
     }
 
     CacheHandler(const CacheHandler &) = delete;
@@ -245,8 +245,8 @@ namespace inliner
     void
     done(void)
     {
-      assert(reader_ != nullptr);
-      assert(sink2_ != nullptr);
+      assert(reader_ != NULL);
+      assert(sink2_ != NULL);
       std::string o;
       read(reader_, o);
       o = "<script>h(\"" + id_ + "\",\"" + o + "\");</script>";
@@ -257,7 +257,7 @@ namespace inliner
     data(TSIOBufferReader r)
     {
       // TODO(dmorilha): API maybe address as a different single event?
-      if (reader_ == nullptr) {
+      if (reader_ == NULL) {
         reader_ = TSIOBufferReaderClone(r);
       }
     }
@@ -265,7 +265,7 @@ namespace inliner
     void
     hit(TSVConn v)
     {
-      assert(v != nullptr);
+      assert(v != NULL);
 
       TSDebug(PLUGIN_TAG, "cache hit for %s (%" PRId64 " bytes)", src_.c_str(), TSVConnCacheObjectSizeGet(v));
 
@@ -288,7 +288,7 @@ namespace inliner
     void
     miss(void)
     {
-      assert(sink_ != nullptr);
+      assert(sink_ != NULL);
       *sink_ << original_;
       if (!src_.empty()) {
         *sink_ << "src=\"" << src_ << "\" ";
@@ -298,7 +298,7 @@ namespace inliner
       }
       sink_.reset();
 
-      assert(sink2_ != nullptr);
+      assert(sink2_ != NULL);
       sink2_.reset();
 
       const std::string b;

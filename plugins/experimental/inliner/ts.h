@@ -118,22 +118,22 @@ namespace io
 
     ~Lock()
     {
-      if (mutex_ != nullptr) {
+      if (mutex_ != NULL) {
         TSMutexUnlock(mutex_);
       }
     }
 
     Lock(const TSMutex m) : mutex_(m)
     {
-      if (mutex_ != nullptr) {
+      if (mutex_ != NULL) {
         TSMutexLock(mutex_);
       }
     }
 
-    Lock(void) : mutex_(nullptr) {}
+    Lock(void) : mutex_(NULL) {}
     Lock(const Lock &) = delete;
 
-    Lock(Lock &&l) : mutex_(l.mutex_) { const_cast<TSMutex &>(l.mutex_) = nullptr; }
+    Lock(Lock &&l) : mutex_(l.mutex_) { const_cast<TSMutex &>(l.mutex_) = NULL; }
     Lock &operator=(const Lock &) = delete;
   };
 
@@ -150,7 +150,7 @@ namespace io
     bool reenable_;
 
     static int Handle(TSCont, TSEvent, void *);
-    static WriteOperationWeakPointer Create(const TSVConn, const TSMutex mutex = nullptr, const size_t timeout = 0);
+    static WriteOperationWeakPointer Create(const TSVConn, const TSMutex mutex = NULL, const size_t timeout = 0);
 
     ~WriteOperation();
 
@@ -238,16 +238,16 @@ namespace io
 
     ~BufferNode()
     {
-      assert(reader_ != nullptr);
+      assert(reader_ != NULL);
       TSIOBufferReaderFree(reader_);
-      assert(buffer_ != nullptr);
+      assert(buffer_ != NULL);
       TSIOBufferDestroy(buffer_);
     }
 
     BufferNode(void) : buffer_(TSIOBufferCreate()), reader_(TSIOBufferReaderAlloc(buffer_))
     {
-      assert(buffer_ != nullptr);
-      assert(reader_ != nullptr);
+      assert(buffer_ != NULL);
+      assert(reader_ != NULL);
     }
 
     BufferNode(const BufferNode &) = delete;
@@ -289,7 +289,7 @@ namespace io
     {
       if (data_) {
         const Lock lock = data_->root_->lock();
-        assert(data_->root_ != nullptr);
+        assert(data_->root_ != NULL);
         const bool empty = data_->nodes_.empty();
         if (data_->first_ && empty) {
           // TSDebug(PLUGIN_TAG, "flushing");
@@ -297,15 +297,15 @@ namespace io
           *data_->root_ << std::forward<T>(t);
         } else {
           // TSDebug(PLUGIN_TAG, "buffering");
-          BufferNode *buffer = nullptr;
+          BufferNode *buffer = NULL;
           if (!empty) {
             buffer = dynamic_cast<BufferNode *>(data_->nodes_.back().get());
           }
-          if (buffer == nullptr) {
+          if (buffer == NULL) {
             data_->nodes_.emplace_back(new BufferNode());
             buffer = reinterpret_cast<BufferNode *>(data_->nodes_.back().get());
           }
-          assert(buffer != nullptr);
+          assert(buffer != NULL);
           *buffer << std::forward<T>(t);
         }
       }

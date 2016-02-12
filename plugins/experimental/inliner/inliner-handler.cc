@@ -40,7 +40,7 @@ namespace inliner
     assert(sink_->data_);
     assert(sink2_);
     assert(sink2_->data_);
-    assert(reader_ != nullptr);
+    assert(reader_ != NULL);
     *sink_ << "<script>"
               "var a=document,b=a.getElementsByTagName(\"img\"),c=b.length,w=window,d=function(){var "
               "m=w.addEventListener,n=w.attachEvent;return "
@@ -69,13 +69,13 @@ namespace inliner
   void
   Handler::parse(void)
   {
-    assert(reader_ != nullptr);
+    assert(reader_ != NULL);
     TSIOBufferBlock block = TSIOBufferReaderStart(reader_);
     int64_t offset = 0;
-    while (block != nullptr) {
+    while (block != NULL) {
       int64_t length = 0;
       const char *const buffer = TSIOBufferBlockReadStart(block, reader_, &length);
-      assert(buffer != nullptr);
+      assert(buffer != NULL);
       if (length > 0) {
         HtmlParser::parse(buffer, length, offset);
         offset += length;
@@ -119,12 +119,12 @@ namespace inliner
         }
       }
 
-      assert(sink_ != nullptr);
-      assert(sink2_ != nullptr);
+      assert(sink_ != NULL);
+      assert(sink2_ != NULL);
       src.erase(src.find('#'));
       cache::fetch<CacheHandler>(src + VERSION, src, original, classes, generateId(), sink2_->branch(), sink_);
     } else {
-      assert(sink2_ != nullptr);
+      assert(sink2_ != NULL);
       *sink2_ << " " << static_cast<std::string>(a);
     }
   }
