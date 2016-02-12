@@ -55,8 +55,8 @@ public:
   void append(const String &);
   void append(const char *s);
   void append(const char *n, unsigned s);
-  void appendPrefix(const String &prefix, Pattern &pattern);
-  void appendPath();
+  void appendPrefix(const String &prefix, Pattern &prefixCapture, Pattern &prefixCaptureUri);
+  void appendPath(Pattern &pathCapture, Pattern &pathCaptureUri);
   void appendHeaders(const ConfigHeaders &config);
   void appendQuery(const ConfigQuery &config);
   void appendCookies(const ConfigCookies &config);

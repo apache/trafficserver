@@ -95,7 +95,7 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
     CacheKey cachekey(txn, rri->requestBufp, rri->requestUrl, rri->requestHdrp);
 
     /* Append custom prefix or the host:port */
-    cachekey.appendPrefix(config->_prefix, config->_hostCapture);
+    cachekey.appendPrefix(config->_prefix, config->_prefixCapture, config->_prefixCaptureUri);
 
     /* Classify User-Agent and append the class name to the cache key if matched. */
     cachekey.appendUaClass(config->_classifier);
@@ -109,8 +109,8 @@ TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
     /* Append cookies to the cache key. */
     cachekey.appendCookies(config->_cookies);
 
-    /* Append the path, @todo enhance */
-    cachekey.appendPath();
+    /* Append the path to the cache key. */
+    cachekey.appendPath(config->_pathCapture, config->_pathCaptureUri);
 
     /* Append query parameters to the cache key. */
     cachekey.appendQuery(config->_query);
