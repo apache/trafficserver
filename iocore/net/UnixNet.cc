@@ -140,16 +140,14 @@ update_cop_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data,
 
 PollCont::PollCont(ProxyMutex *m, int pt) : Continuation(m), net_handler(NULL), nextPollDescriptor(NULL), poll_timeout(pt)
 {
-  pollDescriptor = new PollDescriptor;
-  pollDescriptor->init();
+  pollDescriptor = new PollDescriptor();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
 PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt)
   : Continuation(m), net_handler(nh), nextPollDescriptor(NULL), poll_timeout(pt)
 {
-  pollDescriptor = new PollDescriptor;
-  pollDescriptor->init();
+  pollDescriptor = new PollDescriptor();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
