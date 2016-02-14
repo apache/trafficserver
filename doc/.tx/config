@@ -2242,3 +2242,13 @@ file_filter = locale/<lang>/LC_MESSAGES/developer-guide/plugins/hooks-and-transa
 source_file = _build/locale/pot/developer-guide/plugins/hooks-and-transactions/trafficserver-timers.en.pot
 source_lang = en
 
+[apache-traffic-server-6x.admin-guide--plugins--url_sig_en]
+file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/url_sig.en.po
+source_file = _build/locale/pot/admin-guide/plugins/url_sig.en.pot
+source_lang = en
+
+[apache-traffic-server-6x.developer-guide--documentation--plugins_en]
+file_filter = locale/<lang>/LC_MESSAGES/developer-guide/documentation/plugins.en.po
+source_file = _build/locale/pot/developer-guide/documentation/plugins.en.pot
+source_lang = en
+
