@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -156,24 +156,24 @@ msgid "**Attribute** **Transparency Style** **Reverse Proxy**"
 msgstr "**属性** **透過性のスタイル** **リバースプロキシー**"
 
 #: ../../../admin-guide/configuration/transparent-proxy.en.rst:101
-msgid "="
-msgstr "="
+msgid "``=``"
+msgstr ""
 
 #: ../../../admin-guide/configuration/transparent-proxy.en.rst:101
 msgid "Full transparency: either"
 msgstr "完全な透過性: どちらか"
 
 #: ../../../admin-guide/configuration/transparent-proxy.en.rst:104
-msgid ">"
-msgstr ">"
+msgid "``>``"
+msgstr ""
 
 #: ../../../admin-guide/configuration/transparent-proxy.en.rst:104
 msgid "Inbound (client) transparency: enabled"
 msgstr "内向きの (クライアント) 透過性: 有効"
 
 #: ../../../admin-guide/configuration/transparent-proxy.en.rst:107
-msgid "<"
-msgstr "<"
+msgid "``<``"
+msgstr ""
 
 #: ../../../admin-guide/configuration/transparent-proxy.en.rst:107
 msgid "Outbound (origin server) transparency: either"
@@ -204,3 +204,12 @@ msgstr ":doc:`transparent-proxy/router-inline.en`"
 #: ../../../admin-guide/configuration/transparent-proxy.en.rst:117
 msgid ":doc:`transparent-proxy/wccp-configuration.en`"
 msgstr ":doc:`transparent-proxy/wccp-configuration.en`"
+
+#~ msgid "="
+#~ msgstr "="
+
+#~ msgid ">"
+#~ msgstr ">"
+
+#~ msgid "<"
+#~ msgstr "<"

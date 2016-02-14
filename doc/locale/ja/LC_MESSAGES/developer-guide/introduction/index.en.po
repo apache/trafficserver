@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -66,7 +66,7 @@ msgid "Below is a section-by-section breakdown of this guide:"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:53
-msgid "developer-plugins-getting-started"
+msgid ":ref:`developer-plugins-getting-started`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:50
@@ -78,7 +78,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:57
-msgid "developer-plugins-examples-query-remap"
+msgid ":ref:`developer-plugins-examples-query-remap`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:56
@@ -88,7 +88,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:62
-msgid "developer-plugins-header-based-examples"
+msgid ":ref:`developer-plugins-header-based-examples`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:60
@@ -98,7 +98,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:66
-msgid "developer-plugins-http-transformations"
+msgid ":ref:`developer-plugins-http-transformations`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:65
@@ -108,7 +108,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:71
-msgid "developer-plugins-new-protocol-plugins"
+msgid ":ref:`developer-plugins-new-protocol-plugins`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:69
@@ -125,7 +125,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:79
-msgid "developer-plugins-interfaces"
+msgid ":ref:`developer-plugins-interfaces`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:77
@@ -136,7 +136,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:82
-msgid "developer-plugins-hooks-and-transactions"
+msgid ":ref:`developer-plugins-hooks-and-transactions`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:82
@@ -145,7 +145,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:89
-msgid "developer-plugins-http-headers"
+msgid ":ref:`developer-plugins-http-headers`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:85
@@ -162,7 +162,7 @@ msgid ":ref:`developer-plugins-mutexes`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:95
-msgid "developer-plugins-continuations"
+msgid ":ref:`developer-plugins-continuations`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:94
@@ -176,7 +176,7 @@ msgid ":ref:`developer-plugins-configuration`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:100
-msgid "developer-plugins-actions"
+msgid ":ref:`developer-plugins-actions`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:100
@@ -184,7 +184,7 @@ msgid "Describes how to use ``TSActions`` and the ``TSDNSLookup`` API."
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:105
-msgid "developer-plugins-io"
+msgid ":ref:`developer-plugins-io`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:103
@@ -194,7 +194,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:109
-msgid "developer-plugins-management"
+msgid ":ref:`developer-plugins-management`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:108
@@ -204,7 +204,7 @@ msgid ""
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:112
-msgid "developer-plugins-add-statistics"
+msgid ":ref:`developer-plugins-add-statistics`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:112
@@ -212,7 +212,7 @@ msgid "These functions add statistics to your plugin."
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:116
-msgid "developer-api-ref-functions"
+msgid ":ref:`developer-api-ref-functions`"
 msgstr ""
 
 #: ../../../developer-guide/introduction/index.en.rst:115

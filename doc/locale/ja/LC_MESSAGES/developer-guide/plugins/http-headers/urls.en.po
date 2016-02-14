@@ -9,37 +9,37 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.1.1\n"
+"Generated-By: Babel 2.2.0\n"
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:23
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:23
 msgid "URLs"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:25
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:25
 msgid ""
 "API URL functions provide access to URL data stored in marshal buffers. The "
 "URL functions can create, copy, retrieve or delete entire URLs; they can "
 "also retrieve or modify parts of URLs, such as port or scheme information."
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:30
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:30
 msgid "The general form of an Internet URL is:"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:36
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:36
 msgid ""
 "The URL data structure includes support for two specific types of internet "
 "URLs. HTTP URLs have the form:"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:43
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:43
 msgid ""
 "The URL port is stored as integer. All remaining parts of the URL (scheme, "
 "user, etc.) are stored as strings. Traffic Server URL functions are named "
@@ -48,101 +48,101 @@ msgid ""
 "``TSUrlHostGet``."
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:49
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:49
 msgid ""
 "To facilitate fast comparisons and reduce storage size, Traffic Server "
 "defines several preallocated scheme names."
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:54
-msgid "TS_URL_SCHEME_FILE"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:54
+msgid "``TS_URL_SCHEME_FILE``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:53
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:53
 msgid "\"file\" ``TS_URL_LEN_FILE``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:58
-msgid "TS_URL_SCHEME_FTP"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:58
+msgid "``TS_URL_SCHEME_FTP``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:57
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:57
 msgid "\"ftp\" ``TS_URL_LEN_FTP``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:62
-msgid "TS_URL_SCHEME_GOPHER"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:62
+msgid "``TS_URL_SCHEME_GOPHER``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:61
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:61
 msgid "\"gopher\" ``TS_URL_LEN_GOPHER``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:66
-msgid "TS_URL_SCHEME_HTTP"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:66
+msgid "``TS_URL_SCHEME_HTTP``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:65
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:65
 msgid "\"http\" ``TS_URL_LEN_HTTP``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:70
-msgid "TS_URL_SCHEME_HTTPS"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:70
+msgid "``TS_URL_SCHEME_HTTPS``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:69
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:69
 msgid "\"https\" ``TS_URL_LEN_HTTPS``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:74
-msgid "TS_URL_SCHEME_MAILTO"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:74
+msgid "``TS_URL_SCHEME_MAILTO``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:73
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:73
 msgid "\"mailto\" ``TS_URL_LEN_MAILTO``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:78
-msgid "TS_URL_SCHEME_NEWS"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:78
+msgid "``TS_URL_SCHEME_NEWS``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:77
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:77
 msgid "\"news\" ``TS_URL_LEN_NEWS``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:82
-msgid "TS_URL_SCHEME_NNTP"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:82
+msgid "``TS_URL_SCHEME_NNTP``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:81
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:81
 msgid "\"nntp\" ``TS_URL_LEN_NNTP``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:86
-msgid "TS_URL_SCHEME_PROSPERO"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:86
+msgid "``TS_URL_SCHEME_PROSPERO``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:85
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:85
 msgid "\"prospero\" ``TS_URL_LEN_PROSPERO``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:90
-msgid "TS_URL_SCHEME_TELNET"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:90
+msgid "``TS_URL_SCHEME_TELNET``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:89
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:89
 msgid "\"telnet\" ``TS_URL_LEN_TELNET``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:94
-msgid "TS_URL_SCHEME_WAIS"
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:94
+msgid "``TS_URL_SCHEME_WAIS``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:93
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:93
 msgid "\"wais\" ``TS_URL_LEN_WAIS``"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:96
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:96
 msgid ""
 "The scheme names above are defined in ``ts.h`` as ``const`` ``char*`` "
 "strings. When Traffic Server sets the scheme portion of the URL (or any "
@@ -156,11 +156,11 @@ msgid ""
 "prevent the possibility of spelling errors."
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:107
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:107
 msgid "Traffic Server **URL functions** are listed below:"
 msgstr ""
 
-#: ../../developer-guide/plugins/http-headers/urls.en.rst:109
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:109
 msgid ""
 ":c:func:`TSUrlClone` :c:func:`TSUrlCopy` :c:func:`TSUrlCreate` :c:func:"
 "`TSUrlDestroy` :c:func:`TSUrlPrint` :c:func:`TSUrlFtpTypeGet` :c:func:"

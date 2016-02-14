@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -94,7 +94,7 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:78
-msgid "proxy.config.http.server_ports"
+msgid "``proxy.config.http.server_ports``"
 msgstr ""
 
 #: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:77
@@ -102,7 +102,7 @@ msgid "``STRING`` Default: *value from* ``--on-port``"
 msgstr ""
 
 #: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:82
-msgid "proxy.config.reverse_proxy.enabled"
+msgid "``proxy.config.reverse_proxy.enabled``"
 msgstr ""
 
 #: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:81
@@ -110,7 +110,7 @@ msgid "``INT`` Default: ``1``"
 msgstr ""
 
 #: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:86
-msgid "proxy.config.url_remap.remap_required"
+msgid "``proxy.config.url_remap.remap_required``"
 msgstr ""
 
 #: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:85
