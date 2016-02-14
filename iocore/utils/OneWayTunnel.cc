@@ -350,7 +350,7 @@ OneWayTunnel::connection_closed(int result)
 #ifdef TEST
     cout << "OneWayTunnel::connection_closed() ... calling cont" << endl;
 #endif
-    cont->handleEvent(result ? VC_EVENT_ERROR : VC_EVENT_EOS, cont);
+    cont->handleEvent(result ? VC_EVENT_ERROR : VC_EVENT_EOS, this);
   } else {
     OneWayTunnel_free(this);
   }
