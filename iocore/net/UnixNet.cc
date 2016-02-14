@@ -149,7 +149,6 @@ PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt)
   : Continuation(m), net_handler(nh), nextPollDescriptor(NULL), poll_timeout(pt)
 {
   pollDescriptor = new PollDescriptor;
-  pollDescriptor->init();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
