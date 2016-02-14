@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -382,7 +382,7 @@ msgstr ""
 
 #: ../../../getting-started/index.en.rst:256
 #: ../../../getting-started/index.en.rst:383
-msgid "proxy.config.http.cache.http"
+msgid ":ts:cv:`proxy.config.http.cache.http`"
 msgstr ""
 
 #: ../../../getting-started/index.en.rst:256
@@ -391,7 +391,7 @@ msgid "Enables caching of proxied HTTP requests."
 msgstr ""
 
 #: ../../../getting-started/index.en.rst:259
-msgid "proxy.config.reverse_proxy.enabled"
+msgid ":ts:cv:`proxy.config.reverse_proxy.enabled`"
 msgstr ""
 
 #: ../../../getting-started/index.en.rst:259
@@ -400,7 +400,7 @@ msgstr ""
 
 #: ../../../getting-started/index.en.rst:265
 #: ../../../getting-started/index.en.rst:380
-msgid "proxy.config.url_remap.remap_required"
+msgid ":ts:cv:`proxy.config.url_remap.remap_required`"
 msgstr ""
 
 #: ../../../getting-started/index.en.rst:262
@@ -412,7 +412,7 @@ msgid ""
 msgstr ""
 
 #: ../../../getting-started/index.en.rst:271
-msgid "proxy.config.url_remap.pristine_host_hdr"
+msgid ":ts:cv:`proxy.config.url_remap.pristine_host_hdr`"
 msgstr ""
 
 #: ../../../getting-started/index.en.rst:268
@@ -424,7 +424,7 @@ msgid ""
 msgstr ""
 
 #: ../../../getting-started/index.en.rst:274
-msgid "proxy.config.http.server_ports"
+msgid ":ts:cv:`proxy.config.http.server_ports`"
 msgstr ""
 
 #: ../../../getting-started/index.en.rst:274

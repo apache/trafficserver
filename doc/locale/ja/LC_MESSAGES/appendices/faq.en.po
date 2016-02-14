@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
 "PO-Revision-Date: 2016-01-03 14:56+0900\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -887,7 +887,8 @@ msgid "Traffic Line commands do not execute under the following conditions:"
 msgstr "Traffic Line コマンドは次の状況で動作しません。"
 
 #: ../../../appendices/faq.en.rst:377
-msgid "When the traffic_manager process is not running"
+#, fuzzy
+msgid "**When the traffic_manager process is not running**"
 msgstr "traffic_manager プロセスが実行中でないとき"
 
 #: ../../../appendices/faq.en.rst:369
@@ -907,7 +908,8 @@ msgstr ""
 "Traffic Server の ``bin`` ディレクトリで次のコマンドを入力してください。"
 
 #: ../../../appendices/faq.en.rst:388
-msgid "When you are not executing the command from $TSHome/bin"
+#, fuzzy
+msgid "**When you are not executing the command from $TSHome/bin**"
 msgstr "$TSHome/bin からコマンドを実行していない場合"
 
 #: ../../../appendices/faq.en.rst:387

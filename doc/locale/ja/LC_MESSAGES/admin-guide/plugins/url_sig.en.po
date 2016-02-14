@@ -1,0 +1,420 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:23
+msgid "Signed URL Plugin"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:25
+msgid ""
+"This plugin checks a signature query string on a URL and rejects (HTTP "
+"``403``) or redirects (HTTP ``302``) when the check fails. The signature is "
+"based on a secret key that both a signing portal and the |TS| cache share. "
+"The algorithm for the signature may be either ``MD5`` or ``SHA1``. When the "
+"signature check passes, the query string of the request is stripped and "
+"continues to process as if there were no query string at all."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:33
+msgid "Installation"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:35
+msgid ""
+"To make this plugin available, you must either enable experimental plugins "
+"when building |TS|::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:40
+msgid ""
+"Or use :program:`tsxs` to compile the plugin against your current |TS| "
+"build. To do this, you must ensure that:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:43
+msgid "Development packages for |TS| are installed."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:45
+msgid "The :program:`tsxs` binary is in your path."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:47
+msgid ""
+"The version of this plugin you are building, and the version of |TS| "
+"against which you are building it are compatible."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:50
+msgid ""
+"Once those conditions are satisfied, enter the source directory for the "
+"plugin and perform the following::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:57
+msgid "Configuration"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:59
+msgid ""
+"Configuring URL signature verification within |TS| using this plugin is a "
+"two step process. First, you must generate a configuration file containing "
+"the list of valid signing keys. Secondly, you must indicate to |TS| which "
+"URLs require valid signatures."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:65
+msgid "Generating Keys"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:67
+msgid ""
+"This plugin comes with two Perl scripts which assist in generating "
+"signatures. For |TS| to verify URL signatures, it must have the relevant "
+"keys. Using the provided *genkeys* script, you can generate a suitable "
+"configuration file::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:73
+msgid ""
+"The resulting file will look something like the following, with the actual "
+"keys differing (as they are generated randomly each time the script is "
+"run)::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:94
+msgid ""
+"This file should be placed in your |TS| ``etc`` directory, with permissions "
+"and ownership set such that only the |TS| processes may read it."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:99
+msgid ""
+"The configuration file contains the full set of secret keys which |TS| will "
+"be using to verify incoming requests, and as such should be treated with as "
+"much care as any other file in your infrastructure containing keys, pass "
+"phrases, and other sensitive data. Unauthorized access to the contents of "
+"this file will allow others to spoof requests from your signing portal, "
+"thus defeating the entire purpose of using a signing portal in the first "
+"place."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:107
+msgid "Requiring Signatures on URLs"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:109
+msgid ""
+"To require a valid signature, verified by a key from the list you generated "
+"earlier, modify your :file:`remap.config` configuration to include this "
+"plugin for any rules you wish it to affect."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:113
+msgid "Two parameters for each remap rule are required::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:117
+msgid ""
+"The first simply enables this plugin for the rule. The second specifies the "
+"location of the configuration file containing your signing keys."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:120
+msgid ""
+"For example, if we wanted to restrict all paths under a ``/download`` "
+"directory on our website ``foo.com`` we might have a remap line like this::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:127
+msgid "Signing a URL"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:129
+msgid ""
+"Signing a URL is solely the responsibility of your signing portal service. "
+"This requires that whatever application runs that service must also have a "
+"list of your signing keys (generated earlier in Configuration_ and stored "
+"in the ``url_sig.config`` file in your |TS| configuration directory). How "
+"your signing portal application is informed about, or stores, these keys is "
+"up to you, but it is critical that the ``keyN`` index numbers are matched "
+"to the same keys."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:136
+msgid ""
+"Signing is performed by adding several query parameters to a URL, before "
+"redirecting the client. The parameters' values are all generated by your "
+"signing portal application, and then a hash is calculated by your portal, "
+"using the entire URL just constructed, and attached as the final query "
+"parameter."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:143
+msgid ""
+"Ordering is important when adding the query parameters and generating the "
+"signature. The signature itself is a hash, using your chosen algorithm, of "
+"the entire URL to which you are about to redirect the client, up to and "
+"including the ``S=`` substring indicating the signature parameter."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:148
+msgid ""
+"The following list details all the query parameters you must add to the URL "
+"you will hand back to the client for redirection."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:155
+msgid "Client IP"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:152
+msgid ""
+"The IP address of the client being redirected. This must be their IP as it "
+"will appear to your |TS| cache::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:161
+msgid "Expiration"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:158
+msgid ""
+"The time at which this signature will no longer be valid, expressed in "
+"seconds since epoch (and thus in UTC)::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:176
+#: ../../../admin-guide/plugins/url_sig.en.rst:172
+msgid "Algorithm"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:164
+msgid ""
+"The hash algorithm which your signing portal application has elected to use "
+"for this signature::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:169
+msgid "The only supported values at this time are:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:172
+#: ../../../admin-guide/plugins/url_sig.en.rst:200
+msgid "Value"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:174
+#: ../../../admin-guide/plugins/url_sig.en.rst:202
+msgid "``1``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:174
+msgid "HMAC_SHA1"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:175
+msgid "``2``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:175
+msgid "HMAC_MD5"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:183
+msgid "Key Index"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:179
+msgid ""
+"The key number, from your plugin configuration, which was used for this "
+"signature. See Configuration_ for generating these keys and determining the "
+"index number of each::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:208
+msgid "Parts"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:186
+msgid ""
+"Configures which components of the URL to use for signature verification. "
+"The value of this paramerts is a string of ones and zeroes, each enabling "
+"or disabling the use of a URL part for signatures. The URL scheme (e.g. "
+"``http://``) is never part of the signature. The first number of this "
+"parameter's value indicates whether to include the FQDN, and all remaining "
+"numbers determine whether to use the directory parts of the URL. If there "
+"are more directories in the URL than there are numbers in this parameter, "
+"the last number is repeated as many times as necessary::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:197
+msgid "Examples include:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:200
+msgid "Effect"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:202
+msgid "Use the FQDN and all directory parts for signature verification."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:203
+msgid "``01``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:203
+msgid "Ignore the FQDN, but verify using all directory parts."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:204
+msgid "``0110``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:204
+msgid ""
+"Ignore the FQDN, and use only the first two directory parts, skipping the "
+"remainder, for signatures."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:206
+msgid "``110``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:206
+msgid ""
+"Use the FQDN and first directory for signature verification, but ignore the "
+"remainder of the path."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:241
+msgid "Signature"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:211
+msgid "The actual signature hash::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:215
+msgid ""
+"The hash should be calculated in accordance with the parts specification "
+"you have declared in the ``P=`` query parameter, which if you have chosen "
+"any value other than ``1`` may require additional URL parsing be performed "
+"by your signing portal."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:220
+msgid ""
+"Additionally, all query parameters up to and including the ``S=`` substring "
+"for this parameter must be included, and must be in the same order as they "
+"are returned to the client for redirection. For obvious reasons, the value "
+"of this parameter is not included in the source string being hashed."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:225
+msgid ""
+"As a simple example, if we are about to redirect a client to the URL "
+"``https://foo.com/downloads/expensive-app.exe`` with signature verification "
+"enabled, then we will compute a signature on the following string::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:231
+msgid ""
+"And, assuming that *key2* from our secrets file matches our example in "
+"Configuration_, then our signature becomes::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:236
+msgid ""
+"Which is then appended to the URL for redirection as the value of the ``S`` "
+"parameter."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:239
+msgid ""
+"For an example implementation of signing which may be adapted for your own "
+"portal, refer to the file ``sign.pl`` included with the source code of this "
+"plugin."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:244
+msgid "Edge Cache Debugging"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:246
+msgid ""
+"To include debugging output for this plugin in your |TS| logs, adjust the "
+"values for :ts:cv:`proxy.config.diags.debug.enabled` and :ts:cv:`proxy."
+"config.diags.debug.tags` in your :file:`records.config` as so::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:253
+msgid ""
+"Once updated, issue a :option:`traffic_ctl reload` to make the settings "
+"active."
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:256
+msgid "Example"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:258
+msgid "Enable experimental plugins when building |TS|::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:262
+msgid ""
+"Generate a secrets configuration for |TS| (replacing the output location "
+"with something appropriate to your |TS| installation)::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:267
+msgid ""
+"Verify that your configuration looks like the following, with actual key "
+"values altered::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:288
+msgid ""
+"Enable signature verification for a remap rule in |TS| by modifying :file:"
+"`remap.config` (here we will just remap to Google's homepage for "
+"demonstrative purposes)::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:295
+msgid "Reload your |TS| configuration to ensure the changes are active::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:299
+msgid ""
+"Attempt to access the now-protected URL without a valid signature. This "
+"will fail, and that is a good thing, as it demonstrates that |TS| now "
+"rejects any requests to paths matching that rule which do not include a "
+"valid signature.::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:330
+msgid "Generate a signed URL using the included ``sign.pl`` script::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/url_sig.en.rst:336
+msgid "Now access the protected URL with a valid signature::"
+msgstr ""
