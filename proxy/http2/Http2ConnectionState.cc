@@ -722,6 +722,8 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     // settings.
     Http2ConnectionSettings configured_settings;
     configured_settings.settings_from_configs();
+    configured_settings.set(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, _adjust_concurrent_stream());
+
     send_settings_frame(configured_settings);
 
     if (server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) > HTTP2_INITIAL_WINDOW_SIZE) {
@@ -1159,4 +1161,37 @@ Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &window_update);
+}
+
+// Return min_concurrent_streams_in when current client streams number is larger than max_active_streams_in.
+// Main purpose of this is preventing DDoS Attacks.
+unsigned
+Http2ConnectionState::_adjust_concurrent_stream()
+{
+  if (Http2::max_active_streams_in == 0) {
+    // Throttling down is disabled.
+    return Http2::max_concurrent_streams_in;
+  }
+
+  int64_t current_client_streams = 0;
+  RecGetRawStatSum(http2_rsb, HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, &current_client_streams);
+
+  DebugHttp2Con(ua_session, "current client streams: %" PRId64, current_client_streams);
+
+  if (current_client_streams >= Http2::max_active_streams_in) {
+    if (!Http2::throttling) {
+      Warning("too many streams: %" PRId64 ", reduce SETTINGS_MAX_CONCURRENT_STREAMS to %d", current_client_streams,
+              Http2::min_concurrent_streams_in);
+      Http2::throttling = true;
+    }
+
+    return Http2::min_concurrent_streams_in;
+  } else {
+    if (Http2::throttling) {
+      Note("revert SETTINGS_MAX_CONCURRENT_STREAMS to %d", Http2::max_concurrent_streams_in);
+      Http2::throttling = false;
+    }
+  }
+
+  return Http2::max_concurrent_streams_in;
 }

@@ -342,7 +342,10 @@ int64_t http2_write_header_fragment(HTTPHdr *, MIMEFieldIter &, uint8_t *, uint6
 class Http2
 {
 public:
-  static uint32_t max_concurrent_streams;
+  static uint32_t max_concurrent_streams_in;
+  static uint32_t min_concurrent_streams_in;
+  static uint32_t max_active_streams_in;
+  static bool throttling;
   static uint32_t initial_window_size;
   static uint32_t max_frame_size;
   static uint32_t header_table_size;
