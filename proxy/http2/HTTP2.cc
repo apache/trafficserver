@@ -727,7 +727,10 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
 }
 
 // Initialize this subsystem with librecords configs (for now)
-uint32_t Http2::max_concurrent_streams = 100;
+uint32_t Http2::max_concurrent_streams_in = 100;
+uint32_t Http2::min_concurrent_streams_in = 10;
+uint32_t Http2::max_active_streams_in = 0;
+bool Http2::throttling = false;
 uint32_t Http2::initial_window_size = 1048576;
 uint32_t Http2::max_frame_size = 16384;
 uint32_t Http2::header_table_size = 4096;
@@ -740,7 +743,9 @@ uint32_t Http2::active_timeout_in = 0;
 void
 Http2::init()
 {
-  REC_EstablishStaticConfigInt32U(max_concurrent_streams, "proxy.config.http2.max_concurrent_streams_in");
+  REC_EstablishStaticConfigInt32U(max_concurrent_streams_in, "proxy.config.http2.max_concurrent_streams_in");
+  REC_EstablishStaticConfigInt32U(min_concurrent_streams_in, "proxy.config.http2.min_concurrent_streams_in");
+  REC_EstablishStaticConfigInt32U(max_active_streams_in, "proxy.config.http2.max_active_streams_in");
   REC_EstablishStaticConfigInt32U(initial_window_size, "proxy.config.http2.initial_window_size_in");
   REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
   REC_EstablishStaticConfigInt32U(header_table_size, "proxy.config.http2.header_table_size");
@@ -751,7 +756,8 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(active_timeout_in, "proxy.config.http2.active_timeout_in");
 
   // If any settings is broken, ATS should not start
-  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams}) &&
+  ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams_in}) &&
+                     http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, min_concurrent_streams_in}) &&
                      http2_settings_parameter_is_valid({HTTP2_SETTINGS_INITIAL_WINDOW_SIZE, initial_window_size}) &&
                      http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_FRAME_SIZE, max_frame_size}) &&
                      http2_settings_parameter_is_valid({HTTP2_SETTINGS_HEADER_TABLE_SIZE, header_table_size}) &&
