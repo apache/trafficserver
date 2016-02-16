@@ -250,10 +250,10 @@ For a list of :program:`traffic_ctl` commands, enter::
 
      bin/traffic_ctl
 
-Please note that :program:`traffic_ctl`, while a fine tool for an
-administrator, is a poor choice for automation, especially that of
-monitoring. See our chapter on :ref:`monitoring-traffic`
-for how to do that more efficiently and effectively.
+Please note that :program:`traffic_ctl`, while a fine tool for administrators,
+is a poor choice for automation, especially that of monitoring. See our chapter
+on :ref:`monitoring <admin-monitoring>` for how to do that more efficiently and
+effectively.
 
 .. _stop-traffic-server:
 
