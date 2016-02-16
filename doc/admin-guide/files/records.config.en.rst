@@ -55,7 +55,7 @@ A variable marked as ``Reloadable`` can be updated via the command::
    traffic_ctl config reload
 
 A variable marked as ``Overridable`` can be changed on a per-remap basis using plugins
-(like the :ref:`conf-remap-plugin`).
+(like the :ref:`admin-plugins-conf-remap`).
 
 ``INT`` type configurations are expressed as any normal integer,
 e.g. *32768*. They can also be expressed using more human readable values
@@ -1296,6 +1296,8 @@ Congestion Control
 
    When enabled >= (``0``), Traffic Server will enforce a maximum number of simultaneous websocket connections.
 
+.. _admin-negative-response-caching:
+
 Negative Response Caching
 =========================
 
@@ -1803,6 +1805,8 @@ RAM Cache
    .. note::
 
       Compression runs on task threads.  To use more cores for RAM cache compression, increase :ts:cv:`proxy.config.task_threads`.
+
+.. _admin-heuristic-expiration:
 
 Heuristic Expiration
 ====================

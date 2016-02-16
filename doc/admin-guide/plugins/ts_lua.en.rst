@@ -19,7 +19,7 @@
 
 .. _admin-plugins-ts-lua:
 
-ts-lua Plugin
+TS Lua Plugin
 *************
 
 This module embeds Lua, via the standard Lua 5.1 interpreter, into |ATS|. With

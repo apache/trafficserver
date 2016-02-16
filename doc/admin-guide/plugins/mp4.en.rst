@@ -1,7 +1,7 @@
-.. _mp4-plugin:
+.. _admin-plugins-mp4:
 
 MP4 Plugin
-****************
+**********
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file

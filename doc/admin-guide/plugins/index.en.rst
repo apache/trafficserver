@@ -43,23 +43,49 @@ Stable plugins
 Plugins that are considered stable are installed by default in |TS| releases.
 
 .. toctree::
-  :maxdepth: 1
+   :hidden:
 
-  CacheURL: allows you to change the key that is used for caching a request by using any portion of the url via regex <cacheurl.en>
-  Configuration Remap: allows you to override configuration directives dependent on actual remapping rules <conf_remap.en>
-  GZip: gzips or deflates responses <gzip.en>
-  Header Rewrite: allows you to modify various headers based on defined rules (operations) on a request or response <header_rewrite.en>
-  Health Checks: allows you to define health check links <healthchecks.en>
-  Regex Remap: allows you to configure mapping rules based on regular expressions <regex_remap.en>
-  Stats over HTTP: implements an HTTP interface to all Traffic Server statistics <stats_over_http.en>
-  TCPInfo: logs TCP metrics at various points in the HTTP processing pipeline <tcpinfo.en>
+   Cache URL <cacheurl.en>
+   Configuration Remap <conf_remap.en>
+   GZip <gzip.en>
+   Header Rewrite <header_rewrite.en>
+   Health Checks <healthchecks.en>
+   Regex Remap <regex_remap.en>
+   Stats over HTTP <stats_over_http.en>
+   TCPInfo <tcpinfo.en>
+
+:doc:`Cache URL <cacheurl.en>`
+    Modify the :term:`cache key` used for requests by applying a regular
+    expression to the URL.
+
+:doc:`Configuration Remap <conf_remap.en>`
+    Override configuration directives on a per-rule basis.
+
+:doc:`GZip <gzip.en>`
+    Compress or deflate cache responses.
+
+:doc:`Header Rewrite <header_rewrite.en>`
+    Modify requests and responses based on incoming and outgoing headers and
+    other transaction attributes.
+
+:doc:`Health Checks <healthchecks.en>`
+    Define service health check links.
+
+:doc:`Regex Remap <regex_remap.en>`
+    Configure remapping rules using regular expressions.
+
+:doc:`Stats over HTTP <stats_over_http.en>`
+    Provide an HTTP interface to all |TS| statistics.
+
+:doc:`TCPInfo <tcpinfo.en>`
+    Log TCP metrics at various points of the HTTP processing pipeline.
 
 Experimental plugins
 ====================
 
 Plugins that are considered experimental are located in the
 `plugins/experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=tree;f=plugins/experimental;hb=HEAD>`_
-directory of the Apache Traffic Server source tree. Experimental plugins can be compiled by passing the
+directory of the |TS| source tree. Experimental plugins can be compiled by passing the
 `--enable-experimental-plugins` option to `configure`::
 
     $ autoconf -i
@@ -67,27 +93,94 @@ directory of the Apache Traffic Server source tree. Experimental plugins can be 
     $ make
 
 .. toctree::
-  :maxdepth: 1
+   :hidden:
 
-  AWS S3 Authentication: provides support for the Amazon S3 authentication features <s3_auth.en>
-  AuthProxy: delegates the authorization decision of a request to an external HTTP service <authproxy.en>
-  Background Fetch: allows you to proactively fetch content from Origin in a way that it will fill the object into cache <background_fetch.en>
-  Balancer: balances requests across multiple origin servers <balancer.en>
-  Buffer Upload: buffers POST data before connecting to the Origin server <buffer_upload.en>
-  Cache Promotion: provides additional control over when an object should be allowed into the cache <cache_promote.en>
-  Cachekey: allows some common cache key manipulations based on various HTTP request elements <cachekey.en> 
-  Combo Handler: provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response <combo_handler.en>
-  ESI: implements the ESI specification <esi.en>
-  Epic: emits Traffic Server metrics in a format that is consumed tby the Epic Network Monitoring System <epic.en>
-  Generator: generate arbitrary response data <generator.en>
-  GeoIP ACLs: denying (or allowing) requests based on the source IP geo-location <geoip_acl.en>
-  MP4: mp4 streaming media <mp4.en>
-  Memcache: implements the memcache protocol for cache contents <memcache.en>
-  Metalink: implements the Metalink download description format in order to try not to download the same file twice. <metalink.en>
-  MySQL Remap: allows dynamic “remaps” from a database <mysql_remap.en>
-  SSL Headers: Populate request headers with SSL session information <sslheaders.en>
-  XDebug: allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header <xdebug.en>
-  hipes.en
-  stale_while_revalidate.en
-  ts-lua: allows plugins to be written in Lua instead of C code <ts_lua.en>
-  Signed URLs: adds support for verifying URL signatures for incoming requests to either deny or redirect access <url_sig.en>
+   AuthProxy <authproxy.en>
+   AWS S3 Authentication <s3_auth.en>
+   Background Fetch <background_fetch.en>
+   Balancer <balancer.en>
+   Buffer Upload <buffer_upload.en>
+   Cache Key Manipulation <cachekey.en>
+   Cache Promote <cache_promote.en>
+   Combo Handler <combo_handler.en>
+   Epic <epic.en>
+   ESI <esi.en>
+   Generator <generator.en>
+   GeoIP ACL <geoip_acl.en>
+   HIPES <hipes.en>
+   Memcache <memcache.en>
+   Metalink <metalink.en>
+   MP4 <mp4.en>
+   MySQL Remap <mysql_remap.en>
+   Signed URLs <url_sig.en>
+   SSL Headers <sslheaders.en>
+   Stale While Revalidate <stale_while_revalidate.en>
+   TS Lua <ts_lua.en>
+   X-Debug <xdebug.en>
+
+:doc:`AuthProxy <authproxy.en>`
+   Delegates the authorization decision of a request to an external HTTP service.
+
+:doc:`AWS S3 Authentication <s3_auth.en>`
+   Support for Amazon S3 authentication features.
+
+:doc:`Background Fetch <background_fetch.en>`
+   Proactively fetch content from Origin in a way that it will fill the object into cache.
+
+:doc:`Balancer <balancer.en>`
+   Balances requests across multiple origin servers.
+
+:doc:`Buffer Upload <buffer_upload.en>`
+   Buffers POST data before connecting to the Origin server.
+
+:doc:`Cache Key Manipulation <cachekey.en>`
+   Allows some common cache key manipulations based on various HTTP request elements.
+
+:doc:`Cache Promote <cache_promote.en>`
+   Provides additional control over when an object should be allowed into the cache.
+
+:doc:`Combo Handler <combo_handler.en>`
+   Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
+
+:doc:`Epic <epic.en>`
+   Emits Traffic Server metrics in a format that is consumed tby the Epic Network Monitoring System.
+
+:doc:`ESI <esi.en>`
+   Implements the Edge Side Includes (ESI) specification.
+
+:doc:`Generator <generator.en>`
+   Generate arbitrary response data.
+
+:doc:`GeoIP ACL <geoip_acl.en>`
+   Deny or allow requests based on the source IP geo-location.
+
+:doc:`HIPES <hipes.en>`
+   Adds support for HTTP Pipes.
+
+:doc:`Memcache <memcache.en>`
+   Implements the memcache protocol for cache contents.
+
+:doc:`Metalink <metalink.en>`
+   Implements the Metalink download description format in order to try not to download the same file twice.
+
+:doc:`MP4 <mp4.en>`
+   MP4 streaming media.
+
+:doc:`MySQL Remap <mysql_remap.en>`
+   Allows dynamic remaps from a MySQL database.
+
+:doc:`Signed URLs <url_sig.en>`
+   Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
+
+:doc:`SSL Headers <sslheaders.en>`
+   Populate request headers with SSL session information.
+
+:doc:`Stale While Revalidate <stale_while_revalidate.en>`
+   Refresh content asynchronously while serving stale data.
+
+:doc:`TS Lua <ts_lua.en>`
+   Allows plugins to be written in Lua instead of C code.
+
+:doc:`X-Debug <xdebug.en>`
+   Allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header.
+
