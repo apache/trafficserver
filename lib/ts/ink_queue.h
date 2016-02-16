@@ -61,8 +61,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-extern int fastmemtotal;
-
 void ink_queue_load_64(void *dst, void *src);
 
 #ifdef __x86_64__
@@ -151,10 +149,6 @@ struct _InkFreeList {
   uint32_t allocated_base, used_base;
   int advice;
 };
-
-inkcoreapi extern volatile int64_t fastalloc_mem_in_use;
-inkcoreapi extern volatile int64_t fastalloc_mem_total;
-inkcoreapi extern volatile int64_t freelist_allocated_mem;
 
 typedef struct ink_freelist_ops InkFreeListOps;
 typedef struct _InkFreeList InkFreeList;

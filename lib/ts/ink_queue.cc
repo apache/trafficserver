@@ -54,9 +54,6 @@
 
 #define DEBUG_TAG "freelist"
 
-inkcoreapi volatile int64_t fastalloc_mem_in_use = 0;
-inkcoreapi volatile int64_t fastalloc_mem_total = 0;
-
 /*
  * SANITY and DEADBEEF are compute-intensive memory debugging to
  * help in diagnosing freelist corruption.  We turn them off in
@@ -186,7 +183,6 @@ ink_freelist_new(InkFreeList *f)
 
   if (likely(ptr = freelist_freelist_ops->fl_new(f))) {
     ink_atomic_increment((int *)&f->used, 1);
-    ink_atomic_increment(&fastalloc_mem_in_use, (int64_t)f->type_size);
   }
 
   return ptr;
@@ -221,7 +217,6 @@ freelist_new(InkFreeList *f)
       SET_FREELIST_POINTER_VERSION(item, newp, 0);
 
       ink_atomic_increment((int *)&f->allocated, f->chunk_size);
-      ink_atomic_increment(&fastalloc_mem_total, (int64_t)f->chunk_size * f->type_size);
 
       /* free each of the new elements */
       for (i = 0; i < f->chunk_size; i++) {
@@ -275,7 +270,6 @@ ink_freelist_free(InkFreeList *f, void *item)
     ink_assert(f->used != 0);
     freelist_freelist_ops->fl_free(f, item);
     ink_atomic_decrement((int *)&f->used, 1);
-    ink_atomic_decrement(&fastalloc_mem_in_use, f->type_size);
   }
 }
 
@@ -332,7 +326,6 @@ ink_freelist_free_bulk(InkFreeList *f, void *head, void *tail, size_t num_item)
 
   freelist_freelist_ops->fl_bulkfree(f, head, tail, num_item);
   ink_atomic_decrement((int *)&f->used, num_item);
-  ink_atomic_decrement(&fastalloc_mem_in_use, f->type_size * num_item);
 }
 
 static void
