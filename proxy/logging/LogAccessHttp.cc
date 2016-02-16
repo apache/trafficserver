@@ -506,16 +506,29 @@ LogAccessHttp::marshal_client_req_unmapped_url_path(char *buf)
 int
 LogAccessHttp::marshal_client_req_unmapped_url_host(char *buf)
 {
-  int len = INK_MIN_ALIGN;
+  int plen = INK_MIN_ALIGN;
 
   validate_unmapped_url();
   validate_unmapped_url_path();
 
-  len = round_strlen(m_client_req_unmapped_url_host_len + 1); // +1 for eos
-  if (buf) {
-    marshal_mem(buf, m_client_req_unmapped_url_host_str, m_client_req_unmapped_url_host_len, len);
+  int alen = m_client_req_unmapped_url_host_len;
+  if (alen < 0) {
+    alen = 0;
   }
-  return len;
+
+  // calculate the the padded length only if the actual length
+  // is not zero. We don't want the padded length to be zero
+  // because marshal_mem should write the DEFAULT_STR to the
+  // buffer if str is nil, and we need room for this.
+  if (alen) {
+    plen = round_strlen(alen + 1); // +1 for eos
+  }
+
+  if (buf) {
+    marshal_mem(buf, m_client_req_unmapped_url_host_str, alen, plen);
+  }
+
+  return plen;
 }
 
 int
@@ -1122,6 +1135,19 @@ LogAccessHttp::marshal_server_transact_count(char *buf)
     int64_t count;
     count = m_http_sm->server_transact_count;
     marshal_int(buf, count);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_server_connect_attempts(char *buf)
+{
+  if (buf) {
+    int64_t attempts = m_http_sm->t_state.current.attempts;
+    marshal_int(buf, attempts);
   }
   return INK_MIN_ALIGN;
 }

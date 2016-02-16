@@ -57,3 +57,6 @@ port\.h
 ^luajit$
 ^.*crt$
 ^.*key$
+^.pr$
+^protocol_binary.h$
+^override.css$

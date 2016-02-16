@@ -92,7 +92,7 @@ transaction hooks::
         case TS_EVENT_HTTP_TXN_START:
             txnp = (TSHttpTxn) edata;
             // Add a transaction hook ...
-            TSHttpTxnHookAdd(ssnp, TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
+            TSHttpTxnHookAdd(txnp, TS_HTTP_READ_REQUEST_HDR_HOOK, contp);
             TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
             return 0;
         default:

@@ -295,6 +295,7 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
     HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
 
     client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::no_activity_timeout_in));
+    client_vc->set_active_timeout(HRTIME_SECONDS(Http2::active_timeout_in));
 
     // XXX start the write VIO ...
 

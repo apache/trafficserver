@@ -52,10 +52,10 @@ The following sections describe how to enable and configure the SSL
 termination option.
 
 -  Enable and configure SSL termination for client/Traffic Server
-   connections: :ref:`admin-client-and-traffic-server-connections`
+   connections: :ref:`client-and-traffic-server-connections`
 
 -  Enable and configure SSL termination for Traffic Server/origin server
-   connections: :ref:`admin-traffic-server-and-origin-server-connections`
+   connections: :ref:`traffic-server-and-origin-server-connections`
 
 .. _client-and-traffic-server-connections:
 
@@ -69,7 +69,7 @@ Server (and between Traffic Server and an origin server) when the SSL
 termination option is enabled and configured for Client/Traffic
 Server connections only.
 
-.. figure:: ../static/images/admin/ssl_c.jpg
+.. figure:: ../../static/images/admin/ssl_c.jpg
    :align: center
    :alt: Client and Traffic Server communication using SSL termination
 
@@ -79,17 +79,17 @@ Server connections only.
 
 The figure above depicts the following:
 
-1. The client sends an HTTPS request for content. Traffic Server receives the
+#. The client sends an HTTPS request for content. Traffic Server receives the
    request and performs the SSL handshake to authenticate the client (depending
    on the authentication options configured) and determine the encryption
    method that will be used. If the client is allowed access, then Traffic
    Server checks its cache for the requested content.
 
-2. If the request is a cache hit and the content is fresh, then Traffic Server
+#. If the request is a cache hit and the content is fresh, then Traffic Server
    encrypts the content and sends it to the client. The client decrypts the
    content (using the method determined during the handshake) and displays it.
 
-3. If the request is a cache miss or cached content is stale, then Traffic
+#. If the request is a cache miss or cached content is stale, then Traffic
    Server communicates with the origin server via HTTP and obtains a plain text
    version of the content. Traffic Server saves the plain text version of the
    content in its cache, encrypts the content, and sends it to the client. The
@@ -163,7 +163,7 @@ The figure below illustrates communication between Traffic Server and an
 origin server when the SSL termination option is enabled for Traffic
 Server/origin server connections.
 
-.. figure:: ../static/images/admin/ssl_os.jpg
+.. figure:: ../../static/images/admin/ssl_os.jpg
    :align: center
    :alt: Traffic Server and origin server communication using SSL termination
 
@@ -173,17 +173,17 @@ Server/origin server connections.
 
 The figure above depicts the following:
 
-1. If a client request is a cache miss or is stale, then Traffic Server sends
+#. If a client request is a cache miss or is stale, then Traffic Server sends
    an HTTPS request for the content to the origin server. The origin server
    receives the request and performs the SSL handshake to authenticate Traffic
    Server and determine the encryption method to be used.
 
-2. If Traffic Server is allowed access, then the origin server encrypts the
+#. If Traffic Server is allowed access, then the origin server encrypts the
    content and sends it to Traffic Server, where it is decrypted (using the
    method determined during the handshake). A plain text version of the content
    is saved in the cache, if Traffic Server deems the content cacheable.
 
-3. If SSL termination is enabled for Client/Traffic Server connections, then
+#. If SSL termination is enabled for Client/Traffic Server connections, then
    Traffic Server re-encrypts the content and sends it to the client via HTTPS,
    where it is decrypted and displayed. If SSL termination is not enabled for
    Client/Traffic Server connections, then Traffic Server sends the plain text

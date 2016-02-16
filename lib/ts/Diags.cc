@@ -50,6 +50,8 @@ bool DiagsConfigState::enabled[2] = {false, false};
 // Global, used for all diagnostics
 inkcoreapi Diags *diags = NULL;
 
+static bool setup_diagslog(BaseLogFile *blf);
+
 template <int Size>
 static void
 vprintline(FILE *fp, char(&buffer)[Size], va_list ap)
@@ -123,7 +125,6 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
 
   cleanup_func = NULL;
   ink_mutex_init(&tag_table_lock, "Diags::tag_table_lock");
-  ink_mutex_init(&rotate_lock, "Diags::rotate_lock");
 
   ////////////////////////////////////////////////////////
   // initialize the default, base debugging/action tags //
@@ -154,7 +155,9 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
   stdout_log->open_file(); // should never fail
   stderr_log->open_file(); // should never fail
 
-  setup_diagslog(_diags_log);
+  if (setup_diagslog(_diags_log)) {
+    diags_log = _diags_log;
+  }
 
   //////////////////////////////////////////////////////////////////
   // start off with empty tag tables, will build in reconfigure() //
@@ -586,22 +589,22 @@ Diags::error_va(DiagsLevel level, const char *file, const char *func, const int 
 
 /*
  * Sets up and error handles the given BaseLogFile object to work
- * with this instance of Diags
+ * with this instance of Diags.
+ *
+ * Returns true on success, false otherwise
  */
-void
-Diags::setup_diagslog(BaseLogFile *blf)
+static bool
+setup_diagslog(BaseLogFile *blf)
 {
-  ink_assert(diags_log == NULL);
-
-  if (blf != NULL && blf->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
-    delete blf;
-
-    log_log_error("Could not open diags log file: %s\n", strerror(errno));
-    return;
+  if (blf != NULL) {
+    if (blf->open_file() != BaseLogFile::LOG_FILE_NO_ERROR) {
+      log_log_error("Could not open diags log file: %s\n", strerror(errno));
+      delete blf;
+      return false;
+    }
   }
 
-  diags_log = blf;
-  log_log_trace("Exiting setup_diagslog, name=%s, this=%p\n", blf->get_name(), this);
+  return true;
 }
 
 void
@@ -658,8 +661,11 @@ Diags::should_roll_diagslog()
         if (diags_log->roll()) {
           char *oldname = ats_strdup(diags_log->get_name());
           log_log_trace("in should_roll_logs() for diags.log, oldname=%s\n", oldname);
-          delete diags_log;
-          setup_diagslog(new BaseLogFile(oldname));
+          BaseLogFile *n = new BaseLogFile(oldname);
+          if (setup_diagslog(n)) {
+            delete diags_log;
+            diags_log = n;
+          }
           ats_free(oldname);
           ret_val = true;
         }
@@ -672,8 +678,11 @@ Diags::should_roll_diagslog()
           diagslog_time_last_roll = now;
           char *oldname = ats_strdup(diags_log->get_name());
           log_log_trace("in should_roll_logs() for diags.log, oldname=%s\n", oldname);
-          delete diags_log;
-          setup_diagslog(new BaseLogFile(oldname));
+          BaseLogFile *n = new BaseLogFile(oldname);
+          if (setup_diagslog(n)) {
+            delete diags_log;
+            diags_log = n;
+          }
           ats_free(oldname);
           ret_val = true;
         }
@@ -812,9 +821,6 @@ Diags::set_stdout_output(const char *_bind_stdout)
     stdout_log = NULL;
   }
 
-  // get root
-  ElevateAccess elevate;
-
   // create backing BaseLogFile for stdout
   stdout_log = new BaseLogFile(_bind_stdout);
 
@@ -851,8 +857,6 @@ Diags::set_stderr_output(const char *_bind_stderr)
     delete stderr_log;
     stderr_log = NULL;
   }
-  // get root
-  ElevateAccess elevate;
 
   // create backing BaseLogFile for stdout
   stderr_log = new BaseLogFile(_bind_stderr);

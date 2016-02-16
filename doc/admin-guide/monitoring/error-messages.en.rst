@@ -62,7 +62,7 @@ Process Warnings
 
 ``Log format symbol <symbol name> not found``
    Custom log format references a field symbol that does not exist.
-   Refer to :ref:`admin-event-logging-formats`.
+   Refer to :ref:`admin-monitoring-logging-formats`.
 
 ``Missing field for field marker``
    Error reading a log buffer.

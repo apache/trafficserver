@@ -92,7 +92,7 @@ AC_DEFUN([TS_CHECK_XML_LIBXML2], [
       fi
       if test -d "$libxml2_ldflags" ; then
         TS_ADDTO(LDFLAGS, [-L${libxml2_ldflags}])
-        TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${libxml2_ldflags}])
+        TS_ADDTO_RPATH(${libxml2_ldflags})
       fi
       TS_ADDTO(LIBS, -lxml2)
       enable_xml=yes
@@ -179,7 +179,7 @@ if test "$enable_expat" != "no"; then
   if test "$expat_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${expat_include}])
     TS_ADDTO(LDFLAGS, [-L${expat_ldflags}])
-    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-R${expat_ldflags}])
+    TS_ADDTO_RPATH(${expat_ldflags})
   fi
   AC_SEARCH_LIBS([XML_SetUserData], [expat], [expat_have_libs=1])
   if test "$expat_have_libs" != "0"; then

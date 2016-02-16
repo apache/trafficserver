@@ -49,7 +49,8 @@ libtsutil_la_SOURCES = \
   Bitops.h \
   ConsistentHash.cc \
   ConsistentHash.h \
-  Cryptohash.h \
+  ContFlags.cc \
+  ContFlags.h \
   Diags.cc \
   Diags.h \
   DynArray.h \
@@ -69,7 +70,6 @@ libtsutil_la_SOURCES = \
   I_Layout.h \
   I_Version.h \
   InkErrno.h \
-  InkPool.h \
   IntrusiveDList.h \
   IpMap.cc \
   IpMap.h \

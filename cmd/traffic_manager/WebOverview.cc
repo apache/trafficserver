@@ -547,7 +547,7 @@ overviewPage::clusterSumData(RecDataT varType, const char *nodeVar, RecData *sum
 }
 
 int
-overviewPage::varClusterDataFromName(RecDataT varType, char *nodeVar, RecData *sum)
+overviewPage::varClusterDataFromName(RecDataT varType, const char *nodeVar, RecData *sum)
 {
   int status = 0;
 

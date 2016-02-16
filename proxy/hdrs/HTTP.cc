@@ -23,7 +23,6 @@
 
 #include "ts/ink_defs.h"
 #include "ts/ink_platform.h"
-#include "ts/TsBuffer.h"
 #include "ts/ink_inet.h"
 #include <assert.h>
 #include <stdio.h>
@@ -160,6 +159,7 @@ is_digit(char c)
 {
   return ((c <= '9') && (c >= '0'));
 }
+
 
 /***********************************************************************
  *                                                                     *
@@ -1124,9 +1124,11 @@ validate_hdr_host(HTTPHdrImpl *hh)
           if (port.size() > 5)
             return PARSE_ERROR;
           int port_i = ink_atoi(port.data(), port.size());
-          if (port.size() > 5 || port_i >= 65536 || port_i <= 0)
+          if (port_i >= 65536 || port_i <= 0)
             return PARSE_ERROR;
         }
+        if (!validate_host_name(addr))
+          return PARSE_ERROR;
         while (rest && PARSE_DONE == ret) {
           if (!ParseRules::is_ws(*rest))
             return PARSE_ERROR;

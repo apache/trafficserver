@@ -48,7 +48,8 @@ libatscppapi_la_SOURCES = GlobalPlugin.cc \
 			  GzipDeflateTransformation.cc \
 			  GzipInflateTransformation.cc \
 			  AsyncTimer.cc \
-                          InterceptPlugin.cc
+			  InterceptPlugin.cc \
+			  Mutex.cc
 
 library_includedir=$(includedir)/atscppapi
 base_include_folder = $(top_srcdir)/$(subdir)/include/atscppapi

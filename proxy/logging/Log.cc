@@ -714,6 +714,11 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "sstc", field);
 
+  field = new LogField("server_connect_attempts", "sca", LogField::sINT, &LogAccess::marshal_server_connect_attempts,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "sca", field);
+
   field = new LogField("cached_resp_status_code", "csssc", LogField::sINT, &LogAccess::marshal_cache_resp_status_code,
                        &LogAccess::unmarshal_http_status);
   global_field_list.add(field, false);
@@ -1148,6 +1153,9 @@ Log::preproc_thread_main(void *args)
   Log::preproc_notify[idx].lock();
 
   while (true) {
+    if (unlikely(shutdown_event_system == true)) {
+      return NULL;
+    }
     size_t buffers_preproced = 0;
     LogConfig *current = (LogConfig *)configProcessor.get(log_configid);
 
@@ -1190,6 +1198,9 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   Log::flush_notify->lock();
 
   while (true) {
+    if (unlikely(shutdown_event_system == true)) {
+      return NULL;
+    }
     fdata = (LogFlushData *)ink_atomiclist_popall(flush_data_list);
 
     // invert the list

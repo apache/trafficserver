@@ -83,12 +83,12 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
                 if test -d "$ssldir/lib64"; then
                   OPENSSL_LDFLAGS="-L$ssldir/lib64"
                   if test "$overriden_with_ssl"; then
-                    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${ssldir}/lib64])
+                    TS_ADDTO_RPATH(${ssldir}/lib64)
                   fi
                 else
                   OPENSSL_LDFLAGS="-L$ssldir/lib"
                   if test "$overriden_with_ssl"; then
-                    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${ssldir}/lib])
+                    TS_ADDTO_RPATH(${ssldir}/lib)
                   fi
                 fi
                 OPENSSL_LIBS="-lssl -lcrypto"

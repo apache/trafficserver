@@ -16,7 +16,7 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-AM_CPPFLAGS += -DPLUGIN_TAG=\"multiplexer\"
+AM_CPPFLAGS += -DPLUGIN_TAG=\"multiplexer\" -I $(top_srcdir)/lib/atscppapi/src/include
 
 pkglib_LTLIBRARIES = multiplexer.la
 

@@ -1,4 +1,4 @@
-.. _esi-plugin:
+.. _admin-plugins-esi:
 
 ESI Plugin
 **********
@@ -53,6 +53,7 @@ Supported variables:
     $(HTTP_ACCEPT_LANGUAGE{name})
     $(HTTP_COOKIE{name}) or $(HTTP_COOKIE{name;subkey})
     $(QUERY_STRING{name})
+    $(HTTP_HEADER{hdr_name})
 
 Note: the name is the key name such as "username", "id" etc. For cookie support sub-name or sub-key, the format is:
 name;subkey, such as "l;u", "l;t" etc. e.g. such cookie string: l=u=test&t=1350952328, the value of
@@ -149,3 +150,5 @@ Differences from Spec - http://www.w3.org/TR/esi-lang
 4. HTTP_USER_AGENT variable is not supported
 
 5. HTTP_COOKIE supports fetching for sub-key
+
+6. HTTP_HEADER supports accessing request headers as variables

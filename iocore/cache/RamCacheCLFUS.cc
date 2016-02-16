@@ -115,7 +115,7 @@ RamCacheCLFUS::size() const
   for (int i = 0; i < 2; i++) {
     forl_LL(RamCacheCLFUSEntry, e, lru[i])
     {
-      s += sizeof(e);
+      s += sizeof(*e);
       if (e->data) {
         s += sizeof(*e->data);
         s += e->data->block_size();

@@ -39,6 +39,8 @@
 #include "ink_mutex.h"
 #include "Regex.h"
 #include "ink_apidefs.h"
+#include "ContFlags.h"
+#include "ink_inet.h"
 #include "BaseLogFile.h"
 
 #define DIAGS_MAGIC 0x12345678
@@ -115,9 +117,7 @@ public:
   }
 
   SrcLoc(const SrcLoc &rhs) : file(rhs.file), func(rhs.func), line(rhs.line) {}
-
   SrcLoc(const char *_file, const char *_func, int _line) : file(_file), func(_func), line(_line) {}
-
   SrcLoc &operator=(const SrcLoc &rhs)
   {
     this->file = rhs.file;
@@ -164,6 +164,13 @@ public:
   ///////////////////////////
   // conditional debugging //
   ///////////////////////////
+
+
+  bool
+  get_override() const
+  {
+    return get_cont_flag(ContFlags::DEBUG_OVERRIDE);
+  }
 
   bool
   on(DiagsTagType mode = DiagsTagType_Debug) const
@@ -258,7 +265,6 @@ public:
 
 private:
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
-  mutable ink_mutex rotate_lock;    // prevents rotation races
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
 
 
@@ -272,7 +278,6 @@ private:
   time_t outputlog_time_last_roll;
   time_t diagslog_time_last_roll;
 
-  void setup_diagslog(BaseLogFile *blf);
   bool rebind_stdout(int new_fd);
   bool rebind_stderr(int new_fd);
   void

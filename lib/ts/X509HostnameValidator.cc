@@ -23,6 +23,7 @@
 
 #include <memory.h>
 #include <strings.h>
+#include <openssl/crypto.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
@@ -225,7 +226,8 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
   // Check SANs for a match.
   gens = (GENERAL_NAMES *)X509_get_ext_d2i(x, NID_subject_alt_name, NULL, NULL);
   if (gens) {
-    for (i = 0; i < sk_GENERAL_NAME_num(gens); i++) {
+    // BoringSSL has sk_GENERAL_NAME_num() return size_t.
+    for (i = 0; i < static_cast<int>(sk_GENERAL_NAME_num(gens)); i++) {
       GENERAL_NAME *gen;
       ASN1_STRING *cstr;
       gen = sk_GENERAL_NAME_value(gens, i);

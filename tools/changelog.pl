@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -96,6 +96,8 @@ foreach my $key (sort keys %{ $changelog })
   print "\n$key:\n";
   foreach my $issue (@{ $changelog->{$key} })
   {
+    chomp $issue->{summary};
+    $issue->{summary} =~ s/\s+$//; # Trim trailing whitespace
     print "  *) [$issue->{key}] ";
     if (length($issue->{summary}) <= (131 - 15)) {
       print "$issue->{summary}\n";

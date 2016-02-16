@@ -112,7 +112,7 @@ void destroyCont(InterceptPlugin::State *state);
 
 InterceptPlugin::InterceptPlugin(Transaction &transaction, InterceptPlugin::Type type) : TransactionPlugin(transaction)
 {
-  TSCont cont = TSContCreate(handleEvents, TSMutexCreate());
+  TSCont cont = TSContCreate(handleEvents, NULL);
   state_ = new State(cont, this);
   TSContDataSet(cont, state_);
   TSHttpTxn txn = static_cast<TSHttpTxn>(transaction.getAtsHandle());
@@ -137,6 +137,7 @@ InterceptPlugin::~InterceptPlugin()
 bool
 InterceptPlugin::produce(const void *data, int data_size)
 {
+  ScopedSharedMutexLock lock(getMutex());
   if (!state_->net_vc_) {
     LOG_ERROR("Intercept not operational");
     return false;

@@ -19,6 +19,7 @@ SUBDIRS = \
  background_fetch \
  balancer \
  buffer_upload \
+ cachekey \
  cache_range_requests \
  cache_promote \
  collapsed_connection \
@@ -30,8 +31,10 @@ SUBDIRS = \
  geoip_acl \
  header_normalize \
  hipes \
+ inliner \
  metalink \
  multiplexer \
+ memcache \
  memcached_remap \
  regex_revalidate \
  remap_stats \

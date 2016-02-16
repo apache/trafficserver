@@ -103,7 +103,8 @@ right out of the box. Such functionality may be implemented in a plugin, but
 in some cases Traffic Server's internal APIs or architectural restrictions
 won't make it easy:
 
-* Load Balancing - note that there is an experimental plugin for this: :ref:`balancer-plugin`.
+* Load Balancing - note that there is an experimental plugin for this,
+:ref:`admin-plugins-balancer`.
 
 .. XXX needs re-work: the leadin states there's "a number" of scenarios, and then only lists one -- one's a number, but not much of a list
 
@@ -256,9 +257,8 @@ monitoring:
    help with log file analysis, you can separate log files so that they
    contain information specific to protocol or hosts.
 
-Traffic analysis options are described in more detail in :ref:`monitoring-traffic`.
-
-Traffic Server logging options are described in :ref:`working-with-log-files`.
+|TS| event and error logging, monitoring, and analysis is covered in greater
+detail in :ref:`admin-monitoring`.
 
 Traffic Server Security Options
 ===============================

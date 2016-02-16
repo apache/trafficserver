@@ -105,15 +105,15 @@ class Http2ConnectionState : public Continuation
 {
 public:
   Http2ConnectionState()
-    : Continuation(NULL), ua_session(NULL), client_rwnd(Http2::initial_window_size), server_rwnd(Http2::initial_window_size),
+    : Continuation(NULL), ua_session(NULL), client_rwnd(HTTP2_INITIAL_WINDOW_SIZE), server_rwnd(Http2::initial_window_size),
       stream_list(), latest_streamid(0), client_streams_count(0), continued_stream_id(0)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
 
   Http2ClientSession *ua_session;
-  Http2DynamicTable *local_dynamic_table;
-  Http2DynamicTable *remote_dynamic_table;
+  Http2IndexingTable *local_indexing_table;
+  Http2IndexingTable *remote_indexing_table;
 
   // Settings.
   Http2ConnectionSettings server_settings;
@@ -122,8 +122,8 @@ public:
   void
   init()
   {
-    local_dynamic_table = new Http2DynamicTable();
-    remote_dynamic_table = new Http2DynamicTable();
+    local_indexing_table = new Http2IndexingTable();
+    remote_indexing_table = new Http2IndexingTable();
 
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len = 0;
@@ -135,8 +135,8 @@ public:
     cleanup_streams();
 
     mutex = NULL; // magic happens - assigning to NULL frees the ProxyMutex
-    delete local_dynamic_table;
-    delete remote_dynamic_table;
+    delete local_indexing_table;
+    delete remote_indexing_table;
 
     ats_free(continued_buffer.iov_base);
   }

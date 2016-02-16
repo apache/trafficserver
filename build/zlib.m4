@@ -82,7 +82,7 @@ if test "$enable_zlib" != "no"; then
   if test "$zlib_base_dir" != "/usr"; then
     TS_ADDTO(CPPFLAGS, [-I${zlib_include}])
     TS_ADDTO(LDFLAGS, [-L${zlib_ldflags}])
-    TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${zlib_ldflags}])
+    TS_ADDTO_RPATH(${zlib_ldflags})
   fi
   AC_SEARCH_LIBS([compressBound], [z], [zlib_have_libs=1])
   if test "$zlib_have_libs" != "0"; then

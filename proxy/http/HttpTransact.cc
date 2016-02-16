@@ -1360,7 +1360,7 @@ HttpTransact::HandleRequest(State *s)
   // if the newly added varible doc_in_cache_skip_dns is not enabled
   if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' &&
       (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
-      s->parent_params->ParentTable->hostMatch) {
+      s->parent_params->parent_table->hostMatch) {
     s->force_dns = 1;
   }
   /* A redirect means we need to check some things again.
@@ -1772,7 +1772,7 @@ HttpTransact::OSDNSLookup(State *s)
     // we've come back after already trying the server to get a better address
     // and finished with all backtracking - return to trying the server.
     TRANSACT_RETURN(how_to_open_connection(s), HttpTransact::HandleResponse);
-  } else if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' && s->parent_params->ParentTable->hostMatch &&
+  } else if (s->dns_info.lookup_name[0] <= '9' && s->dns_info.lookup_name[0] >= '0' && s->parent_params->parent_table->hostMatch &&
              !s->http_config_param->no_dns_forward_to_parent) {
     // note, broken logic: ACC fudges the OR stmt to always be true,
     // 'AuthHttpAdapter' should do the rev-dns if needed, not here .
@@ -2668,6 +2668,18 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
         update_current_info(&s->current, NULL, UNDEFINED_LOOKUP, 0);
         DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
       }
+      // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
+      // there are no available parents (all down).
+      else if (s->current.request_to == HOST_NONE && s->parent_result.r == PARENT_FAIL) {
+        if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
+          server_up = false;
+          update_current_info(&s->current, NULL, UNDEFINED_LOOKUP, 0);
+          DebugTxn("http_trans", "CacheOpenReadHit - server_down, returning stale document");
+        } else {
+          handle_parent_died(s);
+          return;
+        }
+      }
     }
 
     if (server_up || s->stale_icp_lookup) {
@@ -3104,6 +3116,12 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
 
   if (!h->is_cache_control_set(HTTP_VALUE_ONLY_IF_CACHED)) {
     find_server_and_update_current_info(s);
+    // a parent lookup could come back as PARENT_FAIL if in parent.config go_direct == false and
+    // there are no available parents (all down).
+    if (s->parent_result.r == PARENT_FAIL) {
+      handle_parent_died(s);
+      return;
+    }
     if (!s->current.server->dst_addr.isValid()) {
       ink_release_assert(s->current.request_to == PARENT_PROXY || s->http_config_param->no_dns_forward_to_parent != 0);
       if (s->current.request_to == PARENT_PROXY) {
@@ -3504,7 +3522,7 @@ HttpTransact::handle_response_from_parent(State *s)
     s->current.server->connect_result = 0;
     SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_SUCCESS);
     if (s->parent_result.retry) {
-      s->parent_params->recordRetrySuccess(&s->parent_result);
+      s->parent_params->markParentUp(&s->parent_result);
     }
     handle_forward_server_connection_open(s);
     break;
@@ -7281,12 +7299,8 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 {
   bool heuristic, do_revalidate = false;
   int age_limit;
-  // These aren't used.
-  // HTTPValCacheControl *cc;
-  // const char *cc_val;
   int fresh_limit;
   ink_time_t current_age, response_date;
-  ;
   uint32_t cc_mask, cooked_cc_mask;
   uint32_t os_specifies_revalidate;
 

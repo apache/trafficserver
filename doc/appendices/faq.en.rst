@@ -60,7 +60,7 @@ the request for the objects), and do not execute on the server.
 In Squid- and Netscape-format log files, what do the cache result codes mean?
 -----------------------------------------------------------------------------
 
-This is described in detail in the :ref:`log-formats-squid-format` documentation.
+This is described in detail in the :ref:`admin-logging-format-squid` documentation.
 
 What is recorded by the ``cqtx`` field in a custom log file?
 ------------------------------------------------------------
@@ -593,7 +593,7 @@ load on Traffic Server.
 Config checker
 --------------
 
-Traffic Server supports the below command to validate the config offline, inorder to
+Traffic Server supports the below command to validate the config offline, in order to
 allow the config to be pre-checked for possible service disruptions due to synatx errors::
 
    traffic_server -Cverify_config -D<config_dir>

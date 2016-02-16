@@ -1,33 +1,34 @@
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
 
-================
-log_hosts.config
-================
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
+
+.. include:: ../../common.defs
 
 .. configfile:: log_hosts.config
 
-To record HTTP transactions for different origin servers in separate log
-files, you must list each origin server hostname in the
-:file:`log_hosts.config` file. In addition, you must enable the :ref:`httphostlogsplitting` foo! ... <../working-log-files#HTTPHostLogSplitting>`_ option. You
-should use the same :file:`log_hosts.config` file on every Traffic Server
-node in your cluster. After you modify the :file:`log_hosts.config` file,
-run the :option:`traffic_ctl config reload` command to apply the changes.
-When you apply the changes to a node in a cluster, Traffic Server automatically applies the
+log_hosts.config
+****************
+
+To record HTTP transactions for different origin servers in separate log files,
+you must list each origin server hostname in the :file:`log_hosts.config` file.
+
+You should use the same :file:`log_hosts.config` file on every |TS| node in
+your cluster. After you modify the :file:`log_hosts.config` file, run the
+:option:`traffic_ctl config reload` command to apply the changes. When you
+apply the changes to a node in a cluster, |TS| automatically applies the
 changes to all other nodes in the cluster.
 
 Format

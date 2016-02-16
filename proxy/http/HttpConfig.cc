@@ -596,10 +596,10 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.background_fill_bytes_completed_stat", RECD_INT, RECP_PERSISTENT,
                      (int)http_background_fill_bytes_completed_stat, RecRawStatSyncSum);
 
-  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.cache_write_errors", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.cache_write_errors", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_cache_write_errors, RecRawStatSyncSum);
 
-  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.cache_read_errors", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.cache_read_errors", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_cache_read_errors, RecRawStatSyncSum);
 
   ////////////////////////////////////////////////////////////////////////////////

@@ -148,7 +148,7 @@ SocksEntry::free()
 
 #ifdef SOCKS_WITH_TS
   if (!lerrno && netVConnection && server_result.retry)
-    server_params->recordRetrySuccess(&server_result);
+    server_params->markParentUp(&server_result);
 #endif
 
   if ((action_.cancelled || lerrno) && netVConnection)

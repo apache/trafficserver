@@ -81,7 +81,7 @@ supported. They include
 Assignment Table
 ----------------
 
-Each storage element defined in :file:`storage.config` is divided in to :term:`stripes`. The
+Each storage element defined in :file:`storage.config` is divided in to :term:`stripes <cache stripe>`. The
 assignment table maps from an object URL to a specific stripe. The table is initialized based on a
 pseudo-random process which is seeded by hashing a string for each stripe. This string is composed
 of a base string, an offset (the start of the stripe on the storage element), and the length of the

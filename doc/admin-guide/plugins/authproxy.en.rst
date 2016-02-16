@@ -1,4 +1,4 @@
-.. _authproxy-plugin:
+.. _admin-plugins-authproxy:
 
 AuthProxy Plugin
 ****************

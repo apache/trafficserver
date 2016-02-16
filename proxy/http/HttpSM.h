@@ -249,7 +249,7 @@ public:
   get_tunnel()
   {
     return &tunnel;
-  };
+  }
 
   // Debugging routines to dump the SM history, hdrs
   void dump_state_on_assert();

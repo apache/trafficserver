@@ -256,16 +256,20 @@ CongestionControlRecord::UpdateMatch(CongestionControlRule *pRule, RequestData *
    */
   if (pRule->record == 0 || pRule->record->rank < rank || (pRule->record->line_num > line_num && pRule->record->rank == rank)) {
     if (rank > 0) {
-      if (rdata->data_type() == RequestData::RD_CONGEST_ENTRY) {
+      CongestionEntry *entry = dynamic_cast<CongestionEntry *>(rdata);
+      if (entry) {
         // Enforce the same port and prefix
-        if (port != 0 && port != ((CongestionEntry *)rdata)->pRecord->port)
+        if (port != 0 && port != entry->pRecord->port)
           return;
-        if (prefix != NULL && ((CongestionEntry *)rdata)->pRecord->prefix == NULL)
+        if (prefix != NULL && entry->pRecord->prefix == NULL)
           return;
-        if (prefix != NULL && strncmp(prefix, ((CongestionEntry *)rdata)->pRecord->prefix, prefix_len))
+        if (prefix != NULL && strncmp(prefix, entry->pRecord->prefix, prefix_len))
           return;
-      } else if (!this->CheckModifiers((HttpRequestData *)rdata)) {
-        return;
+      } else {
+        HttpRequestData *h = dynamic_cast<HttpRequestData *>(rdata);
+        if (h && !this->CheckModifiers(h)) {
+          return;
+        }
       }
     }
     pRule->record = this;

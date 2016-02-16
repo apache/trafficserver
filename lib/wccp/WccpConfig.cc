@@ -61,7 +61,6 @@ static char const *const SVC_PROP_ID = "id";
 static char const *const SVC_PROP_TYPE = "type";
 static char const *const SVC_PROP_PRIORITY = "priority";
 static char const *const SVC_PROP_PROTOCOL = "protocol";
-static char const *const SVC_PROP_FLAGS = "flags";
 static char const *const SVC_PROP_PRIMARY_HASH = "primary-hash";
 static char const *const SVC_PROP_ALT_HASH = "alt-hash";
 static char const *const SVC_PROP_PORTS = "ports";

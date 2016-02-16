@@ -74,6 +74,7 @@ The following table lists events and the corresponding type of
 Event                                        Event Sender                                Data Type
 ============================================ =========================================== ==========================
 :data:`TS_EVENT_HTTP_READ_REQUEST_HDR`       :data:`TS_HTTP_READ_REQUEST_HDR_HOOK`       :type:`TSHttpTxn`
+:data:`TS_EVENT_HTTP_PRE_REMAP`              :data:`TS_HTTP_PRE_REMAP_HOOK`              :type:`TSHttpTxn`
 :data:`TS_EVENT_HTTP_OS_DNS`                 :data:`TS_HTTP_OS_DNS_HOOK`                 :type:`TSHttpTxn`
 :data:`TS_EVENT_HTTP_SEND_REQUEST_HDR`       :data:`TS_HTTP_SEND_REQUEST_HDR_HOOK`       :type:`TSHttpTxn`
 :data:`TS_EVENT_HTTP_READ_CACHE_HDR`         :data:`TS_HTTP_READ_CACHE_HDR_HOOK`         :type:`TSHttpTxn`

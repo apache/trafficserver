@@ -18,6 +18,7 @@
 bin_PROGRAMS = traffic_manager
 
 AM_CPPFLAGS = \
+  $(LUAJIT_CPPFLAGS) \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy \
@@ -28,7 +29,11 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/mgmt/api/include \
   -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/utils \
-  -I$(top_srcdir)/lib
+  -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/lib/luajit/src
+
+AM_CXXFLAGS += \
+  $(LUAJIT_CFLAGS)
 
 AM_LDFLAGS = \
   @EXTRA_CXX_LDFLAGS@ \
@@ -36,9 +41,13 @@ AM_LDFLAGS = \
   @EXPAT_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
+AM_LDFLAGS += \
+  $(LUAJIT_LDFLAGS)
+
 traffic_manager_SOURCES = \
   AddConfigFilesHere.cc \
   traffic_manager.cc \
+  metrics.cc \
   StatProcessor.cc \
   StatProcessor.h \
   StatType.cc \
@@ -58,7 +67,15 @@ traffic_manager_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/proxy/shared/liberror.a \
-  $(top_builddir)/proxy/shared/libdiagsconfig.a \
+  $(top_builddir)/proxy/shared/libdiagsconfig.a
+
+if BUILD_LUAJIT
+traffic_manager_LDADD += \
+  $(top_builddir)/lib/bindings/libbindings.la \
+  $(top_builddir)/lib/luajit/src/libluajit.a
+endif
+
+traffic_manager_LDADD +=\
   $(LIBUNWIND_LIBS) \
   @LIBRESOLV@ @LIBEXPAT@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
   -lm

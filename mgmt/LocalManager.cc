@@ -604,6 +604,21 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
     alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_HTTP_ALLEVIATED_SERVER, data_raw);
     break;
   // Congestion Control - end
+  case MGMT_SIGNAL_CONFIG_FILE_CHILD: {
+    static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
+    char *parent = NULL;
+    char *child = NULL;
+    MgmtMarshallInt options = 0;
+    if (mgmt_message_parse(data_raw, mh->data_len, fields, countof(fields), &parent, &child, &options) != -1) {
+      configFiles->configFileChild(parent, child, (unsigned int)options);
+    } else {
+      mgmt_elog(stderr, 0, "[LocalManager::handleMgmtMsgFromProcesses] "
+                           "MGMT_SIGNAL_CONFIG_FILE_CHILD mgmt_message_parse error\n");
+    }
+    // Output pointers are guaranteed to be NULL or valid.
+    ats_free_null(parent);
+    ats_free_null(child);
+  } break;
   case MGMT_SIGNAL_SAC_SERVER_DOWN:
     alarm_keeper->signalAlarm(MGMT_ALARM_SAC_SERVER_DOWN, data_raw);
     break;
@@ -1006,8 +1021,9 @@ void
 LocalManager::bindProxyPort(HttpProxyPort &port)
 {
   int one = 1;
+  int priv = (port.m_port < 1024 && 0 != geteuid()) ? ElevateAccess::LOW_PORT_PRIVILEGE : 0;
 
-  ElevateAccess access(port.m_port < 1024 && geteuid() != 0);
+  ElevateAccess access(priv);
 
   /* Setup reliable connection, for large config changes */
   if ((port.m_fd = socket(port.m_family, SOCK_STREAM, 0)) < 0) {

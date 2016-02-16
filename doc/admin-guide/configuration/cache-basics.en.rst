@@ -389,7 +389,7 @@ request headers:
 -  ``Cookie`` (for text objects)
 
    By default, Traffic Server caches objects served in response to
-   requests that contain cookies (unless the object is text). You can
+   requests that contain cookies (even if the object is text). You can
    configure Traffic Server to not cache cookied content of any type,
    cache all cookied content, or cache cookied content that is of image
    type only. For more information, refer to `Caching Cookied Objects`_.
@@ -546,7 +546,7 @@ Caching Cookied Objects
 .. XXX This should be extended to xml as well!
 
 By default, Traffic Server caches objects served in response to requests
-that contain cookies. This is true for all types of objects except for
+that contain cookies. This is true for all types of objects including
 text. Traffic Server does not cache cookied text content because object
 headers are stored along with the object, and personalized cookie header
 values could be saved with the object. With non-text objects, it is

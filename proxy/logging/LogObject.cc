@@ -1024,16 +1024,17 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
                   "filename",
                   filename);
           LogFile logfile(filename, NULL, LOG_FILE_ASCII, 0);
-          long time_now = LogUtils::timestamp();
+          if (logfile.open_file() == LogFile::LOG_FILE_NO_ERROR) {
+            long time_now = LogUtils::timestamp();
 
-          if (logfile.roll(time_now - log_object->get_rolling_interval(), time_now) == 0) {
-            // an error happened while trying to roll the file
-            //
-            const char *msg = "Cannot roll log file %s to fix log "
-                              "filename conflicts";
-
-            Error(msg, filename);
-            LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename);
+            if (logfile.roll(time_now - log_object->get_rolling_interval(), time_now) == 0) {
+              // an error happened while trying to roll the file
+              //
+              _filename_resolution_abort(filename);
+              retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
+            }
+          } else {
+            _filename_resolution_abort(filename);
             retVal = CANNOT_SOLVE_FILENAME_CONFLICTS;
           }
         }
@@ -1041,6 +1042,16 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
     }
   }
   return retVal;
+}
+
+void
+LogObjectManager::_filename_resolution_abort(const char *filename)
+{
+  const char *msg = "Cannot roll log file %s to fix log "
+                    "conflicts (filename or log format): %s";
+  const char *err = strerror(errno);
+  Error(msg, filename, err);
+  LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename, err);
 }
 
 

@@ -41,7 +41,7 @@ AC_ARG_WITH([tcmalloc], [AC_HELP_STRING([--with-tcmalloc=DIR], [use the tcmalloc
     if test "x$withval" != "xyes" && test "x$withval" != "x"; then
       tcmalloc_ldflags="$withval/lib"
       TS_ADDTO(LDFLAGS, [-L${tcmalloc_ldflags}])
-      TS_ADDTO(LIBTOOL_LINK_FLAGS, [-rpath ${tcmalloc_ldflags}])
+      TS_ADDTO_RPATH(${tcmalloc_ldflags})
     fi
     AC_SEARCH_LIBS([tc_cfree], ${with_tcmalloc_lib}, [tcmalloc_have_lib=1])
     if test "$tcmalloc_have_lib" != "0"; then

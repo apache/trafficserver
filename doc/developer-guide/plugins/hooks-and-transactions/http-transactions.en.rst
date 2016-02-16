@@ -185,6 +185,8 @@ The HTTP transaction functions are:
 
 -  :c:func:`TSHttpTxnServerAddrGet`
 
+-  :c:func:`TSHttpTxnServerAddrSet`
+
 -  :c:func:`TSHttpTxnServerReqGet`
 
 -  :c:func:`TSHttpTxnServerRespGet`

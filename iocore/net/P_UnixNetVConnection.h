@@ -291,6 +291,7 @@ public:
   virtual void set_local_addr();
   virtual void set_remote_addr();
   virtual int set_tcp_init_cwnd(int init_cwnd);
+  virtual int set_tcp_congestion_control(const char *name, int len);
   virtual void apply_options();
 
   friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
@@ -448,6 +449,25 @@ UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
   return rv;
 #else
   Debug("socket", "Setting TCP initial congestion window %d -> unsupported", init_cwnd);
+  return -1;
+#endif
+}
+
+TS_INLINE int
+UnixNetVConnection::set_tcp_congestion_control(const char *name, int len)
+{
+#ifdef TCP_CONGESTION
+  int rv = 0;
+  rv = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(const_cast<char *>(name)), len);
+  if (rv < 0) {
+    Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, name, errno,
+          strerror(errno));
+  } else {
+    Debug("socket", "Setting TCP congestion control on socket [%d] to \"%.*s\" -> %d", con.fd, len, name, rv);
+  }
+  return rv;
+#else
+  Debug("socket", "Setting TCP congestion control %.*s is not supported on this platform.", len, name);
   return -1;
 #endif
 }

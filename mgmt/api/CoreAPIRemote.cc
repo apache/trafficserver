@@ -343,7 +343,7 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
   MgmtMarshallInt pclear = clear;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, PROXY_STATE_SET, &optype, &pstate, &pclear);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(PROXY_STATE_GET, main_socket_fd) : ret;
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(PROXY_STATE_SET, main_socket_fd) : ret;
 }
 
 TSMgmtError

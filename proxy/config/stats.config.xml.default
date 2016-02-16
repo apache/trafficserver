@@ -1946,11 +1946,12 @@
         </expression>
     </statistics>
 
+    <!-- TS-3409. Mirror proxy.process.ssl.total_success_handshake_count_in for backwards compatibility. -->
     <statistics
 	minimum="0">
-        <destination>proxy.process.ssl.total_success_handshake_count_in</destination>
+        <destination>proxy.process.ssl.total_success_handshake_count</destination>
         <expression>
-            proxy.process.ssl.total_success_handshake_count
+            proxy.process.ssl.total_success_handshake_count_in
         </expression>
     </statistics>
 

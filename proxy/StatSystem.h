@@ -558,28 +558,6 @@ struct ink_unprot_global_stat_t {
 extern void start_stats_snap(void);
 void initialize_all_global_stats();
 
-// TODO: I don't think these are necessary any more, but double check.
-// void *tmp_stats_lock_function(UpdateLockAction action);
-// void *stats_lock_function(void *data, UpdateLockAction action);
-
-void *http_trans_stats_count_cb(void *data, void *res);
-void *http_trans_stats_sum_cb(void *data, void *res);
-void *http_trans_stats_avg_cb(void *data, void *res);
-void *http_trans_stats_fsum_cb(void *data, void *res);
-void *http_trans_stats_favg_cb(void *data, void *res);
-void *http_trans_stats_time_seconds_cb(void *data, void *res);
-void *http_trans_stats_time_mseconds_cb(void *data, void *res);
-void *http_trans_stats_time_useconds_cb(void *data, void *res);
-
-void *dyn_stats_count_cb(void *data, void *res);
-inkcoreapi void *dyn_stats_sum_cb(void *data, void *res);
-void *dyn_stats_avg_cb(void *data, void *res);
-void *dyn_stats_fsum_cb(void *data, void *res);
-void *dyn_stats_favg_cb(void *data, void *res);
-void *dyn_stats_time_seconds_cb(void *data, void *res);
-void *dyn_stats_time_mseconds_cb(void *data, void *res);
-void *dyn_stats_time_useconds_cb(void *data, void *res);
-void *dyn_stats_int_msecs_to_float_seconds_cb(void *data, void *res);
 //---------------------------------------------------------------------//
 //                 Global variables declaration.                       //
 //---------------------------------------------------------------------//

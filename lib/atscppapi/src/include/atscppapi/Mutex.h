@@ -29,6 +29,10 @@
 #include <atscppapi/noncopyable.h>
 #include <atscppapi/shared_ptr.h>
 
+// Import in name only.
+typedef struct tsapi_mutex *TSMutex;
+typedef struct tsapi_cont *TSCont;
+
 namespace atscppapi
 {
 /**
@@ -250,6 +254,30 @@ public:
 private:
   shared_ptr<Mutex> mutex_;
   bool has_lock_;
+};
+
+/**
+ * @brief Lock a TS Continuation by acquiring and releasing its lock in the current scope.
+ *
+ * This is an RAII implementation which will lock a mutex for the continuation at the declaration of an instance
+ * and unlock it when the instance goes out of scope.
+ */
+class ScopedContinuationLock : noncopyable
+{
+public:
+  /**
+   * Create the scoped mutex lock, once this object is constructed the lock will be held by the thread.
+   * @param cont The TS continuation.
+   */
+  explicit ScopedContinuationLock(TSCont contp);
+
+  /**
+   * Unlock the mutex.
+   */
+  ~ScopedContinuationLock();
+
+private:
+  TSMutex mutex_;
 };
 
 } /* atscppapi */

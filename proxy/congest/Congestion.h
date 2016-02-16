@@ -225,11 +225,6 @@ struct CongestionEntry : public RequestData {
   {
     return NULL;
   }
-  virtual RD_Type
-  data_type(void)
-  {
-    return RD_CONGEST_ENTRY;
-  }
 
   /* print the entry into the congested list output buffer */
   int sprint(char *buf, int buflen, int format = 0);

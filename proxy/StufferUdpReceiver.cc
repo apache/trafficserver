@@ -162,7 +162,7 @@ int
 StreamHashTable::deleteStaleStreams(time_t now)
 {
   int nremoved = 0;
-  for (int i; i < size; i++) {
+  for (int i = 0; i < size; i++) {
     Stream *&e = array[i];
     while (e) {
       if (e->last_activity_time < now - STREAM_TIMEOUT_SECS) {

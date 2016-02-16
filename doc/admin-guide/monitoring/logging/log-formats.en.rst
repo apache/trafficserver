@@ -27,6 +27,8 @@ supports. Rather than just reading about those formats, you may also want to
 try our `online event log builder <http://trafficserver.apache.org/logbuilder/>`_
 for an interactive way of building and understanding log formats.
 
+.. _admin-logging-binary-v-ascii:
+
 Binary or ASCII?
 ================
 
@@ -57,16 +59,10 @@ ASCII log file.
 
 It is wise to consider the type of data that will be logged before you select
 ASCII or binary for your log files, if your decision is being driven by storage
-space concerns. For example, you might try logging for one day using ASCII and
-then another day using binary. If the number of requests is roughly the same
-for both days, then you can calculate a rough metric that compares the two
-formats.
-
-For standard log formats, select Binary or ASCII (refer to `Using Standard
-Formats`_). For the custom log format, specify ASCII or Binary mode in the
-:ref:`LogObject` (refer to :ref:`using-custom-log-formats`). In addition to the
-ASCII and binary options, you can also write custom log entries to a UNIX-named
-pipe (a buffer in memory) with the `ASCII_PIPE File Mode`_ setting.
+space concerns. For example, you might try logging to both formats
+simultaneously for a representative period of time and compare the storage
+requirements of the two logs to determine whether one or the other provides
+any measurable savings.
 
 Defining Log Objects
 ====================
@@ -98,44 +94,11 @@ variety of off-the-shelf log-analysis packages. You should use one of the
 standard event log formats unless you need information that these formats do
 not provide.
 
-Set standard log file format options by following the steps below:
+These formats may be used by enabling the :ts:cv:`proxy.config.log.custom_logs_enabled`
+setting in :file:`records.config` and adding appropriate entries to
+:file:`logs_xml.config`.
 
-#. In the :file:`records.config` file, edit the following variables
-
-#. Edit the following variables to use the Squid format:
-
-   -  :ts:cv:`proxy.config.log.squid_log_enabled`
-   -  :ts:cv:`proxy.config.log.squid_log_is_ascii`
-   -  :ts:cv:`proxy.config.log.squid_log_name`
-   -  :ts:cv:`proxy.config.log.squid_log_header`
-
-#. To use the Netscape Common format, edit the following variables:
-
-   -  :ts:cv:`proxy.config.log.common_log_enabled`
-   -  :ts:cv:`proxy.config.log.common_log_is_ascii`
-   -  :ts:cv:`proxy.config.log.common_log_name`
-   -  :ts:cv:`proxy.config.log.common_log_header`
-
-#. To use the Netscape Extended format, edit the following variables:
-
-   -  :ts:cv:`proxy.config.log.extended_log_enabled`
-   -  :ts:cv:`proxy.config.log.extended_log_is_ascii`
-   -  :ts:cv:`proxy.config.log.extended_log_name`
-   -  :ts:cv:`proxy.config.log.extended_log_header`
-
-#. To use the Netscape Extended-2 format, edit the following variables:
-
-   -  :ts:cv:`proxy.config.log.extended2_log_enabled`
-   -  :ts:cv:`proxy.config.log.extended2_log_is_ascii`
-   -  :ts:cv:`proxy.config.log.extended2_log_name`
-   -  :ts:cv:`proxy.config.log.extended2_log_header`
-
-#. Run the command :option:`traffic_line -x` to apply the configuration
-   changes.
-
-You may enable as many of the formats as you wish, keeping in mind the
-additional overhead, both in processing time to create the individual formats
-and storage space to keep them.
+.. _admin-logging-format-squid:
 
 Squid
 -----
@@ -161,8 +124,9 @@ Field  Symbol    Description
 3      chi       The IP address of the client’s host machine.
 4      crc/pssc  The cache result code; how the cache responded to the request:
                  ``HIT``, ``MISS``, and so on. Cache result codes are described
-                 in :ref:`<squid-netscape-result-codes>`. The proxy response
-                 status code (HTTP response status code from |TS| to client).
+                 in :ref:`admin-monitoring-logging-cache-result-codes`. The
+                 proxy response status code (HTTP response status code from
+                 |TS| to client).
 5      psql      The length of the |TS| response to the client in bytes,
                  including headers and content.
 6      cqhm      The client request method: ``GET``, ``POST``, and so on.
@@ -178,6 +142,8 @@ Field  Symbol    Description
 10     psct      The proxy response content type. The object content type taken
                  from the |TS| response header.
 ====== ========= ==============================================================
+
+.. _admin-logging-format-common:
 
 Netscape Common
 ---------------
@@ -202,6 +168,8 @@ Field  Symbol    Description
 6      pssc      The proxy response status code (HTTP reply code).
 7      pscl      The length of the |TS| response to the client in bytes.
 ====== ========= ==============================================================
+
+.. _admin-logging-format-extended:
 
 Netscape Extended
 -----------------
@@ -241,6 +209,8 @@ Field  Symbol    Description
                  of the response back to the client.
 ====== ========= ==============================================================
 
+.. _admin-logging-format-extended2:
+
 Netscape Extended2
 ------------------
 
@@ -268,7 +238,7 @@ Field  Symbol   Description
                 request was interrupted.
 20     crc      The cache result code; how the |TS| cache responded to the
                 request: ``HIT``, ``MISS``, and so on. Cache result codes are
-                listed in :ref:`<admin-monitoring-logging-cache-result-codes>`.
+                listed in :ref:`admin-monitoring-logging-cache-result-codes`.
 ====== ======== ===============================================================
 
 .. _admin-monitoring-logging-format-custom:
@@ -634,7 +604,7 @@ The following list describes |TS| custom logging fields.
     The timestamp in milliseconds of a specific milestone for this request.
     see :c:func:`TSHttpTxnMilestoneGet` for milestone names.
 
-.. _msdms
+.. _msdms:
 
 ``{Milestone field name1-Milestone field name2}msdms``
     The difference in milliseconds of between two milestones.
@@ -737,6 +707,12 @@ The following list describes |TS| custom logging fields.
 ``pqssl``
     Indicates whether the connection from |TS| to the origin
     was over SSL or not.
+
+.. _sca:
+
+``sca``
+    The number of attempts in the transaction Traffic Server tries to
+    connect to the origin server.
 
 .. _shi:
 

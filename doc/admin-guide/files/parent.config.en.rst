@@ -129,6 +129,15 @@ The following list shows the possible actions and their allowed values.
     origin server. You can specify either a hostname or an IP address,
     but; you must specify the port number.
 
+.. _parent-config-format-secondary-parent:
+
+``secondary_parent``
+    An optional ordered list of secondary parent servers.  This optional
+    list may only be used when ``round_robin`` is set to ``consistent_hash``.
+    If the request cannot be handled by a parent server from the ``parent``
+    list, then the request will be re-tried from a server found in this list
+    using a consistent hash of the url.
+
 .. _parent-config-format-round-robin:
 
 ``round_robin``
@@ -155,6 +164,14 @@ The following list shows the possible actions and their allowed values.
     -  ``true`` - requests bypass parent hierarchies and go directly to
        the origin server.
     -  ``false`` - requests do not bypass parent hierarchies.
+
+.. _parent-config-format-qstring:
+
+``qstring``
+    One of the following values:
+
+    -  ``consider`` - Use the query string when finding a parent.
+    -  ``ignore`` - Do not consider the query string when finding a parent.
 
 Examples
 ========

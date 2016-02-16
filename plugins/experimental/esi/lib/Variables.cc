@@ -45,7 +45,7 @@ const string Variables::SPECIAL_HEADERS[] = {string("ACCEPT-LANGUAGE"), string("
 const string Variables::NORM_SIMPLE_HEADERS[] = {string("HTTP_HOST"), string("HTTP_REFERER"), string("")};
 
 const string Variables::NORM_SPECIAL_HEADERS[] = {string("HTTP_ACCEPT_LANGUAGE"), string("HTTP_COOKIE"), string("HTTP_USER_AGENT"),
-                                                  string("QUERY_STRING"), string("")};
+                                                  string("QUERY_STRING"),         string("HTTP_HEADER"), string("")};
 
 inline string &
 Variables::_toUpperCase(string &str) const
@@ -106,11 +106,10 @@ Variables::populate(const HttpHeader &header)
         match_index = _searchHeaders(SPECIAL_HEADERS, header.name, name_len);
         if (match_index != -1) {
           _cached_special_headers[match_index].push_back(string(header.value, value_len));
-        } else {
-          _debugLog(_debug_tag, "[%s] Not retaining header [%.*s]", __FUNCTION__, name_len, header.name);
         }
       }
     }
+    _insert(_dict_data[HTTP_HEADER], string(header.name, name_len), string(header.value, value_len));
   }
 }
 

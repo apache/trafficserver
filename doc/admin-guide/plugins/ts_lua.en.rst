@@ -19,7 +19,7 @@
 
 .. _admin-plugins-ts-lua:
 
-ts-lua Plugin
+TS Lua Plugin
 *************
 
 This module embeds Lua, via the standard Lua 5.1 interpreter, into |ATS|. With
@@ -137,13 +137,14 @@ ts.now
 
 **context:** global
 
-**description:** This function returns the time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
+**description:** This function returns the time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds. It
+includes milliseconds as the decimal part.
 
 Here is an example:
 
 ::
 
-    local nt = ts.now()  -- 1395221053
+    local nt = ts.now()  -- 1395221053.123
 
 `TOP <#ts-lua-plugin>`_
 
@@ -355,7 +356,6 @@ instead.
 
 Hook point constants
 --------------------
-**context:** do_remap or later
 
 ::
 
@@ -374,6 +374,49 @@ Hook point constants
     TS_LUA_RESPONSE_TRANSFORM
 
 These constants are usually used in ts.hook method call.
+
+Additional Information:
+
++------------------------------------+------------------------------------+----------------------+---------------------+
+|           Hook Point               |     Lua Hook Point constant        |   Hook function be   |   Hook function be  |
+|                                    |                                    |   registered  within |   registered within |
+|                                    |                                    |   do_remap() via     |   global context via| 
+|                                    |                                    |   ts.hook()?         |   ts.hook()?        |
++====================================+====================================+======================+=====================+
+| TS_HTTP_TXN_START_HOOK             |  TS_LUA_HOOK_TXN_START             |     NO               |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_READ_REQUEST_HDR_HOOK      |  TS_LUA_HOOK_READ_REQUEST_HDR      |     NO               |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_PRE_REMAP_HOOK             |  TS_LUA_HOOK_PRE_REMAP             |     NO               |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_POST_REMAP_HOOK            |  TS_LUA_HOOK_POST_REMAP            |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_SELECT_ALT_HOOK            |  TS_LUA_HOOK_SELECT_ALT            |     NO               |    NO               |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_READ_CACHE_HDR_HOOK        |  TS_LUA_HOOK_READ_CACHE_HDR        |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_OS_DNS_HOOK                |  TS_LUA_HOOK_OS_DNS                |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _CACHE_LOOKUP_COMPLETE_HOOK        |  _CACHE_LOOKUP_COMPLETE            |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _SEND_REQUEST_HDR_HOOK             |  _SEND_REQUEST_HDR                 |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _READ_RESPONSE_HDR_HOOK            |  _READ_RESPONSE_HDR                |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _SEND_RESPONSE_HDR_HOOK            |  _SEND_RESPONSE_HDR                |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_REQUEST_TRANSFORM          |     YES              |    YES              |
+| _REQUEST_TRANSFORM_HOOK            |                                    |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_RESPONSE_TRANSFORM         |     YES              |    YES              |
+| _RESPONSE_TRANSFORM_HOOK           |                                    |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_TXN_CLOSE_HOOK             |  TS_LUA_HOOK_TXN_CLOSE             |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
 
 `TOP <#ts-lua-plugin>`_
 
@@ -2374,6 +2417,36 @@ Here is an example:
     function do_remap()
         ts.hook(TS_LUA_HOOK_READ_RESPONSE_HDR, read_response)
         ts.hook(TS_LUA_HOOK_SEND_RESPONSE_HDR, send_response)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.schedule
+-----------
+**syntax:** *ts.schedule(THREAD_TYPE, sec, FUNCTION, param1?, param2?, ...)*
+
+**context:** *after do_remap*
+
+**description:** Schedule function to be run after specified seconds without blocking.
+
+Behind the scene, this method makes use of the ATS event model.
+
+Here is an example:
+
+::
+
+    function schedule()
+        ts.debug('test schedule starts')
+    end
+
+    function cache_lookup()
+        ts.debug('cache-lookup')
+        ts.schedule(TS_LUA_THREAD_POOL_NET, 0, schedule)
+        return 0
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
     end
 
 `TOP <#ts-lua-plugin>`_

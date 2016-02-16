@@ -429,9 +429,7 @@ huffman_encode(uint8_t *dst_start, const uint8_t *src, uint32_t src_len)
     }
   }
 
-  if (buf != 0) {
-    dst = huffman_encode_append(dst, buf, remain_bits / 8);
-  }
+  dst = huffman_encode_append(dst, buf, remain_bits / 8);
 
   // NOTE: Add padding w/ EOS
   uint32_t pad_len = remain_bits % 8;

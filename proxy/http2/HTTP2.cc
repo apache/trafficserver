@@ -484,8 +484,37 @@ convert_from_2_to_1_1_header(HTTPHdr *headers)
   return PARSE_DONE;
 }
 
+static int64_t
+http2_write_header_field(uint8_t *out, const uint8_t *end, MIMEFieldWrapper &header, Http2IndexingTable &indexing_table)
+{
+  HpackFieldType field_type = HPACK_FIELD_INDEXED_LITERAL;
+
+  // Cookie less that 20 bytes and Authorization are never indexed
+  // This policy is refer to Firefox and nghttp2
+  int name_len = 0, value_len = 0;
+  const char *name = header.name_get(&name_len);
+  header.value_get(&value_len);
+  if ((ptr_len_casecmp(name, name_len, MIME_FIELD_COOKIE, MIME_LEN_COOKIE) == 0 && value_len < 20) ||
+      (ptr_len_casecmp(name, name_len, MIME_FIELD_AUTHORIZATION, MIME_LEN_AUTHORIZATION) == 0)) {
+    field_type = HPACK_FIELD_NEVERINDEX_LITERAL;
+  }
+
+  // TODO Enable to configure selecting header field representation
+
+  const Http2LookupIndexResult &result = indexing_table.get_index(header);
+  if (result.index > 0) {
+    if (result.value_is_indexed) {
+      return encode_indexed_header_field(out, end, result.index);
+    } else {
+      return encode_literal_header_field_with_indexed_name(out, end, header, result.index, indexing_table, field_type);
+    }
+  } else {
+    return encode_literal_header_field_with_new_name(out, end, header, indexing_table, field_type);
+  }
+}
+
 int64_t
-http2_write_psuedo_headers(HTTPHdr *in, uint8_t *out, uint64_t out_len, Http2DynamicTable & /* dynamic_table */)
+http2_write_psuedo_headers(HTTPHdr *in, uint8_t *out, uint64_t out_len, Http2IndexingTable &indexing_table)
 {
   uint8_t *p = out;
   uint8_t *end = out + out_len;
@@ -508,7 +537,8 @@ http2_write_psuedo_headers(HTTPHdr *in, uint8_t *out, uint64_t out_len, Http2Dyn
 
     // Encode psuedo headers by HPACK
     MIMEFieldWrapper header(status_field, in->m_heap, in->m_http->m_fields_impl);
-    len = encode_literal_header_field(p, end, header, HPACK_FIELD_NEVERINDEX_LITERAL);
+
+    len = http2_write_header_field(p, end, header, indexing_table);
     if (len == -1)
       return -1;
     p += len;
@@ -522,7 +552,7 @@ http2_write_psuedo_headers(HTTPHdr *in, uint8_t *out, uint64_t out_len, Http2Dyn
 
 int64_t
 http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out, uint64_t out_len,
-                            Http2DynamicTable & /* dynamic_table */, bool &cont)
+                            Http2IndexingTable &indexing_table, bool &cont)
 {
   uint8_t *p = out;
   uint8_t *end = out + out_len;
@@ -559,7 +589,7 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
     }
 
     MIMEFieldWrapper header(field, in->m_heap, in->m_http->m_fields_impl);
-    if ((len = encode_literal_header_field(p, end, header, HPACK_FIELD_INDEXED_LITERAL)) == -1) {
+    if ((len = http2_write_header_field(p, end, header, indexing_table)) == -1) {
       if (p == out) {
         // no progress was made, header was too big for the buffer, skipping for now
         continue;
@@ -584,12 +614,14 @@ http2_write_header_fragment(HTTPHdr *in, MIMEFieldIter &field_iter, uint8_t *out
  * Decode Header Blocks to Header List.
  */
 int64_t
-http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t *buf_end, Http2DynamicTable &dynamic_table)
+http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t *buf_end, Http2IndexingTable &indexing_table,
+                           bool &trailing_header)
 {
   const uint8_t *cursor = buf_start;
   HdrHeap *heap = hdr->m_heap;
   HTTPHdrImpl *hh = hdr->m_http;
   bool header_field_started = false;
+  bool is_trailing_header = trailing_header;
 
   while (cursor < buf_end) {
     int64_t read_bytes = 0;
@@ -601,7 +633,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
 
     switch (ftype) {
     case HPACK_FIELD_INDEX:
-      read_bytes = decode_indexed_header_field(header, cursor, buf_end, dynamic_table);
+      read_bytes = decode_indexed_header_field(header, cursor, buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
@@ -611,7 +643,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
     case HPACK_FIELD_INDEXED_LITERAL:
     case HPACK_FIELD_NOINDEX_LITERAL:
     case HPACK_FIELD_NEVERINDEX_LITERAL:
-      read_bytes = decode_literal_header_field(header, cursor, buf_end, dynamic_table);
+      read_bytes = decode_literal_header_field(header, cursor, buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
@@ -622,7 +654,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
       if (header_field_started) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
-      read_bytes = update_dynamic_table_size(cursor, buf_end, dynamic_table);
+      read_bytes = update_dynamic_table_size(cursor, buf_end, indexing_table);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
@@ -654,22 +686,29 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
       }
     }
 
-    // when The TE header field is received, it MUST NOT contain any
-    // value other than "trailers".
+    // when The TE header field is received, it MUST NOT contain any value other than "trailers".
     if (name_len == MIME_LEN_TE && strncmp(name, MIME_FIELD_TE, name_len) == 0) {
       int value_len = 0;
       const char *value = field->value_get(&value_len);
-      char trailers[] = "trailers";
+      const char trailers[] = "trailers";
       if (!(value_len == (sizeof(trailers) - 1) && memcmp(value, trailers, value_len) == 0)) {
         return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
       }
     }
 
+    // turn on that we have a trailer header
+    const char trailer_name[] = "trailer";
+    if (name_len == (sizeof(trailer_name) - 1) && strncmp(name, trailer_name, sizeof(trailer_name) - 1) == 0) {
+      trailing_header = true;
+    }
+
     // Store to HdrHeap
     mime_hdr_field_attach(hh->m_fields_impl, field, 1, NULL);
+  }
 
+  if (!is_trailing_header) {
     // Check psuedo headers
-    if (hdr->fields_count() == 4) {
+    if (hdr->fields_count() >= 4) {
       if (hdr->field_find(HPACK_VALUE_SCHEME, HPACK_LEN_SCHEME) == NULL ||
           hdr->field_find(HPACK_VALUE_METHOD, HPACK_LEN_METHOD) == NULL ||
           hdr->field_find(HPACK_VALUE_PATH, HPACK_LEN_PATH) == NULL ||
@@ -677,12 +716,10 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
         // Decoded header field is invalid
         return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
       }
+    } else {
+      // Psuedo headers is insufficient
+      return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
     }
-  }
-
-  // Psuedo headers is insufficient
-  if (hdr->fields_count() < 4) {
-    return HPACK_ERROR_HTTP2_PROTOCOL_ERROR;
   }
 
   // Parsing all headers is done
@@ -698,6 +735,7 @@ uint32_t Http2::max_header_list_size = 4294967295;
 uint32_t Http2::max_request_header_size = 131072;
 uint32_t Http2::accept_no_activity_timeout = 120;
 uint32_t Http2::no_activity_timeout_in = 115;
+uint32_t Http2::active_timeout_in = 0;
 
 void
 Http2::init()
@@ -710,6 +748,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_request_header_size, "proxy.config.http.request_header_max_size");
   REC_EstablishStaticConfigInt32U(accept_no_activity_timeout, "proxy.config.http2.accept_no_activity_timeout");
   REC_EstablishStaticConfigInt32U(no_activity_timeout_in, "proxy.config.http2.no_activity_timeout_in");
+  REC_EstablishStaticConfigInt32U(active_timeout_in, "proxy.config.http2.active_timeout_in");
 
   // If any settings is broken, ATS should not start
   ink_release_assert(http2_settings_parameter_is_valid({HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, max_concurrent_streams}) &&

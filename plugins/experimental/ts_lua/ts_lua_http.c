@@ -334,7 +334,9 @@ ts_lua_http_set_cache_url(lua_State *L)
   url = luaL_checklstring(L, 1, &url_len);
 
   if (url && url_len) {
-    TSCacheUrlSet(http_ctx->txnp, url, url_len);
+    if (TSCacheUrlSet(http_ctx->txnp, url, url_len) != TS_SUCCESS) {
+      TSError("[ts_lua] Failed to set cache url");
+    }
   }
 
   return 0;

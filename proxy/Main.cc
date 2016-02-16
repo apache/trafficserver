@@ -124,6 +124,7 @@ static const long MAX_LOGIN = ink_login_name_max();
 static void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void *mgmt_storage_device_cmd_callback(void *x, char *data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
+static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
 
 static int num_of_net_threads = ink_number_of_processors();
 static int num_of_udp_threads = 0;
@@ -282,9 +283,17 @@ public:
     baseline_taken = 0;
   }
 
+  ~TrackerContinuation() { mutex = NULL; }
+
   int
-  periodic(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+  periodic(int event, Event * /* e ATS_UNUSED */)
   {
+    if (event == EVENT_IMMEDIATE) {
+      // rescheduled from periodic to immediate event
+      // this is the indication to terminate this tracker.
+      delete this;
+      return EVENT_DONE;
+    }
     if (use_baseline) {
       // TODO: TS-567 Integrate with debugging allocators "dump" features?
       ink_freelists_dump_baselinerel(stderr);
@@ -336,7 +345,11 @@ static int
 init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecData data, void * /* cookie ATS_UNUSED */)
 {
   static Event *tracker_event = NULL;
+  Event *preE;
   int dump_mem_info_frequency = 0;
+
+  // set tracker_event to NULL, and return previous value
+  preE = ink_atomic_swap(&tracker_event, static_cast<Event *>(NULL));
 
   if (config_var) {
     dump_mem_info_frequency = data.rec_int;
@@ -344,11 +357,11 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
     dump_mem_info_frequency = REC_ConfigReadInteger("proxy.config.dump_mem_info_frequency");
   }
 
-  Debug("tracker", "init_tracker called [%d]\n", dump_mem_info_frequency);
+  Debug("tracker", "init_memory_tracker called [%d]\n", dump_mem_info_frequency);
 
-  if (tracker_event) {
-    tracker_event->cancel();
-    tracker_event = NULL;
+  if (preE) {
+    eventProcessor.schedule_imm(preE->continuation, ET_CALL);
+    preE->cancel();
   }
 
   if (dump_mem_info_frequency > 0) {
@@ -391,7 +404,10 @@ proxy_signal_handler(int signo, siginfo_t *info, void *)
     return;
   }
 
-  _exit(signo);
+  shutdown_event_system = true;
+  sleep(1);
+
+  exit(signo);
 }
 
 //
@@ -1409,24 +1425,6 @@ change_uid_gid(const char *user)
 #endif
 }
 
-/** Open a file, elevating privilege only if needed.
-
-    @internal This is necessary because the CI machines run the regression tests
-    as a normal user, not as root, so attempts to get privilege fail even though
-    the @c open would succeed without elevation. So, try that first and ask for
-    elevation only on an explicit permission failure.
-*/
-static int
-elevating_open(char const *path, unsigned int flags, unsigned int fperms)
-{
-  int fd = open(path, flags, fperms);
-  if (fd < 0 && EPERM == errno) {
-    ElevateAccess access;
-    fd = open(path, flags, fperms);
-  }
-  return fd;
-}
-
 /*
  * Binds stdout and stderr to files specified by the parameters
  *
@@ -1801,6 +1799,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     (void)plugin_init(); // plugin.config
 
     SSLConfigParams::init_ssl_ctx_cb = init_ssl_ctx_callback;
+    SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(getNumSSLThreads(), stacksize);
 
     pmgmt->registerPluginCallbacks(global_config_cbs);
@@ -1920,6 +1919,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #endif
 
   this_thread()->execute();
+  delete main_thread;
 }
 
 
@@ -1975,4 +1975,10 @@ init_ssl_ctx_callback(void *ctx, bool server)
     hook->invoke(event, ctx);
     hook = hook->next();
   }
+}
+
+static void
+load_ssl_file_callback(const char *ssl_file, unsigned int options)
+{
+  pmgmt->signalConfigFileChild("ssl_multicert.config", ssl_file, options);
 }

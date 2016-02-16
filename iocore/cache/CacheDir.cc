@@ -1001,6 +1001,15 @@ CacheSync::mainEvent(int event, Event *e)
 Lrestart:
   if (vol_idx >= gnvol) {
     vol_idx = 0;
+    if (buf) {
+      if (buf_huge)
+        ats_free_hugepage(buf, buflen);
+      else
+        ats_memalign_free(buf);
+      buflen = 0;
+      buf = NULL;
+      buf_huge = false;
+    }
     Debug("cache_dir_sync", "sync done");
     if (event == EVENT_INTERVAL)
       trigger = e->ethread->schedule_in(this, HRTIME_SECONDS(cache_config_dir_sync_frequency));
@@ -1136,7 +1145,6 @@ compare_ushort(void const *a, void const *b)
 // Check
 //
 
-#define HIST_DEPTH 8
 int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this parameter ?
 {
   static int const SEGMENT_HISTOGRAM_WIDTH = 16;
@@ -1145,28 +1153,32 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
   int32_t chain_mark[MAX_ENTRIES_PER_SEGMENT];
   uint64_t total_buckets = buckets * segments;
   uint64_t total_entries = total_buckets * DIR_DEPTH;
+  int frag_demographics[1 << DIR_SIZE_WIDTH][DIR_BLOCK_SIZES];
 
   int j;
-  int stale = 0, full = 0, empty = 0;
-  int free = 0, head = 0;
+  int stale = 0, in_use = 0, empty = 0;
+  int free = 0, head = 0, buckets_in_use = 0;
 
   int max_chain_length = 0;
   int64_t bytes_in_use = 0;
 
+  ink_zero(frag_demographics);
+
   printf("Stripe '[%s]'\n", hash_text.get());
   printf("  Directory Bytes: %" PRIu64 "\n", total_buckets * SIZEOF_DIR);
   printf("  Segments:  %d\n", segments);
-  printf("  Buckets:   %" PRIu64 "\n", buckets);
+  printf("  Buckets per segment:   %" PRIu64 "\n", buckets);
   printf("  Entries:   %" PRIu64 "\n", total_entries);
 
   for (int s = 0; s < segments; s++) {
     Dir *seg = dir_segment(s, this);
     int seg_chain_max = 0;
     int seg_empty = 0;
-    int seg_full = 0;
+    int seg_in_use = 0;
     int seg_stale = 0;
     int seg_bytes_in_use = 0;
     int seg_dups = 0;
+    int seg_buckets_in_use = 0;
 
     ink_zero(chain_tag);
     memset(chain_mark, -1, sizeof(chain_mark));
@@ -1178,9 +1190,14 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
       // Walk the chain starting in this bucket
       int chain_idx = 0;
       int mark = 0;
+      ++seg_buckets_in_use;
       for (Dir *e = root; e; e = next_dir(e, seg)) {
-        if (!dir_offset(e)) { // this should only happen on the first dir in a bucket
+        if (!dir_offset(e)) {
           ++seg_empty;
+          --seg_buckets_in_use;
+          // this should only happen on the first dir in a bucket
+          ink_assert(NULL == next_dir(e, seg));
+          break;
         } else {
           int e_idx = e - seg;
           ++h;
@@ -1193,14 +1210,15 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
             chain_mark[e_idx] = mark;
           }
 
-          if (dir_head(e))
-            ++head;
-
           if (!dir_valid(this, e)) {
             ++seg_stale;
           } else {
-            ++seg_full;
-            seg_bytes_in_use += dir_approx_size(e);
+            uint64_t size = dir_approx_size(e);
+            if (dir_head(e))
+              ++head;
+            ++seg_in_use;
+            seg_bytes_in_use += size;
+            ++frag_demographics[dir_size(e)][dir_big(e)];
           }
         }
         e = next_dir(e, seg);
@@ -1223,22 +1241,22 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
       ++hist[std::min(h, SEGMENT_HISTOGRAM_WIDTH)];
       seg_chain_max = std::max(seg_chain_max, h);
     }
-    int seg_chains = buckets - seg_empty;
-    full += seg_full;
+    int fl_size = dir_freelist_length(this, s);
+    in_use += seg_in_use;
     empty += seg_empty;
     stale += seg_stale;
-    free += dir_freelist_length(this, s);
+    free += fl_size;
+    buckets_in_use += seg_buckets_in_use;
     max_chain_length = std::max(max_chain_length, seg_chain_max);
     bytes_in_use += seg_bytes_in_use;
 
-    printf("  - Segment-%d: full:%d stale:%d empty:%d bytes-used:%d chain-count:%d chain-max:%d chain-avg:%.2f chain-dups:%d\n", s,
-           seg_full, seg_stale, seg_empty, seg_bytes_in_use, seg_chains, seg_chain_max,
-           seg_chains ? static_cast<float>(seg_full + seg_stale) / seg_chains : 0.0, seg_dups);
+    printf("  - Segment-%d | Entries: used=%d stale=%d free=%d disk-bytes=%d Buckets: used=%d empty=%d max=%d avg=%.2f dups=%d\n",
+           s, seg_in_use, seg_stale, fl_size, seg_bytes_in_use, seg_buckets_in_use, seg_empty, seg_chain_max,
+           seg_buckets_in_use ? static_cast<float>(seg_in_use + seg_stale) / seg_buckets_in_use : 0.0, seg_dups);
   }
 
-  int chain_count = total_buckets - empty;
-  printf("  - Stripe: full:%d stale:%d empty:%d free:%d chain-count:%d chain-max:%d chain-avg:%.2f\n", full, stale, empty, free,
-         chain_count, max_chain_length, chain_count ? static_cast<float>(full + stale) / chain_count : 0);
+  printf("  - Stripe | Entries: in-use=%d stale=%d free=%d Buckets: empty=%d max=%d avg=%.2f\n", in_use, stale, free, empty,
+         max_chain_length, buckets_in_use ? static_cast<float>(in_use + stale) / buckets_in_use : 0);
 
   printf("    Chain lengths:  ");
   for (j = 0; j < SEGMENT_HISTOGRAM_WIDTH; ++j)
@@ -1246,17 +1264,37 @@ int Vol::dir_check(bool /* fix ATS_UNUSED */) // TODO: we should eliminate this 
   printf(" %d>=%d\n", SEGMENT_HISTOGRAM_WIDTH, hist[SEGMENT_HISTOGRAM_WIDTH]);
 
   char tt[256];
-  printf("    Total Size:      %" PRIu64 "\n", (uint64_t)len);
-  printf("    Bytes in Use:    %" PRIu64 "\n", bytes_in_use);
+  printf("    Total Size:      %" PRIu64 "\n", static_cast<uint64_t>(len));
+  printf("    Bytes in Use:    %" PRIu64 " [%0.2f%%]\n", bytes_in_use, 100.0 * (static_cast<float>(bytes_in_use) / len));
   printf("    Objects:         %d\n", head);
   printf("    Average Size:    %" PRIu64 "\n", head ? (bytes_in_use / head) : 0);
-  printf("    Write Position:  %" PRIu64 "\n", (uint64_t)(header->write_pos - skip - start));
-  printf("    Phase:           %d\n", (int)!!header->phase);
+  printf("    Average Frags:   %.2f\n", head ? static_cast<float>(in_use) / head : 0);
+  printf("    Write Position:  %" PRIu64 "\n", header->write_pos - start);
+  printf("    Wrap Count:      %d\n", header->cycle);
+  printf("    Phase:           %s\n", header->phase ? "true" : "false");
   ink_ctime_r(&header->create_time, tt);
   tt[strlen(tt) - 1] = 0;
+  printf("    Sync Serial:     %u\n", header->sync_serial);
+  printf("    Write Serial:    %u\n", header->write_serial);
   printf("    Create Time:     %s\n", tt);
-  printf("    Sync Serial:     %u\n", (unsigned int)header->sync_serial);
-  printf("    Write Serial:    %u\n", (unsigned int)header->write_serial);
+  printf("\n");
+  printf("  Fragment size demographics\n");
+  for (int b = 0; b < DIR_BLOCK_SIZES; ++b) {
+    int block_size = DIR_BLOCK_SIZE(b);
+    int s = 0;
+    while (s < 1 << DIR_SIZE_WIDTH) {
+      for (int j = 0; j < 8; ++j, ++s) {
+        // The size markings are redundant. Low values (less than DIR_SHIFT_WIDTH) for larger
+        // base block sizes should never be used. Such entries should use the next smaller base block size.
+        if (b > 0 && s < 1 << DIR_BLOCK_SHIFT(1)) {
+          ink_assert(frag_demographics[s][b] == 0);
+          continue;
+        }
+        printf(" %8d[%2d:%1d]:%06d", (s + 1) * block_size, s, b, frag_demographics[s][b]);
+      }
+      printf("\n");
+    }
+  }
   printf("\n");
 
   return 0;

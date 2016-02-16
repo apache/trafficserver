@@ -207,7 +207,7 @@ public:
   int mainNetEventExt(int event, Event *data);
   void process_enabled_list(NetHandler *);
   void manage_keep_alive_queue();
-  bool manage_active_queue();
+  bool manage_active_queue(bool ignore_queue_size);
   void add_to_keep_alive_queue(UnixNetVConnection *vc);
   void remove_from_keep_alive_queue(UnixNetVConnection *vc);
   bool add_to_active_queue(UnixNetVConnection *vc);

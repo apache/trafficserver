@@ -24,88 +24,12 @@
 #include "I_EventSystem.h"
 #include "ts/I_Layout.h"
 
+#include "diags.i"
+
 #define TEST_TIME_SECOND 60
 #define TEST_THREADS 2
 
-int count;
-Diags *diags;
-#define DIAGS_LOG_FILE "diags.log"
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      void reconfigure_diags()
-//
-//      This function extracts the current diags configuration settings from
-//      records.config, and rebuilds the Diags data structures.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-static void
-reconfigure_diags()
-{
-  int i;
-  DiagsConfigState c;
-
-  // initial value set to 0 or 1 based on command line tags
-  c.enabled[DiagsTagType_Debug] = (diags->base_debug_tags != NULL);
-  c.enabled[DiagsTagType_Action] = (diags->base_action_tags != NULL);
-
-  c.enabled[DiagsTagType_Debug] = 1;
-  c.enabled[DiagsTagType_Action] = 1;
-  diags->show_location = 1;
-
-  // read output routing values
-  for (i = 0; i < DiagsLevel_Count; i++) {
-    c.outputs[i].to_stdout = 0;
-    c.outputs[i].to_stderr = 1;
-    c.outputs[i].to_syslog = 1;
-    c.outputs[i].to_diagslog = 1;
-  }
-
-  //////////////////////////////
-  // clear out old tag tables //
-  //////////////////////////////
-
-  diags->deactivate_all(DiagsTagType_Debug);
-  diags->deactivate_all(DiagsTagType_Action);
-
-  //////////////////////////////////////////////////////////////////////
-  //                     add new tag tables
-  //////////////////////////////////////////////////////////////////////
-
-  if (diags->base_debug_tags)
-    diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
-  if (diags->base_action_tags)
-    diags->activate_taglist(diags->base_action_tags, DiagsTagType_Action);
-
-////////////////////////////////////
-// change the diags config values //
-////////////////////////////////////
-#if !defined(__GNUC__) && !defined(hpux)
-  diags->config = c;
-#else
-  memcpy(((void *)&diags->config), ((void *)&c), sizeof(DiagsConfigState));
-#endif
-}
-
-static void
-init_diags(const char *bdt, const char *bat)
-{
-  char diags_logpath[500];
-  strcpy(diags_logpath, DIAGS_LOG_FILE);
-
-  BaseLogFile *blf = new BaseLogFile(diags_logpath);
-  diags = new Diags(bdt, bat, blf);
-
-  if (blf == NULL || blf->m_fp == NULL) {
-    Warning("couldn't open diags log file '%s', "
-            "will not log to this file",
-            diags_logpath);
-  }
-
-  Status("opened %s", diags_logpath);
-  reconfigure_diags();
-}
+static int count;
 
 struct alarm_printer : public Continuation {
   alarm_printer(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&alarm_printer::dummy_function); }

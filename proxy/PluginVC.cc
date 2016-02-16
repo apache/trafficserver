@@ -293,7 +293,9 @@ PluginVC::reenable(VIO *vio)
 {
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
-  ink_assert(vio->mutex->thread_holding == this_ethread());
+
+  Ptr<ProxyMutex> sm_mutex = vio->mutex;
+  SCOPED_MUTEX_LOCK(lock, sm_mutex, this_ethread());
 
   Debug("pvc", "[%u] %s: reenable %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
@@ -313,34 +315,26 @@ PluginVC::reenable_re(VIO *vio)
 {
   ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
-  ink_assert(vio->mutex->thread_holding == this_ethread());
 
   Debug("pvc", "[%u] %s: reenable_re %s", core_obj->id, PVC_TYPE, (vio->op == VIO::WRITE) ? "Write" : "Read");
 
-  MUTEX_TRY_LOCK(lock, this->mutex, this_ethread());
-  if (!lock.is_locked()) {
-    if (vio->op == VIO::WRITE) {
-      need_write_process = true;
-    } else {
-      need_read_process = true;
-    }
-    setup_event_cb(PVC_LOCK_RETRY_TIME, &sm_lock_retry_event);
-    return;
-  }
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
-  reentrancy_count++;
+  ++reentrancy_count;
 
   if (vio->op == VIO::WRITE) {
     ink_assert(vio == &write_state.vio);
+    need_write_process = true;
     process_write_side(false);
   } else if (vio->op == VIO::READ) {
     ink_assert(vio == &read_state.vio);
+    need_read_process = true;
     process_read_side(false);
   } else {
     ink_release_assert(0);
   }
 
-  reentrancy_count--;
+  --reentrancy_count;
 
   // To process the close, we need the lock
   //   for the PluginVC.  Schedule an event
@@ -353,31 +347,20 @@ PluginVC::reenable_re(VIO *vio)
 void
 PluginVC::do_io_close(int /* flag ATS_UNUSED */)
 {
-  ink_assert(closed == false);
+  ink_assert(!closed);
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
   Debug("pvc", "[%u] %s: do_io_close", core_obj->id, PVC_TYPE);
 
-  if (reentrancy_count > 0) {
-    // Do nothing since dealloacting ourselves
-    //  now will lead to us running on a dead
-    //  PluginVC since we are being called
-    //  reentrantly
+  SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
+  if (!closed) { // if already closed, need to do nothing.
     closed = true;
-    return;
+
+    // If re-entered then that earlier handler will clean up, otherwise set up a ping
+    // to drive that process (too dangerous to do it here).
+    if (reentrancy_count <= 0)
+      setup_event_cb(0, &sm_lock_retry_event);
   }
-
-  MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-
-  if (!lock.is_locked()) {
-    setup_event_cb(PVC_LOCK_RETRY_TIME, &sm_lock_retry_event);
-    closed = true;
-    return;
-  } else {
-    closed = true;
-  }
-
-  process_close();
 }
 
 void
@@ -920,6 +903,12 @@ PluginVC::set_remote_addr()
 
 int
 PluginVC::set_tcp_init_cwnd(int /* init_cwnd ATS_UNUSED */)
+{
+  return -1;
+}
+
+int
+PluginVC::set_tcp_congestion_control(const char *ATS_UNUSED, int ATS_UNUSED)
 {
   return -1;
 }

@@ -16,11 +16,14 @@
 
 from OpenSSL import SSL
 import socket
-
+import time
 import helpers
 import tsqa.utils
+import os
+import logging
 unittest = tsqa.utils.import_unittest()
 
+log = logging.getLogger(__name__)
 # some ciphers to test with
 CIPHER_MAP = {
     'rsa': 'ECDHE-RSA-AES256-GCM-SHA384',
@@ -273,3 +276,66 @@ class TestMix(helpers.EnvironmentCase, CertSelectionMixin):
 
     def test_intermediate_ca_ecdsa(self):
         self._intermediate_ca_t('ecdsa')
+
+
+class TestConfigFileGroup(helpers.EnvironmentCase, CertSelectionMixin):
+    '''
+    Tests for config file group with https
+    The config file group includes a parent file ssl_multicert.config and some children files.
+    when the content of a child file is updated but the file name hasn't been changed.
+    The behavior is the same as the parent file in the group has been changed.
+    In the test, a child file named www.unknown.com.pem, which is rsa_keys/www.test.com.pem at first,
+      is updated to ec_keys/www.test.com.pem.
+    The difference can be told by different results from calling get_cert() with different ciphers as paramters
+    '''
+    @classmethod
+    def setUpEnv(cls, env):
+        # add an SSL port to ATS
+        cls.ssl_port = tsqa.utils.bind_unused_port()[1]
+        cls.configs['records.config']['CONFIG']['proxy.config.http.server_ports'] += ' {0}:ssl'.format(cls.ssl_port)
+        cls.configs['records.config']['CONFIG'].update({
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'ssl',
+            'proxy.config.ssl.server.cipher_suite': '{0}:{1}'.format(CIPHER_MAP['ecdsa'], CIPHER_MAP['rsa']),
+        })
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0},{1} ssl_ca_name={2},{3}'.format(
+            helpers.tests_file_path('rsa_keys/www.example.com.pem'),
+            helpers.tests_file_path('ec_keys/www.example.com.pem'),
+            helpers.tests_file_path('rsa_keys/intermediate.crt'),
+            helpers.tests_file_path('ec_keys/intermediate.crt'),
+        ))
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=127.0.0.3 ssl_cert_name={0}'.format(
+            helpers.tests_file_path('www.unknown.com.pem'),
+        ))
+        os.system('cp %s %s' % (helpers.tests_file_path('rsa_keys/www.test.com.pem'), helpers.tests_file_path('www.unknown.com.pem')))
+        log.info('cp %s %s' % (helpers.tests_file_path('rsa_keys/www.test.com.pem'), helpers.tests_file_path('www.unknown.com.pem')))
+
+    def test_config_file_group(self):
+        signal_cmd = os.path.join(self.environment.layout.bindir, 'traffic_line') + ' -x'
+        addr = ('127.0.0.3', self.ssl_port)
+        cert = self._get_cert(addr, ciphers=CIPHER_MAP['rsa'])
+        self.assertEqual(cert.get_subject().commonName.decode(), 'www.test.com')
+        with self.assertRaises(Exception):
+          self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
+        time.sleep(5)
+        os.system('cp %s %s' % (helpers.tests_file_path('ec_keys/www.test.com.pem'), helpers.tests_file_path('www.unknown.com.pem')))
+        log.info('cp %s %s' % (helpers.tests_file_path('ec_keys/www.test.com.pem'), helpers.tests_file_path('www.unknown.com.pem')))
+        os.system(signal_cmd)
+        log.info(signal_cmd)
+        # waiting for the reconfiguration completed
+        sec = 0
+        while True:
+          time.sleep(5)
+          sec += 5
+          log.info("reloading: %d seconds" % (sec))
+          self.assertLess(sec, 30)
+          try:
+            self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
+            break
+          except:
+            continue
+        cert = self._get_cert(addr, ciphers=CIPHER_MAP['ecdsa'])
+        self.assertEqual(cert.get_subject().commonName.decode(), 'www.test.com')
+        with self.assertRaises(Exception):
+          self._get_cert(addr, ciphers=CIPHER_MAP['rsa'])
+        os.system('rm %s' %(helpers.tests_file_path('www.unknown.com.pem')))

@@ -39,6 +39,11 @@
 void SSL_set_rbio(SSL *ssl, BIO *rbio);
 #endif
 
+// This is missing from BoringSSL
+#ifndef BIO_eof
+#define BIO_eof(b) (int) BIO_ctrl(b, BIO_CTRL_EOF, 0, NULL)
+#endif
+
 #define SSL_READ_ERROR_NONE 0
 #define SSL_READ_ERROR 1
 #define SSL_READ_READY 2
@@ -281,12 +286,16 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
         Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
         break;
       case SSL_ERROR_SSL:
-      default:
-        TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "SSL Error: sslErr=%d, errno=%d", sslErr, errno);
+      default: {
+        char buf[512];
+        unsigned long e = ERR_peek_last_error();
+        ERR_error_string_n(e, buf, sizeof(buf));
+        TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "SSL Error: sslErr=%d, ERR_get_error=%ld (%s) errno=%d",
+                sslErr, e, buf, errno);
         event = SSL_READ_ERROR;
         ret = errno;
         SSL_CLR_ERR_INCR_DYN_STAT(sslvc, ssl_error_ssl, "[SSL_NetVConnection::ssl_read_from_net]: errno=%d", errno);
-        break;
+      } break;
       } // switch
       break;
     } // while( block_write_avail > 0 )
@@ -828,11 +837,15 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
       Debug("ssl.error", "SSL_write-SSL_ERROR_ZERO_RETURN");
       break;
     case SSL_ERROR_SSL:
-    default:
-      TraceOut(trace, get_remote_addr(), get_remote_port(), "SSL Error: sslErr=%d, errno=%d", err, errno);
+    default: {
+      char buf[512];
+      unsigned long e = ERR_peek_last_error();
+      ERR_error_string_n(e, buf, sizeof(buf));
+      TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL Error: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", err, e, buf,
+              errno);
       r = -errno;
       SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSL_write-SSL_ERROR_SSL errno=%d", errno);
-      break;
+    } break;
     }
     return (r);
   }
@@ -1227,10 +1240,15 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL server handshake ERROR_WANT_ACCEPT");
     return EVENT_CONT;
 
-  case SSL_ERROR_SSL:
+  case SSL_ERROR_SSL: {
     SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslServerHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
-    TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL server handshake ERROR_SSL");
+    char buf[512];
+    unsigned long e = ERR_peek_last_error();
+    ERR_error_string_n(e, buf, sizeof(buf));
+    TraceIn(trace, get_remote_addr(), get_remote_port(),
+            "SSL server handshake ERROR_SSL: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", ssl_error, e, buf, errno);
     return EVENT_ERROR;
+  }
 
   case SSL_ERROR_ZERO_RETURN:
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL server handshake ERROR_ZERO_RETURN");
@@ -1330,15 +1348,19 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
 
 
   case SSL_ERROR_SSL:
-  default:
+  default: {
     err = errno;
     // FIXME -- This triggers a retry on cases of cert validation errors....
     Debug("ssl", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
     SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL errno=%d", errno);
     Debug("ssl.error", "SSLNetVConnection::sslClientHandShakeEvent, SSL_ERROR_SSL");
-    TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL client handshake SSL_ERROR");
+    char buf[512];
+    unsigned long e = ERR_peek_last_error();
+    ERR_error_string_n(e, buf, sizeof(buf));
+    TraceIn(trace, get_remote_addr(), get_remote_port(),
+            "SSL client handshake ERROR_SSL: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", ssl_error, e, buf, errno);
     return EVENT_ERROR;
-    break;
+  } break;
   }
   return EVENT_CONT;
 }

@@ -35,6 +35,7 @@
 #include "ts/ink_cap.h"
 #include "ts/I_Layout.h"
 #include "FileManager.h"
+#include "ProxyConfig.h"
 
 #define MAX_VERSION_DIGITS 11
 #define DEFAULT_BACKUPS 2
@@ -43,7 +44,9 @@
 const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version was out of date", "System Call Error",
                                  "Invalid Version - Version Numbers Must Increase"};
 
-Rollback::Rollback(const char *baseFileName, bool root_access_needed_) : configFiles(NULL), root_access_needed(root_access_needed_)
+Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *parentRollback_, unsigned flags)
+  : configFiles(NULL), root_access_needed(root_access_needed_), parentRollback(parentRollback_), currentVersion(0),
+    fileLastModified(0), numVersions(0), numberBackups(0)
 {
   version_t highestSeen;             // the highest backup version
   ExpandingArray existVer(25, true); // Exsisting versions
@@ -60,21 +63,26 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_) : configF
   char *activeVerStr;
   bool needZeroLength;
 
-  ink_assert(baseFileName != NULL);
+  ink_assert(fileName_ != NULL);
 
-  // Copy the file name
-  fileNameLen = strlen(baseFileName);
-  fileName = (char *)ats_malloc(fileNameLen + 1);
-  ink_strlcpy(fileName, baseFileName, fileNameLen + 1);
-
-  // TODO: Use the runtime directory for storing mutable data
-  // XXX: Sysconfdir should be imutable!!!
-
-  ats_scoped_str sysconfdir(RecConfigReadConfigDir());
-  if (access(sysconfdir, F_OK) < 0) {
-    mgmt_fatal(0, "[Rollback::Rollback] unable to access() directory '%s': %d, %s\n", (const char *)sysconfdir, errno,
-               strerror(errno));
+  // parent must not also have a parent
+  if (parentRollback) {
+    ink_assert(parentRollback->parentRollback == NULL);
   }
+
+  // Copy the file name.
+  fileNameLen = strlen(fileName_);
+  fileName = ats_strdup(fileName_);
+
+  // Extract the file base name.
+  fileBaseName = strrchr(fileName, '/');
+  if (fileBaseName) {
+    fileBaseName++;
+  } else {
+    fileBaseName = fileName;
+  }
+
+  ink_mutex_init(&fileAccessLock, "RollBack Mutex");
 
   if (varIntFromName("proxy.config.admin.number_config_bak", &numBak) == true) {
     if (numBak > 1) {
@@ -86,7 +94,13 @@ Rollback::Rollback(const char *baseFileName, bool root_access_needed_) : configF
     numberBackups = DEFAULT_BACKUPS;
   }
 
-  ink_mutex_init(&fileAccessLock, "RollBack Mutex");
+  // If we are not doing backups, bail early.
+  if ((numberBackups <= 0) || (flags & CONFIG_FLAG_UNVERSIONED)) {
+    currentVersion = 0;
+    setLastModifiedTime();
+    numberBackups = 0;
+    return;
+  }
 
   currentVersion = 0; // Prevent UMR with stat file
   highestSeen = findVersions_ml(versionQ);
@@ -216,12 +230,12 @@ Rollback::~Rollback()
 char *
 Rollback::createPathStr(version_t version)
 {
+  int bufSize = 0;
+  char *buffer = NULL;
   ats_scoped_str sysconfdir(RecConfigReadConfigDir());
-  int bufSize = strlen(sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
-  char *buffer = (char *)ats_malloc(bufSize);
-
+  bufSize = strlen(sysconfdir) + fileNameLen + MAX_VERSION_DIGITS + 1;
+  buffer = (char *)ats_malloc(bufSize);
   Layout::get()->relative_to(buffer, bufSize, sysconfdir, fileName);
-
   if (version != ACTIVE_VERSION) {
     size_t pos = strlen(buffer);
     snprintf(buffer + pos, bufSize - pos, "_%d", version);
@@ -246,7 +260,7 @@ Rollback::statFile(version_t version, struct stat *buf)
   }
 
   ats_scoped_str filePath(createPathStr(version));
-  ElevateAccess access(root_access_needed);
+  ElevateAccess access(root_access_needed ? ElevateAccess::FILE_PRIVILEGE : 0);
 
   statResult = stat(filePath, buf);
 
@@ -264,7 +278,7 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
   int fd;
 
   ats_scoped_str filePath(createPathStr(version));
-  ElevateAccess access(root_access_needed);
+  ElevateAccess access(root_access_needed ? ElevateAccess::FILE_PRIVILEGE : 0);
 
   // TODO: Use the original permissions
   //       Anyhow the _1 files should not be created inside Syconfdir.
@@ -389,7 +403,6 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   currentVersion_local = createPathStr(this->currentVersion);
   activeVersion = createPathStr(ACTIVE_VERSION);
   nextVersion = createPathStr(newVersion);
-
   // Create the new configuration file
   // TODO: Make sure they are not created in Sysconfigdir!
   diskFD = openFile(newVersion, O_WRONLY | O_CREAT | O_TRUNC);

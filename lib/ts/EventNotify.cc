@@ -92,7 +92,7 @@ EventNotify::wait(void)
   struct epoll_event ev;
 
   do {
-    nr_fd = epoll_wait(m_epoll_fd, &ev, 1, -1);
+    nr_fd = epoll_wait(m_epoll_fd, &ev, 1, 500000);
   } while (nr_fd == -1 && errno == EINTR);
 
   if (nr_fd == -1)

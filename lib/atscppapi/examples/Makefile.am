@@ -30,10 +30,11 @@ SUBDIRS = \
 	boom \
 	stat_example \
 	remap_plugin \
+	custom_error_remap_plugin \
 	async_http_fetch \
 	gzip_transformation \
 	timeout_example \
 	internal_transaction_handling \
 	async_timer \
 	intercept \
-        async_http_fetch_streaming
+	async_http_fetch_streaming

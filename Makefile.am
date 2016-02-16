@@ -81,10 +81,10 @@ asf-dist-sign-rc: asf-dist-rc
 	sha1sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.sha1
 	gpg --armor --output $(distdir)-rc$(RC).tar.bz2.asc  --detach-sig $(distdir)-rc$(RC).tar.bz2
 
-release: changelog asf-dist-sign
+release: asf-dist-sign
 	git tag -fs -m "Release $(VERSION)" $(VERSION)
 
-rel-candidate: changelog asf-dist-sign-rc
+rel-candidate: asf-dist-sign-rc
 	git tag -fs -m "Release Candidate $(VERSION)-rc$(RC)" $(VERSION)-rc$(RC)
 
 examples: all

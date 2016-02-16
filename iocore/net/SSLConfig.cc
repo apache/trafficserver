@@ -53,6 +53,7 @@ size_t SSLConfigParams::session_cache_number_buckets = 1024;
 bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
 size_t SSLConfigParams::session_cache_max_bucket_size = 100;
 init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
+load_ssl_file_func SSLConfigParams::load_ssl_file_cb = NULL;
 
 // TS-3534 Wiretracing for SSL Connections
 int SSLConfigParams::ssl_wire_trace_enabled = 0;
@@ -306,10 +307,10 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 
   // SSL Wire Trace configurations
-  REC_ReadConfigInteger(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");
+  REC_EstablishStaticConfigInt32(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");
   if (ssl_wire_trace_enabled) {
     // wire trace specific source ip
-    REC_ReadConfigStringAlloc(ssl_wire_trace_addr, "proxy.config.ssl.wire_trace_addr");
+    REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_addr, "proxy.config.ssl.wire_trace_addr");
     if (ssl_wire_trace_addr) {
       ssl_wire_trace_ip = new IpAddr();
       ssl_wire_trace_ip->load(ssl_wire_trace_addr);
@@ -317,8 +318,8 @@ SSLConfigParams::initialize()
       ssl_wire_trace_ip = NULL;
     }
     // wire trace percentage of requests
-    REC_ReadConfigInteger(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
-    REC_ReadConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
+    REC_EstablishStaticConfigInt32(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
+    REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
   } else {
     ssl_wire_trace_addr = NULL;
     ssl_wire_trace_ip = NULL;

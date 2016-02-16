@@ -98,6 +98,29 @@ int URL_LEN_MMST;
 // url_MD5_get_fast() does NOT produce the same result as url_MD5_get_general().
 static int url_hash_method = 0;
 
+// test to see if a character is a valid character for a host in a URI according to
+// RFC 3986 and RFC 1034
+inline static int
+is_host_char(char c)
+{
+  return (ParseRules::is_alnum(c) || (c == '-') || (c == '.') || (c == '[') || (c == ']') || (c == '_') || (c == ':') ||
+          (c == '~') || (c == '%'));
+}
+
+
+// Checks if `addr` is a valid FQDN string
+bool
+validate_host_name(ts::ConstBuffer addr)
+{
+  while (addr) {
+    if (!(is_host_char(*addr)))
+      return false;
+    ++addr;
+  }
+  return true;
+}
+
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 URLHashContext::HashType URLHashContext::Setting = URLHashContext::MD5;
@@ -1264,8 +1287,12 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       last_colon = 0; // prevent port setting.
     }
   }
-  if (host._size)
-    url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
+  if (host._size) {
+    if (validate_host_name(host))
+      url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
+    else
+      return PARSE_ERROR;
+  }
 
   if (last_colon) {
     ink_assert(n_colon);
@@ -1279,6 +1306,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
   *start = cur;
   return PARSE_DONE;
 }
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1735,3 +1763,45 @@ url_host_MD5_get(URLImpl *url, INK_MD5 *md5)
   ctx.update(&port, sizeof(port));
   ctx.finalize(*md5);
 }
+
+
+/*-------------------------------------------------------------------------
+ * Regression tests
+  -------------------------------------------------------------------------*/
+#if TS_HAS_TESTS
+#include "ts/TestBox.h"
+
+const static struct {
+  const char *const text;
+  bool valid;
+} http_validate_hdr_field_test_case[] = {{"yahoo", true},
+                                         {"yahoo.com", true},
+                                         {"yahoo.wow.com", true},
+                                         {"yahoo.wow.much.amaze.com", true},
+                                         {"209.131.52.50", true},
+                                         {"192.168.0.1", true},
+                                         {"localhost", true},
+                                         {"3ffe:1900:4545:3:200:f8ff:fe21:67cf", true},
+                                         {"fe80:0:0:0:200:f8ff:fe21:67cf", true},
+                                         {"fe80::200:f8ff:fe21:67cf", true},
+                                         {"<svg onload=alert(1)>", false}, // Sample host header XSS attack
+                                         {"jlads;f8-9349*(D&F*D(234jD*(FSD*(VKLJ#(*$@()#$)))))", false},
+                                         {"\"\t\n", false},
+                                         {"!@#$%^ &*(*&^%$#@#$%^&*(*&^%$#))", false},
+                                         {":):(:O!!!!!!", false}};
+
+REGRESSION_TEST(VALIDATE_HDR_FIELD)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  for (unsigned int i = 0; i < sizeof(http_validate_hdr_field_test_case) / sizeof(http_validate_hdr_field_test_case[0]); ++i) {
+    const char *const txt = http_validate_hdr_field_test_case[i].text;
+    ts::ConstBuffer tmp = ts::ConstBuffer(txt, strlen(txt));
+    box.check(validate_host_name(tmp) == http_validate_hdr_field_test_case[i].valid,
+              "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
+              (http_validate_hdr_field_test_case[i].valid ? "true" : "false"));
+  }
+}
+
+#endif // TS_HAS_TESTS
