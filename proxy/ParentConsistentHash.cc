@@ -196,7 +196,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
   }
 
   // use the available or marked for retry parent.
-  if ((pRec && pRec->available) || result->retry) {
+  if (pRec && (pRec->available || result->retry)) {
     result->r = PARENT_SPECIFIED;
     result->hostname = pRec->hostname;
     result->port = pRec->port;
