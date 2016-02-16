@@ -445,8 +445,8 @@ ink_freelists_dump(FILE *f)
     fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n", (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size,
             (uint64_t)fll->fl->used * (uint64_t)fll->fl->type_size, fll->fl->type_size,
             fll->fl->name ? fll->fl->name : "<unknown>");
-    total_allocated += fll->fl->allocated * fll->fl->type_size;
-    total_used += fll->fl->used * fll->fl->type_size;
+    total_allocated += (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size;
+    total_used += (uint64_t)fll->fl->used * (uint64_t)fll->fl->type_size;
     fll = fll->next;
   }
   fprintf(f, " %18" PRIu64 " | %18" PRIu64 " |            | TOTAL\n", total_allocated, total_used);
