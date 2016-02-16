@@ -198,7 +198,6 @@ freelist_new(InkFreeList *f)
   do {
     INK_QUEUE_LD(item, f->head);
     if (TO_PTR(FREELIST_POINTER(item)) == NULL) {
-      uint32_t type_size = f->type_size;
       uint32_t i;
       void *newp = NULL;
       size_t alloc_size = 0;
@@ -220,10 +219,10 @@ freelist_new(InkFreeList *f)
 
       /* free each of the new elements */
       for (i = 0; i < f->chunk_size; i++) {
-        char *a = ((char *)FREELIST_POINTER(item)) + i * type_size;
+        char *a = ((char *)FREELIST_POINTER(item)) + i * f->type_size;
 #ifdef DEADBEEF
         const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
-        for (int j = 0; j < (int)type_size; j++)
+        for (int j = 0; j < (int)f->type_size; j++)
           a[j] = str[j % 4];
 #endif
         freelist_free(f, a);
