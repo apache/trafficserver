@@ -33,7 +33,7 @@
 #define DebugHttp2Stream(ua_session, stream_id, fmt, ...) \
   DebugSsn(ua_session, "http2_con", "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
 
-typedef Http2Error (*http2_frame_dispatch)(Http2ClientSession &, Http2ConnectionState &, const Http2Frame &);
+typedef Http2Error (*http2_frame_dispatch)(Http2ConnectionState &, const Http2Frame &);
 
 static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
   BUFFER_SIZE_INDEX_8K,  // HTTP2_FRAME_TYPE_DATA
@@ -64,7 +64,7 @@ read_rcv_buffer(char *buf, size_t bufsize, unsigned &nbytes, const Http2Frame &f
 }
 
 static Http2Error
-rcv_data_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   char buf[BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA])];
   unsigned nbytes = 0;
@@ -178,7 +178,7 @@ rcv_data_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, cons
  *      CONTINUATION frame
  */
 static Http2Error
-rcv_headers_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   const Http2StreamId stream_id = frame.header().streamid;
   const uint32_t payload_length = frame.header().length;
@@ -301,7 +301,7 @@ rcv_headers_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, c
 }
 
 static Http2Error
-rcv_priority_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   DebugHttp2Stream(cstate.ua_session, frame.header().streamid, "Received PRIORITY frame");
 
@@ -324,7 +324,7 @@ rcv_priority_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, 
 }
 
 static Http2Error
-rcv_rst_stream_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   Http2RstStream rst_stream;
   char buf[HTTP2_RST_STREAM_LEN];
@@ -378,7 +378,7 @@ rcv_rst_stream_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate
 }
 
 static Http2Error
-rcv_settings_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   Http2SettingsParameter param;
   char buf[HTTP2_SETTINGS_PARAMETER_LEN];
@@ -450,7 +450,7 @@ rcv_settings_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, 
 }
 
 static Http2Error
-rcv_push_promise_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_push_promise_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   DebugHttp2Stream(cstate.ua_session, frame.header().streamid, "Received PUSH_PROMISE frame");
 
@@ -460,7 +460,7 @@ rcv_push_promise_frame(Http2ClientSession & /* cs */, Http2ConnectionState &csta
 }
 
 static Http2Error
-rcv_ping_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_ping_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   uint8_t opaque_data[HTTP2_PING_LEN];
   const Http2StreamId stream_id = frame.header().streamid;
@@ -494,7 +494,7 @@ rcv_ping_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, cons
 }
 
 static Http2Error
-rcv_goaway_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   Http2Goaway goaway;
   char buf[HTTP2_GOAWAY_LEN];
@@ -527,7 +527,7 @@ rcv_goaway_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, co
 }
 
 static Http2Error
-rcv_window_update_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   char buf[HTTP2_WINDOW_UPDATE_LEN];
   uint32_t size;
@@ -618,7 +618,7 @@ rcv_window_update_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cst
  *
  */
 static Http2Error
-rcv_continuation_frame(Http2ClientSession & /* cs */, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   const Http2StreamId stream_id = frame.header().streamid;
   const uint32_t payload_length = frame.header().length;
@@ -753,7 +753,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     }
 
     if (frame_handlers[frame->header().type]) {
-      error = frame_handlers[frame->header().type](*this->ua_session, *this, *frame);
+      error = frame_handlers[frame->header().type](*this, *frame);
     } else {
       error = Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_INTERNAL_ERROR);
     }
