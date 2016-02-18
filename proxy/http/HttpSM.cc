@@ -2842,7 +2842,7 @@ HttpSM::is_http_server_eos_truncation(HttpTunnelProducer *p)
   int64_t cl = t_state.hdr_info.server_response.get_content_length();
 
   if (cl != UNDEFINED_COUNT && cl > server_response_body_bytes) {
-    DebugSM("http", "[%" PRId64 "] server eos after %" PRId64 ".  Expected %" PRId64, sm_id, server_response_body_bytes, cl);
+    DebugSM("http", "[%" PRId64 "] server EOS after %" PRId64 " bytes, expected %" PRId64, sm_id, server_response_body_bytes, cl);
     return true;
   } else {
     return false;
