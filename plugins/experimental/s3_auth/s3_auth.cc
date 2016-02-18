@@ -519,12 +519,10 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  static const struct option longopt[] = {{const_cast<char *>("access_key"), required_argument, NULL, 'a'},
-                                          {const_cast<char *>("config"), required_argument, NULL, 'c'},
-                                          {const_cast<char *>("secret_key"), required_argument, NULL, 's'},
-                                          {const_cast<char *>("version"), required_argument, NULL, 'v'},
-                                          {const_cast<char *>("virtual_host"), no_argument, NULL, 'h'},
-                                          {NULL, no_argument, NULL, '\0'}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("access_key"), required_argument, NULL, 'a'}, {const_cast<char *>("config"), required_argument, NULL, 'c'},
+    {const_cast<char *>("secret_key"), required_argument, NULL, 's'}, {const_cast<char *>("version"), required_argument, NULL, 'v'},
+    {const_cast<char *>("virtual_host"), no_argument, NULL, 'h'},     {NULL, no_argument, NULL, '\0'}};
 
   S3Config *s3 = new S3Config();
 
