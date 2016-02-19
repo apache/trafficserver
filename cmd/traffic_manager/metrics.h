@@ -32,18 +32,24 @@ void metrics_binding_evaluate(BindingInstance &binding);
 
 #else /* TS_USE_LUAJIT */
 
-struct BindingInstance{};
+struct BindingInstance {
+};
 
 static inline bool
-metrics_binding_initialize(BindingInstance &binding) {
+metrics_binding_initialize(BindingInstance &binding)
+{
   return false;
 }
 
 static inline void
-metrics_binding_destroy(BindingInstance &binding) { }
+metrics_binding_destroy(BindingInstance &binding)
+{
+}
 
 static inline void
-metrics_binding_evaluate(BindingInstance &binding) { }
+metrics_binding_evaluate(BindingInstance &binding)
+{
+}
 
 #endif /* TS_USE_LUAJIT */
 
