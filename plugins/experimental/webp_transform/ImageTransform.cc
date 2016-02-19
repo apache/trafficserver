@@ -94,11 +94,9 @@ public:
 
     string ctype = transaction.getServerResponse().getHeaders().values("Content-Type");
     string user_agent = transaction.getServerRequest().getHeaders().values("User-Agent");
-    std::cout <<  "user_agent: %s" << user_agent << std::endl;
-    std::cout <<  "content_type: %s" << ctype << std::endl;
     if (user_agent.find("Chrome") != string::npos &&
         (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos)) {
-      std::cout <<  "Content type is either jpeg or png. Converting to webp" << std::endl;
+      TS_DEBUG(TAG, "Content type is either jpeg or png. Converting to webp");
       transaction.addPlugin(new ImageTransform(transaction));
     }
 
