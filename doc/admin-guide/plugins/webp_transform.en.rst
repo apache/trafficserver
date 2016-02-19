@@ -35,4 +35,5 @@ Add the following line to :file:`plugin.config`::
 Note
 ===================
 
-This plugin only supports jpeg and png and require libjpeg > 1.9 and libpng > 1.6.16
+This plugin only supports jpeg and png and requires Magick++ from ImageMagick.
+Other image formats can easily be supported.
