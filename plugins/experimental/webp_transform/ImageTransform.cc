@@ -37,45 +37,46 @@ namespace
 class ImageTransform : public TransformationPlugin
 {
 public:
-  ImageTransform(Transaction &transaction)
-  : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION)
+  ImageTransform(Transaction &transaction) : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION)
   {
     TransformationPlugin::registerHook(HOOK_READ_RESPONSE_HEADERS);
     InitializeMagick("");
   }
 
-  void handleReadResponseHeaders(Transaction &transaction)
+  void
+  handleReadResponseHeaders(Transaction &transaction)
   {
     transaction.getServerResponse().getHeaders()["Content-Type"] = "image/webp";
-    transaction.getServerResponse().getHeaders()["Vary"] = "Content-Type"; //to have a separate cache entry.
+    transaction.getServerResponse().getHeaders()["Vary"] = "Content-Type"; // to have a separate cache entry.
 
     TS_DEBUG(TAG, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
     transaction.resume();
   }
 
-  void consume(const string &data)
+  void
+  consume(const string &data)
   {
     _img.write(data.data(), data.size());
   }
 
-  void handleInputComplete()
+  void
+  handleInputComplete()
   {
-
     string input_data = _img.str();
     Blob input_blob(input_data.data(), input_data.length());
     Image image;
     image.read(input_blob);
 
     Blob output_blob;
-    image.magick( "WEBP" );
-    image.write( &output_blob);
+    image.magick("WEBP");
+    image.write(&output_blob);
     string output_data(reinterpret_cast<const char *>(output_blob.data()), output_blob.length());
     produce(output_data);
 
     setOutputComplete();
   }
 
-  virtual ~ImageTransform() { }
+  virtual ~ImageTransform() {}
 
 private:
   std::stringstream _img;
@@ -85,17 +86,13 @@ private:
 class GlobalHookPlugin : public GlobalPlugin
 {
 public:
-  GlobalHookPlugin()
+  GlobalHookPlugin() { registerHook(HOOK_READ_RESPONSE_HEADERS); }
+  virtual void
+  handleReadResponseHeaders(Transaction &transaction)
   {
-    registerHook(HOOK_READ_RESPONSE_HEADERS);
-  }
-  virtual void handleReadResponseHeaders(Transaction &transaction)
-  {
-
     string ctype = transaction.getServerResponse().getHeaders().values("Content-Type");
     string user_agent = transaction.getServerRequest().getHeaders().values("User-Agent");
-    if (user_agent.find("Chrome") != string::npos &&
-        (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos)) {
+    if (user_agent.find("Chrome") != string::npos && (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos)) {
       TS_DEBUG(TAG, "Content type is either jpeg or png. Converting to webp");
       transaction.addPlugin(new ImageTransform(transaction));
     }
