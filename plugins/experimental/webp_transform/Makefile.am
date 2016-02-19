@@ -19,10 +19,10 @@ include $(top_srcdir)/build/plugins.mk
 
 if BUILD_WEBP_TRANSFORM_PLUGIN
 
-AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable $(LIBMAGICKCPP_CFLAGS)
+AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable $(LIBMAGICKCPP_CFLAGS)
 target=WebpTransform.so
 pkglib_LTLIBRARIES = WebpTransform.la
 WebpTransform_la_SOURCES = ImageTransform.cc 
 WebpTransform_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS) $(LIBMAGICKCPP_LIBS)
 
-fi
+endif
