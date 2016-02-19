@@ -15,123 +15,69 @@
 #  limitations under the License.
 
 $network = {
-  # The VM host is 192.168.100.1
-  "raring64"  => "192.168.100.11",
-  "quantal64" => "192.168.100.12",
-  "precise64" => "192.168.100.13",
-  "lucid64"   => "192.168.100.14",
-  "centos63"  => "192.168.100.15",
-  "freebsd"   => "192.168.100.16",
-  "omnios"    => "192.168.100.17",
-
-  "raring32"  => "192.168.200.11",
-  "quantal32" => "192.168.200.12",
-  "precise32" => "192.168.200.13",
-  "lucid32"   => "192.168.200.14",
-
-  "fedora18"  => "192.168.200.15",
-  "centos59"  => "192.168.200.16",
-  "centos64"  => "192.168.200.17",
-  "debian7"   => "192.168.200.18",
-  "sles11"    => "192.168.200.19",
-  "oel63"     => "192.168.200.20",
-
-  "saucy64"   => "192.168.100.21",
-  "saucy32"   => "192.168.100.22",
-  "trusty64"  => "192.168.100.23",
-  "trusty32"  => "192.168.100.24",
+  "trusty_64"  => "192.168.2.101",
+  "trusty_32"  => "192.168.2.102",
+  "jessie_64" => "192.168.2.103",
+  "jessie_32" => "192.168.2.104",
+  "centos7_64" => "192.168.2.105",
+  "centos6_64" => "192.168.2.106",
+  "centos6_32" => "192.168.2.107",
+  "omnios" => "192.168.2.108",
 }
 
 $vmspec = {
-  "lucid64" => [ # Ubuntu 10.04 LTS (Lucid Lynx)
-    "http://files.vagrantup.com/lucid64.box", "debian.pp"
+  "trusty_64" => [
+    "ubuntu/trusty64"
   ],
-  "fedora18" => [
-    "http://puppet-vagrant-boxes.puppetlabs.com/fedora-18-x64-vbox4210.box", "redhat.pp"
+  "trusty_32" => [
+    "ubuntu/trusty32"
   ],
-  "centos63" => [
-    "https://dl.dropbox.com/u/7225008/Vagrant/CentOS-6.3-x86_64-minimal.box", "redhat.pp"
+  "jessie_64" => [
+    "puppetlabs/debian-8.2-64-nocm"
   ],
-  "centos59" => [
-    "http://puppet-vagrant-boxes.puppetlabs.com/centos-59-x64-vbox4210.box", "redhat.pp",
+  "jessie_32" => [
+    "puppetlabs/debian-8.2-32-nocm"
   ],
-  "centos64" => [
-    "http://puppet-vagrant-boxes.puppetlabs.com/centos-64-x64-vbox4210.box", "redhat.pp",
+  "centos7_64" => [
+    "puppetlabs/centos-7.2-64-nocm"
   ],
-  "debian7" => [
-    "http://puppet-vagrant-boxes.puppetlabs.com/debian-70rc1-x64-vbox4210.box", "debian.pp",
+  "centos6_64" => [
+    "puppetlabs/centos-6.6-64-nocm"
   ],
-  "sles11" => [
-    "http://puppet-vagrant-boxes.puppetlabs.com/sles-11sp1-x64-vbox4210.box", "redhat.pp",
+  "centos6_32" => [
+    "puppetlabs/centos-6.6-32-nocm"
   ],
-  "oel63" => [
-    "http://ats.boot.org/vagrant/vagrant-oel63-x64.box", "redhat.pp",
+  "omnios" => [
+    "omniti/omnios-r151014"
   ],
 }
 
 Vagrant.configure("2") do |config|
 
-  # Default all VMs to 1GB.
+  # Default all VMs to 1GB and 2 cores
   config.vm.provider :virtualbox do |v|
-    v.customize ["modifyvm", :id, "--memory", 1024]
+    v.memory = 1024
+    v.cpus = 2
   end
 
-  # Mount the Traffic Server source code in a fixed location everywhere. Use NFS
-  # because it's faster and vboxfs doesn't support links.
-  config.vm.synced_folder ".", "/opt/src/trafficserver.git", :nfs => true
-
-  # Always forward SSH keys to VMs.
-  config.ssh.forward_agent = true
-
-  # Ubuntu 14.04 (Trusty Tahr)
-  # Ubuntu 13.04 (Raring Ringtail)
-  # Ubuntu 12.10 (Quantal Quetzal)
-  # Ubuntu 12.04 LTS (Precise Pangolin)
-  ["i386", "amd64"].each { |arch|
-    ['saucy', 'raring', 'quantal', 'precise', 'trusty' ].each { |release|
-      n = { "i386" => "32", "amd64" => "64" }[arch]
-      config.vm.define "#{release}#{n}" do | config |
-        config.vm.box = "#{release}#{n}"
-        config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/#{release}/current/#{release}-server-cloudimg-#{arch}-vagrant-disk1.box"
-        config.vm.network :private_network, ip: $network["#{release}#{n}"]
-        config.vm.provision :puppet do |puppet|
-          puppet.manifests_path = "contrib/manifests"
-          puppet.manifest_file = "debian.pp"
-        end
-      end
-    }
-  }
-
-  config.vm.define :freebsd do | config |
-    config.vm.box = "freebsd"
-    config.vm.synced_folder ".", "/opt/src/trafficserver.git", :nfs => false
-    # Force the FreeBSD VM to use a network driver that actually works.
-    config.vm.provider :virtualbox do |v|
-      v.customize ["modifyvm", :id, "--nictype1", "82543GC"]
-      v.customize ["modifyvm", :id, "--nictype2", "82543GC"]
-    end
-    config.vm.network :private_network, ip: $network["freebsd"]
-    config.vm.box_url = "https://github.com/downloads/xironix/freebsd-vagrant/freebsd_amd64_zfs.box"
-  end
-
-  # Current OmniOS release, see http://omnios.omniti.com/wiki.php/Installation
-  config.vm.define :omnios do | config |
-    config.vm.box = "omnios"
-    config.vm.guest = :solaris
-    config.vm.network :private_network, ip: $network["omnios"]
-    config.vm.synced_folder ".", "/opt/src/trafficserver.git", :nfs => false
-    config.vm.box_url = "http://omnios.omniti.com/media/omnios-latest.box"
-    config.vm.provision :shell, :path => "contrib/manifests/omnios.sh"
-  end
+  config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
 
   $vmspec.each do | name, spec |
     config.vm.define name do | config |
-      config.vm.box = name
-      config.vm.box_url = spec[0]
+      if name == 'omnios'
+        # nfs seems to be the only way to make this work for omnios
+        # this method fails if hostfs is encrypted
+        config.vm.synced_folder ".", "/vagrant", type: "nfs"
+        config.ssh.username = "root"
+        config.ssh.password = "vagrant"
+      else
+        config.vm.synced_folder ".", "/vagrant"
+      end
+      config.vm.box = spec[0]
       config.vm.network :private_network, ip: $network[name]
-      config.vm.provision :puppet do |puppet|
-        puppet.manifests_path = "contrib/manifests"
-        puppet.manifest_file = spec[1]
+      config.vm.provision "shell" do |s|
+        s.path = "contrib/vagrant-setup.sh"
+        s.args = name
       end
     end
   end
