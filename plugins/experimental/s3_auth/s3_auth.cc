@@ -408,7 +408,7 @@ S3Request::authorize(S3Config *s3)
 
     if (param) {
       loff += str_concat(&left[loff], (left_size - loff), ";", 1);
-      loff += str_concat(&left[loff], (left_size - loff), param, param_len);
+      str_concat(&left[loff], (left_size - loff), param, param_len);
     }
 
     TSDebug(PLUGIN_NAME, "%s", left);
