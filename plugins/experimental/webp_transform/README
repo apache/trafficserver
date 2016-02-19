@@ -1,6 +1,4 @@
-Converting jpeg and png to webp
+Converting jpeg and png to webp using ImageMagick Magick++ lib
 Pre-requisites
 
-1. webp 
-2. jpeg version 9 and above -- http://ijg.org/files/jpegsrc.v9.tar.gz 
-3. png version 1.6.19 and above  -- http://sourceforge.net/projects/libpng/files/libpng19/1.6.19/libpng-1.6.19.tar.xz/download
+1. Magick++ api for ImageMagick 
