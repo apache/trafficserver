@@ -14,17 +14,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable `Magick++-config --cppflags --cxxflags`
 
+include $(top_srcdir)/build/plugins.mk
+
+if BUILD_WEBP_TRANSFORM_PLUGIN
+
+AM_CPPFLAGS = -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable $(LIBMAGICKCPP_CFLAGS)
 target=WebpTransform.so
-pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = WebpTransform.la
 WebpTransform_la_SOURCES = ImageTransform.cc 
-WebpTransform_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS) `Magick++-config --ldflags --libs`
+WebpTransform_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS) $(LIBMAGICKCPP_LIBS)
 
-
-all:
-	ln -sf .libs/$(target)
-
-clean-local:
-	rm -f $(target)
+fi

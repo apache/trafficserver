@@ -44,7 +44,8 @@ SUBDIRS = \
  url_sig \
  xdebug \
  mp4 \
- stream_editor
+ stream_editor \
+ webp_transform
 
 if HAS_MYSQL
   SUBDIRS += mysql_remap
@@ -54,11 +55,4 @@ if BUILD_LUAJIT
   SUBDIRS += ts_lua
 endif
 
-if HAS_WEBP
-if HAS_JPEG
-if HAS_PNG
-  SUBDIRS += webp_transform
-endif
-endif
-endif
 
