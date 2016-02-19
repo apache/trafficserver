@@ -799,7 +799,7 @@ ssl_malloc(size_t size)
 void *
 ssl_realloc(void *ptr, size_t size)
 {
-  return ats_track_realloc(ptr, size, &ssl_memory_allocated);
+  return ats_track_realloc(ptr, size, &ssl_memory_allocated, &ssl_memory_freed);
 }
 
 void

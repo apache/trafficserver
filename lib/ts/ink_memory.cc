@@ -221,7 +221,7 @@ ats_track_malloc(size_t size, uint64_t *stat)
 }
 
 void *
-ats_track_realloc(void *ptr, size_t size, uint64_t *stat)
+ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat)
 {
   ptr = (void *)((uint64_t)ptr - 8);
   size_t old_size = 0;
@@ -230,9 +230,9 @@ ats_track_realloc(void *ptr, size_t size, uint64_t *stat)
   memcpy(ptr, &size, 8);
   if (old_size < size) {
     // allocating something bigger
-    ink_atomic_increment(stat, size - old_size);
+    ink_atomic_increment(alloc_stat, size - old_size);
   } else if (old_size > size) {
-    ink_atomic_increment(stat, old_size - size);
+    ink_atomic_increment(free_stat, old_size - size);
   }
   return (void *)((uint64_t)ptr + 8);
 }
