@@ -107,7 +107,7 @@ static const RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.snapshot_dir", RECD_STRING, "snapshots", RECU_NULL, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
   ,
   //# 0 = disable
-  {RECT_CONFIG, "proxy.config.res_track_memory", RECD_INT, "0", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.res_track_memory", RECD_INT, "0", RECU_NULL, RR_REQUIRED, RECC_NULL,  "[0-2]", RECA_NULL}
   ,
   //##############################################################################
   //# Traffic Server system settings

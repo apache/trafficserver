@@ -25,6 +25,7 @@
 #include "ts/ink_defs.h"
 #include "ts/ink_stack_trace.h"
 #include "ts/Diags.h"
+#include "ts/ink_atomic.h"
 
 #include <assert.h>
 #if defined(linux)
@@ -209,6 +210,46 @@ ats_mlock(caddr_t addr, size_t len)
   return res;
 }
 
+void *
+ats_track_malloc(size_t size, uint64_t *stat)
+{
+  // pad with 8 bytes to add allocation size
+  void *ptr = malloc(size + 8);
+  memcpy(ptr, &size, 8);
+  ink_atomic_increment(stat, size);
+  return (void *)((uint64_t)ptr + 8);
+}
+
+void *
+ats_track_realloc(void *ptr, size_t size, uint64_t *stat)
+{
+  ptr = (void *)((uint64_t)ptr - 8);
+  size_t old_size = 0;
+  memcpy(&old_size, ptr, 8);
+  ptr = realloc(ptr, size + 8);
+  memcpy(ptr, &size, 8);
+  if (old_size < size) {
+    // allocating something bigger
+    ink_atomic_increment(stat, size - old_size);
+  } else if (old_size > size) {
+    ink_atomic_increment(stat, old_size - size);
+  }
+  return (void *)((uint64_t)ptr + 8);
+}
+
+void
+ats_track_free(void *ptr, uint64_t *stat)
+{
+  if (ptr == NULL) {
+    return;
+  }
+
+  ptr = (void *)((uint64_t)ptr - 8);
+  size_t size = 0;
+  memcpy(&size, ptr, 8);
+  ink_atomic_increment(stat, size);
+  free(ptr);
+}
 
 /*-------------------------------------------------------------------------
   Moved from old ink_resource.h
