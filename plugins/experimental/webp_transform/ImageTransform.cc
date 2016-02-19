@@ -40,7 +40,6 @@ public:
   ImageTransform(Transaction &transaction) : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION)
   {
     TransformationPlugin::registerHook(HOOK_READ_RESPONSE_HEADERS);
-    InitializeMagick("");
   }
 
   void
@@ -105,5 +104,6 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Webp_Transform", "apache", "dev@trafficserver.apache.org");
+  InitializeMagick("");
   new GlobalHookPlugin();
 }
