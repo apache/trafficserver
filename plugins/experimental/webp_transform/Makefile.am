@@ -17,7 +17,7 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-if BUILD_WEBP_TRANSFORM_PLUGIN
+if BUILD_HAS_IMAGEMAGICKCPP
 
 AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable $(LIBMAGICKCPP_CFLAGS)
 target=WebpTransform.so
