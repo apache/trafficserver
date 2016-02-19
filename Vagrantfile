@@ -15,10 +15,10 @@
 #  limitations under the License.
 
 $network = {
-  # The VM host is 192.168.100.1
   "trusty_64"  => "192.168.2.101",
   "jessie_64" => "192.168.2.102",
   "centos7_64" => "192.168.2.103",
+  "omnios_64" => "192.168.2.104",
 }
 
 $vmspec = {
@@ -26,29 +26,36 @@ $vmspec = {
     "ubuntu/trusty64"
   ],
   "jessie_64" => [
-      "debian/jessie64"
+    "puppetlabs/debian-8.2-64-nocm"
   ],
   "centos7_64" => [
-      "puppetlabs/centos-7.2-64-nocm"
+    "puppetlabs/centos-7.2-64-nocm"
+  ],
+  "omnios_64" => [
+    "omniti/omnios-r151014"
   ],
 }
 
 Vagrant.configure("2") do |config|
 
-  # Default all VMs to 1GB.
+  # Default all VMs to 1GB and 2 Cores
   config.vm.provider :virtualbox do |v|
     v.memory = 1024
     v.cpus = 2
   end
 
-  # Mount the Traffic Server source code in a fixed location everywhere
-  config.vm.synced_folder ".", "/vagrant"
-
-  config.ssh.forward_agent = false
   config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
 
   $vmspec.each do | name, spec |
     config.vm.define name do | config |
+      if name == 'omnios_64'
+        # nfs seems to be the only way to make this work for omnios
+        # this method fails if hostfs is encrypted
+        config.vm.synced_folder ".", "/vagrant", type: "nfs"
+        config.ssh.username = "root"
+      else
+        config.vm.synced_folder ".", "/vagrant"
+      end
       config.vm.box = spec[0]
       config.vm.network :private_network, ip: $network[name]
       config.vm.provision "shell" do |s|
