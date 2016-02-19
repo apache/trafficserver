@@ -48,7 +48,7 @@ Logging
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_received_from_network_avg_10s integer
-   :type: counter
+   :type: int
    :unit: bytes
    :ungathered:
 
@@ -58,7 +58,7 @@ Logging
    :ungathered:
 
 .. ts:stat:: global proxy.node.log.bytes_sent_to_network_avg_10s integer
-   :type: counter
+   :type: int
    :unit: bytes
    :ungathered:
 
