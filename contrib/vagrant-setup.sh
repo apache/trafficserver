@@ -16,6 +16,10 @@ omnios)
     export PATH=/usr/gnu/bin:/usr/bin:/usr/sbin:/sbin:/opt/gcc-4.8.1/bin
     echo "export PATH=/usr/gnu/bin:/usr/bin:/usr/sbin:/sbin:/opt/gcc-4.8.1/bin" >> /root/.profile
     RC=0
+    if [[ ! $(grep http://pkg.omniti.com/omniti-ms/ /var/pkg/pkg5.image) ]]; then
+        pkg set-publisher -g http://pkg.omniti.com/omniti-ms/ ms.omniti.com
+    fi
+    pkg refresh
     pkg install developer/gcc48 \
         developer/build/autoconf \
         developer/build/automake \
@@ -31,24 +35,10 @@ omnios)
         system/header \
         system/library/math \
         archiver/gnu-tar \
+        omniti/runtime/tcl-8 \
         || RC=${?}
     if [[ ${RC} != 0 ]] && [[ ${RC} != 4 ]]; then
         exit 1
-    fi
-    if [[ ! -d /usr/local/lib/tcl8.6 ]]; then
-        rm -f tcl8.6.4-src.tar.gz
-        echo "downloading tcl"
-        wget -c -q ftp://ftp.tcl.tk/pub/tcl/tcl8_6/tcl8.6.4-src.tar.gz
-        echo "extracting tcl"
-        gtar xzf tcl8.6.4-src.tar.gz
-        cd tcl8.6.4/unix
-        echo "building tcl"
-        ./configure --prefix=/usr/local >configure.out 2>&1 || (cat configure.out && exit 1)
-        make >make.out 2>&1 || (cat make.out && exit 1)
-        echo "installing tcl"
-        make install >make.install.out 2>&1 || (cat make.install.out && exit 1)
-    else
-        echo "tcl is already installed"
     fi
 ;;
 *)
