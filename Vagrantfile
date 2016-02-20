@@ -16,29 +16,45 @@
 
 $network = {
   "trusty_64"  => "192.168.2.101",
-  "jessie_64" => "192.168.2.102",
-  "centos7_64" => "192.168.2.103",
-  "omnios_64" => "192.168.2.104",
+  "trusty_32"  => "192.168.2.102",
+  "jessie_64" => "192.168.2.103",
+  "jessie_32" => "192.168.2.104",
+  "centos7_64" => "192.168.2.105",
+  "centos6_64" => "192.168.2.106",
+  "centos6_32" => "192.168.2.107",
+  "omnios" => "192.168.2.108",
 }
 
 $vmspec = {
   "trusty_64" => [
     "ubuntu/trusty64"
   ],
+  "trusty_32" => [
+    "ubuntu/trusty32"
+  ],
   "jessie_64" => [
     "puppetlabs/debian-8.2-64-nocm"
+  ],
+  "jessie_32" => [
+    "puppetlabs/debian-8.2-32-nocm"
   ],
   "centos7_64" => [
     "puppetlabs/centos-7.2-64-nocm"
   ],
-  "omnios_64" => [
+  "centos6_64" => [
+    "puppetlabs/centos-6.6-64-nocm"
+  ],
+  "centos6_32" => [
+    "puppetlabs/centos-6.6-32-nocm"
+  ],
+  "omnios" => [
     "omniti/omnios-r151014"
   ],
 }
 
 Vagrant.configure("2") do |config|
 
-  # Default all VMs to 1GB and 2 Cores
+  # Default all VMs to 1GB and 2 cores
   config.vm.provider :virtualbox do |v|
     v.memory = 1024
     v.cpus = 2
@@ -48,11 +64,12 @@ Vagrant.configure("2") do |config|
 
   $vmspec.each do | name, spec |
     config.vm.define name do | config |
-      if name == 'omnios_64'
+      if name == 'omnios'
         # nfs seems to be the only way to make this work for omnios
         # this method fails if hostfs is encrypted
         config.vm.synced_folder ".", "/vagrant", type: "nfs"
         config.ssh.username = "root"
+        config.ssh.password = "vagrant"
       else
         config.vm.synced_folder ".", "/vagrant"
       end
