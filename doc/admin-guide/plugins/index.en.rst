@@ -116,6 +116,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    SSL Headers <sslheaders.en>
    Stale While Revalidate <stale_while_revalidate.en>
    TS Lua <ts_lua.en>
+   WebP Transform <webp_transform.en>
    X-Debug <xdebug.en>
 
 :doc:`AuthProxy <authproxy.en>`
@@ -180,6 +181,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`TS Lua <ts_lua.en>`
    Allows plugins to be written in Lua instead of C code.
+
+:doc:`WebP Transform <webp_transform.en>`
+   Converts jpeg and png images to webp format.
 
 :doc:`X-Debug <xdebug.en>`
    Allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header.

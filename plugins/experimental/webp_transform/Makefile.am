@@ -1,3 +1,4 @@
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,46 +15,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- cachekey \
- cache_range_requests \
- cache_promote \
- collapsed_connection \
- custom_redirect \
- epic \
- escalate \
- esi \
- generator \
- geoip_acl \
- header_normalize \
- hipes \
- inliner \
- metalink \
- multiplexer \
- memcache \
- memcached_remap \
- regex_revalidate \
- remap_stats \
- s3_auth \
- ssl_cert_loader \
- sslheaders \
- stale_while_revalidate \
- url_sig \
- xdebug \
- mp4 \
- stream_editor \
- webp_transform
+include $(top_srcdir)/build/plugins.mk
 
-if HAS_MYSQL
-  SUBDIRS += mysql_remap
+if BUILD_HAS_IMAGEMAGICKCPP
+
+AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable $(LIBMAGICKCPP_CFLAGS)
+target=WebpTransform.so
+pkglib_LTLIBRARIES = WebpTransform.la
+WebpTransform_la_SOURCES = ImageTransform.cc 
+WebpTransform_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS) $(LIBMAGICKCPP_LIBS)
+
 endif
-
-if BUILD_LUAJIT
-  SUBDIRS += ts_lua
-endif
-
-

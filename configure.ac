@@ -409,6 +409,12 @@ PKG_CHECK_MODULES([LIBMEMCACHED], [libmemcached >= 1.0], [have_libmemcached=yes]
 AM_CONDITIONAL([BUILD_MEMCACHED_REMAP_PLUGIN], [test "x${have_libmemcached}" = "xyes"])
 
 #
+# Check Magick++ is available. Enable experimental/webp_transform plugin
+#
+PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++], [have_libmagickcpp=yes], [have_libmagickcpp=no])
+AM_CONDITIONAL([BUILD_HAS_IMAGEMAGICKCPP], [test "x${have_libmagickcpp}" = "xyes"])
+
+#
 # Example plugins. The example plugins are always built, but not always installed. Installing
 # them is useful for QA, but not useful for most users, so we default this to disabled.
 #
@@ -1931,6 +1937,11 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/mp4/Makefile
     plugins/experimental/stream_editor/Makefile
 ])])
+
+AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
+  AS_IF([test "x$enable_cppapi" = "xyes"], [
+    AC_CONFIG_FILES([plugins/experimental/webp_transform/Makefile])
+  ])])
 
 AS_IF([test "x$enable_cppapi" = "xyes"], [
   AC_CONFIG_FILES([
