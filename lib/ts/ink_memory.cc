@@ -213,28 +213,24 @@ ats_mlock(caddr_t addr, size_t len)
 void *
 ats_track_malloc(size_t size, uint64_t *stat)
 {
-  // pad with 8 bytes to add allocation size
-  void *ptr = ats_malloc(size + sizeof(size_t));
-  memcpy(ptr, &size, sizeof(size_t));
-  ink_atomic_increment(stat, size);
-  return (void *)((uintptr_t)ptr + sizeof(size_t));
+  void *ptr = ats_malloc(size);
+  ink_atomic_increment(stat, malloc_usable_size(ptr));
+  return ptr;
 }
 
 void *
 ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat)
 {
-  ptr = (void *)((uintptr_t)ptr - sizeof(size_t));
-  size_t old_size = 0;
-  memcpy(&old_size, ptr, sizeof(size_t));
-  ptr = ats_realloc(ptr, size + sizeof(size_t));
-  memcpy(ptr, &size, sizeof(size_t));
-  if (old_size < size) {
+  const size_t old_size =  malloc_usable_size(ptr);
+  ptr = ats_realloc(ptr, size);
+  const size_t new_size =  malloc_usable_size(ptr);
+  if (old_size < new_size) {
     // allocating something bigger
-    ink_atomic_increment(alloc_stat, size - old_size);
+    ink_atomic_increment(alloc_stat, new_size - old_size);
   } else if (old_size > size) {
-    ink_atomic_increment(free_stat, old_size - size);
+    ink_atomic_increment(free_stat, old_size - new_size);
   }
-  return (void *)((uintptr_t)ptr + sizeof(size_t));
+  return ptr;
 }
 
 void
@@ -244,10 +240,7 @@ ats_track_free(void *ptr, uint64_t *stat)
     return;
   }
 
-  ptr = (void *)((uintptr_t)ptr - sizeof(size_t));
-  size_t size = 0;
-  memcpy(&size, ptr, sizeof(size_t));
-  ink_atomic_increment(stat, size);
+  ink_atomic_increment(stat, malloc_usable_size(ptr));
   ats_free(ptr);
 }
 
