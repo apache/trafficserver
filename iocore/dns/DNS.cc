@@ -809,7 +809,7 @@ DNSHandler::mainEvent(int event, Event *e)
     for (int i = 0; i < n_con; i++) {
       if (!ns_down[i] && failover_soon(i)) {
         Debug("dns", "mainEvent: nameserver = %d failover soon", name_server);
-        if (failover_now(i))
+        if (!failover_now(i))
           rr_failure(i);
         else {
           Debug("dns", "mainEvent: nameserver = %d no failover now - retrying", i);
