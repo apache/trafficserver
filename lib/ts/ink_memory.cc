@@ -227,7 +227,7 @@ ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_s
   if (old_size < new_size) {
     // allocating something bigger
     ink_atomic_increment(alloc_stat, new_size - old_size);
-  } else if (old_size > size) {
+  } else if (old_size > new_size) {
     ink_atomic_increment(free_stat, old_size - new_size);
   }
   return ptr;
