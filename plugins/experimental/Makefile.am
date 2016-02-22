@@ -45,8 +45,11 @@ SUBDIRS = \
  url_sig \
  xdebug \
  mp4 \
- stream_editor \
- webp_transform
+ stream_editor
+
+if BUILD_HAS_IMAGEMAGICKCPP
+ SUBDIRS += webp_transform
+endif
 
 if HAS_MYSQL
   SUBDIRS += mysql_remap
