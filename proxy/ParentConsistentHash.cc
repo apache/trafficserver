@@ -105,7 +105,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
 
   // Should only get into this state if we are supposed to go direct.
   if (parents[PRIMARY] == NULL && parents[SECONDARY] == NULL) {
-    if (result->rec->go_direct == true) {
+    if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
       result->r = PARENT_DIRECT;
     } else {
       result->r = PARENT_FAIL;
@@ -207,7 +207,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
     ink_assert(result->port != 0);
     Debug("parent_select", "Chosen parent: %s.%d", result->hostname, result->port);
   } else {
-    if (result->rec->go_direct == true) {
+    if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
       result->r = PARENT_DIRECT;
     } else {
       result->r = PARENT_FAIL;

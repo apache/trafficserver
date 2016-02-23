@@ -68,7 +68,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       //   if we are supposed to go direct
       ink_assert(result->rec->go_direct == true);
       // Could not find a parent
-      if (result->rec->go_direct == true) {
+      if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
         result->r = PARENT_DIRECT;
       } else {
         result->r = PARENT_FAIL;
@@ -111,7 +111,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       // We've wrapped around so bypass if we can
       if (bypass_ok == true) {
         // Could not find a parent
-        if (result->rec->go_direct == true) {
+        if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
           result->r = PARENT_DIRECT;
         } else {
           result->r = PARENT_FAIL;
@@ -166,7 +166,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     cur_index = (cur_index + 1) % result->rec->num_parents;
   } while ((unsigned int)cur_index != result->start_parent);
 
-  if (result->rec->go_direct == true) {
+  if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
     result->r = PARENT_DIRECT;
   } else {
     result->r = PARENT_FAIL;
