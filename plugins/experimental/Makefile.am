@@ -47,7 +47,7 @@ SUBDIRS = \
  mp4 \
  stream_editor
 
-if BUILD_HAS_IMAGEMAGICKCPP
+if BUILD_WEBP_TRANSFORM_PLUGIN
  SUBDIRS += webp_transform
 endif
 
@@ -59,4 +59,4 @@ if BUILD_LUAJIT
   SUBDIRS += ts_lua
 endif
 
-
+DIST_SUBDIRS = $(SUBDIRS)

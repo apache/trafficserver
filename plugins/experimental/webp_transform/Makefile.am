@@ -17,12 +17,19 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-if BUILD_HAS_IMAGEMAGICKCPP
+AM_CPPFLAGS += \
+  -I$(top_srcdir)/lib/atscppapi/src/include \
+  $(LIBMAGICKCPP_CFLAGS)
 
-AM_CPPFLAGS += -I$(top_srcdir)/lib/atscppapi/src/include -Wno-unused-variable $(LIBMAGICKCPP_CFLAGS)
-target=WebpTransform.so
+AM_CXXFLAGS += \
+  -Wno-unused-variable
+
 pkglib_LTLIBRARIES = WebpTransform.la
-WebpTransform_la_SOURCES = ImageTransform.cc 
-WebpTransform_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi $(TS_PLUGIN_LDFLAGS) $(LIBMAGICKCPP_LIBS)
 
-endif
+WebpTransform_la_SOURCES = ImageTransform.cc
+WebpTransform_la_LDFLAGS = \
+  $(TS_PLUGIN_LDFLAGS) \
+  -L$(top_builddir)/lib/atscppapi/src
+WebpTransform_la_LIBADD = \
+  -latscppapi \
+  $(LIBMAGICKCPP_LIBS)

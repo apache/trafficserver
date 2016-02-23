@@ -411,8 +411,17 @@ AM_CONDITIONAL([BUILD_MEMCACHED_REMAP_PLUGIN], [test "x${have_libmemcached}" = "
 #
 # Check Magick++ is available. Enable experimental/webp_transform plugin
 #
-PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++], [have_libmagickcpp=yes], [have_libmagickcpp=no])
-AM_CONDITIONAL([BUILD_HAS_IMAGEMAGICKCPP], [test "x${have_libmagickcpp}" = "xyes"])
+PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++], [
+  have_libmagickcpp=yes
+  AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
+    enable_webp_transform_plugin=yes
+  ])
+],
+[
+  have_libmagickcpp=no
+])
+
+AM_CONDITIONAL([BUILD_WEBP_TRANSFORM_PLUGIN], [test "x${enable_webp_transform_plugin}" = "xyes"])
 
 #
 # Example plugins. The example plugins are always built, but not always installed. Installing
@@ -1938,10 +1947,9 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
     plugins/experimental/stream_editor/Makefile
 ])])
 
-AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
-  AS_IF([test "x$enable_cppapi" = "xyes"], [
-    AC_CONFIG_FILES([plugins/experimental/webp_transform/Makefile])
-  ])])
+AS_IF([test "x$enable_webp_transform_plugin" = "xyes"], [
+  AC_CONFIG_FILES([plugins/experimental/webp_transform/Makefile])
+])
 
 AS_IF([test "x$enable_cppapi" = "xyes"], [
   AC_CONFIG_FILES([
