@@ -790,13 +790,35 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   return RecRawStatSyncCount(name, data_type, data, rsb, id);
 }
 
+void *
+ssl_malloc(size_t size)
+{
+  return ats_track_malloc(size, &ssl_memory_allocated);
+}
+
+void *
+ssl_realloc(void *ptr, size_t size)
+{
+  return ats_track_realloc(ptr, size, &ssl_memory_allocated, &ssl_memory_freed);
+}
+
+void
+ssl_free(void *ptr)
+{
+  ats_track_free(ptr, &ssl_memory_freed);
+}
+
 void
 SSLInitializeLibrary()
 {
   if (!open_ssl_initialized) {
 // BoringSSL does not have the memory functions
 #ifndef OPENSSL_IS_BORINGSSL
-    CRYPTO_set_mem_functions(ats_malloc, ats_realloc, ats_free);
+    if (res_track_memory >= 2) {
+      CRYPTO_set_mem_functions(ssl_malloc, ssl_realloc, ssl_free);
+    } else {
+      CRYPTO_set_mem_functions(ats_malloc, ats_realloc, ats_free);
+    }
 #endif
 
     SSL_load_error_strings();

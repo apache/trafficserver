@@ -426,6 +426,7 @@ ink_freelists_dump_baselinerel(FILE *f)
     }
     fll = fll->next;
   }
+  fprintf(f, "-----------------------------------------------------------------------------------------\n");
 }
 
 void
@@ -435,7 +436,7 @@ ink_freelists_dump(FILE *f)
   if (f == NULL)
     f = stderr;
 
-  fprintf(f, "     allocated      |        in-use      | type size  |   free list name\n");
+  fprintf(f, "     Allocated      |        In-Use      | Type Size  |   Free List Name\n");
   fprintf(f, "--------------------|--------------------|------------|----------------------------------\n");
 
   uint64_t total_allocated = 0;
@@ -450,6 +451,7 @@ ink_freelists_dump(FILE *f)
     fll = fll->next;
   }
   fprintf(f, " %18" PRIu64 " | %18" PRIu64 " |            | TOTAL\n", total_allocated, total_used);
+  fprintf(f, "-----------------------------------------------------------------------------------------\n");
 }
 
 
