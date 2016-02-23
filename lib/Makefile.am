@@ -30,8 +30,6 @@ if ENABLE_CPPAPI
 SUBDIRS += atscppapi
 endif
 
-DIST_SUBDIRS = $(SUBDIRS)
-
 # Some special hacks around building the luajit.
 #
 #  - Copy the luajit source tree if we're doing out-of-source builds

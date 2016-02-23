@@ -58,5 +58,3 @@ endif
 if BUILD_LUAJIT
   SUBDIRS += ts_lua
 endif
-
-DIST_SUBDIRS = $(SUBDIRS)

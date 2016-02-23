@@ -1423,6 +1423,11 @@ if test "x${enable_spdy}" = "xyes"; then
   PKG_CHECK_MODULES([SPDYLAY],[libspdylay])
 fi
 
+AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
+AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
+AC_SUBST(has_mysql)
+AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
+
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
 
@@ -1799,7 +1804,8 @@ AM_CONDITIONAL([BUILD_COLLAPSED_CONNECTION_PLUGIN],
 #
 # use modular IOCORE
 #
-iocore_include_dirs="-I\$(top_srcdir)/iocore/eventsystem \
+iocore_include_dirs="\
+-I\$(top_srcdir)/iocore/eventsystem \
 -I\$(top_srcdir)/iocore/net \
 -I\$(top_srcdir)/iocore/aio \
 -I\$(top_srcdir)/iocore/hostdb \
@@ -1854,6 +1860,31 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
+  lib/atscppapi/Makefile
+  lib/atscppapi/examples/Makefile
+  lib/atscppapi/examples/async_http_fetch/Makefile
+  lib/atscppapi/examples/async_http_fetch_streaming/Makefile
+  lib/atscppapi/examples/async_timer/Makefile
+  lib/atscppapi/examples/boom/Makefile
+  lib/atscppapi/examples/clientredirect/Makefile
+  lib/atscppapi/examples/clientrequest/Makefile
+  lib/atscppapi/examples/custom_error_remap_plugin/Makefile
+  lib/atscppapi/examples/customresponse/Makefile
+  lib/atscppapi/examples/globalhook/Makefile
+  lib/atscppapi/examples/gzip_transformation/Makefile
+  lib/atscppapi/examples/helloworld/Makefile
+  lib/atscppapi/examples/intercept/Makefile
+  lib/atscppapi/examples/internal_transaction_handling/Makefile
+  lib/atscppapi/examples/logger_example/Makefile
+  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
+  lib/atscppapi/examples/null_transformation_plugin/Makefile
+  lib/atscppapi/examples/post_buffer/Makefile
+  lib/atscppapi/examples/remap_plugin/Makefile
+  lib/atscppapi/examples/serverresponse/Makefile
+  lib/atscppapi/examples/stat_example/Makefile
+  lib/atscppapi/examples/timeout_example/Makefile
+  lib/atscppapi/examples/transactionhook/Makefile
+  lib/atscppapi/src/Makefile
   lib/bindings/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
@@ -1871,6 +1902,42 @@ AC_CONFIG_FILES([
   plugins/Makefile
   plugins/cacheurl/Makefile
   plugins/conf_remap/Makefile
+  plugins/experimental/Makefile
+  plugins/experimental/authproxy/Makefile
+  plugins/experimental/background_fetch/Makefile
+  plugins/experimental/balancer/Makefile
+  plugins/experimental/buffer_upload/Makefile
+  plugins/experimental/cache_promote/Makefile
+  plugins/experimental/cache_range_requests/Makefile
+  plugins/experimental/cachekey/Makefile
+  plugins/experimental/channel_stats/Makefile
+  plugins/experimental/collapsed_connection/Makefile
+  plugins/experimental/custom_redirect/Makefile
+  plugins/experimental/epic/Makefile
+  plugins/experimental/escalate/Makefile
+  plugins/experimental/esi/Makefile
+  plugins/experimental/generator/Makefile
+  plugins/experimental/geoip_acl/Makefile
+  plugins/experimental/header_normalize/Makefile
+  plugins/experimental/hipes/Makefile
+  plugins/experimental/inliner/Makefile
+  plugins/experimental/memcache/Makefile
+  plugins/experimental/memcached_remap/Makefile
+  plugins/experimental/metalink/Makefile
+  plugins/experimental/mp4/Makefile
+  plugins/experimental/multiplexer/Makefile
+  plugins/experimental/mysql_remap/Makefile
+  plugins/experimental/regex_revalidate/Makefile
+  plugins/experimental/remap_stats/Makefile
+  plugins/experimental/s3_auth/Makefile
+  plugins/experimental/ssl_cert_loader/Makefile
+  plugins/experimental/sslheaders/Makefile
+  plugins/experimental/stale_while_revalidate/Makefile
+  plugins/experimental/stream_editor/Makefile
+  plugins/experimental/ts_lua/Makefile
+  plugins/experimental/url_sig/Makefile
+  plugins/experimental/webp_transform/Makefile
+  plugins/experimental/xdebug/Makefile
   plugins/gzip/Makefile
   plugins/header_rewrite/Makefile
   plugins/healthchecks/Makefile
@@ -1902,83 +1969,6 @@ AC_CONFIG_FILES([
   tools/trafficserver.pc
   tools/tsxs
 ])
-
-AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
-AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
-AC_SUBST(has_mysql)
-AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
-
-AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
-  AC_CONFIG_FILES([
-    plugins/experimental/Makefile
-    plugins/experimental/authproxy/Makefile
-    plugins/experimental/background_fetch/Makefile
-    plugins/experimental/balancer/Makefile
-    plugins/experimental/buffer_upload/Makefile
-    plugins/experimental/cache_range_requests/Makefile
-    plugins/experimental/channel_stats/Makefile
-    plugins/experimental/cachekey/Makefile
-    plugins/experimental/cache_promote/Makefile
-    plugins/experimental/collapsed_connection/Makefile
-    plugins/experimental/custom_redirect/Makefile
-    plugins/experimental/epic/Makefile
-    plugins/experimental/escalate/Makefile
-    plugins/experimental/esi/Makefile
-    plugins/experimental/generator/Makefile
-    plugins/experimental/geoip_acl/Makefile
-    plugins/experimental/header_normalize/Makefile
-    plugins/experimental/hipes/Makefile
-    plugins/experimental/inliner/Makefile
-    plugins/experimental/memcache/Makefile
-    plugins/experimental/memcached_remap/Makefile
-    plugins/experimental/metalink/Makefile
-    plugins/experimental/multiplexer/Makefile
-    plugins/experimental/mysql_remap/Makefile
-    plugins/experimental/regex_revalidate/Makefile
-    plugins/experimental/remap_stats/Makefile
-    plugins/experimental/s3_auth/Makefile
-    plugins/experimental/ssl_cert_loader/Makefile
-    plugins/experimental/sslheaders/Makefile
-    plugins/experimental/stale_while_revalidate/Makefile
-    plugins/experimental/ts_lua/Makefile
-    plugins/experimental/url_sig/Makefile
-    plugins/experimental/xdebug/Makefile
-    plugins/experimental/mp4/Makefile
-    plugins/experimental/stream_editor/Makefile
-])])
-
-AS_IF([test "x$enable_webp_transform_plugin" = "xyes"], [
-  AC_CONFIG_FILES([plugins/experimental/webp_transform/Makefile])
-])
-
-AS_IF([test "x$enable_cppapi" = "xyes"], [
-  AC_CONFIG_FILES([
-  lib/atscppapi/Makefile
-  lib/atscppapi/examples/Makefile
-  lib/atscppapi/examples/async_http_fetch/Makefile
-  lib/atscppapi/examples/async_timer/Makefile
-  lib/atscppapi/examples/clientredirect/Makefile
-  lib/atscppapi/examples/clientrequest/Makefile
-  lib/atscppapi/examples/customresponse/Makefile
-  lib/atscppapi/examples/boom/Makefile
-  lib/atscppapi/examples/globalhook/Makefile
-  lib/atscppapi/examples/gzip_transformation/Makefile
-  lib/atscppapi/examples/helloworld/Makefile
-  lib/atscppapi/examples/intercept/Makefile
-  lib/atscppapi/examples/internal_transaction_handling/Makefile
-  lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
-  lib/atscppapi/examples/null_transformation_plugin/Makefile
-  lib/atscppapi/examples/post_buffer/Makefile
-  lib/atscppapi/examples/remap_plugin/Makefile
-  lib/atscppapi/examples/custom_error_remap_plugin/Makefile
-  lib/atscppapi/examples/serverresponse/Makefile
-  lib/atscppapi/examples/stat_example/Makefile
-  lib/atscppapi/examples/timeout_example/Makefile
-  lib/atscppapi/examples/transactionhook/Makefile
-  lib/atscppapi/examples/async_http_fetch_streaming/Makefile
-  lib/atscppapi/src/Makefile
-])])
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES
