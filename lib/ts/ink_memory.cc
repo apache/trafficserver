@@ -214,13 +214,16 @@ void *
 ats_track_malloc(size_t size, uint64_t *stat)
 {
   void *ptr = ats_malloc(size);
+#ifdef HAVE_MALLOC_USABLE_SIZE
   ink_atomic_increment(stat, malloc_usable_size(ptr));
+#endif
   return ptr;
 }
 
 void *
 ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat)
 {
+#ifdef HAVE_MALLOC_USABLE_SIZE
   const size_t old_size =  malloc_usable_size(ptr);
   ptr = ats_realloc(ptr, size);
   const size_t new_size =  malloc_usable_size(ptr);
@@ -231,6 +234,9 @@ ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_s
     ink_atomic_increment(free_stat, old_size - new_size);
   }
   return ptr;
+#else
+  return ats_realloc(ptr, size);
+#endif
 }
 
 void
@@ -240,7 +246,9 @@ ats_track_free(void *ptr, uint64_t *stat)
     return;
   }
 
+#ifdef HAVE_MALLOC_USABLE_SIZE
   ink_atomic_increment(stat, malloc_usable_size(ptr));
+#endif
   ats_free(ptr);
 }
 

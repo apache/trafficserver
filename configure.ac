@@ -1173,6 +1173,11 @@ AC_CHECK_HEADERS(mcheck.h)
 AC_CHECK_FUNCS(mcheck_pedantic)
 
 #
+# Check for malloc_usable_size()
+#
+AC_CHECK_FUNCS(malloc_usable_size)
+
+#
 # Check for pcre library
 #
 TS_CHECK_PCRE
