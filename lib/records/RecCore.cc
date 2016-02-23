@@ -46,17 +46,42 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 {
   RecRecord *r = NULL;
 
+  // Metrics are restored from persistence before they are registered. In this case, when the registration arrives, we
+  // might find that they yave changed. For example, a metric might change it's type due to a software upgrade. Records
+  // must not flip between config and metrics, but changing within those classes is OK.
   if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
-    ink_release_assert(r->rec_type == rec_type);
-    ink_release_assert(r->data_type == data_type);
-    // Note: do not set r->data as we want to keep the previous value
-    RecDataSet(r->data_type, &(r->data_default), &(data_default));
-    if (updated_p)
+    if (REC_TYPE_IS_STAT(rec_type)) {
+      ink_release_assert(REC_TYPE_IS_STAT(r->rec_type));
+    }
+
+    if (REC_TYPE_IS_CONFIG(rec_type)) {
+      ink_release_assert(REC_TYPE_IS_CONFIG(r->rec_type));
+    }
+
+    if (data_type != r->data_type) {
+      // Clear with the old type before resetting with the new type.
+      RecDataClear(r->data_type, &(r->data));
+      RecDataClear(r->data_type, &(r->data_default));
+
+      // If the data type changed, reset the current value to the default.
+      RecDataSet(data_type, &(r->data), &(data_default));
+    }
+
+    // NOTE: Do not set r->data as we want to keep the previous value because we almost certainly restored a persisted
+    // value before the metric was registered.
+    RecDataSet(data_type, &(r->data_default), &(data_default));
+
+    r->data_type = data_type;
+    r->rec_type = rec_type;
+
+    if (updated_p) {
       *updated_p = true;
+    }
   } else {
     if ((r = RecAlloc(rec_type, name, data_type)) == NULL) {
       return NULL;
     }
+
     // Set the r->data to its default value as this is a new record
     RecDataSet(r->data_type, &(r->data), &(data_default));
     RecDataSet(r->data_type, &(r->data_default), &(data_default));
@@ -65,8 +90,10 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       r->stat_meta.persist_type = persist_type;
     }
-    if (updated_p)
+
+    if (updated_p) {
       *updated_p = false;
+    }
   }
 
   // we're now registered
