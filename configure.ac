@@ -1798,9 +1798,6 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"],
 AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
   [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
 
-AM_CONDITIONAL([BUILD_COLLAPSED_CONNECTION_PLUGIN],
-  [ test "x$enable_experimental_plugins" = "xyes" -a "x${enable_collapsed_connection_plugin}" != "xno" ])
-
 #
 # use modular IOCORE
 #
