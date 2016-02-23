@@ -233,6 +233,7 @@ ProcessManager::pollLMConnection()
   MgmtMessageHdr *mh_full;
   char *data_raw;
 
+  int count = MAX_MSGS_IN_A_ROW;
   while (1) {
     int num;
 
@@ -240,26 +241,38 @@ ProcessManager::pollLMConnection()
     if (num == 0) { /* Have nothing */
       break;
     } else if (num > 0) { /* We have a message */
-
       if ((res = mgmt_read_pipe(local_manager_sockfd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
-        mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
+        size_t mh_full_size = sizeof(MgmtMessageHdr) + mh_hdr.data_len;
+        mh_full = (MgmtMessageHdr *)ats_malloc(mh_full_size);
+
         memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
         data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
+
         if ((res = mgmt_read_pipe(local_manager_sockfd, data_raw, mh_hdr.data_len)) > 0) {
           Debug("pmgmt", "[ProcessManager::pollLMConnection] Message: '%d'", mh_full->msg_id);
           handleMgmtMsgFromLM(mh_full);
         } else if (res < 0) {
           mgmt_fatal(stderr, errno, "[ProcessManager::pollLMConnection] Error in read!");
         }
+
+        ats_free(mh_full);
       } else if (res < 0) {
         mgmt_fatal(stderr, errno, "[ProcessManager::pollLMConnection] Error in read!");
       }
+
       // handle EOF
       if (res == 0) {
         close_socket(local_manager_sockfd);
         mgmt_fatal(stderr, 0, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
       }
 
+      // Now don't get stuck in the while loop handling too many requests in a row.
+      count--;
+      if (0 == count) {
+        Debug("pmgmt", "[ProcessManager::pollLMConnection] enqueued '%d' messages in a row, pausing for processing",
+              MAX_MSGS_IN_A_ROW);
+        break;
+      }
     } else if (num < 0) { /* Error */
       mgmt_elog(stderr, 0, "[ProcessManager::pollLMConnection] select failed or was interrupted (%d)\n", errno);
     }

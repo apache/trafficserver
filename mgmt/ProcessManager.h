@@ -100,6 +100,8 @@ public:
   int local_manager_sockfd;
 
 private:
+  static const int MAX_MSGS_IN_A_ROW = 10000;
+
   ConfigUpdateCbTable *cbtable;
 }; /* End class ProcessManager */
 
