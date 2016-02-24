@@ -351,6 +351,12 @@ public:
     HTTP_TRANSACT_MAGIC_SEPARATOR = 0x12345678
   };
 
+  enum ParentOriginRetry_t {
+    PARENT_ORIGIN_UNDEFINED_RETRY = 0x0,
+    PARENT_ORIGIN_SIMPLE_RETRY = 0x1,
+    PARENT_ORIGIN_DEAD_SERVER_RETRY = 0x2
+  };
+
   enum LookingUp_t {
     ORIGIN_SERVER,
     UNDEFINED_LOOKUP,
@@ -408,7 +414,8 @@ public:
     PARSE_ERROR,
     TRANSACTION_COMPLETE,
     CONGEST_CONTROL_CONGESTED_ON_F,
-    CONGEST_CONTROL_CONGESTED_ON_M
+    CONGEST_CONTROL_CONGESTED_ON_M,
+    PARENT_ORIGIN_RETRY
   };
 
   enum CacheWriteStatus_t {
@@ -704,9 +711,13 @@ public:
     ink_time_t now;
     ServerState_t state;
     int attempts;
+    int simple_retry_attempts;
+    int dead_server_retry_attempts;
+    ParentOriginRetry_t retry_type;
 
     _CurrentInfo()
-      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1){};
+      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1),
+        simple_retry_attempts(0), dead_server_retry_attempts(0), retry_type(PARENT_ORIGIN_UNDEFINED_RETRY){};
   } CurrentInfo;
 
   typedef struct _DNSLookupInfo {

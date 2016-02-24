@@ -1117,6 +1117,12 @@ HttpConfig::startup()
   // Local Manager
   HttpEstablishStaticConfigLongLong(c.synthetic_port, "proxy.config.admin.synthetic_port");
 
+
+  // origin parent selection variables.
+  HttpEstablishStaticConfigByte(c.oride.parent_origin_retry_enabled, "proxy.config.http.parent_origin.retry_enabled");
+  HttpEstablishStaticConfigStringAlloc(c.dead_server_retry_response_codes,
+                                       "proxy.config.http.parent_origin.dead_server_retry_response_codes");
+
   // Cluster time delta gets it own callback since it needs
   //  to use ink_atomic_swap
   c.cluster_time_delta = 0;
@@ -1377,6 +1383,10 @@ HttpConfig::reconfigure()
 
   // Local Manager
   params->synthetic_port = m_master.synthetic_port;
+
+  // origin parent selection variables.
+  params->oride.parent_origin_retry_enabled = m_master.oride.parent_origin_retry_enabled;
+  params->oride.dead_server_retry_response_codes = m_master.dead_server_retry_response_codes;
 
   m_id = configProcessor.set(m_id, params);
 

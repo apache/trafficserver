@@ -384,12 +384,12 @@ struct OverridableHttpConfigParams {
       freshness_fuzz_min_time(0), max_cache_open_read_retries(-1), cache_open_read_retry_time(10), cache_generation_number(-1),
       max_cache_open_write_retries(1), background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0),
       flow_low_water_mark(0), default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
-
+      parent_origin_retry_enabled(0),
       // Strings / floats must come last
       body_factory_template_base(NULL), body_factory_template_base_len(0), proxy_response_server_string(NULL),
       proxy_response_server_string_len(0), global_user_agent_header(NULL), global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10), freshness_fuzz_prob(0.005), background_fill_threshold(0.5), cache_open_write_fail_action(0),
-      redirection_enabled(0), redirect_use_orig_cache_key(0), number_of_redirections(1)
+      redirection_enabled(0), redirect_use_orig_cache_key(0), number_of_redirections(1), dead_server_retry_response_codes(NULL)
   {
   }
 
@@ -561,6 +561,10 @@ struct OverridableHttpConfigParams {
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
   MgmtInt slow_log_threshold;
+
+  // origin parent selection simple and dead server retry.
+  MgmtByte parent_origin_retry_enabled;
+
   // IMPORTANT: Here comes all strings / floats configs.
 
   ///////////////////////////////////////////////////////////////////
@@ -595,6 +599,9 @@ struct OverridableHttpConfigParams {
   MgmtByte redirection_enabled;
   MgmtByte redirect_use_orig_cache_key;
   MgmtInt number_of_redirections;
+
+  // origin parent dead server retry response codes.
+  char *dead_server_retry_response_codes;
 };
 
 
@@ -760,6 +767,11 @@ public:
   ////////////////////
   MgmtInt synthetic_port;
 
+  /////////////////////////////////////////////////////
+  // parent selection origin server response codes. //
+  /////////////////////////////////////////////////////
+  char *dead_server_retry_response_codes;
+
 private:
   /////////////////////////////////////
   // operator = and copy constructor //
@@ -860,7 +872,7 @@ inline HttpConfigParams::HttpConfigParams()
     redirection_host_no_port(1), post_copy_size(2048), ignore_accept_mismatch(0), ignore_accept_language_mismatch(0),
     ignore_accept_encoding_mismatch(0), ignore_accept_charset_mismatch(0), send_100_continue_response(0),
     disallow_post_100_continue(0), parser_allow_non_http(1), max_post_size(0),
-    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD), synthetic_port(0)
+    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD), synthetic_port(0), dead_server_retry_response_codes(NULL)
 {
 }
 
@@ -880,6 +892,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(url_expansions);
+  ats_free(dead_server_retry_response_codes);
 
   if (connect_ports) {
     delete connect_ports;

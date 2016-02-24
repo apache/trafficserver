@@ -7980,6 +7980,15 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->redirect_use_orig_cache_key;
     break;
+  case TS_CONFIG_HTTP_PARENT_ORIGIN_RETRY_ENABLED:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->parent_origin_retry_enabled;
+    break;
+  case TS_CONFIG_HTTP_DEAD_SERVER_RETRY_RESPONSE_CODES:
+    ret = &overridableHttpConfig->dead_server_retry_response_codes;
+    typ = OVERRIDABLE_TYPE_STRING;
+    break;
+
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8132,6 +8141,13 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     } else {
       s->t_state.txn_conf->body_factory_template_base = NULL;
       s->t_state.txn_conf->body_factory_template_base_len = 0;
+    }
+    break;
+  case TS_CONFIG_HTTP_DEAD_SERVER_RETRY_RESPONSE_CODES:
+    if (value && length > 0) {
+      s->t_state.txn_conf->dead_server_retry_response_codes = const_cast<char *>(value); // The "core" likes non-const char*
+    } else {
+      s->t_state.txn_conf->dead_server_retry_response_codes = NULL;
     }
     break;
   default:
@@ -8451,6 +8467,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'd':
       if (!strncmp(name, "proxy.config.http.down_server.abort_threshold", length))
         cnf = TS_CONFIG_HTTP_DOWN_SERVER_ABORT_THRESHOLD;
+      if (!strncmp(name, "proxy.config.http.parent_origin.retry_enabled", length))
+        cnf = TS_CONFIG_HTTP_PARENT_ORIGIN_RETRY_ENABLED;
       break;
     case 'n':
       if (!strncmp(name, "proxy.config.http.cache.ignore_authentication", length))
@@ -8616,6 +8634,12 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   case 58:
     if (!strncmp(name, "proxy.config.http.connect_attempts_max_retries_dead_server", length))
       cnf = TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DEAD_SERVER;
+    break;
+
+  case 64:
+    if (!strncmp(name, "proxy.config.http.parent_origin.dead_server_retry_response_codes", length))
+      cnf = TS_CONFIG_HTTP_DEAD_SERVER_RETRY_RESPONSE_CODES;
+    typ = TS_RECORDDATATYPE_STRING;
     break;
   }
 
