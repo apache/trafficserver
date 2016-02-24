@@ -27,6 +27,10 @@
 #include "ts/Diags.h"
 #include "ts/ink_atomic.h"
 
+#if defined(freebsd)
+#include <malloc_np.h> // for malloc_usable_size
+#endif
+
 #include <assert.h>
 #if defined(linux)
 // XXX: SHouldn't that be part of CPPFLAGS?
