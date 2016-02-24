@@ -1030,7 +1030,8 @@ AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host
 
 # Add hardening options to flags
 if test "x${enable_hardening}" = "xyes"; then
-  TS_ADDTO(CPPFLAGS, [-fPIE -fstack-protector -fno-omit-frame-pointer])
+  TS_ADDTO(CPPFLAGS, [-D_FORTIFY_SOURCE=2])
+  TS_ADDTO(CXXFLAGS, [-fPIE -fstack-protector -fno-omit-frame-pointer])
   TS_ADDTO(CFLAGS, [-fPIE -fstack-protector -fno-omit-frame-pointer])
   TS_ADDTO(LDFLAGS, [-pie -Wl,-z,relro -Wl,-z,now])
 fi
