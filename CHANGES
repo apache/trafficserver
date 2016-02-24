@@ -1,4 +1,9 @@
                                                          -*- coding: utf-8 -*-
+Changes with Apache Traffic Server 5.3.3
+
+  *) [TS-3634] Replace auto_ptr with ats_scoped_object.
+
+
 Changes with Apache Traffic Server 5.3.2
 
   *) [TS-3890] Errors in the huffman tree for HTTP/2.
