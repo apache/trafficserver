@@ -19,7 +19,7 @@
 #include <ts/ts.h>
 #include <spdy/spdy.h>
 #include "io.h"
-#include <memory>
+#include "ink_memory.h"
 
 spdy_io_control::spdy_io_control(TSVConn v) : vconn(v), input(), output(), streams(), last_stream_id(0)
 {
@@ -60,7 +60,7 @@ spdy_io_control::valid_client_stream_id(unsigned stream_id) const
 spdy_io_stream *
 spdy_io_control::create_stream(unsigned stream_id)
 {
-  std::auto_ptr<spdy_io_stream> ptr(new spdy_io_stream(stream_id));
+  ats_scoped_obj<spdy_io_stream> ptr(new spdy_io_stream(stream_id));
   std::pair<stream_map_type::iterator, bool> result;
 
   result = streams.insert(std::make_pair(stream_id, ptr.get()));

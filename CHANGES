@@ -1,6 +1,8 @@
                                                          -*- coding: utf-8 -*-
 Changes with Apache Traffic Server 5.3.3
 
+  *) [TS-4227] Remove auto_ptr in SPDY plugin.
+
   *) [TS-3634] Replace auto_ptr with ats_scoped_object.
 
 
