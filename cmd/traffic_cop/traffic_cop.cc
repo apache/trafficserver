@@ -35,6 +35,7 @@
 #include "RecordsConfig.h"
 #include "ClusterCom.h"
 #include "ts/ink_cap.h"
+#include "Cop.h"
 
 #include <string>
 #include <map>
@@ -110,11 +111,7 @@ static int source_port = 0;
 static int manager_failures = 0;
 static int server_failures = 0;
 static int server_not_found = 0;
-
-static const int sleep_time = 10;          // 10 sec
-static int init_sleep_time = sleep_time;   // 10 sec
-static const int manager_timeout = 3 * 60; //  3 min
-static const int server_timeout = 3 * 60;  //  3 min
+static int init_sleep_time = cop_sleep_time; // 10 sec
 
 // traffic_manager flap detection
 #define MANAGER_FLAP_DETECTION 1
@@ -130,8 +127,6 @@ static ink_hrtime manager_flap_retry_start_time = 0;    // first time we attempt
 
 // transient syscall error timeout
 #define TRANSIENT_ERROR_WAIT_MS 500
-
-static const int kill_timeout = 1 * 60; //  1 min
 
 static int child_pid = 0;
 static int child_status = 0;
@@ -316,12 +311,10 @@ sig_alarm_warn(int signum)
 #endif
 {
   cop_log_trace("Entering sig_alarm_warn(%d)\n", signum);
-  cop_log(COP_WARNING, "unable to kill traffic_server for the last"
-                       " %d seconds\n",
-          kill_timeout);
+  cop_log(COP_WARNING, "unable to kill traffic_server for the last %d seconds\n", cop_kill_timeout);
 
   // Set us up for another alarm
-  alarm(kill_timeout);
+  alarm(cop_kill_timeout);
   cop_log_trace("Leaving sig_alarm_warn(%d)\n", signum);
 }
 
@@ -402,7 +395,7 @@ safe_kill(const char *lockfile_name, const char *pname, bool group)
 
   cop_log_trace("Entering safe_kill(%s, %s, %d)\n", lockfile_name, pname, group);
   set_alarm_warn();
-  alarm(kill_timeout);
+  alarm(cop_kill_timeout);
 
   if (group == true) {
     lockfile.KillGroup(killsig, coresig, pname);
@@ -1017,7 +1010,7 @@ read_manager_string(const char *variable, char *value, size_t val_len)
 
   snprintf(request, sizeof(request), "read %s\n", variable);
 
-  err = test_port(rs_port, request, buffer, 4095, manager_timeout * 1000);
+  err = test_port(rs_port, request, buffer, 4095, cop_manager_timeout * 1000);
   if (err < 0) {
     return err;
   }
@@ -1071,7 +1064,7 @@ read_manager_int(const char *variable, int *value)
 
   snprintf(request, sizeof(request), "read %s\n", variable);
 
-  err = test_port(rs_port, request, buffer, 4095, manager_timeout * 1000);
+  err = test_port(rs_port, request, buffer, 4095, cop_manager_timeout * 1000);
   if (err < 0) {
     return err;
   }
@@ -1236,7 +1229,7 @@ test_server_http_port()
   // servers up on the autoconf port.
   snprintf(request, sizeof(request), "GET http://127.0.0.1:%d/synthetic.txt HTTP/1.0\r\n\r\n", synthetic_port);
 
-  return test_http_port(http_backdoor_port, request, server_timeout * 1000, localhost, localhost);
+  return test_http_port(http_backdoor_port, request, cop_server_timeout * 1000, localhost, localhost);
 }
 
 static int
@@ -1444,7 +1437,7 @@ check_programs()
     // is up, we make sure there is actually a server process
     // running. If there is we test it.
 
-    alarm(2 * manager_timeout);
+    alarm(2 * cop_manager_timeout);
     err = heartbeat_manager();
     alarm(0);
 
@@ -1471,7 +1464,7 @@ check_programs()
         safe_kill(manager_lockfile, manager_binary, true);
       }
     } else {
-      alarm(2 * server_timeout);
+      alarm(2 * cop_server_timeout);
       heartbeat_server();
       alarm(0);
     }
@@ -1566,7 +1559,7 @@ check(void *arg)
     chown_file_to_admin_user(manager_lockfile);
     chown_file_to_admin_user(server_lockfile);
 
-    alarm(2 * (sleep_time + manager_timeout * 2 + server_timeout));
+    alarm(2 * (cop_sleep_time + cop_manager_timeout * 2 + cop_server_timeout));
 
     if (check_no_run() < 0) {
       break;
@@ -1601,7 +1594,7 @@ check(void *arg)
     // Pause to catch our breath. (10 seconds).
     // Use 'millisleep()' because normal 'sleep()' interferes with
     // the SIGALRM signal which we use to heartbeat the cop.
-    millisleep(sleep_time * 1000);
+    millisleep(cop_sleep_time * 1000);
 
     // We do this after the first round of checks, since the first "check" will spawn traffic_manager
     if (!mgmt_init) {
