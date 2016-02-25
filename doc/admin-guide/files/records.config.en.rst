@@ -1162,12 +1162,16 @@ HTTP Redirection
 ================
 
 .. ts:cv:: CONFIG proxy.config.http.redirection_enabled INT 0
+   :reloadable:
+   :overridable:
 
    This setting indicates whether Trafficserver does a redirect follow location on receiving a 3XX Redirect response from the Origin
    server. The redirection attempt is transparent to the client and the client is served the final response from the redirected-to
    location.
 
 .. ts:cv:: CONFIG proxy.config.http.number_of_redirections INT 1
+   :reloadable:
+   :overridable:
 
    This setting determines the maximum number of times Trafficserver does a redirect follow location on receiving a 3XX Redirect response
    for a given client request.
@@ -1178,6 +1182,8 @@ HTTP Redirection
    (e.g. 80 for HTTP and 443 for HTTPS). Note that the port is still included in the Host header if it's non-default.
 
 .. ts:cv:: CONFIG proxy.config.http.redirect_use_orig_cache_key INT 0
+   :reloadable:
+   :overridable:
 
    This setting enables Trafficserver to allow using original request cache key (for example, set using a TS API) during a 3xx redirect follow.
    The default behavior (0) is to use the URL specified by Location header in the 3xx response as the cache key.
@@ -1912,11 +1918,13 @@ all the different user-agent versions of documents it encounters.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.max_open_write_retries INT 1
    :reloadable:
+   :overridable:
 
     The number of times to attempt a cache open write upon failure to get a write lock.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
+   :overridable:
 
     This setting indicates the action taken on failing to obtain the cache open write lock on either a cache miss or a cache
     hit stale. This typically happens when there is more than one request to the same cache object simultaneously. During such
