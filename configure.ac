@@ -321,6 +321,17 @@ AC_ARG_ENABLE([ccache],
 AC_MSG_RESULT([$enable_ccache])
 
 #
+# Enble hardening of the executables
+#
+AC_MSG_CHECKING([whether to enable hardening of the executables])
+AC_ARG_ENABLE([hardening],
+  [AS_HELP_STRING([--enable-hardening],[Enable hardening of executables])],
+  [],
+  [enable_hardening="no"]
+)
+AC_MSG_RESULT([$enable_hardening])
+
+#
 # Use TPROXY for connection transparency.
 #
 AC_MSG_CHECKING([whether to enable TPROXY based transparency])
@@ -1026,6 +1037,14 @@ TS_ADDTO(CPPFLAGS, [-D__STDC_LIMIT_MACROS=1])
 TS_ADDTO(CPPFLAGS, [-D__STDC_FORMAT_MACROS=1])
 
 AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host_os_def])
+
+# Add hardening options to flags
+if test "x${enable_hardening}" = "xyes"; then
+  TS_ADDTO(CPPFLAGS, [-D_FORTIFY_SOURCE=2])
+  TS_ADDTO(CXXFLAGS, [-fPIE -fstack-protector])
+  TS_ADDTO(CFLAGS, [-fPIE -fstack-protector])
+  TS_ADDTO(LDFLAGS, [-pie -Wl,-z,relro -Wl,-z,now])
+fi
 
 #
 # Note:  These are site-specific macro's that do various tests
