@@ -23,10 +23,44 @@ case ${1} in
 trusty*|jessie*)
     sed -i 's/^mesg n$/tty -s \&\& mesg n/g' /root/.profile
     apt-get update
-    apt-get install -y build-essential autoconf libpcre3-dev libssl-dev tcl-dev libxml2-dev
+    apt-get install -y \
+        autoconf \
+        automake \
+        build-essential \
+        clang \
+        libcap-dev \
+        libcurl4-openssl-dev \
+        libexpat-dev \
+        libhwloc-dev \
+        liblua5.2-dev \
+        libpcre3-dev \
+        libssl-dev \
+        libxml2-dev \
+        m4 \
+        ncurses-dev \
+        tcl-dev
+
 ;;
 centos*)
-    yum install -y autoconf gcc gcc-c++ pcre-devel openssl-devel tcl-devel libxml2-devel
+    yum install -y \
+        autoconf \
+        automake \
+        clang \
+        expat-devel \
+        flex \
+        gcc \
+        gcc-c++ \
+        hwloc-devel \
+        libcap-devel \
+        libcurl-devel d\
+        libtool \
+        libxml2-devel \
+        lua-devel \
+        m4 \
+        ncurses-devel \
+        openssl-devel \
+        pcre-devel \
+        tcl-devel
 ;;
 omnios)
     export PATH=/usr/gnu/bin:/usr/bin:/usr/sbin:/sbin:/opt/gcc-4.8.1/bin
@@ -36,22 +70,24 @@ omnios)
         pkg set-publisher -g http://pkg.omniti.com/omniti-ms/ ms.omniti.com
     fi
     pkg refresh
-    pkg install developer/gcc48 \
+    pkg install \
+        archiver/gnu-tar \
         developer/build/autoconf \
         developer/build/automake \
-        developer/lexer/flex \
-        developer/parser/bison \
-        developer/object-file \
-        developer/linker \
-        developer/library/lint \
         developer/build/gnu-make \
         developer/build/libtool \
+        developer/gcc48 \
+        developer/lexer/flex \
+        developer/library/lint \
+        developer/linker \
+        developer/object-file \
+        developer/parser/bison \
         library/idnkit \
         library/idnkit/header-idnkit \
+        omniti/runtime/tcl-8 \
+        omniti/system/hwloc \
         system/header \
         system/library/math \
-        archiver/gnu-tar \
-        omniti/runtime/tcl-8 \
         || RC=${?}
     if [[ ${RC} != 0 ]] && [[ ${RC} != 4 ]]; then
         exit 1
