@@ -62,7 +62,8 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
   do {
     int64_t b_avail = r->block_read_avail();
 
-    if (b_avail <= 0 && eof == false) {
+    //NO POINT IN PARSING THE RESPONSE IF CURRENT BLOCK IS NULL
+    if (r->get_current_block() == NULL || (b_avail <= 0 && eof == false)) {
       break;
     }
 
@@ -161,6 +162,7 @@ int
 HdrHeap::attach_block(IOBufferBlock *b, const char *use_start)
 {
   ink_assert(m_writeable);
+  ink_assert(b != NULL);
 
 RETRY:
 
