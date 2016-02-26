@@ -4,6 +4,8 @@ Bug:
   *) [TS-4188] Client initial window size is set incorrectly in HTTP/2
   *) [TS-4198] Excessive memory allocations from HostDB with huge tables enabled
   *) [TS-4199] Parent Selection - parents not marked down due to race
+  *) [TS-4222] ATS 6.2.0 seg faults while processing ssl_multicert.config
+  *) [TS-4228] traffic_manager can hang in a tight read() loop
 
 
 Changes with Apache Traffic Server 6.1.1
