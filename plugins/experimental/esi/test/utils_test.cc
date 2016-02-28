@@ -113,6 +113,11 @@ main()
   const char *expected_strs9[] = {"n1", "v1", "n2", "v2", "n3", "v3", "n4", "v4=extrav4", 0};
   checkAttributes("test9", attr_list, expected_strs9);
 
+  string str10("hello=world&test=萌萌&a=b");
+  Utils::parseAttributes(str10, attr_list, "&");
+  const char *expected_strs10[] = {"hello", "world", "test", "萌萌", "a", "b", 0};
+  checkAttributes("test10", attr_list, expected_strs10);
+
   cout << endl << "All tests passed!" << endl;
   return 0;
 }
