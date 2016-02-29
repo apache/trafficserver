@@ -39,8 +39,6 @@ to specify the path to tsxs manually:
 
 Configuration:
 
-    Add @plugin=cache_range_requests.so to your remap.config rules.
-
-    Or for a global plugin where all range requests are processed,
-    Add cache_range_requests.so to the plugin.config
-
+    Add @plugin=collapsed_forwarding.so to your remap.config rules. The plugin optionally
+accepts a --delay=<delay> parameter and a --retries=<retries> parameter that can help tune
+the total number of retries and the delay between consecutive retries.
