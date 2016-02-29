@@ -1942,6 +1942,7 @@ AC_CONFIG_FILES([
   plugins/experimental/generator/Makefile
   plugins/experimental/geoip_acl/Makefile
   plugins/experimental/header_normalize/Makefile
+  plugins/experimental/collapsed_forwarding/Makefile
   plugins/experimental/hipes/Makefile
   plugins/experimental/inliner/Makefile
   plugins/experimental/memcache/Makefile
