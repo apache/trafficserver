@@ -46,11 +46,6 @@
 // This plugin currently supports only per-remap mode activation.
 ////////////////////////////////////////////////////////////////////////////////////
 
-#define UNUSED __attribute__((unused))
-static char UNUSED rcsId__collapsed_forwarding_cc[] =
-  "@(#) $Id: collapsed_forwarding.cc 218 2016-02-26 01:29:16Z sudheerv $ built on " __DATE__ " " __TIME__;
-
-
 #include <sys/time.h>
 #include <ts/ts.h>
 #include <ts/remap.h>
