@@ -2232,6 +2232,13 @@ This value is a global default that can be overridden by :ts:cv:`proxy.config.ht
    origin server is determined by the client, which forces the IP address family of the address used for the origin
    server. In effect, outbound transparent connections always use a resolution style of "``client``".
 
+.. ts:cv:: CONFIG proxy.config.cache.hostdb.sync_frequency INT 120
+
+   Set the frequency (in seconds) to sync hostdb to disk.
+
+   Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
+   This means that the minumum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
+
 Logging Configuration
 =====================
 
