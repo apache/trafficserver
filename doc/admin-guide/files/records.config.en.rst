@@ -3111,7 +3111,7 @@ Sockets
 
 .. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_out STRING ""
 
-   This directive will override the congestion control algorithm for outgoing 
+   This directive will override the congestion control algorithm for outgoing
    connections (connect sockets). On linux the allowed values are typically
    specified in a space seperated list in /proc/sys/net/ipv4/tcp_allowed_congestion_control
 
