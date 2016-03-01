@@ -195,7 +195,7 @@ on_send_response_header(RequestData *req, TSHttpTxn &txnp, TSCont &contp)
   TSHttpStatus status = TSHttpHdrStatusGet(bufp, hdr_loc);
   TSDebug(DEBUG_TAG, "Response code: %d", status);
 
-  if ((status == TS_HTTP_STATUS_BAD_GATEWAY) || (status == TS_HTTP_STATUS_SEE_OTHER)) {
+  if ((status == TS_HTTP_STATUS_BAD_GATEWAY) || (status == TS_HTTP_STATUS_SEE_OTHER) || status == TS_HTTP_STATUS_INTERNAL_SERVER_ERROR) {
     bool is_internal_message_hdr = check_internal_message_hdr(txnp);
     bool delay_request =
       is_internal_message_hdr || ((req->wl_retry > 0) && (req->wl_retry < OPEN_WRITE_FAIL_MAX_REQ_DELAY_RETRIES));
