@@ -2239,6 +2239,10 @@ This value is a global default that can be overridden by :ts:cv:`proxy.config.ht
    Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
    This means that the minumum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
 
+.. ts:cv:: CONFIG proxy.config.hostdb.verify_after INT 720
+
+    Set the interval (in seconds) in which to re-query DNS regardless of TTL status.
+
 Logging Configuration
 =====================
 
