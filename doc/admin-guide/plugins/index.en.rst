@@ -189,3 +189,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`X-Debug <xdebug.en>`
    Allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header.
 
+:doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
+   Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
+   all clients in parallel.
+
