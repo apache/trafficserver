@@ -1393,6 +1393,10 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   this->ep.stop();
   this->do_io_close();
 
+  // The do_io_close will decrement the current stat count but we are creating a new vc.
+  // Increment the currently open stat here so the net current count is unchanged
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+
   // Create new VC:
   if (save_ssl) {
     SSLNetVConnection *sslvc = static_cast<SSLNetVConnection *>(sslNetProcessor.allocate_vc(t));
