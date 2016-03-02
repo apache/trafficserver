@@ -73,7 +73,7 @@ special @-header indicating the reason for 502 error. The plugin acts on the
 error by using an internal redirect follow back to itself, essentially blocking
 the request until a response arrives, at which point, relies on read-while-writer
 feature to start downloading the object to all waiting clients. The following
-config parameters are assumed to be set for this plugin to work:
+config parameters are assumed to be set for this plugin to work::
 
 :ts:cv:`proxy.config.http.cache.open_write_fail_action`        1
 :ts:cv:`proxy.config.cache.enable_read_while_writer`           1
