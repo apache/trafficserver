@@ -23,6 +23,7 @@ SUBDIRS = \
  cache_range_requests \
  cache_promote \
  collapsed_connection \
+ collapsed_forwarding \
  custom_redirect \
  epic \
  escalate \
