@@ -21,7 +21,7 @@ Collapsed Forwarding Plugin
   under the License.
 
 
-This is a plugin for Apache Traffic Server that allows you to achieve
+This is a plugin for Apache Traffic Server that allows to achieve
 effective connection collapse by blocking all but one of the multiple
 concurrent requests for the same object from going to the Origin.
 
