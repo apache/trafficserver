@@ -86,41 +86,57 @@ config parameters are assumed to be set for this plugin to work:
 
 Description
 -----------
-Traffic Server has been affected severely by the Thundering Herd problem caused by its inability
-to do effective connection collapse of multiple concurrent requests for the same segment. This is
-especially critical when Traffic Server is used as a solution to use cases such as delivering a
-large scale video live streaming. This problem results in a specific behavior where multiple number
-of requests for the same file are leaked upstream to the Origin layer choking the upstream bandwidth
-due to the duplicated large file downloads or process intensive file at the Origin layer. This
-ultimately can cause stability problems on the origin layer disrupting the overall network performance.
+Traffic Server has been affected severely by the Thundering Herd problem caused
+by its inability to do effective connection collapse of multiple concurrent
+requests for the same segment. This is especially critical when Traffic Server
+is used as a solution to use cases such as delivering a large scale video
+live streaming. This problem results in a specific behavior where multiple
+number of requests for the same file are leaked upstream to the Origin layer
+choking the upstream bandwidth due to the duplicated large file downloads or
+process intensive file at the Origin layer. This ultimately can cause
+stability problems on the origin layer disrupting the overall network
+performance.
 
-ATS supports several kind of connection collapse mechanisms including Read-While-Writer (RWW),
-stale-while-revalidate (SWR) etc each very effective dealing with a majority of the use cases
-that can result in the Thundering herd problem.
+ATS supports several kind of connection collapse mechanisms including
+Read-While-Writer (RWW), Stale-While-Revalidate (SWR) etc each very effective
+dealing with a majority of the use cases that can result in the
+Thundering herd problem.
  
-For a large scale video streaming scenario, there’s a combination of a large number of revalidations
-(e.g. media playlists) and cache misses (e.g. media segments) that occur for the same file. Traffic Server’s
-RWW works great in collapsing the concurrent requests in such a scenario, however, as described in
-``_admin-configuration-reducing-origin-requests``, Traffic Server’s implementation of RWW has a significant
-limitation, which restricts its ability to invoke RWW only when the response headers are already received.
-This means that any number of concurrent requests for the same file that are received before the response
-headers arrive are leaked upstream, which can result in a severe Thundering herd problem, depending on
-the network latencies (which impact the TTFB for the response headers) at a given instant of time.
+For a large scale Video Streaming scenario, there’s a combination of a
+large number of revalidations (e.g. media playlists) and cache misses
+(e.g. media segments) that occur for the same file. Traffic Server’s
+RWW works great in collapsing the concurrent requests in such a scenario,
+however, as described in ``_admin-configuration-reducing-origin-requests``,
+Traffic Server’s implementation of RWW has a significant limitation, which
+restricts its ability to invoke RWW only when the response headers are
+already received. This means that any number of concurrent requests for
+the same file that are received before the response headers arrive are
+leaked upstream, which can result in a severe Thundering herd problem,
+depending on the network latencies (which impact the TTFB for the
+response headers) at a given instant of time.
  
-To address this limitation, Traffic Server supports a few “workaround” solutions, such as Open Read Retry,
-and a new feature called Open Write Fail action from 6.0. To understand how these approaches work, it is
-important to understand the high level flow of how Traffic Server handles a GET request.
+To address this limitation, Traffic Server supports a few Cache tuning
+solutions, such as Open Read Retry, and a new feature called
+Open Write Fail action from 6.0. To understand how these approaches work,
+it is important to understand the high level flow of how Traffic Server
+handles a GET request.
  
-On receiving a HTTP GET request, Traffic Server generates the cache key (basically, a hash of the request URL)
-and looks up for the directory entry (dirent) using the generated index. On a cache miss, the lookup fails and
-Traffic Server then tries to just get a write lock for the cache object and proceeds to the origin to download
-the object. On the Other hand, if the lookup is successful, meaning, the dirent exists for the generated cache
-key, Traffic Server tries to obtain a read lock on the cache object to be able to serve it from the cache. If
-the read lock is not successful (possibly, due to the fact that the object’s being written to at that same
-instant and the response headers are not in the cache yet), Traffic Server then moves to the next step of trying
-to obtain an exclusive write lock. If the write lock is already held exclusively by another request (transaction),
-the attempt fails and at this point Traffic Server simply disables the cache on that transaction and
-downloads the object in a proxy-only mode::
+On receiving a HTTP GET request, Traffic Server generates the cache key
+(basically, a hash of the request URL) and looks up for the directory
+entry (dirent) using the generated index. On a cache miss, the lookup
+fails and Traffic Server then tries to just get a write lock for the
+cache object and proceeds to the origin to download the object. On
+the Other hand, if the lookup is successful, meaning, the dirent
+exists for the generated cache key, Traffic Server tries to obtain
+a read lock on the cache object to be able to serve it from the cache.
+If the read lock is not successful (possibly, due to the fact that
+the object’s being written to at that same instant and the response
+headers are not in the cache yet), Traffic Server then moves to the
+next step of trying to obtain an exclusive write lock. If the write
+lock is already held exclusively by another request (transaction), the
+attempt fails and at this point Traffic Server simply disables the
+cache on that transaction and downloads the object in a proxy-only
+mode::
 
   1). Cache Lookup (lookup for the dirent using the request URL as cache key).
     1.1). If lookup fails (cache miss), goto (3).
@@ -133,21 +149,27 @@ downloads the object in a proxy-only mode::
     3.2). If write lock fails, disable cache, and download to the client in a proxy-only mode.
   4). Done
  
-As can be seen above, if a majority of concurrent requests arrive before response headers are received, they hit
-(2.2) and (3.2) above.  Open Read Retry can help to repeat (2) after a configured delay on 2.2, thereby increasing
-the chances for obtaining a read lock and being able to serve from the cache.
+As can be seen above, if a majority of concurrent requests arrive before
+response headers are received, they hit (2.2) and (3.2) above. Open Read
+Retry can help to repeat (2) after a configured delay on 2.2, thereby
+increasing the chances for obtaining a read lock and being able to serve
+from the cache.
  
-However, the Open Read Retry can not help with the concurrent requests that hit (1.1) above, jumping to (3)
-directly. Only one such request will be able to obtain the exclusive write lock and all other requests are leaked
-upstream. This is where, the recently developed ATS feature Open Write Fail Action will help. The feature
-detects the write lock failure and can return a stale copy for a Cache Revalidation or a 5xx status code for a
-Cache Miss with a special internal header <@Ats-Internal> that allows a TS plugin to take other special actions
+However, the Open Read Retry can not help with the concurrent requests
+that hit (1.1) above, jumping to (3) directly. Only one such request will
+be able to obtain the exclusive write lock and all other requests are
+leaked upstream. This is where, the recently developed ATS feature
+Open Write Fail Action will help. The feature detects the write lock
+failure and can return a stale copy for a Cache Revalidation or a
+5xx status code for a Cache Miss with a special internal header
+<@Ats-Internal> that allows a TS plugin to take other special actions
 depending on the use-case.
 
-``collapsed_forwarding`` plugin catches that error in SEND_RESPONSE_HDR_HOOK and performs an internal 3xx Redirect
-back to the same host, the configured number of times with the configured amount of delay between consecutive
-retries, allowing to be able to initiate RWW, whenever the response headers are received for the request that was
-allowed to go to the Origin.
+``collapsed_forwarding`` plugin catches that error in SEND_RESPONSE_HDR_HOOK
+and performs an internal 3xx Redirect back to the same host, the configured
+number of times with the configured amount of delay between consecutive
+retries, allowing to be able to initiate RWW, whenever the response headers
+are received for the request that was allowed to go to the Origin.
  
 
 More details are available at
