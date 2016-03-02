@@ -118,6 +118,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    TS Lua <ts_lua.en>
    WebP Transform <webp_transform.en>
    X-Debug <xdebug.en>
+   Collapsed-Forwarding <collapsed_forwarding.en>
 
 :doc:`AuthProxy <authproxy.en>`
    Delegates the authorization decision of a request to an external HTTP service.
