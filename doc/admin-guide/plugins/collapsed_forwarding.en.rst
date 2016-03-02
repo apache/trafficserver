@@ -21,11 +21,9 @@ Collapsed Forwarding Plugin
   under the License.
 
 
-This is a plugin for Apache Traffic Server that allows you to proactively
-fetch content from Origin in a way that it will fill the object into
-cache. This is particularly useful when all (or most) of your client requests
-are of the byte-Range type. The underlying problem being that Traffic Server
-is not able to cache request / responses with byte ranges.
+This is a plugin for Apache Traffic Server that allows you to achieve
+effective connection collapse by blocking all but one of the multiple
+concurrent requests for the same object from going to the Origin.
 
 Installation
 ------------
@@ -66,14 +64,15 @@ below to the specific remap line::
 Functionality
 -------------
 
-ATS plugin to allow collapsed forwarding of concurrent requests for the same
-object. This plugin is based on open_write_fail_action feature, which detects
-cache open write failure on a cache miss and returns a 502 error along with a
-special @-header indicating the reason for 502 error. The plugin acts on the 
-error by using an internal redirect follow back to itself, essentially blocking
-the request until a response arrives, at which point, relies on read-while-writer
-feature to start downloading the object to all waiting clients. The following
-config parameters are assumed to be set for this plugin to work::
+Traffic Server plugin to allow collapsed forwarding of concurrent requests for
+the same object. This plugin is based on open_write_fail_action feature, which
+detects cache open write failure on a cache miss and returns a 502 error along
+with a special @-header indicating the reason for 502 error. The plugin acts
+on the error by using an internal redirect follow back to itself, essentially
+blocking the request until a response arrives, at which point, relies on
+read-while-writer feature to start downloading the object to all waiting
+clients. The following config parameters are assumed to be set for this
+plugin to work::
 
 :ts:cv:`proxy.config.http.cache.open_write_fail_action`        1
 :ts:cv:`proxy.config.cache.enable_read_while_writer`           1
