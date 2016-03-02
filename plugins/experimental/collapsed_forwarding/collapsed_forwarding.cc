@@ -1,8 +1,5 @@
 /** @file
 
-    Plugin to perform background fetches of certain content that would
-    otherwise not be cached. For example, Range: requests / responses.
-
     @section license License
 
     Licensed to the Apache Software Foundation (ASF) under one
