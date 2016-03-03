@@ -58,6 +58,10 @@ public:
   int
   getCount(const IpEndpoint &addr, const INK_MD5 &hostname_hash, TSServerSessionSharingMatchType match_type)
   {
+    if (TS_SERVER_SESSION_SHARING_MATCH_NONE == match_type) {
+      return 0; // We can never match a node if match type is NONE
+    }
+
     ink_mutex_acquire(&_mutex);
     int count = _hostCount.get(ConnAddr(addr, hostname_hash, match_type));
     ink_mutex_release(&_mutex);
@@ -73,6 +77,10 @@ public:
   incrementCount(const IpEndpoint &addr, const INK_MD5 &hostname_hash, TSServerSessionSharingMatchType match_type,
                  const int delta = 1)
   {
+    if (TS_SERVER_SESSION_SHARING_MATCH_NONE == match_type) {
+      return; // We can never match a node if match type is NONE.
+    }
+
     ConnAddr caddr(addr, hostname_hash, match_type);
     ink_mutex_acquire(&_mutex);
     int count = _hostCount.get(caddr);

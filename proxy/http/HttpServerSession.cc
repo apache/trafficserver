@@ -140,14 +140,14 @@ HttpServerSession::do_io_close(int alerrno)
   // Check to see if we are limiting the number of connections
   // per host
   if (enable_origin_connection_limiting == true) {
-    if (connection_count->getCount(server_ip, hostname_hash, sharing_match) > 0) {
+    if (connection_count->getCount(server_ip, hostname_hash, sharing_match) >= 0) {
       connection_count->incrementCount(server_ip, hostname_hash, sharing_match, -1);
       ip_port_text_buffer addrbuf;
       Debug("http_ss", "[%" PRId64 "] connection closed, ip: %s, count: %u", con_id,
             ats_ip_nptop(&server_ip.sa, addrbuf, sizeof(addrbuf)),
             connection_count->getCount(server_ip, hostname_hash, sharing_match));
     } else {
-      Error("[%" PRId64 "] number of connections should be greater than zero: %u", con_id,
+      Error("[%" PRId64 "] number of connections should be greater than or equal to zero: %u", con_id,
             connection_count->getCount(server_ip, hostname_hash, sharing_match));
     }
   }
