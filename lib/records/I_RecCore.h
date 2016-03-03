@@ -185,8 +185,6 @@ int RecGetRecordSource(const char *name, RecSourceT *source, bool lock = true);
 int RecGetRecordAccessType(const char *name, RecAccessT *secure, bool lock = true);
 int RecSetRecordAccessType(const char *name, RecAccessT secure, bool lock = true);
 
-int RecGetRecordPrefix_Xmalloc(char *prefix, char **result, int *result_len);
-
 //------------------------------------------------------------------------
 // Signal and Alarms
 //------------------------------------------------------------------------

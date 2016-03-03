@@ -1114,12 +1114,6 @@ static const RecordElement RecordsConfig[] =
   //        #########
   //        # Stats #
   //        #########
-  //# frequency is in seconds
-  {RECT_CONFIG, "proxy.config.stats.snap_frequency", RECD_INT, "60", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  // Jira TS-21
-  {RECT_CONFIG, "proxy.config.stats.snap_file", RECD_STRING, "stats.snap", RECU_RESTART_TS, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.stats.enable_lua", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
 

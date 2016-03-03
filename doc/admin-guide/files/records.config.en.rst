@@ -312,14 +312,6 @@ Value Effect
 Metrics Variables
 -----------------
 
-.. ts:cv:: CONFIG proxy.config.stats.snap_frequency INT 60
-
-  Interval (in seconds) at which to snapshot persistent metrics.
-
-.. ts:cv:: CONFIG proxy.config.stats.snap_file STRING "stats.snap"
-
-  Name of the file to use for snapshots of persistent metrics.
-
 .. ts:cv:: proxy.config.stats.enable_lua INT 0
 
   Whether to enable execution of the Lua-based custom metrics from
@@ -1989,7 +1981,7 @@ Customizable User Response Pages
    To enable any enpoint there needs to be an entry in :file:`remap.config` which
    specifically enables it. Such a line would look like: ::
 
-        map / http://{stat}
+        map / http://{cache}
 
    The following are the cache endpoints:
 
@@ -2001,8 +1993,6 @@ Customizable User Response Pages
    - ``hostdb`` = lookups against the hostdb
    - ``http`` = HTTPSM details, this endpoint is also gated by `proxy.config.http.enable_http_info`
    - ``net`` = lookup and listing of open connections
-   - ``stat`` = list of all records.config options and metrics
-   - ``test`` = test callback page
 
 .. ts:cv:: CONFIG proxy.config.http.enable_http_info INT 0
 

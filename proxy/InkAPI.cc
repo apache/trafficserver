@@ -41,7 +41,6 @@
 #include "P_Net.h"
 #include "P_UDPNet.h"
 #include "P_HostDB.h"
-#include "StatSystem.h"
 #include "P_Cache.h"
 #include "I_RecCore.h"
 #include "I_RecSignals.h"

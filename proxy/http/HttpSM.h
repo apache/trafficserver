@@ -39,7 +39,6 @@
 #include "HttpTransact.h"
 #include "HttpTunnel.h"
 #include "InkAPIInternal.h"
-#include "StatSystem.h"
 #include "HttpClientSession.h"
 #include "HdrUtils.h"
 //#include "AuthHttpAdapter.h"

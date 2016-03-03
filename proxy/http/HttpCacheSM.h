@@ -34,7 +34,6 @@
 #define _HTTP_CACHE_SM_H_
 
 #include "P_Cache.h"
-#include "StatSystem.h"
 #include "ProxyConfig.h"
 #include "URL.h"
 #include "HTTP.h"

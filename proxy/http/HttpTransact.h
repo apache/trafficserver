@@ -31,12 +31,12 @@
 #include "HttpConfig.h"
 #include "HTTP.h"
 #include "HttpTransactCache.h"
-#include "StatSystem.h"
 #include "ControlMatcher.h"
 #include "CacheControl.h"
 #include "ParentSelection.h"
 #include "ProxyConfig.h"
 #include "Transform.h"
+#include "Milestones.h"
 //#include "HttpAuthParams.h"
 #include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
@@ -560,27 +560,6 @@ public:
     CACHE_AUTH_SERVE
   };
 
-#define StatBlockEntries 28
-
-  struct StatBlock {
-    StatBlock()
-    {
-      init();
-      memset(&stats, 0, sizeof(stats));
-    };
-
-    void
-    init()
-    {
-      next = NULL;
-      next_insert = 0;
-    };
-
-    StatRecord_t stats[StatBlockEntries];
-    StatBlock *next;
-    uint16_t next_insert;
-  };
-
   struct State;
   typedef void (*TransactFunc_t)(HttpTransact::State *);
 
@@ -877,9 +856,6 @@ public:
 
     // HttpAuthParams auth_params;
 
-    StatBlock first_stats;
-    StatBlock *current_stats;
-
     // new ACL filtering result (calculated immediately after remap)
     bool client_connection_enabled;
     bool acl_filtering_performed;
@@ -961,7 +937,6 @@ public:
     init()
     {
       parent_params = ParentConfig::acquire();
-      current_stats = &first_stats;
     }
 
     // Constructor
@@ -978,7 +953,7 @@ public:
         internal_msg_buffer_size(0), internal_msg_buffer_fast_allocator_size(-1), icp_lookup_success(false), scheme(-1),
         next_hop_scheme(scheme), orig_scheme(scheme), method(0), cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
         client_request_time(UNDEFINED_TIME), request_sent_time(UNDEFINED_TIME), response_received_time(UNDEFINED_TIME),
-        plugin_set_expire_time(UNDEFINED_TIME), state_machine_id(0), first_stats(), current_stats(NULL),
+        plugin_set_expire_time(UNDEFINED_TIME), state_machine_id(0),
         client_connection_enabled(true), acl_filtering_performed(false), negative_caching(false), srv_lookup(false),
         www_auth_content(CACHE_AUTH_NONE), remap_plugin_instance(0), fp_tsremap_os_response(NULL),
         http_return_code(HTTP_STATUS_NONE), api_txn_active_timeout_value(-1), api_txn_connect_timeout_value(-1),
@@ -1021,28 +996,8 @@ public:
     }
 
     void
-    record_transaction_stats()
-    {
-      if (http_config_param->enable_http_stats) {
-        // Loop over our transaction stat blocks and record the stats
-        //  in the global arrays
-        STAT_LOCK_ACQUIRE(&(global_http_trans_stat_lock));
-        StatBlock *b = &first_stats;
-
-        while (b != NULL) {
-          for (int i = 0; i < b->next_insert && i < StatBlockEntries; i++) {
-            RecIncrRawStat(http_rsb, this_ethread(), b->stats[i].index, b->stats[i].increment);
-          }
-          b = b->next;
-        }
-        STAT_LOCK_RELEASE(&(global_http_trans_stat_lock));
-      }
-    }
-
-    void
     destroy()
     {
-      record_transaction_stats();
       m_magic = HTTP_TRANSACT_MAGIC_DEAD;
 
       free_internal_msg_buffer();
@@ -1245,7 +1200,6 @@ public:
   static const char *get_error_string(int erno);
 
   // the stat functions
-  static void update_stat(State *s, int stat, ink_statval_t increment);
   static void update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
                                          ink_hrtime origin_server_read_time, int user_agent_request_header_size,
                                          int64_t user_agent_request_body_size, int user_agent_response_header_size,
@@ -1258,7 +1212,6 @@ public:
   static void user_agent_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes);
   static void origin_server_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes);
   static void client_result_stat(State *s, ink_hrtime total_time, ink_hrtime request_process_time);
-  static void add_new_stat_block(State *s);
   static void delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code);
   static bool is_connection_collapse_checks_success(State *s); // YTS Team, yamsat
 };
@@ -1289,21 +1242,5 @@ is_response_body_precluded(HTTPStatus status_code, int method)
 }
 
 inkcoreapi extern ink_time_t ink_cluster_time(void);
-
-inline void
-HttpTransact::update_stat(State *s, int stat, ink_statval_t increment)
-{
-  if (s->current_stats->next_insert >= StatBlockEntries) {
-    // This a rare operation and we want to avoid the
-    //   code bloat of inlining it everywhere so
-    //   it's a function call
-    add_new_stat_block(s);
-  }
-
-  uint16_t *next_insert = &s->current_stats->next_insert;
-  s->current_stats->stats[*next_insert].index = stat;
-  s->current_stats->stats[*next_insert].increment = increment;
-  (*next_insert)++;
-}
 
 #endif

@@ -119,8 +119,6 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
 
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
 
-#define HTTP_INCREMENT_TRANS_STAT(X) HttpTransact::update_stat(&t_state, X, 1);
-
 HttpVCTable::HttpVCTable()
 {
   memset(&vc_table, 0, sizeof(vc_table));
@@ -3272,7 +3270,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
       p->vc->do_io_close(EHTTP_ERROR);
       p->read_vio = NULL;
       tunnel.chain_abort_all(p);
-      HTTP_INCREMENT_TRANS_STAT(http_cache_read_errors);
+      HTTP_INCREMENT_DYN_STAT(http_cache_read_errors);
       break;
     } else {
       tunnel.local_finish_all(p);
@@ -3312,7 +3310,7 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     c->write_vio = NULL;
     c->vc->do_io_close(EHTTP_ERROR);
 
-    HTTP_INCREMENT_TRANS_STAT(http_cache_write_errors);
+    HTTP_INCREMENT_DYN_STAT(http_cache_write_errors);
     DebugSM("http", "[%" PRId64 "] aborting cache write due %s event from cache", sm_id, HttpDebugNames::get_event_name(event));
     // abort the producer if the cache_writevc is the only consumer.
     if (c->producer->alive && c->producer->num_consumers == 1)
@@ -4385,7 +4383,7 @@ HttpSM::do_cache_lookup_and_read()
   // ink_assert(server_session == NULL);
   ink_assert(pending_action == 0);
 
-  HTTP_INCREMENT_TRANS_STAT(http_cache_lookups_stat);
+  HTTP_INCREMENT_DYN_STAT(http_cache_lookups_stat);
 
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = Thread::get_hrtime();
   t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_NONE;
