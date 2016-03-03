@@ -1533,7 +1533,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         tip._family = AF_INET;       // force the tip valid, or else the srv will fail
       r = lookup_done(tip,           /* junk: FIXME: is the code in lookup_done() wrong to NEED this? */
                       md5.host_name, /* hostname */
-                      is_rr,            /* is round robin, doesnt matter for SRV since we recheck getCount() inside lookup_done() */
+                      is_rr,         /* is round robin, doesnt matter for SRV since we recheck getCount() inside lookup_done() */
                       ttl_seconds,   /* ttl in seconds */
                       failed ? 0 : &e->srv_hosts);
     } else if (failed) {
