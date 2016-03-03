@@ -57,7 +57,6 @@ extern "C" int plock(int);
 #include "Main.h"
 #include "ts/signals.h"
 #include "Error.h"
-#include "StatSystem.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "P_UDPNet.h"
@@ -1072,7 +1071,7 @@ struct ShowStats : public Continuation {
     (void)e;
     if (!(cycle++ % 24))
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
-    ink_statval_t sval, cval;
+    int64_t sval, cval;
 
     NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
     int64_t d_rb = sval - last_rb;
@@ -1700,9 +1699,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
   Note("cache clustering %s", cache_clustering_enabled ? "enabled" : "disabled");
 
-  // Initialize New Stat system
-  initialize_all_global_stats();
-
   num_of_net_threads = adjust_num_of_net_threads(num_of_net_threads);
 
   size_t stacksize;
@@ -1819,7 +1815,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // acc.start();
     // pmgmt initialization moved up, needed by RecProcessInit
     // pmgmt->start();
-    start_stats_snap();
 
     // Initialize Response Body Factory
     body_factory = new HttpBodyFactory;

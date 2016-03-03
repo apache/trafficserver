@@ -672,8 +672,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.server.private_key.path
  proxy.config.stat_collector.interval
  proxy.config.stat_collector.port
- proxy.config.stats.snap_file
- proxy.config.stats.snap_frequency
  proxy.config.syslog_facility
  proxy.config.system.mmap_max
  proxy.config.system.file_max_pct

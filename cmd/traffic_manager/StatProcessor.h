@@ -41,10 +41,6 @@
 #include "LocalManager.h"
 #include "WebOverview.h"
 
-#define _HEADER
-#define _D(x)
-#define _FOOTER
-#include "DynamicStats.h"
 #include "StatType.h"
 
 #if HAVE_LIBEXPAT

@@ -28,7 +28,6 @@
 
 */
 #include "ts/ink_platform.h"
-#include "StatSystem.h"
 #include "P_Net.h"
 #include "I_OneWayTunnel.h"
 #include "HttpSessionAccept.h"
