@@ -1652,6 +1652,7 @@ HttpSM::state_http_server_open(int event, void *data)
        UnixNetVConnection *server_vc = (UnixNetVConnection*)data;
        printf("client fd is :%d , server fd is %d\n",vc->con.fd,
        server_vc->con.fd); */
+    session->attach_hostname(t_state.current.server->name);
     ats_ip_copy(&session->server_ip, &t_state.current.server->dst_addr);
     session->new_connection(static_cast<NetVConnection *>(data));
     session->state = HSS_ACTIVE;
@@ -4748,10 +4749,17 @@ HttpSM::do_http_server_open(bool raw)
   if (t_state.txn_conf->origin_max_connections > 0) {
     ConnectionCount *connections = ConnectionCount::getInstance();
 
-    char addrbuf[INET6_ADDRSTRLEN];
-    if (connections->getCount((t_state.current.server->dst_addr)) >= t_state.txn_conf->origin_max_connections) {
+    INK_MD5 hostname_hash;
+    MD5Context md5_ctx;
+    md5_ctx.hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
+                           strlen(t_state.current.server->name));
+
+    ip_port_text_buffer addrbuf;
+    if (connections->getCount(t_state.current.server->dst_addr, hostname_hash,
+                              (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match) >=
+        t_state.txn_conf->origin_max_connections) {
       DebugSM("http", "[%" PRId64 "] over the number of connection for this host: %s", sm_id,
-              ats_ip_ntop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+              ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
       ink_assert(pending_action == NULL);
       pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));
       return;
