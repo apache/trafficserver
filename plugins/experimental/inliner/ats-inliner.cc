@@ -95,7 +95,7 @@ handle_transform(const TSCont c)
 }
 
 int
-null_transform(TSCont c, TSEvent e, void *)
+inliner_transform(TSCont c, TSEvent e, void *)
 {
   if (TSVConnClosedGet(c)) {
     TSDebug(PLUGIN_TAG, "connection closed");
@@ -165,7 +165,7 @@ void
 transform_add(const TSHttpTxn t)
 {
   assert(t != NULL);
-  const TSVConn vconnection = TSTransformCreate(null_transform, t);
+  const TSVConn vconnection = TSTransformCreate(inliner_transform, t);
   assert(vconnection != NULL);
   TSHttpTxnHookAdd(t, TS_HTTP_RESPONSE_TRANSFORM_HOOK, vconnection);
 }
