@@ -134,6 +134,7 @@ namespace inliner
     AttributeParser attributeParser_;
 
     HtmlParser(void) : state_(State::kUndefined), tag_(Tag::kUndefined) {}
+    virtual ~HtmlParser() {}
     bool parseTag(const char);
     size_t parse(const char *, size_t, size_t o = 0);
     virtual void handleImage(const Attributes &) = 0;
