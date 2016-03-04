@@ -38,13 +38,16 @@ namespace inliner
     ats::io::SinkPointer sink_, sink2_;
     const TSIOBufferReader reader_;
     size_t counter_;
+    bool abort_;
 
     ~Handler()
     {
       assert(reader_ != NULL);
-      const int64_t available = TSIOBufferReaderAvail(reader_);
-      if (available > 0) {
-        TSIOBufferReaderConsume(reader_, available);
+      if (!abort_) {
+        const int64_t available = TSIOBufferReaderAvail(reader_);
+        if (available > 0) {
+          TSIOBufferReaderConsume(reader_, available);
+        }
       }
       TSIOBufferReaderFree(reader_);
     }
