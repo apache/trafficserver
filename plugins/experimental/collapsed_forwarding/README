@@ -18,6 +18,14 @@
 // proxy.config.http.background_fill_active_timeout      0 /////////////////////////
 // proxy.config.http.background_fill_completed_threshold 0 /////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////
+// Additionally, given that collapsed forwarding works based on cache write
+// lock failure detection, the plugin requires cache to be enabled and ready.
+// On a restart, Traffic Server typically takes a few seconds to initialize
+// the cache depending on the cache size and number of dirents. While the
+// cache is not ready yet, collapsed forwarding can not detect the write lock
+// contention and so can not work. The setting proxy.config.http.wait_for_cache
+// may be enabled which allows blocking incoming connections from being
+// accepted until cache is ready.
 ////////////////////////////////////////////////////////////////////////////////////
 // This plugin currently supports only per-remap mode activation.
 ////////////////////////////////////////////////////////////////////////////////////
