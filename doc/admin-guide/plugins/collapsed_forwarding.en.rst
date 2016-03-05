@@ -82,6 +82,14 @@ plugin to work::
 :ts:cv:`proxy.config.http.background_fill_active_timeout`      0
 :ts:cv:`proxy.config.http.background_fill_completed_threshold` 0
 
+Additionally, given that collapsed forwarding works based on cache write
+lock failure detection, the plugin requires cache to be enabled and ready.
+On a restart, Traffic Server typically takes a few seconds to initialize
+the cache depending on the cache size and number of dirents. While the
+cache is not ready yet, collapsed forwarding can not detect the write lock
+contention and so can not work. The setting :ts:cv:`proxy.config.http.wait_for_cache`
+may be enabled which allows blocking incoming connections from being
+accepted until cache is ready.
 
 Description
 -----------
@@ -96,7 +104,7 @@ process intensive file at the Origin layer. This ultimately can cause
 stability problems on the origin layer disrupting the overall network
 performance.
 
-ATS supports several kind of connection collapse mechanisms including
+Traffic Server supports several kind of connection collapse mechanisms including
 Read-While-Writer (RWW), Stale-While-Revalidate (SWR) etc each very effective
 dealing with a majority of the use cases that can result in the
 Thundering herd problem.
@@ -157,9 +165,9 @@ from the cache.
 However, the Open Read Retry can not help with the concurrent requests
 that hit (1.1) above, jumping to (3) directly. Only one such request will
 be able to obtain the exclusive write lock and all other requests are
-leaked upstream. This is where, the recently developed ATS feature
-Open Write Fail Action will help. The feature detects the write lock
-failure and can return a stale copy for a Cache Revalidation or a
+leaked upstream. This is where, the recently developed Traffic Server
+feature Open Write Fail Action will help. The feature detects the write
+lock failure and can return a stale copy for a Cache Revalidation or a
 5xx status code for a Cache Miss with a special internal header
 <@Ats-Internal> that allows a TS plugin to take other special actions
 depending on the use-case.
