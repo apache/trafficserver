@@ -2981,6 +2981,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 
   if (close_connection) {
     p->vc->do_io_close();
+    server_session = NULL; // Because p->vc == server_session
     p->read_vio = NULL;
     /* TS-1424: if we're outbound transparent and using the client
        source port for the outbound connection we must effectively
@@ -3053,9 +3054,10 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
 {
   ink_assert(c->vc_type == HT_HTTP_CLIENT);
 
-  if (c->producer->alive &&                                              // something there to read
-      server_entry && server_entry->vc && server_session->get_netvc() && // from an origin server
-      c->producer->num_consumers > 1                                     // with someone else reading it
+  if (c->producer->alive &&                            // something there to read
+      server_entry && server_entry->vc &&              // from an origin server
+      server_session && server_session->get_netvc() && // which is still open and valid
+      c->producer->num_consumers > 1                   // with someone else reading it
       ) {
     // If threshold is 0.0 or negative then do background
     //   fill regardless of the content length.  Since this
