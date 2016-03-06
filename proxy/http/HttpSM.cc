@@ -95,22 +95,21 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
     bool active = api_timer >= 0;
     if (!active)
       api_timer = -api_timer;
-    delta = Thread::get_hrtime() - api_timer;
+    delta = Thread::get_hrtime_updated() - api_timer;
     api_timer = 0;
-    // Exactly zero is a problem because we want to signal *something* happened
-    // vs. no API activity at all. This can happen when the API time is less than
-    // the HR timer resolution, so in fact we're understating the time even with
-    // this tweak.
-    if (0 == delta)
-      ++delta;
+    // Zero or negative time is a problem because we want to signal *something* happened
+    // vs. no API activity at all. This can happen due to graininess or real time
+    // clock adjustment.
+    if (delta <= 0)
+      delta = 1;
 
     if (0 == milestones[TS_MILESTONE_PLUGIN_TOTAL])
       milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_SM_START];
-    milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_PLUGIN_TOTAL] + delta;
+    milestones[TS_MILESTONE_PLUGIN_TOTAL] += delta;
     if (active) {
       if (0 == milestones[TS_MILESTONE_PLUGIN_ACTIVE])
         milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_SM_START];
-      milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_PLUGIN_ACTIVE] + delta;
+      milestones[TS_MILESTONE_PLUGIN_ACTIVE] += delta;
     }
   }
 }
@@ -1309,11 +1308,18 @@ HttpSM::state_api_callout(int event, void *data)
     STATE_ENTER(&HttpSM::state_api_callout, event);
   }
 
+  if (api_timer < 0) {
+    // This happens when either the plugin lock was missed and the hook rescheduled or
+    // the transaction got an event without the plugin calling TsHttpTxnReenable().
+    // The call chain does not recurse here if @a api_timer < 0 which means this call
+    // is the first from an event dispatch in this case.
+    milestone_update_api_time(milestones, api_timer);
+  }
+
   switch (event) {
   case EVENT_INTERVAL:
     ink_assert(pending_action == data);
     pending_action = NULL;
-    milestone_update_api_time(milestones, api_timer);
   // FALLTHROUGH
   case EVENT_NONE:
   case HTTP_API_CONTINUE:
@@ -1360,10 +1366,14 @@ HttpSM::state_api_callout(int event, void *data)
           plugin_lock = MUTEX_TAKE_TRY_LOCK(cur_hook->m_cont->mutex, mutex->thread_holding);
 
           if (!plugin_lock) {
-            api_timer = -Thread::get_hrtime();
+            api_timer = -Thread::get_hrtime_updated();
             HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
             ink_assert(pending_action == NULL);
             pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
+            // Should @a callout_state be reset back to HTTP_API_NO_CALLOUT here? Because the default
+            // handler has been changed the value isn't important to the rest of the state machine
+            // but not resetting means there is no way to reliably detect re-entrance to this state with an
+            // outstanding callout.
             return 0;
           }
         } else {
@@ -1376,14 +1386,15 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
-        api_timer = Thread::get_hrtime();
+        if (!api_timer)
+          api_timer = Thread::get_hrtime_updated();
         hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
-        if (api_timer > 0) {
+        if (api_timer > 0) { // true if the hook did not call TxnReenable()
           milestone_update_api_time(milestones, api_timer);
-          api_timer = -Thread::get_hrtime(); // set in order to track non-active callout duration
+          api_timer = -Thread::get_hrtime_updated(); // set in order to track non-active callout duration
           // which means that if we get back from the invoke with api_timer < 0 we're already
           // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
-          // up in state_api_callback.
+          // up in state_api_callback when the plugin re-enables this transaction.
         }
 
         if (plugin_lock) {

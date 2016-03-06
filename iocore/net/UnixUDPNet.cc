@@ -630,7 +630,7 @@ void
 UDPQueue::service(UDPNetHandler *nh)
 {
   (void)nh;
-  ink_hrtime now = ink_get_hrtime_internal();
+  ink_hrtime now = Thread::get_hrtime_updated();
   uint64_t timeSpent = 0;
   uint64_t pktSendStartTime;
   UDPPacketInternal *p;
@@ -684,8 +684,8 @@ void
 UDPQueue::SendPackets()
 {
   UDPPacketInternal *p;
-  static ink_hrtime lastCleanupTime = ink_get_hrtime_internal();
-  ink_hrtime now = ink_get_hrtime_internal();
+  static ink_hrtime lastCleanupTime = Thread::get_hrtime_updated();
+  ink_hrtime now = Thread::get_hrtime_updated();
   ink_hrtime send_threshold_time = now + SLOT_TIME;
   int32_t bytesThisSlot = INT_MAX, bytesUsed = 0;
   int32_t bytesThisPipe, sentOne;
@@ -721,7 +721,7 @@ sendPackets:
 
   if ((bytesThisSlot > 0) && sentOne) {
     // redistribute the slack...
-    now = ink_get_hrtime_internal();
+    now = Thread::get_hrtime_updated();
     if (pipeInfo.firstPacket(now) == NULL) {
       pipeInfo.advanceNow(now);
     }
@@ -797,7 +797,7 @@ UDPNetHandler::UDPNetHandler()
   mutex = new_ProxyMutex();
   ink_atomiclist_init(&udpOutQueue.atomicQueue, "Outgoing UDP Packet queue", offsetof(UDPPacketInternal, alink.next));
   ink_atomiclist_init(&udpNewConnections, "UDP Connection queue", offsetof(UnixUDPConnection, newconn_alink.next));
-  nextCheck = ink_get_hrtime_internal() + HRTIME_MSECONDS(1000);
+  nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
   lastCheck = 0;
   SET_HANDLER((UDPNetContHandler)&UDPNetHandler::startNetEvent);
 }
@@ -847,7 +847,7 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
   }   // end for
 
   // remove dead UDP connections
-  ink_hrtime now = ink_get_hrtime_internal();
+  ink_hrtime now = Thread::get_hrtime_updated();
   if (now >= nextCheck) {
     for (uc = udp_polling.head; uc; uc = next) {
       ink_assert(uc->mutex && uc->continuation);
@@ -859,7 +859,7 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
         uc->Release();
       }
     }
-    nextCheck = ink_get_hrtime_internal() + HRTIME_MSECONDS(1000);
+    nextCheck = Thread::get_hrtime_updated() + HRTIME_MSECONDS(1000);
   }
   // service UDPConnections with data ready for callback.
   Que(UnixUDPConnection, callback_link) q = udp_callbacks;

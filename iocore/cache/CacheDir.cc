@@ -1425,25 +1425,25 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   // test insert-delete
   rprintf(t, "insert-delete test\n");
   regress_rand_init(13);
-  ttime = ink_get_hrtime_internal();
+  ttime = Thread::get_hrtime_updated();
   for (i = 0; i < newfree; i++) {
     regress_rand_CacheKey(&key);
     dir_insert(&key, d, &dir);
   }
-  uint64_t us = (ink_get_hrtime_internal() - ttime) / HRTIME_USECOND;
+  uint64_t us = (Thread::get_hrtime_updated() - ttime) / HRTIME_USECOND;
   // On windows us is sometimes 0. I don't know why.
   // printout the insert rate only if its not 0
   if (us)
     rprintf(t, "insert rate = %d / second\n", (int)((newfree * (uint64_t)1000000) / us));
   regress_rand_init(13);
-  ttime = ink_get_hrtime_internal();
+  ttime = Thread::get_hrtime_updated();
   for (i = 0; i < newfree; i++) {
     Dir *last_collision = 0;
     regress_rand_CacheKey(&key);
     if (!dir_probe(&key, d, &dir, &last_collision))
       ret = REGRESSION_TEST_FAILED;
   }
-  us = (ink_get_hrtime_internal() - ttime) / HRTIME_USECOND;
+  us = (Thread::get_hrtime_updated() - ttime) / HRTIME_USECOND;
   // On windows us is sometimes 0. I don't know why.
   // printout the probe rate only if its not 0
   if (us)
