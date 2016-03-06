@@ -2897,7 +2897,13 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     if (is_http_server_eos_truncation(p)) {
       DebugSM("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] aborting HTTP tunnel due to server truncation", sm_id);
       tunnel.chain_abort_all(p);
-      ua_session = NULL;
+      // UA session may not be in the tunnel yet, don't NULL out the pointer in that case.
+      // Note: This is a hack. The correct solution is for the UA session to signal back to the SM
+      // when the UA is about to be destroyed and clean up the pointer there. That should be done once
+      // the TS-3612 changes are in place (and similarly for the server session).
+      if (ua_entry->in_tunnel)
+        ua_session = NULL;
+
       t_state.current.server->abort = HttpTransact::ABORTED;
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
       t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
