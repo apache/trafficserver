@@ -48,6 +48,7 @@ librecords_COMMON = \
   RecHttp.cc \
   RecMessage.cc \
   RecMutex.cc \
+  RecRawStats.cc \
   RecUtils.cc
 
 librecords_lm_a_SOURCES = \
