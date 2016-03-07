@@ -264,6 +264,26 @@ METHOD
 The HTTP method (e.g. ``GET``, ``HEAD``, ``POST``, and so on) used by the
 client for this transaction.
 
+NOW
+~~~
+::
+
+   cond %{NOW} >1453484915
+
+This is the current time, in the local timezone as set on the machine,
+typically GMC. Without any further qualifiers, this is the time in seconds
+since EPOCH aka Unix time. Qualifiers can be used to give various other
+values, such as year, month etc.
+::
+
+   %{NOW:YEAR}      Current year (e.g. 2016)
+   %{NOW:MONTH}     Current month (0-11, 0 == January)
+   %{NOW:DAY}       Current day of the month (1-31)
+   %{NOW:HOUR}      Current hour (0-23, in the 24h system)
+   %{NOW:MIN}       Current minute (0-59}
+   %{NOW:WEEKDAY}   Current weekday (0-6, 0 == Sunday)
+   %{NOW:YEARDAY}   Current day of the year (0-365, 0 == Jan 1st)
+
 PATH
 ~~~~
 ::
