@@ -233,8 +233,9 @@ ProcessManager::pollLMConnection()
   MgmtMessageHdr *mh_full;
   char *data_raw;
 
-  int count = MAX_MSGS_IN_A_ROW;
-  while (1) {
+  // Avoid getting stuck enqueuing too many requests in a row, limit to MAX_MSGS_IN_A_ROW.
+  int count;
+  for (count = 0; count < MAX_MSGS_IN_A_ROW; ++count) {
     int num;
 
     num = mgmt_read_timeout(local_manager_sockfd, 1 /* sec */, 0 /* usec */);
@@ -265,19 +266,12 @@ ProcessManager::pollLMConnection()
         close_socket(local_manager_sockfd);
         mgmt_fatal(stderr, 0, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
       }
-
-      // Now don't get stuck in the while loop handling too many requests in a row.
-      count--;
-      if (0 == count) {
-        Debug("pmgmt", "[ProcessManager::pollLMConnection] enqueued '%d' messages in a row, pausing for processing",
-              MAX_MSGS_IN_A_ROW);
-        break;
-      }
     } else if (num < 0) { /* Error */
       mgmt_elog(stderr, 0, "[ProcessManager::pollLMConnection] select failed or was interrupted (%d)\n", errno);
     }
   }
 
+  Debug("pmgmt", "[ProcessManager::pollLMConnection] enqueued %d of %d messages in a row", count, MAX_MSGS_IN_A_ROW)
 } /* End ProcessManager::pollLMConnection */
 
 void
