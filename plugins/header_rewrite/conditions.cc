@@ -674,7 +674,7 @@ ConditionNow::initialize(Parser &p)
   Condition::initialize(p);
   Matchers<int64_t> *match = new Matchers<int64_t>(_cond_op);
 
-  match->set(static_cast<unsigned int64_t>(strtol(p.get_arg().c_str(), NULL, 10)));
+  match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), NULL, 10)));
   _matcher = match;
 }
 
