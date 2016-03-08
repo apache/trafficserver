@@ -88,9 +88,6 @@ Statement::get_now_qualified(NowQualifiers qual) const
 
     localtime_r(&now, &res);
     switch (qual) {
-    case NOW_QUAL_EPOCH:
-      TSReleaseAssert(!"EPOCH should have been handled before");
-      break;
     case NOW_QUAL_YEAR:
       return static_cast<int64_t>(res.tm_year + 1900); // This makes more sense
       break;
@@ -111,6 +108,9 @@ Statement::get_now_qualified(NowQualifiers qual) const
       break;
     case NOW_QUAL_YEARDAY:
       return static_cast<int64_t>(res.tm_yday);
+      break;
+    default:
+      TSReleaseAssert(!"All cases should have been handled");
       break;
     }
   }
