@@ -8836,9 +8836,9 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   // proxy stats
   if (s->current.request_to == HttpTransact::PARENT_PROXY) {
     HTTP_SUM_DYN_STAT(http_parent_proxy_request_total_bytes_stat,
-                        origin_server_request_header_size + origin_server_request_body_size);
+                      origin_server_request_header_size + origin_server_request_body_size);
     HTTP_SUM_DYN_STAT(http_parent_proxy_response_total_bytes_stat,
-                        origin_server_response_header_size + origin_server_response_body_size);
+                      origin_server_response_header_size + origin_server_response_body_size);
     HTTP_SUM_DYN_STAT(http_parent_proxy_transaction_time_stat, total_time);
   }
   // request header zero means the document was cached.
@@ -8875,65 +8875,65 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   }
   if (http_ua_read_header_done_time_stat) {
     HTTP_SUM_DYN_STAT(http_ua_read_header_done_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE));
   }
   if (http_ua_begin_write_time_stat) {
     HTTP_SUM_DYN_STAT(http_ua_begin_write_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE));
   }
   if (http_ua_close_time_stat) {
     HTTP_SUM_DYN_STAT(http_ua_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE));
   }
   if (http_server_first_connect_time_stat) {
     HTTP_SUM_DYN_STAT(http_server_first_connect_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_CONNECT));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_CONNECT));
   }
   if (http_server_connect_time_stat) {
     HTTP_SUM_DYN_STAT(http_server_connect_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT));
   }
   if (http_server_connect_end_time_stat) {
     HTTP_SUM_DYN_STAT(http_server_connect_end_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END));
   }
   if (http_server_begin_write_time_stat) {
     HTTP_SUM_DYN_STAT(http_server_begin_write_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_BEGIN_WRITE));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_BEGIN_WRITE));
   }
   if (http_server_first_read_time_stat) {
     HTTP_SUM_DYN_STAT(http_server_first_read_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ));
   }
   if (http_server_read_header_done_time_stat) {
     HTTP_SUM_DYN_STAT(http_server_read_header_done_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE));
   }
   if (http_server_close_time_stat) {
     HTTP_SUM_DYN_STAT(http_server_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE));
   }
   if (http_cache_open_read_begin_time_stat) {
     HTTP_SUM_DYN_STAT(http_cache_open_read_begin_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN));
   }
   if (http_cache_open_read_end_time_stat) {
     HTTP_SUM_DYN_STAT(http_cache_open_read_end_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END));
   }
   if (http_cache_open_write_begin_time_stat) {
     HTTP_SUM_DYN_STAT(http_cache_open_write_begin_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN));
   }
   if (http_cache_open_write_end_time_stat) {
     HTTP_SUM_DYN_STAT(http_cache_open_write_end_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END));
   }
   if (http_dns_lookup_begin_time_stat) {
     HTTP_SUM_DYN_STAT(http_dns_lookup_begin_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN));
   }
   if (http_dns_lookup_end_time_stat) {
     HTTP_SUM_DYN_STAT(http_dns_lookup_end_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END));
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END));
   }
   if (http_sm_start_time_stat) {
     HTTP_SUM_DYN_STAT(http_sm_start_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_START));
