@@ -373,12 +373,10 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
   HostDBInfo *infos[HOST_DB_MAX_ROUND_ROBIN_INFO];
 
   do {
-    if (info[i].app.http_data.last_failure != 0 && (uint32_t)(now - fail_window) < info[i].app.http_data.last_failure) {
+    // if the real isn't alive-- exclude it from selection
+    if (info[i].alive(now, fail_window)) {
       continue;
     }
-
-    if (info[i].app.http_data.last_failure)
-      info[i].app.http_data.last_failure = 0;
 
     if (info[i].data.srv.srv_priority <= p) {
       p = info[i].data.srv.srv_priority;
