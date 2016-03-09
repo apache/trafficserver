@@ -277,11 +277,11 @@ Configure Origin Location
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The previous settings enable reverse proxying (and prevent flagrant abuse of
-it), but now |TS| needs to know what to proxy. This is achieved by writing remap
-rules, which make use of the core :ref:`conf-remap-plugin`. For our Getting
-Started guide's |AW| example scenario, we have very simple needs and want little
-more than to proxy all requests to our single origin server. This is
-accomplished with the following rule added to the :file:`remap.config`
+it), but now |TS| needs to know what to proxy. This is achieved by writing
+remap rules, which make use of the core :ref:`admin-plugins-conf-remap`. For
+our Getting Started guide's |AW| example scenario, we have very simple needs
+and want little more than to proxy all requests to our single origin server.
+This is accomplished with the following rule added to the :file:`remap.config`
 configuration::
 
     regex_map http://(.*)/ http://localhost:80/

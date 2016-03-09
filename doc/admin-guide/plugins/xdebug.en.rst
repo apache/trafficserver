@@ -17,7 +17,7 @@
 
 .. include:: ../../common.defs
 
-.. _xdebug-plugin:
+.. _admin-plugins-xdebug:
 
 XDebug Plugin
 *************

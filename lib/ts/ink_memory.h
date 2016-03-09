@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <strings.h>
+#include <inttypes.h>
 
 #include "ts/ink_config.h"
 
@@ -91,6 +92,10 @@ int ats_mallopt(int param, int value);
 int ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
 int ats_madvise(caddr_t addr, size_t len, int flags);
 int ats_mlock(caddr_t addr, size_t len);
+
+void *ats_track_malloc(size_t size, uint64_t *stat);
+void *ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat);
+void ats_track_free(void *ptr, uint64_t *stat);
 
 static inline size_t __attribute__((const)) ats_pagesize(void)
 {

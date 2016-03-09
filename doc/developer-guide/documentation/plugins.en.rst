@@ -140,3 +140,13 @@ that will be covered in the sections that follow. This, it is hoped, will get
 the usual case out of the way quickly for most |TS| administrators while
 limiting the paralysis of choice they may face otherwise.
 
+Documentation Template
+======================
+
+For the convenience of plugin developers, this manual includes a
+:ref:`plugin documentation template <developer-doc-plugin-template>` which you
+may use as a base. The template includes placeholders, with markup, for common
+features of the documentation which may be relevant for your plugin. Developers
+are very strongly encouraged to use this template whenever possible, as a means
+of producing and maintaining a consistent format for plugin documentation.
+

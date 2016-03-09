@@ -24,8 +24,33 @@
 #ifndef METRICS_H_D289E71B_AAC5_4CF3_9954_D54EDED60D1B
 #define METRICS_H_D289E71B_AAC5_4CF3_9954_D54EDED60D1B
 
+#if TS_USE_LUAJIT
+
 bool metrics_binding_initialize(BindingInstance &binding);
 void metrics_binding_destroy(BindingInstance &binding);
 void metrics_binding_evaluate(BindingInstance &binding);
+
+#else /* TS_USE_LUAJIT */
+
+struct BindingInstance {
+};
+
+static inline bool
+metrics_binding_initialize(BindingInstance &binding)
+{
+  return false;
+}
+
+static inline void
+metrics_binding_destroy(BindingInstance &binding)
+{
+}
+
+static inline void
+metrics_binding_evaluate(BindingInstance &binding)
+{
+}
+
+#endif /* TS_USE_LUAJIT */
 
 #endif /* METRICS_H_D289E71B_AAC5_4CF3_9954_D54EDED60D1B */

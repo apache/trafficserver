@@ -86,6 +86,7 @@ class TSConfVar(std.Target):
         # highlighted background when the link is selected.
         title = sphinx.addnodes.desc_signature(cv_name, '')
         title['ids'].append(nodes.make_id(cv_name))
+        title['ids'].append(cv_name)
         title['names'].append(cv_name)
         title['first'] = False
         title['objtype'] = 'cv'

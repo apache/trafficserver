@@ -1163,7 +1163,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   if (event == EVENT_IMMEDIATE) {
     /* BZ 49408 */
     // ink_assert(inactivity_timeout_in);
-    // ink_assert(next_inactivity_timeout_at < ink_get_hrtime());
+    // ink_assert(next_inactivity_timeout_at < Thread::get_hrtime());
     if (!inactivity_timeout_in || next_inactivity_timeout_at > Thread::get_hrtime())
       return EVENT_CONT;
     signal_event = VC_EVENT_INACTIVITY_TIMEOUT;
@@ -1392,6 +1392,10 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   // processed on two threads simultaneously
   this->ep.stop();
   this->do_io_close();
+
+  // The do_io_close will decrement the current stat count but we are creating a new vc.
+  // Increment the currently open stat here so the net current count is unchanged
+  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
 
   // Create new VC:
   if (save_ssl) {

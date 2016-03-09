@@ -172,7 +172,6 @@ namespace io
     handle_error:
       operation.close();
       assert(operation.action_ != NULL);
-      TSActionDone(operation.action_);
       operation.action_ = NULL;
       /*
       TSContDataSet(c, NULL);

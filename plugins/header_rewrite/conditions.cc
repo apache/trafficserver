@@ -34,7 +34,6 @@ void
 ConditionStatus::initialize(Parser &p)
 {
   Condition::initialize(p);
-
   Matchers<TSHttpStatus> *match = new Matchers<TSHttpStatus>(_cond_op);
 
   match->set(static_cast<TSHttpStatus>(strtol(p.get_arg().c_str(), NULL, 10)));
@@ -77,8 +76,8 @@ void
 ConditionMethod::initialize(Parser &p)
 {
   Condition::initialize(p);
-
   Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+
   match->set(p.get_arg());
 
   _matcher = match;
@@ -120,12 +119,10 @@ void
 ConditionRandom::initialize(Parser &p)
 {
   struct timeval tv;
-
   Condition::initialize(p);
+  Matchers<unsigned int> *match = new Matchers<unsigned int>(_cond_op);
 
   gettimeofday(&tv, NULL);
-
-  Matchers<unsigned int> *match = new Matchers<unsigned int>(_cond_op);
   _seed = getpid() * tv.tv_usec;
   _max = strtol(_qualifier.c_str(), NULL, 10);
 
@@ -146,6 +143,7 @@ void
 ConditionRandom::append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
 {
   std::ostringstream oss;
+
   oss << rand_r(&_seed) % _max;
   s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending RANDOM(%d) to evaluation value -> %s", _max, s.c_str());
@@ -157,7 +155,6 @@ void
 ConditionAccess::initialize(Parser &p)
 {
   struct timeval tv;
-
   Condition::initialize(p);
 
   gettimeofday(&tv, NULL);
@@ -206,10 +203,9 @@ void
 ConditionHeader::initialize(Parser &p)
 {
   Condition::initialize(p);
-
   Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
-  match->set(p.get_arg());
 
+  match->set(p.get_arg());
   _matcher = match;
 
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
@@ -256,7 +252,6 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
   }
 }
 
-
 bool
 ConditionHeader::eval(const Resources &res)
 {
@@ -268,15 +263,15 @@ ConditionHeader::eval(const Resources &res)
   return rval;
 }
 
+
 // ConditionPath
 void
 ConditionPath::initialize(Parser &p)
 {
   Condition::initialize(p);
-
   Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
-  match->set(p.get_arg());
 
+  match->set(p.get_arg());
   _matcher = match;
 }
 
@@ -308,13 +303,14 @@ ConditionPath::eval(const Resources &res)
   return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
 
+
 // ConditionQuery
 void
 ConditionQuery::initialize(Parser &p)
 {
   Condition::initialize(p);
-
   Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+
   match->set(p.get_arg());
   _matcher = match;
 }
@@ -324,6 +320,7 @@ ConditionQuery::append_value(std::string &s, const Resources &res)
 {
   int query_len = 0;
   const char *query = TSUrlHttpQueryGet(res._rri->requestBufp, res._rri->requestUrl, &query_len);
+
   TSDebug(PLUGIN_NAME, "Appending QUERY to evaluation value: %.*s", query_len, query);
   s.append(query, query_len);
 }
@@ -360,6 +357,7 @@ ConditionUrl::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
+  TSDebug(PLUGIN_NAME, "\tParsing %%{URL:%s}", q.c_str());
   _url_qual = parse_url_qualifier(q);
 }
 
@@ -623,6 +621,7 @@ ConditionIncomingPort::append_value(std::string &s, const Resources &res)
   TSDebug(PLUGIN_NAME, "Appending %d to evaluation value -> %s", port, s.c_str());
 }
 
+
 // ConditionTransactCount
 void
 ConditionTransactCount::initialize(Parser &p)
@@ -665,4 +664,48 @@ ConditionTransactCount::append_value(std::string &s, Resources const &res)
       s.append(value, length);
     }
   }
+}
+
+
+// ConditionNow: time related conditions, such as time since epoch (default), hour, day etc.
+void
+ConditionNow::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  Matchers<int64_t> *match = new Matchers<int64_t>(_cond_op);
+
+  match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), NULL, 10)));
+  _matcher = match;
+}
+
+
+void
+ConditionNow::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+
+  TSDebug(PLUGIN_NAME, "\tParsing %%{NOW:%s} qualifier", q.c_str());
+  _now_qual = parse_now_qualifier(q);
+}
+
+
+void
+ConditionNow::append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
+{
+  std::ostringstream oss;
+
+  oss << get_now_qualified(_now_qual);
+  s += oss.str();
+  TSDebug(PLUGIN_NAME, "Appending NOW() to evaluation value -> %s", s.c_str());
+}
+
+
+bool
+ConditionNow::eval(const Resources &res)
+{
+  int64_t now = get_now_qualified(_now_qual);
+
+  TSDebug(PLUGIN_NAME, "Evaluating NOW() -> %" PRId64, now);
+
+  return static_cast<const Matchers<int64_t> *>(_matcher)->test(now);
 }

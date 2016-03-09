@@ -32,7 +32,6 @@
 #include "Main.h"
 #include "IPAllow.h"
 #include "ProxyConfig.h"
-#include "StatSystem.h"
 #include "P_EventSystem.h"
 #include "P_Cache.h"
 #include "hdrs/HdrToken.h"

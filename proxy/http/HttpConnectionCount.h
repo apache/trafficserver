@@ -28,6 +28,7 @@
 #include "ts/Map.h"
 
 #ifndef _HTTP_CONNECTION_COUNT_H_
+#define _HTTP_CONNECTION_COUNT_H_
 
 /**
  * Singleton class to keep track of the number of connections per host

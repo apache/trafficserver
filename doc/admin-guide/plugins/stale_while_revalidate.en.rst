@@ -1,7 +1,7 @@
-.. _stale-while-revalidate-plugin:
+.. _admin-plugins-tale-while-revalidate:
 
-Stale While Revalidate Plugin (undocumented)
-********************************************
+Stale While Revalidate Plugin
+*****************************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file

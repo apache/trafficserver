@@ -55,7 +55,7 @@ A variable marked as ``Reloadable`` can be updated via the command::
    traffic_ctl config reload
 
 A variable marked as ``Overridable`` can be changed on a per-remap basis using plugins
-(like the :ref:`conf-remap-plugin`).
+(like the :ref:`admin-plugins-conf-remap`).
 
 ``INT`` type configurations are expressed as any normal integer,
 e.g. *32768*. They can also be expressed using more human readable values
@@ -311,14 +311,6 @@ Value Effect
 
 Metrics Variables
 -----------------
-
-.. ts:cv:: CONFIG proxy.config.stats.snap_frequency INT 60
-
-  Interval (in seconds) at which to snapshot persistent metrics.
-
-.. ts:cv:: CONFIG proxy.config.stats.snap_file STRING "stats.snap"
-
-  Name of the file to use for snapshots of persistent metrics.
 
 .. ts:cv:: proxy.config.stats.enable_lua INT 0
 
@@ -1162,12 +1154,16 @@ HTTP Redirection
 ================
 
 .. ts:cv:: CONFIG proxy.config.http.redirection_enabled INT 0
+   :reloadable:
+   :overridable:
 
    This setting indicates whether Trafficserver does a redirect follow location on receiving a 3XX Redirect response from the Origin
    server. The redirection attempt is transparent to the client and the client is served the final response from the redirected-to
    location.
 
 .. ts:cv:: CONFIG proxy.config.http.number_of_redirections INT 1
+   :reloadable:
+   :overridable:
 
    This setting determines the maximum number of times Trafficserver does a redirect follow location on receiving a 3XX Redirect response
    for a given client request.
@@ -1178,6 +1174,8 @@ HTTP Redirection
    (e.g. 80 for HTTP and 443 for HTTPS). Note that the port is still included in the Host header if it's non-default.
 
 .. ts:cv:: CONFIG proxy.config.http.redirect_use_orig_cache_key INT 0
+   :reloadable:
+   :overridable:
 
    This setting enables Trafficserver to allow using original request cache key (for example, set using a TS API) during a 3xx redirect follow.
    The default behavior (0) is to use the URL specified by Location header in the 3xx response as the cache key.
@@ -1295,6 +1293,8 @@ Congestion Control
    :reloadable:
 
    When enabled >= (``0``), Traffic Server will enforce a maximum number of simultaneous websocket connections.
+
+.. _admin-negative-response-caching:
 
 Negative Response Caching
 =========================
@@ -1804,6 +1804,8 @@ RAM Cache
 
       Compression runs on task threads.  To use more cores for RAM cache compression, increase :ts:cv:`proxy.config.task_threads`.
 
+.. _admin-heuristic-expiration:
+
 Heuristic Expiration
 ====================
 
@@ -1908,11 +1910,13 @@ all the different user-agent versions of documents it encounters.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.max_open_write_retries INT 1
    :reloadable:
+   :overridable:
 
     The number of times to attempt a cache open write upon failure to get a write lock.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_write_fail_action INT 0
    :reloadable:
+   :overridable:
 
     This setting indicates the action taken on failing to obtain the cache open write lock on either a cache miss or a cache
     hit stale. This typically happens when there is more than one request to the same cache object simultaneously. During such
@@ -1977,7 +1981,7 @@ Customizable User Response Pages
    To enable any enpoint there needs to be an entry in :file:`remap.config` which
    specifically enables it. Such a line would look like: ::
 
-        map / http://{stat}
+        map / http://{cache}
 
    The following are the cache endpoints:
 
@@ -1989,8 +1993,6 @@ Customizable User Response Pages
    - ``hostdb`` = lookups against the hostdb
    - ``http`` = HTTPSM details, this endpoint is also gated by `proxy.config.http.enable_http_info`
    - ``net`` = lookup and listing of open connections
-   - ``stat`` = list of all records.config options and metrics
-   - ``test`` = test callback page
 
 .. ts:cv:: CONFIG proxy.config.http.enable_http_info INT 0
 
@@ -2219,6 +2221,17 @@ This value is a global default that can be overridden by :ts:cv:`proxy.config.ht
    This option has no effect on outbound transparent connections The local IP address used in the connection to the
    origin server is determined by the client, which forces the IP address family of the address used for the origin
    server. In effect, outbound transparent connections always use a resolution style of "``client``".
+
+.. ts:cv:: CONFIG proxy.config.cache.hostdb.sync_frequency INT 120
+
+   Set the frequency (in seconds) to sync hostdb to disk.
+
+   Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
+   This means that the minumum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
+
+.. ts:cv:: CONFIG proxy.config.hostdb.verify_after INT 720
+
+    Set the interval (in seconds) in which to re-query DNS regardless of TTL status.
 
 Logging Configuration
 =====================
@@ -3088,7 +3101,7 @@ Sockets
 
 .. ts:cv:: CONFIG  proxy.config.net.tcp_congestion_control_out STRING ""
 
-   This directive will override the congestion control algorithm for outgoing 
+   This directive will override the congestion control algorithm for outgoing
    connections (connect sockets). On linux the allowed values are typically
    specified in a space seperated list in /proc/sys/net/ipv4/tcp_allowed_congestion_control
 

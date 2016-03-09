@@ -25,6 +25,11 @@
 #include "ts/ink_defs.h"
 #include "ts/ink_stack_trace.h"
 #include "ts/Diags.h"
+#include "ts/ink_atomic.h"
+
+#if defined(freebsd)
+#include <malloc_np.h> // for malloc_usable_size
+#endif
 
 #include <assert.h>
 #if defined(linux)
@@ -209,6 +214,47 @@ ats_mlock(caddr_t addr, size_t len)
   return res;
 }
 
+void *
+ats_track_malloc(size_t size, uint64_t *stat)
+{
+  void *ptr = ats_malloc(size);
+#ifdef HAVE_MALLOC_USABLE_SIZE
+  ink_atomic_increment(stat, malloc_usable_size(ptr));
+#endif
+  return ptr;
+}
+
+void *
+ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat)
+{
+#ifdef HAVE_MALLOC_USABLE_SIZE
+  const size_t old_size = malloc_usable_size(ptr);
+  ptr = ats_realloc(ptr, size);
+  const size_t new_size = malloc_usable_size(ptr);
+  if (old_size < new_size) {
+    // allocating something bigger
+    ink_atomic_increment(alloc_stat, new_size - old_size);
+  } else if (old_size > new_size) {
+    ink_atomic_increment(free_stat, old_size - new_size);
+  }
+  return ptr;
+#else
+  return ats_realloc(ptr, size);
+#endif
+}
+
+void
+ats_track_free(void *ptr, uint64_t *stat)
+{
+  if (ptr == NULL) {
+    return;
+  }
+
+#ifdef HAVE_MALLOC_USABLE_SIZE
+  ink_atomic_increment(stat, malloc_usable_size(ptr));
+#endif
+  ats_free(ptr);
+}
 
 /*-------------------------------------------------------------------------
   Moved from old ink_resource.h

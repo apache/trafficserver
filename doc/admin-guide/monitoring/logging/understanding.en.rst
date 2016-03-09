@@ -54,7 +54,7 @@ every error it detects in log files. |TS| keeps three types of log files:
    logged, the hostname of the Traffic Server that reported the error,
    and a description of the error or warning.
 
-   Refer to :ref:`traffic-server-error-messages` for a list of the
+   Refer to :ref:`admin-monitoring-errors` for a list of the
    messages logged by Traffic Server.
 
 By default, |TS| creates both error and event log files and

@@ -1,4 +1,4 @@
-.. _generator-plugin:
+.. _admin-plugins-generator:
 
 Generator Plugin
 ****************

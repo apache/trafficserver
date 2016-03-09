@@ -17,10 +17,10 @@
 
 .. include:: ../../common.defs
 
-.. _healthcheck-plugin:
+.. _admin-plugins-healthchecks:
 
-Health Check Plugin
-*******************
+Health Checks Plugin
+********************
 
 This is a simple plugin, to provide basic (but configurable) health checks.
 This is a server intercept plugin, and it takes one single configuration

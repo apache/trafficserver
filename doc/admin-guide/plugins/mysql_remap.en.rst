@@ -1,4 +1,4 @@
-.. _mysql-remap-plugin:
+.. _admin-plugins-mysql-remap:
 
 MySQL Remap Plugin
 ******************

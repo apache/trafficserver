@@ -790,13 +790,35 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   return RecRawStatSyncCount(name, data_type, data, rsb, id);
 }
 
+void *
+ssl_malloc(size_t size)
+{
+  return ats_track_malloc(size, &ssl_memory_allocated);
+}
+
+void *
+ssl_realloc(void *ptr, size_t size)
+{
+  return ats_track_realloc(ptr, size, &ssl_memory_allocated, &ssl_memory_freed);
+}
+
+void
+ssl_free(void *ptr)
+{
+  ats_track_free(ptr, &ssl_memory_freed);
+}
+
 void
 SSLInitializeLibrary()
 {
   if (!open_ssl_initialized) {
 // BoringSSL does not have the memory functions
 #ifndef OPENSSL_IS_BORINGSSL
-    CRYPTO_set_mem_functions(ats_malloc, ats_realloc, ats_free);
+    if (res_track_memory >= 2) {
+      CRYPTO_set_mem_functions(ssl_malloc, ssl_realloc, ssl_free);
+    } else {
+      CRYPTO_set_mem_functions(ats_malloc, ats_realloc, ats_free);
+    }
 #endif
 
     SSL_load_error_strings();
@@ -1198,7 +1220,9 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
       SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
       return false;
     }
-    SSLConfigParams::load_ssl_file_cb(completeServerKeyPath, CONFIG_FLAG_UNVERSIONED);
+    if (SSLConfigParams::load_ssl_file_cb) {
+      SSLConfigParams::load_ssl_file_cb(completeServerKeyPath, CONFIG_FLAG_UNVERSIONED);
+    }
   } else {
     SSLError("empty SSL private key path in records.config");
     return false;
@@ -1381,7 +1405,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         goto fail;
       }
       certList.push_back(cert);
-      SSLConfigParams::load_ssl_file_cb(completeServerCertPath, CONFIG_FLAG_UNVERSIONED);
+      if (SSLConfigParams::load_ssl_file_cb) {
+        SSLConfigParams::load_ssl_file_cb(completeServerCertPath, CONFIG_FLAG_UNVERSIONED);
+      }
       // Load up any additional chain certificates
       X509 *ca;
       while ((ca = PEM_read_bio_X509(bio.get(), NULL, 0, NULL))) {
@@ -1404,7 +1430,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
         goto fail;
       }
-      SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+      if (SSLConfigParams::load_ssl_file_cb) {
+        SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+      }
     }
 
     // Now, load any additional certificate chains specified in this entry.
@@ -1414,7 +1442,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
         goto fail;
       }
-      SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+      if (SSLConfigParams::load_ssl_file_cb) {
+        SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+      }
     }
   }
 

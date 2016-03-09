@@ -50,9 +50,6 @@
 static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 #define RANGE_NUMBERS_LENGTH 60
 
-#define HTTP_INCREMENT_TRANS_STAT(X) update_stat(s, X, 1);
-#define HTTP_SUM_TRANS_STAT(X, S) update_stat(s, X, (ink_statval_t)S);
-
 #define TRANSACT_REMEMBER(_s, _e, _d)                              \
   {                                                                \
     HttpSM *sm = (_s)->state_machine;                              \
@@ -889,7 +886,7 @@ done:
   */
   if (!s->reverse_proxy && s->state_machine->plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL) {
     DebugTxn("http_trans", "END HttpTransact::EndRemapRequest");
-    HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_invalid_client_requests_stat);
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
   } else {
     s->hdr_info.client_response.clear(); // anything previously set is invalid from this point forward
@@ -1204,10 +1201,10 @@ HttpTransact::HandleRequest(State *s)
 
   ink_assert(!s->hdr_info.server_request.valid());
 
-  HTTP_INCREMENT_TRANS_STAT(http_incoming_requests_stat);
+  HTTP_INCREMENT_DYN_STAT(http_incoming_requests_stat);
 
   if (s->client_info.port_attribute == HttpProxyPort::TRANSPORT_SSL) {
-    HTTP_INCREMENT_TRANS_STAT(https_incoming_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(https_incoming_requests_stat);
   }
 
   ///////////////////////////////////////////////
@@ -1215,7 +1212,7 @@ HttpTransact::HandleRequest(State *s)
   ///////////////////////////////////////////////
 
   if (!(is_request_valid(s, &s->hdr_info.client_request))) {
-    HTTP_INCREMENT_TRANS_STAT(http_invalid_client_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_invalid_client_requests_stat);
     DebugTxn("http_seq", "[HttpTransact::HandleRequest] request invalid.");
     s->next_action = SM_ACTION_SEND_ERROR_CACHE_NOOP;
     //  s->next_action = HttpTransact::PROXY_INTERNAL_CACHE_NOOP;
@@ -1251,7 +1248,7 @@ HttpTransact::HandleRequest(State *s)
       s->hdr_info.request_content_length > s->http_config_param->max_post_size) {
     DebugTxn("http_trans", "Max post size %" PRId64 " Client tried to post a body that was too large.",
              s->http_config_param->max_post_size);
-    HTTP_INCREMENT_TRANS_STAT(http_post_body_too_large);
+    HTTP_INCREMENT_DYN_STAT(http_post_body_too_large);
     bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
     build_error_response(s, HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE, "Request Entity Too Large", "request#entity_too_large", NULL);
     s->squid_codes.log_code = SQUID_LOG_ERR_POST_ENTITY_TOO_LARGE;
@@ -1269,7 +1266,7 @@ HttpTransact::HandleRequest(State *s)
       if (ptr_len_casecmp(expect_hdr_val, expect_hdr_val_len, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0) {
         // Let's error out this request.
         DebugTxn("http_trans", "Client sent a post expect: 100-continue, sending 405.");
-        HTTP_INCREMENT_TRANS_STAT(disallowed_post_100_continue);
+        HTTP_INCREMENT_DYN_STAT(disallowed_post_100_continue);
         build_error_response(s, HTTP_STATUS_METHOD_NOT_ALLOWED, "Method Not Allowed", "request#method_unsupported", NULL);
         TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
       }
@@ -1398,7 +1395,7 @@ HttpTransact::setup_plugin_request_intercept(State *s)
   if (s->cache_info.action != HttpTransact::CACHE_DO_NO_ACTION) {
     s->cache_info.action = HttpTransact::CACHE_DO_NO_ACTION;
     s->current.mode = TUNNELLING_PROXY;
-    HTTP_INCREMENT_TRANS_STAT(http_tunnels_stat);
+    HTTP_INCREMENT_DYN_STAT(http_tunnels_stat);
   }
   // Regardless of the protocol we're gatewaying to
   //   we see the scheme as http
@@ -1886,14 +1883,14 @@ HttpTransact::DecideCacheLookup(State *s)
     } else {
       s->cache_info.action = CACHE_DO_NO_ACTION;
       s->current.mode = TUNNELLING_PROXY;
-      HTTP_INCREMENT_TRANS_STAT(http_tunnels_stat);
+      HTTP_INCREMENT_DYN_STAT(http_tunnels_stat);
     }
   }
 
   if (service_transaction_in_proxy_only_mode(s)) {
     s->cache_info.action = CACHE_DO_NO_ACTION;
     s->current.mode = TUNNELLING_PROXY;
-    HTTP_INCREMENT_TRANS_STAT(http_throttled_proxy_only_stat);
+    HTTP_INCREMENT_DYN_STAT(http_throttled_proxy_only_stat);
   }
   // at this point the request is ready to continue down the
   // traffic server path.
@@ -3162,7 +3159,7 @@ HttpTransact::HandleICPLookup(State *s)
 {
   SET_VIA_STRING(VIA_DETAIL_CACHE_TYPE, VIA_DETAIL_ICP);
   if (s->icp_lookup_success == true) {
-    HTTP_INCREMENT_TRANS_STAT(http_icp_suggested_lookups_stat);
+    HTTP_INCREMENT_DYN_STAT(http_icp_suggested_lookups_stat);
     DebugTxn("http_trans", "[HandleICPLookup] Success, sending request to icp suggested host.");
     ats_ip4_set(&s->icp_info.dst_addr, s->icp_ip_result.sin_addr.s_addr);
     s->icp_info.dst_addr.port() = ntohs(s->icp_ip_result.sin_port);
@@ -3305,7 +3302,7 @@ HttpTransact::HandleResponse(State *s)
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", &s->hdr_info.server_response, s->state_machine_id, "Incoming O.S. Response");
 
-  HTTP_INCREMENT_TRANS_STAT(http_incoming_responses_stat);
+  HTTP_INCREMENT_DYN_STAT(http_incoming_responses_stat);
 
   ink_release_assert(s->current.request_to != UNDEFINED_LOOKUP);
   if (s->cache_info.action != CACHE_DO_WRITE) {
@@ -3831,7 +3828,7 @@ HttpTransact::handle_server_connection_not_open(State *s)
   ink_assert(s->current.state != CONNECTION_ALIVE);
 
   SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
-  HTTP_INCREMENT_TRANS_STAT(http_broken_server_connections_stat);
+  HTTP_INCREMENT_DYN_STAT(http_broken_server_connections_stat);
 
   // Fire off a hostdb update to mark the server as down
   s->state_machine->do_hostdb_update_if_necessary();
@@ -4289,7 +4286,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
       base_response->set_expires(exp_time);
 
       SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
-      HTTP_INCREMENT_TRANS_STAT(http_cache_updates_stat);
+      HTTP_INCREMENT_DYN_STAT(http_cache_updates_stat);
 
       // unset Cache-control: "need-revalidate-once" (if it's set)
       // This directive is used internally by T.S. to invalidate
@@ -4451,12 +4448,12 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   case CACHE_DO_DELETE:
     DebugTxn("http_trans", "[hcoofsr] delete cached copy");
     SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_DELETED);
-    HTTP_INCREMENT_TRANS_STAT(http_cache_deletes_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_deletes_stat);
     break;
   case CACHE_DO_WRITE:
     DebugTxn("http_trans", "[hcoofsr] cache write");
     SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_WRITTEN);
-    HTTP_INCREMENT_TRANS_STAT(http_cache_writes_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_writes_stat);
     break;
   case CACHE_DO_SERVE_AND_UPDATE:
   // fall through
@@ -4465,7 +4462,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   case CACHE_DO_REPLACE:
     DebugTxn("http_trans", "[hcoofsr] cache update/replace");
     SET_VIA_STRING(VIA_CACHE_FILL_ACTION, VIA_CACHE_UPDATED);
-    HTTP_INCREMENT_TRANS_STAT(http_cache_updates_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_updates_stat);
     break;
   default:
     break;
@@ -5315,7 +5312,7 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
   if (!incoming_hdr->presence(MIME_PRESENCE_HOST) && incoming_hdr->version_get() != HTTPVersion(0, 9)) {
     // Update the number of incoming 1.0 or 1.1 requests that do
     // not contain Host header fields.
-    HTTP_INCREMENT_TRANS_STAT(http_missing_host_hdr_stat);
+    HTTP_INCREMENT_DYN_STAT(http_missing_host_hdr_stat);
   }
   // Did the client send a "TE: identity;q=0"? We have to respond
   // with an error message because we only support identity
@@ -5456,7 +5453,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
     // Trace and Options requests should not be looked up in cache.
     // s->cache_info.action = CACHE_DO_NO_ACTION;
     s->current.mode = TUNNELLING_PROXY;
-    HTTP_INCREMENT_TRANS_STAT(http_tunnels_stat);
+    HTTP_INCREMENT_DYN_STAT(http_tunnels_stat);
     return false;
   }
 
@@ -5521,7 +5518,7 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
     // Trace and Options requests should not be looked up in cache.
     // s->cache_info.action = CACHE_DO_NO_ACTION;
     s->current.mode = TUNNELLING_PROXY;
-    HTTP_INCREMENT_TRANS_STAT(http_tunnels_stat);
+    HTTP_INCREMENT_DYN_STAT(http_tunnels_stat);
   }
 
   return false;
@@ -5635,29 +5632,29 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   s->method = incoming_request->method_get_wksidx();
 
   if (s->method == HTTP_WKSIDX_GET) {
-    HTTP_INCREMENT_TRANS_STAT(http_get_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_get_requests_stat);
   } else if (s->method == HTTP_WKSIDX_HEAD) {
-    HTTP_INCREMENT_TRANS_STAT(http_head_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_head_requests_stat);
   } else if (s->method == HTTP_WKSIDX_POST) {
-    HTTP_INCREMENT_TRANS_STAT(http_post_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_post_requests_stat);
   } else if (s->method == HTTP_WKSIDX_PUT) {
-    HTTP_INCREMENT_TRANS_STAT(http_put_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_put_requests_stat);
   } else if (s->method == HTTP_WKSIDX_CONNECT) {
-    HTTP_INCREMENT_TRANS_STAT(http_connect_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_connect_requests_stat);
   } else if (s->method == HTTP_WKSIDX_DELETE) {
-    HTTP_INCREMENT_TRANS_STAT(http_delete_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_delete_requests_stat);
   } else if (s->method == HTTP_WKSIDX_PURGE) {
-    HTTP_INCREMENT_TRANS_STAT(http_purge_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_purge_requests_stat);
   } else if (s->method == HTTP_WKSIDX_TRACE) {
-    HTTP_INCREMENT_TRANS_STAT(http_trace_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_trace_requests_stat);
   } else if (s->method == HTTP_WKSIDX_PUSH) {
-    HTTP_INCREMENT_TRANS_STAT(http_push_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_push_requests_stat);
   } else if (s->method == HTTP_WKSIDX_OPTIONS) {
-    HTTP_INCREMENT_TRANS_STAT(http_options_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_options_requests_stat);
   } else if (s->method == HTTP_WKSIDX_TRACE) {
-    HTTP_INCREMENT_TRANS_STAT(http_trace_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_trace_requests_stat);
   } else {
-    HTTP_INCREMENT_TRANS_STAT(http_extension_method_requests_stat);
+    HTTP_INCREMENT_DYN_STAT(http_extension_method_requests_stat);
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_METHOD);
     s->squid_codes.log_code = SQUID_LOG_TCP_MISS;
     s->hdr_info.extension_method = true;
@@ -7833,7 +7830,7 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", outgoing_request, s->state_machine_id, "Proxy's Request");
 
-  HTTP_INCREMENT_TRANS_STAT(http_outgoing_requests_stat);
+  HTTP_INCREMENT_DYN_STAT(http_outgoing_requests_stat);
 }
 
 // build a (status_code) response based upon the given info
@@ -8317,16 +8314,9 @@ ink_time_t
 ink_cluster_time(void)
 {
   int highest_delta;
+  ink_time_t local_time;
 
-#ifdef DEBUG
-  ink_mutex_acquire(&http_time_lock);
-  ink_time_t local_time = Thread::get_hrtime() / HRTIME_SECOND;
-  last_http_local_time = local_time;
-  ink_mutex_release(&http_time_lock);
-#else
-  ink_time_t local_time = Thread::get_hrtime() / HRTIME_SECOND;
-#endif
-
+  local_time = Thread::get_hrtime() / HRTIME_SECOND;
   highest_delta = (int)HttpConfig::m_master.cluster_time_delta;
   //     highest_delta =
   //      lmgmt->record_data->readInteger("proxy.process.http.cluster_delta",
@@ -8351,19 +8341,19 @@ void
 HttpTransact::histogram_response_document_size(State *s, int64_t doc_size)
 {
   if (doc_size >= 0 && doc_size <= 100) {
-    HTTP_INCREMENT_TRANS_STAT(http_response_document_size_100_stat);
+    HTTP_INCREMENT_DYN_STAT(http_response_document_size_100_stat);
   } else if (doc_size <= 1024) {
-    HTTP_INCREMENT_TRANS_STAT(http_response_document_size_1K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_response_document_size_1K_stat);
   } else if (doc_size <= 3072) {
-    HTTP_INCREMENT_TRANS_STAT(http_response_document_size_3K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_response_document_size_3K_stat);
   } else if (doc_size <= 5120) {
-    HTTP_INCREMENT_TRANS_STAT(http_response_document_size_5K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_response_document_size_5K_stat);
   } else if (doc_size <= 10240) {
-    HTTP_INCREMENT_TRANS_STAT(http_response_document_size_10K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_response_document_size_10K_stat);
   } else if (doc_size <= 1048576) {
-    HTTP_INCREMENT_TRANS_STAT(http_response_document_size_1M_stat);
+    HTTP_INCREMENT_DYN_STAT(http_response_document_size_1M_stat);
   } else {
-    HTTP_INCREMENT_TRANS_STAT(http_response_document_size_inf_stat);
+    HTTP_INCREMENT_DYN_STAT(http_response_document_size_inf_stat);
   }
   return;
 }
@@ -8372,19 +8362,19 @@ void
 HttpTransact::histogram_request_document_size(State *s, int64_t doc_size)
 {
   if (doc_size >= 0 && doc_size <= 100) {
-    HTTP_INCREMENT_TRANS_STAT(http_request_document_size_100_stat);
+    HTTP_INCREMENT_DYN_STAT(http_request_document_size_100_stat);
   } else if (doc_size <= 1024) {
-    HTTP_INCREMENT_TRANS_STAT(http_request_document_size_1K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_request_document_size_1K_stat);
   } else if (doc_size <= 3072) {
-    HTTP_INCREMENT_TRANS_STAT(http_request_document_size_3K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_request_document_size_3K_stat);
   } else if (doc_size <= 5120) {
-    HTTP_INCREMENT_TRANS_STAT(http_request_document_size_5K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_request_document_size_5K_stat);
   } else if (doc_size <= 10240) {
-    HTTP_INCREMENT_TRANS_STAT(http_request_document_size_10K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_request_document_size_10K_stat);
   } else if (doc_size <= 1048576) {
-    HTTP_INCREMENT_TRANS_STAT(http_request_document_size_1M_stat);
+    HTTP_INCREMENT_DYN_STAT(http_request_document_size_1M_stat);
   } else {
-    HTTP_INCREMENT_TRANS_STAT(http_request_document_size_inf_stat);
+    HTTP_INCREMENT_DYN_STAT(http_request_document_size_inf_stat);
   }
   return;
 }
@@ -8396,19 +8386,19 @@ HttpTransact::user_agent_connection_speed(State *s, ink_hrtime transfer_time, in
   int bytes_per_sec = (int)(bytes_per_hrtime * HRTIME_SECOND);
 
   if (bytes_per_sec <= 100) {
-    HTTP_INCREMENT_TRANS_STAT(http_user_agent_speed_bytes_per_sec_100_stat);
+    HTTP_INCREMENT_DYN_STAT(http_user_agent_speed_bytes_per_sec_100_stat);
   } else if (bytes_per_sec <= 1024) {
-    HTTP_INCREMENT_TRANS_STAT(http_user_agent_speed_bytes_per_sec_1K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_user_agent_speed_bytes_per_sec_1K_stat);
   } else if (bytes_per_sec <= 10240) {
-    HTTP_INCREMENT_TRANS_STAT(http_user_agent_speed_bytes_per_sec_10K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_user_agent_speed_bytes_per_sec_10K_stat);
   } else if (bytes_per_sec <= 102400) {
-    HTTP_INCREMENT_TRANS_STAT(http_user_agent_speed_bytes_per_sec_100K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_user_agent_speed_bytes_per_sec_100K_stat);
   } else if (bytes_per_sec <= 1048576) {
-    HTTP_INCREMENT_TRANS_STAT(http_user_agent_speed_bytes_per_sec_1M_stat);
+    HTTP_INCREMENT_DYN_STAT(http_user_agent_speed_bytes_per_sec_1M_stat);
   } else if (bytes_per_sec <= 10485760) {
-    HTTP_INCREMENT_TRANS_STAT(http_user_agent_speed_bytes_per_sec_10M_stat);
+    HTTP_INCREMENT_DYN_STAT(http_user_agent_speed_bytes_per_sec_10M_stat);
   } else {
-    HTTP_INCREMENT_TRANS_STAT(http_user_agent_speed_bytes_per_sec_100M_stat);
+    HTTP_INCREMENT_DYN_STAT(http_user_agent_speed_bytes_per_sec_100M_stat);
   }
 
   return;
@@ -8431,61 +8421,61 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
 
   switch (s->squid_codes.log_code) {
   case SQUID_LOG_ERR_CONNECT_FAIL:
-    HTTP_INCREMENT_TRANS_STAT(http_cache_miss_cold_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_miss_cold_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL;
     break;
 
   case SQUID_LOG_TCP_MEM_HIT:
-    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_mem_fresh_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_hit_mem_fresh_stat);
   case SQUID_LOG_TCP_HIT:
     // It's possible to have two stat's instead of one, if needed.
-    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_fresh_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_hit_fresh_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_REFRESH_HIT:
-    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_reval_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_hit_reval_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_REVALIDATED;
     break;
 
   case SQUID_LOG_TCP_IMS_HIT:
-    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_ims_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_hit_ims_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_REF_FAIL_HIT:
-    HTTP_INCREMENT_TRANS_STAT(http_cache_hit_stale_served_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_hit_stale_served_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
     break;
 
   case SQUID_LOG_TCP_MISS:
     if ((GET_VIA_STRING(VIA_CACHE_RESULT) == VIA_IN_CACHE_NOT_ACCEPTABLE) || (GET_VIA_STRING(VIA_CACHE_RESULT) == VIA_CACHE_MISS)) {
-      HTTP_INCREMENT_TRANS_STAT(http_cache_miss_cold_stat);
+      HTTP_INCREMENT_DYN_STAT(http_cache_miss_cold_stat);
       client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_COLD;
     } else {
       // FIX: what case is this for?  can it ever happen?
-      HTTP_INCREMENT_TRANS_STAT(http_cache_miss_uncacheable_stat);
+      HTTP_INCREMENT_DYN_STAT(http_cache_miss_uncacheable_stat);
       client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_UNCACHABLE;
     }
     break;
 
   case SQUID_LOG_TCP_REFRESH_MISS:
-    HTTP_INCREMENT_TRANS_STAT(http_cache_miss_changed_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_miss_changed_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_CHANGED;
     break;
 
   case SQUID_LOG_TCP_CLIENT_REFRESH:
-    HTTP_INCREMENT_TRANS_STAT(http_cache_miss_client_no_cache_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_miss_client_no_cache_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_CLIENT_NO_CACHE;
     break;
 
   case SQUID_LOG_TCP_IMS_MISS:
-    HTTP_INCREMENT_TRANS_STAT(http_cache_miss_ims_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_miss_ims_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_MISS_COLD;
     break;
 
   case SQUID_LOG_TCP_SWAPFAIL:
-    HTTP_INCREMENT_TRANS_STAT(http_cache_read_error_stat);
+    HTTP_INCREMENT_DYN_STAT(http_cache_read_error_stat);
     client_transaction_result = CLIENT_TRANSACTION_RESULT_HIT_FRESH;
     break;
 
@@ -8498,7 +8488,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   default:
     // FIX: What is the conditional below doing?
     //          if (s->local_trans_stats[http_cache_lookups_stat].count == 1L)
-    //              HTTP_INCREMENT_TRANS_STAT(http_cache_miss_cold_stat);
+    //              HTTP_INCREMENT_DYN_STAT(http_cache_miss_cold_stat);
 
     // FIX: I suspect the following line should not be set here,
     //      because it overrides the error classification above.
@@ -8522,140 +8512,140 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
 
     switch (status_code) {
     case 100:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_100_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_100_count_stat);
       break;
     case 101:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_101_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_101_count_stat);
       break;
     case 200:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_200_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_200_count_stat);
       break;
     case 201:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_201_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_201_count_stat);
       break;
     case 202:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_202_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_202_count_stat);
       break;
     case 203:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_203_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_203_count_stat);
       break;
     case 204:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_204_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_204_count_stat);
       break;
     case 205:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_205_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_205_count_stat);
       break;
     case 206:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_206_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_206_count_stat);
       break;
     case 300:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_300_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_300_count_stat);
       break;
     case 301:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_301_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_301_count_stat);
       break;
     case 302:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_302_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_302_count_stat);
       break;
     case 303:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_303_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_303_count_stat);
       break;
     case 304:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_304_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_304_count_stat);
       break;
     case 305:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_305_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_305_count_stat);
       break;
     case 307:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_307_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_307_count_stat);
       break;
     case 400:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_400_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_400_count_stat);
       break;
     case 401:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_401_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_401_count_stat);
       break;
     case 402:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_402_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_402_count_stat);
       break;
     case 403:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_403_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_403_count_stat);
       break;
     case 404:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_404_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_404_count_stat);
       break;
     case 405:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_405_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_405_count_stat);
       break;
     case 406:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_406_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_406_count_stat);
       break;
     case 407:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_407_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_407_count_stat);
       break;
     case 408:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_408_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_408_count_stat);
       break;
     case 409:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_409_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_409_count_stat);
       break;
     case 410:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_410_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_410_count_stat);
       break;
     case 411:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_411_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_411_count_stat);
       break;
     case 412:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_412_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_412_count_stat);
       break;
     case 413:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_413_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_413_count_stat);
       break;
     case 414:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_414_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_414_count_stat);
       break;
     case 415:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_415_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_415_count_stat);
       break;
     case 416:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_416_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_416_count_stat);
       break;
     case 500:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_500_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_500_count_stat);
       break;
     case 501:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_501_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_501_count_stat);
       break;
     case 502:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_502_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_502_count_stat);
       break;
     case 503:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_503_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_503_count_stat);
       break;
     case 504:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_504_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_504_count_stat);
       break;
     case 505:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_505_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_505_count_stat);
       break;
     default:
       break;
     }
     switch (status_code / 100) {
     case 1:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_1xx_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_1xx_count_stat);
       break;
     case 2:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_2xx_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_2xx_count_stat);
       break;
     case 3:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_3xx_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_3xx_count_stat);
       break;
     case 4:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_4xx_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_4xx_count_stat);
       break;
     case 5:
-      HTTP_INCREMENT_TRANS_STAT(http_response_status_5xx_count_stat);
+      HTTP_INCREMENT_DYN_STAT(http_response_status_5xx_count_stat);
       break;
     default:
       break;
@@ -8663,45 +8653,45 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   }
 
   // Increment the completed connection count
-  HTTP_INCREMENT_TRANS_STAT(http_completed_requests_stat);
+  HTTP_INCREMENT_DYN_STAT(http_completed_requests_stat);
 
   // Set the stat now that we know what happend
   ink_hrtime total_msec = ink_hrtime_to_msec(total_time);
   ink_hrtime process_msec = ink_hrtime_to_msec(request_process_time);
   switch (client_transaction_result) {
   case CLIENT_TRANSACTION_RESULT_HIT_FRESH:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_hit_fresh_stat, total_msec);
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_hit_fresh_process_stat, process_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_hit_fresh_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_hit_fresh_process_stat, process_msec);
     break;
   case CLIENT_TRANSACTION_RESULT_HIT_REVALIDATED:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_hit_reval_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_hit_reval_stat, total_msec);
     break;
   case CLIENT_TRANSACTION_RESULT_MISS_COLD:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_miss_cold_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_miss_cold_stat, total_msec);
     break;
   case CLIENT_TRANSACTION_RESULT_MISS_CHANGED:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_miss_changed_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_miss_changed_stat, total_msec);
     break;
   case CLIENT_TRANSACTION_RESULT_MISS_CLIENT_NO_CACHE:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_miss_client_no_cache_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_miss_client_no_cache_stat, total_msec);
     break;
   case CLIENT_TRANSACTION_RESULT_MISS_UNCACHABLE:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_miss_uncacheable_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_miss_uncacheable_stat, total_msec);
     break;
   case CLIENT_TRANSACTION_RESULT_ERROR_ABORT:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_errors_aborts_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_aborts_stat, total_msec);
     break;
   case CLIENT_TRANSACTION_RESULT_ERROR_POSSIBLE_ABORT:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_errors_possible_aborts_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_possible_aborts_stat, total_msec);
     break;
   case CLIENT_TRANSACTION_RESULT_ERROR_CONNECT_FAIL:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_errors_connect_failed_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_connect_failed_stat, total_msec);
     break;
   case CLIENT_TRANSACTION_RESULT_ERROR_OTHER:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_errors_other_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_other_stat, total_msec);
     break;
   default:
-    HTTP_SUM_TRANS_STAT(http_ua_msecs_counts_other_unclassified_stat, total_msec);
+    HTTP_SUM_DYN_STAT(http_ua_msecs_counts_other_unclassified_stat, total_msec);
     // This can happen if a plugin manually sets the status code after an error.
     DebugTxn("http", "Unclassified statistic");
     break;
@@ -8715,19 +8705,19 @@ HttpTransact::origin_server_connection_speed(State *s, ink_hrtime transfer_time,
   int bytes_per_sec = (int)(bytes_per_hrtime * HRTIME_SECOND);
 
   if (bytes_per_sec <= 100) {
-    HTTP_INCREMENT_TRANS_STAT(http_origin_server_speed_bytes_per_sec_100_stat);
+    HTTP_INCREMENT_DYN_STAT(http_origin_server_speed_bytes_per_sec_100_stat);
   } else if (bytes_per_sec <= 1024) {
-    HTTP_INCREMENT_TRANS_STAT(http_origin_server_speed_bytes_per_sec_1K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_origin_server_speed_bytes_per_sec_1K_stat);
   } else if (bytes_per_sec <= 10240) {
-    HTTP_INCREMENT_TRANS_STAT(http_origin_server_speed_bytes_per_sec_10K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_origin_server_speed_bytes_per_sec_10K_stat);
   } else if (bytes_per_sec <= 102400) {
-    HTTP_INCREMENT_TRANS_STAT(http_origin_server_speed_bytes_per_sec_100K_stat);
+    HTTP_INCREMENT_DYN_STAT(http_origin_server_speed_bytes_per_sec_100K_stat);
   } else if (bytes_per_sec <= 1048576) {
-    HTTP_INCREMENT_TRANS_STAT(http_origin_server_speed_bytes_per_sec_1M_stat);
+    HTTP_INCREMENT_DYN_STAT(http_origin_server_speed_bytes_per_sec_1M_stat);
   } else if (bytes_per_sec <= 10485760) {
-    HTTP_INCREMENT_TRANS_STAT(http_origin_server_speed_bytes_per_sec_10M_stat);
+    HTTP_INCREMENT_DYN_STAT(http_origin_server_speed_bytes_per_sec_10M_stat);
   } else {
-    HTTP_INCREMENT_TRANS_STAT(http_origin_server_speed_bytes_per_sec_100M_stat);
+    HTTP_INCREMENT_DYN_STAT(http_origin_server_speed_bytes_per_sec_100M_stat);
   }
 
   return;
@@ -8755,7 +8745,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   case BACKGROUND_FILL_COMPLETED: {
     int64_t bg_size = origin_server_response_body_size - user_agent_response_body_size;
     bg_size = max((int64_t)0, bg_size);
-    HTTP_SUM_TRANS_STAT(http_background_fill_bytes_completed_stat, bg_size);
+    HTTP_SUM_DYN_STAT(http_background_fill_bytes_completed_stat, bg_size);
     break;
   }
   case BACKGROUND_FILL_ABORTED: {
@@ -8763,7 +8753,7 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
 
     if (bg_size < 0)
       bg_size = 0;
-    HTTP_SUM_TRANS_STAT(http_background_fill_bytes_aborted_stat, bg_size);
+    HTTP_SUM_DYN_STAT(http_background_fill_bytes_aborted_stat, bg_size);
     break;
   }
   case BACKGROUND_FILL_NONE:
@@ -8778,91 +8768,91 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   case SQUID_LOG_TCP_HIT:
   case SQUID_LOG_TCP_MEM_HIT:
     // It's possible to have two stat's instead of one, if needed.
-    HTTP_INCREMENT_TRANS_STAT(http_tcp_hit_count_stat);
-    HTTP_SUM_TRANS_STAT(http_tcp_hit_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_tcp_hit_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_tcp_hit_count_stat);
+    HTTP_SUM_DYN_STAT(http_tcp_hit_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_tcp_hit_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_TCP_MISS:
-    HTTP_INCREMENT_TRANS_STAT(http_tcp_miss_count_stat);
-    HTTP_SUM_TRANS_STAT(http_tcp_miss_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_tcp_miss_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_tcp_miss_count_stat);
+    HTTP_SUM_DYN_STAT(http_tcp_miss_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_tcp_miss_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_TCP_EXPIRED_MISS:
-    HTTP_INCREMENT_TRANS_STAT(http_tcp_expired_miss_count_stat);
-    HTTP_SUM_TRANS_STAT(http_tcp_expired_miss_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_tcp_expired_miss_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_tcp_expired_miss_count_stat);
+    HTTP_SUM_DYN_STAT(http_tcp_expired_miss_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_tcp_expired_miss_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_TCP_REFRESH_HIT:
-    HTTP_INCREMENT_TRANS_STAT(http_tcp_refresh_hit_count_stat);
-    HTTP_SUM_TRANS_STAT(http_tcp_refresh_hit_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_tcp_refresh_hit_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_tcp_refresh_hit_count_stat);
+    HTTP_SUM_DYN_STAT(http_tcp_refresh_hit_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_tcp_refresh_hit_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_TCP_REFRESH_MISS:
-    HTTP_INCREMENT_TRANS_STAT(http_tcp_refresh_miss_count_stat);
-    HTTP_SUM_TRANS_STAT(http_tcp_refresh_miss_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_tcp_refresh_miss_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_tcp_refresh_miss_count_stat);
+    HTTP_SUM_DYN_STAT(http_tcp_refresh_miss_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_tcp_refresh_miss_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_TCP_CLIENT_REFRESH:
-    HTTP_INCREMENT_TRANS_STAT(http_tcp_client_refresh_count_stat);
-    HTTP_SUM_TRANS_STAT(http_tcp_client_refresh_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_tcp_client_refresh_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_tcp_client_refresh_count_stat);
+    HTTP_SUM_DYN_STAT(http_tcp_client_refresh_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_tcp_client_refresh_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_TCP_IMS_HIT:
-    HTTP_INCREMENT_TRANS_STAT(http_tcp_ims_hit_count_stat);
-    HTTP_SUM_TRANS_STAT(http_tcp_ims_hit_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_tcp_ims_hit_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_tcp_ims_hit_count_stat);
+    HTTP_SUM_DYN_STAT(http_tcp_ims_hit_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_tcp_ims_hit_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_TCP_IMS_MISS:
-    HTTP_INCREMENT_TRANS_STAT(http_tcp_ims_miss_count_stat);
-    HTTP_SUM_TRANS_STAT(http_tcp_ims_miss_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_tcp_ims_miss_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_tcp_ims_miss_count_stat);
+    HTTP_SUM_DYN_STAT(http_tcp_ims_miss_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_tcp_ims_miss_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_ERR_CLIENT_ABORT:
-    HTTP_INCREMENT_TRANS_STAT(http_err_client_abort_count_stat);
-    HTTP_SUM_TRANS_STAT(http_err_client_abort_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_err_client_abort_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_err_client_abort_count_stat);
+    HTTP_SUM_DYN_STAT(http_err_client_abort_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_err_client_abort_origin_server_bytes_stat, origin_server_bytes);
     break;
   case SQUID_LOG_ERR_CONNECT_FAIL:
-    HTTP_INCREMENT_TRANS_STAT(http_err_connect_fail_count_stat);
-    HTTP_SUM_TRANS_STAT(http_err_connect_fail_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_err_connect_fail_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_err_connect_fail_count_stat);
+    HTTP_SUM_DYN_STAT(http_err_connect_fail_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_err_connect_fail_origin_server_bytes_stat, origin_server_bytes);
     break;
   default:
-    HTTP_INCREMENT_TRANS_STAT(http_misc_count_stat);
-    HTTP_SUM_TRANS_STAT(http_misc_user_agent_bytes_stat, user_agent_bytes);
-    HTTP_SUM_TRANS_STAT(http_misc_origin_server_bytes_stat, origin_server_bytes);
+    HTTP_INCREMENT_DYN_STAT(http_misc_count_stat);
+    HTTP_SUM_DYN_STAT(http_misc_user_agent_bytes_stat, user_agent_bytes);
+    HTTP_SUM_DYN_STAT(http_misc_origin_server_bytes_stat, origin_server_bytes);
     break;
   }
 
   // times
-  HTTP_SUM_TRANS_STAT(http_total_transactions_time_stat, total_time);
+  HTTP_SUM_DYN_STAT(http_total_transactions_time_stat, total_time);
 
   // sizes
-  HTTP_SUM_TRANS_STAT(http_user_agent_request_header_total_size_stat, user_agent_request_header_size);
-  HTTP_SUM_TRANS_STAT(http_user_agent_response_header_total_size_stat, user_agent_response_header_size);
-  HTTP_SUM_TRANS_STAT(http_user_agent_request_document_total_size_stat, user_agent_request_body_size);
-  HTTP_SUM_TRANS_STAT(http_user_agent_response_document_total_size_stat, user_agent_response_body_size);
+  HTTP_SUM_DYN_STAT(http_user_agent_request_header_total_size_stat, user_agent_request_header_size);
+  HTTP_SUM_DYN_STAT(http_user_agent_response_header_total_size_stat, user_agent_response_header_size);
+  HTTP_SUM_DYN_STAT(http_user_agent_request_document_total_size_stat, user_agent_request_body_size);
+  HTTP_SUM_DYN_STAT(http_user_agent_response_document_total_size_stat, user_agent_response_body_size);
 
   // proxy stats
   if (s->current.request_to == HttpTransact::PARENT_PROXY) {
-    HTTP_SUM_TRANS_STAT(http_parent_proxy_request_total_bytes_stat,
-                        origin_server_request_header_size + origin_server_request_body_size);
-    HTTP_SUM_TRANS_STAT(http_parent_proxy_response_total_bytes_stat,
-                        origin_server_response_header_size + origin_server_response_body_size);
-    HTTP_SUM_TRANS_STAT(http_parent_proxy_transaction_time_stat, total_time);
+    HTTP_SUM_DYN_STAT(http_parent_proxy_request_total_bytes_stat,
+                      origin_server_request_header_size + origin_server_request_body_size);
+    HTTP_SUM_DYN_STAT(http_parent_proxy_response_total_bytes_stat,
+                      origin_server_response_header_size + origin_server_response_body_size);
+    HTTP_SUM_DYN_STAT(http_parent_proxy_transaction_time_stat, total_time);
   }
   // request header zero means the document was cached.
   // do not add to stats.
   if (origin_server_request_header_size > 0) {
-    HTTP_SUM_TRANS_STAT(http_origin_server_request_header_total_size_stat, origin_server_request_header_size);
-    HTTP_SUM_TRANS_STAT(http_origin_server_response_header_total_size_stat, origin_server_response_header_size);
-    HTTP_SUM_TRANS_STAT(http_origin_server_request_document_total_size_stat, origin_server_request_body_size);
-    HTTP_SUM_TRANS_STAT(http_origin_server_response_document_total_size_stat, origin_server_response_body_size);
+    HTTP_SUM_DYN_STAT(http_origin_server_request_header_total_size_stat, origin_server_request_header_size);
+    HTTP_SUM_DYN_STAT(http_origin_server_response_header_total_size_stat, origin_server_response_header_size);
+    HTTP_SUM_DYN_STAT(http_origin_server_request_document_total_size_stat, origin_server_request_body_size);
+    HTTP_SUM_DYN_STAT(http_origin_server_response_document_total_size_stat, origin_server_response_body_size);
   }
 
   if (s->method == HTTP_WKSIDX_PUSH) {
-    HTTP_SUM_TRANS_STAT(http_pushed_response_header_total_size_stat, pushed_response_header_size);
-    HTTP_SUM_TRANS_STAT(http_pushed_document_total_size_stat, pushed_response_body_size);
+    HTTP_SUM_DYN_STAT(http_pushed_response_header_total_size_stat, pushed_response_header_size);
+    HTTP_SUM_DYN_STAT(http_pushed_document_total_size_stat, pushed_response_body_size);
   }
 
   histogram_request_document_size(s, user_agent_request_body_size);
@@ -8878,99 +8868,80 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
 
   // update milestones stats
   if (http_ua_begin_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_begin_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN))
+    HTTP_SUM_DYN_STAT(http_ua_begin_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN));
   }
   if (http_ua_first_read_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_first_read_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ))
+    HTTP_SUM_DYN_STAT(http_ua_first_read_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_FIRST_READ));
   }
   if (http_ua_read_header_done_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_read_header_done_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE))
+    HTTP_SUM_DYN_STAT(http_ua_read_header_done_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_READ_HEADER_DONE));
   }
   if (http_ua_begin_write_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_begin_write_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE))
+    HTTP_SUM_DYN_STAT(http_ua_begin_write_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_BEGIN_WRITE));
   }
   if (http_ua_close_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_ua_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE))
+    HTTP_SUM_DYN_STAT(http_ua_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_UA_CLOSE));
   }
   if (http_server_first_connect_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_first_connect_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_CONNECT))
+    HTTP_SUM_DYN_STAT(http_server_first_connect_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_CONNECT));
   }
   if (http_server_connect_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_connect_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT))
+    HTTP_SUM_DYN_STAT(http_server_connect_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT));
   }
   if (http_server_connect_end_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_connect_end_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END))
+    HTTP_SUM_DYN_STAT(http_server_connect_end_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CONNECT_END));
   }
   if (http_server_begin_write_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_begin_write_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_BEGIN_WRITE))
+    HTTP_SUM_DYN_STAT(http_server_begin_write_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_BEGIN_WRITE));
   }
   if (http_server_first_read_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_first_read_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ))
+    HTTP_SUM_DYN_STAT(http_server_first_read_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_FIRST_READ));
   }
   if (http_server_read_header_done_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_read_header_done_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE))
+    HTTP_SUM_DYN_STAT(http_server_read_header_done_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_READ_HEADER_DONE));
   }
   if (http_server_close_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_server_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE))
+    HTTP_SUM_DYN_STAT(http_server_close_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SERVER_CLOSE));
   }
   if (http_cache_open_read_begin_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_cache_open_read_begin_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN))
+    HTTP_SUM_DYN_STAT(http_cache_open_read_begin_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_BEGIN));
   }
   if (http_cache_open_read_end_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_cache_open_read_end_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END))
+    HTTP_SUM_DYN_STAT(http_cache_open_read_end_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_READ_END));
   }
   if (http_cache_open_write_begin_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_cache_open_write_begin_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN))
+    HTTP_SUM_DYN_STAT(http_cache_open_write_begin_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_BEGIN));
   }
   if (http_cache_open_write_end_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_cache_open_write_end_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END))
+    HTTP_SUM_DYN_STAT(http_cache_open_write_end_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_CACHE_OPEN_WRITE_END));
   }
   if (http_dns_lookup_begin_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_dns_lookup_begin_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN))
+    HTTP_SUM_DYN_STAT(http_dns_lookup_begin_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_BEGIN));
   }
   if (http_dns_lookup_end_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_dns_lookup_end_time_stat,
-                        milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END))
+    HTTP_SUM_DYN_STAT(http_dns_lookup_end_time_stat,
+                      milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_DNS_LOOKUP_END));
   }
   if (http_sm_start_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_sm_start_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_START))
+    HTTP_SUM_DYN_STAT(http_sm_start_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_START));
   }
   if (http_sm_finish_time_stat) {
-    HTTP_SUM_TRANS_STAT(http_sm_finish_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH))
+    HTTP_SUM_DYN_STAT(http_sm_finish_time_stat, milestones.difference_msec(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH));
   }
 }
-
-// void HttpTransact::add_new_stat_block(State* s)
-//
-//   Adds a new stat block
-//
-void
-HttpTransact::add_new_stat_block(State *s)
-{
-  // We keep the block around till the end of transaction
-  //    We don't need explicitly deallocate it later since
-  //    when the transaction is over, the arena will be destroyed
-  ink_assert(s->current_stats->next_insert == StatBlockEntries);
-  StatBlock *new_block = (StatBlock *)s->arena.alloc(sizeof(StatBlock));
-  new_block->init();
-  s->current_stats->next = new_block;
-  s->current_stats = new_block;
-  DebugTxn("http_trans", "Adding new large stat block");
-}
-
 
 void
 HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code)

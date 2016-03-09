@@ -16,10 +16,6 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-if BUILD_COLLAPSED_CONNECTION_PLUGIN
-
 pkglib_LTLIBRARIES = collapsed_connection.la
 collapsed_connection_la_SOURCES = collapsed_connection.cc MurmurHash3.cc
 collapsed_connection_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
-endif

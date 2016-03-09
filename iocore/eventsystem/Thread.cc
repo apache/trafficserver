@@ -102,9 +102,3 @@ Thread::start(const char *name, size_t stacksize, ThreadFunction f, void *a)
 
   return tid;
 }
-
-ink_hrtime
-Thread::get_hrtime()
-{
-  return Thread::cur_time;
-}

@@ -22,11 +22,20 @@
 Integrating Third-Party Tools
 *****************************
 
+There are many monitoring and alerting systems available, too many for us to
+hope to cover every possible option here. We can, however, attempt to document
+using some of the more common options.
+
+Some of these third party monitoring applications and services are able to tap
+into the extensive list of |TS| statistics, others make use of |TS| log files,
+and yet others are aimed at simple health check reporting. An extensive service
+monitoring configuration may take advantage of more than one service to play to
+their complementary strengths. Which tool, or combination of tools, is right
+for your infrastructure will likely vary.
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    circonus.en
    logstash.en
-   nagios.en
-   zabbix.en
 

@@ -1,0 +1,52 @@
+////////////////////////////////////////////////////////////////////////////////
+// collapsed_forwarding::
+//
+// ATS plugin to allow collapsed forwarding of concurrent requests for the same
+// object. This plugin is based on open_write_fail_action feature, which detects
+// cache open write failure on a cache miss and returns a 502 error along with a
+// special @-header indicating the reason for 502 error. The plugin acts on the
+// error by using an internal redirect follow back to itself, essentially blocking
+// the request until a response arrives, at which point, relies on read-while-writer
+// feature to start downloading the object to all waiting clients. The following
+// config parameters are assumed to be set for this plugin to work:
+////////////////////////////////////////////////////////////////////////////////////
+// proxy.config.http.cache.open_write_fail_action        1 /////////////////////////
+// proxy.config.cache.enable_read_while_writer           1 /////////////////////////
+// proxy.config.http.redirection_enabled                 1 /////////////////////////
+// proxy.config.http.number_of_redirections             10 /////////////////////////
+// proxy.config.http.redirect_use_orig_cache_key         1 /////////////////////////
+// proxy.config.http.background_fill_active_timeout      0 /////////////////////////
+// proxy.config.http.background_fill_completed_threshold 0 /////////////////////////
+////////////////////////////////////////////////////////////////////////////////////
+// Additionally, given that collapsed forwarding works based on cache write
+// lock failure detection, the plugin requires cache to be enabled and ready.
+// On a restart, Traffic Server typically takes a few seconds to initialize
+// the cache depending on the cache size and number of dirents. While the
+// cache is not ready yet, collapsed forwarding can not detect the write lock
+// contention and so can not work. The setting proxy.config.http.wait_for_cache
+// may be enabled which allows blocking incoming connections from being
+// accepted until cache is ready.
+////////////////////////////////////////////////////////////////////////////////////
+// This plugin currently supports only per-remap mode activation.
+////////////////////////////////////////////////////////////////////////////////////
+
+More details are available at
+
+https://docs.trafficserver.apache.org/en/6.0.x/admin/http-proxy-caching.en.html#reducing-origin-server-requests-avoiding-the-thundering-herd
+
+Installation:
+
+    make
+    sudo make install
+
+If you don't have the traffic server binaries in your path, then you will need
+to specify the path to tsxs manually:
+
+    make TSXS=/opt/trafficserver/bin/tsxs
+    sudo make TSXS=/opt/trafficserver/bin/tsxs install
+
+Configuration:
+
+    Add @plugin=collapsed_forwarding.so to your remap.config rules. The plugin optionally
+accepts a --delay=<delay> parameter and a --retries=<retries> parameter that can help tune
+the total number of retries and the delay between consecutive retries.

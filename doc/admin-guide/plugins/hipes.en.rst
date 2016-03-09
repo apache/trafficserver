@@ -1,6 +1,6 @@
-.. _hipes-plugin:
+.. _admin-plugins-hipes:
 
-HIPES plugin
+HIPES Plugin
 ************
 
 .. Licensed to the Apache Software Foundation (ASF) under one

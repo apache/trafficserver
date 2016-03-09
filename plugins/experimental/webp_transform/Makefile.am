@@ -1,3 +1,4 @@
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,25 +15,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pkg set-publisher -g http://pkg.omniti.com/omniti-ms/ ms.omniti.com
+include $(top_srcdir)/build/plugins.mk
 
-pkg refresh
+AM_CPPFLAGS += \
+  -I$(top_srcdir)/lib/atscppapi/src/include \
+  $(LIBMAGICKCPP_CFLAGS)
 
-# Base ATS build dependencies.
-pkg install \
-  developer/gcc46 \
-  developer/object-file \
-  developer/linker \
-  developer/library/lint \
-  system/header \
-  system/library/math/header-math \
-  developer/lexer/flex \
-  developer/parser/bison \
-  developer/build/libtool \
-  developer/versioning/git \
-  omniti/runtime/tcl-8 \
-  developer/build/automake-111 \
-  developer/build/autoconf \
-  developer/build/gnu-make || true
+AM_CXXFLAGS += \
+  -Wno-unused-variable
 
-pkg update || true
+pkglib_LTLIBRARIES = WebpTransform.la
+
+WebpTransform_la_SOURCES = ImageTransform.cc
+WebpTransform_la_LDFLAGS = \
+  $(TS_PLUGIN_LDFLAGS) \
+  -L$(top_builddir)/lib/atscppapi/src
+WebpTransform_la_LIBADD = \
+  -latscppapi \
+  $(LIBMAGICKCPP_LIBS)

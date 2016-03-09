@@ -544,6 +544,7 @@ dnl
 dnl Note: As with AC_ARG_ENABLE, non-alphanumeric characters are
 dnl transformed to underscores.
 dnl
+dnl This macro also AC_SUBST's the constructed variable name.
 AC_DEFUN([TS_ARG_ENABLE_VAR],[
   tsl_prefix="AS_TR_SH($1)"
   tsl_stem="AS_TR_SH($2)"
@@ -552,6 +553,7 @@ AC_DEFUN([TS_ARG_ENABLE_VAR],[
      [eval "${tsl_prefix}_${tsl_stem}=1"],
      [eval "${tsl_prefix}_${tsl_stem}=0"]
   )
+  AC_SUBST(m4_join([_], $1, AS_TR_SH($2)))
 ])
 
 dnl

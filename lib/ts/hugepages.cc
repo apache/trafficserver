@@ -68,14 +68,14 @@ ats_hugepage_init(int enabled)
   hugepage_size = 0;
 
   if (!enabled) {
-    Debug(DEBUG_TAG, "hugepages not enabled");
+    Debug(DEBUG_TAG "_init", "hugepages not enabled");
     return;
   }
 
   fp = fopen(MEMINFO_PATH, "r");
 
   if (fp == NULL) {
-    Debug(DEBUG_TAG, "Cannot open file %s", MEMINFO_PATH);
+    Debug(DEBUG_TAG "_init", "Cannot open file %s", MEMINFO_PATH);
     return;
   }
 
@@ -100,9 +100,9 @@ ats_hugepage_init(int enabled)
     hugepage_enabled = true;
   }
 
-  Debug(DEBUG_TAG, "Hugepage size = %d", hugepage_size);
+  Debug(DEBUG_TAG "_init", "Hugepage size = %d", hugepage_size);
 #else
-  Debug(DEBUG_TAG, "MAP_HUGETLB not defined");
+  Debug(DEBUG_TAG "_init", "MAP_HUGETLB not defined");
 #endif
 }
 
@@ -122,6 +122,7 @@ ats_alloc_hugepage(size_t s)
     return NULL;
   }
 
+  Debug(DEBUG_TAG, "Request/Allocation (%zu/%zu) {%p}", s, size, mem);
   return mem;
 #else
   (void)s;

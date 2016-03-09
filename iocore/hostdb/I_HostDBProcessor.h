@@ -158,13 +158,6 @@ struct HostDBInfo {
   char *hostname();
   char *perm_hostname();
   char *srvname(HostDBRoundRobin *rr);
-  /// Check if this entry is the root of a round robin entry.
-  /// If @c true then this entry needs to be converted to a specific element of the round robin to be used.
-  bool
-  is_rr() const
-  {
-    return 0 != round_robin;
-  }
   /// Check if this entry is an element of a round robin entry.
   /// If @c true then this entry is part of and was obtained from a round robin root. This is useful if the
   /// address doesn't work - a retry can probably get a new address by doing another lookup and resolving to

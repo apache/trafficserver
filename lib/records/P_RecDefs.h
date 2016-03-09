@@ -29,7 +29,6 @@
 #define REC_CONFIG_FILE "records.config"
 #define REC_SHADOW_EXT ".shadow"
 #define REC_RAW_STATS_FILE "records.snap"
-#define REC_PIPE_NAME "librecords_pipe"
 
 #define REC_MESSAGE_ELE_MAGIC 0xF00DF00D
 

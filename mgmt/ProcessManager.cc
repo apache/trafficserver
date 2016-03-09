@@ -233,38 +233,45 @@ ProcessManager::pollLMConnection()
   MgmtMessageHdr *mh_full;
   char *data_raw;
 
-  while (1) {
+  // Avoid getting stuck enqueuing too many requests in a row, limit to MAX_MSGS_IN_A_ROW.
+  int count;
+  for (count = 0; count < MAX_MSGS_IN_A_ROW; ++count) {
     int num;
 
     num = mgmt_read_timeout(local_manager_sockfd, 1 /* sec */, 0 /* usec */);
     if (num == 0) { /* Have nothing */
       break;
     } else if (num > 0) { /* We have a message */
-
       if ((res = mgmt_read_pipe(local_manager_sockfd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
-        mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + mh_hdr.data_len);
+        size_t mh_full_size = sizeof(MgmtMessageHdr) + mh_hdr.data_len;
+        mh_full = (MgmtMessageHdr *)ats_malloc(mh_full_size);
+
         memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
         data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);
+
         if ((res = mgmt_read_pipe(local_manager_sockfd, data_raw, mh_hdr.data_len)) > 0) {
           Debug("pmgmt", "[ProcessManager::pollLMConnection] Message: '%d'", mh_full->msg_id);
           handleMgmtMsgFromLM(mh_full);
         } else if (res < 0) {
           mgmt_fatal(stderr, errno, "[ProcessManager::pollLMConnection] Error in read!");
         }
+
+        ats_free(mh_full);
       } else if (res < 0) {
         mgmt_fatal(stderr, errno, "[ProcessManager::pollLMConnection] Error in read!");
       }
+
       // handle EOF
       if (res == 0) {
         close_socket(local_manager_sockfd);
         mgmt_fatal(stderr, 0, "[ProcessManager::pollLMConnection] Lost Manager EOF!");
       }
-
     } else if (num < 0) { /* Error */
       mgmt_elog(stderr, 0, "[ProcessManager::pollLMConnection] select failed or was interrupted (%d)\n", errno);
     }
   }
 
+  Debug("pmgmt", "[ProcessManager::pollLMConnection] enqueued %d of max %d messages in a row", count, MAX_MSGS_IN_A_ROW);
 } /* End ProcessManager::pollLMConnection */
 
 void

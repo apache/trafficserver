@@ -181,7 +181,7 @@ complete()
   ink_hrtime now;
   state_machines_finished++;
   if (!(state_machines_finished % measurement_interval)) {
-    now = ink_get_hrtime();
+    now = Thread::get_hrtime();
     cumul_throughput = state_machines_finished * 1.0 * HRTIME_SECOND / (now - start_time);
     throughput = measurement_interval * 1.0 * HRTIME_SECOND / (now - last_measurement_time);
     last_measurement_time = now;
@@ -199,7 +199,7 @@ complete()
     fout_rate.flush();
   }
   if (state_machines_finished == state_machines_created) {
-    now = ink_get_hrtime();
+    now = Thread::get_hrtime();
     fout_rate_misc << (now - start_time) * 1.0 / HRTIME_SECOND << "\n";
     fout_rate_misc.flush();
     fout.close();
@@ -240,14 +240,14 @@ test()
   state_machines_created = N_STATE_MACHINES;
   state_machines_finished = 0;
   measurement_interval = MEASUREMENT_INTERVAL;
-  start_time = ink_get_hrtime();
-  last_measurement_time = ink_get_hrtime();
+  start_time = Thread::get_hrtime();
+  last_measurement_time = Thread::get_hrtime();
   while ((fscanf(fin, "%s", host) != EOF) && (i < state_machines_created)) {
     test_dns_state_machine = new TestDnsStateMachine(host, sizeof(host));
     test_dns_state_machine->handleEvent();
     i++;
   }
-  now = ink_get_hrtime();
+  now = Thread::get_hrtime();
   cout << "Finished creating all Continuations at " << (now - start_time) / HRTIME_SECOND << " sec and "
        << (now - start_time) % HRTIME_SECOND << "nanosec\n";
   fout_rate_misc << (now - start_time) * 1.0 / HRTIME_SECOND << "\n";

@@ -275,7 +275,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
         } else {
           // then EOF observed, treat it as EOS
           event = SSL_READ_EOS;
-          // Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, EOF observed violating SSL protocol");
+          Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, EOF observed violating SSL protocol");
           TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "EOF observed violating SSL protocol");
         }
         break;
@@ -287,6 +287,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
         break;
       case SSL_ERROR_SSL:
       default: {
+        Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SSL and default case");
         char buf[512];
         unsigned long e = ERR_peek_last_error();
         ERR_error_string_n(e, buf, sizeof(buf));
@@ -697,7 +698,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
   // Dynamic TLS record sizing
   ink_hrtime now = 0;
   if (SSLConfigParams::ssl_maxrecord == -1) {
-    now = ink_get_hrtime_internal();
+    now = Thread::get_hrtime_updated();
     int msec_since_last_write = ink_hrtime_diff_msec(now, sslLastWriteTime);
 
     if (msec_since_last_write > SSL_DEF_TLS_RECORD_MSEC_THRESHOLD) {

@@ -19,7 +19,7 @@
 
 .. _admin-plugins-ts-lua:
 
-ts-lua Plugin
+TS Lua Plugin
 *************
 
 This module embeds Lua, via the standard Lua 5.1 interpreter, into |ATS|. With
@@ -2970,7 +2970,7 @@ ts.stat_find
 
 **context:** global
 
-**description:** This function can be used to find a statistics record given the name. A statistics record table will 
+**description:** This function can be used to find a statistics record given the name. A statistics record table will
 be returned with 4 functions to increment, decrement, get and set the value. That is similar to ts.stat_create()
 
 `TOP <#ts-lua-plugin>`_
@@ -2985,12 +2985,13 @@ transaction. This can be wasteful. Also the state cannot be reused for the same 
 alternative will be to use a TXN_START hook to create a lua state first and then add each global hook in the lua script
 as transaction hook instead. But this will have problem down the road when we need to have multiple plugins to work
 together in some proper orderings. In the future, we should consider different approach, such as creating and
-maintaining the lua state in the ATS core. 
+maintaining the lua state in the ATS core.
 
 `TOP <#ts-lua-plugin>`_
 
 Notes on Unit Testing Lua scripts for ATS Lua Plugin
 ====================================================
+
 Follow the steps below to use busted framework to run some unit tests on sample scripts and modules
 
 * Build and install lua 5.1.5 using the source code from here - http://www.lua.org/ftp/lua-5.1.tar.gz
@@ -3003,18 +3004,16 @@ Follow the steps below to use busted framework to run some unit tests on sample 
 
 * "cd trafficserver/plugins/experimental/ts_lua/ci"
 
-* Run "busted -c module_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for
-* "module.lua"
+* Run "busted -c module_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for "module.lua"
 
-* Run "busted -c script_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for
-* "script.lua"
+* Run "busted -c script_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for "script.lua"
 
 Reference for further information
 
 * Busted - http://olivinelabs.com/busted/
 
-* Specifications for asserts/mocks/stubs/etc inside busted framework - 
-https://github.com/Olivine-Labs/luassert/tree/master/spec 
+* Specifications for asserts/mocks/stubs/etc inside busted framework:
+  https://github.com/Olivine-Labs/luassert/tree/master/spec
 
 * luacov - https://luarocks.org/modules/hisham/luacov
 

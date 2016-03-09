@@ -27,6 +27,8 @@
 #include <execinfo.h>
 
 volatile int res_track_memory = 0; // Disabled by default
+uint64_t ssl_memory_allocated = 0;
+uint64_t ssl_memory_freed = 0;
 
 std::map<const char *, Resource *> ResourceTracker::_resourceMap;
 ink_mutex ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
@@ -165,8 +167,18 @@ ResourceTracker::dump(FILE *fd)
               resource.getDecrement(), resource.getValue(), average_size, resource.getName());
       total += resource.getValue();
     }
+    fprintf(fd, "                          %20" PRId64 " |            | %-50s\n", total, "TOTAL");
+    fprintf(fd, "--------------------------------------------------------------"
+                "--------------------------------------------------------------------\n");
   }
-  fprintf(fd, "                          %20" PRId64 " |            | %-50s\n", total, "TOTAL");
 
   ink_mutex_release(&resourceLock);
+
+  if (res_track_memory >= 2) {
+    fprintf(fd, "\n%-20s | %-20s | %-20s | %-20s\n", "Total Allocated", "Total Freed", "Currently Allocated", "Type");
+    fprintf(fd, "---------------------|----------------------|----------------------|----------------------\n");
+    fprintf(fd, "%20" PRId64 " | %20" PRId64 " | %20" PRId64 " | %-50s\n", ssl_memory_allocated, ssl_memory_freed,
+            ssl_memory_allocated - ssl_memory_freed, "SSL Allocated Memory");
+    fprintf(fd, "---------------------|----------------------|----------------------|----------------------\n");
+  }
 }

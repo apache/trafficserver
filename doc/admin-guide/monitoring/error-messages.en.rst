@@ -141,7 +141,7 @@ Traffic Server returns detailed error messages to client browsers when there are
 problems with the HTTP transactions requested by the browser. These Traffic
 Server response messages correspond to standard HTTP response codes, but provide
 more information. A list of the more frequently encountered HTTP response codes
-is provided in :ref:`standard-http-response-messages`.
+is provided in :ref:`appendix-http-status-codes`.
 
 The error messages can be customized. The actual response is generated from a template. These
 templates are stored in files which means the errors responses can be customized by modifying these
