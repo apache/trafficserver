@@ -30,6 +30,7 @@ class Http2DebugNames
 {
 public:
   static const char *get_settings_param_name(uint16_t id);
+  static const char *get_state_name(uint16_t id);
 };
 
 #endif // __HTTP2_DEBUG_NAMES_H__

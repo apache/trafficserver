@@ -533,11 +533,10 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   uint32_t size;
   const Http2StreamId sid = frame.header().streamid;
 
-  DebugHttp2Stream(cstate.ua_session, sid, "Received WINDOW_UPDATE frame");
-
   //  A WINDOW_UPDATE frame with a length other than 4 octets MUST be
   //  treated as a connection error of type FRAME_SIZE_ERROR.
   if (frame.header().length != HTTP2_WINDOW_UPDATE_LEN) {
+    DebugHttp2Stream(cstate.ua_session, sid, "Received WINDOW_UPDATE frame - length incorrect");
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_FRAME_SIZE_ERROR);
   }
 
@@ -545,6 +544,9 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     // Connection level window update
     frame.reader()->memcpy(buf, sizeof(buf), 0);
     http2_parse_window_update(make_iovec(buf, sizeof(buf)), size);
+
+    DebugHttp2Stream(cstate.ua_session, sid, "Received WINDOW_UPDATE frame - updated to: %zd delta: %u",
+                     (cstate.client_rwnd + size), size);
 
     // A receiver MUST treat the receipt of a WINDOW_UPDATE frame with a
     // connection
@@ -581,6 +583,9 @@ rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
     frame.reader()->memcpy(buf, sizeof(buf), 0);
     http2_parse_window_update(make_iovec(buf, sizeof(buf)), size);
+
+    DebugHttp2Stream(cstate.ua_session, sid, "Received WINDOW_UPDATE frame - updated to: %zd delta: %u",
+                     (stream->client_rwnd + size), size);
 
     // A receiver MUST treat the receipt of a WINDOW_UPDATE frame with an
     // flow control window increment of 0 as a stream error of type
@@ -919,7 +924,6 @@ Http2ConnectionState::send_data_frame(FetchSM *fetch_sm)
   uint8_t payload_buffer[buf_len];
 
   Http2Stream *stream = static_cast<Http2Stream *>(fetch_sm->ext_get_user_data());
-  DebugHttp2Stream(ua_session, stream->get_id(), "Send DATA frame");
 
   if (stream->get_state() == HTTP2_STREAM_STATE_CLOSED) {
     return;
@@ -952,6 +956,8 @@ Http2ConnectionState::send_data_frame(FetchSM *fetch_sm)
     }
 
     // Create frame
+    DebugHttp2Stream(ua_session, stream->get_id(), "Send DATA frame - client window con: %zd stream: %zd payload: %zd", client_rwnd,
+                     stream->client_rwnd, payload_length);
     Http2Frame data(HTTP2_FRAME_TYPE_DATA, stream->get_id(), flags);
     data.alloc(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
     http2_write_data(payload_buffer, payload_length, data.write());
@@ -959,6 +965,7 @@ Http2ConnectionState::send_data_frame(FetchSM *fetch_sm)
 
     // Change state to 'closed' if its end of DATAs.
     if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
+      DebugHttp2Stream(ua_session, stream->get_id(), "End of DATA frame");
       if (!stream->change_state(data.header().type, data.header().flags)) {
         this->send_goaway_frame(stream->get_id(), HTTP2_ERROR_PROTOCOL_ERROR);
       }

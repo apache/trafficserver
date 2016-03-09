@@ -26,6 +26,7 @@
 
 #include "HTTP2.h"
 #include "FetchSM.h"
+#include "Http2DebugNames.h"
 
 class Http2ConnectionState;
 
@@ -46,6 +47,7 @@ public:
 
   ~Http2Stream()
   {
+    Debug("http2_stream", "[%d] state: %s", _id, Http2DebugNames::get_state_name(_state));
     HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
     ink_hrtime end_time = Thread::get_hrtime();
     HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);

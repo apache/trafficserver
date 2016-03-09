@@ -45,3 +45,26 @@ Http2DebugNames::get_settings_param_name(uint16_t id)
 
   return "UNKNOWN";
 }
+
+const char *
+Http2DebugNames::get_state_name(uint16_t id)
+{
+  switch (id) {
+  case HTTP2_STREAM_STATE_IDLE:
+    return "HTTP2_STREAM_STATE_IDLE";
+  case HTTP2_STREAM_STATE_RESERVED_LOCAL:
+    return "HTTP2_STREAM_STATE_RESERVED_LOCAL";
+  case HTTP2_STREAM_STATE_RESERVED_REMOTE:
+    return "HTTP2_STREAM_STATE_RESERVED_REMOTE";
+  case HTTP2_STREAM_STATE_OPEN:
+    return "HTTP2_STREAM_STATE_OPEN";
+  case HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL:
+    return "HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL";
+  case HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE:
+    return "HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE";
+  case HTTP2_STREAM_STATE_CLOSED:
+    return "HTTP2_STREAM_STATE_CLOSED";
+  }
+
+  return "UNKNOWN";
+}
