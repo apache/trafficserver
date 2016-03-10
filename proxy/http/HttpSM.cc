@@ -2049,23 +2049,33 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
         // may be very large, we cannot use client_request_time to approximate
         // current time when calling select_best_http().
         HostDBRoundRobin *rr = r->rr();
-        ret = rr->select_best_http(&t_state.client_info.src_addr.sa, now, static_cast<int>(t_state.txn_conf->down_server_timeout));
 
-        // set the srv target`s last_failure
-        if (t_state.dns_info.srv_lookup_success) {
-          uint32_t last_failure = 0xFFFFFFFF;
-          for (int i = 0; i < rr->rrcount && last_failure != 0; ++i) {
-            if (last_failure > rr->info[i].app.http_data.last_failure)
-              last_failure = rr->info[i].app.http_data.last_failure;
-          }
+        if (rr) {
+          ret =
+            rr->select_best_http(&t_state.client_info.src_addr.sa, now, static_cast<int>(t_state.txn_conf->down_server_timeout));
 
-          if (last_failure != 0 && (uint32_t)(now - t_state.txn_conf->down_server_timeout) < last_failure) {
-            HostDBApplicationInfo app;
-            app.allotment.application1 = 0;
-            app.allotment.application2 = 0;
-            app.http_data.last_failure = last_failure;
-            hostDBProcessor.setby_srv(t_state.dns_info.lookup_name, 0, t_state.dns_info.srv_hostname, &app);
+          // set the srv target`s last_failure
+          if (t_state.dns_info.srv_lookup_success) {
+            uint32_t last_failure = 0xFFFFFFFF;
+            for (int i = 0; i < rr->rrcount && last_failure != 0; ++i) {
+              if (last_failure > rr->info[i].app.http_data.last_failure)
+                last_failure = rr->info[i].app.http_data.last_failure;
+            }
+
+            if (last_failure != 0 && (uint32_t)(now - t_state.txn_conf->down_server_timeout) < last_failure) {
+              HostDBApplicationInfo app;
+              app.allotment.application1 = 0;
+              app.allotment.application2 = 0;
+              app.http_data.last_failure = last_failure;
+              hostDBProcessor.setby_srv(t_state.dns_info.lookup_name, 0, t_state.dns_info.srv_hostname, &app);
+            }
           }
+        } else {
+          Warning("Failed doing select_best_http(), rr is NULL, hostname is '%s'", r->hostname());
+          t_state.dns_info.lookup_success = false;
+          t_state.host_db_info.app.allotment.application1 = 0;
+          t_state.host_db_info.app.allotment.application2 = 0;
+          ret = NULL;
         }
       }
     } else {
