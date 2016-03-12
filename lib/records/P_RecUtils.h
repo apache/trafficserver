@@ -51,7 +51,9 @@ RecRecord *RecAlloc(RecT rec_type, const char *name, RecDataT data_type);
 // RecData Utils
 //-------------------------------------------------------------------------
 
-void RecDataClear(RecDataT type, RecData *data);
+// Reset the value of this RecData to zero.
+void RecDataZero(RecDataT type, RecData *data);
+
 void RecDataSetMax(RecDataT type, RecData *data);
 void RecDataSetMin(RecDataT type, RecData *data);
 bool RecDataSet(RecDataT data_type, RecData *data_dst, RecData *data_src);

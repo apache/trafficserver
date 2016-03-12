@@ -60,8 +60,8 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 
     if (data_type != r->data_type) {
       // Clear with the old type before resetting with the new type.
-      RecDataClear(r->data_type, &(r->data));
-      RecDataClear(r->data_type, &(r->data_default));
+      RecDataZero(r->data_type, &(r->data));
+      RecDataZero(r->data_type, &(r->data_default));
 
       // If the data type changed, reset the current value to the default.
       RecDataSet(data_type, &(r->data), &(data_default));
