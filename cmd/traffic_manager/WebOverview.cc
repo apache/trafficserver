@@ -238,7 +238,7 @@ overviewRecord::readData(RecDataT varType, const char *name, bool *found)
   int rec_status = REC_ERR_OKAY;
   int order = -1;
   RecData rec;
-  RecDataClear(RECD_NULL, &rec);
+  RecDataZero(RECD_NULL, &rec);
 
   if (localNode == false) {
     rec_status = RecGetRecordOrderAndId(name, &order, NULL);
@@ -531,7 +531,7 @@ overviewPage::clusterSumData(RecDataT varType, const char *nodeVar, RecData *sum
   RecData recTmp;
 
   ink_assert(sum != NULL);
-  RecDataClear(varType, sum);
+  RecDataZero(varType, sum);
 
   for (int i = 0; i < numHosts_local; i++) {
     current = (overviewRecord *)sortRecords[i];

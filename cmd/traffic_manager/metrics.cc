@@ -290,7 +290,7 @@ metrics_cluster_sum(lua_State *L)
 
   // Sum the cluster value.
   if (!overviewGenerator->varClusterDataFromName(data_type, rec_name, &rec_data)) {
-    RecDataClear(data_type, &rec_data);
+    RecDataZero(data_type, &rec_data);
 
     // If we can't get any cluster data, return nil. This will generally cause the
     // evaluator to fail, which is handled by logging and ignoring the failure.

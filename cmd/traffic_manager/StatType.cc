@@ -47,9 +47,9 @@ bool StatDebug = false; // global debug flag
 StatExprToken::StatExprToken()
   : m_arith_symbol('\0'), m_token_name(NULL), m_token_type(RECD_NULL), m_sum_var(false), m_node_var(true)
 {
-  RecDataClear(RECD_NULL, &m_token_value);
-  RecDataClear(RECD_NULL, &m_token_value_max);
-  RecDataClear(RECD_NULL, &m_token_value_min);
+  RecDataZero(RECD_NULL, &m_token_value);
+  RecDataZero(RECD_NULL, &m_token_value_max);
+  RecDataZero(RECD_NULL, &m_token_value_min);
   memset(&m_token_value_delta, 0, sizeof(m_token_value_delta));
 }
 
@@ -234,7 +234,7 @@ StatExprToken::statVarSet(RecDataT type, RecData value)
        "[StatPro] ERROR in a statistics aggregation operations\n");
      */
     RecData err_value;
-    RecDataClear(m_token_type, &err_value);
+    RecDataZero(m_token_type, &err_value);
     return varSetData(m_token_type, m_token_name, err_value);
   }
 
@@ -535,8 +535,8 @@ StatObject::assignExpr(char *str)
         statToken->m_token_value_delta->previous_time = (ink_hrtime)0;
         statToken->m_token_value_delta->current_time = (ink_hrtime)0;
         statToken->m_token_value_delta->data_type = RECD_NULL;
-        RecDataClear(RECD_NULL, &statToken->m_token_value_delta->previous_value);
-        RecDataClear(RECD_NULL, &statToken->m_token_value_delta->current_value);
+        RecDataZero(RECD_NULL, &statToken->m_token_value_delta->previous_value);
+        RecDataZero(RECD_NULL, &statToken->m_token_value_delta->current_value);
       }
 
       statToken->assignTokenName(token);
@@ -644,7 +644,7 @@ StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
   StatExprToken *result = NULL;
   StatExprToken *curToken = NULL;
   RecData tempValue;
-  RecDataClear(RECD_NULL, &tempValue);
+  RecDataZero(RECD_NULL, &tempValue);
 
   *result_type = RECD_NULL;
 
@@ -665,11 +665,11 @@ StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
       tempValue = src->m_token_value_delta->diff_value(src->m_token_name);
     } else if (!cluster) {
       if (!varDataFromName(src->m_token_type, src->m_token_name, &tempValue)) {
-        RecDataClear(src->m_token_type, &tempValue);
+        RecDataZero(src->m_token_type, &tempValue);
       }
     } else {
       if (!overviewGenerator->varClusterDataFromName(src->m_token_type, src->m_token_name, &tempValue)) {
-        RecDataClear(src->m_token_type, &tempValue);
+        RecDataZero(src->m_token_type, &tempValue);
       }
     }
   } else {
@@ -736,7 +736,7 @@ StatObject::ClusterStatEval(RecDataT *result_type)
 
     if (!overviewGenerator->varClusterDataFromName(m_node_dest->m_token_type, m_node_dest->m_token_name, &tempValue)) {
       *result_type = RECD_NULL;
-      RecDataClear(*result_type, &tempValue);
+      RecDataZero(*result_type, &tempValue);
     }
 
     return (tempValue);
@@ -783,14 +783,14 @@ StatObject::setTokenValue(StatExprToken *token, bool cluster)
     case RECD_FLOAT:
       if (cluster) {
         if (!overviewGenerator->varClusterDataFromName(token->m_token_type, token->m_token_name, &(token->m_token_value))) {
-          RecDataClear(token->m_token_type, &token->m_token_value);
+          RecDataZero(token->m_token_type, &token->m_token_value);
         }
       } else {
         if (token->m_token_value_delta) {
           token->m_token_value = token->m_token_value_delta->diff_value(token->m_token_name);
         } else {
           if (!varDataFromName(token->m_token_type, token->m_token_name, &(token->m_token_value))) {
-            RecDataClear(token->m_token_type, &token->m_token_value);
+            RecDataZero(token->m_token_type, &token->m_token_value);
           }
         } // delta?
       }   // cluster?
@@ -862,8 +862,8 @@ StatObject::StatBinaryEval(StatExprToken *left, char op, StatExprToken *right, b
   /*
    * We should make the operands with the same type before calculating.
    */
-  RecDataClear(RECD_NULL, &l);
-  RecDataClear(RECD_NULL, &r);
+  RecDataZero(RECD_NULL, &l);
+  RecDataZero(RECD_NULL, &r);
 
   if (left->m_token_type == right->m_token_type) {
     l = left->m_token_value;
@@ -904,7 +904,7 @@ StatObject::StatBinaryEval(StatExprToken *left, char op, StatExprToken *right, b
 
   case '/':
     RecData recTmp;
-    RecDataClear(RECD_NULL, &recTmp);
+    RecDataZero(RECD_NULL, &recTmp);
 
     /*
      * Force the type of result to be RecFloat on div operation
@@ -1002,8 +1002,8 @@ StatObjectList::Eval()
   ink_hrtime delta = 0;
   short count = 0;
 
-  RecDataClear(RECD_NULL, &tempValue);
-  RecDataClear(RECD_NULL, &result);
+  RecDataZero(RECD_NULL, &tempValue);
+  RecDataZero(RECD_NULL, &result);
 
   for (StatObject *object = first(); object; object = next(object)) {
     StatError = false;
@@ -1088,7 +1088,7 @@ StatObjectList::Eval()
 
             if (token->m_token_value_delta) {
               if (!varDataFromName(token->m_token_type, token->m_token_name, &tempValue)) {
-                RecDataClear(RECD_NULL, &tempValue);
+                RecDataZero(RECD_NULL, &tempValue);
               }
 
               token->m_token_value_delta->previous_time = token->m_token_value_delta->current_time;
