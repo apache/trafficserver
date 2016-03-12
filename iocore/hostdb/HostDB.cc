@@ -2862,6 +2862,7 @@ ParseHostLine(RefCountedHostsFileMap *map, char *l)
       // If we don't have an entry already (host files only support single IPs for a given name)
       if (map->hosts_file_map.find(name) == map->hosts_file_map.end()) {
         HostsFileMap::mapped_type &item = map->hosts_file_map[name];
+        memset(&item, 0, sizeof(item));
         item.round_robin = false;
         item.round_robin_elt = false;
         item.reverse_dns = false;
