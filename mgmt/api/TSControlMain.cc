@@ -977,7 +977,7 @@ handle_stats_reset(int fd, void *req, size_t reqlen)
   MgmtMarshallInt err;
 
   err = recv_mgmt_request(req, reqlen, STATS_RESET_NODE, &optype, &name);
-  if (err != TS_ERR_OKAY) {
+  if (err == TS_ERR_OKAY) {
     err = StatsReset(optype == STATS_RESET_CLUSTER, name);
   }
 
