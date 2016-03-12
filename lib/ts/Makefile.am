@@ -82,8 +82,6 @@ libtsutil_la_SOURCES = \
   Map.h \
   MatcherUtils.cc \
   MatcherUtils.h \
-  MimeTable.cc \
-  MimeTable.h \
   ParseRules.cc \
   ParseRules.h \
   Ptr.h \

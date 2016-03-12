@@ -106,7 +106,6 @@
 typedef time_t ink_time_t;
 
 struct HttpConfigParams;
-struct MimeTableEntry;
 class HttpSM;
 
 #include "ts/InkErrno.h"

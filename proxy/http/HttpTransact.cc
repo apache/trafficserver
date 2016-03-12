@@ -35,7 +35,6 @@
 #include "ts/ParseRules.h"
 #include "HTTP.h"
 #include "HdrUtils.h"
-#include "ts/MimeTable.h"
 #include "logging/Log.h"
 #include "logging/LogUtils.h"
 #include "Error.h"
