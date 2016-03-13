@@ -580,6 +580,45 @@ ts.client_request.set_uri_args
 
 `TOP <#ts-lua-plugin>`_
 
+ts.client_request.get_uri_params
+--------------------------------
+**syntax:** *ts.client_request.get_uri_params()*
+
+**context:** do_remap or do_global_* or later
+
+**description:** This function can be used to retrieve the client request's parameter string.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        local query = ts.client_request.get_uri_params()
+        print(query)
+    end
+
+Then ``GET /st;a=1`` will yield the output:
+
+``a=1``
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.client_request.set_uri_params
+--------------------------------
+**syntax:** *ts.client_request.set_uri_params(PARAMETER_STRING)*
+
+**context:** do_remap or do_global_*
+
+**description:** This function can be used to override the client request's parameter string.
+
+::
+
+    ts.client_request.set_uri_params('n=6')
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.client_request.get_url
 -------------------------
 **syntax:** *ts.client_request.get_url()*
@@ -1208,6 +1247,50 @@ ts.server_request.set_uri_args
 ::
 
     ts.server_request.set_uri_args('n=6&p=7')
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.get_uri_params
+--------------------------------
+**syntax:** *ts.server_request.get_uri_params()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description:** This function can be used to retrieve the server request's parameter string.
+
+Here is an example:
+
+::
+
+    function send_request()
+        local query = ts.server_request.get_uri_params()
+        print(query)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+Then ``GET /st;a=1`` will yield the output:
+
+``a=1``
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.set_uri_params
+--------------------------------
+**syntax:** *ts.server_request.set_uri_params(PARAMETER_STRING)*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
+
+**description:** This function can be used to override the server request's parameter string.
+
+::
+
+    ts.server_request.set_uri_params('n=6')
 
 
 `TOP <#ts-lua-plugin>`_
