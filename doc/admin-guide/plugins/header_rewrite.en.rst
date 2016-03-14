@@ -943,3 +943,14 @@ possible to accomplish::
     cond %{RANDOM:500} >290
     set-status 403
 
+Add Cache Control Headers Based on Origin Path
+----------------------------------------------
+
+This rule adds cache control headers to CDN responses based matching the origin path.  One provides a max age and the other provides a “no-cache” statement to two different file paths.
+
+cond %{SEND_RESPONSE_HDR_HOOK}  
+cond %{PATH} /examplepath1/
+add-header Cache-Control "max-age=3600" [L]
+cond %{SEND_RESPONSE_HDR_HOOK}  
+cond %{PATH} /examplepath2/examplepath3/.*/
+add-header Cache-Control "no-cache" [L]
