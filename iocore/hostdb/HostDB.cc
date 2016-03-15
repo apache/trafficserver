@@ -1275,6 +1275,7 @@ HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
 // Lookup done, insert into the local table, return data to the
 // calling continuation or to the calling cluster node.
 //
+// Note: this method must *always* return a valid response
 HostDBInfo *
 HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around_robin, unsigned int ttl_seconds, SRVHosts *srv)
 {
@@ -1360,7 +1361,6 @@ HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around
         ink_assert(!"out of room in hostdb data area");
         Warning("out of room in hostdb for reverse DNS data");
         hostDB.delete_block(i);
-        return NULL;
       }
     }
   }
@@ -1374,7 +1374,6 @@ HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around
     } else {
       Warning("Out of room in hostdb for hostname (data area full!)");
       hostDB.delete_block(i);
-      return NULL;
     }
   }
 
