@@ -210,11 +210,12 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
     s->parent_result.r = PARENT_DIRECT;
-  } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
+  } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting &&
+             s->parent_result.rec->parent_is_proxy) {
     s->parent_result.r = PARENT_DIRECT;
   } else if (s->http_config_param->uncacheable_requests_bypass_parent && s->http_config_param->no_dns_forward_to_parent == 0 &&
-             !HttpTransact::is_request_cache_lookupable(s)) {
-    // request not lookupable and cacheable, so bypass parent
+             !HttpTransact::is_request_cache_lookupable(s) && s->parent_result.rec->parent_is_proxy) {
+    // request not lookupable and cacheable, so bypass parent if the parent is not an origin server.
     // Note that the configuration of the proxy as well as the request
     // itself affects the result of is_request_cache_lookupable();
     // we are assuming both child and parent have similar configuration
@@ -246,7 +247,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       //   2) the config permits us
       //   3) the config permitted us to dns the origin server
       if (!s->parent_params->apiParentExists(&s->request_data) && s->parent_result.rec->bypass_ok() &&
-          s->http_config_param->no_dns_forward_to_parent == 0) {
+          s->http_config_param->no_dns_forward_to_parent == 0 && s->parent_result.rec->parent_is_proxy) {
         s->parent_result.r = PARENT_DIRECT;
       }
       break;
@@ -7784,12 +7785,19 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   // If we're going to a parent proxy, make sure we pass host and port
   // in the URL even if we didn't get them (e.g. transparent proxy)
-  if (s->current.request_to == PARENT_PROXY && !outgoing_request->is_target_in_url()) {
-    DebugTxn("http_trans", "[build_request] adding target to URL for parent proxy");
+  if (s->current.request_to == PARENT_PROXY) {
+    if (!outgoing_request->is_target_in_url() && s->parent_result.rec->parent_is_proxy) {
+      DebugTxn("http_trans", "[build_request] adding target to URL for parent proxy");
 
-    // No worry about HTTP/0.9 because we reject forward proxy requests that
-    // don't have a host anywhere.
-    outgoing_request->set_url_target_from_host_field();
+      // No worry about HTTP/0.9 because we reject forward proxy requests that
+      // don't have a host anywhere.
+      outgoing_request->set_url_target_from_host_field();
+    } else if (s->current.request_to == PARENT_PROXY && !s->parent_result.rec->parent_is_proxy &&
+           outgoing_request->is_target_in_url()) {
+        // If the parent is an origin server remove the hostname from the url.
+        DebugTxn("http_trans", "[build_request] removing target from URL for a parent origin.");
+        HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
+    }
   }
 
   // If the response is most likely not cacheable, eg, request with Authorization,
