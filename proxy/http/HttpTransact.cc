@@ -7793,10 +7793,10 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
       // don't have a host anywhere.
       outgoing_request->set_url_target_from_host_field();
     } else if (s->current.request_to == PARENT_PROXY && !s->parent_result.rec->parent_is_proxy &&
-           outgoing_request->is_target_in_url()) {
-        // If the parent is an origin server remove the hostname from the url.
-        DebugTxn("http_trans", "[build_request] removing target from URL for a parent origin.");
-        HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
+               outgoing_request->is_target_in_url()) {
+      // If the parent is an origin server remove the hostname from the url.
+      DebugTxn("http_trans", "[build_request] removing target from URL for a parent origin.");
+      HttpTransactHeaders::remove_host_name_from_url(outgoing_request);
     }
   }
 
