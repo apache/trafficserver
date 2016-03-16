@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-#include <string>
 #include <string.h>
 #include <zlib.h>
 
@@ -49,15 +48,13 @@ using namespace Gzip;
 // to be about the best level to use in an HTTP Server.
 
 const int ZLIB_COMPRESSION_LEVEL = 6;
-
-int arg_idx_hooked;
-int arg_idx_host_configuration;
-int arg_idx_url_disallowed;
-
-
 const char *global_hidden_header_name;
-Configuration *config = NULL;
 const char *dictionary = NULL;
+
+// Current global configuration, and the previous one (for cleanup)
+Configuration *cur_config = NULL;
+Configuration *prev_config = NULL;
+
 
 static GzipData *
 gzip_data_alloc(int compression_type)
@@ -200,6 +197,7 @@ gzip_etag_header(TSMBuffer bufp, TSMLoc hdr_loc)
     int changetag = 1;
     int strl;
     const char *strv = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, ce_loc, -1, &strl);
+
     // do not alter weak etags.
     // FIXME: consider just making the etag weak for compressed content
     if (strl >= 2) {
@@ -259,9 +257,6 @@ gzip_transform_one(GzipData *data, TSIOBufferReader upstream_reader, int amount)
   int64_t upstream_length, downstream_length;
   int err;
 
-  TSHttpTxn txnp = (TSHttpTxn)data->txn;
-  HostConfiguration *hc = (HostConfiguration *)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-
   while (amount > 0) {
     downstream_blkp = TSIOBufferReaderStart(upstream_reader);
     if (!downstream_blkp) {
@@ -289,7 +284,7 @@ gzip_transform_one(GzipData *data, TSIOBufferReader upstream_reader, int amount)
       data->zstrm.next_out = (unsigned char *)downstream_buffer;
       data->zstrm.avail_out = downstream_length;
 
-      if (!hc->flush()) {
+      if (!data->hc->flush()) {
         debug("gzip_transform: deflate with Z_NO_FLUSH");
         err = deflate(&data->zstrm, Z_NO_FLUSH);
       } else {
@@ -459,7 +454,7 @@ gzip_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
 
 static int
-gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration *host_configuration, int *compress_type)
+gzip_transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration, int *compress_type)
 {
   /* Server response header */
   TSMBuffer bufp;
@@ -474,8 +469,8 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration *host_configura
   const char *value;
   int nvalues;
   int i, compression_acceptable, len;
-
   TSHttpStatus resp_status;
+
   if (server) {
     TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
   } else {
@@ -495,6 +490,7 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration *host_configura
   // the only compressible method is currently GET.
   int method_length;
   const char *method = TSHttpHdrMethodGet(cbuf, chdr, &method_length);
+
   if (!(method_length == TS_HTTP_LEN_GET && memcmp(method, TS_HTTP_METHOD_GET, TS_HTTP_LEN_GET) == 0)) {
     debug("method is not GET, not compressible");
     TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
@@ -563,7 +559,7 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration *host_configura
 
   value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
 
-  int rv = host_configuration->ContentTypeIsCompressible(value, len);
+  int rv = host_configuration->is_content_type_compressible(value, len);
   if (!rv) {
     info("content-type [%.*s] not compressible", len, value);
   }
@@ -574,17 +570,10 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration *host_configura
 
 
 static void
-gzip_transform_add(TSHttpTxn txnp, int /* server ATS_UNUSED */, HostConfiguration *hc, int compress_type)
+gzip_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type)
 {
-  int *tmp = (int *)TSHttpTxnArgGet(txnp, arg_idx_hooked);
-  if (tmp) {
-    // happens on cache_stale_hit
-    debug("transform hook already set, bail");
-    return;
-  } else {
-    TSHttpTxnArgSet(txnp, arg_idx_hooked, (void *)&GZIP_ONE);
-    info("adding compression transform");
-  }
+  TSVConn connp;
+  GzipData *data;
 
   TSHttpTxnUntransformedRespCache(txnp, 1);
 
@@ -594,156 +583,177 @@ gzip_transform_add(TSHttpTxn txnp, int /* server ATS_UNUSED */, HostConfiguratio
     TSHttpTxnTransformedRespCache(txnp, 1);
   }
 
-  TSVConn connp;
-  GzipData *data;
-
   connp = TSTransformCreate(gzip_transform, txnp);
   data = gzip_data_alloc(compress_type);
   data->txn = txnp;
+  data->hc = hc;
 
   TSContDataSet(connp, data);
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
 }
 
-static int
-cache_transformable(TSHttpTxn txnp)
-{
-  int obj_status;
-
-  if (TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) == TS_ERROR) {
-    warning("Couldn't get cache status of object");
-    return 0;
-  }
-  if (obj_status == TS_CACHE_LOOKUP_HIT_STALE) {
-    info("stale cache hit");
-    return 0;
-  }
-  if (obj_status == TS_CACHE_LOOKUP_HIT_FRESH) {
-    info("fresh cache hit");
-    return 1;
-  }
-
-  return 0;
-}
 
 HostConfiguration *
 find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc locp)
 {
   TSMLoc fieldp = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
+  int strl = 0;
+  const char *strv = NULL;
 
   if (fieldp) {
-    int strl;
-    const char *strv = TSMimeHdrFieldValueStringGet(bufp, locp, fieldp, -1, &strl);
+    strv = TSMimeHdrFieldValueStringGet(bufp, locp, fieldp, -1, &strl);
     TSHandleMLocRelease(bufp, locp, fieldp);
-
-    HostConfiguration *host_configuration = config->Find(strv, strl);
-    return host_configuration;
   }
 
-  return config->GlobalConfiguration();
+  return cur_config->find(strv, strl);
 }
 
-
 static int
-transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
+transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
   int compress_type = COMPRESSION_TYPE_DEFLATE;
+  HostConfiguration *hc = (HostConfiguration *)TSContDataGet(contp);
 
   switch (event) {
-  case TS_EVENT_HTTP_READ_REQUEST_HDR: {
-    TSMBuffer req_buf;
-    TSMLoc req_loc;
-    if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
-      int url_len;
-      char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
-      HostConfiguration *hc = find_host_configuration(txnp, req_buf, req_loc);
-      // we could clone the hosting configuration here, to make it deletable on reload?
-      TSHttpTxnArgSet(txnp, arg_idx_host_configuration, (void *)hc);
-
-      if (!hc->enabled() || !hc->IsUrlAllowed(url, url_len)) {
-        // FIXME: no double negatives
-        TSHttpTxnArgSet(txnp, arg_idx_url_disallowed, (void *)&GZIP_ONE);
-        info("url [%.*s] not allowed", url_len, url);
-      } else {
-        normalize_accept_encoding(txnp, req_buf, req_loc);
-      }
-      TSfree(url);
-      TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
-    }
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  } break;
-
-  case TS_EVENT_HTTP_READ_RESPONSE_HDR: {
+  case TS_EVENT_HTTP_READ_RESPONSE_HDR:
     // os: the accept encoding header needs to be restored..
     // otherwise the next request won't get a cache hit on this
-    HostConfiguration *hc = (HostConfiguration *)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
     if (hc != NULL) {
+      info("reading response headers");
       if (hc->remove_accept_encoding()) {
         TSMBuffer req_buf;
         TSMLoc req_loc;
+
         if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
           restore_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
           TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
         }
       }
 
-      int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
-      if (allowed && gzip_transformable(txnp, 1, hc, &compress_type)) {
-        gzip_transform_add(txnp, 1, hc, compress_type);
+      if (gzip_transformable(txnp, true, hc, &compress_type)) {
+        gzip_transform_add(txnp, hc, compress_type);
       }
     }
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  } break;
+    break;
 
-  case TS_EVENT_HTTP_SEND_REQUEST_HDR: {
-    HostConfiguration *hc = (HostConfiguration *)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
+  case TS_EVENT_HTTP_SEND_REQUEST_HDR:
     if (hc != NULL) {
+      info("preparing send request headers");
       if (hc->remove_accept_encoding()) {
         TSMBuffer req_buf;
         TSMLoc req_loc;
+
         if (TSHttpTxnServerReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
           hide_accept_encoding(txnp, req_buf, req_loc, global_hidden_header_name);
           TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
         }
       }
+      TSHttpTxnHookAdd(txnp, TS_HTTP_READ_RESPONSE_HDR_HOOK, contp);
     }
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-  } break;
+    break;
 
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
-    int allowed = !TSHttpTxnArgGet(txnp, arg_idx_url_disallowed);
-    HostConfiguration *hc = (HostConfiguration *)TSHttpTxnArgGet(txnp, arg_idx_host_configuration);
-    if (hc != NULL) {
-      if (allowed && cache_transformable(txnp) && gzip_transformable(txnp, 0, hc, &compress_type)) {
-        gzip_transform_add(txnp, 0, hc, compress_type);
+    int obj_status;
+
+    if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) && (TS_CACHE_LOOKUP_HIT_FRESH == obj_status)) {
+      if (hc != NULL) {
+        info("handling compression of cached object");
+        if (gzip_transformable(txnp, false, hc, &compress_type)) {
+          gzip_transform_add(txnp, hc, compress_type);
+        }
       }
+    } else {
+      // Prepare for going to origin
+      info("preparing to go to origin");
+      TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
     }
-    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
   } break;
+
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    // Release the ocnif lease, and destroy this continuation
+    hc->release();
+    TSContDestroy(contp);
+    break;
 
   default:
     fatal("gzip transform unknown event");
   }
 
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+
   return 0;
 }
 
 
+static int
+transform_global_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
+{
+  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSMBuffer req_buf;
+  TSMLoc req_loc;
+
+  switch (event) {
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
+      HostConfiguration *hc = find_host_configuration(txnp, req_buf, req_loc); // Get a lease on the
+      bool allowed = false;
+
+      if (hc->enabled()) {
+        if (hc->has_disallows()) {
+          int url_len;
+          char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
+
+          allowed = hc->is_url_allowed(url, url_len);
+          TSfree(url);
+        } else {
+          allowed = true;
+        }
+      }
+
+      if (allowed) {
+        TSCont transform_contp = TSContCreate(transform_plugin, NULL);
+
+        info("Kicking off gzip plugin for request");
+
+        TSContDataSet(transform_contp, (void *)hc);
+        normalize_accept_encoding(txnp, req_buf, req_loc);
+        TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, transform_contp);
+        TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, transform_contp); // To release the config
+      } else {
+        hc->release(); // No longer need this configuration, release it.
+      }
+      TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+    }
+    break;
+
+  default:
+    fatal("gzip global transform unknown event");
+  }
+
+  TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+
+  return 0;
+}
+
 static void
-read_configuration(TSCont contp)
+load_global_configuration(TSCont contp)
 {
   const char *path = (const char *)TSContDataGet(contp);
   Configuration *newconfig = Configuration::Parse(path);
+  Configuration *oldconfig = __sync_lock_test_and_set(&cur_config, newconfig);
 
-  Configuration *oldconfig = __sync_lock_test_and_set(&config, newconfig);
-  debug("config swapped,old config %p", oldconfig);
+  debug("config swapped, old config %p", oldconfig);
 
-  // FIXME: we have leaked.
-  // consider cloning or refcounting the configuration passed to the txn
-  // to make deleting the old configuration possible
-  // if (config != NULL )
-  //  delete config;
+  // First, if there was a previous configuration, clean that one out. This avois the
+  // small race condition tht exist between doing a find() and calling hold() on a
+  // HostConfig object.
+  if (prev_config) {
+    prev_config->release_all();
+    debug("deleting previous configuration container, %p", prev_config);
+    delete prev_config;
+  }
+  prev_config = oldconfig;
 }
 
 static int
@@ -751,7 +761,8 @@ management_update(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
   TSReleaseAssert(event == TS_EVENT_MGMT_UPDATE);
   info("management update event received");
-  read_configuration(contp);
+  load_global_configuration(contp);
+
   return 0;
 }
 
@@ -759,46 +770,31 @@ management_update(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  string config_path;
+  const char *config_path = NULL;
 
   if (argc > 2) {
     fatal("the gzip plugin does not accept more than 1 plugin argument");
-  } else if (argc == 2) {
-    config_path = std::string(argv[1]);
+  } else {
+    config_path = TSstrdup(2 == argc ? argv[1] : "");
   }
-
-  info("TSPluginInit %s", argv[0]);
 
   if (!register_plugin()) {
     fatal("The gzip plugin failed to register");
   }
 
-  if (TSHttpArgIndexReserve("gzip", "for remembering if the hook was set", &arg_idx_hooked) != TS_SUCCESS) {
-    fatal("failed to reserve an argument index");
-  }
-  if (TSHttpArgIndexReserve("gzip", "for storing if compression is applicable", &arg_idx_host_configuration) != TS_SUCCESS) {
-    fatal("failed to reserve an argument index");
-  }
-  if (TSHttpArgIndexReserve("gzip", "for storing if compression is disallowed for this txn", &arg_idx_url_disallowed) !=
-      TS_SUCCESS) {
-    fatal("failed to reserve an argument index");
-  }
-
+  info("TSPluginInit %s", argv[0]);
   global_hidden_header_name = init_hidden_header_name();
 
   TSCont management_contp = TSContCreate(management_update, NULL);
-  // fixme: never freed. there is no shutdown event?
-  char *p = (char *)TSmalloc(config_path.size() + 1);
-  strcpy(p, config_path.c_str());
-  TSContDataSet(management_contp, (void *)p);
+
+  // Make sure the global configuration is properly loaded and reloaded on changes
+  TSContDataSet(management_contp, (void *)config_path);
   TSMgmtUpdateRegister(management_contp, TAG);
-  read_configuration(management_contp);
+  load_global_configuration(management_contp);
 
-  TSCont transform_contp = TSContCreate(transform_plugin, NULL);
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, transform_contp);
-  TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, transform_contp);
-  TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, transform_contp);
-  TSHttpHookAdd(TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, transform_contp);
+  // Setup the global hook, main entry point for kicking off the plugin
+  TSCont transform_global_contp = TSContCreate(transform_global_plugin, NULL);
 
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, transform_global_contp);
   info("loaded");
 }
