@@ -7974,6 +7974,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->redirect_use_orig_cache_key;
     break;
+  case TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->attach_server_session_to_client;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8555,6 +8559,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       }
       break;
     }
+    break;
+
+  case 49:
+    if (!strncmp(name, "proxy.config.http.attach_server_session_to_client", length))
+      cnf = TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT;
     break;
 
   case 50:
