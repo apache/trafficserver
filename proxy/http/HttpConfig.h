@@ -529,6 +529,8 @@ struct OverridableHttpConfigParams {
   MgmtInt transaction_active_timeout_out;
   MgmtInt origin_max_connections;
 
+  MgmtInt attach_server_session_to_client;
+
   ////////////////////////////////////
   // origin server connect attempts //
   ////////////////////////////////////
@@ -632,7 +634,6 @@ public:
 
   MgmtInt server_max_connections;
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
-  MgmtInt attach_server_session_to_client;
   MgmtInt max_websocket_connections;
 
   MgmtByte parent_proxy_routing_enable;

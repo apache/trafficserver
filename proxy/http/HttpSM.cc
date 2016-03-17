@@ -3016,8 +3016,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     // server session to so the next ka request can use it.  Server sessions will
     // be placed into the shared pool if the next incoming request is for a different
     // origin server
-    if (t_state.http_config_param->attach_server_session_to_client == 1 && ua_session &&
-        t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
+    if (t_state.txn_conf->attach_server_session_to_client == 1 && ua_session && t_state.client_info.keep_alive == HTTP_KEEPALIVE) {
       Debug("http", "attaching server session to the client");
       ua_session->attach_server_session(server_session);
     } else {

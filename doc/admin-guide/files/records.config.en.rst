@@ -891,6 +891,7 @@ Value Effect
    ========== =================================================================
 
 .. ts:cv:: CONFIG proxy.config.http.attach_server_session_to_client INT 0
+   :overridable:
 
    Control the re-use of an server session by a user agent (client) session.
 
