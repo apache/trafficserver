@@ -375,7 +375,6 @@ CoreUtils::test_HdrHeap(void *arg)
   if (read_from_core((intptr_t)magic_ptr, sizeof(uint32_t), (char *)&magic) != 0) {
     if (magic == HDR_BUF_MAGIC_ALIVE || magic == HDR_BUF_MAGIC_DEAD || magic == HDR_BUF_MAGIC_CORRUPT ||
         magic == HDR_BUF_MAGIC_MARSHALED) {
-      // This is not 64-bit correct ... /leif
       printf("Found Hdr Heap @ 0x%p\n", arg);
     }
   }
@@ -434,7 +433,6 @@ CoreUtils::process_HttpSM(HttpSM *core_ptr)
     HttpSM *http_sm = (HttpSM *)ats_malloc(sizeof(HttpSM));
 
     if (read_from_core((intptr_t)core_ptr, sizeof(HttpSM), (char *)http_sm) < 0) {
-      // This is not 64-bit correct ... /leif
       printf("ERROR: Failed to read httpSM @ 0x%p from core\n", core_ptr);
       ats_free(http_sm);
       return;
@@ -448,7 +446,6 @@ CoreUtils::process_HttpSM(HttpSM *core_ptr)
         printf("\n*****match-ALIVE*****\n");
 #endif
       }
-      // I don't think this is 64-bit correct. /leif
       printf("---- Found HttpSM --- id %" PRId64 "  ------ @ 0x%p -----\n\n", http_sm->sm_id, http_sm);
 
       print_http_hdr(&http_sm->t_state.hdr_info.client_request, "Client Request");
@@ -465,13 +462,7 @@ CoreUtils::process_HttpSM(HttpSM *core_ptr)
         printf("\n*****match-DEAD*****\n");
 #endif
       }
-    } else {
-      if (is_debug_tag_set("magic")) {
-        // Nothing here? /leif
-        ;
-      }
     }
-
     ats_free(http_sm);
   } else
     printf("process_HttpSM : last_seen_http_sm == core_ptr\n");
@@ -746,7 +737,6 @@ CoreUtils::process_EThread(EThread *eth_test)
   if (read_from_core((intptr_t)eth_test, sizeof(EThread), buf) != -1) {
     EThread *loaded_eth = (EThread *)buf;
 
-    // This is not 64-bit correct. /leif
     printf("----------- EThread @ 0x%p ----------\n", eth_test);
 #if !defined(kfreebsd) && (defined(freebsd) || defined(darwin) || defined(openbsd))
     printf("   thread_id: %p\n", loaded_eth->tid);
@@ -762,7 +752,6 @@ CoreUtils::process_EThread(EThread *eth_test)
 static void
 print_netstate(NetState *n)
 {
-  // These might not be 64-bit correct. /leif
   printf("      enabled: %d\n", n->enabled);
   printf("      op: %d  _cont: 0x%p\n", n->vio.op, n->vio._cont);
   printf("      nbytes: %d  done: %d\n", (int)n->vio.nbytes, (int)n->vio.ndone);
@@ -776,9 +765,8 @@ CoreUtils::process_NetVC(UnixNetVConnection *nvc_test)
 
   if (read_from_core((intptr_t)nvc_test, sizeof(UnixNetVConnection), buf) != -1) {
     UnixNetVConnection *loaded_nvc = (UnixNetVConnection *)buf;
-
-    // Probably not 64-bit safe. /leif
     char addrbuf[INET6_ADDRSTRLEN];
+
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
     printf("     ip: %s    port: %d\n", ats_ip_ntop(&loaded_nvc->server_addr.sa, addrbuf, sizeof(addrbuf)),
            ats_ip_port_host_order(&loaded_nvc->server_addr));
@@ -918,7 +906,6 @@ process_core(char *fname)
                 printf("\n*** printing registers****\n");
                 for (j = 0; j < ELF_NGREG; j++) {
                   rinfo[j] = pstat.pr_reg[j];
-                  // This is probably not 64-bit correct. /leif
                   printf("%#x ", (unsigned int)rinfo[j]);
                 }
                 printf("\n");
@@ -933,11 +920,9 @@ process_core(char *fname)
                 // convert it using strsignal
                 // char *msg=strsignal(pstat.pr_cursig);
 
-                // Probably not 64-bit correct. /leif
                 printf("stack pointer = %#x\n", (unsigned int)pstat.pr_reg[SP_REGNUM]); // UESP
                 framep = pstat.pr_reg[FP_REGNUM];
                 pc = pstat.pr_reg[PC_REGNUM];
-                // Probably not 64-bit correct. /leif
                 printf("frame pointer = %#x\n", (unsigned int)pstat.pr_reg[FP_REGNUM]); // EBP
                 printf("program counter if no save = %#x\n", (unsigned int)pstat.pr_reg[PC_REGNUM]);
                 //}
