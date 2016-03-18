@@ -29,14 +29,14 @@
 #endif
 
 #include <string>
-
 #include "lulu.h"
 
 #if HAVE_GEOIP_H
 #include <GeoIP.h>
-#endif
-
-extern GeoIP *gGI;
+typedef GeoIP *GeoDBHandle;
+#else  /* !HAVE_GEOIP_H */
+typedef void *GeoDBHandle;
+#endif /* HAVE_GEOIP_H */
 
 // See http://www.iso.org/iso/english_country_names_and_code_elements
 // Maxmind allocates 253 country codes,even though there are only 248 according to the above
@@ -47,20 +47,16 @@ static const int NUM_ISO_CODES = 253;
 class Acl
 {
 public:
-  Acl() : _allow(true), _added_tokens(0) {}
+  Acl() : _allow(true) {}
 
   virtual ~Acl() {}
 
   // These have to be implemented for each ACL type
   virtual void read_regex(const char *fn) = 0;
-  virtual void process_args(int argc, char *argv[]) = 0;
+  virtual int process_args(int argc, char *argv[]) = 0;
   virtual bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const = 0;
+  virtual void add_token(const std::string &str) = 0;
 
-  virtual void
-  add_token(const std::string & /* str */)
-  {
-    ++_added_tokens;
-  }
   void
   set_allow(bool allow)
   {
@@ -79,10 +75,16 @@ public:
 
   void read_html(const char *fn);
 
+  int country_id_by_code(const std::string &str) const;
+  int country_id_by_addr(const sockaddr *addr) const;
+
+  static bool init();
+
 protected:
   std::string _html;
   bool _allow;
   int _added_tokens;
+  static GeoDBHandle _geoip;
 };
 
 
@@ -111,10 +113,10 @@ public:
   bool
   match(const char *str, int len) const
   {
-    // TODO: Not 100% sure this is absolutely correct, and not sure why adding
-    // PCRE_NOTEMPTY to the options doesn't work ...
-    if (0 == len)
+    if (0 == len) {
       return false;
+    }
+
     return (pcre_exec(_rex, _extra, str, len, 0, PCRE_NOTEMPTY, NULL, 0) != -1);
   }
 
@@ -138,7 +140,7 @@ public:
   CountryAcl() : _regexes(NULL) { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
 
   void read_regex(const char *fn);
-  void process_args(int argc, char *argv[]);
+  int process_args(int argc, char *argv[]);
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const;
   void add_token(const std::string &str);
 
