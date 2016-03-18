@@ -276,7 +276,8 @@ _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDa
   rsb->global[id]->last_count = 0;
 
   // setup the periodic sync callback
-  if (sync_cb) RecRegisterRawStatSyncCb(name, sync_cb, rsb, id);
+  if (sync_cb)
+    RecRegisterRawStatSyncCb(name, sync_cb, rsb, id);
 
 Ldone:
   return err;
@@ -600,11 +601,13 @@ RecExecRawStatSyncCbs()
 }
 
 int
-RecRawStatUpdateSum(RecRawStatBlock* rsb, int id)
+RecRawStatUpdateSum(RecRawStatBlock *rsb, int id)
 {
-  RecRawStat* raw = rsb->global[id];
+  RecRawStat *raw = rsb->global[id];
   if (NULL != raw) {
-    RecRecord* r = reinterpret_cast<RecRecord*>(reinterpret_cast<char*>(raw) - (reinterpret_cast<char*>(&reinterpret_cast<RecRecord*>(0)->stat_meta) - reinterpret_cast<char*>(reinterpret_cast<RecRecord*>(0))));
+    RecRecord *r = reinterpret_cast<RecRecord *>(reinterpret_cast<char *>(raw) -
+                                                 (reinterpret_cast<char *>(&reinterpret_cast<RecRecord *>(0)->stat_meta) -
+                                                  reinterpret_cast<char *>(reinterpret_cast<RecRecord *>(0))));
 
     RecDataSetFromInk64(r->data_type, &r->data, rsb->global[id]->sum);
     r->sync_required = REC_SYNC_REQUIRED;

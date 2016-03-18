@@ -74,7 +74,7 @@ int RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, R
 int RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData *data, RecRawStatBlock *rsb, int id);
 
 int RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatBlock *rsb, int id);
-int RecRawStatUpdateSum(RecRawStatBlock* rsb, int id);
+int RecRawStatUpdateSum(RecRawStatBlock *rsb, int id);
 
 //-------------------------------------------------------------------------
 // RawStat Setting/Getting
