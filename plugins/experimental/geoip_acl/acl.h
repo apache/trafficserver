@@ -85,6 +85,7 @@ protected:
   bool _allow;
   int _added_tokens;
   static GeoDBHandle _geoip;
+  static GeoDBHandle _geoip6;
 };
 
 

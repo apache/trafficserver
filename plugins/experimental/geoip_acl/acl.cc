@@ -28,14 +28,21 @@
 // Implementation of the ACL base class. This wraps the underlying Geo library
 // that we've found and used.
 GeoDBHandle Acl::_geoip;
+GeoDBHandle Acl::_geoip6;
 
 // Maxmind v1 APIs
 #if HAVE_GEOIP_H
 bool
 Acl::init()
 {
-  TSDebug(PLUGIN_NAME, "Initialized with Maxmind GeoIP (v1)");
+  TSDebug(PLUGIN_NAME, "initialized IPv4 GeoIP DB");
   _geoip = GeoIP_new(GEOIP_MMAP_CACHE); // GEOIP_STANDARD seems to break threaded apps...
+
+  // Setup IPv6 if possible
+  if (GeoIP_db_avail(GEOIP_COUNTRY_EDITION_V6)) {
+    _geoip6 = GeoIP_open_type(GEOIP_COUNTRY_EDITION_V6, GEOIP_MMAP_CACHE | GEOIP_MEMORY_CACHE);
+    TSDebug(PLUGIN_NAME, "initialized IPv6 GeoIP DB");
+  }
 
   return true;
 }
@@ -50,6 +57,7 @@ int
 Acl::country_id_by_addr(const sockaddr *addr) const
 {
   int iso = -1;
+  int v = 4;
 
   switch (addr->sa_family) {
   case AF_INET: {
@@ -58,13 +66,17 @@ Acl::country_id_by_addr(const sockaddr *addr) const
     iso = GeoIP_id_by_ipnum(_geoip, ip);
   } break;
   case AF_INET6: {
-    TSDebug(PLUGIN_NAME, "eval(): Unsupported protocol, IPv6");
+    geoipv6_t ip;
+
+    memcpy(ip.s6_addr, reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr.s6_addr, sizeof(ip));
+    iso = GeoIP_id_by_ipnum_v6(_geoip6, ip);
+    v = 6;
   } break;
   default:
     break;
   }
 
-  TSDebug(PLUGIN_NAME, "eval(): Client IP seems to come from ISO=%d", iso);
+  TSDebug(PLUGIN_NAME, "eval(): Client IPv%d seems to come from ISO=%d", v, iso);
   return iso;
 }
 #else  /* !HAVE_GEOIP_H */
