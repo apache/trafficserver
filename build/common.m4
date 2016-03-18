@@ -556,30 +556,6 @@ AC_DEFUN([TS_ARG_ENABLE_VAR],[
   AC_SUBST(m4_join([_], $1, AS_TR_SH($2)))
 ])
 
-dnl
-dnl TS_SEARCH_LIBRARY(function, search-libs, [action-if-found], [action-if-not-found])
-dnl This macro works like AC_SEARCH_LIBS, except that $LIBS is not modified. If the library
-dnl is found, it is cached in the ts_cv_lib_${function} variable.
-dnl
-AC_DEFUN([TS_SEARCH_LIBRARY], [
-  __saved_LIBS="$LIBS"
-
-  AC_SEARCH_LIBS($1, $2, [
-    dnl action-if-found
-    case $ac_cv_search_$1 in
-    "none required"|"no") ts_cv_search_$1="" ;;
-    *) ts_cv_search_$1=$ac_cv_search_$1 ;;
-    esac
-    m4_default([$3], [true])
-  ], [
-    dnl action-if-not-found
-    m4_default([$4], [true])
-  ])
-
-  LIBS="$__saved_LIBS"
-  unset __saved_LIBS
-])
-
 dnl TS_CHECK_SOCKOPT(socket-option, [action-if-found], [action-if-not-found]
 AC_DEFUN([TS_CHECK_SOCKOPT], [
   AC_MSG_CHECKING([for $1 socket option])

@@ -24,10 +24,76 @@
 #include "acl.h"
 #include "lulu.h"
 
-// Global GeoIP object.
-GeoIP *gGI;
 
-// Implementation of the ACL base class.
+// Implementation of the ACL base class. This wraps the underlying Geo library
+// that we've found and used.
+GeoDBHandle Acl::_geoip;
+
+// Maxmind v1 APIs
+#if HAVE_GEOIP_H
+bool
+Acl::init()
+{
+  TSDebug(PLUGIN_NAME, "Initialized with Maxmind GeoIP (v1)");
+  _geoip = GeoIP_new(GEOIP_MMAP_CACHE); // GEOIP_STANDARD seems to break threaded apps...
+
+  return true;
+}
+
+int
+Acl::country_id_by_code(const std::string &str) const
+{
+  return GeoIP_id_by_code(str.c_str());
+}
+
+int
+Acl::country_id_by_addr(const sockaddr *addr) const
+{
+  int iso = -1;
+
+  switch (addr->sa_family) {
+  case AF_INET: {
+    uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
+
+    iso = GeoIP_id_by_ipnum(_geoip, ip);
+  } break;
+  case AF_INET6: {
+    TSDebug(PLUGIN_NAME, "eval(): Unsupported protocol, IPv6");
+  } break;
+  default:
+    break;
+  }
+
+  TSDebug(PLUGIN_NAME, "eval(): Client IP seems to come from ISO=%d", iso);
+  return iso;
+}
+#else  /* !HAVE_GEOIP_H */
+
+// No library available, nothing will work :)
+bool
+Acl::init()
+{
+  TSDebug(PLUGIN_NAME, "No Geo library available!");
+  TSError("[%s] No Geo library available!", PLUGIN_NAME);
+
+  return false;
+}
+
+int
+Acl::country_id_by_code(const std::string &str) const
+{
+  return -1;
+}
+
+int
+Acl::country_id_by_addr(const sockaddr *addr) const
+{
+  return -1;
+}
+#endif /* HAVE_GEOIP_H */
+
+
+// This is the rest of the ACL baseclass, which is the same for all underlying Geo libraries.
 void
 Acl::read_html(const char *fn)
 {
@@ -39,7 +105,7 @@ Acl::read_html(const char *fn)
     f.close();
     TSDebug(PLUGIN_NAME, "Loaded HTML from %s", fn);
   } else {
-    TSError("[geoip_acl] Unable to open HTML file %s", fn);
+    TSError("[%s] Unable to open HTML file %s", PLUGIN_NAME, fn);
   }
 }
 
@@ -52,11 +118,13 @@ RegexAcl::parse_line(const char *filename, const std::string &line, int lineno)
   std::string regex, tmp;
   std::string::size_type pos1, pos2;
 
-  if (line.empty())
+  if (line.empty()) {
     return false;
+  }
   pos1 = line.find_first_not_of(_SEPARATOR);
-  if (line[pos1] == '#' || pos1 == std::string::npos)
+  if (line[pos1] == '#' || pos1 == std::string::npos) {
     return false;
+  }
 
   pos2 = line.find_first_of(_SEPARATOR, pos1);
   if (pos2 != std::string::npos) {
@@ -66,12 +134,12 @@ RegexAcl::parse_line(const char *filename, const std::string &line, int lineno)
       pos2 = line.find_first_of(_SEPARATOR, pos1);
       if (pos2 != std::string::npos) {
         tmp = line.substr(pos1, pos2 - pos1);
-        if (tmp == "allow")
+        if (tmp == "allow") {
           _acl->set_allow(true);
-        else if (tmp == "deny")
+        } else if (tmp == "deny") {
           _acl->set_allow(false);
-        else {
-          TSError("[geoip_acl] Bad action on in %s:line %d: %s", filename, lineno, tmp.c_str());
+        } else {
+          TSError("[%s] Bad action on in %s:line %d: %s", PLUGIN_NAME, filename, lineno, tmp.c_str());
           return false;
         }
         // The rest are "tokens"
@@ -102,11 +170,12 @@ RegexAcl::compile(const std::string &str, const char *filename, int lineno)
   if (NULL != _rex) {
     _extra = pcre_study(_rex, 0, &error);
     if ((NULL == _extra) && error && (*error != 0)) {
-      TSError("[geoip_acl] Failed to study regular expression in %s:line %d at offset %d: %s", filename, lineno, erroffset, error);
+      TSError("[%s] Failed to study regular expression in %s:line %d at offset %d: %s", PLUGIN_NAME, filename, lineno, erroffset,
+              error);
       return false;
     }
   } else {
-    TSError("[geoip_acl] Failed to compile regular expression in %s:line %d: %s", filename, lineno, error);
+    TSError("[%s] Failed to compile regular expression in %s:line %d: %s", PLUGIN_NAME, filename, lineno, error);
     return false;
   }
 
@@ -134,14 +203,12 @@ CountryAcl::add_token(const std::string &str)
 {
   int iso = -1;
 
-  Acl::add_token(str);
-  iso = GeoIP_id_by_code(str.c_str());
-
+  iso = country_id_by_code(str.c_str());
   if (iso > 0 && iso < NUM_ISO_CODES) {
     _iso_country_codes[iso] = true;
-    TSDebug(PLUGIN_NAME, "Added %s(%d) to remap rule, ACL=%d", str.c_str(), iso, _allow);
+    TSDebug(PLUGIN_NAME, "Added %s(%d) to remap rule, ACL=%s", str.c_str(), iso, _allow ? "allow" : "deny");
   } else {
-    TSError("[geoip_acl] Tried setting an ISO code (%d) outside the supported range", iso);
+    TSError("[%s] Tried setting an ISO code (%d) outside the supported range", PLUGIN_NAME, iso);
   }
 }
 
@@ -159,20 +226,22 @@ CountryAcl::read_regex(const char *fn)
     while (!f.eof()) {
       getline(f, line);
       ++lineno;
-      if (!acl)
+      if (!acl) {
         acl = new RegexAcl(new CountryAcl());
+      }
       if (acl->parse_line(fn, line, lineno)) {
-        if (NULL == _regexes)
+        if (NULL == _regexes) {
           _regexes = acl;
-        else
+        } else {
           _regexes->append(acl);
+        }
         acl = NULL;
       }
     }
     f.close();
     TSDebug(PLUGIN_NAME, "Loaded regex rules from %s", fn);
   } else {
-    TSError("[geoip_acl] Unable to open regex file %s", fn);
+    TSError("[%s] Unable to open regex file %s", PLUGIN_NAME, fn);
   }
 }
 
@@ -195,40 +264,22 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
     } while ((acl = acl->next()));
   }
 
-  // This is a special case for when there are no ISO codes. It got kinda wonky without it.
-  if (0 == _added_tokens)
-    return _allow;
-
   // None of the regexes (if any) matched, so fallback to the remap defaults if there are any.
-  int iso = -1;
-  const sockaddr *addr = TSHttpTxnClientAddrGet(txnp);
+  int iso = country_id_by_addr(TSHttpTxnClientAddrGet(txnp));
 
-  switch (addr->sa_family) {
-  case AF_INET: {
-    uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
-
-    iso = GeoIP_id_by_ipnum(gGI, ip);
-    if (TSIsDebugTagSet(PLUGIN_NAME)) {
-      const char *c = GeoIP_country_code_by_ipnum(gGI, ip);
-      TSDebug(PLUGIN_NAME, "eval(): IP=%u seems to come from ISO=%d / %s", ip, iso, c);
-    }
-  } break;
-  case AF_INET6:
-    return true;
-  default:
-    break;
-  }
-
-  if ((iso <= 0) || (!_iso_country_codes[iso]))
+  if ((iso <= 0) || (!_iso_country_codes[iso])) {
     return !_allow;
+  }
 
   return _allow;
 }
 
 
-void
+int
 CountryAcl::process_args(int argc, char *argv[])
 {
+  int tokens = 0;
+
   for (int i = 3; i < argc; ++i) {
     if (!strncmp(argv[i], "allow", 5)) {
       _allow = true;
@@ -240,6 +291,9 @@ CountryAcl::process_args(int argc, char *argv[])
       read_html(argv[i] + 6);
     } else { // ISO codes assumed for the rest
       add_token(argv[i]);
+      ++tokens;
     }
   }
+
+  return tokens;
 }
