@@ -65,6 +65,48 @@ extern HttpBodyFactory *body_factory;
 
 static const char local_host_ip_str[] = "127.0.0.1";
 
+inline static void
+simple_or_unavailable_server_retry(HttpTransact::State *s)
+{
+  int server_response = 0;
+
+  HTTP_RELEASE_ASSERT(!s->parent_result.rec->parent_is_proxy);
+
+  // reponse is from a parent origin server.
+  server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
+
+  DebugTxn("http_trans", "[simple_or_unavailabe_server_retry] server_response = %d, simple_retry_attempts: %d, numParents:%d \n",
+           server_response, s->current.simple_retry_attempts, s->parent_params->numParents(&s->parent_result));
+
+  // simple retry is enabled, 0x1
+  if ((s->parent_result.rec->parent_retry & HttpTransact::PARENT_ORIGIN_SIMPLE_RETRY) &&
+      (s->current.simple_retry_attempts < s->parent_result.rec->max_simple_retries && server_response == HTTP_STATUS_NOT_FOUND)) {
+    DebugTxn("parent_select", "RECEIVED A SIMPLE RETRY RESPONSE");
+    if (s->current.simple_retry_attempts < (int)s->parent_params->numParents(&s->parent_result)) {
+      s->current.state = HttpTransact::PARENT_ORIGIN_RETRY;
+      s->current.retry_type = HttpTransact::PARENT_ORIGIN_SIMPLE_RETRY;
+      return;
+    } else {
+      DebugTxn("http_trans", "PARENT_ORIGIN_SIMPLE_RETRY: retried all parents, send response to client.\n");
+      return;
+    }
+  }
+  // unavailable server retry is enabled 0x2
+  else if ((s->parent_result.rec->parent_retry & HttpTransact::PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY) &&
+           (s->current.unavailable_server_retry_attempts < s->parent_result.rec->max_unavailable_server_retries &&
+            s->parent_result.rec->unavailable_server_retry_responses->contains(server_response))) {
+    DebugTxn("parent_select", "RECEIVED A PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY RESPONSE");
+    if (s->current.unavailable_server_retry_attempts < (int)s->parent_params->numParents(&s->parent_result)) {
+      s->current.state = HttpTransact::PARENT_ORIGIN_RETRY;
+      s->current.retry_type = HttpTransact::PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY;
+      return;
+    } else {
+      DebugTxn("http_trans", "PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY: retried all parents, send error to client.\n");
+      return;
+    }
+  }
+}
+
 inline static bool
 is_request_conditional(HTTPHdr *header)
 {
@@ -3520,6 +3562,15 @@ HttpTransact::handle_response_from_parent(State *s)
   DebugTxn("http_trans", "[handle_response_from_parent] (hrfp)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
 
+  // response is from a parent origin server.
+  if (is_response_valid(s, &s->hdr_info.server_response) && s->current.request_to == HttpTransact::PARENT_PROXY &&
+      !s->parent_result.rec->parent_is_proxy) {
+    // check for a retryable response if simple or unavailable server retry are enabled.
+    if (s->parent_result.rec->parent_retry & (PARENT_ORIGIN_SIMPLE_RETRY | PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY)) {
+      simple_or_unavailable_server_retry(s);
+    }
+  }
+
   s->parent_info.state = s->current.state;
   switch (s->current.state) {
   case CONNECTION_ALIVE:
@@ -3552,7 +3603,31 @@ HttpTransact::handle_response_from_parent(State *s)
       return;
     }
 
-    if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
+    // try a simple retry if we received a simple retryable response from the parent.
+    if (s->current.retry_type == PARENT_ORIGIN_SIMPLE_RETRY || s->current.retry_type == PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY) {
+      if (s->current.retry_type == PARENT_ORIGIN_SIMPLE_RETRY) {
+        if (s->current.simple_retry_attempts >= s->parent_result.rec->max_simple_retries) {
+          DebugTxn("http_trans", "PARENT_ORIGIN_SIMPLE_RETRY: retried all parents, send error to client.\n");
+          s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
+        } else {
+          s->current.simple_retry_attempts++;
+          DebugTxn("http_trans", "PARENT_ORIGIN_SIMPLE_RETRY: try another parent.\n");
+          s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
+          next_lookup = find_server_and_update_current_info(s);
+        }
+      } else { // try unavailable server retry if we have a unavailable server retry response from the parent.
+        if (s->current.unavailable_server_retry_attempts >= s->parent_result.rec->max_unavailable_server_retries) {
+          DebugTxn("http_trans", "PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY: retried all parents, send error to client.\n");
+          s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
+        } else {
+          s->current.unavailable_server_retry_attempts++;
+          DebugTxn("http_trans", "PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY: marking parent down and trying another.\n");
+          s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
+          s->parent_params->markParentDown(&s->parent_result);
+          next_lookup = find_server_and_update_current_info(s);
+        }
+      }
+    } else if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
       s->current.attempts++;
 
       // Are we done with this particular parent?
