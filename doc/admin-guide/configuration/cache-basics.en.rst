@@ -513,9 +513,9 @@ detailed below.
 
 To disable HTTP object caching manually:
 
-#. Set :ts:cv:`proxy.config.http.enabled` to ``0`` in :file:`records.config`. ::
+#. Set :ts:cv:`proxy.config.http.cache.http` to ``0`` in :file:`records.config`. ::
 
-        CONFIG proxy.config.http.enabled INT 0
+        CONFIG proxy.config.http.cache.http INT 0
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
