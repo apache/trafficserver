@@ -129,6 +129,11 @@ public:
     is_internal_request = val;
   }
 
+  VIO* get_read_vio()
+  {
+    return read_vio;
+  }
+
 private:
   int InvokePlugin(int event, void *data);
   void InvokePluginExt(int error_event = 0);

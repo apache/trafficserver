@@ -28,6 +28,7 @@
 #include "HPACK.h"
 #include "FetchSM.h"
 #include "Http2Stream.h"
+#include "Http2DependencyTree.h"
 
 class Http2ClientSession;
 
@@ -104,9 +105,12 @@ private:
 class Http2ConnectionState : public Continuation
 {
 public:
+  typedef Http2DependencyTree<Http2Stream *> DependencyTree;
+
   Http2ConnectionState()
-    : Continuation(NULL), ua_session(NULL), client_rwnd(HTTP2_INITIAL_WINDOW_SIZE), server_rwnd(Http2::initial_window_size),
-      stream_list(), latest_streamid(0), client_streams_count(0), continued_stream_id(0)
+    : Continuation(NULL), ua_session(NULL), dependency_tree(NULL), client_rwnd(HTTP2_INITIAL_WINDOW_SIZE),
+      server_rwnd(Http2::initial_window_size), stream_list(), latest_streamid(0), client_streams_count(0), continued_stream_id(0),
+      _scheduled(false)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
   }
@@ -114,6 +118,7 @@ public:
   Http2ClientSession *ua_session;
   Http2IndexingTable *local_indexing_table;
   Http2IndexingTable *remote_indexing_table;
+  DependencyTree *dependency_tree;
 
   // Settings.
   Http2ConnectionSettings server_settings;
@@ -127,6 +132,8 @@ public:
 
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len = 0;
+
+    dependency_tree = new DependencyTree();
   }
 
   void
@@ -139,6 +146,8 @@ public:
     delete remote_indexing_table;
 
     ats_free(continued_buffer.iov_base);
+
+    delete dependency_tree;
   }
 
   // Event handlers
@@ -180,8 +189,10 @@ public:
   // Connection level window size
   ssize_t client_rwnd, server_rwnd;
 
-  // HTTP/2 frame sender
-  void send_data_frame(FetchSM *fetch_sm);
+  void stream_scheduler();
+  void schedule_stream(Http2Stream *stream);
+  void send_response_body(Http2Stream *stream);
+  Http2Error send_data_frame(Http2Stream *stream, size_t &payload_length);
   void send_headers_frame(FetchSM *fetch_sm);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_settings_frame(const Http2ConnectionSettings &new_settings);
@@ -220,6 +231,7 @@ private:
   //     another CONTINUATION frame."
   Http2StreamId continued_stream_id;
   IOVec continued_buffer;
+  bool _scheduled;
 };
 
 #endif // __HTTP2_CONNECTION_STATE_H__

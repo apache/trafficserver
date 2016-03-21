@@ -316,15 +316,19 @@ http2_parse_headers_parameter(IOVec iov, Http2HeadersParameter &params)
 }
 
 bool
-http2_parse_priority_parameter(IOVec iov, Http2Priority &params)
+http2_parse_priority_parameter(IOVec iov, Http2Priority &priority)
 {
   byte_pointer ptr(iov.iov_base);
   byte_addressable_value<uint32_t> dependency;
 
   memcpy_and_advance(dependency.bytes, ptr);
-  memcpy_and_advance(params.weight, ptr);
 
-  params.stream_dependency = ntohl(dependency.value);
+  priority.exclusive_flag = dependency.bytes[0] & 0x80;
+
+  dependency.bytes[0] &= 0x7f; // Clear the highest bit for exclusive flag
+  priority.stream_dependency = ntohl(dependency.value);
+
+  memcpy_and_advance(priority.weight, ptr);
 
   return true;
 }
@@ -727,6 +731,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint8_t
 }
 
 // Initialize this subsystem with librecords configs (for now)
+bool Http2::stream_priority_enabled = 0;
 uint32_t Http2::max_concurrent_streams = 100;
 uint32_t Http2::initial_window_size = 1048576;
 uint32_t Http2::max_frame_size = 16384;
@@ -740,6 +745,7 @@ uint32_t Http2::active_timeout_in = 0;
 void
 Http2::init()
 {
+  REC_EstablishStaticConfigBool(stream_priority_enabled, "proxy.config.http2.stream_priority_enabled");
   REC_EstablishStaticConfigInt32U(max_concurrent_streams, "proxy.config.http2.max_concurrent_streams_in");
   REC_EstablishStaticConfigInt32U(initial_window_size, "proxy.config.http2.initial_window_size_in");
   REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
