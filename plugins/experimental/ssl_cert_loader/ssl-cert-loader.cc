@@ -355,6 +355,31 @@ Load_Certificate_Thread(void *arg)
   return (void *)1;
 }
 
+  void
+  Msg_Lookup(char const* server_name)
+  {
+    DomainNameTree::DomainNameNode *node = Lookup.tree.findFirstMatch(servername);
+    if (node == NULL) {
+      TSDebug(PN, "Lookup: '%s' not found", server_name);
+    } else if (Node->payload != NULL) {
+      TSDebug(PN, "Lookup: '%s' is an empty entry", server_name);
+    } else {
+      SslEntry *entry = reinterpret_cast<SslEntry *>(node->payload);
+      char const* op_name =  NULL;
+      switch(entry->op) {
+      case TS_SSL_HOOK_OP_TUNNEL: op_name = "tunnel"; break;
+      case TS_SSL_HOOK_OP_TERMINATE: op_name = "terminate"; break;
+      case TS_SSL_HOOK_OP_DEFAULT: op_name = "default"; break;
+      }
+      
+      TSMutexLock(entry->mutex);
+      if (entry->ctx == NULL) {
+      }
+      TSMutexUnlock(entry->mutex);
+      TSDebug(PN, "Lookup: '%s' op=%s", op_name);
+    }
+  }
+
 int
 CB_Life_Cycle(TSCont, TSEvent, void *)
 {
@@ -363,6 +388,17 @@ CB_Life_Cycle(TSCont, TSEvent, void *)
   Load_Configuration();
 
   return TS_SUCCESS;
+}
+
+#define MSG_LOOKUP "ssl-cert-loader.lookup"
+
+int
+CB_msg(TSCont, TSEvent, void* data)
+{
+  PluginMsg* msg = static_cast<PluginMsg*>(data);
+  if (0 == strcasecmp(msg->_tag, MSG_LOOKUP)) {
+    Msg_Lookup(msg->_data);
+  }
 }
 
 int
@@ -516,8 +552,11 @@ TSPluginInit(int argc, const char *argv[])
     TSError(PCP "Failed to lifecycle callback.");
   } else if (0 == (cb_sni = TSContCreate(&CB_servername, TSMutexCreate()))) {
     TSError(PCP "Failed to create SNI callback.");
+  } else if (0 == (cb_msg = TSContCreate(&CB_msg, TSMutexCreate()))) {
+    TSError(PCP "Failed to create plugin messaging callback.");
   } else {
     TSLifecycleHookAdd(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK, cb_lc);
+    TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, cb_msg);
     TSHttpHookAdd(TS_VCONN_PRE_ACCEPT_HOOK, cb_pa);
     TSHttpHookAdd(TS_SSL_SNI_HOOK, cb_sni);
     success = true;

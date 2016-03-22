@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 /***************************************************************************
  * System Specific Items
@@ -947,6 +948,12 @@ tsapi TSMgmtError TSBounce(unsigned options);
  * @return Success.
  */
 tsapi TSMgmtError TSStorageDeviceCmdOffline(char const *dev);
+
+/* TSLifecycleMessage: Send a lifecycle message to the plugins.
+ * @arg tag Alert tag string (null-terminated)
+ * @return Success
+ */
+tsapi TSMgmtError TSLifecycleMessage(char const *tag, void const *data, size_t data_size);
 
 /*--- diags output operations ---------------------------------------------*/
 /* TSDiags: enables users to manipulate run-time diagnostics, and print

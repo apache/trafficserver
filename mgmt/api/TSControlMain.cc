@@ -1150,6 +1150,48 @@ done:
   ats_free(name);
   return ret;
 }
+/**************************************************************************
+ * handle_lifecycle_message
+ *
+ * purpose: handle lifecyle message to plugins
+ * output: TS_ERR_xx
+ * note: None
+ *************************************************************************/
+static TSMgmtError
+handle_lifecycle_message(int fd, void *req, size_t reqlen)
+{
+  MgmtMarshallInt optype;
+  MgmtMarshallInt err;
+  MgmtMarshallString tag;
+  MgmtMarshallData data;
+
+  err = recv_mgmt_request(req, reqlen, LIFECYCLE_MESSAGE, &optype, &tag, &data);
+  if (err == TS_ERR_OKAY) {
+    size_t tag_size = strlen(tag) + 1;
+    size_t n = sizeof(TSPluginMsg) + tag_size + data.len;
+    TSPluginMsg *msg = NULL;
+    char buffer[n];
+    msg = reinterpret_cast<TSPluginMsg *>(buffer);
+
+    // forward to server
+    /* This is very ugly because the marshalling support is not available in
+       traffic_server so we have to pack up the data in the final form used by
+       the plugin, or introduce yet another RPC mechanism. Gah. We effectively
+       do that by sending the pointers as offsets to be unswizzled by the
+       receiver.
+    */
+    msg->tag = reinterpret_cast<char const *>(sizeof(*msg));
+    msg->data = reinterpret_cast<void const *>(msg->tag + tag_size);
+    msg->data_size = data.len;
+    memcpy(msg + 1, tag, tag_size);
+    memcpy(reinterpret_cast<char *>(msg + 1) + tag_size, data.ptr, data.len);
+    Debug("amc", "Handling msg of size %" PRIu64 " with tag=%s and payload of size %" PRIu64, n, tag, data.len);
+    lmgmt->signalEvent(MGMT_EVENT_LIFECYCLE_MESSAGE, buffer, n);
+  }
+
+  return send_mgmt_response(fd, LIFECYCLE_MESSAGE, &err);
+}
+/**************************************************************************/
 
 struct control_message_handler {
   unsigned flags;
@@ -1183,7 +1225,9 @@ static const control_message_handler handlers[] = {
   /* RECORD_MATCH_GET           */ {0, handle_record_match},
   /* API_PING                   */ {0, handle_api_ping},
   /* SERVER_BACKTRACE           */ {MGMT_API_PRIVILEGED, handle_server_backtrace},
-  /* RECORD_DESCRIBE_CONFIG     */ {0, handle_record_describe}};
+  /* RECORD_DESCRIBE_CONFIG     */ {0, handle_record_describe},
+  /* LIFECYCLE_MESSAGE  */ {MGMT_API_PRIVILEGED, handle_lifecycle_message},
+};
 
 // This should use countof(), but we need a constexpr :-/
 #define NUM_OP_HANDLERS (sizeof(handlers) / sizeof(handlers[0]))

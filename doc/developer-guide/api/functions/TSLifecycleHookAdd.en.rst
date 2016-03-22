@@ -60,6 +60,15 @@ once during the execution of the Traffic Server process and therefore should be 
 
    Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_CACHE_READY` and :c:data:`NULL` data.
 
+.. c:var:: TS_LIFECYCLE_MSG_HOOK
+
+   Called when triggered by an external process, such as :program:`traffic_ctl`.
+
+   Invoked with the event :c:data:`TS_EVENT_LIFECYCLE_MSG`. The data is an instance of the
+   :c:type:`TSPluginMsg`. This contains a *tag* which is a null terminated string and a data payload.
+   The payload cannot be assumed to be null terminated and is created by the external agent.
+   
+
 Ordering
 ========
 
