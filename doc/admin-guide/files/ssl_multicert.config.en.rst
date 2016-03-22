@@ -105,7 +105,8 @@ ticket_key_name=FILENAME (optional)
   :ts:cv:`proxy.config.ssl.server.cert.path` configuration variable.
   This option has no effect if session tickets are disabled by the
   ``ssl_ticket_enabled`` option.  The contents of the key file should
-  be 48 random bytes.
+  be 48 random (ASCII) bytes. One way to generate this would be to run
+  ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file.ticket``.
 
   Session ticket support is enabled by default. If neither of the
   ``ssl_ticket_enabled`` and ``ticket_key_name`` options are

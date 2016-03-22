@@ -104,6 +104,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Cache Promote <cache_promote.en>
    Combo Handler <combo_handler.en>
    Epic <epic.en>
+   Escalate <escalate.en>
    ESI <esi.en>
    Generator <generator.en>
    GeoIP ACL <geoip_acl.en>
@@ -145,7 +146,10 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
 
 :doc:`Epic <epic.en>`
-   Emits Traffic Server metrics in a format that is consumed tby the Epic Network Monitoring System.
+   Emits Traffic Server metrics in a format that is consumed by the Epic Network Monitoring System.
+
+:doc:`Escalate <escalate.en>`
+   Escalate: when the origin returns specific status codes, retry the request at a secondary origin (failover/fail-action)
 
 :doc:`ESI <esi.en>`
    Implements the Edge Side Includes (ESI) specification.

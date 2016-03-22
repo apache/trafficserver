@@ -8,3 +8,7 @@
     max-width: 100%;
     overflow: visible;
 }
+/* pre inside paragraphs gets weird spacing  */
+span.pre {
+    line-height: initial;
+}
