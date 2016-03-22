@@ -26,7 +26,6 @@
 
 #include "P_EventSystem.h"
 #include "URL.h"
-#include "StatSystem.h"
 #include "P_Net.h"
 #include "ts.h"
 #include "experimental.h"

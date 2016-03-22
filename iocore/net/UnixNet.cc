@@ -104,7 +104,7 @@ public:
     }
 
     // Cleanup the active and keep-alive queues periodically
-    nh.manage_active_queue();
+    nh.manage_active_queue(true); // close any connections over the active timeout
     nh.manage_keep_alive_queue();
 
     return 0;
@@ -140,16 +140,14 @@ update_cop_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data,
 
 PollCont::PollCont(ProxyMutex *m, int pt) : Continuation(m), net_handler(NULL), nextPollDescriptor(NULL), poll_timeout(pt)
 {
-  pollDescriptor = new PollDescriptor;
-  pollDescriptor->init();
+  pollDescriptor = new PollDescriptor();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
 PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt)
   : Continuation(m), net_handler(nh), nextPollDescriptor(NULL), poll_timeout(pt)
 {
-  pollDescriptor = new PollDescriptor;
-  pollDescriptor->init();
+  pollDescriptor = new PollDescriptor();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
@@ -569,7 +567,7 @@ NetHandler::mainNetEvent(int event, Event *e)
 }
 
 bool
-NetHandler::manage_active_queue()
+NetHandler::manage_active_queue(bool ignore_queue_size = false)
 {
   const int total_connections_in = active_queue_size + keep_alive_queue_size;
   Debug("net_queue", "max_connections_per_thread_in: %d max_connections_active_per_thread_in: %d total_connections_in: %d "
@@ -577,7 +575,7 @@ NetHandler::manage_active_queue()
         max_connections_per_thread_in, max_connections_active_per_thread_in, total_connections_in, active_queue_size,
         keep_alive_queue_size);
 
-  if (max_connections_active_per_thread_in > active_queue_size) {
+  if (ignore_queue_size == false && max_connections_active_per_thread_in > active_queue_size) {
     return true;
   }
 
@@ -591,12 +589,18 @@ NetHandler::manage_active_queue()
   int total_idle_time = 0;
   int total_idle_count = 0;
   for (; vc != NULL; vc = vc_next) {
-    if ((vc->next_inactivity_timeout_at <= now) || (vc->next_activity_timeout_at <= now)) {
+    vc_next = vc->active_queue_link.next;
+    if ((vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) ||
+        (vc->active_timeout_in && vc->next_activity_timeout_at <= now)) {
       _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);
     }
-    if (max_connections_active_per_thread_in > active_queue_size) {
+    if (ignore_queue_size == false && max_connections_active_per_thread_in > active_queue_size) {
       return true;
     }
+  }
+
+  if (max_connections_active_per_thread_in > active_queue_size) {
+    return true;
   }
 
   return false; // failed to make room in the queue, all connections are active
@@ -635,7 +639,7 @@ NetHandler::manage_keep_alive_queue()
   int total_idle_time = 0;
   int total_idle_count = 0;
   for (UnixNetVConnection *vc = keep_alive_queue.head; vc != NULL; vc = vc_next) {
-    vc_next = vc->active_queue_link.next;
+    vc_next = vc->keep_alive_queue_link.next;
     _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);
 
     total_connections_in = active_queue_size + keep_alive_queue_size;

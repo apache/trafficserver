@@ -21,7 +21,6 @@ bodyfactorydir = $(pkgsysconfdir)/body_factory/default
 dist_bodyfactory_DATA = \
   access\#denied \
   access\#proxy_auth_required \
-  access\#redirect_url \
   access\#ssl_forbidden \
   .body_factory_info \
   cache\#not_in_cache \

@@ -1465,13 +1465,13 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
   } else {
     bool failed = !e;
 
-    bool rr = false;
+    bool is_rr = false;
     pending_action = NULL;
 
     if (is_srv()) {
-      rr = !failed && (e->srv_hosts.srv_host_count > 0);
+      is_rr = !failed && (e->srv_hosts.srv_host_count > 0);
     } else if (!failed) {
-      rr = 0 != e->ent.h_addr_list[1];
+      is_rr = 0 != e->ent.h_addr_list[1];
     } else {
     }
 
@@ -1495,7 +1495,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     int n = 0, nn = 0;
     void *first = 0;
     uint8_t af = e ? e->ent.h_addrtype : AF_UNSPEC; // address family
-    if (rr) {
+    if (is_rr) {
       if (is_srv() && !failed) {
         n = e->srv_hosts.srv_host_count;
       } else {
@@ -1514,7 +1514,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         }
         if (!first) {
           failed = true;
-          rr = false;
+          is_rr = false;
         }
       }
     } else if (!failed) {
@@ -1527,13 +1527,13 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     if (is_byname()) {
       if (first)
         ip_addr_set(tip, af, first);
-      r = lookup_done(tip, md5.host_name, rr, ttl_seconds, failed ? 0 : &e->srv_hosts);
+      r = lookup_done(tip, md5.host_name, is_rr, ttl_seconds, failed ? 0 : &e->srv_hosts);
     } else if (is_srv()) {
       if (!failed)
         tip._family = AF_INET;       // force the tip valid, or else the srv will fail
       r = lookup_done(tip,           /* junk: FIXME: is the code in lookup_done() wrong to NEED this? */
                       md5.host_name, /* hostname */
-                      rr,            /* is round robin, doesnt matter for SRV since we recheck getCount() inside lookup_done() */
+                      is_rr,         /* is round robin, doesnt matter for SRV since we recheck getCount() inside lookup_done() */
                       ttl_seconds,   /* ttl in seconds */
                       failed ? 0 : &e->srv_hosts);
     } else if (failed) {
@@ -1545,7 +1545,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     // @c lookup_done should always return a valid value so @a r should be null @c NULL.
     ink_assert(r && r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0);
 
-    if (rr) {
+    if (is_rr) {
       const int rrsize = HostDBRoundRobin::size(n, e->srv_hosts.srv_hosts_length);
       HostDBRoundRobin *rr_data = (HostDBRoundRobin *)hostDB.alloc(&r->app.rr.offset, rrsize);
 
@@ -1652,7 +1652,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         r->round_robin_elt = 0;
       }
     }
-    if (!failed && !rr && !is_srv())
+    if (!failed && !is_rr && !is_srv())
       restore_info(r, old_r, old_info, old_rr_data);
     ink_assert(!r || !r->round_robin || !r->reverse_dns);
     ink_assert(failed || !r->round_robin || r->app.rr.offset);
@@ -2862,6 +2862,7 @@ ParseHostLine(RefCountedHostsFileMap *map, char *l)
       // If we don't have an entry already (host files only support single IPs for a given name)
       if (map->hosts_file_map.find(name) == map->hosts_file_map.end()) {
         HostsFileMap::mapped_type &item = map->hosts_file_map[name];
+        memset(&item, 0, sizeof(item));
         item.round_robin = false;
         item.round_robin_elt = false;
         item.reverse_dns = false;

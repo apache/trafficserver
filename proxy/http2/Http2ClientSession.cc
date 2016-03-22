@@ -31,9 +31,7 @@
              HttpDebugNames::get_event_name(event));                                         \
   } while (0)
 
-#define DebugHttp2Ssn(fmt, ...) DebugSsn(this, "http2_cs", "[%" PRId64 "] " fmt, this->connection_id(), __VA_ARGS__)
-
-#define DebugHttp2Ssn0(msg) DebugSsn(this, "http2_cs", "[%" PRId64 "] " msg, this->connection_id())
+#define DebugHttp2Ssn(fmt, ...) DebugSsn(this, "http2_cs", "[%" PRId64 "] " fmt, this->connection_id(), ##__VA_ARGS__)
 
 #define HTTP2_SET_SESSION_HANDLER(handler) \
   do {                                     \
@@ -69,7 +67,7 @@ Http2ClientSession::Http2ClientSession()
 void
 Http2ClientSession::destroy()
 {
-  DebugHttp2Ssn0("session destroy");
+  DebugHttp2Ssn("session destroy");
 
   ink_release_assert(this->client_vc == NULL);
 
@@ -200,7 +198,7 @@ Http2ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http2ClientSession::do_io_close(int alerrno)
 {
-  DebugHttp2Ssn0("session closed");
+  DebugHttp2Ssn("session closed");
 
   ink_assert(this->mutex->thread_holding == this_ethread());
   if (client_vc) {
@@ -285,16 +283,17 @@ Http2ClientSession::state_read_connection_preface(int event, void *edata)
     ink_release_assert(nbytes == HTTP2_CONNECTION_PREFACE_LEN);
 
     if (memcmp(HTTP2_CONNECTION_PREFACE, buf, nbytes) != 0) {
-      DebugHttp2Ssn0("invalid connection preface");
+      DebugHttp2Ssn("invalid connection preface");
       this->do_io_close();
       return 0;
     }
 
-    DebugHttp2Ssn0("received connection preface");
+    DebugHttp2Ssn("received connection preface");
     this->sm_reader->consume(nbytes);
     HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
 
     client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::no_activity_timeout_in));
+    client_vc->set_active_timeout(HRTIME_SECONDS(Http2::active_timeout_in));
 
     // XXX start the write VIO ...
 
@@ -325,11 +324,11 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
     uint8_t buf[HTTP2_FRAME_HEADER_LEN];
     unsigned nbytes;
 
-    DebugHttp2Ssn0("receiving frame header");
+    DebugHttp2Ssn("receiving frame header");
     nbytes = copy_from_buffer_reader(buf, this->sm_reader, sizeof(buf));
 
     if (!http2_parse_frame_header(make_iovec(buf), this->current_hdr)) {
-      DebugHttp2Ssn0("frame header parse failure");
+      DebugHttp2Ssn("frame header parse failure");
       this->do_io_close();
       return 0;
     }

@@ -60,6 +60,8 @@ struct PollDescriptor {
   int port_fd;
 #endif
 
+  PollDescriptor() { init(); }
+
 #if TS_USE_EPOLL
 #define get_ev_port(a) ((a)->epoll_fd)
 #define get_ev_events(a, x) ((a)->ePoll_Triggered_Events[(x)].events)
@@ -115,7 +117,9 @@ struct PollDescriptor {
     return 0;
 #endif
   }
-  PollDescriptor *
+
+private:
+  void
   init()
   {
     result = 0;
@@ -133,9 +137,7 @@ struct PollDescriptor {
     port_fd = port_create();
     memset(Port_Triggered_Events, 0, sizeof(Port_Triggered_Events));
 #endif
-    return this;
   }
-  PollDescriptor() { init(); }
 };
 
 #endif

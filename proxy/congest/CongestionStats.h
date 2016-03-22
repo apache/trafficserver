@@ -30,8 +30,6 @@
 #ifndef CONGESTION_STATS_H_
 #define CONGESTION_STATS_H_
 
-
-// the stat variables are defined in StatSystem.h, StatSystem.cc
 void register_congest_stats();
 #include "P_RecProcess.h"
 extern RecRawStatBlock *congest_rsb;

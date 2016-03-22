@@ -44,30 +44,6 @@ char *int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *
 
 //////////////////////////////////////////////////////////////////////////////
 //
-// Time Stamp Counter
-//
-//////////////////////////////////////////////////////////////////////////////
-#ifdef USE_TIME_STAMP_COUNTER_HRTIME
-extern ink_hrtime init_hrtime_TSC();
-extern uint32_t hrtime_freq;
-extern double hrtime_freq_float;
-static inline ink_hrtime
-hrtime_rdtsc()
-{
-  ink_hrtime rv;
-  asm volatile(".byte 0x0f, 0x31" : "=A"(rv));
-  return (rv);
-}
-static inline uint64_t
-get_hrtime_rdtsc()
-{
-  // do it fixed point if you have better hardware support
-  return (uint64_t)(hrtime_freq_float * hrtime_rdtsc());
-}
-#endif
-
-//////////////////////////////////////////////////////////////////////////////
-//
 //      Factors to multiply units by to obtain coresponding ink_hrtime values.
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -82,7 +58,7 @@ get_hrtime_rdtsc()
 #define HRTIME_SECOND (1000 * HRTIME_MSECOND)
 #define HRTIME_MSECOND (1000 * HRTIME_USECOND)
 #define HRTIME_USECOND (1000 * HRTIME_NSECOND)
-#define HRTIME_NSECOND (1LL)
+#define HRTIME_NSECOND (static_cast<ink_hrtime>(1))
 
 #define HRTIME_APPROX_SECONDS(_x) ((_x) >> 30) // off by 7.3%
 #define HRTIME_APPROX_FACTOR (((float)(1 << 30)) / (((float)HRTIME_SECOND)))
@@ -248,9 +224,7 @@ ink_hrtime_to_timeval2(ink_hrtime t, struct timeval *tv)
 static inline ink_hrtime
 ink_get_hrtime_internal()
 {
-#if defined(USE_TIME_STAMP_COUNTER_HRTIME)
-  return get_hrtime_rdtsc();
-#elif defined(freebsd)
+#if defined(freebsd) || HAVE_CLOCK_GETTIME
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
   return ink_hrtime_from_timespec(&ts);
@@ -260,40 +234,23 @@ ink_get_hrtime_internal()
   return ink_hrtime_from_timeval(&tv);
 #endif
 }
-
-static inline ink_hrtime
-ink_get_based_hrtime_internal()
-{
-#if defined(USE_TIME_STAMP_COUNTER_HRTIME)
-  return hrtime_offset + ink_get_hrtime_internal();
-#elif !HAVE_CLOCK_GETTIME
-  timeval tv;
-  gettimeofday(&tv, NULL);
-  return ink_hrtime_from_timeval(&tv);
-#else
-  timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  return ink_hrtime_from_timespec(&ts);
-#endif
-}
-
 
 static inline struct timeval
 ink_gettimeofday()
 {
-  return ink_hrtime_to_timeval(ink_get_based_hrtime_internal());
+  return ink_hrtime_to_timeval(ink_get_hrtime_internal());
 }
 
 static inline int
 ink_gethrtimeofday(struct timeval *tp, void *)
 {
-  return ink_hrtime_to_timeval2(ink_get_based_hrtime_internal(), tp);
+  return ink_hrtime_to_timeval2(ink_get_hrtime_internal(), tp);
 }
 
 static inline int
 ink_time()
 {
-  return (int)ink_hrtime_to_sec(ink_get_based_hrtime_internal());
+  return (int)ink_hrtime_to_sec(ink_get_hrtime_internal());
 }
 
 static inline int

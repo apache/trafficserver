@@ -1,4 +1,4 @@
-.. _balancer-plugin:
+.. _admin-plugins-balancer:
 
 Balancer Plugin
 ***************

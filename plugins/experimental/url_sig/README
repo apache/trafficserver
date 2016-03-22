@@ -41,6 +41,15 @@ Edge cache debugging
 	to traffic.out.  Failed transactions (signature check fails
 	that is) will be logged in to error.log.
 
+Application Query Parameters.
+  If a request to be signed has application query parameters, the signing
+  parameters must be concatenated to the end of the requests application
+  query parameters.  The application query parameters will be included in
+  the signing calculation as determined by the 'Parts' signing explained
+  below.  At the edge after verification of the signing by this plugin,
+  the signing parameters are removed and the application query parameters
+  are preserved in the request.
+
 Signing a URL
 	At the signing portal take the full URL, without any query string, and
 	add on a query string with the following parameters:

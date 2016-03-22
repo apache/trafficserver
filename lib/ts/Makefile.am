@@ -51,7 +51,6 @@ libtsutil_la_SOURCES = \
   ConsistentHash.h \
   ContFlags.cc \
   ContFlags.h \
-  Cryptohash.h \
   Diags.cc \
   Diags.h \
   DynArray.h \
@@ -71,7 +70,6 @@ libtsutil_la_SOURCES = \
   I_Layout.h \
   I_Version.h \
   InkErrno.h \
-  InkPool.h \
   IntrusiveDList.h \
   IpMap.cc \
   IpMap.h \
@@ -84,8 +82,6 @@ libtsutil_la_SOURCES = \
   Map.h \
   MatcherUtils.cc \
   MatcherUtils.h \
-  MimeTable.cc \
-  MimeTable.h \
   ParseRules.cc \
   ParseRules.h \
   Ptr.h \

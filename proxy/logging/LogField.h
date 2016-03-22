@@ -28,7 +28,7 @@
 #include "ts/ink_platform.h"
 #include "ts/List.h"
 #include "LogFieldAliasMap.h"
-#include "StatSystem.h"
+#include "Milestones.h"
 
 class LogAccess;
 

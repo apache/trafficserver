@@ -389,7 +389,7 @@ request headers:
 -  ``Cookie`` (for text objects)
 
    By default, Traffic Server caches objects served in response to
-   requests that contain cookies (unless the object is text). You can
+   requests that contain cookies (even if the object is text). You can
    configure Traffic Server to not cache cookied content of any type,
    cache all cookied content, or cache cookied content that is of image
    type only. For more information, refer to `Caching Cookied Objects`_.
@@ -513,9 +513,9 @@ detailed below.
 
 To disable HTTP object caching manually:
 
-#. Set :ts:cv:`proxy.config.http.enabled` to ``0`` in :file:`records.config`. ::
+#. Set :ts:cv:`proxy.config.http.cache.http` to ``0`` in :file:`records.config`. ::
 
-        CONFIG proxy.config.http.enabled INT 0
+        CONFIG proxy.config.http.cache.http INT 0
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
@@ -546,7 +546,7 @@ Caching Cookied Objects
 .. XXX This should be extended to xml as well!
 
 By default, Traffic Server caches objects served in response to requests
-that contain cookies. This is true for all types of objects except for
+that contain cookies. This is true for all types of objects including
 text. Traffic Server does not cache cookied text content because object
 headers are stored along with the object, and personalized cookie header
 values could be saved with the object. With non-text objects, it is
@@ -685,7 +685,7 @@ connection is fast and the origin server connection slow. If very large objects
 are being used this can cause the memory usage of Traffic Server to become
 `very large <https://issues.apache.org/jira/browse/TS-1496>`_.
 
-This problem can be ameloriated by controlling the amount of buffer space used
+This problem can be ameliorated by controlling the amount of buffer space used
 by a transaction. A high water and low water mark are set in terms of bytes
 used by the transaction. If the buffer space in use exceeds the high water
 mark, the connection is throttled to prevent additional external data from

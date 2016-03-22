@@ -39,7 +39,6 @@
 #include "ProxyConfig.h"
 #include "HTTP.h"
 #include "HttpConfig.h"
-#include "StatSystem.h"
 #include "P_Cache.h"
 #include "ts/Regex.h"
 

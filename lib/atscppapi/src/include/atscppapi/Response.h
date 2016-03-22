@@ -67,6 +67,7 @@ public:
 private:
   ResponseState *state_;
   void init(void *hdr_buf, void *hdr_loc);
+  void reset();
   friend class Transaction;
   friend class utils::internal;
 };

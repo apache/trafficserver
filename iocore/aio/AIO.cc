@@ -116,7 +116,7 @@ static AIOTestData *data;
 int
 AIOTestData::ink_aio_stats(int event, void *d)
 {
-  ink_hrtime now = ink_get_hrtime();
+  ink_hrtime now = Thread::get_hrtime();
   double time_msec = (double)(now - start) / (double)HRTIME_MSECOND;
   int i = (aio_reqs[0] == NULL) ? 1 : 0;
   for (; i < num_filedes; ++i)
@@ -188,6 +188,7 @@ struct AIOThreadInfo : public Continuation {
     (void)event;
     (void)e;
     aio_thread_main(this);
+    delete this;
     return EVENT_DONE;
   }
 
@@ -458,6 +459,10 @@ aio_thread_main(void *arg)
   ink_mutex_acquire(&my_aio_req->aio_mutex);
   for (;;) {
     do {
+      if (unlikely(shutdown_event_system == true)) {
+        ink_mutex_release(&my_aio_req->aio_mutex);
+        return 0;
+      }
       current_req = my_aio_req;
       /* check if any pending requests on the atomic list */
       if (!INK_ATOMICLIST_EMPTY(my_aio_req->aio_temp_list))
@@ -504,7 +509,7 @@ aio_thread_main(void *arg)
         op->thread->schedule_imm_signal(op);
       ink_mutex_acquire(&my_aio_req->aio_mutex);
     } while (1);
-    timespec timedwait_msec = ink_hrtime_to_timespec(Thread::get_hrtime() + HRTIME_MSECONDS(net_config_poll_timeout));
+    timespec timedwait_msec = ink_hrtime_to_timespec(Thread::get_hrtime_updated() + HRTIME_MSECONDS(net_config_poll_timeout));
     ink_cond_timedwait(&my_aio_req->aio_cond, &my_aio_req->aio_mutex, &timedwait_msec);
   }
   return 0;

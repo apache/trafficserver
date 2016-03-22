@@ -54,7 +54,7 @@ const size_t HTTP2_SETTINGS_PARAMETER_LEN = 6;
 // SETTINGS initial values. NOTE: These should not be modified
 // unless the protocol changes! Do not change this thinking you
 // are changing server defaults. that is done via RecordsConfig.cc
-const uint32_t HTTP2_MAX_CONCURRENT_STREAMS = 100;
+const uint32_t HTTP2_MAX_CONCURRENT_STREAMS = UINT_MAX;
 const uint32_t HTTP2_INITIAL_WINDOW_SIZE = 65535;
 const uint32_t HTTP2_MAX_FRAME_SIZE = 16384;
 const uint32_t HTTP2_HEADER_TABLE_SIZE = 4096;
@@ -342,7 +342,10 @@ int64_t http2_write_header_fragment(HTTPHdr *, MIMEFieldIter &, uint8_t *, uint6
 class Http2
 {
 public:
-  static uint32_t max_concurrent_streams;
+  static uint32_t max_concurrent_streams_in;
+  static uint32_t min_concurrent_streams_in;
+  static uint32_t max_active_streams_in;
+  static bool throttling;
   static uint32_t initial_window_size;
   static uint32_t max_frame_size;
   static uint32_t header_table_size;
@@ -350,6 +353,7 @@ public:
   static uint32_t max_request_header_size;
   static uint32_t accept_no_activity_timeout;
   static uint32_t no_activity_timeout_in;
+  static uint32_t active_timeout_in;
 
   static void init();
 };

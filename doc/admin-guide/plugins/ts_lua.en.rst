@@ -19,7 +19,7 @@
 
 .. _admin-plugins-ts-lua:
 
-ts-lua Plugin
+TS Lua Plugin
 *************
 
 This module embeds Lua, via the standard Lua 5.1 interpreter, into |ATS|. With
@@ -356,7 +356,6 @@ instead.
 
 Hook point constants
 --------------------
-**context:** do_remap or later
 
 ::
 
@@ -375,6 +374,49 @@ Hook point constants
     TS_LUA_RESPONSE_TRANSFORM
 
 These constants are usually used in ts.hook method call.
+
+Additional Information:
+
++------------------------------------+------------------------------------+----------------------+---------------------+
+|           Hook Point               |     Lua Hook Point constant        |   Hook function be   |   Hook function be  |
+|                                    |                                    |   registered  within |   registered within |
+|                                    |                                    |   do_remap() via     |   global context via| 
+|                                    |                                    |   ts.hook()?         |   ts.hook()?        |
++====================================+====================================+======================+=====================+
+| TS_HTTP_TXN_START_HOOK             |  TS_LUA_HOOK_TXN_START             |     NO               |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_READ_REQUEST_HDR_HOOK      |  TS_LUA_HOOK_READ_REQUEST_HDR      |     NO               |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_PRE_REMAP_HOOK             |  TS_LUA_HOOK_PRE_REMAP             |     NO               |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_POST_REMAP_HOOK            |  TS_LUA_HOOK_POST_REMAP            |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_SELECT_ALT_HOOK            |  TS_LUA_HOOK_SELECT_ALT            |     NO               |    NO               |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_READ_CACHE_HDR_HOOK        |  TS_LUA_HOOK_READ_CACHE_HDR        |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_OS_DNS_HOOK                |  TS_LUA_HOOK_OS_DNS                |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _CACHE_LOOKUP_COMPLETE_HOOK        |  _CACHE_LOOKUP_COMPLETE            |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _SEND_REQUEST_HDR_HOOK             |  _SEND_REQUEST_HDR                 |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _READ_RESPONSE_HDR_HOOK            |  _READ_RESPONSE_HDR                |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_HOOK                       |     YES              |    YES              |
+| _SEND_RESPONSE_HDR_HOOK            |  _SEND_RESPONSE_HDR                |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_REQUEST_TRANSFORM          |     YES              |    YES              |
+| _REQUEST_TRANSFORM_HOOK            |                                    |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP                            |  TS_LUA_RESPONSE_TRANSFORM         |     YES              |    YES              |
+| _RESPONSE_TRANSFORM_HOOK           |                                    |                      |                     |
++------------------------------------+------------------------------------+----------------------+---------------------+
+| TS_HTTP_TXN_CLOSE_HOOK             |  TS_LUA_HOOK_TXN_CLOSE             |     YES              |    YES              |
++------------------------------------+------------------------------------+----------------------+---------------------+
 
 `TOP <#ts-lua-plugin>`_
 
@@ -534,6 +576,45 @@ ts.client_request.set_uri_args
 ::
 
     ts.client_request.set_uri_args('n=6&p=7')
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.client_request.get_uri_params
+--------------------------------
+**syntax:** *ts.client_request.get_uri_params()*
+
+**context:** do_remap or do_global_* or later
+
+**description:** This function can be used to retrieve the client request's parameter string.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        local query = ts.client_request.get_uri_params()
+        print(query)
+    end
+
+Then ``GET /st;a=1`` will yield the output:
+
+``a=1``
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.client_request.set_uri_params
+--------------------------------
+**syntax:** *ts.client_request.set_uri_params(PARAMETER_STRING)*
+
+**context:** do_remap or do_global_*
+
+**description:** This function can be used to override the client request's parameter string.
+
+::
+
+    ts.client_request.set_uri_params('n=6')
 
 
 `TOP <#ts-lua-plugin>`_
@@ -1166,6 +1247,50 @@ ts.server_request.set_uri_args
 ::
 
     ts.server_request.set_uri_args('n=6&p=7')
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.get_uri_params
+--------------------------------
+**syntax:** *ts.server_request.get_uri_params()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description:** This function can be used to retrieve the server request's parameter string.
+
+Here is an example:
+
+::
+
+    function send_request()
+        local query = ts.server_request.get_uri_params()
+        print(query)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+Then ``GET /st;a=1`` will yield the output:
+
+``a=1``
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.set_uri_params
+--------------------------------
+**syntax:** *ts.server_request.set_uri_params(PARAMETER_STRING)*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
+
+**description:** This function can be used to override the server request's parameter string.
+
+::
+
+    ts.server_request.set_uri_params('n=6')
 
 
 `TOP <#ts-lua-plugin>`_
@@ -2379,6 +2504,36 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.schedule
+-----------
+**syntax:** *ts.schedule(THREAD_TYPE, sec, FUNCTION, param1?, param2?, ...)*
+
+**context:** *after do_remap*
+
+**description:** Schedule function to be run after specified seconds without blocking.
+
+Behind the scene, this method makes use of the ATS event model.
+
+Here is an example:
+
+::
+
+    function schedule()
+        ts.debug('test schedule starts')
+    end
+
+    function cache_lookup()
+        ts.debug('cache-lookup')
+        ts.schedule(TS_LUA_THREAD_POOL_NET, 0, schedule)
+        return 0
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.config_int_get
 ----------------------
 **syntax:** *val = ts.http.config_int_get(CONFIG)*
@@ -2898,7 +3053,7 @@ ts.stat_find
 
 **context:** global
 
-**description:** This function can be used to find a statistics record given the name. A statistics record table will 
+**description:** This function can be used to find a statistics record given the name. A statistics record table will
 be returned with 4 functions to increment, decrement, get and set the value. That is similar to ts.stat_create()
 
 `TOP <#ts-lua-plugin>`_
@@ -2913,12 +3068,13 @@ transaction. This can be wasteful. Also the state cannot be reused for the same 
 alternative will be to use a TXN_START hook to create a lua state first and then add each global hook in the lua script
 as transaction hook instead. But this will have problem down the road when we need to have multiple plugins to work
 together in some proper orderings. In the future, we should consider different approach, such as creating and
-maintaining the lua state in the ATS core. 
+maintaining the lua state in the ATS core.
 
 `TOP <#ts-lua-plugin>`_
 
 Notes on Unit Testing Lua scripts for ATS Lua Plugin
 ====================================================
+
 Follow the steps below to use busted framework to run some unit tests on sample scripts and modules
 
 * Build and install lua 5.1.5 using the source code from here - http://www.lua.org/ftp/lua-5.1.tar.gz
@@ -2931,18 +3087,16 @@ Follow the steps below to use busted framework to run some unit tests on sample 
 
 * "cd trafficserver/plugins/experimental/ts_lua/ci"
 
-* Run "busted -c module_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for
-* "module.lua"
+* Run "busted -c module_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for "module.lua"
 
-* Run "busted -c script_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for
-* "script.lua"
+* Run "busted -c script_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for "script.lua"
 
 Reference for further information
 
 * Busted - http://olivinelabs.com/busted/
 
-* Specifications for asserts/mocks/stubs/etc inside busted framework - 
-https://github.com/Olivine-Labs/luassert/tree/master/spec 
+* Specifications for asserts/mocks/stubs/etc inside busted framework:
+  https://github.com/Olivine-Labs/luassert/tree/master/spec
 
 * luacov - https://luarocks.org/modules/hisham/luacov
 

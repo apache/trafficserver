@@ -760,11 +760,9 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     Debug("remap_plugin", "New remap plugin info created for \"%s\"", c);
 
     {
-#if TS_USE_POSIX_CAP
       uint32_t elevate_access = 0;
       REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
-      ElevateAccess access(elevate_access != 0);
-#endif /* TS_USE_POSIX_CAP */
+      ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
       if ((pi->dlh = dlopen(c, RTLD_NOW)) == NULL) {
 #if defined(freebsd) || defined(openbsd)

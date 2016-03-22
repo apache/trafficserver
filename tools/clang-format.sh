@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /usr/bin/env bash
 #
 #  Simple wrapper to run clang-format on a bunch of files
 #
@@ -18,9 +18,42 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+set -e # exit on error
+
 DIR=${1:-.}
+ROOT=${ROOT:-$(git rev-parse --show-toplevel)/.git/fmt}
+URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/clang-format-20150331.tar.bz2}
+
+TAR=${TAR:-tar}
+CURL=${CURL:-curl}
+SHASUM=${SHASUM:-shasum}
+
+ARCHIVE=$ROOT/$(basename ${URL})
+
+case $(uname -s) in
+Darwin)
+  FORMAT=${FORMAT:-${ROOT}/clang-format/clang-format.osx}
+  ;;
+Linux)
+  FORMAT=${FORMAT:-${ROOT}/clang-format/clang-format.linux}
+  ;;
+*)
+  echo "Leif needs to build a clang-format for $(uname -s)"
+  exit 2
+esac
+
+mkdir -p ${ROOT}
+
+if [ ! -e ${FORMAT} ] ; then
+  ${CURL} -L --progress-bar -o ${ARCHIVE} ${URL}
+  ${TAR} -x -C ${ROOT} -f ${ARCHIVE}
+  cat > ${ROOT}/sha1 << EOF
+7117c5bed99da43be733427970b4239f4bd8063d  ${ARCHIVE}
+EOF
+  ${SHASUM} -a 1 -c ${ROOT}/sha1
+fi
 
 for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc); do
     echo $file
-    clang-format -i $file
+    ${FORMAT} -i $file
 done

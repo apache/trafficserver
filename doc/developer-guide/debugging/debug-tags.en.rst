@@ -70,7 +70,7 @@ Embedded in the base Traffic Server code are many debug tags for
 internal debugging purposes. These can also be used to follow Traffic
 Server behavior for testing and analysis.
 
-The debug tag setting (``-T`` and ``proxy.config.diag.debug.tags``) is a
+The debug tag setting (``-T`` and ``proxy.config.diags.debug.tags``) is a
 anchored regular expression against which the tag for a specific debug
 message is matched. This means the value "http" matches debug emssages
 with the tag "http" but also "http\_seq" and "http\_trans". If you want

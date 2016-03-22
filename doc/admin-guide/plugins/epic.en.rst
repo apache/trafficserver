@@ -1,4 +1,4 @@
-.. _epic-plugin:
+.. _admin-plugins-epic:
 
 Epic Plugin
 ***********

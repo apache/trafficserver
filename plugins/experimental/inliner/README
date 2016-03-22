@@ -1,0 +1,29 @@
+ATS (Apache Traffic Server) Inliner plug-in
+-----------------------------------------------
+
+This is a global transformation plug-in that inlines base64 images on text/html responses.
+
+Inliner:
+   1. Detects the response to have header "Content-Type" set to "text/html".
+   2. Without impacting streaming, scans the mark-up looking for "src" attributes
+    into "img" tags.
+   3. For each detected http/https url, checks for a "#inline" at its end.
+   4. Checks on ATS cache if the url exists.
+   5. In case the url exists into the cache. Inliner replaces the image with a 1x1
+      base64 pixel and starts retrieving the content from the cache.
+   6. Once the image is retrieved, buffers its content into memory.
+   7. At the end of the orginal document, Inliner outputs a little JavaScript
+      snippet.
+   8. Inliner outputs every image found into the cache into a JavaScript function
+      call.
+   9. Once the JavaScript gets executed by the browser, the 1x1 pixels
+      are replaced by their actual content.
+  10. For the images which do not exist into the cache, Inliner preserve their
+      original url and retrieves their content into background, also converting
+      them to their base64 representation.
+
+Please use "inliner" tag for debugging purposes.
+
+Please add the inliner library into ATS plugins.conf configuration file.
+
+No special configurations are required

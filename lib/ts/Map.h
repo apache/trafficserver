@@ -1406,8 +1406,8 @@ public:
     m_expansion_policy = p;
   }
   /// Get the current expansion policy.
-  void
-  expansionPolicy() const
+  ExpansionPolicy
+  getExpansionPolicy() const
   {
     return m_expansion_policy;
   }

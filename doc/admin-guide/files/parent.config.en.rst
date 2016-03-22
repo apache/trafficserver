@@ -138,6 +138,18 @@ The following list shows the possible actions and their allowed values.
     list, then the request will be re-tried from a server found in this list
     using a consistent hash of the url.
 
+.. _parent-config-format-parent-is-proxy:
+
+``parent_is_proxy``
+    One of the following values:
+
+    -  ``true`` - This is the default.  The list of parents and secondary parents
+        are proxy cache servers.
+    -  ``false`` - The list of parents and secondary parents are the origin
+        servers ``go_direct`` flag is ignored and origins are selected using
+        the specified ``round_robin`` algorithm.  The FQDN is removed from
+        the http request line.
+
 .. _parent-config-format-round-robin:
 
 ``round_robin``

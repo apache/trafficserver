@@ -544,11 +544,19 @@ LogAccessHttp::marshal_client_req_url_path(char *buf)
 int
 LogAccessHttp::marshal_client_req_url_scheme(char *buf)
 {
-  char *str = NULL;
-  int alen = 0;
+  int scheme = m_http_sm->t_state.orig_scheme;
+  const char *str = NULL;
+  int alen;
   int plen = INK_MIN_ALIGN;
 
-  str = (char *)m_client_request->scheme_get(&alen);
+  // If the transaction aborts very early, the scheme may not be set, or so ASAN reports.
+  if (scheme >= 0) {
+    str = hdrtoken_index_to_wks(scheme);
+    alen = hdrtoken_index_to_length(scheme);
+  } else {
+    str = "UNKNOWN";
+    alen = strlen(str);
+  }
 
   // calculate the the padded length only if the actual length
   // is not zero. We don't want the padded length to be zero
@@ -1135,6 +1143,19 @@ LogAccessHttp::marshal_server_transact_count(char *buf)
     int64_t count;
     count = m_http_sm->server_transact_count;
     marshal_int(buf, count);
+  }
+  return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_server_connect_attempts(char *buf)
+{
+  if (buf) {
+    int64_t attempts = m_http_sm->t_state.current.attempts;
+    marshal_int(buf, attempts);
   }
   return INK_MIN_ALIGN;
 }

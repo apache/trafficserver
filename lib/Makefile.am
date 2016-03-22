@@ -16,7 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = ts records tsconfig
+SUBDIRS = ts records tsconfig bindings
 
 if BUILD_PERL_LIB
 SUBDIRS += perl
@@ -29,8 +29,6 @@ endif
 if ENABLE_CPPAPI
 SUBDIRS += atscppapi
 endif
-
-DIST_SUBDIRS = $(SUBDIRS)
 
 # Some special hacks around building the luajit.
 #

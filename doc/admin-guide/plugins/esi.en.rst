@@ -1,4 +1,4 @@
-.. _esi-plugin:
+.. _admin-plugins-esi:
 
 ESI Plugin
 **********

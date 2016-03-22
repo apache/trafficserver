@@ -68,7 +68,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       //   if we are supposed to go direct
       ink_assert(result->rec->go_direct == true);
       // Could not find a parent
-      if (result->rec->go_direct == true) {
+      if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
         result->r = PARENT_DIRECT;
       } else {
         result->r = PARENT_FAIL;
@@ -111,7 +111,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       // We've wrapped around so bypass if we can
       if (bypass_ok == true) {
         // Could not find a parent
-        if (result->rec->go_direct == true) {
+        if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
           result->r = PARENT_DIRECT;
         } else {
           result->r = PARENT_FAIL;
@@ -166,7 +166,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     cur_index = (cur_index + 1) % result->rec->num_parents;
   } while ((unsigned int)cur_index != result->start_parent);
 
-  if (result->rec->go_direct == true) {
+  if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
     result->r = PARENT_DIRECT;
   } else {
     result->r = PARENT_FAIL;
@@ -236,9 +236,9 @@ ParentRoundRobin::markParentDown(const ParentSelectionPolicy *policy, ParentResu
     new_fail_count = old_count + 1;
   }
 
-  if (new_fail_count > 0 && new_fail_count == policy->FailThreshold) {
+  if (new_fail_count > 0 && new_fail_count >= policy->FailThreshold) {
     Note("Failure threshold met, http parent proxy %s:%d marked down", pRec->hostname, pRec->port);
-    pRec->available = false;
+    ink_atomic_swap(&pRec->available, false);
     Debug("parent_select", "Parent marked unavailable, pRec->available=%d", pRec->available);
   }
 }
@@ -264,7 +264,7 @@ ParentRoundRobin::markParentUp(ParentResult *result)
 
   ink_assert((int)(result->last_parent) < result->rec->num_parents);
   pRec = result->rec->parents + result->last_parent;
-  pRec->available = true;
+  ink_atomic_swap(&pRec->available, true);
 
   ink_atomic_swap(&pRec->failedAt, (time_t)0);
   int old_count = ink_atomic_swap(&pRec->failCount, 0);

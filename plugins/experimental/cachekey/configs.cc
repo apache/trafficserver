@@ -324,19 +324,19 @@ Configs::loadClassifiers(const String &args, bool blacklist)
 bool
 Configs::init(int argc, char *argv[])
 {
-  static const struct option longopt[] = {{"exclude-params", optional_argument, 0, 'a'},
-                                          {"include-params", optional_argument, 0, 'b'},
-                                          {"include-match-params", optional_argument, 0, 'c'},
-                                          {"exclude-match-params", optional_argument, 0, 'd'},
-                                          {"sort-params", optional_argument, 0, 'e'},
-                                          {"remove-all-params", optional_argument, 0, 'f'},
-                                          {"include-headers", optional_argument, 0, 'g'},
-                                          {"include-cookies", optional_argument, 0, 'h'},
-                                          {"ua-capture", optional_argument, 0, 'i'},
-                                          {"static-prefix", optional_argument, 0, 'j'},
-                                          {"capture-prefix", optional_argument, 0, 'k'},
-                                          {"ua-whitelist", optional_argument, 0, 'l'},
-                                          {"ua-blacklist", optional_argument, 0, 'm'},
+  static const struct option longopt[] = {{const_cast<char *>("exclude-params"), optional_argument, 0, 'a'},
+                                          {const_cast<char *>("include-params"), optional_argument, 0, 'b'},
+                                          {const_cast<char *>("include-match-params"), optional_argument, 0, 'c'},
+                                          {const_cast<char *>("exclude-match-params"), optional_argument, 0, 'd'},
+                                          {const_cast<char *>("sort-params"), optional_argument, 0, 'e'},
+                                          {const_cast<char *>("remove-all-params"), optional_argument, 0, 'f'},
+                                          {const_cast<char *>("include-headers"), optional_argument, 0, 'g'},
+                                          {const_cast<char *>("include-cookies"), optional_argument, 0, 'h'},
+                                          {const_cast<char *>("ua-capture"), optional_argument, 0, 'i'},
+                                          {const_cast<char *>("static-prefix"), optional_argument, 0, 'j'},
+                                          {const_cast<char *>("capture-prefix"), optional_argument, 0, 'k'},
+                                          {const_cast<char *>("ua-whitelist"), optional_argument, 0, 'l'},
+                                          {const_cast<char *>("ua-blacklist"), optional_argument, 0, 'm'},
                                           {0, 0, 0, 0}};
 
   bool status = true;

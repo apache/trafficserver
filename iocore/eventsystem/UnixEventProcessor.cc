@@ -85,7 +85,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     if (i == 0) {
       ink_thread_setspecific(Thread::thread_data_key, t);
       global_mutex = t->mutex;
-      t->cur_time = ink_get_based_hrtime_internal();
+      Thread::get_hrtime_updated();
     }
     all_ethreads[i] = t;
 

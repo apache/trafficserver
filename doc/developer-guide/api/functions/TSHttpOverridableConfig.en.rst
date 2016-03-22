@@ -142,6 +142,13 @@ The following configurations (from ``records.config``) are overridable.
 |   :ts:cv:`proxy.config.http.cache.range.write`
 |   :ts:cv:`proxy.config.http.global_user_agent_header`
 |   :ts:cv:`proxy.config.http.slow.log.threshold`
+|   :ts:cv:`proxy.config.http.cache.generation`
+|   :ts:cv:`proxy.config.body_factory.template_base`
+|   :ts:cv:`proxy.config.http.cache.open_write_fail_action`
+|   :ts:cv:`proxy.config.http.redirection_enabled`
+|   :ts:cv:`proxy.config.http.number_of_redirections`
+|   :ts:cv:`proxy.config.http.cache.max_open_write_retries`
+|   :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`
 
 Examples
 ========

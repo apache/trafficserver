@@ -197,7 +197,6 @@ sub _do_read {
 sub get_stat {
     my ($self, $stat) = @_;
     my $res               = "";
-    my $max_read_attempts = 25;
 
     return undef unless defined($self->{_socket});
     return undef unless $self->{_select}->can_write(10);
@@ -210,6 +209,7 @@ sub get_stat {
     my $msg = pack("ll/Z", TS_RECORD_GET, $stat);
     $self->{_socket}->print(pack("l/a", $msg));
     $res = $self->_do_read();
+    return undef unless defined($res); # Don't proceed on read failure.
 
     # The response format is:
     #   MGMT_MARSHALL_INT: message length
@@ -668,12 +668,9 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.ssl.TLSv1
  proxy.config.ssl.compression
  proxy.config.ssl.server.multicert.filename
- proxy.config.ssl.server_port
  proxy.config.ssl.server.private_key.path
  proxy.config.stat_collector.interval
  proxy.config.stat_collector.port
- proxy.config.stats.snap_file
- proxy.config.stats.snap_frequency
  proxy.config.syslog_facility
  proxy.config.system.mmap_max
  proxy.config.system.file_max_pct

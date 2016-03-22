@@ -53,3 +53,6 @@ http_load_http_load_SOURCES =  \
 
 endif
 
+all-am: Makefile $(PROGRAMS) $(SCRIPTS) $(DATA)
+	@sed "s/ -fPIE//" tsxs > tsxs.new
+	@mv -f tsxs.new tsxs

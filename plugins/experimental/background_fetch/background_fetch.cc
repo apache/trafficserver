@@ -244,7 +244,9 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
       char *url = TSUrlStringGet(mbuf, url_loc, &len);
 
       _url.append(url, len); // Save away the URL for later use when acquiring lock
+
       TSfree(static_cast<void *>(url));
+      TSHandleMLocRelease(request, TS_NULL_MLOC, purl);
 
       if (TS_SUCCESS == TSHttpHdrUrlSet(mbuf, hdr_loc, url_loc)) {
         // Make sure we have the correct Host: header for this request.

@@ -708,6 +708,12 @@ The following list describes |TS| custom logging fields.
     Indicates whether the connection from |TS| to the origin
     was over SSL or not.
 
+.. _sca:
+
+``sca``
+    The number of attempts in the transaction Traffic Server tries to
+    connect to the origin server.
+
 .. _shi:
 
 ``shi``

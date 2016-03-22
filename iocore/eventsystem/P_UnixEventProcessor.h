@@ -90,7 +90,7 @@ EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callba
 
   ink_assert(et < MAX_EVENT_TYPES);
 #ifdef ENABLE_TIME_TRACE
-  e->start_time = ink_get_hrtime();
+  e->start_time = Thread::get_hrtime();
 #endif
   e->callback_event = callback_event;
   e->cookie = cookie;
@@ -104,7 +104,7 @@ EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_even
 
   ink_assert(et < MAX_EVENT_TYPES);
 #ifdef ENABLE_TIME_TRACE
-  e->start_time = ink_get_hrtime();
+  e->start_time = Thread::get_hrtime();
 #endif
   e->callback_event = callback_event;
   e->cookie = cookie;

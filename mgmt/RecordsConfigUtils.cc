@@ -43,7 +43,7 @@ override_record(const RecordElement *record, void *)
         // "interesting" results if you are trying to override configuration values
         // early in startup (before we have synced with the local manager).
         RecSetRecord(record->type, record->name, record->value_type, &data, NULL, REC_SOURCE_ENV, false);
-        RecDataClear(record->value_type, &data);
+        RecDataZero(record->value_type, &data);
       }
     }
   }
@@ -115,7 +115,7 @@ initialize_record(const RecordElement *record, void *)
       break;
     } // switch
 
-    RecDataClear(record->value_type, &data);
+    RecDataZero(record->value_type, &data);
   } else { // Everything else, except PROCESS, are stats. TODO: Should modularize this too like PROCESS was done.
     ink_assert(REC_TYPE_IS_STAT(type));
 

@@ -627,7 +627,7 @@ RecConsumeConfigEntry(RecT rec_type, RecDataT data_type, const char *name, const
   memset(&data, 0, sizeof(RecData));
   RecDataSetFromString(data_type, &data, value);
   RecSetRecord(rec_type, name, data_type, &data, NULL, source, false, inc_version);
-  RecDataClear(data_type, &data);
+  RecDataZero(data_type, &data);
 }
 
 //-------------------------------------------------------------------------

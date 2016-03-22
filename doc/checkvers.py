@@ -31,11 +31,22 @@ if __name__ == '__main__':
     print 'checking for sphinx version >= 1.1... ',
     try:
       import sphinx
+
       version = sphinx.__version__
+      print 'found ' + sphinx.__version__
+
       (major, minor, micro) = version.split('.')
-      if (int(major) > 1) or (int(major) == 1 and int(minor) >= 1):
-        print 'found ' + sphinx.__version__
-      sys.exit(0)
+      if (int(major) < 1) or (int(major) == 1 and int(minor) < 1):
+          sys.exit(1)
+
+    except Exception as e:
+      print e
+      sys.exit(1)
+
+    print 'checking for sphinx.writers.manpage... ',
+    try:
+        from sphinx.writers import manpage
+        print 'yes'
     except Exception as e:
       print e
       sys.exit(1)

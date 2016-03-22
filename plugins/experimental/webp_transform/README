@@ -1,0 +1,4 @@
+Converting jpeg and png to webp using ImageMagick Magick++ lib
+Pre-requisites
+
+1. Magick++ api for ImageMagick 

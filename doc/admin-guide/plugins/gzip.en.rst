@@ -1,84 +1,143 @@
-.. _gzip-plugin:
-
-gzip / deflate Plugin
-*********************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
 
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+   under the License.
 
-This plugin gzips or deflates responses, whichever is applicable. It can
-compress origin respones as well as cached responses. The plugin is built
-and installed as part of the normal Apache Traffic Server installation
-process.
+.. include:: ../../common.defs
+
+.. _admin-plugins-gzip:
+
+GZip Plugin
+***********
+
+This plugin adds compression and decompression options to both origin and cache
+responses.
+
+Purpose
+=======
+
+Not all clients can handle compressed content. Not all origin servers are
+configured to respond with compressed content when a client says it can accept
+it. And it's not always necessary to make two separate requests to an origin,
+and track two separate cache objects, for the same content - once for a
+compressed version and another time for an uncompressed version.
+
+This plugin tidies up these problems by transparently compressing or deflating
+origin responses, as necessary, so that both variants of a response are stored
+as :term:`alternates <alternate>` and the appropriate version is used for client responses,
+depending on the client's indication (via an ``Accept`` request header) of what
+it can support.
+
+Additionally, this plugin adds configurability for what types of origin
+responses will receive this treatment, which will be proxied and cached with
+default behavior, and which may be explicitly disallowed to cache both
+compressed and deflated versions (because, for example, the cost of compression
+is known ahead of time to outweigh the space and bandwidth savings and you wish
+to avoid |TS| even testing for the possibility).
 
 Installation
 ============
 
-Add the following line to :file:`plugin.config`::
-
-    gzip.so
-
-In this case, the plugin will use the default behaviour:
-
--  Enable caching
--  Compress text/\* for every origin
--  Don't hide accept encoding from origin servers (for an offloading
-   reverse proxy)
--  No urls are disallowed from compression
--  Disable flush (flush gzipped content to client)
+This plugin is considered stable and is included with |TS| by default. There
+are no special steps necessary for its installation.
 
 Configuration
 =============
 
-Alternatively, a configuration can also be specified::
+This plugin is enabled globally for |TS| by adding the following to your
+:file:`plugin.config`::
+
+    gzip.so
+
+With no further options, this will enable the following default behavior:
+
+-  Enable caching of both compressed and uncompressed versions of origin
+   responses as :term:`alternates <alternate>`.
+
+-  Compress objects with `text/*` content types for every origin.
+
+-  Don't hide `Accept` encoding headers from origin servers (for an offloading
+   reverse proxy).
+
+-  No URLs are disallowed from compression.
+
+-  Disable flush (flush gzipped content to client).
+
+Alternatively, a configuration may be specified (shown here using the sample
+configuration provided with the plugin's source)::
 
     gzip.so <path-to-plugin>/sample.gzip.config
 
-After modifying plugin.config, restart traffic server (sudo traffic_ctl
-server restart) the configuration is also re-read when a management
-update is given (sudo traffic_ctl config reload)
+The following sections detail the options you may specify in the plugin's
+configuration file. Options may be used globally, or may be specified on a
+per-site basis by preceding them with a `[<site>]` line, where `<site>` is the
+client-facing domain for which the options should apply.
 
-Options
-=======
+cache
+-----
 
-Flags and options are:
+When set to ``true``, causes |TS| to cache both the compressed and uncompressed
+versions of the content as :term:`alternates <alternate>`. When set to
+``false``, |TS| will cache only the compressed or decompressed variant returned
+by the origin. Enabled by default.
 
-``enabled``: (``true`` or ``false``) Enable or disable compression for a
-host.
+compressible-content-type
+-------------------------
 
-``remove-accept-encoding``: (``true`` or ``false``) Sets whether the
-plugin should hide the accept encoding from origin servers:
+Provides a wildcard to match against content types, determining which are to be
+considered compressible. This defaults to ``text/*``.
 
--  To ease the load on the origins.
--  For when the proxy parses responses, and the resulting
-   compression/decompression is wasteful.
+disallow
+--------
 
-``cache``: (``true`` or ``false``) When set, the plugin stores the
-uncompressed and compressed response as alternates.
+Provides a wildcard pattern which will be applied to request URLs. Any which
+match the pattern will be considered uncompressable, and only deflated versions
+of the objects will be cached and returned to clients. This may be useful for
+objects which already have their own compression built-in, to avoid the expense
+of multiple rounds of compression for trivial gains.
 
-``compressible-content-type``: Wildcard pattern for matching
-compressible content types.
+enabled
+-------
 
-``disallow``: Wildcard pattern for disabling compression on urls.
+When set to ``true`` permits objects to be compressed, and when ``false``
+effectively disables the plugin in the current context.
 
-``flush``: (``true`` or ``false``) Enable or disable flushing of gzipped content.
+flush
+-----
 
-Options can be set globally or on a per-site basis, as such::
+Enables (``true``) or disables (``false``) flushing of compressed objects to
+clients.
+
+remove-accept-encoding
+----------------------
+
+When set to ``true`` this option causes the plugin to strip the request's
+``Accept`` encoding header when contacting the origin server. Setting this option to ``false``
+will leave the header intact if the client provided it.
+
+- To ease the load on the origins.
+
+- For when the proxy parses responses, and the resulting compression and
+  decompression is wasteful.
+
+Examples
+========
+
+To establish global defaults for all site requests passing through |TS|, while
+overriding just a handful for requests to content at ``www.example.com``, you
+might create a configuration with the following options::
 
     # Set some global options first
     cache true
@@ -94,4 +153,8 @@ Options can be set globally or on a per-site basis, as such::
     disallow /notthis/*.js
     flush true
 
-See example.gzip.config for example configurations.
+Assuming the above options are in a file at ``/etc/trafficserver/gzip.config``
+the plugin would be enabled for |TS| in :file:`plugin.config` as::
+
+    gzip.so /etc/trafficserver/gzip.config
+

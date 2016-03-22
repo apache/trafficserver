@@ -46,17 +46,42 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
 {
   RecRecord *r = NULL;
 
+  // Metrics are restored from persistence before they are registered. In this case, when the registration arrives, we
+  // might find that they yave changed. For example, a metric might change it's type due to a software upgrade. Records
+  // must not flip between config and metrics, but changing within those classes is OK.
   if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
-    ink_release_assert(r->rec_type == rec_type);
-    ink_release_assert(r->data_type == data_type);
-    // Note: do not set r->data as we want to keep the previous value
-    RecDataSet(r->data_type, &(r->data_default), &(data_default));
-    if (updated_p)
+    if (REC_TYPE_IS_STAT(rec_type)) {
+      ink_release_assert(REC_TYPE_IS_STAT(r->rec_type));
+    }
+
+    if (REC_TYPE_IS_CONFIG(rec_type)) {
+      ink_release_assert(REC_TYPE_IS_CONFIG(r->rec_type));
+    }
+
+    if (data_type != r->data_type) {
+      // Clear with the old type before resetting with the new type.
+      RecDataZero(r->data_type, &(r->data));
+      RecDataZero(r->data_type, &(r->data_default));
+
+      // If the data type changed, reset the current value to the default.
+      RecDataSet(data_type, &(r->data), &(data_default));
+    }
+
+    // NOTE: Do not set r->data as we want to keep the previous value because we almost certainly restored a persisted
+    // value before the metric was registered.
+    RecDataSet(data_type, &(r->data_default), &(data_default));
+
+    r->data_type = data_type;
+    r->rec_type = rec_type;
+
+    if (updated_p) {
       *updated_p = true;
+    }
   } else {
     if ((r = RecAlloc(rec_type, name, data_type)) == NULL) {
       return NULL;
     }
+
     // Set the r->data to its default value as this is a new record
     RecDataSet(r->data_type, &(r->data), &(data_default));
     RecDataSet(r->data_type, &(r->data_default), &(data_default));
@@ -65,8 +90,10 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       r->stat_meta.persist_type = persist_type;
     }
-    if (updated_p)
+
+    if (updated_p) {
       *updated_p = false;
+    }
   }
 
   // we're now registered
@@ -981,74 +1008,6 @@ RecDumpRecordsHt(RecT rec_type)
   RecDebug(DL_Note, "Dumping Records:");
   RecDumpRecords(rec_type, debug_record_callback, NULL);
 }
-
-//-------------------------------------------------------------------------
-// RecGetRecordPrefix_Xmalloc
-//
-//     mimics/replaces proxy/StatSystem.cc::stat_callback().
-//     returns the number of variables name match the prefix.
-//-------------------------------------------------------------------------
-int
-RecGetRecordPrefix_Xmalloc(char *prefix, char **buf, int *buf_len)
-{
-  int num_records = g_num_records;
-  int result_size = num_records * 256; /* estimate buffer size */
-  int num_matched = 0;
-  char *result = NULL;
-
-  result = (char *)ats_malloc(result_size * sizeof(char));
-  memset(result, 0, result_size * sizeof(char));
-
-  int i;
-  int total_bytes_written = 0;
-  int error = 0;
-  for (i = 0; !error && i < num_records; i++) {
-    int bytes_written = 0;
-    int bytes_avail = result_size - total_bytes_written;
-    RecRecord *r = &(g_records[i]);
-    if (strncmp(prefix, r->name, strlen(prefix)) == 0) {
-      rec_mutex_acquire(&(r->lock));
-      switch (r->data_type) {
-      case RECD_INT:
-        num_matched++;
-        bytes_written = snprintf(result + total_bytes_written, bytes_avail, "%s=%" PRId64 "\r\n", r->name, r->data.rec_int);
-        break;
-      case RECD_FLOAT:
-        num_matched++;
-        bytes_written = snprintf(result + total_bytes_written, bytes_avail, "%s=%f\r\n", r->name, r->data.rec_float);
-        break;
-      case RECD_STRING:
-        num_matched++;
-        bytes_written = snprintf(result + total_bytes_written, bytes_avail, "%s=%s\r\n", r->name,
-                                 r->data.rec_string ? r->data.rec_string : "NULL");
-        break;
-      case RECD_COUNTER:
-        num_matched++;
-        bytes_written = snprintf(result + total_bytes_written, bytes_avail, "%s=%" PRId64 "\r\n", r->name, r->data.rec_int);
-        break;
-      default:
-        break;
-      }
-
-      if (bytes_written <= 0 || bytes_written > bytes_avail) {
-        error = 1;
-      } else
-        total_bytes_written += bytes_written;
-
-      rec_mutex_release(&(r->lock));
-    }
-  }
-
-  if (error || total_bytes_written == result_size) {
-    RecLog(DL_Error, "Stat system was unable to fully generate stat list, size exceeded limit of %d", result_size);
-  }
-
-  *buf = result;
-  *buf_len = strlen(result);
-
-  return num_matched;
-}
-
 
 //-------------------------------------------------------------------------
 // Backwards compatibility ... TODO: Should eliminate these

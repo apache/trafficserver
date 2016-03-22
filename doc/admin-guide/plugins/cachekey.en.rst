@@ -1,4 +1,5 @@
-.. _cachekey-plugin:
+.. _admin-plugins-cachekey:
+
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
    distributed with this work for additional information
@@ -17,8 +18,8 @@
    under the License.
 
 
-Cache Key Manipulation (cachekey)
----------------------------------------
+Cache Key Manipulation Plugin
+*****************************
 
 Description
 ===========

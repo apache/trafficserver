@@ -51,7 +51,7 @@ public:
   void
   settings_from_configs()
   {
-    settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams;
+    settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams_in;
     settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)] = Http2::initial_window_size;
     settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)] = Http2::max_frame_size;
     settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)] = Http2::header_table_size;
@@ -105,7 +105,7 @@ class Http2ConnectionState : public Continuation
 {
 public:
   Http2ConnectionState()
-    : Continuation(NULL), ua_session(NULL), client_rwnd(Http2::initial_window_size), server_rwnd(Http2::initial_window_size),
+    : Continuation(NULL), ua_session(NULL), client_rwnd(HTTP2_INITIAL_WINDOW_SIZE), server_rwnd(Http2::initial_window_size),
       stream_list(), latest_streamid(0), client_streams_count(0), continued_stream_id(0)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
@@ -198,6 +198,8 @@ public:
 private:
   Http2ConnectionState(const Http2ConnectionState &);            // noncopyable
   Http2ConnectionState &operator=(const Http2ConnectionState &); // noncopyable
+
+  unsigned _adjust_concurrent_stream();
 
   // NOTE: 'stream_list' has only active streams.
   //   If given Stream Identifier is not found in stream_list and it is less

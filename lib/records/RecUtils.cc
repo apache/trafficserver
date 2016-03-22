@@ -68,10 +68,10 @@ RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
 
 
 //-------------------------------------------------------------------------
-// RecDataClear
+// RecDataZero
 //-------------------------------------------------------------------------
 void
-RecDataClear(RecDataT data_type, RecData *data)
+RecDataZero(RecDataT data_type, RecData *data)
 {
   if ((data_type == RECD_STRING) && (data->rec_string)) {
     ats_free(data->rec_string);

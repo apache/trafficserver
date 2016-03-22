@@ -32,7 +32,6 @@
 #include "Main.h"
 #include "Error.h"
 #include "P_EventSystem.h"
-#include "StatSystem.h"
 #include "P_Cache.h"
 #include "ProxyConfig.h"
 #include "ReverseProxy.h"

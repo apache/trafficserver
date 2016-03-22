@@ -90,7 +90,7 @@ class ParentRecord : public ControlBase
 public:
   ParentRecord()
     : parents(NULL), secondary_parents(NULL), num_parents(0), num_secondary_parents(0), ignore_query(false), rr_next(0),
-      go_direct(true), selection_strategy(NULL)
+      go_direct(true), parent_is_proxy(true), selection_strategy(NULL)
   {
   }
 
@@ -117,6 +117,7 @@ public:
   bool ignore_query;
   volatile uint32_t rr_next;
   bool go_direct;
+  bool parent_is_proxy;
   ParentSelectionStrategy *selection_strategy;
 };
 
@@ -163,13 +164,13 @@ struct ParentSelectionPolicy {
 class ParentSelectionStrategy
 {
 public:
-  // void selectParent(const ParentSelectionPolicy, *policy, bool firstCall, ParentResult *result, RequestData *rdata)
+  // void selectParent(const ParentSelectionPolicy *policy, bool firstCall, ParentResult *result, RequestData *rdata)
   //
   // The implementation parent lookup.
   //
   virtual void selectParent(const ParentSelectionPolicy *policy, bool firstCall, ParentResult *result, RequestData *rdata) = 0;
 
-  // void markParentDown(const ParentSelectionPolicy, *policy, ParentResult* rsult)
+  // void markParentDown(const ParentSelectionPolicy *policy, ParentResult *result)
   //
   //    Marks the parent pointed to by result as down
   //

@@ -61,7 +61,6 @@
 
 #include "ProxyConfig.h"
 #include "P_Net.h"
-#include "ts/MimeTable.h"
 #include "TransformInternal.h"
 #include "HdrUtils.h"
 #include "Log.h"

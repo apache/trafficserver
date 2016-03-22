@@ -43,9 +43,9 @@ public:
   enum flags { DEBUG_OVERRIDE = 0, DISABLE_PLUGINS = 1, LAST_FLAG };
 
   ContFlags() : raw_flags(0) {}
-  ContFlags(u_int32_t in_flags) : raw_flags(in_flags) {}
+  ContFlags(uint32_t in_flags) : raw_flags(in_flags) {}
   void
-  set_flags(u_int32_t new_flags)
+  set_flags(uint32_t new_flags)
   {
     raw_flags = new_flags;
   }
@@ -55,7 +55,7 @@ public:
     return *this;
   }
 
-  u_int32_t
+  uint32_t
   get_flags() const
   {
     return raw_flags;
@@ -81,7 +81,7 @@ public:
   }
 
 private:
-  u_int32_t raw_flags;
+  uint32_t raw_flags;
 };
 
 void init_cont_flags();

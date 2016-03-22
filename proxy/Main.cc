@@ -57,7 +57,6 @@ extern "C" int plock(int);
 #include "Main.h"
 #include "ts/signals.h"
 #include "Error.h"
-#include "StatSystem.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "P_UDPNet.h"
@@ -404,7 +403,10 @@ proxy_signal_handler(int signo, siginfo_t *info, void *)
     return;
   }
 
-  _exit(signo);
+  shutdown_event_system = true;
+  sleep(1);
+
+  exit(signo);
 }
 
 //
@@ -1069,7 +1071,7 @@ struct ShowStats : public Continuation {
     (void)e;
     if (!(cycle++ % 24))
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
-    ink_statval_t sval, cval;
+    int64_t sval, cval;
 
     NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
     int64_t d_rb = sval - last_rb;
@@ -1422,24 +1424,6 @@ change_uid_gid(const char *user)
 #endif
 }
 
-/** Open a file, elevating privilege only if needed.
-
-    @internal This is necessary because the CI machines run the regression tests
-    as a normal user, not as root, so attempts to get privilege fail even though
-    the @c open would succeed without elevation. So, try that first and ask for
-    elevation only on an explicit permission failure.
-*/
-static int
-elevating_open(char const *path, unsigned int flags, unsigned int fperms)
-{
-  int fd = open(path, flags, fperms);
-  if (fd < 0 && (EPERM == errno || EACCES == errno)) {
-    ElevateAccess access;
-    fd = open(path, flags, fperms);
-  }
-  return fd;
-}
-
 /*
  * Binds stdout and stderr to files specified by the parameters
  *
@@ -1715,9 +1699,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
   Note("cache clustering %s", cache_clustering_enabled ? "enabled" : "disabled");
 
-  // Initialize New Stat system
-  initialize_all_global_stats();
-
   num_of_net_threads = adjust_num_of_net_threads(num_of_net_threads);
 
   size_t stacksize;
@@ -1834,7 +1815,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // acc.start();
     // pmgmt initialization moved up, needed by RecProcessInit
     // pmgmt->start();
-    start_stats_snap();
 
     // Initialize Response Body Factory
     body_factory = new HttpBodyFactory;
@@ -1934,6 +1914,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #endif
 
   this_thread()->execute();
+  delete main_thread;
 }
 
 

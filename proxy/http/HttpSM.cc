@@ -95,22 +95,21 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
     bool active = api_timer >= 0;
     if (!active)
       api_timer = -api_timer;
-    delta = Thread::get_hrtime() - api_timer;
+    delta = Thread::get_hrtime_updated() - api_timer;
     api_timer = 0;
-    // Exactly zero is a problem because we want to signal *something* happened
-    // vs. no API activity at all. This can happen when the API time is less than
-    // the HR timer resolution, so in fact we're understating the time even with
-    // this tweak.
-    if (0 == delta)
-      ++delta;
+    // Zero or negative time is a problem because we want to signal *something* happened
+    // vs. no API activity at all. This can happen due to graininess or real time
+    // clock adjustment.
+    if (delta <= 0)
+      delta = 1;
 
     if (0 == milestones[TS_MILESTONE_PLUGIN_TOTAL])
       milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_SM_START];
-    milestones[TS_MILESTONE_PLUGIN_TOTAL] = milestones[TS_MILESTONE_PLUGIN_TOTAL] + delta;
+    milestones[TS_MILESTONE_PLUGIN_TOTAL] += delta;
     if (active) {
       if (0 == milestones[TS_MILESTONE_PLUGIN_ACTIVE])
         milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_SM_START];
-      milestones[TS_MILESTONE_PLUGIN_ACTIVE] = milestones[TS_MILESTONE_PLUGIN_ACTIVE] + delta;
+      milestones[TS_MILESTONE_PLUGIN_ACTIVE] += delta;
     }
   }
 }
@@ -118,8 +117,6 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
 
 
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
-
-#define HTTP_INCREMENT_TRANS_STAT(X) HttpTransact::update_stat(&t_state, X, 1);
 
 HttpVCTable::HttpVCTable()
 {
@@ -1311,11 +1308,18 @@ HttpSM::state_api_callout(int event, void *data)
     STATE_ENTER(&HttpSM::state_api_callout, event);
   }
 
+  if (api_timer < 0) {
+    // This happens when either the plugin lock was missed and the hook rescheduled or
+    // the transaction got an event without the plugin calling TsHttpTxnReenable().
+    // The call chain does not recurse here if @a api_timer < 0 which means this call
+    // is the first from an event dispatch in this case.
+    milestone_update_api_time(milestones, api_timer);
+  }
+
   switch (event) {
   case EVENT_INTERVAL:
     ink_assert(pending_action == data);
     pending_action = NULL;
-    milestone_update_api_time(milestones, api_timer);
   // FALLTHROUGH
   case EVENT_NONE:
   case HTTP_API_CONTINUE:
@@ -1362,10 +1366,14 @@ HttpSM::state_api_callout(int event, void *data)
           plugin_lock = MUTEX_TAKE_TRY_LOCK(cur_hook->m_cont->mutex, mutex->thread_holding);
 
           if (!plugin_lock) {
-            api_timer = -Thread::get_hrtime();
+            api_timer = -Thread::get_hrtime_updated();
             HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_api_callout);
             ink_assert(pending_action == NULL);
             pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
+            // Should @a callout_state be reset back to HTTP_API_NO_CALLOUT here? Because the default
+            // handler has been changed the value isn't important to the rest of the state machine
+            // but not resetting means there is no way to reliably detect re-entrance to this state with an
+            // outstanding callout.
             return 0;
           }
         } else {
@@ -1378,14 +1386,15 @@ HttpSM::state_api_callout(int event, void *data)
         APIHook *hook = cur_hook;
         cur_hook = cur_hook->next();
 
-        api_timer = Thread::get_hrtime();
+        if (!api_timer)
+          api_timer = Thread::get_hrtime_updated();
         hook->invoke(TS_EVENT_HTTP_READ_REQUEST_HDR + cur_hook_id, this);
-        if (api_timer > 0) {
+        if (api_timer > 0) { // true if the hook did not call TxnReenable()
           milestone_update_api_time(milestones, api_timer);
-          api_timer = -Thread::get_hrtime(); // set in order to track non-active callout duration
+          api_timer = -Thread::get_hrtime_updated(); // set in order to track non-active callout duration
           // which means that if we get back from the invoke with api_timer < 0 we're already
           // tracking a non-complete callout from a chain so just let it ride. It will get cleaned
-          // up in state_api_callback.
+          // up in state_api_callback when the plugin re-enables this transaction.
         }
 
         if (plugin_lock) {
@@ -2842,7 +2851,7 @@ HttpSM::is_http_server_eos_truncation(HttpTunnelProducer *p)
   int64_t cl = t_state.hdr_info.server_response.get_content_length();
 
   if (cl != UNDEFINED_COUNT && cl > server_response_body_bytes) {
-    DebugSM("http", "[%" PRId64 "] server eos after %" PRId64 ".  Expected %" PRId64, sm_id, cl, server_response_body_bytes);
+    DebugSM("http", "[%" PRId64 "] server EOS after %" PRId64 " bytes, expected %" PRId64, sm_id, server_response_body_bytes, cl);
     return true;
   } else {
     return false;
@@ -2897,7 +2906,13 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     if (is_http_server_eos_truncation(p)) {
       DebugSM("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] aborting HTTP tunnel due to server truncation", sm_id);
       tunnel.chain_abort_all(p);
-      ua_session = NULL;
+      // UA session may not be in the tunnel yet, don't NULL out the pointer in that case.
+      // Note: This is a hack. The correct solution is for the UA session to signal back to the SM
+      // when the UA is about to be destroyed and clean up the pointer there. That should be done once
+      // the TS-3612 changes are in place (and similarly for the server session).
+      if (ua_entry->in_tunnel)
+        ua_session = NULL;
+
       t_state.current.server->abort = HttpTransact::ABORTED;
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
       t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
@@ -2981,6 +2996,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
 
   if (close_connection) {
     p->vc->do_io_close();
+    server_session = NULL; // Because p->vc == server_session
     p->read_vio = NULL;
     /* TS-1424: if we're outbound transparent and using the client
        source port for the outbound connection we must effectively
@@ -3053,9 +3069,10 @@ HttpSM::is_bg_fill_necessary(HttpTunnelConsumer *c)
 {
   ink_assert(c->vc_type == HT_HTTP_CLIENT);
 
-  if (c->producer->alive &&                                              // something there to read
-      server_entry && server_entry->vc && server_session->get_netvc() && // from an origin server
-      c->producer->num_consumers > 1                                     // with someone else reading it
+  if (c->producer->alive &&                            // something there to read
+      server_entry && server_entry->vc &&              // from an origin server
+      server_session && server_session->get_netvc() && // which is still open and valid
+      c->producer->num_consumers > 1                   // with someone else reading it
       ) {
     // If threshold is 0.0 or negative then do background
     //   fill regardless of the content length.  Since this
@@ -3272,7 +3289,7 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
       p->vc->do_io_close(EHTTP_ERROR);
       p->read_vio = NULL;
       tunnel.chain_abort_all(p);
-      HTTP_INCREMENT_TRANS_STAT(http_cache_read_errors);
+      HTTP_INCREMENT_DYN_STAT(http_cache_read_errors);
       break;
     } else {
       tunnel.local_finish_all(p);
@@ -3312,7 +3329,7 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     c->write_vio = NULL;
     c->vc->do_io_close(EHTTP_ERROR);
 
-    HTTP_INCREMENT_TRANS_STAT(http_cache_write_errors);
+    HTTP_INCREMENT_DYN_STAT(http_cache_write_errors);
     DebugSM("http", "[%" PRId64 "] aborting cache write due %s event from cache", sm_id, HttpDebugNames::get_event_name(event));
     // abort the producer if the cache_writevc is the only consumer.
     if (c->producer->alive && c->producer->num_consumers == 1)
@@ -4385,7 +4402,7 @@ HttpSM::do_cache_lookup_and_read()
   // ink_assert(server_session == NULL);
   ink_assert(pending_action == 0);
 
-  HTTP_INCREMENT_TRANS_STAT(http_cache_lookups_stat);
+  HTTP_INCREMENT_DYN_STAT(http_cache_lookups_stat);
 
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = Thread::get_hrtime();
   t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_NONE;
@@ -5622,6 +5639,9 @@ HttpSM::attach_server_session(HttpServerSession *s)
   // Propagate the per client IP debugging
   if (ua_session)
     s->get_netvc()->control_flags = get_cont_flags();
+  else { // If there is no ua_session no sense in continuing to attach the server session
+    return;
+  }
 
   // Set the mutex so that we have something to update
   //   stats with
