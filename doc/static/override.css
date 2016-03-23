@@ -4,7 +4,11 @@ dd {
     line-height: 24px;
 }
 
-/* override table contents wrapping */
+/*
+  Following two styles fix the problem with wide tables introducing a horizontal
+  scrollbar, instead of the much more desired behavior of wrapping cell contents.
+  Source: https://github.com/snide/sphinx_rtd_theme/issues/117#issuecomment-41506687
+*/
 .wy-table-responsive table td, .wy-table-responsive table th {
     white-space: normal;
 }
@@ -14,6 +18,7 @@ dd {
     max-width: 100%;
     overflow: visible;
 }
+
 /* pre inside paragraphs gets weird spacing  */
 span.pre {
     line-height: initial;
