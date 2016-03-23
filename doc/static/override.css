@@ -1,3 +1,9 @@
+/* Use the same line-height on <dd> as for <p>, which prevents odd rendering of
+   single vs. mulei paragraph definition bodies. */
+dd {
+    line-height: 24px;
+}
+
 /* override table contents wrapping */
 .wy-table-responsive table td, .wy-table-responsive table th {
     white-space: normal;
