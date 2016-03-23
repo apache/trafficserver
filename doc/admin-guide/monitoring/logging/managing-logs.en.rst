@@ -45,13 +45,13 @@ space window for a long period of time.  After you establish a space limit,
 space dwindles to the headroom limit, it enters a low space state and takes the
 following actions:
 
--  If the autodelete option (discussed in `Rolling Event Log Files`_)
-   is *enabled*, then |TS| identifies previously-rolled log files (log files
-   with the ``.old`` extension). It starts deleting files one by one, beginning
-   with the oldest file, until it emerges from the low state. |TS| logs a
-   record of all deleted files in the system error log.
+-  If the autodelete option (discussed in `Rolling Logs`_) is enabled, then
+   |TS| identifies previously-rolled log files (log files with the ``.old``
+   extension). It starts deleting files one by one, beginning with the oldest
+   file, until it emerges from the low state. |TS| logs a record of all deleted
+   files in the system error log.
 
--  If the autodelete option is *disabled* or there are not enough old log files
+-  If the autodelete option is disabled or there are not enough old log files
    to delete for the system to emerge from its low space state, then |TS|
    issues a warning and continues logging until space is exhausted. When
    available space is consumed, event logging stops. |TS| resumes event logging

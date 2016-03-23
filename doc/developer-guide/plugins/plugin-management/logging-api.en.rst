@@ -95,8 +95,11 @@ The steps below show how the logging API is used in the
 
    .. code-block:: c
 
-       for (i = 0; i < nsites; i++) { if (strncmp (host, sites[i],
-       host\_length) == 0) {
+       for (i = 0; i < nsites; i++) {
+         if (strncmp (host, sites[i], host_length) == 0) {
+           /* ... */
+         }
+       }
 
    If the host matches one of the blacklisted
    sites (such as ``sites[i]``), then the plugin writes a blacklist

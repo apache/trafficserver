@@ -250,7 +250,8 @@ for :ts:cv:`proxy.config.diags.debug.enabled` and
     CONFIG proxy.config.diags.debug.enabled INT 1
     CONFIG proxy.config.diags.debug.tags STRING url_sig
 
-Once updated, issue a :option:`traffic_ctl reload` to make the settings active.
+Once updated, issue a :option:`traffic_ctl config reload` to make the settings
+active.
 
 Example
 =======
@@ -294,7 +295,7 @@ Example
 
 #. Reload your |TS| configuration to ensure the changes are active::
 
-    traffic_ctl reload
+    traffic_ctl config reload
 
 #. Attempt to access the now-protected URL without a valid signature. This will
    fail, and that is a good thing, as it demonstrates that |TS| now rejects any

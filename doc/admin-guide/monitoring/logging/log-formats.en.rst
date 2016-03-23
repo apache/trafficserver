@@ -263,9 +263,7 @@ summarization and are covered elsewhere):
 
 A very simple example format, which contains only the timestamp of when the
 event began and the canonical URL of the request, and named *myformat* would
-be written as follows:
-
-.. code-block:: xml
+be written as follows::
 
    <LogFormat>
      <Name = "myformat"/>

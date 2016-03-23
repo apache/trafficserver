@@ -41,9 +41,7 @@ fields, over a specified interval.
 
 To create a summary log file format:
 
-#. Define the format of the log file in :file:`logs_xml.config` as follows:
-
-   .. code-block:: xml
+#. Define the format of the log file in :file:`logs_xml.config` as follows::
 
        <LogFormat>
          <Name = "summary"/>
@@ -64,9 +62,7 @@ To create a summary log file format:
 The following example format generates one entry every 10 seconds. Each entry
 contains the timestamp of the last entry of the interval, a count of the number
 of entries seen within that 10-second interval, and the sum of all bytes sent
-to the client:
-
-.. code-block:: xml
+to the client::
 
     <LogFormat>
       <Name = "summary"/>

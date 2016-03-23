@@ -104,7 +104,7 @@ in some cases Traffic Server's internal APIs or architectural restrictions
 won't make it easy:
 
 * Load Balancing - note that there is an experimental plugin for this,
-:ref:`admin-plugins-balancer`.
+  :ref:`admin-plugins-balancer`.
 
 .. XXX needs re-work: the leadin states there's "a number" of scenarios, and then only lists one -- one's a number, but not much of a list
 

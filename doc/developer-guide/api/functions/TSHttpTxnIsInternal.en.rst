@@ -6,7 +6,7 @@
    "License"); you may not use this file except in compliance
    with the License.  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+   http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to in writing, software
    distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,14 +16,14 @@
 
 .. default-domain:: c
 
-=======================
 TSHttpTxnIsInternal
-=======================
+*******************
 
 Test whether a request is internally-generated.
 
 Synopsis
 ========
+
 `#include <ts/ts.h>`
 
 .. function:: TSReturnCode TSHttpTxnIsInternal(TSHttpTxn txnp)
@@ -50,10 +50,11 @@ Examples
 The ESI plugin uses :func:`TSHttpTxnIsInternal` to ignore requests that is
 had generated while fetching portions of an ESI document:
 
-.. literalinclude:: ../../../plugins/experimental/esi/esi.cc
+.. literalinclude:: ../../../../plugins/experimental/esi/esi.cc
   :language: c
   :lines: 1395-1398
 
 See also
 ========
+
 :manpage:`TSAPI(3ts)`

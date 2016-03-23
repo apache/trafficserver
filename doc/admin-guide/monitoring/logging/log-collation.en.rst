@@ -178,9 +178,7 @@ To collate custom event log files:
 
 #. On each collation client, edit :file:`logs_xml.config` and add the
    :ref:`CollationHosts <logs-xml-logobject-collationhost>` attribute to the
-   :ref:`LogObject` specification:
-
-   .. code-block:: xml
+   :ref:`LogObject` specification::
 
        <LogObject>
          <Format = "squid"/>

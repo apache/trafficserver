@@ -67,7 +67,7 @@ Configuration
    so on, which will be replaced with the appropriate matching group from
    ``<pattern>``.
 
-#. Reload your |TS| configuration with :option:`traffic_ctl reload`.
+#. Reload your |TS| configuration with :option:`traffic_ctl config reload`.
 
 Logging
 =======
