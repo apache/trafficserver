@@ -263,9 +263,6 @@ getAppQueryString(char *query_string, int query_length)
   p = buf;
 
   TSDebug(PLUGIN_NAME, "query_string: %s, query_length: %d", query_string, query_length);
-  if (p == NULL) {
-    return NULL;
-  }
 
   do {
     switch (*p) {
