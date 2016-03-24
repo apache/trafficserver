@@ -107,7 +107,7 @@ handle_response(TSHttpTxn txnp)
     goto done;
   }
 
-  if (!TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
+  if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
     TSError("[blacklist-0] Couldn't retrieve request url");
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
