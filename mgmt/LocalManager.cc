@@ -253,8 +253,6 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
     mgmt_fatal(0, "[LocalManager::LocalManager] please set bin path 'proxy.config.bin_path' \n");
   }
 
-  internal_ticker = 0;
-
   watched_process_pid = -1;
 
   process_server_sockfd = -1;
