@@ -2942,6 +2942,20 @@ HTTP/2 Configuration
    .. note:: Reloading this value affects only new HTTP/2 connections, not the
 	     ones already established.
 
+.. ts:cv:: CONFIG proxy.config.http2.min_concurrent_streams_in INT 10
+   :reloadable:
+
+   The minimum number of concurrent streams per inbound connection.
+   This is used when `proxy.config.http2.max_active_streams_in` is set larger than 0.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_active_streams_in INT 0
+   :reloadable:
+
+   Limits the maximum number of connection wide active streams.
+   When connection wide active streams are larger than this value,
+   SETTINGS_MAX_CONCURRENT_STREAMS will be reduced to `proxy.config.http2.min_concurrent_streams_in`.
+   To disable, set to zero (``0``).
+
 .. ts:cv:: CONFIG proxy.config.http2.initial_window_size_in INT 1048576
    :reloadable:
 
