@@ -31,8 +31,39 @@
 const char PLUGIN_NAME[] = "header_rewrite";
 const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
 
+
+// Geo information, currently only Maxmind. These have to be initialized when the plugin loads.
+#if HAVE_GEOIP_H
+#include <GeoIP.h>
+
+GeoIP *gGeoIP[NUM_DB_TYPES];
+
+static void
+initGeoIP()
+{
+  GeoIPDBTypes dbs[] = {GEOIP_COUNTRY_EDITION, GEOIP_COUNTRY_EDITION_V6, GEOIP_ASNUM_EDITION, GEOIP_ASNUM_EDITION_V6};
+
+  for (unsigned i = 0; i < sizeof(dbs) / sizeof(dbs[0]); ++i) {
+    if (!gGeoIP[dbs[i]] && GeoIP_db_avail(dbs[i])) {
+      // GEOIP_STANDARD seems to break threaded apps...
+      gGeoIP[dbs[i]] = GeoIP_open_type(dbs[i], GEOIP_MMAP_CACHE);
+      TSDebug(PLUGIN_NAME, "initialized GeoIP-DB[%d] %s", dbs[i], GeoIP_database_info(gGeoIP[dbs[i]]));
+    }
+  }
+}
+
+#else
+
+static void
+initGeoIP()
+{
+}
+#endif
+
+
 // Forward declaration for the main continuation.
 static int cont_rewrite_headers(TSCont, TSEvent, void *);
+
 
 // Simple wrapper around a configuration file / set. This is useful such that
 // we can reuse most of the code for both global and per-remap rule sets.
@@ -304,6 +335,7 @@ TSPluginInit(int argc, const char *argv[])
   RulesConfig *conf = new RulesConfig;
   bool got_config = false;
 
+  initGeoIP();
   conf->hold();
 
   for (int i = 1; i < argc; ++i) {
@@ -358,7 +390,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
+  initGeoIP();
   TSDebug(PLUGIN_NAME, "Remap plugin is successfully initialized");
+
   return TS_SUCCESS;
 }
 

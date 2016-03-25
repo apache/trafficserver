@@ -129,6 +129,8 @@ condition_factory(const std::string &cond)
     c = new ConditionTransactCount();
   } else if (c_name == "NOW") {
     c = new ConditionNow();
+  } else if (c_name == "GEO") {
+    c = new ConditionGeo();
   } else {
     TSError("[%s] Unknown condition: %s", PLUGIN_NAME, c_name.c_str());
     return NULL;
