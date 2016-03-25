@@ -43,12 +43,10 @@
 #include "P_HostDB.h"
 #include "P_Cache.h"
 #include "I_RecCore.h"
-#include "I_RecSignals.h"
 #include "ProxyConfig.h"
 #include "Plugin.h"
 #include "LogObject.h"
 #include "LogConfig.h"
-//#include "UserNameCache.h"
 #include "PluginVC.h"
 #include "api/ts/experimental.h"
 #include "ICP.h"
@@ -86,13 +84,10 @@
 static volatile int api_rsb_index = 0;
 static RecRawStatBlock *api_rsb;
 
-// Library init functions needed for API.
-extern void ts_session_protocol_well_known_name_indices_init();
-
 // Globals for the Sessions/Transaction index registry
 static volatile int next_argv_index = 0;
 
-struct _STATE_ARG_TABLE {
+static struct _STATE_ARG_TABLE {
   char *name;
   size_t name_len;
   char *description;
