@@ -47,11 +47,12 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 
-  // gGI = GeoIP_new(GEOIP_STANDARD); // This seems to break on threaded apps
-  gGI = GeoIP_new(GEOIP_MMAP_CACHE);
-
-  TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
-  return TS_SUCCESS; /* success */
+  if (Acl::init()) {
+    TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
+    return TS_SUCCESS; /* success */
+  } else {
+    return TS_ERROR;
+  }
 }
 
 
@@ -59,21 +60,27 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
   if (argc < 3) {
-    TSError("[geoip_acl] Unable to create remap instance, need more parameters");
+    TSError("[%s] Unable to create remap instance, need more parameters", PLUGIN_NAME);
     return TS_ERROR;
   } else {
     Acl *a = NULL;
 
+    // ToDo: Should do better processing here, to make it easier to deal with
+    // rules other then country codes.
     if (!strncmp(argv[2], "country", 11)) {
       TSDebug(PLUGIN_NAME, "creating an ACL rule with ISO country codes");
       a = new CountryAcl();
     }
 
     if (a) {
-      a->process_args(argc, argv);
-      *ih = static_cast<void *>(a);
+      if (a->process_args(argc, argv) > 0) {
+        *ih = static_cast<void *>(a);
+      } else {
+        TSError("[%s] Unable to create remap instance, no geo-identifying tokens provided", PLUGIN_NAME);
+        return TS_ERROR;
+      }
     } else {
-      TSError("[geoip_acl] Unable to create remap instance, no supported ACL specified as first parameter");
+      TSError("[%s] Unable to create remap instance, no supported ACL specified as first parameter", PLUGIN_NAME);
       return TS_ERROR;
     }
   }
@@ -109,19 +116,3 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   return TSREMAP_NO_REMAP;
 }
-
-
-/*
-  local variables:
-  mode: C++
-  indent-tabs-mode: nil
-  c-basic-offset: 2
-  c-comment-only-line-offset: 0
-  c-file-offsets: ((statement-block-intro . +)
-  (label . 0)
-  (statement-cont . +)
-  (innamespace . 0))
-  end:
-
-  Indent with: /usr/bin/indent -ncs -nut -npcs -l 120 logstats.cc
-*/
