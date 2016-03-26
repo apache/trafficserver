@@ -24,7 +24,9 @@
 #include "P_EventSystem.h" /* MAGIC_EDITING_TAG */
 #include <sched.h>
 #if TS_USE_HWLOC
+#if HAVE_ALLOCA_H
 #include <alloca.h>
+#endif
 #include <hwloc.h>
 #endif
 #include "ts/ink_defs.h"
