@@ -133,7 +133,7 @@ RegexAcl::parse_line(const char *filename, const std::string &line, int lineno)
     return false;
   }
   pos1 = line.find_first_not_of(_SEPARATOR);
-  if (line[pos1] == '#' || pos1 == std::string::npos) {
+  if ((pos1 == std::string::npos) || (line[pos1] == '#')) {
     return false;
   }
 
@@ -237,18 +237,18 @@ CountryAcl::read_regex(const char *fn)
     while (!f.eof()) {
       getline(f, line);
       ++lineno;
-      if (!acl) {
-        acl = new RegexAcl(new CountryAcl());
-      }
+      acl = new RegexAcl(new CountryAcl());
       if (acl->parse_line(fn, line, lineno)) {
         if (NULL == _regexes) {
           _regexes = acl;
         } else {
           _regexes->append(acl);
         }
-        acl = NULL;
+      } else {
+        TSfree(acl);
       }
     }
+
     f.close();
     TSDebug(PLUGIN_NAME, "Loaded regex rules from %s", fn);
   } else {

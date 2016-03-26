@@ -47,7 +47,7 @@ static const int NUM_ISO_CODES = 253;
 class Acl
 {
 public:
-  Acl() : _allow(true) {}
+  Acl() : _allow(true), _added_tokens(0) {}
 
   virtual ~Acl() {}
 
@@ -93,7 +93,7 @@ protected:
 class RegexAcl
 {
 public:
-  RegexAcl(Acl *acl) : _next(NULL), _acl(acl) {}
+  RegexAcl(Acl *acl) : _extra(NULL), _next(NULL), _acl(acl) {}
 
   const std::string &
   get_regex() const
