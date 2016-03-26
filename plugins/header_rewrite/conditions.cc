@@ -713,6 +713,7 @@ ConditionNow::eval(const Resources &res)
 
 
 // ConditionGeo: Geo-based information (integer). See ConditionGeoCountry for the string version.
+#if HAVE_GEOIP_H
 const char *
 ConditionGeo::get_geo_string(const sockaddr *addr)
 {
@@ -844,6 +845,27 @@ ConditionGeo::get_geo_int(const sockaddr *addr)
 
   return ret;
 }
+
+#else
+
+// No Geo library avaiable, these are just stubs.
+
+const char *
+ConditionGeo::get_geo_string(const sockaddr *addr)
+{
+  TSError("[%s] No Geo library available!", PLUGIN_NAME);
+  return NULL;
+}
+
+int64_t
+ConditionGeo::get_geo_int(const sockaddr *addr)
+{
+  TSError("[%s] No Geo library available!", PLUGIN_NAME);
+  return 0;
+}
+
+#endif
+
 
 void
 ConditionGeo::initialize(Parser &p)
