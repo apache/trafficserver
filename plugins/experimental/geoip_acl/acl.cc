@@ -245,7 +245,7 @@ CountryAcl::read_regex(const char *fn)
           _regexes->append(acl);
         }
       } else {
-        TSfree(acl);
+        delete acl;
       }
     }
 

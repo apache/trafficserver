@@ -485,7 +485,10 @@ gzip_transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configur
     return 0;
   }
 
-  TSHttpTxnClientReqGet(txnp, &cbuf, &chdr);
+  if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &cbuf, &chdr)) {
+    info("cound not get client request");
+    return 0;
+  }
 
   // the only compressible method is currently GET.
   int method_length;
@@ -533,9 +536,15 @@ gzip_transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configur
   }
 
   if (server) {
-    TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
+    if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+      info("could not get server response");
+      return 0;
+    }
   } else {
-    TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc);
+    if (TS_SUCCESS != TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc)) {
+      info("could not get cached response");
+      return 0;
+    }
   }
 
   /* If there already exists a content encoding then we don't want
