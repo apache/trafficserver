@@ -136,9 +136,6 @@ protected:
 
   UrlQualifiers parse_url_qualifier(const std::string &q) const;
 
-  NowQualifiers parse_now_qualifier(const std::string &q) const;
-  int64_t get_now_qualified(NowQualifiers qual) const;
-
   void
   require_resources(const ResourceIDs ids)
   {
