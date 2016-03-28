@@ -437,8 +437,6 @@ Flag   Description
 AND    Indicates that both the current condition and the next must be true.
        This is the default behavior for all conditions when no flags are
        provided.
-NC     Indicates that the condition operand should be matched case-insensitive.
-       **Not implemented.**
 NOT    Inverts the condition.
 OR     Indicates that either the current condition or the next one must be
        true, as contrasted with the default behavior from ``[AND]``.
@@ -971,11 +969,13 @@ possible to accomplish::
 Add Cache Control Headers Based on Origin Path
 ----------------------------------------------
 
-This rule adds cache control headers to CDN responses based matching the origin path.  One provides a max age and the other provides a “no-cache” statement to two different file paths.
+This rule adds cache control headers to CDN responses based matching the origin
+path.  One provides a max age and the other provides a “no-cache” statement to
+two different file paths.::
 
-cond %{SEND_RESPONSE_HDR_HOOK}  
-cond %{PATH} /examplepath1/
-add-header Cache-Control "max-age=3600" [L]
-cond %{SEND_RESPONSE_HDR_HOOK}  
-cond %{PATH} /examplepath2/examplepath3/.*/
-add-header Cache-Control "no-cache" [L]
+    cond %{SEND_RESPONSE_HDR_HOOK}
+    cond %{PATH} /examplepath1/
+    add-header Cache-Control "max-age=3600" [L]
+    cond %{SEND_RESPONSE_HDR_HOOK}
+    cond %{PATH} /examplepath2/examplepath3/.*/
+    add-header Cache-Control "no-cache" [L]
