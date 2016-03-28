@@ -472,21 +472,27 @@ gzip_transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configur
   TSHttpStatus resp_status;
 
   if (server) {
-    TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
+    if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+      return 0;
+    }
   } else {
-    TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc);
+    if (TS_SUCCESS != TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc)) {
+      return 0;
+    }
   }
+
   resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
-  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
   // conservatively pick some statusses to compress
   if (!(resp_status == 200 || resp_status == 404 || resp_status == 500)) {
     info("http response status [%d] is not compressible", resp_status);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
 
   if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &cbuf, &chdr)) {
     info("cound not get client request");
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
   }
 
@@ -526,25 +532,15 @@ gzip_transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configur
 
     if (!compression_acceptable) {
       info("no acceptable encoding found in request header, not compressible");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
       return 0;
     }
   } else {
     info("no acceptable encoding found in request header, not compressible");
     TSHandleMLocRelease(cbuf, chdr, cfield);
     TSHandleMLocRelease(cbuf, TS_NULL_MLOC, chdr);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     return 0;
-  }
-
-  if (server) {
-    if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
-      info("could not get server response");
-      return 0;
-    }
-  } else {
-    if (TS_SUCCESS != TSHttpTxnCachedRespGet(txnp, &bufp, &hdr_loc)) {
-      info("could not get cached response");
-      return 0;
-    }
   }
 
   /* If there already exists a content encoding then we don't want
@@ -569,11 +565,14 @@ gzip_transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configur
   value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
 
   int rv = host_configuration->is_content_type_compressible(value, len);
+
   if (!rv) {
     info("content-type [%.*s] not compressible", len, value);
   }
+
   TSHandleMLocRelease(bufp, hdr_loc, field_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+
   return rv;
 }
 

@@ -573,18 +573,18 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
     }
     break;
   case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    TSHttpTxnServerRespGet(txn, &buf, &loc);
-    http_status = TSHttpHdrStatusGet(buf, loc);
-    if ((http_status == 500) || ((http_status >= 502) && (http_status <= 504))) // 500, 502, 503, or 504
-    {
-      TSDebug(PLUGIN_NAME, "Set non-cachable");
+    if (TS_SUCCESS == TSHttpTxnServerRespGet(txn, &buf, &loc)) {
+      http_status = TSHttpHdrStatusGet(buf, loc);
+      if ((http_status == 500) || ((http_status >= 502) && (http_status <= 504))) { // 500, 502, 503, or 504
+        TSDebug(PLUGIN_NAME, "Set non-cachable");
 #if (TS_VERSION_NUMBER >= 3003000)
-      TSHttpTxnServerRespNoStoreSet(txn, 1);
+        TSHttpTxnServerRespNoStoreSet(txn, 1);
 #else
-      TSHttpTxnServerRespNoStore(txn);
+        TSHttpTxnServerRespNoStore(txn);
 #endif
+      }
+      TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
     }
-    TSHandleMLocRelease(buf, TS_NULL_MLOC, loc);
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:

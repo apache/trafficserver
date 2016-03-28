@@ -887,34 +887,34 @@ transformable(TSHttpTxn txnp)
   TSHttpStatus resp_status;
   const char *value;
 
-  TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
+  if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+    resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+    if (resp_status != TS_HTTP_STATUS_OK) {
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return 0;
+    }
 
-  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
-  if (resp_status != TS_HTTP_STATUS_OK) {
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
-  }
+    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
+    if (field_loc == TS_NULL_MLOC) {
+      TSError("[psi] Unable to search Content-Type field");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return 0;
+    }
 
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
-  if (field_loc == TS_NULL_MLOC) {
-    TSError("[psi] Unable to search Content-Type field");
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
-  }
+    value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, NULL);
+    if ((value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return 0;
+    }
 
-  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, NULL);
-  if ((value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+
+    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1);
+
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
   }
-
-  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1);
-
-  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
   return 1;
 }
