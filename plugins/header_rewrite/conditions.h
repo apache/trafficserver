@@ -410,10 +410,11 @@ protected:
   bool eval(const Resources &res);
 
 private:
+  int64_t get_now_qualified(NowQualifiers qual) const;
+
   DISALLOW_COPY_AND_ASSIGN(ConditionNow);
   NowQualifiers _now_qual;
 };
-
 
 // GeoIP class for the "integer" based Geo information pieces
 class ConditionGeo : public Condition
@@ -440,13 +441,13 @@ public:
     _int_type = flag;
   }
 
-  int64_t get_geo_int(const sockaddr *addr);
-  const char *get_geo_string(const sockaddr *addr);
-
 protected:
   bool eval(const Resources &res);
 
 private:
+  int64_t get_geo_int(const sockaddr *addr) const;
+  const char *get_geo_string(const sockaddr *addr) const;
+
   DISALLOW_COPY_AND_ASSIGN(ConditionGeo);
 
   GeoQualifiers _geo_qual;

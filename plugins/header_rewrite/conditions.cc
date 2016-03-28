@@ -669,6 +669,51 @@ ConditionTransactCount::append_value(std::string &s, Resources const &res)
 
 
 // ConditionNow: time related conditions, such as time since epoch (default), hour, day etc.
+// Time related functionality for statements. We return an int64_t here, to assure that
+// gettimeofday() / Epoch does not lose bits.
+int64_t
+ConditionNow::get_now_qualified(NowQualifiers qual) const
+{
+  time_t now;
+
+  // First short circuit for the Epoch qualifier, since it needs less data
+  time(&now);
+  if (NOW_QUAL_EPOCH == qual) {
+    return static_cast<int64_t>(now);
+  } else {
+    struct tm res;
+
+    localtime_r(&now, &res);
+    switch (qual) {
+    case NOW_QUAL_YEAR:
+      return static_cast<int64_t>(res.tm_year + 1900); // This makes more sense
+      break;
+    case NOW_QUAL_MONTH:
+      return static_cast<int64_t>(res.tm_mon);
+      break;
+    case NOW_QUAL_DAY:
+      return static_cast<int64_t>(res.tm_mday);
+      break;
+    case NOW_QUAL_HOUR:
+      return static_cast<int64_t>(res.tm_hour);
+      break;
+    case NOW_QUAL_MINUTE:
+      return static_cast<int64_t>(res.tm_min);
+      break;
+    case NOW_QUAL_WEEKDAY:
+      return static_cast<int64_t>(res.tm_wday);
+      break;
+    case NOW_QUAL_YEARDAY:
+      return static_cast<int64_t>(res.tm_yday);
+      break;
+    default:
+      TSReleaseAssert(!"All cases should have been handled");
+      break;
+    }
+  }
+  return 0;
+}
+
 void
 ConditionNow::initialize(Parser &p)
 {
@@ -679,16 +724,33 @@ ConditionNow::initialize(Parser &p)
   _matcher = match;
 }
 
-
 void
 ConditionNow::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
   TSDebug(PLUGIN_NAME, "\tParsing %%{NOW:%s} qualifier", q.c_str());
-  _now_qual = parse_now_qualifier(q);
-}
 
+  if (q == "EPOCH") {
+    _now_qual = NOW_QUAL_EPOCH;
+  } else if (q == "YEAR") {
+    _now_qual = NOW_QUAL_YEAR;
+  } else if (q == "MONTH") {
+    _now_qual = NOW_QUAL_MONTH;
+  } else if (q == "DAY") {
+    _now_qual = NOW_QUAL_DAY;
+  } else if (q == "HOUR") {
+    _now_qual = NOW_QUAL_HOUR;
+  } else if (q == "MINUTE") {
+    _now_qual = NOW_QUAL_MINUTE;
+  } else if (q == "WEEKDAY") {
+    _now_qual = NOW_QUAL_WEEKDAY;
+  } else if (q == "YEARDAY") {
+    _now_qual = NOW_QUAL_YEARDAY;
+  } else {
+    TSError("[%s] Unknown Now() qualifier: %s", PLUGIN_NAME, q.c_str());
+  }
+}
 
 void
 ConditionNow::append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
@@ -699,7 +761,6 @@ ConditionNow::append_value(std::string &s, const Resources & /* res ATS_UNUSED *
   s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending NOW() to evaluation value -> %s", s.c_str());
 }
-
 
 bool
 ConditionNow::eval(const Resources &res)
@@ -715,7 +776,7 @@ ConditionNow::eval(const Resources &res)
 // ConditionGeo: Geo-based information (integer). See ConditionGeoCountry for the string version.
 #if HAVE_GEOIP_H
 const char *
-ConditionGeo::get_geo_string(const sockaddr *addr)
+ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   const char *ret = NULL;
   int v = 4;
@@ -777,7 +838,7 @@ ConditionGeo::get_geo_string(const sockaddr *addr)
 }
 
 int64_t
-ConditionGeo::get_geo_int(const sockaddr *addr)
+ConditionGeo::get_geo_int(const sockaddr *addr) const
 {
   int64_t ret = -1;
   int v = 4;
@@ -851,14 +912,14 @@ ConditionGeo::get_geo_int(const sockaddr *addr)
 // No Geo library avaiable, these are just stubs.
 
 const char *
-ConditionGeo::get_geo_string(const sockaddr *addr)
+ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return NULL;
 }
 
 int64_t
-ConditionGeo::get_geo_int(const sockaddr *addr)
+ConditionGeo::get_geo_int(const sockaddr *addr) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return 0;
@@ -906,7 +967,7 @@ ConditionGeo::set_qualifier(const std::string &q)
     _geo_qual = GEO_QUAL_ASN_NAME;
     is_int_type(false);
   } else {
-    TSError("[%s] Unknown Geo qualifier: %s", PLUGIN_NAME, q.c_str());
+    TSError("[%s] Unknown Geo() qualifier: %s", PLUGIN_NAME, q.c_str());
   }
 }
 
