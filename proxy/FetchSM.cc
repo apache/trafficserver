@@ -128,12 +128,14 @@ FetchSM::has_body()
   if (check_chunked())
     return true;
 
-  if (check_connection_close())
-    return true;
-
   resp_content_length = hdr->value_get_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-  if (!resp_content_length)
-    return false;
+  if (!resp_content_length) {
+    if (check_connection_close()) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   return true;
 }
