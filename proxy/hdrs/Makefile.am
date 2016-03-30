@@ -59,6 +59,20 @@ load_http_hdr_LDADD = -L. -lhdrs \
   @LIBTCL@
 load_http_hdr_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
+check_PROGRAMS = test_mime
+
+TESTS = test_mime
+
+test_mime_LDADD = -L. -lhdrs \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a
+test_mime_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+
+test_mime_SOURCES = test_mime.cc
+
 #test_UNUSED_SOURCES = \
 #  test_header.cc \
 #  test_urlhash.cc
