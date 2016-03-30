@@ -1926,10 +1926,9 @@ all the different user-agent versions of documents it encounters.
 
    -  ``0`` = default, disable cache and goto origin server
    -  ``1`` = return a 502 error on a cache miss
-   -  ``2`` = serve stale if object's age is under :ts:cv:`proxy.config.http.cache.max_stale_age`, else, goto origin server
-   -  ``3`` = return a 502 error on a cache miss or serve stale on a cache revalidate
-              if object's age is under :ts:cv:`proxy.config.http.cache.max_stale_age`, else, goto origin server
-   -  ``4`` = return a 502 error on either a cache miss or on a revalidate
+   -  ``2`` = serve stale if object's age is under :ts:cv:`proxy.config.http.cache.max_stale_age`, else go to origin server
+   -  ``3`` = return a 502 error on a cache miss or serve stale on a cache revalidate if object's age is under :ts:cv:`proxy.config.http.cache.max_stale_age`, else go to origin server
+   -  ``4`` = return a 502 error on either a cache miss or on a revalidation
 
 Customizable User Response Pages
 ================================
