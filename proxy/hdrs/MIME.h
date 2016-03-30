@@ -194,6 +194,7 @@ struct MIMEFieldBlockImpl : public HdrHeapObjImpl {
   void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap *new_heap);
   size_t strings_length();
+  bool contains(const MIMEField *field);
 
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);

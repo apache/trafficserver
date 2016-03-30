@@ -86,6 +86,7 @@ iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
 proxy/config/records.config.default
 proxy/config/storage.config.default
+proxy/hdrs/test_mime
 proxy/http2/test_Huffmancode
 
 plugins/header_rewrite/header_rewrite_test
