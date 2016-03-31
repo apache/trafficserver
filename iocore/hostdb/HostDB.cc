@@ -1190,7 +1190,7 @@ remove_round_robin(HostDBInfo *r, const char *hostname, IpAddr const &ip)
           hostDB.delete_block(r);
           return false;
         } else {
-          if (diags->on("hostdb")) {
+          if (is_debug_tag_set("hostdb")) {
             int bufsize = rr->good * INET6_ADDRSTRLEN;
             char *rr_ip_list = (char *)alloca(bufsize);
             char *p = rr_ip_list;

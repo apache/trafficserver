@@ -6830,13 +6830,13 @@ ink_sanity_check_stat_structure(void *obj)
 int
 TSIsDebugTagSet(const char *t)
 {
-  return (diags->on(t, DiagsTagType_Debug)) ? 1 : 0;
+  return is_debug_tag_set(t);
 }
 
 void
 TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 {
-  if (diags->on(tag, DiagsTagType_Debug) || (debug_flag && diags->on())) {
+  if (is_debug_tag_set(tag) || (debug_flag && diags->on())) {
     va_list ap;
 
     va_start(ap, format_str);
@@ -6850,7 +6850,7 @@ TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 void
 TSDebug(const char *tag, const char *format_str, ...)
 {
-  if (diags->on(tag, DiagsTagType_Debug)) {
+  if (is_debug_tag_set(tag)) {
     va_list ap;
 
     va_start(ap, format_str);

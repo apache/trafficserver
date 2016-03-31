@@ -2235,7 +2235,9 @@ HttpTransact::issue_revalidate(State *s)
     // the client has the right credentials
     // this cache action is just to get us into the hcoofsr function
     s->cache_info.action = CACHE_DO_UPDATE;
-    DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
+    if (!s->cop_test_page) {
+      DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
+    }
     return;
   }
 
@@ -7973,13 +7975,12 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
   //  s->state_machine->authAdapter.UpdateResponseHeaders(outgoing_response);
   // }
 
-  if (diags->on()) {
+  if (!s->cop_test_page && is_debug_tag_set("http_hdrs")) {
     if (base_response) {
-      if (!s->cop_test_page)
-        DUMP_HEADER("http_hdrs", base_response, s->state_machine_id, "Base Header for Building Response");
+      DUMP_HEADER("http_hdrs", base_response, s->state_machine_id, "Base Header for Building Response");
     }
-    if (!s->cop_test_page)
-      DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response 2");
+
+    DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response 2");
   }
 
   return;
