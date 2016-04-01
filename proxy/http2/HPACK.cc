@@ -903,7 +903,7 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
 {
   uint8_t *cursor = out_buf;
   const uint8_t *const out_buf_end = out_buf + out_buf_len;
-  int64_t written;
+  int64_t written = 0;
 
   ink_assert(http_hdr_type_get(hdr->m_http) != HTTP_TYPE_UNKNOWN);
 
@@ -935,6 +935,10 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
       break;
     case HPACK_EXACT_MATCH:
       written = encode_indexed_header_field(cursor, out_buf_end, result.index);
+      break;
+    default:
+      // Does it happen?
+      written = 0;
       break;
     }
     if (written == HPACK_ERROR_COMPRESSION_ERROR) {
