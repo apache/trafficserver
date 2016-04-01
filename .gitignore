@@ -88,6 +88,8 @@ proxy/config/storage.config.default
 proxy/hdrs/test_mime
 proxy/http2/test_Huffmancode
 proxy/http2/test_Http2DependencyTree
+proxy/http2/test_HPACK
+proxy/http2/hpack-tests/results
 
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/esi/*_test
