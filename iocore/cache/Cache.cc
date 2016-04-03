@@ -1689,8 +1689,10 @@ Vol::handle_recover_from_data(int event, void * /* data ATS_UNUSED */)
       if (s > e)
         s -= round_to_approx_size(doc->len);
       recover_pos -= e - s;
-      if (recover_pos >= skip + len)
+      if (recover_pos >= skip + len) {
+        recover_wrapped = 1;
         recover_pos = start;
+      }
       io.aiocb.aio_nbytes = RECOVERY_SIZE;
       if ((off_t)(recover_pos + io.aiocb.aio_nbytes) > (off_t)(skip + len))
         io.aiocb.aio_nbytes = (skip + len) - recover_pos;
