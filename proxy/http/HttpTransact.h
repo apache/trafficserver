@@ -905,8 +905,9 @@ public:
     int next_hop_scheme; // out
     int orig_scheme;     // pre-mapped scheme
     int method;
-    int cause_of_death_errno; // in
-    HostDBInfo host_db_info;  // in
+    int cause_of_death_errno;     // in
+    Ptr<HostDBInfo> hostdb_entry; // Pointer to the entry we are referencing in hostdb-- to keep our ref
+    HostDBInfo host_db_info;      // in
 
     ink_time_t client_request_time;    // internal
     ink_time_t request_sent_time;      // internal
@@ -1120,7 +1121,7 @@ public:
       via_string[MAX_VIA_INDICES]              = '\0';
 
       memset(user_args, 0, sizeof(user_args));
-      memset(&host_db_info, 0, sizeof(host_db_info));
+      memset((void *)&host_db_info, 0, sizeof(host_db_info));
     }
 
     void

@@ -32,7 +32,7 @@
 //#include "P_Cluster.h"
 #include "I_HostDB.h"
 #include "BaseManager.h"
-#include "P_MultiCache.h"
+#include "P_RefCountCache.h"
 
 /*-------------------------------------------------------------------------
   event_int_to_string
@@ -95,8 +95,8 @@ event_int_to_string(int event, int blen, char *buffer)
   case DNS_EVENT_EVENTS_START:
     return "DNS_EVENT_EVENTS_START";
 
-  case MULTI_CACHE_EVENT_SYNC:
-    return "MULTI_CACHE_EVENT_SYNC";
+  case REFCOUNT_CACHE_EVENT_SYNC:
+    return "REFCOUNT_CACHE_EVENT_SYNC";
 
   case CACHE_EVENT_LOOKUP:
     return "CACHE_EVENT_LOOKUP";

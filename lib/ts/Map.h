@@ -1374,6 +1374,8 @@ public:
 
       This method assumes a @a location is consistent. Be very careful if you modify a @c Location.
 
+      @note This does @b not clean up the removed elements. Use carefully to avoid leaks.
+
       @return @c true if the value was removed, @c false otherwise.
   */
   bool remove(Location const &location);

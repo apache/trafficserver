@@ -695,7 +695,7 @@ cmd_clear(char *cmd)
       Note("unable to open Host Database, CLEAR failed");
       return CMD_FAILED;
     }
-    hostDBProcessor.cache()->reset();
+    hostDBProcessor.cache()->refcountcache->clear();
     if (c_hdb)
       return CMD_OK;
   }
@@ -1918,7 +1918,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
 #if TS_HAS_TESTS
     TransformTest::run();
-    run_HostDBTest();
     //  run_SimpleHttp();
     run_RegressionTest();
 #endif
