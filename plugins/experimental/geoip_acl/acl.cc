@@ -120,7 +120,7 @@ Acl::read_html(const char *fn)
 
 // Implementations for the RegexAcl class
 bool
-RegexAcl::parse_line(const char *filename, const std::string &line, int lineno)
+RegexAcl::parse_line(const char *filename, const std::string &line, int lineno, int &tokens)
 {
   static const char _SEPARATOR[] = " \t\n";
   std::string regex, tmp;
@@ -155,6 +155,7 @@ RegexAcl::parse_line(const char *filename, const std::string &line, int lineno)
           pos2 = line.find_first_of(_SEPARATOR, pos1);
           tmp = line.substr(pos1, pos2 - pos1);
           _acl->add_token(tmp);
+          ++tokens;
         }
         compile(regex, filename, lineno);
         TSDebug(PLUGIN_NAME, "Added regex rule for /%s/", regex.c_str());
@@ -220,7 +221,7 @@ CountryAcl::add_token(const std::string &str)
 }
 
 void
-CountryAcl::read_regex(const char *fn)
+CountryAcl::read_regex(const char *fn, int &tokens)
 {
   std::ifstream f;
   int lineno = 0;
@@ -234,7 +235,7 @@ CountryAcl::read_regex(const char *fn)
       getline(f, line);
       ++lineno;
       acl = new RegexAcl(new CountryAcl());
-      if (acl->parse_line(fn, line, lineno)) {
+      if (acl->parse_line(fn, line, lineno, tokens)) {
         if (NULL == _regexes) {
           _regexes = acl;
         } else {
@@ -255,6 +256,9 @@ CountryAcl::read_regex(const char *fn)
 bool
 CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
 {
+  bool ret = _allow;
+
+  TSDebug(PLUGIN_NAME, "CountryAcl::eval() called, default ACL is %s", ret ? "allow" : "deny");
   // If there are regex rules, they take priority first. If a regex matches, we will
   // honor it's eval() rule. If no regexes matches, fall back on the default (which is
   // "allow" if nothing else is specified).
@@ -269,16 +273,19 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
         return acl->eval(rri, txnp);
       }
     } while ((acl = acl->next()));
+    ret = !_allow; // Now we invert the default since no regexes matched
   }
 
   // None of the regexes (if any) matched, so fallback to the remap defaults if there are any.
   int iso = country_id_by_addr(TSHttpTxnClientAddrGet(txnp));
 
-  if ((iso <= 0) || (!_iso_country_codes[iso])) {
-    return !_allow;
+  if ((iso <= 0) || !_iso_country_codes[iso]) {
+    TSDebug(PLUGIN_NAME, "ISO not found in table, returning %d", !ret);
+    return !ret;
   }
 
-  return _allow;
+  TSDebug(PLUGIN_NAME, "ISO was found in table, or -1, returning %d", ret);
+  return ret;
 }
 
 int
@@ -288,11 +295,11 @@ CountryAcl::process_args(int argc, char *argv[])
 
   for (int i = 3; i < argc; ++i) {
     if (!strncmp(argv[i], "allow", 5)) {
-      _allow = true;
+      set_allow(true);
     } else if (!strncmp(argv[i], "deny", 4)) {
-      _allow = false;
+      set_allow(false);
     } else if (!strncmp(argv[i], "regex::", 7)) {
-      read_regex(argv[i] + 7);
+      read_regex(argv[i] + 7, tokens);
     } else if (!strncmp(argv[i], "html::", 6)) {
       read_html(argv[i] + 6);
     } else { // ISO codes assumed for the rest

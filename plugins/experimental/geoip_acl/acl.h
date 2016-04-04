@@ -51,7 +51,7 @@ public:
   Acl() : _allow(true), _added_tokens(0) {}
   virtual ~Acl() {}
   // These have to be implemented for each ACL type
-  virtual void read_regex(const char *fn) = 0;
+  virtual void read_regex(const char *fn, int &tokens) = 0;
   virtual int process_args(int argc, char *argv[]) = 0;
   virtual bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const = 0;
   virtual void add_token(const std::string &str) = 0;
@@ -83,6 +83,8 @@ protected:
   std::string _html;
   bool _allow;
   int _added_tokens;
+
+  // Class members
   static GeoDBHandle _geoip;
   static GeoDBHandle _geoip6;
 };
@@ -119,7 +121,7 @@ public:
   }
 
   void append(RegexAcl *ra);
-  bool parse_line(const char *filename, const std::string &line, int lineno);
+  bool parse_line(const char *filename, const std::string &line, int lineno, int &tokens);
 
 private:
   bool compile(const std::string &str, const char *filename, int lineno);
@@ -135,7 +137,7 @@ class CountryAcl : public Acl
 {
 public:
   CountryAcl() : _regexes(NULL) { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
-  void read_regex(const char *fn);
+  void read_regex(const char *fn, int &tokens);
   int process_args(int argc, char *argv[]);
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const;
   void add_token(const std::string &str);
