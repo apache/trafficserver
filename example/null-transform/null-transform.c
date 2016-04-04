@@ -259,13 +259,10 @@ transformable(TSHttpTxn txnp)
 
   TSDebug("null-transform", "Entering transformable()");
 
-  TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
-  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
-  retv = (resp_status == TS_HTTP_STATUS_OK);
-
-  if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
-    TSError("[null-transform] Error releasing MLOC while checking "
-            "header status");
+  if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+    resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+    retv = (resp_status == TS_HTTP_STATUS_OK);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   }
 
   TSDebug("null-transform", "Exiting transformable with return %d", retv);
