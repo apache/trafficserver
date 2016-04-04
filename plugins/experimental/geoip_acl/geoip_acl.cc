@@ -105,6 +105,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     Acl *a = static_cast<Acl *>(ih);
 
     if (!a->eval(rri, rh)) {
+      TSDebug(PLUGIN_NAME, "denying request");
       TSHttpTxnSetHttpRetStatus((TSHttpTxn)rh, (TSHttpStatus)403);
       a->send_html((TSHttpTxn)rh);
     }
