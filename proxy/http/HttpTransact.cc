@@ -210,19 +210,25 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
     s->parent_result.r = PARENT_DIRECT;
-  } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting &&
-             s->parent_result.rec->parent_is_proxy) {
-    s->parent_result.r = PARENT_DIRECT;
+  } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
+    s->parent_params->findParent(&s->request_data, &s->parent_result);
+    if (s->parent_result.rec == NULL || s->parent_result.rec->parent_is_proxy) {
+      DebugTxn("http_trans", "request not cacheable, so bypass parent");
+      s->parent_result.r = PARENT_DIRECT;
+    }
   } else if (s->http_config_param->uncacheable_requests_bypass_parent && s->http_config_param->no_dns_forward_to_parent == 0 &&
-             !HttpTransact::is_request_cache_lookupable(s) && s->parent_result.rec->parent_is_proxy) {
+             !HttpTransact::is_request_cache_lookupable(s)) {
     // request not lookupable and cacheable, so bypass parent if the parent is not an origin server.
     // Note that the configuration of the proxy as well as the request
     // itself affects the result of is_request_cache_lookupable();
     // we are assuming both child and parent have similar configuration
     // with respect to whether a request is cacheable or not.
     // For example, the cache_urls_that_look_dynamic variable.
-    DebugTxn("http_trans", "request not cacheable, so bypass parent");
-    s->parent_result.r = PARENT_DIRECT;
+    s->parent_params->findParent(&s->request_data, &s->parent_result);
+    if (s->parent_result.rec == NULL || s->parent_result.rec->parent_is_proxy) {
+      DebugTxn("http_trans", "request not cacheable, so bypass parent");
+      s->parent_result.r = PARENT_DIRECT;
+    }
   } else {
     switch (s->parent_result.r) {
     case PARENT_UNDEFINED:
