@@ -1125,10 +1125,9 @@ Log::trace_va(bool in, const sockaddr *peer_addr, uint16_t peer_port, const char
   char ip[INET6_ADDRSTRLEN];
   ats_ip_ntop(peer_addr, ip, sizeof(ip));
 
-  struct timeval tp;
-  ink_gethrtimeofday(&tp, NULL);
+  struct timeval tp = ink_gettimeofday();
 
-  Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ", (int)tp.tv_sec, (int)(tp.tv_usec / 1000), (uint64_t)pthread_self(),
+  Log::error("[%9d.%03d] Trace {0x%" PRIx64 "} %s %s:%d: ", (int)tp.tv_sec, (int)(tp.tv_usec / 1000), (uint64_t)ink_thread_self(),
              in ? "RECV" : "SEND", ip, peer_port);
   Log::va_error(format_string, ap);
   Log::error("[End Trace]\n");

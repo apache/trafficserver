@@ -186,7 +186,7 @@ cop_log(int priority, const char *format, ...)
     struct timeval now;
     double now_f;
 
-    gettimeofday(&now, NULL);
+    now = ink_gettimeofday();
     now_f = now.tv_sec + now.tv_usec / 1000000.0f;
 
     fprintf(stdout, "<%.4f> [%s]: ", now_f, priority_name(priority));
@@ -418,14 +418,14 @@ safe_kill(const char *lockfile_name, const char *pname, bool group)
 static ink_hrtime
 milliseconds(void)
 {
-  struct timeval curTime;
+  struct timeval now;
 
   cop_log_trace("Entering milliseconds()\n");
-  ink_gethrtimeofday(&curTime, NULL);
+  now = ink_gettimeofday();
   // Make liberal use of casting to ink_hrtime to ensure the
   //  compiler does not truncate our result
   cop_log_trace("Leaving milliseconds()\n");
-  return ((ink_hrtime)curTime.tv_sec * 1000) + ((ink_hrtime)curTime.tv_usec / 1000);
+  return ((ink_hrtime)now.tv_sec * 1000) + ((ink_hrtime)now.tv_usec / 1000);
 }
 
 static void

@@ -205,16 +205,6 @@ ink_hrtime_to_timeval(ink_hrtime t)
   return (tv);
 }
 
-static inline int
-ink_hrtime_to_timeval2(ink_hrtime t, struct timeval *tv)
-{
-  int64_t usecs = ink_hrtime_to_usec(t);
-  tv->tv_sec = usecs / 1000000;
-  tv->tv_usec = usecs % 1000000;
-  return 0;
-}
-
-
 /*
    using Jan 1 1970 as the base year, instead of Jan 1 1601,
    which translates to (365 + 0.25)369*24*60*60 seconds   */
@@ -239,12 +229,6 @@ static inline struct timeval
 ink_gettimeofday()
 {
   return ink_hrtime_to_timeval(ink_get_hrtime_internal());
-}
-
-static inline int
-ink_gethrtimeofday(struct timeval *tp, void *)
-{
-  return ink_hrtime_to_timeval2(ink_get_hrtime_internal(), tp);
 }
 
 static inline int
