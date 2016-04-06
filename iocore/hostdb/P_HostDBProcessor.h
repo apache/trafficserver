@@ -217,10 +217,11 @@ struct HostDBCache : public MultiCache<HostDBInfo> {
 
   // This accounts for an average of 2 HostDBInfo per DNS cache (for round-robin etc.)
   // In addition, we can do a padding for additional SRV records storage.
+  // In addition, we add 120 for hostname storage (since we now always do that)
   virtual size_t
   estimated_heap_bytes_per_entry() const
   {
-    return sizeof(HostDBInfo) * 2 + 512 * hostdb_srv_enabled;
+    return sizeof(HostDBInfo) * 2 + 512 * hostdb_srv_enabled + 120;
   }
 
   // Map to contain all of the host file overrides, initialize it to empty
