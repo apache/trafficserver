@@ -1007,14 +1007,17 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
 
   DebugHttp2Stream(ua_session, stream->get_id(), "Send HEADERS frame");
 
-  http2_convert_header_from_1_1_to_2(resp_header);
-  buf_len = resp_header->length_get() * 2; // Make it double just in case
+  HTTPHdr h2_hdr;
+  http2_generate_h2_header_from_1_1(resp_header, &h2_hdr);
+  buf_len = h2_hdr.length_get() * 2; // Make it double just in case
   buf = (uint8_t *)ats_malloc(buf_len);
   if (buf == NULL) {
+    h2_hdr.destroy();
     return;
   }
-  Http2ErrorCode result = http2_encode_header_blocks(resp_header, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle));
+  Http2ErrorCode result = http2_encode_header_blocks(&h2_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle));
   if (result != HTTP2_ERROR_NO_ERROR) {
+    h2_hdr.destroy();
     ats_free(buf);
     return;
   }
@@ -1023,7 +1026,7 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
   if (header_blocks_size <= BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]) - HTTP2_FRAME_HEADER_LEN) {
     payload_length = header_blocks_size;
     flags |= HTTP2_FLAGS_HEADERS_END_HEADERS;
-    if (resp_header->presence(MIME_PRESENCE_CONTENT_LENGTH) && resp_header->get_content_length() == 0) {
+    if (h2_hdr.presence(MIME_PRESENCE_CONTENT_LENGTH) && h2_hdr.get_content_length() == 0) {
       flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
     }
   } else {
@@ -1057,6 +1060,7 @@ Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
     sent += payload_length;
   }
 
+  h2_hdr.destroy();
   ats_free(buf);
 }
 
