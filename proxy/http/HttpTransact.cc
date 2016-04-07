@@ -6463,13 +6463,17 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 
 // bool HttpTransact::is_request_retryable
 //
-//   If we started a POST/PUT tunnel then we can
-//    not retry failed requests
+// In the general case once bytes have been sent on the wire the request cannot be retried.
+// The reason we cannot retry is that the rfc2616 does not make any gaurantees about the
+// retry-ability of a request. In fact in the reverse proxy case it is quite common for GET
+// requests on the origin to fire tracking events etc. So, as a proxy once we have sent bytes
+// on the wire to the server we cannot gaurantee that the request is safe to redispatch to another server.
 //
 bool
 HttpTransact::is_request_retryable(State *s)
 {
-  if (s->hdr_info.request_body_start == true) {
+  // If the connection was established-- we cannot retry
+  if (s->state_machine->server_request_hdr_bytes > 0) {
     return false;
   }
 
