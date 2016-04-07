@@ -203,7 +203,8 @@ MultiCacheBase::initialize(Store *astore, char *afilename, int aelements, int ab
     astore->free(*store);
     delete store;
     store = NULL;
-    Warning("Configured store too small (actual=%d required=%d), unable to reconfigure", got * STORE_BLOCK_SIZE, blocks * STORE_BLOCK_SIZE);
+    Warning("Configured store too small (actual=%d required=%d), unable to reconfigure", got * STORE_BLOCK_SIZE,
+            blocks * STORE_BLOCK_SIZE);
     return -3;
   }
   totalsize = (STORE_BLOCK_SIZE)*blocks;
