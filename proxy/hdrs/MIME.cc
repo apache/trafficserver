@@ -473,8 +473,7 @@ mime_hdr_set_accelerator_slotnum(MIMEHdrImpl *mh, int32_t slot_id, uint32_t slot
 inline void
 mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
 {
-  int slot_id;
-  ptrdiff_t slot_num;
+  int slot_id, slot_num;
   if (field->m_wks_idx < 0)
     return;
 
@@ -482,20 +481,11 @@ mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
 
   slot_id = hdrtoken_index_to_slotid(field->m_wks_idx);
   if (slot_id != MIME_SLOTID_NONE) {
-    if (mh->m_first_fblock.contains(field)) {
-      slot_num = (field - &(mh->m_first_fblock.m_field_slots[0]));
-      // constains() assure that the field is in the block, and the calculated
-      // slot_num will be between 0 and 15, which seem valid.
-      // However, strangely, this function regards slot number 14 and 15 as
-      // unknown for some reason that is not clear. It might be a bug.
-      // The block below is left to keep the original behavior. See also TS-4316.
-      if (slot_num >= MIME_FIELD_SLOTNUM_UNKNOWN) {
-        slot_num = MIME_FIELD_SLOTNUM_UNKNOWN;
-      }
-    } else {
-      slot_num = MIME_FIELD_SLOTNUM_UNKNOWN;
-    }
-    mime_hdr_set_accelerator_slotnum(mh, slot_id, slot_num);
+    slot_num = (field - &(mh->m_first_fblock.m_field_slots[0]));
+    if ((slot_num >= 0) && (slot_num < MIME_FIELD_SLOTNUM_UNKNOWN))
+      mime_hdr_set_accelerator_slotnum(mh, slot_id, slot_num);
+    else
+      mime_hdr_set_accelerator_slotnum(mh, slot_id, MIME_FIELD_SLOTNUM_UNKNOWN);
   }
 }
 
@@ -1650,11 +1640,10 @@ mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field)
 
   slots_so_far = 0;
   for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
-    if (fblock->contains(field)) {
-      MIMEField *first = &(fblock->m_field_slots[0]);
-      ptrdiff_t block_slot = field - first; // in units of MIMEField
-      return slots_so_far + block_slot;
-    }
+    MIMEField *first = &(fblock->m_field_slots[0]);
+    int block_slot = (int)(field - first); // in units of MIMEField
+    if ((block_slot >= 0) && (block_slot < MIME_FIELD_BLOCK_SLOTS))
+      return (slots_so_far + block_slot);
     slots_so_far += MIME_FIELD_BLOCK_SLOTS;
   }
   return -1;
@@ -3624,14 +3613,6 @@ MIMEFieldBlockImpl::strings_length()
     }
   }
   return ret;
-}
-
-bool
-MIMEFieldBlockImpl::contains(const MIMEField *field)
-{
-  MIMEField *first = &(m_field_slots[0]);
-  MIMEField *last = &(m_field_slots[MIME_FIELD_BLOCK_SLOTS - 1]);
-  return (field >= first) && (field <= last);
 }
 
 void
