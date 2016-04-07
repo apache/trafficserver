@@ -5418,7 +5418,6 @@ HttpSM::do_setup_post_tunnel(HttpVC_t to_vc_type)
     IOBufferReader *buf_start = post_buffer->alloc_reader();
     int64_t post_bytes = chunked ? INT64_MAX : t_state.hdr_info.request_content_length;
 
-    t_state.hdr_info.request_body_start = true;
     // Note: Many browsers, Netscape and IE included send two extra
     //  bytes (CRLF) at the end of the post.  We just ignore those
     //  bytes since the sending them is not spec
