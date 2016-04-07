@@ -1370,7 +1370,6 @@ HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around
     void *host_dest = hostDB.alloc(&i->hostname_offset, s_size);
     if (host_dest) {
       ink_strlcpy((char *)host_dest, aname, s_size);
-      *((char *)host_dest + s_size) = '\0';
     } else {
       Warning("Out of room in hostdb for hostname (data area full!)");
       hostDB.delete_block(i);
