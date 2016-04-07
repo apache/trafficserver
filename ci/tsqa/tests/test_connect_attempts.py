@@ -38,36 +38,6 @@ def thread_die_on_connect(sock):
     sock.close()
 
 
-def thread_delayed_accept_after_connect(sock):
-    '''
-    Thread to sleep a decreasing amount of time before requests
-
-    sleep times: 2 -> 1 -> 0
-    '''
-    sock.listen(0)
-    sleep_time = 2
-    num_requests = 0
-    # poll
-    while True:
-        select.select([sock], [], [])
-        time.sleep(sleep_time)
-        try:
-            connection, addr = sock.accept()
-            connection.send((
-                'HTTP/1.1 200 OK\r\n'
-                'Content-Length: {body_len}\r\n'
-                'Content-Type: text/html; charset=UTF-8\r\n'
-                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(num_requests)), body=num_requests)
-            ))
-            connection.close()
-            num_requests += 1
-        except Exception as e:
-            print 'connection died!', e
-            pass
-        if sleep_time > 0:
-            sleep_time -= 1
-
-
 def thread_reset_after_accept(sock):
     sock.listen(0)
     first = True
@@ -174,11 +144,6 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
         t.daemon = True
         t.start()
 
-        sock = _add_sock('delayed_accept_after_connect')
-        t = threading.Thread(target=thread_delayed_accept_after_connect, args=(sock,))
-        t.daemon = True
-        t.start()
-
         sock = _add_sock('slow_response')
         t = threading.Thread(target=thread_slow_response, args=(sock,))
         t.daemon = True
@@ -234,16 +199,6 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
         url = 'http://127.0.0.1:{0}/reset_after_accept/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
         ret = requests.get(url)
         self.assertEqual(ret.status_code, 502)
-
-    def test_delayed_accept_after_connect_origin(self):
-        '''Verify that we get 200s from origins that delayed_accept_after_connect'''
-        url = 'http://127.0.0.1:{0}/delayed_accept_after_connect/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
-        ret = requests.get(url)
-        # make sure it worked
-        self.assertEqual(ret.status_code, 200)
-        # make sure its not the first one (otherwise the test messed up somehow)
-        print ret.text
-        self.assertGreater(int(ret.text), 0)
 
     def test_slow_response(self):
         '''Verify that we get 5xx from origins that take longer than acceptable, since we will not retry them'''
