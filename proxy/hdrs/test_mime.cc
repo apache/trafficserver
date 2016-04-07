@@ -22,7 +22,7 @@
  */
 
 #include <ts/TestBox.h>
-#include "P_Eventsystem.h"
+#include "P_EventSystem.h"
 #include "MIME.h"
 
 REGRESSION_TEST(MIME)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
@@ -55,7 +55,7 @@ REGRESSION_TEST(MIME)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatu
 int
 main(int argc, char *argv[])
 {
-  Thread *main_thread = new EThread;
+  Thread *main_thread = new EThread();
   main_thread->set_specific();
   mime_init();
 
