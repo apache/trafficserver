@@ -1126,13 +1126,12 @@ struct MultiCacheHeapGC : public Continuation {
       char *after = mc->heap + mc->heap_used[mc->heap_halfspace];
 
       // sync new heap data and header (used)
-
       if (after - before > 0) {
         ink_assert(!ats_msync(before, after - before, mc->heap + mc->totalsize, MS_SYNC));
         ink_assert(!ats_msync((char *)mc->mapped_header, STORE_BLOCK_SIZE, (char *)mc->mapped_header + STORE_BLOCK_SIZE, MS_SYNC));
       }
-      // update table to point to new entries
 
+      // update table to point to new entries
       for (int i = 0; i < n_offsets; i++) {
         int *i1, i2;
         // BAD CODE GENERATION ON THE ALPHA
@@ -1411,3 +1410,4 @@ stealStore(Store &s, int blocks)
     d++;
   }
 }
+

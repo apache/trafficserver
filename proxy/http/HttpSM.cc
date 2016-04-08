@@ -2110,10 +2110,10 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
     // Leave ret unassigned, so we don't overwrite the host_db_info
   }
 
-  if (r && !r->failed()) {
-    ink_time_t now                    = ink_cluster_time();
-    HostDBInfo *ret                   = NULL;
-    t_state.dns_info.lookup_success   = true;
+  if (r && !r->is_failed()) {
+    ink_time_t now = ink_cluster_time();
+    HostDBInfo *ret = NULL;
+    t_state.dns_info.lookup_success = true;
     t_state.dns_info.lookup_validated = true;
 
     HostDBRoundRobin *rr = r->round_robin ? r->rr() : NULL;

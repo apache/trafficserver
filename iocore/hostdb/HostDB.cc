@@ -577,7 +577,7 @@ HostDBContinuation::refresh_MD5()
 static bool
 reply_to_cont(Continuation *cont, HostDBInfo *r, bool is_srv = false)
 {
-  if (r == NULL || r->is_srv != is_srv || r->failed()) {
+  if (r == NULL || r->is_srv != is_srv || r->is_failed()) {
     cont->handleEvent(is_srv ? EVENT_SRV_LOOKUP : EVENT_HOST_DB_LOOKUP, NULL);
     return false;
   }
@@ -666,7 +666,7 @@ probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout)
       if (r->is_deleted()) {
         Debug("hostdb", "HostDB entry was set as deleted");
         return NULL;
-      } else if (r->failed()) {
+      } else if (r->is_failed()) {
         Debug("hostdb", "'%.*s' failed", md5.host_len, md5.host_name);
         if (r->is_ip_fail_timeout()) {
           Debug("hostdb", "fail timeout %u", r->ip_interval());
@@ -782,7 +782,7 @@ HostDBProcessor::getby(Continuation *cont, const char *hostname, int len, sockad
         // If we can get the lock and a level 1 probe succeeds, return
         HostDBInfo *r = probe(bmutex, md5, aforce_dns);
         if (r) {
-          if (r->failed() && hostname)
+          if (r->is_failed() && hostname)
             loop = check_for_retry(md5.db_mark, host_res_style);
           if (!loop) {
             // No retry -> final result. Return it.
@@ -977,7 +977,7 @@ HostDBProcessor::getbyname_imm(Continuation *cont, process_hostdb_info_pfn proce
       // do a level 1 probe for immediate result.
       HostDBInfo *r = probe(bucket_mutex, md5, false);
       if (r) {
-        if (r->failed()) // fail, see if we should retry with alternate
+        if (r->is_failed()) // fail, see if we should retry with alternate
           loop = check_for_retry(md5.db_mark, opt.host_res_style);
         if (!loop) {
           // No retry -> final result. Return it.
@@ -1381,6 +1381,7 @@ HostDBContinuation::dnsPendingEvent(int event, Event *e)
   }
 }
 
+// for a new HostDBInfo `r`, "inherit" from the old version of yourself if it exists in `old_rr_data`
 static int
 restore_info(HostDBInfo *r, HostDBInfo *old_r, HostDBInfo &old_info, HostDBRoundRobin *old_rr_data)
 {
@@ -1461,33 +1462,41 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       }
     }
 #endif
-    int n = 0, nn = 0;
-    void *first = 0;
-    uint8_t af  = e ? e->ent.h_addrtype : AF_UNSPEC; // address family
+    int valid_records = 0;
+    void *first_record = 0;
+    uint8_t af = e ? e->ent.h_addrtype : AF_UNSPEC; // address family
+    // if this is an RR response, we need to find the first record, as well as the
+    // total number of records
     if (is_rr) {
       if (is_srv() && !failed) {
-        n = e->srv_hosts.srv_host_count;
+        valid_records = e->srv_hosts.srv_host_count;
       } else {
         void *ptr; // tmp for current entry.
-        for (; nn < HOST_DB_MAX_ROUND_ROBIN_INFO && 0 != (ptr = e->ent.h_addr_list[nn]); ++nn) {
+        for (int total_records = 0; total_records < HOST_DB_MAX_ROUND_ROBIN_INFO && 0 != (ptr = e->ent.h_addr_list[total_records]);
+             ++total_records) {
           if (is_addr_valid(af, ptr)) {
-            if (!first)
-              first = ptr;
-            ++n;
+            if (!first_record) {
+              first_record = ptr;
+            }
+            // If we have found some records which are invalid, lets just shuffle around them.
+            // This way we'll end up with e->ent.h_addr_list with all the valid responses at
+            // the first `valid_records` slots
+            if (valid_records != total_records) {
+              e->ent.h_addr_list[valid_records] = e->ent.h_addr_list[total_records];
+            }
+
+            ++valid_records;
           } else {
             Warning("Zero address removed from round-robin list for '%s'", md5.host_name);
           }
-          // what's the point of @a n? Should there be something like
-          // if (n != nn) e->ent.h_addr_list[n] = e->ent->h_addr_list[nn];
-          // with a final copy of the terminating null? - AMC
         }
-        if (!first) {
+        if (!first_record) {
           failed = true;
           is_rr  = false;
         }
       }
     } else if (!failed) {
-      first = e->ent.h_addr_list[0];
+      first_record = e->ent.h_addr_list[0];
     } // else first is 0.
 
     HostDBInfo *r = NULL;
@@ -1499,8 +1508,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     if (failed && old_r && old_r->serve_stale_but_revalidate()) {
       r = old_r;
     } else if (is_byname()) {
-      if (first)
-        ip_addr_set(tip, af, first);
+      if (first_record)
+        ip_addr_set(tip, af, first_record);
       r = lookup_done(tip, md5.host_name, is_rr, ttl_seconds, failed ? 0 : &e->srv_hosts);
     } else if (is_srv()) {
       if (!failed)
@@ -1520,25 +1529,24 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     ink_assert(r && r->app.allotment.application1 == 0 && r->app.allotment.application2 == 0);
 
     if (is_rr) {
-      const int rrsize          = HostDBRoundRobin::size(n, e->srv_hosts.srv_hosts_length);
+      const int rrsize = HostDBRoundRobin::size(valid_records, e->srv_hosts.srv_hosts_length);
       HostDBRoundRobin *rr_data = (HostDBRoundRobin *)hostDB.alloc(&r->app.rr.offset, rrsize);
 
-      Debug("hostdb", "allocating %d bytes for %d RR at %p %d", rrsize, n, rr_data, r->app.rr.offset);
+      Debug("hostdb", "allocating %d bytes for %d RR at %p %d", rrsize, valid_records, rr_data, r->app.rr.offset);
 
       if (rr_data) {
         rr_data->length = rrsize;
-        int i = 0, ii = 0;
         if (is_srv()) {
-          int skip  = 0;
-          char *pos = (char *)rr_data + sizeof(HostDBRoundRobin) + n * sizeof(HostDBInfo);
+          int skip = 0;
+          char *pos = (char *)rr_data + sizeof(HostDBRoundRobin) + valid_records * sizeof(HostDBInfo);
           SRV *q[HOST_DB_MAX_ROUND_ROBIN_INFO];
-          ink_assert(n <= HOST_DB_MAX_ROUND_ROBIN_INFO);
+          ink_assert(valid_records <= HOST_DB_MAX_ROUND_ROBIN_INFO);
           // sort
-          for (i = 0; i < n; ++i) {
+          for (int i = 0; i < valid_records; ++i) {
             q[i] = &e->srv_hosts.hosts[i];
           }
-          for (i = 0; i < n; ++i) {
-            for (ii = i + 1; ii < n; ++ii) {
+          for (int i = 0; i < valid_records; ++i) {
+            for (int ii = i + 1; ii < valid_records; ++ii) {
               if (*q[ii] < *q[i]) {
                 SRV *tmp = q[i];
                 q[i]     = q[ii];
@@ -1547,8 +1555,8 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
             }
           }
 
-          for (i = 0; i < n; ++i) {
-            SRV *t           = q[i];
+          for (int i = 0; i < valid_records; ++i) {
+            SRV *t = q[i];
             HostDBInfo &item = rr_data->info[i];
 
             memset(&item, 0, sizeof(item));
@@ -1578,13 +1586,13 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
             item.app.allotment.application2 = 0;
             Debug("dns_srv", "inserted SRV RR record [%s] into HostDB with TTL: %d seconds", t->host, ttl_seconds);
           }
-          rr_data->good = rr_data->rrcount = n;
-          rr_data->current                 = 0;
+          rr_data->good = rr_data->rrcount = valid_records;
+          rr_data->current = 0;
 
           // restore
           if (old_rr_data) {
-            for (i = 0; i < rr_data->rrcount; ++i) {
-              for (ii = 0; ii < old_rr_data->rrcount; ++ii) {
+            for (int i = 0; i < rr_data->rrcount; ++i) {
+              for (int ii = 0; ii < old_rr_data->rrcount; ++ii) {
                 if (rr_data->info[i].data.srv.key == old_rr_data->info[ii].data.srv.key) {
                   char *new_host = rr_data->info[i].srvname(rr_data);
                   char *old_host = old_rr_data->info[ii].srvname(old_rr_data);
@@ -1594,30 +1602,27 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
               }
             }
           }
-        } else {
-          for (ii = 0; ii < nn; ++ii) {
-            if (is_addr_valid(af, e->ent.h_addr_list[ii])) {
-              HostDBInfo &item = rr_data->info[i];
-              memset(&item, 0, sizeof(item));
-              ip_addr_set(item.ip(), af, e->ent.h_addr_list[ii]);
-              item.full            = 1;
-              item.round_robin     = 0;
-              item.round_robin_elt = 1;
-              item.reverse_dns     = 0;
-              item.is_srv          = 0;
-              item.md5_high        = r->md5_high;
-              item.md5_low         = r->md5_low;
-              item.md5_low_low     = r->md5_low_low;
-              item.hostname_offset = 0;
-              if (!restore_info(&item, old_r, old_info, old_rr_data)) {
-                item.app.allotment.application1 = 0;
-                item.app.allotment.application2 = 0;
-              }
-              ++i;
+        } else { // Otherwise this is a regular dns response
+          for (int i = 0; i < valid_records; ++i) {
+            HostDBInfo &item = rr_data->info[i];
+            memset(&item, 0, sizeof(item));
+            ip_addr_set(item.ip(), af, e->ent.h_addr_list[i]);
+            item.full = 1;
+            item.round_robin = 0;
+            item.round_robin_elt = 1;
+            item.reverse_dns = 0;
+            item.is_srv = 0;
+            item.md5_high = r->md5_high;
+            item.md5_low = r->md5_low;
+            item.md5_low_low = r->md5_low_low;
+            item.hostname_offset = 0;
+            if (!restore_info(&item, old_r, old_info, old_rr_data)) {
+              item.app.allotment.application1 = 0;
+              item.app.allotment.application2 = 0;
             }
           }
-          rr_data->good = rr_data->rrcount = n;
-          rr_data->current                 = 0;
+          rr_data->good = rr_data->rrcount = valid_records;
+          rr_data->current = 0;
         }
       } else {
         ink_assert(!"out of room in hostdb data area");
@@ -1834,7 +1839,7 @@ HostDBContinuation::iterateEvent(int event, Event *e)
       for (unsigned int l = 0; l < hostDB.levels; ++l) {
         HostDBInfo *r =
           reinterpret_cast<HostDBInfo *>(hostDB.data + hostDB.level_offset[l] + hostDB.bucketsize[l] * current_iterate_pos);
-        if (!r->deleted && !r->failed()) {
+        if (!r->deleted && !r->is_failed()) {
           action.continuation->handleEvent(EVENT_INTERVAL, static_cast<void *>(r));
         }
       }

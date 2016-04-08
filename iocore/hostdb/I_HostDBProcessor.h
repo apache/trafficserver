@@ -170,7 +170,7 @@ struct HostDBInfo {
 
   /** Indicate that the HostDBInfo is BAD and should be deleted. */
   void
-  bad()
+  is_bad()
   {
     full = 0;
   }
@@ -276,7 +276,7 @@ struct HostDBInfo {
    * Given the current time `now` and the fail_window, determine if this real is alive
    */
   bool
-  alive(ink_time_t now, int32_t fail_window)
+  is_alive(ink_time_t now, int32_t fail_window)
   {
     unsigned int last_failure = app.http_data.last_failure;
 
@@ -295,11 +295,13 @@ struct HostDBInfo {
       return false;
     }
   }
+
   bool
-  failed()
+  is_failed()
   {
     return !((is_srv && data.srv.srv_offset) || (reverse_dns && data.hostname_offset) || ats_is_ip(ip()));
   }
+
   void
   set_failed()
   {
@@ -316,6 +318,7 @@ struct HostDBInfo {
   {
     deleted = 1;
   }
+
   bool
   is_deleted() const
   {
@@ -484,21 +487,6 @@ struct HostDBProcessor : public Processor {
   {
     return getby(cont, NULL, 0, aip, false, HOST_RES_NONE, 0);
   }
-
-#if 0
-  /**
-    If you were unable to connect to an IP address associated with a
-    particular hostname, call this function and that IP address will
-    be marked "bad" and if the host is using round-robin DNS, next time
-    you will get a different IP address.
-
-  */
-  Action *failed_connect_on_ip_for_name(
-    Continuation * cont,
-    sockaddr const* aip,
-    const char *hostname, int len = 0
-  );
-#endif
 
   /** Set the application information (fire-and-forget). */
   void
