@@ -25,6 +25,7 @@
 */
 
 #include <stdarg.h>
+#include "ts/ink_apidefs.h"
 #include "ts/Regression.h"
 
 namespace

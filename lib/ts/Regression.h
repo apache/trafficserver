@@ -79,7 +79,7 @@ struct RegressionTest {
   static int ran_tests;
   static DFA dfa;
   static RegressionTest *current;
-  static int run(char *name = NULL);
+  static int run(const char *name = NULL);
   static int run_some();
   static int check_status();
 };

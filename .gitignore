@@ -77,6 +77,7 @@ lib/ts/test_Map
 lib/ts/test_Vec
 lib/ts/test_geometry
 lib/ts/test_Regex
+lib/ts/test_PriorityQueue
 lib/ts/test_X509HostnameValidator
 lib/perl/lib/Apache/TS.pm
 
