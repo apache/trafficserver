@@ -26,7 +26,13 @@ URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/clang-form
 
 TAR=${TAR:-tar}
 CURL=${CURL:-curl}
-SHASUM=${SHASUM:-shasum}
+
+# default to using native sha1sum command when available
+if [ $(which sha1sum) ] ; then
+  SHASUM=${SHASUM:-sha1sum}
+else
+  SHASUM=${SHASUM:-shasum}
+fi
 
 ARCHIVE=$ROOT/$(basename ${URL})
 
