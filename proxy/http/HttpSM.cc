@@ -1775,7 +1775,8 @@ HttpSM::state_read_server_response_header(int event, void *data)
   /////////////////////
   // tokenize header //
   /////////////////////
-  MIMEParseResult state = t_state.hdr_info.server_response.parse_resp(&http_parser, server_buffer_reader, &bytes_used, server_entry->eos);
+  MIMEParseResult state =
+    t_state.hdr_info.server_response.parse_resp(&http_parser, server_buffer_reader, &bytes_used, server_entry->eos);
 
   server_response_hdr_bytes += bytes_used;
 
