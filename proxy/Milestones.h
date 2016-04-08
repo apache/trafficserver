@@ -27,6 +27,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_hrtime.h"
 #include "ts/apidefs.h"
+#include "../lib/ts/ink_hrtime.h"
 
 /////////////////////////////////////////////////////////////
 //
