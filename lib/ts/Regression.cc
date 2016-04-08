@@ -86,7 +86,7 @@ start_test(RegressionTest *t)
 }
 
 int
-RegressionTest::run(char *atest)
+RegressionTest::run(const char *atest)
 {
   if (atest)
     dfa.compile(atest);
