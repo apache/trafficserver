@@ -4109,8 +4109,6 @@ HttpSM::do_hostdb_update_if_necessary()
       char addrbuf[INET6_ADDRPORTSTRLEN];
       DebugSM("http", "[%" PRId64 "] hostdb update marking IP: %s as up", sm_id,
               ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
-      DebugSM("http", "[%" PRId64 "] hostdb update marking IP: %s as up", sm_id,
-              ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
     }
 
     if (t_state.dns_info.srv_lookup_success && t_state.dns_info.srv_app.http_data.last_failure != 0) {
