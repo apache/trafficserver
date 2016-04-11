@@ -1973,6 +1973,7 @@ AC_CONFIG_FILES([
   plugins/cacheurl/Makefile
   plugins/conf_remap/Makefile
   plugins/experimental/Makefile
+  plugins/experimental/acme/Makefile
   plugins/experimental/authproxy/Makefile
   plugins/experimental/background_fetch/Makefile
   plugins/experimental/balancer/Makefile
