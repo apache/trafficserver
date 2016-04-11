@@ -33,7 +33,9 @@
 
 #include "ts/ink_platform.h"
 
+#ifndef STORE_BLOCK_SIZE
 #define STORE_BLOCK_SIZE 8192
+#endif
 #define STORE_BLOCK_SHIFT 13
 #define DEFAULT_HW_SECTOR_SIZE 512
 

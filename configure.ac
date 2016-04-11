@@ -1348,6 +1348,14 @@ AS_IF([test "x$has_128bit_cas" = "x1"], [
   TS_ADDTO(CFLAGS, [-mcx16])
   TS_ADDTO(CXXFLAGS, [-mcx16])
 ])
+AC_MSG_CHECKING([TESTING KERNEL PAGE SIZE])
+kernel_page_size=`getconf PAGE_SIZE`
+AS_IF([test "x${kernel_page_size}" = "x65536"],
+[
+  TS_ADDTO(CXXFLAGS, [-DSTORE_BLOCK_SIZE=65536])
+]
+)
+AC_MSG_RESULT([$kernel_page_size])
 
 # Check for POSIX capabilities library.
 # If we don't find it, disable checking for header.

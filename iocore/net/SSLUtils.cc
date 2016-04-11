@@ -1,3 +1,4 @@
+
 /** @file
 
   @section license License
@@ -121,8 +122,13 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 static int ssl_session_ticket_index = -1;
 #endif
 
+#ifdef SSL_USE_SPINLOCK
+#include "Spinlock.h"
+static Spinlock *spinlock_buf = NULL;
+#else
+static pthread_mutex_t *mutex_buf = NULL;
+#endif
 
-static ink_mutex *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
 
 RecRawStatBlock *ssl_rsb = NULL;
@@ -153,9 +159,17 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
 #endif
 
   if (mode & CRYPTO_LOCK) {
+#ifdef SSL_USE_SPINLOCK
+    spinlock_buf[type].lock();
+#else
     ink_mutex_acquire(&mutex_buf[type]);
+#endif
   } else if (mode & CRYPTO_UNLOCK) {
+#ifdef SSL_USE_SPINLOCK
+    spinlock_buf[type].unlock();
+#else
     ink_mutex_release(&mutex_buf[type]);
+#endif
   } else {
     Debug("ssl", "invalid SSL locking mode 0x%x", mode);
     ink_assert(0);
@@ -831,8 +845,11 @@ SSLInitializeLibrary()
     FIPS_mode_set(mode);
     Debug("ssl", "FIPS_mode: %d", mode);
 #endif
-
+#ifdef SSL_USE_SPINLOCK
+    spinlock_buf = new Spinlock[CRYPTO_num_locks()];
+#else
     mutex_buf = (ink_mutex *)OPENSSL_malloc(CRYPTO_num_locks() * sizeof(ink_mutex));
+#endif
 
     for (int i = 0; i < CRYPTO_num_locks(); i++) {
       ink_mutex_init(&mutex_buf[i], NULL);
