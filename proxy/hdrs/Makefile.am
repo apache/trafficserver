@@ -68,7 +68,8 @@ test_mime_LDADD = -L. -lhdrs \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/proxy/shared/libUglyLogStubs.a
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  @HWLOC_LIBS@
 test_mime_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
 test_mime_SOURCES = test_mime.cc
