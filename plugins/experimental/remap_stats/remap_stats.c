@@ -257,7 +257,7 @@ TSPluginInit(int argc, const char *argv[])
 
   if (argc > 1) {
     int c;
-    optind = 1;
+    optind = 0;
     static const struct option longopts[] = {
       {"post-remap-host", no_argument, NULL, 'P'}, {"persistent", no_argument, NULL, 'p'}, {NULL, 0, NULL, 0}};
 
