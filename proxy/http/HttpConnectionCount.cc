@@ -25,3 +25,4 @@
 
 
 ConnectionCount ConnectionCount::_connectionCount;
+ConnectionCountQueue ConnectionCountQueue::_connectionCount;

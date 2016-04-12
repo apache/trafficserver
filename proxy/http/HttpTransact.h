@@ -840,6 +840,9 @@ public:
     bool is_websocket;
     bool did_upgrade_succeed;
 
+    // Some queue info
+    bool origin_request_queued;
+
     char *internal_msg_buffer;        // out
     char *internal_msg_buffer_type;   // out
     int64_t internal_msg_buffer_size; // out
@@ -959,7 +962,7 @@ public:
         first_dns_lookup(true), backdoor_request(false), cop_test_page(false), parent_params(NULL),
         cache_lookup_result(CACHE_LOOKUP_NONE), next_action(SM_ACTION_UNDEFINED), api_next_action(SM_ACTION_UNDEFINED),
         transact_return_point(NULL), post_remap_upgrade_return_point(NULL), upgrade_token_wks(NULL), is_upgrade_request(false),
-        is_websocket(false), did_upgrade_succeed(false), internal_msg_buffer(NULL), internal_msg_buffer_type(NULL),
+        is_websocket(false), did_upgrade_succeed(false), origin_request_queued(false), internal_msg_buffer(NULL), internal_msg_buffer_type(NULL),
         internal_msg_buffer_size(0), internal_msg_buffer_fast_allocator_size(-1), icp_lookup_success(false), scheme(-1),
         next_hop_scheme(scheme), orig_scheme(scheme), method(0), cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
         client_request_time(UNDEFINED_TIME), request_sent_time(UNDEFINED_TIME), response_received_time(UNDEFINED_TIME),
