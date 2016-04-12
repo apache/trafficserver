@@ -53,7 +53,11 @@ class KAHandler(SocketServer.BaseRequestHandler):
                 log.info('Client disconnected: {timeout}seconds'.format(timeout=time.time() - start))
                 break
             body = conn_id
-            time.sleep(2)
+            if 'timeout' in data:
+                print 'sleep for a long time!'
+                time.sleep(4)
+            else:
+                time.sleep(2)
             resp = ('HTTP/1.1 200 OK\r\n'
                     'Content-Length: {content_length}\r\n'
                     'Content-Type: text/html; charset=UTF-8\r\n'
@@ -101,13 +105,15 @@ class TestKeepAlive_Origin_Max_connections(helpers.EnvironmentCase):
             'proxy.config.http.origin_max_connections':  1,
             'proxy.config.http.keep_alive_enabled_out': 1,
             'proxy.config.http.keep_alive_no_activity_timeout_out': 1,
+            'proxy.config.http.transaction_active_timeout_out': 2,
+            'proxy.config.http.connect_attempts_timeout': 2,
+            'proxy.config.http.connect_attempts_rr_retries': 0,
             'proxy.config.exec_thread.limit': 1,
             'proxy.config.exec_thread.autoconfig': 0,
         })
 
     def _send_requests(self, total_requests, path='', other=False):
         url = 'http://{0}:{1}/{2}'.format(self.traffic_server_host, self.traffic_server_port, path)
-        print url
         url2 = 'http://{0}:{1}/other/{2}'.format(self.traffic_server_host, self.traffic_server_port, path)
         jobs = []
         jobs2 = []
@@ -170,8 +176,25 @@ class TestKeepAlive_Origin_Max_connections(helpers.EnvironmentCase):
                 success += 1
             else:
                 fail += 1
-        print 'results:', success, fail
         self.assertEqual(success, 3)
+
+    def test_origin_queueing_timeouts(self):
+        '''Lets have some requests timeout and ensure that the queue is freed up
+        '''
+        REQUEST_COUNT = 4
+        results, results2 = self._send_requests(REQUEST_COUNT, path='queue/timeout')
+
+        success = 0
+        fail = 0
+        for x in xrange(0, REQUEST_COUNT):
+            if results[x].status_code == 200:
+                success += 1
+                print 'success', x
+            else:
+                fail += 1
+        self.assertEqual(fail, 4)
+
+        self.test_origin_queueing()
 
     def test_origin_no_queueing(self):
         '''If the queue is set to 0, all requests past the max immediately fail
