@@ -463,7 +463,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
         ++fmt_buf_bytes;
         ++fmt_entry_count;
       } else {
-        Error("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.", entry_header->entry_len);
+        Note("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.", entry_header->entry_len);
 
         RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_lost_before_flush_to_disk_stat, fmt_entry_count);
 
