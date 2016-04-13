@@ -164,7 +164,7 @@ AC_MSG_RESULT([$enable_debug])
 
 # Enable code coverage instrumentation only if requested by the user.
 AC_MSG_CHECKING([whether to code coverage])
-AC_ARG_ENABLE([coverage],
+AC_ARG_ENABLE([debug],
   [AS_HELP_STRING([--enable-coverage],[generate code coverage instrumentation])],
   [],
   [enable_coverage=no]
