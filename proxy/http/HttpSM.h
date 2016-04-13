@@ -39,7 +39,7 @@
 #include "HttpTransact.h"
 #include "HttpTunnel.h"
 #include "InkAPIInternal.h"
-#include "HttpClientSession.h"
+#include "../ProxyClientTransaction.h"
 #include "HdrUtils.h"
 //#include "AuthHttpAdapter.h"
 
@@ -193,7 +193,7 @@ public:
 
   void init();
 
-  void attach_client_session(HttpClientSession *client_vc_arg, IOBufferReader *buffer_reader);
+  void attach_client_session(ProxyClientTransaction *client_vc_arg, IOBufferReader *buffer_reader);
 
   // Called by httpSessionManager so that we can reset
   //  the session timeouts and initiate a read while
@@ -301,7 +301,7 @@ protected:
   void remove_ua_entry();
 
 public:
-  HttpClientSession *ua_session;
+  ProxyClientTransaction *ua_session;
   BackgroundFill_t background_fill;
   // AuthHttpAdapter authAdapter;
   void set_http_schedule(Continuation *);
@@ -548,6 +548,11 @@ public:
 
 public:
   bool set_server_session_private(bool private_session);
+  bool
+  is_dying() const
+  {
+    return terminate_sm;
+  }
 };
 
 // Function to get the cache_sm object - YTS Team, yamsat
@@ -651,7 +656,8 @@ HttpSM::add_cache_sm()
 inline bool
 HttpSM::is_transparent_passthrough_allowed()
 {
-  return (t_state.client_info.is_transparent && ua_session->f_transparent_passthrough && ua_session->get_transact_count() == 1);
+  return (t_state.client_info.is_transparent && ua_session->is_transparent_passthrough_allowed() &&
+          ua_session->get_transact_count() == 1);
 }
 
 #endif

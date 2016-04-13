@@ -531,30 +531,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       // the handshake is complete. Otherwise set up for continuing read
       // operations.
       if (ntodo <= 0) {
-        if (!getSSLClientConnection()) {
-          // we will not see another ET epoll event if the first byte is already
-          // in the ssl buffers, so, SSL_read if there's anything already..
-          Debug("ssl", "ssl handshake completed on vc %p, check to see if first byte, is already in the ssl buffers", this);
-          this->iobuf = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
-          if (this->iobuf) {
-            this->reader = this->iobuf->alloc_reader();
-            s->vio.buffer.writer_for(this->iobuf);
-            ret = ssl_read_from_net(this, lthread, r);
-            if (ret == SSL_READ_EOS) {
-              this->eosRcvd = true;
-            }
-#if DEBUG
-            int pending = SSL_pending(this->ssl);
-            if (r > 0 || pending > 0) {
-              Debug("ssl", "ssl read right after handshake, read %" PRId64 ", pending %d bytes, for vc %p", r, pending, this);
-            }
-#endif
-          } else {
-            Error("failed to allocate MIOBuffer after handshake, vc %p", this);
-          }
-          read.triggered = 0;
-          read_disable(nh, this);
-        }
         readSignalDone(VC_EVENT_READ_COMPLETE, nh);
       } else {
         read.triggered = 1;
@@ -857,7 +833,7 @@ SSLNetVConnection::SSLNetVConnection()
     sslHandShakeComplete(false), sslClientConnection(false), sslClientRenegotiationAbort(false), sslSessionCacheHit(false),
     handShakeBuffer(NULL), handShakeHolder(NULL), handShakeReader(NULL), handShakeBioStored(0),
     sslPreAcceptHookState(SSL_HOOKS_INIT), sslHandshakeHookState(HANDSHAKE_HOOKS_PRE), npnSet(NULL), npnEndpoint(NULL),
-    sessionAcceptPtr(NULL), iobuf(NULL), reader(NULL), eosRcvd(false), sslTrace(false)
+    sessionAcceptPtr(NULL), eosRcvd(false), sslTrace(false)
 {
 }
 
@@ -931,9 +907,6 @@ SSLNetVConnection::free(EThread *t)
     SSL_free(ssl);
     ssl = NULL;
   }
-  if (iobuf) {
-    free_MIOBuffer(iobuf);
-  }
   sslHandShakeComplete = false;
   sslClientConnection = false;
   sslHandshakeBeginTime = 0;
@@ -950,8 +923,6 @@ SSLNetVConnection::free(EThread *t)
   npnSet = NULL;
   npnEndpoint = NULL;
   sessionAcceptPtr = NULL;
-  iobuf = NULL;
-  reader = NULL;
   eosRcvd = false;
   sslHandShakeComplete = false;
   free_handshake_buffers();

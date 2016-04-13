@@ -100,11 +100,7 @@ struct ChunkedHandler {
 
   static int const DEFAULT_MAX_CHUNK_SIZE = 4096;
 
-  enum Action {
-    ACTION_DOCHUNK = 0,
-    ACTION_DECHUNK,
-    ACTION_PASSTHRU,
-  };
+  enum Action { ACTION_DOCHUNK = 0, ACTION_DECHUNK, ACTION_PASSTHRU, ACTION_UNSET };
 
   Action action;
 
@@ -386,6 +382,10 @@ private:
 
 public:
   PostDataBuffers *postbuf;
+
+private:
+  int reentrancy_count;
+  bool call_sm;
 };
 
 // void HttpTunnel::abort_cache_write_finish_others
@@ -482,9 +482,11 @@ HttpTunnel::get_producer(VIO *vio)
 inline HttpTunnelConsumer *
 HttpTunnel::get_consumer(VIO *vio)
 {
-  for (int i = 0; i < MAX_CONSUMERS; i++) {
-    if (consumers[i].write_vio == vio) {
-      return consumers + i;
+  if (vio) {
+    for (int i = 0; i < MAX_CONSUMERS; i++) {
+      if (consumers[i].write_vio == vio || consumers[i].vc == vio->vc_server) {
+        return consumers + i;
+      }
     }
   }
   return NULL;
