@@ -146,6 +146,16 @@ public:
   }
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
 
+  int
+  get_transact_count() const
+  {
+    return this->transact_count;
+  }
+  void
+  release(ProxyClientTransaction *)
+  { /* TBD */
+  }
+
   int64_t sm_id;
   spdy::SessionVersion version;
   uint64_t total_size;
@@ -164,6 +174,7 @@ public:
 
   int event;
   spdylay_session *session;
+  int transact_count;
 
   map<int32_t, SpdyRequest *> req_map;
 

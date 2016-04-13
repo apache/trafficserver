@@ -31,7 +31,7 @@
  ****************************************************************************/
 
 #include "HttpSessionManager.h"
-#include "HttpClientSession.h"
+#include "../ProxyClientSession.h"
 #include "HttpServerSession.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
@@ -239,7 +239,7 @@ HttpSessionManager::purge_keepalives()
 
 HSMresult_t
 HttpSessionManager::acquire_session(Continuation * /* cont ATS_UNUSED */, sockaddr const *ip, const char *hostname,
-                                    HttpClientSession *ua_session, HttpSM *sm)
+                                    ProxyClientTransaction *ua_session, HttpSM *sm)
 {
   HttpServerSession *to_return = NULL;
   TSServerSessionSharingMatchType match_style =

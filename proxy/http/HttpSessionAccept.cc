@@ -23,7 +23,7 @@
 
 #include "HttpSessionAccept.h"
 #include "IPAllow.h"
-#include "HttpClientSession.h"
+#include "Http1ClientSession.h"
 #include "I_Machine.h"
 #include "Error.h"
 
@@ -60,7 +60,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
-  HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, this_ethread());
+  Http1ClientSession *new_session = THREAD_ALLOC_INIT(http1ClientSessionAllocator, this_ethread());
 
   // copy over session related data.
   new_session->f_outbound_transparent = f_outbound_transparent;

@@ -26,7 +26,6 @@
 
 #include "HTTP2.h"
 #include "HPACK.h"
-#include "FetchSM.h"
 #include "Http2Stream.h"
 
 class Http2ClientSession;
@@ -181,8 +180,8 @@ public:
   ssize_t client_rwnd, server_rwnd;
 
   // HTTP/2 frame sender
-  void send_data_frame(FetchSM *fetch_sm);
-  void send_headers_frame(FetchSM *fetch_sm);
+  void send_data_frame(Http2Stream *stream);
+  void send_headers_frame(Http2Stream *stream);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_settings_frame(const Http2ConnectionSettings &new_settings);
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);

@@ -315,6 +315,7 @@ spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type, sp
     sm->req_map[stream_id] = req;
     sm->vc->add_to_active_queue();
     spdy_process_syn_stream_frame(sm, req);
+    sm->transact_count++;
     break;
 
   case SPDYLAY_HEADERS:
