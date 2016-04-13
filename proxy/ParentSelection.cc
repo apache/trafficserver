@@ -833,202 +833,305 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // first, set everything up
   *pstatus = REGRESSION_TEST_INPROGRESS;
   ParentConfig config;
-  P_table *ParentTable;
-  ParentConfigParams *params;
+  P_table *ParentTable = NULL;
+  ParentConfigParams *params = NULL;
   passes = fails = 0;
   config.startup();
   char tbl[2048];
-#define T(x) ink_strlcat(tbl, x, sizeof(tbl));
-#define REBUILD                                                                                                          \
-  ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags,                                      \
-                            ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); \
-  ParentTable->BuildTableFromString(tbl);                                                                                \
-  params = new ParentConfigParams(ParentTable);                                                                          \
-  params->policy.FailThreshold = 1;                                                                                      \
-  params->policy.ParentEnable = true;                                                                                    \
-  params->policy.ParentRetryTime = 5;
   HttpRequestData *request = NULL;
   ParentResult *result = NULL;
-#define REINIT                            \
-  delete request;                         \
-  delete result;                          \
-  request = new HttpRequestData();        \
-  result = new ParentResult();            \
-  if (!result || !request) {              \
-    (void) printf("Allocation failed\n"); \
-    return;                               \
-  }
-#define ST(x) printf("*** TEST %d *** STARTING ***\n", x);
-#define RE(x, y)                                                     \
-  if (x) {                                                           \
-    printf("*** TEST %d *** PASSED ***\n", y);                       \
-    passes++;                                                        \
-  } else {                                                           \
-    printf("*** TEST %d *** FAILED *** FAILED *** FAILED ***\n", y); \
-    fails++;                                                         \
-  }
-#define FP params->findParent(request, result);
+
+#define T(x)                          \
+  do {                                \
+    ink_strlcat(tbl, x, sizeof(tbl)); \
+  } while (0)
+
+#define REBUILD                                                                                                            \
+  do {                                                                                                                     \
+    delete ParentTable;                                                                                                    \
+    delete params;                                                                                                         \
+    ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags,                                      \
+                              ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); \
+    ParentTable->BuildTableFromString(tbl);                                                                                \
+    params = new ParentConfigParams(ParentTable);                                                                          \
+    params->policy.FailThreshold = 1;                                                                                      \
+    params->policy.ParentEnable = true;                                                                                    \
+    params->policy.ParentRetryTime = 5;                                                                                    \
+  } while (0)
+
+#define REINIT                              \
+  do {                                      \
+    if (request != NULL) {                  \
+      delete request->hdr;                  \
+      ats_free(request->hostname_str);      \
+      delete request->api_info;             \
+    }                                       \
+    delete request;                         \
+    delete result;                          \
+    request = new HttpRequestData();        \
+    result = new ParentResult();            \
+    if (!result || !request) {              \
+      (void) printf("Allocation failed\n"); \
+      return;                               \
+    }                                       \
+  } while (0)
+
+#define ST(x)                                    \
+  do {                                           \
+    printf("*** TEST %d *** STARTING ***\n", x); \
+  } while (0)
+
+#define RE(x, y)                                                       \
+  do {                                                                 \
+    if (x) {                                                           \
+      printf("*** TEST %d *** PASSED ***\n", y);                       \
+      passes++;                                                        \
+    } else {                                                           \
+      printf("*** TEST %d *** FAILED *** FAILED *** FAILED ***\n", y); \
+      fails++;                                                         \
+    }                                                                  \
+  } while (0)
+
+#define FP                               \
+  do {                                   \
+    params->findParent(request, result); \
+  } while (0)
 
   // Test 1
   tbl[0] = '\0';
-  ST(1)
-  T("dest_domain=. parent=red:37412,orange:37412,yellow:37412 round_robin=strict\n")
-  REBUILD int c, red = 0, orange = 0, yellow = 0;
+  ST(1);
+  T("dest_domain=. parent=red:37412,orange:37412,yellow:37412 round_robin=strict\n");
+  REBUILD;
+  int c, red = 0, orange = 0, yellow = 0;
   for (c = 0; c < 21; c++) {
-    REINIT br(request, "fruit_basket.net");
-    FP red += verify(result, PARENT_SPECIFIED, "red", 37412);
+    REINIT;
+    br(request, "fruit_basket.net");
+    FP;
+    red += verify(result, PARENT_SPECIFIED, "red", 37412);
     orange += verify(result, PARENT_SPECIFIED, "orange", 37412);
     yellow += verify(result, PARENT_SPECIFIED, "yellow", 37412);
   }
-  RE(((red == 7) && (orange == 7) && (yellow == 7)), 1)
+  RE(((red == 7) && (orange == 7) && (yellow == 7)), 1);
   // Test 2
-  ST(2)
+  ST(2);
   tbl[0] = '\0';
-  T("dest_domain=. parent=green:4325,blue:4325,indigo:4325,violet:4325 round_robin=false\n")
-  REBUILD int g = 0, b = 0, i = 0, v = 0;
+  T("dest_domain=. parent=green:4325,blue:4325,indigo:4325,violet:4325 round_robin=false\n");
+  REBUILD;
+  int g = 0, b = 0, i = 0, v = 0;
   for (c = 0; c < 17; c++) {
-    REINIT br(request, "fruit_basket.net");
-    FP g += verify(result, PARENT_SPECIFIED, "green", 4325);
+    REINIT;
+    br(request, "fruit_basket.net");
+    FP;
+    g += verify(result, PARENT_SPECIFIED, "green", 4325);
     b += verify(result, PARENT_SPECIFIED, "blue", 4325);
     i += verify(result, PARENT_SPECIFIED, "indigo", 4325);
     v += verify(result, PARENT_SPECIFIED, "violet", 4325);
   }
   RE((((g == 17) && !b && !i && !v) || (!g && (b == 17) && !i && !v) || (!g && !b && (i == 17) && !v) ||
       (!g && !b && !i && (v == 17))),
-     2)
+     2);
   // Test 3 - 6 Parenting Table
   tbl[0] = '\0';
 #define TEST_IP4_ADDR "209.131.62.14"
 #define TEST_IP6_ADDR "BEEF:DEAD:ABBA:CAFE:1337:1E1F:5EED:C0FF"
-  T("dest_ip=" TEST_IP4_ADDR " parent=cat:37,dog:24 round_robin=strict\n")             /* L1 */
-  T("dest_ip=" TEST_IP6_ADDR " parent=zwoop:37,jMCg:24 round_robin=strict\n")          /* L1 */
-  T("dest_host=www.pilot.net parent=pilot_net:80\n")                                   /* L2 */
-  T("url_regex=snoopy parent=odie:80,garfield:80 round_robin=true\n")                  /* L3 */
-  T("dest_domain=i.am parent=amy:80,katie:80,carissa:771 round_robin=false\n")         /* L4 */
-  T("dest_domain=microsoft.net time=03:00-22:10 parent=zoo.net:341\n")                 /* L5 */
-  T("dest_domain=microsoft.net time=0:00-02:59 parent=zoo.net:347\n")                  /* L6 */
-  T("dest_domain=microsoft.net time=22:11-23:59 parent=zoo.edu:111\n")                 /* L7 */
-  T("dest_domain=imac.net port=819 parent=genie:80 round_robin=strict\n")              /* L8 */
-  T("dest_ip=172.34.61.211 port=3142 parent=orangina:80 go_direct=false\n")            /* L9 */
-  T("url_regex=miffy prefix=furry/rabbit parent=nintje:80 go_direct=false\n")          /* L10 */
-  T("url_regex=kitty suffix=tif parent=hello:80 round_robin=strict go_direct=false\n") /* L11 */
-  T("url_regex=cyclops method=get parent=turkey:80\n")                                 /* L12 */
-  T("url_regex=cyclops method=post parent=club:80\n")                                  /* L13 */
-  T("url_regex=cyclops method=put parent=sandwich:80\n")                               /* L14 */
-  T("url_regex=cyclops method=trace parent=mayo:80\n")                                 /* L15 */
-  T("dest_host=pluto scheme=HTTP parent=strategy:80\n")                                /* L16 */
-  REBUILD
+  T("dest_ip=" TEST_IP4_ADDR " parent=cat:37,dog:24 round_robin=strict\n");             /* L1 */
+  T("dest_ip=" TEST_IP6_ADDR " parent=zwoop:37,jMCg:24 round_robin=strict\n");          /* L1 */
+  T("dest_host=www.pilot.net parent=pilot_net:80\n");                                   /* L2 */
+  T("url_regex=snoopy parent=odie:80,garfield:80 round_robin=true\n");                  /* L3 */
+  T("dest_domain=i.am parent=amy:80,katie:80,carissa:771 round_robin=false\n");         /* L4 */
+  T("dest_domain=microsoft.net time=03:00-22:10 parent=zoo.net:341\n");                 /* L5 */
+  T("dest_domain=microsoft.net time=0:00-02:59 parent=zoo.net:347\n");                  /* L6 */
+  T("dest_domain=microsoft.net time=22:11-23:59 parent=zoo.edu:111\n");                 /* L7 */
+  T("dest_domain=imac.net port=819 parent=genie:80 round_robin=strict\n");              /* L8 */
+  T("dest_ip=172.34.61.211 port=3142 parent=orangina:80 go_direct=false\n");            /* L9 */
+  T("url_regex=miffy prefix=furry/rabbit parent=nintje:80 go_direct=false\n");          /* L10 */
+  T("url_regex=kitty suffix=tif parent=hello:80 round_robin=strict go_direct=false\n"); /* L11 */
+  T("url_regex=cyclops method=get parent=turkey:80\n");                                 /* L12 */
+  T("url_regex=cyclops method=post parent=club:80\n");                                  /* L13 */
+  T("url_regex=cyclops method=put parent=sandwich:80\n");                               /* L14 */
+  T("url_regex=cyclops method=trace parent=mayo:80\n");                                 /* L15 */
+  T("dest_host=pluto scheme=HTTP parent=strategy:80\n");                                /* L16 */
+  REBUILD;
   // Test 3
   IpEndpoint ip;
   ats_ip_pton(TEST_IP4_ADDR, &ip.sa);
-  ST(3) REINIT br(request, "numeric_host", &ip.sa);
-  FP RE(verify(result, PARENT_SPECIFIED, "cat", 37) + verify(result, PARENT_SPECIFIED, "dog", 24), 3)
-    ats_ip_pton(TEST_IP6_ADDR, &ip.sa);
-  ST(4) REINIT br(request, "numeric_host", &ip.sa);
-  FP RE(verify(result, PARENT_SPECIFIED, "zwoop", 37) + verify(result, PARENT_SPECIFIED, "jMCg", 24), 4)
-    // Test 5
-    ST(5) REINIT br(request, "www.pilot.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "pilot_net", 80), 5)
-    // Test 6
-    ST(6) REINIT br(request, "www.snoopy.net");
+  ST(3);
+  REINIT;
+  br(request, "numeric_host", &ip.sa);
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "cat", 37) + verify(result, PARENT_SPECIFIED, "dog", 24), 3);
+  ats_ip_pton(TEST_IP6_ADDR, &ip.sa);
+  ST(4);
+  REINIT;
+  br(request, "numeric_host", &ip.sa);
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "zwoop", 37) + verify(result, PARENT_SPECIFIED, "jMCg", 24), 4);
+  // Test 5
+  ST(5);
+  REINIT;
+  br(request, "www.pilot.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "pilot_net", 80), 5);
+  // Test 6
+  ST(6);
+  REINIT;
+  br(request, "www.snoopy.net");
   const char *snoopy_dog = "http://www.snoopy.com/";
   request->hdr->url_set(snoopy_dog, strlen(snoopy_dog));
-  FP RE(verify(result, PARENT_SPECIFIED, "odie", 80) + verify(result, PARENT_SPECIFIED, "garfield", 80), 5)
-    // Test 7
-    ST(7) REINIT br(request, "a.rabbit.i.am");
-  FP RE(verify(result, PARENT_SPECIFIED, "amy", 80) + verify(result, PARENT_SPECIFIED, "katie", 80) +
-          verify(result, PARENT_SPECIFIED, "carissa", 771),
-        6)
-    // Test 6+ BUGBUG needs to be fixed
-    //   ST(7) REINIT
-    //   br(request, "www.microsoft.net");
-    //   FP RE( verify(result,PARENT_SPECIFIED,"zoo.net",341) +
-    //       verify(result,PARENT_SPECIFIED,"zoo.net",347) +
-    //       verify(result,PARENT_SPECIFIED,"zoo.edu",111) ,7)
-    // Test 6++ BUGBUG needs to be fixed
-    //   ST(7) REINIT
-    //   br(request, "snow.imac.net:2020");
-    //   FP RE(verify(result,PARENT_DIRECT,0,0),7)
-    // Test 6+++ BUGBUG needs to be fixed
-    //   ST(8) REINIT
-    //   br(request, "snow.imac.net:819");
-    //   URL* u = new URL();
-    //   char* r = "http://snow.imac.net:819/";
-    //   u->create(0);
-    //   u->parse(r,strlen(r));
-    //   u->port_set(819);
-    //   request->hdr->url_set(u);
-    //   ink_assert(request->hdr->url_get()->port_get() == 819);
-    //   printf("url: %s\n",request->hdr->url_get()->string_get(0));
-    //   FP RE(verify(result,PARENT_SPECIFIED,"genie",80),8)
-    // Test 7 - N Parent Table
-    tbl[0] = '\0';
-  T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=strict go_direct=true\n")
-  REBUILD
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "odie", 80) + verify(result, PARENT_SPECIFIED, "garfield", 80), 5);
+  // Test 7
+  ST(7);
+  REINIT;
+  br(request, "a.rabbit.i.am");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "amy", 80) + verify(result, PARENT_SPECIFIED, "katie", 80) +
+       verify(result, PARENT_SPECIFIED, "carissa", 771),
+     6);
+  // Test 6+ BUGBUG needs to be fixed
+  //   ST(7); REINIT;
+  //   br(request, "www.microsoft.net");
+  //   FP; RE( verify(result,PARENT_SPECIFIED,"zoo.net",341) +
+  //       verify(result,PARENT_SPECIFIED,"zoo.net",347) +
+  //       verify(result,PARENT_SPECIFIED,"zoo.edu",111) ,7);
+  // Test 6++ BUGBUG needs to be fixed
+  //   ST(7); REINIT;
+  //   br(request, "snow.imac.net:2020");
+  //   FP; RE(verify(result,PARENT_DIRECT,0,0),7);
+  // Test 6+++ BUGBUG needs to be fixed
+  //   ST(8); REINIT;
+  //   br(request, "snow.imac.net:819");
+  //   URL* u = new URL();
+  //   char* r = "http://snow.imac.net:819/";
+  //   u->create(0);
+  //   u->parse(r,strlen(r));
+  //   u->port_set(819);
+  //   request->hdr->url_set(u);
+  //   ink_assert(request->hdr->url_get()->port_get() == 819);
+  //   printf("url: %s\n",request->hdr->url_get()->string_get(0));
+  //   FP; RE(verify(result,PARENT_SPECIFIED,"genie",80),8);
+  // Test 7 - N Parent Table
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=strict go_direct=true\n");
+  REBUILD;
   // Test 8
-  ST(8) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 7) params->markParentDown(result);
+  ST(8);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 7);
+  params->markParentDown(result);
 
   // Test 9
-  ST(9) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 8)
-    // Test 10
-    ST(10) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 9)
-    // Test 11
-    ST(11) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 10)
-    // restart the loop
-    // Test 12
-    ST(12) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 11)
-    // Test 13
-    ST(13) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 12)
-    // Test 14
-    ST(14) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 13)
-    // Test 15
-    ST(15) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 14) params->markParentDown(result);
+  ST(9);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 8);
+  // Test 10
+  ST(10);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 9);
+  // Test 11
+  ST(11);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 10);
+  // restart the loop
+  // Test 12
+  ST(12);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 11);
+  // Test 13
+  ST(13);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 12);
+  // Test 14
+  ST(14);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 13);
+  // Test 15
+  ST(15);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 14);
+  params->markParentDown(result);
 
   // restart the loop
 
   // Test 16
-  ST(16) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 15)
-    // Test 17
-    ST(17) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 16)
-    // Test 18
-    ST(18) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 17)
-    // Test 19
-    ST(19) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 18)
-    // restart the loop
-    // Test 20
-    ST(20) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 19)
-    // Test 21
-    ST(21) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 20)
-    // Test 22
-    ST(22) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 21) params->markParentDown(result);
+  ST(16);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 15);
+  // Test 17
+  ST(17);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 16);
+  // Test 18
+  ST(18);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 17);
+  // Test 19
+  ST(19);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 18);
+  // restart the loop
+  // Test 20
+  ST(20);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 19);
+  // Test 21
+  ST(21);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 20);
+  // Test 22
+  ST(22);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 21);
+  params->markParentDown(result);
 
   // Test 23 - 32
   for (i = 23; i < 33; i++) {
-    ST(i) REINIT br(request, "i.am.rabbit.net");
-    FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i)
+    ST(i);
+    REINIT;
+    br(request, "i.am.rabbit.net");
+    FP;
+    RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i);
   }
 
   params->markParentDown(result); // now they're all down
 
   // Test 33 - 132
   for (i = 33; i < 133; i++) {
-    ST(i) REINIT br(request, "i.am.rabbit.net");
-    FP RE(verify(result, PARENT_DIRECT, 0, 0), i)
+    ST(i);
+    REINIT;
+    br(request, "i.am.rabbit.net");
+    FP;
+    RE(verify(result, PARENT_DIRECT, 0, 0), i);
   }
 
   // sleep(5); // parents should come back up; they don't
@@ -1039,17 +1142,24 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 133 - 172
   for (i = 133; i < 173; i++) {
-    ST(i) REINIT br(request, "i.am.rabbit.net");
-    FP sleep(1);
+    ST(i);
+    REINIT;
+    br(request, "i.am.rabbit.net");
+    FP;
+    sleep(1);
     switch (i % 4) {
     case 0:
-      RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), i) break;
+      RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), i);
+      break;
     case 1:
-      RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i) break;
+      RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i);
+      break;
     case 2:
-      RE(verify(result, PARENT_SPECIFIED, "furry", 80), i) break;
+      RE(verify(result, PARENT_SPECIFIED, "furry", 80), i);
+      break;
     case 3:
-      RE(verify(result, PARENT_SPECIFIED, "frisky", 80), i) break;
+      RE(verify(result, PARENT_SPECIFIED, "frisky", 80), i);
+      break;
     default:
       ink_assert(0);
     }
@@ -1057,44 +1167,54 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 173
   tbl[0] = '\0';
-  ST(173)
+  ST(173);
   T("dest_domain=rabbit.net parent=fuzzy:80|1.0;fluffy:80|1.0 secondary_parent=furry:80|1.0;frisky:80|1.0 "
-    "round_robin=consistent_hash go_direct=false\n")
-  REBUILD
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 173)
+    "round_robin=consistent_hash go_direct=false\n");
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 173);
   params->markParentDown(result); // fuzzy is down.
 
   // Test 174
-  ST(174)
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 174)
+  ST(174);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 174);
 
   params->markParentDown(result); // frisky is down.
 
   // Test 175
-  ST(175)
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 175)
+  ST(175);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 175);
 
   params->markParentDown(result); // frisky is down.
 
   // Test 176
-  ST(176)
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 176)
+  ST(176);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 176);
 
   params->markParentDown(result); // all are down now.
 
   // Test 177
-  ST(177)
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_FAIL, NULL, 80), 177)
+  ST(177);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_FAIL, NULL, 80), 177);
 
   delete request;
   delete result;
