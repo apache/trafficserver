@@ -7219,7 +7219,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.body_factory.template_base", "proxy.config.http.cache.open_write_fail_action",
   "proxy.config.http.redirection_enabled", "proxy.config.http.number_of_redirections",
   "proxy.config.http.cache.max_open_write_retries", "proxy.config.http.redirect_use_orig_cache_key",
-  "proxy.config.http.attach_server_session_to_client"};
+  "proxy.config.http.attach_server_session_to_client", "proxy.config.http.origin_max_connections_queue"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
