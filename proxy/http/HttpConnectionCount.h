@@ -183,7 +183,7 @@ public:
     }
   };
 
-private:
+protected:
   // Hide the constructor and copy constructor
   ConnectionCount() { ink_mutex_init(&_mutex, "ConnectionCountMutex"); }
   ConnectionCount(const ConnectionCount & /* x ATS_UNUSED */) {}
@@ -192,5 +192,22 @@ private:
   HashMap<ConnAddr, ConnAddrHashFns, int> _hostCount;
   ink_mutex _mutex;
 };
+
+class ConnectionCountQueue: public ConnectionCount {
+public:
+  /**
+   * Static method to get the instance of the class
+   * @return Returns a pointer to the instance of the class
+   */
+  static ConnectionCountQueue *
+  getInstance()
+  {
+    return &_connectionCount;
+  }
+private:
+  static ConnectionCountQueue _connectionCount;
+};
+
+
 
 #endif

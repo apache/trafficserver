@@ -1217,6 +1217,15 @@ Origin Server Connect Attempts
 
    Limits the number of socket connections per origin server to the value specified. To enable, set to one (``1``).
 
+.. ts:cv:: CONFIG proxy.config.http.origin_max_connections_queue INT -1
+   :reloadable:
+   :overridable:
+
+   Limits the number of requests to be queued when the :ts:cv:`proxy.config.http.origin_max_connections` is reached.
+   When disabled (``-1``) requests are will wait indefinitely for an available connection. When set to ``0`` all 
+   requests past the :ts:cv:`proxy.config.http.origin_max_connections` will immediately fail. When set to ``>0`` 
+   ATS will queue that many requests to go to the origin, any additional requests past the limit will immediately fail. 
+
 .. ts:cv:: CONFIG proxy.config.http.origin_min_keep_alive_connections INT 0
    :reloadable:
 
