@@ -193,7 +193,8 @@ protected:
   ink_mutex _mutex;
 };
 
-class ConnectionCountQueue: public ConnectionCount {
+class ConnectionCountQueue : public ConnectionCount
+{
 public:
   /**
    * Static method to get the instance of the class
@@ -204,10 +205,10 @@ public:
   {
     return &_connectionCount;
   }
+
 private:
   static ConnectionCountQueue _connectionCount;
 };
-
 
 
 #endif
