@@ -307,6 +307,26 @@ ats_ip_hash(sockaddr const *addr)
   return zret.i;
 }
 
+uint64_t
+ats_ip_port_hash(sockaddr const *addr)
+{
+  union md5sum {
+    uint64_t i;
+    uint16_t b[4];
+    unsigned char c[16];
+  } zret;
+
+  zret.i = 0;
+  if (ats_is_ip4(addr)) {
+    zret.i = (static_cast<uint64_t>(ats_ip4_addr_cast(addr)) << 16) | (ats_ip_port_cast(addr));
+  } else if (ats_is_ip6(addr)) {
+    ink_code_md5(const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE, zret.c);
+    // now replace the bottom 16bits so we can account for the port.
+    zret.b[3] = ats_ip_port_cast(addr);
+  }
+  return zret.i;
+}
+
 int
 ats_ip_to_hex(sockaddr const *src, char *dst, size_t len)
 {
