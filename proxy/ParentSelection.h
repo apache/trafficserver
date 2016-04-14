@@ -40,6 +40,9 @@
 #include "ts/Tokenizer.h"
 #include "ts/ink_apidefs.h"
 
+#include <algorithm>
+#include <vector>
+
 #define MAX_PARENTS 64
 
 struct RequestData;
@@ -61,6 +64,28 @@ enum ParentRR_t {
   P_STRICT_ROUND_ROBIN,
   P_HASH_ROUND_ROBIN,
   P_CONSISTENT_HASH,
+};
+
+enum ParentRetry_t {
+  PARENT_RETRY_NONE = 0,
+  PARENT_RETRY_SIMPLE = 1,
+  PARENT_RETRY_UNAVAILABLE_SERVER = 2,
+  // both simple and unavailable server retry
+  PARENT_RETRY_BOTH = 3
+};
+
+struct UnavailableServerResponseCodes {
+  UnavailableServerResponseCodes(char *val);
+  ~UnavailableServerResponseCodes(){};
+
+  bool
+  contains(int code)
+  {
+    return binary_search(codes.begin(), codes.end(), code);
+  }
+
+private:
+  std::vector<int> codes;
 };
 
 // struct pRecord
@@ -90,7 +115,8 @@ class ParentRecord : public ControlBase
 public:
   ParentRecord()
     : parents(NULL), secondary_parents(NULL), num_parents(0), num_secondary_parents(0), ignore_query(false), rr_next(0),
-      go_direct(true), parent_is_proxy(true), selection_strategy(NULL)
+      go_direct(true), parent_is_proxy(true), selection_strategy(NULL), unavailable_server_retry_responses(NULL), parent_retry(0),
+      max_simple_retries(1), max_unavailable_server_retries(1)
   {
   }
 
@@ -119,6 +145,10 @@ public:
   bool go_direct;
   bool parent_is_proxy;
   ParentSelectionStrategy *selection_strategy;
+  UnavailableServerResponseCodes *unavailable_server_retry_responses;
+  int parent_retry;
+  int max_simple_retries;
+  int max_unavailable_server_retries;
 };
 
 // If the parent was set by the external customer api,
