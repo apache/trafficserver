@@ -171,8 +171,8 @@ ServerSessionPool::eventHandler(int event, void *data)
       // origin, then reset the timeouts on our end and do not close the connection
       if ((event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ACTIVE_TIMEOUT) && s->state == HSS_KA_SHARED &&
           s->enable_origin_connection_limiting) {
-        bool connection_count_below_min =
-          s->connection_count->getCount(s->server_ip) <= http_config_params->origin_min_keep_alive_connections;
+        bool connection_count_below_min = s->connection_count->getCount(s->server_ip, s->hostname_hash, s->sharing_match) <=
+                                          http_config_params->origin_min_keep_alive_connections;
 
         if (connection_count_below_min) {
           Debug("http_ss", "[%" PRId64 "] [session_bucket] session received io notice [%s], "

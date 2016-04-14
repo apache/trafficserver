@@ -1151,6 +1151,8 @@ int ats_ip_getbestaddrinfo(char const *name, ///< [in] Address name (IPv4, IPv6,
 */
 uint32_t ats_ip_hash(sockaddr const *addr);
 
+uint64_t ats_ip_port_hash(sockaddr const *addr);
+
 /** Convert address to string as a hexidecimal value.
     The string is always nul terminated, the output string is clipped
     if @a dst is insufficient.

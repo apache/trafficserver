@@ -7978,6 +7978,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->attach_server_session_to_client;
     break;
+  case TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->origin_max_connections_queue;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8488,6 +8492,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_HEURISTIC_MIN_LIFETIME;
       else if (!strncmp(name, "proxy.config.http.cache.heuristic_max_lifetime", length))
         cnf = TS_CONFIG_HTTP_CACHE_HEURISTIC_MAX_LIFETIME;
+      else if (!strncmp(name, "proxy.config.http.origin_max_connections_queue", length))
+        cnf = TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE;
       break;
     case 'r':
       if (!strncmp(name, "proxy.config.http.insert_squid_x_forwarded_for", length))
