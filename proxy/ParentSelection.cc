@@ -659,7 +659,7 @@ ParentRecord::Init(matcher_line *line_info)
     Warning("%s disabling parent_retry on line %d because parent_is_proxy is true", modulePrefix, line_num);
   } else {
     // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
-    if (unavailable_server_retry_responses != NULL && (!parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+    if (unavailable_server_retry_responses != NULL && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
       Warning("%s ignoring unavailable_server_retry_responses directive on line %d, as unavailable_server_retry is not enabled.",
               modulePrefix, line_num);
       delete unavailable_server_retry_responses;
