@@ -499,24 +499,21 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 }
 
 void
-http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
+http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
 {
-  HTTPHdr tmp;
-  tmp.create(http_hdr_type_get(headers->m_http));
-  tmp.copy(headers);
-  headers->fields_clear();
+  h2_headers->create(http_hdr_type_get(headers->m_http));
 
-  if (http_hdr_type_get(tmp.m_http) == HTTP_TYPE_RESPONSE) {
+  if (http_hdr_type_get(headers->m_http) == HTTP_TYPE_RESPONSE) {
     char status_str[HTTP2_LEN_STATUS_VALUE_STR + 1];
-    snprintf(status_str, sizeof(status_str), "%d", tmp.status_get());
+    snprintf(status_str, sizeof(status_str), "%d", headers->status_get());
 
     // Add ':status' header field
-    MIMEField *status_field = headers->field_create(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS);
-    status_field->value_set(headers->m_heap, headers->m_mime, status_str, HTTP2_LEN_STATUS_VALUE_STR);
-    headers->field_attach(status_field);
+    MIMEField *status_field = h2_headers->field_create(HTTP2_VALUE_STATUS, HTTP2_LEN_STATUS);
+    status_field->value_set(h2_headers->m_heap, h2_headers->m_mime, status_str, HTTP2_LEN_STATUS_VALUE_STR);
+    h2_headers->field_attach(status_field);
 
     MIMEFieldIter field_iter;
-    for (MIMEField *field = tmp.iter_get_first(&field_iter); field != NULL; field = tmp.iter_get_next(&field_iter)) {
+    for (MIMEField *field = headers->iter_get_first(&field_iter); field != NULL; field = headers->iter_get_next(&field_iter)) {
       // Intermediaries SHOULD remove connection-specific header fields.
       const char *name;
       int name_len;
@@ -533,14 +530,12 @@ http2_convert_header_from_1_1_to_2(HTTPHdr *headers)
 
       MIMEField *newfield;
       name = field->name_get(&name_len);
-      newfield = headers->field_create(name, name_len);
+      newfield = h2_headers->field_create(name, name_len);
       value = field->value_get(&value_len);
-      newfield->value_set(headers->m_heap, headers->m_mime, value, value_len);
-      tmp.field_delete(field);
-      headers->field_attach(newfield);
+      newfield->value_set(h2_headers->m_heap, h2_headers->m_mime, value, value_len);
+      h2_headers->field_attach(newfield);
     }
   }
-  tmp.destroy();
 }
 
 Http2ErrorCode

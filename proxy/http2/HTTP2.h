@@ -331,7 +331,7 @@ Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint
 Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32_t *, HpackHandle &);
 
 MIMEParseResult http2_convert_header_from_2_to_1_1(HTTPHdr *);
-void http2_convert_header_from_1_1_to_2(HTTPHdr *);
+void http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers);
 
 
 // Not sure where else to put this, but figure this is as good of a start as
