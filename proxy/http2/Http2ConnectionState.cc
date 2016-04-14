@@ -36,7 +36,7 @@
 typedef Http2Error (*http2_frame_dispatch)(Http2ConnectionState &, const Http2Frame &);
 
 static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
-  BUFFER_SIZE_INDEX_8K,  // HTTP2_FRAME_TYPE_DATA
+  BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_DATA
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_HEADERS
   -1,                    // HTTP2_FRAME_TYPE_PRIORITY
   BUFFER_SIZE_INDEX_128, // HTTP2_FRAME_TYPE_RST_STREAM
