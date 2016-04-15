@@ -1165,7 +1165,7 @@ HttpConfig::reconfigure()
   params->oride.origin_max_connections = m_master.oride.origin_max_connections;
   params->oride.origin_max_connections_queue = m_master.oride.origin_max_connections_queue;
   // if origin_max_connections_queue is set without max_connections, it is meaningless, so we'll warn
-  if (params->oride.origin_max_connections_queue &&
+  if (params->oride.origin_max_connections_queue >= 0 &&
       !(params->oride.origin_max_connections || params->origin_min_keep_alive_connections)) {
     Warning("origin_max_connections_queue is set, but neither origin_max_connections nor origin_min_keep_alive_connections are "
             "set, please correct your records.config");
