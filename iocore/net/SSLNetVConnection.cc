@@ -897,7 +897,6 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::free(EThread *t)
 {
-  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
   got_remote_addr = 0;
   got_local_addr = 0;
   read.vio.mutex.clear();
