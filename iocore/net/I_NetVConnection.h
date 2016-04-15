@@ -432,6 +432,21 @@ public:
   */
   virtual void cancel_inactivity_timeout() = 0;
 
+  /** Set the action to use a continuation.
+      The action continuation will be called with an event if there is no pending I/O operation
+      to receive the event.
+
+      Pass @c NULL to disable.
+
+      @internal Subclasses should implement this if they support actions. This abstract class does
+      not. If the subclass doesn't have an action this method is silently ignored.
+  */
+  virtual void
+  set_action(Continuation *)
+  {
+    return;
+  }
+
   virtual void add_to_keep_alive_queue() = 0;
 
   virtual void remove_from_keep_alive_queue() = 0;
