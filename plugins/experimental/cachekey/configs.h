@@ -140,13 +140,16 @@ public:
   bool finalize();
 
   /* Make the following members public to avoid unnecessary accessors */
-  ConfigQuery _query;     /**< @brief query parameter related configuration */
-  ConfigHeaders _headers; /**< @brief headers related configuration */
-  ConfigCookies _cookies; /**< @brief cookies related configuration */
-  Pattern _uaCapture;     /**< @brief the capture groups and the replacement string used for the User-Agent header capture */
-  String _prefix;         /**< @brief cache key prefix string */
-  Pattern _hostCapture;   /**< @brief cache key prefix captured from the URI host:port */
-  Classifier _classifier; /**< @brief blacklist and white-list classifier used to classify User-Agent header */
+  ConfigQuery _query;        /**< @brief query parameter related configuration */
+  ConfigHeaders _headers;    /**< @brief headers related configuration */
+  ConfigCookies _cookies;    /**< @brief cookies related configuration */
+  Pattern _uaCapture;        /**< @brief the capture groups and the replacement string used for the User-Agent header capture */
+  String _prefix;            /**< @brief cache key prefix string */
+  Pattern _prefixCapture;    /**< @brief cache key prefix captured from the URI host:port */
+  Pattern _prefixCaptureUri; /**< @brief cache key prefix captured from the URI as a whole */
+  Pattern _pathCapture;      /**< @brief cache key element captured from the URI path */
+  Pattern _pathCaptureUri;   /**< @brief cache key element captured from the URI as a whole */
+  Classifier _classifier;    /**< @brief blacklist and white-list classifier used to classify User-Agent header */
 
 private:
   /**
