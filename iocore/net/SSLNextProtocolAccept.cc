@@ -96,6 +96,11 @@ struct SSLNextProtocolTrampoline : public Continuation {
       return EVENT_ERROR;
     }
 
+    // Cancel the action, so later timeouts and errors don't try to
+    // send the event to the Accept object.  After this point, the accept
+    // object does not care.
+    netvc->set_action(NULL);
+
     // Cancel the read before we have a chance to delete the continuation
     netvc->do_io_read(NULL, 0, NULL);
     plugin = netvc->endpoint();
