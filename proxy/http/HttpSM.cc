@@ -624,7 +624,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // tokenize header //
   /////////////////////
 
-  MIMEParseResult state = t_state.hdr_info.client_request.parse_req(&http_parser, ua_buffer_reader, &bytes_used, ua_entry->eos);
+  MIMEParseResult state = t_state.hdr_info.client_request.parse_req(&http_parser, ua_buffer_reader, &bytes_used, ua_entry->eos,
+                                                                    t_state.http_config_param->strict_uri_parsing);
 
   client_request_hdr_bytes += bytes_used;
 

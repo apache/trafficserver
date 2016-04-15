@@ -1158,9 +1158,28 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
   return PARSE_ERROR; // no non-whitespace found
 }
 
-MIMEParseResult
-url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p)
+/**
+ *  This method will return TRUE if the uri is strictly compliant with
+ *  RFC 3986 and it will return FALSE if not.
+ */
+static bool
+url_is_strictly_compliant(const char *start, const char *end)
 {
+  for (const char *i = start; i < end; ++i) {
+    if (!ParseRules::is_uri(*i)) {
+      Debug("http", "Non-RFC compliant character [0x%.2X] found in URL", (unsigned char)*i);
+      return false;
+    }
+  }
+  return true;
+}
+
+MIMEParseResult
+url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, bool strict_uri_parsing)
+{
+  if (strict_uri_parsing && !url_is_strictly_compliant(*start, end))
+    return PARSE_ERROR;
+
   MIMEParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
   return PARSE_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p) : zret;
 }
@@ -1801,6 +1820,44 @@ REGRESSION_TEST(VALIDATE_HDR_FIELD)(RegressionTest *t, int /* level ATS_UNUSED *
     box.check(validate_host_name(tmp) == http_validate_hdr_field_test_case[i].valid,
               "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
               (http_validate_hdr_field_test_case[i].valid ? "true" : "false"));
+  }
+}
+
+
+REGRESSION_TEST(ParseRules_strict_URI)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
+{
+  const struct {
+    const char *const uri;
+    bool valid;
+  } http_strict_uri_parsing_test_case[] = {{"/home", true},
+                                           {"/path/data?key=value#id", true},
+                                           {"/ABCDEFGHIJKLMNOPQRSTUVWXYZ", true},
+                                           {"/abcdefghijklmnopqrstuvwxyz", true},
+                                           {"/0123456789", true},
+                                           {":/?#[]@", true},
+                                           {"!$&'()*+,;=", true},
+                                           {"-._~", true},
+                                           {"%", true},
+                                           {"\n", false},
+                                           {"\"", false},
+                                           {"<", false},
+                                           {">", false},
+                                           {"\\", false},
+                                           {"^", false},
+                                           {"`", false},
+                                           {"{", false},
+                                           {"|", false},
+                                           {"}", false},
+                                           {"é", false}};
+
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  for (unsigned int i = 0; i < sizeof(http_strict_uri_parsing_test_case) / sizeof(http_strict_uri_parsing_test_case[0]); ++i) {
+    const char *const uri = http_strict_uri_parsing_test_case[i].uri;
+    box.check(url_is_strictly_compliant(uri, uri + strlen(uri)) == http_strict_uri_parsing_test_case[i].valid,
+              "Strictly parse URI: \"%s\", expected %s, but not", uri,
+              (http_strict_uri_parsing_test_case[i].valid ? "true" : "false"));
   }
 }
 

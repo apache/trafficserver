@@ -59,7 +59,7 @@ typedef unsigned int CTypeResult;
 #define is_wslfcr_BIT (1 << 20)
 #define is_eow_BIT (1 << 21)
 #define is_token_BIT (1 << 22)
-#define is_wildmat_BIT (1 << 23)
+#define is_uri_BIT (1 << 23)
 #define is_sep_BIT (1 << 24)
 #define is_empty_BIT (1 << 25)
 #define is_alnum_BIT (1 << 26)
@@ -122,7 +122,7 @@ public:
   static CTypeResult is_punct(char c);            // !"#$%&'()*+,-./:;<>=?@_{}|~
   static CTypeResult is_end_of_url(char c);       // NUL,CR,SP
   static CTypeResult is_eow(char c);              // NUL,CR,LF
-  static CTypeResult is_wildmat(char c);          // \,*,?,[
+  static CTypeResult is_uri(char c);              // A-Z,a-z,0-9 :/?#[]@!$&'()*+,;=-._~%
   static CTypeResult is_sep(char c);              // NULL,COMMA,':','!',wslfcr
   static CTypeResult is_empty(char c);            // wslfcr,#
   static CTypeResult is_alnum(char c);            // 0-9,A-Z,a-z
@@ -590,12 +590,41 @@ ParseRules::is_eow(char c)
 }
 
 inline CTypeResult
-ParseRules::is_wildmat(char c)
+ParseRules::is_uri(char c)
 {
 #ifndef COMPILE_PARSE_RULES
-  return (parseRulesCType[(unsigned char)c] & is_wildmat_BIT);
+  return (parseRulesCType[(unsigned char)c] & is_uri_BIT);
 #else
-  return (c == '*' || c == '?' || c == '[' || c == '\\');
+  if (is_alnum(c))
+    return (true);
+
+  switch (c) {
+  case ':':
+  case '/':
+  case '?':
+  case '#':
+  case '[':
+  case ']':
+  case '@':
+  case '!':
+  case '$':
+  case '&':
+  case '\'':
+  case '(':
+  case ')':
+  case '*':
+  case '+':
+  case ',':
+  case ';':
+  case '=':
+  case '-':
+  case '.':
+  case '_':
+  case '~':
+  case '%':
+    return (true);
+  }
+  return (false);
 #endif
 }
 
