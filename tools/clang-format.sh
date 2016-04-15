@@ -56,7 +56,7 @@ if [ ! -e ${FORMAT} ] ; then
   cat > ${ROOT}/sha1 << EOF
 7117c5bed99da43be733427970b4239f4bd8063d  ${ARCHIVE}
 EOF
-  ${SHASUM} -a 1 -c ${ROOT}/sha1
+  ${SHASUM} -c ${ROOT}/sha1
 fi
 
 for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc); do
