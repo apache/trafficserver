@@ -97,6 +97,9 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
 void
 close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
 {
+  if (vc->con.fd != NO_FD) {
+    NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
+  }
   NetHandler *nh = vc->nh;
   vc->cancel_OOB();
   vc->ep.stop();
@@ -1312,7 +1315,6 @@ void
 UnixNetVConnection::free(EThread *t)
 {
   ink_release_assert(t == this_ethread());
-  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, -1);
   // clear variables for reuse
   this->mutex.clear();
   action_.mutex.clear();
@@ -1386,10 +1388,6 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
   // processed on two threads simultaneously
   this->ep.stop();
   this->do_io_close();
-
-  // The do_io_close will decrement the current stat count but we are creating a new vc.
-  // Increment the currently open stat here so the net current count is unchanged
-  NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
 
   // Create new VC:
   if (save_ssl) {
