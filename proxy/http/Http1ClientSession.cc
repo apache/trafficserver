@@ -240,26 +240,28 @@ Http1ClientSession::do_io_close(int alerrno)
     SET_HANDLER(&Http1ClientSession::state_wait_for_close);
     DebugHttpSsn("[%" PRId64 "] session half close", con_id);
 
-    // We want the client to know that that we're finished
-    //  writing.  The write shutdown accomplishes this.  Unfortuantely,
-    //  the IO Core semantics don't stop us from getting events
-    //  on the write side of the connection like timeouts so we
-    //  need to zero out the write of the continuation with
-    //  the do_io_write() call (INKqa05309)
-    client_vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
+    if (client_vc) {
+      // We want the client to know that that we're finished
+      //  writing.  The write shutdown accomplishes this.  Unfortuantely,
+      //  the IO Core semantics don't stop us from getting events
+      //  on the write side of the connection like timeouts so we
+      //  need to zero out the write of the continuation with
+      //  the do_io_write() call (INKqa05309)
+      client_vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
 
-    ka_vio = client_vc->do_io_read(this, INT64_MAX, read_buffer);
-    ink_assert(slave_ka_vio != ka_vio);
+      ka_vio = client_vc->do_io_read(this, INT64_MAX, read_buffer);
+      ink_assert(slave_ka_vio != ka_vio);
+
+      // Set the active timeout to the same as the inactive time so
+      //   that this connection does not hang around forever if
+      //   the ua hasn't closed
+      client_vc->set_active_timeout(HRTIME_SECONDS(trans.get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_out));
+    }
 
     // [bug 2610799] Drain any data read.
     // If the buffer is full and the client writes again, we will not receive a
     // READ_READY event.
     sm_reader->consume(sm_reader->read_avail());
-
-    // Set the active timeout to the same as the inactive time so
-    //   that this connection does not hang around forever if
-    //   the ua hasn't closed
-    client_vc->set_active_timeout(HRTIME_SECONDS(trans.get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_out));
   } else {
     read_state = HCS_CLOSED;
     DebugHttpSsn("[%" PRId64 "] session closed", con_id);
