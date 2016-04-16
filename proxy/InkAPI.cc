@@ -961,6 +961,9 @@ INKContInternal::destroy()
   } else {
     // TODO: Should this schedule on some other "thread" ?
     // TODO: we don't care about the return action?
+    if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
+      ink_assert(!"not reached");
+    }
     this_ethread()->schedule_imm(this);
     Warning("INKCont not deletable %d %p", m_event_count, this);
   }
