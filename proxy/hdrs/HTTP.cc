@@ -874,7 +874,7 @@ http_parser_clear(HTTPParser *parser)
 
 MIMEParseResult
 http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                      bool must_copy_strings, bool eof)
+                      bool must_copy_strings, bool eof, bool strict_uri_parsing)
 {
   if (parser->m_parsing_http) {
     MIMEScanner *scanner = &parser->m_mime_parser.m_scanner;
@@ -939,7 +939,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       ink_assert(hh->u.req.m_url_impl != NULL);
       url = hh->u.req.m_url_impl;
       url_start = &(cur[4]);
-      err = ::url_parse(heap, url, &url_start, &(end[-11]), must_copy_strings);
+      err = ::url_parse(heap, url, &url_start, &(end[-11]), must_copy_strings, strict_uri_parsing);
       if (err < 0)
         return err;
       http_hdr_version_set(hh, version);
@@ -1073,7 +1073,7 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
     ink_assert(hh->u.req.m_url_impl != NULL);
 
     url = hh->u.req.m_url_impl;
-    err = ::url_parse(heap, url, &url_start, url_end, must_copy_strings);
+    err = ::url_parse(heap, url, &url_start, url_end, must_copy_strings, strict_uri_parsing);
 
     if (err < 0)
       return err;

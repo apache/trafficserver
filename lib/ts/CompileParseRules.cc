@@ -105,8 +105,8 @@ main()
       tparseRulesCType[c] |= is_eow_BIT;
     if (ParseRules::is_token(c))
       tparseRulesCType[c] |= is_token_BIT;
-    if (ParseRules::is_wildmat(c))
-      tparseRulesCType[c] |= is_wildmat_BIT;
+    if (ParseRules::is_uri(c))
+      tparseRulesCType[c] |= is_uri_BIT;
     if (ParseRules::is_sep(c))
       tparseRulesCType[c] |= is_sep_BIT;
     if (ParseRules::is_empty(c))

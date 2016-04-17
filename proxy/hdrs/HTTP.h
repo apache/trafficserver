@@ -441,7 +441,7 @@ const char *http_hdr_reason_lookup(unsigned status);
 void http_parser_init(HTTPParser *parser);
 void http_parser_clear(HTTPParser *parser);
 MIMEParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                                      bool must_copy_strings, bool eof);
+                                      bool must_copy_strings, bool eof, bool strict_uri_parsing);
 MIMEParseResult validate_hdr_host(HTTPHdrImpl *hh);
 MIMEParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                        bool must_copy_strings, bool eof);
@@ -618,10 +618,10 @@ public:
   const char *reason_get(int *length);
   void reason_set(const char *value, int length);
 
-  MIMEParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof);
+  MIMEParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing = false);
   MIMEParseResult parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof);
 
-  MIMEParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
+  MIMEParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing = false);
   MIMEParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
 
 public:
@@ -1231,12 +1231,12 @@ HTTPHdr::reason_set(const char *value, int length)
   -------------------------------------------------------------------------*/
 
 inline MIMEParseResult
-HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool eof)
+HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing)
 {
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
-  return http_parser_parse_req(parser, m_heap, m_http, start, end, true, eof);
+  return http_parser_parse_req(parser, m_heap, m_http, start, end, true, eof, strict_uri_parsing);
 }
 
 /*-------------------------------------------------------------------------
