@@ -935,7 +935,7 @@ done:
     HTTP_INCREMENT_DYN_STAT(http_invalid_client_requests_stat);
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
   } else {
-    s->hdr_info.client_response.clear(); // anything previously set is invalid from this point forward
+    s->hdr_info.client_response.destroy(); // anything previously set is invalid from this point forward
     DebugTxn("http_trans", "END HttpTransact::EndRemapRequest");
 
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {
