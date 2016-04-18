@@ -1,5 +1,3 @@
-.. _admin-plugins-cachekey:
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
    distributed with this work for additional information
@@ -16,6 +14,11 @@
    KIND, either express or implied.  See the License for the
    specific language governing permissions and limitations
    under the License.
+
+
+.. include:: ../../common.defs
+
+.. _admin-plugins-cachekey:
 
 
 Cache Key Manipulation Plugin
@@ -108,7 +111,7 @@ Cache key structure and related plugin parameters
 * ``--include-headers`` (default: empty list) - comma separated list of headers to be added to the cache key. The list of headers defined by ``--include-headers`` are always sorted before adding them to the cache  key.
 
 "Cookies" section
-^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^
 
 ::
 
