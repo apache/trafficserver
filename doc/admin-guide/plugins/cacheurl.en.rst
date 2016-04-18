@@ -22,6 +22,12 @@
 Cache URL Plugin
 ****************
 
+.. note::
+
+   This plugin is deprecated as of v6.2.0 and will be removed as of v7.0.0.
+   It is replaced by a new :ref:`admin-plugins-cachekey` and you should change your configurations to use the new plugin instead.
+   Please find some examples below.
+
 This plugin allows you to change the :term:`cache key` that is used for caching
 a request by using any portion of the URL via regular expressions.
 
@@ -100,6 +106,14 @@ will effectively share cache objects. Adding a unique suffix (``TSINTERNAL`` in
 this example) to the cache key guarantees that it won't clash with a real URL
 should s.example.com exist.
 
+Converting to :ref:`admin-plugins-cachekey`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You could do the same with :ref:`admin-plugins-cachekey` by adding the following to the mapping rules::
+
+    @plugin=cachekey.so @pparam=--capture-prefix=/s[123].example.com:.*/s.example.com.TSINTERNAL/
+
+
 Ignoring Some Query Parameters
 ------------------------------
 
@@ -110,6 +124,14 @@ generating a cache key, while still retaining important query parameters::
 
     http://www.example.com/video\?.*?\&?(id=[0-9a-f]*).*?\&(format=[a-z]*)  http://video-srv.example.com.ATSINTERNAL/$1&$2
 
+Converting to :ref:`admin-plugins-cachekey`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You could do the same with :ref:`admin-plugins-cachekey` by adding the following to the mapping rules::
+
+    @plugin=cachekey.so @pparam=--include-params=id,format
+
+
 Ignore Query String on Specific Pages
 -------------------------------------
 
@@ -119,3 +141,9 @@ of the URL::
 
     http://www.example.com/some/page(?:\?|$)  http://www.example.com/some/page
 
+Converting to :ref:`admin-plugins-cachekey`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You could do the same with :ref:`admin-plugins-cachekey` by adding the following to the mapping rules::
+
+    @plugin=cachekey.so @pparam=--remove-all-params
