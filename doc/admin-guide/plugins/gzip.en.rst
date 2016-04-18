@@ -56,7 +56,8 @@ are no special steps necessary for its installation.
 Configuration
 =============
 
-This plugin is enabled globally for |TS| by adding the following to your
+This plugin can be used as either global plugin or remap plugin.
+It can be enabled globally for |TS| by adding the following to your
 :file:`plugin.config`::
 
     gzip.so
@@ -80,10 +81,16 @@ configuration provided with the plugin's source)::
 
     gzip.so <path-to-plugin>/sample.gzip.config
 
+This can be used as remap plugin by pointing to config file in remap rule 
+:file:`remap.config`::
+    @plugin=gzip.so @pparam=--config=<path-to-plugin>/sample.gzip.config 
+
 The following sections detail the options you may specify in the plugin's
 configuration file. Options may be used globally, or may be specified on a
 per-site basis by preceding them with a `[<site>]` line, where `<site>` is the
 client-facing domain for which the options should apply.
+
+Per site configuration for remap plugin should be ignored.
 
 cache
 -----

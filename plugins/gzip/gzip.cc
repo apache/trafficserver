@@ -30,6 +30,7 @@
 #include "debug_macros.h"
 #include "misc.h"
 #include "configuration.h"
+#include "ts/remap.h"
 
 using namespace std;
 using namespace Gzip;
@@ -594,18 +595,23 @@ gzip_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type)
 }
 
 HostConfiguration *
-find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc locp)
+find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc locp, Configuration *config)
 {
   TSMLoc fieldp = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
   int strl = 0;
   const char *strv = NULL;
+  HostConfiguration *host_configuration;
 
   if (fieldp) {
     strv = TSMimeHdrFieldValueStringGet(bufp, locp, fieldp, -1, &strl);
     TSHandleMLocRelease(bufp, locp, fieldp);
   }
-
-  return cur_config->find(strv, strl);
+  if (config == NULL) {
+    host_configuration = cur_config->find(strv, strl);
+  } else {
+    host_configuration = config->find(strv, strl);
+  }
+  return host_configuration;
 }
 
 static int
@@ -685,45 +691,67 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
+/**
+ * This handles gzip request
+ * 1. Reads the client request header
+ * 2. For global plugin, get host configuration from global config
+ *    For remap plugin, get host configuration from configs populated through remap
+ * 3. Check for Accept encoding
+ * 4. Schedules TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK and TS_HTTP_TXN_CLOSE_HOOK for
+ *    further processing
+ */
+static void
+handle_gzip_request(TSHttpTxn txnp, Configuration *config)
+{
+  TSMBuffer req_buf;
+  TSMLoc req_loc;
+  HostConfiguration *hc;
+
+  if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
+    if (config == NULL) {
+      hc = find_host_configuration(txnp, req_buf, req_loc, NULL); // Get a lease on the global config
+    } else {
+      hc = find_host_configuration(txnp, req_buf, req_loc, config); // Get a lease on the local config passed through doRemap
+    }
+    bool allowed = false;
+
+    if (hc->enabled()) {
+      if (hc->has_disallows()) {
+        int url_len;
+        char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
+
+        allowed = hc->is_url_allowed(url, url_len);
+        TSfree(url);
+      } else {
+        allowed = true;
+      }
+    }
+
+    if (allowed) {
+      TSCont transform_contp = TSContCreate(transform_plugin, NULL);
+
+      TSContDataSet(transform_contp, (void *)hc);
+
+      info("Kicking off gzip plugin for request");
+      normalize_accept_encoding(txnp, req_buf, req_loc);
+      TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, transform_contp);
+      TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, transform_contp); // To release the config
+    } else {
+      hc->release(); // No longer need this configuration, release it.
+    }
+    TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
+  }
+}
+
 static int
 transform_global_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
-  TSMBuffer req_buf;
-  TSMLoc req_loc;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) == TS_SUCCESS) {
-      HostConfiguration *hc = find_host_configuration(txnp, req_buf, req_loc); // Get a lease on the
-      bool allowed = false;
-
-      if (hc->enabled()) {
-        if (hc->has_disallows()) {
-          int url_len;
-          char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
-
-          allowed = hc->is_url_allowed(url, url_len);
-          TSfree(url);
-        } else {
-          allowed = true;
-        }
-      }
-
-      if (allowed) {
-        TSCont transform_contp = TSContCreate(transform_plugin, NULL);
-
-        info("Kicking off gzip plugin for request");
-
-        TSContDataSet(transform_contp, (void *)hc);
-        normalize_accept_encoding(txnp, req_buf, req_loc);
-        TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, transform_contp);
-        TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, transform_contp); // To release the config
-      } else {
-        hc->release(); // No longer need this configuration, release it.
-      }
-      TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
-    }
+    // Handle gzip request and use the global configs
+    handle_gzip_request(txnp, NULL);
     break;
 
   default:
@@ -795,4 +823,69 @@ TSPluginInit(int argc, const char *argv[])
 
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, transform_global_contp);
   info("loaded");
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Initialize the plugin as a remap plugin.
+//
+TSReturnCode
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+{
+  if (!api_info) {
+    strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
+    return TS_ERROR;
+  }
+
+  if (api_info->tsremap_version < TSREMAP_VERSION) {
+    snprintf(errbuf, errbuf_size - 1, "[TSRemapInit] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
+             (api_info->tsremap_version & 0xffff));
+    return TS_ERROR;
+  }
+
+  info("The gzip plugin is successfully initialized");
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
+{
+  info("Instantiating a new gzip plugin remap rule");
+  info("Reading gzip config from file = %s", argv[2]);
+
+  const char *config_path = NULL;
+
+  if (argc > 4) {
+    fatal("The gzip plugin does not accept more than one plugin argument");
+  } else if (argc == 3) {
+    config_path = TSstrdup(argv[2]);
+  }
+  global_hidden_header_name = init_hidden_header_name();
+
+  Configuration *config = Configuration::Parse(config_path);
+  *instance = config;
+
+  free((void *)config_path);
+  info("Configuration loaded");
+  return TS_SUCCESS;
+}
+
+void
+TSRemapDeleteInstance(void *instance)
+{
+  debug("Cleanup configs read from remap");
+  static_cast<Configuration *>(instance)->release_all();
+}
+
+TSRemapStatus
+TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+{
+  if (NULL == instance) {
+    info("No Rules configured, falling back to default");
+  } else {
+    info("Remap Rules configured for gzip");
+    Configuration *config = (Configuration *)instance;
+    // Handle gzip request and use the configs populated from remap instance
+    handle_gzip_request(txnp, config);
+  }
+  return TSREMAP_NO_REMAP;
 }
