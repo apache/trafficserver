@@ -991,7 +991,14 @@ INKContInternal::handle_event(int event, void *edata)
       Warning("INKCont Deletable but not deleted %d", m_event_count);
     }
   } else {
-    return m_event_func((TSCont)this, (TSEvent)event, edata);
+    int retval = m_event_func((TSCont)this, (TSEvent)event, edata);
+    if (event == EVENT_INTERVAL) {
+      // In the interval case, we must re-increment the m_event_count for
+      // the next go around.  Otherwise, our event count will go negative.
+      if (ink_atomic_increment((int *)&this->m_event_count, 1) < 0)
+        ink_assert(!"not reached");
+    }
+    return retval;
   }
   return EVENT_DONE;
 }
