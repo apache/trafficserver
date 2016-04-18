@@ -160,6 +160,7 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
   }
 }
 
+#ifndef SSL_CTX_add0_chain_cert
 static bool
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 {
@@ -183,6 +184,7 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 
   return true;
 }
+#endif
 
 bool
 ssl_session_timed_out(SSL_SESSION *session)
@@ -1530,7 +1532,11 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
       // Load up any additional chain certificates
       X509 *ca;
       while ((ca = PEM_read_bio_X509(bio.get(), NULL, 0, NULL))) {
+#ifdef SSL_CTX_add0_chain_cert
+        if (!SSL_CTX_add0_chain_cert(ctx, ca)) {
+#else
         if (!SSL_CTX_add_extra_chain_cert(ctx, ca)) {
+#endif
           X509_free(ca);
           goto fail;
         }
@@ -1540,29 +1546,51 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
       if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, keyPath)) {
         goto fail;
       }
-    }
 
-    // First, load any CA chains from the global chain file.
-    if (params->serverCertChainFilename) {
-      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
-      if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-        SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
-        goto fail;
-      }
-      if (SSLConfigParams::load_ssl_file_cb) {
-        SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
-      }
-    }
+      // Must load all the intermediate certificates before starting the next chain
 
-    // Now, load any additional certificate chains specified in this entry.
-    if (sslMultCertSettings.ca) {
-      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_tok.getNext()));
-      if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-        SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
-        goto fail;
+      // First, load any CA chains from the global chain file.  This should probably
+      // eventually be a comma separated list too.  For now we will load it in all chains even
+      // though it only makes sense in one chain
+      if (params->serverCertChainFilename) {
+        ats_scoped_str completeServerCertChainPath(
+          Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
+#ifdef SSL_CTX_add0_chain_cert
+        scoped_BIO bio(BIO_new_file(completeServerCertChainPath, "r"));
+        X509 *intermediate_cert = PEM_read_bio_X509(bio.get(), NULL, 0, NULL);
+        if (!intermediate_cert || !SSL_CTX_add0_chain_cert(ctx, intermediate_cert)) {
+          if (intermediate_cert)
+            X509_free(intermediate_cert);
+#else
+        if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+#endif
+          SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
+          goto fail;
+        }
+        if (SSLConfigParams::load_ssl_file_cb) {
+          SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+        }
       }
-      if (SSLConfigParams::load_ssl_file_cb) {
-        SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+
+      // Now, load any additional certificate chains specified in this entry.
+      if (sslMultCertSettings.ca) {
+        const char *ca_name = ca_tok.getNext();
+        ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_name));
+#ifdef SSL_CTX_add0_chain_cert
+        scoped_BIO bio(BIO_new_file(completeServerCertChainPath, "r"));
+        X509 *intermediate_cert = PEM_read_bio_X509(bio.get(), NULL, 0, NULL);
+        if (!intermediate_cert || !SSL_CTX_add0_chain_cert(ctx, intermediate_cert)) {
+          if (intermediate_cert)
+            X509_free(intermediate_cert);
+#else
+        if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+#endif
+          SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
+          goto fail;
+        }
+        if (SSLConfigParams::load_ssl_file_cb) {
+          SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+        }
       }
     }
   }

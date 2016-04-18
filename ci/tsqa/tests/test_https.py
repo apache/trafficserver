@@ -229,6 +229,9 @@ class TestMix(helpers.EnvironmentCase, CertSelectionMixin):
     '''
     @classmethod
     def setUpEnv(cls, env):
+        # Temporarily skipping TestMix until we can figure out how to specify underlying open ssl versions
+        # The behaviour of the intermediate cert chains depends on openssl version
+        raise helpers.unittest.SkipTest('Skip TestMix until we figure out openssl version tracking');
         # add an SSL port to ATS
         cls.ssl_port = tsqa.utils.bind_unused_port()[1]
         cls.configs['records.config']['CONFIG']['proxy.config.http.server_ports'] += ' {0}:ssl'.format(cls.ssl_port)
