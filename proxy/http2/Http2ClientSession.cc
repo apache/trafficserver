@@ -287,13 +287,6 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     }
     return 0;
 
-  case TS_FETCH_EVENT_EXT_HEAD_DONE:
-  case TS_FETCH_EVENT_EXT_BODY_READY:
-  case TS_FETCH_EVENT_EXT_BODY_DONE:
-    // Process responses from origin server
-    send_connection_event(&this->connection_state, event, edata);
-    return 0;
-
   default:
     DebugHttp2Ssn("unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
