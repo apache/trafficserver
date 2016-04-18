@@ -1433,13 +1433,15 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
 
     // Now, load any additional certificate chains specified in this entry.
     if (sslMultCertSettings.ca) {
-      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_tok.getNext()));
-      if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-        SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
-        goto fail;
-      }
-      if (SSLConfigParams::load_ssl_file_cb) {
-        SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+      for (const char *ca_name = ca_tok.getNext(); ca_name; ca_name = ca_tok.getNext()) {
+        ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_name));
+        if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+          SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
+          goto fail;
+        }
+        if (SSLConfigParams::load_ssl_file_cb) {
+          SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+        }
       }
     }
   }
