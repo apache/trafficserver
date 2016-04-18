@@ -27,6 +27,11 @@ using std::cerr;
 using std::endl;
 using std::string;
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 class PostBufferTransformationPlugin : public TransformationPlugin
 {
 public:
@@ -78,5 +83,5 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_PostBuffer", "apache", "dev@trafficserver.apache.org");
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

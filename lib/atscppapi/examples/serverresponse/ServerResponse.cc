@@ -28,6 +28,11 @@ using std::endl;
 using std::list;
 using std::string;
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 class ServerResponsePlugin : public GlobalPlugin
 {
 public:
@@ -115,5 +120,5 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_ServerResponse", "apache", "dev@trafficserver.apache.org");
-  new ServerResponsePlugin();
+  plugin = new ServerResponsePlugin();
 }

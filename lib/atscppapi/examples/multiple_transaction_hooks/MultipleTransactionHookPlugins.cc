@@ -23,6 +23,10 @@
 #include <atscppapi/PluginInit.h>
 
 using namespace atscppapi;
+namespace
+{
+GlobalPlugin *plugin;
+}
 
 class MultipleTransactionHookPluginsOne : public atscppapi::TransactionPlugin
 {
@@ -102,5 +106,5 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_MultipleTransactionHook", "apache", "dev@trafficserver.apache.org");
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

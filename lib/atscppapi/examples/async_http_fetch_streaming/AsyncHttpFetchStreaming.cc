@@ -34,6 +34,11 @@ using std::string;
 // To view the debug messages ./traffic_server -T "async_http_fetch_example.*"
 #define TAG "async_http_fetch_example"
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 class Intercept : public InterceptPlugin, public AsyncReceiver<AsyncHttpFetch>
 {
 public:

@@ -33,6 +33,11 @@ using std::string;
 // To view the debug messages ./traffic_server -T "async_http_fetch_example.*"
 #define TAG "async_http_fetch_example"
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 class AsyncHttpFetch2 : public AsyncHttpFetch
 {
 public:
@@ -213,7 +218,5 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
   RegisterGlobalPlugin("CPP_Example_AsyncHttpFetch", "apache", "dev@trafficserver.apache.org");
-  GlobalPlugin *instance = new GlobalHookPlugin();
-
-  (void)instance;
+  plugin = new GlobalHookPlugin();
 }
