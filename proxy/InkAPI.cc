@@ -992,10 +992,13 @@ INKContInternal::handle_event(int event, void *edata)
     }
   } else {
     int retval = m_event_func((TSCont)this, (TSEvent)event, edata);
-    if (event == EVENT_INTERVAL) {
-      // In the interval case, we must re-increment the m_event_count for
-      // the next go around.  Otherwise, our event count will go negative.
-      ink_release_assert(ink_atomic_increment((int *)&this->m_event_count, 1) < 0)
+    if (edata && event == EVENT_INTERVAL) {
+      Event *e = reinterpret_cast<Event *>(edata);
+      if (e->period != 0) {
+        // In the interval case, we must re-increment the m_event_count for
+        // the next go around.  Otherwise, our event count will go negative.
+        ink_release_assert(ink_atomic_increment((int *)&this->m_event_count, 1) >- 0);
+      }
     }
     return retval;
   }
