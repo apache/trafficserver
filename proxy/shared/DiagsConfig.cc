@@ -28,7 +28,6 @@
 #include "DiagsConfig.h"
 #include "P_RecCore.h"
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void reconfigure_diags()
@@ -37,7 +36,6 @@
 //      records.config, and rebuilds the Diags data structures.
 //
 //////////////////////////////////////////////////////////////////////////////
-
 
 void
 DiagsConfig::reconfigure_diags()
@@ -50,16 +48,11 @@ DiagsConfig::reconfigure_diags()
   static struct {
     const char *config_name;
     DiagsLevel level;
-  } output_records[] = {{"proxy.config.diags.output.diag", DL_Diag},
-                        {"proxy.config.diags.output.debug", DL_Debug},
-                        {"proxy.config.diags.output.status", DL_Status},
-                        {"proxy.config.diags.output.note", DL_Note},
-                        {"proxy.config.diags.output.warning", DL_Warning},
-                        {"proxy.config.diags.output.error", DL_Error},
-                        {"proxy.config.diags.output.fatal", DL_Fatal},
-                        {"proxy.config.diags.output.alert", DL_Alert},
-                        {"proxy.config.diags.output.emergency", DL_Emergency},
-                        {NULL, DL_Undefined}};
+  } output_records[] = {{"proxy.config.diags.output.diag", DL_Diag},           {"proxy.config.diags.output.debug", DL_Debug},
+                        {"proxy.config.diags.output.status", DL_Status},       {"proxy.config.diags.output.note", DL_Note},
+                        {"proxy.config.diags.output.warning", DL_Warning},     {"proxy.config.diags.output.error", DL_Error},
+                        {"proxy.config.diags.output.fatal", DL_Fatal},         {"proxy.config.diags.output.alert", DL_Alert},
+                        {"proxy.config.diags.output.emergency", DL_Emergency}, {NULL, DL_Undefined}};
 
   if (!callbacks_established) {
     register_diags_callbacks();
@@ -155,7 +148,6 @@ DiagsConfig::reconfigure_diags()
   ats_free(at);
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      static void *diags_config_callback(void *opaque_token, void *data)
@@ -176,7 +168,6 @@ diags_config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type 
   diagsConfig->reconfigure_diags();
   return (0);
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -200,7 +191,6 @@ DiagsConfig::parse_output_string(char *s, DiagsModeOutput *o)
   o->to_syslog = (s && strchr(s, 'S'));
   o->to_diagslog = (s && strchr(s, 'L'));
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -265,7 +255,6 @@ DiagsConfig::RegisterDiagConfig()
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.emergency", "SL", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
 }
 
-
 DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *actions, bool use_records) : diags_log(NULL)
 {
   char diags_logpath[PATH_NAME_MAX];
@@ -319,7 +308,6 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
 
   reconfigure_diags();
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //

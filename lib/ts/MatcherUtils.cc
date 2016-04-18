@@ -53,7 +53,6 @@ config_parse_error::config_parse_error(const char *fmt, ...)
   va_end(ap);
 }
 
-
 // char* readIntoBuffer(const char* file_path, const char* module_name,
 //                          int* read_size_ptr)
 //

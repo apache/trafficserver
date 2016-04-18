@@ -347,7 +347,6 @@ struct HttpConfigPortRange {
   HttpConfigPortRange *next;
 
   HttpConfigPortRange() : low(0), high(0), next(0) {}
-
   ~HttpConfigPortRange()
   {
     if (next)
@@ -600,7 +599,6 @@ struct OverridableHttpConfigParams {
   MgmtByte redirect_use_orig_cache_key;
   MgmtInt number_of_redirections;
 };
-
 
 /////////////////////////////////////////////////////////////
 //

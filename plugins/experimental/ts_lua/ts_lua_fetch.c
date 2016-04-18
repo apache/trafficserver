@@ -37,7 +37,6 @@ static int ts_lua_fetch_multi_handler(TSCont contp, TSEvent event, void *edata);
 static int ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetch_info *fi);
 static inline void ts_lua_destroy_fetch_multi_info(ts_lua_fetch_multi_info *fmi);
 
-
 void
 ts_lua_inject_fetch_api(lua_State *L)
 {
@@ -550,7 +549,6 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   TSMutexUnlock(lmutex);
   return 0;
 }
-
 
 static inline void
 ts_lua_destroy_fetch_multi_info(ts_lua_fetch_multi_info *fmi)

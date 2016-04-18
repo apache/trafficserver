@@ -324,7 +324,6 @@ drainIncomingChannel(void *arg)
   return NULL;
 } /* End drainIncomingChannel */
 
-
 /*
  * cluster_com_port_watcher(...)
  *   This function watches updates and changes that are made to the
@@ -344,7 +343,6 @@ cluster_com_port_watcher(const char *name, RecDataT /* data_type ATS_UNUSED */, 
 
   return 0;
 } /* End cluster_com_port_watcher */
-
 
 ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, int rsport, char *p)
   : our_wall_clock(0), alive_peers_count(0), reliable_server_fd(0), broadcast_fd(0), receive_fd(0)
@@ -469,7 +467,6 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   return;
 } /* End ClusterCom::ClusterCom */
 
-
 /*
  * checkPeers(...)
  *   Function checks on our peers by racing through the peer list(ht) and
@@ -587,7 +584,6 @@ ClusterCom::checkPeers(time_t *ticker)
           }
         }
 
-
         if (num_peers == number_of_nodes) {
           /*
            * If the number of peers in the hash_table is the same as the
@@ -660,7 +656,6 @@ ClusterCom::checkPeers(time_t *ticker)
   return;
 } /* End ClusterCom::checkPeers */
 
-
 void
 ClusterCom::generateClusterDelta(void)
 {
@@ -692,7 +687,6 @@ ClusterCom::generateClusterDelta(void)
   }
 
 } /* End ClusterCom::generateClusterDelta */
-
 
 /*
  * handleMultCastMessage(...)
@@ -900,7 +894,6 @@ Lbogus:
     return;
   }
 } /* End ClusterCom::handleMultiCastMessage */
-
 
 /*
  * handleMultiCastStatPacket(...)
@@ -1232,7 +1225,6 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
   return;
 } /* End ClusterCom::handleMultiCastFilePacket */
 
-
 /*
  * handleMultiCastAlarmPacket(...)
  *   Function receives incoming alarm messages and updates the alarms class.
@@ -1268,7 +1260,6 @@ ClusterCom::handleMultiCastAlarmPacket(char *last, char *ip)
   lmgmt->alarm_keeper->clearUnSeen(ip); /* Purge expired alarms */
   return;
 } /* End ClusterCom::handleMultiCastAlarmPacket */
-
 
 /*
  * handleMultiCastVMapPacket(...)
@@ -1310,7 +1301,6 @@ ClusterCom::handleMultiCastVMapPacket(char *last, char *ip)
   ink_mutex_release(&(mutex));
   return;
 } /* End ClusterCom::handleMultiCastVMapPacket */
-
 
 /*
  * sendSharedData
@@ -1382,7 +1372,6 @@ ClusterCom::sendSharedData(bool send_proxy_heart_beat)
   return true;
 } /* End ClusterCom::sendSharedData */
 
-
 /*
  * constructSharedGenericPacket(...)
  *   A generic packet builder that can construct config or stat
@@ -1416,7 +1405,6 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
   ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
   running_sum += strlen(tmp);
   ink_release_assert(running_sum < max);
-
 
   if (sys_release[0]) {
     snprintf(tmp, sizeof(tmp), "rel: %s\n", sys_release);
@@ -1493,14 +1481,12 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
   return;
 } /* End ClusterCom::constructSharedGenericPacket */
 
-
 void
 ClusterCom::constructSharedStatPacket(char *message, int max)
 {
   constructSharedGenericPacket(message, max, RECT_NODE);
   return;
 } /* End ClusterCom::constructSharedStatPacket */
-
 
 /* static int constructSharedPacketHeader(...)
  *   Each multicast packet needs to have the following
@@ -1521,7 +1507,6 @@ ClusterCom::constructSharedPacketHeader(const AppVersionInfo &version, char *mes
 
   return running_sum;
 } /* End ClusterCom::constructSharedPacketHeader */
-
 
 /*
  * constructSharedFilePacket(...)
@@ -1592,7 +1577,6 @@ ClusterCom::constructSharedFilePacket(char *message, int max)
   return;
 } /* End ClusterCom::constructSharedFilePacket */
 
-
 /*
  * estabilishChannels(...)
  *   Sets up the multi-cast and reliable tcp channels for cluster
@@ -1641,7 +1625,6 @@ ClusterCom::establishChannels()
   return;
 }
 
-
 /*
  * establishBroadcastChannel()
  *   Setup our multicast channel for broadcasting.
@@ -1681,7 +1664,6 @@ ClusterCom::establishBroadcastChannel(void)
 
   return;
 } /* End ClusterCom::establishBroadcastChannel */
-
 
 /*
  * establishReceiveChannel()
@@ -1753,7 +1735,6 @@ ClusterCom::establishReceiveChannel(int fatal_on_error)
   return 0;
 } /* End ClusterCom::establishReceiveChannel */
 
-
 /*
  * sendOutgoingMessage
  *   Function basically writes a message to the broadcast_fd, it is blocking,
@@ -1769,7 +1750,6 @@ ClusterCom::sendOutgoingMessage(char *buf, int len)
   }
   return true;
 } /* End ClusterCom::sendOutgoingMessage */
-
 
 bool
 ClusterCom::sendClusterMessage(int msg_type, const char *args)
@@ -1838,7 +1818,6 @@ ClusterCom::sendClusterMessage(int msg_type, const char *args)
   return ret;
 } /* End ClusterCom::sendClusterMessage */
 
-
 bool
 ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len)
 {
@@ -1875,7 +1854,6 @@ ClusterCom::rl_sendReliableMessage(unsigned long addr, const char *buf, int len)
   serv_addr.sin_addr.s_addr = addr;
   serv_addr.sin_port = htons(cport);
 
-
   if ((fd = mgmt_socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     mgmt_elog(errno, "[ClusterCom::rl_sendReliableMessage] Unable to create socket\n");
     return false;
@@ -1900,7 +1878,6 @@ ClusterCom::rl_sendReliableMessage(unsigned long addr, const char *buf, int len)
   close_socket(fd);
   return true;
 } /* End ClusterCom::rl_sendReliableMessage */
-
 
 /*
  * sendReliableMessage(...)
@@ -1985,7 +1962,6 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len, char *re
   return true;
 } /* End ClusterCom::sendReliableMessage */
 
-
 /*
  * sendReliableMessage(...)
  *   Used to send a string across the reliable fd.
@@ -2063,7 +2039,6 @@ ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int 
   return true;
 } /* End ClusterCom::sendReliableMessageReadTillClose */
 
-
 /*
  * receiveIncomingMessage
  *   This function reads from the incoming channel. It is blocking,
@@ -2079,7 +2054,6 @@ ClusterCom::receiveIncomingMessage(char *buf, int max)
   }
   return nbytes;
 } /* End ClusterCom::processIncomingMessages */
-
 
 /*
  * isMaster()
@@ -2113,7 +2087,6 @@ ClusterCom::isMaster()
   }
   return false;
 } /* End ClusterCom::isMaster */
-
 
 /*
  * lowestPeer()
@@ -2149,7 +2122,6 @@ ClusterCom::lowestPeer(int *no)
   *no = naddrs;
   return min_ip;
 } /* End ClusterCom::lowestPeer */
-
 
 void
 ClusterCom::logClusterMismatch(const char *ip, ClusterMismatch type, char *data)
@@ -2189,7 +2161,6 @@ ClusterCom::logClusterMismatch(const char *ip, ClusterMismatch type, char *data)
   ink_hash_table_insert(mismatchLog, ip, (void *)type);
 }
 
-
 /*
  * highestPeer()
  *   Function finds the peer with the highest number of current virtual
@@ -2225,7 +2196,6 @@ ClusterCom::highestPeer(int *no)
 
   return max_ip;
 } /* End ClusterCom::highestPeer */
-
 
 /*
  * checkBackDoor(...)
@@ -2370,7 +2340,6 @@ checkBackDoor(int req_fd, char *message)
                "Idle-Our-WC: %" PRId64 "   Peer-WC-Last-Time: %ld  Delta: %ld Mgmt-Idle: %" PRId64 " M-Alive: %d",
                (int64_t)tmp->idle_ticks, tmp->last_time_recorded, tmp->delta, (int64_t)tmp->manager_idle_ticks, tmp->manager_alive);
       mgmt_writeline(req_fd, reply, strlen(reply));
-
 
       tmp_msg = "---------------------------\n";
       mgmt_writeline(req_fd, tmp_msg, strlen(tmp_msg));

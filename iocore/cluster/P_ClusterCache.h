@@ -69,7 +69,6 @@
 #define MIN_CLUSTER_MAJOR_VERSION CLUSTER_MAJOR_VERSION
 #define MIN_CLUSTER_MINOR_VERSION CLUSTER_MINOR_VERSION
 
-
 #define DEFAULT_CLUSTER_PORT_NUMBER 0
 #define DEFAULT_NUMBER_OF_CLUSTER_THREADS 1
 #define DEFAULT_CLUSTER_HOST ""
@@ -85,13 +84,11 @@
 // after zombie the configuration is deleted
 #define CLUSTER_CONFIGURATION_ZOMBIE (HRTIME_DAY * 2)
 
-
 // the number of configurations into the past we probe for data
 // one allows a new machine to come into or fall out of the
 // cluster without loss of data.  If the data is redistributed within
 // one day, no data will be lost.
 #define CONFIGURATION_HISTORY_PROBE_DEPTH 1
-
 
 // move these to a central event definition file (Event.h)
 #define CLUSTER_EVENT_CHANGE (CLUSTER_EVENT_EVENTS_START)
@@ -1174,6 +1171,5 @@ ClusterVC_remove_write(ClusterVConnectionBase *vc)
   ((Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link> *)cs->queue)->remove(vc);
   cs->queue = NULL;
 }
-
 
 #endif /* _Cluster_h */

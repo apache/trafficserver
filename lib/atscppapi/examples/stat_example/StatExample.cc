@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/Logger.h>
 #include <atscppapi/Stat.h>

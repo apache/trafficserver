@@ -54,7 +54,6 @@
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove spaces)
 */
 
-
 #include "ts/ink_platform.h"
 #include "ts/ink_rand.h"
 

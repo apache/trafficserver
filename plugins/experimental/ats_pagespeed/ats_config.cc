@@ -36,7 +36,6 @@ namespace net_instaweb
 {
 using namespace std;
 
-
 void
 ltrim_if(string &s, int (*fp)(int))
 {
@@ -170,7 +169,6 @@ AtsConfig::Parse(const char *path)
     return false;
   }
 
-
   while (!f.eof()) {
     std::string line;
     getline(f, line);
@@ -215,6 +213,5 @@ AtsConfig::Parse(const char *path)
 
   return true;
 }
-
 
 } //  namespace net_instaweb

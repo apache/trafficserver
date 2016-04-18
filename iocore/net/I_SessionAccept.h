@@ -31,9 +31,7 @@ class SessionAccept : public Continuation
 {
 public:
   SessionAccept(ProxyMutex *amutex) : Continuation(amutex) { SET_HANDLER(&SessionAccept::mainEvent); }
-
   ~SessionAccept() {}
-
   virtual void accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
 
 private:

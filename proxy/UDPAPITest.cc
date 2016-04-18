@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 char ACK[] = "I got it.";
 
 FILE *fp;
@@ -45,7 +44,6 @@ UDPTestInit()
   //      INKUDPBind(cont, INADDR_ANY,1813);
   INKUDPBind(cont, ip, 1813);
 }
-
 
 void
 printN(const char *start, int length)
@@ -74,7 +72,6 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
   int avail, total_len;
   char recv_buffer[4096];
 
-
   fp = fopen("UDPServer.log", "a+");
 
   switch (event) {
@@ -83,7 +80,6 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
     UDPConn = (INKUDPConn)e;
     INKUDPRecvFrom(cont, UDPConn);
     break;
-
 
   case TS_NET_EVENT_DATAGRAM_READ_READY:
     fprintf(fp, "read ready event called\n");
@@ -104,7 +100,6 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
         TSIOBufferReaderConsume(reader, avail);
         total_len += avail;
       }
-
 
       ip = INKUDPPacketFromAddressGet(packet);
       port = INKUDPPacketFromPortGet(packet);

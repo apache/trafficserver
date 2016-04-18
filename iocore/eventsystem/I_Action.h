@@ -99,7 +99,6 @@ public:
   */
   Continuation *continuation;
 
-
   /**
     Reference to the Continuation's lock.
 
@@ -171,7 +170,8 @@ public:
 #endif
   }
 
-  Continuation *operator=(Continuation *acont)
+  Continuation *
+  operator=(Continuation *acont)
   {
     continuation = acont;
     if (acont)
@@ -188,7 +188,6 @@ public:
 
   */
   Action() : continuation(NULL), cancelled(false) {}
-
 #if defined(__GNUC__)
   virtual ~Action() {}
 #endif

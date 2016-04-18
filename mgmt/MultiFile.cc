@@ -147,7 +147,6 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
   return MF_OK;
 }
 
-
 bool
 MultiFile::isManaged(const char *fileName)
 {

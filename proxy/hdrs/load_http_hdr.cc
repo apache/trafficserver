@@ -42,7 +42,6 @@
  *    state and is therefore not useful for must purposes.
  ***************************************************************************/
 
-
 #include "HdrHeap.h"
 #include "MIME.h"
 #include "HTTP.h"
@@ -87,7 +86,6 @@ load_string(const char *s, int len, int offset)
   r[len] = '\0';
   return r;
 }
-
 
 void
 process_http_hdr_impl(HdrHeapObjImpl *obj, int offset)
@@ -143,7 +141,6 @@ process_mime_hdr_impl(HdrHeapObjImpl *obj, int offset)
   process_mime_block_impl(&mhdr->m_first_fblock, offset);
 }
 
-
 void
 loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
 {
@@ -195,7 +192,6 @@ loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
   }
 }
 
-
 void
 load_buffer(int fd, hdr_type h_type)
 {
@@ -208,7 +204,6 @@ load_buffer(int fd, hdr_type h_type)
 
   char *file_buf = (char *)ats_malloc(sizeof(char) * (s_info.st_size + 1));
   file_buf[s_info.st_size] = '\0';
-
 
   // Read in the entire file
   int bytes_to_read = s_info.st_size;
@@ -228,7 +223,6 @@ load_buffer(int fd, hdr_type h_type)
 
   Tokenizer line_tok("\n");
   Tokenizer el_tok(" \t");
-
 
   int num_lines = line_tok.Initialize(file_buf);
   int num_el = el_tok.Initialize(line_tok[0]);

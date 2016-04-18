@@ -165,7 +165,6 @@ static ClassAllocator<ICPPeerReadCont> ICPPeerReadContAllocator("ICPPeerReadCont
 
 static Action *default_action = NULL;
 
-
 ICPHandlerCont::ICPHandlerCont(ICPProcessor *icpP) : PeriodicCont(icpP)
 {
 }
@@ -1744,7 +1743,6 @@ ICPProcessor::start()
 
   _mcastCB_handler = new ICPHandlerCont(this);
   SET_CONTINUATION_HANDLER(_mcastCB_handler, (ICPHandlerContHandler)&ICPHandlerCont::TossEvent);
-
 
   //
   // Build ICP peer list and setup listen sockets

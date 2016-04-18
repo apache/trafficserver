@@ -161,7 +161,6 @@ const static struct {
                     {"via", ""},
                     {"www-authenticate", ""}};
 
-
 /******************
  * Local functions
  ******************/
@@ -198,7 +197,6 @@ hpack_parse_field_type(uint8_t ftype)
   ink_assert((ftype & 0xf0) == 0x0);
   return HPACK_FIELD_NOINDEX_LITERAL;
 }
-
 
 /************************
  * HpackIndexingTable

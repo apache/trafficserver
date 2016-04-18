@@ -962,7 +962,6 @@ Http2ConnectionState::send_data_frame(Http2Stream *stream)
 
     stream->update_sent_count(payload_length);
 
-
     // Change state to 'closed' if its end of DATAs.
     if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
       DebugHttp2Stream(ua_session, stream->get_id(), "End of DATA frame");

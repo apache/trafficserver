@@ -65,7 +65,6 @@ typedef vvoidp *pvvoidp;
 /* GCC compiler >= 4.1 */
 #if defined(__GNUC__) && (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 1)) || (__GNUC__ >= 5))
 
-
 /* see http://gcc.gnu.org/onlinedocs/gcc-4.1.2/gcc/Atomic-Builtins.html */
 
 // ink_atomic_swap(ptr, value)
@@ -189,7 +188,6 @@ ink_atomic_decrement(pvuint64 mem, Amount value)
 /* not used for Intel Processors which have sequential(esque) consistency */
 #define INK_WRITE_MEMORY_BARRIER
 #define INK_MEMORY_BARRIER
-
 
 #else /* not gcc > v4.1.2 */
 #error Need a compiler / libc that supports atomic operations, e.g. gcc v4.1.2 or later

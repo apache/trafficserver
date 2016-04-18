@@ -37,7 +37,6 @@ HttpTransactHeaders::is_method_cacheable(const HttpConfigParams *http_config_par
           (http_config_param->cache_post_method == 1 && method == HTTP_WKSIDX_POST));
 }
 
-
 bool
 HttpTransactHeaders::is_method_cache_lookupable(int method)
 {
@@ -46,7 +45,6 @@ HttpTransactHeaders::is_method_cache_lookupable(int method)
   return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_DELETE ||
           method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_PURGE || method == HTTP_WKSIDX_PUSH);
 }
-
 
 bool
 HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
@@ -60,7 +58,6 @@ HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
   }
 }
 
-
 bool
 HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
 {
@@ -73,7 +70,6 @@ HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
   } else
     return false;
 }
-
 
 void
 HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int scheme)
@@ -151,7 +147,6 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
   ats_free(alloced_buffer);
 }
 
-
 void
 HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response, HTTPStatus status, const char *reason_phrase,
                                          int reason_phrase_len, ink_time_t date)
@@ -167,7 +162,6 @@ HttpTransactHeaders::build_base_response(HTTPHdr *outgoing_response, HTTPStatus 
   outgoing_response->reason_set(reason_phrase, reason_phrase_len);
   outgoing_response->set_date(date);
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 // Copy all non hop-by-hop header fields from src_hdr to new_hdr.
@@ -222,7 +216,6 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
     new_hdr->set_date(date);
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 // Just convert the outgoing request to the appropriate version
 void
@@ -261,7 +254,6 @@ HttpTransactHeaders::convert_response(HTTPVersion outgoing_ver, HTTPHdr *outgoin
   }
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing request header and make it HTTP/0.9
 void
@@ -276,7 +268,6 @@ HttpTransactHeaders::convert_to_0_9_request_header(HTTPHdr *outgoing_request)
   // HTTP/0.9 has no headers: nuke them all
   outgoing_request->fields_clear();
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing request header and make it HTTP/1.0
@@ -301,7 +292,6 @@ HttpTransactHeaders::convert_to_1_0_request_header(HTTPHdr *outgoing_request)
   // outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing request header and make it HTTP/1.1
 void
@@ -320,7 +310,6 @@ HttpTransactHeaders::convert_to_1_1_request_header(HTTPHdr *outgoing_request)
   // outgoing_request->value_insert(MIME_FIELD_TE, "chunked;q=0.0");
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing response header and make it HTTP/0.9
 void
@@ -334,7 +323,6 @@ HttpTransactHeaders::convert_to_0_9_response_header(HTTPHdr * /* outgoing_respon
   // the size of the response body, however.
   // There is therefore no need to clear the header.
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing response header and make it HTTP/1.0
@@ -353,7 +341,6 @@ HttpTransactHeaders::convert_to_1_0_response_header(HTTPHdr *outgoing_response)
   // Cache-Control?
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 // Take an existing outgoing response header and make it HTTP/1.1
 void
@@ -366,7 +353,6 @@ HttpTransactHeaders::convert_to_1_1_response_header(HTTPHdr *outgoing_response)
   //    ink_assert(outgoing_response->version_get() == HTTPVersion (1, 1));
   outgoing_response->version_set(HTTPVersion(1, 1));
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : calculate_document_age()
@@ -436,7 +422,6 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time, ink_time_t 
   return current_age;
 }
 
-
 bool
 HttpTransactHeaders::does_server_allow_response_to_be_stored(HTTPHdr *resp)
 {
@@ -447,7 +432,6 @@ HttpTransactHeaders::does_server_allow_response_to_be_stored(HTTPHdr *resp)
   else
     return true;
 }
-
 
 bool
 HttpTransactHeaders::downgrade_request(bool *origin_server_keep_alive, HTTPHdr *outgoing_request)
@@ -656,7 +640,6 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
   header->value_set(MIME_FIELD_WARNING, MIME_LEN_WARNING, warning_text, len);
 }
 
-
 void
 HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_sent_time, ink_time_t response_received_time,
                                                              ink_time_t now, HTTPHdr *base, HTTPHdr *outgoing)
@@ -672,7 +655,6 @@ HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_
     outgoing->set_date(now);
 }
 
-
 void
 HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, int server_tag_size, HTTPHdr *h)
 {
@@ -680,7 +662,6 @@ HttpTransactHeaders::insert_server_header_in_response(const char *server_tag, in
     h->set_server(server_tag, server_tag_size);
   }
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : insert_via_header_in_request
@@ -875,7 +856,6 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name: insert_basic_realm_in_proxy_authenticate
 // Description: insert Basic realm into Proxy-Authenticate based on
@@ -905,7 +885,6 @@ HttpTransactHeaders::insert_basic_realm_in_proxy_authenticate(const char *realm,
   header->field_attach(auth);
 }
 
-
 void
 HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 {
@@ -930,7 +909,6 @@ HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr
   }
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 // Deal with lame-o servers by removing the host name from the url.
 void
@@ -939,7 +917,6 @@ HttpTransactHeaders::remove_host_name_from_url(HTTPHdr *outgoing_request)
   URL *outgoing_url = outgoing_request->url_get();
   outgoing_url->nuke_proxy_stuff();
 }
-
 
 void
 HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
@@ -957,7 +934,6 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConf
       header->field_value_set(ua_field, http_txn_conf->global_user_agent_header, http_txn_conf->global_user_agent_header_size);
   }
 }
-
 
 void
 HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
@@ -982,7 +958,6 @@ HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *
     }
   }
 }
-
 
 void
 HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_config_param,

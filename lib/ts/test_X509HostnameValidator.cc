@@ -85,7 +85,6 @@ static const char *test_certificate_cn_and_SANs = "-----BEGIN CERTIFICATE-----\n
                                                   "gQP8uiG6cly7NruPZn2Yc1Cha0TycSYfVkRi0dMF2RKtaVvd4uaXDNb4Qpwv3Q==\n"
                                                   "-----END CERTIFICATE-----\n";
 
-
 static X509 *
 load_cert_from_string(const char *cert_string)
 {

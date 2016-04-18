@@ -94,7 +94,6 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
   }
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
-
   if (number_of_ssl_threads == -1) {
     // We've disabled ET_SSL threads, so we will mark all ET_NET threads as having
     // ET_SSL thread capabilities and just keep on chugging.

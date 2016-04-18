@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 #include <iostream>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
@@ -52,7 +51,6 @@ public:
   }
 
   virtual ~PostBufferTransformationPlugin() {}
-
 private:
   Transaction &transaction_;
   string buffer_;
@@ -62,7 +60,6 @@ class GlobalHookPlugin : public GlobalPlugin
 {
 public:
   GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP); }
-
   virtual void
   handleReadRequestHeadersPostRemap(Transaction &transaction)
   {

@@ -43,7 +43,6 @@
 //       *pstatus = REGRESSION_TEST_PASSED;
 //   }
 
-
 // status values
 #define REGRESSION_TEST_PASSED 1
 #define REGRESSION_TEST_INPROGRESS 0 // initial value

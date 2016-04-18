@@ -75,7 +75,7 @@ public:
   int fetch_data_len;
   unsigned delta_window_size;
   bool fetch_body_completed;
-  vector<pair<string, string> > headers;
+  vector<pair<string, string>> headers;
 
   string url;
   string host;
@@ -99,7 +99,6 @@ public:
       req_reader(NULL), resp_buffer(NULL), resp_reader(NULL), read_vio(NULL), write_vio(NULL), event(0), session(NULL)
   {
   }
-
 
   void init(NetVConnection *netvc);
   void clear();
@@ -205,6 +204,5 @@ private:
   int state_session_start(int event, void *edata);
   int state_session_readwrite(int event, void *edata);
 };
-
 
 #endif

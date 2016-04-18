@@ -728,7 +728,6 @@ main(int argc, const char **argv)
   ink_thread_create(ts_ctrl_main, &mgmtapiFD);
   ink_thread_create(event_callback_main, &eventapiFD);
 
-
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
 

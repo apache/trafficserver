@@ -67,7 +67,6 @@ class PluginIdentity
 public:
   /// Make sure destructor is virtual.
   virtual ~PluginIdentity() {}
-
   /** Get the plugin tag.
       The returned string must have a lifetime at least as long as the plugin.
       @return A string identifying the plugin or @c NULL.

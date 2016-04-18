@@ -72,7 +72,6 @@ test_block_boundries()
   int failures = 0;
   Arena *a = new Arena();
 
-
   for (int i = 0; i < sizes_to_test; i++) {
     int test_size = 1 << i;
 

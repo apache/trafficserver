@@ -220,7 +220,6 @@ public:
     return restart_immediate;
   }
 
-
 protected:
   ProxyClientSession *parent;
   HttpSM *current_reader;
@@ -230,7 +229,6 @@ protected:
   HostResStyle host_res_style;
 
   bool restart_immediate;
-
 
 private:
 };

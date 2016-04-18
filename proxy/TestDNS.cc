@@ -58,7 +58,6 @@ ofstream fout;
 ofstream fout_rate, fout_rate_misc;
 FILE *fin;
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      TestDnsStateMachine
@@ -96,7 +95,6 @@ TestDnsStateMachine::TestDnsStateMachine(char *ahost, size_t size) : Continuatio
   SET_HANDLER(processEvent);
   return;
 }
-
 
 inline const char *
 TestDnsStateMachine::currentStateName()

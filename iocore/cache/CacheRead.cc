@@ -1046,9 +1046,10 @@ CacheVC::openReadStartHead(int event, Event *e)
                "- vector n=%d size=%d"
                "first alt=%d[%s]",
                key.slice32(0), uml, doc->hlen, doc->len, sizeofDoc, doc->v_major, doc->v_minor, vector.count(), alt_length,
-               alt->m_magic, (CACHE_ALT_MAGIC_ALIVE == alt->m_magic ? "alive" : CACHE_ALT_MAGIC_MARSHALED == alt->m_magic ?
-                                                                      "serial" :
-                                                                      CACHE_ALT_MAGIC_DEAD == alt->m_magic ? "dead" : "bogus"));
+               alt->m_magic,
+               (CACHE_ALT_MAGIC_ALIVE == alt->m_magic ?
+                  "alive" :
+                  CACHE_ALT_MAGIC_MARSHALED == alt->m_magic ? "serial" : CACHE_ALT_MAGIC_DEAD == alt->m_magic ? "dead" : "bogus"));
           dir_delete(&key, vol, &dir);
         }
         err = ECACHE_BAD_META_DATA;

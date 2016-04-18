@@ -34,7 +34,6 @@ public:
   typedef ProxyClientTransaction super;
 
   Http1ClientTransaction() : super() {}
-
   // Implement VConnection interface.
   virtual VIO *
   do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0)

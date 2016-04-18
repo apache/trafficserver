@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
 #include <atscppapi/Logger.h>
@@ -70,7 +69,6 @@ public:
     return getDispatchController()->isEnabled();
   }
   ~DelayedAsyncHttpFetch() { delete timer_; }
-
 private:
   shared_ptr<Mutex> mutex_;
   AsyncTimer *timer_;

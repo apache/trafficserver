@@ -802,7 +802,6 @@ int64_t ink_atoi64(const char *);
 uint64_t ink_atoui64(const char *);
 int64_t ink_atoi64(const char *, int);
 
-
 static inline int
 ink_atoi(const char *str)
 {

@@ -56,7 +56,6 @@
 #include "net/instaweb/util/public/string_util.h"
 #include "net/instaweb/util/public/thread_system.h"
 
-
 namespace net_instaweb
 {
 AtsRewriteDriverFactory::AtsRewriteDriverFactory(const ProcessContext &process_context, AtsThreadSystem *thread_system,
@@ -174,7 +173,6 @@ AtsRewriteDriverFactory::InitStats(Statistics *statistics)
   // Init Ats-specific stats.
   AtsServerContext::InitStats(statistics);
 }
-
 
 AtsServerContext *
 AtsRewriteDriverFactory::MakeAtsServerContext()

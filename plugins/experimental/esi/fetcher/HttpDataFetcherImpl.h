@@ -144,7 +144,6 @@ private:
   bool _checkHeaderValue(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_len, const char *exp_value, int exp_value_len,
                          bool prefix) const;
 
-
   std::string _headers_str;
 
   inline void _release(RequestData &req_data);

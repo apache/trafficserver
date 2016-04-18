@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "Prefetch.h"
 #include "HdrUtils.h"
 #include "HttpCompat.h"
@@ -51,20 +50,20 @@ struct html_tag prefetch_allowable_html_tags[] = {
 
 // this attribute table is hard coded. It has to be the same size as
 // the prefetch_allowable_html_tags table
-struct html_tag prefetch_allowable_html_attrs[] = {
-  {NULL, NULL},
-  {NULL, NULL},
-  {NULL, NULL},
-  {NULL, NULL},
-  {NULL, NULL},
-  {NULL, NULL},
-  {NULL, NULL},
-  {NULL, NULL},
-  {NULL, NULL},
-  {NULL, NULL},
-  {NULL, NULL},
-  {"rel", "stylesheet"}, // We want to prefetch the .css files that are common; make sure this matches {"link", "href"}
-  {NULL, NULL}};
+struct html_tag prefetch_allowable_html_attrs[] = {{NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {NULL, NULL},
+                                                   {"rel", "stylesheet"}, // We want to prefetch the .css files that are
+                                                                          // common; make sure this matches {"link", "href"}
+                                                   {NULL, NULL}};
 
 static const char *PREFETCH_FIELD_RECURSION;
 static int PREFETCH_FIELD_LEN_RECURSION;
@@ -240,7 +239,7 @@ normalize_url(char *url, int *len)
         }
       } break;
       default: /* NONE */
-        ;
+               ;
       }; /* end of switch (state) */
 
       state = SLASH;
@@ -620,7 +619,6 @@ PrefetchTransform::hash_add(char *s)
   if (normalize_url(s, &str_len) > 0)
     Debug("PrefetchParserURLs", "Normalized URL: %s\n", s);
 
-
   INK_MD5 hash;
   MD5Context().hash_immediate(hash, s, str_len);
   index = hash.slice32(1) % HASH_TABLE_LENGTH;
@@ -635,7 +633,6 @@ PrefetchTransform::hash_add(char *s)
 
   return *e;
 }
-
 
 #define IS_RECURSIVE_PREFETCH(req_ip) (prefetch_config->max_recursion > 0 && ats_is_ip_loopback(&req_ip))
 
@@ -730,7 +727,6 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
                 "Request Header given for  Prefetch Parser");
   }
 }
-
 
 static int
 PrefetchPlugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)

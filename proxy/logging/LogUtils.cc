@@ -47,7 +47,6 @@
 #include "LogUtils.h"
 #include "LogLimits.h"
 
-
 /*-------------------------------------------------------------------------
   LogUtils::timestamp_to_str
 
@@ -395,7 +394,6 @@ LogUtils::remove_content_type_attributes(char *type_str, int *type_len)
   }
 }
 
-
 /*-------------------------------------------------------------------------
   LogUtils::timestamp_to_hex_str
 
@@ -457,7 +455,6 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
   int tr = rolling_offset * 3600;
   return ((tr >= sidl ? (tr - sidl) % rolling_interval : (86400 - (sidl - tr)) % rolling_interval));
 }
-
 
 // Checks if the file pointed to by full_filename either is a regular
 // file or a pipe and has write permission, or, if the file does not

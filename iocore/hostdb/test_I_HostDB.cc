@@ -45,6 +45,5 @@ main()
 
   hostDBProcessor.start();
 
-
   this_ethread()->execute();
 }

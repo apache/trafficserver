@@ -94,14 +94,10 @@ HdrTest::test_error_page_selection()
     const char *set_name;
     const char *content_language;
     const char *content_charset;
-  } sets[] = {{"default", "en", "iso-8859-1"},
-              {"en-cockney", "en-cockney", "iso-8859-1"},
-              {"en", "en", "iso-8859-1"},
-              {"en-us", "en-us", "us-ascii"},
-              {"en", "en", "unicode"},
-              {"en-cockney-slang", "en-cockney-slang", "iso-8859-1"},
-              {"ko", "ko", "iso-8859-1"},
-              {"ko", "ko", "iso-2022-kr"},
+  } sets[] = {{"default", "en", "iso-8859-1"}, {"en-cockney", "en-cockney", "iso-8859-1"},
+              {"en", "en", "iso-8859-1"},      {"en-us", "en-us", "us-ascii"},
+              {"en", "en", "unicode"},         {"en-cockney-slang", "en-cockney-slang", "iso-8859-1"},
+              {"ko", "ko", "iso-8859-1"},      {"ko", "ko", "iso-2022-kr"},
               {"jp", "jp", "shift-jis"}};
 
   static struct {
@@ -358,7 +354,6 @@ HdrTest::test_url()
     "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]/some/path", "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/some/path",
     "http://172.16.28.101/", "http://[fc01:172:16:28:BAAD:BEEF:DEAD:101]:8080/",
 
-
     "foo:bar@some.place", "foo:bar@some.place/", "http://foo:bar@some.place", "http://foo:bar@some.place/",
     "http://foo:bar@[::1]:8080/", "http://foo@[::1]",
 
@@ -367,8 +362,15 @@ HdrTest::test_url()
     "/finance/external/cbsm/*http://cbs.marketwatch.com/archive/19990713/news/current/net.htx?source=blq/yhoo&dist=yhoo",
     "http://a.b.com/xx.jpg?newpath=http://bob.dave.com"};
 
-  static char const *bad[] = {"http://[1:2:3:4:5:6:7:8:9]", "http://1:2:3:4:5:6:7:8:A:B", "http://bob.com[::1]", "http://[::1].com",
-                              "http://foo:bar:baz@bob.com/", "http://foo:bar:baz@[::1]:8080/", "http://]", "http://:", "http:/"};
+  static char const *bad[] = {"http://[1:2:3:4:5:6:7:8:9]",
+                              "http://1:2:3:4:5:6:7:8:A:B",
+                              "http://bob.com[::1]",
+                              "http://[::1].com",
+                              "http://foo:bar:baz@bob.com/",
+                              "http://foo:bar:baz@[::1]:8080/",
+                              "http://]",
+                              "http://:",
+                              "http:/"};
 
   int err, failed;
   URL url;
@@ -580,7 +582,6 @@ HdrTest::test_mime()
 
   hdr.print(NULL, 0, NULL, NULL);
   printf("\n");
-
 
   obj_describe((HdrHeapObjImpl *)(hdr.m_mime), true);
 
@@ -1011,7 +1012,6 @@ comp_http_hdr(HTTPHdr *h1, HTTPHdr *h2)
   }
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1049,7 +1049,6 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
     return (0);
   }
   http_parser_clear(&parser);
-
 
   /*** (2) parse the response string into hdr ***/
 
@@ -1621,7 +1620,6 @@ HdrTest::test_http_mutation()
     resp_hdr.field_delete(field_name, (int)strlen(field_name));
   }
 
-
   printf("\n======== mutated response ==========\n\n");
   printf("\n[");
   resp_hdr.print(NULL, 0, NULL, NULL);
@@ -1765,7 +1763,6 @@ HdrTest::test_accept_language_match()
   return (failures_to_status("test_accept_language_match", failures));
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1841,24 +1838,15 @@ HdrTest::test_comma_vals()
       int offset;
       int len;
     } pieces[4];
-  } tests[] = {{",", 2, {{0, 0}, {1, 0}, {-1, 0}, {-1, 0}}},
-               {"", 1, {{0, 0}, {-1, 0}, {-1, 0}, {-1, 0}}},
-               {" ", 1, {{0, 0}, {-1, 0}, {-1, 0}, {-1, 0}}},
-               {", ", 2, {{0, 0}, {1, 0}, {-1, 0}, {-1, 0}}},
-               {",,", 3, {{0, 0}, {1, 0}, {2, 0}, {-1, 0}}},
-               {" ,", 2, {{0, 0}, {2, 0}, {-1, 0}, {-1, 0}}},
-               {" , ", 2, {{0, 0}, {2, 0}, {-1, 0}, {-1, 0}}},
-               {"a, ", 2, {{0, 1}, {2, 0}, {-1, 0}, {-1, 0}}},
-               {" a, ", 2, {{1, 1}, {3, 0}, {-1, 0}, {-1, 0}}},
-               {" ,a", 2, {{0, 0}, {2, 1}, {-1, 0}, {-1, 0}}},
-               {" , a", 2, {{0, 0}, {3, 1}, {-1, 0}, {-1, 0}}},
-               {"a,a", 2, {{0, 1}, {2, 1}, {-1, 0}, {-1, 0}}},
-               {"foo", 1, {{0, 3}, {-1, 0}, {-1, 0}, {-1, 0}}},
-               {"foo,", 2, {{0, 3}, {4, 0}, {-1, 0}, {-1, 0}}},
-               {"foo, ", 2, {{0, 3}, {4, 0}, {-1, 0}, {-1, 0}}},
-               {"foo, bar", 2, {{0, 3}, {5, 3}, {-1, 0}, {-1, 0}}},
-               {"foo, bar,", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}},
-               {"foo, bar, ", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}},
+  } tests[] = {{",", 2, {{0, 0}, {1, 0}, {-1, 0}, {-1, 0}}},        {"", 1, {{0, 0}, {-1, 0}, {-1, 0}, {-1, 0}}},
+               {" ", 1, {{0, 0}, {-1, 0}, {-1, 0}, {-1, 0}}},       {", ", 2, {{0, 0}, {1, 0}, {-1, 0}, {-1, 0}}},
+               {",,", 3, {{0, 0}, {1, 0}, {2, 0}, {-1, 0}}},        {" ,", 2, {{0, 0}, {2, 0}, {-1, 0}, {-1, 0}}},
+               {" , ", 2, {{0, 0}, {2, 0}, {-1, 0}, {-1, 0}}},      {"a, ", 2, {{0, 1}, {2, 0}, {-1, 0}, {-1, 0}}},
+               {" a, ", 2, {{1, 1}, {3, 0}, {-1, 0}, {-1, 0}}},     {" ,a", 2, {{0, 0}, {2, 1}, {-1, 0}, {-1, 0}}},
+               {" , a", 2, {{0, 0}, {3, 1}, {-1, 0}, {-1, 0}}},     {"a,a", 2, {{0, 1}, {2, 1}, {-1, 0}, {-1, 0}}},
+               {"foo", 1, {{0, 3}, {-1, 0}, {-1, 0}, {-1, 0}}},     {"foo,", 2, {{0, 3}, {4, 0}, {-1, 0}, {-1, 0}}},
+               {"foo, ", 2, {{0, 3}, {4, 0}, {-1, 0}, {-1, 0}}},    {"foo, bar", 2, {{0, 3}, {5, 3}, {-1, 0}, {-1, 0}}},
+               {"foo, bar,", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}}, {"foo, bar, ", 3, {{0, 3}, {5, 3}, {9, 0}, {-1, 0}}},
                {",foo,bar,", 4, {{0, 0}, {1, 3}, {5, 3}, {9, 0}}}};
 
   bri_box("test_comma_vals");

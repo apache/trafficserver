@@ -53,7 +53,8 @@ struct SSLSessionID {
     len = other.len;
   }
 
-  bool operator<(const SSLSessionID &other) const
+  bool
+  operator<(const SSLSessionID &other) const
   {
     if (len != other.len)
       return len < other.len;
@@ -61,7 +62,8 @@ struct SSLSessionID {
     return (memcmp(bytes, other.bytes, len) < 0);
   }
 
-  SSLSessionID &operator=(const SSLSessionID &other)
+  SSLSessionID &
+  operator=(const SSLSessionID &other)
   {
     if (other.len)
       memcpy(bytes, other.bytes, other.len);
@@ -70,7 +72,8 @@ struct SSLSessionID {
     return *this;
   }
 
-  bool operator==(const SSLSessionID &other) const
+  bool
+  operator==(const SSLSessionID &other) const
   {
     if (len != other.len)
       return false;

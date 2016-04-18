@@ -45,7 +45,6 @@ struct SSLCertLookup;
 // configuration file.
 /////////////////////////////////////////////////////////////
 
-
 typedef void (*init_ssl_ctx_func)(void *, bool);
 typedef void (*load_ssl_file_func)(const char *, unsigned int);
 

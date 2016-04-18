@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Main entry points for the plugin hooks etc.
@@ -28,7 +27,6 @@
 
 #include "lulu.h"
 #include "acl.h"
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin as a remap plugin.
@@ -54,7 +52,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 }
-
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
@@ -95,7 +92,6 @@ TSRemapDeleteInstance(void *ih)
 
   delete a;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Main entry point when used as a remap plugin.

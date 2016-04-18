@@ -26,10 +26,8 @@
 #include "ts/ink_thread.h"
 #include "ts/ink_queue.h"
 
-
 #define NTHREADS 64
 InkFreeList *flist = NULL;
-
 
 void *
 test(void *d)
@@ -66,7 +64,6 @@ test(void *d)
     }
   }
 }
-
 
 int
 main(int /* argc ATS_UNUSED */, char * /*argv ATS_UNUSED */ [])

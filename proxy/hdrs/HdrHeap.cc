@@ -131,7 +131,6 @@ new_HdrHeap(int size)
   h->m_size = size;
   h->init();
 
-
   return h;
 }
 
@@ -204,7 +203,6 @@ HdrHeap::allocate_obj(int nbytes, int type)
 
   HdrHeap *h = this;
 
-
   while (1) {
     if ((unsigned)nbytes <= (h->m_free_size)) {
       new_space = h->m_free_start;
@@ -237,7 +235,6 @@ HdrHeap::deallocate_obj(HdrHeapObjImpl *obj)
   obj->m_type = HDR_HEAP_OBJ_EMPTY;
 }
 
-
 char *
 HdrHeap::allocate_str(int nbytes)
 {
@@ -256,7 +253,6 @@ HdrHeap::allocate_str(int nbytes)
   if (m_lost_string_space > (int)MAX_LOST_STR_SPACE) {
     goto FAILED;
   }
-
 
 RETRY:
   // First check to see if we have a read/write
@@ -320,7 +316,6 @@ HdrHeap::duplicate_str(const char *str, int nbytes)
   memcpy(new_str, str, nbytes);
   return (new_str);
 }
-
 
 // int HdrHeap::demote_rw_str_heap()
 //
@@ -499,7 +494,6 @@ HdrHeap::sanity_check_strs()
     }
   }
 
-
   // Loop over the objects in heap call the check
   //   function on each one
   HdrHeap *h = this;
@@ -537,7 +531,6 @@ HdrHeap::sanity_check_strs()
     h = h->m_next;
   }
 }
-
 
 // int HdrHeap::marshal_length()
 //
@@ -598,7 +591,6 @@ compute_checksum(void *buf, int len)
   return cksum;
 }
 #endif
-
 
 // int HdrHeap::marshal(char* buf, int len)
 //
@@ -811,7 +803,6 @@ Failed:
   return -1;
 }
 
-
 // bool HdrHeap::check_marshalled(char* buf, int buf_length) {
 //
 //   Takes in marshalled buffer and verifies whether stuff appears
@@ -828,7 +819,7 @@ HdrHeap::check_marshalled(uint32_t buf_length)
     return false;
   }
 
-  if (this->m_size != (uintptr_t) this->m_ronly_heap[0].m_heap_start) {
+  if (this->m_size != (uintptr_t)this->m_ronly_heap[0].m_heap_start) {
     return false;
   }
 
@@ -928,7 +919,7 @@ HdrHeap::unmarshal(int buf_length, int obj_type, HdrHeapObjImpl **found_obj, Ref
   // Loop over objects and swizzle there pointer to
   //  live offsets
   char *obj_data = m_data_start;
-  intptr_t offset = (intptr_t) this;
+  intptr_t offset = (intptr_t)this;
 
   while (obj_data < m_free_start) {
     HdrHeapObjImpl *obj = (HdrHeapObjImpl *)obj_data;
@@ -1000,7 +991,6 @@ HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *
 
   return 1;
 }
-
 
 // void HdrHeap::inhertit_string_heaps(const HdrHeap* inherit_from)
 //
@@ -1099,7 +1089,7 @@ HdrHeap::dump_heap(int len)
   }
   end = ((char *)this) + len;
 
-  fprintf(stderr, "---- Dumping header heap @ 0x%" PRIx64 " - len %d ------", (uint64_t)((ptrdiff_t) this), len);
+  fprintf(stderr, "---- Dumping header heap @ 0x%" PRIx64 " - len %d ------", (uint64_t)((ptrdiff_t)this), len);
 
   while (tmp < end) {
     if (count % 4 == 0) {
@@ -1123,7 +1113,6 @@ HdrHeap::dump_heap(int len)
 
   fprintf(stderr, "\n-------------- End header heap dump -----------\n");
 }
-
 
 void
 HdrStrHeap::free()
@@ -1176,7 +1165,6 @@ HdrStrHeap::expand(char *ptr, int old_size, int new_size)
     return NULL;
   }
 }
-
 
 StrHeapDesc::StrHeapDesc()
 {
@@ -1259,7 +1247,6 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */,
            "Checking that the aliased string shows having proper length");
   tb.check(aliased_str_url->m_ptr_path == buf3, "Checking that the aliased string is correctly pointing at buf");
 
-
   for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
     tb.check(heap->m_ronly_heap[i].m_heap_start != (char *)NULL, "Post non-copied string: Checking ronly_heap[%d] is NOT NULL", i);
   }
@@ -1271,7 +1258,6 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */,
   // coalesce it used to sum up the size of the ronly heaps and the rw heap which is incorrect because we never
   // copied the above string onto the heap. The new behaviour fixed in TS-2766 will make sure that this non copied
   // string is accounted for, in the old implementation it would result in an allocation failure.
-
 
   char *str = heap->allocate_str(1); // this will force a coalese.
   tb.check(str != NULL, "Checking that 1 byte allocated string is not NULL");

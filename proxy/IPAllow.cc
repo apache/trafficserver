@@ -93,7 +93,6 @@ IpAllow::release(IpAllow *lookup)
 //   End API functions
 //
 
-
 IpAllow::IpAllow(const char *config_var, const char *name, const char *action_val) : module_name(name), action(action_val)
 {
   ats_scoped_str config_path(RecConfigReadConfigPath(config_var));

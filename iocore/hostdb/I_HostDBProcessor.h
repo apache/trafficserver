@@ -64,7 +64,6 @@ extern unsigned int hostdb_ip_timeout_interval;
 extern unsigned int hostdb_ip_fail_timeout_interval;
 extern unsigned int hostdb_serve_stale_but_revalidate;
 
-
 static inline unsigned int
 makeHostHash(const char *string)
 {
@@ -239,7 +238,6 @@ struct HostDBInfo {
     return false;
   }
 
-
   //
   // Private
   //
@@ -377,7 +375,6 @@ struct HostDBInfo {
   int *heap_offset_ptr();
 };
 
-
 struct HostDBRoundRobin {
   /** Total number (to compute space used). */
   short rrcount;
@@ -456,7 +453,6 @@ struct HostDBProcessor : public Processor {
     HostResStyle host_res_style; ///< How to query host (default HOST_RES_IPV4)
 
     Options() : port(0), flags(HOSTDB_DO_NOT_FORCE_DNS), timeout(0), host_res_style(HOST_RES_IPV4) {}
-
     /// Set the flags.
     self &
     setFlags(int f)
@@ -470,7 +466,6 @@ struct HostDBProcessor : public Processor {
   static Options const DEFAULT_OPTIONS;
 
   HostDBProcessor() {}
-
   inkcoreapi Action *getbyname_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);
 
   Action *getbynameport_re(Continuation *cont, const char *hostname, int len, Options const &opt = DEFAULT_OPTIONS);

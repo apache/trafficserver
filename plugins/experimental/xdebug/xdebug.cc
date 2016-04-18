@@ -30,7 +30,6 @@ static struct {
   int len;
 } xDebugHeader = {NULL, 0};
 
-
 #define XHEADER_X_CACHE_KEY 0x0004u
 #define XHEADER_X_MILESTONES 0x0008u
 #define XHEADER_X_CACHE 0x0010u
@@ -42,7 +41,7 @@ static TSCont XInjectHeadersCont = NULL;
 // Return the length of a string literal.
 template <int N>
 unsigned
-lengthof(const char(&)[N])
+lengthof(const char (&)[N])
 {
   return N - 1;
 }
@@ -391,7 +390,6 @@ TSPluginInit(int argc, const char *argv[])
     xDebugHeader.str = TSstrdup("X-Debug"); // We malloc this, for consistency for future plugin unload events
   }
   xDebugHeader.len = strlen(xDebugHeader.str);
-
 
   // Setup the global hook
   TSReleaseAssert(TSHttpArgIndexReserve("xdebug", "xdebug header requests", &XArgIndex) == TS_SUCCESS);

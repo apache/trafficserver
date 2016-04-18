@@ -61,7 +61,6 @@ public:
   }
 
   ~Http2Stream() { this->destroy(); }
-
   int main_event_handler(int event, void *edata);
 
   void destroy();

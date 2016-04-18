@@ -62,8 +62,6 @@ struct SocksProxy : public Continuation {
   {
   }
   ~SocksProxy() {}
-
-
   // int startEvent(int event, void * data);
   int mainEvent(int event, void *data);
   int setupHttpRequest(unsigned char *p);
@@ -412,7 +410,6 @@ SocksProxy::sendResp(bool granted)
   // connect at all. Set these feilds to zeros. Any socks client which uses
   // these breaks caching.
 
-
   buf->reset();
   unsigned char *p = (unsigned char *)buf->start();
 
@@ -434,7 +431,6 @@ SocksProxy::sendResp(bool granted)
 
   return n_bytes;
 }
-
 
 int
 SocksProxy::setupHttpRequest(unsigned char *p)
@@ -477,7 +473,6 @@ SocksProxy::setupHttpRequest(unsigned char *p)
 
   return ret;
 }
-
 
 static void
 new_SocksProxy(NetVConnection *netVC)

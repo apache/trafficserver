@@ -141,9 +141,7 @@ static void get_admin_user(void);
 
 struct ConfigValue {
   ConfigValue() : config_type(RECT_NULL), data_type(RECD_NULL) {}
-
   ConfigValue(RecT _t, RecDataT _d, const std::string &_v) : config_type(_t), data_type(_d), data_value(_v) {}
-
   RecT config_type;
   RecDataT data_type;
   std::string data_value;
@@ -200,7 +198,6 @@ cop_log(int priority, const char *format, ...)
 
   va_end(args);
 }
-
 
 void
 chown_file_to_admin_user(const char *file)
@@ -408,7 +405,6 @@ safe_kill(const char *lockfile_name, const char *pname, bool group)
   set_alarm_death();
   cop_log_trace("Leaving safe_kill(%s, %s, %d)\n", lockfile_name, pname, group);
 }
-
 
 // ink_hrtime milliseconds()
 //
@@ -759,7 +755,6 @@ spawn_manager()
   manager_failures = 0;
   cop_log_trace("Leaving spawn_manager()\n");
 }
-
 
 static int
 poll_read_or_write(int fd, int timeout, int inorout)
@@ -1119,7 +1114,6 @@ read_mgmt_cli_int(const char *variable, int *value)
   return 0;
 }
 
-
 static int
 test_rs_port()
 {
@@ -1138,7 +1132,6 @@ test_rs_port()
 
   return 0;
 }
-
 
 static int
 test_mgmt_cli_port()
@@ -1160,7 +1153,6 @@ test_mgmt_cli_port()
     TSfree(val);
   return ret;
 }
-
 
 static int
 test_http_port(int port, char *request, int timeout, char const *ip = NULL, char const *ip_to_bind = NULL)
@@ -1344,7 +1336,6 @@ server_up()
   }
 }
 
-
 //         |  state  |  status  |  action
 // --------|---------|----------|---------------
 // manager |   up    |    ok    |  nothing
@@ -1358,7 +1349,6 @@ server_up()
 // --------|---------|----------|---------------
 // manager |   up    |    ok    |  kill server
 // server  |   up    |    bad   |
-
 
 static void
 check_programs()
@@ -1615,7 +1605,6 @@ check(void *arg)
   cop_log_trace("Leaving check()\n");
   return arg;
 }
-
 
 static void
 check_lockfile()

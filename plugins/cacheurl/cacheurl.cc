@@ -58,7 +58,6 @@ struct pr_list {
   std::vector<regex_info *> pr;
 
   pr_list() {}
-
   ~pr_list()
   {
     for (std::vector<regex_info *>::iterator info = this->pr.begin(); info != this->pr.end(); ++info) {
@@ -405,7 +404,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
   *ih = load_config_file(argc > 2 ? argv[2] : NULL);
   return (NULL == *ih) ? TS_ERROR : TS_SUCCESS;
 }
-
 
 void
 TSRemapDeleteInstance(void *ih)

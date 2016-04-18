@@ -40,7 +40,6 @@ int CONGESTION_DB_SIZE = 1024;
 
 CongestionDB *theCongestionDB = NULL;
 
-
 /*
  * the CongestionDBCont is the continuation to do the congestion db related work
  * when the CongestionDB's corresponding function does not get the lock in the
@@ -56,7 +55,6 @@ public:
   int get_congest_list(int event, Event *e);
 
   int get_congest_entry(int event, Event *e);
-
 
   Action m_action;
 

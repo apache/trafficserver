@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 #include <iostream>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>

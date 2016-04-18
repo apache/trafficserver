@@ -63,7 +63,6 @@ static char const *const HTTP2_STAT_SESSION_DIE_ERROR_NAME = "proxy.process.http
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
-
   void *ptr;
   uint8_t *u8;
   uint16_t *u16;
@@ -111,7 +110,7 @@ write_and_advance(byte_pointer &dst, uint8_t src)
 
 template <unsigned N>
 static void
-memcpy_and_advance(uint8_t(&dst)[N], byte_pointer &src)
+memcpy_and_advance(uint8_t (&dst)[N], byte_pointer &src)
 {
   memcpy(dst, src.u8, N);
   src.u8 += N;
@@ -580,7 +579,6 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   if (len_read) {
     *len_read = result;
   }
-
 
   MIMEFieldIter iter;
   unsigned int expected_pseudo_header_count = 4;

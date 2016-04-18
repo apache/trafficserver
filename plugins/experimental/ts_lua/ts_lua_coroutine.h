@@ -25,7 +25,6 @@
 #include <lauxlib.h>
 #include <ts/ts.h>
 
-
 struct async_item;
 typedef int (*async_clean)(struct async_item *item);
 
@@ -51,7 +50,6 @@ typedef struct {
   struct async_item *async_chain; // async_item list
 } ts_lua_cont_info;
 
-
 /* asynchronous item */
 typedef struct async_item {
   struct async_item *next;
@@ -63,7 +61,6 @@ typedef struct async_item {
   async_clean cleanup; // cleanup function
   int deleted : 1;
 } ts_lua_async_item;
-
 
 ts_lua_async_item *ts_lua_async_create_item(TSCont cont, async_clean func, void *d, ts_lua_cont_info *ci);
 void ts_lua_release_cont_info(ts_lua_cont_info *ci);

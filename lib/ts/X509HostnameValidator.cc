@@ -96,7 +96,6 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
   return NULL;
 }
 
-
 /*
  * Comparison functions
  * @param pattern is the value from the certificate
@@ -162,7 +161,6 @@ wildcard_match(const unsigned char *prefix, size_t prefix_len, const unsigned ch
   return true;
 }
 
-
 /* Compare using wildcards. */
 static bool
 equal_wildcard(const unsigned char *pattern, size_t pattern_len, const unsigned char *subject, size_t subject_len)
@@ -182,7 +180,6 @@ equal_wildcard(const unsigned char *pattern, size_t pattern_len, const unsigned 
   return wildcard_match(pattern, wildcard - pattern, wildcard + 1, (pattern + pattern_len) - wildcard - 1, subject, subject_len);
 }
 
-
 /*
  * Compare an ASN1_STRING to a supplied string. only compare if string matches the specified type
  *
@@ -201,7 +198,6 @@ do_check_string(ASN1_STRING *a, int cmp_type, equal_fn equal, const unsigned cha
     *peername = ats_strndup((char *)a->data, a->length);
   return retval;
 }
-
 
 bool
 validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **peername)

@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 /**
  * @warning log rolling doesn't work correctly in 3.2.x, see:
  *   https://issues.apache.org/jira/browse/TS-1813, Apply the patch in

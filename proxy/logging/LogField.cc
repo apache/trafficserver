@@ -36,8 +36,8 @@
 #include "LogAccess.h"
 #include "Log.h"
 
-const char *container_names[] = {"not-a-container", "cqh", "psh", "pqh", "ssh", "cssh", "ecqh", "epsh", "epqh", "essh", "ecssh",
-                                 "icfg", "scfg", "record", "ms", "msdms", ""};
+const char *container_names[] = {"not-a-container", "cqh",  "psh",  "pqh",    "ssh", "cssh",  "ecqh", "epsh", "epqh", "essh",
+                                 "ecssh",           "icfg", "scfg", "record", "ms",  "msdms", ""};
 
 const char *aggregate_names[] = {"not-an-agg-op", "COUNT", "SUM", "AVG", "FIRST", "LAST", ""};
 
@@ -122,7 +122,11 @@ LogSlice::toStrOffset(int strlen, int *offset)
 namespace
 {
 struct cmp_str {
-  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) const { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0; }
+  bool
+  operator()(ts::ConstBuffer a, ts::ConstBuffer b) const
+  {
+    return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;
+  }
 };
 }
 
@@ -502,7 +506,8 @@ LogField::display(FILE *fd)
   This operator does only care of the name and m_symbol, may need
   do check on others layter.
   -------------------------------------------------------------------------*/
-bool LogField::operator==(LogField &rhs)
+bool
+LogField::operator==(LogField &rhs)
 {
   if (strcmp(name(), rhs.name()) || strcmp(symbol(), rhs.symbol())) {
     return false;
@@ -523,7 +528,6 @@ LogField::set_aggregate_op(LogField::Aggregate agg_op)
     m_agg_op = NO_AGGREGATE;
   }
 }
-
 
 void
 LogField::update_aggregate(int64_t val)
@@ -569,7 +573,6 @@ LogField::valid_container_name(char *name)
   return LogField::NO_CONTAINER;
 }
 
-
 LogField::Aggregate
 LogField::valid_aggregate_name(char *name)
 {
@@ -580,7 +583,6 @@ LogField::valid_aggregate_name(char *name)
   }
   return LogField::NO_AGGREGATE;
 }
-
 
 bool
 LogField::fieldlist_contains_aggregates(char *fieldlist)
@@ -596,7 +598,6 @@ LogField::fieldlist_contains_aggregates(char *fieldlist)
   }
   return contains_aggregates;
 }
-
 
 /*-------------------------------------------------------------------------
   LogFieldList

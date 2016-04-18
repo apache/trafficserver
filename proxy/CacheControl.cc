@@ -86,7 +86,6 @@ struct CC_FreerContinuation : public Continuation {
   }
 };
 
-
 // struct CC_UpdateContinuation
 //
 //   Used to read the cache.conf file after the manager signals
@@ -193,7 +192,6 @@ getClusterCacheLocal(URL *url)
 //
 //   End API functions
 //
-
 
 // void CacheControlResult::Print()
 //

@@ -190,7 +190,6 @@ public:
    */
   const sockaddr *getNextHopAddress() const;
 
-
   /**
    * Set the incoming port on the Transaction
    *
@@ -258,7 +257,6 @@ public:
    */
   Response &getCachedResponse();
 
-
   /**
    * Returns the Effective URL for this transaction taking into account host.
    */
@@ -322,7 +320,6 @@ public:
    * @param TransactionPlugin* the TransactionPlugin that will be now bound to the current Transaction.
    */
   void addPlugin(TransactionPlugin *);
-
 
   /*
    * Note: The following methods cannot be attached to a Response

@@ -62,7 +62,6 @@ ink_bsprintf(char *buffer, const char *format, ...)
   return (l);
 }
 
-
 int
 ink_bvsprintf(char *buffer, const char *format, va_list ap)
 {

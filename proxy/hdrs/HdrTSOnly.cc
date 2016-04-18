@@ -58,7 +58,6 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
   MIMEParseResult state = PARSE_CONT;
   *bytes_used = 0;
 
-
   do {
     int64_t b_avail = r->block_read_avail();
 
@@ -145,7 +144,6 @@ HdrHeap::set_ronly_str_heap_end(int slot, const char *end)
 
   m_ronly_heap[slot].m_heap_len = (int)(end - m_ronly_heap[slot].m_heap_start);
 }
-
 
 // void HdrHeap::attach_block(IOBufferBlock* b, const char* use_start)
 //

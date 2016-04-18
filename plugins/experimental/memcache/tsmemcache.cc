@@ -386,7 +386,6 @@ MC::write_binary_response(const void *d, int hlen, int keylen, int dlen)
     }                                                \
   } while (0)
 
-
 static char *
 get_pointer(MC *mc, int start, int len)
 {

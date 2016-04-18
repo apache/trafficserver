@@ -123,7 +123,6 @@ public:
   */
   EventType spawn_event_threads(int n_threads, const char *et_name, size_t stacksize);
 
-
   /**
     Schedules the continuation on a specific EThread to receive an event
     at the given timeout.  Requests the EventProcessor to schedule
@@ -214,7 +213,6 @@ public:
   */
   Event *schedule_every(Continuation *c, ink_hrtime aperiod, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
                         void *cookie = NULL);
-
 
   ////////////////////////////////////////////
   // reschedule an already scheduled event. //

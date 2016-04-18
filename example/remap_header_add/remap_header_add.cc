@@ -47,7 +47,6 @@ struct remap_line {
 #define NOWARN_UNUSED __attribute__((unused))
 #define EXTERN extern "C"
 
-
 EXTERN void
 ParseArgIntoNv(const char *arg, char **n, char **v)
 {
@@ -80,13 +79,11 @@ ParseArgIntoNv(const char *arg, char **n, char **v)
   TSDebug(TAG, "\t name_len=%zu, val_len=%zu, %s=%s", name_len, val_len, *n, *v);
 }
 
-
 TSReturnCode
 TSRemapInit(NOWARN_UNUSED TSRemapInterface *api_info, NOWARN_UNUSED char *errbuf, NOWARN_UNUSED int errbuf_size)
 {
   return TS_SUCCESS;
 }
-
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, NOWARN_UNUSED char *errbuf, NOWARN_UNUSED int errbuf_size)
@@ -121,7 +118,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, NOWARN_UNUSED char *errbuf
   return TS_SUCCESS;
 }
 
-
 void
 TSRemapDeleteInstance(void *ih)
 {
@@ -139,7 +135,6 @@ TSRemapDeleteInstance(void *ih)
     TSfree(rl);
   }
 }
-
 
 TSRemapStatus
 TSRemapDoRemap(void *ih, NOWARN_UNUSED TSHttpTxn txn, NOWARN_UNUSED TSRemapRequestInfo *rri)

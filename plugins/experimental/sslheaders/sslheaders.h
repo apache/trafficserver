@@ -63,7 +63,6 @@ enum ExpansionField {
 
 struct SslHdrExpansion {
   SslHdrExpansion() : name(), scope(SSL_HEADERS_SCOPE_NONE), field(SSL_HEADERS_FIELD_NONE) {}
-
   std::string name; // HTTP header name
   ExpansionScope scope;
   ExpansionField field;

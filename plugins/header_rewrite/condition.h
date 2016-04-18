@@ -31,7 +31,6 @@
 #include "matcher.h"
 #include "parser.h"
 
-
 // Condition modifiers
 enum CondModifiers {
   COND_NONE = 0,
@@ -42,7 +41,6 @@ enum CondModifiers {
   COND_LAST = 16,
   COND_CHAIN = 32 // Not implemented
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Conditions (this is also the interface)
@@ -128,6 +126,5 @@ private:
 
   CondModifiers _mods;
 };
-
 
 #endif // __CONDITION_H

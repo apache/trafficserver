@@ -37,7 +37,6 @@ class ConfigElements
 public:
   ConfigElements() : _sort(false), _remove(false), _skip(false) {}
   virtual ~ConfigElements() {}
-
   void setExclude(const char *arg);
   void setInclude(const char *arg);
   void setExcludePatterns(const char *arg);
@@ -124,7 +123,6 @@ class Configs
 {
 public:
   Configs() {}
-
   /**
    * @brief initializes plugin configuration.
    * @param argc number of plugin parameters

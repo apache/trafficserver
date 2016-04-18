@@ -70,7 +70,6 @@ RequestInput::run()
   char *buff = m_cb->getWrite(&maxBytes);
   unsigned writeBytes = (m_len < maxBytes) ? m_len : maxBytes;
 
-
   writeBytes = ink_strlcpy(buff, m_sp, maxBytes);
   m_cb->wrote(writeBytes);
 
@@ -176,7 +175,6 @@ main()
     double elapsedTime = testPreProc(lc);
     cout << "Elapsed time for " << lc << "loops is " << elapsedTime << endl;
   }
-
 
   return (0);
 }

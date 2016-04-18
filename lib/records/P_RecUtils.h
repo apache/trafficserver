@@ -38,14 +38,12 @@
 
 #define REC_TYPE_IS_CONFIG(rec_type) (((rec_type) == RECT_CONFIG) || ((rec_type) == RECT_LOCAL))
 
-
 //-------------------------------------------------------------------------
 // RecRecord Utils
 //-------------------------------------------------------------------------
 void RecRecordInit(RecRecord *r);
 void RecRecordFree(RecRecord *r);
 RecRecord *RecAlloc(RecT rec_type, const char *name, RecDataT data_type);
-
 
 //-------------------------------------------------------------------------
 // RecData Utils
@@ -65,7 +63,6 @@ RecData RecDataAdd(RecDataT type, RecData left, RecData right);
 RecData RecDataSub(RecDataT type, RecData left, RecData right);
 RecData RecDataMul(RecDataT type, RecData left, RecData right);
 RecData RecDataDiv(RecDataT type, RecData left, RecData right);
-
 
 //-------------------------------------------------------------------------
 // Logging

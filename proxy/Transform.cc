@@ -65,13 +65,10 @@
 #include "HdrUtils.h"
 #include "Log.h"
 
-
 #define ART 1
 #define AGIF 2
 
-
 TransformProcessor transformProcessor;
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -106,7 +103,6 @@ TransformProcessor::null_transform(ProxyMutex *mutex)
   return new NullTransform(mutex);
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -119,7 +115,6 @@ TransformProcessor::range_transform(ProxyMutex *mut, RangeRecord *ranges, int nu
   return range_transform;
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -130,14 +125,12 @@ TransformTerminus::TransformTerminus(TransformVConnection *tvc)
   SET_HANDLER(&TransformTerminus::handle_event);
 }
 
-
 #define RETRY()                                                  \
   if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {      \
     ink_assert(!"not reached");                                  \
   }                                                              \
   eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_NET); \
   return 0;
-
 
 int
 TransformTerminus::handle_event(int event, void * /* edata ATS_UNUSED */)
@@ -381,7 +374,6 @@ TransformTerminus::reenable(VIO *vio)
                        "pending events");
   }
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -705,7 +697,6 @@ NullTransform::handle_event(int event, void *edata)
   return 0;
 }
 
-
 /*-------------------------------------------------------------------------
   Reasons the JG transform cannot currently be a plugin:
     a) Uses the config system
@@ -717,7 +708,6 @@ NullTransform::handle_event(int event, void *edata)
 
 /* the JG transform is now a plugin. All the JG code,
    config variables and stats are removed from Transform.cc */
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -731,7 +721,6 @@ TransformTest::run()
   }
 }
 #endif
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -749,7 +738,6 @@ RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges, int num_fie
   Debug("http_trans", "RangeTransform creation finishes");
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -758,7 +746,6 @@ RangeTransform::~RangeTransform()
   if (m_output_buf)
     free_MIOBuffer(m_output_buf);
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -822,7 +809,6 @@ RangeTransform::handle_event(int event, void *edata)
 
   return 0;
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -928,7 +914,6 @@ RangeTransform::transform_to_range()
   m_write_vio._cont->handleEvent(VC_EVENT_WRITE_READY, &m_write_vio);
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -952,7 +937,6 @@ RangeTransform::add_boundary(bool end)
 
   m_done += m_output_buf->write("\r\n", 2);
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1008,7 +992,6 @@ RangeTransform::change_response_header()
 
     if (field != NULL)
       m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
-
 
     field = m_transform_resp->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, range_type, sizeof(range_type) - 1);

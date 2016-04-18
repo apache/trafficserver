@@ -137,13 +137,11 @@ recv_message_cb__process(RecMessage *msg, RecMessageT msg_type, void *cookie)
   return err;
 }
 
-
 //-------------------------------------------------------------------------
 // raw_stat_sync_cont
 //-------------------------------------------------------------------------
 struct raw_stat_sync_cont : public Continuation {
   raw_stat_sync_cont(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&raw_stat_sync_cont::exec_callbacks); }
-
   int
   exec_callbacks(int /* event */, Event * /* e */)
   {
@@ -154,13 +152,11 @@ struct raw_stat_sync_cont : public Continuation {
   }
 };
 
-
 //-------------------------------------------------------------------------
 // config_update_cont
 //-------------------------------------------------------------------------
 struct config_update_cont : public Continuation {
   config_update_cont(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&config_update_cont::exec_callbacks); }
-
   int
   exec_callbacks(int /* event */, Event * /* e */)
   {
@@ -170,7 +166,6 @@ struct config_update_cont : public Continuation {
     return EVENT_CONT;
   }
 };
-
 
 //-------------------------------------------------------------------------
 // sync_cont
@@ -205,7 +200,6 @@ struct sync_cont : public Continuation {
     return EVENT_CONT;
   }
 };
-
 
 //-------------------------------------------------------------------------
 // RecProcessInit
@@ -249,7 +243,6 @@ RecProcessInit(RecModeT mode_type, Diags *_diags)
   return REC_ERR_OKAY;
 }
 
-
 void
 RecMessageInit()
 {
@@ -287,7 +280,6 @@ RecProcessInitMessage(RecModeT mode_type)
   return REC_ERR_OKAY;
 }
 
-
 //-------------------------------------------------------------------------
 // RecProcessStart
 //-------------------------------------------------------------------------
@@ -322,7 +314,6 @@ RecProcessStart(void)
 
   return REC_ERR_OKAY;
 }
-
 
 void
 RecSignalManager(int id, const char *msg, size_t msgsize)

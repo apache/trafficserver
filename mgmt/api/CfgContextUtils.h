@@ -131,7 +131,6 @@ char *admin_acc_type_to_string(TSAccessT access);
  ***************************************************************************/
 Token *tokens_to_pdss_format(TokenList *tokens, Token *first_tok, TSPdSsFormat *pdss);
 
-
 /***************************************************************************
  * Validation Functions
  ***************************************************************************/
@@ -152,7 +151,6 @@ char *chopWhiteSpaces_alloc(char *str);
 CfgEleObj *create_ele_obj_from_rule_node(Rule *rule);
 CfgEleObj *create_ele_obj_from_ele(TSCfgEle *ele);
 TSRuleTypeT get_rule_type(TokenList *token_list, TSFileNameT file);
-
 
 /***************************************************************************
  * Copy Helper Functions

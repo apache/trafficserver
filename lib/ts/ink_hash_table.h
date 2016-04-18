@@ -114,7 +114,6 @@ ink_hash_table_iterator_first(InkHashTable *ht_ptr, InkHashTableIteratorState *s
   return (he_ptr);
 } /* End ink_hash_table_iterator_first */
 
-
 /*---------------------------------------------------------------------------*
 
   InkHashTableEntry *ink_hash_table_iterator_next(InkHashTable *ht_ptr,

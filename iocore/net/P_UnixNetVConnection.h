@@ -320,7 +320,6 @@ extern ClassAllocator<UnixNetVConnection> netVCAllocator;
 
 typedef int (UnixNetVConnection::*NetVConnHandler)(int, void *);
 
-
 TS_INLINE void
 UnixNetVConnection::set_remote_addr()
 {

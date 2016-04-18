@@ -115,7 +115,6 @@ milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_tim
 }
 }
 
-
 ClassAllocator<HttpSM> httpSMAllocator("httpSMAllocator");
 
 HttpVCTable::HttpVCTable()
@@ -257,9 +256,7 @@ HttpVCTable::cleanup_all()
     default_handler = _h;               \
   }
 
-
 static int next_sm_id = 0;
-
 
 HttpSM::HttpSM()
   : Continuation(NULL), sm_id(-1), magic(HTTP_SM_MAGIC_DEAD),
@@ -456,7 +453,6 @@ HttpSM::kill_this_async_hook(int /* event ATS_UNUSED */, void * /* data ATS_UNUS
   return EVENT_DONE;
 }
 
-
 void
 HttpSM::start_sub_sm()
 {
@@ -550,7 +546,6 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
     ink_assert(reentrancy_count >= 0);
   }
 }
-
 
 void
 HttpSM::setup_client_read_request_header()
@@ -837,7 +832,6 @@ HttpSM::state_drain_client_request_body(int event, void *data)
   return EVENT_DONE;
 }
 #endif /* PROXY_DRAIN */
-
 
 int
 HttpSM::state_watch_for_client_abort(int event, void *data)
@@ -1127,7 +1121,6 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   return 0;
 }
 
-
 // int HttpSM::state_request_wait_for_transform_read(int event, void* data)
 //
 //   We've done a successful transform open and issued a do_io_write
@@ -1167,7 +1160,6 @@ HttpSM::state_request_wait_for_transform_read(int event, void *data)
   return 0;
 }
 
-
 // int HttpSM::state_response_wait_for_transform_read(int event, void* data)
 //
 //   We've done a successful transform open and issued a do_io_write
@@ -1199,7 +1191,6 @@ HttpSM::state_response_wait_for_transform_read(int event, void *data)
 
   return 0;
 }
-
 
 // int HttpSM::state_common_wait_for_transform_read(...)
 //
@@ -1742,7 +1733,6 @@ HttpSM::state_http_server_open(int event, void *data)
 
   return 0;
 }
-
 
 int
 HttpSM::state_read_server_response_header(int event, void *data)
@@ -2854,7 +2844,6 @@ HttpSM::tunnel_handler(int event, void *data)
   return 0;
 }
 
-
 /****************************************************
    TUNNELLING HANDLERS
    ******************************************************/
@@ -3353,7 +3342,6 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
   HTTP_DECREMENT_DYN_STAT(http_current_cache_connections_stat);
   return 0;
 }
-
 
 int
 HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
@@ -4033,9 +4021,10 @@ HttpSM::do_hostdb_lookup()
       historical_action = pending_action;
     } else {
       char *host_name = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
-      opt.port = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_port : t_state.server_info.dst_addr.isValid() ?
-                                                       t_state.server_info.dst_addr.host_order_port() :
-                                                       t_state.hdr_info.client_request.port_get();
+      opt.port = t_state.dns_info.srv_lookup_success ?
+                   t_state.dns_info.srv_port :
+                   t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() :
+                                                            t_state.hdr_info.client_request.port_get();
       opt.flags = (t_state.cache_info.directives.does_client_permit_dns_storing) ? HostDBProcessor::HOSTDB_DO_NOT_FORCE_DNS :
                                                                                    HostDBProcessor::HOSTDB_FORCE_DNS_RELOAD;
       opt.timeout = (t_state.api_txn_dns_timeout_value != -1) ? t_state.api_txn_dns_timeout_value : 0;
@@ -4057,10 +4046,10 @@ HttpSM::do_hostdb_lookup()
 
     // If there is not a current server, we must be looking up the origin
     //  server at the beginning of the transaction
-    int server_port =
-      t_state.current.server ? t_state.current.server->dst_addr.host_order_port() : t_state.server_info.dst_addr.isValid() ?
-                               t_state.server_info.dst_addr.host_order_port() :
-                               t_state.hdr_info.client_request.port_get();
+    int server_port = t_state.current.server ?
+                        t_state.current.server->dst_addr.host_order_port() :
+                        t_state.server_info.dst_addr.isValid() ? t_state.server_info.dst_addr.host_order_port() :
+                                                                 t_state.hdr_info.client_request.port_get();
 
     if (t_state.api_txn_dns_timeout_value != -1) {
       DebugSM("http_timeout", "beginning DNS lookup. allowing %d mseconds for DNS lookup", t_state.api_txn_dns_timeout_value);
@@ -4435,7 +4424,6 @@ HttpSM::do_range_setup_if_necessary()
     }
   }
 }
-
 
 void
 HttpSM::do_cache_lookup_and_read()
@@ -4937,7 +4925,6 @@ HttpSM::do_http_server_open(bool raw)
   return;
 }
 
-
 void
 HttpSM::do_icp_lookup()
 {
@@ -5074,7 +5061,6 @@ HttpSM::mark_host_failure(HostDBInfo *info, time_t time_down)
   }
 
   info->app.http_data.last_failure = time_down;
-
 
 #ifdef DEBUG
   ink_assert(ink_cluster_time() + t_state.txn_conf->down_server_timeout > time_down);
@@ -5684,7 +5670,6 @@ HttpSM::perform_cache_write_action()
   }
 }
 
-
 void
 HttpSM::issue_cache_update()
 {
@@ -5760,7 +5745,6 @@ HttpSM::attach_server_session(HttpServerSession *s)
   server_entry->vc = server_session;
   server_entry->vc_type = HTTP_SERVER_VC;
   server_entry->vc_handler = &HttpSM::state_send_server_request_header;
-
 
   // es - is this a concern here in HttpSM?  Does it belong somewhere else?
   // Get server and client connections
@@ -5968,7 +5952,6 @@ HttpSM::setup_cache_read_transfer()
   client_response_hdr_bytes = hdr_size = write_response_header_into_buffer(&t_state.hdr_info.client_response, buf);
   cache_response_hdr_bytes = client_response_hdr_bytes;
 
-
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
   if (doc_size != INT64_MAX)
@@ -6006,7 +5989,6 @@ HttpSM::setup_cache_transfer_to_transform()
   alloc_index = buffer_size_to_index(doc_size);
   MIOBuffer *buf = new_MIOBuffer(alloc_index);
   IOBufferReader *buf_start = buf->alloc_reader();
-
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_response_wait_for_transform_read);
 
@@ -6170,7 +6152,6 @@ HttpSM::setup_internal_transfer(HttpSMHandler handler_arg)
     else
       buf->append_fast_allocated(t_state.internal_msg_buffer, t_state.internal_msg_buffer_size,
                                  t_state.internal_msg_buffer_fast_allocator_size);
-
 
     // The IOBufferBlock will free the msg buffer when necessary so
     //  eliminate our pointer to it
@@ -6356,7 +6337,6 @@ HttpSM::setup_transfer_from_transform()
 
   return p;
 }
-
 
 HttpTunnelProducer *
 HttpSM::setup_transfer_from_transform_to_cache_only()
@@ -6582,7 +6562,6 @@ HttpSM::setup_blind_tunnel(bool send_response_hdr)
 
   c_ua = tunnel.add_consumer(ua_entry->vc, server_entry->vc, &HttpSM::tunnel_handler_ssl_consumer, HT_HTTP_CLIENT,
                              "user agent - tunnel");
-
 
   p_ua = tunnel.add_producer(ua_entry->vc, -1, r_from, &HttpSM::tunnel_handler_ssl_producer, HT_HTTP_CLIENT, "user agent - tunnel");
 
@@ -6864,7 +6843,6 @@ HttpSM::update_stats()
       }
       */
 
-
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
   if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
     URL *url = t_state.hdr_info.client_request.url_get();
@@ -6948,7 +6926,6 @@ HttpSM::update_stats()
   }
 }
 
-
 //
 // void HttpSM::dump_state_on_assert
 //    Debugging routine to dump the state machine's history
@@ -7003,7 +6980,6 @@ HttpSM::dump_state_hdr(HTTPHdr *h, const char *s)
     ats_free(hdr_buf);
   }
 }
-
 
 /*****************************************************************************
  *****************************************************************************
@@ -7363,7 +7339,6 @@ HttpSM::set_next_state()
     break;
   }
 
-
   case HttpTransact::SM_ACTION_INTERNAL_REQUEST: {
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_handle_stat_page);
     Action *action_handle = statPagesManager.handle_http(this, &t_state.hdr_info.client_request);
@@ -7486,12 +7461,10 @@ HttpSM::set_next_state()
   }
 }
 
-
 void
 clear_http_handler_times()
 {
 }
-
 
 bool
 HttpSM::do_congestion_control_lookup()
@@ -7529,7 +7502,6 @@ HttpSM::state_congestion_control_lookup(int event, void *data)
   }
   return 0;
 }
-
 
 // YTS Team, yamsat Plugin
 

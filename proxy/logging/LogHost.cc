@@ -211,7 +211,6 @@ LogHost::disconnect()
   m_connected = false;
 }
 
-
 void
 LogHost::create_orphan_LogFile_object()
 {
@@ -427,7 +426,8 @@ LogHostList::display(FILE *fd)
   }
 }
 
-bool LogHostList::operator==(LogHostList &rhs)
+bool
+LogHostList::operator==(LogHostList &rhs)
 {
   LogHost *host;
   for (host = first(); host; host = next(host)) {

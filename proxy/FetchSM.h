@@ -41,7 +41,6 @@ class FetchSM : public Continuation
 {
 public:
   FetchSM() {}
-
   void
   init_comm()
   {

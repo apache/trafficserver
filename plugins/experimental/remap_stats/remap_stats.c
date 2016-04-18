@@ -42,7 +42,6 @@ typedef struct {
   TSMutex stat_creation_mutex;
 } config_t;
 
-
 static void
 stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex create_mutex)
 {
@@ -90,7 +89,6 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
     TSDebug(DEBUG_TAG, "stat error! stat_name: %s stat_id: %d", name, stat_id);
 }
 
-
 static char *
 get_effective_host(TSHttpTxn txn)
 {
@@ -113,7 +111,6 @@ get_effective_host(TSHttpTxn txn)
   return tmp;
 }
 
-
 static int
 handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
 {
@@ -129,7 +126,6 @@ handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   TSDebug(DEBUG_TAG, "Read Req Handler Finished");
   return 0;
 }
-
 
 static int
 handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
@@ -152,9 +148,7 @@ handle_post_remap(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   return 0;
 }
 
-
 #define CREATE_STAT_NAME(s, h, b) snprintf(s, MAX_STAT_LENGTH, "plugin.%s.%s.%s", PLUGIN_NAME, h, b)
-
 
 static int
 handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)

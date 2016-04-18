@@ -35,11 +35,19 @@ struct ATSHashBase {
 
 struct ATSHash : ATSHashBase {
   struct nullxfrm {
-    uint8_t operator()(uint8_t byte) const { return byte; }
+    uint8_t
+    operator()(uint8_t byte) const
+    {
+      return byte;
+    }
   };
 
   struct nocase {
-    uint8_t operator()(uint8_t byte) const { return toupper(byte); }
+    uint8_t
+    operator()(uint8_t byte) const
+    {
+      return toupper(byte);
+    }
   };
 
   virtual const void *get(void) const = 0;

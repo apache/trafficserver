@@ -241,7 +241,6 @@ struct ats_wildcard_matcher {
   }
 
   ~ats_wildcard_matcher() {}
-
   bool
   match(const char *hostname) const
   {
@@ -253,7 +252,7 @@ private:
 };
 
 static char *
-reverse_dns_name(const char *hostname, char(&reversed)[TS_MAX_HOST_NAME_LEN + 1])
+reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
 {
   char *ptr = reversed + sizeof(reversed);
   const char *part = hostname;

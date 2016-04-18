@@ -72,22 +72,26 @@ HeaderFieldName::c_str()
   return name_.c_str();
 }
 
-bool HeaderFieldName::operator==(const char *field_name)
+bool
+HeaderFieldName::operator==(const char *field_name)
 {
   return (::strcasecmp(c_str(), field_name) == 0);
 }
 
-bool HeaderFieldName::operator==(const std::string &field_name)
+bool
+HeaderFieldName::operator==(const std::string &field_name)
 {
   return operator==(field_name.c_str());
 }
 
-bool HeaderFieldName::operator!=(const char *field_name)
+bool
+HeaderFieldName::operator!=(const char *field_name)
 {
   return !operator==(field_name);
 }
 
-bool HeaderFieldName::operator!=(const std::string &field_name)
+bool
+HeaderFieldName::operator!=(const std::string &field_name)
 {
   return !operator==(field_name.c_str());
 }
@@ -153,13 +157,15 @@ header_field_value_iterator header_field_value_iterator::operator++(int)
   return tmp;
 }
 
-bool header_field_value_iterator::operator==(const header_field_value_iterator &rhs) const
+bool
+header_field_value_iterator::operator==(const header_field_value_iterator &rhs) const
 {
   return (state_->hdr_buf_ == rhs.state_->hdr_buf_) && (state_->hdr_loc_ == rhs.state_->hdr_loc_) &&
          (state_->field_loc_ == rhs.state_->field_loc_) && (state_->index_ == rhs.state_->index_);
 }
 
-bool header_field_value_iterator::operator!=(const header_field_value_iterator &rhs) const
+bool
+header_field_value_iterator::operator!=(const header_field_value_iterator &rhs) const
 {
   return !operator==(rhs);
 }
@@ -312,27 +318,32 @@ HeaderField::setName(const std::string &str)
                                 iter_.state_->mloc_container_->field_loc_, str.c_str(), str.length()) == TS_SUCCESS);
 }
 
-bool HeaderField::operator==(const char *field_name) const
+bool
+HeaderField::operator==(const char *field_name) const
 {
   return (::strcasecmp(name(), field_name) == 0);
 }
 
-bool HeaderField::operator==(const std::string &field_name) const
+bool
+HeaderField::operator==(const std::string &field_name) const
 {
   return operator==(field_name.c_str());
 }
 
-bool HeaderField::operator!=(const char *field_name) const
+bool
+HeaderField::operator!=(const char *field_name) const
 {
   return !operator==(field_name);
 }
 
-bool HeaderField::operator!=(const std::string &field_name) const
+bool
+HeaderField::operator!=(const std::string &field_name) const
 {
   return !operator==(field_name.c_str());
 }
 
-bool HeaderField::operator=(const std::string &field_value)
+bool
+HeaderField::operator=(const std::string &field_value)
 {
   if (!clear())
     return false;
@@ -340,7 +351,8 @@ bool HeaderField::operator=(const std::string &field_value)
   return append(field_value);
 }
 
-bool HeaderField::operator=(const char *field_value)
+bool
+HeaderField::operator=(const char *field_value)
 {
   if (!clear())
     return false;
@@ -362,7 +374,8 @@ HeaderField::str()
   return oss.str();
 }
 
-std::ostream &operator<<(std::ostream &os, HeaderField &obj)
+std::ostream &
+operator<<(std::ostream &os, HeaderField &obj)
 {
   os << obj.name() << ": ";
   int count = obj.size();
@@ -384,7 +397,8 @@ header_field_iterator::header_field_iterator(const header_field_iterator &it) : 
 {
 }
 
-header_field_iterator &header_field_iterator::operator=(const header_field_iterator &rhs)
+header_field_iterator &
+header_field_iterator::operator=(const header_field_iterator &rhs)
 {
   if (this != &rhs) {
     delete state_;
@@ -432,14 +446,16 @@ header_field_iterator::nextDup()
   return *this;
 }
 
-bool header_field_iterator::operator==(const header_field_iterator &rhs) const
+bool
+header_field_iterator::operator==(const header_field_iterator &rhs) const
 {
   return (state_->mloc_container_->hdr_buf_ == rhs.state_->mloc_container_->hdr_buf_) &&
          (state_->mloc_container_->hdr_loc_ == rhs.state_->mloc_container_->hdr_loc_) &&
          (state_->mloc_container_->field_loc_ == rhs.state_->mloc_container_->field_loc_);
 }
 
-bool header_field_iterator::operator!=(const header_field_iterator &rhs) const
+bool
+header_field_iterator::operator!=(const header_field_iterator &rhs) const
 {
   return !operator==(rhs);
 }
@@ -681,7 +697,8 @@ Headers::wireStr()
   return retval;
 }
 
-std::ostream &operator<<(std::ostream &os, atscppapi::Headers &obj)
+std::ostream &
+operator<<(std::ostream &os, atscppapi::Headers &obj)
 {
   for (header_field_iterator it = obj.begin(); it != obj.end(); ++it) {
     HeaderField hf = *it;

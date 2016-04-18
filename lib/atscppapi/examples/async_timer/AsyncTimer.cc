@@ -48,7 +48,6 @@ public:
   }
 
   ~TimerEventReceiver() { delete timer_; }
-
 private:
   int max_instances_;
   int instance_count_;

@@ -68,7 +68,6 @@ public:
   }
 
   virtual ~NullTransformationPlugin() {}
-
 private:
 };
 

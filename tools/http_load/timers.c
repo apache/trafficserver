@@ -32,14 +32,12 @@
 
 #include "timers.h"
 
-
 #define HASH_SIZE 67
 static Timer *timers[HASH_SIZE];
 static Timer *free_timers = (Timer *)0;
 static long mstimeout_cache = -1;
 
 ClientData JunkClientData;
-
 
 static unsigned int
 hash(Timer *t)
@@ -51,7 +49,6 @@ hash(Timer *t)
    */
   return ((unsigned int)t->time.tv_sec ^ (unsigned int)t->time.tv_usec) % HASH_SIZE;
 }
-
 
 static void
 l_add(Timer *t)
@@ -92,7 +89,6 @@ l_add(Timer *t)
   }
 }
 
-
 static void
 l_remove(Timer *t)
 {
@@ -106,7 +102,6 @@ l_remove(Timer *t)
     t->next->prev = t->prev;
 }
 
-
 static void
 l_resort(Timer *t)
 {
@@ -118,7 +113,6 @@ l_resort(Timer *t)
   l_add(t);
 }
 
-
 void
 tmr_init(void)
 {
@@ -128,7 +122,6 @@ tmr_init(void)
   for (h = 0; h < HASH_SIZE; ++h)
     timers[h] = (Timer *)0;
 }
-
 
 Timer *
 tmr_create(struct timeval *nowP, TimerProc *timer_proc, ClientData client_data, long msecs, int periodic)
@@ -166,7 +159,6 @@ tmr_create(struct timeval *nowP, TimerProc *timer_proc, ClientData client_data, 
   return t;
 }
 
-
 struct timeval *
 tmr_timeout(struct timeval *nowP)
 {
@@ -180,7 +172,6 @@ tmr_timeout(struct timeval *nowP)
   timeout.tv_usec = (msecs % 1000L) * 1000L;
   return &timeout;
 }
-
 
 long
 tmr_mstimeout(struct timeval *nowP)
@@ -219,7 +210,6 @@ tmr_mstimeout(struct timeval *nowP)
   }
 }
 
-
 void
 tmr_run(struct timeval *nowP)
 {
@@ -254,7 +244,6 @@ tmr_run(struct timeval *nowP)
     }
 }
 
-
 void
 tmr_reset(struct timeval *nowP, Timer *t)
 {
@@ -269,7 +258,6 @@ tmr_reset(struct timeval *nowP, Timer *t)
   l_resort(t);
 }
 
-
 void
 tmr_cancel(Timer *t)
 {
@@ -281,7 +269,6 @@ tmr_cancel(Timer *t)
   free_timers = t;
   t->prev = (Timer *)0;
 }
-
 
 void
 tmr_cleanup(void)
@@ -295,7 +282,6 @@ tmr_cleanup(void)
     free((void *)t);
   }
 }
-
 
 void
 tmr_destroy(void)

@@ -23,7 +23,6 @@
 
 #include "P_Cache.h"
 
-
 int
 CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fildes, bool clear)
 {
@@ -303,7 +302,6 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   }
   return p;
 }
-
 
 int
 CacheDisk::delete_volume(int number)

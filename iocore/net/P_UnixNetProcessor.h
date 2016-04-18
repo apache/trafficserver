@@ -61,7 +61,6 @@ public:
   EThread **netthreads;
 };
 
-
 TS_INLINE Action *
 NetProcessor::connect_re(Continuation *cont, sockaddr const *addr, NetVCOptions *opts)
 {

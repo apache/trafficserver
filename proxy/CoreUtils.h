@@ -196,7 +196,6 @@ public:
   static void test_HdrHeap(void *arg);
 };
 
-
 // parses the core file
 void process_core(char *fname);
 

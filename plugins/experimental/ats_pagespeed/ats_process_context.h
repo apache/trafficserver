@@ -70,7 +70,6 @@ private:
   AtsServerContext *server_context_;
 };
 
-
 } // namespace net_instaweb
 
 #endif // ATS_PROCESS_CONTEXT_H_

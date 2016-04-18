@@ -38,7 +38,6 @@ safe_delay(int msec)
   socketManager.poll(0, 0, msec);
 }
 
-
 //
 // Send the throttling message to up to THROTTLE_AT_ONCE connections,
 // delaying to let some of the current connections complete
@@ -71,7 +70,6 @@ send_throttle_message(NetAccept *na)
     con[i].close();
   return 0;
 }
-
 
 //
 // General case network connection accept code
@@ -149,7 +147,6 @@ NetAccept::init_accept_loop(const char *thr_name)
   eventProcessor.spawn_thread(this, thr_name, stacksize);
 }
 
-
 //
 // Initialize the NetAccept for execution in a etype thread.
 // This should be done for low connection rate sockets.
@@ -173,7 +170,6 @@ NetAccept::init_accept(EThread *t, bool isTransparent)
   period = -HRTIME_MSECONDS(net_accept_period);
   t->schedule_every(this, period, etype);
 }
-
 
 void
 NetAccept::init_accept_per_thread(bool isTransparent)
@@ -300,7 +296,6 @@ NetAccept::do_blocking_accept(EThread *t)
   return 1;
 }
 
-
 int
 NetAccept::acceptEvent(int event, void *ep)
 {
@@ -341,7 +336,6 @@ NetAccept::acceptEvent(int event, void *ep)
   }
   return EVENT_CONT;
 }
-
 
 int
 NetAccept::acceptFastEvent(int event, void *ep)
@@ -482,7 +476,6 @@ Lerror:
   return EVENT_DONE;
 }
 
-
 int
 NetAccept::acceptLoopEvent(int event, Event *e)
 {
@@ -499,7 +492,6 @@ NetAccept::acceptLoopEvent(int event, Event *e)
   return EVENT_DONE;
 }
 
-
 //
 // Accept Event handler
 //
@@ -510,7 +502,6 @@ NetAccept::NetAccept()
     sockopt_flags(0), packet_mark(0), packet_tos(0), etype(0)
 {
 }
-
 
 //
 // Stop listening.  When the next poll takes place, an error will result.

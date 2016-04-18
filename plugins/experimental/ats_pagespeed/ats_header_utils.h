@@ -31,7 +31,6 @@
 #include "net/instaweb/util/public/string.h"
 #include "net/instaweb/util/public/string_util.h"
 
-
 GoogleString get_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header_name);
 void unset_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header_name);
 void hide_accept_encoding(TSMBuffer reqp, TSMLoc hdr_loc, const char *hidden_header_name);

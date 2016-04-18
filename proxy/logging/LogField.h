@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_FIELD_H
 #define LOG_FIELD_H
 
@@ -60,7 +59,6 @@ struct LogSlice {
   int toStrOffset(int strlen, int *offset);
 };
 
-
 /*-------------------------------------------------------------------------
   LogField
 
@@ -80,7 +78,6 @@ public:
   typedef int (*UnmarshalFuncWithSlice)(char **buf, char *dest, int len, LogSlice *slice);
   typedef int (*UnmarshalFuncWithMap)(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
   typedef void (LogAccess::*SetFunc)(char *buf, int len);
-
 
   enum Type {
     sINT = 0,

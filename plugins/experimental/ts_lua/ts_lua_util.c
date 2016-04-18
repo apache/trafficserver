@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 #include "ts_lua_remap.h"
 #include "ts_lua_constant.h"
@@ -41,7 +40,6 @@ static lua_State *ts_lua_new_state();
 static void ts_lua_init_registry(lua_State *L);
 static void ts_lua_init_globals(lua_State *L);
 static void ts_lua_inject_ts_api(lua_State *L);
-
 
 int
 ts_lua_create_vm(ts_lua_main_ctx *arr, int n)
@@ -448,7 +446,6 @@ ts_lua_create_http_ctx(ts_lua_main_ctx *main_ctx, ts_lua_instance_conf *conf)
 
   return http_ctx;
 }
-
 
 void
 ts_lua_destroy_http_ctx(ts_lua_http_ctx *http_ctx)

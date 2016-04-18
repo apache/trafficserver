@@ -113,7 +113,6 @@ struct Connection {
               NetVCOptions const &opt = DEFAULT_OPTIONS ///< Socket options
               );
 
-
   /// Set the internal socket address struct.
   /// @internal Used only by ICP.
   void

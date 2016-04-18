@@ -175,9 +175,7 @@ struct NetVCOptions {
                       unsigned long _packet_tos = 0);
 
   NetVCOptions() { reset(); }
-
   ~NetVCOptions() {}
-
   /** Set the SNI server name.
       A local copy is made of @a name.
   */
@@ -195,7 +193,8 @@ struct NetVCOptions {
     return *this;
   }
 
-  self &operator=(self const &that)
+  self &
+  operator=(self const &that)
   {
     if (&that != this) {
       sni_servername = NULL; // release any current name.
@@ -326,7 +325,6 @@ public:
 
   */
   virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
-
 
   /**
     Sends out of band messages over the connection. This function
@@ -518,7 +516,6 @@ public:
 
   /// PRIVATE
   virtual ~NetVConnection() {}
-
   /**
     PRIVATE: instances of NetVConnection cannot be created directly
     by the state machines. The objects are created by NetProcessor

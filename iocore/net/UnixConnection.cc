@@ -102,7 +102,6 @@ Lerror:
   return res;
 }
 
-
 int
 Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, bool non_blocking, Connection *sendChan,
                              Continuation *c)

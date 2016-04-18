@@ -36,10 +36,8 @@
 #include "rules.h"
 #include "configs.h"
 
-
 // Global config, if we don't have a remap specific config.
 static BgFetchConfig *gConfig;
-
 
 ///////////////////////////////////////////////////////////////////////////
 // Hold the global ackground fetch state. This is currently shared across all
@@ -58,7 +56,6 @@ public:
   }
 
   ~BgFetchState() { TSMutexDestroy(_lock); }
-
   void
   createLog(const char *log_name)
   {
@@ -110,7 +107,6 @@ public:
 
 private:
   BgFetchState() : _log(NULL), _lock(TSMutexCreate()) {}
-
   BgFetchState(BgFetchState const &);   // Don't Implement
   void operator=(BgFetchState const &); // Don't implement
 
@@ -118,7 +114,6 @@ private:
   OutstandingRequests _urls;
   TSMutex _lock;
 };
-
 
 //////////////////////////////////////////////////////////////////////////////
 // Hold and manage some state for the TXN background fetch continuation.
@@ -202,7 +197,6 @@ private:
   int64_t _bytes;
   TSCont _cont;
 };
-
 
 // This sets up the data and continuation properly, this is done outside
 // of the CTor, since this can actually fail. If we fail, the data is
@@ -327,7 +321,6 @@ BgFetchData::log(TSEvent event) const
     }
   }
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 // Continuation to perform a background fill of a URL. This is pretty
@@ -469,7 +462,6 @@ cont_check_cacheable(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
   return 0;
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 // Main "plugin", which is a global READ_RESPONSE_HDR hook. Before
 // initiating a background fetch, this checks:
@@ -530,7 +522,6 @@ cont_handle_response(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////
 // Setup global hooks
 void
@@ -577,7 +568,6 @@ TSPluginInit(int argc, const char *argv[])
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////
 // Setup Remap mode
 ///////////////////////////////////////////////////////////////////////////////
@@ -601,7 +591,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   TSDebug(PLUGIN_NAME, "background fetch remap is successfully initialized");
   return TS_SUCCESS;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // We don't have any specific "instances" here, at least not yet.
@@ -632,7 +621,6 @@ TSRemapDeleteInstance(void *ih)
 
   config->release();
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //// This is the main "entry" point for the plugin, called for every request.

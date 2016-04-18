@@ -40,7 +40,6 @@ NetVConnection::get_remote_ip()
   return ats_is_ip4(addr) ? ats_ip4_addr_cast(addr) : 0;
 }
 
-
 /// @return The remote port in host order.
 TS_INLINE uint16_t
 NetVConnection::get_remote_port()

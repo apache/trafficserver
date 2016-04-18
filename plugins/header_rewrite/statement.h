@@ -33,7 +33,6 @@
 #include "parser.h"
 #include "lulu.h"
 
-
 // URL data (both client and server)
 enum UrlQualifiers {
   URL_QUAL_NONE,
@@ -64,7 +63,6 @@ enum GeoQualifiers {
   GEO_QUAL_ASN,
   GEO_QUAL_ASN_NAME,
 };
-
 
 class Statement
 {
@@ -153,6 +151,5 @@ private:
   std::vector<TSHttpHookID> _allowed_hooks;
   TSHttpHookID _hook;
 };
-
 
 #endif // __STATEMENT_H

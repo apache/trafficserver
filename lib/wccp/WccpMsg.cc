@@ -42,7 +42,8 @@ ServiceGroup::setSvcType(ServiceGroup::Type t)
   return *this;
 }
 
-bool ServiceGroup::operator==(self const &that) const
+bool
+ServiceGroup::operator==(self const &that) const
 {
   if (m_svc_type == STANDARD) {
     // If type are different, fail, else if both are STANDARD
@@ -1224,7 +1225,6 @@ AltHashAssignComp::getCacheCount() const
 {
   return ntohl(*m_cache_count);
 }
-
 
 size_t
 AltHashAssignComp::calcSize(int n_routers, int n_caches)

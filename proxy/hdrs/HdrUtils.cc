@@ -133,7 +133,6 @@ HdrCsvIter::get_nth(MIMEField *field, int *len, int n, bool follow_dups)
   return (s);
 }
 
-
 int
 HdrCsvIter::count_values(MIMEField *field, bool follow_dups)
 {
@@ -148,7 +147,6 @@ HdrCsvIter::count_values(MIMEField *field, bool follow_dups)
   } // get next
   return (count);
 }
-
 
 /*
 int main() {

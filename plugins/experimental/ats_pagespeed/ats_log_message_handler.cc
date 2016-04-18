@@ -76,7 +76,6 @@ LogMessageHandler(int severity, const char *file, int line, size_t message_start
 
 } // namespace
 
-
 namespace net_instaweb
 {
 namespace log_message_handler

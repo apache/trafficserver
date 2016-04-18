@@ -106,7 +106,6 @@ aio_stats_cb(const char * /* name ATS_UNUSED */, RecDataT data_type, RecData *da
   return 0;
 }
 
-
 #ifdef AIO_STATS
 /* total number of requests received - for debugging */
 static int num_requests = 0;
@@ -208,7 +207,6 @@ struct AIOThreadInfo : public Continuation {
    request in the atomic list. Requests are served in the order of
    highest priority first. If both the queues are empty, the aio threads
    check if there is any request on the other disks */
-
 
 /* insert  an entry for file descriptor fildes into aio_reqs */
 static AIO_Reqs *

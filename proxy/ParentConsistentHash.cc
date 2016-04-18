@@ -58,7 +58,6 @@ ParentConsistentHash::~ParentConsistentHash()
   delete chash[SECONDARY];
 }
 
-
 uint64_t
 ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
 {

@@ -45,7 +45,6 @@
 #include "LogBuffer.h"
 #include "Log.h"
 
-
 struct FieldListCacheElement {
   LogFieldList *fieldlist;
   char *symbol_str;
@@ -341,7 +340,6 @@ LogBuffer::checkin_write(size_t write_offset)
   return ret_val;
 }
 
-
 unsigned
 LogBuffer::add_header_str(const char *str, char *buf_ptr, unsigned buf_len)
 {
@@ -354,7 +352,6 @@ LogBuffer::add_header_str(const char *str, char *buf_ptr, unsigned buf_len)
   }
   return len;
 }
-
 
 size_t
 LogBuffer::_add_buffer_header()

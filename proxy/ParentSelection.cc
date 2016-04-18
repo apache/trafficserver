@@ -540,7 +540,6 @@ ParentRecord::Init(matcher_line *line_info)
   bool used = false;
   ParentRR_t round_robin = P_NO_ROUND_ROBIN;
 
-
   this->line_num = line_info->line_num;
   this->scheme = NULL;
 
@@ -912,7 +911,6 @@ request_to_data(HttpRequestData *req, sockaddr const *srcip, sockaddr const *dst
   http_parser_clear(&parser);
 }
 
-
 static int passes;
 static int fails;
 
@@ -948,21 +946,21 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
     params->policy.ParentRetryTime = 5;                                                                                    \
   } while (0)
 
-#define REINIT                              \
-  do {                                      \
-    if (request != NULL) {                  \
-      delete request->hdr;                  \
-      ats_free(request->hostname_str);      \
-      delete request->api_info;             \
-    }                                       \
-    delete request;                         \
-    delete result;                          \
-    request = new HttpRequestData();        \
-    result = new ParentResult();            \
-    if (!result || !request) {              \
-      (void) printf("Allocation failed\n"); \
-      return;                               \
-    }                                       \
+#define REINIT                             \
+  do {                                     \
+    if (request != NULL) {                 \
+      delete request->hdr;                 \
+      ats_free(request->hostname_str);     \
+      delete request->api_info;            \
+    }                                      \
+    delete request;                        \
+    delete result;                         \
+    request = new HttpRequestData();       \
+    result = new ParentResult();           \
+    if (!result || !request) {             \
+      (void)printf("Allocation failed\n"); \
+      return;                              \
+    }                                      \
   } while (0)
 
 #define ST(x)                                    \

@@ -55,7 +55,6 @@ const char seperator[] = "\": \"";
 const char end[] = "\",\n";
 };
 
-
 //----------------------------------------------------------------------------
 class Stats
 {
@@ -116,7 +115,6 @@ public:
     lookup_table.insert(make_pair("server_req_conn", LookupItem("Req/Conn", "server_req", "server_conn", 3)));
     lookup_table.insert(make_pair("server_curr_conn", LookupItem("Curr Conn", "proxy.process.http.current_server_connections", 1)));
 
-
     lookup_table.insert(
       make_pair("client_head", LookupItem("Head Bytes", "proxy.process.http.user_agent_response_header_total_size", 2)));
     lookup_table.insert(
@@ -131,7 +129,6 @@ public:
     lookup_table.insert(make_pair("ram_miss", LookupItem("Ram Misses", "proxy.process.cache.ram_cache.misses", 2)));
     lookup_table.insert(make_pair("ka_total", LookupItem("KA Total", "proxy.process.net.dynamic_keep_alive_timeout_in_total", 2)));
     lookup_table.insert(make_pair("ka_count", LookupItem("KA Count", "proxy.process.net.dynamic_keep_alive_timeout_in_count", 2)));
-
 
     lookup_table.insert(make_pair("client_abort", LookupItem("Clnt Abort", "proxy.process.http.err_client_abort_count_stat", 2)));
     lookup_table.insert(make_pair("conn_fail", LookupItem("Conn Fail", "proxy.process.http.err_connect_fail_count_stat", 2)));
@@ -222,7 +219,6 @@ public:
     lookup_table.insert(make_pair("s_1m", LookupItem("1 MB", "proxy.process.http.response_document_size_1M", 5)));
     lookup_table.insert(make_pair("s_>1m", LookupItem("> 1 MB", "proxy.process.http.response_document_size_inf", 5)));
 
-
     // sum together
     lookup_table.insert(make_pair("ram_hit_miss", LookupItem("Ram Hit+Miss", "ram_hit", "ram_miss", 6)));
     lookup_table.insert(make_pair("client_net", LookupItem("Net (bits)", "client_head", "client_body", 7)));
@@ -232,7 +228,6 @@ public:
     lookup_table.insert(make_pair("server_net", LookupItem("Net (bits)", "server_head", "server_body", 7)));
     lookup_table.insert(make_pair("server_size", LookupItem("Total Size", "server_head", "server_body", 6)));
     lookup_table.insert(make_pair("server_avg_size", LookupItem("Avg Size", "server_size", "server_req", 3)));
-
 
     lookup_table.insert(make_pair("total_time", LookupItem("Total Time", "proxy.process.http.total_transactions_time", 2)));
 
@@ -344,7 +339,6 @@ public:
     int typetmp;
     getStat(key, value, strtmp, typetmp, overrideType);
   }
-
 
   void
   getStat(const string &key, string &value)

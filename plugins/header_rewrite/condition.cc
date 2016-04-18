@@ -25,7 +25,6 @@
 
 #include "condition.h"
 
-
 static MatcherOps
 parse_matcher_op(std::string &arg)
 {
@@ -52,7 +51,6 @@ parse_matcher_op(std::string &arg)
     break;
   }
 }
-
 
 void
 Condition::initialize(Parser &p)

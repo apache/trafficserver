@@ -43,7 +43,6 @@
 #define TRACK_COOKING 0
 #define MIME_FORMAT_DATE_USE_LOOKUP_TABLE 1
 
-
 /***********************************************************************
  *                                                                     *
  *                          C O N S T A N T S                          *
@@ -69,7 +68,6 @@ struct MDY {
 static MDY *_days_to_mdy_fast_lookup_table = NULL;
 static unsigned int _days_to_mdy_fast_lookup_table_first_day;
 static unsigned int _days_to_mdy_fast_lookup_table_last_day;
-
 
 /***********************************************************************
  *                                                                     *
@@ -364,7 +362,6 @@ is_ws(char c)
   return ((c == ParseRules::CHAR_SP) || (c == ParseRules::CHAR_HT));
 }
 
-
 /***********************************************************************
  *                                                                     *
  *                    P R E S E N C E    B I T S                       *
@@ -541,7 +538,6 @@ checksum_block(const char *s, int len)
   return sum;
 }
 
-
 #ifdef DEBUG
 void
 mime_hdr_sanity_check(MIMEHdrImpl *mh)
@@ -636,7 +632,6 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
   ink_release_assert(masksum == mh->m_presence_bits);
 }
 #endif
-
 
 void
 mime_init()
@@ -733,7 +728,6 @@ mime_init()
 
     MIME_FIELD_HTTP2_SETTINGS = hdrtoken_string_to_wks("HTTP2-Settings");
 
-
     MIME_LEN_ACCEPT = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT);
     MIME_LEN_ACCEPT_CHARSET = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_CHARSET);
     MIME_LEN_ACCEPT_ENCODING = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_ENCODING);
@@ -813,7 +807,6 @@ mime_init()
     MIME_LEN_SEC_WEBSOCKET_VERSION = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_VERSION);
 
     MIME_LEN_HTTP2_SETTINGS = hdrtoken_wks_to_length(MIME_FIELD_HTTP2_SETTINGS);
-
 
     MIME_WKSIDX_ACCEPT = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT);
     MIME_WKSIDX_ACCEPT_CHARSET = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_CHARSET);
@@ -916,7 +909,6 @@ mime_init()
     MIME_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks("need-revalidate-once");
     MIME_VALUE_WEBSOCKET = hdrtoken_string_to_wks("websocket");
     MIME_VALUE_H2C = hdrtoken_string_to_wks(MIME_UPGRADE_H2C_TOKEN);
-
 
     mime_init_date_format_table();
     mime_init_cache_control_cooking_masks();
@@ -1959,7 +1951,6 @@ mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
     /*   End Fix for bug INKqa09752     */
     /************************************/
 
-
     // (4) reassemble the new string
     field->m_ptr_value = mime_field_value_str_from_strlist(heap, &len, &list);
     field->m_len_value = len;
@@ -2592,7 +2583,6 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // build and insert the new field object //
     ///////////////////////////////////////////
 
-
     MIMEField *field = mime_field_create(heap, mh);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name_first, field_name_length, field_value_first,
                               field_value_length, true, total_line_length, 0);
@@ -3156,7 +3146,6 @@ mime_parse_int64(const char *buf, const char *end)
   }
 }
 
-
 /*-------------------------------------------------------------------------
 
   mime_parse_rfc822_date_fastcase (const char *buf, int length, struct tm *tp)
@@ -3531,7 +3520,6 @@ mime_parse_integer(const char *&buf, const char *end, int *integer)
   return 1;
 }
 
-
 /***********************************************************************
  *                                                                     *
  *                        M A R S H A L I N G                          *
@@ -3575,7 +3563,6 @@ void
 MIMEFieldBlockImpl::unmarshal(intptr_t offset)
 {
   HDR_UNMARSHAL_PTR(m_next, MIMEFieldBlockImpl, offset);
-
 
   for (uint32_t index = 0; index < m_freetop; index++) {
     MIMEField *field = &(m_field_slots[index]);
@@ -3687,7 +3674,6 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
   mime_hdr_reset_accelerators_and_presence_bits(this);
 }
 
-
 /***********************************************************************
  *                                                                     *
  *                 C O O K E D    V A L U E    C A C H E               *
@@ -3701,7 +3687,6 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
 //      attaching the field and the field isn't empty //
 //      detaching the field                           //
 ////////////////////////////////////////////////////////
-
 
 void
 MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)

@@ -62,7 +62,6 @@ char error_tags[1024] = "";
 char action_tags[1024] = "";
 char command_string[512] = "";
 
-
 // Diags *diags = NULL;
 DiagsConfig *diagsConfig = NULL;
 HttpBodyFactory *body_factory = NULL;
@@ -138,7 +137,6 @@ initialize_process_manager()
   //                         appVersionInfo.BldCompileFlagsStr,
   //                         RECP_NON_PERSISTENT);
 }
-
 
 /*-------------------------------------------------------------------------
   check_lockfile

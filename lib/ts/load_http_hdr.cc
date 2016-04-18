@@ -119,7 +119,6 @@ load_buffer(int fd, hdr_type h_type)
   char *file_buf = (char *)ats_malloc(sizeof(char) * (s_info.st_size + 1));
   file_buf[s_info.st_size] = '\0';
 
-
   // Read in the entire file
   int bytes_to_read = s_info.st_size;
   while (bytes_to_read > 0) {
@@ -138,7 +137,6 @@ load_buffer(int fd, hdr_type h_type)
 
   Tokenizer line_tok("\n");
   Tokenizer el_tok(" \t");
-
 
   int num_lines = line_tok.Initialize(file_buf);
   int num_el = el_tok.Initialize(line_tok[0]);
@@ -242,7 +240,6 @@ main(int argc, const char *argv[])
   return 0;
 }
 
-
 /*********************************************************************
   Code for manual groking the mbuf objects
 *******************************************************************/
@@ -287,7 +284,6 @@ walk_mbuffer(MBuffer *bufp)
       printf("\n");
       break;
     }
-
 
     default:
       printf("\n");

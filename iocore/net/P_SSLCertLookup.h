@@ -94,7 +94,6 @@ struct SSLCertLookup : public ConfigInfo {
   */
   SSLCertContext *find(char const *name) const;
 
-
   // Return the last-resort default TLS context if there is no name or address match.
   SSL_CTX *
   defaultContext() const

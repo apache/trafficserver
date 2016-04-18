@@ -33,7 +33,6 @@
 // Constants
 const char PLUGIN_NAME[] = "background_fetch";
 
-
 ///////////////////////////////////////////////////////////////////////////
 // This holds one complete background fetch rule, which is also ref-counted.
 //
@@ -41,7 +40,6 @@ class BgFetchConfig
 {
 public:
   BgFetchConfig(TSCont cont) : _cont(cont), _rules(NULL), _ref_count(0) { TSContDataSet(cont, static_cast<void *>(this)); }
-
   void
   acquire()
   {

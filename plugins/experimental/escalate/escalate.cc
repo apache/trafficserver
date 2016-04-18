@@ -31,11 +31,9 @@
 #include <iterator>
 #include <map>
 
-
 // Constants and some declarations
 const char PLUGIN_NAME[] = "escalate";
 static int EscalateResponse(TSCont, TSEvent, void *);
-
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Hold information about the escalation / retry states for a remap rule.
@@ -60,12 +58,10 @@ struct EscalationState {
   }
 
   ~EscalationState() { TSContDestroy(cont); }
-
   TSCont cont;
   StatusMapType status_map;
   bool use_pristine;
 };
-
 
 // Little helper function, to update the Host portion of a URL, and stringify the result.
 // Returns the URL string, and updates url_len with the length.
@@ -153,13 +149,11 @@ no_action:
   return TS_EVENT_NONE;
 }
 
-
 TSReturnCode
 TSRemapInit(TSRemapInterface * /* api */, char * /* errbuf */, int /* bufsz */)
 {
   return TS_SUCCESS;
 }
-
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
@@ -219,13 +213,11 @@ fail:
   return TS_ERROR;
 }
 
-
 void
 TSRemapDeleteInstance(void *instance)
 {
   delete static_cast<EscalationState *>(instance);
 }
-
 
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo * /* rri */)

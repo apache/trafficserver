@@ -87,5 +87,4 @@ namespace transformations
 }
 }
 
-
 #endif /* ATSCPPAPI_GZIPDEFLATETRANSFORMATION_H_ */

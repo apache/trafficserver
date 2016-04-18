@@ -72,7 +72,6 @@ template <class key_t, class data_t> class HashTableIteratorState
 {
 public:
   HashTableIteratorState() : cur_buck(-1), ppcur(NULL) {}
-
   int cur_buck;
   HashTableEntry<key_t, data_t> **ppcur;
 };
@@ -90,7 +89,6 @@ public:
     memset(buckets, 0, bucket_num * sizeof(HashTableEntry<key_t, data_t> *));
   }
   ~IMTHashTable() { reset(); }
-
   int
   getBucketNum()
   {
@@ -241,7 +239,6 @@ IMTHashTable<key_t, data_t>::insert_entry(key_t key, data_t data)
   return (data_t)0;
 }
 
-
 template <class key_t, class data_t>
 inline data_t
 IMTHashTable<key_t, data_t>::remove_entry(key_t key)
@@ -282,7 +279,6 @@ IMTHashTable<key_t, data_t>::lookup_entry(key_t key)
   }
   return ret;
 }
-
 
 template <class key_t, class data_t>
 inline data_t

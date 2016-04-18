@@ -269,7 +269,6 @@ charIndexIterState::charIndexIterState() : cur_level(-1), cur_index(-1), cur_el(
 {
 }
 
-
 // class charIndex - A constant time string matcher intended for
 //    short strings in a sparsely populated DNS paritition
 //
@@ -403,7 +402,6 @@ charIndex::Insert(const char *match_data, HostBranch *toInsert)
     match_data++;
   }
 }
-
 
 // HostBranch* charIndex::Lookup(const char* match_data)
 //
@@ -881,7 +879,6 @@ HostLookup::TableNewLevel(HostBranch *from, const char *level_data)
   return InsertBranch(from, level_data);
 }
 
-
 //
 // HostBranch* HostLookup::InsertBranch(HostBranch* insert_to, const char* level_data)
 //
@@ -901,7 +898,6 @@ HostLookup::InsertBranch(HostBranch *insert_in, const char *level_data)
   HostBranch *tmp;
   char *key = NULL;
   InkHashTable *new_ht;
-
 
   HostBranch *new_branch = new HostBranch;
   new_branch->type = HOST_TERMINAL;
@@ -1130,7 +1126,6 @@ HostLookup::MatchArray(HostLookupState *s, void **opaque_ptr, DynArray<int> &arr
   s->array_index = i;
   return false;
 }
-
 
 // bool HostLookup::MatchFirst(const char* host, HostLookupState* s, void** opaque_ptr)
 //

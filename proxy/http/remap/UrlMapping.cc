@@ -37,7 +37,6 @@ url_mapping::url_mapping(int rank /* = 0 */)
   memset(_instance_data, 0, sizeof(_instance_data));
 }
 
-
 /**
  *
 **/
@@ -53,7 +52,6 @@ url_mapping::add_plugin(remap_plugin_info *i, void *ih)
 
   return true;
 }
-
 
 /**
  *
@@ -81,7 +79,6 @@ url_mapping::delete_instance(unsigned int index)
     p->fp_tsremap_delete_instance(ih);
   }
 }
-
 
 /**
  *
@@ -174,7 +171,6 @@ redirect_tag_str::parse_format_redirect_url(char *url)
   return list;
 }
 
-
 /**
  *
 **/
@@ -210,7 +206,6 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
     }
   }
 }
-
 
 /**
  *

@@ -52,7 +52,6 @@
 #define ALIGN_DOUBLE(_p) ((((uintptr_t)(_p)) + 7) & ~7)
 #define ALLOCA_DOUBLE(_sz) ALIGN_DOUBLE(alloca((_sz) + 8))
 
-
 //
 // Testing
 //
@@ -192,7 +191,6 @@ struct CacheContinuation : public Continuation {
   void setupReadBufTunnel(VConnection *, VConnection *);
   int tunnelClosedEvent(int event, void *);
   int remove_and_delete(int, Event *);
-
 
   inline void
   setMsgBufferLen(int l, IOBufferData *b = 0)

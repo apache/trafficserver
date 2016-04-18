@@ -128,7 +128,6 @@ TSReturnCode sdk_sanity_check_iocore_structure(void *);
 tsapi TSMutex TSMutexCreateInternal(void);
 tsapi int TSMutexCheck(TSMutex mutex);
 
-
 /* IOBuffer */
 tsapi void TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64_t length);
 tsapi int64_t TSIOBufferBlockDataSizeGet(TSIOBufferBlock blockp);

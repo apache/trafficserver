@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #if !defined(_RECORDS_CONFIG_H_)
 #define _RECORDS_CONFIG_H_
 

@@ -30,7 +30,6 @@
 #include "OneWayMultiTunnel.h"
 #include "Cache.h"
 
-
 struct TestProxy : Continuation {
   VConnection *vc;
   VConnection *vconnection_vector[2];

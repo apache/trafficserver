@@ -520,8 +520,7 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
   Lfailed:
     ats_free(b);
     e->flag_bits.incompressible = 1;
-  Lcontinue:
-    ;
+  Lcontinue:;
     DDebug("ram_cache", "compress %X %d %d %d %d %d %d %d", e->key.slice32(3), e->auxkey1, e->auxkey2, e->flag_bits.incompressible,
            e->flag_bits.compressed, e->len, e->compressed_len, ncompressed);
     if (!e->lru_link.next)

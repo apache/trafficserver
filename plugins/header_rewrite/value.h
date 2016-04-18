@@ -32,7 +32,6 @@
 #include "factory.h"
 #include "parser.h"
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Values (this is also the interface).
 //
@@ -119,6 +118,5 @@ private:
   double _float_value;
   Condition *_cond_val;
 };
-
 
 #endif // __VALUE_H

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
@@ -31,7 +30,6 @@
 #include "ts/ink_atomic.h"
 #include "ts/ink_queue.h"
 #include "ts/ink_thread.h"
-
 
 #ifndef LONG_ATOMICLIST_TEST
 
@@ -148,7 +146,6 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 
   printf("sizeof(int32_t)==%d   sizeof(void *)==%d\n", (int)sizeof(int32_t), (int)sizeof(void *));
 
-
   printf("CAS: %d == 1  then  2\n", m);
   n = ink_atomic_cas(&m, 1, 2);
   printf("changed to: %d,  result=%s\n", m, n ? "true" : "false");
@@ -169,7 +166,6 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   printf("Atomic Inc of %d\n", n);
   m = ink_atomic_increment((int *)&n, 1);
   printf("changed to: %d,  result=%d\n", n, m);
-
 
   printf("Atomic Fetch-and-Add 2 to pointer to '%s'\n", m2);
   n2 = (char *)ink_atomic_increment((pvvoidp)&m2, (void *)2);

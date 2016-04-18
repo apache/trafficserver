@@ -35,7 +35,6 @@
 #include <vector>
 #include <set>
 
-
 #include "ats_pagespeed.h"
 
 #include "ats_config.h"
@@ -81,7 +80,6 @@
 #include "net/instaweb/util/public/time_util.h"
 #include "net/instaweb/util/stack_buffer.h"
 #include "net/instaweb/system/public/system_request_context.h"
-
 
 #include <dirent.h>
 
@@ -468,7 +466,6 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
   TSMLoc req_hdr_loc;
   ctx->state = transform_state_output;
 
-
   // TODO: check cleanup flow
   if (TSHttpTxnTransformRespGet(ctx->txn, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[ats_pagespeed] TSHttpTxnTransformRespGet failed");
@@ -535,7 +532,6 @@ ats_transform_init(TSCont contp, TransformCtx *ctx)
                                  &pagespeed_option_cookies,
                                  true);
   */
-
 
   // TODO(oschaaf): use the determined option/query params
   // Take ownership of custom_options.
@@ -639,7 +635,6 @@ ats_transform_one(TransformCtx *ctx, TSIOBufferReader upstream_reader, int amoun
   // We could also have a look at directly writing to the traffic server buffers
 }
 
-
 static void
 ats_transform_finish(TransformCtx *ctx)
 {
@@ -716,7 +711,6 @@ ats_transform_do(TSCont contp)
     TSContCall(TSVIOContGet(upstream_vio), TS_EVENT_VCONN_WRITE_COMPLETE, upstream_vio);
   }
 }
-
 
 static int
 ats_pagespeed_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
@@ -799,7 +793,6 @@ handle_read_request_header(TSHttpTxn txnp)
       ctx->url_string = new GoogleString(url, url_length);
       ctx->gurl = new GoogleUrl(*(ctx->url_string));
 
-
       if (!ctx->gurl->IsWebValid()) {
         TSDebug("ats-speed", "URL != WebValid(): %s", ctx->url_string->c_str());
       } else {
@@ -838,7 +831,6 @@ handle_read_request_header(TSHttpTxn txnp)
 
           ctx->base_fetch = new AtsBaseFetch(server_context, rptr, ctx->downstream_vio, ctx->downstream_buffer, false);
 
-
           RequestHeaders *request_headers = new RequestHeaders();
           ctx->base_fetch->SetRequestHeadersTakingOwnership(request_headers);
           copy_request_headers_to_psol(reqp, hdr_loc, request_headers);
@@ -857,7 +849,6 @@ handle_read_request_header(TSHttpTxn txnp)
           if (options == NULL) {
             options = server_context->global_options()->Clone();
           }
-
 
           // GoogleString pagespeed_query_params;
           // GoogleString pagespeed_option_cookies;
@@ -958,8 +949,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     if (ctx != NULL) {
       bool is_owned = TSHttpTxnArgGet(txn, TXN_INDEX_OWNED_ARG) == &TXN_INDEX_OWNED_ARG_SET
                       // TODO(oschaaf): rewrite this.
-                      &&
-                      !ctx->serve_in_place;
+                      && !ctx->serve_in_place;
       if (is_owned) {
         ats_ctx_destroy(ctx);
       }
@@ -1023,7 +1013,6 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
   if (host != NULL && strlen(host) > 0) {
     override_expiry = get_override_expiry(host);
   }
-
 
   if (ctx->mps_user_agent && override_expiry) {
     if (TSHttpTxnServerRespGet(txn, &response_header_buf, &response_header_loc) == TS_SUCCESS) {
@@ -1261,7 +1250,6 @@ config_notification_callback(void *data)
 
   return NULL;
 }
-
 
 void
 TSPluginInit(int argc, const char *argv[])

@@ -81,7 +81,6 @@ class AppVersionInfo;
 extern const char *alarmText[];
 extern const int alarmTextNum;
 
-
 /* OEM_ALARM: the alarm type is used as a key for hash tables;
    need offset and modulo constants which will keep the unique
    keys for OEM alarms within a specified range */

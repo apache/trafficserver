@@ -53,5 +53,4 @@ private:
   uLong _crc;
 };
 
-
 #endif // _ESI_GZIP_H

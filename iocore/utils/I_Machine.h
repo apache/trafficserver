@@ -33,7 +33,6 @@
 
 #include "ts/ink_inet.h"
 
-
 /**
   The Machine is a simple place holder for the hostname and the ip
   address of an internet host.

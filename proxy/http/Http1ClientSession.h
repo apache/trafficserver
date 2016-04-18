@@ -186,7 +186,6 @@ private:
   VIO *ka_vio;
   VIO *slave_ka_vio;
 
-
   HttpServerSession *bound_ss;
 
 public:
@@ -203,7 +202,6 @@ public:
   bool f_outbound_transparent;
   /// Transparently pass-through non-HTTP traffic.
   bool f_transparent_passthrough;
-
 
   // for DI. An active connection is one that a request has
   // been successfully parsed (PARSE_DONE) and it remains to

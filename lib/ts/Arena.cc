@@ -28,12 +28,10 @@
 #include <assert.h>
 #include <string.h>
 
-
 #define DEFAULT_ALLOC_SIZE 1024
 #define DEFAULT_BLOCK_SIZE (DEFAULT_ALLOC_SIZE - (sizeof(ArenaBlock) - 8))
 
 static Allocator defaultSizeArenaBlock("ArenaBlock", DEFAULT_ALLOC_SIZE);
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -71,7 +69,6 @@ blk_free(ArenaBlock *blk)
     ats_free(blk);
   }
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

@@ -392,7 +392,8 @@ IpAddr::isMulticast() const
   return (AF_INET == _family && 0xe == (_addr._byte[0] >> 4)) || (AF_INET6 == _family && IN6_IS_ADDR_MULTICAST(&_addr._ip6));
 }
 
-bool operator==(IpAddr const &lhs, sockaddr const *rhs)
+bool
+operator==(IpAddr const &lhs, sockaddr const *rhs)
 {
   bool zret = false;
   if (lhs._family == rhs->sa_family) {
@@ -650,8 +651,7 @@ REGRESSION_TEST(Ink_Inet)(RegressionTest *t, int /* atype */, int *pstatus)
     case AF_INET6:
       box.check(memcmp(&ep.sin6.sin6_addr, &addr._addr._ip6, sizeof(in6_addr)) == 0, "IPv6 address mismatch");
       break;
-    default:
-      ;
+    default:;
     }
   }
 }

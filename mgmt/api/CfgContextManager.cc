@@ -141,7 +141,6 @@ CfgContextCommit(CfgContext *ctx, LLQ *errRules)
   return err;
 }
 
-
 /* ---------------------------------------------------------------
  * CfgContextGet
  * ---------------------------------------------------------------
@@ -197,7 +196,6 @@ CfgContextGet(CfgContext *ctx)
     ats_free(old_text); // need to free memory
   return TS_ERR_OKAY;
 }
-
 
 /***************************************************************
  * CfgContext Operations
@@ -265,7 +263,6 @@ CfgContextGetObjAt(CfgContext *ctx, int index)
   return NULL; // invalid index
 }
 
-
 /*--------------------------------------------------------------
  * CfgContextGetEleAt
  *--------------------------------------------------------------
@@ -303,7 +300,6 @@ CfgContextGetEleAt(CfgContext *ctx, int index)
 
   return NULL; // invalid index
 }
-
 
 /*--------------------------------------------------------------
  * CfgContextGetFirst
@@ -374,7 +370,6 @@ CfgContextGetNext(CfgContext *ctx, TSCfgIterState *state)
 
   return NULL; // ERROR
 }
-
 
 /*--------------------------------------------------------------
  * CfgContextMoveEleUp

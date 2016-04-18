@@ -140,7 +140,6 @@ print_err(const char *module, TSMgmtError err)
     TSfree(err_msg);
 }
 
-
 /*--------------------------------------------------------------
  * print_ports
  *--------------------------------------------------------------*/
@@ -222,7 +221,6 @@ print_domain_list(TSDomainList list)
   }
 }
 
-
 void
 print_ip_addr_ele(TSIpAddrEle *ele)
 {
@@ -278,7 +276,6 @@ print_list_of_ip_list(TSList list)
     TSListEnqueue(list, ele);
   }
 }
-
 
 /*-------------------------------------------------------
  * print_pd_sspec
@@ -349,7 +346,6 @@ print_pd_sspec(TSPdSsFormat info)
   }
   printf("\n");
 
-
   printf("\tscheme: ");
   switch (info.sec_spec.scheme) {
   case TS_SCHEME_NONE:
@@ -368,7 +364,6 @@ print_pd_sspec(TSPdSsFormat info)
 
   return;
 }
-
 
 void
 print_cache_ele(TSCacheEle *ele)
@@ -439,7 +434,6 @@ print_cache_ele(TSCacheEle *ele)
    */
   return;
 }
-
 
 void
 print_hosting_ele(TSHostingEle *ele)
@@ -839,7 +833,6 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
   return;
 }
 
-
 /***************************************************************************
  * Control Testing
  ***************************************************************************/
@@ -991,7 +984,6 @@ test_error_records()
   ret = TSRecordSetInt("proy.config.cop.core_signal", new_port, &action);
   print_err("TSRecordSetInt", ret);
 
-
   printf("\n");
   if (TSRecordGetCounter("proxy.press.socks.connections_successful", &ctr1) != TS_ERR_OKAY)
     printf("TSRecordGetCounter FAILED!\n");
@@ -1034,7 +1026,6 @@ test_records()
     printf("[TSRecordSetInt] proxy.config.cop.core_signal=%" PRId64 " \n", new_port);
 #endif
 
-
 #if TEST_REC_GET
   TSRecordEle *rec_ele;
   // retrieve a string value record using generic RecordGet
@@ -1047,7 +1038,6 @@ test_records()
   TSRecordEleDestroy(rec_ele);
   printf("\n\n");
 #endif
-
 
 #if TEST_REC_GET_2
   // retrieve a string value record using generic RecordGet
@@ -1077,7 +1067,6 @@ test_records()
     print_err("TSRecordSetString", err);
   else
     printf("[TSRecordSetString] proxy.config.proxy_name=%s\n", new_str);
-
 
   // get
   err = TSRecordGetString("proxy.config.proxy_name", &rec_value);
@@ -1251,7 +1240,6 @@ test_record_get_mlt(void)
   TSStringListEnqueue(name_list, v7);
   TSStringListEnqueue(name_list, v8);
 
-
   num = TSStringListLen(name_list);
   printf("Num Records to Get: %d\n", num);
   ret = TSRecordGetMlt(name_list, rec_list);
@@ -1335,7 +1323,6 @@ test_record_set_mlt(void)
   ele5->rec_type = TS_REC_INT;
   ele5->valueT.int_val = 555;
 
-
   TSListEnqueue(list, ele4);
   TSListEnqueue(list, ele1);
   TSListEnqueue(list, ele2);
@@ -1354,7 +1341,6 @@ test_record_set_mlt(void)
   }
   TSListDestroy(list);
 }
-
 
 /***************************************************************************
  * File I/O Testing
@@ -1730,7 +1716,6 @@ test_cfg_context_ops()
   }
   // print_VirtIpAddr_ele_list(ctx);
 
-
   printf("\nMove ele at index %d to botoom of list\n", insert_at);
   for (i = insert_at; i < TSCfgContextGetCount(ctx); i++) {
     err = TSCfgContextMoveEleDown(ctx, i);
@@ -1751,7 +1736,6 @@ test_cfg_context_ops()
     }
   }
   // print_VirtIpAddr_ele_list(ctx);
-
 
   // commit change
   TSCfgContextCommit(ctx, NULL, NULL);
@@ -1884,7 +1868,6 @@ test_cfg_socks()
 
   TSCfgContextDestroy(ctx);
 }
-
 
 /***************************************************************************
  * Events Testing
@@ -2137,7 +2120,6 @@ set_stats()
 
   fprintf(stderr, "[set_stats] Set Dummy Stat Values\n");
 
-
   TSRecordSetInt("proxy.process.http.user_agent_response_document_total_size", 100, &action);
   TSRecordSetInt("proxy.process.http.user_agent_response_header_total_size", 100, &action);
   TSRecordSetInt("proxy.process.http.current_client_connections", 100, &action);
@@ -2146,7 +2128,6 @@ set_stats()
   TSRecordSetInt("proxy.process.http.origin_server_response_header_total_size", 100, &action);
   TSRecordSetInt("proxy.process.http.current_server_connections", 100, &action);
   TSRecordSetInt("proxy.process.http.current_server_transactions", 100, &action);
-
 
   TSRecordSetFloat("proxy.node.bandwidth_hit_ratio", 110, &action);
   TSRecordSetFloat("proxy.node.hostdb.hit_ratio", 110, &action);
@@ -2193,7 +2174,6 @@ print_stats()
   TSInt i1, i2, i3, i4, i5, i6, i7, i8, i9;
 
   fprintf(stderr, "[print_stats]\n");
-
 
   TSRecordGetInt("proxy.process.http.user_agent_response_document_total_size", &i1);
   TSRecordGetInt("proxy.process.http.user_agent_response_header_total_size", &i2);
@@ -2396,11 +2376,9 @@ runInteractive()
       sync_test();
     }
 
-
   } // end while(1)
 
 } // end runInteractive
-
 
 /* ------------------------------------------------------------------------
  * main

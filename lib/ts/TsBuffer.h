@@ -310,19 +310,23 @@ Buffer::reset()
   _size = 0;
   return *this;
 }
-inline bool Buffer::operator!=(self const &that) const
+inline bool
+Buffer::operator!=(self const &that) const
 {
   return !(*this == that);
 }
-inline bool Buffer::operator!=(ConstBuffer const &that) const
+inline bool
+Buffer::operator!=(ConstBuffer const &that) const
 {
   return !(*this == that);
 }
-inline bool Buffer::operator==(self const &that) const
+inline bool
+Buffer::operator==(self const &that) const
 {
   return _size == that._size && _ptr == that._ptr;
 }
-inline bool Buffer::operator==(ConstBuffer const &that) const
+inline bool
+Buffer::operator==(ConstBuffer const &that) const
 {
   return _size == that._size && _ptr == that._ptr;
 }
@@ -390,25 +394,30 @@ ConstBuffer::reset()
   _size = 0;
   return *this;
 }
-inline bool ConstBuffer::operator!=(self const &that) const
+inline bool
+ConstBuffer::operator!=(self const &that) const
 {
   return !(*this == that);
 }
-inline bool ConstBuffer::operator!=(Buffer const &that) const
+inline bool
+ConstBuffer::operator!=(Buffer const &that) const
 {
   return !(*this == that);
 }
-inline bool ConstBuffer::operator==(self const &that) const
+inline bool
+ConstBuffer::operator==(self const &that) const
 {
   return _size == that._size && 0 == memcmp(_ptr, that._ptr, _size);
 }
-inline ConstBuffer &ConstBuffer::operator=(Buffer const &that)
+inline ConstBuffer &
+ConstBuffer::operator=(Buffer const &that)
 {
   _ptr = that._ptr;
   _size = that._size;
   return *this;
 }
-inline bool ConstBuffer::operator==(Buffer const &that) const
+inline bool
+ConstBuffer::operator==(Buffer const &that) const
 {
   return _size == that._size && 0 == memcmp(_ptr, that._ptr, _size);
 }
@@ -430,7 +439,8 @@ inline ConstBuffer &ConstBuffer::operator++()
   --_size;
   return *this;
 }
-inline ConstBuffer &ConstBuffer::operator+=(size_t n)
+inline ConstBuffer &
+ConstBuffer::operator+=(size_t n)
 {
   _ptr += n;
   _size -= n;

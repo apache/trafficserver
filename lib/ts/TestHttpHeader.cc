@@ -203,7 +203,6 @@ TestHttpHeader()
   cout << "first accept" << endl;
   cout << h.m_header_fields.m_accept.get(0, &l) << endl;
 
-
   char buf[4096];
   int marshal_length = h.marshal(buf, sizeof(buf));
 

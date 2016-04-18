@@ -53,7 +53,6 @@ public:
   /// Default constructor.
   /// Constructs and empty set.
   SessionProtocolSet() : m_bits(0) {}
-
   uint32_t
   indexToMask(int idx) const
   {
@@ -124,7 +123,11 @@ public:
   }
 
   /// Equality (identical sets).
-  bool operator==(self const &that) const { return m_bits == that.m_bits; }
+  bool
+  operator==(self const &that) const
+  {
+    return m_bits == that.m_bits;
+  }
 };
 
 // Predefined sets of protocols, useful for configuration.

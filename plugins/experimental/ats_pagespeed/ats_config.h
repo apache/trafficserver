@@ -34,7 +34,6 @@
 #include "net/instaweb/util/public/string.h"
 #include "net/instaweb/util/public/string_util.h"
 
-
 namespace net_instaweb
 {
 class AtsRewriteOptions;
@@ -103,7 +102,6 @@ private:
   // todo: destructor. delete owned host configurations
   DISALLOW_COPY_AND_ASSIGN(AtsConfig);
 }; // class Configuration
-
 
 } // namespace net_instaweb
 

@@ -41,7 +41,6 @@ struct NetTesterSM : public Continuation {
     read_vio = vc->do_io_read(this, INT64_MAX, buf);
   }
 
-
   int
   handle_read(int event, void *data)
   {
@@ -73,10 +72,8 @@ struct NetTesterSM : public Continuation {
   }
 };
 
-
 struct NetTesterAccept : public Continuation {
   NetTesterAccept(ProxyMutex *_mutex) : Continuation(_mutex) { SET_HANDLER(&NetTesterAccept::handle_accept); }
-
   int
   handle_accept(int event, void *data)
   {
@@ -87,7 +84,6 @@ struct NetTesterAccept : public Continuation {
     return EVENT_CONT;
   }
 };
-
 
 int
 main()

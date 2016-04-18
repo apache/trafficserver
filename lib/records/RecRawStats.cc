@@ -60,7 +60,6 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
   return REC_ERR_OKAY;
 }
 
-
 //-------------------------------------------------------------------------
 // raw_stat_sync_to_global
 //-------------------------------------------------------------------------
@@ -117,7 +116,6 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
   return REC_ERR_OKAY;
 }
 
-
 //-------------------------------------------------------------------------
 // raw_stat_clear
 //-------------------------------------------------------------------------
@@ -152,7 +150,6 @@ raw_stat_clear(RecRawStatBlock *rsb, int id)
   return REC_ERR_OKAY;
 }
 
-
 //-------------------------------------------------------------------------
 // raw_stat_clear_sum
 //-------------------------------------------------------------------------
@@ -182,7 +179,6 @@ raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
 
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // raw_stat_clear_count
@@ -239,7 +235,6 @@ RecAllocateRawStatBlock(int num_stats)
   return rsb;
 }
 
-
 //-------------------------------------------------------------------------
 // RecRegisterRawStat
 //-------------------------------------------------------------------------
@@ -282,7 +277,6 @@ _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDa
 Ldone:
   return err;
 }
-
 
 //-------------------------------------------------------------------------
 // RecRawStatSync...
@@ -403,7 +397,6 @@ RecIncrRawStatBlock(RecRawStatBlock * /* rsb ATS_UNUSED */, EThread * /* ethread
   return REC_ERR_FAIL;
 }
 
-
 //-------------------------------------------------------------------------
 // RecSetRawStatXXX
 //-------------------------------------------------------------------------
@@ -429,7 +422,6 @@ RecSetRawStatBlock(RecRawStatBlock * /* rsb ATS_UNUSED */, RecRawStat * /* stat_
   return REC_ERR_FAIL;
 }
 
-
 //-------------------------------------------------------------------------
 // RecGetRawStatXXX
 //-------------------------------------------------------------------------
@@ -453,7 +445,6 @@ RecGetRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data)
   *data = total.count;
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // RecIncrGlobalRawStatXXX
@@ -480,7 +471,6 @@ RecIncrGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t incr)
   return REC_ERR_OKAY;
 }
 
-
 //-------------------------------------------------------------------------
 // RecSetGlobalRawStatXXX
 //-------------------------------------------------------------------------
@@ -498,7 +488,6 @@ RecSetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t data)
   return REC_ERR_OKAY;
 }
 
-
 //-------------------------------------------------------------------------
 // RecGetGlobalRawStatXXX
 //-------------------------------------------------------------------------
@@ -515,7 +504,6 @@ RecGetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data)
   *data = rsb->global[id]->count;
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // RegGetGlobalRawStatXXXPtr
@@ -537,7 +525,6 @@ RecGetGlobalRawStatCountPtr(RecRawStatBlock *rsb, int id)
 {
   return &(rsb->global[id]->count);
 }
-
 
 //-------------------------------------------------------------------------
 // RecRegisterRawStatSyncCb
@@ -568,7 +555,6 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
 
   return err;
 }
-
 
 //-------------------------------------------------------------------------
 // RecExecRawStatSyncCbs

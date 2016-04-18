@@ -37,7 +37,6 @@
 #include "ts/MatcherUtils.h"
 #include "ts/HostLookup.h"
 
-
 /* --------------------------------------------------------------
    this file is built using "ParentSelection.cc as a template.
    -------------    ------------------------------------------------- */
@@ -57,7 +56,6 @@ static ClassAllocator<DNSRequestData> DNSReqAllocator("DNSRequestDataAllocator")
    -------------------------------------------------------------- */
 const matcher_tags sdns_dest_tags = {"dest_host", "dest_domain", NULL, "url_regex", "url", NULL, true};
 
-
 /* --------------------------------------------------------------
    config Callback Prototypes
    -------------------------------------------------------------- */
@@ -66,15 +64,12 @@ enum SplitDNSCB_t {
   SDNS_ENABLE_CB,
 };
 
-
 static const char *SDNSResultStr[] = {"DNSServer_Undefined", "DNSServer_Specified", "DNSServer_Failed"};
-
 
 int SplitDNSConfig::m_id = 0;
 int SplitDNSConfig::gsplit_dns_enabled = 0;
 int splitDNSFile_CB(const char *name, RecDataT data_type, RecData data, void *cookie);
 Ptr<ProxyMutex> SplitDNSConfig::dnsHandler_mutex;
-
 
 /* --------------------------------------------------------------
    SplitDNSResult::SplitDNSResult()
@@ -83,7 +78,6 @@ inline SplitDNSResult::SplitDNSResult() : r(DNS_SRVR_UNDEFINED), m_line_number(0
 {
 }
 
-
 /* --------------------------------------------------------------
    SplitDNS::SplitDNS()
    -------------------------------------------------------------- */
@@ -91,14 +85,12 @@ SplitDNS::SplitDNS() : m_DNSSrvrTable(NULL), m_SplitDNSlEnable(0), m_bEnableFast
 {
 }
 
-
 SplitDNS::~SplitDNS()
 {
   if (m_DNSSrvrTable) {
     delete m_DNSSrvrTable;
   }
 }
-
 
 /* --------------------------------------------------------------
    SplitDNSConfig::acquire()
@@ -109,7 +101,6 @@ SplitDNSConfig::acquire()
   return (SplitDNS *)configProcessor.get(SplitDNSConfig::m_id);
 }
 
-
 /* --------------------------------------------------------------
    SplitDNSConfig::release()
    -------------------------------------------------------------- */
@@ -118,7 +109,6 @@ SplitDNSConfig::release(SplitDNS *params)
 {
   configProcessor.release(SplitDNSConfig::m_id, params);
 }
-
 
 /* --------------------------------------------------------------
    SplitDNSConfig::startup()
@@ -133,7 +123,6 @@ SplitDNSConfig::startup()
   SplitDNSConfig::splitDNSUpdate = new ConfigUpdateHandler<SplitDNSConfig>();
   SplitDNSConfig::splitDNSUpdate->attach("proxy.config.cache.splitdns.filename");
 }
-
 
 /* --------------------------------------------------------------
    SplitDNSConfig::reconfigure()
@@ -171,7 +160,6 @@ SplitDNSConfig::reconfigure()
   }
 }
 
-
 /* --------------------------------------------------------------
    SplitDNSConfig::print()
    -------------------------------------------------------------- */
@@ -186,7 +174,6 @@ SplitDNSConfig::print()
   params->m_DNSSrvrTable->Print();
   SplitDNSConfig::release(params);
 }
-
 
 /* --------------------------------------------------------------
    SplitDNS::getDNSRecord()
@@ -211,7 +198,6 @@ SplitDNS::getDNSRecord(const char *hostname)
   Debug("splitdns", "Fail to match a valid splitdns rule, fallback to default dns resolver");
   return NULL;
 }
-
 
 /* --------------------------------------------------------------
    SplitDNS::findServer()
@@ -299,7 +285,6 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
   }
 }
 
-
 /* --------------------------------------------------------------
    SplitDNSRecord::ProcessDNSHosts()
    -------------------------------------------------------------- */
@@ -374,7 +359,6 @@ SplitDNSRecord::ProcessDNSHosts(char *val)
   return NULL;
 }
 
-
 /* --------------------------------------------------------------
    SplitDNSRecord::ProcessDefDomain()
    -------------------------------------------------------------- */
@@ -402,7 +386,6 @@ SplitDNSRecord::ProcessDefDomain(char *val)
 
   return NULL;
 }
-
 
 /* --------------------------------------------------------------
    SplitDNSRecord::ProcessDomainSrchList()
@@ -438,7 +421,6 @@ SplitDNSRecord::ProcessDomainSrchList(char *val)
   m_domain_srch_list = numTok;
   return NULL;
 }
-
 
 /* --------------------------------------------------------------
    SplitDNSRecord::Init()
@@ -528,7 +510,6 @@ SplitDNSRecord::Init(matcher_line *line_info)
   return config_parse_error::ok();
 }
 
-
 /* --------------------------------------------------------------
     SplitDNSRecord::UpdateMatch()
    -------------------------------------------------------------- */
@@ -545,7 +526,6 @@ SplitDNSRecord::UpdateMatch(SplitDNSResult *result, RequestData * /* rdata ATS_U
   }
 }
 
-
 /* --------------------------------------------------------------
     SplitDNSRecord::Print()
    -------------------------------------------------------------- */
@@ -557,7 +537,6 @@ SplitDNSRecord::Print()
     Debug("splitdns_config", " %s ", ats_ip_ntop(&m_servers.x_server_ip[i].sa, ab, sizeof ab));
   }
 }
-
 
 void
 ink_split_dns_init(ModuleVersion v)

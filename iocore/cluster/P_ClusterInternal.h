@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ClusterInternal.h
@@ -37,7 +36,6 @@
 #define CLUSTER_THREAD_STEALING 1
 #define CLUSTER_TOMCAT 1
 #define CLUSTER_STATS 1
-
 
 #define ALIGN_DOUBLE(_p) ((((uintptr_t)(_p)) + 7) & ~7)
 #define ALLOCA_DOUBLE(_sz) ALIGN_DOUBLE(alloca((_sz) + 8))

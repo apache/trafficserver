@@ -203,7 +203,6 @@ class BlasterUrlList : public Continuation
 
 public:
   BlasterUrlList() : Continuation(), timeout(0), action(0), mtu(0), list_head(0), cur_len(0) {}
-
   void
   init(TSPrefetchBlastData const &bdata = UDP_BLAST_DATA, int tout = 0, int xmtu = INT_MAX)
   {
@@ -235,7 +234,6 @@ public:
   typedef int (PrefetchUrlBlaster::*EventHandler)(int, void *);
 
   PrefetchUrlBlaster() : url_head(0), action(0) { ink_zero(blast); }
-
   void init(PrefetchUrlEntry *list_head, TSPrefetchBlastData const &u_bd = UDP_BLAST_DATA);
 
   void free();
@@ -339,7 +337,6 @@ class KeepAliveConn : public Continuation
 {
 public:
   KeepAliveConn() : Continuation(), nbytes_added(0) { ink_zero(ip); }
-
   int init(IpEndpoint const &ip, MIOBuffer *buf, IOBufferReader *reader);
   void free();
 
@@ -386,7 +383,6 @@ class KeepAliveLockHandler : public Continuation
 
 public:
   KeepAliveLockHandler() : Continuation() { ink_zero(ip); };
-
   void
   init(IpEndpoint const &xip, MIOBuffer *xbuf, IOBufferReader *xreader)
   {
@@ -401,14 +397,12 @@ public:
   }
 
   ~KeepAliveLockHandler() { mutex = NULL; }
-
   int handleEvent(int event, void *data);
 
   IpEndpoint ip;
   MIOBuffer *buf;
   IOBufferReader *reader;
 };
-
 
 #define PREFETCH_CONFIG_UPDATE_TIMEOUT (HRTIME_SECOND * 60)
 

@@ -31,7 +31,11 @@
 namespace EsiLib
 {
 struct StringHasher {
-  inline size_t operator()(const std::string &str) const { return __gnu_cxx::hash<const char *>()(str.c_str()); };
+  inline size_t
+  operator()(const std::string &str) const
+  {
+    return __gnu_cxx::hash<const char *>()(str.c_str());
+  };
 };
 
 typedef __gnu_cxx::hash_map<std::string, std::string, StringHasher> StringHash;

@@ -157,7 +157,6 @@ struct ShowCache : public ShowCont {
 #define STREQ_PREFIX(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
 #define STREQ_LEN_PREFIX(_x, _l, _s) (path_len < sizeof(_s) && !strncasecmp(_x, _s, sizeof(_s) - 1))
 
-
 Action *
 register_ShowCache(Continuation *c, HTTPHdr *h)
 {
@@ -287,7 +286,6 @@ ShowCache::invalidate_regex_form(int event, Event *e)
                   "</FORM>\n"));
   return complete(event, e);
 }
-
 
 int
 ShowCache::handleCacheEvent(int event, Event *e)
@@ -458,7 +456,6 @@ ShowCache::lookup_url(int event, Event *e)
     return EVENT_CONT; // callback pending, will be a cluster read.
 }
 
-
 int
 ShowCache::delete_url(int event, Event *e)
 {
@@ -467,7 +464,6 @@ ShowCache::delete_url(int event, Event *e)
     CHECK_SHOW(begin("Delete URL"));
     CHECK_SHOW(show("<B><TABLE border=1>\n"));
   }
-
 
   if (strcmp(show_cache_urlstrs[urlstrs_index], "") == 0) {
     // close the page when you reach the end of the
@@ -502,7 +498,6 @@ ShowCache::handleCacheDeleteComplete(int event, Event *e)
   }
   return delete_url(event, e);
 }
-
 
 int
 ShowCache::lookup_regex(int event, Event *e)
@@ -562,7 +557,6 @@ ShowCache::delete_regex(int event, Event *e)
   return EVENT_DONE;
 }
 
-
 int
 ShowCache::invalidate_regex(int event, Event *e)
 {
@@ -573,7 +567,6 @@ ShowCache::invalidate_regex(int event, Event *e)
   cacheProcessor.scan(this);
   return EVENT_DONE;
 }
-
 
 int
 ShowCache::handleCacheScanCallback(int event, Event *e)

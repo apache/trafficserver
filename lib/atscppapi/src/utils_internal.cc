@@ -263,7 +263,6 @@ utils::internal::consumeFromTSIOBufferReader(TSIOBufferReader reader)
   return str;
 }
 
-
 HttpVersion
 utils::internal::getHttpVersion(TSMBuffer hdr_buf, TSMLoc hdr_loc)
 {

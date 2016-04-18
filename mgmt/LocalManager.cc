@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "ts/ink_platform.h"
 #include "ts/ink_sock.h"
 #include "ts/ink_file.h"
@@ -52,7 +51,6 @@ LocalManager::mgmtCleanup()
   return;
 }
 
-
 void
 LocalManager::mgmtShutdown()
 {
@@ -72,7 +70,6 @@ LocalManager::mgmtShutdown()
   mgmtCleanup();
 }
 
-
 void
 LocalManager::processShutdown(bool mainThread)
 {
@@ -85,7 +82,6 @@ LocalManager::processShutdown(bool mainThread)
   return;
 }
 
-
 void
 LocalManager::processRestart()
 {
@@ -93,7 +89,6 @@ LocalManager::processRestart()
   signalEvent(MGMT_EVENT_RESTART, "processRestart");
   return;
 }
-
 
 void
 LocalManager::processBounce()
@@ -499,7 +494,6 @@ LocalManager::pollMgmtProcessServer()
   }
 }
 
-
 void
 LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
 {
@@ -626,14 +620,12 @@ LocalManager::handleMgmtMsgFromProcesses(MgmtMessageHdr *mh)
   }
 }
 
-
 void
 LocalManager::sendMgmtMsgToProcesses(int msg_id, const char *data_str)
 {
   sendMgmtMsgToProcesses(msg_id, data_str, strlen(data_str) + 1);
   return;
 }
-
 
 void
 LocalManager::sendMgmtMsgToProcesses(int msg_id, const char *data_raw, int data_len)
@@ -647,7 +639,6 @@ LocalManager::sendMgmtMsgToProcesses(int msg_id, const char *data_raw, int data_
   sendMgmtMsgToProcesses(mh);
   return;
 }
-
 
 void
 LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
@@ -757,7 +748,6 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
   }
 }
 
-
 void
 LocalManager::signalFileChange(const char *var_name, bool incVersion)
 {
@@ -769,14 +759,12 @@ LocalManager::signalFileChange(const char *var_name, bool incVersion)
   return;
 }
 
-
 void
 LocalManager::signalEvent(int msg_id, const char *data_str)
 {
   signalEvent(msg_id, data_str, strlen(data_str) + 1);
   return;
 }
-
 
 void
 LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
@@ -791,7 +779,6 @@ LocalManager::signalEvent(int msg_id, const char *data_raw, int data_len)
 
   return;
 }
-
 
 /*
  * processEventQueue()
@@ -836,7 +823,6 @@ LocalManager::processEventQueue()
     ats_free(mh);
   }
 }
-
 
 /*
  * startProxy()
@@ -1009,7 +995,6 @@ LocalManager::listenForProxy()
   }
   return;
 }
-
 
 /*
  * bindProxyPort()

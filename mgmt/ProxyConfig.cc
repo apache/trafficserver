@@ -28,7 +28,6 @@
 
 ConfigProcessor configProcessor;
 
-
 void *
 config_int_cb(void *data, void *value)
 {
@@ -90,7 +89,6 @@ config_string_alloc_cb(void *data, void *value)
   return NULL;
 }
 
-
 class ConfigInfoReleaser : public Continuation
 {
 public:
@@ -111,7 +109,6 @@ public:
   unsigned int m_id;
   ConfigInfo *m_info;
 };
-
 
 ConfigProcessor::ConfigProcessor() : ninfos(0)
 {
@@ -228,7 +225,6 @@ struct RegressionConfig : public ConfigInfo {
   // object count drops below the specified count.
   template <typename CallType> struct DeferredCall : public Continuation {
     DeferredCall(int _r, CallType _c) : remain(_r), call(_c) { SET_HANDLER(&DeferredCall::handleEvent); }
-
     int
     handleEvent(int event ATS_UNUSED, Event *e)
     {
@@ -289,8 +285,8 @@ volatile int RegressionConfig::nobjects = 0;
 
 struct ProxyConfig_Set_Completion {
   ProxyConfig_Set_Completion(int _id, RegressionConfig *_c) : configid(_id), config(_c) {}
-
-  void operator()(void) const
+  void
+  operator()(void) const
   {
     // Push one more RegressionConfig to force the LAST-tagged one to get destroyed.
     rprintf(config->test, "setting LAST config object %p\n", config);
@@ -323,8 +319,8 @@ EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Set)(RegressionTest *test, int /* atype AT
 
 struct ProxyConfig_Release_Completion {
   ProxyConfig_Release_Completion(int _id, RegressionConfig *_c) : configid(_id), config(_c) {}
-
-  void operator()(void) const
+  void
+  operator()(void) const
   {
     // Release the reference count. Since we were keeping this alive, it should be the last to die.
     configProcessor.release(configid, config);

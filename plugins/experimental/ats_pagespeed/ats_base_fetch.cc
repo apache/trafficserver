@@ -33,7 +33,6 @@
 #include "net/instaweb/util/public/string_writer.h"
 #include "net/instaweb/util/public/google_message_handler.h"
 
-
 using namespace net_instaweb;
 
 // TODO(oschaaf): rename is_resource_fetch -> write_raw_response_headers
@@ -194,7 +193,6 @@ AtsBaseFetch::HandleDone(bool success)
     copy_request_headers_to_psol(reqp, req_hdr_loc, intercept_ctx->request_headers);
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, req_hdr_loc);
 
-
     TSContDataSet(interceptCont, intercept_ctx);
     // TODO(oschaaf): when we serve an IPRO optimized asset, that will be handled
     // by the resource intercept. Which means we should set TXN_INDEX_OWNED_ARG to
@@ -208,7 +206,6 @@ AtsBaseFetch::HandleDone(bool success)
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return;
   }
-
 
   TSDebug("ats-speed", "Done()!");
   CHECK(!done_called_);

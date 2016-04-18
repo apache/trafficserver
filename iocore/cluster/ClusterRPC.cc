@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ClusterRPC.cc
@@ -87,8 +86,7 @@ machine_list_ClusterFunction(ClusterHandler *from, void *data, int len)
         clusterProcessor.connect(m->ip[i], k);
       }
     }
-  Lfound:
-    ;
+  Lfound:;
   }
 }
 

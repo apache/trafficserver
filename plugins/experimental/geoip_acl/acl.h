@@ -44,15 +44,12 @@ typedef void *GeoDBHandle;
 // Maxmind allocates 253 country codes,even though there are only 248 according to the above
 static const int NUM_ISO_CODES = 253;
 
-
 // Base class for all ACLs
 class Acl
 {
 public:
   Acl() : _allow(true), _added_tokens(0) {}
-
   virtual ~Acl() {}
-
   // These have to be implemented for each ACL type
   virtual void read_regex(const char *fn) = 0;
   virtual int process_args(int argc, char *argv[]) = 0;
@@ -90,13 +87,11 @@ protected:
   static GeoDBHandle _geoip6;
 };
 
-
 // Base class for all Regex ACLs (which contain Acl() subclassed instances)
 class RegexAcl
 {
 public:
   RegexAcl(Acl *acl) : _extra(NULL), _next(NULL), _acl(acl) {}
-
   const std::string &
   get_regex() const
   {
@@ -135,13 +130,11 @@ private:
   Acl *_acl;
 };
 
-
 // ACLs based on ISO country codes.
 class CountryAcl : public Acl
 {
 public:
   CountryAcl() : _regexes(NULL) { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
-
   void read_regex(const char *fn);
   int process_args(int argc, char *argv[]);
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const;

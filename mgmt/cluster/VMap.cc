@@ -57,7 +57,6 @@ vmapEnableHandler(const char *tok, RecDataT /* data_type ATS_UNUSED */, RecData 
   return 0;
 } /* End vmapEnableHandler */
 
-
 VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
 {
   bool found;
@@ -76,7 +75,6 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
   addr_list = NULL;
   num_addrs = 0;
   num_nics = 0;
-
 
   this->interface = ats_strdup(interface);
   turning_off = false; // we are not turning off VIP
@@ -198,7 +196,6 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
     close(tmp_socket);
   }
 
-
   RecRegisterConfigUpdateCb("proxy.config.vmap.enabled", vmapEnableHandler, NULL);
 
   down_up_timeout = REC_readInteger("proxy.config.vmap.down_up_timeout", &found);
@@ -212,7 +209,6 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
 
 } /* End VMap::VMap */
 
-
 VMap::~VMap()
 {
   if (id_map)
@@ -224,7 +220,6 @@ VMap::~VMap()
   ats_free(this->interface);
   ats_free(addr_list);
 } /* End VMap::~VMap */
-
 
 /*
  * lt_runGambit()
@@ -241,7 +236,6 @@ VMap::lt_runGambit()
   char vaddr[80], raddr[80], *conf_addr = NULL;
   bool init = false;
   struct in_addr virtual_addr, real_addr;
-
 
   if (!enabled) {
     return;
@@ -282,7 +276,6 @@ VMap::lt_runGambit()
     }
   }
 
-
   for (i = 0; i < num_addrs; i++) { /* Check for conflicts with your interfaces */
     virtual_addr.s_addr = addr_list[i];
     ink_strlcpy(vaddr, inet_ntoa(virtual_addr), sizeof(vaddr));
@@ -297,7 +290,6 @@ VMap::lt_runGambit()
   ink_mutex_release(mutex);
   return;
 } /* End VMap::lt_runGambit */
-
 
 /*
  * lt_readAListFile(...)
@@ -390,7 +382,6 @@ VMap::lt_readAListFile(const char *fname)
   return;
 } /* End VMap::lt_readAListFile */
 
-
 /*
  * rl_resetSeenFlag(...)
  *   Function resets the "seen" flag for a given peer's mapped addrs.
@@ -412,7 +403,6 @@ VMap::rl_resetSeenFlag(char *ip)
   }
   return;
 } /* End VMap::rl_resetSeenFlag */
-
 
 /*
  * rl_clearUnSeen(...)
@@ -442,7 +432,6 @@ VMap::rl_clearUnSeen(char *ip)
   return numAddrs;
 } /* End VMap::rl_clearUnSeen */
 
-
 /*
  * rl_remote_map(...)
  *   Function sends the up interface command to a remote node.
@@ -464,7 +453,6 @@ VMap::rl_remote_map(char *virt_ip, char *real_ip)
   return true;
 } /* End VMap::rl_remote_map */
 
-
 /*
  * rl_remote_unmap(...)
  *   Function sends the up interface command to a remote node.
@@ -484,7 +472,6 @@ VMap::rl_remote_unmap(char *virt_ip, char *real_ip)
   }
   return true;
 } /* End VMap::rl_remote_unmap */
-
 
 /*
  * rl_map(...)
@@ -524,7 +511,6 @@ VMap::rl_map(char *virt_ip, char *real_ip)
   return true;
 } /* End VMap::rl_map */
 
-
 bool
 VMap::rl_unmap(char *virt_ip, char *real_ip)
 {
@@ -551,7 +537,6 @@ VMap::rl_unmap(char *virt_ip, char *real_ip)
   ats_free(hash_value);
   return true;
 } /* End VMap::rl_unmap */
-
 
 /*
  * rl_checkConflict(...)
@@ -597,7 +582,6 @@ VMap::rl_checkConflict(char *virt_ip)
   }
   return NULL;
 } /* End VMap::rl_checkConflict */
-
 
 /*
  * checkGlobConflict(...)
@@ -696,7 +680,6 @@ VMap::rl_remap(char *virt_ip, char *cur_ip, char *dest_ip, int cur_naddr, int de
   return true;
 } /* End VMap::rl_remap */
 
-
 /*
  * boundAddr(...)
  *   Function tests whether or not the addr is bound. Returns 0(not bound),
@@ -723,7 +706,6 @@ VMap::rl_boundAddr(char *virt_ip)
   }
   return 0;
 } /* End VMap::rl_boundAddr */
-
 
 /*
  * boundTo(...)
@@ -758,7 +740,6 @@ VMap::rl_boundTo(char *virt_ip)
   }
   return 0;
 } /* End VMap::rl_boundTo */
-
 
 /*
  * constructVMapMessage(...)
@@ -843,7 +824,6 @@ VMap::downAddrs()
   ink_mutex_release(mutex);
   return;
 } /* End VMap::downAddrs */
-
 
 void
 VMap::downOurAddrs()

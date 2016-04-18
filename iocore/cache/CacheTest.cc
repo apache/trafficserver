@@ -515,7 +515,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   bool pass = true;
   CacheKey key;
   Vol *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
-  vector<Ptr<IOBufferData> > data;
+  vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, vol);
 

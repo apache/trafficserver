@@ -29,7 +29,6 @@ rotl64(uint64_t x, int8_t r)
 
 #define BIG_CONSTANT(x) (x##LLU)
 
-
 //-----------------------------------------------------------------------------
 // Block read - if your platform needs to do endian-swapping or can only
 // handle aligned reads, do the conversion here

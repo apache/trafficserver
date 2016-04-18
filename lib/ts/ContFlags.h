@@ -49,7 +49,8 @@ public:
   {
     raw_flags = new_flags;
   }
-  ContFlags &operator=(ContFlags const &other)
+  ContFlags &
+  operator=(ContFlags const &other)
   {
     this->set_flags(other.get_flags());
     return *this;

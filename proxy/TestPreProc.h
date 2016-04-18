@@ -43,7 +43,6 @@ private:
   RequestInput(const RequestInput &);
   RequestInput &operator=(const RequestInput &);
 
-
   char *m_sp;
   unsigned m_len;
   IOBuffer *m_cb;

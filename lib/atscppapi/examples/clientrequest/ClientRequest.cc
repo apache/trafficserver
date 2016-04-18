@@ -38,7 +38,6 @@ public:
     registerHook(HOOK_SEND_REQUEST_HEADERS);
   }
 
-
   void
   handleReadRequestHeadersPreRemap(Transaction &transaction)
   {
@@ -63,7 +62,6 @@ public:
 
     transaction.resume();
   }
-
 
   void
   handleReadRequestHeadersPostRemap(Transaction &transaction)

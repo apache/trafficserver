@@ -323,7 +323,6 @@ typedef enum {
   TS_FNAME_UNDEFINED
 } TSFileNameT;
 
-
 /* Each rule type within a file has its own enumeration.
  * Need this enumeration because it's possible there are different Ele's used
  * for rule types within the same file
@@ -391,7 +390,7 @@ typedef struct {
 
 /*--- records -------------------------------------------------------------*/
 
-typedef union {/* record value */
+typedef union { /* record value */
   TSInt int_val;
   TSCounter counter_val;
   TSFloat float_val;
@@ -455,7 +454,6 @@ typedef struct {
   /*unsigned long timestamp; */ /* only applies to active events */
 } TSActiveEvent;
 
-
 /*--- abstract file operations --------------------------------------------*/
 
 typedef struct {
@@ -506,7 +504,6 @@ typedef struct {
                            be found in a URL  */
   TSSspec sec_spec;     /* secondary specifier */
 } TSPdSsFormat;         /* PdSs = Primary Destination Secondary Specifier */
-
 
 /* Generic Ele struct which is used as first member in all other Ele structs.
  * The TSCfgContext operations deal with TSCfgEle* type, so must typecast
@@ -894,7 +891,6 @@ tsapi TSMgmtError TSDisconnectCbRegister(TSDisconnectFunc *func, void *data);
 tsapi TSMgmtError TSDisconnectRetrySet(int retries, int retry_sleep_msec);
 tsapi TSMgmtError TSDisconnect();
 
-
 /*--- control operations --------------------------------------------------*/
 /* TSProxyStateGet: get the proxy state (on/off)
  * Input:  <none>
@@ -1053,14 +1049,12 @@ tsapi TSMgmtError TSSnapshotRemove(char *snapshot_name);
  */
 tsapi TSMgmtError TSSnapshotGetMlt(TSStringList snapshots);
 
-
 /*--- statistics operations -----------------------------------------------*/
 /* TSStatsReset: sets all the statistics variables to their default values
  * Input: cluster - Reset the stats clusterwide or not
  * Outpue: TSErrr
  */
 tsapi TSMgmtError TSStatsReset(bool cluster, const char *name);
-
 
 /*--- variable operations -------------------------------------------------*/
 /* TSRecordGet: gets a record
@@ -1142,7 +1136,6 @@ tsapi TSMgmtError TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need);
  */
 /*tsapi TSMgmtError               TSEventSignal (char *event_name, ...); */
 
-
 /* TSEventResolve: enables the user to resolve an event
  * Input:  event_name - event to resolve
  * Output: TSMgmtError
@@ -1185,7 +1178,6 @@ tsapi TSMgmtError TSEventSignalCbRegister(char *event_name, TSEventSignalFunc fu
  */
 tsapi TSMgmtError TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
 
-
 /*--- abstracted file operations ------------------------------------------*/
 /* TSCfgContextCreate: allocates memory for an empty TSCfgContext for the specified file
  * Input:  file - the file
@@ -1212,7 +1204,6 @@ tsapi TSMgmtError TSCfgContextDestroy(TSCfgContext ctx);
  */
 tsapi TSMgmtError TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT *action_need, TSIntList errRules);
 
-
 /* TSCfgContextGet: retrieves all the Ele's for the file specified in the ctx and
  *                puts them into ctx; note that the ele's in the TSCfgContext don't
  *                all have to be of the same ele type
@@ -1221,7 +1212,6 @@ tsapi TSMgmtError TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT *action_nee
  *
  */
 tsapi TSMgmtError TSCfgContextGet(TSCfgContext ctx);
-
 
 /*--- TSCfgContext Operations --------------------------------------------*/
 /*

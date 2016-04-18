@@ -111,7 +111,6 @@ MIOBuffer::write(const void *abuf, int64_t alen)
   return alen;
 }
 
-
 #ifdef WRITE_AND_TRANSFER
 /*
  * Same functionality as write but for the one small difference.
@@ -136,7 +135,6 @@ MIOBuffer::write_and_transfer_left_over_space(IOBufferReader *r, int64_t alen, i
 }
 
 #endif
-
 
 int64_t
 MIOBuffer::write(IOBufferReader *r, int64_t alen, int64_t offset)

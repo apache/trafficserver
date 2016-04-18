@@ -35,12 +35,9 @@ class Lockfile
 {
 public:
   Lockfile(void) : fd(0) { fname[0] = '\0'; }
-
   // coverity[uninit_member]
   Lockfile(const char *filename) : fd(0) { ink_strlcpy(fname, filename, sizeof(fname)); }
-
   ~Lockfile(void) {}
-
   void
   SetLockfileName(const char *filename)
   {

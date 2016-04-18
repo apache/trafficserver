@@ -112,7 +112,6 @@ public:
   bool statVarSet(RecDataT, RecData);
 };
 
-
 /**
  * StatExprList
  *   simply a list of StatExprToken.
@@ -180,7 +179,6 @@ public:
 private:
   void infix2postfix();
 };
-
 
 /**
  * StatObjectList

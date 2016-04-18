@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "ts/ink_platform.h"
 
 #undef HTTP_CACHE
@@ -80,7 +79,6 @@ ProcessManager::ProcessManager(bool rlm) : BaseManager(), require_lm(rlm), local
   pid = getpid();
 } /* End ProcessManager::ProcessManager */
 
-
 void
 ProcessManager::reconfigure()
 {
@@ -113,7 +111,6 @@ ProcessManager::signalManager(int msg_id, const char *data_str)
   return;
 } /* End ProcessManager::signalManager */
 
-
 void
 ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
 {
@@ -127,7 +124,6 @@ ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
   return;
 
 } /* End ProcessManager::signalManager */
-
 
 bool
 ProcessManager::processEventQueue()
@@ -153,7 +149,6 @@ ProcessManager::processEventQueue()
   return ret;
 } /* End ProcessManager::processEventQueue */
 
-
 bool
 ProcessManager::processSignalQueue()
 {
@@ -175,7 +170,6 @@ ProcessManager::processSignalQueue()
 
   return ret;
 } /* End ProcessManager::processSignalQueue */
-
 
 void
 ProcessManager::initLMConnection()
@@ -222,7 +216,6 @@ ProcessManager::initLMConnection()
   }
 
 } /* End ProcessManager::initLMConnection */
-
 
 void
 ProcessManager::pollLMConnection()

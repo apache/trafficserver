@@ -167,7 +167,6 @@ enum HttpApiState_t {
   HTTP_API_DEFERED_SERVER_ERROR,
 };
 
-
 enum HttpPluginTunnel_t {
   HTTP_NO_PLUGIN_TUNNEL = 0,
   HTTP_PLUGIN_AS_SERVER,

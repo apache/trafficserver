@@ -125,7 +125,6 @@ typedef struct {
   unsigned int magic;
 } ClientTxn;
 
-
 //////////////////////////////////////////////////////////////////////////////
 // DECLARATIONS
 //////////////////////////////////////////////////////////////////////////////
@@ -135,7 +134,6 @@ static char *get_body_ptr(const char *request);
 static char *generate_request(int test_case);
 static char *generate_response(const char *request);
 static int get_request_id(TSHttpTxn txnp);
-
 
 /* client side */
 static ClientTxn *synclient_txn_create(void);
@@ -173,7 +171,6 @@ get_body_ptr(const char *request)
   char *ptr = (char *)strstr((const char *)request, (const char *)"\r\n\r\n");
   return (ptr != NULL) ? (ptr + 4) : NULL;
 }
-
 
 /* Caller must free returned request */
 static char *
@@ -276,7 +273,6 @@ generate_request(int test_case)
   return request;
 }
 
-
 /* Caller must free returned response */
 static char *
 generate_response(const char *request)
@@ -360,7 +356,6 @@ generate_response(const char *request)
   "\r\n"                             \
   "Body for response 10"
 
-
   int test_case, match, http_version;
 
   char *response = (char *)TSmalloc(RESPONSE_MAX_SIZE + 1);
@@ -409,7 +404,6 @@ generate_response(const char *request)
   return response;
 }
 
-
 // This routine can be called by tests, from the READ_REQUEST_HDR_HOOK
 // to figure out the id of a test message
 // Returns id/-1 in case of error
@@ -436,7 +430,6 @@ get_request_id(TSHttpTxn txnp)
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   return id;
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 // SOCKET CLIENT
@@ -540,7 +533,6 @@ synclient_txn_send_request_to_vc(ClientTxn *txn, char *request, TSVConn vc)
   return 1;
 }
 
-
 static int
 synclient_txn_read_response(TSCont contp)
 {
@@ -616,7 +608,6 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data 
   return 1;
 }
 
-
 static int
 synclient_txn_write_request(TSCont contp)
 {
@@ -689,7 +680,6 @@ synclient_txn_write_request_handler(TSCont contp, TSEvent event, void * /* data 
   return TS_EVENT_IMMEDIATE;
 }
 
-
 static int
 synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
 {
@@ -729,7 +719,6 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
   return TS_EVENT_IMMEDIATE;
 }
 
-
 static int
 synclient_txn_main_handler(TSCont contp, TSEvent event, void *data)
 {
@@ -739,7 +728,6 @@ synclient_txn_main_handler(TSCont contp, TSEvent event, void *data)
   TxnHandler handler = txn->current_handler;
   return (*handler)(contp, event, data);
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 // SOCKET SERVER
@@ -840,7 +828,6 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
   return TS_EVENT_IMMEDIATE;
 }
 
-
 static int
 synserver_txn_close(TSCont contp)
 {
@@ -864,7 +851,6 @@ synserver_txn_close(TSCont contp)
   TSDebug(SDBG_TAG, "Server Txn destroyed");
   return TS_EVENT_IMMEDIATE;
 }
-
 
 static int
 synserver_txn_write_response(TSCont contp)
@@ -904,7 +890,6 @@ synserver_txn_write_response(TSCont contp)
   return TS_EVENT_IMMEDIATE;
 }
 
-
 static int
 synserver_txn_write_response_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
 {
@@ -939,7 +924,6 @@ synserver_txn_write_response_handler(TSCont contp, TSEvent event, void * /* data
   }
   return TS_EVENT_IMMEDIATE;
 }
-
 
 static int
 synserver_txn_read_request(TSCont contp)
@@ -1018,7 +1002,6 @@ synserver_txn_read_request_handler(TSCont contp, TSEvent event, void * /* data A
   }
   return TS_EVENT_IMMEDIATE;
 }
-
 
 static int
 synserver_txn_main_handler(TSCont contp, TSEvent event, void *data)

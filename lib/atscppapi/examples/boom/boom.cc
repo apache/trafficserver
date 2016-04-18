@@ -110,7 +110,8 @@ public:
     current_code_string_ = oss.str();
   }
 
-  bool operator()(const std::string &code) const
+  bool
+  operator()(const std::string &code) const
   {
     TS_DEBUG(TAG, "Checking if %s matches code %s", current_code_string_.c_str(), code.c_str());
     if (code == current_code_string_)
@@ -177,7 +178,6 @@ public:
   // Register error codes
   void register_error_codes(const std::vector<std::string> &error_codes);
 };
-
 
 void
 BoomResponseRegistry::register_error_codes(const std::vector<std::string> &error_codes)

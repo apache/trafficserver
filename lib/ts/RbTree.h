@@ -110,10 +110,8 @@ namespace detail
 
     /// Default constructor.
     RBNode() : _color(RED), _parent(0), _left(0), _right(0), _next(0), _prev(0) {}
-
     /// Destructor (force virtual).
     virtual ~RBNode() {}
-
     /** Rotate the subtree rooted at this node.
         The node is rotated in to the position of one of its children.
         Which child is determined by the direction parameter @a d. The
@@ -220,6 +218,5 @@ namespace detail
 } /* namespace detail */
 
 } /* namespace ts */
-
 
 #endif /* RBTREE_H_ */

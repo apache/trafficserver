@@ -51,7 +51,6 @@ NetProcessor::AcceptOptions::reset()
   return *this;
 }
 
-
 int net_connection_number = 1;
 
 unsigned int
@@ -324,7 +323,6 @@ struct CheckConnect : public Continuation {
           vc->write.vio.op = VIO::NONE;
           vc->write.vio.buffer.clear();
 
-
           action_.continuation->handleEvent(NET_EVENT_OPEN, vc);
           delete this;
           return EVENT_DONE;
@@ -389,7 +387,6 @@ NetProcessor::connect_s(Continuation *cont, sockaddr const *target, int timeout,
   return c->connect_s(cont, target, timeout, opt);
 }
 
-
 struct PollCont;
 
 // This is a little odd, in that the actual threads are created before calling the processor.
@@ -438,7 +435,6 @@ UnixNetProcessor::start(int, size_t)
      accept_thread_event = eventProcessor.spawn_thread(na);
      if (!accept_thread_event) delete na;
      } */
-
 
   /*
    * Stat pages

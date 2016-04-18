@@ -45,7 +45,6 @@ size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFE
 // To support Upgrade: h2c
 struct Http2UpgradeContext {
   Http2UpgradeContext() : req_header(NULL) {}
-
   ~Http2UpgradeContext()
   {
     if (req_header) {

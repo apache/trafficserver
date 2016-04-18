@@ -217,7 +217,6 @@ ServerSessionPool::eventHandler(int event, void *data)
   return 0;
 }
 
-
 void
 HttpSessionManager::init()
 {

@@ -55,7 +55,6 @@ struct UDPNetProcessorInternal : public UDPNetProcessor {
 
 extern UDPNetProcessorInternal udpNetInternal;
 
-
 // 20 ms slots; 2048 slots  => 40 sec. into the future
 #define SLOT_TIME_MSEC 20
 #define SLOT_TIME HRTIME_MSECONDS(SLOT_TIME_MSEC)
@@ -71,7 +70,6 @@ public:
   }
 
   virtual ~PacketQueue() {}
-
   int nPackets;
   ink_hrtime lastPullLongTermQ;
   Queue<UDPPacketInternal> longTermQ;
@@ -281,7 +279,6 @@ private:
   }
 };
 
-
 class UDPQueue
 {
   PacketQueue pipeInfo;
@@ -289,7 +286,6 @@ class UDPQueue
   ink_hrtime last_service;
   int packets;
   int added;
-
 
 public:
   InkAtomicList atomicQueue;
@@ -305,7 +301,6 @@ public:
   UDPQueue();
   ~UDPQueue();
 };
-
 
 void initialize_thread_for_udp_net(EThread *thread);
 

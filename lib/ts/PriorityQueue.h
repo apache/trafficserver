@@ -29,21 +29,23 @@
 
 template <typename T> struct PriorityQueueEntry {
   PriorityQueueEntry(T n) : index(0), node(n) {}
-
   uint32_t index;
   T node;
 };
 
 template <typename T> struct PriorityQueueLess {
-  bool operator()(const T &a, const T &b) { return *a < *b; }
+  bool
+  operator()(const T &a, const T &b)
+  {
+    return *a < *b;
+  }
 };
 
-template <typename T, class Comp = PriorityQueueLess<T> > class PriorityQueue
+template <typename T, class Comp = PriorityQueueLess<T>> class PriorityQueue
 {
 public:
   PriorityQueue() {}
   ~PriorityQueue() {}
-
   const bool empty();
   PriorityQueueEntry<T> *top();
   void pop();
@@ -154,7 +156,6 @@ PriorityQueue<T, Comp>::_swap(uint32_t i, uint32_t j)
   _v[i]->index = i;
   _v[j]->index = j;
 }
-
 
 template <typename T, typename Comp>
 void

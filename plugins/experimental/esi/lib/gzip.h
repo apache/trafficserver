@@ -41,7 +41,6 @@ static const char OS_TYPE = 3; // Unix
 
 static const int BUF_SIZE = 1 << 15; // 32k buffer
 
-
 namespace EsiLib
 {
 struct ByteBlock {

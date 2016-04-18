@@ -27,7 +27,6 @@
 
 #include "net/instaweb/system/public/system_caches.h"
 
-
 using namespace net_instaweb;
 
 AtsRewriteOptions *

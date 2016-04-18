@@ -42,7 +42,6 @@ remap_plugin_info::~remap_plugin_info()
     dlclose(dlh);
 }
 
-
 //
 // Find a plugin by path from our linked list
 //
@@ -62,7 +61,6 @@ remap_plugin_info::find_by_path(char *_path)
   return pi;
 }
 
-
 //
 // Add a plugin to the linked list
 //
@@ -79,7 +77,6 @@ remap_plugin_info::add_to_list(remap_plugin_info *pi)
     pi->next = NULL;
   }
 }
-
 
 //
 // Remove and delete all plugins from a list, including ourselves.

@@ -158,7 +158,6 @@ static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {{"file", HDRTOK
 
                                                                  {(char *)NULL, (HdrTokenType)0}};
 
-
 static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Accept", MIME_SLOTID_ACCEPT, MIME_PRESENCE_ACCEPT, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Accept-Charset", MIME_SLOTID_ACCEPT_CHARSET, MIME_PRESENCE_ACCEPT_CHARSET, (HTIF_COMMAS | HTIF_MULTVALS)},
@@ -385,7 +384,6 @@ hdrtoken_hash_init()
   if (num_collisions > 0)
     abort();
 }
-
 
 /***********************************************************************
  *                                                                     *

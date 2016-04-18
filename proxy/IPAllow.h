@@ -64,9 +64,7 @@ struct AclRecord {
   /// Default constructor.
   /// Present only to make Vec<> happy, do not use.
   AclRecord() : _method_mask(0), _src_line(0), _deny_nonstandard_methods(false) {}
-
   AclRecord(uint32_t method_mask) : _method_mask(method_mask), _src_line(0), _deny_nonstandard_methods(false) {}
-
   AclRecord(uint32_t method_mask, int ln, const MethodSet &nonstandard_methods, bool deny_nonstandard_methods)
     : _method_mask(method_mask), _src_line(ln), _nonstandard_methods(nonstandard_methods),
       _deny_nonstandard_methods(deny_nonstandard_methods)

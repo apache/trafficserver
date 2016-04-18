@@ -413,7 +413,6 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
   return false; // Non text objects can be cached
 }
 
-
 inline static bool
 does_method_require_cache_copy_deletion(const HttpConfigParams *http_config_param, const int method)
 {
@@ -535,7 +534,6 @@ how_to_open_connection(HttpTransact::State *s)
              s->cdn_saved_next_action == HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN);
   return s->cdn_saved_next_action;
 }
-
 
 /*****************************************************************************
  *****************************************************************************
@@ -996,7 +994,6 @@ HttpTransact::handle_upgrade_request(State *s)
     return false;
   }
 
-
   // Mark this request as an upgrade request.
   s->is_upgrade_request = true;
 
@@ -1084,7 +1081,6 @@ HttpTransact::handle_websocket_connection(State *s)
 
   HandleRequest(s);
 }
-
 
 static bool
 mimefield_value_equal(MIMEField *field, const char *value, const int value_len)
@@ -1277,7 +1273,6 @@ HttpTransact::HandleRequest(State *s)
   // client keep-alive, cache action, etc.
   initialize_state_variables_from_request(s, &s->hdr_info.client_request);
 
-
   // The following chunk of code will limit the maximum number of websocket connections (TS-3659)
   if (s->is_upgrade_request && s->is_websocket && s->http_config_param->max_websocket_connections >= 0) {
     int64_t val = 0;
@@ -1420,7 +1415,6 @@ HttpTransact::HandleRequest(State *s)
       TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup); // effectively s->force_dns
     }
   }
-
 
   if (s->force_dns) {
     TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup); // After handling the request, DNS is done.
@@ -1642,7 +1636,6 @@ HttpTransact::ReDNSRoundRobin(State *s)
   return;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : OSDNSLookup
 // Description: called after the DNS lookup of origin server name
@@ -1797,7 +1790,6 @@ HttpTransact::OSDNSLookup(State *s)
   // everything succeeded with the DNS lookup so do an API callout
   //   that allows for filtering.  We'll do traffic_server internal
   //   filtering after API filtering
-
 
   // After SM_ACTION_DNS_LOOKUP, goto the saved action/state ORIGIN_SERVER_(RAW_)OPEN.
   // Should we skip the StartAccessControl()? why?
@@ -2047,7 +2039,6 @@ HttpTransact::LookupSkipOpenServer(State *s)
   }
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 // Name       : HandleCacheOpenReadPush
 // Description:
@@ -2145,7 +2136,6 @@ HttpTransact::HandlePushCacheWrite(State *s)
   }
 }
 
-
 void
 HttpTransact::HandlePushTunnelSuccess(State *s)
 {
@@ -2158,7 +2148,6 @@ HttpTransact::HandlePushTunnelSuccess(State *s)
 
   TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, NULL);
 }
-
 
 void
 HttpTransact::HandlePushTunnelFailure(State *s)
@@ -2183,7 +2172,6 @@ HttpTransact::HandlePushError(State *s, const char *reason)
 
   build_error_response(s, HTTP_STATUS_BAD_REQUEST, reason, "default", NULL);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : HandleCacheOpenRead
@@ -2250,7 +2238,6 @@ HttpTransact::HandleCacheOpenRead(State *s)
 
   return;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : issue_revalidate
@@ -2391,7 +2378,6 @@ HttpTransact::issue_revalidate(State *s)
     break;
   }
 }
-
 
 void
 HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
@@ -2542,7 +2528,6 @@ HttpTransact::need_to_revalidate(State *s)
     needs_revalidate = true;
   } else
     needs_revalidate = false;
-
 
   bool send_revalidate = ((needs_authenticate == true) || (needs_revalidate == true) || (is_cache_response_returnable(s) == false));
   if (needs_cache_auth == true) {
@@ -2823,7 +2808,6 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     s->next_action = SM_ACTION_CACHE_PREPARE_UPDATE;
   }
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : build_response_from_cache()
@@ -3189,7 +3173,6 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   return;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : HandleICPLookup
 // Description:
@@ -3261,7 +3244,6 @@ HttpTransact::HandleICPLookup(State *s)
 
   return;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : OriginServerRawOpen
@@ -3537,7 +3519,6 @@ HttpTransact::handle_response_from_icp_suggested_host(State *s)
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_response_from_parent
 // Description: response came from a parent proxy
@@ -3687,7 +3668,6 @@ HttpTransact::handle_response_from_parent(State *s)
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_response_from_server
 // Description: response is from the origin server
@@ -3810,7 +3790,6 @@ HttpTransact::handle_response_from_server(State *s)
 
   return;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : delete_server_rr_entry
@@ -3967,7 +3946,6 @@ HttpTransact::handle_server_connection_not_open(State *s)
 
   return;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_forward_server_connection_open
@@ -4349,7 +4327,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
     SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
 
-
     /* if we receive a 500, 502, 503 or 504 while revalidating
        a document, treat the response as a 304 and in effect revalidate the document for
        negative_revalidating_lifetime. (negative revalidating)
@@ -4633,7 +4610,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   return;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_no_cache_operation_on_forward_server_response
 // Description:
@@ -4732,7 +4708,6 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
 
   return;
 }
-
 
 void
 HttpTransact::merge_and_update_headers_for_cache_update(State *s)
@@ -4956,7 +4931,6 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
   const char *name;
   bool dups_seen = false;
 
-
   field = response_header->iter_get_first(&fiter);
 
   for (; field != NULL; field = response_header->iter_get_next(&fiter)) {
@@ -5050,7 +5024,6 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
 
   Debug("http_hdr_space", "Merged response header with %d dead bytes", cached_header->m_heap->m_lost_string_space);
 }
-
 
 void
 HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_header)
@@ -5171,7 +5144,6 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
 
   return check_hostdb;
 }
-
 
 ////////////////////////////////////////////////////////
 // Set the keep-alive and version flags for later use //
@@ -5809,7 +5781,6 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     s->state_machine->t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
   }
 
-
   HTTPStatus status_code = incoming_response->status_get();
   if (is_response_body_precluded(status_code, s->method)) {
     s->hdr_info.response_content_length = 0;
@@ -5892,7 +5863,6 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
 
   s->current.server->transfer_encoding = NO_TRANSFER_ENCODING;
 }
-
 
 bool
 HttpTransact::is_cache_response_returnable(State *s)
@@ -5982,7 +5952,6 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
   return true;
 }
 
-
 bool
 HttpTransact::url_looks_dynamic(URL *url)
 {
@@ -6040,7 +6009,6 @@ HttpTransact::url_looks_dynamic(URL *url)
 
   return (false);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : is_request_cache_lookupable()
@@ -6113,7 +6081,6 @@ HttpTransact::is_request_cache_lookupable(State *s)
   return true;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : response_cacheable_indicated_by_cc()
 // Description: check if a response is cacheable as indicated by Cache-Control
@@ -6147,7 +6114,6 @@ response_cacheable_indicated_by_cc(HTTPHdr *response)
   // otherwise, no indication
   return 0;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : is_response_cacheable()
@@ -6637,7 +6603,6 @@ HttpTransact::process_quick_http_filter(State *s, int method)
   }
 }
 
-
 HttpTransact::HostNameExpansionError_t
 HttpTransact::try_to_expand_host_name(State *s)
 {
@@ -6859,7 +6824,6 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
   }
   return;
 } /* End HttpTransact::handle_content_length_header */
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -7112,7 +7076,6 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   }
 } /* End HttpTransact::handle_response_keep_alive_headers */
 
-
 bool
 HttpTransact::delete_all_document_alternates_and_return(State *s, bool cache_hit)
 {
@@ -7216,7 +7179,6 @@ HttpTransact::does_client_request_permit_storing(CacheControlResult *c, HTTPHdr 
 
   return (true);
 }
-
 
 int
 HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic)
@@ -7329,7 +7291,6 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   return (freshness_limit);
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////
 //  int HttpTransact::calculate_freshness_fuzz()
 //
@@ -7420,7 +7381,6 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
       return (FRESHNESS_FRESH);
     }
   }
-
 
   cooked_cc_mask = cached_obj_response->get_cooked_cc_mask();
   os_specifies_revalidate = cooked_cc_mask & (MIME_COOKED_MASK_CC_MUST_REVALIDATE | MIME_COOKED_MASK_CC_PROXY_REVALIDATE);
@@ -7656,7 +7616,6 @@ HttpTransact::handle_server_died(State *s)
   // FIX: all the body types below need to be filled in //
   ////////////////////////////////////////////////////////
 
-
   //
   // congestion control
   //
@@ -7851,7 +7810,6 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   // HttpTransactHeaders::convert_request(outgoing_version, outgoing_request); // commented out this idea
 
-
   // Check whether a Host header field is missing from a 1.0 or 1.1 request.
   if (outgoing_version != HTTPVersion(0, 9) && !outgoing_request->presence(MIME_PRESENCE_HOST)) {
     URL *url = outgoing_request->url_get();
@@ -7926,7 +7884,6 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   // The assert is backwards in this case because request is being (re)sent.
   ink_assert(s->request_sent_time >= s->response_received_time);
 
-
   DebugTxn("http_trans", "[build_request] request_sent_time: %" PRId64, (int64_t)s->request_sent_time);
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", outgoing_request, s->state_machine_id, "Proxy's Request");
@@ -7936,14 +7893,12 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
 // build a (status_code) response based upon the given info
 
-
 void
 HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing_response, HTTPVersion outgoing_version)
 {
   build_response(s, base_response, outgoing_response, outgoing_version, HTTP_STATUS_NONE, NULL);
   return;
 }
-
 
 void
 HttpTransact::build_response(State *s, HTTPHdr *outgoing_response, HTTPVersion outgoing_version, HTTPStatus status_code,
@@ -8251,7 +8206,6 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, s->remap_redirect, strlen(s->remap_redirect));
   }
 
-
   ////////////////////////////////////////////////////////////////////
   // create the error message using the "body factory", which will  //
   // build a customized error message if available, or generate the //
@@ -8357,7 +8311,6 @@ HttpTransact::build_redirect_response(State *s)
     "redirect#moved_temporarily", s, 8192, &s->internal_msg_buffer_size, body_language, sizeof(body_language), body_type,
     sizeof(body_type), "%s <a href=\"%s\">%s</a>.  %s.", "The document you requested is now", new_url, new_url,
     "Please update your documents and bookmarks accordingly", NULL);
-
 
   h->set_content_length(s->internal_msg_buffer_size);
   h->value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);

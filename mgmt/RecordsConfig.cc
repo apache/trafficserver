@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "ts/ink_config.h"
 #include "RecordsConfig.h"
 
@@ -2038,7 +2037,6 @@ static const RecordElement RecordsConfig[] =
 
 };
 // clang-format on
-
 
 void
 RecordsConfigIterate(RecordElementCallback callback, void *data)

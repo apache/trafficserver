@@ -328,7 +328,6 @@ public:
   RawHashTable_Value &value() const; // get current value
   const char *key() const;           // get current key
 
-
 private:
   RawHashTable &m_ht;
   RawHashTable_Binding *m_currentBinding;
@@ -341,7 +340,8 @@ private:
 //
 //////////////////////////////////////////////////////////////////////////////
 
-inline RawHashTable_Value &RawHashTableIter::operator()() const
+inline RawHashTable_Value &
+RawHashTableIter::operator()() const
 {
   return (m_currentBinding->clientData);
 }

@@ -753,7 +753,6 @@ state_send_response_to_client(TSCont contp, TSEvent event, TSVIO vio)
   return TS_SUCCESS;
 }
 
-
 /* There is something wrong, abort client, server and cache vc
    if they exist. */
 int

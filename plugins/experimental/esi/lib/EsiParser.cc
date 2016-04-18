@@ -29,7 +29,6 @@
 using std::string;
 using namespace EsiLib;
 
-
 const char *EsiParser::ESI_TAG_PREFIX = "<esi:";
 const int EsiParser::ESI_TAG_PREFIX_LEN = 5;
 
@@ -40,8 +39,10 @@ const string EsiParser::HANDLER_ATTR_STR("handler");
 const unsigned int EsiParser::MAX_DOC_SIZE = 1024 * 1024;
 
 const EsiParser::EsiNodeInfo EsiParser::ESI_NODES[] = {
-  EsiNodeInfo(DocNode::TYPE_INCLUDE, "include", 7, "/>", 2), EsiNodeInfo(DocNode::TYPE_REMOVE, "remove>", 7, "</esi:remove>", 13),
-  EsiNodeInfo(DocNode::TYPE_COMMENT, "comment", 7, "/>", 2), EsiNodeInfo(DocNode::TYPE_VARS, "vars>", 5, "</esi:vars>", 11),
+  EsiNodeInfo(DocNode::TYPE_INCLUDE, "include", 7, "/>", 2),
+  EsiNodeInfo(DocNode::TYPE_REMOVE, "remove>", 7, "</esi:remove>", 13),
+  EsiNodeInfo(DocNode::TYPE_COMMENT, "comment", 7, "/>", 2),
+  EsiNodeInfo(DocNode::TYPE_VARS, "vars>", 5, "</esi:vars>", 11),
   EsiNodeInfo(DocNode::TYPE_CHOOSE, "choose>", 7, "</esi:choose>", 13),
   EsiNodeInfo(DocNode::TYPE_WHEN, "when", 4, "</esi:when>", 11),
   EsiNodeInfo(DocNode::TYPE_OTHERWISE, "otherwise>", 10, "</esi:otherwise>", 16),

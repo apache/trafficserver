@@ -41,7 +41,7 @@ void SSL_set_rbio(SSL *ssl, BIO *rbio);
 
 // This is missing from BoringSSL
 #ifndef BIO_eof
-#define BIO_eof(b) (int) BIO_ctrl(b, BIO_CTRL_EOF, 0, NULL)
+#define BIO_eof(b) (int)BIO_ctrl(b, BIO_CTRL_EOF, 0, NULL)
 #endif
 
 #define SSL_READ_ERROR_NONE 0
@@ -230,7 +230,6 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
                 origin_trace_ip, sslvc->origin_trace_port, (int)nread, (int)nread, b->end() + offset);
       }
 
-
       switch (sslErr) {
       case SSL_ERROR_NONE:
 
@@ -405,7 +404,6 @@ SSLNetVConnection::read_raw_data()
 
   return r;
 }
-
 
 // changed by YTS Team, yamsat
 void
@@ -655,7 +653,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     break;
   }
 }
-
 
 int64_t
 SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_written, MIOBufferAccessor &buf,
@@ -975,7 +972,6 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         return EVENT_DONE;
       }
 
-
       // Attach the default SSL_CTX to this SSL session. The default context is never going to be able
       // to negotiate a SSL session, but it's enough to trampoline us into the SNI callback where we
       // can select the right server certificate.
@@ -1234,7 +1230,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   }
 }
 
-
 int
 SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
@@ -1317,7 +1312,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL client handshake Syscall Error: %s", strerror(errno));
     return EVENT_ERROR;
     break;
-
 
   case SSL_ERROR_SSL:
   default: {
@@ -1418,7 +1412,6 @@ SSLNetVConnection::reenable(NetHandler *nh)
     }
   }
 }
-
 
 bool
 SSLNetVConnection::sslContextSet(void *ctx)

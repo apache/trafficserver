@@ -405,7 +405,6 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   read_reschedule(nh, vc);
 }
 
-
 //
 // Write the data for a UnixNetVConnection.
 // Rescheduling the UnixNetVConnection when necessary.
@@ -418,10 +417,8 @@ write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   NET_INCREMENT_DYN_STAT(net_calls_to_writetonet_stat);
   NET_INCREMENT_DYN_STAT(net_calls_to_writetonet_afterpoll_stat);
 
-
   write_to_net_io(nh, vc, thread);
 }
-
 
 void
 write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
@@ -884,7 +881,6 @@ UnixNetVConnection::reenable_re(VIO *vio)
     reenable(vio);
 }
 
-
 UnixNetVConnection::UnixNetVConnection()
   : closed(0), inactivity_timeout_in(0), active_timeout_in(0),
 #ifdef INACTIVITY_TIMEOUT
@@ -1018,7 +1014,6 @@ UnixNetVConnection::readSignalDone(int event, NetHandler *nh)
 {
   return (read_signal_done(event, nh, this));
 }
-
 
 int
 UnixNetVConnection::readSignalAndUpdate(int event)
@@ -1312,7 +1307,6 @@ fail:
   free(t);
   return CONNECT_FAILURE;
 }
-
 
 void
 UnixNetVConnection::free(EThread *t)

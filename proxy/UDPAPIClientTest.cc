@@ -28,7 +28,6 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-
 char sendBuff[] = "I'm Alive.";
 
 FILE *fp;
@@ -89,7 +88,6 @@ UDPClient_handle_callbacks(TSCont cont, TSEvent event, void *e)
       if (avail > 0) {
         for (int i = 0; i < avail; i++)
           fprintf(fp, "%c", *(buf + i));
-
 
         memcpy((char *)&recvBuff + total_len, buf, avail);
         TSIOBufferReaderConsume(reader, avail);

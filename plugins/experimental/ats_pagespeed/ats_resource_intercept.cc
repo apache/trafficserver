@@ -27,7 +27,6 @@
 
 #include "ats_resource_intercept.h"
 
-
 #include "ats_base_fetch.h"
 #include "ats_rewrite_driver_factory.h"
 #include "ats_rewrite_options.h"
@@ -41,7 +40,6 @@
 #include "net/instaweb/system/public/system_request_context.h"
 
 #include "net/instaweb/util/public/string_writer.h"
-
 
 using namespace net_instaweb;
 
@@ -138,7 +136,6 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
         options = server_context->global_options()->Clone();
       }
 
-
       /*        GoogleString pagespeed_query_params;
       GoogleString pagespeed_option_cookies;
       bool ok = ps_determine_options(server_context,
@@ -158,7 +155,6 @@ resource_intercept(TSCont cont, TSEvent event, void *edata)
       }
     */
       scoped_ptr<RewriteOptions> custom_options(options);
-
 
       // TODO(oschaaf): directory options should be coming from configuration!
       // TODO(oschaaf): do we need to sync the url?
@@ -298,7 +294,6 @@ read_cache_header_callback(TSCont cont, TSEvent event, void *edata)
     intercept_ctx->request_headers = new RequestHeaders();
     copy_request_headers_to_psol(reqp, req_hdr_loc, intercept_ctx->request_headers);
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, req_hdr_loc);
-
 
     TSContDataSet(interceptCont, intercept_ctx);
     TSHttpTxnServerIntercept(interceptCont, txn);

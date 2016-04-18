@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _THREAD_H_
 #define _THREAD_H_
 
@@ -58,7 +57,6 @@ typedef struct {
   TSMutex mutex;
 } Queue;
 
-
 /* queue manipulation functions */
 void init_queue(Queue *q);
 
@@ -68,12 +66,10 @@ void *remove_from_queue(Queue *q);
 
 int get_nbelem_queue(Queue *q);
 
-
 /* Job functions */
 Job *job_create(TSCont contp, ExecFunc func, void *data);
 
 void job_delete(Job *job);
-
 
 /* thread functions */
 void thread_signal_job();

@@ -896,7 +896,6 @@ public:
 
   /// Default constructor.
   MsgHeaderComp() {}
-
   /// @name Accessors
   //@{
   message_type_t getType();           ///< Get message type field.
@@ -1641,7 +1640,6 @@ public:
 
   /// Force virtual desctructor.
   virtual ~AltAssignComp() {}
-
   /// @name Accessors
   //@{
   /// Get the assignment type.
@@ -1697,7 +1695,6 @@ public:
 
   /// Force virtual desctructor.
   virtual ~AltHashAssignComp() {}
-
   /// Fill out the component from an @c Assignment.
   virtual self &fill(MsgBuffer &buffer,               ///< Target storage.
                      detail::Assignment const &assign ///< Assignment data.
@@ -1731,7 +1728,6 @@ public:
 
   /// Force virtual desctructor.
   virtual ~AltMaskAssignComp() {}
-
   /// Fill out the component from an @c Assignment.
   virtual self &fill(MsgBuffer &buffer,               ///< Target storage.
                      detail::Assignment const &assign ///< Assignment data.
@@ -2013,7 +2009,6 @@ public:
   BaseMsg();
   /// Destructor.
   virtual ~BaseMsg() {}
-
   /// Set the message @a buffer.
   void setBuffer(MsgBuffer const &buffer ///< Storage for message.
                  );
@@ -2365,7 +2360,6 @@ namespace detail
       /// Cache assignment methods supported.
       ServiceGroup::CacheAssignmentStyle m_cache_assign;
 
-
       /// Known caches.
       CacheBag m_caches;
       /// Known routers.
@@ -2695,7 +2689,8 @@ RouterIdElt::setRecvId(uint32_t recv_id)
   m_recv_id = htonl(recv_id);
   return *this;
 }
-inline RouterIdElt &RouterIdElt::operator=(super const &that)
+inline RouterIdElt &
+RouterIdElt::operator=(super const &that)
 {
   return this->setAddr(that.m_addr).setRecvId(that.m_recv_id);
 }

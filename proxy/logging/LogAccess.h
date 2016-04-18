@@ -151,7 +151,6 @@ enum LogCacheWriteCodeType {
   N_LOG_CACHE_WRITE_TYPES
 };
 
-
 class LogAccess
 { // Abstract Base Class
 public:
@@ -162,7 +161,6 @@ public:
   }
 
   inkcoreapi virtual ~LogAccess() {}
-
   inkcoreapi virtual void init();
 
   virtual LogEntryType entry_type() = 0;
@@ -244,7 +242,6 @@ public:
   inkcoreapi virtual int marshal_cache_resp_header_len(char *);   // INT
   inkcoreapi virtual int marshal_cache_resp_http_version(char *); // INT
 
-
   inkcoreapi virtual void set_client_req_url(char *, int){};                // STR
   inkcoreapi virtual void set_client_req_url_canon(char *, int){};          // STR
   inkcoreapi virtual void set_client_req_unmapped_url_canon(char *, int){}; // STR
@@ -272,7 +269,6 @@ public:
   inkcoreapi virtual int marshal_plugin_identity_tag(char *);    // STR
   inkcoreapi virtual int marshal_cache_lookup_url_canon(char *); // STR
   int marshal_entry_type(char *);                                // INT
-
 
   // named fields from within a http header
   //

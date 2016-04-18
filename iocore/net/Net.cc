@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /************************************************************************
 
    Net.cc
@@ -53,7 +52,6 @@ configure_net(void)
   REC_ReadConfigInteger(net_event_period, "proxy.config.net.event_period");
   REC_ReadConfigInteger(net_accept_period, "proxy.config.net.accept_period");
 }
-
 
 static inline void
 register_net_stats()

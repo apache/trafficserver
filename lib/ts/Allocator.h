@@ -78,7 +78,6 @@ public:
   }
 
   Allocator() { fl = NULL; }
-
   /**
     Creates a new allocator.
 

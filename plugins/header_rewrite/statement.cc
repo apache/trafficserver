@@ -32,7 +32,6 @@ Statement::append(Statement *stmt)
   tmp->_next = stmt;
 }
 
-
 const ResourceIDs
 Statement::get_resource_ids() const
 {
@@ -47,7 +46,6 @@ Statement::get_resource_ids() const
   return ids;
 }
 
-
 bool
 Statement::set_hook(TSHttpHookID hook)
 {
@@ -60,7 +58,6 @@ Statement::set_hook(TSHttpHookID hook)
   return ret;
 }
 
-
 // This should be overridden for any Statement which only supports some hooks
 void
 Statement::initialize_hooks()
@@ -72,7 +69,6 @@ Statement::initialize_hooks()
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
-
 
 // Parse URL qualifiers, this one is special since it's used in a few places.
 UrlQualifiers

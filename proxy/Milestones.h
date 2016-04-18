@@ -38,11 +38,8 @@ class TransactionMilestones
 {
 public:
   TransactionMilestones() { ink_zero(milestones); }
-
   ink_hrtime &operator[](TSMilestonesType ms) { return milestones[ms]; }
-
   ink_hrtime operator[](TSMilestonesType ms) const { return milestones[ms]; }
-
   /**
    * Takes two milestones and returns the difference.
    * @param start The start time

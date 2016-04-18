@@ -31,7 +31,6 @@
 const char PLUGIN_NAME[] = "header_rewrite";
 const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
 
-
 // Geo information, currently only Maxmind. These have to be initialized when the plugin loads.
 #if HAVE_GEOIP_H
 #include <GeoIP.h>
@@ -60,10 +59,8 @@ initGeoIP()
 }
 #endif
 
-
 // Forward declaration for the main continuation.
 static int cont_rewrite_headers(TSCont, TSEvent, void *);
-
 
 // Simple wrapper around a configuration file / set. This is useful such that
 // we can reuse most of the code for both global and per-remap rule sets.
@@ -143,7 +140,6 @@ RulesConfig::add_rule(RuleSet *rule)
 
   return false;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Config parser, use to parse both the global, and per-remap, configurations.
@@ -253,7 +249,6 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
   return true;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Continuation
 //
@@ -313,7 +308,6 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the InkAPI plugin for the global hooks we support.
 //
@@ -367,7 +361,6 @@ TSPluginInit(int argc, const char *argv[])
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin as a remap plugin.
 //
@@ -395,7 +388,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 
   return TS_SUCCESS;
 }
-
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
@@ -440,7 +432,6 @@ TSRemapDeleteInstance(void *ih)
 {
   static_cast<RulesConfig *>(ih)->release();
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main "entry" point for the plugin, called for every request.

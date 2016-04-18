@@ -77,7 +77,6 @@ ClassAllocator<DNSEntry> dnsEntryAllocator("dnsEntryAllocator");
 // We could page align this buffer to enable page flipping for recv...
 ClassAllocator<HostEnt> dnsBufAllocator("dnsBufAllocator", 2);
 
-
 //
 // Function Prototypes
 //
@@ -603,7 +602,6 @@ DNSHandler::try_primary_named(bool reopen)
   }
 }
 
-
 void
 DNSHandler::switch_named(int ndx)
 {
@@ -721,7 +719,6 @@ good_rcode(char *buff)
   unsigned int r = get_rcode(buff);
   return NOERROR == r || NXDOMAIN == r;
 }
-
 
 void
 DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
@@ -852,8 +849,7 @@ get_dns(DNSHandler *h, uint16_t id)
         }
       }
     }
-  Lnext:
-    ;
+  Lnext:;
   }
   return NULL;
 }
@@ -1015,7 +1011,6 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
   h->sent_one();
   return true;
 }
-
 
 int
 DNSEntry::delayEvent(int event, Event *e)
@@ -1593,13 +1588,11 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       return server_ok;
     }
   }
-Lerror:
-  ;
+Lerror:;
   DNS_INCREMENT_DYN_STAT(dns_lookup_fail_stat);
   dns_result(handler, e, NULL, retry);
   return server_ok;
 }
-
 
 RecRawStatBlock *dns_rsb;
 
@@ -1649,7 +1642,6 @@ ink_dns_init(ModuleVersion v)
   RecRegisterRawStat(dns_rsb, RECT_PROCESS, "proxy.process.dns.in_flight", RECD_INT, RECP_NON_PERSISTENT, (int)dns_in_flight_stat,
                      RecRawStatSyncSum);
 }
-
 
 #ifdef TS_HAS_TESTS
 struct DNSRegressionContinuation;

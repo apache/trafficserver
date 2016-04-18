@@ -156,7 +156,6 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
   }
   resp_end_table();
 
-
   resp_add("<p> Consumers </p>");
   resp_begin_table(1, 5, 60);
   for (int j = 0; j < MAX_CONSUMERS; j++) {
@@ -199,7 +198,6 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
         resp_add("-");
       }
       resp_end_column();
-
 
       resp_end_row();
     }
@@ -332,7 +330,6 @@ HttpPagesHandler::handle_smdetails(int event, void * /* data ATS_UNUSED */)
       sm = sm->debug_link.next;
     }
   }
-
 
   // If we got here, we did not find our state machine
   resp_add("<h2>Id %" PRId64 " not found</h2>", sm_id);

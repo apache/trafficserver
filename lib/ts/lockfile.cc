@@ -130,7 +130,6 @@ Lockfile::Get(pid_t *holding_pid)
   int err;
   *holding_pid = 0;
 
-
   fd = -1;
 
   // Open the Lockfile and get the lock. If we are successful, the

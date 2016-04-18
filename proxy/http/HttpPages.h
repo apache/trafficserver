@@ -71,7 +71,6 @@ private:
   void dump_history(HttpSM *sm);
   int dump_sm(HttpSM *sm);
 
-
   Arena arena;
   char *request;
   int list_bucket;

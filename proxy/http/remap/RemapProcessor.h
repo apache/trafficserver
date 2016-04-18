@@ -44,9 +44,7 @@ class RemapProcessor : public Processor
 {
 public:
   RemapProcessor() : ET_REMAP(0), _use_separate_remap_thread(false) {}
-
   ~RemapProcessor() {}
-
   bool setup_for_remap(HttpTransact::State *s);
   bool finish_remap(HttpTransact::State *s);
 

@@ -371,14 +371,12 @@ public:
   self &setCacheAssignment(CacheAssignmentStyle style ///< Style to use.
                            );
 
-
 private:
   Service(Cache const &cache, detail::cache::GroupData &group);
   Cache m_cache;                     ///< Parent cache.
   detail::cache::GroupData *m_group; ///< Service Group data.
   friend class Cache;
 };
-
 
 class Router : public EndPoint
 {
@@ -405,7 +403,8 @@ protected:
 };
 
 // ------------------------------------------------------
-inline bool ServiceGroup::operator!=(self const &that) const
+inline bool
+ServiceGroup::operator!=(self const &that) const
 {
   return !(*this == that);
 }

@@ -57,7 +57,6 @@ public:
   ~Vec();
 
   C &operator[](int i) const { return v[i]; }
-
   C get(size_t i) const;
   void add(C a);
   void
@@ -134,7 +133,8 @@ public:
   {
     return v[n - 1];
   }
-  Vec<C, A, S> &operator=(Vec<C, A, S> &v)
+  Vec<C, A, S> &
+  operator=(Vec<C, A, S> &v)
   {
     this->copy(v);
     return *this;

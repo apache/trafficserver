@@ -18,7 +18,6 @@
 
 #include "mp4_common.h"
 
-
 static char *ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, size_t *val_len);
 static int mp4_handler(TSCont contp, TSEvent event, void *edata);
 static void mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp);
@@ -27,7 +26,6 @@ static void mp4_add_transform(Mp4Context *mc, TSHttpTxn txnp);
 static int mp4_transform_entry(TSCont contp, TSEvent event, void *edata);
 static int mp4_transform_handler(TSCont contp, Mp4Context *mc);
 static int mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete);
-
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)

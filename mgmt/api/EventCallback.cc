@@ -35,7 +35,6 @@
 #include "EventCallback.h"
 #include "CoreAPIShared.h"
 
-
 /**********************************************************************
  * create_event_callback
  *
@@ -91,7 +90,6 @@ create_callback_table(const char *lock_name)
   ink_mutex_init(&cb_table->event_callback_lock, lock_name);
   return cb_table;
 }
-
 
 /**********************************************************************
  * delete_callback_table
@@ -237,7 +235,6 @@ cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignal
 
   return TS_ERR_OKAY;
 }
-
 
 /**********************************************************************
  * cb_table_unregister

@@ -980,7 +980,6 @@ main()
 
     string packedNodeList = node_list.pack();
 
-
     const char *output_data;
     int output_data_len = 0;
 

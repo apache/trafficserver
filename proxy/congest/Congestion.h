@@ -171,7 +171,6 @@ struct FailHistory {
   }
 };
 
-
 struct CongestionEntry : public RequestData {
   // key in the hash table;
   uint64_t m_key;
@@ -341,7 +340,6 @@ CongestionEntry::connect_timeout()
   }
 }
 
-
 inline void
 CongestionEntry::stat_inc_F()
 {
@@ -395,7 +393,6 @@ inline CongestionEntry::CongestionEntry()
   memset(&m_ip, 0, sizeof(m_ip));
   m_hist_lock = new_ProxyMutex();
 }
-
 
 inline CongestionEntry::~CongestionEntry()
 {

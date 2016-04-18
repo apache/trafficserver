@@ -218,7 +218,6 @@ CacheHostTable::Print()
   }
 }
 
-
 // void ControlMatcher<Data, Result>::Match(RequestData* rdata
 //                                          Result* result)
 //
@@ -583,7 +582,6 @@ CacheHostRecord::Print()
 {
 }
 
-
 void
 ConfigVolumes::read_config_file()
 {
@@ -805,7 +803,6 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 
   return;
 }
-
 
 /* Test the cache volumeing with different configurations */
 #define MEGS_128 (128 * 1024 * 1024)
@@ -1112,7 +1109,6 @@ ClearCacheVolList(Queue<CacheVol> *cpl, int len)
   }
   return 1;
 }
-
 
 void
 save_state()

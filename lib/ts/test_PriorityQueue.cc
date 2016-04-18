@@ -34,8 +34,11 @@ class N
 {
 public:
   N(uint32_t w, string c) : weight(w), content(c) {}
-
-  bool operator<(const N &n) const { return weight < n.weight; }
+  bool
+  operator<(const N &n) const
+  {
+    return weight < n.weight;
+  }
 
   uint32_t weight;
   string content;

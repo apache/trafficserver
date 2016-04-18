@@ -126,5 +126,4 @@ struct CacheDisk : public Continuation {
   DiskVol *get_diskvol(int vol_number);
 };
 
-
 #endif

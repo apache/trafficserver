@@ -54,7 +54,7 @@ static bool setup_diagslog(BaseLogFile *blf);
 
 template <int Size>
 static void
-vprintline(FILE *fp, char(&buffer)[Size], va_list ap)
+vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
 {
   int nbytes = strlen(buffer);
 
@@ -97,7 +97,6 @@ SrcLoc::str(char *buf, int buflen) const
   buf[buflen - 1] = NUL;
   return (buf);
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -202,7 +201,6 @@ Diags::~Diags()
   deactivate_all(DiagsTagType_Action);
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void Diags::print_va(...)
@@ -302,7 +300,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
   for (s = format_string; *s; *end_of_format++ = *s++)
     ;
   *end_of_format++ = NUL;
-
 
   //////////////////////////////////////////////////////////////////
   // prepend timestamp into the timestamped version of the buffer //
@@ -406,7 +403,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
 #endif
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      bool Diags::tag_activated(char * tag, DiagsTagType mode)
@@ -434,7 +430,6 @@ Diags::tag_activated(const char *tag, DiagsTagType mode) const
   return (activated);
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void Diags::activate_taglist(char * taglist, DiagsTagType mode)
@@ -460,7 +455,6 @@ Diags::activate_taglist(const char *taglist, DiagsTagType mode)
   }
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void Diags::deactivate_all(DiagsTagType mode)
@@ -481,7 +475,6 @@ Diags::deactivate_all(DiagsTagType mode)
   }
   unlock();
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -518,7 +511,6 @@ Diags::level_name(DiagsLevel dl) const
     return ("DIAG");
   }
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //

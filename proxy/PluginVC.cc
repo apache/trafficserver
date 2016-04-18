@@ -475,7 +475,6 @@ PluginVC::process_write_side(bool other_side_call)
   Debug("pvc", "[%u] %s: process_write_side", core_obj->id, PVC_TYPE);
   need_write_process = false;
 
-
   // Check the state of our write buffer as well as ntodo
   int64_t ntodo = write_state.vio.ntodo();
   if (ntodo == 0) {
@@ -541,7 +540,6 @@ PluginVC::process_write_side(bool other_side_call)
     }
   }
 }
-
 
 // void PluginVC::process_read_side()
 //
@@ -1121,7 +1119,6 @@ PluginVCCore::state_send_accept(int /* event ATS_UNUSED */, void * /* data ATS_U
 
   return 0;
 }
-
 
 // void PluginVCCore::attempt_delete()
 //

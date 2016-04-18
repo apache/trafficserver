@@ -71,13 +71,15 @@ extern ClassAllocator<CacheLookupHttpConfig> CacheLookupHttpConfigAllocator;
 // this is a global CacheLookupHttpConfig used to bypass SelectFromAlternates
 extern CacheLookupHttpConfig global_cache_lookup_config;
 
-inline void *CacheLookupHttpConfig::operator new(size_t size, void *mem)
+inline void *
+CacheLookupHttpConfig::operator new(size_t size, void *mem)
 {
   (void)size;
   return mem;
 }
 
-inline void CacheLookupHttpConfig::operator delete(void *mem)
+inline void
+CacheLookupHttpConfig::operator delete(void *mem)
 {
   CacheLookupHttpConfigAllocator.free((CacheLookupHttpConfig *)mem);
 }
@@ -92,7 +94,6 @@ enum ContentEncoding {
   NO_GZIP = 0,
   GZIP,
 };
-
 
 class HttpTransactCache
 {

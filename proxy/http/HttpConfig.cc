@@ -49,14 +49,12 @@
   REC_EstablishStaticConfigByte(_ix, _n);      \
   REC_RegisterConfigUpdateFunc(_n, http_config_cb, NULL)
 
-
 RecRawStatBlock *http_rsb;
 #define HTTP_CLEAR_DYN_STAT(x)          \
   do {                                  \
     RecSetRawStatSum(http_rsb, x, 0);   \
     RecSetRawStatCount(http_rsb, x, 0); \
   } while (0);
-
 
 class HttpConfigCont : public Continuation
 {
@@ -77,7 +75,7 @@ template <typename T> struct ConfigEnumPair {
 /// If found @a value is set to the corresponding value in @a list.
 template <typename T, unsigned N>
 static bool
-http_config_enum_search(char const *key, const ConfigEnumPair<T>(&list)[N], MgmtByte &value)
+http_config_enum_search(char const *key, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
   // We don't expect any of these lists to be more than 10 long, so a linear search is the best choice.
   for (unsigned i = 0; i < N; ++i) {
@@ -95,7 +93,7 @@ http_config_enum_search(char const *key, const ConfigEnumPair<T>(&list)[N], Mgmt
 /// If found @a value is set to the corresponding value in @a list.
 template <typename T, unsigned N>
 static bool
-http_config_enum_read(char const *name, const ConfigEnumPair<T>(&list)[N], MgmtByte &value)
+http_config_enum_read(char const *name, const ConfigEnumPair<T> (&list)[N], MgmtByte &value)
 {
   char key[512]; // it's just one key - painful UI if keys are longer than this
   if (REC_ERR_OKAY == RecGetRecordString(name, key, sizeof(key))) {
@@ -127,7 +125,6 @@ HttpUserAgent_RegxEntry *HttpConfig::user_agent_list = NULL;
 static volatile int http_config_changes = 1;
 static HttpConfigCont *http_config_cont = NULL;
 
-
 HttpConfigCont::HttpConfigCont() : Continuation(new_ProxyMutex())
 {
   SET_HANDLER(&HttpConfigCont::handle_event);
@@ -141,7 +138,6 @@ HttpConfigCont::handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNU
   }
   return 0;
 }
-
 
 static int
 http_config_cb(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData /* data ATS_UNUSED */,
@@ -738,7 +734,6 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.5xx_responses", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_response_status_5xx_count_stat, RecRawStatSyncCount);
 
-
   ////////////////////////////////////////////////////////////////////////////////
   // http - time and count of transactions classified by client's point of view //
   //  the internal stat is in msecs, the output time is float seconds           //
@@ -773,7 +768,6 @@ register_stat_callbacks()
                      (int)http_ua_msecs_counts_miss_changed_stat, RecRawStatSyncCount);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.transaction_totaltime.miss_changed", RECD_FLOAT, RECP_PERSISTENT,
                      (int)http_ua_msecs_counts_miss_changed_stat, RecRawStatSyncIntMsecsToFloatSeconds);
-
 
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.transaction_counts.miss_client_no_cache", RECD_COUNTER,
                      RECP_PERSISTENT, (int)http_ua_msecs_counts_miss_client_no_cache_stat, RecRawStatSyncCount);
@@ -859,7 +853,6 @@ register_stat_callbacks()
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.milestone.sm_finish", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_sm_finish_time_stat, RecRawStatSyncSum);
 }
-
 
 ////////////////////////////////////////////////////////////////
 //
@@ -972,7 +965,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.sock_packet_mark_out, "proxy.config.net.sock_packet_mark_out");
   HttpEstablishStaticConfigLongLong(c.oride.sock_packet_tos_out, "proxy.config.net.sock_packet_tos_out");
 
-
   HttpEstablishStaticConfigByte(c.oride.fwd_proxy_auth_to_parent, "proxy.config.http.forward.proxy_auth_to_parent");
 
   HttpEstablishStaticConfigByte(c.oride.anonymize_remove_from, "proxy.config.http.anonymize_remove_from");
@@ -992,7 +984,6 @@ HttpConfig::startup()
     c.oride.proxy_response_server_string ? strlen(c.oride.proxy_response_server_string) : 0;
 
   HttpEstablishStaticConfigByte(c.oride.insert_squid_x_forwarded_for, "proxy.config.http.insert_squid_x_forwarded_for");
-
 
   HttpEstablishStaticConfigByte(c.oride.insert_age_in_response, "proxy.config.http.insert_age_in_response");
   HttpEstablishStaticConfigByte(c.enable_http_stats, "proxy.config.http.enable_http_stats");
@@ -1245,7 +1236,6 @@ HttpConfig::reconfigure()
   params->oride.sock_option_flag_out = m_master.oride.sock_option_flag_out;
   params->oride.sock_packet_mark_out = m_master.oride.sock_packet_mark_out;
   params->oride.sock_packet_tos_out = m_master.oride.sock_packet_tos_out;
-
 
   params->oride.fwd_proxy_auth_to_parent = INT_TO_BOOL(m_master.oride.fwd_proxy_auth_to_parent);
 
@@ -1549,7 +1539,6 @@ HttpConfig::parse_url_expansions(char *url_expansions_str, int *num_expansions)
   *num_expansions = count;
   return expansions;
 }
-
 
 ////////////////////////////////////////////////////////////////
 //

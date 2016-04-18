@@ -69,7 +69,6 @@ struct CacheHostResult {
   CacheHostResult() : record(NULL) {}
 };
 
-
 class CacheHostMatcher
 {
 public:
@@ -168,7 +167,6 @@ struct CacheHostTableConfig : public Continuation {
     return EVENT_DONE;
   }
 };
-
 
 /* list of volumes in the volume.config file */
 struct ConfigVol {

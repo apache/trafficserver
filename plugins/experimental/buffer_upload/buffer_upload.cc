@@ -912,7 +912,6 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       }
     }
 
-
     TSDebug(DEBUG_TAG, "calling TSHttpTxnIntercept() ...");
     TSHttpTxnIntercept(new_cont, txnp);
 
@@ -1033,7 +1032,6 @@ load_urls(char *filename)
   }
   TSfree(url_buf);
 }
-
 
 void
 parse_config_line(char *line, const struct config_val_ul *cv)

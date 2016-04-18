@@ -251,7 +251,8 @@ BitMap::IsBitSet(int bit)
 //      Manage global ICP configuration data from the TS configuration.
 //      Support class for ICPConfiguration.
 //-----------------------------------------------------------------------
-int ICPConfigData::operator==(ICPConfigData &ICPData)
+int
+ICPConfigData::operator==(ICPConfigData &ICPData)
 {
   if (ICPData._icp_enabled != _icp_enabled)
     return 0;
@@ -331,7 +332,8 @@ PeerConfigData::GetHostIPByName(char *hostname, IpAddr &rip)
   return best ? 0 : 1;
 }
 
-bool PeerConfigData::operator==(PeerConfigData &PeerData)
+bool
+PeerConfigData::operator==(PeerConfigData &PeerData)
 {
   if (strncmp(PeerData._hostname, _hostname, PeerConfigData::HOSTNAME_SIZE) != 0)
     return false;
@@ -851,7 +853,6 @@ ParentSiblingPeer::GetICPPort()
   return _pconfig->GetICPPort();
 }
 
-
 sockaddr *
 ParentSiblingPeer::GetIP()
 {
@@ -1354,16 +1355,42 @@ ICPlog::GetContentType()
 // ICP Debug support.
 //*****************************************************************************
 //
-static const char *ICPstatNames[] = {
-  "icp_stat_def", "config_mgmt_callouts_stat", "reconfig_polls_stat", "reconfig_events_stat", "invalid_poll_data_stat",
-  "no_data_read_stat", "short_read_stat", "invalid_sender_stat", "read_not_v2_icp_stat", "icp_remote_query_requests_stat",
-  "icp_remote_responses_stat", "icp_cache_lookup_success_stat", "icp_cache_lookup_fail_stat", "query_response_write_stat",
-  "query_response_partial_write_stat", "no_icp_request_for_response_stat", "icp_response_request_nolock_stat",
-  "icp_start_icpoff_stat", "send_query_partial_write_stat", "icp_queries_no_expected_replies_stat", "icp_query_hits_stat",
-  "icp_query_misses_stat", "invalid_icp_query_response_stat", "icp_query_requests_stat", "total_icp_response_time_stat",
-  "total_udp_send_queries_stat", "total_icp_request_time_stat", "icp_total_reloads", "icp_pending_reloads",
-  "icp_reload_start_aborts", "icp_reload_connect_aborts", "icp_reload_read_aborts", "icp_reload_write_aborts",
-  "icp_reload_successes", "icp_stat_count", ""};
+static const char *ICPstatNames[] = {"icp_stat_def",
+                                     "config_mgmt_callouts_stat",
+                                     "reconfig_polls_stat",
+                                     "reconfig_events_stat",
+                                     "invalid_poll_data_stat",
+                                     "no_data_read_stat",
+                                     "short_read_stat",
+                                     "invalid_sender_stat",
+                                     "read_not_v2_icp_stat",
+                                     "icp_remote_query_requests_stat",
+                                     "icp_remote_responses_stat",
+                                     "icp_cache_lookup_success_stat",
+                                     "icp_cache_lookup_fail_stat",
+                                     "query_response_write_stat",
+                                     "query_response_partial_write_stat",
+                                     "no_icp_request_for_response_stat",
+                                     "icp_response_request_nolock_stat",
+                                     "icp_start_icpoff_stat",
+                                     "send_query_partial_write_stat",
+                                     "icp_queries_no_expected_replies_stat",
+                                     "icp_query_hits_stat",
+                                     "icp_query_misses_stat",
+                                     "invalid_icp_query_response_stat",
+                                     "icp_query_requests_stat",
+                                     "total_icp_response_time_stat",
+                                     "total_udp_send_queries_stat",
+                                     "total_icp_request_time_stat",
+                                     "icp_total_reloads",
+                                     "icp_pending_reloads",
+                                     "icp_reload_start_aborts",
+                                     "icp_reload_connect_aborts",
+                                     "icp_reload_read_aborts",
+                                     "icp_reload_write_aborts",
+                                     "icp_reload_successes",
+                                     "icp_stat_count",
+                                     ""};
 
 void
 dumpICPstatEntry(int i, const char *name)
@@ -1388,7 +1415,6 @@ dumpICPstats()
     dumpICPstatEntry(i, ICPstatNames[i]);
   }
 }
-
 
 void
 ICPProcessor::DumpICPConfig()

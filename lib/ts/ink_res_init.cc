@@ -64,7 +64,6 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-
 #include "ts/ink_platform.h"
 #include "ts/ink_defs.h"
 

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include <stdio.h>
 #include <pthread.h>
 #include "ts/ts.h"
@@ -38,7 +37,6 @@ Queue job_queue;
 
 static pthread_cond_t cond;
 static pthread_mutex_t cond_mutex;
-
 
 void
 init_queue(Queue *q)

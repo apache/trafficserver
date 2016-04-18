@@ -75,7 +75,6 @@ struct InterceptIOChannel {
   TSIOBufferReader reader;
 
   InterceptIOChannel() : vio(NULL), iobuf(NULL), reader(NULL) {}
-
   ~InterceptIOChannel()
   {
     if (this->reader) {
@@ -137,7 +136,6 @@ struct InterceptState {
   InterceptIO server; // Intercept origin VC state.
 
   InterceptState() : txn(NULL) {}
-
   ~InterceptState() {}
 };
 
@@ -166,8 +164,8 @@ InterceptProxySide(const InterceptState *istate, const InterceptIO *io)
 static const char *
 InterceptProxySideVC(const InterceptState *istate, TSVConn vc)
 {
-  return (istate->client.vc && vc == istate->client.vc) ? "<client>" : (istate->server.vc && vc == istate->server.vc) ? "<server>" :
-                                                                                                                        "<unknown>";
+  return (istate->client.vc && vc == istate->client.vc) ? "<client>" :
+                                                          (istate->server.vc && vc == istate->server.vc) ? "<server>" : "<unknown>";
 }
 
 static bool

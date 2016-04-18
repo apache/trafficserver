@@ -32,7 +32,6 @@ namespace
 {
 struct RoundRobinBalancer : public BalancerInstance {
   RoundRobinBalancer() : targets(), next(0) {}
-
   void
   push_target(const BalancerTarget &target)
   {

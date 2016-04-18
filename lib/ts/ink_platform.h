@@ -119,7 +119,6 @@
 #include <port.h>
 #endif
 
-
 #ifdef HAVE_VALUES_H
 #include <values.h>
 #endif
@@ -168,7 +167,6 @@ struct ifafilt;
 
 #include <resolv.h>
 
-
 #if defined(linux)
 typedef unsigned int in_addr_t;
 #endif
@@ -202,7 +200,6 @@ typedef unsigned int in_addr_t;
 #ifdef HAVE_SYS_PRCTL_H
 #include <sys/prctl.h>
 #endif
-
 
 #ifndef PATH_NAME_MAX
 #define PATH_NAME_MAX 4096 // instead of PATH_MAX which is inconsistent

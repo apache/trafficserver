@@ -978,7 +978,6 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     }
   }
 
-
   if (p->alive) {
     ink_assert(producer_n >= 0);
 
@@ -1373,7 +1372,6 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
   return sm_callback;
 }
 
-
 // void HttpTunnel::chain_abort_all(HttpTunnelProducer* p)
 //
 //    Abort the producer and everyone still alive
@@ -1617,7 +1615,6 @@ HttpTunnel::internal_error()
 {
 }
 
-
 // YTS Team, yamsat Plugin
 // Function to copy the partial Post data while tunnelling
 void
@@ -1667,7 +1664,6 @@ HttpTunnel::allocate_redirect_postdata_buffers(IOBufferReader *ua_reader)
     postbuf->postdata_producer_reader = postbuf->postdata_producer_buffer->alloc_reader();
   }
 }
-
 
 // YTS Team, yamsat Plugin
 // Deallocating the post data buffers

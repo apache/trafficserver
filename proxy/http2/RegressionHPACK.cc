@@ -45,7 +45,7 @@ const static struct {
   uint8_t *encoded_field;
   int encoded_field_len;
   int prefix;
-} integer_test_case[] = {{10, (uint8_t *) "\x0A", 1, 5}, {1337, (uint8_t *) "\x1F\x9A\x0A", 3, 5}, {42, (uint8_t *) "\x2A", 1, 8}};
+} integer_test_case[] = {{10, (uint8_t *)"\x0A", 1, 5}, {1337, (uint8_t *)"\x1F\x9A\x0A", 3, 5}, {42, (uint8_t *)"\x2A", 1, 8}};
 
 // Example: custom-key: custom-header
 const static struct {
@@ -53,17 +53,17 @@ const static struct {
   uint32_t raw_string_len;
   uint8_t *encoded_field;
   int encoded_field_len;
-} string_test_case[] = {{(char *)"", 0, (uint8_t *) "\x0"
-                                                    "",
+} string_test_case[] = {{(char *)"", 0, (uint8_t *)"\x0"
+                                                   "",
                          1},
-                        {(char *)"custom-key", 10, (uint8_t *) "\xA"
-                                                               "custom-key",
+                        {(char *)"custom-key", 10, (uint8_t *)"\xA"
+                                                              "custom-key",
                          11},
-                        {(char *)"", 0, (uint8_t *) "\x80"
-                                                    "",
+                        {(char *)"", 0, (uint8_t *)"\x80"
+                                                   "",
                          1},
-                        {(char *)"custom-key", 10, (uint8_t *) "\x88"
-                                                               "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
+                        {(char *)"custom-key", 10, (uint8_t *)"\x88"
+                                                              "\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f",
                          9}};
 
 // [RFC 7541] C.2.4. Indexed Header Field
@@ -73,7 +73,7 @@ const static struct {
   char *raw_value;
   uint8_t *encoded_field;
   int encoded_field_len;
-} indexed_test_case[] = {{2, (char *) ":method", (char *) "GET", (uint8_t *) "\x82", 1}};
+} indexed_test_case[] = {{2, (char *)":method", (char *)"GET", (uint8_t *)"\x82", 1}};
 
 // [RFC 7541] C.2. Header Field Representation Examples
 const static struct {
@@ -84,76 +84,76 @@ const static struct {
   uint8_t *encoded_field;
   int encoded_field_len;
 } literal_test_case[] = {
-  {(char *)"custom-key", (char *) "custom-header", 0, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *) "\x40\x0a"
-                                                                                               "custom-key\x0d"
-                                                                                               "custom-header",
+  {(char *)"custom-key", (char *)"custom-header", 0, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *)"\x40\x0a"
+                                                                                             "custom-key\x0d"
+                                                                                             "custom-header",
    26},
-  {(char *)"custom-key", (char *) "custom-header", 0, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *) "\x00\x0a"
-                                                                                               "custom-key\x0d"
-                                                                                               "custom-header",
+  {(char *)"custom-key", (char *)"custom-header", 0, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *)"\x00\x0a"
+                                                                                             "custom-key\x0d"
+                                                                                             "custom-header",
    26},
-  {(char *)"custom-key", (char *) "custom-header", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *) "\x10\x0a"
-                                                                                                  "custom-key\x0d"
-                                                                                                  "custom-header",
+  {(char *)"custom-key", (char *)"custom-header", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *)"\x10\x0a"
+                                                                                                "custom-key\x0d"
+                                                                                                "custom-header",
    26},
-  {(char *)":path", (char *) "/sample/path", 4, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *) "\x44\x0c"
-                                                                                         "/sample/path",
+  {(char *)":path", (char *)"/sample/path", 4, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *)"\x44\x0c"
+                                                                                       "/sample/path",
    14},
-  {(char *)":path", (char *) "/sample/path", 4, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *) "\x04\x0c"
-                                                                                         "/sample/path",
+  {(char *)":path", (char *)"/sample/path", 4, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *)"\x04\x0c"
+                                                                                       "/sample/path",
    14},
-  {(char *)":path", (char *) "/sample/path", 4, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *) "\x14\x0c"
-                                                                                            "/sample/path",
+  {(char *)":path", (char *)"/sample/path", 4, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *)"\x14\x0c"
+                                                                                          "/sample/path",
    14},
-  {(char *)"password", (char *) "secret", 0, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *) "\x40\x08"
-                                                                                      "password\x06"
-                                                                                      "secret",
+  {(char *)"password", (char *)"secret", 0, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *)"\x40\x08"
+                                                                                    "password\x06"
+                                                                                    "secret",
    17},
-  {(char *)"password", (char *) "secret", 0, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *) "\x00\x08"
-                                                                                      "password\x06"
-                                                                                      "secret",
+  {(char *)"password", (char *)"secret", 0, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *)"\x00\x08"
+                                                                                    "password\x06"
+                                                                                    "secret",
    17},
-  {(char *)"password", (char *) "secret", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *) "\x10\x08"
-                                                                                         "password\x06"
-                                                                                         "secret",
+  {(char *)"password", (char *)"secret", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *)"\x10\x08"
+                                                                                       "password\x06"
+                                                                                       "secret",
    17},
   // with Huffman Coding
-  {(char *)"custom-key", (char *) "custom-header", 0, HPACK_FIELD_INDEXED_LITERAL,
-   (uint8_t *) "\x40"
-               "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
-               "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+  {(char *)"custom-key", (char *)"custom-header", 0, HPACK_FIELD_INDEXED_LITERAL,
+   (uint8_t *)"\x40"
+              "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+              "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
    20},
-  {(char *)"custom-key", (char *) "custom-header", 0, HPACK_FIELD_NOINDEX_LITERAL,
-   (uint8_t *) "\x00"
-               "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
-               "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+  {(char *)"custom-key", (char *)"custom-header", 0, HPACK_FIELD_NOINDEX_LITERAL,
+   (uint8_t *)"\x00"
+              "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+              "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
    20},
-  {(char *)"custom-key", (char *) "custom-header", 0, HPACK_FIELD_NEVERINDEX_LITERAL,
-   (uint8_t *) "\x10"
-               "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
-               "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
+  {(char *)"custom-key", (char *)"custom-header", 0, HPACK_FIELD_NEVERINDEX_LITERAL,
+   (uint8_t *)"\x10"
+              "\x88\x25\xa8\x49\xe9\x5b\xa9\x7d\x7f"
+              "\x89\x25\xa8\x49\xe9\x5a\x72\x8e\x42\xd9",
    20},
-  {(char *)":path", (char *) "/sample/path", 4, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *) "\x44"
-                                                                                         "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+  {(char *)":path", (char *)"/sample/path", 4, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *)"\x44"
+                                                                                       "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
    11},
-  {(char *)":path", (char *) "/sample/path", 4, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *) "\x04"
-                                                                                         "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+  {(char *)":path", (char *)"/sample/path", 4, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *)"\x04"
+                                                                                       "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
    11},
-  {(char *)":path", (char *) "/sample/path", 4, HPACK_FIELD_NEVERINDEX_LITERAL,
-   (uint8_t *) "\x14"
-               "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
+  {(char *)":path", (char *)"/sample/path", 4, HPACK_FIELD_NEVERINDEX_LITERAL,
+   (uint8_t *)"\x14"
+              "\x89\x61\x03\xa6\xba\x0a\xc5\x63\x4c\xff",
    11},
-  {(char *)"password", (char *) "secret", 0, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *) "\x40"
-                                                                                      "\x86\xac\x68\x47\x83\xd9\x27"
-                                                                                      "\x84\x41\x49\x61\x53",
+  {(char *)"password", (char *)"secret", 0, HPACK_FIELD_INDEXED_LITERAL, (uint8_t *)"\x40"
+                                                                                    "\x86\xac\x68\x47\x83\xd9\x27"
+                                                                                    "\x84\x41\x49\x61\x53",
    13},
-  {(char *)"password", (char *) "secret", 0, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *) "\x00"
-                                                                                      "\x86\xac\x68\x47\x83\xd9\x27"
-                                                                                      "\x84\x41\x49\x61\x53",
+  {(char *)"password", (char *)"secret", 0, HPACK_FIELD_NOINDEX_LITERAL, (uint8_t *)"\x00"
+                                                                                    "\x86\xac\x68\x47\x83\xd9\x27"
+                                                                                    "\x84\x41\x49\x61\x53",
    13},
-  {(char *)"password", (char *) "secret", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *) "\x10"
-                                                                                         "\x86\xac\x68\x47\x83\xd9\x27"
-                                                                                         "\x84\x41\x49\x61\x53",
+  {(char *)"password", (char *)"secret", 0, HPACK_FIELD_NEVERINDEX_LITERAL, (uint8_t *)"\x10"
+                                                                                       "\x86\xac\x68\x47\x83\xd9\x27"
+                                                                                       "\x84\x41\x49\x61\x53",
    13}};
 
 // [RFC 7541] C.3. Request Examples without Huffman Coding - C.3.1. First Request
@@ -162,18 +162,18 @@ const static struct {
   char *raw_name;
   char *raw_value;
 } raw_field_request_test_case[][MAX_TEST_FIELD_NUM] = {{
-                                                         {(char *)":method", (char *) "GET"},
-                                                         {(char *)":scheme", (char *) "http"},
-                                                         {(char *)":path", (char *) "/"},
-                                                         {(char *)":authority", (char *) "www.example.com"},
-                                                         {(char *)"", (char *) ""} // End of this test case
+                                                         {(char *)":method", (char *)"GET"},
+                                                         {(char *)":scheme", (char *)"http"},
+                                                         {(char *)":path", (char *)"/"},
+                                                         {(char *)":authority", (char *)"www.example.com"},
+                                                         {(char *)"", (char *)""} // End of this test case
                                                        },
                                                        {
-                                                         {(char *)":method", (char *) "GET"},
-                                                         {(char *)":scheme", (char *) "http"},
-                                                         {(char *)":path", (char *) "/"},
-                                                         {(char *)":authority", (char *) "www.example.com"},
-                                                         {(char *)"", (char *) ""} // End of this test case
+                                                         {(char *)":method", (char *)"GET"},
+                                                         {(char *)":scheme", (char *)"http"},
+                                                         {(char *)":path", (char *)"/"},
+                                                         {(char *)":authority", (char *)"www.example.com"},
+                                                         {(char *)"", (char *)""} // End of this test case
                                                        }};
 const static struct {
   uint8_t *encoded_field;
@@ -211,27 +211,27 @@ const static struct {
   char *raw_value;
 } raw_field_response_test_case[][MAX_TEST_FIELD_NUM] = {
   {
-    {(char *)":status", (char *) "302"},
-    {(char *)"cache-control", (char *) "private"},
-    {(char *)"date", (char *) "Mon, 21 Oct 2013 20:13:21 GMT"},
-    {(char *)"location", (char *) "https://www.example.com"},
-    {(char *)"", (char *) ""} // End of this test case
+    {(char *)":status", (char *)"302"},
+    {(char *)"cache-control", (char *)"private"},
+    {(char *)"date", (char *)"Mon, 21 Oct 2013 20:13:21 GMT"},
+    {(char *)"location", (char *)"https://www.example.com"},
+    {(char *)"", (char *)""} // End of this test case
   },
   {
-    {(char *)":status", (char *) "307"},
-    {(char *)"cache-control", (char *) "private"},
-    {(char *)"date", (char *) "Mon, 21 Oct 2013 20:13:21 GMT"},
-    {(char *)"location", (char *) "https://www.example.com"},
-    {(char *)"", (char *) ""} // End of this test case
+    {(char *)":status", (char *)"307"},
+    {(char *)"cache-control", (char *)"private"},
+    {(char *)"date", (char *)"Mon, 21 Oct 2013 20:13:21 GMT"},
+    {(char *)"location", (char *)"https://www.example.com"},
+    {(char *)"", (char *)""} // End of this test case
   },
   {
-    {(char *)":status", (char *) "200"},
-    {(char *)"cache-control", (char *) "private"},
-    {(char *)"date", (char *) "Mon, 21 Oct 2013 20:13:22 GMT"},
-    {(char *)"location", (char *) "https://www.example.com"},
-    {(char *)"content-encoding", (char *) "gzip"},
-    {(char *)"set-cookie", (char *) "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1"},
-    {(char *)"", (char *) ""} // End of this test case
+    {(char *)":status", (char *)"200"},
+    {(char *)"cache-control", (char *)"private"},
+    {(char *)"date", (char *)"Mon, 21 Oct 2013 20:13:22 GMT"},
+    {(char *)"location", (char *)"https://www.example.com"},
+    {(char *)"content-encoding", (char *)"gzip"},
+    {(char *)"set-cookie", (char *)"foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1"},
+    {(char *)"", (char *)""} // End of this test case
   }};
 const static struct {
   uint8_t *encoded_field;
@@ -272,26 +272,25 @@ const static struct {
   char *value;
 } dynamic_table_response_test_case[][MAX_TEST_FIELD_NUM] = {
   {
-    {63, (char *) "location", (char *) "https://www.example.com"},
-    {65, (char *) "date", (char *) "Mon, 21 Oct 2013 20:13:21 GMT"},
-    {52, (char *) "cache-control", (char *) "private"},
-    {42, (char *) ":status", (char *) "302"},
-    {0, (char *) "", (char *) ""} // End of this test case
+    {63, (char *)"location", (char *)"https://www.example.com"},
+    {65, (char *)"date", (char *)"Mon, 21 Oct 2013 20:13:21 GMT"},
+    {52, (char *)"cache-control", (char *)"private"},
+    {42, (char *)":status", (char *)"302"},
+    {0, (char *)"", (char *)""} // End of this test case
   },
   {
-    {42, (char *) ":status", (char *) "307"},
-    {63, (char *) "location", (char *) "https://www.example.com"},
-    {65, (char *) "date", (char *) "Mon, 21 Oct 2013 20:13:21 GMT"},
-    {52, (char *) "cache-control", (char *) "private"},
-    {0, (char *) "", (char *) ""} // End of this test case
+    {42, (char *)":status", (char *)"307"},
+    {63, (char *)"location", (char *)"https://www.example.com"},
+    {65, (char *)"date", (char *)"Mon, 21 Oct 2013 20:13:21 GMT"},
+    {52, (char *)"cache-control", (char *)"private"},
+    {0, (char *)"", (char *)""} // End of this test case
   },
   {
-    {98, (char *) "set-cookie", (char *) "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1"},
-    {52, (char *) "content-encoding", (char *) "gzip"},
-    {65, (char *) "date", (char *) "Mon, 21 Oct 2013 20:13:22 GMT"},
-    {0, (char *) "", (char *) ""} // End of this test case
+    {98, (char *)"set-cookie", (char *)"foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1"},
+    {52, (char *)"content-encoding", (char *)"gzip"},
+    {65, (char *)"date", (char *)"Mon, 21 Oct 2013 20:13:22 GMT"},
+    {0, (char *)"", (char *)""} // End of this test case
   }};
-
 
 /***********************************************************************************
  *                                                                                 *

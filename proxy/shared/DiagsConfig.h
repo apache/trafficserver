@@ -44,5 +44,4 @@ public:
   Diags *diags;
 };
 
-
 #endif

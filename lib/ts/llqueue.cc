@@ -55,7 +55,6 @@ newrec(LLQ *Q)
 
   Q->free[RECORD_CHUNK - 1].next = NULL;
 
-
   new_val = Q->free;
   Q->free = Q->free->next;
 
@@ -148,7 +147,6 @@ queue_highwater(LLQ *Q)
   return highwater;
 }
 
-
 /*
  *---------------------------------------------------------------------------
  *
@@ -186,7 +184,6 @@ dequeue(LLQ *Q)
   ink_sem_wait(&(Q->sema));
   ink_mutex_acquire(&(Q->mux));
 
-
   if (Q->head == NULL) {
     ink_mutex_release(&(Q->mux));
 
@@ -208,7 +205,6 @@ dequeue(LLQ *Q)
 
   return d;
 }
-
 
 #ifdef LLQUEUE_MAIN
 

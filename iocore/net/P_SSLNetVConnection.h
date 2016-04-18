@@ -132,7 +132,6 @@ public:
   ////////////////////////////////////////////////////////////
   SSLNetVConnection();
   virtual ~SSLNetVConnection() {}
-
   SSL *ssl;
   ink_hrtime sslHandshakeBeginTime;
   ink_hrtime sslLastWriteTime;
@@ -228,7 +227,6 @@ public:
   // Returns true if we have already called at
   // least some of the hooks
   bool calledHooks(TSHttpHookID /* eventId */) { return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE); }
-
   bool
   isEosRcvd()
   {

@@ -89,5 +89,4 @@ private:
 
 } /* atscppapi */
 
-
 #endif /* ATSCPPAPI_GLOBALPLUGIN_H_ */

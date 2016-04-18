@@ -49,7 +49,6 @@
 #include "LogBuffer.h"
 #include "Log.h"
 
-
 /*-------------------------------------------------------------------------
   LogAccess::init
   -------------------------------------------------------------------------*/
@@ -652,7 +651,6 @@ LogAccess::marshal_http_header_field(LogField::Container /* container ATS_UNUSED
   DEFAULT_STR_FIELD;
 }
 
-
 /*-------------------------------------------------------------------------
 
   -------------------------------------------------------------------------*/
@@ -747,7 +745,6 @@ LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, ch
 {
   DEFAULT_INT_FIELD;
 }
-
 
 // To allow for a generic marshal_record function, rather than
 // multiple functions (one per data type) we always marshal a record
@@ -875,10 +872,8 @@ LogAccess::marshal_record(char *record, char *buf)
   ink_assert(num_chars <= max_chars);
   memcpy(buf, out_buf, num_chars);
 
-
   return max_chars;
 }
-
 
 /*-------------------------------------------------------------------------
   LogAccess::marshal_str
@@ -1137,7 +1132,6 @@ LogAccess::unmarshal_int_to_str_hex(char **buf, char *dest, int len)
   }
   return -1;
 }
-
 
 /*-------------------------------------------------------------------------
   LogAccess::unmarshal_str
@@ -1431,7 +1425,6 @@ LogAccess::unmarshal_finish_status(char **buf, char *dest, int len, Ptr<LogField
 
   return (LogAccess::unmarshal_with_map(unmarshal_int(buf), dest, len, map, "UNKNOWN_FINISH_CODE"));
 }
-
 
 /*-------------------------------------------------------------------------
   LogAccess::unmarshal_cache_code

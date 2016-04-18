@@ -24,7 +24,6 @@
 #include "operators.h"
 #include "conditions.h"
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // "Factory" functions, processing the parsed lines
 //
@@ -68,7 +67,6 @@ operator_factory(const std::string &op)
 
   return o;
 }
-
 
 Condition *
 condition_factory(const std::string &cond)

@@ -117,7 +117,6 @@ StrList::overflow_heap_clean()
     overflow_first->clean();
 }
 
-
 #define INIT_OVERFLOW_ALIGNMENT 8
 // XXX: This is basically INK_ALIGN_DEFAULT
 const int overflow_head_hdr_size = INK_ALIGN(sizeof(StrListOverflow), INIT_OVERFLOW_ALIGNMENT);

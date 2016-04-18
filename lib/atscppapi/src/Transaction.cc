@@ -58,7 +58,7 @@ struct atscppapi::TransactionState : noncopyable {
   TSMBuffer cached_request_hdr_buf_;
   TSMLoc cached_request_hdr_loc_;
   Request cached_request_;
-  map<string, shared_ptr<Transaction::ContextValue> > context_values_;
+  map<string, shared_ptr<Transaction::ContextValue>> context_values_;
 
   TransactionState(TSHttpTxn txn, TSMBuffer client_request_hdr_buf, TSMLoc client_request_hdr_loc)
     : txn_(txn), client_request_hdr_buf_(client_request_hdr_buf), client_request_hdr_loc_(client_request_hdr_loc),
@@ -211,7 +211,7 @@ shared_ptr<Transaction::ContextValue>
 Transaction::getContextValue(const std::string &key)
 {
   shared_ptr<Transaction::ContextValue> return_context_value;
-  map<string, shared_ptr<Transaction::ContextValue> >::iterator iter = state_->context_values_.find(key);
+  map<string, shared_ptr<Transaction::ContextValue>>::iterator iter = state_->context_values_.find(key);
   if (iter != state_->context_values_.end()) {
     return_context_value = iter->second;
   }
@@ -378,7 +378,6 @@ Transaction::setTimeout(Transaction::TimeoutType type, int time_ms)
   }
 }
 
-
 Transaction::CacheStatus
 Transaction::getCacheStatus()
 {
@@ -427,7 +426,8 @@ class initializeHandles
 public:
   typedef TSReturnCode (*GetterFunction)(TSHttpTxn, TSMBuffer *, TSMLoc *);
   initializeHandles(GetterFunction getter) : getter_(getter) {}
-  bool operator()(TSHttpTxn txn, TSMBuffer &hdr_buf, TSMLoc &hdr_loc, const char *handles_name)
+  bool
+  operator()(TSHttpTxn txn, TSMBuffer &hdr_buf, TSMLoc &hdr_loc, const char *handles_name)
   {
     hdr_buf = NULL;
     hdr_loc = NULL;

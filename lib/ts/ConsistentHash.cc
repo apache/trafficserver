@@ -27,7 +27,8 @@
 #include <climits>
 #include <cstdio>
 
-std::ostream &operator<<(std::ostream &os, ATSConsistentHashNode &thing)
+std::ostream &
+operator<<(std::ostream &os, ATSConsistentHashNode &thing)
 {
   return os << thing.name;
 }

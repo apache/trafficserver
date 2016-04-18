@@ -62,7 +62,6 @@ struct AuthOptions {
   bool force;
 
   AuthOptions() : hostport(-1), transform(NULL), force(false) {}
-
   ~AuthOptions() {}
 };
 

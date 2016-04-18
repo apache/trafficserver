@@ -33,7 +33,6 @@ init_thread_key()
   return flags_data_key;
 }
 
-
 /* Set up a cont_flags entry for this threa */
 void
 init_cont_flags()

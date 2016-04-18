@@ -37,7 +37,6 @@
 static int64_t next_ss_id = (int64_t)0;
 ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
 
-
 void
 HttpServerSession::destroy()
 {

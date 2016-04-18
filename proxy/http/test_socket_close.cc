@@ -154,7 +154,6 @@ main(int argc, char **argv)
   memset(&write_buf, 'B', sizeof(write_buf));
   memset(&read_buf, '\0', sizeof(read_buf));
 
-
   client.connection_type = CONNECTION_CLIENT;
   server.connection_type = CONNECTION_SERVER;
 
@@ -419,7 +418,6 @@ do_accept(Conn *c)
   FD_SET(c->listen_s, &readfds);
   timeout.tv_sec = 0;
   timeout.tv_usec = 10; /* 0.01 ms */
-
 
   if (select(c->listen_s + 1, &readfds, 0, 0, &timeout) > 0) {
     addrlen = sizeof(c->addr);

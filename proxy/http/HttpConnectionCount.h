@@ -118,7 +118,6 @@ public:
       md5_ctx.hash_immediate(_hostname_hash, static_cast<const void *>(hostname), strlen(hostname));
     }
 
-
     operator bool() { return ats_is_ip(&_addr); }
   };
 
@@ -195,7 +194,6 @@ protected:
   // Hide the constructor and copy constructor
   ConnectionCount() { ink_mutex_init(&_mutex, "ConnectionCountMutex"); }
   ConnectionCount(const ConnectionCount & /* x ATS_UNUSED */) {}
-
   static ConnectionCount _connectionCount;
   HashMap<ConnAddr, ConnAddrHashFns, int> _hostCount;
   ink_mutex _mutex;
@@ -217,6 +215,5 @@ public:
 private:
   static ConnectionCountQueue _connectionCount;
 };
-
 
 #endif

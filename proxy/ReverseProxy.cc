@@ -116,7 +116,6 @@ response_url_remap(HTTPHdr *response_header)
   return rewrite_table ? rewrite_table->ReverseMap(response_header) : false;
 }
 
-
 //
 //
 //  End API Functions

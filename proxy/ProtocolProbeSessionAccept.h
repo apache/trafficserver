@@ -47,7 +47,6 @@ public:
     SET_HANDLER(&ProtocolProbeSessionAccept::mainEvent);
   }
   ~ProtocolProbeSessionAccept() {}
-
   void registerEndpoint(ProtoGroupKey key, SessionAccept *ap);
 
   void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);

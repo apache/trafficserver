@@ -90,7 +90,6 @@ public:
   typedef typename Server::LogEntry LogEntry;
 
   virtual ~Raft() {}
-
   virtual void SetElectionTimeout(double seconds) = 0; // 1 sec.
 
   virtual void Recover(const LogEntry &entry) = 0;

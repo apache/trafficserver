@@ -212,7 +212,6 @@ LogConfig::read_configuration_variables()
     collation_max_send_buffers = val;
   }
 
-
   // ROLLING
 
   // we don't check for valid values of rolling_enabled, rolling_interval_sec,
@@ -305,7 +304,6 @@ LogConfig::~LogConfig()
   ats_free(collation_secret);
   ats_free(m_dir_entry);
 }
-
 
 /*-------------------------------------------------------------------------
   LogConfig::setup_collation
@@ -542,17 +540,33 @@ void
 LogConfig::register_config_callbacks()
 {
   static const char *names[] = {
-    "proxy.config.log.log_buffer_size", "proxy.config.log.max_secs_per_buffer", "proxy.config.log.max_space_mb_for_logs",
-    "proxy.config.log.max_space_mb_for_orphan_logs", "proxy.config.log.max_space_mb_headroom", "proxy.config.log.logfile_perm",
-    "proxy.config.log.hostname", "proxy.config.log.logfile_dir", "proxy.local.log.collation_mode",
-    "proxy.config.log.collation_host", "proxy.config.log.collation_port", "proxy.config.log.collation_host_tagged",
-    "proxy.config.log.collation_secret", "proxy.config.log.collation_retry_sec", "proxy.config.log.collation_max_send_buffers",
-    "proxy.config.log.rolling_enabled", "proxy.config.log.rolling_interval_sec", "proxy.config.log.rolling_offset_hr",
-    "proxy.config.log.rolling_size_mb", "proxy.config.log.auto_delete_rolled_files", "proxy.config.log.custom_logs_enabled",
-    "proxy.config.log.xml_config_file", "proxy.config.log.hosts_config_file", "proxy.config.log.sampling_frequency",
-    "proxy.config.log.file_stat_frequency", "proxy.config.log.space_used_frequency",
+    "proxy.config.log.log_buffer_size",
+    "proxy.config.log.max_secs_per_buffer",
+    "proxy.config.log.max_space_mb_for_logs",
+    "proxy.config.log.max_space_mb_for_orphan_logs",
+    "proxy.config.log.max_space_mb_headroom",
+    "proxy.config.log.logfile_perm",
+    "proxy.config.log.hostname",
+    "proxy.config.log.logfile_dir",
+    "proxy.local.log.collation_mode",
+    "proxy.config.log.collation_host",
+    "proxy.config.log.collation_port",
+    "proxy.config.log.collation_host_tagged",
+    "proxy.config.log.collation_secret",
+    "proxy.config.log.collation_retry_sec",
+    "proxy.config.log.collation_max_send_buffers",
+    "proxy.config.log.rolling_enabled",
+    "proxy.config.log.rolling_interval_sec",
+    "proxy.config.log.rolling_offset_hr",
+    "proxy.config.log.rolling_size_mb",
+    "proxy.config.log.auto_delete_rolled_files",
+    "proxy.config.log.custom_logs_enabled",
+    "proxy.config.log.xml_config_file",
+    "proxy.config.log.hosts_config_file",
+    "proxy.config.log.sampling_frequency",
+    "proxy.config.log.file_stat_frequency",
+    "proxy.config.log.space_used_frequency",
   };
-
 
   for (unsigned i = 0; i < countof(names); ++i) {
     REC_RegisterConfigUpdateFunc(names[i], &LogConfig::reconfigure, NULL);
@@ -642,7 +656,6 @@ LogConfig::register_mgmt_callbacks()
 {
   RecRegisterManagerCb(REC_EVENT_ROLL_LOG_FILES, &LogConfig::reconfigure_mgmt_variables, NULL);
 }
-
 
 /*-------------------------------------------------------------------------
   LogConfig::space_to_write
@@ -851,7 +864,6 @@ LogConfig::update_space_used()
   // issue any alarms or warnings about space
   //
 
-
   if (!space_to_write(headroom)) {
     if (!logging_space_exhausted)
       Note("Logging space exhausted, any logs writing to local disk will be dropped!");
@@ -916,7 +928,6 @@ LogConfig::update_space_used()
     }
   }
 }
-
 
 /*-------------------------------------------------------------------------
   LogConfig::read_xml_log_config

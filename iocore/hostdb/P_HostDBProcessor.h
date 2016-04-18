@@ -143,7 +143,6 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
 //#define TEST(_x) _x
 #define TEST(_x)
 
-
 #ifdef _HOSTDB_CC_
 template struct MultiCache<HostDBInfo>;
 #endif /* _HOSTDB_CC_ */
@@ -163,7 +162,6 @@ enum HostDB_Stats {
   hostdb_bytes_stat,
   HostDB_Stat_Count
 };
-
 
 struct RecRawStatBlock;
 extern RecRawStatBlock *hostdb_rsb;
@@ -190,9 +188,12 @@ extern RecRawStatBlock *hostdb_rsb;
 
 #define HOSTDB_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_s, -1);
 
-
 struct CmpConstBuffferCaseInsensitive {
-  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) const { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0; }
+  bool
+  operator()(ts::ConstBuffer a, ts::ConstBuffer b) const
+  {
+    return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;
+  }
 };
 
 // Our own typedef for the host file mapping

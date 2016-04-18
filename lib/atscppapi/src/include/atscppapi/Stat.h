@@ -104,5 +104,4 @@ private:
 
 } /* atscppapi */
 
-
 #endif /* ATSCPPAPI_STAT_H_ */

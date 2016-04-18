@@ -29,7 +29,6 @@
 #ifdef PCRE_CONFIG_JIT
 struct RegexThreadKey {
   RegexThreadKey() { ink_thread_key_create(&this->key, (void (*)(void *)) & pcre_jit_stack_free); }
-
   ink_thread_key key;
 };
 

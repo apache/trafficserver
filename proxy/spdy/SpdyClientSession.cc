@@ -60,7 +60,6 @@ SpdyRequest::destroy()
   spdyRequestAllocator.free(this);
 }
 
-
 void
 SpdyRequest::init(SpdyClientSession *sm, int id)
 {
@@ -91,7 +90,7 @@ SpdyRequest::clear()
     fetch_sm = NULL;
   }
 
-  vector<pair<string, string> >().swap(headers);
+  vector<pair<string, string>>().swap(headers);
 
   std::string().swap(url);
   std::string().swap(host);
@@ -164,7 +163,6 @@ SpdyClientSession::clear()
     vc = NULL;
   }
 
-
   if (req_reader) {
     TSIOBufferReaderFree(req_reader);
     req_reader = NULL;
@@ -227,8 +225,8 @@ SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
     {SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size}};
   int r;
 
-  this->read_vio = (TSVIO) this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
-  this->write_vio = (TSVIO) this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
+  this->read_vio = (TSVIO)this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
+  this->write_vio = (TSVIO)this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
 
   if (TSIOBufferReaderAvail(this->req_reader) > 0) {
     spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
@@ -294,7 +292,6 @@ SpdyClientSession::destroy()
   this->clear();
   spdyClientSessionAllocator.free(this);
 }
-
 
 SpdyClientSession *
 SpdyClientSession::alloc()

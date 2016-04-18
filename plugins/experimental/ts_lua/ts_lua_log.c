@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 
 static TSTextLogObject log;
@@ -24,7 +23,6 @@ static TSTextLogObject log;
 static int ts_lua_log_object_creat(lua_State *L);
 static int ts_lua_log_object_write(lua_State *L);
 static int ts_lua_log_object_destroy(lua_State *L);
-
 
 static void ts_lua_inject_log_object_creat_api(lua_State *L);
 static void ts_lua_inject_log_object_write_api(lua_State *L);

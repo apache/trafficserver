@@ -16,11 +16,9 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_hook.h"
 #include "ts_lua_transform.h"
 #include "ts_lua_util.h"
-
 
 typedef enum {
   TS_LUA_HOOK_DUMMY = 0,
@@ -41,17 +39,25 @@ typedef enum {
   TS_LUA_HOOK_LAST
 } TSLuaHookID;
 
-
-char *ts_lua_hook_id_string[] = {"TS_LUA_HOOK_DUMMY", "TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE", "TS_LUA_HOOK_SEND_REQUEST_HDR",
-                                 "TS_LUA_HOOK_READ_RESPONSE_HDR", "TS_LUA_HOOK_SEND_RESPONSE_HDR", "TS_LUA_HOOK_READ_REQUEST_HDR",
-                                 "TS_LUA_HOOK_TXN_START", "TS_LUA_HOOK_PRE_REMAP", "TS_LUA_HOOK_POST_REMAP", "TS_LUA_HOOK_OS_DNS",
-                                 "TS_LUA_HOOK_SELECT_ALT", "TS_LUA_HOOK_READ_CACHE_HDR", "TS_LUA_HOOK_TXN_CLOSE",
-                                 "TS_LUA_REQUEST_TRANSFORM", "TS_LUA_RESPONSE_TRANSFORM", "TS_LUA_HOOK_LAST"};
-
+char *ts_lua_hook_id_string[] = {"TS_LUA_HOOK_DUMMY",
+                                 "TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE",
+                                 "TS_LUA_HOOK_SEND_REQUEST_HDR",
+                                 "TS_LUA_HOOK_READ_RESPONSE_HDR",
+                                 "TS_LUA_HOOK_SEND_RESPONSE_HDR",
+                                 "TS_LUA_HOOK_READ_REQUEST_HDR",
+                                 "TS_LUA_HOOK_TXN_START",
+                                 "TS_LUA_HOOK_PRE_REMAP",
+                                 "TS_LUA_HOOK_POST_REMAP",
+                                 "TS_LUA_HOOK_OS_DNS",
+                                 "TS_LUA_HOOK_SELECT_ALT",
+                                 "TS_LUA_HOOK_READ_CACHE_HDR",
+                                 "TS_LUA_HOOK_TXN_CLOSE",
+                                 "TS_LUA_REQUEST_TRANSFORM",
+                                 "TS_LUA_RESPONSE_TRANSFORM",
+                                 "TS_LUA_HOOK_LAST"};
 
 static int ts_lua_add_hook(lua_State *L);
 static void ts_lua_inject_hook_variables(lua_State *L);
-
 
 void
 ts_lua_inject_hook_api(lua_State *L)

@@ -424,7 +424,6 @@ main(int argc, char **argv)
   init_pair(colorPair::border, COLOR_WHITE, COLOR_BLUE);
   //  mvchgat(0, 0, -1, A_BLINK, 1, NULL);
 
-
   enum Page {
     MAIN_PAGE,
     RESPONSE_PAGE,
@@ -446,7 +445,6 @@ main(int argc, char **argv)
     mvprintw(23, 0, "%-20.20s   %30s (q)uit (h)elp (%c)bsolute  ", host.c_str(), page_alt.c_str(), absolute ? 'A' : 'a');
     attroff(COLOR_PAIR(colorPair::border));
     attroff(A_BOLD);
-
 
     if (page == MAIN_PAGE) {
       main_stats_page(stats);

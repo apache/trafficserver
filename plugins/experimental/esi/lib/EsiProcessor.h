@@ -186,5 +186,4 @@ private:
   }
 };
 
-
 #endif // _ESI_PROCESSOR_H

@@ -16,13 +16,11 @@
   limitations under the License.
 */
 
-
 #include <stdint.h>
 #include <stdio.h>
 #include <lua.h>
 
 static void ts_lua_inject_number_variables(lua_State *L);
-
 
 void
 ts_lua_inject_constant_api(lua_State *L)

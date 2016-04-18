@@ -27,7 +27,6 @@ class MyRemapPlugin : public RemapPlugin
 {
 public:
   MyRemapPlugin(void **instance_handle) : RemapPlugin(instance_handle) {}
-
   Result
   doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect)
   {

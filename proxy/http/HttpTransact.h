@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #if !defined(_HttpTransact_h_)
 #define _HttpTransact_h_
 
@@ -77,7 +76,6 @@
     }                                                           \
   }
 
-
 #define TRANSACT_SETUP_RETURN(n, r) \
   s->next_action = n;               \
   s->transact_return_point = r;     \
@@ -90,7 +88,6 @@
 #define TRANSACT_RETURN_VAL(n, r, v) \
   TRANSACT_SETUP_RETURN(n, r)        \
   return v;
-
 
 #define SET_UNPREPARE_CACHE_ACTION(C)                               \
   {                                                                 \
@@ -774,7 +771,6 @@ public:
 
     _SquidLogInfo() : log_code(SQUID_LOG_ERR_UNKNOWN), hier_code(SQUID_HIER_EMPTY), hit_miss_code(SQUID_MISS_NONE) {}
   } SquidLogInfo;
-
 
 #define HTTP_TRANSACT_STATE_MAX_XBUF_SIZE (1024 * 2) /* max size of plugin exchange buffer */
 

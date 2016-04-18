@@ -2632,7 +2632,7 @@ interval_report()
     tag++;                                                                         \
   unsigned char *base = bytes + bucket * BYTES_PER_BUCKET;                         \
   unsigned char *last = bytes + (bucket + 1) * BYTES_PER_BUCKET - BYTES_PER_ENTRY; \
-  (void) last;                                                                     \
+  (void)last;                                                                      \
                                                                                    \
   for (unsigned int x = 0; x < ENTRIES_PER_BUCKET; x++) {                          \
     unsigned char *e = base + x * BYTES_PER_ENTRY;

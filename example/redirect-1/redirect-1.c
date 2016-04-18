@@ -58,7 +58,6 @@ static INKStat method_count_redirected_put;
 static INKStat method_count_redirected_trace;
 static INKStat method_count_redirected_unknown;
 
-
 /*
  *	coupled statistics variables:
  *		coupled stat category for the following stats
@@ -70,13 +69,11 @@ static INKStat requests_all;
 static INKStat requests_redirects;
 static INKStat requests_unchanged;
 
-
 void update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc);
 
 static char *url_redirect;
 static char *uri_redirect;
 static char *block_ip;
-
 
 static void
 handle_client_lookup(TSHttpTxn txnp, TSCont contp)
@@ -102,14 +99,12 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
    */
   local_request_outcomes = INKStatCoupledLocalCopyCreate("local_request_outcomes", request_outcomes);
 
-
   /*
    * Create the local copies of the global coupled stats:
    */
   local_requests_all = INKStatCoupledLocalAdd(local_request_outcomes, "requests.all.local", INKSTAT_TYPE_FLOAT);
   local_requests_redirects = INKStatCoupledLocalAdd(local_request_outcomes, "requests.redirects.local", INKSTAT_TYPE_INT64);
   local_requests_unchanged = INKStatCoupledLocalAdd(local_request_outcomes, "requests.unchanged.local", INKSTAT_TYPE_INT64);
-
 
   /*
    *   Increment the count of total requests:
@@ -197,7 +192,6 @@ done:
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
-
 static void
 handle_response(TSHttpTxn txnp)
 {
@@ -229,11 +223,9 @@ handle_response(TSHttpTxn txnp)
   TSHandleMLocRelease(bufp, hdr_loc, newfield_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
-
 done:
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
-
 
 static int
 redirect_plugin(TSCont contp, TSEvent event, void *edata)
@@ -257,7 +249,6 @@ redirect_plugin(TSCont contp, TSEvent event, void *edata)
 
   return 0;
 }
-
 
 /*
  *  Global statistics functions:

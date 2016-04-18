@@ -198,7 +198,6 @@ plugin_expand(char *arg)
     break;
   }
 
-
 not_found:
   Warning("plugin.config: unable to find parameter %s", arg);
   return NULL;

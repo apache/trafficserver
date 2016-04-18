@@ -189,5 +189,4 @@ private:
 
 }; /* End class MgmtHashTable */
 
-
 #endif /* _MGMT_HASH_TABLE_H */

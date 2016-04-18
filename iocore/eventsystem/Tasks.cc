@@ -27,7 +27,6 @@
 EventType ET_TASK = ET_CALL;
 TasksProcessor tasksProcessor;
 
-
 // Note that if the number of task_threads is 0, all continuations scheduled for
 // ET_TASK ends up running on ET_CALL (which is the net-threads).
 int

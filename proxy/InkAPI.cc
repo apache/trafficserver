@@ -61,7 +61,6 @@
 #include "I_RecCore.h"
 #include "HttpProxyServerMain.h"
 
-
 /****************************************************************
  *  IMPORTANT - READ ME
  * Any plugin using the IO Core must enter
@@ -92,7 +91,6 @@ static struct _STATE_ARG_TABLE {
   size_t name_len;
   char *description;
 } state_arg_table[HTTP_SSN_TXN_MAX_USER_ARG];
-
 
 /* URL schemes */
 tsapi const char *TS_URL_SCHEME_FILE;
@@ -282,7 +280,6 @@ tsapi int TS_MIME_LEN_WWW_AUTHENTICATE;
 tsapi int TS_MIME_LEN_XREF;
 tsapi int TS_MIME_LEN_X_FORWARDED_FOR;
 
-
 /* HTTP miscellaneous values */
 tsapi const char *TS_HTTP_VALUE_BYTES;
 tsapi const char *TS_HTTP_VALUE_CHUNKED;
@@ -372,7 +369,6 @@ static ClassAllocator<APIHook> apiHookAllocator("apiHookAllocator");
 static ClassAllocator<INKContInternal> INKContAllocator("INKContAllocator");
 static ClassAllocator<INKVConnInternal> INKVConnAllocator("INKVConnAllocator");
 static ClassAllocator<MIMEFieldSDKHandle> mHandleAllocator("MIMEFieldSDKHandle");
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -470,7 +466,6 @@ _TSAssert(const char *, const char *, int)
 // within the MIME header.
 //
 ////////////////////////////////////////////////////////////////////
-
 
 /*****************************************************************/
 /* Handles to headers are impls, but need to handle MIME or HTTP */
@@ -665,7 +660,6 @@ isWriteable(TSMBuffer bufp)
   return false;
 }
 
-
 /******************************************************/
 /* Allocators for field handles and standalone fields */
 /******************************************************/
@@ -690,7 +684,6 @@ sdk_free_field_handle(TSMBuffer bufp, MIMEFieldSDKHandle *field_handle)
     mHandleAllocator.free(field_handle);
   }
 }
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -998,11 +991,10 @@ INKContInternal::handle_event(int event, void *edata)
       Warning("INKCont Deletable but not deleted %d", m_event_count);
     }
   } else {
-    return m_event_func((TSCont) this, (TSEvent)event, edata);
+    return m_event_func((TSCont)this, (TSEvent)event, edata);
   }
   return EVENT_DONE;
 }
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -1053,7 +1045,7 @@ INKVConnInternal::handle_event(int event, void *edata)
       INKVConnAllocator.free(this);
     }
   } else {
-    return m_event_func((TSCont) this, (TSEvent)event, edata);
+    return m_event_func((TSCont)this, (TSEvent)event, edata);
   }
   return EVENT_DONE;
 }
@@ -1224,7 +1216,6 @@ APIHook::next() const
 {
   return m_link.next;
 }
-
 
 void
 APIHooks::prepend(INKContInternal *cont)
@@ -1440,7 +1431,6 @@ api_init()
     TS_MIME_FIELD_XREF = MIME_FIELD_XREF;
     TS_MIME_FIELD_X_FORWARDED_FOR = MIME_FIELD_X_FORWARDED_FOR;
 
-
     TS_MIME_LEN_ACCEPT = MIME_LEN_ACCEPT;
     TS_MIME_LEN_ACCEPT_CHARSET = MIME_LEN_ACCEPT_CHARSET;
     TS_MIME_LEN_ACCEPT_ENCODING = MIME_LEN_ACCEPT_ENCODING;
@@ -1513,7 +1503,6 @@ api_init()
     TS_MIME_LEN_WWW_AUTHENTICATE = MIME_LEN_WWW_AUTHENTICATE;
     TS_MIME_LEN_XREF = MIME_LEN_XREF;
     TS_MIME_LEN_X_FORWARDED_FOR = MIME_LEN_X_FORWARDED_FOR;
-
 
     /* HTTP methods */
     TS_HTTP_METHOD_CONNECT = HTTP_METHOD_CONNECT;
@@ -1889,7 +1878,6 @@ TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
   }
 }
 
-
 ////////////////////////////////////////////////////////////////////
 //
 // HdrHeaps (previously known as "Marshal Buffers")
@@ -2232,7 +2220,6 @@ TSUrlFtpTypeSet(TSMBuffer bufp, TSMLoc obj, int type)
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
 
-
   if ((type == 0 || type == 'A' || type == 'E' || type == 'I' || type == 'a' || type == 'i' || type == 'e') && isWriteable(bufp)) {
     URL u;
 
@@ -2351,7 +2338,6 @@ TSUrlPercentEncode(TSMBuffer bufp, TSMLoc obj, char *dst, size_t dst_size, size_
 
   return ret;
 }
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -2612,7 +2598,6 @@ TSMimeFieldValueInsert(TSMBuffer bufp, TSMLoc field_obj, const char *value, int 
 
   mime_field_value_insert_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
 }
-
 
 /****************/
 /* MimeHdrField */
@@ -3430,7 +3415,6 @@ TSHttpParserDestroy(TSHttpParser parser)
 /* HttpHdr */
 /***********/
 
-
 TSMLoc
 TSHttpHdrCreate(TSMBuffer bufp)
 {
@@ -3863,7 +3847,6 @@ TSHttpHdrReasonLookup(TSHttpStatus status)
   return http_hdr_reason_lookup((HTTPStatus)status);
 }
 
-
 ////////////////////////////////////////////////////////////////////
 //
 // Cache
@@ -4006,7 +3989,6 @@ TSCacheHttpInfoReqGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
   sdk_assert(sdk_sanity_check_mbuffer(*bufp) == TS_SUCCESS);
 }
 
-
 void
 TSCacheHttpInfoRespGet(TSCacheHttpInfo infop, TSMBuffer *bufp, TSMLoc *obj)
 {
@@ -4049,7 +4031,6 @@ TSCacheHttpInfoReqSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
   info->request_set(&h);
 }
 
-
 void
 TSCacheHttpInfoRespSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
 {
@@ -4060,7 +4041,6 @@ TSCacheHttpInfoRespSet(TSCacheHttpInfo infop, TSMBuffer bufp, TSMLoc obj)
   CacheHTTPInfo *info = (CacheHTTPInfo *)infop;
   info->response_set(&h);
 }
-
 
 int
 TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length)
@@ -4079,7 +4059,6 @@ TSCacheHttpInfoVector(TSCacheHttpInfo infop, void *data, int length)
   return vector.marshal((char *)data, length);
 }
 
-
 void
 TSCacheHttpInfoDestroy(TSCacheHttpInfo infop)
 {
@@ -4094,7 +4073,6 @@ TSCacheHttpInfoCreate(void)
 
   return reinterpret_cast<TSCacheHttpInfo>(info);
 }
-
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -4355,7 +4333,6 @@ TSContMutexGet(TSCont contp)
   return (TSMutex)((ProxyMutex *)c->mutex);
 }
 
-
 /* HTTP hooks */
 
 void
@@ -4440,7 +4417,6 @@ private:
   TSEvent m_event;
 };
 
-
 void
 TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
 {
@@ -4464,7 +4440,6 @@ TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
   }
 }
 
-
 /* HTTP transactions */
 void
 TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
@@ -4476,7 +4451,6 @@ TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
   HttpSM *sm = (HttpSM *)txnp;
   sm->txn_hook_append(id, (INKContInternal *)contp);
 }
-
 
 // Private api function for gzip plugin.
 //  This function should only appear in TsapiPrivate.h
@@ -4595,7 +4569,6 @@ TSHttpTxnClientRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   return TS_ERROR;
 }
 
-
 TSReturnCode
 TSHttpTxnServerReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
@@ -4712,7 +4685,6 @@ TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   return TS_SUCCESS;
 }
 
-
 TSReturnCode
 TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
 {
@@ -4786,7 +4758,6 @@ TSHttpTxnCacheLookupCountGet(TSHttpTxn txnp, int *lookup_count)
   *lookup_count = sm->t_state.cache_info.lookup_count;
   return TS_SUCCESS;
 }
-
 
 /* two hooks this function may gets called:
    TS_HTTP_READ_CACHE_HDR_HOOK   &
@@ -5077,7 +5048,6 @@ TSHttpTxnDNSTimeoutSet(TSHttpTxn txnp, int timeout)
 
   s->api_txn_dns_timeout_value = timeout;
 }
-
 
 /**
  * timeout is in msec
@@ -5610,7 +5580,6 @@ TSHttpTxnTransformedRespCache(TSHttpTxn txnp, int on)
   sm->t_state.api_info.cache_transformed = (on ? true : false);
 }
 
-
 class TSHttpSMCallback : public Continuation
 {
 public:
@@ -5631,7 +5600,6 @@ private:
   HttpSM *m_sm;
   TSEvent m_event;
 };
-
 
 //----------------------------------------------------------------------------
 void
@@ -6052,7 +6020,6 @@ TSHttpCurrentServerConnectionsGet(void)
   return (int)S;
 }
 
-
 /* HTTP alternate selection */
 TSReturnCode
 TSHttpAltInfoClientReqGet(TSHttpAltInfo infop, TSMBuffer *bufp, TSMLoc *obj)
@@ -6226,7 +6193,6 @@ TSVConnCreate(TSEventFunc event_funcp, TSMutex mutexp)
 
 struct ActionSink : public Continuation {
   ActionSink() : Continuation(NULL) { SET_HANDLER(&ActionSink::mainEvent); }
-
   int
   mainEvent(int event, void *edata)
   {
@@ -6501,7 +6467,6 @@ TSNetVConnLocalAddrGet(TSVConn connp)
   return vc->get_local_addr();
 }
 
-
 sockaddr const *
 TSNetVConnRemoteAddrGet(TSVConn connp)
 {
@@ -6723,7 +6688,6 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
   return reinterpret_cast<TSAction>(cacheProcessor.scan(i, 0, 0, KB_per_second));
 }
 
-
 /************************   REC Stats API    **************************/
 int
 TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
@@ -6804,7 +6768,6 @@ TSStatFindName(const char *name, int *idp)
 
   return TS_ERROR;
 }
-
 
 /**************************    Stats API    ****************************/
 // THESE APIS ARE DEPRECATED, USE THE REC APIs INSTEAD
@@ -7547,7 +7510,6 @@ TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
   pAIO->aiocb.aio_offset = offset;
   pAIO->aiocb.aio_nbytes = buffSize;
 
-
   pAIO->aiocb.aio_buf = buf;
   pAIO->action = pCont;
   pAIO->thread = ((ProxyMutex *)pCont->mutex)->thread_holding;
@@ -8138,7 +8100,6 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
   return TS_SUCCESS;
 }
 
-
 TSReturnCode
 TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char **value, int *length)
 {
@@ -8168,7 +8129,6 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 
   return TS_SUCCESS;
 }
-
 
 // This is pretty suboptimal, and should only be used outside the critical path.
 TSReturnCode
@@ -8738,7 +8698,6 @@ TSPluginDescriptorAccept(TSCont contp)
   return action ? TS_SUCCESS : TS_ERROR;
 }
 
-
 int
 TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp)
 {
@@ -8774,7 +8733,6 @@ TSHttpTxnIsCacheable(TSHttpTxn txnp, TSMBuffer request, TSMBuffer response)
   return (req->valid() && resp->valid() && HttpTransact::is_response_cacheable(&(sm->t_state), req, resp)) ? 1 : 0;
 }
 
-
 // Lookup various debug names for common HTTP types.
 const char *
 TSHttpServerStateNameLookup(TSServerState state)
@@ -8799,7 +8757,6 @@ class TSSslCallback : public Continuation
 {
 public:
   TSSslCallback(SSLNetVConnection *vc) : Continuation(vc->mutex), m_vc(vc) { SET_HANDLER(&TSSslCallback::event_handler); }
-
   int
   event_handler(int, void *)
   {
@@ -8811,7 +8768,6 @@ public:
 private:
   SSLNetVConnection *m_vc;
 };
-
 
 /// SSL Hooks
 TSReturnCode

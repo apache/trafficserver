@@ -87,7 +87,6 @@ handle_response(TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
-
 static int
 plugin_main_handler(TSCont contp, TSEvent event, void *edata)
 {
@@ -98,7 +97,6 @@ plugin_main_handler(TSCont contp, TSEvent event, void *edata)
     handle_response(txnp, contp);
     break;
   }
-
 
   default: {
     TSDebug("[custom_redirect]", "default event");

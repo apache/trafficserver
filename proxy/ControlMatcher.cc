@@ -680,7 +680,6 @@ IpMatcher<Data, Result>::Match(sockaddr const *addr, RequestData *rdata, Result 
   }
 }
 
-
 template <class Data, class Result>
 void
 IpMatcher<Data, Result>::Print()
@@ -759,7 +758,6 @@ ControlMatcher<Data, Result>::Print()
     hrMatch->Print();
   }
 }
-
 
 // void ControlMatcher<Data, Result>::Match(RequestData* rdata
 //                                          Result* result)
@@ -972,7 +970,6 @@ ControlMatcher<Data, Result>::BuildTable()
   ats_free(file_buf);
   return ret;
 }
-
 
 /****************************************************************
  *    TEMPLATE INSTANTIATIONS GO HERE

@@ -24,7 +24,6 @@
 #include "acl.h"
 #include "lulu.h"
 
-
 // Implementation of the ACL base class. This wraps the underlying Geo library
 // that we've found and used.
 GeoDBHandle Acl::_geoip;
@@ -103,7 +102,6 @@ Acl::country_id_by_addr(const sockaddr *addr) const
 }
 #endif /* HAVE_GEOIP_H */
 
-
 // This is the rest of the ACL baseclass, which is the same for all underlying Geo libraries.
 void
 Acl::read_html(const char *fn)
@@ -119,7 +117,6 @@ Acl::read_html(const char *fn)
     TSError("[%s] Unable to open HTML file %s", PLUGIN_NAME, fn);
   }
 }
-
 
 // Implementations for the RegexAcl class
 bool
@@ -207,7 +204,6 @@ RegexAcl::append(RegexAcl *ra)
   }
 }
 
-
 // Implementation of the Country ACL class.
 void
 CountryAcl::add_token(const std::string &str)
@@ -284,7 +280,6 @@ CountryAcl::eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const
 
   return _allow;
 }
-
 
 int
 CountryAcl::process_args(int argc, char *argv[])

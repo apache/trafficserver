@@ -55,18 +55,15 @@ enum HpackMatchType {
 // Result of looking for a header field in IndexingTable
 struct HpackLookupResult {
   HpackLookupResult() : index(0), index_type(HPACK_INDEX_TYPE_NONE), match_type(HPACK_NO_MATCH) {}
-
   int index;
   HpackIndexType index_type;
   HpackMatchType match_type;
 };
 
-
 class MIMEFieldWrapper
 {
 public:
   MIMEFieldWrapper(MIMEField *f, HdrHeap *hh, MIMEHdrImpl *impl) : _field(f), _heap(hh), _mh(impl) {}
-
   void
   name_set(const char *name, int name_len)
   {
@@ -142,9 +139,7 @@ class HpackIndexingTable
 {
 public:
   HpackIndexingTable(uint32_t size) { _dynamic_table = new HpackDynamicTable(size); }
-
   ~HpackIndexingTable() { delete _dynamic_table; }
-
   HpackLookupResult lookup(const MIMEFieldWrapper &field) const;
   HpackLookupResult lookup(const char *name, int name_len, const char *value, int value_len) const;
   int get_header_field(uint32_t index, MIMEFieldWrapper &header_field) const;
@@ -156,7 +151,6 @@ public:
 private:
   HpackDynamicTable *_dynamic_table;
 };
-
 
 // Low level interfaces
 int64_t encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n);
@@ -173,7 +167,6 @@ int64_t decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf
 int64_t decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
                                     HpackIndexingTable &indexing_table);
 int64_t update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, HpackIndexingTable &indexing_table);
-
 
 // High level interfaces
 typedef HpackIndexingTable HpackHandle;

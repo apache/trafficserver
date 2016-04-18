@@ -254,7 +254,6 @@ struct Http2SettingsParameter {
 // [RFC 7540] 6.3 PRIORITY Format
 struct Http2Priority {
   Http2Priority() : stream_dependency(0), weight(15) {}
-
   uint32_t stream_dependency;
   uint8_t weight;
 };
@@ -262,7 +261,6 @@ struct Http2Priority {
 // [RFC 7540] 6.2 HEADERS Format
 struct Http2HeadersParameter {
   Http2HeadersParameter() : pad_length(0) {}
-
   uint8_t pad_length;
   Http2Priority priority;
 };
@@ -270,7 +268,6 @@ struct Http2HeadersParameter {
 // [RFC 7540] 6.8 GOAWAY Format
 struct Http2Goaway {
   Http2Goaway() : last_streamid(0), error_code(0) {}
-
   Http2StreamId last_streamid;
   uint32_t error_code;
 
@@ -338,7 +335,6 @@ Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32
 
 MIMEParseResult http2_convert_header_from_2_to_1_1(HTTPHdr *);
 void http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers);
-
 
 // Not sure where else to put this, but figure this is as good of a start as
 // anything else.

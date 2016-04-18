@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ClusterLoadMonitor.h

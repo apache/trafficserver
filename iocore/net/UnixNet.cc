@@ -33,7 +33,6 @@ ink_hrtime last_transient_accept_error;
 
 extern "C" void fd_reify(struct ev_loop *);
 
-
 #ifndef INACTIVITY_TIMEOUT
 int update_cop_config(const char *name, RecDataT data_type, RecData data, void *cookie);
 
@@ -293,7 +292,6 @@ NetHandler::NetHandler() : Continuation(NULL), trigger_event(0), keep_alive_queu
   SET_HANDLER((NetContHandler)&NetHandler::startNetEvent);
 }
 
-
 int
 update_nethandler_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data, void *cookie)
 {
@@ -332,7 +330,6 @@ update_nethandler_config(const char *name, RecDataT data_type ATS_UNUSED, RecDat
 
   return REC_ERR_OKAY;
 }
-
 
 //
 // Initialization here, in the thread in which we will be executing
@@ -395,7 +392,6 @@ NetHandler::process_enabled_list(NetHandler *nh)
       nh->write_ready_list.in_or_enqueue(vc);
   }
 }
-
 
 //
 // The main event for NetHandler

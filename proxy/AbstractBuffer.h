@@ -24,7 +24,6 @@
 #ifndef __ABSTRACT_BUFFER_H__
 #define __ABSTRACT_BUFFER_H__
 
-
 #include "ts/ink_platform.h"
 #include "ts/ink_atomic.h"
 #include "ts/ink_assert.h"
@@ -36,7 +35,6 @@ enum ABError {
   AB_ERROR_FULL,
   AB_ERROR_OFFSET,
 };
-
 
 class AbstractBuffer
 {
@@ -53,10 +51,9 @@ public:
 protected:
   union VolatileState {
     VolatileState() { ival = 0; }
-
     VolatileState(volatile VolatileState &vs) { ival = vs.ival; }
-
-    VolatileState &operator=(volatile VolatileState &vs)
+    VolatileState &
+    operator=(volatile VolatileState &vs)
     {
       ival = vs.ival;
       return *this;
@@ -74,7 +71,6 @@ protected:
 public:
   AbstractBuffer(int xsize, int xalignment) : buffer(NULL), unaligned_buffer(NULL), size(xsize), alignment(xalignment) { clear(); }
   virtual ~AbstractBuffer() { clear(); }
-
   char *
   data()
   {
@@ -117,27 +113,21 @@ public:
   VolatileState vs_history[AB_STATE_FLUSH_COMPLETE + 1];
 };
 
-
 class AbstractBufferReader
 {
 public:
   AbstractBufferReader(AbstractBuffer *xbuffer, int xoffset) : buffer(xbuffer), offset(xoffset) {}
-
   ~AbstractBufferReader() { buffer->checkin_read(offset); }
-
 private:
   AbstractBuffer *buffer;
   int offset;
 };
 
-
 class AbstractBufferWriter
 {
 public:
   AbstractBufferWriter(AbstractBuffer *xbuffer, int xoffset) : buffer(xbuffer), offset(xoffset) {}
-
   ~AbstractBufferWriter() { buffer->checkin_write(offset); }
-
 private:
   AbstractBuffer *buffer;
   int offset;

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "ts/List.h"
 
 class Foo

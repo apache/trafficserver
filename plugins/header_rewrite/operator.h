@@ -30,7 +30,6 @@
 #include "statement.h"
 #include "parser.h"
 
-
 // Operator modifiers
 enum OperModifiers {
   OPER_NONE = 0,
@@ -39,7 +38,6 @@ enum OperModifiers {
   OPER_QSA = 4,
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Operators (this is also the interface)
 //
@@ -47,7 +45,6 @@ class Operator : public Statement
 {
 public:
   Operator() : _mods(OPER_NONE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
-
   void
   do_exec(const Resources &res) const
   {
@@ -69,7 +66,6 @@ private:
   OperModifiers _mods;
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Header based Operators, this is obviously also an
 // Operator interface.
@@ -78,7 +74,6 @@ class OperatorHeaders : public Operator
 {
 public:
   OperatorHeaders() : _header("") { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorHeaders"); }
-
   void initialize(Parser &p);
 
 protected:

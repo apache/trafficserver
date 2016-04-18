@@ -32,7 +32,6 @@ public:
   {
   public:
     DomainNameNode() : order(-1), payload(NULL), parent(NULL), is_wild(false) {}
-
     DomainNameNode(std::string key, void *payload, int order, bool is_wild)
       : key(key), order(order), payload(payload), parent(NULL), is_wild(is_wild)
     {
@@ -72,7 +71,6 @@ public:
   }
 
   ~DomainNameTree() { delete root; }
-
   DomainNameNode *
   findBestMatch(std::string key)
   {

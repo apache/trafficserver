@@ -132,7 +132,6 @@ HttpDebugNames::get_event_name(int event)
   case EVENT_INTERVAL:
     return ("VC_EVENT_INTERVAL");
 
-
   /////////////////
   // NET  EVENTS //
   /////////////////
@@ -163,7 +162,6 @@ HttpDebugNames::get_event_name(int event)
 
   case EVENT_SRV_GET_RESPONSE:
     return ("EVENT_SRV_GET_RESPONSE");
-
 
   ////////////////////
   // DNS     EVENTS //
@@ -434,7 +432,6 @@ HttpDebugNames::get_cache_action_name(HttpTransact::CacheAction_t t)
 
   return ("unknown cache action");
 }
-
 
 //////////////////////////////////////////////////////////////////
 //

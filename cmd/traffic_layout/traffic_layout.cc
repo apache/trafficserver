@@ -45,7 +45,6 @@ const ArgumentDescription argument_descriptions[] = {
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 
-
 // Produce output about compile time features, useful for checking how things were built, as well
 // as for our TSQA test harness.
 static void
@@ -123,7 +122,6 @@ produce_features(bool json)
     printf("}\n");
   }
 }
-
 
 static void
 print_var(const char *name, char *value, bool json, bool free = true, bool last = false)

@@ -96,7 +96,6 @@ add_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
     field_loc = next_field_loc;
   }
 
-
 error:
   TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
 

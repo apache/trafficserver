@@ -33,7 +33,6 @@ unsigned int tparseRulesCType[256];
 char tparseRulesCTypeToUpper[256];
 char tparseRulesCTypeToLower[256];
 
-
 #include <stdio.h>
 #include <ctype.h>
 #include "ts/ink_string.h"

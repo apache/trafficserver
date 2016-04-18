@@ -103,7 +103,6 @@ class NonMatchingMultiPattern : public MultiPattern
 {
 public:
   NonMatchingMultiPattern(const String &name) { _name = name; }
-
   /*
    * @brief Matches the subject string against all patterns.
    * @param subject subject string
@@ -120,7 +119,6 @@ private:
   NonMatchingMultiPattern(const NonMatchingMultiPattern &);            // disallow
   NonMatchingMultiPattern &operator=(const NonMatchingMultiPattern &); // disallow
 };
-
 
 /**
  * @brief Simple classifier which classifies a subject string using a list of named multi-patterns.

@@ -283,7 +283,6 @@ public:
   }
 
   ~TrackerContinuation() { mutex = NULL; }
-
   int
   periodic(int event, Event * /* e ATS_UNUSED */)
   {
@@ -790,7 +789,6 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
   return 0;
 }
 
-
 static int cmd_help(char *cmd);
 
 static const struct CMD {
@@ -1180,7 +1178,6 @@ struct ShowStats : public Continuation {
   }
 };
 
-
 // static void syslog_log_configure()
 //
 //   Reads the syslog configuration variable
@@ -1284,7 +1281,6 @@ run_RegressionTest()
 }
 #endif // TS_HAS_TESTS
 
-
 static void
 chdir_root()
 {
@@ -1299,7 +1295,6 @@ chdir_root()
     printf("%s: using root directory '%s'\n", appVersionInfo.AppStr, prefix);
   }
 }
-
 
 static int
 getNumSSLThreads(void)
@@ -1782,7 +1777,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start(0, stacksize);
 
-
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
       SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, "bad hostdb or storage configuration, hostdb disabled");
@@ -1833,7 +1827,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Continuation Statistics Dump
     if (show_statistics)
       eventProcessor.schedule_every(new ShowStats(), HRTIME_SECONDS(show_statistics), ET_CALL);
-
 
     //////////////////////////////////////
     // main server logic initiated here //
@@ -1916,7 +1909,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   this_thread()->execute();
   delete main_thread;
 }
-
 
 #if TS_HAS_TESTS
 //////////////////////////////

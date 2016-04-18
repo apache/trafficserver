@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_ACCESS_ICP_H
 #define LOG_ACCESS_ICP_H
 

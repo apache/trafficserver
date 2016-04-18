@@ -230,7 +230,6 @@ enum SquidHitMissCode {
   SQUID_HIT_NET = SQUID_HIT_LEVEL_5
 };
 
-
 enum HTTPType {
   HTTP_TYPE_UNKNOWN,
   HTTP_TYPE_REQUEST,
@@ -275,30 +274,25 @@ struct HTTPValAccept {
   double qvalue;
 };
 
-
 struct HTTPValAcceptCharset {
   char *charset;
   double qvalue;
 };
-
 
 struct HTTPValAcceptEncoding {
   char *encoding;
   double qvalue;
 };
 
-
 struct HTTPValAcceptLanguage {
   char *language;
   double qvalue;
 };
 
-
 struct HTTPValFieldList {
   char *name;
   HTTPValFieldList *next;
 };
-
 
 struct HTTPValCacheControl {
   const char *directive;
@@ -309,26 +303,22 @@ struct HTTPValCacheControl {
   } u;
 };
 
-
 struct HTTPValRange {
   int start;
   int end;
   HTTPValRange *next;
 };
 
-
 struct HTTPValTE {
   char *encoding;
   double qvalue;
 };
-
 
 struct HTTPParser {
   bool m_parsing_http;
   bool m_allow_non_http;
   MIMEParser m_mime_parser;
 };
-
 
 extern const char *HTTP_METHOD_CONNECT;
 extern const char *HTTP_METHOD_DELETE;
@@ -354,7 +344,6 @@ extern int HTTP_WKSIDX_PUT;
 extern int HTTP_WKSIDX_TRACE;
 extern int HTTP_WKSIDX_PUSH;
 extern int HTTP_WKSIDX_METHODS_CNT;
-
 
 extern int HTTP_LEN_CONNECT;
 extern int HTTP_LEN_DELETE;
@@ -457,10 +446,8 @@ MIMEParseResult validate_hdr_host(HTTPHdrImpl *hh);
 MIMEParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                        bool must_copy_strings, bool eof);
 
-
 HTTPStatus http_parse_status(const char *start, const char *end);
 int32_t http_parse_version(const char *start, const char *end);
-
 
 /*
 HTTPValAccept*         http_parse_accept (const char *buf, Arena *arena);
@@ -472,7 +459,6 @@ const char*            http_parse_cache_directive (const char **buf);
 HTTPValRange*          http_parse_range (const char *buf, Arena *arena);
 */
 HTTPValTE *http_parse_te(const char *buf, int len, Arena *arena);
-
 
 class HTTPVersion
 {
@@ -645,7 +631,6 @@ public:
   bool is_keep_alive_set() const;
   HTTPKeepAlive keep_alive_get() const;
 
-
 protected:
   /** Load the target cache.
       @see m_host, m_port, m_target_in_url
@@ -667,7 +652,6 @@ private:
 
   friend class UrlPrintHack; // don't ask.
 };
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -711,7 +695,8 @@ HTTPVersion::set(int ver_major, int ver_minor)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline HTTPVersion &HTTPVersion::operator=(const HTTPVersion &hv)
+inline HTTPVersion &
+HTTPVersion::operator=(const HTTPVersion &hv)
 {
   m_version = hv.m_version;
 
@@ -721,7 +706,8 @@ inline HTTPVersion &HTTPVersion::operator=(const HTTPVersion &hv)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int HTTPVersion::operator==(const HTTPVersion &hv) const
+inline int
+HTTPVersion::operator==(const HTTPVersion &hv) const
 {
   return (m_version == hv.m_version);
 }
@@ -729,7 +715,8 @@ inline int HTTPVersion::operator==(const HTTPVersion &hv) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int HTTPVersion::operator!=(const HTTPVersion &hv) const
+inline int
+HTTPVersion::operator!=(const HTTPVersion &hv) const
 {
   return (m_version != hv.m_version);
 }
@@ -737,7 +724,8 @@ inline int HTTPVersion::operator!=(const HTTPVersion &hv) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int HTTPVersion::operator>(const HTTPVersion &hv) const
+inline int
+HTTPVersion::operator>(const HTTPVersion &hv) const
 {
   return (m_version > hv.m_version);
 }
@@ -745,7 +733,8 @@ inline int HTTPVersion::operator>(const HTTPVersion &hv) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int HTTPVersion::operator<(const HTTPVersion &hv) const
+inline int
+HTTPVersion::operator<(const HTTPVersion &hv) const
 {
   return (m_version < hv.m_version);
 }
@@ -753,7 +742,8 @@ inline int HTTPVersion::operator<(const HTTPVersion &hv) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int HTTPVersion::operator>=(const HTTPVersion &hv) const
+inline int
+HTTPVersion::operator>=(const HTTPVersion &hv) const
 {
   return (m_version >= hv.m_version);
 }
@@ -761,11 +751,11 @@ inline int HTTPVersion::operator>=(const HTTPVersion &hv) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline int HTTPVersion::operator<=(const HTTPVersion &hv) const
+inline int
+HTTPVersion::operator<=(const HTTPVersion &hv) const
 {
   return (m_version <= hv.m_version);
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -773,7 +763,6 @@ inline int HTTPVersion::operator<=(const HTTPVersion &hv) const
 inline HTTPHdr::HTTPHdr() : MIMEHdr(), m_http(NULL), m_url_cached(), m_target_cached(false)
 {
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1066,7 +1055,6 @@ HTTPHdr::method_get(int *length)
   return http_hdr_method_get(m_http, length);
 }
 
-
 inline int
 HTTPHdr::method_get_wksidx()
 {
@@ -1075,7 +1063,6 @@ HTTPHdr::method_get_wksidx()
 
   return (m_http->u.req.m_method_wks_idx);
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1385,9 +1372,7 @@ public:
   HTTPCacheAlt *m_alt;
 
   HTTPInfo() : m_alt(NULL) {}
-
   ~HTTPInfo() { clear(); }
-
   void
   clear()
   {
@@ -1539,7 +1524,8 @@ HTTPInfo::destroy()
   clear();
 }
 
-inline HTTPInfo &HTTPInfo::operator=(const HTTPInfo &m)
+inline HTTPInfo &
+HTTPInfo::operator=(const HTTPInfo &m)
 {
   m_alt = m.m_alt;
   return *this;
