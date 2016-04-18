@@ -2593,12 +2593,20 @@ SSL Termination
    ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:AES256-GCM-SHA384:AES128-GCM-SHA256:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA
 
 .. ts:cv:: CONFIG proxy.config.ssl.SSLv2 INT 0
+   :deprecated:
 
-   Enables (``1``) or disables (``0``) SSLv2. Please don't enable it.
+   Enables (``1``) or disables (``0``) SSLv2. Please don't enable it unless you really know what you are doing and are sure you need this. It is a security risk to enable.
+
+   `More Information <https://tools.ietf.org/html/rfc6176>`_.
 
 .. ts:cv:: CONFIG proxy.config.ssl.SSLv3 INT 0
+   :deprecated:
 
    Enables (``1``) or disables (``0``) SSLv3.
+
+   Please don't enable it unless you really know what you are doing and are sure you need this. It is a security risk to enable.
+
+   `More Information <https://tools.ietf.org/html/rfc7568>`_.
 
 .. ts:cv:: CONFIG proxy.config.ssl.TLSv1 INT 1
 
