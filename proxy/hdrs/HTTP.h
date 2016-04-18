@@ -507,7 +507,7 @@ public:
   int valid() const;
 
   void create(HTTPType polarity, HdrHeap *heap = NULL);
-  void clear();
+  void destroy();
   void reset();
   void copy(const HTTPHdr *hdr);
   void copy_shallow(const HTTPHdr *hdr);
@@ -796,12 +796,13 @@ HTTPHdr::create(HTTPType polarity, HdrHeap *heap)
 }
 
 inline void
-HTTPHdr::clear()
+HTTPHdr::destroy()
 {
   if (m_http && m_http->m_polarity == HTTP_TYPE_REQUEST) {
     m_url_cached.clear();
   }
-  this->HdrHeapSDKHandle::clear();
+  // Removing the only pointers to this data therefore it needs to get cleaned up or leak.
+  this->HdrHeapSDKHandle::destroy();
   m_http = NULL;
   m_mime = NULL;
 }
