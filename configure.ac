@@ -367,7 +367,7 @@ AC_MSG_RESULT([$enable_tproxy])
 #
 AC_MSG_CHECKING([whether to enable spdy])
 AC_ARG_ENABLE([spdy],
-        [AS_HELP_STRING([--enable-spdy], [turn on spdy protocol])],
+        [AS_HELP_STRING([--enable-spdy], [turn on spdy protocol [DEPRECATED!]])],
         [],
         [enable_spdy="no"])
 AC_MSG_RESULT([$enable_spdy])
