@@ -935,7 +935,7 @@ done:
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
   } else {
     s->hdr_info.client_response.destroy(); // release the underlying memory.
-    s->hdr_info.client_response.clear(); // clear the pointers.
+    s->hdr_info.client_response.clear();   // clear the pointers.
     DebugTxn("http_trans", "END HttpTransact::EndRemapRequest");
 
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {
