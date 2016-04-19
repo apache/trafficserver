@@ -23,6 +23,7 @@
 
 #include "http/HttpSM.h"
 #include "http/HttpServerSession.h"
+#include "Plugin.h"
 
 #define DebugHttpTxn(fmt, ...) DebugSsn(this, "http_txn", fmt, __VA_ARGS__)
 
@@ -44,6 +45,22 @@ ProxyClientTransaction::new_transaction()
   DebugHttpTxn("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", parent->connection_id(),
                parent->get_transact_count(), current_reader->sm_id);
 
+  // This is a temporary hack until we get rid of SPDY and can use virutal methods entirely
+  // to track protocol
+  PluginIdentity *pi = dynamic_cast<PluginIdentity *>(this->get_netvc());
+  if (pi) {
+    current_reader->plugin_tag = pi->getPluginTag();
+    current_reader->plugin_id = pi->getPluginId();
+  } else {
+    const char *protocol_str = this->get_protocol_string();
+    // We don't set the plugin_tag for http, though in future we should probably log http as protocol
+    if (strncmp("http", protocol_str, 4)) {
+      current_reader->plugin_tag = protocol_str;
+      // Since there is no more plugin, there is no plugin id for http/2
+      // We are copying along the plugin_tag as a standin for protocol name for logging
+      // and to detect a case in HttpTransaction (TS-3954)
+    }
+  }
   current_reader->attach_client_session(this, sm_reader);
 }
 
