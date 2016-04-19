@@ -5800,7 +5800,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
   server_entry->read_vio = server_session->do_io_read(this, 0, server_session->read_buffer);
 
   // Transfer control of the write side as well
-  server_session->do_io_write(this, 0, NULL);
+  server_entry->write_vio = server_session->do_io_write(this, 0, NULL);
 
   // Setup the timeouts
   // Set the inactivity timeout to the connect timeout so that we
