@@ -196,7 +196,9 @@ Adding SPDY Support
 -------------------
 
 Traffic Server v5.0.x and above are capable of supporting SPDY, but it is
-optional and must be explicitly configured during the build process.
+optional and must be explicitly configured during the build process. The
+support of SPDY is deprecated as of ATS v6.2.0, and will be removed in
+v7.0.0.
 
 #. Clone the spdylay Git repository from tatsuhiro. ::
 

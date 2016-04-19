@@ -610,7 +610,7 @@ proto
    Specify the :ref:`session level protocols <session-protocol>` supported. These should be
    separated by semi-colons. For TLS proxy ports the default value is
    all available protocols. For non-TLS proxy ports the default is HTTP
-   only. SPDY can be enabled on non-TLS proxy ports but that must be done explicitly.
+   only.
 
 tr-full
    Fully transparent. This is a convenience option and is identical to specifying both ``tr-in`` and ``tr-out``.
@@ -669,9 +669,9 @@ ip-resolve
 
 .. topic:: Example
 
-   Listen on port 9090 for TSL enabled SPDY or HTTP connections, accept no other session protocols.::
+   Listen on port 9090 for TSL enabled HTTP/2 or HTTP connections, accept no other session protocols.::
 
-      9090:proto=spdy;http:ssl
+      9090:proto=http2;http:ssl
 
 .. ts:cv:: CONFIG proxy.config.http.connect_ports STRING 443 563
 
@@ -3000,23 +3000,28 @@ HTTP/2 Configuration
 SPDY Configuration
 ==================
 
+
 .. ts:cv:: CONFIG proxy.config.spdy.accept_no_activity_timeout INT 120
    :reloadable:
+   :deprecated:
 
    How long a SPDY connection will be kept open after an accept without any streams created.
 
 .. ts:cv:: CONFIG proxy.config.spdy.no_activity_timeout_in INT 115
    :reloadable:
+   :deprecated:
 
    How long a stream is kept open without activity.
 
 .. ts:cv:: CONFIG proxy.config.spdy.initial_window_size_in INT 1048576
    :reloadable:
+   :deprecated:
 
    The initial window size for inbound connections.
 
 .. ts:cv:: CONFIG proxy.config.spdy.max_concurrent_streams_in INT 100
    :reloadable:
+   :deprecated:
 
    The maximum number of concurrent streams per inbound connection.
 
