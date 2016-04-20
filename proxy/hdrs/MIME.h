@@ -630,6 +630,7 @@ void mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, H
 MIMEHdrImpl *mime_hdr_clone(MIMEHdrImpl *s_mh, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit_strs = true);
 void mime_hdr_field_block_list_adjust(int block_count, MIMEFieldBlockImpl *old_list, MIMEFieldBlockImpl *new_list);
 int mime_hdr_length_get(MIMEHdrImpl *mh);
+int mime_hdr_net_length_get(MIMEHdrImpl *mh);
 
 void mime_hdr_fields_clear(HdrHeap *heap, MIMEHdrImpl *mh);
 

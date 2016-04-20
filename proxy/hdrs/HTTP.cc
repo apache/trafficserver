@@ -593,8 +593,8 @@ http_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-http_hdr_length_get(HTTPHdrImpl *hdr)
+static int
+http_hdr_base_length_get(HTTPHdrImpl *hdr)
 {
   int length = 0;
 
@@ -634,7 +634,31 @@ http_hdr_length_get(HTTPHdrImpl *hdr)
     length += 2; // "\r\n"
   }
 
+  return length;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+http_hdr_length_get(HTTPHdrImpl *hdr)
+{
+  int length = http_hdr_base_length_get(hdr);
+
   length += mime_hdr_length_get(hdr->m_fields_impl);
+
+  return length;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+http_hdr_net_length_get(HTTPHdrImpl *hdr)
+{
+  int length = http_hdr_base_length_get(hdr);
+
+  length += mime_hdr_net_length_get(hdr->m_fields_impl);
 
   return length;
 }

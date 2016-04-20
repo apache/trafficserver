@@ -94,6 +94,7 @@ public:
   // proxy -> server fields
   //
   virtual int marshal_proxy_req_header_len(char *);  // INT
+  virtual int marshal_proxy_req_net_hdr_len(char *); // INT
   virtual int marshal_proxy_req_body_len(char *);    // INT
   virtual int marshal_proxy_req_server_name(char *); // STR
   virtual int marshal_proxy_req_server_ip(char *);   // INT
