@@ -1176,19 +1176,23 @@ mime_hdr_field_block_list_adjust(int /* block_count ATS_UNUSED */, MIMEFieldBloc
   }
 }
 
+// Calculates the serialized length of the headers mh including the
+// terminating '\r\n'. If include_internal is false, any headers whose
+// names start with an '@' are excluded.
+
 int
-mime_hdr_length_get(MIMEHdrImpl *mh)
+mime_hdr_length_calc(const MIMEHdrImpl *mh, bool include_internal)
 {
   unsigned int length, index;
-  MIMEFieldBlockImpl *fblock;
-  MIMEField *field;
+  const MIMEFieldBlockImpl *fblock;
+  const MIMEField *field;
 
   length = 2;
 
   for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
     for (index = 0; index < fblock->m_freetop; index++) {
       field = &(fblock->m_field_slots[index]);
-      if (field->is_live()) {
+      if (field->is_live() && (include_internal || *field->m_ptr_name != '@')) {
         length += mime_field_length_get(field);
       }
     }
@@ -1198,24 +1202,9 @@ mime_hdr_length_get(MIMEHdrImpl *mh)
 }
 
 int
-mime_hdr_net_length_get(MIMEHdrImpl *mh)
+mime_hdr_length_get(const MIMEHdrImpl *mh)
 {
-  unsigned int length, index;
-  MIMEFieldBlockImpl *fblock;
-  MIMEField *field;
-
-  length = 2;
-
-  for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
-    for (index = 0; index < fblock->m_freetop; index++) {
-      field = &(fblock->m_field_slots[index]);
-      if (field->is_live() && *field->m_ptr_name != '@') {
-        length += mime_field_length_get(field);
-      }
-    }
-  }
-
-  return length;
+  return mime_hdr_length_calc(mh, true);
 }
 
 void
@@ -2835,7 +2824,7 @@ mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str
 }
 
 int
-mime_field_length_get(MIMEField *field)
+mime_field_length_get(const MIMEField *field)
 {
   if (field->m_n_v_raw_printable) {
     return (field->m_len_name + field->m_len_value + field->m_n_v_raw_printable_pad);

@@ -629,8 +629,9 @@ void mime_hdr_destroy(HdrHeap *heap, MIMEHdrImpl *mh);
 void mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHeap *d_heap, bool inherit_strs = true);
 MIMEHdrImpl *mime_hdr_clone(MIMEHdrImpl *s_mh, HdrHeap *s_heap, HdrHeap *d_heap, bool inherit_strs = true);
 void mime_hdr_field_block_list_adjust(int block_count, MIMEFieldBlockImpl *old_list, MIMEFieldBlockImpl *new_list);
-int mime_hdr_length_get(MIMEHdrImpl *mh);
-int mime_hdr_net_length_get(MIMEHdrImpl *mh);
+
+int mime_hdr_length_calc(const MIMEHdrImpl *mh, bool include_internal);
+int mime_hdr_length_get(const MIMEHdrImpl *mh);
 
 void mime_hdr_fields_clear(HdrHeap *heap, MIMEHdrImpl *mh);
 
@@ -712,7 +713,7 @@ int mime_field_print(MIMEField *field, char *buf_start, int buf_length, int *buf
 
 const char *mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str, uint16_t *d_len, bool must_copy);
 
-int mime_field_length_get(MIMEField *field);
+int mime_field_length_get(const MIMEField *field);
 int mime_format_int(char *buf, int32_t val, size_t buf_len);
 int mime_format_uint(char *buf, uint32_t val, size_t buf_len);
 int mime_format_int64(char *buf, int64_t val, size_t buf_len);
