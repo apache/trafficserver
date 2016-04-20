@@ -85,8 +85,9 @@ public:
         vc->set_inactivity_timeout(HRTIME_SECONDS(default_inactivity_timeout));
         NET_INCREMENT_DYN_STAT(default_inactivity_timeout_stat);
       } else {
-        Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc, now,
-              ink_hrtime_to_sec(vc->next_inactivity_timeout_at), ink_hrtime_to_sec(vc->inactivity_timeout_in));
+        Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
+              ink_hrtime_to_sec(now), ink_hrtime_to_sec(vc->next_inactivity_timeout_at),
+              ink_hrtime_to_sec(vc->inactivity_timeout_in));
       }
 
       if (vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now) {
@@ -96,8 +97,8 @@ public:
           NET_SUM_DYN_STAT(keep_alive_queue_timeout_total_stat, diff);
           NET_INCREMENT_DYN_STAT(keep_alive_queue_timeout_count_stat);
         }
-        Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc, now,
-              vc->next_inactivity_timeout_at, vc->inactivity_timeout_in);
+        Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
+              ink_hrtime_to_sec(now), vc->next_inactivity_timeout_at, vc->inactivity_timeout_in);
         vc->handleEvent(EVENT_IMMEDIATE, e);
       }
     }
