@@ -342,6 +342,8 @@ Network
    `proxy.process.net.default_inactivity_timeout_applied` metric
    is incremented.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.net.inactivity_check_frequency INT 1
 
    How frequent (in seconds) to check for inactive connections. If you deal
@@ -1079,6 +1081,8 @@ Parent Proxy Configuration
 
    The timeout value (in seconds) for parent cache connection attempts.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.http.forward.proxy_auth_to_parent INT 0
    :reloadable:
    :overridable:
@@ -1101,6 +1105,8 @@ HTTP Connection Timeouts
    subsequent request after a transaction ends. A value of ``0`` will disable
    the no activity timeout.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
    :reloadable:
    :overridable:
@@ -1109,11 +1115,16 @@ HTTP Connection Timeouts
    for a subsequent transfer of data after a transaction ends. A value of
    ``0`` will disable the no activity timeout.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
    :reloadable:
    :overridable:
 
-   Specifies how long Traffic Server keeps connections to clients open if a transaction stalls.
+   Specifies how long Traffic Server keeps connections to clients open if a
+   transaction stalls.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30
    :reloadable:
@@ -1121,11 +1132,15 @@ HTTP Connection Timeouts
 
    Specifies how long Traffic Server keeps connections to origin servers open if the transaction stalls.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.websocket.no_activity_timeout INT 600
    :reloadable:
    :overridable:
 
    Specifies how long Traffic Server keeps connections open if a websocket stalls.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.websocket.active_timeout INT 3600
    :reloadable:
@@ -1133,13 +1148,17 @@ HTTP Connection Timeouts
 
    The maximum amount of time Traffic Server keeps websocket connections open.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_in INT 900
    :reloadable:
 
    The maximum amount of time Traffic Server can remain connected to a client. If the transfer to the client is not complete before this
    timeout expires, then Traffic Server closes the connection.
 
-The value of ``0`` specifies that there is no timeout.
+   The value of ``0`` specifies that there is no timeout.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_out INT 0
    :reloadable:
@@ -1148,18 +1167,24 @@ The value of ``0`` specifies that there is no timeout.
    The maximum amount of time Traffic Server waits for fulfillment of a connection request to an origin server. If Traffic Server does not
    complete the transfer to the origin server before this timeout expires, then Traffic Server terminates the connection request.
 
-The default value of ``0`` specifies that there is no timeout.
+   The default value of ``0`` specifies that there is no timeout.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.http.accept_no_activity_timeout INT 120
    :reloadable:
 
    The timeout interval in seconds before Traffic Server closes a connection that has no activity.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.http.background_fill_active_timeout INT 0
    :reloadable:
    :overridable:
 
    Specifies how long Traffic Server continues a background fill before giving up and dropping the origin server connection.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.http.background_fill_completed_threshold FLOAT 0.0
    :reloadable:
@@ -1262,7 +1287,10 @@ Origin Server Connect Attempts
    :reloadable:
    :overridable:
 
-   The timeout value (in seconds) for **time to first byte** for an origin server connection.
+   The timeout value (in seconds) for time to first byte for an origin server
+   connection.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
    :reloadable:
@@ -1270,6 +1298,8 @@ Origin Server Connect Attempts
 
    The timeout value (in seconds) for an origin server connection when the client request is a ``POST`` or ``PUT``
    request.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.http.down_server.cache_time INT 60
    :reloadable:
@@ -2106,6 +2136,8 @@ HostDB
 
    Time to wait for a DNS response in seconds.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.hostdb.serve_stale_for INT
    :metric: seconds
    :reloadable:
@@ -2153,6 +2185,8 @@ HostDB
    Internal time to live value for host DB entries, **in minutes**.
 
    See :ts:cv:`proxy.config.hostdb.ttl_mode` for when this value is used.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.strict_round_robin INT 0
    :reloadable:
@@ -2757,6 +2791,8 @@ SSL Termination
   when using the Traffic Server session cache (option ``2`` in
   ``proxy.config.ssl.session_cache``)
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.ssl.session_cache.auto_clear INT 1
 
   This will set the OpenSSL auto clear flag. Auto clear is enabled by
@@ -2815,8 +2851,10 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.handshake_timeout_in INT 0
 
-  When enabled this limits the total duration for the server side SSL
-  handshake.
+   When enabled this limits the total duration for the server side SSL
+   handshake.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.ssl.wire_trace_enabled INT 0
 
@@ -2892,9 +2930,13 @@ OCSP Stapling Configuration
 
    Number of seconds before an OCSP response expires in the stapling cache.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv:: CONFIG proxy.config.ssl.ocsp.request_timeout INT 10
 
    Timeout (in seconds) for queries to OCSP responders.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.ssl.ocsp.update_period INT 60
 
@@ -2947,6 +2989,8 @@ ICP Configuration
    :reloadable:
 
    Specifies the timeout used for ICP queries.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 HTTP/2 Configuration
 ====================
@@ -3069,9 +3113,13 @@ SOCKS Processor
 
    The activity timeout value (in seconds) for SOCKS server connections.
 
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
+
 .. ts:cv::  CONFIG proxy.config.socks.server_connect_timeout INT 10
 
    The timeout value (in seconds) for SOCKS server connection attempts.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv::  CONFIG proxy.config.socks.per_server_connection_attempts INT 1
 
@@ -3086,6 +3134,8 @@ SOCKS Processor
 .. ts:cv::  CONFIG proxy.config.socks.server_retry_timeout INT 300
 
    The timeout value (in seconds) for SOCKS server connection retry attempts.
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv::  CONFIG proxy.config.socks.default_servers STRING
 
@@ -3258,6 +3308,8 @@ Sockets
        CONFIG proxy.config.exec_thread.limit INT 2
        CONFIG proxy.config.accept_threads INT 1
        CONFIG proxy.config.cache.threads_per_disk INT 8
+
+   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
 .. ts:cv:: CONFIG proxy.config.task_threads INT 2
 
