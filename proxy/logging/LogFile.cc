@@ -289,9 +289,12 @@ LogFile::preproc_and_try_delete(LogBuffer *lb)
   // the low_timestamp from the given LogBuffer.  Then, we always set the
   // end time to the high_timestamp, so it's always up to date.
   //
-  if (!m_log->m_start_time)
-    m_log->m_start_time = buffer_header->low_timestamp;
-  m_log->m_end_time = buffer_header->high_timestamp;
+  if (m_log) {
+    if (!m_log->m_start_time) {
+      m_log->m_start_time = buffer_header->low_timestamp;
+    }
+    m_log->m_end_time = buffer_header->high_timestamp;
+  }
 
   if (m_file_format == LOG_FILE_BINARY) {
     //
