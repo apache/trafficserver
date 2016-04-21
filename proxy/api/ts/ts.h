@@ -1231,7 +1231,6 @@ tsapi void TSSslContextDestroy(TSSslContext ctx);
 // Returns 1 if the sslp argument refers to a SSL connection
 tsapi int TSVConnIsSsl(TSVConn sslp);
 
-
 /* --------------------------------------------------------------------------
    HTTP transactions */
 tsapi void TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp);

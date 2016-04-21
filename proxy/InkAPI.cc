@@ -8860,7 +8860,7 @@ TSSslServerContextCreate()
 tsapi void
 TSSslContextDestroy(TSSslContext ctx)
 {
-  SSLReleaseContext(reinterpret_cast<SSL_CTX*>(ctx));
+  SSLReleaseContext(reinterpret_cast<SSL_CTX *>(ctx));
 }
 
 tsapi int

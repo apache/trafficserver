@@ -1281,6 +1281,129 @@ SSLCheckServerCertNow(X509 *cert, const char *certname)
 
 } /* CheckServerCertNow() */
 
+static char *
+asn1_strdup(ASN1_STRING *s)
+{
+  // Make sure we have an 8-bit encoding.
+  ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
+             ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING || ASN1_STRING_type(s) == V_ASN1_T61STRING);
+
+  return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
+}
+
+// Given a certificate and it's corresponding SSL_CTX context, insert hash
+// table aliases for subject CN and subjectAltNames DNS without wildcard,
+// insert trie aliases for those with wildcard.
+static bool
+ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname)
+{
+  X509_NAME *subject = NULL;
+  bool inserted = false;
+
+  if (NULL == cert) {
+    Error("Failed to load certificate %s", certname);
+    lookup->is_valid = false;
+    return false;
+  }
+
+  // Insert a key for the subject CN.
+  subject = X509_get_subject_name(cert);
+  ats_scoped_str subj_name;
+  if (subject) {
+    int pos = -1;
+    for (;;) {
+      pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
+      if (pos == -1) {
+        break;
+      }
+
+      X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
+      ASN1_STRING *cn = X509_NAME_ENTRY_get_data(e);
+      subj_name = asn1_strdup(cn);
+
+      Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
+      if (lookup->insert(subj_name, cc) >= 0)
+        inserted = true;
+    }
+  }
+
+#if HAVE_OPENSSL_TS_H
+  // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
+  GENERAL_NAMES *names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+  if (names) {
+    unsigned count = sk_GENERAL_NAME_num(names);
+    for (unsigned i = 0; i < count; ++i) {
+      GENERAL_NAME *name;
+
+      name = sk_GENERAL_NAME_value(names, i);
+      if (name->type == GEN_DNS) {
+        ats_scoped_str dns(asn1_strdup(name->d.dNSName));
+        // only try to insert if the alternate name is not the main name
+        if (strcmp(dns, subj_name) != 0) {
+          Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
+          if (lookup->insert(dns, cc) >= 0)
+            inserted = true;
+        }
+      }
+    }
+
+    GENERAL_NAMES_free(names);
+  }
+#endif // HAVE_OPENSSL_TS_H
+  return inserted;
+}
+
+// This callback function is executed while OpenSSL processes the SSL
+// handshake and does SSL record layer stuff.  It's used to trap
+// client-initiated renegotiations and update cipher stats
+static void
+ssl_callback_info(const SSL *ssl, int where, int ret)
+{
+  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
+  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+
+  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
+      SSLConfigParams::ssl_allow_client_renegotiation == false) {
+    int state = SSL_get_state(ssl);
+
+// TODO: ifdef can be removed in the future
+// Support for SSL23 only if we have it
+#ifdef SSL23_ST_SR_CLNT_HELLO_A
+    if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
+#else
+    if (state == SSL3_ST_SR_CLNT_HELLO_A) {
+#endif
+      netvc->setSSLClientRenegotiationAbort(true);
+      Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
+    }
+  }
+  if (where & SSL_CB_HANDSHAKE_DONE) {
+    // handshake is complete
+    const SSL_CIPHER *cipher = SSL_get_current_cipher(ssl);
+    if (cipher) {
+      const char *cipherName = SSL_CIPHER_get_name(cipher);
+      // lookup index of stat by name and incr count
+      InkHashTableValue data;
+      if (ink_hash_table_lookup(ssl_cipher_name_table, cipherName, &data)) {
+        SSL_INCREMENT_DYN_STAT((intptr_t)data);
+      }
+    }
+  }
+}
+
+static void
+ssl_set_handshake_callbacks(SSL_CTX *ctx)
+{
+#if TS_USE_TLS_SNI
+// Make sure the callbacks are set
+#if TS_USE_CERT_CB
+  SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, NULL);
+#else
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+#endif
+#endif
+}
+
 SSL_CTX *
 SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings, Vec<X509 *> &certList)
 {
@@ -1550,149 +1673,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
   if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
     goto fail;
   }
-  return ssl_context_enable_ecdh(ctx);
 
-fail:
-  SSL_CLEAR_PW_REFERENCES(ud, ctx)
-  SSLReleaseContext(ctx);
-  for (unsigned int i = 0; i < certList.length(); i++) {
-    X509_free(certList[i]);
-  }
+  ssl_context_enable_ecdh(ctx);
 
-  return NULL;
-}
-
-static char *
-asn1_strdup(ASN1_STRING *s)
-{
-  // Make sure we have an 8-bit encoding.
-  ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
-             ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING || ASN1_STRING_type(s) == V_ASN1_T61STRING);
-
-  return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
-}
-
-// Given a certificate and it's corresponding SSL_CTX context, insert hash
-// table aliases for subject CN and subjectAltNames DNS without wildcard,
-// insert trie aliases for those with wildcard.
-static bool
-ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname)
-{
-  X509_NAME *subject = NULL;
-  bool inserted = false;
-
-  if (NULL == cert) {
-    Error("Failed to load certificate %s", certname);
-    lookup->is_valid = false;
-    return false;
-  }
-
-  // Insert a key for the subject CN.
-  subject = X509_get_subject_name(cert);
-  ats_scoped_str subj_name;
-  if (subject) {
-    int pos = -1;
-    for (;;) {
-      pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
-      if (pos == -1) {
-        break;
-      }
-
-      X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
-      ASN1_STRING *cn = X509_NAME_ENTRY_get_data(e);
-      subj_name = asn1_strdup(cn);
-
-      Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
-      if (lookup->insert(subj_name, cc) >= 0)
-        inserted = true;
-    }
-  }
-
-#if HAVE_OPENSSL_TS_H
-  // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES *names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
-  if (names) {
-    unsigned count = sk_GENERAL_NAME_num(names);
-    for (unsigned i = 0; i < count; ++i) {
-      GENERAL_NAME *name;
-
-      name = sk_GENERAL_NAME_value(names, i);
-      if (name->type == GEN_DNS) {
-        ats_scoped_str dns(asn1_strdup(name->d.dNSName));
-        // only try to insert if the alternate name is not the main name
-        if (strcmp(dns, subj_name) != 0) {
-          Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
-          if (lookup->insert(dns, cc) >= 0)
-            inserted = true;
-        }
-      }
-    }
-
-    GENERAL_NAMES_free(names);
-  }
-#endif // HAVE_OPENSSL_TS_H
-  return inserted;
-}
-
-// This callback function is executed while OpenSSL processes the SSL
-// handshake and does SSL record layer stuff.  It's used to trap
-// client-initiated renegotiations and update cipher stats
-static void
-ssl_callback_info(const SSL *ssl, int where, int ret)
-{
-  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
-  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
-
-  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
-      SSLConfigParams::ssl_allow_client_renegotiation == false) {
-    int state = SSL_get_state(ssl);
-
-// TODO: ifdef can be removed in the future
-// Support for SSL23 only if we have it
-#ifdef SSL23_ST_SR_CLNT_HELLO_A
-    if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
-#else
-    if (state == SSL3_ST_SR_CLNT_HELLO_A) {
-#endif
-      netvc->setSSLClientRenegotiationAbort(true);
-      Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
-    }
-  }
-  if (where & SSL_CB_HANDSHAKE_DONE) {
-    // handshake is complete
-    const SSL_CIPHER *cipher = SSL_get_current_cipher(ssl);
-    if (cipher) {
-      const char *cipherName = SSL_CIPHER_get_name(cipher);
-      // lookup index of stat by name and incr count
-      InkHashTableValue data;
-      if (ink_hash_table_lookup(ssl_cipher_name_table, cipherName, &data)) {
-        SSL_INCREMENT_DYN_STAT((intptr_t)data);
-      }
-    }
-  }
-}
-
-static void
-ssl_set_handshake_callbacks(SSL_CTX *ctx)
-{
-#if TS_USE_TLS_SNI
-// Make sure the callbacks are set
-#if TS_USE_CERT_CB
-  SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, NULL);
-#else
-  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
-#endif
-#endif
-}
-
-SSL_CTX *
-SSLCreateServerContext(const SSLConfigParams *params) {
-  Vec<X509 *> cert_list;
-  const ssl_user_config sslMultCertSettings;
-  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
-
-  // The certificate callbacks are set by the caller only
-  // for the default certificate
   SSL_CTX_set_info_callback(ctx, ssl_callback_info);
 
 #if TS_USE_TLS_NPN
@@ -1702,9 +1685,6 @@ SSLCreateServerContext(const SSLConfigParams *params) {
 #if TS_USE_TLS_ALPN
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
 #endif /* TS_USE_TLS_ALPN */
-
-  // TODO: Allow control over tickets and ticket path when using SSLCreateServerContext
-  ssl_context_enable_tickets(ctx, NULL);
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
   if (SSLConfigParams::ssl_ocsp_enabled) {
@@ -1719,10 +1699,28 @@ SSLCreateServerContext(const SSLConfigParams *params) {
   }
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */
 
-
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(ctx, true);
   }
+  return ctx;
+
+fail:
+  SSL_CLEAR_PW_REFERENCES(ud, ctx)
+  SSLReleaseContext(ctx);
+  for (unsigned int i = 0; i < certList.length(); i++) {
+    X509_free(certList[i]);
+  }
+
+  return NULL;
+}
+
+SSL_CTX *
+SSLCreateServerContext(const SSLConfigParams *params)
+{
+  const ssl_user_config sslMultCertSettings;
+  Vec<X509 *> cert_list;
+  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
+  ink_assert(cert_list.length() == 0);
   return ctx;
 }
 
@@ -1738,19 +1736,6 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     lookup->is_valid = false;
     return ctx;
   }
-
-  // The certificate callbacks are set by the caller only
-  // for the default certificate
-
-  SSL_CTX_set_info_callback(ctx, ssl_callback_info);
-
-#if TS_USE_TLS_NPN
-  SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
-#endif /* TS_USE_TLS_NPN */
-
-#if TS_USE_TLS_ALPN
-  SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
-#endif /* TS_USE_TLS_ALPN */
 
   const char *certname = sslMultCertSettings.cert.get();
   for (unsigned i = 0; i < cert_list.length(); ++i) {
