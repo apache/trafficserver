@@ -28,6 +28,11 @@ using namespace atscppapi;
 
 #define LOG_TAG "remapplugin"
 
+namespace
+{
+RemapPlugin *plugin;
+}
+
 class MyRemapPlugin : public RemapPlugin
 {
 public:
@@ -86,6 +91,6 @@ TSReturnCode
 TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, void **instance_handle, char *errbuf ATSCPPAPI_UNUSED,
                    int errbuf_size ATSCPPAPI_UNUSED)
 {
-  new MyRemapPlugin(instance_handle);
+  plugin = new MyRemapPlugin(instance_handle);
   return TS_SUCCESS;
 }

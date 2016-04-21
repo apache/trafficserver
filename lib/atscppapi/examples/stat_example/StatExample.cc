@@ -38,6 +38,8 @@ const string STAT_NAME = "stat_example";
 // This is the stat we'll be using, you can view it's value
 // using traffic_line -r stat_example
 Stat stat;
+
+GlobalPlugin *plugin;
 }
 
 /*
@@ -73,5 +75,5 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
   stat.init(STAT_NAME, Stat::SYNC_COUNT, true);
   stat.set(0);
 
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

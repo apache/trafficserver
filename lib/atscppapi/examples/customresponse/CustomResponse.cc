@@ -37,6 +37,11 @@ using std::string;
  *
  */
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 class CustomResponseTransactionPlugin : public atscppapi::TransactionPlugin
 {
 public:
@@ -83,5 +88,5 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_CustomResponse", "apache", "dev@trafficserver.apache.org");
-  new ClientRedirectGlobalPlugin();
+  plugin = new ClientRedirectGlobalPlugin();
 }

@@ -84,4 +84,10 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
     new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms, initial_period_in_ms, max_instances, true /* cancel */);
   TS_DEBUG(TAG, "Created canceling timer %p with initial period %d, regular period %d and max instances %d", timer5,
            initial_period_in_ms, period_in_ms, max_instances);
+
+  (void)timer1;
+  (void)timer2;
+  (void)timer3;
+  (void)timer4;
+  (void)timer5;
 }

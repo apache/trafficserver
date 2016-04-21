@@ -93,6 +93,11 @@ const std::string DEFAULT_BOOM_HTTP_STATUS = "OK (BOOM)";
 Stat boom_counter;
 }
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 // Functor that decides whether the HTTP error can be rewritten or not.
 // Rewritable codes are: 2xx, 3xx, 4xx, 5xx and 6xx.
 // 1xx is NOT rewritable!
@@ -434,5 +439,5 @@ TSPluginInit(int argc, const char *argv[])
     TS_ERROR(TAG, "Invalid number of command line arguments, using compile time defaults.");
   }
 
-  new BoomGlobalPlugin(pregistry);
+  plugin = new BoomGlobalPlugin(pregistry);
 }
