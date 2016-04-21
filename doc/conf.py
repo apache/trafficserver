@@ -94,6 +94,15 @@ if os.environ.get('READTHEDOCS') == 'True':
           po = polib.pofile(po_file)
           po.save_as_mofile(fpath=mo_file)
   print "done"
+else:
+  # Backporting theme workaround for non-RTD environments to use the
+  # sphinx_rtd_theme instead of whatever local default theme is set.
+  try:
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+  except:
+    pass
 ## End of HACK
 
 # There are two options for replacing |today|: either, you set today to some
