@@ -30,7 +30,7 @@ plugins to build large scale web applications.
       |-- hostdb/ ........ Internal DNS cache
       |-- net/ ........... Network
   |-- lib/ ...............
-      |-- cpp11api ....... C++ '11 wrapper for plugin developers
+      |-- atscppapi/ ....... C++ api wrapper for plugin developers
       |-- records/ ....... library for config files
       |-- perl/ .......... Perl libraries for e.g. mgmt access and configurations
       |-- ts/ ............ Base / core library
