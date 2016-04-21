@@ -159,7 +159,7 @@ LogFile::open_file()
 
   if (m_file_format == LOG_FILE_PIPE) {
     // setup pipe
-    if (mkfifo(m_name, S_IRUSR | S_IWUSR) < 0) {
+    if (mkfifo(m_name, S_IRUSR | S_IWUSR | S_IRGRP) < 0) {
       if (errno != EEXIST) {
         Error("Could not create named pipe %s for logging: %s", m_name, strerror(errno));
         return LOG_FILE_COULD_NOT_CREATE_PIPE;
