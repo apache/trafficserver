@@ -26,6 +26,7 @@
 
 #include "ts/ink_platform.h"
 #include "ts/Regex.h"
+#include "ts/Diags.h"
 
 //   Each module should provide one or more regression tests
 //
@@ -60,37 +61,41 @@
 // regression options
 #define REGRESSION_OPT_EXCLUSIVE (1 << 0)
 
+#define RegressionMakeLocation(f) SourceLocation(__FILE__, f, __LINE__)
+
 struct RegressionTest;
 
 typedef void TestFunction(RegressionTest *t, int type, int *status);
 
 struct RegressionTest {
   const char *name;
+  const SourceLocation location;
   TestFunction *function;
   RegressionTest *next;
   int status;
-  int printed;
+  bool printed;
   int opt;
 
-  RegressionTest(const char *name_arg, TestFunction *function_arg, int aopt);
+  RegressionTest(const char *name_arg, const SourceLocation &loc, TestFunction *function_arg, int aopt);
 
   static int final_status;
   static int ran_tests;
   static DFA dfa;
   static RegressionTest *current;
   static int run(const char *name = NULL);
+  static void list();
   static int run_some();
   static int check_status();
 };
 
 #define REGRESSION_TEST(_f)                                             \
   void RegressionTest_##_f(RegressionTest *t, int atype, int *pstatus); \
-  RegressionTest regressionTest_##_f(#_f, &RegressionTest_##_f, 0);     \
+  RegressionTest regressionTest_##_f(#_f, RegressionMakeLocation("RegressionTest_" #_f), &RegressionTest_##_f, 0);     \
   void RegressionTest_##_f
 
 #define EXCLUSIVE_REGRESSION_TEST(_f)                                                      \
   void RegressionTest_##_f(RegressionTest *t, int atype, int *pstatus);                    \
-  RegressionTest regressionTest_##_f(#_f, &RegressionTest_##_f, REGRESSION_OPT_EXCLUSIVE); \
+  RegressionTest regressionTest_##_f(#_f, RegressionMakeLocation("RegressionTest_" #_f), &RegressionTest_##_f, REGRESSION_OPT_EXCLUSIVE); \
   void RegressionTest_##_f
 
 int rprintf(RegressionTest *t, const char *format, ...);

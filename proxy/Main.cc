@@ -143,6 +143,7 @@ bool command_valid = false;
 static char const *CMD_VERIFY_CONFIG = "verify_config";
 #if TS_HAS_TESTS
 static char regression_test[1024] = "";
+static int regression_list = 0;
 #endif
 int auto_clear_hostdb_flag = 0;
 extern int fds_limit;
@@ -192,6 +193,7 @@ static const ArgumentDescription argument_descriptions[] = {
 #if TS_HAS_TESTS
   {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
   {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
+  {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", NULL},
 #endif // TS_HAS_TESTS
 
 #if TS_USE_DIAGS
@@ -211,7 +213,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"read_core", 'c', "Read Core file", "S255", &core_file, NULL, NULL},
 #endif
 
-  {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss, NULL, NULL},
+  {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, NULL, NULL},
   {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, NULL, NULL},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
@@ -1495,6 +1497,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (cmd_disable_freelist) {
     ink_freelist_init_ops(ink_freelist_malloc_ops());
   }
+
+#if TS_HAS_TESTS
+  if (regression_list) {
+    RegressionTest::list();
+    ::exit(0);
+  }
+#endif
+
   // Specific validity checks.
   if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {
     fprintf(stderr, "-D option can only be used with the %s command\n", CMD_VERIFY_CONFIG);
