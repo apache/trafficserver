@@ -377,13 +377,13 @@ struct OverridableHttpConfigParams {
       cache_heuristic_min_lifetime(3600), cache_heuristic_max_lifetime(86400), cache_guaranteed_min_lifetime(0),
       cache_guaranteed_max_lifetime(31536000), cache_max_stale_age(604800), keep_alive_no_activity_timeout_in(115),
       keep_alive_no_activity_timeout_out(120), transaction_no_activity_timeout_in(30), transaction_no_activity_timeout_out(30),
-      transaction_active_timeout_out(0), origin_max_connections(0), origin_max_connections_queue(0),
-      attach_server_session_to_client(0), connect_attempts_max_retries(0), connect_attempts_max_retries_dead_server(3),
-      connect_attempts_rr_retries(3), connect_attempts_timeout(30), post_connect_attempts_timeout(1800), down_server_timeout(300),
-      client_abort_threshold(10), freshness_fuzz_time(240), freshness_fuzz_min_time(0), max_cache_open_read_retries(-1),
-      cache_open_read_retry_time(10), cache_generation_number(-1), max_cache_open_write_retries(1),
-      background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0), flow_low_water_mark(0),
-      default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
+      transaction_active_timeout_out(0), websocket_active_timeout(3600), websocket_inactive_timeout(600), origin_max_connections(0),
+      origin_max_connections_queue(0), attach_server_session_to_client(0), connect_attempts_max_retries(0),
+      connect_attempts_max_retries_dead_server(3), connect_attempts_rr_retries(3), connect_attempts_timeout(30),
+      post_connect_attempts_timeout(1800), down_server_timeout(300), client_abort_threshold(10), freshness_fuzz_time(240),
+      freshness_fuzz_min_time(0), max_cache_open_read_retries(-1), cache_open_read_retry_time(10), cache_generation_number(-1),
+      max_cache_open_write_retries(1), background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0),
+      flow_low_water_mark(0), default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
 
       // Strings / floats must come last
       body_factory_template_base(NULL), body_factory_template_base_len(0), proxy_response_server_string(NULL),
@@ -527,6 +527,8 @@ struct OverridableHttpConfigParams {
   MgmtInt transaction_no_activity_timeout_in;
   MgmtInt transaction_no_activity_timeout_out;
   MgmtInt transaction_active_timeout_out;
+  MgmtInt websocket_active_timeout;
+  MgmtInt websocket_inactive_timeout;
   MgmtInt origin_max_connections;
   MgmtInt origin_max_connections_queue;
 
