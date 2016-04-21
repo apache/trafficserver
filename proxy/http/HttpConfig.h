@@ -422,6 +422,8 @@ struct OverridableHttpConfigParams {
       transaction_no_activity_timeout_in(30),
       transaction_no_activity_timeout_out(30),
       transaction_active_timeout_out(0),
+      websocket_active_timeout(3600),
+      websocket_inactive_timeout(600),
       origin_max_connections(0),
       origin_max_connections_queue(0),
       attach_server_session_to_client(0),
@@ -597,6 +599,8 @@ struct OverridableHttpConfigParams {
   MgmtInt transaction_no_activity_timeout_in;
   MgmtInt transaction_no_activity_timeout_out;
   MgmtInt transaction_active_timeout_out;
+  MgmtInt websocket_active_timeout;
+  MgmtInt websocket_inactive_timeout;
   MgmtInt origin_max_connections;
   MgmtInt origin_max_connections_queue;
 

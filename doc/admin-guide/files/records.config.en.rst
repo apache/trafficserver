@@ -1116,6 +1116,18 @@ HTTP Connection Timeouts
 
    Specifies how long Traffic Server keeps connections to origin servers open if the transaction stalls.
 
+.. ts:cv:: CONFIG proxy.config.websocket.no_activity_timeout INT 600
+   :reloadable:
+   :overridable:
+
+   Specifies how long Traffic Server keeps connections open if a websocket stalls.
+
+.. ts:cv:: CONFIG proxy.config.websocket.active_timeout INT 3600
+   :reloadable:
+   :overridable:
+
+   The maximum amount of time Traffic Server keeps websocket connections open.
+
 .. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_in INT 900
    :reloadable:
 
