@@ -98,9 +98,7 @@ public:
   {
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/"), getMutex());
     ++num_fetches_pending_;
-    AsyncHttpFetch *post_request = new AsyncHttpFetch("http://127.0.0.1/post", "data");
-
-    (void)post_request;
+    post_request_ = new AsyncHttpFetch("http://127.0.0.1/post", "data");
 
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/post", "data"), getMutex());
     ++num_fetches_pending_;
@@ -161,6 +159,7 @@ public:
 private:
   Transaction &transaction_;
   int num_fetches_pending_;
+  AsyncHttpFetch *post_request_;
 
   void
   handleAnyAsyncComplete(AsyncHttpFetch &async_http_fetch)
