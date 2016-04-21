@@ -50,14 +50,9 @@ regression_status_string(int status)
               (status == REGRESSION_TEST_PASSED ? "PASSED" : (status == REGRESSION_TEST_INPROGRESS ? "INPROGRESS" : "FAILED")));
 }
 
-RegressionTest::RegressionTest(const char *name_arg, TestFunction *function_arg, int aopt)
+RegressionTest::RegressionTest(const char *_n, const SourceLocation &_l, TestFunction *_f, int _o)
+  : name(_n), location(_l), function(_f), next(0), status(REGRESSION_TEST_NOT_RUN), printed(false), opt(_o)
 {
-  name = name_arg;
-  function = function_arg;
-  status = REGRESSION_TEST_NOT_RUN;
-  printed = 0;
-  opt = aopt;
-
   if (opt == REGRESSION_OPT_EXCLUSIVE) {
     if (exclusive_test)
       this->next = exclusive_test;
@@ -80,7 +75,7 @@ start_test(RegressionTest *t)
   if (tresult != REGRESSION_TEST_INPROGRESS) {
     fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", t->name, 40 - (int)strlen(t->name), " ",
             regression_status_string(tresult));
-    t->printed = 1;
+    t->printed = true;
   }
   return tresult;
 }
@@ -103,6 +98,26 @@ RegressionTest::run(const char *atest)
   }
   current = exclusive_test;
   return run_some();
+}
+
+void
+RegressionTest::list()
+{
+  char buf[128];
+  const char *bold = "\x1b[1m";
+  const char *unbold = "\x1b[0m";
+
+  if (!isatty(fileno(stdout))) {
+    bold = unbold = "";
+  }
+
+  for (RegressionTest *t = test; t; t = t->next) {
+    fprintf(stdout, "%s%s%s %s\n", bold, t->name, unbold, t->location.str(buf, sizeof(buf)));
+  }
+
+  for (RegressionTest *t = exclusive_test; t; t = t->next) {
+    fprintf(stdout, "%s%s%s %s\n", bold, t->name, unbold, t->location.str(buf, sizeof(buf)));
+  }
 }
 
 int
