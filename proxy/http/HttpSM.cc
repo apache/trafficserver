@@ -1586,14 +1586,14 @@ HttpSM::handle_api_return()
         HTTP_INCREMENT_DYN_STAT(http_websocket_current_active_client_connections_stat);
 
         if (ua_session) {
-          DebugSM("http_websocket", "(client session) Setting websocket active timeout=%ld s and inactive timeout=%ld s",
+          DebugSM("http_websocket", "(client session) Setting websocket active timeout=%" PRId64 "s and inactive timeout=%" PRId64 "s",
                   t_state.txn_conf->websocket_active_timeout, t_state.txn_conf->websocket_inactive_timeout);
           ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->websocket_active_timeout));
           ua_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->websocket_inactive_timeout));
         }
 
         if (server_session) {
-          DebugSM("http_websocket", "(server session) Setting websocket active timeout=%ld s and inactive timeout=%ld s",
+          DebugSM("http_websocket", "(server session) Setting websocket active timeout=%" PRId64 "s and inactive timeout=%" PRId64 "s",
                   t_state.txn_conf->websocket_active_timeout, t_state.txn_conf->websocket_inactive_timeout);
           server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->websocket_active_timeout));
           server_session->get_netvc()->set_inactivity_timeout(HRTIME_SECONDS(t_state.txn_conf->websocket_inactive_timeout));
