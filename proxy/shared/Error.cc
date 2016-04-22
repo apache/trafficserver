@@ -54,7 +54,7 @@ ErrorClass::operator()(const char *aformat_string, ...)
 void
 ErrorClass::raise(va_list ap, const char * /* prefix ATS_UNUSED */)
 {
-  SrcLoc loc(filename, function_name, line_number);
+  SourceLocation loc(filename, function_name, line_number);
   diags->print_va(NULL, DL_Fatal, &loc, format_string, ap);
 }
 
