@@ -34,7 +34,7 @@
 ClassAllocator<ProxyMutex> mutexAllocator("mutexAllocator");
 
 void
-lock_waiting(const SrcLoc &srcloc, const char *handler)
+lock_waiting(const SourceLocation &srcloc, const char *handler)
 {
   if (is_diags_on("locks")) {
     char buf[128];
@@ -43,7 +43,7 @@ lock_waiting(const SrcLoc &srcloc, const char *handler)
 }
 
 void
-lock_holding(const SrcLoc &srcloc, const char *handler)
+lock_holding(const SourceLocation &srcloc, const char *handler)
 {
   if (is_diags_on("locks")) {
     char buf[128];
@@ -52,7 +52,7 @@ lock_holding(const SrcLoc &srcloc, const char *handler)
 }
 
 void
-lock_taken(const SrcLoc &srcloc, const char *handler)
+lock_taken(const SourceLocation &srcloc, const char *handler)
 {
   if (is_diags_on("locks")) {
     char buf[128];

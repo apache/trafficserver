@@ -42,6 +42,7 @@
 #include "ContFlags.h"
 #include "ink_inet.h"
 #include "BaseLogFile.h"
+#include "SourceLocation.h"
 
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000
@@ -88,45 +89,6 @@ struct DiagsConfigState {
   // this is static to eliminate many loads from the critical path
   static bool enabled[2];                    // one debug, one action
   DiagsModeOutput outputs[DiagsLevel_Count]; // where each level prints
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      class SrcLoc
-//
-//      The SrcLoc class wraps up a source code location, including file
-//      name, function name, and line number, and contains a method to
-//      format the result into a string buffer.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-#define DiagsMakeLocation() SrcLoc(__FILE__, __FUNCTION__, __LINE__)
-
-class SrcLoc
-{
-public:
-  const char *file;
-  const char *func;
-  int line;
-
-  bool
-  valid() const
-  {
-    return file && line;
-  }
-
-  SrcLoc(const SrcLoc &rhs) : file(rhs.file), func(rhs.func), line(rhs.line) {}
-  SrcLoc(const char *_file, const char *_func, int _line) : file(_file), func(_func), line(_line) {}
-  SrcLoc &
-  operator=(const SrcLoc &rhs)
-  {
-    this->file = rhs.file;
-    this->func = rhs.func;
-    this->line = rhs.line;
-    return *this;
-  }
-
-  char *str(char *buf, int buflen) const;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -194,7 +156,7 @@ public:
 
   const char *level_name(DiagsLevel dl) const;
 
-  inkcoreapi void print_va(const char *tag, DiagsLevel dl, const SrcLoc *loc, const char *format_string, va_list ap) const;
+  inkcoreapi void print_va(const char *tag, DiagsLevel dl, const SourceLocation *loc, const char *format_string, va_list ap) const;
 
   //////////////////////////////
   // user printing interfaces //
@@ -207,7 +169,7 @@ public:
     va_list ap;
     va_start(ap, format_string);
     if (show_location) {
-      SrcLoc lp(file, func, line);
+      SourceLocation lp(file, func, line);
       print_va(tag, dl, &lp, format_string, ap);
     } else {
       print_va(tag, dl, NULL, format_string, ap);
@@ -221,7 +183,7 @@ public:
   ///////////////////////////////////////////////////////////////////////
 
   void
-  log_va(const char *tag, DiagsLevel dl, const SrcLoc *loc, const char *format_string, va_list ap)
+  log_va(const char *tag, DiagsLevel dl, const SourceLocation *loc, const char *format_string, va_list ap)
   {
     if (!on(tag))
       return;
