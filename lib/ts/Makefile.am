@@ -53,6 +53,8 @@ libtsutil_la_SOURCES = \
   ContFlags.h \
   Diags.cc \
   Diags.h \
+  SourceLocation.h \
+  SourceLocation.cc \
   DynArray.h \
   EventNotify.cc \
   EventNotify.h \

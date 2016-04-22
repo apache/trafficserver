@@ -67,39 +67,6 @@ vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//      char *SrcLoc::str(char *buf, int buflen)
-//
-//      This method takes a SrcLoc source location data structure and
-//      converts it to a human-readable representation, in the buffer <buf>
-//      with length <buflen>.  The buffer will always be NUL-terminated, and
-//      must always have a length of at least 1.  The buffer address is
-//      returned on success.  The routine will only fail if the SrcLoc is
-//      not valid, or the buflen is less than 1.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-char *
-SrcLoc::str(char *buf, int buflen) const
-{
-  const char *shortname;
-
-  if (!this->valid() || buflen < 1)
-    return (NULL);
-
-  shortname = strrchr(file, '/');
-  shortname = shortname ? (shortname + 1) : file;
-
-  if (func != NULL) {
-    snprintf(buf, buflen, "%s:%d (%s)", shortname, line, func);
-  } else {
-    snprintf(buf, buflen, "%s:%d", shortname, line);
-  }
-  buf[buflen - 1] = NUL;
-  return (buf);
-}
-
-//////////////////////////////////////////////////////////////////////////////
-//
 //      Diags::Diags(char *bdt, char *bat)
 //
 //      This is the constructor for the Diags class.  The constructor takes
@@ -229,7 +196,8 @@ Diags::~Diags()
 //////////////////////////////////////////////////////////////////////////////
 
 void
-Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc, const char *format_string, va_list ap) const
+Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocation *loc, const char *format_string,
+                va_list ap) const
 {
   struct timeval tp;
   const char *s;
@@ -545,7 +513,7 @@ Diags::log(const char *tag, DiagsLevel level, const char *file, const char *func
   va_list ap;
   va_start(ap, format_string);
   if (show_location) {
-    SrcLoc lp(file, func, line);
+    SourceLocation lp(file, func, line);
     print_va(tag, level, &lp, format_string, ap);
   } else {
     print_va(tag, level, NULL, format_string, ap);
@@ -563,7 +531,7 @@ Diags::error_va(DiagsLevel level, const char *file, const char *func, const int 
   }
 
   if (show_location) {
-    SrcLoc lp(file, func, line);
+    SourceLocation lp(file, func, line);
     print_va(NULL, level, &lp, format_string, ap);
   } else {
     print_va(NULL, level, NULL, format_string, ap);

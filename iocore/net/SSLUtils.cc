@@ -1116,7 +1116,7 @@ increment_ssl_server_error(unsigned long err)
 }
 
 void
-SSLDiagnostic(const SrcLoc &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...)
+SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...)
 {
   unsigned long l;
   char buf[256];
