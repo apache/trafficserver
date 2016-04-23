@@ -1701,10 +1701,13 @@ HttpTransact::OSDNSLookup(State *s)
     case EXPANSION_FAILED:
     case DNS_ATTEMPTS_EXHAUSTED:
       if (DNSLookupInfo::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
-        // No HostDB data, just keep on with the CTA.
+        /*
+         *  We tried to connect to client target address, failed and tried to use a different addr
+         *  No HostDB data, just keep on with the CTA.
+         */
         s->dns_info.lookup_success = true;
         s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
-        DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful reverting to force client target address use");
+        DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful, using client target address");
       } else {
         if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
           // config file doesn't allow automatic expansion of host names
