@@ -144,9 +144,9 @@ typedef enum {
 
 /* used when starting Traffic Server process */
 typedef enum {
-  TS_CACHE_CLEAR_ON,     /* run TS in  "clear entire cache" mode */
-  TS_CACHE_CLEAR_HOSTDB, /* run TS in "only clear the host db cache" mode */
-  TS_CACHE_CLEAR_OFF     /* starts TS in regualr mode w/o any options */
+  TS_CACHE_CLEAR_NONE = 0,          /* starts TS in regular mode w/o any options */
+  TS_CACHE_CLEAR_CACHE = (1 << 0),  /* run TS in  "clear cache" mode */
+  TS_CACHE_CLEAR_HOSTDB = (1 << 1), /* run TS in "clear the host db cache" mode */
 } TSCacheClearT;
 
 /*--- diagnostic output operations ----------------------------------------*/
@@ -900,12 +900,13 @@ tsapi TSProxyStateT TSProxyStateGet();
 
 /* TSProxyStateSet: set the proxy state (on/off)
  * Input:  proxy_state - set to on/off
- *         clear - specifies if want to start TS with clear_cache or
- *                 clear_cache_hostdb option, or just run TS with no options;
- *                  only applies when turning proxy on
+ *         clear - a TSCacheClearT bitmask,
+ *            specifies if want to start TS with clear_cache or
+ *            clear_cache_hostdb option, or just run TS with no options;
+ *            only applies when turning proxy on
  * Output: TSMgmtError
  */
-tsapi TSMgmtError TSProxyStateSet(TSProxyStateT proxy_state, TSCacheClearT clear);
+tsapi TSMgmtError TSProxyStateSet(TSProxyStateT proxy_state, unsigned clear);
 
 /* TSProxyBacktraceGet: get a backtrace of the proxy
  * Input:  unsigned options - stack trace options

@@ -66,13 +66,13 @@ handleArgInvocation()
   } else if (ShutdownMgmtLocal == 1) {
     return TSRestart(restart);
   } else if (Shutdown == 1) {
-    return TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF);
+    return TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE);
   } else if (BounceCluster == 1) {
     return TSBounce(restart | TS_RESTART_OPT_CLUSTER);
   } else if (BounceLocal == 1) {
     return TSBounce(restart);
   } else if (Startup == 1) {
-    return TSProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_OFF);
+    return TSProxyStateSet(TS_PROXY_ON, TS_CACHE_CLEAR_NONE);
   } else if (ClearCluster == 1) {
     return TSStatsReset(true, NULL);
   } else if (ClearNode == 1) {

@@ -859,18 +859,18 @@ void
 start_TS(char *tsArgs)
 {
   TSMgmtError ret;
-  TSCacheClearT clear = TS_CACHE_CLEAR_OFF;
+  TSCacheClearT clear = TS_CACHE_CLEAR_NONE;
   char *args;
 
   strtok(tsArgs, ":");
   args = strtok(NULL, ":");
   if (args) {
     if (strcmp(args, "all\n") == 0)
-      clear = TS_CACHE_CLEAR_ON;
+      clear = TS_CACHE_CLEAR_CACHE;
     else if (strcmp(args, "hostdb\n") == 0)
       clear = TS_CACHE_CLEAR_HOSTDB;
   } else {
-    clear = TS_CACHE_CLEAR_OFF;
+    clear = TS_CACHE_CLEAR_NONE;
   }
 
   printf("STARTING PROXY with cache: %d\n", clear);
@@ -886,7 +886,7 @@ stop_TS()
   TSMgmtError ret;
 
   printf("STOPPING PROXY\n");
-  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF)) != TS_ERR_OKAY)
+  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE)) != TS_ERR_OKAY)
     printf("[TSProxyStateSet] turn off FAILED\n");
   print_err("stop_TS", ret);
 }
@@ -2267,7 +2267,7 @@ sync_test()
     printf("[TSRecordSet] proxy.config.http.cache.fuzz.probability=-0.3333\n");
 
   TSMgmtError ret;
-  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_OFF)) != TS_ERR_OKAY)
+  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE)) != TS_ERR_OKAY)
     printf("[TSProxyStateSet] turn off FAILED\n");
   print_err("stop_TS", ret);
 }
