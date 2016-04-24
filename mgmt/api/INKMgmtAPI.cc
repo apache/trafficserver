@@ -1686,13 +1686,19 @@ TSProxyStateGet()
 /* TSProxyStateSet: set the proxy state (on/off)
  * Input:  proxy_state - set to on/off
  *         clear - start TS with cache clearing option,
- *                 when stopping TS should always be TS_CACHE_CLEAR_OFF
+ *                 when stopping TS should always be TS_CACHE_CLEAR_NONE
  * Output: TSMgmtError
  */
 tsapi TSMgmtError
-TSProxyStateSet(TSProxyStateT proxy_state, TSCacheClearT clear)
+TSProxyStateSet(TSProxyStateT proxy_state, unsigned clear)
 {
-  return ProxyStateSet(proxy_state, clear);
+  unsigned mask = TS_CACHE_CLEAR_NONE | TS_CACHE_CLEAR_CACHE | TS_CACHE_CLEAR_HOSTDB;
+
+  if (clear & ~mask) {
+    return TS_ERR_PARAMS;
+  }
+
+  return ProxyStateSet(proxy_state, static_cast<TSCacheClearT>(clear));
 }
 
 tsapi TSMgmtError

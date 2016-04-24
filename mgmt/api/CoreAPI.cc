@@ -203,9 +203,8 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
   int i = 0;
   char tsArgs[MAX_BUF_SIZE];
   char *proxy_options;
-  bool found;
 
-  memset(tsArgs, 0, MAX_BUF_SIZE);
+  ink_zero(tsArgs);
 
   switch (state) {
   case TS_PROXY_OFF:
@@ -213,28 +212,22 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
       goto Lerror;        // unsuccessful shutdown
     break;
   case TS_PROXY_ON:
-    if (lmgmt->processRunning()) // already on
+    if (lmgmt->processRunning()) { // already on
       break;
+    }
 
-    // taken from mgmt/Main.cc when check the -tsArgs option
-    // Update cmd line overrides/environmental overrides/etc
-    switch (clear) {
-    case TS_CACHE_CLEAR_ON: // traffic_server -K
-      snprintf(tsArgs, sizeof(tsArgs), "-K -M");
-      break;
-    case TS_CACHE_CLEAR_HOSTDB: // traffic_server -k
-      snprintf(tsArgs, sizeof(tsArgs), "-k -M");
-      break;
-    case TS_CACHE_CLEAR_OFF:
-      // use default tsargs in records.config
-      int rec_err = RecGetRecordString_Xmalloc("proxy.config.proxy_binary_opts", &proxy_options);
-      found = (rec_err == REC_ERR_OKAY);
-      if (!found)
-        goto Lerror;
-
-      snprintf(tsArgs, MAX_BUF_SIZE, "%s", proxy_options);
+    // Start with the default options from records.config.
+    if (RecGetRecordString_Xmalloc("proxy.config.proxy_binary_opts", &proxy_options) == REC_ERR_OKAY) {
+      snprintf(tsArgs, sizeof(tsArgs), "%s", proxy_options);
       ats_free(proxy_options);
-      break;
+    }
+
+    if (clear & TS_CACHE_CLEAR_CACHE) {
+      ink_strlcat(tsArgs, " -K", sizeof(tsArgs));
+    }
+
+    if (clear & TS_CACHE_CLEAR_HOSTDB) {
+      ink_strlcat(tsArgs, " -k", sizeof(tsArgs));
     }
 
     if (strlen(tsArgs) > 0) { /* Passed command line args for proxy */
@@ -245,11 +238,15 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 
     lmgmt->run_proxy = true;
     lmgmt->listenForProxy();
+
     do {
       mgmt_sleep_sec(1);
     } while (i++ < 20 && (lmgmt->proxy_running == 0));
-    if (!lmgmt->processRunning())
+
+    if (!lmgmt->processRunning()) {
       goto Lerror;
+    }
+
     break;
   default:
     goto Lerror;
@@ -258,7 +255,7 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
   return TS_ERR_OKAY;
 
 Lerror:
-  return TS_ERR_FAIL; /* failed to set proxy  state */
+  return TS_ERR_FAIL; /* failed to set proxy state */
 }
 
 #if TS_USE_REMOTE_UNWINDING
