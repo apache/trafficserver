@@ -123,7 +123,8 @@ void SSLInitializeLibrary();
 // Initialize SSL statistics.
 void SSLInitializeStatistics();
 
-// Release SSL_CTX and the associated data
+// Release SSL_CTX and the associated data. This works for both
+// client and server contexts and gracefully accepts NULL.
 void SSLReleaseContext(SSL_CTX *ctx);
 
 // Wrapper functions to SSL I/O routines

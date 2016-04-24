@@ -52,10 +52,8 @@ struct OCSPContinuation : public Continuation {
 void
 SSLNetProcessor::cleanup(void)
 {
-  if (client_ctx) {
-    SSL_CTX_free(client_ctx);
-    client_ctx = NULL;
-  }
+  SSLReleaseContext(client_ctx);
+  client_ctx = NULL;
 }
 
 int

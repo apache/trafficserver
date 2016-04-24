@@ -166,10 +166,9 @@ SSLCertContext::release()
     ticket_block_free(keyblock);
     keyblock = NULL;
   }
-  if (ctx) {
-    SSL_CTX_free(ctx);
-    ctx = NULL;
-  }
+
+  SSLReleaseContext(ctx);
+  ctx = NULL;
 }
 
 SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(NULL), is_valid(true)

@@ -1019,7 +1019,7 @@ SSLInitializeStatistics()
   }
 
   SSL_free(ssl);
-  SSL_CTX_free(ctx);
+  SSLReleaseContext(ctx);
 }
 
 // return true if we have a stat for the error
@@ -1554,7 +1554,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
 
 fail:
   SSL_CLEAR_PW_REFERENCES(ud, ctx)
-  SSL_CTX_free(ctx);
+  SSLReleaseContext(ctx);
   for (unsigned int i = 0; i < certList.length(); i++) {
     X509_free(certList[i]);
   }
@@ -1800,15 +1800,16 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       SSLConfigParams::init_ssl_ctx_cb(ctx, true);
     }
   }
+
   if (!inserted) {
-    if (ctx != NULL) {
-      SSL_CTX_free(ctx);
-      ctx = NULL;
-    }
+    SSLReleaseContext(ctx);
+    ctx = NULL;
   }
+
   for (unsigned int i = 0; i < cert_list.length(); i++) {
     X509_free(cert_list[i]);
   }
+
   return ctx;
 }
 
@@ -2026,6 +2027,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 void
 SSLReleaseContext(SSL_CTX *ctx)
 {
+  // SSL_CTX_free() does nothing if ctx in NULL, so there's no need to check.
   SSL_CTX_free(ctx);
 }
 
