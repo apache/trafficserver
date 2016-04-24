@@ -2055,39 +2055,37 @@ HttpSM::process_srv_info(HostDBInfo *r)
 void
 HttpSM::process_hostdb_info(HostDBInfo *r)
 {
+  sockaddr const *client_addr = NULL;
+  bool use_client_addr = t_state.http_config_param->use_client_target_addr == 1 && t_state.client_info.is_transparent &&
+                         t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT;
+  if (use_client_addr) {
+    client_addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr();
+    // Regardless of whether the client address matches the DNS record or not,
+    // we want to use that address.  Therefore, we copy over the client address
+    // info and skip the assignment from the DNS cache
+    ats_ip_copy(t_state.host_db_info.ip(), client_addr);
+    t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
+    t_state.dns_info.lookup_success = true;
+    // Leave ret unassigned, so we don't overwrite the host_db_info
+  }
+
   if (r && !r->failed()) {
     ink_time_t now = ink_cluster_time();
     HostDBInfo *ret = NULL;
     t_state.dns_info.lookup_success = true;
     t_state.dns_info.lookup_validated = true;
-    if (r->round_robin) {
-      // if use_client_target_addr is set, make sure the client
-      // addr sits in the pool
-      if (t_state.http_config_param->use_client_target_addr == 1 && t_state.client_info.is_transparent &&
-          t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT) {
-        HostDBRoundRobin *rr = r->rr();
-        sockaddr const *addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr();
 
-        if (rr && rr->find_ip(addr) == NULL) {
-          // The client specified server address does not appear
-          // in the DNS pool
-          DebugSM("http",
-                  "use_client_target_addr == 1. Client specified address is not in the pool. Client address is not validated.");
-          t_state.dns_info.lookup_validated = false;
-        }
-        // Even if we did find the client specified address in the pool,
-        // We want to make sure that that address is used and not some
-        // other address in the DNS set.
-        // Copy over the client information and give up on the lookup
-        ats_ip_copy(t_state.host_db_info.ip(), addr);
-        t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
+    HostDBRoundRobin *rr = r->round_robin ? r->rr() : NULL;
+    if (rr) {
+      // if use_client_target_addr is set, make sure the client addr is in the results pool
+      if (use_client_addr && rr->find_ip(client_addr) == NULL) {
+        DebugSM("http", "use_client_target_addr == 1. Client specified address is not in the pool, not validated.");
+        t_state.dns_info.lookup_validated = false;
       } else {
         // Since the time elapsed between current time and client_request_time
         // may be very large, we cannot use client_request_time to approximate
         // current time when calling select_best_http().
-        HostDBRoundRobin *rr = r->rr();
         ret = rr->select_best_http(&t_state.client_info.src_addr.sa, now, static_cast<int>(t_state.txn_conf->down_server_timeout));
-
         // set the srv target`s last_failure
         if (t_state.dns_info.srv_lookup_success) {
           uint32_t last_failure = 0xFFFFFFFF;
@@ -2106,22 +2104,9 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
         }
       }
     } else {
-      if (t_state.http_config_param->use_client_target_addr == 1 && t_state.client_info.is_transparent &&
-          t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT) {
-        // Compare the client specified address against the looked up address
-        sockaddr const *addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr();
-        if (!ats_ip_addr_eq(addr, &r->data.ip.sa)) {
-          DebugSM("http", "use_client_target_addr == 1.  Comparing single addresses failed. Client address is not validated.");
-          t_state.dns_info.lookup_validated = false;
-        }
-        // Regardless of whether the client address matches the DNS
-        // record or not, we want to use that address.  Therefore,
-        // we copy over the client address info and skip the assignment
-        // from the DNS cache
-        ats_ip_copy(t_state.host_db_info.ip(), addr);
-        t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
-
-        // Leave ret unassigned, so we don't overwrite the host_db_info
+      if (use_client_addr && !ats_ip_addr_eq(client_addr, &r->data.ip.sa)) {
+        DebugSM("http", "use_client_target_addr == 1. Comparing single addresses failed, not validated.");
+        t_state.dns_info.lookup_validated = false;
       } else {
         ret = r;
       }
@@ -2134,7 +2119,8 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
   } else {
     DebugSM("http", "[%" PRId64 "] DNS lookup failed for '%s'", sm_id, t_state.dns_info.lookup_name);
 
-    t_state.dns_info.lookup_success = false;
+    if (!use_client_addr)
+      t_state.dns_info.lookup_success = false;
     t_state.host_db_info.app.allotment.application1 = 0;
     t_state.host_db_info.app.allotment.application2 = 0;
     ink_assert(!t_state.host_db_info.round_robin);
