@@ -287,8 +287,8 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
 
   static const char usage[] = PLUGIN_NAME ".so [--integer-counters] [PATH]";
-  static const struct option longopts[] = {{(char *)("integer-counters"), required_argument, NULL, 'i'},
-                                           {(char *)("wrap-counters"), required_argument, NULL, 'w'},
+  static const struct option longopts[] = {{(char *)("integer-counters"), no_argument, NULL, 'i'},
+                                           {(char *)("wrap-counters"), no_argument, NULL, 'w'},
                                            {NULL, 0, NULL, 0}};
 
   info.plugin_name = PLUGIN_NAME;
