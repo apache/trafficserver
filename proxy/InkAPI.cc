@@ -8838,7 +8838,7 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
 }
 
 tsapi TSSslContext
-TSSslContextCreate()
+TSSslServerContextCreate()
 {
   TSSslContext ret = NULL;
   SSLConfigParams *config = SSLConfig::acquire();

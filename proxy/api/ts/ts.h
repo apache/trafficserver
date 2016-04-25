@@ -1225,7 +1225,7 @@ tsapi TSSslConnection TSVConnSSLConnectionGet(TSVConn sslp);
 tsapi TSSslContext TSSslContextFindByName(const char *name);
 tsapi TSSslContext TSSslContextFindByAddr(struct sockaddr const *);
 // Create a new SSL context based on the settings in records.config
-tsapi TSSslContext TSSslContextCreate(void);
+tsapi TSSslContext TSSslServerContextCreate(void);
 tsapi void TSSslContextDestroy(TSSslContext ctx);
 
 // Returns 1 if the sslp argument refers to a SSL connection

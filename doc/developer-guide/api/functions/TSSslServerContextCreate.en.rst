@@ -18,7 +18,7 @@
 
 .. default-domain:: c
 
-TSSslContextCreate
+TSSslServerContextCreate
 **********************
 
 Synopsis
@@ -26,12 +26,12 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: TSSslContext TSSslContextCreate(void)
+.. function:: TSSslContext TSSslServerContextCreate(void)
 
 Description
 ===========
 
-Create a new SSL context. It also opulates cypher suite settings from records.config.
+Create a new server SSL context. It also populates cypher suite settings from records.config.
 
 Type
 ====
