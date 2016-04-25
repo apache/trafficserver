@@ -311,7 +311,8 @@ class TestConfigFileGroup(helpers.EnvironmentCase, CertSelectionMixin):
         log.info('cp %s %s' % (helpers.tests_file_path('rsa_keys/www.test.com.pem'), helpers.tests_file_path('www.unknown.com.pem')))
 
     def test_config_file_group(self):
-        signal_cmd = os.path.join(self.environment.layout.bindir, 'traffic_line') + ' -x'
+        traffic_ctl = os.path.join(self.environment.layout.bindir, 'traffic_ctl')
+        signal_cmd = [traffic_ctl, 'config', 'reload')]
         addr = ('127.0.0.3', self.ssl_port)
         cert = self._get_cert(addr, ciphers=CIPHER_MAP['rsa'])
         self.assertEqual(cert.get_subject().commonName.decode(), 'www.test.com')

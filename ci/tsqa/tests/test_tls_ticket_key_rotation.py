@@ -119,6 +119,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
         '''
         Make sure the new ticket key is loaded
         '''
+        traffic_ctl = os.path.join(self.environment.layout.bindir, 'traffic_ctl')
         addr = ('127.0.0.1', self.ssl_port)
         self.start_connection(addr)
 
@@ -133,7 +134,9 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
         # touch the ssl_multicert.config file
         ssl_multicert = os.path.join(self.environment.layout.sysconfdir, 'ssl_multicert.config')
 
-        read_renewed_cmd = os.path.join(self.environment.layout.bindir, 'traffic_line') + ' -r proxy.process.ssl.total_ticket_keys_renewed'
+        read_renewed_cmd = [
+            traffic_ctl, 'config', 'get', 'proxy.process.ssl.total_ticket_keys_renewed'
+        ]
 
         # Check whether the config file exists.
         self.assertTrue(os.path.isfile(ssl_multicert), ssl_multicert)
@@ -152,7 +155,7 @@ class TestTLSTicketKeyRotation(helpers.EnvironmentCase):
                 if count > 30:
                     self.assertTrue(False, "Failed to get the number of renewed keys!")
 
-        signal_cmd = os.path.join(self.environment.layout.bindir, 'traffic_line') + ' -x'
+        signal_cmd = [traffic_ctl, 'config', 'reload']
         tsqa.utils.run_sync_command(signal_cmd, stdout=subprocess.PIPE, shell=True)
 
         # wait for the ticket keys to be sucked in by traffic_server.
