@@ -221,7 +221,7 @@ int
 Mp4Meta::parse_root_atoms()
 {
   int i, ret, rc;
-  int64_t atom_size, atom_header_size;
+  int64_t atom_size, atom_header_size, copied_size;
   char buf[64];
   char *atom_header, *atom_name;
 
@@ -231,8 +231,8 @@ Mp4Meta::parse_root_atoms()
     if (meta_avail < (int64_t)sizeof(uint32_t))
       return 0;
 
-    IOBufferReaderCopy(meta_reader, buf, sizeof(mp4_atom_header64));
-    atom_size = mp4_get_32value(buf);
+    copied_size = IOBufferReaderCopy(meta_reader, buf, sizeof(mp4_atom_header64));
+    atom_size   = copied_size > 0 ? mp4_get_32value(buf) : 0;
 
     if (atom_size == 0) {
       return 1;
@@ -319,7 +319,7 @@ int
 Mp4Meta::mp4_read_atom(mp4_atom_handler *atom, int64_t size)
 {
   int i, ret, rc;
-  int64_t atom_size, atom_header_size;
+  int64_t atom_size, atom_header_size, copied_size;
   char buf[32];
   char *atom_header, *atom_name;
 
@@ -330,8 +330,8 @@ Mp4Meta::mp4_read_atom(mp4_atom_handler *atom, int64_t size)
     if (meta_avail < (int64_t)sizeof(uint32_t)) // data insufficient, not reasonable for internal atom box.
       return -1;
 
-    IOBufferReaderCopy(meta_reader, buf, sizeof(mp4_atom_header64));
-    atom_size = mp4_get_32value(buf);
+    copied_size = IOBufferReaderCopy(meta_reader, buf, sizeof(mp4_atom_header64));
+    atom_size   = copied_size > 0 ? mp4_get_32value(buf) : 0;
 
     if (atom_size == 0) {
       return 1;
@@ -461,6 +461,7 @@ Mp4Meta::mp4_read_mvhd_atom(int64_t atom_header_size, int64_t atom_data_size)
   if (sizeof(mp4_mvhd_atom) - 8 > (size_t)atom_data_size)
     return -1;
 
+  memset(&mvhd64, 0, sizeof(mvhd64));
   IOBufferReaderCopy(meta_reader, &mvhd64, sizeof(mp4_mvhd64_atom));
   mvhd = (mp4_mvhd_atom *)&mvhd64;
 
@@ -559,6 +560,7 @@ Mp4Meta::mp4_read_mdhd_atom(int64_t atom_header_size, int64_t atom_data_size)
   mp4_mdhd_atom *mdhd;
   mp4_mdhd64_atom mdhd64;
 
+  memset(&mdhd64, 0, sizeof(mdhd64));
   IOBufferReaderCopy(meta_reader, &mdhd64, sizeof(mp4_mdhd64_atom));
   mdhd = (mp4_mdhd_atom *)&mdhd64;
 
@@ -726,17 +728,16 @@ int
 Mp4Meta::mp4_read_stts_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   int32_t entries;
-  int64_t esize;
+  int64_t esize, copied_size;
   mp4_stts_atom stts;
   Mp4Trak *trak;
 
   if (sizeof(mp4_stts_atom) - 8 > (size_t)atom_data_size)
     return -1;
 
-  IOBufferReaderCopy(meta_reader, &stts, sizeof(mp4_stts_atom));
-
-  entries = mp4_get_32value(stts.entries);
-  esize   = entries * sizeof(mp4_stts_entry);
+  copied_size = IOBufferReaderCopy(meta_reader, &stts, sizeof(mp4_stts_atom));
+  entries     = copied_size > 0 ? mp4_get_32value(stts.entries) : 0;
+  esize       = entries * sizeof(mp4_stts_entry);
 
   if (sizeof(mp4_stts_atom) - 8 + esize > (size_t)atom_data_size)
     return -1;
@@ -761,16 +762,16 @@ int
 Mp4Meta::mp4_read_stss_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   int32_t entries;
-  int64_t esize;
+  int64_t esize, copied_size;
   mp4_stss_atom stss;
   Mp4Trak *trak;
 
   if (sizeof(mp4_stss_atom) - 8 > (size_t)atom_data_size)
     return -1;
 
-  IOBufferReaderCopy(meta_reader, &stss, sizeof(mp4_stss_atom));
-  entries = mp4_get_32value(stss.entries);
-  esize   = entries * sizeof(int32_t);
+  copied_size = IOBufferReaderCopy(meta_reader, &stss, sizeof(mp4_stss_atom));
+  entries     = copied_size > 0 ? mp4_get_32value(stss.entries) : 0;
+  esize       = entries * sizeof(int32_t);
 
   if (sizeof(mp4_stss_atom) - 8 + esize > (size_t)atom_data_size)
     return -1;
@@ -795,16 +796,16 @@ int
 Mp4Meta::mp4_read_ctts_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   int32_t entries;
-  int64_t esize;
+  int64_t esize, copied_size;
   mp4_ctts_atom ctts;
   Mp4Trak *trak;
 
   if (sizeof(mp4_ctts_atom) - 8 > (size_t)atom_data_size)
     return -1;
 
-  IOBufferReaderCopy(meta_reader, &ctts, sizeof(mp4_ctts_atom));
-  entries = mp4_get_32value(ctts.entries);
-  esize   = entries * sizeof(mp4_ctts_entry);
+  copied_size = IOBufferReaderCopy(meta_reader, &ctts, sizeof(mp4_ctts_atom));
+  entries     = copied_size > 0 ? mp4_get_32value(ctts.entries) : 0;
+  esize       = entries * sizeof(mp4_ctts_entry);
 
   if (sizeof(mp4_ctts_atom) - 8 + esize > (size_t)atom_data_size)
     return -1;
@@ -829,16 +830,16 @@ int
 Mp4Meta::mp4_read_stsc_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   int32_t entries;
-  int64_t esize;
+  int64_t esize, copied_size;
   mp4_stsc_atom stsc;
   Mp4Trak *trak;
 
   if (sizeof(mp4_stsc_atom) - 8 > (size_t)atom_data_size)
     return -1;
 
-  IOBufferReaderCopy(meta_reader, &stsc, sizeof(mp4_stsc_atom));
-  entries = mp4_get_32value(stsc.entries);
-  esize   = entries * sizeof(mp4_stsc_entry);
+  copied_size = IOBufferReaderCopy(meta_reader, &stsc, sizeof(mp4_stsc_atom));
+  entries     = copied_size > 0 ? mp4_get_32value(stsc.entries) : 0;
+  esize       = entries * sizeof(mp4_stsc_entry);
 
   if (sizeof(mp4_stsc_atom) - 8 + esize > (size_t)atom_data_size)
     return -1;
@@ -863,19 +864,19 @@ int
 Mp4Meta::mp4_read_stsz_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   int32_t entries, size;
-  int64_t esize, atom_size;
+  int64_t esize, atom_size, copied_size;
   mp4_stsz_atom stsz;
   Mp4Trak *trak;
 
   if (sizeof(mp4_stsz_atom) - 8 > (size_t)atom_data_size)
     return -1;
 
-  IOBufferReaderCopy(meta_reader, &stsz, sizeof(mp4_stsz_atom));
-  entries = mp4_get_32value(stsz.entries);
-  esize   = entries * sizeof(int32_t);
+  copied_size = IOBufferReaderCopy(meta_reader, &stsz, sizeof(mp4_stsz_atom));
+  entries     = copied_size > 0 ? mp4_get_32value(stsz.entries) : 0;
+  esize       = entries * sizeof(int32_t);
 
   trak = trak_vec[trak_num - 1];
-  size = mp4_get_32value(stsz.uniform_size);
+  size = copied_size > 0 ? mp4_get_32value(stsz.uniform_size) : 0;
 
   trak->sample_sizes_entries = entries;
 
@@ -906,16 +907,16 @@ int
 Mp4Meta::mp4_read_stco_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   int32_t entries;
-  int64_t esize;
+  int64_t esize, copied_size;
   mp4_stco_atom stco;
   Mp4Trak *trak;
 
   if (sizeof(mp4_stco_atom) - 8 > (size_t)atom_data_size)
     return -1;
 
-  IOBufferReaderCopy(meta_reader, &stco, sizeof(mp4_stco_atom));
-  entries = mp4_get_32value(stco.entries);
-  esize   = entries * sizeof(int32_t);
+  copied_size = IOBufferReaderCopy(meta_reader, &stco, sizeof(mp4_stco_atom));
+  entries     = copied_size > 0 ? mp4_get_32value(stco.entries) : 0;
+  esize       = entries * sizeof(int32_t);
 
   if (sizeof(mp4_stco_atom) - 8 + esize > (size_t)atom_data_size)
     return -1;
@@ -940,16 +941,16 @@ int
 Mp4Meta::mp4_read_co64_atom(int64_t atom_header_size, int64_t atom_data_size)
 {
   int32_t entries;
-  int64_t esize;
+  int64_t esize, copied_size;
   mp4_co64_atom co64;
   Mp4Trak *trak;
 
   if (sizeof(mp4_co64_atom) - 8 > (size_t)atom_data_size)
     return -1;
 
-  IOBufferReaderCopy(meta_reader, &co64, sizeof(mp4_co64_atom));
-  entries = mp4_get_32value(co64.entries);
-  esize   = entries * sizeof(int64_t);
+  copied_size = IOBufferReaderCopy(meta_reader, &co64, sizeof(mp4_co64_atom));
+  entries     = copied_size > 0 ? mp4_get_32value(co64.entries) : 0;
+  esize       = entries * sizeof(int64_t);
 
   if (sizeof(mp4_co64_atom) - 8 + esize > (size_t)atom_data_size)
     return -1;
@@ -1554,6 +1555,7 @@ Mp4Meta::mp4_update_mvhd_duration()
   if (need > (int64_t)sizeof(mp4_mvhd64_atom))
     need = sizeof(mp4_mvhd64_atom);
 
+  memset(&mvhd64, 0, sizeof(mvhd64));
   IOBufferReaderCopy(mvhd_atom.reader, &mvhd64, need);
   mvhd = (mp4_mvhd_atom *)&mvhd64;
 
@@ -1589,6 +1591,7 @@ Mp4Meta::mp4_update_tkhd_duration(Mp4Trak *trak)
   if (need > (int64_t)sizeof(mp4_tkhd64_atom))
     need = sizeof(mp4_tkhd64_atom);
 
+  memset(&tkhd64_atom, 0, sizeof(tkhd64_atom));
   IOBufferReaderCopy(trak->atoms[MP4_TKHD_ATOM].reader, &tkhd64_atom, need);
   tkhd_atom = (mp4_tkhd_atom *)&tkhd64_atom;
 
