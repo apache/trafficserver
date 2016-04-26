@@ -63,6 +63,10 @@ struct CacheTestHeader {
 
 struct CacheTestSM : public RegressionSM {
   int start_memcpy_on_clone; // place all variables to be copied between these markers
+
+  // Cache test instance name. This is a pointer to a string literal, so copying is safe.
+  const char *cache_test_name;
+
   Action *timeout;
   Action *cache_action;
   ink_hrtime start_time;
@@ -113,12 +117,14 @@ struct CacheTestSM : public RegressionSM {
   void
   run()
   {
+    rprintf(this->t, "running %s (%p)\n", this->cache_test_name, this);
     SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
     timeout = eventProcessor.schedule_imm(this);
   }
+
   virtual RegressionSM *clone() = 0;
 
-  CacheTestSM(RegressionTest *t);
+  CacheTestSM(RegressionTest *t, const char *name);
   CacheTestSM(const CacheTestSM &ao);
   ~CacheTestSM();
 };
@@ -127,10 +133,13 @@ struct CacheTestSM : public RegressionSM {
 #define CACHE_SM(_t, _sm, _f)                                               \
   struct CacheTestSM__##_sm : public CacheTestSM {                          \
     void                                                                    \
-    make_request_internal() _f CacheTestSM__##_sm(RegressionTest *t)        \
-      : CacheTestSM(t)                                                      \
+    make_request_internal() _f                                              \
+                                                                            \
+      CacheTestSM__##_sm(RegressionTest *t)                                 \
+      : CacheTestSM(t, #_sm)                                                \
     {                                                                       \
     }                                                                       \
+                                                                            \
     CacheTestSM__##_sm(const CacheTestSM__##_sm &xsm) : CacheTestSM(xsm) {} \
     RegressionSM *                                                          \
     clone()                                                                 \
