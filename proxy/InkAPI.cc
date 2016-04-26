@@ -4208,6 +4208,8 @@ TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
+
   INKContInternal *i = (INKContInternal *)contp;
   TSAction action;
 
@@ -4259,6 +4261,8 @@ TSAction
 TSContScheduleEvery(TSCont contp, ink_hrtime every, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
+
+  FORCE_PLUGIN_SCOPED_MUTEX(contp);
 
   INKContInternal *i = (INKContInternal *)contp;
   TSAction action;
