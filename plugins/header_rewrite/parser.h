@@ -28,7 +28,6 @@
 
 #include "lulu.h"
 
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 class Parser
@@ -94,6 +93,5 @@ private:
 protected:
   std::vector<std::string> _tokens;
 };
-
 
 #endif // __PARSER_H

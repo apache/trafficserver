@@ -28,7 +28,6 @@
 
  ****************************************************************************/
 
-
 #ifndef _MultiCache_h_
 #define _MultiCache_h_
 
@@ -45,7 +44,6 @@
 #define MULTI_CACHE_PARTITIONS 64
 
 #define MULTI_CACHE_EVENT_SYNC MULTI_CACHE_EVENT_EVENTS_START
-
 
 // for heap_offset() and heap_size(), indicates no data
 #define MULTI_CACHE_HEAP_NONE -1
@@ -78,7 +76,6 @@ class Continuation;
 // MultiCacheBlock
 // This is an abstract class which simply documents the operations
 // required by the templated cache operations.
-
 
 struct MultiCacheBlock {
   uint64_t tag();
@@ -353,7 +350,6 @@ struct MultiCacheBase : public MultiCacheHeader {
 
   MultiCacheBase();
   virtual ~MultiCacheBase() { reset(); }
-
   virtual int
   get_elementsize()
   {

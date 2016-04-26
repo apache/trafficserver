@@ -160,7 +160,6 @@ is_digit(char c)
   return ((c <= '9') && (c >= '0'));
 }
 
-
 /***********************************************************************
  *                                                                     *
  *                         M A I N    C O D E                          *
@@ -224,7 +223,6 @@ http_init()
     HTTP_WKSIDX_METHODS_CNT++;
     HTTP_WKSIDX_PUSH = hdrtoken_wks_to_index(HTTP_METHOD_PUSH);
     HTTP_WKSIDX_METHODS_CNT++;
-
 
     HTTP_LEN_CONNECT = hdrtoken_wks_to_length(HTTP_METHOD_CONNECT);
     HTTP_LEN_DELETE = hdrtoken_wks_to_length(HTTP_METHOD_DELETE);
@@ -641,7 +639,6 @@ http_hdr_length_get(HTTPHdrImpl *hdr)
   return length;
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -707,7 +704,6 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
     hh->u.req.m_url_impl = url;
   }
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1490,7 +1486,6 @@ http_parse_qvalue(const char *&buf, int &len)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-
 /*-------------------------------------------------------------------------
   TE        = "TE" ":" #( t-codings )
   t-codings = "trailers" | ( transfer-extension [ accept-params ] )
@@ -1727,7 +1722,6 @@ HTTPHdrImpl::marshal(MarshalXlate *ptr_xlate, int num_ptr, MarshalXlate *str_xla
   return 0;
 }
 
-
 void
 HTTPHdrImpl::unmarshal(intptr_t offset)
 {
@@ -1742,7 +1736,6 @@ HTTPHdrImpl::unmarshal(intptr_t offset)
 
   HDR_UNMARSHAL_PTR(m_fields_impl, MIMEHdrImpl, offset);
 }
-
 
 void
 HTTPHdrImpl::move_strings(HdrStrHeap *new_heap)
@@ -1889,7 +1882,6 @@ HTTPInfo::copy_frag_offsets_from(HTTPInfo *src)
   if (m_alt && src->m_alt)
     m_alt->copy_frag_offsets_from(src->m_alt);
 }
-
 
 int
 HTTPInfo::marshal_length()
@@ -2118,7 +2110,6 @@ HTTPInfo::check_marshalled(char *buf, int len)
 
   return true;
 }
-
 
 // void HTTPInfo::set_buffer_reference(RefCountObj* block_ref)
 //

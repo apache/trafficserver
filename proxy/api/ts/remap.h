@@ -41,7 +41,6 @@ typedef struct _tsremap_api_info {
   unsigned long tsremap_version; /* in: TS supported version ((major << 16) | minor) */
 } TSRemapInterface;
 
-
 typedef struct _tm_remap_request_info {
   /* Important: You should *not* release these buf pointers or TSMLocs from your plugin! */
 
@@ -61,7 +60,6 @@ typedef struct _tm_remap_request_info {
   int redirect;
 } TSRemapRequestInfo;
 
-
 /* This is the type returned by the TSRemapDoRemap() callback */
 typedef enum {
   TSREMAP_NO_REMAP = 0,       /* No remaping was done, continue with next in chain */
@@ -78,7 +76,6 @@ typedef enum {
   TSREMAP_ERROR = -1 /* Some error, that should generate an error page */
 } TSRemapStatus;
 
-
 /* ----------------------------------------------------------------------------------
    These are the entry points a plugin can implement. Note that TSRemapInit() and
    TSRemapDoRemap() are both required.
@@ -92,7 +89,6 @@ typedef enum {
 */
 tsapi TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size);
 
-
 /* Remap new request
    Mandatory interface function.
    Remap API plugin can/should use SDK API function calls inside this function!
@@ -103,11 +99,9 @@ tsapi TSReturnCode TSRemapInit(TSRemapInterface *api_info, char *errbuf, int err
 */
 tsapi TSRemapStatus TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri);
 
-
 /* Plugin shutdown, called when plugin is unloaded.
    Optional function. */
 tsapi void TSRemapDone(void);
-
 
 /* Plugin new instance. Create new plugin processing entry for unique remap record.
    First two arguments in argv vector are - fromURL and toURL from remap record.
@@ -117,7 +111,6 @@ tsapi void TSRemapDone(void);
 */
 tsapi TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_size);
 tsapi void TSRemapDeleteInstance(void *);
-
 
 /* Check response code from Origin Server
    os_response_type -> TSServerState

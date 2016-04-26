@@ -63,7 +63,6 @@ destroy_continuation(TSHttpTxn txnp, TSCont contp)
   return;
 }
 
-
 static void
 handle_dns(TSHttpTxn txnp, TSCont contp)
 {
@@ -302,7 +301,6 @@ handle_txn_start(TSCont contp ATS_UNUSED, TSHttpTxn txnp)
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
-
 
 void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)

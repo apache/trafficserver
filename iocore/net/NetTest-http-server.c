@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 IOBufferBlock *resp_blk;
 int doc_len;
 
@@ -32,7 +31,6 @@ struct NetTesterSM : public Continuation {
   MIOBuffer *req_buf, *resp_buf;
   char request[2000];
   int req_len;
-
 
   NetTesterSM(ProxyMutex *_mutex, NetVConnection *_vc) : Continuation(_mutex)
   {
@@ -50,7 +48,6 @@ struct NetTesterSM : public Continuation {
     req_len = 0;
     resp_reader = resp_buf->alloc_reader();
   }
-
 
   ~NetTesterSM()
   {
@@ -111,7 +108,6 @@ struct NetTesterSM : public Continuation {
     return EVENT_CONT;
   }
 
-
   int
   handle_write(int event, Event *e)
   {
@@ -134,10 +130,8 @@ struct NetTesterSM : public Continuation {
   }
 };
 
-
 struct NetTesterAccept : public Continuation {
   NetTesterAccept(ProxyMutex *_mutex) : Continuation(_mutex) { SET_HANDLER(&NetTesterAccept::handle_accept); }
-
   int
   handle_accept(int event, void *data)
   {
@@ -149,11 +143,9 @@ struct NetTesterAccept : public Continuation {
   }
 };
 
-
 struct Stop : public Continuation {
   Action *a;
   Stop(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&Stop::stop); }
-
   int
   stop(int event, Event *e)
   {
@@ -161,7 +153,6 @@ struct Stop : public Continuation {
     return EVENT_DONE;
   }
 };
-
 
 int
 test_main()

@@ -32,7 +32,6 @@ static const char PLUGIN_NAME[] = "conf_remap";
 // OK, since this plugin is distributed only with the "core" (it's a core piece).
 #define MAX_OVERRIDABLE_CONFIGS TS_CONFIG_LAST_ENTRY
 
-
 // Class to hold a set of configurations (one for each remap rule instance)
 struct RemapConfigs {
   struct Item {
@@ -43,7 +42,6 @@ struct RemapConfigs {
   };
 
   RemapConfigs() : _current(0) { memset(_items, 0, sizeof(_items)); };
-
   bool parse_file(const char *filename);
   bool parse_inline(const char *arg);
 
@@ -239,7 +237,6 @@ RemapConfigs::parse_file(const char *filename)
   return (_current > 0);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin as a remap plugin.
 //
@@ -259,7 +256,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
   return TS_SUCCESS; /* success */
 }
-
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
@@ -304,7 +300,6 @@ TSRemapDeleteInstance(void *ih)
 
   delete conf;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Main entry point when used as a remap plugin.

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ICP.h
@@ -40,12 +39,10 @@
 #include "ICPProcessor.h"
 #include "ts/DynArray.h"
 
-
 //*********************************************************************
 // ICP Configurables
 //*********************************************************************
 #define ICP_DEBUG 1
-
 
 //*********************************************************************
 // ICP.h -- Internet Cache Protocol (ICP) related data structures.
@@ -1276,18 +1273,19 @@ private:
   ICPstate_t _next_state;
 };
 
-
 extern ClassAllocator<ICPRequestCont> ICPRequestCont_allocator;
 
 typedef int (*PluginFreshnessCalcFunc)(void *contp);
 extern PluginFreshnessCalcFunc pluginFreshnessCalcFunc;
 
-inline void *ICPRequestCont::operator new(size_t /* size ATS_UNUSED */, void *mem)
+inline void *
+ICPRequestCont::operator new(size_t /* size ATS_UNUSED */, void *mem)
 {
   return mem;
 }
 
-inline void ICPRequestCont::operator delete(void *mem)
+inline void
+ICPRequestCont::operator delete(void *mem)
 {
   ICPRequestCont_allocator.free((ICPRequestCont *)mem);
 }
@@ -1345,7 +1343,6 @@ enum {
 
 #define ICP_ReadConfigString REC_ReadConfigString
 #define ICP_RegisterConfigUpdateFunc REC_RegisterConfigUpdateFunc
-
 
 // End of ICP.h
 

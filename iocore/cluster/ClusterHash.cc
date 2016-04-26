@@ -52,13 +52,11 @@ bool randClusterHash = false;
 // bool boundClusterHash = true;
 // bool randClusterHash = true;
 
-
 //
 // Cluster Hash Table
 //
 // see Memo.ClusterHash for details
 //
-
 
 //
 // Linear Congruence Random number generator

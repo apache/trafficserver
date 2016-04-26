@@ -39,7 +39,6 @@
 #include "MT_hashtable.h"
 #include "ControlMatcher.h"
 
-
 class CongestionControlRecord;
 struct CongestionEntry;
 
@@ -75,9 +74,7 @@ struct CongestRequestParam {
   };
 
   CongestRequestParam() : m_key(0), m_op(REVALIDATE_BUCKET), m_pEntry(NULL) {}
-
   ~CongestRequestParam() {}
-
   uint64_t m_key;
   Op_t m_op;
   CongestionEntry *m_pEntry;

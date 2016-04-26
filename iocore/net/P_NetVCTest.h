@@ -43,7 +43,6 @@ class VIO;
 class MIOBuffer;
 class IOBufferReader;
 
-
 enum NetVcTestType_t {
   NET_VC_TEST_ACTIVE,
   NET_VC_TEST_PASSIVE,
@@ -80,7 +79,6 @@ protected:
   RegressionTest *r;
   int *pstatus;
 };
-
 
 class NetVCTest : public Continuation
 {
@@ -143,6 +141,5 @@ public:
   const char *module_name;
   const char *debug_tag;
 };
-
 
 #endif

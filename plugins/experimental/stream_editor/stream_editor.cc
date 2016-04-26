@@ -110,13 +110,14 @@ struct edit_t {
   const std::string repl;
   const int priority;
   edit_t(size_t s, size_t b, const std::string &r, int p) : start(s), bytes(b), repl(r), priority(p) { ; }
-
-  bool operator!=(const edit_t &x) const
+  bool
+  operator!=(const edit_t &x) const
   {
     return start != x.start || bytes != x.bytes || repl != x.repl || priority != x.priority;
   }
 
-  bool operator<(const edit_t &x) const
+  bool
+  operator<(const edit_t &x) const
   {
     if ((start == x.start) || (start < x.start && start + bytes > x.start) || (x.start < start && x.start + x.bytes > start)) {
       /* conflicting edits.  Throw back to resolve conflict */
@@ -152,7 +153,6 @@ struct edit_t {
     }
   }
 };
-
 
 class scope_t
 {
@@ -199,10 +199,8 @@ public:
   }
 
   scope_t(const bool u) : uri(u) { ; }
-
   virtual ~scope_t() {}
 };
-
 
 class rxscope : public scope_t
 {
@@ -232,7 +230,6 @@ public:
   virtual ~rxscope() { regfree(&rx); }
 };
 
-
 class strscope : public scope_t
 {
 private:
@@ -247,14 +244,12 @@ private:
 
 public:
   strscope(const bool u, const bool i, const char *pattern, int len) : scope_t(u), icase(i) { str = TSstrndup(pattern, len); }
-
   virtual ~strscope()
   {
     if (str)
       TSfree(str);
   }
 };
-
 
 class match_t
 {
@@ -263,7 +258,6 @@ public:
   virtual size_t cont_size() const = 0;
   virtual ~match_t() {}
 };
-
 
 class strmatch : public match_t
 {
@@ -299,7 +293,6 @@ public:
     return slen;
   }
 };
-
 
 class rxmatch : public match_t
 {
@@ -375,7 +368,6 @@ public:
       x = strcasestr(x + 1, str);  \
     else                           \
   break
-
 
 class rule_t
 {

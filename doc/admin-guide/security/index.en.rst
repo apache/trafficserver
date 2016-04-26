@@ -257,6 +257,8 @@ a ticket key file as a reverse queue in 48-byte chunks.
 
 #. Run the command :option:`traffic_ctl config reload` to apply the new ticket key.
 
+.. _admin-ocsp-stapling:
+
 OCSP Stapling
 =============
 

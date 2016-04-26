@@ -27,7 +27,6 @@
 #include "I_RecCore.h"
 #include "I_EventSystem.h"
 
-
 //-------------------------------------------------------------------------
 // Initialization/Starting
 //-------------------------------------------------------------------------
@@ -62,7 +61,6 @@ int _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, R
 //                           RecInt min,
 //                           RecInt max);
 
-
 //-------------------------------------------------------------------------
 // Predefined RawStat Callbacks
 //-------------------------------------------------------------------------
@@ -95,7 +93,6 @@ int RecSetRawStatBlock(RecRawStatBlock *rsb, RecRawStat *stat_array);
 int RecGetRawStatSum(RecRawStatBlock *rsb, int id, int64_t *data);
 int RecGetRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data);
 
-
 //-------------------------------------------------------------------------
 // Global RawStat Items (e.g. same as above, but no thread-local behavior)
 //-------------------------------------------------------------------------
@@ -112,7 +109,6 @@ int RecGetGlobalRawStatCount(RecRawStatBlock *rsb, int id, int64_t *data);
 RecRawStat *RecGetGlobalRawStatPtr(RecRawStatBlock *rsb, int id);
 int64_t *RecGetGlobalRawStatSumPtr(RecRawStatBlock *rsb, int id);
 int64_t *RecGetGlobalRawStatCountPtr(RecRawStatBlock *rsb, int id);
-
 
 //-------------------------------------------------------------------------
 // RecIncrRawStatXXX

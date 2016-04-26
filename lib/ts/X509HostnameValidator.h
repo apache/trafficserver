@@ -37,5 +37,4 @@
 
 bool validate_hostname(X509 *cert, const unsigned char *hostname, bool is_ip, char **peername);
 
-
 #endif /* LIB_TS_X509HOSTNAMEVALIDATOR_H_ */

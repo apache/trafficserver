@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #ifndef _TS_LUA_MGMT_H
 #define _TS_LUA_MGMT_H
 

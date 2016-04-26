@@ -123,7 +123,8 @@ void SSLInitializeLibrary();
 // Initialize SSL statistics.
 void SSLInitializeStatistics();
 
-// Release SSL_CTX and the associated data
+// Release SSL_CTX and the associated data. This works for both
+// client and server contexts and gracefully accepts NULL.
 void SSLReleaseContext(SSL_CTX *ctx);
 
 // Wrapper functions to SSL I/O routines
@@ -133,11 +134,11 @@ ssl_error_t SSLAccept(SSL *ssl);
 ssl_error_t SSLConnect(SSL *ssl);
 
 // Log an SSL error.
-#define SSLError(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, NULL, fmt, ##__VA_ARGS__)
-#define SSLErrorVC(vc, fmt, ...) SSLDiagnostic(DiagsMakeLocation(), false, (vc), fmt, ##__VA_ARGS__)
+#define SSLError(fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, NULL, fmt, ##__VA_ARGS__)
+#define SSLErrorVC(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), false, (vc), fmt, ##__VA_ARGS__)
 // Log a SSL diagnostic using the "ssl" diagnostic tag.
-#define SSLDebug(fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, NULL, fmt, ##__VA_ARGS__)
-#define SSLDebugVC(vc, fmt, ...) SSLDiagnostic(DiagsMakeLocation(), true, (vc), fmt, ##__VA_ARGS__)
+#define SSLDebug(fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, NULL, fmt, ##__VA_ARGS__)
+#define SSLDebugVC(vc, fmt, ...) SSLDiagnostic(MakeSourceLocation(), true, (vc), fmt, ##__VA_ARGS__)
 
 #define SSL_CLR_ERR_INCR_DYN_STAT(vc, x, fmt, ...) \
   do {                                             \
@@ -145,7 +146,7 @@ ssl_error_t SSLConnect(SSL *ssl);
     RecIncrRawStat(ssl_rsb, NULL, (int)x, 1);      \
   } while (0)
 
-void SSLDiagnostic(const SrcLoc &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
+void SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
 
 // Return a static string name for a SSL_ERROR constant.
 const char *SSLErrorName(int ssl_error);

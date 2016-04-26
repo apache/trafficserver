@@ -143,6 +143,7 @@ bool command_valid = false;
 static char const *CMD_VERIFY_CONFIG = "verify_config";
 #if TS_HAS_TESTS
 static char regression_test[1024] = "";
+static int regression_list = 0;
 #endif
 int auto_clear_hostdb_flag = 0;
 extern int fds_limit;
@@ -192,6 +193,7 @@ static const ArgumentDescription argument_descriptions[] = {
 #if TS_HAS_TESTS
   {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
   {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
+  {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", NULL},
 #endif // TS_HAS_TESTS
 
 #if TS_USE_DIAGS
@@ -211,7 +213,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"read_core", 'c', "Read Core file", "S255", &core_file, NULL, NULL},
 #endif
 
-  {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss, NULL, NULL},
+  {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, NULL, NULL},
   {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, NULL, NULL},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
@@ -283,7 +285,6 @@ public:
   }
 
   ~TrackerContinuation() { mutex = NULL; }
-
   int
   periodic(int event, Event * /* e ATS_UNUSED */)
   {
@@ -790,7 +791,6 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
   return 0;
 }
 
-
 static int cmd_help(char *cmd);
 
 static const struct CMD {
@@ -1180,7 +1180,6 @@ struct ShowStats : public Continuation {
   }
 };
 
-
 // static void syslog_log_configure()
 //
 //   Reads the syslog configuration variable
@@ -1284,7 +1283,6 @@ run_RegressionTest()
 }
 #endif // TS_HAS_TESTS
 
-
 static void
 chdir_root()
 {
@@ -1299,7 +1297,6 @@ chdir_root()
     printf("%s: using root directory '%s'\n", appVersionInfo.AppStr, prefix);
   }
 }
-
 
 static int
 getNumSSLThreads(void)
@@ -1500,6 +1497,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (cmd_disable_freelist) {
     ink_freelist_init_ops(ink_freelist_malloc_ops());
   }
+
+#if TS_HAS_TESTS
+  if (regression_list) {
+    RegressionTest::list();
+    ::exit(0);
+  }
+#endif
+
   // Specific validity checks.
   if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {
     fprintf(stderr, "-D option can only be used with the %s command\n", CMD_VERIFY_CONFIG);
@@ -1782,7 +1787,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start(0, stacksize);
 
-
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
       SignalWarning(MGMT_SIGNAL_SYSTEM_ERROR, "bad hostdb or storage configuration, hostdb disabled");
@@ -1833,7 +1837,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Continuation Statistics Dump
     if (show_statistics)
       eventProcessor.schedule_every(new ShowStats(), HRTIME_SECONDS(show_statistics), ET_CALL);
-
 
     //////////////////////////////////////
     // main server logic initiated here //
@@ -1916,7 +1919,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   this_thread()->execute();
   delete main_thread;
 }
-
 
 #if TS_HAS_TESTS
 //////////////////////////////

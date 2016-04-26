@@ -36,7 +36,6 @@
 
 RecModeT g_mode_type = RECM_NULL;
 
-
 //-------------------------------------------------------------------------
 // send_reset_message
 //-------------------------------------------------------------------------
@@ -55,7 +54,6 @@ send_reset_message(RecRecord *record)
 
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // send_set_message
@@ -76,7 +74,6 @@ send_set_message(RecRecord *record)
   return REC_ERR_OKAY;
 }
 
-
 //-------------------------------------------------------------------------
 // send_register_message
 //-------------------------------------------------------------------------
@@ -95,7 +92,6 @@ send_register_message(RecRecord *record)
 
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // send_push_message
@@ -130,7 +126,6 @@ send_push_message()
 
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // send_pull_message
@@ -178,7 +173,6 @@ send_pull_message(RecMessageT msg_type)
 
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // recv_message_cb
@@ -263,7 +257,6 @@ recv_message_cb(RecMessage *msg, RecMessageT msg_type, void * /* cookie */)
   return REC_ERR_OKAY;
 }
 
-
 //-------------------------------------------------------------------------
 // RecRegisterStatXXX
 //-------------------------------------------------------------------------
@@ -308,7 +301,6 @@ _RecRegisterStatCounter(RecT rec_type, const char *name, RecCounter data_default
   REC_REGISTER_STAT_XXX(rec_counter, RECD_COUNTER);
 }
 
-
 //-------------------------------------------------------------------------
 // RecRegisterConfigXXX
 //-------------------------------------------------------------------------
@@ -344,7 +336,6 @@ RecRegisterConfigFloat(RecT rec_type, const char *name, RecFloat data_default, R
   REC_REGISTER_CONFIG_XXX(rec_float, RECD_FLOAT);
 }
 
-
 int
 RecRegisterConfigString(RecT rec_type, const char *name, const char *data_default_tmp, RecUpdateT update_type, RecCheckT check_type,
                         const char *check_regex, RecSourceT source, RecAccessT access_type)
@@ -361,7 +352,6 @@ RecRegisterConfigCounter(RecT rec_type, const char *name, RecCounter data_defaul
   ink_assert((rec_type == RECT_CONFIG) || (rec_type == RECT_LOCAL));
   REC_REGISTER_CONFIG_XXX(rec_counter, RECD_COUNTER);
 }
-
 
 //-------------------------------------------------------------------------
 // RecSetRecordXXX
@@ -517,7 +507,6 @@ RecSetRecordCounter(const char *name, RecCounter rec_counter, RecSourceT source,
   return RecSetRecord(RECT_NULL, name, RECD_COUNTER, &data, NULL, source, lock, inc_version);
 }
 
-
 //-------------------------------------------------------------------------
 // RecReadStatsFile
 //-------------------------------------------------------------------------
@@ -573,7 +562,6 @@ RecReadStatsFile()
 
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // RecSyncStatsFile
@@ -649,7 +637,6 @@ RecReadConfigFile(bool inc_version)
 
   return REC_ERR_OKAY;
 }
-
 
 //-------------------------------------------------------------------------
 // RecSyncConfigFile
@@ -788,7 +775,6 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
   return err;
 }
 
-
 //-------------------------------------------------------------------------
 // RecExecConfigUpdateCbs
 //-------------------------------------------------------------------------
@@ -834,7 +820,6 @@ RecExecConfigUpdateCbs(unsigned int update_required_type)
   return update_type;
 }
 
-
 //------------------------------------------------------------------------
 // RecResetStatRecord
 //------------------------------------------------------------------------
@@ -869,7 +854,6 @@ RecResetStatRecord(const char *name)
 
   return err;
 }
-
 
 //------------------------------------------------------------------------
 // RecResetStatRecord
@@ -911,7 +895,6 @@ RecResetStatRecord(RecT type, bool all)
   }
   return err;
 }
-
 
 int
 RecSetSyncRequired(char *name, bool lock)

@@ -37,7 +37,6 @@ static INKStat transaction_count;
 static INKStat session_count;
 static INKStat av_transaction;
 
-
 static void
 txn_handler(TSHttpTxn txnp, TSCont contp)
 {
@@ -47,7 +46,6 @@ txn_handler(TSHttpTxn txnp, TSCont contp)
   num_txns = INKStatIntGet(transaction_count);
   TSDebug("tag_session", "The number of transactions is %" PRId64, num_txns);
 }
-
 
 static void
 handle_session(TSHttpSsn ssnp, TSCont contp)

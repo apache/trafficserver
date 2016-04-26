@@ -36,7 +36,6 @@
 
 #define MAX_STAT_PAGES 32
 
-
 // Globals
 StatPagesManager statPagesManager;
 

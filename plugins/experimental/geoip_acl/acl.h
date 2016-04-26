@@ -22,6 +22,8 @@
 #include <ts/ts.h>
 #include <ts/remap.h>
 
+#include "ts/ink_defs.h"
+
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
 #else
@@ -42,17 +44,14 @@ typedef void *GeoDBHandle;
 // Maxmind allocates 253 country codes,even though there are only 248 according to the above
 static const int NUM_ISO_CODES = 253;
 
-
 // Base class for all ACLs
 class Acl
 {
 public:
   Acl() : _allow(true), _added_tokens(0) {}
-
   virtual ~Acl() {}
-
   // These have to be implemented for each ACL type
-  virtual void read_regex(const char *fn) = 0;
+  virtual void read_regex(const char *fn, int &tokens) = 0;
   virtual int process_args(int argc, char *argv[]) = 0;
   virtual bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const = 0;
   virtual void add_token(const std::string &str) = 0;
@@ -84,17 +83,17 @@ protected:
   std::string _html;
   bool _allow;
   int _added_tokens;
+
+  // Class members
   static GeoDBHandle _geoip;
   static GeoDBHandle _geoip6;
 };
-
 
 // Base class for all Regex ACLs (which contain Acl() subclassed instances)
 class RegexAcl
 {
 public:
   RegexAcl(Acl *acl) : _extra(NULL), _next(NULL), _acl(acl) {}
-
   const std::string &
   get_regex() const
   {
@@ -122,7 +121,7 @@ public:
   }
 
   void append(RegexAcl *ra);
-  bool parse_line(const char *filename, const std::string &line, int lineno);
+  bool parse_line(const char *filename, const std::string &line, int lineno, int &tokens);
 
 private:
   bool compile(const std::string &str, const char *filename, int lineno);
@@ -133,14 +132,12 @@ private:
   Acl *_acl;
 };
 
-
 // ACLs based on ISO country codes.
 class CountryAcl : public Acl
 {
 public:
   CountryAcl() : _regexes(NULL) { memset(_iso_country_codes, 0, sizeof(_iso_country_codes)); }
-
-  void read_regex(const char *fn);
+  void read_regex(const char *fn, int &tokens);
   int process_args(int argc, char *argv[]);
   bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const;
   void add_token(const std::string &str);

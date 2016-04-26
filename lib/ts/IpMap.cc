@@ -58,26 +58,70 @@ namespace detail
   }
 
   /// Less than.
-  inline bool operator<(sockaddr_in6 const &lhs, sockaddr_in6 const &rhs) { return ts::detail::cmp(lhs, rhs) < 0; }
-  inline bool operator<(sockaddr_in6 const *lhs, sockaddr_in6 const &rhs) { return ts::detail::cmp(*lhs, rhs) < 0; }
+  inline bool
+  operator<(sockaddr_in6 const &lhs, sockaddr_in6 const &rhs)
+  {
+    return ts::detail::cmp(lhs, rhs) < 0;
+  }
+  inline bool
+  operator<(sockaddr_in6 const *lhs, sockaddr_in6 const &rhs)
+  {
+    return ts::detail::cmp(*lhs, rhs) < 0;
+  }
   /// Less than.
-  inline bool operator<(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs) { return ts::detail::cmp(lhs, *rhs) < 0; }
+  inline bool
+  operator<(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs)
+  {
+    return ts::detail::cmp(lhs, *rhs) < 0;
+  }
   /// Equality.
-  inline bool operator==(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs) { return ts::detail::cmp(lhs, *rhs) == 0; }
+  inline bool
+  operator==(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs)
+  {
+    return ts::detail::cmp(lhs, *rhs) == 0;
+  }
   /// Equality.
-  inline bool operator==(sockaddr_in6 const *lhs, sockaddr_in6 const &rhs) { return ts::detail::cmp(*lhs, rhs) == 0; }
+  inline bool
+  operator==(sockaddr_in6 const *lhs, sockaddr_in6 const &rhs)
+  {
+    return ts::detail::cmp(*lhs, rhs) == 0;
+  }
   /// Equality.
-  inline bool operator==(sockaddr_in6 const &lhs, sockaddr_in6 const &rhs) { return ts::detail::cmp(lhs, rhs) == 0; }
+  inline bool
+  operator==(sockaddr_in6 const &lhs, sockaddr_in6 const &rhs)
+  {
+    return ts::detail::cmp(lhs, rhs) == 0;
+  }
   /// Less than or equal.
-  inline bool operator<=(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs) { return ts::detail::cmp(lhs, *rhs) <= 0; }
+  inline bool
+  operator<=(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs)
+  {
+    return ts::detail::cmp(lhs, *rhs) <= 0;
+  }
   /// Less than or equal.
-  inline bool operator<=(sockaddr_in6 const &lhs, sockaddr_in6 const &rhs) { return ts::detail::cmp(lhs, rhs) <= 0; }
+  inline bool
+  operator<=(sockaddr_in6 const &lhs, sockaddr_in6 const &rhs)
+  {
+    return ts::detail::cmp(lhs, rhs) <= 0;
+  }
   /// Greater than or equal.
-  inline bool operator>=(sockaddr_in6 const &lhs, sockaddr_in6 const &rhs) { return ts::detail::cmp(lhs, rhs) >= 0; }
+  inline bool
+  operator>=(sockaddr_in6 const &lhs, sockaddr_in6 const &rhs)
+  {
+    return ts::detail::cmp(lhs, rhs) >= 0;
+  }
   /// Greater than or equal.
-  inline bool operator>=(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs) { return ts::detail::cmp(lhs, *rhs) >= 0; }
+  inline bool
+  operator>=(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs)
+  {
+    return ts::detail::cmp(lhs, *rhs) >= 0;
+  }
   /// Greater than.
-  inline bool operator>(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs) { return ts::detail::cmp(lhs, *rhs) > 0; }
+  inline bool
+  operator>(sockaddr_in6 const &lhs, sockaddr_in6 const *rhs)
+  {
+    return ts::detail::cmp(lhs, *rhs) > 0;
+  }
 
   /** Base template class for IP maps.
       This class is templated by the @a N type which must be a subclass
@@ -96,7 +140,6 @@ namespace detail
 
     IpMapBase() : _root(0) {}
     ~IpMapBase() { this->clear(); }
-
     /** Mark a range.
         All addresses in the range [ @a min , @a max ] are marked with @a data.
         @return This object.
@@ -1175,7 +1218,6 @@ inline IpMap::iterator &IpMap::iterator::operator--()
   }
   return *this;
 }
-
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

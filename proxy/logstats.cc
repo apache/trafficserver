@@ -55,7 +55,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif
@@ -69,7 +68,6 @@ const int MAX_LOGBUFFER_SIZE = 65536;
 const int DEFAULT_LINE_LEN = 78;
 const double LOG10_1024 = 3.0102999566398116;
 const int MAX_ORIG_STRING = 4096;
-
 
 // Optimizations for "strcmp()", treat some fixed length (3 or 4 bytes) strings
 // as integers.
@@ -103,7 +101,6 @@ struct LastState {
   ino_t st_ino;
 };
 static LastState last_state;
-
 
 // Store the collected counters and stats, per Origin Server, URL or total
 struct StatsCounter {
@@ -284,7 +281,11 @@ struct OriginStats {
 };
 
 struct UrlStats {
-  bool operator<(const UrlStats &rhs) const { return req.count > rhs.req.count; } // Reverse order
+  bool
+  operator<(const UrlStats &rhs) const
+  {
+    return req.count > rhs.req.count;
+  } // Reverse order
 
   const char *url;
   StatsCounter req;
@@ -302,11 +303,16 @@ struct UrlStats {
 ///////////////////////////////////////////////////////////////////////////////
 // Equal operator for char* (for the hash_map)
 struct eqstr {
-  inline bool operator()(const char *s1, const char *s2) const { return 0 == strcmp(s1, s2); }
+  inline bool
+  operator()(const char *s1, const char *s2) const
+  {
+    return 0 == strcmp(s1, s2);
+  }
 };
 
 struct hash_fnv32 {
-  inline uint32_t operator()(const char *s) const
+  inline uint32_t
+  operator()(const char *s) const
   {
     ATSHash32FNV1a fnv;
 
@@ -331,7 +337,6 @@ rehash(T &container, N size)
 {
   container.rehash(size);
 }
-
 
 // LRU class for the URL data
 void update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counter);
@@ -555,7 +560,6 @@ private:
   LruStack::iterator _cur;
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Globals, holding the accumulated stats (ok, I'm lazy ...)
 static OriginStats totals;
@@ -672,7 +676,6 @@ CommandLineArgs::parse_arguments(const char **argv)
   }
 }
 
-
 // Enum for return code levels.
 enum ExitLevel {
   EXIT_OK = 0,
@@ -686,7 +689,6 @@ struct ExitStatus {
   char notice[1024];
 
   ExitStatus() : level(EXIT_OK) { memset(notice, 0, sizeof(notice)); }
-
   void
   set(ExitLevel l, const char *n = NULL)
   {
@@ -708,7 +710,6 @@ struct ExitStatus {
     ink_strlcat(notice, s.c_str(), sizeof(notice));
   }
 };
-
 
 // Enum for parsing a log line
 enum ParseStates {
@@ -748,7 +749,6 @@ enum URLScheme {
   SCHEME_NONE,
   SCHEME_OTHER,
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the elapsed field
@@ -904,7 +904,6 @@ update_results_elapsed(OriginStats *stat, int result, int elapsed, int size)
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "codes" stats for a particular record
 inline void
@@ -1052,7 +1051,6 @@ update_codes(OriginStats *stat, int code, int size)
     update_counter(stat->codes.c_2xx, size);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "methods" stats for a particular record
 inline void
@@ -1106,7 +1104,6 @@ update_methods(OriginStats *stat, int method, int size)
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "schemes" stats for a particular record
 inline void
@@ -1121,7 +1118,6 @@ update_schemes(OriginStats *stat, int scheme, int size)
   else
     update_counter(stat->schemes.other, size);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Parse a log buffer
@@ -1592,7 +1588,6 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Process a file (FD)
 int
@@ -1714,7 +1709,6 @@ process_file(int in_fd, off_t offset, unsigned max_age)
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Determine if this "stat" (Origin Server) is worthwhile to produce a
 // report for.
@@ -1723,7 +1717,6 @@ use_origin(const OriginStats *stat)
 {
   return ((stat->total.count > cl.min_hits) && (NULL != strchr(stat->server, '.')) && (NULL == strchr(stat->server, '%')));
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Produce a nicely formatted output for a stats collection on a stream
@@ -1787,7 +1780,6 @@ format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json = fals
   }
 }
 
-
 void
 format_detail_header(const char *desc)
 {
@@ -1830,10 +1822,10 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
   }
 }
 
-
 // Little "helpers" for the vector we use to sort the Origins.
 typedef pair<const char *, OriginStats *> OriginPair;
-inline bool operator<(const OriginPair &a, const OriginPair &b)
+inline bool
+operator<(const OriginPair &a, const OriginPair &b)
 {
   return a.second->total.count > b.second->total.count;
 }
@@ -2069,7 +2061,6 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Little wrapper around exit, to allow us to exit gracefully
 void
@@ -2213,7 +2204,6 @@ open_main_log(ExitStatus &status)
 #endif
   return main_fd;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // main

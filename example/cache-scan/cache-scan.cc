@@ -59,7 +59,6 @@ struct cache_scan_state_t {
 
 typedef struct cache_scan_state_t cache_scan_state;
 
-
 //----------------------------------------------------------------------------
 static int
 handle_scan(TSCont contp, TSEvent event, void *edata)
@@ -140,13 +139,11 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
     TSHandleMLocRelease(req_bufp, req_hdr_loc, url_loc);
     TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_hdr_loc);
 
-
     // print the response headers
     TSCacheHttpInfoRespGet(cache_infop, &resp_bufp, &resp_hdr_loc);
     cstate->total_bytes += TSMimeHdrLengthGet(resp_bufp, resp_hdr_loc);
     TSMimeHdrPrint(resp_bufp, resp_hdr_loc, cstate->resp_buffer);
     TSHandleMLocRelease(resp_bufp, TS_NULL_MLOC, resp_hdr_loc);
-
 
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, s2, sizeof(s2) - 1);
     if (!cstate->write_pending) {
@@ -299,7 +296,6 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
   return 0;
 }
-
 
 //----------------------------------------------------------------------------
 // handler for VConnection and CacheScan events

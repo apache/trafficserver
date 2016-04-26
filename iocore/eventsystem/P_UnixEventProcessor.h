@@ -29,7 +29,6 @@
 
 const int LOAD_BALANCE_INTERVAL = 1;
 
-
 TS_INLINE
 EventProcessor::EventProcessor() : n_ethreads(0), n_thread_groups(0), n_dthreads(0), thread_data_used(0)
 {
@@ -81,7 +80,6 @@ EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
   e->ethread->EventQueueExternal.enqueue(e, fast_signal);
   return e;
 }
-
 
 TS_INLINE Event *
 EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callback_event, void *cookie)
@@ -148,6 +146,5 @@ EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, i
   else
     return schedule(e->init(cont, Thread::get_hrtime() + t, t), et);
 }
-
 
 #endif

@@ -43,7 +43,6 @@
 #define TRACK_COOKING 0
 #define MIME_FORMAT_DATE_USE_LOOKUP_TABLE 1
 
-
 /***********************************************************************
  *                                                                     *
  *                          C O N S T A N T S                          *
@@ -69,7 +68,6 @@ struct MDY {
 static MDY *_days_to_mdy_fast_lookup_table = NULL;
 static unsigned int _days_to_mdy_fast_lookup_table_first_day;
 static unsigned int _days_to_mdy_fast_lookup_table_last_day;
-
 
 /***********************************************************************
  *                                                                     *
@@ -364,7 +362,6 @@ is_ws(char c)
   return ((c == ParseRules::CHAR_SP) || (c == ParseRules::CHAR_HT));
 }
 
-
 /***********************************************************************
  *                                                                     *
  *                    P R E S E N C E    B I T S                       *
@@ -473,7 +470,8 @@ mime_hdr_set_accelerator_slotnum(MIMEHdrImpl *mh, int32_t slot_id, uint32_t slot
 inline void
 mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
 {
-  int slot_id, slot_num;
+  int slot_id;
+  ptrdiff_t slot_num;
   if (field->m_wks_idx < 0)
     return;
 
@@ -481,11 +479,20 @@ mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
 
   slot_id = hdrtoken_index_to_slotid(field->m_wks_idx);
   if (slot_id != MIME_SLOTID_NONE) {
-    slot_num = (field - &(mh->m_first_fblock.m_field_slots[0]));
-    if ((slot_num >= 0) && (slot_num < MIME_FIELD_SLOTNUM_UNKNOWN))
-      mime_hdr_set_accelerator_slotnum(mh, slot_id, slot_num);
-    else
-      mime_hdr_set_accelerator_slotnum(mh, slot_id, MIME_FIELD_SLOTNUM_UNKNOWN);
+    if (mh->m_first_fblock.contains(field)) {
+      slot_num = (field - &(mh->m_first_fblock.m_field_slots[0]));
+      // constains() assure that the field is in the block, and the calculated
+      // slot_num will be between 0 and 15, which seem valid.
+      // However, strangely, this function regards slot number 14 and 15 as
+      // unknown for some reason that is not clear. It might be a bug.
+      // The block below is left to keep the original behavior. See also TS-4316.
+      if (slot_num >= MIME_FIELD_SLOTNUM_UNKNOWN) {
+        slot_num = MIME_FIELD_SLOTNUM_UNKNOWN;
+      }
+    } else {
+      slot_num = MIME_FIELD_SLOTNUM_UNKNOWN;
+    }
+    mime_hdr_set_accelerator_slotnum(mh, slot_id, slot_num);
   }
 }
 
@@ -530,7 +537,6 @@ checksum_block(const char *s, int len)
     sum ^= *s++;
   return sum;
 }
-
 
 #ifdef DEBUG
 void
@@ -627,7 +633,6 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
 }
 #endif
 
-
 void
 mime_init()
 {
@@ -723,7 +728,6 @@ mime_init()
 
     MIME_FIELD_HTTP2_SETTINGS = hdrtoken_string_to_wks("HTTP2-Settings");
 
-
     MIME_LEN_ACCEPT = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT);
     MIME_LEN_ACCEPT_CHARSET = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_CHARSET);
     MIME_LEN_ACCEPT_ENCODING = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_ENCODING);
@@ -803,7 +807,6 @@ mime_init()
     MIME_LEN_SEC_WEBSOCKET_VERSION = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_VERSION);
 
     MIME_LEN_HTTP2_SETTINGS = hdrtoken_wks_to_length(MIME_FIELD_HTTP2_SETTINGS);
-
 
     MIME_WKSIDX_ACCEPT = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT);
     MIME_WKSIDX_ACCEPT_CHARSET = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_CHARSET);
@@ -906,7 +909,6 @@ mime_init()
     MIME_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks("need-revalidate-once");
     MIME_VALUE_WEBSOCKET = hdrtoken_string_to_wks("websocket");
     MIME_VALUE_H2C = hdrtoken_string_to_wks(MIME_UPGRADE_H2C_TOKEN);
-
 
     mime_init_date_format_table();
     mime_init_cache_control_cooking_masks();
@@ -1640,10 +1642,11 @@ mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field)
 
   slots_so_far = 0;
   for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
-    MIMEField *first = &(fblock->m_field_slots[0]);
-    int block_slot = (int)(field - first); // in units of MIMEField
-    if ((block_slot >= 0) && (block_slot < MIME_FIELD_BLOCK_SLOTS))
-      return (slots_so_far + block_slot);
+    if (fblock->contains(field)) {
+      MIMEField *first = &(fblock->m_field_slots[0]);
+      ptrdiff_t block_slot = field - first; // in units of MIMEField
+      return slots_so_far + block_slot;
+    }
     slots_so_far += MIME_FIELD_BLOCK_SLOTS;
   }
   return -1;
@@ -1947,7 +1950,6 @@ mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
     /************************************/
     /*   End Fix for bug INKqa09752     */
     /************************************/
-
 
     // (4) reassemble the new string
     field->m_ptr_value = mime_field_value_str_from_strlist(heap, &len, &list);
@@ -2581,7 +2583,6 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // build and insert the new field object //
     ///////////////////////////////////////////
 
-
     MIMEField *field = mime_field_create(heap, mh);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name_first, field_name_length, field_value_first,
                               field_value_length, true, total_line_length, 0);
@@ -3145,7 +3146,6 @@ mime_parse_int64(const char *buf, const char *end)
   }
 }
 
-
 /*-------------------------------------------------------------------------
 
   mime_parse_rfc822_date_fastcase (const char *buf, int length, struct tm *tp)
@@ -3520,7 +3520,6 @@ mime_parse_integer(const char *&buf, const char *end, int *integer)
   return 1;
 }
 
-
 /***********************************************************************
  *                                                                     *
  *                        M A R S H A L I N G                          *
@@ -3564,7 +3563,6 @@ void
 MIMEFieldBlockImpl::unmarshal(intptr_t offset)
 {
   HDR_UNMARSHAL_PTR(m_next, MIMEFieldBlockImpl, offset);
-
 
   for (uint32_t index = 0; index < m_freetop; index++) {
     MIMEField *field = &(m_field_slots[index]);
@@ -3613,6 +3611,14 @@ MIMEFieldBlockImpl::strings_length()
     }
   }
   return ret;
+}
+
+bool
+MIMEFieldBlockImpl::contains(const MIMEField *field)
+{
+  MIMEField *first = &(m_field_slots[0]);
+  MIMEField *last = &(m_field_slots[MIME_FIELD_BLOCK_SLOTS - 1]);
+  return (field >= first) && (field <= last);
 }
 
 void
@@ -3668,7 +3674,6 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
   mime_hdr_reset_accelerators_and_presence_bits(this);
 }
 
-
 /***********************************************************************
  *                                                                     *
  *                 C O O K E D    V A L U E    C A C H E               *
@@ -3682,7 +3687,6 @@ MIMEHdrImpl::recompute_accelerators_and_presence_bits()
 //      attaching the field and the field isn't empty //
 //      detaching the field                           //
 ////////////////////////////////////////////////////////
-
 
 void
 MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)

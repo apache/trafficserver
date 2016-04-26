@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_FILTER_H
 #define LOG_FILTER_H
 
@@ -247,7 +246,6 @@ private:
 
 bool filters_are_equal(LogFilter *filt1, LogFilter *filt2);
 
-
 /*-------------------------------------------------------------------------
   LogFilterList
   -------------------------------------------------------------------------*/
@@ -305,7 +303,6 @@ private:
   LogFilterList(const LogFilterList &rhs);
   LogFilterList &operator=(const LogFilterList &rhs);
 };
-
 
 /*-------------------------------------------------------------------------
   Inline functions

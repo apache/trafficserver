@@ -181,6 +181,6 @@ SSLInitClientContext(const SSLConfigParams *params)
   return client_ctx;
 
 fail:
-  SSL_CTX_free(client_ctx);
+  SSLReleaseContext(client_ctx);
   _exit(1);
 }

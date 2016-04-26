@@ -75,7 +75,6 @@ ink_string_concatenate_strings(char *dest, ...)
   return (dest);
 } /* End ink_string_concatenate_strings */
 
-
 /*---------------------------------------------------------------------------*
 
   char *ink_string_concatenate_strings_n(char *dest, int n, ...)
@@ -111,7 +110,6 @@ ink_string_concatenate_strings_n(char *dest, int n, ...)
   va_end(ap);
   return (dest);
 } /* End ink_string_concatenate_strings_n */
-
 
 /*---------------------------------------------------------------------------*
 
@@ -164,7 +162,6 @@ ink_string_append(char *dest, char *src, int n)
 
   return (dest);
 } /* End ink_string_append */
-
 
 #if !HAVE_STRLCPY
 size_t

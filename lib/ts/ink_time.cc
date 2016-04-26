@@ -91,7 +91,6 @@ ink_time_wall_seconds()
   return ((double)s_val.tv_sec + 0.000001 * s_val.tv_usec);
 } /* End ink_time_wall_seconds */
 
-
 struct dtconv {
   char *abbrev_month_names[12];
   char *month_names[12];
@@ -104,7 +103,6 @@ struct dtconv {
   char *pm_string;
   char *ldate_format;
 };
-
 
 /*
  * The man page for cftime lies. It claims that it is thread safe.

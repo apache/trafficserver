@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _P_CACHE_INTERNAL_H__
 #define _P_CACHE_INTERNAL_H__
 
@@ -70,7 +69,6 @@ struct EvacuationBlock;
   CACHE_MUTEX_RELEASE(_l)
 #endif
 
-
 #define VC_LOCK_RETRY_EVENT()                                                                                         \
   do {                                                                                                                \
     trigger = mutex->thread_holding->schedule_in_local(this, HRTIME_MSECONDS(cache_config_mutex_retry_delay), event); \
@@ -101,7 +99,6 @@ struct EvacuationBlock;
     trigger = mutex->thread_holding->schedule_in_local(this, _t);         \
     return EVENT_CONT;                                                    \
   } while (0)
-
 
 // cache stats definitions
 enum {
@@ -155,7 +152,6 @@ enum {
   cache_directory_sync_bytes_stat,
   cache_stat_count
 };
-
 
 extern RecRawStatBlock *cache_rsb;
 
@@ -524,7 +520,6 @@ struct CacheRemoveCont : public Continuation {
 
   CacheRemoveCont() : Continuation(NULL) {}
 };
-
 
 // Global Data
 extern ClassAllocator<CacheVC> cacheVConnectionAllocator;

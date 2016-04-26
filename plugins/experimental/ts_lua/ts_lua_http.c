@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 #include "ts_lua_http_intercept.h"
 #include "ts_lua_http_config.h"

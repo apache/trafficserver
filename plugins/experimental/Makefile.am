@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 SUBDIRS = \
+ acme \
  authproxy \
  background_fetch \
  balancer \

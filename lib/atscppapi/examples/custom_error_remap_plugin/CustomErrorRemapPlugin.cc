@@ -23,11 +23,15 @@
 using namespace std;
 using namespace atscppapi;
 
+namespace
+{
+RemapPlugin *plugin;
+}
+
 class MyRemapPlugin : public RemapPlugin
 {
 public:
   MyRemapPlugin(void **instance_handle) : RemapPlugin(instance_handle) {}
-
   Result
   doRemap(const Url &map_from_url, const Url &map_to_url, Transaction &transaction, bool &redirect)
   {
@@ -52,6 +56,6 @@ TSReturnCode
 TSRemapNewInstance(int argc ATSCPPAPI_UNUSED, char *argv[] ATSCPPAPI_UNUSED, void **instance_handle, char *errbuf ATSCPPAPI_UNUSED,
                    int errbuf_size ATSCPPAPI_UNUSED)
 {
-  new MyRemapPlugin(instance_handle);
+  plugin = new MyRemapPlugin(instance_handle);
   return TS_SUCCESS;
 }

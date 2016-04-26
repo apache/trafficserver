@@ -66,7 +66,6 @@ class DFA
 {
 public:
   DFA() : _my_patterns(0) {}
-
   ~DFA();
 
   int compile(const char *pattern, unsigned flags = 0);

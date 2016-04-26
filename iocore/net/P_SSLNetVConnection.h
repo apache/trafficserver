@@ -132,7 +132,6 @@ public:
   ////////////////////////////////////////////////////////////
   SSLNetVConnection();
   virtual ~SSLNetVConnection() {}
-
   SSL *ssl;
   ink_hrtime sslHandshakeBeginTime;
   ink_hrtime sslLastWriteTime;
@@ -228,25 +227,6 @@ public:
   // Returns true if we have already called at
   // least some of the hooks
   bool calledHooks(TSHttpHookID /* eventId */) { return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE); }
-
-  MIOBuffer *
-  get_ssl_iobuf()
-  {
-    return iobuf;
-  }
-
-  void
-  set_ssl_iobuf(MIOBuffer *buf)
-  {
-    iobuf = buf;
-  }
-
-  IOBufferReader *
-  get_ssl_reader()
-  {
-    return reader;
-  }
-
   bool
   isEosRcvd()
   {
@@ -328,8 +308,6 @@ private:
   const SSLNextProtocolSet *npnSet;
   Continuation *npnEndpoint;
   SessionAccept *sessionAcceptPtr;
-  MIOBuffer *iobuf;
-  IOBufferReader *reader;
   bool eosRcvd;
   bool sslTrace;
 };

@@ -166,10 +166,9 @@ SSLCertContext::release()
     ticket_block_free(keyblock);
     keyblock = NULL;
   }
-  if (ctx) {
-    SSL_CTX_free(ctx);
-    ctx = NULL;
-  }
+
+  SSLReleaseContext(ctx);
+  ctx = NULL;
 }
 
 SSLCertLookup::SSLCertLookup() : ssl_storage(new SSLContextStorage()), ssl_default(NULL), is_valid(true)
@@ -241,7 +240,6 @@ struct ats_wildcard_matcher {
   }
 
   ~ats_wildcard_matcher() {}
-
   bool
   match(const char *hostname) const
   {
@@ -253,7 +251,7 @@ private:
 };
 
 static char *
-reverse_dns_name(const char *hostname, char(&reversed)[TS_MAX_HOST_NAME_LEN + 1])
+reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
 {
   char *ptr = reversed + sizeof(reversed);
   const char *part = hostname;

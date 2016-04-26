@@ -322,7 +322,6 @@ _memset(unsigned char *b, int c, int len)
 }
 #endif
 
-
 int
 ink_code_incr_MMH_final(uint8_t *presult, MMH_CTX *ctx)
 {

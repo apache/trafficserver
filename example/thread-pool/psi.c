@@ -61,7 +61,6 @@
    blocking calls duration, etc... */
 #define NB_THREADS 3
 
-
 #define PSI_FILENAME_MAX_SIZE 512
 #define PSI_PATH_MAX_SIZE 256
 #define PSI_PATH "include"
@@ -85,7 +84,6 @@ typedef enum {
   PARSE_EXTRACT,
 } ParseState;
 
-
 typedef struct {
   unsigned int magic;
   TSVIO output_vio;
@@ -104,12 +102,10 @@ typedef struct {
   int transform_bytes;
 } ContData;
 
-
 typedef struct {
   TSCont contp;
   TSEvent event;
 } TryLockData;
-
 
 typedef enum {
   STR_SUCCESS,
@@ -117,12 +113,10 @@ typedef enum {
   STR_FAIL,
 } StrOperationResult;
 
-
 extern Queue job_queue;
 
 static TSTextLogObject log;
 static char psi_directory[PSI_PATH_MAX_SIZE];
-
 
 static int trylock_handler(TSCont contp, TSEvent event, void *edata);
 
@@ -160,7 +154,6 @@ cont_data_alloc()
   return data;
 }
 
-
 /*-------------------------------------------------------------------------
   cont_data_destroy
   Deallocate ContData structure associated to a transaction
@@ -197,7 +190,6 @@ cont_data_destroy(ContData *data)
     TSfree(data);
   }
 }
-
 
 /*-------------------------------------------------------------------------
   strsearch_ioreader
@@ -260,7 +252,6 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
     return STR_FAIL;
   }
 }
-
 
 /*-------------------------------------------------------------------------
   strextract_ioreader
@@ -347,7 +338,6 @@ strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern
   }
 }
 
-
 /*-------------------------------------------------------------------------
   parse_data
   Search for psi filename in the data.
@@ -400,7 +390,6 @@ parse_data(TSCont contp, TSIOBufferReader input_reader, int avail, int *toconsum
       TSAssert(!"strsearch_ioreader returned unexpected status");
     }
   }
-
 
   /* And now let's extract the filename */
   status = strextract_ioreader(input_reader, nparse + PSI_START_TAG_LEN, PSI_END_TAG, data->psi_filename, &data->psi_filename_len);
@@ -584,7 +573,6 @@ wake_up_streams(TSCont contp)
   return 1;
 }
 
-
 /*-------------------------------------------------------------------------
   handle_transform
    Get data from upstream vconn.
@@ -697,7 +685,6 @@ handle_transform(TSCont contp)
   return 1;
 }
 
-
 /*-------------------------------------------------------------------------
   dump_psi
   Dump the psi_output to the downstream vconnection.
@@ -746,7 +733,6 @@ dump_psi(TSCont contp)
   data->state = STATE_READ_DATA;
   return 0;
 }
-
 
 /*-------------------------------------------------------------------------
   transform_handler
@@ -865,7 +851,6 @@ trylock_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
   return 0;
 }
 
-
 /*-------------------------------------------------------------------------
   transformable
   Determine if the current transaction should be transformed or not
@@ -887,34 +872,34 @@ transformable(TSHttpTxn txnp)
   TSHttpStatus resp_status;
   const char *value;
 
-  TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
+  if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+    resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+    if (resp_status != TS_HTTP_STATUS_OK) {
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return 0;
+    }
 
-  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
-  if (resp_status != TS_HTTP_STATUS_OK) {
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
-  }
+    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
+    if (field_loc == TS_NULL_MLOC) {
+      TSError("[psi] Unable to search Content-Type field");
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return 0;
+    }
 
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, -1);
-  if (field_loc == TS_NULL_MLOC) {
-    TSError("[psi] Unable to search Content-Type field");
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
-  }
+    value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, NULL);
+    if ((value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+      return 0;
+    }
 
-  value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, NULL);
-  if ((value == NULL) || (strncasecmp(value, "text/", sizeof("text/") - 1) != 0)) {
+    TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+
+    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1);
+
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return 0;
   }
-
-  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-
-  field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, MIME_FIELD_XPSI, -1);
-
-  TSHandleMLocRelease(bufp, hdr_loc, field_loc);
-  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
   return 1;
 }
@@ -974,7 +959,6 @@ read_response_handler(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 
   return 0;
 }
-
 
 /*-------------------------------------------------------------------------
   TSPluginInit

@@ -29,6 +29,7 @@ using std::string;
 namespace
 {
 #define TAG "null_transformation"
+GlobalPlugin *plugin;
 }
 
 class NullTransformationPlugin : public TransformationPlugin
@@ -68,7 +69,6 @@ public:
   }
 
   virtual ~NullTransformationPlugin() {}
-
 private:
 };
 
@@ -101,5 +101,5 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_NullTransformation", "apache", "dev@trafficserver.apache.org");
   TS_DEBUG(TAG, "TSPluginInit");
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

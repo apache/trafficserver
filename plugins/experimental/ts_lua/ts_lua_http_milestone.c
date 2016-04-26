@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 
 typedef enum {
@@ -44,25 +43,32 @@ typedef enum {
   TS_LUA_MILESTONE_PLUGIN_TOTAL = TS_MILESTONE_PLUGIN_TOTAL
 } TSLuaMilestoneType;
 
-
-ts_lua_var_item ts_lua_milestone_type_vars[] = {
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_BEGIN), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_FIRST_READ),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_READ_HEADER_DONE), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_BEGIN_WRITE),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_CLOSE), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_FIRST_CONNECT),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_CONNECT), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_CONNECT_END),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_BEGIN_WRITE), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_FIRST_READ),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_READ_HEADER_DONE), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_CLOSE),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_CACHE_OPEN_READ_BEGIN), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_CACHE_OPEN_READ_END),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_CACHE_OPEN_WRITE_BEGIN), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_CACHE_OPEN_WRITE_END),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_DNS_LOOKUP_BEGIN), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_DNS_LOOKUP_END),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SM_START), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SM_FINISH),
-  TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_PLUGIN_ACTIVE), TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_PLUGIN_TOTAL)};
-
+ts_lua_var_item ts_lua_milestone_type_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_BEGIN),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_FIRST_READ),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_READ_HEADER_DONE),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_BEGIN_WRITE),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_UA_CLOSE),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_FIRST_CONNECT),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_CONNECT),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_CONNECT_END),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_BEGIN_WRITE),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_FIRST_READ),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_READ_HEADER_DONE),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SERVER_CLOSE),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_CACHE_OPEN_READ_BEGIN),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_CACHE_OPEN_READ_END),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_CACHE_OPEN_WRITE_BEGIN),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_CACHE_OPEN_WRITE_END),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_DNS_LOOKUP_BEGIN),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_DNS_LOOKUP_END),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SM_START),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_SM_FINISH),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_PLUGIN_ACTIVE),
+                                                TS_LUA_MAKE_VAR_ITEM(TS_LUA_MILESTONE_PLUGIN_TOTAL)};
 
 static void ts_lua_inject_http_milestone_variables(lua_State *L);
 
 static int ts_lua_http_milestone_get(lua_State *L);
-
 
 void
 ts_lua_inject_http_milestone_api(lua_State *L)

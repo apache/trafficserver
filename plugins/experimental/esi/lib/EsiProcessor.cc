@@ -34,7 +34,6 @@ const char *EsiProcessor::INCLUDE_DATA_ID_ATTR = reinterpret_cast<const char *>(
 
 #define FAILURE_INFO_TAG "plugin_esi_failureInfo"
 
-
 EsiProcessor::EsiProcessor(const char *debug_tag, const char *parser_debug_tag, const char *expression_debug_tag,
                            ComponentBase::Debug debug_func, ComponentBase::Error error_func, HttpDataFetcher &fetcher,
                            Variables &variables, const HandlerManager &handler_mgr)

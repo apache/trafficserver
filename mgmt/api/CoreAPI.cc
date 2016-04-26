@@ -270,7 +270,6 @@ threads_for_process(pid_t proc)
     }
   }
 
-
 done:
   if (dir) {
     closedir(dir);

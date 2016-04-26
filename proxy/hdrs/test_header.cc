@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -68,7 +67,6 @@ main(int argc, char *argv[])
   return (0);
 }
 
-
 static void
 test_parse_date()
 {
@@ -114,7 +112,6 @@ test_parse_date()
 
   printf("*** %s ***\n", (failures ? "FAILED" : "PASSED"));
 }
-
 
 static void
 test_format_date()
@@ -180,7 +177,6 @@ test_format_date()
   }
   printf("*** %s ***\n", (failures ? "FAILED" : "PASSED"));
 }
-
 
 static void
 test_url()
@@ -265,7 +261,6 @@ test_url()
   printf("*** %s ***\n", (failed ? "FAILED" : "PASSED"));
 }
 
-
 static void
 test_mime()
 {
@@ -346,7 +341,6 @@ test_mime()
     printf("FAILED: set_date(%ld) ... get_date = %ld\n\n", t1, t2);
   }
 
-
   hdr.value_append("Cache-Control", 13, "no-cache", 8, 1);
 
   MIMEField *cc_field;
@@ -354,7 +348,6 @@ test_mime()
   int slist_count;
   cc_field = hdr.field_find("Cache-Control", 13);
   slist_count = cc_field->value_get_comma_list(&slist); // FIX: correct usage?
-
 
   mime_parser_clear(&parser);
 
@@ -367,7 +360,6 @@ test_mime()
 
   hdr.destroy();
 }
-
 
 static void
 test_http_parser_eos_boundary_cases()
@@ -446,7 +438,6 @@ test_http_parser_eos_boundary_cases()
   if (failures)
     printf("*** %s ***\n", (failures ? "FAILED" : "PASSED"));
 }
-
 
 static void
 test_http_aux(const char *request, const char *response)
@@ -565,7 +556,6 @@ test_http_aux(const char *request, const char *response)
   req_hdr.destroy();
   rsp_hdr.destroy();
 }
-
 
 static void
 test_http()
@@ -718,7 +708,6 @@ test_http()
   static const char response_blank3[] = {"     "
                                          "\r\n"};
 
-
   test_http_aux(request0, response0);
   test_http_aux(request09, response09);
   test_http_aux(request1, response1);
@@ -808,7 +797,6 @@ test_http_mutation()
     resp_hdr.field_delete(field_name, strlen(field_name));
   }
 
-
   printf("\n======== mutated response ==========\n\n");
   printf("\n[");
   resp_hdr.print(NULL, 0, NULL, NULL);
@@ -830,7 +818,6 @@ test_arena_aux(Arena *arena, int len)
     return (0); // no errors
   }
 }
-
 
 static void
 test_arena()
@@ -863,7 +850,6 @@ test_arena()
   printf("*** %s ***\n", (failures ? "FAILED" : "PASSED"));
 }
 
-
 static void
 test_regex()
 {
@@ -877,7 +863,6 @@ test_regex()
   printf("match www.example.com [%d]\n", dfa.match("www.example.com"));
   printf("match www.apache.org [%d]\n", dfa.match("www.apache.org"));
 }
-
 
 static void
 test_accept_language_match()

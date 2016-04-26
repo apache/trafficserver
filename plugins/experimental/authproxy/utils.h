@@ -76,7 +76,6 @@ private:
 
 struct HttpHeader {
   HttpHeader() : buffer(TSMBufferCreate()), header(TSHttpHdrCreate(buffer)) {}
-
   ~HttpHeader()
   {
     TSHttpHdrDestroy(this->buffer, this->header);

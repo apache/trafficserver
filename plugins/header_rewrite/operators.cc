@@ -42,7 +42,6 @@ OperatorSetConfig::initialize(Parser &p)
   }
 }
 
-
 void
 OperatorSetConfig::exec(const Resources &res) const
 {
@@ -70,7 +69,6 @@ OperatorSetConfig::exec(const Resources &res) const
   }
 }
 
-
 // OperatorSetStatus
 void
 OperatorSetStatus::initialize(Parser &p)
@@ -91,7 +89,6 @@ OperatorSetStatus::initialize(Parser &p)
   require_resources(RSRC_RESPONSE_STATUS);
 }
 
-
 void
 OperatorSetStatus::initialize_hooks()
 {
@@ -101,7 +98,6 @@ OperatorSetStatus::initialize_hooks()
   add_allowed_hook(TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK);
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
 }
-
 
 void
 OperatorSetStatus::exec(const Resources &res) const
@@ -124,7 +120,6 @@ OperatorSetStatus::exec(const Resources &res) const
   TSDebug(PLUGIN_NAME, "OperatorSetStatus::exec() invoked with status=%d", _status.get_int_value());
 }
 
-
 // OperatorSetStatusReason
 void
 OperatorSetStatusReason::initialize(Parser &p)
@@ -135,7 +130,6 @@ OperatorSetStatusReason::initialize(Parser &p)
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
 }
-
 
 void
 OperatorSetStatusReason::initialize_hooks()
@@ -158,7 +152,6 @@ OperatorSetStatusReason::exec(const Resources &res) const
   }
 }
 
-
 // OperatorSetDestination
 void
 OperatorSetDestination::initialize(Parser &p)
@@ -170,7 +163,6 @@ OperatorSetDestination::initialize(Parser &p)
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
 }
-
 
 void
 OperatorSetDestination::exec(const Resources &res) const
@@ -279,7 +271,6 @@ OperatorSetDestination::exec(const Resources &res) const
   }
 }
 
-
 // OperatorSetRedirect
 void
 OperatorSetRedirect::initialize(Parser &p)
@@ -299,7 +290,6 @@ OperatorSetRedirect::initialize(Parser &p)
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_RESPONSE_STATUS);
 }
-
 
 void
 OperatorSetRedirect::exec(const Resources &res) const
@@ -404,7 +394,6 @@ OperatorSetRedirect::exec(const Resources &res) const
   }
 }
 
-
 // OperatorSetTimeoutOut
 void
 OperatorSetTimeoutOut::initialize(Parser &p)
@@ -426,7 +415,6 @@ OperatorSetTimeoutOut::initialize(Parser &p)
 
   _timeout.set_value(p.get_value());
 }
-
 
 void
 OperatorSetTimeoutOut::exec(const Resources &res) const
@@ -475,7 +463,6 @@ OperatorSkipRemap::exec(const Resources &res) const
   TSSkipRemappingSet(res.txnp, _skip_remap ? 1 : 0);
 }
 
-
 // OperatorRMHeader
 void
 OperatorRMHeader::exec(const Resources &res) const
@@ -494,7 +481,6 @@ OperatorRMHeader::exec(const Resources &res) const
     }
   }
 }
-
 
 // OperatorAddHeader
 void
@@ -537,7 +523,6 @@ OperatorAddHeader::exec(const Resources &res) const
     }
   }
 }
-
 
 // OperatorSetHeader
 void

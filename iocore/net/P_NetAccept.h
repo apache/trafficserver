@@ -42,7 +42,6 @@
 #include "ts/ink_platform.h"
 #include "P_Connection.h"
 
-
 struct NetAccept;
 class Event;
 //
@@ -67,11 +66,14 @@ struct NetAcceptAction : public Action, public RefCountObj {
     server->close();
   }
 
-  Continuation *operator=(Continuation *acont) { return Action::operator=(acont); }
+  Continuation *
+  operator=(Continuation *acont)
+  {
+    return Action::operator=(acont);
+  }
 
   ~NetAcceptAction() { Debug("net_accept", "NetAcceptAction dying\n"); }
 };
-
 
 //
 // NetAccept
@@ -113,6 +115,5 @@ struct NetAccept : public Continuation {
   NetAccept();
   virtual ~NetAccept() { action_ = NULL; };
 };
-
 
 #endif

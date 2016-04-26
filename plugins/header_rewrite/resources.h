@@ -45,7 +45,6 @@ enum ResourceIDs {
   RSRC_RESPONSE_STATUS = 16,
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Resources holds the minimum resources required to process a request.
 //
@@ -67,7 +66,6 @@ public:
   }
 
   ~Resources() { destroy(); }
-
   void gather(const ResourceIDs ids, TSHttpHookID hook);
   bool
   ready() const
@@ -91,6 +89,5 @@ private:
 
   bool _ready;
 };
-
 
 #endif // __RESOURCES_H

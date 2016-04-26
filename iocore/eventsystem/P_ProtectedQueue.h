@@ -32,7 +32,6 @@
 
 #include "I_EventSystem.h"
 
-
 TS_INLINE
 ProtectedQueue::ProtectedQueue()
 {

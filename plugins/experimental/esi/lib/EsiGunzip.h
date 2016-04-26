@@ -54,5 +54,4 @@ private:
   bool _success;
 };
 
-
 #endif // _ESI_GUNZIP_H

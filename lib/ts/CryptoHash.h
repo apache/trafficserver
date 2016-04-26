@@ -44,7 +44,8 @@ union CryptoHash {
   }
 
   /// Assignment - bitwise copy.
-  CryptoHash &operator=(CryptoHash const &that)
+  CryptoHash &
+  operator=(CryptoHash const &that)
   {
     u64[0] = that.u64[0];
     u64[1] = that.u64[1];
@@ -52,10 +53,18 @@ union CryptoHash {
   }
 
   /// Equality - bitwise identical.
-  bool operator==(CryptoHash const &that) const { return u64[0] == that.u64[0] && u64[1] == that.u64[1]; }
+  bool
+  operator==(CryptoHash const &that) const
+  {
+    return u64[0] == that.u64[0] && u64[1] == that.u64[1];
+  }
 
   /// Equality - bitwise identical.
-  bool operator!=(CryptoHash const &that) const { return !(*this == that); }
+  bool
+  operator!=(CryptoHash const &that) const
+  {
+    return !(*this == that);
+  }
 
   /// Reduce to 64 bit value.
   uint64_t
@@ -66,7 +75,6 @@ union CryptoHash {
 
   /// Access 64 bit slice.
   uint64_t operator[](int i) const { return u64[i]; }
-
   /// Access 64 bit slice.
   /// @note Identical to @ operator[] but included for symmetry.
   uint64_t
@@ -102,7 +110,6 @@ class CryptoContext
 public:
   /// Destructor (force virtual)
   virtual ~CryptoContext() {}
-
   /// Update the hash with @a data of @a length bytes.
   virtual bool update(void const *data, int length) = 0;
   /// Finalize and extract the @a hash.

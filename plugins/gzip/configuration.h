@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef GZIP_CONFIGURATION_H_
 #define GZIP_CONFIGURATION_H_
 
@@ -140,7 +139,6 @@ public:
 
 private:
   explicit Configuration() {}
-
   void add_host_configuration(HostConfiguration *hc);
 
   HostContainer host_configurations_;

@@ -47,7 +47,6 @@
 #include "P_MultiCache.h"
 #include "P_HostDBProcessor.h"
 
-
 #undef HOSTDB_MODULE_VERSION
 #define HOSTDB_MODULE_VERSION makeModuleVersion(HOSTDB_MODULE_MAJOR_VERSION, HOSTDB_MODULE_MINOR_VERSION, PRIVATE_MODULE_HEADER)
 HostDBInfo *probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout);

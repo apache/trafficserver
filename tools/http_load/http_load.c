@@ -70,7 +70,6 @@
 /* How many file descriptors to not use. */
 #define RESERVED_FDS 3
 
-
 typedef struct {
   char *url_str;
   int protocol;
@@ -293,7 +292,6 @@ static void *malloc_check(size_t size);
 static void *realloc_check(void *ptr, size_t size);
 static char *strdup_check(char *str);
 static void check(void *ptr);
-
 
 int
 main(int argc, char **argv)
@@ -605,7 +603,6 @@ main(int argc, char **argv)
   /* NOT_REACHED */
 }
 
-
 static void
 usage(void)
 {
@@ -623,7 +620,6 @@ usage(void)
   (void)fprintf(stderr, "One end specifier, either -fetches or -seconds, is required.\n");
   exit(1);
 }
-
 
 static void
 read_url_file(char *url_file)
@@ -750,7 +746,6 @@ read_url_file(char *url_file)
   }
   fclose(fp);
 }
-
 
 static void
 lookup_address(int url_num)
@@ -880,7 +875,6 @@ lookup_address(int url_num)
 #endif /* USE_IPV6 */
 }
 
-
 static void
 read_sip_file(char *sip_file)
 {
@@ -918,7 +912,6 @@ read_sip_file(char *sip_file)
   }
   fclose(fp);
 }
-
 
 static void
 start_connection(struct timeval *nowP)
@@ -994,7 +987,6 @@ start_connection(struct timeval *nowP)
   finish(nowP);
 }
 
-
 static void
 start_socket(int url_num, int cnum, struct timeval *nowP)
 {
@@ -1002,7 +994,6 @@ start_socket(int url_num, int cnum, struct timeval *nowP)
   int flags;
   int sip_num;
   int reusable = connections[cnum].reusable;
-
 
   /* Start filling in the connection slot. */
   connections[cnum].url_num = url_num;
@@ -1234,7 +1225,6 @@ handle_connect(int cnum, struct timeval *nowP, int double_check)
   connections[cnum].conn_state = CNST_HEADERS;
   connections[cnum].header_state = HDST_LINE1_PROTOCOL;
 }
-
 
 static void
 handle_read(int cnum, struct timeval *nowP)
@@ -2764,7 +2754,6 @@ handle_read(int cnum, struct timeval *nowP)
   }
 }
 
-
 static void
 idle_connection(ClientData client_data, struct timeval *nowP __attribute__((unused)))
 {
@@ -2791,7 +2780,6 @@ idle_connection(ClientData client_data, struct timeval *nowP __attribute__((unus
   ++total_timeouts;
 }
 
-
 static void
 wakeup_connection(ClientData client_data, struct timeval *nowP __attribute__((unused)))
 {
@@ -2801,7 +2789,6 @@ wakeup_connection(ClientData client_data, struct timeval *nowP __attribute__((un
   connections[cnum].wakeup_timer = (Timer *)0;
   connections[cnum].conn_state = CNST_READING;
 }
-
 
 static void
 close_connection(int cnum)
@@ -2887,7 +2874,6 @@ close_connection(int cnum)
   }
 }
 
-
 static void
 progress_report(ClientData client_data __attribute__((unused)), struct timeval *nowP __attribute__((unused)))
 {
@@ -2898,7 +2884,6 @@ progress_report(ClientData client_data __attribute__((unused)), struct timeval *
                 num_connections);
 }
 
-
 static void
 start_timer(ClientData client_data __attribute__((unused)), struct timeval *nowP __attribute__((unused)))
 {
@@ -2907,13 +2892,11 @@ start_timer(ClientData client_data __attribute__((unused)), struct timeval *nowP
     (void)tmr_create(nowP, start_timer, JunkClientData, (long)(random() % range_interval) + low_interval, 0);
 }
 
-
 static void
 end_timer(ClientData client_data __attribute__((unused)), struct timeval *nowP __attribute__((unused)))
 {
   finish(nowP);
 }
-
 
 static void
 finish(struct timeval *nowP)
@@ -2965,7 +2948,6 @@ finish(struct timeval *nowP)
   exit(0);
 }
 
-
 static long long
 delta_timeval(struct timeval *start, struct timeval *finish)
 {
@@ -2973,7 +2955,6 @@ delta_timeval(struct timeval *start, struct timeval *finish)
   long long delta_usecs = finish->tv_usec - start->tv_usec;
   return delta_secs * (long long)1000000L + delta_usecs;
 }
-
 
 static void *
 malloc_check(size_t size)
@@ -2983,7 +2964,6 @@ malloc_check(size_t size)
   return ptr;
 }
 
-
 static void *
 realloc_check(void *ptr, size_t size)
 {
@@ -2992,7 +2972,6 @@ realloc_check(void *ptr, size_t size)
   return ptr;
 }
 
-
 static char *
 strdup_check(char *str)
 {
@@ -3000,7 +2979,6 @@ strdup_check(char *str)
   check((void *)str);
   return str;
 }
-
 
 static void
 check(void *ptr)

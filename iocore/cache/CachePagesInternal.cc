@@ -32,7 +32,6 @@ struct ShowCacheInternal : public ShowCont {
   CacheKey show_cache_key;
   CacheVC *cache_vc;
 
-
   int showMain(int event, Event *e);
   int showEvacuations(int event, Event *e);
   int showVolEvacuations(int event, Event *e);
@@ -55,18 +54,14 @@ struct ShowCacheInternal : public ShowCont {
 extern ShowCacheInternal *theshowcacheInternal;
 Action *register_ShowCacheInternal(Continuation *c, HTTPHdr *h);
 
-
 extern Vol **gvol;
 extern volatile int gnvol;
-
 
 // Stat Pages
 ShowCacheInternal *theshowcacheInternal = NULL;
 
-
 #define STREQ_PREFIX(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
 #define STREQ_LEN_PREFIX(_x, _l, _s) (path_len < sizeof(_s) && !strncasecmp(_x, _s, sizeof(_s) - 1))
-
 
 Action *
 register_ShowCacheInternal(Continuation *c, HTTPHdr *h)
@@ -96,7 +91,6 @@ register_ShowCacheInternal(Continuation *c, HTTPHdr *h)
     eventProcessor.schedule_imm(theshowcacheInternal, ET_TASK);
   return &theshowcacheInternal->action;
 }
-
 
 int
 ShowCacheInternal::showMain(int event, Event *e)
@@ -131,7 +125,6 @@ ShowCacheInternal::showConnections(int event, Event *e)
   SET_HANDLER(&ShowCacheInternal::showVolConnections);
   CONT_SCHED_LOCK_RETRY_RET(this);
 }
-
 
 int
 ShowCacheInternal::showVolConnections(int event, Event *e)
@@ -185,7 +178,6 @@ ShowCacheInternal::showVolConnections(int event, Event *e)
 
 #endif
 
-
 int
 ShowCacheInternal::showEvacuations(int event, Event *e)
 {
@@ -201,7 +193,6 @@ ShowCacheInternal::showEvacuations(int event, Event *e)
   SET_HANDLER(&ShowCacheInternal::showVolEvacuations);
   CONT_SCHED_LOCK_RETRY_RET(this);
 }
-
 
 int
 ShowCacheInternal::showVolEvacuations(int event, Event *e)
@@ -258,7 +249,6 @@ ShowCacheInternal::showVolumes(int event, Event *e)
   SET_HANDLER(&ShowCacheInternal::showVolVolumes);
   CONT_SCHED_LOCK_RETRY_RET(this);
 }
-
 
 int
 ShowCacheInternal::showVolVolumes(int event, Event *e)

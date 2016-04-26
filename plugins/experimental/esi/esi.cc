@@ -163,7 +163,6 @@ public:
   }
 };
 
-
 static const char *
 createDebugTag(const char *prefix, TSCont contp, string &dest)
 {
@@ -898,7 +897,6 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
   cont_data->checkXformStatus();
 
   is_fetch_event = cont_data->data_fetcher->isFetchEvent(event);
-
 
   if (cont_data->xform_closed) {
     TSDebug(cont_debug_tag, "[%s] Transformation closed. Post-processing...", __FUNCTION__);

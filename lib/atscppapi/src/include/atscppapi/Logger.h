@@ -264,5 +264,4 @@ private:
 
 } /* atscppapi */
 
-
 #endif /* ATSCPPAPI_LOGGER_H_ */

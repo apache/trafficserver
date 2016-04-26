@@ -160,7 +160,6 @@ Expression::_evalSimpleExpr(const char *expr, int expr_len)
   return _convert(lhs, val) ? val : !lhs.empty();
 }
 
-
 bool
 Expression::evaluate(const char *expr, int expr_len /* = -1 */)
 {

@@ -137,7 +137,6 @@ public:
   }
 
   ~SimpleTokenizer() { _clearData(); }
-
   void
   setString(const char *s)
   {

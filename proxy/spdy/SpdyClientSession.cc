@@ -60,7 +60,6 @@ SpdyRequest::destroy()
   spdyRequestAllocator.free(this);
 }
 
-
 void
 SpdyRequest::init(SpdyClientSession *sm, int id)
 {
@@ -91,7 +90,7 @@ SpdyRequest::clear()
     fetch_sm = NULL;
   }
 
-  vector<pair<string, string> >().swap(headers);
+  vector<pair<string, string>>().swap(headers);
 
   std::string().swap(url);
   std::string().swap(host);
@@ -160,15 +159,9 @@ SpdyClientSession::clear()
   this->mutex = NULL;
 
   if (vc) {
-    // clean up ssl's first byte iobuf
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
-    if (ssl_vc) {
-      ssl_vc->set_ssl_iobuf(NULL);
-    }
     TSVConnClose(reinterpret_cast<TSVConn>(vc));
     vc = NULL;
   }
-
 
   if (req_reader) {
     TSIOBufferReaderFree(req_reader);
@@ -232,8 +225,8 @@ SpdyClientSession::state_session_start(int /* event */, void * /* edata */)
     {SPDYLAY_SETTINGS_INITIAL_WINDOW_SIZE, SPDYLAY_ID_FLAG_SETTINGS_NONE, spdy_initial_window_size}};
   int r;
 
-  this->read_vio = (TSVIO) this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
-  this->write_vio = (TSVIO) this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
+  this->read_vio = (TSVIO)this->vc->do_io_read(this, INT64_MAX, reinterpret_cast<MIOBuffer *>(this->req_buffer));
+  this->write_vio = (TSVIO)this->vc->do_io_write(this, INT64_MAX, reinterpret_cast<IOBufferReader *>(this->resp_reader));
 
   if (TSIOBufferReaderAvail(this->req_reader) > 0) {
     spdy_process_read(TS_EVENT_VCONN_WRITE_READY, this);
@@ -299,7 +292,6 @@ SpdyClientSession::destroy()
   this->clear();
   spdyClientSessionAllocator.free(this);
 }
-
 
 SpdyClientSession *
 SpdyClientSession::alloc()
@@ -507,14 +499,6 @@ spdy_process_fetch_body(TSEvent event, SpdyClientSession *sm, TSFetchSM fetch_sm
 void
 SpdyClientSession::do_io_close(int alertno)
 {
-  if (vc) {
-    // vc is released (null'ed) within ProxyClientSession when handling
-    // TS_HTTP_SSN_CLOSE_HOOK, so, reset ssl_iobuf to prevent double free
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
-    if (ssl_vc) {
-      ssl_vc->set_ssl_iobuf(NULL);
-    }
-  }
   // The object will be cleaned up from within ProxyClientSession::handle_api_return
   // This way, the object will still be alive for any SSN_CLOSE hooks
   do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);

@@ -68,7 +68,6 @@ private:
   friend class DocNode; // to use the method above
 };
 
-
 class DocNode
 {
 public:

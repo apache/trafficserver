@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ClusterHandler.cc
@@ -2316,7 +2315,6 @@ ClusterHandler::build_poll(bool next)
 
 extern int CacheClusterMonitorEnabled;
 extern int CacheClusterMonitorIntervalSecs;
-
 
 //
 // The main event for machine-machine link

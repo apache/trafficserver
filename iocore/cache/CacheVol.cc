@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "P_Cache.h"
 
 #define SCAN_BUF_SIZE RECOVERY_SIZE
@@ -321,8 +320,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       }
     }
     continue;
-  Lskip:
-    ;
+  Lskip:;
 #endif
   }
 #ifdef HTTP_CACHE

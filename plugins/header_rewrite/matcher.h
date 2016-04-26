@@ -30,7 +30,6 @@
 #include "regex_helper.h"
 #include "lulu.h"
 
-
 // Possible operators that we support (at least partially)
 enum MatcherOps {
   MATCH_EQUAL,
@@ -39,7 +38,6 @@ enum MatcherOps {
   MATCH_REGULAR_EXPRESSION,
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Matchers (this is also the interface)
 //
@@ -47,7 +45,6 @@ class Matcher
 {
 public:
   explicit Matcher(const MatcherOps op) : _pdata(NULL), _op(op) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Matcher"); }
-
   virtual ~Matcher()
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling DTOR for Matcher");
@@ -84,7 +81,6 @@ template <class T> class Matchers : public Matcher
 {
 public:
   explicit Matchers<T>(const MatcherOps op) : Matcher(op), _data() {}
-
   // Getters / setters
   const T
   get() const

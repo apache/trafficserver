@@ -98,7 +98,6 @@ RecHttpLoadIp(char const *value_name, IpAddr &ip4, IpAddr &ip6)
   }
 }
 
-
 char const *const HttpProxyPort::DEFAULT_VALUE = "8080";
 
 char const *const HttpProxyPort::PORTS_CONFIG_NAME = "proxy.config.http.server_ports";

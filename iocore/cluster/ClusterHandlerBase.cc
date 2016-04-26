@@ -35,7 +35,6 @@ extern uint32_t cluster_packet_mark;
 extern uint32_t cluster_packet_tos;
 extern int num_of_cluster_threads;
 
-
 ///////////////////////////////////////////////////////////////
 // Incoming message continuation for periodic callout threads
 ///////////////////////////////////////////////////////////////

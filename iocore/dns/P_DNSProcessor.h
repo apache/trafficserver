@@ -78,7 +78,6 @@ extern unsigned int dns_sequence_number;
 #define QFIXEDSZ 4
 #endif
 
-
 // Events
 
 #define DNS_EVENT_LOOKUP DNS_EVENT_EVENTS_START
@@ -86,7 +85,6 @@ extern unsigned int dns_sequence_number;
 extern int dns_fd;
 
 void *dns_udp_receiver(void *arg);
-
 
 // Stats
 enum DNS_Stats {
@@ -176,7 +174,6 @@ struct DNSEntry : public Continuation {
     memset(qname, 0, MAXDNAME);
   }
 };
-
 
 typedef int (DNSEntry::*DNSEntryHandler)(int, void *);
 
@@ -314,11 +311,10 @@ struct DNSServer {
   }
 };
 
-
 TS_INLINE
 DNSHandler::DNSHandler()
   : Continuation(NULL), n_con(0), in_flight(0), name_server(0), in_write_dns(0), hostent_cache(0), last_primary_retry(0),
-    last_primary_reopen(0), m_res(0), txn_lookup_timeout(0), generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t) this))
+    last_primary_reopen(0), m_res(0), txn_lookup_timeout(0), generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this))
 {
   ats_ip_invalidate(&ip);
   for (int i = 0; i < MAX_NAMED; i++) {

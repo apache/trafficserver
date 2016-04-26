@@ -53,7 +53,6 @@ int arg_idx_hooked;
 int arg_idx_host_configuration;
 int arg_idx_url_disallowed;
 
-
 const char *global_hidden_header_name;
 Configuration *config = NULL;
 const char *dictionary = NULL;
@@ -99,7 +98,6 @@ gzip_data_alloc(int compression_type)
 
   return data;
 }
-
 
 static void
 gzip_data_destroy(GzipData *data)
@@ -248,7 +246,6 @@ gzip_transform_init(TSCont contp, GzipData *data)
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 }
 
-
 static void
 gzip_transform_one(GzipData *data, TSIOBufferReader upstream_reader, int amount)
 {
@@ -350,7 +347,6 @@ gzip_transform_finish(GzipData *data)
   }
 }
 
-
 static void
 gzip_transform_do(TSCont contp)
 {
@@ -413,7 +409,6 @@ gzip_transform_do(TSCont contp)
   }
 }
 
-
 static int
 gzip_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 {
@@ -446,7 +441,6 @@ gzip_transform(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
   return 0;
 }
-
 
 static int
 gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration *host_configuration, int *compress_type)
@@ -562,7 +556,6 @@ gzip_transformable(TSHttpTxn txnp, int server, HostConfiguration *host_configura
   return rv;
 }
 
-
 static void
 gzip_transform_add(TSHttpTxn txnp, int /* server ATS_UNUSED */, HostConfiguration *hc, int compress_type)
 {
@@ -650,7 +643,6 @@ find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc 
   return config->GlobalConfiguration();
 }
 
-
 static int
 transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 {
@@ -736,7 +728,6 @@ transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
   return 0;
 }
 
-
 static void
 read_configuration(TSCont contp)
 {
@@ -761,7 +752,6 @@ management_update(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
   read_configuration(contp);
   return 0;
 }
-
 
 void
 TSPluginInit(int argc, const char *argv[])

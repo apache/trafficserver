@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "P_Cache.h"
 
 #define IS_POWER_2(_x) (!((_x) & ((_x)-1)))
@@ -709,7 +708,6 @@ Vol::evac_range(off_t low, off_t high, int evac_phase)
   }
   return 0;
 }
-
 
 static int
 agg_copy(char *p, CacheVC *vc)

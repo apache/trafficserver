@@ -87,7 +87,6 @@ Load_Config_Value(Value const &parent, char const *name, IpRangeQueue &addrs)
   }
 }
 
-
 int
 Load_Config_File()
 {

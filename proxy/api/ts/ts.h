@@ -697,8 +697,8 @@ tsapi TSReturnCode TSUrlHttpFragmentSet(TSMBuffer bufp, TSMLoc offset, const cha
    @param map optional (can be NULL) map of characters to encode.
 
 */
-tsapi TSReturnCode
-TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, size_t *length, const unsigned char *map);
+tsapi TSReturnCode TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, size_t *length,
+                                         const unsigned char *map);
 
 /**
    Similar to TSStringPercentEncode(), but works on a URL object.
@@ -711,8 +711,8 @@ TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, 
    @param map optional (can be NULL) map of characters to encode.
 
 */
-tsapi TSReturnCode
-TSUrlPercentEncode(TSMBuffer bufp, TSMLoc offset, char *dst, size_t dst_size, size_t *length, const unsigned char *map);
+tsapi TSReturnCode TSUrlPercentEncode(TSMBuffer bufp, TSMLoc offset, char *dst, size_t dst_size, size_t *length,
+                                      const unsigned char *map);
 
 /**
    Perform percent-decoding of the string in the buffer, writing
@@ -728,7 +728,6 @@ TSUrlPercentEncode(TSMBuffer bufp, TSMLoc offset, char *dst, size_t dst_size, si
 
 */
 tsapi TSReturnCode TSStringPercentDecode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length);
-
 
 /* --------------------------------------------------------------------------
    MIME headers */
@@ -979,10 +978,10 @@ tsapi TSReturnCode TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, con
  */
 tsapi TSReturnCode TSMimeHdrFieldDestroy(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
 
-tsapi TSReturnCode
-TSMimeHdrFieldClone(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field, TSMLoc *locp);
-tsapi TSReturnCode
-TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field);
+tsapi TSReturnCode TSMimeHdrFieldClone(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc src_field,
+                                       TSMLoc *locp);
+tsapi TSReturnCode TSMimeHdrFieldCopy(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp, TSMLoc src_hdr,
+                                      TSMLoc src_field);
 tsapi TSReturnCode TSMimeHdrFieldCopyValues(TSMBuffer dest_bufp, TSMLoc dest_hdr, TSMLoc dest_field, TSMBuffer src_bufp,
                                             TSMLoc src_hdr, TSMLoc src_field);
 tsapi TSMLoc TSMimeHdrFieldNext(TSMBuffer bufp, TSMLoc hdr, TSMLoc field);
@@ -1007,8 +1006,8 @@ tsapi TSReturnCode TSMimeHdrFieldValueDateSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc
 
 tsapi TSReturnCode TSMimeHdrFieldValueAppend(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length);
 /* These Insert() APIs should be considered. Use the corresponding Set() API instead */
-tsapi TSReturnCode
-TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value, int length);
+tsapi TSReturnCode TSMimeHdrFieldValueStringInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, const char *value,
+                                                   int length);
 tsapi TSReturnCode TSMimeHdrFieldValueIntInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, int value);
 tsapi TSReturnCode TSMimeHdrFieldValueUintInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, unsigned int value);
 tsapi TSReturnCode TSMimeHdrFieldValueDateInsert(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, time_t value);
@@ -1726,10 +1725,10 @@ tsapi struct sockaddr const *TSNetVConnRemoteAddrGet(TSVConn vc);
       or cancel the attempt to connect.
 
  */
-tsapi TSAction
-TSNetConnect(TSCont contp, /**< continuation that is called back when the attempted net connection either succeeds or fails. */
-             struct sockaddr const *to /**< Address to which to connect. */
-             );
+tsapi TSAction TSNetConnect(
+  TSCont contp,             /**< continuation that is called back when the attempted net connection either succeeds or fails. */
+  struct sockaddr const *to /**< Address to which to connect. */
+  );
 
 tsapi TSAction TSNetAccept(TSCont contp, int port, int domain, int accept_threads);
 
@@ -2243,7 +2242,6 @@ tsapi void TSVConnActiveTimeoutCancel(TSVConn connp);
   this only really makes sense in TS_HTTP_READ_REQUEST_HDR_HOOK
 */
 tsapi void TSSkipRemappingSet(TSHttpTxn txnp, int flag);
-
 
 /*
   Set or get various overridable configurations, for a transaction. This should

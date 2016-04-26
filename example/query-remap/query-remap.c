@@ -41,7 +41,6 @@ typedef struct _query_remap_info {
   int num_hosts;
 } query_remap_info;
 
-
 int
 TSRemapInit(TSRemapInterface *api_info ATS_UNUSED, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
 {
@@ -49,7 +48,6 @@ TSRemapInit(TSRemapInterface *api_info ATS_UNUSED, char *errbuf ATS_UNUSED, int 
   TSDebug(PLUGIN_NAME, "remap plugin initialized");
   return 0;
 }
-
 
 int
 TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, int errbuf_size ATS_UNUSED)
@@ -110,7 +108,6 @@ TSRemapDeleteInstance(void *ih)
   }
 }
 
-
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 {
@@ -166,7 +163,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
   TSDebug(PLUGIN_NAME, "request not modified");
   return TSREMAP_NO_REMAP;
 }
-
 
 /* FNV (Fowler/Noll/Vo) hash
    (description: http://www.isthe.com/chongo/tech/comp/fnv/index.html) */

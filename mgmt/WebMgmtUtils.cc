@@ -40,7 +40,6 @@
  *
  ****************************************************************************/
 
-
 // bool varSetFromStr(const char*, const char* )
 //
 // Sets the named local manager variable from the value string
@@ -290,7 +289,6 @@ varDataFromName(RecDataT varType, const char *varName, RecData *value)
   return (err == REC_ERR_OKAY);
 }
 
-
 // bool varCounterFromName (const char*, RecFloat* )
 //
 //   Sets the *value to value of the varName.
@@ -438,7 +436,6 @@ varIntFromName(const char *varName, RecInt *value)
 
   return found;
 }
-
 
 // void percentStrFromFloat(MgmtFloat, char* bufVal)
 //
@@ -789,7 +786,6 @@ varType(const char *varName)
   return data_type;
 }
 
-
 // InkHashTable* processFormSubmission(char* submission)
 //
 //  A generic way to handle a HTML form submission.
@@ -1014,7 +1010,6 @@ substituteForHTMLChars(const char *buffer)
   *safeCurrent = '\0';
   return safeBuf;
 }
-
 
 // bool ProxyShutdown()
 //

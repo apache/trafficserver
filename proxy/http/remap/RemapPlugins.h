@@ -42,14 +42,12 @@
 **/
 struct RemapPlugins : public Continuation {
   RemapPlugins() : _cur(0) {}
-
   RemapPlugins(HttpTransact::State *s, URL *u, HTTPHdr *h, host_hdr_info *hi)
     : _cur(0), _s(s), _request_url(u), _request_header(h), _hh_ptr(hi)
   {
   }
 
   ~RemapPlugins() { _cur = 0; }
-
   // Some basic setters
   void
   setState(HttpTransact::State *state)

@@ -146,7 +146,6 @@ UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc
   }
 }
 
-
 int
 UDPNetProcessorInternal::udp_callback(UDPNetHandler *nh, UDPConnection *xuc, EThread *thread)
 {
@@ -504,7 +503,6 @@ UDPNetProcessor::sendto_re(Continuation *cont, void *token, int fd, struct socka
   }
 }
 
-
 bool
 UDPNetProcessor::CreateUDPSocket(int *resfd, sockaddr const *remote_addr, sockaddr *local_addr, int *local_addr_len,
                                  Action **status, int send_bufsize, int recv_bufsize)
@@ -557,7 +555,6 @@ HardError:
   *status = ACTION_IO_ERROR;
   return false;
 }
-
 
 Action *
 UDPNetProcessor::UDPBind(Continuation *cont, sockaddr const *addr, int send_bufsize, int recv_bufsize)
@@ -612,7 +609,6 @@ Lerror:
   cont->handleEvent(NET_EVENT_DATAGRAM_ERROR, NULL);
   return ACTION_IO_ERROR;
 }
-
 
 // send out all packets that need to be sent out as of time=now
 UDPQueue::UDPQueue() : last_report(0), last_service(0), packets(0), added(0)
@@ -781,7 +777,6 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
     }
   }
 }
-
 
 void
 UDPQueue::send(UDPPacket *p)

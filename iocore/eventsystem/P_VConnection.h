@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #if !defined(P_VConnection_h)
 #define P_VConnection_h
 #include "I_EventSystem.h"
@@ -54,7 +53,6 @@ get_vc_event_name(int event)
     return "VC_EVENT_ACTIVE_TIMEOUT";
   }
 }
-
 
 TS_INLINE
 VConnection::VConnection(ProxyMutex *aMutex) : Continuation(aMutex), lerrno(0)

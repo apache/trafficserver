@@ -24,7 +24,6 @@
 #include "ruleset.h"
 #include "factory.h"
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Class implementation (no reason to have these inline)
 //
@@ -39,7 +38,6 @@ RuleSet::append(RuleSet *rule)
     tmp = tmp->next;
   tmp->next = rule;
 }
-
 
 void
 RuleSet::add_condition(Parser &p)
@@ -64,7 +62,6 @@ RuleSet::add_condition(Parser &p)
     _ids = static_cast<ResourceIDs>(_ids | _cond->get_resource_ids());
   }
 }
-
 
 void
 RuleSet::add_operator(Parser &p)

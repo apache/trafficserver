@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_OBJECT_H
 #define LOG_OBJECT_H
 
@@ -72,7 +71,6 @@ private:
 
 public:
   LogBufferManager() : _num_flush_buffers(0) {}
-
   void
   add_to_flush_queue(LogBuffer *buffer)
   {
@@ -339,9 +337,7 @@ class RefCounter
 {
 public:
   RefCounter(int *count) : m_count(count) { ink_atomic_increment(m_count, 1); }
-
   ~RefCounter() { ink_atomic_increment(m_count, -1); }
-
 private:
   int *m_count;
 };
@@ -433,7 +429,8 @@ public:
   unsigned get_num_collation_clients() const;
 };
 
-inline bool LogObject::operator==(LogObject &old)
+inline bool
+LogObject::operator==(LogObject &old)
 {
   if (!receives_remote_data() && !old.receives_remote_data()) {
     return (get_signature() == old.get_signature() &&

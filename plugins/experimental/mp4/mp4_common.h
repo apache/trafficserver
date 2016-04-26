@@ -30,7 +30,6 @@
 #include <ts/remap.h>
 #include "mp4_meta.h"
 
-
 class IOHandle
 {
 public:

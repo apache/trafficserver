@@ -53,7 +53,8 @@ public:
     return;
   }
   virtual ~NonAtomicRefCountObj() { return; }
-  NonAtomicRefCountObj &operator=(const NonAtomicRefCountObj &s)
+  NonAtomicRefCountObj &
+  operator=(const NonAtomicRefCountObj &s)
   {
     (void)s;
     return (*this);
@@ -94,7 +95,6 @@ NonAtomicRefCountObj::refcount() const
   return m_refcount;
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 //
 // class NonAtomicPtr
@@ -115,11 +115,26 @@ public:
   operator T *() const { return (m_ptr); }
   T *operator->() const { return (m_ptr); }
   T &operator*() const { return (*m_ptr); }
-
-  int operator==(const T *p) { return (m_ptr == p); }
-  int operator==(const NonAtomicPtr<T> &p) { return (m_ptr == p.m_ptr); }
-  int operator!=(const T *p) { return (m_ptr != p); }
-  int operator!=(const NonAtomicPtr<T> &p) { return (m_ptr != p.m_ptr); }
+  int
+  operator==(const T *p)
+  {
+    return (m_ptr == p);
+  }
+  int
+  operator==(const NonAtomicPtr<T> &p)
+  {
+    return (m_ptr == p.m_ptr);
+  }
+  int
+  operator!=(const T *p)
+  {
+    return (m_ptr != p);
+  }
+  int
+  operator!=(const NonAtomicPtr<T> &p)
+  {
+    return (m_ptr != p.m_ptr);
+  }
 
   NonAtomicRefCountObj *
   _ptr()
@@ -164,7 +179,9 @@ template <class T> inline NonAtomicPtr<T>::~NonAtomicPtr()
   return;
 }
 
-template <class T> inline NonAtomicPtr<T> &NonAtomicPtr<T>::operator=(T *p)
+template <class T>
+inline NonAtomicPtr<T> &
+NonAtomicPtr<T>::operator=(T *p)
 {
   T *temp_ptr = m_ptr;
 
@@ -193,11 +210,12 @@ NonAtomicPtr<T>::clear()
     m_ptr = NULL;
   }
 }
-template <class T> inline NonAtomicPtr<T> &NonAtomicPtr<T>::operator=(const NonAtomicPtr<T> &src)
+template <class T>
+inline NonAtomicPtr<T> &
+NonAtomicPtr<T>::operator=(const NonAtomicPtr<T> &src)
 {
   return (operator=(src.m_ptr));
 }
-
 
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
@@ -208,7 +226,6 @@ template <class T> inline NonAtomicPtr<T> &NonAtomicPtr<T>::operator=(const NonA
 struct ForceVFPTToTop {
   virtual ~ForceVFPTToTop() {}
 };
-
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -226,7 +243,8 @@ public:
     return;
   }
   virtual ~RefCountObj() {}
-  RefCountObj &operator=(const RefCountObj &s)
+  RefCountObj &
+  operator=(const RefCountObj &s)
   {
     (void)s;
     return (*this);
@@ -269,7 +287,6 @@ RefCountObj::refcount() const
   return m_refcount;
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 //
 // class Ptr
@@ -300,11 +317,26 @@ public:
   operator T *() const { return (m_ptr); }
   T *operator->() const { return (m_ptr); }
   T &operator*() const { return (*m_ptr); }
-
-  int operator==(const T *p) { return (m_ptr == p); }
-  int operator==(const Ptr<T> &p) { return (m_ptr == p.m_ptr); }
-  int operator!=(const T *p) { return (m_ptr != p); }
-  int operator!=(const Ptr<T> &p) { return (m_ptr != p.m_ptr); }
+  int
+  operator==(const T *p)
+  {
+    return (m_ptr == p);
+  }
+  int
+  operator==(const Ptr<T> &p)
+  {
+    return (m_ptr == p.m_ptr);
+  }
+  int
+  operator!=(const T *p)
+  {
+    return (m_ptr != p);
+  }
+  int
+  operator!=(const Ptr<T> &p)
+  {
+    return (m_ptr != p.m_ptr);
+  }
 
   RefCountObj *
   _ptr()
@@ -349,7 +381,9 @@ template <class T> inline Ptr<T>::~Ptr()
   return;
 }
 
-template <class T> inline Ptr<T> &Ptr<T>::operator=(T *p)
+template <class T>
+inline Ptr<T> &
+Ptr<T>::operator=(T *p)
 {
   T *temp_ptr = m_ptr;
 
@@ -378,7 +412,9 @@ Ptr<T>::clear()
     m_ptr = NULL;
   }
 }
-template <class T> inline Ptr<T> &Ptr<T>::operator=(const Ptr<T> &src)
+template <class T>
+inline Ptr<T> &
+Ptr<T>::operator=(const Ptr<T> &src)
 {
   return (operator=(src.m_ptr));
 }

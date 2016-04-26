@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _P_CACHE_VOL_H__
 #define _P_CACHE_VOL_H__
 
@@ -56,7 +55,6 @@
 #define AUTO_SIZE_RAM_CACHE -1                             // 1-1 with directory size
 #define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeofDoc) // 1MB
 
-
 #define dir_offset_evac_bucket(_o) (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
 #define dir_evac_bucket(_e) dir_offset_evac_bucket(dir_offset(_e))
 #define offset_evac_bucket(_d, _o) \
@@ -69,7 +67,6 @@
 #define DOC_NO_CHECKSUM ((uint32_t)0xA0B0C0D0)
 
 #define sizeofDoc (((uint32_t)(uintptr_t) & ((Doc *)0)->checksum) + (uint32_t)sizeof(uint32_t))
-
 
 struct Cache;
 struct Vol;
@@ -122,7 +119,6 @@ struct EvacuationBlock {
   CacheVC *earliest_evacuator;
   LINK(EvacuationBlock, link);
 };
-
 
 struct Vol : public Continuation {
   char *path;
@@ -179,7 +175,6 @@ struct Vol : public Continuation {
   int64_t first_fragment_offset;
   Ptr<IOBufferData> first_fragment_data;
 
-
   void cancel_trigger();
 
   int recover_data();
@@ -206,7 +201,6 @@ struct Vol : public Continuation {
   int handle_recover_from_data(int event, void *data);
   int handle_recover_write_dir(int event, void *data);
   int handle_header_read(int event, void *data);
-
 
   int dir_init_done(int event, void *data);
 

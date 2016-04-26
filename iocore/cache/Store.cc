@@ -93,7 +93,6 @@ Store::add(Store &s)
   s.delete_all();
 }
 
-
 // should be changed to handle offset in more general
 // case (where this is not a free of a "just" allocated
 // store
@@ -111,8 +110,7 @@ Store::free(Store &s)
             goto Lfound;
           }
       ink_release_assert(!"Store::free failed");
-    Lfound:
-      ;
+    Lfound:;
     }
   }
 }
@@ -141,8 +139,7 @@ Store::sort()
         }
       }
       disk[n++] = sd;
-    Ldone:
-      ;
+    Ldone:;
     }
   }
   n_disks = n;
@@ -434,7 +431,6 @@ Lfail:
   return err;
 }
 
-
 int
 Store::write_config_data(int fd) const
 {
@@ -587,7 +583,6 @@ fail:
   return Span::errorstr(serr);
 }
 
-
 void
 Store::normalize()
 {
@@ -706,8 +701,7 @@ Store::try_realloc(Store &s, Store &diff)
         sd = prev ? prev->link.next : s.disk[i];
         continue;
       }
-    Lfound:
-      ;
+    Lfound:;
       prev = sd;
       sd = sd->link.next;
     }

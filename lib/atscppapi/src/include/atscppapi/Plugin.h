@@ -30,7 +30,6 @@
 #include <atscppapi/Transaction.h>
 #include <atscppapi/noncopyable.h>
 
-
 namespace atscppapi
 {
 /**

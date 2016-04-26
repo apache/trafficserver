@@ -47,7 +47,7 @@ DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 // Functions
 //
 
-DNSConnection::DNSConnection() : fd(NO_FD), num(0), generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t) this)), handler(NULL)
+DNSConnection::DNSConnection() : fd(NO_FD), num(0), generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this)), handler(NULL)
 {
   memset(&ip, 0, sizeof(ip));
 }
@@ -147,8 +147,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
       goto Lok;
     }
     Warning("unable to bind random DNS port");
-  Lok:
-    ;
+  Lok:;
   } else if (ats_is_ip(&bind_addr.sa)) {
     ip_text_buffer b;
     res = socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto);

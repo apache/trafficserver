@@ -135,7 +135,6 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
   return out_buf;
 }
 
-
 int
 squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, long timestamp_usec)
 {

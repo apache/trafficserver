@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /*-------------------------------------------------------------------------*/
 /**
    @file    iniparser.h
@@ -85,7 +84,6 @@
 
 int iniparser_getnsec(dictionary *d);
 
-
 /*-------------------------------------------------------------------------*/
 /**
   @brief    Get name for section n in a dictionary.
@@ -102,7 +100,6 @@ int iniparser_getnsec(dictionary *d);
 /*--------------------------------------------------------------------------*/
 
 char *iniparser_getsecname(dictionary *d, int n);
-
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -228,7 +225,6 @@ double iniparser_getdouble(dictionary *d, char *key, double notfound);
 /*--------------------------------------------------------------------------*/
 int iniparser_getboolean(dictionary *d, const char *key, int notfound);
 
-
 /*-------------------------------------------------------------------------*/
 /**
   @brief    Set an entry in a dictionary.
@@ -243,7 +239,6 @@ int iniparser_getboolean(dictionary *d, const char *key, int notfound);
  */
 /*--------------------------------------------------------------------------*/
 int iniparser_setstring(dictionary *ini, char *entry, char *val);
-
 
 /*-------------------------------------------------------------------------*/
 /**

@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
@@ -30,7 +29,6 @@ static uint64_t ts_lua_g_http_next_id = 0;
 
 static ts_lua_main_ctx *ts_lua_main_ctx_array;
 static ts_lua_main_ctx *ts_lua_g_main_ctx_array;
-
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
@@ -391,7 +389,6 @@ TSPluginInit(int argc, const char *argv[])
   snprintf(conf->script, TS_LUA_MAX_SCRIPT_FNAME_LENGTH, "%s", argv[1]);
 
   ts_lua_init_instance(conf);
-
 
   char errbuf[TS_LUA_MAX_STR_LENGTH];
   int errbuf_len = sizeof(errbuf);

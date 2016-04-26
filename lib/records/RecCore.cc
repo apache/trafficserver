@@ -103,7 +103,6 @@ register_record(RecT rec_type, const char *name, RecDataT data_type, RecData dat
   return r;
 }
 
-
 //-------------------------------------------------------------------------
 // link_XXX
 //-------------------------------------------------------------------------
@@ -306,7 +305,6 @@ RecLinkConfigBool(const char *name, RecBool *rec_bool)
   return RecRegisterConfigUpdateCb(name, link_byte, (void *)rec_bool);
 }
 
-
 //-------------------------------------------------------------------------
 // RecRegisterConfigUpdateCb
 //-------------------------------------------------------------------------
@@ -359,7 +357,6 @@ RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *c
 
   return err;
 }
-
 
 //-------------------------------------------------------------------------
 // RecGetRecordXXX
@@ -535,7 +532,6 @@ RecGetRecordType(const char *name, RecT *rec_type, bool lock)
   return err;
 }
 
-
 int
 RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock)
 {
@@ -649,7 +645,6 @@ RecGetRecordUpdateType(const char *name, RecUpdateT *update_type, bool lock)
   return err;
 }
 
-
 int
 RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock)
 {
@@ -677,7 +672,6 @@ RecGetRecordCheckType(const char *name, RecCheckT *check_type, bool lock)
 
   return err;
 }
-
 
 int
 RecGetRecordCheckExpr(const char *name, char **check_expr, bool lock)
@@ -757,7 +751,6 @@ RecGetRecordDefaultDataString_Xmalloc(char *name, char **buf, bool lock)
   return err;
 }
 
-
 int
 RecGetRecordAccessType(const char *name, RecAccessT *access, bool lock)
 {
@@ -782,7 +775,6 @@ RecGetRecordAccessType(const char *name, RecAccessT *access, bool lock)
   return err;
 }
 
-
 int
 RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
 {
@@ -806,7 +798,6 @@ RecSetRecordAccessType(const char *name, RecAccessT access, bool lock)
 
   return err;
 }
-
 
 //-------------------------------------------------------------------------
 // RecRegisterStat
@@ -838,7 +829,6 @@ RecRegisterStat(RecT rec_type, const char *name, RecDataT data_type, RecData dat
   return r;
 }
 
-
 //-------------------------------------------------------------------------
 // RecRegisterConfig
 //-------------------------------------------------------------------------
@@ -867,7 +857,6 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
 
   return r;
 }
-
 
 //-------------------------------------------------------------------------
 // RecGetRecord_Xmalloc
@@ -903,7 +892,6 @@ RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool l
 
   return err;
 }
-
 
 //-------------------------------------------------------------------------
 // RecForceInsert
@@ -958,7 +946,6 @@ RecForceInsert(RecRecord *record)
 
   return r;
 }
-
 
 //-------------------------------------------------------------------------
 // RecDumpRecordsHt
@@ -1043,7 +1030,6 @@ REC_ConfigReadCounter(const char *name)
   RecGetRecordCounter(name, (RecCounter *)&t);
   return t;
 }
-
 
 //-------------------------------------------------------------------------
 // Backwards compatibility. TODO: Should remove these.

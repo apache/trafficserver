@@ -64,7 +64,6 @@ EventProcessor::spawn_event_threads(int n_threads, const char *et_name, size_t s
   return new_thread_group_id;
 }
 
-
 class EventProcessor eventProcessor;
 
 int

@@ -134,7 +134,6 @@ int RecLinkConfigBool(const char *name, RecBool *rec_byte);
 int RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *cookie);
 int RecRegisterRawStatUpdateFunc(const char *name, RecRawStatBlock *rsb, int id, RecStatUpdateFunc update_func, void *cookie);
 
-
 //-------------------------------------------------------------------------
 // Record Reading/Writing
 //-------------------------------------------------------------------------
@@ -301,7 +300,6 @@ RecString REC_readString(const char *name, bool *found, bool lock = true);
 //------------------------------------------------------------------------
 int RecResetStatRecord(const char *name);
 int RecResetStatRecord(RecT type = RECT_NULL, bool all = false);
-
 
 //------------------------------------------------------------------------
 // Set RecRecord attributes

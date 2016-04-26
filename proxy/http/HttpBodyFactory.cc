@@ -241,7 +241,6 @@ HttpBodyFactory::dump_template_tables(FILE *fp)
   unlock();
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 //
 // Configuration Change Callback
@@ -383,13 +382,11 @@ HttpBodyFactory::HttpBodyFactory()
   }
 }
 
-
 HttpBodyFactory::~HttpBodyFactory()
 {
   // FIX: need to implement destructor
   delete table_of_sets;
 }
-
 
 // LOCKING: must be called with lock taken
 char *
@@ -454,7 +451,6 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   buffer = t->build_instantiated_buffer(context, buffer_length_return);
   return (buffer);
 }
-
 
 // LOCKING: must be called with lock taken
 const char *
@@ -524,7 +520,6 @@ HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **
   return (NULL);
 }
 
-
 // LOCKING: must be called with lock taken
 bool
 HttpBodyFactory::is_response_suppressed(HttpTransact::State *context)
@@ -552,7 +547,6 @@ HttpBodyFactory::is_response_suppressed(HttpTransact::State *context)
     return (false);
   }
 }
-
 
 // LOCKING: must be called with lock taken
 void
@@ -610,7 +604,6 @@ HttpBodyFactory::nuke_template_tables()
 
   table_of_sets = NULL;
 }
-
 
 // LOCKING: must be called with lock taken
 RawHashTable *
@@ -677,7 +670,6 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
 
   return (new_table_of_sets);
 }
-
 
 // LOCKING: must be called with lock taken
 HttpBodySet *
@@ -755,7 +747,6 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
   return (body_set);
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 //
 // class HttpBodySet
@@ -773,7 +764,6 @@ HttpBodySet::HttpBodySet()
   table_of_pages = NULL;
 }
 
-
 HttpBodySet::~HttpBodySet()
 {
   ats_free(set_name);
@@ -782,7 +772,6 @@ HttpBodySet::~HttpBodySet()
   if (table_of_pages)
     delete table_of_pages;
 }
-
 
 int
 HttpBodySet::init(char *set, char *dir)
@@ -894,7 +883,6 @@ HttpBodySet::init(char *set, char *dir)
   return (lines_added);
 }
 
-
 HttpBodyTemplate *
 HttpBodySet::get_template_by_name(const char *name)
 {
@@ -917,7 +905,6 @@ HttpBodySet::get_template_by_name(const char *name)
   return (NULL);
 }
 
-
 void
 HttpBodySet::set_template_by_name(const char *name, HttpBodyTemplate *t)
 {
@@ -938,12 +925,10 @@ HttpBodyTemplate::HttpBodyTemplate()
   template_pathname = NULL;
 }
 
-
 HttpBodyTemplate::~HttpBodyTemplate()
 {
   reset();
 }
-
 
 void
 HttpBodyTemplate::reset()
@@ -953,7 +938,6 @@ HttpBodyTemplate::reset()
   byte_count = 0;
   ats_free(template_pathname);
 }
-
 
 int
 HttpBodyTemplate::load_from_file(char *dir, char *file)

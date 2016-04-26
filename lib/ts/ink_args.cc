@@ -47,8 +47,8 @@ unsigned n_file_arguments = 0;
 //
 
 static const char *argument_types_keys = (char *)"ISDfFTL";
-static const char *argument_types_descriptions[] = {(char *)"int  ",  (char *) "str  ", (char *) "dbl  ", (char *) "off  ",
-                                                    (char *) "on   ", (char *) "tog  ", (char *) "i64  ", (char *) "     "};
+static const char *argument_types_descriptions[] = {(char *)"int  ", (char *)"str  ", (char *)"dbl  ", (char *)"off  ",
+                                                    (char *)"on   ", (char *)"tog  ", (char *)"i64  ", (char *)"     "};
 
 //
 // Functions
@@ -124,7 +124,6 @@ process_arg(const AppVersionInfo *appinfo, const ArgumentDescription *argument_d
 
   return true;
 }
-
 
 void
 show_argument_configuration(const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions)

@@ -52,7 +52,6 @@ get_listen_backlog(void)
   return listen_backlog >= 0 ? listen_backlog : ats_tcp_somaxconn();
 }
 
-
 //
 // Functions
 //
@@ -67,12 +66,10 @@ Connection::Connection() : fd(NO_FD), is_bound(false), is_connected(false), sock
   memset(&addr, 0, sizeof(addr));
 }
 
-
 Connection::~Connection()
 {
   close();
 }
-
 
 int
 Server::accept(Connection *c)
@@ -106,7 +103,6 @@ Lerror:
   c->close();
   return res;
 }
-
 
 int
 Connection::close()
@@ -295,7 +291,6 @@ Lerror:
 
   return res;
 }
-
 
 int
 Server::listen(bool non_blocking, int recv_bufsize, int send_bufsize, bool transparent)

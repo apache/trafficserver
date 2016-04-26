@@ -43,7 +43,7 @@
 #include "ReverseProxy.h"
 #include "HttpBodyFactory.h"
 #include "StatPages.h"
-#include "HttpClientSession.h"
+#include "../IPAllow.h"
 #include "I_Machine.h"
 
 static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
@@ -64,6 +64,48 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 extern HttpBodyFactory *body_factory;
 
 static const char local_host_ip_str[] = "127.0.0.1";
+
+inline static void
+simple_or_unavailable_server_retry(HttpTransact::State *s)
+{
+  int server_response = 0;
+
+  HTTP_RELEASE_ASSERT(!s->parent_result.rec->parent_is_proxy);
+
+  // reponse is from a parent origin server.
+  server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
+
+  DebugTxn("http_trans", "[simple_or_unavailabe_server_retry] server_response = %d, simple_retry_attempts: %d, numParents:%d \n",
+           server_response, s->current.simple_retry_attempts, s->parent_params->numParents(&s->parent_result));
+
+  // simple retry is enabled, 0x1
+  if ((s->parent_result.rec->parent_retry & HttpTransact::PARENT_ORIGIN_SIMPLE_RETRY) &&
+      (s->current.simple_retry_attempts < s->parent_result.rec->max_simple_retries && server_response == HTTP_STATUS_NOT_FOUND)) {
+    DebugTxn("parent_select", "RECEIVED A SIMPLE RETRY RESPONSE");
+    if (s->current.simple_retry_attempts < (int)s->parent_params->numParents(&s->parent_result)) {
+      s->current.state = HttpTransact::PARENT_ORIGIN_RETRY;
+      s->current.retry_type = HttpTransact::PARENT_ORIGIN_SIMPLE_RETRY;
+      return;
+    } else {
+      DebugTxn("http_trans", "PARENT_ORIGIN_SIMPLE_RETRY: retried all parents, send response to client.\n");
+      return;
+    }
+  }
+  // unavailable server retry is enabled 0x2
+  else if ((s->parent_result.rec->parent_retry & HttpTransact::PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY) &&
+           (s->current.unavailable_server_retry_attempts < s->parent_result.rec->max_unavailable_server_retries &&
+            s->parent_result.rec->unavailable_server_retry_responses->contains(server_response))) {
+    DebugTxn("parent_select", "RECEIVED A PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY RESPONSE");
+    if (s->current.unavailable_server_retry_attempts < (int)s->parent_params->numParents(&s->parent_result)) {
+      s->current.state = HttpTransact::PARENT_ORIGIN_RETRY;
+      s->current.retry_type = HttpTransact::PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY;
+      return;
+    } else {
+      DebugTxn("http_trans", "PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY: retried all parents, send error to client.\n");
+      return;
+    }
+  }
+}
 
 inline static bool
 is_request_conditional(HTTPHdr *header)
@@ -210,19 +252,25 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
     s->parent_result.r = PARENT_DIRECT;
-  } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting &&
-             s->parent_result.rec->parent_is_proxy) {
-    s->parent_result.r = PARENT_DIRECT;
+  } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
+    s->parent_params->findParent(&s->request_data, &s->parent_result);
+    if (s->parent_result.rec == NULL || s->parent_result.rec->parent_is_proxy) {
+      DebugTxn("http_trans", "request not cacheable, so bypass parent");
+      s->parent_result.r = PARENT_DIRECT;
+    }
   } else if (s->http_config_param->uncacheable_requests_bypass_parent && s->http_config_param->no_dns_forward_to_parent == 0 &&
-             !HttpTransact::is_request_cache_lookupable(s) && s->parent_result.rec->parent_is_proxy) {
+             !HttpTransact::is_request_cache_lookupable(s)) {
     // request not lookupable and cacheable, so bypass parent if the parent is not an origin server.
     // Note that the configuration of the proxy as well as the request
     // itself affects the result of is_request_cache_lookupable();
     // we are assuming both child and parent have similar configuration
     // with respect to whether a request is cacheable or not.
     // For example, the cache_urls_that_look_dynamic variable.
-    DebugTxn("http_trans", "request not cacheable, so bypass parent");
-    s->parent_result.r = PARENT_DIRECT;
+    s->parent_params->findParent(&s->request_data, &s->parent_result);
+    if (s->parent_result.rec == NULL || s->parent_result.rec->parent_is_proxy) {
+      DebugTxn("http_trans", "request not cacheable, so bypass parent");
+      s->parent_result.r = PARENT_DIRECT;
+    }
   } else {
     switch (s->parent_result.r) {
     case PARENT_UNDEFINED:
@@ -365,7 +413,6 @@ do_cookies_prevent_caching(int cookies_conf, HTTPHdr *request, HTTPHdr *response
   return false; // Non text objects can be cached
 }
 
-
 inline static bool
 does_method_require_cache_copy_deletion(const HttpConfigParams *http_config_param, const int method)
 {
@@ -487,7 +534,6 @@ how_to_open_connection(HttpTransact::State *s)
              s->cdn_saved_next_action == HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN);
   return s->cdn_saved_next_action;
 }
-
 
 /*****************************************************************************
  *****************************************************************************
@@ -868,7 +914,7 @@ HttpTransact::EndRemapRequest(State *s)
     }
   }
   s->reverse_proxy = true;
-  s->server_info.is_transparent = s->state_machine->ua_session ? s->state_machine->ua_session->f_outbound_transparent : false;
+  s->server_info.is_transparent = s->state_machine->ua_session ? s->state_machine->ua_session->is_outbound_transparent() : false;
 
 done:
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
@@ -889,7 +935,8 @@ done:
     HTTP_INCREMENT_DYN_STAT(http_invalid_client_requests_stat);
     TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
   } else {
-    s->hdr_info.client_response.clear(); // anything previously set is invalid from this point forward
+    s->hdr_info.client_response.destroy(); // release the underlying memory.
+    s->hdr_info.client_response.clear();   // clear the pointers.
     DebugTxn("http_trans", "END HttpTransact::EndRemapRequest");
 
     if (s->is_upgrade_request && s->post_remap_upgrade_return_point) {
@@ -947,7 +994,6 @@ HttpTransact::handle_upgrade_request(State *s)
              "Transaction wasn't a valid upgrade request, proceeding as a normal HTTP request, missing Connection upgrade header.");
     return false;
   }
-
 
   // Mark this request as an upgrade request.
   s->is_upgrade_request = true;
@@ -1036,7 +1082,6 @@ HttpTransact::handle_websocket_connection(State *s)
 
   HandleRequest(s);
 }
-
 
 static bool
 mimefield_value_equal(MIMEField *field, const char *value, const int value_len)
@@ -1229,7 +1274,6 @@ HttpTransact::HandleRequest(State *s)
   // client keep-alive, cache action, etc.
   initialize_state_variables_from_request(s, &s->hdr_info.client_request);
 
-
   // The following chunk of code will limit the maximum number of websocket connections (TS-3659)
   if (s->is_upgrade_request && s->is_websocket && s->http_config_param->max_websocket_connections >= 0) {
     int64_t val = 0;
@@ -1372,7 +1416,6 @@ HttpTransact::HandleRequest(State *s)
       TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup); // effectively s->force_dns
     }
   }
-
 
   if (s->force_dns) {
     TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup); // After handling the request, DNS is done.
@@ -1594,7 +1637,6 @@ HttpTransact::ReDNSRoundRobin(State *s)
   return;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : OSDNSLookup
 // Description: called after the DNS lookup of origin server name
@@ -1659,10 +1701,13 @@ HttpTransact::OSDNSLookup(State *s)
     case EXPANSION_FAILED:
     case DNS_ATTEMPTS_EXHAUSTED:
       if (DNSLookupInfo::OS_ADDR_TRY_HOSTDB == s->dns_info.os_addr_style) {
-        // No HostDB data, just keep on with the CTA.
+        /*
+         *  We tried to connect to client target address, failed and tried to use a different addr
+         *  No HostDB data, just keep on with the CTA.
+         */
         s->dns_info.lookup_success = true;
         s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
-        DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful reverting to force client target address use");
+        DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS lookup unsuccessful, using client target address");
       } else {
         if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
           // config file doesn't allow automatic expansion of host names
@@ -1749,7 +1794,6 @@ HttpTransact::OSDNSLookup(State *s)
   // everything succeeded with the DNS lookup so do an API callout
   //   that allows for filtering.  We'll do traffic_server internal
   //   filtering after API filtering
-
 
   // After SM_ACTION_DNS_LOOKUP, goto the saved action/state ORIGIN_SERVER_(RAW_)OPEN.
   // Should we skip the StartAccessControl()? why?
@@ -1999,7 +2043,6 @@ HttpTransact::LookupSkipOpenServer(State *s)
   }
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 // Name       : HandleCacheOpenReadPush
 // Description:
@@ -2097,7 +2140,6 @@ HttpTransact::HandlePushCacheWrite(State *s)
   }
 }
 
-
 void
 HttpTransact::HandlePushTunnelSuccess(State *s)
 {
@@ -2110,7 +2152,6 @@ HttpTransact::HandlePushTunnelSuccess(State *s)
 
   TRANSACT_RETURN(SM_ACTION_INTERNAL_CACHE_NOOP, NULL);
 }
-
 
 void
 HttpTransact::HandlePushTunnelFailure(State *s)
@@ -2135,7 +2176,6 @@ HttpTransact::HandlePushError(State *s, const char *reason)
 
   build_error_response(s, HTTP_STATUS_BAD_REQUEST, reason, "default", NULL);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : HandleCacheOpenRead
@@ -2203,7 +2243,6 @@ HttpTransact::HandleCacheOpenRead(State *s)
   return;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : issue_revalidate
 // Description:   Sets cache action and does various bookkeeping
@@ -2235,7 +2274,9 @@ HttpTransact::issue_revalidate(State *s)
     // the client has the right credentials
     // this cache action is just to get us into the hcoofsr function
     s->cache_info.action = CACHE_DO_UPDATE;
-    DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
+    if (!s->cop_test_page) {
+      DUMP_HEADER("http_hdrs", &s->hdr_info.server_request, s->state_machine_id, "Proxy's Request (Conditionalized)");
+    }
     return;
   }
 
@@ -2341,7 +2382,6 @@ HttpTransact::issue_revalidate(State *s)
     break;
   }
 }
-
 
 void
 HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
@@ -2492,7 +2532,6 @@ HttpTransact::need_to_revalidate(State *s)
     needs_revalidate = true;
   } else
     needs_revalidate = false;
-
 
   bool send_revalidate = ((needs_authenticate == true) || (needs_revalidate == true) || (is_cache_response_returnable(s) == false));
   if (needs_cache_auth == true) {
@@ -2773,7 +2812,6 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
     s->next_action = SM_ACTION_CACHE_PREPARE_UPDATE;
   }
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : build_response_from_cache()
@@ -3139,7 +3177,6 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
   return;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : HandleICPLookup
 // Description:
@@ -3211,7 +3248,6 @@ HttpTransact::HandleICPLookup(State *s)
 
   return;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : OriginServerRawOpen
@@ -3487,7 +3523,6 @@ HttpTransact::handle_response_from_icp_suggested_host(State *s)
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_response_from_parent
 // Description: response came from a parent proxy
@@ -3511,6 +3546,15 @@ HttpTransact::handle_response_from_parent(State *s)
 {
   DebugTxn("http_trans", "[handle_response_from_parent] (hrfp)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
+
+  // response is from a parent origin server.
+  if (is_response_valid(s, &s->hdr_info.server_response) && s->current.request_to == HttpTransact::PARENT_PROXY &&
+      !s->parent_result.rec->parent_is_proxy) {
+    // check for a retryable response if simple or unavailable server retry are enabled.
+    if (s->parent_result.rec->parent_retry & (PARENT_ORIGIN_SIMPLE_RETRY | PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY)) {
+      simple_or_unavailable_server_retry(s);
+    }
+  }
 
   s->parent_info.state = s->current.state;
   switch (s->current.state) {
@@ -3544,7 +3588,31 @@ HttpTransact::handle_response_from_parent(State *s)
       return;
     }
 
-    if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
+    // try a simple retry if we received a simple retryable response from the parent.
+    if (s->current.retry_type == PARENT_ORIGIN_SIMPLE_RETRY || s->current.retry_type == PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY) {
+      if (s->current.retry_type == PARENT_ORIGIN_SIMPLE_RETRY) {
+        if (s->current.simple_retry_attempts >= s->parent_result.rec->max_simple_retries) {
+          DebugTxn("http_trans", "PARENT_ORIGIN_SIMPLE_RETRY: retried all parents, send error to client.\n");
+          s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
+        } else {
+          s->current.simple_retry_attempts++;
+          DebugTxn("http_trans", "PARENT_ORIGIN_SIMPLE_RETRY: try another parent.\n");
+          s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
+          next_lookup = find_server_and_update_current_info(s);
+        }
+      } else { // try unavailable server retry if we have a unavailable server retry response from the parent.
+        if (s->current.unavailable_server_retry_attempts >= s->parent_result.rec->max_unavailable_server_retries) {
+          DebugTxn("http_trans", "PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY: retried all parents, send error to client.\n");
+          s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
+        } else {
+          s->current.unavailable_server_retry_attempts++;
+          DebugTxn("http_trans", "PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY: marking parent down and trying another.\n");
+          s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
+          s->parent_params->markParentDown(&s->parent_result);
+          next_lookup = find_server_and_update_current_info(s);
+        }
+      }
+    } else if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
       s->current.attempts++;
 
       // Are we done with this particular parent?
@@ -3603,7 +3671,6 @@ HttpTransact::handle_response_from_parent(State *s)
   }
   }
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_response_from_server
@@ -3695,7 +3762,7 @@ HttpTransact::handle_response_from_server(State *s)
         // Force host resolution to have the same family as the client.
         // Because this is a transparent connection, we can't switch address
         // families - that is locked in by the client source address.
-        s->state_machine->ua_session->host_res_style = ats_host_res_match(&s->current.server->dst_addr.sa);
+        s->state_machine->ua_session->set_host_res_style(ats_host_res_match(&s->current.server->dst_addr.sa));
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
       } else if ((s->dns_info.srv_lookup_success || s->host_db_info.is_rr_elt()) &&
                  (s->txn_conf->connect_attempts_rr_retries > 0) &&
@@ -3727,7 +3794,6 @@ HttpTransact::handle_response_from_server(State *s)
 
   return;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : delete_server_rr_entry
@@ -3884,7 +3950,6 @@ HttpTransact::handle_server_connection_not_open(State *s)
 
   return;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_forward_server_connection_open
@@ -4266,7 +4331,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_SERVED);
     SET_VIA_STRING(VIA_PROXY_RESULT, VIA_PROXY_SERVED);
 
-
     /* if we receive a 500, 502, 503 or 504 while revalidating
        a document, treat the response as a 304 and in effect revalidate the document for
        negative_revalidating_lifetime. (negative revalidating)
@@ -4550,7 +4614,6 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
   return;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : handle_no_cache_operation_on_forward_server_response
 // Description:
@@ -4649,7 +4712,6 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
 
   return;
 }
-
 
 void
 HttpTransact::merge_and_update_headers_for_cache_update(State *s)
@@ -4873,7 +4935,6 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
   const char *name;
   bool dups_seen = false;
 
-
   field = response_header->iter_get_first(&fiter);
 
   for (; field != NULL; field = response_header->iter_get_next(&fiter)) {
@@ -4967,7 +5028,6 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
 
   Debug("http_hdr_space", "Merged response header with %d dead bytes", cached_header->m_heap->m_lost_string_space);
 }
-
 
 void
 HttpTransact::merge_warning_header(HTTPHdr *cached_header, HTTPHdr *response_header)
@@ -5088,7 +5148,6 @@ HttpTransact::get_ka_info_from_config(State *s, ConnectionAttributes *server_inf
 
   return check_hostdb;
 }
-
 
 ////////////////////////////////////////////////////////
 // Set the keep-alive and version flags for later use //
@@ -5588,8 +5647,13 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
     s->request_data.incoming_port = s->state_machine->ua_session->get_netvc()->get_local_port();
     s->request_data.internal_txn = s->state_machine->ua_session->get_netvc()->get_is_internal_request();
   }
+  NetVConnection *vc = NULL;
+  if (s->state_machine->ua_session) {
+    vc = s->state_machine->ua_session->get_netvc();
+  }
   // If this is an internal request, never keep alive
-  if (!s->txn_conf->keep_alive_enabled_in || s->request_data.internal_txn) {
+  if (!s->txn_conf->keep_alive_enabled_in || (vc && vc->get_is_internal_request()) ||
+      (s->state_machine->ua_session && s->state_machine->ua_session->ignore_keep_alive())) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
   } else {
     s->client_info.keep_alive = incoming_request->keep_alive_get();
@@ -5669,6 +5733,12 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
   s->request_data.hostname_str = s->arena.str_store(host_name, host_len);
   ats_ip_copy(&s->request_data.src_ip, &s->client_info.src_addr);
   memset(&s->request_data.dest_ip, 0, sizeof(s->request_data.dest_ip));
+  if (s->state_machine->ua_session) {
+    NetVConnection *netvc = s->state_machine->ua_session->get_netvc();
+    if (netvc) {
+      s->request_data.incoming_port = netvc->get_local_port();
+    }
+  }
   s->request_data.xact_start = s->client_request_time;
   s->request_data.api_info = &s->api_info;
 
@@ -5706,7 +5776,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     if (!s->cop_test_page)
       DebugTxn("http_hdrs", "[initialize_state_variables_from_response]"
                             "Server is keep-alive.");
-  } else if (s->state_machine->ua_session && s->state_machine->ua_session->f_outbound_transparent &&
+  } else if (s->state_machine->ua_session && s->state_machine->ua_session->is_outbound_transparent() &&
              s->state_machine->t_state.http_config_param->use_client_source_port) {
     /* If we are reusing the client<->ATS 4-tuple for ATS<->server then if the server side is closed, we can't
        re-open it because the 4-tuple may still be in the processing of shutting down. So if the server isn't
@@ -5714,7 +5784,6 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     */
     s->state_machine->t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
   }
-
 
   HTTPStatus status_code = incoming_response->status_get();
   if (is_response_body_precluded(status_code, s->method)) {
@@ -5798,7 +5867,6 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
 
   s->current.server->transfer_encoding = NO_TRANSFER_ENCODING;
 }
-
 
 bool
 HttpTransact::is_cache_response_returnable(State *s)
@@ -5888,7 +5956,6 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
   return true;
 }
 
-
 bool
 HttpTransact::url_looks_dynamic(URL *url)
 {
@@ -5946,7 +6013,6 @@ HttpTransact::url_looks_dynamic(URL *url)
 
   return (false);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : is_request_cache_lookupable()
@@ -6019,7 +6085,6 @@ HttpTransact::is_request_cache_lookupable(State *s)
   return true;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : response_cacheable_indicated_by_cc()
 // Description: check if a response is cacheable as indicated by Cache-Control
@@ -6053,7 +6118,6 @@ response_cacheable_indicated_by_cc(HTTPHdr *response)
   // otherwise, no indication
   return 0;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Name       : is_response_cacheable()
@@ -6521,7 +6585,7 @@ HttpTransact::process_quick_http_filter(State *s, int method)
   }
 
   if (s->state_machine->ua_session) {
-    const AclRecord *acl_record = s->state_machine->ua_session->acl_record;
+    const AclRecord *acl_record = s->state_machine->ua_session->get_acl_record();
     bool deny_request = (acl_record == NULL);
     if (acl_record && (acl_record->_method_mask != AclRecord::ALL_METHOD_MASK)) {
       if (method != -1) {
@@ -6542,7 +6606,6 @@ HttpTransact::process_quick_http_filter(State *s, int method)
     }
   }
 }
-
 
 HttpTransact::HostNameExpansionError_t
 HttpTransact::try_to_expand_host_name(State *s)
@@ -6765,7 +6828,6 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
   }
   return;
 } /* End HttpTransact::handle_content_length_header */
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -7018,7 +7080,6 @@ HttpTransact::handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTP
   }
 } /* End HttpTransact::handle_response_keep_alive_headers */
 
-
 bool
 HttpTransact::delete_all_document_alternates_and_return(State *s, bool cache_hit)
 {
@@ -7122,7 +7183,6 @@ HttpTransact::does_client_request_permit_storing(CacheControlResult *c, HTTPHdr 
 
   return (true);
 }
-
 
 int
 HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic)
@@ -7235,7 +7295,6 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   return (freshness_limit);
 }
 
-
 ////////////////////////////////////////////////////////////////////////////////////
 //  int HttpTransact::calculate_freshness_fuzz()
 //
@@ -7326,7 +7385,6 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
       return (FRESHNESS_FRESH);
     }
   }
-
 
   cooked_cc_mask = cached_obj_response->get_cooked_cc_mask();
   os_specifies_revalidate = cooked_cc_mask & (MIME_COOKED_MASK_CC_MUST_REVALIDATE | MIME_COOKED_MASK_CC_PROXY_REVALIDATE);
@@ -7562,7 +7620,6 @@ HttpTransact::handle_server_died(State *s)
   // FIX: all the body types below need to be filled in //
   ////////////////////////////////////////////////////////
 
-
   //
   // congestion control
   //
@@ -7757,7 +7814,6 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
   // HttpTransactHeaders::convert_request(outgoing_version, outgoing_request); // commented out this idea
 
-
   // Check whether a Host header field is missing from a 1.0 or 1.1 request.
   if (outgoing_version != HTTPVersion(0, 9) && !outgoing_request->presence(MIME_PRESENCE_HOST)) {
     URL *url = outgoing_request->url_get();
@@ -7832,7 +7888,6 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   // The assert is backwards in this case because request is being (re)sent.
   ink_assert(s->request_sent_time >= s->response_received_time);
 
-
   DebugTxn("http_trans", "[build_request] request_sent_time: %" PRId64, (int64_t)s->request_sent_time);
   if (!s->cop_test_page)
     DUMP_HEADER("http_hdrs", outgoing_request, s->state_machine_id, "Proxy's Request");
@@ -7842,14 +7897,12 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
 
 // build a (status_code) response based upon the given info
 
-
 void
 HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing_response, HTTPVersion outgoing_version)
 {
   build_response(s, base_response, outgoing_response, outgoing_version, HTTP_STATUS_NONE, NULL);
   return;
 }
-
 
 void
 HttpTransact::build_response(State *s, HTTPHdr *outgoing_response, HTTPVersion outgoing_version, HTTPStatus status_code,
@@ -7973,13 +8026,12 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
   //  s->state_machine->authAdapter.UpdateResponseHeaders(outgoing_response);
   // }
 
-  if (diags->on()) {
+  if (!s->cop_test_page && is_debug_tag_set("http_hdrs")) {
     if (base_response) {
-      if (!s->cop_test_page)
-        DUMP_HEADER("http_hdrs", base_response, s->state_machine_id, "Base Header for Building Response");
+      DUMP_HEADER("http_hdrs", base_response, s->state_machine_id, "Base Header for Building Response");
     }
-    if (!s->cop_test_page)
-      DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response 2");
+
+    DUMP_HEADER("http_hdrs", outgoing_response, s->state_machine_id, "Proxy's Response 2");
   }
 
   return;
@@ -8054,7 +8106,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   }
   // If transparent and the forward server connection looks unhappy don't
   // keep alive the ua connection.
-  if ((s->state_machine->ua_session && s->state_machine->ua_session->f_outbound_transparent) &&
+  if ((s->state_machine->ua_session && s->state_machine->ua_session->is_outbound_transparent()) &&
       (status_code == HTTP_STATUS_INTERNAL_SERVER_ERROR || status_code == HTTP_STATUS_GATEWAY_TIMEOUT ||
        status_code == HTTP_STATUS_BAD_GATEWAY || status_code == HTTP_STATUS_SERVICE_UNAVAILABLE)) {
     s->client_info.keep_alive = HTTP_NO_KEEPALIVE;
@@ -8086,7 +8138,7 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_DNS_FAILURE);
     break;
   case HTTP_STATUS_MOVED_TEMPORARILY:
-    SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_SERVER);
+    SET_VIA_STRING(VIA_ERROR_TYPE, VIA_ERROR_MOVED_TEMPORARILY);
     break;
   case HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED:
     SET_VIA_STRING(VIA_CLIENT_REQUEST, VIA_CLIENT_ERROR);
@@ -8157,7 +8209,6 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
       s->remap_redirect) {
     s->hdr_info.client_response.value_set(MIME_FIELD_LOCATION, MIME_LEN_LOCATION, s->remap_redirect, strlen(s->remap_redirect));
   }
-
 
   ////////////////////////////////////////////////////////////////////
   // create the error message using the "body factory", which will  //
@@ -8264,7 +8315,6 @@ HttpTransact::build_redirect_response(State *s)
     "redirect#moved_temporarily", s, 8192, &s->internal_msg_buffer_size, body_language, sizeof(body_language), body_type,
     sizeof(body_type), "%s <a href=\"%s\">%s</a>.  %s.", "The document you requested is now", new_url, new_url,
     "Please update your documents and bookmarks accordingly", NULL);
-
 
   h->set_content_length(s->internal_msg_buffer_size);
   h->value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/html", 9);

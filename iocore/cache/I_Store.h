@@ -50,9 +50,17 @@ enum span_error_t {
 struct span_diskid_t {
   int64_t id[2];
 
-  bool operator<(const span_diskid_t &rhs) const { return id[0] < rhs.id[0] && id[1] < rhs.id[1]; }
+  bool
+  operator<(const span_diskid_t &rhs) const
+  {
+    return id[0] < rhs.id[0] && id[1] < rhs.id[1];
+  }
 
-  bool operator==(const span_diskid_t &rhs) const { return id[0] == rhs.id[0] && id[1] == rhs.id[1]; }
+  bool
+  operator==(const span_diskid_t &rhs) const
+  {
+    return id[0] == rhs.id[0] && id[1] == rhs.id[1];
+  }
 
   int64_t &operator[](unsigned i) { return id[i]; }
 };

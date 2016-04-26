@@ -76,7 +76,6 @@ escapify_url(const char *src, int src_len, char *dst, int dst_len)
   return len;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Unescape a string. Have to make sure the destination buffer is at least as
 // long as the source buffer.
@@ -120,7 +119,6 @@ unescapify(const char *src, char *dst, int len)
   return dst;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Class encapsulating one service configuration
 //
@@ -145,7 +143,6 @@ struct HIPESService {
   int dns_timeout;
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin.
 //
@@ -166,7 +163,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   TSDebug(PLUGIN_NAME, "plugin is successfully initialized");
   return TS_SUCCESS;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // One instance per remap.config invocation.
@@ -244,7 +240,6 @@ TSRemapDeleteInstance(void *ih)
 
   delete ri;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main "entry" point for the plugin, called for every request.
@@ -533,7 +528,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // Step 3: Profit
   return TSREMAP_DID_REMAP;
 }
-
 
 /*
   local variables:

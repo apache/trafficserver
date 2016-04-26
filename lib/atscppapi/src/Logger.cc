@@ -63,7 +63,6 @@ namespace
 const int ROLL_ON_TIME = 1; // See RollingEnabledValues in LogConfig.h
 }
 
-
 /*
  * These have default values specified for add_timestamp and rename_file in Logger.h
  */

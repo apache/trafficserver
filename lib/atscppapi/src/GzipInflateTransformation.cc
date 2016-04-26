@@ -72,7 +72,6 @@ struct atscppapi::transformations::GzipInflateTransformationState : noncopyable 
   };
 };
 
-
 GzipInflateTransformation::GzipInflateTransformation(Transaction &transaction, TransformationPlugin::Type type)
   : TransformationPlugin(transaction, type)
 {

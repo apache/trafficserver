@@ -80,7 +80,6 @@ private:
   uint64_t hval;
 };
 
-
 template <typename Transform>
 void
 ATSHash64FNV1a::update(const void *data, size_t len, Transform xfrm)

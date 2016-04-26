@@ -85,7 +85,6 @@ public:
   }
 
   virtual ~AsyncProvider() {}
-
 protected:
   shared_ptr<AsyncDispatchControllerBase>
   getDispatchController()
@@ -152,7 +151,6 @@ public:
   }
 
   virtual ~AsyncDispatchController() {}
-
 public:
   AsyncEventReceiverType *event_receiver_;
   shared_ptr<Mutex> dispatch_mutex_;
@@ -171,7 +169,7 @@ private:
 template <typename AsyncEventReceiverType, typename AsyncProviderType> class AsyncReceiverPromise : noncopyable
 {
 public:
-  AsyncReceiverPromise(shared_ptr<AsyncDispatchController<AsyncEventReceiverType, AsyncProviderType> > dispatch_controller)
+  AsyncReceiverPromise(shared_ptr<AsyncDispatchController<AsyncEventReceiverType, AsyncProviderType>> dispatch_controller)
     : dispatch_controller_(dispatch_controller)
   {
   }
@@ -183,7 +181,7 @@ public:
   }
 
 protected:
-  shared_ptr<AsyncDispatchController<AsyncEventReceiverType, AsyncProviderType> > dispatch_controller_;
+  shared_ptr<AsyncDispatchController<AsyncEventReceiverType, AsyncProviderType>> dispatch_controller_;
 };
 
 /**
@@ -202,13 +200,12 @@ public:
    */
   virtual void handleAsyncComplete(AsyncProviderType &provider) = 0;
   virtual ~AsyncReceiver() {}
-
 protected:
   AsyncReceiver() {}
   friend class Async;
 
 private:
-  mutable std::list<shared_ptr<AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType> > > receiver_promises_;
+  mutable std::list<shared_ptr<AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType>>> receiver_promises_;
 };
 
 /**
@@ -235,15 +232,14 @@ public:
     if (!mutex.get()) {
       mutex.reset(new Mutex(Mutex::TYPE_RECURSIVE));
     }
-    shared_ptr<AsyncDispatchController<AsyncReceiver<AsyncProviderType>, AsyncProviderType> > dispatcher(
+    shared_ptr<AsyncDispatchController<AsyncReceiver<AsyncProviderType>, AsyncProviderType>> dispatcher(
       new AsyncDispatchController<AsyncReceiver<AsyncProviderType>, AsyncProviderType>(event_receiver, provider, mutex));
-    shared_ptr<AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType> > receiver_promise(
+    shared_ptr<AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType>> receiver_promise(
       new AsyncReceiverPromise<AsyncReceiver<AsyncProviderType>, AsyncProviderType>(dispatcher));
     event_receiver->receiver_promises_.push_back(receiver_promise); // now if the event receiver dies, we're safe.
     provider->doRun(dispatcher);
   }
 };
 }
-
 
 #endif /* ATSCPPAPI_ASYNC_H_ */

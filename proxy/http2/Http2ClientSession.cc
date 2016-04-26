@@ -24,6 +24,7 @@
 #include "Http2ClientSession.h"
 #include "HttpDebugNames.h"
 #include "ts/ink_base64.h"
+#include "../IPAllow.h"
 
 #define STATE_ENTER(state_name, event)                                                       \
   do {                                                                                       \
@@ -69,6 +70,30 @@ Http2ClientSession::destroy()
 {
   DebugHttp2Ssn("session destroy");
 
+  // Update stats on how we died.  May want to eliminate this.  Was useful for
+  // tracking down which cases we were having problems cleaning up.  But for general
+  // use probably not worth the effort
+  switch (dying_event) {
+  case VC_EVENT_NONE:
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_DEFAULT, this_ethread());
+    break;
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ACTIVE, this_ethread());
+    break;
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_INACTIVE, this_ethread());
+    break;
+  case VC_EVENT_ERROR:
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_ERROR, this_ethread());
+    break;
+  case VC_EVENT_EOS:
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_EOS, this_ethread());
+    break;
+  default:
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_SESSION_DIE_OTHER, this_ethread());
+    break;
+  }
+
   ink_release_assert(this->client_vc == NULL);
 
   this->connection_state.destroy();
@@ -77,7 +102,7 @@ Http2ClientSession::destroy()
 
   free_MIOBuffer(this->read_buffer);
   free_MIOBuffer(this->write_buffer);
-  http2ClientSessionAllocator.free(this);
+  THREAD_FREE(this, http2ClientSessionAllocator, this_ethread());
 }
 
 void
@@ -107,6 +132,17 @@ Http2ClientSession::start()
 void
 Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
+  acl_record = NULL;
+  sockaddr const *client_ip = new_vc->get_remote_addr();
+  IpAllow::scoped_config ipallow;
+  if (ipallow && (((acl_record = ipallow->match(client_ip)) == NULL) || (acl_record->isEmpty()))) {
+    ip_port_text_buffer ipb;
+    Warning("http2 client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+  } else if (!acl_record) {
+    ip_port_text_buffer ipb;
+    Warning("http2 client '%s' no ip-allow policy specified", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+  }
+
   ink_assert(new_vc->mutex->thread_holding == this_ethread());
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, new_vc->mutex->thread_holding);
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, new_vc->mutex->thread_holding);
@@ -119,6 +155,10 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->client_vc = new_vc;
   client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
   this->mutex = new_vc->mutex;
+
+  // These macros must have the mutex set.
+  HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
+  HTTP_INCREMENT_DYN_STAT(http_total_client_connections_stat);
 
   this->connection_state.mutex = new_ProxyMutex();
 
@@ -201,14 +241,8 @@ Http2ClientSession::do_io_close(int alerrno)
   DebugHttp2Ssn("session closed");
 
   ink_assert(this->mutex->thread_holding == this_ethread());
-  if (client_vc) {
-    // clean up ssl's first byte iobuf
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(client_vc);
-    if (ssl_vc) {
-      ssl_vc->set_ssl_iobuf(NULL);
-    }
-  }
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
+  HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
   do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
 }
@@ -251,13 +285,6 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     if (this->connection_state.is_state_closed()) {
       this->do_io_close();
     }
-    return 0;
-
-  case TS_FETCH_EVENT_EXT_HEAD_DONE:
-  case TS_FETCH_EVENT_EXT_BODY_READY:
-  case TS_FETCH_EVENT_EXT_BODY_DONE:
-    // Process responses from origin server
-    send_connection_event(&this->connection_state, event, edata);
     return 0;
 
   default:

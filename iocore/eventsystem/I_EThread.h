@@ -58,7 +58,6 @@ enum ThreadType {
 
 extern bool shutdown_event_system;
 
-
 /**
   Event System specific type of thread.
 
@@ -333,7 +332,8 @@ class ink_dummy_for_new
 {
 };
 
-inline void *operator new(size_t, ink_dummy_for_new *p)
+inline void *
+operator new(size_t, ink_dummy_for_new *p)
 {
   return (void *)p;
 }

@@ -325,7 +325,6 @@ public:
   int m_len;
 
   LogFlushData(LogFile *logfile, void *data, int len = -1) : m_logfile(logfile), m_data(data), m_len(len) {}
-
   ~LogFlushData()
   {
     switch (m_logfile->m_file_format) {
@@ -478,7 +477,6 @@ private:
   Log(const Log &rhs);
   Log &operator=(const Log &rhs);
 };
-
 
 static inline bool
 LogRollingEnabledIsValid(int enabled)

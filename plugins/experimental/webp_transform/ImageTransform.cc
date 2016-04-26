@@ -76,11 +76,9 @@ public:
   }
 
   virtual ~ImageTransform() {}
-
 private:
   std::stringstream _img;
 };
-
 
 class GlobalHookPlugin : public GlobalPlugin
 {

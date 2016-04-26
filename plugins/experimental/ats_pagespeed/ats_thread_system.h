@@ -49,5 +49,4 @@ public:
 
 } // net_instaweb
 
-
 #endif // ATS_THREAD_SYSTEM_H_

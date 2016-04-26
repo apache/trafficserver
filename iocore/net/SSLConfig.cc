@@ -72,8 +72,8 @@ SSLConfigParams::SSLConfigParams()
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 
-  ssl_ctx_options = 0;
-  ssl_client_ctx_protocols = 0;
+  ssl_ctx_options = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_client_ctx_protocols = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   ssl_session_cache = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
   ssl_session_cache_size = 1024 * 100;
   ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
@@ -161,22 +161,15 @@ SSLConfigParams::initialize()
 
   int options;
   int client_ssl_options;
-  REC_ReadConfigInteger(options, "proxy.config.ssl.SSLv2");
-  if (!options)
-    ssl_ctx_options |= SSL_OP_NO_SSLv2;
-  REC_ReadConfigInteger(options, "proxy.config.ssl.SSLv3");
-  if (!options)
-    ssl_ctx_options |= SSL_OP_NO_SSLv3;
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1");
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
 
-  REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.SSLv2");
-  if (!client_ssl_options)
-    ssl_client_ctx_protocols |= SSL_OP_NO_SSLv2;
+#if TS_USE_SSLV3_CLIENT
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.SSLv3");
-  if (!client_ssl_options)
-    ssl_client_ctx_protocols |= SSL_OP_NO_SSLv3;
+  if (client_ssl_options)
+    ssl_client_ctx_protocols &= ~SSL_OP_NO_SSLv3;
+#endif
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1");
   if (!client_ssl_options)
     ssl_client_ctx_protocols |= SSL_OP_NO_TLSv1;

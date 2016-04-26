@@ -104,7 +104,6 @@ public:
     memset(array, 0, size * sizeof(Stream *));
   }
   ~StreamHashTable() { delete[] array; }
-
   int
   index(prefetch_udp_header *hdr)
   {

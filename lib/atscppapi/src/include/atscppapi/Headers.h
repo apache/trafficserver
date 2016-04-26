@@ -238,7 +238,6 @@ class HeaderField
 private:
   header_field_iterator iter_;
   HeaderField(header_field_iterator iter) : iter_(iter) {}
-
 public:
   typedef unsigned int size_type;
   typedef header_field_value_iterator iterator;

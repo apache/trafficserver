@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "ts/ink_platform.h"
 #include "ts/ink_string.h"
 
@@ -66,7 +65,6 @@ CommentObj::getCfgEleCopy()
 {
   return (TSCfgEle *)copy_comment_ele(m_ele);
 }
-
 
 //--------------------------------------------------------------------------
 // CacheObj
@@ -246,7 +244,6 @@ CacheObj::getCfgEleCopy()
 {
   return (TSCfgEle *)copy_cache_ele(m_ele);
 }
-
 
 //--------------------------------------------------------------------------
 // CongestionObj
@@ -464,7 +461,6 @@ CongestionObj::getCfgEleCopy()
 {
   return (TSCfgEle *)copy_congestion_ele(m_ele);
 }
-
 
 //--------------------------------------------------------------------------
 // HostingObj
@@ -976,7 +972,6 @@ IpAllowObj::getCfgEleCopy()
   return (TSCfgEle *)copy_ip_allow_ele(m_ele);
 }
 
-
 //--------------------------------------------------------------------------
 // ParentProxyObj
 //--------------------------------------------------------------------------
@@ -1417,7 +1412,6 @@ PluginObj::getCfgEleCopy()
 {
   return (TSCfgEle *)copy_plugin_ele(m_ele);
 }
-
 
 //--------------------------------------------------------------------------
 // RemapObj
@@ -2279,7 +2273,6 @@ StorageObj::getCfgEleCopy()
   return (TSCfgEle *)copy_storage_ele(m_ele);
 }
 
-
 //--------------------------------------------------------------------------
 // VirtIpAddrObj
 //--------------------------------------------------------------------------
@@ -2388,7 +2381,6 @@ VirtIpAddrObj::getCfgEleCopy()
 {
   return (TSCfgEle *)copy_virt_ip_addr_ele(m_ele);
 }
-
 
 /*****************************************************************
  * CfgContext

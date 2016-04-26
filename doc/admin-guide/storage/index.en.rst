@@ -329,8 +329,8 @@ returned.
 
 In the following example, Traffic Server is running on the domain
 ``example.com`` and you want to remove the image ``remove_me.jpg``
-from cache. Because by default we do not permit ``PURGE`` requests from
-any other IP, we connect to the daemon via localhost: ::
+from cache. Because by default we do not permit ``PURGE`` requests
+from any other IP, we connect to the daemon via localhost: ::
 
       $ curl -vX PURGE --resolve example.com:80:127.0.0.1 http://example.com/remove_me.jpg
       * About to connect() to example.com port 80 (#0)

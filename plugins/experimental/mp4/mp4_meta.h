@@ -65,7 +65,6 @@
   ((u_char *)(p))[6] = (u_char)((n) >> 8);            \
   ((u_char *)(p))[7] = (u_char)(n)
 
-
 typedef enum {
   MP4_TRAK_ATOM = 0,
   MP4_TKHD_ATOM,
@@ -95,7 +94,6 @@ typedef enum {
   MP4_CO64_DATA,
   MP4_LAST_ATOM = MP4_CO64_DATA
 } TSMp4AtomID;
-
 
 typedef struct {
   u_char size[4];
@@ -310,7 +308,6 @@ typedef struct {
   Mp4AtomHandler handler;
 } mp4_atom_handler;
 
-
 class BufferHandle
 {
 public:
@@ -347,7 +344,6 @@ public:
   }
 
   ~Mp4Trak() {}
-
 public:
   uint32_t timescale;
   int64_t duration;

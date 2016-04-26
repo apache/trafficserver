@@ -249,31 +249,31 @@ transformable(TSHttpTxn txnp)
   const char *value;
   int val_length;
 
-  TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
+  if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+    /*
+     *    We are only interested in "200 OK" responses.
+     */
 
-  /*
-   *    We are only interested in "200 OK" responses.
-   */
+    if (TS_HTTP_STATUS_OK == (resp_status = TSHttpHdrStatusGet(bufp, hdr_loc))) {
+      /* We only want to do the transformation on documents that have a
+         content type of "text/html". */
+      field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Content-Type", 12);
+      if (!field_loc) {
+        ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
+        return 0;
+      }
 
-  if (TS_HTTP_STATUS_OK == (resp_status = TSHttpHdrStatusGet(bufp, hdr_loc))) {
-    /* We only want to do the transformation on documents that have a
-       content type of "text/html". */
-    field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Content-Type", 12);
-    if (!field_loc) {
-      ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
-      return 0;
-    }
+      value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &val_length);
+      if (value && (strncasecmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
+        ASSERT_SUCCESS(TSHandleMLocRelease(bufp, hdr_loc, field_loc));
+        ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
 
-    value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &val_length);
-    if (value && (strncasecmp(value, "text/html", sizeof("text/html") - 1) == 0)) {
-      ASSERT_SUCCESS(TSHandleMLocRelease(bufp, hdr_loc, field_loc));
-      ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
-
-      return 1;
-    } else {
-      ASSERT_SUCCESS(TSHandleMLocRelease(bufp, hdr_loc, field_loc));
-      ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
-      return 0;
+        return 1;
+      } else {
+        ASSERT_SUCCESS(TSHandleMLocRelease(bufp, hdr_loc, field_loc));
+        ASSERT_SUCCESS(TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc));
+        return 0;
+      }
     }
   }
 

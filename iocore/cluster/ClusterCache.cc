@@ -1561,7 +1561,6 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
   ink_release_assert(expect_cache_callback);
   expect_cache_callback = false; // make sure we are called back exactly once
 
-
   result = event;
   bool open = event_is_open(event);
   bool read_op = op_is_read(request_opcode);
@@ -2379,7 +2378,6 @@ CacheContinuation::lookupEvent(int /* event ATS_UNUSED */, void * /* d ATS_UNUSE
   return EVENT_DONE;
 }
 
-
 //////////////////////////////////////////////////////////////////////////
 // do_remote_lookup()
 //   If the object is supposed to be on a remote machine, probe there.
@@ -2395,7 +2393,6 @@ CacheContinuation::do_remote_lookup(Continuation *cont, const CacheKey *key, Cac
   int mlen = op_to_sizeof_fixedlen_msg(CACHE_LOOKUP_OP) + ((hostname && hostname_len) ? hostname_len : 0);
   CacheLookupMsg *msg = (CacheLookupMsg *)ALLOCA_DOUBLE(mlen);
   msg->init();
-
 
   if (key) {
     msg->url_md5 = *key;
@@ -2495,7 +2492,6 @@ CacheContinuation::do_remote_lookup(Continuation *cont, const CacheKey *key, Cac
   clusterProcessor.invoke_remote(c->ch, CACHE_LOOKUP_CLUSTER_FUNCTION, data, len);
   return &c->action;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////
 // cache_lookup_ClusterFunction()
@@ -2725,7 +2721,6 @@ CacheContinuation::cacheContAllocator_alloc()
   return cacheContAllocator.alloc();
 }
 
-
 ///////////////////////////////////////////////////////////////////////
 // cacheContAllocator_free()
 ///////////////////////////////////////////////////////////////////////
@@ -2829,7 +2824,6 @@ new_cache_sequence_number()
   do {
     res = (unsigned int)ink_atomic_increment(&cluster_sequence_number, 1);
   } while (!res);
-
 
   return res;
 }

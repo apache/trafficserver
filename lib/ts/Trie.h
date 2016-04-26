@@ -35,7 +35,6 @@ template <typename T> class Trie
 {
 public:
   Trie() { m_root.Clear(); }
-
   // will return false for duplicates; key should be NULL-terminated
   // if key_len is defaulted to -1
   bool Insert(const char *key, T *value, int rank, int key_len = -1);
@@ -52,7 +51,6 @@ public:
   }
 
   virtual ~Trie() { Clear(); }
-
 private:
   static const int N_NODE_CHILDREN = 256;
 
@@ -101,7 +99,11 @@ private:
   // make copy-constructor and assignment operator private
   // till we properly implement them
   Trie(const Trie<T> &rhs){};
-  Trie &operator=(const Trie<T> &rhs) { return *this; }
+  Trie &
+  operator=(const Trie<T> &rhs)
+  {
+    return *this;
+  }
 };
 
 template <typename T>
@@ -195,7 +197,6 @@ Trie<T>::Search(const char *key, int key_len /* = -1 */) const
 
   return NULL;
 }
-
 
 template <typename T>
 void

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_ACCESS_TEST_H
 #define LOG_ACCESS_TEST_H
 

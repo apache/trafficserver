@@ -44,9 +44,7 @@ static AppVersionInfo appVersionInfo;
 
 struct VIA {
   VIA(const char *t) : title(t), next(NULL) { memset(viaData, 0, sizeof(viaData)); }
-
   ~VIA() { delete next; }
-
   const char *title;
   const char *viaData[128];
   VIA *next;
@@ -178,6 +176,7 @@ standardViaLookup(char flag)
     viaTable->viaData[(unsigned char)'N'] = "no error";
     viaTable->viaData[(unsigned char)'F'] = "request forbidden";
     viaTable->viaData[(unsigned char)'R'] = "cache read error";
+    viaTable->viaData[(unsigned char)'M'] = "moved temporarily";
     viaTable->viaData[(unsigned char)' '] = "unknown";
     break;
   default:

@@ -229,7 +229,6 @@ public:
 
   Event();
 
-
   Event *init(Continuation *c, ink_hrtime atimeout_at = 0, ink_hrtime aperiod = 0);
 
 #ifdef ENABLE_TIME_TRACE

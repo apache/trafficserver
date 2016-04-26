@@ -105,7 +105,6 @@ struct IOChannel {
   TSIOBufferReader reader;
 
   IOChannel() : vio(NULL), iobuf(TSIOBufferSizedCreate(TS_IOBUFFER_SIZE_INDEX_32K)), reader(TSIOBufferReaderAlloc(iobuf)) {}
-
   ~IOChannel()
   {
     if (this->reader) {
@@ -167,7 +166,6 @@ struct GeneratorRequest {
   };
 
   GeneratorRequest() : nbytes(0), flags(0) {}
-
   ~GeneratorRequest() {}
 };
 

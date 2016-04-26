@@ -107,7 +107,6 @@ is_host_char(char c)
           (c == '~') || (c == '%'));
 }
 
-
 // Checks if `addr` is a valid FQDN string
 bool
 validate_host_name(ts::ConstBuffer addr)
@@ -119,7 +118,6 @@ validate_host_name(ts::ConstBuffer addr)
   }
   return true;
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1594,7 +1592,6 @@ url_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
         (obj->m_ptr_fragment ? obj->m_ptr_fragment : "NULL"), obj->m_len_fragment);
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1613,7 +1610,6 @@ memcpy_tolower(char *d, const char *s, int n)
     d++;
   }
 }
-
 
 #define BUFSIZE 512
 
@@ -1658,7 +1654,6 @@ url_MD5_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash, cache
 
   ctx.finalize(hash);
 }
-
 
 static inline void
 url_MD5_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, cache_generation_t generation)
@@ -1783,7 +1778,6 @@ url_host_MD5_get(URLImpl *url, INK_MD5 *md5)
   ctx.finalize(*md5);
 }
 
-
 /*-------------------------------------------------------------------------
  * Regression tests
   -------------------------------------------------------------------------*/
@@ -1822,7 +1816,6 @@ REGRESSION_TEST(VALIDATE_HDR_FIELD)(RegressionTest *t, int /* level ATS_UNUSED *
               (http_validate_hdr_field_test_case[i].valid ? "true" : "false"));
   }
 }
-
 
 REGRESSION_TEST(ParseRules_strict_URI)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
 {

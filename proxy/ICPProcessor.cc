@@ -49,7 +49,6 @@ ICPProcessorExt::start()
   _ICPpr->start();
 }
 
-
 Action *
 ICPProcessorExt::ICPQuery(Continuation *c, URL *url)
 {

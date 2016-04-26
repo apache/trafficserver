@@ -37,7 +37,6 @@ struct HttpBodySetRawData {
   RawHashTable *table_of_pages;
 };
 
-
 class HttpCompat
 {
 public:

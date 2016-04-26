@@ -41,7 +41,6 @@
 #include "ts/ParseRules.h"
 #include "ts/ink_apidefs.h"
 
-
 /*===========================================================================*
 
                             Function Prototypes
@@ -88,7 +87,6 @@ void ink_utf8_to_latin1(const char *in, int inlen, char *out, int *outlen);
                              Inline Functions
 
  *===========================================================================*/
-
 
 // inline int ptr_len_cmp(const char* p1, int l1, const char* p2, int l2)
 //
@@ -216,7 +214,6 @@ ptr_len_ncmp(const char *p1, int l1, const char *str, int n)
   }
 }
 
-
 // int ptr_len_ncasecmp(const char* p1, int l1, const char* str, int n) {
 //
 //    strncasecmp like functionality for comparing a ptr,len pair with
@@ -296,7 +293,6 @@ ptr_len_casecmp(const char *p1, int l1, const char *str)
     return -1;
   }
 }
-
 
 // int ptr_len_cmp(const char* p1, int l1, const char* str) {
 //

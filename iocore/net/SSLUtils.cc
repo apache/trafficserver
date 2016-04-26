@@ -93,7 +93,6 @@ typedef SSL_METHOD *ink_ssl_method_t;
 // gather user provided settings from ssl_multicert.config in to a single struct
 struct ssl_user_config {
   ssl_user_config() : session_ticket_enabled(1), opt(SSLCertContext::OPT_NONE) {}
-
   int session_ticket_enabled; // ssl_ticket_enabled - session ticket enabled
   ats_scoped_str addr;        // dest_ip - IPv[64] address to match
   ats_scoped_str cert;        // ssl_cert_name - certificate
@@ -120,7 +119,6 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 #if HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
 #endif
-
 
 static ink_mutex *mutex_buf = NULL;
 static bool open_ssl_initialized = false;
@@ -161,7 +159,6 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
     ink_assert(0);
   }
 }
-
 
 static bool
 SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
@@ -1022,7 +1019,7 @@ SSLInitializeStatistics()
   }
 
   SSL_free(ssl);
-  SSL_CTX_free(ctx);
+  SSLReleaseContext(ctx);
 }
 
 // return true if we have a stat for the error
@@ -1119,7 +1116,7 @@ increment_ssl_server_error(unsigned long err)
 }
 
 void
-SSLDiagnostic(const SrcLoc &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...)
+SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...)
 {
   unsigned long l;
   char buf[256];
@@ -1171,9 +1168,9 @@ SSLDiagnostic(const SrcLoc &loc, bool debug, SSLNetVConnection *vc, const char *
 const char *
 SSLErrorName(int ssl_error)
 {
-  static const char *names[] = {"SSL_ERROR_NONE", "SSL_ERROR_SSL", "SSL_ERROR_WANT_READ", "SSL_ERROR_WANT_WRITE",
-                                "SSL_ERROR_WANT_X509_LOOKUP", "SSL_ERROR_SYSCALL", "SSL_ERROR_ZERO_RETURN",
-                                "SSL_ERROR_WANT_CONNECT", "SSL_ERROR_WANT_ACCEPT"};
+  static const char *names[] = {
+    "SSL_ERROR_NONE",    "SSL_ERROR_SSL",         "SSL_ERROR_WANT_READ",    "SSL_ERROR_WANT_WRITE", "SSL_ERROR_WANT_X509_LOOKUP",
+    "SSL_ERROR_SYSCALL", "SSL_ERROR_ZERO_RETURN", "SSL_ERROR_WANT_CONNECT", "SSL_ERROR_WANT_ACCEPT"};
 
   if (ssl_error < 0 || ssl_error >= (int)countof(names)) {
     return "unknown SSL error";
@@ -1283,7 +1280,6 @@ SSLCheckServerCertNow(X509 *cert, const char *certname)
   return 0; // all good
 
 } /* CheckServerCertNow() */
-
 
 SSL_CTX *
 SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings, Vec<X509 *> &certList)
@@ -1558,7 +1554,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
 
 fail:
   SSL_CLEAR_PW_REFERENCES(ud, ctx)
-  SSL_CTX_free(ctx);
+  SSLReleaseContext(ctx);
   for (unsigned int i = 0; i < certList.length(); i++) {
     X509_free(certList[i]);
   }
@@ -1733,7 +1729,6 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     keyblock = ssl_context_enable_tickets(ctx, NULL);
   }
 
-
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings.addr) {
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
@@ -1763,7 +1758,6 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
 #endif
   }
-
 
 #if defined(SSL_OP_NO_TICKET)
   // Session tickets are enabled by default. Disable if explicitly requested.
@@ -1806,15 +1800,16 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       SSLConfigParams::init_ssl_ctx_cb(ctx, true);
     }
   }
+
   if (!inserted) {
-    if (ctx != NULL) {
-      SSL_CTX_free(ctx);
-      ctx = NULL;
-    }
+    SSLReleaseContext(ctx);
+    ctx = NULL;
   }
+
   for (unsigned int i = 0; i < cert_list.length(); i++) {
     X509_free(cert_list[i]);
   }
+
   return ctx;
 }
 
@@ -2032,6 +2027,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 void
 SSLReleaseContext(SSL_CTX *ctx)
 {
+  // SSL_CTX_free() does nothing if ctx in NULL, so there's no need to check.
   SSL_CTX_free(ctx);
 }
 

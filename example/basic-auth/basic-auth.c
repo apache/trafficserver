@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include <stdio.h>
 #include <string.h>
 
@@ -30,9 +29,7 @@
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
-
 static char base64_codes[256];
-
 
 static char *
 base64_decode(const char *input)

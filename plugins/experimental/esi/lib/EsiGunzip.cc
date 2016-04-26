@@ -47,7 +47,6 @@ EsiGunzip::stream_finish()
     _init = false;
   }
 
-
   return _success;
 }
 
@@ -119,7 +118,6 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
 
   return true;
 }
-
 
 EsiGunzip::~EsiGunzip()
 {

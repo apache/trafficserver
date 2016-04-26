@@ -22,7 +22,6 @@
 
  */
 
-
 #ifndef BASE_LOG_FILE_H
 #define BASE_LOG_FILE_H
 
@@ -157,7 +156,6 @@ public:
     return (_flags & FILE_OPEN_SUCCESSFUL ? true : false);
   }
 };
-
 
 /*
  *

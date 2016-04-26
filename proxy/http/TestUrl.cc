@@ -40,13 +40,11 @@ create_url(const char *url_string)
   cout << "UserNameExists: " << url.userNameExists() << endl;
   cout << "UserNameEmpty : " << url.userNameEmpty() << endl;
 
-
   len = url.getPassword(buf, sizeof(buf));
   buf[len] = '\0';
   cout << "password      : " << buf << endl;
   cout << "PasswordExists: " << url.passwordExists() << endl;
   cout << "PasswordEmpty : " << url.passwordEmpty() << endl;
-
 
   len = url.getHost(buf, sizeof(buf));
   buf[len] = '\0';
@@ -109,7 +107,6 @@ test_marshal(URL *url)
 
   return;
 }
-
 
 main()
 {

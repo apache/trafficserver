@@ -65,7 +65,6 @@ xml_strcmp(const xmlchar *s1, const char *s2)
   return strcmp((const char *)s1, s2);
 }
 
-
 static void
 elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlchar **atts)
 {
@@ -139,7 +138,6 @@ elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlcha
   }
 }
 
-
 static void
 elementEnd(void * /* userData ATS_UNUSED */, const xmlchar * /* name ATS_UNUSED */)
 {
@@ -158,7 +156,6 @@ elementEnd(void * /* userData ATS_UNUSED */, const xmlchar * /* name ATS_UNUSED 
     break;
   }
 }
-
 
 static void
 charDataHandler(void * /* userData ATS_UNUSED */, const xmlchar *name, int /* len ATS_UNUSED */)
@@ -180,12 +177,10 @@ charDataHandler(void * /* userData ATS_UNUSED */, const xmlchar *name, int /* le
   }
 }
 
-
 StatProcessor::StatProcessor(FileManager *configFiles) : m_lmgmt(NULL), m_overviewGenerator(NULL)
 {
   rereadConfig(configFiles);
 }
-
 
 void
 StatProcessor::rereadConfig(FileManager *configFiles)
@@ -257,18 +252,15 @@ StatProcessor::rereadConfig(FileManager *configFiles)
   xmlFreeParserCtxt(parser);
 #endif
 
-
   delete fileContent;
 
   Debug(MODULE_INIT, "\n\n---------- END OF PARSING & INITIALIZING ---------\n\n");
 }
 
-
 StatProcessor::~StatProcessor()
 {
   Debug(MODULE_INIT, "[StatProcessor] Destructing Statistics Processor\n");
 }
-
 
 void
 setTest()
@@ -287,7 +279,6 @@ setTest()
     }
   }
 }
-
 
 void
 verifyTest()
@@ -320,7 +311,6 @@ verifyTest()
   }
 }
 
-
 /**
  * Updating the statistics NOW.
  **/
@@ -337,7 +327,6 @@ StatProcessor::processStat()
 
   return (result);
 }
-
 
 /**
  * ExpressionEval

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #if !defined(_HttpTransact_h_)
 #define _HttpTransact_h_
 
@@ -77,7 +76,6 @@
     }                                                           \
   }
 
-
 #define TRANSACT_SETUP_RETURN(n, r) \
   s->next_action = n;               \
   s->transact_return_point = r;     \
@@ -90,7 +88,6 @@
 #define TRANSACT_RETURN_VAL(n, r, v) \
   TRANSACT_SETUP_RETURN(n, r)        \
   return v;
-
 
 #define SET_UNPREPARE_CACHE_ACTION(C)                               \
   {                                                                 \
@@ -186,6 +183,7 @@ enum ViaString_t {
   VIA_ERROR_SERVER = 'S',
   VIA_ERROR_TIMEOUT = 'T',
   VIA_ERROR_CACHE_READ = 'R',
+  VIA_ERROR_MOVED_TEMPORARILY = 'M',
   //
   // Now the detailed stuff
   //
@@ -350,6 +348,12 @@ public:
     HTTP_TRANSACT_MAGIC_SEPARATOR = 0x12345678
   };
 
+  enum ParentOriginRetry_t {
+    PARENT_ORIGIN_UNDEFINED_RETRY = 0x0,
+    PARENT_ORIGIN_SIMPLE_RETRY = 0x1,
+    PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY = 0x2
+  };
+
   enum LookingUp_t {
     ORIGIN_SERVER,
     UNDEFINED_LOOKUP,
@@ -407,7 +411,8 @@ public:
     PARSE_ERROR,
     TRANSACTION_COMPLETE,
     CONGEST_CONTROL_CONGESTED_ON_F,
-    CONGEST_CONTROL_CONGESTED_ON_M
+    CONGEST_CONTROL_CONGESTED_ON_M,
+    PARENT_ORIGIN_RETRY
   };
 
   enum CacheWriteStatus_t {
@@ -682,9 +687,13 @@ public:
     ink_time_t now;
     ServerState_t state;
     int attempts;
+    int simple_retry_attempts;
+    int unavailable_server_retry_attempts;
+    ParentOriginRetry_t retry_type;
 
     _CurrentInfo()
-      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1){};
+      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1),
+        simple_retry_attempts(0), unavailable_server_retry_attempts(0), retry_type(PARENT_ORIGIN_UNDEFINED_RETRY){};
   } CurrentInfo;
 
   typedef struct _DNSLookupInfo {
@@ -764,7 +773,6 @@ public:
     _SquidLogInfo() : log_code(SQUID_LOG_ERR_UNKNOWN), hier_code(SQUID_HIER_EMPTY), hit_miss_code(SQUID_MISS_NONE) {}
   } SquidLogInfo;
 
-
 #define HTTP_TRANSACT_STATE_MAX_XBUF_SIZE (1024 * 2) /* max size of plugin exchange buffer */
 
   struct State {
@@ -828,6 +836,9 @@ public:
     // Some WebSocket state
     bool is_websocket;
     bool did_upgrade_succeed;
+
+    // Some queue info
+    bool origin_request_queued;
 
     char *internal_msg_buffer;        // out
     char *internal_msg_buffer_type;   // out
@@ -948,19 +959,19 @@ public:
         first_dns_lookup(true), backdoor_request(false), cop_test_page(false), parent_params(NULL),
         cache_lookup_result(CACHE_LOOKUP_NONE), next_action(SM_ACTION_UNDEFINED), api_next_action(SM_ACTION_UNDEFINED),
         transact_return_point(NULL), post_remap_upgrade_return_point(NULL), upgrade_token_wks(NULL), is_upgrade_request(false),
-        is_websocket(false), did_upgrade_succeed(false), internal_msg_buffer(NULL), internal_msg_buffer_type(NULL),
-        internal_msg_buffer_size(0), internal_msg_buffer_fast_allocator_size(-1), icp_lookup_success(false), scheme(-1),
-        next_hop_scheme(scheme), orig_scheme(scheme), method(0), cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
-        client_request_time(UNDEFINED_TIME), request_sent_time(UNDEFINED_TIME), response_received_time(UNDEFINED_TIME),
-        plugin_set_expire_time(UNDEFINED_TIME), state_machine_id(0), client_connection_enabled(true),
-        acl_filtering_performed(false), negative_caching(false), srv_lookup(false), www_auth_content(CACHE_AUTH_NONE),
-        remap_plugin_instance(0), fp_tsremap_os_response(NULL), http_return_code(HTTP_STATUS_NONE),
-        api_txn_active_timeout_value(-1), api_txn_connect_timeout_value(-1), api_txn_dns_timeout_value(-1),
-        api_txn_no_activity_timeout_value(-1), cache_req_hdr_heap_handle(NULL), cache_resp_hdr_heap_handle(NULL),
-        api_cleanup_cache_read(false), api_server_response_no_store(false), api_server_response_ignore(false),
-        api_http_sm_shutdown(false), api_modifiable_cached_resp(false), api_server_request_body_set(false),
-        api_req_cacheable(false), api_resp_cacheable(false), api_server_addr_set(false), stale_icp_lookup(false),
-        api_update_cached_object(UPDATE_CACHED_OBJECT_NONE), api_lock_url(LOCK_URL_FIRST),
+        is_websocket(false), did_upgrade_succeed(false), origin_request_queued(false), internal_msg_buffer(NULL),
+        internal_msg_buffer_type(NULL), internal_msg_buffer_size(0), internal_msg_buffer_fast_allocator_size(-1),
+        icp_lookup_success(false), scheme(-1), next_hop_scheme(scheme), orig_scheme(scheme), method(0),
+        cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR), client_request_time(UNDEFINED_TIME), request_sent_time(UNDEFINED_TIME),
+        response_received_time(UNDEFINED_TIME), plugin_set_expire_time(UNDEFINED_TIME), state_machine_id(0),
+        client_connection_enabled(true), acl_filtering_performed(false), negative_caching(false), srv_lookup(false),
+        www_auth_content(CACHE_AUTH_NONE), remap_plugin_instance(0), fp_tsremap_os_response(NULL),
+        http_return_code(HTTP_STATUS_NONE), api_txn_active_timeout_value(-1), api_txn_connect_timeout_value(-1),
+        api_txn_dns_timeout_value(-1), api_txn_no_activity_timeout_value(-1), cache_req_hdr_heap_handle(NULL),
+        cache_resp_hdr_heap_handle(NULL), api_cleanup_cache_read(false), api_server_response_no_store(false),
+        api_server_response_ignore(false), api_http_sm_shutdown(false), api_modifiable_cached_resp(false),
+        api_server_request_body_set(false), api_req_cacheable(false), api_resp_cacheable(false), api_server_addr_set(false),
+        stale_icp_lookup(false), api_update_cached_object(UPDATE_CACHED_OBJECT_NONE), api_lock_url(LOCK_URL_FIRST),
         saved_update_next_action(SM_ACTION_UNDEFINED), saved_update_cache_action(CACHE_DO_UNDEFINED), url_map(),
         pCongestionEntry(NULL), congest_saved_next_action(SM_ACTION_UNDEFINED), congestion_control_crat(0),
         congestion_congested_or_failed(0), congestion_connection_opened(0), filter_mask(0), remap_redirect(NULL),

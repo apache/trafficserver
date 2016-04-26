@@ -31,6 +31,11 @@ using std::string;
 
 #define TAG "gzip_transformation"
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 /*
  * Note, the GzipInflateTransformation and GzipDeflateTransformation do not
  * check headers to determine if the content was gziped and it doesn't check
@@ -120,7 +125,6 @@ public:
   }
 
   virtual ~SomeTransformationPlugin() {}
-
 private:
   Transaction &transaction_;
 };
@@ -194,5 +198,5 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_GzipTransformation", "apache", "dev@trafficserver.apache.org");
   TS_DEBUG(TAG, "TSPluginInit");
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

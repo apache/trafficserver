@@ -203,7 +203,8 @@ MultiCacheBase::initialize(Store *astore, char *afilename, int aelements, int ab
     astore->free(*store);
     delete store;
     store = NULL;
-    Warning("Configured store too small, unable to reconfigure");
+    Warning("Configured store too small (actual=%d required=%d), unable to reconfigure", got * STORE_BLOCK_SIZE,
+            blocks * STORE_BLOCK_SIZE);
     return -3;
   }
   totalsize = (STORE_BLOCK_SIZE)*blocks;
@@ -349,7 +350,6 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 
   data = 0;
 
-
   // mmap levels
   //
   {
@@ -439,7 +439,6 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 #endif
     store = saved;
   }
-
 
   for (int i = 0; i < n_fds; i++) {
     if (fds[i] >= 0)
@@ -763,7 +762,6 @@ MultiCacheBase::print_info(FILE *fp)
   fprintf(fp, "    Elements:       %-10d\n", totalelements);
   fprintf(fp, "    Size (bytes):   %-10u\n", totalsize);
 }
-
 
 //
 //  We need to preserve the buckets
@@ -1361,7 +1359,6 @@ MultiCacheBase::ptr_to_partition(char *ptr)
     return partition_of_bucket((o - level_offset[2]) / bucketsize[2]);
   return -1;
 }
-
 
 void
 stealStore(Store &s, int blocks)

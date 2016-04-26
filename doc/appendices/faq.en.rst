@@ -229,6 +229,7 @@ F     request forbidden
 H     header syntax unacceptable
 N     no error
 R     cache read error
+M     moved temporarily
 S     server related error
 T     connection timed out
 ===== ==========================

@@ -25,7 +25,6 @@
 #include <string.h>
 #include "P_Cache.h"
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -67,7 +66,6 @@ CacheHTTPInfoVector::insert(CacheHTTPInfo *info, int index)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
 
 void
 CacheHTTPInfoVector::detach(int idx, CacheHTTPInfo *r)
@@ -223,7 +221,6 @@ CacheHTTPInfoVector::unmarshal(const char *buf, int length, RefCountObj *block_p
   return ((caddr_t)buf - (caddr_t)start);
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 uint32_t
@@ -277,7 +274,6 @@ CacheHTTPInfoVector::insert(CacheHTTPInfo * /* info ATS_UNUSED */, int index)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
-
 
 void
 CacheHTTPInfoVector::detach(int /* idx ATS_UNUSED */, CacheHTTPInfo * /* r ATS_UNUSED */)
@@ -337,7 +333,6 @@ CacheHTTPInfoVector::unmarshal(const char * /* buf ATS_UNUSED */, int /* length 
   ink_assert(0);
   return 0;
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

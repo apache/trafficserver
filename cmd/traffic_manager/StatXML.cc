@@ -56,7 +56,6 @@ XML_extractContent(const char *name, char *content, size_t result_len)
   return (strlen(content));
 }
 
-
 //
 // Returns true  if 'c'is an operator (in our definition),
 //         false otherwise

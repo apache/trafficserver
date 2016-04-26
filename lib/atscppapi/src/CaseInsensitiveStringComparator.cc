@@ -30,7 +30,8 @@ using std::string;
  * This class should eventually be removed, but because it's in a public API we cannot remove
  * it until the next major release.
  */
-bool CaseInsensitiveStringComparator::operator()(const string &lhs, const string &rhs) const
+bool
+CaseInsensitiveStringComparator::operator()(const string &lhs, const string &rhs) const
 {
   return (compare(lhs, rhs) < 0);
 }

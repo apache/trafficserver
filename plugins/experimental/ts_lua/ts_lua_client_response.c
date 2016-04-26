@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 
 #define TS_LUA_CHECK_CLIENT_RESPONSE_HDR(http_ctx)                                                                    \
@@ -28,7 +27,6 @@
       }                                                                                                               \
     }                                                                                                                 \
   } while (0)
-
 
 static int ts_lua_client_response_header_get(lua_State *L);
 static int ts_lua_client_response_header_set(lua_State *L);
@@ -46,7 +44,6 @@ static int ts_lua_client_response_set_version(lua_State *L);
 static void ts_lua_inject_client_response_header_api(lua_State *L);
 static void ts_lua_inject_client_response_headers_api(lua_State *L);
 static void ts_lua_inject_client_response_misc_api(lua_State *L);
-
 
 void
 ts_lua_inject_client_response_api(lua_State *L)

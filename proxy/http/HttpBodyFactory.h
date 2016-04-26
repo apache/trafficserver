@@ -66,7 +66,6 @@
 #include "Main.h"
 #include "ts/RawHashTable.h"
 
-
 #define HTTP_BODY_TEMPLATE_MAGIC 0xB0DFAC00
 #define HTTP_BODY_SET_MAGIC 0xB0DFAC55
 #define HTTP_BODY_FACTORY_MAGIC 0xB0DFACFF
@@ -103,7 +102,6 @@ public:
   char *template_pathname;
 };
 
-
 ////////////////////////////////////////////////////////////////////////
 //
 //      class HttpBodySet
@@ -133,7 +131,6 @@ public:
   HttpBodyTemplate *get_template_by_name(const char *name);
   void set_template_by_name(const char *name, HttpBodyTemplate *t);
 };
-
 
 ////////////////////////////////////////////////////////////////////////
 //

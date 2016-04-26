@@ -67,7 +67,6 @@ enum ExtraSubstitutions {
   SUB_LOWER_PATH = 20,
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Class holding one request URL's component, to simplify the code and
 // length calculations (we need all of them).
@@ -107,7 +106,6 @@ struct UrlComponents {
 
   int url_len; // Full length, of all components
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Class encapsulating one regular expression (and the linked list).
@@ -635,7 +633,6 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
   return 0; // Shouldn't happen.
 }
 
-
 // Hold one remap instance
 struct RemapInstance {
   RemapInstance()
@@ -677,7 +674,6 @@ setup_memory_allocation()
   pcre_free = &ts_free;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin.
 //
@@ -699,7 +695,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   TSDebug(PLUGIN_NAME, "Plugin is successfully initialized");
   return TS_SUCCESS;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // We don't have any specific "instances" here, at least not yet.
@@ -851,7 +846,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   return TS_SUCCESS;
 }
 
-
 void
 TSRemapDeleteInstance(void *ih)
 {
@@ -888,7 +882,7 @@ TSRemapDeleteInstance(void *ih)
 
   re = ri->first;
   while (re) {
-    RemapRegex::Override *override = re->get_overrides();
+    RemapRegex::Override * override = re->get_overrides();
 
     while (override) {
       RemapRegex::Override *tmp = override;
@@ -906,7 +900,6 @@ TSRemapDeleteInstance(void *ih)
 
   delete ri;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main "entry" point for the plugin, called for every request.
@@ -1001,7 +994,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         lowercase_substitutions = true;
       }
 
-      RemapRegex::Override *override = re->get_overrides();
+      RemapRegex::Override * override = re->get_overrides();
 
       while (override) {
         switch (override->type) {

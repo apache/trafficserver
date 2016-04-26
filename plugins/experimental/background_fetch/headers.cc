@@ -26,7 +26,6 @@
 #include "configs.h"
 #include "headers.h"
 
-
 ///////////////////////////////////////////////////////////////////////////
 // Remove a header (fully) from an TSMLoc / TSMBuffer. Return the number
 // of fields (header values) we removed.
@@ -47,7 +46,6 @@ remove_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len)
 
   return cnt;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////
 // Set a header to a specific value. This will avoid going to through a
@@ -93,7 +91,6 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
 
   return ret;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////
 // Dump a header on stderr, useful together with TSDebug().

@@ -100,7 +100,6 @@ AtsRewriteOptions::ParseAndSetOptions0(StringPiece directive, GoogleString *msg,
   return RewriteOptions::kOptionOk;
 }
 
-
 RewriteOptions::OptionSettingResult
 AtsRewriteOptions::ParseAndSetOptionFromName1(StringPiece name, StringPiece arg, GoogleString *msg, MessageHandler *handler)
 {
@@ -263,6 +262,5 @@ AtsRewriteOptions::Clone() const
   options->Merge(*this);
   return options;
 }
-
 
 } // namespace net_instaweb

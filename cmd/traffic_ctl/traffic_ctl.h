@@ -66,9 +66,7 @@ int CtrlGenericSubcommand(const char *, const subcommand *cmds, unsigned ncmds, 
 
 struct CtrlMgmtRecord {
   explicit CtrlMgmtRecord(TSRecordEle *e) : ele(e) {}
-
   CtrlMgmtRecord() : ele(TSRecordEleCreate()) {}
-
   ~CtrlMgmtRecord()
   {
     if (this->ele) {
@@ -129,7 +127,6 @@ struct RecordListPolicy {
 
 template <typename T> struct CtrlMgmtList {
   CtrlMgmtList() : list(TSListCreate()) {}
-
   ~CtrlMgmtList()
   {
     this->clear();
@@ -170,7 +167,6 @@ struct CtrlMgmtRecordList : CtrlMgmtList<RecordListPolicy> {
 
 struct CtrlCommandLine {
   CtrlCommandLine() { this->args.push_back(NULL); }
-
   void
   init(unsigned argc, const char **argv)
   {

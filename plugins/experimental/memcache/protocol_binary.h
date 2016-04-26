@@ -362,7 +362,6 @@ typedef protocol_binary_request_no_extras protocol_binary_request_version;
  */
 typedef protocol_binary_response_no_extras protocol_binary_response_version;
 
-
 /**
  * Definition of the packet used by the stats command.
  * See section 4

@@ -39,7 +39,6 @@
 #include "CfgContextImpl.h"
 #include "CfgContextDefs.h"
 
-
 /***************************************************************************
  * CfgContext Operations
  ***************************************************************************/
@@ -51,7 +50,6 @@ CfgContext *CfgContextCreate(TSFileNameT filetype);
 TSMgmtError CfgContextDestroy(CfgContext *ctx);
 TSMgmtError CfgContextCommit(CfgContext *ctx, LLQ *errRules = NULL);
 TSMgmtError CfgContextGet(CfgContext *ctx);
-
 
 /***************************************************************************
  * CfgContext Operations

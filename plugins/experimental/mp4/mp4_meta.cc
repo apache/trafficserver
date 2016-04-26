@@ -18,7 +18,6 @@
 
 #include "mp4_meta.h"
 
-
 static mp4_atom_handler mp4_atoms[] = {{"ftyp", &Mp4Meta::mp4_read_ftyp_atom},
                                        {"moov", &Mp4Meta::mp4_read_moov_atom},
                                        {"mdat", &Mp4Meta::mp4_read_mdat_atom},
@@ -44,23 +43,16 @@ static mp4_atom_handler mp4_minf_atoms[] = {{"vmhd", &Mp4Meta::mp4_read_vmhd_ato
                                             {"stbl", &Mp4Meta::mp4_read_stbl_atom},
                                             {NULL, NULL}};
 
-static mp4_atom_handler mp4_stbl_atoms[] = {{"stsd", &Mp4Meta::mp4_read_stsd_atom},
-                                            {"stts", &Mp4Meta::mp4_read_stts_atom},
-                                            {"stss", &Mp4Meta::mp4_read_stss_atom},
-                                            {"ctts", &Mp4Meta::mp4_read_ctts_atom},
-                                            {"stsc", &Mp4Meta::mp4_read_stsc_atom},
-                                            {"stsz", &Mp4Meta::mp4_read_stsz_atom},
-                                            {"stco", &Mp4Meta::mp4_read_stco_atom},
-                                            {"co64", &Mp4Meta::mp4_read_co64_atom},
-                                            {NULL, NULL}};
-
+static mp4_atom_handler mp4_stbl_atoms[] = {
+  {"stsd", &Mp4Meta::mp4_read_stsd_atom}, {"stts", &Mp4Meta::mp4_read_stts_atom}, {"stss", &Mp4Meta::mp4_read_stss_atom},
+  {"ctts", &Mp4Meta::mp4_read_ctts_atom}, {"stsc", &Mp4Meta::mp4_read_stsc_atom}, {"stsz", &Mp4Meta::mp4_read_stsz_atom},
+  {"stco", &Mp4Meta::mp4_read_stco_atom}, {"co64", &Mp4Meta::mp4_read_co64_atom}, {NULL, NULL}};
 
 static void mp4_reader_set_32value(TSIOBufferReader readerp, int64_t offset, uint32_t n);
 static void mp4_reader_set_64value(TSIOBufferReader readerp, int64_t offset, uint64_t n);
 static uint32_t mp4_reader_get_32value(TSIOBufferReader readerp, int64_t offset);
 static uint64_t mp4_reader_get_64value(TSIOBufferReader readerp, int64_t offset);
 static int64_t IOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length);
-
 
 int
 Mp4Meta::parse_meta(bool body_complete)
@@ -107,7 +99,6 @@ Mp4Meta::mp4_meta_consume(int64_t size)
   meta_avail -= size;
   passed += size;
 }
-
 
 int
 Mp4Meta::post_process_meta()
@@ -202,7 +193,6 @@ Mp4Meta::post_process_meta()
   this->content_length += this->moov_size;
 
   adjustment = this->ftyp_size + this->moov_size + mp4_update_mdat_atom(start_offset) - start_offset;
-
 
   TSIOBufferCopy(out_handle.buffer, mdat_atom.reader, TSIOBufferReaderAvail(mdat_atom.reader), 0);
 
@@ -320,7 +310,6 @@ Mp4Meta::mp4_atom_next(int64_t atom_size, bool wait)
 
   return -1;
 }
-
 
 /*
  *  -1: error
@@ -1520,7 +1509,6 @@ Mp4Meta::mp4_update_mdat_atom(int64_t start_offset)
   return atom_header_size;
 }
 
-
 uint32_t
 Mp4Meta::mp4_find_key_sample(uint32_t start_sample, Mp4Trak *trak)
 {
@@ -1656,7 +1644,6 @@ Mp4Meta::mp4_update_mdhd_duration(Mp4Trak *trak)
     mp4_reader_set_64value(trak->atoms[MP4_MDHD_ATOM].reader, offsetof(mp4_mdhd64_atom, duration), duration);
   }
 }
-
 
 static void
 mp4_reader_set_32value(TSIOBufferReader readerp, int64_t offset, uint32_t n)

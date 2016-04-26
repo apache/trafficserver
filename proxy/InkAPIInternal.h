@@ -102,7 +102,6 @@ public:
   int m_bufpos;
 };
 
-
 struct INKConfigImpl : public ConfigInfo {
   void *mdata;
   TSConfigDestroyFunc m_destroy_func;
@@ -296,7 +295,6 @@ class SslAPIHooks : public FeatureAPIHooks<TSSslHookInternalID, TS_SSL_INTERNAL_
 class LifecycleAPIHooks : public FeatureAPIHooks<TSLifecycleHookID, TS_LIFECYCLE_LAST_HOOK>
 {
 };
-
 
 class ConfigUpdateCallback : public Continuation
 {

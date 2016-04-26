@@ -64,7 +64,6 @@ thread_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
   return 0;
 }
 
-
 void
 TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {

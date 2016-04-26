@@ -1045,7 +1045,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   return TS_SUCCESS;
 }
 
-
 void
 TSRemapDeleteInstance(void *ih)
 {

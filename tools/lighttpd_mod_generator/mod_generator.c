@@ -234,14 +234,12 @@ URIHANDLER_FUNC(mod_generator_uri_handler)
   return HANDLER_GO_ON;
 }
 
-
 URIHANDLER_FUNC(mod_generator_subrequest_handler)
 {
   (void)p_d;
   // plugin_data *p = p_d;
   buffer *b;
   b = chunkqueue_get_append_buffer(con->write_queue);
-
 
   // get the url information
   // int length = strlen(con->uri.path->ptr);

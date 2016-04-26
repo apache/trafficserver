@@ -36,7 +36,6 @@
 #include "ts/ink_memory.h"
 #include "BaseManager.h"
 
-
 BaseManager::BaseManager()
 {
   /* Setup the event queue and callback tables */
@@ -44,7 +43,6 @@ BaseManager::BaseManager()
   mgmt_callback_table = ink_hash_table_create(InkHashTableKeyType_Word);
 
 } /* End BaseManager::BaseManager */
-
 
 BaseManager::~BaseManager()
 {
@@ -70,7 +68,6 @@ BaseManager::~BaseManager()
 
   return;
 } /* End BaseManager::~BaseManager */
-
 
 /*
  * registerMgmtCallback(...)
@@ -115,7 +112,6 @@ BaseManager::registerMgmtCallback(int msg_id, MgmtCallback cb, void *opaque_cb_d
   return msg_id;
 } /* End BaseManager::registerMgmtCallback */
 
-
 /*
  * signalMgmtEntity(...)
  */
@@ -152,7 +148,6 @@ BaseManager::signalMgmtEntity(int msg_id, char *data_raw, int data_len)
   return msg_id;
 
 } /* End BaseManager::signalMgmtEntity */
-
 
 void
 BaseManager::executeMgmtCallback(int msg_id, char *data_raw, int data_len)

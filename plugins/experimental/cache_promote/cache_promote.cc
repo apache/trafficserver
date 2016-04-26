@@ -37,7 +37,6 @@
 static const char *PLUGIN_NAME = "cache_promote";
 TSCont gNocacheCont;
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Note that all options for all policies has to go here. Not particularly pretty...
 //
@@ -49,7 +48,6 @@ static const struct option longopt[] = {{const_cast<char *>("policy"), required_
                                         {const_cast<char *>("hits"), required_argument, NULL, 'h'},
                                         // EOF
                                         {NULL, no_argument, NULL, '\0'}};
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Abstract base class for all policies.
@@ -110,7 +108,6 @@ private:
   float _sample;
 };
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 // This is the simplest of all policies, just give each request a (small)
 // percentage chance to be promoted to cache.
@@ -137,7 +134,6 @@ public:
   }
 };
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 // The LRU based policy keeps track of <bucket> number of URLs, with a counter for each slot.
 // Objects are not promoted unless the counter reaches <hits> before it gets evicted. An
@@ -150,10 +146,9 @@ class LRUHash
 
 public:
   LRUHash() { TSDebug(PLUGIN_NAME, "In LRUHash()"); }
-
   ~LRUHash() { TSDebug(PLUGIN_NAME, "In ~LRUHash()"); }
-
-  LRUHash &operator=(const LRUHash &h)
+  LRUHash &
+  operator=(const LRUHash &h)
   {
     TSDebug(PLUGIN_NAME, "copying an LRUHash object");
     memcpy(_hash, h._hash, sizeof(_hash));
@@ -175,9 +170,17 @@ private:
 };
 
 struct LRUHashHasher {
-  bool operator()(const LRUHash *s1, const LRUHash *s2) const { return 0 == memcmp(s1->_hash, s2->_hash, sizeof(s2->_hash)); }
+  bool
+  operator()(const LRUHash *s1, const LRUHash *s2) const
+  {
+    return 0 == memcmp(s1->_hash, s2->_hash, sizeof(s2->_hash));
+  }
 
-  size_t operator()(const LRUHash *s) const { return *((size_t *)s->_hash) ^ *((size_t *)(s->_hash + 9)); }
+  size_t
+  operator()(const LRUHash *s) const
+  {
+    return *((size_t *)s->_hash) ^ *((size_t *)(s->_hash + 9));
+  }
 };
 
 typedef std::pair<LRUHash, unsigned> LRUEntry;
@@ -190,7 +193,6 @@ class LRUPolicy : public PromotionPolicy
 {
 public:
   LRUPolicy() : PromotionPolicy(), _buckets(1000), _hits(10), _lock(TSMutexCreate()) {}
-
   ~LRUPolicy()
   {
     TSDebug(PLUGIN_NAME, "deleting LRUPolicy object");
@@ -313,7 +315,6 @@ private:
   LRUList _list, _freelist;
 };
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 // This holds the configuration for a remap rule, as well as parses the configurations.
 //
@@ -321,9 +322,7 @@ class PromotionConfig
 {
 public:
   PromotionConfig() : _policy(NULL) {}
-
   ~PromotionConfig() { delete _policy; }
-
   PromotionPolicy *
   getPolicy() const
   {
@@ -378,7 +377,6 @@ public:
 private:
   PromotionPolicy *_policy;
 };
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Little helper continuation, to turn off writing to the cache. ToDo: when we have proper
@@ -447,7 +445,6 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin as a remap plugin.
 //
@@ -470,7 +467,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
   return TS_SUCCESS; /* success */
 }
-
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
@@ -501,7 +497,6 @@ TSRemapDeleteInstance(void *ih)
   delete config;
   TSContDestroy(contp);
 }
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Schedule the cache-read continuation for this remap rule.

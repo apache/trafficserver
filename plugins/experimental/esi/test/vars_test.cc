@@ -76,8 +76,19 @@ main()
   {
     cout << endl << "===================== Test 1" << endl;
     Variables esi_vars("vars_test", &Debug, &Error);
-    const char *strings[] = {"Cookie", "; c1=v1; c2=v2; ;   c3; c4=;    c5=v5  ", "Host", "example.com", "Referer", "google.com",
-                             "Blah", "Blah", "Accept-Language", "en-gb , en-us ,  ,", "Accept-Language", "ka-in", 0};
+    const char *strings[] = {"Cookie",
+                             "; c1=v1; c2=v2; ;   c3; c4=;    c5=v5  ",
+                             "Host",
+                             "example.com",
+                             "Referer",
+                             "google.com",
+                             "Blah",
+                             "Blah",
+                             "Accept-Language",
+                             "en-gb , en-us ,  ,",
+                             "Accept-Language",
+                             "ka-in",
+                             0};
 
     HttpHeaderList headers;
     addToHeaderList(strings, headers);

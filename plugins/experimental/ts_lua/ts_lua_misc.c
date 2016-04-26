@@ -16,9 +16,7 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
-
 
 static int ts_lua_get_now_time(lua_State *L);
 static int ts_lua_debug(lua_State *L);

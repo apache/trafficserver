@@ -47,7 +47,6 @@ sockaddrlen(const struct sockaddr *sa)
 
 struct md5_key {
   md5_key() {}
-
   md5_key(const BalancerTarget &target, unsigned i)
   {
     MD5_CTX ctx;
@@ -59,7 +58,11 @@ struct md5_key {
     MD5_Final(this->key, &ctx);
   }
 
-  bool operator<(const md5_key &rhs) const { return memcmp(this->key, rhs.key, sizeof(this->key)) < 0; }
+  bool
+  operator<(const md5_key &rhs) const
+  {
+    return memcmp(this->key, rhs.key, sizeof(this->key)) < 0;
+  }
 
   unsigned char key[MD5_DIGEST_LENGTH];
 };
@@ -148,7 +151,6 @@ struct HashBalancer : public BalancerInstance {
   };
 
   HashBalancer() { this->hash_parts.push_back(HashTxnUrl); }
-
   void
   push_target(const BalancerTarget &target)
   {

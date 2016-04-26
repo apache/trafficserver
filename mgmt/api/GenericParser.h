@@ -151,7 +151,6 @@ private:
   Queue<Token> m_nameList;
 };
 
-
 /***************************************************************************
  * Rule
  *   a rule is nothing more than just a token list. This object also

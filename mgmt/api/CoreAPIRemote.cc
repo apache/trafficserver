@@ -485,8 +485,7 @@ mgmt_record_convert_value(TSRecordT rec_type, const MgmtMarshallData &data, TSRe
       ink_assert(data.len == strlen((char *)data.ptr) + 1);
       value.string_val = ats_strdup((char *)data.ptr);
       break;
-    default:
-      ; // nothing ... shut up compiler!
+    default:; // nothing ... shut up compiler!
     }
   }
 }

@@ -45,7 +45,6 @@ ConditionStatus::initialize(Parser &p)
   require_resources(RSRC_RESPONSE_STATUS);
 }
 
-
 void
 ConditionStatus::initialize_hooks()
 {
@@ -53,14 +52,12 @@ ConditionStatus::initialize_hooks()
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
 }
 
-
 bool
 ConditionStatus::eval(const Resources &res)
 {
   TSDebug(PLUGIN_NAME, "Evaluating STATUS()"); // TODO: It'd be nice to get the args here ...
   return static_cast<const Matchers<TSHttpStatus> *>(_matcher)->test(res.resp_status);
 }
-
 
 void
 ConditionStatus::append_value(std::string &s, const Resources &res)
@@ -70,7 +67,6 @@ ConditionStatus::append_value(std::string &s, const Resources &res)
   s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending STATUS(%d) to evaluation value -> %s", res.resp_status, s.c_str());
 }
-
 
 // ConditionMethod
 void
@@ -95,7 +91,6 @@ ConditionMethod::eval(const Resources &res)
   return rval;
 }
 
-
 void
 ConditionMethod::append_value(std::string &s, const Resources &res)
 {
@@ -114,7 +109,6 @@ ConditionMethod::append_value(std::string &s, const Resources &res)
   }
 }
 
-
 // ConditionRandom: random 0 to (N-1)
 void
 ConditionRandom::initialize(Parser &p)
@@ -131,14 +125,12 @@ ConditionRandom::initialize(Parser &p)
   _matcher = match;
 }
 
-
 bool
 ConditionRandom::eval(const Resources & /* res ATS_UNUSED */)
 {
   TSDebug(PLUGIN_NAME, "Evaluating RANDOM(%d)", _max);
   return static_cast<const Matchers<unsigned int> *>(_matcher)->test(rand_r(&_seed) % _max);
 }
-
 
 void
 ConditionRandom::append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
@@ -149,7 +141,6 @@ ConditionRandom::append_value(std::string &s, const Resources & /* res ATS_UNUSE
   s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending RANDOM(%d) to evaluation value -> %s", _max, s.c_str());
 }
-
 
 // ConditionAccess: access(file)
 void
@@ -164,7 +155,6 @@ ConditionAccess::initialize(Parser &p)
   _last = !access(_qualifier.c_str(), R_OK);
 }
 
-
 void
 ConditionAccess::append_value(std::string &s, const Resources &res)
 {
@@ -174,7 +164,6 @@ ConditionAccess::append_value(std::string &s, const Resources &res)
     s += "NOT OK";
   }
 }
-
 
 bool
 ConditionAccess::eval(const Resources & /* res ATS_UNUSED */)
@@ -198,7 +187,6 @@ ConditionAccess::eval(const Resources & /* res ATS_UNUSED */)
   return _last;
 }
 
-
 // ConditionHeader: request or response header
 void
 ConditionHeader::initialize(Parser &p)
@@ -214,7 +202,6 @@ ConditionHeader::initialize(Parser &p)
   require_resources(RSRC_SERVER_REQUEST_HEADERS);
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
 }
-
 
 void
 ConditionHeader::append_value(std::string &s, const Resources &res)
@@ -264,7 +251,6 @@ ConditionHeader::eval(const Resources &res)
   return rval;
 }
 
-
 // ConditionPath
 void
 ConditionPath::initialize(Parser &p)
@@ -304,7 +290,6 @@ ConditionPath::eval(const Resources &res)
   return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
 
-
 // ConditionQuery
 void
 ConditionQuery::initialize(Parser &p)
@@ -340,7 +325,6 @@ ConditionQuery::eval(const Resources &res)
   return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
 
-
 // ConditionUrl: request or response header. TODO: This is not finished, at all!!!
 void
 ConditionUrl::initialize(Parser &p)
@@ -352,7 +336,6 @@ ConditionUrl::initialize(Parser &p)
   _matcher = match;
 }
 
-
 void
 ConditionUrl::set_qualifier(const std::string &q)
 {
@@ -362,12 +345,10 @@ ConditionUrl::set_qualifier(const std::string &q)
   _url_qual = parse_url_qualifier(q);
 }
 
-
 void
 ConditionUrl::append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */)
 {
 }
-
 
 bool
 ConditionUrl::eval(const Resources &res)
@@ -422,7 +403,6 @@ ConditionUrl::eval(const Resources &res)
   return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
 
-
 // ConditionDBM: do a lookup against a DBM
 void
 ConditionDBM::initialize(Parser &p)
@@ -448,7 +428,6 @@ ConditionDBM::initialize(Parser &p)
     TSError("[%s] Malformed DBM condition", PLUGIN_NAME);
   }
 }
-
 
 void
 ConditionDBM::append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */)
@@ -476,7 +455,6 @@ ConditionDBM::append_value(std::string & /* s ATS_UNUSED */, const Resources & /
   // }
 }
 
-
 bool
 ConditionDBM::eval(const Resources &res)
 {
@@ -487,7 +465,6 @@ ConditionDBM::eval(const Resources &res)
 
   return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
 }
-
 
 // ConditionCookie: request or response header
 void
@@ -622,7 +599,6 @@ ConditionIncomingPort::append_value(std::string &s, const Resources &res)
   TSDebug(PLUGIN_NAME, "Appending %d to evaluation value -> %s", port, s.c_str());
 }
 
-
 // ConditionTransactCount
 void
 ConditionTransactCount::initialize(Parser &p)
@@ -667,8 +643,52 @@ ConditionTransactCount::append_value(std::string &s, Resources const &res)
   }
 }
 
-
 // ConditionNow: time related conditions, such as time since epoch (default), hour, day etc.
+// Time related functionality for statements. We return an int64_t here, to assure that
+// gettimeofday() / Epoch does not lose bits.
+int64_t
+ConditionNow::get_now_qualified(NowQualifiers qual) const
+{
+  time_t now;
+
+  // First short circuit for the Epoch qualifier, since it needs less data
+  time(&now);
+  if (NOW_QUAL_EPOCH == qual) {
+    return static_cast<int64_t>(now);
+  } else {
+    struct tm res;
+
+    localtime_r(&now, &res);
+    switch (qual) {
+    case NOW_QUAL_YEAR:
+      return static_cast<int64_t>(res.tm_year + 1900); // This makes more sense
+      break;
+    case NOW_QUAL_MONTH:
+      return static_cast<int64_t>(res.tm_mon);
+      break;
+    case NOW_QUAL_DAY:
+      return static_cast<int64_t>(res.tm_mday);
+      break;
+    case NOW_QUAL_HOUR:
+      return static_cast<int64_t>(res.tm_hour);
+      break;
+    case NOW_QUAL_MINUTE:
+      return static_cast<int64_t>(res.tm_min);
+      break;
+    case NOW_QUAL_WEEKDAY:
+      return static_cast<int64_t>(res.tm_wday);
+      break;
+    case NOW_QUAL_YEARDAY:
+      return static_cast<int64_t>(res.tm_yday);
+      break;
+    default:
+      TSReleaseAssert(!"All cases should have been handled");
+      break;
+    }
+  }
+  return 0;
+}
+
 void
 ConditionNow::initialize(Parser &p)
 {
@@ -679,16 +699,33 @@ ConditionNow::initialize(Parser &p)
   _matcher = match;
 }
 
-
 void
 ConditionNow::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
 
   TSDebug(PLUGIN_NAME, "\tParsing %%{NOW:%s} qualifier", q.c_str());
-  _now_qual = parse_now_qualifier(q);
-}
 
+  if (q == "EPOCH") {
+    _now_qual = NOW_QUAL_EPOCH;
+  } else if (q == "YEAR") {
+    _now_qual = NOW_QUAL_YEAR;
+  } else if (q == "MONTH") {
+    _now_qual = NOW_QUAL_MONTH;
+  } else if (q == "DAY") {
+    _now_qual = NOW_QUAL_DAY;
+  } else if (q == "HOUR") {
+    _now_qual = NOW_QUAL_HOUR;
+  } else if (q == "MINUTE") {
+    _now_qual = NOW_QUAL_MINUTE;
+  } else if (q == "WEEKDAY") {
+    _now_qual = NOW_QUAL_WEEKDAY;
+  } else if (q == "YEARDAY") {
+    _now_qual = NOW_QUAL_YEARDAY;
+  } else {
+    TSError("[%s] Unknown Now() qualifier: %s", PLUGIN_NAME, q.c_str());
+  }
+}
 
 void
 ConditionNow::append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
@@ -700,7 +737,6 @@ ConditionNow::append_value(std::string &s, const Resources & /* res ATS_UNUSED *
   TSDebug(PLUGIN_NAME, "Appending NOW() to evaluation value -> %s", s.c_str());
 }
 
-
 bool
 ConditionNow::eval(const Resources &res)
 {
@@ -711,11 +747,10 @@ ConditionNow::eval(const Resources &res)
   return static_cast<const Matchers<int64_t> *>(_matcher)->test(now);
 }
 
-
 // ConditionGeo: Geo-based information (integer). See ConditionGeoCountry for the string version.
 #if HAVE_GEOIP_H
 const char *
-ConditionGeo::get_geo_string(const sockaddr *addr)
+ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   const char *ret = NULL;
   int v = 4;
@@ -777,7 +812,7 @@ ConditionGeo::get_geo_string(const sockaddr *addr)
 }
 
 int64_t
-ConditionGeo::get_geo_int(const sockaddr *addr)
+ConditionGeo::get_geo_int(const sockaddr *addr) const
 {
   int64_t ret = -1;
   int v = 4;
@@ -851,21 +886,20 @@ ConditionGeo::get_geo_int(const sockaddr *addr)
 // No Geo library avaiable, these are just stubs.
 
 const char *
-ConditionGeo::get_geo_string(const sockaddr *addr)
+ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return NULL;
 }
 
 int64_t
-ConditionGeo::get_geo_int(const sockaddr *addr)
+ConditionGeo::get_geo_int(const sockaddr *addr) const
 {
   TSError("[%s] No Geo library available!", PLUGIN_NAME);
   return 0;
 }
 
 #endif
-
 
 void
 ConditionGeo::initialize(Parser &p)
@@ -906,7 +940,7 @@ ConditionGeo::set_qualifier(const std::string &q)
     _geo_qual = GEO_QUAL_ASN_NAME;
     is_int_type(false);
   } else {
-    TSError("[%s] Unknown Geo qualifier: %s", PLUGIN_NAME, q.c_str());
+    TSError("[%s] Unknown Geo() qualifier: %s", PLUGIN_NAME, q.c_str());
   }
 }
 

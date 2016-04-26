@@ -32,9 +32,7 @@
 #include "net/instaweb/rewriter/public/rewrite_options.h"
 #include "net/instaweb/system/public/system_rewrite_options.h"
 
-
 //#include "ats_configuration.h"
-
 
 namespace net_instaweb
 {
@@ -61,7 +59,6 @@ struct global_settings {
   int shm_cache_size_kb;
 };
 
-
 class AtsRewriteOptions : public SystemRewriteOptions
 {
 public:
@@ -71,7 +68,6 @@ public:
 
   AtsRewriteOptions(ThreadSystem *thread_system);
   virtual ~AtsRewriteOptions() {}
-
   const char *ParseAndSetOptions(std::vector<std::string> args, MessageHandler *handler, global_settings &global_config);
 
   virtual AtsRewriteOptions *Clone() const;
@@ -79,7 +75,6 @@ public:
 
   virtual OptionSettingResult ParseAndSetOptionFromName1(StringPiece name, StringPiece arg, GoogleString *msg,
                                                          MessageHandler *handler);
-
 
 private:
   bool SetBoolFlag(bool *v, StringPiece arg);

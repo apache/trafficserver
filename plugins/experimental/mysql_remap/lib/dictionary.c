@@ -393,7 +393,6 @@ dictionary_dump(dictionary *d, FILE *out)
   return;
 }
 
-
 /* Test code */
 #ifdef TESTDIC
 #define NVALS 20000

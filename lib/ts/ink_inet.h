@@ -101,7 +101,6 @@ union IpEndpoint {
   self &setToLoopback(int family ///< Address family.
                       );
 
-
   /// Port in network order.
   in_port_t &port();
   /// Port in network order.
@@ -863,11 +862,13 @@ ats_ip_addr_eq(IpEndpoint const *lhs, IpEndpoint const *rhs)
   return 0 == ats_ip_addr_cmp(&lhs->sa, &rhs->sa);
 }
 
-inline bool operator==(IpEndpoint const &lhs, IpEndpoint const &rhs)
+inline bool
+operator==(IpEndpoint const &lhs, IpEndpoint const &rhs)
 {
   return 0 == ats_ip_addr_cmp(&lhs.sa, &rhs.sa);
 }
-inline bool operator!=(IpEndpoint const &lhs, IpEndpoint const &rhs)
+inline bool
+operator!=(IpEndpoint const &lhs, IpEndpoint const &rhs)
 {
   return 0 != ats_ip_addr_cmp(&lhs.sa, &rhs.sa);
 }
@@ -911,7 +912,6 @@ ats_ip_port_host_order(IpEndpoint const *ip ///< Address with port.
   // by value.
   return ntohs(ats_ip_port_cast(const_cast<sockaddr *>(&ip->sa)));
 }
-
 
 /** Extract the IPv4 address.
     @return Host order IPv4 address.
@@ -1053,7 +1053,6 @@ ats_ip_nptop(IpEndpoint const *addr, ///< Address.
   return ats_ip_nptop(&addr->sa, dst, size);
 }
 
-
 /** Convert @a text to an IP address and write it to @a addr.
 
     @a text is expected to be an explicit address, not a hostname.  No
@@ -1151,6 +1150,8 @@ int ats_ip_getbestaddrinfo(char const *name, ///< [in] Address name (IPv4, IPv6,
 */
 uint32_t ats_ip_hash(sockaddr const *addr);
 
+uint64_t ats_ip_port_hash(sockaddr const *addr);
+
 /** Convert address to string as a hexidecimal value.
     The string is always nul terminated, the output string is clipped
     if @a dst is insufficient.
@@ -1195,13 +1196,16 @@ struct IpAddr {
   explicit IpAddr(IpEndpoint const &addr) { this->assign(&addr.sa); }
   /// Construct from @c IpEndpoint.
   explicit IpAddr(IpEndpoint const *addr) { this->assign(&addr->sa); }
-
   /// Assign sockaddr storage.
   self &assign(sockaddr const *addr ///< May be @c NULL
                );
 
   /// Assign from end point.
-  self &operator=(IpEndpoint const &ip) { return this->assign(&ip.sa); }
+  self &
+  operator=(IpEndpoint const &ip)
+  {
+    return this->assign(&ip.sa);
+  }
   /// Assign from IPv4 raw address.
   self &operator=(in_addr_t ip ///< Network order IPv4 address.
                   );
@@ -1232,15 +1236,21 @@ struct IpAddr {
                  ) const;
 
   /// Equality.
-  bool operator==(self const &that) const
+  bool
+  operator==(self const &that) const
   {
-    return _family == AF_INET ? (that._family == AF_INET && _addr._ip4 == that._addr._ip4) : _family == AF_INET6 ?
-                                (that._family == AF_INET6 && 0 == memcmp(&_addr._ip6, &that._addr._ip6, TS_IP6_SIZE)) :
-                                (_family == AF_UNSPEC && that._family == AF_UNSPEC);
+    return _family == AF_INET ?
+             (that._family == AF_INET && _addr._ip4 == that._addr._ip4) :
+             _family == AF_INET6 ? (that._family == AF_INET6 && 0 == memcmp(&_addr._ip6, &that._addr._ip6, TS_IP6_SIZE)) :
+                                   (_family == AF_UNSPEC && that._family == AF_UNSPEC);
   }
 
   /// Inequality.
-  bool operator!=(self const &that) { return !(*this == that); }
+  bool
+  operator!=(self const &that)
+  {
+    return !(*this == that);
+  }
 
   /// Generic compare.
   int cmp(self const &that) const;
@@ -1256,7 +1266,11 @@ struct IpAddr {
       @see hash
   */
   struct Hasher {
-    uint32_t operator()(self const &ip) const { return ip.hash(); }
+    uint32_t
+    operator()(self const &ip) const
+    {
+      return ip.hash();
+    }
   };
 
   /// Test for same address family.
@@ -1303,14 +1317,16 @@ struct IpAddr {
   static self const INVALID;
 };
 
-inline IpAddr &IpAddr::operator=(in_addr_t ip)
+inline IpAddr &
+IpAddr::operator=(in_addr_t ip)
 {
   _family = AF_INET;
   _addr._ip4 = ip;
   return *this;
 }
 
-inline IpAddr &IpAddr::operator=(in6_addr const &ip)
+inline IpAddr &
+IpAddr::operator=(in6_addr const &ip)
 {
   _family = AF_INET6;
   _addr._ip6 = ip;
@@ -1367,51 +1383,62 @@ IpAddr::assign(sockaddr const *addr)
 
 // Associated operators.
 bool operator==(IpAddr const &lhs, sockaddr const *rhs);
-inline bool operator==(sockaddr const *lhs, IpAddr const &rhs)
+inline bool
+operator==(sockaddr const *lhs, IpAddr const &rhs)
 {
   return rhs == lhs;
 }
-inline bool operator!=(IpAddr const &lhs, sockaddr const *rhs)
+inline bool
+operator!=(IpAddr const &lhs, sockaddr const *rhs)
 {
   return !(lhs == rhs);
 }
-inline bool operator!=(sockaddr const *lhs, IpAddr const &rhs)
+inline bool
+operator!=(sockaddr const *lhs, IpAddr const &rhs)
 {
   return !(rhs == lhs);
 }
-inline bool operator==(IpAddr const &lhs, IpEndpoint const &rhs)
+inline bool
+operator==(IpAddr const &lhs, IpEndpoint const &rhs)
 {
   return lhs == &rhs.sa;
 }
-inline bool operator==(IpEndpoint const &lhs, IpAddr const &rhs)
+inline bool
+operator==(IpEndpoint const &lhs, IpAddr const &rhs)
 {
   return &lhs.sa == rhs;
 }
-inline bool operator!=(IpAddr const &lhs, IpEndpoint const &rhs)
+inline bool
+operator!=(IpAddr const &lhs, IpEndpoint const &rhs)
 {
   return !(lhs == &rhs.sa);
 }
-inline bool operator!=(IpEndpoint const &lhs, IpAddr const &rhs)
+inline bool
+operator!=(IpEndpoint const &lhs, IpAddr const &rhs)
 {
   return !(rhs == &lhs.sa);
 }
 
-inline bool operator<(IpAddr const &lhs, IpAddr const &rhs)
+inline bool
+operator<(IpAddr const &lhs, IpAddr const &rhs)
 {
   return -1 == lhs.cmp(rhs);
 }
 
-inline bool operator>=(IpAddr const &lhs, IpAddr const &rhs)
+inline bool
+operator>=(IpAddr const &lhs, IpAddr const &rhs)
 {
   return lhs.cmp(rhs) >= 0;
 }
 
-inline bool operator>(IpAddr const &lhs, IpAddr const &rhs)
+inline bool
+operator>(IpAddr const &lhs, IpAddr const &rhs)
 {
   return 1 == lhs.cmp(rhs);
 }
 
-inline bool operator<=(IpAddr const &lhs, IpAddr const &rhs)
+inline bool
+operator<=(IpAddr const &lhs, IpAddr const &rhs)
 {
   return lhs.cmp(rhs) <= 0;
 }

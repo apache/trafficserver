@@ -29,7 +29,6 @@
 #include "resources.h"
 #include "parser.h"
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Class holding one ruleset. A ruleset is one (or more) pre-conditions, and
 // one (or more) operators.
@@ -112,6 +111,5 @@ private:
   OperModifiers _opermods;
   bool _last;
 };
-
 
 #endif // __RULESET_H

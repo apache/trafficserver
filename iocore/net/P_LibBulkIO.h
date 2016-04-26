@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _LIB_BULK_IO_H
 #define _LIB_BULK_IO_H
 

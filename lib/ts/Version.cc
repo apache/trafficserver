@@ -41,7 +41,6 @@ AppVersionInfo::AppVersionInfo()
   // coverity[uninit_member]
 }
 
-
 void
 AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *app_version, const char *build_date,
                       const char *build_time, const char *build_machine, const char *build_person, const char *build_cflags)
@@ -114,7 +113,6 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
 
   defined = 1;
 }
-
 
 #if TS_HAS_TESTS
 #include <ts/TestBox.h>

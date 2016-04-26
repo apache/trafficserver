@@ -75,7 +75,6 @@ class VIO
 {
 public:
   ~VIO() {}
-
   /** Interface for the VConnection that owns this handle. */
   Continuation *get_continuation();
   void set_continuation(Continuation *cont);

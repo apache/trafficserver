@@ -55,7 +55,11 @@ template <class K, class C> class MapElem
 public:
   K key;
   C value;
-  bool operator==(MapElem &e) { return e.key == key; }
+  bool
+  operator==(MapElem &e)
+  {
+    return e.key == key;
+  }
   operator uintptr_t(void) { return (uintptr_t)(uintptr_t)key; }
   MapElem(uintptr_t x)
   {
@@ -122,7 +126,6 @@ public:
     for (_c *qq__##_p = (_c *)0, *_p = &(_v).v[0]; ((uintptr_t)(qq__##_p) < (_v).n) && ((_p = &(_v).v[(uintptr_t)qq__##_p]) || 1); \
          qq__##_p = (_c *)(((uintptr_t)qq__##_p) + 1))                                                                             \
       if ((_p)->key)
-
 
 template <class K, class AHashFns, class C, class A = DefaultAlloc> class HashSet : public Vec<C, A>
 {
@@ -573,8 +576,8 @@ ChainHash<C, AHashFns, A>::put(C c)
 {
   uintptr_t h = AHashFns::hash(c);
   List<C, A> *l;
-  MapElem<uintptr_t, List<C, A> > e(h, (C)0);
-  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<C, A>> e(h, (C)0);
+  MapElem<uintptr_t, List<C, A>> *x = this->set_in(e);
   if (x)
     l = &x->value;
   else {
@@ -592,8 +595,8 @@ ChainHash<C, AHashFns, A>::get(C c)
 {
   uintptr_t h = AHashFns::hash(c);
   List<C> empty;
-  MapElem<uintptr_t, List<C, A> > e(h, empty);
-  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<C, A>> e(h, empty);
+  MapElem<uintptr_t, List<C, A>> *x = this->set_in(e);
   if (!x)
     return 0;
   List<C> *l = &x->value;
@@ -607,12 +610,12 @@ ChainHash<C, AHashFns, A>::put_bag(C c)
 {
   uintptr_t h = AHashFns::hash(c);
   List<C, A> *l;
-  MapElem<uintptr_t, List<C, A> > e(h, (C)0);
-  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<C, A>> e(h, (C)0);
+  MapElem<uintptr_t, List<C, A>> *x = this->set_in(e);
   if (x)
     l = &x->value;
   else {
-    l = &Map<uintptr_t, List<C, A> >::put(h, c)->value;
+    l = &Map<uintptr_t, List<C, A>>::put(h, c)->value;
     return l->head->car;
   }
   l->push(c);
@@ -625,8 +628,8 @@ ChainHash<C, AHashFns, A>::get_bag(C c, Vec<C> &v)
 {
   uintptr_t h = AHashFns::hash(c);
   List<C, A> empty;
-  MapElem<uintptr_t, List<C, A> > e(h, empty);
-  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<C, A>> e(h, empty);
+  MapElem<uintptr_t, List<C, A>> *x = this->set_in(e);
   if (!x)
     return 0;
   List<C, A> *l = &x->value;
@@ -650,8 +653,8 @@ ChainHash<C, AHashFns, A>::del(C c)
 {
   uintptr_t h = AHashFns::hash(c);
   List<C> *l;
-  MapElem<uintptr_t, List<C, A> > e(h, (C)0);
-  MapElem<uintptr_t, List<C, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<C, A>> e(h, (C)0);
+  MapElem<uintptr_t, List<C, A>> *x = this->set_in(e);
   if (x)
     l = &x->value;
   else
@@ -680,8 +683,8 @@ ChainHashMap<K, AHashFns, C, A>::put(K akey, C avalue)
   List<MapElem<K, C>, A> empty;
   List<MapElem<K, C>, A> *l;
   MapElem<K, C> c(akey, avalue);
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> *x = this->set_in(e);
   if (x)
     l = &x->value;
   else {
@@ -703,8 +706,8 @@ ChainHashMap<K, AHashFns, C, A>::get(K akey)
 {
   uintptr_t h = AHashFns::hash(akey);
   List<MapElem<K, C>, A> empty;
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> *x = this->set_in(e);
   if (!x)
     return 0;
   List<MapElem<K, C>, A> *l = &x->value;
@@ -723,8 +726,8 @@ ChainHashMap<K, AHashFns, C, A>::put_bag(K akey, C avalue)
   List<MapElem<K, C>, A> empty;
   List<MapElem<K, C>, A> *l;
   MapElem<K, C> c(akey, avalue);
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> *x = this->set_in(e);
   if (x)
     l = &x->value;
   else {
@@ -744,8 +747,8 @@ ChainHashMap<K, AHashFns, C, A>::get_bag(K akey, Vec<C> &v)
 {
   uintptr_t h = AHashFns::hash(akey);
   List<MapElem<K, C>, A> empty;
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> *x = this->set_in(e);
   if (!x)
     return 0;
   List<MapElem<K, C>, A> *l = &x->value;
@@ -762,8 +765,8 @@ ChainHashMap<K, AHashFns, C, A>::del(K akey)
   uintptr_t h = AHashFns::hash(akey);
   List<MapElem<K, C>, A> empty;
   List<MapElem<K, C>, A> *l;
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > e(h, empty);
-  MapElem<uintptr_t, List<MapElem<K, C>, A> > *x = this->set_in(e);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> e(h, empty);
+  MapElem<uintptr_t, List<MapElem<K, C>, A>> *x = this->set_in(e);
   if (x)
     l = &x->value;
   else
@@ -787,7 +790,7 @@ void
 ChainHashMap<K, AHashFns, C, A>::get_keys(Vec<K> &keys)
 {
   for (size_t i = 0; i < n; i++) {
-    List<MapElem<K, C> > *l = &v[i].value;
+    List<MapElem<K, C>> *l = &v[i].value;
     if (l->head)
       for (ConsCell<MapElem<K, C>, A> *p = l->head; p; p = p->cdr)
         keys.add(p->car.key);
@@ -819,8 +822,8 @@ StringChainHash<F, A>::canonicalize(cchar *s, cchar *e)
   else
     while (*a)
       h = h * 27 + (unsigned char)*a++;
-  MapElem<uintptr_t, List<cchar *, A> > me(h, (char *)0);
-  MapElem<uintptr_t, List<cchar *, A> > *x = this->set_in(me);
+  MapElem<uintptr_t, List<cchar *, A>> me(h, (char *)0);
+  MapElem<uintptr_t, List<cchar *, A>> *x = this->set_in(me);
   if (x) {
     List<cchar *, A> *l = &x->value;
     typedef ConsCell<cchar *, A> TT;
@@ -1263,7 +1266,6 @@ public:
 
     /// Default constructor - empty location.
     Location() : m_value(NULL), m_bucket(NULL), m_id(0), m_distance(0) {}
-
     /// Check for location being valid (referencing a value).
     bool
     isValid() const
@@ -1275,12 +1277,10 @@ public:
     /// @note This lets you assign the return of @c find to a @c Value*.
     /// @note This also permits the use of this class directly as a boolean expression.
     operator Value *() const { return m_value; }
-
     /// Dereference.
     Value &operator*() const { return *m_value; }
     /// Dereference.
     Value *operator->() const { return m_value; }
-
     /// Find next value with matching key (prefix).
     Location &operator++()
     {
@@ -1316,8 +1316,16 @@ public:
     iterator &operator++();
     Value &operator*() { return *m_value; }
     Value *operator->() { return m_value; }
-    bool operator==(iterator const &that) { return m_bucket == that.m_bucket && m_value == that.m_value; }
-    bool operator!=(iterator const &that) { return !(*this == that); }
+    bool
+    operator==(iterator const &that)
+    {
+      return m_bucket == that.m_bucket && m_value == that.m_value;
+    }
+    bool
+    operator!=(iterator const &that)
+    {
+      return !(*this == that);
+    }
 
   protected:
     /// Internal iterator constructor.
@@ -1482,8 +1490,7 @@ template <typename H> typename TSHashTable<H>::iterator &TSHashTable<H>::iterato
 }
 
 template <typename H>
-TSHashTable<H>::TSHashTable(size_t nb)
-  : m_count(0), m_expansion_policy(AVERAGE), m_expansion_limit(DEFAULT_EXPANSION_LIMIT)
+TSHashTable<H>::TSHashTable(size_t nb) : m_count(0), m_expansion_policy(AVERAGE), m_expansion_limit(DEFAULT_EXPANSION_LIMIT)
 {
   if (nb) {
     int idx = 1;

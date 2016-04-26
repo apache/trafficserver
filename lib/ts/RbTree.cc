@@ -28,11 +28,19 @@ namespace detail
   /// Equality.
   /// @note If @a n is @c NULL it is treated as having the color @c BLACK.
   /// @return @c true if @a c and the color of @a n are the same.
-  inline bool operator==(RBNode *n, RBNode::Color c) { return c == (n ? n->getColor() : RBNode::BLACK); }
+  inline bool
+  operator==(RBNode *n, RBNode::Color c)
+  {
+    return c == (n ? n->getColor() : RBNode::BLACK);
+  }
   /// Equality.
   /// @note If @a n is @c NULL it is treated as having the color @c BLACK.
   /// @return @c true if @a c and the color of @a n are the same.
-  inline bool operator==(RBNode::Color c, RBNode *n) { return n == c; }
+  inline bool
+  operator==(RBNode::Color c, RBNode *n)
+  {
+    return n == c;
+  }
 
   RBNode *
   RBNode::getChild(Direction d) const
@@ -153,7 +161,6 @@ namespace detail
 
     return root;
   }
-
 
   // Returns new root node
   RBNode *

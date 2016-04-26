@@ -64,7 +64,7 @@ class TestNoOp(helpers.EnvironmentCase):
         is an environment object)
         '''
         # we can modify any/all configs (note: all pre-daemon start)
-        cls.configs['remap.config'].add_line('map / http://http://trafficserver.readthedocs.org/')
+        cls.configs['remap.config'].add_line('map / http://trafficserver.readthedocs.org/')
 
         # Some configs have nicer wrapper objects to give you a more pythonic interface
         cls.configs['records.config']['CONFIG'].update({
@@ -101,13 +101,14 @@ class TestBootstrap(helpers.EnvironmentCase):
         self.assertEqual(ret.status_code, 404)
         self.assertIn('ATS', ret.headers['server'])
 
-    def test_trafficline(self):
+    def test_trafficctl(self):
         '''
-        Test that traffic_line works, and verify that the values for proxy.config
+        Test that traffic_ctl works, and verify that the values for proxy.config
         match what we put in records.config
         '''
-        cmd = [os.path.join(self.environment.layout.bindir, 'traffic_line'),
-               '-m',
+        cmd = [os.path.join(self.environment.layout.bindir, 'traffic_ctl'),
+               'config',
+               'match',
                'proxy.config',
                ]
         stdout, _ = tsqa.utils.run_sync_command(cmd, stdout=subprocess.PIPE)

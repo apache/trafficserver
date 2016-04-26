@@ -238,7 +238,6 @@ Tokenizer::Initialize(char *str, unsigned opt)
   return tok_count;
 }
 
-
 void
 Tokenizer::addToken(char *startAddr, int length)
 {
@@ -269,7 +268,6 @@ Tokenizer::addToken(char *startAddr, int length)
     add_index = 0;
   }
 }
-
 
 const char *Tokenizer::operator[](unsigned index) const
 {
@@ -327,7 +325,6 @@ Tokenizer::iterNext(tok_iter_state *state)
     return NULL;
   }
 }
-
 
 void
 Tokenizer::Print()

@@ -30,7 +30,6 @@
 #include "net/instaweb/util/public/md5_hasher.h"
 #include "net/instaweb/util/public/scoped_ptr.h"
 
-
 namespace net_instaweb
 {
 class AbstractSharedMem;

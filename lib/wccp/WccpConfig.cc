@@ -33,7 +33,8 @@ using ts::config::Value;
 // Support that must go in the standard namespace.
 namespace std
 {
-inline ostream &operator<<(ostream &s, ts::ConstBuffer const &b)
+inline ostream &
+operator<<(ostream &s, ts::ConstBuffer const &b)
 {
   if (b._ptr)
     s.write(b._ptr, b._size);
@@ -110,7 +111,8 @@ struct ValueNamePrinter {
   ValueNamePrinter(Value const &v) : _v(v) {}
 };
 
-std::ostream &operator<<(std::ostream &out, ValueNamePrinter const &v)
+std::ostream &
+operator<<(std::ostream &out, ValueNamePrinter const &v)
 {
   ts::ConstBuffer const &name = v._v.getName();
   if (name._ptr)
@@ -352,12 +354,14 @@ Port_Type_Invalid(ts::ConstBuffer const &text, int line)
 
 namespace wccp
 {
-inline bool operator==(ts::ConstBuffer const &b, char const *text)
+inline bool
+operator==(ts::ConstBuffer const &b, char const *text)
 {
   return 0 == strncasecmp(text, b._ptr, b._size);
 }
 
-inline bool operator==(char const *text, ts::ConstBuffer const &b)
+inline bool
+operator==(char const *text, ts::ConstBuffer const &b)
 {
   return 0 == strncasecmp(text, b._ptr, b._size);
 }

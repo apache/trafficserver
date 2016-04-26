@@ -61,7 +61,6 @@ struct PollDescriptor {
 #endif
 
   PollDescriptor() { init(); }
-
 #if TS_USE_EPOLL
 #define get_ev_port(a) ((a)->epoll_fd)
 #define get_ev_events(a, x) ((a)->ePoll_Triggered_Events[(x)].events)

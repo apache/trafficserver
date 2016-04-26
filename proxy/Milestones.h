@@ -27,6 +27,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_hrtime.h"
 #include "ts/apidefs.h"
+#include "../lib/ts/ink_hrtime.h"
 
 /////////////////////////////////////////////////////////////
 //
@@ -37,11 +38,8 @@ class TransactionMilestones
 {
 public:
   TransactionMilestones() { ink_zero(milestones); }
-
   ink_hrtime &operator[](TSMilestonesType ms) { return milestones[ms]; }
-
   ink_hrtime operator[](TSMilestonesType ms) const { return milestones[ms]; }
-
   /**
    * Takes two milestones and returns the difference.
    * @param start The start time

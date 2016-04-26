@@ -853,7 +853,6 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
     Debug("url_rewrite", "Argument %d: %s", k, parv[k]);
   }
 
-
   Debug("remap_plugin", "creating new plugin instance");
 
   void *ih = NULL;

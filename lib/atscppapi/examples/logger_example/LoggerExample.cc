@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 /**
  * @warning log rolling doesn't work correctly in 3.2.x, see:
  *   https://issues.apache.org/jira/browse/TS-1813, Apply the patch in
@@ -35,6 +34,7 @@ using std::string;
 namespace
 {
 Logger log;
+GlobalPlugin *plugin;
 }
 
 /*
@@ -135,5 +135,5 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
   // once every second. You should really avoid flushing the log unless it's really necessary.
   log.flush();
 
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

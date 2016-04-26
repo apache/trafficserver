@@ -79,7 +79,6 @@ do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, cons
   const char *etag_start;
   int n, etag_length;
 
-
   // Can never match a weak tag with a strong compare
   if ((raw_tag_field_len >= 2) && (raw_tag_field[0] == 'W' && raw_tag_field[1] == '/')) {
     return false;
@@ -179,10 +178,9 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
     return -1;
   }
 
-
   Debug("http_match", "[SelectFromAlternates] # alternates = %d", alt_count);
   Debug("http_seq", "[SelectFromAlternates] %d alternates for this cached doc", alt_count);
-  if (diags->on("http_alts")) {
+  if (is_debug_tag_set("http_alts")) {
     ACQUIRE_PRINT_LOCK()
     fprintf(stderr, "[alts] There are %d alternates for this request header.\n", alt_count);
     RELEASE_PRINT_LOCK()
@@ -225,7 +223,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
         current_age = (time_t)0;
       }
 
-      if (diags->on("http_alts")) {
+      if (is_debug_tag_set("http_alts")) {
         fprintf(stderr, "[alts] ---- alternate #%d (Q = %g) has these request/response hdrs:\n", i + 1, Q);
         char b[4096];
         int used, tmp, offset;
@@ -260,7 +258,7 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
     }
   }
   Debug("http_seq", "[SelectFromAlternates] Chosen alternate # %d", best_index);
-  if (diags->on("http_alts")) {
+  if (is_debug_tag_set("http_alts")) {
     ACQUIRE_PRINT_LOCK()
     fprintf(stderr, "[alts] and the winner is alternate number %d\n", best_index + 1);
     RELEASE_PRINT_LOCK()
@@ -617,7 +615,6 @@ does_charset_match(char *charset1, char *charset2)
   return (is_asterisk(charset1) || is_empty(charset1) || (strcasecmp(charset1, charset2) == 0));
 }
 
-
 float
 HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_field, MIMEField *content_field,
                                                              MIMEField *cached_accept_field)
@@ -842,7 +839,6 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   const char *a_raw, *ca_raw;
   int a_raw_len, ca_raw_len;
 
-
   // prefer exact matches
   if (accept_field && cached_accept_field) {
     a_raw = accept_field->value_get(&a_raw_len);
@@ -1053,7 +1049,6 @@ match_accept_content_language(const char *c_raw, MIMEField *accept_field, bool *
 
   return false;
 }
-
 
 // FIX: This code is icky, and i suspect wrong in places, particularly
 //      beacuse parts of match_accept_content_language are commented out.
@@ -1287,7 +1282,6 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
   ink_assert(response->status_get() != HTTP_STATUS_PRECONDITION_FAILED);
   ink_assert(response->status_get() != HTTP_STATUS_RANGE_NOT_SATISFIABLE);
 
-
   if (!(request->presence(MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_NONE_MATCH | MIME_PRESENCE_IF_UNMODIFIED_SINCE |
                           MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_RANGE))) {
     return response->status_get();
@@ -1457,7 +1451,6 @@ HttpTransactCache::match_response_to_request_conditionals(HTTPHdr *request, HTTP
 
   return response->status_get();
 }
-
 
 /*---------------------------------------------------
  *        class CacheLookupHttpConfig

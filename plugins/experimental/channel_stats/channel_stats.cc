@@ -58,7 +58,6 @@ static uint64_t global_response_bytes_content = 0; // transferred bytes
 // channel stats
 struct channel_stat {
   channel_stat() : response_bytes_content(0), response_count_2xx(0), response_count_5xx(0), speed_ua_bytes_per_sec_64k(0) {}
-
   inline void
   increment(uint64_t rbc, uint64_t rc2, uint64_t rc5, uint64_t sbps6)
   {
@@ -636,7 +635,11 @@ json_out_stat(TSRecordType /* rec_type ATS_UNUSED */, void *edata, int /* regist
 }
 
 template <class T> struct compare : std::binary_function<T, T, bool> {
-  inline bool operator()(const T &lhs, const T &rhs) { return lhs.second->response_count_2xx > rhs.second->response_count_2xx; }
+  inline bool
+  operator()(const T &lhs, const T &rhs)
+  {
+    return lhs.second->response_count_2xx > rhs.second->response_count_2xx;
+  }
 };
 
 static void

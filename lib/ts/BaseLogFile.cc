@@ -242,7 +242,6 @@ BaseLogFile::roll()
   return roll(start, now);
 }
 
-
 /*
  * This function will return true if the given filename corresponds to a
  * rolled logfile.  We make this determination based on the file extension.
@@ -435,7 +434,6 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
 
   va_end(args);
 }
-
 
 /****************************************************************************
 

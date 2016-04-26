@@ -129,7 +129,6 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   fll->next = freelists;
   freelists = fll;
 
-
   f->name = name;
   /* quick test for power of 2 */
   ink_assert(!(alignment & (alignment - 1)));
@@ -453,7 +452,6 @@ ink_freelists_dump(FILE *f)
   fprintf(f, " %18" PRIu64 " | %18" PRIu64 " |            | TOTAL\n", total_allocated, total_used);
   fprintf(f, "-----------------------------------------------------------------------------------------\n");
 }
-
 
 void
 ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next)

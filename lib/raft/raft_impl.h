@@ -44,7 +44,6 @@ public:
 
   RaftImpl(Server *server, const ::std::string &node) : server_(server), node_(node) {}
   ~RaftImpl() {}
-
   virtual void
   SetElectionTimeout(double timeout)
   {
@@ -417,7 +416,7 @@ private:
   }
 
   int
-  MajorityIndex(const ::std::set< ::std::string> &other)
+  MajorityIndex(const ::std::set<::std::string> &other)
   {
     ::std::vector<int64_t> indices(1, index_);
     for (auto &o : other)
@@ -454,7 +453,7 @@ private:
   void
   Commit(bool in_recovery)
   {
-    ::std::vector<std::unique_ptr<LogEntry> > pending;
+    ::std::vector<std::unique_ptr<LogEntry>> pending;
     while (!waiting_commits_.empty() && waiting_commits_.front()->index() <= data_committed_) {
       auto &e = waiting_commits_.front();
       while (!pending.empty() && e->index() <= pending.back()->index())
@@ -602,13 +601,13 @@ private:
   ::std::string vote_;   // My vote this term.
   Config config_;
   Config pending_config_;
-  ::std::map< ::std::string, NodeState> node_state_;
-  ::std::deque<std::unique_ptr<LogEntry> > waiting_commits_;
+  ::std::map<::std::string, NodeState> node_state_;
+  ::std::deque<std::unique_ptr<LogEntry>> waiting_commits_;
   bool seen_term_ = true;
   // Cached values.
-  ::std::set< ::std::string> other_nodes_;        // Nodes required for consensus on log entries.
-  ::std::set< ::std::string> other_config_nodes_; // Nodes required for config changes.
-  ::std::set< ::std::string> replicas_;           // All nodes receiving the replication stream.
+  ::std::set<::std::string> other_nodes_;        // Nodes required for consensus on log entries.
+  ::std::set<::std::string> other_config_nodes_; // Nodes required for config changes.
+  ::std::set<::std::string> replicas_;           // All nodes receiving the replication stream.
 };
 
 template <typename Server>

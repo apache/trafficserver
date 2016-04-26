@@ -194,6 +194,7 @@ struct MIMEFieldBlockImpl : public HdrHeapObjImpl {
   void unmarshal(intptr_t offset);
   void move_strings(HdrStrHeap *new_heap);
   size_t strings_length();
+  bool contains(const MIMEField *field);
 
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);
@@ -285,7 +286,6 @@ struct MIMEScanner {
                           //  int m_state;                  // state of scanning state machine
   MimeParseState m_state; ///< Parsing machine state.
 };
-
 
 struct MIMEParser {
   MIMEScanner m_scanner;
@@ -903,7 +903,6 @@ MIMEField::has_dups() const
 
 struct MIMEFieldIter {
   MIMEFieldIter() : m_slot(0), m_block(NULL) {}
-
   uint32_t m_slot;
   MIMEFieldBlockImpl *m_block;
 };

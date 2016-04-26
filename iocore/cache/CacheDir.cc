@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "P_Cache.h"
 
 #include "ts/hugepages.h"
@@ -49,7 +48,6 @@
     ProxyMutex *mutex = _m;                                         \
     CACHE_INCREMENT_DYN_STAT(cache_directory_collision_count_stat); \
   } while (0);
-
 
 // Globals
 
@@ -219,7 +217,6 @@ dir_init_segment(int s, Vol *d)
   }
 }
 
-
 // break the infinite loop in directory entries
 // Note : abuse of the token bit in dir entries
 int
@@ -377,7 +374,6 @@ dir_clean_vol(Vol *d)
     dir_clean_segment(i, d);
   CHECK_DIR(d);
 }
-
 
 void
 dir_clear_range(off_t start, off_t end, Vol *vol)
@@ -813,8 +809,7 @@ dir_lookaside_cleanup(Vol *d)
         goto Lagain;
       }
       b = b->link.next;
-    Lagain:
-      ;
+    Lagain:;
     }
   }
 }
@@ -922,7 +917,6 @@ sync_cache_dir_on_shutdown(void)
     // recompute hit_evacuate_window
     d->hit_evacuate_window = (d->data_blocks * cache_config_hit_evacuate_percent) / 100;
 
-
     // check if we have data in the agg buffer
     // dont worry about the cachevc s in the agg queue
     // directories have not been inserted for these writes
@@ -943,7 +937,6 @@ sync_cache_dir_on_shutdown(void)
       d->agg_buf_pos = 0;
       d->header->write_serial++;
     }
-
 
     if (buflen < dirlen) {
       if (buf) {
@@ -988,7 +981,6 @@ sync_cache_dir_on_shutdown(void)
     buf = NULL;
   }
 }
-
 
 int
 CacheSync::mainEvent(int event, Event *e)
@@ -1139,7 +1131,6 @@ compare_ushort(void const *a, void const *b)
   return *static_cast<unsigned short const *>(a) - *static_cast<unsigned short const *>(b);
 }
 }
-
 
 //
 // Check
@@ -1449,12 +1440,10 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
   if (us)
     rprintf(t, "probe rate = %d / second\n", (int)((newfree * (uint64_t)1000000) / us));
 
-
   for (int c = 0; c < vol_direntries(d) * 0.75; c++) {
     regress_rand_CacheKey(&key);
     dir_insert(&key, d, &dir);
   }
-
 
   Dir dir1;
   memset(&dir1, 0, sizeof(dir1));
@@ -1471,7 +1460,6 @@ EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED 
     dir_insert(&key, d, &dir);
     Dir *last_collision = 0;
     dir_probe(&key, d, &dir, &last_collision);
-
 
     rand_CacheKey(&key, thread->mutex);
     s1 = key.slice32(0) % d->segments;

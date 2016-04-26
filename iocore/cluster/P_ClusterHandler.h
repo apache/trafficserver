@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ClusterHandler.h
@@ -29,7 +28,6 @@
 
 #ifndef _P_ClusterHandler_h
 #define _P_ClusterHandler_h
-
 
 class ClusterLoadMonitor;
 
@@ -360,7 +358,6 @@ struct ClusterState : public Continuation {
   Ptr<IOBufferBlock> block[MAX_TCOUNT];
   class MIOBuffer *mbuf;
   int state; // See enum defs below
-
 
   enum {
     READ_START = 1,

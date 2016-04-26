@@ -44,7 +44,6 @@ class UDPPacket
 {
 public:
   virtual ~UDPPacket() {}
-
   virtual void free(); // fast deallocate
   void setContinuation(Continuation *c);
   void setConnection(UDPConnection *c);

@@ -190,7 +190,6 @@ Configuration::Parse(const char *path)
   current_host_configuration->add_compressible_content_type("*javascript*");
   current_host_configuration->add_compressible_content_type("image/svg+xml");
 
-
   if (pathstring.empty()) {
     return c;
   }

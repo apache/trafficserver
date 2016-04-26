@@ -96,7 +96,6 @@ ats_base64_encode(const char *inBuffer, size_t inBufferSize, char *outBuffer, si
   return ats_base64_encode((const unsigned char *)inBuffer, inBufferSize, outBuffer, outBufSize, length);
 }
 
-
 /*-------------------------------------------------------------------------
   This is a reentrant, and malloc free implemetnation of ats_base64_decode.
   -------------------------------------------------------------------------*/

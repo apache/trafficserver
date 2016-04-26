@@ -123,7 +123,11 @@ public:
     iterator() : _list(0), _elt(0) {}
     /// Equality test.
     /// @return @c true if @c this and @a that refer to the same object.
-    bool operator==(self const &that) const { return _list == that._list && _elt == that._elt; }
+    bool
+    operator==(self const &that) const
+    {
+      return _list == that._list && _elt == that._elt;
+    }
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
@@ -164,14 +168,17 @@ public:
     }
     /// Inequality test.
     /// @return @c true if @c this and @a do not refer to the same object.
-    bool operator!=(self const &that) const { return !(*this == that); }
+    bool
+    operator!=(self const &that) const
+    {
+      return !(*this == that);
+    }
     /// Dereference.
     /// @return A reference to the referent.
     reference operator*() { return *_elt; }
     /// Dereference.
     /// @return A pointer to the referent.
     pointer operator->() { return _elt; }
-
   protected:
     IntrusiveDList *_list; ///< List for this iterator.
     T *_elt;               ///< Referenced element.

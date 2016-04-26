@@ -381,7 +381,6 @@ struct CCCongestionDBTestCont : public Continuation {
   int dbsize;
   CongestionEntry *gen_CongestionEntry(sockaddr const *ip, int congested = 0);
 
-
   CCCongestionDBTestCont(Ptr<ProxyMutex> _mutex, RegressionTest *_test)
     : Continuation(_mutex), final_status(REGRESSION_TEST_PASSED), complete(false), test(_test), rule(NULL), db(NULL), dbsize(1024)
   {
@@ -477,7 +476,6 @@ CCCongestionDBTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_U
   db->removeAllRecords();
 
   rprintf(test, "There are %d records in the db\n", items[0]);
-
 
   rprintf(test, "Add %d records into the db", to_add);
   for (i = 0; i < to_add; i++) {

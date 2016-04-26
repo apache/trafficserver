@@ -69,6 +69,12 @@ enum {
   HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, // Total connections running http2
   HTTP2_STAT_STREAM_ERRORS_COUNT,
   HTTP2_STAT_CONNECTION_ERRORS_COUNT,
+  HTTP2_STAT_SESSION_DIE_DEFAULT,
+  HTTP2_STAT_SESSION_DIE_OTHER,
+  HTTP2_STAT_SESSION_DIE_ACTIVE,
+  HTTP2_STAT_SESSION_DIE_INACTIVE,
+  HTTP2_STAT_SESSION_DIE_EOS,
+  HTTP2_STAT_SESSION_DIE_ERROR,
 
   HTTP2_N_STATS // Terminal counter, NOT A STAT INDEX.
 };
@@ -248,7 +254,6 @@ struct Http2SettingsParameter {
 // [RFC 7540] 6.3 PRIORITY Format
 struct Http2Priority {
   Http2Priority() : stream_dependency(0), weight(15) {}
-
   uint32_t stream_dependency;
   uint8_t weight;
 };
@@ -256,7 +261,6 @@ struct Http2Priority {
 // [RFC 7540] 6.2 HEADERS Format
 struct Http2HeadersParameter {
   Http2HeadersParameter() : pad_length(0) {}
-
   uint8_t pad_length;
   Http2Priority priority;
 };
@@ -264,7 +268,6 @@ struct Http2HeadersParameter {
 // [RFC 7540] 6.8 GOAWAY Format
 struct Http2Goaway {
   Http2Goaway() : last_streamid(0), error_code(0) {}
-
   Http2StreamId last_streamid;
   uint32_t error_code;
 
@@ -326,13 +329,12 @@ bool http2_parse_goaway(IOVec, Http2Goaway &);
 
 bool http2_parse_window_update(IOVec, uint32_t &);
 
-int64_t http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint8_t *, Http2IndexingTable &, bool &);
+Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint32_t, uint32_t *, HpackHandle &, bool &);
 
-MIMEParseResult convert_from_2_to_1_1_header(HTTPHdr *);
+Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32_t *, HpackHandle &);
 
-int64_t http2_write_psuedo_headers(HTTPHdr *, uint8_t *, uint64_t, Http2IndexingTable &);
-
-int64_t http2_write_header_fragment(HTTPHdr *, MIMEFieldIter &, uint8_t *, uint64_t, Http2IndexingTable &, bool &);
+MIMEParseResult http2_convert_header_from_2_to_1_1(HTTPHdr *);
+void http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers);
 
 // Not sure where else to put this, but figure this is as good of a start as
 // anything else.

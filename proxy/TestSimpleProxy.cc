@@ -137,7 +137,6 @@ struct TestProxy : Continuation {
   }
 };
 
-
 struct TestAccept : Continuation {
   int
   startEvent(int event, NetVConnection *e)

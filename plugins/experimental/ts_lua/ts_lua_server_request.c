@@ -29,7 +29,6 @@
     }                                                                                                                            \
   } while (0)
 
-
 #define TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx)                                                                         \
   do {                                                                                                                    \
     if (!http_ctx->server_request_url) {                                                                                  \

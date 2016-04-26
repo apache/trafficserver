@@ -80,7 +80,6 @@ NVC_test_def netvc_tests_def[] = {
 };
 const unsigned num_netvc_tests = countof(netvc_tests_def);
 
-
 NetVCTest::NetVCTest()
   : Continuation(NULL), test_cont_type(NET_VC_TEST_ACTIVE), test_vc(NULL), regress(NULL), driver(NULL), read_vio(NULL),
     write_vio(NULL), read_buffer(NULL), write_buffer(NULL), reader_for_rbuf(NULL), reader_for_wbuf(NULL), write_bytes_to_add_per(0),
@@ -164,7 +163,6 @@ NetVCTest::start_test()
     write_done = true;
   }
 }
-
 
 int
 NetVCTest::fill_buffer(MIOBuffer *buf, uint8_t *seed, int bytes)
@@ -373,7 +371,6 @@ NetVCTest::main_handler(int event, void *data)
 
   return 0;
 }
-
 
 NetTestDriver::NetTestDriver() : Continuation(NULL), errors(0), r(NULL), pstatus(NULL)
 {

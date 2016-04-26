@@ -68,7 +68,6 @@ LogFilter::~LogFilter()
   delete m_field;
 }
 
-
 /*-------------------------------------------------------------------------
   LogFilterString::LogFilterString
   -------------------------------------------------------------------------*/
@@ -94,7 +93,6 @@ LogFilterString::_setValues(size_t n, char **value)
     }
   }
 }
-
 
 LogFilterString::LogFilterString(const char *name, LogField *field, LogFilter::Action action, LogFilter::Operator oper,
                                  char *values)
@@ -161,7 +159,8 @@ LogFilterString::~LogFilterString()
 
   -------------------------------------------------------------------------*/
 
-bool LogFilterString::operator==(LogFilterString &rhs)
+bool
+LogFilterString::operator==(LogFilterString &rhs)
 {
   if (m_type == rhs.m_type && *m_field == *rhs.m_field && m_action == rhs.m_action && m_operator == rhs.m_operator &&
       m_num_values == rhs.m_num_values) {
@@ -245,7 +244,6 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
   ats_free(big_buf);
   return cond_satisfied;
 }
-
 
 /*-------------------------------------------------------------------------
   LogFilterString::toss_this_entry
@@ -485,7 +483,8 @@ LogFilterInt::~LogFilterInt()
 
   -------------------------------------------------------------------------*/
 
-bool LogFilterInt::operator==(LogFilterInt &rhs)
+bool
+LogFilterInt::operator==(LogFilterInt &rhs)
 {
   if (m_type == rhs.m_type && *m_field == *rhs.m_field && m_action == rhs.m_action && m_operator == rhs.m_operator &&
       m_num_values == rhs.m_num_values) {
@@ -711,7 +710,8 @@ LogFilterIP::~LogFilterIP()
 
   -------------------------------------------------------------------------*/
 
-bool LogFilterIP::operator==(LogFilterIP &rhs)
+bool
+LogFilterIP::operator==(LogFilterIP &rhs)
 {
   if (m_type == rhs.m_type && *m_field == *rhs.m_field && m_action == rhs.m_action && m_operator == rhs.m_operator &&
       m_num_values == rhs.m_num_values) {
@@ -817,7 +817,6 @@ LogFilterIP::display(FILE *fd)
   }
 }
 
-
 void
 LogFilterIP::display_as_XML(FILE *fd)
 {
@@ -884,7 +883,8 @@ LogFilterList::~LogFilterList()
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-bool LogFilterList::operator==(LogFilterList &rhs)
+bool
+LogFilterList::operator==(LogFilterList &rhs)
 {
   if (m_does_conjunction == rhs.does_conjunction()) {
     LogFilter *f = first();
@@ -957,7 +957,6 @@ LogFilterList::wipe_this_entry(LogAccess *lad)
   return wipeFlag;
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -998,7 +997,6 @@ LogFilterList::find_by_name(char *name)
   }
   return NULL;
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

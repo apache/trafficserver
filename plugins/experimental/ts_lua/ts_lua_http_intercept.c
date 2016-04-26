@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 #include "ts_lua_http_intercept.h"
 
@@ -36,7 +35,6 @@ static int ts_lua_flush(lua_State *L);
 static int ts_lua_flush_wakeup(ts_lua_http_intercept_ctx *ictx);
 static int ts_lua_flush_wakeup_handler(TSCont contp, TSEvent event, void *edata);
 static int ts_lua_flush_cleanup(ts_lua_async_item *ai);
-
 
 void
 ts_lua_inject_http_intercept_api(lua_State *L)

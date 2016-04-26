@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #if !defined(P_VIO_h)
 #define P_VIO_h
 #include "I_VIO.h"

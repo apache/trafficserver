@@ -63,7 +63,6 @@ struct Config {
   TSTextLogObject log;
 
   Config() : sample(1000), log_level(1), log(NULL) {}
-
   ~Config()
   {
     if (log) {
@@ -271,12 +270,8 @@ parse_hook_list(const char *hook_list)
   const struct hookmask {
     const char *name;
     unsigned mask;
-  } hooks[] = {{"ssn_start", TCPI_HOOK_SSN_START},
-               {"txn_start", TCPI_HOOK_TXN_START},
-               {"send_resp_hdr", TCPI_HOOK_SEND_RESPONSE},
-               {"ssn_close", TCPI_HOOK_SSN_CLOSE},
-               {"txn_close", TCPI_HOOK_TXN_CLOSE},
-               {NULL, 0u}};
+  } hooks[] = {{"ssn_start", TCPI_HOOK_SSN_START}, {"txn_start", TCPI_HOOK_TXN_START}, {"send_resp_hdr", TCPI_HOOK_SEND_RESPONSE},
+               {"ssn_close", TCPI_HOOK_SSN_CLOSE}, {"txn_close", TCPI_HOOK_TXN_CLOSE}, {NULL, 0u}};
 
   str = TSstrdup(hook_list);
 

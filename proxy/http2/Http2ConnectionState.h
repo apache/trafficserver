@@ -26,7 +26,6 @@
 
 #include "HTTP2.h"
 #include "HPACK.h"
-#include "FetchSM.h"
 #include "Http2Stream.h"
 
 class Http2ClientSession;
@@ -112,8 +111,8 @@ public:
   }
 
   Http2ClientSession *ua_session;
-  Http2IndexingTable *local_indexing_table;
-  Http2IndexingTable *remote_indexing_table;
+  HpackHandle *local_hpack_handle;
+  HpackHandle *remote_hpack_handle;
 
   // Settings.
   Http2ConnectionSettings server_settings;
@@ -122,8 +121,8 @@ public:
   void
   init()
   {
-    local_indexing_table = new Http2IndexingTable();
-    remote_indexing_table = new Http2IndexingTable();
+    local_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
+    remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
 
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len = 0;
@@ -135,8 +134,8 @@ public:
     cleanup_streams();
 
     mutex = NULL; // magic happens - assigning to NULL frees the ProxyMutex
-    delete local_indexing_table;
-    delete remote_indexing_table;
+    delete local_hpack_handle;
+    delete remote_hpack_handle;
 
     ats_free(continued_buffer.iov_base);
   }
@@ -181,8 +180,8 @@ public:
   ssize_t client_rwnd, server_rwnd;
 
   // HTTP/2 frame sender
-  void send_data_frame(FetchSM *fetch_sm);
-  void send_headers_frame(FetchSM *fetch_sm);
+  void send_data_frame(Http2Stream *stream);
+  void send_headers_frame(Http2Stream *stream);
   void send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec);
   void send_settings_frame(const Http2ConnectionSettings &new_settings);
   void send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data);

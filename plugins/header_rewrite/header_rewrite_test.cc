@@ -65,7 +65,6 @@ class ParserTest : public Parser
 {
 public:
   ParserTest(std::string line) : Parser(line) {}
-
   std::vector<std::string>
   getTokens()
   {

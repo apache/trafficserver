@@ -28,7 +28,6 @@
 
  ****************************************************************************/
 
-
 //
 //  The Machine is the set of processes which share part of an
 //  address space.
@@ -42,7 +41,6 @@
 // fall out of the current configuration that are deleted.
 //
 #define MACHINE_TIMEOUT (HRTIME_DAY * 2)
-
 
 //
 //  This is the time processors should delay before freeing up resouces
@@ -113,6 +111,5 @@ extern ProxyMutex *the_cluster_config_mutex;
 //
 extern MachineList *machines_config;
 extern MachineList *cluster_config;
-
 
 #endif /* _Machine_h */

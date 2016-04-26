@@ -199,7 +199,6 @@ OneWayTunnel::init(Continuation *aCont, VIO *SourceVio, VIO *TargetVio, bool acl
   vioTarget = TargetVio;
 }
 
-
 void
 OneWayTunnel::transform(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 {

@@ -126,9 +126,9 @@ public:
   string node_;
   string leader_;
   unique_ptr<RaftClass> raft_;
-  vector<unique_ptr<LogEntry> > log_;
-  vector<unique_ptr<LogEntry> > commits_;
-  map<string, pair<int64_t, string> > state_;
+  vector<unique_ptr<LogEntry>> log_;
+  vector<unique_ptr<LogEntry>> commits_;
+  map<string, pair<int64_t, string>> state_;
 };
 
 template <typename T>
@@ -203,7 +203,7 @@ protected:
   void
   CrashAndRecover(int i, const LogEntry &config_log_entry)
   {
-    vector<unique_ptr<LogEntry> > log;
+    vector<unique_ptr<LogEntry>> log;
     for (auto &p : servers_[i]->log_)
       log.emplace_back(p.release());
     servers_[i].reset(new RaftServer(to_string(i), this));
@@ -229,10 +229,10 @@ protected:
   SnapshotCrashAndRecover(int i, const LogEntry &config_log_entry)
   {
     vector<LogEntry> entries;
-    vector<pair<int64_t, string> > state;
+    vector<pair<int64_t, string>> state;
     for (auto &p : servers_[i]->state_)
       state.push_back(make_pair(p.second.first, p.first + "=" + p.second.second));
-    std::sort(state.begin(), state.end(), firstless<pair<int64_t, string> >);
+    std::sort(state.begin(), state.end(), firstless<pair<int64_t, string>>);
     servers_[i]->log_.clear();
     for (auto &s : state) {
       LogEntry *e = new LogEntry;
@@ -259,8 +259,8 @@ protected:
 
   double now_;
   set<string> down_;
-  vector<unique_ptr<RaftServer> > servers_;
-  deque<pair<string, Message *> > messages_;
+  vector<unique_ptr<RaftServer>> servers_;
+  deque<pair<string, Message *>> messages_;
 };
 
 bool

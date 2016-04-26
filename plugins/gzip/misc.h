@@ -65,7 +65,6 @@ typedef struct {
   int compression_type;
 } GzipData;
 
-
 voidpf gzip_alloc(voidpf opaque, uInt items, uInt size);
 void gzip_free(voidpf opaque, voidpf address);
 void normalize_accept_encoding(TSHttpTxn txnp, TSMBuffer reqp, TSMLoc hdr_loc);

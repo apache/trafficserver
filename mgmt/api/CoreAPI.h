@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _CORE_API_H
 #define _CORE_API_H
 

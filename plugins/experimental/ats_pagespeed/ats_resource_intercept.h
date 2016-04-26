@@ -28,7 +28,6 @@
 
 #include <ts/ts.h>
 
-
 #include "net/instaweb/http/public/async_fetch.h"
 #include "net/instaweb/http/public/headers.h"
 #include "net/instaweb/util/public/string_util.h"

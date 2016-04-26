@@ -33,7 +33,6 @@
 
 #include "I_UDPNet.h"
 
-
 class UDPConnectionInternal : public UDPConnection
 {
 public:
@@ -78,7 +77,6 @@ UDPConnectionInternal::~UDPConnectionInternal()
   continuation = NULL;
   mutex = NULL;
 }
-
 
 TS_INLINE SOCKET
 UDPConnection::getFd()

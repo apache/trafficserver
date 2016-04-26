@@ -60,7 +60,6 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
     goto release_hdr;
   }
 
-
   field_loc = TSMimeHdrFieldFind(reqp, hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
 
   if (!field_loc) {

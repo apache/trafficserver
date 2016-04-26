@@ -16,10 +16,8 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 #include "ts_lua_remap.h"
-
 
 typedef enum {
   TS_LUA_REMAP_NO_REMAP = TSREMAP_NO_REMAP,
@@ -47,7 +45,6 @@ static int ts_lua_remap_get_to_uri(lua_State *L);
 static int ts_lua_remap_get_to_url(lua_State *L);
 
 static void ts_lua_inject_remap_variables(lua_State *L);
-
 
 void
 ts_lua_inject_remap_api(lua_State *L)

@@ -139,7 +139,6 @@ test_sort()
   for (int i = 0; i < 1000; ++i)
     ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
 
-
   v.clear();
   for (long i = 1; i <= 1000000; ++i) {
     v.add(reinterpret_cast<void *>(static_cast<intptr_t>(((i * 51511) % 1000000) + 1)));

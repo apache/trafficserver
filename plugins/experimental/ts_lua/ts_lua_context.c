@@ -16,14 +16,12 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 
 static char ts_http_context_key;
 
 static int ts_lua_context_get(lua_State *L);
 static int ts_lua_context_set(lua_State *L);
-
 
 void
 ts_lua_inject_context_api(lua_State *L)
@@ -49,7 +47,6 @@ ts_lua_create_context_table(lua_State *L)
   lua_newtable(L);
   lua_rawset(L, LUA_GLOBALSINDEX);
 }
-
 
 static int
 ts_lua_context_get(lua_State *L)

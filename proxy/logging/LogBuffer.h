@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_BUFFER_H
 #define LOG_BUFFER_H
 
@@ -95,13 +94,11 @@ struct LogBufferHeader {
   char *log_filename();
 };
 
-
 union LB_State {
   LB_State() : ival(0) {}
-
   LB_State(volatile LB_State &vs) { ival = vs.ival; }
-
-  LB_State &operator=(volatile LB_State &vs)
+  LB_State &
+  operator=(volatile LB_State &vs)
   {
     ival = vs.ival;
     return *this;
@@ -293,7 +290,6 @@ private:
   LogBufferIterator &operator=(const LogBufferIterator &);
 };
 
-
 /*-------------------------------------------------------------------------
   LogBufferIterator
 
@@ -319,7 +315,6 @@ inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_net
     break;
   }
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/

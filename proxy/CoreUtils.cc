@@ -28,7 +28,6 @@
    Description:  Automated processing of core files on Linux
  ****************************************************************************/
 
-
 /*
    Stack Unwinding procedure on ix86 architecture on Linux :
    Get the first frame pointer in $ebp.
@@ -128,7 +127,6 @@ char netvc_ptr_str[256] = "";
 HdrHeap *swizzle_heap;
 char *ptr_data;
 
-
 // returns the index of the vaddr or the index after where it should be
 intptr_t
 CoreUtils::find_vaddr(intptr_t vaddr, intptr_t upper, intptr_t lower)
@@ -208,7 +206,6 @@ CoreUtils::insert_table(intptr_t vaddr1, intptr_t offset1, intptr_t fsize1)
   }
 }
 
-
 // returns -1 on failure otherwise fills the buffer and
 // returns the number of bytes read
 intptr_t
@@ -243,7 +240,6 @@ CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
 
   return -1;
 }
-
 
 /* Linux Specific functions */
 
@@ -362,7 +358,6 @@ CoreUtils::find_stuff(StuffTest_f f)
 }
 #endif // linux check
 
-
 // test whether a given register is an HttpSM
 //   if it is, call process_HttpSM on it
 void
@@ -467,7 +462,6 @@ CoreUtils::process_HttpSM(HttpSM *core_ptr)
   } else
     printf("process_HttpSM : last_seen_http_sm == core_ptr\n");
 }
-
 
 void
 CoreUtils::print_http_hdr(HTTPHdr *h, const char *name)
@@ -779,7 +773,6 @@ CoreUtils::process_NetVC(UnixNetVConnection *nvc_test)
 
   ats_free(buf);
 }
-
 
 char *
 CoreUtils::load_string(const char *addr)

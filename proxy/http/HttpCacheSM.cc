@@ -45,7 +45,6 @@
 
 #define REMEMBER(e, r) master_sm->add_history_entry(__FILE__ ":" _REMEMBER(__LINE__), e, r);
 
-
 HttpCacheAction::HttpCacheAction() : sm(NULL)
 {
 }

@@ -25,7 +25,6 @@
   limitations under the License.
  */
 
-
 #include <stdio.h>
 #include <memory.h>
 #include <inttypes.h>
@@ -115,7 +114,6 @@ CB_servername(TSCont /* contp */, TSEvent /* event */, void *edata)
       }
     }
   }
-
 
   // All done, reactivate things
   TSVConnReenable(ssl_vc);

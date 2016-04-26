@@ -39,7 +39,8 @@ struct VersionNumber {
   VersionNumber(short int major, short int minor) : ink_major(major), ink_minor(minor) {}
 };
 
-inline bool operator<(VersionNumber const &lhs, VersionNumber const &rhs)
+inline bool
+operator<(VersionNumber const &lhs, VersionNumber const &rhs)
 {
   return lhs.ink_major < rhs.ink_major || (lhs.ink_major == rhs.ink_major && lhs.ink_minor < rhs.ink_minor);
 }

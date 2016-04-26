@@ -24,11 +24,15 @@
 using namespace atscppapi;
 using namespace std;
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 class GlobalHookPlugin : public GlobalPlugin
 {
 public:
   GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
-
   virtual void
   handleReadRequestHeadersPreRemap(Transaction &transaction)
   {
@@ -42,5 +46,5 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_GlobalHookPplugin", "apache", "dev@trafficserver.apache.org");
   std::cout << "Hello from " << argv[0] << std::endl;
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

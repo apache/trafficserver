@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_SOCK_H
 #define LOG_SOCK_H
 

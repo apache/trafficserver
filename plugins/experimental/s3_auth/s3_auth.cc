@@ -40,7 +40,6 @@
 static const char PLUGIN_NAME[] = "s3_auth";
 static const char DATE_FMT[] = "%a, %d %b %Y %H:%M:%S %z";
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // One configuration setup
 //
@@ -144,7 +143,6 @@ private:
   TSCont _cont;
 };
 
-
 bool
 S3Config::parse_config(const char *config)
 {
@@ -207,7 +205,6 @@ S3Config::parse_config(const char *config)
   return true;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // This class is used to perform the S3 auth generation.
 //
@@ -242,7 +239,6 @@ private:
   TSMBuffer _bufp;
   TSMLoc _hdr_loc, _url_loc;
 };
-
 
 ///////////////////////////////////////////////////////////////////////////
 // Set a header to a specific value. This will avoid going to through a
@@ -490,7 +486,6 @@ event_handler(TSCont cont, TSEvent /* event */, void *edata)
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin.
 //
@@ -512,19 +507,16 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   return TS_SUCCESS;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // One instance per remap.config invocation.
 //
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
-  static const struct option longopt[] = {{const_cast<char *>("access_key"), required_argument, NULL, 'a'},
-                                          {const_cast<char *>("config"), required_argument, NULL, 'c'},
-                                          {const_cast<char *>("secret_key"), required_argument, NULL, 's'},
-                                          {const_cast<char *>("version"), required_argument, NULL, 'v'},
-                                          {const_cast<char *>("virtual_host"), no_argument, NULL, 'h'},
-                                          {NULL, no_argument, NULL, '\0'}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("access_key"), required_argument, NULL, 'a'}, {const_cast<char *>("config"), required_argument, NULL, 'c'},
+    {const_cast<char *>("secret_key"), required_argument, NULL, 's'}, {const_cast<char *>("version"), required_argument, NULL, 'v'},
+    {const_cast<char *>("virtual_host"), no_argument, NULL, 'h'},     {NULL, no_argument, NULL, '\0'}};
 
   S3Config *s3 = new S3Config();
 
@@ -582,7 +574,6 @@ TSRemapDeleteInstance(void *ih)
 
   delete s3;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main "entry" point for the plugin, called for every request.

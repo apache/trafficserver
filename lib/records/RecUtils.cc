@@ -66,7 +66,6 @@ RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
   return r;
 }
 
-
 //-------------------------------------------------------------------------
 // RecDataZero
 //-------------------------------------------------------------------------
@@ -355,7 +354,6 @@ RecDataSetFromInk64(RecDataT data_type, RecData *data_dst, int64_t data_int64)
   return true;
 }
 
-
 //-------------------------------------------------------------------------
 // RecDataSetFromFloat
 //-------------------------------------------------------------------------
@@ -393,7 +391,6 @@ RecDataSetFromFloat(RecDataT data_type, RecData *data_dst, float data_float)
 
   return true;
 }
-
 
 //-------------------------------------------------------------------------
 // RecDataSetFromString

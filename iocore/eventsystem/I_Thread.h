@@ -79,7 +79,6 @@ extern ProxyMutex *global_mutex;
 static const int MAX_THREAD_NAME_LENGTH = 16;
 static const int DEFAULT_STACKSIZE = 1048576; // 1MB
 
-
 /**
   Base class for the threads in the Event System. Thread is the base
   class for all the thread classes in the Event System. Objects of the
@@ -131,7 +130,9 @@ public:
   ProxyAllocator eventAllocator;
   ProxyAllocator netVCAllocator;
   ProxyAllocator sslNetVCAllocator;
-  ProxyAllocator httpClientSessionAllocator;
+  ProxyAllocator http1ClientSessionAllocator;
+  ProxyAllocator http2ClientSessionAllocator;
+  ProxyAllocator http2StreamAllocator;
   ProxyAllocator httpServerSessionAllocator;
   ProxyAllocator hdrHeapAllocator;
   ProxyAllocator strHeapAllocator;

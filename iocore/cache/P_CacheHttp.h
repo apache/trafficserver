@@ -29,11 +29,9 @@
 #include "HTTP.h"
 #include "URL.h"
 
-
 typedef URL CacheURL;
 typedef HTTPHdr CacheHTTPHdr;
 typedef HTTPInfo CacheHTTPInfo;
-
 
 #define OFFSET_BITS 24
 enum {

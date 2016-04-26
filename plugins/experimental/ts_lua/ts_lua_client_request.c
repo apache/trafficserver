@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include "ts/ink_platform.h"
 #include <netinet/in.h>
 #include "ts_lua_util.h"
@@ -61,7 +60,6 @@ static void ts_lua_inject_client_request_method_api(lua_State *L);
 static void ts_lua_inject_client_request_version_api(lua_State *L);
 static void ts_lua_inject_client_request_body_size_api(lua_State *L);
 static void ts_lua_inject_client_request_header_size_api(lua_State *L);
-
 
 static int ts_lua_client_request_client_addr_get_ip(lua_State *L);
 static int ts_lua_client_request_client_addr_get_port(lua_State *L);
@@ -372,7 +370,6 @@ ts_lua_client_request_get_url_host(lua_State *L)
     char *l_key = "host";
     int key_len = 4;
 
-
     TSMLoc field_loc;
 
     field_loc = TSMimeHdrFieldFind(http_ctx->client_request_bufp, http_ctx->client_request_hdrp, key, key_len);
@@ -523,7 +520,6 @@ ts_lua_client_request_set_uri(lua_State *L)
 
   return 0;
 }
-
 
 static void
 ts_lua_inject_client_request_args_api(lua_State *L)

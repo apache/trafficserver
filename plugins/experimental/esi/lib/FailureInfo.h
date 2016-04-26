@@ -43,7 +43,7 @@
 #include "ComponentBase.h"
 using namespace std;
 
-typedef std::vector<std::pair<double, double> > FailureToSuccess;
+typedef std::vector<std::pair<double, double>> FailureToSuccess;
 typedef std::map<std::string, class FailureInfo *> FailureData;
 
 static const int WINDOW_SIZE = 200;
@@ -64,7 +64,6 @@ public:
   };
 
   ~FailureInfo() {}
-
   /* Fills the statistics vector depending
    * upon the position of the window marker
    */

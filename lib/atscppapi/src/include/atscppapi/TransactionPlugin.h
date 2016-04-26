@@ -113,5 +113,4 @@ private:
 
 } /* atscppapi */
 
-
 #endif /* ATSCPPAPI_TRANSACTIONPLUGIN_H_ */

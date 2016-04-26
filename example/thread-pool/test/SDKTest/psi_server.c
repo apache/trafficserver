@@ -76,7 +76,6 @@ generate_psibility()
   }
 }
 
-
 void
 TSOptionsProcess(char *option, char *value)
 {
@@ -85,7 +84,6 @@ TSOptionsProcess(char *option, char *value)
     my_plugin.psi_ratio = (double)(atoi(value)) / 100.0;
   }
 }
-
 
 void
 TSPluginInit()

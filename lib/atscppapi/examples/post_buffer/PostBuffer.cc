@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 #include <iostream>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
@@ -27,6 +26,11 @@ using namespace atscppapi;
 using std::cerr;
 using std::endl;
 using std::string;
+
+namespace
+{
+GlobalPlugin *plugin;
+}
 
 class PostBufferTransformationPlugin : public TransformationPlugin
 {
@@ -52,7 +56,6 @@ public:
   }
 
   virtual ~PostBufferTransformationPlugin() {}
-
 private:
   Transaction &transaction_;
   string buffer_;
@@ -62,7 +65,6 @@ class GlobalHookPlugin : public GlobalPlugin
 {
 public:
   GlobalHookPlugin() { registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP); }
-
   virtual void
   handleReadRequestHeadersPostRemap(Transaction &transaction)
   {
@@ -81,5 +83,5 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_PostBuffer", "apache", "dev@trafficserver.apache.org");
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

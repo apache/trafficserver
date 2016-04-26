@@ -30,7 +30,6 @@
 #define USE_EDGE_TRIGGER_KQUEUE 1
 #define USE_EDGE_TRIGGER_PORT 1
 
-
 #define EVENTIO_NETACCEPT 1
 #define EVENTIO_READWRITE_VC 2
 #define EVENTIO_DNS_CONNECTION 3
@@ -130,7 +129,6 @@ extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
 extern int http_accept_port_number;
 
-
 //#define INACTIVITY_TIMEOUT
 //
 // Configuration Parameter had to move here to share
@@ -167,7 +165,6 @@ struct PollCont : public Continuation {
   ~PollCont();
   int pollEvent(int event, Event *e);
 };
-
 
 //
 // NetHandler
@@ -237,7 +234,6 @@ get_PollDescriptor(EThread *t)
   PollCont *p = get_PollCont(t);
   return p->pollDescriptor;
 }
-
 
 enum ThrottleType {
   ACCEPT,
@@ -326,7 +322,6 @@ check_emergency_throttle(Connection &con)
   return false;
 }
 
-
 TS_INLINE int
 change_net_connections_throttle(const char *token, RecDataT data_type, RecData value, void *data)
 {
@@ -344,7 +339,6 @@ change_net_connections_throttle(const char *token, RecDataT data_type, RecData v
   }
   return 0;
 }
-
 
 // 1  - transient
 // 0  - report as warning
@@ -643,7 +637,6 @@ EventIO::refresh(int e)
   return 0;
 #endif
 }
-
 
 TS_INLINE int
 EventIO::stop()

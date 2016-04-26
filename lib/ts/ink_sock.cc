@@ -38,7 +38,6 @@
 
 // #define CHECK_PLAUSIBILITY_OF_SOCKADDR
 
-
 #ifdef CHECK_PLAUSIBILITY_OF_SOCKADDR
 #define CHECK_PLAUSIBLE_SOCKADDR(_n, _f, _l) check_plausible_sockaddr(_n, _f, _n)
 inline void
@@ -246,7 +245,6 @@ fd_read_line(int fd, char *s, int len)
   s[numread] = 0;
   return numread;
 }
-
 
 int
 close_socket(int s)

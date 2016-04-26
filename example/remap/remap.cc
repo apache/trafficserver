@@ -29,7 +29,6 @@
     # tsxs -i -o remap.so
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -47,7 +46,6 @@
 #include "ts/ink_defs.h"
 #include "ts/ts.h"
 #include "ts/remap.h"
-
 
 class remap_entry
 {
@@ -191,7 +189,6 @@ TSRemapDone(void)
   fprintf(stderr, "Remap Plugin: TSRemapDone()\n");
 }
 
-
 // Plugin new instance for new remapping rule.
 // This function can be called multiple times (depends on remap.config)
 /* ------------------------ TSRemapNewInstance --------------------------- */
@@ -200,7 +197,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 {
   remap_entry *ri;
   int i;
-
 
   fprintf(stderr, "Remap Plugin: TSRemapNewInstance()\n");
 

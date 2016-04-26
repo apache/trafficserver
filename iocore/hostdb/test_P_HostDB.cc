@@ -41,7 +41,6 @@ struct NetTesterSM : public Continuation {
     read_vio = vc->do_io_read(this, INT64_MAX, buf);
   }
 
-
   int
   handle_read(int event, void *data)
   {

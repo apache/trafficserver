@@ -28,6 +28,11 @@ using std::endl;
 using std::list;
 using std::string;
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 class GlobalHookPlugin : public GlobalPlugin
 {
 public:
@@ -37,7 +42,6 @@ public:
     registerHook(HOOK_READ_REQUEST_HEADERS_POST_REMAP);
     registerHook(HOOK_SEND_REQUEST_HEADERS);
   }
-
 
   void
   handleReadRequestHeadersPreRemap(Transaction &transaction)
@@ -63,7 +67,6 @@ public:
 
     transaction.resume();
   }
-
 
   void
   handleReadRequestHeadersPostRemap(Transaction &transaction)
@@ -136,5 +139,5 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_ClientRequest", "apache", "dev@trafficserver.apache.org");
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

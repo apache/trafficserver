@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/Logger.h>
 #include <atscppapi/PluginInit.h>
@@ -24,6 +23,12 @@
 
 using namespace atscppapi;
 using std::string;
+
+namespace
+{
+GlobalPlugin *plugin;
+GlobalPlugin *plugin2;
+}
 
 #define TAG "internal_transaction_handling"
 
@@ -73,6 +78,6 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_InternalTransactionHandling", "apache", "dev@trafficserver.apache.org");
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
-  new AllTransactionsGlobalPlugin();
-  new NoInternalTransactionsGlobalPlugin();
+  plugin = new AllTransactionsGlobalPlugin();
+  plugin2 = new NoInternalTransactionsGlobalPlugin();
 }

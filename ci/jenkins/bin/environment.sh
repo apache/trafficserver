@@ -60,4 +60,6 @@ fi
 
 # Figure out parallelism for regular builds / bots
 ATS_MAKE_FLAGS="-j 4"
-[ -x /usr/sbin/psrinfo ] && ATS_MAKE_FLAGS="-j $(/usr/sbin/psrinfo -p)" # Conservative on Solaris
+
+# This is for Solaris, but didn't seem to work
+#[ -x /usr/sbin/psrinfo ] && ATS_MAKE_FLAGS="-j $(/usr/sbin/psrinfo -p)" # Conservative on Solaris

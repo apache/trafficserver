@@ -21,13 +21,11 @@
   limitations under the License.
  */
 
-
 #if !defined(_P_IOBuffer_h)
 #define _P_IOBuffer_h
 
 #include "ts/ink_platform.h"
 #include "ts/ink_resource.h"
-
 
 // TODO: I think we're overly aggressive here on making MIOBuffer 64-bit
 // but not sure it's worthwhile changing anything to 32-bit honestly.
@@ -289,7 +287,6 @@ IOBufferData::alloc(int64_t size_index, AllocType type)
 }
 
 // ****** IF YOU CHANGE THIS FUNCTION change that one as well.
-
 
 TS_INLINE void
 IOBufferData::dealloc()

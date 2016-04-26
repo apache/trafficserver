@@ -30,7 +30,6 @@
 */
 #define SOCKS_WITH_TS
 
-
 #define SOCKS_DEFAULT_VERSION 0 // defined the configuration variable
 #define SOCKS4_VERSION 4
 #define SOCKS5_VERSION 5

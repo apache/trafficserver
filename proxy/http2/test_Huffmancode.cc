@@ -64,7 +64,6 @@ uint32_t test_values[] = {
   0x7ffffeb,  27, 0xffffffe, 28, 0x7ffffec,  27, 0x7ffffed, 27, 0x7ffffee, 27, 0x7ffffef,  27, 0x7fffff0,  27, 0x3ffffee, 26,
   0x3fffffff, 30};
 
-
 void
 random_test()
 {
@@ -149,13 +148,13 @@ const static struct {
   uint8_t *expect;
   int64_t expect_len;
 } huffman_encode_test_data[] = {
-  {(uint8_t *)"", 0, (uint8_t *) "", 0},
-  {(uint8_t *)"0", 1, (uint8_t *) "\x07", 1},
-  {(uint8_t *)"302", 3, (uint8_t *) "\x64\x02", 2},
-  {(uint8_t *)"private", 7, (uint8_t *) "\xae\xc3\x77\x1a\x4b", 5},
+  {(uint8_t *)"", 0, (uint8_t *)"", 0},
+  {(uint8_t *)"0", 1, (uint8_t *)"\x07", 1},
+  {(uint8_t *)"302", 3, (uint8_t *)"\x64\x02", 2},
+  {(uint8_t *)"private", 7, (uint8_t *)"\xae\xc3\x77\x1a\x4b", 5},
   {(uint8_t *)"Mon, 21 Oct 2013 20:13:21 GMT", 29,
-   (uint8_t *) "\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66\xe0\x82\xa6\x2d\x1b\xff", 22},
-  {(uint8_t *)"https://www.example.com", 23, (uint8_t *) "\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3",
+   (uint8_t *)"\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66\xe0\x82\xa6\x2d\x1b\xff", 22},
+  {(uint8_t *)"https://www.example.com", 23, (uint8_t *)"\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3",
    17}};
 
 void

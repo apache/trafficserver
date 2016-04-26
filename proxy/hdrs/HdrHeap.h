@@ -149,7 +149,6 @@ struct StrHeapDesc {
   }
 };
 
-
 class IOBufferBlock;
 
 class HdrStrHeap : public RefCountObj
@@ -317,7 +316,6 @@ HdrHeap::unmarshal_size() const
   return m_size + m_ronly_heap[0].m_heap_len;
 }
 
-
 //
 struct MarshalXlate {
   char *start;
@@ -329,7 +327,6 @@ struct HeapCheck {
   char *start;
   char *end;
 };
-
 
 // Nasty macro to do string marshalling
 #define HDR_MARSHAL_STR(ptr, table, nentries)               \
@@ -362,7 +359,6 @@ struct HeapCheck {
     }                                                     \
   }
 
-
 #define HDR_MARSHAL_PTR(ptr, type, table, nentries)                       \
   if (ptr) {                                                              \
     int found = 0;                                                        \
@@ -391,7 +387,6 @@ struct HeapCheck {
       return -1;                                                        \
     }                                                                   \
   }
-
 
 #define HDR_UNMARSHAL_STR(ptr, offset) \
   if (ptr) {                           \
@@ -440,9 +435,7 @@ struct HeapCheck {
 struct HdrHeapSDKHandle {
 public:
   HdrHeapSDKHandle() : m_heap(NULL) {}
-
   ~HdrHeapSDKHandle() { clear(); }
-
   // clear() only deallocates chained SDK return values
   //   The underlying MBuffer is left untouched
   void clear();

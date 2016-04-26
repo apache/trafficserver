@@ -45,7 +45,6 @@
 #include "LogBuffer.h"
 #include "Log.h"
 
-
 struct FieldListCacheElement {
   LogFieldList *fieldlist;
   char *symbol_str;
@@ -288,9 +287,8 @@ LogBuffer::checkout_write(size_t *write_offset, size_t write_size)
 
     LogEntryHeader *entry_header = (LogEntryHeader *)&m_buffer[offset];
     // entry_header->timestamp = LogUtils::timestamp();
-    struct timeval tp;
+    struct timeval tp = ink_gettimeofday();
 
-    ink_gethrtimeofday(&tp, 0);
     entry_header->timestamp = tp.tv_sec;
     entry_header->timestamp_usec = tp.tv_usec;
     entry_header->entry_len = actual_write_size;
@@ -342,7 +340,6 @@ LogBuffer::checkin_write(size_t write_offset)
   return ret_val;
 }
 
-
 unsigned
 LogBuffer::add_header_str(const char *str, char *buf_ptr, unsigned buf_len)
 {
@@ -355,7 +352,6 @@ LogBuffer::add_header_str(const char *str, char *buf_ptr, unsigned buf_len)
   }
   return len;
 }
-
 
 size_t
 LogBuffer::_add_buffer_header()

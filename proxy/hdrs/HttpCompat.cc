@@ -25,7 +25,6 @@
 #include "HttpCompat.h"
 #include "HdrUtils.h" /* MAGIC_EDITING_TAG */
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      HttpCompat::parse_tok_list
@@ -245,7 +244,6 @@ HttpCompat::lookup_param_in_strlist(StrList *param_list, const char *param_name,
   return (false);
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      bool HttpCompat::lookup_param_in_semicolon_string(
@@ -273,7 +271,6 @@ HttpCompat::lookup_param_in_semicolon_string(const char *semicolon_string, int s
   result = lookup_param_in_strlist(&l, param_name, param_val, param_val_length);
   return (result);
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -813,7 +810,6 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
                                               &Idummy, true);
         Debug("body_factory_determine_set", "      SET: [%-8s] A-C match value => [ Qc=%g ]", set_name, Qc);
       }
-
 
       /////////////////////////////////////////////////////////////////
       // We get back the Q value, the matching field length, and the //

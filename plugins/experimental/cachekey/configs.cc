@@ -333,10 +333,13 @@ Configs::init(int argc, char *argv[])
                                           {const_cast<char *>("include-headers"), optional_argument, 0, 'g'},
                                           {const_cast<char *>("include-cookies"), optional_argument, 0, 'h'},
                                           {const_cast<char *>("ua-capture"), optional_argument, 0, 'i'},
-                                          {const_cast<char *>("static-prefix"), optional_argument, 0, 'j'},
-                                          {const_cast<char *>("capture-prefix"), optional_argument, 0, 'k'},
-                                          {const_cast<char *>("ua-whitelist"), optional_argument, 0, 'l'},
-                                          {const_cast<char *>("ua-blacklist"), optional_argument, 0, 'm'},
+                                          {const_cast<char *>("ua-whitelist"), optional_argument, 0, 'j'},
+                                          {const_cast<char *>("ua-blacklist"), optional_argument, 0, 'k'},
+                                          {const_cast<char *>("static-prefix"), optional_argument, 0, 'l'},
+                                          {const_cast<char *>("capture-prefix"), optional_argument, 0, 'm'},
+                                          {const_cast<char *>("capture-prefix-uri"), optional_argument, 0, 'n'},
+                                          {const_cast<char *>("capture-path"), optional_argument, 0, 'o'},
+                                          {const_cast<char *>("capture-path-uri"), optional_argument, 0, 'p'},
                                           {0, 0, 0, 0}};
 
   bool status = true;
@@ -386,25 +389,43 @@ Configs::init(int argc, char *argv[])
         status = false;
       }
       break;
-    case 'j': /* static-prefix */
-      _prefix.assign(optarg);
-      CacheKeyDebug("prefix='%s'", _prefix.c_str());
-      break;
-    case 'k': /* capture-prefix */
-      if (!_hostCapture.init(optarg)) {
-        CacheKeyError("failed to initialize URI host:port capture pattern '%s'", optarg);
-        status = false;
-      }
-      break;
-    case 'l': /* ua-whitelist */
+    case 'j': /* ua-whitelist */
       if (!loadClassifiers(optarg, /* blacklist = */ false)) {
         CacheKeyError("failed to load User-Agent pattern white-list '%s'", optarg);
         status = false;
       }
       break;
-    case 'm': /* ua-blacklist */
+    case 'k': /* ua-blacklist */
       if (!loadClassifiers(optarg, /* blacklist = */ true)) {
         CacheKeyError("failed to load User-Agent pattern black-list '%s'", optarg);
+        status = false;
+      }
+      break;
+    case 'l': /* static-prefix */
+      _prefix.assign(optarg);
+      CacheKeyDebug("prefix='%s'", _prefix.c_str());
+      break;
+    case 'm': /* capture-prefix */
+      if (!_prefixCapture.init(optarg)) {
+        CacheKeyError("failed to initialize prefix URI host:port capture pattern '%s'", optarg);
+        status = false;
+      }
+      break;
+    case 'n': /* capture-prefix-uri */
+      if (!_prefixCaptureUri.init(optarg)) {
+        CacheKeyError("failed to initialize prefix URI capture pattern '%s'", optarg);
+        status = false;
+      }
+      break;
+    case 'o': /* capture-path */
+      if (!_pathCapture.init(optarg)) {
+        CacheKeyError("failed to initialize path capture pattern '%s'", optarg);
+        status = false;
+      }
+      break;
+    case 'p': /* capture-path-uri */
+      if (!_pathCaptureUri.init(optarg)) {
+        CacheKeyError("failed to initialize path URI capture pattern '%s'", optarg);
         status = false;
       }
       break;

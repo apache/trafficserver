@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _STATXML_H_
 #define _STATXML_H_
 

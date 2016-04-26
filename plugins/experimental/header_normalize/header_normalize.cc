@@ -40,7 +40,6 @@
 static char UNUSED rcsId__header_normalize_cc[] =
   "@(#) $Id: header_normalize.cc 218 2014-11-11 01:29:16Z sudheerv $ built on " __DATE__ " " __TIME__;
 
-
 #include <sys/time.h>
 #include <ts/ts.h>
 #include <ts/remap.h>
@@ -59,7 +58,7 @@ using namespace std;
 //
 const char *PLUGIN_NAME = "header_normalize";
 
-std::map<std::string, std::string, std::less<std::string> > hdrMap;
+std::map<std::string, std::string, std::less<std::string>> hdrMap;
 
 static void
 buildHdrMap()

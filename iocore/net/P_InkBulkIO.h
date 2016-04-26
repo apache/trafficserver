@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _INK_BULK_IO_H
 #define _INK_BULK_IO_H
 
@@ -73,7 +72,6 @@ typedef struct {
   uint32_t numFreeBlocks;
   uint32_t freeBlockId[INKBIO_MAX_BLOCKS];
 } InkBulkIOFreeBlockInfo_t;
-
 
 /*
  * Describes a packet to be sent.  Found after a request header in a request block
@@ -167,6 +165,5 @@ struct InkBulkIORequest {
   ((INKBIO_PKT_SIZE_WO_UDPHDR -                                                                           \
     (sizeof(struct InkBulkIORequest) + sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo))) / \
    (sizeof(struct InkBulkIOPkt) + sizeof(struct InkBulkIOAddrInfo)))
-
 
 #endif

@@ -107,7 +107,6 @@ UDPConnection::recv(Continuation *c)
   return ACTION_RESULT_NONE;
 }
 
-
 TS_INLINE UDPConnection *
 new_UDPConnection(int fd)
 {

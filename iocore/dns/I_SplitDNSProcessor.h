@@ -37,7 +37,6 @@ struct SplitDNS;
    **                struct SplitDNSConfig
    -------------------------------------------------------------- */
 
-
 struct SplitDNSConfig {
   static void startup();
 

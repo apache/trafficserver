@@ -76,7 +76,6 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
     RecGetRecordOrderAndId(node_rec_data.recs[0].name, &node_rec_first_ix, NULL);
   }
 
-
   // Query for the name of the node.  If it is not there, some
   //   their cluster ip address
   name_l = this->readString("proxy.node.hostname_FQ", &name_found);
@@ -331,7 +330,6 @@ overviewPage::checkForUpdates()
   ink_mutex_release(&accessLock);
 }
 
-
 // overrviewPage::sortHosts()
 //
 // resorts sortRecords, but always leaves the local node
@@ -388,7 +386,7 @@ overviewPage::addSelfRecord()
   newRec = new overviewRecord(ourAddr, true);
   newRec->up = true;
 
-  ink_hash_table_insert(nodeRecords, (InkHashTableKey) this->ourAddr, (InkHashTableEntry *)newRec);
+  ink_hash_table_insert(nodeRecords, (InkHashTableKey)this->ourAddr, (InkHashTableEntry *)newRec);
 
   sortRecords.addEntry(newRec);
   numHosts++;

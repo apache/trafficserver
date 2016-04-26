@@ -885,11 +885,17 @@ main()
   {
     cout << endl << "==================== Test 38: html comment tag - partial chunks " << endl;
     EsiParser parser("parser_test", &Debug, &Error);
-    const char *lines[] = {"foo ", "<es", "i:comment text=\"blah\"/><esi:include src=url1/>", "<!--",
-                           "esi <p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>-->", "<esi:include src=url2 /><!--e",
-                           "si foo--><!--esi bar-->", "<!--esi blah--><esi:com",
+    const char *lines[] = {"foo ",
+                           "<es",
+                           "i:comment text=\"blah\"/><esi:include src=url1/>",
+                           "<!--",
+                           "esi <p><esi:vars>Hello, $(HTTP_COOKIE{name})!</esi:vars></p>-->",
+                           "<esi:include src=url2 /><!--e",
+                           "si foo--><!--esi bar-->",
+                           "<!--esi blah--><esi:com",
                            "ment text=\"bleh\" /> <esi:remove> </esi:remove><!--esi bleh -->",
-                           "<!--esi blooh--><esi:include src=url3/>", 0};
+                           "<!--esi blooh--><esi:include src=url3/>",
+                           0};
 
     DocNodeList node_list;
     for (int i = 0; lines[i]; ++i) {

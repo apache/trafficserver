@@ -50,7 +50,7 @@
 
 */
 #ifdef DEBUG
-#define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(DiagsMakeLocation(), NULL, _m, _t)
+#define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(MakeSourceLocation(), NULL, _m, _t)
 #else
 #define SCOPED_MUTEX_LOCK(_l, _m, _t) MutexLock _l(_m, _t)
 #endif // DEBUG
@@ -69,7 +69,7 @@
   @param _t The current EThread executing your code.
 
 */
-#define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(DiagsMakeLocation(), (char *)NULL, _m, _t)
+#define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(MakeSourceLocation(), (char *)NULL, _m, _t)
 
 /**
   Attempts to acquire the lock to the ProxyMutex.
@@ -85,7 +85,7 @@
   @param _sc The number of attempts or spin count. It must be a positive value.
 
 */
-#define MUTEX_TRY_LOCK_SPIN(_l, _m, _t, _sc) MutexTryLock _l(DiagsMakeLocation(), (char *)NULL, _m, _t, _sc)
+#define MUTEX_TRY_LOCK_SPIN(_l, _m, _t, _sc) MutexTryLock _l(MakeSourceLocation(), (char *)NULL, _m, _t, _sc)
 
 /**
   Attempts to acquire the lock to the ProxyMutex.
@@ -102,7 +102,7 @@
 
 */
 
-#define MUTEX_TRY_LOCK_FOR(_l, _m, _t, _c) MutexTryLock _l(DiagsMakeLocation(), NULL, _m, _t)
+#define MUTEX_TRY_LOCK_FOR(_l, _m, _t, _c) MutexTryLock _l(MakeSourceLocation(), NULL, _m, _t)
 #else // DEBUG
 #define MUTEX_TRY_LOCK(_l, _m, _t) MutexTryLock _l(_m, _t)
 #define MUTEX_TRY_LOCK_SPIN(_l, _m, _t, _sc) MutexTryLock _l(_m, _t, _sc)
@@ -126,9 +126,9 @@
 /////////////////////////////////////
 // DEPRECATED DEPRECATED DEPRECATED
 #ifdef DEBUG
-#define MUTEX_TAKE_TRY_LOCK(_m, _t) Mutex_trylock(DiagsMakeLocation(), (char *)NULL, _m, _t)
-#define MUTEX_TAKE_TRY_LOCK_FOR(_m, _t, _c) Mutex_trylock(DiagsMakeLocation(), (char *)NULL, _m, _t)
-#define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m, _t, _c, _sc) Mutex_trylock_spin(DiagsMakeLocation(), NULL, _m, _t, _sc)
+#define MUTEX_TAKE_TRY_LOCK(_m, _t) Mutex_trylock(MakeSourceLocation(), (char *)NULL, _m, _t)
+#define MUTEX_TAKE_TRY_LOCK_FOR(_m, _t, _c) Mutex_trylock(MakeSourceLocation(), (char *)NULL, _m, _t)
+#define MUTEX_TAKE_TRY_LOCK_FOR_SPIN(_m, _t, _c, _sc) Mutex_trylock_spin(MakeSourceLocation(), NULL, _m, _t, _sc)
 #else
 #define MUTEX_TAKE_TRY_LOCK(_m, _t) Mutex_trylock(_m, _t)
 #define MUTEX_TAKE_TRY_LOCK_FOR(_m, _t, _c) Mutex_trylock(_m, _t)
@@ -136,8 +136,8 @@
 #endif
 
 #ifdef DEBUG
-#define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(DiagsMakeLocation(), (char *)NULL, _m, _t)
-#define MUTEX_TAKE_LOCK_FOR(_m, _t, _c) Mutex_lock(DiagsMakeLocation(), NULL, _m, _t)
+#define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(MakeSourceLocation(), (char *)NULL, _m, _t)
+#define MUTEX_TAKE_LOCK_FOR(_m, _t, _c) Mutex_lock(MakeSourceLocation(), NULL, _m, _t)
 #else
 #define MUTEX_TAKE_LOCK(_m, _t) Mutex_lock(_m, _t)
 #define MUTEX_TAKE_LOCK_FOR(_m, _t, _c) Mutex_lock(_m, _t)
@@ -152,9 +152,9 @@ typedef EThread *EThreadPtr;
 typedef volatile EThreadPtr VolatileEThreadPtr;
 
 #if DEBUG
-inkcoreapi extern void lock_waiting(const SrcLoc &, const char *handler);
-inkcoreapi extern void lock_holding(const SrcLoc &, const char *handler);
-inkcoreapi extern void lock_taken(const SrcLoc &, const char *handler);
+inkcoreapi extern void lock_waiting(const SourceLocation &, const char *handler);
+inkcoreapi extern void lock_holding(const SourceLocation &, const char *handler);
+inkcoreapi extern void lock_taken(const SourceLocation &, const char *handler);
 #endif
 
 /**
@@ -209,7 +209,7 @@ public:
 
 #ifdef DEBUG
   ink_hrtime hold_time;
-  SrcLoc srcloc;
+  SourceLocation srcloc;
   const char *handler;
 
 #ifdef MAX_LOCK_TAKEN
@@ -280,7 +280,7 @@ extern inkcoreapi ClassAllocator<ProxyMutex> mutexAllocator;
 inline bool
 Mutex_trylock(
 #ifdef DEBUG
-  const SrcLoc &location, const char *ahandler,
+  const SourceLocation &location, const char *ahandler,
 #endif
   ProxyMutex *m, EThread *t)
 {
@@ -324,7 +324,7 @@ Mutex_trylock(
 inline bool
 Mutex_trylock_spin(
 #ifdef DEBUG
-  const SrcLoc &location, const char *ahandler,
+  const SourceLocation &location, const char *ahandler,
 #endif
   ProxyMutex *m, EThread *t, int spincnt = 1)
 {
@@ -373,7 +373,7 @@ Mutex_trylock_spin(
 inline int
 Mutex_lock(
 #ifdef DEBUG
-  const SrcLoc &location, const char *ahandler,
+  const SourceLocation &location, const char *ahandler,
 #endif
   ProxyMutex *m, EThread *t)
 {
@@ -416,7 +416,7 @@ Mutex_unlock(ProxyMutex *m, EThread *t)
       if (m->taken > MAX_LOCK_TAKEN)
         lock_taken(m->srcloc, m->handler);
 #endif // MAX_LOCK_TAKEN
-      m->srcloc = SrcLoc(NULL, NULL, 0);
+      m->srcloc = SourceLocation(NULL, NULL, 0);
       m->handler = NULL;
 #endif // DEBUG
       ink_assert(m->thread_holding);
@@ -436,7 +436,7 @@ private:
 public:
   MutexLock(
 #ifdef DEBUG
-    const SrcLoc &location, const char *ahandler,
+    const SourceLocation &location, const char *ahandler,
 #endif // DEBUG
     ProxyMutex *am, EThread *t)
     : m(am)
@@ -462,7 +462,7 @@ private:
 public:
   MutexTryLock(
 #ifdef DEBUG
-    const SrcLoc &location, const char *ahandler,
+    const SourceLocation &location, const char *ahandler,
 #endif // DEBUG
     ProxyMutex *am, EThread *t)
     : m(am)
@@ -476,7 +476,7 @@ public:
 
   MutexTryLock(
 #ifdef DEBUG
-    const SrcLoc &location, const char *ahandler,
+    const SourceLocation &location, const char *ahandler,
 #endif // DEBUG
     ProxyMutex *am, EThread *t, int sp)
     : m(am)

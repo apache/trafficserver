@@ -41,7 +41,7 @@ void SSL_set_rbio(SSL *ssl, BIO *rbio);
 
 // This is missing from BoringSSL
 #ifndef BIO_eof
-#define BIO_eof(b) (int) BIO_ctrl(b, BIO_CTRL_EOF, 0, NULL)
+#define BIO_eof(b) (int)BIO_ctrl(b, BIO_CTRL_EOF, 0, NULL)
 #endif
 
 #define SSL_READ_ERROR_NONE 0
@@ -230,7 +230,6 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
                 origin_trace_ip, sslvc->origin_trace_port, (int)nread, (int)nread, b->end() + offset);
       }
 
-
       switch (sslErr) {
       case SSL_ERROR_NONE:
 
@@ -406,7 +405,6 @@ SSLNetVConnection::read_raw_data()
   return r;
 }
 
-
 // changed by YTS Team, yamsat
 void
 SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
@@ -531,30 +529,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
       // the handshake is complete. Otherwise set up for continuing read
       // operations.
       if (ntodo <= 0) {
-        if (!getSSLClientConnection()) {
-          // we will not see another ET epoll event if the first byte is already
-          // in the ssl buffers, so, SSL_read if there's anything already..
-          Debug("ssl", "ssl handshake completed on vc %p, check to see if first byte, is already in the ssl buffers", this);
-          this->iobuf = new_MIOBuffer(BUFFER_SIZE_INDEX_4K);
-          if (this->iobuf) {
-            this->reader = this->iobuf->alloc_reader();
-            s->vio.buffer.writer_for(this->iobuf);
-            ret = ssl_read_from_net(this, lthread, r);
-            if (ret == SSL_READ_EOS) {
-              this->eosRcvd = true;
-            }
-#if DEBUG
-            int pending = SSL_pending(this->ssl);
-            if (r > 0 || pending > 0) {
-              Debug("ssl", "ssl read right after handshake, read %" PRId64 ", pending %d bytes, for vc %p", r, pending, this);
-            }
-#endif
-          } else {
-            Error("failed to allocate MIOBuffer after handshake, vc %p", this);
-          }
-          read.triggered = 0;
-          read_disable(nh, this);
-        }
         readSignalDone(VC_EVENT_READ_COMPLETE, nh);
       } else {
         read.triggered = 1;
@@ -679,7 +653,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     break;
   }
 }
-
 
 int64_t
 SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_written, MIOBufferAccessor &buf,
@@ -857,7 +830,7 @@ SSLNetVConnection::SSLNetVConnection()
     sslHandShakeComplete(false), sslClientConnection(false), sslClientRenegotiationAbort(false), sslSessionCacheHit(false),
     handShakeBuffer(NULL), handShakeHolder(NULL), handShakeReader(NULL), handShakeBioStored(0),
     sslPreAcceptHookState(SSL_HOOKS_INIT), sslHandshakeHookState(HANDSHAKE_HOOKS_PRE), npnSet(NULL), npnEndpoint(NULL),
-    sessionAcceptPtr(NULL), iobuf(NULL), reader(NULL), eosRcvd(false), sslTrace(false)
+    sessionAcceptPtr(NULL), eosRcvd(false), sslTrace(false)
 {
 }
 
@@ -931,9 +904,6 @@ SSLNetVConnection::free(EThread *t)
     SSL_free(ssl);
     ssl = NULL;
   }
-  if (iobuf) {
-    free_MIOBuffer(iobuf);
-  }
   sslHandShakeComplete = false;
   sslClientConnection = false;
   sslHandshakeBeginTime = 0;
@@ -950,8 +920,6 @@ SSLNetVConnection::free(EThread *t)
   npnSet = NULL;
   npnEndpoint = NULL;
   sessionAcceptPtr = NULL;
-  iobuf = NULL;
-  reader = NULL;
   eosRcvd = false;
   sslHandShakeComplete = false;
   free_handshake_buffers();
@@ -1003,7 +971,6 @@ SSLNetVConnection::sslStartHandShake(int event, int &err)
         this->ssl = NULL;
         return EVENT_DONE;
       }
-
 
       // Attach the default SSL_CTX to this SSL session. The default context is never going to be able
       // to negotiate a SSL session, but it's enough to trampoline us into the SNI callback where we
@@ -1263,7 +1230,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   }
 }
 
-
 int
 SSLNetVConnection::sslClientHandShakeEvent(int &err)
 {
@@ -1346,7 +1312,6 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL client handshake Syscall Error: %s", strerror(errno));
     return EVENT_ERROR;
     break;
-
 
   case SSL_ERROR_SSL:
   default: {
@@ -1447,7 +1412,6 @@ SSLNetVConnection::reenable(NetHandler *nh)
     }
   }
 }
-
 
 bool
 SSLNetVConnection::sslContextSet(void *ctx)

@@ -24,7 +24,6 @@
 #include "resources.h"
 #include "lulu.h"
 
-
 // Collect all resources
 void
 Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
@@ -99,7 +98,6 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
       hdr_loc = client_hdr_loc;
     }
     break;
-
 
   default:
     break;

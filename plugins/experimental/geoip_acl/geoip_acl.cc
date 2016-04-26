@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
 // Main entry points for the plugin hooks etc.
@@ -28,7 +27,6 @@
 
 #include "lulu.h"
 #include "acl.h"
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin as a remap plugin.
@@ -54,7 +52,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
     return TS_ERROR;
   }
 }
-
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
@@ -96,7 +93,6 @@ TSRemapDeleteInstance(void *ih)
   delete a;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Main entry point when used as a remap plugin.
 //
@@ -109,6 +105,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     Acl *a = static_cast<Acl *>(ih);
 
     if (!a->eval(rri, rh)) {
+      TSDebug(PLUGIN_NAME, "denying request");
       TSHttpTxnSetHttpRetStatus((TSHttpTxn)rh, (TSHttpStatus)403);
       a->send_html((TSHttpTxn)rh);
     }

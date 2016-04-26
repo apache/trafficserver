@@ -68,11 +68,9 @@ uint16_t getPort(sockaddr const *s_sockaddr);
 extern const char PLUGIN_NAME[];
 extern const char PLUGIN_NAME_DBG[];
 
-
 // From google styleguide: http://google-styleguide.googlecode.com/svn/trunk/cppguide.xml
 #define DISALLOW_COPY_AND_ASSIGN(TypeName) \
   TypeName(const TypeName &);              \
   void operator=(const TypeName &)
-
 
 #endif // __LULU_H__

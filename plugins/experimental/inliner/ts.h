@@ -193,7 +193,9 @@ namespace io
 
     IOSink &operator=(const IOSink &) = delete;
 
-    template <class T> IOSink &operator<<(T &&t)
+    template <class T>
+    IOSink &
+    operator<<(T &&t)
     {
       const WriteOperationPointer operation = operation_.lock();
       if (operation) {
@@ -285,7 +287,9 @@ namespace io
 
     Sink &operator<<(std::string &&);
 
-    template <class T> Sink &operator<<(T &&t)
+    template <class T>
+    Sink &
+    operator<<(T &&t)
     {
       if (data_) {
         const Lock lock = data_->root_->lock();

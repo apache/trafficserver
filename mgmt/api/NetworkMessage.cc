@@ -311,7 +311,7 @@ send_mgmt_response(int fd, OpType optype, ...)
 
 template <unsigned N>
 static TSMgmtError
-recv_x(const struct NetCmdOperation(&ops)[N], void *buf, size_t buflen, OpType optype, va_list ap)
+recv_x(const struct NetCmdOperation (&ops)[N], void *buf, size_t buflen, OpType optype, va_list ap)
 {
   ssize_t msglen;
   const NetCmdOperation *cmd;

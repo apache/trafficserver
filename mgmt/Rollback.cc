@@ -222,7 +222,6 @@ Rollback::~Rollback()
   ats_free(fileName);
 }
 
-
 // Rollback::createPathStr(version_t version)
 //
 //   CALLEE DELETES STORAGE
@@ -314,7 +313,6 @@ Rollback::closeFile(int fd, bool callSync)
   return result;
 }
 
-
 RollBackCodes
 Rollback::updateVersion(textBuffer *buf, version_t basedOn, version_t newVersion, bool notifyChange, bool incVersion)
 {
@@ -340,7 +338,6 @@ Rollback::updateVersion_ml(textBuffer *buf, version_t basedOn, version_t newVers
 
   return returnCode;
 }
-
 
 RollBackCodes
 Rollback::forceUpdate(textBuffer *buf, version_t newVersion)
@@ -378,7 +375,6 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   versionInfo *newBak;
   bool failedLink = false;
   char *alarmMsg = NULL;
-
 
   // Check to see if the callee has specified a newVersion number
   //   If the newVersion argument is less than zero, the callee
@@ -475,7 +471,6 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   this->numVersions++;
   this->currentVersion = newVersion;
 
-
   returnCode = OK_ROLLBACK;
 
   // Post the change to the config file manager
@@ -507,7 +502,6 @@ UPDATE_CLEANUP:
 
   return returnCode;
 }
-
 
 RollBackCodes
 Rollback::getVersion(version_t version, textBuffer **buffer)
@@ -773,7 +767,6 @@ Rollback::findVersions_ml(Queue<versionInfo> &q)
 
   return highest;
 }
-
 
 RollBackCodes
 Rollback::removeVersion(version_t version)

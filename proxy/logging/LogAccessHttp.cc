@@ -195,7 +195,6 @@ LogAccessHttp::set_client_req_url_path(char *buf, int len)
   }
 }
 
-
 /*-------------------------------------------------------------------------
   The marshalling routines ...
 
@@ -295,7 +294,6 @@ LogAccessHttp::marshal_client_auth_user_name(char *buf)
   return len;
 }
 
-
 /*-------------------------------------------------------------------------
   Private utility function to validate m_client_req_unmapped_url_canon_str &
   m_client_req_unmapped_url_canon_len fields.
@@ -354,7 +352,6 @@ LogAccessHttp::validate_unmapped_url_path(void)
     }
   }
 }
-
 
 /*-------------------------------------------------------------------------
   Private utility function to validate m_cache_lookup_url_canon_str &
@@ -452,7 +449,6 @@ LogAccessHttp::marshal_client_req_url_canon(char *buf)
   }
   return len;
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -631,7 +627,6 @@ LogAccessHttp::marshal_client_req_protocol_version(char *buf)
 
   return len;
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1019,7 +1014,6 @@ LogAccessHttp::marshal_server_host_ip(char *buf)
   return marshal_ip(buf, ip);
 }
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1041,7 +1035,6 @@ LogAccessHttp::marshal_server_host_name(char *buf)
   }
   return padded_len;
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1226,7 +1219,6 @@ LogAccessHttp::marshal_cache_resp_http_version(char *buf)
   return (2 * INK_MIN_ALIGN);
 }
 
-
 int
 LogAccessHttp::marshal_client_retry_after_time(char *buf)
 {
@@ -1270,7 +1262,6 @@ convert_cache_write_code(HttpTransact::CacheWriteStatus_t t)
   return code;
 }
 
-
 int
 LogAccessHttp::marshal_cache_write_code(char *buf)
 {
@@ -1292,7 +1283,6 @@ LogAccessHttp::marshal_cache_write_transform_code(char *buf)
 
   return INK_MIN_ALIGN;
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1558,7 +1548,6 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
   return (padded_len);
 }
 
-
 int
 LogAccessHttp::marshal_milestone(TSMilestonesType ms, char *buf)
 {
@@ -1568,7 +1557,6 @@ LogAccessHttp::marshal_milestone(TSMilestonesType ms, char *buf)
   }
   return INK_MIN_ALIGN;
 }
-
 
 int
 LogAccessHttp::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf)

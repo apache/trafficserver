@@ -58,9 +58,7 @@ class SslEntry
 {
 public:
   SslEntry() : ctx(NULL), op(TS_SSL_HOOK_OP_DEFAULT) { this->mutex = TSMutexCreate(); }
-
   ~SslEntry() {}
-
   SSL_CTX *ctx;
   TSSslVConnOp op;
   // If the CTX is not already created, use these
@@ -123,7 +121,6 @@ struct ParsedSslValues {
   std::string action;
   IpRangeQueue server_ips;
 };
-
 
 void Parse_Config_Rules(Value &parent, ParsedSslValues &orig_values);
 
@@ -206,7 +203,6 @@ Load_Certificate(SslEntry const *entry, std::deque<std::string> &names)
   // Do we need to free cert? Did assigning to SSL_CTX increment its ref count
   return retval;
 }
-
 
 /*
  * Load the config information about the terminal config.
@@ -484,7 +480,6 @@ TSPluginInit(int argc, const char *argv[])
   TSCont cb_sni = 0; // SNI callback continuuation
   static const struct option longopt[] = {{const_cast<char *>("config"), required_argument, NULL, 'c'},
                                           {NULL, no_argument, NULL, '\0'}};
-
 
   info.plugin_name = const_cast<char *>("SSL Certificate Loader");
   info.vendor_name = const_cast<char *>("Network Geographics");

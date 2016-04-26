@@ -30,7 +30,6 @@
 
  ****************************************************************************/
 
-
 #ifndef _HTTP_SESSION_MANAGER_H_
 #define _HTTP_SESSION_MANAGER_H_
 
@@ -38,7 +37,7 @@
 #include "HttpServerSession.h"
 #include <ts/Map.h>
 
-class HttpClientSession;
+class ProxyClientTransaction;
 class HttpSM;
 
 void initialize_thread_for_http_sessions(EThread *thread, int thread_index);
@@ -155,10 +154,8 @@ class HttpSessionManager
 {
 public:
   HttpSessionManager() : m_g_pool(NULL) {}
-
   ~HttpSessionManager() {}
-
-  HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, HttpClientSession *ua_session,
+  HSMresult_t acquire_session(Continuation *cont, sockaddr const *addr, const char *hostname, ProxyClientTransaction *ua_session,
                               HttpSM *sm);
   HSMresult_t release_session(HttpServerSession *to_release);
   void purge_keepalives();

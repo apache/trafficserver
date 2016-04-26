@@ -121,7 +121,6 @@ HdrCsvIter::get_first(const MIMEField *m, int *len, bool follow_dups)
   return m_csv_start;
 }
 
-
 inline const char *
 HdrCsvIter::get_next(int *len)
 {
@@ -175,6 +174,5 @@ HdrCsvIter::get_next_int(int *valid)
     return 0;
   }
 }
-
 
 #endif

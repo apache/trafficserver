@@ -74,7 +74,6 @@ SDK_RPRINT(RegressionTest *t, const char *api_name, const char *testcase_name, i
   return (l);
 }
 
-
 /*
   REGRESSION_TEST(SDK_<test_name>)(RegressionTest *t, int atype, int *pstatus)
 
@@ -135,7 +134,6 @@ REGRESSION_TEST(SDK_API_TSTrafficServerVersionGet)(RegressionTest *test, int /* 
   return;
 }
 
-
 ////////////////////////////////////////////////
 //       SDK_API_TSPluginDirGet
 //
@@ -179,7 +177,6 @@ REGRESSION_TEST(SDK_API_TSPluginDirGet)(RegressionTest *test, int /* atype ATS_U
   *pstatus = REGRESSION_TEST_PASSED;
   return;
 }
-
 
 /* TSConfig */
 ////////////////////////////////////////////////
@@ -473,9 +470,7 @@ REGRESSION_TEST(SDK_API_TSPortDescriptor)(RegressionTest *test, int /* atype ATS
 //  - remove it from the cache
 //  - try to read it (should faild)
 
-
 #define OBJECT_SIZE 100000 // size of the object we'll write/read/remove in cache
-
 
 RegressionTest *SDK_Cache_test;
 int *SDK_Cache_pstatus;
@@ -645,7 +640,6 @@ cache_handler(TSCont contp, TSEvent event, void *data)
     }
     Debug(UTDBG_TAG "_cache_write", "finishing up [d]");
 
-
     if (TSVIOBufferGet(cache_vconn->write_vio) != cache_vconn->bufp) {
       SDK_RPRINT(SDK_Cache_test, "TSVIOBufferGet", "TestCase1", TC_FAIL, "write_vio corrupted");
       *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
@@ -696,13 +690,11 @@ cache_handler(TSCont contp, TSEvent event, void *data)
 
     Debug(UTDBG_TAG "_cache_write", "finishing up [h]");
 
-
     // start to read data out of cache
     read_counter++;
     TSCacheRead(contp, cache_vconn->key);
     Debug(UTDBG_TAG "_cache_read", "starting read [i]");
     return 1;
-
 
   case TS_EVENT_VCONN_WRITE_READY:
     Debug(UTDBG_TAG "_cache_event", "TS_EVENT_VCONN_WRITE_READY %d %p", event, data);
@@ -1209,7 +1201,6 @@ REGRESSION_TEST(SDK_API_TSThread)(RegressionTest *test, int /* atype ATS_UNUSED 
   }
 }
 
-
 //////////////////////////////////////////////
 //       SDK_API_TSThread
 //
@@ -1356,7 +1347,6 @@ cont_handler(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void
   return 0;
 }
 
-
 REGRESSION_TEST(SDK_API_TSContCreate)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -1380,7 +1370,6 @@ REGRESSION_TEST(SDK_API_TSContCreate)(RegressionTest *test, int /* atype ATS_UNU
 
   TSContDestroy(contp);
 }
-
 
 //////////////////////////////////////////////
 //       SDK_API_TSCont
@@ -1422,7 +1411,6 @@ cont_data_handler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata 
   return 0;
 }
 
-
 REGRESSION_TEST(SDK_API_TSContDataGet)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -1441,7 +1429,6 @@ REGRESSION_TEST(SDK_API_TSContDataGet)(RegressionTest *test, int /* atype ATS_UN
 
   TSContSchedule(contp, 0, TS_THREAD_POOL_DEFAULT);
 }
-
 
 //////////////////////////////////////////////
 //       SDK_API_TSCont
@@ -1611,7 +1598,6 @@ REGRESSION_TEST(SDK_API_TSIOBufferCreate)(RegressionTest *test, int /* atype ATS
   return;
 }
 
-
 //////////////////////////////////////////////
 //       SDK_API_TSIOBuffer
 //
@@ -1648,7 +1634,6 @@ REGRESSION_TEST(SDK_API_TSIOBufferProduce)(RegressionTest *test, int /* atype AT
   *pstatus = ((test_passed == true) ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED);
   return;
 }
-
 
 //////////////////////////////////////////////
 //       SDK_API_TSIOBuffer
@@ -1742,7 +1727,6 @@ REGRESSION_TEST(SDK_API_TSIOBufferStart)(RegressionTest *test, int /* atype ATS_
   *pstatus = ((test_passed == true) ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED);
   return;
 }
-
 
 //////////////////////////////////////////////
 //       SDK_API_TSIOBuffer
@@ -1870,7 +1854,6 @@ REGRESSION_TEST(SDK_API_TSIOBufferBlockNext)(RegressionTest *test, int /* atype 
   return;
 }
 
-
 REGRESSION_TEST(SDK_API_TSContSchedule)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -1925,7 +1908,6 @@ typedef struct {
 
   unsigned int magic;
 } SocketTest;
-
 
 // This func is called by us from mytest_handler to test TSHttpTxnClientIPGet
 static int
@@ -1984,7 +1966,6 @@ checkHttpTxnNextHopIPGet(SocketTest *test, void *data)
   return TS_EVENT_CONTINUE;
 }
 
-
 // This func is called by us from mytest_handler to test TSHttpTxnServerIPGet
 static int
 checkHttpTxnServerIPGet(SocketTest *test, void *data)
@@ -2009,7 +1990,6 @@ checkHttpTxnServerIPGet(SocketTest *test, void *data)
     test->test_server_ip_get = false;
     SDK_RPRINT(test->regtest, "TSHttpTxnServerIPGet", "TestCase1", TC_FAIL, "Value's Mismatch");
   }
-
 
   return TS_EVENT_CONTINUE;
 }
@@ -2184,7 +2164,6 @@ checkHttpTxnServerRespGet(SocketTest *test, void *data)
   return TS_EVENT_CONTINUE;
 }
 
-
 // This func is called both by us when scheduling EVENT_IMMEDIATE
 // And by HTTP SM for registered hooks
 // Depending on the timing of the DNS response, OS_DNS can happen before or after CACHE_LOOKUP.
@@ -2340,7 +2319,6 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
   return TS_EVENT_IMMEDIATE;
 }
 
-
 EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -2390,7 +2368,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpHookAdd)(RegressionTest *test, int /* atyp
 
   return;
 }
-
 
 //////////////////////////////////////////////
 //       SDK_API_TSUrl
@@ -2583,7 +2560,6 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
            ((query == NULL) ? "" : "?"), ((query == NULL) ? "" : query), ((fragment == NULL) ? "" : "#"),
            ((fragment == NULL) ? "" : fragment));
 
-
   // Set Functions
 
   bufp1 = TSMBufferCreate();
@@ -2745,7 +2721,6 @@ REGRESSION_TEST(SDK_API_TSUrl)(RegressionTest *test, int /* atype ATS_UNUSED */,
     } else {
       SDK_RPRINT(test, "TSUrlCopy", "TestCase1", TC_FAIL, "Values don't match");
     }
-
 
     // String Test Case 2
     url_string_from_2 = TSUrlStringGet(bufp2, url_loc2, &tmp_len);
@@ -2950,7 +2925,6 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
   bool try_print_function = true;
   bool test_buffer_created = true;
 
-
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   bufp1 = TSMBufferCreate();
@@ -2968,7 +2942,6 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
   } else {
     SDK_RPRINT(test, "TSHttpHdrCreate", "All Test Cases", TC_FAIL, "Cannot run test as unable to allocate MBuffers");
   }
-
 
   // Type
   if (test_passed_Http_Hdr_Create == true) {
@@ -3376,7 +3349,6 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
     SDK_RPRINT(test, "TSHttpHdrClone", "All Test Cases", TC_PASS, "Cannot run test as TSHttpHdrCreate has failed");
   }
 
-
   // LengthGet
   if (test_passed_Http_Hdr_Create == true) {
     actual_length = TSHttpHdrLengthGet(bufp1, hdr_loc1);
@@ -3496,7 +3468,6 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
   return;
 }
 
-
 //////////////////////////////////////////////
 //       SDK_API_TSMimeHdrField
 //
@@ -3564,7 +3535,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
   TSMLoc field_loc13 = (TSMLoc)NULL;
   TSMLoc field_loc14 = (TSMLoc)NULL;
   TSMLoc field_loc15 = (TSMLoc)NULL;
-
 
   const char *field1Name = "field1";
   const char *field2Name = "field2";
@@ -3733,7 +3703,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "TSMimeHdrFieldCreate", "All Test Case", TC_FAIL, "Cannot run test as Test for TSMimeHdrCreate Failed");
   }
 
-
   // TSMimeHdrFieldNameGet&Set
   if (test_passed_Mime_Hdr_Field_Create == true) {
     if ((TSMimeHdrFieldNameSet(bufp1, mime_loc1, field_loc11, field1Name, -1) == TS_ERROR) ||
@@ -3763,7 +3732,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "TSMimeHdrFieldNameGet&Set", "All Test Case", TC_FAIL,
                "Cannot run test as Test for TSMBufferFieldCreate Failed");
   }
-
 
   // TSMimeHdrFieldAppend, TSMimeHdrFieldGet, TSMimeHdrFieldNext
   if (test_passed_Mime_Hdr_Field_Name == true) {
@@ -3869,7 +3837,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
                "Cannot run test as Test for TSMimeHdrFieldNameGet&Set Failed");
   }
 
-
   // TSMimeHdrFieldsCount
   if (test_passed_Mime_Hdr_Field_Create == true) {
     if ((numberOfFields = TSMimeHdrFieldsCount(bufp1, mime_loc1)) < 0) {
@@ -3961,7 +3928,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "TSMimeHdrFieldValueStringInsert&Set&Get", "All", TC_FAIL, "Cannot run Test as TSMimeHdrFieldCreate failed");
   }
 
-
   // TSMimeHdrFieldValueDateInsert, TSMimeHdrFieldValueDateGet, TSMimeHdrFieldValueDateSet
   if (test_passed_Mime_Hdr_Field_Create == true) {
     if (TSMimeHdrFieldValueDateInsert(bufp1, mime_loc1, field_loc12, field2Value1) == TS_ERROR) {
@@ -4000,7 +3966,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "TSMimeHdrFieldValueDateInsert&Set&Get", "TestCase1", TC_FAIL,
                "Cannot run Test as TSMimeHdrFieldCreate failed");
   }
-
 
   // TSMimeHdrFieldValueIntInsert, TSMimeHdrFieldValueIntGet, TSMimeHdrFieldValueIntSet
   if (test_passed_Mime_Hdr_Field_Create == true) {
@@ -4108,7 +4073,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "TSMimeHdrFieldLengthGet", "TestCase1", TC_PASS, "ok");
     test_passed_Mime_Hdr_Field_Length_Get = true;
   }
-
 
   // TSMimeHdrFieldValueAppend, TSMimeHdrFieldValueDelete, TSMimeHdrFieldValuesCount, TSMimeHdrFieldValuesClear
 
@@ -4265,7 +4229,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "TSMimeHdrDestroy", "TestCase1", TC_FAIL, "Cannot run test as TSMimeHdrCreate failed");
   }
 
-
   if ((test_passed_MBuffer_Create == true) && (test_passed_Mime_Hdr_Create == true) &&
       (test_passed_Mime_Hdr_Field_Create == true) && (test_passed_Mime_Hdr_Field_Name == true) &&
       (test_passed_Mime_Hdr_Field_Append == true) && (test_passed_Mime_Hdr_Field_Get == true) &&
@@ -4287,7 +4250,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrField)(RegressionTest *test, int /* atype ATS_U
   }
   return;
 }
-
 
 //////////////////////////////////////////////
 //       SDK_API_TSHttpHdrParse
@@ -4487,7 +4449,6 @@ REGRESSION_TEST(SDK_API_TSHttpHdrParse)(RegressionTest *test, int /* atype ATS_U
   return;
 }
 
-
 //////////////////////////////////////////////
 //       SDK_API_TSMimeHdrParse
 //
@@ -4615,7 +4576,6 @@ compare_field_values(RegressionTest *test, TSMBuffer bufp1, TSMLoc hdr_loc1, TSM
   return TS_SUCCESS;
 }
 
-
 REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   const char *parse_string =
@@ -4719,7 +4679,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
     SDK_RPRINT(test, "TSMimeHdrLengthGet", "TestCase1", TC_FAIL, "Cannot run test as unable to create a parser");
   }
 
-
   // HOW DO I CHECK FOR PARSER CLEAR????
   if (test_passed_parser_create == true) {
     TSMimeParserClear(parser);
@@ -4728,7 +4687,6 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
   } else {
     SDK_RPRINT(test, "TSMimeParserClear", "TestCase1", TC_FAIL, "Cannot run test as unable to create a parser");
   }
-
 
   if (test_passed_parser_create == true) {
     TSMimeParserDestroy(parser);
@@ -5034,19 +4992,24 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
 REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   static char const *const urls[] = {
-    "file:///test.dat;ab?abc=def#abc", "http://www.example.com/", "http://abc:def@www.example.com/", "http://www.example.com:3426/",
-    "http://abc:def@www.example.com:3426/", "http://www.example.com/homepage.cgi",
-    "http://www.example.com/homepage.cgi;ab?abc=def#abc", "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
+    "file:///test.dat;ab?abc=def#abc",
+    "http://www.example.com/",
+    "http://abc:def@www.example.com/",
+    "http://www.example.com:3426/",
+    "http://abc:def@www.example.com:3426/",
+    "http://www.example.com/homepage.cgi",
+    "http://www.example.com/homepage.cgi;ab?abc=def#abc",
+    "http://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
     "https://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
     "ftp://abc:def@www.example.com:3426/homepage.cgi;ab?abc=def#abc",
     "file:///c:/test.dat;ab?abc=def#abc", // Note: file://c: is malformed URL because no host is present.
-    "file:///test.dat;ab?abc=def#abc", "foo://bar.com/baz/",
+    "file:///test.dat;ab?abc=def#abc",
+    "foo://bar.com/baz/",
     "http://a.b.com/xx.jpg?newpath=http://b.c.com" // https://issues.apache.org/jira/browse/TS-1635
   };
 
   static int const num_urls = sizeof(urls) / sizeof(urls[0]);
   bool test_passed[num_urls] = {false};
-
 
   const char *start;
   const char *end;
@@ -5059,7 +5022,6 @@ REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSE
   int length;
 
   *pstatus = REGRESSION_TEST_INPROGRESS;
-
 
   int idx;
   for (idx = 0; idx < num_urls; idx++) {
@@ -5107,7 +5069,6 @@ REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSE
     *pstatus = REGRESSION_TEST_PASSED;
   }
 
-
   return;
 }
 
@@ -5128,7 +5089,6 @@ typedef struct {
   unsigned long magic;
   TSTextLogObject log;
 } LogTestData;
-
 
 static int
 log_test_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
@@ -5177,7 +5137,6 @@ log_test_handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
 
   *(data->pstatus) = REGRESSION_TEST_PASSED;
   SDK_RPRINT(data->test, "TSTextLogObject", "TestCase1", TC_PASS, "ok");
-
 
   // figure out the matainfo file for cleanup.
   // code from MetaInfo::_build_name(const char *filename)
@@ -5265,7 +5224,6 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
   return;
 }
 
-
 //////////////////////////////////////////////
 //       SDK_API_TSMgmtGet
 //
@@ -5344,7 +5302,6 @@ REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED
   return;
 }
 
-
 //////////////////////////////////////////////
 //       SDK_API_TSConstant
 //
@@ -5359,7 +5316,6 @@ REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED
       SDK_RPRINT(test, "##_x", "TestCase1", TC_FAIL, "%s:Original Value = %d; New Value = %d \n", #_x, _x, ORIG_##_x); \
     }                                                                                                                  \
   }
-
 
 typedef enum {
   ORIG_TS_PARSE_ERROR = -1,
@@ -5535,7 +5491,6 @@ typedef enum {
   ORIG_TS_SUCCESS = 0,
 } ORIG_TSReturnCode;
 
-
 REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -5551,7 +5506,6 @@ REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSE
   PRINT_DIFF(TS_HTTP_STATUS_SWITCHING_PROTOCOL);
   PRINT_DIFF(TS_HTTP_STATUS_OK);
   PRINT_DIFF(TS_HTTP_STATUS_CREATED);
-
 
   PRINT_DIFF(TS_HTTP_STATUS_ACCEPTED);
   PRINT_DIFF(TS_HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION);
@@ -5676,7 +5630,6 @@ REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSE
   PRINT_DIFF(TS_ERROR);
   PRINT_DIFF(TS_SUCCESS);
 
-
   if (test_passed) {
     *pstatus = REGRESSION_TEST_PASSED;
   } else {
@@ -5694,7 +5647,6 @@ REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSE
 //                    TSHttpTxnParentProxyGet
 //                    TSHttpTxnParentProxySet
 //////////////////////////////////////////////
-
 
 typedef struct {
   RegressionTest *test;
@@ -5737,7 +5689,6 @@ checkHttpTxnParentProxy(ContData *data, TSHttpTxn txnp)
 
   return TS_EVENT_CONTINUE;
 }
-
 
 static int
 ssn_handler(TSCont contp, TSEvent event, void *edata)
@@ -5866,7 +5817,6 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
   }
   return 0;
 }
-
 
 EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpSsn)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
@@ -6091,7 +6041,6 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
   }
   return 0;
 }
-
 
 EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnCache)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
@@ -6655,7 +6604,6 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-
 EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpTxnTransform)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -6892,7 +6840,6 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-
 EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -6938,7 +6885,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo)(RegressionTest *test, int /* atyp
   return;
 }
 
-
 //////////////////////////////////////////////
 //       SDK_API_TSHttpConnect
 //
@@ -6977,7 +6923,6 @@ typedef struct {
   char *request;
   unsigned long magic;
 } ConnectTestData;
-
 
 static int
 cont_test_handler(TSCont contp, TSEvent event, void *edata)
@@ -7080,7 +7025,6 @@ done:
   return TS_EVENT_IMMEDIATE;
 }
 
-
 EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept)(RegressionTest *test, int /* atype */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -7122,7 +7066,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept)(RegressionTest *test, 
   return;
 }
 
-
 EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
@@ -7162,7 +7105,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
   return;
 }
 
-
 ////////////////////////////////////////////////
 // SDK_API_OVERRIDABLE_CONFIGS
 //
@@ -7176,50 +7118,103 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
 ////////////////////////////////////////////////
 
 // The order of these should be the same as TSOverridableConfigKey
-const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
-  "proxy.config.url_remap.pristine_host_hdr", "proxy.config.http.chunking_enabled", "proxy.config.http.negative_caching_enabled",
-  "proxy.config.http.negative_caching_lifetime", "proxy.config.http.cache.when_to_revalidate",
-  "proxy.config.http.keep_alive_enabled_in", "proxy.config.http.keep_alive_enabled_out", "proxy.config.http.keep_alive_post_out",
-  "proxy.config.http.server_session_sharing.match", "proxy.config.net.sock_recv_buffer_size_out",
-  "proxy.config.net.sock_send_buffer_size_out", "proxy.config.net.sock_option_flag_out",
-  "proxy.config.http.forward.proxy_auth_to_parent", "proxy.config.http.anonymize_remove_from",
-  "proxy.config.http.anonymize_remove_referer", "proxy.config.http.anonymize_remove_user_agent",
-  "proxy.config.http.anonymize_remove_cookie", "proxy.config.http.anonymize_remove_client_ip",
-  "proxy.config.http.anonymize_insert_client_ip", "proxy.config.http.response_server_enabled",
-  "proxy.config.http.insert_squid_x_forwarded_for", "proxy.config.http.server_tcp_init_cwnd",
-  "proxy.config.http.send_http11_requests", "proxy.config.http.cache.http", "proxy.config.http.cache.cluster_cache_local",
-  "proxy.config.http.cache.ignore_client_no_cache", "proxy.config.http.cache.ignore_client_cc_max_age",
-  "proxy.config.http.cache.ims_on_client_no_cache", "proxy.config.http.cache.ignore_server_no_cache",
-  "proxy.config.http.cache.cache_responses_to_cookies", "proxy.config.http.cache.ignore_authentication",
-  "proxy.config.http.cache.cache_urls_that_look_dynamic", "proxy.config.http.cache.required_headers",
-  "proxy.config.http.insert_request_via_str", "proxy.config.http.insert_response_via_str",
-  "proxy.config.http.cache.heuristic_min_lifetime", "proxy.config.http.cache.heuristic_max_lifetime",
-  "proxy.config.http.cache.guaranteed_min_lifetime", "proxy.config.http.cache.guaranteed_max_lifetime",
-  "proxy.config.http.cache.max_stale_age", "proxy.config.http.keep_alive_no_activity_timeout_in",
-  "proxy.config.http.keep_alive_no_activity_timeout_out", "proxy.config.http.transaction_no_activity_timeout_in",
-  "proxy.config.http.transaction_no_activity_timeout_out", "proxy.config.http.transaction_active_timeout_out",
-  "proxy.config.http.origin_max_connections", "proxy.config.http.connect_attempts_max_retries",
-  "proxy.config.http.connect_attempts_max_retries_dead_server", "proxy.config.http.connect_attempts_rr_retries",
-  "proxy.config.http.connect_attempts_timeout", "proxy.config.http.post_connect_attempts_timeout",
-  "proxy.config.http.down_server.cache_time", "proxy.config.http.down_server.abort_threshold", "proxy.config.http.cache.fuzz.time",
-  "proxy.config.http.cache.fuzz.min_time", "proxy.config.http.doc_in_cache_skip_dns",
-  "proxy.config.http.background_fill_active_timeout", "proxy.config.http.response_server_str",
-  "proxy.config.http.cache.heuristic_lm_factor", "proxy.config.http.cache.fuzz.probability",
-  "proxy.config.http.background_fill_completed_threshold", "proxy.config.net.sock_packet_mark_out",
-  "proxy.config.net.sock_packet_tos_out", "proxy.config.http.insert_age_in_response", "proxy.config.http.chunking.size",
-  "proxy.config.http.flow_control.enabled", "proxy.config.http.flow_control.low_water", "proxy.config.http.flow_control.high_water",
-  "proxy.config.http.cache.range.lookup", "proxy.config.http.normalize_ae_gzip", "proxy.config.http.default_buffer_size",
-  "proxy.config.http.default_buffer_water_mark", "proxy.config.http.request_header_max_size",
-  "proxy.config.http.response_header_max_size", "proxy.config.http.negative_revalidating_enabled",
-  "proxy.config.http.negative_revalidating_lifetime", "proxy.config.http.accept_encoding_filter_enabled",
-  "proxy.config.ssl.hsts_max_age", "proxy.config.ssl.hsts_include_subdomains", "proxy.config.http.cache.open_read_retry_time",
-  "proxy.config.http.cache.max_open_read_retries", "proxy.config.http.cache.range.write",
-  "proxy.config.http.post.check.content_length.enabled", "proxy.config.http.global_user_agent_header",
-  "proxy.config.http.auth_server_session_private", "proxy.config.http.slow.log.threshold", "proxy.config.http.cache.generation",
-  "proxy.config.body_factory.template_base", "proxy.config.http.cache.open_write_fail_action",
-  "proxy.config.http.redirection_enabled", "proxy.config.http.number_of_redirections",
-  "proxy.config.http.cache.max_open_write_retries", "proxy.config.http.redirect_use_orig_cache_key",
-  "proxy.config.http.attach_server_session_to_client"};
+const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {"proxy.config.url_remap.pristine_host_hdr",
+                                                             "proxy.config.http.chunking_enabled",
+                                                             "proxy.config.http.negative_caching_enabled",
+                                                             "proxy.config.http.negative_caching_lifetime",
+                                                             "proxy.config.http.cache.when_to_revalidate",
+                                                             "proxy.config.http.keep_alive_enabled_in",
+                                                             "proxy.config.http.keep_alive_enabled_out",
+                                                             "proxy.config.http.keep_alive_post_out",
+                                                             "proxy.config.http.server_session_sharing.match",
+                                                             "proxy.config.net.sock_recv_buffer_size_out",
+                                                             "proxy.config.net.sock_send_buffer_size_out",
+                                                             "proxy.config.net.sock_option_flag_out",
+                                                             "proxy.config.http.forward.proxy_auth_to_parent",
+                                                             "proxy.config.http.anonymize_remove_from",
+                                                             "proxy.config.http.anonymize_remove_referer",
+                                                             "proxy.config.http.anonymize_remove_user_agent",
+                                                             "proxy.config.http.anonymize_remove_cookie",
+                                                             "proxy.config.http.anonymize_remove_client_ip",
+                                                             "proxy.config.http.anonymize_insert_client_ip",
+                                                             "proxy.config.http.response_server_enabled",
+                                                             "proxy.config.http.insert_squid_x_forwarded_for",
+                                                             "proxy.config.http.server_tcp_init_cwnd",
+                                                             "proxy.config.http.send_http11_requests",
+                                                             "proxy.config.http.cache.http",
+                                                             "proxy.config.http.cache.cluster_cache_local",
+                                                             "proxy.config.http.cache.ignore_client_no_cache",
+                                                             "proxy.config.http.cache.ignore_client_cc_max_age",
+                                                             "proxy.config.http.cache.ims_on_client_no_cache",
+                                                             "proxy.config.http.cache.ignore_server_no_cache",
+                                                             "proxy.config.http.cache.cache_responses_to_cookies",
+                                                             "proxy.config.http.cache.ignore_authentication",
+                                                             "proxy.config.http.cache.cache_urls_that_look_dynamic",
+                                                             "proxy.config.http.cache.required_headers",
+                                                             "proxy.config.http.insert_request_via_str",
+                                                             "proxy.config.http.insert_response_via_str",
+                                                             "proxy.config.http.cache.heuristic_min_lifetime",
+                                                             "proxy.config.http.cache.heuristic_max_lifetime",
+                                                             "proxy.config.http.cache.guaranteed_min_lifetime",
+                                                             "proxy.config.http.cache.guaranteed_max_lifetime",
+                                                             "proxy.config.http.cache.max_stale_age",
+                                                             "proxy.config.http.keep_alive_no_activity_timeout_in",
+                                                             "proxy.config.http.keep_alive_no_activity_timeout_out",
+                                                             "proxy.config.http.transaction_no_activity_timeout_in",
+                                                             "proxy.config.http.transaction_no_activity_timeout_out",
+                                                             "proxy.config.http.transaction_active_timeout_out",
+                                                             "proxy.config.http.origin_max_connections",
+                                                             "proxy.config.http.connect_attempts_max_retries",
+                                                             "proxy.config.http.connect_attempts_max_retries_dead_server",
+                                                             "proxy.config.http.connect_attempts_rr_retries",
+                                                             "proxy.config.http.connect_attempts_timeout",
+                                                             "proxy.config.http.post_connect_attempts_timeout",
+                                                             "proxy.config.http.down_server.cache_time",
+                                                             "proxy.config.http.down_server.abort_threshold",
+                                                             "proxy.config.http.cache.fuzz.time",
+                                                             "proxy.config.http.cache.fuzz.min_time",
+                                                             "proxy.config.http.doc_in_cache_skip_dns",
+                                                             "proxy.config.http.background_fill_active_timeout",
+                                                             "proxy.config.http.response_server_str",
+                                                             "proxy.config.http.cache.heuristic_lm_factor",
+                                                             "proxy.config.http.cache.fuzz.probability",
+                                                             "proxy.config.http.background_fill_completed_threshold",
+                                                             "proxy.config.net.sock_packet_mark_out",
+                                                             "proxy.config.net.sock_packet_tos_out",
+                                                             "proxy.config.http.insert_age_in_response",
+                                                             "proxy.config.http.chunking.size",
+                                                             "proxy.config.http.flow_control.enabled",
+                                                             "proxy.config.http.flow_control.low_water",
+                                                             "proxy.config.http.flow_control.high_water",
+                                                             "proxy.config.http.cache.range.lookup",
+                                                             "proxy.config.http.normalize_ae_gzip",
+                                                             "proxy.config.http.default_buffer_size",
+                                                             "proxy.config.http.default_buffer_water_mark",
+                                                             "proxy.config.http.request_header_max_size",
+                                                             "proxy.config.http.response_header_max_size",
+                                                             "proxy.config.http.negative_revalidating_enabled",
+                                                             "proxy.config.http.negative_revalidating_lifetime",
+                                                             "proxy.config.http.accept_encoding_filter_enabled",
+                                                             "proxy.config.ssl.hsts_max_age",
+                                                             "proxy.config.ssl.hsts_include_subdomains",
+                                                             "proxy.config.http.cache.open_read_retry_time",
+                                                             "proxy.config.http.cache.max_open_read_retries",
+                                                             "proxy.config.http.cache.range.write",
+                                                             "proxy.config.http.post.check.content_length.enabled",
+                                                             "proxy.config.http.global_user_agent_header",
+                                                             "proxy.config.http.auth_server_session_private",
+                                                             "proxy.config.http.slow.log.threshold",
+                                                             "proxy.config.http.cache.generation",
+                                                             "proxy.config.body_factory.template_base",
+                                                             "proxy.config.http.cache.open_write_fail_action",
+                                                             "proxy.config.http.redirection_enabled",
+                                                             "proxy.config.http.number_of_redirections",
+                                                             "proxy.config.http.cache.max_open_write_retries",
+                                                             "proxy.config.http.redirect_use_orig_cache_key",
+                                                             "proxy.config.http.attach_server_session_to_client",
+                                                             "proxy.config.http.origin_max_connections_queue",
+                                                             "proxy.config.websocket.no_activity_timeout",
+                                                             "proxy.config.websocket.active_timeout"};
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
@@ -7235,7 +7230,6 @@ REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype 
   const char *sval_read;
   const char *test_string = "The Apache Traffic Server";
   int len;
-
 
   s->init();
 
@@ -7320,7 +7314,6 @@ REGRESSION_TEST(SDK_API_TXN_HTTP_INFO_GET)(RegressionTest *test, int /* atype AT
   bool success = true;
   TSHttpTxn txnp = reinterpret_cast<TSHttpTxn>(s);
   TSMgmtInt ival_read;
-
 
   s->init();
 
@@ -7459,7 +7452,6 @@ REGRESSION_TEST(SDK_API_ENCODING)(RegressionTest *test, int /* atype ATS_UNUSED 
   return;
 }
 
-
 ////////////////////////////////////////////////
 // SDK_API_DEBUG_NAME_LOOKUPS
 //
@@ -7487,7 +7479,6 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS)(RegressionTest *test, int /* atype A
     SDK_RPRINT(test, "TSHttpServerStateNameLookup", "TestCase1", TC_PASS, "ok");
   }
 
-
   str = TSHttpHookNameLookup(TS_HTTP_READ_RESPONSE_HDR_HOOK);
   if ((strlen(str) != strlen(hook_name) || strcmp(str, hook_name))) {
     SDK_RPRINT(test, "TSHttpHookNameLookup", "TestCase1", TC_FAIL, "Failed on %d, expected %s, got %s",
@@ -7497,7 +7488,6 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS)(RegressionTest *test, int /* atype A
     SDK_RPRINT(test, "TSHttpHookNameLookup", "TestCase1", TC_PASS, "ok");
   }
 
-
   str = TSHttpEventNameLookup(TS_EVENT_IMMEDIATE);
   if ((strlen(str) != strlen(event_name) || strcmp(str, event_name))) {
     SDK_RPRINT(test, "TSHttpEventNameLookup", "TestCase1", TC_FAIL, "Failed on %d, expected %s, got %s", TS_EVENT_IMMEDIATE,
@@ -7506,7 +7496,6 @@ REGRESSION_TEST(SDK_API_DEBUG_NAME_LOOKUPS)(RegressionTest *test, int /* atype A
   } else {
     SDK_RPRINT(test, "TSHttpEventNameLookup", "TestCase1", TC_PASS, "ok");
   }
-
 
   *pstatus = success ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED;
 

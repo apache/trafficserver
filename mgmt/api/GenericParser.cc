@@ -224,7 +224,6 @@ Rule::parse(const char *const_rule, TSFileNameT filetype)
   }
 }
 
-
 /**
  * arm_securityParse
  **/
@@ -265,7 +264,6 @@ Rule::arm_securityParse(char *rule)
 
   return m_tokenList;
 }
-
 
 /**
  * cacheParse
@@ -365,7 +363,6 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
   return m_tokenList;
 }
 
-
 /**
  * congestionParse
  **/
@@ -386,7 +383,6 @@ Rule::hostingParse(char *rule)
   //   NO SPACE around ","
   return cacheParse(rule, 2, 2);
 }
-
 
 /**
  * icpParse
@@ -413,7 +409,6 @@ Rule::icpParse(char *rule, unsigned short minNumToken, unsigned short maxNumToke
     return NULL;
   }
 
-
   m_tokenList = new TokenList();
   for (; tokenStr; tokenStr = ruleTok.iterNext(&ruleTok_state)) {
     token = new Token();
@@ -423,7 +418,6 @@ Rule::icpParse(char *rule, unsigned short minNumToken, unsigned short maxNumToke
 
   return m_tokenList;
 }
-
 
 /**
  * ip_allowParse
@@ -437,7 +431,6 @@ Rule::ip_allowParse(char *rule)
   return cacheParse(rule, 2, 2);
 }
 
-
 /**
  * logsParse
  **/
@@ -446,7 +439,6 @@ Rule::logsParse(char * /* rule ATS_UNUSED */)
 {
   return NULL;
 }
-
 
 /**
  * log_hostsParse
@@ -466,7 +458,6 @@ Rule::log_hostsParse(char *rule)
   return m_tokenList;
 }
 
-
 /**
  * logs_xmlParse
  **/
@@ -475,7 +466,6 @@ Rule::logs_xmlParse(char * /* rule ATS_UNUSED */)
 {
   return NULL;
 }
-
 
 /**
  * parentParse
@@ -486,7 +476,6 @@ Rule::parentParse(char *rule)
   return cacheParse(rule, 2);
 }
 
-
 /**
  * volumeParse
  **/
@@ -495,7 +484,6 @@ Rule::volumeParse(char *rule)
 {
   return cacheParse(rule, 3, 3);
 }
-
 
 /**
  * pluginParse
@@ -518,7 +506,6 @@ Rule::pluginParse(char *rule)
 
   return m_tokenList;
 }
-
 
 /**
  * remapParse
@@ -561,7 +548,6 @@ Rule::remapParse(char *rule)
   return m_tokenList;
 }
 
-
 /**
  * socksParse
  **/
@@ -575,7 +561,6 @@ Rule::socksParse(char *rule)
   Token *token = NULL;
   bool insideQuote = false;
   const char *newStr;
-
 
   if (numRuleTok < 2) {
     setErrorHint("Expecting at least 2 space delimited tokens");
@@ -675,7 +660,6 @@ Rule::socksParse(char *rule)
   return m_tokenList;
 }
 
-
 /**
  * splitdnsParse
  **/
@@ -761,7 +745,6 @@ Rule::splitdnsParse(char *rule)
   //  return cacheParse(rule, 2);
 }
 
-
 /**
  * updateParse
  **/
@@ -793,7 +776,6 @@ Rule::updateParse(char *rule)
   return m_tokenList;
 }
 
-
 /**
  * vaddrsParse
  **/
@@ -818,7 +800,6 @@ Rule::vaddrsParse(char *rule)
 
   return m_tokenList;
 }
-
 
 /**
  * storageParse
@@ -854,7 +835,6 @@ Rule::storageParse(char *rule)
   return m_tokenList;
 }
 
-
 /*
  * bool Rule::inQuote(char *str)
  *   Counts the number of quote found in "str"
@@ -872,7 +852,6 @@ Rule::inQuote(const char *str)
   }
   return (numQuote & 1);
 }
-
 
 /***************************************************************************
  * RuleList
@@ -1010,7 +989,6 @@ RuleList::parse(char *fileBuf, TSFileNameT filetype)
   }
   // this->Print();
 }
-
 
 /***************************************************************************
  * General Routines

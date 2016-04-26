@@ -35,7 +35,6 @@ class SpdySessionAccept : public SessionAccept
 public:
   explicit SpdySessionAccept(spdy::SessionVersion vers);
   ~SpdySessionAccept() {}
-
   void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
 
 private:

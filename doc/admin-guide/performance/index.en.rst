@@ -209,6 +209,160 @@ Thread Stack Size
 
    is there ever a need to fiddle with this, outside of possibly custom developed plugins?
 
+.. _admin-performance-timeouts:
+
+Timeout Settings
+----------------
+
+|TS| has a variety of timeout settings which may be modified to help tune the
+performance of various proxy components. In general it is recommended to leave
+the timeouts at their default values unless you have identified specific causes
+for an adjustment.
+
+Note that not all proxy configurations will be impacted by every timeout. For
+instance, if you are not using any hierarchical caching then the parent proxy
+timeouts will be irrelevant.
+
+While all of the timeouts described below may be set globally for your |TS|
+instance using :file:`records.config`, many of them are also overridable on a
+per-transaction basis by plugins (including :ref:`admin-plugins-conf-remap`).
+This allows the possibility for adjusting timeout value for individual subsets
+of your cache.
+
+For example, you may wish to be fairly lenient on activity timeouts for most of
+your cache, leaving the default at a minute or two, but enforce a much stricter
+timeout on a set of very small, incredibly heavily accessed objects for which
+you can construct a ``map`` rule with the goal of reducing the chances that a
+few bad actors (misconfigured or misbehaving clients) may generate too much
+connection pressure on your cache. The tradeoff may be that some perfectly
+innocent, but slow clients may have their connections terminated early. As with
+all performance tuning efforts, your needs are likely to vary from others' and
+should be carefully considered and closely monitored.
+
+Default Inactivity Timeout
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :ts:cv:`proxy.process.net.default_inactivity_timeout` setting is applied to
+the HTTP state machine when no other inactivity timeouts have been applied. In
+effect, it sets an upper limit, in seconds, on state machine inactivity.
+
+In addition to the timeout itself, there is a related statistic:
+:ts:stat:`proxy.process.net.default_inactivity_timeout_applied` which tracks
+the number of times the default inactivity timeout was applied to transactions
+(as opposed to a more specific timeout having been applied).
+
+::
+
+    CONFIG proxy.process.net.default_inactivity_timeout INT 86400
+
+Accept Timeout
+~~~~~~~~~~~~~~
+
+The variable :ts:cv:`proxy.config.http.accept_no_activity_timeout` sets, in
+seconds, the time after which |TS| will close incoming connections which remain
+inactive (have not sent data). Lowering this timeout can ease pressure on the
+proxy if misconfigured or misbehaving clients are opening a large number of
+connections without submitting requests.
+
+::
+
+    CONFIG proxy.config.http.accept_no_activity_timeout INT 120
+
+Background Fill Timeout
+~~~~~~~~~~~~~~~~~~~~~~~
+
+When :ref:`background fills <admin-config-read-while-writer>` are enabled,
+:ts:cv:`proxy.config.http.background_fill_active_timeout` sets in seconds the
+time after which |TS| will abort the fill attempt and close the origin
+server connection that was being used. Setting this to zero disables the
+timeout, but modifying the value and enforcing a timeout may help in
+situtations where your origin servers stall connections without closing.
+
+::
+
+    CONFIG proxy.config.http.background_fill_active_timeout INT 0
+
+DNS Timeouts
+~~~~~~~~~~~~
+
+|TS| performs all DNS queries for origin servers through the HostDB subsystem.
+Two settings affect the potential frequency and amount of time |TS| will spend
+on these lookups. :ts:cv:`proxy.config.hostdb.timeout` is used to establish the
+time-to-live, in minutes, for all DNS records and
+:ts:cv:`proxy.config.hostdb.lookup_timeout` sets, in seconds, the timeout for
+actual DNS queries.
+
+Setting a higher ``timeout`` value will reduce the number of times |TS| needs
+to perform DNS queries for origin servers, but may also prevent your |TS|
+instance from updating its records to reflect external DNS record changes in a
+timely manner (refer to :ts:cv:`proxy.config.hostdb.ttl_mode` for more
+information on when this TTL value will actually be used).
+
+::
+
+    CONFIG proxy.config.hostdb.timeout INT 1440
+    CONFIG proxy.config.hostdb.lookup_timeout INT 30
+
+ICP Timeout
+~~~~~~~~~~~
+
+When using :ref:`admin-icp-peering` for hierarchical caching configurations, a
+global timeout on all inter-cache queries may be set, in seconds, using
+:ts:cv:`proxy.config.icp.query_timeout`.
+
+::
+
+    CONFIG proxy.config.icp.query_timeout INT 2
+
+Keepalive Timeouts
+~~~~~~~~~~~~~~~~~~
+
+|TS| keepalive timeouts may be set both for maintaining a client connection for
+subsequent requests, using
+:ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_in`, as well as origin
+server connections for subsequent object requests (when not servable from the
+cache) using :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_out`.
+Both are specified in seconds. Keep in mind that
+``keep_alive_no_activity_timeout_out`` for origin server connections is
+effectively an advisory maximum, as the origin server may have its own
+keepalive timeout which (if set lower) will likely take precedence.
+
+::
+
+    CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT 115
+    CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT 120
+
+Origin Connection Timeouts
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Origin server connection timeouts are configured with :ts:cv:`proxy.config.http.connect_attempts_timeout`,
+which is applied both to the initial connection as well as any retries attempted,
+should an attempt timeout. The timeout applies from the moment |TS| begins the
+connection attempt until the origin returns the first byte.
+
+In the case where you wish to have a different (generally longer) timeout for
+``POST`` and ``PUT`` connections to an origin server, you may also adjust
+:ts:cv:`proxy.config.http.post_connect_attempts_timeout` which applies only to
+origin connections using those HTTP verbs.
+
+::
+
+    CONFIG proxy.config.http.connect_attempts_timeout INT 30
+    CONFIG proxy.config.http.post_connect_attempts_timeout INT 1800
+
+Parent Proxy Timeout
+~~~~~~~~~~~~~~~~~~~~
+
+In hierarchical caching configurations, the :ts:cv:`proxy.config.http.parent_proxy.connect_attempts_timeout`
+setting is used for all connection attempts to parent caches. It may be useful,
+in cases where you wish to have |TS| fall back to an alternate parent cache
+(in configurations where you have multiple parents for the same cache) more
+quickly, to lower this timeout.
+
+::
+
+    CONFIG  proxy.config.http.parent_proxy.connect_attempts_timeout INT 30
+
 Polling Timeout
 ~~~~~~~~~~~~~~~
 
@@ -217,6 +371,109 @@ idle workloads, you may consider adjusting the polling timeout with
 :ts:cv:`proxy.config.net.poll_timeout`::
 
     CONFIG proxy.config.net.poll_timeout INT 60
+
+SOCKS Timeouts
+~~~~~~~~~~~~~~
+
+In |TS| configurations where SOCKS has been enabled, three timeouts are made
+available for tuning. Basic activity timeout for SOCKS server connections may
+be adjusted with :ts:cv:`proxy.config.socks.socks_timeout`, in seconds. Server
+connection attempts (initial connections attempts only) are covered by
+:ts:cv:`proxy.config.socks.server_connect_timeout`, again in seconds, and
+server connection retry attempts are set with
+:ts:cv:`proxy.config.socks.server_retry_timeout`. Note that the retry timeout
+is the timeout for the actual connection attempt on a retry, not the delay
+after which a retry will be performed (the delay is configured with
+:ts:cv:`proxy.config.socks.server_retry_time`).
+
+::
+
+    CONFIG proxy.config.socks.socks_timeout INT 100
+    CONFIG proxy.config.socks.server_connect_timeout INT 10
+    CONFIG proxy.config.socks.server_retry_timeout INT 300
+    CONFIG proxy.config.socks.server_retry_time INT 300
+
+SSL Timeouts
+~~~~~~~~~~~~
+
+|TS| offers a few timeouts specific to encrypted connections handled by the SSL
+engine.
+
+:ts:cv:`proxy.config.ssl.handshake_timeout_in` configures the time, in seconds,
+after which incoming client connections will abort should the SSL handshake not
+be completed. The default of ``0`` disables the timeout.
+
+When :ref:`admin-ocsp-stapling` is enabled in |TS|, you can configure two
+separate timeouts; one for setting the length of time which cached OCSP results
+will persist, specified in seconds using
+:ts:cv:`proxy.config.ssl.ocsp.cache_timeout`, and the timeout for requests to
+the remote OCSP responders, in seconds, with
+:ts:cv:`proxy.config.ssl.ocsp.request_timeout`.
+
+Lastly, you can control the number of seconds for which SSL sessions will be
+cached in |TS| using :ts:cv:`proxy.config.ssl.session_cache.timeout`.
+
+::
+
+    CONFIG proxy.config.ssl.handshake_timeout_in INT 0
+    CONFIG proxy.config.ssl.ocsp.cache_timeout INT 3600
+    CONFIG proxy.config.ssl.ocsp.request_timeout INT 10
+    CONFIG proxy.config.ssl.session_cache.timeout INT 0
+
+Transaction Activity Timeouts
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+|TS| specifies two sets of general transaction activity timeouts: a pair for
+active transactions, and a pair for inactive connections (ones which are not
+receiving or sending data during the timeout period). Each pair includes one
+timeout for client connections (the ``_in`` variant) and another for origin
+server transactions (``_out`` variants).
+
+For active transactions,
+:ts:cv:`proxy.config.http.transaction_active_timeout_in` and
+:ts:cv:`proxy.config.http.transaction_active_timeout_out` set the maximum time,
+in seconds, which |TS| will spend sending/receiving data with a client or
+origin server, respectively. If the data transfer has not completed within the
+time specified then the connection will be closed automatically. This may
+result in the lack of a cache update, or partial data transmitted to a client.
+Both timeouts are disabled (set to ``0``) by default.
+
+In general, it's unlikely you will want to enable either of these timeouts
+globally, especially if your cache contains objects of varying sizes and deals
+with clients which may support a range of speeds (and therefore take less or
+more time to complete normal, healthy data exchanges). However, there may be
+configurations in which small objects need to be exchanged in very short
+periods and you wish your |TS| cache to enforce these time resrictions by
+closing connections which exceed them.
+
+The variables :ts:cv:`proxy.config.http.transaction_no_activity_timeout_in` and
+:ts:cv:`proxy.config.http.transaction_no_activity_timeout_out` control the
+maximum amount of time which |TS| will spend in a transaction which is stalled
+and not transmitting data, for clients and origin servers respectively.
+
+Unlike the active transaction timeouts, these two inactive transaction timeout
+values prove somewhat more generally applicable.
+
+::
+
+    CONFIG proxy.config.http.transaction_active_timeout_in INT 0
+    CONFIG proxy.config.http.transaction_active_timeout_out INT 0
+    CONFIG proxy.config.http.transaction_no_activity_timeout_in INT 30
+    CONFIG proxy.config.http.transaction_no_activity_timeout_out INT 30
+
+WebSocket Timeouts
+~~~~~~~~~~~~~~~~~~
+
+|TS| provides two configurable timeouts for WebSocket connections. The setting
+:ts:cv:`proxy.config.websocket.no_activity_timeout` will establish the maximum
+length of time a stalled WebSocket connection will remain before |TS| closes
+it. :ts:cv:`proxy.config.websocket.active_timeout` sets the maximum duration
+for all WebSocket connections, regardless of their level of activity.
+
+::
+
+    CONFIG proxy.config.websocket.no_activity_timeout INT 600
+    CONFIG proxy.config.websocket.active_timeout INT 3600
 
 Memory Optimization
 -------------------

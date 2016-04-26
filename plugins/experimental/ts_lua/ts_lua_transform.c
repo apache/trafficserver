@@ -16,12 +16,9 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 
-
 static int ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx, TSEvent event, int n);
-
 
 int
 ts_lua_transform_entry(TSCont contp, TSEvent ev, void *edata)

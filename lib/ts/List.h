@@ -154,7 +154,6 @@ template <class C> struct Link : public SLink<C> {
 #define LINK_DEFINITION(_c, _f)                                           \
   inline _c *&Link##_##_c##_##_f::next_link(_c *c) { return c->_f.next; } \
   inline _c *&Link##_##_c##_##_f::prev_link(_c *c) { return c->_f.prev; }
-
 //
 //      List descriptor for singly-linked list of objects of type C.
 //
@@ -598,8 +597,16 @@ template <class C, class A = DefaultAlloc> struct ConsCell {
   ConsCell(C acar, ConsCell *acdr) : car(acar), cdr(acdr) {}
   ConsCell(C acar) : car(acar), cdr(NULL) {}
   ConsCell(ConsCell *acdr) : cdr(acdr) {}
-  static void *operator new(size_t size) { return A::alloc(size); }
-  static void operator delete(void *p, size_t /* size ATS_UNUSED */) { A::free(p); }
+  static void *
+  operator new(size_t size)
+  {
+    return A::alloc(size);
+  }
+  static void
+  operator delete(void *p, size_t /* size ATS_UNUSED */)
+  {
+    A::free(p);
+  }
 };
 
 template <class C, class A = DefaultAlloc> struct List {

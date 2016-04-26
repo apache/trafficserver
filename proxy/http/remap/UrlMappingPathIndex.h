@@ -35,7 +35,6 @@ class UrlMappingPathIndex
 {
 public:
   UrlMappingPathIndex() {}
-
   virtual ~UrlMappingPathIndex();
   bool Insert(url_mapping *mapping);
   url_mapping *Search(URL *request_url, int request_port, bool normal_search = true) const;
@@ -49,8 +48,8 @@ private:
     int port;
 
     UrlMappingTrieKey(int idx, int p) : scheme_wks_idx(idx), port(p) {}
-
-    bool operator<(const UrlMappingTrieKey &rhs) const
+    bool
+    operator<(const UrlMappingTrieKey &rhs) const
     {
       if (scheme_wks_idx == rhs.scheme_wks_idx) {
         return (port < rhs.port);
@@ -65,7 +64,11 @@ private:
   // make copy-constructor and assignment operator private
   // till we properly implement them
   UrlMappingPathIndex(const UrlMappingPathIndex & /* rhs ATS_UNUSED */){};
-  UrlMappingPathIndex &operator=(const UrlMappingPathIndex & /* rhs ATS_UNUSED */) { return *this; }
+  UrlMappingPathIndex &
+  operator=(const UrlMappingPathIndex & /* rhs ATS_UNUSED */)
+  {
+    return *this;
+  }
 
   inline UrlMappingTrie *
   _GetTrie(URL *url, int &idx, int port, bool search = true) const

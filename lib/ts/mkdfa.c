@@ -29,7 +29,6 @@
 
 #define SIZEOF(t) (sizeof(t) / (sizeof((t)[0])))
 
-
 typedef struct _info_t info_t;
 typedef struct _state_t state_t;
 typedef struct _transition_t transition_t;
@@ -51,7 +50,6 @@ struct _transition_t {
   state_t *state;
   transition_t *next;
 };
-
 
 info_t fields[] = {
   {"Accept", "MIME_FIELD_ACCEPT", 0},
@@ -124,32 +122,17 @@ info_t fields[] = {
 };
 
 info_t schemes[] = {
-  {"file", "URL_SCHEME_FILE", 0},
-  {"ftp", "URL_SCHEME_FTP", 0},
-  {"gopher", "URL_SCHEME_GOPHER", 0},
-  {"http", "URL_SCHEME_HTTP", 0},
-  {"https", "URL_SCHEME_HTTPS", 0},
-  {"mailto", "URL_SCHEME_MAILTO", 0},
-  {"news", "URL_SCHEME_NEWS", 0},
-  {"nntp", "URL_SCHEME_NNTP", 0},
-  {"prospero", "URL_SCHEME_PROSPERO", 0},
-  {"telnet", "URL_SCHEME_TELNET", 0},
-  {"wais", "URL_SCHEME_WAIS", 0},
-  {NULL, "URL_SCHEME_NONE", 0},
+  {"file", "URL_SCHEME_FILE", 0},     {"ftp", "URL_SCHEME_FTP", 0},     {"gopher", "URL_SCHEME_GOPHER", 0},
+  {"http", "URL_SCHEME_HTTP", 0},     {"https", "URL_SCHEME_HTTPS", 0}, {"mailto", "URL_SCHEME_MAILTO", 0},
+  {"news", "URL_SCHEME_NEWS", 0},     {"nntp", "URL_SCHEME_NNTP", 0},   {"prospero", "URL_SCHEME_PROSPERO", 0},
+  {"telnet", "URL_SCHEME_TELNET", 0}, {"wais", "URL_SCHEME_WAIS", 0},   {NULL, "URL_SCHEME_NONE", 0},
 };
 
 info_t methods[] = {
-  {"CONNECT", "HTTP_METHOD_CONNECT", -1},
-  {"DELETE", "HTTP_METHOD_DELETE", -1},
-  {"GET", "HTTP_METHOD_GET", -1},
-  {"HEAD", "HTTP_METHOD_HEAD", -1},
-  {"HTTP/", "HTTP_METHOD_HTTP", -1},
-  {"OPTIONS", "HTTP_METHOD_OPTIONS", -1},
-  {"POST", "HTTP_METHOD_POST", -1},
-  {"PURGE", "HTTP_METHOD_PURGE", -1},
-  {"PUT", "HTTP_METHOD_PUT", -1},
-  {"TRACE", "HTTP_METHOD_TRACE", -1},
-  {NULL, "HTTP_METHOD_NONE", 0},
+  {"CONNECT", "HTTP_METHOD_CONNECT", -1}, {"DELETE", "HTTP_METHOD_DELETE", -1}, {"GET", "HTTP_METHOD_GET", -1},
+  {"HEAD", "HTTP_METHOD_HEAD", -1},       {"HTTP/", "HTTP_METHOD_HTTP", -1},    {"OPTIONS", "HTTP_METHOD_OPTIONS", -1},
+  {"POST", "HTTP_METHOD_POST", -1},       {"PURGE", "HTTP_METHOD_PURGE", -1},   {"PUT", "HTTP_METHOD_PUT", -1},
+  {"TRACE", "HTTP_METHOD_TRACE", -1},     {NULL, "HTTP_METHOD_NONE", 0},
 };
 
 info_t statuses[] = {
@@ -194,37 +177,16 @@ info_t statuses[] = {
 };
 
 info_t days[] = {
-  {"Fri", "FRIDAY", -1},
-  {"Friday", "FRIDAY", -1},
-  {"Mon", "MONDAY", -1},
-  {"Monday", "MONDAY", -1},
-  {"Sat", "SATURDAY", -1},
-  {"Saturday", "SATURDAY", -1},
-  {"Sun", "SUNDAY", -1},
-  {"Sunday", "SUNDAY", -1},
-  {"Thu", "THURSDAY", -1},
-  {"Thursday", "THURSDAY", -1},
-  {"Tue", "TUESDAY", -1},
-  {"Tuesday", "TUESDAY", -1},
-  {"Wed", "WEDNESDAY", -1},
-  {"Wednesday", "WEDNESDAY", -1},
-  {NULL, "UNKNOWN_DAY", -1},
+  {"Fri", "FRIDAY", -1},    {"Friday", "FRIDAY", -1},       {"Mon", "MONDAY", -1},     {"Monday", "MONDAY", -1},
+  {"Sat", "SATURDAY", -1},  {"Saturday", "SATURDAY", -1},   {"Sun", "SUNDAY", -1},     {"Sunday", "SUNDAY", -1},
+  {"Thu", "THURSDAY", -1},  {"Thursday", "THURSDAY", -1},   {"Tue", "TUESDAY", -1},    {"Tuesday", "TUESDAY", -1},
+  {"Wed", "WEDNESDAY", -1}, {"Wednesday", "WEDNESDAY", -1}, {NULL, "UNKNOWN_DAY", -1},
 };
 
 info_t months[] = {
-  {"Apr", "APRIL", -1},
-  {"Aug", "AUGUST", -1},
-  {"Dec", "DECEMBER", -1},
-  {"Feb", "FEBRUARY", -1},
-  {"Jan", "JANUARY", -1},
-  {"Jul", "JULY", -1},
-  {"Jun", "JUNE", -1},
-  {"Mar", "MARCH", -1},
-  {"May", "MAY", -1},
-  {"Nov", "NOVEMBER", -1},
-  {"Oct", "OCTOBER", -1},
-  {"Sep", "SEPTEMBER", -1},
-  {NULL, "UNKNOWN_MONTH", -1},
+  {"Apr", "APRIL", -1},   {"Aug", "AUGUST", -1},    {"Dec", "DECEMBER", -1},     {"Feb", "FEBRUARY", -1}, {"Jan", "JANUARY", -1},
+  {"Jul", "JULY", -1},    {"Jun", "JUNE", -1},      {"Mar", "MARCH", -1},        {"May", "MAY", -1},      {"Nov", "NOVEMBER", -1},
+  {"Oct", "OCTOBER", -1}, {"Sep", "SEPTEMBER", -1}, {NULL, "UNKNOWN_MONTH", -1},
 };
 
 info_t connections[] = {
@@ -249,7 +211,6 @@ info_t cache_controls[] = {
   {NULL, "HTTP_CACHE_DIRECTIVE_CACHE_EXTENSION", -1},
 };
 
-
 state_t *start = NULL;
 int state_count = 0;
 
@@ -259,7 +220,6 @@ int *nexttbl = NULL;
 int *checktbl = NULL;
 const char **accepttbl = NULL;
 char **prefixtbl = NULL;
-
 
 state_t *
 mkstate()

@@ -191,13 +191,6 @@ prefix_bench = [
               "cookies": [],
               "key": "/test_prefix/{1}/path/to/object?a=1&b=2&c=3"
             },
-            # Testing adding both static and capture prefix to the cache key
-            { "args": "@pparam=--static-prefix=static_prefix @pparam=--capture-prefix=test_prefix",
-              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
-              "headers": [],
-              "cookies": [],
-              "key": "/static_prefix/test_prefix/path/to/object?a=1&b=2&c=3"
-            },
             # Testing adding a capture prefix with replacement string defined
             { "args": "@pparam=--capture-prefix=/(test_prefix).*:([^\s\/]*)/$1_$2/",
               "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
@@ -205,7 +198,80 @@ prefix_bench = [
               "cookies": [],
               "key": "/test_prefix_{1}/path/to/object?a=1&b=2&c=3"
             },
+            # Testing adding a capture prefix from URI to the cache key
+            { "args": "@pparam=--capture-prefix-uri=(test_prefix).*:.*(object).*$",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/test_prefix/object/path/to/object?a=1&b=2&c=3"
+            },
+            # Testing adding a capture prefix from with replacement string defined
+            { "args": "@pparam=--capture-prefix-uri=/(test_prefix).*:.*(object).*$/$1_$2/",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/test_prefix_object/path/to/object?a=1&b=2&c=3"
+            },
+            # Testing adding both static and capture prefix to the cache key
+            { "args": "@pparam=--static-prefix=static_prefix @pparam=--capture-prefix=(test_prefix).*",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/static_prefix/test_prefix/path/to/object?a=1&b=2&c=3"
+            },
+            # Testing adding static and capture prefix and capture prefix from URI to the cache key
+            { "args": "@pparam=--static-prefix=static_prefix @pparam=--capture-prefix=(test_prefix).* @pparam=--capture-prefix-uri=(object).*",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/static_prefix/test_prefix/object/path/to/object?a=1&b=2&c=3"
+            },
         ]
+path_bench = [
+            # Testing adding default path to the cache key
+            { "args": "",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/{0}/{1}/path/to/object?a=1&b=2&c=3"
+            },
+            # Testing adding a path capture to the cache key
+            { "args": "@pparam=--capture-path=.*(object).*",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/{0}/{1}/object?a=1&b=2&c=3"
+            },
+            # Testing adding a path capture/replacement to the cache key
+            { "args": "@pparam=--capture-path=/.*(object).*/const_path_$1/",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/{0}/{1}/const_path_object?a=1&b=2&c=3"
+            },
+            # Testing adding an URI capture to the cache key
+            { "args": "@pparam=--capture-path-uri=(test_path).*(object).*",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/{0}/{1}/test_path/object?a=1&b=2&c=3"
+            },
+            # Testing adding an URI capture/replacement to the cache key
+            { "args": "@pparam=--capture-path-uri=/(test_path).*(object).*/$1_$2/",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/{0}/{1}/test_path_object?a=1&b=2&c=3"
+            },
+            # Testing adding an URI and path capture/replacement together to the cache key
+            { "args": "@pparam=--capture-path=/.*(object).*/const_path_$1/ @pparam=--capture-path-uri=/(test_path).*(object).*/$1_$2/",
+              "uri": "{0}:{1}/path/to/object?a=1&b=2&c=3",
+              "headers": [],
+              "cookies": [],
+              "key": "/{0}/{1}/test_path_object/const_path_object?a=1&b=2&c=3"
+            },
+        ]
+
 
 # User-Agent header capture related tests. Doesn't use the meta_bench.
 ua_captures_bench = [
@@ -431,7 +497,7 @@ class StaticEnvironmentCase(tsqa.test_cases.EnvironmentCase):
     '''
     @classmethod
     def getEnv(cls):
-        layout = tsqa.environment.Layout('/opt/apache/trafficserver.cachekey')
+        layout = tsqa.environment.Layout('/opt/apache/trafficserver.TS-4183/')
         env = tsqa.environment.Environment()
         env.clone(layout=layout)
         return env
@@ -449,7 +515,6 @@ class TestCacheKey(tsqa.test_cases.DynamicHTTPEndpointCase, StaticEnvironmentCas
 
         cls.configs['records.config']['CONFIG'].update({
             'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': '.*',
             'proxy.config.diags.debug.tags': 'cachekey.*',
             'proxy.config.url_remap.pristine_host_hdr': 1,
         })
@@ -495,6 +560,12 @@ class TestCacheKey(tsqa.test_cases.DynamicHTTPEndpointCase, StaticEnvironmentCas
         i = 0
         for test in prefix_bench:
             add_remap_rule("prefix", i, test)
+            i+=1
+
+        # Prepare path tests related remap rules.
+        i = 0
+        for test in path_bench:
+            add_remap_rule("path", i, test)
             i+=1
 
         # Prepare ua-capture tests related remap rules.
@@ -577,14 +648,26 @@ class TestCacheKey(tsqa.test_cases.DynamicHTTPEndpointCase, StaticEnvironmentCas
 
     def test_cachekey_preffix(self):
         '''
-        Tests --static-prefix plugin option for replacing host:port with a static prefix in the cache key.
+        Tests --static-prefix, --capture-prefix, --capture-prefix-uri plugin option in the cache key.
         '''
         global prifix_bench
 
-        log.info("Testing replacing host:port with a static prefix in the cache key creation.")
+        log.info("Testing --static-prefix, --capture-prefix, --capture-prefix-uri plugin option in the cache key.")
         i = 0
         for test in prefix_bench:
             self.verify_key('prefix', i, test)
+            i += 1
+
+    def test_cachekey_path(self):
+        '''
+        Tests --path-capture, --path-capture-uri plugin option for replacing path in the cache key.
+        '''
+        global path_bench
+
+        log.info("Testing --path-capture, --path-capture-uri plugin option for replacing path in the cache key.")
+        i = 0
+        for test in path_bench:
+            self.verify_key('path', i, test)
             i += 1
 
     def test_cachekey_headers(self):

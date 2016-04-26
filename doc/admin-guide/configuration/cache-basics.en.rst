@@ -733,6 +733,8 @@ requests to the origin server, potentially overwhelming it or associated
 resources. There are several features in Traffic Server that can be used to
 avoid this scenario.
 
+.. _admin-config-read-while-writer:
+
 Read While Writer
 -----------------
 

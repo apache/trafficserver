@@ -55,7 +55,7 @@ TSPluginInit(int argc, const char *argv[])
 // partial compilation
 #if (TS_VERSION_NUMBER < 3000000)
   if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
-#elif(TS_VERSION_NUMBER < 6000000)
+#elif (TS_VERSION_NUMBER < 6000000)
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
 #else
   if (TSPluginRegister(&info) != TS_SUCCESS) {

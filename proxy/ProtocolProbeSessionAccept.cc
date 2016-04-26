@@ -125,10 +125,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     return EVENT_CONT;
 
   done:
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-    if (!ssl_vc || (this->iobuf != ssl_vc->get_ssl_iobuf())) {
-      free_MIOBuffer(this->iobuf);
-    }
+    free_MIOBuffer(this->iobuf);
     this->iobuf = NULL;
     delete this;
     return EVENT_CONT;
@@ -145,15 +142,8 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     ink_assert(data);
 
     VIO *vio;
-    NetVConnection *netvc = static_cast<NetVConnection *>(data);
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-    MIOBuffer *buf = NULL;
-    IOBufferReader *reader = NULL;
-    if (ssl_vc) {
-      buf = ssl_vc->get_ssl_iobuf();
-      reader = ssl_vc->get_ssl_reader();
-    }
-    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, buf, reader);
+    NetVConnection *netvc = (NetVConnection *)data;
+    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, NULL, NULL);
 
     // XXX we need to apply accept inactivity timeout here ...
 

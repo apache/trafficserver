@@ -52,10 +52,8 @@ struct OCSPContinuation : public Continuation {
 void
 SSLNetProcessor::cleanup(void)
 {
-  if (client_ctx) {
-    SSL_CTX_free(client_ctx);
-    client_ctx = NULL;
-  }
+  SSLReleaseContext(client_ctx);
+  client_ctx = NULL;
 }
 
 int
@@ -93,7 +91,6 @@ SSLNetProcessor::start(int number_of_ssl_threads, size_t stacksize)
     eventProcessor.schedule_every(new OCSPContinuation(), HRTIME_SECONDS(SSLConfigParams::ssl_ocsp_update_period), ET_OCSP);
   }
 #endif /* HAVE_OPENSSL_OCSP_STAPLING */
-
 
   if (number_of_ssl_threads == -1) {
     // We've disabled ET_SSL threads, so we will mark all ET_NET threads as having

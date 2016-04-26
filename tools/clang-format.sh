@@ -22,11 +22,20 @@ set -e # exit on error
 
 DIR=${1:-.}
 ROOT=${ROOT:-$(git rev-parse --show-toplevel)/.git/fmt}
-URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/clang-format-20150331.tar.bz2}
+PACKAGE="clang-format-20160415.tar.bz2"
+VERSION="clang-format version 3.9.0 (trunk 265913)"
+
+URL=${URL:-https://bintray.com/artifact/download/apache/trafficserver/${PACKAGE}}
 
 TAR=${TAR:-tar}
 CURL=${CURL:-curl}
-SHASUM=${SHASUM:-shasum}
+
+# default to using native sha1sum command when available
+if [ $(which sha1sum) ] ; then
+  SHASUM=${SHASUM:-sha1sum}
+else
+  SHASUM=${SHASUM:-shasum}
+fi
 
 ARCHIVE=$ROOT/$(basename ${URL})
 
@@ -44,16 +53,27 @@ esac
 
 mkdir -p ${ROOT}
 
-if [ ! -e ${FORMAT} ] ; then
+# Note that the two spaces between the hash and ${ARCHIVE) is needed
+if [ ! -e ${FORMAT} -o ! -e ${ROOT}/${PACKAGE} ] ; then
   ${CURL} -L --progress-bar -o ${ARCHIVE} ${URL}
   ${TAR} -x -C ${ROOT} -f ${ARCHIVE}
   cat > ${ROOT}/sha1 << EOF
-7117c5bed99da43be733427970b4239f4bd8063d  ${ARCHIVE}
+d5558924377a6ad5799956cec5b37d4e421e2156  ${ARCHIVE}
 EOF
-  ${SHASUM} -a 1 -c ${ROOT}/sha1
+  ${SHASUM} -c ${ROOT}/sha1
 fi
 
-for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc); do
-    echo $file
-    ${FORMAT} -i $file
-done
+
+# Make sure we only run this with our exact version
+ver=$(${FORMAT} --version)
+if [ "$ver" != "$VERSION" ]; then
+    echo "Wrong version of clang-format!"
+    echo "See https://bintray.com/apache/trafficserver/clang-format-tools/view for a newer version,"
+    echo "or alternatively, undefine the FORMAT environment variable"
+    exit 1
+else
+    for file in $(find $DIR -iname \*.[ch] -o -iname \*.cc); do
+	echo $file
+	${FORMAT} -i $file
+    done
+fi
