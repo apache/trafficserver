@@ -958,7 +958,6 @@ INKContInternal::destroy()
       ink_assert(!"not reached");
     }
     this_ethread()->schedule_imm(this);
-    Warning("INKCont not deletable %d %p", m_event_count, this);
   }
 }
 
