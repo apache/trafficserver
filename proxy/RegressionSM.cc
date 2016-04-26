@@ -96,7 +96,7 @@ RegressionSM::regression_sm_waiting(int /* event ATS_UNUSED */, void *data)
     delete this;
     return EVENT_DONE;
   }
-  if (par || nwaiting > 1) {
+  if (parallel || nwaiting > 1) {
     ((Event *)data)->schedule_in(REGRESSION_SM_RETRY);
     return EVENT_CONT;
   }
@@ -117,8 +117,8 @@ r_sequential(RegressionTest *t, RegressionSM *sm, ...)
   RegressionSM *new_sm = new RegressionSM(t);
   va_list ap;
   va_start(ap, sm);
-  new_sm->par = false;
-  new_sm->rep = false;
+  new_sm->parallel = false;
+  new_sm->repeat = false;
   new_sm->ichild = 0;
   new_sm->nchildren = 0;
   new_sm->nwaiting = 0;
@@ -135,8 +135,8 @@ RegressionSM *
 r_sequential(RegressionTest *t, int an, RegressionSM *sm)
 {
   RegressionSM *new_sm = new RegressionSM(t);
-  new_sm->par = false;
-  new_sm->rep = true;
+  new_sm->parallel = false;
+  new_sm->repeat = true;
   new_sm->ichild = 0;
   new_sm->nchildren = 1;
   new_sm->children(0) = sm;
@@ -151,8 +151,8 @@ r_parallel(RegressionTest *t, RegressionSM *sm, ...)
   RegressionSM *new_sm = new RegressionSM(t);
   va_list ap;
   va_start(ap, sm);
-  new_sm->par = true;
-  new_sm->rep = false;
+  new_sm->parallel = true;
+  new_sm->repeat = false;
   new_sm->ichild = 0;
   new_sm->nchildren = 0;
   new_sm->nwaiting = 0;
@@ -169,8 +169,8 @@ RegressionSM *
 r_parallel(RegressionTest *t, int an, RegressionSM *sm)
 {
   RegressionSM *new_sm = new RegressionSM(t);
-  new_sm->par = true;
-  new_sm->rep = true;
+  new_sm->parallel = true;
+  new_sm->repeat = true;
   new_sm->ichild = 0;
   new_sm->nchildren = 1;
   new_sm->children(0) = sm;
@@ -189,19 +189,20 @@ RegressionSM::run()
       goto Lretry;
     RegressionSM *x = 0;
     while (ichild < n) {
-      if (!rep)
+      if (!repeat) {
         x = children[ichild];
-      else {
-        if (ichild != n - 1)
+      } else {
+        if (ichild != n - 1) {
           x = children[(intptr_t)0]->clone();
-        else
+        } else {
           x = children[(intptr_t)0];
+        }
       }
       if (!ichild)
         nwaiting++;
       x->xrun(this);
       ichild++;
-      if (!par && nwaiting > 1)
+      if (!parallel && nwaiting > 1)
         goto Lretry;
     }
   }
@@ -229,8 +230,8 @@ RegressionSM::RegressionSM(const RegressionSM &ao)
     children(i) = o.children[i]->clone();
   n = o.n;
   ichild = o.ichild;
-  par = o.par;
-  rep = o.rep;
+  parallel = o.parallel;
+  repeat = o.repeat;
   pending_action = o.pending_action;
   ink_assert(status == REGRESSION_TEST_INPROGRESS);
   ink_assert(nwaiting == 0);
