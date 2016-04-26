@@ -194,7 +194,7 @@ public:
   virtual const char *
   get_protocol_string() const
   {
-    return "http2";
+    return "http/2";
   }
 
   virtual void set_active_timeout(ink_hrtime timeout_in);
