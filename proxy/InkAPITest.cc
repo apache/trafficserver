@@ -5668,7 +5668,7 @@ checkHttpTxnParentProxy(ContData *data, TSHttpTxn txnp)
 {
   const char *hostname = "txnpp.example.com";
   int port = 10180;
-  char *hostnameget = NULL;
+  const char *hostnameget = NULL;
   int portget = 0;
 
   TSHttpTxnParentProxySet(txnp, (char *)hostname, port);

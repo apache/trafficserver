@@ -5545,7 +5545,7 @@ TSHttpTxnServerRequestBodySet(TSHttpTxn txnp, char *buf, int64_t buflength)
 }
 
 TSReturnCode
-TSHttpTxnParentProxyGet(TSHttpTxn txnp, char **hostname, int *port)
+TSHttpTxnParentProxyGet(TSHttpTxn txnp, const char **hostname, int *port)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
@@ -5558,7 +5558,7 @@ TSHttpTxnParentProxyGet(TSHttpTxn txnp, char **hostname, int *port)
 }
 
 void
-TSHttpTxnParentProxySet(TSHttpTxn txnp, char *hostname, int port)
+TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)hostname) == TS_SUCCESS);
