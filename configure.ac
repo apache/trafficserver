@@ -1188,12 +1188,9 @@ if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
 fi
 
 #
-# Check for XML parser
+# Check for XML parser. Required.
 #
 TS_CHECK_XML
-if test "x${enable_xml}" != "xyes"; then
-  AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
-fi
 
 AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate inotify_init])
 AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf sysctlbyname getpagesize])

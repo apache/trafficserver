@@ -22,30 +22,43 @@ dnl
 dnl TS_CHECK_XML: look for xml libraries and headers
 dnl
 AC_DEFUN([TS_CHECK_XML], [
-  enable_xml=no
-  AC_MSG_CHECKING(["For XML parser"])
+  _xml_parser=none
+
   AC_ARG_WITH(xml, [AC_HELP_STRING([--with-xml=(expat|libxml2)],[select XML parser])],
   [
     if test "$withval" = "expat" ; then
-      TS_CHECK_XML_EXPAT
+      TS_CHECK_XML_EXPAT([_xml_parser=expat])
     elif test "$withval" = "libxml2" ; then
-      TS_CHECK_XML_LIBXML2
+      TS_CHECK_XML_LIBXML2([_xml_parser=libxlm2])
     else
       AC_MSG_ERROR([Unrecognised --with-xml option])
     fi
   ],
   [
-    TS_CHECK_XML_LIBXML2
-    if test "$enable_xml" = "no"; then
-      TS_CHECK_XML_EXPAT
-    fi
+    # Default to preferring libxml2 over expat.
+    TS_CHECK_XML_LIBXML2([_xml_parser=libxml2],[
+      TS_CHECK_XML_EXPAT([_xml_parser=expat])
+    ])
   ])
-  if test "$enable_xml" = "no"; then
-    AC_MSG_ERROR([An XML parser (expat or libxml2) is required.])
-  fi
+
+  AC_MSG_CHECKING([for an XML parser])
+  AC_MSG_RESULT([$_xml_parser])
+
+  AS_IF([test "$_xml_parser" = "none"], [
+    AC_MSG_ERROR([missing XML parser
+
+An XML parser (expat or libxml2) is required. Use the
+--with-xml option to select between libxml2 and expat.
+Use the --with-libxml2 or --with-expat options to select
+a specific installation of each library.
+    ])
+  ])
+
+  unset _xml_parser
 ])
 dnl
 
+dnl TS_CHECK_XML_LIBXML2(action-if-found, action-if-not-found)
 AC_DEFUN([TS_CHECK_XML_LIBXML2], [
   enable_libxml2=no
   libxml2_include=""
@@ -95,13 +108,17 @@ AC_DEFUN([TS_CHECK_XML_LIBXML2], [
         TS_ADDTO_RPATH(${libxml2_ldflags})
       fi
       TS_ADDTO(LIBS, -lxml2)
-      enable_xml=yes
+      # libxml action-if-found
+      $1
     else
-      AC_MSG_WARN(["Failed to find libxml2"])
+      AC_MSG_WARN([failed to find libxml2])
+      # libxml action-if-not-found
+      $2
     fi
   fi
 ])
 
+dnl TS_CHECK_XML_EXPAT(action-if-found, action-if-not-found)
 AC_DEFUN([TS_CHECK_XML_EXPAT], [
 enable_expat=no
 AC_ARG_WITH(expat, [AC_HELP_STRING([--with-expat=DIR],[use a specific Expat library])],
@@ -130,24 +147,15 @@ if test "x$expat_base_dir" = "x"; then
   AC_MSG_CHECKING([for Expat location])
   AC_CACHE_VAL(ats_cv_expat_dir,[
   _expat_dir_list=""
-  case $host_os_def in
-    darwin)
-    for dir in /usr/local /usr "`xcrun -show-sdk-path 2>/dev/null`/usr" ; do
-      if test -d $dir && test -f $dir/include/expat.h; then
-        ats_cv_expat_dir=$dir
-        break
-      fi
-    done
-    ;;
-    *)
-    for dir in /usr/local /usr; do
-      if test -d $dir && test -f $dir/include/expat.h; then
-        ats_cv_expat_dir=$dir
-        break
-      fi
-    done
-    ;;
-  esac
+  # On Darwin we used to check the OS XSDK for expat, but this causes us
+  # to accidentally link the wrong version of pcre (see TS-4385). Best to
+  # just avoid the SDK in most cases.
+  for dir in /usr/local /usr; do
+    if test -d $dir && test -f $dir/include/expat.h; then
+      ats_cv_expat_dir=$dir
+      break
+    fi
+  done
 
   unset _expat_dir_list
   ])
@@ -186,14 +194,17 @@ if test "$enable_expat" != "no"; then
       AC_CHECK_HEADERS(expat.h, [expat_have_headers=1])
   fi
   if test "$expat_have_headers" != "0"; then
-    enable_xml=yes
 
     AC_SUBST([LIBEXPAT],["-lexpat"])
     AC_DEFINE([HAVE_LIBEXPAT],[1],[Define to 1 if you have Expat library])
+    # expat action-if-found
+    $1
   else
     enable_expat=no
     CPPFLAGS=$saved_cppflags
     LDFLAGS=$saved_ldflags
+    # expat action-if-not-found
+    $2
   fi
 fi
 AC_SUBST(expath)
