@@ -404,6 +404,21 @@ generate_response(const char *request)
   return response;
 }
 
+static int
+get_request_id_value(const char *name, TSMBuffer buf, TSMLoc hdr)
+{
+  int id = -1;
+  TSMLoc field;
+
+  field = TSMimeHdrFieldFind(buf, hdr, name, -1);
+  if (field != TS_NULL_MLOC) {
+    id = TSMimeHdrFieldValueIntGet(buf, hdr, field, 0);
+  }
+
+  TSHandleMLocRelease(buf, hdr, field);
+  return id;
+}
+
 // This routine can be called by tests, from the READ_REQUEST_HDR_HOOK
 // to figure out the id of a test message
 // Returns id/-1 in case of error
@@ -411,22 +426,33 @@ static int
 get_request_id(TSHttpTxn txnp)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc, id_loc;
+  TSMLoc hdr_loc;
   int id = -1;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     return -1;
   }
 
-  id_loc = TSMimeHdrFieldFind(bufp, hdr_loc, X_REQUEST_ID, -1);
-  if (id_loc == TS_NULL_MLOC) {
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  id = get_request_id_value(X_REQUEST_ID, bufp, hdr_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  return id;
+}
+
+// This routine can be called by tests, from the READ_RESPONSE_HDR_HOOK
+// to figure out the id of a test message
+// Returns id/-1 in case of error
+static int
+get_response_id(TSHttpTxn txnp)
+{
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  int id = -1;
+
+  if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     return -1;
   }
 
-  id = TSMimeHdrFieldValueIntGet(bufp, hdr_loc, id_loc, 0);
-
-  TSHandleMLocRelease(bufp, hdr_loc, id_loc);
+  id = get_request_id_value(X_RESPONSE_ID, bufp, hdr_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   return id;
 }

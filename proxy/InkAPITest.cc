@@ -5858,6 +5858,139 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpSsn)(RegressionTest *test, int /* atype AT
   return;
 }
 
+struct ParentTest {
+  RegressionTest *regtest;
+  int *pstatus;
+  SocketServer *os;
+  ClientTxn *browser;
+
+  RecBool parent_proxy_routing_enable;
+  unsigned int magic;
+};
+
+static int
+parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
+{
+  ParentTest *ptest = (ParentTest *)TSContDataGet(contp);
+  TSHttpTxn txnp = (TSHttpTxn)edata;
+
+  switch (event) {
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    rprintf(ptest->regtest, "setting synserver parent proxy to %s:%d\n", "127.0.0.1", SYNSERVER_LISTEN_PORT);
+
+    // Since we chose a request format with a hostname of trafficserver.apache.org, it won't get
+    // sent to the synserver unless we set a parent proxy.
+    TSHttpTxnParentProxySet(txnp, "127.0.0.1", SYNSERVER_LISTEN_PORT);
+
+    TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, contp);
+
+    TSSkipRemappingSet(txnp, 1);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    break;
+
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR: {
+    int expected = get_request_id(txnp);
+    int received = get_response_id(txnp);
+
+    if (expected != received) {
+      *(ptest->pstatus) = REGRESSION_TEST_FAILED;
+      SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", "TestCase", TC_FAIL, "Expected response ID %d, received %d", expected,
+                 received);
+    } else {
+      *(ptest->pstatus) = REGRESSION_TEST_PASSED;
+      SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", "TestCase", TC_PASS, "Received expected response ID %d", expected);
+    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    break;
+  }
+
+  case TS_EVENT_TIMEOUT:
+    if (*(ptest->pstatus) == REGRESSION_TEST_INPROGRESS) {
+      // If we are still in progress, reschedule.
+      rprintf(ptest->regtest, "waiting for response\n");
+      TSContSchedule(contp, 100, TS_THREAD_POOL_DEFAULT);
+    } else {
+      // Otherwise the test completed so clean up.
+      RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", ptest->parent_proxy_routing_enable, REC_SOURCE_EXPLICIT);
+
+      ptest->magic = MAGIC_DEAD;
+      synclient_txn_delete(ptest->browser);
+      synserver_delete(ptest->os);
+      TSfree(ptest);
+      TSContDataSet(contp, NULL);
+    }
+    break;
+
+  case TS_EVENT_HTTP_TXN_CLOSE:
+    // We expected to pass or fail reading the response header. At this point we must have failed.
+    if (*(ptest->pstatus) == REGRESSION_TEST_INPROGRESS) {
+      *(ptest->pstatus) = REGRESSION_TEST_FAILED;
+      SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", "TestCase", TC_FAIL, "Failed on txn close");
+    }
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+    break;
+
+  default:
+    *(ptest->pstatus) = REGRESSION_TEST_FAILED;
+    SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", "TestCase", TC_FAIL, "Unexpected event %d", event);
+    break;
+  }
+
+  return 0;
+}
+
+EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet)(RegressionTest *test, int level, int *pstatus)
+{
+  // Don't enable this test by default until it passes.
+  if (level < REGRESSION_TEST_FATAL) {
+    *pstatus = REGRESSION_TEST_NOT_RUN;
+    return;
+  }
+
+  *pstatus = REGRESSION_TEST_INPROGRESS;
+
+  TSCont cont = TSContCreate(parent_proxy_handler, TSMutexCreate());
+  if (cont == NULL) {
+    SDK_RPRINT(test, "TSHttpTxnParentProxySet", "TestCase", TC_FAIL, "Unable to create continuation");
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
+  }
+
+  ParentTest *ptest = (ParentTest *)TSmalloc(sizeof(SocketTest));
+  ink_zero(*ptest);
+
+  ptest->regtest = test;
+  ptest->pstatus = pstatus;
+  ptest->magic = MAGIC_ALIVE;
+  TSContDataSet(cont, ptest);
+
+  /* If parent proxy routing is not enabled, enable it for the life of the test. */
+  RecGetRecordBool("proxy.config.http.parent_proxy_routing_enable", &ptest->parent_proxy_routing_enable);
+  if (!ptest->parent_proxy_routing_enable) {
+    rprintf(test, "enabling proxy.config.http.parent_proxy_routing_enable");
+    RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", 1, REC_SOURCE_EXPLICIT);
+  }
+
+  RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", 1, REC_SOURCE_EXPLICIT);
+  /* Hook read request headers, since that is the earliest reasonable place to set the parent proxy. */
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, cont);
+
+  /* Create a new synthetic server */
+  ptest->os = synserver_create(SYNSERVER_LISTEN_PORT);
+  synserver_start(ptest->os);
+
+  /* Create a client transaction */
+  ptest->browser = synclient_txn_create();
+
+  // HTTP_REQUEST_FORMAT10 is a hostname, so we will need to set the parent to the synserver to get a response.
+  char *request = generate_request(10);
+  synclient_txn_send_request(ptest->browser, request);
+  TSfree(request);
+
+  TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
+}
+
 /////////////////////////////////////////////////////
 //       SDK_API_TSHttpTxnCache
 //
