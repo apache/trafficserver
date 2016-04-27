@@ -124,7 +124,6 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
   }
   // Initialize the result structure
   result->rec = NULL;
-  result->epoch = tablePtr;
   result->line_number = 0xffffffff;
   result->wrap_around = false;
   result->start_parent = 0;
@@ -137,7 +136,6 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
     result->hostname = rdata->api_info->parent_proxy_name;
     result->port = rdata->api_info->parent_proxy_port;
     result->rec = extApiRecord;
-    result->epoch = NULL;
     result->start_parent = 0;
     result->last_parent = 0;
 
@@ -194,8 +192,8 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
 {
   P_table *tablePtr = parent_table;
 
-  Debug("parent_select", "ParentConfigParams::nextParent(): parent_table: %p, result->rec: %p, result->epoch: %p", parent_table,
-        result->rec, result->epoch);
+  Debug("parent_select", "ParentConfigParams::nextParent(): parent_table: %p, result->rec: %p",
+      parent_table, result->rec);
 
   //  Make sure that we are being called back with a
   //   result structure with a parent
@@ -211,9 +209,8 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
     result->r = PARENT_FAIL;
     return;
   }
-  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p, result->epoch: %p", result->r, tablePtr,
-        result->epoch);
-  ink_release_assert(tablePtr == result->epoch);
+  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p",
+      result->r, tablePtr);
 
   // Find the next parent in the array
   Debug("parent_select", "Calling selectParent() from nextParent");
