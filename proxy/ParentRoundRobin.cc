@@ -198,7 +198,7 @@ ParentRoundRobin::markParentDown(const ParentSelectionPolicy *policy, ParentResu
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     return;
   }
 
@@ -257,7 +257,7 @@ ParentRoundRobin::markParentUp(ParentResult *result)
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     ink_assert(0);
     return;
   }
