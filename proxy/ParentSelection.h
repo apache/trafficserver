@@ -40,7 +40,6 @@
 #include "ts/Tokenizer.h"
 #include "ts/ink_apidefs.h"
 
-#include <algorithm>
 #include <vector>
 
 #define MAX_PARENTS 64
