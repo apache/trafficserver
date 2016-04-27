@@ -888,8 +888,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
   HttpEstablishStaticConfigLongLong(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
 
-  HttpEstablishStaticConfigByte(c.parent_proxy_routing_enable, "proxy.config.http.parent_proxy_routing_enable");
-
   // Wank me.
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
   HttpEstablishStaticConfigByte(c.no_dns_forward_to_parent, "proxy.config.http.no_dns_just_forward_to_parent");
@@ -1173,7 +1171,6 @@ HttpConfig::reconfigure()
     params->origin_min_keep_alive_connections = params->oride.origin_max_connections;
   }
 
-  params->parent_proxy_routing_enable = INT_TO_BOOL(m_master.parent_proxy_routing_enable);
   params->enable_url_expandomatic = INT_TO_BOOL(m_master.enable_url_expandomatic);
 
   params->oride.insert_request_via_string = m_master.oride.insert_request_via_string;
