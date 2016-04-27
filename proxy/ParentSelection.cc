@@ -201,7 +201,7 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->result]);
     result->result = PARENT_FAIL;
     return;

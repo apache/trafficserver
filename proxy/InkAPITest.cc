@@ -5982,12 +5982,6 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
 
 EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet)(RegressionTest *test, int level, int *pstatus)
 {
-  // Don't enable this test by default until it passes.
-  if (level < REGRESSION_TEST_FATAL) {
-    *pstatus = REGRESSION_TEST_NOT_RUN;
-    return;
-  }
-
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   TSCont cont = TSContCreate(parent_proxy_handler, TSMutexCreate());

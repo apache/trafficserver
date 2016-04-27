@@ -716,9 +716,9 @@ public:
     ConnectionAttributes *server;
     ink_time_t now;
     ServerState_t state;
-    int attempts;
-    int simple_retry_attempts;
-    int unavailable_server_retry_attempts;
+    unsigned attempts;
+    unsigned simple_retry_attempts;
+    unsigned unavailable_server_retry_attempts;
     ParentOriginRetry_t retry_type;
 
     _CurrentInfo()
@@ -1234,7 +1234,7 @@ public:
   static void handle_response_from_parent(State *s);
   static void handle_response_from_server(State *s);
   static void delete_server_rr_entry(State *s, int max_retries);
-  static void retry_server_connection_not_open(State *s, ServerState_t conn_state, int max_retries);
+  static void retry_server_connection_not_open(State *s, ServerState_t conn_state, unsigned max_retries);
   static void handle_server_connection_not_open(State *s);
   static void handle_forward_server_connection_open(State *s);
   static void handle_cache_operation_on_forward_server_response(State *s);
