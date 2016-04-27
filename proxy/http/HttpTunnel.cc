@@ -1568,7 +1568,7 @@ HttpTunnel::main_handler(int event, void *data)
     sm_callback = producer_handler(event, p);
   } else {
     if ((c = get_consumer((VIO *)data)) != 0) {
-      ink_assert(c->write_vio == (VIO *)data);
+      ink_assert(c->write_vio == (VIO *)data || c->vc == ((VIO *)data)->vc_server);
       sm_callback = consumer_handler(event, c);
     } else {
       internal_error(); // do nothing
