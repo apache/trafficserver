@@ -68,21 +68,20 @@ static const char local_host_ip_str[] = "127.0.0.1";
 inline static void
 simple_or_unavailable_server_retry(HttpTransact::State *s)
 {
-  int server_response = 0;
-
-  HTTP_RELEASE_ASSERT(!s->parent_result.rec->parent_is_proxy);
+  HTTP_RELEASE_ASSERT(!s->parent_result.parent_is_proxy());
 
   // reponse is from a parent origin server.
-  server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
+  HTTPStatus server_response = http_hdr_status_get(s->hdr_info.server_response.m_http);
 
   DebugTxn("http_trans", "[simple_or_unavailabe_server_retry] server_response = %d, simple_retry_attempts: %d, numParents:%d \n",
            server_response, s->current.simple_retry_attempts, s->parent_params->numParents(&s->parent_result));
 
   // simple retry is enabled, 0x1
-  if ((s->parent_result.rec->parent_retry & HttpTransact::PARENT_ORIGIN_SIMPLE_RETRY) &&
-      (s->current.simple_retry_attempts < s->parent_result.rec->max_simple_retries && server_response == HTTP_STATUS_NOT_FOUND)) {
+  if ((s->parent_result.retry_type() & HttpTransact::PARENT_ORIGIN_SIMPLE_RETRY) &&
+      s->current.simple_retry_attempts < s->parent_result.max_retries(PARENT_RETRY_SIMPLE) &&
+      server_response == HTTP_STATUS_NOT_FOUND) {
     DebugTxn("parent_select", "RECEIVED A SIMPLE RETRY RESPONSE");
-    if (s->current.simple_retry_attempts < (int)s->parent_params->numParents(&s->parent_result)) {
+    if (s->current.simple_retry_attempts < s->parent_params->numParents(&s->parent_result)) {
       s->current.state = HttpTransact::PARENT_ORIGIN_RETRY;
       s->current.retry_type = HttpTransact::PARENT_ORIGIN_SIMPLE_RETRY;
       return;
@@ -92,11 +91,11 @@ simple_or_unavailable_server_retry(HttpTransact::State *s)
     }
   }
   // unavailable server retry is enabled 0x2
-  else if ((s->parent_result.rec->parent_retry & HttpTransact::PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY) &&
-           (s->current.unavailable_server_retry_attempts < s->parent_result.rec->max_unavailable_server_retries &&
-            s->parent_result.rec->unavailable_server_retry_responses->contains(server_response))) {
+  else if ((s->parent_result.retry_type() & HttpTransact::PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY) &&
+           s->current.unavailable_server_retry_attempts < s->parent_result.max_retries(PARENT_RETRY_UNAVAILABLE_SERVER) &&
+           s->parent_result.response_is_retryable(server_response)) {
     DebugTxn("parent_select", "RECEIVED A PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY RESPONSE");
-    if (s->current.unavailable_server_retry_attempts < (int)s->parent_params->numParents(&s->parent_result)) {
+    if (s->current.unavailable_server_retry_attempts < s->parent_params->numParents(&s->parent_result)) {
       s->current.state = HttpTransact::PARENT_ORIGIN_RETRY;
       s->current.retry_type = HttpTransact::PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY;
       return;
@@ -254,7 +253,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     s->parent_result.result = PARENT_DIRECT;
   } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
     s->parent_params->findParent(&s->request_data, &s->parent_result);
-    if (s->parent_result.rec == NULL || s->parent_result.rec->parent_is_proxy) {
+    if (!s->parent_result.is_some() || s->parent_result.is_api_result() || s->parent_result.parent_is_proxy()) {
       DebugTxn("http_trans", "request not cacheable, so bypass parent");
       s->parent_result.result = PARENT_DIRECT;
     }
@@ -267,7 +266,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // with respect to whether a request is cacheable or not.
     // For example, the cache_urls_that_look_dynamic variable.
     s->parent_params->findParent(&s->request_data, &s->parent_result);
-    if (s->parent_result.rec == NULL || s->parent_result.rec->parent_is_proxy) {
+    if (!s->parent_result.is_some() || s->parent_result.is_api_result() || s->parent_result.parent_is_proxy()) {
       DebugTxn("http_trans", "request not cacheable, so bypass parent");
       s->parent_result.result = PARENT_DIRECT;
     }
@@ -291,11 +290,11 @@ find_server_and_update_current_info(HttpTransact::State *s)
     case PARENT_FAIL:
       // Check to see if should bypass the parent and go direct
       //   We can only do this if
-      //   1) the parent was not set from API
+      //   1) the config permitted us to dns the origin server
       //   2) the config permits us
-      //   3) the config permitted us to dns the origin server
-      if (!s->parent_params->apiParentExists(&s->request_data) && s->parent_result.rec->bypass_ok() &&
-          s->http_config_param->no_dns_forward_to_parent == 0 && s->parent_result.rec->parent_is_proxy) {
+      //   3) the parent was not set from API
+      if (s->http_config_param->no_dns_forward_to_parent == 0 && s->parent_result.bypass_ok() &&
+          s->parent_result.parent_is_proxy() && !s->parent_params->apiParentExists(&s->request_data)) {
         s->parent_result.result = PARENT_DIRECT;
       }
       break;
@@ -3549,9 +3548,9 @@ HttpTransact::handle_response_from_parent(State *s)
 
   // response is from a parent origin server.
   if (is_response_valid(s, &s->hdr_info.server_response) && s->current.request_to == HttpTransact::PARENT_PROXY &&
-      !s->parent_result.rec->parent_is_proxy) {
+      !s->parent_result.parent_is_proxy()) {
     // check for a retryable response if simple or unavailable server retry are enabled.
-    if (s->parent_result.rec->parent_retry & (PARENT_ORIGIN_SIMPLE_RETRY | PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY)) {
+    if (s->parent_result.retry_type() & (PARENT_ORIGIN_SIMPLE_RETRY | PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY)) {
       simple_or_unavailable_server_retry(s);
     }
   }
@@ -3591,7 +3590,7 @@ HttpTransact::handle_response_from_parent(State *s)
     // try a simple retry if we received a simple retryable response from the parent.
     if (s->current.retry_type == PARENT_ORIGIN_SIMPLE_RETRY || s->current.retry_type == PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY) {
       if (s->current.retry_type == PARENT_ORIGIN_SIMPLE_RETRY) {
-        if (s->current.simple_retry_attempts >= s->parent_result.rec->max_simple_retries) {
+        if (s->current.simple_retry_attempts >= s->parent_result.max_retries(PARENT_RETRY_SIMPLE)) {
           DebugTxn("http_trans", "PARENT_ORIGIN_SIMPLE_RETRY: retried all parents, send error to client.\n");
           s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
         } else {
@@ -3601,7 +3600,7 @@ HttpTransact::handle_response_from_parent(State *s)
           next_lookup = find_server_and_update_current_info(s);
         }
       } else { // try unavailable server retry if we have a unavailable server retry response from the parent.
-        if (s->current.unavailable_server_retry_attempts >= s->parent_result.rec->max_unavailable_server_retries) {
+        if (s->current.unavailable_server_retry_attempts >= s->parent_result.max_retries(PARENT_RETRY_UNAVAILABLE_SERVER)) {
           DebugTxn("http_trans", "PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY: retried all parents, send error to client.\n");
           s->current.retry_type = PARENT_ORIGIN_UNDEFINED_RETRY;
         } else {
@@ -3694,7 +3693,7 @@ HttpTransact::handle_response_from_server(State *s)
 {
   DebugTxn("http_trans", "[handle_response_from_server] (hrfs)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->server_info);
-  int max_connect_retries = 0;
+  unsigned max_connect_retries = 0;
 
   // plugin call
   s->server_info.state = s->current.state;
@@ -3831,7 +3830,7 @@ HttpTransact::delete_server_rr_entry(State *s, int max_retries)
 //
 ///////////////////////////////////////////////////////////////////////////////
 void
-HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_state, int max_retries)
+HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_state, unsigned max_retries)
 {
   ink_assert(s->current.state != CONNECTION_ALIVE);
   ink_assert(s->current.state != ACTIVE_TIMEOUT);
@@ -7840,13 +7839,13 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   // If we're going to a parent proxy, make sure we pass host and port
   // in the URL even if we didn't get them (e.g. transparent proxy)
   if (s->current.request_to == PARENT_PROXY) {
-    if (!outgoing_request->is_target_in_url() && s->parent_result.rec->parent_is_proxy) {
+    if (!outgoing_request->is_target_in_url() && s->parent_result.parent_is_proxy()) {
       DebugTxn("http_trans", "[build_request] adding target to URL for parent proxy");
 
       // No worry about HTTP/0.9 because we reject forward proxy requests that
       // don't have a host anywhere.
       outgoing_request->set_url_target_from_host_field();
-    } else if (s->current.request_to == PARENT_PROXY && !s->parent_result.rec->parent_is_proxy &&
+    } else if (s->current.request_to == PARENT_PROXY && !s->parent_result.parent_is_proxy() &&
                outgoing_request->is_target_in_url()) {
       // If the parent is an origin server remove the hostname from the url.
       DebugTxn("http_trans", "[build_request] removing target from URL for a parent origin.");

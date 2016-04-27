@@ -236,7 +236,7 @@ ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, Parent
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     return;
   }
 
@@ -312,7 +312,7 @@ ParentConsistentHash::markParentUp(ParentResult *result)
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     ink_assert(0);
     return;
   }
