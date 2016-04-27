@@ -35,6 +35,7 @@ traffic_top_SOURCES = traffic_top.cc
 
 traffic_top_LDADD = \
   $(top_builddir)/mgmt/api/libtsmgmt.la \
+  $(top_builddir)/lib/ts/libtsutil.la \
   @CURL_LIBS@ @CURSES_LIB@
 
 endif
