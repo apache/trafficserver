@@ -31,10 +31,6 @@
 #include "HTTP.h"
 #include "HttpTransact.h"
 
-#define PARENT_RegisterConfigUpdateFunc REC_RegisterConfigUpdateFunc
-#define PARENT_ReadConfigInteger REC_ReadConfigInteger
-#define PARENT_ReadConfigStringAlloc REC_ReadConfigStringAlloc
-
 #define MAX_SIMPLE_RETRIES 5
 #define MAX_UNAVAILABLE_SERVER_RETRIES 5
 
@@ -74,19 +70,19 @@ ParentSelectionPolicy::ParentSelectionPolicy()
   int32_t dns_parent_only = 0;
 
   // Handle parent timeout
-  PARENT_ReadConfigInteger(retry_time, retry_var);
+  REC_ReadConfigInteger(retry_time, retry_var);
   ParentRetryTime = retry_time;
 
   // Handle parent enable
-  PARENT_ReadConfigInteger(enable, enable_var);
+  REC_ReadConfigInteger(enable, enable_var);
   ParentEnable = enable;
 
   // Handle the fail threshold
-  PARENT_ReadConfigInteger(fail_threshold, threshold_var);
+  REC_ReadConfigInteger(fail_threshold, threshold_var);
   FailThreshold = fail_threshold;
 
   // Handle dns parent only
-  PARENT_ReadConfigInteger(dns_parent_only, dns_parent_only_var);
+  REC_ReadConfigInteger(dns_parent_only, dns_parent_only_var);
   DNS_ParentOnly = dns_parent_only;
 }
 
@@ -95,7 +91,7 @@ ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_p
   char *default_val = NULL;
 
   // Handle default parent
-  PARENT_ReadConfigStringAlloc(default_val, default_var);
+  REC_ReadConfigStringAlloc(default_val, default_var);
   DefaultParent = createDefaultParent(default_val);
   ats_free(default_val);
 }
@@ -829,7 +825,7 @@ SocksServerConfig::reconfigure()
   ink_assert(params != NULL);
 
   // Handle default parent
-  PARENT_ReadConfigStringAlloc(default_val, "proxy.config.socks.default_servers");
+  REC_ReadConfigStringAlloc(default_val, "proxy.config.socks.default_servers");
   params->DefaultParent = createDefaultParent(default_val);
   ats_free(default_val);
 
@@ -839,7 +835,7 @@ SocksServerConfig::reconfigure()
     setup_socks_servers(params->parent_table->ipMatch->data_array, params->parent_table->ipMatch->array_len);
 
   // Handle parent timeout
-  PARENT_ReadConfigInteger(retry_time, "proxy.config.socks.server_retry_time");
+  REC_ReadConfigInteger(retry_time, "proxy.config.socks.server_retry_time");
   params->policy.ParentRetryTime = retry_time;
 
   // Handle parent enable
@@ -847,7 +843,7 @@ SocksServerConfig::reconfigure()
   params->policy.ParentEnable = 1;
 
   // Handle the fail threshold
-  PARENT_ReadConfigInteger(fail_threshold, "proxy.config.socks.server_fail_threshold");
+  REC_ReadConfigInteger(fail_threshold, "proxy.config.socks.server_fail_threshold");
   params->policy.FailThreshold = fail_threshold;
 
   // Handle dns parent only
