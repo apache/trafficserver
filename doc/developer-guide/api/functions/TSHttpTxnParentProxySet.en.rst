@@ -28,7 +28,7 @@ Synopsis
 
 `#include <ts/ts.h>`
 
-.. function:: void TSHttpTxnParentProxySet(TSHttpTxn txnp, char * hostname, int port)
+.. function:: void TSHttpTxnParentProxySet(TSHttpTxn txnp, const char * hostname, int port)
 
 Description
 ===========
