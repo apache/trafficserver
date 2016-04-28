@@ -238,16 +238,32 @@ public:
   {
     LRUHash hash;
     LRUMap::iterator map_it;
+    char *url = NULL;
     int url_len = 0;
-    char *url = TSHttpTxnEffectiveUrlStringGet(txnp, &url_len);
     bool ret = false;
+    TSMBuffer request;
+    TSMLoc req_hdr;
+
+    if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &request, &req_hdr)) {
+      TSMLoc c_url = TS_NULL_MLOC;
+
+      // Get the cache key URL (for now), since this has better lookup behavior when using
+      // e.g. the cachekey plugin.
+      if (TS_SUCCESS == TSUrlCreate(request, &c_url)) {
+        if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(txnp, request, c_url)) {
+          url = TSUrlStringGet(request, c_url, &url_len);
+          TSHandleMLocRelease(request, TS_NULL_MLOC, c_url);
+        }
+      }
+      TSHandleMLocRelease(request, TS_NULL_MLOC, req_hdr);
+    }
 
     // Generally shouldn't happen ...
     if (!url) {
       return false;
     }
 
-    TSDebug(PLUGIN_NAME, "LRUPolicy::doPromote(%.*s ...)", url_len > 30 ? 30 : url_len, url);
+    TSDebug(PLUGIN_NAME, "LRUPolicy::doPromote(%.*s%s)", url_len > 100 ? 100 : url_len, url, url_len > 100 ? "..." : "");
     hash.init(url, url_len);
     TSfree(url);
 
