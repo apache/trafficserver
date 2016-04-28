@@ -42,6 +42,7 @@
 #define MAGIC_DEAD 0xdeadbeef
 
 #define SYNSERVER_LISTEN_PORT 3300
+#define SYNSERVER_DUMMY_PORT -1
 
 #define PROXY_CONFIG_NAME_HTTP_PORT "proxy.config.http.server_port"
 #define PROXY_HTTP_DEFAULT_PORT 8080
@@ -762,6 +763,11 @@ synclient_txn_main_handler(TSCont contp, TSEvent event, void *data)
 SocketServer *
 synserver_create(int port)
 {
+  if (port != SYNSERVER_DUMMY_PORT) {
+    TSAssert(port > 0);
+    TSAssert(port < INT16_MAX);
+  }
+
   SocketServer *s = (SocketServer *)TSmalloc(sizeof(SocketServer));
   s->magic = MAGIC_ALIVE;
   s->accept_port = port;
@@ -775,7 +781,15 @@ static int
 synserver_start(SocketServer *s)
 {
   TSAssert(s->magic == MAGIC_ALIVE);
-  s->accept_action = TSNetAccept(s->accept_cont, s->accept_port, -1, 0);
+  TSAssert(s->accept_action == NULL);
+
+  if (s->accept_port != SYNSERVER_DUMMY_PORT) {
+    TSAssert(s->accept_port > 0);
+    TSAssert(s->accept_port < INT16_MAX);
+
+    s->accept_action = TSNetAccept(s->accept_cont, s->accept_port, AF_INET, 0);
+  }
+
   return 1;
 }
 
@@ -795,17 +809,21 @@ synserver_stop(SocketServer *s)
 static int
 synserver_delete(SocketServer *s)
 {
-  TSAssert(s->magic == MAGIC_ALIVE);
-  synserver_stop(s);
+  if (s != NULL) {
+    TSAssert(s->magic == MAGIC_ALIVE);
+    synserver_stop(s);
 
-  if (s->accept_cont) {
-    TSContDestroy(s->accept_cont);
-    s->accept_cont = NULL;
-    TSDebug(SDBG_TAG, "destroyed accept cont");
+    if (s->accept_cont) {
+      TSContDestroy(s->accept_cont);
+      s->accept_cont = NULL;
+      TSDebug(SDBG_TAG, "destroyed accept cont");
+    }
+
+    s->magic = MAGIC_DEAD;
+    TSfree(s);
+    TSDebug(SDBG_TAG, "deleted server");
   }
-  s->magic = MAGIC_DEAD;
-  TSfree(s);
-  TSDebug(SDBG_TAG, "deleted server");
+
   return 1;
 }
 
