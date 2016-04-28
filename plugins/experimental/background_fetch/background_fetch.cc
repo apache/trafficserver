@@ -219,9 +219,11 @@ private:
 bool
 BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 {
+  struct sockaddr const *ip = TSHttpTxnClientAddrGet(txnp);
+  bool ret = false;
+
   TSAssert(TS_NULL_MLOC == hdr_loc);
   TSAssert(TS_NULL_MLOC == url_loc);
-  struct sockaddr const *ip = TSHttpTxnClientAddrGet(txnp);
 
   if (ip) {
     if (ip->sa_family == AF_INET) {
@@ -238,39 +240,51 @@ BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 
   hdr_loc = TSHttpHdrCreate(mbuf);
   if (TS_SUCCESS == TSHttpHdrCopy(mbuf, hdr_loc, request, req_hdr)) {
-    TSMLoc purl;
-    int len;
+    TSMLoc p_url;
 
     // Now copy the pristine request URL into our MBuf
-    if ((TS_SUCCESS == TSHttpTxnPristineUrlGet(txnp, &request, &purl)) &&
-        (TS_SUCCESS == TSUrlClone(mbuf, request, purl, &url_loc))) {
-      char *url = TSUrlStringGet(mbuf, url_loc, &len);
+    if (TS_SUCCESS == TSHttpTxnPristineUrlGet(txnp, &request, &p_url)) {
+      if (TS_SUCCESS == TSUrlClone(mbuf, request, p_url, &url_loc)) {
+        TSMLoc c_url = TS_NULL_MLOC;
+        int len;
+        char *url = NULL;
 
-      _url.append(url, len); // Save away the URL for later use when acquiring lock
-
-      TSfree(static_cast<void *>(url));
-      TSHandleMLocRelease(request, TS_NULL_MLOC, purl);
-
-      if (TS_SUCCESS == TSHttpHdrUrlSet(mbuf, hdr_loc, url_loc)) {
-        // Make sure we have the correct Host: header for this request.
-        const char *hostp = TSUrlHostGet(mbuf, url_loc, &len);
-
-        if (set_header(mbuf, hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, hostp, len)) {
-          TSDebug(PLUGIN_NAME, "Set header Host: %.*s", len, hostp);
+        // Get the cache key URL (for now), since this has better lookup behavior when using
+        // e.g. the cachekey plugin.
+        if (TS_SUCCESS == TSUrlCreate(request, &c_url)) {
+          if (TS_SUCCESS == TSHttpTxnCacheLookupUrlGet(txnp, request, c_url)) {
+            url = TSUrlStringGet(request, c_url, &len);
+            TSHandleMLocRelease(request, TS_NULL_MLOC, c_url);
+            TSDebug(PLUGIN_NAME, "Cache URL is %.*s", len, url);
+          }
         }
 
-        // Next, remove any Range: headers from our request.
-        if (remove_header(mbuf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE) > 0) {
-          TSDebug(PLUGIN_NAME, "Removed the Range: header from request");
-        }
+        if (url) {
+          _url.assign(url, len); // Save away the cache URL for later use when acquiring lock
+          TSfree(static_cast<void *>(url));
 
-        return true;
+          if (TS_SUCCESS == TSHttpHdrUrlSet(mbuf, hdr_loc, url_loc)) {
+            // Make sure we have the correct Host: header for this request.
+            const char *hostp = TSUrlHostGet(mbuf, url_loc, &len);
+
+            if (set_header(mbuf, hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST, hostp, len)) {
+              TSDebug(PLUGIN_NAME, "Set header Host: %.*s", len, hostp);
+            }
+
+            // Next, remove any Range: headers from our request.
+            if (remove_header(mbuf, hdr_loc, TS_MIME_FIELD_RANGE, TS_MIME_LEN_RANGE) > 0) {
+              TSDebug(PLUGIN_NAME, "Removed the Range: header from request");
+            }
+            // Everything went as planned, so we can return true
+            ret = true;
+          }
+        }
       }
+      TSHandleMLocRelease(request, TS_NULL_MLOC, p_url);
     }
   }
 
-  // Something failed.
-  return false;
+  return ret;
 }
 
 static int cont_bg_fetch(TSCont contp, TSEvent event, void *edata);
@@ -362,7 +376,7 @@ cont_bg_fetch(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
         TSError("[%s] Unknown address family %d", PLUGIN_NAME, sockaddress->sa_family);
         break;
       }
-      TSDebug(PLUGIN_NAME, "Starting bg fetch on: %s", data->getUrl());
+      TSDebug(PLUGIN_NAME, "Starting background fetch, replaying:");
       dump_headers(data->mbuf, data->hdr_loc);
     }
 
