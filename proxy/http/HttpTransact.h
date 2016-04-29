@@ -754,13 +754,12 @@ public:
     bool trust_response_cl;
     ResponseError_t response_error;
     bool extension_method;
-    bool request_body_start;
 
     _HeaderInfo()
       : client_request(), client_response(), server_request(), server_response(), transform_response(), cache_response(),
         request_content_length(HTTP_UNDEFINED_CL), response_content_length(HTTP_UNDEFINED_CL),
         transform_request_cl(HTTP_UNDEFINED_CL), transform_response_cl(HTTP_UNDEFINED_CL), client_req_is_server_style(false),
-        trust_response_cl(false), response_error(NO_RESPONSE_HEADER_ERROR), extension_method(false), request_body_start(false)
+        trust_response_cl(false), response_error(NO_RESPONSE_HEADER_ERROR), extension_method(false)
     {
     }
   } HeaderInfo;
