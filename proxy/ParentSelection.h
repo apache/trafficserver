@@ -159,8 +159,8 @@ ParentRecord *const extApiRecord = (ParentRecord *)0xeeeeffff;
 
 struct ParentResult {
   ParentResult()
-    : r(PARENT_UNDEFINED), hostname(NULL), port(0), retry(false), line_number(0), rec(NULL), last_parent(0),
-      start_parent(0), wrap_around(false), last_lookup(0)
+    : r(PARENT_UNDEFINED), hostname(NULL), port(0), retry(false), line_number(0), rec(NULL), last_parent(0), start_parent(0),
+      wrap_around(false), last_lookup(0)
   {
   }
 

@@ -192,8 +192,7 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
 {
   P_table *tablePtr = parent_table;
 
-  Debug("parent_select", "ParentConfigParams::nextParent(): parent_table: %p, result->rec: %p",
-      parent_table, result->rec);
+  Debug("parent_select", "ParentConfigParams::nextParent(): parent_table: %p, result->rec: %p", parent_table, result->rec);
 
   //  Make sure that we are being called back with a
   //   result structure with a parent
@@ -209,8 +208,7 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
     result->r = PARENT_FAIL;
     return;
   }
-  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p",
-      result->r, tablePtr);
+  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->r, tablePtr);
 
   // Find the next parent in the array
   Debug("parent_select", "Calling selectParent() from nextParent");
