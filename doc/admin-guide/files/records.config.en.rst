@@ -1315,6 +1315,8 @@ Origin Server Connect Attempts
    because the origin server was too slow in sending the response header.
 
 .. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
+   :reloadable:
+   :overridable:
 
    When enabled (1), Traffic Server bypasses the parent proxy for a request that is not cacheable.
 
