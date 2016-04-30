@@ -257,7 +257,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       DebugTxn("http_trans", "request not cacheable, so bypass parent");
       s->parent_result.result = PARENT_DIRECT;
     }
-  } else if (s->http_config_param->uncacheable_requests_bypass_parent && s->http_config_param->no_dns_forward_to_parent == 0 &&
+  } else if (s->txn_conf->uncacheable_requests_bypass_parent && s->http_config_param->no_dns_forward_to_parent == 0 &&
              !HttpTransact::is_request_cache_lookupable(s)) {
     // request not lookupable and cacheable, so bypass parent if the parent is not an origin server.
     // Note that the configuration of the proxy as well as the request
