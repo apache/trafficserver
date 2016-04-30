@@ -3611,7 +3611,7 @@ HttpTransact::handle_response_from_parent(State *s)
           next_lookup = find_server_and_update_current_info(s);
         }
       }
-    } else if (s->current.attempts < s->http_config_param->parent_connect_attempts) {
+    } else if (s->current.attempts < s->txn_conf->parent_connect_attempts) {
       s->current.attempts++;
 
       // Are we done with this particular parent?

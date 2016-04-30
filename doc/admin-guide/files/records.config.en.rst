@@ -1067,6 +1067,7 @@ Parent Proxy Configuration
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.total_connect_attempts INT 4
    :reloadable:
+   :overridable:
 
    The total number of connection attempts allowed to a parent cache before Traffic Server bypasses the parent or fails the request
    (depending on the ``go_direct`` option in the :file:`parent.config` file).
