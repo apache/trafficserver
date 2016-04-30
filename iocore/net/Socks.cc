@@ -87,7 +87,7 @@ SocksEntry::findServer()
 
 #ifdef SOCKS_WITH_TS
   if (nattempts == 1) {
-    ink_assert(server_result.r == PARENT_UNDEFINED);
+    ink_assert(server_result.result == PARENT_UNDEFINED);
     server_params->findParent(&req_data, &server_result);
   } else {
     socks_conf_struct *conf = netProcessor.socks_conf_stuff;
@@ -97,12 +97,12 @@ SocksEntry::findServer()
     server_params->markParentDown(&server_result);
 
     if (nattempts > conf->connection_attempts)
-      server_result.r = PARENT_FAIL;
+      server_result.result = PARENT_FAIL;
     else
       server_params->nextParent(&req_data, &server_result);
   }
 
-  switch (server_result.r) {
+  switch (server_result.result) {
   case PARENT_SPECIFIED:
     // Original was inet_addr, but should hostnames work?
     // ats_ip_pton only supports numeric (because other clients

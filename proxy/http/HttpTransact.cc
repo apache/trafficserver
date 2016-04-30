@@ -251,12 +251,12 @@ find_server_and_update_current_info(HttpTransact::State *s)
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
-    s->parent_result.r = PARENT_DIRECT;
+    s->parent_result.result = PARENT_DIRECT;
   } else if (s->method == HTTP_WKSIDX_CONNECT && s->http_config_param->disable_ssl_parenting) {
     s->parent_params->findParent(&s->request_data, &s->parent_result);
     if (s->parent_result.rec == NULL || s->parent_result.rec->parent_is_proxy) {
       DebugTxn("http_trans", "request not cacheable, so bypass parent");
-      s->parent_result.r = PARENT_DIRECT;
+      s->parent_result.result = PARENT_DIRECT;
     }
   } else if (s->http_config_param->uncacheable_requests_bypass_parent && s->http_config_param->no_dns_forward_to_parent == 0 &&
              !HttpTransact::is_request_cache_lookupable(s)) {
@@ -269,10 +269,10 @@ find_server_and_update_current_info(HttpTransact::State *s)
     s->parent_params->findParent(&s->request_data, &s->parent_result);
     if (s->parent_result.rec == NULL || s->parent_result.rec->parent_is_proxy) {
       DebugTxn("http_trans", "request not cacheable, so bypass parent");
-      s->parent_result.r = PARENT_DIRECT;
+      s->parent_result.result = PARENT_DIRECT;
     }
   } else {
-    switch (s->parent_result.r) {
+    switch (s->parent_result.result) {
     case PARENT_UNDEFINED:
       s->parent_params->findParent(&s->request_data, &s->parent_result);
       break;
@@ -283,9 +283,9 @@ find_server_and_update_current_info(HttpTransact::State *s)
       // We already have a parent that failed, if we are now told
       //  to go the origin server, we can only obey this if we
       //  dns'ed the origin server
-      if (s->parent_result.r == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 0) {
+      if (s->parent_result.result == PARENT_DIRECT && s->http_config_param->no_dns_forward_to_parent != 0) {
         ink_assert(!s->server_info.dst_addr.isValid());
-        s->parent_result.r = PARENT_FAIL;
+        s->parent_result.result = PARENT_FAIL;
       }
       break;
     case PARENT_FAIL:
@@ -296,7 +296,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
       //   3) the config permitted us to dns the origin server
       if (!s->parent_params->apiParentExists(&s->request_data) && s->parent_result.rec->bypass_ok() &&
           s->http_config_param->no_dns_forward_to_parent == 0 && s->parent_result.rec->parent_is_proxy) {
-        s->parent_result.r = PARENT_DIRECT;
+        s->parent_result.result = PARENT_DIRECT;
       }
       break;
     default:
@@ -310,7 +310,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
     }
   }
 
-  switch (s->parent_result.r) {
+  switch (s->parent_result.result) {
   case PARENT_SPECIFIED:
     s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
     update_current_info(&s->current, &s->parent_info, HttpTransact::PARENT_PROXY, (s->current.attempts)++);
@@ -457,7 +457,7 @@ how_to_open_connection(HttpTransact::State *s)
     break;
   }
 
-  if (s->method == HTTP_WKSIDX_CONNECT && s->parent_result.r != PARENT_SPECIFIED) {
+  if (s->method == HTTP_WKSIDX_CONNECT && s->parent_result.result != PARENT_SPECIFIED) {
     s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_RAW_OPEN;
   } else {
     s->cdn_saved_next_action = HttpTransact::SM_ACTION_ORIGIN_SERVER_OPEN;
@@ -2706,7 +2706,7 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
       }
       // a parent lookup could come back as PARENT_FAIL if in parent.config, go_direct == false and
       // there are no available parents (all down).
-      else if (s->current.request_to == HOST_NONE && s->parent_result.r == PARENT_FAIL) {
+      else if (s->current.request_to == HOST_NONE && s->parent_result.result == PARENT_FAIL) {
         if (is_server_negative_cached(s) && response_returnable == true && is_stale_cache_response_returnable(s) == true) {
           server_up = false;
           update_current_info(&s->current, NULL, UNDEFINED_LOOKUP, 0);
@@ -3153,7 +3153,7 @@ HttpTransact::HandleCacheOpenReadMiss(State *s)
     find_server_and_update_current_info(s);
     // a parent lookup could come back as PARENT_FAIL if in parent.config go_direct == false and
     // there are no available parents (all down).
-    if (s->parent_result.r == PARENT_FAIL) {
+    if (s->parent_result.result == PARENT_FAIL) {
       handle_parent_died(s);
       return;
     }
@@ -3583,7 +3583,7 @@ HttpTransact::handle_response_from_parent(State *s)
     // If the request is not retryable, just give up!
     if (!is_request_retryable(s)) {
       s->parent_params->markParentDown(&s->parent_result);
-      s->parent_result.r = PARENT_FAIL;
+      s->parent_result.result = PARENT_FAIL;
       handle_parent_died(s);
       return;
     }
@@ -3639,7 +3639,7 @@ HttpTransact::handle_response_from_parent(State *s)
       //   appropriate
       DebugTxn("http_trans", "[handle_response_from_parent] Error. No more retries.");
       s->parent_params->markParentDown(&s->parent_result);
-      s->parent_result.r = PARENT_FAIL;
+      s->parent_result.result = PARENT_FAIL;
       next_lookup = find_server_and_update_current_info(s);
     }
 
@@ -7601,7 +7601,7 @@ HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr
 void
 HttpTransact::handle_parent_died(State *s)
 {
-  ink_assert(s->parent_result.r == PARENT_FAIL);
+  ink_assert(s->parent_result.result == PARENT_FAIL);
 
   build_error_response(s, HTTP_STATUS_BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect", NULL);
   TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
