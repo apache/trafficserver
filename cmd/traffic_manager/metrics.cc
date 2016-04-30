@@ -336,7 +336,7 @@ metrics_binding_initialize(BindingInstance &binding)
   binding.bind_function("metrics.cluster.sum", metrics_cluster_sum);
 
   binding.bind_constant("metrics.now.msec", timestamp_now_msec());
-  binding.bind_constant("metrics.update.pass", int64_t(0));
+  binding.bind_constant("metrics.update.pass", lua_Integer(0));
 
   // Stash a backpointer to the evaluators.
   binding.attach_ptr("evaluators", new EvaluatorList());
