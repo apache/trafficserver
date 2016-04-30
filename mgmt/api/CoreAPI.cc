@@ -142,6 +142,38 @@ DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
 /***************************************************************************
  * Control Operations
  ***************************************************************************/
+
+// bool ProxyShutdown()
+//
+//  Attempts to turn the proxy off.  Returns
+//    true if the proxy is off when the call returns
+//    and false if it is still on
+//
+static bool
+ProxyShutdown()
+{
+  int i = 0;
+
+  // Check to make sure that we are not already down
+  if (!lmgmt->processRunning()) {
+    return true;
+  }
+
+  lmgmt->processShutdown(false /* only shut down the proxy*/);
+
+  // Wait for awhile for shtudown to happen
+  do {
+    mgmt_sleep_sec(1);
+    i++;
+  } while (i < 10 && lmgmt->processRunning());
+
+  // See if we succeeded
+  if (lmgmt->processRunning()) {
+    return false;
+  } else {
+    return true;
+  }
+}
 /*-------------------------------------------------------------------------
  * ProxyStateGet
  *-------------------------------------------------------------------------
@@ -161,7 +193,7 @@ ProxyStateGet()
  * ProxyStateSet
  *-------------------------------------------------------------------------
  * If state == TS_PROXY_ON, will turn on TS (unless it's already running).
- * If steat == TS_PROXY_OFF, will turn off TS (unless it's already off).
+ * If state == TS_PROXY_OFF, will turn off TS (unless it's already off).
  * tsArgs  - (optional) a string with space delimited options that user
  *            wants to start traffic Server with
  */

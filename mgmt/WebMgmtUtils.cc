@@ -1011,38 +1011,6 @@ substituteForHTMLChars(const char *buffer)
   return safeBuf;
 }
 
-// bool ProxyShutdown()
-//
-//  Attempts to turn the proxy off.  Returns
-//    true if the proxy is off when the call returns
-//    and false if it is still on
-//
-bool
-ProxyShutdown()
-{
-  int i = 0;
-
-  // Check to make sure that we are not already down
-  if (!lmgmt->processRunning()) {
-    return true;
-  }
-  // Send the shutdown event
-  lmgmt->signalEvent(MGMT_EVENT_SHUTDOWN, "shutdown");
-
-  // Wait for awhile for shtudown to happen
-  do {
-    mgmt_sleep_sec(1);
-    i++;
-  } while (i < 10 && lmgmt->processRunning());
-
-  // See if we succeeded
-  if (lmgmt->processRunning()) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
 //
 //
 //  Sets the LocalManager variable:  proxy.node.hostname
