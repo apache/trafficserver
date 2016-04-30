@@ -98,8 +98,6 @@ char *substituteForHTMLChars(const char *buffer);
 InkHashTable *processFormSubmission(char *submission);
 InkHashTable *processFormSubmission_noSubstitute(char *submission);
 
-// Shutdown the proxy
-bool ProxyShutdown();
 int setHostnameVar();
 void appendDefaultDomain(char *hostname, int bufLength);
 
