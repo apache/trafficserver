@@ -1994,6 +1994,7 @@ AC_CONFIG_FILES([
   plugins/experimental/mysql_remap/Makefile
   plugins/experimental/regex_revalidate/Makefile
   plugins/experimental/remap_stats/Makefile
+  plugins/experimental/remap_purge/Makefile
   plugins/experimental/s3_auth/Makefile
   plugins/experimental/ssl_cert_loader/Makefile
   plugins/experimental/sslheaders/Makefile

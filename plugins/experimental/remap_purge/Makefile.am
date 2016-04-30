@@ -14,53 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
- acme \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- cache_promote \
- cache_range_requests \
- cachekey \
- collapsed_connection \
- collapsed_forwarding \
- custom_redirect \
- epic \
- escalate \
- esi \
- generator \
- geoip_acl \
- header_normalize \
- hipes \
- inliner \
- memcache \
- memcached_remap \
- metalink \
- mp4 \
- multiplexer \
- regex_revalidate \
- remap_stats \
- remap_purge \
- s3_auth \
- ssl_cert_loader \
- sslheaders \
- stale_while_revalidate \
- stream_editor \
- ts_lua \
- url_sig \
- xdebug
+include $(top_srcdir)/build/plugins.mk
 
-if ENABLE_CPPAPI
-if BUILD_WEBP_TRANSFORM_PLUGIN
- SUBDIRS += webp_transform
-endif
-endif
-
-if HAS_MYSQL
-  SUBDIRS += mysql_remap
-endif
-
-if HAS_KYOTOCABINET
-  SUBDIRS += cache_key_genid
-endif
+pkglib_LTLIBRARIES = remap_purge.la
+remap_purge_la_SOURCES = remap_purge.c
+remap_purge_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
