@@ -7971,6 +7971,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT:
     ret = &overridableHttpConfig->uncacheable_requests_bypass_parent;
     break;
+  case TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->parent_connect_attempts;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8610,6 +8614,11 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       if (!strncmp(name, "proxy.config.http.background_fill_completed_threshold", length)) {
         typ = TS_RECORDDATATYPE_FLOAT;
         cnf = TS_CONFIG_HTTP_BACKGROUND_FILL_COMPLETED_THRESHOLD;
+      }
+      break;
+    case 's':
+      if (!strncmp(name, "proxy.config.http.parent_proxy.total_connect_attempts", length)) {
+        cnf = TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS;
       }
       break;
     }

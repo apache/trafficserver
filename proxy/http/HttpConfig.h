@@ -433,6 +433,7 @@ struct OverridableHttpConfigParams {
       connect_attempts_rr_retries(3),
       connect_attempts_timeout(30),
       post_connect_attempts_timeout(1800),
+      parent_connect_attempts(4),
       down_server_timeout(300),
       client_abort_threshold(10),
       freshness_fuzz_time(240),
@@ -616,6 +617,7 @@ struct OverridableHttpConfigParams {
   MgmtInt connect_attempts_rr_retries;
   MgmtInt connect_attempts_timeout;
   MgmtInt post_connect_attempts_timeout;
+  MgmtInt parent_connect_attempts;
 
   MgmtInt down_server_timeout;
   MgmtInt client_abort_threshold;
@@ -742,7 +744,6 @@ public:
   ////////////////////////////////////
   // origin server connect attempts //
   ////////////////////////////////////
-  MgmtInt parent_connect_attempts;
   MgmtInt per_parent_connect_attempts;
   MgmtInt parent_connect_timeout;
 
@@ -942,7 +943,6 @@ inline HttpConfigParams::HttpConfigParams()
     session_auth_cache_keep_alive_enabled(1),
     transaction_active_timeout_in(900),
     accept_no_activity_timeout(120),
-    parent_connect_attempts(4),
     per_parent_connect_attempts(2),
     parent_connect_timeout(30),
     anonymize_other_header_list(NULL),
