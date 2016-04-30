@@ -123,12 +123,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
     return;
   }
   // Initialize the result structure
-  result->rec = NULL;
-  result->epoch = tablePtr;
-  result->line_number = 0xffffffff;
-  result->wrap_around = false;
-  result->start_parent = 0;
-  result->last_parent = 0;
+  result->reset();
 
   // Check to see if the parent was set through the
   //   api

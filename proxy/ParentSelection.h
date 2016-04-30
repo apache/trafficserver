@@ -168,26 +168,20 @@ public:
 ParentRecord *const extApiRecord = (ParentRecord *)0xeeeeffff;
 
 struct ParentResult {
-  ParentResult()
-    : result(PARENT_UNDEFINED),
-      hostname(NULL),
-      port(0),
-      retry(false),
-      line_number(0),
-      epoch(NULL),
-      rec(NULL),
-      last_parent(0),
-      start_parent(0),
-      wrap_around(false),
-      last_lookup(0)
-  {
-  }
-
+  ParentResult() { reset(); }
   // For outside consumption
   ParentResultType result;
   const char *hostname;
   int port;
   bool retry;
+
+  void
+  reset()
+  {
+    ink_zero(*this);
+    line_number = -1;
+    result = PARENT_UNDEFINED;
+  }
 
   // Internal use only
   //   Not to be modified by HTTP
