@@ -7968,6 +7968,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->websocket_active_timeout;
     break;
+  case TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT:
+    ret = &overridableHttpConfig->uncacheable_requests_bypass_parent;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8591,6 +8594,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 't':
       if (!strncmp(name, "proxy.config.http.keep_alive_no_activity_timeout_out", length))
         cnf = TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT;
+      else if (!strncmp(name, "proxy.config.http.uncacheable_requests_bypass_parent", length))
+        cnf = TS_CONFIG_HTTP_UNCACHEABLE_REQUESTS_BYPASS_PARENT;
       break;
     }
     break;

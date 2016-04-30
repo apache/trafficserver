@@ -371,6 +371,7 @@ struct OverridableHttpConfigParams {
       server_session_sharing_match(TS_SERVER_SESSION_SHARING_MATCH_BOTH),
       auth_server_session_private(1),
       fwd_proxy_auth_to_parent(0),
+      uncacheable_requests_bypass_parent(1),
       insert_age_in_response(1),
       anonymize_remove_from(0),
       anonymize_remove_referer(0),
@@ -489,6 +490,7 @@ struct OverridableHttpConfigParams {
   //  MgmtByte share_server_sessions;
   MgmtByte auth_server_session_private;
   MgmtByte fwd_proxy_auth_to_parent;
+  MgmtByte uncacheable_requests_bypass_parent;
 
   MgmtByte insert_age_in_response;
 
@@ -714,7 +716,6 @@ public:
 
   MgmtByte enable_url_expandomatic;
   MgmtByte no_dns_forward_to_parent;
-  MgmtByte uncacheable_requests_bypass_parent;
   MgmtByte no_origin_server_dns;
   MgmtByte use_client_target_addr;
   MgmtByte use_client_source_port;

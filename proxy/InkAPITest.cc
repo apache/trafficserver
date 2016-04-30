@@ -7353,6 +7353,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.origin_max_connections_queue",
   "proxy.config.websocket.no_activity_timeout",
   "proxy.config.websocket.active_timeout",
+  "proxy.config.http.uncacheable_requests_bypass_parent",
 };
 
 REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
