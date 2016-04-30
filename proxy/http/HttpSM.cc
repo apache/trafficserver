@@ -7647,7 +7647,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   // we want to close the server session
   // will do that in handle_api_return under the
   // HttpTransact::SM_ACTION_REDIRECT_READ state
-  t_state.parent_result.result = PARENT_UNDEFINED;
+  t_state.parent_result.reset();
   t_state.request_sent_time = 0;
   t_state.response_received_time = 0;
   t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
