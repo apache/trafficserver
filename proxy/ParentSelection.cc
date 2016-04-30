@@ -110,12 +110,12 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
   ParentRecord *rec;
 
   Debug("parent_select", "In ParentConfigParams::findParent(): parent_table: %p.", parent_table);
-  ink_assert(result->r == PARENT_UNDEFINED);
+  ink_assert(result->result == PARENT_UNDEFINED);
 
   // Check to see if we are enabled
   Debug("parent_select", "policy.ParentEnable: %d", policy.ParentEnable);
   if (policy.ParentEnable == 0) {
-    result->r = PARENT_DIRECT;
+    result->result = PARENT_DIRECT;
     return;
   }
   // Initialize the result structure
@@ -128,7 +128,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
   // Check to see if the parent was set through the
   //   api
   if (apiParentExists(rdata)) {
-    result->r = PARENT_SPECIFIED;
+    result->result = PARENT_SPECIFIED;
     result->hostname = rdata->api_info->parent_proxy_name;
     result->port = rdata->api_info->parent_proxy_port;
     result->rec = extApiRecord;
@@ -148,7 +148,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
     if (defaultPtr != NULL) {
       rec = result->rec = defaultPtr;
     } else {
-      result->r = PARENT_DIRECT;
+      result->result = PARENT_DIRECT;
       Debug("parent_select", "Returning PARENT_DIRECT (no parents were found)");
       return;
     }
@@ -160,17 +160,17 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
 
   const char *host = rdata->get_host();
 
-  switch (result->r) {
+  switch (result->result) {
   case PARENT_UNDEFINED:
     Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_FAIL:
     Debug("parent_select", "PARENT_FAIL");
     break;
   case PARENT_DIRECT:
     Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_SPECIFIED:
     Debug("parent_select", "PARENT_SPECIFIED");
@@ -192,19 +192,19 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
 
   //  Make sure that we are being called back with a
   //   result structure with a parent
-  ink_assert(result->r == PARENT_SPECIFIED);
-  if (result->r != PARENT_SPECIFIED) {
-    result->r = PARENT_FAIL;
+  ink_assert(result->result == PARENT_SPECIFIED);
+  if (result->result != PARENT_SPECIFIED) {
+    result->result = PARENT_FAIL;
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
   if (result->rec == extApiRecord) {
-    Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->r]);
-    result->r = PARENT_FAIL;
+    Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->result]);
+    result->result = PARENT_FAIL;
     return;
   }
-  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->r, tablePtr);
+  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->result, tablePtr);
 
   // Find the next parent in the array
   Debug("parent_select", "Calling selectParent() from nextParent");
@@ -212,18 +212,18 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
 
   const char *host = rdata->get_host();
 
-  switch (result->r) {
+  switch (result->result) {
   case PARENT_UNDEFINED:
     Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_FAIL:
     Debug("parent_select", "PARENT_FAIL");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_DIRECT:
     Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_SPECIFIED:
     Debug("parent_select", "Retry result for %s was parent %s:%d", host, result->hostname, result->port);
@@ -242,7 +242,7 @@ ParentConfigParams::parentExists(HttpRequestData *rdata)
 
   findParent(rdata, &result);
 
-  if (result.r == PARENT_SPECIFIED) {
+  if (result.result == PARENT_SPECIFIED) {
     return true;
   } else {
     return false;
@@ -1308,7 +1308,7 @@ verify(ParentResult *r, ParentResultType e, const char *h, int p)
 {
   if (is_debug_tag_set("parent_select"))
     show_result(r);
-  return (r->r != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));
+  return (r->result != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));
 }
 
 // br creates an HttpRequestData object
@@ -1330,7 +1330,7 @@ br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
 void
 show_result(ParentResult *p)
 {
-  switch (p->r) {
+  switch (p->result) {
   case PARENT_UNDEFINED:
     printf("result is PARENT_UNDEFINED\n");
     break;
