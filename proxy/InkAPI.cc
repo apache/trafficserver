@@ -7648,9 +7648,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT:
     ret = &overridableHttpConfig->keep_alive_post_out;
     break;
-  case TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE:
-    ret = &overridableHttpConfig->auth_server_session_private;
-    break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
     ret = &overridableHttpConfig->server_session_sharing_match;
     break;
@@ -7904,12 +7901,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_SSL_HSTS_INCLUDE_SUBDOMAINS:
     ret = &overridableHttpConfig->proxy_response_hsts_include_subdomains;
     break;
-  case TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT:
-    ret = &overridableHttpConfig->websocket_active_timeout;
-    break;
-  case TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT:
-    ret = &overridableHttpConfig->websocket_inactive_timeout;
-    break;
   case TS_CONFIG_HTTP_CACHE_OPEN_READ_RETRY_TIME:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->cache_open_read_retry_time;
@@ -7918,20 +7909,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->max_cache_open_read_retries;
     break;
-  case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->max_cache_open_write_retries;
-    break;
-  case TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->cache_open_write_fail_action;
-    break;
   case TS_CONFIG_HTTP_CACHE_RANGE_WRITE:
     ret = &overridableHttpConfig->cache_range_write;
-    break;
-  case TS_CONFIG_HTTP_CACHE_GENERATION:
-    typ = OVERRIDABLE_TYPE_INT;
-    ret = &overridableHttpConfig->cache_generation_number;
     break;
   case TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED:
     ret = &overridableHttpConfig->post_check_content_length_enabled;
@@ -7940,24 +7919,37 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_STRING;
     ret = &overridableHttpConfig->global_user_agent_header;
     break;
+  case TS_CONFIG_HTTP_AUTH_SERVER_SESSION_PRIVATE:
+    ret = &overridableHttpConfig->auth_server_session_private;
+    break;
   case TS_CONFIG_HTTP_SLOW_LOG_THRESHOLD:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->slow_log_threshold;
+    break;
+  case TS_CONFIG_HTTP_CACHE_GENERATION:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->cache_generation_number;
     break;
   case TS_CONFIG_BODY_FACTORY_TEMPLATE_BASE:
     typ = OVERRIDABLE_TYPE_STRING;
     ret = &overridableHttpConfig->body_factory_template_base;
     break;
-  case TS_CONFIG_HTTP_ENABLE_REDIRECTION:
+  case TS_CONFIG_HTTP_CACHE_OPEN_WRITE_FAIL_ACTION:
     typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->cache_open_write_fail_action;
+    break;
+  case TS_CONFIG_HTTP_ENABLE_REDIRECTION:
     ret = &overridableHttpConfig->redirection_enabled;
     break;
   case TS_CONFIG_HTTP_NUMBER_OF_REDIRECTIONS:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->number_of_redirections;
     break;
-  case TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY:
+  case TS_CONFIG_HTTP_CACHE_MAX_OPEN_WRITE_RETRIES:
     typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->max_cache_open_write_retries;
+    break;
+  case TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY:
     ret = &overridableHttpConfig->redirect_use_orig_cache_key;
     break;
   case TS_CONFIG_HTTP_ATTACH_SERVER_SESSION_TO_CLIENT:
@@ -7967,6 +7959,14 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_ORIGIN_MAX_CONNECTIONS_QUEUE:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->origin_max_connections_queue;
+    break;
+  case TS_CONFIG_WEBSOCKET_NO_ACTIVITY_TIMEOUT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->websocket_inactive_timeout;
+    break;
+  case TS_CONFIG_WEBSOCKET_ACTIVE_TIMEOUT:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->websocket_active_timeout;
     break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
