@@ -213,9 +213,28 @@ traffic_ctl server
     :program:`traffic_manager` is also restarted.
 
 .. program:: traffic_ctl server
+.. option:: start
+
+   Start :program:`traffic_server` if it is already running.
+
+.. program:: traffic_ctl server start
+.. option:: --clear-cache
+
+   Clear the disk cache upon startup.
+
+.. option:: --clear-hostdb
+
+   Clear the DNS resolver cache upon startup.
+
+.. program:: traffic_ctl server
 .. option:: status
 
    Show the current proxy server status, indicating if we're running or not.
+
+.. program:: traffic_ctl server
+.. option:: stop
+
+   Stop the running :program:`traffic_server` process.
 
 .. program:: traffic_ctl server
 .. option:: backtrace
