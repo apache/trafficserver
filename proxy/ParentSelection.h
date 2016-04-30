@@ -169,7 +169,7 @@ ParentRecord *const extApiRecord = (ParentRecord *)0xeeeeffff;
 
 struct ParentResult {
   ParentResult()
-    : r(PARENT_UNDEFINED),
+    : result(PARENT_UNDEFINED),
       hostname(NULL),
       port(0),
       retry(false),
@@ -184,7 +184,7 @@ struct ParentResult {
   }
 
   // For outside consumption
-  ParentResultType r;
+  ParentResultType result;
   const char *hostname;
   int port;
   bool retry;
