@@ -380,9 +380,9 @@ struct OverridableHttpConfigParams {
       transaction_no_activity_timeout_in(30), transaction_no_activity_timeout_out(30), transaction_active_timeout_out(0),
       websocket_active_timeout(3600), websocket_inactive_timeout(600), origin_max_connections(0), origin_max_connections_queue(0),
       attach_server_session_to_client(0), connect_attempts_max_retries(0), connect_attempts_max_retries_dead_server(3),
-      connect_attempts_rr_retries(3), connect_attempts_timeout(30), post_connect_attempts_timeout(1800), down_server_timeout(300),
-      client_abort_threshold(10), freshness_fuzz_time(240), freshness_fuzz_min_time(0), max_cache_open_read_retries(-1),
-      cache_open_read_retry_time(10), cache_generation_number(-1), max_cache_open_write_retries(1),
+      connect_attempts_rr_retries(3), connect_attempts_timeout(30), post_connect_attempts_timeout(1800), parent_connect_attempts(4),
+      down_server_timeout(300), client_abort_threshold(10), freshness_fuzz_time(240), freshness_fuzz_min_time(0),
+      max_cache_open_read_retries(-1), cache_open_read_retry_time(10), cache_generation_number(-1), max_cache_open_write_retries(1),
       background_fill_active_timeout(60), http_chunking_size(4096), flow_high_water_mark(0), flow_low_water_mark(0),
       default_buffer_size_index(8), default_buffer_water_mark(32768), slow_log_threshold(0),
 
@@ -544,6 +544,7 @@ struct OverridableHttpConfigParams {
   MgmtInt connect_attempts_rr_retries;
   MgmtInt connect_attempts_timeout;
   MgmtInt post_connect_attempts_timeout;
+  MgmtInt parent_connect_attempts;
 
   MgmtInt down_server_timeout;
   MgmtInt client_abort_threshold;
@@ -670,7 +671,6 @@ public:
   ////////////////////////////////////
   // origin server connect attempts //
   ////////////////////////////////////
-  MgmtInt parent_connect_attempts;
   MgmtInt per_parent_connect_attempts;
   MgmtInt parent_connect_timeout;
 
@@ -852,12 +852,11 @@ extern volatile int32_t icp_dynamic_enabled;
 /////////////////////////////////////////////////////////////
 inline HttpConfigParams::HttpConfigParams()
   : proxy_hostname(NULL), proxy_hostname_len(0), server_max_connections(0), origin_min_keep_alive_connections(0),
-    max_websocket_connections(-1), disable_ssl_parenting(0), enable_url_expandomatic(0),
-    no_dns_forward_to_parent(0), no_origin_server_dns(0), use_client_target_addr(0), use_client_source_port(0),
-    proxy_request_via_string(NULL), proxy_request_via_string_len(0), proxy_response_via_string(NULL),
-    proxy_response_via_string_len(0), url_expansions_string(NULL), url_expansions(NULL), num_url_expansions(0),
-    session_auth_cache_keep_alive_enabled(1), transaction_active_timeout_in(900), accept_no_activity_timeout(120),
-    parent_connect_attempts(4), per_parent_connect_attempts(2), parent_connect_timeout(30), anonymize_other_header_list(NULL),
+    max_websocket_connections(-1), disable_ssl_parenting(0), enable_url_expandomatic(0), no_dns_forward_to_parent(0),
+    no_origin_server_dns(0), use_client_target_addr(0), use_client_source_port(0), proxy_request_via_string(NULL),
+    proxy_request_via_string_len(0), proxy_response_via_string(NULL), proxy_response_via_string_len(0), url_expansions_string(NULL),
+    url_expansions(NULL), num_url_expansions(0), session_auth_cache_keep_alive_enabled(1), transaction_active_timeout_in(900),
+    accept_no_activity_timeout(120), per_parent_connect_attempts(2), parent_connect_timeout(30), anonymize_other_header_list(NULL),
     enable_http_stats(1), icp_enabled(0), stale_icp_enabled(0), cache_vary_default_text(NULL), cache_vary_default_images(NULL),
     cache_vary_default_other(NULL), cache_enable_default_vary_headers(0), cache_post_method(0), connect_ports_string(NULL),
     connect_ports(NULL), push_method_enabled(0), referer_filter_enabled(0), referer_format_redirect(0), strict_uri_parsing(0),
