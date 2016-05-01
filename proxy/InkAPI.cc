@@ -8845,6 +8845,25 @@ TSSslContextFindByAddr(struct sockaddr const *addr)
   return ret;
 }
 
+tsapi TSSslContext
+TSSslServerContextCreate()
+{
+  TSSslContext ret = NULL;
+  SSLConfigParams *config = SSLConfig::acquire();
+  if (config != NULL) {
+    ret = reinterpret_cast<TSSslContext>(SSLCreateServerContext(config));
+    SSLConfig::release(config);
+  }
+  return ret;
+}
+
+tsapi void
+TSSslContextDestroy(TSSslContext ctx)
+{
+  SSL_CTX *ssl_ctx = reinterpret_cast<SSL_CTX*>(ctx);
+  SSL_CTX_free(ssl_ctx);
+}
+
 tsapi int
 TSVConnIsSsl(TSVConn sslp)
 {
