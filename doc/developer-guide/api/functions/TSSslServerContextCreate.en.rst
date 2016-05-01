@@ -19,7 +19,9 @@
 .. default-domain:: c
 
 TSSslServerContextCreate
-**********************
+************************
+
+Traffic Server TLS server context creation.
 
 Synopsis
 ========
@@ -27,15 +29,29 @@ Synopsis
 `#include <ts/ts.h>`
 
 .. function:: TSSslContext TSSslServerContextCreate(void)
+.. function:: void TSSslContextDestroy(TSSslContext ctx)
 
 Description
 ===========
 
-Create a new server SSL context. It also populates cypher suite settings from records.config.
+:func:`TSSslServerContextCreate` creates a new TLS server context.
+The context is configured using the TLS settings specified in
+:file:`records.config`. :func:`TSSslServerContextCreate` returns
+``NULL`` on failure.
+
+:func:`TSSslServerContextDestroy` destroys a TLS context created
+by :func:`TSSslServerContextCreate`. If :arg:`ctx` is ``NULL``, no
+operation is performed.
 
 Type
 ====
 
 .. type:: TSSslContext
 
-Corresponds to the SSL_CTX * value in openssl.
+The SSL context object. This is an opaque type that can be cast to
+the underlying SSL library type (SSL_CTX * for the OpenSSL library).
+
+See also
+========
+
+:manpage:`TSAPI(3ts)`
