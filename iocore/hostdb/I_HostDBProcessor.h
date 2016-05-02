@@ -288,7 +288,7 @@ struct HostDBInfo {
       //  as to how far in the future we should tolerate bogus last
       //  failure times.  This sets the upper bound that we would ever
       //  consider a server down to 2*down_server_timeout
-      if (now + fail_window < last_failure) {
+      if ((unsigned int)(now + fail_window) < last_failure) {
         app.http_data.last_failure = 0;
         return false;
       }
