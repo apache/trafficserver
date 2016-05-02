@@ -1501,7 +1501,12 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     HostDBInfo *r = NULL;
     IpAddr tip; // temp storage if needed.
 
-    if (is_byname()) {
+    // If the DNS lookup failed (errors such as NXDOMAIN, SERVFAIL, etc.) but we have an old record
+    // which is okay with being served stale-- lets continue to serve the stale record as long as
+    // the record is willing to be served.
+    if (failed && old_r && old_r->serve_stale_but_revalidate()) {
+      r = old_r;
+    } else if (is_byname()) {
       if (first)
         ip_addr_set(tip, af, first);
       r = lookup_done(tip, md5.host_name, is_rr, ttl_seconds, failed ? 0 : &e->srv_hosts);
