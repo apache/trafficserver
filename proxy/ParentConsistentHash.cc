@@ -105,9 +105,9 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
   // Should only get into this state if we are supposed to go direct.
   if (parents[PRIMARY] == NULL && parents[SECONDARY] == NULL) {
     if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-      result->r = PARENT_DIRECT;
+      result->result = PARENT_DIRECT;
     } else {
-      result->r = PARENT_FAIL;
+      result->result = PARENT_FAIL;
     }
     result->hostname = NULL;
     result->port = 0;
@@ -156,7 +156,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
           result->last_parent = pRec->idx;
           result->last_lookup = last_lookup;
           result->retry = parentRetry;
-          result->r = PARENT_SPECIFIED;
+          result->result = PARENT_SPECIFIED;
           Debug("parent_select", "Down parent %s is now retryable, marked it available.", pRec->hostname);
           break;
         }
@@ -196,7 +196,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
 
   // use the available or marked for retry parent.
   if (pRec && (pRec->available || result->retry)) {
-    result->r = PARENT_SPECIFIED;
+    result->result = PARENT_SPECIFIED;
     result->hostname = pRec->hostname;
     result->port = pRec->port;
     result->last_parent = pRec->idx;
@@ -207,9 +207,9 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
     Debug("parent_select", "Chosen parent: %s.%d", result->hostname, result->port);
   } else {
     if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-      result->r = PARENT_DIRECT;
+      result->result = PARENT_DIRECT;
     } else {
-      result->r = PARENT_FAIL;
+      result->result = PARENT_FAIL;
     }
     result->hostname = NULL;
     result->port = 0;
@@ -230,13 +230,13 @@ ParentConsistentHash::markParentDown(const ParentSelectionPolicy *policy, Parent
 
   //  Make sure that we are being called back with with a
   //   result structure with a parent
-  ink_assert(result->r == PARENT_SPECIFIED);
-  if (result->r != PARENT_SPECIFIED) {
+  ink_assert(result->result == PARENT_SPECIFIED);
+  if (result->result != PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     return;
   }
 
@@ -306,13 +306,13 @@ ParentConsistentHash::markParentUp(ParentResult *result)
   //  Make sure that we are being called back with with a
   //   result structure with a parent that is being retried
   ink_release_assert(result->retry == true);
-  ink_assert(result->r == PARENT_SPECIFIED);
-  if (result->r != PARENT_SPECIFIED) {
+  ink_assert(result->result == PARENT_SPECIFIED);
+  if (result->result != PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     ink_assert(0);
     return;
   }

@@ -55,6 +55,39 @@
 
 #define UTDBG_TAG "sdk_ut"
 
+// Since there's no way to unregister global hooks, tests that register a hook
+// have to co-operate once they are complete by re-enabling and transactions
+// and getting out of the way.
+#define CHECK_SPURIOUS_EVENT(cont, event, edata)                     \
+  if (TSContDataGet(cont) == NULL) {                                 \
+    switch (event) {                                                 \
+    case TS_EVENT_IMMEDIATE:                                         \
+    case TS_EVENT_TIMEOUT:                                           \
+      return TS_EVENT_NONE;                                          \
+    case TS_EVENT_HTTP_SELECT_ALT:                                   \
+      return TS_EVENT_NONE;                                          \
+    case TS_EVENT_HTTP_READ_REQUEST_HDR:                             \
+    case TS_EVENT_HTTP_OS_DNS:                                       \
+    case TS_EVENT_HTTP_SEND_REQUEST_HDR:                             \
+    case TS_EVENT_HTTP_READ_CACHE_HDR:                               \
+    case TS_EVENT_HTTP_READ_RESPONSE_HDR:                            \
+    case TS_EVENT_HTTP_SEND_RESPONSE_HDR:                            \
+    case TS_EVENT_HTTP_REQUEST_TRANSFORM:                            \
+    case TS_EVENT_HTTP_RESPONSE_TRANSFORM:                           \
+    case TS_EVENT_HTTP_TXN_START:                                    \
+    case TS_EVENT_HTTP_TXN_CLOSE:                                    \
+    case TS_EVENT_HTTP_SSN_START:                                    \
+    case TS_EVENT_HTTP_SSN_CLOSE:                                    \
+    case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:                        \
+    case TS_EVENT_HTTP_PRE_REMAP:                                    \
+    case TS_EVENT_HTTP_POST_REMAP:                                   \
+      TSHttpTxnReenable((TSHttpTxn)(edata), TS_EVENT_HTTP_CONTINUE); \
+      return TS_EVENT_NONE;                                          \
+    default:                                                         \
+      break;                                                         \
+    }                                                                \
+  }
+
 /******************************************************************************/
 
 /* Use SDK_RPRINT to report failure or success for each test case */
@@ -2303,6 +2336,7 @@ mytest_handler(TSCont contp, TSEvent event, void *data)
       // transaction is over. clean up.
       synclient_txn_delete(test->browser);
       synserver_delete(test->os);
+      test->os = NULL;
 
       test->magic = MAGIC_DEAD;
       TSfree(test);
@@ -5804,6 +5838,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
       /* Don't need it as didn't initialize the server
          synserver_delete(data->os);
        */
+      data->os = NULL;
       data->magic = MAGIC_DEAD;
       TSfree(data);
       TSContDataSet(contp, NULL);
@@ -5871,8 +5906,11 @@ struct ParentTest {
 static int
 parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
 {
-  ParentTest *ptest = (ParentTest *)TSContDataGet(contp);
+  ParentTest *ptest = NULL;
   TSHttpTxn txnp = (TSHttpTxn)edata;
+
+  CHECK_SPURIOUS_EVENT(contp, event, edata);
+  ptest = (ParentTest *)TSContDataGet(contp);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -5914,11 +5952,13 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
       // Otherwise the test completed so clean up.
       RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", ptest->parent_proxy_routing_enable, REC_SOURCE_EXPLICIT);
 
-      ptest->magic = MAGIC_DEAD;
+      TSContDataSet(contp, NULL);
+
       synclient_txn_delete(ptest->browser);
       synserver_delete(ptest->os);
+      ptest->os = NULL;
+      ptest->magic = MAGIC_DEAD;
       TSfree(ptest);
-      TSContDataSet(contp, NULL);
     }
     break;
 
@@ -5942,12 +5982,6 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
 
 EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet)(RegressionTest *test, int level, int *pstatus)
 {
-  // Don't enable this test by default until it passes.
-  if (level < REGRESSION_TEST_FATAL) {
-    *pstatus = REGRESSION_TEST_NOT_RUN;
-    return;
-  }
-
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
   TSCont cont = TSContCreate(parent_proxy_handler, TSMutexCreate());
@@ -6017,20 +6051,10 @@ static int
 cache_hook_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = NULL;
-  CacheTestData *data = (CacheTestData *)TSContDataGet(contp);
+  CacheTestData *data = NULL;
 
-  if (data == NULL) {
-    switch (event) {
-    case TS_EVENT_IMMEDIATE:
-    case TS_EVENT_TIMEOUT:
-      break;
-    case TS_EVENT_HTTP_READ_CACHE_HDR:
-    default:
-      TSHttpTxnReenable((TSHttpTxn)edata, TS_EVENT_HTTP_CONTINUE);
-      break;
-    }
-    return 0;
-  }
+  CHECK_SPURIOUS_EVENT(contp, event, edata);
+  data = (CacheTestData *)TSContDataGet(contp);
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -6139,6 +6163,7 @@ cache_hook_handler(TSCont contp, TSEvent event, void *edata)
         data->first_time = false;
         /* Kill the origin server */
         synserver_delete(data->os);
+        data->os = NULL;
 
         /* Send another similar client request */
         synclient_txn_send_request(data->browser2, data->request);
@@ -6523,19 +6548,9 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = NULL;
   TransformTestData *data = NULL;
+
+  CHECK_SPURIOUS_EVENT(contp, event, edata);
   data = (TransformTestData *)TSContDataGet(contp);
-  if (data == NULL) {
-    switch (event) {
-    case TS_EVENT_IMMEDIATE:
-    case TS_EVENT_TIMEOUT:
-      break;
-    case TS_EVENT_HTTP_READ_RESPONSE_HDR:
-    default:
-      TSHttpTxnReenable((TSHttpTxn)edata, TS_EVENT_HTTP_CONTINUE);
-      break;
-    }
-    return 0;
-  }
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -6651,6 +6666,7 @@ transform_hook_handler(TSCont contp, TSEvent event, void *edata)
         return 0;
       }
       synserver_delete(data->os);
+      data->os = NULL;
       data->req_no++;
       TSfree(data->request1);
       TSfree(data->request2);
@@ -6823,20 +6839,8 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
   AltInfoTestData *data = NULL;
   TSHttpTxn txnp = NULL;
 
+  CHECK_SPURIOUS_EVENT(contp, event, edata);
   data = (AltInfoTestData *)TSContDataGet(contp);
-  if (data == NULL) {
-    switch (event) {
-    case TS_EVENT_IMMEDIATE:
-    case TS_EVENT_TIMEOUT:
-      break;
-    case TS_EVENT_HTTP_SELECT_ALT:
-      break;
-    default:
-      TSHttpTxnReenable((TSHttpTxn)edata, TS_EVENT_HTTP_CONTINUE);
-      break;
-    }
-    return 0;
-  }
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
@@ -6928,6 +6932,7 @@ altinfo_hook_handler(TSCont contp, TSEvent event, void *edata)
         data->first_time = false;
         /* Kill the origin server */
         synserver_delete(data->os);
+        data->os = NULL;
         // ink_release_assert(0);
         /* Send another similar client request */
         synclient_txn_send_request(data->browser3, data->request3);
@@ -7044,8 +7049,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpAltInfo)(RegressionTest *test, int /* atyp
 #define TEST_CASE_CONNECT_ID1 9  // TSHttpTxnIntercept
 #define TEST_CASE_CONNECT_ID2 10 // TSHttpTxnServerIntercept
 
-#define SYNSERVER_DUMMY_PORT -1
-
 typedef struct {
   RegressionTest *test;
   int *pstatus;
@@ -7061,8 +7064,11 @@ static int
 cont_test_handler(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpTxn txnp = (TSHttpTxn)edata;
-  ConnectTestData *data = (ConnectTestData *)TSContDataGet(contp);
+  ConnectTestData *data = NULL;
   int request_id = -1;
+
+  CHECK_SPURIOUS_EVENT(contp, event, edata);
+  data = (ConnectTestData *)TSContDataGet(contp);
 
   TSReleaseAssert(data->magic == MAGIC_ALIVE);
   TSReleaseAssert((data->test_case == TEST_CASE_CONNECT_ID1) || (data->test_case == TEST_CASE_CONNECT_ID2));
@@ -7139,12 +7145,10 @@ cont_test_handler(TSCont contp, TSEvent event, void *edata)
       // transaction is over. clean it up.
       synclient_txn_delete(data->browser);
       synserver_delete(data->os);
-
-      // As we registered to a global hook, we may be called back again.
-      // Do not destroy the continuation...
-      // data->magic = MAGIC_DEAD;
-      // TSfree(data);
-      // TSContDataSet(contp, NULL);
+      data->os = NULL;
+      data->magic = MAGIC_DEAD;
+      TSfree(data);
+      TSContDataSet(contp, NULL);
     }
     break;
 

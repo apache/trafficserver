@@ -7107,7 +7107,7 @@ HttpSM::set_next_state()
       call_transact_and_set_next_state(HttpTransact::HandleFiltering);
       break;
     } else if (t_state.http_config_param->use_client_target_addr == 2 && !t_state.url_remap_success &&
-               t_state.parent_result.r != PARENT_SPECIFIED && t_state.client_info.is_transparent &&
+               t_state.parent_result.result != PARENT_SPECIFIED && t_state.client_info.is_transparent &&
                t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT &&
                ats_is_ip(addr = t_state.state_machine->ua_session->get_netvc()->get_local_addr())) {
       /* If the connection is client side transparent and the URL
@@ -7135,7 +7135,7 @@ HttpSM::set_next_state()
       t_state.dns_info.os_addr_style = HttpTransact::DNSLookupInfo::OS_ADDR_TRY_CLIENT;
       call_transact_and_set_next_state(NULL);
       break;
-    } else if (t_state.parent_result.r == PARENT_UNDEFINED && t_state.dns_info.lookup_success) {
+    } else if (t_state.parent_result.result == PARENT_UNDEFINED && t_state.dns_info.lookup_success) {
       // Already set, and we don't have a parent proxy to lookup
       ink_assert(ats_is_ip(t_state.host_db_info.ip()));
       DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup, provided by plugin");
@@ -7647,7 +7647,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   // we want to close the server session
   // will do that in handle_api_return under the
   // HttpTransact::SM_ACTION_REDIRECT_READ state
-  t_state.parent_result.r = PARENT_UNDEFINED;
+  t_state.parent_result.reset();
   t_state.request_sent_time = 0;
   t_state.response_received_time = 0;
   t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;

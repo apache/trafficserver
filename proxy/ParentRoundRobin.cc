@@ -69,9 +69,9 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       ink_assert(result->rec->go_direct == true);
       // Could not find a parent
       if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-        result->r = PARENT_DIRECT;
+        result->result = PARENT_DIRECT;
       } else {
-        result->r = PARENT_FAIL;
+        result->result = PARENT_FAIL;
       }
 
       result->hostname = NULL;
@@ -112,9 +112,9 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       if (bypass_ok == true) {
         // Could not find a parent
         if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-          result->r = PARENT_DIRECT;
+          result->result = PARENT_DIRECT;
         } else {
-          result->r = PARENT_FAIL;
+          result->result = PARENT_FAIL;
         }
         result->hostname = NULL;
         result->port = 0;
@@ -153,7 +153,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     }
 
     if (parentUp == true) {
-      result->r = PARENT_SPECIFIED;
+      result->result = PARENT_SPECIFIED;
       result->hostname = result->rec->parents[cur_index].hostname;
       result->port = result->rec->parents[cur_index].port;
       result->last_parent = cur_index;
@@ -167,9 +167,9 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
   } while ((unsigned int)cur_index != result->start_parent);
 
   if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
-    result->r = PARENT_DIRECT;
+    result->result = PARENT_DIRECT;
   } else {
-    result->r = PARENT_FAIL;
+    result->result = PARENT_FAIL;
   }
 
   result->hostname = NULL;
@@ -192,13 +192,13 @@ ParentRoundRobin::markParentDown(const ParentSelectionPolicy *policy, ParentResu
   Debug("parent_select", "Starting ParentRoundRobin::markParentDown()");
   //  Make sure that we are being called back with with a
   //   result structure with a parent
-  ink_assert(result->r == PARENT_SPECIFIED);
-  if (result->r != PARENT_SPECIFIED) {
+  ink_assert(result->result == PARENT_SPECIFIED);
+  if (result->result != PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     return;
   }
 
@@ -251,13 +251,13 @@ ParentRoundRobin::markParentUp(ParentResult *result)
   //  Make sure that we are being called back with with a
   //   result structure with a parent that is being retried
   ink_release_assert(result->retry == true);
-  ink_assert(result->r == PARENT_SPECIFIED);
-  if (result->r != PARENT_SPECIFIED) {
+  ink_assert(result->result == PARENT_SPECIFIED);
+  if (result->result != PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     ink_assert(0);
     return;
   }
