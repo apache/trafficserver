@@ -802,6 +802,10 @@ of the object is completed::
 Fuzzy Revalidation
 ------------------
 
+.. note::
+
+    These options are deprecated as of v6.2.0.
+
 Traffic Server can be set to attempt to revalidate an object before it becomes
 stale in cache. :file:`records.config` contains the settings::
 
