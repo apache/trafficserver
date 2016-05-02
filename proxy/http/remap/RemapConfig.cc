@@ -670,7 +670,7 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
         }
         ret_flags |= REMAP_OPTFLG_INTERNAL;
       } else {
-	TSError("remap_check_option(): Option '%s' in remap configuration is not valid.\n",argv[i]);
+        TSError("remap_check_option(): Option '%s' in remap configuration is not valid.\n", argv[i]);
       }
 
       if ((findmode & ret_flags) && !argptr) {
