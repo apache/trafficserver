@@ -54,7 +54,7 @@ ProxyClientTransaction::new_transaction()
   } else {
     const char *protocol_str = this->get_protocol_string();
     // We don't set the plugin_tag for http, though in future we should probably log http as protocol
-    if (strncmp("http", protocol_str, 4)) {
+    if (strlen(protocol_str) != 4 || strncmp("http", protocol_str, 4)) {
       current_reader->plugin_tag = protocol_str;
       // Since there is no more plugin, there is no plugin id for http/2
       // We are copying along the plugin_tag as a standin for protocol name for logging
