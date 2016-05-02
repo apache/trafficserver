@@ -1859,6 +1859,7 @@ Heuristic Expiration
    higher than the value in this variable.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.time INT 240
+   :deprecated:
    :reloadable:
    :overridable:
 
@@ -1867,6 +1868,7 @@ Heuristic Expiration
    section on :ref:`fuzzy-revalidation` for more details.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.probability FLOAT 0.005
+   :deprecated:
    :reloadable:
    :overridable:
 
@@ -1874,6 +1876,7 @@ Heuristic Expiration
    specified in :ts:cv:`proxy.config.http.cache.fuzz.time`.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.fuzz.min_time INT 0
+   :deprecated:
    :reloadable:
    :overridable:
 
@@ -1886,6 +1889,14 @@ Heuristic Expiration
    ``fuzz.min_time`` and ``fuzz.time``). As the object gets closer to expiring,
    the window start becomes more likely. By default this setting is not enabled,
    but should be enabled any time you have objects with small TTLs.
+
+.. note::
+
+    These fuzzing options are marked as deprecated as of v6.2.0, and will be
+    removed for v7.0.0. Instead, we recommend looking at the new
+    :ts:cv:`proxy-config-http-cache-open-write-fail-action` configuration and
+    the features around thundering heard avoidance (see
+    :ref:`cache-basics` for details).
 
 Dynamic Content & Content Negotiation
 =====================================
