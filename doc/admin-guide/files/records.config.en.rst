@@ -1153,6 +1153,7 @@ HTTP Connection Timeouts
 
 .. ts:cv:: CONFIG proxy.config.http.transaction_active_timeout_in INT 900
    :reloadable:
+   :overridable:
 
    The maximum amount of time Traffic Server can remain connected to a client. If the transfer to the client is not complete before this
    timeout expires, then Traffic Server closes the connection.

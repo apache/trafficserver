@@ -916,6 +916,9 @@ HttpTransact::EndRemapRequest(State *s)
   s->server_info.is_transparent = s->state_machine->ua_session ? s->state_machine->ua_session->is_outbound_transparent() : false;
 
 done:
+  // We now set the active-timeout again, since it might have been changed as part of the remap rules.
+  s->state_machine->ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(s->txn_conf->transaction_active_timeout_in));
+
   if (is_debug_tag_set("http_chdr_describe") || is_debug_tag_set("http_trans") || is_debug_tag_set("url_rewrite")) {
     DebugTxn("http_trans", "After Remapping:");
     obj_describe(s->hdr_info.client_request.m_http, 1);
