@@ -267,7 +267,9 @@ private:
   uint32_t last_parent;
   uint32_t start_parent;
   bool wrap_around;
-  int last_lookup; // state for for consistent hash.
+  // state for consistent hash.
+  int last_lookup;
+  ATSConsistentHashIter chashIter[2];
 
   friend class ParentConsistentHash;
   friend class ParentRoundRobin;
