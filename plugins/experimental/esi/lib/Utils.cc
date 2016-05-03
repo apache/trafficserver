@@ -145,12 +145,12 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
   char separator_lookup[256] = {0};
   int i;
   for (i = 0; pair_separators[i]; ++i) {
-    separator_lookup[static_cast<unsigned int>(pair_separators[i])] = 1;
+    separator_lookup[static_cast<uint8_t>(pair_separators[i])] = 1;
   }
   Attribute attr;
   bool inside_quotes = false, end_of_attribute;
   bool escape_on = false;
-  for (i = 0; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<unsigned int>(data[i])])); ++i)
+  for (i = 0; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<uint8_t>(data[i])])); ++i)
     ;
   attr.name = data + i;
   attr.value = 0;
@@ -158,7 +158,7 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
     end_of_attribute = false;
     if (i == data_len) {
       end_of_attribute = true;
-    } else if (separator_lookup[static_cast<unsigned int>(data[i])] && !inside_quotes) {
+    } else if (separator_lookup[static_cast<uint8_t>(data[i])] && !inside_quotes) {
       end_of_attribute = true;
     } // else ignore separator when in quotes
     if (end_of_attribute) {
@@ -178,7 +178,7 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
           } // else ignore empty name/value
         }   // else ignore attribute with no value
       }     // else ignore variable with unterminated quotes
-      for (; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<unsigned int>(data[i])])); ++i)
+      for (; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<uint8_t>(data[i])])); ++i)
         ;
       attr.name = data + i;
       attr.value = 0;
