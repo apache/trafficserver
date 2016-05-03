@@ -7974,6 +7974,9 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->parent_connect_attempts;
+  case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->transaction_active_timeout_in;
     break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
@@ -8526,6 +8529,10 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
         cnf = TS_CONFIG_HTTP_CACHE_GUARANTEED_MIN_LIFETIME;
       else if (!strncmp(name, "proxy.config.http.cache.guaranteed_max_lifetime", length))
         cnf = TS_CONFIG_HTTP_CACHE_GUARANTEED_MAX_LIFETIME;
+      break;
+    case 'n':
+      if (!strncmp(name, "proxy.config.http.transaction_active_timeout_in", length))
+        cnf = TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN;
       break;
     case 't':
       if (!strncmp(name, "proxy.config.http.post_connect_attempts_timeout", length))

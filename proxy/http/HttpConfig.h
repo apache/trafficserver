@@ -423,6 +423,7 @@ struct OverridableHttpConfigParams {
       transaction_no_activity_timeout_in(30),
       transaction_no_activity_timeout_out(30),
       transaction_active_timeout_out(0),
+      transaction_active_timeout_in(900),
       websocket_active_timeout(3600),
       websocket_inactive_timeout(600),
       origin_max_connections(0),
@@ -602,6 +603,7 @@ struct OverridableHttpConfigParams {
   MgmtInt transaction_no_activity_timeout_in;
   MgmtInt transaction_no_activity_timeout_out;
   MgmtInt transaction_active_timeout_out;
+  MgmtInt transaction_active_timeout_in;
   MgmtInt websocket_active_timeout;
   MgmtInt websocket_inactive_timeout;
   MgmtInt origin_max_connections;
@@ -738,7 +740,6 @@ public:
   // connection variables. timeouts are in seconds //
   ///////////////////////////////////////////////////
   MgmtByte session_auth_cache_keep_alive_enabled;
-  MgmtInt transaction_active_timeout_in;
   MgmtInt accept_no_activity_timeout;
 
   ////////////////////////////////////
@@ -941,7 +942,6 @@ inline HttpConfigParams::HttpConfigParams()
     url_expansions(NULL),
     num_url_expansions(0),
     session_auth_cache_keep_alive_enabled(1),
-    transaction_active_timeout_in(900),
     accept_no_activity_timeout(120),
     per_parent_connect_attempts(2),
     parent_connect_timeout(30),

@@ -942,7 +942,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.websocket_active_timeout, "proxy.config.websocket.active_timeout");
   HttpEstablishStaticConfigLongLong(c.oride.websocket_inactive_timeout, "proxy.config.websocket.no_activity_timeout");
 
-  HttpEstablishStaticConfigLongLong(c.transaction_active_timeout_in, "proxy.config.http.transaction_active_timeout_in");
+  HttpEstablishStaticConfigLongLong(c.oride.transaction_active_timeout_in, "proxy.config.http.transaction_active_timeout_in");
   HttpEstablishStaticConfigLongLong(c.oride.transaction_active_timeout_out, "proxy.config.http.transaction_active_timeout_out");
   HttpEstablishStaticConfigLongLong(c.accept_no_activity_timeout, "proxy.config.http.accept_no_activity_timeout");
 
@@ -1216,7 +1216,7 @@ HttpConfig::reconfigure()
   params->oride.keep_alive_no_activity_timeout_out = m_master.oride.keep_alive_no_activity_timeout_out;
   params->oride.transaction_no_activity_timeout_in = m_master.oride.transaction_no_activity_timeout_in;
   params->oride.transaction_no_activity_timeout_out = m_master.oride.transaction_no_activity_timeout_out;
-  params->transaction_active_timeout_in = m_master.transaction_active_timeout_in;
+  params->oride.transaction_active_timeout_in = m_master.oride.transaction_active_timeout_in;
   params->oride.transaction_active_timeout_out = m_master.oride.transaction_active_timeout_out;
   params->oride.websocket_active_timeout = m_master.oride.websocket_active_timeout;
   params->oride.websocket_inactive_timeout = m_master.oride.websocket_inactive_timeout;
