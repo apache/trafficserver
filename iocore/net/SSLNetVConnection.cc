@@ -1041,6 +1041,11 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
       return SSL_WAIT_FOR_HOOK;
     }
   }
+  
+  // handle SNI Hooks after PreAccept Hooks
+  if (HANDSHAKE_HOOKS_DONE != sslHandshakeHookState && HANDSHAKE_HOOKS_PRE != sslHandshakeHookState) {
+    return SSL_WAIT_FOR_HOOK;
+  }
 
   // handle SNI Hooks after PreAccept Hooks
   if (HANDSHAKE_HOOKS_DONE != sslHandshakeHookState && HANDSHAKE_HOOKS_PRE != sslHandshakeHookState) {
