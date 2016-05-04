@@ -21,28 +21,20 @@
   limitations under the License.
  */
 
-#ifndef I_SessionAccept_H_
-#define I_SessionAccept_H_
-
 #include "I_Net.h"
 #include "I_VConnection.h"
+#include "../../proxy/IPAllow.h"
 
-class AclRecord;
-
-class SessionAccept : public Continuation
+const AclRecord *
+SessionAccept::testIpAllowPolicy(sockaddr const *client_ip)
 {
-public:
-  SessionAccept(ProxyMutex *amutex) : Continuation(amutex) { SET_HANDLER(&SessionAccept::mainEvent); }
-  ~SessionAccept() {}
-  virtual void accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
-
-  /* Returns NULL if the specified client_ip is not allowed by ip_allow
-   * Returns a pointer to the relevant IP policy for later processing otherwise */
-  static const AclRecord *
-  testIpAllowPolicy(sockaddr const *client_ip);
-
-private:
-  virtual int mainEvent(int event, void *netvc) = 0;
-};
-
-#endif /* I_SessionAccept_H_ */
+  IpAllow::scoped_config ipallow;
+  const AclRecord *acl_record = NULL;
+  if (ipallow) {
+    acl_record = ipallow->match(client_ip);
+    if (acl_record && acl_record->isEmpty()) {
+      acl_record = NULL;
+    }
+  }
+  return acl_record;
+}

@@ -33,20 +33,21 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   sockaddr const *client_ip = netvc->get_remote_addr();
   const AclRecord *acl_record = NULL;
   ip_port_text_buffer ipb;
-  IpAllow::scoped_config ipallow;
 
   // The backdoor port is now only bound to "localhost", so no
   // reason to check for if it's incoming from "localhost" or not.
   if (backdoor) {
     acl_record = IpAllow::AllMethodAcl();
-  } else if (ipallow && (((acl_record = ipallow->match(client_ip)) == NULL) || (acl_record->isEmpty()))) {
-    ////////////////////////////////////////////////////
-    // if client address forbidden, close immediately //
-    ////////////////////////////////////////////////////
-    Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-    netvc->do_io_close();
-
-    return;
+  } else {
+    acl_record = testIpAllowPolicy(client_ip);
+    if (!acl_record) {
+      ////////////////////////////////////////////////////
+      // if client address forbidden, close immediately //
+      ////////////////////////////////////////////////////
+      Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+      netvc->do_io_close();
+      return;
+    }
   }
 
   // Set the transport type if not already set
