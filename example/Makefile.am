@@ -31,6 +31,7 @@ plugins = \
   hook-trace.la \
   intercept.la \
   lifecycle-plugin.la \
+  limit-rate.la \
   null-transform.la \
   output-header.la \
   protocol.la \
@@ -67,6 +68,7 @@ hello_la_SOURCES = hello/hello.c
 hook_trace_la_SOURCES = hook-trace/hook-trace.cc
 intercept_la_SOURCES = intercept/intercept.cc
 lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c
+limit_rate_la_SOURCES = limit-rate/limit-rate.c
 null_transform_la_SOURCES = null-transform/null-transform.c
 output_header_la_SOURCES = output-header/output-header.c
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
