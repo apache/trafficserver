@@ -24,7 +24,6 @@
 #include "Http2ClientSession.h"
 #include "HttpDebugNames.h"
 #include "ts/ink_base64.h"
-#include "../IPAllow.h"
 
 #define STATE_ENTER(state_name, event)                                                       \
   do {                                                                                       \
@@ -138,17 +137,6 @@ Http2ClientSession::start()
 void
 Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor)
 {
-  acl_record = NULL;
-  sockaddr const *client_ip = new_vc->get_remote_addr();
-  IpAllow::scoped_config ipallow;
-  if (ipallow && (((acl_record = ipallow->match(client_ip)) == NULL) || (acl_record->isEmpty()))) {
-    ip_port_text_buffer ipb;
-    Warning("http2 client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-  } else if (!acl_record) {
-    ip_port_text_buffer ipb;
-    Warning("http2 client '%s' no ip-allow policy specified", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-  }
-
   ink_assert(new_vc->mutex->thread_holding == this_ethread());
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, new_vc->mutex->thread_holding);
   HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_CONNECTION_COUNT, new_vc->mutex->thread_holding);
