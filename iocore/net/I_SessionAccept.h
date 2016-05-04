@@ -26,6 +26,7 @@
 
 #include "I_Net.h"
 #include "I_VConnection.h"
+#include "../../proxy/IPAllow.h"
 
 class SessionAccept : public Continuation
 {
@@ -33,6 +34,20 @@ public:
   SessionAccept(ProxyMutex *amutex) : Continuation(amutex) { SET_HANDLER(&SessionAccept::mainEvent); }
   ~SessionAccept() {}
   virtual void accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
+
+  /* Returns NULL if the specified client_ip is not allowed by ip_allow
+   * Returns a pointer to the relevant IP policy for later processing otherwise */
+  static const AclRecord *testIpAllowPolicy(sockaddr const *client_ip) {
+    IpAllow::scoped_config ipallow;
+    const AclRecord *acl_record = NULL;
+    if (ipallow) {
+      acl_record = ipallow->match(client_ip);
+      if (acl_record && acl_record->isEmpty()) {
+        acl_record = NULL;
+      }
+    }
+    return acl_record;
+  }
 
 private:
   virtual int mainEvent(int event, void *netvc) = 0;

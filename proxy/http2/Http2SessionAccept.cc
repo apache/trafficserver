@@ -39,20 +39,14 @@ Http2SessionAccept::~Http2SessionAccept()
 void
 Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  AclRecord *session_acl_record = NULL;
   sockaddr const *client_ip = netvc->get_remote_addr();
-  IpAllow::scoped_config ipallow;
-  if (ipallow && (((session_acl_record = ipallow->match(client_ip)) == NULL) || (session_acl_record->isEmpty()))) {
+  const AclRecord *session_acl_record = testIpAllowPolicy(client_ip);
+  if (!session_acl_record) {
     ip_port_text_buffer ipb;
-    Warning("http2 client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+    Warning("HTTP/2 client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
     netvc->do_io_close();
     return;
-  } else if (!session_acl_record) {
-    ip_port_text_buffer ipb;
-    Warning("http2 client '%s' no ip-allow policy specified", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-    netvc->do_io_close();
-    return;
-  }
+  } 
   netvc->attributes = this->options.transport_type;
 
   if (is_debug_tag_set("http2_seq")) {
@@ -62,7 +56,6 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
-  // XXX Allocate a Http2ClientSession
   Http2ClientSession *new_session = THREAD_ALLOC_INIT(http2ClientSessionAllocator, this_ethread());
   new_session->acl_record = session_acl_record;
   new_session->new_connection(netvc, iobuf, reader, false /* backdoor */);
