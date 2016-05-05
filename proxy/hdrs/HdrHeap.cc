@@ -155,13 +155,14 @@ new_HdrStrHeap(int requested_size)
 
   //    Debug("hdrs", "Allocated string heap in size %d", alloc_size);
 
-  // Patch virtual function table ptr
-  *((void **)sh) = *((void **)&str_proto_heap);
+  // Placement new the HdrStrHeap.
+  sh = new (sh) HdrStrHeap();
 
   sh->m_heap_size = alloc_size;
   sh->m_free_size = alloc_size - STR_HEAP_HDR_SIZE;
   sh->m_free_start = ((char *)sh) + STR_HEAP_HDR_SIZE;
-  sh->m_refcount = 0;
+
+  ink_assert(sh->refcount() == 0);
 
   ink_assert(sh->m_free_size > 0);
 

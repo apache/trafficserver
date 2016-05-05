@@ -54,7 +54,7 @@ sdk_sanity_check_mutex(TSMutex mutex)
 
   ProxyMutex *mutexp = (ProxyMutex *)mutex;
 
-  if (mutexp->m_refcount < 0)
+  if (mutexp->refcount() < 0)
     return TS_ERROR;
   if (mutexp->nthread_holding < 0)
     return TS_ERROR;
@@ -210,7 +210,7 @@ TSMutexCheck(TSMutex mutex)
 {
   ProxyMutex *mutexp = (ProxyMutex *)mutex;
 
-  if (mutexp->m_refcount < 0)
+  if (mutexp->refcount() < 0)
     return -1;
   if (mutexp->nthread_holding < 0)
     return -1;
