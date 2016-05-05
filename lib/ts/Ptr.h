@@ -109,17 +109,6 @@ public:
   Ptr<T> &operator=(const Ptr<T> &);
   Ptr<T> &operator=(T *);
 
-  T *
-  to_ptr()
-  {
-    if (m_ptr && m_ptr->m_refcount == 1) {
-      T *ptr = m_ptr;
-      m_ptr = 0;
-      ptr->m_refcount = 0;
-      return ptr;
-    }
-    return 0;
-  }
   operator T *() const { return (m_ptr); }
   T *operator->() const { return (m_ptr); }
   T &operator*() const { return (*m_ptr); }
@@ -128,16 +117,19 @@ public:
   {
     return (m_ptr == p);
   }
+
   int
   operator==(const Ptr<T> &p)
   {
     return (m_ptr == p.m_ptr);
   }
+
   int
   operator!=(const T *p)
   {
     return (m_ptr != p);
   }
+
   int
   operator!=(const Ptr<T> &p)
   {
@@ -208,6 +200,7 @@ Ptr<T>::operator=(T *p)
 
   return (*this);
 }
+
 template <class T>
 inline void
 Ptr<T>::clear()
@@ -218,6 +211,7 @@ Ptr<T>::clear()
     m_ptr = NULL;
   }
 }
+
 template <class T>
 inline Ptr<T> &
 Ptr<T>::operator=(const Ptr<T> &src)
