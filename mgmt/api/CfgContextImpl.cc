@@ -1202,27 +1202,45 @@ VolumeObj::VolumeObj(TokenList *tokens)
   }
   m_ele->volume_num = ink_atoi(token->value);
 
+  // arguments
   token = tokens->next(token);
-  if (strcmp(token->name, "scheme") || !token->value) {
-    goto FORMAT_ERR;
-  }
-  if (!strcmp(token->value, "http")) {
-    m_ele->scheme = TS_VOLUME_HTTP;
-  } else {
-    m_ele->scheme = TS_VOLUME_UNDEFINED;
-  }
+  while (token) {
+    if (strcmp(token->name, "scheme")) {
+      if (!token->value || m_ele->scheme) {
+        // return a format error if the token doesn't have a
+        // value or the scheme was already set with a previous
+        // duplicated option.
+        goto FORMAT_ERR;
+      }
+      if (!strcmp(token->value, "http")) {
+        m_ele->scheme = TS_VOLUME_HTTP;
+      } else {
+        m_ele->scheme = TS_VOLUME_UNDEFINED;
+      }
+    }
 
-  token = tokens->next(token);
-  if (strcmp(token->name, "size") || !token->value) {
-    goto FORMAT_ERR;
+    if (strcmp(token->name, "size")) {
+      if (!token->value || m_ele->volume_size) {
+        // return a format error if the token doesn't have a
+        // value or the size was already set with a previous
+        // duplicated option.
+        goto FORMAT_ERR;
+      }
+      // CAUTION: we may need a tigher error check
+      if (strstr(token->value, "%")) {
+        m_ele->size_format = TS_SIZE_FMT_PERCENT;
+      } else {
+        m_ele->size_format = TS_SIZE_FMT_ABSOLUTE;
+      }
+      m_ele->volume_size = ink_atoi(token->value);
+    }
+
+    if (m_ele->scheme && m_ele->volume_size) {
+      break; // Ignore duplicated options.
+    }
+
+    token = tokens->next(token);
   }
-  // CAUTION: we may need a tigher error check
-  if (strstr(token->value, "%")) {
-    m_ele->size_format = TS_SIZE_FMT_PERCENT;
-  } else {
-    m_ele->size_format = TS_SIZE_FMT_ABSOLUTE;
-  }
-  m_ele->volume_size = ink_atoi(token->value);
 
   return;
 
