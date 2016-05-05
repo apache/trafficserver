@@ -1257,7 +1257,10 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
   /*** (2) copy the request header ***/
   HTTPHdr new_hdr, marshal_hdr;
   RefCountObj ref;
-  ref.m_refcount = 100;
+
+  // Pretend to pin this object with a refcount.
+  ref.refcount_inc();
+
   int marshal_len = hdr.m_heap->marshal(marshal_buf, marshal_bufsize);
   marshal_hdr.create(HTTP_TYPE_REQUEST);
   marshal_hdr.unmarshal(marshal_buf, marshal_len, &ref);

@@ -69,6 +69,7 @@ public:
     delete this;
   }
 
+private:
   volatile int m_refcount;
 };
 

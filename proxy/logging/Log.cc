@@ -1164,7 +1164,7 @@ Log::preproc_thread_main(void *args)
       // TODO: the bytes_to_disk should be set to Log
 
       Debug("log-preproc", "%zu buffers preprocessed from LogConfig %p (refcount=%d) this round", buffers_preproced, current,
-            current->m_refcount);
+            current->refcount());
 
       configProcessor.release(log_configid, current);
     }
