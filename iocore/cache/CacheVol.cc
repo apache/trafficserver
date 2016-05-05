@@ -239,7 +239,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       char *tmp = doc->hdr();
       int len = doc->hlen;
       while (len > 0) {
-        int r = HTTPInfo::unmarshal(tmp, len, buf._ptr());
+        int r = HTTPInfo::unmarshal(tmp, len, buf.get());
         if (r < 0) {
           ink_assert(!"CacheVC::scanObject unmarshal failed");
           goto Lskip;

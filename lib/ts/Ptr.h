@@ -136,10 +136,19 @@ public:
     return (m_ptr != p.m_ptr);
   }
 
-  RefCountObj *
-  _ptr()
+  // Return the raw pointer.
+  T *
+  get() const
   {
-    return (RefCountObj *)m_ptr;
+    return m_ptr;
+  }
+
+  // Return the raw pointer as a RefCount object. Typically
+  // this is for keeping a collection of heterogenous objects.
+  RefCountObj *
+  object() const
+  {
+    return static_cast<RefCountObj *>(m_ptr);
   }
 
   T *m_ptr;
@@ -159,24 +168,23 @@ make_ptr(T *p)
 ////////////////////////////////////////////////////////////////////////
 template <class T> inline Ptr<T>::Ptr(T *ptr /* = 0 */) : m_ptr(ptr)
 {
-  if (m_ptr)
-    _ptr()->refcount_inc();
-  return;
+  if (m_ptr) {
+    m_ptr->refcount_inc();
+  }
 }
 
 template <class T> inline Ptr<T>::Ptr(const Ptr<T> &src) : m_ptr(src.m_ptr)
 {
-  if (m_ptr)
-    _ptr()->refcount_inc();
-  return;
+  if (m_ptr) {
+    m_ptr->refcount_inc();
+  }
 }
 
 template <class T> inline Ptr<T>::~Ptr()
 {
-  if ((m_ptr) && _ptr()->refcount_dec() == 0) {
-    _ptr()->free();
+  if (m_ptr && m_ptr->refcount_dec() == 0) {
+    m_ptr->free();
   }
-  return;
 }
 
 template <class T>
@@ -185,17 +193,18 @@ Ptr<T>::operator=(T *p)
 {
   T *temp_ptr = m_ptr;
 
-  if (m_ptr == p)
+  if (m_ptr == p) {
     return (*this);
+  }
 
   m_ptr = p;
 
-  if (m_ptr != 0) {
-    _ptr()->refcount_inc();
+  if (m_ptr) {
+    m_ptr->refcount_inc();
   }
 
-  if ((temp_ptr) && ((RefCountObj *)temp_ptr)->refcount_dec() == 0) {
-    ((RefCountObj *)temp_ptr)->free();
+  if (temp_ptr && temp_ptr->refcount_dec() == 0) {
+    temp_ptr->free();
   }
 
   return (*this);

@@ -972,7 +972,7 @@ HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *
   // Loop over existing entries to see if this one is already present
   for (int z = 0; z < *index; z++) {
     if (m_ronly_heap[z].m_heap_start == h_start) {
-      ink_assert(m_ronly_heap[z].m_ref_count_ptr._ptr() == h_ref_obj);
+      ink_assert(m_ronly_heap[z].m_ref_count_ptr.object() == h_ref_obj);
 
       // The lengths could be different because our copy could be
       //   read-only and the copy we are attaching from could be

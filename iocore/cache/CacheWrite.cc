@@ -106,7 +106,7 @@ CacheVC::updateVector(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       alternate_index = write_vector->insert(&alternate, alternate_index);
     }
 
-    if (od->move_resident_alt && first_buf._ptr() && !od->has_multiple_writers()) {
+    if (od->move_resident_alt && first_buf.get() && !od->has_multiple_writers()) {
       Doc *doc = (Doc *)first_buf->data();
       int small_doc = (int64_t)doc->data_len() < (int64_t)cache_config_alt_rewrite_max_size;
       int have_res_alt = doc->key == od->single_doc_key;
