@@ -27,7 +27,7 @@
 #include "I_Net.h"
 #include "I_VConnection.h"
 
-class AclRecord;
+struct AclRecord;
 
 class SessionAccept : public Continuation
 {
