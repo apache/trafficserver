@@ -83,6 +83,7 @@ configuration provided with the plugin's source)::
 
 This can be used as remap plugin by pointing to config file in remap rule 
 :file:`remap.config`::
+
     @plugin=gzip.so @pparam=--config=<path-to-plugin>/sample.gzip.config 
 
 The following sections detail the options you may specify in the plugin's
