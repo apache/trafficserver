@@ -51,6 +51,7 @@ public:
     (void)s;
     return;
   }
+
   virtual ~RefCountObj() {}
   RefCountObj &
   operator=(const RefCountObj &s)
@@ -59,9 +60,25 @@ public:
     return (*this);
   }
 
-  int refcount_inc();
-  int refcount_dec();
-  int refcount() const;
+  // Increment the reference count, returning the new count.
+  int
+  refcount_inc()
+  {
+    return ink_atomic_increment((int *)&m_refcount, 1) + 1;
+  }
+
+  // Decrement the reference count, returning the new count.
+  int
+  refcount_dec()
+  {
+    return ink_atomic_increment((int *)&m_refcount, -1) - 1;
+  }
+
+  int
+  refcount() const
+  {
+    return m_refcount;
+  }
 
   virtual void
   free()
@@ -73,29 +90,8 @@ private:
   volatile int m_refcount;
 };
 
-// Increment the reference count, returning the new count.
-inline int
-RefCountObj::refcount_inc()
-{
-  return ink_atomic_increment((int *)&m_refcount, 1) + 1;
-}
-
 #define REF_COUNT_OBJ_REFCOUNT_INC(_x) (_x)->refcount_inc()
-
-// Decrement the reference count, returning the new count.
-inline int
-RefCountObj::refcount_dec()
-{
-  return ink_atomic_increment((int *)&m_refcount, -1) - 1;
-}
-
 #define REF_COUNT_OBJ_REFCOUNT_DEC(_x) (_x)->refcount_dec()
-
-inline int
-RefCountObj::refcount() const
-{
-  return m_refcount;
-}
 
 ////////////////////////////////////////////////////////////////////////
 //
