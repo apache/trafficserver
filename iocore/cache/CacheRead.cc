@@ -410,7 +410,7 @@ CacheVC::openReadFromWriter(int event, Event *e)
       // Update case (b) : grab doc_len from the writer's alternate
       doc_len = alternate.object_size_get();
       if (write_vc->update_key == cod->single_doc_key && (cod->move_resident_alt || write_vc->f.rewrite_resident_alt) &&
-          write_vc->first_buf._ptr()) {
+          write_vc->first_buf.get()) {
         // the resident alternate is being updated and its a
         // header only update. The first_buf of the writer has the
         // document body.
