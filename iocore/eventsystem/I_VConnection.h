@@ -311,6 +311,7 @@ public:
   virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
 
   VConnection(ProxyMutex *aMutex);
+  VConnection(Ptr<ProxyMutex> &aMutex);
 
   /** @deprecated */
   VIO *do_io(int op, Continuation *c = NULL, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0, int data = 0);
