@@ -41,7 +41,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheFragType type, co
 
   Vol *vol = key_to_vol(key, hostname, host_len);
   Dir result, *last_collision = NULL;
-  ProxyMutex *mutex = cont->mutex;
+  ProxyMutex *mutex = cont->mutex.get();
   OpenDirEntry *od = NULL;
   CacheVC *c = NULL;
   {
@@ -104,7 +104,7 @@ Cache::open_read(Continuation *cont, const CacheKey *key, CacheHTTPHdr *request,
 
   Vol *vol = key_to_vol(key, hostname, host_len);
   Dir result, *last_collision = NULL;
-  ProxyMutex *mutex = cont->mutex;
+  ProxyMutex *mutex = cont->mutex.get();
   OpenDirEntry *od = NULL;
   CacheVC *c = NULL;
 
@@ -495,7 +495,7 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
      openWriteWriteDone was called. */
   if (length > ((int64_t)doc_len) - vio.ndone) {
     int64_t skip_bytes = length - (doc_len - vio.ndone);
-    iobufferblock_skip(writer_buf, &writer_offset, &length, skip_bytes);
+    iobufferblock_skip(writer_buf.get(), &writer_offset, &length, skip_bytes);
   }
   int64_t bytes = length;
   if (bytes > vio.ntodo())
@@ -505,8 +505,8 @@ CacheVC::openReadFromWriterMain(int /* event ATS_UNUSED */, Event * /* e ATS_UNU
     // reached the end of the document and the user still wants more
     return calluser(VC_EVENT_EOS);
   }
-  b = iobufferblock_clone(writer_buf, writer_offset, bytes);
-  writer_buf = iobufferblock_skip(writer_buf, &writer_offset, &length, bytes);
+  b = iobufferblock_clone(writer_buf.get(), writer_offset, bytes);
+  writer_buf = iobufferblock_skip(writer_buf.get(), &writer_offset, &length, bytes);
   vio.buffer.writer()->append_block(b);
   vio.ndone += bytes;
   if (vio.ntodo() <= 0)
@@ -938,7 +938,7 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
     if (io.ok()) {
       ink_assert(f.evac_vector);
       ink_assert(frag_type == CACHE_FRAG_TYPE_HTTP);
-      ink_assert(!buf.m_ptr);
+      ink_assert(!buf);
       f.evac_vector = false;
       last_collision = NULL;
       f.update = 0;
@@ -957,8 +957,9 @@ CacheVC::openReadVecWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */
         // case is rare.
         goto Lrestart;
       }
-    } else
+    } else {
       vol->close_write(this);
+    }
   }
 
   CACHE_INCREMENT_DYN_STAT(cache_read_failure_stat);
