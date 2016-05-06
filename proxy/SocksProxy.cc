@@ -57,7 +57,15 @@ struct SocksProxy : public Continuation {
   };
 
   SocksProxy()
-    : Continuation(), clientVC(0), clientVIO(0), buf(0), timeout(0), auth_handler(0), version(0), state(SOCKS_INIT), recursion(0),
+    : Continuation(),
+      clientVC(0),
+      clientVIO(0),
+      buf(0),
+      timeout(0),
+      auth_handler(0),
+      version(0),
+      state(SOCKS_INIT),
+      recursion(0),
       pending_action(NULL)
   {
   }

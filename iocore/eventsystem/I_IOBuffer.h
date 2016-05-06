@@ -259,7 +259,9 @@ public:
 
   */
   IOBufferData()
-    : _size_index(BUFFER_SIZE_NOT_ALLOCATED), _mem_type(NO_ALLOC), _data(NULL)
+    : _size_index(BUFFER_SIZE_NOT_ALLOCATED),
+      _mem_type(NO_ALLOC),
+      _data(NULL)
 #ifdef TRACK_BUFFER_USER
       ,
       _location(NULL)
@@ -1215,7 +1217,8 @@ struct MIOBufferAccessor {
 #ifdef DEBUG
       name(NULL),
 #endif
-      mbuf(NULL), entry(NULL)
+      mbuf(NULL),
+      entry(NULL)
   {
   }
 

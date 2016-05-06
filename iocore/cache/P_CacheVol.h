@@ -246,10 +246,30 @@ struct Vol : public Continuation {
   uint32_t round_to_approx_size(uint32_t l);
 
   Vol()
-    : Continuation(new_ProxyMutex()), path(NULL), fd(-1), dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0),
-      skip(0), start(0), len(0), data_blocks(0), hit_evacuate_window(0), agg_todo_size(0), agg_buf_pos(0), trigger(0),
-      evacuate_size(0), disk(NULL), last_sync_serial(0), last_write_serial(0), recover_wrapped(false), dir_sync_waiting(0),
-      dir_sync_in_progress(0), writing_end_marker(0)
+    : Continuation(new_ProxyMutex()),
+      path(NULL),
+      fd(-1),
+      dir(0),
+      buckets(0),
+      recover_pos(0),
+      prev_recover_pos(0),
+      scan_pos(0),
+      skip(0),
+      start(0),
+      len(0),
+      data_blocks(0),
+      hit_evacuate_window(0),
+      agg_todo_size(0),
+      agg_buf_pos(0),
+      trigger(0),
+      evacuate_size(0),
+      disk(NULL),
+      last_sync_serial(0),
+      last_write_serial(0),
+      recover_wrapped(false),
+      dir_sync_waiting(0),
+      dir_sync_in_progress(0),
+      writing_end_marker(0)
   {
     open_dir.mutex = mutex;
     agg_buffer = (char *)ats_memalign(ats_pagesize(), AGG_SIZE);

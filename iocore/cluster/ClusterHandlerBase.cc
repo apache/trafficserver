@@ -209,9 +209,29 @@ OutgoingControl::freeall()
 // ClusterState member functions (Internal Class)
 /*************************************************************************/
 ClusterState::ClusterState(ClusterHandler *c, bool read_chan)
-  : Continuation(0), ch(c), read_channel(read_chan), do_iodone_event(false), n_descriptors(0), sequence_number(0), to_do(0), did(0),
-    n_iov(0), io_complete(1), io_complete_event(0), v(0), bytes_xfered(0), last_ndone(0), total_bytes_xfered(0), iov(NULL),
-    iob_iov(NULL), byte_bank(NULL), n_byte_bank(0), byte_bank_size(0), missed(0), missed_msg(false), read_state_t(READ_START),
+  : Continuation(0),
+    ch(c),
+    read_channel(read_chan),
+    do_iodone_event(false),
+    n_descriptors(0),
+    sequence_number(0),
+    to_do(0),
+    did(0),
+    n_iov(0),
+    io_complete(1),
+    io_complete_event(0),
+    v(0),
+    bytes_xfered(0),
+    last_ndone(0),
+    total_bytes_xfered(0),
+    iov(NULL),
+    iob_iov(NULL),
+    byte_bank(NULL),
+    n_byte_bank(0),
+    byte_bank_size(0),
+    missed(0),
+    missed_msg(false),
+    read_state_t(READ_START),
     write_state_t(WRITE_START)
 {
   mutex = new_ProxyMutex();

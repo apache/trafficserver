@@ -40,7 +40,10 @@ class ThreadSystem;
 
 struct global_settings {
   global_settings()
-    : info_urls_local_only(true), use_native_fetcher(false), use_per_vhost_statistics(true), message_buffer_size(1024 * 128),
+    : info_urls_local_only(true),
+      use_native_fetcher(false),
+      use_per_vhost_statistics(true),
+      message_buffer_size(1024 * 128),
       shm_cache_size_kb(0)
   //, rate_limit_background_fetches(true)
   //, force_caching(false)

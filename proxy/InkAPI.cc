@@ -919,14 +919,26 @@ FileImpl::fgets(char *buf, int length)
 ////////////////////////////////////////////////////////////////////
 
 INKContInternal::INKContInternal()
-  : DummyVConnection(NULL), mdata(NULL), m_event_func(NULL), m_event_count(0), m_closed(1), m_deletable(0), m_deleted(0),
+  : DummyVConnection(NULL),
+    mdata(NULL),
+    m_event_func(NULL),
+    m_event_count(0),
+    m_closed(1),
+    m_deletable(0),
+    m_deleted(0),
     m_free_magic(INKCONT_INTERN_MAGIC_ALIVE)
 {
 }
 
 INKContInternal::INKContInternal(TSEventFunc funcp, TSMutex mutexp)
-  : DummyVConnection((ProxyMutex *)mutexp), mdata(NULL), m_event_func(funcp), m_event_count(0), m_closed(1), m_deletable(0),
-    m_deleted(0), m_free_magic(INKCONT_INTERN_MAGIC_ALIVE)
+  : DummyVConnection((ProxyMutex *)mutexp),
+    mdata(NULL),
+    m_event_func(funcp),
+    m_event_count(0),
+    m_closed(1),
+    m_deletable(0),
+    m_deleted(0),
+    m_free_magic(INKCONT_INTERN_MAGIC_ALIVE)
 {
   SET_HANDLER(&INKContInternal::handle_event);
 }

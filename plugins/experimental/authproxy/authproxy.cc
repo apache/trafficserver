@@ -151,8 +151,15 @@ struct AuthRequestContext {
   const StateTransition *state;
 
   AuthRequestContext()
-    : txn(NULL), cont(NULL), vconn(NULL), hparser(TSHttpParserCreate()), rheader(), iobuf(TS_IOBUFFER_SIZE_INDEX_4K), method(NULL),
-      read_body(true), state(NULL)
+    : txn(NULL),
+      cont(NULL),
+      vconn(NULL),
+      hparser(TSHttpParserCreate()),
+      rheader(),
+      iobuf(TS_IOBUFFER_SIZE_INDEX_4K),
+      method(NULL),
+      read_body(true),
+      state(NULL)
   {
     this->cont = TSContCreate(dispatch, TSMutexCreate());
     TSContDataSet(this->cont, this);

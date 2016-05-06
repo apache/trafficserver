@@ -276,14 +276,51 @@ struct CacheContinuation : public Continuation {
   }
 
   CacheContinuation()
-    : Continuation(NULL), magicno(MagicNo), callback_data(0), callback_data_2(0), timeout(0), target_machine(0), probe_depth(0),
-      start_time(0), cache_read(false), result(0), result_error(0), seq_number(0), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE),
-      nbytes(0), target_ip(0), request_opcode(0), request_purge(false), local_lookup_only(0), no_reply_message(0),
-      request_timeout(0), expect_cache_callback(true), use_deferred_callback(0), pin_in_cache(0), rw_buf_msg_len(0),
-      read_cluster_vc(0), write_cluster_vc(0), cluster_vc_channel(0), caller_buf_freebytes(0), readahead_vio(0),
-      readahead_reader(0), have_all_data(false), cache_vc_info(), tunnel(0), tunnel_cont(0), tunnel_closed(0),
-      lookup_open_write_vc_event(0), ic_arena(), ic_request(), ic_response(), ic_params(0), ic_old_info(), ic_new_info(),
-      ic_hostname_len(0), cache_op_ClusterFunction(0)
+    : Continuation(NULL),
+      magicno(MagicNo),
+      callback_data(0),
+      callback_data_2(0),
+      timeout(0),
+      target_machine(0),
+      probe_depth(0),
+      start_time(0),
+      cache_read(false),
+      result(0),
+      result_error(0),
+      seq_number(0),
+      cfl_flags(0),
+      frag_type(CACHE_FRAG_TYPE_NONE),
+      nbytes(0),
+      target_ip(0),
+      request_opcode(0),
+      request_purge(false),
+      local_lookup_only(0),
+      no_reply_message(0),
+      request_timeout(0),
+      expect_cache_callback(true),
+      use_deferred_callback(0),
+      pin_in_cache(0),
+      rw_buf_msg_len(0),
+      read_cluster_vc(0),
+      write_cluster_vc(0),
+      cluster_vc_channel(0),
+      caller_buf_freebytes(0),
+      readahead_vio(0),
+      readahead_reader(0),
+      have_all_data(false),
+      cache_vc_info(),
+      tunnel(0),
+      tunnel_cont(0),
+      tunnel_closed(0),
+      lookup_open_write_vc_event(0),
+      ic_arena(),
+      ic_request(),
+      ic_response(),
+      ic_params(0),
+      ic_old_info(),
+      ic_new_info(),
+      ic_hostname_len(0),
+      cache_op_ClusterFunction(0)
   {
     token.clear();
     SET_HANDLER((CacheContHandler)&CacheContinuation::remoteOpEvent);
@@ -419,7 +456,14 @@ struct CacheOpMsg_long : public ClusterMessageHeader {
     CACHE_OP_LONG_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpMsg_long(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION)
-    : ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0),
+    : ClusterMessageHeader(vers),
+      opcode(0),
+      frag_type(0),
+      cfl_flags(0),
+      seq_number(0),
+      nbytes(0),
+      data(0),
+      channel(0),
       buffer_size(0)
   {
     moi.u32 = 0;
@@ -480,7 +524,14 @@ struct CacheOpMsg_short : public ClusterMessageHeader {
     CACHE_OP_SHORT_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpMsg_short(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION)
-    : ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0),
+    : ClusterMessageHeader(vers),
+      opcode(0),
+      frag_type(0),
+      cfl_flags(0),
+      seq_number(0),
+      nbytes(0),
+      data(0),
+      channel(0),
       buffer_size(0)
   {
     moi.u32 = 0;

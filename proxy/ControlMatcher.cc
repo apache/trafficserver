@@ -237,7 +237,13 @@ HostMatcher<Data, Result>::NewEntry(matcher_line *line_info)
 //
 template <class Data, class Result>
 UrlMatcher<Data, Result>::UrlMatcher(const char *name, const char *filename)
-  : url_ht(NULL), url_str(NULL), url_value(NULL), data_array(NULL), array_len(0), num_el(-1), matcher_name(name),
+  : url_ht(NULL),
+    url_str(NULL),
+    url_value(NULL),
+    data_array(NULL),
+    array_len(0),
+    num_el(-1),
+    matcher_name(name),
     file_name(filename)
 {
   url_ht = ink_hash_table_create(InkHashTableKeyType_String);

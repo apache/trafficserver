@@ -236,7 +236,11 @@ struct HttpApiInfo {
   bool retry_intercept_failures;
 
   HttpApiInfo()
-    : parent_proxy_name(NULL), parent_proxy_port(-1), cache_untransformed(false), cache_transformed(true), logging_enabled(true),
+    : parent_proxy_name(NULL),
+      parent_proxy_port(-1),
+      cache_untransformed(false),
+      cache_transformed(true),
+      logging_enabled(true),
       retry_intercept_failures(false)
   {
   }
@@ -577,8 +581,12 @@ public:
     bool does_server_permit_storing;
 
     _CacheDirectives()
-      : does_client_permit_lookup(true), does_client_permit_storing(true), does_client_permit_dns_storing(true),
-        does_config_permit_lookup(true), does_config_permit_storing(true), does_server_permit_lookup(true),
+      : does_client_permit_lookup(true),
+        does_client_permit_storing(true),
+        does_client_permit_dns_storing(true),
+        does_config_permit_lookup(true),
+        does_config_permit_storing(true),
+        does_server_permit_lookup(true),
         does_server_permit_storing(true)
     {
     }
@@ -607,10 +615,24 @@ public:
     SquidHitMissCode hit_miss_code;
 
     _CacheLookupInfo()
-      : action(CACHE_DO_UNDEFINED), transform_action(CACHE_DO_UNDEFINED), write_status(NO_CACHE_WRITE),
-        transform_write_status(NO_CACHE_WRITE), lookup_url(NULL), lookup_url_storage(), original_url(), object_read(NULL),
-        second_object_read(NULL), object_store(), transform_store(), config(), directives(), open_read_retries(0),
-        open_write_retries(0), write_lock_state(CACHE_WL_INIT), lookup_count(0), hit_miss_code(SQUID_MISS_NONE)
+      : action(CACHE_DO_UNDEFINED),
+        transform_action(CACHE_DO_UNDEFINED),
+        write_status(NO_CACHE_WRITE),
+        transform_write_status(NO_CACHE_WRITE),
+        lookup_url(NULL),
+        lookup_url_storage(),
+        original_url(),
+        object_read(NULL),
+        second_object_read(NULL),
+        object_store(),
+        transform_store(),
+        config(),
+        directives(),
+        open_read_retries(0),
+        open_write_retries(0),
+        write_lock_state(CACHE_WL_INIT),
+        lookup_count(0),
+        hit_miss_code(SQUID_MISS_NONE)
     {
     }
   } CacheLookupInfo;
@@ -671,9 +693,18 @@ public:
     }
 
     ConnectionAttributes()
-      : http_version(), keep_alive(HTTP_KEEPALIVE_UNDEFINED), receive_chunked_response(false), pipeline_possible(false),
-        proxy_connect_hdr(false), connect_result(0), name(NULL), transfer_encoding(NO_TRANSFER_ENCODING), state(STATE_UNDEFINED),
-        abort(ABORT_UNDEFINED), port_attribute(HttpProxyPort::TRANSPORT_DEFAULT), is_transparent(false)
+      : http_version(),
+        keep_alive(HTTP_KEEPALIVE_UNDEFINED),
+        receive_chunked_response(false),
+        pipeline_possible(false),
+        proxy_connect_hdr(false),
+        connect_result(0),
+        name(NULL),
+        transfer_encoding(NO_TRANSFER_ENCODING),
+        state(STATE_UNDEFINED),
+        abort(ABORT_UNDEFINED),
+        port_attribute(HttpProxyPort::TRANSPORT_DEFAULT),
+        is_transparent(false)
     {
       memset(&src_addr, 0, sizeof(src_addr));
       memset(&dst_addr, 0, sizeof(dst_addr));
@@ -692,8 +723,15 @@ public:
     ParentOriginRetry_t retry_type;
 
     _CurrentInfo()
-      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1),
-        simple_retry_attempts(0), unavailable_server_retry_attempts(0), retry_type(PARENT_ORIGIN_UNDEFINED_RETRY){};
+      : mode(UNDEFINED_MODE),
+        request_to(UNDEFINED_LOOKUP),
+        server(NULL),
+        now(0),
+        state(STATE_UNDEFINED),
+        attempts(1),
+        simple_retry_attempts(0),
+        unavailable_server_retry_attempts(0),
+        retry_type(PARENT_ORIGIN_UNDEFINED_RETRY){};
   } CurrentInfo;
 
   typedef struct _DNSLookupInfo {
@@ -730,8 +768,14 @@ public:
     bool lookup_validated;
 
     _DNSLookupInfo()
-      : attempts(0), os_addr_style(OS_ADDR_TRY_DEFAULT), lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP),
-        srv_lookup_success(false), srv_port(0), lookup_validated(true)
+      : attempts(0),
+        os_addr_style(OS_ADDR_TRY_DEFAULT),
+        lookup_success(false),
+        lookup_name(NULL),
+        looking_up(UNDEFINED_LOOKUP),
+        srv_lookup_success(false),
+        srv_port(0),
+        lookup_validated(true)
     {
       srv_hostname[0] = '\0';
       srv_app.allotment.application1 = 0;
@@ -756,10 +800,20 @@ public:
     bool extension_method;
 
     _HeaderInfo()
-      : client_request(), client_response(), server_request(), server_response(), transform_response(), cache_response(),
-        request_content_length(HTTP_UNDEFINED_CL), response_content_length(HTTP_UNDEFINED_CL),
-        transform_request_cl(HTTP_UNDEFINED_CL), transform_response_cl(HTTP_UNDEFINED_CL), client_req_is_server_style(false),
-        trust_response_cl(false), response_error(NO_RESPONSE_HEADER_ERROR), extension_method(false)
+      : client_request(),
+        client_response(),
+        server_request(),
+        server_response(),
+        transform_response(),
+        cache_response(),
+        request_content_length(HTTP_UNDEFINED_CL),
+        response_content_length(HTTP_UNDEFINED_CL),
+        transform_request_cl(HTTP_UNDEFINED_CL),
+        transform_response_cl(HTTP_UNDEFINED_CL),
+        client_req_is_server_style(false),
+        trust_response_cl(false),
+        response_error(NO_RESPONSE_HEADER_ERROR),
+        extension_method(false)
     {
     }
   } HeaderInfo;
@@ -950,33 +1004,98 @@ public:
 
     // Constructor
     State()
-      : m_magic(HTTP_TRANSACT_MAGIC_ALIVE), state_machine(NULL), http_config_param(NULL), force_dns(false),
-        updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), cache_open_write_fail_action(0),
-        is_revalidation_necessary(false), request_will_not_selfloop(false), // YTS Team, yamsat
-        source(SOURCE_NONE), pre_transform_source(SOURCE_NONE), req_flavor(REQ_FLAVOR_FWDPROXY), pending_work(NULL),
-        cdn_saved_next_action(SM_ACTION_UNDEFINED), cdn_saved_transact_return_point(NULL), cdn_remap_complete(false),
-        first_dns_lookup(true), backdoor_request(false), cop_test_page(false), parent_params(NULL),
-        cache_lookup_result(CACHE_LOOKUP_NONE), next_action(SM_ACTION_UNDEFINED), api_next_action(SM_ACTION_UNDEFINED),
-        transact_return_point(NULL), post_remap_upgrade_return_point(NULL), upgrade_token_wks(NULL), is_upgrade_request(false),
-        is_websocket(false), did_upgrade_succeed(false), origin_request_queued(false), internal_msg_buffer(NULL),
-        internal_msg_buffer_type(NULL), internal_msg_buffer_size(0), internal_msg_buffer_fast_allocator_size(-1),
-        icp_lookup_success(false), scheme(-1), next_hop_scheme(scheme), orig_scheme(scheme), method(0),
-        cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR), client_request_time(UNDEFINED_TIME), request_sent_time(UNDEFINED_TIME),
-        response_received_time(UNDEFINED_TIME), plugin_set_expire_time(UNDEFINED_TIME), state_machine_id(0),
-        client_connection_enabled(true), acl_filtering_performed(false), negative_caching(false), srv_lookup(false),
-        www_auth_content(CACHE_AUTH_NONE), remap_plugin_instance(0), fp_tsremap_os_response(NULL),
-        http_return_code(HTTP_STATUS_NONE), api_txn_active_timeout_value(-1), api_txn_connect_timeout_value(-1),
-        api_txn_dns_timeout_value(-1), api_txn_no_activity_timeout_value(-1), cache_req_hdr_heap_handle(NULL),
-        cache_resp_hdr_heap_handle(NULL), api_cleanup_cache_read(false), api_server_response_no_store(false),
-        api_server_response_ignore(false), api_http_sm_shutdown(false), api_modifiable_cached_resp(false),
-        api_server_request_body_set(false), api_req_cacheable(false), api_resp_cacheable(false), api_server_addr_set(false),
-        stale_icp_lookup(false), api_update_cached_object(UPDATE_CACHED_OBJECT_NONE), api_lock_url(LOCK_URL_FIRST),
-        saved_update_next_action(SM_ACTION_UNDEFINED), saved_update_cache_action(CACHE_DO_UNDEFINED), url_map(),
-        pCongestionEntry(NULL), congest_saved_next_action(SM_ACTION_UNDEFINED), congestion_control_crat(0),
-        congestion_congested_or_failed(0), congestion_connection_opened(0), filter_mask(0), remap_redirect(NULL),
-        reverse_proxy(false), url_remap_success(false), api_skip_all_remapping(false), already_downgraded(false), pristine_url(),
-        range_setup(RANGE_NONE), num_range_fields(0), range_output_cl(0), ranges(NULL), txn_conf(NULL),
-        transparent_passthrough(false), range_in_cache(false)
+      : m_magic(HTTP_TRANSACT_MAGIC_ALIVE),
+        state_machine(NULL),
+        http_config_param(NULL),
+        force_dns(false),
+        updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED),
+        cache_open_write_fail_action(0),
+        is_revalidation_necessary(false),
+        request_will_not_selfloop(false), // YTS Team, yamsat
+        source(SOURCE_NONE),
+        pre_transform_source(SOURCE_NONE),
+        req_flavor(REQ_FLAVOR_FWDPROXY),
+        pending_work(NULL),
+        cdn_saved_next_action(SM_ACTION_UNDEFINED),
+        cdn_saved_transact_return_point(NULL),
+        cdn_remap_complete(false),
+        first_dns_lookup(true),
+        backdoor_request(false),
+        cop_test_page(false),
+        parent_params(NULL),
+        cache_lookup_result(CACHE_LOOKUP_NONE),
+        next_action(SM_ACTION_UNDEFINED),
+        api_next_action(SM_ACTION_UNDEFINED),
+        transact_return_point(NULL),
+        post_remap_upgrade_return_point(NULL),
+        upgrade_token_wks(NULL),
+        is_upgrade_request(false),
+        is_websocket(false),
+        did_upgrade_succeed(false),
+        origin_request_queued(false),
+        internal_msg_buffer(NULL),
+        internal_msg_buffer_type(NULL),
+        internal_msg_buffer_size(0),
+        internal_msg_buffer_fast_allocator_size(-1),
+        icp_lookup_success(false),
+        scheme(-1),
+        next_hop_scheme(scheme),
+        orig_scheme(scheme),
+        method(0),
+        cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
+        client_request_time(UNDEFINED_TIME),
+        request_sent_time(UNDEFINED_TIME),
+        response_received_time(UNDEFINED_TIME),
+        plugin_set_expire_time(UNDEFINED_TIME),
+        state_machine_id(0),
+        client_connection_enabled(true),
+        acl_filtering_performed(false),
+        negative_caching(false),
+        srv_lookup(false),
+        www_auth_content(CACHE_AUTH_NONE),
+        remap_plugin_instance(0),
+        fp_tsremap_os_response(NULL),
+        http_return_code(HTTP_STATUS_NONE),
+        api_txn_active_timeout_value(-1),
+        api_txn_connect_timeout_value(-1),
+        api_txn_dns_timeout_value(-1),
+        api_txn_no_activity_timeout_value(-1),
+        cache_req_hdr_heap_handle(NULL),
+        cache_resp_hdr_heap_handle(NULL),
+        api_cleanup_cache_read(false),
+        api_server_response_no_store(false),
+        api_server_response_ignore(false),
+        api_http_sm_shutdown(false),
+        api_modifiable_cached_resp(false),
+        api_server_request_body_set(false),
+        api_req_cacheable(false),
+        api_resp_cacheable(false),
+        api_server_addr_set(false),
+        stale_icp_lookup(false),
+        api_update_cached_object(UPDATE_CACHED_OBJECT_NONE),
+        api_lock_url(LOCK_URL_FIRST),
+        saved_update_next_action(SM_ACTION_UNDEFINED),
+        saved_update_cache_action(CACHE_DO_UNDEFINED),
+        url_map(),
+        pCongestionEntry(NULL),
+        congest_saved_next_action(SM_ACTION_UNDEFINED),
+        congestion_control_crat(0),
+        congestion_congested_or_failed(0),
+        congestion_connection_opened(0),
+        filter_mask(0),
+        remap_redirect(NULL),
+        reverse_proxy(false),
+        url_remap_success(false),
+        api_skip_all_remapping(false),
+        already_downgraded(false),
+        pristine_url(),
+        range_setup(RANGE_NONE),
+        num_range_fields(0),
+        range_output_cl(0),
+        ranges(NULL),
+        txn_conf(NULL),
+        transparent_passthrough(false),
+        range_in_cache(false)
     {
       int i;
       char *via_ptr = via_string;

@@ -35,8 +35,12 @@ struct atscppapi::AsyncTimerState {
   AsyncTimer *timer_;
   shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
   AsyncTimerState(AsyncTimer::Type type, int period_in_ms, int initial_period_in_ms, AsyncTimer *timer)
-    : type_(type), period_in_ms_(period_in_ms), initial_period_in_ms_(initial_period_in_ms), initial_timer_action_(NULL),
-      periodic_timer_action_(NULL), timer_(timer)
+    : type_(type),
+      period_in_ms_(period_in_ms),
+      initial_period_in_ms_(initial_period_in_ms),
+      initial_timer_action_(NULL),
+      periodic_timer_action_(NULL),
+      timer_(timer)
   {
   }
 };

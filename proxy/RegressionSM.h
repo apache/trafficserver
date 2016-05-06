@@ -69,8 +69,17 @@ struct RegressionSM : public Continuation {
   void xrun(RegressionSM *parent);
 
   RegressionSM(RegressionTest *at = NULL)
-    : t(at), status(REGRESSION_TEST_INPROGRESS), pstatus(0), parent(0), nwaiting(0), nchildren(0), children(0), ichild(0),
-      parallel(false), repeat(false), pending_action(0)
+    : t(at),
+      status(REGRESSION_TEST_INPROGRESS),
+      pstatus(0),
+      parent(0),
+      nwaiting(0),
+      nchildren(0),
+      children(0),
+      ichild(0),
+      parallel(false),
+      repeat(false),
+      pending_action(0)
   {
     mutex = new_ProxyMutex();
   }

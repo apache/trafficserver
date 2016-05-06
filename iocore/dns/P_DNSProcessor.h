@@ -165,9 +165,22 @@ struct DNSEntry : public Continuation {
   void init(const char *x, int len, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt);
 
   DNSEntry()
-    : Continuation(NULL), qtype(0), host_res_style(HOST_RES_NONE), retries(DEFAULT_DNS_RETRIES), which_ns(NO_NAMESERVER_SELECTED),
-      submit_time(0), send_time(0), qname_len(0), orig_qname_len(0), domains(0), timeout(0), result_ent(0), dnsH(0),
-      written_flag(false), once_written_flag(false), last(false)
+    : Continuation(NULL),
+      qtype(0),
+      host_res_style(HOST_RES_NONE),
+      retries(DEFAULT_DNS_RETRIES),
+      which_ns(NO_NAMESERVER_SELECTED),
+      submit_time(0),
+      send_time(0),
+      qname_len(0),
+      orig_qname_len(0),
+      domains(0),
+      timeout(0),
+      result_ent(0),
+      dnsH(0),
+      written_flag(false),
+      once_written_flag(false),
+      last(false)
   {
     for (int i = 0; i < MAX_DNS_RETRIES; i++)
       id[i] = -1;
@@ -313,8 +326,17 @@ struct DNSServer {
 
 TS_INLINE
 DNSHandler::DNSHandler()
-  : Continuation(NULL), n_con(0), in_flight(0), name_server(0), in_write_dns(0), hostent_cache(0), last_primary_retry(0),
-    last_primary_reopen(0), m_res(0), txn_lookup_timeout(0), generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this))
+  : Continuation(NULL),
+    n_con(0),
+    in_flight(0),
+    name_server(0),
+    in_write_dns(0),
+    hostent_cache(0),
+    last_primary_retry(0),
+    last_primary_reopen(0),
+    m_res(0),
+    txn_lookup_timeout(0),
+    generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this))
 {
   ats_ip_invalidate(&ip);
   for (int i = 0; i < MAX_NAMED; i++) {

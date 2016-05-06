@@ -130,7 +130,14 @@ template <class T> struct HttpTransaction {
   }
 
   HttpTransaction(TSVConn v, TSCont c, io::IO *const i, const uint64_t l, const T &t)
-    : parsingHeaders_(false), abort_(false), timeout_(false), in_(NULL), out_(i), vconnection_(v), continuation_(c), t_(t),
+    : parsingHeaders_(false),
+      abort_(false),
+      timeout_(false),
+      in_(NULL),
+      out_(i),
+      vconnection_(v),
+      continuation_(c),
+      t_(t),
       chunkDecoder_(NULL)
   {
     assert(vconnection_ != NULL);

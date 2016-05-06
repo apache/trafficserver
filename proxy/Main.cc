@@ -1170,8 +1170,19 @@ struct ShowStats : public Continuation {
     return EVENT_CONT;
   }
   ShowStats()
-    : Continuation(NULL), cycle(0), last_cc(0), last_rb(0), last_w(0), last_r(0), last_wb(0), last_nrb(0), last_nw(0), last_nr(0),
-      last_nwb(0), last_p(0), last_o(0)
+    : Continuation(NULL),
+      cycle(0),
+      last_cc(0),
+      last_rb(0),
+      last_w(0),
+      last_r(0),
+      last_wb(0),
+      last_nrb(0),
+      last_nw(0),
+      last_nr(0),
+      last_nwb(0),
+      last_p(0),
+      last_o(0)
   {
     SET_HANDLER(&ShowStats::mainEvent);
 #ifdef ENABLE_TIME_TRACE

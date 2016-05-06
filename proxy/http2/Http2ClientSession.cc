@@ -59,7 +59,13 @@ send_connection_event(Continuation *cont, int event, void *edata)
 }
 
 Http2ClientSession::Http2ClientSession()
-  : con_id(0), total_write_len(0), client_vc(NULL), read_buffer(NULL), sm_reader(NULL), write_buffer(NULL), sm_writer(NULL),
+  : con_id(0),
+    total_write_len(0),
+    client_vc(NULL),
+    read_buffer(NULL),
+    sm_reader(NULL),
+    write_buffer(NULL),
+    sm_writer(NULL),
     upgrade_context()
 {
 }

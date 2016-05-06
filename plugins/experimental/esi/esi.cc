@@ -125,10 +125,29 @@ struct ContData {
   list<string> post_headers;
 
   ContData(TSCont contptr, TSHttpTxn tx)
-    : curr_state(READING_ESI_DOC), input_vio(NULL), output_vio(NULL), output_buffer(NULL), output_reader(NULL), esi_vars(NULL),
-      data_fetcher(NULL), esi_proc(NULL), esi_gzip(NULL), esi_gunzip(NULL), contp(contptr), txnp(tx), request_url(NULL),
-      input_type(DATA_TYPE_RAW_ESI), packed_node_list(""), gzipped_data(""), gzip_output(false), initialized(false),
-      xform_closed(false), intercept_header(false), cache_txn(false), head_only(false), os_response_cacheable(true)
+    : curr_state(READING_ESI_DOC),
+      input_vio(NULL),
+      output_vio(NULL),
+      output_buffer(NULL),
+      output_reader(NULL),
+      esi_vars(NULL),
+      data_fetcher(NULL),
+      esi_proc(NULL),
+      esi_gzip(NULL),
+      esi_gunzip(NULL),
+      contp(contptr),
+      txnp(tx),
+      request_url(NULL),
+      input_type(DATA_TYPE_RAW_ESI),
+      packed_node_list(""),
+      gzipped_data(""),
+      gzip_output(false),
+      initialized(false),
+      xform_closed(false),
+      intercept_header(false),
+      cache_txn(false),
+      head_only(false),
+      os_response_cacheable(true)
   {
     client_addr = TSHttpTxnClientAddrGet(txnp);
     *debug_tag = '\0';

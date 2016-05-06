@@ -73,8 +73,18 @@ enum ExtraSubstitutions {
 //
 struct UrlComponents {
   UrlComponents()
-    : scheme(NULL), host(NULL), path(NULL), query(NULL), matrix(NULL), port(0), scheme_len(0), host_len(0), path_len(0),
-      query_len(0), matrix_len(0), url_len(0)
+    : scheme(NULL),
+      host(NULL),
+      path(NULL),
+      query(NULL),
+      matrix(NULL),
+      port(0),
+      scheme_len(0),
+      host_len(0),
+      path_len(0),
+      query_len(0),
+      matrix_len(0),
+      url_len(0)
   {
   }
 
@@ -114,8 +124,17 @@ class RemapRegex
 {
 public:
   RemapRegex()
-    : _num_subs(-1), _rex(NULL), _extra(NULL), _options(0), _order(-1), _lowercase_substitutions(false), _active_timeout(-1),
-      _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1), _first_override(NULL)
+    : _num_subs(-1),
+      _rex(NULL),
+      _extra(NULL),
+      _options(0),
+      _order(-1),
+      _lowercase_substitutions(false),
+      _active_timeout(-1),
+      _no_activity_timeout(-1),
+      _connect_timeout(-1),
+      _dns_timeout(-1),
+      _first_override(NULL)
   {
     TSDebug(PLUGIN_NAME, "Calling constructor");
   }
@@ -636,7 +655,14 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
 // Hold one remap instance
 struct RemapInstance {
   RemapInstance()
-    : first(NULL), last(NULL), profile(false), method(false), query_string(true), matrix_params(false), hits(0), misses(0),
+    : first(NULL),
+      last(NULL),
+      profile(false),
+      method(false),
+      query_string(true),
+      matrix_params(false),
+      hits(0),
+      misses(0),
       filename("unknown")
   {
   }

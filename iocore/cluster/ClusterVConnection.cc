@@ -187,11 +187,33 @@ ClusterVConnectionBase::reenable_re(VIO *vio)
 }
 
 ClusterVConnection::ClusterVConnection(int is_new_connect_read)
-  : ch(NULL), new_connect_read(is_new_connect_read), remote_free(0), last_local_free(0), channel(0), close_disabled(0),
-    remote_closed(0), remote_close_disabled(1), remote_lerrno(0), in_vcs(0), type(0), start_time(0), last_activity_time(0),
-    n_set_data_msgs(0), n_recv_set_data_msgs(0), pending_remote_fill(0), remote_ram_cache_hit(0), have_all_data(0),
-    initial_data_bytes(0), current_cont(0), iov_map(CLUSTER_IOV_NOT_OPEN), write_list_tail(0), write_list_bytes(0),
-    write_bytes_in_transit(0), alternate(), time_pin(0), disk_io_priority(0)
+  : ch(NULL),
+    new_connect_read(is_new_connect_read),
+    remote_free(0),
+    last_local_free(0),
+    channel(0),
+    close_disabled(0),
+    remote_closed(0),
+    remote_close_disabled(1),
+    remote_lerrno(0),
+    in_vcs(0),
+    type(0),
+    start_time(0),
+    last_activity_time(0),
+    n_set_data_msgs(0),
+    n_recv_set_data_msgs(0),
+    pending_remote_fill(0),
+    remote_ram_cache_hit(0),
+    have_all_data(0),
+    initial_data_bytes(0),
+    current_cont(0),
+    iov_map(CLUSTER_IOV_NOT_OPEN),
+    write_list_tail(0),
+    write_list_bytes(0),
+    write_bytes_in_transit(0),
+    alternate(),
+    time_pin(0),
+    disk_io_priority(0)
 {
 #ifdef DEBUG
   read.vio.buffer.name = "ClusterVConnection.read";

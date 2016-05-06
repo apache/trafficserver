@@ -315,9 +315,20 @@ struct ClusterMsg {
     return cksum;
   }
   ClusterMsg()
-    : descriptor(NULL), iob_descriptor_block(NULL), count(0), control_bytes(0), descriptor_cksum(0), control_bytes_cksum(0),
-      unused(0), state(0), control_data_offset(0), did_small_control_set_data(0), did_large_control_set_data(0),
-      did_small_control_msgs(0), did_large_control_msgs(0), did_freespace_msgs(0)
+    : descriptor(NULL),
+      iob_descriptor_block(NULL),
+      count(0),
+      control_bytes(0),
+      descriptor_cksum(0),
+      control_bytes_cksum(0),
+      unused(0),
+      state(0),
+      control_data_offset(0),
+      did_small_control_set_data(0),
+      did_large_control_set_data(0),
+      did_small_control_msgs(0),
+      did_large_control_msgs(0),
+      did_freespace_msgs(0)
   {
   }
 };

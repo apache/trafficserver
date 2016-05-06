@@ -584,8 +584,14 @@ protected:
 };
 
 inline NetVConnection::NetVConnection()
-  : VConnection(NULL), attributes(0), thread(NULL), got_local_addr(0), got_remote_addr(0), is_internal_request(false),
-    is_transparent(false), write_buffer_empty_event(0)
+  : VConnection(NULL),
+    attributes(0),
+    thread(NULL),
+    got_local_addr(0),
+    got_remote_addr(0),
+    is_internal_request(false),
+    is_transparent(false),
+    write_buffer_empty_event(0)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

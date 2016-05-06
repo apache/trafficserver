@@ -51,16 +51,30 @@
   -------------------------------------------------------------------------*/
 
 LogHost::LogHost(const char *object_filename, uint64_t object_signature)
-  : m_object_filename(ats_strdup(object_filename)), m_object_signature(object_signature), m_port(0), m_name(NULL), m_sock(NULL),
-    m_sock_fd(-1), m_connected(false), m_orphan_file(NULL), m_log_collation_client_sm(NULL)
+  : m_object_filename(ats_strdup(object_filename)),
+    m_object_signature(object_signature),
+    m_port(0),
+    m_name(NULL),
+    m_sock(NULL),
+    m_sock_fd(-1),
+    m_connected(false),
+    m_orphan_file(NULL),
+    m_log_collation_client_sm(NULL)
 {
   ink_zero(m_ip);
   ink_zero(m_ipstr);
 }
 
 LogHost::LogHost(const LogHost &rhs)
-  : m_object_filename(ats_strdup(rhs.m_object_filename)), m_object_signature(rhs.m_object_signature), m_ip(rhs.m_ip), m_port(0),
-    m_name(ats_strdup(rhs.m_name)), m_sock(NULL), m_sock_fd(-1), m_connected(false), m_orphan_file(NULL),
+  : m_object_filename(ats_strdup(rhs.m_object_filename)),
+    m_object_signature(rhs.m_object_signature),
+    m_ip(rhs.m_ip),
+    m_port(0),
+    m_name(ats_strdup(rhs.m_name)),
+    m_sock(NULL),
+    m_sock_fd(-1),
+    m_connected(false),
+    m_orphan_file(NULL),
     m_log_collation_client_sm(NULL)
 {
   memcpy(m_ipstr, rhs.m_ipstr, sizeof(m_ipstr));

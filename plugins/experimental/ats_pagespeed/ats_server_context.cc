@@ -38,7 +38,8 @@ AtsServerContext::config()
 AtsServerContext::AtsServerContext(AtsRewriteDriverFactory *factory)
   : // TODO(oschaaf): host/port
     SystemServerContext(factory, "foo.com" /*hostname*/, 8080 /*port*/),
-    initialized_(false), ats_factory_(factory)
+    initialized_(false),
+    ats_factory_(factory)
 {
 }
 

@@ -48,9 +48,17 @@ BaseLogFile::BaseLogFile(const char *name, uint64_t sig) : m_signature(sig), m_h
  * This copy constructor creates a BaseLogFile based on a given copy.
  */
 BaseLogFile::BaseLogFile(const BaseLogFile &copy)
-  : m_fp(NULL), m_start_time(copy.m_start_time), m_end_time(0L), m_bytes_written(0), m_signature(copy.m_signature),
-    m_has_signature(copy.m_has_signature), m_name(ats_strdup(copy.m_name)), m_hostname(ats_strdup(copy.m_hostname)),
-    m_is_regfile(false), m_is_init(copy.m_is_init), m_meta_info(NULL)
+  : m_fp(NULL),
+    m_start_time(copy.m_start_time),
+    m_end_time(0L),
+    m_bytes_written(0),
+    m_signature(copy.m_signature),
+    m_has_signature(copy.m_has_signature),
+    m_name(ats_strdup(copy.m_name)),
+    m_hostname(ats_strdup(copy.m_hostname)),
+    m_is_regfile(false),
+    m_is_init(copy.m_is_init),
+    m_meta_info(NULL)
 {
   log_log_trace("exiting BaseLogFile copy constructor, m_name=%s, this=%p\n", m_name.get(), this);
 }

@@ -114,9 +114,19 @@ class ParentRecord : public ControlBase
 {
 public:
   ParentRecord()
-    : parents(NULL), secondary_parents(NULL), num_parents(0), num_secondary_parents(0), ignore_query(false), rr_next(0),
-      go_direct(true), parent_is_proxy(true), selection_strategy(NULL), unavailable_server_retry_responses(NULL),
-      parent_retry(PARENT_RETRY_NONE), max_simple_retries(1), max_unavailable_server_retries(1)
+    : parents(NULL),
+      secondary_parents(NULL),
+      num_parents(0),
+      num_secondary_parents(0),
+      ignore_query(false),
+      rr_next(0),
+      go_direct(true),
+      parent_is_proxy(true),
+      selection_strategy(NULL),
+      unavailable_server_retry_responses(NULL),
+      parent_retry(PARENT_RETRY_NONE),
+      max_simple_retries(1),
+      max_unavailable_server_retries(1)
   {
   }
 

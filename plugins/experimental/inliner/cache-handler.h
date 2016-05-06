@@ -233,8 +233,13 @@ namespace inliner
     }
 
     CacheHandler(CacheHandler &&h)
-      : src_(std::move(h.src_)), original_(std::move(h.original_)), classes_(std::move(h.classes_)), id_(std::move(h.id_)),
-        sink_(std::move(h.sink_)), sink2_(std::move(h.sink2_)), reader_(h.reader_)
+      : src_(std::move(h.src_)),
+        original_(std::move(h.original_)),
+        classes_(std::move(h.classes_)),
+        id_(std::move(h.id_)),
+        sink_(std::move(h.sink_)),
+        sink2_(std::move(h.sink2_)),
+        reader_(h.reader_)
     {
       h.reader_ = NULL;
     }

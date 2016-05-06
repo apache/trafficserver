@@ -38,12 +38,22 @@ using namespace net_instaweb;
 // TODO(oschaaf): rename is_resource_fetch -> write_raw_response_headers
 AtsBaseFetch::AtsBaseFetch(AtsServerContext *server_context, const net_instaweb::RequestContextPtr &request_ctx,
                            TSVIO downstream_vio, TSIOBuffer downstream_buffer, bool is_resource_fetch)
-  : AsyncFetch(request_ctx), server_context_(server_context), done_called_(false), last_buf_sent_(false), references_(2),
+  : AsyncFetch(request_ctx),
+    server_context_(server_context),
+    done_called_(false),
+    last_buf_sent_(false),
+    references_(2),
     // downstream_vio is NULL for the IPRO lookup
-    downstream_vio_(downstream_vio), downstream_buffer_(downstream_buffer), is_resource_fetch_(is_resource_fetch),
-    downstream_length_(0), txn_mutex_(downstream_vio ? TSVIOMutexGet(downstream_vio) : NULL),
+    downstream_vio_(downstream_vio),
+    downstream_buffer_(downstream_buffer),
+    is_resource_fetch_(is_resource_fetch),
+    downstream_length_(0),
+    txn_mutex_(downstream_vio ? TSVIOMutexGet(downstream_vio) : NULL),
     // TODO(oschaaf): check and use handle_error_.
-    handle_error_(false), is_ipro_(false), ctx_(NULL), ipro_callback_(NULL)
+    handle_error_(false),
+    is_ipro_(false),
+    ctx_(NULL),
+    ipro_callback_(NULL)
 {
   buffer_.reserve(1024 * 32);
 }

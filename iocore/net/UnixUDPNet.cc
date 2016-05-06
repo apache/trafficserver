@@ -217,8 +217,16 @@ ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator")
 #define UNINITIALIZED_EVENT_PTR (Event *)0xdeadbeef
 
 UDPReadContinuation::UDPReadContinuation(Event *completionToken)
-  : Continuation(NULL), event(completionToken), readbuf(NULL), readlen(0), fromaddrlen(0), fd(-1), ifd(-1), period(0),
-    elapsed_time(0), timeout_interval(0)
+  : Continuation(NULL),
+    event(completionToken),
+    readbuf(NULL),
+    readlen(0),
+    fromaddrlen(0),
+    fd(-1),
+    ifd(-1),
+    period(0),
+    elapsed_time(0),
+    timeout_interval(0)
 {
   if (completionToken->continuation)
     this->mutex = completionToken->continuation->mutex;
@@ -227,8 +235,16 @@ UDPReadContinuation::UDPReadContinuation(Event *completionToken)
 }
 
 UDPReadContinuation::UDPReadContinuation()
-  : Continuation(NULL), event(UNINITIALIZED_EVENT_PTR), readbuf(NULL), readlen(0), fromaddrlen(0), fd(-1), ifd(-1), period(0),
-    elapsed_time(0), timeout_interval(0)
+  : Continuation(NULL),
+    event(UNINITIALIZED_EVENT_PTR),
+    readbuf(NULL),
+    readlen(0),
+    fromaddrlen(0),
+    fd(-1),
+    ifd(-1),
+    period(0),
+    elapsed_time(0),
+    timeout_interval(0)
 {
 }
 

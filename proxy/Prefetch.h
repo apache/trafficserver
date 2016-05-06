@@ -64,9 +64,21 @@ struct PrefetchConfiguration {
   TSPrefetchHook embedded_obj_hook;
 
   PrefetchConfiguration()
-    : prefetch_enabled(0), html_tags_table(0), html_attrs_table(0), local_http_server_port(0), stuffer_port(0), url_buffer_size(0),
-      url_buffer_timeout(0), keepalive_timeout(0), push_cached_objects(0), max_object_size(0), max_recursion(0), redirection(0),
-      pre_parse_hook(0), embedded_url_hook(0), embedded_obj_hook(0)
+    : prefetch_enabled(0),
+      html_tags_table(0),
+      html_attrs_table(0),
+      local_http_server_port(0),
+      stuffer_port(0),
+      url_buffer_size(0),
+      url_buffer_timeout(0),
+      keepalive_timeout(0),
+      push_cached_objects(0),
+      max_object_size(0),
+      max_recursion(0),
+      redirection(0),
+      pre_parse_hook(0),
+      embedded_url_hook(0),
+      embedded_obj_hook(0)
   {
   }
   int readConfiguration();
@@ -280,8 +292,18 @@ public:
   typedef int (PrefetchBlaster::*EventHandler)(int event, void *data);
 
   PrefetchBlaster()
-    : Continuation(), url_ent(0), transform(0), url_list(0), request(0), cache_http_info(0), buf(0), reader(0), serverVC(0),
-      n_pkts_sent(0), seq_no(0), io_block(0){};
+    : Continuation(),
+      url_ent(0),
+      transform(0),
+      url_list(0),
+      request(0),
+      cache_http_info(0),
+      buf(0),
+      reader(0),
+      serverVC(0),
+      n_pkts_sent(0),
+      seq_no(0),
+      io_block(0){};
   ~PrefetchBlaster(){};
 
   int init(PrefetchUrlEntry *entry, HTTPHdr *request, PrefetchTransform *p_trans);

@@ -195,8 +195,13 @@ struct CCFailHistoryTestCont : public Continuation {
   }
 
   CCFailHistoryTestCont(Ptr<ProxyMutex> _mutex, RegressionTest *_test)
-    : Continuation(_mutex), test_mode(SIMPLE_TEST), final_status(REGRESSION_TEST_PASSED), complete(false), test(_test),
-      failEvents(NULL), pending_action(NULL)
+    : Continuation(_mutex),
+      test_mode(SIMPLE_TEST),
+      final_status(REGRESSION_TEST_PASSED),
+      complete(false),
+      test(_test),
+      failEvents(NULL),
+      pending_action(NULL)
   {
     SET_HANDLER(&CCFailHistoryTestCont::mainEvent);
     rule = new CongestionControlRecord;

@@ -62,8 +62,17 @@ store_verify(Store *store)
 }
 
 MultiCacheHeader::MultiCacheHeader()
-  : magic(MULTI_CACHE_MAGIC_NUMBER), levels(0), tag_bits(0), max_hits(0), elementsize(0), buckets(0), totalelements(0),
-    totalsize(0), nominal_elements(0), heap_size(0), heap_halfspace(0)
+  : magic(MULTI_CACHE_MAGIC_NUMBER),
+    levels(0),
+    tag_bits(0),
+    max_hits(0),
+    elementsize(0),
+    buckets(0),
+    totalelements(0),
+    totalsize(0),
+    nominal_elements(0),
+    heap_size(0),
+    heap_halfspace(0)
 {
   memset(level_offset, 0, sizeof(level_offset));
   memset(bucketsize, 0, sizeof(bucketsize));

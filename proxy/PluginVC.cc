@@ -86,10 +86,27 @@
 #define PVC_TYPE ((vc_type == PLUGIN_VC_ACTIVE) ? "Active" : "Passive")
 
 PluginVC::PluginVC(PluginVCCore *core_obj)
-  : NetVConnection(), magic(PLUGIN_VC_MAGIC_ALIVE), vc_type(PLUGIN_VC_UNKNOWN), core_obj(core_obj), other_side(NULL), read_state(),
-    write_state(), need_read_process(false), need_write_process(false), closed(false), sm_lock_retry_event(NULL),
-    core_lock_retry_event(NULL), deletable(false), reentrancy_count(0), active_timeout(0), active_event(NULL), inactive_timeout(0),
-    inactive_timeout_at(0), inactive_event(NULL), plugin_tag(NULL), plugin_id(0)
+  : NetVConnection(),
+    magic(PLUGIN_VC_MAGIC_ALIVE),
+    vc_type(PLUGIN_VC_UNKNOWN),
+    core_obj(core_obj),
+    other_side(NULL),
+    read_state(),
+    write_state(),
+    need_read_process(false),
+    need_write_process(false),
+    closed(false),
+    sm_lock_retry_event(NULL),
+    core_lock_retry_event(NULL),
+    deletable(false),
+    reentrancy_count(0),
+    active_timeout(0),
+    active_event(NULL),
+    inactive_timeout(0),
+    inactive_timeout_at(0),
+    inactive_event(NULL),
+    plugin_tag(NULL),
+    plugin_id(0)
 {
   ink_assert(core_obj != NULL);
   SET_HANDLER(&PluginVC::main_handler);

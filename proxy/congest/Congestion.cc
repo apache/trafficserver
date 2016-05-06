@@ -534,8 +534,15 @@ FailHistory::regist_event(long t, int n)
 // CongestionEntry Implementation
 //----------------------------------------------------------
 CongestionEntry::CongestionEntry(const char *hostname, sockaddr const *ip, CongestionControlRecord *rule, uint64_t key)
-  : m_key(key), m_last_congested(0), m_congested(0), m_stat_congested_conn_failures(0), m_M_congested(0), m_last_M_congested(0),
-    m_num_connections(0), m_stat_congested_max_conn(0), m_ref_count(1)
+  : m_key(key),
+    m_last_congested(0),
+    m_congested(0),
+    m_stat_congested_conn_failures(0),
+    m_M_congested(0),
+    m_last_M_congested(0),
+    m_num_connections(0),
+    m_stat_congested_max_conn(0),
+    m_ref_count(1)
 {
   memset(&m_ip, 0, sizeof(m_ip));
   if (ip != NULL) {

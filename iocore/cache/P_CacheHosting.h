@@ -55,7 +55,13 @@ struct CacheHostRecord {
   int num_cachevols;
 
   CacheHostRecord()
-    : type(CACHE_NONE_TYPE), vols(NULL), good_num_vols(0), num_vols(0), num_initialized(0), vol_hash_table(0), cp(NULL),
+    : type(CACHE_NONE_TYPE),
+      vols(NULL),
+      good_num_vols(0),
+      num_vols(0),
+      num_initialized(0),
+      vol_hash_table(0),
+      cp(NULL),
       num_cachevols(0)
   {
   }

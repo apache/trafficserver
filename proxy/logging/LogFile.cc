@@ -63,7 +63,10 @@
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size,
                  size_t max_line_size)
-  : m_file_format(format), m_name(ats_strdup(name)), m_header(ats_strdup(header)), m_signature(signature),
+  : m_file_format(format),
+    m_name(ats_strdup(name)),
+    m_header(ats_strdup(header)),
+    m_signature(signature),
     m_max_line_size(max_line_size)
 {
   if (m_file_format != LOG_FILE_PIPE) {
@@ -86,8 +89,12 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const LogFile &copy)
-  : m_file_format(copy.m_file_format), m_name(ats_strdup(copy.m_name)), m_header(ats_strdup(copy.m_header)),
-    m_signature(copy.m_signature), m_ascii_buffer_size(copy.m_ascii_buffer_size), m_max_line_size(copy.m_max_line_size),
+  : m_file_format(copy.m_file_format),
+    m_name(ats_strdup(copy.m_name)),
+    m_header(ats_strdup(copy.m_header)),
+    m_signature(copy.m_signature),
+    m_ascii_buffer_size(copy.m_ascii_buffer_size),
+    m_max_line_size(copy.m_max_line_size),
     m_fd(copy.m_fd)
 {
   ink_release_assert(m_ascii_buffer_size >= m_max_line_size);

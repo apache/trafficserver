@@ -155,8 +155,16 @@ LogBuffer::LogBuffer(LogObject *owner, size_t size, size_t buf_align, size_t wri
 }
 
 LogBuffer::LogBuffer(LogObject *owner, LogBufferHeader *header)
-  : m_unaligned_buffer(NULL), m_buffer((char *)header), m_size(0), m_buf_align(LB_DEFAULT_ALIGN), m_write_align(INK_MIN_ALIGN),
-    m_buffer_fast_allocator_size(-1), m_expiration_time(0), m_owner(owner), m_header(header), m_references(0)
+  : m_unaligned_buffer(NULL),
+    m_buffer((char *)header),
+    m_size(0),
+    m_buf_align(LB_DEFAULT_ALIGN),
+    m_write_align(INK_MIN_ALIGN),
+    m_buffer_fast_allocator_size(-1),
+    m_expiration_time(0),
+    m_owner(owner),
+    m_header(header),
+    m_references(0)
 {
   // This constructor does not allocate a buffer because it gets it as
   // an argument. We set m_unaligned_buffer to NULL, which means that

@@ -60,8 +60,16 @@ struct atscppapi::TransformationPluginState : noncopyable {
 
   TransformationPluginState(atscppapi::Transaction &transaction, TransformationPlugin &transformation_plugin,
                             TransformationPlugin::Type type, TSHttpTxn txn)
-    : vconn_(NULL), transaction_(transaction), transformation_plugin_(transformation_plugin), type_(type), output_vio_(NULL),
-      txn_(txn), output_buffer_(NULL), output_buffer_reader_(NULL), bytes_written_(0), input_complete_dispatched_(false)
+    : vconn_(NULL),
+      transaction_(transaction),
+      transformation_plugin_(transformation_plugin),
+      type_(type),
+      output_vio_(NULL),
+      txn_(txn),
+      output_buffer_(NULL),
+      output_buffer_reader_(NULL),
+      bytes_written_(0),
+      input_complete_dispatched_(false)
   {
     output_buffer_ = TSIOBufferCreate();
     output_buffer_reader_ = TSIOBufferReaderAlloc(output_buffer_);

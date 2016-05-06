@@ -38,7 +38,10 @@ class Variables : private ComponentBase
 {
 public:
   Variables(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
-    : ComponentBase(debug_tag, debug_func, error_func), _headers_parsed(false), _query_string(""), _query_string_parsed(false),
+    : ComponentBase(debug_tag, debug_func, error_func),
+      _headers_parsed(false),
+      _query_string(""),
+      _query_string_parsed(false),
       _cookie_jar_created(false){};
 
   /** currently 'host', 'referer', 'accept-language', 'cookie' and 'user-agent' headers are parsed */

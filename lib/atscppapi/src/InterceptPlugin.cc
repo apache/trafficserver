@@ -85,8 +85,17 @@ struct InterceptPlugin::State {
   bool plugin_io_done_;
 
   State(TSCont cont, InterceptPlugin *plugin)
-    : cont_(cont), net_vc_(NULL), expected_body_size_(0), num_body_bytes_read_(0), hdr_parsed_(false), hdr_buf_(NULL),
-      hdr_loc_(NULL), num_bytes_written_(0), plugin_(plugin), timeout_action_(NULL), plugin_io_done_(false)
+    : cont_(cont),
+      net_vc_(NULL),
+      expected_body_size_(0),
+      num_body_bytes_read_(0),
+      hdr_parsed_(false),
+      hdr_buf_(NULL),
+      hdr_loc_(NULL),
+      num_bytes_written_(0),
+      plugin_(plugin),
+      timeout_action_(NULL),
+      plugin_io_done_(false)
   {
     plugin_mutex_ = plugin->getMutex();
     http_parser_ = TSHttpParserCreate();

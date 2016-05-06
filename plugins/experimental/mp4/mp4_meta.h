@@ -335,9 +335,25 @@ class Mp4Trak
 {
 public:
   Mp4Trak()
-    : timescale(0), duration(0), time_to_sample_entries(0), sample_to_chunk_entries(0), sync_samples_entries(0),
-      composition_offset_entries(0), sample_sizes_entries(0), chunks(0), start_sample(0), start_chunk(0), chunk_samples(0),
-      chunk_samples_size(0), start_offset(0), tkhd_size(0), mdhd_size(0), hdlr_size(0), vmhd_size(0), smhd_size(0), dinf_size(0),
+    : timescale(0),
+      duration(0),
+      time_to_sample_entries(0),
+      sample_to_chunk_entries(0),
+      sync_samples_entries(0),
+      composition_offset_entries(0),
+      sample_sizes_entries(0),
+      chunks(0),
+      start_sample(0),
+      start_chunk(0),
+      chunk_samples(0),
+      chunk_samples_size(0),
+      start_offset(0),
+      tkhd_size(0),
+      mdhd_size(0),
+      hdlr_size(0),
+      vmhd_size(0),
+      smhd_size(0),
+      dinf_size(0),
       size(0)
   {
     memset(&stsc_chunk_entry, 0, sizeof(mp4_stsc_entry));
@@ -378,8 +394,22 @@ class Mp4Meta
 {
 public:
   Mp4Meta()
-    : start(0), cl(0), content_length(0), meta_atom_size(0), meta_avail(0), wait_next(0), need_size(0), rs(0), rate(0),
-      ftyp_size(0), moov_size(0), start_pos(0), timescale(0), trak_num(0), passed(0), meta_complete(false)
+    : start(0),
+      cl(0),
+      content_length(0),
+      meta_atom_size(0),
+      meta_avail(0),
+      wait_next(0),
+      need_size(0),
+      rs(0),
+      rate(0),
+      ftyp_size(0),
+      moov_size(0),
+      start_pos(0),
+      timescale(0),
+      trak_num(0),
+      passed(0),
+      meta_complete(false)
   {
     memset(trak_vec, 0, sizeof(trak_vec));
     meta_buffer = TSIOBufferCreate();

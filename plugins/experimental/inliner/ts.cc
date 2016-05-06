@@ -104,9 +104,15 @@ namespace io
   }
 
   WriteOperation::WriteOperation(const TSVConn v, const TSMutex m, const size_t t)
-    : vconnection_(v), buffer_(TSIOBufferCreate()), reader_(TSIOBufferReaderAlloc(buffer_)),
-      mutex_(m != NULL ? m : TSMutexCreate()), continuation_(TSContCreate(WriteOperation::Handle, mutex_)),
-      vio_(TSVConnWrite(v, continuation_, reader_, std::numeric_limits<int64_t>::max())), action_(NULL), timeout_(t), bytes_(0),
+    : vconnection_(v),
+      buffer_(TSIOBufferCreate()),
+      reader_(TSIOBufferReaderAlloc(buffer_)),
+      mutex_(m != NULL ? m : TSMutexCreate()),
+      continuation_(TSContCreate(WriteOperation::Handle, mutex_)),
+      vio_(TSVConnWrite(v, continuation_, reader_, std::numeric_limits<int64_t>::max())),
+      action_(NULL),
+      timeout_(t),
+      bytes_(0),
       reenable_(true)
   {
     assert(vconnection_ != NULL);

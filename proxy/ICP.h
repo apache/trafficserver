@@ -234,8 +234,16 @@ class ICPConfigData
 
 public:
   ICPConfigData()
-    : _icp_enabled(0), _icp_port(0), _icp_interface(0), _multicast_enabled(0), _icp_query_timeout(0), _cache_lookup_local(0),
-      _stale_lookup(0), _reply_to_unknown_peer(0), _default_reply_port(0), _cache_generation(-1)
+    : _icp_enabled(0),
+      _icp_port(0),
+      _icp_interface(0),
+      _multicast_enabled(0),
+      _icp_query_timeout(0),
+      _cache_lookup_local(0),
+      _stale_lookup(0),
+      _reply_to_unknown_peer(0),
+      _default_reply_port(0),
+      _cache_generation(-1)
   {
   }
   ~ICPConfigData() {} // Note: _icp_interface freed prior to delete
@@ -318,7 +326,12 @@ class PeerConfigData
 public:
   PeerConfigData();
   PeerConfigData(int ctype, IpAddr const &ip_addr, int proxy_port, int icp_port)
-    : _ctype(ctype), _ip_addr(ip_addr), _proxy_port(proxy_port), _icp_port(icp_port), _mc_member(0), _mc_ttl(0),
+    : _ctype(ctype),
+      _ip_addr(ip_addr),
+      _proxy_port(proxy_port),
+      _icp_port(icp_port),
+      _mc_member(0),
+      _mc_ttl(0),
       _my_ip_addr(ip_addr)
   {
     _hostname[0] = 0;

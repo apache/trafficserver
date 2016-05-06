@@ -885,14 +885,26 @@ UnixNetVConnection::reenable_re(VIO *vio)
 }
 
 UnixNetVConnection::UnixNetVConnection()
-  : closed(0), inactivity_timeout_in(0), active_timeout_in(0),
+  : closed(0),
+    inactivity_timeout_in(0),
+    active_timeout_in(0),
 #ifdef INACTIVITY_TIMEOUT
-    inactivity_timeout(NULL), active_timeout(NULL),
+    inactivity_timeout(NULL),
+    active_timeout(NULL),
 #else
-    next_inactivity_timeout_at(0), next_activity_timeout_at(0),
+    next_inactivity_timeout_at(0),
+    next_activity_timeout_at(0),
 #endif
-    nh(NULL), id(0), flags(0), recursion(0), submit_time(0), oob_ptr(0), from_accept_thread(false), origin_trace(false),
-    origin_trace_addr(NULL), origin_trace_port(0)
+    nh(NULL),
+    id(0),
+    flags(0),
+    recursion(0),
+    submit_time(0),
+    oob_ptr(0),
+    from_accept_thread(false),
+    origin_trace(false),
+    origin_trace_addr(NULL),
+    origin_trace_port(0)
 {
   memset(&local_addr, 0, sizeof local_addr);
   memset(&server_addr, 0, sizeof server_addr);

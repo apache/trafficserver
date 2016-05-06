@@ -119,7 +119,13 @@ TransformProcessor::range_transform(ProxyMutex *mut, RangeRecord *ranges, int nu
   -------------------------------------------------------------------------*/
 
 TransformTerminus::TransformTerminus(TransformVConnection *tvc)
-  : VConnection(tvc->mutex), m_tvc(tvc), m_read_vio(), m_write_vio(), m_event_count(0), m_deletable(0), m_closed(0),
+  : VConnection(tvc->mutex),
+    m_tvc(tvc),
+    m_read_vio(),
+    m_write_vio(),
+    m_event_count(0),
+    m_deletable(0),
+    m_closed(0),
     m_called_user(0)
 {
   SET_HANDLER(&TransformTerminus::handle_event);
@@ -727,10 +733,19 @@ TransformTest::run()
 
 RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges, int num_fields, HTTPHdr *transform_resp,
                                const char *content_type, int content_type_len, int64_t content_length)
-  : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(mut)), m_output_buf(NULL), m_output_reader(NULL),
-    m_transform_resp(transform_resp), m_output_vio(NULL), m_range_content_length(0), m_num_range_fields(num_fields),
-    m_current_range(0), m_content_type(content_type), m_content_type_len(content_type_len), m_ranges(ranges),
-    m_output_cl(content_length), m_done(0)
+  : INKVConnInternal(NULL, reinterpret_cast<TSMutex>(mut)),
+    m_output_buf(NULL),
+    m_output_reader(NULL),
+    m_transform_resp(transform_resp),
+    m_output_vio(NULL),
+    m_range_content_length(0),
+    m_num_range_fields(num_fields),
+    m_current_range(0),
+    m_content_type(content_type),
+    m_content_type_len(content_type_len),
+    m_ranges(ranges),
+    m_output_cl(content_length),
+    m_done(0)
 {
   SET_HANDLER(&RangeTransform::handle_event);
 

@@ -31,8 +31,13 @@
 int cluster_port = DEFAULT_CLUSTER_PORT_NUMBER;
 
 ClusterAccept::ClusterAccept(int *port, int send_bufsize, int recv_bufsize)
-  : Continuation(0), p_cluster_port(port), socket_send_bufsize(send_bufsize), socket_recv_bufsize(recv_bufsize),
-    current_cluster_port(-1), accept_action(0), periodic_event(0)
+  : Continuation(0),
+    p_cluster_port(port),
+    socket_send_bufsize(send_bufsize),
+    socket_recv_bufsize(recv_bufsize),
+    current_cluster_port(-1),
+    accept_action(0),
+    periodic_event(0)
 {
   mutex = new_ProxyMutex();
   SET_HANDLER(&ClusterAccept::ClusterAcceptEvent);

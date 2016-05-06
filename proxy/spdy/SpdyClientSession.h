@@ -38,14 +38,30 @@ class SpdyRequest
 {
 public:
   SpdyRequest()
-    : event(0), spdy_sm(NULL), stream_id(-1), start_time(0), fetch_sm(NULL), has_submitted_data(false), need_resume_data(false),
-      fetch_data_len(0), delta_window_size(0), fetch_body_completed(false)
+    : event(0),
+      spdy_sm(NULL),
+      stream_id(-1),
+      start_time(0),
+      fetch_sm(NULL),
+      has_submitted_data(false),
+      need_resume_data(false),
+      fetch_data_len(0),
+      delta_window_size(0),
+      fetch_body_completed(false)
   {
   }
 
   SpdyRequest(SpdyClientSession *sm, int id)
-    : event(0), spdy_sm(NULL), stream_id(-1), start_time(0), fetch_sm(NULL), has_submitted_data(false), need_resume_data(false),
-      fetch_data_len(0), delta_window_size(0), fetch_body_completed(false)
+    : event(0),
+      spdy_sm(NULL),
+      stream_id(-1),
+      start_time(0),
+      fetch_sm(NULL),
+      has_submitted_data(false),
+      need_resume_data(false),
+      fetch_data_len(0),
+      delta_window_size(0),
+      fetch_body_completed(false)
   {
     init(sm, id);
   }
@@ -95,8 +111,19 @@ class SpdyClientSession : public ProxyClientSession, public PluginIdentity
 public:
   typedef ProxyClientSession super; ///< Parent type.
   SpdyClientSession()
-    : sm_id(0), version(spdy::SessionVersion::SESSION_VERSION_3_1), total_size(0), start_time(0), vc(NULL), req_buffer(NULL),
-      req_reader(NULL), resp_buffer(NULL), resp_reader(NULL), read_vio(NULL), write_vio(NULL), event(0), session(NULL)
+    : sm_id(0),
+      version(spdy::SessionVersion::SESSION_VERSION_3_1),
+      total_size(0),
+      start_time(0),
+      vc(NULL),
+      req_buffer(NULL),
+      req_reader(NULL),
+      resp_buffer(NULL),
+      resp_reader(NULL),
+      read_vio(NULL),
+      write_vio(NULL),
+      event(0),
+      session(NULL)
   {
   }
 

@@ -373,8 +373,18 @@ struct TestProxy : Continuation {
   }
 
   TestProxy(MIOBuffer *abuf)
-    : Continuation(new_ProxyMutex()), vc(0), remote(0), inbuf(abuf), outbuf(0), clusterOutVIO(0), inVIO(0), url(0), url_end(0),
-      amode(0), tunnel(0), cachefile(0)
+    : Continuation(new_ProxyMutex()),
+      vc(0),
+      remote(0),
+      inbuf(abuf),
+      outbuf(0),
+      clusterOutVIO(0),
+      inVIO(0),
+      url(0),
+      url_end(0),
+      amode(0),
+      tunnel(0),
+      cachefile(0)
   {
     SET_HANDLER(startEvent);
   }

@@ -37,7 +37,12 @@ class RuleSet
 {
 public:
   RuleSet()
-    : next(NULL), _cond(NULL), _oper(NULL), _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK), _ids(RSRC_NONE), _opermods(OPER_NONE),
+    : next(NULL),
+      _cond(NULL),
+      _oper(NULL),
+      _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK),
+      _ids(RSRC_NONE),
+      _opermods(OPER_NONE),
       _last(false){};
 
   // No reason to inline these

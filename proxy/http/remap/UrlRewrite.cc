@@ -54,8 +54,16 @@ SetHomePageRedirectFlag(url_mapping *new_mapping, URL &new_to_url)
 // CTOR / DTOR for the UrlRewrite class.
 //
 UrlRewrite::UrlRewrite()
-  : nohost_rules(0), reverse_proxy(0), mgmt_synthetic_port(0), ts_name(NULL), http_default_redirect_url(NULL), num_rules_forward(0),
-    num_rules_reverse(0), num_rules_redirect_permanent(0), num_rules_redirect_temporary(0), num_rules_forward_with_recv_port(0),
+  : nohost_rules(0),
+    reverse_proxy(0),
+    mgmt_synthetic_port(0),
+    ts_name(NULL),
+    http_default_redirect_url(NULL),
+    num_rules_forward(0),
+    num_rules_reverse(0),
+    num_rules_redirect_permanent(0),
+    num_rules_redirect_temporary(0),
+    num_rules_forward_with_recv_port(0),
     _valid(false)
 {
   ats_scoped_str config_file_path;
