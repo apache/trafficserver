@@ -27,10 +27,8 @@ static void
 send_plugin_event(Continuation *plugin, int event, void *edata)
 {
   if (plugin->mutex) {
-    EThread *thread(this_ethread());
-    MUTEX_TAKE_LOCK(plugin->mutex, thread);
+    SCOPED_MUTEX_LOCK(lock, plugin->mutex, this_ethread());
     plugin->handleEvent(event, edata);
-    MUTEX_UNTAKE_LOCK(plugin->mutex, thread);
   } else {
     plugin->handleEvent(event, edata);
   }
@@ -64,7 +62,7 @@ ssl_netvc_cast(int event, void *edata)
 // lock across the handshake, so we make a trampoline to bounce the event from the SSL acceptor to the ultimate session
 // acceptor.
 struct SSLNextProtocolTrampoline : public Continuation {
-  explicit SSLNextProtocolTrampoline(const SSLNextProtocolAccept *npn, ProxyMutex *mutex) : Continuation(mutex), npnParent(npn)
+  SSLNextProtocolTrampoline(const SSLNextProtocolAccept *npn, Ptr<ProxyMutex> &mutex) : Continuation(mutex), npnParent(npn)
   {
     SET_HANDLER(&SSLNextProtocolTrampoline::ioCompletionEvent);
   }
