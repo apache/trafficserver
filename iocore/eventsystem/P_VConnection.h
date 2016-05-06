@@ -61,6 +61,12 @@ VConnection::VConnection(ProxyMutex *aMutex) : Continuation(aMutex), lerrno(0)
 }
 
 TS_INLINE
+VConnection::VConnection(Ptr<ProxyMutex> &aMutex) : Continuation(aMutex), lerrno(0)
+{
+  SET_HANDLER(0);
+}
+
+TS_INLINE
 VConnection::~VConnection()
 {
 }
