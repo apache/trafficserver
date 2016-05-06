@@ -76,13 +76,10 @@ public:
       This takes the secondary @a mutex and the @a target continuation
       to invoke, along with the arguments for that invocation.
   */
-  ContWrapper(ProxyMutex *mutex ///< Mutex for this continuation (primary lock).
-              ,
-              Continuation *target ///< "Real" continuation we want to call.
-              ,
-              int eventId = EVENT_IMMEDIATE ///< Event ID for invocation of @a target.
-              ,
-              void *edata = 0 ///< Data for invocation of @a target.
+  ContWrapper(ProxyMutex *mutex,             ///< Mutex for this continuation (primary lock).
+              Continuation *target,          ///< "Real" continuation we want to call.
+              int eventId = EVENT_IMMEDIATE, ///< Event ID for invocation of @a target.
+              void *edata = 0                ///< Data for invocation of @a target.
               )
     : Continuation(mutex), _target(target), _eventId(eventId), _edata(edata)
   {
@@ -116,13 +113,10 @@ public:
       instance but simply calls the @a target.
   */
   static void
-  wrap(ProxyMutex *mutex ///< Mutex for this continuation (primary lock).
-       ,
-       Continuation *target ///< "Real" continuation we want to call.
-       ,
-       int eventId = EVENT_IMMEDIATE ///< Event ID for invocation of @a target.
-       ,
-       void *edata = 0 ///< Data for invocation of @a target.
+  wrap(ProxyMutex *mutex,             ///< Mutex for this continuation (primary lock).
+       Continuation *target,          ///< "Real" continuation we want to call.
+       int eventId = EVENT_IMMEDIATE, ///< Event ID for invocation of @a target.
+       void *edata = 0                ///< Data for invocation of @a target.
        )
   {
     EThread *eth = this_ethread();
@@ -209,7 +203,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
   bool trace = sslvc->getSSLTrace();
   Debug("ssl", "trace=%s", trace ? "TRUE" : "FALSE");
 
-  for (bytes_read = 0; (b != 0) && (sslErr == SSL_ERROR_NONE); b = b->next) {
+  for (bytes_read = 0; (b != 0) && (sslErr == SSL_ERROR_NONE); b = b->next.get()) {
     block_write_avail = b->write_avail();
 
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] b->write_avail()=%" PRId64, block_write_avail);
@@ -341,7 +335,7 @@ SSLNetVConnection::read_raw_data()
 
   // read data
   int64_t rattempted = 0, total_read = 0;
-  int niov = 0;
+  unsigned niov = 0;
   IOVec tiovec[NET_MAX_IOV];
   if (toread) {
     IOBufferBlock *b = this->handShakeBuffer->first_write_block();
@@ -361,14 +355,13 @@ SSLNetVConnection::read_raw_data()
           if (a >= togo)
             break;
         }
-        b = b->next;
+        b = b->next.get();
       }
 
-      if (niov == 1) {
-        r = socketManager.read(this->con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
-      } else {
-        r = socketManager.readv(this->con.fd, &tiovec[0], niov);
-      }
+      ink_assert(niov > 0);
+      ink_assert(niov < countof(tiovec));
+      r = socketManager.readv(this->con.fd, &tiovec[0], niov);
+
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
       total_read += rattempted;
     } while (rattempted && r == rattempted && total_read < toread);
@@ -607,7 +600,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     break;
   case SSL_WRITE_WOULD_BLOCK:
   case SSL_READ_WOULD_BLOCK:
-    if (lock.get_mutex() != s->vio.mutex.m_ptr) {
+    if (lock.get_mutex() != s->vio.mutex.get()) {
       Debug("ssl", "ssl_read_from_net, mutex switched");
       if (ret == SSL_READ_WOULD_BLOCK)
         readReschedule(nh);
@@ -658,7 +651,6 @@ int64_t
 SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_written, MIOBufferAccessor &buf,
                                          int &needs)
 {
-  ProxyMutex *mutex = this_ethread()->mutex;
   int64_t r = 0;
   int64_t l = 0;
   uint32_t dynamic_tls_record_size = 0;
@@ -666,7 +658,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
 
   // XXX Rather than dealing with the block directly, we should use the IOBufferReader API.
   int64_t offset = buf.reader()->start_offset;
-  IOBufferBlock *b = buf.reader()->block;
+  IOBufferBlock *b = buf.reader()->block.get();
 
   // Dynamic TLS record sizing
   ink_hrtime now = 0;
@@ -695,7 +687,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     l -= offset;
     if (l <= 0) {
       offset = -l;
-      b = b->next;
+      b = b->next.get();
       continue;
     }
     // check if to amount to write exceeds that in this buffer
@@ -750,7 +742,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     if (l == orig_l) {
       // on to the next block
       offset = 0;
-      b = b->next;
+      b = b->next.get();
     } else {
       offset += l;
     }
@@ -1043,7 +1035,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         sslPreAcceptHookState = SSL_HOOKS_DONE;
       } else {
         sslPreAcceptHookState = SSL_HOOKS_ACTIVE;
-        ContWrapper::wrap(mutex, curHook->m_cont, TS_EVENT_VCONN_PRE_ACCEPT, this);
+        ContWrapper::wrap(mutex.get(), curHook->m_cont, TS_EVENT_VCONN_PRE_ACCEPT, this);
         return SSL_WAIT_FOR_HOOK;
       }
     } else { // waiting for hook to complete
