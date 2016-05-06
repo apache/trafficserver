@@ -322,6 +322,20 @@ Mutex_trylock(
 }
 
 inline bool
+Mutex_trylock(
+#ifdef DEBUG
+  const SourceLocation &location, const char *ahandler,
+#endif
+  Ptr<ProxyMutex> &m, EThread *t)
+{
+  return Mutex_trylock(
+#ifdef DEBUG
+    location, ahandler,
+#endif
+    m.get(), t);
+}
+
+inline bool
 Mutex_trylock_spin(
 #ifdef DEBUG
   const SourceLocation &location, const char *ahandler,
@@ -370,6 +384,20 @@ Mutex_trylock_spin(
   return true;
 }
 
+inline bool
+Mutex_trylock_spin(
+#ifdef DEBUG
+  const SourceLocation &location, const char *ahandler,
+#endif
+  Ptr<ProxyMutex> &m, EThread *t, int spincnt = 1)
+{
+  return Mutex_trylock_spin(
+#ifdef DEBUG
+    location, ahandler,
+#endif
+    m.get(), t, spincnt);
+}
+
 inline int
 Mutex_lock(
 #ifdef DEBUG
@@ -402,6 +430,20 @@ Mutex_lock(
   return true;
 }
 
+inline int
+Mutex_lock(
+#ifdef DEBUG
+  const SourceLocation &location, const char *ahandler,
+#endif
+  Ptr<ProxyMutex> &m, EThread *t)
+{
+  return Mutex_lock(
+#ifdef DEBUG
+    location, ahandler,
+#endif
+    m.get(), t);
+}
+
 inline void
 Mutex_unlock(ProxyMutex *m, EThread *t)
 {
@@ -426,6 +468,12 @@ Mutex_unlock(ProxyMutex *m, EThread *t)
   }
 }
 
+inline void
+Mutex_unlock(Ptr<ProxyMutex> &m, EThread *t)
+{
+  Mutex_unlock(m.get(), t);
+}
+
 /** Scoped lock class for ProxyMutex
  */
 class MutexLock
@@ -445,10 +493,24 @@ public:
 #ifdef DEBUG
       location, ahandler,
 #endif // DEBUG
-      m, t);
+      m.get(), t);
   }
 
-  ~MutexLock() { Mutex_unlock(m, m->thread_holding); }
+  MutexLock(
+#ifdef DEBUG
+    const SourceLocation &location, const char *ahandler,
+#endif // DEBUG
+    Ptr<ProxyMutex> &am, EThread *t)
+    : m(am)
+  {
+    Mutex_lock(
+#ifdef DEBUG
+      location, ahandler,
+#endif // DEBUG
+      m.get(), t);
+  }
+
+  ~MutexLock() { Mutex_unlock(m.get(), m->thread_holding); }
 };
 
 /** Scoped try lock class for ProxyMutex
@@ -471,7 +533,21 @@ public:
 #ifdef DEBUG
       location, ahandler,
 #endif // DEBUG
-      m, t);
+      m.get(), t);
+  }
+
+  MutexTryLock(
+#ifdef DEBUG
+    const SourceLocation &location, const char *ahandler,
+#endif // DEBUG
+    Ptr<ProxyMutex> &am, EThread *t)
+    : m(am)
+  {
+    lock_acquired = Mutex_trylock(
+#ifdef DEBUG
+      location, ahandler,
+#endif // DEBUG
+      m.get(), t);
   }
 
   MutexTryLock(
@@ -485,13 +561,27 @@ public:
 #ifdef DEBUG
       location, ahandler,
 #endif // DEBUG
-      m, t, sp);
+      m.get(), t, sp);
+  }
+
+  MutexTryLock(
+#ifdef DEBUG
+    const SourceLocation &location, const char *ahandler,
+#endif // DEBUG
+    Ptr<ProxyMutex> &am, EThread *t, int sp)
+    : m(am)
+  {
+    lock_acquired = Mutex_trylock_spin(
+#ifdef DEBUG
+      location, ahandler,
+#endif // DEBUG
+      m.get(), t, sp);
   }
 
   ~MutexTryLock()
   {
     if (lock_acquired)
-      Mutex_unlock(m.m_ptr, m.m_ptr->thread_holding);
+      Mutex_unlock(m.get(), m->thread_holding);
   }
 
   /** Spin till lock is acquired
@@ -499,7 +589,7 @@ public:
   void
   acquire(EThread *t)
   {
-    MUTEX_TAKE_LOCK(m.m_ptr, t);
+    MUTEX_TAKE_LOCK(m.get(), t);
     lock_acquired = true;
   }
 
@@ -508,7 +598,7 @@ public:
   {
     ink_assert(lock_acquired); // generate a warning because it shouldn't be done.
     if (lock_acquired) {
-      Mutex_unlock(m.m_ptr, m.m_ptr->thread_holding);
+      Mutex_unlock(m.get(), m->thread_holding);
     }
     lock_acquired = false;
   }
@@ -518,10 +608,11 @@ public:
   {
     return lock_acquired;
   }
+
   const ProxyMutex *
-  get_mutex()
+  get_mutex() const
   {
-    return m.m_ptr;
+    return m.get();
   }
 };
 
