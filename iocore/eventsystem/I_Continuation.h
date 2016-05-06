@@ -161,6 +161,7 @@ public:
 
   */
   Continuation(ProxyMutex *amutex = NULL);
+  Continuation(Ptr<ProxyMutex> &amutex);
 };
 
 /**
@@ -190,6 +191,17 @@ public:
 #else
 #define SET_CONTINUATION_HANDLER(_c, _h) (_c->handler = ((ContinuationHandler)_h))
 #endif
+
+inline Continuation::Continuation(Ptr<ProxyMutex> &amutex)
+  : handler(NULL),
+#ifdef DEBUG
+    handler_name(NULL),
+#endif
+    mutex(amutex)
+{
+  // Pick up the control flags from the creating thread
+  this->control_flags.set_flags(get_cont_flags().get_flags());
+}
 
 inline Continuation::Continuation(ProxyMutex *amutex)
   : handler(NULL),
