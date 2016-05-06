@@ -2415,7 +2415,7 @@ CacheVC::handleReadDone(int event, Event *e)
                         (doc_len && (int64_t)doc_len < cache_config_ram_cache_cutoff) || !cache_config_ram_cache_cutoff);
         if (cutoff_check && !f.doc_from_ram_cache) {
           uint64_t o = dir_offset(&dir);
-          vol->ram_cache->put(read_key, buf, doc->len, http_copy_hdr, (uint32_t)(o >> 32), (uint32_t)o);
+          vol->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, (uint32_t)(o >> 32), (uint32_t)o);
         }
         if (!doc_len) {
           // keep a pointer to it. In case the state machine decides to
@@ -2510,7 +2510,7 @@ Cache::lookup(Continuation *cont, const CacheKey *key, CacheFragType type, char 
   }
 
   Vol *vol = key_to_vol(key, hostname, host_len);
-  ProxyMutex *mutex = cont->mutex;
+  ProxyMutex *mutex = cont->mutex.get();
   CacheVC *c = new_CacheVC(cont);
   SET_CONTINUATION_HANDLER(c, &CacheVC::openReadStartHead);
   c->vio.op = VIO::READ;
