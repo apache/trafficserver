@@ -395,6 +395,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   }
 
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
+
+  TSError("[%s] is deprecated and will be removed as of v7.0.0", PLUGIN_NAME);
+
   return TS_SUCCESS;
 }
 
@@ -456,4 +459,6 @@ TSPluginInit(int argc, const char *argv[])
     initialization_error("Plugin config load failed.");
     return;
   }
+
+  TSError("[%s] is deprecated and will be removed as of v7.0.0", PLUGIN_NAME);
 }
