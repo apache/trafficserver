@@ -39,8 +39,14 @@ int ClusterLoadMonitor::cf_cluster_load_clear_duration;
 int ClusterLoadMonitor::cf_cluster_load_exceed_duration;
 
 ClusterLoadMonitor::ClusterLoadMonitor(ClusterHandler *ch)
-  : Continuation(0), ch(ch), ping_history_buf_head(0), periodic_action(0), cluster_overloaded(0), cancel_periodic(0),
-    cluster_load_msg_sequence_number(0), cluster_load_msg_start_sequence_number(0)
+  : Continuation(0),
+    ch(ch),
+    ping_history_buf_head(0),
+    periodic_action(0),
+    cluster_overloaded(0),
+    cancel_periodic(0),
+    cluster_load_msg_sequence_number(0),
+    cluster_load_msg_start_sequence_number(0)
 {
   mutex = this->ch->mutex;
   SET_HANDLER(&ClusterLoadMonitor::cluster_load_periodic);

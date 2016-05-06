@@ -1779,8 +1779,18 @@ ClassAllocator<HTTPCacheAlt> httpCacheAltAllocator("httpCacheAltAllocator");
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 HTTPCacheAlt::HTTPCacheAlt()
-  : m_magic(CACHE_ALT_MAGIC_ALIVE), m_writeable(1), m_unmarshal_len(-1), m_id(-1), m_rid(-1), m_request_hdr(), m_response_hdr(),
-    m_request_sent_time(0), m_response_received_time(0), m_frag_offset_count(0), m_frag_offsets(0), m_ext_buffer(NULL)
+  : m_magic(CACHE_ALT_MAGIC_ALIVE),
+    m_writeable(1),
+    m_unmarshal_len(-1),
+    m_id(-1),
+    m_rid(-1),
+    m_request_hdr(),
+    m_response_hdr(),
+    m_request_sent_time(0),
+    m_response_received_time(0),
+    m_frag_offset_count(0),
+    m_frag_offsets(0),
+    m_ext_buffer(NULL)
 {
   m_object_key[0] = 0;
   m_object_key[1] = 0;

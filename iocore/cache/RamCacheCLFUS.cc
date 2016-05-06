@@ -102,8 +102,18 @@ struct RamCacheCLFUS : public RamCache {
   void requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims);
   void tick(); // move CLOCK on history
   RamCacheCLFUS()
-    : max_bytes(0), bytes(0), objects(0), vol(0), average_value(0), history(0), ibuckets(0), nbuckets(0), bucket(0), seen(0),
-      ncompressed(0), compressed(0)
+    : max_bytes(0),
+      bytes(0),
+      objects(0),
+      vol(0),
+      average_value(0),
+      history(0),
+      ibuckets(0),
+      nbuckets(0),
+      bucket(0),
+      seen(0),
+      ncompressed(0),
+      compressed(0)
   {
   }
 };

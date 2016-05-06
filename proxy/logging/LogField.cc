@@ -176,9 +176,20 @@ LogField::init_milestone_container(void)
 
 // Generic field ctor
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setfunc)
-  : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
-    m_unmarshal_func(unmarshal), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_milestone1(TS_MILESTONE_LAST_ENTRY), m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(false), m_alias_map(0),
+  : m_name(ats_strdup(name)),
+    m_symbol(ats_strdup(symbol)),
+    m_type(type),
+    m_container(NO_CONTAINER),
+    m_marshal_func(marshal),
+    m_unmarshal_func(unmarshal),
+    m_unmarshal_func_map(NULL),
+    m_agg_op(NO_AGGREGATE),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(false),
+    m_alias_map(0),
     m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
@@ -192,9 +203,20 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
                    Ptr<LogFieldAliasMap> map, SetFunc _setfunc)
-  : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
-    m_unmarshal_func(NULL), m_unmarshal_func_map(unmarshal), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_milestone1(TS_MILESTONE_LAST_ENTRY), m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(false), m_alias_map(map),
+  : m_name(ats_strdup(name)),
+    m_symbol(ats_strdup(symbol)),
+    m_type(type),
+    m_container(NO_CONTAINER),
+    m_marshal_func(marshal),
+    m_unmarshal_func(NULL),
+    m_unmarshal_func_map(unmarshal),
+    m_agg_op(NO_AGGREGATE),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(false),
+    m_alias_map(map),
     m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
@@ -247,9 +269,20 @@ LogField::milestones_from_m_name(TSMilestonesType *ms1, TSMilestonesType *ms2)
 
 // Container field ctor
 LogField::LogField(const char *field, Container container, SetFunc _setfunc)
-  : m_name(ats_strdup(field)), m_symbol(ats_strdup(container_names[container])), m_type(LogField::STRING), m_container(container),
-    m_marshal_func(NULL), m_unmarshal_func(NULL), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_milestone1(TS_MILESTONE_LAST_ENTRY), m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(false), m_alias_map(0),
+  : m_name(ats_strdup(field)),
+    m_symbol(ats_strdup(container_names[container])),
+    m_type(LogField::STRING),
+    m_container(container),
+    m_marshal_func(NULL),
+    m_unmarshal_func(NULL),
+    m_unmarshal_func_map(NULL),
+    m_agg_op(NO_AGGREGATE),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(false),
+    m_alias_map(0),
     m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
@@ -304,10 +337,21 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
 
 // Copy ctor
 LogField::LogField(const LogField &rhs)
-  : m_name(ats_strdup(rhs.m_name)), m_symbol(ats_strdup(rhs.m_symbol)), m_type(rhs.m_type), m_container(rhs.m_container),
-    m_marshal_func(rhs.m_marshal_func), m_unmarshal_func(rhs.m_unmarshal_func), m_unmarshal_func_map(rhs.m_unmarshal_func_map),
-    m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_milestone1(TS_MILESTONE_LAST_ENTRY),
-    m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map), m_set_func(rhs.m_set_func)
+  : m_name(ats_strdup(rhs.m_name)),
+    m_symbol(ats_strdup(rhs.m_symbol)),
+    m_type(rhs.m_type),
+    m_container(rhs.m_container),
+    m_marshal_func(rhs.m_marshal_func),
+    m_unmarshal_func(rhs.m_unmarshal_func),
+    m_unmarshal_func_map(rhs.m_unmarshal_func_map),
+    m_agg_op(rhs.m_agg_op),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(rhs.m_time_field),
+    m_alias_map(rhs.m_alias_map),
+    m_set_func(rhs.m_set_func)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);

@@ -42,15 +42,27 @@ struct AIOCallback;
 bool shutdown_event_system = false;
 
 EThread::EThread()
-  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this), ethreads_to_be_signalled(NULL),
-    n_ethreads_to_be_signalled(0), main_accept_index(-1), id(NO_ETHREAD_ID), event_types(0), signal_hook(0), tt(REGULAR)
+  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this),
+    ethreads_to_be_signalled(NULL),
+    n_ethreads_to_be_signalled(0),
+    main_accept_index(-1),
+    id(NO_ETHREAD_ID),
+    event_types(0),
+    signal_hook(0),
+    tt(REGULAR)
 {
   memset(thread_private, 0, PER_THREAD_DATA);
 }
 
 EThread::EThread(ThreadType att, int anid)
-  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this), ethreads_to_be_signalled(NULL),
-    n_ethreads_to_be_signalled(0), main_accept_index(-1), id(anid), event_types(0), signal_hook(0), tt(att),
+  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this),
+    ethreads_to_be_signalled(NULL),
+    n_ethreads_to_be_signalled(0),
+    main_accept_index(-1),
+    id(anid),
+    event_types(0),
+    signal_hook(0),
+    tt(att),
     server_session_pool(NULL)
 {
   ethreads_to_be_signalled = (EThread **)ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *));
@@ -82,8 +94,15 @@ EThread::EThread(ThreadType att, int anid)
 }
 
 EThread::EThread(ThreadType att, Event *e)
-  : generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this)), ethreads_to_be_signalled(NULL), n_ethreads_to_be_signalled(0),
-    main_accept_index(-1), id(NO_ETHREAD_ID), event_types(0), signal_hook(0), tt(att), oneevent(e)
+  : generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this)),
+    ethreads_to_be_signalled(NULL),
+    n_ethreads_to_be_signalled(0),
+    main_accept_index(-1),
+    id(NO_ETHREAD_ID),
+    event_types(0),
+    signal_hook(0),
+    tt(att),
+    oneevent(e)
 {
   ink_assert(att == DEDICATED);
   memset(thread_private, 0, PER_THREAD_DATA);

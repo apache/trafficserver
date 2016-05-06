@@ -26,8 +26,16 @@
 #include "ts/ink_memory.h"
 
 remap_plugin_info::remap_plugin_info(char *_path)
-  : next(0), path(NULL), path_size(0), dlh(NULL), fp_tsremap_init(NULL), fp_tsremap_done(NULL), fp_tsremap_new_instance(NULL),
-    fp_tsremap_delete_instance(NULL), fp_tsremap_do_remap(NULL), fp_tsremap_os_response(NULL)
+  : next(0),
+    path(NULL),
+    path_size(0),
+    dlh(NULL),
+    fp_tsremap_init(NULL),
+    fp_tsremap_done(NULL),
+    fp_tsremap_new_instance(NULL),
+    fp_tsremap_delete_instance(NULL),
+    fp_tsremap_do_remap(NULL),
+    fp_tsremap_os_response(NULL)
 {
   // coverity did not see ats_free
   // coverity[ctor_dtor_leak]

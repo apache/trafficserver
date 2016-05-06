@@ -44,8 +44,16 @@ public:
   // MIME standard separator ',' is used as the default value
   // Set-cookie/Cookie uses ';'
   HdrCsvIter(const char s = ',')
-    : m_value_start(NULL), m_value_len(0), m_bytes_consumed(0), m_follow_dups(false), m_csv_start(NULL), m_csv_len(0),
-      m_csv_end(NULL), m_csv_index(0), m_cur_field(NULL), m_separator(s)
+    : m_value_start(NULL),
+      m_value_len(0),
+      m_bytes_consumed(0),
+      m_follow_dups(false),
+      m_csv_start(NULL),
+      m_csv_len(0),
+      m_csv_end(NULL),
+      m_csv_index(0),
+      m_cur_field(NULL),
+      m_separator(s)
   {
   }
   const char *get_first(const MIMEField *m, int *len, bool follow_dups = true);

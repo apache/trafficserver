@@ -588,8 +588,18 @@ struct CommandLineArgs {
   int as_object;   // Show the URL stats as a single JSON object (not array)
 
   CommandLineArgs()
-    : max_origins(0), min_hits(0), max_age(0), line_len(DEFAULT_LINE_LEN), incremental(0), tail(0), summary(0), json(0), cgi(0),
-      urls(0), show_urls(0), as_object(0)
+    : max_origins(0),
+      min_hits(0),
+      max_age(0),
+      line_len(DEFAULT_LINE_LEN),
+      incremental(0),
+      tail(0),
+      summary(0),
+      json(0),
+      cgi(0),
+      urls(0),
+      show_urls(0),
+      as_object(0)
   {
     log_file[0] = '\0';
     origin_file[0] = '\0';

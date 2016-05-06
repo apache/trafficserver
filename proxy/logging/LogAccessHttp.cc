@@ -49,12 +49,28 @@
   -------------------------------------------------------------------------*/
 
 LogAccessHttp::LogAccessHttp(HttpSM *sm)
-  : m_http_sm(sm), m_arena(), m_client_request(NULL), m_proxy_response(NULL), m_proxy_request(NULL), m_server_response(NULL),
-    m_cache_response(NULL), m_client_req_url_str(NULL), m_client_req_url_len(0), m_client_req_url_canon_str(NULL),
-    m_client_req_url_canon_len(0), m_client_req_unmapped_url_canon_str(NULL), m_client_req_unmapped_url_canon_len(-1),
-    m_client_req_unmapped_url_path_str(NULL), m_client_req_unmapped_url_path_len(-1), m_client_req_unmapped_url_host_str(NULL),
-    m_client_req_unmapped_url_host_len(-1), m_client_req_url_path_str(NULL), m_client_req_url_path_len(0),
-    m_proxy_resp_content_type_str(NULL), m_proxy_resp_content_type_len(0), m_cache_lookup_url_canon_str(NULL),
+  : m_http_sm(sm),
+    m_arena(),
+    m_client_request(NULL),
+    m_proxy_response(NULL),
+    m_proxy_request(NULL),
+    m_server_response(NULL),
+    m_cache_response(NULL),
+    m_client_req_url_str(NULL),
+    m_client_req_url_len(0),
+    m_client_req_url_canon_str(NULL),
+    m_client_req_url_canon_len(0),
+    m_client_req_unmapped_url_canon_str(NULL),
+    m_client_req_unmapped_url_canon_len(-1),
+    m_client_req_unmapped_url_path_str(NULL),
+    m_client_req_unmapped_url_path_len(-1),
+    m_client_req_unmapped_url_host_str(NULL),
+    m_client_req_unmapped_url_host_len(-1),
+    m_client_req_url_path_str(NULL),
+    m_client_req_url_path_len(0),
+    m_proxy_resp_content_type_str(NULL),
+    m_proxy_resp_content_type_len(0),
+    m_cache_lookup_url_canon_str(NULL),
     m_cache_lookup_url_canon_len(0)
 {
   ink_assert(m_http_sm != NULL);

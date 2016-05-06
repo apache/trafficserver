@@ -398,16 +398,40 @@ StatExprList::count()
  */
 
 StatObject::StatObject()
-  : m_id(1), m_debug(false), m_expr_string(NULL), m_node_dest(NULL), m_cluster_dest(NULL), m_expression(NULL), m_postfix(NULL),
-    m_last_update(-1), m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(FLT_MIN), m_has_max(false),
-    m_has_min(false), m_has_delta(false)
+  : m_id(1),
+    m_debug(false),
+    m_expr_string(NULL),
+    m_node_dest(NULL),
+    m_cluster_dest(NULL),
+    m_expression(NULL),
+    m_postfix(NULL),
+    m_last_update(-1),
+    m_current_time(-1),
+    m_update_interval(-1),
+    m_stats_max(FLT_MAX),
+    m_stats_min(FLT_MIN),
+    m_has_max(false),
+    m_has_min(false),
+    m_has_delta(false)
 {
 }
 
 StatObject::StatObject(unsigned identifier)
-  : m_id(identifier), m_debug(false), m_expr_string(NULL), m_node_dest(NULL), m_cluster_dest(NULL), m_expression(NULL),
-    m_postfix(NULL), m_last_update(-1), m_current_time(-1), m_update_interval(-1), m_stats_max(FLT_MAX), m_stats_min(FLT_MIN),
-    m_has_max(false), m_has_min(false), m_has_delta(false)
+  : m_id(identifier),
+    m_debug(false),
+    m_expr_string(NULL),
+    m_node_dest(NULL),
+    m_cluster_dest(NULL),
+    m_expression(NULL),
+    m_postfix(NULL),
+    m_last_update(-1),
+    m_current_time(-1),
+    m_update_interval(-1),
+    m_stats_max(FLT_MAX),
+    m_stats_min(FLT_MIN),
+    m_has_max(false),
+    m_has_min(false),
+    m_has_delta(false)
 {
 }
 

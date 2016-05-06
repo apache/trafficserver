@@ -117,7 +117,12 @@ SrcLoc::str(char *buf, int buflen) const
 //////////////////////////////////////////////////////////////////////////////
 
 Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
-  : diags_log(NULL), stdout_log(NULL), stderr_log(NULL), magic(DIAGS_MAGIC), show_location(0), base_debug_tags(NULL),
+  : diags_log(NULL),
+    stdout_log(NULL),
+    stderr_log(NULL),
+    magic(DIAGS_MAGIC),
+    show_location(0),
+    base_debug_tags(NULL),
     base_action_tags(NULL)
 {
   int i;

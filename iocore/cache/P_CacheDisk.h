@@ -103,8 +103,22 @@ struct CacheDisk : public Continuation {
   ats_scoped_str hash_base_string; ///< Base string for hash seed.
 
   CacheDisk()
-    : Continuation(new_ProxyMutex()), header(NULL), path(NULL), header_len(0), len(0), start(0), skip(0), num_usable_blocks(0),
-      fd(-1), free_space(0), wasted_space(0), disk_vols(NULL), free_blocks(NULL), num_errors(0), cleared(0), read_only_p(false),
+    : Continuation(new_ProxyMutex()),
+      header(NULL),
+      path(NULL),
+      header_len(0),
+      len(0),
+      start(0),
+      skip(0),
+      num_usable_blocks(0),
+      fd(-1),
+      free_space(0),
+      wasted_space(0),
+      disk_vols(NULL),
+      free_blocks(NULL),
+      num_errors(0),
+      cleared(0),
+      read_only_p(false),
       forced_volume_num(-1)
   {
   }

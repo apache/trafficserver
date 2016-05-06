@@ -66,8 +66,15 @@ struct ShowCache : public ShowCont {
   int handleCacheScanCallback(int event, Event *e);
 
   ShowCache(Continuation *c, HTTPHdr *h)
-    : ShowCont(c, h), vol_index(0), seg_index(0), scan_flag(scan_type_lookup), cache_vc(0), buffer(0), buffer_reader(0),
-      content_length(0), cvio(0)
+    : ShowCont(c, h),
+      vol_index(0),
+      seg_index(0),
+      scan_flag(scan_type_lookup),
+      cache_vc(0),
+      buffer(0),
+      buffer_reader(0),
+      content_length(0),
+      cvio(0)
   {
     urlstrs_index = 0;
     linecount = 0;

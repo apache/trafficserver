@@ -63,8 +63,19 @@ transfer_data(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 }
 
 OneWayTunnel::OneWayTunnel()
-  : Continuation(0), vioSource(0), vioTarget(0), cont(0), manipulate_fn(0), n_connections(0), lerrno(0), single_buffer(0),
-    close_source(0), close_target(0), tunnel_till_done(0), tunnel_peer(0), free_vcs(true)
+  : Continuation(0),
+    vioSource(0),
+    vioTarget(0),
+    cont(0),
+    manipulate_fn(0),
+    n_connections(0),
+    lerrno(0),
+    single_buffer(0),
+    close_source(0),
+    close_target(0),
+    tunnel_till_done(0),
+    tunnel_peer(0),
+    free_vcs(true)
 {
 }
 
@@ -96,9 +107,16 @@ OneWayTunnel::~OneWayTunnel()
 }
 
 OneWayTunnel::OneWayTunnel(Continuation *aCont, Transform_fn aManipulate_fn, bool aclose_source, bool aclose_target)
-  : Continuation(aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex()), cont(aCont), manipulate_fn(aManipulate_fn),
-    n_connections(2), lerrno(0), single_buffer(true), close_source(aclose_source), close_target(aclose_target),
-    tunnel_till_done(false), free_vcs(false)
+  : Continuation(aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex()),
+    cont(aCont),
+    manipulate_fn(aManipulate_fn),
+    n_connections(2),
+    lerrno(0),
+    single_buffer(true),
+    close_source(aclose_source),
+    close_target(aclose_target),
+    tunnel_till_done(false),
+    free_vcs(false)
 {
   ink_assert(!"This form of OneWayTunnel() constructor not supported");
 }

@@ -45,10 +45,12 @@ private:
 };
 
 UpTest::UpTest(FILE * /* f ATS_UNUSED */, ProxyMutex *amutex)
-  : Continuation(amutex), active_req(0)
+  : Continuation(amutex),
+    active_req(0)
 #ifdef GO_AWAY
     ,
-    total_req(0), file(f)
+    total_req(0),
+    file(f)
 #endif
 {
   SET_HANDLER(&UpTest::main_handler);

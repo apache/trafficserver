@@ -60,9 +60,19 @@ int LogCollationHostSM::ID = 0;
 //-------------------------------------------------------------------------
 
 LogCollationHostSM::LogCollationHostSM(NetVConnection *client_vc)
-  : Continuation(new_ProxyMutex()), m_client_vc(client_vc), m_client_vio(NULL), m_client_buffer(NULL), m_client_reader(NULL),
-    m_pending_event(NULL), m_read_buffer(NULL), m_read_bytes_wanted(0), m_read_bytes_received(0),
-    m_read_buffer_fast_allocator_size(-1), m_client_ip(0), m_client_port(0), m_id(ID++)
+  : Continuation(new_ProxyMutex()),
+    m_client_vc(client_vc),
+    m_client_vio(NULL),
+    m_client_buffer(NULL),
+    m_client_reader(NULL),
+    m_pending_event(NULL),
+    m_read_buffer(NULL),
+    m_read_bytes_wanted(0),
+    m_read_bytes_received(0),
+    m_read_buffer_fast_allocator_size(-1),
+    m_client_ip(0),
+    m_client_port(0),
+    m_id(ID++)
 {
   Debug("log-coll", "[%d]host::constructor", m_id);
 

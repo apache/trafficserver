@@ -114,9 +114,19 @@ class ParentRecord : public ControlBase
 {
 public:
   ParentRecord()
-    : parents(NULL), secondary_parents(NULL), num_parents(0), num_secondary_parents(0), ignore_query(false), rr_next(0),
-      go_direct(true), parent_is_proxy(true), selection_strategy(NULL), unavailable_server_retry_responses(NULL), parent_retry(0),
-      max_simple_retries(1), max_unavailable_server_retries(1)
+    : parents(NULL),
+      secondary_parents(NULL),
+      num_parents(0),
+      num_secondary_parents(0),
+      ignore_query(false),
+      rr_next(0),
+      go_direct(true),
+      parent_is_proxy(true),
+      selection_strategy(NULL),
+      unavailable_server_retry_responses(NULL),
+      parent_retry(0),
+      max_simple_retries(1),
+      max_unavailable_server_retries(1)
   {
   }
 
@@ -159,8 +169,17 @@ ParentRecord *const extApiRecord = (ParentRecord *)0xeeeeffff;
 
 struct ParentResult {
   ParentResult()
-    : r(PARENT_UNDEFINED), hostname(NULL), port(0), retry(false), line_number(0), epoch(NULL), rec(NULL), last_parent(0),
-      start_parent(0), wrap_around(false), last_lookup(0)
+    : r(PARENT_UNDEFINED),
+      hostname(NULL),
+      port(0),
+      retry(false),
+      line_number(0),
+      epoch(NULL),
+      rec(NULL),
+      last_parent(0),
+      start_parent(0),
+      wrap_around(false),
+      last_lookup(0)
   {
   }
 

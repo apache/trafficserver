@@ -66,8 +66,17 @@ create_this_cluster_machine()
 }
 
 ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
-  : dead(false), hostname(ahostname), ip(aip), cluster_port(aport), num_connections(0), now_connections(0), free_connections(0),
-    rr_count(0), msg_proto_major(0), msg_proto_minor(0), clusterHandlers(0)
+  : dead(false),
+    hostname(ahostname),
+    ip(aip),
+    cluster_port(aport),
+    num_connections(0),
+    now_connections(0),
+    free_connections(0),
+    rr_count(0),
+    msg_proto_major(0),
+    msg_proto_minor(0),
+    clusterHandlers(0)
 {
   EThread *thread = this_ethread();
   ProxyMutex *mutex = thread->mutex;

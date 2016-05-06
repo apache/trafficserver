@@ -257,7 +257,10 @@ class PostDataBuffers
 {
 public:
   PostDataBuffers()
-    : postdata_producer_buffer(NULL), postdata_copy_buffer(NULL), postdata_producer_reader(NULL), postdata_copy_buffer_start(NULL),
+    : postdata_producer_buffer(NULL),
+      postdata_copy_buffer(NULL),
+      postdata_producer_reader(NULL),
+      postdata_copy_buffer_start(NULL),
       ua_buffer_reader(NULL)
   {
     Debug("http_redirect", "[PostDataBuffers::PostDataBuffers]");

@@ -52,15 +52,31 @@ class Resources
 {
 public:
   explicit Resources(TSHttpTxn txnptr, TSCont contptr)
-    : txnp(txnptr), contp(contptr), bufp(NULL), hdr_loc(NULL), client_bufp(NULL), client_hdr_loc(NULL),
-      resp_status(TS_HTTP_STATUS_NONE), _rri(NULL), changed_url(false), _ready(false)
+    : txnp(txnptr),
+      contp(contptr),
+      bufp(NULL),
+      hdr_loc(NULL),
+      client_bufp(NULL),
+      client_hdr_loc(NULL),
+      resp_status(TS_HTTP_STATUS_NONE),
+      _rri(NULL),
+      changed_url(false),
+      _ready(false)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (InkAPI)");
   }
 
   Resources(TSHttpTxn txnptr, TSRemapRequestInfo *rri)
-    : txnp(txnptr), contp(NULL), bufp(NULL), hdr_loc(NULL), client_bufp(NULL), client_hdr_loc(NULL),
-      resp_status(TS_HTTP_STATUS_NONE), _rri(rri), changed_url(false), _ready(false)
+    : txnp(txnptr),
+      contp(NULL),
+      bufp(NULL),
+      hdr_loc(NULL),
+      client_bufp(NULL),
+      client_hdr_loc(NULL),
+      resp_status(TS_HTTP_STATUS_NONE),
+      _rri(rri),
+      changed_url(false),
+      _ready(false)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Resources (RemapAPI)");
   }

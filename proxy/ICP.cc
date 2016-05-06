@@ -282,8 +282,15 @@ ICPPeerReadCont::PeerReadData::reset(int full_reset)
 // ICPPeerReadCont -- ICP incoming message processing state machine
 //------------------------------------------------------------------------
 ICPPeerReadCont::ICPPeerReadCont()
-  : Continuation(0), _object_vc(NULL), _object_read(NULL), _cache_req_hdr_heap_handle(NULL), _cache_resp_hdr_heap_handle(NULL),
-    _ICPpr(NULL), _state(NULL), _start_time(0), _recursion_depth(0)
+  : Continuation(0),
+    _object_vc(NULL),
+    _object_read(NULL),
+    _cache_req_hdr_heap_handle(NULL),
+    _cache_resp_hdr_heap_handle(NULL),
+    _ICPpr(NULL),
+    _state(NULL),
+    _start_time(0),
+    _recursion_depth(0)
 {
 }
 
@@ -960,8 +967,18 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
 ClassAllocator<ICPRequestCont> ICPRequestCont_allocator("ICPRequestCont_allocator");
 
 ICPRequestCont::ICPRequestCont(ICPProcessor *pr, Continuation *c, URL *u)
-  : Continuation(0), _cont(c), _url(u), _start_time(0), _ICPpr(pr), _timeout(0), npending_actions(0), pendingActions(NULL),
-    _sequence_number(0), _expected_replies(0), _expected_replies_list(MAX_DEFINED_PEERS), _received_replies(0),
+  : Continuation(0),
+    _cont(c),
+    _url(u),
+    _start_time(0),
+    _ICPpr(pr),
+    _timeout(0),
+    npending_actions(0),
+    pendingActions(NULL),
+    _sequence_number(0),
+    _expected_replies(0),
+    _expected_replies_list(MAX_DEFINED_PEERS),
+    _received_replies(0),
     _next_state(ICP_START)
 {
   memset((void *)&_ret_sockaddr, 0, sizeof(_ret_sockaddr));
@@ -1682,9 +1699,25 @@ ICPProcessor icpProcessorInternal;
 ICPProcessorExt icpProcessor(&icpProcessorInternal);
 
 ICPProcessor::ICPProcessor()
-  : _l(0), _Initialized(0), _AllowIcpQueries(0), _PendingIcpQueries(0), _ICPConfig(0), _ICPPeriodic(0), _ICPHandler(0),
-    _mcastCB_handler(NULL), _PeriodicEvent(0), _ICPHandlerEvent(0), _nPeerList(-1), _LocalPeer(0), _curSendPeer(0),
-    _nSendPeerList(-1), _curRecvPeer(0), _nRecvPeerList(-1), _curParentPeer(0), _nParentPeerList(-1), _ValidPollData(0),
+  : _l(0),
+    _Initialized(0),
+    _AllowIcpQueries(0),
+    _PendingIcpQueries(0),
+    _ICPConfig(0),
+    _ICPPeriodic(0),
+    _ICPHandler(0),
+    _mcastCB_handler(NULL),
+    _PeriodicEvent(0),
+    _ICPHandlerEvent(0),
+    _nPeerList(-1),
+    _LocalPeer(0),
+    _curSendPeer(0),
+    _nSendPeerList(-1),
+    _curRecvPeer(0),
+    _nRecvPeerList(-1),
+    _curParentPeer(0),
+    _nParentPeerList(-1),
+    _ValidPollData(0),
     _last_recv_peer_bias(0)
 {
   memset((void *)_PeerList, 0, sizeof(_PeerList[PEER_LIST_SIZE]));

@@ -45,8 +45,13 @@ const char *RollbackStrings[] = {"Rollback Ok", "File was not found", "Version w
                                  "Invalid Version - Version Numbers Must Increase"};
 
 Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *parentRollback_, unsigned flags)
-  : configFiles(NULL), root_access_needed(root_access_needed_), parentRollback(parentRollback_), currentVersion(0),
-    fileLastModified(0), numVersions(0), numberBackups(0)
+  : configFiles(NULL),
+    root_access_needed(root_access_needed_),
+    parentRollback(parentRollback_),
+    currentVersion(0),
+    fileLastModified(0),
+    numVersions(0),
+    numberBackups(0)
 {
   version_t highestSeen;             // the highest backup version
   ExpandingArray existVer(25, true); // Exsisting versions

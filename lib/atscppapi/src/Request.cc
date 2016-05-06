@@ -42,7 +42,11 @@ struct atscppapi::RequestState : noncopyable {
   HttpVersion version_;
   bool destroy_buf_;
   RequestState()
-    : hdr_buf_(NULL), hdr_loc_(NULL), url_loc_(NULL), method_(HTTP_METHOD_UNKNOWN), version_(HTTP_VERSION_UNKNOWN),
+    : hdr_buf_(NULL),
+      hdr_loc_(NULL),
+      url_loc_(NULL),
+      method_(HTTP_METHOD_UNKNOWN),
+      version_(HTTP_VERSION_UNKNOWN),
       destroy_buf_(false)
   {
   }

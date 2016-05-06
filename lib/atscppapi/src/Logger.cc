@@ -51,8 +51,13 @@ struct atscppapi::LoggerState : noncopyable {
   bool initialized_;
 
   LoggerState()
-    : add_timestamp_(false), rename_file_(false), level_(Logger::LOG_LEVEL_NO_LOG), rolling_enabled_(false),
-      rolling_interval_seconds_(-1), text_log_obj_(NULL), initialized_(false){};
+    : add_timestamp_(false),
+      rename_file_(false),
+      level_(Logger::LOG_LEVEL_NO_LOG),
+      rolling_enabled_(false),
+      rolling_interval_seconds_(-1),
+      text_log_obj_(NULL),
+      initialized_(false){};
   ~LoggerState(){};
 };
 

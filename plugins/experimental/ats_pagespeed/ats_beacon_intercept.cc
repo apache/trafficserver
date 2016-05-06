@@ -69,8 +69,16 @@ struct InterceptCtx {
   bool initialized;
   TransformCtx *request_context;
   InterceptCtx(TSCont cont)
-    : net_vc(0), contp(cont), input(), output(), body(""), req_content_len(0), req_hdr_bufp(0), req_hdr_loc(0),
-      req_hdr_parsed(false), initialized(false)
+    : net_vc(0),
+      contp(cont),
+      input(),
+      output(),
+      body(""),
+      req_content_len(0),
+      req_hdr_bufp(0),
+      req_hdr_loc(0),
+      req_hdr_parsed(false),
+      initialized(false)
   {
     http_parser = TSHttpParserCreate();
   }

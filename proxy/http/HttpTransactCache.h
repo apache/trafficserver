@@ -57,9 +57,15 @@ public:
   int unmarshal(Arena *arena, const char *buf, int length);
 
   CacheLookupHttpConfig()
-    : cache_global_user_agent_header(false), cache_enable_default_vary_headers(false), ignore_accept_mismatch(0),
-      ignore_accept_language_mismatch(0), ignore_accept_encoding_mismatch(0), ignore_accept_charset_mismatch(0),
-      cache_vary_default_text(NULL), cache_vary_default_images(NULL), cache_vary_default_other(NULL)
+    : cache_global_user_agent_header(false),
+      cache_enable_default_vary_headers(false),
+      ignore_accept_mismatch(0),
+      ignore_accept_language_mismatch(0),
+      ignore_accept_encoding_mismatch(0),
+      ignore_accept_charset_mismatch(0),
+      cache_vary_default_text(NULL),
+      cache_vary_default_images(NULL),
+      cache_vary_default_other(NULL)
   {
   }
 

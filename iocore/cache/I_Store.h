@@ -155,8 +155,13 @@ public:
   void volume_number_set(int n);
 
   Span()
-    : blocks(0), offset(0), hw_sector_size(DEFAULT_HW_SECTOR_SIZE), alignment(0), forced_volume_num(-1),
-      is_mmapable_internal(false), file_pathname(false)
+    : blocks(0),
+      offset(0),
+      hw_sector_size(DEFAULT_HW_SECTOR_SIZE),
+      alignment(0),
+      forced_volume_num(-1),
+      is_mmapable_internal(false),
+      file_pathname(false)
   {
     disk_id[0] = disk_id[1] = 0;
   }

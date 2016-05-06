@@ -115,8 +115,17 @@ struct InterceptData {
   string gzipped_data;
 
   InterceptData(TSCont cont)
-    : net_vc(0), contp(cont), input(), output(), req_hdr_bufp(0), req_hdr_loc(0), req_hdr_parsed(false), initialized(false),
-      fetcher(0), read_complete(false), write_complete(false)
+    : net_vc(0),
+      contp(cont),
+      input(),
+      output(),
+      req_hdr_bufp(0),
+      req_hdr_loc(0),
+      req_hdr_parsed(false),
+      initialized(false),
+      fetcher(0),
+      read_complete(false),
+      write_complete(false)
   {
     http_parser = TSHttpParserCreate();
   }

@@ -61,10 +61,19 @@ struct atscppapi::TransactionState : noncopyable {
   map<string, shared_ptr<Transaction::ContextValue>> context_values_;
 
   TransactionState(TSHttpTxn txn, TSMBuffer client_request_hdr_buf, TSMLoc client_request_hdr_loc)
-    : txn_(txn), client_request_hdr_buf_(client_request_hdr_buf), client_request_hdr_loc_(client_request_hdr_loc),
-      client_request_(txn, client_request_hdr_buf, client_request_hdr_loc), server_request_hdr_buf_(NULL),
-      server_request_hdr_loc_(NULL), server_response_hdr_buf_(NULL), server_response_hdr_loc_(NULL), client_response_hdr_buf_(NULL),
-      client_response_hdr_loc_(NULL), cached_response_hdr_buf_(NULL), cached_response_hdr_loc_(NULL), cached_request_hdr_buf_(NULL),
+    : txn_(txn),
+      client_request_hdr_buf_(client_request_hdr_buf),
+      client_request_hdr_loc_(client_request_hdr_loc),
+      client_request_(txn, client_request_hdr_buf, client_request_hdr_loc),
+      server_request_hdr_buf_(NULL),
+      server_request_hdr_loc_(NULL),
+      server_response_hdr_buf_(NULL),
+      server_response_hdr_loc_(NULL),
+      client_response_hdr_buf_(NULL),
+      client_response_hdr_loc_(NULL),
+      cached_response_hdr_buf_(NULL),
+      cached_response_hdr_loc_(NULL),
+      cached_request_hdr_buf_(NULL),
       cached_request_hdr_loc_(NULL){};
 };
 

@@ -992,8 +992,14 @@ struct Cache {
   Vol *key_to_vol(const CacheKey *key, char const *hostname, int host_len);
 
   Cache()
-    : cache_read_done(0), total_good_nvol(0), total_nvol(0), ready(CACHE_INITIALIZING), cache_size(0), // in store block size
-      hosttable(NULL), total_initialized_vol(0), scheme(CACHE_NONE_TYPE)
+    : cache_read_done(0),
+      total_good_nvol(0),
+      total_nvol(0),
+      ready(CACHE_INITIALIZING),
+      cache_size(0), // in store block size
+      hosttable(NULL),
+      total_initialized_vol(0),
+      scheme(CACHE_NONE_TYPE)
   {
   }
 };

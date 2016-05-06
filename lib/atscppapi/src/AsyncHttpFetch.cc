@@ -54,8 +54,14 @@ struct atscppapi::AsyncHttpFetchState : noncopyable {
 
   AsyncHttpFetchState(const string &url_str, HttpMethod http_method, string request_body,
                       AsyncHttpFetch::StreamingFlag streaming_flag)
-    : request_body_(request_body), result_(AsyncHttpFetch::RESULT_FAILURE), body_(NULL), body_size_(0), hdr_buf_(NULL),
-      hdr_loc_(NULL), streaming_flag_(streaming_flag), fetch_sm_(NULL)
+    : request_body_(request_body),
+      result_(AsyncHttpFetch::RESULT_FAILURE),
+      body_(NULL),
+      body_size_(0),
+      hdr_buf_(NULL),
+      hdr_loc_(NULL),
+      streaming_flag_(streaming_flag),
+      fetch_sm_(NULL)
   {
     request_.reset(new Request(url_str, http_method,
                                (streaming_flag_ == AsyncHttpFetch::STREAMING_DISABLED) ? HTTP_VERSION_1_0 : HTTP_VERSION_1_1));

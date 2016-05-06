@@ -121,8 +121,17 @@ private:
 // during the time we fetch from origin.
 struct BgFetchData {
   BgFetchData()
-    : hdr_loc(TS_NULL_MLOC), url_loc(TS_NULL_MLOC), vc(NULL), req_io_buf(NULL), resp_io_buf(NULL), req_io_buf_reader(NULL),
-      resp_io_buf_reader(NULL), r_vio(NULL), w_vio(NULL), _bytes(0), _cont(NULL)
+    : hdr_loc(TS_NULL_MLOC),
+      url_loc(TS_NULL_MLOC),
+      vc(NULL),
+      req_io_buf(NULL),
+      resp_io_buf(NULL),
+      req_io_buf_reader(NULL),
+      resp_io_buf_reader(NULL),
+      r_vio(NULL),
+      w_vio(NULL),
+      _bytes(0),
+      _cont(NULL)
   {
     mbuf = TSMBufferCreate();
     memset(&client_ip, 0, sizeof(client_ip));

@@ -63,7 +63,8 @@ AtsRewriteDriverFactory::AtsRewriteDriverFactory(const ProcessContext &process_c
   : SystemRewriteDriverFactory(process_context, thread_system, NULL /*default shared mem runtime*/, "" /*hostname, not used*/,
                                -1 /*port, not used*/),
     ats_message_handler_(new AtsMessageHandler(thread_system->NewMutex())),
-    ats_html_parse_message_handler_(new AtsMessageHandler(thread_system->NewMutex())), use_per_vhost_statistics_(false),
+    ats_html_parse_message_handler_(new AtsMessageHandler(thread_system->NewMutex())),
+    use_per_vhost_statistics_(false),
     threads_started_(false)
 {
   InitializeDefaultOptions();

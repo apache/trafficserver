@@ -36,11 +36,27 @@ class Http2Stream : public ProxyClientTransaction
 public:
   typedef ProxyClientTransaction super; ///< Parent type.
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size)
-    : client_rwnd(initial_rwnd), server_rwnd(Http2::initial_window_size), header_blocks(NULL), header_blocks_length(0),
-      request_header_length(0), end_stream(false), response_reader(NULL), request_reader(NULL),
-      request_buffer(CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX), _id(sid), _state(HTTP2_STREAM_STATE_IDLE),
-      trailing_header(false), body_done(false), data_length(0), closed(false), sent_delete(false), bytes_sent(0), chunked(false),
-      cross_thread_event(NULL), active_event(NULL), inactive_event(NULL)
+    : client_rwnd(initial_rwnd),
+      server_rwnd(Http2::initial_window_size),
+      header_blocks(NULL),
+      header_blocks_length(0),
+      request_header_length(0),
+      end_stream(false),
+      response_reader(NULL),
+      request_reader(NULL),
+      request_buffer(CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX),
+      _id(sid),
+      _state(HTTP2_STREAM_STATE_IDLE),
+      trailing_header(false),
+      body_done(false),
+      data_length(0),
+      closed(false),
+      sent_delete(false),
+      bytes_sent(0),
+      chunked(false),
+      cross_thread_event(NULL),
+      active_event(NULL),
+      inactive_event(NULL)
   {
     SET_HANDLER(&Http2Stream::main_event_handler);
   }

@@ -61,10 +61,26 @@ HttpCacheAction::cancel(Continuation *c)
 }
 
 HttpCacheSM::HttpCacheSM()
-  : Continuation(NULL), cache_read_vc(NULL), cache_write_vc(NULL), read_locked(false), write_locked(false),
-    readwhilewrite_inprogress(false), master_sm(NULL), pending_action(NULL), captive_action(), open_read_cb(false),
-    open_write_cb(false), open_read_tries(0), read_request_hdr(NULL), read_config(NULL), read_pin_in_cache(0), retry_write(true),
-    open_write_tries(0), lookup_url(NULL), lookup_max_recursive(0), current_lookup_level(0)
+  : Continuation(NULL),
+    cache_read_vc(NULL),
+    cache_write_vc(NULL),
+    read_locked(false),
+    write_locked(false),
+    readwhilewrite_inprogress(false),
+    master_sm(NULL),
+    pending_action(NULL),
+    captive_action(),
+    open_read_cb(false),
+    open_write_cb(false),
+    open_read_tries(0),
+    read_request_hdr(NULL),
+    read_config(NULL),
+    read_pin_in_cache(0),
+    retry_write(true),
+    open_write_tries(0),
+    lookup_url(NULL),
+    lookup_max_recursive(0),
+    current_lookup_level(0)
 {
 }
 

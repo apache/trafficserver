@@ -498,8 +498,17 @@ NetAccept::acceptLoopEvent(int event, Event *e)
 //
 
 NetAccept::NetAccept()
-  : Continuation(NULL), period(0), ifd(NO_FD), callback_on_open(false), backdoor(false), recv_bufsize(0), send_bufsize(0),
-    sockopt_flags(0), packet_mark(0), packet_tos(0), etype(0)
+  : Continuation(NULL),
+    period(0),
+    ifd(NO_FD),
+    callback_on_open(false),
+    backdoor(false),
+    recv_bufsize(0),
+    send_bufsize(0),
+    sockopt_flags(0),
+    packet_mark(0),
+    packet_tos(0),
+    etype(0)
 {
 }
 

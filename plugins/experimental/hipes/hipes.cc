@@ -124,9 +124,19 @@ unescapify(const char *src, char *dst, int len)
 //
 struct HIPESService {
   HIPESService()
-    : url_param("url"), path(""), svc_server(""), svc_port(80), ssl(false), hipes_server(HIPES_SERVER_NAME), hipes_port(80),
-      default_redirect_flag(1), x_hipes_header("X-HIPES-Redirect"), active_timeout(-1), no_activity_timeout(-1),
-      connect_timeout(-1), dns_timeout(-1){};
+    : url_param("url"),
+      path(""),
+      svc_server(""),
+      svc_port(80),
+      ssl(false),
+      hipes_server(HIPES_SERVER_NAME),
+      hipes_port(80),
+      default_redirect_flag(1),
+      x_hipes_header("X-HIPES-Redirect"),
+      active_timeout(-1),
+      no_activity_timeout(-1),
+      connect_timeout(-1),
+      dns_timeout(-1){};
 
   std::string url_param;
   std::string path;

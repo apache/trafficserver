@@ -1685,8 +1685,15 @@ struct DNSRegressionContinuation : public Continuation {
   }
 
   DNSRegressionContinuation(int ahosts, int atofind, const char **ahostnames, RegressionTest *t, int atype, int *astatus)
-    : Continuation(new_ProxyMutex()), hosts(ahosts), hostnames(ahostnames), type(atype), status(astatus), found(0), tofind(atofind),
-      i(0), test(t)
+    : Continuation(new_ProxyMutex()),
+      hosts(ahosts),
+      hostnames(ahostnames),
+      type(atype),
+      status(astatus),
+      found(0),
+      tofind(atofind),
+      i(0),
+      test(t)
   {
     SET_HANDLER((DNSRegContHandler)&DNSRegressionContinuation::mainEvent);
   }

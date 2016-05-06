@@ -29,9 +29,22 @@
  *
 **/
 url_mapping::url_mapping(int rank /* = 0 */)
-  : from_path_len(0), fromURL(), toUrl(), homePageRedirect(false), unique(false), default_redirect_url(false),
-    optional_referer(false), negative_referer(false), wildcard_from_scheme(false), tag(NULL), filter_redirect_url(NULL),
-    referer_list(0), redir_chunk_list(0), filter(NULL), _plugin_count(0), _rank(rank)
+  : from_path_len(0),
+    fromURL(),
+    toUrl(),
+    homePageRedirect(false),
+    unique(false),
+    default_redirect_url(false),
+    optional_referer(false),
+    negative_referer(false),
+    wildcard_from_scheme(false),
+    tag(NULL),
+    filter_redirect_url(NULL),
+    referer_list(0),
+    redir_chunk_list(0),
+    filter(NULL),
+    _plugin_count(0),
+    _rank(rank)
 {
   memset(_plugin_list, 0, sizeof(_plugin_list));
   memset(_instance_data, 0, sizeof(_instance_data));

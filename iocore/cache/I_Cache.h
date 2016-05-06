@@ -67,7 +67,9 @@ typedef HTTPInfo CacheHTTPInfo;
 struct CacheProcessor : public Processor {
   CacheProcessor()
     : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
-      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION), cb_after_init(0), wait_for_cache(0)
+      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
+      cb_after_init(0),
+      wait_for_cache(0)
   {
   }
 

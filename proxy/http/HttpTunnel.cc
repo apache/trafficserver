@@ -71,9 +71,22 @@ VcTypeCode(HttpTunnelType_t t)
 }
 
 ChunkedHandler::ChunkedHandler()
-  : action(ACTION_UNSET), chunked_reader(NULL), dechunked_buffer(NULL), dechunked_size(0), dechunked_reader(NULL),
-    chunked_buffer(NULL), chunked_size(0), truncation(false), skip_bytes(0), state(CHUNK_READ_CHUNK), cur_chunk_size(0),
-    bytes_left(0), last_server_event(VC_EVENT_NONE), running_sum(0), num_digits(0), max_chunk_size(DEFAULT_MAX_CHUNK_SIZE),
+  : action(ACTION_UNSET),
+    chunked_reader(NULL),
+    dechunked_buffer(NULL),
+    dechunked_size(0),
+    dechunked_reader(NULL),
+    chunked_buffer(NULL),
+    chunked_size(0),
+    truncation(false),
+    skip_bytes(0),
+    state(CHUNK_READ_CHUNK),
+    cur_chunk_size(0),
+    bytes_left(0),
+    last_server_event(VC_EVENT_NONE),
+    running_sum(0),
+    num_digits(0),
+    max_chunk_size(DEFAULT_MAX_CHUNK_SIZE),
     max_chunk_header_len(0)
 {
 }
@@ -404,10 +417,29 @@ ChunkedHandler::generate_chunked_content()
 }
 
 HttpTunnelProducer::HttpTunnelProducer()
-  : consumer_list(), self_consumer(NULL), vc(NULL), vc_handler(NULL), read_vio(NULL), read_buffer(NULL), buffer_start(NULL),
-    vc_type(HT_HTTP_SERVER), chunking_action(TCA_PASSTHRU_DECHUNKED_CONTENT), do_chunking(false), do_dechunking(false),
-    do_chunked_passthru(false), init_bytes_done(0), nbytes(0), ntodo(0), bytes_read(0), handler_state(0), last_event(0),
-    num_consumers(0), alive(false), read_success(false), flow_control_source(0), name(NULL)
+  : consumer_list(),
+    self_consumer(NULL),
+    vc(NULL),
+    vc_handler(NULL),
+    read_vio(NULL),
+    read_buffer(NULL),
+    buffer_start(NULL),
+    vc_type(HT_HTTP_SERVER),
+    chunking_action(TCA_PASSTHRU_DECHUNKED_CONTENT),
+    do_chunking(false),
+    do_dechunking(false),
+    do_chunked_passthru(false),
+    init_bytes_done(0),
+    nbytes(0),
+    ntodo(0),
+    bytes_read(0),
+    handler_state(0),
+    last_event(0),
+    num_consumers(0),
+    alive(false),
+    read_success(false),
+    flow_control_source(0),
+    name(NULL)
 {
 }
 
@@ -472,13 +504,31 @@ HttpTunnelProducer::set_throttle_src(HttpTunnelProducer *srcp)
 }
 
 HttpTunnelConsumer::HttpTunnelConsumer()
-  : link(), producer(NULL), self_producer(NULL), vc_type(HT_HTTP_CLIENT), vc(NULL), buffer_reader(NULL), vc_handler(NULL),
-    write_vio(NULL), skip_bytes(0), bytes_written(0), handler_state(0), alive(false), write_success(false), name(NULL)
+  : link(),
+    producer(NULL),
+    self_producer(NULL),
+    vc_type(HT_HTTP_CLIENT),
+    vc(NULL),
+    buffer_reader(NULL),
+    vc_handler(NULL),
+    write_vio(NULL),
+    skip_bytes(0),
+    bytes_written(0),
+    handler_state(0),
+    alive(false),
+    write_success(false),
+    name(NULL)
 {
 }
 
 HttpTunnel::HttpTunnel()
-  : Continuation(NULL), num_producers(0), num_consumers(0), sm(NULL), active(false), postbuf(NULL), reentrancy_count(0),
+  : Continuation(NULL),
+    num_producers(0),
+    num_consumers(0),
+    sm(NULL),
+    active(false),
+    postbuf(NULL),
+    reentrancy_count(0),
     call_sm(false)
 {
 }

@@ -37,10 +37,20 @@ const char *EsiProcessor::INCLUDE_DATA_ID_ATTR = reinterpret_cast<const char *>(
 EsiProcessor::EsiProcessor(const char *debug_tag, const char *parser_debug_tag, const char *expression_debug_tag,
                            ComponentBase::Debug debug_func, ComponentBase::Error error_func, HttpDataFetcher &fetcher,
                            Variables &variables, const HandlerManager &handler_mgr)
-  : ComponentBase(debug_tag, debug_func, error_func), _curr_state(STOPPED), _parser(parser_debug_tag, debug_func, error_func),
-    _n_prescanned_nodes(0), _n_processed_nodes(0), _n_processed_try_nodes(0), _overall_len(0), _fetcher(fetcher), _reqAdded(false),
-    _usePackedNodeList(false), _esi_vars(variables), _expression(expression_debug_tag, debug_func, error_func, _esi_vars),
-    _n_try_blocks_processed(0), _handler_manager(handler_mgr)
+  : ComponentBase(debug_tag, debug_func, error_func),
+    _curr_state(STOPPED),
+    _parser(parser_debug_tag, debug_func, error_func),
+    _n_prescanned_nodes(0),
+    _n_processed_nodes(0),
+    _n_processed_try_nodes(0),
+    _overall_len(0),
+    _fetcher(fetcher),
+    _reqAdded(false),
+    _usePackedNodeList(false),
+    _esi_vars(variables),
+    _expression(expression_debug_tag, debug_func, error_func, _esi_vars),
+    _n_try_blocks_processed(0),
+    _handler_manager(handler_mgr)
 {
 }
 
