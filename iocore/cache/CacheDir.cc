@@ -33,19 +33,19 @@
 
 #define CACHE_INC_DIR_USED(_m)                            \
   do {                                                    \
-    ProxyMutex *mutex = _m;                               \
+    ProxyMutex *mutex = _m.get();                         \
     CACHE_INCREMENT_DYN_STAT(cache_direntries_used_stat); \
   } while (0)
 
 #define CACHE_DEC_DIR_USED(_m)                            \
   do {                                                    \
-    ProxyMutex *mutex = _m;                               \
+    ProxyMutex *mutex = _m.get();                         \
     CACHE_DECREMENT_DYN_STAT(cache_direntries_used_stat); \
   } while (0)
 
 #define CACHE_INC_DIR_COLLISIONS(_m)                                \
   do {                                                              \
-    ProxyMutex *mutex = _m;                                         \
+    ProxyMutex *mutex = _m.get();                                   \
     CACHE_INCREMENT_DYN_STAT(cache_directory_collision_count_stat); \
   } while (0);
 
