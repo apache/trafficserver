@@ -59,7 +59,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
   static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   IOBufferReader *reader;
 
-  explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, ProxyMutex *mutex, MIOBuffer *buffer,
+  explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, Ptr<ProxyMutex> &mutex, MIOBuffer *buffer,
                                    IOBufferReader *reader)
     : Continuation(mutex), probeParent(probe)
   {
