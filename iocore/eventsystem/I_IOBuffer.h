@@ -917,18 +917,19 @@ public:
     Returns a pointer to the first writable block on the block chain.
     Returns NULL if there are not currently any writable blocks on the
     block list.
-
   */
   IOBufferBlock *
   first_write_block()
   {
     if (_writer) {
-      if (_writer->next && !_writer->write_avail())
-        return _writer->next;
+      if (_writer->next && !_writer->write_avail()) {
+        return _writer->next.get();
+      }
       ink_assert(!_writer->next || !_writer->next->read_avail());
-      return _writer;
-    } else
-      return NULL;
+      return _writer.get();
+    }
+
+    return NULL;
   }
 
   char *
@@ -937,16 +938,19 @@ public:
     IOBufferBlock *b = first_write_block();
     return b ? b->buf() : 0;
   }
+
   char *
   buf_end()
   {
     return first_write_block()->buf_end();
   }
+
   char *
   start()
   {
     return first_write_block()->start();
   }
+
   char *
   end()
   {
@@ -1317,6 +1321,11 @@ public:
   operator()(IOBufferData *d, int64_t len = 0, int64_t offset = 0)
   {
     return new_IOBufferBlock_internal(loc, d, len, offset);
+  }
+  IOBufferBlock *
+  operator()(Ptr<IOBufferData> &d, int64_t len = 0, int64_t offset = 0)
+  {
+    return new_IOBufferBlock_internal(loc, d.get(), len, offset);
   }
 };
 #endif

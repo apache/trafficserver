@@ -79,7 +79,7 @@ MIOBuffer::remove_append(IOBufferReader *r)
     }
     r->start_offset = 0;
     l += b->read_avail();
-    append_block(b);
+    append_block(b.get());
   }
   r->mbuf->_writer = NULL;
   return l;
@@ -140,7 +140,7 @@ int64_t
 MIOBuffer::write(IOBufferReader *r, int64_t alen, int64_t offset)
 {
   int64_t len = alen;
-  IOBufferBlock *b = r->block;
+  IOBufferBlock *b = r->block.get();
   offset += r->start_offset;
 
   while (b && len > 0) {
@@ -148,22 +148,24 @@ MIOBuffer::write(IOBufferReader *r, int64_t alen, int64_t offset)
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
-      b = b->next;
+      b = b->next.get();
       continue;
     }
     int64_t bytes;
-    if (len < 0 || len >= max_bytes)
+    if (len < 0 || len >= max_bytes) {
       bytes = max_bytes;
-    else
+    } else {
       bytes = len;
+    }
     IOBufferBlock *bb = b->clone();
     bb->_start += offset;
     bb->_buf_end = bb->_end = bb->_start + bytes;
     append_block(bb);
     offset = 0;
     len -= bytes;
-    b = b->next;
+    b = b->next.get();
   }
+
   return alen - len;
 }
 
@@ -212,7 +214,7 @@ IOBufferReader::read(void *ab, int64_t len)
 int64_t
 IOBufferReader::memchr(char c, int64_t len, int64_t offset)
 {
-  IOBufferBlock *b = block;
+  IOBufferBlock *b = block.get();
   offset += start_offset;
   int64_t o = offset;
 
@@ -221,7 +223,7 @@ IOBufferReader::memchr(char c, int64_t len, int64_t offset)
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
-      b = b->next;
+      b = b->next.get();
       continue;
     }
     int64_t bytes;
@@ -235,7 +237,7 @@ IOBufferReader::memchr(char c, int64_t len, int64_t offset)
       return (int64_t)(o - start_offset + p - s);
     o += bytes;
     len -= bytes;
-    b = b->next;
+    b = b->next.get();
     offset = 0;
   }
 
@@ -246,7 +248,7 @@ char *
 IOBufferReader::memcpy(const void *ap, int64_t len, int64_t offset)
 {
   char *p = (char *)ap;
-  IOBufferBlock *b = block;
+  IOBufferBlock *b = block.get();
   offset += start_offset;
 
   while (b && len) {
@@ -254,7 +256,7 @@ IOBufferReader::memcpy(const void *ap, int64_t len, int64_t offset)
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
-      b = b->next;
+      b = b->next.get();
       continue;
     }
     int64_t bytes;
@@ -265,7 +267,7 @@ IOBufferReader::memcpy(const void *ap, int64_t len, int64_t offset)
     ::memcpy(p, b->start() + offset, bytes);
     p += bytes;
     len -= bytes;
-    b = b->next;
+    b = b->next.get();
     offset = 0;
   }
 

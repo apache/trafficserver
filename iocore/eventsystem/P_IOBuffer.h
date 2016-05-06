@@ -69,27 +69,32 @@ index_to_buffer_size(int64_t idx)
 }
 
 TS_INLINE IOBufferBlock *
-iobufferblock_clone(IOBufferBlock *b, int64_t offset, int64_t len)
+iobufferblock_clone(IOBufferBlock *src, int64_t offset, int64_t len)
 {
   IOBufferBlock *start_buf = NULL;
   IOBufferBlock *current_buf = NULL;
 
-  while (b && len >= 0) {
-    char *start = b->_start;
-    char *end = b->_end;
+  while (src && len >= 0) {
+    char *start = src->_start;
+    char *end = src->_end;
     int64_t max_bytes = end - start;
+
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
-      b = b->next;
+      src = src->next.get();
       continue;
     }
+
     int64_t bytes = len;
-    if (bytes >= max_bytes)
+    if (bytes >= max_bytes) {
       bytes = max_bytes;
-    IOBufferBlock *new_buf = b->clone();
+    }
+
+    IOBufferBlock *new_buf = src->clone();
     new_buf->_start += offset;
     new_buf->_buf_end = new_buf->_end = new_buf->_start + bytes;
+
     if (!start_buf) {
       start_buf = new_buf;
       current_buf = start_buf;
@@ -97,10 +102,12 @@ iobufferblock_clone(IOBufferBlock *b, int64_t offset, int64_t len)
       current_buf->next = new_buf;
       current_buf = new_buf;
     }
+
     len -= bytes;
-    b = b->next;
+    src = src->next.get();
     offset = 0;
   }
+
   return start_buf;
 }
 
@@ -109,16 +116,21 @@ iobufferblock_skip(IOBufferBlock *b, int64_t *poffset, int64_t *plen, int64_t wr
 {
   int64_t offset = *poffset;
   int64_t len = write;
+
   while (b && len >= 0) {
     int64_t max_bytes = b->read_avail();
+
+    // If this block ends before the start offset, skip it
+    // and adjust the offset to consume its length.
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
-      b = b->next;
+      b = b->next.get();
       continue;
     }
+
     if (len >= max_bytes) {
-      b = b->next;
+      b = b->next.get();
       len -= max_bytes;
       offset = 0;
     } else {
@@ -126,14 +138,13 @@ iobufferblock_skip(IOBufferBlock *b, int64_t *poffset, int64_t *plen, int64_t wr
       break;
     }
   }
+
   *poffset = offset;
   *plen -= write;
   return b;
 }
 
 #ifdef TRACK_BUFFER_USER
-extern Resource *res_lookup(const char *path);
-
 TS_INLINE void
 iobuffer_mem_inc(const char *_loc, int64_t _size_index)
 {
@@ -406,19 +417,25 @@ TS_INLINE void
 IOBufferBlock::clear()
 {
   data = NULL;
-  IOBufferBlock *p = next;
+
+  IOBufferBlock *p = next.get();
   while (p) {
-    int r = p->refcount_dec();
-    if (r)
-      break;
-    else {
-      IOBufferBlock *n = p->next.m_ptr;
-      p->next.m_ptr = NULL;
+    // If our block pointer refcount dropped to zero,
+    // recursively free the list.
+    if (p->refcount_dec() == 0) {
+      IOBufferBlock *n = p->next.detach();
       p->free();
       p = n;
+    } else {
+      // We don't hold the last refcount, so we are done.
+      break;
     }
   }
-  next.m_ptr = NULL;
+
+  // Nuke the next pointer without dropping the refcount
+  // because we already manually did that.
+  next.detach();
+
   _buf_end = _end = _start = NULL;
 }
 
@@ -555,14 +572,16 @@ IOBufferReader::current_low_water()
 TS_INLINE IOBufferBlock *
 IOBufferReader::get_current_block()
 {
-  return block;
+  return block.get();
 }
 
 TS_INLINE char *
 IOBufferReader::start()
 {
-  if (block == 0)
+  if (!block) {
     return 0;
+  }
+
   skip_empty_blocks();
   return block->start() + start_offset;
 }
@@ -570,8 +589,10 @@ IOBufferReader::start()
 TS_INLINE char *
 IOBufferReader::end()
 {
-  if (block == 0)
+  if (!block) {
     return 0;
+  }
+
   skip_empty_blocks();
   return block->end();
 }
@@ -579,8 +600,10 @@ IOBufferReader::end()
 TS_INLINE int64_t
 IOBufferReader::block_read_avail()
 {
-  if (block == 0)
+  if (!block) {
     return 0;
+  }
+
   skip_empty_blocks();
   return (int64_t)(block->end() - (block->start() + start_offset));
 }
@@ -589,12 +612,13 @@ TS_INLINE int
 IOBufferReader::block_count()
 {
   int count = 0;
-  IOBufferBlock *b = block;
+  IOBufferBlock *b = block.get();
 
   while (b) {
     count++;
-    b = b->next;
+    b = b->next.get();
   }
+
   return count;
 }
 
@@ -602,15 +626,18 @@ TS_INLINE int64_t
 IOBufferReader::read_avail()
 {
   int64_t t = 0;
-  IOBufferBlock *b = block;
+  IOBufferBlock *b = block.get();
 
   while (b) {
     t += b->read_avail();
-    b = b->next;
+    b = b->next.get();
   }
+
   t -= start_offset;
-  if (size_limit != INT64_MAX && t > size_limit)
+  if (size_limit != INT64_MAX && t > size_limit) {
     t = size_limit;
+  }
+
   return t;
 }
 
@@ -618,13 +645,14 @@ inline bool
 IOBufferReader::is_read_avail_more_than(int64_t size)
 {
   int64_t t = -start_offset;
-  IOBufferBlock *b = block;
+  IOBufferBlock *b = block.get();
+
   while (b) {
     t += b->read_avail();
     if (t > size) {
       return true;
     }
-    b = b->next;
+    b = b->next.get();
   }
   return false;
 }
@@ -633,11 +661,15 @@ TS_INLINE void
 IOBufferReader::consume(int64_t n)
 {
   start_offset += n;
-  if (size_limit != INT64_MAX)
+  if (size_limit != INT64_MAX) {
     size_limit -= n;
+  }
+
   ink_assert(size_limit >= 0);
-  if (block == 0)
+  if (!block) {
     return;
+  }
+
   int64_t r = block->read_avail();
   int64_t s = start_offset;
   while (r <= s && block->next && block->next->read_avail()) {
@@ -646,26 +678,28 @@ IOBufferReader::consume(int64_t n)
     block = block->next;
     r = block->read_avail();
   }
+
   ink_assert(read_avail() >= 0);
 }
 
 TS_INLINE char &IOBufferReader::operator[](int64_t i)
 {
   static char _error = '\0';
+  IOBufferBlock *b = block.get();
 
-  IOBufferBlock *b = block;
   i += start_offset;
   while (b) {
     int64_t bytes = b->read_avail();
     if (bytes > i)
       return b->start()[i];
     i -= bytes;
-    b = b->next;
+    b = b->next.get();
   }
 
   ink_assert(!"out of range");
-  if (unlikely(b))
+  if (unlikely(b)) {
     return *b->start();
+  }
 
   return _error;
 }
@@ -893,7 +927,7 @@ MIOBuffer::append_block_internal(IOBufferBlock *b)
     _writer->next = b;
     while (b->read_avail()) {
       _writer = b;
-      b = b->next;
+      b = b->next.get();
       if (!b)
         break;
     }
@@ -964,10 +998,10 @@ TS_INLINE int64_t
 MIOBuffer::current_write_avail()
 {
   int64_t t = 0;
-  IOBufferBlock *b = _writer;
+  IOBufferBlock *b = _writer.get();
   while (b) {
     t += b->write_avail();
-    b = b->next;
+    b = b->next.get();
   }
   return t;
 }
