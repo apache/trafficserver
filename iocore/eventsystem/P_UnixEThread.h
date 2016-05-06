@@ -97,7 +97,7 @@ EThread::schedule(Event *e, bool fast_signal)
     e->mutex = e->continuation->mutex;
   else
     e->mutex = e->continuation->mutex = e->ethread->mutex;
-  ink_assert(e->mutex.m_ptr);
+  ink_assert(e->mutex.get());
   EventQueueExternal.enqueue(e, fast_signal);
   return e;
 }
@@ -145,7 +145,7 @@ EThread::schedule_local(Event *e)
     ink_assert(tt == DEDICATED);
     return eventProcessor.schedule(e, ET_CALL);
   }
-  if (!e->mutex.m_ptr) {
+  if (!e->mutex) {
     e->ethread = this;
     e->mutex = e->continuation->mutex;
   } else {
