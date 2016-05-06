@@ -555,7 +555,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       data.push_back(make_ptr(d));
       md5.u64[0] = ((uint64_t)i << 32) + i;
       md5.u64[1] = ((uint64_t)i << 32) + i;
-      cache->put(&md5, data[i], 1 << 15);
+      cache->put(&md5, data[i].get(), 1 << 15);
       // More hits for the first 10.
       for (int j = 0; j <= i && j < 10; j++) {
         Ptr<IOBufferData> data;
@@ -597,7 +597,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
       d->alloc(BUFFER_SIZE_INDEX_16K);
       data.push_back(make_ptr(d));
-      cache->put(&md5, data.back(), 1 << 15);
+      cache->put(&md5, data.back().get(), 1 << 15);
       if (i >= sample_size / 2)
         misses++; // Sample last half of the gets.
     }
@@ -616,7 +616,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
       d->alloc(BUFFER_SIZE_INDEX_8K + (r[i] % 3));
       data.push_back(make_ptr(d));
-      cache->put(&md5, data.back(), d->block_size());
+      cache->put(&md5, data.back().get(), d->block_size());
       if (i >= sample_size / 2)
         misses++; // Sample last half of the gets.
     }
