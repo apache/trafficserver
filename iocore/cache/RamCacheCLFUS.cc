@@ -302,10 +302,10 @@ RamCacheCLFUS::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, 
           }
           (*ret_data) = data;
         } else {
-          IOBufferData *data = e->data;
+          IOBufferData *data = e->data.get();
           if (e->flag_bits.copy) {
             data = new_IOBufferData(iobuffer_size_to_index(e->len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-            memcpy(data->data(), e->data->data(), e->len);
+            ::memcpy(data->data(), e->data->data(), e->len);
           }
           (*ret_data) = data;
         }
