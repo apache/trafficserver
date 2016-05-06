@@ -73,7 +73,7 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
   HTTP_INCREMENT_DYN_STAT(http_total_server_connections_stat);
   // Check to see if we are limiting the number of connections
   // per host
-  if (enable_origin_connection_limiting == true) {
+  if (enable_origin_connection_tracking == true) {
     if (connection_count == NULL)
       connection_count = ConnectionCount::getInstance();
     connection_count->incrementCount(server_ip, hostname_hash, sharing_match);
@@ -138,7 +138,7 @@ HttpServerSession::do_io_close(int alerrno)
 
   // Check to see if we are limiting the number of connections
   // per host
-  if (enable_origin_connection_limiting == true) {
+  if (enable_origin_connection_tracking == true) {
     if (connection_count->getCount(server_ip, hostname_hash, sharing_match) >= 0) {
       connection_count->incrementCount(server_ip, hostname_hash, sharing_match, -1);
       ip_port_text_buffer addrbuf;

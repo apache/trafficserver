@@ -785,6 +785,12 @@ The following list describes |TS| custom logging fields.
     from a single server session. A value greater than 0 indicates connection
     reuse.
 
+.. _sscc:
+
+``sscc``
+    The number of open connections to specified origin at the time of 
+    connection establishment. 
+
 .. _ttms:
 
 ``ttms``
