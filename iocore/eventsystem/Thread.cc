@@ -37,14 +37,12 @@
 
 static ink_thread_key init_thread_key();
 
-ProxyMutex *global_mutex = NULL;
 ink_hrtime Thread::cur_time = 0;
 inkcoreapi ink_thread_key Thread::thread_data_key = init_thread_key();
 
 Thread::Thread()
 {
   mutex = new_ProxyMutex();
-  mutex_ptr = mutex;
   MUTEX_TAKE_LOCK(mutex, (EThread *)this);
   mutex->nthread_holding = THREAD_MUTEX_THREAD_HOLDING;
 }

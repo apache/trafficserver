@@ -85,7 +85,6 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     EThread *t = new EThread(REGULAR, i);
     if (i == 0) {
       ink_thread_setspecific(Thread::thread_data_key, t);
-      global_mutex = t->mutex;
       Thread::get_hrtime_updated();
     }
     all_ethreads[i] = t;
