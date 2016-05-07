@@ -151,6 +151,16 @@ public:
     return static_cast<RefCountObj *>(m_ptr);
   }
 
+  // Return the stored pointer, storing NULL instead. Do not increment
+  // the refcount; the caller is now responsible for owning the RefCountObj.
+  T *
+  detach()
+  {
+    T *tmp = m_ptr;
+    m_ptr = NULL;
+    return tmp;
+  }
+
   T *m_ptr;
 };
 
