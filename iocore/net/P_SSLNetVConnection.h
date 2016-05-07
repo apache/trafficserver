@@ -97,16 +97,6 @@ public:
   {
     sslHandShakeComplete = state;
   };
-  virtual bool
-  getSSLClientConnection()
-  {
-    return sslClientConnection;
-  };
-  virtual void
-  setSSLClientConnection(bool state)
-  {
-    sslClientConnection = state;
-  };
   virtual void
   setSSLSessionCacheHit(bool state)
   {
@@ -275,7 +265,6 @@ private:
   SSLNetVConnection &operator=(const SSLNetVConnection &);
 
   bool sslHandShakeComplete;
-  bool sslClientConnection;
   bool sslClientRenegotiationAbort;
   bool sslSessionCacheHit;
   MIOBuffer *handShakeBuffer;

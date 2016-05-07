@@ -1149,8 +1149,8 @@ SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, cons
     // Tally desired stats (only client/server connection stats, not init
     // issues where vc is NULL)
     if (vc) {
-      // getSSLClientConnection - true if ats is client (we update server stats)
-      if (vc->getSSLClientConnection()) {
+      // get_context() == Net_VConnection_P2S if ats is client (we update server stats)
+      if (vc->get_context() == Net_VConnection_P2S) {
         increment_ssl_server_error(l); // update server error stats
       } else {
         increment_ssl_client_error(l); // update client error stat

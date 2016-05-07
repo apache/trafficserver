@@ -441,7 +441,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   if (!vc->getSSLHandShakeComplete()) {
     int err, ret;
 
-    if (vc->getSSLClientConnection())
+    if (vc->get_context() == Net_VConnection_P2S)
       ret = vc->sslStartHandShake(SSL_EVENT_CLIENT, err);
     else
       ret = vc->sslStartHandShake(SSL_EVENT_SERVER, err);
@@ -1405,6 +1405,8 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       sslvc->do_io_close();
       sslvc = NULL;
+    } else {
+	  sslvc->set_context(get_context());
     }
     return sslvc;
     // Update the SSL fields
@@ -1413,6 +1415,8 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     if (netvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       netvc->do_io_close();
       netvc = NULL;
+    } else {
+	  netvc->set_context(get_context());
     }
     return netvc;
   }
