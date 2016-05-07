@@ -161,6 +161,15 @@ public:
     return tmp;
   }
 
+  // XXX Clearly this is not safe. This is used in HdrHeap::unmarshal() to swizzle
+  // the refcount of the managed heap pointers. That code needs to be cleaned up
+  // so that this can be removed. Do not use this in new code.
+  void
+  swizzle(RefCountObj *ptr)
+  {
+    m_ptr = ptr;
+  }
+
   T *m_ptr;
 };
 
