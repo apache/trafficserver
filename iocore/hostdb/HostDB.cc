@@ -565,8 +565,9 @@ HostDBContinuation::refresh_MD5()
   md5.refresh();
   // Update the mutex if it's from the bucket.
   // Some call sites modify this after calling @c init so need to check.
-  if (old_bucket_mutex == mutex)
+  if (mutex.get() == old_bucket_mutex) {
     mutex = hostDB.lock_for_bucket((int)(fold_md5(md5.hash) % hostDB.buckets));
+  }
 }
 
 static bool
@@ -1141,7 +1142,7 @@ HostDBProcessor::setby_srv(const char *hostname, int len, const char *target, Ho
 int
 HostDBContinuation::setbyEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  HostDBInfo *r = probe(mutex, md5, false);
+  HostDBInfo *r = probe(mutex.get(), md5, false);
 
   if (r)
     do_setby(r, &app, md5.host_name, md5.ip, is_srv());
@@ -1232,7 +1233,7 @@ HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
 {
   Continuation *cont = action.continuation;
 
-  MUTEX_TRY_LOCK(lock, cont ? (ProxyMutex *)cont->mutex : (ProxyMutex *)NULL, e->ethread);
+  MUTEX_TRY_LOCK(lock, cont ? cont->mutex.get() : (ProxyMutex *)NULL, e->ethread);
   if (!lock.is_locked()) {
     e->schedule_in(HOST_DB_RETRY_PERIOD);
     return EVENT_CONT;
@@ -1242,7 +1243,7 @@ HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
       if (cont)
         cont->handleEvent(EVENT_HOST_DB_IP_REMOVED, (void *)NULL);
     } else {
-      HostDBInfo *r = probe(mutex, md5, false);
+      HostDBInfo *r = probe(mutex.get(), md5, false);
       bool res = (remove_round_robin(r, md5.host_name, md5.ip) ? true : false);
       if (cont)
         cont->handleEvent(EVENT_HOST_DB_IP_REMOVED, res ? static_cast<void *>(&md5.ip) : static_cast<void *>(NULL));
@@ -1455,7 +1456,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     ttl = failed ? 0 : e->ttl / 60;
     int ttl_seconds = failed ? 0 : e->ttl; // ebalsa: moving to second accuracy
 
-    HostDBInfo *old_r = probe(mutex, md5, true);
+    HostDBInfo *old_r = probe(mutex.get(), md5, true);
     HostDBInfo old_info;
     if (old_r)
       old_info = *old_r;
@@ -1912,7 +1913,7 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   if (!force_dns) {
     // Do the probe
     //
-    HostDBInfo *r = probe(mutex, md5, false);
+    HostDBInfo *r = probe(mutex.get(), md5, false);
 
     if (r)
       HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
@@ -2794,18 +2795,12 @@ HostDBFileContinuation::destroy()
 // globals.
 int HostDBFileUpdateActive = 0;
 
-// Actual ordering doesn't matter as long as it's consistent.
-bool
-CmpMD5(INK_MD5 const &lhs, INK_MD5 const &rhs)
-{
-  return lhs[0] < rhs[0] || (lhs[0] == rhs[0] && lhs[1] < rhs[1]);
-}
-
-void
-ParseHostLine(RefCountedHostsFileMap *map, char *l)
+static void
+ParseHostLine(Ptr<RefCountedHostsFileMap> &map, char *l)
 {
   Tokenizer elts(" \t");
   int n_elts = elts.Initialize(l, SHARE_TOKS);
+
   // Elements should be the address then a list of host names.
   // Don't use RecHttpLoadIp because the address *must* be literal.
   IpAddr ip;

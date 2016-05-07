@@ -1046,7 +1046,7 @@ struct MultiCacheSync : public Continuation {
   }
 
   MultiCacheSync(Continuation *acont, MultiCacheBase *amc)
-    : Continuation(amc->locks[0]), partition(0), mc(amc), cont(acont), before_used(0)
+    : Continuation(amc->locks[0].get()), partition(0), mc(amc), cont(acont), before_used(0)
   {
     mutex = mc->locks[partition];
     SET_HANDLER((MCacheSyncHandler)&MultiCacheSync::heapEvent);
@@ -1159,7 +1159,7 @@ struct MultiCacheHeapGC : public Continuation {
   }
 
   MultiCacheHeapGC(Continuation *acont, MultiCacheBase *amc)
-    : Continuation(amc->locks[0]), cont(acont), mc(amc), partition(0), n_offsets(0)
+    : Continuation(amc->locks[0].get()), cont(acont), mc(amc), partition(0), n_offsets(0)
   {
     SET_HANDLER((MCacheHeapGCHandler)&MultiCacheHeapGC::startEvent);
     offset_table = (OffsetTable *)ats_malloc(sizeof(OffsetTable) *

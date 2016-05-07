@@ -107,7 +107,7 @@ OneWayTunnel::~OneWayTunnel()
 }
 
 OneWayTunnel::OneWayTunnel(Continuation *aCont, Transform_fn aManipulate_fn, bool aclose_source, bool aclose_target)
-  : Continuation(aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex()),
+  : Continuation(aCont ? aCont->mutex.get() : new_ProxyMutex()),
     cont(aCont),
     manipulate_fn(aManipulate_fn),
     n_connections(2),
@@ -126,7 +126,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
                    int64_t nbytes, bool asingle_buffer, bool aclose_source, bool aclose_target, Transform_fn aManipulate_fn,
                    int water_mark)
 {
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : (aMutex ? aMutex : new_ProxyMutex());
+  mutex = aCont ? aCont->mutex.get() : (aMutex ? aMutex : new_ProxyMutex());
   cont = aMutex ? NULL : aCont;
   single_buffer = asingle_buffer;
   manipulate_fn = aManipulate_fn;
@@ -170,7 +170,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
                    bool aclose_source, bool aclose_target)
 {
   (void)vcSource;
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
+  mutex = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
   cont = aCont;
   single_buffer = true;
   manipulate_fn = 0;
@@ -196,7 +196,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
 void
 OneWayTunnel::init(Continuation *aCont, VIO *SourceVio, VIO *TargetVio, bool aclose_source, bool aclose_target)
 {
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
+  mutex = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
   cont = aCont;
   single_buffer = true;
   manipulate_fn = 0;

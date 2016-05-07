@@ -321,8 +321,9 @@ struct MultiCacheBase : public MultiCacheHeader {
   ProxyMutex *
   lock_for_bucket(int bucket)
   {
-    return locks[partition_of_bucket(bucket)];
+    return locks[partition_of_bucket(bucket)].get();
   }
+
   uint64_t
   make_tag(uint64_t folded_md5)
   {
