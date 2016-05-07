@@ -100,6 +100,13 @@ private:
 ////////////////////////////////////////////////////////////////////////
 template <class T> class Ptr
 {
+  // https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Safe_bool.
+  typedef void (Ptr::*bool_type)() const;
+  void
+  this_type_does_not_support_comparisons() const
+  {
+  }
+
 public:
   explicit Ptr(T *p = 0);
   Ptr(const Ptr<T> &);
@@ -109,9 +116,9 @@ public:
   Ptr<T> &operator=(const Ptr<T> &);
   Ptr<T> &operator=(T *);
 
-  operator T *() const { return (m_ptr); }
   T *operator->() const { return (m_ptr); }
   T &operator*() const { return (*m_ptr); }
+  operator bool_type() const { return m_ptr ? &Ptr::this_type_does_not_support_comparisons : 0; }
   int
   operator==(const T *p)
   {
@@ -170,7 +177,10 @@ public:
     m_ptr = ptr;
   }
 
+private:
   T *m_ptr;
+
+  friend class CoreUtils;
 };
 
 template <typename T>
