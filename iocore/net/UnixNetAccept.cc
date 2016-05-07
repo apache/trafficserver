@@ -111,6 +111,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
 
     ++count;
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
+    vc->set_context(Net_VConnection_C2P);
     vc->id = net_next_connection_number();
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
@@ -279,6 +280,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->apply_options();
     vc->from_accept_thread = true;
     vc->id = net_next_connection_number();
+    vc->set_context(Net_VConnection_C2P);
 
     check_emergency_throttle(con);
 
@@ -427,7 +429,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->id = net_next_connection_number();
-
+    vc->set_context(Net_VConnection_C2P);
     vc->submit_time = Thread::get_hrtime();
     ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
