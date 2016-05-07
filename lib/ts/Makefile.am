@@ -21,7 +21,8 @@ library_includedir=$(includedir)/ts
 library_include_HEADERS = apidefs.h
 
 noinst_PROGRAMS = mkdfa CompileParseRules
-check_PROGRAMS = test_arena test_atomic test_freelist test_geometry test_List test_Map test_Regex test_PriorityQueue test_Vec test_X509HostnameValidator
+check_PROGRAMS = test_arena test_atomic test_freelist test_geometry test_List test_Map test_Regex test_PriorityQueue test_Vec test_X509HostnameValidator test_Ptr
+
 TESTS = $(check_PROGRAMS)
 
 AM_CPPFLAGS = -I$(top_srcdir)/lib
@@ -234,6 +235,10 @@ test_geometry_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 test_X509HostnameValidator_SOURCES = test_X509HostnameValidator.cc
 test_X509HostnameValidator_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@ @OPENSSL_LIBS@
 test_X509HostnameValidator_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
+
+test_Ptr_SOURCES = test_Ptr.cc
+test_Ptr_LDADD = libtsutil.la @LIBTCL@ @LIBPCRE@
+test_Ptr_LDFLAGS = @EXTRA_CXX_LDFLAGS@ @LIBTOOL_LINK_FLAGS@
 
 CompileParseRules_SOURCES = CompileParseRules.cc
 
