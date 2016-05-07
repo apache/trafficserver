@@ -60,6 +60,9 @@
 #define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)
 #define STR_HEAP_HDR_SIZE sizeof(HdrStrHeap)
 
+class CoreUtils;
+class IOBufferBlock;
+
 enum {
   HDR_HEAP_OBJ_EMPTY = 0,
   HDR_HEAP_OBJ_RAW = 1,
@@ -135,22 +138,6 @@ enum {
   HDR_BUF_MAGIC_CORRUPT = 0xbadbadcc
 };
 
-struct StrHeapDesc {
-  StrHeapDesc();
-  Ptr<RefCountObj> m_ref_count_ptr;
-  char *m_heap_start;
-  int32_t m_heap_len;
-  bool m_locked;
-
-  bool
-  contains(const char *str) const
-  {
-    return (str >= m_heap_start && str < (m_heap_start + m_heap_len));
-  }
-};
-
-class IOBufferBlock;
-
 class HdrStrHeap : public RefCountObj
 {
 public:
@@ -171,7 +158,19 @@ public:
   }
 };
 
-class CoreUtils;
+struct StrHeapDesc {
+  StrHeapDesc();
+  Ptr<RefCountObj> m_ref_count_ptr;
+  char *m_heap_start;
+  int32_t m_heap_len;
+  bool m_locked;
+
+  bool
+  contains(const char *str) const
+  {
+    return (str >= m_heap_start && str < (m_heap_start + m_heap_len));
+  }
+};
 
 class HdrHeap
 {
@@ -211,7 +210,8 @@ public:
   lock_ronly_str_heap(int i)
   {
     m_ronly_heap[i].m_locked = true;
-  };
+  }
+
   void
   unlock_ronly_str_heap(int i)
   {
@@ -233,7 +233,7 @@ public:
         m_ronly_heap[i].m_locked = false;
       }
     }
-  };
+  }
 
   // Sanity Check Functions
   void sanity_check_strs();
@@ -265,7 +265,7 @@ public:
   void coalesce_str_heaps(int incoming_size = 0);
   void evacuate_from_str_heaps(HdrStrHeap *new_heap);
   size_t required_space_for_evacuation();
-  int attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
+  bool attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
 
   /** Struct to prevent garbage collection on heaps.
       This bumps the reference count to the heap containing the pointer
@@ -278,7 +278,7 @@ public:
     HeapGuard(HdrHeap *heap, const char *str)
     {
       if (heap->m_read_write_heap && heap->m_read_write_heap->contains(str)) {
-        m_ptr = heap->m_read_write_heap;
+        m_ptr = heap->m_read_write_heap.get();
       } else {
         for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
           if (heap->m_ronly_heap[i].contains(str)) {
@@ -290,7 +290,7 @@ public:
     }
 
     // There's no need to have a destructor here, the default dtor will take care of
-    // releaseing the (potentially) locked heap.
+    // releasing the (potentially) locked heap.
 
     /// The heap we protect (if any)
     Ptr<RefCountObj> m_ptr;
