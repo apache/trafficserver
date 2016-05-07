@@ -21,7 +21,7 @@
 set -e # exit on error
 
 DIR=${1:-.}
-ROOT=${ROOT:-$(git rev-parse --show-toplevel)/.git/fmt}
+ROOT=${ROOT:-$(cd $(dirname $0) && git rev-parse --show-toplevel)/.git/fmt}
 PACKAGE="clang-format-20160415.tar.bz2"
 VERSION="clang-format version 3.9.0 (trunk 265913)"
 
