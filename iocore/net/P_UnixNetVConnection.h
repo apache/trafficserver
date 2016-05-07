@@ -250,8 +250,6 @@ public:
   EventIO ep;
   NetHandler *nh;
   unsigned int id;
-  // amc - what is this for? Why not use remote_addr or con.addr?
-  IpEndpoint server_addr; /// Server address and port.
 
   union {
     unsigned int flags;
