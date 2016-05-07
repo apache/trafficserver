@@ -206,6 +206,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   else
     opt = &vc->options;
 
+  vc->set_context(Net_VConnection_P2S);
   // virtual function used to upgrade etype to ET_SSL for SSLNetProcessor.
   upgradeEtype(opt->etype);
 
