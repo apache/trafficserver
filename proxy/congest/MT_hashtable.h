@@ -347,10 +347,11 @@ public:
       delete hashTables[i];
     }
   }
+
   ProxyMutex *
   lock_for_key(key_t key)
   {
-    return locks[part_num(key)];
+    return locks[part_num(key)].get();
   }
 
   int

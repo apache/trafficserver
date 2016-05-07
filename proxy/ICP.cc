@@ -526,7 +526,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       if (!_ICPpr->Lock())
         return EVENT_CONT; // unable to get lock, try again later
 
-      bool valid_peer = (_ICPpr->IdToPeer(s->_peer->GetPeerID()) == s->_peer);
+      bool valid_peer = (_ICPpr->IdToPeer(s->_peer->GetPeerID()) == s->_peer.get());
 
       if (valid_peer && _ICPpr->AllowICPQueries() && _ICPpr->GetConfig()->globalConfig()->ICPconfigured()) {
         // Note pending incoming ICP request or response
@@ -553,7 +553,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
 
       // Assumption of one outstanding read per peer...
       // Setup read from FD
-      ink_assert(s->_peer->buf == NULL);
+      ink_assert(!s->_peer->buf);
       Ptr<IOBufferBlock> buf = s->_peer->buf = new_IOBufferBlock();
       buf->alloc(ICPHandlerCont::ICPDataBuf_IOBuffer_sizeindex);
       s->_peer->fromaddrlen = sizeof(s->_peer->fromaddr);
@@ -563,7 +563,8 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       s->_next_state = READ_DATA_DONE;
       RECORD_ICP_STATE_CHANGE(s, 0, READ_DATA_DONE);
       ink_assert(s->_peer->readAction == NULL);
-      Action *a = s->_peer->RecvFrom_re(this, this, buf, buf->write_avail() - 1, &s->_peer->fromaddr.sa, &s->_peer->fromaddrlen);
+      Action *a =
+        s->_peer->RecvFrom_re(this, this, buf.get(), buf->write_avail() - 1, &s->_peer->fromaddr.sa, &s->_peer->fromaddrlen);
       if (!a) {
         a = ACTION_IO_ERROR;
       }
@@ -702,7 +703,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       // we hand off the decoded buffer from the Peer to the PeerReadData
       s->_sender = from;
       s->_rICPmsg_len = s->_bytesReceived;
-      ink_assert(s->_buf == NULL);
+      ink_assert(!s->_buf);
       s->_buf = s->_peer->buf;
       s->_rICPmsg = (ICPMsg_t *)s->_buf->start();
       s->_peer->buf = NULL;
@@ -2044,7 +2045,7 @@ ICPProcessor::SetupListenSockets()
   int index;
   ip_port_text_buffer ipb, ipb2;
   for (index = 0; index < (_nPeerList + 1); ++index) {
-    if ((P = _PeerList[index])) {
+    if ((P = _PeerList[index].get())) {
       if ((P->GetType() == PEER_PARENT) || (P->GetType() == PEER_SIBLING)) {
         ParentSiblingPeer *pPS = (ParentSiblingPeer *)P;
 
@@ -2078,7 +2079,7 @@ ICPProcessor::SetupListenSockets()
   // We funnel all unicast sends and receives through
   // the local peer UDP socket.
   //
-  ParentSiblingPeer *pPS = (ParentSiblingPeer *)((Peer *)_LocalPeer);
+  ParentSiblingPeer *pPS = (ParentSiblingPeer *)(GetLocalPeer());
 
   NetVCOptions options;
   options.local_ip.assign(pPS->GetIP());
@@ -2105,9 +2106,8 @@ ICPProcessor::ShutdownListenSockets()
   ink_assert(!PendingQuery());
   Peer *P;
 
-  int index;
-  for (index = 0; index < (_nPeerList + 1); ++index) {
-    if ((P = _PeerList[index])) {
+  for (int index = 0; index < (_nPeerList + 1); ++index) {
+    if ((P = IdToPeer(index))) {
       if (P->GetType() == PEER_LOCAL) {
         ParentSiblingPeer *pPS = (ParentSiblingPeer *)P;
         (void)pPS->GetChan()->close();
@@ -2253,7 +2253,7 @@ ICPProcessor::GenericFindListPeer(IpAddr const &ip, uint16_t port, int validList
   Peer *P;
   port = htons(port);
   for (int n = 0; n < validListItems; ++n) {
-    if ((P = List[n])) {
+    if ((P = List[n].get())) {
       if ((P->GetIP() == ip) && ((port == 0) || (ats_ip_port_cast(P->GetIP()) == port)))
         return P;
     }

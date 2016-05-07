@@ -132,7 +132,7 @@ struct UR_UpdateContinuation : public Continuation {
     delete this;
     return EVENT_DONE;
   }
-  UR_UpdateContinuation(ProxyMutex *m) : Continuation(m)
+  UR_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m)
   {
     SET_HANDLER((UR_UpdContHandler)&UR_UpdateContinuation::file_update_handler);
   }

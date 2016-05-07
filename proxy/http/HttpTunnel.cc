@@ -534,7 +534,7 @@ HttpTunnel::HttpTunnel()
 }
 
 void
-HttpTunnel::init(HttpSM *sm_arg, ProxyMutex *amutex)
+HttpTunnel::init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex)
 {
   HttpConfigParams *params = sm_arg->t_state.http_config_param;
   sm = sm_arg;

@@ -347,7 +347,7 @@ SocksProxy::mainEvent(int event, void *data)
     OneWayTunnel *s_to_c = OneWayTunnel::OneWayTunnel_alloc();
 
     c_to_s->init(clientVC, serverVC, NULL, clientVIO, reader);
-    s_to_c->init(serverVC, clientVC, /*aCont = */ NULL, 0 /*best guess */, c_to_s->mutex);
+    s_to_c->init(serverVC, clientVC, /*aCont = */ NULL, 0 /*best guess */, c_to_s->mutex.get());
 
     OneWayTunnel::SetupTwoWayTunnel(c_to_s, s_to_c);
 

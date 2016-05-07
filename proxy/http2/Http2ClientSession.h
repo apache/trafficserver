@@ -124,7 +124,7 @@ public:
   xmit(MIOBuffer *iobuffer)
   {
     if (ioblock) {
-      iobuffer->append_block(this->ioblock);
+      iobuffer->append_block(this->ioblock.get());
     } else {
       iobuffer->write(this->hdr.raw, sizeof(this->hdr.raw));
     }

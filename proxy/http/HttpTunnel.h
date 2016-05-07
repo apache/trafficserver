@@ -300,7 +300,7 @@ class HttpTunnel : public Continuation
 public:
   HttpTunnel();
 
-  void init(HttpSM *sm_arg, ProxyMutex *amutex);
+  void init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex);
   void reset();
   void kill_tunnel();
   bool

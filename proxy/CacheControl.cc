@@ -99,7 +99,7 @@ struct CC_UpdateContinuation : public Continuation {
     delete this;
     return EVENT_DONE;
   }
-  CC_UpdateContinuation(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&CC_UpdateContinuation::file_update_handler); }
+  CC_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m) { SET_HANDLER(&CC_UpdateContinuation::file_update_handler); }
 };
 
 int
