@@ -74,3 +74,87 @@ NetVConnection::get_local_port()
 {
   return ats_ip_port_host_order(this->get_local_addr());
 }
+
+TS_INLINE sockaddr const *
+NetVConnection::get_client_addr()
+{
+  switch(netvc_context)
+  {
+    case Net_VConnection_C2P:
+      return get_remote_addr();
+    case Net_VConnection_P2S:
+      return get_local_addr();
+    default:
+      ink_assert(!"not reached.");
+  }
+}
+
+TS_INLINE in_addr_t
+NetVConnection::get_client_ip()
+{
+  switch(netvc_context)
+  {
+    case Net_VConnection_C2P:
+      return get_remote_ip();
+    case Net_VConnection_P2S:
+      return get_local_ip();
+    default:
+      ink_assert(!"not reached.");
+  }
+}
+
+TS_INLINE uint16_t
+NetVConnection::get_client_ip()
+{
+  switch(netvc_context)
+  {
+    case Net_VConnection_C2P:
+      return get_remote_port();
+    case Net_VConnection_P2S:
+      return get_local_port();
+    default:
+      ink_assert(!"not reached.");
+  }
+}
+
+TS_INLINE sockaddr const *
+NetVConnection::get_server_addr()
+{
+  switch(netvc_context)
+  {
+    case Net_VConnection_C2P:
+      return get_local_addr();
+    case Net_VConnection_P2S:
+      return get_remote_addr();
+    default:
+      ink_assert(!"not reached.");
+  }
+}
+
+TS_INLINE in_addr_t
+NetVConnection::get_server_ip()
+{
+  switch(netvc_context)
+  {
+    case Net_VConnection_C2P:
+      return get_local_ip();
+    case Net_VConnection_P2S:
+      return get_remote_ip();
+    default:
+      ink_assert(!"not reached.");
+  }
+}
+
+TS_INLINE uint16_t
+NetVConnection::get_server_ip()
+{
+  switch(netvc_context)
+  {
+    case Net_VConnection_C2P:
+      return get_local_port();
+    case Net_VConnection_P2S:
+      return get_remote_port();
+    default:
+      ink_assert(!"not reached.");
+  }
+}
