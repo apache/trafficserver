@@ -53,8 +53,7 @@ ClusterProcessor::~ClusterProcessor()
 int
 ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn, void *data, int len, int options, void *cmsg)
 {
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex;
   //
   // RPC facility for intercluster communication available to other
   //  subsystems.

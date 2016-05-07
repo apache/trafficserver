@@ -104,13 +104,13 @@ clone_IOBufferBlockList(IOBufferBlock *b, int start_off, int n, IOBufferBlock **
   while (bsrc && nbytes) {
     // Skip zero length blocks
     if (!bsrc->read_avail()) {
-      bsrc = bsrc->next;
+      bsrc = bsrc->next.get();
       continue;
     }
 
     if (bclone_head) {
       bclone->next = bsrc->clone();
-      bclone = bclone->next;
+      bclone = bclone->next.get();
     } else {
       // Skip bytes already processed
       if (bytes_to_skip) {
@@ -125,7 +125,7 @@ clone_IOBufferBlockList(IOBufferBlock *b, int start_off, int n, IOBufferBlock **
 
         } else {
           // Skip entire block
-          bsrc = bsrc->next;
+          bsrc = bsrc->next.get();
           continue;
         }
       } else {
@@ -140,7 +140,7 @@ clone_IOBufferBlockList(IOBufferBlock *b, int start_off, int n, IOBufferBlock **
       bclone->fill(nbytes);
       nbytes = 0;
     }
-    bsrc = bsrc->next;
+    bsrc = bsrc->next.get();
   }
   ink_release_assert(!nbytes);
   *b_tail = bclone;
@@ -167,14 +167,15 @@ consume_IOBufferBlockList(IOBufferBlock *b, int64_t n)
 
       } else {
         // Consumed entire block
-        b_remainder = b->next;
+        b_remainder = b->next.get();
       }
       break;
 
     } else {
-      b = b->next;
+      b = b->next.get();
     }
   }
+
   ink_release_assert(nbytes == 0);
   return b_remainder; // return remaining blocks
 }
@@ -191,8 +192,9 @@ bytes_IOBufferBlockList(IOBufferBlock *b, int64_t read_avail_bytes)
     } else {
       n += b->write_avail();
     }
-    b = b->next;
+    b = b->next.get();
   }
+
   return n;
 }
 

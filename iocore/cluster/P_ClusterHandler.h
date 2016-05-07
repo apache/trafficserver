@@ -52,17 +52,19 @@ struct ClusterControl : public Continuation {
   Ptr<IOBufferBlock> iob_block;
 
   IOBufferBlock *
-  get_block()
+  get_block() const
   {
-    return iob_block;
+    return iob_block.get();
   }
+
   bool
-  fast_data()
+  fast_data() const
   {
     return (len <= MAX_FAST_CONTROL_MESSAGE);
   }
+
   bool
-  valid_alloc_data()
+  valid_alloc_data() const
   {
     return iob_block && real_data && data;
   }
@@ -240,9 +242,9 @@ struct ClusterMsg {
   }
 
   IOBufferBlock *
-  get_block()
+  get_block() const
   {
-    return iob_descriptor_block;
+    return iob_descriptor_block.get();
   }
 
   IOBufferBlock *
@@ -255,7 +257,7 @@ struct ClusterMsg {
     iob_descriptor_block->next = 0;
     iob_descriptor_block->fill(start_offset);
     iob_descriptor_block->consume(start_offset);
-    return iob_descriptor_block;
+    return iob_descriptor_block.get();
   }
 
   IOBufferBlock *
@@ -268,7 +270,7 @@ struct ClusterMsg {
     iob_descriptor_block->next = 0;
     iob_descriptor_block->fill(start_offset);
     iob_descriptor_block->consume(start_offset);
-    return iob_descriptor_block;
+    return iob_descriptor_block.get();
   }
 
   void

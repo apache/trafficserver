@@ -454,12 +454,12 @@ class ByteBankDescriptor
 public:
   ByteBankDescriptor() {}
   IOBufferBlock *
-  get_block()
+  get_block() const
   {
-    return block;
+    return block.get();
   }
 
-  static ByteBankDescriptor *ByteBankDescriptor_alloc(IOBufferBlock *);
+  static ByteBankDescriptor *ByteBankDescriptor_alloc(Ptr<IOBufferBlock> &);
   static void ByteBankDescriptor_free(ByteBankDescriptor *);
 
 public:

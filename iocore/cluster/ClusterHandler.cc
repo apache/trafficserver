@@ -369,11 +369,11 @@ ClusterHandler::close_free_lock(ClusterVConnection *vc, ClusterVConnState *s)
 {
   Ptr<ProxyMutex> m(s->vio.mutex);
   if (s == &vc->read) {
-    if ((ProxyMutex *)vc->read_locked)
+    if (vc->read_locked)
       MUTEX_UNTAKE_LOCK(vc->read_locked, thread);
     vc->read_locked = NULL;
   } else {
-    if ((ProxyMutex *)vc->write_locked)
+    if (vc->write_locked)
       MUTEX_UNTAKE_LOCK(vc->write_locked, thread);
     vc->write_locked = NULL;
   }
@@ -569,7 +569,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
             /////////////////////////////////////
             // Try to get the read VIO mutex
             /////////////////////////////////////
-            ink_release_assert(!(ProxyMutex *)vc->read_locked);
+            ink_release_assert(!vc->read_locked);
 #ifdef CLUSTER_TOMCAT
             if (!vc->read.vio.mutex ||
                 !MUTEX_TAKE_TRY_LOCK_FOR_SPIN(vc->read.vio.mutex, thread, vc->read.vio._cont, READ_LOCK_SPIN_COUNT))
@@ -617,7 +617,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
             bool remote_write_fill = (vc->pending_remote_fill && vc->remote_write_block);
             // Sanity check, assert we have the lock
             if (!remote_write_fill) {
-              ink_assert((ProxyMutex *)vc->write_locked);
+              ink_assert(vc->write_locked);
             }
             if (vc_ok_write(vc) || remote_write_fill) {
               if (remote_write_fill) {
@@ -633,9 +633,10 @@ ClusterHandler::build_initial_vector(bool read_flag)
                 vc->write_list_bytes -= (int)s.msg.descriptor[i].length;
                 vc->write_bytes_in_transit += (int)s.msg.descriptor[i].length;
 
-                vc->write_list_tail = vc->write_list;
-                while (vc->write_list_tail && vc->write_list_tail->next)
-                  vc->write_list_tail = vc->write_list_tail->next;
+                vc->write_list_tail = vc->write_list.get();
+                while (vc->write_list_tail && vc->write_list_tail->next) {
+                  vc->write_list_tail = vc->write_list_tail->next.get();
+                }
               }
             } else {
               Debug(CL_NOTE, "faking cluster write data");
@@ -761,7 +762,7 @@ ClusterHandler::get_read_locks()
         continue;
       }
 
-      ink_assert(!(ProxyMutex *)vc->read_locked);
+      ink_assert(!vc->read_locked);
       vc->read_locked = vc->read.vio.mutex;
       if (vc->byte_bank_q.head ||
           !MUTEX_TAKE_TRY_LOCK_FOR_SPIN(vc->read.vio.mutex, thread, vc->read.vio._cont, READ_LOCK_SPIN_COUNT)) {
@@ -815,7 +816,7 @@ ClusterHandler::get_write_locks()
         //  already have a reference to the buffer
         continue;
       }
-      ink_assert(!(ProxyMutex *)vc->write_locked);
+      ink_assert(!vc->write_locked);
       vc->write_locked = vc->write.vio.mutex;
 #ifdef CLUSTER_TOMCAT
       if (vc->write_locked &&
@@ -1110,7 +1111,7 @@ ClusterHandler::update_channels_read()
           continue;
         }
 
-        if (!vc->pending_remote_fill && vc_ok_read(vc) && (!((ProxyMutex *)vc->read_locked) || vc->byte_bank_q.head)) {
+        if (!vc->pending_remote_fill && vc_ok_read(vc) && (!vc->read_locked || vc->byte_bank_q.head)) {
           //
           // Byte bank active or unable to acquire lock on VC.
           // Move data into the byte bank and attempt delivery
@@ -1120,7 +1121,7 @@ ClusterHandler::update_channels_read()
           add_to_byte_bank(vc);
 
         } else {
-          if (vc->pending_remote_fill || ((ProxyMutex *)vc->read_locked && vc_ok_read(vc))) {
+          if (vc->pending_remote_fill || (vc->read_locked && vc_ok_read(vc))) {
             vc->read_block->fill(len); // note bytes received
             if (!vc->pending_remote_fill) {
               vc->read.vio.buffer.writer()->append_block(vc->read_block->clone());
@@ -1146,9 +1147,8 @@ ClusterHandler::update_channels_read()
 // for message processing which cannot be done with a ET_CLUSTER thread.
 //
 int
-ClusterHandler::process_incoming_callouts(ProxyMutex *m)
+ClusterHandler::process_incoming_callouts(ProxyMutex *mutex)
 {
-  ProxyMutex *mutex = m;
   ink_hrtime now;
   //
   // Atomically dequeue all active requests from the external queue and
@@ -1308,7 +1308,7 @@ ClusterHandler::update_channels_partial_read()
             vc->read_block->fill(len); // note bytes received
 
             if (!vc->pending_remote_fill) {
-              if ((ProxyMutex *)vc->read_locked) {
+              if (vc->read_locked) {
                 Debug("cluster_vc_xfer", "Partial read, credit ch %d %p %d bytes", vc->channel, vc, len);
                 s->vio.buffer.writer()->append_block(vc->read_block->clone());
                 if (complete_channel_read(len, vc)) {
@@ -1358,7 +1358,7 @@ ClusterHandler::complete_channel_read(int len, ClusterVConnection *vc)
   if (vc->closed)
     return false; // No action if already closed
 
-  ink_assert((ProxyMutex *)s->vio.mutex == (ProxyMutex *)s->vio._cont->mutex);
+  ink_assert(s->vio.mutex == s->vio._cont->mutex);
 
   Debug("cluster_vc_xfer", "Complete read, credit ch %d %p %d bytes", vc->channel, vc, len);
   s->vio.ndone += len;
@@ -2316,12 +2316,12 @@ ClusterHandler::free_locks(bool read_flag, int i)
       ClusterVConnection *vc = channels[s.msg.descriptor[j].channel];
       if (VALID_CHANNEL(vc)) {
         if (read_flag) {
-          if ((ProxyMutex *)vc->read_locked) {
+          if (vc->read_locked) {
             MUTEX_UNTAKE_LOCK(vc->read.vio.mutex, thread);
             vc->read_locked = NULL;
           }
         } else {
-          if ((ProxyMutex *)vc->write_locked) {
+          if (vc->write_locked) {
             MUTEX_UNTAKE_LOCK(vc->write_locked, thread);
             vc->write_locked = NULL;
           }
@@ -2331,7 +2331,7 @@ ClusterHandler::free_locks(bool read_flag, int i)
                s.msg.descriptor[j].channel != CLUSTER_CONTROL_CHANNEL) {
       ClusterVConnection *vc = channels[s.msg.descriptor[j].channel];
       if (VALID_CHANNEL(vc)) {
-        if ((ProxyMutex *)vc->read_locked) {
+        if (vc->read_locked) {
           MUTEX_UNTAKE_LOCK(vc->read_locked, thread);
           vc->read_locked = NULL;
         }
