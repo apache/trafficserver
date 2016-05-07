@@ -285,7 +285,7 @@ configuration_add_machine(ClusterConfiguration *c, ClusterMachine *m)
   // Machines are stored in ip sorted order.
   //
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   int i = 0;
   ClusterConfiguration *cc = new ClusterConfiguration(*c);
 
@@ -321,8 +321,7 @@ configuration_add_machine(ClusterConfiguration *c, ClusterMachine *m)
 ClusterConfiguration *
 configuration_remove_machine(ClusterConfiguration *c, ClusterMachine *m)
 {
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = this_thread()->mutex.get();
 
   //
   // Build a new cluster configuration without a machine

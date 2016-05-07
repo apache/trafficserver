@@ -78,8 +78,7 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
     msg_proto_minor(0),
     clusterHandlers(0)
 {
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex.get();
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_MACHINES_ALLOCATED_STAT);
   if (!aip) {
     char localhost[1024];
@@ -191,8 +190,7 @@ struct MachineTimeoutContinuation : public Continuation {
 void
 free_ClusterMachine(ClusterMachine *m)
 {
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex.get();
   // delay before the final free
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_MACHINES_FREED_STAT);
   m->dead = true;

@@ -42,7 +42,7 @@ int update_cop_config(const char *name, RecDataT data_type, RecData data, void *
 class InactivityCop : public Continuation
 {
 public:
-  InactivityCop(ProxyMutex *m) : Continuation(m), default_inactivity_timeout(0)
+  explicit InactivityCop(Ptr<ProxyMutex> &m) : Continuation(m.get()), default_inactivity_timeout(0)
   {
     SET_HANDLER(&InactivityCop::check_inactivity);
     REC_ReadConfigInteger(default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
@@ -138,14 +138,15 @@ update_cop_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data,
 
 #endif
 
-PollCont::PollCont(ProxyMutex *m, int pt) : Continuation(m), net_handler(NULL), nextPollDescriptor(NULL), poll_timeout(pt)
+PollCont::PollCont(Ptr<ProxyMutex> &m, int pt)
+  : Continuation(m.get()), net_handler(NULL), nextPollDescriptor(NULL), poll_timeout(pt)
 {
   pollDescriptor = new PollDescriptor();
   SET_HANDLER(&PollCont::pollEvent);
 }
 
-PollCont::PollCont(ProxyMutex *m, NetHandler *nh, int pt)
-  : Continuation(m), net_handler(nh), nextPollDescriptor(NULL), poll_timeout(pt)
+PollCont::PollCont(Ptr<ProxyMutex> &m, NetHandler *nh, int pt)
+  : Continuation(m.get()), net_handler(nh), nextPollDescriptor(NULL), poll_timeout(pt)
 {
   pollDescriptor = new PollDescriptor();
   SET_HANDLER(&PollCont::pollEvent);

@@ -67,7 +67,7 @@ ClusterControl::ClusterControl()
 void
 ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_boundary)
 {
-  ProxyMutex *mutex = this_ethread()->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex.get();
 
   ink_assert(!data);
   if ((len + DATA_HDR + sizeof(int32_t)) <= DEFAULT_MAX_BUFFER_SIZE) {

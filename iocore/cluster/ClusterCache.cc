@@ -243,7 +243,7 @@ ClusterVConnectionCache::insert(INK_MD5 *key, ClusterVConnection *vc)
   int index = MD5ToIndex(key);
   Entry *e;
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   MUTEX_TRY_LOCK(lock, hash_lock[index], thread);
   if (!lock.is_locked()) {
@@ -269,7 +269,7 @@ ClusterVConnectionCache::lookup(INK_MD5 *key)
   Entry *e;
   ClusterVConnection *vc = 0;
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   MUTEX_TRY_LOCK(lock, hash_lock[index], thread);
   if (!lock.is_locked()) {
@@ -1023,7 +1023,7 @@ void
 cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   ////////////////////////////////////////////////////////
   // Note: we are running on the ET_CLUSTER thread
   ////////////////////////////////////////////////////////
@@ -1939,7 +1939,7 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
 
   unsigned int hash = FOLDHASH(ch->machine->ip, msg->seq_number);
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   if (MUTEX_TAKE_TRY_LOCK(remoteCacheContQueueMutex[hash], thread)) {
     // Find it in pending list
 
@@ -2504,7 +2504,7 @@ cache_lookup_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   (void)len;
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   ////////////////////////////////////////////////////////
   // Note: we are running on the ET_CLUSTER thread
   ////////////////////////////////////////////////////////

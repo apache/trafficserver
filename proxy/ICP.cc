@@ -1821,7 +1821,7 @@ ICPProcessor::ICPQuery(Continuation *c, URL *url)
 
   // Build continuation to process ICP request
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   ICPRequestCont *rc = new (ICPRequestCont_allocator.alloc()) ICPRequestCont(this, c, url);
 
   ICP_INCREMENT_DYN_STAT(icp_query_requests_stat);

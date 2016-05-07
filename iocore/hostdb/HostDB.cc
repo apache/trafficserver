@@ -754,7 +754,7 @@ HostDBProcessor::getby(Continuation *cont, const char *hostname, int len, sockad
 {
   HostDBMD5 md5;
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   ip_text_buffer ipb;
 
   HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
@@ -840,7 +840,7 @@ HostDBProcessor::getbyname_re(Continuation *cont, const char *ahostname, int len
 {
   bool force_dns = false;
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS)
     force_dns = true;
@@ -857,7 +857,7 @@ HostDBProcessor::getbynameport_re(Continuation *cont, const char *ahostname, int
 {
   bool force_dns = false;
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS)
     force_dns = true;
@@ -879,7 +879,7 @@ HostDBProcessor::getSRVbyname_imm(Continuation *cont, process_srv_info_pfn proce
   ink_assert(cont->mutex->thread_holding == this_ethread());
   bool force_dns = false;
   EThread *thread = cont->mutex->thread_holding;
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS)
     force_dns = true;
@@ -952,7 +952,7 @@ HostDBProcessor::getbyname_imm(Continuation *cont, process_hostdb_info_pfn proce
   ink_assert(cont->mutex->thread_holding == this_ethread());
   bool force_dns = false;
   EThread *thread = cont->mutex->thread_holding;
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   HostDBMD5 md5;
 
   if (opt.flags & HOSTDB_FORCE_DNS_ALWAYS)
@@ -1022,7 +1022,7 @@ HostDBProcessor::iterate(Continuation *cont)
 {
   ink_assert(cont->mutex->thread_holding == this_ethread());
   EThread *thread = cont->mutex->thread_holding;
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   HOSTDB_INCREMENT_DYN_STAT(hostdb_total_lookups_stat);
 

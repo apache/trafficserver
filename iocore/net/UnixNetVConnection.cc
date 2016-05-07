@@ -253,7 +253,7 @@ static void
 read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
   NetState *s = &vc->read;
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   int64_t r = 0;
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
@@ -416,7 +416,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 void
 write_to_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   NET_INCREMENT_DYN_STAT(net_calls_to_writetonet_stat);
   NET_INCREMENT_DYN_STAT(net_calls_to_writetonet_afterpoll_stat);
@@ -428,7 +428,7 @@ void
 write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 {
   NetState *s = &vc->write;
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
@@ -1012,7 +1012,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
       }
     }
 
-    ProxyMutex *mutex = thread->mutex;
+    ProxyMutex *mutex = thread->mutex.get();
     NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
   } while (r == wattempted && total_written < towrite);
 

@@ -364,7 +364,7 @@ CacheVC *
 new_DocEvacuator(int nbytes, Vol *vol)
 {
   CacheVC *c = new_CacheVC(vol);
-  ProxyMutex *mutex = vol->mutex;
+  ProxyMutex *mutex = vol->mutex.get();
   c->base_stat = cache_evacuate_active_stat;
   CACHE_INCREMENT_DYN_STAT(c->base_stat + CACHE_STAT_ACTIVE);
   c->buf = new_IOBufferData(iobuffer_size_to_index(nbytes, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
@@ -802,7 +802,7 @@ agg_copy(char *p, CacheVC *vc)
     // move data
     if (vc->write_len) {
       {
-        ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex;
+        ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex.get();
         ink_assert(mutex->thread_holding == this_ethread());
         CACHE_DEBUG_SUM_DYN_STAT(cache_write_bytes_stat, vc->write_len);
       }
@@ -841,7 +841,7 @@ agg_copy(char *p, CacheVC *vc)
     Doc *doc = (Doc *)vc->buf->data();
     int l = vc->vol->round_to_approx_size(doc->len);
     {
-      ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex;
+      ProxyMutex *mutex ATS_UNUSED = vc->vol->mutex.get();
       ink_assert(mutex->thread_holding == this_ethread());
       CACHE_DEBUG_INCREMENT_DYN_STAT(cache_gc_frags_evacuated_stat);
       CACHE_DEBUG_SUM_DYN_STAT(cache_gc_bytes_evacuated_stat, l);
@@ -1583,7 +1583,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheFragType frag_ty
 
   intptr_t res = 0;
   CacheVC *c = new_CacheVC(cont);
-  ProxyMutex *mutex = cont->mutex;
+  ProxyMutex *mutex = cont->mutex.get();
   SCOPED_MUTEX_LOCK(lock, c->mutex, this_ethread());
   c->vio.op = VIO::WRITE;
   c->base_stat = cache_write_active_stat;
@@ -1651,7 +1651,7 @@ Cache::open_write(Continuation *cont, const CacheKey *key, CacheHTTPInfo *info, 
   intptr_t err = 0;
   int if_writers = (uintptr_t)info == CACHE_ALLOW_MULTIPLE_WRITES;
   CacheVC *c = new_CacheVC(cont);
-  ProxyMutex *mutex = cont->mutex;
+  ProxyMutex *mutex = cont->mutex.get();
   c->vio.op = VIO::WRITE;
   c->first_key = *key;
   /*

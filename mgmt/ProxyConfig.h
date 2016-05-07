@@ -104,12 +104,12 @@ template <typename UpdateClass> struct ConfigUpdateContinuation : public Continu
     return EVENT_DONE;
   }
 
-  ConfigUpdateContinuation(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&ConfigUpdateContinuation::update); }
+  ConfigUpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m.get()) { SET_HANDLER(&ConfigUpdateContinuation::update); }
 };
 
 template <typename UpdateClass>
 int
-ConfigScheduleUpdate(ProxyMutex *mutex)
+ConfigScheduleUpdate(Ptr<ProxyMutex> &mutex)
 {
   eventProcessor.schedule_imm(new ConfigUpdateContinuation<UpdateClass>(mutex), ET_CALL);
   return 0;

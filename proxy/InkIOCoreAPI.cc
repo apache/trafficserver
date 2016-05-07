@@ -338,7 +338,7 @@ TSVIOMutexGet(TSVIO viop)
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
 
   VIO *vio = (VIO *)viop;
-  return (TSMutex)((ProxyMutex *)vio->mutex);
+  return (TSMutex)(vio->mutex.get());
 }
 
 /* High Resolution Time */

@@ -314,7 +314,7 @@ LogFile::preproc_and_try_delete(LogBuffer *lb)
     //
     LogFlushData *flush_data = new LogFlushData(this, lb);
 
-    ProxyMutex *mutex = this_thread()->mutex;
+    ProxyMutex *mutex = this_thread()->mutex.get();
 
     RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat, lb->header()->entry_count);
 
@@ -422,7 +422,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
         m_name, this);
   ink_assert(buffer_header != NULL);
 
-  ProxyMutex *mutex = this_thread()->mutex;
+  ProxyMutex *mutex = this_thread()->mutex.get();
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
   int fmt_entry_count = 0;

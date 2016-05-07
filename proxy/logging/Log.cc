@@ -1005,7 +1005,7 @@ Log::access(LogAccess *lad)
   int ret;
   static long sample = 1;
   long this_sample;
-  ProxyMutex *mutex = this_ethread()->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex.get();
 
   // See if we're sampling and it is not time for another sample
   //
@@ -1061,7 +1061,7 @@ int
 Log::va_error(const char *format, va_list ap)
 {
   int ret_val = Log::SKIP;
-  ProxyMutex *mutex = this_ethread()->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex.get();
 
   if (error_log) {
     ink_assert(format != NULL);
@@ -1196,7 +1196,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
   ink_hrtime now, last_time = 0;
   int len, total_bytes;
   SLL<LogFlushData, LogFlushData::Link_link> link, invert_link;
-  ProxyMutex *mutex = this_thread()->mutex;
+  ProxyMutex *mutex = this_thread()->mutex.get();
 
   Log::flush_notify->lock();
 
