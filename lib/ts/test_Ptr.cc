@@ -85,6 +85,19 @@ REGRESSION_TEST(Ptr_refcount)(RegressionTest *t, int /* atype ATS_UNUSED */, int
   box.check(alive == 0, "refcounts dropped");
 }
 
+REGRESSION_TEST(Ptr_bool)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+  unsigned alive = 0;
+
+  Ptr<PtrObject> none;
+  Ptr<PtrObject> some = make_ptr(new PtrObject(&alive));
+
+  box.check(!none, "Empty Ptr<T> is false");
+  box.check(some, "Non-empty Ptr<T> is true");
+}
+
 int
 main(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */)
 {
