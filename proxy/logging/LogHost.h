@@ -87,8 +87,9 @@ public:
   LogFile *
   get_orphan_logfile() const
   {
-    return m_orphan_file;
+    return m_orphan_file.get();
   }
+
   // check if we will be able to write orphan file
   int
   do_filesystem_checks()
