@@ -63,7 +63,7 @@ OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vc
                         bool aclose_targets,                 /* = false */
                         Transform_fn aManipulate_fn, int water_mark)
 {
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
+  mutex = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
   cont = aCont;
   manipulate_fn = aManipulate_fn;
   close_source = aclose_source;
@@ -108,7 +108,7 @@ void
 OneWayMultiTunnel::init(Continuation *aCont, VIO *SourceVio, VIO **TargetVios, int n_TargetVios, bool aclose_source,
                         bool aclose_targets)
 {
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
+  mutex = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
   cont = aCont;
   single_buffer = true;
   manipulate_fn = 0;
