@@ -588,7 +588,7 @@ TSIOBufferBlockNext(TSIOBufferBlock blockp)
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
 
   IOBufferBlock *blk = (IOBufferBlock *)blockp;
-  return (TSIOBufferBlock)((IOBufferBlock *)blk->next);
+  return (TSIOBufferBlock)(blk->next.get());
 }
 
 // dev API, not exposed
@@ -615,7 +615,7 @@ TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64
   if (avail)
     *avail = blk->read_avail();
 
-  if (blk == reader->block) {
+  if (reader->block.get() == blk) {
     p += reader->start_offset;
     if (avail) {
       *avail -= reader->start_offset;
@@ -640,7 +640,7 @@ TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp)
 
   avail = blk->read_avail();
 
-  if (blk == reader->block) {
+  if (reader->block.get() == blk) {
     avail -= reader->start_offset;
     if (avail < 0) {
       avail = 0;
@@ -728,8 +728,10 @@ TSIOBufferReaderStart(TSIOBufferReader readerp)
 
   IOBufferReader *r = (IOBufferReader *)readerp;
 
-  if (r->block != NULL)
+  if (r->block) {
     r->skip_empty_blocks();
+  }
+
   return reinterpret_cast<TSIOBufferBlock>(r->get_current_block());
 }
 
