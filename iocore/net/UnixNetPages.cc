@@ -64,12 +64,12 @@ struct ShowNet : public ShowCont {
     forl_LL(UnixNetVConnection, vc, nh->open_list)
     {
       //      uint16_t port = ats_ip_port_host_order(&addr.sa);
-      if (ats_is_ip(&addr) && addr != vc->server_addr)
+      if (ats_is_ip(&addr) && !ats_ip_addr_port_eq(&addr.sa, vc->get_server_addr()))
         continue;
       //      if (port && port != ats_ip_port_host_order(&vc->server_addr.sa) && port != vc->accept_port)
       //        continue;
       char ipbuf[INET6_ADDRSTRLEN];
-      ats_ip_ntop(&vc->server_addr.sa, ipbuf, sizeof(ipbuf));
+      ats_ip_ntop(vc->get_server_addr(), ipbuf, sizeof(ipbuf));
       char opt_ipbuf[INET6_ADDRSTRLEN];
       char interbuf[80];
       snprintf(interbuf, sizeof(interbuf), "[%s] %s:%d", vc->options.toString(vc->options.addr_binding),
@@ -95,7 +95,7 @@ struct ShowNet : public ShowCont {
                       "<td>%d</td>"          // shutdown
                       "<td>-%s</td>"         // comments
                       "</tr>\n",
-                      vc->id, ipbuf, ats_ip_port_host_order(&vc->server_addr), vc->con.fd, interbuf,
+                      vc->id, ipbuf, ats_ip_port_host_order(vc->get_server_addr()), vc->con.fd, interbuf,
                       //                      vc->accept_port,
                       (int)((now - vc->submit_time) / HRTIME_SECOND), ethread->id, vc->read.enabled, vc->read.vio.nbytes,
                       vc->read.vio.ndone, vc->write.enabled, vc->write.vio.nbytes, vc->write.vio.ndone,
