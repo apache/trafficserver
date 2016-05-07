@@ -1070,7 +1070,7 @@ DNSEntry::mainEvent(int event, Event *e)
     Debug("dns", "timeout for query %s", qname);
     if (dnsH->txn_lookup_timeout) {
       timeout = NULL;
-      dns_result(dnsH, this, result_ent, false); // do not retry -- we are over TXN timeout on DNS alone!
+      dns_result(dnsH, this, result_ent.get(), false); // do not retry -- we are over TXN timeout on DNS alone!
       return EVENT_DONE;
     }
     if (written_flag) {
@@ -1080,7 +1080,7 @@ DNSEntry::mainEvent(int event, Event *e)
       DNS_DECREMENT_DYN_STAT(dns_in_flight_stat);
     }
     timeout = NULL;
-    dns_result(dnsH, this, result_ent, true);
+    dns_result(dnsH, this, result_ent.get(), true);
     return EVENT_DONE;
   }
 }
@@ -1266,7 +1266,7 @@ DNSEntry::postEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   if (!action.cancelled) {
     Debug("dns", "called back continuation for %s", qname);
-    action.continuation->handleEvent(DNS_EVENT_LOOKUP, result_ent);
+    action.continuation->handleEvent(DNS_EVENT_LOOKUP, result_ent.get());
   }
   result_ent = NULL;
   action.mutex = NULL;
