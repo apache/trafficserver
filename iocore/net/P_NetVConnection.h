@@ -104,7 +104,7 @@ NetVConnection::get_client_ip()
 }
 
 TS_INLINE uint16_t
-NetVConnection::get_client_ip()
+NetVConnection::get_client_port()
 {
   switch(netvc_context)
   {
@@ -146,7 +146,7 @@ NetVConnection::get_server_ip()
 }
 
 TS_INLINE uint16_t
-NetVConnection::get_server_ip()
+NetVConnection::get_server_port()
 {
   switch(netvc_context)
   {
