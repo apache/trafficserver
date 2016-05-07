@@ -455,7 +455,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   if (!getSSLHandShakeComplete()) {
     int err;
 
-    if (netvc->get_context() == Net_VConnection_P2S) {
+    if (get_context() == Net_VConnection_P2S) {
       ret = sslStartHandShake(SSL_EVENT_CLIENT, err);
     } else {
       ret = sslStartHandShake(SSL_EVENT_SERVER, err);
