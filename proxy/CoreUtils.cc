@@ -763,7 +763,7 @@ CoreUtils::process_NetVC(UnixNetVConnection *nvc_test)
 
     printf("----------- UnixNetVConnection @ 0x%p ----------\n", nvc_test);
     printf("     ip: %s    port: %d\n", ats_ip_ntop(loaded_nvc->get_server_addr(), addrbuf, sizeof(addrbuf)),
-           ats_ip_port_host_order(loaded_nvc->server_addr()));
+           ats_ip_port_host_order(loaded_nvc->get_server_addr()));
     printf("     closed: %d\n\n", loaded_nvc->closed);
     printf("     read state: \n");
     print_netstate(&loaded_nvc->read);
