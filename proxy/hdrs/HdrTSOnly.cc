@@ -171,7 +171,7 @@ RETRY:
       // Add block to heap in this slot
       m_ronly_heap[i].m_heap_start = (char *)use_start;
       m_ronly_heap[i].m_heap_len = (int)(b->end() - b->start());
-      m_ronly_heap[i].m_ref_count_ptr = b->data;
+      m_ronly_heap[i].m_ref_count_ptr = b->data.object();
       //          printf("Attaching block at %X for %d in slot %d\n",
       //                 m_ronly_heap[i].m_heap_start,
       //                 m_ronly_heap[i].m_heap_len,
