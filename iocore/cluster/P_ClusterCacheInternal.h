@@ -195,7 +195,7 @@ struct CacheContinuation : public Continuation {
   inline void
   setMsgBufferLen(int l, IOBufferData *b = 0)
   {
-    ink_assert(rw_buf_msg == 0);
+    ink_assert(!rw_buf_msg);
     ink_assert(rw_buf_msg_len == 0);
 
     rw_buf_msg = b;
@@ -211,7 +211,7 @@ struct CacheContinuation : public Continuation {
   inline void
   allocMsgBuffer()
   {
-    ink_assert(rw_buf_msg == 0);
+    ink_assert(!rw_buf_msg);
     ink_assert(rw_buf_msg_len);
     if (rw_buf_msg_len <= DEFAULT_MAX_BUFFER_SIZE) {
       rw_buf_msg = new_IOBufferData(buffer_size_to_index(rw_buf_msg_len, MAX_BUFFER_SIZE_INDEX));
@@ -228,9 +228,9 @@ struct CacheContinuation : public Continuation {
   }
 
   inline IOBufferData *
-  getMsgBufferIOBData()
+  getMsgBufferIOBData() const
   {
-    return rw_buf_msg;
+    return rw_buf_msg.get();
   }
 
   inline void

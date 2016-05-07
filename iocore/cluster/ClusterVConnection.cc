@@ -31,7 +31,7 @@ ClassAllocator<ClusterVConnection> clusterVCAllocator("clusterVCAllocator");
 ClassAllocator<ByteBankDescriptor> byteBankAllocator("byteBankAllocator");
 
 ByteBankDescriptor *
-ByteBankDescriptor::ByteBankDescriptor_alloc(IOBufferBlock *iob)
+ByteBankDescriptor::ByteBankDescriptor_alloc(Ptr<IOBufferBlock> &iob)
 {
   ByteBankDescriptor *b = byteBankAllocator.alloc();
   b->block = iob;

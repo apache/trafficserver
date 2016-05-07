@@ -218,7 +218,7 @@ void
 ClusterLoadMonitor::note_ping_response_time(ink_hrtime response_time, int sequence_number)
 {
 #ifdef CLUSTER_TOMCAT
-  ProxyMutex *mutex = this->ch->mutex; // hack for stats
+  ProxyMutex *mutex = this->ch->mutex.get(); // hack for stats
 #endif
 
   CLUSTER_SUM_DYN_STAT(CLUSTER_PING_TIME_STAT, response_time);

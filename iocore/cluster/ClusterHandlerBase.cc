@@ -53,7 +53,7 @@ ClusterCalloutContinuation::~ClusterCalloutContinuation()
 int
 ClusterCalloutContinuation::CalloutHandler(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  return _ch->process_incoming_callouts(this->mutex);
+  return _ch->process_incoming_callouts(this->mutex.get());
 }
 
 /*************************************************************************/
@@ -67,8 +67,7 @@ ClusterControl::ClusterControl()
 void
 ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_boundary)
 {
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex;
 
   ink_assert(!data);
   if ((len + DATA_HDR + sizeof(int32_t)) <= DEFAULT_MAX_BUFFER_SIZE) {
@@ -316,11 +315,12 @@ ClusterState::build_do_io_vector()
     if (last_block) {
       last_block->next = block[n];
     }
-    last_block = block[n];
+    last_block = block[n].get();
     while (last_block->next) {
-      last_block = last_block->next;
+      last_block = last_block->next.get();
     }
   }
+
   mbuf->_writer = block[0];
   ink_release_assert(bytes_to_xfer == to_do);
   ink_assert(bytes_to_xfer == bytes_IOBufferBlockList(mbuf->_writer, !read_channel));

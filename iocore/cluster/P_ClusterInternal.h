@@ -493,8 +493,28 @@ extern void cluster_update_priority(ClusterHandler *, ClusterVConnection *, Clus
 extern void cluster_bump(ClusterHandler *, ClusterVConnectionBase *, ClusterVConnState *, int);
 
 extern IOBufferBlock *clone_IOBufferBlockList(IOBufferBlock *, int, int, IOBufferBlock **);
+
+static inline IOBufferBlock *
+clone_IOBufferBlockList(Ptr<IOBufferBlock> &src, int start_off, int b, IOBufferBlock **b_tail)
+{
+  return clone_IOBufferBlockList(src.get(), start_off, b, b_tail);
+}
+
 extern IOBufferBlock *consume_IOBufferBlockList(IOBufferBlock *, int64_t);
+
+static inline IOBufferBlock *
+consume_IOBufferBlockList(Ptr<IOBufferBlock> &b, int64_t n)
+{
+  return consume_IOBufferBlockList(b.get(), n);
+}
+
 extern int64_t bytes_IOBufferBlockList(IOBufferBlock *, int64_t);
+
+static inline int64_t
+bytes_IOBufferBlockList(Ptr<IOBufferBlock> &b, int64_t read_avail_bytes)
+{
+  return bytes_IOBufferBlockList(b.get(), read_avail_bytes);
+}
 
 // ClusterVConnection declarations
 extern void clusterVCAllocator_free(ClusterVConnection *vc);
