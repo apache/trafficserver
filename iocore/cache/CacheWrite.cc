@@ -224,7 +224,7 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
     max_bytes -= offset;
     if (max_bytes <= 0) {
       offset = -max_bytes;
-      b = b->next;
+      b = b->next.get();
       continue;
     }
     int bytes = len;
@@ -233,7 +233,7 @@ iobufferblock_memcpy(char *p, int len, IOBufferBlock *ab, int offset)
     ::memcpy(p, start + offset, bytes);
     p += bytes;
     len -= bytes;
-    b = b->next;
+    b = b->next.get();
     offset = 0;
   }
   return p;
@@ -811,7 +811,7 @@ agg_copy(char *p, CacheVC *vc)
         iobufferblock_memcpy(doc->data(), vc->write_len, res_alt_blk, 0);
       else
 #endif
-        iobufferblock_memcpy(doc->data(), vc->write_len, vc->blocks, vc->offset);
+        iobufferblock_memcpy(doc->data(), vc->write_len, vc->blocks.get(), vc->offset);
 #ifdef VERIFY_JTEST_DATA
       if (f.use_first_key && header_len) {
         int ib = 0, xd = 0;
@@ -1218,7 +1218,7 @@ CacheVC::openWriteCloseDataDone(int event, Event *e)
     fragment++;
     write_pos += write_len;
     dir_insert(&key, vol, &dir);
-    blocks = iobufferblock_skip(blocks, &offset, &length, write_len);
+    blocks = iobufferblock_skip(blocks.get(), &offset, &length, write_len);
     next_CacheKey(&key, &key);
     if (length) {
       write_len = length;
@@ -1315,7 +1315,7 @@ CacheVC::openWriteWriteDone(int event, Event *e)
     write_pos += write_len;
     dir_insert(&key, vol, &dir);
     DDebug("cache_insert", "WriteDone: %X, %X, %d", key.slice32(0), first_key.slice32(0), write_len);
-    blocks = iobufferblock_skip(blocks, &offset, &length, write_len);
+    blocks = iobufferblock_skip(blocks.get(), &offset, &length, write_len);
     next_CacheKey(&key, &key);
   }
   if (closed)
@@ -1480,7 +1480,7 @@ CacheVC::openWriteStartDone(int event, Event *e)
       if (!(doc->first_key == first_key))
         goto Lcollision;
 
-      if (doc->magic != DOC_MAGIC || !doc->hlen || this->load_http_info(write_vector, doc, buf) != doc->hlen) {
+      if (doc->magic != DOC_MAGIC || !doc->hlen || this->load_http_info(write_vector, doc, buf.object()) != doc->hlen) {
         err = ECACHE_BAD_META_DATA;
         goto Lfailure;
       }
