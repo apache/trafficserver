@@ -85,8 +85,7 @@ Action *
 UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const &opt)
 {
   EventType upgraded_etype = opt.etype; // setEtype requires non-const ref.
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex;
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip;                    // local binding address.
   char thr_name[MAX_THREAD_NAME_LENGTH];
@@ -181,6 +180,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     setsockopt(na->server.fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &should_filter_int, sizeof(int));
   }
 #endif
+
 #ifdef TCP_INIT_CWND
   int tcp_init_cwnd = 0;
   REC_ReadConfigInteger(tcp_init_cwnd, "proxy.config.http.server_tcp_init_cwnd");
@@ -191,14 +191,14 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     }
   }
 #endif
-  return na->action_;
+
+  return na->action_.get();
 }
 
 Action *
 UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
 {
-  ProxyMutex *mutex = cont->mutex;
-  EThread *t = mutex->thread_holding;
+  EThread *t = cont->mutex->thread_holding;
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
   if (opt)
@@ -364,7 +364,7 @@ struct CheckConnect : public Continuation {
     }
   }
 
-  CheckConnect(ProxyMutex *m = NULL) : Continuation(m), connect_status(-1), recursion(0), timeout(0)
+  explicit CheckConnect(Ptr<ProxyMutex> &m) : Continuation(m.get()), connect_status(-1), recursion(0), timeout(0)
   {
     SET_HANDLER(&CheckConnect::handle_connect);
     buf = new_empty_MIOBuffer(1);

@@ -66,7 +66,7 @@ completionUtil::setHandle(Event *e, void *handle)
   u->setHandle(handle);
 }
 TS_INLINE void
-completionUtil::setInfo(Event *e, int fd, IOBufferBlock *buf, int actual, int errno_)
+completionUtil::setInfo(Event *e, int fd, const Ptr<IOBufferBlock> &buf, int actual, int errno_)
 {
   UDPIOEvent *u = (UDPIOEvent *)e;
   u->setInfo(fd, buf, actual, errno_);

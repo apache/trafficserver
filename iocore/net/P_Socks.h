@@ -140,7 +140,7 @@ struct SocksEntry : public Continuation {
   int startEvent(int event, void *data);
   int mainEvent(int event, void *data);
   void findServer();
-  void init(ProxyMutex *m, SocksNetVC *netvc, unsigned char socks_support, unsigned char ver);
+  void init(Ptr<ProxyMutex> &m, SocksNetVC *netvc, unsigned char socks_support, unsigned char ver);
   void free();
 
   SocksEntry()

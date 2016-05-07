@@ -291,7 +291,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
   // read data
   int64_t rattempted = 0, total_read = 0;
-  int niov = 0;
+  unsigned niov = 0;
   IOVec tiovec[NET_MAX_IOV];
   if (toread) {
     IOBufferBlock *b = buf.writer()->first_write_block();
@@ -311,14 +311,13 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
           if (a >= togo)
             break;
         }
-        b = b->next;
+        b = b->next.get();
       }
 
-      if (niov == 1) {
-        r = socketManager.read(vc->con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
-      } else {
-        r = socketManager.readv(vc->con.fd, &tiovec[0], niov);
-      }
+      ink_assert(niov > 0);
+      ink_assert(niov < countof(tiovec));
+      r = socketManager.readv(vc->con.fd, &tiovec[0], niov);
+
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
 
       if (vc->origin_trace) {
@@ -390,10 +389,12 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       Debug("iocore_net", "read_from_net, read finished - signal done");
       return;
     } else {
-      if (read_signal_and_update(VC_EVENT_READ_READY, vc) != EVENT_CONT)
+      if (read_signal_and_update(VC_EVENT_READ_READY, vc) != EVENT_CONT) {
         return;
+      }
+
       // change of lock... don't look at shared variables!
-      if (lock.get_mutex() != s->vio.mutex.m_ptr) {
+      if (lock.get_mutex() != s->vio.mutex.get()) {
         read_reschedule(nh, vc);
         return;
       }
@@ -431,7 +432,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
 
   MUTEX_TRY_LOCK_FOR(lock, s->vio.mutex, thread, s->vio._cont);
 
-  if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.m_ptr) {
+  if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.get()) {
     write_reschedule(nh, vc);
     return;
   }
@@ -574,12 +575,14 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       if (write_signal_and_update(VC_EVENT_WRITE_READY, vc) != EVENT_CONT) {
         return;
       }
+
       // change of lock... don't look at shared variables!
-      if (lock.get_mutex() != s->vio.mutex.m_ptr) {
+      if (lock.get_mutex() != s->vio.mutex.get()) {
         write_reschedule(nh, vc);
         return;
       }
     }
+
     if (!buf.reader()->read_avail()) {
       write_disable(nh, vc);
       return;
@@ -950,11 +953,11 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
 
   // XXX Rather than dealing with the block directly, we should use the IOBufferReader API.
   int64_t offset = buf.reader()->start_offset;
-  IOBufferBlock *b = buf.reader()->block;
+  IOBufferBlock *b = buf.reader()->block.get();
 
   do {
     IOVec tiovec[NET_MAX_IOV];
-    int niov = 0;
+    unsigned niov = 0;
     int64_t total_written_last = total_written;
     while (b && niov < NET_MAX_IOV) {
       // check if we have done this block
@@ -962,15 +965,20 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
       l -= offset;
       if (l <= 0) {
         offset = -l;
-        b = b->next;
+        b = b->next.get();
         continue;
       }
+
       // check if to amount to write exceeds that in this buffer
       int64_t wavail = towrite - total_written;
-      if (l > wavail)
+      if (l > wavail) {
         l = wavail;
-      if (!l)
+      }
+
+      if (!l) {
         break;
+      }
+
       total_written += l;
       // build an iov entry
       tiovec[niov].iov_len = l;
@@ -978,13 +986,14 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
       niov++;
       // on to the next block
       offset = 0;
-      b = b->next;
+      b = b->next.get();
     }
+
     wattempted = total_written - total_written_last;
-    if (niov == 1)
-      r = socketManager.write(con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
-    else
-      r = socketManager.writev(con.fd, &tiovec[0], niov);
+
+    ink_assert(niov > 0);
+    ink_assert(niov < countof(tiovec));
+    r = socketManager.writev(con.fd, &tiovec[0], niov);
 
     if (origin_trace) {
       char origin_trace_ip[INET6_ADDRSTRLEN];
@@ -1136,11 +1145,12 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   ink_assert(thread == this_ethread());
 
   MUTEX_TRY_LOCK(hlock, get_NetHandler(thread)->mutex, e->ethread);
-  MUTEX_TRY_LOCK(rlock, read.vio.mutex ? (ProxyMutex *)read.vio.mutex : (ProxyMutex *)e->ethread->mutex, e->ethread);
-  MUTEX_TRY_LOCK(wlock, write.vio.mutex ? (ProxyMutex *)write.vio.mutex : (ProxyMutex *)e->ethread->mutex, e->ethread);
+  MUTEX_TRY_LOCK(rlock, read.vio.mutex ? read.vio.mutex : e->ethread->mutex, e->ethread);
+  MUTEX_TRY_LOCK(wlock, write.vio.mutex ? write.vio.mutex : e->ethread->mutex, e->ethread);
+
   if (!hlock.is_locked() || !rlock.is_locked() || !wlock.is_locked() ||
-      (read.vio.mutex.m_ptr && rlock.get_mutex() != read.vio.mutex.m_ptr) ||
-      (write.vio.mutex.m_ptr && wlock.get_mutex() != write.vio.mutex.m_ptr)) {
+      (read.vio.mutex && rlock.get_mutex() != read.vio.mutex.get()) ||
+      (write.vio.mutex && wlock.get_mutex() != write.vio.mutex.get())) {
 #ifdef INACTIVITY_TIMEOUT
     if (e == active_timeout)
 #endif

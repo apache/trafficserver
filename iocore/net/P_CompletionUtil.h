@@ -33,7 +33,7 @@ public:
   static void setContinuation(Event *e, Continuation *c);
   static void *getHandle(Event *e);
   static void setHandle(Event *e, void *handle);
-  static void setInfo(Event *e, int fd, IOBufferBlock *buf, int actual, int errno_);
+  static void setInfo(Event *e, int fd, const Ptr<IOBufferBlock> &buf, int actual, int errno_);
   static void setInfo(Event *e, int fd, struct msghdr *msg, int actual, int errno_);
   static int getBytesTransferred(Event *e);
   static IOBufferBlock *getIOBufferBlock(Event *e);
