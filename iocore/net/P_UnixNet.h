@@ -160,8 +160,8 @@ struct PollCont : public Continuation {
   PollDescriptor *nextPollDescriptor;
   int poll_timeout;
 
-  PollCont(ProxyMutex *m, int pt = net_config_poll_timeout);
-  PollCont(ProxyMutex *m, NetHandler *nh, int pt = net_config_poll_timeout);
+  PollCont(Ptr<ProxyMutex> &m, int pt = net_config_poll_timeout);
+  PollCont(Ptr<ProxyMutex> &m, NetHandler *nh, int pt = net_config_poll_timeout);
   ~PollCont();
   int pollEvent(int event, Event *e);
 };

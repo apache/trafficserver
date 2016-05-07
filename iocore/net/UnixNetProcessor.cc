@@ -85,7 +85,7 @@ Action *
 UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const &opt)
 {
   EventType upgraded_etype = opt.etype; // setEtype requires non-const ref.
-  ProxyMutex *mutex = this_ethread()->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex.get();
   int accept_threads = opt.accept_threads; // might be changed.
   IpEndpoint accept_ip;                    // local binding address.
   char thr_name[MAX_THREAD_NAME_LENGTH];

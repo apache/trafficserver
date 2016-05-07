@@ -879,7 +879,7 @@ dir_overwrite_lock(CacheKey *key, Vol *d, Dir *to_part, ProxyMutex *m, Dir *over
 }
 
 void TS_INLINE
-rand_CacheKey(CacheKey *next_key, ProxyMutex *mutex)
+rand_CacheKey(CacheKey *next_key, Ptr<ProxyMutex> &mutex)
 {
   next_key->b[0] = mutex->thread_holding->generator.random();
   next_key->b[1] = mutex->thread_holding->generator.random();

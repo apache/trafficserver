@@ -299,7 +299,7 @@ class LifecycleAPIHooks : public FeatureAPIHooks<TSLifecycleHookID, TS_LIFECYCLE
 class ConfigUpdateCallback : public Continuation
 {
 public:
-  ConfigUpdateCallback(INKContInternal *contp) : Continuation(contp->mutex), m_cont(contp)
+  ConfigUpdateCallback(INKContInternal *contp) : Continuation(contp->mutex.get()), m_cont(contp)
   {
     SET_HANDLER(&ConfigUpdateCallback::event_handler);
   }

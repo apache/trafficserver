@@ -53,7 +53,7 @@ ClusterProcessor::~ClusterProcessor()
 int
 ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn, void *data, int len, int options, void *cmsg)
 {
-  ProxyMutex *mutex = this_ethread()->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex.get();
   //
   // RPC facility for intercluster communication available to other
   //  subsystems.
@@ -238,7 +238,7 @@ ClusterProcessor::open_local(Continuation *cont, ClusterMachine * /* m ATS_UNUSE
     return NULL;
 
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   ClusterVConnection *vc = clusterVCAllocator.alloc();
   vc->new_connect_read = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
   vc->start_time = Thread::get_hrtime();
@@ -308,7 +308,7 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
     return NULL;
 
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   ClusterVConnection *vc = clusterVCAllocator.alloc();
   vc->new_connect_read = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
   vc->start_time = Thread::get_hrtime();

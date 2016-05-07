@@ -874,7 +874,7 @@ get_entry(DNSHandler *h, char *qname, int qtype)
 static void
 write_dns(DNSHandler *h)
 {
-  ProxyMutex *mutex = h->mutex;
+  ProxyMutex *mutex = h->mutex.get();
   DNS_INCREMENT_DYN_STAT(dns_total_lookups_stat);
   int max_nscount = h->m_res->nscount;
   if (max_nscount > MAX_NAMED)
@@ -955,7 +955,7 @@ DNSHandler::get_query_id()
 static bool
 write_dns_event(DNSHandler *h, DNSEntry *e)
 {
-  ProxyMutex *mutex = h->mutex;
+  ProxyMutex *mutex = h->mutex.get();
   union {
     HEADER _h;
     char _b[MAX_DNS_PACKET_LEN];
@@ -1110,7 +1110,7 @@ DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Option
 static void
 dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
 {
-  ProxyMutex *mutex = h->mutex;
+  ProxyMutex *mutex = h->mutex.get();
   bool cancelled = (e->action.cancelled ? true : false);
 
   if (!ent && !cancelled) {
@@ -1279,7 +1279,7 @@ DNSEntry::postEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 static bool
 dns_process(DNSHandler *handler, HostEnt *buf, int len)
 {
-  ProxyMutex *mutex = handler->mutex;
+  ProxyMutex *mutex = handler->mutex.get();
   HEADER *h = (HEADER *)(buf->buf);
   DNSEntry *e = get_dns(handler, (uint16_t)ntohs(h->id));
   bool retry = false;

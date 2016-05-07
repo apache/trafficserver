@@ -518,7 +518,7 @@ void *
 ICPConfiguration::icp_config_change_callback(void *data, void *value, int startup)
 {
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   //
   // Cast passed parameters to correct types

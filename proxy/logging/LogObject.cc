@@ -1301,7 +1301,7 @@ int
 LogObjectManager::log(LogAccess *lad)
 {
   int ret = Log::SKIP;
-  ProxyMutex *mutex = this_thread()->mutex;
+  ProxyMutex *mutex = this_thread()->mutex.get();
 
   for (unsigned i = 0; i < this->_objects.length(); i++) {
     //

@@ -110,7 +110,7 @@ public:
     regions. Do not modify this member directly.
 
   */
-  ProxyMutex *mutex;
+  Ptr<ProxyMutex> mutex;
 
   // PRIVATE
   void set_specific();

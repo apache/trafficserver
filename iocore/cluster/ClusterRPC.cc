@@ -132,7 +132,7 @@ CacheVC *
 ChannelToCacheWriteVC(ClusterHandler *ch, int channel, uint32_t channel_seqno, ClusterVConnection **cluster_vc)
 {
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   ClusterVConnection *cvc = ch->channels[channel];
   if (!VALID_CHANNEL(cvc) || (channel_seqno != cvc->token.sequence_number) || (cvc->read.vio.op != VIO::READ)) {
@@ -160,7 +160,7 @@ void
 set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
 {
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   // We are called on the ET_CLUSTER thread.
 
   char *data;
@@ -229,7 +229,7 @@ void
 post_setchan_send_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   // We are called on the ET_CLUSTER thread.
   // set_data() control message has been queued into cluster transfer message.
   // This allows us to assume that it has been sent.
@@ -289,7 +289,7 @@ void
 post_setchan_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
   // We are called on the ET_CLUSTER thread.
   // Control message has been queued into cluster transfer message.
   // This allows us to assume that it has been sent.
@@ -349,7 +349,7 @@ void
 post_setchan_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
   EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = thread->mutex.get();
 
   // We are called on the ET_CLUSTER thread.
   // Control message has been queued into cluster transfer message.

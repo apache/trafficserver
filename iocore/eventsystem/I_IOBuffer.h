@@ -1318,11 +1318,6 @@ public:
     return new_IOBufferBlock_internal(loc);
   }
   IOBufferBlock *
-  operator()(IOBufferData *d, int64_t len = 0, int64_t offset = 0)
-  {
-    return new_IOBufferBlock_internal(loc, d, len, offset);
-  }
-  IOBufferBlock *
   operator()(Ptr<IOBufferData> &d, int64_t len = 0, int64_t offset = 0)
   {
     return new_IOBufferBlock_internal(loc, d.get(), len, offset);

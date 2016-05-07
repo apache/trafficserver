@@ -888,7 +888,7 @@ CacheProcessor::cacheInitialized()
   uint64_t vol_used_direntries = 0;
   Vol *vol;
 
-  ProxyMutex *mutex = this_ethread()->mutex;
+  ProxyMutex *mutex = this_ethread()->mutex.get();
 
   if (theCache) {
     total_size += theCache->cache_size;
