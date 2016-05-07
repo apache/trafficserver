@@ -2078,7 +2078,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
     HostDBRoundRobin *rr = r->rr();
     HostDBInfo *srv = NULL;
     if (rr) {
-      srv = rr->select_best_srv(t_state.dns_info.srv_hostname, &mutex.m_ptr->thread_holding->generator, ink_cluster_time(),
+      srv = rr->select_best_srv(t_state.dns_info.srv_hostname, &mutex->thread_holding->generator, ink_cluster_time(),
                                 (int)t_state.txn_conf->down_server_timeout);
     }
     if (!srv) {
@@ -4464,7 +4464,7 @@ HttpSM::do_range_setup_if_necessary()
         content_type = t_state.cache_info.object_read->response_get()->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE,
                                                                                  &field_content_type_len);
         // create a Range: transform processor for requests of type Range: bytes=1-2,4-5,10-100 (eg. multiple ranges)
-        range_trans = transformProcessor.range_transform(mutex, t_state.ranges, t_state.num_range_fields,
+        range_trans = transformProcessor.range_transform(mutex.get(), t_state.ranges, t_state.num_range_fields,
                                                          &t_state.hdr_info.transform_response, content_type, field_content_type_len,
                                                          t_state.cache_info.object_read->object_size_get());
         api_hooks.append(TS_HTTP_RESPONSE_TRANSFORM_HOOK, range_trans);
@@ -5055,7 +5055,7 @@ HttpSM::do_post_transform_open()
   ink_assert(post_transform_info.vc == NULL);
 
   if (is_action_tag_set("http_post_nullt")) {
-    txn_hook_prepend(TS_HTTP_REQUEST_TRANSFORM_HOOK, transformProcessor.null_transform(mutex));
+    txn_hook_prepend(TS_HTTP_REQUEST_TRANSFORM_HOOK, transformProcessor.null_transform(mutex.get()));
   }
 
   post_transform_info.vc = transformProcessor.open(this, api_hooks.get(TS_HTTP_REQUEST_TRANSFORM_HOOK));
@@ -5076,7 +5076,7 @@ HttpSM::do_transform_open()
   APIHook *hooks;
 
   if (is_action_tag_set("http_nullt")) {
-    txn_hook_prepend(TS_HTTP_RESPONSE_TRANSFORM_HOOK, transformProcessor.null_transform(mutex));
+    txn_hook_prepend(TS_HTTP_RESPONSE_TRANSFORM_HOOK, transformProcessor.null_transform(mutex.get()));
   }
 
   hooks = api_hooks.get(TS_HTTP_RESPONSE_TRANSFORM_HOOK);

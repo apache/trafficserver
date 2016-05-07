@@ -307,7 +307,7 @@ public:
   int
   event_handler(int, void *)
   {
-    if (m_cont->mutex != NULL) {
+    if (m_cont->mutex) {
       MUTEX_TRY_LOCK(trylock, m_cont->mutex, this_ethread());
       if (!trylock.is_locked()) {
         eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_TASK);

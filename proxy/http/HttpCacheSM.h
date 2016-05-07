@@ -60,7 +60,7 @@ public:
   HttpCacheSM();
 
   void
-  init(HttpSM *sm_arg, ProxyMutex *amutex)
+  init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex)
   {
     master_sm = sm_arg;
     mutex = amutex;

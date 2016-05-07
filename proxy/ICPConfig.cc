@@ -1028,7 +1028,7 @@ Action *
 MultiCastPeer::RecvFrom_re(Continuation *cont, void *token, IOBufferBlock * /* bufblock ATS_UNUSED */, int len,
                            struct sockaddr *from, socklen_t *fromlen)
 {
-  Action *a = udpNet.recvfrom_re(cont, token, _recv_chan.fd, from, fromlen, buf, len, true, 0);
+  Action *a = udpNet.recvfrom_re(cont, token, _recv_chan.fd, from, fromlen, buf.get(), len, true, 0);
   return a;
 }
 
@@ -1431,7 +1431,7 @@ ICPProcessor::DumpICPConfig()
         GetConfig()->globalConfig()->ICPReplyToUnknownPeer(), GetConfig()->globalConfig()->ICPDefaultReplyPort());
 
   for (int i = 0; i < (_nPeerList + 1); i++) {
-    P = _PeerList[i];
+    P = IdToPeer(i);
     id = P->GetPeerID();
     type = P->GetType();
     const char *str_type;

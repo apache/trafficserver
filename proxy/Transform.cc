@@ -385,7 +385,7 @@ TransformTerminus::reenable(VIO *vio)
   -------------------------------------------------------------------------*/
 
 TransformVConnection::TransformVConnection(Continuation *cont, APIHook *hooks)
-  : TransformVCChain(cont->mutex), m_cont(cont), m_terminus(this), m_closed(0)
+  : TransformVCChain(cont->mutex.get()), m_cont(cont), m_terminus(this), m_closed(0)
 {
   INKVConnInternal *xform;
 

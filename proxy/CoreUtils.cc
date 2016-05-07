@@ -743,8 +743,8 @@ CoreUtils::process_EThread(EThread *eth_test)
   ats_free(buf);
 }
 
-static void
-print_netstate(NetState *n)
+void
+CoreUtils::print_netstate(NetState *n)
 {
   printf("      enabled: %d\n", n->enabled);
   printf("      op: %d  _cont: 0x%p\n", n->vio.op, n->vio._cont);

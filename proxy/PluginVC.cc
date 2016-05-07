@@ -145,7 +145,7 @@ PluginVC::main_handler(int event, void *data)
       return 0;
     }
 
-    if (read_side_mutex.m_ptr != read_state.vio.mutex.m_ptr) {
+    if (read_side_mutex != read_state.vio.mutex) {
       // It's possible some swapped the mutex on us before
       //  we were able to grab it
       Mutex_unlock(read_side_mutex, my_ethread);
@@ -167,7 +167,7 @@ PluginVC::main_handler(int event, void *data)
       return 0;
     }
 
-    if (write_side_mutex.m_ptr != write_state.vio.mutex.m_ptr) {
+    if (write_side_mutex != write_state.vio.mutex) {
       // It's possible some swapped the mutex on us before
       //  we were able to grab it
       Mutex_unlock(write_side_mutex, my_ethread);

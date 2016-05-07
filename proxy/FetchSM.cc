@@ -343,12 +343,10 @@ out:
 }
 
 void
-FetchSM::get_info_from_buffer(IOBufferReader *the_reader)
+FetchSM::get_info_from_buffer(IOBufferReader *reader)
 {
   char *buf, *info;
   int64_t read_avail, read_done;
-  IOBufferBlock *blk;
-  IOBufferReader *reader = the_reader;
 
   if (!reader) {
     client_bytes = 0;
@@ -369,9 +367,11 @@ FetchSM::get_info_from_buffer(IOBufferReader *the_reader)
   if (!(fetch_flags & TS_FETCH_FLAGS_STREAM) || !check_chunked()) {
     /* Read the data out of the reader */
     while (read_avail > 0) {
-      if (reader->block != NULL)
+      if (reader->block) {
         reader->skip_empty_blocks();
-      blk = reader->block;
+      }
+
+      IOBufferBlock *blk = reader->block.get();
 
       // This is the equivalent of TSIOBufferBlockReadStart()
       buf = blk->start() + reader->start_offset;
@@ -401,9 +401,11 @@ FetchSM::get_info_from_buffer(IOBufferReader *the_reader)
     /* Read the data out of the reader */
     read_avail = reader->read_avail();
     while (read_avail > 0) {
-      if (reader->block != NULL)
+      if (reader->block) {
         reader->skip_empty_blocks();
-      blk = reader->block;
+      }
+
+      IOBufferBlock *blk = reader->block.get();
 
       // This is the equivalent of TSIOBufferBlockReadStart()
       buf = blk->start() + reader->start_offset;

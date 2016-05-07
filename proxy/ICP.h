@@ -818,12 +818,12 @@ public:
   inline Peer *
   GetLocalPeer()
   {
-    return _LocalPeer;
+    return _LocalPeer.get();
   }
   inline Peer *
   IdToPeer(int id)
   {
-    return _PeerList[id];
+    return _PeerList[id].get();
   }
   inline ICPConfiguration *
   GetConfig()
@@ -918,7 +918,7 @@ private:
   inline Peer *
   GetNthSendPeer(int n, int bias)
   {
-    return _SendPeerList[(bias + n) % (_nSendPeerList + 1)];
+    return _SendPeerList[(bias + n) % (_nSendPeerList + 1)].get();
   }
 
   inline int
@@ -929,7 +929,7 @@ private:
   inline Peer *
   GetNthRecvPeer(int n, int bias)
   {
-    return _RecvPeerList[(bias + n) % (_nRecvPeerList + 1)];
+    return _RecvPeerList[(bias + n) % (_nRecvPeerList + 1)].get();
   }
 
   inline int
@@ -951,7 +951,7 @@ private:
   inline Peer *
   GetNthParentPeer(int n, int bias)
   {
-    return _ParentPeerList[(bias + n) % (_nParentPeerList + 1)];
+    return _ParentPeerList[(bias + n) % (_nParentPeerList + 1)].get();
   }
   inline int
   GetStartingParentPeerBias()

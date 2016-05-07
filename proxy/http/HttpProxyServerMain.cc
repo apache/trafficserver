@@ -266,9 +266,8 @@ init_HttpProxyServer(int n_accept_threads)
     plugin_http_transparent_accept = new HttpSessionAccept(ha_opt);
     plugin_http_transparent_accept->mutex = new_ProxyMutex();
   }
-  if (ssl_plugin_mutex == NULL) {
-    ssl_plugin_mutex = mutexAllocator.alloc();
-    ssl_plugin_mutex->init("SSL Acceptor List");
+  if (!ssl_plugin_mutex) {
+    ssl_plugin_mutex = new_ProxyMutex();
   }
 
   // Do the configuration defined ports.

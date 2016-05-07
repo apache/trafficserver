@@ -646,6 +646,12 @@ sdk_sanity_check_null_ptr(void *ptr)
   return TS_SUCCESS;
 }
 
+static TSReturnCode
+sdk_sanity_check_mutex(Ptr<ProxyMutex> &m)
+{
+  return m ? TS_SUCCESS : TS_ERROR;
+}
+
 /**
   The function checks if the buffer is Modifiable and returns true if
   it is modifiable, else returns false.
@@ -4354,7 +4360,7 @@ TSContMutexGet(TSCont contp)
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
   Continuation *c = (Continuation *)contp;
-  return (TSMutex)((ProxyMutex *)c->mutex);
+  return (TSMutex)(c->mutex.get());
 }
 
 /* HTTP hooks */
@@ -6418,7 +6424,7 @@ TSHttpTxnServerIntercept(TSCont contp, TSHttpTxn txnp)
   INKContInternal *i = (INKContInternal *)contp;
 
   // Must have a mutex
-  sdk_assert(sdk_sanity_check_null_ptr((void *)i->mutex) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_mutex(i->mutex) == TS_SUCCESS);
 
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_SERVER;
   http_sm->plugin_tunnel = PluginVCCore::alloc();
@@ -6435,7 +6441,7 @@ TSHttpTxnIntercept(TSCont contp, TSHttpTxn txnp)
   INKContInternal *i = (INKContInternal *)contp;
 
   // Must have a mutex
-  sdk_assert(sdk_sanity_check_null_ptr((void *)i->mutex) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_mutex(i->mutex) == TS_SUCCESS);
 
   http_sm->plugin_tunnel_type = HTTP_PLUGIN_AS_INTERCEPT;
   http_sm->plugin_tunnel = PluginVCCore::alloc();
@@ -7536,7 +7542,7 @@ TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
 
   pAIO->aiocb.aio_buf = buf;
   pAIO->action = pCont;
-  pAIO->thread = ((ProxyMutex *)pCont->mutex)->thread_holding;
+  pAIO->thread = pCont->mutex->thread_holding;
 
   if (ink_aio_read(pAIO, 1) == 1)
     return TS_SUCCESS;
@@ -7574,7 +7580,7 @@ TSAIOWrite(int fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
   pAIO->aiocb.aio_buf = buf;
   pAIO->aiocb.aio_nbytes = bufSize;
   pAIO->action = pCont;
-  pAIO->thread = ((ProxyMutex *)pCont->mutex)->thread_holding;
+  pAIO->thread = pCont->mutex->thread_holding;
 
   if (ink_aio_write(pAIO, 1) == 1)
     return TS_SUCCESS;
