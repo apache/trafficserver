@@ -223,7 +223,7 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
   ink_assert(m_symbol != NULL);
   ink_assert(m_type >= 0 && m_type < N_TYPES);
   ink_assert(m_marshal_func != (MarshalFunc)NULL);
-  ink_assert(m_alias_map != NULL);
+  ink_assert(m_alias_map);
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
@@ -521,7 +521,7 @@ LogField::marshal_agg(char *buf)
 unsigned
 LogField::unmarshal(char **buf, char *dest, int len)
 {
-  if (m_alias_map == NULL) {
+  if (!m_alias_map) {
     if (m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_str ||
         m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_http_text) {
       UnmarshalFuncWithSlice func = (UnmarshalFuncWithSlice)m_unmarshal_func;

@@ -435,7 +435,7 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
     char *t;
     while (t = tok.getNext(), t != NULL) {
       int64_t ival;
-      if (!_convertStringToInt(t, &ival, field->map())) {
+      if (!_convertStringToInt(t, &ival, field->map().get())) {
         // conversion was successful, add entry to array
         //
         val_array[i++] = ival;

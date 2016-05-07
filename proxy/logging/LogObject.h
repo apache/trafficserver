@@ -143,7 +143,7 @@ public:
       idx = m_buffer_manager_idx++ % m_flush_threads;
 
     if (m_logFile) {
-      nfb = m_buffer_manager[idx].preproc_buffers(m_logFile);
+      nfb = m_buffer_manager[idx].preproc_buffers(m_logFile.get());
     } else {
       nfb = m_buffer_manager[idx].preproc_buffers(&m_host_list);
     }

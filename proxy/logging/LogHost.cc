@@ -228,7 +228,10 @@ LogHost::disconnect()
 void
 LogHost::create_orphan_LogFile_object()
 {
-  delete m_orphan_file;
+  // We expect that no-one else is holding any refcounts on the
+  // orphan file so that is will be releases when we replace it
+  // below.
+  ink_assert(m_orphan_file->refcount() == 1);
 
   const char *orphan_ext = "orphan";
   unsigned name_len = (unsigned)(strlen(m_object_filename) + strlen(name()) + strlen(orphan_ext) + 16);
@@ -241,7 +244,6 @@ LogHost::create_orphan_LogFile_object()
   // should check for conflicts with orphan filename
   //
   m_orphan_file = new LogFile(name_buf, NULL, LOG_FILE_ASCII, m_object_signature);
-  ink_assert(m_orphan_file != NULL);
   ats_free(name_buf);
 }
 
