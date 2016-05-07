@@ -41,7 +41,7 @@ socks_conf_struct *g_socks_conf_stuff = 0;
 ClassAllocator<SocksEntry> socksAllocator("socksAllocator");
 
 void
-SocksEntry::init(ProxyMutex *m, SocksNetVC *vc, unsigned char socks_support, unsigned char ver)
+SocksEntry::init(Ptr<ProxyMutex> &m, SocksNetVC *vc, unsigned char socks_support, unsigned char ver)
 {
   mutex = m;
   buf = new_MIOBuffer();

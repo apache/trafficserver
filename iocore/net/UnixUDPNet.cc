@@ -380,7 +380,7 @@ UDPReadContinuation::readPollEvent(int event_, Event *e)
   } else if (rlen < 0 && rlen != -EAGAIN) {
     // signal error.
     *fromaddrlen = tmp_fromlen;
-    completionUtil::setInfo(event, fd, (IOBufferBlock *)readbuf, rlen, errno);
+    completionUtil::setInfo(event, fd, readbuf, rlen, errno);
     c = completionUtil::getContinuation(event);
     // TODO: Should we deal with the return code?
     c->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
@@ -434,7 +434,7 @@ UDPNetProcessor::recvfrom_re(Continuation *cont, void *token, int fd, struct soc
 
   if (actual > 0) {
     completionUtil::setThread(event, this_ethread());
-    completionUtil::setInfo(event, fd, buf, actual, errno);
+    completionUtil::setInfo(event, fd, make_ptr(buf), actual, errno);
     buf->fill(actual);
     cont->handleEvent(NET_EVENT_DATAGRAM_READ_COMPLETE, event);
     completionUtil::destroy(event);
@@ -449,7 +449,7 @@ UDPNetProcessor::recvfrom_re(Continuation *cont, void *token, int fd, struct soc
     return event;
   } else {
     completionUtil::setThread(event, this_ethread());
-    completionUtil::setInfo(event, fd, buf, actual, errno);
+    completionUtil::setInfo(event, fd, make_ptr(buf), actual, errno);
     cont->handleEvent(NET_EVENT_DATAGRAM_READ_ERROR, event);
     completionUtil::destroy(event);
     return ACTION_IO_ERROR;
@@ -749,7 +749,6 @@ sendPackets:
 void
 UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
 {
-  IOBufferBlock *b;
   struct msghdr msg;
   struct iovec iov[32];
   int real_len = 0;
@@ -767,7 +766,7 @@ UDPQueue::SendUDPPacket(UDPPacketInternal *p, int32_t /* pktLen ATS_UNUSED */)
   msg.msg_namelen = sizeof(p->to);
   iov_len = 0;
 
-  for (b = p->chain; b != NULL; b = b->next) {
+  for (IOBufferBlock *b = p->chain.get(); b != NULL; b = b->next.get()) {
     iov[iov_len].iov_base = (caddr_t)b->start();
     iov[iov_len].iov_len = b->size();
     real_len += iov[iov_len].iov_len;

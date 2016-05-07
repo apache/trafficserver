@@ -84,9 +84,12 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   UnixNetVConnection *vc = NULL;
   Connection con;
 
-  if (!blockable)
-    if (!MUTEX_TAKE_TRY_LOCK_FOR(na->action_->mutex, e->ethread, na->action_->continuation))
+  if (!blockable) {
+    if (!MUTEX_TAKE_TRY_LOCK(na->action_->mutex.get(), e->ethread)) {
       return 0;
+    }
+  }
+
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
@@ -129,7 +132,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
 
 Ldone:
   if (!blockable)
-    MUTEX_UNTAKE_LOCK(na->action_->mutex, e->ethread);
+    MUTEX_UNTAKE_LOCK(na->action_->mutex.get(), e->ethread);
   return count;
 }
 
@@ -304,10 +307,12 @@ NetAccept::acceptEvent(int event, void *ep)
   // PollDescriptor *pd = get_PollDescriptor(e->ethread);
   ProxyMutex *m = 0;
 
-  if (action_->mutex)
-    m = action_->mutex;
-  else
-    m = mutex;
+  if (action_->mutex) {
+    m = action_->mutex.get();
+  } else {
+    m = mutex.get();
+  }
+
   MUTEX_TRY_LOCK(lock, m, e->ethread);
   if (lock.is_locked()) {
     if (action_->cancelled) {

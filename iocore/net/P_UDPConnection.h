@@ -156,7 +156,7 @@ TS_INLINE void
 UDPConnection::setContinuation(Continuation *c)
 {
   // it is not safe to switch among continuations that don't share locks
-  ink_assert(mutex == NULL || c->mutex == mutex);
+  ink_assert(mutex.get() == NULL || c->mutex == mutex);
   mutex = c->mutex;
   ((UDPConnectionInternal *)this)->continuation = c;
 }
