@@ -111,11 +111,10 @@ net_accept(NetAccept *na, void *ep, bool blockable)
 
     ++count;
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
-    vc->set_context(Net_VConnection_C2P);
     vc->id = net_next_connection_number();
+    vc->set_context(Net_VConnection_C2P);
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
-    ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *na->action_;
     vc->set_is_transparent(na->server.f_inbound_transparent);
@@ -278,15 +277,12 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->options.packet_mark = packet_mark;
     vc->options.packet_tos = packet_tos;
     vc->apply_options();
-    vc->from_accept_thread = true;
     vc->id = net_next_connection_number();
     vc->set_context(Net_VConnection_C2P);
-
     check_emergency_throttle(con);
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->submit_time = now;
-    ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
     vc->mutex = new_ProxyMutex();
     vc->action_ = *action_;
@@ -431,7 +427,6 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->id = net_next_connection_number();
     vc->set_context(Net_VConnection_C2P);
     vc->submit_time = Thread::get_hrtime();
-    ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
     vc->mutex = new_ProxyMutex();
     vc->thread = e->ethread;
