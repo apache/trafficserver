@@ -226,7 +226,6 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   vc->id = net_next_connection_number();
   vc->submit_time = Thread::get_hrtime();
   vc->setSSLClientConnection(true);
-  ats_ip_copy(&vc->server_addr, target);
   vc->mutex = cont->mutex;
   Action *result = &vc->action_;
 
@@ -242,11 +241,12 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
       socksEntry->free();
       return ACTION_RESULT_DONE;
     }
-    ats_ip_copy(&vc->server_addr, &socksEntry->server_addr);
+    vc->con.setRemote(&socksEntry->server_addr.sa);
     result = &socksEntry->action_;
     vc->action_ = socksEntry;
   } else {
     Debug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
+    vc->con.setRemote(target);
     vc->action_ = cont;
   }
 
