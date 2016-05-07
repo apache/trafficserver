@@ -906,8 +906,6 @@ UnixNetVConnection::UnixNetVConnection()
     origin_trace_addr(NULL),
     origin_trace_port(0)
 {
-  memset(&local_addr, 0, sizeof local_addr);
-  memset(&server_addr, 0, sizeof server_addr);
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
 }
 
@@ -1252,7 +1250,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   }
 
   // Force family to agree with remote (server) address.
-  options.ip_family = server_addr.sa.sa_family;
+  options.ip_family = con.addr.sa.sa_family;
 
   //
   // Initialize this UnixNetVConnection
@@ -1295,7 +1293,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   }
 
   if (fd == NO_FD) {
-    res = con.connect(&server_addr.sa, options);
+    res = con.connect(NULL, options);
     if (res != 0) {
       goto fail;
     }
