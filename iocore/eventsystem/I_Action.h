@@ -204,6 +204,4 @@ public:
 
 #define MAKE_ACTION_RESULT(_x) (Action *)(((uintptr_t)((_x << 1) + 1)))
 
-#define IS_ACTION_RESULT(_x) ((((uintptr_t)_x) & 1) != 0)
-
 #endif /*_Action_h_*/
