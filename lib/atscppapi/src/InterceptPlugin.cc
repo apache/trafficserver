@@ -121,7 +121,7 @@ void destroyCont(InterceptPlugin::State *state);
 
 InterceptPlugin::InterceptPlugin(Transaction &transaction, InterceptPlugin::Type type) : TransactionPlugin(transaction)
 {
-  TSCont cont = TSContCreate(handleEvents, NULL);
+  TSCont cont = TSContCreate(handleEvents, TSMutexCreate());
   state_ = new State(cont, this);
   TSContDataSet(cont, state_);
   TSHttpTxn txn = static_cast<TSHttpTxn>(transaction.getAtsHandle());
