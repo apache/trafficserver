@@ -218,11 +218,12 @@ as documented in `URL Parts`_ below.
 GEO
 ~~~
 ::
+
     cond %{GEO:<part>} <operand>
 
 Perform a GeoIP lookup of the client-IP, using a 3rd party library and
 DB. Currently only the MaxMind GeoIP API is supported. The default is to
-do a Country lookup, but the following qualifiers are supported:
+do a Country lookup, but the following qualifiers are supported::
 
     %{GEO:COUNTRY}      The country code (e.g. "US")
     %{GEO:COUNTRY-ISO}  The country ISO code (e.g. 225)
