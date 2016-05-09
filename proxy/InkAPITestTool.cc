@@ -154,7 +154,8 @@ SocketServer *synserver_create(int port);
 static int synserver_start(SocketServer *s);
 static int synserver_stop(SocketServer *s);
 static int synserver_delete(SocketServer *s);
-static int synserver_accept_handler(TSCont contp, TSEvent event, void *data);
+static int synserver_vc_accept(TSCont contp, TSEvent event, void *data);
+static int synserver_vc_refuse(TSCont contp, TSEvent event, void *data);
 static int synserver_txn_close(TSCont contp);
 static int synserver_txn_write_response(TSCont contp);
 static int synserver_txn_write_response_handler(TSCont contp, TSEvent event, void *data);
@@ -761,7 +762,7 @@ synclient_txn_main_handler(TSCont contp, TSEvent event, void *data)
 //////////////////////////////////////////////////////////////////////////////
 
 SocketServer *
-synserver_create(int port)
+synserver_create(int port, TSCont cont)
 {
   if (port != SYNSERVER_DUMMY_PORT) {
     TSAssert(port > 0);
@@ -772,9 +773,15 @@ synserver_create(int port)
   s->magic = MAGIC_ALIVE;
   s->accept_port = port;
   s->accept_action = NULL;
-  s->accept_cont = TSContCreate(synserver_accept_handler, TSMutexCreate());
+  s->accept_cont = cont;
   TSContDataSet(s->accept_cont, s);
   return s;
+}
+
+SocketServer *
+synserver_create(int port)
+{
+  return synserver_create(port, TSContCreate(synserver_vc_accept, TSMutexCreate()));
 }
 
 static int
@@ -828,7 +835,21 @@ synserver_delete(SocketServer *s)
 }
 
 static int
-synserver_accept_handler(TSCont contp, TSEvent event, void *data)
+synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
+{
+  TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
+
+  SocketServer *s = (SocketServer *)TSContDataGet(contp);
+  TSAssert(s->magic == MAGIC_ALIVE);
+
+  TSDebug(SDBG_TAG, "NET_ACCEPT");
+
+  TSVConnClose((TSVConn)data);
+  return TS_EVENT_IMMEDIATE;
+}
+
+static int
+synserver_vc_accept(TSCont contp, TSEvent event, void *data)
 {
   TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
 
