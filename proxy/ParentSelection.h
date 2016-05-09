@@ -331,29 +331,39 @@ public:
   void
   selectParent(bool firstCall, ParentResult *result, RequestData *rdata)
   {
-    ink_release_assert(result->rec->selection_strategy != NULL);
-    return result->rec->selection_strategy->selectParent(&policy, firstCall, result, rdata);
+    if (!result->is_api_result()) {
+      ink_release_assert(result->rec->selection_strategy != NULL);
+      return result->rec->selection_strategy->selectParent(&policy, firstCall, result, rdata);
+    }
   }
 
   void
   markParentDown(ParentResult *result)
   {
-    ink_release_assert(result->rec->selection_strategy != NULL);
-    result->rec->selection_strategy->markParentDown(&policy, result);
+    if (!result->is_api_result()) {
+      ink_release_assert(result->rec->selection_strategy != NULL);
+      result->rec->selection_strategy->markParentDown(&policy, result);
+    }
   }
 
   uint32_t
   numParents(ParentResult *result)
   {
-    ink_release_assert(result->rec->selection_strategy != NULL);
-    return result->rec->selection_strategy->numParents(result);
+    if (result->is_api_result()) {
+      return 1;
+    } else {
+      ink_release_assert(result->rec->selection_strategy != NULL);
+      return result->rec->selection_strategy->numParents(result);
+    }
   }
 
   void
   markParentUp(ParentResult *result)
   {
-    ink_release_assert(result != NULL);
-    result->rec->selection_strategy->markParentUp(result);
+    if (!result->is_api_result()) {
+      ink_release_assert(result != NULL);
+      result->rec->selection_strategy->markParentUp(result);
+    }
   }
 
   P_table *parent_table;
