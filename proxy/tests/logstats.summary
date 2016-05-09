@@ -3,6 +3,7 @@
 Request Result                         Count    Percent       Bytes    Percent
 ------------------------------------------------------------------------------
 Cache hit                                  0      0.00%      0.00KB      0.00%
+Cache hit RAM                              0      0.00%      0.00KB      0.00%
 Cache hit IMS                              0      0.00%      0.00KB      0.00%
 Cache hit refresh                          0      0.00%      0.00KB      0.00%
 Cache hit other                            0      0.00%      0.00KB      0.00%
@@ -148,6 +149,7 @@ other                                      0      0.00%      0.00KB      0.00%
 Elapsed time stats          Min          Max              Avg    Std Deviation
 ------------------------------------------------------------------------------
 Cache hit                     0            0             0.00             0.00
+Cache hit RAM                 0            0             0.00             0.00
 Cache hit IMS                 0            0             0.00             0.00
 Cache hit refresh             0            0             0.00             0.00
 Cache hit other               0            0             0.00             0.00

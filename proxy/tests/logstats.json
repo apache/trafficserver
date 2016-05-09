@@ -1,5 +1,6 @@
 { "total": {
     "hit.direct" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
+    "hit.ram" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.ims" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.refresh" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
@@ -109,6 +110,7 @@
     "content.none" : { "req": "1", "req_pct": "1.49", "bytes": "0", "bytes_pct": "0.00" },
     "content.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.direct.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
+    "hit.ram.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.ims.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.refresh.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.other.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
@@ -121,6 +123,7 @@
   },
   "imgur.com": {
     "hit.direct" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
+    "hit.ram" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.ims" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.refresh" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
@@ -230,6 +233,7 @@
     "content.none" : { "req": "1", "req_pct": "1.49", "bytes": "0", "bytes_pct": "0.00" },
     "content.other" : { "req": "0", "req_pct": "0.00", "bytes": "0", "bytes_pct": "0.00" },
     "hit.direct.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
+    "hit.ram.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.ims.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.refresh.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
     "hit.other.latency" : { "min": "-1", "max": "0", "avg": "0.00", "dev": "0.00" },
