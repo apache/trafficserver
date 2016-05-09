@@ -267,13 +267,13 @@ limitations below:
 
 -  Only the ``host`` field can contain a regex; the ``scheme``,
    ``port``, and other fields cannot. For path manipulation via regexes,
-   use the ``regex_remap`` plugin.
+   use the :ref:`admin-plugins-regex-remap`.
 -  The number of capturing subpatterns is limited to 9. This means that
    ``$0`` through ``$9`` can be used as subtraction placeholders (``$0``
    will be the entire input string).
 -  The number of substitutions in the expansion string is limited to 10.
 -  There is no ``regex_`` equivalent to ``reverse_remap``, so when using
-   ``regex_remap`` you should make sure the reverse path is clear by
+   ``regex_map`` you should make sure the reverse path is clear by
    setting (:ts:cv:`proxy.config.url_remap.pristine_host_hdr`)
 
 Examples
@@ -394,7 +394,7 @@ Examples
 
     map http://foo.example.com/  http://foo.example.com/ @action=deny @src_ip=1.2.3.4
     map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1
-    
+
     map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=10.5.2.1 @in_ip=72.209.23.4
 
     map http://foo.example.com/  http://foo.example.com/ @action=allow @src_ip=127.0.0.1 @method=post @method=get @method=head
