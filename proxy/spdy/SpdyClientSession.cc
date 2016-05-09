@@ -24,6 +24,7 @@
 #include "SpdyClientSession.h"
 #include "SpdySessionAccept.h"
 #include "I_Net.h"
+#include "I_STLAllocator.h"
 
 static ClassAllocator<SpdyClientSession> spdyClientSessionAllocator("spdyClientSessionAllocator");
 ClassAllocator<SpdyRequest> spdyRequestAllocator("spdyRequestAllocator");
@@ -90,14 +91,14 @@ SpdyRequest::clear()
     fetch_sm = NULL;
   }
 
-  vector<pair<string, string>>().swap(headers);
+  header_vector().swap(headers);
 
-  std::string().swap(url);
-  std::string().swap(host);
-  std::string().swap(path);
-  std::string().swap(scheme);
-  std::string().swap(method);
-  std::string().swap(version);
+  ts_string().swap(url);
+  ts_string().swap(host);
+  ts_string().swap(path);
+  ts_string().swap(scheme);
+  ts_string().swap(method);
+  ts_string().swap(version);
 
   Debug("spdy", "****Delete Request[%" PRIu64 ":%d]", spdy_sm->sm_id, stream_id);
 }
@@ -144,8 +145,8 @@ SpdyClientSession::clear()
   // SpdyRequest depends on SpdyClientSession,
   // we should delete it firstly to avoid race.
   //
-  map<int, SpdyRequest *>::iterator iter = req_map.begin();
-  map<int, SpdyRequest *>::iterator endIter = req_map.end();
+  request_map::iterator iter = req_map.begin();
+  request_map::iterator endIter = req_map.end();
   for (; iter != endIter; ++iter) {
     SpdyRequest *req = iter->second;
     if (req) {

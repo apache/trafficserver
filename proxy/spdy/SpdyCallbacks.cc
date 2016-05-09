@@ -23,6 +23,7 @@
 
 #include "SpdyCallbacks.h"
 #include "SpdyClientSession.h"
+#include "I_STLAllocator.h"
 #include <arpa/inet.h>
 
 void
@@ -59,7 +60,7 @@ spdy_prepare_status_response_and_clean_request(SpdyClientSession *sm, int stream
           sm->sm_id, stream_id);
     return;
   }
-  string date_str = http_date(time(0));
+  ts_string date_str = http_date(time(0));
   const char **nv = new const char *[8 + req->headers.size() * 2 + 1];
 
   nv[0] = ":status";
@@ -168,7 +169,7 @@ spdy_show_ctl_frame(const char *head_str, spdylay_session * /*session*/, spdylay
 static int
 spdy_fetcher_launch(SpdyRequest *req)
 {
-  string url;
+  ts_string url;
   int fetch_flags;
   const sockaddr *client_addr;
   SpdyClientSession *sm = req->spdy_sm;
@@ -267,8 +268,8 @@ spdy_process_syn_stream_frame(SpdyClientSession *sm, SpdyRequest *req)
   bool acceptEncodingRecvd = false;
   // validate request headers
   for (size_t i = 0; i < req->headers.size(); ++i) {
-    const std::string &field = req->headers[i].first;
-    const std::string &value = req->headers[i].second;
+    const ts_string &field = req->headers[i].first;
+    const ts_string &value = req->headers[i].second;
 
     if (field == ":path")
       req->path = value;
@@ -370,8 +371,8 @@ unsigned
 spdy_session_delta_window_size(SpdyClientSession *sm)
 {
   unsigned sess_delta_window_size = 0;
-  map<int, SpdyRequest *>::iterator iter = sm->req_map.begin();
-  map<int, SpdyRequest *>::iterator endIter = sm->req_map.end();
+  request_map::iterator iter = sm->req_map.begin();
+  request_map::iterator endIter = sm->req_map.end();
   for (; iter != endIter; ++iter) {
     SpdyRequest *req = iter->second;
     sess_delta_window_size += req->delta_window_size;

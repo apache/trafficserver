@@ -1653,6 +1653,24 @@ _TSfree(void *ptr)
   ats_free(ptr);
 }
 
+void *
+_TSmalloc_pool(size_t size, const char * /* path ATS_UNUSED */)
+{
+  return ats_malloc_pool(size);
+}
+
+void
+_TSfree_pool(void *ptr)
+{
+  ats_free_pool(ptr);
+}
+
+void *
+_TSrealloc_pool(void *ptr, size_t size, const char * /* path ATS_UNUSED */)
+{
+  return ats_realloc_pool(ptr, size);
+}
+
 ////////////////////////////////////////////////////////////////////
 //
 // Encoding utility

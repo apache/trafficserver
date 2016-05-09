@@ -34,6 +34,8 @@
 class SpdyClientSession;
 typedef int (*SpdyClientSessionHandler)(TSCont contp, TSEvent event, void *data);
 
+typedef vector<pair<ts_string, ts_string>, ts_stl_iobuf_allocator<pair<ts_string, ts_string>>> header_vector;
+
 class SpdyRequest
 {
 public:
@@ -75,19 +77,22 @@ public:
   int fetch_data_len;
   unsigned delta_window_size;
   bool fetch_body_completed;
-  vector<pair<string, string>> headers;
+  header_vector headers;
 
-  string url;
-  string host;
-  string path;
-  string scheme;
-  string method;
-  string version;
+  ts_string url;
+  ts_string host;
+  ts_string path;
+  ts_string scheme;
+  ts_string method;
+  ts_string version;
 
   MD5_CTX recv_md5;
 };
 
 extern ClassAllocator<SpdyRequest> spdyRequestAllocator;
+
+typedef std::map<int32_t, SpdyRequest *, std::less<int32_t>, ts_stl_iobuf_allocator<std::pair<const int32_t, SpdyRequest *>>>
+  request_map;
 
 // class SpdyClientSession : public Continuation, public PluginIdentity
 class SpdyClientSession : public ProxyClientSession, public PluginIdentity
@@ -175,7 +180,7 @@ public:
   spdylay_session *session;
   int transact_count;
 
-  map<int32_t, SpdyRequest *> req_map;
+  request_map req_map;
 
   virtual char const *getPluginTag() const;
   virtual int64_t getPluginId() const;
@@ -183,7 +188,7 @@ public:
   SpdyRequest *
   find_request(int streamId)
   {
-    map<int32_t, SpdyRequest *>::iterator iter = this->req_map.find(streamId);
+    request_map::iterator iter = this->req_map.find(streamId);
     return ((iter == this->req_map.end()) ? NULL : iter->second);
   }
 

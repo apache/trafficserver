@@ -27,6 +27,7 @@
 **************************************************************************/
 #include "ts/ink_defs.h"
 #include "P_EventSystem.h"
+#include "I_IOBuffer.h"
 
 //
 // General Buffer Allocator
@@ -271,3 +272,74 @@ IOBufferReader::memcpy(const void *ap, int64_t len, int64_t offset)
 
   return p;
 }
+
+void *
+ats_malloc_pool(size_t size)
+{
+  void *ptr = NULL;
+  size_t total_required_size = size + sizeof(uint64_t);
+
+  if (likely(size > 0)) {
+    if (unlikely(total_required_size > DEFAULT_MAX_BUFFER_SIZE)) {
+      // we need to fall back to ats_malloc for large allocations
+      ptr = ats_malloc(total_required_size);
+    } else {
+      int64_t iobuffer_index = iobuffer_size_to_index(total_required_size);
+      ink_release_assert(iobuffer_index >= 0);
+
+      ptr = ioBufAllocator[iobuffer_index].alloc_void();
+      Debug("allocator_pool",
+            "Allocating a block from iobuf index %ld (block size %ld), requested_size = %ld, alloc size = %ld at location %p",
+            iobuffer_index, index_to_buffer_size(iobuffer_index), size, total_required_size, ptr);
+    }
+  } else {
+    return NULL;
+  }
+
+  *(uint64_t *)(ptr) = size;
+  return ptr + sizeof(uint64_t);
+} /* End ats_malloc_pool */
+
+void *
+ats_realloc_pool(void *ptr, size_t size)
+{
+  if (ptr == NULL)
+    return ats_malloc_pool(size);
+
+  uint64_t previous_allocation_size = *(uint64_t *)(ptr - sizeof(uint64_t));
+  int64_t iobuffer_index = iobuffer_size_to_index(previous_allocation_size + sizeof(uint64_t));
+  uint64_t iobuf_size = index_to_buffer_size(iobuffer_index);
+  if ((size + sizeof(uint64_t)) < iobuf_size) {
+    // we still have enough space in our old buffer, just update the size
+    *(uint64_t *)(ptr - sizeof(uint64_t)) = size;
+    return ptr;
+  }
+
+  void *newptr = ats_malloc_pool(size);
+  memcpy(newptr, ptr, previous_allocation_size);
+  ats_free_pool(ptr);
+
+  return newptr;
+} /* End ats_realloc_pool */
+
+void
+ats_free_pool(void *ptr)
+{
+  void *real_ptr = NULL;
+  if (likely(ptr != NULL)) {
+    uint64_t total_alloc_size = *(uint64_t *)(ptr - sizeof(uint64_t)) + sizeof(uint64_t);
+    real_ptr = ptr - sizeof(uint64_t);
+    if (unlikely(total_alloc_size > DEFAULT_MAX_BUFFER_SIZE)) {
+      // we need to fall back to the ts_stl_std_allocator for large allocations
+      ats_free(real_ptr);
+    } else {
+      // we need to return this block to the appropriate iobuffer
+      int64_t iobuffer_index = iobuffer_size_to_index(total_alloc_size);
+      ink_release_assert(iobuffer_index >= 0);
+
+      Debug("allocator_pool", "Deallocating a block to iobuf index %ld (block size %ld), alloc size = %ld at location %p",
+            iobuffer_index, index_to_buffer_size(iobuffer_index), total_alloc_size, real_ptr);
+      ioBufAllocator[iobuffer_index].free_void(reinterpret_cast<void *>(real_ptr));
+    }
+  }
+} /* End ats_free_pool */
