@@ -2107,6 +2107,85 @@ Here is an example:
         bin = ts.sha1_bin(uri)
     end
 
+`TOP <#ts-lua-plugin>`_
+
+ts.sha256
+-------
+**syntax:** *digest = ts.sha256(str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the SHA256 digest of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        print(uri)              -- /foo
+        print(ts.sha256(uri))     -- 6f64c6e6261f492ac220b0a4cd9a14c6373181b92a4a8040c1fcde5db31ffc94
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.sha256_bin
+-----------
+**syntax:** *digest = ts.sha256_bin(str)*
+
+**context:** global
+
+**description:** Returns the binary form of the SHA256 digest of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        bin = ts.sha256_bin(uri)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.sha512
+-------
+**syntax:** *digest = ts.sha512(str)*
+
+**context:** global
+
+**description:** Returns the hexadecimal representation of the SHA512 digest of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        print(uri)              -- /foo
+        print(ts.sha512(uri))     -- d94cf0c4cc46986d0c188634245644f56fa624be2d5754a0a7aa44661b8571...
+    end
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.sha512_bin
+-----------
+**syntax:** *digest = ts.sha512_bin(str)*
+
+**context:** global
+
+**description:** Returns the binary form of the SHA512 digest of the ``str`` argument.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        uri = ts.client_request.get_uri()
+        bin = ts.sha512_bin(uri)
+    end
 
 `TOP <#ts-lua-plugin>`_
 
