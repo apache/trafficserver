@@ -655,18 +655,16 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 }
 
 int64_t
-SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_written, MIOBufferAccessor &buf,
-                                         int &needs)
+SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs)
 {
+  int64_t try_to_write;
   ProxyMutex *mutex = this_ethread()->mutex;
-  int64_t r = 0;
+  int64_t num_really_written = 0;
   int64_t l = 0;
   uint32_t dynamic_tls_record_size = 0;
   ssl_error_t err = SSL_ERROR_NONE;
 
-  // XXX Rather than dealing with the block directly, we should use the IOBufferReader API.
-  int64_t offset = buf.reader()->start_offset;
-  IOBufferBlock *b = buf.reader()->block;
+  char *current_block = buf.reader()->start();
 
   // Dynamic TLS record sizing
   ink_hrtime now = 0;
@@ -683,21 +681,17 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
   }
 
   if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == this->attributes) {
-    return this->super::load_buffer_and_write(towrite, wattempted, total_written, buf, needs);
+    return this->super::load_buffer_and_write(towrite, buf, total_written, needs);
   }
 
   bool trace = getSSLTrace();
   Debug("ssl", "trace=%s", trace ? "TRUE" : "FALSE");
 
   do {
-    // check if we have done this block
-    l = b->read_avail();
-    l -= offset;
-    if (l <= 0) {
-      offset = -l;
-      b = b->next;
-      continue;
-    }
+    // What is remaining left in the next block?
+    l = buf.reader()->block_read_avail();
+    current_block = buf.reader()->start();
+
     // check if to amount to write exceeds that in this buffer
     int64_t wavail = towrite - total_written;
 
@@ -708,7 +702,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
     // TS-2365: If the SSL max record size is set and we have
     // more data than that, break this into smaller write
     // operations.
-    int64_t orig_l = l;
     if (SSLConfigParams::ssl_maxrecord > 0 && l > SSLConfigParams::ssl_maxrecord) {
       l = SSLConfigParams::ssl_maxrecord;
     } else if (SSLConfigParams::ssl_maxrecord == -1) {
@@ -728,50 +721,40 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
       break;
     }
 
-    wattempted = l;
-    total_written += l;
+    try_to_write = l;
+    num_really_written = 0;
     Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, before SSLWriteBuffer, l=%" PRId64 ", towrite=%" PRId64 ", b=%p", l,
-          towrite, b);
-    err = SSLWriteBuffer(ssl, b->start() + offset, l, r);
+          towrite, current_block);
+    err = SSLWriteBuffer(ssl, current_block, l, num_really_written);
 
     if (!origin_trace) {
-      TraceOut((0 < r && trace), get_remote_addr(), get_remote_port(), "WIRE TRACE\tbytes=%d\n%.*s", (int)r, (int)r,
-               b->start() + offset);
+      TraceOut((0 < num_really_written && trace), get_remote_addr(), get_remote_port(),
+          "WIRE TRACE\tbytes=%d\n%.*s", (int)num_really_written, (int)num_really_written, current_block);
     } else {
       char origin_trace_ip[INET6_ADDRSTRLEN];
       ats_ip_ntop(origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
-      TraceOut((0 < r && trace), get_remote_addr(), get_remote_port(), "CLIENT %s:%d\ttbytes=%d\n%.*s", origin_trace_ip,
-               origin_trace_port, (int)r, (int)r, b->start() + offset);
+      TraceOut((0 < num_really_written && trace), get_remote_addr(), get_remote_port(), 
+          "CLIENT %s:%d\ttbytes=%d\n%.*s", origin_trace_ip, origin_trace_port,
+          (int)num_really_written, (int)num_really_written, current_block);
     }
 
-    if (r == l) {
-      wattempted = total_written;
-    }
-    if (l == orig_l) {
-      // on to the next block
-      offset = 0;
-      b = b->next;
-    } else {
-      offset += l;
+    // We wrote all that we thought we should
+    if (num_really_written > 0) {
+      total_written += num_really_written;
+      buf.reader()->consume(num_really_written);
     }
 
-    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%" PRId64 " , total=%" PRId64 "", r,
+    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%" PRId64 " , total=%" PRId64 "", num_really_written,
           total_written);
     NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
-  } while (r == l && total_written < towrite && b);
+  } while (num_really_written == try_to_write && total_written < towrite);
 
-  if (r > 0) {
+  if (total_written > 0) {
     sslLastWriteTime = now;
     sslTotalBytesSent += total_written;
-    if (total_written != wattempted) {
-      Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, wrote some bytes, but not all requested.");
-      // I'm not sure how this could happen. We should have tried and hit an EAGAIN.
-      needs |= EVENTIO_WRITE;
-      return (r);
-    } else {
-      Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite, write successful.");
-      return (total_written);
-    }
+  }
+  if (num_really_written > 0) {
+    needs |= EVENTIO_WRITE;
   } else {
     switch (err) {
     case SSL_ERROR_NONE:
@@ -779,7 +762,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
       break;
     case SSL_ERROR_WANT_READ:
       needs |= EVENTIO_READ;
-      r = -EAGAIN;
+      num_really_written = -EAGAIN;
       SSL_INCREMENT_DYN_STAT(ssl_error_want_read);
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_READ");
       break;
@@ -793,20 +776,20 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
       }
 
       needs |= EVENTIO_WRITE;
-      r = -EAGAIN;
+      num_really_written = -EAGAIN;
       Debug("ssl.error", "SSL_write-SSL_ERROR_WANT_WRITE");
       break;
     }
     case SSL_ERROR_SYSCALL:
       TraceOut(trace, get_remote_addr(), get_remote_port(), "Syscall Error: %s", strerror(errno));
-      r = -errno;
+      num_really_written = -errno;
       SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
       Debug("ssl.error", "SSL_write-SSL_ERROR_SYSCALL");
       break;
     // end of stream
     case SSL_ERROR_ZERO_RETURN:
       TraceOut(trace, get_remote_addr(), get_remote_port(), "SSL Error: zero return");
-      r = -errno;
+      num_really_written = -errno;
       SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
       Debug("ssl.error", "SSL_write-SSL_ERROR_ZERO_RETURN");
       break;
@@ -817,12 +800,12 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, i
       ERR_error_string_n(e, buf, sizeof(buf));
       TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL Error: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", err, e, buf,
               errno);
-      r = -errno;
+      num_really_written = -errno;
       SSL_CLR_ERR_INCR_DYN_STAT(this, ssl_error_ssl, "SSL_write-SSL_ERROR_SSL errno=%d", errno);
     } break;
     }
-    return (r);
   }
+  return num_really_written;
 }
 
 SSLNetVConnection::SSLNetVConnection()
