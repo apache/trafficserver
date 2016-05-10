@@ -5904,7 +5904,7 @@ struct ParentTest {
     /* If parent proxy routing is not enabled, enable it for the life of the test. */
     RecGetRecordBool("proxy.config.http.parent_proxy_routing_enable", &this->parent_proxy_routing_enable);
     if (!this->parent_proxy_routing_enable) {
-      rprintf(this->regtest, "enabling proxy.config.http.parent_proxy_routing_enable");
+      rprintf(this->regtest, "enabling proxy.config.http.parent_proxy_routing_enable\n");
       RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", 1, REC_SOURCE_EXPLICIT);
     }
 
@@ -6082,8 +6082,9 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Fail)(RegressionTest *test,
   /* Create a client transaction */
   ptest->browser = synclient_txn_create();
 
-  // HTTP_REQUEST_FORMAT10 is a hostname, so we will need to set the parent to the synserver to get a response.
-  char *request = generate_request(10);
+  // HTTP_REQUEST_FORMAT11 is a hostname with a no-cache response, so we will need to set the parent to the synserver to get a
+  // response.
+  char *request = generate_request(11);
   synclient_txn_send_request(ptest->browser, request);
   TSfree(request);
 
@@ -6117,8 +6118,9 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Success)(RegressionTest *te
   /* Create a client transaction */
   ptest->browser = synclient_txn_create();
 
-  // HTTP_REQUEST_FORMAT10 is a hostname, so we will need to set the parent to the synserver to get a response.
-  char *request = generate_request(10);
+  // HTTP_REQUEST_FORMAT11 is a hostname with a no-cache response, so we will need to set the parent to the synserver to get a
+  // response.
+  char *request = generate_request(11);
   synclient_txn_send_request(ptest->browser, request);
   TSfree(request);
 
