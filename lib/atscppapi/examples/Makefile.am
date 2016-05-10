@@ -37,4 +37,5 @@ SUBDIRS = \
 	internal_transaction_handling \
 	async_timer \
 	intercept \
+	websocket \
 	async_http_fetch_streaming
