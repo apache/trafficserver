@@ -311,7 +311,18 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
       delete istate;
       TSContDestroy(contp);
 
-      close(fd);
+      ::close(fd);
+      return TS_EVENT_NONE;
+    }
+
+    if ((istate->server.vc = TSVConnFdCreate(fd)) == NULL) {
+      VDEBUG("TSVconnFdCreate() failed");
+      TSVConnAbort(arg.vc, TS_VC_CLOSE_ABORT);
+
+      delete istate;
+      TSContDestroy(contp);
+
+      ::close(fd);
       return TS_EVENT_NONE;
     }
 
@@ -320,7 +331,6 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
 
     istate->txn = cdata.txn;
     istate->client.vc = arg.vc;
-    istate->server.vc = TSVConnFdCreate(fd);
 
     // Reset the continuation data to be our intercept state
     // block. We will need this so that we can access both of the
@@ -372,7 +382,6 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     TSVConn vc = TSVIOVConnGet(arg.vio);
     InterceptIO *from = InterceptGetThisSide(cdata.istate, vc);
     InterceptIO *to = InterceptGetOtherSide(cdata.istate, vc);
-    ;
     int64_t nbytes;
 
     VIODEBUG(arg.vio, "ndone=%" PRId64 " ntodo=%" PRId64, TSVIONDoneGet(arg.vio), TSVIONTodoGet(arg.vio));
@@ -419,7 +428,6 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     TSVConn vc = TSVIOVConnGet(arg.vio);
     InterceptIO *to = InterceptGetThisSide(cdata.istate, vc);
     InterceptIO *from = InterceptGetOtherSide(cdata.istate, vc);
-    ;
 
     // If the other side is closed, close this side too, but only if there
     // we have drained the write buffer.
@@ -450,7 +458,6 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
 
     InterceptIO *from = InterceptGetThisSide(cdata.istate, vc);
     InterceptIO *to = InterceptGetOtherSide(cdata.istate, vc);
-    ;
 
     VIODEBUG(arg.vio, "received EOS or ERROR from %s side", InterceptProxySideVC(cdata.istate, vc));
 
