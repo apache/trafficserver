@@ -5906,9 +5906,10 @@ struct ParentTest {
     if (!this->parent_proxy_routing_enable) {
       rprintf(this->regtest, "enabling proxy.config.http.parent_proxy_routing_enable\n");
       RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", 1, REC_SOURCE_EXPLICIT);
-    }
 
-    RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", 1, REC_SOURCE_EXPLICIT);
+      // Force the config change to sync.
+      RecExecConfigUpdateCbs(REC_UPDATE_REQUIRED);
+    }
   }
 
   ~ParentTest()
