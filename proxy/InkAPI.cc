@@ -6249,12 +6249,12 @@ TSVConnFdCreate(int fd)
   vc->action_ = &a;
 
   vc->id = net_next_connection_number();
+  vc->set_context(Net_VConnection_P2S);
   vc->submit_time = Thread::get_hrtime();
   vc->set_is_transparent(false);
   vc->mutex = new_ProxyMutex();
 
   if (vc->connectUp(this_ethread(), fd) != CONNECT_SUCCESS) {
-    vc->free(this_ethread());
     return NULL;
   }
 
