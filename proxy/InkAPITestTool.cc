@@ -233,7 +233,10 @@ generate_request(int test_case)
   "GET http://trafficserver.apache.org/format10.html HTTP/1.0\r\n" \
   "X-Request-ID: %d\r\n"                                           \
   "\r\n"
-
+#define HTTP_REQUEST_FORMAT11                                      \
+  "GET http://trafficserver.apache.org/format11.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                                           \
+  "\r\n"
   char *request = (char *)TSmalloc(REQUEST_MAX_SIZE + 1);
 
   switch (test_case) {
@@ -266,6 +269,9 @@ generate_request(int test_case)
     break;
   case 10:
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_FORMAT10, test_case);
+    break;
+  case 11:
+    snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_FORMAT11, test_case);
     break;
   default:
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_DEFAULT_FORMAT, SYNSERVER_LISTEN_PORT, test_case);
@@ -358,6 +364,13 @@ generate_response(const char *request)
   "\r\n"                             \
   "Body for response 10"
 
+#define HTTP_RESPONSE_FORMAT11  \
+  "HTTP/1.0 200 OK\r\n"         \
+  "Cache-Control: no-cache\r\n" \
+  "X-Response-ID: %d\r\n"       \
+  "\r\n"                        \
+  "Body for response 11"
+
   int test_case, match, http_version;
 
   char *response = (char *)TSmalloc(RESPONSE_MAX_SIZE + 1);
@@ -393,6 +406,9 @@ generate_response(const char *request)
       break;
     case 10:
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_FORMAT10, test_case);
+      break;
+    case 11:
+      snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_FORMAT11, test_case);
       break;
     default:
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_DEFAULT_FORMAT, test_case);
