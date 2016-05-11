@@ -226,25 +226,24 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
 
     Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] nread=%d", (int)nread);
     if (!sslvc->origin_trace) {
-      TraceIn((0 < nread && trace), sslvc->get_remote_addr(), sslvc->get_remote_port(),
-          "WIRE TRACE\tbytes=%d\n%.*s", (int)nread, (int)nread, current_block);
+      TraceIn((0 < nread && trace), sslvc->get_remote_addr(), sslvc->get_remote_port(), "WIRE TRACE\tbytes=%d\n%.*s", (int)nread,
+              (int)nread, current_block);
     } else {
-      char origin_trace_ip[INET6_ADDRSTRLEN];        
-      ats_ip_ntop(sslvc->origin_trace_addr, origin_trace_ip, sizeof (origin_trace_ip));
-      TraceIn((0 < nread && trace), sslvc->get_remote_addr(), sslvc->get_remote_port(),
-          "CLIENT %s:%d\ttbytes=%d\n%.*s", origin_trace_ip, sslvc->origin_trace_port,
-          (int)nread, (int)nread, current_block);
+      char origin_trace_ip[INET6_ADDRSTRLEN];
+      ats_ip_ntop(sslvc->origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
+      TraceIn((0 < nread && trace), sslvc->get_remote_addr(), sslvc->get_remote_port(), "CLIENT %s:%d\ttbytes=%d\n%.*s",
+              origin_trace_ip, sslvc->origin_trace_port, (int)nread, (int)nread, current_block);
     }
 
     switch (sslErr) {
     case SSL_ERROR_NONE:
- #if DEBUG
+#if DEBUG
       SSLDebugBufferPrint("ssl_buff", current_block, nread, "SSL Read");
- #endif
+#endif
       ink_assert(nread);
       bytes_read += nread;
       if (nread > 0) {
-        buf.writer()->fill(nread);	// Tell the buffer, we've used the bytes
+        buf.writer()->fill(nread); // Tell the buffer, we've used the bytes
       }
       break;
     case SSL_ERROR_WANT_WRITE:
@@ -258,33 +257,28 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read)");
       break;
     case SSL_ERROR_WANT_X509_LOOKUP:
-      TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), 
-          "Want X509 lookup");
+      TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "Want X509 lookup");
       event = SSL_READ_WOULD_BLOCK;
       SSL_INCREMENT_DYN_STAT(ssl_error_want_x509_lookup);
       Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_WOULD_BLOCK(read/x509 lookup)");
       break;
     case SSL_ERROR_SYSCALL:
-      TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(),
-          "Syscall Error: %s", strerror(errno));
+      TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "Syscall Error: %s", strerror(errno));
       SSL_INCREMENT_DYN_STAT(ssl_error_syscall);
       if (nread != 0) {
         // not EOF
         event = SSL_READ_ERROR;
         ret = errno;
         Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, underlying IO error: %s", strerror(errno));
-        TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(),
-            "Underlying IO error: %d", errno);
+        TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "Underlying IO error: %d", errno);
       } else {
         // then EOF observed, treat it as EOS
-        //Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, EOF observed violating SSL protocol");
-        TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(),
-            "EOF observed violating SSL protocol");
+        // Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, EOF observed violating SSL protocol");
+        TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "EOF observed violating SSL protocol");
       }
       break;
     case SSL_ERROR_ZERO_RETURN:
-      TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(),
-          "Connection closed by peer");
+      TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "Connection closed by peer");
       event = SSL_READ_EOS;
       SSL_INCREMENT_DYN_STAT(ssl_error_zero_return);
       Debug("ssl.error", "[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_ZERO_RETURN");
@@ -294,13 +288,12 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
       char buf[512];
       unsigned long e = ERR_peek_last_error();
       ERR_error_string_n(e, buf, sizeof(buf));
-        TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(),
-            "SSL Error: sslErr=%d, ERR_get_error=%ld (%s) errno=%d", sslErr, e, buf, errno);
-        event = SSL_READ_ERROR;
-        ret = errno;
-        SSL_CLR_ERR_INCR_DYN_STAT(sslvc, ssl_error_ssl, "[SSL_NetVConnection::ssl_read_from_net]: errno=%d", errno);
-      }
-      break;
+      TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "SSL Error: sslErr=%d, ERR_get_error=%ld (%s) errno=%d",
+              sslErr, e, buf, errno);
+      event = SSL_READ_ERROR;
+      ret = errno;
+      SSL_CLR_ERR_INCR_DYN_STAT(sslvc, ssl_error_ssl, "[SSL_NetVConnection::ssl_read_from_net]: errno=%d", errno);
+    } break;
     } // switch
   }   // while
 
@@ -310,8 +303,8 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
     s->vio.ndone += bytes_read;
     sslvc->netActivity(lthread);
     ret = bytes_read;
-    event =  (s->vio.ntodo() <= 0) ?  SSL_READ_COMPLETE : SSL_READ_READY;
-  } else { // if( bytes_read > 0 ) 
+    event = (s->vio.ntodo() <= 0) ? SSL_READ_COMPLETE : SSL_READ_READY;
+  } else { // if( bytes_read > 0 )
 #if defined(_DEBUG)
     if (bytes_read == 0) {
       Debug("ssl", "[SSL_NetVConnection::ssl_read_from_net] bytes_read == 0");
@@ -723,14 +716,13 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     err = SSLWriteBuffer(ssl, current_block, l, num_really_written);
 
     if (!origin_trace) {
-      TraceOut((0 < num_really_written && trace), get_remote_addr(), get_remote_port(),
-          "WIRE TRACE\tbytes=%d\n%.*s", (int)num_really_written, (int)num_really_written, current_block);
+      TraceOut((0 < num_really_written && trace), get_remote_addr(), get_remote_port(), "WIRE TRACE\tbytes=%d\n%.*s",
+               (int)num_really_written, (int)num_really_written, current_block);
     } else {
       char origin_trace_ip[INET6_ADDRSTRLEN];
       ats_ip_ntop(origin_trace_addr, origin_trace_ip, sizeof(origin_trace_ip));
-      TraceOut((0 < num_really_written && trace), get_remote_addr(), get_remote_port(), 
-          "CLIENT %s:%d\ttbytes=%d\n%.*s", origin_trace_ip, origin_trace_port,
-          (int)num_really_written, (int)num_really_written, current_block);
+      TraceOut((0 < num_really_written && trace), get_remote_addr(), get_remote_port(), "CLIENT %s:%d\ttbytes=%d\n%.*s",
+               origin_trace_ip, origin_trace_port, (int)num_really_written, (int)num_really_written, current_block);
     }
 
     // We wrote all that we thought we should
@@ -739,8 +731,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       buf.reader()->consume(num_really_written);
     }
 
-    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%" PRId64 " , total=%" PRId64 "", num_really_written,
-          total_written);
+    Debug("ssl", "SSLNetVConnection::loadBufferAndCallWrite,Number of bytes written=%" PRId64 " , total=%" PRId64 "",
+          num_really_written, total_written);
     NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
   } while (num_really_written == try_to_write && total_written < towrite);
 

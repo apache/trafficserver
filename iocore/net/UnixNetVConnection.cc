@@ -542,7 +542,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     vc->write.triggered = 0;
     write_signal_error(nh, vc, (int)-total_written);
     return;
-  } else { // Wrote data.  Finished without error
+  } else {                                        // Wrote data.  Finished without error
     int wbe_event = vc->write_buffer_empty_event; // save so we can clear if needed.
 
     // If the empty write buffer trap is set, clear it.
@@ -580,7 +580,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     }
     if ((needs & EVENTIO_READ) == EVENTIO_READ) {
       read_reschedule(nh, vc);
-    } 
+    }
     return;
   }
 }
@@ -935,9 +935,10 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
     while (niov < NET_MAX_IOV) {
       // check if we have done this block
       int64_t l = tmp_reader->block_read_avail();
-      if (l <= 0) break;
+      if (l <= 0)
+        break;
       char *current_block = tmp_reader->start();
-      
+
       // check if to amount to write exceeds that in this buffer
       int64_t wavail = towrite - total_written;
       if (l > wavail)
@@ -952,7 +953,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
       tmp_reader->consume(l);
       // on to the next block
     }
-    
+
     if (niov == 1)
       r = socketManager.write(con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
     else
@@ -985,7 +986,6 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
 
   tmp_reader->dealloc();
 
-    
   needs |= EVENTIO_WRITE;
 
   return r;
