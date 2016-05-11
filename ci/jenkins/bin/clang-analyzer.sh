@@ -45,7 +45,7 @@ test -d "/home/jenkins/clang-analyzer" && output="/home/jenkins/clang-analyzer"
 autoreconf -fi
 #scan-build ./configure ${configure}
 ./configure ${configure}
-scan-build ${checkers} ${options} -o ${output} --html-title="ATS master branch"  ${ATS_MAKE} -j4
+/opt/llvm/bin/scan-build ${checkers} ${options} -o ${output} --html-title="ATS master branch"  ${ATS_MAKE} -j4
 status=$?
 
 ${ATS_MAKE} distclean
