@@ -302,7 +302,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     fd = ::socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     TSReleaseAssert(fd != -1);
 
-    if (::connect(fd, &addr.sa, sizeof(addr.sin)) == -1) {
+    if (::connect(fd, &addr.sa, sizeof(addr.sin)) == -1 || (istate->server.vc = TSVConnFdCreate(fd)) == NULL) {
       // We failed to connect to the intercepted origin. Abort the
       // server intercept since we cannot handle it.
       VDEBUG("connect failed with %s (%d)", strerror(errno), errno);
@@ -311,7 +311,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
       delete istate;
       TSContDestroy(contp);
 
-      close(fd);
+      ::close(fd);
       return TS_EVENT_NONE;
     }
 
@@ -320,7 +320,6 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
 
     istate->txn = cdata.txn;
     istate->client.vc = arg.vc;
-    istate->server.vc = TSVConnFdCreate(fd);
 
     // Reset the continuation data to be our intercept state
     // block. We will need this so that we can access both of the
