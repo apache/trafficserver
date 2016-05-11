@@ -197,11 +197,12 @@ struct CmpConstBuffferCaseInsensitive {
 };
 
 // Our own typedef for the host file mapping
-typedef std::map<ts::ConstBuffer, HostDBInfo, CmpConstBuffferCaseInsensitive> HostsFileMap;
+typedef std::map<ts::ConstBuffer, IpAddr, CmpConstBuffferCaseInsensitive> HostsFileMap;
 // A to hold a ref-counted map
 struct RefCountedHostsFileMap : public RefCountObj {
   HostsFileMap hosts_file_map;
   ats_scoped_str HostFileText;
+  ink_time_t next_sync_time; // time of the next sync
 };
 
 //
@@ -227,8 +228,6 @@ struct HostDBCache : public MultiCache<HostDBInfo> {
 
   // Map to contain all of the host file overrides, initialize it to empty
   Ptr<RefCountedHostsFileMap> hosts_file_ptr;
-  // Double buffer the hosts file becase it's small and it solves dangling reference problems.
-  Ptr<RefCountedHostsFileMap> prev_hosts_file_ptr;
 
   Queue<HostDBContinuation, Continuation::Link_link> pending_dns[MULTI_CACHE_PARTITIONS];
   Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 &md5);
