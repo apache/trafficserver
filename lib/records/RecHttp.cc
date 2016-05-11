@@ -36,7 +36,6 @@ SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
 const char *const TS_NPN_PROTOCOL_HTTP_0_9 = "http/0.9";
 const char *const TS_NPN_PROTOCOL_HTTP_1_0 = "http/1.0";
 const char *const TS_NPN_PROTOCOL_HTTP_1_1 = "http/1.1";
-const char *const TS_NPN_PROTOCOL_HTTP_2_0_14 = "h2-14"; // Last H2 interrop draft. TODO: Should be removed later
 const char *const TS_NPN_PROTOCOL_HTTP_2_0 = "h2";       // HTTP/2 over TLS
 const char *const TS_NPN_PROTOCOL_SPDY_1 = "spdy/1";     // obsolete
 const char *const TS_NPN_PROTOCOL_SPDY_2 = "spdy/2";
