@@ -6260,7 +6260,6 @@ TSVConnFdCreate(int fd)
   vc->mutex = new_ProxyMutex();
 
   if (vc->connectUp(this_ethread(), fd) != CONNECT_SUCCESS) {
-    vc->free(this_ethread());
     return NULL;
   }
 
