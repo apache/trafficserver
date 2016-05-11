@@ -509,17 +509,15 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     return;
   }
 
-  int64_t total_written = 0, wattempted = 0;
   int needs = 0;
-  int64_t r = vc->load_buffer_and_write(towrite, wattempted, total_written, buf, needs);
+  int64_t total_written = 0;
+  int64_t r = vc->load_buffer_and_write(towrite, buf, total_written, needs);
 
-  // if we have already moved some bytes successfully, summarize in r
-  if (total_written != wattempted) {
-    if (r <= 0)
-      r = total_written - wattempted;
-    else
-      r = total_written - wattempted + r;
+  if (total_written > 0) {
+    NET_SUM_DYN_STAT(net_write_bytes_stat, total_written);
+    s->vio.ndone += total_written;
   }
+
   // check for errors
   if (r <= 0) { // if the socket was not ready,add to WaitList
     if (r == -EAGAIN || r == -ENOTCONN) {
@@ -542,18 +540,10 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       return;
     }
     vc->write.triggered = 0;
-    write_signal_error(nh, vc, (int)-r);
+    write_signal_error(nh, vc, (int)-total_written);
     return;
-  } else {
+  } else {                                        // Wrote data.  Finished without error
     int wbe_event = vc->write_buffer_empty_event; // save so we can clear if needed.
-
-    NET_SUM_DYN_STAT(net_write_bytes_stat, r);
-
-    // Remove data from the buffer and signal continuation.
-    ink_assert(buf.reader()->read_avail() >= r);
-    buf.reader()->consume(r);
-    ink_assert(buf.reader()->read_avail() >= 0);
-    s->vio.ndone += r;
 
     // If the empty write buffer trap is set, clear it.
     if (!(buf.reader()->is_read_avail_more_than(0)))
@@ -943,44 +933,39 @@ UnixNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
 // (SSL read does not support overlapped i/o)
 // without duplicating all the code in write_to_net.
 int64_t
-UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, int64_t &total_written, MIOBufferAccessor &buf,
-                                          int &needs)
+UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs)
 {
   int64_t r = 0;
 
-  // XXX Rather than dealing with the block directly, we should use the IOBufferReader API.
-  int64_t offset = buf.reader()->start_offset;
-  IOBufferBlock *b = buf.reader()->block;
+  int64_t try_to_write = 0;
+  IOBufferReader *tmp_reader = buf.reader()->clone();
 
   do {
     IOVec tiovec[NET_MAX_IOV];
     int niov = 0;
-    int64_t total_written_last = total_written;
-    while (b && niov < NET_MAX_IOV) {
+    try_to_write = 0;
+    while (niov < NET_MAX_IOV) {
       // check if we have done this block
-      int64_t l = b->read_avail();
-      l -= offset;
-      if (l <= 0) {
-        offset = -l;
-        b = b->next;
-        continue;
-      }
+      int64_t l = tmp_reader->block_read_avail();
+      if (l <= 0)
+        break;
+      char *current_block = tmp_reader->start();
+
       // check if to amount to write exceeds that in this buffer
       int64_t wavail = towrite - total_written;
       if (l > wavail)
         l = wavail;
       if (!l)
         break;
-      total_written += l;
       // build an iov entry
       tiovec[niov].iov_len = l;
-      tiovec[niov].iov_base = b->start() + offset;
+      try_to_write += l;
+      tiovec[niov].iov_base = current_block;
       niov++;
+      tmp_reader->consume(l);
       // on to the next block
-      offset = 0;
-      b = b->next;
     }
-    wattempted = total_written - total_written_last;
+
     if (niov == 1)
       r = socketManager.write(con.fd, tiovec[0].iov_base, tiovec[0].iov_len);
     else
@@ -1002,14 +987,20 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
                  strerror(errno));
       }
     }
+    if (r > 0) {
+      buf.reader()->consume(r);
+    }
+    total_written += r;
 
     ProxyMutex *mutex = thread->mutex;
     NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
-  } while (r == wattempted && total_written < towrite);
+  } while (r == try_to_write && total_written < towrite);
+
+  tmp_reader->dealloc();
 
   needs |= EVENTIO_WRITE;
 
-  return (r);
+  return r;
 }
 
 void
