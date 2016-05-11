@@ -87,6 +87,7 @@ NetVConnection::get_client_addr()
     default:
       ink_assert(!"not reached.");
   }
+  return NULL;
 }
 
 TS_INLINE in_addr_t
@@ -101,6 +102,7 @@ NetVConnection::get_client_ip()
     default:
       ink_assert(!"not reached.");
   }
+  return 0;
 }
 
 TS_INLINE uint16_t
@@ -115,6 +117,7 @@ NetVConnection::get_client_port()
     default:
       ink_assert(!"not reached.");
   }
+  return 0;
 }
 
 TS_INLINE sockaddr const *
@@ -129,6 +132,7 @@ NetVConnection::get_server_addr()
     default:
       ink_assert(!"not reached.");
   }
+  return NULL;
 }
 
 TS_INLINE in_addr_t
@@ -143,6 +147,7 @@ NetVConnection::get_server_ip()
     default:
       ink_assert(!"not reached.");
   }
+  return 0;
 }
 
 TS_INLINE uint16_t
@@ -157,4 +162,5 @@ NetVConnection::get_server_port()
     default:
       ink_assert(!"not reached.");
   }
+  return 0;
 }
