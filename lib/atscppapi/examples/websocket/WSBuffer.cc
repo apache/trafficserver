@@ -141,10 +141,10 @@ std::string WSBuffer::get_handshake(std::string const& ws_key)
     std::string digest = ws_digest(ws_key);
 
     // NOTE: a real server might be expecting a Sec-WebSocket-Protocol
-    // header and wish to respond accordingly.
+    // header and wish to respond accordingly. In that case you must
+    // call ws_digest() and construct the headers yourself.
 
-    std::string headers;
-    headers +=
+    std::string headers =
         "HTTP/1.1 101 Switching Protocols\r\n"
         "Upgrade: websocket\r\n"
         "Connection: Upgrade\r\n"

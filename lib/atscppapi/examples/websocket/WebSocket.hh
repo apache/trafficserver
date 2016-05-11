@@ -7,6 +7,8 @@
 #include <string>
 #include <stddef.h>
 
+#include "WSBuffer.hh"
+
 // WebSocket InterceptPlugin
 
 using atscppapi::InterceptPlugin;
@@ -23,21 +25,14 @@ public:
     void handleInputComplete();
 
     void ws_send(std::string const& data, int code);
+    void ws_receive(std::string const& data, int code);
 
 private:
-    bool read_buffered_message(std::string& message);
-
     std::string headers_;
     std::string body_;
 
-    std::string ws_buf_; // incoming data.
-    size_t pos_;         // next byte to read in ws_buf_
-    int ctrl_;
-    size_t mask_len_;
-    char mask_[4];
-    size_t msg_len_;     // length of current message
-    bool ws_handshake_done_;
     std::string ws_key_; // value of sec-websocket-key header
+    WSBuffer ws_buf_;    // incoming data.
 };
 
 class WebSocketInstaller : public GlobalPlugin

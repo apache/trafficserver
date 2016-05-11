@@ -5,6 +5,7 @@ pkglibdir = ${pkglibexecdir}
 pkglib_LTLIBRARIES = WebSocket.la
 
 WebSocket_la_SOURCES = \
+	WSBuffer.cc \
 	WebSocket.cc
 
 WebSocket_la_LDFLAGS = -module -avoid-version -shared -L$(top_srcdir)/lib/atscppapi/src/ -latscppapi
