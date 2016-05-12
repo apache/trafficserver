@@ -9,10 +9,14 @@ plugins to build large scale web applications.
   traffic/ ............... top src dir
   |-- ci/ ................ quality assurance and other CI tools and configs
   |-- cmd/ ............... various command applications
-      |-- traffic_cop/ ... traffic_cop application
-      |-- traffic_line/ .. Command line utilities and API
-      |-- traffic_shell/ . traffic_shell application
+      |-- traffic_cop/ ..
+      |-- traffic_crashlog/
+      |-- traffic_ctl/ ... traffic_ctl command line management application
+      |-- traffic_layout/
+      |-- traffic_manager/
       |-- traffic_top/ ... traffic_top application
+      |-- traffic_via/ ...
+      |-- traffic_wccp/ ..
   |-- contrib ............ various contributed auxiliary pieces
   |-- doc/ ...............
       |-- admin/ ......... Admin guide documentations

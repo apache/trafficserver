@@ -592,11 +592,6 @@ file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_ctl.en.p
 source_file = _build/locale/pot/appendices/command-line/traffic_ctl.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.appendices--command-line--traffic_line_en]
-file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_line.en.po
-source_file = _build/locale/pot/appendices/command-line/traffic_line.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.appendices--command-line--traffic_logcat_en]
 file_filter = locale/<lang>/LC_MESSAGES/appendices/command-line/traffic_logcat.en.po
 source_file = _build/locale/pot/appendices/command-line/traffic_logcat.en.pot

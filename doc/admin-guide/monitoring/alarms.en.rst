@@ -55,7 +55,7 @@ You can use the Traffic Line command-line interface to view statistics
 about Traffic Server performance and web traffic. In addition to viewing
 statistics, you can also configure, stop, and restart the Traffic Server
 system. For additional information, refer to :ref:`configure-using-traffic-line`
-and :program:`traffic_line`. You can view
+and :program:`traffic_ctl`. You can view
 specific information about a Traffic Server node or cluster by
 specifying the variable that corresponds to the statistic you want to
 see.

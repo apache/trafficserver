@@ -85,7 +85,7 @@ sub get_switch {
 # Command: show:alarms
 #
 sub show_alarms {
-    print "Not implemented, use 'traffic_line --alarms' instead\n";
+    print "Not implemented, use 'traffic_ctl' instead\n";
 }
 
 
@@ -694,7 +694,7 @@ sub show_ssl {
 # Command: show:status
 #
 sub show_status {
-    print "Not implemented, use 'traffic_line --status' instead\n";
+    print "Not implemented, use 'traffic_ctl server status' instead\n";
 }
 
 

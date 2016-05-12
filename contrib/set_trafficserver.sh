@@ -36,25 +36,25 @@ EC2_CACHE_LOC=/mnt/trafficserver_cache
 function recordsConfig() {
     startServer
 
-	traffic_line -s proxy.config.reverse_proxy.enabled -v 1
-	traffic_line -s proxy.config.exec_thread.autoconfig -v 1
+    traffic_ctl config set proxy.config.reverse_proxy.enabled 1
+    traffic_ctl config set proxy.config.exec_thread.autoconfig 1
 
     # Good default on a dedicated box or SMP VM.
-    #traffic_line -s proxy.config.exec_thread.autoconfig.scale -v 3.000000
+    #traffic_ctl config set proxy.config.exec_thread.autoconfig.scale 3.000000
 
     # Good for a VM.
-    traffic_line -s proxy.config.exec_thread.autoconfig.scale -v 1.000000
+    traffic_ctl config set proxy.config.exec_thread.autoconfig.scale 1.000000
 
-	traffic_line -s proxy.config.accept_threads -v 1
-    traffic_line -s proxy.config.log.logging_enabled -v 0
-    traffic_line -s proxy.config.http.server_port -v 8080
-    traffic_line -s proxy.config.url_remap.pristine_host_hdr -v 1
+    traffic_ctl config set proxy.config.accept_threads 1
+    traffic_ctl config set proxy.config.log.logging_enabled 0
+    traffic_ctl config set proxy.config.http.server_port 8080
+    traffic_ctl config set proxy.config.url_remap.pristine_host_hdr 1
 
     # Good for a VM.
-    traffic_line -s proxy.config.exec_thread.limit -v 1
+    traffic_ctl config set proxy.config.exec_thread.limit 1
 
     # Good default on a dedicated box or SMP VM.
-    traffic_line -s proxy.config.exec_thread.limit -v 2
+    traffic_ctl config set proxy.config.exec_thread.limit 2
 }
 
 function sampleRemap() {

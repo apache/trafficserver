@@ -64,7 +64,7 @@ Bracketed Monospace
     Example::
 
         To examine a performance statistic of a running |TS| instance, you may
-        run the comand ``traffic_line -r <name>``, replacing ``<name>`` with
+        run the comand ``traffic_ctl metric get <name>``, replacing ``<name>`` with
         the statistic you wish to examine.
 
 Ellipsis

@@ -330,5 +330,5 @@ To configure Split DNS:
 
         CONFIG proxy.config.dns.splitDNS.enabled INT 1
 
-#. Run the command :option:`traffic_line -x` to apply the configuration changes.
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 

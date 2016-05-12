@@ -111,7 +111,7 @@ TM_DAEMON=${TM_DAEMON:-$TS_BASE@exp_bindir@/traffic_manager}
 TM_DAEMON_ARGS=""
 TS_DAEMON=${TS_DAEMON:-$TS_BASE@exp_bindir@/traffic_server}
 TS_DAEMON_ARGS=""
-TL_BINARY=${TL_BINARY:-$TS_BASE@exp_bindir@/traffic_line}
+TL_BINARY=${TL_BINARY:-$TS_BASE@exp_bindir@/traffic_ctl}
 TC_PIDFILE=${TC_PIDFILE:-$TS_BASE@exp_runtimedir@/cop.lock}
 TM_PIDFILE=${TM_PIDFILE:-$TS_BASE@exp_runtimedir@/manager.lock}
 TS_PIDFILE=${TS_PIDFILE:-$TS_BASE@exp_runtimedir@/server.lock}
@@ -362,26 +362,26 @@ case "$1" in
         if [ "$DISTRIB_ID" = "ubuntu" -o "$DISTRIB_ID" = "debian" ] ; then
             test "x$VERBOSE" != "xno" && log_daemon_msg "Reloading ${TS_PACKAGE_NAME}" "$NAME"
             retval=0
-            $TL_BINARY -x
+            $TL_BINARY config reload
             test "$?" -ne 0 -a "$?" -ne 1 && retval=1
             test "x$VERBOSE" != "xno" && log_end_msg "$retval"
             exit "$retval"
         elif [ "$DISTRIB_ID" = "fedora" -o "$DISTRIB_ID" = "redhat" ]; then
-            action "Reloading ${NAME}:" $TL_BINARY -x
+            action "Reloading ${NAME}:" $TL_BINARY config reload
         elif [ "$DISTRIB_ID" = "gentoo" ]; then
 	    ebegin "Reloading ${NAME}"
-            $TL_BINARY -x
+            $TL_BINARY config reload
 	    eend $?
         elif [ "$DISTRIB_ID" = "suse" ]; then
             echo -n "Reloading ${NAME}"
-            $TL_BINARY -x
+            $TL_BINARY config reload
             rc_status -v
         elif [ "$DISTRIB_ID" = "Darwin" ]; then
             echo "Reloading ${NAME}"
-            $TL_BINARY -x
+            $TL_BINARY config reload
         elif [ "$DISTRIB_ID" = "FreeBSD" ]; then
             echo "Reloading ${NAME}"
-            $TL_BINARY -x
+            $TL_BINARY config reload
         else
             echo "This script needs to be ported to this OS"
             exit 1

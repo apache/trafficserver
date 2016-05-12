@@ -30,20 +30,20 @@ There are currently two methods provided with |TS| to view statistics:
 Traffic Line
 ============
 
-The command line utility :program:`traffic_line` offers a text based interface
+The command line utility :program:`traffic_ctl` offers a text based interface
 for viewing |TS| statistics. Invocation is simple and requires knowing the
 specific name of the statistic you wish you view::
 
-    traffic_line -r <statistic name>
+    traffic_ctl metric get <statistic name>
 
 You may notice that this is the same utility, and argument, used for viewing
 configuration variables of a running |TS| instance. Unlike configuration
-variables, you cannot modify a statistic value with the :program:`traffic_line`
+variables, you cannot modify a statistic value with the :program:`traffic_ctl`
 program.
 
 This utility is enabled and built by default, and will be located in the
 ``bin/`` subdirectory of your |TS| installation. There are no required changes
-to your configuration to allow :program:`traffic_line` to function, however it
+to your configuration to allow :program:`traffic_ctl` to function, however it
 may only be run by users with permissions to access the |TS| Unix socket. This
 will typically limit use to root as well as the system user you have configured
 |TS| to run under or any other system users which share the same group as you
