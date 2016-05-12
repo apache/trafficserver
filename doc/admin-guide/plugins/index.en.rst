@@ -113,6 +113,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Metalink <metalink.en>
    MP4 <mp4.en>
    MySQL Remap <mysql_remap.en>
+   Regex Revalidate <regex_revalidate.en>
    Signed URLs <url_sig.en>
    SSL Headers <sslheaders.en>
    Stale While Revalidate <stale_while_revalidate.en>
@@ -174,6 +175,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.
+
+:doc:`Regex Revalidate <regex_revalidate.en>`
+   Configurable rules for ...
 
 :doc:`Signed URLs <url_sig.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
