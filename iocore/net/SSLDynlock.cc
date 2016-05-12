@@ -43,6 +43,8 @@ ssl_dyn_create_callback(const char *file, int line)
   return value;
 }
 
+// The locking callback goes away with openssl 1.1 and CRYPTO_LOCK is on longer defined
+#ifdef CRYPTO_LOCK
 void
 ssl_dyn_lock_callback(int mode, struct CRYPTO_dynlock_value *value, const char *file, int line)
 {
@@ -57,6 +59,7 @@ ssl_dyn_lock_callback(int mode, struct CRYPTO_dynlock_value *value, const char *
     ink_release_assert(0);
   }
 }
+#endif
 
 void
 ssl_dyn_destroy_callback(struct CRYPTO_dynlock_value *value, const char *file, int line)

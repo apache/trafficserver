@@ -196,3 +196,37 @@ AC_DEFUN([TS_CHECK_CRYPTO_SET_RBIO], [
   TS_ARG_ENABLE_VAR([use], [set-rbio])
   AC_SUBST(use_set_rbio)
 ])
+
+AC_DEFUN([TS_CHECK_CRYPTO_DH_GET_2048_256], [
+  _dh_saved_LIBS=$LIBS
+  enable_dh_get_2048_256=yes
+
+  TS_ADDTO(LIBS, [$OPENSSL_LIBS])
+  AC_MSG_CHECKING([for DH_get_2048_256])
+  AC_LINK_IFELSE(
+  [
+    AC_LANG_PROGRAM([[
+#if HAVE_OPENSSL_SSL_H
+#include <openssl/ssl.h>
+#endif
+#if HAVE_OPENSSL_TLS1_H
+#include <openssl/tls1.h>
+#endif
+      ]],
+      [[DH_get_2048_256();]])
+  ],
+  [
+    AC_MSG_RESULT([yes])
+  ],
+  [
+    AC_MSG_RESULT([no])
+    enable_dh_get_2048_256=no
+  ])
+
+  LIBS=$_dh_saved_LIBS
+
+  AC_MSG_CHECKING(whether to enable DH_get_2048_256)
+  AC_MSG_RESULT([$enable_dh_get_2048_256])
+  TS_ARG_ENABLE_VAR([use], [dh_get_2048_256])
+  AC_SUBST(use_dh_get_2048_256)
+])
