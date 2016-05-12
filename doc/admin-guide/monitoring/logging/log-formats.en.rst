@@ -280,7 +280,7 @@ just adding the desired characters to the format string::
     %<cqtq> / %<cauc>
 
 You may define as many custom formats as you wish. To apply changes to custom
-formats, you will need to run the command :option:`traffic_line -x` after
+formats, you will need to run the command :option:`traffic_ctl config reload` after
 saving your changes to :file:`logs_xml.config`.
 
 .. _custom-logging-fields:

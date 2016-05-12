@@ -20,7 +20,6 @@ SUBDIRS = \
   traffic_ctl \
   traffic_crashlog \
   traffic_layout \
-  traffic_line \
   traffic_manager \
   traffic_top \
   traffic_via

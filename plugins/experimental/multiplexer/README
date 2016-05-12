@@ -19,7 +19,7 @@ A global timeout can be overwritten through "multiplexer__timeout" environment v
 
 Please use "mutiplexer" tag for debugging purposes. While debugging, multiplexed requests and responses are printed into the logs.
 
-Multiplexer produces the following statistics consumed with traffic_line:
+Multiplexer produces the following statistics consumed with traffic_ctl:
  - failures: number of failed multiplexed requests
  - hits: number of successful multiplexed requests
  - requests: total number of multiplexed requests

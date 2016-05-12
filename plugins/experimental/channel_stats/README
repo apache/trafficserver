@@ -35,7 +35,7 @@ Edit:
   Example: 'channel_stats.so _my_cstats'.
 
 Start:
-  Restart Traffic Server: sudo traffic_line -L or sudo trafficserver restart
+  Restart Traffic Server: sudo traffic_ctl server restart or sudo trafficserver restart
 
 
 Viewing Stats

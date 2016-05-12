@@ -64,7 +64,7 @@ Bracketed Monospace
     or commands.
 
     Example:
-        Running the command ``traffic_line -r <name>`` will display the current
+        Running the command ``traffic_ctl metric get <name>`` will display the current
         value of a performance statistic, where ``<name>`` is the statistic
         whose value you wish to view.
 

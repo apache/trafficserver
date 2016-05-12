@@ -81,7 +81,7 @@ configuration adjustments in :file:`records.config`:
 
         CONFIG proxy.config.log.collation_secret STRING "seekrit"
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 .. note::
@@ -165,7 +165,7 @@ restart |TS|.
    -  :ts:cv:`proxy.config.log.collation_host_tagged`
    -  :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 Collating Custom Logs
@@ -191,7 +191,7 @@ To collate custom event log files:
    ``port`` is the port number for communication between the collation
    server and collation clients.
 
-#. Run the command :option:`traffic_line -L` to restart Traffic Server on the
-   local node or :option:`traffic_line -M` to restart Traffic Server on all
+#. Run the command :option:`traffic_ctl config reload` to restart Traffic Server on the
+   local node or :option:`traffic_ctl config reload` to restart Traffic Server on all
    the nodes in a cluster.
 

@@ -33,7 +33,7 @@ By default, Traffic Server writes all event log files in the ``logs``
 directory located in the directory where you installed |TS|. To change this
 location, adjust the value of :ts:cv:`proxy.config.log.logfile_dir` in
 :file:`records.config`. You will need to either restart |TS| or run the
-command :option:`traffic_line -x` for changes to take effect.
+command :option:`traffic_ctl config reload` for changes to take effect.
 
 Controlling Logging Space
 =========================
@@ -76,7 +76,7 @@ To set log management options, follow the steps below:
    -  :ts:cv:`proxy.config.log.max_space_mb_for_logs`
    -  :ts:cv:`proxy.config.log.max_space_mb_headroom`
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 Rolling Logs
@@ -212,7 +212,7 @@ they reach a certain size, adjust the following settings in
 
     CONFIG proxy.config.log.rolling_interval_sec INT 21600
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 You can fine-tune log file rolling settings for a custom log file in the

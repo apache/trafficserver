@@ -23,18 +23,7 @@ Command Line Utilities
 **********************
 
 .. toctree::
+   :glob:
    :maxdepth: 1
 
-   traffic_cop.en
-   traffic_crashlog.en
-   traffic_ctl.en
-   traffic_line.en
-   traffic_logcat.en
-   traffic_logstats.en
-   traffic_manager.en
-   traffic_server.en
-   traffic_top.en
-   traffic_via.en
-   traffic_wccp.en
-   tspush.en
-   tsxs.en
+   *

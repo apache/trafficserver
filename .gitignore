@@ -45,8 +45,6 @@ doc/xml/
 MYMETA.*
 pm_to_blib
 
-cmd/traffic_line/traffic_line
-cmd/traffic_shell/traffic_shell
 cmd/traffic_cop/traffic_cop
 cmd/traffic_ctl/traffic_ctl
 cmd/traffic_crashlog/traffic_crashlog
