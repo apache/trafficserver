@@ -1151,6 +1151,9 @@ TS_CHECK_CRYPTO_CERT_CB
 # Check for SSL_set_rbio call
 TS_CHECK_CRYPTO_SET_RBIO
 
+# Check for DH_get_2048_256
+TS_CHECK_CRYPTO_DH_GET_2048_256
+
 #
 # Check for zlib presence and usability
 TS_CHECK_ZLIB

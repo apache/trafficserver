@@ -131,12 +131,18 @@ static InkHashTable *ssl_cipher_name_table = NULL;
  * may use pthreads and openssl without confusing us here. (TS-2271).
  */
 
+// Only define this function if the version of openssl really has a
+// CRYPTO_THREADID_set_callback function.  openssl 1.1.0 defines it to 0
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void
 SSL_pthreads_thread_id(CRYPTO_THREADID *id)
 {
   CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }
+#endif
 
+// The locking callback goes away with openssl 1.1 and CRYPTO_LOCK is on longer defined
+#ifdef CRYPTO_LOCK
 static void
 SSL_locking_callback(int mode, int type, const char *file, int line)
 {
@@ -159,6 +165,7 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
     ink_assert(0);
   }
 }
+#endif
 
 #ifndef SSL_CTX_add0_chain_cert
 static bool
@@ -195,7 +202,11 @@ ssl_session_timed_out(SSL_SESSION *session)
 static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
 
 static SSL_SESSION *
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
+#else
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
+#endif
 {
   SSLSessionID sid(id, len);
 
@@ -428,9 +439,10 @@ done:
 #endif
 #endif /* TS_USE_TLS_SNI */
 
+#if TS_USE_GET_DH_2048_256 == 0
 /* Build 2048-bit MODP Group with 256-bit Prime Order Subgroup from RFC 5114 */
 static DH *
-get_dh2048()
+DH_get_2048_256()
 {
   static const unsigned char dh2048_p[] = {
     0x87, 0xA8, 0xE6, 0x1D, 0xB4, 0xB6, 0x66, 0x3C, 0xFF, 0xBB, 0xD1, 0x9C, 0x65, 0x19, 0x59, 0x99, 0x8C, 0xEE, 0xF6, 0x08,
@@ -472,6 +484,7 @@ get_dh2048()
   }
   return (dh);
 }
+#endif
 
 static SSL_CTX *
 ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
@@ -482,7 +495,7 @@ ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
     scoped_BIO bio(BIO_new_file(dhparams_file, "r"));
     server_dh = PEM_read_bio_DHparams(bio.get(), NULL, NULL, NULL);
   } else {
-    server_dh = get_dh2048();
+    server_dh = DH_get_2048_256();
   }
 
   if (!server_dh) {
@@ -788,21 +801,68 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_timeout_stat, timeouts);
   return RecRawStatSyncCount(name, data_type, data, rsb, id);
 }
-
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void *
+ssl_malloc(size_t size, const char * /*filename */, int /*lineno*/)
+#else
 void *
 ssl_malloc(size_t size)
+#endif
+{
+  return ats_malloc(size);
+}
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void *
+ssl_realloc(void *ptr, size_t size, const char * /*filename*/, int /*lineno*/)
+#else
+void *
+ssl_realloc(void *ptr, size_t size)
+#endif
+{
+  return ats_realloc(ptr, size);
+}
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void
+ssl_free(void *ptr, const char * /*filename*/, int /*lineno*/)
+#else
+void
+ssl_free(void *ptr)
+#endif
+{
+  ats_free(ptr);
+}
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void *
+ssl_track_malloc(size_t size, const char * /*filename*/, int /*lineno*/)
+#else
+void *
+ssl_track_malloc(size_t size)
+#endif
 {
   return ats_track_malloc(size, &ssl_memory_allocated);
 }
 
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void *
-ssl_realloc(void *ptr, size_t size)
+ssl_track_realloc(void *ptr, size_t size, const char * /*filename*/, int /*lineno*/)
+#else
+void *
+ssl_track_realloc(void *ptr, size_t size)
+#endif
 {
   return ats_track_realloc(ptr, size, &ssl_memory_allocated, &ssl_memory_freed);
 }
 
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
 void
-ssl_free(void *ptr)
+ssl_track_free(void *ptr, const char * /*filename*/, int /*lineno*/)
+#else
+void
+ssl_track_free(void *ptr)
+#endif
 {
   ats_track_free(ptr, &ssl_memory_freed);
 }
@@ -814,9 +874,9 @@ SSLInitializeLibrary()
 // BoringSSL does not have the memory functions
 #ifndef OPENSSL_IS_BORINGSSL
     if (res_track_memory >= 2) {
-      CRYPTO_set_mem_functions(ssl_malloc, ssl_realloc, ssl_free);
+      CRYPTO_set_mem_functions(ssl_track_malloc, ssl_track_realloc, ssl_track_free);
     } else {
-      CRYPTO_set_mem_functions(ats_malloc, ats_realloc, ats_free);
+      CRYPTO_set_mem_functions(ssl_malloc, ssl_realloc, ssl_free);
     }
 #endif
 
@@ -1038,30 +1098,42 @@ increment_ssl_client_error(unsigned long err)
   // (we ignore FUNCTION with the prejudice that we don't care what function
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_expired_cert_stat);
     break;
+#endif
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_revoked_cert_stat);
     break;
+#endif
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_cert_stat);
     break;
+#endif
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_cert_verify_failed_stat);
     break;
+#ifdef SSL_R_SSLV3_ALERT_BAD_CERTIFICATE
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_bad_cert_stat);
     break;
+#endif
+#ifdef SSL_R_TLSV1_ALERT_DECRYPTION_FAILED
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_decryption_failed_stat);
     break;
+#endif
   case SSL_R_WRONG_VERSION_NUMBER:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_wrong_version_stat);
     break;
+#ifdef SSL_R_TLSV1_ALERT_UNKNOWN_CA
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_ca_stat);
     break;
+#endif
   default:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
     return false;
@@ -1085,30 +1157,42 @@ increment_ssl_server_error(unsigned long err)
   // (we ignore FUNCTION with the prejudice that we don't care what function
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_expired_cert_stat);
     break;
+#endif
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_revoked_cert_stat);
     break;
+#endif
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_cert_stat);
     break;
+#endif
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_cert_verify_failed_stat);
     break;
+#ifdef SSL_R_SSLV3_ALERT_BAD_CERTIFICATE
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_bad_cert_stat);
     break;
+#endif
+#ifdef SSL_R_TLSV1_ALERT_DECRYPTION_FAILED
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_decryption_failed_stat);
     break;
+#endif
   case SSL_R_WRONG_VERSION_NUMBER:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_wrong_version_stat);
     break;
+#ifdef SSL_R_TLSV1_ALERT_UNKNOWN_CA
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_ca_stat);
     break;
+#endif
   default:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
     return false;
@@ -1288,8 +1372,8 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
 {
   int server_verify_client;
   ats_scoped_str completeServerCertPath;
-  SSL_CTX *ctx = SSLDefaultServerContext();
-  EVP_MD_CTX digest;
+  SSL_CTX *ctx                 = SSLDefaultServerContext();
+  EVP_MD_CTX *digest           = EVP_MD_CTX_create();
   STACK_OF(X509_NAME) *ca_list = NULL;
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
   unsigned int hash_len    = 0;
@@ -1522,9 +1606,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
       SSL_CTX_set_client_CA_list(ctx, ca_list);
     }
   }
-  EVP_MD_CTX_init(&digest);
+  EVP_MD_CTX_init(digest);
 
-  if (EVP_DigestInit_ex(&digest, evp_md_func, NULL) == 0) {
+  if (EVP_DigestInit_ex(digest, evp_md_func, NULL) == 0) {
     SSLError("EVP_DigestInit_ex failed");
     goto fail;
   }
@@ -1532,7 +1616,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
   Debug("ssl", "Using '%s' in hash for session id context", sslMultCertSettings.cert.get());
 
   if (NULL != setting_cert) {
-    if (EVP_DigestUpdate(&digest, sslMultCertSettings.cert, strlen(setting_cert)) == 0) {
+    if (EVP_DigestUpdate(digest, sslMultCertSettings.cert, strlen(setting_cert)) == 0) {
       SSLError("EVP_DigestUpdate failed");
       goto fail;
     }
@@ -1544,19 +1628,18 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
     for (size_t i = 0; i < num_certs; i++) {
       X509_NAME *name = sk_X509_NAME_value(ca_list, i);
       if (X509_NAME_digest(name, evp_md_func, hash_buf /* borrow our final hash buffer. */, &hash_len) == 0 ||
-          EVP_DigestUpdate(&digest, hash_buf, hash_len) == 0) {
+          EVP_DigestUpdate(digest, hash_buf, hash_len) == 0) {
         SSLError("Adding X509 name to digest failed");
         goto fail;
       }
     }
   }
 
-  if (EVP_DigestFinal_ex(&digest, hash_buf, &hash_len) == 0) {
+  if (EVP_DigestFinal_ex(digest, hash_buf, &hash_len) == 0) {
     SSLError("EVP_DigestFinal_ex failed");
     goto fail;
   }
 
-  EVP_MD_CTX_cleanup(&digest);
   if (SSL_CTX_set_session_id_context(ctx, hash_buf, hash_len) == 0) {
     SSLError("SSL_CTX_set_session_id_context failed");
     goto fail;
@@ -1581,6 +1664,8 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
   return ssl_context_enable_ecdh(ctx);
 
 fail:
+  // EVP_MD_CTX_destroy calls EVP_MD_CTX_cleanup too
+  EVP_MD_CTX_destroy(digest);
   SSL_CLEAR_PW_REFERENCES(ud, ctx)
   SSL_CTX_free(ctx);
   for (unsigned int i = 0; i < certList.length(); i++) {
@@ -1680,7 +1765,11 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
 #ifdef SSL23_ST_SR_CLNT_HELLO_A
     if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
 #else
+#ifdef SSL3_ST_SR_CLNT_HELLO_A
     if (state == SSL3_ST_SR_CLNT_HELLO_A) {
+#else
+    if (state == TLS_ST_SR_CLNT_HELLO) {
+#endif
 #endif
       netvc->setSSLClientRenegotiationAbort(true);
       Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
