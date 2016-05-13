@@ -751,8 +751,14 @@ Value Effect
    You can specify one of the following:
 
    -  ``0`` no Server: header is added to the response.
-   -  ``1`` the Server: header is added (see string below).
+   -  ``1`` the Server: header is added according to :ts:cv:`proxy.config.http.response_server_str`
    -  ``2`` the Server: header is added only if the response from origin does not have one already.
+
+.. ts:cv:: CONFIG proxy.config.http.response_server_str STRING ATS/${PACKAGE_VERSION}
+   :reloadable:
+   :overridable:
+
+   The Server: string that ATS will insert in a response header (if requested, see above). Note that the actual default value is defined with ``"ATS/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ATS/6.0.0`` if you really set a value with the version in :file:`records.config` file. If you want to hide the version, you can set this value to ``ATS``.
 
 .. ts:cv:: CONFIG proxy.config.http.insert_age_in_response INT 1
    :reloadable:
@@ -763,12 +769,6 @@ Value Effect
 
    -  ``0`` no ``Age`` header is added
    -  ``1`` the ``Age`` header is added
-
-.. ts:cv:: CONFIG proxy.config.http.response_server_str STRING ATS/${PACKAGE_VERSION}
-   :reloadable:
-   :overridable:
-
-   The Server: string that ATS will insert in a response header (if requested, see above). Note that the actual default value is defined with ``"ATS/" PACKAGE_VERSION`` in a C++ source code, and you must write such as ``ATS/6.0.0`` if you really set a value with the version in :file:`records.config` file. If you want to hide the version, you can set this value to ``ATS``.
 
 .. ts:cv:: CONFIG proxy.config.http.enable_url_expandomatic INT 0
    :reloadable:
