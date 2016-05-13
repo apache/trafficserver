@@ -1336,8 +1336,10 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     // Deallocate the reader after calling back the sm
     //  because buffer problems are easier to debug
     //  in the sm when the reader is still valid
-    c->buffer_reader->mbuf->dealloc_reader(c->buffer_reader);
-    c->buffer_reader = NULL;
+    if (c->buffer_reader) {
+      c->buffer_reader->mbuf->dealloc_reader(c->buffer_reader);
+      c->buffer_reader = NULL;
+    }
 
     // Since we removed a consumer, it may now be
     //   possbile to put more stuff in the buffer
