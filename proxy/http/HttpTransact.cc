@@ -3442,7 +3442,7 @@ HttpTransact::HandleStatPage(State *s)
   if (s->internal_msg_buffer) {
     status = HTTP_STATUS_OK;
   } else {
-    status = HTTP_STATUS_BAD_REQUEST;
+    status = HTTP_STATUS_NOT_FOUND;
   }
 
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status);
