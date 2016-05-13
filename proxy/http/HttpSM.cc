@@ -630,9 +630,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
     return 0;
 
   // check to see if there was an EOS received on the SSL connection
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(ua_session->get_netvc());
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
   if (ssl_vc && ssl_vc->isEosRcvd()) {
-    DebugSM("http", "EOS for ssl vc %p at read_first_btye state", ua_session->get_netvc());
+    DebugSM("http", "EOS for ssl vc %p at read_first_btye state", netvc);
     event = VC_EVENT_EOS;
   }
   switch (event) {
@@ -705,8 +705,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
       // Turn off read eventing until we get the
       // blind tunnel infrastructure set up
-      ua_session->get_netvc()->do_io_read(this, 0, NULL);
-      netvc->do_io_read(this, 0, NULL);
+      if (netvc)
+        netvc->do_io_read(this, 0, NULL);
 
       /* establish blind tunnel */
       setup_blind_tunnel_port();
