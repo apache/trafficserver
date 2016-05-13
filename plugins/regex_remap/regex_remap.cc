@@ -563,6 +563,7 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
         memcpy(p1, src + ovector[2 * ix], lengths[ix]);
         p1 += lengths[ix];
       } else {
+        TSMLoc iploc;
         const char *str = NULL;
         int len = 0;
 
@@ -597,10 +598,11 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
           str = req_url->matrix;
           len = req_url->matrix_len;
           break;
-        case SUB_CLIENT_IP: {
-          // TODO: Finish implementing with the addr from above
-          // p1 += snprintf(p1, 15, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-        } break;
+        case SUB_CLIENT_IP:
+          if ((iploc = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_CLIENT_IP, TS_MIME_LEN_CLIENT_IP)) != TS_NULL_MLOC) {
+            str = TSMimeHdrFieldValueStringGet(rri->requestBufp, rri->requestHdrp, iploc, 0, &len);
+          }
+          break;
         default:
           break;
         }
@@ -924,6 +926,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   RemapRegex *re = ri->first;
   int match_len = 0;
   char *match_buf;
+  struct sockaddr_in *addr;
+  TSMLoc iploc;
+  char *ip;
 
   match_buf = (char *)alloca(req_url.url_len + 32);
 
@@ -965,6 +970,16 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   match_buf[match_len] = '\0'; // NULL terminate the match string
   TSDebug(PLUGIN_NAME, "Target match string is `%s'", match_buf);
 
+  if ((iploc = TSMimeHdrFieldFind(rri->requestBufp, rri->requestHdrp, TS_MIME_FIELD_CLIENT_IP, TS_MIME_LEN_CLIENT_IP)) == TS_NULL_MLOC) {
+    addr = (struct sockaddr_in *)TSHttpTxnClientAddrGet(txnp);
+    ip = inet_ntoa(addr->sin_addr);
+    TSDebug(PLUGIN_NAME, "%s", ip);
+
+    TSMimeHdrFieldCreate(rri->requestBufp, rri->requestHdrp, &iploc);
+    TSMimeHdrFieldNameSet(rri->requestBufp, rri->requestHdrp, iploc, TS_MIME_FIELD_CLIENT_IP, TS_MIME_LEN_CLIENT_IP);
+    TSMimeHdrFieldValueStringInsert(rri->requestBufp, rri->requestHdrp, iploc, 0, ip, strlen(ip));
+    TSMimeHdrFieldAppend(rri->requestBufp, rri->requestHdrp, iploc);
+  }
   // Apply the regular expressions, in order. First one wins.
   while (re) {
     // Since we check substitutions on parse time, we don't need to reset ovector
