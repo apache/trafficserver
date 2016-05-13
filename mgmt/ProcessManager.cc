@@ -140,8 +140,7 @@ ProcessManager::processEventQueue()
       executeMgmtCallback(mh->msg_id, NULL, 0);
     }
     if (mh->msg_id == MGMT_EVENT_SHUTDOWN) {
-      mgmt_log(stderr, "[ProcessManager::processEventQueue] Shutdown msg received, exiting\n");
-      _exit(0);
+      mgmt_fatal(stderr, 0, "[ProcessManager::processEventQueue] Shutdown msg received, exiting\n");
     } /* Exit on shutdown */
     ats_free(mh);
     ret = true;

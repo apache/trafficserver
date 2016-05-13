@@ -152,7 +152,7 @@ check_lockfile()
   if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
     fprintf(stderr, "unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir, errno, strerror(errno));
     fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
-    _exit(1);
+    ::exit(1);
   }
   lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
 
@@ -176,7 +176,7 @@ check_lockfile()
     } else {
       fprintf(stderr, "\n");
     }
-    _exit(1);
+    ::exit(1);
   }
   ats_free(lockfile);
 }

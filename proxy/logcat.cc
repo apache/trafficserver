@@ -219,7 +219,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   //
   if (output_file[0] != 0 && auto_filenames) {
     fprintf(stderr, "Error: specify only one of -o <file> and -a\n");
-    _exit(CMD_LINE_OPTION_ERROR);
+    ::exit(CMD_LINE_OPTION_ERROR);
   }
   // initialize this application for standalone logging operation
   //
@@ -234,7 +234,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     out_fd = open_output_file(output_file);
 
     if (out_fd < 0) {
-      _exit(DATA_PROCESSING_ERROR);
+      ::exit(DATA_PROCESSING_ERROR);
     }
   } else if (!auto_filenames) {
     out_fd = STDOUT_FILENO;
@@ -305,5 +305,5 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     }
   }
 
-  _exit(error);
+  ::exit(error);
 }

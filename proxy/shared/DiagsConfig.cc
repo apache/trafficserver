@@ -282,7 +282,7 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
   if (access(logpath, W_OK | R_OK) == -1) {
     fprintf(stderr, "unable to access log directory '%s': %d, %s\n", (const char *)logpath, errno, strerror(errno));
     fprintf(stderr, "please set 'proxy.config.log.logfile_dir'\n");
-    _exit(1);
+    ::exit(1);
   }
 
   ink_filepath_make(diags_logpath, sizeof(diags_logpath), logpath, filename);

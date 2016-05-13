@@ -319,13 +319,13 @@ init_dirs()
   if (access(sysconfdir, R_OK) == -1) {
     mgmt_elog(0, "unable to access() config directory '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
     mgmt_elog(0, "please set the 'TS_ROOT' environment variable\n");
-    _exit(1);
+    ::exit(1);
   }
 
   if (access(rundir, R_OK) == -1) {
     mgmt_elog(0, "unable to access() local state directory '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
     mgmt_elog(0, "please set 'proxy.config.local_state_dir'\n");
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -817,12 +817,12 @@ main(int argc, const char **argv)
     switch (lmgmt->mgmt_shutdown_outstanding) {
     case MGMT_PENDING_RESTART:
       lmgmt->mgmtShutdown();
-      _exit(0);
+      ::exit(0);
       break;
     case MGMT_PENDING_IDLE_RESTART:
       if (is_server_idle()) {
         lmgmt->mgmtShutdown();
-        _exit(0);
+        ::exit(0);
       }
       break;
     case MGMT_PENDING_BOUNCE:
@@ -988,11 +988,11 @@ SignalHandler(int sig)
   default:
     fprintf(stderr, "[TrafficManager] ==> signal #%d\n", sig);
     mgmt_elog(stderr, 0, "[TrafficManager] ==> signal #%d\n", sig);
-    _exit(sig);
+    ::exit(sig);
   }
   fprintf(stderr, "[TrafficManager] ==> signal2 #%d\n", sig);
   mgmt_elog(stderr, 0, "[TrafficManager] ==> signal2 #%d\n", sig);
-  _exit(sig);
+  ::exit(sig);
 } /* End SignalHandler */
 
 // void SigChldHandler(int sig)

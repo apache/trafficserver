@@ -105,7 +105,7 @@ check_lockfile()
     } else {
       fprintf(stderr, "\n");
     }
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -192,7 +192,7 @@ main(int argc, char **argv)
     pid_t pid = fork();
     if (pid > 0) {
       // Successful, the parent should go away
-      _exit(0);
+      ::exit(0);
     }
   }
 
