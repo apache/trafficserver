@@ -46,7 +46,7 @@ all-local:
 		BUILDMODE="static" \
 		PREFIX="$(prefix)" \
 		CC="$(CC)" \
-		CFLAGS="$(CFLAGS) $(LUA_CFLAGS)" \
+		CFLAGS="$(LUA_CFLAGS)" \
 		XCFLAGS="" \
 		LDFLAGS="$(LUA_LDFLAGS)"
 
