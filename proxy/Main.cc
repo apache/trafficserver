@@ -372,7 +372,7 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
 }
 
 static void
-proxy_signal_handler(int signo, siginfo_t *info, void *)
+proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
 {
   switch (signo) {
   case SIGUSR1:
@@ -393,15 +393,10 @@ proxy_signal_handler(int signo, siginfo_t *info, void *)
   ProfilerStop();
 #endif
 
+  // We don't expect any crashing signals here because, but
+  // forward to the default handler just to be robust.
   if (signal_is_crash(signo)) {
-    // The only call to abort(2) should be from ink_fatal, which has already logged a stack trace.
-    if (signo != SIGABRT) {
-      ink_stack_trace_dump();
-    }
-
-    // Make sure to drop a core for signals that normally would do so.
-    signal(signo, SIG_DFL);
-    return;
+    signal_crash_handler(signo, info, ctx);
   }
 
   shutdown_event_system = true;
@@ -417,7 +412,7 @@ static void
 init_system()
 {
   signal_register_default_handler(proxy_signal_handler);
-  signal_register_crash_handler(proxy_signal_handler);
+  signal_register_crash_handler(signal_crash_handler);
 
   syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", appVersionInfo.AppStr);
   syslog(LOG_NOTICE, "NOTE: %s Version: %s", appVersionInfo.AppStr, appVersionInfo.FullVersionInfoStr);
