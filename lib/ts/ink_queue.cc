@@ -235,9 +235,9 @@ freelist_new(InkFreeList *f)
 #ifdef SANITY
       if (result) {
         if (FREELIST_POINTER(item) == TO_PTR(FREELIST_POINTER(next)))
-          ink_fatal("ink_freelist_new: loop detected");
+          ink_abort("ink_freelist_new: loop detected");
         if (((uintptr_t)(TO_PTR(FREELIST_POINTER(next)))) & 3)
-          ink_fatal("ink_freelist_new: bad list");
+          ink_abort("ink_freelist_new: bad list");
         if (TO_PTR(FREELIST_POINTER(next)))
           fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(next));
       }
@@ -296,9 +296,9 @@ freelist_free(InkFreeList *f, void *item)
     INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == item)
-      ink_fatal("ink_freelist_free: trying to free item twice");
+      ink_abort("ink_freelist_free: trying to free item twice");
     if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
-      ink_fatal("ink_freelist_free: bad list");
+      ink_abort("ink_freelist_free: bad list");
     if (TO_PTR(FREELIST_POINTER(h)))
       fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
 #endif /* SANITY */
@@ -356,9 +356,9 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
     INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
     if (TO_PTR(FREELIST_POINTER(h)) == head)
-      ink_fatal("ink_freelist_free: trying to free item twice");
+      ink_abort("ink_freelist_free: trying to free item twice");
     if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
-      ink_fatal("ink_freelist_free: bad list");
+      ink_abort("ink_freelist_free: bad list");
     if (TO_PTR(FREELIST_POINTER(h)))
       fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
 #endif /* SANITY */
