@@ -45,6 +45,9 @@ extern "C" {
 #define TSstrlcpy(d, s, l) _TSstrlcpy((d), (s), (l))
 #define TSstrlcat(d, s, l) _TSstrlcat((d), (s), (l))
 #define TSfree(p) _TSfree(p)
+#define TSmalloc_pool(s) _TSmalloc_pool((s), TS_RES_MEM_PATH)
+#define TSrealloc_pool(p, s) _TSrealloc_pool((p), (s), TS_RES_MEM_PATH)
+#define TSfree_pool(p) _TSfree_pool(p)
 
 tsapi void *_TSmalloc(size_t size, const char *path);
 tsapi void *_TSrealloc(void *ptr, size_t size, const char *path);
@@ -52,6 +55,9 @@ tsapi char *_TSstrdup(const char *str, int64_t length, const char *path);
 tsapi size_t _TSstrlcpy(char *dst, const char *str, size_t siz);
 tsapi size_t _TSstrlcat(char *dst, const char *str, size_t siz);
 tsapi void _TSfree(void *ptr);
+tsapi void *_TSmalloc_pool(size_t size, const char *path);
+tsapi void *_TSrealloc_pool(void *ptr, size_t size, const char *path);
+tsapi void _TSfree_pool(void *ptr);
 
 /* --------------------------------------------------------------------------
    Component object handles */

@@ -42,13 +42,13 @@ uint32_t spdy_initial_window_size = 1048576;
 int32_t spdy_accept_no_activity_timeout = 120;
 int32_t spdy_no_activity_timeout_in = 115;
 
-string
+ts_string
 http_date(time_t t)
 {
   char buf[32];
   tm *tms = gmtime(&t); // returned struct is statically allocated.
   size_t r = strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tms);
-  return std::string(&buf[0], &buf[r]);
+  return ts_string(&buf[0], &buf[r]);
 }
 
 int

@@ -84,7 +84,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   /* Allocate the string with an extra byte for the string
      terminator */
-  output_string = (char *)TSmalloc(total_avail + 1);
+  output_string = (char *)TSmalloc_pool(total_avail + 1);
   output_len = 0;
 
   /* We need to loop over all the buffer blocks to make
@@ -124,9 +124,9 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
 
   /* Although I'd never do this a production plugin, printf
      the header so that we can see it's all there */
-  TSDebug("debug-output-header", "%s", output_string);
+  TSDebug(DEBUG_TAG, "%s", output_string);
 
-  TSfree(output_string);
+  TSfree_pool(output_string);
 
 done:
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -138,7 +138,7 @@ hdr_plugin(TSCont contp, TSEvent event, void *edata)
   TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
-  case TS_EVENT_HTTP_OS_DNS:
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
     handle_dns(txnp, contp);
     return 0;
   default:
@@ -163,7 +163,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
     goto error;
   }
 
-  TSHttpHookAdd(TS_HTTP_OS_DNS_HOOK, TSContCreate(hdr_plugin, NULL));
+  TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(hdr_plugin, NULL));
 
 error:
   TSError("[output_header] Plugin not initialized");

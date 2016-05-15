@@ -89,6 +89,11 @@ void *ats_free_null(void *ptr);
 void ats_memalign_free(void *ptr);
 int ats_mallopt(int param, int value);
 
+/* use IOBufs as the underlying allocation pool */
+void *ats_malloc_pool(size_t size);
+void *ats_realloc_pool(void *ptr, size_t size);
+void ats_free_pool(void *ptr);
+
 int ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
 int ats_madvise(caddr_t addr, size_t len, int flags);
 int ats_mlock(caddr_t addr, size_t len);

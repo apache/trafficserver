@@ -25,6 +25,7 @@
 #define __P_SPDY_CALLBACKS_H__
 
 #include <spdylay/spdylay.h>
+#include "I_STLAllocator.h"
 class SpdyClientSession;
 
 void spdy_callbacks_init(spdylay_session_callbacks *callbacks);

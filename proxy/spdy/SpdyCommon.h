@@ -38,6 +38,7 @@
 #include "ts/ts.h"
 #include "ts/ink_platform.h"
 #include "ts/experimental.h"
+#include "I_STLAllocator.h"
 #include <spdylay/spdylay.h>
 using namespace std;
 
@@ -100,7 +101,7 @@ private:
   char version[64];
 };
 
-string http_date(time_t t);
+ts_string http_date(time_t t);
 int spdy_config_load();
 
 // Stat helper functions. ToDo: These probably should be turned into #define's as we do elsewhere
