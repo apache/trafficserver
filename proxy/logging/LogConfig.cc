@@ -168,7 +168,7 @@ LogConfig::read_configuration_variables()
     // Try 'system_root_dir/var/log/trafficserver' directory
     fprintf(stderr, "unable to access log directory '%s': %d, %s\n", logfile_dir, errno, strerror(errno));
     fprintf(stderr, "please set 'proxy.config.log.logfile_dir'\n");
-    _exit(1);
+    ::exit(1);
   }
 
   // COLLATION

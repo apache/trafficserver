@@ -256,8 +256,7 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
 #if TS_USE_TPROXY
     Debug("http_tproxy", "Listen port inbound transparency enabled.\n");
     if (safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT, SOCKOPT_ON, sizeof(int)) < 0) {
-      Error("[Server::listen] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
-      _exit(1);
+      Fatal("[Server::listen] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
     }
 #else
     Error("[Server::listen] Transparency requested but TPROXY not configured\n");

@@ -71,7 +71,7 @@ sac_signal_handler(int signo, siginfo_t *info, void *)
   }
 
   signal_format_siginfo(signo, info, appVersionInfo.AppStr);
-  _exit(signo);
+  ::exit(signo);
 }
 
 int

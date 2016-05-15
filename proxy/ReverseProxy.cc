@@ -74,10 +74,7 @@ init_reverse_proxy()
   rewrite_table = new UrlRewrite();
 
   if (!rewrite_table->is_valid()) {
-    Warning("Can not load the remap table, exiting out!");
-    // TODO: For now, I _exit() out of here, because otherwise we'll keep generating
-    // core files (if enabled) when starting up with a bad remap.config file.
-    _exit(-1);
+    Fatal("unable to load remap.config");
   }
 
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);

@@ -891,7 +891,7 @@ LocalManager::startProxy()
     RecSetRecordInt("proxy.node.restarts.proxy.start_time", proxy_started_at, REC_SOURCE_DEFAULT);
     RecSetRecordInt("proxy.node.restarts.proxy.restart_count", proxy_launch_count, REC_SOURCE_DEFAULT);
   } else {
-    int res, i = 0;
+    int i = 0;
     char *options[32], *last, *tok;
     bool open_ports_p = false;
 
@@ -945,9 +945,8 @@ LocalManager::startProxy()
 
     EnableDeathSignal(SIGTERM);
 
-    res = execv(absolute_proxy_binary, options);
-    mgmt_elog(stderr, errno, "[LocalManager::startProxy] Exec of %s failed\n", absolute_proxy_binary);
-    _exit(res);
+    execv(absolute_proxy_binary, options);
+    mgmt_fatal(stderr, errno, "[LocalManager::startProxy] Exec of %s failed\n", absolute_proxy_binary);
   }
   return true;
 }
@@ -1010,8 +1009,7 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
 
   /* Setup reliable connection, for large config changes */
   if ((port.m_fd = socket(port.m_family, SOCK_STREAM, 0)) < 0) {
-    mgmt_elog(stderr, 0, "[bindProxyPort] Unable to create socket : %s\n", strerror(errno));
-    _exit(1);
+    mgmt_fatal(stderr, 0, "[bindProxyPort] Unable to create socket : %s\n", strerror(errno));
   }
 
   if (port.m_type == HttpProxyPort::TRANSPORT_DEFAULT) {
@@ -1031,16 +1029,14 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
     }
   }
   if (setsockopt(port.m_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(int)) < 0) {
-    mgmt_elog(stderr, 0, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
-    _exit(1);
+    mgmt_fatal(stderr, 0, "[bindProxyPort] Unable to set socket options: %d : %s\n", port.m_port, strerror(errno));
   }
 
   if (port.m_inbound_transparent_p) {
 #if TS_USE_TPROXY
     Debug("http_tproxy", "Listen port %d inbound transparency enabled.\n", port.m_port);
     if (setsockopt(port.m_fd, SOL_IP, TS_IP_TRANSPARENT, &one, sizeof(one)) == -1) {
-      mgmt_elog(stderr, 0, "[bindProxyPort] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
-      _exit(1);
+      mgmt_fatal(stderr, 0, "[bindProxyPort] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
     }
 #else
     Debug("lm", "[bindProxyPort] Transparency requested but TPROXY not configured\n");
@@ -1061,13 +1057,11 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
     else
       ip.setToAnyAddr(AF_INET);
   } else {
-    mgmt_elog(stderr, 0, "[bindProxyPort] Proxy port with invalid address type %d\n", port.m_family);
-    _exit(1);
+    mgmt_fatal(stderr, 0, "[bindProxyPort] Proxy port with invalid address type %d\n", port.m_family);
   }
   ip.port() = htons(port.m_port);
   if (bind(port.m_fd, &ip.sa, ats_ip_size(&ip)) < 0) {
-    mgmt_elog(stderr, 0, "[bindProxyPort] Unable to bind socket: %d : %s\n", port.m_port, strerror(errno));
-    _exit(1);
+    mgmt_fatal(stderr, 0, "[bindProxyPort] Unable to bind socket: %d : %s\n", port.m_port, strerror(errno));
   }
 
   Debug("lm", "[bindProxyPort] Successfully bound proxy port %d\n", port.m_port);

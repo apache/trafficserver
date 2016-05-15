@@ -402,7 +402,7 @@ proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
   shutdown_event_system = true;
   sleep(1);
 
-  exit(signo);
+  ::exit(signo);
 }
 
 //
@@ -449,7 +449,7 @@ check_lockfile()
     } else {
       fprintf(stderr, "\n");
     }
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -462,13 +462,13 @@ check_config_directories(void)
   if (access(sysconfdir, R_OK) == -1) {
     fprintf(stderr, "unable to access() config dir '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
     fprintf(stderr, "please set the 'TS_ROOT' environment variable\n");
-    _exit(1);
+    ::exit(1);
   }
 
   if (access(rundir, R_OK | W_OK) == -1) {
     fprintf(stderr, "unable to access() local state dir '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
     fprintf(stderr, "please set 'proxy.config.local_state_dir'\n");
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -599,10 +599,10 @@ CB_cmd_cache_clear()
 {
   if (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED) {
     Note("CLEAR, succeeded");
-    _exit(0);
+    ::exit(0);
   } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
     Note("unable to open Cache, CLEAR failed");
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -617,14 +617,14 @@ CB_cmd_cache_check()
 
     if (res) {
       printf("\n%s failed", n);
-      _exit(1);
+      ::exit(1);
     } else {
       printf("\n%s succeeded\n", n);
-      _exit(0);
+      ::exit(0);
     }
   } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
     Note("unable to open Cache, Check failed");
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -781,7 +781,7 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
 
   // TODO: Add more config validation..
 
-  _exit(exitStatus);
+  ::exit(exitStatus);
 
   return 0;
 }
@@ -1236,7 +1236,7 @@ struct AutoStopCont : public Continuation {
   {
     (void)event;
     (void)e;
-    _exit(0);
+    ::exit(0);
     return 0;
   }
   AutoStopCont() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AutoStopCont::mainEvent); }
@@ -1272,7 +1272,7 @@ struct RegressionCont : public Continuation {
     if ((res = RegressionTest::check_status()) == REGRESSION_TEST_INPROGRESS)
       return EVENT_CONT;
     fprintf(stderr, "REGRESSION_TEST DONE: %s\n", regression_status_string(res));
-    _exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
+    ::exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
     return EVENT_CONT;
   }
   RegressionCont() : Continuation(new_ProxyMutex()), initialized(0), waits(0), started(0)
@@ -1298,7 +1298,7 @@ chdir_root()
     fprintf(stderr, "%s: unable to change to root directory \"%s\" [%d '%s']\n", appVersionInfo.AppStr, prefix, errno,
             strerror(errno));
     fprintf(stderr, "%s: please correct the path or set the TS_ROOT environment variable\n", appVersionInfo.AppStr);
-    _exit(1);
+    ::exit(1);
   } else {
     printf("%s: using root directory '%s'\n", appVersionInfo.AppStr, prefix);
   }
@@ -1514,7 +1514,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Specific validity checks.
   if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {
     fprintf(stderr, "-D option can only be used with the %s command\n", CMD_VERIFY_CONFIG);
-    _exit(1);
+    ::exit(1);
   }
 
   // Bootstrap syslog.  Since we haven't read records.config
@@ -1645,7 +1645,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Check for core file
   if (core_file[0] != '\0') {
     process_core(core_file);
-    _exit(0);
+    ::exit(0);
   }
 
   // We need to do this early so we can initialize the Machine
@@ -1759,9 +1759,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     if (cmd_ret != CMD_IN_PROGRESS) {
       if (cmd_ret >= 0)
-        _exit(0); // everything is OK
+        ::exit(0); // everything is OK
       else
-        _exit(1); // in error
+        ::exit(1); // in error
     }
   } else {
     remapProcessor.start(num_remap_threads, stacksize);

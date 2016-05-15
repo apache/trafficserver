@@ -164,7 +164,7 @@ AC_MSG_RESULT([$enable_debug])
 
 # Enable code coverage instrumentation only if requested by the user.
 AC_MSG_CHECKING([whether to code coverage])
-AC_ARG_ENABLE([debug],
+AC_ARG_ENABLE([coverage],
   [AS_HELP_STRING([--enable-coverage],[generate code coverage instrumentation])],
   [],
   [enable_coverage=no]
@@ -917,8 +917,10 @@ AS_IF([test x"$enable_coverage" = "xyes"], [
   # supported compiler to test coverage.
   AS_CASE("$ax_cv_c_compiler_vendor",
     [clang], [
-      TS_ADDTO(CXXFLAGS, "-fprofile-instr-generate -fcoverage-mapping")
-      TS_ADDTO(CFLAGS, "-fprofile-instr-generate -fcoverage-mapping")
+      TS_ADDTO(CXXFLAGS, "-fprofile-instr-generate")
+      TS_ADDTO(CXXFLAGS, "-fcoverage-mapping")
+      TS_ADDTO(CFLAGS, "-fprofile-instr-generate")
+      TS_ADDTO(CFLAGS, "-fcoverage-mapping")
     ], [gnu], [
       TS_ADDTO(CXXFLAGS, "--coverage")
       TS_ADDTO(CFLAGS, "--coverage")
@@ -945,10 +947,6 @@ AC_SUBST(AM_CXXFLAGS)
 
 # Special compiler flag hacks for various pieces of the code
 AC_SUBST([FLEX_CFLAGS], $flex_cflags)
-
-# Flags for buildit LuaJIT itself.
-AC_SUBST(LUA_LDFLAGS)
-AC_SUBST([LUA_CFLAGS], $lua_cflags)
 
 SHARED_CFLAGS=-fPIC
 SHARED_LDFLAGS=-shared
@@ -1892,6 +1890,17 @@ iocore_include_dirs="\
 -I\$(top_srcdir)/iocore/cluster \
 -I\$(top_srcdir)/iocore/utils \
 -I\$(top_srcdir)/iocore/dns"
+
+# Flags for buildit LuaJIT itself. We take the latest version
+# of the generic flags, plus any Lua-specific flags so that we
+# can strip the coverage flags from Lua while keeping them by
+# default everywhere else.
+AC_SUBST([LUA_CFLAGS], [$CFLAGS $lua_cflags])
+AC_SUBST(LUA_LDFLAGS)
+
+TS_REMOVEFROM(LUA_CFLAGS, "-fprofile-instr-generate")
+TS_REMOVEFROM(LUA_CFLAGS, "-fcoverage-mapping")
+TS_REMOVEFROM(LUA_CFLAGS, "--coverage")
 
 AC_SUBST([CC])
 AC_SUBST([CFLAGS])

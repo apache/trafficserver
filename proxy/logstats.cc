@@ -2097,7 +2097,7 @@ my_exit(const ExitStatus &status)
       std::cout << "}" << std::endl;
     else
       std::cout << "]" << std::endl;
-    _exit(status.level);
+    ::exit(status.level);
   }
 
   if (cl.json) {
@@ -2111,11 +2111,11 @@ my_exit(const ExitStatus &status)
       break;
     case EXIT_CRITICAL:
       std::cout << "critical: " << status.notice << std::endl;
-      _exit(status.level);
+      ::exit(status.level);
       break;
     case EXIT_UNKNOWN:
       std::cout << "unknown: " << status.notice << std::endl;
-      _exit(status.level);
+      ::exit(status.level);
       break;
     }
   }
@@ -2190,7 +2190,7 @@ my_exit(const ExitStatus &status)
     std::cout << std::endl << "}" << std::endl;
   }
 
-  _exit(status.level);
+  ::exit(status.level);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2283,7 +2283,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     if (!fs.is_open()) {
       std::cerr << "can't read " << cl.origin_file << std::endl;
       usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
-      _exit(0);
+      ::exit(0);
     }
 
     while (!fs.eof()) {

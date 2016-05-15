@@ -362,9 +362,9 @@ SSLCertificateConfig::startup()
   // proxy.config.ssl.server.multicert.exit_on_load_fail is true
   SSLConfig::scoped_config params;
   if (!reconfigure() && params->configExitOnLoadError) {
-    Error("Problems loading ssl certificate file, %s.  Exiting.", params->configFilePath);
-    _exit(1);
+    Fatal("failed to load SSL certificate file, %s", params->configFilePath);
   }
+
   return true;
 }
 

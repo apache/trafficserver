@@ -385,7 +385,7 @@ mgmt_fatal(FILE *log, const int lerrno, const char *message_format, ...)
   va_end(ap);
 
   mgmt_cleanup();
-  _exit(1);
+  ::exit(1);
 } /* End mgmt_fatal */
 
 void
@@ -423,7 +423,7 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
   va_end(ap);
 
   mgmt_cleanup();
-  _exit(1);
+  ::exit(1);
 } /* End mgmt_fatal */
 
 static inline int

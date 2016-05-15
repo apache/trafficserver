@@ -505,7 +505,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   do {
     if (read_from_core((intptr_t)heap, sizeof(HdrHeap), buf) == -1) {
       printf("Cannot read from core\n");
-      _exit(0);
+      ::exit(0);
     }
     heap = (HdrHeap *)buf;
     copy_size = (int)(heap->m_free_start - heap->m_data_start);
@@ -522,14 +522,14 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   do {
     if (read_from_core((intptr_t)heap_ptr, sizeof(HdrHeap), buf) == -1) {
       printf("Cannot read from core\n");
-      _exit(0);
+      ::exit(0);
     }
     heap_ptr = (HdrHeap *)buf;
     copy_size = (int)(heap_ptr->m_free_start - heap_ptr->m_data_start);
 
     if (read_from_core((intptr_t)heap_ptr->m_data_start, copy_size, ptr_data) == -1) {
       printf("Cannot read from core\n");
-      _exit(0);
+      ::exit(0);
     }
     // Expand ptr xlation table if necessary
     if (ptr_heaps >= ptr_xl_size) {
@@ -552,7 +552,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   heap = (HdrHeap *)http_hdr->m_heap;
   if (read_from_core((intptr_t)heap, sizeof(HdrHeap), buf) == -1) {
     printf("Cannot read from core\n");
-    _exit(0);
+    ::exit(0);
   }
   heap = (HdrHeap *)buf;
   // filling in the live_hdr
@@ -585,7 +585,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
     char *str_hdr = (char *)ats_malloc(sizeof(char) * sizeof(HdrStrHeap));
     if (read_from_core((intptr_t)hdr, sizeof(HdrStrHeap), str_hdr) == -1) {
       printf("Cannot read from core\n");
-      _exit(0);
+      ::exit(0);
     }
 
     char *free_start = (char *)(((HdrStrHeap *)str_hdr)->m_free_start);
@@ -598,7 +598,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
 #endif
     if (read_from_core((intptr_t)copy_start, nto_copy, rw_heap) == -1) {
       printf("Cannot read from core\n");
-      _exit(0);
+      ::exit(0);
     }
     // FIX ME - possible offset overflow issues?
     str_xlation[str_heaps].start = copy_start;
@@ -621,7 +621,7 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
 #endif
       if (read_from_core((intptr_t)heap->m_ronly_heap[i].m_heap_start, heap->m_ronly_heap[i].m_heap_len, ro_heap) == -1) {
         printf("Cannot read from core\n");
-        _exit(0);
+        ::exit(0);
       }
       // Add translation table entry for string heaps
       str_xlation[str_heaps].start = heap->m_ronly_heap[i].m_heap_start;
@@ -811,13 +811,13 @@ process_core(char *fname)
   /* Open the input file */
   if (!(fp = fopen(fname, "r"))) {
     printf("cannot open file\n");
-    _exit(1);
+    ::exit(1);
   }
 
   /* Obtain the .shstrtab data buffer */
   if (fread(&ehdr, sizeof ehdr, 1, fp) != 1) {
     printf("Unable to read ehdr\n");
-    _exit(1);
+    ::exit(1);
   }
   // program header offset
   phoff = ehdr.e_phoff;
@@ -829,12 +829,12 @@ process_core(char *fname)
   for (int i = 0; i < phnum; i++) {
     if (fseek(fp, phoff + i * phentsize, SEEK_SET) == -1) {
       fprintf(stderr, "Unable to seek to Phdr %d\n", i);
-      _exit(1);
+      ::exit(1);
     }
 
     if (fread(&phdr, sizeof phdr, 1, fp) != 1) {
       fprintf(stderr, "Unable to read Phdr %d\n", i);
-      _exit(1);
+      ::exit(1);
     }
     int poffset, psize;
     int pvaddr;
@@ -882,7 +882,7 @@ process_core(char *fname)
               char *offset = (char *)(thdr + 1) + ((thdr->n_namesz + 3) & ~3);
 
               if (len < 0 || len > size) {
-                _exit(1);
+                ::exit(1);
               }
               printf("size=%d, len=%d\n", size, len);
 
