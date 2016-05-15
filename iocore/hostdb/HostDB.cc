@@ -731,7 +731,7 @@ HostDBContinuation::insert(unsigned int attl)
 
   ink_assert(this_ethread() == hostDB.lock_for_bucket(bucket)->thread_holding);
   // remove the old one to prevent buildup
-  HostDBInfo *old_r = hostDB.lookup_block(folded_md5, 3);
+  HostDBInfo *old_r = hostDB.lookup_block(folded_md5, hostDB.levels);
   if (old_r)
     hostDB.delete_block(old_r);
   HostDBInfo *r = hostDB.insert_block(folded_md5, NULL, 0);
