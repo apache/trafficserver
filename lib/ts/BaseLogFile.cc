@@ -151,9 +151,6 @@ BaseLogFile::roll(long interval_start, long interval_end)
   char end_time_ext[64];
   time_t start, end;
 
-  // Make sure the file is closed so we don't leak any descriptors.
-  close_file();
-
   // Start with conservative values for the start and end bounds, then
   // try to refine.
   start = 0L;
@@ -165,7 +162,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
     // our starting bounds.  Instead, we'll try to use the file
     // creation time stored in the metafile (if it's valid and we can
     // read it).  If all else fails, we'll use 0 for the start time.
-    log_log_trace("in BaseLogFile::roll(..) used metadata starttime");
+    log_log_trace("in BaseLogFile::roll(..) used metadata starttime\n");
     m_meta_info->get_creation_time(&start);
   } else {
     // The logfile was not preexisting (normal case), so we'll use
