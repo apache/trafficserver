@@ -1356,6 +1356,7 @@ UnixNetVConnection::free(EThread *t)
 #endif
   ink_assert(con.fd == NO_FD);
   ink_assert(t == this_ethread());
+  netvc_context = Net_VConnection_UNSET;
 
   if (from_accept_thread) {
     netVCAllocator.free(this);
