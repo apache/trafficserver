@@ -47,9 +47,9 @@ public:
 
   // No reason to inline these
   void append(RuleSet *rule);
+  void add_condition(Parser &p, const char *filename);
+  void add_operator(Parser &p, const char *filename);
 
-  void add_condition(Parser &p);
-  void add_operator(Parser &p);
   bool
   has_operator() const
   {

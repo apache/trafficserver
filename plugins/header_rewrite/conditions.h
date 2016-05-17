@@ -87,6 +87,8 @@ private:
 // Check the HTTP return status
 class ConditionStatus : public Condition
 {
+  typedef Matchers<TSHttpStatus> MatcherType;
+
 public:
   ConditionStatus() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionStatus"); }
   void initialize(Parser &p);
@@ -103,6 +105,8 @@ private:
 // Check the HTTP method
 class ConditionMethod : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   ConditionMethod() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionMethod"); }
   void initialize(Parser &p);
@@ -118,6 +122,8 @@ private:
 // Random 0 to (N-1)
 class ConditionRandom : public Condition
 {
+  typedef Matchers<unsigned int> MatcherType;
+
 public:
   ConditionRandom() : _seed(0), _max(0) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionRandom"); }
   void initialize(Parser &p);
@@ -154,6 +160,8 @@ private:
 // cookie(name)
 class ConditionCookie : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   ConditionCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCookie"); }
   void initialize(Parser &p);
@@ -215,6 +223,8 @@ private:
 // header
 class ConditionHeader : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   explicit ConditionHeader(bool client = false) : _client(client)
   {
@@ -236,6 +246,8 @@ private:
 // path
 class ConditionPath : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   explicit ConditionPath() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionPath"); };
   void initialize(Parser &p);
@@ -251,6 +263,8 @@ private:
 // query
 class ConditionQuery : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   explicit ConditionQuery() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionQuery"); };
   void initialize(Parser &p);
@@ -266,6 +280,8 @@ private:
 // url
 class ConditionUrl : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   enum UrlType { CLIENT, URL, FROM, TO };
 
@@ -291,6 +307,8 @@ private:
 // DBM lookups
 class ConditionDBM : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   ConditionDBM()
     : //_dbm(NULL),
@@ -325,6 +343,8 @@ private:
 
 class ConditionInternalTxn : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   void
   append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */)
@@ -337,6 +357,8 @@ protected:
 
 class ConditionClientIp : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
@@ -347,6 +369,8 @@ protected:
 
 class ConditionIncomingPort : public Condition
 {
+  typedef Matchers<uint16_t> MatcherType;
+
 public:
   ConditionIncomingPort() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIncomingPort"); }
   void initialize(Parser &p);
@@ -379,6 +403,8 @@ private:
 // now: Keeping track of current time / day / hour etc.
 class ConditionNow : public Condition
 {
+  typedef Matchers<int64_t> MatcherType;
+
 public:
   explicit ConditionNow() : _now_qual(NOW_QUAL_EPOCH) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); };
   void initialize(Parser &p);

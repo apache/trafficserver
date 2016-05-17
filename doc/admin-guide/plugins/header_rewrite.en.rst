@@ -979,3 +979,26 @@ two different file paths.::
     cond %{SEND_RESPONSE_HDR_HOOK}
     cond %{PATH} /examplepath2/examplepath3/.*/
     add-header Cache-Control "no-cache" [L]
+
+Redirect when the Origin Server Times Out
+-----------------------------------------
+
+This rule sends a 302 redirect to the client with the requested URI's Path and
+Query string when the Origin server times out or the connection is refused::
+
+    cond %{SEND_RESPONSE_HDR_HOOK}
+    cond %{STATUS} =502 [OR]
+    cond %{STATUS} =504
+    set-redirect 302 http://different_origin.example.com/%{PATH} [QSA]
+
+Check for existence of a header
+-------------------------------
+
+This rule will modify the ``Cache-Control`` header, but only if it is not
+already set to some value, and the status code is a 2xx::
+
+    cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    cond %{HEADER:Cache-Control} ="" [AND]
+    cond %{STATUS} >199 [AND]
+    cond %{STATUS} <300
+    set-header Cache-Control "max-age=600, public"
