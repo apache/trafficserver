@@ -82,16 +82,19 @@ public:
   {
     return _value;
   }
+
   size_t
   size() const
   {
     return _value.size();
   }
+
   int
   get_int_value() const
   {
     return _int_value;
   }
+
   double
   get_float_value() const
   {
@@ -103,6 +106,7 @@ public:
   {
     return _value.empty();
   }
+
   bool
   need_expansion() const
   {

@@ -612,8 +612,9 @@ void
 OperatorCounter::exec(const Resources & /* ATS_UNUSED res */) const
 {
   // Sanity
-  if (_counter == TS_ERROR)
+  if (_counter == TS_ERROR) {
     return;
+  }
 
   TSDebug(PLUGIN_NAME, "OperatorCounter::exec() invoked on counter %s", _counter_name.c_str());
   TSStatIntIncrement(_counter, 1);

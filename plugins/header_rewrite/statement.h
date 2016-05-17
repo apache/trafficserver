@@ -84,11 +84,13 @@ public:
   {
     _pdata = pdata;
   }
+
   void *
   get_pdata() const
   {
     return (_pdata);
   }
+
   virtual void
   free_pdata()
   {
@@ -118,11 +120,12 @@ public:
 
   virtual void
   initialize(Parser &)
-  { // Parser &p
+  {
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
     _initialized = true;
   }
+
   bool
   initialized() const
   {

@@ -36,11 +36,13 @@ public:
   regexHelper() : regex(NULL), regexExtra(NULL), regexCcount(0) {}
   ~regexHelper()
   {
-    if (regex)
+    if (regex) {
       pcre_free(regex);
+    }
 
-    if (regexExtra)
+    if (regexExtra) {
       pcre_free(regexExtra);
+    }
   }
 
   bool setRegexMatch(const std::string &s);

@@ -173,27 +173,31 @@ private:
     const char *start, *last, *end;
 
     // Sanity
-    if (buf == NULL || name == NULL || value == NULL || value_len == NULL)
+    if (buf == NULL || name == NULL || value == NULL || value_len == NULL) {
       return TS_ERROR;
+    }
 
     start = buf;
     end   = buf + buf_len;
 
     while (start < end) {
-      if (strncasecmp(start, name, name_len) != 0)
+      if (strncasecmp(start, name, name_len) != 0) {
         goto skip;
+      }
 
-      for (start += name_len; start < end && *start == ' '; start++)
-        ;
+      for (start += name_len; start < end && *start == ' '; start++) {
+      }
 
-      if (start == end || *start++ != '=')
+      if (start == end || *start++ != '=') {
         goto skip;
+      }
 
       while (start < end && *start == ' ') {
         start++;
       }
-      for (last = start; last < end && *last != ';'; last++)
-        ;
+
+      for (last = start; last < end && *last != ';'; last++) {
+      }
 
       *value_len = last - start;
       *value     = start;
@@ -201,15 +205,16 @@ private:
     skip:
       while (start < end) {
         char ch = *start++;
-        if (ch == ';' || ch == ',')
+        if (ch == ';' || ch == ',') {
           break;
+        }
       }
       while (start < end && *start == ' ') {
         start++;
       }
     }
     return TS_ERROR;
-  };
+  }
 };
 
 // header
@@ -219,7 +224,7 @@ public:
   explicit ConditionHeader(bool client = false) : _client(client)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionHeader, client %d", client);
-  };
+  }
 
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
@@ -237,7 +242,7 @@ private:
 class ConditionPath : public Condition
 {
 public:
-  explicit ConditionPath() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionPath"); };
+  explicit ConditionPath() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionPath"); }
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
 
@@ -252,7 +257,7 @@ private:
 class ConditionQuery : public Condition
 {
 public:
-  explicit ConditionQuery() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionQuery"); };
+  explicit ConditionQuery() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionQuery"); }
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
 
@@ -272,7 +277,7 @@ public:
   explicit ConditionUrl(const UrlType type) : _url_qual(URL_QUAL_NONE), _type(type)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionUrl");
-  };
+  }
 
   void initialize(Parser &p);
   void set_qualifier(const std::string &q);
@@ -316,7 +321,6 @@ protected:
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionDBM);
-
   // MDBM* _dbm;
   std::string _file;
   Value _key;
@@ -380,7 +384,7 @@ private:
 class ConditionNow : public Condition
 {
 public:
-  explicit ConditionNow() : _now_qual(NOW_QUAL_EPOCH) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); };
+  explicit ConditionNow() : _now_qual(NOW_QUAL_EPOCH) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); }
   void initialize(Parser &p);
   void set_qualifier(const std::string &q);
   void append_value(std::string &s, const Resources &res);
@@ -389,9 +393,9 @@ protected:
   bool eval(const Resources &res);
 
 private:
-  int64_t get_now_qualified(NowQualifiers qual) const;
-
   DISALLOW_COPY_AND_ASSIGN(ConditionNow);
+
+  int64_t get_now_qualified(NowQualifiers qual) const;
   NowQualifiers _now_qual;
 };
 
@@ -402,7 +406,7 @@ public:
   explicit ConditionGeo() : _geo_qual(GEO_QUAL_COUNTRY), _int_type(false)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionGeo");
-  };
+  }
 
   void initialize(Parser &p);
   void set_qualifier(const std::string &q);
@@ -414,6 +418,7 @@ public:
   {
     return _int_type;
   }
+
   void
   is_int_type(bool flag)
   {
@@ -424,11 +429,10 @@ protected:
   bool eval(const Resources &res);
 
 private:
-  int64_t get_geo_int(const sockaddr *addr) const;
-  const char *get_geo_string(const sockaddr *addr) const;
-
   DISALLOW_COPY_AND_ASSIGN(ConditionGeo);
 
+  int64_t get_geo_int(const sockaddr *addr) const;
+  const char *get_geo_string(const sockaddr *addr) const;
   GeoQualifiers _geo_qual;
   bool _int_type;
 };

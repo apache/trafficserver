@@ -56,11 +56,13 @@ public:
   {
     _pdata = pdata;
   }
+
   void *
   get_pdata() const
   {
     return _pdata;
   }
+
   virtual void
   free_pdata()
   {
@@ -103,6 +105,7 @@ public:
   {
     return;
   }
+
   void
   setRegex(const TSHttpStatus /* t ATS_UNUSED */)
   {
@@ -113,8 +116,9 @@ public:
   set(const T d)
   {
     _data = d;
-    if (_op == MATCH_REGULAR_EXPRESSION)
+    if (_op == MATCH_REGULAR_EXPRESSION) {
       setRegex(d);
+    }
   }
 
   // Evaluate this matcher
@@ -149,12 +153,14 @@ private:
     // std::cout << "Testing: " << t << " == " << _data << std::endl;
     return t == _data;
   }
+
   bool
   test_lt(const T t) const
   {
     // std::cout << "Testing: " << t << " < " << _data << std::endl;
     return t < _data;
   }
+
   bool
   test_gt(const T t) const
   {
@@ -187,6 +193,7 @@ private:
     }
     return false;
   }
+
   T _data;
   regexHelper helper;
 };

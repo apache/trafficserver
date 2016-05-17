@@ -139,10 +139,11 @@ Parser::preprocess(std::vector<std::string> tokens)
     _op = tokens[0];
     if (tokens.size() > 1) {
       _arg = tokens[1];
-      if (tokens.size() > 2)
+      if (tokens.size() > 2) {
         _val = tokens[2];
-      else
+      } else {
         _val = "";
+      }
     } else {
       _arg = "";
       _val = "";
