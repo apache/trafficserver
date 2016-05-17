@@ -367,7 +367,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSDebug("redirect_init", "block_ip is %s, url_redirect is %s, and uri_redirect is %s", block_ip, url_redirect, uri_redirect);
   // ToDo: Should figure out how to print IPs which are IPv4 / v6.
-  // TSDebug("redirect_init", "ip_deny is %ld\n", ip_deny);
+  // TSDebug("redirect_init", "ip_deny is %ld", ip_deny);
 
   /*
    *  Demonstrate another tracing function.  This can be used to

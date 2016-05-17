@@ -782,7 +782,7 @@ varType(const char *varName)
     return RECD_NULL;
   }
 
-  Debug("RecOp", "[varType] %s is of type %d\n", varName, data_type);
+  Debug("RecOp", "[varType] %s is of type %d", varName, data_type);
   return data_type;
 }
 

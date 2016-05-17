@@ -358,7 +358,7 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
     dump_mem_info_frequency = REC_ConfigReadInteger("proxy.config.dump_mem_info_frequency");
   }
 
-  Debug("tracker", "init_memory_tracker called [%d]\n", dump_mem_info_frequency);
+  Debug("tracker", "init_memory_tracker called [%d]", dump_mem_info_frequency);
 
   if (preE) {
     eventProcessor.schedule_imm(preE->continuation, ET_CALL);
@@ -1208,7 +1208,7 @@ syslog_log_configure()
     if (facility < 0) {
       syslog(LOG_WARNING, "Bad syslog facility in records.config. Keeping syslog at LOG_DAEMON");
     } else {
-      Debug("server", "Setting syslog facility to %d\n", facility);
+      Debug("server", "Setting syslog facility to %d", facility);
       closelog();
       openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility);
     }
@@ -1684,9 +1684,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #define SET_INTERVAL(scope, name, var)                    \
   do {                                                    \
     RecInt tmpint;                                        \
-    Debug("statsproc", "Looking for %s\n", name);         \
+    Debug("statsproc", "Looking for %s", name);           \
     if (RecGetRecordInt(name, &tmpint) == REC_ERR_OKAY) { \
-      Debug("statsproc", "Found %s\n", name);             \
+      Debug("statsproc", "Found %s", name);               \
       scope##_set_##var(tmpint);                          \
     }                                                     \
   } while (0)

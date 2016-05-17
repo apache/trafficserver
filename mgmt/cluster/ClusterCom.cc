@@ -277,7 +277,7 @@ drainIncomingChannel(void *arg)
               stat = false;
               mgmt_log(stderr, "[drainIncomingChannel] Failed file req: %s v: %d\n", fname, ver);
             } else {
-              Debug("ccom", "[drainIncomingChannel] file req: %s v: %d bytes: %d\n", fname, ver, (int)strlen(buff->bufPtr()));
+              Debug("ccom", "[drainIncomingChannel] file req: %s v: %d bytes: %d", fname, ver, (int)strlen(buff->bufPtr()));
             }
           } else {
             mgmt_elog(0, "[drainIncomingChannel] Error file req: %s ver: %d\n", fname, ver);
@@ -510,14 +510,14 @@ ClusterCom::checkPeers(time_t *ticker)
 
         ink_strlcpy(cip, inet_ntoa(addr), sizeof(cip));
 
-        Debug("ccom", "[ClusterCom::checkPeers] DEAD! %s idle since: %ld naddrs: %d\n", cip, idle_since, tmp->num_virt_addrs);
+        Debug("ccom", "[ClusterCom::checkPeers] DEAD! %s idle since: %ld naddrs: %d", cip, idle_since, tmp->num_virt_addrs);
 
         if ((idle_since = t - tmp->manager_idle_ticks) > peer_timeout) {
           if (tmp->manager_alive > 0) {
             Note("marking manager on node %s as down", cip);
           }
           tmp->manager_alive = -1;
-          Debug("ccom", "[ClusterCom::checkPeers] Manager DEAD! %s idle since: %ld\n", cip, idle_since);
+          Debug("ccom", "[ClusterCom::checkPeers] Manager DEAD! %s idle since: %ld", cip, idle_since);
         }
 
         if (tmp->num_virt_addrs >= 0) {
@@ -889,7 +889,7 @@ Lbogus:
   if (log_bogus_mc_msgs) {
     mgmt_elog(0, "[ClusterCom::handleMultiCastMessage] Bogus mc message-line\n");
     if (line) {
-      Debug("ccom", "[ClusterCom::handleMultiCastMessage] Bogus mc message-line %s\n", line);
+      Debug("ccom", "[ClusterCom::handleMultiCastMessage] Bogus mc message-line %s", line);
     }
     return;
   }
@@ -1030,7 +1030,7 @@ extract_locals(MgmtHashTable *local_ht, char *record_buffer)
   for (eof = false; !eof;) {
     line = q = p;
     eof = scan_and_terminate(p, '\r', '\n');
-    Debug("ccom_rec", "[extract_locals] %s\n", line);
+    Debug("ccom_rec", "[extract_locals] %s", line);
     while ((*q == ' ') || (*q == '\t'))
       q++;
     // is this line a LOCAL?
@@ -1041,7 +1041,7 @@ extract_locals(MgmtHashTable *local_ht, char *record_buffer)
         q++;
       name = q;
       if (scan_and_terminate(q, ' ', '\t')) {
-        Debug("ccom_rec", "[extract_locals] malformed line: %s\n", name);
+        Debug("ccom_rec", "[extract_locals] malformed line: %s", name);
         ats_free(line_cp);
         continue;
       }
@@ -1062,7 +1062,7 @@ insert_locals(textBuffer *rec_cfg_new, textBuffer *rec_cfg, MgmtHashTable *local
   for (eof = false; !eof;) {
     line = q = p;
     eof = scan_and_terminate(p, '\r', '\n');
-    Debug("ccom_rec", "[insert_locals] %s\n", line);
+    Debug("ccom_rec", "[insert_locals] %s", line);
     while ((*q == ' ') || (*q == '\t'))
       q++;
     // is this line a local?
@@ -1072,7 +1072,7 @@ insert_locals(textBuffer *rec_cfg_new, textBuffer *rec_cfg, MgmtHashTable *local
         q++;
       name = q;
       if (scan_and_terminate(q, ' ', '\t')) {
-        Debug("ccom_rec", "[insert_locals] malformed line: %s\n", name);
+        Debug("ccom_rec", "[insert_locals] malformed line: %s", name);
         continue;
       }
       if (local_ht->mgmt_hash_table_lookup(name, (void **)&line)) {
@@ -1255,7 +1255,7 @@ ClusterCom::handleMultiCastAlarmPacket(char *last, char *ip)
 
     /* Signalling will only re-issue if new */
     lmgmt->alarm_keeper->signalAlarm(a, desc, ip);
-    Debug("ccom", "[ClusterCom::handleMultiCastAlarmPacket] Alarm: ip: '%s' '%s'\n", ip, line);
+    Debug("ccom", "[ClusterCom::handleMultiCastAlarmPacket] Alarm: ip: '%s' '%s'", ip, line);
   }
   lmgmt->alarm_keeper->clearUnSeen(ip); /* Purge expired alarms */
   return;
@@ -1620,7 +1620,7 @@ ClusterCom::establishChannels()
     }
   }
 
-  Debug("ccom", "[ClusterCom::establishChannels] Channels setup\n");
+  Debug("ccom", "[ClusterCom::establishChannels] Channels setup");
   init = true;
   return;
 }
@@ -2014,7 +2014,7 @@ ClusterCom::sendReliableMessageReadTillClose(unsigned long addr, char *buf, int 
     close_socket(fd);
     return false;
   } else {
-    Debug("ccom", "[ClusterCom::sendReliableMessageREadTillClose] Sent '%s' len: %d on fd: %d\n", buf, len, fd);
+    Debug("ccom", "[ClusterCom::sendReliableMessageREadTillClose] Sent '%s' len: %d on fd: %d", buf, len, fd);
   }
 
   memset(tmp_reply, 0, 1024);

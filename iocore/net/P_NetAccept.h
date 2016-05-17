@@ -72,7 +72,7 @@ struct NetAcceptAction : public Action, public RefCountObj {
     return Action::operator=(acont);
   }
 
-  ~NetAcceptAction() { Debug("net_accept", "NetAcceptAction dying\n"); }
+  ~NetAcceptAction() { Debug("net_accept", "NetAcceptAction dying"); }
 };
 
 //

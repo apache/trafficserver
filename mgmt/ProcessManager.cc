@@ -47,7 +47,7 @@ startProcessManager(void *arg)
   void *ret = arg;
 
   while (!pmgmt) { /* Avert race condition, thread spun during constructor */
-    Debug("pmgmt", "[startProcessManager] Waiting for initialization of object...\n");
+    Debug("pmgmt", "[startProcessManager] Waiting for initialization of object...");
     mgmt_sleep_sec(1);
   }
   if (pmgmt->require_lm) { /* Allow p. process to run w/o a lm */
@@ -133,7 +133,7 @@ ProcessManager::processEventQueue()
   while (!queue_is_empty(mgmt_event_queue)) {
     MgmtMessageHdr *mh = (MgmtMessageHdr *)dequeue(mgmt_event_queue);
 
-    Debug("pmgmt", "[ProcessManager] ==> Processing event id '%d' payload=%d\n", mh->msg_id, mh->data_len);
+    Debug("pmgmt", "[ProcessManager] ==> Processing event id '%d' payload=%d", mh->msg_id, mh->data_len);
     if (mh->data_len > 0) {
       executeMgmtCallback(mh->msg_id, (char *)mh + sizeof(MgmtMessageHdr), mh->data_len);
     } else {
@@ -156,7 +156,7 @@ ProcessManager::processSignalQueue()
   while (!queue_is_empty(mgmt_signal_queue)) {
     MgmtMessageHdr *mh = (MgmtMessageHdr *)dequeue(mgmt_signal_queue);
 
-    Debug("pmgmt", "[ProcessManager] ==> Signalling local manager '%d'\n", mh->msg_id);
+    Debug("pmgmt", "[ProcessManager] ==> Signalling local manager '%d'", mh->msg_id);
 
     if (require_lm && mgmt_write_pipe(local_manager_sockfd, (char *)mh, sizeof(MgmtMessageHdr) + mh->data_len) <= 0) {
       mgmt_fatal(stderr, errno, "[ProcessManager::processSignalQueue] Error writing message!");

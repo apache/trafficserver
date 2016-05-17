@@ -364,7 +364,7 @@ PrefetchTransform::PrefetchTransform(HttpSM *sm, HTTPHdr *resp)
 
   SET_HANDLER(&PrefetchTransform::handle_event);
 
-  Debug("PrefetchParser", "Created: transform for %s\n", url);
+  Debug("PrefetchParser", "Created: transform for %s", url);
 
   memset(&hash_table[0], 0, HASH_TABLE_LENGTH * sizeof(hash_table[0]));
 
@@ -397,12 +397,12 @@ PrefetchTransform::~PrefetchTransform()
   this_ethread()->schedule_imm_local(udp_url_list);
   this_ethread()->schedule_imm_local(tcp_url_list);
 
-  Debug("PrefetchParserURLs", "Unique URLs 0x%p (%s):\n", this, url);
+  Debug("PrefetchParserURLs", "Unique URLs 0x%p (%s):", this, url);
   int nurls = 0;
   for (int i = 0; i < HASH_TABLE_LENGTH; i++) {
     PrefetchUrlEntry *e = hash_table[i];
     while (e) {
-      Debug("PrefetchParserURLs", "(0x%p) %d: %s\n", this, i, e->url);
+      Debug("PrefetchParserURLs", "(0x%p) %d: %s", this, i, e->url);
       nurls++;
       PrefetchUrlEntry *next = e->hash_link;
       e->free();
@@ -410,7 +410,7 @@ PrefetchTransform::~PrefetchTransform()
     }
   }
 
-  Debug("PrefetchParserURLs", "Number of embedded objects extracted for %s: %d\n", url, nurls);
+  Debug("PrefetchParserURLs", "Number of embedded objects extracted for %s: %d", url, nurls);
 
   if (m_output_buf)
     free_MIOBuffer(m_output_buf);
@@ -491,7 +491,7 @@ PrefetchTransform::handle_event(int event, void *edata)
                                   "writing %" PRId64 " bytes to output",
                 towrite);
 
-          // Debug("PrefetchParser", "Read avail before = %d\n", avail);
+          // Debug("PrefetchParser", "Read avail before = %d", avail);
 
           m_output_buf->write(buf_reader, towrite);
 
@@ -545,7 +545,7 @@ PrefetchTransform::redirect(HTTPHdr *resp)
 
       redirect_url = (char *)alloca(redirect_url_len + 1);
       ink_strlcpy(redirect_url, tmp_url, redirect_url_len + 1);
-      Debug("PrefetchTransform", "redirect_url = %s\n", redirect_url);
+      Debug("PrefetchTransform", "redirect_url = %s", redirect_url);
     } else {
       response_status = -1;
     }
@@ -558,13 +558,13 @@ PrefetchTransform::redirect(HTTPHdr *resp)
       req = &m_sm->t_state.hdr_info.client_request;
       req_url = req->url_get()->string_get(NULL, NULL);
 
-      Debug("PrefetchTransform", "Received response status = %d\n", response_status);
-      Debug("PrefetchTransform", "Redirect from request = %s\n", req_url);
+      Debug("PrefetchTransform", "Received response status = %d", response_status);
+      Debug("PrefetchTransform", "Redirect from request = %s", req_url);
 
       int location_len = strlen(redirect_url);
-      Debug("PrefetchTransform", "Redirect url to HTTP Hdr Location: \'%s\'\n", redirect_url);
+      Debug("PrefetchTransform", "Redirect url to HTTP Hdr Location: \'%s\'", redirect_url);
       if (strncmp(redirect_url, req_url, location_len) == 0) {
-        Debug("PrefetchTransform", "'%s' -> '%s' - Could be a loop. Discontinuing this path.\n", req_url, redirect_url);
+        Debug("PrefetchTransform", "'%s' -> '%s' - Could be a loop. Discontinuing this path.", req_url, redirect_url);
         ats_free(req_url);
         return 0;
       }
@@ -617,7 +617,7 @@ PrefetchTransform::hash_add(char *s)
   int str_len = strlen(s);
 
   if (normalize_url(s, &str_len) > 0)
-    Debug("PrefetchParserURLs", "Normalized URL: %s\n", s);
+    Debug("PrefetchParserURLs", "Normalized URL: %s", s);
 
   INK_MD5 hash;
   MD5Context().hash_immediate(hash, s, str_len);
@@ -645,7 +645,7 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
   IpEndpoint client_ip = sm->t_state.client_info.src_addr;
 
   // we depend on this to setup @a client_ipb for all subsequent Debug().
-  Debug("PrefetchParser", "Checking response for request from %s\n", ats_ip_ntop(&client_ip, client_ipb, sizeof(client_ipb)));
+  Debug("PrefetchParser", "Checking response for request from %s", ats_ip_ntop(&client_ip, client_ipb, sizeof(client_ipb)));
 
   unsigned int rec_depth = 0;
   HTTPHdr *request = &sm->t_state.hdr_info.client_request;
@@ -677,7 +677,7 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
   const char *c_type = resp->value_get(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, &c_type_len);
 
   if ((c_type == NULL) || strncmp("text/html", c_type, 9) != 0) {
-    Debug("PrefetchParserCT", "Content type is not text/html.. skipping\n");
+    Debug("PrefetchParserCT", "Content type is not text/html.. skipping");
     return;
   }
 
@@ -687,11 +687,11 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
     char type[64];
     memcpy(type, c_type, c_type_len);
     type[c_type_len] = 0;
-    Debug("PrefetchParserCT", "Content is encoded with %s .. skipping\n", type);
+    Debug("PrefetchParserCT", "Content is encoded with %s .. skipping", type);
     return;
   }
 
-  Debug("PrefetchParserCT", "Content type is text/html\n");
+  Debug("PrefetchParserCT", "Content type is text/html");
 
   if (prefetch_config->pre_parse_hook) {
     TSPrefetchInfo info;
@@ -720,7 +720,7 @@ check_n_attach_prefetch_transform(HttpSM *sm, HTTPHdr *resp, bool from_cache)
   prefetch_trans = new PrefetchTransform(sm, resp);
 
   if (prefetch_trans) {
-    Debug("PrefetchParser", "Adding Prefetch Parser 0x%p\n", prefetch_trans);
+    Debug("PrefetchParser", "Adding Prefetch Parser 0x%p", prefetch_trans);
     TSHttpTxnHookAdd(reinterpret_cast<TSHttpTxn>(sm), TS_HTTP_RESPONSE_TRANSFORM_HOOK, reinterpret_cast<TSCont>(prefetch_trans));
 
     DUMP_HEADER("PrefetchParserHdrs", &sm->t_state.hdr_info.client_request, (int64_t)0,
@@ -744,11 +744,11 @@ PrefetchPlugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     TSHttpTxnCacheLookupStatusGet((TSHttpTxn)sm, &status);
 
     if (status == TS_CACHE_LOOKUP_HIT_FRESH) {
-      Debug("PrefetchPlugin", "Cached object is fresh\n");
+      Debug("PrefetchPlugin", "Cached object is fresh");
       resp = sm->t_state.cache_info.object_read->response_get();
       from_cache = true;
     } else {
-      Debug("PrefetchPlugin", "Cache lookup did not succeed\n");
+      Debug("PrefetchPlugin", "Cache lookup did not succeed");
     }
 
     break;
@@ -762,7 +762,7 @@ PrefetchPlugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     break;
 
   default:
-    Debug("PrefetchPlugin", "Error: Received unexpected event\n");
+    Debug("PrefetchPlugin", "Error: Received unexpected event");
     return 0;
   }
 
@@ -771,7 +771,7 @@ PrefetchPlugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 
   TSHttpTxnReenable(reinterpret_cast<TSHttpTxn>(sm), TS_EVENT_HTTP_CONTINUE);
 
-  // Debug("PrefetchPlugin", "Returning after check_n_attach_prefetch_transform()\n");
+  // Debug("PrefetchPlugin", "Returning after check_n_attach_prefetch_transform()");
 
   return 0;
 }
@@ -817,7 +817,7 @@ PrefetchProcessor::start()
 
     Note("PrefetchProcessor: Started the prefetch processor\n");
   } else {
-    Debug("PrefetchProcessor", "Prefetch processor is not started\n");
+    Debug("PrefetchProcessor", "Prefetch processor is not started");
   }
 }
 
@@ -1486,7 +1486,7 @@ PrefetchBlaster::handleEvent(int event, void *data)
   case CACHE_EVENT_OPEN_READ: {
     // action = NULL;
 
-    Debug("PrefetchBlaster", "Cache lookup succeded for %s\n", url_ent->url);
+    Debug("PrefetchBlaster", "Cache lookup succeded for %s", url_ent->url);
 
     serverVC = (VConnection *)data;
 
@@ -1497,7 +1497,7 @@ PrefetchBlaster::handleEvent(int event, void *data)
   }
   case CACHE_EVENT_OPEN_READ_FAILED:
     // action = NULL;
-    Debug("PrefetchBlaster", "Cache lookup failed for %s\n", url_ent->url);
+    Debug("PrefetchBlaster", "Cache lookup failed for %s", url_ent->url);
 
     invokeBlaster();
     break;
@@ -1583,7 +1583,7 @@ PrefetchBlaster::httpClient(int event, void *data)
   }
 
   case NET_EVENT_OPEN_FAILED:
-    Debug("PrefetchBlaster", "Open to local http port failed.. strange\n");
+    Debug("PrefetchBlaster", "Open to local http port failed.. strange");
     free();
     break;
 
@@ -1595,7 +1595,7 @@ PrefetchBlaster::httpClient(int event, void *data)
     break;
 
   default:
-    Debug("PrefetchBlaster", "Unexpected Event: %d(%s)\n", event, get_vc_event_name(event));
+    Debug("PrefetchBlaster", "Unexpected Event: %d(%s)", event, get_vc_event_name(event));
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     free();
@@ -1641,7 +1641,7 @@ PrefetchBlaster::bufferObject(int event, void * /* data ATS_UNUSED */)
     break;
 
   default:
-    Debug("PrefetchBlaster", "Error Event: %s\n", get_vc_event_name(event));
+    Debug("PrefetchBlaster", "Error Event: %s", get_vc_event_name(event));
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_EOS:
     blastObject(EVENT_IMMEDIATE, NULL);
@@ -1846,7 +1846,7 @@ config_read_proto(TSPrefetchBlastData &blast, const char *str)
       } else {
         ip_text_buffer ipb;
         blast.type = TS_PREFETCH_MULTICAST_BLAST;
-        Debug("Prefetch", "Setting multicast address: %s\n", ats_ip_ntop(ats_ip_sa_cast(&blast.ip), ipb, sizeof(ipb)));
+        Debug("Prefetch", "Setting multicast address: %s", ats_ip_ntop(ats_ip_sa_cast(&blast.ip), ipb, sizeof(ipb)));
       }
     } else {
       Error("PrefetchProcessor: The protocol for Prefetch should of the form: "
@@ -1960,7 +1960,7 @@ PrefetchConfiguration::readHtmlTags(int fd, html_tag **ptags, html_tag **pattrs)
     // length(63) specified in sscanf, no need to worry about string overflow
     // coverity[secure_coding]
     if ((num = sscanf(buf, " html_tag %63s %63s %63s %63s", tag, attr, attr_tag, attr_attr)) >= 2) {
-      Debug("Prefetch", "Read html_tag: %s %s\n", tag, attr);
+      Debug("Prefetch", "Read html_tag: %s %s", tag, attr);
       tags[ntags].tag = ats_strdup(tag);
       tags[ntags].attr = ats_strdup(attr);
       if (num >= 4) {
@@ -2154,7 +2154,7 @@ KeepAliveConn::handleEvent(int event, void *data)
     break;
 
   case NET_EVENT_OPEN_FAILED:
-    Debug("PrefetchKeepAlive", "Connection to child %s failed\n", ats_ip_ntop(&ip.sa, ipb, sizeof(ipb)));
+    Debug("PrefetchKeepAlive", "Connection to child %s failed", ats_ip_ntop(&ip.sa, ipb, sizeof(ipb)));
     free();
     break;
 

@@ -54,7 +54,7 @@ Example:
 
 .. code-block:: c
 
-       TSDebug ("my-plugin", "Starting my-plugin at %d\n", the_time);
+       TSDebug ("my-plugin", "Starting my-plugin at %d", the_time);
 
 The statement ``"Starting my-plugin at <time>"`` appears whenever you
 run Traffic Server with the ``my-plugin`` tag:

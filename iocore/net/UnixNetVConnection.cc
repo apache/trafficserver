@@ -1107,7 +1107,7 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   nh = get_NetHandler(thread);
   PollDescriptor *pd = get_PollDescriptor(thread);
   if (ep.start(pd, this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
-    Debug("iocore_net", "acceptEvent : failed EventIO::start\n");
+    Debug("iocore_net", "acceptEvent : failed EventIO::start");
     close_UnixNetVConnection(this, e->ethread);
     return EVENT_DONE;
   }
@@ -1227,7 +1227,7 @@ UnixNetVConnection::populate(Connection &con_in, Continuation *c, void *arg)
   if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
     // EEXIST should be ok, though it should have been cleared before we got back here
     if (errno != EEXIST) {
-      Debug("iocore_net", "populate : Failed to add to epoll list\n");
+      Debug("iocore_net", "populate : Failed to add to epoll list");
       return EVENT_ERROR;
     }
   }
@@ -1269,7 +1269,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   //
   if (is_debug_tag_set("iocore_net")) {
     char addrbuf[INET6_ADDRSTRLEN];
-    Debug("iocore_net", "connectUp:: local_addr=%s:%d [%s]\n",
+    Debug("iocore_net", "connectUp:: local_addr=%s:%d [%s]",
           options.local_ip.isValid() ? options.local_ip.toString(addrbuf, sizeof(addrbuf)) : "*", options.local_port,
           NetVCOptions::toString(options.addr_binding));
   }
@@ -1298,7 +1298,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   // when edge triggering is used.
   if (ep.start(get_PollDescriptor(t), this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
     lerrno = errno;
-    Debug("iocore_net", "connectUp : Failed to add to epoll list\n");
+    Debug("iocore_net", "connectUp : Failed to add to epoll list");
     action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)0); // 0 == res
     free(t);
     return CONNECT_FAILURE;

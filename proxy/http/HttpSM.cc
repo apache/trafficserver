@@ -7140,7 +7140,7 @@ HttpSM::set_next_state()
        * then we can skip the lookup
        */
       ip_text_buffer ipb;
-      DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for API supplied target %s.\n",
+      DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for API supplied target %s.",
               ats_ip_ntop(&t_state.server_info.dst_addr, ipb, sizeof(ipb)));
       // this seems wasteful as we will just copy it right back
       ats_ip_copy(t_state.host_db_info.ip(), &t_state.server_info.dst_addr);
@@ -7165,7 +7165,7 @@ HttpSM::set_next_state()
        */
       if (is_debug_tag_set("dns")) {
         ip_text_buffer ipb;
-        DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %s.\n",
+        DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup for client supplied target %s.",
                 ats_ip_ntop(addr, ipb, sizeof(ipb)));
       }
       ats_ip_copy(t_state.host_db_info.ip(), addr);

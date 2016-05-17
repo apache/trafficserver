@@ -245,7 +245,7 @@ event_callback_main(void *arg)
   socket_fd = (int *)arg;
   con_socket_fd = *socket_fd; // the socket for event callbacks
 
-  Debug("event", "[event_callback_main] listen on socket = %d\n", con_socket_fd);
+  Debug("event", "[event_callback_main] listen on socket = %d", con_socket_fd);
 
   // initialize queue for accepted con
   accepted_clients = ink_hash_table_create(InkHashTableKeyType_Word);
@@ -279,7 +279,7 @@ event_callback_main(void *arg)
 
     if (con_socket_fd >= 0) {
       FD_SET(con_socket_fd, &selectFDs);
-      Debug("event", "[event_callback_main] add fd %d to select set\n", con_socket_fd);
+      Debug("event", "[event_callback_main] add fd %d to select set", con_socket_fd);
     }
     // see if there are more fd to set
     con_entry = ink_hash_table_iterator_first(accepted_clients, &con_state);
@@ -308,14 +308,14 @@ event_callback_main(void *arg)
         EventClientT *new_client_con = new_event_client();
 
         if (!new_client_con) {
-          // Debug ("TS_Control_Main", "can't create new EventClientT for new connection\n");
+          // Debug ("TS_Control_Main", "can't create new EventClientT for new connection");
         } else {
           // accept connection
           socklen_t addr_len = (sizeof(struct sockaddr));
           new_con_fd = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
           new_client_con->fd = new_con_fd;
           ink_hash_table_insert(accepted_clients, (char *)&new_client_con->fd, new_client_con);
-          Debug("event", "[event_callback_main] Accept new connection: fd=%d\n", new_con_fd);
+          Debug("event", "[event_callback_main] Accept new connection: fd=%d", new_con_fd);
         }
       } // end if (new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
 
@@ -334,7 +334,7 @@ event_callback_main(void *arg)
 
             ret = preprocess_msg(client_entry->fd, &req, &reqlen);
             if (ret == TS_ERR_NET_READ || ret == TS_ERR_NET_EOF) { // preprocess_msg FAILED!
-              Debug("event", "[event_callback_main] preprocess_msg FAILED; skip! \n");
+              Debug("event", "[event_callback_main] preprocess_msg FAILED; skip!");
               remove_event_client(client_entry, accepted_clients);
               con_entry = ink_hash_table_iterator_next(accepted_clients, &con_state);
               continue;
@@ -344,7 +344,7 @@ event_callback_main(void *arg)
             ats_free(req);
 
             if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-              Debug("event", "[event_callback_main] ERROR: handle_control_message\n");
+              Debug("event", "[event_callback_main] ERROR: handle_control_message");
               remove_event_client(client_entry, accepted_clients);
               con_entry = ink_hash_table_iterator_next(accepted_clients, &con_state);
               continue;
@@ -367,7 +367,7 @@ event_callback_main(void *arg)
 
     if (!mgmt_events || queue_is_empty(mgmt_events)) { // no events to process
       // fprintf(stderr, "[event_callback_main] NO EVENTS TO PROCESS\n");
-      Debug("event", "[event_callback_main] NO EVENTS TO PROCESS\n");
+      Debug("event", "[event_callback_main] NO EVENTS TO PROCESS");
       continue;
     }
     // iterate through each event in mgmt_events
@@ -392,7 +392,7 @@ event_callback_main(void *arg)
 
           ret = send_mgmt_request(client_entry->fd, EVENT_NOTIFY, &optype, &name, &desc);
           if (ret != TS_ERR_OKAY) {
-            Debug("event", "sending even notification to fd [%d] failed.\n", client_entry->fd);
+            Debug("event", "sending even notification to fd [%d] failed.", client_entry->fd);
           }
         }
         // get next client connection, if any

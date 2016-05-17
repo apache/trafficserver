@@ -59,7 +59,7 @@ public:
   void
   createLog(const char *log_name)
   {
-    TSDebug(PLUGIN_NAME, "Creating log name %s\n", log_name);
+    TSDebug(PLUGIN_NAME, "Creating log name %s", log_name);
     TSAssert(TS_SUCCESS == TSTextLogObjectCreate(log_name, TS_LOG_MODE_ADD_TIMESTAMP, &_log));
   }
 
@@ -83,7 +83,7 @@ public:
     }
     TSMutexUnlock(_lock);
 
-    TSDebug(PLUGIN_NAME, "BgFetchState.acquire(): ret = %d, url = %s\n", ret, url.c_str());
+    TSDebug(PLUGIN_NAME, "BgFetchState.acquire(): ret = %d, url = %s", ret, url.c_str());
 
     return ret;
   }

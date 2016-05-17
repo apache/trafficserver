@@ -365,7 +365,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
           redirect_flag = *(pos + 9) - '0';
           if ((redirect_flag < 0) || (redirect_flag > 2))
             redirect_flag = h_conf->default_redirect_flag;
-          TSDebug(PLUGIN_NAME, "Found _redirect flag in URL: %d\n", redirect_flag);
+          TSDebug(PLUGIN_NAME, "Found _redirect flag in URL: %d", redirect_flag);
           pos = NULL;
         }
       }

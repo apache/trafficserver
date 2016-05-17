@@ -39,5 +39,5 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
     TSError("[hello-world] Plugin registration failed.");
   }
 
-  TSDebug("debug-hello", "Hello World!\n");
+  TSDebug("debug-hello", "Hello World!");
 }

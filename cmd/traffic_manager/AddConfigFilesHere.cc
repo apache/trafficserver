@@ -39,7 +39,7 @@ extern FileManager *configFiles;
 void
 testcall(char *foo, bool /* incVersion */)
 {
-  Debug("lm", "Received Callback that %s has changed\n", foo);
+  Debug("lm", "Received Callback that %s has changed", foo);
 }
 
 //

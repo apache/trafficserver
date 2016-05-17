@@ -277,7 +277,7 @@ processPacket(const char *packet, int pkt_sz)
         return -1;
     }
 
-    Debug(("Writing %d bytes on socket %d\n", pkt_sz, sock_fd));
+    Debug(("Writing %d bytes on socket %d", pkt_sz, sock_fd));
     while (pkt_sz > 0) {
       int nsent = write(sock_fd, (char *)packet, pkt_sz);
       if (nsent < 0)
@@ -324,7 +324,7 @@ main(int argc, char *argv[])
     if (pkt_size < 0)
       return 0;
 
-    Debug(("Processing udp packet (size = %d)\n", pkt_size));
+    Debug(("Processing udp packet (size = %d)", pkt_size));
     processPacket(pkt_buf, pkt_size);
 
     time_t now = time(0);

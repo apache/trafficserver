@@ -154,7 +154,7 @@ ts_ctrl_main(void *arg)
 
     if (con_socket_fd >= 0) {
       FD_SET(con_socket_fd, &selectFDs);
-      // Debug("ts_main", "[ts_ctrl_main] add fd %d to select set\n", con_socket_fd);
+      // Debug("ts_main", "[ts_ctrl_main] add fd %d to select set", con_socket_fd);
     }
     // see if there are more fd to set
     con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
@@ -164,7 +164,7 @@ ts_ctrl_main(void *arg)
       client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
       if (client_entry->fd >= 0) { // add fd to select set
         FD_SET(client_entry->fd, &selectFDs);
-        Debug("ts_main", "[ts_ctrl_main] add fd %d to select set\n", client_entry->fd);
+        Debug("ts_main", "[ts_ctrl_main] add fd %d to select set", client_entry->fd);
       }
       con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
     }
@@ -182,13 +182,13 @@ ts_ctrl_main(void *arg)
         ClientT *new_client_con = create_client();
         if (!new_client_con) {
           // return TS_ERR_SYS_CALL; WHAT TO DO? just keep going
-          Debug("ts_main", "[ts_ctrl_main] can't allocate new ClientT\n");
+          Debug("ts_main", "[ts_ctrl_main] can't allocate new ClientT");
         } else { // accept connection
           socklen_t addr_len = (sizeof(struct sockaddr));
           new_con_fd = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
           new_client_con->fd = new_con_fd;
           ink_hash_table_insert(accepted_con, (char *)&new_client_con->fd, new_client_con);
-          Debug("ts_main", "[ts_ctrl_main] Add new client connection \n");
+          Debug("ts_main", "[ts_ctrl_main] Add new client connection");
         }
       } // end if(new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
 
@@ -197,7 +197,7 @@ ts_ctrl_main(void *arg)
         // see if there are more fd to set - iterate through all entries in hash table
         con_entry = ink_hash_table_iterator_first(accepted_con, &con_state);
         while (con_entry) {
-          Debug("ts_main", "[ts_ctrl_main] We have a remote client request!\n");
+          Debug("ts_main", "[ts_ctrl_main] We have a remote client request!");
           client_entry = (ClientT *)ink_hash_table_entry_value(accepted_con, con_entry);
           // got information; check
           if (client_entry->fd && FD_ISSET(client_entry->fd, &selectFDs)) {
@@ -207,7 +207,7 @@ ts_ctrl_main(void *arg)
             ret = preprocess_msg(client_entry->fd, &req, &reqlen);
             if (ret == TS_ERR_NET_READ || ret == TS_ERR_NET_EOF) {
               // occurs when remote API client terminates connection
-              Debug("ts_main", "[ts_ctrl_main] ERROR: preprocess_msg - remove client %d \n", client_entry->fd);
+              Debug("ts_main", "[ts_ctrl_main] ERROR: preprocess_msg - remove client %d ", client_entry->fd);
               remove_client(client_entry, accepted_con);
               // get next client connection (if any)
               con_entry = ink_hash_table_iterator_next(accepted_con, &con_state);
@@ -238,7 +238,7 @@ ts_ctrl_main(void *arg)
   } // end while (1)
 
   // if we get here something's wrong, just clean up
-  Debug("ts_main", "[ts_ctrl_main] CLOSING AND SHUTTING DOWN OPERATIONS\n");
+  Debug("ts_main", "[ts_ctrl_main] CLOSING AND SHUTTING DOWN OPERATIONS");
   close_socket(con_socket_fd);
 
   // iterate through hash table; close client socket connections and remove entry

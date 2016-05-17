@@ -107,7 +107,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
       if (log) {
         TSTextLogObjectWrite(log, "blacklisting site: %s", sites[i]);
       } else {
-        TSDebug("blacklist-1", "blacklisting site: %s\n", sites[i]);
+        TSDebug("blacklist-1", "blacklisting site: %s", sites[i]);
       }
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
       TSHandleMLocRelease(bufp, hdr_loc, url_loc);
@@ -270,7 +270,7 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
         handle_response(cd->txnp, contp);
         return 0;
       default:
-        TSDebug("blacklist_plugin", "This event was unexpected: %d\n", event);
+        TSDebug("blacklist_plugin", "This event was unexpected: %d", event);
         break;
       }
     } else {

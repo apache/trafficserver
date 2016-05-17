@@ -63,6 +63,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[version] Plugin registration failed. \n");
   }
 
-  TSDebug("debug-version-plugin", "Running in Apache Traffic Server: v%d.%d.%d\n", major_ts_version, minor_ts_version,
+  TSDebug("debug-version-plugin", "Running in Apache Traffic Server: v%d.%d.%d", major_ts_version, minor_ts_version,
           patch_ts_version);
 }

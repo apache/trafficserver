@@ -621,7 +621,7 @@ TSPluginInit(int argc, const char *argv[])
 
     return;
   } else {
-    TSDebug(PLUGIN_NAME, "Plugin registration succeeded.\n");
+    TSDebug(PLUGIN_NAME, "Plugin registration succeeded.");
   }
 
   plugin_config = TSmalloc(sizeof(config_t));
@@ -677,5 +677,5 @@ TSPluginInit(int argc, const char *argv[])
   TSContDataSet(main_cont, (void *)plugin_config);
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, main_cont);
 
-  TSDebug(PLUGIN_NAME, "Plugin Init Complete.\n");
+  TSDebug(PLUGIN_NAME, "Plugin Init Complete.");
 }

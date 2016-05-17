@@ -306,7 +306,7 @@ LocalManager::initCCom(const AppVersionInfo &version, FileManager *configFiles, 
   }
 
   ats_ip_ntop(&cluster_ip, clusterAddrStr, sizeof(clusterAddrStr));
-  Debug("ccom", "Cluster Interconnect is %s : %s\n", intrName, clusterAddrStr);
+  Debug("ccom", "Cluster Interconnect is %s : %s", intrName, clusterAddrStr);
 
   // This an awful hack but I could not come up with a better way to
   //  pass the cluster address to the proxy
@@ -457,7 +457,7 @@ LocalManager::pollMgmtProcessServer()
           int estatus;
           pid_t tmp_pid = watched_process_pid;
 
-          Debug("lm", "[LocalManager::pollMgmtProcessServer] Lost process EOF!\n");
+          Debug("lm", "[LocalManager::pollMgmtProcessServer] Lost process EOF!");
 
           close_socket(watched_process_fd);
 
@@ -817,7 +817,7 @@ LocalManager::processEventQueue()
         ink_assert(enqueue(mgmt_event_queue, mh));
         return;
       }
-      Debug("lm", "[TrafficManager] ==> Sending signal event '%d' payload=%d\n", mh->msg_id, mh->data_len);
+      Debug("lm", "[TrafficManager] ==> Sending signal event '%d' payload=%d", mh->msg_id, mh->data_len);
       lmgmt->sendMgmtMsgToProcesses(mh);
     }
     ats_free(mh);
@@ -927,7 +927,7 @@ LocalManager::startProxy()
     // NUL-terminate for the benefit of strtok and printf.
     real_proxy_options.add(0);
 
-    Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'\n", absolute_proxy_binary, &real_proxy_options[0]);
+    Debug("lm", "[LocalManager::startProxy] Launching %s with options '%s'", absolute_proxy_binary, &real_proxy_options[0]);
 
     ink_zero(options);
     options[0] = absolute_proxy_binary;
@@ -935,7 +935,7 @@ LocalManager::startProxy()
     tok = strtok_r(&real_proxy_options[0], " ", &last);
     options[i++] = tok;
     while (i < 32 && (tok = strtok_r(NULL, " ", &last))) {
-      Debug("lm", "opt %d = '%s'\n", i, tok);
+      Debug("lm", "opt %d = '%s'", i, tok);
       options[i++] = tok;
     }
 
@@ -1034,12 +1034,12 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
 
   if (port.m_inbound_transparent_p) {
 #if TS_USE_TPROXY
-    Debug("http_tproxy", "Listen port %d inbound transparency enabled.\n", port.m_port);
+    Debug("http_tproxy", "Listen port %d inbound transparency enabled.", port.m_port);
     if (setsockopt(port.m_fd, SOL_IP, TS_IP_TRANSPARENT, &one, sizeof(one)) == -1) {
       mgmt_fatal(stderr, 0, "[bindProxyPort] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
     }
 #else
-    Debug("lm", "[bindProxyPort] Transparency requested but TPROXY not configured\n");
+    Debug("lm", "[bindProxyPort] Transparency requested but TPROXY not configured");
 #endif
   }
 
@@ -1064,7 +1064,7 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
     mgmt_fatal(stderr, 0, "[bindProxyPort] Unable to bind socket: %d : %s\n", port.m_port, strerror(errno));
   }
 
-  Debug("lm", "[bindProxyPort] Successfully bound proxy port %d\n", port.m_port);
+  Debug("lm", "[bindProxyPort] Successfully bound proxy port %d", port.m_port);
 }
 
 void

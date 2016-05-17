@@ -6832,7 +6832,7 @@ TSDebugSpecific(int debug_flag, const char *tag, const char *format_str, ...)
 }
 
 // Plugins would use TSDebug just as the TS internal uses Debug
-// e.g. TSDebug("plugin-cool", "Snoopy is a cool guy even after %d requests.\n", num_reqs);
+// e.g. TSDebug("plugin-cool", "Snoopy is a cool guy even after %d requests.", num_reqs);
 void
 TSDebug(const char *tag, const char *format_str, ...)
 {
