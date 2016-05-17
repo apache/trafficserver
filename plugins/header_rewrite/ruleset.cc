@@ -41,7 +41,7 @@ RuleSet::append(RuleSet *rule)
 }
 
 void
-RuleSet::add_condition(Parser &p)
+RuleSet::add_condition(Parser &p, const char *filename)
 {
   Condition *c = condition_factory(p.get_op());
 
@@ -49,7 +49,8 @@ RuleSet::add_condition(Parser &p)
     TSDebug(PLUGIN_NAME, "   Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
     c->initialize(p);
     if (!c->set_hook(_hook)) {
-      TSError("[%s] can't use this condition in this hook", PLUGIN_NAME);
+      TSError("[%s] in %s: can't use this condition in hook=%d: %%{%s} with arg: %s", PLUGIN_NAME, filename, _hook,
+              p.get_op().c_str(), p.get_arg().c_str());
       return;
     }
     if (NULL == _cond) {
@@ -65,7 +66,7 @@ RuleSet::add_condition(Parser &p)
 }
 
 void
-RuleSet::add_operator(Parser &p)
+RuleSet::add_operator(Parser &p, const char *filename)
 {
   Operator *o = operator_factory(p.get_op());
 
@@ -74,7 +75,8 @@ RuleSet::add_operator(Parser &p)
     TSDebug(PLUGIN_NAME, "   Adding operator: %s(%s)", p.get_op().c_str(), p.get_arg().c_str());
     o->initialize(p);
     if (!o->set_hook(_hook)) {
-      TSError("[%s] can't use this operator in this hook", PLUGIN_NAME);
+      TSError("[%s] in %s: can't use this operator in hook=%d:  %s(%s)", PLUGIN_NAME, filename, _hook, p.get_op().c_str(),
+              p.get_arg().c_str());
       return;
     }
     if (NULL == _oper) {

@@ -470,7 +470,7 @@ OperatorRMHeader::exec(const Resources &res) const
   TSMLoc field_loc, tmp;
 
   if (res.bufp && res.hdr_loc) {
-    TSDebug(PLUGIN_NAME, "OperatorRMHeader::exec() invoked on header %s", _header.c_str());
+    TSDebug(PLUGIN_NAME, "OperatorRMHeader::exec() invoked on %s", _header.c_str());
     field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
     while (field_loc) {
       TSDebug(PLUGIN_NAME, "   Deleting header %s", _header.c_str());
@@ -511,7 +511,7 @@ OperatorAddHeader::exec(const Resources &res) const
   }
 
   if (res.bufp && res.hdr_loc) {
-    TSDebug(PLUGIN_NAME, "OperatorAddHeader::exec() invoked on header %s: %s", _header.c_str(), value.c_str());
+    TSDebug(PLUGIN_NAME, "OperatorAddHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
     TSMLoc field_loc;
 
     if (TS_SUCCESS == TSMimeHdrFieldCreateNamed(res.bufp, res.hdr_loc, _header.c_str(), _header.size(), &field_loc)) {
@@ -549,7 +549,7 @@ OperatorSetHeader::exec(const Resources &res) const
   if (res.bufp && res.hdr_loc) {
     TSMLoc field_loc = TSMimeHdrFieldFind(res.bufp, res.hdr_loc, _header.c_str(), _header.size());
 
-    TSDebug(PLUGIN_NAME, "OperatorSetHeader::exec() invoked on header %s: %s", _header.c_str(), value.c_str());
+    TSDebug(PLUGIN_NAME, "OperatorSetHeader::exec() invoked on %s: %s", _header.c_str(), value.c_str());
 
     if (!field_loc) {
       // No existing header, so create one
@@ -616,7 +616,7 @@ OperatorCounter::exec(const Resources & /* ATS_UNUSED res */) const
     return;
   }
 
-  TSDebug(PLUGIN_NAME, "OperatorCounter::exec() invoked on counter %s", _counter_name.c_str());
+  TSDebug(PLUGIN_NAME, "OperatorCounter::exec() invoked on %s", _counter_name.c_str());
   TSStatIntIncrement(_counter, 1);
 }
 

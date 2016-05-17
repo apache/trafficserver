@@ -35,7 +35,7 @@ void
 ConditionStatus::initialize(Parser &p)
 {
   Condition::initialize(p);
-  Matchers<TSHttpStatus> *match = new Matchers<TSHttpStatus>(_cond_op);
+  MatcherType *match = new MatcherType(_cond_op);
 
   match->set(static_cast<TSHttpStatus>(strtol(p.get_arg().c_str(), NULL, 10)));
   _matcher = match;
@@ -55,14 +55,15 @@ ConditionStatus::initialize_hooks()
 bool
 ConditionStatus::eval(const Resources &res)
 {
-  TSDebug(PLUGIN_NAME, "Evaluating STATUS()"); // TODO: It'd be nice to get the args here ...
-  return static_cast<const Matchers<TSHttpStatus> *>(_matcher)->test(res.resp_status);
+  TSDebug(PLUGIN_NAME, "Evaluating STATUS()");
+  return static_cast<MatcherType *>(_matcher)->test(res.resp_status);
 }
 
 void
 ConditionStatus::append_value(std::string &s, const Resources &res)
 {
   std::ostringstream oss;
+
   oss << res.resp_status;
   s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending STATUS(%d) to evaluation value -> %s", res.resp_status, s.c_str());
@@ -73,10 +74,9 @@ void
 ConditionMethod::initialize(Parser &p)
 {
   Condition::initialize(p);
-  Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+  MatcherType *match = new MatcherType(_cond_op);
 
   match->set(p.get_arg());
-
   _matcher = match;
 }
 
@@ -86,9 +86,9 @@ ConditionMethod::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
-  TSDebug(PLUGIN_NAME, "Evaluating METHOD(): %s - rval: %d", s.c_str(), rval);
-  return rval;
+  TSDebug(PLUGIN_NAME, "Evaluating METHOD()");
+
+  return static_cast<const MatcherType *>(_matcher)->test(s);
 }
 
 void
@@ -115,7 +115,7 @@ ConditionRandom::initialize(Parser &p)
 {
   struct timeval tv;
   Condition::initialize(p);
-  Matchers<unsigned int> *match = new Matchers<unsigned int>(_cond_op);
+  MatcherType *match = new MatcherType(_cond_op);
 
   gettimeofday(&tv, NULL);
   _seed = getpid() * tv.tv_usec;
@@ -128,8 +128,8 @@ ConditionRandom::initialize(Parser &p)
 bool
 ConditionRandom::eval(const Resources & /* res ATS_UNUSED */)
 {
-  TSDebug(PLUGIN_NAME, "Evaluating RANDOM(%d)", _max);
-  return static_cast<const Matchers<unsigned int> *>(_matcher)->test(rand_r(&_seed) % _max);
+  TSDebug(PLUGIN_NAME, "Evaluating RANDOM()");
+  return static_cast<const MatcherType *>(_matcher)->test(rand_r(&_seed) % _max);
 }
 
 void
@@ -171,8 +171,6 @@ ConditionAccess::eval(const Resources & /* res ATS_UNUSED */)
   struct timeval tv;
 
   gettimeofday(&tv, NULL);
-
-  TSDebug(PLUGIN_NAME, "Evaluating ACCESS(%s)", _qualifier.c_str());
   if (tv.tv_sec > _next) {
     // There is a small "race" here, where we could end up calling access() a few times extra. I think
     // that is OK, and not worth protecting with a lock.
@@ -183,6 +181,7 @@ ConditionAccess::eval(const Resources & /* res ATS_UNUSED */)
     _next = tv.tv_sec; // I hope this is an atomic "set"...
     _last = check;     // This sure ought to be
   }
+  TSDebug(PLUGIN_NAME, "Evaluating ACCESS(%s) -> %d", _qualifier.c_str(), _last);
 
   return _last;
 }
@@ -192,7 +191,7 @@ void
 ConditionHeader::initialize(Parser &p)
 {
   Condition::initialize(p);
-  Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+  MatcherType *match = new MatcherType(_cond_op);
 
   match->set(p.get_arg());
   _matcher = match;
@@ -246,9 +245,9 @@ ConditionHeader::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
-  TSDebug(PLUGIN_NAME, "Evaluating HEADER(): %s - rval: %d", s.c_str(), rval);
-  return rval;
+  TSDebug(PLUGIN_NAME, "Evaluating HEADER()");
+
+  return static_cast<const MatcherType *>(_matcher)->test(s);
 }
 
 // ConditionPath
@@ -256,7 +255,7 @@ void
 ConditionPath::initialize(Parser &p)
 {
   Condition::initialize(p);
-  Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+  MatcherType *match = new MatcherType(_cond_op);
 
   match->set(p.get_arg());
   _matcher = match;
@@ -286,9 +285,9 @@ ConditionPath::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating PATH");
+  TSDebug(PLUGIN_NAME, "Evaluating PATH()");
 
-  return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+  return static_cast<MatcherType *>(_matcher)->test(s);
 }
 
 // ConditionQuery
@@ -296,7 +295,7 @@ void
 ConditionQuery::initialize(Parser &p)
 {
   Condition::initialize(p);
-  Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+  MatcherType *match = new MatcherType(_cond_op);
 
   match->set(p.get_arg());
   _matcher = match;
@@ -315,15 +314,17 @@ ConditionQuery::append_value(std::string &s, const Resources &res)
 bool
 ConditionQuery::eval(const Resources &res)
 {
-  std::string s;
+  if (NULL != res._rri) {
+    std::string s;
 
-  if (NULL == res._rri) {
-    TSDebug(PLUGIN_NAME, "QUERY requires remap initialization! Evaluating to false!");
-    return false;
+    append_value(s, res);
+    TSDebug(PLUGIN_NAME, "Evaluating QUERY()");
+
+    return static_cast<const MatcherType *>(_matcher)->test(s);
   }
-  append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating QUERY - %s", s.c_str());
-  return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+
+  TSDebug(PLUGIN_NAME, "\tQUERY requires remap initialization! Evaluating to false!");
+  return false;
 }
 
 // ConditionUrl: request or response header. TODO: This is not finished, at all!!!
@@ -332,7 +333,7 @@ ConditionUrl::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+  MatcherType *match = new MatcherType(_cond_op);
   match->set(p.get_arg());
   _matcher = match;
 }
@@ -410,7 +411,7 @@ ConditionDBM::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+  MatcherType *match = new MatcherType(_cond_op);
   match->set(p.get_arg());
   _matcher = match;
 
@@ -463,9 +464,9 @@ ConditionDBM::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  TSDebug(PLUGIN_NAME, "Evaluating DBM(%s, \"%s\")", _file.c_str(), s.c_str());
+  TSDebug(PLUGIN_NAME, "Evaluating DBM()");
 
-  return static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+  return static_cast<const MatcherType *>(_matcher)->test(s);
 }
 
 // ConditionCookie: request or response header
@@ -474,9 +475,9 @@ ConditionCookie::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
-  match->set(p.get_arg());
+  MatcherType *match = new MatcherType(_cond_op);
 
+  match->set(p.get_arg());
   _matcher = match;
 
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
@@ -533,15 +534,19 @@ ConditionCookie::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
-  TSDebug(PLUGIN_NAME, "Evaluating COOKIE(%s): %s: rval: %d", _qualifier.c_str(), s.c_str(), rval);
-  return rval;
+  TSDebug(PLUGIN_NAME, "Evaluating COOKIE()");
+
+  return static_cast<const MatcherType *>(_matcher)->test(s);
 }
 
+// ConditionInternalTxn: Is the txn internal?
 bool
 ConditionInternalTxn::eval(const Resources &res)
 {
-  return TSHttpTxnIsInternal(res.txnp) == TS_SUCCESS;
+  bool ret = (TSHttpTxnIsInternal(res.txnp) == TS_SUCCESS);
+
+  TSDebug(PLUGIN_NAME, "Evaluating INTERNAL-TRANSACTION() -> %d", ret);
+  return ret;
 }
 
 void
@@ -549,9 +554,9 @@ ConditionClientIp::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
-  match->set(p.get_arg());
+  MatcherType *match = new MatcherType(_cond_op);
 
+  match->set(p.get_arg());
   _matcher = match;
 }
 
@@ -561,9 +566,9 @@ ConditionClientIp::eval(const Resources &res)
   std::string s;
 
   append_value(s, res);
-  bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
-  TSDebug(PLUGIN_NAME, "Evaluating CLIENT-IP(): %s: rval: %d", s.c_str(), rval);
-  return rval;
+  TSDebug(PLUGIN_NAME, "Evaluating CLIENT-IP()");
+
+  return static_cast<MatcherType *>(_matcher)->test(s);
 }
 
 void
@@ -581,7 +586,8 @@ ConditionIncomingPort::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  Matchers<uint16_t> *match = new Matchers<uint16_t>(_cond_op);
+  MatcherType *match = new MatcherType(_cond_op);
+
   match->set(static_cast<uint16_t>(strtoul(p.get_arg().c_str(), NULL, 10)));
   _matcher = match;
 }
@@ -590,9 +596,9 @@ bool
 ConditionIncomingPort::eval(const Resources &res)
 {
   uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
-  bool rval     = static_cast<const Matchers<uint16_t> *>(_matcher)->test(port);
-  TSDebug(PLUGIN_NAME, "Evaluating INCOMING-PORT(): %d: rval: %d", port, rval);
-  return rval;
+
+  TSDebug(PLUGIN_NAME, "Evaluating INCOMING-PORT()");
+  return static_cast<MatcherType *>(_matcher)->test(port);
 }
 
 void
@@ -600,6 +606,7 @@ ConditionIncomingPort::append_value(std::string &s, const Resources &res)
 {
   std::ostringstream oss;
   uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
+
   oss << port;
   s += oss.str();
   TSDebug(PLUGIN_NAME, "Appending %d to evaluation value -> %s", port, s.c_str());
@@ -610,11 +617,10 @@ void
 ConditionTransactCount::initialize(Parser &p)
 {
   Condition::initialize(p);
-
   MatcherType *match     = new MatcherType(_cond_op);
   std::string const &arg = p.get_arg();
-  match->set(strtol(arg.c_str(), NULL, 10));
 
+  match->set(strtol(arg.c_str(), NULL, 10));
   _matcher = match;
 }
 
@@ -622,15 +628,16 @@ bool
 ConditionTransactCount::eval(const Resources &res)
 {
   TSHttpSsn ssn = TSHttpTxnSsnGet(res.txnp);
-  bool rval     = false;
+
   if (ssn) {
     int n = TSHttpSsnTransactionCount(ssn);
-    rval  = static_cast<MatcherType *>(_matcher)->test(n);
-    TSDebug(PLUGIN_NAME, "Evaluating TXN-COUNT(): %d: rval: %s", n, rval ? "true" : "false");
-  } else {
-    TSDebug(PLUGIN_NAME, "Evaluation TXN-COUNT(): No session found, returning false");
+
+    TSDebug(PLUGIN_NAME, "Evaluating TXN-COUNT()");
+    return static_cast<MatcherType *>(_matcher)->test(n);
   }
-  return rval;
+
+  TSDebug(PLUGIN_NAME, "\tNo session found, returning false");
+  return false;
 }
 
 void
@@ -642,6 +649,7 @@ ConditionTransactCount::append_value(std::string &s, Resources const &res)
     char value[32]; // enough for UINT64_MAX
     int count  = TSHttpSsnTransactionCount(ssn);
     int length = ink_fast_itoa(count, value, sizeof(value));
+
     if (length > 0) {
       TSDebug(PLUGIN_NAME, "Appending TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
       s.append(value, length);
@@ -699,7 +707,8 @@ void
 ConditionNow::initialize(Parser &p)
 {
   Condition::initialize(p);
-  Matchers<int64_t> *match = new Matchers<int64_t>(_cond_op);
+
+  MatcherType *match = new MatcherType(_cond_op);
 
   match->set(static_cast<int64_t>(strtol(p.get_arg().c_str(), NULL, 10)));
   _matcher = match;
@@ -748,9 +757,8 @@ ConditionNow::eval(const Resources &res)
 {
   int64_t now = get_now_qualified(_now_qual);
 
-  TSDebug(PLUGIN_NAME, "Evaluating NOW() -> %" PRId64, now);
-
-  return static_cast<const Matchers<int64_t> *>(_matcher)->test(now);
+  TSDebug(PLUGIN_NAME, "Evaluating NOW()");
+  return static_cast<const MatcherType *>(_matcher)->test(now);
 }
 
 // ConditionGeo: Geo-based information (integer). See ConditionGeoCountry for the string version.
@@ -969,19 +977,19 @@ ConditionGeo::append_value(std::string &s, const Resources &res)
 bool
 ConditionGeo::eval(const Resources &res)
 {
+  bool ret = false;
+
+  TSDebug(PLUGIN_NAME, "Evaluating GEO()");
   if (is_int_type()) {
     int64_t geo = get_geo_int(TSHttpTxnClientAddrGet(res.txnp));
 
-    TSDebug(PLUGIN_NAME, "Evaluating GEO() -> %" PRId64, geo);
-
-    return static_cast<const Matchers<int64_t> *>(_matcher)->test(geo);
+    ret = static_cast<const Matchers<int64_t> *>(_matcher)->test(geo);
   } else {
     std::string s;
 
     append_value(s, res);
-    bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
-
-    TSDebug(PLUGIN_NAME, "Evaluating GEO(): %s - rval: %d", s.c_str(), rval);
-    return rval;
+    ret = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
   }
+
+  return ret;
 }

@@ -23,7 +23,7 @@
 #define __MATCHER_H__ 1
 
 #include <string>
-#include <iostream> // For debugging
+#include <sstream>
 
 #include "ts/ts.h"
 
@@ -56,13 +56,11 @@ public:
   {
     _pdata = pdata;
   }
-
   void *
   get_pdata() const
   {
     return _pdata;
   }
-
   virtual void
   free_pdata()
   {
@@ -84,7 +82,7 @@ template <class T> class Matchers : public Matcher
 public:
   explicit Matchers<T>(const MatcherOps op) : Matcher(op), _data() {}
   // Getters / setters
-  const T
+  const T &
   get() const
   {
     return _data;
@@ -94,7 +92,9 @@ public:
   setRegex(const std::string /* data ATS_UNUSED */)
   {
     if (!helper.setRegexMatch(_data)) {
-      std::cout << "Invalid regex:failed to precompile" << std::endl;
+      std::stringstream ss;
+      ss << _data;
+      TSError("[%s] Invalid regex: failed to precompile: %s", PLUGIN_NAME, ss.str().c_str());
       abort();
     }
     TSDebug(PLUGIN_NAME, "Regex precompiled successfully");
@@ -105,7 +105,6 @@ public:
   {
     return;
   }
-
   void
   setRegex(const TSHttpStatus /* t ATS_UNUSED */)
   {
@@ -146,26 +145,47 @@ public:
   }
 
 private:
+  void
+  debug_helper(const T t, const char *op, bool r) const
+  {
+    std::stringstream ss;
+
+    ss << '"' << t << '"' << op << '"' << _data << '"' << " -> " << r;
+    TSDebug(PLUGIN_NAME, "\ttesting: %s", ss.str().c_str());
+  }
+
   // For basic types
   bool
   test_eq(const T t) const
   {
-    // std::cout << "Testing: " << t << " == " << _data << std::endl;
-    return t == _data;
+    bool r = (t == _data);
+
+    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+      debug_helper(t, " == ", r);
+    }
+    return r;
   }
 
   bool
   test_lt(const T t) const
   {
-    // std::cout << "Testing: " << t << " < " << _data << std::endl;
-    return t < _data;
+    bool r = (t < _data);
+
+    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+      debug_helper(t, " < ", r);
+    }
+    return r;
   }
 
   bool
   test_gt(const T t) const
   {
-    // std::cout << "Testing: " << t << " > " << _data << std::endl;
-    return t > _data;
+    bool r = t > _data;
+
+    if (TSIsDebugTagSet(PLUGIN_NAME)) {
+      debug_helper(t, " > ", r);
+    }
+    return r;
   }
 
   bool
@@ -185,8 +205,9 @@ private:
   bool
   test_reg(const std::string t) const
   {
-    TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());
     int ovector[OVECCOUNT];
+
+    TSDebug(PLUGIN_NAME, "Test regular expression %s : %s", _data.c_str(), t.c_str());
     if (helper.regexMatch(t.c_str(), t.length(), ovector) > 0) {
       TSDebug(PLUGIN_NAME, "Successfully found regular expression match");
       return true;
