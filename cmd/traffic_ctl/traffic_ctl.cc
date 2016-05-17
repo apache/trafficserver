@@ -226,6 +226,7 @@ main(int argc, const char **argv)
     {subcommand_metric, "metric", "Manipulate performance metrics"},
     {subcommand_server, "server", "Stop, restart and examine the server"},
     {subcommand_storage, "storage", "Manipulate cache storage"},
+    {subcommand_plugin, "plugin", "Interact with plugins"},
   };
 
   BaseLogFile *base_log_file = new BaseLogFile("stderr");
