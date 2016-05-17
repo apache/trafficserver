@@ -1017,3 +1017,15 @@ Query string when the Origin server times out or the connection is refused::
     cond %{STATUS} =502 [OR]
     cond %{STATUS} =504
     set-redirect 302 http://different_origin.example.com/%{PATH} [QSA]
+
+Check for existence of a header
+-------------------------------
+
+This rule will modify the ``Cache-Control`` header, but only if it is not
+already set to some value, and the status code is a 2xx::
+
+    cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    cond %{HEADER:Cache-Control} ="" [AND]
+    cond %{STATUS} >199 [AND]
+    cond %{STATUS} <300
+    set-header Cache-Control "max-age=600, public"

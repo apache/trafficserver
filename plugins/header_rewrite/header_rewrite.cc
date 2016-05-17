@@ -231,9 +231,9 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
     }
 
     if (p.is_cond()) {
-      rule->add_condition(p);
+      rule->add_condition(p, filename.c_str());
     } else {
-      rule->add_operator(p);
+      rule->add_operator(p, filename.c_str());
     }
   }
 
@@ -357,7 +357,7 @@ TSPluginInit(int argc, const char *argv[])
     }
   } else {
     // Didn't get anything, nuke it.
-    TSError("[%s] failed to parse configuration file", PLUGIN_NAME);
+    TSError("[%s] failed to parse any configuration file", PLUGIN_NAME);
     conf->release();
   }
 }
