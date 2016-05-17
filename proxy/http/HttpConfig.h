@@ -663,7 +663,7 @@ struct OverridableHttpConfigParams {
   MgmtFloat cache_heuristic_lm_factor;
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
-  MgmtInt cache_open_write_fail_action;
+  MgmtByte cache_open_write_fail_action;
 
   //##############################################################################
   //#
