@@ -59,18 +59,20 @@ public:
   {
     bool rt = eval(res);
 
-    if (_mods & COND_NOT)
+    if (_mods & COND_NOT) {
       rt = !rt;
+    }
 
     if (_next) {
       if (_mods & COND_OR) {
         return rt || (static_cast<Condition *>(_next)->do_eval(res));
       } else { // AND is the default
         // Short circuit if we're an AND and the first condition is FALSE.
-        if (rt)
+        if (rt) {
           return static_cast<Condition *>(_next)->do_eval(res);
-        else
+        } else {
           return false;
+        }
       }
     } else {
       return rt;
@@ -98,11 +100,13 @@ public:
   {
     return _matcher;
   }
+
   const MatcherOps
   get_cond_op() const
   {
     return _cond_op;
   }
+
   const std::string
   get_qualifier() const
   {

@@ -45,17 +45,17 @@ class Operator : public Statement
 {
 public:
   Operator() : _mods(OPER_NONE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Operator"); }
+  const OperModifiers get_oper_modifiers() const;
+  virtual void initialize(Parser &p);
+
   void
   do_exec(const Resources &res) const
   {
     exec(res);
-    if (NULL != _next)
+    if (NULL != _next) {
       static_cast<Operator *>(_next)->do_exec(res);
+    }
   }
-
-  const OperModifiers get_oper_modifiers() const;
-
-  virtual void initialize(Parser &p);
 
 protected:
   virtual void exec(const Resources &res) const = 0;

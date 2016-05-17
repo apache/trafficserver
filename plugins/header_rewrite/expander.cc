@@ -40,12 +40,14 @@ VariableExpander::expand(const Resources &res)
 
   while (true) {
     std::string::size_type start = result.find("%<");
-    if (start == std::string::npos)
+    if (start == std::string::npos) {
       break;
+    }
 
     std::string::size_type end = result.find(">", start);
-    if (end == std::string::npos)
+    if (end == std::string::npos) {
       break;
+    }
 
     std::string first_part = result.substr(0, start);
     std::string last_part  = result.substr(end + 1);

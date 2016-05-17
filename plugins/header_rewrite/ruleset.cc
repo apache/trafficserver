@@ -34,8 +34,9 @@ RuleSet::append(RuleSet *rule)
 
   TSReleaseAssert(rule->next == NULL);
 
-  while (tmp->next)
-    tmp     = tmp->next;
+  while (tmp->next) {
+    tmp = tmp->next;
+  }
   tmp->next = rule;
 }
 

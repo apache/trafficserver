@@ -103,8 +103,9 @@ public:
   void
   release()
   {
-    if (1 >= ink_atomic_decrement(&_ref_count, 1))
+    if (1 >= ink_atomic_decrement(&_ref_count, 1)) {
       delete this;
+    }
   }
 
 private:

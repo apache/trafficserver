@@ -47,14 +47,15 @@ public:
 
   // No reason to inline these
   void append(RuleSet *rule);
-
   void add_condition(Parser &p);
   void add_operator(Parser &p);
+
   bool
   has_operator() const
   {
     return NULL != _oper;
   }
+
   bool
   has_condition() const
   {
@@ -66,13 +67,13 @@ public:
   {
     _hook = hook;
   }
+
   const TSHttpHookID
   get_hook() const
   {
     return _hook;
   }
 
-  // Inline
   const ResourceIDs
   get_all_resource_ids() const
   {

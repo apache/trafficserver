@@ -34,8 +34,9 @@ regexHelper::setRegexMatch(const std::string &s)
   if ((regexExtra == NULL) && (errorStudy != 0)) {
     return false;
   }
-  if (pcre_fullinfo(regex, regexExtra, PCRE_INFO_CAPTURECOUNT, &regexCcount) != 0)
+  if (pcre_fullinfo(regex, regexExtra, PCRE_INFO_CAPTURECOUNT, &regexCcount) != 0) {
     return false;
+  }
   return true;
 }
 

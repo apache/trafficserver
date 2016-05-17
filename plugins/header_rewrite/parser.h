@@ -40,6 +40,7 @@ public:
   {
     return _empty;
   }
+
   bool
   is_cond() const
   {
@@ -51,6 +52,7 @@ public:
   {
     return _cond && (_op == s);
   }
+
   bool
   oper_op_is(const std::string s) const
   {
@@ -62,11 +64,13 @@ public:
   {
     return _op;
   }
+
   std::string &
   get_arg()
   {
     return _arg;
   }
+
   const std::string &
   get_value() const
   {
