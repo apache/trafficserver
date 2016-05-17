@@ -79,7 +79,7 @@ ssn_handler(TSCont contp, TSEvent event, void *edata)
     return 0;
 
   default:
-    TSDebug("tag_session", "In the default case: event = %d\n", event);
+    TSDebug("tag_session", "In the default case: event = %d", event);
     break;
   }
   return 0;

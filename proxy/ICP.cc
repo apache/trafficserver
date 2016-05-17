@@ -401,7 +401,7 @@ ICPPeerReadCont::StaleCheck(int event, Event * /* e ATS_UNUSED */)
     break;
   }
   default: {
-    Debug("icp-stale", "ICPPeerReadCont::StaleCheck: Invalid Event %d\n", event);
+    Debug("icp-stale", "ICPPeerReadCont::StaleCheck: Invalid Event %d", event);
     _state->_queryResult = CACHE_EVENT_LOOKUP_FAILED;
     break;
   }

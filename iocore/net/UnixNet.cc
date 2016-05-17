@@ -647,7 +647,7 @@ NetHandler::manage_keep_alive_queue()
   }
 
   if (total_idle_count > 0) {
-    Debug("net_queue", "max cons: %d active: %d idle: %d already closed: %d, close event: %d mean idle: %d\n",
+    Debug("net_queue", "max cons: %d active: %d idle: %d already closed: %d, close event: %d mean idle: %d",
           max_connections_per_thread_in, total_connections_in, keep_alive_queue_size, closed, handle_event,
           total_idle_time / total_idle_count);
   }

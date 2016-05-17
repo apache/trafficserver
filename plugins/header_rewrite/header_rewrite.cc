@@ -129,7 +129,7 @@ bool
 RulesConfig::add_rule(RuleSet *rule)
 {
   if (rule && rule->has_operator()) {
-    TSDebug(PLUGIN_NAME_DBG, "   Adding rule to hook=%s\n", TSHttpHookNameLookup(rule->get_hook()));
+    TSDebug(PLUGIN_NAME_DBG, "   Adding rule to hook=%s", TSHttpHookNameLookup(rule->get_hook()));
     if (NULL == _rules[rule->get_hook()]) {
       _rules[rule->get_hook()] = rule;
     } else {

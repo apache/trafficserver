@@ -231,7 +231,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
 
   if (using_socks) {
     char buff[INET6_ADDRPORTSTRLEN];
-    Debug("Socks", "Using Socks ip: %s\n", ats_ip_nptop(target, buff, sizeof(buff)));
+    Debug("Socks", "Using Socks ip: %s", ats_ip_nptop(target, buff, sizeof(buff)));
     socksEntry = socksAllocator.alloc();
     socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version); /*XXXX remove last two args */
     socksEntry->action_ = cont;
@@ -245,7 +245,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
     result = &socksEntry->action_;
     vc->action_ = socksEntry;
   } else {
-    Debug("Socks", "Not Using Socks %d \n", socks_conf_stuff->socks_needed);
+    Debug("Socks", "Not Using Socks %d ", socks_conf_stuff->socks_needed);
     vc->action_ = cont;
   }
 

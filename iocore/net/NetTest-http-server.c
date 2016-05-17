@@ -76,11 +76,11 @@ struct NetTesterSM : public Continuation {
       reader->read(&request[req_len], r);
       req_len += r;
       request[req_len] = 0;
-      Debug("net_test", "%s\n", request);
+      Debug("net_test", "%s", request);
       fflush(stdout);
       // vc->set_inactivity_timeout(HRTIME_SECONDS(30));
       if (strcmp(&request[req_len - 4], "\r\n\r\n") == 0) {
-        Debug("net_test", "The request header is :\n%s\n", request);
+        Debug("net_test", "The request header is :\n%s", request);
         // parse and get the doc size
         SET_HANDLER(&NetTesterSM::handle_write);
         ink_assert(doc_len == resp_reader->read_avail());
@@ -135,7 +135,7 @@ struct NetTesterAccept : public Continuation {
   int
   handle_accept(int event, void *data)
   {
-    Debug("net_test", "Accepted a connection\n");
+    Debug("net_test", "Accepted a connection");
     fflush(stdout);
     NetVConnection *vc = (NetVConnection *)data;
     new NetTesterSM(new_ProxyMutex(), vc);

@@ -2346,7 +2346,7 @@ CacheVC::handleReadDone(int event, Event *e)
       if (upgrade_doc_version(buf)) {
         doc = reinterpret_cast<Doc *>(buf->data()); // buf may be a new copy
       } else {
-        Debug("cache_bc", "Upgrade of fragment failed - disk %s - doc id = %" PRIx64 ":%" PRIx64 "\n", vol->hash_text.get(),
+        Debug("cache_bc", "Upgrade of fragment failed - disk %s - doc id = %" PRIx64 ":%" PRIx64 "", vol->hash_text.get(),
               read_key->slice64(0), read_key->slice64(1));
         doc->magic = DOC_CORRUPT;
         // Should really trash the directory entry for this, as it's never going to work in the future.

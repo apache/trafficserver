@@ -84,7 +84,7 @@ elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlcha
   switch (currentTag) {
   case STAT_TAG:
     statObject = new StatObject(++statCount);
-    Debug(MODULE_INIT, "\nStat #: ----------------------- %d -----------------------\n", statCount);
+    Debug(MODULE_INIT, "\nStat #: ----------------------- %d -----------------------", statCount);
 
     if (atts)
       for (i = 0; atts[i]; i += 2) {
@@ -102,7 +102,7 @@ elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlcha
           statObject->m_debug = (atts[i + 1] && atts[i + 1][0] == '1');
         }
 
-        Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s\n", atts[i], atts[i + 1]);
+        Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s", atts[i], atts[i + 1]);
       }
     break;
 
@@ -124,13 +124,13 @@ elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlcha
           sumClusterVar = (!xml_strcmp(atts[i + 1], "sum") ? true : false);
         }
 
-        Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s\n", atts[i], atts[i + 1]);
+        Debug(MODULE_INIT, "\tDESTINTATION w/ attribute: %s -> %s", atts[i], atts[i + 1]);
       }
 
     break;
 
   case INVALID_TAG:
-    Debug(MODULE_INIT, "==========================================>%s<=\n", name);
+    Debug(MODULE_INIT, "==========================================>%s<=", name);
     break;
 
   default:
@@ -196,7 +196,7 @@ StatProcessor::rereadConfig(FileManager *configFiles)
 
   int ret = configFiles->getRollbackObj(STAT_CONFIG_FILE, &fileRB);
   if (!ret) {
-    Debug(MODULE_INIT, " Can't get Rollback for file: %s\n", STAT_CONFIG_FILE);
+    Debug(MODULE_INIT, " Can't get Rollback for file: %s", STAT_CONFIG_FILE);
   }
   fileVersion = fileRB->getCurrentVersion();
   fileRB->getVersion(fileVersion, &fileContent);
@@ -259,7 +259,7 @@ StatProcessor::rereadConfig(FileManager *configFiles)
 
 StatProcessor::~StatProcessor()
 {
-  Debug(MODULE_INIT, "[StatProcessor] Destructing Statistics Processor\n");
+  Debug(MODULE_INIT, "[StatProcessor] Destructing Statistics Processor");
 }
 
 void
@@ -319,7 +319,7 @@ StatProcessor::processStat()
 {
   unsigned short result = 0;
 
-  Debug(MODULE_INIT, "[StatProcessor] Processing Statistics....\n");
+  Debug(MODULE_INIT, "[StatProcessor] Processing Statistics....");
 
   //    setTest();
   statObjectList.Eval();

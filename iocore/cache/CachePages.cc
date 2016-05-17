@@ -603,7 +603,7 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
       int erroffset;
       pcre *preq = pcre_compile(show_cache_urlstrs[s], 0, &error, &erroffset, NULL);
 
-      Debug("cache_inspector", "matching url '%s' '%s' with regex '%s'\n", m, xx, show_cache_urlstrs[s]);
+      Debug("cache_inspector", "matching url '%s' '%s' with regex '%s'", m, xx, show_cache_urlstrs[s]);
 
       if (preq) {
         int r = pcre_exec(preq, NULL, xx, ib, 0, 0, NULL, 0);

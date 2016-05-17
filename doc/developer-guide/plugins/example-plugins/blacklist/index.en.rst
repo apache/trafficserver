@@ -86,7 +86,7 @@ that might be sent to it:
             handle_response (txnp);
             return 0;
          default:
-            TSDebug ("blacklist_plugin", "This event was unexpected: %d\n", );
+            TSDebug ("blacklist_plugin", "This event was unexpected: %d", );
             break;
       }
       return 0;

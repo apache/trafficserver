@@ -456,7 +456,7 @@ void
 StatObject::assignDst(const char *str, bool m_node_var, bool m_sum_var)
 {
   if (StatDebug) {
-    Debug(MODULE_INIT, "DESTINTATION: %s\n", str);
+    Debug(MODULE_INIT, "DESTINTATION: %s", str);
   }
 
   StatExprToken *statToken = new StatExprToken();
@@ -500,7 +500,7 @@ StatObject::assignExpr(char *str)
   StatExprToken *statToken = NULL;
 
   if (StatDebug) {
-    Debug(MODULE_INIT, "EXPRESSION: %s\n", str);
+    Debug(MODULE_INIT, "EXPRESSION: %s", str);
   }
   ink_assert(m_expr_string == NULL);
   // We take ownership here
@@ -522,7 +522,7 @@ StatObject::assignExpr(char *str)
       ink_assert(statToken->m_token_name == NULL);
 
       if (StatDebug) {
-        Debug(MODULE_INIT, "\toperator: ->%c<-\n", statToken->m_arith_symbol);
+        Debug(MODULE_INIT, "\toperator: ->%c<-", statToken->m_arith_symbol);
       }
 
     } else {
@@ -542,7 +542,7 @@ StatObject::assignExpr(char *str)
       statToken->assignTokenName(token);
 
       if (StatDebug) {
-        Debug(MODULE_INIT, "\toperand:  ->%s<-\n", token);
+        Debug(MODULE_INIT, "\toperand:  ->%s<-", token);
       }
     }
 
@@ -794,7 +794,7 @@ StatObject::setTokenValue(StatExprToken *token, bool cluster)
 
     default:
       if (StatDebug) {
-        Debug(MODULE, "Unrecognized token \"%s\" of type %d.\n", token->m_token_name, token->m_token_type);
+        Debug(MODULE, "Unrecognized token \"%s\" of type %d.", token->m_token_name, token->m_token_type);
       }
     } // switch
   }   // m_token_name?
@@ -999,7 +999,7 @@ StatObjectList::Eval()
     StatDebug = object->m_debug;
 
     if (StatDebug) {
-      Debug(MODULE, "\n##### %d #####\n", object->m_id);
+      Debug(MODULE, "\n##### %d #####", object->m_id);
     }
 
     if (object->m_update_interval <= 0) {
@@ -1025,8 +1025,7 @@ StatObjectList::Eval()
       delta = object->m_current_time - object->m_last_update;
 
       if (StatDebug) {
-        Debug(MODULE, "\tUPDATE:%" PRId64 " THRESHOLD:%" PRId64 ", DELTA:%" PRId64 "\n", object->m_update_interval, threshold,
-              delta);
+        Debug(MODULE, "\tUPDATE:%" PRId64 " THRESHOLD:%" PRId64 ", DELTA:%" PRId64 "", object->m_update_interval, threshold, delta);
       }
 
       /* Should we do the calculation? */
@@ -1036,19 +1035,19 @@ StatObjectList::Eval()
 
         if (StatDebug) {
           if (delta > threshold) {
-            Debug(MODULE, "\t\tdelta > threshold IS TRUE!\n");
+            Debug(MODULE, "\t\tdelta > threshold IS TRUE!");
           }
           if (object->m_last_update == -1) {
-            Debug(MODULE, "\t\tm_last_update = -1 IS TRUE!\n");
+            Debug(MODULE, "\t\tm_last_update = -1 IS TRUE!");
           }
           if (object->m_last_update > object->m_current_time) {
-            Debug(MODULE, "\t\tm_last_update > m_current_time IS TRUE\n");
+            Debug(MODULE, "\t\tm_last_update > m_current_time IS TRUE");
           }
         }
 
         if (!object->m_has_delta) {
           if (StatDebug) {
-            Debug(MODULE, "\tEVAL: Simple time-condition.\n");
+            Debug(MODULE, "\tEVAL: Simple time-condition.");
           }
 
           if (object->m_node_dest) {
@@ -1065,7 +1064,7 @@ StatObjectList::Eval()
         } else {
           /* has delta */
           if (StatDebug) {
-            Debug(MODULE, "\tEVAL: Complicated time-condition.\n");
+            Debug(MODULE, "\tEVAL: Complicated time-condition.");
           }
           // scroll old values
           for (StatExprToken *token = object->m_postfix->first(); token; token = object->m_expression->next(token)) {
@@ -1101,13 +1100,13 @@ StatObjectList::Eval()
             object->m_last_update = object->m_current_time;
           } else {
             if (StatDebug) {
-              Debug(MODULE, "\tEVAL: Timer not expired, do nothing\n");
+              Debug(MODULE, "\tEVAL: Timer not expired, do nothing");
             }
           }
         } /* delta? */
       } else {
         if (StatDebug) {
-          Debug(MODULE, "\tEVAL: Timer not expired, nor 1st time, nor wrapped, SORRY!\n");
+          Debug(MODULE, "\tEVAL: Timer not expired, nor 1st time, nor wrapped, SORRY!");
         }
       } /* timed event */
     }
@@ -1127,7 +1126,7 @@ StatObjectList::print(const char *prefix)
 {
   for (StatObject *object = first(); object; object = next(object)) {
     if (StatDebug) {
-      Debug(MODULE, "\n%sSTAT OBJECT#: %d\n", prefix, object->m_id);
+      Debug(MODULE, "\n%sSTAT OBJECT#: %d", prefix, object->m_id);
     }
 
     if (object->m_expression) {

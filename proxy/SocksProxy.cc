@@ -139,7 +139,7 @@ SocksProxy::mainEvent(int event, void *data)
   switch (event) {
   case NET_EVENT_ACCEPT:
     state = SOCKS_ACCEPT;
-    Debug("SocksProxy", "Proxy got accept event\n");
+    Debug("SocksProxy", "Proxy got accept event");
 
     clientVC = (NetVConnection *)data;
     clientVC->socks_addr.reset();
@@ -152,7 +152,7 @@ SocksProxy::mainEvent(int event, void *data)
       // This is a WRITE_COMPLETE. vio->nbytes == vio->ndone is true
 
       SOCKSPROXY_INC_STAT(socksproxy_http_connections_stat);
-      Debug("SocksProxy", "Handing over the HTTP request\n");
+      Debug("SocksProxy", "Handing over the HTTP request");
 
       ha_opt.transport_type = clientVC->attributes;
       HttpSessionAccept http_accept(ha_opt);
@@ -174,11 +174,11 @@ SocksProxy::mainEvent(int event, void *data)
     break;
 
   case VC_EVENT_WRITE_READY:
-    Debug("SocksProxy", "Received unexpected write_ready\n");
+    Debug("SocksProxy", "Received unexpected write_ready");
     break;
 
   case VC_EVENT_READ_COMPLETE:
-    Debug("SocksProxy", "Oops! We should never get Read_Complete.\n");
+    Debug("SocksProxy", "Oops! We should never get Read_Complete.");
   // FALLTHROUGH
   case VC_EVENT_READ_READY: {
     unsigned char *port_ptr = 0;
@@ -191,7 +191,7 @@ SocksProxy::mainEvent(int event, void *data)
     p = (unsigned char *)reader->start();
 
     if (n_read_avail >= 2) {
-      Debug(state == SOCKS_ACCEPT ? "SocksProxy" : "", "Accepted connection from a version %d client\n", (int)p[0]);
+      Debug(state == SOCKS_ACCEPT ? "SocksProxy" : "", "Accepted connection from a version %d client", (int)p[0]);
 
       // Most of the time request is just a single packet
       switch (p[0]) {
@@ -239,7 +239,7 @@ SocksProxy::mainEvent(int event, void *data)
               break;
             default:
               req_len = INT_MAX;
-              Debug("SocksProxy", "Illegal address type(%d)\n", (int)p[3]);
+              Debug("SocksProxy", "Illegal address type(%d)", (int)p[3]);
             }
 
             if (n_read_avail >= req_len) {
@@ -281,7 +281,7 @@ SocksProxy::mainEvent(int event, void *data)
 
           state = AUTH_DONE;
         } else {
-          Debug("SocksProxy", "Auth_handler returned error\n");
+          Debug("SocksProxy", "Auth_handler returned error");
           state = SOCKS_ERROR;
         }
 
@@ -338,7 +338,7 @@ SocksProxy::mainEvent(int event, void *data)
   case NET_EVENT_OPEN: {
     pending_action = NULL;
     ink_assert(state == SERVER_TUNNEL);
-    Debug("SocksProxy", "open to Socks server succeeded\n");
+    Debug("SocksProxy", "open to Socks server succeeded");
 
     NetVConnection *serverVC;
     serverVC = (NetVConnection *)data;
@@ -360,12 +360,12 @@ SocksProxy::mainEvent(int event, void *data)
     pending_action = NULL;
     sendResp(false);
     state = RESP_TO_CLIENT;
-    Debug("SocksProxy", "open to Socks server failed\n");
+    Debug("SocksProxy", "open to Socks server failed");
     break;
 
   case EVENT_INTERVAL:
     timeout = 0;
-    Debug("SocksProxy", "SocksProxy timeout, state = %d\n", state);
+    Debug("SocksProxy", "SocksProxy timeout, state = %d", state);
     state = SOCKS_ERROR;
     break;
 
@@ -373,7 +373,7 @@ SocksProxy::mainEvent(int event, void *data)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_EOS:
-    Debug("SocksProxy", "VC_EVENT (state: %d error: %s)\n", state, get_vc_event_name(event));
+    Debug("SocksProxy", "VC_EVENT (state: %d error: %s)", state, get_vc_event_name(event));
     state = SOCKS_ERROR;
     break;
 
@@ -390,7 +390,7 @@ SocksProxy::mainEvent(int event, void *data)
       timeout->cancel(this);
 
     if (clientVC) {
-      Debug("SocksProxy", "Closing clientVC on error\n");
+      Debug("SocksProxy", "Closing clientVC on error");
       clientVC->do_io_close();
       clientVC = NULL;
     }
@@ -496,7 +496,7 @@ struct SocksAccepter : public Continuation {
   mainEvent(int event, NetVConnection *netVC)
   {
     ink_assert(event == NET_EVENT_ACCEPT);
-    // Debug("Socks", "Accepter got ACCEPT event\n");
+    // Debug("Socks", "Accepter got ACCEPT event");
 
     new_SocksProxy(netVC);
 
@@ -510,7 +510,7 @@ struct SocksAccepter : public Continuation {
 void
 start_SocksProxy(int port)
 {
-  Debug("SocksProxy", "Accepting SocksProxy connections on port %d\n", port);
+  Debug("SocksProxy", "Accepting SocksProxy connections on port %d", port);
   NetProcessor::AcceptOptions opt;
   opt.local_port = port;
   netProcessor.main_accept(new SocksAccepter(), NO_FD, opt);
@@ -536,12 +536,12 @@ socks5ServerAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
   case SOCKS_AUTH_READ_COMPLETE:
 
     ink_assert(p[0] == SOCKS5_VERSION);
-    Debug("SocksProxy", "Socks read initial auth info\n");
+    Debug("SocksProxy", "Socks read initial auth info");
     // do nothing
     break;
 
   case SOCKS_AUTH_FILL_WRITE_BUF:
-    Debug("SocksProxy", "No authentication is required\n");
+    Debug("SocksProxy", "No authentication is required");
     p[0] = SOCKS5_VERSION;
     p[1] = 0; // no authentication necessary
     ret = 2;

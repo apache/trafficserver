@@ -145,7 +145,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
   else
     size_index = default_large_iobuffer_size;
 
-  Debug("one_way_tunnel", "buffer size index [%" PRId64 "] [%d]\n", size_index, size_estimate);
+  Debug("one_way_tunnel", "buffer size index [%" PRId64 "] [%d]", size_index, size_estimate);
 
   // enqueue read request on vcSource.
   MIOBuffer *buf1 = new_MIOBuffer(size_index);

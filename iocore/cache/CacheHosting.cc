@@ -671,7 +671,7 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           num_http_volumes++;
         else
           num_stream_volumes++;
-        Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d\n", volume_number, scheme, size, in_percent);
+        Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d", volume_number, scheme, size, in_percent);
         break;
       }
 

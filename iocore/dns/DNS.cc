@@ -244,21 +244,21 @@ void
 DNSProcessor::dns_init()
 {
   gethostname(try_server_names[0], 255);
-  Debug("dns", "localhost=%s\n", try_server_names[0]);
-  Debug("dns", "Round-robin nameservers = %d\n", dns_ns_rr);
+  Debug("dns", "localhost=%s", try_server_names[0]);
+  Debug("dns", "Round-robin nameservers = %d", dns_ns_rr);
 
   IpEndpoint nameserver[MAX_NAMED];
   size_t nserv = 0;
 
   if (dns_ns_list) {
-    Debug("dns", "Nameserver list specified \"%s\"\n", dns_ns_list);
+    Debug("dns", "Nameserver list specified \"%s\"", dns_ns_list);
     int i;
     char *last;
     char *ns_list = ats_strdup(dns_ns_list);
     char *ns = (char *)strtok_r(ns_list, " ,;\t\r", &last);
 
     for (i = 0, nserv = 0; (i < MAX_NAMED) && ns; ++i) {
-      Debug("dns", "Nameserver list - parsing \"%s\"\n", ns);
+      Debug("dns", "Nameserver list - parsing \"%s\"", ns);
       bool err = false;
       int prt = DOMAIN_SERVICE_PORT;
       char *colon = 0; // where the port colon is.
@@ -479,7 +479,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
 {
   //
   // If this is for the default server, get it
-  Debug("dns", "DNSHandler::startEvent: on thread %d\n", e->ethread->id);
+  Debug("dns", "DNSHandler::startEvent: on thread %d", e->ethread->id);
 
   this->validate_ip();
 
@@ -525,7 +525,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
 int
 DNSHandler::startEvent_sdns(int /* event ATS_UNUSED */, Event *e)
 {
-  Debug("dns", "DNSHandler::startEvent_sdns: on thread %d\n", e->ethread->id);
+  Debug("dns", "DNSHandler::startEvent_sdns: on thread %d", e->ethread->id);
   this->validate_ip();
 
   SET_HANDLER(&DNSHandler::mainEvent);

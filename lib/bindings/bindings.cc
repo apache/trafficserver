@@ -108,17 +108,17 @@ BindingInstance::bind_value(const char *name, int value)
 
   // XXX extract this code so that we can using it for binding constants
   // into an arbitrary table path ...
-  Debug("lua", "binding %s value at %d to %s\n", luaL_typename(this->lua, value), value, name);
+  Debug("lua", "binding %s value at %d to %s", luaL_typename(this->lua, value), value, name);
 
   for (; (end = ::strchr(start, '.')); start = end + 1) {
     std::string name(start, end);
 
-    Debug("lua", "checking for table '%s'\n", name.c_str());
+    Debug("lua", "checking for table '%s'", name.c_str());
     if (depth == 0) {
       lua_getglobal(this->lua, name.c_str());
       if (lua_isnil(this->lua, -1)) {
         // No table with this name, construct one.
-        Debug("lua", "creating global table '%s'\n", name.c_str());
+        Debug("lua", "creating global table '%s'", name.c_str());
 
         lua_pop(this->lua, 1); // Pop the nil.
         lua_newtable(this->lua);
@@ -133,7 +133,7 @@ BindingInstance::bind_value(const char *name, int value)
     } else {
       ink_assert(is_indexable(this->lua, -1));
 
-      Debug("lua", "checking for table key '%s'\n", name.c_str());
+      Debug("lua", "checking for table key '%s'", name.c_str());
 
       // Push the string key.
       lua_pushlstring(this->lua, &name[0], name.size());
@@ -141,7 +141,7 @@ BindingInstance::bind_value(const char *name, int value)
       lua_gettable(this->lua, -2);
 
       if (lua_isnil(this->lua, -1)) {
-        Debug("lua", "creating table key '%s'\n", name.c_str());
+        Debug("lua", "creating table key '%s'", name.c_str());
 
         lua_pop(this->lua, 1); // Pop the nil.
         lua_pushlstring(this->lua, &name[0], name.size());
@@ -168,8 +168,8 @@ BindingInstance::bind_value(const char *name, int value)
     ++depth;
   }
 
-  Debug("lua", "stack depth is %d (expected %d)\n", lua_gettop(this->lua), depth);
-  Debug("lua", "last name token is '%s'\n", start);
+  Debug("lua", "stack depth is %d (expected %d)", lua_gettop(this->lua), depth);
+  Debug("lua", "last name token is '%s'", start);
 
   // If we pushed a series of tables onto the stack, bind the name to a table
   // entry. otherwise bind it as a global name.
@@ -179,11 +179,11 @@ BindingInstance::bind_value(const char *name, int value)
     // At this point the top of stack should be something indexable.
     ink_assert(is_indexable(this->lua, -1));
 
-    Debug("lua", "stack depth is %d (expected %d)\n", lua_gettop(this->lua), depth);
+    Debug("lua", "stack depth is %d (expected %d)", lua_gettop(this->lua), depth);
     // Push the index name.
     lua_pushstring(this->lua, start);
 
-    Debug("lua", "stack depth is %d (expected %d)\n", lua_gettop(this->lua), depth);
+    Debug("lua", "stack depth is %d (expected %d)", lua_gettop(this->lua), depth);
     // Fetch the index (without metamethods);
     lua_gettable(this->lua, -2);
 
@@ -199,7 +199,7 @@ BindingInstance::bind_value(const char *name, int value)
       bound = true;
     }
 
-    Debug("lua", "stack depth is %d (expected %d)\n", lua_gettop(this->lua), depth);
+    Debug("lua", "stack depth is %d (expected %d)", lua_gettop(this->lua), depth);
     lua_pop(this->lua, depth);
   } else {
     bool isnil;

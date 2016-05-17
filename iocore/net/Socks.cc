@@ -247,7 +247,7 @@ SocksEntry::mainEvent(int event, void *data)
     if (auth_handler) {
       n_bytes = invokeSocksAuthHandler(auth_handler, SOCKS_AUTH_OPEN, p);
     } else {
-      // Debug("Socks", " Got NET_EVENT_OPEN to SOCKS server\n");
+      // Debug("Socks", " Got NET_EVENT_OPEN to SOCKS server");
 
       p[n_bytes++] = version;
       p[n_bytes++] = (socks_cmd == NORMAL_SOCKS) ? SOCKS_CONNECT : socks_cmd;
@@ -292,7 +292,7 @@ SocksEntry::mainEvent(int event, void *data)
     }
 
     netVConnection->do_io_write(this, n_bytes, reader, 0);
-    // Debug("Socks", "Sent the request to the SOCKS server\n");
+    // Debug("Socks", "Sent the request to the SOCKS server");
 
     ret = EVENT_CONT;
     break;
@@ -370,7 +370,7 @@ SocksEntry::mainEvent(int event, void *data)
       timeout->cancel(this);
       timeout = NULL;
     }
-    // Debug("Socks", "Successfully read the reply from the SOCKS server\n");
+    // Debug("Socks", "Successfully read the reply from the SOCKS server");
     p = (unsigned char *)buf->start();
 
     if (auth_handler) {

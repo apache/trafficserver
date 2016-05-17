@@ -191,7 +191,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
       }
     }
 
-    Debug("rollback", "[Rollback::Rollback] Current Version of %s is %d\n", fileName, currentVersion);
+    Debug("rollback", "[Rollback::Rollback] Current Version of %s is %d", fileName, currentVersion);
   }
 
   // Now that we'll got every thing set up, try opening
@@ -398,7 +398,7 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
     }
   }
 
-  Debug("rollback", "[Rollback::internalUpdate] Moving %s from version %d to version %d\n", this->fileName, this->currentVersion,
+  Debug("rollback", "[Rollback::internalUpdate] Moving %s from version %d to version %d", this->fileName, this->currentVersion,
         newVersion);
 
   currentVersion_local = createPathStr(this->currentVersion);

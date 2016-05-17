@@ -530,7 +530,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
   MgmtIntCounter counter_val;
   MgmtInt int_val;
 
-  Debug("RecOp", "[MgmtRecordGet] Start\n");
+  Debug("RecOp", "[MgmtRecordGet] Start");
 
   // initialize the record name
   rec_ele->rec_name = ats_strdup(rec_name);
@@ -545,7 +545,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
       return TS_ERR_FAIL;
     rec_ele->valueT.counter_val = (TSCounter)counter_val;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64 "\n", rec_ele->rec_name, rec_ele->valueT.counter_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64 "", rec_ele->rec_name, rec_ele->valueT.counter_val);
     break;
 
   case RECD_INT:
@@ -554,7 +554,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
       return TS_ERR_FAIL;
     rec_ele->valueT.int_val = (TSInt)int_val;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64 "\n", rec_ele->rec_name, rec_ele->valueT.int_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64 "", rec_ele->rec_name, rec_ele->valueT.int_val);
     break;
 
   case RECD_FLOAT:
@@ -562,7 +562,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
     if (!varFloatFromName(rec_name, &(rec_ele->valueT.float_val)))
       return TS_ERR_FAIL;
 
-    Debug("RecOp", "[MgmtRecordGet] Get Float Var %s = %f\n", rec_ele->rec_name, rec_ele->valueT.float_val);
+    Debug("RecOp", "[MgmtRecordGet] Get Float Var %s = %f", rec_ele->rec_name, rec_ele->valueT.float_val);
     break;
 
   case RECD_STRING:
@@ -578,11 +578,11 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 
     rec_ele->rec_type = TS_REC_STRING;
     rec_ele->valueT.string_val = str_val;
-    Debug("RecOp", "[MgmtRecordGet] Get String Var %s = %s\n", rec_ele->rec_name, rec_ele->valueT.string_val);
+    Debug("RecOp", "[MgmtRecordGet] Get String Var %s = %s", rec_ele->rec_name, rec_ele->valueT.string_val);
     break;
 
   default: // UNKOWN TYPE
-    Debug("RecOp", "[MgmtRecordGet] Get Failed : %d is Unknown Var type %s\n", rec_type, rec_name);
+    Debug("RecOp", "[MgmtRecordGet] Get Failed : %d is Unknown Var type %s", rec_type, rec_name);
     return TS_ERR_FAIL;
   }
 
@@ -659,7 +659,7 @@ determine_action_need(const char *rec_name)
 TSMgmtError
 MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT *action_need)
 {
-  Debug("RecOp", "[MgmtRecordSet] Start\n");
+  Debug("RecOp", "[MgmtRecordSet] Start");
 
   if (!rec_name || !val || !action_need)
     return TS_ERR_PARAMS;
@@ -772,7 +772,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   char *old_file_lines;
   version_t ver;
 
-  Debug("FileOp", "[get_lines_from_file] START\n");
+  Debug("FileOp", "[get_lines_from_file] START");
 
   fname = filename_to_string(file);
   if (!fname)
@@ -780,7 +780,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
 
   ret = configFiles->getRollbackObj(fname, &file_rb);
   if (ret != true) {
-    Debug("FileOp", "[get_lines_from_file] Can't get Rollback for file: %s\n", fname);
+    Debug("FileOp", "[get_lines_from_file] Can't get Rollback for file: %s", fname);
     return TS_ERR_READ_FILE;
   }
   ver = file_rb->getCurrentVersion();

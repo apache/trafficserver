@@ -289,7 +289,7 @@ CfgContextGetEleAt(CfgContext *ctx, int index)
       continue;
     } else {
       if (count == index) { // got right ele
-        // Debug("config", "Get ele at index = %d\n", index);
+        // Debug("config", "Get ele at index = %d", index);
         cfg_ele = curr_ele->getCfgEle();
         return cfg_ele;
       }

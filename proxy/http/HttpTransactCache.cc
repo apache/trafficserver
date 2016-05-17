@@ -1202,7 +1202,7 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig *http_config_params, HT
 
       Debug("http_match", "Vary: %s", field->str);
       if (((field->str[0] == '*') && (field->str[1] == NUL))) {
-        Debug("http_match", "Wildcard variability --- object not served from cache\n");
+        Debug("http_match", "Wildcard variability --- object not served from cache");
         variability = VARIABILITY_ALL;
         break;
       }

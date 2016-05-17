@@ -122,7 +122,7 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 static int
 raw_stat_clear(RecRawStatBlock *rsb, int id)
 {
-  Debug("stats", "raw_stat_clear(): rsb pointer:%p id:%d\n", rsb, id);
+  Debug("stats", "raw_stat_clear(): rsb pointer:%p id:%d", rsb, id);
 
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
@@ -156,7 +156,7 @@ raw_stat_clear(RecRawStatBlock *rsb, int id)
 static int
 raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
 {
-  Debug("stats", "raw_stat_clear_sum(): rsb pointer:%p id:%d\n", rsb, id);
+  Debug("stats", "raw_stat_clear_sum(): rsb pointer:%p id:%d", rsb, id);
 
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
@@ -186,7 +186,7 @@ raw_stat_clear_sum(RecRawStatBlock *rsb, int id)
 static int
 raw_stat_clear_count(RecRawStatBlock *rsb, int id)
 {
-  Debug("stats", "raw_stat_clear_count(): rsb pointer:%p id:%d\n", rsb, id);
+  Debug("stats", "raw_stat_clear_count(): rsb pointer:%p id:%d", rsb, id);
 
   // the globals need to be reset too
   // lock so the setting of the globals and last values are atomic
@@ -242,7 +242,7 @@ int
 _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDataT data_type, RecPersistT persist_type, int id,
                     RecRawStatSyncCb sync_cb)
 {
-  Debug("stats", "RecRawStatSyncCb(%s): rsb pointer:%p id:%d\n", name, rsb, id);
+  Debug("stats", "RecRawStatSyncCb(%s): rsb pointer:%p id:%d", name, rsb, id);
 
   // check to see if we're good to proceed
   ink_assert(id < rsb->max_stats);

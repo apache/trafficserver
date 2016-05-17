@@ -250,7 +250,7 @@ PreserveCapabilities()
 #if TS_USE_POSIX_CAP
   zret = prctl(PR_SET_KEEPCAPS, 1);
 #endif
-  Debug("privileges", "[PreserveCapabilities] zret : %d\n", zret);
+  Debug("privileges", "[PreserveCapabilities] zret : %d", zret);
   return zret == 0;
 }
 
@@ -272,7 +272,7 @@ RestrictCapabilities()
   zret = cap_set_proc(caps);
   cap_free(caps);
 #endif
-  Debug("privileges", "[RestrictCapabilities] zret : %d\n", zret);
+  Debug("privileges", "[RestrictCapabilities] zret : %d", zret);
   return zret == 0;
 }
 
@@ -291,7 +291,7 @@ EnableCoreFile(bool flag)
   }
 #endif // linux check
 
-  Debug("privileges", "[EnableCoreFile] zret : %d\n", zret);
+  Debug("privileges", "[EnableCoreFile] zret : %d", zret);
   return zret == 0;
 }
 
@@ -351,7 +351,7 @@ ElevateAccess::acquirePrivilege(unsigned priv_mask)
   cap_value_t cap_list[2];
   cap_t new_cap_state;
 
-  Debug("privileges", "[acquirePrivilege] level= %x\n", level);
+  Debug("privileges", "[acquirePrivilege] level= %x", level);
 
   ink_assert(NULL == cap_state);
 

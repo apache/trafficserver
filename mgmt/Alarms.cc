@@ -101,7 +101,7 @@ Alarms::registerCallback(AlarmCallbackFunc func)
 
   ink_mutex_acquire(&mutex);
   snprintf(cb_buf, sizeof(cb_buf), "%d", cur_cb++);
-  Debug("alarm", "[Alarms::registerCallback] Registering Alarms callback\n");
+  Debug("alarm", "[Alarms::registerCallback] Registering Alarms callback");
   ink_hash_table_insert(cblist, cb_buf, (void *)func);
   ink_mutex_release(&mutex);
 } /* End Alarms::registerCallback */

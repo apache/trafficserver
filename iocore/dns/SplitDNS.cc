@@ -168,8 +168,8 @@ SplitDNSConfig::print()
 {
   SplitDNS *params = SplitDNSConfig::acquire();
 
-  Debug("splitdns_config", "DNS Server Selection Config\n");
-  Debug("splitdns_config", "\tEnabled=%d \n", params->m_SplitDNSlEnable);
+  Debug("splitdns_config", "DNS Server Selection Config");
+  Debug("splitdns_config", "\tEnabled=%d", params->m_SplitDNSlEnable);
 
   params->m_DNSSrvrTable->Print();
   SplitDNSConfig::release(params);
@@ -275,7 +275,7 @@ SplitDNS::findServer(RequestData *rdata, SplitDNSResult *result)
       Debug("splitdns_config", "Result for %s was %s", host, SDNSResultStr[result->r]);
       break;
     case DNS_SRVR_SPECIFIED:
-      Debug("splitdns_config", "Result for %s was dns servers \n", host);
+      Debug("splitdns_config", "Result for %s was dns servers", host);
       result->m_rec->Print();
       break;
     default:
@@ -534,7 +534,7 @@ SplitDNSRecord::Print()
 {
   for (int i = 0; i < m_dnsSrvr_cnt; i++) {
     char ab[INET6_ADDRPORTSTRLEN];
-    Debug("splitdns_config", " %s ", ats_ip_ntop(&m_servers.x_server_ip[i].sa, ab, sizeof ab));
+    Debug("splitdns_config", " %s", ats_ip_ntop(&m_servers.x_server_ip[i].sa, ab, sizeof ab));
   }
 }
 

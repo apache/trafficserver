@@ -419,7 +419,7 @@ ConditionDBM::initialize(Parser &p)
     _file = _qualifier.substr(0, pos);
     //_dbm = mdbm_open(_file.c_str(), O_RDONLY, 0, 0, 0);
     // if (NULL != _dbm) {
-    //   TSDebug(PLUGIN_NAME, "Opened DBM file %s\n", _file.c_str());
+    //   TSDebug(PLUGIN_NAME, "Opened DBM file %s", _file.c_str());
     //   _key.set_value(_qualifier.substr(pos + 1));
     // } else {
     //   TSError("Failed to open DBM file: %s", _file.c_str());

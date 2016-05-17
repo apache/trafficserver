@@ -146,7 +146,7 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[remap] Plugin registration failed.");
   }
-  TSDebug("debug-remap", "TSPluginInit: Remap plugin started\n");
+  TSDebug("debug-remap", "TSPluginInit: Remap plugin started");
 }
 
 // Plugin initialization code. Called immediately after dlopen() Only once!

@@ -1571,24 +1571,21 @@ url_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 {
   URLImpl *obj = (URLImpl *)raw;
 
-  Debug("http", "[URLTYPE: %d, SWKSIDX: %d,\n", obj->m_url_type, obj->m_scheme_wks_idx);
-  Debug("http", "\tSCHEME: \"%.*s\", SCHEME_LEN: %d,\n", obj->m_len_scheme, (obj->m_ptr_scheme ? obj->m_ptr_scheme : "NULL"),
+  Debug("http", "[URLTYPE: %d, SWKSIDX: %d,", obj->m_url_type, obj->m_scheme_wks_idx);
+  Debug("http", "\tSCHEME: \"%.*s\", SCHEME_LEN: %d,", obj->m_len_scheme, (obj->m_ptr_scheme ? obj->m_ptr_scheme : "NULL"),
         obj->m_len_scheme);
-  Debug("http", "\tUSER: \"%.*s\", USER_LEN: %d,\n", obj->m_len_user, (obj->m_ptr_user ? obj->m_ptr_user : "NULL"),
-        obj->m_len_user);
-  Debug("http", "\tPASSWORD: \"%.*s\", PASSWORD_LEN: %d,\n", obj->m_len_password,
+  Debug("http", "\tUSER: \"%.*s\", USER_LEN: %d,", obj->m_len_user, (obj->m_ptr_user ? obj->m_ptr_user : "NULL"), obj->m_len_user);
+  Debug("http", "\tPASSWORD: \"%.*s\", PASSWORD_LEN: %d,", obj->m_len_password,
         (obj->m_ptr_password ? obj->m_ptr_password : "NULL"), obj->m_len_password);
-  Debug("http", "\tHOST: \"%.*s\", HOST_LEN: %d,\n", obj->m_len_host, (obj->m_ptr_host ? obj->m_ptr_host : "NULL"),
-        obj->m_len_host);
-  Debug("http", "\tPORT: \"%.*s\", PORT_LEN: %d, PORT_NUM: %d\n", obj->m_len_port, (obj->m_ptr_port ? obj->m_ptr_port : "NULL"),
+  Debug("http", "\tHOST: \"%.*s\", HOST_LEN: %d,", obj->m_len_host, (obj->m_ptr_host ? obj->m_ptr_host : "NULL"), obj->m_len_host);
+  Debug("http", "\tPORT: \"%.*s\", PORT_LEN: %d, PORT_NUM: %d", obj->m_len_port, (obj->m_ptr_port ? obj->m_ptr_port : "NULL"),
         obj->m_len_port, obj->m_port);
-  Debug("http", "\tPATH: \"%.*s\", PATH_LEN: %d,\n", obj->m_len_path, (obj->m_ptr_path ? obj->m_ptr_path : "NULL"),
-        obj->m_len_path);
-  Debug("http", "\tPARAMS: \"%.*s\", PARAMS_LEN: %d,\n", obj->m_len_params, (obj->m_ptr_params ? obj->m_ptr_params : "NULL"),
+  Debug("http", "\tPATH: \"%.*s\", PATH_LEN: %d,", obj->m_len_path, (obj->m_ptr_path ? obj->m_ptr_path : "NULL"), obj->m_len_path);
+  Debug("http", "\tPARAMS: \"%.*s\", PARAMS_LEN: %d,", obj->m_len_params, (obj->m_ptr_params ? obj->m_ptr_params : "NULL"),
         obj->m_len_params);
-  Debug("http", "\tQUERY: \"%.*s\", QUERY_LEN: %d,\n", obj->m_len_query, (obj->m_ptr_query ? obj->m_ptr_query : "NULL"),
+  Debug("http", "\tQUERY: \"%.*s\", QUERY_LEN: %d,", obj->m_len_query, (obj->m_ptr_query ? obj->m_ptr_query : "NULL"),
         obj->m_len_query);
-  Debug("http", "\tFRAGMENT: \"%.*s\", FRAGMENT_LEN: %d]\n", obj->m_len_fragment,
+  Debug("http", "\tFRAGMENT: \"%.*s\", FRAGMENT_LEN: %d]", obj->m_len_fragment,
         (obj->m_ptr_fragment ? obj->m_ptr_fragment : "NULL"), obj->m_len_fragment);
 }
 

@@ -285,7 +285,7 @@ Connection::open(NetVCOptions const &opt)
       int rbufsz = ROUNDUP(opt.socket_recv_bufsize, 1024);
       while (rbufsz && !socketManager.set_rcvbuf_size(fd, rbufsz))
         rbufsz -= 1024;
-      Debug("socket", "::open: recv_bufsize = %d of %d\n", rbufsz, opt.socket_recv_bufsize);
+      Debug("socket", "::open: recv_bufsize = %d of %d", rbufsz, opt.socket_recv_bufsize);
     }
   }
   if (opt.socket_send_bufsize > 0) {
@@ -294,7 +294,7 @@ Connection::open(NetVCOptions const &opt)
       int sbufsz = ROUNDUP(opt.socket_send_bufsize, 1024);
       while (sbufsz && !socketManager.set_sndbuf_size(fd, sbufsz))
         sbufsz -= 1024;
-      Debug("socket", "::open: send_bufsize = %d of %d\n", sbufsz, opt.socket_send_bufsize);
+      Debug("socket", "::open: send_bufsize = %d of %d", sbufsz, opt.socket_send_bufsize);
     }
   }
 

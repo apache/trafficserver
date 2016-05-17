@@ -72,6 +72,6 @@ preprocess_msg(int fd, void **req, size_t *reqlen)
 
   *req = msg.ptr;
   *reqlen = msg.len;
-  Debug("ts_main", "[preprocess_msg] read message length = %zd\n", msg.len);
+  Debug("ts_main", "[preprocess_msg] read message length = %zd", msg.len);
   return TS_ERR_OKAY;
 }

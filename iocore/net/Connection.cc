@@ -83,7 +83,7 @@ Server::accept(Connection *c)
   c->fd = res;
   if (is_debug_tag_set("iocore_net_server")) {
     ip_port_text_buffer ipb1, ipb2;
-    Debug("iocore_net_server", "Connection accepted [Server]. %s -> %s\n", ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2)),
+    Debug("iocore_net_server", "Connection accepted [Server]. %s -> %s", ats_ip_nptop(&c->addr, ipb2, sizeof(ipb2)),
           ats_ip_nptop(&addr, ipb1, sizeof(ipb1)));
   }
 
@@ -254,7 +254,7 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
 
   if (transparent) {
 #if TS_USE_TPROXY
-    Debug("http_tproxy", "Listen port inbound transparency enabled.\n");
+    Debug("http_tproxy", "Listen port inbound transparency enabled.");
     if (safe_setsockopt(fd, SOL_IP, TS_IP_TRANSPARENT, SOCKOPT_ON, sizeof(int)) < 0) {
       Fatal("[Server::listen] Unable to set transparent socket option [%d] %s\n", errno, strerror(errno));
     }

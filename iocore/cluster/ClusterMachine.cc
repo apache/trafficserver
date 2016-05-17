@@ -101,7 +101,7 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
 #endif
     if (clustering_enabled) {
       char *clusterIP = getenv("PROXY_CLUSTER_ADDR");
-      Debug("cluster_note", "[Machine::Machine] Cluster IP addr: %s\n", clusterIP);
+      Debug("cluster_note", "[Machine::Machine] Cluster IP addr: %s", clusterIP);
       ip = inet_addr(clusterIP);
     } else {
       ink_gethostbyname_r_data data;

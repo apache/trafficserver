@@ -315,7 +315,7 @@ Vol::aggWriteDone(int event, Event *e)
     header->last_write_pos = header->write_pos;
     header->write_pos += io.aiocb.aio_nbytes;
     ink_assert(header->write_pos >= start);
-    DDebug("cache_agg", "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "\n", hash_text.get(), header->write_pos,
+    DDebug("cache_agg", "Dir %s, Write: %" PRIu64 ", last Write: %" PRIu64 "", hash_text.get(), header->write_pos,
            header->last_write_pos);
     ink_assert(header->write_pos == header->agg_pos);
     if (header->write_pos + EVACUATION_SIZE > scan_pos)
@@ -1073,14 +1073,14 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
   if (is_debug_tag_set("cache_update")) {
     if (f.update && closed > 0) {
       if (!total_len && alternate_index != CACHE_ALT_REMOVED) {
-        Debug("cache_update", "header only %d (%" PRIu64 ", %" PRIu64 ")\n", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
+        Debug("cache_update", "header only %d (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
               update_key.b[1]);
 
       } else if (total_len && alternate_index != CACHE_ALT_REMOVED) {
-        Debug("cache_update", "header body, %d, (%" PRIu64 ", %" PRIu64 "), (%" PRIu64 ", %" PRIu64 ")\n",
+        Debug("cache_update", "header body, %d, (%" PRIu64 ", %" PRIu64 "), (%" PRIu64 ", %" PRIu64 ")",
               DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0], update_key.b[1], earliest_key.b[0], earliest_key.b[1]);
       } else if (!total_len && alternate_index == CACHE_ALT_REMOVED) {
-        Debug("cache_update", "alt delete, %d, (%" PRIu64 ", %" PRIu64 ")\n", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
+        Debug("cache_update", "alt delete, %d, (%" PRIu64 ", %" PRIu64 ")", DIR_MASK_TAG(first_key.slice32(2)), update_key.b[0],
               update_key.b[1]);
       }
     }
