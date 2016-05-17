@@ -3443,7 +3443,7 @@ HttpTransact::HandleStatPage(State *s)
   if (s->internal_msg_buffer) {
     status = HTTP_STATUS_OK;
   } else {
-    status = HTTP_STATUS_BAD_REQUEST;
+    status = HTTP_STATUS_NOT_FOUND;
   }
 
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status);
@@ -3460,7 +3460,7 @@ HttpTransact::HandleStatPage(State *s)
       s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, s->internal_msg_buffer_type, len);
     }
   } else {
-    s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/plain", 9);
+    s->hdr_info.client_response.value_set(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE, "text/plain", 10);
   }
 
   s->cache_info.action = CACHE_DO_NO_ACTION;
