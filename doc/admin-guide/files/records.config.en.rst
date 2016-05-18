@@ -303,6 +303,12 @@ Value Effect
    before :program:`traffic_server` drops privilege. If this variable
    is set to ``NULL``, no helper will be spawned.
 
+.. ts::vc:: CONFIG proxy.config.core_limit INT -1
+
+   This option specifies the size limit for core files in the event
+   that :program:`traffic_server` crashes. ``-1`` means there is
+   no limit. A value of ``0`` prevents core dump creation.
+
 .. ts:cv:: CONFIG proxy.config.restart.active_client_threshold INT 0
    :reloadable:
 
