@@ -376,39 +376,24 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
         err = REC_ERR_FAIL;
       } else {
         if (data_type == RECD_NULL) {
-          ink_assert(data->rec_string);
-          switch (r1->data_type) {
-          case RECD_INT:
-            r1->data.rec_int = ink_atoi64(data->rec_string);
-            data_type = RECD_INT;
-            break;
-          case RECD_FLOAT:
-            r1->data.rec_float = atof(data->rec_string);
-            data_type = RECD_FLOAT;
-            break;
-          case RECD_STRING:
-            data_type = RECD_STRING;
-            r1->data.rec_string = data->rec_string;
-            break;
-          case RECD_COUNTER:
-            r1->data.rec_int = ink_atoi64(data->rec_string);
-            data_type = RECD_COUNTER;
-            break;
-          default:
-            err = REC_ERR_FAIL;
-            break;
-          }
+          // If the caller didn't know the data type, they gave us a string
+          // and we should convert based on the record's data type.
+          ink_release_assert(data->rec_string != NULL);
+          RecDataSetFromString(r1->data_type, &(r1->data), data->rec_string);
+          data_type = r1->data_type;
+        } else {
+          RecDataSet(data_type, &(r1->data), data);
         }
 
-        if (RecDataSet(data_type, &(r1->data), data)) {
-          r1->sync_required = REC_SYNC_REQUIRED;
-          if (inc_version) {
-            r1->sync_required |= REC_INC_CONFIG_VERSION;
-          }
-          if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
-            r1->config_meta.update_required = REC_UPDATE_REQUIRED;
-          }
+        r1->sync_required = REC_SYNC_REQUIRED;
+        if (inc_version) {
+          r1->sync_required |= REC_INC_CONFIG_VERSION;
         }
+
+        if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
+          r1->config_meta.update_required = REC_UPDATE_REQUIRED;
+        }
+
         if (REC_TYPE_IS_STAT(r1->rec_type) && (data_raw != NULL)) {
           r1->stat_meta.data_raw = *data_raw;
         } else if (REC_TYPE_IS_CONFIG(r1->rec_type)) {
