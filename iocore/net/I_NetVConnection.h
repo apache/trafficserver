@@ -498,28 +498,6 @@ public:
   /** Returns remote port. */
   uint16_t get_remote_port();
 
-  /** Returns remote addr for client-side and local addr for server-side. */
-  sockaddr const *get_client_addr();
-
-  /** Returns client ip.
-      @deprecated get_client_addr() should be used instead for AF_INET6 compatibility.
-  */
-  in_addr_t get_client_ip();
-  
-  /** Returns client port. */
-  uint16_t get_client_port();
-
-  /** Returns local addr for client-side and remote addr for server-side. */
-  sockaddr const *get_server_addr();
-
-  /** Returns server ip.
-      @deprecated get_server_addr() should be used instead for AF_INET6 compatibility.
-  */
-  in_addr_t get_server_ip();
-  
-  /** Returns server port. */
-  uint16_t get_server_port();
-
   /** Structure holding user options. */
   NetVCOptions options;
 
