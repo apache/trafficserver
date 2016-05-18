@@ -625,7 +625,6 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
     // close the connection if we have SSL_READ_EOS, this is the return value from ssl_read_from_net() if we get an
     // SSL_ERROR_ZERO_RETURN from SSL_get_error()
     // SSL_ERROR_ZERO_RETURN means that the origin server closed the SSL connection
-    eosRcvd = true;
     read.triggered = 0;
     readSignalDone(VC_EVENT_EOS, nh);
 
@@ -836,7 +835,6 @@ SSLNetVConnection::SSLNetVConnection()
     npnSet(NULL),
     npnEndpoint(NULL),
     sessionAcceptPtr(NULL),
-    eosRcvd(false),
     sslTrace(false)
 {
 }
@@ -926,7 +924,6 @@ SSLNetVConnection::free(EThread *t)
   npnSet = NULL;
   npnEndpoint = NULL;
   sessionAcceptPtr = NULL;
-  eosRcvd = false;
   sslHandShakeComplete = false;
   free_handshake_buffers();
   sslTrace = false;
