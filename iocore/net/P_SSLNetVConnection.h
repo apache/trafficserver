@@ -227,11 +227,6 @@ public:
   // Returns true if we have already called at
   // least some of the hooks
   bool calledHooks(TSHttpHookID /* eventId */) { return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE); }
-  bool
-  isEosRcvd()
-  {
-    return eosRcvd;
-  }
 
   bool
   getSSLTrace() const
@@ -308,7 +303,6 @@ private:
   const SSLNextProtocolSet *npnSet;
   Continuation *npnEndpoint;
   SessionAccept *sessionAcceptPtr;
-  bool eosRcvd;
   bool sslTrace;
 };
 
