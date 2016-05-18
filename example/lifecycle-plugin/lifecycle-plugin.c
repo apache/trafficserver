@@ -46,7 +46,7 @@ CallbackHandler(TSCont this, TSEvent id, void *data)
     break;
   case TS_EVENT_LIFECYCLE_MSG: {
     TSPluginMsg *msg = (TSPluginMsg *)data;
-    TSDebug("lifecycle-plugin", "Message to '%s' - %" PRIu64 " bytes of data", msg->tag, msg->data_size);
+    TSDebug("lifecycle-plugin", "Message to '%s' - %zu bytes of data", msg->tag, msg->data_size);
     break;
   }
   default:
