@@ -254,7 +254,7 @@ varSetInt(const char *varName, RecInt value, bool convert)
 bool
 varSetData(RecDataT varType, const char *varName, RecData value)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   switch (varType) {
   case RECD_INT:

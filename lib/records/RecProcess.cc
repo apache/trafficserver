@@ -122,10 +122,10 @@ RecProcess_set_remote_sync_interval_ms(int ms)
 //-------------------------------------------------------------------------
 // recv_message_cb__process
 //-------------------------------------------------------------------------
-static int
+static RecErrT
 recv_message_cb__process(RecMessage *msg, RecMessageT msg_type, void *cookie)
 {
-  int err;
+  RecErrT err;
 
   if ((err = recv_message_cb(msg, msg_type, cookie)) == REC_ERR_OKAY) {
     if (msg_type == RECG_PULL_ACK) {

@@ -239,7 +239,7 @@ RecCoreInit(RecModeT mode_type, Diags *_diags)
 //-------------------------------------------------------------------------
 // RecLinkCnfigXXX
 //-------------------------------------------------------------------------
-int
+RecErrT
 RecLinkConfigInt(const char *name, RecInt *rec_int)
 {
   if (RecGetRecordInt(name, rec_int) == REC_ERR_FAIL) {
@@ -248,19 +248,19 @@ RecLinkConfigInt(const char *name, RecInt *rec_int)
   return RecRegisterConfigUpdateCb(name, link_int, (void *)rec_int);
 }
 
-int
+RecErrT
 RecLinkConfigInt32(const char *name, int32_t *p_int32)
 {
   return RecRegisterConfigUpdateCb(name, link_int32, (void *)p_int32);
 }
 
-int
+RecErrT
 RecLinkConfigUInt32(const char *name, uint32_t *p_uint32)
 {
   return RecRegisterConfigUpdateCb(name, link_uint32, (void *)p_uint32);
 }
 
-int
+RecErrT
 RecLinkConfigFloat(const char *name, RecFloat *rec_float)
 {
   if (RecGetRecordFloat(name, rec_float) == REC_ERR_FAIL) {
@@ -269,7 +269,7 @@ RecLinkConfigFloat(const char *name, RecFloat *rec_float)
   return RecRegisterConfigUpdateCb(name, link_float, (void *)rec_float);
 }
 
-int
+RecErrT
 RecLinkConfigCounter(const char *name, RecCounter *rec_counter)
 {
   if (RecGetRecordCounter(name, rec_counter) == REC_ERR_FAIL) {
@@ -278,7 +278,7 @@ RecLinkConfigCounter(const char *name, RecCounter *rec_counter)
   return RecRegisterConfigUpdateCb(name, link_counter, (void *)rec_counter);
 }
 
-int
+RecErrT
 RecLinkConfigString(const char *name, RecString *rec_string)
 {
   if (RecGetRecordString_Xmalloc(name, rec_string) == REC_ERR_FAIL) {
@@ -287,7 +287,7 @@ RecLinkConfigString(const char *name, RecString *rec_string)
   return RecRegisterConfigUpdateCb(name, link_string_alloc, (void *)rec_string);
 }
 
-int
+RecErrT
 RecLinkConfigByte(const char *name, RecByte *rec_byte)
 {
   if (RecGetRecordByte(name, rec_byte) == REC_ERR_FAIL) {
@@ -296,7 +296,7 @@ RecLinkConfigByte(const char *name, RecByte *rec_byte)
   return RecRegisterConfigUpdateCb(name, link_byte, (void *)rec_byte);
 }
 
-int
+RecErrT
 RecLinkConfigBool(const char *name, RecBool *rec_bool)
 {
   if (RecGetRecordBool(name, rec_bool) == REC_ERR_FAIL) {
@@ -308,10 +308,10 @@ RecLinkConfigBool(const char *name, RecBool *rec_bool)
 //-------------------------------------------------------------------------
 // RecRegisterConfigUpdateCb
 //-------------------------------------------------------------------------
-int
+RecErrT
 RecRegisterConfigUpdateCb(const char *name, RecConfigUpdateCb update_cb, void *cookie)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
   RecRecord *r;
 
   ink_rwlock_rdlock(&g_records_rwlock);
@@ -861,10 +861,10 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
 //-------------------------------------------------------------------------
 // RecGetRecord_Xmalloc
 //-------------------------------------------------------------------------
-int
+RecErrT
 RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool lock)
 {
-  int err = REC_ERR_OKAY;
+  RecErrT err = REC_ERR_OKAY;
   RecRecord *r;
 
   if (lock) {

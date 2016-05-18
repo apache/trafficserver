@@ -68,33 +68,31 @@ RecRecord *RecForceInsert(RecRecord *record);
 // Setting/Getting
 //-------------------------------------------------------------------------
 
-int RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *raw_stat, RecSourceT source,
-                 bool lock = true, bool inc_version = true);
+RecErrT RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data, RecRawStat *raw_stat, RecSourceT source,
+                     bool lock = true, bool inc_version = true);
 
-int RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool lock = true);
+RecErrT RecGetRecord_Xmalloc(const char *name, RecDataT data_type, RecData *data, bool lock = true);
 
 //-------------------------------------------------------------------------
 // Read/Sync to Disk
 //-------------------------------------------------------------------------
 
-int RecReadStatsFile();
-int RecSyncStatsFile();
-int RecReadConfigFile(bool inc_version);
-int RecWriteConfigFile(textBuffer *tb);
-int RecSyncConfigToTB(textBuffer *tb, bool *inc_version = NULL);
+RecErrT RecReadStatsFile();
+RecErrT RecSyncStatsFile();
+RecErrT RecReadConfigFile(bool inc_version);
+RecErrT RecWriteConfigFile(textBuffer *tb);
+RecErrT RecSyncConfigToTB(textBuffer *tb, bool *inc_version = NULL);
 
 //-------------------------------------------------------------------------
 // Misc
 //-------------------------------------------------------------------------
 
 bool i_am_the_record_owner(RecT rec_type);
-int send_push_message();
-int send_pull_message(RecMessageT msg_type);
-int send_register_message(RecRecord *record);
-int recv_message_cb(RecMessage *msg, RecMessageT msg_type, void *cookie);
+RecErrT send_push_message();
+RecErrT send_pull_message(RecMessageT msg_type);
+RecErrT send_register_message(RecRecord *record);
+RecErrT recv_message_cb(RecMessage *msg, RecMessageT msg_type, void *cookie);
 RecUpdateT RecExecConfigUpdateCbs(unsigned int update_required_type);
-int RecExecStatUpdateFuncs();
-int RecExecRawStatUpdateFuncs();
 
 void RecDumpRecordsHt(RecT rec_type = RECT_NULL);
 
