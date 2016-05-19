@@ -190,11 +190,16 @@ struct sync_cont : public Continuation {
   int
   sync(int /* event */, Event * /* e */)
   {
+    RecBool disabled = false;
+    RecGetRecordBool("proxy.config.disable_configuration_modification", &disabled);
+
     send_push_message();
     RecSyncStatsFile();
-    if (RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
+
+    if (!disabled && RecSyncConfigToTB(m_tb) == REC_ERR_OKAY) {
       RecWriteConfigFile(m_tb);
     }
+
     Debug("statsproc", "sync_cont() processed");
 
     return EVENT_CONT;
@@ -295,16 +300,9 @@ RecProcessStart(void)
   Debug("statsproc", "raw-stat syncer");
   raw_stat_sync_cont_event = eventProcessor.schedule_every(rssc, HRTIME_MSECONDS(g_rec_raw_stat_sync_interval_ms), ET_TASK);
 
-  RecInt disable_modification = 0;
-  RecGetRecordInt("proxy.config.disable_configuration_modification", &disable_modification);
-  // Schedule continuation to call the configuration callbacks if we are allowed to modify configuration in RAM
-  if (disable_modification == 1) {
-    Debug("statsproc", "Disabled configuration modification");
-  } else {
-    config_update_cont *cuc = new config_update_cont(new_ProxyMutex());
-    Debug("statsproc", "config syncer");
-    config_update_cont_event = eventProcessor.schedule_every(cuc, HRTIME_MSECONDS(g_rec_config_update_interval_ms), ET_TASK);
-  }
+  config_update_cont *cuc = new config_update_cont(new_ProxyMutex());
+  Debug("statsproc", "config syncer");
+  config_update_cont_event = eventProcessor.schedule_every(cuc, HRTIME_MSECONDS(g_rec_config_update_interval_ms), ET_TASK);
 
   sync_cont *sc = new sync_cont(new_ProxyMutex());
   Debug("statsproc", "remote syncer");

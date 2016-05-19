@@ -69,8 +69,9 @@ for all ``INT`` type configurations
 
 .. note::
 
-    Traffic Server currently writes back configurations to disk periodically,
-    and when doing so, will not preserve the prefixes.
+    Unless :ts:cv:`proxy.config.disable_configuration_modification`
+    is enabled, Traffic Server writes configurations to back disk
+    periodically. When doing so, the unit prefixes are not preserved.
 
 Examples
 ========
@@ -522,6 +523,14 @@ will still be restricted to root processes.
 
 This setting is not reloadable, since it is must be applied when
 program:`traffic_manager` initializes.
+
+.. ts:cv:: CONFIG proxy.config.disable_configuration_modification INT 0
+   :reloadable:
+
+This setting prevents Traffic Server rewriting the :file:`records.config`
+configuration file. Dynamic configuration changes can still be made
+using :program:`traffic_ctl config set`, but these changes will not
+be persisted.
 
 Process Manager
 ===============

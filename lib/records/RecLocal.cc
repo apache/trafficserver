@@ -65,15 +65,23 @@ sync_thr(void *data)
   textBuffer *tb = new textBuffer(65536);
   FileManager *configFiles = (FileManager *)data;
 
-  Rollback *rb;
-  bool inc_version;
-  bool written;
-
   while (1) {
+    bool inc_version;
+    RecBool disabled = false;
+    RecBool check = true;
+
+    RecGetRecordBool("proxy.config.disable_configuration_modification", &disabled);
+    if (disabled) {
+      RecDebug(DL_Debug, "configuration modification is disabled, skipping it");
+    }
+
     send_push_message();
     RecSyncStatsFile();
-    if (RecSyncConfigToTB(tb, &inc_version) == REC_ERR_OKAY) {
-      written = false;
+
+    if (!disabled && RecSyncConfigToTB(tb, &inc_version) == REC_ERR_OKAY) {
+      bool written = false;
+      Rollback *rb = NULL;
+
       if (configFiles->getRollbackObj(REC_CONFIG_FILE, &rb)) {
         if (inc_version) {
           RecDebug(DL_Note, "Rollback: '%s'", REC_CONFIG_FILE);
@@ -83,17 +91,18 @@ sync_thr(void *data)
           }
           written = true;
         }
-      } else {
-        rb = NULL;
       }
+
       if (!written) {
-        RecWriteConfigFile(tb);
-        if (rb != NULL) {
+        if (RecWriteConfigFile(tb) == REC_ERR_OKAY) {
           rb->setLastModifiedTime();
+          check = false;
         }
       }
-    } else {
-      // If we didn't sync to disk, check whether we need to update ....
+    }
+
+    // If we didn't successfully sync to disk, check whether we need to update ....
+    if (check) {
       if (configFiles->isConfigStale()) {
         RecSetRecordInt("proxy.node.config.reconfigure_required", 1, REC_SOURCE_DEFAULT);
       }
@@ -101,6 +110,7 @@ sync_thr(void *data)
 
     usleep(REC_REMOTE_SYNC_INTERVAL_MS * 1000);
   }
+
   return NULL;
 }
 
@@ -206,14 +216,8 @@ RecLocalInitMessage()
 int
 RecLocalStart(FileManager *configFiles)
 {
-  RecInt disable_modification = 0;
-  RecGetRecordInt("proxy.config.disable_configuration_modification", &disable_modification);
-  if (disable_modification == 1) {
-    RecDebug(DL_Debug, "Disable configuration modification");
-  } else {
-    ink_thread_create(sync_thr, configFiles);
-    ink_thread_create(config_update_thr, NULL);
-  }
+  ink_thread_create(sync_thr, configFiles);
+  ink_thread_create(config_update_thr, NULL);
   return REC_ERR_OKAY;
 }
 
