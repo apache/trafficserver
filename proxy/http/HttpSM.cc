@@ -7816,6 +7816,8 @@ HttpSM::get_http_schedule(int event, void * /* data ATS_UNUSED */)
       ink_assert(pending_action == NULL);
       pending_action = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
       return 0;
+    } else {
+      pending_action = NULL; // if there was a pending action, it'll get freed after this returns so clear it.
     }
   } else {
     plugin_lock = false;
