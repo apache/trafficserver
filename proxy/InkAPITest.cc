@@ -5910,6 +5910,12 @@ struct ParentTest {
       // Force the config change to sync.
       RecExecConfigUpdateCbs(REC_UPDATE_REQUIRED);
     }
+
+    for (RecBool enabled = false; enabled == false; pthread_yield()) {
+      ParentConfigParams *params = ParentConfig::acquire();
+      enabled = params->policy.ParentEnable;
+      ParentConfig::release(params);
+    }
   }
 
   ~ParentTest()
