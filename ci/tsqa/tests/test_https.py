@@ -315,7 +315,7 @@ class TestConfigFileGroup(helpers.EnvironmentCase, CertSelectionMixin):
 
     def test_config_file_group(self):
         traffic_ctl = os.path.join(self.environment.layout.bindir, 'traffic_ctl')
-        signal_cmd = [traffic_ctl, 'config', 'reload')]
+        signal_cmd = [traffic_ctl, 'config', 'reload']
         addr = ('127.0.0.3', self.ssl_port)
         cert = self._get_cert(addr, ciphers=CIPHER_MAP['rsa'])
         self.assertEqual(cert.get_subject().commonName.decode(), 'www.test.com')
