@@ -161,6 +161,6 @@ typedef RecMessageHdr RecMessage;
 
 typedef void (*RecDumpEntryCb)(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum);
 
-typedef int (*RecMessageRecvCb)(RecMessage *msg, RecMessageT msg_type, void *cookie);
+typedef RecErrT (*RecMessageRecvCb)(RecMessage *msg, RecMessageT msg_type, void *cookie);
 
 #endif

@@ -48,7 +48,7 @@ static InkHashTable *accepted_con; // a list of all accepted client connections
 
 static TSMgmtError handle_control_message(int fd, void *msg, size_t msglen);
 
-static RecInt disable_modification = 0;
+static RecBool disable_modification = false;
 
 /*********************************************************************
  * create_client
@@ -142,8 +142,6 @@ ts_ctrl_main(void *arg)
   int fds_ready;                       // stores return value for select
   struct timeval timeout;
 
-  RecGetRecordInt("proxy.config.disable_configuration_modification", &disable_modification);
-
   // loops until TM dies; waits for and processes requests from clients
   while (1) {
     // LINUX: to prevent hard-spin of CPU,  reset timeout on each loop
@@ -174,6 +172,8 @@ ts_ctrl_main(void *arg)
 
     // check if have any connections or requests
     if (fds_ready > 0) {
+      RecGetRecordBool("proxy.config.disable_configuration_modification", &disable_modification);
+
       // first check for connections!
       if (con_socket_fd >= 0 && FD_ISSET(con_socket_fd, &selectFDs)) {
         fds_ready--;
@@ -1222,11 +1222,6 @@ handle_control_message(int fd, void *req, size_t reqlen)
 
   if (optype < 0 || static_cast<unsigned>(optype) >= countof(handlers)) {
     goto fail;
-  }
-
-  if (optype == RECORD_SET && disable_modification == 1) {
-    Debug("ts_main", "Trying to set a record when disable configuration modification is on, returning permission denied");
-    return send_mgmt_error(fd, optype, TS_ERR_PERMISSION_DENIED);
   }
 
   if (handlers[optype].handler == NULL) {

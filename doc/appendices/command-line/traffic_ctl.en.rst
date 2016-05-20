@@ -143,9 +143,10 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: reload
 
-    Initiate a Traffic Server configuration reload. Use this
-    command to update the running configuration after any configuration
-    file modification.
+    Initiate a Traffic Server configuration reload. Use this command
+    to update the running configuration after any configuration
+    file modification. If no configuration files have been modified
+    since the previous configuration load, this command is a no-op.
 
     The timestamp of the last reconfiguration event (in seconds
     since epoch) is published in the `proxy.node.config.reconfigure_time`

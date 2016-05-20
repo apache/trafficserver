@@ -38,18 +38,6 @@
 
 typedef fileEntry snapshot;
 
-const char *SnapshotStrings[] = {"Request Successful\n",
-                                 "No Snapshot Directory",
-                                 "Snapshot was not found\n",
-                                 "Creation of snapshot directory failed\n",
-                                 "Creation of snapshot file failed\n",
-                                 "Access to snapshot file Failed\n",
-                                 "Unable to write to snapshot file\n",
-                                 "Remove of Snapshot failed\n",
-                                 "Internal Error: Form Submission was invalid\n",
-                                 "No Snapshot Name Was Given\n",
-                                 "Invalid Snapshot name\n"};
-
 FileManager::FileManager()
 {
   bindings = ink_hash_table_create(InkHashTableKeyType_String);
