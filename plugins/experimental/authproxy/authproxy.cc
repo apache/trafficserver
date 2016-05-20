@@ -682,11 +682,13 @@ AuthParseOptions(int argc, const char **argv)
   // The const_cast<> here is magic to work around a flaw in the definition of struct option
   // on some platforms (e.g. Solaris / Illumos). On sane platforms (e.g. linux), it'll get
   // automatically casted back to the const char*, as the struct is defined in <getopt.h>.
-  static const struct option longopt[] = {{const_cast<char *>("auth-host"), required_argument, 0, 'h'},
-                                          {const_cast<char *>("auth-port"), required_argument, 0, 'p'},
-                                          {const_cast<char *>("auth-transform"), required_argument, 0, 't'},
-                                          {const_cast<char *>("force-cacheability"), no_argument, 0, 'c'},
-                                          {0, 0, 0, 0}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("auth-host"), required_argument, 0, 'h'},
+    {const_cast<char *>("auth-port"), required_argument, 0, 'p'},
+    {const_cast<char *>("auth-transform"), required_argument, 0, 't'},
+    {const_cast<char *>("force-cacheability"), no_argument, 0, 'c'},
+    {0, 0, 0, 0},
+  };
 
   AuthOptions *options = AuthNew<AuthOptions>();
 

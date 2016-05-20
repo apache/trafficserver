@@ -101,7 +101,9 @@ TSRemapInit(TSRemapInterface * /* api */, char * /* errbuf */, int /* bufsz */)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
 {
-  static const struct option longopt[] = {{const_cast<char *>("policy"), required_argument, 0, 'p'}, {0, 0, 0, 0}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("policy"), required_argument, 0, 'p'}, {0, 0, 0, 0},
+  };
 
   BalancerInstance *balancer = NULL;
 

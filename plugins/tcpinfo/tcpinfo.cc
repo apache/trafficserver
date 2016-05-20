@@ -299,11 +299,13 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   static const char usage[] = "tcpinfo.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT]";
-  static const struct option longopts[] = {{const_cast<char *>("sample-rate"), required_argument, NULL, 'r'},
-                                           {const_cast<char *>("log-file"), required_argument, NULL, 'f'},
-                                           {const_cast<char *>("log-level"), required_argument, NULL, 'l'},
-                                           {const_cast<char *>("hooks"), required_argument, NULL, 'h'},
-                                           {NULL, 0, NULL, 0}};
+  static const struct option longopts[] = {
+    {const_cast<char *>("sample-rate"), required_argument, NULL, 'r'},
+    {const_cast<char *>("log-file"), required_argument, NULL, 'f'},
+    {const_cast<char *>("log-level"), required_argument, NULL, 'l'},
+    {const_cast<char *>("hooks"), required_argument, NULL, 'h'},
+    {NULL, 0, NULL, 0},
+  };
 
   TSPluginRegistrationInfo info;
   Config *config = new Config();

@@ -129,8 +129,9 @@ TSPluginInit(int argc, const char *argv[])
   bool success = false;
   TSPluginRegistrationInfo info;
   TSCont cb_cert = 0; // Certificate callback continuation
-  static const struct option longopt[] = {{const_cast<char *>("config"), required_argument, NULL, 'c'},
-                                          {NULL, no_argument, NULL, '\0'}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("config"), required_argument, NULL, 'c'}, {NULL, no_argument, NULL, '\0'},
+  };
 
   info.plugin_name = const_cast<char *>("SSL SNI callback test");
   info.vendor_name = const_cast<char *>("Network Geographics");

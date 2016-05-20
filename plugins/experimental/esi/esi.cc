@@ -1597,12 +1597,14 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
 
   if (argc > 1) {
     int c;
-    static const struct option longopts[] = {{const_cast<char *>("packed-node-support"), no_argument, NULL, 'n'},
-                                             {const_cast<char *>("private-response"), no_argument, NULL, 'p'},
-                                             {const_cast<char *>("disable-gzip-output"), no_argument, NULL, 'z'},
-                                             {const_cast<char *>("first-byte-flush"), no_argument, NULL, 'b'},
-                                             {const_cast<char *>("handler-filename"), required_argument, NULL, 'f'},
-                                             {NULL, 0, NULL, 0}};
+    static const struct option longopts[] = {
+      {const_cast<char *>("packed-node-support"), no_argument, NULL, 'n'},
+      {const_cast<char *>("private-response"), no_argument, NULL, 'p'},
+      {const_cast<char *>("disable-gzip-output"), no_argument, NULL, 'z'},
+      {const_cast<char *>("first-byte-flush"), no_argument, NULL, 'b'},
+      {const_cast<char *>("handler-filename"), required_argument, NULL, 'f'},
+      {NULL, 0, NULL, 0},
+    };
 
     optarg = NULL;
     optind = opterr = optopt = 0;

@@ -478,8 +478,9 @@ TSPluginInit(int argc, const char *argv[])
   TSCont cb_pa = 0;  // pre-accept callback continuation
   TSCont cb_lc = 0;  // life cycle callback continuuation
   TSCont cb_sni = 0; // SNI callback continuuation
-  static const struct option longopt[] = {{const_cast<char *>("config"), required_argument, NULL, 'c'},
-                                          {NULL, no_argument, NULL, '\0'}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("config"), required_argument, NULL, 'c'}, {NULL, no_argument, NULL, '\0'},
+  };
 
   info.plugin_name = const_cast<char *>("SSL Certificate Loader");
   info.vendor_name = const_cast<char *>("Network Geographics");

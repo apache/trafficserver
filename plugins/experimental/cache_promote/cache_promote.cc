@@ -40,14 +40,16 @@ TSCont gNocacheCont;
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Note that all options for all policies has to go here. Not particularly pretty...
 //
-static const struct option longopt[] = {{const_cast<char *>("policy"), required_argument, NULL, 'p'},
-                                        // This is for both Chance and LRU (optional) policy
-                                        {const_cast<char *>("sample"), required_argument, NULL, 's'},
-                                        // For the LRU policy
-                                        {const_cast<char *>("buckets"), required_argument, NULL, 'b'},
-                                        {const_cast<char *>("hits"), required_argument, NULL, 'h'},
-                                        // EOF
-                                        {NULL, no_argument, NULL, '\0'}};
+static const struct option longopt[] = {
+  {const_cast<char *>("policy"), required_argument, NULL, 'p'},
+  // This is for both Chance and LRU (optional) policy
+  {const_cast<char *>("sample"), required_argument, NULL, 's'},
+  // For the LRU policy
+  {const_cast<char *>("buckets"), required_argument, NULL, 'b'},
+  {const_cast<char *>("hits"), required_argument, NULL, 'h'},
+  // EOF
+  {NULL, no_argument, NULL, '\0'},
+};
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Abstract base class for all policies.
