@@ -605,28 +605,14 @@ ConfigVolumes::read_config_file()
 void
 ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 {
-#define PAIR_ZERO 0
-#define PAIR_ONE 1
-#define PAIR_TWO 2
-#define DONE 3
-#define INK_ERROR -1
-
-#define INK_ERROR_VOLUME -2 // added by YTS Team, yamsat for bug id 59632
   // Table build locals
   Tokenizer bufTok("\n");
   tok_iter_state i_state;
   const char *tmp;
-  char *end;
-  char *line_end = NULL;
   int line_num = 0;
   int total = 0; // added by YTS Team, yamsat for bug id 59632
 
   char volume_seen[256];
-  int state = 0; // changed by YTS Team, yamsat for bug id 59632
-  int volume_number = 0;
-  CacheType scheme = CACHE_NONE_TYPE;
-  int size = 0;
-  int in_percent = 0;
   const char *matcher_name = "[CacheVolition]";
 
   memset(volume_seen, 0, sizeof(volume_seen));
@@ -639,51 +625,32 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
     /* no volumes */
     return;
   }
+
+  printf("configuring volumes");
   // First get the number of entries
   tmp = bufTok.iterFirst(&i_state);
   while (tmp != NULL) {
-    state = PAIR_ZERO;
     line_num++;
 
-    // skip all blank spaces at beginning of line
+    char *end;
+    char *line_end = NULL;
+    const char *err = NULL;
+    int volume_number = 0;
+    CacheType scheme = CACHE_NONE_TYPE;
+    int size = 0;
+    int in_percent = 0;
+
     while (1) {
+      // skip all blank spaces at beginning of line
       while (*tmp && isspace(*tmp)) {
         tmp++;
       }
 
-      if (!(*tmp) && state == DONE) {
-        /* add the config */
-
-        ConfigVol *configp = new ConfigVol();
-        configp->number = volume_number;
-        if (in_percent) {
-          configp->percent = size;
-          configp->in_percent = 1;
-        } else {
-          configp->in_percent = 0;
-        }
-        configp->scheme = scheme;
-        configp->size = size;
-        configp->cachep = NULL;
-        cp_queue.enqueue(configp);
-        num_volumes++;
-        if (scheme == CACHE_HTTP_TYPE)
-          num_http_volumes++;
-        else
-          num_stream_volumes++;
-        Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d", volume_number, scheme, size, in_percent);
+      if (*tmp == '\0' || *tmp == '#') {
+          break;
+      } else if (!(*tmp)) {
+        err = "Unexpected end of line";
         break;
-      }
-
-      if (state == PAIR_ZERO) {
-        if (*tmp == '\0' || *tmp == '#')
-          break;
-      } else {
-        if (!(*tmp)) {
-          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : Unexpected end of line", matcher_name,
-                           config_file_path, line_num);
-          break;
-        }
       }
 
       end = (char *)tmp;
@@ -700,45 +667,31 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 
       eq_sign = (char *)strchr(tmp, '=');
       if (!eq_sign) {
-        state = INK_ERROR;
-      } else
+        err = "Unexpected end of line";
+        break;
+      } else {
         *eq_sign = '\0';
+      }
 
-      switch (state) {
-      case PAIR_ZERO:
-        if (strcasecmp(tmp, "volume")) {
-          state = INK_ERROR;
-          break;
-        }
+      if (strcasecmp(tmp, "volume") == 0) { // match volume
         tmp += 7; // size of string volume including null
         volume_number = atoi(tmp);
 
-        if (volume_number < 1 || volume_number > 255 || volume_seen[volume_number]) {
-          const char *err;
+        if (volume_seen[volume_number]) {
+          err = "Volume Already Specified";
+          break;
+        }
 
-          if (volume_number < 1 || volume_number > 255) {
-            err = "Bad Volume Number";
-          } else {
-            err = "Volume Already Specified";
-          }
-
-          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s [%d]", matcher_name, config_file_path,
-                           line_num, err, volume_number);
-          state = INK_ERROR;
+        if (volume_number < 1 || volume_number > 255) {
+          err = "Bad Volume Number";
           break;
         }
 
         volume_seen[volume_number] = 1;
-        while (ParseRules::is_digit(*tmp))
+        while (ParseRules::is_digit(*tmp)) {
           tmp++;
-        state = PAIR_ONE;
-        break;
-
-      case PAIR_ONE:
-        if (strcasecmp(tmp, "scheme")) {
-          state = INK_ERROR;
-          break;
         }
+      } else if (strcasecmp(tmp, "scheme") == 0) { // match scheme
         tmp += 7; // size of string scheme including null
 
         if (!strcasecmp(tmp, "http")) {
@@ -748,19 +701,10 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           tmp += 4;
           scheme = CACHE_RTSP_TYPE;
         } else {
-          state = INK_ERROR;
+          err = "Unexpected end of line";
           break;
         }
-
-        state = PAIR_TWO;
-        break;
-
-      case PAIR_TWO:
-
-        if (strcasecmp(tmp, "size")) {
-          state = INK_ERROR;
-          break;
-        }
+      } else if (strcasecmp(tmp, "size") == 0) { // match size
         tmp += 5;
         size = atoi(tmp);
 
@@ -771,33 +715,49 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           // added by YTS Team, yamsat for bug id 59632
           total += size;
           if (size > 100 || total > 100) {
-            state = INK_ERROR_VOLUME;
-            RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "Total volume size added upto more than 100 percent, No volumes created");
+            err = "Total volume size added upto more than 100 percent, No volumes created";
             break;
           }
           // ends here
           in_percent = 1;
           tmp++;
-        } else
+        } else {
           in_percent = 0;
-        state = DONE;
-        break;
+        }
       }
 
-      if (state == INK_ERROR || *tmp) {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : Invalid token [%s]", matcher_name,
-                         config_file_path, line_num, tmp);
-        break;
-      }
-      // added by YTS Team, yamsat for bug id 59632
-      if (state == INK_ERROR_VOLUME || *tmp) {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "Total volume size added upto more than 100 percent,No volumes created");
-        break;
-      }
       // ends here
       if (end < line_end)
         tmp++;
     }
+
+    if (err) {
+        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s", matcher_name,
+                         config_file_path, line_num, err);
+    } else if (volume_number && size && scheme) {
+      /* add the config */
+
+      ConfigVol *configp = new ConfigVol();
+      configp->number = volume_number;
+      if (in_percent) {
+        configp->percent = size;
+        configp->in_percent = 1;
+      } else {
+        configp->in_percent = 0;
+      }
+      configp->scheme = scheme;
+      configp->size = size;
+      configp->cachep = NULL;
+      cp_queue.enqueue(configp);
+      num_volumes++;
+      if (scheme == CACHE_HTTP_TYPE) {
+        num_http_volumes++;
+      } else {
+        num_stream_volumes++;
+      }
+      Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d", volume_number, scheme, size, in_percent);
+    }
+
     tmp = bufTok.iterNext(&i_state);
   }
 
