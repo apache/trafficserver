@@ -40,6 +40,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_atomic.h"
 #include "ts/ink_time.h"
+#include "ts/ink_inet.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -185,7 +186,7 @@ public:
 
   // Substitutions
   int get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url);
-  int substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSRemapRequestInfo *rri,
+  int substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSHttpTxn txnp, TSRemapRequestInfo *rri,
                  UrlComponents *req_url, bool lowercase_substitutions);
 
   // setter / getters for members the linked list.
@@ -549,7 +550,7 @@ RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *
         len += req_url->matrix_len;
         break;
       case SUB_CLIENT_IP:
-        len += 15; // Allow for 255.255.255.255
+        len += INET6_ADDRSTRLEN;
         break;
       default:
         break;
@@ -564,8 +565,8 @@ RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *
 // regex that was matches, while $1 - $9 are the corresponding groups. Return the final
 // length of the string as written to dest (not including the trailing '0').
 int
-RemapRegex::substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSRemapRequestInfo *rri,
-                       UrlComponents *req_url, bool lowercase_substitutions)
+RemapRegex::substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSHttpTxn txnp,
+                       TSRemapRequestInfo *rri, UrlComponents *req_url, bool lowercase_substitutions)
 {
   if (_num_subs > 0) {
     char *p1 = dest;
@@ -582,6 +583,7 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
         memcpy(p1, src + ovector[2 * ix], lengths[ix]);
         p1 += lengths[ix];
       } else {
+        char buff[INET6_ADDRSTRLEN];
         const char *str = NULL;
         int len = 0;
 
@@ -616,10 +618,10 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
           str = req_url->matrix;
           len = req_url->matrix_len;
           break;
-        case SUB_CLIENT_IP: {
-          // TODO: Finish implementing with the addr from above
-          // p1 += snprintf(p1, 15, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-        } break;
+        case SUB_CLIENT_IP:
+          str = ats_ip_ntop(TSHttpTxnClientAddrGet(txnp), buff, INET6_ADDRSTRLEN);
+          len = strlen(str);
+          break;
         default:
           break;
         }
@@ -1052,7 +1054,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         char *dest;
 
         dest = (char *)alloca(new_len + 8);
-        dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url, lowercase_substitutions);
+        dest_len = re->substitute(dest, match_buf, ovector, lengths, txnp, rri, &req_url, lowercase_substitutions);
 
         TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);
         TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest, dest_len);
