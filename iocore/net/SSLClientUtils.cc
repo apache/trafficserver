@@ -85,7 +85,7 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     // Otherwise match by IP
     else {
       char buff[INET6_ADDRSTRLEN];
-      ats_ip_ntop(netvc->server_addr, buff, INET6_ADDRSTRLEN);
+      ats_ip_ntop(netvc->get_remote_addr(), buff, INET6_ADDRSTRLEN);
       if (validate_hostname(cert, reinterpret_cast<unsigned char *>(buff), true, NULL)) {
         SSLDebug("IP %s verified OK", buff);
         return preverify_ok;

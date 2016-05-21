@@ -442,7 +442,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   if (!vc->getSSLHandShakeComplete()) {
     int err, ret;
 
-    if (vc->getSSLClientConnection())
+    if (vc->get_context() == Net_VConnection_P2S)
       ret = vc->sslStartHandShake(SSL_EVENT_CLIENT, err);
     else
       ret = vc->sslStartHandShake(SSL_EVENT_SERVER, err);
@@ -909,8 +909,6 @@ UnixNetVConnection::UnixNetVConnection()
     origin_trace_addr(NULL),
     origin_trace_port(0)
 {
-  memset(&local_addr, 0, sizeof local_addr);
-  memset(&server_addr, 0, sizeof server_addr);
   SET_HANDLER((NetVConnHandler)&UnixNetVConnection::startEvent);
 }
 
@@ -1262,7 +1260,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   }
 
   // Force family to agree with remote (server) address.
-  options.ip_family = server_addr.sa.sa_family;
+  options.ip_family = con.addr.sa.sa_family;
 
   //
   // Initialize this UnixNetVConnection
@@ -1305,7 +1303,7 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   }
 
   if (fd == NO_FD) {
-    res = con.connect(&server_addr.sa, options);
+    res = con.connect(NULL, options);
     if (res != 0) {
       goto fail;
     }
@@ -1368,6 +1366,7 @@ UnixNetVConnection::free(EThread *t)
 #endif
   ink_assert(con.fd == NO_FD);
   ink_assert(t == this_ethread());
+  netvc_context = Net_VConnection_UNSET;
 
   if (from_accept_thread) {
     netVCAllocator.free(this);
@@ -1417,6 +1416,8 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     if (sslvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       sslvc->do_io_close();
       sslvc = NULL;
+    } else {
+	  sslvc->set_context(get_context());
     }
     return sslvc;
     // Update the SSL fields
@@ -1425,6 +1426,8 @@ UnixNetVConnection::migrateToCurrentThread(Continuation *cont, EThread *t)
     if (netvc->populate(hold_con, cont, save_ssl) != EVENT_DONE) {
       netvc->do_io_close();
       netvc = NULL;
+    } else {
+	  netvc->set_context(get_context());
     }
     return netvc;
   }

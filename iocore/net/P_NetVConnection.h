@@ -74,3 +74,4 @@ NetVConnection::get_local_port()
 {
   return ats_ip_port_host_order(this->get_local_addr());
 }
+

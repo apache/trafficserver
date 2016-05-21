@@ -40,6 +40,13 @@
 #define SSL_EVENT_SERVER 0
 #define SSL_EVENT_CLIENT 1
 
+// Indicator the context for a NetVC.
+typedef enum {
+  Net_VConnection_UNSET,
+  Net_VConnection_C2P,  // Client <--> ATS, Client-Side
+  Net_VConnection_P2S,  // ATS <--> Server, Server-Side
+} NetVConnectionContext_t;
+
 /** Holds client options for NetVConnection.
 
     This class holds various options a user can specify for
@@ -565,6 +572,15 @@ public:
     is_transparent = state;
   }
 
+  /// Set the context and return context value
+  NetVConnectionContext_t set_context(NetVConnectionContext_t context) {
+    if (Net_VConnection_UNSET == netvc_context)
+      netvc_context = context;
+    return netvc_context;
+  }
+  /// Get the context.
+  NetVConnectionContext_t get_context() const { return netvc_context; }
+
 private:
   NetVConnection(const NetVConnection &);
   NetVConnection &operator=(const NetVConnection &);
@@ -581,6 +597,8 @@ protected:
   bool is_transparent;
   /// Set if the next write IO that empties the write buffer should generate an event.
   int write_buffer_empty_event;
+  /// NetVC Context.
+  NetVConnectionContext_t netvc_context;
 };
 
 inline NetVConnection::NetVConnection()
@@ -591,7 +609,8 @@ inline NetVConnection::NetVConnection()
     got_remote_addr(0),
     is_internal_request(false),
     is_transparent(false),
-    write_buffer_empty_event(0)
+    write_buffer_empty_event(0),
+    netvc_context(Net_VConnection_UNSET)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);
