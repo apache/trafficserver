@@ -74,7 +74,6 @@ public:
   // proxy -> server fields
   //
   virtual int marshal_proxy_req_header_len(char *);  // INT
-  virtual int marshal_proxy_req_net_hdr_len(char *); // INT
   virtual int marshal_proxy_req_body_len(char *);    // INT
   virtual int marshal_proxy_hierarchy_route(char *); // INT
 

@@ -594,11 +594,6 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqhl", field);
 
-  field = new LogField("proxy_req_net_hdr_len", "pqnhl", LogField::sINT, &LogAccess::marshal_proxy_req_net_hdr_len,
-                       &LogAccess::unmarshal_int_to_str);
-  global_field_list.add(field, false);
-  ink_hash_table_insert(field_symbol_hash, "pqnhl", field);
-
   field = new LogField("proxy_req_body_len", "pqbl", LogField::sINT, &LogAccess::marshal_proxy_req_body_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
