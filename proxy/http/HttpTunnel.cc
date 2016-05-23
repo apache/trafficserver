@@ -1311,7 +1311,9 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
           if (is_debug_tag_set("http_tunnel"))
             Debug("http_tunnel", "Unthrottle %p %" PRId64 " / %" PRId64, p, backlog, p->backlog());
           srcp->unthrottle();
-          srcp->read_vio->reenable();
+          if (srcp->read_vio) {
+            srcp->read_vio->reenable();
+          }
           // Kick source producer to get flow ... well, flowing.
           this->producer_handler(VC_EVENT_READ_READY, srcp);
         } else {
@@ -1325,7 +1327,8 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
           }
         }
       }
-      p->read_vio->reenable();
+      if (p->read_vio)
+        p->read_vio->reenable();
     }
   }
 }
