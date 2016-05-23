@@ -6472,8 +6472,8 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
 bool
 HttpTransact::is_request_retryable(State *s)
 {
-  // If the connection was established-- we cannot retry
-  if (s->state_machine->server_request_hdr_bytes > 0) {
+  // If there was no error establishing the connection (and we sent bytes)-- we cannot retry
+  if (s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0) {
     return false;
   }
 
