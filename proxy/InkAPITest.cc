@@ -5269,7 +5269,7 @@ REGRESSION_TEST(SDK_API_TSTextLog)(RegressionTest *test, int /* atype ATS_UNUSED
 
 REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
-  const char *CONFIG_PARAM_COUNTER_NAME = "proxy.process.http.total_parent_proxy_connections";
+  const char *CONFIG_PARAM_COUNTER_NAME = "proxy.process.ssl.total_tickets_renewed";
   int CONFIG_PARAM_COUNTER_VALUE = 0;
 
   const char *CONFIG_PARAM_FLOAT_NAME = "proxy.config.http.background_fill_completed_threshold";
@@ -5900,6 +5900,8 @@ struct ParentTest {
     this->regtest = test;
     this->pstatus = pstatus;
     this->magic = MAGIC_ALIVE;
+    this->deferred.event = TS_EVENT_NONE;
+    this->deferred.edata = NULL;
 
     /* If parent proxy routing is not enabled, enable it for the life of the test. */
     RecGetRecordBool("proxy.config.http.parent_proxy_routing_enable", &this->parent_proxy_routing_enable);
@@ -5920,8 +5922,23 @@ struct ParentTest {
     this->magic = MAGIC_DEAD;
   }
 
+  bool parent_routing_enabled() const {
+    RecBool enabled = false;
+
+    ParentConfigParams *params = ParentConfig::acquire();
+    enabled = params->policy.ParentEnable;
+    ParentConfig::release(params);
+
+    return enabled;
+  }
+
   RegressionTest *regtest;
   int *pstatus;
+
+  struct {
+    TSEvent event;
+    void *  edata;
+  } deferred;
 
   const char *testcase;
   SocketServer *os;
@@ -6006,8 +6023,26 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
   CHECK_SPURIOUS_EVENT(contp, event, edata);
   ptest = (ParentTest *)TSContDataGet(contp);
 
+  if (ptest && ptest->deferred.event != TS_EVENT_NONE) {
+    event = ptest->deferred.event;
+    edata = ptest->deferred.edata;
+    ptest->deferred.event = TS_EVENT_NONE;
+    ptest->deferred.edata = NULL;
+  }
+
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
+    // Keep deferring the test start until the parent configuration
+    // has taken effect.
+    if (!ptest->parent_routing_enabled()) {
+      rprintf(ptest->regtest, "waiting for parent proxy configuration\n");
+
+      ptest->deferred.event = event;
+      ptest->deferred.edata = edata;
+      TSContSchedule(contp, 100, TS_THREAD_POOL_NET);
+      break;
+    }
+
     rprintf(ptest->regtest, "setting synserver parent proxy to %s:%d\n", "127.0.0.1", SYNSERVER_LISTEN_PORT);
 
     // Since we chose a request format with a hostname of trafficserver.apache.org, it won't get
