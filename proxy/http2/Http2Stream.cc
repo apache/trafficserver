@@ -508,6 +508,11 @@ Http2Stream::destroy()
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(NULL, 0, NULL);
 
+  if (m_active) {
+    m_active = false;
+    HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
+  }
+
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
   ink_hrtime end_time = Thread::get_hrtime();
   HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);
