@@ -5922,7 +5922,9 @@ struct ParentTest {
     this->magic = MAGIC_DEAD;
   }
 
-  bool parent_routing_enabled() const {
+  bool
+  parent_routing_enabled() const
+  {
     RecBool enabled = false;
 
     ParentConfigParams *params = ParentConfig::acquire();
@@ -5937,7 +5939,7 @@ struct ParentTest {
 
   struct {
     TSEvent event;
-    void *  edata;
+    void *edata;
   } deferred;
 
   const char *testcase;
