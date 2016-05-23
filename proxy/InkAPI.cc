@@ -7979,6 +7979,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_PARENT_PROXY_TOTAL_CONNECT_ATTEMPTS:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->parent_connect_attempts;
+    break;
   case TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_IN:
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->transaction_active_timeout_in;
