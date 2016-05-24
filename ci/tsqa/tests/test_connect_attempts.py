@@ -111,6 +111,36 @@ def thread_slow_response(sock):
             sleep_time -= 1
 
 
+def thread_slow_close(sock):
+    '''
+    Thread to sleep a decreasing amount of time after the request, before closing
+
+    sleep times: 2 -> 1 -> 0
+    '''
+    sock.listen(0)
+    sleep_time = 2
+    num_requests = 0
+    # poll
+    while True:
+        select.select([sock], [], [])
+        try:
+            connection, addr = sock.accept()
+            connection.send((
+                'HTTP/1.1 200 OK\r\n'
+                'Content-Length: {body_len}\r\n'
+                'Content-Type: text/html; charset=UTF-8\r\n'
+                'Connection: close\r\n\r\n{body}'.format(body_len=len(str(num_requests)), body=num_requests)
+            ))
+            time.sleep(sleep_time)
+            connection.close()
+            num_requests += 1
+        except Exception as e:
+            print 'connection died!', e
+            pass
+        if sleep_time > 0:
+            sleep_time -= 1
+
+
 class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
     @classmethod
     def setUpEnv(cls, env):
@@ -151,6 +181,11 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
 
         sock = _add_sock('partial_response')
         t = threading.Thread(target=thread_partial_response, args=(sock,))
+        t.daemon = True
+        t.start()
+
+        sock = _add_sock('slow_close')
+        t = threading.Thread(target=thread_slow_close, args=(sock,))
         t.daemon = True
         t.start()
 
@@ -206,3 +241,10 @@ class TestOriginServerConnectAttempts(helpers.EnvironmentCase):
         ret = requests.get(url)
         # make sure it worked
         self.assertEqual(ret.status_code, 504)
+
+    def test_slow_close(self):
+        '''Verify that we retry connecting to an origin when there is a connection failure'''
+        url = 'http://127.0.0.1:{0}/slow_close/s'.format(self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'])
+        ret = requests.get(url)
+        # make sure it worked
+        self.assertEqual(ret.status_code, 200)
