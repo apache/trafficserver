@@ -44,14 +44,9 @@ const int MAX_TXN_ARG               = 15;
 const int TRANSACTION_STORAGE_INDEX = MAX_TXN_ARG;
 
 void
-initTransactionHandles(Transaction &transaction, TSEvent event)
+resetTransactionHandles(Transaction &transaction, TSEvent event)
 {
-  utils::internal::initTransactionCachedRequest(transaction, event);
-  utils::internal::initTransactionCachedResponse(transaction, event);
-  utils::internal::initTransactionServerRequest(transaction, event);
-  utils::internal::initTransactionServerResponse(transaction, event);
-  utils::internal::initTransactionClientResponse(transaction, event);
-
+  utils::internal::resetTransactionHandles(transaction);
   return;
 }
 
@@ -64,6 +59,7 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
   LOG_DEBUG("Got event %d on continuation %p for transaction (ats pointer %p, object %p)", event, cont, ats_txn_handle,
             &transaction);
 
+  utils::internal::setTransactionEvent(transaction, event);
   switch (event) {
   case TS_EVENT_HTTP_POST_REMAP:
     transaction.getClientRequest().getUrl().reset();
@@ -77,10 +73,10 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
   case TS_EVENT_HTTP_READ_CACHE_HDR:
     // the buffer handles may be destroyed in the core during redirect follow
-    initTransactionHandles(transaction, event);
+    resetTransactionHandles(transaction, event);
     break;
   case TS_EVENT_HTTP_TXN_CLOSE: { // opening scope to declare plugins variable below
-    initTransactionHandles(transaction, event);
+    resetTransactionHandles(transaction, event);
     const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
     for (std::list<TransactionPlugin *>::const_iterator iter = plugins.begin(), end = plugins.end(); iter != end; ++iter) {
       shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(**iter);
