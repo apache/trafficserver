@@ -6020,7 +6020,6 @@ static int
 parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
 {
   ParentTest *ptest = NULL;
-  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   CHECK_SPURIOUS_EVENT(contp, event, edata);
   ptest = (ParentTest *)TSContDataGet(contp);
@@ -6032,6 +6031,8 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
     ptest->deferred.event = TS_EVENT_NONE;
     ptest->deferred.edata = NULL;
   }
+
+  TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
