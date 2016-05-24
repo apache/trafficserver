@@ -380,7 +380,6 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
           // and we should convert based on the record's data type.
           ink_release_assert(data->rec_string != NULL);
           RecDataSetFromString(r1->data_type, &(r1->data), data->rec_string);
-          data_type = r1->data_type;
         } else {
           RecDataSet(data_type, &(r1->data), data);
         }
