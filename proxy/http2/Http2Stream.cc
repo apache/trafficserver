@@ -512,6 +512,7 @@ Http2Stream::destroy()
     m_active = false;
     HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
   }
+  HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
 
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
   ink_hrtime end_time = Thread::get_hrtime();
