@@ -6024,8 +6024,9 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
 
   CHECK_SPURIOUS_EVENT(contp, event, edata);
   ptest = (ParentTest *)TSContDataGet(contp);
+  ink_release_assert(ptest);
 
-  if (ptest && ptest->deferred.event != TS_EVENT_NONE) {
+  if (ptest->deferred.event != TS_EVENT_NONE) {
     event = ptest->deferred.event;
     edata = ptest->deferred.edata;
     ptest->deferred.event = TS_EVENT_NONE;
