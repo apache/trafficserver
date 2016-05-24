@@ -315,7 +315,7 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       }
 
       ink_assert(niov > 0);
-      ink_assert(niov < countof(tiovec));
+      ink_assert(niov <= countof(tiovec));
       r = socketManager.readv(vc->con.fd, &tiovec[0], niov);
 
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
@@ -992,7 +992,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, int64_t &wattempted, 
     wattempted = total_written - total_written_last;
 
     ink_assert(niov > 0);
-    ink_assert(niov < countof(tiovec));
+    ink_assert(niov <= countof(tiovec));
     r = socketManager.writev(con.fd, &tiovec[0], niov);
 
     if (origin_trace) {

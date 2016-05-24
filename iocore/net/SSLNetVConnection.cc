@@ -359,7 +359,7 @@ SSLNetVConnection::read_raw_data()
       }
 
       ink_assert(niov > 0);
-      ink_assert(niov < countof(tiovec));
+      ink_assert(niov <= countof(tiovec));
       r = socketManager.readv(this->con.fd, &tiovec[0], niov);
 
       NET_INCREMENT_DYN_STAT(net_calls_to_read_stat);
