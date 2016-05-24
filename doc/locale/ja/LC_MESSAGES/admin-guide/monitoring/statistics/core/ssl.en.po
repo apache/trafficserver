@@ -152,5 +152,5 @@ msgstr ""
 #: ../../admin-guide/monitoring/statistics/core/ssl.en.rst:219
 msgid ""
 "Incoming client SSL connections terminated due to an unsupported or "
-"disabled version of SSL/TLS, since staistics collection began."
+"disabled version of SSL/TLS, since statistics collection began."
 msgstr ""
