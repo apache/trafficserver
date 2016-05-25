@@ -25,6 +25,7 @@
 #define _HttpTransact_h_
 
 #include "ts/ink_platform.h"
+#include "ts/Map.h"
 #include "P_HostDB.h"
 #include "P_Net.h"
 #include "HttpConfig.h"
@@ -826,6 +827,8 @@ public:
     _SquidLogInfo() : log_code(SQUID_LOG_ERR_UNKNOWN), hier_code(SQUID_HIER_EMPTY), hit_miss_code(SQUID_MISS_NONE) {}
   } SquidLogInfo;
 
+  typedef StringHashMap<> HttpNote;
+
 #define HTTP_TRANSACT_STATE_MAX_XBUF_SIZE (1024 * 2) /* max size of plugin exchange buffer */
 
   struct State {
@@ -858,6 +861,7 @@ public:
     HeaderInfo hdr_info;
     SquidLogInfo squid_codes;
     HttpApiInfo api_info;
+    HttpNote note;
     // To handle parent proxy case, we need to be
     //  able to defer some work in building the request
     TransactFunc_t pending_work;
@@ -1140,6 +1144,7 @@ public:
       hdr_info.server_response.destroy();
       hdr_info.transform_response.destroy();
       hdr_info.cache_response.destroy();
+      note.clear();
       cache_info.lookup_url_storage.destroy();
       cache_info.original_url.destroy();
       cache_info.object_store.destroy();

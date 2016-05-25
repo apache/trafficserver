@@ -1584,3 +1584,20 @@ LogAccessHttp::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2
   }
   return INK_MIN_ALIGN;
 }
+
+int
+LogAccessHttp::marshal_note_field(char *field, char *buf)
+{
+  int padded_len = INK_MIN_ALIGN;
+  const char *value = m_http_sm->t_state.note.get(field);
+  if (value != 0) {
+    padded_len = LogAccess::strlen(value);
+    if (buf) {
+      marshal_str(buf, value, padded_len);
+    }
+  } else if (buf) {
+    marshal_str(buf, NULL, padded_len);
+  }
+
+  return padded_len;
+}

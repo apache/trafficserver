@@ -104,6 +104,7 @@ public:
     RECORD,
     MS,
     MSDMS,
+    NOTE,
     N_CONTAINERS,
   };
 

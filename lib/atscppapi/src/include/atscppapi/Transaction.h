@@ -367,6 +367,9 @@ public:
   bool configStringGet(TSOverridableConfigKey conf, std::string &value);
   bool configFind(std::string const &name, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
+  bool noteStringSet(std::string const &key, std::string const &value);
+  bool noteStringGet(std::string const &key, std::string &value);
+
 private:
   TransactionState *state_;          //!< The internal TransactionState object tied to the current Transaction
   friend class TransactionPlugin;    //!< TransactionPlugin is a friend so it can call addPlugin()

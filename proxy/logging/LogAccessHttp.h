@@ -154,6 +154,8 @@ public:
   virtual int marshal_milestone(TSMilestonesType ms, char *buf);
   virtual int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
 
+  virtual int marshal_note_field(char *field, char *buf);
+
   virtual void set_client_req_url(char *, int);                // STR
   virtual void set_client_req_url_canon(char *, int);          // STR
   virtual void set_client_req_unmapped_url_canon(char *, int); // STR

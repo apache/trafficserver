@@ -746,6 +746,14 @@ LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, ch
   DEFAULT_INT_FIELD;
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_note_field(char * /* field ATS_UNUSED */, char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
 // To allow for a generic marshal_record function, rather than
 // multiple functions (one per data type) we always marshal a record
 // as a string of a fixed length.  We use a fixed length because the

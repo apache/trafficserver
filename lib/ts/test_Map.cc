@@ -203,6 +203,28 @@ main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
   ssh.del(ho);
   ink_assert(ssh.get(ho) == 0);
 
+  StringHashMap<> sm;
+  sm.put(hi, hhi);
+  sm.put(ho, hhi);
+  ink_assert(strcmp(sm.get(hi), hhi) == 0);
+  ink_assert(strcmp(sm.get(ho), hhi) == 0);
+  ink_assert(strcmp(sm.get(hi), sm.get(ho)) == 0);
+  ink_assert(sm.get(hi) != sm.get(ho));
+  ink_assert(sm.get(hi) != 0);
+  ink_assert(sm.get(ho) != 0);
+  sm.del(ho);
+  ink_assert(sm.get(hi) != 0);
+  ink_assert(sm.get(ho) == 0);
+  sm.put(hhi, hhi);
+  ink_assert(strcmp(sm.get(hhi), hhi) == 0);
+  ink_assert(strcmp(sm.get(hhi), sm.get(hi)) == 0);
+  ink_assert(sm.get(hhi) == sm.get(hi));
+  sm.put(ho, hum);
+  ink_assert(sm.get(ho) != 0);
+  ink_assert(strcmp(sm.get(ho), hum) == 0);
+  sm.clear();
+  ink_assert(sm.get(ho) == 0);
+
   Vec<int> ints;
   ssh.get_values(ints);
   ink_assert(ints.n == 8);
