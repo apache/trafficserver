@@ -1,7 +1,11 @@
 #
-# 
-# This file specifies the various volumes, their sizes and the 
-# protocol they belong to. Use this file in conjunction with the 
+# volume.config
+#
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/volume.config.en.html
+#
+# This file specifies the various volumes, their sizes and the
+# protocol they belong to. Use this file in conjunction with the
 # hosting.config file.
 #
 #  Each line consists of a tag value pair.

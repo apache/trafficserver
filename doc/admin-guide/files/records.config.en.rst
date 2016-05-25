@@ -247,26 +247,33 @@ A value of ``0`` means no signal will be sent.
    path, this directory is located in the Traffic Server ``SYSCONFDIR``
    directory.
 
+Thread Variables
+----------------
+
 .. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig INT 1
 
-   When enabled (the default, ``1``), Traffic Server scales threads according to the available CPU cores. See the config option below.
+   When enabled (the default, ``1``), |TS| scales threads according to the
+   available CPU cores. See the config option below.
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.5
 
-   Factor by which Traffic Server scales the number of threads. The multiplier is usually the number of available CPU cores. By default
-   this is scaling factor is ``1.5``.
+   Factor by which |TS| scales the number of threads. The multiplier is usually
+   the number of available CPU cores. By default this is scaling factor is
+   ``1.5``.
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.limit INT 2
 
-   The number of threads Traffic Server will create if `proxy.config.exec_thread.autoconfig` is set to `0`, otherwise this option is ignored.
+   The number of threads |TS| will create if `proxy.config.exec_thread.autoconfig`
+   is set to ``0``, otherwise this option is ignored.
 
 .. ts:cv:: CONFIG proxy.config.accept_threads INT 1
 
-   The number of accept threads Traffic Server. If disabled (``0``), then accepts will be done in each of the worker threads.
+   The number of accept threads. If disabled (``0``), then accepts will be done
+   in each of the worker threads.
 
-.. ts:cv:: CONFIG proxy.config.thread.default.stacksize  INT 1048576
+.. ts:cv:: CONFIG proxy.config.thread.default.stacksize INT 1048576
 
-   The new default thread stack size, for all threads. The original default is set at 1 MB.
+   Default thread stack size, in bytes, for all threads (default is 1 MB).
 
 .. ts:cv:: CONFIG proxy.config.exec_thread.affinity INT 1
 

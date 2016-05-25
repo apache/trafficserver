@@ -1,10 +1,14 @@
+#
 # ip_allow.config
+#
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/ip_allow.config.en.html
 #
 # Rules:
 # src_ip=<range of IP addresses> action=<action> [method=<list of methods separated by '|'>]
 #
 # Actions: ip_allow, ip_deny
-# 
+#
 # Multiple method keywords can be specified (method=GET method=HEAD), or
 # multiple methods can be separated by an '|' (method=GET|HEAD).  The method
 # keyword is optional and it is defaulted to ALL.

@@ -1,11 +1,14 @@
 #
 # congestion.config
 #
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/congestion.config.en.html
+#
 # The purpose of this file is to specify the congestion control rules.
 #
 # Each line consists of a set of tag value pairs.  The pairs
 #   are in the format  <tag>=<value>
-# 
+#
 # Each line must include exactly one primary specifier
 #
 #   Primary destination specifiers are
@@ -13,7 +16,7 @@
 #     dest_host=
 #     dest_ip=
 #     host_regex=
-# 
+#
 # Lines may include any number of the secondary specifiers but
 #   secondary specifiers may not be duplicated on the same line.
 #
