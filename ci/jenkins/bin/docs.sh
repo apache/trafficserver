@@ -28,7 +28,7 @@ cd doc
 
 echo "Building English version"
 rm -rf docbuild/html
-${ATS_MAKE} html
+${ATS_MAKE} -e SPHINXOPTS="-D language='en'" html
 [ $? != 0 ] && exit 1
 /usr/bin/rsync --delete -av docbuild/html/ /home/docs/en/${ATS_BRANCH}
 

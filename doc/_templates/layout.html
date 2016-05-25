@@ -1,0 +1,41 @@
+{#
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+#}
+{% extends "!layout.html" %}
+{% block footer %}
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Apache Traffic Server</span>
+    v: {{ version }}
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Languages</dt>
+      <dd><a href="/en/latest/">English</a></dd>
+      <dd><a href="/ja/latest/">日本語</a></dd>
+    </dl>
+    <dl>
+      <dt>Versions</dt>
+      <dd><a href="/{{ language }}/latest/">latest</a></dd>
+      <dd><a href="/{{ language }}/6.2.x/">6.2.x</a></dd>
+      <dd><a href="/{{ language }}/5.3.x/">5.3.x</a></dd>
+    </dl>
+  </div>
+</div>
+{{ super() }}
+{% endblock %}
