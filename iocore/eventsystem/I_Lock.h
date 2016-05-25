@@ -432,6 +432,7 @@ class MutexLock
 {
 private:
   Ptr<ProxyMutex> m;
+  bool locked_p;
 
 public:
   MutexLock(
@@ -439,7 +440,7 @@ public:
     const SrcLoc &location, const char *ahandler,
 #endif // DEBUG
     ProxyMutex *am, EThread *t)
-    : m(am)
+    : m(am), locked_p(true)
   {
     Mutex_lock(
 #ifdef DEBUG
@@ -448,7 +449,15 @@ public:
       m, t);
   }
 
-  ~MutexLock() { Mutex_unlock(m, m->thread_holding); }
+  void
+  release()
+  {
+    if (locked_p)
+      Mutex_unlock(m, m->thread_holding);
+    locked_p = false;
+  }
+
+  ~MutexLock() { this->release(); }
 };
 
 /** Scoped try lock class for ProxyMutex
