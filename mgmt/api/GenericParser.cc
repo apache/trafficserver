@@ -354,12 +354,15 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
       if (insideQuote) {
         //              printf("enqueue\n");
         m_tokenList->enqueue(token);
+        token       = NULL; // transfered ownership of token to the token list
         insideQuote = false;
       } else {
         insideQuote = true;
       }
     }
   }
+
+  delete token;
   return m_tokenList;
 }
 
@@ -633,6 +636,7 @@ Rule::socksParse(char *rule)
           //          printf("!insideQuote: %s\n", subtoken);
           token->setValue(newStr);
           m_tokenList->enqueue(token);
+          token = NULL; // transfered ownership of token to the token list
         } else {
           //          printf("insideQuote: %s\n", subtoken);
           //          printf("%s 1\n", subtoken);
@@ -649,6 +653,7 @@ Rule::socksParse(char *rule)
         if (insideQuote) {
           //              printf("enqueue\n");
           m_tokenList->enqueue(token);
+          token       = NULL; // transfered ownership of token to the token list
           insideQuote = false;
         } else {
           insideQuote = true;
@@ -657,6 +662,7 @@ Rule::socksParse(char *rule)
     } /* end for loop */
   }
 
+  delete token;
   return m_tokenList;
 }
 
@@ -719,6 +725,7 @@ Rule::splitdnsParse(char *rule)
       if (!insideQuote) {
         token->setValue(newStr);
         m_tokenList->enqueue(token);
+        token = NULL; // transfered ownership of token to the token list
       } else {
         //          printf("%s 1\n", subtoken);
         token->appendValue(newStr);
@@ -734,6 +741,7 @@ Rule::splitdnsParse(char *rule)
       if (insideQuote) {
         //              printf("enqueue\n");
         m_tokenList->enqueue(token);
+        token       = NULL; // transfered ownership of token to the token list
         insideQuote = false;
       } else {
         insideQuote = true;
@@ -741,6 +749,7 @@ Rule::splitdnsParse(char *rule)
     }
   }
 
+  delete token;
   return m_tokenList;
   //  return cacheParse(rule, 2);
 }
