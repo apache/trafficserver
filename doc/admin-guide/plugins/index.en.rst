@@ -177,7 +177,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Allows dynamic remaps from a MySQL database.
 
 :doc:`Regex Revalidate <regex_revalidate.en>`
-   Configurable rules for ...
+   Configurable rules for forcing cache object revalidations using regular expressions.
 
 :doc:`Signed URLs <url_sig.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
