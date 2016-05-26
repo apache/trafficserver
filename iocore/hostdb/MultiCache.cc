@@ -1177,9 +1177,9 @@ MultiCacheBase::sync_partitions(Continuation *cont)
   // don't try to sync if we were not correctly initialized
   if (data && mapped_header) {
     if (heap_used[heap_halfspace] > halfspace_size() * MULTI_CACHE_HEAP_HIGH_WATER)
-      eventProcessor.schedule_imm(new MultiCacheHeapGC(cont, this), ET_CALL);
+      eventProcessor.schedule_imm(new MultiCacheHeapGC(cont, this), ET_TASK);
     else
-      eventProcessor.schedule_imm(new MultiCacheSync(cont, this), ET_CALL);
+      eventProcessor.schedule_imm(new MultiCacheSync(cont, this), ET_TASK);
   }
 }
 
