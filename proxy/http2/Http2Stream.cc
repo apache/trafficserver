@@ -241,8 +241,8 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
 void
 Http2Stream::do_io_close(int /* flags */)
 {
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   current_reader = NULL; // SM on the way out
-  Mutex_lock(this->mutex, this_ethread());
   if (!sent_delete) {
     sent_delete = true;
     Debug("http2_stream", "do_io_close stream %d", this->get_id());
@@ -255,7 +255,7 @@ Http2Stream::do_io_close(int /* flags */)
       if (!this->is_body_done() && this->write_vio.ndone == this->write_vio.nbytes) {
         this->mark_body_done();
       } else {
-        Mutex_unlock(this->mutex, this_ethread());
+        lock.release();
         this->reenable(&write_vio); // Kick the mechanism to get any remaining data pushed out
         Warning("Re-enabled to get data pushed out is_done=%d", this->is_body_done());
         return;	
@@ -284,7 +284,6 @@ Http2Stream::do_io_close(int /* flags */)
     // We have marked the stream closed, so no new events should be queued
     cross_thread_event = this_ethread()->schedule_imm(this, VC_EVENT_EOS);
   }
-  Mutex_unlock(this->mutex, this_ethread());
 }
 
 // Initiated from the Http2 side
