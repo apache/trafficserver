@@ -5900,8 +5900,8 @@ struct ParentTest {
     this->regtest = test;
     this->pstatus = pstatus;
     this->magic = MAGIC_ALIVE;
-    this->deferred.event = TS_EVENT_NONE;
-    this->deferred.edata = NULL;
+    this->configured = false;
+    this->browser = synclient_txn_create();
 
     /* If parent proxy routing is not enabled, enable it for the life of the test. */
     RecGetRecordBool("proxy.config.http.parent_proxy_routing_enable", &this->parent_proxy_routing_enable);
@@ -5916,6 +5916,7 @@ struct ParentTest {
 
   ~ParentTest()
   {
+    synclient_txn_close(this->browser);
     synclient_txn_delete(this->browser);
     synserver_delete(this->os);
     this->os = NULL;
@@ -5936,11 +5937,7 @@ struct ParentTest {
 
   RegressionTest *regtest;
   int *pstatus;
-
-  struct {
-    TSEvent event;
-    void *edata;
-  } deferred;
+  bool configured;
 
   const char *testcase;
   SocketServer *os;
@@ -5959,6 +5956,7 @@ parent_proxy_success(TSCont contp, TSEvent event, void *edata)
 
   int expected;
   int received;
+  int status;
 
   switch (event) {
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
@@ -5966,19 +5964,19 @@ parent_proxy_success(TSCont contp, TSEvent event, void *edata)
     received = get_response_id(txnp);
 
     if (expected != received) {
-      *(ptest->pstatus) = REGRESSION_TEST_FAILED;
+      status = REGRESSION_TEST_FAILED;
       SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", "TestCase", TC_FAIL, "Expected response ID %d, received %d", expected,
                  received);
     } else {
-      *(ptest->pstatus) = REGRESSION_TEST_PASSED;
+      status = REGRESSION_TEST_PASSED;
       SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", "TestCase", TC_PASS, "Received expected response ID %d", expected);
     }
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
-    return TS_EVENT_NONE;
+    return status;
 
   default:
     SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", ptest->testcase, TC_FAIL, "Unexpected event %d", event);
-    return TS_EVENT_ERROR;
+    return REGRESSION_TEST_FAILED;
   }
 }
 
@@ -5992,6 +5990,7 @@ parent_proxy_fail(TSCont contp, TSEvent event, void *edata)
   TSMLoc hdr;
   TSHttpStatus expected = TS_HTTP_STATUS_BAD_GATEWAY;
   TSHttpStatus received;
+  int status;
 
   switch (event) {
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
@@ -5999,20 +5998,20 @@ parent_proxy_fail(TSCont contp, TSEvent event, void *edata)
     received = TSHttpHdrStatusGet(mbuf, hdr);
 
     if (expected != received) {
-      *(ptest->pstatus) = REGRESSION_TEST_FAILED;
+      status = REGRESSION_TEST_FAILED;
       SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", "TestCase", TC_FAIL, "Expected response status %d, received %d",
                  expected, received);
     } else {
-      *(ptest->pstatus) = REGRESSION_TEST_PASSED;
+      status = REGRESSION_TEST_PASSED;
       SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", "TestCase", TC_PASS, "Received expected response status %d", expected);
     }
 
     TSHandleMLocRelease(mbuf, TS_NULL_MLOC, hdr);
-    return TS_EVENT_NONE;
+    return status;
 
   default:
     SDK_RPRINT(ptest->regtest, "TSHttpTxnParentProxySet", ptest->testcase, TC_FAIL, "Unexpected event %d", event);
-    return TS_EVENT_ERROR;
+    return REGRESSION_TEST_FAILED;
   }
 }
 
@@ -6025,28 +6024,10 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
   ptest = (ParentTest *)TSContDataGet(contp);
   ink_release_assert(ptest);
 
-  if (ptest->deferred.event != TS_EVENT_NONE) {
-    event = ptest->deferred.event;
-    edata = ptest->deferred.edata;
-    ptest->deferred.event = TS_EVENT_NONE;
-    ptest->deferred.edata = NULL;
-  }
-
   TSHttpTxn txnp = (TSHttpTxn)edata;
 
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
-    // Keep deferring the test start until the parent configuration
-    // has taken effect.
-    if (!ptest->parent_routing_enabled()) {
-      rprintf(ptest->regtest, "waiting for parent proxy configuration\n");
-
-      ptest->deferred.event = event;
-      ptest->deferred.edata = edata;
-      TSContSchedule(contp, 100, TS_THREAD_POOL_NET);
-      break;
-    }
-
     rprintf(ptest->regtest, "setting synserver parent proxy to %s:%d\n", "127.0.0.1", SYNSERVER_LISTEN_PORT);
 
     // Since we chose a request format with a hostname of trafficserver.apache.org, it won't get
@@ -6062,9 +6043,29 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
 
   case TS_EVENT_TIMEOUT:
     if (*(ptest->pstatus) == REGRESSION_TEST_INPROGRESS) {
-      // If we are still in progress, reschedule.
-      rprintf(ptest->regtest, "waiting for response\n");
-      TSContSchedule(contp, 100, TS_THREAD_POOL_DEFAULT);
+      if (ptest->configured) {
+        // If we are still in progress, reschedule.
+        rprintf(ptest->regtest, "waiting for response\n");
+        TSContSchedule(contp, 100, TS_THREAD_POOL_DEFAULT);
+        break;
+      }
+
+      if (!ptest->parent_routing_enabled()) {
+        rprintf(ptest->regtest, "waiting for configuration\n");
+        TSContSchedule(contp, 100, TS_THREAD_POOL_DEFAULT);
+        break;
+      }
+
+      // Now that the configuration is applied, it is safe to create a request.
+      // HTTP_REQUEST_FORMAT11 is a hostname with a no-cache response, so
+      // we will need to set the parent to the synserver to get a
+      // response.
+      char *request = generate_request(11);
+      synclient_txn_send_request(ptest->browser, request);
+      TSfree(request);
+
+      ptest->configured = true;
+
     } else {
       // Otherwise the test completed so clean up.
       RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", ptest->parent_proxy_routing_enable, REC_SOURCE_EXPLICIT);
@@ -6084,12 +6085,19 @@ parent_proxy_handler(TSCont contp, TSEvent event, void *edata)
     break;
 
   default:
-    if (ptest->handler(contp, event, edata) == TS_ERROR) {
-      *(ptest->pstatus) = REGRESSION_TEST_FAILED;
 
+  {
+    int status = ptest->handler(contp, event, edata);
+    if (status != REGRESSION_TEST_INPROGRESS) {
+      int *pstatus = ptest->pstatus;
+
+      RecSetRecordInt("proxy.config.http.parent_proxy_routing_enable", ptest->parent_proxy_routing_enable, REC_SOURCE_EXPLICIT);
       TSContDataSet(contp, NULL);
       delete ptest;
+
+      *pstatus = status;
     }
+  }
   }
 
   return TS_EVENT_NONE;
@@ -6119,15 +6127,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Fail)(RegressionTest *test,
   ptest->os = synserver_create(SYNSERVER_LISTEN_PORT, TSContCreate(synserver_vc_refuse, TSMutexCreate()));
   synserver_start(ptest->os);
 
-  /* Create a client transaction */
-  ptest->browser = synclient_txn_create();
-
-  // HTTP_REQUEST_FORMAT11 is a hostname with a no-cache response, so we will need to set the parent to the synserver to get a
-  // response.
-  char *request = generate_request(11);
-  synclient_txn_send_request(ptest->browser, request);
-  TSfree(request);
-
   TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
 }
 
@@ -6154,15 +6153,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Success)(RegressionTest *te
   /* Create a new synthetic server */
   ptest->os = synserver_create(SYNSERVER_LISTEN_PORT, TSContCreate(synserver_vc_accept, TSMutexCreate()));
   synserver_start(ptest->os);
-
-  /* Create a client transaction */
-  ptest->browser = synclient_txn_create();
-
-  // HTTP_REQUEST_FORMAT11 is a hostname with a no-cache response, so we will need to set the parent to the synserver to get a
-  // response.
-  char *request = generate_request(11);
-  synclient_txn_send_request(ptest->browser, request);
-  TSfree(request);
 
   TSContSchedule(cont, 25, TS_THREAD_POOL_DEFAULT);
 }
