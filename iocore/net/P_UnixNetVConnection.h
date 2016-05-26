@@ -372,7 +372,11 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
   } else
     inactivity_timeout = 0;
 #else
-  next_inactivity_timeout_at = Thread::get_hrtime() + timeout;
+  if (timeout) {
+    next_inactivity_timeout_at = Thread::get_hrtime() + timeout;
+  } else {
+    next_inactivity_timeout_at = 0;
+  }
 #endif
 }
 
