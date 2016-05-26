@@ -266,7 +266,7 @@ Http1ClientSession::do_io_close(int alerrno)
       // Set the active timeout to the same as the inactive time so
       //   that this connection does not hang around forever if
       //   the ua hasn't closed
-      client_vc->set_active_timeout(HRTIME_SECONDS(trans.get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_out));
+      client_vc->set_active_timeout(HRTIME_SECONDS(trans.get_sm()->t_state.txn_conf->keep_alive_no_activity_timeout_in));
     }
 
     // [bug 2610799] Drain any data read.
@@ -427,9 +427,10 @@ Http1ClientSession::release(ProxyClientTransaction *trans)
     ka_vio = this->do_io_read(this, INT64_MAX, read_buffer);
     ink_assert(slave_ka_vio != ka_vio);
 
-    // Y!?
-    // client_vc->add_to_keep_alive_lru();
-    client_vc->cancel_active_timeout();
+    if (client_vc) {
+      client_vc->cancel_active_timeout();
+      client_vc->add_to_keep_alive_queue();
+    }
     trans->destroy();
   }
 }
@@ -451,8 +452,8 @@ Http1ClientSession::new_transaction()
 
   trans.set_parent(this);
   transact_count++;
-  // Y!?
-  // client_vc->remove_from_keep_alive_lru();
+
+  client_vc->add_to_active_queue();
   trans.new_transaction();
 }
 
