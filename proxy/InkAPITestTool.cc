@@ -139,7 +139,7 @@ static int get_request_id(TSHttpTxn txnp);
 /* client side */
 static ClientTxn *synclient_txn_create(void);
 static int synclient_txn_delete(ClientTxn *txn);
-static int synclient_txn_close(TSCont contp);
+static void synclient_txn_close(ClientTxn *txn);
 static int synclient_txn_send_request(ClientTxn *txn, char *request);
 static int synclient_txn_send_request_to_vc(ClientTxn *txn, char *request, TSVConn vc);
 static int synclient_txn_read_response(TSCont contp);
@@ -364,11 +364,11 @@ generate_response(const char *request)
   "\r\n"                             \
   "Body for response 10"
 
-#define HTTP_RESPONSE_FORMAT11  \
-  "HTTP/1.0 200 OK\r\n"         \
-  "Cache-Control: no-cache\r\n" \
-  "X-Response-ID: %d\r\n"       \
-  "\r\n"                        \
+#define HTTP_RESPONSE_FORMAT11          \
+  "HTTP/1.0 200 OK\r\n"                 \
+  "Cache-Control: private,no-store\r\n" \
+  "X-Response-ID: %d\r\n"               \
+  "\r\n"                                \
   "Body for response 11"
 
   int test_case, match, http_version;
@@ -521,26 +521,27 @@ synclient_txn_delete(ClientTxn *txn)
   return 1;
 }
 
-static int
-synclient_txn_close(TSCont contp)
+static void
+synclient_txn_close(ClientTxn *txn)
 {
-  ClientTxn *txn = (ClientTxn *)TSContDataGet(contp);
-  TSAssert(txn->magic == MAGIC_ALIVE);
+  if (txn) {
+    if (txn->vconn != NULL) {
+      TSVConnClose(txn->vconn);
+      txn->vconn = NULL;
+    }
 
-  if (txn->vconn != NULL) {
-    TSVConnClose(txn->vconn);
-  }
-  if (txn->req_buffer != NULL) {
-    TSIOBufferDestroy(txn->req_buffer);
-  }
-  if (txn->resp_buffer != NULL) {
-    TSIOBufferDestroy(txn->resp_buffer);
-  }
+    if (txn->req_buffer != NULL) {
+      TSIOBufferDestroy(txn->req_buffer);
+      txn->req_buffer = NULL;
+    }
 
-  TSContDestroy(contp);
+    if (txn->resp_buffer != NULL) {
+      TSIOBufferDestroy(txn->resp_buffer);
+      txn->resp_buffer = NULL;
+    }
 
-  TSDebug(CDBG_TAG, "Client Txn destroyed");
-  return TS_EVENT_IMMEDIATE;
+    TSDebug(CDBG_TAG, "Client Txn destroyed");
+  }
 }
 
 static int
@@ -636,14 +637,16 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data 
     TSDebug(CDBG_TAG, "READ_EOS");
     // Connection closed. In HTTP/1.0 it means we're done for this request.
     txn->status = REQUEST_SUCCESS;
-    return synclient_txn_close(contp);
-    break;
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
+    return 1;
 
   case TS_EVENT_ERROR:
     TSDebug(CDBG_TAG, "READ_ERROR");
     txn->status = REQUEST_FAILURE;
-    return synclient_txn_close(contp);
-    break;
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
+    return 1;
 
   default:
     TSAssert(!"Invalid event");
@@ -708,13 +711,15 @@ synclient_txn_write_request_handler(TSCont contp, TSEvent event, void * /* data 
   case TS_EVENT_VCONN_EOS:
     TSDebug(CDBG_TAG, "WRITE_EOS");
     txn->status = REQUEST_FAILURE;
-    return synclient_txn_close(contp);
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
     break;
 
   case TS_EVENT_ERROR:
     TSDebug(CDBG_TAG, "WRITE_ERROR");
     txn->status = REQUEST_FAILURE;
-    return synclient_txn_close(contp);
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
     break;
 
   default:
@@ -757,7 +762,8 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
   } else {
     TSDebug(CDBG_TAG, "NET_CONNECT_FAILED");
     txn->status = REQUEST_FAILURE;
-    synclient_txn_close(contp);
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
   }
 
   return TS_EVENT_IMMEDIATE;
@@ -858,7 +864,14 @@ synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
   SocketServer *s = (SocketServer *)TSContDataGet(contp);
   TSAssert(s->magic == MAGIC_ALIVE);
 
-  TSDebug(SDBG_TAG, "NET_ACCEPT");
+  TSDebug(SDBG_TAG, "%s: NET_ACCEPT", __func__);
+
+  if (event == TS_EVENT_NET_ACCEPT_FAILED) {
+    Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
+    ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
+    TSDebug(SDBG_TAG, "%s: NET_ACCEPT_FAILED", __func__);
+    return TS_EVENT_IMMEDIATE;
+  }
 
   TSVConnClose((TSVConn)data);
   return TS_EVENT_IMMEDIATE;
@@ -875,11 +888,11 @@ synserver_vc_accept(TSCont contp, TSEvent event, void *data)
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
     Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
     ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
-    TSDebug(SDBG_TAG, "NET_ACCEPT_FAILED");
+    TSDebug(SDBG_TAG, "%s: NET_ACCEPT_FAILED", __func__);
     return TS_EVENT_IMMEDIATE;
   }
 
-  TSDebug(SDBG_TAG, "NET_ACCEPT");
+  TSDebug(SDBG_TAG, "%s: NET_ACCEPT", __func__);
 
   /* Create a new transaction */
   ServerTxn *txn = (ServerTxn *)TSmalloc(sizeof(ServerTxn));
