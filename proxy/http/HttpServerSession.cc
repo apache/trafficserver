@@ -180,6 +180,10 @@ HttpServerSession::release()
     return;
   }
 
+  // Make sure the vios for the current SM are cleared
+  server_vc->do_io_read(NULL, 0, NULL);
+  server_vc->do_io_write(NULL, 0, NULL);
+
   HSMresult_t r = httpSessionManager.release_session(this);
 
   if (r == HSM_RETRY) {
