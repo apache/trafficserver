@@ -91,12 +91,9 @@ LogCollationAccept::~LogCollationAccept()
 int
 LogCollationAccept::accept_event(int event, NetVConnection *net_vc)
 {
-  LogCollationHostSM *sm;
-
   switch (event) {
   case NET_EVENT_ACCEPT:
-    sm = new LogCollationHostSM(net_vc);
-    ink_assert(NULL != sm);
+    new LogCollationHostSM(net_vc);
     break;
 
   default:
