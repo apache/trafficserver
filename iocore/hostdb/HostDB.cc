@@ -394,9 +394,9 @@ HostDBSyncer::wait_event(int, void *)
 
   SET_HANDLER(&HostDBSyncer::sync_event);
   if (next_sync > HRTIME_MSECONDS(100))
-    mutex->thread_holding->schedule_in_local(this, next_sync);
+    eventProcessor.schedule_in(this, next_sync, ET_TASK);
   else
-    mutex->thread_holding->schedule_imm_local(this);
+    eventProcessor.schedule_imm(this, ET_TASK);
   return EVENT_DONE;
 }
 
@@ -526,7 +526,8 @@ HostDBProcessor::start(int, size_t)
   // Sync HostDB, if we've asked for it.
   //
   if (hostdb_sync_frequency > 0)
-    eventProcessor.schedule_imm(new HostDBSyncer);
+    eventProcessor.schedule_imm(new HostDBSyncer, ET_TASK);
+
   return 0;
 }
 
