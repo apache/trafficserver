@@ -428,10 +428,8 @@ Http1ClientSession::release(ProxyClientTransaction *trans)
     ink_assert(slave_ka_vio != ka_vio);
 
     if (client_vc) {
+      client_vc->cancel_active_timeout();
       client_vc->add_to_keep_alive_queue();
-      if (client_vc) {
-        client_vc->cancel_active_timeout();
-      }
     }
     trans->destroy();
   }
