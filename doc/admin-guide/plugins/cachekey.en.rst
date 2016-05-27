@@ -29,7 +29,7 @@ Description
 
 This plugin allows some common cache key manipulations based on various HTTP request components.  It can
 
-* sort query parameters to prevent query parameters reordereding from being a cache miss
+* sort query parameters to prevent query parameter reordering being a cache miss
 * ignore specific query parameters from the cache key by name or regular expression
 * ignore all query parameters from the cache key
 * only use specific query parameters in the cache key by name or regular expression
@@ -53,7 +53,7 @@ Cache key structure and related plugin parameters
   └─────────────┴──────────────┴──────────────┴──────────────┴─────────────┴─────────────┘
 
 * The cache key set by the cachekey plugin can be considered as devided into several sections.
-* Every section is manupulated separately by the related plugin parameters (more info in each section description below).
+* Every section is manipulated separately by the related plugin parameters (more info in each section description below).
 * "User-Agent", "Headers" and "Cookies" sections are optional and will be missing from the cache key if no related plugin parameters are used.
 * "Prefix", "Path" and "Query" sections always have default values even if no related plugin parameters are used.
 * All cachekey plugin parameters are optional and if missing some of the cache key sections will be missing (the optional sections) or their values will be left to their defaults.
@@ -94,7 +94,7 @@ Cache key structure and related plugin parameters
     * Multiple ``--ua-whitelist`` and ``--ua-blacklist`` can be used and the result will be defined by their order in the plugin configuration.
 * ``User-Agent`` regex capturing and replacement
     * ``--ua-capture=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from the ``User-Agent`` header based on ``<capture_definition>`` (see below) and are added to the cache key.
-* If any ``User-Agent`` classigication and regex capturing and replacement plugin parameters are used together they are added to the cache key in the order shown in the diagram.
+* If any ``User-Agent`` classification and regex capturing and replacement plugin parameters are used together they are added to the cache key in the order shown in the diagram.
 
 "Headers" section
 ^^^^^^^^^^^^^^^^^
