@@ -38,7 +38,6 @@ static RegressionTest *exclusive_test = NULL;
 RegressionTest *RegressionTest::current = 0;
 int RegressionTest::ran_tests = 0;
 DFA RegressionTest::dfa;
-int regression_level = 0;
 int RegressionTest::final_status = REGRESSION_TEST_PASSED;
 
 char *
@@ -65,7 +64,7 @@ RegressionTest::RegressionTest(const char *_n, const SourceLocation &_l, TestFun
 }
 
 static inline int
-start_test(RegressionTest *t)
+start_test(RegressionTest *t, int regression_level)
 {
   ink_assert(t->status == REGRESSION_TEST_NOT_RUN);
   t->status = REGRESSION_TEST_INPROGRESS;
@@ -81,23 +80,25 @@ start_test(RegressionTest *t)
 }
 
 int
-RegressionTest::run(const char *atest)
+RegressionTest::run(const char *atest, int regression_level)
 {
   if (atest)
     dfa.compile(atest);
   else
     dfa.compile(".*");
+
   fprintf(stderr, "REGRESSION_TEST initialization begun\n");
   // start the non exclusive tests
   for (RegressionTest *t = test; t; t = t->next) {
     if ((dfa.match(t->name) >= 0)) {
-      int res = start_test(t);
+      int res = start_test(t, regression_level);
       if (res == REGRESSION_TEST_FAILED)
         final_status = REGRESSION_TEST_FAILED;
     }
   }
+
   current = exclusive_test;
-  return run_some();
+  return run_some(regression_level);
 }
 
 void
@@ -121,12 +122,14 @@ RegressionTest::list()
 }
 
 int
-RegressionTest::run_some()
+RegressionTest::run_some(int regression_level)
 {
   if (current) {
-    if (current->status == REGRESSION_TEST_INPROGRESS)
+    if (current->status == REGRESSION_TEST_INPROGRESS) {
       return REGRESSION_TEST_INPROGRESS;
-    else if (current->status != REGRESSION_TEST_NOT_RUN) {
+    }
+
+    if (current->status != REGRESSION_TEST_NOT_RUN) {
       if (!current->printed) {
         current->printed = true;
         fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", current->name, 40 - (int)strlen(current->name), " ",
@@ -138,7 +141,7 @@ RegressionTest::run_some()
 
   for (; current; current = current->next) {
     if ((dfa.match(current->name) >= 0)) {
-      int res = start_test(current);
+      int res = start_test(current, regression_level);
       if (res == REGRESSION_TEST_INPROGRESS)
         return res;
       if (res == REGRESSION_TEST_FAILED)
@@ -149,14 +152,15 @@ RegressionTest::run_some()
 }
 
 int
-RegressionTest::check_status()
+RegressionTest::check_status(int regression_level)
 {
   int status = REGRESSION_TEST_PASSED;
   if (current) {
-    status = run_some();
+    status = run_some(regression_level);
     if (!current)
       return status;
   }
+
   RegressionTest *t = test;
   int exclusive = 0;
 

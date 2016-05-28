@@ -145,6 +145,7 @@ static char const *CMD_VERIFY_CONFIG = "verify_config";
 #if TS_HAS_TESTS
 static char regression_test[1024] = "";
 static int regression_list = 0;
+static int regression_level = 1;
 #endif
 int auto_clear_hostdb_flag = 0;
 extern int fds_limit;
@@ -1255,6 +1256,7 @@ struct RegressionCont : public Continuation {
   int initialized;
   int waits;
   int started;
+
   int
   mainEvent(int event, Event *e)
   {
@@ -1265,17 +1267,22 @@ struct RegressionCont : public Continuation {
       printf("Regression waiting for the cache to be ready... %d\n", ++waits);
       return EVENT_CONT;
     }
+
     char *rt = (char *)(regression_test[0] == 0 ? "" : regression_test);
-    if (!initialized && RegressionTest::run(rt) == REGRESSION_TEST_INPROGRESS) {
+    if (!initialized && RegressionTest::run(rt, regression_level) == REGRESSION_TEST_INPROGRESS) {
       initialized = 1;
       return EVENT_CONT;
     }
-    if ((res = RegressionTest::check_status()) == REGRESSION_TEST_INPROGRESS)
+
+    if ((res = RegressionTest::check_status(regression_level)) == REGRESSION_TEST_INPROGRESS) {
       return EVENT_CONT;
+    }
+
     fprintf(stderr, "REGRESSION_TEST DONE: %s\n", regression_status_string(res));
     ::exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
     return EVENT_CONT;
   }
+
   RegressionCont() : Continuation(new_ProxyMutex()), initialized(0), waits(0), started(0)
   {
     SET_HANDLER(&RegressionCont::mainEvent);
