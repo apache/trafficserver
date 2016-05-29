@@ -28,9 +28,11 @@
 
  ****************************************************************************/
 
+#include "ts/Regression.h"
+#include "ts/I_Version.h"
 #include "ts/ink_platform.h"
 #include "ts/ink_assert.h"
-#include "ts/Regression.h"
+#include "ts/ink_args.h"
 
 static RegressionTest *test = NULL;
 static RegressionTest *exclusive_test = NULL;
@@ -39,6 +41,13 @@ RegressionTest *RegressionTest::current = 0;
 int RegressionTest::ran_tests = 0;
 DFA RegressionTest::dfa;
 int RegressionTest::final_status = REGRESSION_TEST_PASSED;
+
+static const char *
+progname(const char *path)
+{
+  const char *slash = strrchr(path, '/');
+  return slash ? slash + 1 : path;
+}
 
 char *
 regression_status_string(int status)
@@ -192,6 +201,34 @@ check_test_list:
   }
 
   return (status == REGRESSION_TEST_INPROGRESS) ? REGRESSION_TEST_INPROGRESS : final_status;
+}
+
+int
+RegressionTest::main(int /* argc */, const char **argv)
+{
+  static char regression_test[1024] = "";
+  static int regression_list = 0;
+  static int regression_level = 1;
+
+  static const ArgumentDescription argument_descriptions[] = {
+    {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
+    {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
+    {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", NULL},
+  };
+
+  AppVersionInfo version;
+
+  version.setup(PACKAGE_NAME, progname(argv[0]), PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+
+  process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
+
+  if (regression_list) {
+    RegressionTest::list();
+  } else {
+    RegressionTest::run(*regression_test == '\0' ? NULL : regression_test, regression_level);
+  }
+
+  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
 }
 
 int

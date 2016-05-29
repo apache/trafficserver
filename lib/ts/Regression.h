@@ -86,6 +86,8 @@ struct RegressionTest {
   static void list();
   static int run_some(int regression_level = 1);
   static int check_status(int regression_level = 1);
+
+  static int main(int argc, const char **argv);
 };
 
 #define REGRESSION_TEST(_f)                                                                                        \
