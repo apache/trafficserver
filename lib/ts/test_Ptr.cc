@@ -97,10 +97,3 @@ REGRESSION_TEST(Ptr_bool)(RegressionTest *t, int /* atype ATS_UNUSED */, int *ps
   box.check(!none, "Empty Ptr<T> is false");
   box.check(some, "Non-empty Ptr<T> is true");
 }
-
-int
-main(int /* argc ATS_UNUSED */, char ** /* argv ATS_UNUSED */)
-{
-  RegressionTest::run();
-  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
-}

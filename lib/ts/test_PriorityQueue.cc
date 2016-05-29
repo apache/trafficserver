@@ -277,12 +277,3 @@ REGRESSION_TEST(PriorityQueue_5)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   box.check(pq->top() == NULL, "top should be NULL");
 }
-
-int
-main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
-{
-  const char *name = "PriorityQueue";
-  RegressionTest::run(name);
-
-  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
-}
