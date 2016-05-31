@@ -1,5 +1,6 @@
 #include "WebSocket.hh"
 
+#include <atscppapi/Logger.h>
 #include <iostream>
 #include "ts/ink_base64.h"
 #include "openssl/evp.h"
@@ -10,8 +11,6 @@
 // does not pretend to implement a complete (or useful) server.
 
 using namespace atscppapi;
-
-#define SAY(a) std::cout << a << std::endl;
 
 void TSPluginInit(int argc, const char* argv[])
 {
@@ -29,7 +28,7 @@ WebSocketInstaller::WebSocketInstaller()
 
 void WebSocketInstaller::handleReadRequestHeadersPreRemap(Transaction &transaction)
 {
-    SAY("Incoming request.");
+    TS_DEBUG("websocket", "Incoming request.");
     transaction.addPlugin(new WebSocket(transaction));
     transaction.resume();
 }
@@ -46,7 +45,7 @@ WebSocket::WebSocket(Transaction& transaction)
 
 WebSocket::~WebSocket()
 {
-    SAY("WebSocket finished.");
+    TS_DEBUG("websocket", "WebSocket finished.");
 }
 
 void WebSocket::consume(const std::string &data, InterceptPlugin::RequestDataType type)
@@ -79,9 +78,6 @@ void WebSocket::ws_send(std::string const& msg, int code)
 void WebSocket::ws_receive(std::string const& message, int code)
 {
     switch (code) {
-    case WS_FRAME_CONTINUATION:
-        // TODO: not implemented.
-        break;
     case WS_FRAME_CLOSE:
         // NOTE: first two bytes (if sent) are a reason code
         // which we are expected to echo.
@@ -93,19 +89,21 @@ void WebSocket::ws_receive(std::string const& message, int code)
         setOutputComplete();
         break;
     case WS_FRAME_TEXT:
-        SAY("WS client: " << message);
+        TS_DEBUG("websocket", "WS client: %s", message.c_str());
         ws_send("got: " + message, WS_FIN + WS_FRAME_TEXT);
         break;
     case WS_FRAME_BINARY:
-        SAY("WS client sent " << message.size() << " bytes");
+        TS_DEBUG("websocket", "WS client sent %d bytes", (int)message.size());
         ws_send("got binary data", WS_FIN + WS_FRAME_TEXT);
         break;
     case WS_FRAME_PING:
-        SAY("WS client ping");
+        TS_DEBUG("websocket", "WS client ping");
         ws_send(message, WS_FRAME_PONG);
         break;
+    case WS_FRAME_CONTINUATION:
+        // WSBuffer should not pass these on.
     case WS_FRAME_PONG:
-        break;
+        // We should not get these so just ignore.
     default:
         // Ignoring unrecognized opcodes.
         break;
@@ -114,7 +112,7 @@ void WebSocket::ws_receive(std::string const& message, int code)
 
 void WebSocket::handleInputComplete()
 {
-    SAY("Request data complete (not a WebSocket connection).");
+    TS_DEBUG("websocket", "Request data complete (not a WebSocket connection).");
 
     std::string out = \
         "HTTP/1.1 200 Ok\r\n"

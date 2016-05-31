@@ -8,11 +8,8 @@
 #define WS_DIGEST_MAX ATS_BASE64_ENCODE_DSTLEN(20)
 static const std::string magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
+
 WSBuffer::WSBuffer()
-    : pos_(0)
-    , ctrl_(0)
-    , mask_len_(0)
-    , msg_len_(0)
 {
 }
 
@@ -36,66 +33,72 @@ bool WSBuffer::read_buffered_message(std::string& message, int& code)
     // When incoming data is fragmented we may be called several
     // times before we get a length or a complete message.
 
-    if (!msg_len_) {
-        size_t avail = ws_buf_.size() - pos_;
+    char mask[4];
+
+        size_t avail = ws_buf_.size();
 
         // Check if there is a mask (there should be).
         if (avail < 2) return false;
-        mask_len_ = (ws_buf_[pos_] & WS_MASKED) ? 4 : 0;
+        size_t mask_len = (ws_buf_[1] & WS_MASKED) ? 4 : 0;
+
+        int frame = ws_buf_[0] & WS_OPCODE;
+        bool first = frame != WS_FRAME_CONTINUATION;
+        auto final = ws_buf_[0] & WS_FIN;
+
+        // Save/restore frame type on first/continuation.
+        if (first) {
+            frame_ = frame;
+            msg_buf_.clear();
+        }
+        else frame = frame_;
 
         // Read the msg_length if we have enough data.
-        if (avail < 2 + mask_len_) return false;
-        ctrl_ = ws_buf_[pos_] & WS_OPCODE;
+        if (avail < 2 + mask_len) return false;
 
-        size_t msg_len = ws_buf_[pos_ + 1] & WS_LENGTH;
+        size_t msg_len = ws_buf_[1] & WS_LENGTH;
+        size_t pos;
         if (msg_len == WS_16BIT_LEN) {
-            if (avail < 4 + mask_len_) { // 2 + 2 + length bytes + mask.
+            if (avail < 4 + mask_len) { // 2 + 2 + length bytes + mask.
                 return false;
             }
-            pos_ += 2;
-            msg_len = ntohs(*(uint16_t*)(ws_buf_.data() + pos_));
-            pos_ += 2;
+            msg_len = ntohs(*(uint16_t*)(ws_buf_.data() + 2));
+            pos = 4;
         } else if (msg_len == WS_64BIT_LEN) {
-            if (avail < 10 + mask_len_) { // 2 + 8 length bytes + mask.
+            if (avail < 10 + mask_len) { // 2 + 8 length bytes + mask.
                 return false;
             }
-            pos_ += 2;
-            msg_len = be64toh(*(uint64_t*)(ws_buf_.data() + pos_));
-            pos_ += 8;
+            msg_len = be64toh(*(uint64_t*)(ws_buf_.data() + 2));
+            pos = 10;
         } else {
-            pos_ += 2;
+            pos = 2;
         }
-        msg_len_ = msg_len;
-
-        // Copy any mask.
-        for (size_t i = 0; i < mask_len_; ++i, ++pos_) {
-            mask_[i] = ws_buf_[pos_];
-        }
-    }
 
     // Check if we have enough data to read the message.
-    if (ws_buf_.size() < pos_ + msg_len_) return false; // not enough data.
+    if (ws_buf_.size() < pos + msg_len) return false; // not enough data.
 
-    // Copy the message.
-    message = ws_buf_.substr(pos_, msg_len_);
-    code = ctrl_;
+        // Copy any mask.
+        for (size_t i = 0; i < mask_len; ++i, ++pos) {
+            mask[i] = ws_buf_[pos];
+        }
 
     // Apply any mask.
-    if (mask_len_) {
-        for (size_t i=0; i<msg_len_; ++i) {
-            message[i] ^= mask_[i & 3];
+    if (mask_len) {
+        for (size_t i=0, p=pos; i<msg_len; ++i, ++p) {
+            ws_buf_[p] ^= mask[i & 3];
         }
     }
 
-    // Consume message and revert to looking for the next length.
-    pos_ += msg_len_;
-    msg_len_ = 0;
+    // Copy the message out.
+    if (final) {
+        message = msg_buf_;
+        message += ws_buf_.substr(pos, msg_len);
+        code = frame;
+    } else {
+        msg_buf_ += ws_buf_.substr(pos, msg_len);
+    }
 
     // Discard consumed data.
-    if (pos_ > 0) {
-        ws_buf_ = ws_buf_.substr(pos_);
-        pos_ = 0;
-    }
+    ws_buf_.erase(0, pos + msg_len);
 
     return true;
 }
@@ -176,3 +179,18 @@ std::string WSBuffer::get_frame(size_t len, int code)
 
     return frame;
 }
+
+uint16_t WSBuffer::get_closing_code(std::string const& message, std::string* desc)
+{
+    uint16_t code = 0;
+    if (message.size() >= 2) {
+        code = (unsigned char)message[0];
+        code <<= 8;
+        code += (unsigned char)message[1];
+        if (desc) *desc = message.substr(2);
+    } else {
+        if (desc) *desc = "";
+    }
+    return code;
+}
+

@@ -55,13 +55,15 @@ public:
      */
     static std::string get_frame(size_t len, int code = WS_FIN+WS_FRAME_TEXT);
 
+    /**
+     * Gets the closing code and message if any.
+     */
+    static uint16_t get_closing_code(std::string const& message, std::string* desc=nullptr);
+
 private:
-    std::string ws_buf_; // incoming data.
-    size_t pos_;         // next byte to read in ws_buf_
-    int ctrl_;           // frame type of current message
-    size_t mask_len_;    // 0 or 4
-    char mask_[4];       // to xor with message
-    size_t msg_len_;     // length of current message
+    std::string ws_buf_;  // incoming data.
+    int frame_;           // frame type of current message
+    std::string msg_buf_; // decoded message data
 };
 
 #endif
