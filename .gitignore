@@ -24,7 +24,7 @@ Makefile.in
 /configure
 /tags
 
-build/aux/
+build/_aux/
 build/libtool.m4
 build/ltoptions.m4
 build/ltsugar.m4
