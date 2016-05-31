@@ -323,7 +323,6 @@ aio_queue_req(AIOCallbackInternal *op, int fromAPI = 0)
   int thread_ndx = 1;
   AIO_Reqs *req = op->aio_req;
   op->link.next = NULL;
-  ;
   op->link.prev = NULL;
 #ifdef AIO_STATS
   ink_atomic_increment((int *)&data->num_req, 1);
