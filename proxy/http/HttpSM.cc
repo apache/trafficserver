@@ -3180,6 +3180,7 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
   bool close_connection = true;
   HttpTunnelProducer *p = NULL;
   HttpTunnelConsumer *selfc = NULL;
+  NetVConnection *netvc;
 
   STATE_ENTER(&HttpSM::tunnel_handler_ua, event);
   ink_assert(c->vc == ua_session);
@@ -3209,7 +3210,9 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
       //  detach the user agent
       ink_assert(server_entry->vc == server_session);
       ink_assert(c->is_downstream_from(server_session));
-      server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
+      if ((netvc = server_session->get_netvc()) != NULL) {
+        netvc->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
+      }
     } else {
       // No background fill
       p = c->producer;
@@ -5341,6 +5344,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
 {
   VIO *vio = (VIO *)data;
   ink_assert(vio != NULL);
+  NetVConnection *netvc;
 
   STATE_ENTER(&HttpSM::handle_server_setup_error, event);
 
@@ -5393,15 +5397,14 @@ HttpSM::handle_server_setup_error(int event, void *data)
     }
   }
 
-  if (event == VC_EVENT_ERROR) {
-    t_state.cause_of_death_errno = server_session->get_netvc()->lerrno;
-  }
-
   switch (event) {
   case VC_EVENT_EOS:
     t_state.current.state = HttpTransact::CONNECTION_CLOSED;
     break;
   case VC_EVENT_ERROR:
+    if ((netvc = server_session->get_netvc()) != NULL) {
+      t_state.cause_of_death_errno = netvc->lerrno;
+    }
     t_state.current.state = HttpTransact::CONNECTION_ERROR;
     break;
   case VC_EVENT_ACTIVE_TIMEOUT:
