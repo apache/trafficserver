@@ -321,8 +321,7 @@ REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, in
 }
 
 int
-main(void)
+main(int argc, const char ** argv)
 {
-  RegressionTest::run();
-  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
+  return RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
 }

@@ -225,7 +225,7 @@ main(int argc, const char **argv)
 
   } else {
     // Standard regression tests.
-    RegressionTest::run();
+    RegressionTest::run(NULL, REGRESSION_TEST_QUICK);
   }
 
   ink_freelists_dump(stdout);

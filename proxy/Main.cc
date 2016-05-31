@@ -145,7 +145,7 @@ static char const *CMD_VERIFY_CONFIG = "verify_config";
 #if TS_HAS_TESTS
 static char regression_test[1024] = "";
 static int regression_list = 0;
-static int regression_level = 1;
+static int regression_level = REGRESSION_TEST_NONE;
 #endif
 int auto_clear_hostdb_flag = 0;
 extern int fds_limit;
