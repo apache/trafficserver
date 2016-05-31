@@ -321,7 +321,7 @@ REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, in
 }
 
 int
-main(int argc, const char ** argv)
+main(int argc, const char **argv)
 {
   return RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
 }
