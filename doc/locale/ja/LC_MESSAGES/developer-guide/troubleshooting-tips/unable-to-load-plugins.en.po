@@ -1,0 +1,58 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:30
+msgid "Compile your plugin source code, creating a shared library."
+msgstr ""
+
+#: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:27
+msgid ""
+"Make sure that your plugin source code contains an ``TSPluginInit`` "
+"initialization function."
+msgstr ""
+
+#: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:25
+msgid "To load plugins, follow the steps below."
+msgstr ""
+
+#: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:23
+msgid "Unable to Load Plugins"
+msgstr ""
+
+#: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:32
+msgid "Add an entry to the ``plugin.config`` file for your plugin."
+msgstr ""
+
+#: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:34
+msgid ""
+"Add the path to your plugin shared library to the :file:`records.config` "
+"file."
+msgstr ""
+
+#: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:39
+msgid ""
+"For detailed information about each step above, refer to :ref:`developer-"
+"plugins-getting-started-simple-plugin`."
+msgstr ""
+
+#: ../../developer-guide/troubleshooting-tips/unable-to-load-plugins.en.rst:37
+msgid "Restart Traffic Server."
+msgstr "Traffic Server を再起動。"

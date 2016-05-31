@@ -1,0 +1,664 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../getting-started/index.en.rst:23
+msgid "Getting Started"
+msgstr "はじめに"
+
+#: ../../../getting-started/index.en.rst:29
+msgid "Introduction"
+msgstr "導入"
+
+#: ../../../getting-started/index.en.rst:31
+msgid ""
+"|ATS| provides a high-performance and scalable software solution for both "
+"forward and reverse proxying of HTTP/HTTPS traffic, and may be configured "
+"to run in either or both modes simultaneously. This Getting Started guide "
+"explains the basic steps an administrator new to |TS| will need to perform "
+"to get the software up and running in a minimal configuration as quickly as "
+"possible."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:38
+msgid "Example Scenario"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:40
+msgid ""
+"In this guide, we will use the fictional company |AW| as a basis for the "
+"configuration examples. |AW| has a product brochure website (assumed to "
+"reside at the domain ``www.acme.com``) that performs very poorly. The "
+"content management software they chose takes an unbearable amount of time "
+"to generate pages on every request and their engineering team has chosen |"
+"TS| as a caching proxy layer to improve site performance."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:47
+msgid ""
+"Separately, |AW| has decided to use |TS| to help improve the performance of "
+"their office's Internet access, which is hobbled by their reliance on an "
+"aging leased line and certain employees' predilection for extracurricular "
+"web browsing."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:53
+msgid "Terminology"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:55
+msgid ""
+"This guide uses some terms which may be unfamiliar to administrators new to "
+"proxy servers."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:64
+msgid "Origin Server"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:59
+msgid ""
+"The server which generates the content you wish to proxy (and optionally "
+"cache) with |TS|. In a forward proxy configuration, the origin server may "
+"be any remote server to which a proxied client attempts to connect. In a "
+"reverse proxy configuration, the origin servers are typically a known set "
+"of servers for which you are using |TS| as a performance-enhancing caching "
+"layer."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:72
+msgid "Reverse Proxy"
+msgstr "リバースプロキシー"
+
+#: ../../../getting-started/index.en.rst:67
+msgid ""
+"A reverse proxy appears to outside users as if it were the origin server, "
+"though it does not generate the content itself. Instead, it intercepts the "
+"requests and, based on the configured rules and contents of its cache, will "
+"either serve a cached copy of the requested content itself, or forward the "
+"request to the origin server, possibly caching the content returned for use "
+"with future requests."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:80
+msgid "Forward Proxy"
+msgstr "フォワードプロキシー"
+
+#: ../../../getting-started/index.en.rst:75
+msgid ""
+"A forward proxy brokers access to external resources, intercepting all "
+"matching outbound traffic from a network. Forward proxies may be used to "
+"speed up external access for locations with slow connections (by caching "
+"the external resources and using those cached copies to service requests "
+"directly in the future), or may be used to restrict or monitor external "
+"access."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:87
+msgid "Transparent Proxy"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:83
+msgid ""
+"A transparent proxy may be either a reverse or forward proxy (though nearly "
+"all reverse proxies are deployed transparently), the defining feature being "
+"the use of network routing to send requests through the proxy without any "
+"need for clients to configure themselves to do so, and often without the "
+"ability for those clients to bypass the proxy."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:89
+msgid ""
+"For a more complete list of definitions, please see the :ref:`glossary`."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:92
+msgid "Installation"
+msgstr "インストール"
+
+#: ../../../getting-started/index.en.rst:94
+msgid ""
+"As with many other software packages, you may have the option of installing "
+"|ATS| from your operating system distribution's packages, or compiling and "
+"installing from the source code yourself. Distribution packages may lag "
+"behind the current stable release of |TS|, sometimes by a significant "
+"amount. While we will cover briefly the packages required for common "
+"operating system distributions, the remainder of this guide will be "
+"assuming the latest stable release of |TS| when discussing configuration "
+"parameters and available features."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:105
+msgid "Installing From Distribution Packages"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:107
+msgid ""
+"It is recommended that you install from source code, as described in the "
+"section below, rather than rely on your distribution's packages if you wish "
+"to have access to the latest features and fixes in |TS|."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:112
+msgid "Ubuntu"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:114
+msgid ""
+"The Canonical repositories up through, and including, Utopic Unicorn only "
+"provide |TS| v3.2.x. ::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:120
+msgid "RHEL / CentOS"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:122
+msgid ""
+"|TS| is available through the EPEL repositories. If you do not have those "
+"configured on your machine yet, you must install them first with the "
+"following::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:128
+msgid ""
+"Ensuring that you replace the release number with a value that is "
+"appropriate for your system. Once you have EPEL installed, you may install |"
+"TS| itself. ::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:134
+msgid "OmniOS (illumos)"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:136
+msgid ""
+"OmniOS (an illumos-based distribution) provides the |TS| package in its "
+"public *OmniTI-MS* publisher. ::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:142
+msgid ""
+"The latest release published, at the time of this writing, is |TS| v4.2.1."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:147
+msgid "Installing From Source Code"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:149
+msgid ""
+"To install from source code, you will need to have the following tools and "
+"libraries on the machine used to build |TS|:"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:152
+msgid "pkgconfig"
+msgstr "pkgconfig"
+
+#: ../../../getting-started/index.en.rst:153
+msgid "libtool"
+msgstr "libtool"
+
+#: ../../../getting-started/index.en.rst:154
+msgid "gcc (>= 4.3 or clang > 3.0)"
+msgstr "gcc (>= 4.3 or clang > 3.0)"
+
+#: ../../../getting-started/index.en.rst:155
+msgid "GNU make"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:156
+msgid "openssl"
+msgstr "openssl"
+
+#: ../../../getting-started/index.en.rst:157
+msgid "tcl"
+msgstr "tcl"
+
+#: ../../../getting-started/index.en.rst:158
+msgid "expat"
+msgstr "expat"
+
+#: ../../../getting-started/index.en.rst:159
+msgid "pcre"
+msgstr "pcre"
+
+#: ../../../getting-started/index.en.rst:160
+msgid "libcap"
+msgstr "libcap"
+
+#: ../../../getting-started/index.en.rst:161
+msgid "flex (for TPROXY)"
+msgstr "flex (for TPROXY)"
+
+#: ../../../getting-started/index.en.rst:162
+msgid "hwloc"
+msgstr "hwloc"
+
+#: ../../../getting-started/index.en.rst:163
+msgid "lua"
+msgstr "lua"
+
+#: ../../../getting-started/index.en.rst:164
+msgid "curses (for traffic_top)"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:165
+msgid "curl (for traffic_top)"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:167
+msgid ""
+"To build |TS| from a Git clone (the method we will be using in this guide), "
+"you will also need the following:"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:170
+msgid "git"
+msgstr "git"
+
+#: ../../../getting-started/index.en.rst:171
+msgid "autoconf"
+msgstr "autoconf"
+
+#: ../../../getting-started/index.en.rst:172
+msgid "automake"
+msgstr "automake"
+
+#: ../../../getting-started/index.en.rst:174
+msgid ""
+"In this guide, |TS| will be built to use the default ``nobody`` user and "
+"group and will be installed to ``/opt/ts``. It is assumed that all of the "
+"dependencies are located in standard paths. If this is not the case, you "
+"may need to use the appropriate ``--with-<package>`` options as detailed in "
+"the output of ``./configure --help``."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:180
+msgid ""
+"Clone the repository (you may skip this if you have downloaded an archive "
+"of the source code to build a specific official release of |TS| instead of "
+"the HEAD from source control)::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:186
+msgid "Change to the cloned (or unarchived) directory::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:190
+msgid ""
+"If you have cloned the repository from Git, you will need to generate the "
+"``configure`` script before proceeding::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:195
+msgid "Configure the source tree::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:199
+msgid "Build |TS| with the generated Makefiles, and test the results::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:204
+msgid "Install |TS| to the configured location::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:208
+msgid ""
+"Optionally, you may find it prudent to run the regression tests on your "
+"newly installed |TS|::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:215
+msgid "Configuration"
+msgstr "設定"
+
+#: ../../../getting-started/index.en.rst:217
+msgid ""
+"We will be tackling two separate configuration scenarios in the following "
+"sections. The first is the most common application of a performance-"
+"enhancing caching proxy for externally-facing websites, a transparent and "
+"caching reverse proxy which forwards all requests presented to it to a "
+"single origin address and caches the responses based on their cache control "
+"headers (as well as some simple heuristics for specific content types when "
+"cache control headers are not present)."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:225
+msgid ""
+"The second configuration we will review is a very basic transparent forward "
+"proxy, typically used in situations where you either need to improve the "
+"performance of a local network's use of external resources, or you wish to "
+"have the capability of monitoring or filtering the traffic."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:231
+msgid "Configuring A Reverse Proxy"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:233
+msgid ""
+"A minimal reverse proxy configuration requires changes to only a few "
+"configuration files, which will all be located in the ``/opt/ts/etc/"
+"trafficserver`` directory if you have configured your installation per the "
+"instructions in :ref:`gs-install-from-source` above."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:238
+msgid ""
+"For these examples, we will be assuming that |TS| is running on the same "
+"host machine as the origin website. This is not a requirement, and you may "
+"choose to run |TS| on an entirely different host, even connected to "
+"entirely different networks, as long as |TS| is able to reach the origin "
+"host."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:244
+msgid "Enable Reverse Proxying"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:246
+msgid ""
+"Within the :file:`records.config` configuration file, ensure that the "
+"following settings have been configured as shown below::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:256
+#: ../../../getting-started/index.en.rst:383
+msgid ":ts:cv:`proxy.config.http.cache.http`"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:256
+#: ../../../getting-started/index.en.rst:383
+msgid "Enables caching of proxied HTTP requests."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:259
+msgid ":ts:cv:`proxy.config.reverse_proxy.enabled`"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:259
+msgid "Enables reverse proxying support."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:265
+#: ../../../getting-started/index.en.rst:380
+msgid ":ts:cv:`proxy.config.url_remap.remap_required`"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:262
+msgid ""
+"This setting requires that a remap rule exist before |TS| will proxy the "
+"request and ensures that your proxy cannot be used to access the content of "
+"arbitrary websites (allowing someone of malicious intent to potentially "
+"mask their identity to an unknowning third party)."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:271
+msgid ":ts:cv:`proxy.config.url_remap.pristine_host_hdr`"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:268
+msgid ""
+"This setting causes |TS| to keep the ``Host:`` client request header intact "
+"which is necessary in cases where your origin servers may be performing "
+"domain-based virtual hosting, or taking other actions dependent upon the "
+"contents of that header."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:274
+msgid ":ts:cv:`proxy.config.http.server_ports`"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:274
+msgid ""
+"This configures |TS| to bind itself to the port ``8080`` for HTTP traffic."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:277
+msgid "Configure Origin Location"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:279
+msgid ""
+"The previous settings enable reverse proxying (and prevent flagrant abuse "
+"of it), but now |TS| needs to know what to proxy. This is achieved by "
+"writing remap rules, which make use of the core :ref:`conf-remap-plugin`. "
+"For our Getting Started guide's |AW| example scenario, we have very simple "
+"needs and want little more than to proxy all requests to our single origin "
+"server. This is accomplished with the following rule added to the :file:"
+"`remap.config` configuration::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:289
+msgid ""
+"It is worth pausing at this point to note that in a reverse proxying "
+"scenario, it is |TS| itself which should be responding to HTTP requests "
+"made to your public domain. While you first configure and evaluate whether |"
+"TS| will meet your needs, your origin server will continue to reside at the "
+"public-facing domain name on the default ports, should you move your |TS| "
+"configuration into production your DNS records for the domain(s) you wish "
+"to proxy and cache should resolve to the host(s) running |TS| (in the event "
+"that you run it on a separate host from your origin). Your origin should be "
+"accessible at a different address (or bind to different ports if you are "
+"running both your origin service and |TS| on the same host) and should no "
+"longer receive requests sent to the primary domain on its default ports."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:301
+msgid ""
+"In our |AW| scenario, they ultimately decide to deploy |TS| at which point, "
+"since they are running both |TS| and their origin web server on the same "
+"host, they reconfigure their origin service to listen on port ``8080`` "
+"instead of the default, and change |TS| to bind to ``80`` itself. Updating "
+"the remap is thus required, and it should now be::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:309
+msgid ""
+"Now all requests made to ``www.acme.com`` are received by |TS| which knows "
+"to proxy those requests to ``localhost:8080`` if it cannot already serve "
+"them from its cache. Because we enabled pristine host headers earlier, the "
+"origin service will continue to receive ``Host: www.acme.com`` in the HTTP "
+"request."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:315
+msgid "Adjust Cache Parameters"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:317
+msgid ""
+"The default |TS| configuration will provide a 256 MB disk cache, located in "
+"``var/trafficserver/`` underneath your install prefix. You may wish to "
+"adjust either or both of the size and location of this cache. This is done "
+"with the :file:`storage.config` configuration file. In our example, |AW| "
+"has dedicated a large storage pool on their cache server which is mounted "
+"at ``/cache``. To use this, and to disable the default cache storage "
+"setting, the following will be the sole entry in :file:`storage.config`::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:327
+msgid "Changes to the cache configuration require a restart of |TS|."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:329
+msgid ""
+"You may also wish to use raw devices, or partition your cache storage. "
+"Details on these features may be found in the :ref:`admin-configuration` "
+"section of the Administrator's Guide."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:334
+msgid "Final Configurations"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:336
+msgid ""
+"Once completed, the following configuration files for |AW| contain the "
+"following entries:"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:339
+msgid ":file:`records.config`::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:347
+msgid ":file:`remap.config`::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:351
+msgid ":file:`storage.config`::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:356
+msgid "Configuring A Forward Proxy"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:358
+msgid ""
+"Configuring a forward proxy with |TS| is somewhat more straightforward, "
+"though there are two main approaches for how to direct client traffic "
+"through the proxy: explicit or transparent."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:362
+msgid ""
+"More detail on the process is also available in the Administrator's Guide "
+"in the :ref:`forward-proxy` section. This guide will cover only a minimal "
+"configuration."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:367
+msgid "Enable Forward Proxying"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:369
+msgid ""
+"Contrary to a reverse proxy, where you have a defined list of origin "
+"servers for which you wish to proxy (and optionally cache), a forward proxy "
+"is used to proxy (and optionally cache) for arbitrary remote hosts. As "
+"such, the following settings in :file:`records.config` are the base "
+"configuration for a minimal forward proxy::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:379
+msgid ""
+"Disables the requirement for a remap rule to exist and match the incoming "
+"request before |TS| will proxy the request to the remote host."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:385
+msgid ""
+"If your installation will be strictly a forwarding proxy, then reverse "
+"proxying should be explicitly disabled::"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:391
+msgid "Explicit Versus Transparent"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:393
+msgid ""
+"With forward proxying enabled, the next step is deciding how clients will "
+"connect through the proxy server. Explicit forward proxying requires that "
+"every client application be configured (manually or through whatever "
+"configuration management system you may employ) to use the proxy. The "
+"presence of the proxy will be known to clients, and any clients not "
+"configured to use the proxy will bypass it entirely unless you otherwise "
+"block network access for unproxied traffic."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:401
+msgid ""
+"With transparent proxying, clients require no configuration and may be "
+"given no option to bypass the proxy. This configuration requires your "
+"network to route all requests automatically to the proxy. The details of "
+"how to accomplish this routing are entirely dependent upon the layout of "
+"your network and the routing devices you use."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:407
+msgid ""
+"For a more detailed discussion of the options, and starting points for "
+"configuring each in your network environment, please refer to the :ref:"
+"`forward-proxy` section of the Administrator's Guide."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:412
+msgid "Logging and Monitoring"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:415
+msgid "Configuring Log Output"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:417
+msgid ""
+"The log formats used by |TS| are highly configurable. While this guide will "
+"not go into full detail of this versatility, it is useful to consider what "
+"style of logging you would like to perform. If your organization already "
+"makes use of log monitoring or analysis tools that understand, for example, "
+"*Netscape Extended-2* format you may wish to enable that logging format in "
+"addition to, or instead of, the default |TS| logs."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:424
+msgid ""
+"The Administrator's Guide discusses logging options in great detail in :ref:"
+"`admin-monitoring-logging`."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:428
+msgid "Using Traffic Top"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:431
+msgid "Using Stats Over HTTP"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:434
+msgid "Using Cache Inspector"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:437
+msgid "Further Steps"
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:439
+msgid ""
+"By this point, you should have a fully functioning caching proxy, whether "
+"to help improve the customer facing performance of your website, or to "
+"assist in speeding up Internet access for your office while allowing for "
+"the possibility of access control, content filtering, and/or usage "
+"monitoring. However, it is quite likely that your installation is not yet "
+"tuned properly and may not be providing the best experience |ATS| has to "
+"offer. It is strongly recommended that you consult the :ref:`performance-"
+"tuning` guide."
+msgstr ""
+
+#: ../../../getting-started/index.en.rst:447
+msgid ""
+"You may also want to learn more about :ref:`admin-monitoring`, or ensuring "
+"that your installation is properly secured by reading the :ref:`admin-"
+"security` section. Properly sizing your cache, both the on-disk cache and "
+"the companion memory cache, are important topics covered in :ref:`admin-"
+"configuration`."
+msgstr ""

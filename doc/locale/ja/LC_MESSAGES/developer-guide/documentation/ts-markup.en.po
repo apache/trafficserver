@@ -1,0 +1,346 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:23
+msgid "|TS| Specific Markup"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:25
+msgid ""
+"This section covers markup used specific to the |TS| documentation and "
+"custom domains provided by local extensions."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:29
+msgid "Types"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:31
+msgid ""
+"Data types are documented using the standard ``:c:type:`` markup provided "
+"by Sphinx. Types provided by the C API should be documented in ``doc/"
+"developer-guide/api/types/``"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:36
+msgid "Constants"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:39
+msgid "Functions"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:42
+msgid "Custom Domains"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:44
+msgid ""
+"The |TS| documentation provides a Sphinx extension, located at ``doc/ext/"
+"traffic-server.py`` which defines custom domains for various purposes. "
+"Those domains and their usage are documented here."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:49
+msgid "Configuration Variables"
+msgstr "設定変数"
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:51
+msgid ""
+"Configuration variables are documented with the ``:ts:cv:`` domain, which "
+"takes three required arguments (the scope, which is the literal string :"
+"literal:`CONFIG`, the variable name, and the data type) and a fourth "
+"optional argument (the default value). ::"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:59
+#: ../../../developer-guide/documentation/ts-markup.en.rst:118
+msgid "Definition"
+msgstr "定義"
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:63
+msgid "Scope"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:62
+msgid ""
+"The scope of the variable. For configuration variables, this will always be "
+"the literal string :literal:`CONFIG`."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:66
+msgid "Variable Name"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:66
+msgid "The full and exact configuration variable name."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:82
+#: ../../../developer-guide/documentation/ts-markup.en.rst:130
+msgid "Data Type"
+msgstr "データタイプ"
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:69
+msgid ""
+"Indicates the data type of the variable and must be one of the following "
+"literal strings:"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:76
+msgid ":literal:`INT`"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:73
+msgid ""
+"Any integer value. Values may optionally be expressed with a binary order "
+"of magnitude suffix; e.g. :literal:`K` for *value* * 1024, :literal:`M` for "
+"*value* * 1024^2, :literal:`G` for *value* * 1024^3, or :literal:`T` for "
+"*value* * 1024^4."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:79
+msgid ":literal:`FLOAT`"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:79
+msgid "Any floating point value."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:82
+msgid ":literal:`STRING`"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:82
+msgid "Any alphanumeric string."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:88
+msgid "Value"
+msgstr "値"
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:85
+msgid ""
+"The default value of the configuration variable. It is preferable to not "
+"use any order of magnitude suffix, as |TS| will rewrite its configuration "
+"files under varioua circumstances, and when doing so it does not maintain "
+"those suffixes."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:91
+#: ../../../developer-guide/documentation/ts-markup.en.rst:143
+msgid "Options"
+msgstr "オプション"
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:93
+msgid ""
+"The domain for configuration variables takes only a single option at this "
+"time."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:98
+#: ../../../developer-guide/documentation/ts-markup.en.rst:188
+msgid "deprecated"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:96
+msgid ""
+"A simple flag option which, when attached to a configuration variable, is "
+"used to indicate that the variable has been deprecated and should no longer "
+"be used or relied upon, as it may be removed at any time by future releases."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:101
+#: ../../../developer-guide/documentation/ts-markup.en.rst:198
+msgid "References"
+msgstr "参考文献"
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:103
+msgid ""
+"References to configuration variables from elsewhere in the documentation "
+"should be made using the standard domain reference markup::"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:109
+msgid "Statistics"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:111
+msgid ""
+"|TS| statistics are documented using the domain ``:ts:stat:``. The domain "
+"takes three required arguments (collection, name, data type) and an option "
+"fourth (an example value). ::"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:123
+msgid "Collection"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:121
+msgid ""
+"The key name of the collection in the returned JSON data from the :ref:"
+"`admin-plugins-stats-over-http` plugin. For most statistics, this is the "
+"literal sting :literal:`global`. *Required*"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:126
+msgid "Statistic Name"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:126
+msgid "The exact and full name of the statistic. *Required*"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:129
+msgid ""
+"One of the following literal string values: :literal:`integer`, :literal:"
+"`float`, :literal:`boolean`, or :literal:`string`. *Required*"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:137
+msgid "Example Value"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:133
+msgid ""
+"A valid example of the value which may be exported by the statistic. In "
+"cases where the description of the statistic makes note of particular "
+"features of the values, such as the case of string statistics which may be "
+"formatted in specific ways, providing the optional example is strongly "
+"recommended. *Optional*"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:139
+msgid ""
+"The statistics domain also supports several options which can provide even "
+"more metadata about the statistic. These are currently:"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:172
+msgid "type"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:146
+msgid "Defines the type of metric exposed by the statistic. Valid values are:"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:151
+msgid ":literal:`counter`"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:149
+msgid ""
+"Numeric values which only increment based on the accumulation or occurrence "
+"of underlying events. Examples include the total number of incoming "
+"connections, or the total number of bytes transferred."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:156
+msgid ":literal:`gauge`"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:154
+msgid ""
+"Used for moment-in-time metrics, such as the current number of |TS| "
+"processes running, or the current number of connections open to origin "
+"servers."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:162
+msgid ":literal:`flag`"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:159
+msgid ""
+"Indicates that values for this statistic will be an integer with each value "
+"indicating a particular state. Most statistics of this type are booleans, "
+"where :literal:`1` indicates a truth or an *on* state, and :literal:`0` the "
+"opposite."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:172
+msgid ":literal:`derivative`"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:165
+msgid ""
+"Statistics of this type presents values that are calculated, or derived, "
+"from other staistics. They do not expose a number or state gathered "
+"directly. Typical statistics of this type are representations of a "
+"statistic over a given period (e.g. average origin connections per second), "
+"ratio or percentage of a statistic as part of a set (e.g. the percentage of "
+"total dns lookups which have failed), or any other statistic whose "
+"computation depends on the value(s) of one or more other statistics."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:176
+msgid "unit"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:175
+msgid ""
+"Indicates the units of measurement that should be assumed for the given "
+"statistic's value."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:181
+msgid "introduced"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:179
+msgid ""
+"May be used to indicate the version of |TS| in which the statistic was "
+"first available. The value of this option should be a valid, human-readable "
+"version number string, e.g. :literal:`5.3.0`."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:184
+msgid ""
+"Used to indicate that the statistic is no longer supported and may be "
+"removed in later versions. This option may be used as a simple flag without "
+"any given value, or may have a value associated in which case it should be "
+"a valid, human-readable version number string for the |TS| release which "
+"was first to deprecate the statistic."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:195
+msgid "ungathered"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:191
+msgid ""
+"A simple flag option, without any associated values, indicating that while "
+"the statistic is included in the output of plugins like :ref:`admin-plugins-"
+"stats-over-http` there is no underlying data gathered for the statistic. If "
+"a statistic is thus marked, it should be assumed to be invalid or simply "
+"unimplemented."
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:200
+msgid ""
+"To reference a statistic from elsewhere in the documentation, the standard "
+"domain reference markup should be used::"
+msgstr ""
+
+#: ../../../developer-guide/documentation/ts-markup.en.rst:205
+msgid ""
+"References should not include the collection name, data type, or any other "
+"components aside from the statistic name."
+msgstr ""

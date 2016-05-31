@@ -1,0 +1,58 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.rst:23
+msgid "Change packet TOS for the server side connection."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.rst:26
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.rst:21
+msgid "TSHttpTxnServerPacketTosSet"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.rst:28
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.rst:33
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.rst:48
+msgid "See Also"
+msgstr "参照"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.rst:41
+msgid ""
+"TOS is deprecated and replaced by DSCP. This is still used to set DSCP, "
+"however the first 2 bits of this value will be ignored as they now belong "
+"to the ECN field."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerPacketTosSet.en.rst:37
+msgid ""
+"The change takes effect immediately. If no OS connection has been made, "
+"then this sets the mark that will be used. If an OS connection is "
+"established"
+msgstr ""

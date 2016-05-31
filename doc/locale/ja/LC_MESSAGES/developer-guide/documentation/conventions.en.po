@@ -1,0 +1,305 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/documentation/conventions.en.rst:23
+msgid "Conventions"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:25
+msgid ""
+"The conventions detailed in this chapter should be followed when modifying "
+"the project documentation to maintain readability and consistency."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:29
+msgid "Typographic"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:43
+msgid "Italic"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:32
+msgid ""
+"Used to introduce new terms. Italics used solely for emphasis should be "
+"avoided. When introducing new terms, only the first use should be set in "
+"italics, and its introduction should be followed with a definition or "
+"description of the term."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:37
+#: ../../developer-guide/documentation/conventions.en.rst:55
+#: ../../developer-guide/documentation/conventions.en.rst:64
+msgid "Example::"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:47
+msgid "Bold"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:46
+msgid ""
+"Bold typesetting is to be reserved for section, table, and glossary "
+"headings and should be avoided in paragraph copy."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:58
+msgid "Monospace"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:50
+msgid ""
+"Used to indicate filesystem paths, variable names, language keywords and "
+"functions, and command output. Note that in the case of variables and "
+"functions, whenever possible references to their documentation should be "
+"used in place of simple monospace markup."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:68
+msgid "Bracketed Monospace"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:61
+msgid ""
+"Used to indicate, within command or source code examples, variables for "
+"which the reader should substitute a value."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:72
+msgid "Ellipsis"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:71
+msgid ""
+"Used to indicate the omission of irrelevant or unimportant information. May "
+"also be used to separate matter to be treated in detail elsewhere."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:75
+msgid "Layout Styles"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:78
+msgid "Block Content"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:85
+msgid "Notes"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:81
+msgid ""
+"Use of ``.. note::`` blocks should be sparing. In most rendered forms, the "
+"note block will appear quite prominently and draw the readers' eyes away "
+"from the surrounding copy. It is therefore advisable that the note itself "
+"provide enough context and detail to be read on its own, without a full "
+"reading of the surrounding copy."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:96
+msgid "Important Notes"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:88
+msgid ""
+"The use of ``.. important::`` callout blocks should be limited only to "
+"those situations in which critical information needs to be prominently "
+"displayed. Suitable use would include noting that resizing a cache voiume "
+"will result in |TS| resetting the cache contents to empty when the service "
+"is started. This is information that may not be obvious, or safe to assume, "
+"for the reader but which can significantly (and negatively) impact the use "
+"and performance of |TS| in their environment. Important note blocks should "
+"not be used for behavior or actions which generally do not have potential "
+"negative side effects."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:100
+msgid "Sidebars"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:99
+msgid ""
+"The use of ``.. sidebar::`` blocks in |TS| documentation should be avoided, "
+"and note blocks favored in their place."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:108
+msgid "Code Samples"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:103
+msgid ""
+"Content should be set within ``.. code::`` blocks whenever a full line or "
+"multiple lines of source code are being included in the documentation, or "
+"when example shell or network commands are being demonstrated. Blank lines "
+"may be used to separate lines of code within the block for readability, and "
+"all normal indentation practices should be followed. No additional markup "
+"should be used within the content block."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:114
+msgid "Definition Lists"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:111
+msgid ""
+"Definition lists may be used in multiple ways, not just for the term "
+"listings in the glossary section. They may be used to provide individual "
+"detailed treatment for a list of function or command arguments or where any "
+"series of terms need to be explained outside of the formal glossary."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:120
+msgid "Ordered Lists"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:117
+msgid ""
+"Explicityly numbered ordered lists should be avoided. |RST| provides two "
+"methods of marking up ordered, numbered lists, and the automatic numbering "
+"form should be used in all cases where surrounding paragraphs do not need "
+"to reference individual list entries."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:123
+msgid "Tables"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:125
+msgid ""
+"Tabular content may be used in any situation where a selection of items, "
+"terms, options, formats, etc. are being compared or where a grouping of the "
+"same are being presented alongside a small number of attributes which do "
+"not require detailed expositions."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:130
+msgid ""
+"The |TS| project documentation supplies a custom styling override which "
+"causes cell contents to wrap within wide tables whenever possible in cases "
+"where it is necessary to prevent the content from overflowing into the "
+"margin. If, however, the cell content cannot be wrapped because there are "
+"no breaking spaces present (for example, a long variable name containing "
+"only letters, periods, underscores, dashes, and so no, but no whitespace), "
+"the table may still require overflowing into the page margin. Whenever "
+"possible, please try to avoid the use of tables when presenting information "
+"that will lead to this, as it greatly hampers readibility on smaller "
+"screens, especially tablets and mobile devices. Alternatives such as a "
+"definition list may be better suited to the content."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:141
+msgid ""
+"Tables may be marked up using any of the |RST| styles, though it is "
+"generally easiest to maintain those using the *simple* table markup style."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:145
+msgid "Structural"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:148
+msgid "Common Definitions"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:150
+msgid ""
+"The |TS| project documentation maintains a common definitions, "
+"abbreviations, and shortcut listing in the file ``doc/common.defs``. This "
+"file should be included by all |RST| source files after the standard "
+"project copyright notice."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:154
+msgid ""
+"The file should always be included using a relative path from the current "
+"file's location. Any commonly or repeatedly used abbreviations, especialy "
+"those of product, company, or person names, should be added to the "
+"definitions file as useful to avoid repetitive typing and ensure accurate "
+"spellings or legal usage."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:160
+msgid "Tables of Content"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:162
+msgid ""
+"Any chapters of non-trivial scope should begin with a table of contents on "
+"the chapter index. The ``:depth:`` option for the table of contents may be "
+"set to a value appropriate to the amount of content in the chapter "
+"sections. A depth of ``2`` will generally provide a balance between "
+"usefully describing the contents of the chapter without overwhelming a "
+"reader scanning for topics relevant to their needs or interests."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:170
+msgid "Sections and Headings"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:172
+msgid ""
+"Each chapter section should be located in a separate |RST| file. Each file "
+"should contain the standard project copyright notice first, followed by a "
+"unique reference marker for the section."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:176
+msgid ""
+"While |RST| itself does not define a fixed ordering of section markers, |"
+"TS| documentation source files should use the same set of single line "
+"section markings, proceeding through the section levels without skipping. "
+"For consistency, the following section line markers should be used in "
+"order::"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:193
+msgid ""
+"Any section file which reaches or has need to exceed the fourth level style "
+"of section line markings is an excellent candidate for breaking into "
+"several smaller, and ideally more focused, |RST| source files and "
+"referenced by an index with its own table of contents."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:199
+msgid "Footnotes and Endnotes"
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:201
+msgid ""
+"Both footnotes and endnotes should be avoided. The |TS| documentation is "
+"intended primarily for online viewing and the positioning of footnotes in "
+"the rendered output is not always intuitive. In cases where a footnote "
+"might have been appropriate in print-oriented material for referencing an "
+"external resource, that reference is more ideally integrated as a standard |"
+"RST| reference."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:208
+msgid ""
+"For more descriptive content that might have been included as a footnote, "
+"it is less disruptive and more useful to choose between reformullating the "
+"text to simply include the additional wording, or consider the use of an "
+"inline note block."
+msgstr ""
+
+#: ../../developer-guide/documentation/conventions.en.rst:214
+msgid "Grammatical"
+msgstr ""

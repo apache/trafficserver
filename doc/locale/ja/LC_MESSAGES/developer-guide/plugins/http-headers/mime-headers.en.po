@@ -1,0 +1,858 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:23
+msgid "MIME Headers"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:25
+msgid ""
+"The Traffic Server \\*\\*MIME header functions \\*\\* enable you to "
+"retrieve and modify information about HTTP MIME fields."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:28
+msgid ""
+"An HTTP request or response consists of a header, body, and trailer. The "
+"**HTTP** **header** contains a request (or response) line and a MIME "
+"header. A **MIME** **header** is composed of zero or more MIME fields. A "
+"**MIME** **field** is composed of a field name, a colon, and zero or more "
+"field values (values in a field are separated by commas)."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:34
+msgid ""
+"In the example below: ``Foo`` is the MIME field name, ``bar`` is the first "
+"MIME field value, and ``car`` is the second MIME field value."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:41
+msgid ""
+"The following example is an augmented **Backus-Naur Form** (BNF) for the "
+"form of a MIME header - it specifies exactly what was described above. A "
+"**header** consists of zero or more **fields** that contain a name, "
+"separating colon, and zero or more values. A **name** or **value** is "
+"simply a string of tokens that is potentially zero length; a **token** is "
+"any character except certain control characters and separators (such as "
+"colons). For the purpose of retrieving a field, field names are not case-"
+"sensitive; therefore, the field names ``Foo``, ``foo`` and ``fOO`` are all "
+"equivalent."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:58
+msgid ""
+"The MIME header data structure is a parsed version of a standard Internet "
+"MIME header. The MIME header data structure is similar to the URL data "
+"structure (see :doc:`URLs <urls.en>`). The actual data is stored in a "
+"marshal buffer; the MIME header functions operate on a marshal buffer and a "
+"location (``TSMLoc``) within the buffer."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:64
+msgid ""
+"After a call to ``TSMimeHdrFieldDestroy``, ``TSMimeHdrFieldRemove``, or "
+"``TSUrlDestroy`` is made, you must deallocate the ``TSMLoc`` handle with a "
+"call to ``TSHandleMLocRelease``. You do not need to deallocate a ``NULL`` "
+"handles. For example: if you call ``TSMimeHdrFieldValueStringGet`` to get "
+"the value of the content type field and the field does not exist, then it "
+"returns ``TS_NULL_MLOC``. In such a case, you wouldn't need to deallocate "
+"the handle with a call to ``TSHandleMLocRelease``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:73
+msgid ""
+"The location (``TSMLoc``) in the :ref:`MIME header functions "
+"<MimeHeaderFxns>` can be either an HTTP header location or a MIME header "
+"location. If an HTTP header location is passed to these functions, then the "
+"system locates the MIME header associated with that HTTP header and "
+"executes the corresponding MIME header operations specified by the "
+"functions (see the example in the description of :c:func:`TSMimeHdrCopy`)."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:81
+msgid ""
+"**Note:** MIME headers may contain more than one MIME field with the same "
+"name. Previous versions of Traffic Server joined multiple fields with the "
+"same name into one field with composite values, but this behavior came at a "
+"performance cost and caused compatability issues with older clients and "
+"servers. Hence, the current version of Traffic Server does not coalesce "
+"duplicate fields. Correctly-behaving plugins should check for the presence "
+"of duplicate fields and iterate over the duplicate fields by using "
+"``TSMimeHdrFieldNextDup``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:90
+msgid ""
+"To facilitate fast comparisons and reduce storage size, Traffic Server "
+"defines several pre-allocated field names. These field names correspond to "
+"the field names in HTTP and NNTP headers."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:96
+msgid "``TS_MIME_FIELD_ACCEPT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:95
+msgid "\"Accept\" ``TS_MIME_LEN_ACCEPT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:100
+msgid "``TS_MIME_FIELD_ACCEPT_CHARSET``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:99
+msgid "\"Accept-Charset\" ``TS_MIME_LEN_ACCEPT_CHARSET``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:104
+msgid "``TS_MIME_FIELD_ACCEPT_ENCODING``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:103
+msgid "\"Accept-Encoding\" ``TS_MIME_LEN_ACCEPT_ENCODING``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:108
+msgid "``TS_MIME_FIELD_ACCEPT_LANGUAGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:107
+msgid "\"Accept-Language\" ``TS_MIME_LEN_ACCEPT_LANGUAGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:112
+msgid "``TS_MIME_FIELD_ACCEPT_RANGES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:111
+msgid "\"Accept-Ranges\" ``TS_MIME_LEN_ACCEPT_RANGES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:116
+msgid "``TS_MIME_FIELD_AGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:115
+msgid "\"Age\" ``TS_MIME_LEN_AGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:120
+msgid "``TS_MIME_FIELD_ALLOW``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:119
+msgid "\"Allow\" ``TS_MIME_LEN_ALLOW``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:124
+msgid "``TS_MIME_FIELD_APPROVED``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:123
+msgid "\"Approved\" ``TS_MIME_LEN_APPROVED``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:128
+msgid "``TS_MIME_FIELD_AUTHORIZATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:127
+msgid "\"Authorization\" ``TS_MIME_LEN_AUTHORIZATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:132
+msgid "``TS_MIME_FIELD_BYTES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:131
+msgid "\"Bytes\" ``TS_MIME_LEN_BYTES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:136
+msgid "``TS_MIME_FIELD_CACHE_CONTROL``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:135
+msgid "\"Cache-Control\" ``TS_MIME_LEN_CACHE_CONTROL``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:140
+msgid "``TS_MIME_FIELD_CLIENT_IP``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:139
+msgid "\"Client-ip\" ``TS_MIME_LEN_CLIENT_IP``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:144
+msgid "``TS_MIME_FIELD_CONNECTION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:143
+msgid "\"Connection\" ``TS_MIME_LEN_CONNECTION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:148
+msgid "``TS_MIME_FIELD_CONTENT_BASE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:147
+msgid "\"Content-Base\" ``TS_MIME_LEN_CONTENT_BASE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:152
+msgid "``TS_MIME_FIELD_CONTENT_ENCODING``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:151
+msgid "\"Content-Encoding\" ``TS_MIME_LEN_CONTENT_ENCODING``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:156
+msgid "``TS_MIME_FIELD_CONTENT_LANGUAGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:155
+msgid "\"Content-Language\" ``TS_MIME_LEN_CONTENT_LANGUAGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:160
+msgid "``TS_MIME_FIELD_CONTENT_LENGTH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:159
+msgid "\"Content-Length\" ``TS_MIME_LEN_CONTENT_LENGTH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:164
+msgid "``TS_MIME_FIELD_CONTENT_LOCATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:163
+msgid "\"Content-Location\" ``TS_MIME_LEN_CONTENT_LOCATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:168
+msgid "``TS_MIME_FIELD_CONTENT_MD5``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:167
+msgid "\"Content-MD5\" ``TS_MIME_LEN_CONTENT_MD5``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:172
+msgid "``TS_MIME_FIELD_CONTENT_RANGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:171
+msgid "\"Content-Range\" ``TS_MIME_LEN_CONTENT_RANGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:176
+msgid "``TS_MIME_FIELD_CONTENT_TYPE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:175
+msgid "\"Content-Type\" ``TS_MIME_LEN_CONTENT_TYPE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:180
+msgid "``TS_MIME_FIELD_CONTROL``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:179
+msgid "\"Control\" ``TS_MIME_LEN_CONTROL``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:184
+msgid "``TS_MIME_FIELD_COOKIE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:183
+msgid "\"Cookie\" ``TS_MIME_LEN_COOKIE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:188
+msgid "``TS_MIME_FIELD_DATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:187
+msgid "\"Date\" ``TS_MIME_LEN_DATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:192
+msgid "``TS_MIME_FIELD_DISTRIBUTION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:191
+msgid "\"Distribution\" ``TS_MIME_LEN_DISTRIBUTION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:196
+msgid "``TS_MIME_FIELD_ETAG``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:195
+msgid "\"Etag\" ``TS_MIME_LEN_ETAG``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:200
+msgid "``TS_MIME_FIELD_EXPECT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:199
+msgid "\"Expect\" ``TS_MIME_LEN_EXPECT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:204
+msgid "``TS_MIME_FIELD_EXPIRES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:203
+msgid "\"Expires\" ``TS_MIME_LEN_EXPIRES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:208
+msgid "``TS_MIME_FIELD_FOLLOWUP_TO``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:207
+msgid "\"Followup-To\" ``TS_MIME_LEN_FOLLOWUP_TO``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:212
+msgid "``TS_MIME_FIELD_FROM``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:211
+msgid "\"From\" ``TS_MIME_LEN_FROM``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:216
+msgid "``TS_MIME_FIELD_HOST``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:215
+msgid "\"Host\" ``TS_MIME_LEN_HOST``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:220
+msgid "``TS_MIME_FIELD_IF_MATCH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:219
+msgid "\"If-Match\" ``TS_MIME_LEN_IF_MATCH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:224
+msgid "``TS_MIME_FIELD_IF_MODIFIED_SINCE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:223
+msgid "\"If-Modified-Since\" ``TS_MIME_LEN_IF_MODIFIED_SINCE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:228
+msgid "``TS_MIME_FIELD_IF_NONE_MATCH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:227
+msgid "\"If-None-Match\" ``TS_MIME_LEN_IF_NONE_MATCH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:232
+msgid "``TS_MIME_FIELD_IF_RANGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:231
+msgid "\"If-Range\" ``TS_MIME_LEN_IF_RANGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:236
+msgid "``TS_MIME_FIELD_IF_UNMODIFIED_SINCE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:235
+msgid "\"If-Unmodified-Since\" ``TS_MIME_LEN_IF_UNMODIFIED_SINCE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:240
+msgid "``TS_MIME_FIELD_KEEP_ALIVE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:239
+msgid "\"Keep-Alive\" ``TS_MIME_LEN_KEEP_ALIVE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:244
+msgid "``TS_MIME_FIELD_KEYWORDS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:243
+msgid "\"Keywords\" ``TS_MIME_LEN_KEYWORDS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:248
+msgid "``TS_MIME_FIELD_LAST_MODIFIED``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:247
+msgid "\"Last-Modified\" ``TS_MIME_LEN_LAST_MODIFIED``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:252
+msgid "``TS_MIME_FIELD_LINES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:251
+msgid "\"Lines\" ``TS_MIME_LEN_LINES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:256
+msgid "``TS_MIME_FIELD_LOCATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:255
+msgid "\"Location\" ``TS_MIME_LEN_LOCATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:260
+msgid "``TS_MIME_FIELD_MAX_FORWARDS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:259
+msgid "\"Max-Forwards\" ``TS_MIME_LEN_MAX_FORWARDS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:264
+msgid "``TS_MIME_FIELD_MESSAGE_ID``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:263
+msgid "\"Message-ID\" ``TS_MIME_LEN_MESSAGE_ID``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:268
+msgid "``TS_MIME_FIELD_NEWSGROUPS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:267
+msgid "\"Newsgroups\" ``TS_MIME_LEN_NEWSGROUPS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:272
+msgid "``TS_MIME_FIELD_ORGANIZATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:271
+msgid "\"Organization\" ``TS_MIME_LEN_ORGANIZATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:276
+msgid "``TS_MIME_FIELD_PATH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:275
+msgid "\"Path\" ``TS_MIME_LEN_PATH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:280
+msgid "``TS_MIME_FIELD_PRAGMA``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:279
+msgid "\"Pragma\" ``TS_MIME_LEN_PRAGMA``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:284
+msgid "``TS_MIME_FIELD_PROXY_AUTHENTICATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:283
+msgid "\"Proxy-Authenticate\" ``TS_MIME_LEN_PROXY_AUTHENTICATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:288
+msgid "``TS_MIME_FIELD_PROXY_AUTHORIZATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:287
+msgid "\"Proxy-Authorization\" ``TS_MIME_LEN_PROXY_AUTHORIZATION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:292
+msgid "``TS_MIME_FIELD_PROXY_CONNECTION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:291
+msgid "\"Proxy-Connection\" ``TS_MIME_LEN_PROXY_CONNECTION``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:296
+msgid "``TS_MIME_FIELD_PUBLIC``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:295
+msgid "\"Public\" ``TS_MIME_LEN_PUBLIC``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:300
+msgid "``TS_MIME_FIELD_RANGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:299
+msgid "\"Range\" ``TS_MIME_LEN_RANGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:304
+msgid "``TS_MIME_FIELD_REFERENCES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:303
+msgid "\"References\" ``TS_MIME_LEN_REFERENCES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:308
+msgid "``TS_MIME_FIELD_REFERER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:307
+msgid "\"Referer\" ``TS_MIME_LEN_REFERER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:312
+msgid "``TS_MIME_FIELD_REPLY_TO``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:311
+msgid "\"Reply-To\" ``TS_MIME_LEN_REPLY_TO``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:316
+msgid "``TS_MIME_FIELD_RETRY_AFTER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:315
+msgid "\"Retry-After\" ``TS_MIME_LEN_RETRY_AFTER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:320
+msgid "``TS_MIME_FIELD_SENDER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:319
+msgid "\"Sender\" ``TS_MIME_LEN_SENDER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:324
+msgid "``TS_MIME_FIELD_SERVER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:323
+msgid "\"Server\" ``TS_MIME_LEN_SERVER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:328
+msgid "``TS_MIME_FIELD_SET_COOKIE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:327
+msgid "\"Set-Cookie\" ``TS_MIME_LEN_SET_COOKIE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:332
+msgid "``TS_MIME_FIELD_SUBJECT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:331
+msgid "\"Subject\" ``TS_MIME_LEN_SUBJECTTS_MIME_LEN_SUBJECT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:336
+msgid "``TS_MIME_FIELD_SUMMARY``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:335
+msgid "\"Summary\" ``TS_MIME_LEN_SUMMARY``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:340
+msgid "``TS_MIME_FIELD_TE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:339
+msgid "\"TE\" ``TS_MIME_LEN_TE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:344
+msgid "``TS_MIME_FIELD_TRANSFER_ENCODING``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:343
+msgid "\"Transfer-Encoding\" ``TS_MIME_LEN_TRANSFER_ENCODING``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:348
+msgid "``TS_MIME_FIELD_UPGRADE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:347
+msgid "\"Upgrade\" ``TS_MIME_LEN_UPGRADE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:352
+msgid "``TS_MIME_FIELD_USER_AGENT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:351
+msgid "\"User-Agent\" ``TS_MIME_LEN_USER_AGENT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:356
+msgid "``TS_MIME_FIELD_VARY``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:355
+msgid "\"Vary\" ``TS_MIME_LEN_VARY``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:360
+msgid "``TS_MIME_FIELD_VIA``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:359
+msgid "\"Via\" ``TS_MIME_LEN_VIA``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:364
+msgid "``TS_MIME_FIELD_WARNING``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:363
+msgid "\"Warning\" ``TS_MIME_LEN_WARNING``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:368
+msgid "``TS_MIME_FIELD_WWW_AUTHENTICATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:367
+msgid "\"Www-Authenticate\" ``TS_MIME_LEN_WWW_AUTHENTICATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:372
+msgid "``TS_MIME_FIELD_XREF``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:371
+msgid "\"Xref\" ``TS_MIME_LEN_XREF``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:374
+msgid ""
+"The header field names above are defined in ``ts.h`` as ``const char*`` "
+"strings. When Traffic Server sets the name portion of a header field (or "
+"any portion for that matter), it quickly checks to see if the new value is "
+"one of the known values. If it is, then Traffic Server stores a pointer "
+"into a global table instead of storing the known value in the marshal "
+"buffer. The header field names listed above are also pointers into this "
+"table, which enables simple pointer comparison of the value returned from "
+"``TSMimeHdrFieldNameGet`` with one of the values listed above. It is "
+"recommended that you use the above values when referring to one of the "
+"known header field names to avoid the possibility of a spelling error."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:386
+msgid ""
+"Traffic Server adds one important feature to MIME fields that you may not "
+"know about: Traffic Server does not print a MIME field if the field name "
+"begins with the '``@``\\ ' symbol. For example: a plugin can add the field "
+"\"``@My-Field``\\ \" to a header. Even though Traffic Server never sends "
+"that field out in a request to an origin server or in a response to a "
+"client, it can be printed to Traffic Server logs by defining a custom log "
+"configuration file that explicitly logs such fields. This provides a useful "
+"mechanism for plugins to store information about an object in one of the "
+"MIME headers associated with the object."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:398
+msgid "The MIME header functions are listed below:"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:400
+msgid ":c:func:`TSMimeHdrFieldAppend`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:401
+msgid ":c:func:`TSMimeHdrFieldClone`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:402
+msgid ":c:func:`TSMimeHdrFieldCopy`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:403
+msgid ":c:func:`TSMimeHdrFieldCopyValues`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:404
+msgid ":c:func:`TSMimeHdrFieldCreate`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:405
+msgid ":c:func:`TSMimeHdrFieldDestroy`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:406
+msgid ":c:func:`TSMimeHdrFieldLengthGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:407
+msgid ":c:func:`TSMimeHdrFieldNameGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:408
+msgid ":c:func:`TSMimeHdrFieldNameSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:409
+msgid ":c:func:`TSMimeHdrFieldNext`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:410
+msgid ":c:func:`TSMimeHdrFieldNextDup`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:411
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:412
+msgid ":c:func:`TSMimeHdrFieldValueAppend`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:413
+msgid ":c:func:`TSMimeHdrFieldValueDateGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:414
+msgid ":c:func:`TSMimeHdrFieldValueDateInsert`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:415
+msgid ":c:func:`TSMimeHdrFieldValueDateSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:416
+msgid ":c:func:`TSMimeHdrFieldValueIntGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:417
+msgid ":c:func:`TSMimeHdrFieldValueIntSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:418
+msgid ":c:func:`TSMimeHdrFieldValueStringGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:419
+msgid ":c:func:`TSMimeHdrFieldValueStringInsert`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:420
+msgid ":c:func:`TSMimeHdrFieldValueStringSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:421
+msgid ":c:func:`TSMimeHdrFieldValueUintGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:422
+msgid ":c:func:`TSMimeHdrFieldValueUintInsert`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:423
+msgid ":c:func:`TSMimeHdrFieldValueUintSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:424
+msgid ":c:func:`TSMimeHdrFieldValuesClear`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:425
+msgid ":c:func:`TSMimeHdrFieldValuesCount`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:426
+msgid ":c:func:`TSMimeHdrClone`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:427
+msgid ":c:func:`TSMimeHdrCopy`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:428
+msgid ":c:func:`TSMimeHdrCreate`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:429
+msgid ":c:func:`TSMimeHdrDestroy`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:430
+msgid ":c:func:`TSMimeHdrFieldFind`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:431
+msgid ":c:func:`TSMimeHdrFieldGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:432
+msgid ":c:func:`TSMimeHdrFieldRemove`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:433
+msgid ":c:func:`TSMimeHdrFieldsClear`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:434
+msgid ":c:func:`TSMimeHdrFieldsCount`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:435
+msgid ":c:func:`TSMimeHdrLengthGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:436
+msgid ":c:func:`TSMimeHdrParse`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:437
+msgid ":c:func:`TSMimeParserClear`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:438
+msgid ":c:func:`TSMimeParserCreate`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:439
+msgid ":c:func:`TSMimeParserDestroy`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/mime-headers.en.rst:440
+msgid ":c:func:`TSMimeHdrPrint`"
+msgstr ""

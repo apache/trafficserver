@@ -1,0 +1,1366 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: 2016-01-03 14:56+0900\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../appendices/faq.en.rst:23
+msgid "Frequently Asked Questions"
+msgstr "よく聞かれる質問 (FAQ)"
+
+#: ../../../appendices/faq.en.rst:29
+msgid ""
+"How do you create a raw disk for the cache if all your disks have mounted "
+"file systems?"
+msgstr ""
+"全ディスクがファイルシステムにマウントされている場合、キャッシュ用の raw "
+"ディスクの作成はどうすればいいですか？"
+
+#: ../../../appendices/faq.en.rst:31
+msgid ""
+"Create a large file on filesystem (with :manpage:`dd(1)`) and mount it as "
+"loopback device. This is accomplished with :manpage:`losetup(8)` on Linux, :"
+"manpage:`lofiadm(1m)` on Solaris and Illumos, and :manpage:`mdconfig(8)` on "
+"FreeBSD."
+msgstr ""
+"ファイルシステム上に大きなファイルを ( :manpage:`dd(1)` を使って ) 作成し、"
+"それをループバックデバイスとしてマウントしてください。これは Linux 上では  :"
+"manpage:`losetup(8)` で、Solaris と Illumos 上では :manpage:`lofiadm(1m)` 、"
+"FreeBSD 上では :manpage:`mdconfig(8)` を使って行えます。"
+
+#: ../../../appendices/faq.en.rst:36
+msgid ""
+"How do disk I/O errors affect the cache and what does Traffic Server do "
+"when a cache disk fails?"
+msgstr ""
+"ディスク I/O エラーはキャッシュにどのように影響し、キャッシュディスクが動か"
+"なくなったとき Traffic Server は何を行いますか？"
+
+#: ../../../appendices/faq.en.rst:38
+msgid ""
+"If a disk drive fails five successive I/O operations, then Traffic Server "
+"considers the drive inaccessible and removes the entire disk from the "
+"cache. Normal cache operations continue for all other Traffic Server disk "
+"drives."
+msgstr ""
+"ディスクドライブが I/O 操作に連続して五回失敗すると、Traffic Server はドライ"
+"ブがアクセス不能とみなしキャッシュからディスク全体を外します。通常のキャッ"
+"シュ操作は Traffic Server の他のすべてのディスクドライブで継続します。"
+
+#: ../../../appendices/faq.en.rst:44
+msgid ""
+"If a client disconnects during the time that Traffic Server is downloading "
+"a large object, is any of the object saved in the cache?"
+msgstr ""
+"Traffic Server が大きいオブジェクトをダウンロード中にクライアントが接続を閉"
+"じた場合、オブジェクトはキャッシュに保存されますか？"
+
+#: ../../../appendices/faq.en.rst:46
+msgid ""
+"When a client disconnects during an HTTP operation, Traffic Server can "
+"continue to download the object from the origin server, using the :ref:"
+"`background fill feature <background_fill>`. It will continue downloading "
+"based on the :ts:cv:`proxy.config.http.background_fill_active_timeout` and :"
+"ts:cv:`proxy.config.http.background_fill_completed_threshold` settings."
+msgstr ""
+"HTTP の処理中にクライアントが接続を閉じたとき、 Traffic Server は :ref:"
+"`background fill feature <background_fill>` を使ってオリジンサーバーからのオ"
+"ブジェクトのダウンロードを継続します。 :ts:cv:`proxy.config.http."
+"background_fill_active_timeout` と :ts:cv:`proxy.config.http."
+"background_fill_completed_threshold` の設定に従ってダウンロードを継続しま"
+"す。"
+
+#: ../../../appendices/faq.en.rst:51
+msgid ""
+"Can Traffic Server cache Java applets, JavaScript programs, or other "
+"application files like VBScript?"
+msgstr ""
+"Traffic Server は Java アプレット、 JavaScript のブログラムもしくは "
+"VBScript のようなその他のアプリケーションファイルをキャッシュできますか？"
+
+#: ../../../appendices/faq.en.rst:53
+msgid ""
+"Yes, Traffic Server can store and serve Java applets, JavaScript programs, "
+"VBScripts, and other executable objects from its cache according to the "
+"freshness and cacheability rules for HTTP objects. Traffic Server does not "
+"execute the applets, scripts, or programs. These objects run entirely "
+"client-side (the system which originated the request for the objects), and "
+"do not execute on the server."
+msgstr ""
+"はい、 Traffic Server は Java アプレット、 JavaScript のプログラム、 "
+"VBScript 、その他の実行形式オブジェクトを保管、配信することができます。"
+"キャッシュから配信する際は HTTP オブジェクトのフレッシュネスとキャッシュして"
+"よいかの判定ルールに従います。 Traffic Server がアプレット、スクリプトやプロ"
+"グラムを実行することはありません。これらのオブジェクトはもっぱらクライアント"
+"サイド (オブジェクトへのリクエストを送出したシステム) で実行され、サーバ上で"
+"は実行されません。"
+
+#: ../../../appendices/faq.en.rst:61
+msgid ""
+"In Squid- and Netscape-format log files, what do the cache result codes "
+"mean?"
+msgstr ""
+"Squid や Netscape フォーマットのログファイルで、キャッシュ結果コードは何を意"
+"味していますか？"
+
+#: ../../../appendices/faq.en.rst:63
+#, fuzzy
+msgid ""
+"This is described in detail in the :ref:`admin-logging-format-squid` "
+"documentation."
+msgstr ""
+"これについては :ref:`log-formats-squid-format` に詳細に説明されています。"
+
+#: ../../../appendices/faq.en.rst:66
+msgid "What is recorded by the ``cqtx`` field in a custom log file?"
+msgstr ""
+"カスタムログファイル内の ``cqtx`` フィールドには何が記録されていますか？"
+
+#: ../../../appendices/faq.en.rst:68
+msgid ""
+"In *forward proxy mode*, the ``cqtx`` field records the complete client "
+"request in the log file (for example, ``GET http://www.company.com "
+"HTTP/1.0``)."
+msgstr ""
+"*フォワードプロキシーモード* では、 ``cqtx`` フィールドは完全なクライアント"
+"のリクエストをログファイルに記録します (例: ``GET http://www.company.com "
+"HTTP/1.0``)。"
+
+#: ../../../appendices/faq.en.rst:70
+msgid ""
+"In *reverse proxy mode*, the ``cqtx`` field records the hostname or IP "
+"address of the origin server because Traffic Server first remaps the "
+"request as per map rules in the :file:`remap.config` file."
+msgstr ""
+"*リバースプロキシーモード* では ``cqtx`` フィールドはオリジンサーバーのホス"
+"ト名または IP アドレスを記録します。なぜなら Traffic Server はリクエストを :"
+"file:`remap.config` ファイル内のマッピングルールごとにリクエストをまずリマッ"
+"プを行うからです。"
+
+#: ../../../appendices/faq.en.rst:75
+msgid ""
+"Does Traffic Server refresh entries in its host database after a certain "
+"period of time if they have not been used?"
+msgstr ""
+"Traffic Server はホストデータベース内のエントリーが一定期間使われなかった場"
+"合にそれらを更新しますか？"
+
+#: ../../../appendices/faq.en.rst:77
+msgid ""
+"By default, the Traffic Server host database observes the time-to-live "
+"(``ttl``) values set by name servers. You can reconfigure Traffic Server to "
+"ignore the ``ttl`` set by name servers and use a specific Traffic Server "
+"setting instead. Alternatively, you can configure Traffic Server to compare "
+"the ``ttl`` value set by the name server with the ``ttl`` value set by "
+"Traffic Server, and then use either the lower or the higher value."
+msgstr ""
+"デフォルトでは、Traffic Server のホストデータベースはネームサーバーにより"
+"セットされた time-to-live (``ttl``) を監視します。ネームサーバーによってセッ"
+"トされた ``ttl`` を無視して指定した設定を使用するように Traffic Server を再"
+"設定することも可能です。もしくは、ネームサーバーによってセットされた "
+"``ttl`` の値と Traffic Server の設定値を比較し、低いものか高いものかどちらか"
+"を使用するように Traffic Serverを設定することも可能です。"
+
+#: ../../../appendices/faq.en.rst:85
+msgid "Refer to :ts:cv:`proxy.config.hostdb.ttl_mode` for more info."
+msgstr ""
+"より詳細な情報は :ts:cv:`proxy.config.hostdb.ttl_mode` を参照してください。"
+
+#: ../../../appendices/faq.en.rst:88
+msgid ""
+"Can you improve the look of your custom response pages by using images, "
+"animated .gifs, and Java applets?"
+msgstr ""
+"カスタムレスポンスメッセージの見た目を画像やアニメーション GIF や Java アプ"
+"レットを使用して改善することはできますか？"
+
+#: ../../../appendices/faq.en.rst:90
+msgid ""
+"No, because Traffic Server can only respond to clients with a single text "
+"or HTML document. As a workaround, however, you can provide references on "
+"your custom response pages to images, animated .gifs, Java applets, or "
+"objects other than text which are located on a web server. Add links in the "
+"body_factory template files in the same way you would for any image in an "
+"HTML document (i.e., with the full URL in the ``SRC`` attribute)."
+msgstr ""
+"いいえ、Traffic Server はクライアントに一つのテキストもしくは HTML ドキュメ"
+"ントしか返せません。次善策ではありますが、カスタマイズレスポンスページで "
+"Web サーバー上にある画像、アニメーション GIF 、Java アプレット、その他テキス"
+"トではないオブジェクトの参照を提供することは可能です。HTML ドキュメントに画"
+"像を追加するのと同じ方法で body_factory テンプレートファイルにリンクを追加し"
+"てください (例、\\ ``SRC`` 属性に完全な URL を指定するなど) 。"
+
+#: ../../../appendices/faq.en.rst:99
+msgid ""
+"Can Traffic Server run in forward proxy and reverse proxy modes at the same "
+"time?"
+msgstr ""
+"Traffic Server はフォワードプロキシーモードとリバースプロキシーモードを同時"
+"に実行できますか？"
+
+#: ../../../appendices/faq.en.rst:101
+msgid ""
+"Yes. When you enable reverse proxy mode, Traffic Server remaps incoming "
+"requests according to the map rules in :file:`remap.config`. All other "
+"requests that do not match a map rule are served in forward proxy mode."
+msgstr ""
+"はい。リバースプロキシーモードを有効にしている場合、 Traffic Server は受け"
+"取ったリクエストを :file:`remap.config` 内のマッピングルールに従ってリマップ"
+"します。マッピングルールにマッチしないその他のリクエストはフォワードプロキ"
+"シーモードで配信されます。"
+
+#: ../../../appendices/faq.en.rst:106
+msgid ""
+"If you want to run in reverse proxy only mode (wherein Traffic Server does "
+"not serve requests that fail to match a map rule), then you must set the "
+"configuration variable :ts:cv:`proxy.config.url_remap.remap_required` to "
+"``1`` in :file:`records.config`."
+msgstr ""
+"リバースプロキシーだけのモード (マップルールにマッチしないリクエストには "
+"Traffic Server は応えなくなります) にしたい場合は、 :file:`records.config` "
+"の設定変数 :ts:cv:`proxy.config.url_remap.remap_required` を ``1`` にしなけ"
+"ればなりません。"
+
+#: ../../../appendices/faq.en.rst:112
+msgid "How do I enable forward proxy mode"
+msgstr "どうやってフォワードプロキシーモードを有効するのですか？"
+
+#: ../../../appendices/faq.en.rst:114
+msgid "Please refer to the :ref:`forward-proxy` documentation."
+msgstr ":ref:`forward-proxy` を参照してください。"
+
+#: ../../../appendices/faq.en.rst:117
+msgid "How do I interpret the Via: header code?"
+msgstr "どうやって Via: ヘッダーコードを解釈するのですか？"
+
+#: ../../../appendices/faq.en.rst:119
+msgid ""
+"The ``Via`` header string can be decoded with the `Via Decoder Ring <http://"
+"trafficserver.apache.org/tools/via>`_."
+msgstr ""
+"``Via`` ヘッダーは `Via Decoder Ring <http://trafficserver.apache.org/tools/"
+"via>`_ でデコードできます。"
+
+#: ../../../appendices/faq.en.rst:121
+msgid ""
+"The Via header is an optional HTTP header added by Traffic Server and other "
+"HTTP proxies. If a request goes through multiple proxies, each one appends "
+"its Via header content to the end of the existing Via header. Via header "
+"content is for general information and diagnostic use only and should not "
+"be used as a programmatic interface to Traffic Server."
+msgstr ""
+"Via ヘッダーは省略可能な HTTP ヘッダーで Traffic Server や他の HTTP プロキ"
+"シーによって追加されます。リクエストが複数のプロキシーを経由する場合は、それ"
+"ぞれのプロキシーが既存の Via ヘッダーの最後に自分の Via ヘッダーの内容を追加"
+"します。 Via ヘッダーの内容は一般情報と診断のみに用いるためのものであり、 "
+"Traffic Server へのプログラムのインターフェースとして使用するべきではありま"
+"せん。"
+
+#: ../../../appendices/faq.en.rst:123
+msgid "The form of the Via header is"
+msgstr "Via ヘッダーの形式は"
+
+#: ../../../appendices/faq.en.rst:125
+msgid "Via: <protocol> <proxyname> (<product/version> [<via-codes>])"
+msgstr "Via: <protocol> <proxyname> (<product/version> [<via-codes>])"
+
+#: ../../../appendices/faq.en.rst:128 ../../../appendices/faq.en.rst:155
+#: ../../../appendices/faq.en.rst:169 ../../../appendices/faq.en.rst:184
+#: ../../../appendices/faq.en.rst:197 ../../../appendices/faq.en.rst:210
+#: ../../../appendices/faq.en.rst:223 ../../../appendices/faq.en.rst:243
+#: ../../../appendices/faq.en.rst:261 ../../../appendices/faq.en.rst:274
+#: ../../../appendices/faq.en.rst:294 ../../../appendices/faq.en.rst:306
+#: ../../../appendices/faq.en.rst:318
+msgid "Value"
+msgstr "値"
+
+#: ../../../appendices/faq.en.rst:128 ../../../appendices/faq.en.rst:155
+#: ../../../appendices/faq.en.rst:169 ../../../appendices/faq.en.rst:184
+#: ../../../appendices/faq.en.rst:197 ../../../appendices/faq.en.rst:210
+#: ../../../appendices/faq.en.rst:223 ../../../appendices/faq.en.rst:243
+#: ../../../appendices/faq.en.rst:261 ../../../appendices/faq.en.rst:274
+#: ../../../appendices/faq.en.rst:294 ../../../appendices/faq.en.rst:306
+#: ../../../appendices/faq.en.rst:318
+msgid "Meaning"
+msgstr "意味"
+
+#: ../../../appendices/faq.en.rst:130
+msgid "<protocol>"
+msgstr "<protocol>"
+
+#: ../../../appendices/faq.en.rst:130
+msgid "the scheme and version of the HTTP request"
+msgstr "HTTP リクエストのスキームとバージョン"
+
+#: ../../../appendices/faq.en.rst:131
+msgid "<proxyname>"
+msgstr "<proxyname>"
+
+#: ../../../appendices/faq.en.rst:131
+msgid "the configured name of the proxy server"
+msgstr "プロキシーサーバーの設定名"
+
+#: ../../../appendices/faq.en.rst:132
+msgid "<product/version>"
+msgstr "<product/version>"
+
+#: ../../../appendices/faq.en.rst:132
+msgid "the Traffic Server product name and version"
+msgstr "Traffic Server のプロダクト名とバージョン"
+
+#: ../../../appendices/faq.en.rst:133
+msgid "<via-codes>"
+msgstr "<via-codes>"
+
+#: ../../../appendices/faq.en.rst:133
+msgid ""
+"a string of alphabetic codes presenting status information about the proxy "
+"handling of the HTTP request"
+msgstr ""
+"HTTP リクエストをプロキシーが処理した際のステータス情報を表すアルファベット"
+"のコードからなる文字列"
+
+#: ../../../appendices/faq.en.rst:136
+msgid "For example: Via: HTTP/1.0 storm (Traffic-Server/4.0.0   [cMs f ])"
+msgstr "例えば: Via: HTTP/1.0 storm (Traffic-Server/4.0.0   [cMs f ])"
+
+#: ../../../appendices/faq.en.rst:139
+msgid "[u lH o  f  pS eN]     cache hit"
+msgstr "[u lH o  f  pS eN]     キャッシュヒット"
+
+#: ../../../appendices/faq.en.rst:140
+msgid "[u lM oS fF pS eN]     cache miss"
+msgstr "[u lM oS fF pS eN]     キャッシュミス"
+
+#: ../../../appendices/faq.en.rst:141
+msgid "[uN l oS f  pS eN]     no-cache origin server fetch"
+msgstr "[uN l oS f  pS eN]     no-cache のためオリジンサーバーから取得"
+
+#: ../../../appendices/faq.en.rst:143
+msgid ""
+"The short status code shows the cache-lookup, server-info and cache-fill "
+"information as listed in the full status code description below. The long "
+"status code list provided in older, commercial versions of Traffic Server "
+"can be restored by setting the verbose_via_str config variable. The "
+"character strings in the via-code show [<request results>:<proxy op>] where "
+"<request results> represents status information about the results of the "
+"client request and <proxy op> represent some information about the proxy "
+"operations performed during request processing. The full via-code status "
+"format is"
+msgstr ""
+"短いステータスコードは、下記に説明している完全なステータスコードのリストにあ"
+"るキャッシュのルックアップ、サーバー情報、キャッシュフィル情報を示します。長"
+"いステータスコードは古い、商用製品版の Traffic Server で提供されていたもの"
+"で、 verbose_via_str 変数を設定することで取得可能です。 via-code の文字は "
+"[<request results>:<proxy op>] という形式を取り、 <request results> はクライ"
+"アントのリクエストの結果についてのステータス情報を表し、 <proxy op> はリクエ"
+"スト処理中に実行されたプロキシーの処理についての情報を表します。完全な via-"
+"code のステータス形式は"
+
+#: ../../../appendices/faq.en.rst:146
+msgid ""
+"[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> "
+"e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> i<icp-"
+"conn-info> p<parent-proxy> s<server-conn-info>]"
+msgstr ""
+"[u<client-info> c<cache-lookup> s<server-info> f<cache-fill> p<proxy-info> "
+"e<error-codes> : t<tunnel-info>c<cache-type><cache-lookup-result> i<icp-"
+"conn-info> p<parent-proxy> s<server-conn-info>]"
+
+#: ../../../appendices/faq.en.rst:150
+msgid "u client-info"
+msgstr "u client-info"
+
+#: ../../../appendices/faq.en.rst:152
+msgid "Request headers received from client. Value is one of:"
+msgstr "クライアントから受信したリクエストヘッダー。値は以下のいずれかです:"
+
+#: ../../../appendices/faq.en.rst:157 ../../../appendices/faq.en.rst:226
+#: ../../../appendices/faq.en.rst:263 ../../../appendices/faq.en.rst:276
+msgid "C"
+msgstr "C"
+
+#: ../../../appendices/faq.en.rst:157
+msgid "cookie"
+msgstr "クッキー"
+
+#: ../../../appendices/faq.en.rst:158 ../../../appendices/faq.en.rst:186
+msgid "E"
+msgstr "E"
+
+#: ../../../appendices/faq.en.rst:158
+msgid "error in request"
+msgstr "リクエスト内にエラー"
+
+#: ../../../appendices/faq.en.rst:159 ../../../appendices/faq.en.rst:264
+#: ../../../appendices/faq.en.rst:279
+msgid "I"
+msgstr "I"
+
+#: ../../../appendices/faq.en.rst:159
+msgid "If Modified Since (IMS)"
+msgstr "If Modified Since (IMS)"
+
+#: ../../../appendices/faq.en.rst:160 ../../../appendices/faq.en.rst:187
+#: ../../../appendices/faq.en.rst:212 ../../../appendices/faq.en.rst:230
+#: ../../../appendices/faq.en.rst:248 ../../../appendices/faq.en.rst:282
+msgid "N"
+msgstr "N"
+
+#: ../../../appendices/faq.en.rst:160
+msgid "no-cache"
+msgstr "no-cache"
+
+#: ../../../appendices/faq.en.rst:161 ../../../appendices/faq.en.rst:175
+#: ../../../appendices/faq.en.rst:188 ../../../appendices/faq.en.rst:214
+#: ../../../appendices/faq.en.rst:232 ../../../appendices/faq.en.rst:267
+#: ../../../appendices/faq.en.rst:283 ../../../appendices/faq.en.rst:297
+#: ../../../appendices/faq.en.rst:309 ../../../appendices/faq.en.rst:321
+msgid "S"
+msgstr "S"
+
+#: ../../../appendices/faq.en.rst:161
+msgid "simple request (not conditional)"
+msgstr "(条件無しの) シンプルなリクエスト"
+
+#: ../../../appendices/faq.en.rst:165
+msgid "c cache-lookup"
+msgstr "c cache-lookup"
+
+#: ../../../appendices/faq.en.rst:166
+msgid "Result of Traffic Server cache lookup for URL. Value is one of:"
+msgstr ""
+"Traffic Server が URL に対してキャッシュをルックアップした結果。値は以下のい"
+"ずれかです:"
+
+#: ../../../appendices/faq.en.rst:171 ../../../appendices/faq.en.rst:225
+#: ../../../appendices/faq.en.rst:245
+msgid "A"
+msgstr "A"
+
+#: ../../../appendices/faq.en.rst:171
+msgid "in cache, not acceptable (a cache \"MISS\")"
+msgstr "キャッシュに存在したが受理できない (キャッシュ「ミス」)"
+
+#: ../../../appendices/faq.en.rst:172 ../../../appendices/faq.en.rst:229
+#: ../../../appendices/faq.en.rst:278
+msgid "H"
+msgstr "H"
+
+#: ../../../appendices/faq.en.rst:172
+msgid "in cache, fresh (a cache \"HIT\")"
+msgstr "キャッシュに存在して新鮮 (キャッシュ「ヒット」)"
+
+#: ../../../appendices/faq.en.rst:173 ../../../appendices/faq.en.rst:247
+#: ../../../appendices/faq.en.rst:281
+msgid "M"
+msgstr "M"
+
+#: ../../../appendices/faq.en.rst:173
+msgid "miss (a cache \"MISS\")"
+msgstr "ミス (キャッシュ「ミス」)"
+
+#: ../../../appendices/faq.en.rst:174 ../../../appendices/faq.en.rst:213
+#: ../../../appendices/faq.en.rst:231
+msgid "R"
+msgstr "R"
+
+#: ../../../appendices/faq.en.rst:174
+msgid "in cache, fresh RAM hit (a cache \"HIT\")"
+msgstr "キャッシュに存在して、 RAM 上にあり新鮮 (キャッシュ「ヒット」)"
+
+#: ../../../appendices/faq.en.rst:175
+msgid "in cache, stale (a cache \"MISS\")"
+msgstr "キャッシュに存在したが、新鮮でない (キャッシュ「ミス」)"
+
+#: ../../../appendices/faq.en.rst:176 ../../../appendices/faq.en.rst:189
+#: ../../../appendices/faq.en.rst:202 ../../../appendices/faq.en.rst:251
+#: ../../../appendices/faq.en.rst:268 ../../../appendices/faq.en.rst:285
+#: ../../../appendices/faq.en.rst:298 ../../../appendices/faq.en.rst:310
+#: ../../../appendices/faq.en.rst:322
+msgid "blank"
+msgstr "blank"
+
+#: ../../../appendices/faq.en.rst:176
+msgid "no cache lookup performed"
+msgstr "キャッシュのルックアップが実行されなかった"
+
+#: ../../../appendices/faq.en.rst:180
+msgid "s server-info"
+msgstr "s server-info"
+
+#: ../../../appendices/faq.en.rst:181
+msgid "Response information received from origin server. Value is one of:"
+msgstr "オリジンサーバーから受け取ったレスポンス情報。値は以下のいずれかです:"
+
+#: ../../../appendices/faq.en.rst:186
+msgid "error in response"
+msgstr "レスポンス内にエラー"
+
+#: ../../../appendices/faq.en.rst:187 ../../../appendices/faq.en.rst:212
+msgid "not-modified"
+msgstr "変更されていなかった"
+
+#: ../../../appendices/faq.en.rst:188 ../../../appendices/faq.en.rst:214
+msgid "served"
+msgstr "配信された"
+
+#: ../../../appendices/faq.en.rst:189
+msgid "no server connection needed"
+msgstr "オリジンサーバーへの接続は不要だった"
+
+#: ../../../appendices/faq.en.rst:193
+msgid "f cache-fill"
+msgstr "f cache-fill"
+
+#: ../../../appendices/faq.en.rst:194
+msgid "Result of document write to cache. Value is one of:"
+msgstr "ドキュメントをキャッシュに書いた結果。値は以下のいずれかです:"
+
+#: ../../../appendices/faq.en.rst:199 ../../../appendices/faq.en.rst:227
+#: ../../../appendices/faq.en.rst:277
+msgid "D"
+msgstr "D"
+
+#: ../../../appendices/faq.en.rst:199
+msgid "cached copy deleted"
+msgstr "キャッシュされたコピーが削除された"
+
+#: ../../../appendices/faq.en.rst:200 ../../../appendices/faq.en.rst:250
+#: ../../../appendices/faq.en.rst:284
+msgid "U"
+msgstr "U"
+
+#: ../../../appendices/faq.en.rst:200
+msgid "updated old cache copy"
+msgstr "古いキャッシュのコピーを上書きした"
+
+#: ../../../appendices/faq.en.rst:201
+msgid "W"
+msgstr "W"
+
+#: ../../../appendices/faq.en.rst:201
+msgid "written into cache (new copy)"
+msgstr "キャッシュに書き込んだ (新しいコピー)"
+
+#: ../../../appendices/faq.en.rst:202
+msgid "no cache write performed"
+msgstr "キャッシュへの書き込みは実行されなかった"
+
+#: ../../../appendices/faq.en.rst:206
+msgid "p proxy-info"
+msgstr "p proxy-info"
+
+#: ../../../appendices/faq.en.rst:207
+msgid "Proxy operation result. Value is one of:"
+msgstr "プロキシー処理結果。値は以下のいずれかです:"
+
+#: ../../../appendices/faq.en.rst:213
+msgid "origin server revalidated"
+msgstr "オリジンサーバーで再検証された"
+
+#: ../../../appendices/faq.en.rst:218
+msgid "e error-codes"
+msgstr "e error-codes"
+
+#: ../../../appendices/faq.en.rst:220
+msgid "Value is one of:"
+msgstr "値は以下のいずれかです:"
+
+#: ../../../appendices/faq.en.rst:225
+msgid "authorization failure"
+msgstr "認証失敗"
+
+#: ../../../appendices/faq.en.rst:226
+msgid "connection to server failed"
+msgstr "サーバーへの接続に失敗した"
+
+#: ../../../appendices/faq.en.rst:227
+msgid "dns failure"
+msgstr "DNS失敗"
+
+#: ../../../appendices/faq.en.rst:228 ../../../appendices/faq.en.rst:246
+#: ../../../appendices/faq.en.rst:296 ../../../appendices/faq.en.rst:308
+#: ../../../appendices/faq.en.rst:320
+msgid "F"
+msgstr "F"
+
+#: ../../../appendices/faq.en.rst:228
+msgid "request forbidden"
+msgstr "リクエストが禁止された"
+
+#: ../../../appendices/faq.en.rst:229
+msgid "header syntax unacceptable"
+msgstr "ヘッダーのシンタックスが受理されなかった"
+
+#: ../../../appendices/faq.en.rst:230
+msgid "no error"
+msgstr "エラー無し"
+
+#: ../../../appendices/faq.en.rst:231
+msgid "cache read error"
+msgstr "キャッシュの読み込みエラー"
+
+#: ../../../appendices/faq.en.rst:232
+msgid "server related error"
+msgstr "サーバー関連エラー"
+
+#: ../../../appendices/faq.en.rst:233
+msgid "T"
+msgstr "T"
+
+#: ../../../appendices/faq.en.rst:233
+msgid "connection timed out"
+msgstr "接続タイムアウト"
+
+#: ../../../appendices/faq.en.rst:236
+msgid ""
+": = Separates proxy request result information from operation detail codes"
+msgstr ": = プロキシーのリクエスト情報と操作詳細コードを分離します"
+
+#: ../../../appendices/faq.en.rst:239
+msgid "t tunnel-info"
+msgstr "t tunnel-info"
+
+#: ../../../appendices/faq.en.rst:240
+msgid "Proxy-only service operation. Value is one of:"
+msgstr "プロキシーのみのサービス処理。値は以下のいずれかです:"
+
+#: ../../../appendices/faq.en.rst:245
+msgid "tunnel authorization"
+msgstr "トンネルの認証"
+
+#: ../../../appendices/faq.en.rst:246
+msgid "tunneling due to a header field (such as presence of If-Range header)"
+msgstr ""
+"ヘッダーフィールド (If-Range ヘッダーが存在するなど) が原因でトンネリング"
+
+#: ../../../appendices/faq.en.rst:247
+msgid "tunneling due to a method (e.g. CONNECT)"
+msgstr "メソッド (例: CONNECT) が原因でトンネリング"
+
+#: ../../../appendices/faq.en.rst:248
+msgid "tunneling due to no forward"
+msgstr "no forward が原因でトンネリング"
+
+#: ../../../appendices/faq.en.rst:249
+msgid "O"
+msgstr "O"
+
+#: ../../../appendices/faq.en.rst:249
+msgid "tunneling because cache is turned off"
+msgstr "キャッシュがオフにされていたためトンネリング"
+
+#: ../../../appendices/faq.en.rst:250
+msgid "tunneling because of url (url suggests dynamic content)"
+msgstr ""
+"URL が原因で (URL がダイナミックコンテンツを示唆していた) トンネリング"
+
+#: ../../../appendices/faq.en.rst:251
+msgid "no tunneling"
+msgstr "トンネリング無し"
+
+#: ../../../appendices/faq.en.rst:255
+msgid "c cache-type and cache-lookup"
+msgstr "c cache-type and cache-lookup"
+
+#: ../../../appendices/faq.en.rst:256
+msgid "cache result values (2 characters)"
+msgstr "キャッシュの結果の値 (2文字)"
+
+#: ../../../appendices/faq.en.rst:258
+msgid "cache-type character value is one of"
+msgstr "キャッシュタイプの文字は以下のいずれかです"
+
+#: ../../../appendices/faq.en.rst:263
+msgid "cache"
+msgstr "cache"
+
+#: ../../../appendices/faq.en.rst:264
+msgid "icp"
+msgstr "icp"
+
+#: ../../../appendices/faq.en.rst:265
+msgid "L"
+msgstr "L"
+
+#: ../../../appendices/faq.en.rst:265
+msgid "cluster, (not used)"
+msgstr "cluster (使用されていません)"
+
+#: ../../../appendices/faq.en.rst:266
+msgid "P"
+msgstr "P"
+
+#: ../../../appendices/faq.en.rst:266
+msgid "parent"
+msgstr "parent"
+
+#: ../../../appendices/faq.en.rst:267
+msgid "server"
+msgstr "server"
+
+#: ../../../appendices/faq.en.rst:268
+msgid "cache miss or no cache lookup"
+msgstr "キャッシュがミスしたかキャッシュルックアップがされなかった"
+
+#: ../../../appendices/faq.en.rst:271
+msgid "cache-lookup-result character value is one of:"
+msgstr "キャッシュルックアップの結果の文字は以下のいずれかです:"
+
+#: ../../../appendices/faq.en.rst:276
+msgid "cache hit, but config forces revalidate"
+msgstr "キャッシュはヒットしたが、設定が再検証を強制した"
+
+#: ../../../appendices/faq.en.rst:277
+msgid "cache hit, but method forces revalidated (e.g. ftp, not anonymous)"
+msgstr ""
+"キャッシュはヒットしたが、メソッドが再検証を強制した (例: anonymousでない"
+"ftp)"
+
+#: ../../../appendices/faq.en.rst:278
+msgid "cache hit"
+msgstr "キャッシュヒット"
+
+#: ../../../appendices/faq.en.rst:279
+msgid ""
+"conditional miss (client sent conditional, fresh in cache, returned 412)"
+msgstr ""
+"条件付きミス (クライアントが条件付きリクエストを送った、キャッシュ内に新鮮な"
+"ドキュメントがあった、 304 を返した)"
+
+#: ../../../appendices/faq.en.rst:280
+msgid "K"
+msgstr "K"
+
+#: ../../../appendices/faq.en.rst:280
+msgid "cookie miss"
+msgstr "クッキーによるミス"
+
+#: ../../../appendices/faq.en.rst:281
+msgid "cache miss (url not in cache)"
+msgstr "キャッシュミス (URL がキャッシュに無かった)"
+
+#: ../../../appendices/faq.en.rst:282
+msgid ""
+"conditional hit (client sent conditional, doc fresh in cache, returned 304)"
+msgstr ""
+"条件付きヒット (クライアントが条件付きリクエストを送った、キャッシュ内に新鮮"
+"なドキュメントがあった、 304 を返した)"
+
+#: ../../../appendices/faq.en.rst:283
+msgid "cache hit, but expired"
+msgstr "キャッシュヒットしたが、期限切れだった"
+
+#: ../../../appendices/faq.en.rst:284
+msgid "cache hit, but client forces revalidate (e.g. Pragma: no-cache)"
+msgstr ""
+"キャッシュはヒットしたが、クライアントが再検証を強制した (例: Pragma: no-"
+"cache)"
+
+#: ../../../appendices/faq.en.rst:285
+msgid "no cache lookup"
+msgstr "キャッシュルックアップ無し"
+
+#: ../../../appendices/faq.en.rst:289
+msgid "i icp-conn-info"
+msgstr "i icp-conn-info"
+
+#: ../../../appendices/faq.en.rst:291
+msgid "ICP status"
+msgstr "ICP の状態"
+
+#: ../../../appendices/faq.en.rst:296 ../../../appendices/faq.en.rst:308
+#: ../../../appendices/faq.en.rst:320
+msgid "connection open failed"
+msgstr "接続オープンに失敗した"
+
+#: ../../../appendices/faq.en.rst:297 ../../../appendices/faq.en.rst:309
+#: ../../../appendices/faq.en.rst:321
+msgid "connection opened successfully"
+msgstr "接続オープンに成功した"
+
+#: ../../../appendices/faq.en.rst:298
+msgid "no icp"
+msgstr "ICP 無し"
+
+#: ../../../appendices/faq.en.rst:302
+msgid "p parent-proxy"
+msgstr "p parent-proxy"
+
+#: ../../../appendices/faq.en.rst:303
+msgid "parent proxy connection status"
+msgstr "ペアレントプロキシーへの接続状態"
+
+#: ../../../appendices/faq.en.rst:310
+msgid "no parent proxy"
+msgstr "ペアレントプロキシー無し"
+
+#: ../../../appendices/faq.en.rst:314
+msgid "s server-conn-info"
+msgstr "s server-conn-info"
+
+#: ../../../appendices/faq.en.rst:315
+msgid "origin server connection status"
+msgstr "オリジンサーバーへの接続状態"
+
+#: ../../../appendices/faq.en.rst:322
+msgid "no server connection"
+msgstr "オリジンサーバーへの接続無し"
+
+#: ../../../appendices/faq.en.rst:328
+msgid "Support for HTTP Expect: Header"
+msgstr "HTTP Expect: ヘッダーのサポート"
+
+#: ../../../appendices/faq.en.rst:330
+msgid ""
+"Traffic Server currently does not handle Expect: request headers according "
+"to the HTTP/1.1 spec."
+msgstr ""
+"Traffic Server は現在 HTTP/1.1 仕様による Expect: ヘッダーを扱いません。"
+
+#: ../../../appendices/faq.en.rst:333
+msgid ""
+"Clients such as cURL automatically send Expect: for POST requests with "
+"large POST bodies, with a 1 second timeout if a 100 Continue response is "
+"not received. To avoid the timeout when using cURL as a client to Traffic "
+"Server, you can turn off the Expect: header::"
+msgstr ""
+"cURL のようなクライアントは巨大な POST のボディを持つ POST のリクエストを送"
+"る際に自動的に Expect ヘッダーを送りますが、100 Continue レスポンスを受け取"
+"らない場合は 1 秒のタイムアウトが発生します。 cURL を Traffic Server へのク"
+"ライアントとして使用する際にこのタイムアウトを回避するには、 Expect ヘッダー"
+"をオフにすることが出来ます。"
+
+#: ../../../appendices/faq.en.rst:340
+msgid "Or with the C (libcurl) library from within your own applications::"
+msgstr ""
+"あるいはあなた自身のアプリケーションから C (libcurl) ライブラリを使う場合"
+"は ::"
+
+#: ../../../appendices/faq.en.rst:346
+msgid "Or with the PHP cURL library::"
+msgstr "あるいは PHP の cURL ライブラリを使う場合は ::"
+
+#: ../../../appendices/faq.en.rst:351
+msgid "Troubleshooting Tips"
+msgstr "トラブルシューティングの秘訣"
+
+#: ../../../appendices/faq.en.rst:354
+msgid "The throughput statistic is inaccurate"
+msgstr "スループットの統計が不正確"
+
+#: ../../../appendices/faq.en.rst:356
+msgid ""
+"Traffic Server updates the throughput statistic after it has transferred an "
+"entire object. For larger files, the byte count increases sharply at the "
+"end of a transfer. The complete number of bytes transferred is attributed "
+"to the last 10-second interval, although it can take several minutes to "
+"transfer the object. This inaccuracy is more noticeable with a light load. "
+"A heavier load yields a more accurate statistic."
+msgstr ""
+"Traffic Server はスループットの統計をオブジェクト全体を転送した後で更新しま"
+"す。大きいファイルではバイト数が転送の終わりで鋭く上昇します。オブジェクトを"
+"転送するのに数分かかることもありますが完全な転送バイト数は直近の 10 秒間とな"
+"ります。この不正確さは負荷が軽い場合に顕著です。重い負荷はより正確な統計をも"
+"たらします。"
+
+#: ../../../appendices/faq.en.rst:364
+msgid "You are unable to execute Traffic Line commands"
+msgstr "Traffic Line コマンドが実行できない"
+
+#: ../../../appendices/faq.en.rst:366
+msgid "Traffic Line commands do not execute under the following conditions:"
+msgstr "Traffic Line コマンドは次の状況で動作しません。"
+
+#: ../../../appendices/faq.en.rst:377
+#, fuzzy
+msgid "**When the traffic_manager process is not running**"
+msgstr "traffic_manager プロセスが実行中でないとき"
+
+#: ../../../appendices/faq.en.rst:369
+msgid ""
+"Check to see if the :program:`traffic_manager` process is running by "
+"entering the following command::"
+msgstr ""
+"以下のコマンドを入力して実行することで :program:`traffic_manager` プロセスが"
+"実行中かどうかを確認してください ::"
+
+#: ../../../appendices/faq.en.rst:374
+msgid ""
+"If the :program:`traffic_manager` process is not running, then enter the "
+"following command from the Traffic Server ``bin`` directory to start it::"
+msgstr ""
+":program:`traffic_manager` プロセスが実行中ではない場合は、開始するために "
+"Traffic Server の ``bin`` ディレクトリで次のコマンドを入力してください。"
+
+#: ../../../appendices/faq.en.rst:388
+#, fuzzy
+msgid "**When you are not executing the command from $TSHome/bin**"
+msgstr "$TSHome/bin からコマンドを実行していない場合"
+
+#: ../../../appendices/faq.en.rst:387
+msgid ""
+"If the Traffic Server ``bin`` directory is not in your path, then prepend "
+"the Traffic Line commands with ``./`` (for example, ``./traffic_ctl -h``)."
+msgstr ""
+"Traffic Server の ``bin`` ディレクトリがあなたの path に無い場合は、 "
+"Traffic Line のコマンドの先頭に ``./`` を追加してください (例: ``./"
+"traffic_ctl -h``)。"
+
+#: ../../../appendices/faq.en.rst:390
+msgid ""
+"**When multiple Traffic Server installations are present and you are not "
+"executing the Traffic Line command from the active Traffic Server path "
+"specified in ``/etc/trafficserver``**"
+msgstr ""
+"**複数のインストール済み Traffic Server が存在し、 ``/etc/trafficserver`` で"
+"指定された Traffic Server のパスから Traffic Line コマンドが実行されていない"
+"場合。**"
+
+#: ../../../appendices/faq.en.rst:396
+msgid ""
+"You observe inconsistent behavior when one node obtains an object from "
+"another node in the cluster"
+msgstr ""
+"クラスター内の他のノードからあるノードがオブジェクトを取得する際に矛盾した振"
+"る舞いを観測した"
+
+#: ../../../appendices/faq.en.rst:398
+msgid ""
+"As part of the initial system preparation, you must synchronize the clocks "
+"on all nodes in your cluster. Minor time differences do not cause problems, "
+"but differences of more than a few minutes can affect Traffic Server "
+"operation."
+msgstr ""
+"最初のシステム準備の一環で、クラスター内のすべてのノードの時刻を同期しなけれ"
+"ば成りません。多少の違いは問題となりませんが、数分以上のずれは Traffic "
+"Server の動作に影響を与えます。"
+
+#: ../../../appendices/faq.en.rst:403
+msgid ""
+"You should run a clock synchronization daemon such as xntpd. To obtain the "
+"latest version of xntpd, go to `<http://www.eecis.udel.edu/~ntp/>`_."
+msgstr ""
+"xntpd などの時刻同期デーモンを実行するべきです。 xntpd の最新版を取得するに"
+"は、 `<http://www.eecis.udel.edu/~ntp/>`_ にアクセスしてください。"
+
+#: ../../../appendices/faq.en.rst:407
+msgid "Web browsers display an error document with a 'data missing' message"
+msgstr ""
+"ウェブブラウザーが 'data missing' というメッセージのエラードキュメントを表示"
+"します"
+
+#: ../../../appendices/faq.en.rst:409
+msgid "A message similar to the following might display in web browsers: ::"
+msgstr "次のようなメッセージがウェブブラウザーに表示されるかもしれません。"
+
+#: ../../../appendices/faq.en.rst:415
+msgid ""
+"This is a Web browser issue and not a problem specific to (or caused by) "
+"Traffic Server. Because Web browsers maintain a separate local cache in "
+"memory and/or disk on the client system, messages about documents that have "
+"expired from cache refer to the browser's local cache and not to the "
+"Traffic Server cache. There is no Traffic Server message or condition that "
+"can cause such messages to appear in a web browser."
+msgstr ""
+"これはウェブブラウザの問題であり、 Traffic Server に固有の (あるいは "
+"Traffic Server によって引き起こされた) 問題ではありません。ウェブブラウザは"
+"クライアントシステム上のメモリやディスクに Traffic Server とは別にローカル"
+"キャッシュを維持しています。 \"documents have expired from cache\" という"
+"メッセージはブラウザのローカルキャッシュに言及しているものであり Traffic "
+"Server に言及しているわけではありません。ウェブブラウザ上にこのようなメッ"
+"セージを表示させるような Traffic Server のメッセージや状態は存在しません。"
+
+#: ../../../appendices/faq.en.rst:423
+msgid "Traffic Server does not resolve any websites"
+msgstr "Traffic Server がどのウェブサイトも解決しません"
+
+#: ../../../appendices/faq.en.rst:425
+msgid ""
+"The browser indicates that it is contacting the host and then times out "
+"with the following message: ::"
+msgstr ""
+"ブラウザーはホストへ接続しようとしてタイムアウトしたことを次のメッセージで示"
+"しています。"
+
+#: ../../../appendices/faq.en.rst:430
+msgid ""
+"Make sure the system is configured correctly and that Traffic Server can "
+"read the name resolution file:"
+msgstr ""
+"システムが正しく設定されていることと Traffic Server が名前解決ファイルを読み"
+"込めるを確認してください。"
+
+#: ../../../appendices/faq.en.rst:433
+msgid ""
+"Check if the server can resolve DNS lookups by issuing the nslookup command "
+"(for example, ``nslookup www.myhost.com``)."
+msgstr ""
+"nslookup コマンドでサーバーが DNS 問い合わせを解決できるか ( 例えば、"
+"``nslookup www.myhost.com``) 確認してください。"
+
+#: ../../../appendices/faq.en.rst:435
+msgid ""
+"Check if the :manpage:`resolv.conf(5)` file contains valid IP addresses for "
+"your DNS servers."
+msgstr ""
+":manpage:`resolv.conf(5)` ファイルが DNS サーバーの妥当な IP アドレスを含ん"
+"でいるか確認してください。"
+
+#: ../../../appendices/faq.en.rst:437
+msgid ""
+"On some systems, if the :manpage:`resolv.conf(5)` file is unreadable or has "
+"no name server entry, then the operating system uses ``localhost`` as a "
+"name server. Traffic Server, however, does not use this convention. If you "
+"want to use ``localhost`` as a name server, then you must add a name server "
+"entry for ``127.0.0.1`` or ``0.0.0.0`` in the :manpage:`resolv.conf(5)` "
+"file."
+msgstr ""
+"いくつかのシステムでは、:manpage:`resolv.conf(5)` ファイルが読み込めないか"
+"ネームサーバーの項目がない場合、オペレーティングシステムは ``localhost`` を"
+"ネームサーバーとして使用します。しかし Traffic Server はこの慣習を使用しませ"
+"ん。``localhost`` をネームサーバーとして使用したい場合は、''127.0.0.1`` もし"
+"くは ``0.0.0.0`` へのネームサーバーの項目を :manpage:`resolv.conf(5)` ファイ"
+"ルに追加しなければ成りません。"
+
+#: ../../../appendices/faq.en.rst:443
+msgid ""
+"Check that the Traffic Server user account has permission to read the :"
+"manpage:`resolv.conf(5)` file. If it does not, then change the file "
+"permissions to ``rw-r--r--`` (``644``)."
+msgstr ""
+"Traffic Server のユーザアカウントが :manpage:`resolv.conf(5)` ファイルを読み"
+"取るパーミションを持っているか確認してください。もし持っていなければファイル"
+"のパーミションを ``rw-r--r--`` (``644``) に変更してください。"
+
+#: ../../../appendices/faq.en.rst:448
+msgid "'Maximum document size exceeded' message in the system log file"
+msgstr ""
+"システムログファイル内の 'Maximum document size exceeded' というメッセージ"
+
+#: ../../../appendices/faq.en.rst:450
+msgid "The following message appears in the system log file: ::"
+msgstr "次のメッセージがシステムログファイルに現れます。"
+
+#: ../../../appendices/faq.en.rst:454
+msgid ""
+"A requested object was larger than the maximum size allowed in the Traffic "
+"Server cache, so Traffic Server provided proxy service for the oversized "
+"object but did not cache it. To set the object size limit for the cache, "
+"modify the :ts:cv:`proxy.config.cache.max_doc_size` variable in the records."
+"config file. If you do not want to limit the size of objects in the cache, "
+"then set the document size to ``0`` (zero)."
+msgstr ""
+"リクエストされたオブジェクトが Traffic Server のキャッシュで許された最大サイ"
+"ズより大きかったので、Traffic Server はその大きすぎるオブジェクトへのプロキ"
+"シーは提供しましたがキャッシュは行いませんでした。キャッシュのオブジェクトサ"
+"イズ制限を設定するには、records.config ファイルの :ts:cv:`proxy.config."
+"cache.max_doc_size` 設定変数を変更してください。キャッシュ内のオブジェクトと"
+"のサイズを制限したくない場合は、ドキュメントサイズを ``0`` ( ゼロ ) に設定し"
+"てください。"
+
+#: ../../../appendices/faq.en.rst:463
+msgid "'DrainIncomingChannel' message in the system log file"
+msgstr "システムログファイル内の 'DrainIncomingChannel' というメッセージ"
+
+#: ../../../appendices/faq.en.rst:465
+msgid "The following messages may appear in the system log file: ::"
+msgstr "次のメッセージがシステムログファイルに現れるかもしれません。"
+
+#: ../../../appendices/faq.en.rst:471
+msgid ""
+"These error messages indicate that a browser is sending HTTP requests to "
+"one of the Traffic Server cluster ports, either ``rsport`` (default port "
+"8088) or ``mcport`` (default port 8089). Traffic Server discards these "
+"requests. This error does not cause any Traffic Server problems. The "
+"misconfigured browser must be reconfigured to use the correct proxy port. "
+"Traffic Server clusters should ideally be configured to use a separate "
+"network interface and cluster on a private subnet, so that client machines "
+"have no access to the cluster ports."
+msgstr ""
+"これらのエラーメッセージは Traffic Server  のクラスターポート ``rsport`` (デ"
+"フォルトは 8088 番ポート) か ``mcport`` (デフォルトは 8089 番ポート)にブラウ"
+"ザが HTTP リクエストを送っていることを意味しています。 Traffic Server はこれ"
+"らのリクエストを破棄します。このエラーは Traffic Server に何か問題を引き起こ"
+"すわけではありません。設定を間違えたブラウザはプロキシーの正しいポートを使う"
+"ように設定を変更しなければなりません。 Traffic Server は理想的には別のネット"
+"ワークインターフェースを使用してクラスターはプライベートなサブネットを使うよ"
+"うに設定し、クライアントマシンがクラスターのポートにアクセスできないようにす"
+"るべきです。"
+
+#: ../../../appendices/faq.en.rst:481
+msgid "'No cop file' message in the system log file"
+msgstr "システムログファイル内の 'No cop file' というメッセージ"
+
+#: ../../../appendices/faq.en.rst:483
+msgid "The following message appears repeatedly in the system log file: ::"
+msgstr "次のメッセージがシステムログファイルに繰り返し現れます。"
+
+#: ../../../appendices/faq.en.rst:487
+msgid ""
+"The file ``var/trafficserver/no_cop`` acts as an administrative control "
+"that instructs the :program:`traffic_cop` process to exit immediately "
+"without starting :program:`traffic_manager` or performing any health "
+"checks. The ``no_cop`` file prevents Traffic Server from starting "
+"automatically when it has been stopped with the option:`trafficserver stop` "
+"command. Without this static control, Traffic Server would restart "
+"automatically upon system reboot. The ``no_cop`` control keeps Traffic "
+"Server off until it is explicitly restarted with: ::"
+msgstr ""
+"``var/trafficserver/no_cop`` ファイルは :program:`traffic_cop` プロセスに :"
+"program:`traffic_manager` を開始したりヘルスチェックを実行したりすることなし"
+"に即座に終了することを指示します。  ``no_cop`` ファイルは Traffic Server が "
+"option:`trafficserver stop` コマンドで停止されたときに自動的に起動しないよう"
+"にします。 この静止の制御が無ければ、Traffic Server はシステムのリブート時に"
+"は自動的に再起動されます。 ``no_cop`` は Traffic Server が明示的に再起動され"
+"るまでは停止状態を保つようにします。"
+
+#: ../../../appendices/faq.en.rst:499
+msgid "Warning in the system log file when manually editing vaddrs.config"
+msgstr "vaddrs.config を手動で編集したときのシステムログファイルの警告"
+
+#: ../../../appendices/faq.en.rst:501
+msgid ""
+"If you manually edit :file:`vaddrs.config` as a non-root user, then Traffic "
+"Server issues a warning message in the system log file similar to the "
+"following::"
+msgstr ""
+"もしあなたが :file:`vaddrs.config` を非 root ユーザで手動で編集したら、 "
+"Traffic Server はシステムログファイルに以下のような警告メッセージを出力しま"
+"す ::"
+
+#: ../../../appendices/faq.en.rst:507
+msgid ""
+"You can safely ignore this message as Traffic Server will still apply your "
+"configuration edits."
+msgstr ""
+"Traffic Server はあなたの設定編集を反映しますのでこのメッセージは安全に無視"
+"することが出来ます。"
+
+#: ../../../appendices/faq.en.rst:511
+msgid "Traffic Server is running but no log files are created"
+msgstr "Traffic Server は実行中だがログファイルが作られない"
+
+#: ../../../appendices/faq.en.rst:513
+msgid ""
+"Traffic Server only writes event log files when there is information to "
+"record. If Traffic Server is idle, then it's possible that no log files "
+"exist."
+msgstr ""
+"Traffic Server は記録する情報があるときだけイベントログファイルに出力しま"
+"す。 Traffic Server がアイドル状態なら、ログファイルが存在しない可能性があり"
+"ます。"
+
+#: ../../../appendices/faq.en.rst:517
+msgid ""
+"If Traffic Server is not idle, and you still do not see log files being "
+"generated, verify the following:"
+msgstr ""
+"Traffic Server がアイドル状態でないのに、ログファイルが作成されていない場合"
+"は、以下を確認してください :"
+
+#: ../../../appendices/faq.en.rst:520
+msgid ""
+"Make sure you're looking in the correct directory. By default, Traffic "
+"Server creates log files in the ``logs`` directory. This can be modified by "
+"changing :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config`."
+msgstr ""
+"正しいディレクトリを見ているかを確認してください。デフォルトでは Traffic "
+"Server はログファイルを ``logs`` ディレクトリに作成します。これは :file:"
+"`records.config` の :ts:cv:`proxy.config.log.logfile_dir` で変更可能です。"
+
+#: ../../../appendices/faq.en.rst:524
+msgid ""
+"Check that the log directory has read/write permissions for the Traffic "
+"Server user account. If the log directory does not have the correct "
+"permissions, then the :program:`traffic_server` process will be unable to "
+"open or create log files."
+msgstr ""
+"ログディレクトリが Traffic Server のユーザアカウントで読み書き可能なパーミ"
+"ションを持っていることを確認してください。ログディレクトリが正しいパーミショ"
+"ンを持っていない場合は、 :program:`traffic_server` はログファイルを開いたり"
+"作成することが出来ません。"
+
+#: ../../../appendices/faq.en.rst:529
+msgid ""
+"Check that logging is enabled by checking the value of the :ts:cv:`proxy."
+"config.log.logging_enabled` variable in :file:`records.config`."
+msgstr ""
+"ログ出力が有効になっているかどうかを :file:`records.config` の :ts:cv:"
+"`proxy.config.log.logging_enabled` 変数の値を見て確認してください。"
+
+#: ../../../appendices/faq.en.rst:532
+msgid ""
+"Check that a log format is enabled. In :file:`records.config`, select the "
+"standard or custom format by editing variables in the Logging Config "
+"section."
+msgstr ""
+"ログフォーマットが有効になっているかを確認してください。 :file:`records."
+"config` 内のログ設定セクションの変数を編集して標準またはカスタムのログ形式を"
+"選択してください。"
+
+#: ../../../appendices/faq.en.rst:537
+msgid "Traffic Server shows an error indicating too many network connections"
+msgstr "Traffic Server がネットワーク接続が多すぎることを示すエラーを表示する"
+
+#: ../../../appendices/faq.en.rst:539
+#, python-format
+msgid ""
+"By default, Traffic Server supports 8000 network connections. Half of this "
+"number is allocated for client connections and the remaining half is for "
+"origin server connections. A *connection throttle event* occurs when either "
+"client or origin server connections reach 90% of half the configured total "
+"limit (3600 by default). When a connection throttle event occurs, Traffic "
+"Server continues processing all existing connections but will not accept "
+"new client connection requests until the connection count falls below the "
+"limit."
+msgstr ""
+"デフォルトでは Traffic Server は 8000 のネットワーク接続をサポートします。こ"
+"の数の半分はクライアントとの接続用に確保されており、残りの半分はオリジンサー"
+"バーとの接続に確保されています。 クライアントかオリジンサーバーとの接続が設"
+"定された全体のリミットの半分の 90% (デフォルトでは 3600) に達すると "
+"*connection throttle event* が発生します。 connection throttle event が発生"
+"すると Traffic Server は既存の全ての接続の処理は継続しますが、接続数がその限"
+"界を下回るまで新しいクライアントの接続は受け付けなくなります。"
+
+#: ../../../appendices/faq.en.rst:548
+msgid "Connection throttle events can occur under the following conditions:"
+msgstr "Connection throttle event は次の条件で発生します。"
+
+#: ../../../appendices/faq.en.rst:554
+msgid "Connection Spike"
+msgstr "接続数のスパイク"
+
+#: ../../../appendices/faq.en.rst:551
+msgid ""
+"Too many client requests (enough to exceed your configured maximum "
+"connections) all reach Traffic Server at the same time. Such events are "
+"typically transient and require no corrective action if your connection "
+"limits are already configured appropriately for your Traffic Server and "
+"origin resources."
+msgstr ""
+"(あなたが設定した最大接続数を超えるほどの) 多すぎるクライアントリクエストが "
+"Traffic Server に同時に届くとき。そのような出来事はたいていは一時的なもので"
+"あり、あなたの Traffic Server とオリジンのリソースに対してあなたの最大接続数"
+"が事前に適切に設定されていれば修正作業は不要です。"
+
+#: ../../../appendices/faq.en.rst:560
+msgid "Service Overload"
+msgstr "サービスの過負荷"
+
+#: ../../../appendices/faq.en.rst:557
+msgid ""
+"Client requests are arriving at a rate faster than that which Traffic "
+"Server can service them. This may indicate network problems between Traffic "
+"Server and origin servers or that Traffic Server may require more memory, "
+"CPU, cache disks, or other resources to handle the client load."
+msgstr ""
+"Traffic Server がクライアントのリクエストに応えるよりも速いペースでクライア"
+"ントのリクエストが届いているとき。これは Traffic Server とオリジンサーバーの"
+"間のネットワークの問題、あるいは Traffic Server がクライアントの負荷を処理す"
+"るためにより多くのメモリ、 CPU 、 キャッシュディスク、または他のリソースを必"
+"要とするかもしれないことを示唆しているかもしれません。"
+
+#: ../../../appendices/faq.en.rst:562
+msgid ""
+"If necessary, you can adjust the maximum number of connections supported by "
+"Traffic Server by editing :ts:cv:`proxy.config.net.connections_throttle` "
+"in :file:`records.config`."
+msgstr ""
+"必要ならば :file:`records.config` の :ts:cv:`proxy.config.net."
+"connections_throttle` を編集することで Traffic Server がサポートする接続の最"
+"大数を調整することが出来ます。"
+
+#: ../../../appendices/faq.en.rst:568
+msgid ""
+"Do not increase the connection throttle limit unless the system has "
+"adequate memory to handle the client connections required. A system with "
+"limited RAM might need a throttle limit lower than the default value. Do "
+"not set this variable below the minimum value of ``100``."
+msgstr ""
+"要求されたクライアントの接続を処理できるのに十分なメモリをシステムが持ってい"
+"ないかぎり、 connection throttle limit を増やさないでください。 RAM が限られ"
+"たシステムでは throttle limit  をデフォルト値より低くする必要があるかもしれ"
+"ません。この変数を最小値 ``100`` より小さい値に設定しないでください。"
+
+#: ../../../appendices/faq.en.rst:574
+msgid "Low memory symptoms"
+msgstr "メモリ不足の兆候"
+
+#: ../../../appendices/faq.en.rst:576
+msgid ""
+"Under heavy load, the Linux kernel can run out of RAM. This low memory "
+"condition can cause slow performance and a variety of other system "
+"problems. In fact, RAM exhaustion can occur even if the system has plenty "
+"of free swap space."
+msgstr ""
+"高負荷な状態において、 Linux カーネルは RAM を使い切る可能性があります。この"
+"メモリの少ない状態はパフォーマンスの低下とその他様々なシステムの問題を引き起"
+"こします。事実、 RAM の枯渇 はシステムが豊富な空きスワップ領域を持っていたと"
+"しても発生し得ます。"
+
+#: ../../../appendices/faq.en.rst:581
+msgid ""
+"Symptoms of extreme memory exhaustion include the following messages in the "
+"system log files (``/var/log/messages``)::"
+msgstr ""
+"極限のメモリー消耗の兆候はシステムログファイル (``/var/log/messages``) の次"
+"のメッセージを含みます。"
+
+#: ../../../appendices/faq.en.rst:590
+msgid ""
+"To avoid memory exhaustion, add more RAM to the system or reduce the load "
+"on Traffic Server."
+msgstr ""
+"メモリーの消耗を防ぐために、システムにもっと RAM を追加するか Traffic "
+"Server の負荷を減らしてください。"
+
+#: ../../../appendices/faq.en.rst:594
+msgid "Config checker"
+msgstr "Config checker"
+
+#: ../../../appendices/faq.en.rst:596
+msgid ""
+"Traffic Server supports the below command to validate the config offline, "
+"in order to allow the config to be pre-checked for possible service "
+"disruptions due to synatx errors::"
+msgstr ""
+"Traffic Server はオフラインで設定が正しいかを検証するために以下のコマンドを"
+"サポートしています。これにより文法エラーのために起こりうるサービス障害を回避"
+"するためにサービスを事前にチェックすることが出来ます。"
+
+#: ../../../appendices/faq.en.rst:601
+msgid "<config_dir> is the location of the config files to be validated."
+msgstr "<config_dir> は検証する設定ファイルの場所です。"
+
+#: ../../../appendices/faq.en.rst:604
+msgid "Connection timeouts with the origin server"
+msgstr "オリジンサーバーとの接続タイムアウト"
+
+#: ../../../appendices/faq.en.rst:606
+msgid ""
+"By default, Traffic Server will timeout after 30 seconds when contacting "
+"origin servers. If you cannot avoid such timeouts by otherwise addressing "
+"the performance on your origin servers, you may adjust the origin "
+"connection timeout in Traffic Server by changing :ts:cv:`proxy.config.http."
+"connect_attempts_timeout` in :file:`records.config` to a larger value."
+msgstr ""
+"デフォルトでは Traffic Server はオリジンサーバーに接続する際に 30 秒でタイム"
+"アウトします。オリジンサーバーのパフォーマンスを改善してこのタイムアウトを回"
+"避することが出来ない場合は、 :file:`records.config` の :ts:cv:`proxy.config."
+"http.connect_attempts_timeout` をより大きな値に変更することで Traffic "
+"Server のオリジンサーバーへの接続のタイムアウトを調整することが出来ます。"

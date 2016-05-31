@@ -1,0 +1,133 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-03 15:39+0900\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:62
+msgid ""
+":func:`TSMimeHdrFieldValueStringGet` returns a pointer to the header value, "
+"and populated :arg:`value_len_ptr` with the length of the value in bytes. "
+"The returned header value is not NUL-terminated."
+msgstr ""
+":func:`TSMimeHdrFieldValueStringGet` はヘッダーの値へのポインターとバイト単"
+"位での値の長さで満たされた :arg:`value_len_ptr` を返します。返されたヘッダー"
+"の値は NUL 終端ではありません"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:109
+msgid ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSMBufferCreate(3ts)`, :manpage:"
+"`TSMimeHdrFieldValuesCount(3ts)`"
+msgstr ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSMBufferCreate(3ts)`, :manpage:"
+"`TSMimeHdrFieldValuesCount(3ts)`"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:69
+msgid ""
+"All functions returns the header value with a type matching the respective "
+"function name. Using :func:`TSMimeHdrFieldValueDateGet` on a header which "
+"does not have date-time semantics always returns :literal:`0`."
+msgstr ""
+"全ての関数はヘッダーの値をそれぞれの関数名にマッチした型で返します。 date-"
+"time セマンティクスを持たないヘッダーでの :func:"
+"`TSMimeHdrFieldValueDateGet` の使用は常に :literal:`0` を返します。"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:48
+msgid ""
+"All the APIs take a :type:`TSMBuffer` marshal buffer argument :arg:`bufp`, "
+"and a :type:`TSMLoc` argument :arg:`hdr` indicating the location of the "
+"HTTP headers. The required :arg:`field` argument is the locator of a "
+"specific header value, as returned by an accessor function such as :func:"
+"`TSMimeHdrFieldFind`."
+msgstr ""
+"全ての API は :type:`TSMBuffer` 型のマーシャルバッファー引数 :arg:`bufp` と "
+"HTTP ヘッダーの場所を指し示す :type:`TSMLoc` 型の引数 :arg:`hdr` を受け取り"
+"ます。必須の :arg:`field` 引数は :func:`TSMimeHdrFieldFind` のようなアクセッ"
+"サ関数から返される特定のヘッダーの値を保管するものです。"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:38
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:74
+msgid "Examples"
+msgstr "例"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:24
+msgid "Get HTTP MIME header values."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:40
+msgid ""
+"MIME headers and fields can be components of request headers, response "
+"headers, or standalone headers created within a Traffic Server plugin. The "
+"functions here are all used to access header values of specific types, but "
+"it is up to the caller to know if a header has appropriate semantics for "
+"the API used. For all but :func:`TSMimeHdrFieldValueStringGet`, an "
+"appropriate data conversion algorithm is applied to the header field string."
+msgstr ""
+"MIME ヘッダーとフィールドはリクエストヘッダーやレスポンスヘッダー、または "
+"Traffic Server プラグイン中で作られたスタンドアローンヘッダーを構成すること"
+"ができます。この関数は全て特定の型のヘッダーの値にアクセスするために使用され"
+"ますが、ヘッダーが API の使用に適切な意味を持つかどうかは呼び出し元によりま"
+"す。 :func:`TSMimeHdrFieldValueStringGet` 以外では適切なデータ変換アルゴリズ"
+"ムがヘッダーフィールド文字列に適用されます。"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:67
+msgid "Return Values"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:107
+msgid "See Slso"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:27
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:22
+msgid "TSMimeHdrFieldValueStringGet"
+msgstr "TSMimeHdrFieldValueStringGet"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:76
+msgid "This examples show how to retrieve and copy a specific header. ::"
+msgstr ""
+"この例はどのように特定のヘッダーを取得しコピーするかを示しています。::"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:54
+msgid ""
+"Within the header field, comma-separated values can be retrieved with an "
+"index :arg:`idx` ranging from :literal:`0` to the maximum number of fields "
+"for this value; this maximum is retrieved using :func:"
+"`TSMimeHdrFieldValuesCount`. An :arg:`idx` value of :literal:`-1` has the "
+"semantics of retrieving the entire header value, regardless of how many "
+"comma-separated values there are. If a header is not comma-separated, an :"
+"arg:`idx` of :literal:`0` or :literal:`-1` are the same, but the latter is "
+"preferred."
+msgstr ""
+"ヘッダーフィールドの中で、コンマで分けられた値は :literal:`0` からこの値の"
+"フィールドの最大値の間のインデックス ( :arg:`idx` ) で取得することができま"
+"す。この最大値は :func:`TSMimeHdrFieldValuesCount` で取得されます。 :"
+"literal:`-1` の :arg:`idx` 値はコンマで分けられた値がいくつあるかを考慮せず"
+"に、全てのヘッダーの値を取得する意味を持ちます。ヘッダーがコンマで分けられて"
+"いない場合、 :literal:`0` と :literal:`-1` の :arg:`idx` は同じですが、後者"
+"が好ましいです。"
+
+#: ../../developer-guide/api/functions/TSMimeHdrFieldValueStringGet.en.rst:29
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"

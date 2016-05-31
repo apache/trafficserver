@@ -1,0 +1,130 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:77
+msgid ""
+"A **session** consists of a single client connection to Traffic Server; it "
+"may consist of a single transaction or several transactions in succession. "
+"The session starts when the client connection opens and ends when the "
+"connection closes."
+msgstr ""
+"**セッション** は、 Traffic Server への一つのクライアントコネクションから成"
+"立します。これは一つまたは幾つかの連続したトランザクションから成立できます。"
+"セッションはクライアントコネクションを open する際に開始し、コネクションを "
+"close する際に終了します。"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:54
+msgid ""
+"A **transaction** consists of a single HTTP request from a client and the "
+"response Traffic Server sends to that client. Thus, a transaction begins "
+"when Traffic Server receives a request and ends when Traffic Server sends "
+"the response."
+msgstr ""
+"**トランザクション** は、クライアントからの単一の HTTP リクエストと Traffic "
+"Server がクライアントに送信するレスポンスから成立します。従って、トランザク"
+"ションは Traffic Server がリクエストを受け取った際に開始し、 Traffic Server "
+"がレスポンスを送信する際に終了します。"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:52
+msgid "HTTP Transaction"
+msgstr "HTTP トランザクション"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:46
+msgid "Hooks"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:23
+msgid "Hooks and Transactions"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:31
+msgid "This chapter contains the following sections:"
+msgstr "この章には次の節があります。"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:48
+msgid ""
+"To understand hooks and transactions, you should be familiar with the "
+"following terminology:"
+msgstr ""
+"フックとトランザクションを理解するため、下記の専門用語を知る必要があります。"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:154
+msgid ""
+"For an overview of HTTP transaction timers, refer to the transaction timer "
+"diagram below."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:75
+msgid "HTTP Session"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:152
+msgid "HTTP Transacation Timers"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:85
+msgid "HTTP Transaction State Diagram"
+msgstr "HTTP トランザクションの状態遷移図"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:25
+msgid ""
+"Hooks are points in Traffic Server transaction processing where plugins can "
+"step in and do some work. Registering a plugin function for callback "
+"amounts to \"adding\" the function to a hook. You can register your plugin "
+"to be called back for every single transaction or only for specific "
+"transactions."
+msgstr ""
+"フックは Traffic Server のトランザクション処理内のプラグインが介入して処理を"
+"行えるポイントです。プラグインのコールバック関数を登録することでフックへ関数"
+"を \"追加\" します。関数を全てのトランザクション、もしくは特定のトランザク"
+"ションでのみコールバックされるように登録できます。"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:69
+msgid ""
+"The two **transform hooks**, ``TS_HTTP_REQUEST_TRANSFORM_HOOK`` and "
+"``TS_HTTP_RESPONSE_TRANSFORM_HOOK``, are called in the course of an HTTP "
+"transform. To see where in the HTTP transaction they are called, look for "
+"the \"set up transform\" ovals in the :ref:`http-txn-state-diagram` below."
+msgstr ""
+"2 つの **トランスフォームフック** 、 ``TS_HTTP_REQUEST_TRANSFORM_HOOK`` と "
+"``TS_HTTP_RESPONSE_TRANSFORM_HOOK``は HTTP トランスフォームの過程で呼び出さ"
+"れます。 HTTP トランザクションの中でこれらが呼び出される場所を確認するに"
+"は、 :ref:`http-txn-state-diagram` 以下の \"set up transform\" の楕円を見て"
+"ください。"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:59
+msgid ""
+"Traffic Server uses **HTTP state machines** to process transactions. The "
+"state machines follow a complex set of states involved in sophisticated "
+"caching and document retrieval (taking into account, for example, alternate "
+"selection, freshness criteria, and hierarchical caching). The Traffic "
+"Server API provides hooks to a subset of these states, as illustrated in "
+"the :ref:`http-txn-state-diagram` below."
+msgstr ""
+"Traffic Server はトランザクションの処理に **HTTP ステートマシン** を使用しま"
+"す。ステートマシンは洗練されたキャッシュとドキュメント検索に伴う（例えば、代"
+"替の選択、フレッシュネスの判定基準、階層的キャッシュを考慮した）複雑な状態の"
+"セットに従います。 :ref:`http-txn-state-diagram` 以下で図示しているように、 "
+"Traffic Server API はこれらの状態のサブセットへのフックを提供します。"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/index.en.rst:67
+msgid "Transform Hooks"
+msgstr ""

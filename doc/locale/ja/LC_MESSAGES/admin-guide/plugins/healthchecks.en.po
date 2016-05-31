@@ -1,0 +1,83 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:28
+msgid "Configuration"
+msgstr "設定"
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:52
+msgid "Example"
+msgstr "例"
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:4
+msgid "Health Check Plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:41
+msgid "The ``URI-path`` can *not* be \"/\" only."
+msgstr ""
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:45
+msgid ""
+"The content of the file specified in the ``file-path``, if any, is sent as "
+"the body of the response. The existence of the file is sufficient to get an "
+"\"OK\" status.  Performance wise, everything is served out of memory, and "
+"it only stats / opens files as necessary. However, the content of the "
+"status file is limited to 16KB, so this is not a generic static file "
+"serving plugin."
+msgstr ""
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:34
+msgid ""
+"The required ``<healthcheck-configuration-file>`` may reference either an "
+"absolute or relative path to the file containing the healthcheck "
+"configuration."
+msgstr ""
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:43
+msgid "This configuration is *not* reloadable."
+msgstr ""
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:37
+msgid "This configuration may contain one or more lines of the format::"
+msgstr ""
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:23
+msgid ""
+"This is a simple plugin, to provide basic (but configurable) health checks. "
+"This is a server intercept plugin, and it takes one single configuration "
+"option in plugin.config, the configuration file name."
+msgstr ""
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:54
+msgid ""
+"This line would define a health check link available at http://www.example."
+"com/__hc that would check if the file ``/var/run/ts-alive`` existed on the "
+"server.  If the file exists, a response is built with the contents of the "
+"``ts-alive`` file, a mime type of ``text/plain`` and a status code of "
+"``200``.  If the file does not exist, a ``403`` response is sent::"
+msgstr ""
+
+#: ../../admin-guide/plugins/healthchecks.en.rst:29
+msgid ""
+"To enable the healthchecks plugin, insert the following line in :file:"
+"`plugin.config`::"
+msgstr ""

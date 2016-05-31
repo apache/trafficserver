@@ -1,0 +1,429 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:23
+msgid "Header Functions"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:25
+msgid ""
+"The Traffic Server API HTTP header functions enable you to work with HTTP "
+"header data stored in marshal buffers."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:28
+msgid ""
+"The HTTP header data structure is a parsed version of the HTTP header "
+"defined in the HTTP protocol specification. An HTTP header is composed of a "
+"request or response line followed by zero or more MIME fields. In fact, an "
+"HTTP header is a subclass of a MIME header; all of the MIME header routines "
+"operate on HTTP headers."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:34
+msgid ""
+"An HTTP **request line** is composed of a method, a URL, and version. A "
+"**response line** is composed of a version, status code, and reason phrase. "
+"See `About HTTP Headers <../http-headers#AboutHTTPHeaders>`__ for "
+"additional details and examples."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:39
+msgid ""
+"To facilitate fast comparisons and reduce storage size, Traffic Server "
+"defines several pre-allocated method names. These names correspond to the "
+"methods defined in the HTTP 1.1 specification"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:44
+msgid "``TS_HTTP_METHOD_CONNECT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:44
+msgid "\"CONNECT\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:47
+msgid "``TS_HTTP_METHOD_DELETE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:47
+msgid "\"DELETE\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:50
+msgid "``TS_HTTP_METHOD_GE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:50
+msgid "\"GET\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:53
+msgid "``TS_HTTP_METHOD_HEAD``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:53
+msgid "\"HEAD\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:56
+msgid "``TS_HTTP_METHOD_ICP_QUERY``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:56
+msgid "\"ICP\\_QUERY\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:59
+msgid "``TS_HTTP_METHOD_OPTIONS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:59
+msgid "\"OPTIONS\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:62
+msgid "``TS_HTTP_METHOD_POST``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:62
+msgid "\"POST\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:65
+msgid "``TS_HTTP_METHOD_PURGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:65
+msgid "\"PURGE\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:68
+msgid "``TS_HTTP_METHOD_PUT``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:68
+msgid "\"PUT\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:71
+msgid "``TS_HTTP_METHOD_TRACE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:71
+msgid "\"TRACE\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:74
+msgid "``TS_HTTP_METHOD_PUSH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:74
+msgid "\"PUSH\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:76
+msgid ""
+"Traffic Server also defines several common values that appear in HTTP "
+"headers."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:80
+msgid "``TS_HTTP_VALUE_BYTES``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:80
+msgid "\"bytes\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:83
+msgid "``TS_HTTP_VALUE_CHUNKED``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:83
+msgid "\"chunked\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:86
+msgid "``TS_HTTP_VALUE_CLOSE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:86
+msgid "\"close\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:89
+msgid "``TS_HTTP_VALUE_COMPRESS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:89
+msgid "\"compress\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:92
+msgid "``TS_HTTP_VALUE_DEFLATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:92
+msgid "\"deflate\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:95
+msgid "``TS_HTTP_VALUE_GZIP``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:95
+msgid "\"gzip\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:98
+msgid "``TS_HTTP_VALUE_IDENTITY``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:98
+msgid "\"identity\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:101
+msgid "``TS_HTTP_VALUE_KEEP_ALIVE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:101
+msgid "\"keep-alive\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:104
+msgid "``TS_HTTP_VALUE_MAX_AGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:104
+msgid "\"max-age\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:107
+msgid "``TS_HTTP_VALUE_MAX_STALE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:107
+msgid "\"max-stale\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:110
+msgid "``TS_HTTP_VALUE_MIN_FRESH``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:110
+msgid "\"min-fresh\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:113
+msgid "``TS_HTTP_VALUE_MUST_REVALIDATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:113
+msgid "\"must-revalidate\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:116
+msgid "``TS_HTTP_VALUE_NONE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:116
+msgid "\"none\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:119
+msgid "``TS_HTTP_VALUE_NO_CACHE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:119
+msgid "\"no-cache\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:122
+msgid "``TS_HTTP_VALUE_NO_STORE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:122
+msgid "\"no-store\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:125
+msgid "``TS_HTTP_VALUE_NO_TRANSFORM``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:125
+msgid "\"no-transform\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:128
+msgid "``TS_HTTP_VALUE_ONLY_IF_CACHED``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:128
+msgid "\"only-if-cached\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:131
+msgid "``TS_HTTP_VALUE_PRIVATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:131
+msgid "\"private\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:134
+msgid "``TS_HTTP_VALUE_PROXY_REVALIDATE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:134
+msgid "\"proxy-revalidate\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:137
+msgid "``TS_HTTP_VALUE_PUBLIC``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:137
+msgid "\"public\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:140
+msgid "``TS_HTTP_VALUE_S_MAX_AGE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:140
+msgid "\"s-maxage\""
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:142
+msgid ""
+"The method names and header values above are defined in ``ts.h`` as ``const "
+"char*`` strings. When Traffic Server sets a method or a header value, it "
+"checks to make sure that the new value is one of the known values. If it "
+"is, then it stores a pointer into a global table (instead of storing the "
+"known value in the marshal buffer). The method names and header values "
+"listed above are also pointers into this table. This allows simple pointer "
+"comparison of the value returned from ``TSHttpMethodGet`` with one of the "
+"values listed above. It is also recommended that you use the above values "
+"when referring to one of the known schemes, since this removes the "
+"possibility of a spelling error."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:153
+msgid "The **HTTP Header Functions** are listed below:"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:155
+msgid ":c:func:`TSHttpHdrClone`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:156
+msgid ":c:func:`TSHttpHdrCopy`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:157
+msgid ":c:func:`TSHttpHdrCreate`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:158
+msgid ":c:func:`TSHttpHdrDestroy`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:159
+msgid ":c:func:`TSHttpHdrLengthGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:160
+msgid ":c:func:`TSHttpHdrMethodGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:161
+msgid ":c:func:`TSHttpHdrMethodSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:162
+msgid ":c:func:`TSHttpHdrPrint`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:163
+msgid ":c:func:`TSHttpHdrReasonGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:164
+msgid ":c:func:`TSHttpHdrReasonLookup`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:165
+msgid ":c:func:`TSHttpHdrReasonSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:166
+msgid ":c:func:`TSHttpHdrStatusGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:167
+msgid ":c:func:`TSHttpHdrStatusSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:168
+msgid ":c:func:`TSHttpHdrTypeGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:169
+msgid ":c:func:`TSHttpHdrTypeSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:170
+msgid ":c:func:`TSHttpHdrUrlGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:171
+msgid ":c:func:`TSHttpHdrUrlSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:172
+msgid ":c:func:`TSHttpHdrVersionGet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:173
+msgid ":c:func:`TSHttpHdrVersionSet`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:174
+msgid ":c:func:`TSHttpParserClear`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:175
+msgid ":c:func:`TSHttpParserCreate`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:176
+msgid ":c:func:`TSHttpParserDestroy`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:177
+msgid ":c:func:`TSHttpHdrParseReq`"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:178
+msgid ":c:func:`TSHttpHdrParseResp`"
+msgstr ""

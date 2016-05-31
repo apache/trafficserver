@@ -1,0 +1,63 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:58
+msgid "Corresponds to the SSL_CTX * value in openssl."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:32
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:48
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:25
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:41
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:22
+msgid "TSSslContextFindByName"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:50
+msgid ""
+"Look for a SSL context created from :file:`ssl_multicert.config`.  Use the "
+"server address to search."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:34
+msgid ""
+"Look for a SSL context created from :file:`ssl_multicert.config`. Use the "
+"server :arg:`name` to search."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:38
+msgid "TSSslContextFindByAddr"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:54
+msgid "Type"
+msgstr "型"
+
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:27
+#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:43
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"

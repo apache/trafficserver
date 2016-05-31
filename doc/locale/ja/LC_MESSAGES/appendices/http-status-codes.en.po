@@ -1,0 +1,205 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../appendices/http-status-codes.en.rst:31
+msgid "200"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:32
+msgid "202"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:29
+msgid "Code"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:29
+msgid "Description"
+msgstr "解説"
+
+#: ../../appendices/http-status-codes.en.rst:25
+msgid ""
+"The following standard HTTP response messages are provided for your "
+"information."
+msgstr "次の標準的な HTTP レスポンスメッセージが参考情報として提供されます。"
+
+#: ../../appendices/http-status-codes.en.rst:33
+msgid "204"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:34
+msgid "206"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:35
+msgid "300"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:36
+msgid "301"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:37
+msgid "302"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:38
+msgid "303"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:32
+msgid "Accepted"
+msgstr "Accepted"
+
+#: ../../appendices/http-status-codes.en.rst:39
+msgid "304"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:40
+msgid "400"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:41
+msgid "401"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:42
+msgid "403"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:44
+msgid "405"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:43
+msgid "404"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:45
+msgid "406"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:46
+msgid "408"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:47
+msgid "500"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:50
+msgid "504"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:48
+msgid "501"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:49
+msgid "502"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:49
+msgid "Bad Gateway"
+msgstr "Bad Gateway"
+
+#: ../../appendices/http-status-codes.en.rst:40
+msgid "Bad Request"
+msgstr "Bad Request"
+
+#: ../../appendices/http-status-codes.en.rst:42
+msgid "Forbidden"
+msgstr "Forbidden"
+
+#: ../../appendices/http-status-codes.en.rst:37
+msgid "Found"
+msgstr "Found"
+
+#: ../../appendices/http-status-codes.en.rst:23
+msgid "HTTP Status Codes"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:47
+msgid "Internal Server Error"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:36
+msgid "Moved Permanently"
+msgstr "Moved Permanently"
+
+#: ../../appendices/http-status-codes.en.rst:35
+msgid "Multiple Choices"
+msgstr "Multiple Choices"
+
+#: ../../appendices/http-status-codes.en.rst:33
+msgid "No Content"
+msgstr "No Content"
+
+#: ../../appendices/http-status-codes.en.rst:39
+msgid "Not Modified"
+msgstr "Not Modified"
+
+#: ../../appendices/http-status-codes.en.rst:45
+msgid "Not Acceptable"
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:31
+msgid "OK"
+msgstr "OK"
+
+#: ../../appendices/http-status-codes.en.rst:34
+msgid "Partial Content"
+msgstr "Partial Content"
+
+#: ../../appendices/http-status-codes.en.rst:38
+msgid "See Other"
+msgstr "See Other"
+
+#: ../../appendices/http-status-codes.en.rst:41
+msgid "Unauthorized; retry"
+msgstr "Unauthorized; retry"
+
+#: ../../appendices/http-status-codes.en.rst:50
+msgid "Gateway Timeout"
+msgstr "Gateway Timeout"
+
+#: ../../appendices/http-status-codes.en.rst:44
+msgid "Method Not Allowed"
+msgstr "Method Not Allowed"
+
+#: ../../appendices/http-status-codes.en.rst:53
+msgid ""
+"More detail can be found in `RFC2616 <http://www.w3.org/Protocols/rfc2616/"
+"rfc2616-sec10.html>`_ which defines the full range of standardized HTTP/1.1 "
+"response codes."
+msgstr ""
+
+#: ../../appendices/http-status-codes.en.rst:43
+msgid "Not Found"
+msgstr "Not Found"
+
+#: ../../appendices/http-status-codes.en.rst:48
+msgid "Not Implemented"
+msgstr "Not Implemented"
+
+#: ../../appendices/http-status-codes.en.rst:46
+msgid "Request Timeout"
+msgstr "Request Timeout"

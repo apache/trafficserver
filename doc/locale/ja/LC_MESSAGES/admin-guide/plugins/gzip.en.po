@@ -1,0 +1,159 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-03 16:13+0900\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../admin-guide/plugins/gzip.en.rst:32
+msgid "Add the following line to :file:`plugin.config`::"
+msgstr "次の行を :file:`plugin.config` に追加してください。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:48
+msgid "Alternatively, a configuration can also be specified::"
+msgstr "もしくは、設定を指定することも可能です。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:38
+msgid "Enable caching"
+msgstr "キャッシュの有効化"
+
+#: ../../admin-guide/plugins/gzip.en.rst:36
+msgid "In this case, the plugin will use the default behaviour:"
+msgstr "このケースでは、プラグインはデフォルトの振る舞いをします"
+
+#: ../../admin-guide/plugins/gzip.en.rst:30
+msgid "Installation"
+msgstr "インストール"
+
+#: ../../admin-guide/plugins/gzip.en.rst:24
+msgid ""
+"This plugin gzips or deflates responses, whichever is applicable. It can "
+"compress origin respones as well as cached responses. The plugin is built "
+"and installed as part of the normal Apache Traffic Server installation "
+"process."
+msgstr ""
+"このプラグインはレスポンスに gzip または deflate の適用可能なほうを行いま"
+"す。オリジンのレスポンスをキャッシュ済みのレスポンスと同様に圧縮します。この"
+"プラグインは通常の Apache Traffic Server のインストール処理でビルドされイン"
+"ストールされます。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:39
+msgid "Compress text/\\* for every origin"
+msgstr "すべてのオリジンで text/\\* を圧縮"
+
+#: ../../admin-guide/plugins/gzip.en.rst:46
+msgid "Configuration"
+msgstr "設定"
+
+#: ../../admin-guide/plugins/gzip.en.rst:43
+msgid "Disable flush (flush gzipped content to client)"
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:40
+msgid ""
+"Don't hide accept encoding from origin servers (for an offloading reverse "
+"proxy)"
+msgstr ""
+"( リバースプロキシーの負荷軽減のために ) オリジンサーバーに受け付けるエン"
+"コーディングを隠しません"
+
+#: ../../admin-guide/plugins/gzip.en.rst:42
+msgid "No urls are disallowed from compression"
+msgstr "どの URL も圧縮を拒否されません"
+
+#: ../../admin-guide/plugins/gzip.en.rst:4
+msgid "gzip / deflate Plugin"
+msgstr "gzip / deflate プラグイン"
+
+#: ../../admin-guide/plugins/gzip.en.rst:52
+msgid ""
+"After modifying plugin.config, restart traffic server (sudo traffic_ctl "
+"server restart) the configuration is also re-read when a management update "
+"is given (sudo traffic_ctl config reload)"
+msgstr ""
+"plugin.config を修正後、Traffic Server をリスタート (sudo traffic_ctl "
+"server restart) 設定ファイルは管理アップデートが行われた際に再読み込みされま"
+"す。(sudo traffic_ctl config reload)"
+
+#: ../../admin-guide/plugins/gzip.en.rst:59
+msgid "Flags and options are:"
+msgstr "フラグとオプションは次のとおりです。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:68
+msgid ""
+"For when the proxy parses responses, and the resulting compression/"
+"decompression is wasteful."
+msgstr ""
+"プロキシーがレスポンスをパースする際に、圧縮/展開が無駄になるときのために。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:57
+msgid "Options"
+msgstr "オプション"
+
+#: ../../admin-guide/plugins/gzip.en.rst:81
+msgid "Options can be set globally or on a per-site basis, as such::"
+msgstr "オプションはこのように大域的にもサイト毎にも設定できます。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:67
+msgid "To ease the load on the origins."
+msgstr "オリジンの負荷を軽くするために。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:71
+msgid ""
+"``cache``: (``true`` or ``false``) When set, the plugin stores the "
+"uncompressed and compressed response as alternates."
+msgstr ""
+"``cache``: (``true`` または ``false``) 設定すると、プラグインは圧縮されてい"
+"ないレスポンスと圧縮されたレスポンスを代替として保存します。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:74
+msgid ""
+"``compressible-content-type``: Wildcard pattern for matching compressible "
+"content types."
+msgstr ""
+"``compressible-content-type``: 圧縮できるコンテントタイプのワイルドカードパ"
+"ターン"
+
+#: ../../admin-guide/plugins/gzip.en.rst:77
+msgid "``disallow``: Wildcard pattern for disabling compression on urls."
+msgstr "``disallow``: 圧縮を無効化する URL のワイルドカードパターン。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:61
+msgid ""
+"``enabled``: (``true`` or ``false``) Enable or disable compression for a "
+"host."
+msgstr ""
+"``enabled``: (``true`` または ``false``) ホストに対する圧縮を有効化または無"
+"効化します。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:79
+msgid ""
+"``flush``: (``true`` or ``false``) Enable or disable flushing of gzipped "
+"content."
+msgstr ""
+
+#: ../../admin-guide/plugins/gzip.en.rst:64
+msgid ""
+"``remove-accept-encoding``: (``true`` or ``false``) Sets whether the plugin "
+"should hide the accept encoding from origin servers:"
+msgstr ""
+"``remove-accept-encoding``: (``true`` または ``false``) プラグインが受け付け"
+"るエンコーディングをオリジンサーバーに隠すべきかどうかを設定します。"
+
+#: ../../admin-guide/plugins/gzip.en.rst:97
+msgid "See example.gzip.config for example configurations."
+msgstr "設定例については example.gzip.config を見てください。"

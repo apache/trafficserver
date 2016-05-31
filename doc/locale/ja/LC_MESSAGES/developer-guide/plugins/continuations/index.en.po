@@ -1,0 +1,217 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:40
+msgid ":ref:`developer-plugins-continuations-activate`"
+msgstr ""
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:23
+msgid "Continuations"
+msgstr "継続"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:31
+msgid ""
+"The continuation interface is Traffic Server's basic callback mechanism. "
+"**Continuations** are instances of the opaque data type ``TSCont``. In its "
+"basic form, a continuation represents a handler function and a mutex."
+msgstr ""
+"継続インタフェースは Traffic Server の基本的なコールバックメカニズムです。 "
+"**Continuations** は不明瞭なデータ型 ``TSCont`` のインスタンスです。基本的な"
+"形式では、継続はハンドラー関数とミューテックスを表現します。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:36
+msgid "This chapter covers the following topics:"
+msgstr "この章では下記のトピックをカバーします。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:38
+msgid "`Mutexes and Data`_"
+msgstr "ミューテックスとデータ"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:114
+msgid ""
+"**Note:** Most HTTP transaction plugin continuations do not need non-null "
+"mutexes because they're called within the processing of an HTTP "
+"transaction, and therefore have the transaction's mutex."
+msgstr ""
+"**注意:** ほとんどの HTTP トランザクションプラグインの継続は null でない"
+"ミューテックスを必要としません。なぜならそれらは HTTP トランザクションの処理"
+"内で呼び出されるので、トランザクションのミューテックスを持っているためです。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:42
+msgid ":ref:`developer-plugins-continuations-handler-functions`"
+msgstr ""
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:47
+msgid ""
+"A continuation must be created with a mutex if your continuation does one "
+"of the following:"
+msgstr ""
+"下記のどれかを行う際、継続はミューテックスを伴って生成されなければなりませ"
+"ん。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:70
+msgid ""
+"A reentrant call occurs when the continuation passed as an argument to the "
+"API can be called in the same stack trace as the function calling the API. "
+"For example, if you call ``TSCacheRead`` (``contp, mykey``), it is possible "
+"that ``contp``'s handler will be called directly and then ``TSCacheRead`` "
+"returns."
+msgstr ""
+"再入可能な呼び出しは、継続を引数として渡した際に、 API の関数呼び出しとして"
+"同じスタックトレース内で API を呼び出し可能にします。例えば ``TSCacheRead`` "
+"(``contp, mykey``) を呼び出す場合、 ``contp`` のハンドラーは直接呼び出され、"
+"その後 ``TSCacheRead`` を返すことが可能です。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:59
+msgid ""
+"Before being activated, a caller must grab the continuation's mutex. This "
+"requirement makes it possible for a continuation's handler function to "
+"safely access its data and to prevent multiple callers from running it at "
+"the same time (see the :ref:`about-the-sample-protocol` for usage). The "
+"data protected by the mutex is any global or continuation data associated "
+"to the continuation by ``TSContDataSet``. This does not include the local "
+"data created by the continuation handler function. A typical example of "
+"continuations created with associated data structures and mutexes is the "
+"transaction state machine created in the sample Protocol plugin (see :ref:"
+"`one-way-to-implement-a-transaction-state-machine`)."
+msgstr ""
+"アクティベートされる前に、呼び出し元は継続のミューテックスを掴まなければなり"
+"ません。この要求は継続のハンドラー関数がそのデータに安全にアクセスし、同時に"
+"複数の動作中の呼び出し元が発生するのを防ぐことができるようにするためです。"
+"（使用方法については :ref:`about-the-sample-protocol` を見てください。）"
+"ミューテックスに守られるデータは ``TSContDataSet`` により継続に関連付けられ"
+"る任意の大域、または継続のデータです。これは継続ハンドラー関数に作成される"
+"ローカルデータを含みません。関連付けられるデータ構造とミューテックスと共に生"
+"成される継続の典型的な例は、サンプルプロトコルプラグイン内で生成されるトラン"
+"ザクションステートマシンです。（ :ref:`one-way-to-implement-a-transaction-"
+"state-machine` を見てください）"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:88
+msgid "Below is an example, followed by an explanation."
+msgstr "下記は例とその説明です。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:76
+msgid "Caveats that could cause issues include the following:"
+msgstr "下記を含む問題を起こす可能性がある注意事項:"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:118
+msgid ""
+"It is also possible to specify a continuation's mutex as ``NULL``. This "
+"should be done only when registering a continuation to a global hook, by a "
+"call to ``TSHttpHookAdd``. In this case, the continuation can be called "
+"simultaneously by different instances of HTTP SM running on different "
+"threads. Having a mutex here would slow and/or hinder Traffic Server "
+"performance, since all the threads will try to lock the same mutex. The "
+"drawback of not having a mutex is that such a continuation cannot have data "
+"associated with it (i.e., ``TSContDataGet/Set`` cannot be used)."
+msgstr ""
+"継続のミューテックスを ``NULL`` として指定することも可能です。 "
+"``TSHttpHookAdd`` の呼び出しによって継続をグローバルフックに登録する際にの"
+"み、これを行うべきです。この場合では継続は異なるスレッドで動作する異なる "
+"HTTP SM のインスタンスにより同時に呼び出される可能性があります。全てのスレッ"
+"ドが同じミューテックスのロックを試みるため、ここでミューテックスを持つこと"
+"は Traffic Server の性能を遅くし、かつ / または妨害する可能性があります。"
+"ミューテックスを持たないことの欠点は、継続がそれに関連付いたデータを持てなく"
+"なる（すなわち、 ``TSContDataGet/Set`` が使えなくなる）ことです。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:45
+msgid "Mutexes and Data"
+msgstr "ミューテックスとデータ"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:78
+msgid "a continuation has data associated with it (``TSContDataGet``)."
+msgstr "継続はそれに関連付いたデータ（ ``TSContDataGet`` ）を持ちます。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:50
+msgid ""
+"is registered globally (``TSHttpHookAdd`` or ``TSHttpSsnHookAdd``) to an "
+"HTTP hook and uses ``TSContDataSet/Get``"
+msgstr ""
+"（ ``TSHttpHookAdd`` もしくは ``TSHttpSsnHookAdd`` で）大域的に HTTP フック"
+"に登録され、 ``TSContDataSet/Get`` を使用する。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:104
+msgid ""
+"The above example first assumes that the continuation is called back with "
+"``event1``; it then does the first reentrant call that schedules the "
+"continuation to receive ``event2``. Because the call is reentrant, the "
+"processor calls back the continuation right away with ``event2`` and the "
+"continuation is destroyed. If you try to access the continuation or one of "
+"its members after the reentrant call, then you might access something that "
+"has been deallocated. To avoid accessing something that has been "
+"deallocated, never access the continuation or any of its members after a "
+"reentrant call - just exit the handler."
+msgstr ""
+"上の例は、まず継続が ``event1`` を伴ってコールバックされる事を想定します。そ"
+"の後 ``event2`` を受け取るために継続をスケジュールする再入可能呼び出しを行い"
+"ます。この呼び出しは再入可能なので、プロセッサーはすぐに ``event2`` を伴って"
+"継続をコールバックし、継続は破棄されます。もし再入可能呼び出し後に継続かその"
+"メンバーのどれかにアクセスを試みたら、解放されたデータへアクセスすることにな"
+"る可能性があります。解放されたデータへのアクセスを避けるため、再入可能呼び出"
+"し後は継続やそのメンバーのいずれかへのアクセスをせず、単にハンドラーを抜けて"
+"ください。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:128
+msgid ""
+"When using a ``NULL`` mutex it is dangerous to access the continuation's "
+"data, but usually continuations with ``NULL`` mutexes have no data "
+"associated with them anyway. An example of such a continuation is one that "
+"gets called back every time an HTTP request is read, and then determines "
+"from the request alone if the request should go through or be rejected. An "
+"HTTP transaction gives its continuation data to the ``contp``."
+msgstr ""
+"``NULL`` ミューテックスを使用する際、継続のデータにアクセスするのは危険です"
+"が、通常は ``NULL`` ミューテックスを伴う継続はそもそも、それに関連付いたデー"
+"タを持ちません。そのような継続の例は、 HTTP リクエストが読み込まれる度にコー"
+"ルバックされてリクエストのみで通過するべきか拒絶するべきか決定するもので"
+"す。 HTTP トランザクションはその継続データを ``contp`` に与えます。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:53
+msgid ""
+"is registered locally (``TSHttpTxnHookAdd``), but for multiple transactions "
+"uses ``TSContDataSet/Get``"
+msgstr ""
+"（ ``TSHttpTxnHookAdd`` で）局所的に登録されるが、複数のトランザクションが "
+"``TSContDataSet/Get`` を使用する。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:80
+msgid ""
+"the reentrant call passes itself as a continuation to the reentrant API. In "
+"this case, the continuation should not try to access its data after calling "
+"the reentrant API. The reason for this is that data may be modified by the "
+"section of code in the continuation's handler that handles the event sent "
+"by the API. It is recommended that you always return after a reentrant call "
+"to avoid accessing something that has been deallocated."
+msgstr ""
+"再入可能呼び出しは自身を継続として再入可能 API に渡します。この場合、継続は"
+"再入可能 API を呼び出した後にデータへのアクセスを試みるべきではありません。"
+"この理由は、 API によって送られるイベントを処理する継続のハンドラー内のコー"
+"ド部分によってデータが変更されているかもしれないからです。解放されたデータへ"
+"のアクセスを避けるため、再入可能呼び出しの後は常に return することを推奨しま"
+"す。"
+
+#: ../../developer-guide/plugins/continuations/index.en.rst:56
+msgid ""
+"uses ``TSCacheXXX``, ``TSNetXXX``, ``TSHostLookup``, or ``TSContSchedule`` "
+"APIs"
+msgstr ""
+"``TSCacheXXX``, ``TSNetXXX``, ``TSHostLookup``, もしくは ``TSContSchedule`` "
+"API を使用する。"

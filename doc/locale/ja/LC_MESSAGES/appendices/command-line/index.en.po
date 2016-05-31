@@ -13,32 +13,11 @@ msgstr ""
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../appendices/command-line/index.en.rst:23
+msgid "Command Line Utilities"
 msgstr ""
-
-#: ../../index.rst:51
-msgid "Indices and tables"
-msgstr ""
-
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ":ref:`genindex`"
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
-msgstr ":ref:`search`"
-
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
-msgstr ""
-
-#: ../../index.rst:35
-msgid "Indices and tables"
-msgstr "Indices and tables"

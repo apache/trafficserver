@@ -1,0 +1,132 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:31
+msgid ""
+":c:func:`TSHttpTxnInfoIntGet` returns arbitrary integer-typed info about a "
+"transaction as defined in :c:type:`TSHttpTxnInfoKey`. The API will be part "
+"of a generic API umbrella that can support returning arbitrary info about a "
+"transaction using custom log tags. It works on multiple hooks depending on "
+"the requested info. For example, cache related info may be available only "
+"at or after :c:data:`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:30
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:22
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:19
+msgid "TSHttpTxnInfoIntGet"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:24
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:43
+msgid ":c:data:`TS_TXN_INFO_CACHE_COMPRESSED_IN_RAM`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:38
+msgid ":c:data:`TS_TXN_INFO_CACHE_HIT_RAM`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:36
+msgid ""
+"The :c:type:`TSHttpTxnInfoKey` currently supports the below integer-based "
+"info about a transaction"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:45
+msgid ""
+"This info is available at or after :c:data:"
+"`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. A value of 1 indicates that the "
+"response is returned from RAM cache and is compressed. A value of 0 "
+"indicates otherwise."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:40
+msgid ""
+"This info is available at or after :c:data:"
+"`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. A value of 1 indicates that the "
+"response is returned from RAM cache. A value of 0 indicates otherwise."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:48
+msgid ":c:data:`TS_TXN_INFO_CACHE_HIT_RWW`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:53
+msgid ":c:data:`TS_TXN_INFO_CACHE_OPEN_READ_TRIES`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:58
+msgid ":c:data:`TS_TXN_INFO_CACHE_OPEN_WRITE_TRIES`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:63
+msgid ":c:data:`TS_TXN_INFO_CACHE_VOLUME`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:50
+msgid ""
+"This info is available at or after :c:data:"
+"`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. A value of 1 indicates that the "
+"response is returned via Read-While-Writer functionality. A value of 0 "
+"indicates otherwise."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:69
+msgid "Return values"
+msgstr "戻り値"
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:71
+msgid ""
+"The API returns :c:data:`TS_SUCCESS`, if the requested info is supported, :"
+"c:data:`TS_ERROR` otherwise."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:65
+msgid ""
+"This info is available at or after :c:data:"
+"`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. The value indicates the cache "
+"volume ID used for the cache object associated with the transaction."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:55
+msgid ""
+"This info is available at or after :c:data:"
+"`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. The value indicates the number "
+"of cache open read reattempts made by the transaction on cache open read "
+"failure."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnInfoIntGet.en.rst:60
+msgid ""
+"This info is available at or after :c:data:"
+"`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK` hook. The value indicates the number "
+"of cache open write reattempts made by the transaction on cache open write "
+"failure."
+msgstr ""

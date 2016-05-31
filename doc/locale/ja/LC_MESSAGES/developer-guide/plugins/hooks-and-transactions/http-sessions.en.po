@@ -1,0 +1,78 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:23
+msgid "HTTP Sessions"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:25
+msgid ""
+"An **HTTP session** is an object that is defined for the lifetime of a "
+"client's TCP session. The Traffic Server API enables you to add a global "
+"hook to the start or end of an HTTP session, as well as add session hooks "
+"that call back your plugin for every transaction within a given session. "
+"When a client connects to Traffic Server, it opens up a TCP connection and "
+"sends one or more HTTP requests. An individual request and its response "
+"comprise the HTTP transaction. The **HTTP session** begins when the client "
+"opens the connection and ends when the connection closes."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:35
+msgid "The HTTP session hooks are:"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:37
+msgid ""
+"``TS_HTTP_SSN_START_HOOK`` Called when an HTTP session is started (a "
+"session starts when a client connects to Traffic Server). This hook must be "
+"added as a global hook."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:41
+msgid ""
+"``TS_HTTP_SSN_CLOSE_HOOK`` Called when an HTTP session ends (a session ends "
+"when the client connection is closed). This hook must be added as a global "
+"hook."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:45
+msgid ""
+"Use the session hooks to get a handle to a session (an ``TSHttpSsn`` "
+"object). If you want your plugin to be called back for each transaction "
+"within the session, then use ``TSHttpSsnHookAdd``."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:49
+msgid ""
+"**Note:** you must reenable the session with ``TSHttpSsnReenable`` after "
+"processing a session hook."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:52
+msgid "The session hook functions are listed below:"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:54
+msgid ":c:func:`TSHttpSsnHookAdd`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-sessions.en.rst:55
+msgid ":c:func:`TSHttpSsnReenable`"
+msgstr ""

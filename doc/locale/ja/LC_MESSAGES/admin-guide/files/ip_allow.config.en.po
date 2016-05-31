@@ -1,0 +1,91 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:35
+msgid ""
+"Each line in the :file:`ip_allow.config` file must have the following "
+"format::"
+msgstr ""
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:33
+msgid "Format"
+msgstr "フォーマット"
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:24
+msgid ""
+"The :file:`ip_allow.config` file controls client access to the Traffic "
+"Server proxy cache. You can specify ranges of IP addresses that are allowed "
+"to use the Traffic Server as a web proxy cache. After you modify the :file:"
+"`ip_allow.config` file, navigate to the Traffic Server bin directory and "
+"run the :option:`traffic_ctl config reload` command to apply changes. When "
+"you apply the changes to a node in a cluster, Traffic Server automatically "
+"applies the changes to all other nodes in the cluster."
+msgstr ""
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:20
+msgid "ip_allow.config"
+msgstr ""
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:40
+msgid ""
+"where src_ip is the IP address or range of IP addresses of the client(s). "
+"The action ``ip_allow`` enables the specified client(s) to access the "
+"Traffic Server proxy cache, and ``ip_deny`` denies the specified client(s) "
+"to access the Traffic Server proxy cache. Multiple method keywords can be "
+"specified (method=GET method=HEAD), or multiple methods can be separated by "
+"an '\\|' (method=GET\\|HEAD). The method keyword is optional and it is "
+"defaulted to ALL. This supports ANY string as the HTTP method, meaning no "
+"validation is done to check wether it is a valid HTTP method. This allows "
+"you to create filters for any method that your origin may require, this is "
+"especially useful if you use newer methods that aren't know to "
+"trafficserver (such as PROPFIND) or if your origin uses an http-ish "
+"protocol."
+msgstr ""
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:53
+msgid ""
+"By default, the :file:`ip_allow.config` file contains the following lines, "
+"which allows all methods to localhost to access the Traffic Server proxy "
+"cache and denies PUSH, PURGE and DELETE to all IPs (note this allows all "
+"other methods to all IPs)::"
+msgstr ""
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:64
+msgid "Examples"
+msgstr "例"
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:71
+msgid ""
+"The following example allows all clients on a specific subnet to access the "
+"Traffic Server proxy cache::"
+msgstr ""
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:76
+msgid ""
+"The following example denies all clients on a specific subnet to access the "
+"Traffic Server proxy cache::"
+msgstr ""
+
+#: ../../admin-guide/files/ip_allow.config.en.rst:66
+msgid ""
+"The following example enables all clients to access the Traffic Server "
+"proxy cache::"
+msgstr ""

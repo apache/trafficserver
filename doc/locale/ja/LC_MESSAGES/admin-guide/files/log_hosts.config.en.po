@@ -1,0 +1,78 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:23
+msgid "log_hosts.config"
+msgstr ""
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:25
+msgid ""
+"To record HTTP transactions for different origin servers in separate log "
+"files, you must list each origin server hostname in the :file:`log_hosts."
+"config` file."
+msgstr ""
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:28
+msgid ""
+"You should use the same :file:`log_hosts.config` file on every |TS| node in "
+"your cluster. After you modify the :file:`log_hosts.config` file, run the :"
+"option:`traffic_ctl config reload` command to apply the changes. When you "
+"apply the changes to a node in a cluster, |TS| automatically applies the "
+"changes to all other nodes in the cluster."
+msgstr ""
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:35
+msgid "Format"
+msgstr "フォーマット"
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:37
+msgid ""
+"Each line in the :file:`log_hosts.config` file has the following format::"
+msgstr ""
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:41
+msgid "where ``hostname`` is the hostname of the origin server."
+msgstr ""
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:45
+msgid ""
+"You can specify keywords in the :file:`log_hosts.config` file to record all "
+"transactions from origin servers with the specified keyword in their names "
+"in a separate log file. See the example below."
+msgstr ""
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:50
+msgid "Examples"
+msgstr "例"
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:52
+msgid ""
+"The following example configures Traffic Server to create separate log "
+"files containing all HTTP transactions for the origin servers "
+"``webserver1``, ``webserver2``, and ``webserver3``::"
+msgstr ""
+
+#: ../../../admin-guide/files/log_hosts.config.en.rst:60
+msgid ""
+"The following example records all HTTP transactions from origin servers "
+"that contain ``sports`` in their names. For example: ``sports.yahoo.com`` "
+"and ``www.foxsports.com`` in a log file called ``squid-sport.log`` (the "
+"Squid format is enabled)::"
+msgstr ""

@@ -1,0 +1,187 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:20
+msgid "splitdns.config"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:24
+msgid ""
+"The :file:`splitdns.config` file enables you to specify the DNS server that "
+"Traffic Server should use for resolving hosts under specific conditions. "
+"For more information, refer to :ref:`admin-split-dns`."
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:28
+msgid ""
+"To specify a DNS server, you must supply the following information in each "
+"active line within the file:"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:31
+msgid ""
+"A primary destination specifier in the form of a destination domain, a "
+"destination host, or a URL regular expression"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:33
+msgid ""
+"A set of server directives, listing one or more DNS servers with "
+"corresponding port numbers"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:36
+msgid ""
+"You can also include the following optional information with each DNS "
+"server specification:"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:39
+msgid "A default domain for resolving hosts"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:40
+msgid ""
+"A search list specifying the domain search order when multiple domains are "
+"specified"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:43
+msgid ""
+"After you modify the :file:`splitdns.config` file, run the :option:"
+"`traffic_ctl config reload` command to apply the changes. When you apply "
+"changes to a node in a cluster, Traffic Server automatically applies the "
+"changes to all other nodes in the cluster."
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:50
+msgid "Format"
+msgstr "フォーマット"
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:52
+msgid ""
+"Each line in the :file:`splitdns.config` file uses one of the following "
+"formats: ::"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:57
+msgid "The following list describes each field."
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:64
+msgid "``dest_domain``"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:62
+msgid ""
+"A valid domain name. This specifies that DNS server selection will be based "
+"on the destination domain. You can prefix the domain with an exclamation "
+"mark (``!``) to indicate the NOT logical operator."
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:71
+msgid "``dest_host``"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:69
+msgid ""
+"A valid hostname. This specifies that DNS server selection will be based on "
+"the destination host. You can prefix the host with an exclamation mark (``!"
+"``) to indicate the ``NOT`` logical operator."
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:77
+msgid "``url_regex``"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:76
+msgid ""
+"A valid URL regular expression. This specifies that DNS server selection "
+"will be based on a regular expression."
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:89
+msgid "``named``"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:82
+msgid ""
+"This is a required directive. It identifies the DNS server that Traffic "
+"Server should use with the given destination specifier. You can specify a "
+"port using a colon (``:``). If you do not specify a port, then 53 is used. "
+"Specify multiple DNS servers with spaces or semicolons (``;``) as "
+"separators."
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:88
+msgid ""
+"You must specify the domains with IP addresses in CIDR (\"dot\") notation."
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:97
+msgid "``def_domain``"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:94
+msgid ""
+"A valid domain name. This optional directive specifies the default domain "
+"name to use for resolving hosts. Only one entry is allowed. If you do not "
+"provide the default domain, the system determines its value from ``/etc/"
+"resolv.conf``"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:104
+msgid "``search_list``"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:102
+msgid ""
+"A list of domains separated by spaces or semicolons (;). This specifies the "
+"domain search order. If you do not provide the search list, the system "
+"determines the value from :manpage:`resolv.conf(5)`"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:107
+msgid "Examples"
+msgstr "例"
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:109
+msgid "Consider the following DNS server selection specifications: ::"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:114
+msgid "Now consider the following two requests: ::"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:118
+msgid ""
+"This request matches the first line and therefore selects DNS server "
+"``255.255.255.255`` on port ``212``. All resolver requests use ``company."
+"com`` as the default domain, and ``company.com`` and ``company1.com`` as "
+"the set of domains to search first. ::"
+msgstr ""
+
+#: ../../../admin-guide/files/splitdns.config.en.rst:125
+msgid ""
+"This request matches the second line. Therefore, Traffic Server selects DNS "
+"server ``255.255.255.253``. Because no ``def_domain`` or ``search_list`` "
+"was supplied, Traffic Server retrieves this information from :manpage:"
+"`resolv.conf(5)`"
+msgstr ""

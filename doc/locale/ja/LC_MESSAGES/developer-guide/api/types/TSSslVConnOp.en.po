@@ -19,26 +19,26 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../developer-guide/api/types/TSSslVConnOp.en.rst:43
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/types/TSSslVConnOp.en.rst:29
+msgid "Enum typedef."
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../developer-guide/api/types/TSSslVConnOp.en.rst:32
+msgid "Enumeration Members"
 msgstr ""
 
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ":ref:`genindex`"
+#: ../../developer-guide/api/types/TSSslVConnOp.en.rst:23
+msgid "Synopsis"
+msgstr "概要"
 
-#: ../../index.rst:54
-msgid ":ref:`search`"
-msgstr ":ref:`search`"
-
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../developer-guide/api/types/TSSslVConnOp.en.rst:20
+msgid "TSSslVConnOp"
 msgstr ""
 
-#: ../../index.rst:35
-msgid "Indices and tables"
-msgstr "Indices and tables"
+#: ../../developer-guide/api/types/TSSslVConnOp.en.rst:25
+msgid "`#include <ts/apidefs.h>`"
+msgstr ""

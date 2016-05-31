@@ -1,0 +1,58 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/documentation/rst-and-sphinx.en.rst:23
+msgid "|RST| and Sphinx"
+msgstr ""
+
+#: ../../developer-guide/documentation/rst-and-sphinx.en.rst:25
+msgid ""
+"The |TS| documentation source files are written using |RST| (RST) markup. "
+"This is a plain-text format intended to be easily readable both in its "
+"source and final rendered forms. While not entirely dissimilar to other "
+"plain text markup formats like Markdown, RST provides additional "
+"functionality for defining internal links between documents, producing "
+"tables of contents, and indices. Additionally, RST works in hand with "
+"Sphinx for providing advanced features such as markup domains, of which "
+"this documenentation makes extensive use."
+msgstr ""
+
+#: ../../developer-guide/documentation/rst-and-sphinx.en.rst:33
+msgid ""
+"Both |RST| and Sphinx have official documentation resources which detail "
+"their full capabilities and all markup options, as well as methods of "
+"extending them with custom markup. This section will explain the most "
+"common markup features used, but the following resources may be consulted "
+"for further details."
+msgstr ""
+
+#: ../../developer-guide/documentation/rst-and-sphinx.en.rst:38
+msgid ""
+"`reStructuredText Markup Specification <http://docutils.sourceforge.net/"
+"docs/ref/rst/restructuredtext.html>`_"
+msgstr ""
+
+#: ../../developer-guide/documentation/rst-and-sphinx.en.rst:40
+msgid "`Sphinx Documentation Generator <http://sphinx-doc.org/>`_"
+msgstr ""
+
+#: ../../developer-guide/documentation/rst-and-sphinx.en.rst:42
+msgid "`RST Primary by Sphinx <http://sphinx-doc.org/rest.html>`_"
+msgstr ""

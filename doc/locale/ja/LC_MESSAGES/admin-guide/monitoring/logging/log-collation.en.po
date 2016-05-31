@@ -1,0 +1,281 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:162
+msgid ":ts:cv:`proxy.config.log.collation_host`"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:164
+msgid ":ts:cv:`proxy.config.log.collation_secret`"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:73
+msgid ""
+"Configure the port on which the server will listen to incoming collation "
+"transfers from clients, using :ts:cv:`proxy.config.log.collation_port`. If "
+"omitted, this defaults to port ``8085``. ::"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:79
+msgid ""
+"Configure the shared secret used by collation clients to authenticate their "
+"sessions, using :ts:cv:`proxy.config.log.collation_secret`. ::"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:21
+msgid "Log Collation"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:165
+msgid ":ts:cv:`proxy.config.log.collation_host_tagged`"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:149
+msgid "Client Configuration"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:47
+msgid ""
+"If log clients cannot contact their log collation server, then they write "
+"their log buffers to their local disks, into *orphan* log files. Orphaned "
+"log files require manual collation."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:98
+msgid ""
+"If you do not want the log collation server to be a |TS| node, then you can "
+"install and configure a standalone collator (*SAC*) that will dedicate more "
+"of its power to collecting, processing, and writing log files."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:89
+msgid ""
+"If you modify the ``collation_port`` or ``secret`` after connections "
+"between the collation server and collation clients have been established, "
+"then you must restart Traffic Server on all nodes."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:45
+msgid "Log collation"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:53
+msgid ""
+"Log collation can have an impact on network performance. Because all nodes "
+"are forwarding their log data buffers to the single collation server, a "
+"bottleneck can occur. In addition, collated log files contain timestamp "
+"information for each entry, but entries in the files do not appear in "
+"strict chronological order. You may want to sort collated log files before "
+"doing analysis."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:105
+msgid ""
+"Configure your |TS| nodes as log collation clients based on the "
+"instructions in :ref:`admin-monitoring-logging-collation-client`."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:84
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:168
+msgid ""
+"Run the command :option:`traffic_line -x` to apply the configuration "
+"changes."
+msgstr ":option:`traffic_line -x` を実行して設定の変更を適用してください。"
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:63
+msgid "Server Configuration"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:68
+msgid ""
+"Set :ts:cv:`proxy.local.log.collation_mode` to ``1`` to indicate this node "
+"will be a server. ::"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:163
+msgid ":ts:cv:`proxy.config.log.collation_port`"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:108
+msgid ""
+"Copy the :program:`traffic_sac` binary from the |TS| ``bin`` directory, and "
+"place in a suitable location on the system that will act as the standalone "
+"collator."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:112
+msgid ""
+"Copy the ``libtsutil.so`` libraries from the |TS| ``lib`` directory to the "
+"machine serving as the standalone collator."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:35
+msgid ""
+"The collation client nodes prepare their log buffers for transfer across "
+"the network and send the buffers to the log collation server. When the log "
+"collation server receives a log buffer from a client, it writes it to its "
+"own log file as if it was generated locally. For a visual representation of "
+"this, see the figure below."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:23
+msgid ""
+"You can use the |TS| log file collation feature to collect all logged "
+"information in one place. Log collation enables you to analyze a set of |"
+"TS| clustered nodes as a whole (rather than as individual nodes) and to use "
+"a large disk that might only be located on one of the nodes in the cluster."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:166
+msgid ":ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:122
+msgid ""
+"Copy the :file:`records.config` file from a |TS| node configured to be a "
+"log collation client to the ``config`` directory you created on the "
+"standalone collator."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:158
+msgid ""
+":ts:cv:`proxy.local.log.collation_mode`: ``2`` to configure this node as "
+"log collation client and sen standard formatted log entries to the "
+"collation server. For XML-based formatted log entries, see :file:`logs_xml."
+"config` file."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:115
+msgid ""
+"Create a directory called ``config`` in the directory that contains the :"
+"program:`traffic_sac` binary."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:118
+msgid ""
+"Create a directory called ``internal`` in the ``config`` directory you "
+"created above. This directory is used internally by the standalone collator "
+"to store lock files."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:96
+msgid "Standalone Collator"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:65
+msgid ""
+"To configure a |TS| node to be a collation server, perform the following "
+"configuration adjustments in :file:`records.config`:"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:172
+msgid "Collating Custom Logs"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:131
+msgid ""
+"Edit :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config` to "
+"specify a location on your standalone collator where the collected log "
+"files should be stored. ::"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:137
+msgid "Enter the following command to start the standalone collator process::"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:174
+msgid ""
+"If you use custom event log files, then you must edit :file:`logs_xml."
+"config`, in addition to configuring a collation server and collation "
+"clients."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:126
+msgid ""
+"The :file:`records.config` file contains the log collation secret and the "
+"port you specified when configuring |TS| nodes to be collation clients. The "
+"collation port and secret must be the same for all collation clients and "
+"servers."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:156
+msgid "In the :file:`records.config` file, edit the following variables:"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:179
+msgid ""
+"On each collation client, edit :file:`logs_xml.config` and add the :ref:"
+"`CollationHosts <logs-xml-logobject-collationhost>` attribute to the :ref:"
+"`LogObject` specification:"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:141
+msgid ""
+"You will likely want to configure this program to run at server startup, as "
+"well as configure a service monitor in the event the process terminates "
+"abnormally. Please consult your operating system's documentation for how to "
+"achieve this."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:196
+msgid ""
+"Run the command :option:`traffic_line -L` to restart Traffic Server on the "
+"local node or :option:`traffic_line -M` to restart Traffic Server on all "
+"the nodes in a cluster."
+msgstr ""
+"ローカルノード上の Traffic Server をリスタートするために :option:"
+"`traffic_line -L` を、もしくはクラスター内のすべての Traffic Server をリス"
+"タートするためには :option:`traffic_line -M` を実行してください。"
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:177
+msgid "To collate custom event log files:"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:151
+msgid ""
+"To configure a |TS| node to be a collation client, follow the steps below. "
+"If you modify the ``collation_port`` or ``secret`` after connections "
+"between the collation clients and the collation server have been "
+"established, then you must restart |TS|."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:103
+msgid "To install and configure a standalone collator:"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:191
+msgid ""
+"Where ``ipaddress`` is the hostname or IP address of the collation server "
+"to which all log entries (for this object) are forwarded, and ``port`` is "
+"the port number for communication between the collation server and "
+"collation clients."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/log-collation.en.rst:28
+msgid ""
+"|TS| collates log files by using one or more nodes as log collation servers "
+"and all remaining nodes as log collation clients. When a |TS| node "
+"generates a buffer of event log entries, it first determines if it is the "
+"collation server or a collation client. The collation server node writes "
+"all log buffers to its local disk, just as it would if log collation was "
+"not enabled.  Log collation servers can be standalone or they can be part "
+"of a node running |TS|."
+msgstr ""

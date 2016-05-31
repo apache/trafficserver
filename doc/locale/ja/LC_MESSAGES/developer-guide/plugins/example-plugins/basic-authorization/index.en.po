@@ -1,0 +1,48 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/index.en.rst:23
+msgid "Basic Authorization Plugin"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/index.en.rst:25
+msgid ""
+"The sample basic authorization plugin, ``basic-auth.c``, checks for basic "
+"HTTP proxy authorization. In HTTP basic proxy authorization, client user "
+"names and passwords are contained in the ``Proxy-Authorization`` header. "
+"The password is encoded using base64 encoding. The plugin checks all "
+"incoming requests for the authorization header, user name, and password. If "
+"the plugin does not find all of the these, then it reenables with an error "
+"(effectively stopping the transaction) and adds a transaction hook to the "
+"send response header event."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/index.en.rst:36
+msgid "Creating the Plugin's Parent Continuation and Global Hook"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/index.en.rst:38
+msgid "The parent continuation and global hook are created as follows:"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/index.en.rst:40
+msgid ""
+"``TSHttpHookAdd (TS_HTTP_OS_DNS_HOOK, TSContCreate (auth_plugin, NULL));``"
+msgstr ""

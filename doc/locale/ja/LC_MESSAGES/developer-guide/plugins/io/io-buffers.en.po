@@ -1,0 +1,90 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/io/io-buffers.en.rst:44
+msgid "Additional information about IO buffer functions:"
+msgstr "IO バッファー関数に関する追加情報"
+
+#: ../../developer-guide/plugins/io/io-buffers.en.rst:52
+msgid ""
+"Bytes that have already been read may not necessarily be freed within the "
+"``TSIOBuffer``. To consume bytes that have been read, you must call "
+"``TSIOBufferConsume``."
+msgstr ""
+"既に読み込まれたバイト列は ``TSIOBuffer`` 内で絶対に解放してはいけません。読"
+"み込まれたバイト列を消費するには、 ``TSIOBufferConsume`` を呼び出す必要があ"
+"ります。"
+
+#: ../../developer-guide/plugins/io/io-buffers.en.rst:23
+msgid "IO Buffers"
+msgstr "IO バッファー"
+
+#: ../../developer-guide/plugins/io/io-buffers.en.rst:35
+msgid ""
+"The IO buffer abstraction provides for a single writer and multiple "
+"readers. In order for the readers to have no knowledge of each other, they "
+"manipulate IO buffers through the ``TSIOBufferReader`` data structure. "
+"Since only a single writer is allowed, there is no corresponding "
+"``TSIOBufferWriter`` data structure. The writer simply modifies the IO "
+"buffer directly. To see an example that illustrates how to use IOBuffers, "
+"refer to the sample code in the description of :c:func:"
+"`TSIOBufferBlockReadStart`."
+msgstr ""
+"IO バッファー抽象構造は一つの writer と複数の reader を提供します。reader が"
+"お互いを知る必要を無くすため、 ``TSIOBufferReader`` データ構造を通して IO "
+"バッファーを操作します。 writer は一つのみしか許可されていないため、"
+"``TSIOBufferWriter`` データ構造に相当するものはありません。 writer は単純に "
+"IO バッファーを直接修正します。 IO バッファーの使用方法を図示した例を確認す"
+"るには :c:func:`TSIOBufferBlockReadStart` の記述のサンプルコードを参照してく"
+"ださい。"
+
+#: ../../developer-guide/plugins/io/io-buffers.en.rst:25
+msgid ""
+"The IO buffer data structure is the building block of the vconnection "
+"abstraction. An **IO buffer** (``TSIOBuffer``) is composed of a list of "
+"buffer blocks that point to buffer data. Both the buffer block "
+"(``TSIOBufferBlock``) and buffer data (``TSIOBufferData``) data structures "
+"are reference-counted, so they can reside in multiple buffers at the same "
+"time. This makes it extremely efficient to copy data from one IO buffer to "
+"another via ``TSIOBufferCopy``, since Traffic Server must only copy "
+"pointers and adjust reference counts appropriately (and doesn't actually "
+"copy any data)."
+msgstr ""
+"IO バッファーデータ構造は vconnection 抽象構造の構成要素です。 **IO バッ"
+"ファー** (``TSIOBuffer``)  はバッファーデータを指すバッファーブロックのリス"
+"トで構成されます。バッファーブロック (``TSIOBufferBlock``) とバッファーデー"
+"タ (``TSIOBufferData``) の両方のデータ構造は参照カウントされ、同時に複数の"
+"バッファーに存在できます。 Traffic Server はポインターのコピーと適切な参照カ"
+"ウントの調節（と実際にデータをコピーしないこと）のみすれば良いため、 "
+"``TSIOBufferCopy`` によりデータをある IO バッファーから別の IO バッファーに"
+"コピーするのが極めて効率的になります。"
+
+#: ../../developer-guide/plugins/io/io-buffers.en.rst:46
+msgid ""
+"The ``TSIOBufferReader`` data structure tracks how much data in "
+"``TSIOBuffer`` has been read. It has an offset number of bytes that is the "
+"current start point of a particular buffer reader (for every read operation "
+"on an ``TSIOBuffer``, you must allocate an ``TSIOBufferReader``)."
+msgstr ""
+"``TSIOBufferReader`` データ構造は ``TSIOBuffer`` に幾つのデータが読み込まれ"
+"たかを追跡します。これは特定のバッファー reader の現在の開始地点のオフセット"
+"バイト数を持ちます。（ ``TSIOBuffer`` の読込み操作ごとに、 "
+"``TSIOBufferReader`` を割り当てる必要があります。）"

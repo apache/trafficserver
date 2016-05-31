@@ -1,0 +1,158 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:23
+msgid "HTTP Headers"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:34
+msgid "An **HTTP message** consists of the following:"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:36
+msgid "HTTP header"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:37
+msgid "body"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:38
+msgid "trailer"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:40
+msgid "The **HTTP header** consists of:"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:42
+msgid "A request or response line"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:44
+msgid "An HTTP **request line** contains a method, URL, and version"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:45
+msgid "A **response line** contains a version, status code, and reason phrase"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:48
+msgid "A MIME header"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:50
+msgid ""
+"A **MIME header** is comprised of zero or more MIME fields. A **MIME "
+"field** is composed of a field name, a colon, and (zero or more) field "
+"values. The values in a field are separated by commas. An HTTP header "
+"containing a request line is usually referred to as a **request**. The "
+"following example shows a typical request header:"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:67
+msgid ""
+"The **response header** for the above request might look like the following:"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:83
+msgid ""
+"The following figure illustrates an HTTP message with an expanded HTTP "
+"header."
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:86
+msgid "**Figure 10.1. HTTP Request/Response and Header Structure**"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:91
+msgid "HTTP Request/Response and Header Structure"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:93
+msgid "The figure below shows example HTTP request and response headers."
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:95
+msgid "**Figure 10.2. Examples of HTTP Request and Response Headers**"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:100
+msgid "Examples of HTTP Request and Response Headers"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:102
+msgid ""
+"The marshal buffer or ``TSMBuffer`` is a heap data structure that stores "
+"parsed URLs, MIME headers, and HTTP headers. You can allocate new objects "
+"out of marshal buffers and change the values within the marshal buffer. "
+"Whenever you manipulate an object, you must require the handle to the "
+"object (``TSMLoc``) and the marshal buffer containing the object "
+"(``TSMBuffer``)."
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:109
+msgid "**Figure 10.3. Marshal Buffers and Header Locations**"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:114
+msgid "Marshal Buffers and Header Locations"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:116
+msgid "The figure above shows the following:"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:118
+msgid "The marshal buffer containing the HTTP request, ``reqest_bufp``"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:120
+msgid "``TSMLoc`` location pointer for the HTTP header (``http_hdr_loc``)"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:122
+msgid "``TSMLoc`` location pointer for the request URL (``url_loc``)"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:124
+msgid "``TSMLoc`` location pointers for the MIME header (``mime_hdr_loc``)"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:126
+msgid "``TSMLoc`` location pointers for MIME fields (``fieldi_loc``)"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:128
+msgid ""
+"``TSMLoc`` location pointer for the next duplicate MIME field "
+"(``next_dup_loc``)"
+msgstr ""
+
+#: ../../developer-guide/plugins/http-headers/index.en.rst:131
+msgid ""
+"The diagram also shows that an HTTP header contains pointers to the URL "
+"location and the MIME header location. You can obtain the URL location from "
+"an HTTP header using the function ``TSHttpHdrUrlGet``. To work with MIME "
+"headers, you can pass either a MIME header location or an HTTP header "
+"location to MIME header functions . If you pass an HTTP header to a MIME "
+"header function, then the system locates the associated MIME header and "
+"executes the MIME header function on the MIME header location."
+msgstr ""

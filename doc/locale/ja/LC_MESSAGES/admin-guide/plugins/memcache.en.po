@@ -1,0 +1,81 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/memcache.en.rst:29
+msgid "Add the following line to :file:`plugin.config`::"
+msgstr "次の行を :file:`plugin.config` に追加してください。"
+
+#: ../../admin-guide/plugins/memcache.en.rst:41
+msgid "Alternatively, a configuration can also be specified::"
+msgstr "もしくは、設定を指定することも可能です。"
+
+#: ../../admin-guide/plugins/memcache.en.rst:33
+msgid "In this case, the plugin will use the default behaviour:"
+msgstr "このケースでは、プラグインはデフォルトの振る舞いをします"
+
+#: ../../admin-guide/plugins/memcache.en.rst:27
+msgid "Installation"
+msgstr "インストール"
+
+#: ../../admin-guide/plugins/memcache.en.rst:35
+msgid "Listen for memcache traffic on the default memcache port 11211"
+msgstr ""
+
+#: ../../admin-guide/plugins/memcache.en.rst:24
+msgid "This plugin implements the memcache protocol for cache contents."
+msgstr ""
+
+#: ../../admin-guide/plugins/memcache.en.rst:4
+msgid "memcache Plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/memcache.en.rst:45
+msgid ""
+"After modifying plugin.config, restart traffic server (sudo traffic_ctl "
+"server restart) the configuration is also re-read when a management update "
+"is given (sudo traffic_ctl config reload)"
+msgstr ""
+
+#: ../../admin-guide/plugins/memcache.en.rst:39
+msgid "Configuration"
+msgstr "設定"
+
+#: ../../admin-guide/plugins/memcache.en.rst:52
+msgid "Flags and options are:"
+msgstr "フラグとオプションは次のとおりです。"
+
+#: ../../admin-guide/plugins/memcache.en.rst:50
+msgid "Options"
+msgstr "オプション"
+
+#: ../../admin-guide/plugins/memcache.en.rst:56
+msgid ""
+"Options in the code: ``TSMEMCACHE_WRITE_SYNC`` whether or not to wait for "
+"the write to complete."
+msgstr ""
+
+#: ../../admin-guide/plugins/memcache.en.rst:36
+msgid "Write memcache data to the cache in the background (without waiting)"
+msgstr ""
+
+#: ../../admin-guide/plugins/memcache.en.rst:54
+msgid "``port``: A single port to listen on for memcache protocol commands."
+msgstr ""

@@ -1,0 +1,57 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:22
+msgid "TSHttpHdrCopy"
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:24
+msgid ""
+"Copies the contents of the HTTP header located at :arg:`src_loc` within :"
+"arg:`src_bufp` to the HTTP header located at :arg:`dest_loc` within :arg:"
+"`dest_bufp`."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:29
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:31
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"
+
+#: ../../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:36
+msgid "Description"
+msgstr "解説"
+
+#: ../../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:38
+msgid ""
+":c:func:`TSHttpHdrCopy` works correctly even if :arg:`src_bufp` and :arg:"
+"`dest_bufp` point to different :ref:`developer-plugins-http-headers-marshal-"
+"buffers`. Make sure that you create the destination HTTP header before "
+"copying into it."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSHttpHdrCopy.en.rst:44
+msgid ""
+":c:func:`TSHttpHdrCopy` appends the port number to the domain of the URL "
+"portion of the header. For example, a copy of http://www.example.com "
+"appears as http://www.example.com:80 in the destination buffer."
+msgstr ""

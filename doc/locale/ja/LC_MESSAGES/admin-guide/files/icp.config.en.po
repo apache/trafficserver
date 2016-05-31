@@ -1,0 +1,170 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/files/icp.config.en.rst:20
+msgid "icp.config"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:24
+msgid ""
+"The :file:`icp.config` file defines ICP peers (parent and sibling caches)."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:28
+msgid ""
+"After you modify the icp.config file, navigate to the Traffic Server bin "
+"directory and run the :option:`traffic_ctl config reload` command to apply "
+"the changes. When you apply the changes to a node in a cluster, Traffic "
+"Server automatically applies the changes to all other nodes in the cluster."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:35
+msgid "Format"
+msgstr "フォーマット"
+
+#: ../../../admin-guide/files/icp.config.en.rst:37
+msgid ""
+"Each line in the icp.config file contains the name and configuration "
+"information for a single ICP peer in the following format::"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:42
+msgid "Each field is described in the following list."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:48
+msgid "``host``"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:45
+msgid "The hostname of the ICP peer."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:47
+msgid ""
+"This field is optional; if you do not specify the hostname of the ICP peer, "
+"you must specify the IP address."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:54
+msgid "``host_IP``"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:51
+msgid "The IP address of the ICP peer."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:53
+msgid ""
+"This field is optional; if you do not specify the IP address of the ICP "
+"peer, you must specify the hostname."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:61
+msgid "``ctype``"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:57
+msgid "Use the following options:"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:59
+msgid "1 to indicate an ICP parent cache"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:60
+msgid "2 to indicate an ICP sibling cache"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:61
+msgid "3 to indicate an ICP local cache"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:65
+msgid "``proxy_port``"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:64
+msgid ""
+"The port number of the TCP port used by the ICP peer for proxy "
+"communication."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:69
+msgid "``icp_port``"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:68
+msgid ""
+"The port number of the UDP port used by the ICP peer for ICP communication."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:75
+msgid "``MC_on``"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:72
+msgid "Enable or disable MultiCast:"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:74
+msgid "0 if multicast is disabled"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:75
+msgid "1 if multicast is enabled"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:78
+msgid "``MC_ip``"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:78
+msgid "The MultiCast IP address."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:87
+msgid "``MC_ttl``"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:81
+msgid "The multicast time to live. Use the following options:"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:83
+msgid ""
+"1 if IP multicast datagrams will not be forwarded beyond a single subnetwork"
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:85
+msgid ""
+"2 to allow delivery of IP multicast datagrams to more than one subnet (if "
+"there are one or more multicast routers attached to the first hop subnet)."
+msgstr ""
+
+#: ../../../admin-guide/files/icp.config.en.rst:90
+msgid "Examples"
+msgstr "例"
+
+#: ../../../admin-guide/files/icp.config.en.rst:92
+msgid ""
+"The following example configuration is for three nodes: the local host, one "
+"parent, and one sibling."
+msgstr ""

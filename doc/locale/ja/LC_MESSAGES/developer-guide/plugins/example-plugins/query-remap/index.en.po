@@ -1,0 +1,128 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:43
+msgid ""
+"((Editor's note: additional text TBD; text in this chapter is still under "
+"development))"
+msgstr "(（注意: 文章の追加は未定です。この章の文は未だ執筆中です。））"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:23
+msgid "Query Remap Plugin"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:47
+msgid "Remap Header File"
+msgstr "リマップヘッダーファイル"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:30
+msgid ""
+"The Remap plugin provides a more flexible, dynamic way of specifying remap "
+"rules. It is not built on top of the Traffic Server APIs and exists solely "
+"for the purpose of URL remapping. The remap plugin is not global --it is "
+"configured on a per-remap rule basis, which enables you to customize how "
+"URLs are redirected based on individual rules in the ``remap.config`` file."
+msgstr ""
+"リマッププラグインはよりフレキシブルかつ動的なリマップルールの指定方法を提供"
+"します。このプラグインは Traffic Server API 上に組込まれてはおらず、 URL リ"
+"マップを目的として独立して存在します。リマッププラグインはグローバルではな"
+"く、基本的にリマップルール毎の処理として設定され ``remap.config`` ファイルの"
+"個々のルールに基づき URL がどのようにリダイレクトされるかをカスタマイズする"
+"ことを可能にします。"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:37
+msgid ""
+"The Traffic Server Remap API enables a plugin to dynamically map a client "
+"request to a target URL. Each plugin is associated with one or more remap "
+"rules in ``remap.config`` (an \"instance\"). If a request URL matches a "
+"remap rule's \"fromURL\", then Traffic Server calls the plugin-defined "
+"remap function for that request."
+msgstr ""
+"Traffic Server リマップ API は、プラグインがクライアントのリクエストをター"
+"ゲットの URL へ動的にマップすることを可能にします。各プラグインは ``remap."
+"config`` の一つ以上のリマップルール（\"インスタンス\"）に関連付けられます。"
+"リクエスト URL がリマップルールの \"fromURL\" にマッチする場合、 Traffic "
+"Server はプラグインで定義したリマップ関数を呼び出します。"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:49
+msgid ""
+"The ``remap.h`` header file contains the Traffic Server remap API. By "
+"default, the header file location is: ``/usr/local/include/ts/remap.h``"
+msgstr ""
+"``remap.h`` ヘッダーファイルは Traffic Server リマップ API を含みます。デ"
+"フォルトでは、ヘッダーファイルは ``/usr/local/include/ts/remap.h`` にありま"
+"す。"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:55
+msgid "A remap plugin is required to implement the following functions:"
+msgstr "リマッププラグインには下記の関数の実装が求められます:"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:71
+msgid "Configuration"
+msgstr "設定"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:53
+msgid "Required Functions"
+msgstr "必要となる関数"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:73
+msgid ""
+"To associate a remap plugin with a remap rule, use the ``@plugin`` "
+"parameter. See the Admin Guide section (?TBD?) for details on configuring "
+"remap plugins"
+msgstr ""
+"リマッププラグインのリマップルールとの関連付けは、 ``@plugin`` パラメータを"
+"使います。リマッププラグインの設定の詳細は、管理者ガイドの章（未定？）を確認"
+"してください。"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:66
+msgid ""
+"`TSRemapDoRemap <http://people.apache.org/~amc/ats/doc/html/remap_8h."
+"html#acf73f0355c591e145398211b3c0596fe>`_: the entry point used by Traffic "
+"Server to find the new URL to which it remaps; called every time a request "
+"comes in"
+msgstr ""
+"`TSRemapDoRemap <http://people.apache.org/~amc/ats/doc/html/remap_8h."
+"html#acf73f0355c591e145398211b3c0596fe>`_: リマップする先の新しい URL を見つ"
+"けるために Traffic Server によって使用されるエントリポイントです。リクエスト"
+"が来る度に毎回呼び出されます。"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:57
+msgid ""
+"`TSRemapInit <http://people.apache.org/~amc/ats/doc/html/remap_8h."
+"html#af7e9b1eee1c38c6f8dcc67a65ba02c24>`_: the remap initialization "
+"function, called once when the plugin is loaded"
+msgstr ""
+"`TSRemapInit <http://people.apache.org/~amc/ats/doc/html/remap_8h."
+"html#af7e9b1eee1c38c6f8dcc67a65ba02c24>`_: プラグインがロードされる際に一度"
+"だけ呼ばれるリマップ初期化関数"
+
+#: ../../developer-guide/plugins/example-plugins/query-remap/index.en.rst:61
+msgid ""
+"`TSRemapNewInstance <http://people.apache.org/~amc/ats/doc/html/remap_8h."
+"html#a963de3eeed2ed7a2da483acf77dc42ca>`_: a new instance is created for "
+"each rule associated with the plugin. Called each time the plugin used in a "
+"remap rule (this function is what processes the pparam values)"
+msgstr ""
+"`TSRemapNewInstance <http://people.apache.org/~amc/ats/doc/html/remap_8h."
+"html#a963de3eeed2ed7a2da483acf77dc42ca>`_: プラグインに関連付けられた各ルー"
+"ル毎に作成される新規インスタンス。リマップルールで使用されるプラグインで毎回"
+"呼ばれます。（この関数は pparam 値を処理します）"

@@ -1,0 +1,78 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-14 01:52+0900\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+"Last-Translator: Hiroaki Nakamura <hnakamur@gmail.com>\n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../admin-guide/plugins/index.en.rst:36
+msgid ""
+"All other functionality can be moved into plugins and by offering a "
+"consistent C API, everyone can implement their own functionality, without "
+"having to touch the core."
+msgstr ""
+"他の全ての機能はプラグインに移すことができます。安定した C API を使うことに"
+"より、コアに触ること無く、誰でも独自の機能を実装することができます。"
+
+#: ../../admin-guide/plugins/index.en.rst:58
+msgid "Experimental plugins"
+msgstr "実験的なプラグイン"
+
+#: ../../admin-guide/plugins/index.en.rst:31
+msgid ""
+"One of the key features of |ATS| is its modularity. Features that aren't "
+"needed in the core simply aren't there. This helps to provide an additional "
+"guarantee that our core can remain fast by concentrating on the things that "
+"we always provide: caching and proxying."
+msgstr ""
+"|ATS| の重要な機能の一つはモジュール性です。コアに不要な機能はコアの中には存"
+"在しません。これは良いことです。なぜならば、それはコアが常に提供するキャッ"
+"シュとプロキシーに集中することにより、速い状態を保つことができるからです。"
+
+#: ../../admin-guide/plugins/index.en.rst:23
+msgid "Plugins"
+msgstr "プラグイン"
+
+#: ../../admin-guide/plugins/index.en.rst:29
+msgid "Overview"
+msgstr "概要"
+
+#: ../../admin-guide/plugins/index.en.rst:60
+msgid ""
+"Plugins that are considered experimental are located in the `plugins/"
+"experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"
+"a=tree;f=plugins/experimental;hb=HEAD>`_ directory of the Apache Traffic "
+"Server source tree. Experimental plugins can be compiled by passing the `--"
+"enable-experimental-plugins` option to `configure`::"
+msgstr ""
+"実験的なプラグインです。 Apache Traffic Server ソースツリーの `plugins/"
+"experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"
+"a=tree;f=plugins/experimental;hb=HEAD>`_ ディレクトリにあります。実験的プラ"
+"グインは `configure` を実行する際に `--enable-experimental-plugins` オプショ"
+"ンをつけることでコンパイルされます。"
+
+#: ../../admin-guide/plugins/index.en.rst:43
+msgid ""
+"Plugins that are considered stable are installed by default in |TS| "
+"releases."
+msgstr ""
+"安定的なプラグインです。これらは |TS| のリリースにデフォルトでインストールさ"
+"れれています。"
+
+#: ../../admin-guide/plugins/index.en.rst:41
+msgid "Stable plugins"
+msgstr "安定したプラグイン"

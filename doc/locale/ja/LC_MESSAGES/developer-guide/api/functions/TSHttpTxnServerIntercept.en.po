@@ -1,0 +1,87 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:35
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:25
+msgid "Intercept origin server requests."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:28
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:23
+msgid "TSHttpTxnServerIntercept"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:30
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:37
+msgid ""
+":func:`TSHttpTxnServerIntercept` allows a plugin take over the servicing of "
+"the request as though it was the origin server. In the event a request "
+"needs to be made to the server for transaction :arg:`txnp`, :arg:`contp` "
+"will be sent a :data:`TS_EVENT_NET_ACCEPT` event. The :arg:`edata` passed "
+"with :data:`TS_NET_EVENT_ACCEPT` is an :type:`TSVConn` just as it would be "
+"for a normal accept. The plugin must act as if it is an HTTP server and "
+"read the HTTP request and body from the :type:`TSVConn` and send an HTTP "
+"response header and body."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:47
+msgid ""
+":func:`TSHttpTxnServerIntercept` must be not be called after the connection "
+"to the server has taken place. This means that the last hook that it can be "
+"called from is :data:`TS_HTTP_READ_CACHE_HDR_HOOK`. If a connection to the "
+"server is not necessary, the continuation :arg:`contp` will be sent a :data:"
+"`TS_EVENT_NET_ACCEPT_FAILED` event when the transaction completes."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:63
+msgid ""
+":func:`TSHttpTxnServerIntercept` must only be called once per transaction. "
+"The continuation :arg:`contp` must have been created with a valid :type:"
+"`TSMutex`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:70
+msgid ":manpage:`TSAPI(3ts)`"
+msgstr ":manpage:`TSAPI(3ts)`"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:68
+msgid "See Also"
+msgstr "参照"
+
+#: ../../developer-guide/api/functions/TSHttpTxnServerIntercept.en.rst:55
+msgid ""
+"The response from the plugin is cached subject to standard and configured "
+"HTTP caching rules. Should the plugin wish the response not be cached, the "
+"plugin must use appropriate HTTP response headers to prevent caching. The "
+"primary purpose of :func:`TSHttpTxnServerIntercept` is allow plugins to "
+"provide gateways to other protocols or to allow to plugin to its own "
+"transport for the next hop to the server. :func:`TSHttpTxnServerIntercept` "
+"overrides parent cache configuration."
+msgstr ""

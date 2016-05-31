@@ -1,0 +1,90 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/io/vios.en.rst:23
+msgid "VIOs"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:25
+msgid ""
+"A **VIO**, or **virtual IO**, is a description of an IO operation that's "
+"currently in progress. The VIO data structure is used by vconnection users "
+"to determine how much progress has been made on a particular IO operation "
+"and to re-enable an IO operation when it stalls due to buffer space issues. "
+"VIOs are used by vconnection implementors to determine the buffer for an IO "
+"operation, how much work to do on the IO operation, and which continuation "
+"to call back when progress on the IO operation is made."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:34
+msgid ""
+"The ``TSVIO`` data structure itself is opaque, but it could be defined as "
+"follows:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:48
+msgid ""
+"The VIO functions below access and modify various parts of the data "
+"structure."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:51
+msgid ":c:func:`TSVIOBufferGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:52
+msgid ":c:func:`TSVIOVConnGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:53
+msgid ":c:func:`TSVIOContGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:54
+msgid ":c:func:`TSVIOMutexGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:55
+msgid ":c:func:`TSVIONBytesGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:56
+msgid ":c:func:`TSVIONBytesSet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:57
+msgid ":c:func:`TSVIONDoneGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:58
+msgid ":c:func:`TSVIONDoneSet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:59
+msgid ":c:func:`TSVIONTodoGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:60
+msgid ":c:func:`TSVIOReaderGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/vios.en.rst:61
+msgid ":c:func:`TSVIOReenable`"
+msgstr ""

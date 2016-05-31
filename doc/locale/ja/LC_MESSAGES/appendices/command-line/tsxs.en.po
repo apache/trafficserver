@@ -19,26 +19,18 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../appendices/command-line/tsxs.en.rst:26
+msgid "Description"
+msgstr "解説"
+
+#: ../../appendices/command-line/tsxs.en.rst:29
+msgid "Options"
+msgstr "オプション"
+
+#: ../../appendices/command-line/tsxs.en.rst:53
+msgid "Print usage information and exit."
+msgstr "使い方の情報を表示して終了します。"
+
+#: ../../appendices/command-line/tsxs.en.rst:23
+msgid "tsxs"
 msgstr ""
-
-#: ../../index.rst:51
-msgid "Indices and tables"
-msgstr ""
-
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ":ref:`genindex`"
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
-msgstr ":ref:`search`"
-
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
-msgstr ""
-
-#: ../../index.rst:35
-msgid "Indices and tables"
-msgstr "Indices and tables"

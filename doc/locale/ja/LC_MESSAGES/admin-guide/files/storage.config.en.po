@@ -1,0 +1,310 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/files/storage.config.en.rst:34
+msgid "*pathname* *size* [ ``volume=``\\ *number* ] [ ``id=``\\ *string* ]"
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:110
+msgid ""
+"As an alternative, using the human readable prefixes, you can express a "
+"64GB cache file with::"
+msgstr ""
+"代わりとして、ヒューマンリーダブルなプレフィックスを使用し、 64GB ファイル"
+"キャッシュを表現できます::"
+
+#: ../../admin-guide/files/storage.config.en.rst:71
+msgid ""
+"As with standard ``records.config`` integers, human readable prefixes are "
+"also supported. They include"
+msgstr ""
+"標準的な ``records.config`` の数値と同様、ヒューマンリーダブルなプレフィック"
+"スもサポートされています。これらには以下のものを含みます。"
+
+#: ../../admin-guide/files/storage.config.en.rst:82
+msgid "Assignment Table"
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:84
+msgid ""
+"Each storage element defined in :file:`storage.config` is divided in to :"
+"term:`stripes`. The assignment table maps from an object URL to a specific "
+"stripe. The table is initialized based on a pseudo-random process which is "
+"seeded by hashing a string for each stripe. This string is composed of a "
+"base string, an offset (the start of the stripe on the storage element), "
+"and the length of the stripe. By default the path for the storage is used "
+"as the base string. This ensures that each stripe has a unique string for "
+"the assignment hash. This does make the assignment table very sensitive to "
+"the path for the storage elements and changing even one can have a "
+"cascading effect which will effectively clear most of the cache. This can "
+"be problem when drives fail and a system reboot causes the path names to "
+"change."
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:98
+msgid "Examples"
+msgstr "例"
+
+#: ../../admin-guide/files/storage.config.en.rst:54
+msgid "For each disk, make all partitions the same size."
+msgstr "各ディスクで、全パーティションを同じサイズになるように作成する"
+
+#: ../../admin-guide/files/storage.config.en.rst:55
+msgid "For each node, use the same number of partitions on all disks."
+msgstr "各ノードで、全ディスクのパーティションを数が同じになるように作成する"
+
+#: ../../admin-guide/files/storage.config.en.rst:30
+msgid "Format"
+msgstr "フォーマット"
+
+#: ../../admin-guide/files/storage.config.en.rst:56
+msgid ""
+"Group similar kinds of storage into different volumes. For example split "
+"out SSD's or RAM drives into their own volume."
+msgstr ""
+"似たような種類のストレージを、別ボリュームにグループ化する例えば、SSDやRAMド"
+"ライブは独自のボリュームに分割する"
+
+#: ../../admin-guide/files/storage.config.en.rst:49
+msgid ""
+"If the :arg:`id` option is used every use must have a unique value for :arg:"
+"`string`."
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:143
+msgid ""
+"If this is not sufficient then the :arg:`id` or :arg:`path` argument should "
+"be used to create a more permanent assignment table. An example would be::"
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:164
+msgid ""
+"In order to apply these settings, trigger a reload with :manpage:"
+"`udevadm(8)`:::"
+msgstr ""
+"これらの設定を適用するには、:manpage:`udevadm(8)` で再読み込みを行ってくださ"
+"い::"
+
+#: ../../admin-guide/files/storage.config.en.rst:59
+msgid ""
+"Specify pathnames according to your operating system requirements. See the "
+"following examples. In the :file:`storage.config` file, a formatted or raw "
+"disk must be at least 128 MB."
+msgstr ""
+"オペレーティングシステム要求により、pathnames を指定してください。以下の例を"
+"確認してください。:file:`storage.config` ファイルには、フォーマット済みもし"
+"くはローディスクを、少なくとも 128MB 指定しなければなりません。"
+
+#: ../../admin-guide/files/storage.config.en.rst:44
+msgid ""
+"The :arg:`volume` option is independent of the :arg:`seed` option and "
+"either can be used with or without the other, and their ordering on the "
+"line is irrelevant."
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:170
+msgid "FreeBSD Example"
+msgstr "FreeBSD の例"
+
+#: ../../admin-guide/files/storage.config.en.rst:132
+msgid "Linux Example"
+msgstr "Linux の例"
+
+#: ../../admin-guide/files/storage.config.en.rst:94
+msgid ""
+"The :arg:`id` option can be used to create a fixed string that an "
+"administrator can use to keep the assignment table consistent by maintaing "
+"the mapping from physical device to base string even in the presence of "
+"hardware changes and failures."
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:53
+msgid "Use raw disk partitions."
+msgstr "ローディスクパーティションを使用する"
+
+#: ../../admin-guide/files/storage.config.en.rst:74
+msgid "``K`` Kilobytes (1024 bytes)"
+msgstr "``K`` キロバイト (1024 バイト)"
+
+#: ../../admin-guide/files/storage.config.en.rst:181
+msgid ""
+"In order to make sure :program:`traffic_server` will have access to this "
+"disk you can use :manpage:`devfs(8)` to persistently set the right "
+"permissions. The following rules are stored in :manpage:`devfs.conf(5)`::"
+msgstr ""
+":program:`traffic_server` がこのディスクへアクセス可能なことを確実にするため"
+"に、:manpage:`devfs(8)` を使って永続的に適切なパーミッションを設定することが"
+"できます。以下のルールは、 :manpage:`devfs.conf(5)` に保存されます。 ::"
+
+#: ../../admin-guide/files/storage.config.en.rst:155
+msgid ""
+"In order to make sure :program:`traffic_server` will have access to this "
+"disk you can use :manpage:`udev(7)` to persistently set the right "
+"permissions. The following rules are targeted for an Ubuntu system, and "
+"stored in ``/etc/udev/rules.d/51-cache-disk.rules``::"
+msgstr ""
+":program:`traffic_server` がこのディスクへアクセス可能なことを確実にするため"
+"に、:manpage:`udev(7)` を使って永続的に適切なパーミッションを設定することが"
+"できます。以下のルールはUbuntuをターゲットにされており、 ``/etc/udev/rules."
+"d/51-cache-disk.rules`` に保存されます::"
+
+#: ../../admin-guide/files/storage.config.en.rst:134
+msgid ""
+"Rather than refer to disk devices like ``/dev/sda``, ``/dev/sdb``, etc., "
+"modern Linux supports `alternative symlinked names for disk devices "
+"<https://wiki.archlinux.org/index.php/persistent_block_device_naming#by-"
+"id_and_by-path>`_ in the ``/dev/disk`` directory structure. As noted for "
+"the :ref:`assignment-table` the path used for the disk can effect the cache "
+"if it changes. This can be ameloriated in some cases by using one of the "
+"alternate paths in via ``/dev/disk``. Note that if the ``by-id`` or ``by-"
+"path`` style is used, replacing a failed drive will cause that path to "
+"change because the new drive will have a different physical ID or path. The "
+"original hash string can be kept by adding :arg:`id` or :arg:`path` with "
+"the original path to the storage line."
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:129
+msgid "Size is optional. If not specified, the entire partition is used."
+msgstr ""
+"サイズはオプションです。指定されなかった場合、パーティション全体が使用されま"
+"す。"
+
+#: ../../admin-guide/files/storage.config.en.rst:122
+msgid "Solaris Example"
+msgstr "Solaris の例"
+
+#: ../../admin-guide/files/storage.config.en.rst:172
+msgid ""
+"Starting with 5.1 FreeBSD dropped support for explicit raw devices. All "
+"devices on FreeBSD can be accessed raw now."
+msgstr ""
+"5.1 FreeBSD から、明示的なローデバイスのサポートは終了しました。FreeBSDにお"
+"いて全デバイスは、現在、生でアクセス可能です。"
+
+#: ../../admin-guide/files/storage.config.en.rst:24
+msgid ""
+"The :file:`storage.config` file (by default, located in ``/usr/local/etc/"
+"trafficserver/``) lists all the files, directories, and/or hard disk "
+"partitions that make up the Traffic Server cache. After you modify the :"
+"file:`storage.config` file the new settings will not be effective until "
+"Traffic Server is restarted."
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:100
+msgid ""
+"The following basic example shows 128 MB of cache storage in the ``/"
+"big_dir`` directory::"
+msgstr ""
+"以下に、キャッシュストレージとして ``/big_dir`` ディレクトリで、128MB 使用す"
+"る例を示します。::"
+
+#: ../../admin-guide/files/storage.config.en.rst:124
+msgid "The following example is for the Solaris operating system::"
+msgstr "以下の例は、Solaris オペレーティングシステム用のものです。::"
+
+#: ../../admin-guide/files/storage.config.en.rst:175
+msgid ""
+"The following example will use an entire raw disk in the FreeBSD operating "
+"system::"
+msgstr ""
+"以下の例では、FreeBSD オペレーティングシステムでローディスク全体を使用しま"
+"す。::"
+
+#: ../../admin-guide/files/storage.config.en.rst:32
+msgid ""
+"The format of the :file:`storage.config` file is a series of lines of the "
+"form"
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:63
+msgid ""
+"When using raw disk or partitions, you should make sure the :ts:cv:`Traffic "
+"Server user <proxy.config.admin.user_id>` used by the Traffic Server "
+"process has read and write privileges on the raw disk device or partition. "
+"One good practice is to make sure the device file is set with 'g+rw' and "
+"the Traffic Server user is in the group which owns the device file.  "
+"However, some operating systems have stronger requirements - see the "
+"following examples for more information."
+msgstr ""
+"ローディスクやローパーティションを使う場合、Traffic Server プロセス に使用さ"
+"れる:ts:cv:`Traffic Server ユーザ <proxy.config.admin.user_id>` が、ローディ"
+"スクデバイスやローパーティションの読み書きの権限を持っているか確認するべきで"
+"す。ベストプラクティスの一つは、 デバイスファイルに 'g+rw' 権限が付与される"
+"こととTraffic Server ユーザ がデバイスファイルの自身のグループに属しているこ"
+"とを確認することです。しかしながら、幾つかのオペレーティングシステムではより"
+"強い要求があります。更なる情報については、以下の例を確認してください。"
+
+#: ../../admin-guide/files/storage.config.en.rst:51
+msgid "You can use any partition of any size. For best performance:"
+msgstr ""
+"どんなサイズのどんなパーティションでも使用する事が出来ます。最適な性能のため"
+"には以下のようにします:"
+
+#: ../../admin-guide/files/storage.config.en.rst:105
+msgid ""
+"You can use the ``.`` symbol for the current directory. Here is an example "
+"for 64 MB of cache storage in the current directory::"
+msgstr ""
+"``.`` シンボルを使用してカレントディレクトリを用いることもできます。以下に、"
+"カレントディレクトリで 64MB キャッシュストレージを構築する例を示します。::"
+
+#: ../../admin-guide/files/storage.config.en.rst:77
+msgid "``T`` Terabytes (1024^4 or 1,099,511,627,776 bytes)"
+msgstr "``T`` テラバイト (1024^4 または 1,099,511,627,776 バイト)"
+
+#: ../../admin-guide/files/storage.config.en.rst:20
+msgid "storage.config"
+msgstr ""
+
+#: ../../admin-guide/files/storage.config.en.rst:149
+msgid ""
+"The following example will use an entire raw disk in the Linux operating "
+"system::"
+msgstr ""
+"以下の例では、Linux オペレーティングシステムにおいてローディスクを使用しま"
+"す。::"
+
+#: ../../admin-guide/files/storage.config.en.rst:117
+msgid ""
+"When using on-filesystem cache disk storage, you can only have one such "
+"directory specified. This will be address in a future version."
+msgstr ""
+"ファイルシステム上のキャッシュディスクストレージを使用する際、指定されたディ"
+"レクトリを一つのみ持てます。これは将来のバージョンで対応される予定です。 "
+
+#: ../../admin-guide/files/storage.config.en.rst:76
+msgid "``G`` Gigabytes (1024^3 or 1,073,741,824 bytes)"
+msgstr "``G`` ギガバイト (1024^3 または 1,073,741,824 バイト)"
+
+#: ../../admin-guide/files/storage.config.en.rst:75
+msgid "``M`` Megabytes (1024^2 or 1,048,576 bytes)"
+msgstr "``M`` メガバイト (1024^2 または 1,048,576 バイト)"
+
+#: ../../admin-guide/files/storage.config.en.rst:36
+msgid ""
+"where :arg:`pathname` is the name of a partition, directory or file, :arg:"
+"`size` is the size of the named partition, directory or file (in bytes), "
+"and :arg:`volume` is the volume number used in the files :file:`volume."
+"config` and :file:`hosting.config`. :arg:`id` is used for seeding the :ref:"
+"`assignment-table`. You must specify a size for directories; size is "
+"optional for files and raw partitions. :arg:`volume` and arg:`seed` are "
+"optional."
+msgstr ""

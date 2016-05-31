@@ -1,0 +1,251 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../preface/index.en.rst:23
+msgid "Preface"
+msgstr "前書き"
+
+#: ../../preface/index.en.rst:29
+msgid "What is Apache Traffic Server?"
+msgstr "Apache Traffic Server とは ?"
+
+#: ../../preface/index.en.rst:31
+msgid ""
+"|ATS| is a high-performance web proxy cache that improves network "
+"efficiency and performance by caching frequently-accessed information at "
+"the edge of the network. This brings content physically closer to end "
+"users, while enabling faster delivery and reduced bandwidth use. |TS| is "
+"designed to improve content delivery for enterprises, Internet service "
+"providers (ISPs), backbone providers, and large intranets by maximizing "
+"existing and available bandwidth."
+msgstr ""
+"|ATS| はネットワークの縁で頻繁にアクセスされる情報をキャッシュすることでネッ"
+"トワークの効率とパフォーマンスを改善するハイパフォーマンスなウェブプロキシー"
+"キャッシュです。これはより速い配信と帯域使用量の削減を実現すると同時に、エン"
+"ドユーザに物理的に近いコンテンツを提供します。|TS| は企業向けコンテンツ配"
+"信、インターネットサービスプロバイダ (ISP) 、バックボーンプロバイダ、そして"
+"大きなイントラネットが持つ既存の利用可能な帯域幅を最大化することによって改善"
+"するために設計されました。"
+
+#: ../../preface/index.en.rst:38
+msgid ""
+"This manual will explore every aspect of installing, managing, extending, "
+"and troubleshooting |TS|."
+msgstr ""
+"このマニュアルではインストール、管理、拡張そして |TS| のトラブルシューティン"
+"グといったあらゆる側面を紹介します。"
+
+#: ../../preface/index.en.rst:42
+msgid "Typographic Conventions"
+msgstr "書体による表記"
+
+#: ../../preface/index.en.rst:44
+msgid "This documentation uses the following typographic conventions:"
+msgstr "このドキュメント次の書体による表記を使用します :"
+
+#: ../../preface/index.en.rst:53
+msgid "Italic"
+msgstr "斜体"
+
+#: ../../preface/index.en.rst:47
+msgid "Used to introduce new terms on their initial appearance."
+msgstr "新しい用語が最初に登場する際に紹介するために使用されます。"
+
+#: ../../preface/index.en.rst:53 ../../preface/index.en.rst:60
+#: ../../preface/index.en.rst:69
+msgid "Example:"
+msgstr "例 :"
+
+#: ../../preface/index.en.rst:50
+msgid ""
+"The |ATS| object storage is based on a *cyclone buffer* architecture. "
+"Cyclone buffers are a form of storage addressing in which a single writer "
+"continually reclaims the oldest allocations for use by new updates."
+msgstr ""
+"|ATS| オブジェクトストレージは *循環バッファ* 構造をベースとしています。循環"
+"バッファは単一の書き込み担当が新たな更新で使用する領域のために絶え間無く古い"
+"領域の返還を要求するストレージのアドレッシング形式です。"
+
+#: ../../preface/index.en.rst:60
+msgid "Monospace"
+msgstr "等幅"
+
+#: ../../preface/index.en.rst:56
+msgid ""
+"Represents C/C++ language statements, commands, file paths, file content, "
+"and computer output."
+msgstr ""
+"C/C++ 言語のステートメント、コマンド、ファイルパス、ファイルの内容、コン"
+"ピュータの出力を表現します。"
+
+#: ../../preface/index.en.rst:60
+msgid "The default installation prefix for |TS| is ``/usr/local/ts``."
+msgstr ""
+"|TS| のデフォルトのインストール先プレフィックスは ``/usr/local/ts`` です。"
+
+#: ../../preface/index.en.rst:69
+msgid "Bracketed Monospace"
+msgstr "括弧書きの等幅"
+
+#: ../../preface/index.en.rst:63
+msgid ""
+"Represents variables for which you should substitute a value in file "
+"content or commands."
+msgstr "ファイルやコマンド内の置き換えるべき値となる変数を表します。"
+
+#: ../../preface/index.en.rst:67
+msgid ""
+"Running the command ``traffic_line -r <name>`` will display the current "
+"value of a performance statistic, where ``<name>`` is the statistic whose "
+"value you wish to view."
+msgstr ""
+"``traffic_line -r <name>`` コマンドを実行すると現在のパフォーマンス統計の値"
+"を表示します。``<name>`` の部分は確認したい統計値の名称です。"
+
+#: ../../preface/index.en.rst:72
+msgid "Ellipsis"
+msgstr "省略"
+
+#: ../../preface/index.en.rst:72
+msgid "Indicates the omission of irrelevant or unimportant information."
+msgstr "無用または重要ではない情報が省略されていることを示します。"
+
+#: ../../preface/index.en.rst:77
+msgid "Other Resources"
+msgstr "その他のリソース"
+
+#: ../../preface/index.en.rst:80
+msgid "Websites"
+msgstr "ウェブサイト"
+
+#: ../../preface/index.en.rst:87
+msgid "Official Website"
+msgstr "公式ウェブサイト"
+
+#: ../../preface/index.en.rst:83
+msgid "https://trafficserver.apache.org/"
+msgstr "https://trafficserver.apache.org/"
+
+#: ../../preface/index.en.rst:85
+msgid ""
+"The official |ATS| project website is hosted by the |ASF|. Documentation, "
+"software downloads, community resource links, security announcements, and "
+"more are located, or linked to, at the site."
+msgstr ""
+"|ATS| プロジェクトの公式ウェブサイトは |ASF| によってホストされています。ド"
+"キュメント、ダウンロードするソフトウェア、コミュニティのリソースのリンク、セ"
+"キュリティに関する告知、その他諸々がここにあるかここからリンクされています。"
+
+#: ../../preface/index.en.rst:94
+msgid "Online Documentation"
+msgstr "オンラインドキュメント"
+
+#: ../../preface/index.en.rst:90
+msgid "https://docs.trafficserver.apache.org/"
+msgstr "https://docs.trafficserver.apache.org/"
+
+#: ../../preface/index.en.rst:92
+msgid ""
+"The most up to date version of the documentation is hosted at |RTD|, with "
+"built-in search functionality. Documentation for past releases is also "
+"available."
+msgstr ""
+"一番更新されているドキュメントは |RTD| にホストされており、組み込みの検索機"
+"能もあります。過去のリリースのドキュメントも参照できます。"
+
+#: ../../preface/index.en.rst:101
+msgid "Jira Bug Tracker"
+msgstr "Jira バグ追跡システム"
+
+#: ../../preface/index.en.rst:97
+msgid "https://issues.apache.org/jira/browse/TS"
+msgstr "https://issues.apache.org/jira/browse/TS"
+
+#: ../../preface/index.en.rst:99
+msgid ""
+"If you wish to report bugs, or look for open issues on which you may help "
+"contribute to the |TS| project, please visit the public Jira bug tracker "
+"site."
+msgstr ""
+"もしバグを報告したい場合、もしくは |TS| プロジェクトに対して貢献できるかもし"
+"れない未解決の課題を探す場合は Jira バグ追跡システムを参照してください。"
+
+#: ../../preface/index.en.rst:104
+msgid "Mailing Lists"
+msgstr "メーリングリスト"
+
+#: ../../preface/index.en.rst:111
+msgid "User List"
+msgstr "ユーザ向けメーリングリスト"
+
+#: ../../preface/index.en.rst:107
+msgid ""
+"The user's mailing list offers support and discussions oriented to users "
+"and administrators of the |TS| software."
+msgstr ""
+"ユーザ向けメーリングリストは |TS| のユーザや管理者向けのサポートや議論を行う"
+"場所です。"
+
+#: ../../preface/index.en.rst:110
+msgid ""
+"Send an email to ``users-subscribe@trafficserver.apache.org`` to join the "
+"list."
+msgstr ""
+"メーリングリストに加わるには ``users-subscribe@trafficserver.apache.org`` に"
+"メールを送信してください。"
+
+#: ../../preface/index.en.rst:120
+msgid "Developer List"
+msgstr "開発者向けメーリングリスト"
+
+#: ../../preface/index.en.rst:114
+msgid ""
+"If you have questions about, or wish to discuss, the development of |TS|, "
+"plugins for the server, or other developer-oriented matters, the developer "
+"list offers an active list of both core project members and external "
+"contributors."
+msgstr ""
+"|TS| やそのプラグイン、もしくはその他の開発に関わる質問がある場合や議論を行"
+"いたい場合、開発者向けメーリングリストを利用してください。ここはプロジェクト"
+"のコアメンバーと外部のコントリビューターで賑わっています。"
+
+#: ../../preface/index.en.rst:119
+msgid ""
+"Send an email to ``dev-subscribe@trafficserver.apache.org`` to join the "
+"list."
+msgstr ""
+"メーリングリストに加わるには ``dev-subscribe@trafficserver.apache.org`` に"
+"メールを送信してください。"
+
+#: ../../preface/index.en.rst:123
+msgid "Internet Relay Chat (IRC)"
+msgstr "インターネットリレーチャット (IRC)"
+
+#: ../../preface/index.en.rst:125
+msgid ""
+"The ``#traffic-server`` channel on ``irc.freenode.net`` is the official IRC "
+"resource for the |TS| project, and boasts active discussions."
+msgstr ""
+"``irc.freenode.net`` の ``#traffic-server`` が |TS| プロジェクトの公式の "
+"IRC チャンネルで、活発な議論が行われています。"
+
+#: ../../preface/index.en.rst:129
+msgid "Community Forums"
+msgstr "コミュニティフォーラム"

@@ -1,0 +1,587 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:21
+msgid "Cache Key Manipulation (cachekey)"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:24
+msgid "Description"
+msgstr "解説"
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:26
+msgid ""
+"This plugin allows some common cache key manipulations based on various "
+"HTTP request components.  It can"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:28
+msgid ""
+"sort query parameters to prevent query parameters reordereding from being a "
+"cache miss"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:29
+msgid ""
+"ignore specific query parameters from the cache key by name or regular "
+"expression"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:30
+msgid "ignore all query parameters from the cache key"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:31
+msgid ""
+"only use specific query parameters in the cache key by name or regular "
+"expression"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:32
+msgid "include headers or cookies by name"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:33
+msgid "capture values from the ``User-Agent`` header."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:34
+msgid ""
+"classify request using ``User-Agent`` and a list of regular expressions"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:37
+msgid "Plugin parameters"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:39
+msgid ""
+"All parameters are optional, and if not used, their default values are as "
+"mentioned below. Boolean values default to ``false`` and the rest default "
+"to an empty list. Examples of each parameter's usage can be found below."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:47
+#: ../../../admin-guide/plugins/cachekey.en.rst:172
+msgid "URI query parameters"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:42
+msgid ""
+"If no query related plugin parameters are used, the query is included as "
+"received from the UA in the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:43
+msgid ""
+"``--exclude-params`` (default: empty list) - comma-separated list of query "
+"params to be black-listed in the cache key. If the list is empty then no "
+"black-list is applied (no query parameters will be excluded from the cache "
+"key). The exclude list overrides the include list."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:44
+msgid ""
+"``--include-params`` (default: empty list) - comma-separated list of query "
+"params to be white-listed in the cache key. If the list is empty then no "
+"white-list is applied (all query parameters will be included in the cache "
+"key)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:45
+msgid ""
+"``--include-match-params`` (default: empty list) - regular expression "
+"matching query parameter names which will be white-listed in the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:46
+msgid ""
+"``--exclude-match-params`` (default: empty list) - regular expression "
+"matching query parameter names which will be black-listed in the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:47
+msgid ""
+"``--remove-all-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, "
+"default: ``false``) - if equals ``true`` then all query parameters are "
+"removed (the whole query string) and all other URI query parameter related "
+"settings (if used) will have no effect."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:48
+msgid ""
+"``--sort-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, default: "
+"``false``) - if equals ``true`` then all query parameters are sorted in an "
+"increasing case-sensitive order"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:49
+msgid "HTTP headers"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:50
+msgid ""
+"``--include-headers`` (default: empty list) - comma separated list of "
+"headers to be added to the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:52
+msgid "HTTP cookies"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:52
+msgid ""
+"``--include-cookies`` (default: empty list) - comma separated list of "
+"cookies to be added to the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:58
+msgid "Host name, port and custom prefix"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:55
+msgid ""
+"Host and port are added to the beginning of the cache key by default unless "
+"a custom preffix by using ``--static-prefix`` or ``--capture-prefix`` "
+"plugin parameters is specified."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:56
+msgid ""
+"``--static-prefix`` (default: empty string) - if specified and not an empty "
+"string the value will be added to the beginning of the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:57
+msgid ""
+"``--capture-prefix=<capture_definition>`` (default: empty string) - if "
+"specified and not an empty string will capture strings from ``host:port`` "
+"based on the ``<capture_definition>`` (see below) and add them to the "
+"beginning of the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:58
+msgid ""
+"If ``--static-prefix`` and ``--capture-prefix`` are used together then the "
+"value of ``--static-prefix`` is added first to the cache key, followed by "
+"the ``--capture-prefix`` capturing/replacement results."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:62
+msgid "``User-Agent`` classification"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:61
+msgid ""
+"``--ua-whitelist=<classname>:<filename>`` (default: empty string) - loads a "
+"regex patterns list from a file ``<filename>``, the patterns are matched "
+"against the ``User-Agent`` header and if matched ``<classname>`` is added "
+"it to the key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:62
+msgid ""
+"``--ua-blacklist=<classname>:<filename>`` (default: empty string) - loads a "
+"regex patterns list from a file ``<filename>``, the patterns are matched "
+"against the ``User-Agent`` header and if **not** matched ``<classname>`` is "
+"added it to the key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:65
+msgid "``User-Agent`` regex capturing and replacement"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:65
+msgid ""
+"``--ua-capture=<capture_definition>`` (default: empty string) - if "
+"specified and not an empty string will capture strings from ``User-Agent`` "
+"header based on ``<capture_definition>`` (see below) and will add them to "
+"the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:69
+msgid "``<capture_definition>`` can be in the following formats"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:68
+msgid ""
+"``<regex>`` - ``<regex>`` defines regex capturing groups, up to 10 captured "
+"strings based on ``<regex>`` will be added to the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:69
+msgid ""
+"``/<regex>/<replacement>/`` - ``<regex>`` defines regex capturing groups, "
+"``<replacement>`` defines a pattern where the captured strings referenced "
+"with ``$0`` ... ``$9`` will be substituted and the result will be added to "
+"the cache key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:72
+msgid "Cache Key Structure"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:88
+msgid ""
+"With the current implementation the following cache key components are "
+"always present in the cache key:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:88
+msgid ""
+"``prefix or host:port`` - included at the beginning of the cache key. If "
+"neither ``--static-prefix`` nor ``--capture-prefix`` are specified or are "
+"empty strings then ``host:port`` from the request URI are used."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:89
+msgid "``path`` - URI path included **as is** (but can be empty)"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:94
+msgid ""
+"The rest of the cache key components are optional and their presence in the "
+"cache key depends on the plugin configuration and the HTTP requests handled "
+"by the plugin:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:91
+msgid ""
+"``UA-class`` - a single class name, result of UA classification defined by "
+"``--ua-whitelist`` and ``--ua-blacklist`` parameters."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:92
+msgid ""
+"``UA-captures`` - a result of the regex capture (and possibly replacement) "
+"from the first ``User-Agent`` header."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:93
+msgid ""
+"``headers`` - always sorted list of headers defined by ``--include-headers``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:94
+msgid ""
+"``cookies`` - always sorted list of headers defined by ``--include-cookies``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:95
+msgid ""
+"``query`` - the request URI query **as is** or a list of query parameters "
+"proccessed by this plugin as configured."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:99
+msgid ""
+"The following URI components are ignored (not included in the cache key):"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:97
+msgid "``scheme:``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:98
+msgid "``user:password@`` from the ``authority`` URI component"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:99
+msgid "``#fragment``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:101
+msgid ""
+"The following is an example of how the above sample keys were generated "
+"(``Sample 1`` and ``Sample 2``)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:103
+msgid "Traffic server configuration ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:123
+msgid "HTTP request ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:158
+msgid "The response header ``X-Cache-Key`` header contains the cache key: ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:162
+msgid ""
+"The ``xdebug.so`` plugin and ``X-Debug`` request header are used just to "
+"demonstrate basic cache key troubleshooting."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:164
+msgid ""
+"If we add ``--static-prefix=nice_custom_prefix`` to the remap rule then the "
+"cache key would look like the following: ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:169
+msgid "Usage examples"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:175
+msgid "Ignore the query string (all query parameters)"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:176
+msgid ""
+"The following added to the remap rule will ignore the query, removing it "
+"from the cache key. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:181
+msgid "Cache key normalization by sorting the query parameters"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:182
+msgid ""
+"The following will normalize the cache key by sorting the query "
+"parameters. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:186
+msgid ""
+"If the URI has the following query string ``c=1&a=1&b=2&x=1&k=1&u=1&y=1`` "
+"the cache key will use ``a=1&b=2&c=1&k=1&u=1&x=1&y=1``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:189
+msgid "Ignore (exclude) certain query parameters"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:191
+msgid ""
+"The following will make sure query parameters `a` and `b` will **not** be "
+"used when constructing the cache key. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:195
+#: ../../../admin-guide/plugins/cachekey.en.rst:203
+msgid ""
+"If the URI has the following query string ``c=1&a=1&b=2&x=1&k=1&u=1&y=1`` "
+"the cache key will use ``c=1&x=1&k=1&u=1&y=1``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:198
+msgid ""
+"Ignore (exclude) certain query parameters from the cache key by using "
+"regular expression (PCRE)"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:199
+msgid ""
+"The following will make sure query parameters ``a`` and ``b`` will **not** "
+"be used when constructing the cache key. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:206
+msgid "Include only certain query parameters"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:207
+msgid ""
+"The following will make sure only query parameters `a` and `c` will be used "
+"when constructing the cache key and the rest will be ignored. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:211
+#: ../../../admin-guide/plugins/cachekey.en.rst:219
+msgid ""
+"If the URI has the following query string ``c=1&a=1&b=2&x=1&k=1&u=1&y=1`` "
+"the cache key will use ``c=1&a=1``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:214
+msgid ""
+"Include only certain query parameters by using regular expression (PCRE)"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:215
+msgid ""
+"The following will make sure only query parameters ``a`` and ``c`` will be "
+"used when constructing the cache key and the rest will be ignored. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:222
+msgid ""
+"White-list + black-list certain parameters using multiple parameters in the "
+"same remap rule."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:223
+#: ../../../admin-guide/plugins/cachekey.en.rst:236
+#: ../../../admin-guide/plugins/cachekey.en.rst:249
+msgid ""
+"If the plugin is used with the following plugin parameters in the remap "
+"rule: ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:232
+#: ../../../admin-guide/plugins/cachekey.en.rst:245
+#: ../../../admin-guide/plugins/cachekey.en.rst:258
+msgid ""
+"and if the URI has the following query string "
+"``c=1&a=1&b=2&x=1&k=1&u=1&y=1`` the cache key will use ``c=1&b=1``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:235
+msgid ""
+"White-list + black-list certain parameters using multiple parameters in the "
+"same remap rule and regular expressions (PCRE)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:248
+msgid ""
+"Mixing --include-params, --exclude-params, --include-match-param and --"
+"exclude-match-param"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:261
+msgid "HTTP Headers"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:264
+msgid "Include certain headers in the cache key"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:265
+msgid ""
+"The following headers ``HeaderA`` and ``HeaderB`` will be used when "
+"constructing the cache key and the rest will be ignored. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:270
+msgid "HTTP Cookies"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:273
+msgid "Include certain cookies in the cache key"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:275
+msgid ""
+"The following headers ``CookieA`` and ``CookieB`` will be used when "
+"constructing the cache key and the rest will be ignored. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:281
+msgid "Host name, port and static prefix"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:283
+msgid "Replacing host:port with a static cache key prefix"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:284
+#: ../../../admin-guide/plugins/cachekey.en.rst:292
+#: ../../../admin-guide/plugins/cachekey.en.rst:300
+msgid ""
+"If the plugin is used with the following plugin parameter in the remap "
+"rule. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:288
+msgid ""
+"the cache key will be prefixed with ``/static_prefix`` instead of ``host:"
+"port`` when ``--static-prefix`` is not used."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:291
+msgid ""
+"Capturing from the host:port and adding it to beginning of cache key prefix"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:296
+msgid ""
+"the cache key will be prefixed with ``/test_prefix/80`` instead of "
+"``test_prefix_371.example.com:80`` when ``--capture-prefix`` is not used."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:299
+msgid "Combining --static-prefix and --capture-prefix"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:304
+msgid ""
+"the cache key will be prefixed with ``/static_prefix/test_prefix/80`` "
+"instead of ``test_prefix_371.example.com:80`` when neither ``--capture-"
+"prefix`` nor ``--static-prefix`` are used."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:307
+msgid "User-Agent capturing, replacement and classification"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:308
+msgid "Let us say we have a request with ``User-Agent`` header: ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:316
+msgid "Capture PCRE groups from User-Agent header"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:317
+#: ../../../admin-guide/plugins/cachekey.en.rst:326
+#: ../../../admin-guide/plugins/cachekey.en.rst:335
+#: ../../../admin-guide/plugins/cachekey.en.rst:350
+msgid "If the plugin is used with the following plugin parameter::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:322
+msgid ""
+"then ``Mozilla/5.0`` and ``AppleWebKit/537.75.14`` will be used when "
+"constructing the key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:325
+msgid "Capture and replace groups from User-Agent header"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:331
+msgid ""
+"then ``Mozilla/5.0_AppleWebKit/537.75.14`` will be used when constructing "
+"the key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:334
+msgid "User-Agent white-list classifier"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:340
+msgid "and if ``browser_agents.config`` contains: ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:346
+#: ../../../admin-guide/plugins/cachekey.en.rst:361
+msgid "then ``browser`` will be used when constructing the key."
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:349
+msgid "User-Agent black-list classifier"
+msgstr ""
+
+#: ../../../admin-guide/plugins/cachekey.en.rst:355
+msgid "and if ``tool_agents.config`` contains: ::"
+msgstr ""

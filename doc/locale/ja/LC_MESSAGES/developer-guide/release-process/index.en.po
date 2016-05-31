@@ -1,0 +1,334 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/release-process/index.en.rst:23
+msgid "Release Process"
+msgstr "リリースプロセス"
+
+#: ../../../developer-guide/release-process/index.en.rst:25
+msgid ""
+"Managing a release is easiest in an environment that is as clean as "
+"possible. For this reason, cloning the code base in to a new directory for "
+"the release process is recommended."
+msgstr ""
+"リリースの管理はできるだけクリーンな環境で行うのが簡単です。この理由により、"
+"リリースを行う際にはコードを新しいディレクトリにクローンすることを推奨しま"
+"す。"
+
+#: ../../../developer-guide/release-process/index.en.rst:30
+msgid "Requirements"
+msgstr "必要なもの"
+
+#: ../../../developer-guide/release-process/index.en.rst:32
+msgid "A system for git and building."
+msgstr "git とビルドのためのシステム"
+
+#: ../../../developer-guide/release-process/index.en.rst:34
+msgid ""
+"A cryptographic key that has been signed by at least two other PMC members. "
+"This should be preferentially associated with your ``apache.org`` email "
+"address but that is not required."
+msgstr ""
+"少なくとも他の二人の PMC メンバーによって署名された暗号鍵。これは ``apache."
+"org`` の E メールアドレスに紐付いていることが好ましいですが、必ずしもそうで"
+"ある必要はありません。"
+
+#: ../../../developer-guide/release-process/index.en.rst:41
+msgid "Release Candidate"
+msgstr "リリース候補"
+
+#: ../../../developer-guide/release-process/index.en.rst:43
+msgid ""
+"The first step in a release is making a release candidate. This is "
+"distributed to the community for validation before the actual release."
+msgstr ""
+"リリースの最初のステップはリリース候補を作成することです。これは実際のリリー"
+"スに先立って検証のためにコミュニティに対して配布するものです。"
+
+#: ../../../developer-guide/release-process/index.en.rst:47
+msgid "Document"
+msgstr "ドキュメント"
+
+#: ../../../developer-guide/release-process/index.en.rst:49
+msgid ""
+"Gather up information about the changes for the release. The ``CHANGES`` "
+"file is a good starting point. You may also want to check the commits since "
+"the last release. The primary purpose of this is to generate a list of the "
+"important changes since the last release."
+msgstr ""
+"これから行うリリースでの変更点について情報を収集してください。``CHANGES`` "
+"ファイルから始めるのが良いでしょう。最後のリリース以降のコミットを確認しても"
+"よいでしょう。これの主な目的は最後のリリース以降の重要な変更の一覧を生成する"
+"ことです。"
+
+#: ../../../developer-guide/release-process/index.en.rst:54
+msgid ""
+"Create or update a page on the Wiki for the release. If it is a major or "
+"minor release it should have its own page. Use the previous release page as "
+"a template. Point releases should get a section at the end of the "
+"corresponding release page."
+msgstr ""
+"Wiki 上でこれから行うリリースについてのページを作成もしくは更新してくださ"
+"い。もしそれがメジャーもしくはマイナーリリースである場合、そのリリース用の個"
+"別のページを用意すべきです。過去のリリースページをテンプレートとして使用して"
+"ください。ポイントリリースの場合は対応するリリースページの末尾に章を設けるべ"
+"きです。"
+
+#: ../../../developer-guide/release-process/index.en.rst:59
+msgid ""
+"Write an announcement for the release. This will contain much of the same "
+"information that is on the Wiki page but more concisely. Check the `mailing "
+"list archives <http://mail-archives.apache.org/mod_mbox/trafficserver-dev/"
+">`_ for examples to use as a base."
+msgstr ""
+"リリースについての告知文を書いてください。これは Wiki に記載した情報の多くと"
+"同じ内容となりますが、より簡潔なものになります。ベースとして使う例は `メーリ"
+"ングリストのアーカイブ <http://mail-archives.apache.org/mod_mbox/"
+"trafficserver-dev/>`_ を確認してください。"
+
+#: ../../../developer-guide/release-process/index.en.rst:65
+msgid "Build"
+msgstr "ビルド"
+
+#: ../../../developer-guide/release-process/index.en.rst:67
+msgid "Go to the top level source directory."
+msgstr "ソースディレクトリの最上位に移動してください。"
+
+#: ../../../developer-guide/release-process/index.en.rst:69
+msgid ""
+"Check the version in ``configure.ac``. There are two values near the top "
+"that need to be set, ``TS_VERSION_S`` and ``TS_VERSION_N``. These are the "
+"release version number in different encodings."
+msgstr ""
+"``configure.ac`` に書かれているバージョンを確認してください。設定する必要の"
+"ある ``TS_VERSION_S`` と ``TS_VERSION_N`` という二つの値は上のほうにありま"
+"す。"
+
+#: ../../../developer-guide/release-process/index.en.rst:73
+msgid ""
+"Check the variable ``RC`` in the top level ``Makefile.am``. This should be "
+"the point release value. This needs to be changed for every release "
+"candidate. The first release candidate is ``0`` (zero)."
+msgstr ""
+"トップレベルの ``Makefile.am`` に書かれている ``RC`` 変数を確認してくださ"
+"い。これはポイントリリースの値であるはずです。この値はリリース候補ごとに変更"
+"される必要があります。最初の候補は ``0`` ( ゼロ ) です。"
+
+#: ../../../developer-guide/release-process/index.en.rst:77
+msgid "Execute the following commands to make the distribution files. ::"
+msgstr "以下のコマンドを実行して配布するファイルを作成してください。 ::"
+
+#: ../../../developer-guide/release-process/index.en.rst:83
+msgid ""
+"These steps will create the distribution files and sign them using your "
+"key. Expect to be prompted twice for your passphrase unless you use an ssh "
+"key agent. If you have multiple keys you will need to set the default "
+"appropriately beforehand, as no option will be provided to select the "
+"signing key. The files should have names that start with ``trafficserver-X."
+"Y.Z-rcA.tar.bz2`` where ``X.Y.Z`` is the version and ``A`` is the release "
+"candidate counter. There should be four such files, one with no extension "
+"and three others with the extensions ``asc``, ``md5``, and ``sha1``. This "
+"will also create a signed git tag of the form ``X.Y.Z-rcA``."
+msgstr ""
+"これらのステップにより、配布するファイルの作成とそれらに対するあなたの鍵によ"
+"る署名が行われます。SSH の鍵エージェントを使用していなければ、二回パスフレー"
+"ズを尋ねられるはずです。もし複数の鍵を持っている場合は、署名に使う鍵を選択す"
+"るオプションは無いので、予めデフォルトの鍵を適切に設定しておく必要がありま"
+"す。作成されたファイルの名前は ``trafficserver−X.Y.Z−rcA.tar.bz2`` で始ま"
+"り、``X.Y.Z`` はバージョン、そして ``A`` はリリース候補の連番になります。そ"
+"のようなファイルが四つあり、一つは拡張子無し、他の三つは ``asc``、``md5``、"
+"``sha1`` という拡張子を持っているはずです。この手順は ``X.Y.Z−rcA`` という形"
+"式の git のタグも作成します。"
+
+#: ../../../developer-guide/release-process/index.en.rst:94
+msgid "Distribute"
+msgstr "配布"
+
+#: ../../../developer-guide/release-process/index.en.rst:96
+msgid ""
+"The release candidate files should be uploaded to some public storage. Your "
+"personal storage on *people.apach.org* is a reasonable location to use."
+msgstr ""
+"リリース候補のファイルはどこか公開されたストレージにアップロードされるべきで"
+"す。*people.apache.org* 上にあるあなた個人のストレージはこれに妥当な場所で"
+"す。"
+
+#: ../../../developer-guide/release-process/index.en.rst:99
+msgid ""
+"Send the release candiate announcement to the *users* and *dev* mailinging "
+"lists, noting that it is a release *candidate* and providing a link to the "
+"distribution files you uploaded. This announcement should also call for a "
+"vote on the candidate, generally with a 72 hours time limit."
+msgstr ""
+"リリース候補の告知を *users* と *dev* のメーリングリストに送信し、それがリ"
+"リース *候補* であることを知らせ、アップロードした配布ファイルへのリンクを伝"
+"えてください。この告知は候補への投票を呼びかけるものでもあり、通常は 72 時間"
+"の時間制限で行われます。"
+
+#: ../../../developer-guide/release-process/index.en.rst:104
+msgid ""
+"If the voting was successful (at least three \"+1\" votes and no \"-1\" "
+"votes), proceed to :ref:`release-management-official-release`. Otherwise, "
+"repeat the :ref:`release-management-release-candidate` process."
+msgstr ""
+"もし投票が成功 ( 少なくとも三つの \"+1\" の投票と \"−1\" の投票が存在しない"
+"こと ) した場合は、 :ref:`release-management-official-release` に進んでくだ"
+"さい。さもなければ :ref:`release-management-release-candidate` の手順を繰り"
+"返してください。"
+
+#: ../../../developer-guide/release-process/index.en.rst:111
+msgid "Official Release"
+msgstr "公式リリース"
+
+#: ../../../developer-guide/release-process/index.en.rst:113
+msgid "Build the distribution files with the command ::"
+msgstr "配布ファイルを次のコマンドでビルドしてください。 ::"
+
+#: ../../../developer-guide/release-process/index.en.rst:117
+msgid ""
+"Be sure to not have changed anything since the release candidate was built "
+"so the checksums are identical. This will create a signed git tag of the "
+"form ``X.Y.Z`` and produce the distribution files. Push the tag to the ASF "
+"repository with the command ::"
+msgstr ""
+"チェックサムが同一であり、リリース候補のビルド以降に何も変更がないことを確認"
+"してください。この手順により ``X.Y.Z`` という形式の署名された git のタグが作"
+"成され、配付ファイルが生成されます。このタグを次のコマンドで ASF のリポジト"
+"リにプッシュしてください。 ::"
+
+#: ../../../developer-guide/release-process/index.en.rst:124
+msgid ""
+"This presumes ``origin`` is the name for the ASF remote repository which is "
+"correct if you originally clone from the ASF repository."
+msgstr ""
+"``origin`` は ASF のリモートリポジトリの名前であると仮定しており、もし元々 "
+"ASF のリポジトリをクローンしてきたのであれば適切です。"
+
+#: ../../../developer-guide/release-process/index.en.rst:127
+msgid ""
+"The distribution files must be added to an SVN repository. This can be "
+"accessed with the command::"
+msgstr ""
+"配付ファイルは SVN リポジトリに追加されなければなりません。これには次のコマ"
+"ンドでアクセスできます。"
+
+#: ../../../developer-guide/release-process/index.en.rst:132
+msgid ""
+"All four of the distribution files go here. If you are making a point "
+"release then you should also remove the distribution files for the previous "
+"release. Allow 24 hours for the files to be distributed through the ASF "
+"infrastructure."
+msgstr ""
+"全四つの配付ファイルはここに入ります。もしポイントリリースをする際には過去の"
+"リリースの配付ファイルを削除すべきです。配付ファイルが ASF のインフラを通じ"
+"て配信されるまで 24 時間待ってください。"
+
+#: ../../../developer-guide/release-process/index.en.rst:136
+msgid ""
+"The Traffic Server website must be updated. This is an SVN repository which "
+"you can access with ::"
+msgstr ""
+"Traffic Server のウェブサイトを更新しなければなりません。これは次のコマンド"
+"でアクセスできる SVN リポジトリ上にあります。"
+
+#: ../../../developer-guide/release-process/index.en.rst:141
+msgid "The files of interest are in the ``content`` directory."
+msgstr "注目すべきファイルは ``content`` ディレクトリにあります。"
+
+#: ../../../developer-guide/release-process/index.en.rst:145
+#, fuzzy
+msgid "``index.html``"
+msgstr "index.html"
+
+#: ../../../developer-guide/release-process/index.en.rst:144
+msgid ""
+"This is the front page. The places to edit here are any security "
+"announcements at the top and the \"News\" section."
+msgstr ""
+"このファイルはフロントページです。ここで編集するのは上部の \"News\" セクショ"
+"ンにあるセキュリティに関する告知の部分です。"
+
+#: ../../../developer-guide/release-process/index.en.rst:148
+#, fuzzy
+msgid "``downloads.en.mdtext``"
+msgstr "downloads.en.mdtext"
+
+#: ../../../developer-guide/release-process/index.en.rst:148
+msgid "Update the downloads page to point to the new download objects."
+msgstr "ダウンロードページが新しいファイルを向くように更新してください。"
+
+#: ../../../developer-guide/release-process/index.en.rst:150
+msgid "After making changes, commit them and then run ::"
+msgstr ""
+"これらの変更を行ったら、それらをコミットし、次のコマンドを実行してくださ"
+"い。 ::"
+
+#: ../../../developer-guide/release-process/index.en.rst:154
+msgid "On the ``people.apache.org`` host."
+msgstr "これは ``people.apache.org`` のホスト上で行ってください。"
+
+#: ../../../developer-guide/release-process/index.en.rst:156
+msgid ""
+"If needed, update the Wiki page for the release to point at the release "
+"distribution files."
+msgstr ""
+"もし必要であれば、Wiki のリリースページもリリースしたファイルを向くように更"
+"新してください。"
+
+#: ../../../developer-guide/release-process/index.en.rst:159
+msgid ""
+"Update the announcement, if needed, to refer to the release distribution "
+"files and remove the comments concerning the release candidate. This "
+"announcement should be sent to the *users* and *dev* mailing lists. It "
+"should also be sent to the ASF announcement list, which must be done using "
+"an ``apache.org`` email address."
+msgstr ""
+"告知文を更新し、必要であれば、リリースした配布ファイルを参照し、リリース候補"
+"についてのコメントを削除してください。この告知文は *users* と *dev* のメーリ"
+"ングリストに送信されるべきです。また、ASF の告知用メーリングリストにも送信さ"
+"れるべきです。これは ``apache.org`` の E メールアドレスで行われなければなり"
+"ません。"
+
+#: ../../../developer-guide/release-process/index.en.rst:165
+msgid "Finally, update various files after the release:"
+msgstr "最後に、リリースを終えたら各種ファイルを更新してください。:"
+
+#: ../../../developer-guide/release-process/index.en.rst:167
+msgid ""
+"The ``STATUS`` file for master and for the release branch to include this "
+"version."
+msgstr ""
+"master とリリースブランチの ``STATUS`` ファイルに今回のバージョンを含めてく"
+"ださい。"
+
+#: ../../../developer-guide/release-process/index.en.rst:169
+msgid "The ``CHANGES`` file to have a header for the next version."
+msgstr "``CHANGES`` ファイルに次のバージョンのヘッダを追加してください。"
+
+#: ../../../developer-guide/release-process/index.en.rst:171
+msgid "``configure.ac`` to be set to the next version."
+msgstr "``configure.ac`` に次のバージョンを設定してください。"
+
+#: ../../../developer-guide/release-process/index.en.rst:173
+msgid ""
+"In the top level ``Makefile.am`` change ``RC`` to have the value ``0``."
+msgstr ""
+"トップレベルにある ``Makefile.am`` の ``RC`` の値を ``0`` に変更してくださ"
+"い。"

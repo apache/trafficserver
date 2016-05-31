@@ -1,0 +1,151 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:23
+msgid "Debug Tags"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:25
+msgid ""
+"Use the API ``void TSDebug (const char *tag, const char *format_str, ...)`` "
+"to add traces in your plugin. In this API:"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:29
+msgid ""
+"``tag`` is the Traffic Server parameter that enables Traffic Server to "
+"print out *``format_str``*"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:32
+msgid ""
+"``...`` are variables for *``format_str``* in the standard ``printf`` style."
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:35
+msgid ""
+"Run Traffic Server with the ``-Ttag`` option. For example, if the tag is "
+"``my-plugin``, then the debug output goes to ``traffic.out.``\\ See below:"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:43
+msgid ""
+"Set the following variables in :file:`records.config` (in the Traffic "
+"Server ``config`` directory):"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:51
+msgid "In this case, debug output goes to ``traffic.out``."
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:53
+msgid "Example:"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:59
+msgid ""
+"The statement ``\"Starting my-plugin at <time>\"`` appears whenever you run "
+"Traffic Server with the ``my-plugin`` tag:"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:67
+msgid "Other Useful Internal Debug Tags"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:69
+msgid ""
+"Embedded in the base Traffic Server code are many debug tags for internal "
+"debugging purposes. These can also be used to follow Traffic Server "
+"behavior for testing and analysis."
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:73
+msgid ""
+"The debug tag setting (``-T`` and ``proxy.config.diag.debug.tags``) is a "
+"anchored regular expression against which the tag for a specific debug "
+"message is matched. This means the value \"http\" matches debug emssages "
+"with the tag \"http\" but also \"http\\_seq\" and \"http\\_trans\". If you "
+"want multiple tags then use a pipe symbol to separate the tags. For example "
+"\"http\\_tproxy\\|dns\\|hostdb\" will match any of the message tags \"http"
+"\\_tproxy\", \"dns\", \"hostdb\", or \"dns\\_srv\" (but not \"http\\_trans"
+"\" nor \"splitdns\")."
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:82
+msgid "Some of the useful HTTP debug tags are:"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:84
+msgid "``http_hdrs`` - traces all incoming and outgoing HTTP headers."
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:86
+msgid "``http_trans`` - traces actions in an HTTP transaction."
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:88
+msgid "``http_seq`` - traces the sequence of the HTTP state machine."
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:90
+msgid "``http_tproxy`` - transparency related HTTP events"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:92
+msgid "``dns`` - DNS operations"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:94
+msgid "``hostdb`` - Host name lookup"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:96
+msgid "``iocore_net`` - Socket and low level IO (very voluminous)"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:98
+msgid "``socket`` - socket operations"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:100
+msgid "``ssl`` - SSL related events"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:102
+msgid ""
+"``cache`` - Cache operations (many subtags, examine the output to narrow "
+"the tag set)"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:105
+msgid "``cache_update`` - Cache updates including writes"
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:107
+msgid "``cache_read`` - Cache read events."
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:109
+msgid "``dir_probe`` - Cache searches."
+msgstr ""
+
+#: ../../developer-guide/debugging/debug-tags.en.rst:111
+msgid "``sdk`` - gives some warning concerning API usage."
+msgstr ""

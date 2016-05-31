@@ -1,0 +1,291 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic Server package.
+#
+# Translators:
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.x\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-06 11:22+0900\n"
+"PO-Revision-Date: 2016-02-13 12:45+0000\n"
+"Last-Translator: Masaori Koshiba <masaori@apache.org>\n"
+"Language-Team: Japanese (http://www.transifex.com/trafficserver/apache-"
+"traffic-server-6x/language/ja/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:2
+msgid "Inline on a Linux Bridge"
+msgstr "Linux ブリッジ上でのインライン"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:23
+msgid ""
+"A Linux can be configured to operate in `bridge mode <http://www."
+"linuxfoundation.org/collaborate/workgroups/networking/bridge>`_. Two or "
+"more physical interfaces are assigned to the bridge. A single IP address is "
+"shared across the interfaces. By default any packet that arrives on one "
+"interface is immediately routed out another bridge interface."
+msgstr ""
+"Linux は\\ `ブリッジモード <http://www.linuxfoundation.org/collaborate/"
+"workgroups/networking/bridge>`_\\ で動作するように設定できます。二つ以上の物"
+"理インターフェースがブリッジに割り当てられます。一つの IP アドレスはそれらの"
+"インターフェース間で共有されます。デフォルトでは一つのインターフェースに到着"
+"したあらゆるパケットは直ちにもう一つのブリッジインターフェースに送り出されま"
+"す。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:29
+msgid "Linux packages required:"
+msgstr "必要な Linux のパッケージ"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:31
+msgid "bridge-utils"
+msgstr "bridge-utils"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:32
+msgid "ebtables"
+msgstr "ebtables"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:34
+msgid ""
+"In our example of setting up bridge mode we will use a local address of "
+"192.168.1.11/24 and interfaces ``eth0`` and ``eth1`` as the bridge "
+"interfaces (more detailed documentation is available `here <http://www.tldp."
+"org/HOWTO/BRIDGE-STP-HOWTO/preparing-the-bridge.html>`_). You may omit the "
+"'#' character and everything after it. ::"
+msgstr ""
+"ブリッジモードの設定例では 192.168.1.11/24 のローカルアドレスとインター"
+"フェース ``eth0`` と ``eth1`` をブリッジインターフェースとして使用します "
+"( より詳細なドキュメントは `ここ <http://www.tldp.org/HOWTO/BRIDGE-STP-"
+"HOWTO/preparing-the-bridge.html>`_ にあります) 。'#' とその後ろのものはすべ"
+"て省略できます。 ::"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:49
+msgid ""
+"If you have not already done so, remember to add a default route, such as "
+"this one for a gateway of 192.168.1.1. ::"
+msgstr ""
+"もしまだ済ませていない場合は、これが 192.168.1.1 のゲートウェイのためのもの"
+"であると、デフォルト経路を追加することを覚えておいてください。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:54
+msgid ""
+"At this point it is a good idea to test connectivity to verify the basic "
+"bridge is functional."
+msgstr ""
+"この時点で基本的なブリッジが動作することを確認するために接続性をテストしてお"
+"くと良いです。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:57
+msgid ""
+"Once the bridge is verified to work, this is the basic traffic pattern of "
+"interest."
+msgstr ""
+"ブリッジが動作することを確認できたなら、これがお望みの基本的なトラフィックパ"
+"ターンです。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:64
+msgid "Picture of traffic flow through a bridge with ATS"
+msgstr "ATS を使ったブリッジを通るトラフィックの流れ"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:66
+msgid ""
+"The green arrows are packets originating from the client and the red arrows "
+"are packets originating from the origin server. All traffic not directed to "
+"the local address will pass through the bridge. We need to break into some "
+"of the traffic and subject it to routing so that it can be routed to ATS. "
+"This requires ``ebtables``. The flows we want to intercept are green 1 "
+"(from client to bridge) and red 1 (origin server to bridge)."
+msgstr ""
+"緑の矢印はクライアントからのパケットで、赤の矢印はオリジンサーバーからのパ"
+"ケットです。ローカルアドレス宛てではないすべてのトラフィックはブリッジを通り"
+"ます。トラフィックに割って入り ATS に向かうようにする必要があります。これに"
+"は ``ebtables`` が必要となります。横取りしたい流れは緑 1 ( クライアントから"
+"ブリッジ ) と赤 1 ( オリジンサーバーからブリッジ ) です。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:74
+msgid ""
+"In this example we will intercept port 80 (HTTP) traffic. We will use the "
+"``BROUTING`` chain because it is traversed only for packets that originated "
+"externally and arrived on a (forwarding enabled) interface. Although it "
+"looks like this will intercept all port 80 traffic it will only affect the "
+"two flows described above. ``-j redirect`` marks the packet as being "
+"diverted to the bridge and not forwarded, and the ``DROP`` target puts the "
+"packets in the normal ``iptables`` routing so that we can use standard "
+"device tests on them [1]_. Although this example handles only port 80, "
+"other ports are the same except for the port value. Note also the port here "
+"is the port from the point of view of the clients and origin servers, not "
+"the Traffic Server server port. ::"
+msgstr ""
+"この例ではポート 80 (HTTP) のトラフィックを横取りします。外部から発信され "
+"( 転送が有効化された ) インターフェースに到着したパケットのみを扱いたいので "
+"``BROUTING`` チェーンを使用します。ポート 80 のすべてのトラフィックを横取り"
+"するように見えますが、上記の流れのみに影響を与えます。``-j redirect`` はパ"
+"ケットがブリッジに流れ、転送はされないように印を付け、``DROP`` ターゲットは"
+"パケットを標準的なデバイスのテストができるように通常の ``iptables`` のルー"
+"ティングに置きます。 [1]_ この例はポート 80 のみを扱いますが、他のポートも"
+"ポート番号が違うことを除いて同じです。ここでのポートはクライアントとオリジン"
+"サーバーの視点でのものであり、Traffic Server のサーバーポートではないことに"
+"注意してください。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:94
+msgid ""
+"Traffic Server operates at layer 3 so we need to use ``iptables`` to handle "
+"IP packets appropriately.::"
+msgstr ""
+"Traffic Server はレイヤー 3 で動作するので IP パケットを適切に扱うために "
+"``iptables`` を使用する必要があります。 ::"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:102
+msgid ""
+"At this point the directionality of the interfaces matters. For the example "
+"``eth1`` is the inbound (client side) interface, while ``eth0`` is the "
+"outbound (origin server side) interface. We mark both flows of packets so "
+"that we can use policy routing on them. For inbound packets we need to use "
+"``TPROXY`` to force acceptance of packets to foreign IP addresses. For "
+"returning outbound packets there will be a socket open bound to the foreign "
+"address, we need only force it to be delivered locally. The value for ``--"
+"on-ip`` is 0 because the target port is listening and not bound to a "
+"specific address. The value for ``--on-port`` must match the Traffic Server "
+"server port. Otherwise its value is arbitrary. ``--dport`` and ``--sport`` "
+"specify the port from the point of view of the clients and origin servers."
+msgstr ""
+"ここでインターフェースの方向性が問題となります。例では ``eth1`` は内向き "
+"( クライアント側 ) インターフェース、``eth0`` は外向き ( オリジンサーバー"
+"側 ) インターフェースです。両方のパケットの流れでポリシーに沿ったルーティン"
+"グができるように印を付けます。内向きのパケットでは外部の IP アドレスへのパ"
+"ケットの受け付けを強制するために ``TPROXY`` を使う必要があります。外向きのパ"
+"ケットを返すためには外部のアドレスに結びつけられているソケットが開かれてお"
+"り、それを内部的に配達されることのみを強制する必要があります。ターゲットポー"
+"トは listen 中で特定のアドレスには bind されていないので ``--on-ip`` の値は "
+"0 です。``--on-port`` の値は Traffic Server のサーバーポートと一致しなければ"
+"なりません。そうでなければその値は任意です。``--dport`` と ``--sport`` はク"
+"ライアントとオリジンサーバーの視点でのポートを指定します。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:115
+msgid ""
+"Once the flows are marked we can force them to be delivered locally via the "
+"loopback interface via a policy routing table.::"
+msgstr ""
+"流れに印が付けられたのでそれらがポリシーに沿ったルーティングテーブルにより"
+"ループバックインターフェースで内部的に配達されることを強制できます。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:121
+msgid ""
+"The marking used is arbitrary but it must be consistent between "
+"``iptables`` and the routing rule. The table number must be in the range "
+"1..253."
+msgstr ""
+"使用済みという印付けは独断的に行われますが、``iptables`` とルーティングルー"
+"ルとの間で一貫していなければなりません。テーブル番号は 1 から 253 の間でなけ"
+"ればなりません。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:125
+msgid ""
+"To configure Traffic Server set the following values in :file:`records."
+"config`"
+msgstr ""
+"Traffic Server を設定するために次の値を :file:`records.config` に設定してく"
+"ださい。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:128
+msgid ""
+":ts:cv:`proxy.config.http.server_ports` *value from* ``--on-port`` (see "
+"below)"
+msgstr ""
+":ts:cv:`proxy.config.http.server_ports` *の値は* ``--on-port`` (以下を参照)"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:130
+msgid ":ts:cv:`proxy.config.reverse_proxy.enabled` ``1``"
+msgstr ":ts:cv:`proxy.config.reverse_proxy.enabled` ``1``"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:132
+msgid ":ts:cv:`proxy.config.url_remap.remap_required` ``0``"
+msgstr ":ts:cv:`proxy.config.url_remap.remap_required` ``0``"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:134
+msgid ""
+"You may also need to set :ts:cv:`proxy.config.cluster.ethernet_interface` "
+"to \"br0\" (the name of the bridge interface from the Bridge Commands)."
+msgstr ""
+":ts:cv:`proxy.config.cluster.ethernet_interface` を \"br0\" (Bridge "
+"Commands からのブリッジインターフェースの名前) に設定する必要もあるかもしれ"
+"ません。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:138
+msgid "Additional troubleshooting"
+msgstr "追加のトラブルシューティング"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:140
+msgid ""
+"Check to make sure that ``iptables`` is not filtering (blocking) incoming "
+"HTTP connections."
+msgstr ""
+"``iptables`` が入ってくる HTTP 接続をフィルタ ( ブロック ) していないことを"
+"確認してください。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:143
+msgid ""
+"It is frequently the case that the default tables prevent incoming HTTP. "
+"You can clear all filters with the commands::"
+msgstr ""
+"デフォルトテーブルが入ってくる HTTP を妨害するケースがよくあります。次のコマ"
+"ンドですべてのフィルターを消去することができます。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:149
+msgid ""
+"That is a bit drastic and should only be used for testing / debugging. A "
+"live system will likely need some filters in place but that is beyond the "
+"scope of this document. If this fixes the problem, then your filter set is "
+"too restrictive."
+msgstr ""
+"これは劇的でテスト / デバッグのためだけに使用すべきです。稼働中のシステムは"
+"ここにいくつかのフィルターを必要としますが、それはこのドキュメントの範囲外で"
+"す。もしこれが問題を解決するのであれば、フィルターの制限が厳しすぎます。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:154
+msgid ""
+"Note that this problem will prevent the basic bridge (without ATS) from "
+"allowing HTTP traffic through."
+msgstr ""
+"この問題は HTTP のトラフィックを通過させる ( ATS を使わない ) 基本的なブリッ"
+"ジ動作を妨げていることに注意してください。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:157
+msgid "Verify that IP packet forwarding is enabled."
+msgstr "IP パケット転送が有効化されていることを確認してください。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:159
+msgid "You can check this with::"
+msgstr "これは次のように確認できます。 ::"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:163
+msgid ""
+"The output should be a non-zero value (usually '1'). If it is zero, you can "
+"set it with::"
+msgstr ""
+"出力は非ゼロ値 ( たいてい '1' ) のはずです。もしゼロの場合は次のように設定可"
+"能です。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:168
+msgid ""
+"This can setting can be persisted by putting it in ``/etc/sysctl.conf``: ::"
+msgstr "この設定は ``/etc/sysctl.conf`` に書くことで恒久的にできます。"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:173
+msgid "Footnotes"
+msgstr "脚注"
+
+#: ../../../admin-guide/transparent-proxy/bridge.en.rst:175
+msgid ""
+"The ``--redirect-target`` can be omitted, but then the ``iptables`` rules "
+"would need to use ``--physdev`` instead of just ``-i``. The actual packet "
+"processing is identical."
+msgstr ""
+"``--redirect-target`` は省略可能ですが、``iptables`` のルールで単に ``-i`` "
+"とする代わりに ``--physdev`` を使う必要があるでしょう。実際のパケット処理は"
+"まったく同じです。"

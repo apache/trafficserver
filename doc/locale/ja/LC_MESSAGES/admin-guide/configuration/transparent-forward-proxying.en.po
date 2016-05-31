@@ -1,0 +1,172 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:26
+msgid ""
+"A forward proxy can be used as a central tool in your infrastructure to "
+"access the web and it may be combined with a cache to lower your overall "
+"bandwidth usage. Forward proxies act as a gatekeeper between client "
+"browsers on your local network and all (or some, at your configuration's "
+"discretion) web sites accessed by those clients. The forward proxy will "
+"receive the HTTP requests, perform any filtering or request alteration "
+"rules you establish, and when appropriate forward the request on to its "
+"destination website. The response will return through your proxy, where it "
+"may optionally be cached and/or modified, and then returned to the original "
+"client."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:58
+msgid ""
+"Apache Traffic Server may be configured to operate as both a forward and a "
+"transparent proxy simultaneously."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:39
+msgid ""
+"Each client must be configured explicitly to use the forward proxy. Client "
+"browsers will be aware of the fact they are using a proxy and will form "
+"their HTTP requests appropriately. This results in the initial HTTP command "
+"being issued with fully qualified URIs that contain the destination "
+"hostname::"
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:4
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:44
+msgid "Forward Proxy"
+msgstr "フォワードプロキシー"
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:62
+msgid "Proxy Configuration"
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:23
+msgid ""
+"The Apache Traffic Server is a general purpose proxy, configurable as both "
+"a reverse and forward proxy."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:64
+msgid ""
+"Configuring basic forward proxy operation in Traffic Server is quite simple "
+"and straightforward."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:47
+msgid ""
+"The use of a transparent proxy is typically done in concert with network "
+"routing rules which redirect all outbound HTTP traffic through your proxy. "
+"Clients will behave, and form their HTTP requests, as if they are "
+"contacting the remote site directly, and will not be aware of the existence "
+"of a proxy server in between themselves and the remote servers. HTTP "
+"requests will be generated per their usual form, with only paths in the "
+"command and a separate Host request header::"
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:36
+msgid "There are two modes in which your forward proxy may operate:"
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:56
+msgid "Transparent Proxy"
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:67
+msgid ""
+"Permit Traffic Server to process requests for hosts not explicitly "
+"configured in the remap rules, by modifying :ts:cv:`proxy.config.url_remap."
+"remap_required` in :file:`records.config`::"
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:73
+msgid ""
+"*Optional*: If Traffic Server will be operating strictly as a forward "
+"proxy, you will want to disable reverse proxy support by modifying :ts:cv:"
+"`proxy.config.reverse_proxy.enabled` in :file:`records.config`::"
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:79
+msgid "You may also want to consider some of these configuration options:"
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:92
+msgid "Client Configuration"
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:102
+msgid ""
+"Clients may be configured to use the default ``8080`` port on your Traffic "
+"Server host as a proxy. This will result in all requests from that client "
+"browser being issued through the single forward proxy as configured."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:97
+msgid ""
+"If you are operating in explicit forward proxy mode, without automatic "
+"routing rules on your network to direct all outbound traffic through the "
+"proxy, your client browsers will need to be directed to the proxy. This may "
+"be accomplished in two different ways."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:94
+msgid ""
+"If you are operating your proxy in transparent mode, your clients should "
+"require no special proxy-related configuration."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:84
+msgid ""
+"Proxy Authentication can be enabled or disabled with :ts:cv:`proxy.config."
+"http.forward.proxy_auth_to_parent` should you also be employing a proxy "
+"cache."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:109
+msgid ""
+"It's important to note that once your Apache Traffic Server is configured "
+"as a forward proxy it will indiscriminately accept proxy requests from "
+"anyone. If it is reachable from the Internet, then you have configured an "
+"*Open Proxy*."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:81
+msgid ""
+"Setting :ts:cv:`proxy.config.http.no_dns_just_forward_to_parent` determines "
+"which host will be used for DNS resolution."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:107
+msgid "Security Considerations"
+msgstr "セキュリティの考慮"
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:88
+msgid ""
+"The client request header X-Forwarded-For may be toggled with :ts:cv:`proxy."
+"config.http.insert_squid_x_forwarded_for`."
+msgstr ""
+
+#: ../../admin-guide/configuration/transparent-forward-proxying.en.rst:113
+msgid ""
+"This is generally not desirable, as it will permit anyone to potentially "
+"use your network as the source of traffic to sites of their choosing. To "
+"avoid this, you'll have to make sure your proxy server is either only "
+"reachable from within your private network or is secured by firewall rules "
+"that permit only those you wish to have access to the proxy."
+msgstr ""

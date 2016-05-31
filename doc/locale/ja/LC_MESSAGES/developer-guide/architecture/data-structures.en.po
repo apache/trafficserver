@@ -1,0 +1,281 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-15 01:00+0900\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+"Last-Translator: Hiroaki Nakamura <hnakamur@gmail.com>\n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:71
+msgid "A typedef for :cpp:class:`HTTPInfo`."
+msgstr ":cpp:class:`HTTPInfo` の 型定義。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:32
+msgid "A virtual connection class which accepts input for writing to cache."
+msgstr "キャッシュへ書込む入力を受け付ける仮想接続クラス。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:27
+msgid ""
+"An open directory entry. It contains all the information of a :cpp:class:"
+"`Dir` plus additional information from the first :cpp:class:`Doc`."
+msgstr ""
+"オープンされたディレクトリエントリ。 :cpp:class:`Dir` と、それに加えて 先頭"
+"の :cpp:class:`Doc` の全情報を含みます。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:23
+msgid "Data Structures"
+msgstr "データ構造"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:44
+msgid ""
+"Data transfer driver. This contains a set of *producers*. Each producer is "
+"connected to one or more *consumers*. The tunnel handles events and buffers "
+"so that data moves from producers to consumers. The data, as much as "
+"possible, is kept in reference counted buffers so that copies are done only "
+"when the data is modified or for sources (which acquire data from outside |"
+"TS|) and sinks (which move data to outside |TS|)."
+msgstr ""
+"データ転送ドライバ。これは *プロデューサ* のセットを含みます。各プロデューサ"
+"は一つ以上の *コンシューマ* に接続されます。トンネルは、プロデューサからコン"
+"シューマへデータを移動させる為に、イベントとバッファを扱います。データは、"
+"データが修正される時のみ、またはソース ( |TS| の外からデータを取得するもの)"
+"とシンク ( |TS| の外へデータを移動するもの)のためにコピーが実行されるため、"
+"可能な限り参照カウントバッファに維持されます。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:63
+#: ../../developer-guide/architecture/data-structures.en.rst:75
+msgid "Defined in |HTTP.h|_."
+msgstr "|HTTP.h|_ で定義されます。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:53
+msgid "Holds the data from a line in :file:`cache.config`."
+msgstr ":file:`cache.config` のある行からデータを保持します。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:36
+msgid "Performs the initial read for a cached object."
+msgstr "キャッシュオブジェクトの最初の読み込みを実行する。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:40
+msgid "Performs the initial read for an :term:`alternate` of an object."
+msgstr "オブジェクトの :term:`代替` の最初の読み込みを実行する。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:57
+msgid ""
+"Defined in |P-CacheHttp.h|_. This is an array of :cpp:class:`HTTPInfo` "
+"objects and serves as the respository of information about alternates of an "
+"object. It is marshaled as part of the metadata for an object in the cache."
+msgstr ""
+"|P-CacheHttp.h|_ で定義されます。これは :cpp:class:`HTTPInfo` オブジェクトの"
+"配列であり、オブジェクトの代替に関する情報のリポジトリとして提供します。それ"
+"はキャッシュ内のオブジェクトのメタデータ部分に配置されます。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:90
+msgid "Record for evacuation."
+msgstr "退避のためのレコード。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:80
+msgid "The key for the earliest ``Doc`` of the alternate."
+msgstr "代替の最古の ``Doc`` のキー。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:65
+msgid ""
+"This class is a wrapper for :cpp:class:`HTTPCacheAlt`. It provides the "
+"external API for accessing data in the wrapped class. It contains only a "
+"pointer (possibly ``NULL``) to an instance of the wrapped class."
+msgstr ""
+"このクラスは :cpp:class:`HTTPCacheAlt` のラッパーです。ラップされたクラス内"
+"のデータへのアクセスのための外部 API を提供します。ラップされたクラスのイン"
+"スタンスへのポインター(``NULL`` の可能性がある)のみ保持します。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:77
+msgid ""
+"This is the metadata for a single :term:`alternate` for a cached object. It "
+"contains, among other data, the following:"
+msgstr ""
+"キャッシュオブジェクトの単一の :term:`代替` のメタデータです。下記の他データ"
+"を含みます。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:126
+msgid "A :term:`cache volume` as described in :file:`volume.config`."
+msgstr ":file:`volume.config` で記述される :term:`キャッシュボリューム` 。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:120
+msgid ""
+"Start an evacuation if there is any :cpp:class:`EvacuationBlock` in the "
+"range from :arg:`low` to :arg:`high`. Return ``0`` if no evacuation was "
+"started, non-zero otherwise."
+msgstr ""
+":arg:`low` から :arg:`high` の範囲に任意の :cpp:class:`EvacuationBlock` があ"
+"る場合、退避を開始します。退避が開始されなかった場合は ``0`` を、それ以外は"
+"非 0 を返します。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:84
+msgid "The fragment offset table.[#fragment-offset-table]_"
+msgstr "フラグメントオフセットテーブル。[#fragment-offset-table]_"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:82
+msgid "The request and response headers."
+msgstr "リクエストヘッダとレスポンスヘッダ。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:86
+msgid "Timestamps for request and response from :term:`origin server`."
+msgstr ""
+":term:`オリジンサーバー` からのリクエストとレスポンスのタイムスタンプ。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:111
+msgid ""
+"Array of of :cpp:class:`EvacuationBlock` buckets. This is sized so there is "
+"one bucket for every evacuation span."
+msgstr ""
+":cpp:class:`EvacuationBlock` バケットの配列。これは、退避スパンごとに一つの"
+"バケットを持つようなサイズになります。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:205
+msgid ""
+"Changed in version 3.2.0. This previously resided in the first ``Doc`` but "
+"that caused different alternates to share the same fragment table."
+msgstr ""
+"バージョン 3.2.0 で変更されました。以前は先頭の ``Doc`` 内で持ちましたが、同"
+"一フラグメントテーブルを共有するために異なる代替を引き起こしました。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:130
+msgid "Defined in |P-CacheVol.h|_."
+msgstr "|P-CacheVol.h|_ で定義されます。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:159
+msgid ""
+"Document header (metadata) length. This is not the length of the HTTP "
+"headers."
+msgstr "ドキュメントヘッダ(メタデータ)長。 HTTP ヘッダの長さではありません。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:148
+msgid ""
+"First index key in the document (the index key used to locate this object "
+"in the volume index)."
+msgstr ""
+"ドキュメントの最初のインデックスキー。（インデックスキーはボリュームインデッ"
+"クスにおいてこのオブジェクトを見つけるのに使用されます。)"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:193
+msgid "Flag and timer for pinned objects."
+msgstr "ピン留めされたオブジェクトのフラグとタイマー。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:202
+msgid "Footnotes"
+msgstr "脚注"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:169
+msgid ""
+"Fragment table length, if any. Only the first ``Doc`` in an object should "
+"contain a fragment table."
+msgstr ""
+"もしあるなら、フラグメントテーブル長。オブジェクトの、先頭の ``Doc`` のみが"
+"フラグメントテーブルを持つべきです。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:116
+msgid "Length of stripe in bytes."
+msgstr "バイト単位のストライプ長。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:104
+msgid ""
+"The number of buckets in the volume. This will be roughly the number of "
+"entries in a segment divided by ``DIR_DEPTH``. For currently defined values "
+"this is around 16,384 (2^16 / 4). Buckets are used as the targets of the "
+"index hash."
+msgstr ""
+"ボリュームのバケット数。 ``DIR_DEPTH`` で分割されるセグメント内のおおよその"
+"エントリ数。現在は約 16,384 (2^16 / 4) で定義されます。バケットはインデック"
+"スハッシュの対象として使用されます。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:164
+msgid ""
+"Fragment type. Currently only ``CACHE_FRAG_TYPE_HTTP`` is used. Other types "
+"may be used for cache extensions if those are ever implemented."
+msgstr ""
+"フラグメントタイプ。現在、 ``CACHE_FRAG_TYPE_HTTP`` のみ使用されます。キャッ"
+"シュ拡張がいつか実装されれば、他のタイプが使用されるかもしれません。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:181
+msgid "Removed as of version 3.3.0."
+msgstr "バージョン 3.3.0 で削除されました。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:172
+msgid ""
+"The fragment table is a list of offsets relative to the HTTP content (not "
+"counting metadata or HTTP headers). Each offset is the byte offset of the "
+"first byte in the fragment. The first element in the table is the second "
+"fragment (what would be index 1 for an array). The offset for the first "
+"fragment is of course always zero and so not stored. The purpose of this is "
+"to enable a fast seek for range requests. Given the first ``Doc`` the "
+"fragment containing the first byte in the range can be computed and loaded "
+"directly without further disk access."
+msgstr ""
+"フラグメントテーブルは、 HTTP コンテンツ (メタデータや HTTP ヘッダは含みませ"
+"ん)に関係したオフセットのリストです。各オフセットは、フラグメントの最初のバ"
+"イトのバイトオフセットです。テーブルの最初の要素は、二番目のフラグメントで"
+"す。(配列のインデックス 1 となるでしょう) 最初のフラグメントのオフセットはも"
+"ちろん常にゼロであり、保存されません。この目的は、レンジリクエストの高速な検"
+"索を可能にすることです。先頭の ``Doc`` が指定されると、範囲の最初のバイトを"
+"含むフラグメントはそれ以上のディスクアクセス無しに、直接計算して読み込むこと"
+"ができます。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:153
+msgid ""
+"The index key for this fragment. Fragment keys are computationally chained "
+"so that the key for the next and previous fragments can be computed from "
+"this key."
+msgstr ""
+"このフラグメントのインデックスキー。前後のフラグメントのキーがこのキーから計"
+"算出来るように、フラグメントキーは計算的に繋がっています。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:98
+msgid ""
+"The number of segments in the volume. This will be roughly the total number "
+"of entries divided by the number of entries in a segment. It will be "
+"rounded up to cover all entries."
+msgstr ""
+"ボリュームのセグメント数。セグメント内のエントリ数で分割されたエントリのおお"
+"よその合計数。全エントリをカバーするように丸め込まれます。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:138
+msgid ""
+"The length of this segment including the header length, fragment table, and "
+"this structure."
+msgstr ""
+"ヘッダ長、フラグメントテーブル、この構造体を含む、このセグメントの長さ。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:94
+msgid "This represents a :term:`storage unit` inside a :term:`cache volume`."
+msgstr ""
+":term:`キャッシュボリューム` 内において :term:`ストレージユニット` を表しま"
+"す。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:143
+msgid ""
+"Total length of the entire document not including meta data but including "
+"headers."
+msgstr "メタデータを含まない、ヘッダを含むドキュメント全体の長さ。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:185
+#: ../../developer-guide/architecture/data-structures.en.rst:189
+#: ../../developer-guide/architecture/data-structures.en.rst:197
+msgid "Unknown."
+msgstr "不明。"
+
+#: ../../developer-guide/architecture/data-structures.en.rst:134
+msgid "Validity check value. Set to ``DOC_MAGIC`` for a valid document."
+msgstr ""
+"正当性チェック値。正当なドキュメントには ``DOC_MAGIC`` が設定されます。"

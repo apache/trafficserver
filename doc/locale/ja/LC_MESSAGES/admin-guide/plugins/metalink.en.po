@@ -1,0 +1,159 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/plugins/metalink.en.rst:21
+msgid "Metalink Plugin"
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:23
+msgid ""
+"The `Metalink` plugin implements the Metalink_ download description format "
+"in order to try not to download the same file twice.  This improves cache "
+"efficiency and speeds up users' downloads."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:27
+msgid ""
+"It takes standard headers and knowledge about objects in the cache and "
+"potentially rewrites those headers so that a client will use a URL that's "
+"already cached instead of one that isn't.  The headers are specified in RFC "
+"6249 (Metalink/HTTP: Mirrors and Hashes) and RFC 3230 (Instance Digests in "
+"HTTP) and are sent by various download redirectors or content distribution "
+"networks."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:34
+msgid ""
+"A lot of download sites distribute the same files from many different "
+"mirrors and users don't know which mirrors are already cached.  These sites "
+"often present users with a simple download button, but the button doesn't "
+"predictably access the same mirror, or a mirror that's already cached.  To "
+"users it seems like the download works sometimes (takes seconds) and not "
+"others (takes hours), which is frustrating."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:41
+msgid ""
+"An extreme example of this happens when users share a limited, possibly "
+"unreliable internet connection, as is common in parts of Africa for example."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:47
+msgid "How it Works"
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:49
+msgid ""
+"When the plugin sees a response with a :mailheader:`Location: ...` header "
+"and a :mailheader:`Digest: SHA-256=...` header, it checks if the URL in "
+"the :mailheader:`Location` header is already cached.  If it isn't, then it "
+"tries to find a URL that is cached to use instead.  It looks in the cache "
+"for some object that matches the digest in the :mailheader:`Digest` header "
+"and if it succeeds, then it rewites the :mailheader:`Location` header with "
+"that object's URL."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:57
+msgid ""
+"This way a client should get sent to a URL that's already cached and won't "
+"download the file again."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:62
+msgid "Installation"
+msgstr "インストール"
+
+#: ../../../admin-guide/plugins/metalink.en.rst:64
+msgid ""
+"The `Metalink` plugin is a :term:`global plugin`.  Enable it by adding "
+"``metalink.so`` to your :file:`plugin.config` file.  There are no options."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:70
+msgid "Implementation Status"
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:72
+msgid ""
+"The plugin implements the :c:data:`TS_HTTP_SEND_RESPONSE_HDR_HOOK` hook to "
+"check and potentially rewrite the :mailheader:`Location` and :mailheader:"
+"`Digest` headers after responses are cached.  It doesn't do it before "
+"they're cached because the contents of the cache can change after responses "
+"are cached.  It uses :c:func:`TSCacheRead` to check if the URL in the :"
+"mailheader:`Location` header is already cached.  In future, the plugin "
+"should also check if the URL is fresh or not."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:81
+msgid ""
+"The plugin implements the :c:data:`TS_HTTP_READ_RESPONSE_HDR_HOOK` hook "
+"and :ref:`a null transformation <developer-plugins-http-transformations-"
+"null-transform>` to compute the SHA-256 digest for content as it's added to "
+"the cache.  It uses SHA256_Init(), SHA256_Update(), and SHA256_Final() from "
+"OpenSSL to compute the digest, then it uses :c:func:`TSCacheWrite` to "
+"associate the digest with the request URL.  This adds a new cache object "
+"where the key is the digest and the object is the request URL."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:90
+msgid ""
+"To check if the cache already contains content that matches a digest, the "
+"plugin must call :c:func:`TSCacheRead` with the digest as the key, read the "
+"URL stored in the resultant object, and then call :c:func:`TSCacheRead` "
+"again with this URL as the key.  This is probably inefficient and should be "
+"improved."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:96
+msgid ""
+"An early version of the plugin scanned :mailheader:`Link: <...>; "
+"rel=duplicate` headers.  If the URL in the :mailheader:`Location: ...` "
+"header wasn't already cached, it scanned :mailheader:`Link: <...>; "
+"rel=duplicate` headers for a URL that was.  The :mailheader:`Digest: "
+"SHA-256=...` header is superior because it will find content that already "
+"exists in the cache in every case that a :mailheader:`Link: <...>; "
+"rel=duplicate` header would, plus in cases where the URL is not listed "
+"among the :mailheader:`Link: <...>; rel=duplicate` headers, maybe because "
+"the content was downloaded from a URL not participating in the content "
+"distribution network, or maybe because there are too many mirrors to list "
+"in :mailheader:`Link: <...>; rel=duplicate` headers."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:109
+msgid ""
+"The :mailheader:`Digest: SHA-256=...` header is also more efficient than :"
+"mailheader:`Link: <...>; rel=duplicate` headers because it involves a "
+"constant number of cache lookups.  RFC 6249 requires a :mailheader:`Digest: "
+"SHA-256=...` header or :mailheader:`Link: <...>; rel=duplicate` headers "
+"MUST be ignored:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:115
+msgid ""
+"If Instance Digests are not provided by the Metalink servers, the :"
+"mailheader:`Link` header fields pertaining to this specification MUST be "
+"ignored."
+msgstr ""
+
+#: ../../../admin-guide/plugins/metalink.en.rst:119
+msgid ""
+"Metalinks contain whole file hashes as described in Section 6, and MUST "
+"include SHA-256, as specified in [FIPS-180-3]."
+msgstr ""

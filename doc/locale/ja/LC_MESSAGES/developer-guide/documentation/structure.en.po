@@ -1,0 +1,97 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/documentation/structure.en.rst:36
+msgid ""
+"Aimed at administrators and developers new to |TS| who wish to install and "
+"configure a |TS| instance in the least amount of time necessary, without "
+"delving into the full featureset or the internals of the |TS| architecture."
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:38
+msgid "Getting Started"
+msgstr "はじめに"
+
+#: ../../developer-guide/documentation/structure.en.rst:33
+msgid "Preface"
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:23
+msgid "Structure"
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:29
+msgid ""
+"The introductory section to the manual as a whole, with a brief exposition "
+"on |TS| and its general role in a network and application infrastructure. "
+"The typographic conventions used in the manual should be covered here to "
+"ease readers' comprehension of the following sections, as well as pointers "
+"to additional resources available outside of the manual."
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:25
+msgid ""
+"The |ATS| documentation is presented as a single manual, sub-divided into "
+"the following sections:"
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:44
+msgid "Administrator's Guide"
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:54
+msgid "Appendices"
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:48
+msgid "Developer's Guide"
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:47
+msgid ""
+"Documentation of internal |TS| architecture as well as guides on plugin "
+"development and debugging are presented in this section."
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:51
+msgid ""
+"Glossary, common references to both administrator and developer guides "
+"(such as status code tables and command line utility usage), frequently "
+"asked questions, and errata should all be located in this final section of "
+"the manual."
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:41
+msgid ""
+"Provides in-depth coverage of all |TS| features and configurations for use "
+"by administrators responsible for installing, configuring, and maintaining |"
+"TS| instances. Troubleshooting, performance tuning, and plugin usage should "
+"all be covered in this section of the manual."
+msgstr ""
+
+#: ../../developer-guide/documentation/structure.en.rst:56
+msgid ""
+"Within each top-level section, a short introduction should be provided to "
+"the content of that section, as well as a brief note on the intended "
+"audience. A very high level treatment of each chapter should be presented "
+"to allow readers to more easily locate the most relevant chapters for their "
+"current needs."
+msgstr ""

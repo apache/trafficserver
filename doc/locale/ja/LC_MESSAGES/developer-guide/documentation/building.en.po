@@ -1,0 +1,59 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/documentation/building.en.rst:23
+msgid "Building the Documentation"
+msgstr ""
+
+#: ../../../developer-guide/documentation/building.en.rst:25
+msgid ""
+"All documentation and related files are located in the source tree under "
+"the ``doc/`` directory. Makefiles are generated automatiically by the main "
+"configure script. For simplicity's sake, it is recommended that "
+"contributors new to the documentation make use of the included Vagrant "
+"configurations, as these will take care of providing all dependencies. "
+"Please refer to the :ref:`developer-testing-with-vagrant` chapter for "
+"complete details on using Vagrant to build and test the |TS| source tree."
+msgstr ""
+
+#: ../../../developer-guide/documentation/building.en.rst:33
+msgid ""
+"With a configured source tree, building the documentation requires only the "
+"invocation ``make html`` from within ``doc/``. For repeated builds while "
+"working on the documentation, it is advisable to clean out the built and "
+"intermediate files each time by running the following instead (again, from "
+"within the ``doc/`` directory of the |TS| source tree)::"
+msgstr ""
+
+#: ../../../developer-guide/documentation/building.en.rst:41
+msgid ""
+"This will ensure that make doesn't inadvertantly skip the regeneration of "
+"any targets."
+msgstr ""
+
+#: ../../../developer-guide/documentation/building.en.rst:44
+msgid ""
+"To view the built documentation, you may point any browser to the directory "
+"``doc/docbuild/html/``. If you are building the documentation on your local "
+"machine, you may access the HTML documentation files directly without the "
+"need for a full-fledged web server, as all necessary resources (CSS, "
+"Javascript, and images) are referenced using relative paths and there are "
+"no server-side scripts necessary to render the documentation."
+msgstr ""

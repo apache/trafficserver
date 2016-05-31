@@ -1,0 +1,312 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/files/parent.config.en.rst:20
+msgid "parent.config"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:24
+msgid ""
+"The :file:`parent.config` file identifies the parent proxies used in an "
+"cache hierarchy. Use this file to perform the following configuration:"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:27
+msgid ""
+"Set up parent cache hierarchies, with multiple parents and parent failover"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:29
+msgid "Configure selected URL requests to bypass parent proxies"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:31
+msgid ""
+"Traffic Server uses the :file:`parent.config` file only when the parent "
+"caching option is enabled (refer to :ref:`configuring-traffic-server-to-use-"
+"a-parent-cache`)."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:34
+msgid ""
+"After you modify the :file:`parent.config` file, run the :option:"
+"`traffic_ctl config reload` command to apply your changes. When you apply "
+"the changes to one node in a cluster, Traffic Server automatically applies "
+"the changes to all other nodes in the cluster."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:40
+msgid "Format"
+msgstr "フォーマット"
+
+#: ../../../admin-guide/files/parent.config.en.rst:42
+msgid ""
+"Each line in the :file:`parent.config` file must contain a parent caching "
+"rule. Traffic Server recognizes three space-delimited tags: ::"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:47
+msgid ""
+"The following list shows the possible primary destinations and their "
+"allowed values."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:53
+msgid "``dest_domain``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:53
+msgid "A requested domain name, and its subdomains."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:58
+msgid "``dest_host``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:58
+msgid "A requested hostname."
+msgstr "リクエストされたホスト名。"
+
+#: ../../../admin-guide/files/parent.config.en.rst:63
+msgid "``dest_ip``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:63
+msgid ""
+"A requested IP address or range of IP addresses separated by a dash (-)."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:68
+msgid "``url_regex``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:68
+msgid "A regular expression (regex) to be found in a URL"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:70
+msgid ""
+"The secondary specifiers are optional in the :file:`parent.config` file. "
+"The following list shows the possible secondary specifiers and their "
+"allowed values."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:77
+msgid "``port``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:77
+msgid "A requested URL port."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:82
+msgid "``scheme``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:82
+msgid "A request URL protocol: ``http`` or ``https``."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:87
+msgid "``prefix``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:87
+msgid "A prefix in the path part of a URL."
+msgstr "URL のパス部分のプレフィックス。"
+
+#: ../../../admin-guide/files/parent.config.en.rst:92
+msgid "``suffix``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:92
+msgid "A file suffix in the URL."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:102
+msgid "``method``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:97
+msgid "A request URL method. It can be one of the following:"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:99
+msgid "get"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:100
+msgid "post"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:101
+msgid "put"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:102
+msgid "trace"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:108
+msgid "``time``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:107
+msgid ""
+"A time range, such as 08:00-14:00, during which the parent cache is used to "
+"serve requests."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:113
+msgid "``src_ip``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:113
+msgid "A client IP address."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:120
+msgid "``internal``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:118
+msgid ""
+"A boolean value, ``true`` or ``false``, specifying if the rule should match "
+"(or not match) a transaction originating from an internal API. This is "
+"useful to differentiate transaction originating from an ATS plugin."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:122
+msgid ""
+"The following list shows the possible actions and their allowed values."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:130
+msgid "``parent``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:127
+msgid ""
+"An ordered list of parent servers. If the request cannot be handled by the "
+"last parent server in the list, then it will be routed to the origin "
+"server. You can specify either a hostname or an IP address, but; you must "
+"specify the port number."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:139
+msgid "``secondary_parent``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:135
+msgid ""
+"An optional ordered list of secondary parent servers.  This optional list "
+"may only be used when ``round_robin`` is set to ``consistent_hash``. If the "
+"request cannot be handled by a parent server from the ``parent`` list, then "
+"the request will be re-tried from a server found in this list using a "
+"consistent hash of the url."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:157
+msgid "``round_robin``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:144
+#: ../../../admin-guide/files/parent.config.en.rst:162
+#: ../../../admin-guide/files/parent.config.en.rst:171
+msgid "One of the following values:"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:146
+msgid ""
+"``true`` - Traffic Server goes through the parent cache list in a round "
+"robin-based on client IP address."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:148
+msgid ""
+"``strict`` - Traffic Server machines serve requests strictly in turn. For "
+"example: machine ``proxy1`` serves the first request, ``proxy2`` serves the "
+"second request, and so on."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:151
+msgid "``false`` - Round robin selection does not occur."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:152
+msgid ""
+"``consistent_hash`` - consistent hash of the url so that one parent is "
+"chosen for a given url. If a parent is down, the traffic that would go to "
+"the down parent is rehashed amongst the remaining parents. The other "
+"traffic is unaffected. Once the downed parent becomes available, the "
+"traffic distribution returns to the pre-down state."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:166
+msgid "``go_direct``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:164
+msgid ""
+"``true`` - requests bypass parent hierarchies and go directly to the origin "
+"server."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:166
+msgid "``false`` - requests do not bypass parent hierarchies."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:174
+msgid "``qstring``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:173
+msgid "``consider`` - Use the query string when finding a parent."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:174
+msgid "``ignore`` - Do not consider the query string when finding a parent."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:177
+msgid "Examples"
+msgstr "例"
+
+#: ../../../admin-guide/files/parent.config.en.rst:179
+msgid ""
+"The following rule configures a parent cache hierarchy consisting of "
+"Traffic Server (which is the child) and two parents, ``p1.x.com`` and ``p2."
+"x.com``. Traffic Server forwards the requests it cannot serve to the parent "
+"servers ``p1.x.com`` and ``p2.x.com`` in a round-robin fashion::"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:190
+msgid ""
+"The following rule configures Traffic Server to route all requests "
+"containing the regular expression ``politics`` and the path ``/viewpoint`` "
+"directly to the origin server (bypassing any parent hierarchies): "
+"``url_regex=politics prefix=/viewpoint go_direct=true``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:195
+msgid ""
+"Every line in the :file:`parent.config` file must contain either a "
+"``parent=`` or ``go_direct=`` directive."
+msgstr ""

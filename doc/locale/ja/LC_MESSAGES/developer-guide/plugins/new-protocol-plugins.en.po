@@ -1,0 +1,613 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:255
+msgid ""
+"**How Transaction State Machines are Implemented in the Protocol Plugin**"
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:111
+msgid "**Protocol Plugin Overview**"
+msgstr "**プロトコルプラグイン概要**"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:75
+msgid "**Sample Protocol State Diagram**"
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:133
+msgid ""
+"**Transaction state machines** that read client requests, process them, and "
+"are then destroyed when the transaction is finished."
+msgstr ""
+"クライアントリクエストを読込み、処理し、トランザクションが終了した際に破棄さ"
+"れる **トランザクションステートマシン**"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:37
+msgid "About the Sample Protocol"
+msgstr "サンプルプロトコルについて"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:128
+msgid ""
+"An **accept state machine** that listens for client connections, and then "
+"creates transaction state machines whenever Traffic Server accepts a new "
+"client connection. The accept state machine lives as long as Traffic Server "
+"is running."
+msgstr ""
+"クライアントコネクションを listen し、 Traffic Server が新しいクライアントコ"
+"ネクションを accept する度にトランザクションステートマシンを生成する "
+"**accept ステートマシン** 。 accept ステートマシンは Traffic Server が動作し"
+"ている限り残ります。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:73
+msgid "Cache the response and send it on to the client"
+msgstr "レスポンスをキャッシュし、クライアントに送信する。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:95
+msgid "Continuations in the Protocol Plugin"
+msgstr "プロトコルプラグインにおける継続"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:54
+msgid "In more specific terms, Traffic Server and the Protocol plugin must:"
+msgstr ""
+"より具体的には、 Traffic Server とプロトコルプラグインは下記の処理をする必要"
+"があります。:"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:69
+msgid "Forward the request to the origin server"
+msgstr "オリジンサーバーへリクエストを転送する。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:198
+msgid "Keep track of the state of the transaction"
+msgstr "トランザクションの状態を追跡し続ける"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:56
+msgid ""
+"Listen for and accept client connections (on the accept port specified in :"
+"file:`plugin.config`)"
+msgstr ""
+"クライアントコネクションの listen と accept を行う。（サーバーポートは :"
+"file:`plugin.config` で指定される）"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:61
+msgid "Look up the requested content in the Traffic Server cache"
+msgstr ""
+"リクエストされたコンテンツを、 Traffic Server キャッシュ内でルックアップする"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:23
+msgid "New Protocol Plugins"
+msgstr "新規プロトコルプラグイン"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:166
+msgid "**Protocol Plugin Flow of Events**"
+msgstr "**プロトコルプラグインのイベントのフロー**"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:195
+msgid ""
+"**Transaction state machines** (**TSMs**) in the Protocol plugin must do "
+"the following:"
+msgstr ""
+"プロトコルプラグインの **トランザクションステートマシン** （ **TSM** ）は下"
+"記のようにする必要があります。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:125
+msgid ""
+"Below is a summary of the continuations implemented for the Protocol plugin:"
+msgstr "下記はプロトコルプラグインの為に実装される継続の概要です:"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:137
+msgid "Event Flow"
+msgstr "イベントフロー"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:66
+msgid ""
+"Open a connection to the origin server if the request is a cache miss (on "
+"the server port specified in :file:`plugin.config`)"
+msgstr ""
+"リクエストがキャッシュミスした場合、オリジンサーバーとのコネクションを開く。"
+"（サーバーポートは :file:`plugin.config` で指定される）"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:276
+msgid ""
+"Below is a step-by-step walk-through of the code that processes a typical "
+"transaction."
+msgstr ""
+"下記は典型的なトランザクションを処理するコードの、段階的なウォークスルーで"
+"す。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:205
+msgid ""
+"Below is one way you can implement TSMs. Details about how the Protocol "
+"plugin does this are provided in the next section."
+msgstr ""
+"以下は TSM を実装できる方法の一つです。プロトコルプラグインがこれをどう行っ"
+"ているかの詳細は次の節で説明します。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:208
+msgid ""
+"Create a data structure for transactions that contains all of the state "
+"data you need to keep track of. In the Protocol plugin this is a struct, "
+"``Txn_SM``."
+msgstr ""
+"追跡し続ける必要のある全ての状態データを含む、トランザクションのデータ構造を"
+"作成する。サンプルのプロトコルプラグインにおいてこれは ``Txn_SM`` 構造体。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:200
+msgid ""
+"Handle events received (based on the state of the transaction and the event "
+"received)"
+msgstr ""
+"（トランザクションの状態と受け取ったイベントに基づき）受け取ったイベントを処"
+"理する"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:157
+msgid ""
+"If the transaction state machine needs to open a connection to the origin "
+"server to fetch content (in the case of a cache miss), then the transaction "
+"state machine initiates a DNS lookup of the server name. The transaction "
+"state machine is activated by a DNS lookup event from the Traffic Server "
+"**Host Database Processor**. If the transaction must connect to the origin "
+"server, then the transaction state machine initiates a net connection and "
+"waits for an event from the Net Processor."
+msgstr ""
+"トランザクションステートマシンがコンテンツを取得するためオリジンサーバーへの"
+"コネクションを開く必要がある場合（キャッシュミスした場合）、トランザクション"
+"ステートマシンはサーバー名の DNS ルックアップを開始します。トランザクション"
+"ステートマシンは Traffic Server の **ホストデータベースプロセッサー** から"
+"の DNS ルックアップイベントによって始動します。トランザクションがオリジン"
+"サーバーへ接続しなければならない場合、トランザクションステートマシンはネット"
+"コネクションを開始し、ネットプロセッサーからのイベントを待ちます。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:139
+msgid ""
+"Implementing the rest of the Protocol plugin requires that you understand "
+"the flow of events during the course of a transaction. Unlike HTTP "
+"transaction plugins, this plugin must read data from network connections "
+"and then read/write data to the Traffic Server cache. This means that its "
+"continuations do not receive HTTP state machine events; they receive events "
+"from Traffic Server's processor subsystems. For example: the accept state "
+"machine is activated by an ``TS_EVENT_NET_ACCEPT`` event from Traffic "
+"Server's Net Processor; the handler function for the accept state machine "
+"must therefore be able to handle that event."
+msgstr ""
+"プロトコルプラグインの残りの実装には、トランザクションの過程の中のイベントの"
+"フローの理解が求められます。 HTTP トランザクションプラグインとは異なり、この"
+"プラグインはネットワークコネクションからデータを読込み、 Traffic Server "
+"キャッシュへデータを読込み/書込みしなければなりません。これは、その継続は "
+"HTTP ステートマシンのイベントを受け取らず、 Traffic Server のプロセッサーサ"
+"ブシステムからイベントを受け取ることを意味します。例えば accept ステートマシ"
+"ンは、Traffic Server のネットプロセッサーからのイベント "
+"``TS_EVENT_NET_ACCEPT`` によって始動します。 accept ステートマシンのハンド"
+"ラー関数はそのため、このイベントを処理できなければなりません。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:173
+msgid "Protocol Plugin Flow of Events"
+msgstr "プロトコルプラグインのイベントのフロー"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:118
+msgid "Protocol Plugin Overview"
+msgstr "プロトコルプラグイン概要"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:85
+msgid "Protocol Plugin Structure"
+msgstr "プロトコルプラグインの構造"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:71
+msgid "Receive the origin server response"
+msgstr "オリジンサーバーのレスポンスを受け取る。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:263
+msgid "How Transaction State Machines are Implemented in the Protocol Plugin"
+msgstr ""
+"プロトコルプラグインにおいてトランザクションステートマシンがどのように実装さ"
+"れるか"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:180
+msgid ""
+"Notice that this flow of events is independent of the Protocol plugin's "
+"design (i.e., whether you build **accept** or **transaction** state "
+"machines). Any plugin that supports network connections uses the net "
+"vconnection interfaces (``TSNetAccept``, ``TSNetConnect``) and thus "
+"receives events from the Net Processor. Any plugin that performs cache "
+"lookups or cache writes uses ``TSCacheRead``, ``TSCacheWrite``, "
+"``TSVConnRead``, and ``TSVConnWrite`` and thus receives events from the "
+"Cache Processor and Traffic Server event system. Similarly, any plugin that "
+"does DNS lookups receives events from the Host Database Processor."
+msgstr ""
+"このイベントのフローは、プロトコルプラグインの設計（すなわち、 **accept** ス"
+"テートマシンや **トランザクション** ステートマシンの組み立て）とは独立してい"
+"ることに注意してください。ネットワークコネクションをサポートするプラグイン"
+"は net vconnection インタフェース（ ``TSNetAccept``, ``TSNetConnect`` ） を"
+"使用し、それによってネットプロセッサーからイベントを受け取ります。キャッシュ"
+"ルックアップやキャッシュ書込みを行うプラグインは、 ``TSCacheRead`` 、 "
+"``TSCacheWrite`` 、 ``TSVConnRead`` 、 そして ``TSVConnWrite`` を使用し、そ"
+"れによってキャッシュプロセッサーと Traffic Server イベントシステムからイベン"
+"トを受け取ります。同様に DNS ルックアップを行うプラグインはホストデータベー"
+"スプロセッサーからイベントを受け取ります。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:193
+msgid "One Way to Implement a Transaction State Machine"
+msgstr "トランザクションステートマシンを実装する方法の一つ"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:82
+msgid "Sample Protocol State Diagram"
+msgstr "サンプルプロトコルの状態遷移図"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:63
+msgid ""
+"Serve content from cache if the request is a cache hit (this simple example "
+"does not do freshness checking)"
+msgstr ""
+"リクエストがキャッシュヒットした場合、キャッシュからコンテンツを配信する。"
+"（このシンプルな例では新鮮さのチェックを行わない）"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:120
+msgid ""
+"The first steps for writing the Protocol plugin are now clear: in "
+"``TSPluginInit``, you must create a continuation that listens for net "
+"connections on the client port specified in :file:`plugin.config` (this "
+"continuation is the accept state machine)."
+msgstr ""
+"プロトコルプラグインの記述の最初のステップは明確です。 ``TSPluginInit`` "
+"で、 :file:`plugin.config` で指定されたクライアントポートでネットコネクショ"
+"ンを listen する継続を生成しなければなりません。（この継続は accept ステート"
+"マシンです）"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:175
+msgid ""
+"The flow of events is illustrated in the :ref:`Protocol Plugin Flow of "
+"Events <ProtocolPluginFlow>` diagram above. The thin straight lines show "
+"Net Processor event flow, the thin dashed lines represent Host Database "
+"event flow, and the thick dashed lines show Cache event flow."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:28
+msgid ""
+"The new protocol APIs enable you to extend Traffic Server to be a web proxy "
+"for any protocol. This chapter describes new protocol APIs and the plugins "
+"that support new protocols. It also provides a detailed review of code for "
+"a sample Protocol plugin that supports a very simple artificial HTTP-like "
+"protocol."
+msgstr ""
+"新規プロトコルプラグインは Traffic Server を任意のプロトコルのウェブプロキ"
+"シーに拡張することを可能にします。この章では新規プロトコル API と新規プロト"
+"コルをサポートするプラグインについて説明します。また非常にシンプルな模造の "
+"HTTP ライクなプロトコルをサポートするサンプルプロトコルプラグインのコードの"
+"詳細なレビューも示します。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:39
+msgid ""
+"The sample protocol enables a client to ask a server for a file. Clients "
+"send requests to a specific Traffic Server port (specified in :file:`plugin."
+"config`); each request has the following structure::"
+msgstr ""
+"サンプルプロトコルはクライアントがサーバーにファイルを問い合わせることを可能"
+"にします。クライアントは特定の Traffic Server ポート（ :file:`plugin."
+"config` で指定される）にリクエストを送信します。各リクエストは下記の構造を持"
+"ちます。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:150
+msgid ""
+"The transaction state machines are activated when the client connection "
+"receives incoming request data. The **Net Processor** notifies the "
+"transaction state machine of incoming data. The transaction state machine "
+"reads the data; when finished, it initiates a cache lookup of the requested "
+"file. When the cache lookup completes, the transaction state machine is "
+"activated by the Traffic Server **Cache Processor**."
+msgstr ""
+"トランザクションステートマシンはクライアントコネクションがやって来たリクエス"
+"トデータを受信した際に始動します。 **ネットプロセッサー** はやって来たデータ"
+"のトランザクションステートマシンに通知します。トランザクションステートマシン"
+"はそのデータを読込み、それが終了した際にリクエストされたファイルのキャッシュ"
+"ルックアップを開始します。キャッシュルックアップが完了した際、トランザクショ"
+"ンステートマシンは Traffic Server の **キャッシュプロセッサー** によって始動"
+"します。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:266
+msgid "Processing a Typical Transaction"
+msgstr "典型的なトランザクションの処理"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:59
+msgid "Read incoming client requests"
+msgstr "やってきたクライアントリクエストを読込む"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:97
+msgid ""
+"The Protocol plugin creates a static continuation that is an **\"accept\" "
+"state machine** - that is, a state machine whose job is to accept client "
+"connections on the appropriate port. When Traffic Server accepts a net "
+"connection from a client on that port, the accept state machine is "
+"activated. It then creates a new continuation: a transaction state machine. "
+"The accept state machine creates one transaction state machine for each "
+"transaction (where a :term:`transaction` consists of a client request and "
+"Traffic Server's response). Each transaction state machine lives until the "
+"transaction completes; then it is destroyed. If the client's request for "
+"content is a cache miss, then a transaction state machine might need to "
+"open a connection to the origin server. This is illustrated in the :ref:"
+"`Protocol Plugin Overview <ProtocolPluginOverview>` diagram below."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:279
+msgid ""
+"The ``TSPluginInit`` function is in the ``Protocol.c`` file. It checks the "
+"validity of the ``plugin.config`` entries (there must be two: a client "
+"accept port and a server port) and runs an initialization routine, ``init``."
+msgstr ""
+"``TSPluginInit`` 関数は ``Protocol.c`` ファイルにあります。これは ``plugin."
+"config`` のエントリの正当性（クライアント accept ポートとサーバーポートの二"
+"つが存在しなければならない）をチェックし、初期化ルーチン ``init`` を実行しま"
+"す。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:309
+msgid ""
+"The ``TxnSMCreate`` function is in the ``TxnSM.c`` file. The first thing it "
+"does is initialize the transaction's data, which is of type ``TxnSM`` (as "
+"defined in ``TxnSM.h``). Notice that the current handler "
+"(``q_current_handler``) is set to ``state_start``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:353
+msgid ""
+"If the read VIO is the ``client_read_VIO`` (which we are expecting at this "
+"stage in the transaction), then ``state_interface_with_client`` updates the "
+"state to ``state_read_request_from_client`` ."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:242
+msgid ""
+"The ``current_handler`` handles the event and updates the data. In :ref:"
+"`the image below <ImplementTransStMachine>` below, the state is changed "
+"from ``state2`` to ``state3`` (and the current handler is changed from "
+"``state2_handler`` to ``state3_handler``). The next time ``main_handler`` "
+"receives an event, it will be processed by ``state3_handler``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:284
+msgid ""
+"The ``init`` function (in ``Protocol.c``) creates the plugin's log file "
+"using ``TSTextLogObjectCreate``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:297
+msgid ""
+"The ``init`` function arranges the callback of the accept state machine "
+"when there is a network connection by using ``TSNetAccept``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:230
+msgid ""
+"The handler for the TSM, (called ``main_handler`` in the Protocol plugin) "
+"receives events from the TSM."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:287
+msgid ""
+"The ``init`` function creates the accept state machine using "
+"``AcceptCreate``. The code for ``AcceptCreate`` is in the ``Accept.c`` file."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:332
+msgid ""
+"The ``state_start`` handler function (in the ``TxnSM.c`` file) is handed an "
+"event (at this stage, the event is ``TS_EVENT_NET_ACCEPT``) and a client "
+"vconnection. ``state_start`` checks to see if this client vconnection is "
+"closed; if it is not, then ``state_start`` attempts to read data from the "
+"client vconnection into an ``TSIOBuffer`` (``state_start`` is handling the "
+"event it receives)."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:291
+msgid ""
+"The accept state machine, like the transaction state machine, keeps track "
+"of its state with a data structure. This data structure, ``Accept``, is "
+"defined in the ``Accept.h`` file. State data in ``AcceptCreate`` is "
+"associated with the new accept state machine via ``TSContDataSet``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:268
+msgid "The code is contained in the following files:"
+msgstr "コードは下記のファイルに含まれます。:"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:324
+msgid ""
+"The first thing ``main_handler`` does is examine the current ``txn_sm`` "
+"state by calling ``TSContDataGet``. The state is ``state_start``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:87
+msgid ""
+"To see how the Protocol plugin works, you need to understand some broader "
+"concepts. This section assumes you're familiar with the concepts of :term:"
+"`continuation`, Traffic Server's **asynchronous event model**, and basic "
+"Traffic Server **plugin structure**. If you are not familiar with these "
+"concepts, then you may want to begin with the :ref:`developer-plugins-"
+"getting-started` section."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:203
+msgid "Update the state of the transaction as it changes"
+msgstr "変更があったらトランザクションの状態を更新する"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:45
+msgid ""
+"Using the Protocol plugin, Traffic Server can accept these requests, parse "
+"them, and act as a proxy cache (i.e., request the file from the origin "
+"server on the client's behalf and store copies of response messages in "
+"cache). The Protocol plugin is a state machine that flows through the "
+"states illustrated in the :ref:`Sample Protocol State Diagram "
+"<SampleProtocolStDiag>`. This figure illustrates the steps that Traffic "
+"Server and the Protocol plugin go through in order to support the sample "
+"protocol."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:301
+msgid ""
+"The handler for the accept state machine is ``accept_event`` in the "
+"``Accept.c`` file. When Traffic Server's Net Processor sends "
+"``TS_EVENT_NET_ACCEPT`` to the accept state machine, ``accept_event`` "
+"creates a transaction state machine (``txn_sm``) by calling "
+"``TxnSMCreate``. Notice that ``accept_event`` creates a mutex for the "
+"transaction state machine, since each transaction state machine has its own "
+"mutex."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:226
+msgid ""
+"The steps below describe the flow of execution illustrated in :ref:`\"How "
+"Transaction State Machines are Implemented in the Protocol Plugin\" "
+"<ImplementTransStMachine>`."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:319
+msgid ""
+"When ``accept_event`` receives ``TS_EVENT_NET_ACCEPT``, it calls the "
+"transaction state machine ( ``TSContCall (txn_sm, 0, NULL);`` ). The event "
+"passed to ``main_handler`` is ``0`` (``TS_EVENT_NONE``)."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:370
+msgid ""
+"When the ``TSCacheRead`` sends the TSM either ``TS_EVENT_OPEN_READ`` (a "
+"cache hit) or ``TS_EVENT_OPEN_READ_FAILED`` (a cache miss), "
+"``main_handler`` calls ``state_handle_cache_lookup``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:212
+msgid ""
+"When you create the TSM's continuation, initialize data of type ``Txn_SM``. "
+"Initialize the data to the initial state of a transaction (in this case, a "
+"net connection has just been accepted). Associate this data to the TSM "
+"continuation using ``TSContDataSet``."
+msgstr ""
+"TSM の継続を作成する際、``Txn_SM`` 型のデータを初期化する。データをトランザ"
+"クションの初期状態に初期化する。（この場合、ネットコネクションはちょうど "
+"accept されている）このデータを ``TSContDataSet`` を使って TSM 継続に関連付"
+"ける。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:217
+msgid ""
+"Write state handler functions that handle the expected events for each "
+"state."
+msgstr ""
+"状態ごとに予想されるイベントを処理する、状態ハンドラー関数を記述する。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:220
+msgid ""
+"Write the handler for the TSM. Its job is to receive events, examine the "
+"current state, and execute the appropriate state handler function. In the "
+"Protocol plugin, the handler is ``main_handler``. ``main_handler`` calls "
+"the state handler functions to handle each state."
+msgstr ""
+"TSM のハンドラーを記述する。そのジョブはイベントを受け取る、現在の状態を検査"
+"する、そして適切な状態ハンドラー関数を実行する。プロトコルプラグインにおい"
+"て、そのハンドラーは ``main_handler`` である。 ``main_handler`` は各状態を処"
+"理するために状態ハンドラー関数を呼び出す。"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:272
+msgid "``Accept.c`` and ``Accept.h``"
+msgstr "``Accept.c`` と ``Accept.h``"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:270
+msgid "``Protocol.c`` and ``Protocol.h``"
+msgstr "``Protocol.c`` と ``Protocol.h``"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:274
+msgid "``TxnSM.c`` and ``TxnSM.h``"
+msgstr "``TxnSM.c`` と ``TxnSM.h``"
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:315
+msgid ""
+"``TxnSMCreate`` then creates a transaction state machine using "
+"``TSContCreate``. The handler for the transaction state machine is "
+"``main_handler``, which is in the ``TxnSM.c`` file."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:236
+msgid ""
+"``main_handler`` calls the ``current_handler`` (which is one of the state "
+"handler functions), and then passes the current event to "
+"``current_handler``. In :ref:`the image below <ImplementTransStMachine>` "
+"below, the current handler is called ``state2_handler``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:233
+msgid ""
+"``main_handler`` examines the state of the transaction-in particular, it "
+"examines the current handler."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:328
+msgid ""
+"``main_handler`` then invokes the handler for ``state_start`` by using the "
+"function pointer ``TxnSMHandler`` (as defined in ``TxnSM.h``)."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:249
+msgid ""
+"``state2_handler`` arranges the next callback of the TSM. Typically, it "
+"gives Traffic Server additional work to do (such as writing a file to "
+"cache) so that it can progress to the next state. The TSM "
+"(``main_handler``) then waits for the next event to arrive from Traffic "
+"Server."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:349
+msgid ""
+"``state_interface_with_client`` is activated by the next event from Traffic "
+"Server. It checks for errors and examines the read VIO for the read "
+"operation initiated by ``TSVConnRead``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:366
+msgid ""
+"``state_read_request_from_client`` arranges for Traffic Server to call back "
+"the TSM with the next set of events (initiating the cache lookup) by "
+"calling ``TSCacheRead``."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:358
+msgid ""
+"``state_read_request_from_client`` handles actual ``TS_EVENT_READ_READY`` "
+"events and reads the client request."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:361
+msgid "``state_read_request_from_client`` parses the client request."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:363
+msgid ""
+"``state_read_request_from_client`` updates the current state to the next "
+"state, ``state_handle_cache_lookup`` ."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:340
+msgid ""
+"``state_start`` changes the current handler to "
+"``state_interface_with_client`` (that is, it updates the state of the "
+"transaction to the next state)."
+msgstr ""
+
+#: ../../developer-guide/plugins/new-protocol-plugins.en.rst:344
+msgid ""
+"``state_start`` initiates a read of the client vconnection (arranges for "
+"Traffic Server to send ``TS_EVENT_VCONN_READ_READY`` events to the TSM) by "
+"calling ``TSVConnRead``."
+msgstr ""

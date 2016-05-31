@@ -13,32 +13,20 @@ msgstr ""
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.1.1\n"
 
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
+#: ../../admin-guide/monitoring/statistics/index.en.rst:23
+msgid "Statistics"
 msgstr ""
 
-#: ../../index.rst:51
-msgid "Indices and tables"
+#: ../../admin-guide/monitoring/statistics/index.en.rst:25
+msgid ""
+"Statistics provide a live view into the current state of |TS| and many of "
+"the plugins which may be usd with it. They can, and generally should be, "
+"used as a core piece in any performance and operational monitoring "
+"infrastructure as they expose a much greater detail about the workings of |"
+"TS| than can reliably be obtained through any other means."
 msgstr ""
-
-#: ../../index.rst:53
-msgid ":ref:`genindex`"
-msgstr ":ref:`genindex`"
-
-#: ../../index.rst:54
-msgid ":ref:`search`"
-msgstr ":ref:`search`"
-
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
-msgstr ""
-
-#: ../../index.rst:35
-msgid "Indices and tables"
-msgstr "Indices and tables"

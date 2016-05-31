@@ -1,0 +1,144 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:28
+msgid ""
+"*Error log files* record information about why a particular transaction was "
+"in error."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:31
+msgid ""
+"*Event log files* (also called *access log files*) record information about "
+"the state of each transaction Traffic Server processes."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:35
+msgid ""
+"*System log files* record system information, including messages about the "
+"state of Traffic Server and errors/warnings it produces. This kind of "
+"information might include a note that event log files were rolled, a "
+"warning that cluster communication timed out, or an error indicating that "
+"Traffic Server was restarted."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:41
+msgid ""
+"All system information messages are logged with the system-wide logging "
+"facility :manpage:`syslog` under the daemon facility. The :manpage:`syslog."
+"conf(5)` configuration file (stored in the ``/etc`` directory) specifies "
+"where these messages are logged. A typical location is ``/var/log/"
+"messages`` (Linux)."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:23
+msgid "Understanding |TS| Log Files"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:75
+msgid ""
+"By analyzing the log files, you can determine how many people use the |TS| "
+"cache, how much information each person requested, what pages are most "
+"popular, and so on. |TS| supports several standard log file formats, such "
+"as Squid and Netscape, as well as user-defined custom formats. You can "
+"analyze the standard format log files with off-the-shelf analysis packages. "
+"To help with log file analysis, you can separate log files so they contain "
+"information specific to protocol or hosts. You can also configure |TS| to "
+"roll log files automatically at specific intervals during the day or when "
+"they reach a certain size."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:60
+msgid ""
+"By default, |TS| creates both error and event log files and records system "
+"information in system log files. You can disable event logging and/or error "
+"logging by setting the configuration variable :ts:cv:`proxy.config.log."
+"logging_enabled` in :file:`records.config` to one of the following values:"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:57
+msgid ""
+"Refer to :ref:`traffic-server-error-messages` for a list of the messages "
+"logged by Traffic Server."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:52
+msgid ""
+"System information logs observe a static format. Each log entry in the log "
+"contains information about the date and time the error was logged, the "
+"hostname of the Traffic Server that reported the error, and a description "
+"of the error or warning."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:47
+msgid ""
+"The :manpage:`syslog(8)` process works on a system-wide basis, so it serves "
+"as the single repository for messages from all Traffic Server processes "
+"(including :program:`traffic_server`, :program:`traffic_manager`, and :"
+"program:`traffic_cop`)."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:67
+msgid "Description"
+msgstr "解説"
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:69
+msgid "Disable both event and error logging."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:72
+msgid "Enable both event and error logging."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:70
+msgid "Enable error logging only."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:71
+msgid "Enable event logging only."
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:67
+msgid "Value"
+msgstr "値"
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:69
+msgid "``0``"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:70
+msgid "``1``"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:71
+msgid "``2``"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:72
+msgid "``3``"
+msgstr ""
+
+#: ../../admin-guide/monitoring/logging/understanding.en.rst:25
+msgid ""
+"|TS| records information about every transaction (or request) it processes "
+"and every error it detects in log files. |TS| keeps three types of log "
+"files:"
+msgstr ""

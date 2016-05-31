@@ -1,0 +1,368 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:23
+msgid "Creating New Domains"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:25
+msgid ""
+"In the event a new type of object or reference needs to be documented, and "
+"none of the existing markup options or domains are appropriate, it is "
+"possible to extend |RST| and Sphinx by adding custom domains."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:29
+msgid ""
+"Each domain may be designed to accept any number of required and optional "
+"arguments, as well as any collection of domain options, and each option may "
+"be designed to support arbitrary values, restricted (enumerated) values, or "
+"to simply act as flags."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:34
+msgid ""
+"All custom domain definitions should be located in ``doc/ext/traffic-server."
+"py`` and consist of, at a bare minimum, a domain class definition and a "
+"domain reference class definition. Sphinx domains are implemented in Python."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:38
+msgid ""
+"For this section, we will use the contrived example of creating a domain "
+"which permits us to define and reference a set of variables which are "
+"constrained by the following characteristics:"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:42
+msgid ""
+"Each variable in the domain must be one of known list of data types, which "
+"we will limit here to the possibilities of :literal:`integeer`, :literal:"
+"`float`, :literal:`string`."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:46
+msgid ""
+"Where the data type is not specified, we can assume it is :literal:`string`."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:48
+msgid ""
+"Variables which are numeric in their type may have a range of permissible "
+"values."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:51
+msgid ""
+"Variables in the domain may still be present and supported in the system, "
+"but are planned to be removed in some future release."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:54
+msgid ""
+"Every variable is associated with a single URI protocol, though there is no "
+"validation performed on the value used to represent the protocol name."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:57
+msgid ""
+"As stated, this example is fairly contrived and would not match any "
+"particularly likely real-world needs, but it will allow us to demonstrate "
+"the full extent of custom domain definition without needless complexity, "
+"reader's suspension of disbelief permitting."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:62
+msgid ""
+"For this chapter's purpose, we will call this domain simply *Variables*, "
+"and we will construct classes which allow us to document variables thusly::"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:71
+msgid "And referencing of those variables defined with this domain via::"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:76
+msgid "Defining the Domain"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:78
+msgid ""
+"Each domain is defined by a class which inherits from ``std.Target``. "
+"Several class attributes are expected, which determine how domain object "
+"definitions are processed. |TS| convention is to name each domain's class "
+"in camel case, beginning with :literal:`TS` to prevent any class name "
+"collisions with builtin Sphinx classes."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:88
+msgid ""
+"We have named the domain's defining class as *TSVariable* and inherited "
+"from the :literal:`std.Target` class. Given the earlier stated "
+"requirements, we need a domain which supports at least two required "
+"attributes (a name, of course, and a URI protocol with which it is "
+"associated) and a commonly defined, though optional, third attribute (a "
+"data type). We'll deal with the value ranges and deprecation status later."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:103
+msgid ""
+"We've now specified the appropriate number of required and optional "
+"arguments, though not what each one happens to be or in what order the "
+"required arguments need be written. Additionally, we've declared that "
+"definitions using this domain do not permit whitespace in the final "
+"argument, but definitions can have a block of text content which follows "
+"them and should be associated with the item being defined."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:112
+msgid ""
+"Permitting whitespace in the final argument causes the final value of a "
+"valid definition to *slurp* the remaining content of the definition. "
+"Normally, each argument is separated by whitespace, thus ``foo bar baz`` "
+"would only be a valid definition if the domain's required and optional "
+"argument counts added up to exactly three. If the domain defined only two "
+"arguments as expected, but sets ``final_argument_whitespace`` to *True*, "
+"then the definition would be valid and the second argument in this case "
+"would be ``bar baz``."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:120
+msgid ""
+"Our requirements also state support for optional value ranges, and a flag "
+"to indicate whether the variable is being deprecated. These can easily be "
+"supported through the ``option_spec``, which allows for options to be "
+"tagged on to a domain item, on the lines immediately following its "
+"definition."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:134
+msgid ""
+"For our example, ``deprecated`` is simply a boolean flag, and ``range`` "
+"will be an arbitrary string on which we will perform no particular "
+"transformation or validation (good behavior will be left up to those "
+"documenting their variables with this domain). The ``rst.directives`` "
+"module may be consulted for a wider range of predefined option types, "
+"including the ability to define your own types which can perform any "
+"complexity of validation you may desire to implement."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:142
+msgid ""
+"It would be good form to also include a docstring for the class explaining "
+"the expected arguments in brief. With that included, our class now looks "
+"like:"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:178
+msgid ""
+"Every domain class must also provide a ``run`` method, which is called "
+"every time an item definition using the domain is encountered. This method "
+"is where all argument and option validations are performed, and where "
+"transformation of the definition into the documentation's rendered output "
+"occurs."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:183
+msgid ""
+"The core responsibilities of the ``run`` method in a domain class are to "
+"populate the domain's data dictionary, for use by references, as well as to "
+"transform the item's definition into a document structure suitable for "
+"rendering. The default title to be used for references will be constructed "
+"in this method, and all arguments and options will be processed."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:189
+msgid "Our variables domain might have the following ``run`` method:"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:242
+msgid "Defining the Domain Reference"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:244
+msgid ""
+"Domain reference definitions are quite simple in comparison to the full "
+"domain definition. As with the domain itself, they are defined by a single "
+"class, but inherit from ``XRefRole`` instead. There are no attributes "
+"necessary, and only a single method, ``process_link`` need be defined."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:249
+msgid ""
+"For our variables domain references, the class definition is a very short "
+"one. |TS| convention is to name the reference class the same as the domain "
+"class, but with :literal:`Ref` appended to the name. Thus, the domain class "
+"``TSVariable`` is accompanied by a ``TSVariableRef`` reference class."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:260
+msgid ""
+"The ``process_link`` method will receive several arguments, as described "
+"below, and should return two values: a string containing the title of the "
+"reference, and a hyperlink target to be used for the rendered documentation."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:264
+msgid "The ``process_link`` method receives the following arguments:"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:267
+msgid "``self``"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:267
+msgid "The reference instance object, as per Python method conventions."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:271
+msgid "``env``"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:270
+msgid ""
+"A dictionary object containing the environment of the documentation "
+"processor in its state at the time of the reference encounter."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:274
+msgid "``ref_node``"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:274
+msgid ""
+"The node object of the reference as encountered in the documentation source."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:278
+msgid "``explicit_title_p``"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:277
+msgid ""
+"Contains the text content of the reference's explicit title overriding, if "
+"present in the reference markup."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:283
+msgid "``title``"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:281
+msgid ""
+"The processed form of the reference title, which may be the result of "
+"domain class transformations or an overriding of the reference title within "
+"the reference itself."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:288
+msgid "``target``"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:286
+msgid ""
+"The computed target of the reference, suitable for use by Sphinx to "
+"construct hyperlinks to the location of the item's definition, wherever it "
+"may reside in the final rendered form of the documentation."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:290
+msgid ""
+"In our reference class, we have simply returned the processed title "
+"(allowing the documentation to override the variable's name if desired, or "
+"defaulting to the domain class's representation of the variable name in all "
+"other cases) and the parser's computed target."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:295
+msgid ""
+"It is recommended to leave the ``target`` untouched, however you may choose "
+"to perform any transformations you wish on the value of the ``title``, "
+"bearing in mind that whatever string is returned will appear verbatim in "
+"the rendered documentation everywhere references for this domain are used."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:301
+msgid "Exporting the Domain"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:303
+msgid ""
+"With both the domain itself and references to it now defined, the final "
+"step is to register those classes as domain and reference handlers in a "
+"namespace. This is done for |TS| (in its ``:ts:`` namespace) quite easily "
+"by modifying the ``TrafficServerDomain`` class, also located in ``doc/ext/"
+"traffic-server.py``."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:308
+msgid ""
+"The following dictionaries defined by that class should be updated to "
+"include the new domain and reference. In each case, the key used when "
+"adding to the dictionary should be the string you wish to use in "
+"documentation markup for your new domain. In our example's case, we will "
+"choose ``variable`` since it aligns with the Python classes we've created "
+"above, and their contrived purpose."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:315
+msgid "object_types"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:315
+msgid "Used to define the actual markup string"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:318
+msgid "directives"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:318
+msgid "Defines which class is used to implement a given domain."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:321
+msgid "roles"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:321
+msgid "Defines the class used to implement references to a domain."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:326
+msgid "initial_data"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:324
+msgid ""
+"Used to initialized the dictionary which tracks all encountered instances "
+"of each domain. This should always be set to an empty dictionary for each "
+"domain."
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:330
+msgid "dangling_warnings"
+msgstr ""
+
+#: ../../../developer-guide/documentation/adding-domains.en.rst:329
+msgid ""
+"May be used to provide a default warning if a reference is attempted to a "
+"non-existent item for a domain."
+msgstr ""

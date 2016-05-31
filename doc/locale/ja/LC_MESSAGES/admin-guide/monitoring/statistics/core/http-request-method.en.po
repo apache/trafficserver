@@ -1,0 +1,91 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:23
+msgid "HTTP Request Method"
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:25
+msgid ""
+"The statistics documented in this section provide counters for the number "
+"of incoming requests to the |TS| instance, broken down by the HTTP method "
+"of the request."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:32
+msgid ""
+"Represents the total number of HTTP :literal:`DELETE` requests received by "
+"the |TS| instance since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:41
+msgid ""
+"Represents the total number of HTTP :literal:`GET` requests received by the "
+"|TS| instance since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:47
+msgid ""
+"Represents the total number of HTTP :literal:`HEAD` requests received by "
+"the |TS| instance since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:53
+msgid ""
+"Represents the total number of requests received by the |TS| instance, "
+"since statistics collection began, which did not include a valid HTTP "
+"method."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:59
+msgid ""
+"Represents the total number of HTTP :literal:`OPTIONS` requests received by "
+"the |TS| instance since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:68
+msgid ""
+"Represents the total number of HTTP :literal:`POST` requests received by "
+"the |TS| instance since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:74
+msgid ""
+"Represents the total number of HTTP :literal:`PURGE` requests received by "
+"the |TS| instance since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:80
+msgid ""
+"Represents the total number of HTTP :literal:`PUSH` requests received by "
+"the |TS| instance since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:86
+msgid ""
+"Represents the total number of HTTP :literal:`PUT` requests received by the "
+"|TS| instance since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/http-request-method.en.rst:92
+msgid ""
+"Represents the total number of HTTP :literal:`TRACE` requests received by "
+"the |TS| instance since statistics collection began."
+msgstr ""

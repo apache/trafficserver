@@ -1,0 +1,120 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:4
+msgid "Background Fetch Plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:24
+msgid ""
+"This is a plugin for Apache Traffic Server that allows you to proactively "
+"fetch content from Origin in a way that it will fill the object into cache. "
+"This is particularly useful when all (or most) of your client requests are "
+"of the byte-Range type. The underlying problem being that Traffic Server is "
+"not able to cache request / responses with byte ranges."
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:31
+msgid "Using the plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:33
+msgid ""
+"This plugin functions as either a global or per remap plugin, and it takes "
+"an optional argument for specifying a config file with inclusion or "
+"exclusion criteria. The config file can be specified both via an absolute "
+"path or via a relative path to the install dir"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:38
+msgid ""
+"To activate the plugin in global mode, in :file:`plugin.config`, simply "
+"add::"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:42
+msgid ""
+"To activate the plugin in per remap mode, in :file:`remap.config`, simply "
+"append the below to the specific remap line::"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:48
+msgid "Functionality"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:50
+msgid ""
+"Examining the responses from origin, we decide to trigger a background "
+"fetch of the original (Client) request under these conditions:"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:53
+msgid "The request is a ``GET`` request (we only support these right now)"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:54
+msgid "The response is a ``206`` response"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:55
+msgid ""
+"The original client request, and the Origin server response, is clearly "
+"indicating that the response is cacheable. This uses the new API c:func:"
+"`TSHttpTxnIsCacheable()`, which also implies honoring current Traffic "
+"Server configurations."
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:61
+msgid ""
+"Once deemed a good candidate to performance a background fetch, we'll "
+"replay the original client request through the Traffic Server proxy again, "
+"except this time eliminating the ``Range`` header. This is transparent to "
+"the original client request, which continues as normal."
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:66
+msgid ""
+"Only one background fetch per URL is ever performed, making sure we do not "
+"accidentally put pressure on the origin servers."
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:69
+msgid ""
+"The plugin now supports a config file that can specify exclusion or "
+"inclusion of background fetch based on any arbitrary header or client-ip::"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:74
+msgid "The contents of the config-file could be as below::"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:82
+msgid ""
+"The plugin also now supports per remap activation. To activate the plugin "
+"for a given remap, add the below on the remap line::"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:88
+msgid "Future additions"
+msgstr ""
+
+#: ../../admin-guide/plugins/background_fetch.en.rst:90
+msgid "Limiting the background fetches to content of certain sizes"
+msgstr ""

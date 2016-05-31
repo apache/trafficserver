@@ -1,0 +1,48 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.rst:23
+msgid "Plugin Registration and Version Checking"
+msgstr ""
+
+#: ../../developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.rst:25
+msgid ""
+"If you need you make a plugin that will load against multiple versions of "
+"Traffic Server, you can check the API version at both compilation time and "
+"run time."
+msgstr ""
+
+#: ../../developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.rst:29
+msgid "Use the following interfaces:"
+msgstr ""
+
+#: ../../developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.rst:31
+msgid ":c:func:`TSPluginRegister`"
+msgstr ""
+
+#: ../../developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.rst:32
+msgid ":c:func:`TSTrafficServerVersionGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/getting-started/plugin-registration-and-version-checking.en.rst:34
+msgid ""
+"The plugin registers the plugin and ensures it's running with a compatible "
+"version of Traffic Server."
+msgstr ""

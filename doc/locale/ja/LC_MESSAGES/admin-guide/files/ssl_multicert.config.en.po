@@ -1,0 +1,358 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: 2016-01-03 16:12+0900\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:20
+msgid "ssl_multicert.config"
+msgstr "ssl_multicert.config"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:24
+msgid ""
+"The :file:`ssl_multicert.config` file lets you configure Traffic Server to "
+"use multiple SSL server certificates to terminate the SSL sessions. If you "
+"have a Traffic Server system with more than one IP address assigned to it, "
+"then you can assign a different SSL certificate to be served when a client "
+"requests a particular IP address or host name."
+msgstr ""
+":file:`ssl_multicert.config` ファイルでは Traffic Server が SSL セッションの"
+"ターミネーションを行うために複数の SSL サーバー証明書を使用する設定を行えま"
+"す。一つ以上の IP アドレスを割り当てた Traffic Server システム をもっている"
+"場合、クライアントが特定の IP アドレスもしくはホスト名をリクエストした際に異"
+"なる SSL 証明書が利用されるように割り当てることができます。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:31
+msgid ""
+"At configuration time, certificates are parsed to extract the certificate "
+"subject and all the DNS `subject alternative names <http://en.wikipedia.org/"
+"wiki/SubjectAltName>`_.  A certificate will be presented for connections "
+"requesting any of the hostnames found in the certificate. Wildcard names "
+"are supported, but only of the form `*.domain.com`, ie. where `*` is the "
+"leftmost domain component."
+msgstr ""
+"設定時、証明書は証明書のサブジェクトとすべての DNS `サブジェクト別名 "
+"<http://en.wikipedia.org/wiki/SubjectAltName>`_ を展開するためにパースされま"
+"す。証明書は証明書内にあるどれかのホスト名を要求する接続で渡されます。ワイル"
+"ドカードの名前は、`*.domain.com` という形式のみ、すなわち `*` がドメインの一"
+"番左にあるもののみサポートされています。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:39
+msgid ""
+"Changes to :file:`ssl_multicert.config` can be applied to a running Traffic "
+"Server using :option:`traffic_ctl config reload`."
+msgstr ""
+":file:`ssl_multicert.config` への変更は :option:`traffic_ctl config reload` "
+"の使用により実行中の Traffic Server に適用できます。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:43
+msgid "Format"
+msgstr "フォーマット"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:45
+msgid ""
+"Each :file:`ssl_multicert.config` line consists of a sequence of "
+"`key=value` fields that specify how Traffic Server should use a particular "
+"SSL certificate."
+msgstr ""
+":file:`ssl_multicert.config` の各行は Traffic Server が特定の SSL 証明書をど"
+"う使用すべきかを指定する `key=value` フィールドの連続で成っています。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:71
+msgid "ssl_cert_name=FILENAME[,FILENAME ...]"
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:50
+msgid ""
+"The name of the file containing the TLS certificate. *FILENAME* is located "
+"relative to the directory specified by the :ts:cv:`proxy.config.ssl.server."
+"cert.path` configuration variable. It may also include the intermediate CA "
+"certificates, sorted from leaf to root.  At a minimum, the file must "
+"include a leaf certificate."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:57
+msgid ""
+"When running with OpenSSL 1.0.2 or later, this directive can be used to "
+"configure the intermediate CA chain on a per-certificate basis.  Multiple "
+"chain files are separated by comma character. For example, it is possible "
+"able to configure a ECDSA certificate chain and a RSA certificate chain and "
+"serve them simultaneously, allowing OpenSSL to determine which certificate "
+"would be used when the TLS session cipher suites are negotiated.  Note that "
+"the leaf certs in `FILENAME1` and `FILENAME2` must have the same subjects "
+"and alternate names. The first certificate is used to to match the client's "
+"SNI request."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:68
+msgid ""
+"You can also configure multiple leaf certificates in a same chain with "
+"OpenSSL 1.0.1."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:71
+msgid "This is the only field that is required to be present."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:82
+msgid "dest_ip=ADDRESS (optional)"
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:74
+msgid ""
+"The IP (v4 or v6) address that the certificate should be presented on. This "
+"is now only used as a fallback in the case that the TLS "
+"SubjectNameIndication extension is not supported. If *ADDRESS* is `*`, the "
+"corresponding certificate will be used as the global default fallback if no "
+"other match can be made. The address may contain a port specifier, in which "
+"case the corresponding certificate will only match for connections accepted "
+"on the specified port. IPv6 addresses must be enclosed by square brackets "
+"if they have a port, eg, [::1]:80. Care should be taken to make each "
+"ADDRESS unique."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:88
+msgid "ssl_key_name=FILENAME (optional)"
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:85
+msgid ""
+"The name of the file containing the private key for this certificate. If "
+"the key is contained in the certificate file, this field can be omitted, "
+"otherwise *FILENAME* is resolved relative to the :ts:cv:`proxy.config.ssl."
+"server.private_key.path` configuration variable."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:94
+msgid "ssl_ca_name=FILENAME (optional)"
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:91
+msgid ""
+"If the certificate is issued by an authority that is not in the system CA "
+"bundle, additional certificates may be needed to validate the certificate "
+"chain. *FILENAME* is resolved relative to the :ts:cv:`proxy.config.ssl.CA."
+"cert.path` configuration variable."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:99
+msgid "ssl_ticket_enabled=1|0 (optional)"
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:97
+msgid ""
+"Enable RFC 5077 stateless TLS session tickets. To support this, OpenSSL "
+"should be upgraded to version 0.9.8f or higher. This option must be set to "
+"`0` to disable session ticket support."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:113
+msgid "ticket_key_name=FILENAME (optional)"
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:102
+msgid ""
+"The name of session ticket key file which contains a secret for encrypting "
+"and decrypting TLS session tickets. If *FILENAME* is not an absolute path, "
+"it is resolved relative to the :ts:cv:`proxy.config.ssl.server.cert.path` "
+"configuration variable. This option has no effect if session tickets are "
+"disabled by the ``ssl_ticket_enabled`` option.  The contents of the key "
+"file should be 48 random bytes."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:110
+msgid ""
+"Session ticket support is enabled by default. If neither of the "
+"``ssl_ticket_enabled`` and ``ticket_key_name`` options are specified, and "
+"internal session ticket key is generated. This key will be different each "
+"time Traffic Server is started."
+msgstr ""
+"セッションチケットサポートはデフォルトで有効化されています。もし "
+"``ssl_ticket_enabled`` と ``ticket_key_name`` オプションのどちらかが指定され"
+"ていない場合、内部セッションチケットキーが生成されます。キーは Traffic "
+"Server が起動されるたびに毎回異なります。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:131
+msgid "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\" (optional)"
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:116
+msgid ""
+"Method used to provide a pass phrase for encrypted private keys.  If the "
+"pass phrase is incorrect, SSL negotiation for this dest_ip will fail for "
+"clients who attempt to connect. Two options are supported: builtin and exec:"
+msgstr ""
+"秘密鍵を暗号化したパスフレーズを渡すのに使われる手段です。パスフレーズが間"
+"違っている場合、接続を試みたクライアントからこの dest_ip への SSL ネゴシエー"
+"ションは失敗するでしょう。builtin と exec: の 2 つのオプションがサポートされ"
+"ています。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:123
+msgid "``builtin`` - Requests pass phrase via stdin/stdout. User will be"
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:122
+msgid ""
+"provided the ssl_cert_name and be prompted for the pass phrase. Useful for "
+"debugging."
+msgstr ""
+"stdin/stdout によるパスフレーズを要求します。ユーザーは ssl_cert_name を提示"
+"され、パスフレーズの入力を促されます。デバッグに便利です。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:131
+msgid "``exec:`` - Executes program /path/to/program and passes args, if"
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:126
+msgid ""
+"specified, to the program and reads the output from stdout for the pass "
+"phrase.  If args are provided then the entire exec: string must be quoted "
+"with \"\" (see examples).  Arguments with white space are supported by "
+"single quoting (').  The intent is that this program runs a security check "
+"to ensure that the system is not compromised by an attacker before "
+"providing the pass phrase."
+msgstr ""
+"記述された場合、プログラム /path/to/program を実行し、プログラムに引数を渡"
+"し、パスフレーズを得るために stdout からの出力を読みます。引数が渡された場"
+"合、exec: 文字列全体は \"\" で囲まれていなければなりません。( 例を参照してく"
+"ださい ) ホワイトスペースを含む引数はシングルクォート (') によってサポートさ"
+"れています。この意図はこのプログラムがセキュリティチェックを実行し、パスフ"
+"レーズを渡す前にシステムが攻撃者によって汚染されていないことを確かめることで"
+"す。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:134
+msgid "Certificate Selection"
+msgstr "証明書の選択"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:136
+msgid ""
+"Traffic Server attempts two certificate selections during SSL connection "
+"setup. An initial selection is made when a TCP connection is accepted. This "
+"selection examines the IP address and port that the client is connecting to "
+"and chooses the best certificate from the those that have a ``dest_ip`` "
+"specification. If no matching certificates are found, a default certificate "
+"is chosen.  The final certificate selection is made during the SSL "
+"handshake.  At this point, the client may use `Server Name Indication "
+"<http://en.wikipedia.org/wiki/Server_Name_Indication>`_ to request a "
+"specific hostname. Traffic Server will use this request to select a "
+"certificate with a matching subject or subject alternative name. Failing "
+"that, a wildcard certificate match is attempted. If no match can be made, "
+"the initial certificate selection remains in force."
+msgstr ""
+"Traffic Server は SSL 接続のセットアップの間に二回の証明書の選択を試みます。"
+"初回の選択は TCP の接続が受け入れられたときに行われます。この選択ではクライ"
+"アントが接続しようとしている IP アドレスとポートを検査し、``dest_ip`` の指定"
+"をもつものから最適な証明書を選びます。マッチする証明書が見つからない場合は、"
+"デフォルトの証明書が選ばれます。最後の選択は SSL ハンドシェイクの間に行われ"
+"ます。このとき、クライアントは具体的なホスト名を要求するために `Server Name "
+"Indication <http://en.wikipedia.org/wiki/Server_Name_Indication>`_ を使用す"
+"ることがあります。Traffic Server はサブジェクトまたはサブジェクト別名のマッ"
+"チングにより証明書を選択するためにこのリクエストを使用するでしょう。それに失"
+"敗すると、ワイルドカードによる証明書のマッチが試されます。いずれにもマッチし"
+"ない場合、初回の証明書の選択がそのまま有効となります。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:150
+msgid ""
+"In all cases, Traffic Server attempts to select the most specific match. An "
+"address specification that contains a port number will take precedence over "
+"a specification that does not contain a port number. A specific certificate "
+"subject will take precedence over a wildcard certificate. In the case of "
+"multiple matching certificates the first match will be returned to non-SNI "
+"capable clients."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:158
+msgid "Examples"
+msgstr "例"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:160
+msgid ""
+"The following example configures Traffic Server to use the SSL certificate "
+"``server.pem`` for all requests to the IP address 111.11.11.1 and the SSL "
+"certificate ``server1.pem`` for all requests to the IP address 11.1.1.1. "
+"Connections from all other IP addresses are terminated with the ``default."
+"pem`` certificate. Since the private key is included in the certificate "
+"files, no private key name is specified."
+msgstr ""
+"次の例は Traffice Server が SSL 証明書 ``server.pem`` を IP アドレス "
+"111.11.11.1 へのすべてのリクエストに使用し、SSL 証明書 ``server1.pem`` を "
+"IP アドレス 11.1.1.1 へのすべてのリクエストに使用するように設定しています。"
+"その他のすべての IP アドレスからの接続は証明書 ``default.pem`` によってター"
+"ミネートされます。秘密鍵は証明書に含まれているので、秘密鍵の名前は指定されて"
+"いません。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:174
+msgid ""
+"The following example configures Traffic Server to use the ECDSA "
+"certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem`` for "
+"all requests."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:182
+msgid ""
+"The following example configures Traffic Server to use the ECDSA "
+"certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem`` for "
+"all requests, the public key and private key are in separate PEM files. "
+"Note that the number of files in ssl_key_name must match the files in "
+"ssl_cert_name, and they should be presented in the same order."
+msgstr ""
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:192
+msgid ""
+"The following example configures Traffic Server to use the SSL certificate "
+"``server.pem`` and the private key ``serverKey.pem`` for all requests to "
+"port 8443 on IP address 111.11.11.1. The ``general.pem`` certificate is "
+"used for server name matches."
+msgstr ""
+"次の例は Traffic Server が SSL 証明書 ``server.pem`` と秘密鍵 ``serverKey."
+"pem`` を IP アドレス 111.11.11.1 のポート 8443 へのすべてのリクエストに使用"
+"するよう設定しています。証明書 ``general.pem`` はサーバー名がマッチするもの"
+"で使用されます。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:201
+msgid ""
+"The following example configures Traffic Server to use the SSL certificate "
+"``server.pem`` for all requests to the IP address 111.11.11.1. Session "
+"tickets are enabled with a persistent ticket key."
+msgstr ""
+"次の例は Traffice Server が SSL 証明書 ``server.pem`` を IP アドレス "
+"111.11.11.1 へのすべてのリクエストに使用するように設定しています。セッション"
+"チケットは恒久的なチケットキーで有効化されています。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:210
+msgid ""
+"The following example configures Traffic Server to use the SSL certificate "
+"``server.pem`` and disable session tickets for all requests to the IP "
+"address 111.11.11.1."
+msgstr ""
+"次の例は Traffice Server が IP アドレス 111.11.11.1 へのすべてのリクエスト"
+"で SSL 証明書 ``server.pem`` を 使用し、セッションチケットを無効化するように"
+"設定しています。"
+
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:218
+msgid ""
+"The following examples configure Traffic Server to use the SSL certificate "
+"``server.pem`` which includes an encrypted private key. The external "
+"program /usr/bin/mypass will be called on startup with one parameter (foo) "
+"in the first example, and with two parameters (foo) and (ba r) in the "
+"second example, the program (mypass) will return the pass phrase to decrypt "
+"the keys."
+msgstr ""
+"次の例は Traffice Server が暗号化された秘密鍵を含む SSL 証明書 ``server."
+"pem`` を 使用するように設定しています。起動時に外部プログラム /usr/bin/"
+"mypass は最初の例では 1 つ引数 (foo) と共に呼ばれ、２つ目の例では 2 つの引"
+"数 (foo) と (ba r) と共に呼ばれ、プログラム (mypass) は鍵を復号化するための"
+"パスフレーズを返すでしょう。"

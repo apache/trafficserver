@@ -1,0 +1,84 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:23
+msgid "traffic_via"
+msgstr "traffic_via"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:26
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:28
+msgid ":program:`traffic_via` [OPTIONS] [VIA ...]"
+msgstr ":program:`traffic_via` [OPTIONS] [VIA ...]"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:31
+msgid "Description"
+msgstr "解説"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:33
+msgid ""
+":program:`traffic_via` decodes the Traffic Server Via header codes. Via "
+"header strings are passed as command-line options. The enclosing square "
+"brackets are optional."
+msgstr ""
+":program:`traffic_via` は Traffic Server の Via ヘッダー内のコードをデコード"
+"します。 Via ヘッダーの文字列はコマンドラインオプションとして渡します。文字"
+"列を囲む角括弧は省略可能です。"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:37
+#, fuzzy
+msgid ""
+"If the argument is '-', :program:`traffic_via` will filter standard input "
+"for Via headers. This modes supports only supports Via headers that are "
+"enclosed by square brackets."
+msgstr ""
+"引数が ‘-‘ の場合、 :program:`traffic_via` は Via ヘッダーを標準入力から読み"
+"込みます。このモードは角括弧で囲まれた Via ヘッダーのみをサポートします。"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:42
+msgid "Options"
+msgstr "オプション"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:48
+msgid "Print usage information and exit."
+msgstr "使い方の情報を表示して終了します。"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:52
+msgid "Print version."
+msgstr "バージョンを表示します。"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:55
+msgid "Examples"
+msgstr "例"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:57
+msgid "Decode the Via header from command-line arguments::"
+msgstr "コマンドライン引数から Via ヘッダーをデコードします::"
+
+#: ../../../appendices/command-line/traffic_via.en.rst:75
+#, fuzzy
+msgid ""
+"Decode the Via header from a curl request, using the :ref:`X-Debug <xdebug-"
+"plugin>` plugin::"
+msgstr ""
+":ref:`X-Debug <_xdebug_plugin>` プラグインを使って、curlのリクエストからの "
+"Via ヘッダーをデコードします::"

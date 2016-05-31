@@ -1,0 +1,77 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:23
+msgid "traffic_wccp"
+msgstr ""
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:26
+msgid "Description"
+msgstr "解説"
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:28
+msgid ""
+"Front end to the wccp client library.  It is a stand alone program that "
+"speaks the client side of the WCCP cache protocol."
+msgstr ""
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:31
+msgid ""
+"It can be used instead of the built in WCCP feature in |TS|. This can be "
+"beneficial if you have multiple programs running on the same computer that "
+"are relying on WCCP to redirect traffic from the router to the computer."
+msgstr ""
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:36
+msgid ""
+"Since it relies on the wccp library, :program:`traffic_wccp` is only built "
+"if |TS| is configured with ``--enable-wccp``."
+msgstr ""
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:39
+msgid ""
+"The overall Apache Traffic Server WCCP configuration documentation is at :"
+"ref:`WCCP Configuration <wccp-configuration>`"
+msgstr ""
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:43
+msgid "Options"
+msgstr "オプション"
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:57
+msgid ""
+"You need to run at least with the ``--service`` arguments. An example "
+"service definition file, ``service-nogre-example.config``, is included in "
+"the ``cmd/traffic_wccp`` directory. In this file you define your MD5 "
+"security password (highly recommended), and you define your service groups. "
+"The details of the service file are defined at :ref:`admin-wccp-service-"
+"config`."
+msgstr ""
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:64
+msgid "Limitations"
+msgstr ""
+
+#: ../../../appendices/command-line/traffic_wccp.en.rst:66
+msgid ""
+"The current WCCP implementation associated with ATS only supports one cache "
+"client per service group per router.  The cache assignment logic currently "
+"assigns the current cache client to all buckets."
+msgstr ""

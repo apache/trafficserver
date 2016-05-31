@@ -1,0 +1,53 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/index.en.rst:23
+msgid "Developer's Guide"
+msgstr ""
+
+#: ../../developer-guide/index.en.rst:31
+msgid ""
+"If you find any such issues, you may want to submit a `bug or a patch "
+"<https://issues.apache.org/jira/secure/CreateIssue!default.jspa?"
+"pid=12310963>`__. We also have a Wiki page explaining how to `create useful "
+"bug reports <https://cwiki.apache.org/confluence/display/TS/Filing+useful"
+"+bug+reports>`__. We encourage everyone to file tickets, early and often. "
+"Looking for existing, duplicate bugs is encouraged, but not required."
+msgstr ""
+"もし何か課題を見つけた場合は、`バグ報告やパッチの提供 <https://issues."
+"apache.org/jira/secure/CreateIssue!default.jspa?pid=12310963>`__ が行えま"
+"す。Wiki ページには `よいバグ報告のしかた <https://cwiki.apache.org/"
+"confluence/display/TS/Filing+useful+bug+reports>`__ も用意しています。私たち"
+"は、早期にそして頻繁にチケットを登録することを全員に奨励します。既存の重複し"
+"たバグを探すことも奨励しますが必須ではありません。"
+
+#: ../../developer-guide/index.en.rst:25
+msgid ""
+"This documentation is a work in progress. It was originally written for a "
+"previous, commercially-available version of Traffic Server that supported "
+"different operating systems and more functions than the current version. As "
+"a result, some of the sections may refer to functionality that no longer "
+"exists."
+msgstr ""
+"このドキュメントは執筆中です。このドキュメントはもともと現在の Traffic "
+"Server よりも多くの機能をもち異なるオペレーティングシステムをサポートとして"
+"いた、以前の商用の Traffic Server のために書かれたものです。そのため、いくつ"
+"かの章はもはや存在しない機能について言及しているかもしれません。"

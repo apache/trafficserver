@@ -1,0 +1,105 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/files/volume.config.en.rst:54
+msgid ""
+"Each volume is striped across several disks to achieve parallel I/O. For "
+"example: if there are four disks, then a 1-GB volume will have 256 MB on "
+"each disk (assuming each disk has enough free space available). If you do "
+"not allocate all the disk space in the cache, then the extra disk space is "
+"not used. You can use the extra space later to create new volumes without "
+"deleting and clearing the existing volumes."
+msgstr ""
+"各ボリュームは並列に I/O を発行するため幾つかのディスクにまたがって分散され"
+"ます。例えば、四つのディスクがある場合、 1-GB ボリュームは（各ディスクに十分"
+"な使用可能な空き領域があると仮定して）各ディスクで 256MB 持つでしょう。"
+"キャッシュの全ディスクスペースを割り当てない場合、余ったディスクスペースは使"
+"用されません。余ったスペースは後で既存ボリュームの削除やクリア無しに新しいボ"
+"リュームを作成するのに使用出来ます。"
+
+#: ../../admin-guide/files/volume.config.en.rst:62
+msgid "Examples"
+msgstr "例"
+
+#: ../../admin-guide/files/volume.config.en.rst:40
+msgid ""
+"For each volume you want to create, enter a line with the following "
+"format: ::"
+msgstr ""
+"作成したいボリュームごとに、下記のフォーマットで一行追加してください。"
+
+#: ../../admin-guide/files/volume.config.en.rst:38
+msgid "Format"
+msgstr "フォーマット"
+
+#: ../../admin-guide/files/volume.config.en.rst:24
+msgid ""
+"The :file:`volume.config` file enables you to manage your cache space more "
+"efficiently and restrict disk usage by creating cache volumes of different "
+"sizes for specific protocols. You can further configure these volumes to "
+"store data from certain origin servers and/or domains in the :file:`hosting."
+"config` file."
+msgstr ""
+":file:`volume.config` ファイルは、特定のプロトコルのために異なったサイズの"
+"キャッシュボリュームを作成することより、キャッシュスペースをより効率的に管理"
+"し、ディスクの使用を制限することを可能にします。更に、 :file:`hosting."
+"config` ファイルで定めたオリジンサーバかつ/またはドメインからのデータを保存"
+"するようにボリュームを設定できます。"
+
+#: ../../admin-guide/files/volume.config.en.rst:64
+msgid ""
+"The following example partitions the cache evenly between HTTP and HTTPS "
+"requests::"
+msgstr "下記の例では HTTP と HTTPS リクエストで均一にキャッシュを分割します。"
+
+#: ../../admin-guide/files/volume.config.en.rst:32
+msgid ""
+"The volume configuration must be the same on all nodes in a cluster. You "
+"must stop Traffic Server before you change the cache volume size and "
+"protocol assignment. For step-by-step instructions about partitioning the "
+"cache, refer to :ref:`partitioning-the-cache`."
+msgstr ""
+"ボリューム設定はクラスターの全ノードで同一にしなければなりません。キャッシュ"
+"ボリュームサイズとプロトコル割当を変更する前に、 Traffic Server を停止しなけ"
+"ればなりません。キャッシュのパーティショニングに関する順を追った説明について"
+"は、 :ref:`partitioning-the-cache` を参照してください。"
+
+#: ../../admin-guide/files/volume.config.en.rst:20
+msgid "volume.config"
+msgstr "volume.config"
+
+#: ../../admin-guide/files/volume.config.en.rst:45
+msgid ""
+"where ``volume_number`` is a number between 1 and 255 (the maximum number "
+"of volumes is 255) and ``protocol_type`` is ``http``. Traffic Server "
+"supports ``http`` for HTTP volume types; ``volume_size`` is the amount of "
+"cache space allocated to the volume. This value can be either a percentage "
+"of the total cache space or an absolute value. The absolute value must be a "
+"multiple of 128 MB, where 128 MB is the smallest value. If you specify a "
+"percentage, then the size is rounded down to the closest multiple of 128 MB."
+msgstr ""
+"``volume_number`` は 1 から 255 （ボリュームの最大数は 255 ）の間の数であ"
+"り、 ``protocol_type`` は ``http`` です。 Traffic Server は HTTP ボリューム"
+"タイプとして ``http`` をサポートします。 ``volume_size`` はボリュームに割り"
+"当てられるキャッシュスペースの量です。この値はキャッシュスペースの合計のパー"
+"センテージもしくは絶対値が指定できます。絶対値は 128MB の倍数でなければなら"
+"ず、 128MB は最小値です。パーセンテージで指定する場合、サイズは最も近い "
+"128MB の倍数に切り捨てられます。"

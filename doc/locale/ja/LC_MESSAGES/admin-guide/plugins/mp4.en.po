@@ -1,0 +1,56 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/mp4.en.rst:4
+msgid "MP4 Plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/mp4.en.rst:40
+msgid "Note"
+msgstr "注釈"
+
+#: ../../admin-guide/plugins/mp4.en.rst:31
+msgid ""
+"This allows performing a random seeking at any time. We can use flash "
+"player, vlc, mplayer, firefox or chrome to play the streaming media."
+msgstr ""
+
+#: ../../admin-guide/plugins/mp4.en.rst:23
+msgid ""
+"This module provides streaming media server support for MP4 files. User can "
+"send a HTTP request to the server with ``start`` argument which is measured "
+"in seconds, and the server will respond with the stream such that its start "
+"position corresponds to the requested time, for example::"
+msgstr ""
+
+#: ../../admin-guide/plugins/mp4.en.rst:34
+msgid ""
+"This plugin can be used as a remap plugin. We can write this in remap."
+"config::"
+msgstr ""
+
+#: ../../admin-guide/plugins/mp4.en.rst:42
+msgid ""
+"This plugin requires that the ``moov`` box in the mp4 file should be ahead "
+"of ``mdat`` box. It is not a good idea to cache a large mp4 file, many "
+"video sites will cut a large video file into many small mp4 files, and each "
+"small mp4 file will be less than 80M(bytes), it will be a reasonable choice."
+msgstr ""

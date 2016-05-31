@@ -1,0 +1,101 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:50
+msgid ""
+"A \"-\" can be supplied as a value for any of these arguments to request "
+"default value be applied."
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:53
+msgid ""
+"Also, just like the original combohandler, this plugin generates URLs of "
+"the form ``http://localhost/<dir>/<file-path>``. ``<dir>`` here defaults to "
+"``l`` unless specified by the file path in the query parameter using a "
+"colon. For example::"
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:4
+msgid "Combohandler Plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:40
+msgid "Configuration"
+msgstr "設定"
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:30
+msgid "Installation"
+msgstr "インストール"
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:32
+msgid "This plugin is only built if the configure option ::"
+msgstr "このプラグインはビルド時の設定オプションに ::"
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:24
+msgid ""
+"This plugin provides an intelligent way to combine multiple URLs into a "
+"single URL, and have Apache Traffic Server combine the components into one "
+"response. This is useful for example to create URLs that combine multiple "
+"CSS or Javascript files into one."
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:66
+msgid ""
+"Remap rules have to be specified to map the above URLs to desired content "
+"servers."
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:42
+msgid "The arguments in the :file:`plugin.config` line in order represent"
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:47
+msgid ""
+"The name of the key used for signature verification (disabled by default)"
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:44
+msgid ""
+"The path that should triggers combo handler (defaults to \"admin/v1/combo\")"
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:69
+msgid ""
+"The plugin also supports a prefix parameter. Common parts of successive "
+"file paths can be extracted and specified separately using a 'p' query "
+"parameter. Successive file path parameters are appended to this prefix to "
+"create complete file paths. The prefix will remain active until changed or "
+"cleared (set to an empty string). For example, the query ::"
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:60
+msgid "Will result in these three pages being fetched::"
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:36
+msgid ""
+"is given at build time. Note that this plugin is built and installed in "
+"combination with the ESI module, since they share common code."
+msgstr ""
+
+#: ../../admin-guide/plugins/combo_handler.en.rst:77
+msgid "results in these file paths being \"reconstructed\"::"
+msgstr ""

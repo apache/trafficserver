@@ -1,0 +1,418 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-03 15:27+0900\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+"Generated-By: Babel 2.1.1\n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:162
+msgid ":manpage:`TSAPI(3ts)`"
+msgstr ":manpage:`TSAPI(3ts)`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:139
+msgid ":ts:cv:`proxy.config.http.accept_encoding_filter_enabled`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:81
+msgid ":ts:cv:`proxy.config.http.anonymize_insert_client_ip`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:80
+msgid ":ts:cv:`proxy.config.http.anonymize_remove_client_ip`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:79
+msgid ":ts:cv:`proxy.config.http.anonymize_remove_cookie`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:76
+msgid ":ts:cv:`proxy.config.http.anonymize_remove_from`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:77
+msgid ":ts:cv:`proxy.config.http.anonymize_remove_referer`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:78
+msgid ":ts:cv:`proxy.config.http.anonymize_remove_user_agent`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:119
+msgid ":ts:cv:`proxy.config.http.background_fill_active_timeout`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:123
+msgid ":ts:cv:`proxy.config.http.background_fill_completed_threshold`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:92
+msgid ":ts:cv:`proxy.config.http.cache.cache_responses_to_cookies`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:94
+msgid ":ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic`"
+msgstr ":ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:87
+msgid ":ts:cv:`proxy.config.http.cache.cluster_cache_local`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:117
+msgid ":ts:cv:`proxy.config.http.cache.fuzz.min_time`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:122
+msgid ":ts:cv:`proxy.config.http.cache.fuzz.probability`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:116
+msgid ":ts:cv:`proxy.config.http.cache.fuzz.time`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:101
+msgid ":ts:cv:`proxy.config.http.cache.guaranteed_max_lifetime`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:100
+msgid ":ts:cv:`proxy.config.http.cache.guaranteed_min_lifetime`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:121
+msgid ":ts:cv:`proxy.config.http.cache.heuristic_lm_factor`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:99
+msgid ":ts:cv:`proxy.config.http.cache.heuristic_max_lifetime`"
+msgstr ":ts:cv:`proxy.config.http.cache.heuristic_max_lifetime`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:98
+msgid ":ts:cv:`proxy.config.http.cache.heuristic_min_lifetime`"
+msgstr ":ts:cv:`proxy.config.http.cache.heuristic_min_lifetime`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:86
+msgid ":ts:cv:`proxy.config.http.cache.http`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:93
+msgid ":ts:cv:`proxy.config.http.cache.ignore_authentication`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:89
+msgid ":ts:cv:`proxy.config.http.cache.ignore_client_cc_max_age`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:88
+msgid ":ts:cv:`proxy.config.http.cache.ignore_client_no_cache`"
+msgstr ":ts:cv:`proxy.config.http.cache.ignore_client_no_cache`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:91
+msgid ":ts:cv:`proxy.config.http.cache.ignore_server_no_cache`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:90
+msgid ":ts:cv:`proxy.config.http.cache.ims_on_client_no_cache`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:102
+msgid ":ts:cv:`proxy.config.http.cache.max_stale_age`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:65
+msgid ":ts:cv:`proxy.config.http.chunking_enabled`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:131
+msgid ":ts:cv:`proxy.config.http.cache.range.lookup`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:140
+msgid ":ts:cv:`proxy.config.http.cache.range.write`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:95
+msgid ":ts:cv:`proxy.config.http.cache.required_headers`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:68
+msgid ":ts:cv:`proxy.config.http.cache.when_to_revalidate`"
+msgstr ":ts:cv:`proxy.config.http.cache.when_to_revalidate`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:127
+msgid ":ts:cv:`proxy.config.http.chunking.size`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:70
+msgid ":ts:cv:`proxy.config.http.keep_alive_enabled_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:110
+msgid ":ts:cv:`proxy.config.http.connect_attempts_max_retries_dead_server`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:96
+msgid ":ts:cv:`proxy.config.http.insert_request_via_str`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:67
+msgid ":ts:cv:`proxy.config.http.negative_caching_lifetime`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:50
+msgid ""
+"All of the ``...Get`` functions store the internal value in the storage "
+"indicated by the :arg:`value` argument. For strings :arg:`length*` will "
+"receive the length of the string."
+msgstr ""
+"すべての ``...Get`` 関数は :arg:`value` 引数で示された記憶領域に内部値を格納"
+"します。文字列では :arg:`length*` は文字列の長さを受け取ります。"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:60
+msgid "Configurations"
+msgstr "設定"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:109
+msgid ":ts:cv:`proxy.config.http.connect_attempts_max_retries`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:111
+msgid ":ts:cv:`proxy.config.http.connect_attempts_rr_retries`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:112
+msgid ":ts:cv:`proxy.config.http.connect_attempts_timeout`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:133
+msgid ":ts:cv:`proxy.config.http.default_buffer_size`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:64
+msgid ":ts:cv:`proxy.config.url_remap.pristine_host_hdr`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:43
+msgid ""
+"Some of the values that are set in :file:`records.config` can be changed "
+"for a specific transaction. It is important to note that these functions "
+"change the configuration values stored for the transation, which is not "
+"quite the same as changing the actual operating values of the transaction. "
+"The critical effect is the value must be changed before it is used by the "
+"transaction - after that, changes will not have any effect."
+msgstr ""
+":file:`records.config` に設定されるいくつかの値は特定のトランザクションにお"
+"いて変更することが可能です。これらの関数はトランザクション用に格納された設定"
+"値を変更すること、つまりトランザクションが実際に処理する際の値を変更するのと"
+"まったく同じではないことに注意することが大切です。その重要な影響は値がトラン"
+"ザクションで使用される前に変更されていなければならないことです。使用された後"
+"だった場合、変更は何の効果も持ちません。"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:134
+msgid ":ts:cv:`proxy.config.http.default_buffer_water_mark`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:118
+msgid ":ts:cv:`proxy.config.http.doc_in_cache_skip_dns`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:115
+msgid ":ts:cv:`proxy.config.http.down_server.abort_threshold`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:128
+msgid ":ts:cv:`proxy.config.http.flow_control.enabled`"
+msgstr ":ts:cv:`proxy.config.http.flow_control.enabled`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:130
+msgid ":ts:cv:`proxy.config.http.flow_control.high_water`"
+msgstr ":ts:cv:`proxy.config.http.flow_control.high_water`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:71
+msgid ":ts:cv:`proxy.config.http.keep_alive_post_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:75
+msgid ":ts:cv:`proxy.config.http.forward.proxy_auth_to_parent`"
+msgstr ":ts:cv:`proxy.config.http.forward.proxy_auth_to_parent`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:141
+msgid ":ts:cv:`proxy.config.http.global_user_agent_header`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:97
+msgid ":ts:cv:`proxy.config.http.insert_response_via_str`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:83
+msgid ":ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`"
+msgstr ":ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:69
+msgid ":ts:cv:`proxy.config.http.keep_alive_enabled_in`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:23
+msgid "TSHttpOverridableConfig"
+msgstr "TSHttpOverridableConfig"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:114
+msgid ":ts:cv:`proxy.config.http.down_server.cache_time`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:126
+msgid ":ts:cv:`proxy.config.http.insert_age_in_response`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:103
+msgid ":ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_in`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:104
+msgid ":ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:66
+msgid ":ts:cv:`proxy.config.http.negative_caching_enabled`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:137
+msgid ":ts:cv:`proxy.config.http.negative_revalidating_enabled`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:129
+msgid ":ts:cv:`proxy.config.http.flow_control.low_water`"
+msgstr ":ts:cv:`proxy.config.http.flow_control.low_water`"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:138
+msgid ":ts:cv:`proxy.config.http.negative_revalidating_lifetime`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:132
+msgid ":ts:cv:`proxy.config.http.normalize_ae_gzip`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:108
+msgid ":ts:cv:`proxy.config.http.origin_max_connections`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:82
+msgid ":ts:cv:`proxy.config.http.response_server_enabled`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:113
+msgid ":ts:cv:`proxy.config.http.post_connect_attempts_timeout`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:135
+msgid ":ts:cv:`proxy.config.http.request_header_max_size`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:85
+msgid ":ts:cv:`proxy.config.http.send_http11_requests`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:73
+msgid ":ts:cv:`proxy.config.net.sock_send_buffer_size_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:41
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:136
+msgid ":ts:cv:`proxy.config.http.response_header_max_size`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:120
+msgid ":ts:cv:`proxy.config.http.response_server_str`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:84
+msgid ":ts:cv:`proxy.config.http.server_tcp_init_cwnd`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:142
+msgid ":ts:cv:`proxy.config.http.slow.log.threshold`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:107
+msgid ":ts:cv:`proxy.config.http.transaction_active_timeout_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:105
+msgid ":ts:cv:`proxy.config.http.transaction_no_activity_timeout_in`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:106
+msgid ":ts:cv:`proxy.config.http.transaction_no_activity_timeout_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:74
+msgid ":ts:cv:`proxy.config.net.sock_option_flag_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:124
+msgid ":ts:cv:`proxy.config.net.sock_packet_mark_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:125
+msgid ":ts:cv:`proxy.config.net.sock_packet_tos_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:72
+msgid ":ts:cv:`proxy.config.net.sock_recv_buffer_size_out`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:147
+msgid ""
+"Enable :ref:`transaction buffer control <transaction-buffering-control>` "
+"with a high water mark of :literal:`262144` and a low water mark of :"
+"literal:`65536`. ::"
+msgstr ""
+":ref:`transaction-buffering-control` を high water マーク :literal:`262144` "
+"と low water マーク :literal:`65536` で有効化します。\\ ::"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:145
+msgid "Examples"
+msgstr "例"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:160
+msgid "See Also"
+msgstr "参照"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:26
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:62
+msgid ""
+"The following configurations (from ``records.config``) are overridable."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:54
+msgid ""
+"The values are identified by the enumeration :type:"
+"`TSOverridableConfigKey`. String values can be used indirectly by first "
+"passing them to :func:`TSHttpTxnConfigFind` which, if the string matches an "
+"overridable value, return the key and data type."
+msgstr ""
+"値は列挙型 :type:`TSOverridableConfigKey` で特定されます。文字列値は最初に :"
+"func:`TSHttpTxnConfigFind` に渡すことで間接的に使用でき、この関数は文字列が"
+"上書き可能な値に一致した場合にキーとデータ型を返します。"
+
+#: ../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:28
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"

@@ -1,0 +1,103 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/actions/index.en.rst:23
+msgid "Actions"
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/index.en.rst:30
+msgid ""
+"An **action** is a handle to an operation initiated by a plugin that has "
+"not yet completed. For example: when a plugin connects to a remote server, "
+"it uses the call ``TSNetConnect`` - which takes ``TSCont`` as an argument "
+"to call back when the connection is established. ``TSNetConnect`` might not "
+"call the continuation back immediately and will return an ``TSAction`` "
+"structure that the caller can use to cancel the operation. Cancelling the "
+"operation does not necessarily mean that the operation will not occur; it "
+"simply means that the continuation passed into the operation will not be "
+"called back. In such an example, the connection might still occur if the "
+"action is cancelled; however, the continuation that initiated the "
+"connection would not be called back."
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/index.en.rst:42
+msgid ""
+"In the preceding example, it is also possible that the connection will "
+"complete and call back the continuation before ``TSNetConnect`` returns. If "
+"that occurs, then ``TSNetConnect`` returns a special action that causes "
+"``TSActionDone`` to return ``1``. This specifies that the operation has "
+"already completed, so it's pointless to try to cancel the operation. Also "
+"note that an action will never change from non-completed to completed. When "
+"the operation actually succeeds and the continuation is called back, the "
+"continuation must zero out its action pointer to indicate to itself that "
+"the operation succeeded."
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/index.en.rst:52
+msgid ""
+"The asynchronous nature of all operations in Traffic Server necessitates "
+"actions. You should notice from the above discussion that once a call to a "
+"function like ``TSNetConnect`` is made by a continuation and that function "
+"returns a valid action (``TSActionDone`` returns ``0``), it is not safe for "
+"the continuation to do anything else except return from its handler "
+"function. It is not safe to modify or examine the continuation's data "
+"because the continuation may have already been destroyed."
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/index.en.rst:60
+msgid "Below is an example of typical usage for an action:"
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/index.en.rst:103
+msgid ""
+"The example above shows a simple plugin that creates a continuation and "
+"then schedules it to be called immediately. When the plugin's handler "
+"function is called the first time, the event is ``TS_EVENT_IMMEDIATE``. The "
+"plugin then tries to open a net connection to port 9999 on ``localhost`` "
+"(127.0.0.1). The IP description was left in cider notation to further "
+"clarify what is going on; also note that the above won't actually compile "
+"until the IP address is modified. The action returned from ``TSNetConnect`` "
+"is examined by the plugin. If the operation has not completed, then the "
+"plugin stores the action in its continuation. Otherwise, the plugin knows "
+"it has already been called back and there is no reason to store the action "
+"pointer."
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/index.en.rst:115
+msgid ""
+"A final question might be, \"why would a plugin want to cancel an action?\" "
+"In the above example, a valid reason could be to place a limit on the "
+"length of time it takes to open a connection. The plugin could schedule "
+"itself to get called back in 30 seconds and then initiate the net "
+"connection. If the timeout expires first, then the plugin would cancel the "
+"action. The following sample code implements this:"
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/index.en.rst:174
+msgid "The action functions are:"
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/index.en.rst:176
+msgid ":c:func:`TSActionCancel`"
+msgstr ""
+
+#: ../../developer-guide/plugins/actions/index.en.rst:177
+msgid ":c:func:`TSActionDone`"
+msgstr ""

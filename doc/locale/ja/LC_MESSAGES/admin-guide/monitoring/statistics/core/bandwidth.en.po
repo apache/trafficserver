@@ -1,0 +1,77 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:23
+msgid "Bandwidth and Transfer"
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:29
+msgid ""
+"The difference of :ts:stat:`proxy.node.user_agent_total_bytes_avg_10s` and :"
+"ts:stat:`proxy.node.origin_server_total_bytes_avg_10s`, divided by :ts:stat:"
+"`proxy.node.user_agent_total_bytes_avg_10s`."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:33
+msgid ""
+"Represents the ratio of bytes served to user agents which were satisfied by "
+"cache hits, over the previous 10 seconds,"
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:40
+msgid ""
+"The percentage value of :ts:stat:`proxy.node.bandwidth_hit_ratio_avg_10s` "
+"converted to an integer."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:47
+msgid ""
+"The percentage vaue of :ts:stat:`proxy.node.bandwidth_hit_ratio` converted "
+"to an integer."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:54
+msgid ""
+"The difference of :ts:stat:`proxy.node.user_agent_total_bytes` and :ts:stat:"
+"`proxy.node.origin_server_total_bytes`, divided by :ts:stat:`proxy.node."
+"user_agent_total_bytes`."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:58
+msgid ""
+"Represents the ratio of bytes served to user agents which were satisfied by "
+"cache hits, since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:65
+msgid ""
+"The value of :ts:stat:`proxy.node.http.throughput` represented in megabits."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:71
+msgid ""
+"The value of :ts:stat:`proxy.node.http.throughput` represented in kilobits."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/bandwidth.en.rst:77
+msgid ""
+"The throughput of responses to user agents over the previous 10 seconds, in "
+"bytes."
+msgstr ""

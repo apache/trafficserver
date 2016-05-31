@@ -1,0 +1,64 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:24
+msgid ""
+"Allows a plugin take over the servicing of the request as though it was the "
+"origin server."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:35
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:28
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:22
+msgid "TSHttpTxnIntercept"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:37
+msgid ""
+":arg:`contp` will be sent :data:`TS_EVENT_NET_ACCEPT`. The edata passed "
+"with :data:`TS_NET_EVENT_ACCEPT` is an :c:type:`TSVConn` just as it would "
+"be for a normal accept. The plugin must act as if it is an HTTP server and "
+"read the HTTP request and body off the :c:type:`TSVConn` and send an HTTP "
+"response header and body."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:43
+msgid ""
+":func:`TSHttpTxnIntercept` must be called be called from only :data:"
+"`TS_HTTP_READ_REQUEST_HOOK`.  Using :type:`TSHttpTxnIntercept` will bypass "
+"the Traffic Server cache.  If response sent by the plugin should be cached, "
+"use :func:`TSHttpTxnServerIntercept` instead. :func:`TSHttpTxnIntercept` "
+"primary use is allow plugins to serve data about their functioning directly."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:51
+msgid ":func:`TSHttpTxnIntercept` must only be called once per transaction."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSHttpTxnIntercept.en.rst:30
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"

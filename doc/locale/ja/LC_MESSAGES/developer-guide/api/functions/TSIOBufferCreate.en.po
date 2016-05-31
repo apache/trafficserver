@@ -1,0 +1,121 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:60
+msgid ":func:`TSIOBufferCreate` creates an empty :type:`TSIOBuffer`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:28
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:25
+msgid "Traffic Server IO buffer API."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:30
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:41
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:23
+msgid "TSIOBufferCreate"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:43
+msgid ""
+"The :type:`TSIOBuffer` data structure is the building block of the :type:"
+"`TSVConn` abstraction. An IO buffer is composed of a list of buffer blocks "
+"which are reference counted so that they can reside in multiple buffers at "
+"the same time. This makes it extremely efficient to copy data from one IO "
+"buffer to another using :func:`TSIOBufferCopy` since Traffic Server only "
+"needs to copy pointers and adjust reference counts appropriately and not "
+"actually copy any data. However, applications should still strive to ensure "
+"data blocks are a reasonable size."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:53
+msgid ""
+"The IO buffer abstraction provides for a single writer and multiple "
+"readers. In order for the readers to have no knowledge of each other, they "
+"manipulate IO buffers through the :type:`TSIOBufferReader` data structure. "
+"Since only a single writer is allowed, there is no corresponding :type:"
+"`TSIOBufferWriter` data structure. The writer simply modifies the IO buffer "
+"directly."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:65
+msgid ""
+":func:`TSIOBufferDestroy` destroys the IO buffer :arg:`bufp`. Since "
+"multiple IO buffers can share data, this does not necessarily free all of "
+"the data associated with the IO buffer but simply decrements the "
+"appropriate reference counts."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:73
+msgid ""
+":func:`TSIOBufferProduce` makes :arg:`nbytes` of data available for reading "
+"in the IO buffer :arg:`bufp`. A common pattern for writing to an IO buffer "
+"is to copy data into a buffer block and then call INKIOBufferProduce to "
+"make the new data visible to any readers."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:62
+msgid ""
+":func:`TSIOBufferSizedCreate` creates an empty :type:`TSIOBuffer` with an "
+"initial capacity of :arg:`index` bytes."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:91
+msgid ""
+":func:`TSIOBufferWaterMarkSet` gets the current watermark for the IO "
+"buffer :arg:`bufp` to :arg:`water_mark` bytes."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:69
+msgid ""
+":func:`TSIOBufferWrite` appends :arg:`length` bytes from the buffer :arg:"
+"`buf` to the IO buffer :arg:`bufp` and returns the number of bytes "
+"successfully written into the IO buffer."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:97
+msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSIOBufferReaderAlloc(3ts)`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:95
+msgid "See Also"
+msgstr "参照"
+
+#: ../../developer-guide/api/functions/TSIOBufferCreate.en.rst:82
+msgid ""
+"The watermark of an :type:`TSIOBuffer` is the minimum number of bytes of "
+"data that have to be in the buffer before calling back any continuation "
+"that has initiated a read operation on this buffer. As a writer feeds data "
+"into the :type:`TSIOBuffer`, no readers are called back until the amount of "
+"data reaches the watermark. Setting a watermark can improve performance "
+"because it avoids frequent callbacks to read small amounts of data. :func:"
+"`TSIOBufferWaterMarkGet` gets the current watermark for the IO buffer :arg:"
+"`bufp`."
+msgstr ""

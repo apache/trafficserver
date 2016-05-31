@@ -1,0 +1,81 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-03 15:29+0900\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:39
+msgid ""
+":func:`TSInstallDirGet` returns the path to the root of the Traffic Server "
+"installation. :func:`TSConfigDirGet` and :func:`TSPluginDirGet` return the "
+"complete, absolute path to the configuration directory and the plugin "
+"installation directory, respectively."
+msgstr ""
+":func:`TSInstallDirGet` は インストール済みの Traffic Server のルートディレ"
+"クトリのパスを返します。:func:`TSConfigDirGet` と :func:`TSPluginDirGet` は"
+"それぞれ設定ディレクトリとインストール済みのプラグインディレクトリへの完全な"
+"絶対パスを返します。"
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:64
+msgid ":manpage:`TSAPI(3ts)`"
+msgstr ":manpage:`TSAPI(3ts)`"
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:37
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:25
+msgid "Return Traffic Server installation directories."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:28
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:23
+msgid "TSInstallDirGet"
+msgstr "TSInstallDirGet"
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:51
+msgid "Examples"
+msgstr "例"
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:45
+msgid "Return Values"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:62
+msgid "See Slso"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:47
+msgid ""
+"These functions all return a NUL-terminated string that must not be "
+"modified or freed."
+msgstr ""
+"これらの関数はすべて変更や解放をしてはならない NULL 終端文字列を返します。"
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:53
+msgid ""
+"To load a file that is located in the Traffic Server configuration "
+"directory::"
+msgstr "Traffic Server 設定ディレクトリにあるファイルを読み込むためには::"
+
+#: ../../developer-guide/api/functions/TSInstallDirGet.en.rst:30
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"

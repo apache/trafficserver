@@ -1,0 +1,2489 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:23
+msgid "Cache Architecture"
+msgstr "キャッシュアーキテクチャ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:26
+msgid "Introduction"
+msgstr "導入"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:28
+msgid ""
+"In addition to being an HTTP proxy, |ATS| is also an HTTP cache. |TS| can "
+"cache any octet stream, although it currently supports only those octet "
+"streams delivered by the HTTP protocol. When such a stream is cached (along "
+"with the HTTP protocol headers) it is termed an :term:`object <cache "
+"object>` in the cache. Each object is identified by a globally unique value "
+"called a :term:`cache key`."
+msgstr ""
+"|ATS| は HTTP プロキシーであると同時に HTTP キャッシュでもあります。 |TS| は"
+"どんなオクテットストリームもキャッシュできますが、現状サポートしているのは "
+"HTTP プロトコルで配信されたオクテットストリームのみです。そういがストリーム"
+"が (HTTP プロトコルヘッダーと共に) キャッシュされたとき、それはキャッシュ内"
+"の :term:`オブジェクト <キャッシュ オブジェクト>` と呼ばれます。それぞれのオ"
+"ブジェクトは :term:`キャッシュキー` と呼ばれるグローバルにユニークな値によっ"
+"て識別されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:35
+#, fuzzy
+msgid ""
+"The purpose of this document is to describe the basic structure and "
+"implementation details of the |TS| cache. Configuration of the cache will "
+"be discussed only to the extent needed to understand the internal "
+"mechanisms. This document will be useful primarily to |TS| developers "
+"working on the |TS| codebase or plugins for |TS|. It is assumed the reader "
+"is already familiar with the :ref:`admin-guide` and specifically with :ref:"
+"`http-proxy-caching` and :ref:`admin-configuration` along with the "
+"associated :ref:`configuration files <admin-configuration-files>`."
+msgstr ""
+"このドキュメントの目的は、 |TS| キャッシュの基本構造と実装の詳細について記述"
+"することです。キャッシュの設定については、内部の仕組みを理解するのに必要な範"
+"囲でのみ記述します。このドキュメントは、主に |TS| のコードや |TS| のプラグイ"
+"ンに関わる |TS| デベロッパーにとって有用となるでしょう。読者は、 :ref:"
+"`admin-guide` と、特に :ref:`http-proxy-caching` と :ref:`configuring-the-"
+"cache` 、加えて設定ファイルや設定値に詳しいことを前提とします。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:44
+msgid ""
+"Unfortunately, the internal terminology is not particularly consistent, so "
+"this document will frequently use terms in different ways than they are "
+"used in the code in an attempt to create some consistency."
+msgstr ""
+"不幸なことに、内部用語は一貫していません。そのためこのドキュメントにおいては"
+"一貫性を得るためにコード内で使われるものとは違った方法で頻繁に用語を使用しま"
+"す。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:49
+msgid "Cache Layout"
+msgstr "キャッシュレイアウト"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:51
+msgid ""
+"The following sections describe how persistent cache data is structured. |"
+"TS| treats its persisent storage as an undifferentiated collection of "
+"bytes, assuming no other structure to it. In particular, it does not use "
+"the file system of the host operating system. If a file is used it is used "
+"only to mark out the set of bytes to be used."
+msgstr ""
+"次節では永続的キャッシュデータがどのような構造を持つかを説明します。 |TS| は"
+"永続的ストレージを区別されてないバイト列の集合として扱い、それ以外の構造を仮"
+"定しません。特に、ホストオペレーティングシステムのファイルシステムは使用しま"
+"せん。ファイルが使われるとすればそれは使用される一組のバイト列を区切るために"
+"使われます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:58
+msgid "Cache storage"
+msgstr "キャッシュストレージ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:60
+msgid ""
+"The raw storage for the |TS| cache is configured in :file:`storage.config`. "
+"Each line in the file defines a :term:`cache span` which is treated as a "
+"uniform persistent store."
+msgstr ""
+"|TS| キャッシュ用の生のストレージは :file:`storage.config` で設定されます。"
+"ファイルの各行は :term:`キャッシュスパン` を定義し、それが一律の永続ストアと"
+"して扱われます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:67
+msgid "Two cache spans"
+msgstr "二つのキャッシュスパン"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:69
+msgid ""
+"This storage organized into a set of :term:`cache volumes <cache volume>` "
+"which are defined in :file:`volume.config`. These are the units that are "
+"used for all other administator level configuration."
+msgstr ""
+"このストレージは一組の :term:`キャッシュボリューム` で構成されます。 :term:`"
+"キャッシュボリューム` は :file:`volume.config` で定義されます。これらは全て"
+"の他の管理レベルの設定に使われる単位となります。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:73
+msgid ""
+"Cache volumes can be defined by a percentage of the total storage or as an "
+"absolute amount of storage. By default, each cache volume is spread across "
+"all of the cache spans for robustness. The intersection of a cache volume "
+"and a cache span is a :term:`cache stripe`. Each cache span is divided into "
+"cache stripes and each cache volume is a collection of those stripes."
+msgstr ""
+"キャッシュボリュームは全体のストレージのパーセンテージかあるいはストレージの"
+"絶対的な量で定義できます。デフォルトでは、それぞれのキャッシュボリュームは堅"
+"牢性のため全てのキャッシュスパンに散在されます。キャッシュボリュームとキャッ"
+"シュスパンの共通部分が :term:`キャッシュストライプ` です。それぞれのキャッ"
+"シュスパンは複数のキャッシュストライプに分割されますし、それぞれのキャッシュ"
+"ボリュームはこれらのストライプの集合です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:79
+msgid "If the cache volumes for the example cache spans were defined as:"
+msgstr ""
+"もし、例としてキャッシュスパンのキャッシュボリュームが以下のように定義されて"
+"いたら"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:84
+msgid "Then the actual layout would look like:"
+msgstr "実際のレイアウトはこのようになるでしょう。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:89
+msgid ""
+"Cache stripes are the fundamental unit of cache for the implementation. A "
+"cached object is stored entirely in a single stripe, and therefore in a "
+"single cache span. Objects are never split across cache spans or volumes. "
+"Objects are assigned to a stripe (and in turn to a cache volume) "
+"automatically based on a hash of the URI used to retrieve the object from "
+"the :term:`origin server`. It is possible to configure this to a limited "
+"extent in :file:`hosting.config`, which supports content from specific "
+"hosts or domain to be stored on specific cache volumes. As of version 4.0.1 "
+"it is also possible to control which cache spans (and hence, which cache "
+"stripes) are contained in a specific cache volume."
+msgstr ""
+"キャッシュストライプはキャッシュを実装するための基本的な単位です。キャッシュ"
+"されたオブジェクトは全体が単一のストライプひいては単一のキャッシュスパンに保"
+"存されます。オブジェクトが複数のキャッシュスパンやボリュームに分割されること"
+"は決してありません。オブジェクトは :term:`オリジンサーバー` からオブジェクト"
+"を取得するために使われた URI。 のハッシュに基いて自動的にストライプに割り当"
+"てられ (そして同様にキャッシュボリュームにも割り当てられ) ます。これは :"
+"file:`hosting.config` である程度までは制御することが出来、特定のホストやドメ"
+"インからのコンテンツを特定のキャッシュボリュームに保存することをサポートして"
+"います。バージョン 4.0.1 以降では特定のキャッシュボリュームの中のどのキャッ"
+"シュスパン (そしてその結果どのキャッシュストライプ) にするかも制御することが"
+"できます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:99
+msgid ""
+"The layout and structure of the cache spans, the cache volumes, and the "
+"cache stripes that compose them are derived entirely from :file:`storage."
+"config` and :file:`cache.config` and is recomputed from scratch when the :"
+"program:`traffic_server` is started. Therefore, any change to those files "
+"can (and almost always will) invalidate the existing cache in its entirety."
+msgstr ""
+"キャッシュスパン、キャッシュボリューム、そしてそれらを構成するキャッシュスト"
+"ライプのレイアウトと構造は、全て :file:`storage.config` と:file:`cache."
+"config` から取得され、 :process:`traffic_server` が開始された時にはじめから"
+"再計算されます。従って、これらのファイルへの任意の変更は(ほとんど常に)それら"
+"全ての既存のキャッシュを無効化します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:106
+msgid "Stripe Structure"
+msgstr "ストライプ構造"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:108
+msgid ""
+"|TS| treats the storage associated with a cache stripe as an "
+"undifferentiated span of bytes. Internally each stripe is treated almost "
+"entirely independently. The data structures described in this section are "
+"duplicated for each stripe. Internally the term *volume* is used for these "
+"stripes and implemented primarily in :cpp:class:`Vol`. What a user thinks "
+"of as a volume (and what this document calls a *cache volume*) is "
+"represented by :cpp:class:`CacheVol`."
+msgstr ""
+"TS| は、キャッシュストライプと結び付けられたストレージを区別されないバイト列"
+"のスパンとして扱います。内部的に各ストライプはほぼ完全に独立して扱われます。"
+"この節で記述されるデータ構造は、各ストライプに複製されます。内部的に *ボ"
+"リューム* という単語はこれらのストライプに使用され、主に :cpp:class:`Vol` で"
+"実装されています。ユーザが思うボリューム (このドキュメントでは *キャッシュボ"
+"リューム* ) は、 :cpp:class:`CacheVol` で表現されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:117
+msgid ""
+"Stripe assignment must be done before working with an object because the "
+"directory is local to the stripe. Any cached objects for which the stripe "
+"assignment is changed are effectively lost as their directory data will not "
+"be found in the new stripe."
+msgstr ""
+"ディレクトリはストライプに配置されるため、ストライプ割当はオブジェクトを扱う"
+"ような動作をする前に行われなければなりません。ストライプ割当が変更された"
+"キャッシュオブジェクトは、新しいストライプ上で発見されないであろうディレクト"
+"リデータとして事実上消失します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:126
+msgid "Cache Directory"
+msgstr "キャッシュディレクトリ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:134
+msgid ""
+"Content in a stripe is tracked via a directory. Each element of the "
+"directory is a :term:`directory entry` and is represented by :cpp:class:"
+"`Dir`. Each entry refers to a chunk of contiguous storage in the cache. "
+"These are referred to variously as *fragments*, *segments*, *docs*, "
+"*documents*, and a few other things. This document will use the term "
+"*fragment* as that is the most common reference in the code. The term *Doc* "
+"(for :cpp:class:`Doc`) will be used to refer to the header data for a "
+"fragment. Overall, the directory is treated as a hash with the :term:`cache "
+"ID` as the key. See :ref:`directory probing <cache-directory-probe>` for "
+"how the cache ID is used to locate a directory entry. The cache ID is in "
+"turn computed from a :term:`cache key` which by default is the URL of the "
+"content."
+msgstr ""
+"コンテンツはディレクトリを使って追跡されます。ディレクトリの各要素は :term:`"
+"ディレクトリエントリ` と呼ばれ :cpp:class:`Dir` で表されます。各エントリは"
+"キャッシュ内の連続したストレージのチャンクを参照します。これらは *フラグメン"
+"ト* 、 *セグメント* 、 *docs* 、 *ドキュメント* 、その他いくつかのものとして"
+"さまざまな呼ばれ方をします。コード内で最もよく参照されているのでこのドキュメ"
+"ントでは *フラグメント* という用語を使います。(:cpp:class:`Doc` に対応する) "
+"*Doc* はフラグメントへのヘッダーデータに言及するときに使用します。概してディ"
+"レクトリは :term:`キャッシュ ID` をキーとしたハッシュとして扱われます。"
+"キャッシュ ID がディレクトリエントリを発見するためにどのように使われるかにつ"
+"いては :ref:`ディレクトリ検索 <cache-directory-probe>` を参照してください。"
+"次にキャッシュ ID は :term:`キャッシュキー` から計算されます。  :term:`"
+"キャッシュキー` はデフォルトではコンテンツの URL です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:146
+msgid ""
+"The directory is used as a memory resident structure, which means a "
+"directory entry is as small as possible (currently 10 bytes). This forces "
+"some compromises on the data that can be stored there. On the other hand "
+"this means that most cache misses do not require disk I/O, which has a "
+"large performance benefit."
+msgstr ""
+"ディレクトリはメモリに常駐する構成で使用されるので、ディレクトリエントリは可"
+"能な限り小さくなっています。（現在は 10 バイト）このことは、そこに保存できる"
+"データに幾つかの制約を強要します。一方でほとんどのキャッシュミスはディスク "
+"I/O を要求せず、大きな性能面の恩恵を得ることになります。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:152
+msgid ""
+"The directory is always fully sized; once a stripe is initialized the "
+"directory size is fixed and never changed. This size is related (roughly "
+"linearly) to the size of the stripe. It is for this reason the memory "
+"footprint of |TS| depends strongly on the size of the disk cache. Because "
+"the directory size does not change, neither does this memory requirement, "
+"so |TS| does not consume more memory as more content is stored in the "
+"cache. If there is enough memory to run |TS| with an empty cache there is "
+"enough to run it with a full cache."
+msgstr ""
+"ディレクトリは常に最大のサイズになります。ストライプが一旦初期化されると、"
+"ディレクトリサイズは固定されて二度と変更されません。このサイズは、ストライプ"
+"のサイズに（大雑把に、線形に）関係します。この理由により |TS| のメモリ使用量"
+"は、ディスクキャッシュのサイズに強く依存します。ディレクトリサイズは変わらず"
+"メモリ要件もまた変わらないため、 |TS| がキャッシュに保存されたコンテンツが増"
+"えてもメモリ消費量が増えることはありません。キャッシュが空の状態で |TS| を動"
+"作させるのに十分なメモリがあるなら、キャッシュが満ちた状態で動作するのに十分"
+"です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:163
+msgid ""
+"Each entry stores an offset in the stripe and a size. The size stored in "
+"the directory entry is an :ref:`approximate size <dir-size>` which is at "
+"least as big as the actual data in the fragment. Exact size data is stored "
+"in the fragment header on disk."
+msgstr ""
+"それぞれのエントリはストライプ内でのオフセットとサイズを保存します。ディレク"
+"トリエントリに保存されるサイズは  :ref:`おおよそのサイズ <dir-size>` であり"
+"フラグメント内の実際のデータと最低でも同じになります。正確なサイズデータは"
+"ディスク上のフラグメントヘッダーに保存されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:170
+msgid ""
+"Data in HTTP headers cannot be examined without disk I/O. This includes the "
+"original URL for the object. The cache key is not stored explicitly and "
+"therefore cannot be reliably retrieved."
+msgstr ""
+"HTTP ヘッダー内のデータはディスク I/O 無しに調べることは出来ません。これには"
+"オブジェクトの元の URL を含みます。キャッシュキーは明示的には保存されていな"
+"いので、その結果確実に取得することは出来ません。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:174
+msgid ""
+"The directory is a hash table that uses `chaining <http://en.wikibooks.org/"
+"wiki/Data_Structures/Hash_Tables#Collision_resolution>`_ for collision "
+"resolution. Because each entry is small they are used directly as the list "
+"header of the hash bucket."
+msgstr ""
+"ディレクトリは衝突解決に `チェイン法 <http://en.wikibooks.org/wiki/"
+"Data_Structures/Hash_Tables#Collision_resolution>`_ を使うハッシュテーブルで"
+"す。各エントリは小さいのでハッシュバケットのリストヘッダーとして直接使用され"
+"ます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:182
+msgid ""
+"Chaining is implemented by imposing grouping structures on the entries in a "
+"directory. The first level grouping is a :term:`directory bucket`. This is "
+"a fixed number (currently 4, defined as ``DIR_DEPTH``) of entries. This "
+"serves to define the basic hash buckets with the first entry in each cache "
+"bucket serving as the root of the hash bucket."
+msgstr ""
+"チェイン法はグループ化する構造をディレクトリ内のエントリに課すことで実装され"
+"ています。第一レベルのグルーピングは :term:`ディレクトリバケット` です。これ"
+"は固定の数 (現在は 4 、``DIR_DEPTH`` で定義されています)のエントリです。これ"
+"はそれぞれのキャッシュバケット内に最初のエントリを持つ基本的なハッシュバケッ"
+"トを定義するのに役立ちます。キャッシュバケットはハッシュバケットのルートの役"
+"目を果たします。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:190
+msgid ""
+"The term *bucket* is used in the code to mean both the conceptual bucket "
+"for hashing and for a structural grouping mechanism in the directory. These "
+"will be qualified as needed to distinguish them. The unqualified term "
+"*bucket* is almost always used to mean the structural grouping in the "
+"directory."
+msgstr ""
+"*バケット* という用語はハッシングのための概念的なバケットとディレクトリ内の"
+"構造をグループ化するメカニズムの両方を意味するコードで使われています。これら"
+"を区別する必要に応じてこれらは修飾されます。修飾無しの *バケット* という用語"
+"はほぼ常にディレクトリ内の構造をグループ化することを意味するのに使われます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:195
+msgid ""
+"Directory buckets are grouped in to :term:`segments <directory segment>`. "
+"All segments in a stripe have the same number of buckets. The number of "
+"segments in a stripe is chosen so that each segment has as many buckets as "
+"possible without exceeding 65,535 (2\\ :sup:`16`\\ -1) entries in a segment."
+msgstr ""
+"ディレクトリバケットは :term:`セグメント <ディレクトリセグメント>` の中にグ"
+"ループ化されます。ストライプの中の全てのセグメントは同じ数のバケットを持ちま"
+"す。ストライプ内のセグメントの数は 1 つのセグメント内のエントリの数が "
+"65,535 (2\\ :sup:`16`\\ -1 を超えない範囲で各セグメントがなるべく多くのバ"
+"ケットを持つように選ばれます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:203
+msgid ""
+"Each directory entry has a previous and next index value which is used to "
+"link entries in the same segment. Because no segment has more than 65,535 "
+"entries, 16 bits suffices for storing the index values. The stripe header "
+"contains an array of entry indices which are used as the roots of entry "
+"free lists, one for each segment. Active entries are stored via the bucket "
+"structure. When a stripe is initialized the first entry in each bucket is "
+"zeroed (marked unused) and all other entries are put in the corresponding "
+"segment free list in the stripe header. This means the first entry of each :"
+"term:`directory bucket` is used as the root of a hash bucket and is "
+"therefore marked unused rather than being put a free list. The other "
+"entries in the directory bucket are preferred for adding to the "
+"corresponding hash bucket but this is not required. The segment free lists "
+"are initialized such that the extra bucket entries are added in order; all "
+"the seconds, then the thirds, then the fourths. Because the free lists are "
+"FIFOs, this means extra entries will be selected from the fourth entries "
+"across all the buckets first, then the thirds, etc. When allocating a new "
+"directory entry in a bucket the entries are searched from first to last, "
+"which maximizes bucket locality (that is, :term:`cache IDs <cache ID>` that "
+"map to the same hash bucket will also tend to use the same directory "
+"bucket)."
+msgstr ""
+"各ディレクトリエントリは前と次のインデックス値を持ちそれは同一セグメント内の"
+"エントリを結びつけるために使われます。 65,535 エントリより多くを持つセグメン"
+"トは存在しないので、インデックス値を保存するには 16 ビットあれば十分です。ス"
+"トライプヘッダーはエントリインデックスの配列を格納し、エントリインデックスは"
+"エントリのフリーリストのルートとして使われます。ルートそれぞれのセグメント"
+"に 1 つ存在します。アクティブなエントリはバケット構造を使って保存されます。"
+"ストライプが初期化されるとき、それぞれのバケットの最初のエントリはゼロクリ"
+"ア (未使用とマーク) され、他のエントリはストライプヘッダー内の対応するセグメ"
+"ントのフリーリストに置かれます。これはそれぞれの :term:`ディレクトリバケット"
+"` の最初のエントリはハッシュバケットのルートとして使われ、そのためフリーリス"
+"ト内に置かれるよりは未使用としてマークされることを意味します。ディレクトリバ"
+"ケット内の他のエントリは対応するハッシュバケットに追加されることが望ましいで"
+"すが、必須ではありません。セグメントのフリーリストは予備のバケットエントリが"
+"順番に追加されるように初期化され、全ての第 2 ディレクトリバケット、第 3 ディ"
+"レクトリバケット、そして第 4 ディレクトリバケットが続きます。フリーリストは "
+"FIFO なので、これは予備のエントリはまず全ての第 4 ディレクトリバケットから選"
+"択され、次に第 3 ディレクトリバケットから選択され、などとなることを意味しま"
+"す。バケット内に新しいディレクトリエントリを割り当てるときはエントリは先頭か"
+"ら最後に検索され、バケットの局所性 (つまり、同じハッシュバケットにマッピング"
+"する :term:`キャッシュ ID` は同じディレクトリバケットを使う傾向が強くなるよ"
+"うに) を最大化します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:225
+msgid ""
+"Entries are removed from the free list when used and returned when no "
+"longer in use. When a :term:`fragment <cache fragment>` needs to be put in "
+"to the directory the cache ID is used to locate a hash bucket (which also "
+"determines the segment and directory bucket). If the first entry in the "
+"directory bucket is marked unused, it is used. Otherwise, the other entries "
+"in the bucket are searched and if any are on the free list, that entry is "
+"used. If none are available then the first entry on the segment free list "
+"is used. This entry is attached to the hash bucket via the same next and "
+"previous indices used for the free list so that it can be found when doing "
+"a lookup of a cache ID."
+msgstr ""
+
+#: ../../../developer-guide/architecture/architecture.en.rst:236
+msgid "Storage Layout"
+msgstr "ストレージレイアウト"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:238
+msgid ""
+"The storage layout is the stripe metadata followed by cached content. The "
+"metadata consists of three parts: the stripe header, the directory, and the "
+"stripe footer. The metadata is stored twice. The header and the footer are "
+"instances of :cpp:class:`VolHeaderFooter`. This is a stub structure which "
+"can have a trailing variable sized array. This array is used as the segment "
+"free list roots in the directory. Each contains the segment index of the "
+"first element of the free list for the segment. The footer is a copy of the "
+"header without the segment free lists. This makes the size of the header "
+"dependent on the directory but not that of the footer."
+msgstr ""
+"ストレージレイアウトは、ストライプメタデータの後ろにキャッシュされたコンテン"
+"ツが続きます。メタデータは三つの要素、ストライプヘッダ、ディレクトリ、ストラ"
+"イプフッタで構成されます。メタデータは二度保存されます。ヘッダとフッタは :"
+"cpp:class:`VolHeaderFooter` のインスタンスです。これは可変長配列を末尾に持つ"
+"ことができるスタブ構造体です。この配列はディレクトリのルートのセグメントフ"
+"リーリストとして使用されます。各要素はセグメントのフリーリストの、最初の要素"
+"のセグメントインデックスを持ちます。フッタは、セグメントフリーリストを伴わな"
+"いヘッダのコピーです。ヘッダのサイズはディレクトリに依存しますが、フッタは依"
+"存しません。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:251
+msgid "Each stripe has several values that describe its basic layout:"
+msgstr "各ストライプは、基本的なレイアウトを表現する幾つかの値を持ちます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:256
+msgid "skip"
+msgstr "skip"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:254
+msgid ""
+"The start of stripe data. This represents either space reserved at the "
+"start of a physical device to avoid problems with the host operating "
+"system, or an offset representing use of space in the cache span by other "
+"stripes."
+msgstr ""
+"ストライプデータの開始地点です。これはホストオペレーティングシステムによる問"
+"題を回避するために物理デバイスの始点に予約されたスペース、もしくは他のストラ"
+"イプにキャッシュスパンのスペースが使用されていることを表すオフセットのどちら"
+"かを表します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:259
+msgid "start"
+msgstr "start"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:259
+msgid "The offset for the start of the content, after the stripe metadata."
+msgstr "ストライプメタデータの後からの、コンテンツの開始地点を示すオフセット"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:262
+msgid "length"
+msgstr "length"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:262
+msgid "Total number of bytes in the stripe. :cpp:member:`Vol::len`."
+msgstr "ストライプのバイトの合計値。 :cpp:member:`Vol::len` "
+
+#: ../../../developer-guide/architecture/architecture.en.rst:266
+msgid "data length"
+msgstr "data length"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:265
+msgid ""
+"Total number of blocks in the stripe available for content storage. :cpp:"
+"member:`Vol::data_blocks`."
+msgstr ""
+"コンテンツストレージとして使用可能なストライプのブロックの合計値。:cpp:"
+"member:`Vol::data_blocks` "
+
+#: ../../../developer-guide/architecture/architecture.en.rst:270
+msgid ""
+"Great care must be taken with sizes and lengths in the cache code because "
+"there are at least three different metrics (bytes, cache blocks, store "
+"blocks) used in various places."
+msgstr ""
+"キャッシュコードの size や length を扱う場合、特に注意しなければなりません。"
+"これらは様々な箇所で、少なくとも三つの違うメトリクス(バイト、キャッシュブ"
+"ロック、ストアブロック)が使われているからです。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:274
+msgid ""
+"The total size of the directory (the number of :term:`entries <directory "
+"entry>`) is computed by taking the size of the :term:`cache stripe` and "
+"dividing by the average object size. The directory always consumes this "
+"amount of memory which has the effect that if cache size is increased so is "
+"the memory requirement for |TS|. The average object size defaults to 8000 "
+"bytes but can be configured using :ts:cv:`proxy.config.cache."
+"min_average_object_size`. Increasing the average object size will reduce "
+"the memory footprint of the directory at the expense of reducing the number "
+"of distinct objects that can be stored in the cache."
+msgstr ""
+"ディレクトリの合計サイズ (:term:`エントリ <ディレクトリエントリ>` 数) は、 :"
+"term:`キャッシュストライプ` のサイズを取得して平均オブジェクトサイズで割るこ"
+"とで計算されます。ディレクトリは常にメモリ量を消費し、それはもしキャッシュサ"
+"イズが増加するなら |TS| のメモリ要件も増加するという効果を引き起こします。平"
+"均オブジェクトサイズはデフォルトでは 8000 バイトですが、 :ts:cv:`proxy."
+"config.cache.min_average_object_size` で設定できます。平均オブジェクトサイズ"
+"を増加させることにより、キャッシュに保存するオブジェクト数を減らすことと引き"
+"換えに、ディレクトリのメモリ使用量を減らすことができます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:286
+msgid ""
+"The content area stores the actual objects and is used as a circular buffer "
+"where new objects overwrite the least recently cached objects. The location "
+"in a stripe where new cache data is written is called the *write cursor*. "
+"This means that objects can be de facto evicted from cache even if they "
+"have not expired if the data is overwritten by the write cursor. If an "
+"object is overwritten this is not detected at that time and the directory "
+"is not updated. Instead it will be noted if the object is accessed in the "
+"future and the disk read of the fragment fails."
+msgstr ""
+"コンテンツエリアは実際のオブジェクトを保存し、最もキャッシュされてから時間が"
+"経過したオブジェクトを新たなドキュメントで上書きする循環バッファとして使用さ"
+"れます。ストライプの新たなキャッシュデータの位置は、 *書込みカーソル* と呼ば"
+"れます。これはデータが書込みカーソルによって上書きされる場合、たとえ失効して"
+"いなくても、オブジェクトは事実上キャッシュから立ち退かせられることを意味しま"
+"す。もしオブジェクトが上書きされる場合、検出されずディレクトリは更新されませ"
+"ん。代わりに、もしオブジェクトが将来アクセスされてフラグメントのディスク読込"
+"みが失敗する場合、警告されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:298
+msgid "The write cursor and documents in the cache."
+msgstr "書込みカーソルとキャッシュ内のドキュメント"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:300
+msgid "Cache data on disk is never updated."
+msgstr "ディスク上のキャッシュデータは永遠に更新されません。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:302
+msgid ""
+"This is a key thing to keep in mind. What appear to be updates (such as "
+"doing a refresh on :term:`stale` content and getting back a 304) are "
+"actually new copies of data being written at the write cursor. The "
+"originals are left as \"dead\" space which will be consumed when the write "
+"cursor arrives at that disk location. Once the stripe directory is updated "
+"(in memory) the original fragment in the cache is effectively destroyed. "
+"This is the general space management technique used in other cases as well. "
+"If an object needs to removed from cache, only the directory needs to be "
+"changed. No other work (and particularly, no disk I/O) needs to be done."
+msgstr ""
+"これは、心に留めておくべき重要な事です。更新されるように見えるもの ( :term:`"
+"新鮮ではない` コンテンツをリフレッシュし、 304 を返すような) は、実際には書"
+"込みカーソルで書き込まれているデータの新しいコピーです。オリジナルは書込み"
+"カーソルがディスクのその位置に到着する時に消去される、 \"死んだ\" スペースと"
+"して残されます。一旦ストライプディレクトリが (メモリ内で) 更新されると、"
+"キャッシュ上のオリジナルのフラグメントは事実上破棄されます。これは他のケース"
+"でも同様に用いられる、一般的なスペース管理技術です。もしオブジェクトをキャッ"
+"シュから削除する必要がある場合、ディレクトリだけ変更する必要があります。他の"
+"動作行う必要はありません (特にディスク I/O は必要ありません)。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:313
+msgid "Object Structure"
+msgstr "オブジェクトの構造"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:315
+msgid ""
+"Objects are stored as two types of data: metadata and content data. "
+"Metadata is all the data about the object and the content and includes the "
+"HTTP headers. The content data is the content of the object, the octet "
+"stream delivered to the client as the object."
+msgstr ""
+"オブジェクトは二つのデータのタイプ、メタデータとコンテンツデータとして保存さ"
+"れます。メタデータは、 HTTP ヘッダを含むオブジェクトとコンテンツに関する全て"
+"のデータです。コンテンツデータはオブジェクトのコンテンツで、オブジェクトとし"
+"てクライアントに配信されるオクテットストリームです。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:320
+msgid ""
+"Objects are rooted in a :cpp:class:`Doc` structure stored in the cache. :"
+"cpp:class:`Doc` serves as the header data for a :term:`cache fragment` and "
+"is contained at the start of every fragment. The first fragment for an "
+"object is termed the *first Doc* and always contains the object metadata. "
+"Any operation on the object will read this fragment first. The fragment is "
+"located by converting the :term:`cache key` for the object to a :term:"
+"`cache ID` and then doing a lookup for a :term:`directory entry` with that "
+"key. The directory entry has the offset and approximate size of the first "
+"fragment which is then read from the disk. This fragment will contain the "
+"request header and response along with overall object properties (such as "
+"content length)."
+msgstr ""
+"オブジェクトは、キャッシュに格納される :cpp:class:`Doc` 構造体をルートとしま"
+"す。:cpp:class:`Doc` は :term:`キャッシュフラグメント` のヘッダデータとして"
+"提供し、各フラグメントの先頭に置かれます。オブジェクトの最初のフラグメント"
+"は *先頭の Doc* と呼ばれ、常にオブジェクトメタデータを含んでいます。オブジェ"
+"クトの任意の操作は、最初にこのフラグメントを読み込みます。そのフラグメントは"
+"オブジェクトの :term:`キャッシュキー` を :term:`キャッシュ ID` に変換するこ"
+"とにより発見され、その後そのキーを使って :term:`ディレクトリエントリ` が検索"
+"されます。ディレクトリエントリは、その時ディスクから読み込まれる先頭のフラグ"
+"メントのオフセットとおおよそのサイズを持ちます。このフラグメントは、全てのオ"
+"ブジェクトのプロパティ (コンテンツ長のような) に加えて、リクエストヘッダとレ"
+"スポンスを持ちます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:333
+msgid ""
+"|TS| supports `varying content <http://www.w3.org/Protocols/rfc2616/rfc2616-"
+"sec14.html#sec14.44>`_ for objects. These are called :term:`alternates "
+"<alternate>`. All metadata for all alternates is stored in the first "
+"fragment including the set of alternates and the HTTP headers for them. "
+"This enables `alternate selection <http://trafficserver.apache.org/docs/"
+"trunk/sdk/http-hooks-and-transactions/http-alternate-selection.en.html>`_ "
+"to be done after the *first Doc* is read from disk. An object that has more "
+"than one alternate will have the alternate content stored separately from "
+"the first fragment. For objects with only one alternate the content may or "
+"may not be in the same (first) fragment as the metadata. Each separate "
+"alternate content is allocated a directory entry and the key for that entry "
+"is stored in the first fragment metadata."
+msgstr ""
+"|TS| はオブジェクト用に `コンテンツ変換 <http://www.w3.org/Protocols/"
+"rfc2616/rfc2616-sec14.html#sec14.44>`_ をサポートします。これらを :term:`代"
+"替` と呼びます。全ての代替の全メタデータは、代替のセットとそれらの HTTP ヘッ"
+"ダを含む先頭のフラグメントに格納されます。これは、 *先頭の Doc* がディスクか"
+"ら読込まれた後に、 `代替セクション <http://trafficserver.apache.org/docs/"
+"trunk/sdk/http-hooks-and-transactions/http-alternate-selection.en.html>`_  "
+"が実行されることを有効にします。複数の代替を持つオブジェクトは、先頭のフラグ"
+"メントとは別に保存された代替コンテンツを持ちます。一つの代替のみ持つオブジェ"
+"クトは、コンテンツはメタデータと同じ (先頭の) フラグメントに置かれるかもしれ"
+"ないし、そうでもないかもしれません。個々の分離された代替コンテンツはディレク"
+"トリエントリを割り当てられ、エントリのキーは先頭のフラグメントのメタデータに"
+"保存されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:345
+msgid ""
+"Prior to version 4.0.1, the header data was stored in the :cpp:class:"
+"`CacheHTTPInfoVector` class which was marshaled to a variable length area "
+"of the on disk image, followed by information about additional fragments if "
+"needed to store the object."
+msgstr ""
+"バージョン 4.0.1 以前は、ヘッダデータはディスクイメージの可変長領域に整列さ"
+"れる :cpp:class:`CacheHTTPInfoVector` クラス内に保存され、オブジェクトを保存"
+"する必要がある場合、追加フラグメント情報がその後ろに続きます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:353
+msgid "``Doc`` layout 3.2.0"
+msgstr "3.2.0 の ``Doc`` レイアウト"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:355
+msgid ""
+"This had the problem that with only one fragment table it could not be "
+"reliable for objects with more than one alternate[#multiple-alternates]_. "
+"Therefore, the fragment data was moved from being a separate variable "
+"length section of the metadata to being directly incorporated in to the :"
+"cpp:class:`CacheHTTPInfoVector`, yielding a layout of the following form."
+msgstr ""
+"この方法では、一つのフラグメントテーブルのみでは複数の 代替[#multiple-"
+"alternates]_ を持つオブジェクトに対しては信頼性を確保できない問題がありまし"
+"た。したがって、フラグメントデータはメタデータ用に分離された可変長領域から :"
+"cpp:class:`CacheHTTPInfoVector` へ直接統合されるよう移動し、以下の形式のレイ"
+"アウトに生まれ変わりました。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:364
+msgid "``Doc`` layout 4.0.1"
+msgstr "4.0.1 の ``Doc`` レイアウト"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:366
+msgid ""
+"Each element in the vector contains for each alternate, in addition to the "
+"HTTP headers and the fragment table (if any), a :term:`cache key`. This "
+"cache key identifies a :term:`directory entry` that is referred to as the "
+"*earliest Doc*. This is the location where the content for the alternate "
+"begins."
+msgstr ""
+"ベクターの各要素は、各代替に加えて (もしあれば) HTTP ヘッダとフラグメント"
+"テーブル、 :term:`キャッシュキー` を含みます。このキャッシュキーは *最古の "
+"Doc* として参照される :term:`ディレクトリエントリ` を特定します。これは代替"
+"のコンテンツの開始位置です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:371
+msgid ""
+"When the object is first cached, it will have a single alternate and that "
+"will be stored (if not too large) in first ``Doc``. This is termed a "
+"*resident alternate* in the code. This can only happen on the initial store "
+"of the object. If the metadata is updated (such as a ``304`` response to an "
+"``If-Modified-Since`` request) then unless the object is small, the object "
+"data will be left in the original fragment and a new fragment written as "
+"the first fragment, making the alternate non-resident. *Small* is defined "
+"as a length smaller than :ts:cv:`proxy.config.cache.alt_rewrite_max_size`."
+msgstr ""
+"オブジェクトが最初にキャッシュされる際、それは単一の代替を持ち、 (大きすぎな"
+"い場合は)  先頭の ``Doc`` に格納されます。これはコード中で *常駐代替* と呼ば"
+"れます。この処理はオブジェクトの最初の保存時にのみ発生し得ます。メタデータが"
+"更新される場合 (``If-Modified-Since`` リクエストに対し、 ``304`` を返すな"
+"ど) 、オブジェクトが小さくなければ、オブジェクトデータはオリジナルのフラグメ"
+"ントに取り残され、新しいフラグメントが先頭のフラグメントとして書き込まれ、非"
+"常駐の代替を作成します。 :ts:cv:`proxy.config.cache.alt_rewrite_max_size` よ"
+"り小さい長さを、 *小さい* と定義します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:382
+msgid ""
+"The :cpp:class:`CacheHTTPInfoVector` is stored only in the first ``Doc``. "
+"Subsequent ``Doc`` instances for the object, including the earliest "
+"``Doc``, should have an ``hlen`` of zero and if not, it is ignored."
+msgstr ""
+":cpp:class:`CacheHTTPInfoVector` は first ``Doc`` にのみ保存されます。"
+"earliest ``Doc`` を含む、 first ``Doc`` に続くオブジェクトの ``Doc`` インス"
+"タンスはゼロの ``hlen`` を持つはずであり、もしそうでないものは無視されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:386
+msgid ""
+"Large objects are split in to multiple fragments when written to the cache. "
+"This is indicated by a total document length that is longer than the "
+"content in first ``Doc`` or an earliest ``Doc``. In such a case a fragment "
+"offset table is stored. This contains the byte offset in the object content "
+"of the first byte of content data for each fragment past the first (as the "
+"offset for the first is always zero). This allows range requests to be "
+"serviced much more efficiently for large objects, as intermediate fragments "
+"that do not contain data in the range can be skipped. The last fragment in "
+"the sequence is detected by the fragment size and offset reaching the end "
+"of the total size of the object, there is no explicit end mark. Each "
+"fragment is computationally chained from the previous in that the cache key "
+"for fragment N is computed by::"
+msgstr ""
+"巨大なオブジェクトは、キャッシュに書き込まれる時に複数のフラグメントに分割さ"
+"れます。これは、ドキュメント長の合計が first ``Doc`` もしくは earliest "
+"``Doc`` のコンテンツより長いことを示します。このような場合には、フラグメント"
+"オフセットテーブルが保存されます。このテーブルは（オフセットが常にゼロである"
+"ような）先頭のフラグメントの次以降の各フラグメントのコンテンツデータの先頭バ"
+"イトを指し示す、オブジェクトコンテンツ全体の中でのバイトオフセットを含みま"
+"す。これは範囲内のデータを含まない、中間にあるフラグメントをスキップ可能にす"
+"ることで、巨大なオブジェクトを非常に効率的に提供するためのレンジリクエストを"
+"可能にします。シーケンスの最後のフラグメントは、明示的なエンドマーク無しにフ"
+"ラグメントサイズとオフセットがオブジェクトの合計サイズの最後に到達することに"
+"より検出されます。各フラグメントは、計算的に前のものと繋がっています。フラグ"
+"メント N のキャッシュキーは、以下により計算されます::"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:400
+msgid ""
+"Where ``next_key`` is a global function that deterministically computes a "
+"new cache key from an existing cache key."
+msgstr ""
+"ここで ``next_key`` は既存のキャッシュキーから新しいキャッシュキーを決定論的"
+"に計算するグローバル関数です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:403
+msgid ""
+"Objects with multiple fragments are laid out such that the data fragments "
+"(including the earliest ``Doc``) are written first and the first ``Doc`` is "
+"written last. When read from disk, both the first and earliest ``Doc`` are "
+"validated (tested to ensure that they haven't been overwritten by the write "
+"cursor) to verify that the entire document is present on disk (as they "
+"bookend the other fragments - the write cursor cannot overwrite them "
+"without overwriting at least one of the verified ``Doc`` instances). Note "
+"that while the fragments of a single object are ordered they are not "
+"necessarily contiguous, as data from different objects are interleaved as "
+"the data arrives in |TS|."
+msgstr ""
+"複数のフラグメントを伴うオブジェクトは、 (最古の ``Doc`` を含む) データフラ"
+"グメントが先頭に書き込まれ、 先頭の ``Doc`` が末尾に書き込まれる形でレイアウ"
+"トされます。ディスクから読み込まれる時、先頭と最古の ``Doc`` の両方は、ド"
+"キュメント全部がディスクに存在することを確認するため検証されます。 (それらが"
+"書込みカーソルにより上書きされていないことを確認することで試験されます)   "
+"(これらの ``Doc`` は他のフラグメントのブックエンドとなります。書込みカーソル"
+"は、検証された ``Doc`` インスタンスの少なくとも一つの上書き無しに、ドキュメ"
+"ントを上書き出来ません) 単一のオブジェクトのフラグメントは、 |TS| に届いた"
+"データとして異なるオブジェクトのデータが挟み込められてしまうため、必ずしも隣"
+"接しないように並べられていることに注意してください。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:416
+msgid "Multi-alternate and multi-fragment object storage"
+msgstr "オブジェクトストレージの、複数の代替と複数のフラグメント"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:420
+msgid ""
+"Documents which are pinned into the cache must not be overwritten so they "
+"are evacuated from in front of the write cursor. Each fragment is read and "
+"rewritten. There is a special lookup mechanism for objects that are being "
+"evacuated so that they can be found in memory rather than the potentially "
+"unreliable disk regions. The cache scans ahead of the write cursor to "
+"discover pinned objects as there is a dead zone immediately before the "
+"write cursor from which data cannot be evacuated. Evacuated data is read "
+"from disk and placed in the write queue and written as its turn comes up."
+msgstr ""
+"キャッシュへピン留めされたドキュメントは上書きされてはならず、そのためそれら"
+"は書込みカーソルの前に退避させられます。各フラグメントは読み込まれ、再書込み"
+"されます。潜在的に信頼性の低いディスク領域ではなくメモリ上で検出できるよう、"
+"退避されるオブジェクトの特殊な検出メカニズムが存在します。データを退避させる"
+"ことができない書込みカーソル直前のデットゾーンがあるため、ピン留めされたオブ"
+"ジェクトを発見するためにキャッシュは書込みカーソルより先にスキャンします。退"
+"避されたデータはディスクから読み込まれて書込みキューに置かれ、出番が来ると書"
+"き込まれます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:429
+msgid ""
+"Objects can only be pinned via :file:`cache.config` and while :ts:cv:`proxy."
+"config.cache.permit.pinning` is set to non-zero (it is zero by default). "
+"Objects which are in use when the write cursor is near use the same "
+"underlying evacuation mechanism but are handled automatically and not via "
+"the explicit ``pinned`` bit in :cpp:class:`Dir`."
+msgstr ""
+"オブジェクトは :file:`cache.config` ファイルと、 :ts:cv:`proxy.config.cache."
+"permit.pinning` にゼロでない値 (デフォルトではゼロ) を設定した場合のみピン留"
+"めできます。書込みカーソルが接近している際に使用中のオブジェクトは、基本的な"
+"退避メカニズムを同様に使用しますが、 :cpp:class:`Dir` の明示的な ``ピン留め"
+"`` 無しに自動的に扱われます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:435
+msgid ""
+"It could, under certain circumstances, be accurate for none of the "
+"alternates."
+msgstr "それは、ある状況下では代替が正確になりません。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:438
+msgid "Additional Notes"
+msgstr "追加情報"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:440
+msgid "Some general observations on the data structures."
+msgstr "データ構造のいくつかの概説。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:443
+msgid "Cyclone buffer"
+msgstr "循環バッファ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:445
+msgid ""
+"Because the cache is a *cyclone cache*, objects are not preserved for an "
+"indefinite time. Even if the object is not :term:`stale` it can be "
+"overwritten as the cache cycles through its volume. Marking an object as "
+"*pinned* preserves the object through the passage of the write cursor but "
+"this is done by copying the object across the gap, in effect re-storing it "
+"in the cache. Pinning large objects or a large number objects can lead to "
+"excessive disk activity. The original purpose of pinning was for small, "
+"frequently used objects explicitly marked by the administrator."
+msgstr ""
+"キャッシュは *循環キャッシュ* であるため、キャッシュオブジェクトは無期限の保"
+"存はされません。たとえオブジェクトが :term:`新鮮でない` わけではなくても、ボ"
+"リュームのキャッシュサイクルとして上書きする可能性があります。 *ピン留め* し"
+"てオブジェクトをマーキングすることにより書込みカーソルの通過をやり過ごしてオ"
+"ブジェクトを保護することができますが、これは書込みカーソルを跨いでオブジェク"
+"トをコピーすること、実際にはキャッシュ内に再保存を行うことによって処理されま"
+"す。巨大なオブジェクトや大量のオブジェクトのピン留めは、過度のディスク動作を"
+"引き起こす場合があります。ピン留めの元々の目的は、管理者によって明示的にマー"
+"クされた小さく頻繁に使用されるオブジェクトのためのものでした。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:454
+msgid ""
+"This means the purpose of expiration data on objects is simply to prevent "
+"them from being served to clients. They are not in the standard sense "
+"deleted or cleaned up. The space can't be immediately reclaimed in any "
+"event, because writing only happens at the write cursor. Deleting an object "
+"consists only of removing the directory entries in the volume directory "
+"which suffices to (eventually) free the space and render the document "
+"inaccessible."
+msgstr ""
+"循環バッファの目的は、単純にオブジェクトの失効データがクライアントに提供され"
+"るのを防ぐことです。失効データは一般的な意味での削除やクリーンアップはされま"
+"せん。書込み処理は書込みカーソルでのみ発生するので、どんなイベントにおいても"
+"スペースは直ちには取り戻せません。オブジェクトの削除は (最終的には) スペース"
+"を解放してかつドキュメントをアクセス不可能にするのに十分な処理である、ボ"
+"リュームディレクトリのディレクトリエントリの削除のみで成り立ちます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:461
+msgid ""
+"Historically, the cache was designed this way because web content was "
+"relatively small and not particularly consistent. The design also provided "
+"high performance and low consistency requirements. There are no "
+"fragmentation issues for the storage, and both cache misses and object "
+"deletions require no disk I/O. It does not deal particularly well with long "
+"term storage of large objects. See the :ref:`volume tagging` appendix for "
+"details on some work in this area."
+msgstr ""
+"ウェブコンテンツは比較的小さく特に一貫もしていなかったので、歴史的にキャッ"
+"シュはこの方法の通りに設計されています。この設計は高性能でかつ低い一貫性の要"
+"件となります。ストレージのフラグメンテーション問題は発生せず、またキャッシュ"
+"ミスやオブジェクトの削除がディスク I/O を要求することもありません。巨大なオ"
+"ブジェクトの長期間保存は特別うまくは扱いません。この部分の動作の詳細について"
+"は :ref:`ボリュームタグ付け` の付録を見てください。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:469
+msgid "Disk Failure"
+msgstr "ディスク障害"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:471
+msgid ""
+"The cache is designed to be relatively resistant to disk failures. Because "
+"each :term:`storage unit` in each :term:`cache volume` is mostly "
+"independent, the loss of a disk simply means that the corresponding :cpp:"
+"class:`Vol` instances (one per cache volume that uses the storage unit) "
+"becomes unusable. The primary issue is updating the volume assignment table "
+"to both preserve assignments for objects on still operational volumes while "
+"distributing the assignments from the failed disk to those operational "
+"volumes. This mostly done in::"
+msgstr ""
+"キャッシュはディスク障害に比較的強いように設計されます。各 :term:`キャッシュ"
+"ボリューム` の各 :term:`ストレージユニット` はほぼ独立しているので、ディスク"
+"の損失は対応する :cpp:class:`Vol` インスタンス (ストレージユニットを使う"
+"キャッシュボリュームにつき 1 つ) が使えなくなることを単に意味します。主な課"
+"題は故障したディスクから運用中のボリュームへの割当の配布中に、まだ運用中のボ"
+"リューム上のオブジェクトの割当を両方保存するためのボリューム割当テーブルの更"
+"新処理です。これはほとんどが以下の中で処理されます::"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:481
+msgid ""
+"Restoring a disk to active duty is a more difficult task. Changing the "
+"volume assignment of a :term:`cache key` renders any currently cached data "
+"inaccessible. This is not a problem when a disk has failed, but is a bit "
+"trickier to decide which cached objects are to be de facto evicted if a new "
+"storage unit is added to a running system. The mechanism for this, if any, "
+"is still under investigation."
+msgstr ""
+"ディスクを稼働状態に戻すのは非常に困難な作業です。 :term:`キャッシュキー` の"
+"ボリューム割当の変更は、全ての現在キャッシュされているデータへのアクセスを不"
+"可能にします。ディスクが故障した際にこれは当然ながら問題にはなりませんが、新"
+"しいストレージユニットが動作中のシステムに追加された場合、どのキャッシュされ"
+"たオブジェクトが事実上追い出されるか決定するのが少々扱いにくい処理です。この"
+"ためのメカニズムは何かないか、まだ調査中です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:489
+msgid "Implementation Details"
+msgstr "実装の詳細"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:492
+msgid "Stripe Directory"
+msgstr "ストライプディレクトリ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:496
+msgid "The in memory volume directory entries are described below."
+msgstr ""
+"メモリ上のボリュームディレクトリエントリは、以下の通りに定義されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:500
+msgid "Defined in |P-CacheDir.h|_."
+msgstr "|P-CacheDir.h|_ で定義される。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:503
+msgid "Name"
+msgstr "名前"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:503
+msgid "Type"
+msgstr "型"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:503
+msgid "Use"
+msgstr "用途"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:505
+msgid "offset"
+msgstr "offset"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:505
+msgid "unsigned int:24"
+msgstr "unsigned int:24"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:505
+msgid "Offset of first byte of metadata (volume relative)"
+msgstr "（ボリュームに関連した）メタデータの先頭バイトのオフセット"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:506
+msgid "big"
+msgstr "big"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:506
+msgid "unsigned in:2"
+msgstr "unsigned in:2"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:506
+msgid "Size multiplier"
+msgstr "サイズの乗数"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:507
+msgid "size"
+msgstr "size"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:507
+msgid "unsigned int:6"
+msgstr "unsigned int:6"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:507
+msgid "Size"
+msgstr "サイズ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:508
+msgid "tag"
+msgstr "tag"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:508
+msgid "unsigned int:12"
+msgstr "unsigned int:12"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:508
+msgid "Partial key (fast collision check)"
+msgstr "（高速な衝突チェックの為の）キーの一部"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:509
+msgid "phase"
+msgstr "phase"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:509
+#: ../../../developer-guide/architecture/architecture.en.rst:510
+#: ../../../developer-guide/architecture/architecture.en.rst:511
+#: ../../../developer-guide/architecture/architecture.en.rst:512
+msgid "unsigned int:1"
+msgstr "unsigned int:1"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:509
+msgid "Phase of the ``Doc`` (for dir valid check)"
+msgstr ""
+
+#: ../../../developer-guide/architecture/architecture.en.rst:510
+msgid "head"
+msgstr "head"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:510
+msgid "Flag: first fragment in an object"
+msgstr "オブジェクトの先頭のフラグメントを示すフラグ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:511
+msgid "pinned"
+msgstr "pinned"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:511
+msgid "Flag: document is pinned"
+msgstr "ドキュメントがピン留めされていることを示すフラグ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:512
+msgid "token"
+msgstr "token"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:512
+msgid "Flag: Unknown"
+msgstr "不明なフラグ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:513
+msgid "next"
+msgstr "next"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:513
+msgid "unsigned int:16"
+msgstr "unsigned int:16"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:513
+msgid "Segment local index of next entry."
+msgstr "次エントリへのセグメントローカルインデックス"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:514
+msgid "offset_high"
+msgstr "offset_high"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:514
+msgid "inku16"
+msgstr "inku16"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:514
+msgid "High order offset bits"
+msgstr "上位オフセットビット"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:517
+msgid ""
+"The stripe directory is an array of ``Dir`` instances. Each entry refers to "
+"a span in the volume which contains a cached object. Because every object "
+"in the cache has at least one directory entry this data has been made as "
+"small as possible."
+msgstr ""
+"ストライプディレクトリは ``Dir`` インスタンスの配列です。各エントリはキャッ"
+"シュされたオブジェクトを持つボリュームのスパンを参照します。キャッシュ内の各"
+"オブジェクトは少なくとも一つのディレクトリエントリを持つため、このデータは可"
+"能な限り小さくなるよう設計されました。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:522
+msgid ""
+"The offset value is the starting byte of the object in the volume. It is 40 "
+"bits long, split between the *offset* (lower 24 bits) and *offset_high* "
+"(upper 16 bits) members. Note that since there is a directory for every "
+"storage unit in a cache volume, this is the offset in to the slice of a "
+"storage unit attached to that volume."
+msgstr ""
+"オフセット値はボリューム内におけるオブジェクトの開始バイトです。それは "
+"*offset* （下位 24 ビット） と *offset_high* （上位 16 ビット） メンバに渡っ"
+"て分割された 40 ビット長です。キャッシュボリュームの各ストレージユニット毎に"
+"ディレクトリは存在するため、この値はボリュームに接続されたストレージユニット"
+"の一部分へのオフセットであることに注意してください。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:530
+msgid ""
+"The *size* and *big* values are used to calculate the approximate size of "
+"the fragment which contains the object. This value is used as the number of "
+"bytes to read from storage at the offset value. The exact size is contained "
+"in the object metadata in :cpp:class:`Doc` which is consulted once the read "
+"has completed. For this reason, the approximate size needs to be at least "
+"as large as the actual size but can be larger, at the cost of reading the "
+"extraneous bytes."
+msgstr ""
+"*size* と *big* 値はオブジェクトを持つスパンの大まかなサイズを計算する為に使"
+"用されます。この値はストレージのオフセット値から読込み処理を行うためのバイト"
+"数として使用されます。正確なサイズは:cpp:class:`Doc` のオブジェクトメタデー"
+"タに含まれており、一旦読込みが完了した後に参照されます。この理由により、おお"
+"よそのサイズは少なくとも実サイズと同じである必要がありますが、外部からのバイ"
+"ト列の読み込みというコストを費やして読み込んだ結果、より大きくなることがあり"
+"ます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:538
+msgid ""
+"The computation of the approximate size of the fragment is defined as::"
+msgstr "フラグメントの大まかなサイズの計算は以下のように定義されます。::"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:542
+msgid ""
+"Where ``CACHE_BLOCK_SHIFT`` is the bit width of the size of a basic cache "
+"block (9, corresponding to a sector size of 512). Therefore the value with "
+"current defines is::"
+msgstr ""
+"ここで ``CACHE_BLOCK_SHIFT`` は基本的なキャッシュブロックのサイズのビット幅"
+"（9 であり、 512 のセクタサイズに対応している） です。したがって現在の定義に"
+"その値を使った値は以下のようになります。::"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:550
+msgid "Because *big* is 2 bits, the values for the multiplier of *size* are:"
+msgstr "*big* は 2 ビットであるため、*size* の乗数の値は、"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:553
+msgid "*big*"
+msgstr "*big*"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:553
+msgid "Multiplier"
+msgstr "乗数"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:553
+msgid "Maximum Size"
+msgstr "最大サイズ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:555
+msgid "0"
+msgstr "0"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:555
+msgid "512 (2^9)"
+msgstr "512 (2^9)"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:555
+#: ../../../developer-guide/architecture/architecture.en.rst:557
+msgid "32768 (2^15)"
+msgstr "32768 (2^15)"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:556
+msgid "1"
+msgstr "1"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:556
+msgid "4096 (2^12)"
+msgstr "4096 (2^12)"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:556
+#: ../../../developer-guide/architecture/architecture.en.rst:558
+msgid "262144 (2^18)"
+msgstr "262144 (2^18)"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:557
+msgid "2"
+msgstr "2"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:557
+msgid "2097152 (2^21)"
+msgstr "2097152 (2^21)"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:558
+msgid "3"
+msgstr "3"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:558
+msgid "16777216 (2^24)"
+msgstr "16777216 (2^24)"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:561
+msgid ""
+"Note also that *size* is effectively offset by one, so a value of 0 "
+"indicates a single unit of the multiplier."
+msgstr ""
+"*size* は実際上は 1 だけずれており、そのため 0 が乗数の単一のユニットを示す"
+"ことに注意してください (訳注: *size* は 0 から始まりますが、 0 が単一のユ"
+"ニット、 1 が 2 つのユニットを示します)。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:566
+msgid ""
+"The target fragment size can set with the :file:`records.config` value :ts:"
+"cv:`proxy.config.cache.target_fragment_size`."
+msgstr ""
+"ターゲットフラグメントサイズは :file:`records.config` の値 :ts:cv:`proxy."
+"config.cache.target_fragment_size` で設定できます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:569
+msgid ""
+"This value should be chosen so that it is a multiple of a :ref:`cache entry "
+"multiplier <big-mult>`. It is not necessary to make it a power of "
+"two[#cache-mult-value]_. Larger fragments increase I/O efficiency but lead "
+"to more wasted space. The default size (1M, 2^20) is a reasonable choice in "
+"most circumstances, altough in very specific cases there can be benefit "
+"from tuning this parameter. |TS| imposes an internal maximum of a 4,194,232 "
+"bytes, which is 4M (2^22), less the size of a struct :cpp:class:`Doc`. In "
+"practice, the largest reasonable target fragment size is 4M - 262,144 = "
+"3,932,160."
+msgstr ""
+"この値は :ref:`キャッシュエントリ乗数 <big-mult>` の倍数になるように選択する"
+"べきです。 2 の冪乗にする必要はありません。 [#cache-mult-value]_ より大きな"
+"フラグメントは I/O の効率を向上しますが、無駄なスペースが増加します。デフォ"
+"ルトサイズ（1M, 2^20）はほとんどの環境において合理的な選択です。ただし、非常"
+"に特殊なケースではこのパラメータをチューニングすることにより恩恵が得られる場"
+"合があります。 |TS| は :cpp:class:`Doc` 構造のサイズより少ない 4M（2^22） で"
+"ある 4,194,232 バイトの内部的な最大値を強制します。事実上、最大の合理的な"
+"ターゲットフラグメントサイズは 4M - 262,144 = 3,932,160 です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:578
+msgid ""
+"When a fragment is stored to disk, the size data in the cache index entry "
+"is set to the finest granularity permitted by the size of the fragment. To "
+"determine this, consult the :ref:`cache entry multipler <big-mult>` table "
+"and find the smallest maximum size that is at least as large as the "
+"fragment. That will indicate the value of *big* selected and therefore the "
+"granularity of the approximate size. That represents the largest possible "
+"amount of wasted disk I/O when the fragment is read from disk."
+msgstr ""
+"フラグメントがディスクへ保存される際、キャッシュインデックスエントリのサイズ"
+"データはフラグメントのサイズにより許容される最小粒度で設定されます。これを決"
+"定するには :ref:`キャッシュエントリ乗数 <big-mult>` テーブルを参照し、少なく"
+"ともフラグメントと同じくらい大きな、最大サイズの最も小さい値を検索します。そ"
+"れは選択された *big* の値であり、従っておおよそのサイズの粒度を示すでしょ"
+"う。それはフラグメントがディスクから読み込まれる際に発生しうる最大の余分な"
+"ディスク I/O の量を表します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:588
+msgid ""
+"The set of index entries for a volume are grouped in to :term:`segments "
+"<directory segment>`. The number of segments for an index is selected so "
+"that there are as few segments as possible such that no segment has more "
+"than 2^16 entries. Intra-segment references can therefore use a 16 bit "
+"value to refer to any other entry in the segment."
+msgstr ""
+"ボリュームのインデックスエントリのセットは *セグメント* へグループ化されま"
+"す。インデックスのセグメントの数は、 2^16 エントリを超えるセグメント数になら"
+"ないように可能な限り少ないセグメントになるよう選択されます。内部セグメントの"
+"参照はそのため、セグメントの任意の他のエントリを参照する為に 16 ビット値を使"
+"用します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:594
+msgid ""
+"Index entries in a segment are grouped :term:`buckets <directory bucket>`, "
+"each of ``DIR_DEPTH`` (currently 4) entries. These are handled in the "
+"standard hash table manner, giving somewhat less than 2^14 buckets per "
+"segment."
+msgstr ""
+"セグメントのインデックスエントリは ``DIR_DEPTH`` （現在は 4）エントリ毎に :"
+"term:`バケット <ディレクトリバケット>` へグループ化されます。これらはセグメ"
+"ント毎に 2^14 未満のバケットを割り当てる標準的なハッシュテーブルの手法で処理"
+"されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:600
+msgid ""
+"The comment in earlier versions of the :file:`records.config` documentation "
+"which indicated that this value must be a power of two were, unfortunately, "
+"mistaken and have been corrected."
+msgstr ""
+":file:`records.config` のドキュメントの以前の版のコメントでこの値が 2 の冪乗"
+"でなければならないと述べていましたが、それは間違いだったため修正されました。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:607
+msgid "Directory Probing"
+msgstr "ディレクトリ検索"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:609
+msgid ""
+"Directory probing is the locating of a specific :term:`directory entry` in "
+"the stripe directory based on a :term:`cache ID`. This is handled primarily "
+"by the function :cpp:func:`dir_probe()`. This is passed the cache ID (:arg:"
+"`key`), a stripe (:arg:`d`), and a last collision (:arg:`last_collision`). "
+"The last of these is an in and out parameter, updated as useful during the "
+"probe."
+msgstr ""
+"ディレクトリ検索は :term:`キャッシュ ID` に基づくストライプディレクトリの特"
+"定の :term:`ディレクトリエントリ` を検索します。これは主に :cpp:func:"
+"`dir_probe()` 関数によって処理されます。この関数にはキャッシュ ID（:arg:"
+"`key`） 、ストライプ（:arg:`d`）、そして最後の衝突（:arg:`last_collision`）"
+"が渡されます。これらのうち最後のパラメータは入出力パラメータであり、検索の間"
+"に役立つよう更新されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:615
+msgid ""
+"Given an ID, the top half (64 bits) is used as a :ref:`segment <dir-"
+"segment>` index, taken modulo the number of segments in the directory. The "
+"bottom half is used as a :ref:`bucket <dir-bucket>` index, taken modulo the "
+"number of buckets per segment. The :arg:`last_collision` value is used to "
+"mark the last matching entry returned by :cpp:func:`dir_probe`."
+msgstr ""
+"ID を考えると、上位半分（64 ビット）は :ref:`セグメント <dir-segment>` イン"
+"デックスとして使用され、ディレクトリのセグメント数の剰余として扱われます。下"
+"位半分は :ref:`バケット <dir-bucket>` インデックスとして使用され、セグメント"
+"毎のバケット数の剰余として扱われます。:arg:`last_collision` の値は "
+"`dir_probe` の戻り値となる最後にマッチするエントリをマークするために使用され"
+"ます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:621
+msgid ""
+"After computing the appropriate bucket, the entries in that bucket are "
+"searched to find a match. In this case a match is detected by comparison of "
+"the bottom 12 bits of the :term:`cache ID` (the *cache tag*). The search "
+"starts at the base entry for the bucket and then proceeds via the linked "
+"list of entries from that first entry. If a tag match is found and there is "
+"no :arg:`collision` then that entry is returned and :arg:`last_collision` "
+"is updated to that entry. If :arg:`collision` is set and if it isn't the "
+"current match, the search continues down the linked list, otherwise :arg:"
+"`collision` is cleared and the search continues."
+msgstr ""
+"適切なバケットを算出した後、バケットのエントリはマッチするものを探すために検"
+"索されます。この場合、マッチするかが :term:`キャッシュ ID` ( *キャッシュタグ"
+"* ) の下位 12 ビットの比較によって検出されます。検索はバケットのベースエント"
+"リから開始して、その後先頭のエントリからのエントリ連結リストを使って進んでい"
+"kます。タグのマッチが発見されていてかつ :arg:`collision` が無い場合、エント"
+"リは返されて :arg:`last_collision` はそのエントリを指すように更新されま"
+"す。 :arg:`collision` がセットされていて現在のマッチではない場合、検索は連結"
+"リストの次へ続きます。そうで無い場合 (訳注: :arg:`collision` がセットされて"
+"いて現在のマッチである場合) :arg:`collision` をクリアし、検索を継続します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:631
+msgid ""
+"The effect of this is that matches are skipped until the last returned "
+"match (:arg:`last_collision`) is found, after which the next match (if any) "
+"is returned. If the search falls off the end of the linked list, then a "
+"miss result is returned (if no last collision), otherwise the probe is "
+"restarted after clearing the collision on the presumption that the entry "
+"for the collision has been removed from the bucket. This can lead to "
+"repeats among the returned values but guarantees that no valid entry will "
+"be skipped."
+msgstr ""
+"これにより最後に返されたマッチしたもの (:arg:`last_collision`) が見つかるま"
+"でマッチングがスキップされ、その後に次のマッチするものが (もしあるなら) 返さ"
+"れます。検索が連結リストの最後まで到達した場合、失敗した結果が返される (もし"
+"最後の衝突がないなら)、あるいは衝突したエントリがバケットから削除されている"
+"との想定の上で、衝突を解消した後に検索が再開されます。この処理は値が返される"
+"まで繰り返すことができますが、正常なエントリがスキップされることがないことを"
+"保証します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:639
+msgid ""
+"Last collision can therefore be used to restart a probe at a later time. "
+"This is important because the match returned may not be the actual object. "
+"Although the hashing of the :term:`cache ID` to a :term:`bucket <directory "
+"bucket>` and the tag matching is unlikely to create false positives, it is "
+"possible. When a fragment is read the full cache ID is available and "
+"checked and if wrong, that read can be discarded and the next possible "
+"match from the directory found because the cache virtual connection tracks "
+"the last collision value."
+msgstr ""
+"したがって最後の衝突は後で検索を再開するのに使用できます。返されたマッチした"
+"ものが実際のオブジェクトではないかも知れないため、これは重要です。 :term:`バ"
+"ケット <ディレクトリバケット>` への :term:`キャッシュ ID` のハッシュ化とタグ"
+"マッチングが偽陽性を発生しそうに無くても、それは使用可能です。フラグメントが"
+"読み込まれる際、キャッシュ ID の全てが使用可能でありチェックされた結果誤りが"
+"ある場合、その読込みは破棄が可能でありキャッシュ仮想接続は最後の衝突値を追跡"
+"するためディレクトリから次のマッチする可能性があるものが検索されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:649
+msgid "Cache Operations"
+msgstr "キャッシュ操作"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:651
+msgid ""
+"Cache activity starts after the HTTP request header has been parsed and "
+"remapped. Tunneled transactions do not interact with the cache because the "
+"headers are never parsed."
+msgstr ""
+"キャッシュアクティビティは HTTP リクエストヘッダがパースされ、リマップされて"
+"から開始します。トンネルされたトランザクションはヘッダがパースされることがな"
+"いためキャッシュに影響しません。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:655
+msgid ""
+"To understand the logic we must introduce the term *cache valid* which "
+"means something that is directly related to an object that is valid to be "
+"put in the cache (e.g. a ``DELETE`` which refers to a URL that is cache "
+"valid but cannot be cached itself). This is important because |TS| computes "
+"cache validity several times during a transaction and only performs cache "
+"operations for cache valid results. The criteria used changes during the "
+"course of the transaction as well. This is done to avoid the cost of cache "
+"activity for objects that cannot be in the cache."
+msgstr ""
+"ロジックを理解するため、 *キャッシュバリッド* という用語を紹介しなければなり"
+"ません。これはキャッシュされるのに有効なオブジェクトに直接関係するものを意味"
+"します。 (例えばキャッシュバリッドな URL を参照する ``DELETE`` はそれ自身は"
+"キャッシュできません) |TS| はトランザクション中に何度かキャッシュの正当性を"
+"計算してキャッシュバリッドの結果によってのみキャッシュ操作を行うため、この用"
+"語は重要です。正当性の基準は同様にトランザクション中の変更を使用しました。こ"
+"の処理はキャッシュできないオブジェクトの為のキャッシュアクティビティによるコ"
+"ストを避けるために実行されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:664
+msgid ""
+"The three basic cache operations are: lookup, read, and write. We will take "
+"deleting entries as a special case of writing where only the volume "
+"directory is updated."
+msgstr ""
+"3 つの基本的なキャッシュ操作は検索、読込み、そして書込みです。エントリの削除"
+"はボリュームディレクトリが更新されるだけという書込みの特殊なケースとして扱い"
+"ます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:668
+msgid ""
+"After the client request header is parsed and is determined to be "
+"potentially cacheable, a `cache lookup`_ is done. If successful, a `cache "
+"read`_ is attempted. If either the lookup or the read fails and the content "
+"is considered cacheable then a `cache write`_ is attempted."
+msgstr ""
+"クライアントリクエストヘッダがパースされてキャッシュできると決定された後、 `"
+"キャッシュ検索`_  が行われます。成功した場合 `キャッシュ読込み`_ が試みられ"
+"ます。検索か読込みのいずれかが失敗してかつコンテンツがキャッシュできると判断"
+"される場合、 `キャッシュ書込み`_  が試みられます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:674
+msgid "Cacheability"
+msgstr "キャッシャビリティ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:676
+msgid ""
+"The first thing done with a request with respect to cache is to determine "
+"whether it is potentially a valid object for the cache. After initial "
+"parsing and remapping, this check is done primarily to detect a negative "
+"result, as it allows further cache processing to be skipped. It will not be "
+"put in to the cache, nor will a cache lookup be performed. There are a "
+"number of prerequisites along with configuration options to change them. "
+"Additional cacheability checks are done later in the process, when more is "
+"known about the transaction (such as plugin operations and the origin "
+"server response). Those checks are described as appropriate in the sections "
+"on the relevant operations."
+msgstr ""
+"キャッシュに関するリクエストで最初に行われるのは、キャッシュするのに潜在的に"
+"有効なオブジェクトであるかどうかを決定することです。最初のパースとリマップの"
+"後、このチェックは主にネガティブな結果を検出するために行われます。これはもし"
+"ネガティブな結果が出た場合は全ての後のキャッシュ処理がスキップされる、すなわ"
+"ちキャッシュに配置されずキャッシュ検索も実行されなくなるためです。それらを変"
+"更する設定オプションに加え、必要条件が数多く存在します。追加のキャッシャビリ"
+"ティチェックは、トランザクションについてより多くのことが分かった際の処理 (プ"
+"ラグイン操作やオリジンサーバレスポンスのような) 以降に実行されます。それらの"
+"チェックについては関連する操作のセクションで適切に説明します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:686
+msgid "The set of things which can affect cacheability are:"
+msgstr "キャッシャビリティに影響できる項目のセットは:"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:688
+msgid "Built in constraints."
+msgstr "組込みの制約。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:689
+msgid "Settings in :file:`records.config`."
+msgstr ":file:`records.config` の設定。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:690
+msgid "Settings in :file:`cache.config`."
+msgstr ":file:`cache.config` の設定。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:691
+msgid "Plugin operations."
+msgstr "プラグインの操作。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:693
+msgid ""
+"The initial internal checks, along with their :file:`records.config` "
+"overrides[#cacheability-overrides]_, are done in ``HttpTransact::"
+"is_request_cache_lookupable``."
+msgstr ""
+"初期の内部チェック、それらの :file:`records.config` を伴った オーバーライド"
+"[#cacheability-overrides]_ は ``HttpTransact::is_request_cache_lookupable`` "
+"内で処理されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:696
+msgid "The checks that are done are:"
+msgstr "実行されるチェックは以下の通りです。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:701
+msgid "Cacheable Method"
+msgstr "キャッシュ可能なメソッド"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:699
+msgid ""
+"The request must be one of ``GET``, ``HEAD``, ``POST``, ``DELETE``, ``PUT``."
+msgstr ""
+"リクエストは ``GET``, ``HEAD``, ``POST``, ``DELETE``, ``PUT`` のいずれかでな"
+"ければなりません。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:701
+msgid "See ``HttpTransact::is_method_cache_lookupable()``."
+msgstr "``HttpTransact::is_method_cache_lookupable()`` を確認してください。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:716
+msgid "Dynamic URL"
+msgstr "動的 URL"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:704
+msgid ""
+"|TS| tries to avoid caching dynamic content because it's dynamic. A URL is "
+"considered dynamic if:"
+msgstr ""
+"URL が動的であるため |TS| は動的コンテンツのキャッシングを避けようとします。"
+"もし以下の条件に当てはまるなら URL は動的であると考えられます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:707
+msgid "It is not ``HTTP`` or ``HTTPS``,"
+msgstr "``HTTP`` や ``HTTPS`` ではない"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:708
+msgid "Has query parameters,"
+msgstr "クエリパラメータを含む"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:709
+msgid "Ends in ``asp``,"
+msgstr "``asp`` で終わる"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:710
+msgid "Has ``cgi`` in the path."
+msgstr "パスに ``cgi`` を含む"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:712
+msgid ""
+"This check can be disabled by setting a non-zero value for :ts:cv:`proxy."
+"config.http.cache.cache_urls_that_look_dynamic`."
+msgstr ""
+"このチェックは :ts:cv:`proxy.config.http.cache."
+"cache_urls_that_look_dynamic` にゼロでない値を設定することで無効にできます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:715
+msgid ""
+"In addition if a TTL is set for rule that matches in :file:`cache.config` "
+"then this check is not done."
+msgstr ""
+"加えて、 :file:`cache.config` にマッチするルールに TTL が設定されていたらこ"
+"のチェックは行われません。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:727
+msgid "Range Request"
+msgstr "レンジリクエスト"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:719
+msgid ""
+"Cache valid only if :ts:cv:`proxy.config.http.cache.range.lookup` in :file:"
+"`records.config` is non-zero. This does not mean the range request can be "
+"cached, only that it might be satisfiable from the cache. In addition, :ts:"
+"cv:`proxy.config.http.cache.range.write` can be set to try to force a write "
+"on a range request. This probably has little value at the moment, but if "
+"for example the origin server ignores the ``Range:`` header, this option "
+"can allow for the response to be cached. It is disabled by default, for "
+"best performance."
+msgstr ""
+":file:`records.config` の :ts:cv:`proxy.config.http.cache.range.lookup` がゼ"
+"ロでない値である場合に限りキャッシュバリッドです。これはレンジリクエストが"
+"キャッシュ可能であることを意味しません。キャッシュから満たされるかもしれない"
+"というだけです。加えて、 :ts:cv:`proxy.config.http.cache.range.write` をレン"
+"ジリクエストでキャッシュ書込みを強制を試みるように設定することが出来ます。こ"
+"れは今はあまり価値が無いかもしれませんが、例えばオリジンサーバーが ``Range:"
+"`` ヘッダーを無視するなら、このオプションはレスポンスをキャッシュすることを"
+"許すことが出来ます。ベストのパフォーマンスのため、デフォルトでは  :ts:cv:"
+"`proxy.config.http.cache.range.write` は無効になっています。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:729
+msgid ""
+"A plugin can call :c:func:`TSHttpTxnReqCacheableSet()` to force the request "
+"to be viewed as cache valid."
+msgstr ""
+"プラグインはリクエストがキャッシュバリッドと見なされる事を強制するため :c:"
+"func:`TSHttpTxnReqCacheableSet()` を呼び出せます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:734
+msgid ""
+"The code appears to check :file:`cache.config` in this logic by setting the "
+"``does_config_permit_lookup`` in the ``cache_info.directives`` of the state "
+"machine instance but I can find no place where the value is used. The "
+"directive ``does_config_permit_storing`` is set and later checked so the "
+"directive (from the administrator point of view) is effective in preventing "
+"caching of the object."
+msgstr ""
+"コード上ではこのロジックにおいてステートマシンインスタンスの ``cache_info."
+"directives`` の中の ``does_config_permit_lookup`` の値を設定することにより :"
+"file:`cache.config` をチェックするように見えますが、その値が使用されている箇"
+"所は発見できません。 ``does_config_permit_storing`` ディレクティブが設定され"
+"てその後にチェックされるので、このディレクティブは（管理者の観点から）オブ"
+"ジェクトのキャッシュすることを妨げるのに効果的です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:742
+msgid "Cache Lookup"
+msgstr "キャッシュ検索"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:744
+msgid ""
+"If the initial request is not determined to be cache invalid then a lookup "
+"is done. Cache lookup determines if an object is in the cache and if so, "
+"where it is located. In some cases the lookup proceeds to read the first "
+"``Doc`` from disk to verify the object is still present in the cache."
+msgstr ""
+"最初のリクエストがキャッシュ無効と判定されなければルックアップが実行されま"
+"す。キャッシュルックアップはオブジェクトがキャッシュ内にあるか、キャッシュ内"
+"にある場合はどこに位置するかを判定します。時には、ルックアップは続けてディス"
+"クから最初の ``Doc`` を読み、オブジェクトがまだキャッシュに存在するかを確認"
+"します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:749
+msgid "The basic steps to a cache lookup are:"
+msgstr "キャッシュルックアップの基本的なステップは :"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:751
+msgid "The cache key is computed."
+msgstr "キャッシュキーが計算されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:753
+msgid ""
+"This is normally computed using the request URL but it can be overridden :"
+"ref:`by a plugin <cache-key>` . The cache index string is not stored, as it "
+"is presumed computable from the client request headers."
+msgstr ""
+"これは通常はリクエストの URL を用いて計算されますが、 :ref:`<cache-key> プラ"
+"グインによって` オーバーライド出来ます。キャッシュのインデックス文字列は保存"
+"されません。それはクライアントのリクエストヘッダーから計算可能という前提だか"
+"らです。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:757
+msgid "The cache stripe is determined (based on the cache key)."
+msgstr "キャッシュストライプが (キャッシュキーに基いて) 判定されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:759
+msgid ""
+"The :term:`cache key` is used as a hash key in to an array of :cpp:class:"
+"`Vol` instances. The construction and arrangement of this array is the "
+"essence of how volumes are assigned."
+msgstr ""
+":term:`キャッシュキー` は :cpp:class:`Vol` インスタンスの配列へのキャッシュ"
+"キーとして使用されます。この配列の生成と整列はボリュームがどのように割り当て"
+"られるかの本質です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:763
+msgid ""
+"The cache stripe directory :ref:`is probed <cache-directory-probe>` using "
+"the index key computed from the cache key."
+msgstr ""
+"キャッシュキーから計算されたインデックスキーを用いてキャッシュストライプディ"
+"レクトリーが :ref:`調べられます <cache-directory-probe>` 。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:766
+msgid ""
+"Various other lookaside directories are checked as well, such as the :ref:"
+"`aggregation buffer <aggregation-buffer>`."
+msgstr ""
+":ref:`集約バッファー <aggregation-buffer>` などさまざまな他の索引ディレクト"
+"リもチェックされます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:769
+msgid ""
+"If the directory entry is found the first ``Doc`` is read from disk and "
+"checked for validity."
+msgstr ""
+"ディレクトリエントリが見つかったら最初の ``Doc`` がディスクから読まれ有効性"
+"が検証されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:772
+msgid ""
+"This is done in :cpp:func:`CacheVC::openReadStartHead()` or :cpp:func:"
+"`CacheVC::openReadStartEarliest()` which are tightly coupled methods."
+msgstr ""
+"これは :cpp:func:`CacheVC::openReadStartHead()` か :cpp:func:`CacheVC::"
+"openReadStartEarliest()` によって行われます。これらは密結合したメソッドで"
+"す。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:776
+msgid ""
+"If the lookup succeeds, then a more detailed directory entry (struct :cpp:"
+"class:`OpenDir`) is created. Note that the directory probe includes a check "
+"for an already extant ``OpenDir`` which, if found, is returned without "
+"additional work."
+msgstr ""
+"ルックアップが成功したらより詳細なディレクトリエントリ (:cpp:class:"
+"`OpenDir` 構造体) が生成されます。ディレクトリ検索は既に現存する "
+"``OpenDir`` のチェックも含み、もし見つかったら追加作業無しに返されることに注"
+"意してください。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:782
+msgid "Cache Read"
+msgstr "キャッシュ読込み"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:784
+msgid ""
+"Cache read starts after a successful `cache lookup`_. At this point the "
+"first ``Doc`` has been loaded in to memory and can be consulted for "
+"additional information. This will always contain the HTTP headers for all :"
+"term:`alternates <alternate>` of the object."
+msgstr ""
+"キャッシュ読込みは `キャッシュ検索`_ が成功した後に開始されます。この時点で"
+"最初の ``Doc`` がメモリに読み込まれ、追加情報が参照可能になります。これはオ"
+"ブジェクトの全ての :term:`代替 <alternate>` の HTTP ヘッダーを常に含みます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst
+msgid "Read while write"
+msgstr "書込みながら読込み"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:791
+msgid ""
+"There is provision in the code to support *read while write*, that is, "
+"serving an object from cache in one transaction while it is being written "
+"in another. Several settings are needed for it to be used. See :ref:`admin-"
+"configuration-reducing-origin-requests`. It must specifically enabled in :"
+"file:`records.config` and if not, a cache read will fail if the object is "
+"currently be written or updated."
+msgstr ""
+"コード内には *書込みながら読込み* をサポートするための条件があります。  *書"
+"込みながら読込み* とはあるトランザクションでオブジェクトをキャッシュに書き込"
+"みながら別のトランザクションでキャッシュからオブジェクトを配信することです。"
+"使用するためにはいくつかの設定が必要になります。 :ref:`admin-configuration-"
+"reducing-origin-requests` を参照してください。 :file:`records.config` で明示"
+"的に有効にする必要があります。そうしなければ、オブジェクトが現在書込まれてい"
+"るか更新されている場合はキャッシュ読込みは失敗するでしょう。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:798
+msgid ""
+"At this point an alternate for the object is selected. This is done by "
+"comparing the client request to the stored response headers, but it can be "
+"controlled by a plugin using ``TS_HTTP_ALT_SELECT_HOOK``."
+msgstr ""
+"この時点でオブジェクトの代替が選択されます。これはクライアントのリクエストを"
+"保存されたレスポンスヘッダーと比較することで実行されますが、 "
+"``TS_HTTP_ALT_SELECT_HOOK`` を用いたプラグインで制御することも出来ます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:802
+msgid ""
+"The content can now be checked to see if it is :term:`stale` by calculating "
+"the *freshness* of the object. This is essentially checking how old the "
+"object is by looking at the headers and possibly other metadata (note that "
+"the headers can't be checked until we've selected an alternate)."
+msgstr ""
+"この時点でコンテンツはオブジェクトの *新鮮さ* を計算することで :term:`新鮮で"
+"ない` かどうかをチェックすることが可能になります。これは基本的にはヘッダーと"
+"場合によって他のメタデータを見ることによりオブジェクトがどれぐらい古いかを"
+"チェックすることになります (ヘッダーは代替を選択する前にはチェックできないこ"
+"とに注意してください) 。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:807
+msgid ""
+"Most of this work is done in ``HttpTransact::what_is_document_freshness``."
+msgstr ""
+"この作業のほとんどは ``HttpTransact::what_is_document_freshness`` 内で行われ"
+"ます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:809
+msgid ""
+"First, the TTL (time to live) value, which can be set in :file:`cache."
+"config`, is checked if the request matches the configuration file line. "
+"This is done based on when the object was placed in the cache, not on any "
+"data in the headers."
+msgstr ""
+"まず、 TTL (time to live) の値、これは :file:`cache.config` で設定可能です、"
+"を見てリクエストが設定ファイルの行にマッチするかチェックされます。これはヘッ"
+"ダー内の日付ではなくオブジェクトがいつキャッシュに収納されたかに基いて行われ"
+"ます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:814
+msgid ""
+"Next, an internal flag (``needs-revalidate-once``) is checked if the :file:"
+"`cache.config` value ``revalidate-after`` is not set, and if set the object "
+"is marked *stale*."
+msgstr ""
+"次に、内部フラグ (``needs-revalidate-once``) を見て :file:`cache.config` の "
+"``revalidate-after`` の値がセットされていないかをチェックします。セットされ"
+"ていればオブジェクトは *新鮮でない* と印を付けられます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:818
+msgid ""
+"After these checks the object age is calculated by ``HttpTransactHeaders::"
+"calculate_document_age``. and then any configured fuzzing is applied. The "
+"limits to this age based on available data is calculated by ``HttpTransact::"
+"calculate_document_freshness_limit``."
+msgstr ""
+"これらのチェックの後オブジェクトの経過時間が ``HttpTransactHeaders::"
+"calculate_document_age`` で計算されます。その後設定された曖昧さ (fuzzing) が"
+"適用されます。利用可能なデータに基づくこの経過時間の限界は ``HttpTransact::"
+"calculate_document_freshness_limit`` によって計算されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:822
+msgid ""
+"How this age is used is determined by the :file:`records.config` setting "
+"for :ts:cv:`proxy.config.http.cache.when_to_revalidate`. If this is ``0`` "
+"then the built caclulations are used which compare the freshness limits "
+"with document age, modified by any of the client supplied cache control "
+"values (``max-age``, ``min-fresh``, ``max-stale``) unless explicitly "
+"overridden in :file:`cache.config`."
+msgstr ""
+"この経過時間がどのように利用されるかは :file:`records.config` の :ts:cv:"
+"`proxy.config.http.cache.when_to_revalidate` によって決定されます。これが "
+"``0`` なら組み立てられた計算を使って新鮮さの限界とドキュメントの経過時間を比"
+"較します。ドキュメントの経過時間は :file:`cache.config` で明示的に上書きされ"
+"ない限りクライアントが提供したキャッシュ制御の値 (``max-age``, ``min-"
+"fresh``, ``max-stale``) のいずれかで調整されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:829
+msgid ""
+"If the object is not stale then it is served to the client. If it is stale, "
+"the client request may be changed to an ``If Modified Since`` request to :"
+"term:`revalidate <revalidation>`."
+msgstr ""
+"オブジェクトが新鮮であればクリアントに配信されます。新鮮でなければクライアン"
+"トのリクエストは :term:`再確認 <revalidation>` のために ``If Modified "
+"Since`` に変更されるかもしれません。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:833
+msgid ""
+"The request is served using a standard virtual connection tunnel "
+"(``HttpTunnel``) with the :cpp:class:`CacheVC` acting as the producer and "
+"the client ``NetVC`` acting as the sink. If the request is a range request "
+"this can be modified with a transform to select the appropriate parts of "
+"the object or, if the request contains a single range, it can use the range "
+"acceleration."
+msgstr ""
+"リクエストは :cpp:class:`CacheVC` を生産者 (producer) としクライアントの "
+"``NetVC`` をシンク (sink) とする標準の仮想接続トンネル (``HttpTunnel``) を用"
+"いて処理されます。もしリクエストがレンジリクエストであれば、これはオブジェク"
+"トの適切な部分を選択するために変換で調整されるか、リクエストが単一のレンジを"
+"含む場合はレンジ加速を使用可能です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:839
+msgid ""
+"Range acceleration is done by consulting a fragment offset table attached "
+"to the earliest ``Doc`` which contains offsets for all fragments past the "
+"first. This allows loading the fragment containing the first requested byte "
+"immediately rather than performing reads on the intermediate fragments."
+msgstr ""
+"レンジ加速は全てのフラグメントのオフセットを含む最古の ``Doc`` に添付された"
+"フラグメントオフセットテーブルが最初のレンジを過ぎたかを調べることによって行"
+"われます。これにより中間のフラグメントの読込みを実行するのではなくリクエスト"
+"された最初のバイトを含むフラグメントを直ちにロードすることを可能にします。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:845
+msgid "Cache Write"
+msgstr "キャッシュ書込み"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:847
+msgid ""
+"Writing to the cache is handled by an instance of the class :cpp:class:"
+"`CacheVC`. This is a virtual connection which receives data and writes it "
+"to cache, acting as a sink. For a standard transaction data transfers "
+"between virtual connections (*VConns*) are handled by :cpp:class:"
+"`HttpTunnel`. Writing to the cache is done by attaching a ``CacheVC`` "
+"instance as a tunnel consumer. It therefore operates in parallel with the "
+"virtual connection that transfers data to the client. The data does not "
+"flow to the cache and then to the client, it is split and goes both "
+"directions in parallel. This avoids any data synchronization issues between "
+"the two."
+msgstr ""
+"キャッシュへの書込みは :cpp:class:`CacheVC` クラスのインスタンスによって処理"
+"されます。これはデータを受信しシンクとして振る舞うキャッシュに書き込む仮想接"
+"続です。標準トランザクションに対する仮想接続 (*VConns*) 間のデータ転送は :"
+"cpp:class:`HttpTunnel` によって処理されます。キャッシュへの書込みは "
+"``CacheVC`` のインスタンスをトンネル消費者として取り付けることによって行われ"
+"ます。そのためデータをクライントへ転送する仮想接続と並列に実行されます。デー"
+"タはキャッシュに流れてそれからクライアントに流れるのではなく、分割されて両方"
+"の向きに同時に流れます。これにより 2 つの間のデータ排他制御の問題を回避して"
+"います。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst
+msgid "Writing to disk"
+msgstr "ディスクへの書込み"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:859
+msgid ""
+"The actual write to disk is handled in a separate thread dedicated to I/O "
+"operations, the AIO threads. The cache logic marshals the data and then "
+"hands the operation off to the AIO thread which signals back once the "
+"operation completes."
+msgstr ""
+"ディスクへの実際の書込みは I/O 処理に専念する別のスレッド、 AIO スレッドで処"
+"理されます。キャッシュロジックはデータをバイト列に変換 (marshal) し AIO ス"
+"レッドに処理を引き渡します。 AIO スレッドは処理が完了したらシグナルを送り返"
+"します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:864
+msgid ""
+"While each ``CacheVC`` handles its transactions independently, they do "
+"interact at the :term:`volume <cache volume>` level as each ``CacheVC`` "
+"makes calls to the volume object to write its data to the volume content. "
+"The ``CacheVC`` accumulates data internally until either the transaction is "
+"complete or the amount of data to write exceeds the target fragment size. "
+"In the former case the entire object is submitted to the volume to be "
+"written. In the latter case, a target fragment size amount of data is "
+"submitted and the ``CacheVC`` continues to operate on subsequent data. The "
+"volume in turn places these write requests in an holding area called the "
+"`aggregation buffer`_."
+msgstr ""
+"それぞれの ``CacheVC`` はトランザクションを独立に処理しますが、 :term:"
+"`volume <cache volume>` のレベルで相互作用します。それぞれの ``CacheVC`` は"
+"データをボリュームコンテンツに書き込むようにボリュームオブジェクトを呼び出す"
+"からです。 ``CacheVC`` はトランザクションが完了するかデータ量がターゲットフ"
+"ラグメントサイズを超えて書き込むまではデータを内部に蓄積します。前者の場合は"
+"オブジェクト全体がボリュームに提供され書き込まれます。後者の場合はターゲット"
+"フラグメントサイズのデータが提供され ``CacheVC`` は後続のデータを処理し続け"
+"ます。今度はボリュームがこれらの書込みリクエストを `集約バッファー`_ と呼ば"
+"れる保留領域に配置します。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:874
+msgid ""
+"For objects under the target fragment size, there is no consideration of "
+"order, the object is simply written to the volume content. For larger "
+"objects, the earliest ``Doc`` is written first and the first ``Doc`` "
+"written last. This provides some detection ability should the object be "
+"overwritten. Because of the nature of the write cursor no fragment after "
+"the first fragment (in the earliest ``Doc``) can be overwritten without "
+"also overwriting that first fragment (since we know at the time the object "
+"was finalized in the cache the write cursor was at the position of the "
+"first ``Doc``)."
+msgstr ""
+"ターゲットフラグメントサイズ以下のオブジェクトについては順序の考慮はなく、オ"
+"ブジェクトはボリュームコンテンツに単に書き込まれます。より大きなオブジェクト"
+"については最古の ``Doc`` が最初に書き込まれ最初の ``Doc`` が最後に書き込まれ"
+"ます。これがオブジェクトが上書きされるべきかを判定するためのちょっとした能力"
+"を提供します。書込みカーソルの性質により (最古の ``Doc`` 内の)、最初のフラグ"
+"メントが上書きされることなしに最初のフラグメントの後のフラグメントが上書きさ"
+"れることはありません (オブジェクトがキャッシュに書き込み済みになった時点で書"
+"込みカーソルは最初の ``Doc`` に位置していることを私達は知っているからで"
+"す) 。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:885
+msgid ""
+"It is the responsibility of the ``CacheVC`` to not submit writes that "
+"exceed the target fragment size."
+msgstr ""
+"ターゲットフラグメントサイズを超えたデータを提供しないことは ``CacheVC`` の"
+"責任です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:891
+msgid "Update"
+msgstr "更新"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:893
+msgid ""
+"Cache write also covers the case where an existing object in the cache is "
+"modified. This occurs when:"
+msgstr ""
+"キャッシュ書込みはキャッシュ内の既存のオブジェクトが修正されるケースもカバー"
+"します。これは以下の場合に発生します :"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:896
+msgid ""
+"A conditional request is made to the origin server and a ``304 - Not "
+"Modified`` response is received."
+msgstr ""
+"条件付きリクエストがオリジンサーバーに送られて ``304 - Not Modified`` レスポ"
+"ンスを受信した。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:899
+msgid ""
+"An alternate of the object is retrieved from an :term:`origin server` and "
+"added to the object."
+msgstr ""
+"オブジェクトの代替が :term:`オリジンサーバー` から取得されてオブジェクトに追"
+"加された。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:902
+msgid ""
+"An alternate of the object is removed (e.g., due to a ``DELETE`` request)."
+msgstr ""
+"(例えば ``DELETE`` リクエストのために) オブジェクトの代替が削除された。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:904
+msgid ""
+"In every case the metadata for the object must be modified. Because |TS| "
+"never updates data already in the cache this means the first ``Doc`` will "
+"be written to the cache again and the volume directory entry updated. "
+"Because a client request has already been processed the first ``Doc`` has "
+"been read from cache and is in memory. The alternate vector is updated as "
+"appropriate (an entry added or removed, or changed to contain the new HTTP "
+"headers), and then written to disk. It is possible for multiple alternates "
+"to be updated by different ``CacheVC`` instances at the same time. The only "
+"contention is the first ``Doc``; the rest of the data for each alternate is "
+"completely independent."
+msgstr ""
+"どんな場合にもオブジェクトのメタデータは修正されなければなりません。 |TS| は"
+"既にキャッシュ内にあるデータは決して更新しないのでこれは最初の ``Doc`` が"
+"キャッシュに再度書き込まれるとボリュームディレクトリエントリが更新されること"
+"を意味します。クライアントリクエストは既に処理されているので最初の ``Doc`` "
+"はキャッシュから読まれてメモリ城にあります。代替ベクターは適切に (エントリが"
+"追加、削除、あるいは新しい HTTP ヘッダを含むように変更される) 更新され、その"
+"後ディスクに書き込まれます。複数の代替が異なる ``CacheVC`` インスタンスによ"
+"り同時に更新されます。唯一の制約は最初の ``Doc`` です。それぞれの代替の残り"
+"のデータは完全に独立です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:917
+msgid "Aggregation Buffer"
+msgstr "集約バッファー"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:919
+msgid ""
+"Disk writes to cache are handled through an *aggregation buffer*. There is "
+"one for each :cpp:class:`Vol` instance. To minimize the number of system "
+"calls data is written to disk in units of roughly :ref:`target fragment "
+"size <target-fragment-size>` bytes. The algorithm used is simple: data is "
+"piled up in the aggregation buffer until no more will fit without going "
+"over the target fragment size, at which point the buffer is written to disk "
+"and the volume directory entries for objects with data in the buffer are "
+"updated with the actual disk locations for those objects (which are "
+"determined by the write to disk action). After the buffer is written it is "
+"cleared and process repeats. There is a special lookup table for the "
+"aggregation buffer so that object lookup can find cache data in that memory."
+msgstr ""
+"キャッシュへのディスク書込みは *集約バッファー* を通して処理されます。 :cpp:"
+"class:`Vol` インスタンスのそれぞれに対して 1 つ存在します。システムコールの"
+"回数を最小化するためデータはディスクにおよそ :ref:`ターゲットフラグメントサ"
+"イズ <target-fragment-size>` バイトの単位で書き込まれます。使用されるアルゴ"
+"リズムは単純です。データはこれ以上追加するとターゲットフラグメントサイズを超"
+"えてしまうようになるまで集約バッファーに集積され、その時点でバッファーはディ"
+"スクに書き込まれ、バッファ内のデータとオブジェクトに対するボリュームディレク"
+"トリエントリがそれらのオブジェクトの実際のディスク上の位置 (それらはディスク"
+"に書き込む行為によって決定されます) で更新されます。バッファーが書き出された"
+"後にそれはクリアーされて上記の手順が繰り返されます。集約バッファーのための特"
+"別なルックアップテーブルがあり、オブジェクトのルックアップはキャッシュデータ"
+"をそのメモリ上で見つけることが出来ます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:930
+msgid ""
+"Because data in the aggregation buffer is visible to other parts of the "
+"cache, particularly `cache lookup`_, there is no need to push a partially "
+"filled aggregation buffer to disk. In effect, any such data is memory "
+"cached until enough additional cache content arrives to fill the buffer."
+msgstr ""
+"集約バッファー内のデータはキャッシュの他の部分、特に `キャッシュルックアップ"
+"`_ にも見えるので、部分的に満たされた集約バッファーをディスクに書き出す必要"
+"はありません。実際に、そういったデータはバッファーを満たす追加のキャッシュコ"
+"ンテンツが届くまでメモリ上にキャッシュされています。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:935
+msgid ""
+"The target fragment size has little effect on small objects because the "
+"fragment size is used only to parcel out disk write operations. For larger "
+"objects the effect very significant as it causes those objects to be broken "
+"up in to fragments at different locations on in the volume. Each fragment "
+"write has its own entry in the volume directory which are computationally "
+"chained (each :term:`cache key` is computed from the previous one). If "
+"possible, a fragment table is accumulated in the earliest ``Doc`` which has "
+"the offsets of the first byte for each fragment."
+msgstr ""
+"フラグメントサイズはディスク書込みの操作を分配することにしか使われないため、"
+"ターゲットフラグメントサイズは小さなオブジェクトにはあまり影響を及ぼしませ"
+"ん。より大きなオブジェクトに対してはそれらのオブジェクトをフラグメントに分割"
+"してボリューム内の異なる位置に配置することになるので非常に大きな影響を及ぼし"
+"ます。各フラグメントの書出しはボリューム内の自身のエントリを持っていて、それ"
+"らは計算によって繋がれています (各 :term:`キャッシュキー` は 1 つ前の値から"
+"計算されます)。もし可能なら、フラグメントテーブルは最古の ``Doc`` 内に蓄積さ"
+"れます。最古の ``Doc`` は各フラグメントの最初のバイトのオフセットを持ってい"
+"ます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:947
+msgid "Evacuation Mechanics"
+msgstr "退避メカニズム"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:949
+msgid ""
+"By default, the write cursor will overwrite (de facto evict from cache) "
+"objects as it proceeds once it has gone around the :term:`cache stripe` at "
+"least once. In some cases this is not acceptable and the object is "
+"*evacuated* by reading it from the cache and then writing it back to cache "
+"which moves the physical storage of the object from in front of the write "
+"cursor to behind the write cursor. Objects that are evacuated are handled "
+"in this way based on data in stripe data structures (attached to the :cpp:"
+"class:`Vol` instance)."
+msgstr ""
+"デフォルトでは書込みカーソルは :term:`キャッシュストライプ` を少なくとも 1 "
+"度周回したら進むに連れてオブジェクトを上書き (キャッシュからの事実上の追い出"
+"し) します。ある場合にはこれは受け入れることが出来ずオブジェクトはキャッシュ"
+"から読み込まれてキャッシュに書き戻され、オブジェクトの物理ストレージを書込み"
+"カーソルの前から書込みカーソルの後ろに移動することで *退避* されます。退避さ"
+"れたオブジェクトは (:cpp:class:`Vol` インスタンスに付与された) ストライプ"
+"データ構造内のデータに基いてこのように扱われます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:957
+msgid ""
+"Evacuation data structures are defined by dividing up the volume content "
+"into a disjoint and contiguous set of regions of ``EVACUATION_BUCKET_SIZE`` "
+"bytes. The :cpp:member:`Vol::evacuate` member is an array with an element "
+"for each evacuation region. Each element is a doubly linked list of :cpp:"
+"class:`EvacuationBlock` instances. Each instance contains a :cpp:class:"
+"`Dir` that specifies the fragment to evacuate. It is assumed that an "
+"evacuation block is placed in the evacuation bucket (array element) that "
+"corresponds to the evacuation region in which the fragment is located "
+"although no ordering per bucket is enforced in the linked list (this "
+"sorting is handled during evacuation). Objects are evacuated by specifying "
+"the first or earliest fragment in the evactuation block. The evactuation "
+"operation will then continue the evacuation for subsequent fragments in the "
+"object by adding those fragments in evacuation blocks. Note that the actual "
+"evacuation of those fragments is delayed until the write cursor reaches the "
+"fragments, it is not necessarily done at the time the earliest fragment is "
+"evacuated."
+msgstr ""
+"退避データ構造はボリュームコンテンツを ``EVACUATION_BUCKET_SIZE`` バイトのバ"
+"ラバラな連続したセットの領域に分割することで定義されます。各要素は :cpp:"
+"class:`EvacuationBlock` インスタンスの二重連結リストです。退避ブロックは退避"
+"バケット (配列の要素) 内に配置され、退避バケット内の退避領域に対応してフラグ"
+"メントが配置されますが、連結リスト内のバケット毎の順序は強制されません (この"
+"並び替えは退避の最中に処理されます)。オブジェクトは退避ブロック内の最初また"
+"は最古のフラグメントを指定することによって対比されます。退避の操作は退避ブ"
+"ロックにこれらのフラグメントを追加することでオブジェクト内の後続のフラグメン"
+"トの退避を継続するでしょう。これらのフラグメントの実際の退避は書込みカーソル"
+"がフラグメントに達するまで遅延され、最初のフラグメントが対比された時点では必"
+"ずしも実行されないことに注意してください。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:973
+msgid ""
+"There are two types of evacuations: *reader based* and *forced*. The "
+"``EvacuationBlock`` has a reader count to track this. If the reader count "
+"is zero, then it is a forced evacuation and the the target, if it exists, "
+"will be evacuated when the write cursor gets close. If the reader value is "
+"non-zero then it is a count of entities that are currently expecting to be "
+"able to read the object. Readers increment the count when they require read "
+"access to the object, or create the ``EvacuationBlock`` with a count of 1. "
+"When a reader is finished with the object it decrements the count and "
+"removes the ``EvacuationBlock`` if the count goes to zero. If the "
+"``EvacuationBlock`` already exists with a count of zero, the count is not "
+"modified and the number of readers is not tracked, so the evacuation is "
+"valid as long as the object exists."
+msgstr ""
+"2 つの種類の退避があります。 *リーダー (reader) に基づく* と *強制される* で"
+"す。 ``EvacuationBlock`` はこれを追跡するためにリーダーの数を持っています。"
+"リーダーの数がゼロなら、それは強制された退避であり、ターゲット、もしそれが存"
+"在するなら、は書込みカーソルが近くなったときに退避されるでしょう。リーダーの"
+"数がゼロでない場合はそれはオブジェクトを読みだすことができると現在期待されて"
+"いるエンティティの数です。リーダーはオブジェクトへの読み取りアクセスを要求さ"
+"れたときにカウントを増加させるか、 1 のカウントとともに ``EvacuationBlock`` "
+"を作成します。リーダーがオブジェクトを読み終えた時はカウントを減少させカウン"
+"トがゼロになったら ``EvacuationBlock`` を削除します。もし "
+"``EvacuationBlock`` がカウントがゼロで既に存在していたら、カウントは変更され"
+"ず、リーダーの数も追跡されません。そのためオブジェクトが存在する限り退避は有"
+"効になります。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:985
+msgid ""
+"Evacuation is driven by cache writes, essentially in :cpp:member:`Vol::"
+"aggWrite`. This method processes the pending cache virtual connections that "
+"are trying to write to the stripe. Some of these may be evacuation virtual "
+"connections. If so then the completion callback for that virtual connection "
+"is called as the data is put in to the aggregation buffer."
+msgstr ""
+"退避はキャッシュ書込み、特に :cpp:member:`Vol::aggWrite` によって引き起こさ"
+"れます。このメソッドはストライプに書き込もうとしているペンディングされた"
+"キャッシュの仮想接続を処理します。これらのいくつかは仮想接続の退避かもしれま"
+"せん。もしそうならデータが集約バッファーに入れられたときに仮想接続の完了コー"
+"ルバッックが呼ばれます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:991
+msgid ""
+"When no more cache virtual connections can be processed (due to an empty "
+"queue or the aggregation buffer filling) then :cpp:member:`Vol::evac_range` "
+"is called to clear the range to be overwritten plus an additional :const:"
+"`EVACUATION_SIZE` range. The buckets covering that range are checked. If "
+"there are any items in the buckets a new cache virtual connection (a *doc "
+"evacuator*) is created and used to read the evacuation item closest to the "
+"write cursor (i.e. with the smallest offset in the stripe) instead of the "
+"aggregation write proceeding. When the read completes it is checked for "
+"validity and if valid, the cache virtual connection for it is placed at the "
+"front of the write queue for the stripe and the write aggregation resumed."
+msgstr ""
+"処理可能なキャッシュ仮想接続がこれ以上無くなった (キューが空か集約バッファー"
+"が満杯のために) とき、 :cpp:member:`Vol::evac_range` が呼ばれてレンジがクリ"
+"アされ、追加の :const:`EVACUATION_SIZE` レンジが上書きされます。このレンジを"
+"カバーするバケットがチェックされます。バケット内に何かアイテムがあるならば、"
+"新しいキャッシュ仮想接続 (*doc evacuator*) が作成され、集約書込みを進める代"
+"わりに書込みカーソルに最も近い (つまりストライプ内で最も小さいオフセットを持"
+"つ) 退避アイテムを読み込むのに使用されます。読み出しが完了した時有効性が"
+"チェックされ、有効であればキャッシュ仮想接続がストライプの書込みキューの前に"
+"配置され、書込み集約が再開されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1002
+msgid ""
+"Before doing a write, the method :cpp:func:`Vol::evac_range()` is called to "
+"start an evacuation. If any fragments are found in the buckets in the range "
+"the earliest such fragment (smallest offset, closest to the write cursor) "
+"is selected and read from disk and the aggregation buffer write is "
+"suspended. The read is done via a cache virtual connection which also "
+"effectively serves as the read buffer. Once the read is complete, that "
+"cache virtual connection instance (the *doc evacuator*) is placed at the "
+"front of the stripe write queue and written out in turn. Because the "
+"fragment data is now in memory it is acceptable to overwrite the disk image."
+msgstr ""
+"書込みの前に :cpp:func:`Vol::evac_range()` メソッドが呼ばれて退避を開始しま"
+"す。レンジのバケット内でなんらかのフラグメントが見つかった場合は最古のそのよ"
+"うな (最小のオフセットを持ち、書込みカーソルに最も近い) フラグメントが選択さ"
+"れディスクから読まれ集約バッファーの書込みは一時中断されます。読込みはキャッ"
+"シュ仮想接続を経由して行われ、それは実質的には読込みバッファとしても機能しま"
+"す。ひとたび読込みが完了したらキャッシュ仮想接続のインスタンス (*doc "
+"evacuator*) はストライプ書込みキューの前に配置され順に書きだされます。フラグ"
+"メントデータは今やメモリ内にあるのでディスクイメージを上書きすることも受け入"
+"れられます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1012
+msgid ""
+"Note that when normal stripe writing is resumed, this same check is done "
+"again, each time evauating (if needed) a fragment and queuing them for "
+"writing in turn."
+msgstr ""
+"通常のストライプへの書込みが再開した時は同じチェックが再び実行され、 (もし必"
+"要なら) フラグメントの退避と続いて書込みへのキューイングが行われることに注意"
+"してください。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1015
+msgid ""
+"Updates to the directory are done when the write for the evacuated fragment "
+"completes. Multi-fragment objects are detected after the read completes for "
+"a fragment. If it is not the first fragment then the next fragment is "
+"marked for evacuation (which in turn, when it is read, will pull the "
+"subsequent fragment). The logic presumes that the end of the :term:"
+"`alternate` is when the next key is not in the directory."
+msgstr ""
+"ディレクトリへの更新は対比したフラグメントの書込みが完了したときに行われま"
+"す。複数のフラグメントからなるオブジェクトはフラグメントの読込みが完了したと"
+"きに検出されます。もしそれが最初のセグメントでなかったら次のフラグメントに退"
+"避の印が付けられます (そして次にそれが読み込まれたら後続のフラグメントが引っ"
+"張られます。ロジックは :term:`代替` の終了が次のキーがディレクトリ内に無いと"
+"きだという前提です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1022
+msgid ""
+"This interacts with the *one at a time* strategy of the aggregation write "
+"logic. If a fragment is close to the fragment being evacuated, it may end "
+"up in the same evacuation bucket. Because the aggregation write checks "
+"every time for the next fragment to evacuate it will find that next "
+"fragment and evacuate it before it is overwritten."
+msgstr ""
+"これは集約書込みロジックの *1 度に 1 つずつ* の戦略と相互作用します。フラグ"
+"メントが対比されようとしているフラグメントに近い場合は、それは結局同じ退避バ"
+"ケット内になるかもしれません。集約書込みは退避する次のフラグメントを毎回"
+"チェックするので、次のフラグメントを見つけてそれが上書きされる前に退避するで"
+"しょう。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1045
+msgid "Evacuation Operation"
+msgstr "退避処理"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1047
+msgid ""
+"The primary source of fragments to be evacuated are active fragments. That "
+"is, fragments which are currently open for reading or writing. This is "
+"tracked by the reader value in the evacuation blocks noted above."
+msgstr ""
+"退避されるフラグメントの主な発生源はアクティブフラグメントです。つまり、読込"
+"みもしくは書込みのために現在オープンされているフラグメントです。これは上記の"
+"退避ブロック内のリーダーの数によって追跡されています。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1051
+msgid ""
+"If object pinning is enabled, then a scan is done on a regular basis as the "
+"write cursor moves to detect pinned objects and mark them for evacuation."
+msgstr ""
+"オブジェクトのピン留めが有効なら、書込みカーソルが移動してピン留めされたオブ"
+"ジェクトを検出したときに定期的にスキャンが実行されそれらに退避の印を付けま"
+"す。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1054
+#, python-format
+msgid ""
+"Fragments can also be evacuated through *hit evacuation*. This is "
+"configured by :ts:cv:`proxy.config.cache.hit_evacuate_percent` and :ts:cv:"
+"`proxy.config.cache.hit_evacuate_size_limit`. When a fragment is read it is "
+"checked to see if it is close and in front of the write cursor, close being "
+"less than the specified percent of the size of the stripe. If set at the "
+"default value of 10, then if the fragment is withing 10% of the size of the "
+"stripe, it is marked for evacuation. This is cleared if the write cursor "
+"passes through the fragment while it remains open (as all open objects are "
+"evacuated). If, when the object is closed, the fragment is still marked "
+"then it is placed in the appropriate evacuation bucket."
+msgstr ""
+"フラグメントは *ヒット退避* を通して退避することも出来ます。これは :ts:cv:"
+"`proxy.config.cache.hit_evacuate_percent` と :ts:cv:`proxy.config.cache."
+"hit_evacuate_size_limit` で設定されます。フラグメントが読み出された時それが"
+"書き込みカーソルに近くて手前にあるかチェックされます。近いというのはストライ"
+"プのサイズの指定したパーセントより小さいかどうかです。もしデフォルト値の 10 "
+"に設定されていたらフラグメントがストライプのサイズの 10% 以内にあれば、退避"
+"の印を付けられます。この印はフラグメントがオープンされている間に書込みカーソ"
+"ルがフラグメントを通過したら (全てのオープンされたオブジェクトが退避された"
+"ら) クリアーされます。オブジェクトがクローズされたときにフラグメントにまだ印"
+"がついていたら適切な退避バケットに配置されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1068
+msgid "Initialization"
+msgstr "初期設定"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1070
+msgid ""
+"Initialization starts with an instance of :cpp:class:`Store` reading the "
+"storage configuration file, by default :file:`storage.config`. For each "
+"valid element in the file an instance of :cpp:class:`Span` is created. "
+"These are of basically four types:"
+msgstr ""
+"初期設定は :cpp:class:`Store` のインスタンスがストレージ設定ファイル、デフォ"
+"ルトでは :file:`storage.config` を読み込むことで開始します。ファイル内の有効"
+"な各要素に対して :cpp:class:`Span` のインスタンスが生成されます。これらは基"
+"本的に 4 つの種類からなります :"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1075
+msgid "File"
+msgstr "ファイル"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1077
+msgid "Directory"
+msgstr "ディレクトリ"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1079
+msgid "Disk"
+msgstr "ディスク"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1081
+msgid "Raw device"
+msgstr "ローデバイス"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1083
+msgid ""
+"After creating all the :cpp:class:`Span` instances, they are grouped by "
+"device ID to internal linked lists attached to the :cpp:member:`Store::"
+"disk` array[#store-disk-array]_. Spans that refer to the same directory, "
+"disk, or raw device are coalesced in to a single span. Spans that refer to "
+"the same file with overlapping offsets are also coalesced [#coalesced-"
+"spans]_. This is all done in :c:func:`ink_cache_init()` called during "
+"startup."
+msgstr ""
+"全ての :cpp:class:`Span` インスタンスを生成した後、それらは :cpp:member:"
+"`Store::disk` アレイ[#store-disk-array]_ に付与された内部的な連結リストにデ"
+"バイス ID でグループ分けされます。同じディレクトリ、ディスク、あるいはローデ"
+"バイスを参照するスパンは単一のスパンに合体されます。同じファイルを参照しオフ"
+"セットがオーバーラップしているスパンも合体されます [#coalesced-spans]_ 。こ"
+"れらは全てスタートアップの最中に呼ばれる :c:func:`ink_cache_init()` の中で実"
+"行されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1092
+msgid ""
+"The span logic is also used by the HostDB and more than one otherwise "
+"inexplicable feature is provided by the span logic for that module."
+msgstr ""
+"スパンロジックは HostDB でも使われていて、 1 つより多い他の説明し難い機能が"
+"そのモジュールのスパンロジックにより提供されています。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1095
+msgid ""
+"After configuration initialization, the cache processor is started by "
+"calling :cpp:func:`CacheProcessor::start()`. This does a number of things:"
+msgstr ""
+"設定の初期化の後、キャッシュプロセッサーが :cpp:func:`CacheProcessor::"
+"start()` を呼ぶことで開始されます。これはいくつかのことをします :"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1098
+msgid ""
+"For each valid span, an instance of :cpp:class:`CacheDisk` is created. This "
+"class is a :term:`continuation` and so can be used to perform potentially "
+"blocking operations on the span. The primary use of these is to be passed "
+"to the AIO threads as the callback when an I/O operation completes. These "
+"are then dispatched to AIO threads to perform :term:`storage unit` "
+"initialization. After all of those have completed, the resulting storage is "
+"distributed across the :term:`volumes <cache volume>` in :c:func:"
+"`cplist_reconfigure`. The :cpp:class:`CacheVol` instances are created at "
+"this time."
+msgstr ""
+"有効なスパンのそれぞれに対して、 :cpp:class:`CacheDisk` のインスタンスが生成"
+"されます。このクラスは :term:`継続` であり、そのためスパンをブロッキングする"
+"可能性のある操作にも使うことが出来ます。これらの主たる用途は AIO スレッドに"
+"引き渡されて I/O 処理が完了したときにコールバックとして使われることです。こ"
+"れらはその後 AIO スレッドにディスパッチされて :term:`ストレージユニット` の"
+"初期化を実行します。これら全てが完了したら、結果として生じるストレージは :c:"
+"func:`cplist_reconfigure` 内の :term:`ボリューム <キャッシュボリューム>` を"
+"横断して分散されます。この時点で :cpp:class:`CacheVol` インスタンスが生成さ"
+"れます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1107
+msgid ""
+":term:`Cache stripe <cache stripe>` assignment setup is done once all "
+"stripes have initialized (that is, the stripe header information has been "
+"successfully read from disk for all stripes). The assignment information is "
+"stored as an array of indices. These are indices in to an array of stripes. "
+"Both the assignment and the stripe arrays are stored in an instance of :cpp:"
+"class:`CacheHostRecord`. Assignment initialization consists of populating "
+"the assignment array, which is much larger than the stripe array."
+msgstr ""
+":term:`キャッシュストライプ <cache stripe>` の割り当てのセットアップはひとた"
+"び全てのストライプが初期化されたら (つまり、全てのストライプについてストライ"
+"プヘッダー情報がディスクから読み出し成功したら) 完了となります。割り当て情報"
+"はインデックスの配列として保持されます。これらはストライプの配列内のインデッ"
+"クスです。割り当てとストライプの配列の両方は :cpp:class:`CacheHostRecord` イ"
+"ンスタンス内に保持されます。割り当ての初期化は割り当て配列にデータを投入する"
+"ことで構成されます。割り当て配列はストライプ配列よりも大幅に大きいです。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1115
+msgid ""
+"There is an instance of :cpp:class:`CacheHostRecord` for each line in :file:"
+"`hosting.config` and one generic record. For the configured instances, the "
+"set of stripes is determined from the cache volume specified in the line. "
+"If no lines are specified, all stripes are placed in the generic record, "
+"otherwise only those stripes marked as default are placed in the generic "
+"record."
+msgstr ""
+":file:`hosting.config` 内の各行と 1 つの包括的なレコードに対して :cpp:class:"
+"`CacheHostRecord` のインスタンスがあります。設定されたインスタンスに対して行"
+"内に指定されたキャッシュボリュームから一組のストライプが決定されます。行が全"
+"く指定されなかった場合は、全てのストライプが包括的なレコード内に配置されま"
+"す。そうでなければ、デフォルトとマークされたストライプだけが包括的なレコード"
+"内に配置されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1123
+msgid ""
+"If hosting records are specified, it is an error to not specify at least "
+"one default cache volume."
+msgstr ""
+"格納するレコードが指定された場合、最低 1 つのデフォルトキャッシュボリューム"
+"を指定しなければエラーとなります。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1126
+msgid ""
+"The assignment table is initialized in :c:func:`build_vol_hash_table` which "
+"is called for each :cpp:class:`CacheHostRecord` instance. For each stripe "
+"in the host record, a sequence of pseudo-random numbers is generated. This "
+"begins with the folded hash of the stripe hash identifier, which is the "
+"device path followed by the ``skip`` and ``size`` values for that stripe, "
+"making it unique. This also makes the sequence deterministic for any "
+"particular stripe."
+msgstr ""
+"割り当てテーブルは :c:func:`build_vol_hash_table` 内で初期化され、それは :"
+"cpp:class:`CacheHostRecord` インスタンスのそれぞれについて呼びだされます。ホ"
+"ストレコード内のストライプのそれぞれに対して擬似乱数のシーケンスが生成されま"
+"す。これはストライプのハッシュ識別子の折り畳まれたハッシュで開始し、ストライ"
+"プのハッシュ識別子はデバイスのパスの後にストライプの ``skip`` と ``size`` の"
+"値が続いたもので、ユニークなものです。これはまたどんな特定のストライプについ"
+"てもシーケンスが決定性を持つようにします。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1133
+msgid ""
+"Each stripe gets one number in its sequence for every `VOL_HASH_ALLOC_SIZE` "
+"(8 MB currently) of storage. These numbers are paired with the stripe "
+"index, combined across all stripes, then sorted by the random values. The "
+"resulting array is sampled for every slot in the stripe assignment table by "
+"dividing the maximum random value by the size of the assignment table and "
+"using the value midway between each multiple of the result of the division. "
+"The coalesced psuedo-random sequence is scanned for each sample in turn and "
+"the first number not greater than the sample is found. The stripe "
+"associated with that value is used for that assignment table entry."
+msgstr ""
+"それぞれのストライプはそのシーケンス内でストレージの `VOL_HASH_ALLOC_SIZE` "
+"(現状 8MB)ごとに 1 つの数字を得ます。これらの数字はストライプのインデックス"
+"とペアにされ、全てのストライプを横断して結合され、そしてランダムな値によって"
+"ソートされます。結果として作られる配列はストライプ割り当てテーブル内の各ス"
+"ロットでサンプリングされます。サンプリングは最大のランダムな値を割り当てテー"
+"ブルのサイズで割って、割った結果の各倍数の間の中間の値を使って行われます。次"
+"に合体された擬似乱数のシーケンスから各サンプルがスキャンされサンプルより大き"
+"くない最初の数字が見つかります。その値に関連付けられたストライプがその割り当"
+"てテーブルのエントリとして使用されます。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1143
+msgid ""
+"While this procedure is deterministic, it is sensitive to initial "
+"conditions, including the size of each stripe."
+msgstr ""
+"この手続は決定性を持っていますが、各ストライプのサイズを含む初期状態に影響を"
+"受けやすいです。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1147
+msgid "Footnotes"
+msgstr "脚注"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1150
+msgid ""
+"`Work is under way <https://issues.apache.org/jira/browse/TS-2020>`_ on "
+"extending this to include objects that are in the memory cache."
+msgstr ""
+"メモリキャッシュ内にあるオブジェクトを含むように拡張する作業 <https://"
+"issues.apache.org/jira/browse/TS-2020>`_ が進行中です。"
+
+#: ../../../developer-guide/architecture/architecture.en.rst:1155
+msgid ""
+"This linked list is mostly ignored in later processing, causing all but one "
+"file or directory storage units on the same device to be ignored. See "
+"`TS-1869 <https://issues.apache.org/jira/browse/TS-1869>`_."
+msgstr ""
+"この連結リストは後の処理ではほとんど無視されます。それは同じデバイス上の 1 "
+"つを除いた全てののファイルやディレクトリのストレージユニットが無視されること"
+"を引き起こします。 `TS-1869 <https://issues.apache.org/jira/browse/"
+"TS-1869>`_ を参照してください。"

@@ -1,0 +1,54 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../appendices/command-line/traffic_server.en.rst:26
+msgid "Description"
+msgstr "解説"
+
+#: ../../appendices/command-line/traffic_server.en.rst:91
+msgid "Environment"
+msgstr ""
+
+#: ../../appendices/command-line/traffic_server.en.rst:49
+msgid ""
+"In order to improve performance, :program:`traffic_server` caches commonly "
+"used data structures in a set of free object lists. This option disables "
+"these caches, causing :program:`traffic_server` to use :manpage:`malloc(3)` "
+"for every allocation. Though this option should not commonly be needed, it "
+"may be beneficial in memory-constrained environments or where the working "
+"set is highly variable."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_server.en.rst:29
+msgid "Options"
+msgstr "オプション"
+
+#: ../../appendices/command-line/traffic_server.en.rst:84
+msgid "Print usage information and exit."
+msgstr "使い方の情報を表示して終了します。"
+
+#: ../../appendices/command-line/traffic_server.en.rst:88
+msgid "Print version information and exit."
+msgstr "バージョン情報を表示して終了します。"
+
+#: ../../appendices/command-line/traffic_server.en.rst:23
+msgid "traffic_server"
+msgstr ""

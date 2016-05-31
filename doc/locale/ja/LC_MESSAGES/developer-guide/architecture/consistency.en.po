@@ -1,0 +1,249 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/architecture/consistency.en.rst:23
+msgid "Cache Tools"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:25
+msgid "Tools and techniques for cache monitoring and inspection."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:27
+msgid ":ref:`The cache inspector <inspecting-the-cache>`."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:30
+msgid "Topics to be done"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:32
+msgid "Resident alternates"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:33
+msgid "Object refresh"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:36
+msgid "Cache Consistency"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:38
+msgid ""
+"The cache is completely consistent, up to and including kicking the power "
+"cord out, if the write buffer on consumer disk drives is disabled. You need "
+"to use::"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:43
+msgid ""
+"The cache validates that all the data for the document is available and "
+"will silently mark a partial document as a miss on read. There is no gentle "
+"shutdown for Traffic Server. You simply kill the process and the recovery "
+"code (fsck) is run every time Traffic Server starts up."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:48
+msgid ""
+"On startup the two versions of the index are checked, and the last valid "
+"one is read into memory. |TS| then moves forward from the last snapped "
+"write cursor and reads all the fragments written to disk and updates the "
+"directory (as in a log-based file system). It stops reading at the write "
+"before the last valid write header it sees (as a write is not necessarily "
+"atomic because of sector reordering). Then the new updated index is written "
+"to the invalid version (in case of a crash during startup) and the system "
+"starts."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:59
+msgid "Volume Tagging"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:61
+msgid ""
+"Currently, :term:`cache volumes <cache volume>` are allocated somewhat "
+"arbitrarily from storage elements. `This enhancement <https://issues.apache."
+"org/jira/browse/TS-1728>`__ allows :file:`storage.config` to assign :term:"
+"`storage units <storage unit>` to specific :term:`volumes <cache volume>` "
+"although the volumes must still be listed in :file:`volume.config` in "
+"general and in particular to map domains to specific volumes. A primary use "
+"case for this is to be able to map specific types of content to different "
+"storage elements. This can be employed to have different storage devices "
+"for various types of content (SSD vs. rotational)."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:71
+msgid "Version Upgrade"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:73
+msgid ""
+"It is currently the case that any change to the cache format will clear the "
+"cache. This is an issue when upgrading the |TS| version and should be kept "
+"in mind."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:79
+msgid "Controlling the cache key"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:81
+msgid ""
+"The :term:`cache key` is by default the URL of the request. There are two "
+"possible choices, the original (pristine) URL and the remapped URL. Which "
+"of these is used is determined by the configuration value :ts:cv:`proxy."
+"config.url_remap.pristine_host_hdr`."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:86
+msgid ""
+"This is an ``INT`` value. If set to ``0`` (disabled) then the remapped URL "
+"is used, and if it is not ``0`` (enabled) then the original URL is used. "
+"This setting also controls the value of the ``HOST`` header that is placed "
+"in the request sent to the :term:`origin server`, using the hostname from "
+"the original URL if not ``0`` and the host name from the remapped URL if "
+"``0``. It has no other effects."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:93
+msgid ""
+"For caching, this setting is irrelevant if no remapping is done or there is "
+"a one-to-one mapping between the original and remapped URLs."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:96
+msgid ""
+"It becomes significant if multiple original URLs are mapped to the same "
+"remapped URL. If pristine headers are enabled, requests to different "
+"original URLs will be stored as distinct :term:`objects <cache object>` in "
+"the cache. If disabled, the remapped URL will be used and there may be "
+"collisions. This is bad if the contents different, but quite useful if they "
+"are the same (as in situations where the original URLs are just aliases for "
+"the same underlying server resource)."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:104
+msgid ""
+"This is also an issue if a remapping is changed because it is effectively a "
+"time axis version of the previous case. If an original URL is remapped to a "
+"different server address then the setting determines if existing cached "
+"objects will be served for new requests (enabled) or not (disabled). "
+"Similarly, if the original URL mapped to a particular URL is changed then "
+"cached objects from the initial original URL will be served from the "
+"updated original URL if pristine headers is disabled."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:112
+msgid ""
+"These collisions are not by themselves good or bad. An administrator needs "
+"to decide which is appropriate for their situation and set the value "
+"correspondingly."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:115
+msgid ""
+"If a greater degree of control is desired, a plugin must be used to invoke "
+"the API calls :c:func:`TSHttpTxnCacheLookupUrlSet()` or  :c:func:"
+"`TSCacheUrlSet()` to provide a specific :term:`cache key`. The :c:func:"
+"`TSCacheUrlSet()` API can be called as early as "
+"``TS_HTTP_READ_REQUEST_HDR_HOOK`` but no later than "
+"``TS_HTTP_POST_REMAP_HOOK``. It can be called only once per transaction; "
+"calling it multiple times has no additional effect."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:122
+msgid ""
+"A plugin that changes the cache key must do so consistently for both cache "
+"hit and cache miss requests because two different requests that map to the "
+"same cache key will be considered equivalent by the cache. Use of the URL "
+"directly provides this and so must any substitute. This is entirely the "
+"responsibility of the plugin; there is no way for the |TS| core to detect "
+"such an occurrence."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:128
+msgid ""
+"If :c:func:`TSHttpTxnCacheLookupUrlGet()` is called after new cache url set "
+"by :c:func:`TSHttpTxnCacheLookupUrlSet()` or :c:func:`TSCacheUrlSet()`, it "
+"should use a URL location created by :c:func:`TSUrlCreate()` as its third "
+"input parameter instead of getting ``url_loc`` from the client request."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:133
+msgid ""
+"It is a requirement that the string be syntactically a URL but otherwise it "
+"is completely arbitrary and need not have any path. For instance, if the "
+"company Network Geographics wanted to store certain content under its own :"
+"term:`cache key`, using a document GUID as part of the key, it could use a "
+"cache key like ::"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:141
+msgid ""
+"The scheme ``ngeo`` was picked specifically because it is not a valid URL "
+"scheme, and so will never collide with any valid URL."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:144
+msgid ""
+"This can be useful if the URL encodes both important and unimportant data. "
+"Instead of storing potentially identical content under different URLs "
+"(because they differ on the unimportant parts) a url containing only the "
+"important parts could be created and used."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:149
+msgid ""
+"For example, suppose the URL for Network Geographics content encoded both "
+"the document GUID and a referral key. ::"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:154
+msgid ""
+"We don't want to serve the same content for every possible referrer. "
+"Instead, we could use a plugin to convert this to the previous example and "
+"requests that differed only in the referrer key would all reference the "
+"same cache entry. Note that we would also map the following to the same "
+"cache key ::"
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:161
+msgid ""
+"This can be handy for sharing content between servers when that content is "
+"identical. Plugins can change the cache key, or not, depending on any data "
+"in the request header. For instance, not changing the cache key if the "
+"request is not in the ``doc`` directory. If distinguishing servers is "
+"important, that can easily be pulled from the request URL and used in the "
+"synthetic cache key. The implementor is free to extract all relevant "
+"elements for use in the cache key."
+msgstr ""
+
+#: ../../developer-guide/architecture/consistency.en.rst:168
+msgid ""
+"While there is no explicit requirement that the synthetic cache key be "
+"based on the HTTP request header, in practice it is generally necessary due "
+"to the consistency requirement. Because cache lookup happens before "
+"attempting to connect to the :term:`origin server`, no data from the HTTP "
+"response header is available, leaving only the request header. The most "
+"common case is the one described above where the goal is to elide elements "
+"of the URL that do not affect the content to minimize cache footprint and "
+"improve cache hit rates."
+msgstr ""

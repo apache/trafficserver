@@ -1,0 +1,332 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: 2016-01-10 15:40+0900\n"
+"Last-Translator: Hiroaki Nakamura <hnakamur@gmail.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../appendices/glossary.en.rst:23
+msgid "Glossary"
+msgstr "用語集"
+
+#: ../../../appendices/glossary.en.rst:84
+msgid "alternate"
+msgstr "代替"
+
+#: ../../../appendices/glossary.en.rst:86
+msgid ""
+"A variant of a :term:`cache object`. This was originally created to handle "
+"the `VARY mechanism <http://www.w3.org/Protocols/rfc2616/rfc2616-sec14."
+"html#sec14.44>`_ but has since been used for additional purposes. All "
+"alternates of an object must be equivalent in some manner. That is, they "
+"are alternate forms of the same stream. The most common example is having "
+"normal and compressed versions of the stream."
+msgstr ""
+":term:`キャッシュオブジェクト` の変形です。元々は `VARY メカニズム <http://"
+"www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.44>`_ を処理するために"
+"作られましたが、以来他の目的のためにも使われています。オブジェクトの全ての代"
+"替は何らかの方法で同質にならなければならず、同じストリームの形式に変化しま"
+"す。最も一般的な例はストリームの通常版と圧縮版を持つことです。"
+
+#: ../../../appendices/glossary.en.rst:121
+msgid "cache fragment"
+msgstr "キャッシュフラグメント"
+
+#: ../../../appendices/glossary.en.rst:123
+msgid ""
+"The unit of storage in the cache. All reads from the cache always read "
+"exactly one fragment. Fragments may be written in groups, but every write "
+"is always an integral number of fragments. Each fragment has a "
+"corresponding :term:`directory entry` which describes its location in the "
+"cache storage."
+msgstr ""
+"キャッシュ内のストレージの単位です。キャッシュの全ての読込みは常にちょうど一"
+"つのフラグメントを読み込みます。フラグメントはまとめて書き込まれるかも知れま"
+"せんが、全ての書込みは常にフラグメントの整数になります。各フラグメントは "
+"キャッシュストレージにおける自身の位置情報を持つ :term:`ディレクトリエントリ"
+"` に対応しています。"
+
+#: ../../../appendices/glossary.en.rst:68
+msgid "cache ID"
+msgstr "キャッシュ ID"
+
+#: ../../../appendices/glossary.en.rst:70
+msgid ""
+"A 128 bit value used as a fixed sized identifier for an object in the "
+"cache. This is computed from the :term:`cache key` using the `MD5 hashing "
+"function <http://www.openssl.org/docs/crypto/md5.html>`_."
+msgstr ""
+"キャッシュのオブジェクトの固定サイズの識別子として使用される 128 ビットの値"
+"です。 `MD5 ハッシュ関数 <http://www.openssl.org/docs/crypto/md5.html>`_ を"
+"用いて :term:`キャッシュキー` から計算されます。"
+
+#: ../../../appendices/glossary.en.rst:63
+msgid "cache key"
+msgstr "キャッシュキー"
+
+#: ../../../appendices/glossary.en.rst:65
+msgid ""
+"A byte sequence that is a globally unique identifier for an :term:`object "
+"<cache object>` in the cache. By default the URL for the object is used."
+msgstr ""
+"キャッシュの :term:`オブジェクト <キャッシュオブジェクト>` の大域的にユニー"
+"クな識別子のバイト列です。デフォルトではオブジェクトの URL が使用されます。"
+
+#: ../../../appendices/glossary.en.rst:78
+msgid "cache object"
+msgstr "キャッシュオブジェクト"
+
+#: ../../../appendices/glossary.en.rst:80
+msgid ""
+"The minimal self contained unit of data in the cache. Cache objects are the "
+"stored version of equivalent content streams from an origin server. A "
+"single object can have multiple variants called :term:`alternates "
+"<alternate>`."
+msgstr ""
+"キャッシュのデータの最小の自己完結した単位です。キャッシュオブジェクトはオリ"
+"ジンサーバーからのコンテンツストリームと等価な保存されたバージョンです。単一"
+"のオブジェクトは :term:`代替 <代替>` と呼ばれる複数の変形を持ち得ます。"
+
+#: ../../../appendices/glossary.en.rst:147
+#, fuzzy
+msgid "cache partitionglobal plugin"
+msgstr "キャッシュパーティション"
+
+#: ../../../appendices/glossary.en.rst:59
+msgid "cache span"
+msgstr "キャッシュスパン"
+
+#: ../../../appendices/glossary.en.rst:61
+msgid ""
+"The physical storage described by a single line in :file:`storage.config`."
+msgstr ":file:`storage.config` の各行に記述された物理ストレージです。"
+
+#: ../../../appendices/glossary.en.rst:53
+msgid "cache stripe"
+msgstr "キャッシュストライプ"
+
+#: ../../../appendices/glossary.en.rst:55
+msgid ""
+"A homogenous, persistent store for the cache in a single :term:`cache "
+"span`. A stripe always resides entirely on a single physical device and is "
+"treated as an undifferentiated span of bytes. This is the smallest "
+"independent unit of storage."
+msgstr ""
+"単一の :term:`キャッシュスパン` におけるキャッシュの同質な永続ストアです。ス"
+"トライプは常に一つの物理デバイスに全体的に置かれ、区別されないバイト列のスパ"
+"ンとして扱われます。これはストレージの最小の独立した単位です。"
+
+#: ../../../appendices/glossary.en.rst:73
+msgid "cache tag"
+msgstr "キャッシュタグ"
+
+#: ../../../appendices/glossary.en.rst:75
+msgid ""
+"The bottom few bits (12 currently) of the :term:`cache ID`. This is used in "
+"the :ref:`cache directory <cache-directory>` for a preliminary identity "
+"check before going to disk."
+msgstr ""
+":term:`キャッシュ ID` の下位数ビット（現在は 12）です。ディスクへアクセスす"
+"る前に予備的な識別チェックを行うために :ref:`キャッシュディレクトリ <cache-"
+"directory>` で使用されます。"
+
+#: ../../../appendices/glossary.en.rst:47
+msgid "cache volume"
+msgstr "キャッシュボリューム"
+
+#: ../../../appendices/glossary.en.rst:49
+msgid ""
+"A user defined unit of persistent storage for the cache. Cache volumes are "
+"defined in :file:`volume.config`. A cache volume is by default spread "
+"across :term:`cache span`\\ s to increase robustness. Each section of a "
+"cache volume on a specific cache span is a :term:`cache stripe`."
+msgstr ""
+"ユーザがキャッシュとして定義した永続ストレージの単位です。キャッシュボリュー"
+"ムは :file:`volume.config` で定義されます。キャッシュボリュームは頑強性を高"
+"めるため :term:`キャッシュスパン`\\ を跨いで分散されます。特定のキャッシュス"
+"パンにおけるキャッシュボリュームの各セクションは :term:`キャッシュストライプ"
+"` です。"
+
+#: ../../../appendices/glossary.en.rst:27
+msgid "continuation"
+msgstr "継続"
+
+#: ../../../appendices/glossary.en.rst:29
+msgid ""
+"A callable object that contains state. These are are mechanism used by |TS| "
+"to implement callbacks and continued computations. Continued computations "
+"are critical to efficient processing of traffic because by avoiding any "
+"blocking operations that wait on external events. In any such case a "
+"continuation is used so that other processing can continue until the "
+"external event occurs. At that point the continuation is invoked to "
+"continue the suspended processing. This can be considered similar to co-"
+"routines."
+msgstr ""
+"状態を持った呼び出し可能なオブジェクトです。 コールバックと継続的な計算を実"
+"装するために |TS| で用いられるメカニズムです。外部イベントを待つ操作のブロッ"
+"キングを避けることによりトラフィックを効率良く処理するため、継続的な計算は重"
+"要です。そのような場合において、他の処理が外部イベントが起こるまで続けられる"
+"ようにするため継続が使用されます。その時点で継続は中断した処理を続けるために"
+"発動されます。これはコルーチンに似た考えができます。"
+
+#: ../../../appendices/glossary.en.rst:113
+msgid "directory bucket"
+msgstr "ディレクトリバケット"
+
+#: ../../../appendices/glossary.en.rst:115
+msgid ""
+"A contiguous fixed sized group of :term:`directory entries <directory "
+"entry>`. This is used for hash bucket maintenance optimization."
+msgstr ""
+"隣接した :term:`ディレクトリエントリ <ディレクトリエントリ>` の固定サイズの"
+"グループです。ハッシュバケットのメンテナンスの最適化に使用されます。"
+
+#: ../../../appendices/glossary.en.rst:118
+msgid "directory entry"
+msgstr "ディレクトリエントリ"
+
+#: ../../../appendices/glossary.en.rst:120
+msgid "An in memory entry that describes a :term:`cache fragment`."
+msgstr ":term:`キャッシュフラグメント` を指すメモリに置かれるエントリです。"
+
+#: ../../../appendices/glossary.en.rst:106
+msgid "directory segment"
+msgstr "ディレクトリセグメント"
+
+#: ../../../appendices/glossary.en.rst:108
+msgid ""
+"A contiguous group of :term:`buckets <directory bucket>`. Each :term:`cache "
+"stripe` has a set of segments all of which have the same number of buckets, "
+"although the number of buckets per segment can vary between cache stripes. "
+"Segments are administrative in purpose to minimize the size of free list "
+"and hash bucket pointers."
+msgstr ""
+"隣接した :term:`バケット <ディレクトリバケット>` のグループです。セグメント"
+"あたりのバケット数はキャッシュストライプの間で変化する可能性がありますが、"
+"各 :term:`キャッシュストライプ` は同じ数のバケットを持つ全てのセグメントの"
+"セットを持ちます。セグメントはフリーリストとハッシュバケットポインタのサイズ"
+"を最小限にするため管理できます。"
+
+#: ../../../appendices/glossary.en.rst:131
+msgid "fresh"
+msgstr "新鮮な"
+
+#: ../../../appendices/glossary.en.rst:133
+msgid ""
+"The state of a :term:`cache object` which can be served directly from the "
+"the cache in response to client requests. Fresh objects have not met or "
+"passed their :term:`origin server` defined expiration time, nor have they "
+"reached the algorithmically determined :term:`stale` age."
+msgstr ""
+"クライアントのリクエストに応じてキャッシュから直接配信することができる :"
+"term:`キャッシュオブジェクト` の状態。新鮮なオブジェクトは :term:`オリジン"
+"サーバー` で定義された有効期限を超えておらず、アルゴリズムで決定された :"
+"term:`新鮮でない` 経過時間にも達していません。"
+
+#: ../../../appendices/glossary.en.rst:128
+msgid "object store"
+msgstr "オブジェクトストア"
+
+#: ../../../appendices/glossary.en.rst:130
+msgid "The database of :term:`cache objects <cache object>`."
+msgstr ":term:`キャッシュオブジェクト` のデータベース。"
+
+#: ../../../appendices/glossary.en.rst:143
+msgid "origin server"
+msgstr "オリジンサーバー"
+
+#: ../../../appendices/glossary.en.rst:145
+msgid ""
+"An HTTP server which provides the original source of content being cached "
+"by Traffic Server."
+msgstr ""
+"Traffic Server にキャッシュされるコンテンツの元の発信源を提供する HTTP サー"
+"バー。"
+
+#: ../../../appendices/glossary.en.rst:96
+msgid "revalidation"
+msgstr "再確認"
+
+#: ../../../appendices/glossary.en.rst:98
+msgid ""
+"Verifying that a currently cached object is still valid. This is usually "
+"done using an `If-Modified-Since <http://www.w3.org/Protocols/rfc2616/"
+"rfc2616-sec14.html#sec14.25>`_ request which allows the origin server to "
+"validate the content without resending the content."
+msgstr ""
+"現在のキャッシュされたオブジェクトがまだ有効か確認することです。これは通常オ"
+"リジンサーバがコンテンツの再送信をすることなくコンテンツの確認を行うことを可"
+"能にする `If-Modified-Since <http://www.w3.org/Protocols/rfc2616/rfc2616-"
+"sec14.html#sec14.25>`_ リクエストを使って行われます。"
+
+#: ../../../appendices/glossary.en.rst:37
+msgid "session"
+msgstr "セッション"
+
+#: ../../../appendices/glossary.en.rst:39
+msgid ""
+"A single connection from a client to Traffic Server, covering all requests "
+"and responses on that connection. A session starts when the client "
+"connection opens, and ends when the connection closes."
+msgstr ""
+"全てのリクエストとレスポンスをカバーする、クライアントから Traffic Server へ"
+"の単一のコネクションです。セッションはクライアントがコネクションをオープンし"
+"た際に開始し、コネクションをクローズする際に終了します。"
+
+#: ../../../appendices/glossary.en.rst:137
+msgid "stale"
+msgstr "新鮮でない"
+
+#: ../../../appendices/glossary.en.rst:139
+msgid ""
+"The state of a :term:`cache object` which is not yet expired, but has "
+"reached an algorithmically determined age at which the :term:`origin "
+"server` will be contacted to :term:`revalidate <revalidation>` the "
+"freshness of the object. Contrast with :term:`fresh`."
+msgstr ""
+"期限切れにはなっていないが、アルゴリズムで決定された経過時間には達した :"
+"term:`キャッシュオブジェクト` の状態。その経過時間に達した状態ではオブジェク"
+"トの新鮮さを :term:`再確認` するために :term:`オリジンサーバー` に接続される"
+"でしょう。 :term:`新鮮な` の対義語です。"
+
+#: ../../../appendices/glossary.en.rst:93
+msgid "storage unit"
+msgstr "ストレージユニット"
+
+#: ../../../appendices/glossary.en.rst:95
+msgid "Obsolete term for :term:`cache span`."
+msgstr ":term:`キャッシュスパン` の旧称です。"
+
+#: ../../../appendices/glossary.en.rst:42
+msgid "transaction"
+msgstr "トランザクション"
+
+#: ../../../appendices/glossary.en.rst:44
+msgid ""
+"A client request and response, either from the origin server or from the "
+"cache. A transaction begins when |TS| receives a request, and ends when |"
+"TS| sends the response."
+msgstr ""
+"クライアントのリクエストと、オリジンサーバーもしくはキャッシュからレスポンス"
+"です。トランザクションは Traffic Server がリクエストを受け付けた際に開始"
+"し、 |TS| がレスポンスを送る際に終了します。"
+
+#: ../../../appendices/glossary.en.rst:103
+msgid "write cursor"
+msgstr "書込みカーソル"
+
+#: ../../../appendices/glossary.en.rst:105
+msgid "The location in a :term:`cache stripe` where new data is written."
+msgstr "新しいデータが書き込まれる :term:`キャッシュストライプ` の位置です。"

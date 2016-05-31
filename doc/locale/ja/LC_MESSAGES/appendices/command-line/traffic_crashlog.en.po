@@ -1,0 +1,117 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:91
+msgid ""
+":manpage:`records.config(5)`, :manpage:`traffic_manager(8)`, :manpage:"
+"`traffic_server(8)`"
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:28
+msgid ":program:`traffic_crashlog` [options]"
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:33
+msgid ""
+":program:`traffic_crashlog` is a helper process that catches Traffic Server "
+"crashes and writes a crash report log to the logging directory. Other than "
+"for debugging or development purposes, :program:`traffic_crashlog` is not "
+"intended for users to run directly."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:80
+msgid ""
+":program:`traffic_crashlog` makes use of various Traffic Server management "
+"APIs. If :ref:`traffic_manager` is not available, the crash log will be "
+"incomplete."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:84
+msgid ""
+":program:`traffic_crashlog` may generate a crash log containing information "
+"you would rather not share outside your organization. Please examine the "
+"crash log carefully before posting it in a public forum."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:78
+msgid "Caveats"
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:31
+msgid "Description"
+msgstr "解説"
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:42
+msgid "Options"
+msgstr "オプション"
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:89
+msgid "See also"
+msgstr "参考"
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:56
+msgid ""
+"Specifies the process ID of the crashing :program:`traffic_server` process. "
+"If this option is not specified, :program:`traffic_crashlog` assumes it "
+"should examine it's parent process."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:26
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:62
+msgid ""
+"This option causes :program:`traffic_crashlog` to log the name of the crash "
+"log it creates to the system log."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:73
+msgid ""
+"This option causes :program:`traffic_crashlog` to stop itself immediately "
+"after it is launched. :program:`traffic_server` will allow it to continue "
+"only when a crash occurs."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:67
+msgid ""
+"This option enables debugging mode. In this mode, :program:"
+"`traffic_crashlog` emits the log to it's standard output."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:48
+msgid ""
+"This option specifies the host triple for the process that :program:"
+"`traffic_crashlog` should examine. If a supported host triple is "
+"specified, :program:`traffic_crashlog` expects to receive a ``siginfo_t`` "
+"structure on it's standard input, followed by a ``ucontext_t``."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:38
+msgid ""
+"When :ref:`traffic_server` starts, it will launch a :program:"
+"`traffic_crashlog` process and keep it stopped, activating it only if a "
+"crash occurs."
+msgstr ""
+
+#: ../../appendices/command-line/traffic_crashlog.en.rst:23
+msgid "traffic_crashlog"
+msgstr ""

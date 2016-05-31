@@ -1,0 +1,123 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:23
+msgid "Session Protocol"
+msgstr "セッションプロトコル"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:25
+msgid ""
+"|TS| supports some session level protocols in place of or on top of HTTP. "
+"These can be provided by a plugin (see :ref:`developer-plugins-new-protocol-"
+"plugins`) or be one that is supported directly by |TS|. The `SPDY <http://"
+"www.chromium.org/spdy>`_ protocol is the only one currently supported, but "
+"it is planned to support HTTP 2 when that is finalized."
+msgstr ""
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:31
+msgid ""
+"Session protocols are specified by explicit names, based on the `NPN "
+"<https://technotes.googlecode.com/git/nextprotoneg.html>`_ names. The core "
+"supported names are:"
+msgstr ""
+"セッションプロトコルは `NPN <https://technotes.googlecode.com/git/"
+"nextprotoneg.html>`_ での名称を元にした明示的な名称によって指定されます。直"
+"接サポートされている名称は下記のとおりです。"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:35
+msgid "``http/0.9``"
+msgstr "``http/0.9``"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:36
+msgid "``http/1.0``"
+msgstr "``http/1.0``"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:37
+msgid "``http/1.1``"
+msgstr "``http/1.1``"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:38
+msgid "``http/2``"
+msgstr "``http/2``"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:39
+msgid "``spdy/1``"
+msgstr "``spdy/1``"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:40
+msgid "``spdy/2``"
+msgstr "``spdy/2``"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:41
+msgid "``spdy/3``"
+msgstr "``spdy/3``"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:42
+msgid "``spdy/3.1``"
+msgstr "``spdy/3.1``"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:44
+msgid ""
+"The ``http/2`` value is not currently functional, but is included for "
+"future use. Both ``spdy/1`` and ``spdy/2`` are obsolete, but are include "
+"for completeness."
+msgstr ""
+"``http/2`` の値は現在機能しませんが、将来使用するために含められています。"
+"``spdy/1`` と ``spdy/2`` はどちらも古いですが、完全性のために含められていま"
+"す。"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:48
+msgid ""
+"The session protocols supported on a proxy port are a subset of these "
+"values. For convenience some pseudo-values are defined in terms of these "
+"fundamental protocols:"
+msgstr ""
+"プロキシーポート上でサポートされるセッションプロトコルはこれらの値のサブセッ"
+"トになります。利便性のためにいくつかの擬似的な値が下記の基本的なプロトコルと"
+"して定義されています。"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:52
+msgid "``http`` means ``http/0.9``, ``http/1.0``, and ``http/1.1``"
+msgstr ""
+"``http`` は ``http/0.9`` 、``http/1.0`` 、 ``http/1.1`` を意味します。"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:53
+msgid "``spdy`` means ``spdy/3`` and ``spdy/3.1``."
+msgstr "``spdy`` は ``spdy/3`` と ``spdy/3.1`` を意味します。"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:54
+msgid "``http2`` means ``http/2``"
+msgstr "``http2`` は ``http/2`` を意味します。"
+
+#: ../../../admin-guide/configuration/session-protocol.en.rst:56
+msgid ""
+"Each proxy port can be configured in :ts:cv:`proxy.config.http."
+"server_ports` to support a subset of these session protocols. For TLS "
+"enabled connections this configuration controls which protocols are offered "
+"by NPN. Protocol sniffing is use for non-TLS proxy ports to determine which "
+"protocol is being used by the client. If the detected protocol is not "
+"supported for that proxy port the connection is dropped."
+msgstr ""
+"それぞれのプロキシーポートでサポートするセッションプロトコルは :ts:cv:"
+"`proxy.config.http.server_ports` で設定可能です。TLS が有効な接続では、この"
+"設定は NPN でどのプロトコルを提示するかを制御します。プロトコルスニッフィン"
+"グは非 TLS のプロキシーポートでクライアントによってどのプロトコルが使われて"
+"いるかを判定するためのものです。もし検出されたプロトコルがそのプロキシーポー"
+"トで対応されていない場合、接続は破棄されます。"

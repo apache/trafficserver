@@ -1,0 +1,202 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/index.en.rst:101
+msgid "**API Hooks Corresponding to States**"
+msgstr "**API フックと状態の関係**"
+
+#: ../../developer-guide/plugins/index.en.rst:118
+msgid "**Blacklist Plugin**"
+msgstr "**ブラックリストプラグイン**"
+
+#: ../../developer-guide/plugins/index.en.rst:75
+msgid "**Simplified HTTP Transaction**"
+msgstr "**簡略化された HTTP トランザクション**"
+
+#: ../../developer-guide/plugins/index.en.rst:147
+msgid ""
+"*Header manipulation plugins*, such as filtering, basic authorization, or "
+"redirects, usually have a global hook to the DNS lookup or the read request "
+"header states. If specific actions need to be done to the transaction "
+"further on, then the plugin adds itself to a transaction hook. "
+"*Transformation plugins* require a global hook to check all transactions "
+"for transformability followed by a transform hook, which is a type of "
+"transaction hook used specifically for transforms."
+msgstr ""
+
+#: ../../developer-guide/plugins/index.en.rst:108
+msgid "API Hooks Corresponding to States Listed in"
+msgstr "リストの状態に対応した API フック"
+
+#: ../../developer-guide/plugins/index.en.rst:67
+msgid ""
+"An HTTP transaction consists of a client request for a web document and "
+"Traffic Server's response. The response could be the requested web server "
+"content or it could be an error message. The content could come from the "
+"Traffic Server cache or Traffic Server might fetch it from the origin "
+"server. The following diagram shows some states in a typical transaction - "
+"specifically, the scenario wherein content is served from cache."
+msgstr ""
+"HTTP トランザクションはウェブドキュメントに対するクライアントリクエストと "
+"Traffic Server のレスポンスから成立します。レスポンスは要求されたウェブサー"
+"バーのコンテンツになるかも知れないし、エラーメッセージになるかも知れません。"
+"コンテンツは Traffic Server のキャッシュから配信されるかも知れませんし "
+"Traffic Server がオリジンサーバーから取得するであろうものから配信されるかも"
+"知れません。以下の図は典型的なトランザクション、特にコンテンツがキャッシュか"
+"ら配信される際のシナリオにおける幾つかの状態を示したものです。"
+
+#: ../../developer-guide/plugins/index.en.rst:125
+msgid "Blacklist Plugin"
+msgstr "ブラックリストプラグイン"
+
+#: ../../developer-guide/plugins/index.en.rst:65
+msgid "HTTP Transaction"
+msgstr "HTTP トランザクション"
+
+#: ../../developer-guide/plugins/index.en.rst:59
+msgid ""
+"The example in this section (below) explains how a plugin typically "
+"intervenes and extends Traffic Server's processing of an HTTP transaction. "
+"Complete details about hooking on to Traffic Server processes are provided "
+"in :ref:`developer-plugins-hooks-and-transactions`."
+msgstr ""
+
+#: ../../developer-guide/plugins/index.en.rst:91
+msgid ""
+"If the content is fresh, then Traffic Server sends a reply header to the "
+"client. If the content is stale, then Traffic Server opens a connection to "
+"the origin server and requests the content. The figure above, :ref:"
+"`SimplifiedHTTPTransaction`, does *not* show behavior in the event of an "
+"error. If there is an error at a any stage, then the HTTP state machine "
+"jumps to the \"send reply header\" state and sends a reply. If the reply is "
+"an error, then the transaction closes. If the reply is not an error, then "
+"Traffic Server first sends the response content before it closes the "
+"transaction."
+msgstr ""
+"コンテンツが新鮮である場合、 Traffic Server はクライアントにリプライヘッダー"
+"を送信します。コンテンツが新鮮ではない場合、 Traffic Server はオリジンサーバ"
+"へコネクションを open し、コンテンツをリクエストします。上図、 :ref:"
+"`SimplifiedHTTPTransaction` はエラーのイベントにおける振る舞いを示して *いま"
+"せん。* いずれかの段階でエラーがあった場合、 HTTP ステートマシンは \"send "
+"reply header\" 状態にジャンプし、返信をします。返信がエラーだった場合、トラ"
+"ンザクションは close します。返信がエラーでなかった場合、 Traffic Server は"
+"トランザクションを close する前にまずレスポンスコンテンツを送信します。"
+
+#: ../../developer-guide/plugins/index.en.rst:84
+msgid ""
+"In the diagram above, Traffic Server accepts the client connection, reads "
+"the request headers, looks up the origin server's IP address, and looks for "
+"the requested content in the cache. If the content is not in the cache (a "
+"\"miss\"), then Traffic Server opens a connection to the origin server and "
+"issues a request for the content. If the content is in the cache (a \"hit"
+"\"), then Traffic Server checks it for freshness."
+msgstr ""
+"上の図において、 Traffic Server はクライアントコネクションを accept し、リク"
+"エストヘッダーを読込み、オリジンサーバの IP アドレスをルックアップし、キャッ"
+"シュ上でリクエストされたコンテンツを検索します。キャッシュにコンテンツがない"
+"場合（ \"ミス\" ）、 Traffic Server はオリジンサーバへのコネクションを open "
+"し、コンテンツのリクエストを発行します。キャッシュにコンテンツがある場合"
+"（ \"ヒット\" ）、 Traffic Server はフレッシュネスをチェックします。"
+
+#: ../../developer-guide/plugins/index.en.rst:23
+msgid "Plugin Development"
+msgstr ""
+
+#: ../../developer-guide/plugins/index.en.rst:82
+msgid "Simplified HTTP Transaction"
+msgstr "簡略化された HTTP トランザクション"
+
+#: ../../developer-guide/plugins/index.en.rst:138
+msgid ""
+"The Blacklist plugin's hook to the origin server DNS lookup state is a "
+"*global hook*, meaning that the plugin is called every time there's an HTTP "
+"transaction with a DNS lookup event. The plugin's hook to the send reply "
+"header state is a *transaction hook*, meaning that this hook is only "
+"invoked for specified transactions (in the :ref:`developer-plugins-examples-"
+"blacklist` example, it's only used for requests to blacklisted servers). "
+"Several examples of setting up hooks are provided in :ref:`developer-"
+"plugins-header-based-examples` and :ref:`developer-plugins-http-"
+"transformations`."
+msgstr ""
+
+#: ../../developer-guide/plugins/index.en.rst:46
+msgid "Traffic Server HTTP State Machine"
+msgstr "Traffic Server HTTP ステートマシン"
+
+#: ../../developer-guide/plugins/index.en.rst:127
+msgid ""
+"Traffic Server calls the Blacklist plugin right after the origin server DNS "
+"lookup. The plugin checks the requested host against a list of blacklisted "
+"servers; if the request is allowed, then the transaction proceeds. If the "
+"host is forbidden, then the Blacklist plugin sends the transaction into an "
+"error state. When the HTTP state machine gets to the \"send reply header\" "
+"state, it then calls the Blacklist plugin to provide the error message "
+"that's sent to the client."
+msgstr ""
+"Traffic Server はオリジンサーバの DNS ルックアップの直後にブラックリストプラ"
+"グインを呼び出します。このプラグインはリクエストされたホストをブラックリスト"
+"に載ったサーバのリストと照合します。リクエストが許可される場合、トランザク"
+"ションは進みます。ホストが許可されない場合、ブラックリストプラグインはトラン"
+"ザクションをエラー状態に送ります。 HTTP ステートマシンが \"send reply header"
+"\" 状態を取得した際、ブラックリストプラグインはクライアントへ送信するエラー"
+"メッセージを提供する為に呼び出します。"
+
+#: ../../developer-guide/plugins/index.en.rst:48
+msgid ""
+"Traffic Server performs sophisticated HTTP caching and proxying. Important "
+"features include checking for alternates and document freshness, filtering, "
+"supporting cache hierarchies, and hosting. Traffic Server handles thousands "
+"of client requests at a time and each request is handled by an HTTP state "
+"machine. These machines follow a complex state diagram that includes all of "
+"the states required to support Traffic Server's features. The Traffic "
+"Server API provides hooks to a subset of these states, chosen for their "
+"relevance to plugins. You can view the API hooks and corresponding HTTP "
+"states in the :ref:`http-txn-state-diagram`."
+msgstr ""
+"Traffic Server は高度な HTTP キャッシュとプロキシを行います。重要な特徴とし"
+"てオルタネイトとドキュメントのフレッシュネスのチェック、フィルタリング、階層"
+"的キャッシュのサポート、そしてホスティングを含みます。 Traffic Server は同時"
+"に数千のクライアントリクエストを処理し、各リクエストは HTTP ステートマシンに"
+"より処理されます。これらのマシンは Traffic Server の機能をサポートするために"
+"要求される状態の全てを含む、複雑な状態遷移図に従います。 Traffic Server API "
+"は、プラグインとの関連を選択されたこれらの状態のサブセットへのフックを提供し"
+"ます。 :ref:`http-txn-state-diagram` でAPI フックと関係する HTTP 状態が見ら"
+"れます。"
+
+#: ../../developer-guide/plugins/index.en.rst:136
+msgid "Types of Hooks"
+msgstr "フックのタイプ"
+
+#: ../../developer-guide/plugins/index.en.rst:110
+msgid ""
+"You use hooks as triggers to start your plugin. The name of a hook reflects "
+"the Traffic Server state that was *just completed*. For example, the \"OS "
+"DNS lookup\" hook wakes up a plugin right *after* the origin server DNS "
+"lookup. For a plugin that requires the IP address of the requested origin "
+"server, this hook is the right one to use. The Blacklist plugin works in "
+"this manner, as shown in the :ref:`BlackListPlugin` diagram below."
+msgstr ""
+"プラグインを開始するトリガーとしてフックを使用できます。フックの名前はちょう"
+"ど完了した Traffic Server 状態を示します。例えば、 \"OS DNS lookup\" フック"
+"はオリジンサーバの DNS ルックアップの直 *後* にプラグインが動作します。 リク"
+"エストされたオリジンサーバの IP アドレスを要求するプラグインのため、このフッ"
+"クは使用するのが正しいです。ブラックリストプラグインは下図の :ref:"
+"`BlackListPlugin` で示す通り、この方法で動作します。"

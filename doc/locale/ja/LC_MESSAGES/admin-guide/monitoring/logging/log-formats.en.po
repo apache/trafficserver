@@ -1,0 +1,2494 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: 2016-01-03 14:53+0900\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:23
+msgid "Log Formats"
+msgstr "ログフォーマット"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:25
+msgid ""
+"This document provides a reference for all the different logging formats "
+"|TS| supports. Rather than just reading about those formats, you may also"
+" want to try our `online event log builder "
+"<http://trafficserver.apache.org/logbuilder/>`_ for an interactive way of"
+" building and understanding log formats."
+msgstr ""
+"このドキュメントは |TS| "
+"がサポートしている全ての異なるロギングフォーマットについてのリファレンスを提供します。これらのフォーマットについて単に読むよりも、ログフォーマットのビルドと理解をインタラクティブに行うために"
+" `online event log builder "
+"<http://trafficserver.apache.org/logbuilder/>`_ を試す方がいいでしょう。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:33
+msgid "Binary or ASCII?"
+msgstr "バイナリかASCIIか?"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:35
+msgid ""
+"You can configure |TS| to create event log files in either of the "
+"following:"
+msgstr "次のいずれかでイベントログファイルを作成するように |TS| を設定できます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:42
+msgid "ASCII"
+msgstr "ASCII"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:38
+msgid ""
+"These files are human-readable and can be processed using standard, off-"
+"the-shelf log analysis tools. However, |TS| must perform additional "
+"processing to create the files in ASCII, which mildly impacts system "
+"overhead. ASCII files also tend to be larger than the equivalent binary "
+"files. By default, ASCII log files have a ``.log`` filename extension."
+msgstr ""
+"これらのファイルは人間が読むことも出来ますし、標準的な既成のログ解析ツールを使って処理することも出来ます。しかし、 |TS| は ASCII "
+"形式のファイルを作成するためには追加の処理を行う必要があり、それはシステムのオーバーヘッドに少し影響を与えます。 ASCII "
+"形式のファイルは同等なバイナリファイルより大きくなる傾向があります。デフォルトでは ASCII 形式のログファイルは ``.log`` "
+"というファイル名の拡張子を持ちます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:49
+msgid "Binary"
+msgstr "バイナリ"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:45
+msgid ""
+"These files generate lower system overhead and generally occupy less "
+"space on the disk than ASCII files (depending on the type of information "
+"being logged). However, you must use a converter application before you "
+"can read or analyze binary files via standard tools. By default, binary "
+"log files use a ``.blog`` filename extension."
+msgstr ""
+"これらのファイルは ASCII ファイルに比べて (ログ出力する情報の型にもよりますが) "
+"システムのオーバーヘッドが比較的低くなり、一般的には占有するスペースがより少なくてすみます。しかし、バイナリファイルを標準的なツールで読んだり分析したりする前に変換アプリケーションを使う必要があります。デフォルトではバイナリ形式のログファイルは"
+" ``.blog`` というファイル名の拡張子を持ちます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:51
+msgid ""
+"While binary log files typically require less disk space, there are "
+"exceptions."
+msgstr "典型的にはバイナリファイルのほうが占有するディスクスペースは少なくてすみますが、例外はあります。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:53
+msgid ""
+"For example, the value ``0`` (zero) requires only one byte to store in "
+"ASCII, but requires four bytes when stored as a binary integer.  "
+"Conversely, if you define a custom format that logs IP addresses, then a "
+"binary log file would only require four bytes of storage per 32-bit "
+"address. However, the same IP address stored in dot notation would "
+"require around 15 characters (bytes) in an ASCII log file."
+msgstr ""
+"例えば、 ``0`` (ゼロ) という値は ASCII 形式では 1 バイトしか必要としませんが、バイナリ整数として保存するには 4 "
+"バイト必要です。逆に IP アドレスをログ出力するカスタムフォーマットを定義すると、バイナリログファイルは 32 "
+"ビットのアドレスごとに4バイトしか必要としません。しかし、 ASCII 形式のログファイルで同じ IP アドレスをドット形式で格納すると約 15 "
+"文字 (バイト)を必要とします。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:60
+msgid ""
+"It is wise to consider the type of data that will be logged before you "
+"select ASCII or binary for your log files, if your decision is being "
+"driven by storage space concerns. For example, you might try logging to "
+"both formats simultaneously for a representative period of time and "
+"compare the storage requirements of the two logs to determine whether one"
+" or the other provides any measurable savings."
+msgstr ""
+"もしストレージのスペースの懸念事項によって決定するなら、ログファイルを ASCII "
+"かバイナリにするかを選ぶ前にログ出力されるデータの型を考慮するのが賢明です。例えば、典型的な期間両方の形式で同時にログ出力しておいて、 2 "
+"つのログのストレージ要求を比較し、どちらかが目に見えて節約できるかを決定してもよいかもしれません。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:68
+msgid "Defining Log Objects"
+msgstr "ログオブジェクトを定義する"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:70
+msgid ""
+"To perform any logging at all on your |TS| nodes, you must have at least "
+"one :ref:`LogObject` defined in :file:`logs_xml.config`. These "
+"definitions configure what logs will be created, the format they will use"
+" (covered in the sections :ref:`admin-monitoring-logging-format-standard`"
+" and :ref:`admin-monitoring-logging-format-custom`), any filters which "
+"may be applied to events before logging them, and when or how the logs "
+"will be rolled."
+msgstr ""
+"|TS| のノードの全てでログ出力を実行するためには :file:`logs_xml.config` に最低 1 つの "
+":ref:`LogObject` を定義する必要があります。これらの定義はどのログが作られるかとどういう形式を使うか (:ref:`admin-"
+"monitoring-logging-format-standard` と :ref:`admin-monitoring-logging-"
+"format-custom` "
+"で説明されています)、ログ出力の前にイベントにどういうフィルターが適用されるか、そしていつどのようにログがローテートされるかを設定します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:78
+msgid "Log Filters"
+msgstr "ログフィルター"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:80
+msgid ""
+":ref:`LogFilter` objects, configured in :file:`logs_xml.config` allow you"
+" to create filters, which may be applied to :ref:`LogObject` definitions,"
+" limiting the types of entries which will be included in the log output. "
+"This may be useful if your |TS| nodes receive many events which you have "
+"no need to log or analyze."
+msgstr ""
+":file:`logs_xml.config` で設定される :ref:`LogFilter` "
+"によりフィルターを作成することが出来ます。フィルターは :ref:`LogObject` "
+"の定義に適用することが出来て、ログの出力に含まれるエントリの種類を限定します。 |TS| "
+"のノードがログ出力や分析をする必要が無いイベントを多数受け取るなら、これは便利かもしれません。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:89
+msgid "Standard Formats"
+msgstr "標準フォーマット"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:91
+msgid ""
+"The standard log formats include Squid, Netscape Common, Netscape "
+"extended, and Netscape Extended-2. The standard log file formats can be "
+"analyzed with a wide variety of off-the-shelf log-analysis packages. You "
+"should use one of the standard event log formats unless you need "
+"information that these formats do not provide."
+msgstr ""
+"標準ログフォーマットには Squid、Netscape Common、Netscape extended、そして Netscape "
+"Extended-2 "
+"があります。標準ログファイルは幅広い種類の既存のログ分析パッケージを用いて分析することが出来ます。これらのフォーマットが提供しない情報を必要としなければ標準のイベントログフォーマットを使うべきです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:97
+msgid ""
+"These formats may be used by enabling the "
+":ts:cv:`proxy.config.log.custom_logs_enabled` setting in "
+":file:`records.config` and adding appropriate entries to "
+":file:`logs_xml.config`."
+msgstr ""
+"これらのフォーマットは :file:`records.config` の "
+":ts:cv:`proxy.config.log.custom_logs_enabled` 設定を有効にし、 "
+":file:`logs_xml.config` に適切なエントリを追加することで使えるようになります。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:104
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:833
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:839
+msgid "Squid"
+msgstr "Squid"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:106
+msgid "The following figure shows a sample log entry in a Squid log file."
+msgstr "Squid のログファイルのサンプルのログエントリを数に示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:112
+msgid "Sample log entry in squid.log"
+msgstr "squid.log のサンプルのログエントリ"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:115
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:160
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:189
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:229
+msgid "Field"
+msgstr "フィールド"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:115
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:160
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:189
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:229
+msgid "Symbol"
+msgstr "シンボル"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:115
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:160
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:189
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:229
+msgid "Description"
+msgstr "解説"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:117
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:162
+msgid "1"
+msgstr "1"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:117
+msgid "cqtq"
+msgstr "cqtq"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:117
+msgid ""
+"The client request timestamp in Squid format. The time of the client "
+"request in seconds since January 1, 1970 UTC (with millisecond "
+"resolution)."
+msgstr ""
+"Squid フォーマットでのクライアントリクエストのタイムスタンプ。 1970 年 1 月 1 "
+"日からのクライアントリクエストの時間。時間は秒単位で、ミリ秒の精度です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:120
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:163
+msgid "2"
+msgstr "2"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:120
+msgid "ttms"
+msgstr "ttms"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:120
+msgid ""
+"The time |TS| spent processing the client request. The number of "
+"milliseconds between the time the client established the connection with "
+"|TS| and the time |TS| sent the last byte of the response back to the "
+"client."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:124
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:164
+msgid "3"
+msgstr "3"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:124
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:162
+msgid "chi"
+msgstr "chi"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:124
+msgid "The IP address of the client’s host machine."
+msgstr "クライアントのホストマシンの IP アドレス"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:125
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:166
+msgid "4"
+msgstr "4"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:125
+msgid "crc/pssc"
+msgstr "crc/pssc"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:125
+msgid ""
+"The cache result code; how the cache responded to the request: ``HIT``, "
+"``MISS``, and so on. Cache result codes are described in :ref:`admin-"
+"monitoring-logging-cache-result-codes`. The proxy response status code "
+"(HTTP response status code from |TS| to client)."
+msgstr ""
+"キャッシュリザルトコード。キャッシュがリクエストに対してどのように反応したか。 ``HIT``、 ``MISS`` "
+"などです。キャッシュリザルトコードは :ref:`admin-monitoring-logging-cache-result-codes` "
+"で説明しています。プロキシのレスポンスステータスコード (|TS| からクライアントへの HTTP レスポンスのステータスコード)。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:130
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:167
+msgid "5"
+msgstr "5"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:130
+msgid "psql"
+msgstr "psql"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:130
+msgid ""
+"The length of the |TS| response to the client in bytes, including headers"
+" and content."
+msgstr "クライアントへの |TS| のレスポンスの長さ。ヘッダとコンテンツを含みます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:132
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:168
+msgid "6"
+msgstr "6"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:132
+msgid "cqhm"
+msgstr "cqhm"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:132
+msgid "The client request method: ``GET``, ``POST``, and so on."
+msgstr "クライアントのリクエストメソッド。  ``GET``、 ``POST`` などです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:133
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:169
+msgid "7"
+msgstr "7"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:133
+msgid "cauc"
+msgstr "cauc"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:133
+msgid ""
+"The client request canonical URL; blanks and other characters that might "
+"not be parsed by log analysis tools are replaced by escape sequences. The"
+" escape sequence is a percentage sign followed by the ASCII code number "
+"of the replaced character in hex."
+msgstr ""
+"クライアントリクエストの正準化した URL "
+"。ログ分析ツールで構文解析できないかもしれない空白や他の文字はエスケープシーケンスに置き換えられます。エスケープシーケンスはパーセント文字の後に置換された文字の"
+" ASCII コード番号の 16 進数を続けたものです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:138
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:191
+msgid "8"
+msgstr "8"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:138
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:164
+msgid "caun"
+msgstr "caun"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:138
+msgid ""
+"The username of the authenticated client. A hyphen (``-``) means that no "
+"authentication was required."
+msgstr "認証されたクラインアントのユーザ名。ハイフン (``-``) は認証が不要だったことを意味します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:140
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:192
+msgid "9"
+msgstr "9"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:140
+msgid "phr/pqsn"
+msgstr "phr/pqsn"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:140
+msgid "The proxy hierarchy route. The route |TS| used to retrieve the object."
+msgstr "プロキシー階層の経路。 |TS| がオプジェクトを検索するために使用した経路。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:142
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:194
+msgid "10"
+msgstr "10"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:142
+msgid "psct"
+msgstr "psct"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:142
+msgid ""
+"The proxy response content type. The object content type taken from the "
+"|TS| response header."
+msgstr "プロキシーレスポンスのコンテンツタイプ。 |TS| レスポンスヘッダーから取得されたオブジェクトのコンテンツタイプ。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:149
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:864
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:870
+msgid "Netscape Common"
+msgstr "Netscape Common"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:151
+msgid ""
+"The following figure shows a sample log entry in a Netscape Common log "
+"file."
+msgstr "Netscape Common 形式のログファイルのサンプルログエントリを下図に示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:157
+msgid "Sample log entry in common.log"
+msgstr "common.log のサンプルログエントリ"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:162
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:361
+msgid "The IP address of the client's host machine."
+msgstr "クライアントのホストマシンの IP アドレス。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:163
+msgid "--"
+msgstr "--"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:163
+msgid "This hyphen (``-``) is always present in Netscape log entries."
+msgstr "このハイフン (``-``) は Netscape 形式のログエントリ内に常に存在します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:164
+msgid ""
+"The authenticated client username. A hyphen (``-``) means no "
+"authentication was required."
+msgstr "認証されたクラインアントのユーザ名。ハイフン (``-``) は認証が不要だったことを意味します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:166
+msgid "cqtd"
+msgstr "cqtd"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:166
+msgid "The date and time of the client request, enclosed in brackets."
+msgstr "クライアントリクエストの角括弧で囲まれた日時"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:167
+msgid "cqtx"
+msgstr "cqtx"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:167
+msgid "The request line, enclosed in quotes."
+msgstr "クォートで囲まれたリクエスト行"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:168
+msgid "pssc"
+msgstr "pssc"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:168
+msgid "The proxy response status code (HTTP reply code)."
+msgstr "プロキシーレスポンスのステータスコード (HTTP 応答コード)"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:169
+msgid "pscl"
+msgstr "pscl"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:169
+msgid "The length of the |TS| response to the client in bytes."
+msgstr "クライアントへの |TS| レスポンスのバイト長"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:175
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:890
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:896
+msgid "Netscape Extended"
+msgstr "Netscape Extended"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:177
+msgid ""
+"The following figure shows a sample log entry in a Netscape Extended log "
+"file."
+msgstr "Netscape Extended 形式のログのサンプルログエントリを下図に示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:183
+msgid "Sample log entry in extended.log"
+msgstr "extended.log のサンプルログエントリ"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:185
+msgid ""
+"In addition to field 1-7 from the Netscape Common log format above, the "
+"Extended format also adds the following fields:"
+msgstr "上記の Netscape Common ログ形式の項目 1 〜 7 に加えて、 Extended 形式では以下の項目がさらに追加されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:191
+msgid "sssc"
+msgstr "sssc"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:191
+msgid "The origin server response status code."
+msgstr "オリジンサーバーのレスポンスのステータスコード"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:192
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:204
+msgid "sshl"
+msgstr "sshl"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:192
+msgid ""
+"The server response transfer length; the body length in the origin server"
+" response to |TS|, in bytes."
+msgstr "サーバーレスポンスの転送長、 |TS| へのオリジンサーバーのレスポンスのボディの長さで、 byte 単位です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:194
+msgid "cqbl"
+msgstr "cqbl"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:194
+msgid ""
+"The client request transfer length; the body length in the client request"
+" to |TS|, in bytes."
+msgstr "クライアントリクエストの転送長、 |TS| へのクライアントリクエストのボディの長さで、 byte 単位です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:196
+msgid "11"
+msgstr "11"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:196
+msgid "pqbl"
+msgstr "pqbl"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:196
+msgid ""
+"The proxy request transfer length; the body length in the |TS| request to"
+" the origin server."
+msgstr "プロキシーリクエストの転送長、オリジンサーバーへの |TS| のリクエストのボディの長さです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:198
+msgid "12"
+msgstr "12"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:198
+msgid "cqhl"
+msgstr "cqhl"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:198
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:393
+msgid ""
+"The client request header length; the header length in the client request"
+" to |TS|."
+msgstr "クライアントリクエストヘッダーの長さ。 |TS| へのクライアントリクエストのヘッダーの長さです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:200
+msgid "13"
+msgstr "13"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:200
+msgid "pshl"
+msgstr "pshl"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:200
+msgid ""
+"The proxy response header length; the header length in the |TS| response "
+"to the client."
+msgstr "プロキシーのレスポンスヘッダーの長さ、クライアントへの |TS| のレスポンスのヘッダーの長さです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:202
+msgid "14"
+msgstr "14"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:202
+msgid "pqhl"
+msgstr "pqhl"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:202
+msgid ""
+"The proxy request header length; the header length in |TS| request to the"
+" origin server."
+msgstr "プロキシーのリクエストヘッダーの長さ、オリジンサーバーへの |TS| のリクエストのヘッダーの長さです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:204
+msgid "15"
+msgstr "15"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:204
+msgid ""
+"The server response header length; the header length in the origin server"
+" response to |TS|."
+msgstr "サーバーのレスポンスヘッダーの長さ。オリジンサーバーが |TS| へ返すヘッダーの長さ。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:206
+msgid "16"
+msgstr "16"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:206
+msgid "tts"
+msgstr "tts"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:206
+msgid ""
+"The time |TS| spent processing the client request; the number of seconds "
+"between the time that the client established the connection with |TS| and"
+" the time that |TS| sent the last byte of the response back to the "
+"client."
+msgstr ""
+"|TS| がクライアントリクエストを処理するのに費やした時間。クライアントが |TS| とコネクションを確立した時間から、 |TS| "
+"がクライアントにレスポンスの最後の byte を返した時間の間の秒数。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:215
+msgid "Netscape Extended2"
+msgstr "Netscape Extended2"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:217
+msgid ""
+"The following figure shows a sample log entry in a Netscape Extended2 log"
+" file."
+msgstr "Netscape Extended2 形式のログのサンプルログエントリを下図に示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:223
+msgid "Sample log entry in extended2.log"
+msgstr "extended2.log のサンプルログエントリ"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:225
+msgid ""
+"In addition to field 1-16 from the log formats above, the Extended2 "
+"format also adds the following fields:"
+msgstr "上記のログ形式の項目 1 〜 16 に加えて、 Extended2 形式では以下の項目がさらに追加されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:231
+msgid "17"
+msgstr "17"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:231
+msgid "phr"
+msgstr "phr"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:231
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:635
+msgid "The proxy hierarchy route; the route |TS| used to retrieve the object."
+msgstr "プロキシー階層の経路。 |TS| がオプジェクトを検索するために使用した経路。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:233
+msgid "18"
+msgstr "18"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:233
+msgid "cfsc"
+msgstr "cfsc"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:233
+msgid ""
+"The client finish status code: ``FIN`` if the client request completed "
+"successfully or ``INTR`` if the client request was interrupted."
+msgstr ""
+"クライアントの終了ステータスコード、 クライアントリクエストが正しく完了した (``FIN``) もしくは中断された (``INTR``) "
+"のどちらかが記述されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:236
+msgid "19"
+msgstr "19"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:236
+msgid "pfsc"
+msgstr "pfsc"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:236
+msgid ""
+"The proxy finish status code: ``FIN`` if the |TS| request to the origin "
+"server completed successfully or ``INTR`` if the request was interrupted."
+msgstr ""
+"プロキシー終了ステータスコード。 |TS| からオリジンサーバーへのリクエストが正常に完了した (``FIN``) もしくは中断された "
+"(``INTR``) かタイムアウトした (``TIMEOUT``) かどうか。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:239
+msgid "20"
+msgstr "20"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:239
+msgid "crc"
+msgstr "crc"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:239
+msgid ""
+"The cache result code; how the |TS| cache responded to the request: "
+"``HIT``, ``MISS``, and so on. Cache result codes are listed in :ref"
+":`admin-monitoring-logging-cache-result-codes`."
+msgstr ""
+"キャッシュリザルトコード。 |TS| のキャッシュがリクエストに対してどのように反応したか。 ``HIT``、 ``MISS`` "
+"などです。キャッシュリザルトコードは :ref:`admin-monitoring-logging-cache-result-codes` "
+"で説明しています。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:247
+msgid "Custom Formats"
+msgstr "カスタム形式"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:250
+msgid "Defining a Format"
+msgstr "形式を定義する"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:252
+msgid ""
+"Custom logging formats in |TS| are defined by editing "
+":file:`logs_xml.config` and adding new :ref:`LogFormat` entries for each "
+"format you wish to define. The syntax is fairly simple: every "
+":ref:`LogFormat` element should contain at least two child elements "
+"(additional elements are used for features such as log summarization and "
+"are covered elsewhere):"
+msgstr ""
+"|TS| のカスタムログ形式は :file:`logs_xml.config` を編集し、定義したい形式ごとに新しい "
+":ref:`LogFormat` のエントリを追加することで定義されます。文法はかなりシンプルです。各々の :ref:`LogFormat` "
+"は少なくとも 2 つの子要素を持つべきです (追加の要素はログの要約などの機能に使用され、これは別の場所で説明します)。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:258
+msgid ""
+"A ``<Name>`` which contains an arbitrary string (using only the allowed "
+"characters: ``[a-z0-9]``) naming your custom format."
+msgstr "``<Name>`` は (許可された文字 ``[a-z0-9]`` だけを用いた) 任意の文字列を含み、カスタム形式に名前をつけます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:261
+msgid ""
+"A ``<Format>`` which defines the fields that will populate each entry in "
+"the custom logs, as well as the order in which they appear."
+msgstr "``<Format>`` はカスタムログの各エントリを構成する項目とそれらがどの順番で現れるか定義します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:264
+msgid ""
+"A very simple example format, which contains only the timestamp of when "
+"the event began and the canonical URL of the request, and named "
+"*myformat* would be written as follows:"
+msgstr ""
+"非常にシンプルな形式の例、イベントがいつ始まったかのタイムスタンプとリクエストの正準化された URL だけを含み、 *myformat* "
+"と名付けられた形式は以下のように書けます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:275
+msgid ""
+"You may include as many custom field codes as you wish. The full list of "
+"codes available can be found in :ref:`custom-logging-fields`. You may "
+"also include any literal characters in your format. For example, if we "
+"wished to separate the timestamp and canonical URL in our customer format"
+" above with a slash instead of a space, or even a slash surrounded by "
+"spaces, we could do so by just adding the desired characters to the "
+"format string::"
+msgstr ""
+"カスタム項目のコードは望む分だけ含めることが出来ます。利用可能なコードの完全なリストは :ref:`custom-logging-fields` "
+"にあります。形式内にリテラル文字列を含めることも出来ます。例えば上記のカスタム形式内のタイムスタンプと正準化された URL "
+"を空白の代わりにスラッシュで分離させたかったり、あるいは空白で囲まれたスラッシュで分離させたかったら、望む文字列をフォーマット文字列に加えるだけでそうすることが出来ます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:284
+msgid ""
+"You may define as many custom formats as you wish. To apply changes to "
+"custom formats, you will need to run the command :option:`traffic_line "
+"-x` after saving your changes to :file:`logs_xml.config`."
+msgstr ""
+"カスタム形式は望む分だけ定義することが出来ます。カスタム形式に変更を適用するには、変更を :file:`logs_xml.config` "
+"に保存してからコマンド :option:`traffic_line -x` を実行する必要があります。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:291
+msgid "Custom Logging Fields"
+msgstr "カスタムログギングフィールド"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:293
+msgid "The following list describes |TS| custom logging fields."
+msgstr "次のリストは |TS| のカスタムロギングフィールドの説明です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:303
+#, fuzzy
+msgid "``{HTTP header field name}cqh``"
+msgstr "{HTTP ヘッダーフィールド名}cqh"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:298
+msgid ""
+"Logs the information in the requested field of the client request HTTP "
+"header. For example, ``%<{Accept-Language}cqh>`` logs the ``Accept-"
+"Language:`` field in client request headers."
+msgstr ""
+"クライアントのリクエストの HTTP ヘッダの指定されたフィールドの情報のログです。例えば ``%<{Accept-Language}cqh>``"
+" はクライアントリクエストヘッダーの ``Accept-Language:`` フィールドを記録します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:303
+msgid "ecqh is the URL-encoded version of this map"
+msgstr "ecqh はこのマップの URL エンコードされたバージョンです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:313
+#, fuzzy
+msgid "``{HTTP header field name}pqh``"
+msgstr "{HTTP ヘッダーフィールド名}pqh"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:308
+msgid ""
+"Logs the information in the requested field of the proxy request HTTP "
+"header. For example, ``%<{Authorization}pqh>`` logs the "
+"``Authorization:`` field in proxy request headers."
+msgstr ""
+"プロキシーのリクエストの HTTP ヘッダーの指定されたフィールドの情報を記録します。例えば ``%<{Authorization}pqh>`` "
+"はプロキシーリクエストヘッダー内の ``Authorization:`` フィールドを記録します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:313
+msgid "epqh is the URL-encoded version of this map"
+msgstr "epqh はこのマップの URL エンコードされたバージョンです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:323
+#, fuzzy
+msgid "``{HTTP header field name}psh``"
+msgstr "{HTTP ヘッダーフィールド名}psh"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:318
+msgid ""
+"Logs the information in the requested field of the proxy response HTTP "
+"header. For example, ``%<{Retry-After}psh>`` logs the ``Retry-After:`` "
+"field in proxy response headers."
+msgstr ""
+"プロキシーのレスポンスの HTTP ヘッダーの指定されたフィールドの情報を記録します。例えば ``%<{Retry-After}psh>`` "
+"はプロキシーレスポンスヘッダーの ``Retry-After:`` フィールドを記録します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:323
+msgid "epsh is the URL-encoded version of this map"
+msgstr "epsh はこのマップの URL エンコードされたバージョンです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:333
+#, fuzzy
+msgid "``{HTTP header field name}ssh``"
+msgstr "{HTTP ヘッダーフィールド名}ssh"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:328
+msgid ""
+"Logs the information in the requested field of the server response HTTP "
+"header. For example, ``%<{Age}ssh>`` logs the ``Age:`` field in server "
+"response headers."
+msgstr ""
+"サーバーのレスポンスの HTTP ヘッダーの指定されたフィールドの情報を記録します。例えば ``%<{Age}ssh>`` "
+"はサーバーレスポンスヘッダーの ``Age:`` フィールドを記録します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:333
+msgid "essh is the URL-encoded version of this map"
+msgstr "essh はこのマップの URL エンコードされたバージョンです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:343
+#, fuzzy
+msgid "``{HTTP header field name}cssh``"
+msgstr "{HTTP ヘッダーフィールド名}cssh"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:338
+msgid ""
+"Logs the information in the requested field of the cached server response"
+" HTTP header. For example, ``%<{Age}cssh>`` logs the ``Age:`` field in "
+"the cached server response headers."
+msgstr ""
+"キャッシュされたサーバーのレスポンスの HTTP ヘッダーの指定されたフィールドの情報を記録します。例えば ``%<{Age}cssh>`` "
+"はキャッシュされたサーバーレスポンスヘッダーの ``Age:`` フィールドを記録します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:343
+msgid "ecssh is the URL-encoded version of this map"
+msgstr "ecssh はこのマップの URL エンコードされたバージョンです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:349
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:935
+msgid "``caun``"
+msgstr "``caun``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:348
+msgid ""
+"The client authenticated username; result of the RFC931/ident lookup of "
+"the client username."
+msgstr "クライアントの認証されたユーザー名で、RFC931/ident lookup の結果のクライアントユーザー名です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:356
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:950
+msgid "``cfsc``"
+msgstr "``cfsc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:354
+msgid ""
+"The client finish status code; specifies whether the client request to "
+"|TS| was successfully completed (``FIN``) or interrupted (``INTR``)."
+msgstr ""
+"クライアントの終了ステータスコード、 |TS| へのクライアントリクエストが正しく完了した (``FIN``) もしくは中断された "
+"(``INTR``) のどちらかが記述されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:361
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:934
+msgid "``chi``"
+msgstr "``chi``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:366
+#, fuzzy
+msgid "``chih``"
+msgstr "``chi``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:366
+msgid "The IP address of the client's host machine in hexadecimal."
+msgstr "16 進数表記でのクライアントのホストマシンの IP アドレス。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:372
+#, fuzzy
+msgid "``hii``"
+msgstr "``chi``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:371
+msgid ""
+"This is the incoming (interface) IP address for |TS|, in otherwords this "
+"is the IP address the client connected to."
+msgstr "|TS| へ入ってくる (界面の) IP アドレスです。言い換えるとクライアントが接続してきた IP アドレスです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:377
+#, fuzzy
+msgid "``hiih``"
+msgstr "``chi``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:377
+msgid "The the incoming (interface) IP address in hexadecimal."
+msgstr "入ってきた (界面の) IPアドレスを 16 進数で表したもの。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:382
+#, fuzzy
+msgid "``chp``"
+msgstr "``chi``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:382
+msgid "The port number of the client's host machine."
+msgstr "クライアントのホストマシンのポート番号。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:388
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:942
+msgid "``cqbl``"
+msgstr "``cqbl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:387
+msgid ""
+"The client request transfer length; the body length in the client request"
+" to |TS| (in bytes)."
+msgstr "クライアントリクエストの転送長、 |TS| へのクライアントリクエストのボディの長さです。( byte 単位 )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:394
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:944
+msgid "``cqhl``"
+msgstr "``cqhl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:400
+#, fuzzy
+msgid "``cqhm``"
+msgstr "``cqhl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:399
+msgid ""
+"The HTTP method in the client request to |TS|: ``GET``, ``POST``, and so "
+"on (subset of ``cqtx``)."
+msgstr ""
+"|TS| へのクライアントリクエストの HTTP メソッド。``GET`` や ``POST`` やその他のものです。( ``cqtx`` "
+"のサブセット )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:405
+#, fuzzy
+msgid "``cqhv``"
+msgstr "``cqhl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:405
+msgid "The client request HTTP version."
+msgstr "クライアントリクエストの HTTP バージョン。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:410
+#, fuzzy
+msgid "``cqpv``"
+msgstr "``cqhl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:410
+msgid "The client request protocol and version."
+msgstr "クライアントのリクエストのプロトコルとバージョン。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:417
+#, fuzzy
+msgid "``cqtd``"
+msgstr "``[cqtn]``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:415
+msgid ""
+"The client request timestamp. Specifies the date of the client request in"
+" the format yyyy-mm-dd, where yyyy is the 4-digit year, mm is the 2-digit"
+" month, and dd is the 2-digit day."
+msgstr ""
+"クライアントリクエストのタイムスタンプ。クライアントリクエストの日付を yyyy-mm-dd のフォーマットで記述します。。yyyy は 4 "
+"桁で年、mm は 2 桁で月、dd は 2 桁で日を表します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:423
+#, fuzzy
+msgid "``cqtn``"
+msgstr "``[cqtn]``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:422
+msgid ""
+"The client request timestamp; date and time of the client's request (in "
+"the Netscape timestamp format)."
+msgstr "クライアントリクエストのタイムスタンプ。クライアントのリクエストの( Netscape タイムスタンプフォーマットでの) 日付と時間。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:429
+#, fuzzy
+msgid "``cqtq``"
+msgstr "``[cqtn]``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:428
+msgid ""
+"The time of the client request since January 1, 1970 UTC (epoch), with "
+"millisecond resolution."
+msgstr "1970 年 1 月 1 日 (epoch) からのクライアントリクエストの時間。ミリ秒の精度です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:434
+#, fuzzy
+msgid "``cqts``"
+msgstr "`cqts`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:434
+msgid ""
+"The time of the client request since January 1, 1970 UTC (EPOCH), with "
+"second resolution."
+msgstr "1970 年 1 月 1 日 (EPOCH) からのクライアントリクエストの時間。秒の精度です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:442
+#, fuzzy
+msgid "``cqtt``"
+msgstr "``tts``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:439
+msgid ""
+"The client request timestamp. The time of the client request in the "
+"format hh:mm:ss, where hh is the two-digit hour in 24-hour format, mm is "
+"the two-digit minutes value, and ss is the 2-digit seconds value (for "
+"example, 16:01:19)."
+msgstr ""
+"クライアントリクエストのタイムスタンプ。hh:mm:ss フォーマットでのクライアントリクエストの時間で、hh は 2 桁の 24 "
+"時間表記で、mm は 2 桁の分の値、ss は 2 桁の秒の値です。(例 16:01:19)"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:448
+#, fuzzy
+msgid "``cqtr``"
+msgstr "``crc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:447
+msgid ""
+"The TCP reused status; indicates if this client request went through an "
+"already established connection."
+msgstr "TCP の再利用状態、クライアントのリクエストが既に確立していた接続を通したかどうかを示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:454
+#, fuzzy
+msgid "``cqssl``"
+msgstr "``sshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:453
+msgid ""
+"The SSL client request status indicates if this client connection is over"
+" SSL."
+msgstr " SSL クライアントリクエストの状態、クライアントの接続が SSL の上に載っていたかを示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:460
+#, fuzzy
+msgid "``cqssr``"
+msgstr "``ss``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:459
+msgid ""
+"The SSL session ticket reused status; indicates if this request hit the "
+"SSL session ticket and avoided a full SSL handshake."
+msgstr "SSL セッションチケットの再利用状態、リクエストが SSL セッションチケットにヒットして完全な SSL ハンドシェイクを回避できたかを示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:465
+#, fuzzy
+msgid "``cqssv``"
+msgstr "``ss``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:465
+msgid "The SSL version used to communicate with the client."
+msgstr "クライアントと通信するのに使われた SSL バージョン。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:470
+#, fuzzy
+msgid "``cqssc``"
+msgstr "``sssc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:470
+msgid "The cipher used by |TS| to communicate with the client over SSL."
+msgstr "SSL 上でクライアントと通信するのに |TS| が使用した暗号。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:481
+#, fuzzy
+msgid "``cqtx``"
+msgstr "``\"cqtx\"``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:475
+msgid "The full HTTP client request text, minus headers; for example, ::"
+msgstr "ヘッダーを除く HTTP クライアントリクエストテキストの全て。例えば"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:479
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:489
+msgid ""
+"In reverse proxy mode, |TS| logs the rewritten/mapped URL (according to "
+"the rules in :file:`remap.config`), _not_ the pristine/unmapped URL."
+msgstr ""
+"リバースプロキシーモードでは |TS| は pristine/unmapped URL ではなく ( :file:`remap.config` "
+"ファイル内のルールに従って ) rewritten/mapped URL を記録します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:491
+#, fuzzy
+msgid "``cqu``"
+msgstr "``cqhl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:486
+msgid ""
+"The universal resource identifier (URI) of the request from client to "
+"|TS| (subset of ``cqtx`` )."
+msgstr ""
+"|TS| へのクライアントからのリクエストの universal resource identifier (URI) (``cqtx`` "
+"のサブセット)"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:502
+#, fuzzy
+msgid "``cquc``"
+msgstr "`cquc`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:496
+msgid ""
+"The client request canonical URL. This differs from ``cqu`` in that "
+"blanks (and other characters that might not be parsed by log analysis "
+"tools) are replaced by escape sequences. The escape sequence is a "
+"percentage sign followed by the ASCII code number in hex."
+msgstr ""
+"クライアントリクエストの正規化 URL。 ``cqu`` との違いは空白 ( 他のログ分析ツールでパースされないかもしれない文字 ) "
+"がエスケープシーケンスに置換されていることです。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:502
+msgid "See `cquuc`_."
+msgstr "`cquuc`_ を参照してください。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:512
+#, fuzzy
+msgid "``cqup``"
+msgstr "``cqhl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:507
+msgid ""
+"The client request URL path; specifies the argument portion of the URL "
+"(everything after the host). For example, if the URL is "
+"``http://www.company.com/images/x.gif``, then this field displays "
+"``/images/x.gif``"
+msgstr ""
+"クライアントリクエスト URL のパス。URL ( ホストの後ろの全て ) の項の部分を記述します。例えば URL が "
+"``http://www.company.com/images/x.gif`` であれば、このフィールドは ``/images/x.gif`` "
+"と表示されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:512
+msgid "See `cquup`_."
+msgstr "`cquup`_　を参照してください。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:517
+#, fuzzy
+msgid "``cqus``"
+msgstr "``usr``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:517
+msgid "The client request URL scheme."
+msgstr "クライアントリクエスト URL のスキーム。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:523
+#, fuzzy
+msgid "``cquuc``"
+msgstr "`cquc`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:522
+msgid ""
+"The client request unmapped URL canonical. This field records a URL "
+"before it is remapped (reverse proxy mode)."
+msgstr ""
+"クライアントリクエストのマップされていない正規化 URL。このフィールドは リマップされる前の URL を記録します。( リバースプロキシーモード"
+" )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:529
+#, fuzzy
+msgid "``cquup``"
+msgstr "cquup"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:528
+msgid ""
+"The client request unmapped URL path. This field records a URL path "
+"before it is remapped (reverse proxy mode)."
+msgstr ""
+"クライアントリクエストのマップされていない URL パス。このフィールドはリマップされる前の URL パスを記録します。( "
+"リバースプロキシーモード )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:535
+#, fuzzy
+msgid "``cquuh``"
+msgstr "``cqhl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:534
+msgid ""
+"The client request unmapped URL host. This field records a URL's host "
+"before it is remapped (reverse proxy mode)."
+msgstr ""
+"クライアントリクエストのマップされていない URL ホスト。このフィールドはリマップされる前の URL のホストを記録します。( "
+"リバースプロキシーモード )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:541
+#, fuzzy
+msgid "``cluc``"
+msgstr "``crc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:540
+msgid ""
+"The cache lookup URL, or cache key, for the client request. This URL is "
+"canonicalized as well."
+msgstr "クライアントリクエストへのキャッシュ検索 URL 、すなわちキャッシュキー。この URL も正準化されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:546
+#, fuzzy
+msgid "``crat``"
+msgstr "``crc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:546
+msgid "The Retry-After time in seconds, if specified by the origin server."
+msgstr "オリジンサーバーによって指定されている場合、秒単位の Retry-After 時間。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:552
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:952
+msgid "``crc``"
+msgstr "``crc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:551
+msgid ""
+"The cache result code; specifies how the cache responded to the request "
+"(``HIT``, ``MISS``, and so on)."
+msgstr "キャッシュ結果コード。どんなキャッシュをリクエストへ返したかを記述します。( ``HIT`` や ``MISS`` やその他 )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:561
+#, fuzzy
+msgid "``chm``"
+msgstr "``chi``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:557
+msgid ""
+"The cache hit-miss status, specifying which level of the cache this was "
+"served out of. This is useful for example to show whether it was a RAM "
+"cache vs disk cache hit. Future versions of the cache will support more "
+"levels, but right now it only supports RAM (``HIT_RAM``) vs rotational "
+"disk (``HIT_DISK``)."
+msgstr ""
+"キャッシュのヒット・ミス状態、オブジェクトがどのレベルのキャッシュから配信されたかを記述します。これは例えば RAM "
+"キャッシュかディスクキャッシュのどちらでヒットしたかを示すのに役立ちます。将来のバージョンのキャッシュではより多くのレベルをサポートする予定ですが、現時点では"
+" RAM (``HIT_RAM``) か 回転するディスク (``HIT_DISK``) のみをサポートします。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:567
+#, fuzzy
+msgid "``csscl``"
+msgstr "``sscl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:566
+msgid ""
+"The cached response length (in bytes) from origin server to Traffic "
+"Server."
+msgstr "キャッシュしたオリジンサーバーから Traffic Server へのレスポンスの長さ。( byte 単位 )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:573
+#, fuzzy
+msgid "``csshl``"
+msgstr "``sshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:572
+msgid ""
+"The cached header length in the origin server response to Traffic Server "
+"(in bytes)."
+msgstr "キャッシュしたオリジンサーバーから Traffic Server へのヘッダーの長さ。( byte 単位 )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:578
+#, fuzzy
+msgid "``csshv``"
+msgstr "``sshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:578
+msgid "The cached server response HTTP version (1.0, 1.1, etc.)."
+msgstr "キャッシュしたサーバーレスポンス HTTP バージョン。( 1.0 や 1.1 等 )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:584
+#, fuzzy
+msgid "``csssc``"
+msgstr "``sssc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:583
+msgid "The cached HTTP response status code from origin server to Traffic Server."
+msgstr "キャッシュしたオリジンサーバーから Traffic Server への HTTP レスポンスステータスコード。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:589
+#, fuzzy
+msgid "``cwr``"
+msgstr "``crc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:589
+msgid "The cache write result (``-``, ``WL_MISS``, ``INTR```, ``ERR`` or ``FIN``)"
+msgstr "キャッシュ書き込み結果。( ``-``、 ``WL_MISS``、 ``INTR```、 ``ERR`` または ``FIN`` )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:594
+#, fuzzy
+msgid "``cwtr``"
+msgstr "``crc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:594
+msgid "The cache write transform result"
+msgstr "キャッシュ書き込みトランスフォーム結果。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:599
+#, fuzzy
+msgid "``fsiz``"
+msgstr "``pfs``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:599
+msgid "The size of the file (*n* bytes) as seen by the origin server."
+msgstr "オリジンサーバーから見えるファイルサイズ。( *n* バイト )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:605
+#, fuzzy
+msgid "``{Milestone field name}ms``"
+msgstr "{マイルストーンフィールド名}ms"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:604
+msgid ""
+"The timestamp in milliseconds of a specific milestone for this request. "
+"see :c:func:`TSHttpTxnMilestoneGet` for milestone names."
+msgstr ""
+"このリクエストの特定のマイルストーンのミリ秒で表したタイムスタンプ。マイルストーン名については "
+":c:func:`TSHttpTxnMilestoneGet` を参照してください。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:611
+#, fuzzy
+msgid "``{Milestone field name1-Milestone field name2}msdms``"
+msgstr "{マイルストーンフィールド名1-マイルストーンフィールド名2}msdms"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:610
+msgid ""
+"The difference in milliseconds of between two milestones. see "
+":c:func:`TSHttpTxnMilestoneGet` for milestone names."
+msgstr ""
+"2 つのマイルストーンのミリ秒で表した時間差。マイルストーン名については :c:func:`TSHttpTxnMilestoneGet` "
+"を参照してください。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:618
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:951
+msgid "``pfsc``"
+msgstr "``pfsc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:616
+msgid ""
+"The proxy finish status code; specifies whether the |TS| request to the "
+"origin server was successfully completed (``FIN``), interrupted "
+"(``INTR``) or timed out (``TIMEOUT``)."
+msgstr ""
+"プロキシーの終了ステータスコード、オリジンサーバーへの |TS| リクエストが正常終了したか (``FIN``)、中断したか "
+"(``INTR``)、あるいはタイムアウトしたか (``TIMEOUT``) を表します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:624
+#, fuzzy
+msgid "``phn``"
+msgstr "``phr``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:623
+msgid ""
+"The hostname of the |TS| that generated the log entry in collated log "
+"files."
+msgstr "ログファイルに収集されるログエントリーを生成した |TS| のホスト名。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:630
+#, fuzzy
+msgid "``phi``"
+msgstr "``phr``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:629
+msgid "The IP of the |TS| that generated the log entry in collated log files."
+msgstr "ログファイルに収集されるログエントリーを生成した |TS| の IP。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:636
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:949
+msgid "``phr``"
+msgstr "``phr``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:641
+#, fuzzy
+msgid "``php``"
+msgstr "``phr``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:641
+msgid "The TCP port number that |TS| served this request from."
+msgstr "|TS| がこのリクエストに対して配信した TCP のポート番号。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:646
+#, fuzzy
+msgid "``piid``"
+msgstr "piid"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:646
+msgid ""
+"The plugin ID for the transaction. This is set for plugin driven "
+"transactions via :c:func:`TSHttpConnectWithPluginId`."
+msgstr ""
+"トランザクションのプラグイン ID。これは :c:func:`TSHttpConnectWithPluginId` "
+"経由のプラグインによって発生したトランザクションに対して設定されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:652
+#, fuzzy
+msgid "``pitag``"
+msgstr "pitag"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:651
+msgid ""
+"The plugin tag for the transaction. This is set for plugin driven "
+"transactions via :c:func:`TSHttpConnectWithPluginId`."
+msgstr ""
+"トランザクションのプラグインタグ。これは :c:func:`TSHttpConnectWithPluginId` "
+"経由のプラグインによって発生したトランザクションに対して設定されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:658
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:943
+msgid "``pqbl``"
+msgstr "``pqbl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:657
+msgid ""
+"The proxy request transfer length; the body length in Traffic Server's "
+"request to the origin server."
+msgstr "プロキシーリクエスト転送長。Traffic Server からオリジンサーバーへのリクエストのボディの長さ。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:664
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:946
+msgid "``pqhl``"
+msgstr "``pqhl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:663
+msgid ""
+"The proxy request header length; the header length in Traffic Server's "
+"request to the origin server."
+msgstr "プロキシーリクエストヘッダーの長さ。Traffic Server からオリジンサーバーへのリクエストのヘッダーの長さ。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:670
+#, fuzzy
+msgid "``pqsi``"
+msgstr "``pfs``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:669
+msgid ""
+"The proxy request server IP address (0 on cache hits and parent-ip for "
+"requests to parent proxies)."
+msgstr "プロキシーリクエストサーバー IP アドレス。( キャッシュヒットした場合と親プロキシーへのリクエストのペアレント IP は 0 )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:676
+#, fuzzy
+msgid "``pqsn``"
+msgstr "``pfs``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:675
+msgid ""
+"The proxy request server name; the name of the server that fulfilled the "
+"request."
+msgstr "プロキシーリクエストサーバー名。リクエストを満たしたサーバーの名前。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:681
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:939
+msgid "``pscl``"
+msgstr "``pscl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:681
+msgid "The length of the |TS| response to the client (in bytes)."
+msgstr "|TS| からクライアントへのレスポンスの長さ。( byte 単位 )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:687
+#, fuzzy
+msgid "``psct``"
+msgstr "``pssc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:686
+msgid ""
+"The content type of the document from server response header: (for "
+"example, ``img/gif`` )."
+msgstr "サーバーレスポンスヘッダーのドキュメントのコンテンツタイプ。( 例えば ``img/gif`` )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:692
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:945
+msgid "``pshl``"
+msgstr "``pshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:692
+msgid "The header length in |TS|'s response to the client."
+msgstr "|TS| からクライアントへのレスポンスのヘッダーの長さ。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:698
+#, fuzzy
+msgid "``psql``"
+msgstr "``pshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:697
+msgid ""
+"The proxy response transfer length in Squid format (includes header and "
+"content length)."
+msgstr "Squid フォーマットでのプロキシーレスポンス転送長。( ヘッダーとコンテンツの長さを含む )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:703
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:938
+msgid "``pssc``"
+msgstr "``pssc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:703
+msgid "The HTTP response status code from |TS| to the client."
+msgstr "|TS| からクライアントへの HTTP レスポンスステータスコード。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:709
+#, fuzzy
+msgid "``pqssl``"
+msgstr "``sshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:708
+msgid ""
+"Indicates whether the connection from |TS| to the origin was over SSL or "
+"not."
+msgstr "|TS| からオリジンサーバーへの接続が SSL 経由だったかどうかを示す。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:715
+#, fuzzy
+msgid "``sca``"
+msgstr "``sssc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:714
+msgid ""
+"The number of attempts in the transaction Traffic Server tries to connect"
+" to the origin server."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:728
+#, fuzzy
+msgid "``shi``"
+msgstr "``chi``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:720
+msgid ""
+"The IP address resolved from the DNS name lookup of the host in the "
+"request. For hosts with multiple IP addresses, this field records the IP "
+"address resolved from that particular DNS lookup."
+msgstr ""
+"リクエスト内のホストの DNS 名からルックアップして解決された IP アドレス。複数の IP アドレスを持つホストの場合、このフィールドは特定の"
+" DNS ルックアップにより解決された IP アドレスを記録します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:724
+msgid ""
+"This can be misleading for cached documents. For example: if the first "
+"request was a cache miss and came from *IP1* for server *S* and the "
+"second request for server *S* resolved to *IP2* but came from the cache, "
+"then the log entry for the second request will show *IP2*."
+msgstr ""
+"これはキャッシュされたドキュメントで誤解を与えるかもしれません。例えば、最初のリクエストがキャッシュミスでサーバー *S* へ *IP1* "
+"が来て、次のサーバー *S* へのリクエストが *IP2* に解決され、キャッシュから来た場合、2 番目のリクエストのログエントリーは *IP2*"
+" と記録します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:733
+#, fuzzy
+msgid "``shn``"
+msgstr "``sshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:733
+msgid "The hostname of the origin server."
+msgstr "オリジンサーバーのホスト名。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:738
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:941
+msgid "``sscl``"
+msgstr "``sscl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:738
+msgid "The response length (in bytes) from origin server to |TS|."
+msgstr "オリジンサーバーから |TS| へのレスポンスの長さ。( byte 単位 )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:743
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:947
+msgid "``sshl``"
+msgstr "``sshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:743
+msgid "The header length (in bytes) in the origin server response to |TS|."
+msgstr "|TS| へのオリジンサーバーへのレスポンスのヘッダー長 (byte 単位)。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:748
+#, fuzzy
+msgid "``sshv``"
+msgstr "``sshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:748
+msgid "The server response HTTP version (1.0, 1.1, etc.)."
+msgstr "サーバーレスポンス HTTP バージョン。( 1.0、1.1 等 )"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:753
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:940
+msgid "``sssc``"
+msgstr "``sssc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:753
+msgid "The HTTP response status code from origin server to |TS|."
+msgstr "オリジンサーバーから |TS| への HTTP レスポンスステータスコード。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:760
+#, fuzzy
+msgid "``stms``"
+msgstr "``ss``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:758
+msgid ""
+"The time spent accessing the origin (in milliseconds); the time is "
+"measured from the time the connection with the origin is established to "
+"the time the connection is closed."
+msgstr ""
+"オリジンにアクセスするためにかかった時間 "
+"(ミリ秒単位)、この時間はオリジンとのコネクションを確立した時間からコネクションが切断されるまでを測定されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:765
+#, fuzzy
+msgid "``stmsh``"
+msgstr "``sshl``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:765
+msgid "Same as ``stms`` but in hexadecimal."
+msgstr "``stms`` と同様だが 16 進法表記。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:776
+#, fuzzy
+msgid "``stmsf``"
+msgstr "``ss``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:770
+msgid ""
+"The time |TS| spends accessing the origin as a fractional number of "
+"seconds. That is, the time is formated as a floating-point number, "
+"instead of an integer as in ``stms``."
+msgstr ""
+"|TS| がオリジンにアクセスするのにかかった時間を少数の秒数で表したもの。つまり、 ``stms`` "
+"が整数で表すのとは異なり、時間は浮動小数点数で書式化されます。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:774
+msgid ""
+"For example: if the time is 1500 milliseconds, then this field displays "
+"1.5 while the ``stms`` field displays 1500 and the ``sts`` field displays"
+" 1."
+msgstr ""
+"例: 時間が 1500 ミリ秒の場合、このフィールドは 1.5 と表示します。一方 ``stms`` フィールドは 1500 、 ``sts`` "
+"は 1 と表示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:781
+#, fuzzy
+msgid "``sts``"
+msgstr "``ss``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:781
+msgid "The time |TS| spends accessing the origin, in seconds."
+msgstr "|TS| がオリジンにアクセスするのにかかった時間を秒単位で表したもの。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:788
+#, fuzzy
+msgid "``sstc``"
+msgstr "``sssc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:786
+msgid ""
+"The number of transactions between |TS| and the origin server from a "
+"single server session. A value greater than 0 indicates connection reuse."
+msgstr "単一のサーバーセッションに対して |TS| とオリジンサーバーの間のトランザクションの数。 0 より大きな値はコネクションの再利用を示唆します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:796
+#, fuzzy
+msgid "``ttms``"
+msgstr "``tts``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:793
+msgid ""
+"The time |TS| spends processing the client request; the number of "
+"milliseconds between the time the client establishes the connection with "
+"|TS| and the time |TS| sends the last byte of the response back to the "
+"client."
+msgstr ""
+"|TS| がクライアントリクエストを処理するのに費やした時間。クライアントが |TS| とコネクションを確立した時間から |TS| "
+"がクライアントにレスポンスブロックの最後のバイトを送り返した時間までのミリ秒の数。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:801
+#, fuzzy
+msgid "``ttmsh``"
+msgstr "``tts``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:801
+msgid "Same as ``ttms`` but in hexadecimal."
+msgstr "``ttms`` と同様だが 16 進法表記。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:814
+#, fuzzy
+msgid "``ttmsf``"
+msgstr "``tts``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:806
+msgid ""
+"The time |TS| spends processing the client request as a fractional number"
+" of seconds. Time is specified in millisecond resolution; however, "
+"instead of formatting the output as an integer (as with ``ttms``), the "
+"display is formatted as a floating-point number representing a fractional"
+" number of seconds."
+msgstr ""
+"少数秒での |TS| がクライアントリクエストを処理するのに費やした時間。時間はミリ秒の精度で記述されます。しかし ( ``ttms`` のように"
+" ) 整数としてフォーマットして出力する代わりに、秒単位の少数精度の浮動小数点数でフォーマットして表示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:812
+msgid ""
+"For example: if the time is 1500 milliseconds, then this field displays "
+"1.5 while the ``ttms`` field displays 1500 and the ``tts`` field displays"
+" 1."
+msgstr ""
+"例: 時間が 1500 ミリ秒の場合、このフィールドは 1.5 と表示します。一方 ``ttms`` フィールドは 1500 、 ``tts`` "
+"は 1 と表示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:822
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:948
+msgid "``tts``"
+msgstr "``tts``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:819
+msgid ""
+"The time |TS| spends processing the client request; the number of seconds"
+" between the time at which the client establishes the connection with "
+"|TS| and the time at which Traffic Server sends the last byte of the "
+"response back to the client."
+msgstr ""
+"|TS| がクライアントリクエストを処理するのに費やした時間。クライアントが |TS| とコネクションを確立した時間から、 |TS| "
+"がクライアントにレスポンスの最後の byte を返した時間の間の秒数。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:827
+msgid "Custom Field Cross-Reference"
+msgstr "カスタムフィールドクロスリファレンス"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:829
+msgid ""
+"The following sections illustrate the correspondence between |TS| custom "
+"logging fields and standard logging fields for the Squid and Netscape "
+"formats."
+msgstr "次の章では |TS| のロギングフィールドと Squid と Netdcape フォーマットの標準ロギングフィールドの対応を解説します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:835
+msgid ""
+"The following is a list of the Squid logging fields and the corresponding"
+" logging field symbols."
+msgstr "下記は Squid ロギングフィールドと対応するロギングフィールド記号の表です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:839
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:870
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:896
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:932
+msgid "Field Symbols"
+msgstr "フィールド記号"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:841
+msgid "time"
+msgstr "time"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:841
+msgid "`cqts`_"
+msgstr "`cqts`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:842
+msgid "elapsed"
+msgstr "elapsed"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:842
+msgid "`ttms`_"
+msgstr "`ttms`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:843
+msgid "client"
+msgstr "client"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:843
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:872
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:898
+msgid "`chi`_"
+msgstr "`chi`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:844
+msgid "action/code"
+msgstr "action/code"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:844
+msgid "`crc`_/`pssc`_"
+msgstr "`crc`_/`pssc`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:845
+msgid "size"
+msgstr "size"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:845
+msgid "`psql`_"
+msgstr "`psql`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:846
+msgid "method"
+msgstr "method"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:846
+msgid "`cqhm`_"
+msgstr "`cqhm`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:847
+msgid "url"
+msgstr "url"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:847
+msgid "`cquc`_"
+msgstr "`cquc`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:848
+msgid "ident"
+msgstr "ident"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:848
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:873
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:899
+msgid "`caun`_"
+msgstr "`caun`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:849
+msgid "hierarchy/from"
+msgstr "hierarchy/from"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:849
+msgid "`phr`_/`pqsn`_"
+msgstr "`phr`_/`pqsn`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:850
+msgid "content"
+msgstr "content"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:850
+msgid "`psct`_"
+msgstr "`psct`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:853
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:880
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:915
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:955
+msgid "This is the equivalent XML configuration for the log above::"
+msgstr "これが上記のログと同等な XML 設定です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:866
+msgid ""
+"The following is a list of the Netscape Common logging fields and the "
+"corresponding |TS| logging field symbols."
+msgstr "下記は Netscape Common ロギングフィールドと対応する |TS| ロギングフィールド記号の表です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:872
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:898
+msgid "host"
+msgstr "host"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:873
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:899
+msgid "usr"
+msgstr "usr"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:874
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:900
+msgid "[time]"
+msgstr "[time]"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:874
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:900
+msgid "[`cqtn`_]"
+msgstr "[`cqtn`_]"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:875
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:901
+msgid "\"req\""
+msgstr "\"req\""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:875
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:901
+msgid "\"`cqtx`_\""
+msgstr "\"`cqtx`_\""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:876
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:902
+msgid "s1"
+msgstr "s1"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:876
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:902
+msgid "`pssc`_"
+msgstr "`pssc`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:877
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:903
+msgid "c1"
+msgstr "c1"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:877
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:903
+msgid "`pscl`_"
+msgstr "`pscl`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:892
+msgid ""
+"The following table lists the Netscape Extended logging fields and the "
+"corresponding |TS| logging field symbols."
+msgstr "下記は Netscape Extended ロギングフォーマットフィールドと対応する |TS| ロギングフィールド記号の表です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:904
+msgid "s2"
+msgstr "s2"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:904
+msgid "`sssc`_"
+msgstr "`sssc`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:905
+msgid "c2"
+msgstr "c2"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:905
+msgid "`sscl`_"
+msgstr "`sscl`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:906
+msgid "b1"
+msgstr "b1"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:906
+msgid "`cqbl`_"
+msgstr "`cqbl`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:907
+msgid "b2"
+msgstr "b2"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:907
+msgid "`pqbl`_"
+msgstr "`pqbl`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:908
+msgid "h1"
+msgstr "h1"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:908
+msgid "`cqhl`_"
+msgstr "`cqhl`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:909
+msgid "h2"
+msgstr "h2"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:909
+msgid "`pshl`_"
+msgstr "`pshl`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:910
+msgid "h3"
+msgstr "h3"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:910
+msgid "`pqhl`_"
+msgstr "`pqhl`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:911
+msgid "h4"
+msgstr "h4"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:911
+msgid "`sshl`_"
+msgstr "`sshl`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:912
+msgid "xt"
+msgstr "xt"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:912
+msgid "`tts`_"
+msgstr "`tts`_"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:926
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:932
+msgid "Netscape Extended-2"
+msgstr "Netscape Extended-2"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:928
+msgid ""
+"The following is a list of the Netscape Extended-2 logging fields and the"
+" corresponding |TS| logging field symbols."
+msgstr "下記は Netscape Extended-2 ロギングフィールドと対応する |TS| ロギングフィールド記号の表です。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:934
+msgid "``host``"
+msgstr "``host``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:935
+msgid "``usr``"
+msgstr "``usr``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:936
+msgid "``[time]``"
+msgstr "``[time]``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:936
+msgid "``[cqtn]``"
+msgstr "``[cqtn]``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:937
+msgid "``\"req\"``"
+msgstr "``\"req\"``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:937
+msgid "``\"cqtx\"``"
+msgstr "``\"cqtx\"``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:938
+msgid "``s1``"
+msgstr "``s1``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:939
+msgid "``c1``"
+msgstr "``c1``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:940
+msgid "``s2``"
+msgstr "``s2``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:941
+msgid "``c2``"
+msgstr "``c2``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:942
+msgid "``b1``"
+msgstr "``b1``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:943
+msgid "``b2``"
+msgstr "``b2``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:944
+msgid "``h1``"
+msgstr "``h1``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:945
+msgid "``h2``"
+msgstr "``h2``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:946
+msgid "``h3``"
+msgstr "``h3``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:947
+msgid "``h4``"
+msgstr "``h4``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:948
+msgid "``xt``"
+msgstr "``xt``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:949
+msgid "``route``"
+msgstr "``route``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:950
+msgid "``pfs``"
+msgstr "``pfs``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:951
+msgid "``ss``"
+msgstr "``ss``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:966
+msgid "Log Field Slicing"
+msgstr "ログフィールドのスライシング"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:968
+msgid ""
+"It is sometimes desirable to slice a log field to limit the length of a "
+"given log field's output."
+msgstr "ログフィールドの出力に対して長さを制限するためにログフィールドをスライスすることが望ましい場合があります。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:971
+msgid "Log Field slicing can be specified as below::"
+msgstr "ログフィールドのスライシングは以下のように指定できます ::"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:976
+msgid "Omitting the slice notation defaults to the entire log field."
+msgstr "スライス記法を省略すると全体のログフィールドを表示するというデフォルトの指定になります。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:978
+msgid ""
+"Slice notation only applies to a log field that is of type string and can"
+" not be applied to IPs or timestamp which are converted to string from "
+"integer."
+msgstr "スライス記法は文字列型のログフィールドにのみ適用され、 IP アドレスや整数から文字列に変換されたタイムスタンプには適用されません。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:981
+msgid "The below slice specifiers are allowed."
+msgstr "以下のスライス指定が許されています。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:983
+#, fuzzy
+msgid "``[start:end]``"
+msgstr "[開始:終了]"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:984
+msgid "Log field value from start through end-1"
+msgstr "ログフィールド値の開始から終了-1まで"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:985
+#, fuzzy
+msgid "``[start:]``"
+msgstr "[開始:]"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:986
+msgid "Log field value from start through the rest of the string"
+msgstr "ログフィールド値の開始から文字列の最後まで"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:987
+#, fuzzy
+msgid "``[:end]``"
+msgstr "[:終了]"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:988
+msgid "Log field value from the beginning through end-1"
+msgstr "ログフィールド値の最初から終了-1まで"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:990
+#, fuzzy
+msgid "``[:]``"
+msgstr "``[time]``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:990
+msgid "Default - entire Log field"
+msgstr "デフォルト - ログフィールド全体"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:992
+msgid "Some examples below ::"
+msgstr "いくつかの例を以下に示します ::"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1003
+msgid "Cache Result Codes"
+msgstr "キャッシュリザルトコード"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1005
+msgid ""
+"The following table describes the cache result codes in Squid and "
+"Netscape log files."
+msgstr "以下の表に Squid と Netscape ログファイルのキャッシュリザルトコードを示します。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1010
+#, fuzzy
+msgid "``TCP_HIT``"
+msgstr "``chi``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1009
+msgid ""
+"A valid copy of the requested object was in the cache and Traffic Server "
+"sent the object to the client."
+msgstr "リクエストされたオブジェクトの有効なコピーがキャッシュに存在し、 Traffic Server はオブジェクトをクライアントに送った。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1015
+#, fuzzy
+msgid "``TCP_MISS``"
+msgstr "``pssc``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1013
+msgid ""
+"The requested object was not in cache, so |TS| retrieved the object from "
+"the origin server (or a parent proxy) and sent it to the client."
+msgstr ""
+"リクエストされたオブジェクトはキャッシュに存在しなかったため、 |TS| はオリジンサーバー "
+"(あるいは親プロキシー)からオブジェクトを取得し、それをクライアントに送った。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1021
+msgid "``TCP_REFRESH_HIT``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1018
+msgid ""
+"The object was in the cache, but it was stale. |TS| made an ``if-"
+"modified-since`` request to the origin server and the origin server sent "
+"a ``304`` not-modified response. Traffic Server sent the cached object to"
+" the client."
+msgstr ""
+"オブジェクトはキャッシュに存在したが、新鮮ではなかった。 |TS| はオリジンサーバーに  ``if-modified-since`` "
+"リクエストを送りオリジンサーバーは  ``304`` not-modified レスポンスを返した。 Traffic Server "
+"はキャッシュオブジェクトをクライアントに送った。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1027
+msgid "``TCP_REF_FAIL_HIT``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1024
+msgid ""
+"The object was in the cache but was stale. |TS| made an ``if-modified-"
+"since`` request to the origin server but the server did not respond. |TS|"
+" sent the cached object to the client."
+msgstr ""
+"オブジェクトはキャッシュに存在したが、新鮮ではなかった。 |TS| はオリジンサーバーに  ``if-modified-since`` "
+"リクエストを送ったがオリジンサーバーは反応しなかった。 Traffic Server はキャッシュオブジェクトをクライアントに送った。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1033
+msgid "``TCP_REFRESH_MISS``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1030
+msgid ""
+"The object was in the cache but was stale. |TS| made an ``if-modified-"
+"since`` request to the origin server and the server returned a new "
+"object. |TS| served the new object to the client."
+msgstr ""
+"オブジェクトはキャッシュに存在したが、新鮮ではなかった。 |TS| はオリジンサーバーに  ``if-modified-since`` "
+"リクエストを送りオリジンサーバーは新しいオブジェクトを返した。 Traffic Server はその新しいオブジェクトをクライアントに送った。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1039
+msgid "``TCP_CLIENT_REFRESH``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1036
+msgid ""
+"The client issued a request with a ``no-cache`` header. Traffic Server "
+"obtained the requested object from the origin server and sent a copy to "
+"the client. |TS| deleted the previous copy of the object from cache."
+msgstr ""
+"クライアントは  ``no-cache`` ヘッダー付きのリクエストを発行した。 Traffic Server "
+"はリクエストされたオブジェクトをオリジンサーバーから取得し、コピーをクライアントに送った。 |TS| "
+"はキャッシュからオブジェクトの以前のコピーを削除した。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1046
+#, fuzzy
+msgid "``TCP_IMS_HIT``"
+msgstr "``chi``"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1042
+msgid ""
+"The client issued an ``if-modified-since`` request and the object was in "
+"cache and fresher than the IMS date, or an ``if-modified-since`` request "
+"to the origin server revealed the cached object was fresh. |TS| served "
+"the cached object to the client."
+msgstr ""
+"クライアントが ``if-modified-since`` リクエストを発行しオブジェクトはキャッシュに存在し IMS "
+"の日時よりも新しかったか、オリジンサーバーへの ``if-modified-since`` "
+"リクエストがキャッシュオブジェクトが新鮮であることを明らかにした。 |TS| はキャッシュオブジェクトをクライアントに送った。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1053
+msgid "``TCP_IMS_MISS``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1049
+msgid ""
+"The client issued an ``if-modified-since request`` and the object was "
+"either not in cache or was stale in cache. |TS| sent an ``if-modified-"
+"since request`` to the origin server and received the new object. |TS| "
+"sent the updated object to the client."
+msgstr ""
+"クライアントが ``if-modified-since`` "
+"リクエストを発行しオブジェクトはキャッシュに存在しなかったかキャッシュに存在したが新鮮ではなかった。 |TS| は ``if-modified-"
+"since`` リクエストをオリジンサーバーに送り新しいオブジェクトを受け取った。 |TS| は更新されたオブジェクトをクライアントに送った。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1057
+msgid "``TCP_SWAPFAIL``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1056
+msgid ""
+"The object was in the cache but could not be accessed. The client did not"
+" receive the object."
+msgstr "オブジェクトはキャッシュに存在したがアクセスできなかった。クライアントはオブジェクトを受信出来なかった。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1060
+msgid "``ERR_CLIENT_ABORT``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1060
+msgid "The client disconnected before the complete object was sent."
+msgstr "オブジェクトを完全に送り終わる前にクライアントが切断した。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1063
+msgid "``ERR_CONNECT_FAIL``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1063
+msgid "|TS| could not reach the origin server."
+msgstr "|TS| がオリジンサーバーに達することが出来なかった。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1067
+msgid "``ERR_DNS_FAIL``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1066
+msgid ""
+"The Domain Name Server (DNS) could not resolve the origin server name, or"
+" no DNS could be reached."
+msgstr "ドメインネームサーバー (DNS) がオリジンサーバーの名前を解決できなかったか、 DNS サーバーに達することが出来なかった。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1071
+msgid "``ERR_INVALID_REQ``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1070
+msgid ""
+"The client HTTP request was invalid. (|TS| forwards requests with unknown"
+" methods to the origin server.)"
+msgstr "クライアントの HTTP リクエストが不正だった。 (|TS| が不明なメソッドのリクエストをオリジンサーバーに転送した。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1075
+msgid "``ERR_READ_TIMEOUT``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1074
+msgid ""
+"The origin server did not respond to |TS|'s request within the timeout "
+"interval."
+msgstr "オリジンサーバーが |TS| のリクエストにタイムアウト期間までに反応しなかった。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1078
+msgid "``ERR_PROXY_DENIED``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1078
+msgid "Client service was denied."
+msgstr "クライアントのサービスが拒否された。"
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1081
+msgid "``ERR_UNKNOWN``"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/logging/log-formats.en.rst:1081
+msgid ""
+"The client connected, but subsequently disconnected without sending a "
+"request."
+msgstr "クライアントが接続したが、その後リクエストを送ることなく切断した。"
+
+#~ msgid ""
+#~ msgstr ":option:`traffic_line -x` を実行して設定の変更を適用してください。"
+
+#~ msgid "chih"
+#~ msgstr "chih"
+
+#~ msgid "hii"
+#~ msgstr "hii"
+
+#~ msgid "hiih"
+#~ msgstr "hiih"
+
+#~ msgid "chp"
+#~ msgstr "chp"
+
+#~ msgid "cqhv"
+#~ msgstr "cqhv"
+
+#~ msgid "cqpv"
+#~ msgstr "cqpv"
+
+#~ msgid "cqtn"
+#~ msgstr "cqtn"
+
+#~ msgid "cqts"
+#~ msgstr "cqts"
+
+#~ msgid "cqtt"
+#~ msgstr "cqtt"
+
+#~ msgid "cqtr"
+#~ msgstr "cqtr"
+
+#~ msgid "cqssl"
+#~ msgstr "cqssl"
+
+#~ msgid "cqssr"
+#~ msgstr "cqssr"
+
+#~ msgid "cqssv"
+#~ msgstr "cqssv"
+
+#~ msgid "cqssc"
+#~ msgstr "cqssc"
+
+#~ msgid "cqu"
+#~ msgstr "cqu"
+
+#~ msgid "cquc"
+#~ msgstr "cquc"
+
+#~ msgid "cqup"
+#~ msgstr "cqup"
+
+#~ msgid "cqus"
+#~ msgstr "cqus"
+
+#~ msgid "cquuc"
+#~ msgstr "cquuc"
+
+#~ msgid "cquuh"
+#~ msgstr "cquuh"
+
+#~ msgid "cluc"
+#~ msgstr "cluc"
+
+#~ msgid "crat"
+#~ msgstr "crat"
+
+#~ msgid "chm"
+#~ msgstr "chm"
+
+#~ msgid "csscl"
+#~ msgstr "csscl"
+
+#~ msgid "csshl"
+#~ msgstr "csshl"
+
+#~ msgid "csshv"
+#~ msgstr "csshv"
+
+#~ msgid "csssc"
+#~ msgstr "csssc"
+
+#~ msgid "cwr"
+#~ msgstr "cwr"
+
+#~ msgid "cwtr"
+#~ msgstr "cwtr"
+
+#~ msgid "fsiz"
+#~ msgstr "fsiz"
+
+#~ msgid "phn"
+#~ msgstr "phn"
+
+#~ msgid "phi"
+#~ msgstr "phi"
+
+#~ msgid "php"
+#~ msgstr "php"
+
+#~ msgid "pqsi"
+#~ msgstr "pqsi"
+
+#~ msgid "pqsn"
+#~ msgstr "pqsn"
+
+#~ msgid "pqssl"
+#~ msgstr "pqssl"
+
+#~ msgid "shi"
+#~ msgstr "shi"
+
+#~ msgid "shn"
+#~ msgstr "shn"
+
+#~ msgid "sscl"
+#~ msgstr "sscl"
+
+#~ msgid "sshv"
+#~ msgstr "sshv"
+
+#~ msgid "stms"
+#~ msgstr "stms"
+
+#~ msgid "stmsh"
+#~ msgstr "stmsh"
+
+#~ msgid "stmsf"
+#~ msgstr "stmsf"
+
+#~ msgid "sts"
+#~ msgstr "sts"
+
+#~ msgid "sstc"
+#~ msgstr "sstc"
+
+#~ msgid "ttmsh"
+#~ msgstr "ttmsh"
+
+#~ msgid "ttmsf"
+#~ msgstr "ttmsf"
+
+#~ msgid "[:]"
+#~ msgstr "[:]"
+
+#~ msgid "TCP_HIT"
+#~ msgstr "TCP_HIT"
+
+#~ msgid "TCP_MISS"
+#~ msgstr "TCP_MISS"
+
+#~ msgid "TCP_REFRESH_HIT"
+#~ msgstr "TCP_REFRESH_HIT"
+
+#~ msgid "TCP_REF_FAIL_HIT"
+#~ msgstr "TCP_REF_FAIL_HIT"
+
+#~ msgid "TCP_REFRESH_MISS"
+#~ msgstr "TCP_REFRESH_MISS"
+
+#~ msgid "TCP_CLIENT_REFRESH"
+#~ msgstr "TCP_CLIENT_REFRESH"
+
+#~ msgid "TCP_IMS_HIT"
+#~ msgstr "TCP_IMS_HIT"
+
+#~ msgid "TCP_IMS_MISS"
+#~ msgstr "TCP_IMS_MISS"
+
+#~ msgid "TCP_SWAPFAIL"
+#~ msgstr "TCP_SWAPFAIL"
+
+#~ msgid "ERR_CLIENT_ABORT"
+#~ msgstr "ERR_CLIENT_ABORT"
+
+#~ msgid "ERR_CONNECT_FAIL"
+#~ msgstr "ERR_CONNECT_FAIL"
+
+#~ msgid "ERR_DNS_FAIL"
+#~ msgstr "ERR_DNS_FAIL"
+
+#~ msgid "ERR_INVALID_REQ"
+#~ msgstr "ERR_INVALID_REQ"
+
+#~ msgid "ERR_READ_TIMEOUT"
+#~ msgstr "ERR_READ_TIMEOUT"
+
+#~ msgid "ERR_PROXY_DENIED"
+#~ msgstr "ERR_PROXY_DENIED"
+
+#~ msgid "ERR_UNKNOWN"
+#~ msgstr "ERR_UNKNOWN"
+

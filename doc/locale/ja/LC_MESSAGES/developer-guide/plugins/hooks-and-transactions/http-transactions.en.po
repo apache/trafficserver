@@ -1,0 +1,137 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:23
+msgid "HTTP Transactions"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:25
+msgid ""
+"The HTTP transaction functions enable you to set up plugin callbacks to "
+"HTTP transactions and obtain/modify information about particular HTTP "
+"transactions."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:29
+msgid ""
+"As described in the section on HTTP sessions, an **HTTP transaction** is an "
+"object defined for the lifetime of a single request from a client and the "
+"corresponding response from Traffic Server. The **``TSHttpTxn``** structure "
+"is the main handle given to a plugin for manipulating a transaction's "
+"internal state. Additionally, an HTTP transaction has a reference back to "
+"the HTTP session that created it."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:36
+msgid ""
+"The sample code below illustrates how to register locally to a transaction "
+"and associate data to the transaction."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:155
+msgid ""
+"See :ref:`developer-plugins-hooks-adding` for background on HTTP "
+"transactions and HTTP hooks, as well as :ref:`developer-plugins-hooks-and-"
+"transactions`. See also the :ref:`HTTP Transaction State Diagram <http-txn-"
+"state-diagram>` for an illustration of the steps involved in a typical HTTP "
+"transaction."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:160
+msgid "The HTTP transaction functions are:"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:162
+msgid ":c:func:`TSHttpTxnCacheLookupStatusGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:164
+msgid ""
+":c:func:`TSHttpTxnCachedReqGet` - Note that it is an error to modify cached "
+"headers."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:167
+msgid ""
+":c:func:`TSHttpTxnCachedRespGet` - Note that it is an error to modify "
+"cached headers."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:170
+msgid ""
+":c:func:`TSHttpTxnClientReqGet` - Plugins that must read client request "
+"headers use this call to retrieve the HTTP header."
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:174
+msgid ":c:func:`TSHttpTxnClientRespGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:176
+msgid ":c:func:`TSHttpTxnErrorBodySet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:178
+msgid ":c:func:`TSHttpTxnHookAdd`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:180
+msgid ":c:func:`TSHttpTxnNextHopAddrGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:182
+msgid ":c:func:`TSHttpTxnParentProxySet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:184
+msgid ":c:func:`TSHttpTxnReenable`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:186
+msgid ":c:func:`TSHttpTxnServerAddrGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:188
+msgid ":c:func:`TSHttpTxnServerAddrSet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:190
+msgid ":c:func:`TSHttpTxnServerReqGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:192
+msgid ":c:func:`TSHttpTxnServerRespGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:194
+msgid ":c:func:`TSHttpTxnSsnGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:196
+msgid ":c:func:`TSHttpTxnTransformedRespCache`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:198
+msgid ":c:func:`TSHttpTxnTransformRespGet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/hooks-and-transactions/http-transactions.en.rst:200
+msgid ":c:func:`TSHttpTxnUntransformedRespCache`"
+msgstr ""
