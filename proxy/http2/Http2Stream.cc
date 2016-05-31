@@ -265,10 +265,8 @@ Http2Stream::do_io_close(int /* flags */)
 
     if (parent) {
       // Make sure any trailing end of stream frames are sent
+      // Ourselve will be removed at send_data_frames or closing connection phase
       static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
-
-      // Remove ourselves from the stream list
-      static_cast<Http2ClientSession *>(parent)->connection_state.delete_stream(this);
     }
     parent = NULL;
 
