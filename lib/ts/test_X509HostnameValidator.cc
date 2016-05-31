@@ -193,7 +193,7 @@ main(int argc, const char **argv)
   SSL_library_init();
   ink_freelists_snap_baseline();
 
-  int status = RegressionTest::main(argc, argv);
+  int status = RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
   ink_freelists_dump(stdout);
 
   return status;

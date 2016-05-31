@@ -204,13 +204,13 @@ check_test_list:
 }
 
 int
-RegressionTest::main(int /* argc */, const char **argv)
+RegressionTest::main(int /* argc */, const char **argv, int level)
 {
-  static char regression_test[1024] = "";
-  static int regression_list = 0;
-  static int regression_level = 1;
+  char regression_test[1024] = "";
+  int regression_list = 0;
+  int regression_level = level;
 
-  static const ArgumentDescription argument_descriptions[] = {
+  const ArgumentDescription argument_descriptions[] = {
     {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
     {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
     {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", NULL},

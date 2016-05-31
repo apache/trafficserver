@@ -53,12 +53,11 @@ REGRESSION_TEST(MIME)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatu
 }
 
 int
-main(int argc, char *argv[])
+main(int argc, const char **argv)
 {
   Thread *main_thread = new EThread();
   main_thread->set_specific();
   mime_init();
 
-  RegressionTest::run();
-  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
+  return RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
 }

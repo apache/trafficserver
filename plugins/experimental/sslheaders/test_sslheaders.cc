@@ -247,9 +247,8 @@ REGRESSION_TEST(ParseX509Fields)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 }
 
 int
-main(void)
+main(int argc, const char ** argv)
 {
   SSL_library_init();
-  RegressionTest::run();
-  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
+  return RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
 }

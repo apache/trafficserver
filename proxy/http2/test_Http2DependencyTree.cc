@@ -321,7 +321,7 @@ int
 main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
   const char *name = "Http2DependencyTree";
-  RegressionTest::run(name);
+  RegressionTest::run(name, REGRESSION_TEST_QUICK);
 
   return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
 }

@@ -82,12 +82,12 @@ struct RegressionTest {
   static int ran_tests;
   static DFA dfa;
   static RegressionTest *current;
-  static int run(const char *name = NULL, int regression_level = 1);
+  static int run(const char *name, int regression_level);
   static void list();
-  static int run_some(int regression_level = 1);
-  static int check_status(int regression_level = 1);
+  static int run_some(int regression_level);
+  static int check_status(int regression_level);
 
-  static int main(int argc, const char **argv);
+  static int main(int argc, const char **argv, int level);
 };
 
 #define REGRESSION_TEST(_f)                                                                                        \

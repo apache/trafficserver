@@ -24,5 +24,5 @@
 int
 main(int argc, const char **argv)
 {
-  return RegressionTest::main(argc, argv);
+  return RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
 }
