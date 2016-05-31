@@ -46,6 +46,7 @@ plugins = \
   ssl-sni.la \
   thread-1.la \
   txn-data-sink.la \
+  server-push.la \
   version.la
 
 if BUILD_EXAMPLE_PLUGINS
@@ -82,6 +83,7 @@ ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
 thread_1_la_SOURCES = thread-1/thread-1.c
 txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
 version_la_SOURCES = version/version.c
+server_push_la_SOURCES = server-push/server-push.c
 
 # The following examples do not build:
 #
