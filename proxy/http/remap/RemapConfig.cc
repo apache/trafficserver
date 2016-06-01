@@ -802,7 +802,8 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
       ri.tsremap_version = TSREMAP_VERSION;
 
       if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
-        Warning("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
+        snprintf(errbuf, errbufsize, "Failed to initialize plugin \"%s\": %s", pi->path,
+                 tmpbuf[0] ? tmpbuf : "Unknown plugin error");
         return -5;
       }
     } // done elevating access
@@ -869,9 +870,8 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   ats_free(parv[1]); // toURL
 
   if (res != TS_SUCCESS) {
-    snprintf(errbuf, errbufsize, "Can't create new remap instance for plugin \"%s\" - %s", c,
+    snprintf(errbuf, errbufsize, "Failed to create instance for plugin \"%s\": %s", c,
              tmpbuf[0] ? tmpbuf : "Unknown plugin error");
-    Warning("Failed to create new instance for plugin %s (not a TS_SUCCESS return)", pi->path);
     return -8;
   }
 
@@ -1348,8 +1348,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
   // Deal with error / warning scenarios
   MAP_ERROR:
-    Warning("Could not add rule at line #%d; Aborting!", cln + 1);
-    snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
+    snprintf(errBuf, sizeof(errBuf), "%s failed to add remap rule at %s line %d: %s", modulePrefix, path, cln + 1, errStr);
     SignalError(errBuf, alarm_already);
     delete reg_map;
     delete new_mapping;
