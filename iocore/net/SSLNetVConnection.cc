@@ -669,8 +669,10 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 
   do {
     // What is remaining left in the next block?
+    int l0 = buf.reader()->block_read_avail();
     char *current_block = buf.reader()->start();
     l = buf.reader()->block_read_avail();
+    ink_release_assert(l == l0);
 
     // check if to amount to write exceeds that in this buffer
     int64_t wavail = towrite - total_written;
