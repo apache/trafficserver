@@ -269,6 +269,7 @@ ssl_read_from_net(SSLNetVConnection *sslvc, EThread *lthread, int64_t &ret)
         // then EOF observed, treat it as EOS
         // Error("[SSL_NetVConnection::ssl_read_from_net] SSL_ERROR_SYSCALL, EOF observed violating SSL protocol");
         TraceIn(trace, sslvc->get_remote_addr(), sslvc->get_remote_port(), "EOF observed violating SSL protocol");
+        event = SSL_READ_EOS;
       }
       break;
     case SSL_ERROR_ZERO_RETURN:
@@ -644,7 +645,6 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   int64_t l = 0;
   uint32_t dynamic_tls_record_size = 0;
   ssl_error_t err = SSL_ERROR_NONE;
-  char *current_block = buf.reader()->start();
 
   // Dynamic TLS record sizing
   ink_hrtime now = 0;
@@ -670,7 +670,7 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   do {
     // What is remaining left in the next block?
     l = buf.reader()->block_read_avail();
-    current_block = buf.reader()->start();
+    char *current_block = buf.reader()->start();
 
     // check if to amount to write exceeds that in this buffer
     int64_t wavail = towrite - total_written;
