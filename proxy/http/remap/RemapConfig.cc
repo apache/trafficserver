@@ -802,7 +802,8 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
       ri.tsremap_version = TSREMAP_VERSION;
 
       if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
-        Warning("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
+        Warning("Failed to initialize plugin %s (non-zero retval) ... bailing out - %s", pi->path,
+                tmpbuf[0] ? tmpbuf : "Unknown plugin error");
         return -5;
       }
     } // done elevating access
