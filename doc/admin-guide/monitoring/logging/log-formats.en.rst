@@ -561,7 +561,7 @@ The following list describes |TS| custom logging fields.
 .. _csscl:
 
 ``csscl``
-    The cached response length (in bytes) from origin server to Traffic
+    The cached body length (in bytes) from origin server to Traffic
     Server.
 
 .. _csshl:
@@ -733,7 +733,7 @@ The following list describes |TS| custom logging fields.
 .. _sscl:
 
 ``sscl``
-    The response length (in bytes) from origin server to |TS|.
+    The body length (in bytes) from origin server to |TS|.
 
 .. _sshl:
 
