@@ -546,6 +546,8 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
     TSContCall(ci->contp, TS_LUA_EVENT_COROUTINE_CONT, (void *)1);
   }
 
+  ts_lua_fetch_multi_cleanup(ai);
+
   TSMutexUnlock(lmutex);
   return 0;
 }
@@ -586,6 +588,9 @@ static int
 ts_lua_fetch_multi_cleanup(ts_lua_async_item *ai)
 {
   ts_lua_fetch_multi_info *fmi;
+
+  if (ai->deleted)
+    return 0;
 
   if (ai->data) {
     fmi = (ts_lua_fetch_multi_info *)ai->data;
