@@ -1963,7 +1963,8 @@ AC_CONFIG_FILES([
   lib/atscppapi/examples/stat_example/Makefile
   lib/atscppapi/examples/timeout_example/Makefile
   lib/atscppapi/examples/transactionhook/Makefile
-  lib/atscppapi/examples/websocket/Makefile
+  lib/atscppapi/examples/experimental/Makefile
+  lib/atscppapi/examples/experimental/websocket/Makefile
   lib/atscppapi/src/Makefile
   lib/bindings/Makefile
   lib/perl/Makefile
