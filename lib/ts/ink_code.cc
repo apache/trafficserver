@@ -95,33 +95,6 @@ ink_code_md5(unsigned char const *input, int input_length, unsigned char *sixtee
   @brief Converts a MD5 to a null-terminated string
 
   Externalizes an INK_MD5 as a null-terminated string into the first argument.
-  Side Effects: none
-  Reentrancy:     n/a.
-  Thread Safety:  safe.
-  Mem Management: stomps the passed dest char*.
-
-  @return returns the passed destination string ptr.
-*/
-/* reentrant version */
-char *
-ink_code_md5_stringify(char *dest33, const size_t destSize, const char *md5)
-{
-  ink_assert(destSize >= 33);
-
-  int i;
-  for (i = 0; i < 16; i++) {
-    // we check the size of the destination buffer above
-    // coverity[secure_coding]
-    sprintf(&(dest33[i * 2]), "%02X", md5[i]);
-  }
-  ink_assert(dest33[32] == '\0');
-  return (dest33);
-} /* End ink_code_stringify_md5(const char *md5) */
-
-/**
-  @brief Converts a MD5 to a null-terminated string
-
-  Externalizes an INK_MD5 as a null-terminated string into the first argument.
   Does so without intenal procedure calls.
   Side Effects: none.
   Reentrancy:     n/a.

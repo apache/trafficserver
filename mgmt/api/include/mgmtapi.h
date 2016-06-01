@@ -967,13 +967,6 @@ tsapi void TSDiags(TSDiagsT mode, const char *fmt, ...);
  */
 char *TSGetErrorMessage(TSMgmtError error_id);
 
-/*--- password operations -------------------------------------------------*/
-/* TSEncryptPassword: encrypts a password
- * Input: passwd - a password string to encrypt (can be NULL)
- * Output: e_passwd - an encrypted passwd (ats_malloc's memory)
- */
-tsapi TSMgmtError TSEncryptPassword(char *passwd, char **e_passwd);
-
 /*--- direct file operations ----------------------------------------------*/
 /* TSConfigFileRead: reads a config file into a buffer
  * Input:  file - the config file to read
