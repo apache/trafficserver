@@ -106,7 +106,7 @@
     if (_already == false)                                  \
       pmgmt->signalManager(MGMT_SIGNAL_CONFIG_ERROR, _buf); \
     _already = true;                                        \
-    Warning("%s", _buf);                                    \
+    Error("%s", _buf);                                      \
   }
 
 class HostLookup;
