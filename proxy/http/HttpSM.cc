@@ -2437,10 +2437,8 @@ HttpSM::state_cache_open_write(int event, void *data)
 
   // Make sure we are on the "right" thread
   if (ua_session) {
-    NetVConnection *vc = ua_session->get_netvc();
-    if (vc && vc->thread != this_ethread()) {
-      pending_action = vc->thread->schedule_imm(this, event, data); // Stay on the same thread!
-      return 0;
+    if ((pending_action = ua_session->adjust_thread(event, data))) {
+      return 0; // Go away if we reschedule
     }
   }
 
@@ -4645,10 +4643,8 @@ HttpSM::do_http_server_open(bool raw)
 
   // Make sure we are on the "right" thread
   if (ua_session) {
-    NetVConnection *vc = ua_session->get_netvc();
-    if (vc && vc->thread != this_ethread()) {
-      pending_action = vc->thread->schedule_imm(this, EVENT_INTERVAL);
-      return;
+    if ((pending_action = ua_session->adjust_thread(EVENT_INTERVAL, NULL))) {
+      return; // Go away if we reschedule
     }
   }
   pending_action = NULL;
