@@ -41,7 +41,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-// These are included here beacuse older OpenSSL libraries don't have them.
+// These are included here because older OpenSSL libraries don't have them.
 // Don't copy these defines, or use their values directly, they are merely
 // here to avoid compiler errors.
 #ifndef SSL_TLSEXT_ERR_OK
