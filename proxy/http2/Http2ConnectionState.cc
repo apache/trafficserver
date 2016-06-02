@@ -1031,7 +1031,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return HTTP2_SEND_A_DATA_FRAME_NO_WINDOW;
   }
   const size_t buf_len = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]) - HTTP2_FRAME_HEADER_LEN;
-  const size_t available_size = min(buf_len, static_cast<size_t>(window_size));
+  const size_t write_avail_size = min(buf_len, static_cast<size_t>(window_size));
 
   uint8_t flags = 0x00;
   uint8_t payload_buffer[buf_len];
@@ -1039,24 +1039,34 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
 
-  // Select appropriate payload length
-  if (current_reader && current_reader->is_read_avail_more_than(0)) {
-    // Copy into the payload buffer. Seems like we should be able to skip this copy step
-    payload_length = current_reader->read(payload_buffer, available_size);
-  } else {
-    payload_length = 0;
+  if (current_reader == NULL) {
+    return HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD;
+  }
+
+  const int64_t read_avail_size = current_reader->read_avail();
+  if (read_avail_size < 0) {
+    return HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD;
   }
 
   // Are we at the end?
   // If we return here, we never send the END_STREAM in the case of a early terminating OS.
-  // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
-  if (!stream->is_body_done() && payload_length == 0) {
+  // OK if there is read_avail_size is too small or no body yet.
+  // Otherwise continue on to send a DATA frame and delete the stream
+  if (!stream->is_body_done() && read_avail_size == 0) {
     return HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD;
   }
 
-  if (stream->is_body_done() && payload_length < available_size) {
+  // Wait until buffer is filled over write_avail_size or body_done is marked
+  if (!stream->is_body_done() && static_cast<size_t>(read_avail_size) < write_avail_size) {
+    return HTTP2_SEND_A_DATA_FRAME_WAIT_ANOTHER_CHUNK;
+  }
+
+  if (stream->is_body_done() && static_cast<size_t>(read_avail_size) <= write_avail_size) {
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
+
+  // Copy into the payload buffer. Seems like we should be able to skip this copy step
+  payload_length = current_reader->read(payload_buffer, write_avail_size);
 
   // Update window size
   this->client_rwnd -= payload_length;
