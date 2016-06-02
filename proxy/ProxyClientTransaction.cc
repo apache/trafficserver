@@ -84,3 +84,18 @@ ProxyClientTransaction::attach_server_session(HttpServerSession *ssession, bool 
 {
   parent->attach_server_session(ssession, transaction_done);
 }
+
+Action *
+ProxyClientTransaction::adjust_thread(int event, void *data)
+{
+  NetVConnection *vc = this->get_netvc();
+  EThread *this_thread = this_ethread();
+  if (vc && vc->thread != this_thread) {
+    if (vc->thread->is_event_type(ET_NET) || vc->thread->is_event_type(SSLNetProcessor::ET_SSL)) {
+      return vc->thread->schedule_imm(this, event, data);
+    } else { // Not a net thread, take over this thread
+      vc->thread = this_thread;
+    }
+  }
+  return NULL;
+}
