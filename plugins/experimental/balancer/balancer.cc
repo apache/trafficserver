@@ -81,7 +81,7 @@ MakeBalancerTarget(const char *strval)
     }
   }
 
-  if (target.port > INT16_MAX) {
+  if (target.port > UINT16_MAX) {
     TSError("[balancer] Ignoring invalid port number for target '%s'", strval);
     target.port = 0;
   }
