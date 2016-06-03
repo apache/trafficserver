@@ -8199,13 +8199,15 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
     if (has_ua_msie)
       s->hdr_info.client_response.value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
   }
-  // Add a bunch of headers to make sure that caches between
-  // the Traffic Server and the client do not cache the error
-  // page.
+  // Make sure that caches between the Traffic Server and the client do not cache the error.
+  // ToDo: Not sure this matches expectation in RFC 7223.
   s->hdr_info.client_response.value_set(MIME_FIELD_CACHE_CONTROL, MIME_LEN_CACHE_CONTROL, "no-store", 8);
-  // Make sure there are no Expires and Last-Modified headers.
-  s->hdr_info.client_response.field_delete(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES);
-  s->hdr_info.client_response.field_delete(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED);
+
+  // Remove the Last-Modified header, but only if there is an ETag header. See sec 4.1 in
+  //     https://tools.ietf.org/html/rfc7232#page-18
+  if (s->hdr_info.client_response.presence(MIME_PRESENCE_ETAG)) {
+    s->hdr_info.client_response.field_delete(MIME_FIELD_LAST_MODIFIED, MIME_LEN_LAST_MODIFIED);
+  }
 
   if ((status_code == HTTP_STATUS_TEMPORARY_REDIRECT || status_code == HTTP_STATUS_MOVED_TEMPORARILY ||
        status_code == HTTP_STATUS_MOVED_PERMANENTLY) &&
