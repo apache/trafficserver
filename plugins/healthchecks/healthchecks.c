@@ -301,8 +301,23 @@ parse_configs(const char *fname)
   char buf[2 * 1024];
   HCFileInfo *head_finfo = NULL, *finfo = NULL, *prev_finfo = NULL;
 
-  if (NULL == (fd = fopen(fname, "r")))
+  if (!fname) {
     return NULL;
+  }
+
+  if ('/' == *fname) {
+    fd = fopen(fname, "r");
+  } else {
+    char filename[PATH_MAX + 1];
+
+    snprintf(filename, sizeof(filename), "%s/%s", fname, TSConfigDirGet());
+    fd = fopen(filename, "r");
+  }
+
+  if (NULL == fd) {
+    TSError("%s: Could not open config file", PLUGIN_NAME);
+    return NULL;
+  }
 
   while (!feof(fd)) {
     char *str, *save;
