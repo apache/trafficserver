@@ -802,7 +802,8 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
       ri.tsremap_version = TSREMAP_VERSION;
 
       if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
-        Warning("Failed to initialize plugin %s (non-zero retval) ... bailing out", pi->path);
+        snprintf(errbuf, errbufsize, "Failed to initialize plugin %s (non-zero retval) ... bailing out - %s", pi->path,
+                 tmpbuf[0] ? tmpbuf : "Unknown plugin error");
         return -5;
       }
     } // done elevating access
@@ -1348,7 +1349,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
   // Deal with error / warning scenarios
   MAP_ERROR:
-    Warning("Could not add rule at line #%d; Aborting!", cln + 1);
+    Error("Could not add rule at line #%d; Aborting!", cln + 1);
     snprintf(errBuf, sizeof(errBuf), "%s %s at line %d", modulePrefix, errStr, cln + 1);
     SignalError(errBuf, alarm_already);
     delete reg_map;
