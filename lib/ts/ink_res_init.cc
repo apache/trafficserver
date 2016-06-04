@@ -491,23 +491,13 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
       }
       /* read nameservers to query */
       if (MATCH(buf, "nameserver") && nserv < maxns) {
-        struct addrinfo hints, *ai;
-        char sbuf[NI_MAXSERV];
-
         cp = buf + sizeof("nameserver") - 1;
         while (*cp == ' ' || *cp == '\t')
           cp++;
-        cp[strcspn(cp, ";# \t\n")] = '\0';
         if ((*cp != '\0') && (*cp != '\n')) {
-          memset(&hints, 0, sizeof(hints));
-          hints.ai_family = PF_UNSPEC;
-          hints.ai_socktype = SOCK_DGRAM; /*dummy*/
-          hints.ai_flags = AI_NUMERICHOST;
-          sprintf(sbuf, "%d", NAMESERVER_PORT);
-          if (getaddrinfo(cp, sbuf, &hints, &ai) == 0) {
-            if (ats_ip_copy(&statp->nsaddr_list[nserv].sa, ai->ai_addr))
-              ++nserv;
-            freeaddrinfo(ai);
+          ts::ConstBuffer host(cp, strcspn(cp, ";# \t\n"));
+          if (0 == ats_ip_pton(host, &statp->nsaddr_list[nserv].sa)) {
+            ++nserv;
           }
         }
         continue;
