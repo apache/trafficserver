@@ -1,0 +1,56 @@
+{
+  "cases": [
+    {
+      "seqnum": 0,
+      "headers": [
+        {
+          ":scheme": "https"
+        },
+        {
+          ":authority": "example.com"
+        },
+        {
+          ":path": "/"
+        },
+        {
+          ":method": "GET"
+        },
+        {
+          "user-agent": "hpack-test"
+        },
+        {
+          "cookie": "xxxxxxx1"
+        },
+        {
+          "x-hello": "world"
+        }
+      ],
+      "wire": "8741882f91d35d055c87a784827a879eb193aac92a131f1187f3e7cf9f3e7c874086f2b4e5a283ff84f07b2893"
+    },
+    {
+      "seqnum": 1,
+      "headers": [
+        {
+          ":scheme": "https"
+        },
+        {
+          ":authority": "example.com"
+        },
+        {
+          ":path": "/"
+        },
+        {
+          ":method": "GET"
+        },
+        {
+          "user-agent": "hpack-test"
+        },
+        {
+          "cookie": "xxxxxxx2"
+        }
+      ],
+      "wire": "87c08482bf1f1187f3e7cf9f3e7c8b"
+    }
+  ],
+  "description": "Apache Traffic Server"
+}
