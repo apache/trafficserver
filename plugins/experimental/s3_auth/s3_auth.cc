@@ -524,7 +524,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   // second one poses as the program name.
   --argc;
   ++argv;
-  optind = 0;
 
   while (true) {
     int opt = getopt_long(argc, static_cast<char *const *>(argv), "", longopt, NULL);

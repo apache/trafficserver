@@ -1604,9 +1604,7 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
                                              {const_cast<char *>("handler-filename"), required_argument, NULL, 'f'},
                                              {NULL, 0, NULL, 0}};
 
-    optarg = NULL;
-    optind = opterr = optopt = 0;
-    int longindex            = 0;
+    int longindex = 0;
     while ((c = getopt_long(argc, (char *const *)argv, "npzbf:", longopts, &longindex)) != -1) {
       switch (c) {
       case 'n':

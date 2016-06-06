@@ -637,7 +637,6 @@ TSPluginInit(int argc, const char *argv[])
 
   if (argc > 1) {
     int c;
-    optind                                = 1;
     static const struct option longopts[] = {{"log-all", no_argument, NULL, 'a'},
                                              {"log-stale-while-revalidate", no_argument, NULL, 'r'},
                                              {"log-stale-if-error", no_argument, NULL, 'e'},

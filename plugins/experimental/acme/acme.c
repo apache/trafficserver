@@ -307,7 +307,6 @@ TSPluginInit(int argc, const char *argv[])
   };
 
   memset(&gConfig, 0, sizeof(gConfig));
-  optind = 0;
   while (true) {
     int opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
 
