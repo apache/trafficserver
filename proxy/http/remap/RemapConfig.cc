@@ -861,6 +861,17 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
   void *ih = NULL;
   TSReturnCode res = TS_SUCCESS;
   if (pi->fp_tsremap_new_instance) {
+#if defined(freebsd) || defined(darwin)
+    optreset = 1;
+#endif
+#if defined(__GLIBC__)
+    optind = 0;
+#else
+    optind = 1;
+#endif
+    opterr = 0;
+    optarg = NULL;
+
     res = pi->fp_tsremap_new_instance(parc, parv, &ih, tmpbuf, sizeof(tmpbuf) - 1);
   }
 

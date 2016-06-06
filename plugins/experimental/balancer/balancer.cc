@@ -113,7 +113,6 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
   argc--;
   argv++;
 
-  optind = 0;
   for (;;) {
     int opt;
 

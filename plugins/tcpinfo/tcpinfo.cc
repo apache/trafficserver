@@ -321,7 +321,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[tcpinfo] plugin registration failed");
   }
 
-  optind = 0;
   for (;;) {
     unsigned long lval;
 

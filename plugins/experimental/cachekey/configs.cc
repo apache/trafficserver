@@ -345,7 +345,6 @@ Configs::init(int argc, char *argv[])
   };
 
   bool status = true;
-  optind = 0;
 
   /* argv contains the "to" and "from" URLs. Skip the first so that the second one poses as the program name. */
   argc--;
