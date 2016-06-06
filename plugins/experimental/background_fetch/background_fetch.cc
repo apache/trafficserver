@@ -568,7 +568,6 @@ TSPluginInit(int argc, const char *argv[])
   gConfig = new BgFetchConfig(cont);
   gConfig->acquire(); // Inc refcount, although this global config should never go out of scope
 
-  optind = 1;
   while (true) {
     int opt = getopt_long(argc, (char *const *)argv, "lc", longopt, NULL);
 

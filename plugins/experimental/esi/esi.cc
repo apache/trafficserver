@@ -1606,8 +1606,6 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
       {NULL, 0, NULL, 0},
     };
 
-    optarg = NULL;
-    optind = opterr = optopt = 0;
     int longindex = 0;
     while ((c = getopt_long(argc, (char *const *)argv, "npzbf:", longopts, &longindex)) != -1) {
       switch (c) {

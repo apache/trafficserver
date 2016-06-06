@@ -466,7 +466,6 @@ TSPluginInit(int argc, const char *argv[])
   init_plugin_state_t(pstate);
 
   int c;
-  optind = 1;
   static const struct option longopts[] = {
     {"config", required_argument, NULL, 'c'}, {"log", required_argument, NULL, 'l'}, {NULL, 0, NULL, 0}};
 

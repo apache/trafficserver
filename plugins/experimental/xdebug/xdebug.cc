@@ -369,8 +369,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[xdebug] Plugin registration failed");
   }
 
-  optind = 0;
-
   // Parse the arguments
   while (true) {
     int opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
