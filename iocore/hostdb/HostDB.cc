@@ -1996,7 +1996,7 @@ HostDBContinuation::do_dns()
       if (action.continuation) {
         // Set the TTL based on how much time remains until the next sync
         HostDBInfo *r = lookup_done(IpAddr(find_result->second), md5.host_name, false,
-                                    current_host_file_map->next_sync_time - Thread::get_hrtime(), NULL);
+                                    (current_host_file_map->next_sync_time - Thread::get_hrtime()) / HRTIME_SECOND, NULL);
         reply_to_cont(action.continuation, r);
       }
       hostdb_cont_free(this);
