@@ -299,7 +299,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s] registration failed", PLUGIN_NAME);
   }
 
-  optind = 0;
   for (;;) {
     switch (getopt_long(argc, (char *const *)argv, "iw", longopts, NULL)) {
     case 'i':

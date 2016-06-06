@@ -170,11 +170,6 @@ SslHdrParseOptions(int argc, const char **argv)
 
   ats_scoped_obj<SslHdrInstance> hdr(new SslHdrInstance());
 
-  // We might parse arguments multiple times if we are loaded as a global
-  // plugin and a remap plugin. Reset optind so that getopt_long() does the
-  // right thing (ie. work instead of crash).
-  optind = 0;
-
   for (;;) {
     int opt;
 

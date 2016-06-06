@@ -692,11 +692,6 @@ AuthParseOptions(int argc, const char **argv)
 
   options->transform = AuthWriteRedirectedRequest;
 
-  // We might parse arguments multiple times if we are loaded as a global
-  // plugin and a remap plugin. Reset optind so that getopt_long() does the
-  // right thing (ie. work instead of crash).
-  optind = 0;
-
   for (;;) {
     int opt;
 

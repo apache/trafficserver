@@ -349,7 +349,6 @@ public:
   bool
   factory(int argc, char *argv[])
   {
-    optind = 0;
     while (true) {
       int opt = getopt_long(argc, (char *const *)argv, "psbh", longopt, NULL);
 
