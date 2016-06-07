@@ -141,8 +141,9 @@ ts_lua_cached_response_header_get(lua_State *L)
   const char *val;
   int val_len;
   size_t key_len;
+  int count;
 
-  TSMLoc field_loc;
+  TSMLoc field_loc, next_field_loc;
   ts_lua_http_ctx *http_ctx;
 
   GET_HTTP_CONTEXT(http_ctx, L);
@@ -155,11 +156,22 @@ ts_lua_cached_response_header_get(lua_State *L)
   if (key && key_len) {
     field_loc = TSMimeHdrFieldFind(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, key, key_len);
 
-    if (field_loc) {
-      val = TSMimeHdrFieldValueStringGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, -1, &val_len);
-      lua_pushlstring(L, val, val_len);
-      TSHandleMLocRelease(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc);
-
+    if (field_loc != TS_NULL_MLOC) {
+      count = 0;
+      while (field_loc != TS_NULL_MLOC) {
+        val = TSMimeHdrFieldValueStringGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, -1, &val_len);
+        next_field_loc = TSMimeHdrFieldNextDup(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc);
+        lua_pushlstring(L, val, val_len);
+        count++;
+        // multiple headers with the same name must be semantically the same as one value which is comma seperated
+        if (next_field_loc != TS_NULL_MLOC) {
+          lua_pushlstring(L, ",", 1);
+          count++;
+        }
+        TSHandleMLocRelease(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc);
+        field_loc = next_field_loc;
+      }
+      lua_concat(L, count);
     } else {
       lua_pushnil(L);
     }
@@ -185,6 +197,8 @@ ts_lua_cached_response_get_headers(lua_State *L)
   int value_len;
   TSMLoc field_loc;
   TSMLoc next_field_loc;
+  const char *tvalue;
+  size_t tvalue_len;
 
   ts_lua_http_ctx *http_ctx;
 
@@ -196,14 +210,33 @@ ts_lua_cached_response_get_headers(lua_State *L)
 
   field_loc = TSMimeHdrFieldGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, 0);
 
-  while (field_loc) {
+  while (field_loc != TS_NULL_MLOC) {
     name = TSMimeHdrFieldNameGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, &name_len);
     if (name && name_len) {
-      value =
-        TSMimeHdrFieldValueStringGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, -1, &value_len);
+      // retrieve the header name from table
       lua_pushlstring(L, name, name_len);
-      lua_pushlstring(L, value, value_len);
-      lua_rawset(L, -3);
+      lua_gettable(L, -2);
+      if (lua_isnil(L, -1)) {
+        // if header name does not exist in the table, insert it
+        lua_pop(L, 1);
+        value =
+          TSMimeHdrFieldValueStringGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, -1, &value_len);
+        lua_pushlstring(L, name, name_len);
+        lua_pushlstring(L, value, value_len);
+        lua_rawset(L, -3);
+      } else {
+        // if header name exists in the table, append a command and the new value to the end of the existing value
+        tvalue = lua_tolstring(L, -1, &tvalue_len);
+        lua_pop(L, 1);
+        value =
+          TSMimeHdrFieldValueStringGet(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc, -1, &value_len);
+        lua_pushlstring(L, name, name_len);
+        lua_pushlstring(L, tvalue, tvalue_len);
+        lua_pushlstring(L, ",", 1);
+        lua_pushlstring(L, value, value_len);
+        lua_concat(L, 3);
+        lua_rawset(L, -3);
+      }
     }
 
     next_field_loc = TSMimeHdrFieldNext(http_ctx->cached_response_bufp, http_ctx->cached_response_hdrp, field_loc);
