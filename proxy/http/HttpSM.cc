@@ -7178,7 +7178,8 @@ HttpSM::set_next_state()
       DebugSM("dns", "[HttpTransact::HandleRequest] Skipping DNS lookup, provided by plugin");
       call_transact_and_set_next_state(NULL);
       break;
-    } else if (t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER && t_state.http_config_param->no_dns_forward_to_parent) {
+    } else if (t_state.dns_info.looking_up == HttpTransact::ORIGIN_SERVER && t_state.http_config_param->no_dns_forward_to_parent &&
+               t_state.parent_result.result != PARENT_UNDEFINED) {
       if (t_state.cop_test_page)
         ats_ip_copy(t_state.host_db_info.ip(), t_state.state_machine->ua_session->get_netvc()->get_local_addr());
 
