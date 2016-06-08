@@ -1,0 +1,200 @@
+Changes with Apache Traffic Server 6.2.0
+
+Bug:
+  *) [TS-1007] SSN Close called before TXN Close
+  *) [TS-2449] I find INKUDPRecvFrom  can not work .
+  *) [TS-3214] request is not forwarded to parent
+  *) [TS-3235] PluginVC crashed with unrecognized event
+  *) [TS-3429] TSContScheduleEvery does not increment event count correctly
+  *) [TS-3485] We should honor ip_allow.config ACLs for HTTP/2 streams
+  *) [TS-3584] SPDY and H2 requests should not trigger connection keep-alive processing
+  *) [TS-3645] After TS-3033, some traffic_line commands result in "requested command failed"
+  *) [TS-3857] Suppress a logging related error message to Note to avoid flooding.
+  *) [TS-3909] SSLNextProtocolTrampoline heap-use-after-free
+  *) [TS-3917] Sending only SETTINGS_INITIAL_WINDOW_SIZE in SETTINGS Frame
+  *) [TS-3949] Ignore timeout event on PluginVC after it's already closed.
+  *) [TS-3959] Dropped keep-alive connections not being re-established
+  *) [TS-3979] Deprecate allow empty doc cache setting.
+  *) [TS-4020] Cache_promote/background_fetch plugin LRU should use cachekey instead of url
+  *) [TS-4024] Wire tracing enhancements
+  *) [TS-4043] Prevent bogus FQDN characters in host header
+  *) [TS-4046] HdrHeap and HdrStrHeap leak in HttpTransact::EndRemapRequest
+  *) [TS-4048] Broken Vagrantfile in a lot of ways
+  *) [TS-4056] MemLeak: ～NetAccept() do not free alloc_cache(vc)
+  *) [TS-4065] change metrics to counters where appropriate
+  *) [TS-4067] Memory leaks in parent selection regression tests
+  *) [TS-4074] build_* variables need to be escaped
+  *) [TS-4075] Segmentation fault due to reenable in SNI Hook for a closed ssl connection
+  *) [TS-4083] CID 1343347:  Error handling issues in ts_lua_http.c
+  *) [TS-4096] ts_lua - ts.now() should return subsecond information
+  *) [TS-4101] remove proxy.config.stats.config_file
+  *) [TS-4104] wrong return value while create a new ticket on ssl_callback_session_ticket()
+  *) [TS-4105] RecDumpRecords passes the wrong record type to its callback
+  *) [TS-4107] proxy.process.ssl.total_success_handshake_count_in has wrong record type
+  *) [TS-4108] SSL metrics have wrong data type
+  *) [TS-4109] ts_lua plugin - ts.debug/ts.error problem with long string
+  *) [TS-4113] Docs: Add value 4 to proxy.config.http.cache.cache_responses_to_cookies
+  *) [TS-4117] Write tool to compare changes in configs/metrics between ATS versions
+  *) [TS-4135] C++ api coredumps when used with other plugins using TSHttpTxnRedirectUrlSet.
+  *) [TS-4136] incoming http connection stats should be correct regardless of the HTTP version
+  *) [TS-4142] Compile errors on OmniOS
+  *) [TS-4143] Validate host in GET URL
+  *) [TS-4145] ATS 6.0.0 - Address cross-site scripting exploits in error messages
+  *) [TS-4153] incorrect sphinx version check
+  *) [TS-4154] missing Cryptohash.h file
+  *) [TS-4157] traffic_via uses files names in it tests that are illegal on shared drives
+  *) [TS-4158] Fix a few plugins missing to release URL MLocs
+  *) [TS-4160] MLocRelease for txn buffers called too late in CPP API resulting buffer corruption
+  *) [TS-4161] ProcessManager prone to stack-overflow
+  *) [TS-4162] Http2ClientSession close connection by INACTIVITY_TIMEOUT event, even if the connection is still active
+  *) [TS-4165] Logging breaks if changing log format
+  *) [TS-4166] Memory leak in traffic_top
+  *) [TS-4168] Only close inactive and active connections that have a non-zero timeout
+  *) [TS-4170] Error receiving data frame on closed connection for HTTP/2
+  *) [TS-4175] unset INSTALL_BASE when installing
+  *) [TS-4177] Memory leak in LogFieldAliasTable
+  *) [TS-4178] Memory leak in SplitDNSConfig when shutting down
+  *) [TS-4181] Memory leak in aio threads when shutting down
+  *) [TS-4185] Request::getMethod does not return HTTP_METHOD_PUSH
+  *) [TS-4187] connections_currently_open stat not accurate with global server session pools
+  *) [TS-4188] Client initial window size is set incorrectly in HTTP/2
+  *) [TS-4190] Disabling LuaJIT in configure still builds portions with Lua
+  *) [TS-4191] Typo of debug tags setting name in Developer Guide
+  *) [TS-4196] Memory leak from main_thread on shutdown
+  *) [TS-4198] Excessive memory allocations from HostDB with huge tables enabled
+  *) [TS-4199] Parent Selection - parents not marked down due to race
+  *) [TS-4200] Wrong return value for TSHashTable::ExpansionPolicy
+  *) [TS-4201] OneWayTunnel::connection_closed callback handleEvent with wrong continuation
+  *) [TS-4202] missing define _HTTP_CONNECTION_COUNT_H_
+  *) [TS-4203] Multiple PD init/alloc in PollCont
+  *) [TS-4207] Crash in HostDB, likely a regression from 5.x
+  *) [TS-4208] The TOTAL from freelist memory debug dump is wrong
+  *) [TS-4209] Limit concurrent streams correctly
+  *) [TS-4212] Add option to track memory allocation with OpenSSL
+  *) [TS-4214] Fix incorrect HttpSM debug message
+  *) [TS-4222] Seg faults while processing ssl_multicert.config
+  *) [TS-4228] traffic_manager can hang in a tight read() loop
+  *) [TS-4229] proxy.config.http.cache.open_write_fail_action is not in the regression tests
+  *) [TS-4231] Coverity issues in inlined plugin: CID 1352204 and CID 1352203
+  *) [TS-4248] assertions triggered by metric type changes
+  *) [TS-4250] Clang-format breaks on Centos 6
+  *) [TS-4252] Some plugins are causing seg-faults when using getopt_long with optind = 1.
+  *) [TS-4257] Handle unset client request scheme in log field
+  *) [TS-4258] server_session should be NULL'd out after being closed.
+  *) [TS-4259] ua_session should not be NULL'd out if not closed
+  *) [TS-4266] ATS memory statistics shows that memory utilization is doubled after “traffic_ctlconfig reload”. And it is fa...
+  *) [TS-4271] metrics fail to clear
+  *) [TS-4272] HostDB not clearing HostDBInfos for hosts file entries
+  *) [TS-4280] Refactor gzip plugin to eliminate memory leak and reduce global hooks
+  *) [TS-4282] Socket read failure isn't handled in AdminClient.pm
+  *) [TS-4296] Assertion in Epic plugin
+  *) [TS-4299] FetchSM / H2 streams can hang if e.g. a plugin adds a Connection: close header
+  *) [TS-4302] Compiler warnings on OmniOS w. gcc 5.1
+  *) [TS-4305] Coverity issues in geoip_acl plugin: 1353618, 1353617, 1353616, 1353615
+  *) [TS-4307] Check for existence of alloca.h consistently
+  *) [TS-4308] Coverity issues 1353631, 1353632, 1353633, 1353634
+  *) [TS-4310] Coverity issues 1353635, 1353636 and 1353637
+  *) [TS-4313] MIMEHdr fails to find header fields
+  *) [TS-4315] Mistype Conditional ? : Operator
+  *) [TS-4317] Cache recovery can stall, prevent disk from becoming ready.
+  *) [TS-4318] geoip_acl: regressions introduced with refactoring in acd06a7d230e7c8a
+  *) [TS-4321] H2 truncates certain contents on master
+  *) [TS-4323] Should the H2 DATA frame default to 16KB?
+  *) [TS-4327] Fix bug introduced with the addition of multi-site origin to parent selection.
+  *) [TS-4328] Connect_retries re-connects even if request made it to origin (TS-3440 repeat)
+  *) [TS-4329] Off-by-one error in NULL terminator for aname in hostdb
+  *) [TS-4340] `proxy.config.http.origin_max_connections` only matches on IP
+  *) [TS-4348] proxy.process.net.connections_currently_open does not match OS in terms of number of open connections
+  *) [TS-4355] Assert in HttpTunnel fails when access with HTTP/2
+  *) [TS-4378] Periodic warning from TSContInternal::destroy()
+  *) [TS-4387] Add enforcement of TSCont having MUTEX when passed to TSContSchedule()/TSContScheduleEvery()
+  *) [TS-4388] parent proxy crashes with TSHttpTxnParentProxySet
+  *) [TS-4397] Build on i386 fails due to lua_Integer type mismatch in traffic_manager metrics
+  *) [TS-4403] HostDB's "stale while revalidate" doesn't span failed DNS lookups
+  *) [TS-4406] The %<cqpv> log tag now always shows http/1.1
+  *) [TS-4410] Fix i386 compiler warning - unsigned-vs-signed comparison in hostdb.
+  *) [TS-4413] Fix potential consistent hash iterator race.
+  *) [TS-4420] crash on downed API parent
+  *) [TS-4427] traffic_logstats: Count TCP_MEM_HIT as a "normal" hit
+  *) [TS-4431] Atscppapi needs a mutex with intercept plugins
+  *) [TS-4436] ATS' tracking of host failures is broken for entries acquired through the hosts file
+  *) [TS-4440] ATS' missing StatsPages have incorrect content-type
+  *) [TS-4444] Segfault accessing NULL connection buffer reader
+  *) [TS-4445] HttpSM disables read eventing twice before settup up a tunnel binding
+  *) [TS-4461] Not closing client connections
+  *) [TS-4469] TS-3612 changes cause crashes with some plugins
+  *) [TS-4472] Number of active connections is incorrect
+  *) [TS-4473] Parent proxy test configuration race.
+  *) [TS-4477] Decrement proxy.process.http.current_client_transactions in HTTP/2
+  *) [TS-4478] AsyncHttpFetch hangs forever after ProxyClientSession changes
+  *) [TS-4485] MultiCache sync causes significant stalls to various in-flight requests
+  *) [TS-4489] Assert fails at Http2ConnectionState::delete_stream
+  *) [TS-4494] Assert fails at ink_code_md5_stringify with origin_max_connections
+
+Improvement:
+  *) [TS-1775] Cleanup of ink_hrtime.{cc,h}
+  *) [TS-3535] Add priority feature to the HTTP/2 implementation
+  *) [TS-3612] Restructure Proxy Client Sessions to support transaction oriented Sessions execute transaction hooks and connecti...
+  *) [TS-3863] Add support for ASAN leak detection
+  *) [TS-3922] Add independent WebSocket timeouts
+  *) [TS-4064] Customizable congestion control algorithms
+  *) [TS-4092] Decouple HPACK from HTTP/2
+  *) [TS-4094] Clean up RD type junk in ControlMatcher
+  *) [TS-4120] Doc: proxy.config.http.response_server_str default value includes version
+  *) [TS-4122] Doc: Add proxy.config.http.response_via_str
+  *) [TS-4123] Doc: Fix image URLs in the Security page
+  *) [TS-4133] Update url_sig plugin to pass application query parameters
+  *) [TS-4137] Improve stripe inspector diagnostic output
+  *) [TS-4144] Add custom error response support in RemapPlugin of cppapi
+  *) [TS-4147] Allow gzip plugin to be a remap plugin
+  *) [TS-4148] Add a log field for connection attempts made to origin
+  *) [TS-4164] Update clang-format binaries and configs
+  *) [TS-4169] tsxs utility and .lo files on input
+  *) [TS-4172] Cleanup debug logs of Http2ConnectionState
+  *) [TS-4176] s3_auth plugin matrix parameters support
+  *) [TS-4180] support for serving multiple intermediate cert chains
+  *) [TS-4183] cachekey: URI and URI path capture/replacement
+  *) [TS-4197] Add memory debugging
+  *) [TS-4211] Allocate only what we need for debugging
+  *) [TS-4230] support matrix style parameters in ts_lua plugin
+  *) [TS-4235] Deprecate fuzzy cache revalidation ?
+  *) [TS-4253] Better debug messages in ssl_read_from_net()
+  *) [TS-4255] remove StatSystem metrics
+  *) [TS-4261] Split statistic update logic from process handling.
+  *) [TS-4267] HTTP/2 Updates to debugging
+  *) [TS-4283] Remove some remnant comments and code from 64-bit conversion
+  *) [TS-4284] Modernize the geoip_acl plugin
+  *) [TS-4285] Add support for overriding proxy.config.http.attach_server_session_to_client
+  *) [TS-4288] Better error handling of invalid qualifier strings in header_rewrite plugin
+  *) [TS-4290] Cleanup header_rewrite, such that we don't pollute the statement base class
+  *) [TS-4295] Add Priority Queue in lib/ts/
+  *) [TS-4298] Breakdown parameter checks in Http2::init()
+  *) [TS-4339] Remove .pr file
+  *) [TS-4359] Deprecate the SPDY protocol
+  *) [TS-4361] Remove TS_FETCH_EVENT_* handlers from Http2ClientSession
+  *) [TS-4364] Remove some remnants from http/2 refactoring
+  *) [TS-4401] Make some more configurations overridable
+  *) [TS-4418] Change .clang-format to allow ConstructorInitializerAllOnOneLineOrOnePerLine
+  *) [TS-4486] Add release method to MutexLock
+
+New Feature:
+  *) [TS-2642] header_rewrite Time based Rules
+  *) [TS-3123] Make proxy.config.http.transaction_active_timeout_in overridable
+  *) [TS-3639] Add GeoIP info to header_rewrite plugin
+  *) [TS-4087] H2 flexible resource limitation
+  *) [TS-4095] New cppapi plugin for converting image formats to wepb
+  *) [TS-4099] replace XML statistics with Lua
+  *) [TS-4115] Add a multi origin hierarchy to parent selection.
+  *) [TS-4129] Support TSContSchedule in ts_lua plugin
+  *) [TS-4132] Open source Yahoo's ats-inliner plug-in
+  *) [TS-4243] Collapsed Forwarding Plugin
+  *) [TS-4256] fix abort with ats-inliner plug-in
+  *) [TS-4287] Add a simple and unavailable server retry feature to Parent Selection.
+  *) [TS-4297] A script to compare two memory/freelist dumps
+  *) [TS-4320] Implement a letsencrypt / ACME plugin for ATS
+  *) [TS-4369] add VIA_ERROR_MOVED_TEMPORARILY to deal with redirect by remapping correctly for instrumentation (logging, metrics)
+  *) [TS-4476] CLONE - Make proxy.config.http.transaction_active_timeout_in overridable
+
+Task:
+  *) [TS-4356] Deprecate cacheurl plugin
+  *) [TS-4428] Update Japanese documentations
