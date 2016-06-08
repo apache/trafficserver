@@ -113,8 +113,6 @@ bool recordRangeCheck(const char *pattern, const char *value);
 bool recordIPCheck(const char *pattern, const char *value);
 bool recordRestartCheck(const char *varName);
 
-void fileCheckSum(char *buffer, int size, char *checksum, const size_t checksumSize);
-
 // file management
 int getFilesInDirectory(char *managedDir, ExpandingArray *fileList);
 char *newPathString(const char *s1, const char *s2);

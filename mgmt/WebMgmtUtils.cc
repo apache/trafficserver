@@ -1221,18 +1221,6 @@ recordRestartCheck(const char *varName)
   return false;
 }
 
-void
-fileCheckSum(char *buffer, int size, char *checksum, const size_t checksumSize)
-{
-  INK_DIGEST_CTX md5_context;
-  char checksum_md5[16];
-
-  ink_code_incr_md5_init(&md5_context);
-  ink_code_incr_md5_update(&md5_context, buffer, size);
-  ink_code_incr_md5_final(checksum_md5, &md5_context);
-  ink_code_md5_stringify(checksum, checksumSize, checksum_md5);
-}
-
 //-------------------------------------------------------------------------
 // getFilesInDirectory
 //

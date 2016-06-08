@@ -1861,33 +1861,6 @@ TSGetErrorMessage(TSMgmtError err_id)
   return err_msg;
 }
 
-/*--- password operations -------------------------------------------------*/
-tsapi TSMgmtError
-TSEncryptPassword(char *passwd, char **e_passwd)
-{
-  INK_DIGEST_CTX md5_context;
-  char passwd_md5[16];
-  char *passwd_md5_str;
-  int passwd_md5_str_len = 32;
-
-  ink_assert(passwd);
-  ink_assert(TS_ENCRYPT_PASSWD_LEN <= passwd_md5_str_len);
-
-  const size_t md5StringSize = (passwd_md5_str_len + 1) * sizeof(char);
-  passwd_md5_str = (char *)ats_malloc(md5StringSize);
-
-  ink_code_incr_md5_init(&md5_context);
-  ink_code_incr_md5_update(&md5_context, passwd, strlen(passwd));
-  ink_code_incr_md5_final(passwd_md5, &md5_context);
-  ink_code_md5_stringify(passwd_md5_str, md5StringSize, passwd_md5);
-
-  // use only a subset of the MD5 string
-  passwd_md5_str[TS_ENCRYPT_PASSWD_LEN] = '\0';
-  *e_passwd = passwd_md5_str;
-
-  return TS_ERR_OKAY;
-}
-
 /*--- direct file operations ----------------------------------------------*/
 tsapi TSMgmtError
 TSConfigFileRead(TSFileNameT file, char **text, int *size, int *version)
