@@ -46,7 +46,6 @@ static const char *default_var = "proxy.config.http.parent_proxies";
 static const char *retry_var = "proxy.config.http.parent_proxy.retry_time";
 static const char *enable_var = "proxy.config.http.parent_proxy_routing_enable";
 static const char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
-static const char *dns_parent_only_var = "proxy.config.http.no_dns_just_forward_to_parent";
 
 static const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
 
@@ -67,7 +66,6 @@ ParentSelectionPolicy::ParentSelectionPolicy()
   bool enable = false;
   int32_t retry_time = 0;
   int32_t fail_threshold = 0;
-  int32_t dns_parent_only = 0;
 
   // Handle parent timeout
   REC_ReadConfigInteger(retry_time, retry_var);
@@ -80,10 +78,6 @@ ParentSelectionPolicy::ParentSelectionPolicy()
   // Handle the fail threshold
   REC_ReadConfigInteger(fail_threshold, threshold_var);
   FailThreshold = fail_threshold;
-
-  // Handle dns parent only
-  REC_ReadConfigInteger(dns_parent_only, dns_parent_only_var);
-  DNS_ParentOnly = dns_parent_only;
 }
 
 ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_parent_table), DefaultParent(NULL), policy()
@@ -267,9 +261,6 @@ ParentConfig::startup()
 
   //   Fail Threshold
   parentConfigUpdate->attach(threshold_var);
-
-  //   DNS Parent Only
-  parentConfigUpdate->attach(dns_parent_only_var);
 }
 
 void
@@ -300,8 +291,7 @@ ParentConfig::print()
   ParentConfigParams *params = ParentConfig::acquire();
 
   printf("Parent Selection Config\n");
-  printf("\tEnabled %d\tRetryTime %d\tParent DNS Only %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime,
-         params->policy.DNS_ParentOnly);
+  printf("\tEnabled %d\tRetryTime %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime);
   if (params->DefaultParent == NULL) {
     printf("\tNo Default Parent\n");
   } else {
@@ -842,10 +832,6 @@ SocksServerConfig::reconfigure()
   REC_ReadConfigInteger(fail_threshold, "proxy.config.socks.server_fail_threshold");
   params->policy.FailThreshold = fail_threshold;
 
-  // Handle dns parent only
-  // PARENT_ReadConfigInteger(dns_parent_only, dns_parent_only_var);
-  params->policy.DNS_ParentOnly = 0;
-
   m_id = configProcessor.set(m_id, params);
 
   if (is_debug_tag_set("parent_config")) {
@@ -859,8 +845,7 @@ SocksServerConfig::print()
   ParentConfigParams *params = SocksServerConfig::acquire();
 
   printf("Parent Selection Config for Socks Server\n");
-  printf("\tEnabled %d\tRetryTime %d\tParent DNS Only %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime,
-         params->policy.DNS_ParentOnly);
+  printf("\tEnabled %d\tRetryTime %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime);
   if (params->DefaultParent == NULL) {
     printf("\tNo Default Parent\n");
   } else {
