@@ -1545,14 +1545,15 @@ HttpTransact::PPDNSLookup(State *s)
 
   ink_assert(s->dns_info.looking_up == PARENT_PROXY);
   if (!s->dns_info.lookup_success) {
+    // Mark parent as down due to resolving failure
+    s->parent_params->markParentDown(&s->parent_result);
     // DNS lookup of parent failed, find next parent or o.s.
     find_server_and_update_current_info(s);
     if (!s->current.server->dst_addr.isValid()) {
       if (s->current.request_to == PARENT_PROXY) {
         TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, PPDNSLookup);
       } else {
-        // We could be out of parents here if all the parents
-        // failed DNS lookup
+        // We could be out of parents here if all the parents failed DNS lookup
         ink_assert(s->current.request_to == HOST_NONE);
         handle_parent_died(s);
       }

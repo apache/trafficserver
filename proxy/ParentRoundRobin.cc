@@ -56,7 +56,6 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
   int cur_index    = 0;
   bool parentUp    = false;
   bool parentRetry = false;
-  bool bypass_ok   = (result->rec->go_direct == true && policy->DNS_ParentOnly == 0);
 
   HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
 
@@ -109,9 +108,9 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     // Check to see if we have wrapped around
     if ((unsigned int)cur_index == result->start_parent) {
       // We've wrapped around so bypass if we can
-      if (bypass_ok == true) {
+      if (result->rec->go_direct == true) {
         // Could not find a parent
-        if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
+        if (result->rec->parent_is_proxy == true) {
           result->result = PARENT_DIRECT;
         } else {
           result->result = PARENT_FAIL;
@@ -119,10 +118,6 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
         result->hostname = NULL;
         result->port     = 0;
         return;
-      } else {
-        // Bypass disabled so keep trying, ignoring whether we think
-        //   a parent is down or not
-        result->wrap_around = true;
       }
     }
   }
