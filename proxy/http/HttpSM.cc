@@ -3209,7 +3209,9 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
       //  detach the user agent
       ink_assert(server_entry->vc == server_session);
       ink_assert(c->is_downstream_from(server_session));
-      server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
+      if (server_session != NULL) {
+        server_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(t_state.txn_conf->background_fill_active_timeout));
+      }
     } else {
       // No background fill
       p = c->producer;
