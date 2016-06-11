@@ -178,6 +178,8 @@ libtsutil_la_SOURCES = \
   ink_thread.h \
   ink_time.cc \
   ink_time.h \
+  ink_uuid.cc \
+  ink_uuid.h \
   llqueue.cc \
   lockfile.cc \
   signals.cc \
