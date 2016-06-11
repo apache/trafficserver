@@ -55,7 +55,7 @@ if BUILD_TESTS
 	  RegressionHPACK.cc
 endif
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
   test_Huffmancode \
   test_Http2DependencyTree \
   test_HPACK
