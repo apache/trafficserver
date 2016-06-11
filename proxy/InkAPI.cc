@@ -59,6 +59,7 @@
 
 #include "I_RecDefs.h"
 #include "I_RecCore.h"
+#include "I_Machine.h"
 #include "HttpProxyServerMain.h"
 
 /****************************************************************
@@ -8940,4 +8941,98 @@ TSVConnReenable(TSVConn vconn)
       ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
     }
   }
+}
+
+// APIs for managing and using UUIDs.
+TSUuid
+TSUuidCreate(void)
+{
+  ATSUuid *uuid = new ATSUuid();
+  return (TSUuid)uuid;
+}
+
+void
+TSUuidDestroy(TSUuid uuid)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
+  delete (ATSUuid *)uuid;
+}
+
+TSReturnCode
+TSUuidCopy(TSUuid dest, const TSUuid src)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)dest) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)src) == TS_SUCCESS);
+  ATSUuid *d = (ATSUuid *)dest;
+  ATSUuid *s = (ATSUuid *)src;
+
+  if (s->valid()) {
+    *d = *s;
+    return TS_SUCCESS;
+  }
+
+  return TS_ERROR;
+}
+
+TSReturnCode
+TSUuidInitialize(TSUuid uuid, TSUuidVersion v)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
+  ATSUuid *u = (ATSUuid *)uuid;
+
+  u->initialize(v);
+  return u->valid() ? TS_SUCCESS : TS_ERROR;
+}
+
+const TSUuid
+TSProcessUuidGet(void)
+{
+  Machine *machine = Machine::instance();
+  return (TSUuid)(&machine->uuid);
+}
+
+const char *
+TSUuidStringGet(const TSUuid uuid)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
+  ATSUuid *u = (ATSUuid *)(uuid);
+
+  if (u->valid()) {
+    return u->getString();
+  }
+
+  return NULL;
+}
+
+TSReturnCode
+TSUuidStringParse(TSUuid uuid, const char *str)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
+  ATSUuid *u = (ATSUuid *)uuid;
+
+  if (u->parseString(str)) {
+    return TS_SUCCESS;
+  }
+
+  return TS_ERROR;
+}
+
+TSUuidVersion
+TSUuidVersionGet(TSUuid uuid)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)uuid) == TS_SUCCESS);
+  ATSUuid *u = (ATSUuid *)uuid;
+
+  return u->version();
+}
+
+// Expose the HttpSM's sequence number (ID)
+uint64_t
+TSHttpTxnIdGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = (HttpSM *)txnp;
+
+  return (uint64_t)sm->sm_id;
 }

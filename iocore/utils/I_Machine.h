@@ -32,6 +32,7 @@
 #define _I_Machine_h
 
 #include "ts/ink_inet.h"
+#include "ts/ink_uuid.h"
 
 /**
   The Machine is a simple place holder for the hostname and the ip
@@ -62,6 +63,8 @@ struct Machine {
 
   char ip_hex_string[TS_IP6_SIZE * 2 + 1]; ///< IP address as hex string
   int ip_hex_string_len;
+
+  ATSUuid uuid;
 
   ~Machine();
 

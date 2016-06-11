@@ -60,6 +60,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   ink_zero(ip);
   ink_zero(ip4);
   ink_zero(ip6);
+  uuid.initialize(TS_UUID_V4);
 
   localhost[sizeof(localhost) - 1] = 0; // ensure termination.
 
@@ -122,25 +123,28 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
         // get the interface's flags
         struct ifreq ifr;
         ink_strlcpy(ifr.ifr_name, spot->ifr_name, IFNAMSIZ);
-        if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0)
+        if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0) {
           ifflags = ifr.ifr_flags;
-        else
+        } else {
           ifflags = 0; // flags not available, default to just looking at IP
+        }
 #endif
-        if (!ats_is_ip(ifip))
+        if (!ats_is_ip(ifip)) {
           spot_type = NA;
-        else if (ats_is_ip_loopback(ifip) || (IFF_LOOPBACK & ifflags))
+        } else if (ats_is_ip_loopback(ifip) || (IFF_LOOPBACK & ifflags)) {
           spot_type = LO;
-        else if (ats_is_ip_linklocal(ifip))
+        } else if (ats_is_ip_linklocal(ifip)) {
           spot_type = LL;
-        else if (ats_is_ip_private(ifip))
+        } else if (ats_is_ip_private(ifip)) {
           spot_type = PR;
-        else if (ats_is_ip_multicast(ifip))
+        } else if (ats_is_ip_multicast(ifip)) {
           spot_type = MC;
-        else
+        } else {
           spot_type = GL;
-        if (spot_type == NA)
+        }
+        if (spot_type == NA) {
           continue; // Next!
+        }
 
         if (ats_is_ip4(ifip)) {
           if (spot_type > ip4_type) {
@@ -160,24 +164,24 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 #endif
 
       // What about the general address? Prefer IPv4?
-      if (ip4_type >= ip6_type)
+      if (ip4_type >= ip6_type) {
         ats_ip_copy(&ip.sa, &ip4.sa);
-      else
+      } else {
         ats_ip_copy(&ip.sa, &ip6.sa);
+      }
     }
 #if !HAVE_IFADDRS_H
     close(s);
 #endif
   } else { // address provided.
     ats_ip_copy(&ip, addr);
-    if (ats_is_ip4(addr))
+    if (ats_is_ip4(addr)) {
       ats_ip_copy(&ip4, addr);
-    else if (ats_is_ip6(addr))
+    } else if (ats_is_ip6(addr)) {
       ats_ip_copy(&ip6, addr);
+    }
 
-    status = getnameinfo(addr, ats_ip_size(addr), localhost, sizeof(localhost) - 1, 0, 0, // do not request service info
-                         0                                                                // no flags.
-                         );
+    status = getnameinfo(addr, ats_ip_size(addr), localhost, sizeof(localhost) - 1, 0, 0, 0); // no flags
 
     if (0 != status) {
       ip_text_buffer ipbuff;

@@ -1674,6 +1674,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     machine_addr.assign(HttpConfig::m_master.inbound_ip6);
   Machine::init(0, &machine_addr.sa);
 
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->uuid.getString(),
+                        RECP_NON_PERSISTENT);
+
   // pmgmt->start() must occur after initialization of Diags but
   // before calling RecProcessInit()
 

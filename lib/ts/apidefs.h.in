@@ -121,7 +121,12 @@ typedef struct {
     TSHttpHdrParseReq() and TSHttpHdrParseResp().
 
  */
-typedef enum { TS_PARSE_ERROR = -1, TS_PARSE_DONE = 0, TS_PARSE_OK = 1, TS_PARSE_CONT = 2 } TSParseResult;
+typedef enum {
+  TS_PARSE_ERROR = -1,
+  TS_PARSE_DONE = 0,
+  TS_PARSE_OK = 1,
+  TS_PARSE_CONT = 2,
+} TSParseResult;
 
 /**
     This set of enums represents the possible HTTP types that
@@ -133,7 +138,11 @@ typedef enum { TS_PARSE_ERROR = -1, TS_PARSE_DONE = 0, TS_PARSE_OK = 1, TS_PARSE
     to obtain the TSHttpType of an HTTP header.
 
  */
-typedef enum { TS_HTTP_TYPE_UNKNOWN, TS_HTTP_TYPE_REQUEST, TS_HTTP_TYPE_RESPONSE } TSHttpType;
+typedef enum {
+  TS_HTTP_TYPE_UNKNOWN,
+  TS_HTTP_TYPE_REQUEST,
+  TS_HTTP_TYPE_RESPONSE,
+} TSHttpType;
 
 /**
     This set of enums represents possible return values from
@@ -475,9 +484,17 @@ typedef enum {
   TS_CACHE_LOOKUP_SKIPPED
 } TSCacheLookupResult;
 
-typedef enum { TS_CACHE_DATA_TYPE_NONE, TS_CACHE_DATA_TYPE_HTTP, TS_CACHE_DATA_TYPE_OTHER } TSCacheDataType;
+typedef enum {
+  TS_CACHE_DATA_TYPE_NONE,
+  TS_CACHE_DATA_TYPE_HTTP,
+  TS_CACHE_DATA_TYPE_OTHER,
+} TSCacheDataType;
 
-typedef enum { TS_CACHE_ERROR_NO_DOC = -20400, TS_CACHE_ERROR_DOC_BUSY = -20401, TS_CACHE_ERROR_NOT_READY = -20407 } TSCacheError;
+typedef enum {
+  TS_CACHE_ERROR_NO_DOC = -20400,
+  TS_CACHE_ERROR_DOC_BUSY = -20401,
+  TS_CACHE_ERROR_NOT_READY = -20407,
+} TSCacheError;
 
 typedef enum {
   TS_CACHE_SCAN_RESULT_DONE     = 0,
@@ -499,7 +516,10 @@ typedef enum {
   TS_TXN_INFO_LAST_ENTRY
 } TSHttpTxnInfoKey;
 
-typedef enum { TS_VC_CLOSE_ABORT = -1, TS_VC_CLOSE_NORMAL = 1 } TSVConnCloseFlags;
+typedef enum {
+  TS_VC_CLOSE_ABORT = -1,
+  TS_VC_CLOSE_NORMAL = 1,
+} TSVConnCloseFlags;
 
 typedef enum {
   TS_IOBUFFER_SIZE_INDEX_128  = 0,
@@ -519,9 +539,16 @@ typedef enum {
   TS_IOBUFFER_SIZE_INDEX_2M   = 14
 } TSIOBufferSizeIndex;
 
-typedef enum { TS_ERROR = -1, TS_SUCCESS = 0 } TSReturnCode;
+typedef enum {
+  TS_ERROR = -1,
+  TS_SUCCESS = 0,
+} TSReturnCode;
 
-typedef enum { NO_CALLBACK = 0, AFTER_HEADER, AFTER_BODY } TSFetchWakeUpOptions;
+typedef enum {
+  NO_CALLBACK = 0,
+  AFTER_HEADER,
+  AFTER_BODY,
+} TSFetchWakeUpOptions;
 
 #ifndef _HTTP_PROXY_API_ENUMS_H_
 #define _HTTP_PROXY_API_ENUMS_H_
@@ -536,7 +563,10 @@ typedef enum {
 
 /// Server session sharing values - pool
 /// Must be identical to definition in HttpProxyAPIEnums.h
-typedef enum { TS_SERVER_SESSION_SHARING_POOL_GLOBAL, TS_SERVER_SESSION_SHARING_POOL_THREAD } TSServerSessionSharingPoolType;
+typedef enum {
+  TS_SERVER_SESSION_SHARING_POOL_GLOBAL,
+  TS_SERVER_SESSION_SHARING_POOL_THREAD,
+} TSServerSessionSharingPoolType;
 #endif
 
 /* librecords types */
@@ -573,7 +603,11 @@ typedef union {
 } TSRecordData;
 
 /* The values of this enum must match enum RecPersistT in I_RecDefs.h */
-typedef enum { TS_RECORDP_NULL, TS_RECORDP_PERSISTENT, TS_RECORDP_NON_PERSISTENT } TSRecordPersistType;
+typedef enum {
+  TS_RECORDP_NULL,
+  TS_RECORDP_PERSISTENT,
+  TS_RECORDP_NON_PERSISTENT,
+} TSRecordPersistType;
 
 /* The values of this enum must match enum RecUpdateT in I_RecDefs.h */
 typedef enum {
@@ -585,13 +619,27 @@ typedef enum {
 } TSRecordUpdateType;
 
 /* The values of this enum must match enum RecCheckT in I_RecDefs.h */
-typedef enum { TS_RECORDCHECK_NULL, TS_RECORDCHECK_STR, TS_RECORDCHECK_INT, TS_RECORDCHECK_IP } TSRecordCheckType;
+typedef enum {
+  TS_RECORDCHECK_NULL,
+  TS_RECORDCHECK_STR,
+  TS_RECORDCHECK_INT,
+  TS_RECORDCHECK_IP,
+} TSRecordCheckType;
 
 /* The values of this enum must match enum RecModeT in I_RecDefs.h */
-typedef enum { TS_RECORDMODE_NULL, TS_RECORDMODE_CLIENT, TS_RECORDMODE_SERVER, TS_RECORDMODE_STAND_ALONE } TSRecordModeType;
+typedef enum {
+  TS_RECORDMODE_NULL,
+  TS_RECORDMODE_CLIENT,
+  TS_RECORDMODE_SERVER,
+  TS_RECORDMODE_STAND_ALONE,
+} TSRecordModeType;
 
 /* The values of this enum must match enum RecAccessT in I_RecDefs.h */
-typedef enum { TS_RECORDACCESS_NULL, TS_RECORDACCESS_NO_ACCESS, TS_RECORDACCESS_READ_ONLY } TSRecordAccessType;
+typedef enum {
+  TS_RECORDACCESS_NULL,
+  TS_RECORDACCESS_NO_ACCESS,
+  TS_RECORDACCESS_READ_ONLY,
+} TSRecordAccessType;
 
 typedef enum {
   TS_CONFIG_NULL = -1,
@@ -1124,6 +1172,20 @@ extern tsapi const char *const TS_NPN_PROTOCOL_GROUP_SPDY;
 
  */
 extern tsapi const TSMLoc TS_NULL_MLOC;
+
+/* --------------------------------------------------------------------------
+   Interface for the UUID APIs. https://www.ietf.org/rfc/rfc4122.txt. */
+typedef enum {
+  TS_UUID_UNDEFINED = 0,
+  TS_UUID_V1 = 1,
+  TS_UUID_V2,
+  TS_UUID_V3,
+  TS_UUID_V4, /* At this point, this is the only implemented version (or variant) */
+  TS_UUID_V5,
+} TSUuidVersion;
+
+#define TS_UUID_STRING_LEN 36
+typedef struct tsapi_uuid *TSUuid;
 
 #ifdef __cplusplus
 }

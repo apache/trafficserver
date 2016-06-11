@@ -2329,6 +2329,9 @@ tsapi TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TS
 tsapi TSReturnCode TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session);
 tsapi int TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp);
 
+/* Get the Txn's (HttpSM's) unique identifier, which is a sequence number since server start) */
+tsapi uint64_t TSHttpTxnIdGet(TSHttpTxn txnp);
+
 /* Expose internal Base64 Encoding / Decoding */
 tsapi TSReturnCode TSBase64Decode(const char *str, size_t str_len, unsigned char *dst, size_t dst_size, size_t *length);
 tsapi TSReturnCode TSBase64Encode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length);
@@ -2388,6 +2391,20 @@ tsapi const char *TSHttpHookNameLookup(TSHttpHookID hook);
    @return the string representation of the event
 */
 tsapi const char *TSHttpEventNameLookup(TSEvent event);
+
+/* APIs for dealing with UUIDs, either self made, or the system wide process UUID. See
+   https://docs.trafficserver.apache.org/en/latest/developer-guide/api/functions/TSUuidCreate.en.html
+*/
+tsapi TSUuid TSUuidCreate(void);
+tsapi TSReturnCode TSUuidInitialize(TSUuid uuid, TSUuidVersion v);
+tsapi void TSUuidDestroy(TSUuid uuid);
+tsapi TSReturnCode TSUuidCopy(TSUuid dest, const TSUuid src);
+tsapi const char *TSUuidStringGet(const TSUuid uuid);
+tsapi TSUuidVersion TSUuidVersionGet(const TSUuid uuid);
+tsapi TSReturnCode TSUuidStringParse(TSUuid uuid, const char *uuid_str);
+
+/* Get the process global UUID, resets on every startup */
+tsapi const TSUuid TSProcessUuidGet(void);
 
 #ifdef __cplusplus
 }
