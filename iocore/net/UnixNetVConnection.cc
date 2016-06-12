@@ -550,9 +550,11 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     s->vio.ndone += total_written;
   }
 
+  // A write of 0 makes no sense since we tried to write more than 0.
+  ink_assert(r != 0);
+  // Either we wrote something or got an error.
   // check for errors
-  if (r <= 0) {
-    // If the socket was not ready, add it to the wait list.
+  if (r < 0) { // if the socket was not ready, add to WaitList
     if (r == -EAGAIN || r == -ENOTCONN || -r == EINPROGRESS) {
       NET_INCREMENT_DYN_STAT(net_calls_to_write_nodata_stat);
       if ((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
@@ -567,12 +569,6 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
         read_reschedule(nh, vc);
       }
 
-      return;
-    }
-
-    if (!r || r == -ECONNRESET) {
-      vc->write.triggered = 0;
-      write_signal_done(VC_EVENT_EOS, nh, vc);
       return;
     }
 
@@ -1071,8 +1067,7 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
                  origin_trace_port, (int)r, (int)r, (char *)tiovec[0].iov_base);
 
       } else if (r == 0) {
-        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d closed connection", origin_trace_ip,
-                 origin_trace_port);
+        TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d\tbytes=0", origin_trace_ip, origin_trace_port);
       } else {
         TraceOut(origin_trace, get_remote_addr(), get_remote_port(), "CLIENT %s:%d error=%s", origin_trace_ip, origin_trace_port,
                  strerror(errno));
