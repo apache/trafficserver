@@ -51,7 +51,7 @@ public:
 
   // See if we need to schedule on the primary thread for the transaction or change the thread that is associated with the VC.
   // If we reschedule, the scheduled action is returned.  Otherwise, NULL is returned
-  Action *adjust_thread(int event, void *data);
+  Action *adjust_thread(Continuation *cont, int event, void *data);
 
   int
   get_transact_count() const
