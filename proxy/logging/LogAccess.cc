@@ -299,6 +299,15 @@ LogAccess::marshal_client_finish_status_code(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_req_id(char *buf)
+{
+  DEFAULT_INT_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_proxy_resp_content_type(char *buf)
 {
   DEFAULT_STR_FIELD;
