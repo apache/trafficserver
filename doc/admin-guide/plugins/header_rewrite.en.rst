@@ -261,6 +261,26 @@ separated string of the values from every occurrence of the header. Refer to
 If you wish to use a client request header, regardless of hook context, you may
 consider using the `CLIENT-HEADER`_ condition instead.
 
+ID
+~~
+::
+   cond %{ID:REQUEST} >100
+
+This condition provides access to three identifier values that ATS uses
+internally for things like logging and debugging. Since these are IDs, they
+are mostly useful as a value (operand) to other operators. The three types of
+IDs are
+
+    %{ID:REQUEST}    A unique, sequence number for the transaction
+    %{ID:PROCESS}    A UUID string, generated every time ATS restarts
+    %{ID:UNIQUE}     The combination of the previous two IDs
+
+Now, even though these are conditionals, their primary use are as value
+arguments to another operator. For example::
+
+    set-header ATS-Req-UUID %{ID:UNIQUE}
+
+
 INCOMING-PORT
 ~~~~~~~~~~~~~
 ::
