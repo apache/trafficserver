@@ -438,7 +438,7 @@ public:
   void set_qualifier(const std::string &q);
   void append_value(std::string &s, const Resources &res);
 
-  // These are special for this sub-class
+  // Make sure we know if the type is an int-type or a string.
   bool
   is_int_type() const
   {
@@ -461,6 +461,23 @@ private:
   const char *get_geo_string(const sockaddr *addr) const;
   GeoQualifiers _geo_qual;
   bool _int_type;
+};
+
+// id: Various identifiers for the requests, server process etc.
+class ConditionId : public Condition
+{
+public:
+  explicit ConditionId() : _id_qual(ID_QUAL_UNIQUE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionId"); };
+  void initialize(Parser &p);
+  void set_qualifier(const std::string &q);
+  void append_value(std::string &s, const Resources &res);
+
+protected:
+  bool eval(const Resources &res);
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionId);
+  IdQualifiers _id_qual;
 };
 
 #endif // __CONDITIONS_H

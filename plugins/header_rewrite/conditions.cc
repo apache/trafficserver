@@ -738,7 +738,7 @@ ConditionNow::set_qualifier(const std::string &q)
   } else if (q == "YEARDAY") {
     _now_qual = NOW_QUAL_YEARDAY;
   } else {
-    TSError("[%s] Unknown Now() qualifier: %s", PLUGIN_NAME, q.c_str());
+    TSError("[%s] Unknown NOW() qualifier: %s", PLUGIN_NAME, q.c_str());
   }
 }
 
@@ -965,13 +965,11 @@ ConditionGeo::append_value(std::string &s, const Resources &res)
 
   if (is_int_type()) {
     oss << get_geo_int(TSHttpTxnClientAddrGet(res.txnp));
-    s += oss.str();
-    TSDebug(PLUGIN_NAME, "Appending GEO() to evaluation value -> %s", s.c_str());
   } else {
     oss << get_geo_string(TSHttpTxnClientAddrGet(res.txnp));
-    s += oss.str();
-    TSDebug(PLUGIN_NAME, "Appending GEO() to evaluation value -> %s", s.c_str());
   }
+  s += oss.str();
+  TSDebug(PLUGIN_NAME, "Appending GEO() to evaluation value -> %s", s.c_str());
 }
 
 bool
@@ -992,4 +990,94 @@ ConditionGeo::eval(const Resources &res)
   }
 
   return ret;
+}
+
+// ConditionId: Some identifier strings, currently:
+//      PROCESS: The process UUID string
+//      REQUEST: The request (HttpSM::sm_id) counter
+//      UNIQUE:  The combination of UUID-sm_id
+void
+ConditionId::initialize(Parser &p)
+{
+  Condition::initialize(p);
+
+  if (_id_qual == ID_QUAL_REQUEST) {
+    Matchers<uint64_t> *match = new Matchers<uint64_t>(_cond_op);
+
+    match->set(static_cast<uint64_t>(strtol(p.get_arg().c_str(), NULL, 10)));
+    _matcher = match;
+  } else {
+    // The default is to have a string matcher
+    Matchers<std::string> *match = new Matchers<std::string>(_cond_op);
+
+    match->set(p.get_arg());
+    _matcher = match;
+  }
+}
+
+void
+ConditionId::set_qualifier(const std::string &q)
+{
+  Condition::set_qualifier(q);
+
+  TSDebug(PLUGIN_NAME, "\tParsing %%{ID:%s} qualifier", q.c_str());
+
+  if (q == "UNIQUE") {
+    _id_qual = ID_QUAL_UNIQUE;
+  } else if (q == "PROCESS") {
+    _id_qual = ID_QUAL_PROCESS;
+  } else if (q == "REQUEST") {
+    _id_qual = ID_QUAL_REQUEST;
+  } else {
+    TSError("[%s] Unknown ID() qualifier: %s", PLUGIN_NAME, q.c_str());
+  }
+}
+
+void
+ConditionId::append_value(std::string &s, const Resources &res ATS_UNUSED)
+{
+  switch (_id_qual) {
+  case ID_QUAL_REQUEST: {
+    std::ostringstream oss;
+
+    oss << TSHttpTxnIdGet(res.txnp);
+    s += oss.str();
+  } break;
+  case ID_QUAL_PROCESS: {
+    TSUuid process = TSProcessUuidGet();
+
+    if (process) {
+      s += TSUuidStringGet(process);
+    }
+  } break;
+  case ID_QUAL_UNIQUE: {
+    std::ostringstream oss;
+    TSUuid process = TSProcessUuidGet();
+
+    if (process) {
+      oss << TSUuidStringGet(process) << '-' << TSHttpTxnIdGet(res.txnp);
+      s += oss.str();
+    }
+  } break;
+  }
+  TSDebug(PLUGIN_NAME, "Appending ID() to evaluation value -> %s", s.c_str());
+}
+
+bool
+ConditionId::eval(const Resources &res)
+{
+  if (_id_qual == ID_QUAL_REQUEST) {
+    uint64_t id = TSHttpTxnIdGet(res.txnp);
+
+    TSDebug(PLUGIN_NAME, "Evaluating GEO() -> %" PRIu64, id);
+    return static_cast<const Matchers<uint64_t> *>(_matcher)->test(id);
+  } else {
+    std::string s;
+
+    append_value(s, res);
+    bool rval = static_cast<const Matchers<std::string> *>(_matcher)->test(s);
+
+    TSDebug(PLUGIN_NAME, "Evaluating ID(): %s - rval: %d", s.c_str(), rval);
+    return rval;
+  }
 }

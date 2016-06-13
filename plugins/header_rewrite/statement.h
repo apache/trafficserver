@@ -57,11 +57,19 @@ enum NowQualifiers {
   NOW_QUAL_YEARDAY
 };
 
+// GEO data
 enum GeoQualifiers {
   GEO_QUAL_COUNTRY,
   GEO_QUAL_COUNTRY_ISO,
   GEO_QUAL_ASN,
   GEO_QUAL_ASN_NAME,
+};
+
+// ID data
+enum IdQualifiers {
+  ID_QUAL_REQUEST,
+  ID_QUAL_PROCESS,
+  ID_QUAL_UNIQUE,
 };
 
 class Statement
