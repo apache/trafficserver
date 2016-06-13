@@ -722,6 +722,9 @@ LogAccessHttp::marshal_client_req_ssl_reused(char *buf)
   return INK_MIN_ALIGN;
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
 int
 LogAccessHttp::marshal_client_finish_status_code(char *buf)
 {
@@ -742,6 +745,17 @@ LogAccessHttp::marshal_client_finish_status_code(char *buf)
   return INK_MIN_ALIGN;
 }
 
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_client_req_id(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_http_sm->sm_id);
+  }
+  return INK_MIN_ALIGN;
+}
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
 int
