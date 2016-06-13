@@ -49,15 +49,9 @@ enum {
   TTL_MIN,
   TTL_MAX,
 };
-extern int hostdb_ttl_mode;
 
-extern unsigned int hostdb_current_interval;
-extern unsigned int hostdb_ip_stale_interval;
-extern unsigned int hostdb_ip_timeout_interval;
-extern unsigned int hostdb_ip_fail_timeout_interval;
-extern int hostdb_size;
+extern int hostdb_ttl_mode;
 extern int hostdb_srv_enabled;
-extern char hostdb_filename[PATH_NAME_MAX];
 
 // extern int hostdb_timestamp;
 extern int hostdb_sync_frequency;
@@ -119,8 +113,6 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
 
 #define DEFAULT_HOST_DB_FILENAME "host.db"
 #define DEFAULT_HOST_DB_SIZE (1 << 14)
-// Resolution of timeouts
-#define HOST_DB_TIMEOUT_INTERVAL HRTIME_SECOND
 // Timeout DNS every 24 hours by default if ttl_mode is enabled
 #define HOST_DB_IP_TIMEOUT (24 * 60 * 60)
 // DNS entries should be revalidated every 12 hours
