@@ -691,13 +691,11 @@ probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout)
       if ((!ignore_timeout && r->is_ip_stale() && !cluster_machine_at_depth(master_hash(md5.hash)) && !r->reverse_dns) ||
           (r->is_ip_timeout() && r->serve_stale_but_revalidate())) {
         Debug("hostdb", "stale %u %u %u, using it and refreshing it", r->ip_interval(), r->ip_timestamp, r->ip_timeout_interval);
-        if (!is_dotted_form_hostname(md5.host_name)) {
-          HostDBContinuation *c = hostDBContAllocator.alloc();
-          HostDBContinuation::Options copt;
-          copt.host_res_style = host_res_style_for(r->ip());
-          c->init(md5, copt);
-          c->do_dns();
-        }
+        HostDBContinuation *c = hostDBContAllocator.alloc();
+        HostDBContinuation::Options copt;
+        copt.host_res_style = host_res_style_for(r->ip());
+        c->init(md5, copt);
+        c->do_dns();
       }
 
       r->hits++;
