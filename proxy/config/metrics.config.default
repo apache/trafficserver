@@ -1625,7 +1625,7 @@ integer 'proxy.node.log.bytes_sent_to_network_avg_10s' [[
 ]]
 
 integer 'proxy.cluster.log.bytes_sent_to_network_avg_10s' [[
-  return cluster(' proxy.node.log.bytes_sent_to_network_avg_10s')
+  return cluster('proxy.node.log.bytes_sent_to_network_avg_10s')
 ]]
 
 integer 'proxy.node.log.bytes_received_from_network_avg_10s' [[
