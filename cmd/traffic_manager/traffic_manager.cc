@@ -444,7 +444,6 @@ main(int argc, const char **argv)
   int proxy_backdoor = -1;
   char *group_addr = NULL, *tsArgs = NULL;
   bool disable_syslog = false;
-  RecBool enable_lua  = false;
   char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
   time_t ticker;
@@ -519,7 +518,6 @@ main(int argc, const char **argv)
   }
 
   RecGetRecordInt("proxy.config.net.connections_throttle", &fds_throttle);
-  RecGetRecordBool("proxy.config.stats.enable_lua", &enable_lua);
 
   set_process_limits(fds_throttle); // as root
 
@@ -738,10 +736,8 @@ main(int argc, const char **argv)
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.cop", 0, RECP_NON_PERSISTENT);
 
-  if (enable_lua) {
-    binding = new BindingInstance;
-    metrics_binding_initialize(*binding);
-  }
+  binding = new BindingInstance;
+  metrics_binding_initialize(*binding);
 
   int sleep_time = 0; // sleep_time given in sec
 
@@ -749,15 +745,13 @@ main(int argc, const char **argv)
     lmgmt->processEventQueue();
     lmgmt->pollMgmtProcessServer();
 
-    if (enable_lua) {
-      if (binding_version != metrics_version) {
-        metrics_binding_destroy(*binding);
-        delete binding;
+    if (binding_version != metrics_version) {
+      metrics_binding_destroy(*binding);
+      delete binding;
 
-        binding = new BindingInstance;
-        metrics_binding_initialize(*binding);
-        binding_version = metrics_version;
-      }
+      binding = new BindingInstance;
+      metrics_binding_initialize(*binding);
+      binding_version = metrics_version;
     }
 
     // Handle rotation of output log (aka traffic.out) as well as DIAGS_LOG_FILENAME (aka manager.log)
@@ -789,13 +783,7 @@ main(int argc, const char **argv)
     lmgmt->ccom->checkPeers(&ticker);
     overviewGenerator->checkForUpdates();
 
-    if (enable_lua) {
-      metrics_binding_evaluate(*binding);
-    } else {
-      if (statProcessor) {
-        statProcessor->processStat();
-      }
-    }
+    metrics_binding_evaluate(*binding);
 
     if (lmgmt->mgmt_shutdown_outstanding != MGMT_PENDING_NONE) {
       Debug("lm", "pending shutdown %d", lmgmt->mgmt_shutdown_outstanding);

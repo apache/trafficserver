@@ -1118,12 +1118,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.remote_sync_interval_ms", RECD_INT, "5000", RECU_NULL, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  //        #########
-  //        # Stats #
-  //        #########
-  {RECT_CONFIG, "proxy.config.stats.enable_lua", RECD_INT, "0", RECU_RESTART_TM, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-
   //        ###########
   //        # Parsing #
   //        ###########
