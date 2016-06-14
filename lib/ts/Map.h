@@ -1458,6 +1458,10 @@ protected:
       Fills @a m_id and @a m_bucket in @a location from @a key.
   */
   void findBucket(Key key, Location &location);
+
+private:
+  TSHashTable(const TSHashTable &);            // noncopyable
+  TSHashTable &operator=(const TSHashTable &); // noncopyable
 };
 
 template <typename H>
