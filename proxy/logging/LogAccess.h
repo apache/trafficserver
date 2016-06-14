@@ -194,6 +194,7 @@ public:
   inkcoreapi virtual int marshal_client_security_cipher_suite(char *);  // STR
   inkcoreapi virtual int marshal_client_finish_status_code(char *);     // INT
   inkcoreapi virtual int marshal_client_req_id(char *);                 // INT
+  inkcoreapi virtual int marshal_client_req_uuid(char *);               // STR
 
   //
   // proxy -> client fields

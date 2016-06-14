@@ -309,6 +309,15 @@ LogAccess::marshal_client_req_id(char *buf)
   -------------------------------------------------------------------------*/
 
 int
+LogAccess::marshal_client_req_uuid(char *buf)
+{
+  DEFAULT_STR_FIELD;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
 LogAccess::marshal_proxy_resp_content_type(char *buf)
 {
   DEFAULT_STR_FIELD;
