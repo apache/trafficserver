@@ -40,6 +40,7 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "Log.h"
+#include "I_Machine.h"
 
 /*-------------------------------------------------------------------------
   LogAccessHttp
@@ -751,6 +752,27 @@ LogAccessHttp::marshal_client_req_id(char *buf)
     marshal_int(buf, m_http_sm->sm_id);
   }
   return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccessHttp::marshal_client_req_uuid(char *buf)
+{
+  static unsigned _MAX_CRUUID_LEN = TS_UUID_STRING_LEN + 1 + 20; // 20 == max len of int64_t
+
+  if (buf) {
+    char str[_MAX_CRUUID_LEN + 1];
+    const char *uuid = (char *)Machine::instance()->uuid.getString();
+    int len;
+
+    len = snprintf(str, _MAX_CRUUID_LEN, "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
+    marshal_str(buf, str, round_strlen(len + 1));
+    return len;
+  }
+
+  return round_strlen(_MAX_CRUUID_LEN + 1);
 }
 
 /*-------------------------------------------------------------------------
