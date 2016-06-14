@@ -80,7 +80,7 @@ test_Http2DependencyTree_SOURCES = \
   test_Http2DependencyTree.cc \
   Http2DependencyTree.h
 
-test_HPACK_LDADD = \
+test_HPACK_LDADD = @LIBTCL@ \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
