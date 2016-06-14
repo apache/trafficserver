@@ -29,6 +29,8 @@
 #include "ts/ink_syslog.h"
 
 #include "WebMgmtUtils.h"
+#include "WebOverview.h"
+#include "MgmtUtils.h"
 #include "NetworkUtilsRemote.h"
 #include "ClusterCom.h"
 #include "VMap.h"
@@ -48,7 +50,6 @@
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
-#include "StatProcessor.h"
 #include "P_RecLocal.h"
 
 #include "bindings/bindings.h"
@@ -75,7 +76,6 @@ static void runAsUser(const char *userName);
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
 #endif
 
-static StatProcessor *statProcessor;  // Statistics Processors
 static AppVersionInfo appVersionInfo; // Build info for this application
 
 static inkcoreapi DiagsConfig *diagsConfig;
@@ -727,8 +727,6 @@ main(int argc, const char **argv)
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
 
-  statProcessor = new StatProcessor(configFiles);
-
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(NULL), RECP_NON_PERSISTENT);
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_required", 0, RECP_NON_PERSISTENT);
 
@@ -856,10 +854,6 @@ main(int argc, const char **argv)
   if (binding) {
     metrics_binding_destroy(*binding);
     delete binding;
-  }
-
-  if (statProcessor) {
-    delete statProcessor;
   }
 
 #ifndef MGMT_SERVICE
@@ -1039,11 +1033,6 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "proxy.config.body_factory.template_sets_dir") == 0) {
     lmgmt->signalFileChange("proxy.config.body_factory.template_sets_dir");
 
-  } else if (strcmp(fname, "stats.config.xml") == 0) {
-    if (statProcessor) {
-      statProcessor->rereadConfig(configFiles);
-    }
-    mgmt_log(stderr, "[fileUpdated] stats.config.xml file has been modified\n");
   } else if (strcmp(fname, "metrics.config") == 0) {
     ink_atomic_increment(&metrics_version, 1);
     mgmt_log(stderr, "[fileUpdated] metrics.config file has been modified\n");

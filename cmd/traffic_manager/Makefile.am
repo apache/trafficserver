@@ -45,12 +45,6 @@ traffic_manager_SOURCES = \
   AddConfigFilesHere.cc \
   MgmtHandlers.cc \
   MgmtHandlers.h \
-  StatProcessor.cc \
-  StatProcessor.h \
-  StatType.cc \
-  StatType.h \
-  StatXML.cc \
-  StatXML.h \
   WebOverview.cc \
   WebOverview.h \
   metrics.h \
