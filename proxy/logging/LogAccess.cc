@@ -96,6 +96,7 @@ LogAccess::marshal_host_interface_ip(char *buf)
 {
   DEFAULT_IP_FIELD;
 }
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 int
@@ -706,6 +707,20 @@ LogAccess::marshal_entry_type(char *buf)
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+int
+LogAccess::marshal_process_uuid(char *buf)
+{
+  int len = round_strlen(TS_UUID_STRING_LEN + 1);
+
+  if (buf) {
+    const char *str = (char *)Machine::instance()->uuid.getString();
+    marshal_str(buf, str, len);
+  }
+  return len;
 }
 
 /*-------------------------------------------------------------------------
