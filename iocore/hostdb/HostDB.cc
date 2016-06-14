@@ -2540,7 +2540,7 @@ struct ShowHostDB : public ShowCont {
         CHECK_SHOW(show("\"%s\":\"%d\",", "port", r->data.srv.srv_port));
         CHECK_SHOW(show("\"%s\":\"%x\",", "key", r->data.srv.key));
       } else if (!r->is_srv) {
-        CHECK_SHOW(show("\"%s\":\"%s\",", "ip", ats_ip_ntop(r->ip(), b, sizeof b)));
+        CHECK_SHOW(show("\"%s\":\"%s\"", "ip", ats_ip_ntop(r->ip(), b, sizeof b)));
       }
       // Let's display the MD5.
       CHECK_SHOW(show("\"%s\":\"%0.16llx %0.8x %0.8x\"", "md5", r->md5_high, r->md5_low, r->md5_low_low));
