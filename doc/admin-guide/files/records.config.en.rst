@@ -874,13 +874,19 @@ Value Effect
    ======== ===================================================================
    Value    Description
    ======== ===================================================================
-   ``none`` Do not match and do not re-use server sessions.
-   ``ip``   Re-use server sessions, checking only that the IP address and port
-            of the origin server matches.
-   ``host`` Re-use server sessions, checking only that the fully qualified
-            domain name matches.
+   ``none`` Do not match and do not re-use server sessions. If using this in
+            :ref:`ts-overridable-config` (like the :ref:`admin-plugins-conf-remap`),
+            use the integer ``0`` instead.
    ``both`` Re-use server sessions, if *both* the IP address and fully qualified
-            domain name match.
+            domain name match. If using this in :ref:`ts-overridable-config` (like
+            the :ref:`admin-plugins-conf-remap`), use the integer ``1`` instead.
+   ``ip``   Re-use server sessions, checking only that the IP address and port
+            of the origin server matches. If using this in
+            :ref:`ts-overridable-config` (like the :ref:`admin-plugins-conf-remap`),
+            use the integer ``2`` instead.
+   ``host`` Re-use server sessions, checking only that the fully qualified
+            domain name matches. If using this in :ref:`ts-overridable-config`
+            (like the :ref:`admin-plugins-conf-remap`), use the integer ``3`` instead.
    ======== ===================================================================
 
    It is strongly recommended to use either ``none`` or ``both`` for this value
