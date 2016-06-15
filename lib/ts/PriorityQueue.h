@@ -28,7 +28,8 @@
 #include "ts/Vec.h"
 
 template <typename T> struct PriorityQueueEntry {
-  PriorityQueueEntry(T n) : index(0), node(n) {}
+  PriorityQueueEntry(T n) : index(0), node(n){};
+  PriorityQueueEntry() : index(0){};
   uint32_t index;
   T node;
 };
@@ -52,6 +53,7 @@ public:
   void push(PriorityQueueEntry<T> *);
   void update(PriorityQueueEntry<T> *);
   void update(PriorityQueueEntry<T> *, bool);
+  void erase(PriorityQueueEntry<T> *);
   const Vec<PriorityQueueEntry<T> *> &dump() const;
 
 private:
@@ -111,6 +113,22 @@ PriorityQueue<T, Comp>::pop()
   _v[0] = _v[_v.length() - 1];
   _v.pop();
   _bubble_down(0);
+}
+
+template <typename T, typename Comp>
+void
+PriorityQueue<T, Comp>::erase(PriorityQueueEntry<T> *entry)
+{
+  if (empty()) {
+    return;
+  }
+
+  _v[entry->index] = _v[_v.length() - 1];
+  _v.pop();
+  _bubble_down(entry->index);
+  if (!empty()) {
+    _bubble_up(entry->index);
+  }
 }
 
 template <typename T, typename Comp>
