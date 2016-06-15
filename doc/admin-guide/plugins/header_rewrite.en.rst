@@ -316,7 +316,7 @@ PATH
 
     cond %{PATH} <operand>
 
-The path component of the transaction. This includes the leading ``/`` that
+The path component of the transaction. This does NOT include the leading ``/`` that
 immediately follows the hostname and terminates prior to the ``?`` signifying
 the beginning of query parameters (or the end of the URL, whichever occurs
 first).
@@ -980,3 +980,14 @@ two different file paths.::
     cond %{SEND_RESPONSE_HDR_HOOK}
     cond %{PATH} /examplepath2/examplepath3/.*/
     add-header Cache-Control "no-cache" [L]
+
+Redirect when the Origin Server Times Out
+-----------------------------------------
+
+This rule sends a 302 redirect to the client with the requested URI's Path and
+Query string when the Origin server times out or the connection is refused::
+
+    cond %{SEND_RESPONSE_HDR_HOOK}
+    cond %{STATUS} =502 [OR]
+    cond %{STATUS} =504
+    set-redirect 302 http://different_origin.example.com/%{PATH} [QSA]
