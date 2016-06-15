@@ -528,12 +528,13 @@ void
 Http2Stream::send_response_body()
 {
   Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
-
-  if (Http2::stream_priority_enabled) {
-    parent->connection_state.schedule_stream(this);
-  } else {
-    // Send DATA frames directly
-    parent->connection_state.send_data_frames(this);
+  if (parent) {
+    if (Http2::stream_priority_enabled) {
+      parent->connection_state.schedule_stream(this);
+    } else {
+      // Send DATA frames directly
+      parent->connection_state.send_data_frames(this);
+    }
   }
 }
 
