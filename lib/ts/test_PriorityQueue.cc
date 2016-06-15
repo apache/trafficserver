@@ -278,6 +278,36 @@ REGRESSION_TEST(PriorityQueue_5)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   box.check(pq->top() == NULL, "top should be NULL");
 }
 
+// Test erase method
+REGRESSION_TEST(PriorityQueue_6)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  PQ *pq = new PQ();
+
+  N *a = new N(10, "A");
+  N *b = new N(20, "B");
+  N *c = new N(30, "C");
+
+  Entry *entry_a = new Entry(a);
+  Entry *entry_b = new Entry(b);
+  Entry *entry_c = new Entry(c);
+
+  pq->push(entry_a);
+  pq->push(entry_b);
+  pq->push(entry_c);
+
+  box.check(pq->top() == entry_a, "top should be entry_a");
+  pq->erase(entry_a);
+  box.check(pq->top() == entry_b, "top should be entry_b");
+  pq->erase(entry_c);
+  box.check(pq->top() == entry_b, "top should be entry_b");
+  pq->erase(entry_b);
+  box.check(pq->top() == NULL, "top should be NULL");
+  box.check(pq->empty(), "should be empty");
+}
+
 int
 main(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
 {
