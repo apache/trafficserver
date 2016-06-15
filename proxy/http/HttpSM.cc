@@ -2722,7 +2722,10 @@ HttpSM::tunnel_handler_post(int event, void *data)
 {
   STATE_ENTER(&HttpSM::tunnel_handler_post, event);
 
-  HttpTunnelProducer *p = tunnel.get_producer(ua_session);
+  HttpTunnelProducer *p = ua_session != NULL ? tunnel.get_producer(ua_session) : tunnel.get_producer(HT_HTTP_CLIENT);
+  if (!p)
+    return 0; // Cannot do anything if there is no producer
+
   if (event != HTTP_TUNNEL_EVENT_DONE) {
     if ((event == VC_EVENT_WRITE_COMPLETE) || (event == VC_EVENT_EOS)) {
       if (ua_entry->write_buffer) {
@@ -2841,9 +2844,9 @@ HttpSM::tunnel_handler_push(int event, void *data)
   ink_assert(data == &tunnel);
 
   // Check to see if the client is still around
-  HttpTunnelProducer *ua = tunnel.get_producer(ua_session);
+  HttpTunnelProducer *ua = (ua_session) ? tunnel.get_producer(ua_session) : tunnel.get_producer(HT_HTTP_CLIENT);
 
-  if (!ua->read_success) {
+  if (ua && !ua->read_success) {
     // Client failed to send the body, it's gone.  Kill the
     // state machine
     terminate_sm = true;
