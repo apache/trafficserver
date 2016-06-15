@@ -111,7 +111,6 @@
 #ifdef OS_Solaris
 #define HAVE_SETSID
 #define HAVE_WAITPID
-#define HAVE_MEMORY_H
 #define HAVE_SIGSET
 #define HAVE_INT64T
 #endif /* OS_Solaris */
@@ -129,6 +128,5 @@
 #ifdef OS_SysV
 #define HAVE_SETSID
 #define HAVE_WAITPID
-#define HAVE_MEMORY_H
 #define HAVE_SIGSET
 #endif /* OS_Solaris */
