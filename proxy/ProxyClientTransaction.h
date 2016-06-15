@@ -174,10 +174,10 @@ public:
     return true;
   }
 
+  virtual void destroy();
   virtual void
-  destroy()
+  transaction_done()
   {
-    this->mutex.clear();
   }
 
   ProxyClientSession *

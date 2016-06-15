@@ -65,3 +65,10 @@ Http1ClientTransaction::set_parent(ProxyClientSession *new_parent)
   }
   super::set_parent(new_parent);
 }
+
+void
+Http1ClientTransaction::transaction_done()
+{
+  if (parent)
+    dynamic_cast<Http1ClientSession *>(parent)->really_destroy();
+}
