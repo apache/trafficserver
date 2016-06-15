@@ -99,6 +99,7 @@ public:
   {
     return "http";
   }
+  virtual void transaction_done();
 
   void set_parent(ProxyClientSession *new_parent);
 

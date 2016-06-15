@@ -82,10 +82,20 @@ Http1ClientSession::Http1ClientSession()
 void
 Http1ClientSession::destroy()
 {
+}
+
+void
+Http1ClientSession::really_destroy()
+{
+  if (read_state != HCS_CLOSED) {
+    return;
+  }
   DebugHttpSsn("[%" PRId64 "] session destroy", con_id);
 
   ink_release_assert(!client_vc);
   ink_assert(read_buffer);
+
+  do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
 
   magic = HTTP_CS_MAGIC_DEAD;
   if (read_buffer) {
@@ -227,6 +237,8 @@ Http1ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http1ClientSession::do_io_close(int alerrno)
 {
+  if (read_state == HCS_CLOSED)
+    return; // Don't double call session close
   if (read_state == HCS_ACTIVE_READER) {
     HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
     if (m_active) {
@@ -279,7 +291,14 @@ Http1ClientSession::do_io_close(int alerrno)
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
-    do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
+    if (client_vc) {
+      client_vc->do_io_close();
+      client_vc = NULL;
+    }
+    if (trans.get_sm() == NULL) {
+      // Go ahead and destroy
+      this->really_destroy();
+    }
   }
 }
 

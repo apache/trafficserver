@@ -203,12 +203,7 @@ public:
   bool response_process_data();
   bool response_is_data_available() const;
   // For Http2 releasing the transaction should go ahead and delete it
-  void
-  release(IOBufferReader *r)
-  {
-    current_reader = NULL; // State machine is on its own way down.
-    this->do_io_close();
-  }
+  void release(IOBufferReader *r);
 
   virtual bool
   allow_half_open() const

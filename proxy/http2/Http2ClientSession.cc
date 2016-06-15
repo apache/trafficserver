@@ -66,12 +66,29 @@ Http2ClientSession::Http2ClientSession()
     sm_reader(NULL),
     write_buffer(NULL),
     sm_writer(NULL),
-    upgrade_context()
+    upgrade_context(),
+    kill_me(false),
+    recursion(0)
 {
 }
 
 void
 Http2ClientSession::destroy()
+{
+  if (client_vc) {
+    release_netvc();
+    client_vc->do_io_close();
+    client_vc = NULL;
+  }
+  if (!connection_state.is_recursing() && this->recursion == 0) {
+    really_destroy();
+  } else {
+    kill_me = true;
+  }
+}
+
+void
+Http2ClientSession::really_destroy()
 {
   DebugHttp2Ssn("session destroy");
 
@@ -238,7 +255,16 @@ Http2ClientSession::do_io_close(int alerrno)
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
   HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
-  do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
+
+  // Don't send the SSN_CLOSE_HOOK until we got rid of all the streams
+  // And handled all the TXN_CLOSE_HOOK's
+  // do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
+  if (client_vc) {
+    this->release_netvc();
+    client_vc->do_io_close();
+    client_vc = NULL;
+  }
+  this->connection_state.release_stream(NULL);
 }
 
 void
@@ -251,11 +277,15 @@ int
 Http2ClientSession::main_event_handler(int event, void *edata)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
+  int retval;
+
+  recursion++;
 
   switch (event) {
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_READ_READY:
-    return (this->*session_handler)(event, edata);
+    retval = (this->*session_handler)(event, edata);
+    break;
 
   case HTTP2_SESSION_EVENT_XMIT: {
     Http2Frame *frame = (Http2Frame *)edata;
@@ -263,7 +293,8 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     write_vio->nbytes = total_write_len;
     frame->xmit(this->write_buffer);
     write_reenable();
-    return 0;
+    retval = 0;
+    break;
   }
 
   case VC_EVENT_ACTIVE_TIMEOUT:
@@ -271,21 +302,28 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     this->do_io_close();
-    return 0;
+    retval = 0;
+    break;
 
   case VC_EVENT_WRITE_READY:
-    return 0;
+    retval = 0;
+    break;
+
   case VC_EVENT_WRITE_COMPLETE:
     if (this->connection_state.is_state_closed()) {
       this->do_io_close();
     }
-    return 0;
+    retval = 0;
+    break;
 
   default:
     DebugHttp2Ssn("unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
-    return 0;
+    retval = 0;
+    break;
   }
+  recursion--; // The Http2ConnectionState will check the recursion to really do the close
+  return retval;
 }
 
 int

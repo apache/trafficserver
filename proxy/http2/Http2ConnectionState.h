@@ -120,6 +120,8 @@ public:
       latest_streamid(0),
       client_streams_count(0),
       continued_stream_id(0),
+      fini_received(false),
+      recursion(0),
       _scheduled(false)
   {
     SET_HANDLER(&Http2ConnectionState::main_event_handler);
@@ -169,6 +171,7 @@ public:
   Http2Stream *find_stream(Http2StreamId id) const;
   void restart_streams();
   void delete_stream(Http2Stream *stream);
+  void release_stream(Http2Stream *stream);
   void cleanup_streams();
 
   void update_initial_rwnd(Http2WindowSize new_size);
@@ -214,7 +217,13 @@ public:
   bool
   is_state_closed() const
   {
-    return ua_session == NULL;
+    return ua_session == NULL || fini_received;
+  }
+
+  bool
+  is_recursing() const
+  {
+    return recursion > 0;
   }
 
 private:
@@ -232,8 +241,10 @@ private:
   DLL<Http2Stream> stream_list;
   Http2StreamId latest_streamid;
 
-  // Counter for current acive streams which is started by client
+  // Counter for current active streams which is started by client
   uint32_t client_streams_count;
+  // Counter for current active streams and streams in the process of shutting down
+  uint32_t total_client_streams_count;
 
   // NOTE: Id of stream which MUST receive CONTINUATION frame.
   //   - [RFC 7540] 6.2 HEADERS
@@ -244,6 +255,8 @@ private:
   //     another CONTINUATION frame."
   Http2StreamId continued_stream_id;
   IOVec continued_buffer;
+  bool fini_received;
+  int recursion;
   bool _scheduled;
 };
 

@@ -3296,12 +3296,12 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     }
 
     ua_session->do_io_close();
-    ua_session = NULL;
+    // ua_session = NULL;
   } else {
     ink_assert(ua_buffer_reader != NULL);
     ua_session->release(ua_buffer_reader);
     ua_buffer_reader = NULL;
-    ua_session = NULL;
+    // ua_session = NULL;
   }
 
   return 0;
@@ -6114,7 +6114,7 @@ HttpSM::setup_error_transfer()
     DebugSM("http", "[setup_error_transfer] Now closing connection ...");
     vc_table.cleanup_entry(ua_entry);
     ua_entry = NULL;
-    ua_session = NULL;
+    // ua_session = NULL;
     terminate_sm = true;
     t_state.source = HttpTransact::SOURCE_INTERNAL;
   }
@@ -6723,7 +6723,9 @@ HttpSM::kill_this()
       plugin_tunnel = NULL;
     }
 
-    ua_session = NULL;
+    if (ua_session) {
+      ua_session->transaction_done();
+    }
     server_session = NULL;
 
     // So we don't try to nuke the state machine

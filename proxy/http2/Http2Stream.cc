@@ -33,6 +33,14 @@ Http2Stream::main_event_handler(int event, void *edata)
 {
   Event *e = static_cast<Event *>(edata);
 
+  Thread *this_thread = this_ethread();
+  if (this->get_thread() != this_thread) {
+    // Send on to the owning thread
+    if (cross_thread_event == NULL) {
+      cross_thread_event = this->get_thread()->schedule_imm(this, event, edata);
+    }
+    return 0;
+  }
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
   if (e == cross_thread_event) {
     cross_thread_event = NULL;
@@ -90,6 +98,8 @@ Http2Stream::main_event_handler(int event, void *edata)
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     // Clean up after yourself if this was an EOS
     ink_release_assert(this->closed);
+    // Safe to initiate SSN_CLOSE if this is the last stream
+    static_cast<Http2ClientSession *>(parent)->connection_state.release_stream(this);
     this->destroy();
     break;
   }
@@ -242,7 +252,8 @@ void
 Http2Stream::do_io_close(int /* flags */)
 {
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
-  current_reader = NULL; // SM on the way out
+  // disengage us from the SM
+  super::release(NULL);
   if (!sent_delete) {
     sent_delete = true;
     Debug("http2_stream", "do_io_close stream %d", this->get_id());
@@ -257,7 +268,7 @@ Http2Stream::do_io_close(int /* flags */)
       } else {
         lock.release();
         this->reenable(&write_vio); // Kick the mechanism to get any remaining data pushed out
-        Warning("Re-enabled to get data pushed out is_done=%d", this->is_body_done());
+        // Warning("Re-enabled to get data pushed out is_done=%d", this->is_body_done());
         return;
       }
     }
@@ -268,7 +279,7 @@ Http2Stream::do_io_close(int /* flags */)
       // Ourselve will be removed at send_data_frames or closing connection phase
       static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
     }
-    parent = NULL;
+    // parent = NULL;
 
     clear_timers();
     clear_io_events();
@@ -296,7 +307,9 @@ Http2Stream::initiating_close()
     // when we actually destroy
     // current_reader = NULL;
 
-    parent = NULL;
+    // Leaving reference to client session as well, so we can signal once the
+    // TXN_CLOSE has beent sent
+    // parent = NULL;
     clear_timers();
     clear_io_events();
 
@@ -361,7 +374,7 @@ Http2Stream::send_tracked_event(Event *in_event, int send_event, VIO *vio)
 void
 Http2Stream::update_read_request(int64_t read_len, bool call_update)
 {
-  if (closed || this->current_reader == NULL)
+  if (closed || sent_delete || parent == NULL)
     return;
   if (this->get_thread() != this_ethread()) {
     SCOPED_MUTEX_LOCK(stream_lock, this->mutex, this_ethread());
@@ -419,7 +432,7 @@ bool
 Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool call_update)
 {
   bool retval = true;
-  if (closed || parent == NULL)
+  if (closed || sent_delete || parent == NULL)
     return retval;
   if (this->get_thread() != this_ethread()) {
     SCOPED_MUTEX_LOCK(stream_lock, this->mutex, this_ethread());
@@ -718,4 +731,11 @@ Http2Stream::clear_io_events()
   if (write_event)
     write_event->cancel();
   write_event = NULL;
+}
+
+void
+Http2Stream::release(IOBufferReader *r)
+{
+  super::release(r); // disengage us from the SM
+  this->do_io_close();
 }
