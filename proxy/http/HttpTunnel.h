@@ -331,6 +331,7 @@ public:
   DLL<HttpTunnelConsumer> *get_consumers(VConnection *vc);
   HttpTunnelProducer *get_producer(VConnection *vc);
   HttpTunnelConsumer *get_consumer(VConnection *vc);
+  HttpTunnelProducer *get_producer(HttpTunnelType_t type);
   void tunnel_run(HttpTunnelProducer *p = NULL);
 
   int main_handler(int event, void *data);
@@ -454,6 +455,17 @@ HttpTunnel::get_producer(VConnection *vc)
 {
   for (int i = 0; i < MAX_PRODUCERS; i++) {
     if (producers[i].vc == vc) {
+      return producers + i;
+    }
+  }
+  return NULL;
+}
+
+inline HttpTunnelProducer *
+HttpTunnel::get_producer(HttpTunnelType_t type)
+{
+  for (int i = 0; i < MAX_PRODUCERS; i++) {
+    if (producers[i].vc_type == type) {
       return producers + i;
     }
   }
