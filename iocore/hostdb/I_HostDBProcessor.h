@@ -58,7 +58,7 @@ struct HostDBContinuation;
 // disk representation to decrease # of seeks.
 //
 extern int hostdb_enable;
-extern unsigned int hostdb_current_interval;
+extern ink_time_t hostdb_current_interval;
 extern unsigned int hostdb_ip_stale_interval;
 extern unsigned int hostdb_ip_timeout_interval;
 extern unsigned int hostdb_ip_fail_timeout_interval;

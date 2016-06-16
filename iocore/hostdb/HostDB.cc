@@ -51,15 +51,18 @@ int hostdb_lookup_timeout = 30;
 int hostdb_insert_timeout = 160;
 int hostdb_re_dns_on_reload = false;
 int hostdb_ttl_mode = TTL_OBEY;
-unsigned int hostdb_current_interval = 0;
 unsigned int hostdb_ip_stale_interval = HOST_DB_IP_STALE;
 unsigned int hostdb_ip_timeout_interval = HOST_DB_IP_TIMEOUT;
 unsigned int hostdb_ip_fail_timeout_interval = HOST_DB_IP_FAIL_TIMEOUT;
 unsigned int hostdb_serve_stale_but_revalidate = 0;
 unsigned int hostdb_hostfile_check_interval = 86400; // 1 day
-unsigned int hostdb_hostfile_update_timestamp = 0;
-unsigned int hostdb_hostfile_check_timestamp = 0;
-char hostdb_filename[PATH_NAME_MAX] = DEFAULT_HOST_DB_FILENAME;
+// Epoch timestamp of the current hosts file check.
+ink_time_t hostdb_current_interval = 0;
+// Epoch timestamp of the last time we actually checked for a hosts file update.
+static ink_time_t hostdb_last_interval = 0;
+// Epoch timestamp when we updated the hosts file last.
+static ink_time_t hostdb_hostfile_update_timestamp = 0;
+static char hostdb_filename[PATH_NAME_MAX] = DEFAULT_HOST_DB_FILENAME;
 int hostdb_size = DEFAULT_HOST_DB_SIZE;
 char hostdb_hostfile_path[PATH_NAME_MAX] = "";
 int hostdb_sync_frequency = 120;
@@ -515,12 +518,12 @@ HostDBProcessor::start(int, size_t)
   //
   // Set up hostdb_current_interval
   //
-  hostdb_current_interval = (unsigned int)(Thread::get_hrtime() / HOST_DB_TIMEOUT_INTERVAL);
+  hostdb_current_interval = ink_time();
 
   HostDBContinuation *b = hostDBContAllocator.alloc();
   SET_CONTINUATION_HANDLER(b, (HostDBContHandler)&HostDBContinuation::backgroundEvent);
   b->mutex = new_ProxyMutex();
-  eventProcessor.schedule_every(b, HOST_DB_TIMEOUT_INTERVAL, ET_DNS);
+  eventProcessor.schedule_every(b, HRTIME_SECONDS(1), ET_DNS);
 
   //
   // Sync HostDB, if we've asked for it.
@@ -1992,8 +1995,8 @@ HostDBContinuation::do_dns()
     if (find_result != current_host_file_map->hosts_file_map.end()) {
       if (action.continuation) {
         // Set the TTL based on how much time remains until the next sync
-        HostDBInfo *r = lookup_done(IpAddr(find_result->second), md5.host_name, false,
-                                    (current_host_file_map->next_sync_time - Thread::get_hrtime()) / HRTIME_SECOND, NULL);
+        HostDBInfo *r =
+          lookup_done(IpAddr(find_result->second), md5.host_name, false, current_host_file_map->next_sync_time - ink_time(), NULL);
         reply_to_cont(action.continuation, r);
       }
       hostdb_cont_free(this);
@@ -2221,13 +2224,14 @@ put_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUS
 int
 HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  ++hostdb_current_interval;
+  // No nothing if hosts file checking is not enabled.
+  if (hostdb_hostfile_check_interval == 0) {
+    return EVENT_CONT;
+  }
 
-  // hostdb_current_interval is bumped every HOST_DB_TIMEOUT_INTERVAL seconds
-  // so we need to scale that so the user config value is in seconds.
-  if (hostdb_hostfile_check_interval && // enabled
-      (hostdb_current_interval - hostdb_hostfile_check_timestamp) * (HOST_DB_TIMEOUT_INTERVAL / HRTIME_SECOND) >
-        hostdb_hostfile_check_interval) {
+  hostdb_current_interval = ink_time();
+
+  if ((hostdb_current_interval - hostdb_last_interval) > hostdb_hostfile_check_interval) {
     bool update_p = false; // do we need to reparse the file and update?
     struct stat info;
     char path[sizeof(hostdb_hostfile_path)];
@@ -2245,7 +2249,7 @@ HostDBContinuation::backgroundEvent(int /* event ATS_UNUSED */, Event * /* e ATS
       }
       update_p = true;
     } else {
-      hostdb_hostfile_check_timestamp = hostdb_current_interval;
+      hostdb_last_interval = hostdb_current_interval;
       if (*hostdb_hostfile_path) {
         if (0 == stat(hostdb_hostfile_path, &info)) {
           if (info.st_mtime > (time_t)hostdb_hostfile_update_timestamp) {
@@ -2837,7 +2841,7 @@ ParseHostFile(char const *path, unsigned int hostdb_hostfile_check_interval)
         int64_t size = info.st_size + 1;
 
         parsed_hosts_file_ptr = new RefCountedHostsFileMap;
-        parsed_hosts_file_ptr->next_sync_time = Thread::get_hrtime() + hostdb_hostfile_check_interval;
+        parsed_hosts_file_ptr->next_sync_time = ink_time() + hostdb_hostfile_check_interval;
         parsed_hosts_file_ptr->HostFileText = static_cast<char *>(ats_malloc(size));
         if (parsed_hosts_file_ptr->HostFileText) {
           char *base = parsed_hosts_file_ptr->HostFileText;
