@@ -407,7 +407,7 @@ Diags::tag_activated(const char *tag, DiagsTagType mode) const
 //
 //      void Diags::activate_taglist(char * taglist, DiagsTagType mode)
 //
-//      This routine adds all tags in the vertical-bar-seperated taglist
+//      This routine adds all tags in the vertical-bar-separated taglist
 //      to the tag table of type <mode>.  Each addition is done under a lock.
 //      If an individual tag is already set, that tag is ignored.  If
 //      <taglist> is NULL, this routine exits immediately.

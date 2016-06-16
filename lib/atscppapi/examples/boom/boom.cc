@@ -34,7 +34,7 @@
  *   found, then it will try to use default.html, if default.html is not found
  *   the response will be the hard coded html string below.
  *
- *   You will specify a comma seperated list WITH NO SPACES!!!
+ *   You will specify a comma separated list WITH NO SPACES!!!
  *   of error codes to BOOM on, for example you can do:
  *    3xx 4xx 5xx 6xx or you can specify individual error codes such as 501 502 404, etc...
  *   You would put 3xx,4xx,5xx,200 in your config argument REMEMBER NO SPACES!!!!

@@ -270,21 +270,21 @@ public:
   HeaderFieldName name() const;
 
   /**
-    * Join all the values of this HeaderField into a single string seperated by the join string.
+    * Join all the values of this HeaderField into a single string separated by the join string.
     * @param an optional join string (defaults to ",")
     * @return a string which is all of the joined values of this HeaderField
     */
   std::string values(const char *join = ",");
 
   /**
-    * Join all the values of this HeaderField into a single string seperated by the join string.
+    * Join all the values of this HeaderField into a single string separated by the join string.
     * @param a join string
     * @return a string which is all of the joined values of this HeaderField
     */
   std::string values(const std::string &join);
 
   /**
-    * Join all the values of this HeaderField into a single string seperated by the join string.
+    * Join all the values of this HeaderField into a single string separated by the join string.
     * @param a optional join character
     * @return a string which is all of the joined values of this HeaderField
     */
@@ -310,14 +310,14 @@ public:
   bool erase(iterator it);
 
   /**
-   * Append a value or a seperated list of values to this HeaderField
+   * Append a value or a separated list of values to this HeaderField
    * @param a string containing the value(s).
    * @return true if the values was appended.
    */
   bool append(const std::string &value);
 
   /**
-   * Append a value or a seperated list of values to this HeaderField
+   * Append a value or a separated list of values to this HeaderField
    * @param a string containing the value.
    * @param the length of the value that is being appended.
    * @return true if the values was appended.
