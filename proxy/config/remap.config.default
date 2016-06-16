@@ -1,5 +1,8 @@
 #
-#  URL Remapping Config File
+# remap.config - URL Remapping Config File
+#
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/remap.config.en.html
 #
 # Using remap.config allows you to accomplish two things:
 #

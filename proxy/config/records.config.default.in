@@ -1,12 +1,12 @@
 ##############################################################################
 # *NOTE*: All options covered in this file should be documented in the docs:
 #
-#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/records.config.en.html
+#    https://docs.trafficserver.apache.org/records.config
 ##############################################################################
 
 ##############################################################################
 # Thread configurations. Docs:
-#    https://docs.trafficserver.apache.org/records.config#proxy-config-exec-thread-autoconfig
+#    https://docs.trafficserver.apache.org/records.config#thread-variables
 ##############################################################################
 CONFIG proxy.config.exec_thread.autoconfig INT 1
 CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT 1.5
@@ -15,12 +15,11 @@ CONFIG proxy.config.ssl.number.threads INT -1
 CONFIG proxy.config.accept_threads INT 1
 CONFIG proxy.config.task_threads INT 2
 CONFIG proxy.config.cache.threads_per_disk INT 8
-    # https://docs.trafficserver.apache.org/records.config#proxy-config-exec-thread-affinity
 CONFIG proxy.config.exec_thread.affinity INT 1
 
 ##############################################################################
 # Specify server addresses and ports to bind for HTTP and HTTPS. Docs:
-#    https://docs.trafficserver.apache.org/records.config#proxy-config-http-server-ports
+#    https://docs.trafficserver.apache.org/records.config#proxy.config.http.server_ports
 ##############################################################################
 CONFIG proxy.config.http.server_ports STRING 8080
 
@@ -40,7 +39,7 @@ CONFIG proxy.config.http.insert_response_via_str INT 0
 ##############################################################################
 # Parent proxy configuration, in addition to these settings also see parent.config. Docs:
 #    https://docs.trafficserver.apache.org/records.config#parent-proxy-configuration
-#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/parent.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/parent.config.en.html
 ##############################################################################
 CONFIG proxy.config.http.parent_proxy_routing_enable INT 0
 CONFIG proxy.config.http.parent_proxy.retry_time INT 300
@@ -102,7 +101,7 @@ CONFIG proxy.config.http.cache.http INT 1
 ##############################################################################
 # Cache control. Docs:
 #    https://docs.trafficserver.apache.org/records.config#cache-control
-#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/cache.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache.config.en.html
 ##############################################################################
 CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT 1
 CONFIG proxy.config.http.normalize_ae_gzip INT 1
@@ -132,7 +131,7 @@ CONFIG proxy.config.net.max_connections_active_in INT 10000
 ##############################################################################
 # RAM and disk cache configurations. Docs:
 #    https://docs.trafficserver.apache.org/records.config#ram-cache
-#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/storage.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/storage.config.en.html
 ##############################################################################
 CONFIG proxy.config.cache.ram_cache.size INT -1
 CONFIG proxy.config.cache.ram_cache_cutoff INT 4194304
@@ -145,7 +144,7 @@ CONFIG proxy.config.cache.min_average_object_size INT 8000
 ##############################################################################
 # Logging Config. Docs:
 #    https://docs.trafficserver.apache.org/records.config#logging-configuration
-#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/logs_xml.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/logs_xml.config.en.html
 ##############################################################################
 CONFIG proxy.config.log.logging_enabled INT 3
 CONFIG proxy.config.log.max_space_mb_for_logs INT 25000
@@ -159,7 +158,7 @@ CONFIG proxy.config.log.periodic_tasks_interval INT 5
 ##############################################################################
 # These settings control remapping, and if the proxy allows (open) forward proxy or not. Docs:
 #    https://docs.trafficserver.apache.org/records.config#url-remap-rules
-#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/remap.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/remap.config.en.html
 ##############################################################################
 CONFIG proxy.config.url_remap.remap_required INT 1
     # https://docs.trafficserver.apache.org/records.config#proxy-config-url-remap-pristine-host-hdr
@@ -170,7 +169,7 @@ CONFIG proxy.config.reverse_proxy.enabled INT 1
 ##############################################################################
 # SSL Termination. Docs:
 #    https://docs.trafficserver.apache.org/records.config#client-related-configuration
-#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/ssl_multicert.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/ssl_multicert.config.en.html
 ##############################################################################
 CONFIG proxy.config.ssl.client.verify.server INT 0
 CONFIG proxy.config.ssl.client.CA.cert.filename STRING NULL
@@ -179,7 +178,7 @@ CONFIG proxy.config.ssl.server.cipher_suite STRING ECDHE-ECDSA-AES256-GCM-SHA384
 ##############################################################################
 # ICP Configuration. Docs:
 #    https://docs.trafficserver.apache.org/records.config#icp-configuration
-#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/icp.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/icp.config.en.html
 ##############################################################################
 CONFIG proxy.config.icp.enabled INT 0
 

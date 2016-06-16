@@ -1,12 +1,15 @@
 #
 # ssl_multicert.config
 #
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/ssl_multicert.config.en.html
+#
 # Allows a TLS certificate and private key to be tied to a specific
 # hostname or IP address. At load time, the certificate is parsed to
 # extract the subject CN and all the DNS subjectAltNames.  The
 # certificate will be presented for connections requesting any of the
 # hostnames found in the certificate. Wildcard names in the certificates
-# are supported, but only of the form '*.domain.com', ie. where '*' 
+# are supported, but only of the form '*.domain.com', ie. where '*'
 # is the leftmost domain component.
 #
 # The certificate file path, CA path and key path specified in
