@@ -604,9 +604,13 @@ AC_COMPILE_IFELSE([
 )
 
 AC_MSG_RESULT([$have_std_shared_ptr])
-if test "x${have_std_shared_ptr}" = "xyes" ; then
-  AC_DEFINE(HAVE_STD_SHARED_PTR, 1, [whether std::shared_ptr is available])
-fi
+AS_IF([test "x${have_std_shared_ptr}" = "xyes"], [
+    AC_DEFINE(HAVE_STD_SHARED_PTR, 1, [whether std::shared_ptr is available])
+    AC_SUBST(have_std_shared_ptr, 1)
+  ], [
+    AC_SUBST(have_std_shared_ptr, 0)
+  ]
+)
 
 AC_LANG_POP()
 
@@ -1975,6 +1979,7 @@ AC_CONFIG_FILES([
   lib/atscppapi/examples/timeout_example/Makefile
   lib/atscppapi/examples/transactionhook/Makefile
   lib/atscppapi/src/Makefile
+  lib/atscppapi/src/include/atscppapi/shared_ptr.h
   lib/bindings/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
@@ -2004,6 +2009,7 @@ AC_CONFIG_FILES([
   plugins/experimental/cachekey/Makefile
   plugins/experimental/channel_stats/Makefile
   plugins/experimental/collapsed_connection/Makefile
+  plugins/experimental/collapsed_forwarding/Makefile
   plugins/experimental/custom_redirect/Makefile
   plugins/experimental/epic/Makefile
   plugins/experimental/escalate/Makefile
@@ -2011,7 +2017,6 @@ AC_CONFIG_FILES([
   plugins/experimental/generator/Makefile
   plugins/experimental/geoip_acl/Makefile
   plugins/experimental/header_normalize/Makefile
-  plugins/experimental/collapsed_forwarding/Makefile
   plugins/experimental/hipes/Makefile
   plugins/experimental/inliner/Makefile
   plugins/experimental/memcache/Makefile
