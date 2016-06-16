@@ -22,12 +22,12 @@
  */
 
 #pragma once
-#ifndef ASTCPPAPI_SHARED_PTR_H_
-#define ASTCPPAPI_SHARED_PTR_H_
+#ifndef ATSCPPAPI_SHARED_PTR_H_
+#define ATSCPPAPI_SHARED_PTR_H_
 
-#include "ink_autoconf.h"
+#define ATSCPPAPI_USE_STD_SHARED_PTR @have_std_shared_ptr@
 
-#if HAVE_STD_SHARED_PTR
+#if ATSCPPAPI_USE_STD_SHARED_PTR
 #include <memory>
 #else
 #include <tr1/memory>
@@ -40,7 +40,7 @@ namespace atscppapi
  * \todo Consider adding a simple macro to check if c++0x/11 is enabled
  * and if so change it to std::shared_ptr and #include <memory>s
  */
-#if HAVE_STD_SHARED_PTR
+#if ATSCPPAPI_USE_STD_SHARED_PTR
 using std::shared_ptr;
 using std::unique_ptr;
 #else
@@ -50,4 +50,4 @@ using std::tr1::unique_ptr;
 
 } /* atscppapi */
 
-#endif /* SHARED_PTR_H_ */
+#endif /* ATSCPPAPI_SHARED_PTR_H_ */
