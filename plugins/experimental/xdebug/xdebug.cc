@@ -30,10 +30,13 @@ static struct {
   int len;
 } xDebugHeader = {NULL, 0};
 
-#define XHEADER_X_CACHE_KEY 0x0004u
-#define XHEADER_X_MILESTONES 0x0008u
-#define XHEADER_X_CACHE 0x0010u
-#define XHEADER_X_GENERATION 0x0020u
+enum {
+  XHEADER_X_CACHE_KEY      = 0x0004u,
+  XHEADER_X_MILESTONES     = 0x0008u,
+  XHEADER_X_CACHE          = 0x0010u,
+  XHEADER_X_GENERATION     = 0x0020u,
+  XHEADER_X_TRANSACTION_ID = 0x0040u,
+};
 
 static int XArgIndex             = 0;
 static TSCont XInjectHeadersCont = NULL;
@@ -234,6 +237,21 @@ done:
   }
 }
 
+static void
+InjectTxnUuidHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
+{
+  TSMLoc dst = FindOrMakeHdrField(buffer, hdr, "X-Transaction-ID", lengthof("X-Transaction-ID"));
+
+  if (TS_NULL_MLOC != dst) {
+    char buf[TS_UUID_STRING_LEN + 22]; // Padded for int64_t (20) + 1 ('-') + 1 ('\0')
+    TSUuid uuid = TSProcessUuidGet();
+    int len     = snprintf(buf, sizeof(buf) - 1, "%s-%" PRIu64 "", TSUuidStringGet(uuid), TSHttpTxnIdGet(txn));
+
+    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, buf, len) == TS_SUCCESS);
+    TSHandleMLocRelease(buffer, hdr, dst);
+  }
+}
+
 static int
 XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
@@ -267,6 +285,10 @@ XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 
   if (xheaders & XHEADER_X_GENERATION) {
     InjectGenerationHeader(txn, buffer, hdr);
+  }
+
+  if (xheaders & XHEADER_X_TRANSACTION_ID) {
+    InjectTxnUuidHeader(txn, buffer, hdr);
   }
 
 done:
@@ -317,6 +339,8 @@ XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
         xheaders |= XHEADER_X_CACHE;
       } else if (header_field_eq("x-cache-generation", value, vsize)) {
         xheaders |= XHEADER_X_GENERATION;
+      } else if (header_field_eq("x-transaction-id", value, vsize)) {
+        xheaders |= XHEADER_X_TRANSACTION_ID;
       } else if (header_field_eq("via", value, vsize)) {
         // If the client requests the Via header, enable verbose Via debugging for this transaction.
         TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_INSERT_RESPONSE_VIA_STR, 3);

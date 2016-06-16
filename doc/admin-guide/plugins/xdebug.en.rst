@@ -83,3 +83,7 @@ X-Milestones
     :c:func:`TSHttpTxnMilestoneGet` API. Each milestone value is a
     fractional number of seconds since the beginning of the
     transaction.
+
+X-Transaction-ID
+    A unique transaction ID, which identifies this request / transaction. This
+    matches the log field format that is also available, %<cruuid>.
