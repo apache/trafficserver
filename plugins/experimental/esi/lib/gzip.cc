@@ -130,7 +130,7 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
     Utils::ERROR_LOG("[%s] Invalid arguments: 0x%p, %d", __FUNCTION__, data, data_len);
     return false;
   }
-  if ((data[0] != MAGIC_BYTE_1) || (data[1] != MAGIC_BYTE_2) || (data[2] != Z_DEFLATED) || (data[9] != OS_TYPE)) {
+  if ((data[0] != MAGIC_BYTE_1) || (data[1] != MAGIC_BYTE_2) || (data[2] != Z_DEFLATED)) {
     Utils::ERROR_LOG("[%s] Header check failed!", __FUNCTION__);
     return false;
   }

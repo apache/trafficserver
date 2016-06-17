@@ -27,7 +27,7 @@ AM_CXXFLAGS = \
 noinst_LTLIBRARIES = libesicore.la libtest.la
 pkglib_LTLIBRARIES = esi.la combo_handler.la
 
-check_PROGRAMS = docnode_test parser_test processor_test utils_test vars_test
+check_PROGRAMS = docnode_test parser_test processor_test utils_test vars_test gzip_test
 
 libesicore_la_SOURCES = \
 	lib/DocNode.cc \
@@ -94,6 +94,9 @@ utils_test_LDADD = libtest.la -lz
 
 vars_test_SOURCES = test/vars_test.cc
 vars_test_LDADD = libtest.la -lz
+
+gzip_test_SOURCES = test/gzip_test.cc
+gzip_test_LDADD = libtest.la -lz
 
 TESTS = $(check_PROGRAMS)
 
