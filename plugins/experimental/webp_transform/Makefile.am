@@ -17,9 +17,7 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-AM_CPPFLAGS += \
-  -I$(top_srcdir)/lib/atscppapi/src/include \
-  $(LIBMAGICKCPP_CFLAGS)
+AM_CPPFLAGS += $(LIBMAGICKCPP_CFLAGS)
 
 AM_CXXFLAGS += \
   -Wno-unused-variable
