@@ -1901,6 +1901,9 @@ iocore_include_dirs="\
 AC_SUBST([LUA_CFLAGS], [$CFLAGS $lua_cflags])
 AC_SUBST(LUA_LDFLAGS)
 
+TS_REMOVEFROM(LUA_CFLAGS, "-fsanitize=address")
+TS_REMOVEFROM(LUA_CFLAGS, "-fsanitize=thread")
+TS_REMOVEFROM(LUA_CFLAGS, "-fsanitize=memory")
 TS_REMOVEFROM(LUA_CFLAGS, "-fprofile-instr-generate")
 TS_REMOVEFROM(LUA_CFLAGS, "-fcoverage-mapping")
 TS_REMOVEFROM(LUA_CFLAGS, "--coverage")
