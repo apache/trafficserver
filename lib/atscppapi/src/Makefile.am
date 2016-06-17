@@ -17,6 +17,7 @@
 
 AM_CPPFLAGS = \
   -I$(top_srcdir)/$(subdir)/include \
+  -I$(top_builddir)/$(subdir)/include \
   -I$(top_builddir)/proxy/api \
   -I$(top_srcdir)/proxy/api \
   -I$(top_srcdir)/lib
@@ -75,10 +76,12 @@ library_include_HEADERS = $(base_include_folder)/GlobalPlugin.h \
 			  $(base_include_folder)/Stat.h \
 			  $(base_include_folder)/Mutex.h \
 			  $(base_include_folder)/RemapPlugin.h \
-			  $(base_include_folder)/shared_ptr.h \
 			  $(base_include_folder)/Async.h \
 			  $(base_include_folder)/AsyncHttpFetch.h \
 			  $(base_include_folder)/GzipDeflateTransformation.h \
 			  $(base_include_folder)/GzipInflateTransformation.h \
 			  $(base_include_folder)/AsyncTimer.h \
 			  $(base_include_folder)/InterceptPlugin.h
+
+library_include_HEADERS += \
+			  $(top_builddir)/$(subdir)/include/atscppapi/shared_ptr.h
