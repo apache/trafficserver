@@ -6911,7 +6911,8 @@ HttpSM::update_stats()
     int offset = 0;
     int skip = 0;
 
-    t_state.hdr_info.client_request.url_print(url_string, sizeof url_string, &offset, &skip);
+    t_state.hdr_info.client_request.url_print(url_string, sizeof(url_string), &offset, &skip);
+    url_string[sizeof(url_string) - 1] = 0; // NULL terminate the string
 
     // unique id
     char unique_id_string[128] = "";
