@@ -20,9 +20,9 @@ SUBDIRS = \
  background_fetch \
  balancer \
  buffer_upload \
- cachekey \
- cache_range_requests \
  cache_promote \
+ cache_range_requests \
+ cachekey \
  collapsed_connection \
  collapsed_forwarding \
  custom_redirect \
@@ -34,20 +34,21 @@ SUBDIRS = \
  header_normalize \
  hipes \
  inliner \
- metalink \
- multiplexer \
  memcache \
  memcached_remap \
+ metalink \
+ mp4 \
+ multiplexer \
  regex_revalidate \
  remap_stats \
  s3_auth \
  ssl_cert_loader \
  sslheaders \
  stale_while_revalidate \
+ stream_editor \
+ ts_lua \
  url_sig \
- xdebug \
- mp4 \
- stream_editor
+ xdebug
 
 if ENABLE_CPPAPI
 if BUILD_WEBP_TRANSFORM_PLUGIN
@@ -57,10 +58,6 @@ endif
 
 if HAS_MYSQL
   SUBDIRS += mysql_remap
-endif
-
-if BUILD_LUAJIT
-  SUBDIRS += ts_lua
 endif
 
 if HAS_KYOTOCABINET

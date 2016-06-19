@@ -488,20 +488,6 @@ AC_MSG_RESULT([$enable_cppapi])
 AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
 
 #
-# Disable LuaJIT? This is a interim option, when Lua becomes part of the core
-# requirements, we will remove this option.
-#
-AC_MSG_CHECKING([whether to disable LuaJIT])
-AC_ARG_ENABLE([luajit],
-  [AS_HELP_STRING([--disable-luajit],[turn off LuaJIT])],
-  [],
-  [enable_luajit="yes"]
-)
-AC_MSG_RESULT([$enable_luajit])
-AM_CONDITIONAL([BUILD_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
-TS_ARG_ENABLE_VAR([use], [luajit])
-
-#
 # Check if we should allow builds on 32-bit platforms
 #
 AC_MSG_CHECKING([whether to allow 32-bit builds])

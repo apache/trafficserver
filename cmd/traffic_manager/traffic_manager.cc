@@ -51,10 +51,8 @@
 #include "StatProcessor.h"
 #include "P_RecLocal.h"
 
-#if TS_USE_LUAJIT
 #include "bindings/bindings.h"
 #include "bindings/metrics.h"
-#endif
 
 #include "metrics.h"
 
@@ -739,18 +737,6 @@ main(int argc, const char **argv)
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.proxy", 0, RECP_NON_PERSISTENT);
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.cop", 0, RECP_NON_PERSISTENT);
-
-#if !TS_USE_LUAJIT
-  if (enable_lua) {
-    static bool warned = false;
-    enable_lua = false;
-
-    if (!warned) {
-      Warning("missing Lua support, disabling Lua derived metrics");
-      warned = true;
-    }
-  }
-#endif
 
   if (enable_lua) {
     binding = new BindingInstance;
