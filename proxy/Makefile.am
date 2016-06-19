@@ -239,13 +239,11 @@ traffic_server_LDADD = \
   @OPENSSL_LIBS@ \
   -lm
 
-if BUILD_LUAJIT
-  traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
+traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
 
-  # On Darwin LuaJIT requires magic link options, otherwise it will crash in luaL_openlibs() at startup. See
-  # http://luajit.org/install.html.
-  traffic_server_LDFLAGS += $(LUAJIT_LDFLAGS)
-endif
+# On Darwin LuaJIT requires magic link options, otherwise it will
+# crash in luaL_openlibs() at startup. See http://luajit.org/install.html.
+traffic_server_LDFLAGS += $(LUAJIT_LDFLAGS)
 
 traffic_logcat_SOURCES = logcat.cc
 traffic_logcat_LDADD = \

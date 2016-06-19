@@ -24,8 +24,6 @@ AM_CPPFLAGS = \
 AM_CXXFLAGS = \
   $(LUAJIT_CFLAGS)
 
-if BUILD_LUAJIT
-
 noinst_LTLIBRARIES = libbindings.la
 
 libbindings_la_SOURCES = \
@@ -37,6 +35,4 @@ libbindings_la_SOURCES = \
   metrics.h \
   repl.cc \
   repl.h
-
-endif
 
