@@ -66,7 +66,6 @@ traffic_manager_LDADD = \
   $(top_builddir)/proxy/shared/liberror.a \
   $(top_builddir)/proxy/shared/libdiagsconfig.a
 
-if BUILD_LUAJIT
 AM_LDFLAGS += \
   $(LUAJIT_LDFLAGS)
 
@@ -76,7 +75,6 @@ traffic_manager_SOURCES += \
 traffic_manager_LDADD += \
   $(top_builddir)/lib/bindings/libbindings.la \
   $(top_builddir)/lib/luajit/src/libluajit.a
-endif
 
 traffic_manager_LDADD +=\
   $(LIBUNWIND_LIBS) \
