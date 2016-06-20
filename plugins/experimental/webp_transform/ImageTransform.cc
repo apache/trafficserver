@@ -46,7 +46,7 @@ public:
   handleReadResponseHeaders(Transaction &transaction)
   {
     transaction.getServerResponse().getHeaders()["Content-Type"] = "image/webp";
-    transaction.getServerResponse().getHeaders()["Vary"] = "Content-Type"; // to have a separate cache entry.
+    transaction.getServerResponse().getHeaders()["Vary"]         = "Content-Type"; // to have a separate cache entry.
 
     TS_DEBUG(TAG, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
     transaction.resume();
@@ -87,7 +87,7 @@ public:
   virtual void
   handleReadResponseHeaders(Transaction &transaction)
   {
-    string ctype = transaction.getServerResponse().getHeaders().values("Content-Type");
+    string ctype      = transaction.getServerResponse().getHeaders().values("Content-Type");
     string user_agent = transaction.getServerRequest().getHeaders().values("User-Agent");
     if (user_agent.find("Chrome") != string::npos && (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos)) {
       TS_DEBUG(TAG, "Content type is either jpeg or png. Converting to webp");

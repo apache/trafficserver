@@ -141,7 +141,7 @@ ts_lua_schedule(lua_State *L)
   contp = TSContCreate(ts_lua_schedule_handler, ci->mutex);
   TSContDataSet(contp, actx);
 
-  nci = &actx->cinfo;
+  nci        = &actx->cinfo;
   nci->contp = contp;
   nci->mutex = ci->mutex;
 
@@ -165,11 +165,11 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
   actx = (ts_lua_http_ctx *)TSContDataGet(contp);
 
   TSDebug(TS_LUA_DEBUG_TAG, "getting http_Ctx");
-  ci = &actx->cinfo;
+  ci  = &actx->cinfo;
   crt = &ci->routine;
 
   main_ctx = crt->mctx;
-  L = crt->lua;
+  L        = crt->lua;
 
   ret = 0;
 
@@ -178,11 +178,11 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
 
   if (event == TS_LUA_EVENT_COROUTINE_CONT) {
     TSDebug(TS_LUA_DEBUG_TAG, "event is coroutine_cont");
-    n = (intptr_t)edata;
+    n   = (intptr_t)edata;
     ret = lua_resume(L, n);
   } else {
     TSDebug(TS_LUA_DEBUG_TAG, "event is not coroutine_cont");
-    n = lua_gettop(L);
+    n   = lua_gettop(L);
     ret = lua_resume(L, n - 1);
   }
 
@@ -221,7 +221,7 @@ ts_lua_sleep(lua_State *L)
     sec = 1;
   }
 
-  contp = TSContCreate(ts_lua_sleep_handler, ci->mutex);
+  contp  = TSContCreate(ts_lua_sleep_handler, ci->mutex);
   action = TSContSchedule(contp, sec * 1000, TS_THREAD_POOL_DEFAULT);
 
   ai = ts_lua_async_create_item(contp, ts_lua_sleep_cleanup, (void *)action, ci);

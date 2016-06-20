@@ -46,7 +46,7 @@ enum {
   // For these two, we need to pick two values which are not used for any of the
   //"commands" (eg: CONNECT, BIND) in SOCKS protocols.
   NORMAL_SOCKS = 0,
-  NO_SOCKS = 48
+  NO_SOCKS     = 48
 };
 
 enum {

@@ -39,10 +39,10 @@ UDPClientTestInit()
   unsigned long ip;
   TSMutex readMutexp;
 
-  ip = inet_addr("209.131.48.79");
+  ip         = inet_addr("209.131.48.79");
   readMutexp = TSMutexCreate();
-  cont = TSContCreate(&UDPClient_handle_callbacks, readMutexp);
-  fp = fopen("UDPAPI.dbg", "a+");
+  cont       = TSContCreate(&UDPClient_handle_callbacks, readMutexp);
+  fp         = fopen("UDPAPI.dbg", "a+");
   fprintf(fp, "UDPClient Init called\n");
   fclose(fp);
   INKUDPBind(cont, ip, 9999);
@@ -55,7 +55,7 @@ UDPClient_handle_callbacks(TSCont cont, TSEvent event, void *e)
   INKUDPPacket packet;
   TSIOBufferBlock recvBuffBlock;
   unsigned int destIp = inet_addr("209.131.48.79");
-  int destPort = 1813;
+  int destPort        = 1813;
   INKUDPConn UDPConn;
   TSIOBufferReader reader;
   TSIOBuffer iobuffer;
@@ -81,7 +81,7 @@ UDPClient_handle_callbacks(TSCont cont, TSEvent event, void *e)
       recvBuffBlock = INKUDPPacketBufferBlockGet(packet);
 
       iobuffer = TSIOBufferCreate();
-      reader = TSIOBufferReaderAlloc(iobuffer);
+      reader   = TSIOBufferReaderAlloc(iobuffer);
       TSIOBufferAppend(iobuffer, recvBuffBlock);
       buf = TSIOBufferBlockReadStart(recvBuffBlock, reader, &avail);
 

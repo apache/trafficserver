@@ -29,9 +29,9 @@
 #include "FetchedDataProcessor.h"
 
 enum DataStatus {
-  STATUS_ERROR = -1,
+  STATUS_ERROR          = -1,
   STATUS_DATA_AVAILABLE = 0,
-  STATUS_DATA_PENDING = 1,
+  STATUS_DATA_PENDING   = 1,
 };
 
 class HttpDataFetcher

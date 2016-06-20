@@ -19,8 +19,8 @@
 #include "ts_lua_util.h"
 
 typedef enum {
-  TS_LUA_HTTP_CNTL_GET_LOGGING_MODE = TS_HTTP_CNTL_GET_LOGGING_MODE,
-  TS_LUA_HTTP_CNTL_SET_LOGGING_MODE = TS_HTTP_CNTL_SET_LOGGING_MODE,
+  TS_LUA_HTTP_CNTL_GET_LOGGING_MODE         = TS_HTTP_CNTL_GET_LOGGING_MODE,
+  TS_LUA_HTTP_CNTL_SET_LOGGING_MODE         = TS_HTTP_CNTL_SET_LOGGING_MODE,
   TS_LUA_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE = TS_HTTP_CNTL_GET_INTERCEPT_RETRY_MODE,
   TS_LUA_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE = TS_HTTP_CNTL_SET_INTERCEPT_RETRY_MODE
 } TSLuaHttpCntlType;
@@ -67,7 +67,7 @@ ts_lua_http_cntl_set(lua_State *L)
   GET_HTTP_CONTEXT(http_ctx, L);
 
   cntl_type = luaL_checkinteger(L, 1);
-  value = luaL_checkinteger(L, 2);
+  value     = luaL_checkinteger(L, 2);
 
   TSHttpTxnCntl(http_ctx->txnp, cntl_type, value ? TS_HTTP_CNTL_ON : TS_HTTP_CNTL_OFF);
 

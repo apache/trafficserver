@@ -128,8 +128,8 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
   }
 
   UrlToContentMap::iterator &req_entry = _page_entry_lookup[base_event_id];
-  const string &req_str = req_entry->first;
-  RequestData &req_data = req_entry->second;
+  const string &req_str                = req_entry->first;
+  RequestData &req_data                = req_entry->second;
 
   if (req_data.complete) {
     // can only happen if there's a bug in this or fetch API code
@@ -153,17 +153,17 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
   bool valid_data_received = false;
   const char *startptr = req_data.response.data(), *endptr = startptr + page_data_len;
 
-  req_data.bufp = TSMBufferCreate();
+  req_data.bufp    = TSMBufferCreate();
   req_data.hdr_loc = TSHttpHdrCreate(req_data.bufp);
   TSHttpHdrTypeSet(req_data.bufp, req_data.hdr_loc, TS_HTTP_TYPE_RESPONSE);
   TSHttpParserClear(_http_parser);
 
   if (TSHttpHdrParseResp(_http_parser, req_data.bufp, req_data.hdr_loc, &startptr, endptr) == TS_PARSE_DONE) {
     req_data.resp_status = TSHttpHdrStatusGet(req_data.bufp, req_data.hdr_loc);
-    valid_data_received = true;
+    valid_data_received  = true;
     if (req_data.resp_status == TS_HTTP_STATUS_OK) {
       req_data.body_len = endptr - startptr;
-      req_data.body = startptr;
+      req_data.body     = startptr;
       TSDebug(_debug_tag, "[%s] Inserted page data of size %d starting with [%.6s] for request [%s]", __FUNCTION__,
               req_data.body_len, (req_data.body_len ? req_data.body : "(null)"), req_str.c_str());
 
@@ -179,7 +179,7 @@ HttpDataFetcherImpl::handleFetchEvent(TSEvent event, void *edata)
           TSError("[HttpDataFetcherImpl][%s] Error while gunzipping data", __FUNCTION__);
         }
         req_data.body_len = req_data.raw_response.size();
-        req_data.body = req_data.raw_response.data();
+        req_data.body     = req_data.raw_response.data();
       }
 
       for (CallbackObjectList::iterator list_iter = req_data.callback_objects.begin(); list_iter != req_data.callback_objects.end();

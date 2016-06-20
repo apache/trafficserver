@@ -44,15 +44,15 @@ struct PollDescriptor;
 TS_INLINE void
 NetVCOptions::reset()
 {
-  ip_proto = USE_TCP;
+  ip_proto  = USE_TCP;
   ip_family = AF_INET;
   local_ip.invalidate();
-  local_port = 0;
-  addr_binding = ANY_ADDR;
-  f_blocking = false;
+  local_port         = 0;
+  addr_binding       = ANY_ADDR;
+  f_blocking         = false;
   f_blocking_connect = false;
-  socks_support = NORMAL_SOCKS;
-  socks_version = SOCKS_DEFAULT_VERSION;
+  socks_support      = NORMAL_SOCKS;
+  socks_version      = SOCKS_DEFAULT_VERSION;
   socket_recv_bufsize =
 #if defined(RECV_BUF_SIZE)
     RECV_BUF_SIZE;
@@ -60,9 +60,9 @@ NetVCOptions::reset()
     0;
 #endif
   socket_send_bufsize = 0;
-  sockopt_flags = 0;
-  packet_mark = 0;
-  packet_tos = 0;
+  sockopt_flags       = 0;
+  packet_mark         = 0;
+  packet_tos          = 0;
 
   etype = ET_NET;
 
@@ -75,9 +75,9 @@ NetVCOptions::set_sock_param(int _recv_bufsize, int _send_bufsize, unsigned long
 {
   socket_recv_bufsize = _recv_bufsize;
   socket_send_bufsize = _send_bufsize;
-  sockopt_flags = _opt_flags;
-  packet_mark = _packet_mark;
-  packet_tos = _packet_tos;
+  sockopt_flags       = _opt_flags;
+  packet_mark         = _packet_mark;
+  packet_tos          = _packet_tos;
 }
 
 struct OOB_callback : public Continuation {
@@ -91,7 +91,7 @@ struct OOB_callback : public Continuation {
   OOB_callback(Ptr<ProxyMutex> &m, NetVConnection *vc, Continuation *cont, char *buf, int len)
     : Continuation(m), data(buf), length(len), trigger(0)
   {
-    server_vc = (UnixNetVConnection *)vc;
+    server_vc   = (UnixNetVConnection *)vc;
     server_cont = cont;
     SET_HANDLER(&OOB_callback::retry_OOB_send);
   }
@@ -405,7 +405,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
   } else
     active_timeout = 0;
 #else
-  next_activity_timeout_at = Thread::get_hrtime() + timeout;
+  next_activity_timeout_at   = Thread::get_hrtime() + timeout;
 #endif
 }
 
@@ -437,7 +437,7 @@ UnixNetVConnection::cancel_active_timeout()
     active_timeout = NULL;
   }
 #else
-  next_activity_timeout_at = 0;
+  next_activity_timeout_at   = 0;
 #endif
 }
 
@@ -447,7 +447,7 @@ UnixNetVConnection::set_tcp_init_cwnd(int init_cwnd)
 #ifdef TCP_INIT_CWND
   int rv;
   uint32_t val = init_cwnd;
-  rv = setsockopt(con.fd, IPPROTO_TCP, TCP_INIT_CWND, &val, sizeof(val));
+  rv           = setsockopt(con.fd, IPPROTO_TCP, TCP_INIT_CWND, &val, sizeof(val));
   Debug("socket", "Setting TCP initial congestion window (%d) -> %d", init_cwnd, rv);
   return rv;
 #else
@@ -461,7 +461,7 @@ UnixNetVConnection::set_tcp_congestion_control(const char *name, int len)
 {
 #ifdef TCP_CONGESTION
   int rv = 0;
-  rv = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(const_cast<char *>(name)), len);
+  rv     = setsockopt(con.fd, IPPROTO_TCP, TCP_CONGESTION, reinterpret_cast<void *>(const_cast<char *>(name)), len);
   if (rv < 0) {
     Error("Unable to set TCP congestion control on socket %d to \"%.*s\", errno=%d (%s)", con.fd, len, name, errno,
           strerror(errno));

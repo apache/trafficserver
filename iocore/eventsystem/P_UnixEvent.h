@@ -28,10 +28,10 @@ TS_INLINE Event *
 Event::init(Continuation *c, ink_hrtime atimeout_at, ink_hrtime aperiod)
 {
   continuation = c;
-  timeout_at = atimeout_at;
-  period = aperiod;
-  immediate = !period && !atimeout_at;
-  cancelled = false;
+  timeout_at   = atimeout_at;
+  period       = aperiod;
+  immediate    = !period && !atimeout_at;
+  cancelled    = false;
   return this;
 }
 

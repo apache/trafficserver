@@ -55,7 +55,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   char localhost[1024];
   int status; // return for system calls.
 
-  ip_string[0] = 0;
+  ip_string[0]     = 0;
   ip_hex_string[0] = 0;
   ink_zero(ip);
   ink_zero(ip4);
@@ -72,7 +72,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 
 #if HAVE_IFADDRS_H
     ifaddrs *ifa_addrs = 0;
-    status = getifaddrs(&ifa_addrs);
+    status             = getifaddrs(&ifa_addrs);
 #else
     int s = socket(AF_INET, SOCK_DGRAM, 0);
     // This number is hard to determine, but needs to be much larger than
@@ -85,7 +85,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
     if (0 <= s) {
       conf.ifc_len = sizeof(req);
       conf.ifc_req = req;
-      status = ioctl(s, SIOCGIFCONF, &conf);
+      status       = ioctl(s, SIOCGIFCONF, &conf);
     } else {
       status = -1;
     }
@@ -114,7 +114,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 #endif
         ) {
 #if HAVE_IFADDRS_H
-        ifip = spot->ifa_addr;
+        ifip    = spot->ifa_addr;
         ifflags = spot->ifa_flags;
 #else
         ifip = &spot->ifr_addr;
@@ -189,7 +189,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   hostname_len = hostname ? strlen(hostname) : 0;
 
   ats_ip_ntop(&ip.sa, ip_string, sizeof(ip_string));
-  ip_string_len = strlen(ip_string);
+  ip_string_len     = strlen(ip_string);
   ip_hex_string_len = ats_ip_to_hex(&ip.sa, ip_hex_string, sizeof(ip_hex_string));
 }
 

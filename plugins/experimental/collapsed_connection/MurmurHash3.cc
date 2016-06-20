@@ -80,7 +80,7 @@ void
 MurmurHash3_x86_32(const void *key, int len, uint32_t seed, void *out)
 {
   const uint8_t *data = (const uint8_t *)key;
-  const int nblocks = len / 4;
+  const int nblocks   = len / 4;
 
   uint32_t h1 = seed;
 
@@ -140,7 +140,7 @@ void
 MurmurHash3_x86_128(const void *key, const int len, uint32_t seed, void *out)
 {
   const uint8_t *data = (const uint8_t *)key;
-  const int nblocks = len / 16;
+  const int nblocks   = len / 16;
 
   uint32_t h1 = seed;
   uint32_t h2 = seed;

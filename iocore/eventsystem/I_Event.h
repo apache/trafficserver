@@ -95,7 +95,7 @@
 #define PREFETCH_EVENT_SEND_URL (SIMPLE_EVENT_EVENTS_START + 2)
 
 typedef int EventType;
-const int ET_CALL = 0;
+const int ET_CALL         = 0;
 const int MAX_EVENT_TYPES = 8; // conservative, these are dynamically allocated
 
 class EThread;

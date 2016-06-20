@@ -48,7 +48,7 @@ namespace
 static int
 handleTransactionPluginEvents(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn txn             = static_cast<TSHttpTxn>(edata);
   TransactionPlugin *plugin = static_cast<TransactionPlugin *>(TSContDataGet(cont));
   LOG_DEBUG("cont=%p, event=%d, tshttptxn=%p, plugin=%p", cont, event, edata, plugin);
   atscppapi::utils::internal::invokePluginForEvent(plugin, txn, event);
@@ -59,7 +59,7 @@ handleTransactionPluginEvents(TSCont cont, TSEvent event, void *edata)
 
 TransactionPlugin::TransactionPlugin(Transaction &transaction)
 {
-  state_ = new TransactionPluginState(static_cast<TSHttpTxn>(transaction.getAtsHandle()));
+  state_        = new TransactionPluginState(static_cast<TSHttpTxn>(transaction.getAtsHandle()));
   TSMutex mutex = NULL;
   state_->cont_ = TSContCreate(handleTransactionPluginEvents, mutex);
   TSContDataSet(state_->cont_, static_cast<void *>(this));

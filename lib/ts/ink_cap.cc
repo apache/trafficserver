@@ -61,7 +61,7 @@ ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 #define DEBUG_PRIVILEGES(tag)                                                                                    \
   do {                                                                                                           \
     if (is_debug_tag_set(tag)) {                                                                                 \
-      cap_t caps = cap_get_proc();                                                                               \
+      cap_t caps      = cap_get_proc();                                                                          \
       char *caps_text = cap_to_text(caps, NULL);                                                                 \
       Debug(tag, "caps='%s', core=%s, death signal=%d, thread=0x%llx", caps_text, is_dumpable(), death_signal(), \
             (unsigned long long)pthread_self());                                                                 \
@@ -86,7 +86,7 @@ ink_mutex ElevateAccess::lock = INK_MUTEX_INIT;
 static int
 getresuid(uid_t *uid, uid_t *euid, uid_t *suid)
 {
-  *uid = getuid();
+  *uid  = getuid();
   *euid = geteuid();
   return 0;
 }
@@ -96,7 +96,7 @@ getresuid(uid_t *uid, uid_t *euid, uid_t *suid)
 static int
 getresgid(gid_t *gid, gid_t *egid, gid_t *sgid)
 {
-  *gid = getgid();
+  *gid  = getgid();
   *egid = getegid();
   return 0;
 }
@@ -147,7 +147,7 @@ DebugCapabilities(char const *tag)
 static void
 impersonate(const struct passwd *pwd, ImpersonationLevel level)
 {
-  int deathsig = death_signal();
+  int deathsig  = death_signal();
   bool dumpable = false;
 
   DEBUG_CREDENTIALS("privileges");
@@ -262,10 +262,10 @@ RestrictCapabilities()
 #if TS_USE_POSIX_CAP
   cap_t caps = cap_init(); // start with nothing.
   // Capabilities we need.
-  cap_value_t perm_list[] = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE};
+  cap_value_t perm_list[]         = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK, CAP_DAC_OVERRIDE};
   static int const PERM_CAP_COUNT = sizeof(perm_list) / sizeof(*perm_list);
-  cap_value_t eff_list[] = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
-  static int const EFF_CAP_COUNT = sizeof(eff_list) / sizeof(*eff_list);
+  cap_value_t eff_list[]          = {CAP_NET_ADMIN, CAP_NET_BIND_SERVICE, CAP_IPC_LOCK};
+  static int const EFF_CAP_COUNT  = sizeof(eff_list) / sizeof(*eff_list);
 
   cap_set_flag(caps, CAP_PERMITTED, PERM_CAP_COUNT, perm_list, CAP_SET);
   cap_set_flag(caps, CAP_EFFECTIVE, EFF_CAP_COUNT, eff_list, CAP_SET);
@@ -374,7 +374,7 @@ ElevateAccess::acquirePrivilege(unsigned priv_mask)
 
   if (cap_count > 0) {
     this->cap_state = cap_get_proc(); // save current capabilities
-    new_cap_state = cap_get_proc();   // and another instance to modify.
+    new_cap_state   = cap_get_proc(); // and another instance to modify.
     cap_set_flag(new_cap_state, CAP_EFFECTIVE, cap_count, cap_list, CAP_SET);
 
     if (cap_set_proc(new_cap_state) != 0) {

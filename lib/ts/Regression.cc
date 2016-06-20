@@ -34,11 +34,11 @@
 #include "ts/ink_assert.h"
 #include "ts/ink_args.h"
 
-static RegressionTest *test = NULL;
+static RegressionTest *test           = NULL;
 static RegressionTest *exclusive_test = NULL;
 
 RegressionTest *RegressionTest::current = 0;
-int RegressionTest::ran_tests = 0;
+int RegressionTest::ran_tests           = 0;
 DFA RegressionTest::dfa;
 int RegressionTest::final_status = REGRESSION_TEST_PASSED;
 
@@ -63,12 +63,12 @@ RegressionTest::RegressionTest(const char *_n, const SourceLocation &_l, TestFun
 {
   if (opt == REGRESSION_OPT_EXCLUSIVE) {
     if (exclusive_test)
-      this->next = exclusive_test;
+      this->next   = exclusive_test;
     exclusive_test = this;
   } else {
     if (test)
       this->next = test;
-    test = this;
+    test         = this;
   }
 }
 
@@ -114,7 +114,7 @@ void
 RegressionTest::list()
 {
   char buf[128];
-  const char *bold = "\x1b[1m";
+  const char *bold   = "\x1b[1m";
   const char *unbold = "\x1b[0m";
 
   if (!isatty(fileno(stdout))) {
@@ -171,7 +171,7 @@ RegressionTest::check_status(int regression_level)
   }
 
   RegressionTest *t = test;
-  int exclusive = 0;
+  int exclusive     = 0;
 
 check_test_list:
   while (t) {
@@ -196,7 +196,7 @@ check_test_list:
   }
   if (!exclusive) {
     exclusive = 1;
-    t = exclusive_test;
+    t         = exclusive_test;
     goto check_test_list;
   }
 
@@ -207,8 +207,8 @@ int
 RegressionTest::main(int /* argc */, const char **argv, int level)
 {
   char regression_test[1024] = "";
-  int regression_list = 0;
-  int regression_level = level;
+  int regression_list        = 0;
+  int regression_level       = level;
 
   const ArgumentDescription argument_descriptions[] = {
     {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},

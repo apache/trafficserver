@@ -105,7 +105,7 @@ CtrlMgmtRecordValue::init(TSRecordT _t, TSRecordValueT _v)
     }
     break;
   default:
-    rec_type = TS_REC_STRING;
+    rec_type      = TS_REC_STRING;
     this->fmt.str = "(invalid)";
   }
 }
@@ -230,7 +230,7 @@ main(int argc, const char **argv)
   };
 
   BaseLogFile *base_log_file = new BaseLogFile("stderr");
-  diags = new Diags("" /* tags */, "" /* actions */, base_log_file);
+  diags                      = new Diags("" /* tags */, "" /* actions */, base_log_file);
 
   // Process command line arguments and dump into variables
   if (!CtrlProcessArguments(argc, argv, argument_descriptions, countof(argument_descriptions))) {
@@ -240,7 +240,7 @@ main(int argc, const char **argv)
   if (debug) {
     diags->activate_taglist("traffic_ctl", DiagsTagType_Debug);
     diags->config.enabled[DiagsTagType_Debug] = true;
-    diags->show_location = true;
+    diags->show_location                      = true;
   }
 
   CtrlDebug("debug logging active");

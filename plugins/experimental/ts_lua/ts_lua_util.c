@@ -55,8 +55,8 @@ ts_lua_create_vm(ts_lua_main_ctx *arr, int n)
 
     lua_pushvalue(L, LUA_GLOBALSINDEX);
 
-    arr[i].gref = luaL_ref(L, LUA_REGISTRYINDEX); /* L[REG][gref] = L[GLOBAL] */
-    arr[i].lua = L;
+    arr[i].gref   = luaL_ref(L, LUA_REGISTRYINDEX); /* L[REG][gref] = L[GLOBAL] */
+    arr[i].lua    = L;
     arr[i].mutexp = TSMutexCreate();
   }
 
@@ -107,7 +107,7 @@ ts_lua_add_module(ts_lua_instance_conf *conf, ts_lua_main_ctx *arr, int n, int a
 
   for (i = 0; i < n; i++) {
     conf->_first = (i == 0) ? 1 : 0;
-    conf->_last = (i == n - 1) ? 1 : 0;
+    conf->_last  = (i == n - 1) ? 1 : 0;
 
     TSMutexLock(arr[i].mutexp);
 
@@ -355,10 +355,10 @@ ts_lua_create_async_ctx(lua_State *L, ts_lua_cont_info *hci, int n)
   l = lua_newthread(L);
 
   // init the coroutine
-  crt = &actx->cinfo.routine;
+  crt       = &actx->cinfo.routine;
   crt->mctx = hci->routine.mctx;
-  crt->lua = l;
-  crt->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+  crt->lua  = l;
+  crt->ref  = luaL_ref(L, LUA_REGISTRYINDEX);
 
   // replace the param; start with 2 because first two params are not needed
   for (i = 2; i < n; i++) {
@@ -418,7 +418,7 @@ ts_lua_create_http_ctx(ts_lua_main_ctx *main_ctx, ts_lua_instance_conf *conf)
 
   // create coroutine for http_ctx
   crt = &http_ctx->cinfo.routine;
-  l = lua_newthread(L);
+  l   = lua_newthread(L);
 
   lua_pushlightuserdata(L, conf);
   lua_rawget(L, LUA_REGISTRYINDEX);
@@ -435,8 +435,8 @@ ts_lua_create_http_ctx(ts_lua_main_ctx *main_ctx, ts_lua_instance_conf *conf)
   lua_replace(l, LUA_GLOBALSINDEX);
 
   // init coroutine
-  crt->ref = luaL_ref(L, LUA_REGISTRYINDEX);
-  crt->lua = l;
+  crt->ref  = luaL_ref(L, LUA_REGISTRYINDEX);
+  crt->lua  = l;
   crt->mctx = main_ctx;
 
   http_ctx->instance_conf = conf;
@@ -528,10 +528,10 @@ ts_lua_create_http_intercept_ctx(lua_State *L, ts_lua_http_ctx *http_ctx, int n)
   l = lua_newthread(L);
 
   // init the coroutine
-  crt = &ictx->cinfo.routine;
+  crt       = &ictx->cinfo.routine;
   crt->mctx = hci->routine.mctx;
-  crt->lua = l;
-  crt->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+  crt->lua  = l;
+  crt->ref  = luaL_ref(L, LUA_REGISTRYINDEX);
 
   // Todo: replace the global, context table for crt->lua
 
@@ -597,7 +597,7 @@ ts_lua_create_http_transform_ctx(ts_lua_http_ctx *http_ctx, TSVConn connp)
   ts_lua_http_transform_ctx *transform_ctx;
 
   hci = &http_ctx->cinfo;
-  L = hci->routine.lua;
+  L   = hci->routine.lua;
 
   transform_ctx = (ts_lua_http_transform_ctx *)TSmalloc(sizeof(ts_lua_http_transform_ctx));
   memset(transform_ctx, 0, sizeof(ts_lua_http_transform_ctx));
@@ -605,14 +605,14 @@ ts_lua_create_http_transform_ctx(ts_lua_http_ctx *http_ctx, TSVConn connp)
   transform_ctx->hctx = http_ctx;
   TSContDataSet(connp, transform_ctx);
 
-  ci = &transform_ctx->cinfo;
+  ci        = &transform_ctx->cinfo;
   ci->contp = connp;
   ci->mutex = TSContMutexGet((TSCont)http_ctx->txnp);
 
-  crt = &ci->routine;
+  crt       = &ci->routine;
   crt->mctx = hci->routine.mctx;
-  crt->lua = lua_newthread(L);
-  crt->ref = luaL_ref(L, LUA_REGISTRYINDEX);
+  crt->lua  = lua_newthread(L);
+  crt->ref  = luaL_ref(L, LUA_REGISTRYINDEX);
   ts_lua_set_http_transform_ctx(crt->lua, transform_ctx);
 
   lua_pushlightuserdata(L, transform_ctx);
@@ -651,13 +651,13 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
   ts_lua_cont_info *ci;
   ts_lua_coroutine *crt;
 
-  event = (int)ev;
+  event    = (int)ev;
   http_ctx = (ts_lua_http_ctx *)TSContDataGet(contp);
-  ci = &http_ctx->cinfo;
-  crt = &ci->routine;
+  ci       = &http_ctx->cinfo;
+  crt      = &ci->routine;
 
   main_ctx = crt->mctx;
-  L = crt->lua;
+  L        = crt->lua;
 
   txnp = http_ctx->txnp;
 
@@ -783,7 +783,7 @@ ts_lua_http_cont_handler(TSCont contp, TSEvent ev, void *edata)
     break;
 
   case TS_LUA_EVENT_COROUTINE_CONT:
-    n = (intptr_t)edata;
+    n   = (intptr_t)edata;
     ret = lua_resume(L, n);
 
   default:

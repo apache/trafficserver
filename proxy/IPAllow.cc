@@ -128,8 +128,8 @@ IpAllow::Print()
     } else if (0 == mask) {
       s << "NONE";
     } else {
-      bool leader = false;    // need leading vbar?
-      uint32_t test_mask = 1; // mask for current method.
+      bool leader        = false; // need leading vbar?
+      uint32_t test_mask = 1;     // mask for current method.
       for (int i = 0; i < HTTP_WKSIDX_METHODS_CNT; ++i, test_mask <<= 1) {
         if (mask & test_mask) {
           if (leader)
@@ -158,12 +158,12 @@ IpAllow::Print()
 int
 IpAllow::BuildTable()
 {
-  char *tok_state = NULL;
-  char *line = NULL;
+  char *tok_state    = NULL;
+  char *line         = NULL;
   const char *errPtr = NULL;
   char errBuf[1024];
   char *file_buf = NULL;
-  int line_num = 0;
+  int line_num   = 0;
   IpEndpoint addr1;
   IpEndpoint addr2;
   matcher_line line_info;
@@ -210,11 +210,11 @@ IpAllow::BuildTable()
           uint32_t acl_method_mask = 0;
           AclRecord::MethodSet nonstandard_methods;
           bool deny_nonstandard_methods = false;
-          AclOp op = ACL_OP_DENY; // "shut up", I explained to the compiler.
+          AclOp op                      = ACL_OP_DENY; // "shut up", I explained to the compiler.
           bool op_found = false, method_found = false;
           for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
             label = line_info.line[0][i];
-            val = line_info.line[1][i];
+            val   = line_info.line[1][i];
             if (label == NULL) {
               continue;
             }
@@ -230,7 +230,7 @@ IpAllow::BuildTable()
             // Loop again for methods, (in case action= appears after method=)
             for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
               label = line_info.line[0][i];
-              val = line_info.line[1][i];
+              val   = line_info.line[1][i];
               if (label == NULL) {
                 continue;
               }
@@ -243,7 +243,7 @@ IpAllow::BuildTable()
                     break;
                   } else {
                     int method_name_len = strlen(method_name);
-                    int method_idx = hdrtoken_tokenize(method_name, method_name_len);
+                    int method_idx      = hdrtoken_tokenize(method_name, method_name_len);
                     if (method_idx < HTTP_WKSIDX_CONNECT || method_idx >= HTTP_WKSIDX_CONNECT + HTTP_WKSIDX_METHODS_CNT) {
                       nonstandard_methods.insert(method_name);
                       Debug("ip-allow", "Found nonstandard method [%s] on line %d", method_name, line_num);
@@ -257,14 +257,14 @@ IpAllow::BuildTable()
             }
             // If method not specified, default to ALL
             if (!method_found) {
-              method_found = true;
+              method_found    = true;
               acl_method_mask = AclRecord::ALL_METHOD_MASK;
               nonstandard_methods.clear();
             }
             // When deny, use bitwise complement.  (Make the rule 'allow for all
             // methods except those specified')
             if (op == ACL_OP_DENY) {
-              acl_method_mask = AclRecord::ALL_METHOD_MASK & ~acl_method_mask;
+              acl_method_mask          = AclRecord::ALL_METHOD_MASK & ~acl_method_mask;
               deny_nonstandard_methods = true;
             }
           }

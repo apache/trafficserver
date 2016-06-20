@@ -84,7 +84,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
       ++i;                     // skip past '$'; for loop's incrementor will skip past '('
     } else if (((expr[i] == ')') || (expr[i] == '|')) && (var_start_index != -1)) {
       last_variable_expanded = false;
-      var_size = i - var_start_index;
+      var_size               = i - var_start_index;
       if (var_size) {
         const string &var_value = _variables.getValue(expr + var_start_index, var_size);
         _debugLog(_debug_tag, "[%s] Got value [%.*s] for variable [%.*s]", __FUNCTION__, var_value.size(), var_value.data(),
@@ -108,7 +108,7 @@ Expression::expand(const char *expr, int expr_len /* = -1 */)
           goto lFail;
         }
         const char *default_value = expr + default_value_start;
-        int default_value_len = i - default_value_start;
+        int default_value_len     = i - default_value_start;
         if (!_stripQuotes(default_value, default_value_len)) {
           goto lFail;
         }
@@ -142,7 +142,7 @@ Expression::_findOperator(const char *expr, int expr_len, Operator &op) const
   size_t sep;
   for (int i = 0; i < N_OPERATORS; ++i) {
     const OperatorString &op_str = OPERATOR_STRINGS[i];
-    sep = (op_str.str_len == 1) ? expr_str.find(op_str.str[0]) : expr_str.find(op_str.str);
+    sep                          = (op_str.str_len == 1) ? expr_str.find(op_str.str[0]) : expr_str.find(op_str.str);
     if (sep < expr_str.size()) {
       op = static_cast<Operator>(i);
       return static_cast<int>(sep);
@@ -173,23 +173,23 @@ Expression::evaluate(const char *expr, int expr_len /* = -1 */)
   int subexpr_len;
   string lhs, rhs;
   bool retval = false;
-  int sep = _findOperator(expr, expr_len, op);
+  int sep     = _findOperator(expr, expr_len, op);
 
   if (sep == -1) {
     retval = _evalSimpleExpr(expr, expr_len);
   } else if (_isBinaryOperator(op)) {
-    subexpr = expr;
+    subexpr     = expr;
     subexpr_len = sep;
-    lhs = expand(subexpr, subexpr_len);
+    lhs         = expand(subexpr, subexpr_len);
     _debugLog(_debug_tag, "[%s] LHS [%.*s] expanded to [%.*s]", __FUNCTION__, subexpr_len, subexpr, lhs.size(), lhs.data());
-    subexpr = expr + sep + OPERATOR_STRINGS[op].str_len;
+    subexpr     = expr + sep + OPERATOR_STRINGS[op].str_len;
     subexpr_len = expr_len - subexpr_len - OPERATOR_STRINGS[op].str_len;
-    rhs = expand(subexpr, subexpr_len);
+    rhs         = expand(subexpr, subexpr_len);
     _debugLog(_debug_tag, "[%s] RHS [%.*s] expanded to [%.*s]", __FUNCTION__, subexpr_len, subexpr, rhs.size(), rhs.data());
     double lhs_numerical = 0;
     double rhs_numerical = 0;
-    bool are_numerical = _convert(lhs, lhs_numerical);
-    are_numerical = are_numerical ? _convert(rhs, rhs_numerical) : false;
+    bool are_numerical   = _convert(lhs, lhs_numerical);
+    are_numerical        = are_numerical ? _convert(rhs, rhs_numerical) : false;
     switch (op) {
     case OP_EQ:
       retval = are_numerical ? (lhs_numerical == rhs_numerical) : (lhs == rhs);

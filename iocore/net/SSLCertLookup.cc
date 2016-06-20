@@ -45,7 +45,7 @@ struct SSLAddressLookupKey {
     // if there is a certificate on the port.
     nbytes = ats_ip_to_hex(&ip.sa, key, sizeof(key));
     if (port) {
-      sep = nbytes;
+      sep           = nbytes;
       key[nbytes++] = '.';
       key[nbytes++] = hextab[(port >> 12) & 0x000F];
       key[nbytes++] = hextab[(port >> 8) & 0x000F];
@@ -140,7 +140,7 @@ ticket_block_free(void *ptr)
 {
   if (ptr) {
     ssl_ticket_key_block *key_block_ptr = (ssl_ticket_key_block *)ptr;
-    unsigned num_ticket_keys = key_block_ptr->num_keys;
+    unsigned num_ticket_keys            = key_block_ptr->num_keys;
     memset(ptr, 0, sizeof(ssl_ticket_key_block) + num_ticket_keys * sizeof(ssl_ticket_key_t));
   }
   ats_free(ptr);
@@ -253,13 +253,13 @@ private:
 static char *
 reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
 {
-  char *ptr = reversed + sizeof(reversed);
+  char *ptr        = reversed + sizeof(reversed);
   const char *part = hostname;
 
   *(--ptr) = '\0'; // NUL-terminate
 
   while (*part) {
-    ssize_t len = strcspn(part, ".");
+    ssize_t len    = strcspn(part, ".");
     ssize_t remain = ptr - reversed;
 
     if (remain < (len + 1)) {
@@ -321,7 +321,7 @@ int
 SSLContextStorage::insert(const char *name, SSLCertContext const &cc)
 {
   int idx = this->store(cc);
-  idx = this->insert(name, idx);
+  idx     = this->insert(name, idx);
   if (idx < 0)
     this->ctx_store.drop();
   return idx;
@@ -346,9 +346,9 @@ SSLContextStorage::insert(const char *name, int idx)
       return -1;
     }
 
-    ref = new ContextRef(idx);
+    ref         = new ContextRef(idx);
     int ref_idx = (*ref).idx;
-    inserted = this->wildcards.Insert(reversed, ref, 0 /* rank */, -1 /* keylen */);
+    inserted    = this->wildcards.Insert(reversed, ref, 0 /* rank */, -1 /* keylen */);
     if (!inserted) {
       ContextRef *found;
 

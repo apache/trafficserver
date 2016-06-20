@@ -294,7 +294,7 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection *vc)
     ClusterVC_remove_read(vc);
   if (vc->write.queue)
     ClusterVC_remove_write(vc);
-  vc->read.vio.mutex = NULL;
+  vc->read.vio.mutex  = NULL;
   vc->write.vio.mutex = NULL;
 
   ink_assert(!vc->read_locked);
@@ -325,12 +325,12 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection *vc)
     int len;
 
     if (vers == CloseMessage::CLOSE_CHAN_MESSAGE_VERSION) {
-      msg.channel = channel;
-      msg.status = (vc->remote_closed == FORCE_CLOSE_ON_OPEN_CHANNEL) ? FORCE_CLOSE_ON_OPEN_CHANNEL : vc->closed;
-      msg.lerrno = vc->lerrno;
+      msg.channel         = channel;
+      msg.status          = (vc->remote_closed == FORCE_CLOSE_ON_OPEN_CHANNEL) ? FORCE_CLOSE_ON_OPEN_CHANNEL : vc->closed;
+      msg.lerrno          = vc->lerrno;
       msg.sequence_number = vc->token.sequence_number;
-      data = (void *)&msg;
-      len = sizeof(CloseMessage);
+      data                = (void *)&msg;
+      len                 = sizeof(CloseMessage);
 
     } else {
       //////////////////////////////////////////////////////////////
@@ -391,10 +391,10 @@ ClusterHandler::build_data_vector(char *d, int len, bool read_flag)
   ink_assert(len);
   ink_assert(s.iov);
 
-  s.msg.count = 1;
+  s.msg.count       = 1;
   s.iov[0].iov_base = 0;
-  s.iov[0].iov_len = len;
-  s.block[0] = new_IOBufferBlock();
+  s.iov[0].iov_len  = len;
+  s.block[0]        = new_IOBufferBlock();
   s.block[0]->set(new_constant_IOBufferData(d, len));
 
   if (read_flag) {
@@ -406,7 +406,7 @@ ClusterHandler::build_data_vector(char *d, int len, bool read_flag)
   }
 
   s.to_do = len;
-  s.did = 0;
+  s.did   = 0;
   s.n_iov = 1;
 
   return true;
@@ -450,12 +450,12 @@ ClusterHandler::build_initial_vector(bool read_flag)
   // This isn't used.
   // MIOBuffer      *w;
 
-  ink_hrtime now = Thread::get_hrtime();
-  ClusterState &s = (read_flag ? read : write);
+  ink_hrtime now      = Thread::get_hrtime();
+  ClusterState &s     = (read_flag ? read : write);
   OutgoingControl *oc = s.msg.outgoing_control.head;
   IncomingControl *ic = incoming_control.head;
-  int new_n_iov = 0;
-  int to_do = 0;
+  int new_n_iov       = 0;
+  int to_do           = 0;
   int len;
 
   ink_assert(s.iov);
@@ -464,10 +464,10 @@ ClusterHandler::build_initial_vector(bool read_flag)
     //////////////////////////////////////////////////////////////////////
     // Setup vector for write of header, descriptors and control data
     //////////////////////////////////////////////////////////////////////
-    len = sizeof(ClusterMsgHeader) + (s.msg.count * sizeof(Descriptor)) + s.msg.control_bytes;
+    len                       = sizeof(ClusterMsgHeader) + (s.msg.count * sizeof(Descriptor)) + s.msg.control_bytes;
     s.iov[new_n_iov].iov_base = 0;
-    s.iov[new_n_iov].iov_len = len;
-    s.block[new_n_iov] = s.msg.get_block_header();
+    s.iov[new_n_iov].iov_len  = len;
+    s.block[new_n_iov]        = s.msg.get_block_header();
 
     // Make read_avail == len
     s.block[new_n_iov]->fill(len);
@@ -480,10 +480,10 @@ ClusterHandler::build_initial_vector(bool read_flag)
       ////////////////////////////////////
       // Setup vector for read of header
       ////////////////////////////////////
-      len = sizeof(ClusterMsgHeader);
+      len                       = sizeof(ClusterMsgHeader);
       s.iov[new_n_iov].iov_base = 0;
-      s.iov[new_n_iov].iov_len = len;
-      s.block[new_n_iov] = s.msg.get_block_header();
+      s.iov[new_n_iov].iov_len  = len;
+      s.block[new_n_iov]        = s.msg.get_block_header();
 
       // Make write_avail == len
       s.block[new_n_iov]->_buf_end = s.block[new_n_iov]->end() + len;
@@ -495,10 +495,10 @@ ClusterHandler::build_initial_vector(bool read_flag)
       /////////////////////////////////////////////////////////
       // Setup vector for read of Descriptors+control data
       /////////////////////////////////////////////////////////
-      len = (s.msg.count * sizeof(Descriptor)) + s.msg.control_bytes;
+      len                       = (s.msg.count * sizeof(Descriptor)) + s.msg.control_bytes;
       s.iov[new_n_iov].iov_base = 0;
-      s.iov[new_n_iov].iov_len = len;
-      s.block[new_n_iov] = s.msg.get_block_descriptor();
+      s.iov[new_n_iov].iov_len  = len;
+      s.block[new_n_iov]        = s.msg.get_block_descriptor();
 
       // Make write_avail == len
       s.block[new_n_iov]->_buf_end = s.block[new_n_iov]->end() + len;
@@ -527,7 +527,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
           // Incoming Control
           ///////////////////////
           if (!ic) {
-            ic = IncomingControl::alloc();
+            ic                  = IncomingControl::alloc();
             ic->recognized_time = now;
             CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CTRL_MSGS_RECVD_STAT);
             ic->len = s.msg.descriptor[i].length;
@@ -540,8 +540,8 @@ ClusterHandler::build_initial_vector(bool read_flag)
             incoming_control.enqueue(ic);
           }
           s.iov[new_n_iov].iov_base = 0;
-          s.iov[new_n_iov].iov_len = ic->len;
-          s.block[new_n_iov] = ic->get_block();
+          s.iov[new_n_iov].iov_len  = ic->len;
+          s.block[new_n_iov]        = ic->get_block();
           to_do += s.iov[new_n_iov].iov_len;
           ++new_n_iov;
           ic = (IncomingControl *)ic->link.next;
@@ -551,8 +551,8 @@ ClusterHandler::build_initial_vector(bool read_flag)
           ///////////////////////
           ink_assert(oc);
           s.iov[new_n_iov].iov_base = 0;
-          s.iov[new_n_iov].iov_len = oc->len;
-          s.block[new_n_iov] = oc->get_block();
+          s.iov[new_n_iov].iov_len  = oc->len;
+          s.block[new_n_iov]        = oc->get_block();
           to_do += s.iov[new_n_iov].iov_len;
           ++new_n_iov;
           oc = (OutgoingControl *)oc->link.next;
@@ -597,16 +597,16 @@ ClusterHandler::build_initial_vector(bool read_flag)
               //////////////////////////////////////////////////////////
               ink_release_assert(s.msg.descriptor[i].length <= DEFAULT_MAX_BUFFER_SIZE);
               vc->read_block = new_IOBufferBlock();
-              int64_t index = buffer_size_to_index(s.msg.descriptor[i].length, MAX_BUFFER_SIZE_INDEX);
+              int64_t index  = buffer_size_to_index(s.msg.descriptor[i].length, MAX_BUFFER_SIZE_INDEX);
               vc->read_block->alloc(index);
 
               s.iov[new_n_iov].iov_base = 0;
-              s.block[new_n_iov] = vc->read_block->clone();
+              s.block[new_n_iov]        = vc->read_block->clone();
 
             } else {
               Debug(CL_NOTE, "dumping cluster read data");
               s.iov[new_n_iov].iov_base = 0;
-              s.block[new_n_iov] = new_IOBufferBlock();
+              s.block[new_n_iov]        = new_IOBufferBlock();
               s.block[new_n_iov]->set(new_constant_IOBufferData(channel_dummy_input, DEFAULT_MAX_BUFFER_SIZE));
             }
 
@@ -629,7 +629,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
                 s.iov[new_n_iov].iov_base = 0;
                 ink_release_assert((int)s.msg.descriptor[i].length <= vc->write_list_bytes);
                 s.block[new_n_iov] = vc->write_list;
-                vc->write_list = consume_IOBufferBlockList(vc->write_list, (int)s.msg.descriptor[i].length);
+                vc->write_list     = consume_IOBufferBlockList(vc->write_list, (int)s.msg.descriptor[i].length);
                 vc->write_list_bytes -= (int)s.msg.descriptor[i].length;
                 vc->write_bytes_in_transit += (int)s.msg.descriptor[i].length;
 
@@ -641,7 +641,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
             } else {
               Debug(CL_NOTE, "faking cluster write data");
               s.iov[new_n_iov].iov_base = 0;
-              s.block[new_n_iov] = new_IOBufferBlock();
+              s.block[new_n_iov]        = new_IOBufferBlock();
               s.block[new_n_iov]->set(new_constant_IOBufferData(channel_dummy_output, DEFAULT_MAX_BUFFER_SIZE));
               // Make block read_avail == descriptor[].length
               s.block[new_n_iov]->fill(s.msg.descriptor[i].length);
@@ -650,7 +650,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
         } else {
           // VC has been deleted, need to dump the bits...
           s.iov[new_n_iov].iov_base = 0;
-          s.block[new_n_iov] = new_IOBufferBlock();
+          s.block[new_n_iov]        = new_IOBufferBlock();
 
           if (read_flag) {
             s.block[new_n_iov]->set(new_constant_IOBufferData(channel_dummy_input, DEFAULT_MAX_BUFFER_SIZE));
@@ -678,7 +678,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
 
   // Initialize i/o state variables
   s.to_do = to_do;
-  s.did = 0;
+  s.did   = 0;
   s.n_iov = new_n_iov;
   return true;
 
@@ -728,7 +728,7 @@ ClusterHandler::get_read_locks()
         // make considerations for the last transfer on this vector.
 
         vec_bytes_remainder = (s.iov[n].iov_len - iov_done[n]);
-        bytes_processed = s.bytes_xfered;
+        bytes_processed     = s.bytes_xfered;
 
         bytes_processed -= vec_bytes_remainder;
         if (bytes_processed >= 0) {
@@ -857,14 +857,14 @@ ClusterHandler::process_set_data_msgs()
   // Process small control set_data messages.
   /////////////////////////////////////////////
   if (!read.msg.did_small_control_set_data) {
-    char *p = (char *)&read.msg.descriptor[read.msg.count];
+    char *p    = (char *)&read.msg.descriptor[read.msg.count];
     char *endp = p + read.msg.control_bytes;
     while (p < endp) {
       if (needByteSwap) {
         ats_swap32((uint32_t *)p);                     // length
         ats_swap32((uint32_t *)(p + sizeof(int32_t))); // function code
       }
-      int len = *(int32_t *)p;
+      int len                = *(int32_t *)p;
       cluster_function_index = *(uint32_t *)(p + sizeof(int32_t));
 
       if ((cluster_function_index < (uint32_t)SIZE_clusterFunction) &&
@@ -884,7 +884,7 @@ ClusterHandler::process_set_data_msgs()
         break; // End of set_data messages
       }
     }
-    read.msg.control_data_offset = p - (char *)&read.msg.descriptor[read.msg.count];
+    read.msg.control_data_offset        = p - (char *)&read.msg.descriptor[read.msg.count];
     read.msg.did_small_control_set_data = 1;
   }
   /////////////////////////////////////////////
@@ -936,8 +936,8 @@ ClusterHandler::process_small_control_msgs()
   }
 
   ink_hrtime now = Thread::get_hrtime();
-  char *p = (char *)&read.msg.descriptor[read.msg.count] + read.msg.control_data_offset;
-  char *endp = (char *)&read.msg.descriptor[read.msg.count] + read.msg.control_bytes;
+  char *p        = (char *)&read.msg.descriptor[read.msg.count] + read.msg.control_data_offset;
+  char *endp     = (char *)&read.msg.descriptor[read.msg.count] + read.msg.control_bytes;
 
   while (p < endp) {
     /////////////////////////////////////////////////////////////////
@@ -971,7 +971,7 @@ ClusterHandler::process_small_control_msgs()
       ///////////////////////////////////////////////////////
       IncomingControl *ic = IncomingControl::alloc();
       ic->recognized_time = now;
-      ic->len = len;
+      ic->len             = len;
       ic->alloc_data();
       memcpy(ic->data, p, ic->len);
       SetHighBit(&ic->len); // mark as small cntl
@@ -1067,7 +1067,7 @@ ClusterHandler::process_freespace_msgs()
 void
 ClusterHandler::add_to_byte_bank(ClusterVConnection *vc)
 {
-  ByteBankDescriptor *bb_desc = ByteBankDescriptor::ByteBankDescriptor_alloc(vc->read_block);
+  ByteBankDescriptor *bb_desc       = ByteBankDescriptor::ByteBankDescriptor_alloc(vc->read_block);
   bool pending_byte_bank_completion = vc->byte_bank_q.head ? true : false;
 
   // Put current byte bank descriptor on completion list
@@ -1165,7 +1165,7 @@ ClusterHandler::process_incoming_callouts(ProxyMutex *mutex)
       break;
 
     while (ic_ext) {
-      ic_ext_next = (IncomingControl *)ic_ext->link.next;
+      ic_ext_next       = (IncomingControl *)ic_ext->link.next;
       ic_ext->link.next = NULL;
       local_incoming_control.push(ic_ext);
       ic_ext = ic_ext_next;
@@ -1183,8 +1183,8 @@ ClusterHandler::process_incoming_callouts(ProxyMutex *mutex)
       ClearHighBit(&ic->len); // Clear small msg flag bit
 
       if (small_control_msg) {
-        int len = ic->len;
-        char *p = ic->data;
+        int len                         = ic->len;
+        char *p                         = ic->data;
         uint32_t cluster_function_index = *(uint32_t *)p;
         p += sizeof(uint32_t);
 
@@ -1247,7 +1247,7 @@ ClusterHandler::update_channels_partial_read()
   // how much of the iov was done
 
   int64_t iov_done[MAX_TCOUNT];
-  int64_t total = 0;
+  int64_t total        = 0;
   int64_t already_read = read.did - read.bytes_xfered;
 
   for (i = 0; i < read.n_iov; i++) {
@@ -1258,7 +1258,7 @@ ClusterHandler::update_channels_partial_read()
     if (already_read) {
       already_read -= iov_done[i];
       if (already_read < 0) {
-        iov_done[i] = -already_read; // bytes remaining
+        iov_done[i]  = -already_read; // bytes remaining
         already_read = 0;
       } else {
         iov_done[i] = 0;
@@ -1286,7 +1286,7 @@ ClusterHandler::update_channels_partial_read()
       if (VALID_CHANNEL(vc) && (read.msg.descriptor[i].sequence_number) == CLUSTER_SEQUENCE_NUMBER(vc->token.sequence_number)) {
         if (vc->pending_remote_fill || (vc_ok_read(vc) && (vc->iov_map != CLUSTER_IOV_NONE))) {
           vc->last_activity_time = current_time; // note activity time
-          ClusterVConnState *s = &vc->read;
+          ClusterVConnState *s   = &vc->read;
           ink_assert(vc->iov_map < read.n_iov);
           int len = iov_done[vc->iov_map];
 
@@ -1439,19 +1439,19 @@ ClusterHandler::update_channels_written()
             Debug(CL_TRACE, "update_channels_written chan=%d seqno=%d len=%d", write.msg.descriptor[i].channel,
                   write.msg.descriptor[i].sequence_number, write.msg.descriptor[i].length);
             vc->pending_remote_fill = 0;
-            vc->remote_write_block = 0; // free data block
-            continue;                   // ignore remote write fill VC(s)
+            vc->remote_write_block  = 0; // free data block
+            continue;                    // ignore remote write fill VC(s)
           }
 
           ClusterVConnState *s = &vc->write;
-          int len = write.msg.descriptor[i].length;
+          int len              = write.msg.descriptor[i].length;
           vc->write_bytes_in_transit -= len;
           ink_release_assert(vc->write_bytes_in_transit >= 0);
           Debug(CL_PROTO, "(%d) data sent %d %" PRId64, write.msg.descriptor[i].channel, len, s->vio.ndone);
 
           if (vc_ok_write(vc)) {
             vc->last_activity_time = current_time; // note activity time
-            int64_t ndone = vc->was_closed() ? 0 : s->vio.ndone;
+            int64_t ndone          = vc->was_closed() ? 0 : s->vio.ndone;
 
             if (ndone < vc->remote_free) {
               vcs_push(vc, VC_CLUSTER_WRITE);
@@ -1465,7 +1465,7 @@ ClusterHandler::update_channels_written()
         OutgoingControl *oc = write.msg.outgoing_control.dequeue();
         oc->free_data();
         oc->mutex = NULL;
-        now = Thread::get_hrtime();
+        now       = Thread::get_hrtime();
         CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_SEND_TIME_STAT, now - oc->submit_time);
         LOG_EVENT_TIME(oc->submit_time, cluster_send_time_dist, cluster_send_events);
         oc->freeall();
@@ -1491,7 +1491,7 @@ ClusterHandler::update_channels_written()
     // Free descriptor
     hdr_oc->free_data();
     hdr_oc->mutex = NULL;
-    now = Thread::get_hrtime();
+    now           = Thread::get_hrtime();
     CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_SEND_TIME_STAT, now - hdr_oc->submit_time);
     LOG_EVENT_TIME(hdr_oc->submit_time, cluster_send_time_dist, cluster_send_events);
     hdr_oc->freeall();
@@ -1506,8 +1506,8 @@ ClusterHandler::build_write_descriptors()
   // write_vcs bucket with considerations for maximum elements per
   // write (struct iovec system maximum).
   //
-  int count_bucket = cur_vcs;
-  int tcount = write.msg.count + 2; // count + descriptor
+  int count_bucket            = cur_vcs;
+  int tcount                  = write.msg.count + 2; // count + descriptor
   int write_descriptors_built = 0;
   int valid;
   int list_len = 0;
@@ -1519,12 +1519,12 @@ ClusterHandler::build_write_descriptors()
   vc = (ClusterVConnection *)ink_atomiclist_popall(&write_vcs_ready);
   while (vc) {
     enter_exit(&cls_build_writes_entered, &cls_writes_exited);
-    vc_next = (ClusterVConnection *)vc->ready_alink.next;
+    vc_next              = (ClusterVConnection *)vc->ready_alink.next;
     vc->ready_alink.next = NULL;
     list_len++;
     if (VC_CLUSTER_CLOSED == vc->type) {
       vc->in_vcs = false;
-      vc->type = VC_NULL;
+      vc->type   = VC_NULL;
       clusterVCAllocator.free(vc);
       vc = vc_next;
       continue;
@@ -1543,10 +1543,10 @@ ClusterHandler::build_write_descriptors()
     CLUSTER_SUM_DYN_STAT(CLUSTER_VC_WRITE_LIST_LEN_STAT, list_len);
   }
 
-  tcount = write.msg.count + 2;
+  tcount  = write.msg.count + 2;
   vc_next = (ClusterVConnection *)write_vcs[count_bucket].head;
   while (vc_next) {
-    vc = vc_next;
+    vc      = vc_next;
     vc_next = (ClusterVConnection *)vc->write.link.next;
 
     if (VC_CLUSTER_CLOSED == vc->type) {
@@ -1566,11 +1566,11 @@ ClusterHandler::build_write_descriptors()
       if ((vc->remote_free > (vc->write.vio.ndone - vc->write_list_bytes)) && channels[vc->channel] == vc) {
         ink_assert(vc->write_list && vc->write_list_bytes);
 
-        int d = write.msg.count;
-        write.msg.descriptor[d].type = CLUSTER_SEND_DATA;
-        write.msg.descriptor[d].channel = vc->channel;
+        int d                                   = write.msg.count;
+        write.msg.descriptor[d].type            = CLUSTER_SEND_DATA;
+        write.msg.descriptor[d].channel         = vc->channel;
         write.msg.descriptor[d].sequence_number = vc->token.sequence_number;
-        int s = vc->write_list_bytes;
+        int s                                   = vc->write_list_bytes;
         ink_release_assert(s <= MAX_CLUSTER_SEND_LENGTH);
 
         // Transfer no more than nbytes
@@ -1578,7 +1578,7 @@ ClusterHandler::build_write_descriptors()
           s = vc->write.vio.nbytes - (vc->write.vio.ndone - s);
 
         if ((vc->write.vio.ndone - s) > vc->remote_free)
-          s = vc->remote_free - (vc->write.vio.ndone - s);
+          s                            = vc->remote_free - (vc->write.vio.ndone - s);
         write.msg.descriptor[d].length = s;
         write.msg.count++;
         tcount++;
@@ -1610,11 +1610,11 @@ ClusterHandler::build_freespace_descriptors()
   // write (struct iovec system maximum) and for pending elements already
   // in the list.
   //
-  int count_bucket = cur_vcs;
-  int tcount = write.msg.count + 2; // count + descriptor require 2 iovec(s)
+  int count_bucket                = cur_vcs;
+  int tcount                      = write.msg.count + 2; // count + descriptor require 2 iovec(s)
   int freespace_descriptors_built = 0;
-  int s = 0;
-  int list_len = 0;
+  int s                           = 0;
+  int list_len                    = 0;
   ClusterVConnection *vc, *vc_next;
 
   //
@@ -1623,12 +1623,12 @@ ClusterHandler::build_freespace_descriptors()
   vc = (ClusterVConnection *)ink_atomiclist_popall(&read_vcs_ready);
   while (vc) {
     enter_exit(&cls_build_reads_entered, &cls_reads_exited);
-    vc_next = (ClusterVConnection *)vc->ready_alink.next;
+    vc_next              = (ClusterVConnection *)vc->ready_alink.next;
     vc->ready_alink.next = NULL;
     list_len++;
     if (VC_CLUSTER_CLOSED == vc->type) {
       vc->in_vcs = false;
-      vc->type = VC_NULL;
+      vc->type   = VC_NULL;
       clusterVCAllocator.free(vc);
       vc = vc_next;
       continue;
@@ -1647,10 +1647,10 @@ ClusterHandler::build_freespace_descriptors()
     CLUSTER_SUM_DYN_STAT(CLUSTER_VC_READ_LIST_LEN_STAT, list_len);
   }
 
-  tcount = write.msg.count + 2;
+  tcount  = write.msg.count + 2;
   vc_next = (ClusterVConnection *)read_vcs[count_bucket].head;
   while (vc_next) {
-    vc = vc_next;
+    vc      = vc_next;
     vc_next = (ClusterVConnection *)vc->read.link.next;
 
     if (VC_CLUSTER_CLOSED == vc->type) {
@@ -1668,14 +1668,14 @@ ClusterHandler::build_freespace_descriptors()
     } else if (s) {
       if (vc_ok_read(vc) && channels[vc->channel] == vc) {
         // Send free space only if changed
-        int d = write.msg.count;
-        write.msg.descriptor[d].type = CLUSTER_SEND_FREE;
-        write.msg.descriptor[d].channel = vc->channel;
+        int d                                   = write.msg.count;
+        write.msg.descriptor[d].type            = CLUSTER_SEND_FREE;
+        write.msg.descriptor[d].channel         = vc->channel;
         write.msg.descriptor[d].sequence_number = vc->token.sequence_number;
 
         ink_assert(s > 0);
         write.msg.descriptor[d].length = s;
-        vc->last_local_free = s;
+        vc->last_local_free            = s;
         Debug(CL_PROTO, "(%d) free space priority %d", vc->channel, vc->read.priority);
         write.msg.count++;
         tcount++;
@@ -1695,15 +1695,15 @@ ClusterHandler::build_controlmsg_descriptors()
   // write (struct iovec system maximum) and for elements already
   // in the list.
   //
-  int tcount = write.msg.count + 2; // count + descriptor require 2 iovec(s)
+  int tcount             = write.msg.count + 2; // count + descriptor require 2 iovec(s)
   int control_msgs_built = 0;
   bool compound_msg; // msg + chan data
   //
   // Build descriptors for control messages
   //
   OutgoingControl *c = NULL;
-  int control_bytes = 0;
-  int q = 0;
+  int control_bytes  = 0;
+  int q              = 0;
 
   while (tcount < (MAX_TCOUNT - 1)) { // -1 to allow for compound messages
     c = outgoing_control[q].pop();
@@ -1719,7 +1719,7 @@ ClusterHandler::build_controlmsg_descriptors()
         }
       }
       while (c) {
-        c_next = (OutgoingControl *)c->link.next;
+        c_next       = (OutgoingControl *)c->link.next;
         c->link.next = NULL;
         outgoing_control[q].push(c);
         c = c_next;
@@ -1747,9 +1747,9 @@ ClusterHandler::build_controlmsg_descriptors()
     if (compound_msg) {
       // Extract out components of compound message.
       invoke_remote_data_args *cmhdr = (invoke_remote_data_args *)(c->data + sizeof(int32_t));
-      OutgoingControl *oc_header = c;
-      OutgoingControl *oc_msg = cmhdr->msg_oc;
-      OutgoingControl *oc_data = cmhdr->data_oc;
+      OutgoingControl *oc_header     = c;
+      OutgoingControl *oc_msg        = cmhdr->msg_oc;
+      OutgoingControl *oc_data       = cmhdr->data_oc;
 
       ink_assert(cmhdr->magicno == invoke_remote_data_args::MagicNo);
       //
@@ -1759,10 +1759,10 @@ ClusterHandler::build_controlmsg_descriptors()
       // Not an issue today since channel data is always processed first.
       //
       int d;
-      d = write.msg.count;
-      write.msg.descriptor[d].type = CLUSTER_SEND_DATA;
-      write.msg.descriptor[d].channel = cmhdr->dest_channel;
-      write.msg.descriptor[d].length = oc_data->len;
+      d                                       = write.msg.count;
+      write.msg.descriptor[d].type            = CLUSTER_SEND_DATA;
+      write.msg.descriptor[d].channel         = cmhdr->dest_channel;
+      write.msg.descriptor[d].length          = oc_data->len;
       write.msg.descriptor[d].sequence_number = cmhdr->token.sequence_number;
 
 #ifdef CLUSTER_STATS
@@ -1782,9 +1782,9 @@ ClusterHandler::build_controlmsg_descriptors()
         control_msgs_built++;
         d = write.msg.count;
         write.msg.outgoing_control.enqueue(oc_msg);
-        write.msg.descriptor[d].type = CLUSTER_SEND_DATA;
+        write.msg.descriptor[d].type    = CLUSTER_SEND_DATA;
         write.msg.descriptor[d].channel = CLUSTER_CONTROL_CHANNEL;
-        write.msg.descriptor[d].length = oc_msg->len;
+        write.msg.descriptor[d].length  = oc_msg->len;
 
 #ifdef CLUSTER_STATS
         _control_write_bytes += oc_msg->len;
@@ -1820,10 +1820,10 @@ ClusterHandler::build_controlmsg_descriptors()
     } else {
       write.msg.outgoing_control.enqueue(c);
 
-      int d = write.msg.count;
-      write.msg.descriptor[d].type = CLUSTER_SEND_DATA;
+      int d                           = write.msg.count;
+      write.msg.descriptor[d].type    = CLUSTER_SEND_DATA;
       write.msg.descriptor[d].channel = CLUSTER_CONTROL_CHANNEL;
-      write.msg.descriptor[d].length = c->len;
+      write.msg.descriptor[d].length  = c->len;
 
 #ifdef CLUSTER_STATS
       _control_write_bytes += c->len;
@@ -1847,7 +1847,7 @@ ClusterHandler::add_small_controlmsg_descriptors()
   //
   // Move small control message data to free space after descriptors
   //
-  char *p = (char *)&write.msg.descriptor[write.msg.count];
+  char *p            = (char *)&write.msg.descriptor[write.msg.count];
   OutgoingControl *c = NULL;
 
   while ((c = write.msg.outgoing_small_control.dequeue())) {
@@ -1876,7 +1876,7 @@ struct DestructorLock {
   DestructorLock(EThread *thread)
   {
     have_lock = false;
-    t = thread;
+    t         = thread;
   }
   ~DestructorLock()
   {
@@ -1925,8 +1925,8 @@ retry:
       ink_assert(lock.m);
 #endif
       vc->write_locked = lock.m;
-      lock.m = 0;
-      lock.have_lock = false;
+      lock.m           = 0;
+      lock.have_lock   = false;
       return 1;
     } else {
       if (!vc->write_bytes_in_transit) {
@@ -2007,8 +2007,8 @@ retry:
   //
   MIOBufferAccessor &buf = s->vio.buffer;
 
-  int64_t towrite = buf.reader()->read_avail();
-  int64_t ntodo = s->vio.ntodo();
+  int64_t towrite      = buf.reader()->read_avail();
+  int64_t ntodo        = s->vio.ntodo();
   bool write_vc_signal = false;
 
   if (towrite > ntodo)
@@ -2069,8 +2069,8 @@ retry:
     ink_assert(s->vio.mutex);
 #endif
     vc->write_locked = lock.m;
-    lock.m = 0;
-    lock.have_lock = false;
+    lock.m           = 0;
+    lock.have_lock   = false;
     return 1;
   } else {
     if (!write_vc_signal && buf.writer()->write_avail() && towrite != ntodo)
@@ -2346,13 +2346,13 @@ ClusterHandler::build_poll(bool next)
 {
   Pollfd *pfd;
   if (next) {
-    pfd = thread->nextPollDescriptor->alloc();
+    pfd     = thread->nextPollDescriptor->alloc();
     pfd->fd = net_vc->get_socket();
-    ifd = pfd - thread->nextPollDescriptor->pfd;
+    ifd     = pfd - thread->nextPollDescriptor->pfd;
   } else {
-    pfd = thread->pollDescriptor->alloc();
+    pfd     = thread->pollDescriptor->alloc();
     pfd->fd = net_vc->get_socket();
-    ifd = pfd - thread->pollDescriptor->pfd;
+    ifd     = pfd - thread->pollDescriptor->pfd;
   }
   pfd->events = POLLHUP;
   if (next) {
@@ -2435,7 +2435,7 @@ ClusterHandler::mainClusterEvent(int event, Event *e)
   int res;
 
   while (io_activity) {
-    io_activity = 0;
+    io_activity             = 0;
     only_write_control_msgs = 0;
 
     if (downing) {
@@ -2571,11 +2571,11 @@ int ClusterHandler::process_read(ink_hrtime /* now ATS_UNUSED */)
           if (needByteSwap) {
             read.msg.hdr()->SwapBytes();
           }
-          read.msg.count = read.msg.hdr()->count;
-          read.msg.control_bytes = read.msg.hdr()->control_bytes;
-          read.msg.descriptor_cksum = read.msg.hdr()->descriptor_cksum;
+          read.msg.count               = read.msg.hdr()->count;
+          read.msg.control_bytes       = read.msg.hdr()->control_bytes;
+          read.msg.descriptor_cksum    = read.msg.hdr()->descriptor_cksum;
           read.msg.control_bytes_cksum = read.msg.hdr()->control_bytes_cksum;
-          read.msg.unused = read.msg.hdr()->unused;
+          read.msg.unused              = read.msg.hdr()->unused;
 
           if (MAGIC_COUNT(read) != read.msg.hdr()->count_check) {
             ink_assert(!"Read bad ClusterMsgHeader data");
@@ -2661,7 +2661,7 @@ int ClusterHandler::process_read(ink_hrtime /* now ATS_UNUSED */)
           }
           if (read.msg.count == 0) {
             read.bytes_xfered = 0;
-            read.state = ClusterState::READ_COMPLETE;
+            read.state        = ClusterState::READ_COMPLETE;
           } else {
             read.msg.state++;
             read.state = ClusterState::READ_SETUP_DATA;
@@ -2804,12 +2804,12 @@ ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
         _n_write_start++;
 #endif
         write.msg.clear();
-        write.last_time = Thread::get_hrtime();
-        pw_write_descriptors_built = -1;
-        pw_freespace_descriptors_built = -1;
+        write.last_time                  = Thread::get_hrtime();
+        pw_write_descriptors_built       = -1;
+        pw_freespace_descriptors_built   = -1;
         pw_controldata_descriptors_built = -1;
-        pw_time_expired = 0;
-        write.state = ClusterState::WRITE_SETUP;
+        pw_time_expired                  = 0;
+        write.state                      = ClusterState::WRITE_SETUP;
         break;
       }
     ///////////////////////////////////////////////
@@ -2842,8 +2842,8 @@ ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
           /////////////////////////////////////////////////////////////
           // Build a write descriptor only containing control data.
           /////////////////////////////////////////////////////////////
-          pw_write_descriptors_built = 0;
-          pw_freespace_descriptors_built = 0;
+          pw_write_descriptors_built       = 0;
+          pw_freespace_descriptors_built   = 0;
           pw_controldata_descriptors_built = build_controlmsg_descriptors();
           add_small_controlmsg_descriptors(); // always last
         }
@@ -2854,21 +2854,21 @@ ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
           break;
         } else {
           started_on_stolen_thread = on_stolen_thread;
-          control_message_write = only_write_control_msgs;
+          control_message_write    = only_write_control_msgs;
         }
 
 // Move required data into the message header
 #ifdef CLUSTER_MESSAGE_CKSUM
-        write.msg.descriptor_cksum = write.msg.calc_descriptor_cksum();
+        write.msg.descriptor_cksum        = write.msg.calc_descriptor_cksum();
         write.msg.hdr()->descriptor_cksum = write.msg.descriptor_cksum;
 
-        write.msg.control_bytes_cksum = write.msg.calc_control_bytes_cksum();
+        write.msg.control_bytes_cksum        = write.msg.calc_control_bytes_cksum();
         write.msg.hdr()->control_bytes_cksum = write.msg.control_bytes_cksum;
-        write.msg.unused = 0;
+        write.msg.unused                     = 0;
 #endif
-        write.msg.hdr()->count = write.msg.count;
+        write.msg.hdr()->count         = write.msg.count;
         write.msg.hdr()->control_bytes = write.msg.control_bytes;
-        write.msg.hdr()->count_check = MAGIC_COUNT(write);
+        write.msg.hdr()->count_check   = MAGIC_COUNT(write);
 
         ink_release_assert(build_initial_vector(CLUSTER_WRITE));
         free_locks(CLUSTER_WRITE);
@@ -2951,7 +2951,7 @@ ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
 #ifdef CLUSTER_STATS
         _n_write_complete++;
 #endif
-        write.state = ClusterState::WRITE_START;
+        write.state        = ClusterState::WRITE_START;
         ink_hrtime curtime = Thread::get_hrtime();
 
         if (!on_stolen_thread) {
@@ -3034,7 +3034,7 @@ ClusterHandler::do_open_local_requests()
       break;
 
     while (cvc_ext) {
-      cvc_ext_next = (ClusterVConnection *)cvc_ext->link.next;
+      cvc_ext_next       = (ClusterVConnection *)cvc_ext->link.next;
       cvc_ext->link.next = NULL;
       local_incoming_open_local.push(cvc_ext);
       cvc_ext = cvc_ext_next;

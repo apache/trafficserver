@@ -79,13 +79,13 @@ static HandlerManager *gHandlerManager = NULL;
 #define HTTP_VALUE_PRIVATE_CC "max-age=0, private"
 
 enum DataType {
-  DATA_TYPE_RAW_ESI = 0,
+  DATA_TYPE_RAW_ESI     = 0,
   DATA_TYPE_GZIPPED_ESI = 1,
-  DATA_TYPE_PACKED_ESI = 2,
+  DATA_TYPE_PACKED_ESI  = 2,
 };
 static const char *DATA_TYPE_NAMES_[] = {"RAW_ESI", "GZIPPED_ESI", "PACKED_ESI"};
 
-static const char *HEADER_MASK_PREFIX = "Mask-";
+static const char *HEADER_MASK_PREFIX    = "Mask-";
 static const int HEADER_MASK_PREFIX_SIZE = 5;
 
 struct ContData {
@@ -150,7 +150,7 @@ struct ContData {
       os_response_cacheable(true)
   {
     client_addr = TSHttpTxnClientAddrGet(txnp);
-    *debug_tag = '\0';
+    *debug_tag  = '\0';
   }
 
   void fillPostHeader(TSMBuffer bufp, TSMLoc hdr_loc);
@@ -262,7 +262,7 @@ ContData::init()
       createDebugTag(PROCESSOR_DEBUG_TAG, contp, proc_tag), createDebugTag(PARSER_DEBUG_TAG, contp, fetcher_tag),
       createDebugTag(EXPR_DEBUG_TAG, contp, expr_tag), &TSDebug, &TSError, *data_fetcher, *esi_vars, *gHandlerManager);
 
-    esi_gzip = new EsiGzip(createDebugTag(GZIP_DEBUG_TAG, contp, gzip_tag), &TSDebug, &TSError);
+    esi_gzip   = new EsiGzip(createDebugTag(GZIP_DEBUG_TAG, contp, gzip_tag), &TSDebug, &TSError);
     esi_gunzip = new EsiGunzip(createDebugTag(GUNZIP_DEBUG_TAG, contp, gunzip_tag), &TSDebug, &TSError);
 
     TSDebug(debug_tag, "[%s] Set input data type to [%s]", __FUNCTION__, DATA_TYPE_NAMES_[input_type]);
@@ -328,7 +328,7 @@ ContData::getClientState()
         n_values = TSMimeHdrFieldValuesCount(req_bufp, req_hdr_loc, field_loc);
         if (n_values && (n_values != TS_ERROR)) {
           const char *value = NULL;
-          int value_len = 0;
+          int value_len     = 0;
           if (n_values == 1) {
             value = TSMimeHdrFieldValueStringGet(req_bufp, req_hdr_loc, field_loc, 0, &value_len);
 
@@ -522,10 +522,10 @@ removeCacheKey(TSHttpTxn txnp)
 {
   TSMBuffer req_bufp;
   TSMLoc req_hdr_loc;
-  TSMLoc url_loc = NULL;
-  TSCont contp = NULL;
+  TSMLoc url_loc      = NULL;
+  TSCont contp        = NULL;
   TSCacheKey cacheKey = NULL;
-  bool result = false;
+  bool result         = false;
 
   if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_hdr_loc) != TS_SUCCESS) {
     TSError("[esi][%s] Error while retrieving client request", __FUNCTION__);
@@ -628,7 +628,7 @@ transformData(TSCont contp)
 {
   ContData *cont_data;
   int64_t toread, consumed = 0, avail;
-  bool input_vio_buf_null = false;
+  bool input_vio_buf_null     = false;
   bool process_input_complete = false;
 
   // Get the output (downstream) vconnection where we'll write data to.
@@ -761,7 +761,7 @@ transformData(TSCont contp)
                 out_data_len, (out_data_len ? out_data : "(null)"));
       } else {
         TSError("[esi][%s] ESI processor failed to process document; will return empty document", __FUNCTION__);
-        out_data = "";
+        out_data     = "";
         out_data_len = 0;
       }
 
@@ -772,12 +772,12 @@ transformData(TSCont contp)
           if (!gzip(out_data, out_data_len, cdata)) {
             TSError("[esi][%s] Error while gzipping content", __FUNCTION__);
             out_data_len = 0;
-            out_data = "";
+            out_data     = "";
           } else {
             TSDebug(cont_data->debug_tag, "[%s] Compressed document from size %d to %d bytes", __FUNCTION__, out_data_len,
                     (int)cdata.size());
             out_data_len = cdata.size();
-            out_data = cdata.data();
+            out_data     = cdata.data();
           }
         }
 
@@ -931,7 +931,7 @@ transformHandler(TSCont contp, TSEvent event, void *edata)
         TSDebug(cont_debug_tag, "[%s] Requested data has been fetched; will skip event and marking processing as complete ",
                 __FUNCTION__);
         cont_data->curr_state = ContData::PROCESSING_COMPLETE;
-        process_event = false;
+        process_event         = false;
       } else {
         if (is_fetch_event) {
           TSDebug(cont_debug_tag, "[%s] Going to process received data", __FUNCTION__);
@@ -1060,9 +1060,9 @@ addMimeHeaderField(TSMBuffer bufp, TSMLoc hdr_loc, const char *name, int name_le
 static int
 modifyResponseHeader(TSCont contp, TSEvent event, void *edata)
 {
-  int retval = 0;
+  int retval               = 0;
   RespHdrModData *mod_data = static_cast<RespHdrModData *>(TSContDataGet(contp));
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn txnp           = static_cast<TSHttpTxn>(edata);
   if (event != TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
     TSError("[esi][%s] Unexpected event (%d)", __FUNCTION__, event);
     goto lReturn;
@@ -1222,7 +1222,7 @@ maskOsCacheHeaders(TSHttpTxn txnp)
     name = TSMimeHdrFieldNameGet(bufp, hdr_loc, field_loc, &name_len);
     if (name) {
       mask_header = is_cache_header = false;
-      n_field_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+      n_field_values                = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
       for (int j = 0; j < n_field_values; ++j) {
         value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, j, &value_len);
         if (NULL == value || !value_len) {
@@ -1369,7 +1369,7 @@ isInterceptRequest(TSHttpTxn txnp)
   }
 
   bool valid_request = false;
-  bool retval = false;
+  bool retval        = false;
   int method_len;
   const char *method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
   if (!method) {
@@ -1421,10 +1421,10 @@ addSendResponseHeaderHook(TSHttpTxn txnp, const ContData *src_cont_data)
   }
   TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
   RespHdrModData *cont_data = new RespHdrModData();
-  cont_data->option_info = src_cont_data->option_info;
-  cont_data->cache_txn = src_cont_data->cache_txn;
-  cont_data->head_only = src_cont_data->head_only;
-  cont_data->gzip_encoding = src_cont_data->gzip_output;
+  cont_data->option_info    = src_cont_data->option_info;
+  cont_data->cache_txn      = src_cont_data->cache_txn;
+  cont_data->head_only      = src_cont_data->head_only;
+  cont_data->gzip_encoding  = src_cont_data->gzip_output;
   TSContDataSet(contp, cont_data);
   return true;
 }
@@ -1433,7 +1433,7 @@ static bool
 addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool intercept_header, const bool head_only,
              const struct OptionInfo *pOptionInfo)
 {
-  TSCont contp = 0;
+  TSCont contp        = 0;
   ContData *cont_data = 0;
 
   contp = TSTransformCreate(transformHandler, txnp);
@@ -1445,10 +1445,10 @@ addTransform(TSHttpTxn txnp, const bool processing_os_response, const bool inter
   cont_data = new ContData(contp, txnp);
   TSContDataSet(contp, cont_data);
 
-  cont_data->option_info = pOptionInfo;
-  cont_data->cache_txn = !processing_os_response;
+  cont_data->option_info      = pOptionInfo;
+  cont_data->cache_txn        = !processing_os_response;
   cont_data->intercept_header = intercept_header;
-  cont_data->head_only = head_only;
+  cont_data->head_only        = head_only;
   cont_data->getClientState();
   cont_data->getServerState();
 
@@ -1495,10 +1495,10 @@ pthread_key_t threadKey = 0;
 static int
 globalHookHandler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
-  bool intercept_header = false;
-  bool head_only = false;
-  bool intercept_req = isInterceptRequest(txnp);
+  TSHttpTxn txnp                 = (TSHttpTxn)edata;
+  bool intercept_header          = false;
+  bool head_only                 = false;
+  bool intercept_req             = isInterceptRequest(txnp);
   struct OptionInfo *pOptionInfo = (struct OptionInfo *)TSContDataGet(contp);
 
   switch (event) {
@@ -1660,8 +1660,8 @@ void
 TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
-  info.plugin_name = (char *)"esi";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"esi";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

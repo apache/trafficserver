@@ -145,8 +145,8 @@ typedef enum {
 
 /* used when starting Traffic Server process */
 typedef enum {
-  TS_CACHE_CLEAR_NONE = 0,          /* starts TS in regular mode w/o any options */
-  TS_CACHE_CLEAR_CACHE = (1 << 0),  /* run TS in  "clear cache" mode */
+  TS_CACHE_CLEAR_NONE   = 0,        /* starts TS in regular mode w/o any options */
+  TS_CACHE_CLEAR_CACHE  = (1 << 0), /* run TS in  "clear cache" mode */
   TS_CACHE_CLEAR_HOSTDB = (1 << 1), /* run TS in "clear the host db cache" mode */
 } TSCacheClearT;
 
@@ -371,9 +371,9 @@ typedef enum {
 } TSInitOptionT;
 
 typedef enum {
-  TS_RESTART_OPT_NONE = 0x0,
+  TS_RESTART_OPT_NONE    = 0x0,
   TS_RESTART_OPT_CLUSTER = 0x01, /* Restart across the cluster */
-  TS_RESTART_OPT_DRAIN = 0x02,   /* Wait for traffic to drain before restarting. */
+  TS_RESTART_OPT_DRAIN   = 0x02, /* Wait for traffic to drain before restarting. */
 } TSRestartOptionT;
 
 /***************************************************************************

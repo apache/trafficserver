@@ -43,7 +43,7 @@
 #include "ts/SimpleTokenizer.h"
 
 const char *LogFilter::OPERATOR_NAME[] = {"MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN"};
-const char *LogFilter::ACTION_NAME[] = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
+const char *LogFilter::ACTION_NAME[]   = {"REJECT", "ACCEPT", "WIPE_FIELD_VALUE"};
 
 /*-------------------------------------------------------------------------
   LogFilter::LogFilter
@@ -74,16 +74,16 @@ LogFilter::~LogFilter()
 void
 LogFilterString::_setValues(size_t n, char **value)
 {
-  m_type = STRING_FILTER;
+  m_type       = STRING_FILTER;
   m_num_values = n;
   if (n) {
-    m_value = new char *[n];
+    m_value           = new char *[n];
     m_value_uppercase = new char *[n];
-    m_length = new size_t[n];
+    m_length          = new size_t[n];
     ink_assert(m_value && m_value_uppercase && m_length);
     for (size_t i = 0; i < n; ++i) {
-      m_value[i] = ats_strdup(value[i]);
-      m_length[i] = strlen(value[i]);
+      m_value[i]           = ats_strdup(value[i]);
+      m_length[i]          = strlen(value[i]);
       m_value_uppercase[i] = (char *)ats_malloc((unsigned int)m_length[i] + 1);
       size_t j;
       for (j = 0; j < m_length[i]; ++j) {
@@ -101,7 +101,7 @@ LogFilterString::LogFilterString(const char *name, LogField *field, LogFilter::A
   // parse the comma-separated list of values and construct array
   //
   char **val_array = 0;
-  size_t i = 0;
+  size_t i         = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
   if (n) {
@@ -195,8 +195,8 @@ LogFilterString::wipe_this_entry(LogAccess *lad)
 
   static const unsigned BUFSIZE = 1024;
   char small_buf[BUFSIZE];
-  char *big_buf = NULL;
-  char *buf = small_buf;
+  char *big_buf    = NULL;
+  char *buf        = small_buf;
   size_t marsh_len = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
@@ -267,11 +267,11 @@ LogFilterString::toss_this_entry(LogAccess *lad)
   static const unsigned BUFSIZE = 1024;
   char small_buf[BUFSIZE];
   char small_buf_upper[BUFSIZE];
-  char *big_buf = NULL;
+  char *big_buf       = NULL;
   char *big_buf_upper = NULL;
-  char *buf = small_buf;
-  char *buf_upper = small_buf_upper;
-  size_t marsh_len = m_field->marshal_len(lad); // includes null termination
+  char *buf           = small_buf;
+  char *buf_upper     = small_buf_upper;
+  size_t marsh_len    = m_field->marshal_len(lad); // includes null termination
 
   if (marsh_len > BUFSIZE) {
     big_buf = (char *)ats_malloc((unsigned int)marsh_len);
@@ -303,7 +303,7 @@ LogFilterString::toss_this_entry(LogAccess *lad)
   case CASE_INSENSITIVE_CONTAIN: {
     if (big_buf) {
       big_buf_upper = (char *)ats_malloc((unsigned int)marsh_len);
-      buf_upper = big_buf_upper;
+      buf_upper     = big_buf_upper;
     } else {
       buf = small_buf; // make clang happy
     }
@@ -372,7 +372,7 @@ LogFilterString::display_as_XML(FILE *fd)
 void
 LogFilterInt::_setValues(size_t n, int64_t *value)
 {
-  m_type = INT_FILTER;
+  m_type       = INT_FILTER;
   m_num_values = n;
   if (n) {
     m_value = new int64_t[n];
@@ -426,7 +426,7 @@ LogFilterInt::LogFilterInt(const char *name, LogField *field, LogFilter::Action 
   // parse the comma-separated list of values and construct array
   //
   int64_t *val_array = 0;
-  size_t i = 0;
+  size_t i           = 0;
   SimpleTokenizer tok(values, ',');
   size_t n = tok.getNumTokensRemaining();
 
@@ -688,7 +688,7 @@ LogFilterIP::LogFilterIP(const LogFilterIP &rhs) : LogFilter(rhs.m_name, rhs.m_f
 void
 LogFilterIP::init()
 {
-  m_type = IP_FILTER;
+  m_type       = IP_FILTER;
   m_num_values = m_map.getCount();
 }
 
@@ -887,7 +887,7 @@ bool
 LogFilterList::operator==(LogFilterList &rhs)
 {
   if (m_does_conjunction == rhs.does_conjunction()) {
-    LogFilter *f = first();
+    LogFilter *f    = first();
     LogFilter *rhsf = rhs.first();
 
     while (true) {
@@ -898,7 +898,7 @@ LogFilterList::operator==(LogFilterList &rhs)
       } else if (!filters_are_equal(f, rhsf)) {
         return false;
       } else {
-        f = next(f);
+        f    = next(f);
         rhsf = rhs.next(rhsf);
       }
     }

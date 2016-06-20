@@ -100,11 +100,11 @@ int
 ink_code_incr_MMH_init(MMH_CTX *ctx)
 {
   ctx->buffer_size = 0;
-  ctx->blocks = 0;
-  ctx->state[0] = ((uint64_t)MMH_x[MMH_X_SIZE + 0] << 32) + MMH_x[MMH_X_SIZE + 1];
-  ctx->state[1] = ((uint64_t)MMH_x[MMH_X_SIZE + 2] << 32) + MMH_x[MMH_X_SIZE + 3];
-  ctx->state[2] = ((uint64_t)MMH_x[MMH_X_SIZE + 4] << 32) + MMH_x[MMH_X_SIZE + 5];
-  ctx->state[3] = ((uint64_t)MMH_x[MMH_X_SIZE + 6] << 32) + MMH_x[MMH_X_SIZE + 7];
+  ctx->blocks      = 0;
+  ctx->state[0]    = ((uint64_t)MMH_x[MMH_X_SIZE + 0] << 32) + MMH_x[MMH_X_SIZE + 1];
+  ctx->state[1]    = ((uint64_t)MMH_x[MMH_X_SIZE + 2] << 32) + MMH_x[MMH_X_SIZE + 3];
+  ctx->state[2]    = ((uint64_t)MMH_x[MMH_X_SIZE + 4] << 32) + MMH_x[MMH_X_SIZE + 5];
+  ctx->state[3]    = ((uint64_t)MMH_x[MMH_X_SIZE + 6] << 32) + MMH_x[MMH_X_SIZE + 7];
   return 0;
 }
 
@@ -228,7 +228,7 @@ MMH_updatel3(MMH_CTX *ctx, unsigned char *ab)
 int
 ink_code_incr_MMH_update(MMH_CTX *ctx, const char *ainput, int input_length)
 {
-  unsigned char *in = (unsigned char *)ainput;
+  unsigned char *in  = (unsigned char *)ainput;
   unsigned char *end = in + input_length;
   if (ctx->buffer_size) {
     int l = 16 - ctx->buffer_size;
@@ -252,7 +252,7 @@ ink_code_incr_MMH_update(MMH_CTX *ctx, const char *ainput, int input_length)
 #define big_endian 0
 #else
       unsigned int endian = 1;
-      int big_endian = !*(char *)&endian;
+      int big_endian      = !*(char *)&endian;
 #endif
       if (big_endian) {
         if (alignment == 1) {
@@ -317,7 +317,7 @@ _memset(unsigned char *b, int c, int len)
   int o = len & 0x3, i;
   for (i = 0; i < o; i++)
     b[i] = 0;
-  for (i = 0; i < (len - o) / 4; i++)
+  for (i                     = 0; i < (len - o) / 4; i++)
     ((uint32_t *)(b + o))[i] = 0;
 }
 #endif
@@ -338,7 +338,7 @@ ink_code_incr_MMH_final(uint8_t *presult, MMH_CTX *ctx)
   MMH_update(ctx, ctx->buffer);
   // final phase
   uint32_t *b = (uint32_t *)presult;
-  uint64_t d = (((uint64_t)1) << 32) + 15;
+  uint64_t d  = (((uint64_t)1) << 32) + 15;
   uint32_t b0 = uint32_t(ctx->state[0] % d);
   uint32_t b1 = uint32_t(ctx->state[1] % d);
   uint32_t b2 = uint32_t(ctx->state[2] % d);
@@ -405,7 +405,7 @@ main()
   } h;
 
   xxh = (i4_t *)ats_malloc(4 * sizeof(uint32_t) * TEST_COLLISIONS);
-  xf = (double *)ats_malloc(sizeof(double) * TEST_COLLISIONS);
+  xf  = (double *)ats_malloc(sizeof(double) * TEST_COLLISIONS);
 
   printf("test collisions\n");
   char *sc1 = "http://npdev:19080/1.6664000000/4000";
@@ -435,8 +435,8 @@ main()
       printf("********** collision %d\n", xy);
   }
 
-  unsigned char *s = (unsigned char *)MMH_x;
-  int l = sizeof(MMH_x);
+  unsigned char *s  = (unsigned char *)MMH_x;
+  int l             = sizeof(MMH_x);
   unsigned char *s1 = (unsigned char *)ats_malloc(l + 3);
   s1 += 1;
   memcpy(s1, s, l);

@@ -81,7 +81,7 @@ range_header_check(TSHttpTxn txnp)
   struct txndata *txn_state;
   TSMBuffer hdr_bufp;
   TSMLoc req_hdrs = NULL;
-  TSMLoc loc = NULL;
+  TSMLoc loc      = NULL;
   TSCont txn_contp;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &hdr_bufp, &req_hdrs)) {
@@ -94,7 +94,7 @@ range_header_check(TSHttpTxn txnp)
         if (NULL == (txn_contp = TSContCreate((TSEventFunc)transaction_handler, NULL))) {
           ERROR_LOG("failed to create the transaction handler continuation.");
         } else {
-          txn_state = (struct txndata *)TSmalloc(sizeof(struct txndata));
+          txn_state              = (struct txndata *)TSmalloc(sizeof(struct txndata));
           txn_state->range_value = TSstrndup(hdr_value, length);
           DEBUG_LOG("length: %d, txn_state->range_value: %s", length, txn_state->range_value);
           txn_state->range_value[length] = '\0'; // workaround for bug in core
@@ -238,7 +238,7 @@ static int
 remove_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len)
 {
   TSMLoc field = TSMimeHdrFieldFind(bufp, hdr_loc, header, len);
-  int cnt = 0;
+  int cnt      = 0;
 
   while (field) {
     TSMLoc tmp = TSMimeHdrFieldNextDup(bufp, hdr_loc, field);
@@ -267,7 +267,7 @@ set_header(TSMBuffer bufp, TSMLoc hdr_loc, const char *header, int len, const ch
   }
 
   DEBUG_LOG("header: %s, len: %d, val: %s, val_len: %d", header, len, val, val_len);
-  bool ret = false;
+  bool ret         = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, header, len);
 
   if (!field_loc) {
@@ -359,8 +359,8 @@ TSPluginInit(int argc, const char *argv[])
   TSPluginRegistrationInfo info;
   TSCont txnp_cont;
 
-  info.plugin_name = (char *)PLUGIN_NAME;
-  info.vendor_name = (char *)"Comcast";
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Comcast";
   info.support_email = (char *)"John_Rushford@cable.comcast.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -383,7 +383,7 @@ TSPluginInit(int argc, const char *argv[])
 static void
 transaction_handler(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn txnp            = static_cast<TSHttpTxn>(edata);
   struct txndata *txn_state = (struct txndata *)TSContDataGet(contp);
 
   switch (event) {

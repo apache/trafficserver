@@ -77,7 +77,7 @@ public:
     TSMutexLock(_lock);
     if (_urls.end() == _urls.find(url)) {
       _urls[url] = true;
-      ret = true;
+      ret        = true;
     } else {
       ret = false;
     }
@@ -220,7 +220,7 @@ bool
 BgFetchData::initialize(TSMBuffer request, TSMLoc req_hdr, TSHttpTxn txnp)
 {
   struct sockaddr const *ip = TSHttpTxnClientAddrGet(txnp);
-  bool ret = false;
+  bool ret                  = false;
 
   TSAssert(TS_NULL_MLOC == hdr_loc);
   TSAssert(TS_NULL_MLOC == url_loc);
@@ -300,9 +300,9 @@ BgFetchData::schedule()
   TSContDataSet(_cont, static_cast<void *>(this));
 
   // Initialize the VIO stuff (for the fetch)
-  req_io_buf = TSIOBufferCreate();
-  req_io_buf_reader = TSIOBufferReaderAlloc(req_io_buf);
-  resp_io_buf = TSIOBufferCreate();
+  req_io_buf         = TSIOBufferCreate();
+  req_io_buf_reader  = TSIOBufferReaderAlloc(req_io_buf);
+  resp_io_buf        = TSIOBufferCreate();
   resp_io_buf_reader = TSIOBufferReaderAlloc(resp_io_buf);
 
   // Schedule
@@ -500,7 +500,7 @@ static int
 cont_handle_response(TSCont contp, TSEvent event, void *edata)
 {
   // ToDo: If we want to support per-remap configurations, we have to pass along the data here
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn txnp        = static_cast<TSHttpTxn>(edata);
   BgFetchConfig *config = static_cast<BgFetchConfig *>(TSContDataGet(contp));
 
   if (NULL == config) {
@@ -555,8 +555,8 @@ TSPluginInit(int argc, const char *argv[])
                                           {const_cast<char *>("config"), required_argument, NULL, 'c'},
                                           {NULL, no_argument, NULL, '\0'}};
 
-  info.plugin_name = (char *)PLUGIN_NAME;
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
@@ -620,7 +620,7 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /* errbuf_size */)
 {
-  TSCont cont = TSContCreate(cont_handle_response, NULL);
+  TSCont cont           = TSContCreate(cont_handle_response, NULL);
   BgFetchConfig *config = new BgFetchConfig(cont);
 
   config->acquire(); // Inc refcount

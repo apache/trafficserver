@@ -206,8 +206,8 @@ ats_mlock(caddr_t addr, size_t len)
   size_t pagesize = ats_pagesize();
 
   caddr_t a = (caddr_t)(((uintptr_t)addr) & ~(pagesize - 1));
-  size_t l = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
-  int res = mlock(a, l);
+  size_t l  = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
+  int res   = mlock(a, l);
   return res;
 }
 
@@ -226,7 +226,7 @@ ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_s
 {
 #ifdef HAVE_MALLOC_USABLE_SIZE
   const size_t old_size = malloc_usable_size(ptr);
-  ptr = ats_realloc(ptr, size);
+  ptr                   = ats_realloc(ptr, size);
   const size_t new_size = malloc_usable_size(ptr);
   if (old_size < new_size) {
     // allocating something bigger

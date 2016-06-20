@@ -62,9 +62,9 @@ typedef struct _tm_remap_request_info {
 
 /* This is the type returned by the TSRemapDoRemap() callback */
 typedef enum {
-  TSREMAP_NO_REMAP = 0,       /* No remaping was done, continue with next in chain */
-  TSREMAP_DID_REMAP = 1,      /* Remapping was done, continue with next in chain */
-  TSREMAP_NO_REMAP_STOP = 2,  /* No remapping was done, and stop plugin chain evaluation */
+  TSREMAP_NO_REMAP       = 0, /* No remaping was done, continue with next in chain */
+  TSREMAP_DID_REMAP      = 1, /* Remapping was done, continue with next in chain */
+  TSREMAP_NO_REMAP_STOP  = 2, /* No remapping was done, and stop plugin chain evaluation */
   TSREMAP_DID_REMAP_STOP = 3, /* Remapping was done, but stop plugin chain evaluation */
 
   /* In the future, the following error codes can also be used:

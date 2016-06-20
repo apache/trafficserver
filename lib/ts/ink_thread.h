@@ -192,7 +192,7 @@ ink_thread_get_priority(ink_thread t, int *priority)
 #else
   int policy;
   struct sched_param param;
-  int res = pthread_getschedparam(t, &policy, &param);
+  int res   = pthread_getschedparam(t, &policy, &param);
   *priority = param.sched_priority;
   return res;
 #endif

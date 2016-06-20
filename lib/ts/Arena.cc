@@ -47,8 +47,8 @@ blk_alloc(int size)
     blk = (ArenaBlock *)ats_malloc(size + sizeof(ArenaBlock) - 8);
   }
 
-  blk->next = NULL;
-  blk->m_heap_end = &blk->data[size];
+  blk->next          = NULL;
+  blk->m_heap_end    = &blk->data[size];
   blk->m_water_level = &blk->data[0];
 
   return blk;
@@ -114,8 +114,8 @@ Arena::alloc(size_t size, size_t alignment)
     block_size = DEFAULT_BLOCK_SIZE;
   }
 
-  b = blk_alloc(block_size);
-  b->next = m_blocks;
+  b        = blk_alloc(block_size);
+  b->next  = m_blocks;
   m_blocks = b;
 
   mem = block_alloc(b, size, alignment);

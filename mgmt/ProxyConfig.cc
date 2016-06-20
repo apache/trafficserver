@@ -65,7 +65,7 @@ config_long_long_cb(void *data, void *value)
 void *
 config_string_alloc_cb(void *data, void *value)
 {
-  char *_ss = (char *)value;
+  char *_ss        = (char *)value;
   char *_new_value = 0;
 
 //#define DEBUG_CONFIG_STRING_UPDATE
@@ -74,12 +74,12 @@ config_string_alloc_cb(void *data, void *value)
 #endif
   int len = -1;
   if (_ss) {
-    len = strlen(_ss);
+    len        = strlen(_ss);
     _new_value = (char *)ats_malloc(len + 1);
     memcpy(_new_value, _ss, len + 1);
   }
 
-  char *_temp2 = *(char **)data;
+  char *_temp2   = *(char **)data;
   *(char **)data = _new_value;
 
   // free old data
@@ -178,7 +178,7 @@ ConfigProcessor::get(unsigned int id)
     return NULL;
   }
 
-  idx = id - 1;
+  idx  = id - 1;
   info = infos[idx];
 
   // Hand out a refcount to the caller. We should still have out
@@ -213,8 +213,8 @@ ConfigProcessor::release(unsigned int id, ConfigInfo *info)
 #if TS_HAS_TESTS
 
 enum {
-  REGRESSION_CONFIG_FIRST = 1,  // last config in a sequence
-  REGRESSION_CONFIG_LAST = 2,   // last config in a sequence
+  REGRESSION_CONFIG_FIRST  = 1, // last config in a sequence
+  REGRESSION_CONFIG_LAST   = 2, // last config in a sequence
   REGRESSION_CONFIG_SINGLE = 4, // single-owner config
 };
 
@@ -302,7 +302,7 @@ EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Set)(RegressionTest *test, int /* atype AT
 {
   int configid = 0;
 
-  *pstatus = REGRESSION_TEST_INPROGRESS;
+  *pstatus                   = REGRESSION_TEST_INPROGRESS;
   RegressionConfig::nobjects = 0;
 
   configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);
@@ -337,12 +337,12 @@ EXCLUSIVE_REGRESSION_TEST(ProxyConfig_Release)(RegressionTest *test, int /* atyp
   int configid = 0;
   RegressionConfig *config;
 
-  *pstatus = REGRESSION_TEST_INPROGRESS;
+  *pstatus                   = REGRESSION_TEST_INPROGRESS;
   RegressionConfig::nobjects = 0;
 
   // Set an initial config, then get it back to hold a reference count.
   configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_LAST), 1);
-  config = (RegressionConfig *)configProcessor.get(configid);
+  config   = (RegressionConfig *)configProcessor.get(configid);
 
   // Now update the config a few times.
   configid = configProcessor.set(configid, new RegressionConfig(test, pstatus, REGRESSION_CONFIG_FIRST), 1);

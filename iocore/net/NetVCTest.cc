@@ -136,23 +136,23 @@ NetVCTest::init_test(NetVcTestType_t c_type, NetTestDriver *driver_arg, NetVConn
                      NVC_test_def *my_def, const char *module_name_arg, const char *debug_tag_arg)
 {
   test_cont_type = c_type;
-  driver = driver_arg;
-  test_vc = nvc;
-  regress = robj;
-  module_name = module_name_arg;
-  debug_tag = debug_tag_arg;
+  driver         = driver_arg;
+  test_vc        = nvc;
+  regress        = robj;
+  module_name    = module_name_arg;
+  debug_tag      = debug_tag_arg;
 
   bytes_to_send = my_def->bytes_to_send;
   bytes_to_read = my_def->bytes_to_read;
 
-  nbytes_read = my_def->nbytes_read;
+  nbytes_read  = my_def->nbytes_read;
   nbytes_write = my_def->nbytes_write;
 
   write_bytes_to_add_per = my_def->write_bytes_per;
-  timeout = my_def->timeout;
-  expected_read_term = my_def->expected_read_term;
-  expected_write_term = my_def->expected_write_term;
-  test_name = my_def->test_name;
+  timeout                = my_def->timeout;
+  expected_read_term     = my_def->expected_read_term;
+  expected_write_term    = my_def->expected_write_term;
+  test_name              = my_def->test_name;
 
   mutex = new_ProxyMutex();
   SET_HANDLER(&NetVCTest::main_handler);
@@ -168,7 +168,7 @@ NetVCTest::start_test()
   test_vc->set_inactivity_timeout(HRTIME_SECONDS(timeout));
   test_vc->set_active_timeout(HRTIME_SECONDS(timeout + 5));
 
-  read_buffer = new_MIOBuffer();
+  read_buffer  = new_MIOBuffer();
   write_buffer = new_MIOBuffer();
 
   reader_for_rbuf = read_buffer->alloc_reader();
@@ -191,8 +191,8 @@ int
 NetVCTest::fill_buffer(MIOBuffer *buf, uint8_t *seed, int bytes)
 {
   char *space = (char *)ats_malloc(bytes);
-  char *tmp = space;
-  int to_add = bytes;
+  char *tmp   = space;
+  int to_add  = bytes;
 
   while (bytes > 0) {
     *tmp = *seed;
@@ -220,8 +220,8 @@ NetVCTest::consume_and_check_bytes(IOBufferReader *r, uint8_t *seed)
   while (r->read_avail() > 0) {
     int64_t b_avail = r->block_read_avail();
 
-    tmp = (uint8_t *)r->start();
-    end = tmp + b_avail;
+    tmp        = (uint8_t *)r->start();
+    end        = tmp + b_avail;
     b_consumed = 0;
 
     while (tmp < end && actual_bytes_read < bytes_to_read) {

@@ -127,11 +127,11 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname)
   }
 
   // Initialize certinfo
-  cinf->cid = NULL;
-  cinf->uri = NULL;
+  cinf->cid         = NULL;
+  cinf->uri         = NULL;
   cinf->resp_derlen = 0;
   ink_mutex_init(&cinf->stapling_mutex, "stapling_mutex");
-  cinf->is_expire = true;
+  cinf->is_expire   = true;
   cinf->expire_time = 0;
 
   SSL_CTX_set_ex_data(ctx, ssl_stapling_index, cinf);
@@ -179,7 +179,7 @@ stapling_cache_response(OCSP_RESPONSE *rsp, certinfo *cinf)
   unsigned char *p;
   unsigned int resp_derlen;
 
-  p = resp_der;
+  p           = resp_der;
   resp_derlen = i2d_OCSP_RESPONSE(rsp, &p);
 
   if (resp_derlen == 0) {
@@ -195,7 +195,7 @@ stapling_cache_response(OCSP_RESPONSE *rsp, certinfo *cinf)
   ink_mutex_acquire(&cinf->stapling_mutex);
   memcpy(cinf->resp_der, resp_der, resp_derlen);
   cinf->resp_derlen = resp_derlen;
-  cinf->is_expire = false;
+  cinf->is_expire   = false;
   cinf->expire_time = time(NULL) + SSLConfigParams::ssl_ocsp_cache_timeout;
   ink_mutex_release(&cinf->stapling_mutex);
 
@@ -257,7 +257,7 @@ query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeo
   int rv;
 
   start = Thread::get_hrtime();
-  end = ink_hrtime_add(start, ink_hrtime_from_sec(req_timeout));
+  end   = ink_hrtime_add(start, ink_hrtime_from_sec(req_timeout));
 
   ctx = OCSP_sendreq_new(b, path, NULL, -1);
   OCSP_REQ_CTX_add1_header(ctx, "Host", host);
@@ -279,9 +279,9 @@ query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeo
 static OCSP_RESPONSE *
 process_responder(OCSP_REQUEST *req, char *host, char *path, char *port, int req_timeout)
 {
-  BIO *cbio = NULL;
+  BIO *cbio           = NULL;
   OCSP_RESPONSE *resp = NULL;
-  cbio = BIO_new_connect(host);
+  cbio                = BIO_new_connect(host);
   if (!cbio) {
     goto end;
   }
@@ -304,11 +304,11 @@ end:
 static bool
 stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
 {
-  bool rv = true;
+  bool rv           = true;
   OCSP_REQUEST *req = NULL;
-  OCSP_CERTID *id = NULL;
+  OCSP_CERTID *id   = NULL;
   char *host, *path, *port;
-  int ssl_flag = 0;
+  int ssl_flag    = 0;
   int req_timeout = -1;
 
   Debug("ssl_ocsp", "stapling_refresh_response: querying responder");
@@ -328,7 +328,7 @@ stapling_refresh_response(certinfo *cinf, OCSP_RESPONSE **prsp)
     goto err;
 
   req_timeout = SSLConfigParams::ssl_ocsp_request_timeout;
-  *prsp = process_responder(req, host, path, port, req_timeout);
+  *prsp       = process_responder(req, host, path, port, req_timeout);
 
   if (*prsp == NULL) {
     goto done;
@@ -364,7 +364,7 @@ void
 ocsp_update()
 {
   SSL_CTX *ctx;
-  certinfo *cinf = NULL;
+  certinfo *cinf      = NULL;
   OCSP_RESPONSE *resp = NULL;
   time_t current_time;
 
@@ -374,7 +374,7 @@ ocsp_update()
   for (unsigned i = 0; i < ctxCount; i++) {
     SSLCertContext *cc = certLookup->get(i);
     if (cc && cc->ctx) {
-      ctx = cc->ctx;
+      ctx  = cc->ctx;
       cinf = stapling_get_cert_info(ctx);
       if (cinf) {
         ink_mutex_acquire(&cinf->stapling_mutex);

@@ -85,7 +85,7 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
     if (ats_is_ip4(lhs)) {
       in_addr_t ip1 = ats_ip4_addr_cast(lhs);
       in_addr_t ip2 = ats_ip4_addr_cast(rhs);
-      zret = (ip1 >> 16) ^ ip1 ^ ip2 ^ (ip2 >> 16);
+      zret          = (ip1 >> 16) ^ ip1 ^ ip2 ^ (ip2 >> 16);
     } else if (ats_is_ip6(lhs)) {
       uint32_t const *ip1 = ats_ip_addr32_cast(lhs);
       uint32_t const *ip2 = ats_ip_addr32_cast(rhs);
@@ -258,7 +258,7 @@ HostDBRoundRobin::select_next(sockaddr const *ip)
   if (good > 1) {
     int idx = this->index_of(ip);
     if (idx >= 0) {
-      idx = (idx + 1) % good;
+      idx  = (idx + 1) % good;
       zret = &info[idx];
     }
   }
@@ -293,7 +293,7 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
   }
 
   int best_any = 0;
-  int best_up = -1;
+  int best_up  = -1;
 
   // Basic round robin, increment current and mod with how many we have
   if (HostDBProcessor::hostdb_strict_round_robin) {
@@ -324,18 +324,18 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
   } else {
     Debug("hostdb", "Using default round robin");
     unsigned int best_hash_any = 0;
-    unsigned int best_hash_up = 0;
+    unsigned int best_hash_up  = 0;
     sockaddr const *ip;
     for (int i = 0; i < good; i++) {
-      ip = info[i].ip();
+      ip             = info[i].ip();
       unsigned int h = HOSTDB_CLIENT_IP_HASH(client_ip, ip);
       if (best_hash_any <= h) {
-        best_any = i;
+        best_any      = i;
         best_hash_any = h;
       }
       if (info[i].alive(now, fail_window)) {
         if (best_hash_up <= h) {
-          best_up = i;
+          best_up      = i;
           best_hash_up = h;
         }
       }

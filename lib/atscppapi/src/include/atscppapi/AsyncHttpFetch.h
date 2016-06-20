@@ -57,7 +57,7 @@ public:
 
   enum StreamingFlag {
     STREAMING_DISABLED = 0,
-    STREAMING_ENABLED = 0x1,
+    STREAMING_ENABLED  = 0x1,
   };
 
   AsyncHttpFetch(const std::string &url_str, StreamingFlag streaming_flag, HttpMethod http_method = HTTP_METHOD_GET);

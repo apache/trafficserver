@@ -106,7 +106,7 @@
 #define DEFAULT_STR_FIELD         \
   {                               \
     char *str = NULL;             \
-    int len = INK_MIN_ALIGN;      \
+    int len   = INK_MIN_ALIGN;    \
     if (buf) {                    \
       marshal_str(buf, str, len); \
     }                             \

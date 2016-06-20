@@ -61,7 +61,7 @@ EsiProcessor::start()
     _debugLog(_debug_tag, "[%s] Implicit call to stop()", __FUNCTION__);
     stop();
   }
-  _curr_state = PARSING;
+  _curr_state        = PARSING;
   _usePackedNodeList = false;
   return true;
 }
@@ -174,7 +174,7 @@ EsiProcessor::_getIncludeStatus(const DocNode &node)
       return STATUS_ERROR;
     }
     const string &processed_url = iter->second;
-    DataStatus status = _fetcher.getRequestStatus(processed_url);
+    DataStatus status           = _fetcher.getRequestStatus(processed_url);
     _debugLog(_debug_tag, "[%s] Got status %d successfully for URL [%.*s]", __FUNCTION__, status, processed_url.size(),
               processed_url.data());
     return status;
@@ -185,9 +185,9 @@ EsiProcessor::_getIncludeStatus(const DocNode &node)
         break;
       }
     }
-    int include_data_id = attr_iter->value_len;
+    int include_data_id            = attr_iter->value_len;
     SpecialIncludeHandler *handler = reinterpret_cast<SpecialIncludeHandler *>(const_cast<char *>(attr_iter->value));
-    DataStatus status = handler->getIncludeStatus(include_data_id);
+    DataStatus status              = handler->getIncludeStatus(include_data_id);
     _debugLog(_debug_tag, "[%s] Successfully got status for special include with id %d", __FUNCTION__, status, include_data_id);
 
     return status;
@@ -204,7 +204,7 @@ EsiProcessor::_getIncludeData(const DocNode &node, const char **content_ptr /* =
 
     if (url.value_len == 0) { // allow empty url
       if (content_ptr && content_len_ptr) {
-        *content_ptr = NULL;
+        *content_ptr     = NULL;
         *content_len_ptr = 0;
         return true;
       } else {
@@ -239,7 +239,7 @@ EsiProcessor::_getIncludeData(const DocNode &node, const char **content_ptr /* =
         break;
       }
     }
-    int include_data_id = attr_iter->value_len;
+    int include_data_id            = attr_iter->value_len;
     SpecialIncludeHandler *handler = reinterpret_cast<SpecialIncludeHandler *>(const_cast<char *>(attr_iter->value));
     bool result;
     if (content_ptr && content_len_ptr) {
@@ -362,7 +362,7 @@ EsiProcessor::process(const char *&data, int &data_len)
     }
   }
   _addFooterData();
-  data = _output_data.c_str();
+  data     = _output_data.c_str();
   data_len = _output_data.size();
   _debugLog(_debug_tag, "[%s] ESI processed document of size %d starting with [%.10s]", __FUNCTION__, data_len,
             (data_len ? data : "(null)"));
@@ -475,7 +475,7 @@ EsiProcessor::flush(string &data, int &overall_len)
   }
 
   node_pending = false;
-  node_iter = _node_list.begin();
+  node_iter    = _node_list.begin();
   for (int i = 0; i < _n_processed_nodes; ++i, ++node_iter)
     ;
   for (; node_iter != _node_list.end(); ++node_iter) {
@@ -520,7 +520,7 @@ EsiProcessor::flush(string &data, int &overall_len)
   }
   data.assign(_output_data);
   _overall_len = _overall_len + data.size();
-  overall_len = _overall_len;
+  overall_len  = _overall_len;
 
   _debugLog(_debug_tag, "[%s] ESI processed document of size %d starting with [%.10s]", __FUNCTION__, data.size(),
             (data.size() ? data.data() : "(null)"));
@@ -534,9 +534,9 @@ EsiProcessor::stop()
   _node_list.clear();
   _include_urls.clear();
   _try_blocks.clear();
-  _n_prescanned_nodes = 0;
+  _n_prescanned_nodes     = 0;
   _n_try_blocks_processed = 0;
-  _overall_len = 0;
+  _overall_len            = 0;
   for (IncludeHandlerMap::iterator map_iter = _include_handlers.begin(); map_iter != _include_handlers.end(); ++map_iter) {
     delete map_iter->second;
   }
@@ -598,7 +598,7 @@ bool
 EsiProcessor::_handleChoose(DocNodeList::iterator &curr_node)
 {
   DocNodeList::iterator iter, otherwise_node, winning_node, end_node;
-  end_node = curr_node->child_nodes.end();
+  end_node       = curr_node->child_nodes.end();
   otherwise_node = end_node;
   for (iter = curr_node->child_nodes.begin(); iter != end_node; ++iter) {
     if (iter->type == DocNode::TYPE_OTHERWISE) {
@@ -762,7 +762,7 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
         FailureInfo *info;
 
         if (it != threadData->end()) {
-          info = it->second;
+          info  = it->second;
           fetch = _reqAdded = info->isAttemptReq();
           _debugLog(_debug_tag, "[%s] Fetch result is %d", __FUNCTION__, fetch);
         }

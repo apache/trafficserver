@@ -144,20 +144,20 @@ struct HttpTransformInfo {
 
 enum {
   HTTP_SM_MAGIC_ALIVE = 0x0000FEED,
-  HTTP_SM_MAGIC_DEAD = 0xDEADFEED,
+  HTTP_SM_MAGIC_DEAD  = 0xDEADFEED,
 };
 
 enum {
-  HTTP_SM_POST_UNKNOWN = 0,
-  HTTP_SM_POST_UA_FAIL = 1,
+  HTTP_SM_POST_UNKNOWN     = 0,
+  HTTP_SM_POST_UA_FAIL     = 1,
   HTTP_SM_POST_SERVER_FAIL = 2,
-  HTTP_SM_POST_SUCCESS = 3,
+  HTTP_SM_POST_SUCCESS     = 3,
 };
 
 enum {
-  HTTP_SM_TRANSFORM_OPEN = 0,
+  HTTP_SM_TRANSFORM_OPEN   = 0,
   HTTP_SM_TRANSFORM_CLOSED = 1,
-  HTTP_SM_TRANSFORM_FAIL = 2,
+  HTTP_SM_TRANSFORM_FAIL   = 2,
 };
 
 enum HttpApiState_t {
@@ -604,9 +604,9 @@ HttpSM::write_response_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
 inline void
 HttpSM::add_history_entry(const char *fileline, int event, int reentrant)
 {
-  int pos = history_pos++ % HISTORY_SIZE;
-  history[pos].fileline = fileline;
-  history[pos].event = (unsigned short)event;
+  int pos                 = history_pos++ % HISTORY_SIZE;
+  history[pos].fileline   = fileline;
+  history[pos].event      = (unsigned short)event;
   history[pos].reentrancy = (short)reentrant;
 }
 
@@ -643,11 +643,11 @@ HttpSM::add_cache_sm()
     second_cache_sm = new HttpCacheSM;
     second_cache_sm->init(this, mutex);
     if (t_state.cache_info.object_read != NULL) {
-      second_cache_sm->cache_read_vc = cache_sm.cache_read_vc;
-      cache_sm.cache_read_vc = NULL;
-      second_cache_sm->read_locked = cache_sm.read_locked;
+      second_cache_sm->cache_read_vc        = cache_sm.cache_read_vc;
+      cache_sm.cache_read_vc                = NULL;
+      second_cache_sm->read_locked          = cache_sm.read_locked;
       t_state.cache_info.second_object_read = t_state.cache_info.object_read;
-      t_state.cache_info.object_read = NULL;
+      t_state.cache_info.object_read        = NULL;
     }
   }
 }

@@ -23,7 +23,7 @@
 
 #include "traffic_ctl.h"
 
-static int drain = 0;
+static int drain   = 0;
 static int manager = 0;
 
 static int
@@ -142,8 +142,8 @@ static int
 server_start(unsigned argc, const char **argv)
 {
   TSMgmtError error;
-  int cache = 0;
-  int hostdb = 0;
+  int cache      = 0;
+  int hostdb     = 0;
   unsigned clear = TS_CACHE_CLEAR_NONE;
 
   const ArgumentDescription opts[] = {

@@ -270,7 +270,7 @@ typedef Vec<pid_t> threadlist;
 static threadlist
 threads_for_process(pid_t proc)
 {
-  DIR *dir = NULL;
+  DIR *dir             = NULL;
   struct dirent *entry = NULL;
 
   char path[64];
@@ -313,8 +313,8 @@ backtrace_for_thread(pid_t threadid, textBuffer &text)
   int status;
   unw_addr_space_t addr_space = NULL;
   unw_cursor_t cursor;
-  void *ap = NULL;
-  pid_t target = -1;
+  void *ap       = NULL;
+  pid_t target   = -1;
   unsigned level = 0;
 
   // First, attach to the child, causing it to stop.
@@ -576,7 +576,7 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
       str_val = ats_strdup("NULL");
     }
 
-    rec_ele->rec_type = TS_REC_STRING;
+    rec_ele->rec_type          = TS_REC_STRING;
     rec_ele->valueT.string_val = str_val;
     Debug("RecOp", "[MgmtRecordGet] Get String Var %s = %s", rec_ele->rec_name, rec_ele->valueT.string_val);
     break;
@@ -789,7 +789,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
 
   // don't need to allocate memory b/c "getVersion" allocates memory
   old_file_lines = old_file_content->bufPtr();
-  old_file_len = strlen(old_file_lines);
+  old_file_len   = strlen(old_file_lines);
 
   *text = ats_strdup(old_file_lines); // make copy before deleting textBuffer
   *size = old_file_len;
@@ -842,7 +842,7 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
   }
   // use rollback object to update file with new content
   file_content = new textBuffer(size + 1);
-  ret = file_content->copyFrom(text, size);
+  ret          = file_content->copyFrom(text, size);
   if (ret < 0) {
     delete file_content;
     return TS_ERR_WRITE_FILE;
@@ -933,7 +933,7 @@ ActiveEventGetMlt(LLQ *active_events)
     char *key = (char *)ink_hash_table_entry_key(event_ht, entry);
 
     // convert key to int; insert into llQ
-    event_id = ink_atoi(key);
+    event_id   = ink_atoi(key);
     event_name = get_event_name(event_id);
     if (event_name) {
       if (!enqueue(active_events, event_name)) // returns true if successful

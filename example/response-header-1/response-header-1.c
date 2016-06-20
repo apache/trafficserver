@@ -231,8 +231,8 @@ TSPluginInit(int argc, const char *argv[])
 
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "response-header-1";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "response-header-1";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -256,7 +256,7 @@ TSPluginInit(int argc, const char *argv[])
   hdr_bufp = TSMBufferCreate();
   TSMimeHdrCreate(hdr_bufp, &hdr_loc);
 
-  mimehdr1_name = TSstrdup("x-num-served-from-cache");
+  mimehdr1_name  = TSstrdup("x-num-served-from-cache");
   mimehdr1_value = TSstrdup("0");
 
   /* Create name here and set DateTime value when o.s.

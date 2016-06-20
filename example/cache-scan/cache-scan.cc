@@ -67,10 +67,10 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
   cache_scan_state *cstate = (cache_scan_state *)TSContDataGet(contp);
 
   if (event == TS_EVENT_CACHE_REMOVE) {
-    cstate->done = 1;
+    cstate->done       = 1;
     const char error[] = "Cache remove operation succeeded";
-    cstate->cache_vc = (TSVConn)edata;
-    cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
+    cstate->cache_vc   = (TSVConn)edata;
+    cstate->write_vio  = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, error, sizeof(error) - 1);
     TSVIONBytesSet(cstate->write_vio, cstate->total_bytes);
     TSVIOReenable(cstate->write_vio);
@@ -78,11 +78,11 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
   }
 
   if (event == TS_EVENT_CACHE_REMOVE_FAILED) {
-    cstate->done = 1;
+    cstate->done       = 1;
     const char error[] = "Cache remove operation failed error=";
     char rc[12];
     snprintf(rc, 12, "%p", edata);
-    cstate->cache_vc = (TSVConn)edata;
+    cstate->cache_vc  = (TSVConn)edata;
     cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, error, sizeof(error) - 1);
     cstate->total_bytes += TSIOBufferWrite(cstate->resp_buffer, rc, strlen(rc));
@@ -94,7 +94,7 @@ handle_scan(TSCont contp, TSEvent event, void *edata)
 
   // first scan event, save vc and start write
   if (event == TS_EVENT_CACHE_SCAN) {
-    cstate->cache_vc = (TSVConn)edata;
+    cstate->cache_vc  = (TSVConn)edata;
     cstate->write_vio = TSVConnWrite(cstate->net_vc, contp, cstate->resp_reader, INT64_MAX);
     return TS_EVENT_CONTINUE;
   }
@@ -187,7 +187,7 @@ handle_accept(TSCont contp, TSEvent event, TSVConn vc)
       // setup vc, buffers
       cstate->net_vc = vc;
 
-      cstate->req_buffer = TSIOBufferCreate();
+      cstate->req_buffer  = TSIOBufferCreate();
       cstate->resp_buffer = TSIOBufferCreate();
       cstate->resp_reader = TSIOBufferReaderAlloc(cstate->resp_buffer);
 
@@ -258,7 +258,7 @@ handle_io(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */)
     // we don't care about the request, so just shut down the read vc
     TSVConnShutdown(cstate->net_vc, 1, 0);
     // setup the response headers so we are ready to write body
-    char hdrs[] = "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n";
+    char hdrs[]         = "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n";
     cstate->total_bytes = TSIOBufferWrite(cstate->resp_buffer, hdrs, sizeof(hdrs) - 1);
 
     if (cstate->key_to_delete) {
@@ -341,7 +341,7 @@ cache_intercept(TSCont contp, TSEvent event, void *edata)
 int
 unescapifyStr(char *buffer)
 {
-  char *read = buffer;
+  char *read  = buffer;
   char *write = buffer;
   char subStr[3];
 
@@ -350,7 +350,7 @@ unescapifyStr(char *buffer)
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      *write = (char)strtol(subStr, (char **)NULL, 16);
+      *write    = (char)strtol(subStr, (char **)NULL, 16);
       read++;
       write++;
     } else if (*read == '+') {
@@ -415,18 +415,18 @@ setup_request(TSCont contp, TSHttpTxn txnp)
 
     if (query && query_len > 11) {
       char querybuf[2048];
-      query_len = (unsigned)query_len > sizeof(querybuf) - 1 ? sizeof(querybuf) - 1 : query_len;
+      query_len   = (unsigned)query_len > sizeof(querybuf) - 1 ? sizeof(querybuf) - 1 : query_len;
       char *start = querybuf, *end = querybuf + query_len;
       size_t del_url_len;
       memcpy(querybuf, query, query_len);
-      *end = '\0';
+      *end  = '\0';
       start = strstr(querybuf, "remove_url=");
       if (start && (start == querybuf || *(start - 1) == '&')) {
         start += 11;
         if ((end = strstr(start, "&")) != NULL)
-          *end = '\0';
+          *end      = '\0';
         del_url_len = unescapifyStr(start);
-        end = start + del_url_len;
+        end         = start + del_url_len;
 
         cstate->key_to_delete = TSCacheKeyCreate();
         TSDebug("cache_iter", "deleting url: %s", start);

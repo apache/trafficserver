@@ -377,7 +377,7 @@ hdrtoken_hash_init()
              hdrtoken_hash_table[slot].wks);
       ++num_collisions;
     }
-    hdrtoken_hash_table[slot].wks = (const char *)wks;
+    hdrtoken_hash_table[slot].wks  = (const char *)wks;
     hdrtoken_hash_table[slot].hash = hash;
   }
 
@@ -425,8 +425,8 @@ hdrtoken_init()
 
     int heap_size = 0;
     for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
-      hdrtoken_str_lengths[i] = (int)strlen(_hdrtoken_strs[i]);
-      int sstr_len = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
+      hdrtoken_str_lengths[i]   = (int)strlen(_hdrtoken_strs[i]);
+      int sstr_len              = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
       int packed_prefix_str_len = sizeof(HdrTokenHeapPrefix) + sstr_len;
       heap_size += packed_prefix_str_len;
     }
@@ -441,13 +441,13 @@ hdrtoken_init()
 
       memset(&prefix, 0, sizeof(HdrTokenHeapPrefix));
 
-      prefix.wks_idx = i;
-      prefix.wks_length = hdrtoken_str_lengths[i];
-      prefix.wks_token_type = HDRTOKEN_TYPE_OTHER; // default, can override later
-      prefix.wks_info.name = NULL;                 // default, can override later
-      prefix.wks_info.slotid = MIME_SLOTID_NONE;   // default, can override later
-      prefix.wks_info.mask = TOK_64_CONST(0);      // default, can override later
-      prefix.wks_info.flags = MIME_FLAGS_MULTVALS; // default, can override later
+      prefix.wks_idx         = i;
+      prefix.wks_length      = hdrtoken_str_lengths[i];
+      prefix.wks_token_type  = HDRTOKEN_TYPE_OTHER; // default, can override later
+      prefix.wks_info.name   = NULL;                // default, can override later
+      prefix.wks_info.slotid = MIME_SLOTID_NONE;    // default, can override later
+      prefix.wks_info.mask   = TOK_64_CONST(0);     // default, can override later
+      prefix.wks_info.flags  = MIME_FLAGS_MULTVALS; // default, can override later
 
       int sstr_len = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
 
@@ -470,7 +470,7 @@ hdrtoken_init()
 
       ink_assert((wks_idx >= 0) && (wks_idx < (int)SIZEOF(hdrtoken_strs)));
       // coverity[negative_returns]
-      prefix = hdrtoken_index_to_prefix(wks_idx);
+      prefix                 = hdrtoken_index_to_prefix(wks_idx);
       prefix->wks_token_type = _hdrtoken_strs_type_initializers[i].type;
     }
 
@@ -483,19 +483,19 @@ hdrtoken_init()
         hdrtoken_tokenize_dfa(_hdrtoken_strs_field_initializers[i].name, (int)strlen(_hdrtoken_strs_field_initializers[i].name));
 
       ink_assert((wks_idx >= 0) && (wks_idx < (int)SIZEOF(hdrtoken_strs)));
-      prefix = hdrtoken_index_to_prefix(wks_idx);
+      prefix                  = hdrtoken_index_to_prefix(wks_idx);
       prefix->wks_info.slotid = _hdrtoken_strs_field_initializers[i].slotid;
-      prefix->wks_info.flags = _hdrtoken_strs_field_initializers[i].flags;
-      prefix->wks_info.mask = _hdrtoken_strs_field_initializers[i].mask;
+      prefix->wks_info.flags  = _hdrtoken_strs_field_initializers[i].flags;
+      prefix->wks_info.mask   = _hdrtoken_strs_field_initializers[i].mask;
     }
 
     for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
-      HdrTokenHeapPrefix *prefix = hdrtoken_index_to_prefix(i);
-      prefix->wks_info.name = hdrtoken_strs[i];
-      hdrtoken_str_token_types[i] = prefix->wks_token_type; // parallel array for speed
-      hdrtoken_str_slotids[i] = prefix->wks_info.slotid;    // parallel array for speed
-      hdrtoken_str_masks[i] = prefix->wks_info.mask;        // parallel array for speed
-      hdrtoken_str_flags[i] = prefix->wks_info.flags;       // parallel array for speed
+      HdrTokenHeapPrefix *prefix  = hdrtoken_index_to_prefix(i);
+      prefix->wks_info.name       = hdrtoken_strs[i];
+      hdrtoken_str_token_types[i] = prefix->wks_token_type;  // parallel array for speed
+      hdrtoken_str_slotids[i]     = prefix->wks_info.slotid; // parallel array for speed
+      hdrtoken_str_masks[i]       = prefix->wks_info.mask;   // parallel array for speed
+      hdrtoken_str_flags[i]       = prefix->wks_info.flags;  // parallel array for speed
     }
 
     hdrtoken_hash_init();

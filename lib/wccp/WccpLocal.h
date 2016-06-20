@@ -143,29 +143,29 @@ enum CacheAssignmentType {
 /// Top level message types.
 enum message_type_t {
   INVALID_MSG_TYPE = 0,
-  HERE_I_AM = 10,
-  I_SEE_YOU = 11,
-  REDIRECT_ASSIGN = 12,
-  REMOVAL_QUERY = 13,
+  HERE_I_AM        = 10,
+  I_SEE_YOU        = 11,
+  REDIRECT_ASSIGN  = 12,
+  REMOVAL_QUERY    = 13,
 };
 
 /// Message component type.
 /// See Sect 5.1 - 5.4
 enum CompType {
-  SECURITY_INFO = 0,
-  SERVICE_INFO = 1,
-  ROUTER_ID_INFO = 2,
-  CACHE_ID_INFO = 3,
-  RTR_VIEW_INFO = 4,
-  CACHE_VIEW_INFO = 5,
+  SECURITY_INFO       = 0,
+  SERVICE_INFO        = 1,
+  ROUTER_ID_INFO      = 2,
+  CACHE_ID_INFO       = 3,
+  RTR_VIEW_INFO       = 4,
+  CACHE_VIEW_INFO     = 5,
   REDIRECT_ASSIGNMENT = 6,
-  QUERY_INFO = 7,
-  CAPABILITY_INFO = 8,
-  ALT_ASSIGNMENT = 13,
-  ASSIGN_MAP = 14,
-  COMMAND_EXTENSION = 15,
-  COMP_TYPE_MIN = SECURITY_INFO,
-  COMP_TYPE_MAX = COMMAND_EXTENSION
+  QUERY_INFO          = 7,
+  CAPABILITY_INFO     = 8,
+  ALT_ASSIGNMENT      = 13,
+  ASSIGN_MAP          = 14,
+  COMMAND_EXTENSION   = 15,
+  COMP_TYPE_MIN       = SECURITY_INFO,
+  COMP_TYPE_MAX       = COMMAND_EXTENSION
 };
 
 /// Router Identity.
@@ -327,9 +327,9 @@ public:
 
   /// Capability types.
   enum Type {
-    PACKET_FORWARD_METHOD = 1,   ///< Packet forwarding methods.
+    PACKET_FORWARD_METHOD   = 1, ///< Packet forwarding methods.
     CACHE_ASSIGNMENT_METHOD = 2, ///< Cache assignment methods.
-    PACKET_RETURN_METHOD = 3     ///< Packet return methods.
+    PACKET_RETURN_METHOD    = 3  ///< Packet return methods.
   };
 
   CapabilityElt(); ///< Default constructor.
@@ -1754,8 +1754,8 @@ public:
 
   /// Command types.
   enum cmd_t {
-    SHUTDOWN = 1,         ///< Cache is shutting down.
-    SHUTDOWN_RESPONSE = 2 ///< SHUTDOWN ack.
+    SHUTDOWN          = 1, ///< Cache is shutting down.
+    SHUTDOWN_RESPONSE = 2  ///< SHUTDOWN ack.
   };
 
   /// Serialized data layout.
@@ -3330,8 +3330,8 @@ MsgBuffer::reset()
 inline MsgBuffer &
 MsgBuffer::set(void *ptr, size_t n)
 {
-  _ptr = static_cast<char *>(ptr);
-  _size = n;
+  _ptr   = static_cast<char *>(ptr);
+  _size  = n;
   _count = 0;
   return *this;
 }
@@ -3359,7 +3359,7 @@ inline PacketStamp &
 PacketStamp::set(time_t time, uint32_t sn)
 {
   m_time = time;
-  m_sn = sn;
+  m_sn   = sn;
   return *this;
 }
 
@@ -3487,7 +3487,7 @@ MaskAssignElt::appender::initSet(uint32_t srcAddr, uint32_t dstAddr, uint16_t sr
 inline MaskValueSetElt *
 MaskAssignElt::appender::mask(uint32_t srcAddr, uint32_t dstAddr, uint16_t srcPort, uint16_t dstPort)
 {
-  m_set = reinterpret_cast<MaskValueSetElt *>(reinterpret_cast<char *>(m_set) + m_set->getSize());
+  m_set          = reinterpret_cast<MaskValueSetElt *>(reinterpret_cast<char *>(m_set) + m_set->getSize());
   m_elt->m_count = htonl(1 + m_elt->getCount()); // bump set count.
   this->initSet(srcAddr, dstAddr, srcPort, dstPort);
   return m_set;
@@ -3496,7 +3496,7 @@ inline MaskAssignElt::appender
 MaskAssignElt::init(uint32_t srcAddr, uint32_t dstAddr, uint16_t srcPort, uint16_t dstPort)
 {
   appender zret;
-  m_count = htonl(1);
+  m_count    = htonl(1);
   zret.m_set = reinterpret_cast<MaskValueSetElt *>(this + 1);
   zret.m_elt = this;
   zret.initSet(srcAddr, dstAddr, srcPort, dstPort);

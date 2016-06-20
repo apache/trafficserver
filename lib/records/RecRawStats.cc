@@ -33,11 +33,11 @@ raw_stat_get_total(RecRawStatBlock *rsb, int id, RecRawStat *total)
   int i;
   RecRawStat *tlp;
 
-  total->sum = 0;
+  total->sum   = 0;
   total->count = 0;
 
   // get global values
-  total->sum = rsb->global[id]->sum;
+  total->sum   = rsb->global[id]->sum;
   total->count = rsb->global[id]->count;
 
   // get thread local values
@@ -70,7 +70,7 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
   RecRawStat *tlp;
   RecRawStat total;
 
-  total.sum = 0;
+  total.sum   = 0;
   total.count = 0;
 
   // sum the thread local values
@@ -95,7 +95,7 @@ raw_stat_sync_to_global(RecRawStatBlock *rsb, int id)
 
   // get the delta from the last sync
   RecRawStat delta;
-  delta.sum = total.sum - rsb->global[id]->last_sum;
+  delta.sum   = total.sum - rsb->global[id]->last_sum;
   delta.count = total.count - rsb->global[id]->last_count;
 
   // This is too verbose now, so leaving it out / leif
@@ -227,7 +227,7 @@ RecAllocateRawStatBlock(int num_stats)
   rsb = (RecRawStatBlock *)ats_malloc(sizeof(RecRawStatBlock));
   memset(rsb, 0, sizeof(RecRawStatBlock));
   rsb->ethr_stat_offset = ethr_stat_offset;
-  rsb->global = (RecRawStat **)ats_malloc(num_stats * sizeof(RecRawStat *));
+  rsb->global           = (RecRawStat **)ats_malloc(num_stats * sizeof(RecRawStat *));
   memset(rsb->global, 0, num_stats * sizeof(RecRawStat *));
   rsb->num_stats = 0;
   rsb->max_stats = num_stats;
@@ -266,8 +266,8 @@ _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDa
   }
 
   // store a pointer to our record->stat_meta.data_raw in our rsb
-  rsb->global[id] = &(r->stat_meta.data_raw);
-  rsb->global[id]->last_sum = 0;
+  rsb->global[id]             = &(r->stat_meta.data_raw);
+  rsb->global[id]->last_sum   = 0;
   rsb->global[id]->last_count = 0;
 
   // setup the periodic sync callback
@@ -291,7 +291,7 @@ RecRawStatSyncSum(const char *name, RecDataT data_type, RecData *data, RecRawSta
 
   Debug("stats", "raw sync:sum for %s", name);
   raw_stat_sync_to_global(rsb, id);
-  total.sum = rsb->global[id]->sum;
+  total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
   RecDataSetFromInk64(data_type, data, total.sum);
 
@@ -305,7 +305,7 @@ RecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecRawS
 
   Debug("stats", "raw sync:count for %s", name);
   raw_stat_sync_to_global(rsb, id);
-  total.sum = rsb->global[id]->sum;
+  total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
   RecDataSetFromInk64(data_type, data, total.count);
 
@@ -320,7 +320,7 @@ RecRawStatSyncAvg(const char *name, RecDataT data_type, RecData *data, RecRawSta
 
   Debug("stats", "raw sync:avg for %s", name);
   raw_stat_sync_to_global(rsb, id);
-  total.sum = rsb->global[id]->sum;
+  total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
   if (total.count != 0)
     avg = (float)((double)total.sum / (double)total.count);
@@ -336,7 +336,7 @@ RecRawStatSyncHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Rec
 
   Debug("stats", "raw sync:hr-timeavg for %s", name);
   raw_stat_sync_to_global(rsb, id);
-  total.sum = rsb->global[id]->sum;
+  total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
   if (total.count == 0) {
     r = 0.0f;
@@ -356,7 +356,7 @@ RecRawStatSyncIntMsecsToFloatSeconds(const char *name, RecDataT data_type, RecDa
 
   Debug("stats", "raw sync:seconds for %s", name);
   raw_stat_sync_to_global(rsb, id);
-  total.sum = rsb->global[id]->sum;
+  total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
   if (total.count == 0) {
     r = 0.0f;
@@ -375,7 +375,7 @@ RecRawStatSyncMHrTimeAvg(const char *name, RecDataT data_type, RecData *data, Re
 
   Debug("stats", "raw sync:mhr-timeavg for %s", name);
   raw_stat_sync_to_global(rsb, id);
-  total.sum = rsb->global[id]->sum;
+  total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
   if (total.count == 0) {
     r = 0.0f;
@@ -540,11 +540,11 @@ RecRegisterRawStatSyncCb(const char *name, RecRawStatSyncCb sync_cb, RecRawStatB
     rec_mutex_acquire(&(r->lock));
     if (REC_TYPE_IS_STAT(r->rec_type)) {
       if (!(r->stat_meta.sync_cb)) {
-        r->stat_meta.sync_rsb = rsb;
-        r->stat_meta.sync_id = id;
-        r->stat_meta.sync_cb = sync_cb;
+        r->stat_meta.sync_rsb                                        = rsb;
+        r->stat_meta.sync_id                                         = id;
+        r->stat_meta.sync_cb                                         = sync_cb;
         r->stat_meta.sync_rsb->global[r->stat_meta.sync_id]->version = r->version;
-        err = REC_ERR_OKAY;
+        err                                                          = REC_ERR_OKAY;
       } else {
         ink_release_assert(false); // We shouldn't register CBs twice...
       }

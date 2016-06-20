@@ -91,8 +91,8 @@ TSPluginInit(int argc, const char *argv[])
   TSCont contp;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "session-1";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "session-1";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -102,8 +102,8 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   transaction_count = INKStatCreate("transaction.count", INKSTAT_TYPE_INT64);
-  session_count = INKStatCreate("session.count", INKSTAT_TYPE_INT64);
-  av_transaction = INKStatCreate("avg.transactions", INKSTAT_TYPE_FLOAT);
+  session_count     = INKStatCreate("session.count", INKSTAT_TYPE_INT64);
+  av_transaction    = INKStatCreate("avg.transactions", INKSTAT_TYPE_FLOAT);
 
   contp = TSContCreate(ssn_handler, NULL);
   TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, contp);

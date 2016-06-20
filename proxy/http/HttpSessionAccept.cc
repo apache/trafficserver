@@ -30,7 +30,7 @@
 void
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const *client_ip = netvc->get_remote_addr();
+  sockaddr const *client_ip   = netvc->get_remote_addr();
   const AclRecord *acl_record = NULL;
   ip_port_text_buffer ipb;
 
@@ -63,13 +63,13 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
   Http1ClientSession *new_session = THREAD_ALLOC_INIT(http1ClientSessionAllocator, this_ethread());
 
   // copy over session related data.
-  new_session->f_outbound_transparent = f_outbound_transparent;
+  new_session->f_outbound_transparent    = f_outbound_transparent;
   new_session->f_transparent_passthrough = f_transparent_passthrough;
-  new_session->outbound_ip4 = outbound_ip4;
-  new_session->outbound_ip6 = outbound_ip6;
-  new_session->outbound_port = outbound_port;
-  new_session->host_res_style = ats_host_res_from(client_ip->sa_family, host_res_preference);
-  new_session->acl_record = acl_record;
+  new_session->outbound_ip4              = outbound_ip4;
+  new_session->outbound_ip6              = outbound_ip6;
+  new_session->outbound_port             = outbound_port;
+  new_session->host_res_style            = ats_host_res_from(client_ip->sa_family, host_res_preference);
+  new_session->acl_record                = acl_record;
 
   new_session->new_connection(netvc, iobuf, reader, backdoor);
 

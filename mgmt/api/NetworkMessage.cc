@@ -159,7 +159,7 @@ send_mgmt_request(int fd, OpType optype, ...)
 {
   va_list ap;
   MgmtMarshallInt msglen;
-  MgmtMarshallData req = {NULL, 0};
+  MgmtMarshallData req            = {NULL, 0};
   const MgmtMarshallType fields[] = {MGMT_MARSHALL_DATA};
   const NetCmdOperation *cmd;
 
@@ -198,9 +198,9 @@ send_mgmt_request(int fd, OpType optype, ...)
 TSMgmtError
 send_mgmt_error(int fd, OpType optype, TSMgmtError error)
 {
-  MgmtMarshallInt ecode = error;
-  MgmtMarshallInt intval = 0;
-  MgmtMarshallData dataval = {NULL, 0};
+  MgmtMarshallInt ecode     = error;
+  MgmtMarshallInt intval    = 0;
+  MgmtMarshallData dataval  = {NULL, 0};
   MgmtMarshallString strval = NULL;
 
   // Switch on operations, grouped by response format.
@@ -277,7 +277,7 @@ send_mgmt_response(int fd, OpType optype, ...)
 {
   va_list ap;
   MgmtMarshallInt msglen;
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply          = {NULL, 0};
   const MgmtMarshallType fields[] = {MGMT_MARSHALL_DATA};
   const NetCmdOperation *cmd;
 

@@ -49,10 +49,10 @@ extern string response;
 
 namespace constant
 {
-const char global[] = "\"global\": {\n";
-const char start[] = "\"proxy.process.";
+const char global[]    = "\"global\": {\n";
+const char start[]     = "\"proxy.process.";
 const char seperator[] = "\": \"";
-const char end[] = "\",\n";
+const char end[]       = "\",\n";
 };
 
 //----------------------------------------------------------------------------
@@ -69,9 +69,9 @@ public:
 
       // set the host
       size_t start = _url.find(":");
-      size_t end = _url.find("/", start + 3);
-      _host = _url.substr(start + 3, end - start - 3);
-      end = _host.find(":");
+      size_t end   = _url.find("/", start + 3);
+      _host        = _url.substr(start + 3, end - start - 3);
+      end          = _host.find(":");
       if (end != string::npos) {
         _host = _host.substr(0, end);
       }
@@ -82,9 +82,9 @@ public:
       _host = hostname;
     }
 
-    _stats = NULL;
+    _stats     = NULL;
     _old_stats = NULL;
-    _absolute = false;
+    _absolute  = false;
     lookup_table.insert(make_pair("version", LookupItem("Version", "proxy.process.version.server.short", 1)));
     lookup_table.insert(make_pair("disk_used", LookupItem("Disk Used", "proxy.process.cache.bytes_used", 1)));
     lookup_table.insert(make_pair("disk_total", LookupItem("Disk Total", "proxy.process.cache.bytes_total", 1)));
@@ -246,7 +246,7 @@ public:
         _old_stats = NULL;
       }
       _old_stats = _stats;
-      _stats = new map<string, string>;
+      _stats     = new map<string, string>;
 
       gettimeofday(&_time, NULL);
       double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
@@ -259,7 +259,7 @@ public:
             // special case for Version information
             TSString strValue = NULL;
             assert(TSRecordGetString(item.name, &strValue) == TS_ERR_OKAY);
-            string key = item.name;
+            string key     = item.name;
             (*_stats)[key] = strValue;
             TSfree(strValue);
           } else {
@@ -271,13 +271,13 @@ public:
             string key = item.name;
             char buffer[32];
             sprintf(buffer, "%" PRId64, value);
-            string foo = buffer;
+            string foo     = buffer;
             (*_stats)[key] = foo;
           }
         }
       }
-      _old_time = _now;
-      _now = now;
+      _old_time  = _now;
+      _now       = now;
       _time_diff = _now - _old_time;
     } else {
       CURL *curl;
@@ -304,12 +304,12 @@ public:
             _old_stats = NULL;
           }
           _old_stats = _stats;
-          _stats = new map<string, string>;
+          _stats     = new map<string, string>;
 
           // parse
           parseResponse(response);
-          _old_time = _now;
-          _now = now;
+          _old_time  = _now;
+          _now       = now;
           _time_diff = _now - _old_time;
         } else {
           fprintf(stderr, "Can't fetch url %s", _url.c_str());
@@ -360,7 +360,7 @@ public:
     map<string, LookupItem>::const_iterator lookup_it = lookup_table.find(key);
     assert(lookup_it != lookup_table.end());
     const LookupItem &item = lookup_it->second;
-    prettyName = item.pretty;
+    prettyName             = item.pretty;
     if (overrideType != 0)
       type = overrideType;
     else
@@ -380,7 +380,7 @@ public:
         value = (value - old) / _time_diff;
       }
     } else if (type == 3 || type == 4) {
-      double numerator = 0;
+      double numerator   = 0;
       double denominator = 0;
       getStat(item.numerator, numerator);
       getStat(item.denominator, denominator);
@@ -440,9 +440,9 @@ public:
 
     // find parts of the line
     while (1) {
-      size_t start = response.find(constant::start, pos);
+      size_t start     = response.find(constant::start, pos);
       size_t seperator = response.find(constant::seperator, pos);
-      size_t end = response.find(constant::end, pos);
+      size_t end       = response.find(constant::end, pos);
 
       if (start == string::npos || seperator == string::npos || end == string::npos)
         return;

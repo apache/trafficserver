@@ -79,7 +79,7 @@ StatPagesManager::handle_http(Continuation *cont, HTTPHdr *header)
       host_len = MAXDNAME;
     memcpy(host, h, host_len);
     host[host_len] = '\0';
-    host_len = unescapifyStr(host);
+    host_len       = unescapifyStr(host);
 
     for (i = 0; i < n_stat_pages; i++) {
       if (ptr_len_cmp(host, host_len, stat_pages[i].module) == 0) {
@@ -108,7 +108,7 @@ StatPagesManager::is_stat_page(URL *url)
 
   memcpy(host, h, length);
   host[length] = '\0';
-  length = unescapifyStr(host);
+  length       = unescapifyStr(host);
 
   if ((host[0] == '{') && (host[length - 1] == '}'))
     return true;
@@ -128,7 +128,7 @@ StatPagesManager::is_cache_inspector_page(URL *url)
 
   memcpy(host, h, length);
   host[length] = '\0';
-  length = unescapifyStr(host);
+  length       = unescapifyStr(host);
 
   if (strncmp(host, "{cache}", length) == 0)
     return true;
@@ -140,8 +140,8 @@ void
 BaseStatPagesHandler::resp_clear()
 {
   ats_free(response);
-  response = NULL;
-  response_size = 0;
+  response        = NULL;
+  response_size   = 0;
   response_length = 0;
 }
 

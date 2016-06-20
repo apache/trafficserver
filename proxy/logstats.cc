@@ -65,28 +65,28 @@ using namespace std;
 #define PROGRAM_NAME "traffic_logstats"
 
 const int MAX_LOGBUFFER_SIZE = 65536;
-const int DEFAULT_LINE_LEN = 78;
-const double LOG10_1024 = 3.0102999566398116;
-const int MAX_ORIG_STRING = 4096;
+const int DEFAULT_LINE_LEN   = 78;
+const double LOG10_1024      = 3.0102999566398116;
+const int MAX_ORIG_STRING    = 4096;
 
 // Optimizations for "strcmp()", treat some fixed length (3 or 4 bytes) strings
 // as integers.
-const int GET_AS_INT = 5522759;
-const int PUT_AS_INT = 5526864;
+const int GET_AS_INT  = 5522759;
+const int PUT_AS_INT  = 5526864;
 const int HEAD_AS_INT = 1145128264;
 const int POST_AS_INT = 1414745936;
 
 const int TEXT_AS_INT = 1954047348;
 
 const int JPEG_AS_INT = 1734701162;
-const int JPG_AS_INT = 6778986;
-const int GIF_AS_INT = 6711655;
-const int PNG_AS_INT = 6778480;
-const int BMP_AS_INT = 7368034;
-const int CSS_AS_INT = 7566179;
-const int XML_AS_INT = 7105912;
+const int JPG_AS_INT  = 6778986;
+const int GIF_AS_INT  = 6711655;
+const int PNG_AS_INT  = 6778480;
+const int BMP_AS_INT  = 7368034;
+const int CSS_AS_INT  = 7566179;
+const int XML_AS_INT  = 7105912;
 const int HTML_AS_INT = 1819112552;
-const int ZIP_AS_INT = 7367034;
+const int ZIP_AS_INT  = 7367034;
 
 const int JAVA_AS_INT = 1635148138; // For "javascript"
 const int X_JA_AS_INT = 1634348408; // For "x-javascript"
@@ -437,8 +437,8 @@ public:
       // Move this entry to the top of the stack (hence, LRU)
       if (_size > 0)
         _stack.splice(_stack.begin(), _stack, l);
-    } else {                           // "new" URL
-      const char *u = ats_strdup(url); // We own it.
+    } else {                                  // "new" URL
+      const char *u        = ats_strdup(url); // We own it.
       LruStack::iterator l = _stack.end();
 
       if (_size > 0) {
@@ -458,7 +458,7 @@ public:
       }
 
       // Setup this URL stat
-      l->url = u;
+      l->url       = u;
       l->req.bytes = bytes;
       l->req.count = 1;
 
@@ -603,10 +603,10 @@ struct CommandLineArgs {
       show_urls(0),
       as_object(0)
   {
-    log_file[0] = '\0';
+    log_file[0]    = '\0';
     origin_file[0] = '\0';
     origin_list[0] = '\0';
-    state_tag[0] = '\0';
+    state_tag[0]   = '\0';
   }
 
   void parse_arguments(const char **argv);
@@ -648,7 +648,7 @@ CommandLineArgs::parse_arguments(const char **argv)
     char *query;
 
     json = 1;
-    cgi = 1;
+    cgi  = 1;
 
     if (NULL != (query = getenv("QUERY_STRING"))) {
       char buffer[MAX_ORIG_STRING];
@@ -690,10 +690,10 @@ CommandLineArgs::parse_arguments(const char **argv)
 
 // Enum for return code levels.
 enum ExitLevel {
-  EXIT_OK = 0,
-  EXIT_WARNING = 1,
+  EXIT_OK       = 0,
+  EXIT_WARNING  = 1,
   EXIT_CRITICAL = 2,
-  EXIT_UNKNOWN = 3,
+  EXIT_UNKNOWN  = 3,
 };
 
 struct ExitStatus {
@@ -767,17 +767,17 @@ enum URLScheme {
 inline void
 init_elapsed(OriginStats *stats)
 {
-  stats->elapsed.hits.hit.min = -1;
-  stats->elapsed.hits.hit_ram.min = -1;
-  stats->elapsed.hits.ims.min = -1;
-  stats->elapsed.hits.refresh.min = -1;
-  stats->elapsed.hits.other.min = -1;
-  stats->elapsed.hits.total.min = -1;
-  stats->elapsed.misses.miss.min = -1;
-  stats->elapsed.misses.ims.min = -1;
+  stats->elapsed.hits.hit.min       = -1;
+  stats->elapsed.hits.hit_ram.min   = -1;
+  stats->elapsed.hits.ims.min       = -1;
+  stats->elapsed.hits.refresh.min   = -1;
+  stats->elapsed.hits.other.min     = -1;
+  stats->elapsed.hits.total.min     = -1;
+  stats->elapsed.misses.miss.min    = -1;
+  stats->elapsed.misses.ims.min     = -1;
   stats->elapsed.misses.refresh.min = -1;
-  stats->elapsed.misses.other.min = -1;
-  stats->elapsed.misses.total.min = -1;
+  stats->elapsed.misses.other.min   = -1;
+  stats->elapsed.misses.total.min   = -1;
 }
 
 // Update the counters for one StatsCounter
@@ -811,8 +811,8 @@ update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counte
   // New count should never be zero, else there was a programming error.
   ink_release_assert(newcount);
   oldcount = counter.count - 1;
-  oldavg = stat.avg;
-  newavg = (oldavg * oldcount + elapsed) / newcount;
+  oldavg   = stat.avg;
+  newavg   = (oldavg * oldcount + elapsed) / newcount;
   // Now find the new standard deviation from the old one
 
   if (oldcount != 0)
@@ -827,7 +827,7 @@ update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counte
   sum_of_squares = sum_of_squares + (elapsed - newavg) * (elapsed - newavg);
 
   stat.stddev = sqrt(sum_of_squares / newcount);
-  stat.avg = newavg;
+  stat.avg    = newavg;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1178,16 +1178,16 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
     else // This shouldn't happen, buffer must be messed up.
       break;
 
-    state = P_STATE_ELAPSED;
-    o_stats = NULL;
+    state    = P_STATE_ELAPSED;
+    o_stats  = NULL;
     o_server = NULL;
-    method = METHOD_OTHER;
-    scheme = SCHEME_OTHER;
+    method   = METHOD_OTHER;
+    scheme   = SCHEME_OTHER;
 
     while ((field = fieldlist->next(field))) {
       switch (state) {
       case P_STATE_ELAPSED:
-        state = P_STATE_IP;
+        state   = P_STATE_IP;
         elapsed = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
@@ -1197,7 +1197,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
         // Just skip the IP, we no longer assume it's always the same.
         {
           LogFieldIp *ip = reinterpret_cast<LogFieldIp *>(read_from);
-          int len = sizeof(LogFieldIp);
+          int len        = sizeof(LogFieldIp);
           if (AF_INET == ip->_family)
             len = sizeof(LogFieldIp4);
           else if (AF_INET6 == ip->_family)
@@ -1207,21 +1207,21 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
         break;
 
       case P_STATE_RESULT:
-        state = P_STATE_CODE;
+        state  = P_STATE_CODE;
         result = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         if ((result < 32) || (result > 255)) {
-          flag = 1;
+          flag  = 1;
           state = P_STATE_END;
         }
         break;
 
       case P_STATE_CODE:
-        state = P_STATE_SIZE;
+        state     = P_STATE_SIZE;
         http_code = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         if ((http_code < 0) || (http_code > 999)) {
-          flag = 1;
+          flag  = 1;
           state = P_STATE_END;
         }
         break;
@@ -1230,13 +1230,13 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
         // Warning: This is not 64-bit safe, when converting the log format,
         // this needs to be fixed as well.
         state = P_STATE_METHOD;
-        size = *((int64_t *)(read_from));
+        size  = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
       case P_STATE_METHOD:
         state = P_STATE_URL;
-        flag = 0;
+        flag  = 0;
 
         // Small optimization for common (3-4 char) cases
         switch (*reinterpret_cast<int *>(read_from)) {
@@ -1266,7 +1266,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
             method = METHOD_OPTIONS;
           else if ((1 == tok_len) && ('-' == *read_from)) {
             method = METHOD_NONE;
-            flag = 1; // No method, so no need to parse the URL
+            flag   = 1; // No method, so no need to parse the URL
           } else {
             ptr = read_from;
             while (*ptr && isupper(*ptr))
@@ -1303,7 +1303,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
           } else {
             if ('/' == *tok)
               scheme = SCHEME_NONE;
-            tok_len = strlen(tok);
+            tok_len  = strlen(tok);
           }
           if ('/' == *tok) // This is to handle crazy stuff like http:///origin.com
             tok++;
@@ -1321,7 +1321,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
                 init_elapsed(o_stats);
                 o_server = ats_strdup(tok);
                 if (o_stats && o_server) {
-                  o_stats->server = o_server;
+                  o_stats->server   = o_server;
                   origins[o_server] = o_stats;
                 }
               } else
@@ -1332,7 +1332,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
           // No method given
           if ('/' == *read_from)
             scheme = SCHEME_NONE;
-          tok_len = strlen(read_from);
+          tok_len  = strlen(read_from);
         }
         read_from += LogAccess::round_strlen(tok_len + 1);
 
@@ -1361,7 +1361,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
 
       case P_STATE_HIERARCHY:
         state = P_STATE_PEER;
-        hier = *((int64_t *)(read_from));
+        hier  = *((int64_t *)(read_from));
         switch (hier) {
         case SQUID_HIER_NONE:
           update_counter(totals.hierarchies.none, size);
@@ -1560,7 +1560,7 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
             }
           }
         } else if (0 == strncmp(read_from, "audio", 5)) {
-          tok = read_from + 6;
+          tok     = read_from + 6;
           tok_len = 6 + strlen(tok);
           update_counter(totals.content.audio.total, size);
           if (o_stats != NULL)
@@ -1620,7 +1620,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     buffer[0] = '\0';
 
     unsigned first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
-    LogBufferHeader *header = (LogBufferHeader *)&buffer[0];
+    LogBufferHeader *header  = (LogBufferHeader *)&buffer[0];
 
     // Find the next log header, aligning us properly. This is not
     // particularly optimal, but we should only have to do this
@@ -1667,7 +1667,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
 
     // read the rest of the header
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
-    nread = read(in_fd, &buffer[first_read_size], second_read_size);
+    nread                     = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || EOF == nread) {
       Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing), errno=%d.", second_read_size,
             first_read_size, errno);
@@ -1687,7 +1687,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     }
 
     const int MAX_READ_TRIES = 5;
-    int total_read = 0;
+    int total_read           = 0;
     int read_tries_remaining = MAX_READ_TRIES; // since the data will be old anyway, let's only try a few times.
     do {
       nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
@@ -2245,7 +2245,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   memset(&totals, 0, sizeof(totals));
   init_elapsed(&totals);
 
-  origin_set = new OriginSet;
+  origin_set   = new OriginSet;
   parse_errors = 0;
 
   // Command line parsing
@@ -2361,11 +2361,11 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     }
     // Get an exclusive lock, if possible. Try for up to 20 seconds.
     // Use more portable & standard fcntl() over flock()
-    lck.l_type = F_WRLCK;
+    lck.l_type   = F_WRLCK;
     lck.l_whence = 0; /* offset l_start from beginning of file*/
-    lck.l_start = (off_t)0;
-    lck.l_len = (off_t)0; /* till end of file*/
-    cnt = 10;
+    lck.l_start  = (off_t)0;
+    lck.l_len    = (off_t)0; /* till end of file*/
+    cnt          = 10;
     while (((res = fcntl(state_fd, F_SETLK, &lck)) < 0) && --cnt) {
       switch (errno) {
       case EWOULDBLOCK:
@@ -2421,9 +2421,9 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     // Check if the main log file was rotated, and if so, locate
     // the old file first, and parse the remaining log data.
     if (stat_buf.st_ino != last_state.st_ino) {
-      DIR *dirp = NULL;
+      DIR *dirp         = NULL;
       struct dirent *dp = NULL;
-      ino_t old_inode = last_state.st_ino;
+      ino_t old_inode   = last_state.st_ino;
 
       // Save the current log-file's I-Node number.
       last_state.st_ino = stat_buf.st_ino;

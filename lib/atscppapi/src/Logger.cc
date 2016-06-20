@@ -97,13 +97,13 @@ Logger::init(const string &file, bool add_timestamp, bool rename_file, LogLevel 
               state_->filename_.c_str());
     return false;
   }
-  state_->filename_ = file;
-  state_->add_timestamp_ = add_timestamp;
-  state_->rename_file_ = rename_file;
-  state_->level_ = level;
-  state_->rolling_enabled_ = rolling_enabled;
+  state_->filename_                 = file;
+  state_->add_timestamp_            = add_timestamp;
+  state_->rename_file_              = rename_file;
+  state_->level_                    = level;
+  state_->rolling_enabled_          = rolling_enabled;
   state_->rolling_interval_seconds_ = rolling_interval_seconds;
-  state_->initialized_ = true; // set this to true always - we are not providing re-init() after a failed init()
+  state_->initialized_              = true; // set this to true always - we are not providing re-init() after a failed init()
 
   int mode = 0;
   if (state_->add_timestamp_) {

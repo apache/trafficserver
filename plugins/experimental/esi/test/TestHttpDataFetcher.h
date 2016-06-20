@@ -65,7 +65,7 @@ public:
       curr_obj._data.append(">>>>> Content for URL [");
       curr_obj._data.append(url);
       curr_obj._data.append("] <<<<<");
-      content = curr_obj._data.data();
+      content     = curr_obj._data.data();
       content_len = curr_obj._data.size();
       return true;
     }

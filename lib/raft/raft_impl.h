@@ -96,7 +96,7 @@ public:
       double r = 0.0;
       drand48_r(&rand_, &r);
       random_election_delay_ = election_timeout_ * r;
-      last_heartbeat_ = now;
+      last_heartbeat_        = now;
       VoteForMe();
       return;
     }
@@ -140,8 +140,8 @@ public:
       n.term = m.term();
       n.vote = "";
     }
-    n.term = term_;
-    n.last_log_term = m.last_log_term();
+    n.term           = term_;
+    n.last_log_term  = m.last_log_term();
     n.last_log_index = m.last_log_index();
     if (m.from() != leader_ || m.has_vote()) {
       HandleAck(now, m, &n);
@@ -152,7 +152,7 @@ public:
     last_heartbeat_ = now;
     if (m.config_committed() > config_committed_ || m.data_committed() > data_committed_) {
       config_committed_ = m.config_committed();
-      data_committed_ = m.data_committed();
+      data_committed_   = m.data_committed();
       WriteInternalLogEntry();
     }
     if (m.has_entry())
@@ -195,12 +195,12 @@ public:
 
 private:
   struct NodeState {
-    int64_t term = -1;
-    int64_t sent_term = 0;
-    int64_t sent_index = 0;
-    int64_t last_log_term = -1;
+    int64_t term           = -1;
+    int64_t sent_term      = 0;
+    int64_t sent_index     = 0;
+    int64_t last_log_term  = -1;
     int64_t last_log_index = -1;
-    double ack_received = -1.0e10;
+    double ack_received    = -1.0e10;
     ::std::string vote;
   };
 
@@ -221,8 +221,8 @@ private:
   void
   NewTerm(int64_t term, const ::std::string new_leader, bool in_recovery)
   {
-    vote_ = "";
-    term_ = term;
+    vote_   = "";
+    term_   = term;
     leader_ = new_leader;
     waiting_commits_.clear();
     if (!in_recovery) {
@@ -294,7 +294,7 @@ private:
       m.set_nack(true);
       m.set_last_log_term(last_log_committed_term_);
       m.set_last_log_index(last_log_committed_index_);
-      index_ = last_log_committed_index_;
+      index_         = last_log_committed_index_;
       last_log_term_ = last_log_committed_term_;
     }
     server_->SendMessage(this, leader_, m);
@@ -306,7 +306,7 @@ private:
     n->ack_received = now;
     if (m.nack()) {
       n->sent_index = n->last_log_index;
-      n->sent_term = n->last_log_term;
+      n->sent_term  = n->last_log_term;
     } else if (i_am_leader()) {
       int acks_needed = (other_nodes_.size() + 1) / 2;
       for (auto &o : other_nodes_)
@@ -339,19 +339,19 @@ private:
       return;
     // Attempt to pass leadership to a worthy successor.
     const ::std::string *best_node = nullptr;
-    NodeState *best = nullptr;
+    NodeState *best                = nullptr;
     for (auto &n : other_nodes_) {
       auto &s = node_state_[n];
       if (!best || (s.last_log_term > best->last_log_term ||
                     (s.last_log_term == best->last_log_term && s.last_log_index > best->last_log_index))) {
         best_node = &n;
-        best = &s;
+        best      = &s;
       }
     }
     if (best_node) {
       term_++;
       leader_ = "";
-      vote_ = *best_node;
+      vote_   = *best_node;
       WriteInternalLogEntry();
       Message m(InitializeMessage());
       m.set_vote(vote_);
@@ -399,7 +399,7 @@ private:
       if (last_log_term_ == entry->term() && entry->index() != index_ + 1)
         return false; // Out of sequence.
       last_log_term_ = entry->term();
-      index_ = entry->index() + entry->extent();
+      index_         = entry->index() + entry->extent();
       if (!in_recovery && i_am_leader()) {
         if (!other_nodes_.size())
           data_committed_ = index_;
@@ -463,7 +463,7 @@ private:
     }
     for (auto &e : pending) {
       server_->CommitLogEntry(this, *e);
-      last_log_committed_term_ = e->term();
+      last_log_committed_term_  = e->term();
       last_log_committed_index_ = e->index();
     }
     CommitConfig(in_recovery);
@@ -520,7 +520,7 @@ private:
     if (!server_->SendMessage(this, n, m))
       return false;
     s->sent_index = entry.index() + entry.extent();
-    s->sent_term = entry.term();
+    s->sent_term  = entry.term();
     return true;
   }
 
@@ -528,7 +528,7 @@ private:
   Replicate(const ::std::string &n, bool heartbeat)
   {
     bool sent = false;
-    auto &s = node_state_[n];
+    auto &s   = node_state_[n];
     if (s.term == term_) { // Replica has acknowledged me as leader.
       int64_t end = index_;
       if (waiting_commits_.size())
@@ -586,17 +586,17 @@ private:
   Server *const server_;
   struct drand48_data rand_;
   const ::std::string node_;
-  int64_t term_ = 0;           // Current term.
-  int64_t last_log_term_ = -1; // Term of last log entry this node has.
-  int64_t index_ = 0;          // Index of last log entry this node has.
-  int64_t config_committed_ = -1;
-  int64_t data_committed_ = -1;
+  int64_t term_                     = 0;  // Current term.
+  int64_t last_log_term_            = -1; // Term of last log entry this node has.
+  int64_t index_                    = 0;  // Index of last log entry this node has.
+  int64_t config_committed_         = -1;
+  int64_t data_committed_           = -1;
   int64_t last_log_committed_index_ = -1;
-  int64_t last_log_committed_term_ = -1;
-  double election_timeout_ = 1.0;
-  double last_heartbeat_ = -1.0e10;
-  double last_heartbeat_sent_ = -1.0e10;
-  double random_election_delay_ = 0.0;
+  int64_t last_log_committed_term_  = -1;
+  double election_timeout_          = 1.0;
+  double last_heartbeat_            = -1.0e10;
+  double last_heartbeat_sent_       = -1.0e10;
+  double random_election_delay_     = 0.0;
   ::std::string leader_; // The current leader.  "" if there is no leader.
   ::std::string vote_;   // My vote this term.
   Config config_;

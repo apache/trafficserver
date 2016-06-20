@@ -69,8 +69,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "thread-1";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "thread-1";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

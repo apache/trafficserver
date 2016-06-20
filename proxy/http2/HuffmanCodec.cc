@@ -81,11 +81,11 @@ Node *HUFFMAN_TREE_ROOT;
 static Node *
 make_huffman_tree_node()
 {
-  Node *n = static_cast<Node *>(ats_malloc(sizeof(Node)));
-  n->left = NULL;
-  n->right = NULL;
+  Node *n       = static_cast<Node *>(ats_malloc(sizeof(Node)));
+  n->left       = NULL;
+  n->right      = NULL;
   n->ascii_code = '\0';
-  n->leaf_node = false;
+  n->leaf_node  = false;
   return n;
 }
 
@@ -103,16 +103,16 @@ make_huffman_tree()
       if (huffman_table[i].code_as_hex & (1 << (bit_len - 1))) {
         if (!current->right)
           current->right = make_huffman_tree_node();
-        current = current->right;
+        current          = current->right;
       } else {
         if (!current->left)
           current->left = make_huffman_tree_node();
-        current = current->left;
+        current         = current->left;
       }
       bit_len--;
     }
     current->ascii_code = i;
-    current->leaf_node = true;
+    current->leaf_node  = true;
   }
   return root;
 }
@@ -187,11 +187,11 @@ huffman_encode(uint8_t *dst_start, const uint8_t *src, uint32_t src_len)
 {
   uint8_t *dst = dst_start;
   // NOTE: The maximum length of Huffman Code is 30, thus using uint32_t as buffer.
-  uint32_t buf = 0;
+  uint32_t buf         = 0;
   uint32_t remain_bits = 32;
 
   for (uint32_t i = 0; i < src_len; ++i) {
-    const uint32_t hex = huffman_table[src[i]].code_as_hex;
+    const uint32_t hex     = huffman_table[src[i]].code_as_hex;
     const uint32_t bit_len = huffman_table[src[i]].bit_len;
 
     if (remain_bits > bit_len) {
@@ -199,14 +199,14 @@ huffman_encode(uint8_t *dst_start, const uint8_t *src, uint32_t src_len)
       buf |= hex << remain_bits;
     } else if (remain_bits == bit_len) {
       buf |= hex;
-      dst = huffman_encode_append(dst, buf);
+      dst         = huffman_encode_append(dst, buf);
       remain_bits = 32;
-      buf = 0;
+      buf         = 0;
     } else {
       buf |= hex >> (bit_len - remain_bits);
-      dst = huffman_encode_append(dst, buf);
+      dst         = huffman_encode_append(dst, buf);
       remain_bits = (32 - (bit_len - remain_bits));
-      buf = hex << remain_bits;
+      buf         = hex << remain_bits;
     }
   }
 

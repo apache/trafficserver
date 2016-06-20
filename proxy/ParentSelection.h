@@ -67,8 +67,8 @@ enum ParentRR_t {
 };
 
 enum ParentRetry_t {
-  PARENT_RETRY_NONE = 0,
-  PARENT_RETRY_SIMPLE = 1,
+  PARENT_RETRY_NONE               = 0,
+  PARENT_RETRY_SIMPLE             = 1,
   PARENT_RETRY_UNAVAILABLE_SERVER = 2,
   // both simple and unavailable server retry
   PARENT_RETRY_BOTH = 3
@@ -180,7 +180,7 @@ struct ParentResult {
   {
     ink_zero(*this);
     line_number = -1;
-    result = PARENT_UNDEFINED;
+    result      = PARENT_UNDEFINED;
   }
 
   bool

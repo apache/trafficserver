@@ -148,10 +148,10 @@ InterceptData::init(TSVConn vconn)
 
   input.buffer = TSIOBufferCreate();
   input.reader = TSIOBufferReaderAlloc(input.buffer);
-  input.vio = TSVConnRead(net_vc, contp, input.buffer, INT64_MAX);
+  input.vio    = TSVConnRead(net_vc, contp, input.buffer, INT64_MAX);
 
   req_hdr_bufp = TSMBufferCreate();
-  req_hdr_loc = TSHttpHdrCreate(req_hdr_bufp);
+  req_hdr_loc  = TSHttpHdrCreate(req_hdr_bufp);
   TSHttpHdrTypeSet(req_hdr_bufp, req_hdr_loc, TS_HTTP_TYPE_REQUEST);
 
   fetcher = new HttpDataFetcherImpl(contp, creq.client_addr, "combohandler_fetcher");
@@ -167,7 +167,7 @@ InterceptData::setupWrite()
   TSAssert(output.buffer == 0);
   output.buffer = TSIOBufferCreate();
   output.reader = TSIOBufferReaderAlloc(output.buffer);
-  output.vio = TSVConnWrite(net_vc, contp, output.reader, INT64_MAX);
+  output.vio    = TSVConnWrite(net_vc, contp, output.reader, INT64_MAX);
 }
 
 InterceptData::~InterceptData()
@@ -333,7 +333,7 @@ static bool
 isComboHandlerRequest(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc)
 {
   int method_len;
-  bool retval = false;
+  bool retval        = false;
   const char *method = TSHttpHdrMethodGet(bufp, hdr_loc, &method_len);
 
   if (!method) {
@@ -367,7 +367,7 @@ getDefaultBucket(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc hdr_obj
   LOG_DEBUG("In getDefaultBucket");
   TSMLoc field_loc;
   const char *host;
-  int host_len = 0;
+  int host_len            = 0;
   bool defaultBucketFound = false;
 
   field_loc = TSMimeHdrFieldFind(bufp, hdr_obj, TS_MIME_FIELD_HOST, -1);
@@ -434,16 +434,16 @@ getClientRequest(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc url_loc,
 static void
 parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
 {
-  creq.status = TS_HTTP_STATUS_OK;
+  creq.status         = TS_HTTP_STATUS_OK;
   int param_start_pos = 0;
-  bool sig_verified = false;
-  int colon_pos = -1;
+  bool sig_verified   = false;
+  int colon_pos       = -1;
   string file_url("http://localhost/");
-  size_t file_base_url_size = file_url.size();
-  const char *common_prefix = 0;
-  int common_prefix_size = 0;
+  size_t file_base_url_size      = file_url.size();
+  const char *common_prefix      = 0;
+  int common_prefix_size         = 0;
   const char *common_prefix_path = 0;
-  int common_prefix_path_size = 0;
+  int common_prefix_path_size    = 0;
 
   for (int i = 0; i <= query_len; ++i) {
     if ((i == query_len) || (query[i] == '&')) {
@@ -470,13 +470,13 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
           break; // nothing useful after the signature
         }
         if ((param_len >= 2) && (param[0] == 'p') && (param[1] == '=')) {
-          common_prefix_size = param_len - 2;
+          common_prefix_size      = param_len - 2;
           common_prefix_path_size = 0;
           if (common_prefix_size) {
             common_prefix = param + 2;
             for (int i = 0; i < common_prefix_size; ++i) {
               if (common_prefix[i] == ':') {
-                common_prefix_path = common_prefix;
+                common_prefix_path      = common_prefix;
                 common_prefix_path_size = i;
                 ++i; // go beyond the ':'
                 common_prefix += i;
@@ -507,8 +507,8 @@ parseQueryParameters(const char *query, int query_len, ClientRequest &creq)
 
             // modify these to point to the "actual" file path
             param_start_pos = colon_pos + 1;
-            param_len = i - param_start_pos;
-            param = query + param_start_pos;
+            param_len       = i - param_start_pos;
+            param           = query + param_start_pos;
           } else {
             file_url += creq.defaultBucket; // default path
           }
@@ -546,7 +546,7 @@ static void
 checkGzipAcceptance(TSMBuffer bufp, TSMLoc hdr_loc, ClientRequest &creq)
 {
   creq.gzip_accepted = false;
-  TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
+  TSMLoc field_loc   = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   if (field_loc != TS_NULL_MLOC) {
     const char *value;
     int value_len;
@@ -574,7 +574,7 @@ static int
 handleServerEvent(TSCont contp, TSEvent event, void *edata)
 {
   InterceptData *int_data = static_cast<InterceptData *>(TSContDataGet(contp));
-  bool write_response = false;
+  bool write_response     = false;
 
   switch (event) {
   case TS_EVENT_NET_ACCEPT_FAILED:
@@ -687,7 +687,7 @@ readInterceptRequest(InterceptData &int_data)
     const char *data;
     TSIOBufferBlock block = TSIOBufferReaderStart(int_data.input.reader);
     while (block != NULL) {
-      data = TSIOBufferBlockReadStart(block, int_data.input.reader, &data_len);
+      data               = TSIOBufferBlockReadStart(block, int_data.input.reader, &data_len);
       const char *endptr = data + data_len;
       if (TSHttpHdrParseReq(int_data.http_parser, int_data.req_hdr_bufp, int_data.req_hdr_loc, &data, endptr) == TS_PARSE_DONE) {
         int_data.read_complete = true;
@@ -714,7 +714,7 @@ static const string OK_REPLY_LINE("HTTP/1.0 200 OK\r\n");
 static const string BAD_REQUEST_RESPONSE("HTTP/1.0 400 Bad Request\r\n\r\n");
 static const string ERROR_REPLY_RESPONSE("HTTP/1.0 500 Internal Server Error\r\n\r\n");
 static const string FORBIDDEN_RESPONSE("HTTP/1.0 403 Forbidden\r\n\r\n");
-static const char GZIP_ENCODING_FIELD[] = {"Content-Encoding: gzip\r\n"};
+static const char GZIP_ENCODING_FIELD[]   = {"Content-Encoding: gzip\r\n"};
 static const int GZIP_ENCODING_FIELD_SIZE = sizeof(GZIP_ENCODING_FIELD) - 1;
 
 static bool
@@ -782,11 +782,11 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
   if (int_data.creq.status == TS_HTTP_STATUS_OK) {
     HttpDataFetcherImpl::ResponseData resp_data;
     TSMLoc field_loc;
-    int max_age = 0;
+    int max_age      = 0;
     bool got_max_age = false;
     time_t expires_time;
     bool got_expires_time = false;
-    int num_headers = HEADER_WHITELIST.size();
+    int num_headers       = HEADER_WHITELIST.size();
     int flags_list[num_headers];
 
     for (int i = 0; i < num_headers; i++) {
@@ -805,7 +805,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
         int curr_field_max_age = getMaxAge(resp_data.bufp, resp_data.hdr_loc);
         if (curr_field_max_age > 0) {
           if (!got_max_age) {
-            max_age = curr_field_max_age;
+            max_age     = curr_field_max_age;
             got_max_age = true;
           } else if (curr_field_max_age < max_age) {
             max_age = curr_field_max_age;
@@ -819,7 +819,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
           if ((n_values != TS_ERROR) && (n_values > 0)) {
             curr_field_expires_time = TSMimeHdrFieldValueDateGet(resp_data.bufp, resp_data.hdr_loc, field_loc);
             if (!got_expires_time) {
-              expires_time = curr_field_expires_time;
+              expires_time     = curr_field_expires_time;
               got_expires_time = true;
             } else if (curr_field_expires_time < expires_time) {
               expires_time = curr_field_expires_time;
@@ -907,7 +907,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
 static bool
 getContentType(TSMBuffer bufp, TSMLoc hdr_loc, string &resp_header_fields)
 {
-  bool retval = false;
+  bool retval      = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
   if (field_loc != TS_NULL_MLOC) {
     bool values_added = false;
@@ -946,7 +946,7 @@ getMaxAge(TSMBuffer bufp, TSMLoc hdr_loc)
     if ((n_values != TS_ERROR) && (n_values > 0)) {
       for (int i = 0; i < n_values; i++) {
         value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
-        ptr = value;
+        ptr   = value;
         if (strncmp(value, TS_HTTP_VALUE_MAX_AGE, TS_HTTP_LEN_MAX_AGE) == 0) {
           ptr += TS_HTTP_LEN_MAX_AGE;
           while ((*ptr == ' ') || (*ptr == '\t')) {
@@ -966,7 +966,7 @@ getMaxAge(TSMBuffer bufp, TSMLoc hdr_loc)
   return max_age;
 }
 
-static const char INVARIANT_FIELD_LINES[] = {"Vary: Accept-Encoding\r\n"};
+static const char INVARIANT_FIELD_LINES[]    = {"Vary: Accept-Encoding\r\n"};
 static const char INVARIANT_FIELD_LINES_SIZE = sizeof(INVARIANT_FIELD_LINES) - 1;
 
 static bool

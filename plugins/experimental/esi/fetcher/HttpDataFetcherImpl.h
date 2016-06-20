@@ -90,7 +90,7 @@ public:
   {
     ResponseData resp;
     if (getData(url, resp)) {
-      content = resp.content;
+      content     = resp.content;
       content_len = resp.content_len;
       return true;
     }
@@ -154,11 +154,11 @@ private:
 inline void
 HttpDataFetcherImpl::ResponseData::set(const char *c, int clen, TSMBuffer b, TSMLoc loc, TSHttpStatus s)
 {
-  content = c;
+  content     = c;
   content_len = clen;
-  bufp = b;
-  hdr_loc = loc;
-  status = s;
+  bufp        = b;
+  hdr_loc     = loc;
+  status      = s;
 }
 
 #endif

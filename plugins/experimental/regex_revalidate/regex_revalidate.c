@@ -78,12 +78,12 @@ typedef struct {
 static invalidate_t *
 init_invalidate_t(invalidate_t *i)
 {
-  i->regex_text = NULL;
-  i->regex = NULL;
+  i->regex_text  = NULL;
+  i->regex       = NULL;
   i->regex_extra = NULL;
-  i->epoch = 0;
-  i->expiry = 0;
-  i->next = NULL;
+  i->epoch       = 0;
+  i->expiry      = 0;
+  i->next        = NULL;
   return i;
 }
 
@@ -115,9 +115,9 @@ static plugin_state_t *
 init_plugin_state_t(plugin_state_t *pstate)
 {
   pstate->invalidate_list = NULL;
-  pstate->config_file = NULL;
-  pstate->last_load = 0;
-  pstate->log = NULL;
+  pstate->config_file     = NULL;
+  pstate->last_load       = 0;
+  pstate->log             = NULL;
   return pstate;
 }
 
@@ -140,13 +140,13 @@ copy_invalidate_t(invalidate_t *i)
   const char *errptr;
   int erroffset;
 
-  iptr = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
-  iptr->regex_text = TSstrdup(i->regex_text);
-  iptr->regex = pcre_compile(iptr->regex_text, 0, &errptr, &erroffset, NULL); // There is no pcre_copy :-(
-  iptr->regex_extra = pcre_study(iptr->regex, 0, &errptr);                    // Assuming no errors since this worked before :-/
-  iptr->epoch = i->epoch;
-  iptr->expiry = i->expiry;
-  iptr->next = NULL;
+  iptr              = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
+  iptr->regex_text  = TSstrdup(i->regex_text);
+  iptr->regex       = pcre_compile(iptr->regex_text, 0, &errptr, &erroffset, NULL); // There is no pcre_copy :-(
+  iptr->regex_extra = pcre_study(iptr->regex, 0, &errptr); // Assuming no errors since this worked before :-/
+  iptr->epoch       = i->epoch;
+  iptr->expiry      = i->expiry;
+  iptr->next        = NULL;
   return iptr;
 }
 
@@ -162,8 +162,8 @@ copy_config(invalidate_t *old_list)
     iptr_new = new_list;
     while (iptr_old) {
       iptr_new->next = copy_invalidate_t(iptr_old);
-      iptr_new = iptr_new->next;
-      iptr_old = iptr_old->next;
+      iptr_new       = iptr_new->next;
+      iptr_old       = iptr_old->next;
     }
   }
 
@@ -180,7 +180,7 @@ prune_config(invalidate_t **i)
   now = time(NULL);
 
   if (*i) {
-    iptr = *i;
+    iptr  = *i;
     ilast = NULL;
     while (iptr) {
       if (difftime(iptr->expiry, now) < 0) {
@@ -197,7 +197,7 @@ prune_config(invalidate_t **i)
         pruned = true;
       } else {
         ilast = iptr;
-        iptr = iptr->next;
+        iptr  = iptr->next;
       }
     }
   }
@@ -221,7 +221,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
 
   if (pstate->config_file[0] != '/') {
     path_len = strlen(TSConfigDirGet()) + strlen(pstate->config_file) + 2;
-    path = alloca(path_len);
+    path     = alloca(path_len);
     snprintf(path, path_len, "%s/%s", TSConfigDirGet(), pstate->config_file);
   } else
     path = pstate->config_file;
@@ -244,9 +244,9 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
         i = (invalidate_t *)TSmalloc(sizeof(invalidate_t));
         init_invalidate_t(i);
         pcre_get_substring(line, ovector, rc, 1, &i->regex_text);
-        i->epoch = now;
+        i->epoch  = now;
         i->expiry = atoi(line + ovector[4]);
-        i->regex = pcre_compile(i->regex_text, 0, &errptr, &erroffset, NULL);
+        i->regex  = pcre_compile(i->regex_text, 0, &errptr, &erroffset, NULL);
         if (i->expiry <= i->epoch) {
           TSDebug(LOG_PREFIX, "Rule is already expired!");
           free_invalidate_t(i);
@@ -264,7 +264,7 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
               if (strcmp(i->regex_text, iptr->regex_text) == 0) {
                 if (iptr->expiry != i->expiry) {
                   TSDebug(LOG_PREFIX, "Updating duplicate %s", i->regex_text);
-                  iptr->epoch = i->epoch;
+                  iptr->epoch  = i->epoch;
                   iptr->expiry = i->expiry;
                 }
                 free_invalidate_t(i);
@@ -338,7 +338,7 @@ config_handler(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
 
   TSDebug(LOG_PREFIX, "In config Handler");
   pstate = (plugin_state_t *)TSContDataGet(cont);
-  i = copy_config(pstate->invalidate_list);
+  i      = copy_config(pstate->invalidate_list);
 
   updated = prune_config(&i);
   updated = load_config(pstate, &i) || updated;
@@ -390,7 +390,7 @@ main_handler(TSCont cont, TSEvent event, void *edata)
   plugin_state_t *pstate;
 
   time_t date = 0, now = 0;
-  char *url = NULL;
+  char *url   = NULL;
   int url_len = 0;
 
   switch (event) {
@@ -398,11 +398,11 @@ main_handler(TSCont cont, TSEvent event, void *edata)
     if (TSHttpTxnCacheLookupStatusGet(txn, &status) == TS_SUCCESS) {
       if (status == TS_CACHE_LOOKUP_HIT_FRESH) {
         pstate = (plugin_state_t *)TSContDataGet(cont);
-        iptr = pstate->invalidate_list;
+        iptr   = pstate->invalidate_list;
         while (iptr) {
           if (!date) {
             date = get_date_from_cached_hdr(txn);
-            now = time(NULL);
+            now  = time(NULL);
           }
           if ((difftime(iptr->epoch, date) >= 0) && (difftime(iptr->expiry, now) >= 0)) {
             if (!url)
@@ -498,8 +498,8 @@ TSPluginInit(int argc, const char *argv[])
     list_config(pstate, iptr);
   }
 
-  info.plugin_name = LOG_PREFIX;
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = LOG_PREFIX;
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -517,7 +517,7 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   pcre_malloc = &ts_malloc;
-  pcre_free = &ts_free;
+  pcre_free   = &ts_free;
 
   main_cont = TSContCreate(main_handler, NULL);
   TSContDataSet(main_cont, (void *)pstate);

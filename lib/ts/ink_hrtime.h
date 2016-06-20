@@ -188,7 +188,7 @@ ink_hrtime_to_timespec(ink_hrtime t)
 {
   struct timespec ts;
 
-  ts.tv_sec = ink_hrtime_to_sec(t);
+  ts.tv_sec  = ink_hrtime_to_sec(t);
   ts.tv_nsec = t % HRTIME_SECOND;
   return (ts);
 }
@@ -199,8 +199,8 @@ ink_hrtime_to_timeval(ink_hrtime t)
   int64_t usecs;
   struct timeval tv;
 
-  usecs = ink_hrtime_to_usec(t);
-  tv.tv_sec = usecs / 1000000;
+  usecs      = ink_hrtime_to_usec(t);
+  tv.tv_sec  = usecs / 1000000;
   tv.tv_usec = usecs % 1000000;
   return (tv);
 }

@@ -77,12 +77,12 @@ struct ShowCache : public ShowCont {
       cvio(0)
   {
     urlstrs_index = 0;
-    linecount = 0;
+    linecount     = 0;
     int query_len;
     char query[4096];
     char unescapedQuery[sizeof(query)];
     show_cache_urlstrs = NULL;
-    URL *u = h->url_get();
+    URL *u             = h->url_get();
 
     // process the query string
     if (u->query_get(&query_len) && query_len < (int)sizeof(query)) {
@@ -106,7 +106,7 @@ struct ShowCache : public ShowCont {
       query[m] = '\0';
 
       unsigned nstrings = 1;
-      char *p = strstr(query, "url=");
+      char *p           = strstr(query, "url=");
       // count the no of urls
       if (p) {
         while ((p = strstr(p, "\n"))) {
@@ -130,7 +130,7 @@ struct ShowCache : public ShowCont {
           t = (char *)unescapedQuery + strlen(unescapedQuery);
         for (int s = 0; p < t; s++) {
           show_cache_urlstrs[s][0] = '\0';
-          q = strstr(p, "%0D%0A" /* \r\n */); // we used this in the JS to separate urls
+          q                        = strstr(p, "%0D%0A" /* \r\n */); // we used this in the JS to separate urls
           if (!q)
             q = t;
           ink_strlcpy(show_cache_urlstrs[s], p, q - p + 1);
@@ -168,7 +168,7 @@ Action *
 register_ShowCache(Continuation *c, HTTPHdr *h)
 {
   ShowCache *theshowcache = new ShowCache(c, h);
-  URL *u = h->url_get();
+  URL *u                  = h->url_get();
   int path_len;
   const char *path = u->path_get(&path_len);
 
@@ -330,9 +330,9 @@ ShowCache::handleCacheEvent(int event, Event *e)
   }
   case CACHE_EVENT_OPEN_READ: {
     // get the vector
-    cache_vc = (CacheVC *)e;
+    cache_vc                 = (CacheVC *)e;
     CacheHTTPInfoVector *vec = &(cache_vc->vector);
-    int alt_count = vec->count();
+    int alt_count            = vec->count();
     if (alt_count) {
       Doc *d = (Doc *)(cache_vc->first_buf->data());
       time_t t;
@@ -363,11 +363,11 @@ ShowCache::handleCacheEvent(int event, Event *e)
         // unmarshal the alternate??
         CHECK_SHOW(show("<p><table border=1>\n"));
         CHECK_SHOW(show("<tr><th bgcolor=\"#FFF0E0\" colspan=2>Alternate %d</th></tr>\n", i + 1));
-        CacheHTTPInfo *obj = vec->get(i);
-        CacheKey obj_key = obj->object_key_get();
-        HTTPHdr *cached_request = obj->request_get();
+        CacheHTTPInfo *obj       = vec->get(i);
+        CacheKey obj_key         = obj->object_key_get();
+        HTTPHdr *cached_request  = obj->request_get();
         HTTPHdr *cached_response = obj->response_get();
-        int64_t obj_size = obj->object_size_get();
+        int64_t obj_size         = obj->object_size_get();
         int offset, tmp, used, done;
         char b[4096];
 
@@ -376,7 +376,7 @@ ShowCache::handleCacheEvent(int event, Event *e)
         offset = 0;
         do {
           used = 0;
-          tmp = offset;
+          tmp  = offset;
           done = cached_request->print(b, 4095, &used, &tmp);
           offset += used;
           b[used] = '\0';
@@ -389,7 +389,7 @@ ShowCache::handleCacheEvent(int event, Event *e)
         offset = 0;
         do {
           used = 0;
-          tmp = offset;
+          tmp  = offset;
           done = cached_response->print(b, 4095, &used, &tmp);
           offset += used;
           b[used] = '\0';
@@ -415,10 +415,10 @@ ShowCache::handleCacheEvent(int event, Event *e)
   }
   case VC_EVENT_READ_READY:
     if (!cvio) {
-      buffer = new_empty_MIOBuffer();
-      buffer_reader = buffer->alloc_reader();
+      buffer         = new_empty_MIOBuffer();
+      buffer_reader  = buffer->alloc_reader();
       content_length = cache_vc->get_object_size();
-      cvio = cache_vc->do_io_read(this, content_length, buffer);
+      cvio           = cache_vc->do_io_read(this, content_length, buffer);
     } else
       buffer_reader->consume(buffer_reader->read_avail());
     return EVENT_DONE;

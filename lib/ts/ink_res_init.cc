@@ -148,7 +148,7 @@ ink_res_setservers(ink_res_state statp, IpEndpoint const *set, int cnt)
 int
 ink_res_getservers(ink_res_state statp, sockaddr *set, int cnt)
 {
-  int zret = 0; // return count.
+  int zret              = 0; // return count.
   IpEndpoint const *src = statp->nsaddr_list;
 
   for (int i = 0; i < statp->nscount && i < cnt; ++i, ++src) {
@@ -301,8 +301,8 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   char *cp, **pp;
   int n;
   char buf[BUFSIZ];
-  size_t nserv = 0;
-  int haveenv = 0;
+  size_t nserv   = 0;
+  int haveenv    = 0;
   int havesearch = 0;
   int dots;
   size_t maxns = INK_MAXNS;
@@ -311,17 +311,17 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   statp->res_h_errno = 0;
 
   statp->retrans = INK_RES_TIMEOUT;
-  statp->retry = INK_RES_DFLRETRY;
+  statp->retry   = INK_RES_DFLRETRY;
   statp->options = INK_RES_DEFAULT;
-  statp->id = ink_res_randomid();
+  statp->id      = ink_res_randomid();
 
   statp->nscount = 0;
-  statp->ndots = 1;
-  statp->pfcode = 0;
+  statp->ndots   = 1;
+  statp->pfcode  = 0;
   statp->_vcsock = -1;
-  statp->_flags = 0;
-  statp->qhook = NULL;
-  statp->rhook = NULL;
+  statp->_flags  = 0;
+  statp->qhook   = NULL;
+  statp->rhook   = NULL;
 
 #ifdef SOLARIS2
   /*
@@ -335,8 +335,8 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
     if ((ret = sysinfo(SI_SRPC_DOMAIN, buf, sizeof(buf))) > 0 && (unsigned int)ret <= sizeof(buf)) {
       if (buf[0] == '+')
         buf[0] = '.';
-      cp = strchr(buf, '.');
-      cp = (cp == NULL) ? buf : (cp + 1);
+      cp       = strchr(buf, '.');
+      cp       = (cp == NULL) ? buf : (cp + 1);
       ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
     }
   }
@@ -354,25 +354,25 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
      * one that they want to use as an individual (even more
      * important now that the rfc1535 stuff restricts searches)
      */
-    cp = statp->defdname;
-    pp = statp->dnsrch;
+    cp    = statp->defdname;
+    pp    = statp->dnsrch;
     *pp++ = cp;
     for (n = 0; *cp && pp < statp->dnsrch + INK_MAXDNSRCH; cp++) {
       if (*cp == '\n') /*%< silly backwards compat */
         break;
       else if (*cp == ' ' || *cp == '\t') {
         *cp = 0;
-        n = 1;
+        n   = 1;
       } else if (n) {
-        *pp++ = cp;
-        n = 0;
+        *pp++      = cp;
+        n          = 0;
         havesearch = 1;
       }
     }
     /* null terminate last domain if there are excess */
     while (*cp != '\0' && *cp != ' ' && *cp != '\t' && *cp != '\n')
       cp++;
-    *cp = '\0';
+    *cp   = '\0';
     *pp++ = 0;
   }
 
@@ -398,23 +398,23 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
      * Set search list to be blank-separated strings
      * on rest of line.
      */
-    cp = statp->defdname;
-    pp = statp->dnsrch;
+    cp    = statp->defdname;
+    pp    = statp->dnsrch;
     *pp++ = cp;
     for (n = 0; *cp && pp < statp->dnsrch + INK_MAXDNSRCH; cp++) {
       if (*cp == ' ' || *cp == '\t') {
         *cp = 0;
-        n = 1;
+        n   = 1;
       } else if (n) {
         *pp++ = cp;
-        n = 0;
+        n     = 0;
       }
     }
     /* null terminate last domain if there are excess */
     while (*cp != '\0' && *cp != ' ' && *cp != '\t')
       cp++;
-    *cp = '\0';
-    *pp++ = 0;
+    *cp        = '\0';
+    *pp++      = 0;
     havesearch = 1;
   }
 
@@ -449,7 +449,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
           continue;
         ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
         if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL)
-          *cp = '\0';
+          *cp      = '\0';
         havesearch = 0;
         continue;
       }
@@ -469,23 +469,23 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
          * Set search list to be blank-separated strings
          * on rest of line.
          */
-        cp = statp->defdname;
-        pp = statp->dnsrch;
+        cp    = statp->defdname;
+        pp    = statp->dnsrch;
         *pp++ = cp;
         for (n = 0; *cp && pp < statp->dnsrch + INK_MAXDNSRCH; cp++) {
           if (*cp == ' ' || *cp == '\t') {
             *cp = 0;
-            n = 1;
+            n   = 1;
           } else if (n) {
             *pp++ = cp;
-            n = 0;
+            n     = 0;
           }
         }
         /* null terminate last domain if there are excess */
         while (*cp != '\0' && *cp != ' ' && *cp != '\t')
           cp++;
-        *cp = '\0';
-        *pp++ = 0;
+        *cp        = '\0';
+        *pp++      = 0;
         havesearch = 1;
         continue;
       }
@@ -522,9 +522,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 
   /* find components of local domain that might be searched */
   if (havesearch == 0) {
-    pp = statp->dnsrch;
+    pp    = statp->dnsrch;
     *pp++ = statp->defdname;
-    *pp = NULL;
+    *pp   = NULL;
 
     if (dnsSearch == 1) {
       dots = 0;
@@ -535,7 +535,7 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
       while (pp < statp->dnsrch + INK_MAXDFLSRCH) {
         if (dots < INK_LOCALDOMAINPARTS)
           break;
-        cp = strchr(cp, '.') + 1; /*%< we know there is one */
+        cp    = strchr(cp, '.') + 1; /*%< we know there is one */
         *pp++ = cp;
         dots--;
       }
@@ -572,7 +572,7 @@ parse_host_res_preference(char const *value, HostResPreferenceOrder order)
 
   n = tokens.Initialize(value);
 
-  for (i = 0; i < N_HOST_RES_PREFERENCE; ++i)
+  for (i     = 0; i < N_HOST_RES_PREFERENCE; ++i)
     found[i] = false;
 
   for (i = 0; i < n && np < N_HOST_RES_PREFERENCE_ORDER; ++i) {
@@ -580,7 +580,7 @@ parse_host_res_preference(char const *value, HostResPreferenceOrder order)
     // special case none/only because that terminates the sequence.
     if (0 == strcasecmp(elt, HOST_RES_PREFERENCE_STRING[HOST_RES_PREFER_NONE])) {
       found[HOST_RES_PREFER_NONE] = true;
-      order[np] = HOST_RES_PREFER_NONE;
+      order[np]                   = HOST_RES_PREFER_NONE;
       break;
     } else {
       // scan the other types
@@ -592,7 +592,7 @@ parse_host_res_preference(char const *value, HostResPreferenceOrder order)
         }
       }
       if (HOST_RES_PREFER_NONE != ep && !found[ep]) { // ignore duplicates
-        found[ep] = true;
+        found[ep]   = true;
         order[np++] = ep;
       }
     }
@@ -612,7 +612,7 @@ parse_host_res_preference(char const *value, HostResPreferenceOrder order)
 int
 ts_host_res_order_to_string(HostResPreferenceOrder const &order, char *out, int size)
 {
-  int zret = 0;
+  int zret   = 0;
   bool first = true;
   for (int i = 0; i < N_HOST_RES_PREFERENCE_ORDER; ++i) {
     /* Note we use a semi-colon here because this must be compatible

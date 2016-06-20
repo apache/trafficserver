@@ -49,8 +49,8 @@ HdrCsvIter::find_csv()
 
 RETRY:
 
-  cur = m_csv_start;
-  end = m_value_start + m_value_len;
+  cur       = m_csv_start;
+  end       = m_value_start + m_value_len;
   last_data = NULL;
   csv_start = NULL;
 
@@ -98,7 +98,7 @@ parse_value_quote:
   GETNEXT();
   goto parse_value_quote;
 done:
-  m_csv_end = cur;
+  m_csv_end   = cur;
   m_csv_start = csv_start;
 
   if (last_data) {
@@ -140,7 +140,7 @@ HdrCsvIter::count_values(MIMEField *field, bool follow_dups)
   int count, l;
 
   count = 0;
-  s = get_first(field, &l, follow_dups); // get index 0
+  s     = get_first(field, &l, follow_dups); // get index 0
   while (s) {
     s = get_next(&l);
     ++count;

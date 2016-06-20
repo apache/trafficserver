@@ -34,7 +34,7 @@
 #endif
 
 static pid_t crash_logger_pid = -1;
-static int crash_logger_fd = NO_FD;
+static int crash_logger_fd    = NO_FD;
 
 static char *
 create_logger_path()
@@ -53,7 +53,7 @@ create_logger_path()
   }
 
   // Otherwise locate it relative to $BINDIR.
-  bindir = RecConfigReadBinDir();
+  bindir   = RecConfigReadBinDir();
   fullpath = Layout::relative_to(bindir, name);
 
   ats_free(name);
@@ -103,7 +103,7 @@ crash_logger_init()
   case -1:
     Error("failed to fork crash log helper: %s", strerror(errno));
     crash_logger_pid = -1;
-    crash_logger_fd = NO_FD;
+    crash_logger_fd  = NO_FD;
     return;
 
   case 0:
@@ -125,7 +125,7 @@ crash_logger_init()
 
   close(pipe[1]);
   crash_logger_pid = child;
-  crash_logger_fd = pipe[0];
+  crash_logger_fd  = pipe[0];
 
   // Wait for the helper to stop
   if (waitpid(crash_logger_pid, &status, WUNTRACED) > 0) {
@@ -135,7 +135,7 @@ crash_logger_init()
       Warning("crash logger '%s' unexpectedly exited with status %d", (const char *)logger, WEXITSTATUS(status));
       close(crash_logger_pid);
       crash_logger_pid = -1;
-      crash_logger_fd = NO_FD;
+      crash_logger_fd  = NO_FD;
     }
   }
 }

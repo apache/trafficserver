@@ -276,7 +276,7 @@ EThread::execute()
         if (!INK_ATOMICLIST_EMPTY(EventQueueExternal.al))
           EventQueueExternal.dequeue_timed(cur_time, next_time, false);
       } else { // Means there are no negative events
-        next_time = EventQueue.earliest_timeout();
+        next_time             = EventQueue.earliest_timeout();
         ink_hrtime sleep_time = next_time - cur_time;
 
         if (sleep_time > THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND) {

@@ -46,7 +46,7 @@ main()
   DList(Foo, dlink) d;
   Que(Foo, dlink) q;
   Foo *f = new Foo;
-  f->x = 7;
+  f->x   = 7;
   s.push(f);
   d.push(s.pop());
   q.enqueue(d.pop());

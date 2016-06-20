@@ -102,26 +102,26 @@ struct traceEntry recvTraceTable[MAX_TENTRIES];
 struct traceEntry sndTraceTable[MAX_TENTRIES];
 
 static recvTraceTable_index = 0;
-static sndTraceTable_index = 0;
+static sndTraceTable_index  = 0;
 
 void
 log_cache_op_msg(unsigned int seqno, int op, char *type)
 {
-  int t = ink_atomic_increment(&recvTraceTable_index, 1);
-  int n = recvTraceTable_index % MAX_TENTRIES;
+  int t                   = ink_atomic_increment(&recvTraceTable_index, 1);
+  int n                   = recvTraceTable_index % MAX_TENTRIES;
   recvTraceTable[n].seqno = seqno;
-  recvTraceTable[n].op = op;
-  recvTraceTable[n].type = type;
+  recvTraceTable[n].op    = op;
+  recvTraceTable[n].type  = type;
 }
 
 void
 log_cache_op_sndmsg(unsigned int seqno, int op, char *type)
 {
-  int t = ink_atomic_increment(&sndTraceTable_index, 1);
-  int n = sndTraceTable_index % MAX_TENTRIES;
+  int t                  = ink_atomic_increment(&sndTraceTable_index, 1);
+  int n                  = sndTraceTable_index % MAX_TENTRIES;
   sndTraceTable[n].seqno = seqno;
-  sndTraceTable[n].op = op;
-  sndTraceTable[n].type = type;
+  sndTraceTable[n].op    = op;
+  sndTraceTable[n].type  = type;
 }
 
 void
@@ -182,7 +182,7 @@ public:
 
   enum {
     MAX_TABLE_ENTRIES = 256, // must be power of 2
-    SCAN_INTERVAL = 10       // seconds
+    SCAN_INTERVAL     = 10   // seconds
   };
   Queue<Entry> hash_table[MAX_TABLE_ENTRIES];
   Ptr<ProxyMutex> hash_lock[MAX_TABLE_ENTRIES];
@@ -222,7 +222,7 @@ ClusterVConnectionCache::init()
   for (n = 0; n < MAX_TABLE_ENTRIES; ++n) {
     // Setup up periodic purge events on each hash list
 
-    eh = new ClusterVConnectionCacheEvent(this, n);
+    eh            = new ClusterVConnectionCacheEvent(this, n);
     hash_event[n] = eventProcessor.schedule_in(eh, HRTIME_SECONDS(ClusterVConnectionCache::SCAN_INTERVAL), ET_CACHE_CONT_SM);
   }
 }
@@ -242,7 +242,7 @@ ClusterVConnectionCache::insert(INK_MD5 *key, ClusterVConnection *vc)
 {
   int index = MD5ToIndex(key);
   Entry *e;
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex.get();
 
   MUTEX_TRY_LOCK(lock, hash_lock[index], thread);
@@ -253,9 +253,9 @@ ClusterVConnectionCache::insert(INK_MD5 *key, ClusterVConnection *vc)
   } else {
     // Add entry to list
 
-    e = ClusterVCCacheEntryAlloc.alloc();
+    e      = ClusterVCCacheEntryAlloc.alloc();
     e->key = *key;
-    e->vc = vc;
+    e->vc  = vc;
     hash_table[index].enqueue(e);
     CLUSTER_INCREMENT_DYN_STAT(CLUSTER_VC_CACHE_INSERTS_STAT);
   }
@@ -268,8 +268,8 @@ ClusterVConnectionCache::lookup(INK_MD5 *key)
   int index = MD5ToIndex(key);
   Entry *e;
   ClusterVConnection *vc = 0;
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex.get();
+  EThread *thread        = this_ethread();
+  ProxyMutex *mutex      = thread->mutex.get();
 
   MUTEX_TRY_LOCK(lock, hash_lock[index], thread);
   if (!lock.is_locked()) {
@@ -325,7 +325,7 @@ ClusterVConnectionCacheEvent::eventHandler(int /* event ATS_UNUSED */, Event *e)
 
     } else {
       entry->mark_for_delete = true;
-      entry = entry->link.next;
+      entry                  = entry->link.next;
     }
   }
 
@@ -345,7 +345,7 @@ int
 CacheContinuation::init()
 {
   int n;
-  for (n = 0; n < REMOTE_CONNECT_HASH; ++n)
+  for (n                         = 0; n < REMOTE_CONNECT_HASH; ++n)
     remoteCacheContQueueMutex[n] = new_ProxyMutex();
 
   GlobalOpenWriteVCcache = new ClusterVConnectionCache;
@@ -362,9 +362,9 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
                          MIOBuffer *b)
 {
   CacheContinuation *cc = 0;
-  Action *act = 0;
-  char *msg = 0;
-  ClusterHandler *ch = mp->pop_ClusterHandler();
+  Action *act           = 0;
+  char *msg             = 0;
+  ClusterHandler *ch    = mp->pop_ClusterHandler();
 
   /////////////////////////////////////////////////////////////////////
   // Unconditionally map open read buffer interfaces to open read.
@@ -386,22 +386,22 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
     goto no_send_exit;
 
   if (c) {
-    cc = cacheContAllocator_alloc();
-    cc->ch = ch;
-    cc->target_machine = mp;
-    cc->request_opcode = opcode;
-    cc->mutex = c->mutex;
-    cc->action = c;
+    cc                   = cacheContAllocator_alloc();
+    cc->ch               = ch;
+    cc->target_machine   = mp;
+    cc->request_opcode   = opcode;
+    cc->mutex            = c->mutex;
+    cc->action           = c;
     cc->action.cancelled = false;
-    cc->start_time = Thread::get_hrtime();
-    cc->from = mp;
-    cc->result = op_failure(opcode);
+    cc->start_time       = Thread::get_hrtime();
+    cc->from             = mp;
+    cc->result           = op_failure(opcode);
     SET_CONTINUATION_HANDLER(cc, (CacheContHandler)&CacheContinuation::remoteOpEvent);
     act = &cc->action;
 
     // set up sequence number so we can find this continuation
 
-    cc->target_ip = mp->ip;
+    cc->target_ip  = mp->ip;
     cc->seq_number = new_cache_sequence_number();
 
     // establish timeout for cache op
@@ -443,23 +443,23 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
     //////////////////////
     if (!data) {
       data_len = op_to_sizeof_fixedlen_msg(opcode);
-      data = (char *)ALLOCA_DOUBLE(data_len);
+      data     = (char *)ALLOCA_DOUBLE(data_len);
     }
-    msg = (char *)data;
+    msg                 = (char *)data;
     CacheOpMsg_short *m = (CacheOpMsg_short *)msg;
     m->init();
-    m->opcode = opcode;
-    m->cfl_flags = ((CacheOpArgs_General *)args)->cfl_flags;
-    m->md5 = *((CacheOpArgs_General *)args)->url_md5;
-    cc->url_md5 = m->md5;
+    m->opcode     = opcode;
+    m->cfl_flags  = ((CacheOpArgs_General *)args)->cfl_flags;
+    m->md5        = *((CacheOpArgs_General *)args)->url_md5;
+    cc->url_md5   = m->md5;
     m->seq_number = (c ? cc->seq_number : CACHE_NO_RESPONSE);
-    m->frag_type = ((CacheOpArgs_General *)args)->frag_type;
+    m->frag_type  = ((CacheOpArgs_General *)args)->frag_type;
     if (opcode == CACHE_OPEN_WRITE) {
       m->nbytes = nbytes;
-      m->data = (uint32_t)((CacheOpArgs_General *)args)->pin_in_cache;
+      m->data   = (uint32_t)((CacheOpArgs_General *)args)->pin_in_cache;
     } else {
       m->nbytes = 0;
-      m->data = 0;
+      m->data   = 0;
     }
 
     if (opcode == CACHE_OPEN_READ) {
@@ -504,17 +504,17 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
     //////////////////////
     // Use long format  //
     //////////////////////
-    msg = data;
+    msg                = data;
     CacheOpMsg_long *m = (CacheOpMsg_long *)msg;
     m->init();
-    m->opcode = opcode;
-    m->cfl_flags = ((CacheOpArgs_General *)args)->cfl_flags;
-    m->url_md5 = *((CacheOpArgs_General *)args)->url_md5;
-    cc->url_md5 = m->url_md5;
+    m->opcode     = opcode;
+    m->cfl_flags  = ((CacheOpArgs_General *)args)->cfl_flags;
+    m->url_md5    = *((CacheOpArgs_General *)args)->url_md5;
+    cc->url_md5   = m->url_md5;
     m->seq_number = (c ? cc->seq_number : CACHE_NO_RESPONSE);
-    m->nbytes = nbytes;
-    m->data = (uint32_t)((CacheOpArgs_General *)args)->pin_in_cache;
-    m->frag_type = (uint32_t)((CacheOpArgs_General *)args)->frag_type;
+    m->nbytes     = nbytes;
+    m->data       = (uint32_t)((CacheOpArgs_General *)args)->pin_in_cache;
+    m->frag_type  = (uint32_t)((CacheOpArgs_General *)args)->frag_type;
 
     if (opcode == CACHE_OPEN_READ_LONG) {
       //
@@ -556,16 +556,16 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
     //////////////////////
     // Use short format //
     //////////////////////
-    msg = data;
+    msg                 = data;
     CacheOpMsg_short *m = (CacheOpMsg_short *)msg;
     m->init();
-    m->opcode = opcode;
+    m->opcode    = opcode;
     m->frag_type = ((CacheOpArgs_Deref *)args)->frag_type;
     m->cfl_flags = ((CacheOpArgs_Deref *)args)->cfl_flags;
     if (opcode == CACHE_DEREF)
       m->md5 = *((CacheOpArgs_Deref *)args)->md5;
     else
-      m->md5 = *((CacheOpArgs_General *)args)->url_md5;
+      m->md5      = *((CacheOpArgs_General *)args)->url_md5;
     m->seq_number = (c ? cc->seq_number : CACHE_NO_RESPONSE);
     break;
   }
@@ -573,15 +573,15 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
     ////////////////////////
     // Use short_2 format //
     ////////////////////////
-    msg = data;
+    msg                   = data;
     CacheOpMsg_short_2 *m = (CacheOpMsg_short_2 *)msg;
     m->init();
-    m->opcode = opcode;
-    m->cfl_flags = ((CacheOpArgs_Link *)args)->cfl_flags;
-    m->md5_1 = *((CacheOpArgs_Link *)args)->from;
-    m->md5_2 = *((CacheOpArgs_Link *)args)->to;
+    m->opcode     = opcode;
+    m->cfl_flags  = ((CacheOpArgs_Link *)args)->cfl_flags;
+    m->md5_1      = *((CacheOpArgs_Link *)args)->from;
+    m->md5_2      = *((CacheOpArgs_Link *)args)->to;
     m->seq_number = (c ? cc->seq_number : CACHE_NO_RESPONSE);
-    m->frag_type = ((CacheOpArgs_Link *)args)->frag_type;
+    m->frag_type  = ((CacheOpArgs_Link *)args)->frag_type;
     break;
   }
   default:
@@ -605,7 +605,7 @@ no_send_exit:
 int
 CacheContinuation::setup_local_vc(char *data, int data_len, CacheContinuation *cc, ClusterMachine *mp, Action **act)
 {
-  bool read_op = op_is_read(cc->request_opcode);
+  bool read_op   = op_is_read(cc->request_opcode);
   bool short_msg = op_is_shortform(cc->request_opcode);
 
   // Alloc buffer, copy message and attach to continuation
@@ -656,18 +656,18 @@ CacheContinuation::setup_local_vc(char *data, int data_len, CacheContinuation *c
       cc->write_cluster_vc = vc;
     }
     cc->cluster_vc_channel = vc->channel;
-    vc->current_cont = cc;
+    vc->current_cont       = cc;
 
     if (short_msg) {
       CacheOpMsg_short *ms = (CacheOpMsg_short *)data;
-      ms->channel = vc->channel;
-      ms->token = cc->open_local_token;
+      ms->channel          = vc->channel;
+      ms->token            = cc->open_local_token;
       Debug("cache_proto", "0open_local-s (%s) success, seqno=%d chan=%d token=%d,%d VC=%p", (read_op ? "R" : "W"), ms->seq_number,
             vc->channel, ms->token.ip_created, ms->token.sequence_number, vc);
     } else {
       CacheOpMsg_long *ml = (CacheOpMsg_long *)data;
-      ml->channel = vc->channel;
-      ml->token = cc->open_local_token;
+      ml->channel         = vc->channel;
+      ml->token           = cc->open_local_token;
       Debug("cache_proto", "1open_local-l (%s) success, seqno=%d chan=%d token=%d,%d VC=%p", (read_op ? "R" : "W"), ml->seq_number,
             vc->channel, ml->token.ip_created, ml->token.sequence_number, vc);
     }
@@ -719,10 +719,10 @@ CacheContinuation::lookupOpenWriteVC()
     CacheOpReplyMsg msg;
     int msglen;
 
-    msglen = CacheOpReplyMsg::sizeof_fixedlen_msg();
-    msg.result = CACHE_EVENT_OPEN_WRITE;
+    msglen         = CacheOpReplyMsg::sizeof_fixedlen_msg();
+    msg.result     = CACHE_EVENT_OPEN_WRITE;
     msg.seq_number = seq_number;
-    msg.token = vc->token;
+    msg.token      = vc->token;
 
     cache_op_result_ClusterFunction(ch, (void *)&msg, msglen);
 
@@ -788,10 +788,10 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
   ink_assert(magicno == (int)MagicNo);
   ink_assert(getMsgBuffer());
   bool short_msg = op_is_shortform(request_opcode);
-  bool read_op = op_is_read(request_opcode);
+  bool read_op   = op_is_read(request_opcode);
 
   if (event == EVENT_INTERVAL) {
-    Event *e = (Event *)vc;
+    Event *e          = (Event *)vc;
     unsigned int hash = FOLDHASH(target_ip, seq_number);
 
     MUTEX_TRY_LOCK(queuelock, remoteCacheContQueueMutex[hash], e->ethread);
@@ -841,20 +841,20 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
       write_cluster_vc = vc;
     }
     cluster_vc_channel = vc->channel;
-    vc->current_cont = this;
+    vc->current_cont   = this;
 
     if (short_msg) {
       CacheOpMsg_short *ms = (CacheOpMsg_short *)getMsgBuffer();
-      ms->channel = vc->channel;
-      ms->token = open_local_token;
+      ms->channel          = vc->channel;
+      ms->token            = open_local_token;
 
       Debug("cache_proto", "2open_local-s (%s) success, seqno=%d chan=%d token=%d,%d VC=%p", (read_op ? "R" : "W"), ms->seq_number,
             vc->channel, ms->token.ip_created, ms->token.sequence_number, vc);
 
     } else {
       CacheOpMsg_long *ml = (CacheOpMsg_long *)getMsgBuffer();
-      ml->channel = vc->channel;
-      ml->token = open_local_token;
+      ml->channel         = vc->channel;
+      ml->token           = open_local_token;
 
       Debug("cache_proto", "3open_local-l (%s) success, seqno=%d chan=%d token=%d,%d VC=%p", (read_op ? "R" : "W"), ml->seq_number,
             vc->channel, ml->token.ip_created, ml->token.sequence_number, vc);
@@ -888,7 +888,7 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
 
       if (event == CLUSTER_EVENT_OPEN) {
         vc->pending_remote_fill = 0;
-        vc->remote_closed = 1; // avoid remote close msg
+        vc->remote_closed       = 1; // avoid remote close msg
         vc->do_io(VIO::CLOSE);
       }
       send_failure_callback = 0; // already sent.
@@ -906,8 +906,8 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
       //   removing ourselves from the active list.
       //
       this->use_deferred_callback = true;
-      this->result = (read_op ? CACHE_EVENT_OPEN_READ_FAILED : CACHE_EVENT_OPEN_WRITE_FAILED);
-      this->result_error = 0;
+      this->result                = (read_op ? CACHE_EVENT_OPEN_READ_FAILED : CACHE_EVENT_OPEN_WRITE_FAILED);
+      this->result_error          = 0;
       remove_and_delete(0, (Event *)0);
 
     } else {
@@ -958,19 +958,19 @@ unmarshal_CacheOpMsg_short_2(void *data, int NeedByteSwap)
 inline void
 init_from_long(CacheContinuation *cont, CacheOpMsg_long *msg, ClusterMachine *m)
 {
-  cont->no_reply_message = (msg->seq_number == CACHE_NO_RESPONSE);
-  cont->seq_number = msg->seq_number;
-  cont->cfl_flags = msg->cfl_flags;
-  cont->from = m;
-  cont->url_md5 = msg->url_md5;
+  cont->no_reply_message   = (msg->seq_number == CACHE_NO_RESPONSE);
+  cont->seq_number         = msg->seq_number;
+  cont->cfl_flags          = msg->cfl_flags;
+  cont->from               = m;
+  cont->url_md5            = msg->url_md5;
   cont->cluster_vc_channel = msg->channel;
-  cont->frag_type = (CacheFragType)msg->frag_type;
+  cont->frag_type          = (CacheFragType)msg->frag_type;
   if ((cont->request_opcode == CACHE_OPEN_WRITE_LONG) || (cont->request_opcode == CACHE_OPEN_READ_LONG)) {
     cont->pin_in_cache = (time_t)msg->data;
   } else {
     cont->pin_in_cache = 0;
   }
-  cont->token = msg->token;
+  cont->token  = msg->token;
   cont->nbytes = (((int)msg->nbytes < 0) ? 0 : msg->nbytes);
 
   if (cont->request_opcode == CACHE_OPEN_READ_LONG) {
@@ -984,15 +984,15 @@ init_from_long(CacheContinuation *cont, CacheOpMsg_long *msg, ClusterMachine *m)
 inline void
 init_from_short(CacheContinuation *cont, CacheOpMsg_short *msg, ClusterMachine *m)
 {
-  cont->no_reply_message = (msg->seq_number == CACHE_NO_RESPONSE);
-  cont->seq_number = msg->seq_number;
-  cont->cfl_flags = msg->cfl_flags;
-  cont->from = m;
-  cont->url_md5 = msg->md5;
+  cont->no_reply_message   = (msg->seq_number == CACHE_NO_RESPONSE);
+  cont->seq_number         = msg->seq_number;
+  cont->cfl_flags          = msg->cfl_flags;
+  cont->from               = m;
+  cont->url_md5            = msg->md5;
   cont->cluster_vc_channel = msg->channel;
-  cont->token = msg->token;
-  cont->nbytes = (((int)msg->nbytes < 0) ? 0 : msg->nbytes);
-  cont->frag_type = (CacheFragType)msg->frag_type;
+  cont->token              = msg->token;
+  cont->nbytes             = (((int)msg->nbytes < 0) ? 0 : msg->nbytes);
+  cont->frag_type          = (CacheFragType)msg->frag_type;
 
   if (cont->request_opcode == CACHE_OPEN_WRITE) {
     cont->pin_in_cache = (time_t)msg->data;
@@ -1012,17 +1012,17 @@ inline void
 init_from_short_2(CacheContinuation *cont, CacheOpMsg_short_2 *msg, ClusterMachine *m)
 {
   cont->no_reply_message = (msg->seq_number == CACHE_NO_RESPONSE);
-  cont->seq_number = msg->seq_number;
-  cont->cfl_flags = msg->cfl_flags;
-  cont->from = m;
-  cont->url_md5 = msg->md5_1;
-  cont->frag_type = (CacheFragType)msg->frag_type;
+  cont->seq_number       = msg->seq_number;
+  cont->cfl_flags        = msg->cfl_flags;
+  cont->from             = m;
+  cont->url_md5          = msg->md5_1;
+  cont->frag_type        = (CacheFragType)msg->frag_type;
 }
 
 void
 cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex.get();
   ////////////////////////////////////////////////////////
   // Note: we are running on the ET_CLUSTER thread
@@ -1042,12 +1042,12 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
   // If necessary, create a continuation to reflect the response back
 
   CacheContinuation *c = CacheContinuation::cacheContAllocator_alloc();
-  c->mutex = new_ProxyMutex();
+  c->mutex             = new_ProxyMutex();
   MUTEX_TRY_LOCK(lock, c->mutex, this_ethread());
   c->request_opcode = opcode;
   c->token.clear();
   c->start_time = Thread::get_hrtime();
-  c->ch = ch;
+  c->ch         = ch;
   SET_CONTINUATION_HANDLER(c, (CacheContHandler)&CacheContinuation::replyOpEvent);
 
   switch (opcode) {
@@ -1095,12 +1095,12 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     CacheKey key(msg->md5);
 
     char *hostname = NULL;
-    int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
+    int host_len   = len - op_to_sizeof_fixedlen_msg(opcode);
     if (host_len) {
       hostname = (char *)msg->moi.byte;
     }
     Cache *call_cache = caches[c->frag_type];
-    c->cache_action = call_cache->open_read(c, &key, c->frag_type, hostname, host_len);
+    c->cache_action   = call_cache->open_read(c, &key, c->frag_type, hostname, host_len);
     break;
   }
   case CACHE_OPEN_READ_LONG: {
@@ -1109,7 +1109,7 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     c->allocMsgBuffer();
     memcpy(c->getMsgBuffer(), (char *)data, len);
 
-    int flen = CacheOpMsg_long::sizeof_fixedlen_msg();
+    int flen             = CacheOpMsg_long::sizeof_fixedlen_msg();
     CacheOpMsg_long *msg = unmarshal_CacheOpMsg_long(c->getMsgBuffer(), mh->NeedByteSwap());
     init_from_long(c, msg, ch->machine);
     Debug("cache_msg", "cache_op-l op=%d seqno=%d data=%p len=%d machine=%p", opcode, c->seq_number, data, len, ch->machine);
@@ -1142,7 +1142,7 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
           msg->token.ip_created, msg->token.sequence_number);
 
     const char *p = (const char *)msg + flen;
-    int moi_len = len - flen;
+    int moi_len   = len - flen;
     int res;
 
     ink_assert(moi_len > 0);
@@ -1158,7 +1158,7 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     ink_assert(moi_len > 0);
     // Unmarshal CacheLookupHttpConfig
     c->ic_params = new (CacheLookupHttpConfigAllocator.alloc()) CacheLookupHttpConfig();
-    res = c->ic_params->unmarshal(&c->ic_arena, (const char *)p, moi_len);
+    res          = c->ic_params->unmarshal(&c->ic_arena, (const char *)p, moi_len);
     ink_assert(res > 0);
 
     moi_len -= res;
@@ -1167,7 +1167,7 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     CacheKey key(msg->url_md5);
 
     char *hostname = NULL;
-    int host_len = 0;
+    int host_len   = 0;
 
     if (moi_len) {
       hostname = (char *)p;
@@ -1176,14 +1176,14 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
       // Save hostname and attach it to the continuation since we may
       //  need it if we convert this to an open_write.
 
-      c->ic_hostname = new_IOBufferData(iobuffer_size_to_index(host_len));
+      c->ic_hostname     = new_IOBufferData(iobuffer_size_to_index(host_len));
       c->ic_hostname_len = host_len;
 
       memcpy(c->ic_hostname->data(), hostname, host_len);
     }
 
     Cache *call_cache = caches[c->frag_type];
-    Action *a = call_cache->open_read(c, &key, &c->ic_request, c->ic_params, c->frag_type, hostname, host_len);
+    Action *a         = call_cache->open_read(c, &key, &c->ic_request, c->ic_params, c->frag_type, hostname, host_len);
     // Get rid of purify warnings since 'c' can be freed by open_read.
     if (a != ACTION_RESULT_DONE) {
       c->cache_action = a;
@@ -1220,7 +1220,7 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     CacheKey key(msg->md5);
 
     char *hostname = NULL;
-    int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
+    int host_len   = len - op_to_sizeof_fixedlen_msg(opcode);
     if (host_len) {
       hostname = (char *)msg->moi.byte;
     }
@@ -1239,7 +1239,7 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     c->allocMsgBuffer();
     memcpy(c->getMsgBuffer(), (char *)data, len);
 
-    int flen = CacheOpMsg_long::sizeof_fixedlen_msg();
+    int flen             = CacheOpMsg_long::sizeof_fixedlen_msg();
     CacheOpMsg_long *msg = unmarshal_CacheOpMsg_long(c->getMsgBuffer(), mh->NeedByteSwap());
     init_from_long(c, msg, ch->machine);
     Debug("cache_msg", "cache_op-l op=%d seqno=%d data=%p len=%d machine=%p", opcode, c->seq_number, data, len, ch->machine);
@@ -1267,9 +1267,9 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     ink_release_assert(c->read_cluster_vc != CLUSTER_DELAYED_OPEN);
 
     CacheHTTPInfo *ci = 0;
-    const char *p = (const char *)msg + flen;
-    int res = 0;
-    int moi_len = len - flen;
+    const char *p     = (const char *)msg + flen;
+    int res           = 0;
+    int moi_len       = len - flen;
 
     if (moi_len && c->cfl_flags & CFL_LOPENWRITE_HAVE_OLDINFO) {
       // Unmarshal old CacheHTTPInfo
@@ -1294,7 +1294,7 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     }
 
     Cache *call_cache = caches[c->frag_type];
-    Action *a = call_cache->open_write(c, &key, ci, c->pin_in_cache, NULL, c->frag_type, hostname, moi_len);
+    Action *a         = call_cache->open_write(c, &key, ci, c->pin_in_cache, NULL, c->frag_type, hostname, moi_len);
     if (a != ACTION_RESULT_DONE) {
       c->cache_action = a;
     }
@@ -1310,13 +1310,13 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     CacheKey key(msg->md5);
 
     char *hostname = NULL;
-    int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
+    int host_len   = len - op_to_sizeof_fixedlen_msg(opcode);
     if (host_len) {
       hostname = (char *)msg->moi.byte;
     }
 
     Cache *call_cache = caches[c->frag_type];
-    Action *a = call_cache->remove(c, &key, c->frag_type, hostname, host_len);
+    Action *a         = call_cache->remove(c, &key, c->frag_type, hostname, host_len);
     if (a != ACTION_RESULT_DONE) {
       c->cache_action = a;
     }
@@ -1334,13 +1334,13 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     CacheKey key2(msg->md5_2);
 
     char *hostname = NULL;
-    int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
+    int host_len   = len - op_to_sizeof_fixedlen_msg(opcode);
     if (host_len) {
       hostname = (char *)msg->moi.byte;
     }
 
     Cache *call_cache = caches[c->frag_type];
-    Action *a = call_cache->link(c, &key1, &key2, c->frag_type, hostname, host_len);
+    Action *a         = call_cache->link(c, &key1, &key2, c->frag_type, hostname, host_len);
     if (a != ACTION_RESULT_DONE) {
       c->cache_action = a;
     }
@@ -1357,13 +1357,13 @@ cache_op_ClusterFunction(ClusterHandler *ch, void *data, int len)
     CacheKey key(msg->md5);
 
     char *hostname = NULL;
-    int host_len = len - op_to_sizeof_fixedlen_msg(opcode);
+    int host_len   = len - op_to_sizeof_fixedlen_msg(opcode);
     if (host_len) {
       hostname = (char *)msg->moi.byte;
     }
 
     Cache *call_cache = caches[c->frag_type];
-    Action *a = call_cache->deref(c, &key, c->frag_type, hostname, host_len);
+    Action *a         = call_cache->deref(c, &key, c->frag_type, hostname, host_len);
     if (a != ACTION_RESULT_DONE) {
       c->cache_action = a;
     }
@@ -1401,8 +1401,8 @@ CacheContinuation::setupVCdataRead(int event, VConnection *vc)
     SET_HANDLER((CacheContHandler)&CacheContinuation::VCdataRead);
 
     int64_t size_index = iobuffer_size_to_index(caller_buf_freebytes);
-    MIOBuffer *buf = new_MIOBuffer(size_index);
-    readahead_reader = buf->alloc_reader();
+    MIOBuffer *buf     = new_MIOBuffer(size_index);
+    readahead_reader   = buf->alloc_reader();
 
     MUTEX_TRY_LOCK(lock, mutex, this_ethread()); // prevent immediate callback
     readahead_vio = vc->do_io_read(this, caller_buf_freebytes, buf);
@@ -1422,7 +1422,7 @@ CacheContinuation::VCdataRead(int event, VIO *target_vio)
   ink_release_assert(readahead_vio == target_vio);
 
   VConnection *vc = target_vio->vc_server;
-  int reply = CACHE_EVENT_OPEN_READ;
+  int reply       = CACHE_EVENT_OPEN_READ;
   int32_t object_size;
 
   switch (event) {
@@ -1441,7 +1441,7 @@ CacheContinuation::VCdataRead(int event, VIO *target_vio)
     ink_assert(current_ndone);
     ink_assert(current_ndone <= readahead_reader->read_avail());
 
-    object_size = getObjectSize(vc, request_opcode, &cache_vc_info);
+    object_size   = getObjectSize(vc, request_opcode, &cache_vc_info);
     have_all_data = ((object_size <= caller_buf_freebytes) && (object_size == current_ndone));
 
     // Use no more than the caller's max buffer limit
@@ -1481,7 +1481,7 @@ CacheContinuation::VCdataRead(int event, VIO *target_vio)
     vc->do_io(VIO::CLOSE);
     free_MIOBuffer(mbuf);
     readahead_vio = 0;
-    reply = CACHE_EVENT_OPEN_READ_FAILED;
+    reply         = CACHE_EVENT_OPEN_READ_FAILED;
 
     SET_HANDLER((CacheContHandler)&CacheContinuation::replyOpEvent);
     handleEvent(reply, (VConnection *)-ECLUSTER_ORB_DATA_READ);
@@ -1561,15 +1561,15 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
   ink_release_assert(expect_cache_callback);
   expect_cache_callback = false; // make sure we are called back exactly once
 
-  result = event;
-  bool open = event_is_open(event);
-  bool read_op = op_is_read(request_opcode);
+  result                        = event;
+  bool open                     = event_is_open(event);
+  bool read_op                  = op_is_read(request_opcode);
   bool open_read_now_open_write = false;
 
   // Reply message initializations
   CacheOpReplyMsg rmsg;
   CacheOpReplyMsg *msg = &rmsg;
-  msg->result = event;
+  msg->result          = event;
 
   if ((request_opcode == CACHE_OPEN_READ_LONG) && cvc && (event == CACHE_EVENT_OPEN_WRITE)) {
     //////////////////////////////////////////////////////////////////////////
@@ -1577,14 +1577,14 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
     // CACHE_EVENT_OPEN_READ_FAILED and make result token non zero to
     // signal to the remote node that we have established a write connection.
     //////////////////////////////////////////////////////////////////////////
-    msg->result = CACHE_EVENT_OPEN_READ_FAILED;
+    msg->result              = CACHE_EVENT_OPEN_READ_FAILED;
     open_read_now_open_write = true;
   }
 
   msg->seq_number = seq_number;
-  int flen = CacheOpReplyMsg::sizeof_fixedlen_msg(); // include token
-  int len = 0;
-  int vers = 0;
+  int flen        = CacheOpReplyMsg::sizeof_fixedlen_msg(); // include token
+  int len         = 0;
+  int vers        = 0;
 
   int results_expected = 1;
 
@@ -1595,8 +1595,8 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
     // prepare for CACHE_OPEN_EVENT
 
     results_expected = 2;
-    cache_vc = cvc;
-    cache_read = (event == CACHE_EVENT_OPEN_READ);
+    cache_vc         = cvc;
+    cache_read       = (event == CACHE_EVENT_OPEN_READ);
 
     if (read_op && !open_read_now_open_write) {
       ink_release_assert(write_cluster_vc->pending_remote_fill);
@@ -1631,7 +1631,7 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
         (void)getObjectSize(cache_vc, request_opcode, &cache_vc_info);
       }
       // Determine data length and allocate
-      len = cache_vc_info.marshal_length();
+      len                    = cache_vc_info.marshal_length();
       CacheOpReplyMsg *reply = (CacheOpReplyMsg *)ALLOCA_DOUBLE(flen + len);
 
       // Initialize reply message header
@@ -1666,7 +1666,7 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
       }
       if (write_cluster_vc) {
         write_cluster_vc->pending_remote_fill = 0;
-        write_cluster_vc->remote_closed = 1; // avoid remote close msg
+        write_cluster_vc->remote_closed       = 1; // avoid remote close msg
         write_cluster_vc->do_io(VIO::CLOSE);
       }
       reply->moi.u32 = (int32_t)((uintptr_t)cvc & 0xffffffff); // code describing failure
@@ -1719,19 +1719,19 @@ CacheContinuation::setupReadBufTunnel(VConnection *cache_read_vc, VConnection *c
   // Setup OneWayTunnel and tunnel close event handler.
   // Used in readahead processing on open read connections.
   ////////////////////////////////////////////////////////////
-  tunnel_cont = cacheContAllocator_alloc();
+  tunnel_cont        = cacheContAllocator_alloc();
   tunnel_cont->mutex = this->mutex;
   SET_CONTINUATION_HANDLER(tunnel_cont, (CacheContHandler)&CacheContinuation::tunnelClosedEvent);
   int64_t ravail = bytes_IOBufferBlockList(readahead_data, 1);
 
-  tunnel_mutex = tunnel_cont->mutex;
+  tunnel_mutex  = tunnel_cont->mutex;
   tunnel_closed = false;
 
   tunnel = OneWayTunnel::OneWayTunnel_alloc();
   readahead_reader->consume(ravail); // allow for bytes sent in initial reply
   tunnel->init(cache_read_vc, cluster_write_vc, tunnel_cont, readahead_vio, readahead_reader);
-  tunnel_cont->action = this;
-  tunnel_cont->tunnel = tunnel;
+  tunnel_cont->action      = this;
+  tunnel_cont->tunnel      = tunnel;
   tunnel_cont->tunnel_cont = tunnel_cont;
 
   // Disable cluster_write_vc
@@ -1761,8 +1761,8 @@ CacheContinuation::tunnelClosedEvent(int /* event ATS_UNUSED */, void *c)
 
   if (real_cc) {
     // Notify the real continuation of the tunnel closed event
-    real_cc->tunnel = 0;
-    real_cc->tunnel_cont = 0;
+    real_cc->tunnel        = 0;
+    real_cc->tunnel_cont   = 0;
     real_cc->tunnel_closed = true;
   }
   OneWayTunnel::OneWayTunnel_free(tc->tunnel);
@@ -1816,7 +1816,7 @@ CacheContinuation::disposeOfDataBuffer(void *d)
     // close message to remote node.
     //
     cc->write_cluster_vc->pending_remote_fill = 0;
-    cc->write_cluster_vc->remote_closed = 1;
+    cc->write_cluster_vc->remote_closed       = 1;
     cc->write_cluster_vc->do_io(VIO::CLOSE);
     cc->readahead_data = 0;
 
@@ -1883,8 +1883,8 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
   char *data = iob->data();
   int flen, len = l;
   CacheHTTPInfo ci;
-  CacheOpReplyMsg *msg = (CacheOpReplyMsg *)data;
-  int32_t op_result_error = 0;
+  CacheOpReplyMsg *msg     = (CacheOpReplyMsg *)data;
+  int32_t op_result_error  = 0;
   ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
 
   if (mh->GetMsgVersion() != CacheOpReplyMsg::CACHE_OP_REPLY_MESSAGE_VERSION) { ////////////////////////////////////////////////
@@ -1938,7 +1938,7 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
   // See if this response is still expected (expected case == yes)
 
   unsigned int hash = FOLDHASH(ch->machine->ip, msg->seq_number);
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex.get();
   if (MUTEX_TAKE_TRY_LOCK(remoteCacheContQueueMutex[hash], thread)) {
     // Find it in pending list
@@ -1986,12 +1986,12 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
 
   Lretry:
     CacheContinuation *c = CacheContinuation::cacheContAllocator_alloc();
-    c->mutex = new_ProxyMutex();
-    c->seq_number = msg->seq_number;
-    c->target_ip = ch->machine->ip;
+    c->mutex             = new_ProxyMutex();
+    c->seq_number        = msg->seq_number;
+    c->target_ip         = ch->machine->ip;
     SET_CONTINUATION_HANDLER(c, (CacheContHandler)&CacheContinuation::handleReplyEvent);
     c->start_time = Thread::get_hrtime();
-    c->result = msg->result;
+    c->result     = msg->result;
     if (event_is_open(msg->result))
       c->token = msg->token;
     if (ci.valid()) {
@@ -2016,7 +2016,7 @@ CacheContinuation::handleReplyEvent(int event, Event *e)
 
   // take lock on outstanding message queue
 
-  EThread *t = e->ethread;
+  EThread *t        = e->ethread;
   unsigned int hash = FOLDHASH(target_ip, seq_number);
 
   if (!MUTEX_TAKE_TRY_LOCK(remoteCacheContQueueMutex[hash], t)) {
@@ -2086,10 +2086,10 @@ CacheContinuation::remoteOpEvent(int event_code, Event *e)
     if (event != EVENT_INTERVAL) {
       if (event == CACHE_EVENT_RESPONSE) {
         CacheContinuation *ccont = (CacheContinuation *)e;
-        res = ccont->result;
+        res                      = ccont->result;
       } else {
         CacheOpReplyMsg *rmsg = (CacheOpReplyMsg *)e;
-        res = rmsg->result;
+        res                   = rmsg->result;
       }
       if ((res == CACHE_EVENT_LOOKUP) || (res == CACHE_EVENT_LOOKUP_FAILED)) {
         now = Thread::get_hrtime();
@@ -2104,7 +2104,7 @@ CacheContinuation::remoteOpEvent(int event_code, Event *e)
     start_time = 0;
   }
   // for CACHE_EVENT_RESPONSE/XXX the lock was acquired at the higher level
-  intptr_t return_error = 0;
+  intptr_t return_error  = 0;
   ClusterVCToken *pToken = NULL;
 
 retry:
@@ -2140,7 +2140,7 @@ retry:
       Debug("cluster_timeout", "cluster op timeout %d", seq_number);
       CLUSTER_INCREMENT_DYN_STAT(CLUSTER_REMOTE_OP_TIMEOUTS_STAT);
       request_timeout = true;
-      timeout = 0;
+      timeout         = 0;
       //
       // Post error completion now and defer deallocation of
       // the continuation until we receive the reply or the
@@ -2222,7 +2222,7 @@ retry:
         }
         // Move CacheHTTPInfo reply data into VC
         read_cluster_vc->marshal_buf = this->getMsgBufferIOBData();
-        read_cluster_vc->alternate = this->ic_new_info;
+        read_cluster_vc->alternate   = this->ic_new_info;
         this->ic_new_info.clear();
         ink_release_assert(read_cluster_vc->alternate.object_size_get());
 
@@ -2267,7 +2267,7 @@ retry:
     // machine is the master (or the owner machine has failed), go to
     // the local machine.  Also if PROBE_LOCAL_CACHE_LAST.
     //
-    int len = getMsgBufferLen();
+    int len        = getMsgBufferLen();
     char *hostname = (len ? getMsgBuffer() : 0);
 
     if (!m || PROBE_LOCAL_CACHE_LAST) {
@@ -2311,7 +2311,7 @@ retry:
       // Compiler bug in CC: WorkShop Compilers 5.0 98/12/15 C++ 5.0
       // Does not accept assignment of ((Continuation *) NULL)
       {
-        Continuation *temp = NULL;
+        Continuation *temp       = NULL;
         read_cluster_vc->action_ = temp;
       }
       if (!GlobalOpenWriteVCcache->insert(&url_md5, read_cluster_vc)) {
@@ -2388,9 +2388,9 @@ Action *
 CacheContinuation::do_remote_lookup(Continuation *cont, const CacheKey *key, CacheContinuation *c, CacheFragType ft,
                                     const char *hostname, int hostname_len)
 {
-  int probe_depth = 0;
+  int probe_depth                                                = 0;
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH] = {0};
-  int mlen = op_to_sizeof_fixedlen_msg(CACHE_LOOKUP_OP) + ((hostname && hostname_len) ? hostname_len : 0);
+  int mlen            = op_to_sizeof_fixedlen_msg(CACHE_LOOKUP_OP) + ((hostname && hostname_len) ? hostname_len : 0);
   CacheLookupMsg *msg = (CacheLookupMsg *)ALLOCA_DOUBLE(mlen);
   msg->init();
 
@@ -2424,8 +2424,8 @@ CacheContinuation::do_remote_lookup(Continuation *cont, const CacheKey *key, Cac
   // If we do not have a continuation, build one
 
   if (!c) {
-    c = cacheContAllocator_alloc();
-    c->mutex = cont->mutex;
+    c              = cacheContAllocator_alloc();
+    c->mutex       = cont->mutex;
     c->probe_depth = probe_depth;
     memcpy(c->past_probes, past_probes, sizeof(past_probes));
   }
@@ -2438,20 +2438,20 @@ CacheContinuation::do_remote_lookup(Continuation *cont, const CacheKey *key, Cac
     memcpy(c->getMsgBuffer(), hostname, hostname_len);
   }
 
-  c->url_md5 = msg->url_md5;
+  c->url_md5          = msg->url_md5;
   c->action.cancelled = false;
-  c->action = cont;
-  c->start_time = Thread::get_hrtime();
+  c->action           = cont;
+  c->start_time       = Thread::get_hrtime();
   SET_CONTINUATION_HANDLER(c, (CacheContHandler)&CacheContinuation::remoteOpEvent);
   c->result = CACHE_EVENT_LOOKUP_FAILED;
 
   // set up sequence number so we can find this continuation
 
-  c->target_ip = m->ip;
-  c->seq_number = new_cache_sequence_number();
+  c->target_ip    = m->ip;
+  c->seq_number   = new_cache_sequence_number();
   msg->seq_number = c->seq_number;
-  c->frag_type = ft;
-  msg->frag_type = ft;
+  c->frag_type    = ft;
+  msg->frag_type  = ft;
 
   // establish timeout for lookup
 
@@ -2472,8 +2472,8 @@ CacheContinuation::do_remote_lookup(Continuation *cont, const CacheKey *key, Cac
 
   if (vers == CacheLookupMsg::CACHE_LOOKUP_MESSAGE_VERSION) {
     msg->seq_number = c->seq_number;
-    data = (char *)msg;
-    len = mlen;
+    data            = (char *)msg;
+    len             = mlen;
     if (hostname && hostname_len) {
       memcpy(msg->moi.byte, hostname, hostname_len);
     }
@@ -2503,13 +2503,13 @@ void
 cache_lookup_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   (void)len;
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex.get();
   ////////////////////////////////////////////////////////
   // Note: we are running on the ET_CLUSTER thread
   ////////////////////////////////////////////////////////
 
-  CacheLookupMsg *msg = (CacheLookupMsg *)data;
+  CacheLookupMsg *msg      = (CacheLookupMsg *)data;
   ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
 
   if (mh->GetMsgVersion() != CacheLookupMsg::CACHE_LOOKUP_MESSAGE_VERSION) { ////////////////////////////////////////////////
@@ -2524,12 +2524,12 @@ cache_lookup_ClusterFunction(ClusterHandler *ch, void *data, int len)
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CACHE_OUTSTANDING_STAT);
 
   CacheContinuation *c = CacheContinuation::cacheContAllocator_alloc();
-  c->mutex = new_ProxyMutex();
+  c->mutex             = new_ProxyMutex();
   MUTEX_TRY_LOCK(lock, c->mutex, this_ethread());
   c->no_reply_message = (msg->seq_number == CACHE_NO_RESPONSE);
-  c->seq_number = msg->seq_number;
-  c->from = ch->machine;
-  c->url_md5 = msg->url_md5;
+  c->seq_number       = msg->seq_number;
+  c->from             = ch->machine;
+  c->url_md5          = msg->url_md5;
   SET_CONTINUATION_HANDLER(c, (CacheContHandler)&CacheContinuation::replyLookupEvent);
 
   CacheKey key(msg->url_md5);
@@ -2541,7 +2541,7 @@ cache_lookup_ClusterFunction(ClusterHandler *ch, void *data, int len)
 
   char *hostname;
   int hostname_len = len - op_to_sizeof_fixedlen_msg(CACHE_LOOKUP_OP);
-  hostname = (hostname_len ? (char *)msg->moi.byte : 0);
+  hostname         = (hostname_len ? (char *)msg->moi.byte : 0);
 
   // Note: Hostname data invalid after return from lookup
   Cache *call_cache = caches[msg->frag_type];
@@ -2565,14 +2565,14 @@ CacheContinuation::replyLookupEvent(int event, void * /* d ATS_UNUSED */)
   if (vers == CacheOpReplyMsg::CACHE_OP_REPLY_MESSAGE_VERSION) {
     CacheOpReplyMsg *msg;
     int flen = CacheOpReplyMsg::sizeof_fixedlen_msg();
-    msg = (CacheOpReplyMsg *)ALLOCA_DOUBLE(flen);
+    msg      = (CacheOpReplyMsg *)ALLOCA_DOUBLE(flen);
     msg->init();
     CLUSTER_DECREMENT_DYN_STAT(CLUSTER_CACHE_OUTSTANDING_STAT);
     int len = flen - sizeof(msg->token);
 
     if (!no_reply_message) {
       msg->seq_number = seq_number;
-      msg->result = event;
+      msg->result     = event;
 #ifdef CACHE_MSG_TRACE
       log_cache_op_sndmsg(seq_number, event, "cache_result");
 #endif
@@ -2594,7 +2594,7 @@ CacheContinuation::replyLookupEvent(int event, void * /* d ATS_UNUSED */)
 int32_t
 CacheContinuation::getObjectSize(VConnection *vc, int opcode, CacheHTTPInfo *ret_ci)
 {
-  CacheHTTPInfo *ci = 0;
+  CacheHTTPInfo *ci   = 0;
   int64_t object_size = 0;
 
   if ((opcode == CACHE_OPEN_READ_LONG) || (opcode == CACHE_OPEN_READ_BUFFER_LONG)) {
@@ -2603,7 +2603,7 @@ CacheContinuation::getObjectSize(VConnection *vc, int opcode, CacheHTTPInfo *ret
       object_size = ci->object_size_get();
 
     } else {
-      ci = 0;
+      ci          = 0;
       object_size = 0;
     }
 
@@ -2640,8 +2640,8 @@ CacheContinuation::insert_cache_callback_user(ClusterVConnection *vc, int res, v
 
   } else {
     // Unable to insert, try later
-    result = res;
-    callback_data = e;
+    result          = res;
+    callback_data   = e;
     callback_data_2 = (void *)vc;
     SET_HANDLER((CacheContHandler)&CacheContinuation::insertCallbackEvent);
     eventProcessor.schedule_imm(this, ET_CACHE_CONT_SM);
@@ -2693,7 +2693,7 @@ CacheContinuation::callback_user(int res, void *e)
 void
 CacheContinuation::defer_callback_result(int r, void *e)
 {
-  result = r;
+  result        = r;
   callback_data = e;
   SET_HANDLER((CacheContHandler)&CacheContinuation::callbackResultEvent);
   eventProcessor.schedule_imm(this, ET_CACHE_CONT_SM);
@@ -2740,7 +2740,7 @@ CacheContinuation::cacheContAllocator_free(CacheContinuation *c)
   // Does not accept assignment of ((Continuation *) NULL)
   {
     Continuation *temp = NULL;
-    c->action = temp;
+    c->action          = temp;
   }
   c->tunnel_mutex = NULL;
   cacheContAllocator.free(c);
@@ -2755,14 +2755,14 @@ CacheContinuation::callback_failure(Action *a, int result, int err, CacheContinu
 {
   CacheContinuation *cc;
   if (!this_cc) {
-    cc = cacheContAllocator_alloc();
-    cc->mutex = a->mutex;
+    cc         = cacheContAllocator_alloc();
+    cc->mutex  = a->mutex;
     cc->action = *a;
 
   } else {
     cc = this_cc;
   }
-  cc->result = result;
+  cc->result       = result;
   cc->result_error = err;
   SET_CONTINUATION_HANDLER(cc, (CacheContHandler)&CacheContinuation::callbackEvent);
   eventProcessor.schedule_imm(cc, ET_CACHE_CONT_SM);
@@ -2794,8 +2794,8 @@ CacheContinuation::callbackEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UN
 static CacheContinuation *
 find_cache_continuation(unsigned int seq_number, unsigned int from_ip)
 {
-  unsigned int hash = FOLDHASH(from_ip, seq_number);
-  CacheContinuation *c = NULL;
+  unsigned int hash        = FOLDHASH(from_ip, seq_number);
+  CacheContinuation *c     = NULL;
   CacheContinuation *lastc = NULL;
   for (c = (CacheContinuation *)remoteCacheContQueue[hash].head; c; c = (CacheContinuation *)c->link.next) {
     if (seq_number == c->seq_number && from_ip == c->target_ip) {
@@ -2842,7 +2842,7 @@ new_cache_sequence_number()
 int
 CacheContinuation::forwardEvent(int event, VConnection *c)
 {
-  int ret = EVENT_CONT;
+  int ret    = EVENT_CONT;
   cluster_vc = 0;
 
   cache_read = false;
@@ -2857,7 +2857,7 @@ CacheContinuation::forwardEvent(int event, VConnection *c)
     break;
   case CACHE_EVENT_OPEN_READ_FAILED:
     cache_read = true;
-    ret = EVENT_DONE;
+    ret        = EVENT_DONE;
     break;
   case CACHE_EVENT_OPEN_READ:
     cache_read = true;
@@ -2877,9 +2877,9 @@ CacheContinuation::forwardEvent(int event, VConnection *c)
 int
 CacheContinuation::forwardWaitEvent(int event, VConnection *c)
 {
-  int ret = EVENT_CONT;
-  int res = CACHE_EVENT_OPEN_READ_FAILED;
-  void *res_data = NULL;
+  int ret         = EVENT_CONT;
+  int res         = CACHE_EVENT_OPEN_READ_FAILED;
+  void *res_data  = NULL;
   VConnection *vc = NULL;
 
   switch (event) {
@@ -2894,17 +2894,17 @@ CacheContinuation::forwardWaitEvent(int event, VConnection *c)
     vc = c;
     break;
   }
-  VConnection *read_vc = (cache_read ? cluster_vc : vc);
+  VConnection *read_vc  = (cache_read ? cluster_vc : vc);
   VConnection *write_vc = (!cache_read ? cluster_vc : vc);
 
-  res = read_vc ? CACHE_EVENT_OPEN_READ : CACHE_EVENT_OPEN_READ_FAILED;
+  res      = read_vc ? CACHE_EVENT_OPEN_READ : CACHE_EVENT_OPEN_READ_FAILED;
   res_data = read_vc;
 
   // if the read and write are sucessful, tunnel the read to the write
   if (read_vc && write_vc) {
     res_data = new VCTee(read_vc, write_vc, vio);
     if (vio) { // CACHE_EVENT_OPEN_READ_VIO
-      res = event;
+      res      = event;
       res_data = &((VCTee *)read_vc)->vio;
     }
   }
@@ -2922,18 +2922,18 @@ CacheContinuation::forwardWaitEvent(int event, VConnection *c)
 int
 CacheContinuation::tunnelEvent(int event, VConnection *vc)
 {
-  int ret = EVENT_DONE;
-  int flen = CacheOpReplyMsg::sizeof_fixedlen_msg(); // include token
-  int len = 0;
+  int ret       = EVENT_DONE;
+  int flen      = CacheOpReplyMsg::sizeof_fixedlen_msg(); // include token
+  int len       = 0;
   bool read_buf = ((request_opcode == CACHE_OPEN_READ_BUFFER) || (request_opcode == CACHE_OPEN_READ_BUFFER_LONG));
   ink_release_assert(!read_buf);
 
   CacheOpReplyMsg rmsg;
   CacheOpReplyMsg *msg = &rmsg;
-  msg->result = result;
-  msg->seq_number = seq_number;
-  msg->token = token;
-  int expect_reply = 1;
+  msg->result          = result;
+  msg->seq_number      = seq_number;
+  msg->token           = token;
+  int expect_reply     = 1;
 
   if (event == CLUSTER_EVENT_OPEN) {
     if (cache_read) {
@@ -2967,7 +2967,7 @@ CacheContinuation::tunnelEvent(int event, VConnection *vc)
       ci = cache_vc_info;
 
       // Determine data length and allocate
-      len = ci->marshal_length();
+      len                    = ci->marshal_length();
       CacheOpReplyMsg *reply = (CacheOpReplyMsg *)ALLOCA_DOUBLE(flen + len);
 
       // Initialize reply message header
@@ -2992,7 +2992,7 @@ CacheContinuation::tunnelEvent(int event, VConnection *vc)
 
     if (read_buf) {
       Debug("cluster_timeout", "unable to make cluster connection2");
-      initial_buf = 0; // Do not send data
+      initial_buf     = 0; // Do not send data
       initial_bufsize = 0;
 
       if (!have_all_data) {

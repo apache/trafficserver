@@ -48,7 +48,7 @@ class ParentConsistentHash : public ParentSelectionStrategy
   bool ignore_query;
 
 public:
-  static const int PRIMARY = 0;
+  static const int PRIMARY   = 0;
   static const int SECONDARY = 1;
   ParentConsistentHash(ParentRecord *_parent_record);
   ~ParentConsistentHash();

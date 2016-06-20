@@ -64,7 +64,7 @@ inkcoreapi LogObject *Log::error_log = NULL;
 LogFieldList Log::global_field_list;
 LogFormat *Log::global_scrap_format = NULL;
 LogObject *Log::global_scrap_object = NULL;
-Log::LoggingMode Log::logging_mode = LOG_MODE_NONE;
+Log::LoggingMode Log::logging_mode  = LOG_MODE_NONE;
 
 // Flush thread stuff
 EventNotify *Log::preproc_notify;
@@ -79,9 +79,9 @@ int Log::collation_preproc_threads;
 int Log::collation_port;
 
 // Log private objects
-int Log::init_status = 0;
-int Log::config_flags = 0;
-bool Log::logging_mode_changed = false;
+int Log::init_status                  = 0;
+int Log::config_flags                 = 0;
+bool Log::logging_mode_changed        = false;
 uint32_t Log::periodic_tasks_interval = PERIODIC_TASKS_INTERVAL_FALLBACK;
 
 // Hash table for LogField symbols
@@ -96,7 +96,7 @@ RecRawStatBlock *log_rsb;
   to be changed (as the result of a manager callback).
   -------------------------------------------------------------------------*/
 
-LogConfig *Log::config = NULL;
+LogConfig *Log::config       = NULL;
 static unsigned log_configid = 0;
 
 // Downcast from a Ptr<LogFieldAliasTable> to a Ptr<LogFieldAliasMap>.
@@ -109,7 +109,7 @@ make_alias_map(Ptr<LogFieldAliasTable> &table)
 void
 Log::change_configuration()
 {
-  LogConfig *prev = Log::config;
+  LogConfig *prev       = Log::config;
   LogConfig *new_config = NULL;
 
   Debug("log-config", "Changing configuration ...");
@@ -835,7 +835,7 @@ Log::handle_periodic_tasks_int_change(const char * /* name ATS_UNUSED */, RecDat
 void
 Log::init(int flags)
 {
-  collation_preproc_threads = 1;
+  collation_preproc_threads        = 1;
   collation_accept_file_descriptor = NO_FD;
 
   // store the configuration flags
@@ -857,7 +857,7 @@ Log::init(int flags)
     LogConfig::register_stat_callbacks();
 
     config->read_configuration_variables();
-    collation_port = config->collation_port;
+    collation_port            = config->collation_port;
     collation_preproc_threads = config->collation_preproc_threads;
 
     if (config_flags & STANDALONE_COLLATOR) {
@@ -973,7 +973,7 @@ Log::create_threads()
   // TODO: Enable multiple flush threads, such as
   //       one flush thread per file.
   //
-  flush_notify = new EventNotify;
+  flush_notify    = new EventNotify;
   flush_data_list = new InkAtomicList;
 
   sprintf(desc, "Logging flush buffer list");
@@ -1060,7 +1060,7 @@ Log::error(const char *format, ...)
 int
 Log::va_error(const char *format, va_list ap)
 {
-  int ret_val = Log::SKIP;
+  int ret_val       = Log::SKIP;
   ProxyMutex *mutex = this_ethread()->mutex.get();
 
   if (error_log) {
@@ -1162,7 +1162,7 @@ Log::preproc_thread_main(void *args)
       return NULL;
     }
     size_t buffers_preproced = 0;
-    LogConfig *current = (LogConfig *)configProcessor.get(log_configid);
+    LogConfig *current       = (LogConfig *)configProcessor.get(log_configid);
 
     if (likely(current)) {
       buffers_preproced = current->log_object_manager.preproc_buffers(idx);
@@ -1215,19 +1215,19 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     // process each flush data
     //
     while ((fdata = invert_link.pop())) {
-      char *buf = NULL;
+      char *buf         = NULL;
       int bytes_written = 0;
-      LogFile *logfile = fdata->m_logfile.get();
+      LogFile *logfile  = fdata->m_logfile.get();
 
       if (logfile->m_file_format == LOG_FILE_BINARY) {
-        logbuffer = (LogBuffer *)fdata->m_data;
+        logbuffer                      = (LogBuffer *)fdata->m_data;
         LogBufferHeader *buffer_header = logbuffer->header();
 
-        buf = (char *)buffer_header;
+        buf         = (char *)buffer_header;
         total_bytes = buffer_header->byte_count;
 
       } else if (logfile->m_file_format == LOG_FILE_ASCII || logfile->m_file_format == LOG_FILE_PIPE) {
-        buf = (char *)fdata->m_data;
+        buf         = (char *)fdata->m_data;
         total_bytes = fdata->m_len;
 
       } else {

@@ -170,32 +170,32 @@ tcp_info_hook(TSCont contp, TSEvent event, void *edata)
 {
   TSHttpSsn ssnp = NULL;
   TSHttpTxn txnp = NULL;
-  int random = 0;
+  int random     = 0;
   Config *config = (Config *)TSContDataGet(contp);
 
   const char *event_name;
   switch (event) {
   case TS_EVENT_HTTP_SSN_START:
-    ssnp = (TSHttpSsn)edata;
+    ssnp       = (TSHttpSsn)edata;
     event_name = "ssn_start";
     break;
   case TS_EVENT_HTTP_TXN_START:
-    txnp = (TSHttpTxn)edata;
-    ssnp = TSHttpTxnSsnGet(txnp);
+    txnp       = (TSHttpTxn)edata;
+    ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "txn_start";
     break;
   case TS_EVENT_HTTP_TXN_CLOSE:
-    txnp = (TSHttpTxn)edata;
-    ssnp = TSHttpTxnSsnGet(txnp);
+    txnp       = (TSHttpTxn)edata;
+    ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "txn_close";
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
-    txnp = (TSHttpTxn)edata;
-    ssnp = TSHttpTxnSsnGet(txnp);
+    txnp       = (TSHttpTxn)edata;
+    ssnp       = TSHttpTxnSsnGet(txnp);
     event_name = "send_resp_hdr";
     break;
   case TS_EVENT_HTTP_SSN_CLOSE:
-    ssnp = (TSHttpSsn)edata;
+    ssnp       = (TSHttpSsn)edata;
     event_name = "ssn_close";
     break;
   default:
@@ -298,7 +298,7 @@ parse_hook_list(const char *hook_list)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  static const char usage[] = "tcpinfo.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT]";
+  static const char usage[]             = "tcpinfo.so [--log-file=PATH] [--log-level=LEVEL] [--hooks=LIST] [--sample-rate=COUNT]";
   static const struct option longopts[] = {
     {const_cast<char *>("sample-rate"), required_argument, NULL, 'r'},
     {const_cast<char *>("log-file"), required_argument, NULL, 'f'},
@@ -308,13 +308,13 @@ TSPluginInit(int argc, const char *argv[])
   };
 
   TSPluginRegistrationInfo info;
-  Config *config = new Config();
+  Config *config       = new Config();
   const char *filename = "tcpinfo";
   TSCont cont;
   unsigned hooks = 0;
 
-  info.plugin_name = (char *)"tcpinfo";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"tcpinfo";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

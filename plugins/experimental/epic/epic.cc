@@ -309,8 +309,8 @@ TSPluginInit(int argc, const char *argv[])
 
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)"epic";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"epic";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

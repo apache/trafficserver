@@ -84,7 +84,7 @@ plugin_load(int argc, char *argv[], bool validateOnly)
   Note("loading plugin '%s'", path);
 
   for (PluginRegInfo *plugin_reg_temp = plugin_reg_list.head; plugin_reg_temp != NULL;
-       plugin_reg_temp = (plugin_reg_temp->link).next) {
+       plugin_reg_temp                = (plugin_reg_temp->link).next) {
     if (strcmp(plugin_reg_temp->plugin_path, path) == 0) {
       Warning("multiple loading of plugin %s", path);
       break;
@@ -109,9 +109,9 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     // Allocate a new registration structure for the
     //    plugin we're starting up
     ink_assert(plugin_reg_current == NULL);
-    plugin_reg_current = new PluginRegInfo;
+    plugin_reg_current              = new PluginRegInfo;
     plugin_reg_current->plugin_path = ats_strdup(path);
-    plugin_reg_current->dlh = handle;
+    plugin_reg_current->dlh         = handle;
 
     init = (init_func_t)dlsym(plugin_reg_current->dlh, "TSPluginInit");
     if (!init) {
@@ -223,18 +223,18 @@ plugin_init(bool validateOnly)
   int argc;
   int fd;
   int i;
-  bool retVal = true;
+  bool retVal           = true;
   static bool INIT_ONCE = true;
 
   if (INIT_ONCE) {
     api_init();
     TSConfigDirGet();
     plugin_dir = TSPluginDirGet();
-    INIT_ONCE = false;
+    INIT_ONCE  = false;
   }
 
   path = RecConfigReadConfigPath(NULL, "plugin.config");
-  fd = open(path, O_RDONLY);
+  fd   = open(path, O_RDONLY);
   if (fd < 0) {
     Warning("unable to open plugin config file '%s': %d, %s", (const char *)path, errno, strerror(errno));
     return false;
@@ -242,7 +242,7 @@ plugin_init(bool validateOnly)
 
   while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
     argc = 0;
-    p = line;
+    p    = line;
 
     // strip leading white space and test for comment or blank line
     while (*p && ParseRules::is_wslfcr(*p))

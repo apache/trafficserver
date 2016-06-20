@@ -663,14 +663,14 @@ ats_is_ip_private(sockaddr const *ip)
   bool zret = false;
   if (ats_is_ip4(ip)) {
     in_addr_t a = ats_ip4_addr_cast(ip);
-    zret = ((a & htonl(0xFF000000)) == htonl(0x0A000000)) || // 10.0.0.0/8
-           ((a & htonl(0xFFC00000)) == htonl(0x64400000)) || // 100.64.0.0/10
-           ((a & htonl(0xFFF00000)) == htonl(0xAC100000)) || // 172.16.0.0/12
-           ((a & htonl(0xFFFF0000)) == htonl(0xC0A80000))    // 192.168.0.0/16
+    zret        = ((a & htonl(0xFF000000)) == htonl(0x0A000000)) || // 10.0.0.0/8
+           ((a & htonl(0xFFC00000)) == htonl(0x64400000)) ||        // 100.64.0.0/10
+           ((a & htonl(0xFFF00000)) == htonl(0xAC100000)) ||        // 172.16.0.0/12
+           ((a & htonl(0xFFFF0000)) == htonl(0xC0A80000))           // 192.168.0.0/16
       ;
   } else if (ats_is_ip6(ip)) {
     in6_addr a = ats_ip6_addr_cast(ip);
-    zret = ((a.s6_addr[0] & 0xFE) == 0xFC) // fc00::/7
+    zret       = ((a.s6_addr[0] & 0xFE) == 0xFC) // fc00::/7
       ;
   }
   return zret;
@@ -692,11 +692,11 @@ ats_is_ip_linklocal(sockaddr const *ip)
   bool zret = false;
   if (ats_is_ip4(ip)) {
     in_addr_t a = ats_ip4_addr_cast(ip);
-    zret = ((a & htonl(0xFFFF0000)) == htonl(0xA9FE0000)) // 169.254.0.0/16
+    zret        = ((a & htonl(0xFFFF0000)) == htonl(0xA9FE0000)) // 169.254.0.0/16
       ;
   } else if (ats_is_ip6(ip)) {
     in6_addr a = ats_ip6_addr_cast(ip);
-    zret = ((a.s6_addr[0] == 0xFE) && ((a.s6_addr[1] & 0xC0) == 0x80)) // fe80::/10
+    zret       = ((a.s6_addr[0] == 0xFE) && ((a.s6_addr[1] & 0xC0) == 0x80)) // fe80::/10
       ;
   }
   return zret;
@@ -798,7 +798,7 @@ ats_ip_addr_cmp(sockaddr const *lhs, ///< Left hand operand.
                 sockaddr const *rhs  ///< Right hand operand.
                 )
 {
-  int zret = 0;
+  int zret       = 0;
   uint16_t rtype = rhs->sa_family;
   uint16_t ltype = lhs->sa_family;
 
@@ -822,7 +822,7 @@ ats_ip_addr_cmp(sockaddr const *lhs, ///< Left hand operand.
   } else if (AF_INET6 == ltype) {
     if (AF_INET6 == rtype) {
       sockaddr_in6 const *lhs_in6 = ats_ip6_cast(lhs);
-      zret = memcmp(&lhs_in6->sin6_addr, &ats_ip6_cast(rhs)->sin6_addr, sizeof(lhs_in6->sin6_addr));
+      zret                        = memcmp(&lhs_in6->sin6_addr, &ats_ip6_cast(rhs)->sin6_addr, sizeof(lhs_in6->sin6_addr));
     } else {
       zret = 1; // IPv6 greater than any other type.
     }
@@ -934,9 +934,9 @@ ats_ip4_set(sockaddr_in *dst,  ///< Destination storage.
 #if HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
   dst->sin_len = sizeof(sockaddr_in);
 #endif
-  dst->sin_family = AF_INET;
+  dst->sin_family      = AF_INET;
   dst->sin_addr.s_addr = addr;
-  dst->sin_port = port;
+  dst->sin_port        = port;
   return ats_ip_sa_cast(dst);
 }
 
@@ -1320,7 +1320,7 @@ struct IpAddr {
 inline IpAddr &
 IpAddr::operator=(in_addr_t ip)
 {
-  _family = AF_INET;
+  _family    = AF_INET;
   _addr._ip4 = ip;
   return *this;
 }
@@ -1328,7 +1328,7 @@ IpAddr::operator=(in_addr_t ip)
 inline IpAddr &
 IpAddr::operator=(in6_addr const &ip)
 {
-  _family = AF_INET6;
+  _family    = AF_INET6;
   _addr._ip6 = ip;
   return *this;
 }
@@ -1559,7 +1559,7 @@ IpEndpoint::setToLoopback(int family)
 #endif
   } else if (AF_INET6 == family) {
     static const struct in6_addr init = IN6ADDR_LOOPBACK_INIT;
-    sin6.sin6_addr = init;
+    sin6.sin6_addr                    = init;
 #if HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
     sin6.sin6_len = sizeof(sockaddr_in6);
 #endif

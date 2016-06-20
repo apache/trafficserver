@@ -58,23 +58,23 @@ std::vector<uint32_t> Seed_Router;
 // Names used for various elements and properties.
 static char const *const SVC_NAME = "service";
 
-static char const *const SVC_PROP_ID = "id";
-static char const *const SVC_PROP_TYPE = "type";
-static char const *const SVC_PROP_PRIORITY = "priority";
-static char const *const SVC_PROP_PROTOCOL = "protocol";
+static char const *const SVC_PROP_ID           = "id";
+static char const *const SVC_PROP_TYPE         = "type";
+static char const *const SVC_PROP_PRIORITY     = "priority";
+static char const *const SVC_PROP_PROTOCOL     = "protocol";
 static char const *const SVC_PROP_PRIMARY_HASH = "primary-hash";
-static char const *const SVC_PROP_ALT_HASH = "alt-hash";
-static char const *const SVC_PROP_PORTS = "ports";
-static char const *const SVC_PROP_PORT_TYPE = "port-type";
-static char const *const SVC_PROP_SECURITY = "security";
-static char const *const SVC_PROP_ROUTERS = "routers";
-static char const *const SVC_PROP_FORWARD = "forward";
-static char const *const SVC_PROP_RETURN = "return";
-static char const *const SVC_PROP_ASSIGN = "assignment";
-static char const *const SVC_PROP_PROC = "proc-name";
+static char const *const SVC_PROP_ALT_HASH     = "alt-hash";
+static char const *const SVC_PROP_PORTS        = "ports";
+static char const *const SVC_PROP_PORT_TYPE    = "port-type";
+static char const *const SVC_PROP_SECURITY     = "security";
+static char const *const SVC_PROP_ROUTERS      = "routers";
+static char const *const SVC_PROP_FORWARD      = "forward";
+static char const *const SVC_PROP_RETURN       = "return";
+static char const *const SVC_PROP_ASSIGN       = "assignment";
+static char const *const SVC_PROP_PROC         = "proc-name";
 
 static char const *const SECURITY_PROP_OPTION = "option";
-static char const *const SECURITY_PROP_KEY = "key";
+static char const *const SECURITY_PROP_KEY    = "key";
 
 /// Helper structure for processing configuration strings.
 struct CfgString {
@@ -85,10 +85,10 @@ typedef std::vector<CfgString> CfgOpts;
 
 #define N_OPTS(x) (sizeof(x) / sizeof(*x))
 
-CfgString FORWARD_OPTS[] = {{"gre"}, {"l2"}};
+CfgString FORWARD_OPTS[]    = {{"gre"}, {"l2"}};
 size_t const N_FORWARD_OPTS = sizeof(FORWARD_OPTS) / sizeof(*FORWARD_OPTS);
 
-CfgString RETURN_OPTS[] = {{"gre"}, {"l2"}};
+CfgString RETURN_OPTS[]    = {{"gre"}, {"l2"}};
 size_t const N_RETURN_OPTS = sizeof(RETURN_OPTS) / sizeof(*RETURN_OPTS);
 
 CfgString ASSIGN_OPTS[] = {{"hash"}, {"mask"}};
@@ -98,8 +98,8 @@ CfgString HASH_OPTS[] = {{"src_ip"}, {"dst_ip"}, {"src_port"}, {"dst_port"}};
 ts::Errata::Code
 code_max(ts::Errata const &err)
 {
-  ts::Errata::Code zret = std::numeric_limits<ts::Errata::Code::raw_type>::min();
-  ts::Errata::const_iterator spot = err.begin();
+  ts::Errata::Code zret            = std::numeric_limits<ts::Errata::Code::raw_type>::min();
+  ts::Errata::const_iterator spot  = err.begin();
   ts::Errata::const_iterator limit = err.end();
   for (; spot != limit; ++spot)
     zret = std::max(zret, spot->getCode());
@@ -371,9 +371,9 @@ load_option_set(Value const &setting, CfgString *opts, size_t count)
 {
   ts::Errata zret;
   CfgString *spot;
-  CfgString *limit = opts + count;
+  CfgString *limit            = opts + count;
   ts::ConstBuffer const &name = setting.getName();
-  int src_line = setting.getSourceLine();
+  int src_line                = setting.getSourceLine();
 
   // Clear all found flags.
   for (spot = opts; spot < limit; ++spot)
@@ -381,7 +381,7 @@ load_option_set(Value const &setting, CfgString *opts, size_t count)
 
   // Walk through the strings in the setting.
   if (setting.isContainer()) {
-    int nr = setting.childCount();
+    int nr         = setting.childCount();
     bool list_opts = false;
     for (int i = 0; i < nr; ++i) {
       Value item = setting[i];
@@ -470,7 +470,7 @@ load_routers(Value const &setting,        ///< Source of addresses.
     int nr = setting.childCount();
     for (int i = 0; i < nr; ++i) {
       Value const &addr_cfg = setting[i];
-      int addr_line = addr_cfg.getSourceLine();
+      int addr_line         = addr_cfg.getSourceLine();
       in_addr addr;
       if (ts::config::StringValue == addr_cfg.getType()) {
         text = addr_cfg.getText()._ptr;
@@ -501,7 +501,7 @@ CacheImpl::loadServicesFromFile(char const *path)
     return cv.errata();
 
   ts::config::Configuration cfg = cv.result();
-  Value svc_list = cfg.find("services");
+  Value svc_list                = cfg.find("services");
   // No point in going on from here.
   if (!svc_list)
     return Services_Not_Found();
@@ -529,8 +529,8 @@ CacheImpl::loadServicesFromFile(char const *path)
     ts::ConstBuffer text;
     SecurityOption security_style = SECURITY_NONE;
     bool use_group_local_security = false;
-    Value const &svc_cfg = svc_list[idx];
-    int svc_line = svc_cfg.getSourceLine();
+    Value const &svc_cfg          = svc_list[idx];
+    int svc_line                  = svc_cfg.getSourceLine();
     ServiceGroup svc_info;
 
     if (ts::config::GroupValue != svc_cfg.getType()) {
@@ -610,8 +610,8 @@ CacheImpl::loadServicesFromFile(char const *path)
     svc_info.setFlags(0);
     if ((prop = svc_cfg[SVC_PROP_PRIMARY_HASH]).hasValue()) {
       ts::Errata status = load_option_set(prop, HASH_OPTS, N_OPTS(HASH_OPTS));
-      uint32_t f = 0;
-      src_line = prop.getSourceLine();
+      uint32_t f        = 0;
+      src_line          = prop.getSourceLine();
       for (size_t i = 0; i < N_OPTS(HASH_OPTS); ++i)
         if (HASH_OPTS[i].m_found)
           f |= ServiceGroup::SRC_IP_HASH << i;
@@ -628,8 +628,8 @@ CacheImpl::loadServicesFromFile(char const *path)
 
     if ((prop = svc_cfg[SVC_PROP_ALT_HASH]).hasValue()) {
       ts::Errata status = load_option_set(prop, HASH_OPTS, N_OPTS(HASH_OPTS));
-      uint32_t f = 0;
-      src_line = prop.getSourceLine();
+      uint32_t f        = 0;
+      src_line          = prop.getSourceLine();
       for (size_t i = 0; i < N_OPTS(HASH_OPTS); ++i)
         if (HASH_OPTS[i].m_found)
           f |= ServiceGroup::SRC_IP_ALT_HASH << i;
@@ -702,7 +702,7 @@ CacheImpl::loadServicesFromFile(char const *path)
       if (security.isOK()) {
         use_group_local_security = true;
         if (security.result()._ptr) {
-          md5_key = security.result()._ptr;
+          md5_key        = security.result()._ptr;
           security_style = SECURITY_MD5;
         } else {
           security_style = SECURITY_NONE;
@@ -755,8 +755,8 @@ CacheImpl::loadServicesFromFile(char const *path)
     svc.m_packet_forward = ServiceGroup::GRE; // default
     if ((prop = svc_cfg[SVC_PROP_FORWARD]).hasValue()) {
       ts::Errata status = load_option_set(prop, FORWARD_OPTS, N_FORWARD_OPTS);
-      bool gre = FORWARD_OPTS[0].m_found;
-      bool l2 = FORWARD_OPTS[1].m_found;
+      bool gre          = FORWARD_OPTS[0].m_found;
+      bool l2           = FORWARD_OPTS[1].m_found;
       if (gre || l2) {
         svc.m_packet_forward = gre ? l2 ? ServiceGroup::GRE_OR_L2 : ServiceGroup::GRE : ServiceGroup::L2;
         if (!status.isOK())
@@ -769,8 +769,8 @@ CacheImpl::loadServicesFromFile(char const *path)
     svc.m_packet_return = ServiceGroup::GRE; // default.
     if ((prop = svc_cfg[SVC_PROP_RETURN]).hasValue()) {
       ts::Errata status = load_option_set(prop, RETURN_OPTS, N_RETURN_OPTS);
-      bool gre = RETURN_OPTS[0].m_found;
-      bool l2 = RETURN_OPTS[1].m_found;
+      bool gre          = RETURN_OPTS[0].m_found;
+      bool l2           = RETURN_OPTS[1].m_found;
       if (gre || l2) {
         svc.m_packet_return = gre ? l2 ? ServiceGroup::GRE_OR_L2 : ServiceGroup::GRE : ServiceGroup::L2;
         if (!status.isOK())
@@ -783,8 +783,8 @@ CacheImpl::loadServicesFromFile(char const *path)
     svc.m_cache_assign = ServiceGroup::HASH_ONLY; // default
     if ((prop = svc_cfg[SVC_PROP_ASSIGN]).hasValue()) {
       ts::Errata status = load_option_set(prop, ASSIGN_OPTS, N_OPTS(ASSIGN_OPTS));
-      bool hash = ASSIGN_OPTS[0].m_found;
-      bool mask = ASSIGN_OPTS[1].m_found;
+      bool hash         = ASSIGN_OPTS[0].m_found;
+      bool mask         = ASSIGN_OPTS[1].m_found;
       if (hash || mask) {
         svc.m_cache_assign = hash ? mask ? ServiceGroup::HASH_OR_MASK : ServiceGroup::HASH_ONLY : ServiceGroup::MASK_ONLY;
         if (!status.isOK())

@@ -74,9 +74,9 @@ HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr)
 
   TSHttpHdrPrint(mbuf, mhdr, iobuf.buffer);
 
-  blk = TSIOBufferReaderStart(iobuf.reader);
+  blk   = TSIOBufferReaderStart(iobuf.reader);
   avail = TSIOBufferBlockReadAvail(blk, iobuf.reader);
-  ptr = (const char *)TSIOBufferBlockReadStart(blk, iobuf.reader, &nbytes);
+  ptr   = (const char *)TSIOBufferBlockReadStart(blk, iobuf.reader, &nbytes);
 
   AuthLogDebug("http request (%u of %u bytes):\n%*.*s", (unsigned)nbytes, (unsigned)avail, (int)nbytes, (int)nbytes, ptr);
 }

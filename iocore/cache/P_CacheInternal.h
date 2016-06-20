@@ -95,7 +95,7 @@ struct EvacuationBlock;
     writer_lock_retry++;                                                  \
     ink_hrtime _t = HRTIME_MSECONDS(cache_read_while_writer_retry_delay); \
     if (writer_lock_retry > 2)                                            \
-      _t = HRTIME_MSECONDS(cache_read_while_writer_retry_delay) * 2;      \
+      _t    = HRTIME_MSECONDS(cache_read_while_writer_retry_delay) * 2;   \
     trigger = mutex->thread_holding->schedule_in_local(this, _t);         \
     return EVENT_CONT;                                                    \
   } while (0)
@@ -240,8 +240,8 @@ struct CacheVC : public CacheVConnection {
   {
     if (first_buf) {
       Doc *doc = (Doc *)first_buf->data();
-      *ptr = doc->hdr();
-      *len = doc->hlen;
+      *ptr     = doc->hdr();
+      *len     = doc->hlen;
       return 0;
     }
 
@@ -251,7 +251,7 @@ struct CacheVC : public CacheVConnection {
   int
   set_header(void *ptr, int len)
   {
-    header_to_write = ptr;
+    header_to_write     = ptr;
     header_to_write_len = len;
     return 0;
   }
@@ -514,7 +514,7 @@ struct CacheVC : public CacheVConnection {
   do {                                                            \
     ink_assert(handler != (ContinuationHandler)(&CacheVC::dead)); \
     save_handler = handler;                                       \
-    handler = (ContinuationHandler)(_x);                          \
+    handler      = (ContinuationHandler)(_x);                     \
   } while (0)
 
 #define POP_HANDLER                                               \
@@ -550,10 +550,10 @@ new_CacheVC(Continuation *cont)
 #ifdef HTTP_CACHE
   c->vector.data.data = &c->vector.data.fast_data[0];
 #endif
-  c->_action = cont;
+  c->_action        = cont;
   c->initial_thread = t->tt == DEDICATED ? NULL : t;
-  c->mutex = cont->mutex;
-  c->start_time = Thread::get_hrtime();
+  c->mutex          = cont->mutex;
+  c->start_time     = Thread::get_hrtime();
   ink_assert(c->trigger == NULL);
   Debug("cache_new", "new %p", c);
 #ifdef CACHE_STAT_PAGES
@@ -569,7 +569,7 @@ free_CacheVC(CacheVC *cont)
 {
   Debug("cache_free", "free %p", cont);
   ProxyMutex *mutex = cont->mutex.get();
-  Vol *vol = cont->vol;
+  Vol *vol          = cont->vol;
   if (vol) {
     CACHE_DECREMENT_DYN_STAT(cont->base_stat + CACHE_STAT_ACTIVE);
     if (cont->closed > 0) {
@@ -585,10 +585,10 @@ free_CacheVC(CacheVC *cont)
      release build....wierd??? For now, null out continuation and mutex
      of the action separately */
   cont->io.action.continuation = NULL;
-  cont->io.action.mutex = NULL;
+  cont->io.action.mutex        = NULL;
   cont->io.mutex.clear();
-  cont->io.aio_result = 0;
-  cont->io.aiocb.aio_nbytes = 0;
+  cont->io.aio_result        = 0;
+  cont->io.aiocb.aio_nbytes  = 0;
   cont->io.aiocb.aio_reqprio = AIO_DEFAULT_PRIORITY;
 #ifdef HTTP_CACHE
   cont->request.reset();
@@ -654,8 +654,8 @@ CacheVC::callcont(int event)
 TS_INLINE int
 CacheVC::do_read_call(CacheKey *akey)
 {
-  doc_pos = 0;
-  read_key = akey;
+  doc_pos             = 0;
+  read_key            = akey;
   io.aiocb.aio_nbytes = dir_approx_size(&dir);
   PUSH_HANDLER(&CacheVC::handleRead);
   return handleRead(EVENT_CALL, 0);
@@ -742,7 +742,7 @@ CacheVC::writer_done()
 {
   OpenDirEntry *cod = od;
   if (!cod)
-    cod = vol->open_read(&first_key);
+    cod      = vol->open_read(&first_key);
   CacheVC *w = (cod) ? cod->writers.head : NULL;
   // If the write vc started after the reader, then its not the
   // original writer, since we never choose a writer that started
@@ -770,7 +770,7 @@ Vol::close_write(CacheVC *cont)
 TS_INLINE int
 Vol::open_write(CacheVC *cont, int allow_if_writers, int max_writers)
 {
-  Vol *vol = this;
+  Vol *vol       = this;
   bool agg_error = false;
   if (!cont->f.remove) {
     agg_error = (!cont->f.update && agg_todo_size > cache_config_agg_write_backlog);
@@ -891,9 +891,9 @@ next_CacheKey(CacheKey *next_key, CacheKey *key)
 {
   uint8_t *b = (uint8_t *)next_key;
   uint8_t *k = (uint8_t *)key;
-  b[0] = CacheKey_next_table[k[0]];
+  b[0]       = CacheKey_next_table[k[0]];
   for (int i = 1; i < 16; i++)
-    b[i] = CacheKey_next_table[(b[i - 1] + k[i]) & 0xFF];
+    b[i]     = CacheKey_next_table[(b[i - 1] + k[i]) & 0xFF];
 }
 extern uint8_t CacheKey_prev_table[];
 void TS_INLINE
@@ -902,16 +902,16 @@ prev_CacheKey(CacheKey *prev_key, CacheKey *key)
   uint8_t *b = (uint8_t *)prev_key;
   uint8_t *k = (uint8_t *)key;
   for (int i = 15; i > 0; i--)
-    b[i] = 256 + CacheKey_prev_table[k[i]] - k[i - 1];
-  b[0] = CacheKey_prev_table[k[0]];
+    b[i]     = 256 + CacheKey_prev_table[k[i]] - k[i - 1];
+  b[0]       = CacheKey_prev_table[k[0]];
 }
 
 TS_INLINE unsigned int
 next_rand(unsigned int *p)
 {
   unsigned int seed = *p;
-  seed = 1103515145 * seed + 12345;
-  *p = seed;
+  seed              = 1103515145 * seed + 12345;
+  *p                = seed;
   return seed;
 }
 
@@ -1036,7 +1036,7 @@ Cache::generate_key(HttpCacheKey *key, CacheURL *url, cache_generation_t generat
 TS_INLINE unsigned int
 cache_hash(const INK_MD5 &md5)
 {
-  uint64_t f = md5.fold();
+  uint64_t f         = md5.fold();
   unsigned int mhash = (unsigned int)(f >> 32);
   return mhash;
 }

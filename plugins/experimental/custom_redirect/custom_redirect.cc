@@ -34,9 +34,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-static char *redirect_url_header = NULL;
+static char *redirect_url_header   = NULL;
 static int redirect_url_header_len = 0;
-static int return_code = TS_HTTP_STATUS_NONE;
+static int return_code             = TS_HTTP_STATUS_NONE;
 
 static void
 handle_response(TSHttpTxn txnp, TSCont /* contp ATS_UNUSED */)
@@ -123,8 +123,8 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)"";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
   /* This plugin supports following types of url redirect here:
    *
@@ -141,14 +141,14 @@ TSPluginInit(int argc, const char *argv[])
   */
   if (argc > 1) {
     if (isNumber(argv[1])) {
-      return_code = atoi(argv[1]);
+      return_code         = atoi(argv[1]);
       redirect_url_header = TSstrdup(TS_MIME_FIELD_LOCATION);
     } else {
       redirect_url_header = TSstrdup(argv[1]);
     }
   } else {
     // default header name is x-redirect-url
-    redirect_url_header = TSstrdup("x-redirect-url");
+    redirect_url_header     = TSstrdup("x-redirect-url");
     redirect_url_header_len = strlen(redirect_url_header);
   }
   if (TSPluginRegister(&info) != TS_SUCCESS) {

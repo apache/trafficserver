@@ -50,7 +50,7 @@ ProxyClientTransaction::new_transaction()
   PluginIdentity *pi = dynamic_cast<PluginIdentity *>(this->get_netvc());
   if (pi) {
     current_reader->plugin_tag = pi->getPluginTag();
-    current_reader->plugin_id = pi->getPluginId();
+    current_reader->plugin_id  = pi->getPluginId();
   } else {
     const char *protocol_str = this->get_protocol_string();
     // We don't set the plugin_tag for http, though in future we should probably log http as protocol
@@ -88,7 +88,7 @@ ProxyClientTransaction::attach_server_session(HttpServerSession *ssession, bool 
 Action *
 ProxyClientTransaction::adjust_thread(Continuation *cont, int event, void *data)
 {
-  NetVConnection *vc = this->get_netvc();
+  NetVConnection *vc   = this->get_netvc();
   EThread *this_thread = this_ethread();
   if (vc && vc->thread != this_thread) {
     if (vc->thread->is_event_type(ET_NET) || vc->thread->is_event_type(SSLNetProcessor::ET_SSL)) {

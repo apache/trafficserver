@@ -238,7 +238,7 @@ LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
 
     NetMsgHeader nmh;
     int bytes_to_send = (int)strlen(Log::config->collation_secret);
-    nmh.msg_bytes = bytes_to_send;
+    nmh.msg_bytes     = bytes_to_send;
 
     // memory copies, I know...  but it happens rarely!!!  ^_^
     ink_assert(m_auth_buffer != NULL);
@@ -621,7 +621,7 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
     ink_assert(log_buffer_header != NULL);
     NetMsgHeader nmh;
     int bytes_to_send = log_buffer_header->byte_count;
-    nmh.msg_bytes = bytes_to_send;
+    nmh.msg_bytes     = bytes_to_send;
     // TODO: We currently don't try to make the log buffers handle little vs big endian. TS-1156.
     // m_buffer_in_iocore->convert_to_network_order();
 

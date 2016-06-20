@@ -46,10 +46,10 @@ bool
 RemapProcessor::setup_for_remap(HttpTransact::State *s)
 {
   Debug("url_rewrite", "setting up for remap: %p", s);
-  URL *request_url = NULL;
-  bool mapping_found = false;
+  URL *request_url        = NULL;
+  bool mapping_found      = false;
   HTTPHdr *request_header = &s->hdr_info.client_request;
-  char **redirect_url = &s->remap_redirect;
+  char **redirect_url     = &s->remap_redirect;
   const char *request_host;
   int request_host_len;
   int request_port;
@@ -74,13 +74,13 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
     return false;
   }
 
-  request_host = request_header->host_get(&request_host_len);
-  request_port = request_header->port_get();
+  request_host  = request_header->host_get(&request_host_len);
+  request_port  = request_header->port_get();
   proxy_request = request_header->is_target_in_url() || !s->reverse_proxy;
 
   // Default to empty host.
   if (!request_host) {
-    request_host = "";
+    request_host     = "";
     request_host_len = 0;
   }
 
@@ -115,7 +115,7 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
 
     // Save this information for later
     // @amc: why is this done only for requests without a host in the URL?
-    s->hh_info.host_len = request_host_len;
+    s->hh_info.host_len     = request_host_len;
     s->hh_info.request_host = request_host;
     s->hh_info.request_port = request_port;
 
@@ -140,10 +140,10 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s)
 bool
 RemapProcessor::finish_remap(HttpTransact::State *s)
 {
-  url_mapping *map = NULL;
+  url_mapping *map        = NULL;
   HTTPHdr *request_header = &s->hdr_info.client_request;
-  URL *request_url = request_header->url_get();
-  char **redirect_url = &s->remap_redirect;
+  URL *request_url        = request_header->url_get();
+  char **redirect_url     = &s->remap_redirect;
   char host_hdr_buf[TS_MAX_HOST_NAME_LEN], tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048], *c;
   const char *remapped_host;
   int remapped_host_len, remapped_port, tmp;
@@ -161,8 +161,8 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
   // Check referer filtering rules
   if ((s->filter_mask & URL_REMAP_FILTER_REFERER) != 0 && (ri = map->referer_list) != 0) {
     const char *referer_hdr = 0;
-    int referer_len = 0;
-    bool enabled_flag = map->optional_referer ? true : false;
+    int referer_len         = 0;
+    bool enabled_flag       = map->optional_referer ? true : false;
 
     if (request_header->presence(MIME_PRESENCE_REFERER) &&
         (referer_hdr = request_header->value_get(MIME_FIELD_REFERER, MIME_LEN_REFERER, &referer_len)) != NULL) {
@@ -215,7 +215,7 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
             }
           }
           tmp_redirect_buf[sizeof(tmp_redirect_buf) - 1] = 0;
-          *redirect_url = ats_strdup(tmp_redirect_buf);
+          *redirect_url                                  = ats_strdup(tmp_redirect_buf);
         }
       } else {
         *redirect_url = ats_strdup(rewrite_table->http_default_redirect_url);
@@ -290,9 +290,9 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
 {
   Debug("url_rewrite", "Beginning RemapProcessor::perform_remap");
   HTTPHdr *request_header = &s->hdr_info.client_request;
-  URL *request_url = request_header->url_get();
-  url_mapping *map = s->url_map.getMapping();
-  host_hdr_info *hh_info = &(s->hh_info);
+  URL *request_url        = request_header->url_get();
+  url_mapping *map        = s->url_map.getMapping();
+  host_hdr_info *hh_info  = &(s->hh_info);
 
   if (!map) {
     Error("Could not find corresponding url_mapping for this transaction %p", s);
@@ -312,7 +312,7 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
 
     // Execute "inline" if not using separate remap threads.
     ink_assert(cont->mutex->thread_holding == this_ethread());
-    plugins->mutex = cont->mutex;
+    plugins->mutex  = cont->mutex;
     plugins->action = cont;
     SET_CONTINUATION_HANDLER(plugins, &RemapPlugins::run_remap);
     eventProcessor.schedule_imm(plugins, ET_REMAP);

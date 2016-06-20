@@ -153,8 +153,8 @@ extern SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
 class SessionProtocolNameRegistry
 {
 public:
-  static int const MAX = SessionProtocolSet::MAX; ///< Maximum # of registered names.
-  static int const INVALID = -1;                  ///< Normalized invalid index value.
+  static int const MAX     = SessionProtocolSet::MAX; ///< Maximum # of registered names.
+  static int const INVALID = -1;                      ///< Normalized invalid index value.
 
   /// Default constructor.
   /// Creates empty registry with no names.

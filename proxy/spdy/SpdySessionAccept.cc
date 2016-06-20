@@ -44,7 +44,7 @@ SpdySessionAccept::mainEvent(int event, void *edata)
 
 #if TS_HAS_SPDY
     SpdyClientSession *sm = SpdyClientSession::alloc();
-    sm->version = this->version;
+    sm->version           = this->version;
 
     sm->new_connection(netvc, NULL, NULL, false);
 #else
@@ -64,7 +64,7 @@ SpdySessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
 {
 #if TS_HAS_SPDY
   SpdyClientSession *sm = SpdyClientSession::alloc();
-  sm->version = this->version;
+  sm->version           = this->version;
   sm->new_connection(netvc, iobuf, reader, false);
 #else
   (void)netvc;

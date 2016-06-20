@@ -183,7 +183,7 @@ struct DNSEntry : public Continuation {
       last(false)
   {
     for (int i = 0; i < MAX_DNS_RETRIES; i++)
-      id[i] = -1;
+      id[i]    = -1;
     memset(qname, 0, MAXDNAME);
   }
 };
@@ -340,12 +340,12 @@ DNSHandler::DNSHandler()
 {
   ats_ip_invalidate(&ip);
   for (int i = 0; i < MAX_NAMED; i++) {
-    ifd[i] = -1;
-    failover_number[i] = 0;
-    failover_soon_number[i] = 0;
+    ifd[i]                     = -1;
+    failover_number[i]         = 0;
+    failover_soon_number[i]    = 0;
     crossed_failover_number[i] = 0;
-    ns_down[i] = 1;
-    con[i].handler = this;
+    ns_down[i]                 = 1;
+    con[i].handler             = this;
   }
   memset(&qid_in_flight, 0, sizeof(qid_in_flight));
   SET_HANDLER(&DNSHandler::startEvent);

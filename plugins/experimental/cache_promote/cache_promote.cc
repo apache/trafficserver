@@ -104,7 +104,7 @@ public:
   // These are pure virtual
   virtual bool doPromote(TSHttpTxn txnp) = 0;
   virtual const char *policyName() const = 0;
-  virtual void usage() const = 0;
+  virtual void usage() const             = 0;
 
 private:
   float _sample;
@@ -240,9 +240,9 @@ public:
   {
     LRUHash hash;
     LRUMap::iterator map_it;
-    char *url = NULL;
+    char *url   = NULL;
     int url_len = 0;
-    bool ret = false;
+    bool ret    = false;
     TSMBuffer request;
     TSMLoc req_hdr;
 
@@ -301,8 +301,8 @@ public:
         _list.push_front(NULL_LRU_ENTRY);
       }
       // Update the "new" LRUEntry and add it to the hash
-      _list.begin()->first = hash;
-      _list.begin()->second = 1;
+      _list.begin()->first          = hash;
+      _list.begin()->second         = 1;
       _map[&(_list.begin()->first)] = _list.begin();
     }
 
@@ -420,7 +420,7 @@ cont_nocache_response(TSCont contp, TSEvent event, void *edata)
 static int
 cont_handle_policy(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn txnp          = static_cast<TSHttpTxn>(edata);
   PromotionConfig *config = static_cast<PromotionConfig *>(TSContDataGet(contp));
 
   switch (event) {
@@ -508,7 +508,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf */, int /
 void
 TSRemapDeleteInstance(void *ih)
 {
-  TSCont contp = static_cast<TSCont>(ih);
+  TSCont contp            = static_cast<TSCont>(ih);
   PromotionConfig *config = static_cast<PromotionConfig *>(TSContDataGet(contp));
 
   delete config;

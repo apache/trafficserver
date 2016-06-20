@@ -313,7 +313,7 @@ namespace inliner
       if (state_ == State::kUndefined) {
         if (*c == '<') {
           state_ = State::kTag;
-          tag_ = Tag::kTag;
+          tag_   = Tag::kTag;
         }
         continue;
       }

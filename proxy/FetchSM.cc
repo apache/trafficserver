@@ -60,8 +60,8 @@ void
 FetchSM::httpConnect()
 {
   PluginIdentity *pi = dynamic_cast<PluginIdentity *>(contp);
-  char const *tag = pi ? pi->getPluginTag() : "fetchSM";
-  int64_t id = pi ? pi->getPluginId() : 0;
+  char const *tag    = pi ? pi->getPluginTag() : "fetchSM";
+  int64_t id         = pi ? pi->getPluginId() : 0;
 
   Debug(DEBUG_TAG, "[%s] calling httpconnect write pi=%p tag=%s id=%" PRId64, __FUNCTION__, pi, tag, id);
   http_vc = reinterpret_cast<PluginVC *>(TSHttpConnectWithPluginId(&_addr.sa, tag, id));
@@ -78,7 +78,7 @@ FetchSM::httpConnect()
     }
   }
 
-  read_vio = http_vc->do_io_read(this, INT64_MAX, resp_buffer);
+  read_vio  = http_vc->do_io_read(this, INT64_MAX, resp_buffer);
   write_vio = http_vc->do_io_write(this, getReqLen() + req_content_length, req_reader);
 }
 
@@ -162,7 +162,7 @@ FetchSM::check_for_field_value(char const *name, size_t name_len, char const *va
   bool zret = false; // not found.
   StrList slist;
   HTTPHdr *hdr = &client_response_hdr;
-  int ret = hdr->value_get_comma_list(name, name_len, &slist);
+  int ret      = hdr->value_get_comma_list(name, name_len, &slist);
 
   ink_release_assert(header_done);
 
@@ -183,7 +183,7 @@ bool
 FetchSM::check_chunked()
 {
   static char const CHUNKED_TEXT[] = "chunked";
-  static size_t const CHUNKED_LEN = sizeof(CHUNKED_TEXT) - 1;
+  static size_t const CHUNKED_LEN  = sizeof(CHUNKED_TEXT) - 1;
 
   if (resp_is_chunked < 0) {
     resp_is_chunked = static_cast<int>(
@@ -193,7 +193,7 @@ FetchSM::check_chunked()
       ChunkedHandler *ch = &chunked_handler;
       ch->init_by_action(resp_reader, ChunkedHandler::ACTION_DECHUNK);
       ch->dechunked_reader = ch->dechunked_buffer->alloc_reader();
-      ch->state = ChunkedHandler::CHUNK_READ_SIZE;
+      ch->state            = ChunkedHandler::CHUNK_READ_SIZE;
       resp_reader->dealloc();
     }
   }
@@ -204,7 +204,7 @@ bool
 FetchSM::check_connection_close()
 {
   static char const CLOSE_TEXT[] = "close";
-  static size_t const CLOSE_LEN = sizeof(CLOSE_TEXT) - 1;
+  static size_t const CLOSE_LEN  = sizeof(CLOSE_TEXT) - 1;
 
   if (resp_received_close < 0) {
     resp_received_close =
@@ -236,7 +236,7 @@ void
 FetchSM::InvokePluginExt(int fetch_event)
 {
   int event;
-  EThread *mythread = this_ethread();
+  EThread *mythread        = this_ethread();
   bool read_complete_event = (fetch_event == TS_EVENT_VCONN_READ_COMPLETE) || (fetch_event == TS_EVENT_VCONN_EOS);
 
   //
@@ -360,7 +360,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
     return;
   }
 
-  info = (char *)ats_malloc(sizeof(char) * (read_avail + 1));
+  info            = (char *)ats_malloc(sizeof(char) * (read_avail + 1));
   client_response = info;
 
   // To maintain backwards compatability we don't allow chunking when it's not streaming.
@@ -374,7 +374,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
       IOBufferBlock *blk = reader->block.get();
 
       // This is the equivalent of TSIOBufferBlockReadStart()
-      buf = blk->start() + reader->start_offset;
+      buf       = blk->start() + reader->start_offset;
       read_done = blk->read_avail() - reader->start_offset;
 
       if (read_done > 0) {
@@ -408,7 +408,7 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
       IOBufferBlock *blk = reader->block.get();
 
       // This is the equivalent of TSIOBufferBlockReadStart()
-      buf = blk->start() + reader->start_offset;
+      buf       = blk->start() + reader->start_offset;
       read_done = blk->read_avail() - reader->start_offset;
 
       if (read_done > 0) {
@@ -540,7 +540,7 @@ FetchSM::ext_init(Continuation *cont, const char *method, const char *url, const
   init_comm();
 
   if (flags & TS_FETCH_FLAGS_NEWLOCK) {
-    mutex = new_ProxyMutex();
+    mutex      = new_ProxyMutex();
     cont_mutex = cont->mutex;
   } else {
     mutex = cont->mutex;
@@ -636,13 +636,13 @@ FetchSM::ext_read_data(char *buf, size_t len)
     reader = (TSIOBufferReader)resp_reader;
 
   already = 0;
-  blk = TSIOBufferReaderStart(reader);
+  blk     = TSIOBufferReaderStart(reader);
 
   while (blk) {
     wavail = len - already;
 
     next_blk = TSIOBufferBlockNext(blk);
-    start = TSIOBufferBlockReadStart(blk, reader, &blk_len);
+    start    = TSIOBufferBlockReadStart(blk, reader, &blk_len);
 
     need = blk_len > wavail ? wavail : blk_len;
 

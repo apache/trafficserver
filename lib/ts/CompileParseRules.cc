@@ -26,8 +26,8 @@
 #include "ts/ParseRules.h"
 
 const unsigned int parseRulesCType[256] = {0};
-const char parseRulesCTypeToUpper[256] = {0};
-const char parseRulesCTypeToLower[256] = {0};
+const char parseRulesCTypeToUpper[256]  = {0};
+const char parseRulesCTypeToLower[256]  = {0};
 
 unsigned int tparseRulesCType[256];
 char tparseRulesCTypeToUpper[256];
@@ -54,7 +54,7 @@ main()
 {
   int c;
   for (c = 0; c < 256; c++) {
-    tparseRulesCType[c] = 0;
+    tparseRulesCType[c]        = 0;
     tparseRulesCTypeToLower[c] = ParseRules::ink_tolower(c);
     tparseRulesCTypeToUpper[c] = ParseRules::ink_toupper(c);
 

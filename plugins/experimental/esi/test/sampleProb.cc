@@ -30,10 +30,10 @@
 #include <sys/time.h>
 using namespace std;
 
-static int windowSize = 200;     // ms
+static int windowSize    = 200;  // ms
 static int totalDuration = 2000; // seconds
-static int lowerCutOff = 300;
-static int higherCutOff = 1000;
+static int lowerCutOff   = 300;
+static int higherCutOff  = 1000;
 
 class FailureInfo
 {
@@ -42,12 +42,12 @@ public:
   {
     gettimeofday(&_start, NULL);
     _totalSlot = totalDuration / windowSize; // INtegral multiple
-    _marker = 0;
+    _marker    = 0;
     for (int i = 0; i < _totalSlot; i++)
       _passFail.push_back(make_pair(0, 0));
 
     _avgOverWindow = 0;
-    _windowPassed = 0;
+    _windowPassed  = 0;
   };
 
   ~FailureInfo() {}
@@ -143,7 +143,7 @@ isAttemptReq(string URL, FailureData &data)
 
       else {
         double mapFactor = (((avg * 1000 - lowerCutOff) * (avg * 1000 - lowerCutOff)) / (higherCutOff - lowerCutOff)) + lowerCutOff;
-        prob = mapFactor / 1000;
+        prob             = mapFactor / 1000;
         cout << prob << endl;
       }
 
@@ -163,7 +163,7 @@ isAttemptReq(string URL, FailureData &data)
 
   } else {
     FailureInfo *info = new FailureInfo();
-    data[URL] = info;
+    data[URL]         = info;
     return true;
   }
 }

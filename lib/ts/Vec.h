@@ -243,9 +243,9 @@ template <class C, class A, int S> inline Vec<C, A, S>::Vec(const Vec<C, A, S> &
 
 template <class C, class A, int S> inline Vec<C, A, S>::Vec(C c)
 {
-  n = 1;
-  i = 0;
-  v = &e[0];
+  n    = 1;
+  i    = 0;
+  v    = &e[0];
   e[0] = c;
 }
 
@@ -453,7 +453,7 @@ inline void
 Vec<C, A, S>::fill(size_t nn)
 {
   for (size_t i = n; i < nn; i++)
-    add() = 0;
+    add()       = 0;
 }
 
 template <class C, class A, int S>
@@ -512,7 +512,7 @@ Vec<C, A, S>::set_add_internal(C c)
   size_t j, k;
   if (n) {
     uintptr_t h = (uintptr_t)c;
-    h = h % n;
+    h           = h % n;
     for (k = h, j = 0; j < i + 3; j++) {
       if (!v[k]) {
         v[k] = c;
@@ -539,7 +539,7 @@ Vec<C, A, S>::set_in_internal(C c)
   size_t j, k;
   if (n) {
     uintptr_t h = (uintptr_t)c;
-    h = h % n;
+    h           = h % n;
     for (k = h, j = 0; j < i + 3; j++) {
       if (!v[k])
         return 0;
@@ -724,7 +724,7 @@ Vec<C, A, S>::insert(size_t index, Vec<C> &vv)
 {
   fill(n + vv.n);
   memmove(&v[index + vv.n], &v[index], (n - index - 1) * sizeof(C));
-  for (int x = 0; x < vv.n; x++)
+  for (int x     = 0; x < vv.n; x++)
     v[index + x] = vv[x];
 }
 
@@ -762,7 +762,7 @@ Vec<C, A, S>::copy_internal(const Vec<C, A, S> &vv)
     nl++;
   }
   nl = 1 << nl;
-  v = (C *)A::alloc(nl * sizeof(C));
+  v  = (C *)A::alloc(nl * sizeof(C));
   memcpy(v, vv.v, n * sizeof(C));
   memset(v + n, 0, (nl - n) * sizeof(C));
   if (i > n) // reset reserve
@@ -777,8 +777,8 @@ Vec<C, A, S>::set_expand()
     i = SET_INITIAL_INDEX;
   else
     i = i + 1;
-  n = prime2[i];
-  v = (C *)A::alloc(n * sizeof(C));
+  n   = prime2[i];
+  v   = (C *)A::alloc(n * sizeof(C));
   memset(v, 0, n * sizeof(C));
 }
 
@@ -791,9 +791,9 @@ Vec<C, A, S>::reserve(size_t x)
   unsigned xx = 1 << VEC_INITIAL_SHIFT;
   while (xx < x)
     xx *= 2;
-  i = xx;
+  i        = xx;
   void *vv = (void *)v;
-  v = (C *)A::alloc(i * sizeof(C));
+  v        = (C *)A::alloc(i * sizeof(C));
   if (vv && n)
     memcpy(v, vv, n * sizeof(C));
   memset(&v[n], 0, (i - n) * sizeof(C));
@@ -823,7 +823,7 @@ Vec<C, A, S>::addx()
         i = 0;
       }
       void *vv = (void *)v;
-      v = (C *)A::alloc(nl * sizeof(C));
+      v        = (C *)A::alloc(nl * sizeof(C));
       memcpy(v, vv, n * sizeof(C));
       memset(&v[n], 0, n * sizeof(C));
       A::free(vv);
@@ -891,7 +891,7 @@ template <class C, class A, int S>
 inline int
 marshal(Vec<C, A, S> &v, char *buf)
 {
-  char *x = buf;
+  char *x   = buf;
   *(int *)x = v.n;
   x += sizeof(int);
   *(int *)x = v.i;
@@ -906,7 +906,7 @@ inline int
 unmarshal(Vec<C, A, S> &v, char *buf)
 {
   char *x = buf;
-  v.n = *(int *)x;
+  v.n     = *(int *)x;
   x += sizeof(int);
   v.i = *(int *)x;
   x += sizeof(int);
@@ -967,7 +967,7 @@ qsort_Vec(C *left, C *right, bool (*lt)(C, C))
     for (C *y = right - 1; y > left; y--) {
       for (C *x = left; x < y; x++) {
         if (lt(x[1], x[0])) {
-          C t = x[0];
+          C t  = x[0];
           x[0] = x[1];
           x[1] = t;
         }
@@ -1033,7 +1033,7 @@ qsort_VecRef(C *left, C *right, bool (*lt)(const C &, const C &), unsigned int *
     for (C *y = right - 1; y > left; y--) {
       for (C *x = left; x < y; x++) {
         if (lt(x[1], x[0])) {
-          C t = x[0];
+          C t  = x[0];
           x[0] = x[1];
           x[1] = t;
         }

@@ -81,11 +81,11 @@ static StatProcessor *statProcessor;  // Statistics Processors
 static AppVersionInfo appVersionInfo; // Build info for this application
 
 static inkcoreapi DiagsConfig *diagsConfig;
-static char debug_tags[1024] = "";
+static char debug_tags[1024]  = "";
 static char action_tags[1024] = "";
-static bool proxy_off = false;
-static char bind_stdout[512] = "";
-static char bind_stderr[512] = "";
+static bool proxy_off         = false;
+static char bind_stdout[512]  = "";
+static char bind_stderr[512]  = "";
 
 static const char *mgmt_path = NULL;
 
@@ -119,12 +119,12 @@ rotateLogs()
   // The reason being is that it is difficult to send a notification from TS to
   // TM, informing TM that outputlog has been rolled. It is much easier sending
   // a notification (in the form of SIGUSR2) from TM -> TS.
-  int output_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec");
-  int output_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
+  int output_log_roll_int    = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec");
+  int output_log_roll_size   = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
   int output_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled");
-  int diags_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
-  int diags_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
-  int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
+  int diags_log_roll_int     = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
+  int diags_log_roll_size    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
+  int diags_log_roll_enable  = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
   diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
   diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
 
@@ -150,7 +150,7 @@ rotateLogs()
 static bool
 is_server_idle()
 {
-  RecInt active = 0;
+  RecInt active    = 0;
   RecInt threshold = 0;
 
   if (RecGetRecordInt("proxy.config.restart.active_client_threshold", &threshold) != REC_ERR_OKAY) {
@@ -236,10 +236,10 @@ initSignalHandlers()
 
 // Set up the signal handler
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
-  sigHandler.sa_handler = NULL;
+  sigHandler.sa_handler   = NULL;
   sigHandler.sa_sigaction = SignalHandler;
 #else
-  sigHandler.sa_handler = SignalHandler;
+  sigHandler.sa_handler     = SignalHandler;
 #endif
   sigemptyset(&sigHandler.sa_mask);
 
@@ -258,7 +258,7 @@ initSignalHandlers()
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigHandler.sa_flags = SA_RESETHAND | SA_SIGINFO;
 #else
-  sigHandler.sa_flags = SA_RESETHAND;
+  sigHandler.sa_flags       = SA_RESETHAND;
 #endif
   sigaction(SIGINT, &sigHandler, NULL);
   sigaction(SIGQUIT, &sigHandler, NULL);
@@ -268,7 +268,7 @@ initSignalHandlers()
   sigaction(SIGTERM, &sigHandler, NULL);
 
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
-  sigAlrmHandler.sa_handler = NULL;
+  sigAlrmHandler.sa_handler   = NULL;
   sigAlrmHandler.sa_sigaction = SignalAlrmHandler;
 #else
   sigAlrmHandler.sa_handler = SignalAlrmHandler;
@@ -278,7 +278,7 @@ initSignalHandlers()
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigAlrmHandler.sa_flags = SA_SIGINFO;
 #else
-  sigAlrmHandler.sa_flags = 0;
+  sigAlrmHandler.sa_flags   = 0;
 #endif
   sigaction(SIGALRM, &sigAlrmHandler, NULL);
 
@@ -305,7 +305,7 @@ initSignalHandlers()
   //   a problem with Solaris 2.6 and strange waitpid()
   //   behavior
   sigChldHandler.sa_handler = SigChldHandler;
-  sigChldHandler.sa_flags = SA_RESTART;
+  sigChldHandler.sa_flags   = SA_RESTART;
   sigemptyset(&sigChldHandler.sa_mask);
   sigaction(SIGCHLD, &sigChldHandler, NULL);
 }
@@ -394,7 +394,7 @@ Errata_Logger(ts::Errata const &err)
   char buff[SIZE];
   if (err.size()) {
     ts::Errata::Code code = err.top().getCode();
-    n = err.write(buff, SIZE, 1, 0, 2, "> ");
+    n                     = err.write(buff, SIZE, 1, 0, 2, "> ");
     // strip trailing newlines.
     while (n && (buff[n - 1] == '\n' || buff[n - 1] == '\r'))
       buff[--n] = 0;
@@ -420,7 +420,7 @@ millisleep(int ms)
 {
   struct timespec ts;
 
-  ts.tv_sec = ms / 1000;
+  ts.tv_sec  = ms / 1000;
   ts.tv_nsec = (ms - ts.tv_sec * 1000) * 1000 * 1000;
   nanosleep(&ts, NULL); // we use nanosleep instead of sleep because it does not interact with signals
 }
@@ -437,22 +437,22 @@ main(int argc, const char **argv)
   // Set up the application version info
   appVersionInfo.setup(PACKAGE_NAME, "traffic_manager", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
-  bool found = false;
-  int just_started = 0;
+  bool found         = false;
+  int just_started   = 0;
   int cluster_mcport = -1, cluster_rsport = -1;
   // TODO: This seems completely incomplete, disabled for now
   //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_cluster = 0, dump_local = 0;
-  char *proxy_port = 0;
+  char *proxy_port   = 0;
   int proxy_backdoor = -1;
   char *group_addr = NULL, *tsArgs = NULL;
   bool disable_syslog = false;
-  RecBool enable_lua = false;
+  RecBool enable_lua  = false;
   char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
   time_t ticker;
   ink_thread synthThrId;
 
-  int binding_version = 0;
+  int binding_version      = 0;
   BindingInstance *binding = NULL;
 
   ArgumentDescription argument_descriptions[] = {
@@ -505,7 +505,7 @@ main(int argc, const char **argv)
   // Bootstrap the Diags facility so that we can use it while starting
   //  up the manager
   diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, false);
-  diags = diagsConfig->diags;
+  diags       = diagsConfig->diags;
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
   diags->prefix_str = "Manager ";
@@ -552,7 +552,7 @@ main(int argc, const char **argv)
   // INKqa11968: need to set up callbacks and diags data structures
   // using configuration in records.config
   diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
-  diags = diagsConfig->diags;
+  diags       = diagsConfig->diags;
   RecSetDiags(diags);
   diags->prefix_str = "Manager ";
   diags->set_stdout_output(bind_stdout);
@@ -572,7 +572,7 @@ main(int argc, const char **argv)
   RecSetRecordString("proxy.node.version.manager.build_person", appVersionInfo.BldPersonStr, REC_SOURCE_DEFAULT);
 
   if (!disable_syslog) {
-    char sys_var[] = "proxy.config.syslog_facility";
+    char sys_var[]     = "proxy.config.syslog_facility";
     char *facility_str = NULL;
     int facility_int;
 
@@ -671,8 +671,8 @@ main(int argc, const char **argv)
     ink_assert(found);
   }
 
-  in_addr_t min_ip = inet_network("224.0.0.255");
-  in_addr_t max_ip = inet_network("239.255.255.255");
+  in_addr_t min_ip        = inet_network("224.0.0.255");
+  in_addr_t max_ip        = inet_network("239.255.255.255");
   in_addr_t group_addr_ip = inet_network(group_addr);
 
   if (!(min_ip < group_addr_ip && group_addr_ip < max_ip)) {
@@ -707,8 +707,8 @@ main(int argc, const char **argv)
   mode_t oldmask = umask(0);
   mode_t newmode = api_socket_is_restricted() ? 00700 : 00777;
 
-  int mgmtapiFD = -1;  // FD for the api interface to issue commands
-  int eventapiFD = -1; // FD for the api and clients to handle event callbacks
+  int mgmtapiFD         = -1; // FD for the api interface to issue commands
+  int eventapiFD        = -1; // FD for the api and clients to handle event callbacks
   char mgmtapiFailMsg[] = "Traffic server management API service Interface Failed to Initialize.";
 
   mgmtapiFD = bind_unix_domain_socket(apisock, newmode);
@@ -743,7 +743,7 @@ main(int argc, const char **argv)
 #if !TS_USE_LUAJIT
   if (enable_lua) {
     static bool warned = false;
-    enable_lua = false;
+    enable_lua         = false;
 
     if (!warned) {
       Warning("missing Lua support, disabling Lua derived metrics");
@@ -849,7 +849,7 @@ main(int argc, const char **argv)
       }
       if (lmgmt->startProxy()) {
         just_started = 0;
-        sleep_time = 0;
+        sleep_time   = 0;
       } else {
         just_started++;
       }
@@ -859,7 +859,7 @@ main(int argc, const char **argv)
 
     /* This will catch the case were the proxy dies before it can connect to manager */
     if (lmgmt->proxy_launch_outstanding && !lmgmt->processRunning() && just_started >= 120) {
-      just_started = 0;
+      just_started                    = 0;
       lmgmt->proxy_launch_outstanding = false;
       if (lmgmt->proxy_launch_pid != -1) {
         int res;
@@ -1103,7 +1103,7 @@ fileUpdated(char *fname, bool incVersion)
 int
 restoreCapabilities()
 {
-  int zret = 0;                   // return value.
+  int zret      = 0;              // return value.
   cap_t cap_set = cap_get_proc(); // current capabilities
   // Make a list of the capabilities we want turned on.
   cap_value_t cap_list[] = {

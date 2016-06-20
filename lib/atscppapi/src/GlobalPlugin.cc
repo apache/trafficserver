@@ -48,7 +48,7 @@ namespace
 static int
 handleGlobalPluginEvents(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn txn            = static_cast<TSHttpTxn>(edata);
   GlobalPluginState *state = static_cast<GlobalPluginState *>(TSContDataGet(cont));
   if (state->ignore_internal_transactions_ && (TSHttpTxnIsInternal(txn) == TS_SUCCESS)) {
     LOG_DEBUG("Ignoring event %d on internal transaction %p for global plugin %p", event, txn, state->global_plugin_);
@@ -65,7 +65,7 @@ handleGlobalPluginEvents(TSCont cont, TSEvent event, void *edata)
 GlobalPlugin::GlobalPlugin(bool ignore_internal_transactions)
 {
   utils::internal::initTransactionManagement();
-  state_ = new GlobalPluginState(this, ignore_internal_transactions);
+  state_        = new GlobalPluginState(this, ignore_internal_transactions);
   TSMutex mutex = NULL;
   state_->cont_ = TSContCreate(handleGlobalPluginEvents, mutex);
   TSContDataSet(state_->cont_, static_cast<void *>(state_));

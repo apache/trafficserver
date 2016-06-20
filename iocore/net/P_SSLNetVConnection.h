@@ -84,7 +84,7 @@ public:
   virtual void
   enableRead()
   {
-    read.enabled = 1;
+    read.enabled  = 1;
     write.enabled = 1;
   };
   virtual bool
@@ -198,9 +198,9 @@ public:
   void
   initialize_handshake_buffers()
   {
-    this->handShakeBuffer = new_MIOBuffer();
-    this->handShakeReader = this->handShakeBuffer->alloc_reader();
-    this->handShakeHolder = this->handShakeReader->clone();
+    this->handShakeBuffer    = new_MIOBuffer();
+    this->handShakeReader    = this->handShakeBuffer->alloc_reader();
+    this->handShakeHolder    = this->handShakeReader->clone();
     this->handShakeBioStored = 0;
   }
   void
@@ -215,9 +215,9 @@ public:
     if (this->handShakeBuffer) {
       free_MIOBuffer(this->handShakeBuffer);
     }
-    this->handShakeReader = NULL;
-    this->handShakeHolder = NULL;
-    this->handShakeBuffer = NULL;
+    this->handShakeReader    = NULL;
+    this->handShakeHolder    = NULL;
+    this->handShakeBuffer    = NULL;
     this->handShakeBioStored = 0;
   }
   // Returns true if all the hooks reenabled

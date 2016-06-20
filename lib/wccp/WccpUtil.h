@@ -191,7 +191,7 @@ find_by_member(std::vector<T> &container, ///< Vector with elements.
                V const &value             ///< Value to match.
                )
 {
-  typename std::vector<T>::iterator spot = container.begin();
+  typename std::vector<T>::iterator spot  = container.begin();
   typename std::vector<T>::iterator limit = container.end();
   while (spot != limit && (*spot).*member != value)
     ++spot;

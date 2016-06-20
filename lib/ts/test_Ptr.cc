@@ -31,11 +31,11 @@ struct PtrObject : RefCountObj {
 REGRESSION_TEST(Ptr_detach)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
+  box            = REGRESSION_TEST_PASSED;
   unsigned alive = 0;
 
   Ptr<PtrObject> p1 = make_ptr(new PtrObject(&alive));
-  PtrObject *p2 = p1.detach();
+  PtrObject *p2     = p1.detach();
 
   box.check(p1.get() == NULL, "Ptr<T>::detach NULLs the stored pointer");
   box.check(p2->refcount() == 1, "Ptr<T>::detach preserves the refcount");
@@ -49,7 +49,7 @@ REGRESSION_TEST(Ptr_detach)(RegressionTest *t, int /* atype ATS_UNUSED */, int *
 REGRESSION_TEST(Ptr_clear)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
+  box            = REGRESSION_TEST_PASSED;
   unsigned alive = 0;
 
   Ptr<PtrObject> p1 = make_ptr(new PtrObject(&alive));
@@ -67,7 +67,7 @@ REGRESSION_TEST(Ptr_clear)(RegressionTest *t, int /* atype ATS_UNUSED */, int *p
 REGRESSION_TEST(Ptr_refcount)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
+  box            = REGRESSION_TEST_PASSED;
   unsigned alive = 0;
 
   {
@@ -88,7 +88,7 @@ REGRESSION_TEST(Ptr_refcount)(RegressionTest *t, int /* atype ATS_UNUSED */, int
 REGRESSION_TEST(Ptr_bool)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   TestBox box(t, pstatus);
-  box = REGRESSION_TEST_PASSED;
+  box            = REGRESSION_TEST_PASSED;
   unsigned alive = 0;
 
   Ptr<PtrObject> none;

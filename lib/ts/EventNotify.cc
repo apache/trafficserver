@@ -53,7 +53,7 @@ EventNotify::EventNotify()
   }
   ink_release_assert(m_event_fd != -1);
 
-  ev.events = EPOLLIN;
+  ev.events  = EPOLLIN;
   ev.data.fd = m_event_fd;
 
   m_epoll_fd = epoll_create(1);

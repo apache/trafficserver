@@ -94,7 +94,7 @@ namespace io
     }
 
     ReaderSize(const ReaderSize &) = delete;
-    ReaderSize &operator=(const ReaderSize &) = delete;
+    ReaderSize &operator=(const ReaderSize &)                   = delete;
     void *operator new(const std::size_t) throw(std::bad_alloc) = delete;
   };
 
@@ -104,7 +104,7 @@ namespace io
 
     ReaderOffset(const TSIOBufferReader r, const size_t o) : reader(r), offset(o) { assert(reader != NULL); }
     ReaderOffset(const ReaderOffset &) = delete;
-    ReaderOffset &operator=(const ReaderOffset &) = delete;
+    ReaderOffset &operator=(const ReaderOffset &)               = delete;
     void *operator new(const std::size_t) throw(std::bad_alloc) = delete;
   };
 

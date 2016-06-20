@@ -44,8 +44,8 @@ TSPluginInit(int argc, const char *argv[])
   int i;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "file_plugin";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "file_plugin";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

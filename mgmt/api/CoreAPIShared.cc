@@ -211,7 +211,7 @@ connectDirect(const char *host, int port, uint64_t /* timeout ATS_UNUSED */)
   }
   // Connect to the specified port on the machine we're running on.
   name.sin_family = AF_INET;
-  name.sin_port = htons(port);
+  name.sin_port   = htons(port);
 
   struct hostent *pHostent;
   pHostent = gethostbyname(host);
@@ -244,8 +244,8 @@ poll_read(int fd, int timeout)
   struct pollfd info;
   int err;
 
-  info.fd = fd;
-  info.events = POLLIN;
+  info.fd      = fd;
+  info.events  = POLLIN;
   info.revents = 0;
 
   do {
@@ -265,8 +265,8 @@ poll_write(int fd, int timeout)
   struct pollfd info;
   int err;
 
-  info.fd = fd;
-  info.events = POLLOUT;
+  info.fd      = fd;
+  info.events  = POLLOUT;
   info.revents = 0;
 
   do {

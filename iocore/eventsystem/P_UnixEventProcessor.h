@@ -42,8 +42,8 @@ TS_INLINE off_t
 EventProcessor::allocate(int size)
 {
   static off_t start = INK_ALIGN(offsetof(EThread, thread_private), 16);
-  static off_t loss = start - offsetof(EThread, thread_private);
-  size = INK_ALIGN(size, 16); // 16 byte alignment
+  static off_t loss  = start - offsetof(EThread, thread_private);
+  size               = INK_ALIGN(size, 16); // 16 byte alignment
 
   int old;
   do {
@@ -91,7 +91,7 @@ EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callba
   e->start_time = Thread::get_hrtime();
 #endif
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   return schedule(e->init(cont, 0, 0), et, true);
 }
 
@@ -105,7 +105,7 @@ EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_even
   e->start_time = Thread::get_hrtime();
 #endif
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   return schedule(e->init(cont, 0, 0), et);
 }
 
@@ -117,7 +117,7 @@ EventProcessor::schedule_at(Continuation *cont, ink_hrtime t, EventType et, int 
   ink_assert(t > 0);
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   return schedule(e->init(cont, t, 0), et);
 }
 
@@ -128,7 +128,7 @@ EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int 
 
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   return schedule(e->init(cont, Thread::get_hrtime() + t, 0), et);
 }
 
@@ -140,7 +140,7 @@ EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, i
   ink_assert(t != 0);
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   if (t < 0)
     return schedule(e->init(cont, t, t), et);
   else

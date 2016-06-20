@@ -37,7 +37,7 @@ unsigned char *
 append_protocol(const char *proto, unsigned char *buf)
 {
   size_t sz = strlen(proto);
-  *buf++ = (unsigned char)sz;
+  *buf++    = (unsigned char)sz;
   memcpy(buf, proto, sz);
   return buf + sz;
 }
@@ -102,7 +102,7 @@ SSLNextProtocolSet::registerEndpoint(const char *proto, Continuation *ep)
 
     if (npn) {
       ats_free(npn);
-      npn = NULL;
+      npn   = NULL;
       npnsz = 0;
     }
 

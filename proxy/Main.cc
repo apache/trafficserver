@@ -129,23 +129,23 @@ static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
 static int num_of_net_threads = ink_number_of_processors();
 static int num_of_udp_threads = 0;
 static int num_accept_threads = 0;
-static int num_task_threads = 0;
+static int num_task_threads   = 0;
 
 extern int num_of_cluster_threads;
 
 static char *http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
-static char core_file[255] = "";
-static bool enable_core_file_p = false; // Enable core file dump?
-int command_flag = DEFAULT_COMMAND_FLAG;
-int command_index = -1;
-bool command_valid = false;
+static char core_file[255]      = "";
+static bool enable_core_file_p  = false; // Enable core file dump?
+int command_flag                = DEFAULT_COMMAND_FLAG;
+int command_index               = -1;
+bool command_valid              = false;
 // Commands that have special processing / requirements.
 static char const *CMD_VERIFY_CONFIG = "verify_config";
 #if TS_HAS_TESTS
 static char regression_test[1024] = "";
-static int regression_list = 0;
-static int regression_level = REGRESSION_TEST_NONE;
+static int regression_list        = 0;
+static int regression_level       = REGRESSION_TEST_NONE;
 #endif
 int auto_clear_hostdb_flag = 0;
 extern int fds_limit;
@@ -155,21 +155,21 @@ char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 
 //         = DEFAULT_CLUSTER_PORT_NUMBER;
 static char command_string[512] = "";
-static char conf_dir[512] = "";
-int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
-static char bind_stdout[512] = DEFAULT_BIND_STDOUT;
-static char bind_stderr[512] = DEFAULT_BIND_STDERR;
+static char conf_dir[512]       = "";
+int remote_management_flag      = DEFAULT_REMOTE_MANAGEMENT_FLAG;
+static char bind_stdout[512]    = DEFAULT_BIND_STDOUT;
+static char bind_stderr[512]    = DEFAULT_BIND_STDERR;
 
-static char error_tags[1024] = "";
-static char action_tags[1024] = "";
-static int show_statistics = 0;
+static char error_tags[1024]               = "";
+static char action_tags[1024]              = "";
+static int show_statistics                 = 0;
 static inkcoreapi DiagsConfig *diagsConfig = NULL;
-HttpBodyFactory *body_factory = NULL;
+HttpBodyFactory *body_factory              = NULL;
 
-static int accept_mss = 0;
-static int cmd_line_dprintf_level = 0; // default debug output level from ink_dprintf function
-static int poll_timeout = -1;          // No value set.
-static int cmd_disable_freelist = 0;
+static int accept_mss             = 0;
+static int cmd_line_dprintf_level = 0;  // default debug output level from ink_dprintf function
+static int poll_timeout           = -1; // No value set.
+static int cmd_disable_freelist   = 0;
 
 static volatile bool sigusr1_received = false;
 static volatile bool sigusr2_received = false;
@@ -244,7 +244,7 @@ public:
       if (!end)
         end = (char *)sbrk(0);
       if (!snap)
-        snap = (char *)sbrk(0);
+        snap    = (char *)sbrk(0);
       char *now = (char *)sbrk(0);
       // TODO: Use logging instead directly writing to stderr
       //       This is not error condition at the first place
@@ -331,8 +331,8 @@ public:
     // to send a notification from TS to TM, informing TM that outputlog has
     // been rolled. It is much easier sending a notification (in the form
     // of SIGUSR2) from TM -> TS.
-    int diags_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
-    int diags_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
+    int diags_log_roll_int    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
+    int diags_log_roll_size   = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
     int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
     diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
 
@@ -860,8 +860,8 @@ find_cmd_index(char const *p)
     while (l) {
       char const *s = strchr(l, '/');
       char const *e = strpbrk(p, " \t\n");
-      int len = s ? s - l : strlen(l);
-      int lenp = e ? e - p : strlen(p);
+      int len       = s ? s - l : strlen(l);
+      int lenp      = e ? e - p : strlen(p);
       if ((len == lenp) && !strncasecmp(p, l, len))
         return c;
       l = s ? s + 1 : 0;
@@ -1196,8 +1196,8 @@ struct ShowStats : public Continuation {
 static void
 syslog_log_configure()
 {
-  bool found = false;
-  char sys_var[] = "proxy.config.syslog_facility";
+  bool found         = false;
+  char sys_var[]     = "proxy.config.syslog_facility";
   char *facility_str = REC_readString(sys_var, &found);
 
   if (found) {
@@ -1347,7 +1347,7 @@ static int
 adjust_num_of_net_threads(int nthreads)
 {
   float autoconfig_scale = 1.0;
-  int nth_auto_config = 1;
+  int nth_auto_config    = 1;
   int num_of_threads_tmp = 1;
 
   REC_ReadConfigInteger(nth_auto_config, "proxy.config.exec_thread.autoconfig");
@@ -1489,7 +1489,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #endif
 
   pcre_malloc = ats_malloc;
-  pcre_free = ats_free;
+  pcre_free   = ats_free;
 
   // Verify system dependent 'constants'
   check_system_constants();
@@ -1502,7 +1502,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   chdir_root(); // change directory to the install root of traffic server.
 
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
-  command_flag = command_flag || *command_string;
+  command_flag  = command_flag || *command_string;
   command_index = find_cmd_index(command_string);
   command_valid = command_flag && command_index >= 0;
 
@@ -1538,8 +1538,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // re-start it again, TS will crash.
   // This is also needed for log rotation - setting up the file can cause privilege
   // related errors and if diagsConfig isn't get up yet that will crash on a NULL pointer.
-  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
-  diags = diagsConfig->diags;
+  diagsConfig       = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
+  diags             = diagsConfig->diags;
   diags->prefix_str = "Server ";
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
@@ -1592,7 +1592,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   ats_scoped_str user(MAX_LOGIN + 1);
 
-  *user = '\0';
+  *user        = '\0';
   admin_user_p = ((REC_ERR_OKAY == REC_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) && (*user != '\0') &&
                   (0 != strcmp(user, "#-1")));
 
@@ -1625,7 +1625,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     delete (diagsConfig);
   }
   diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, true);
-  diags = diagsConfig->diags;
+  diags       = diagsConfig->diags;
   RecSetDiags(diags);
   diags->prefix_str = "Server ";
   diags->set_stdout_output(bind_stdout);
@@ -1810,7 +1810,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Init plugins as soon as logging is ready.
     (void)plugin_init(); // plugin.config
 
-    SSLConfigParams::init_ssl_ctx_cb = init_ssl_ctx_callback;
+    SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(getNumSSLThreads(), stacksize);
 
@@ -1987,8 +1987,8 @@ mgmt_lifecycle_msg_callback(void *, char *data, int len)
   if (mgmt_message_parse(data, len, fields, countof(fields), &op, &tag, &payload) == -1) {
     Error("Plugin message - RPC parsing error - message discarded.");
   } else {
-    msg.tag = tag;
-    msg.data = payload.ptr;
+    msg.tag       = tag;
+    msg.data      = payload.ptr;
     msg.data_size = payload.len;
     while (hook) {
       TSPluginMsg tmp(msg); // Just to make sure plugins don't mess this up for others.

@@ -72,19 +72,19 @@ class DocNode
 {
 public:
   enum TYPE {
-    TYPE_UNKNOWN = 0,
-    TYPE_PRE = 1,
-    TYPE_INCLUDE = 2,
-    TYPE_COMMENT = 3,
-    TYPE_REMOVE = 4,
-    TYPE_VARS = 5,
-    TYPE_CHOOSE = 6,
-    TYPE_WHEN = 7,
-    TYPE_OTHERWISE = 8,
-    TYPE_TRY = 9,
-    TYPE_ATTEMPT = 10,
-    TYPE_EXCEPT = 11,
-    TYPE_HTML_COMMENT = 12,
+    TYPE_UNKNOWN         = 0,
+    TYPE_PRE             = 1,
+    TYPE_INCLUDE         = 2,
+    TYPE_COMMENT         = 3,
+    TYPE_REMOVE          = 4,
+    TYPE_VARS            = 5,
+    TYPE_CHOOSE          = 6,
+    TYPE_WHEN            = 7,
+    TYPE_OTHERWISE       = 8,
+    TYPE_TRY             = 9,
+    TYPE_ATTEMPT         = 10,
+    TYPE_EXCEPT          = 11,
+    TYPE_HTML_COMMENT    = 12,
     TYPE_SPECIAL_INCLUDE = 13,
   };
 

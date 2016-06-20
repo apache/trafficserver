@@ -45,10 +45,10 @@ LogCollationAccept::LogCollationAccept(int port) : Continuation(new_ProxyMutex()
   // small amounts of data.  Most arguments are default except for the
   // last one which we will set to true.
   // [amc] That argument is ignored so I dropped it.
-  opt.local_port = m_port;
-  opt.ip_family = AF_INET;
+  opt.local_port     = m_port;
+  opt.ip_family      = AF_INET;
   opt.accept_threads = 0;
-  m_accept_action = netProcessor.accept(this, opt);
+  m_accept_action    = netProcessor.accept(this, opt);
   ink_assert(NULL != m_accept_action);
 }
 

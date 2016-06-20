@@ -196,7 +196,7 @@ inline void
 SLL<C, L>::push(C *e)
 {
   next(e) = head;
-  head = e;
+  head    = e;
 }
 
 template <class C, class L>
@@ -205,7 +205,7 @@ SLL<C, L>::pop()
 {
   C *ret = head;
   if (ret) {
-    head = next(ret);
+    head      = next(ret);
     next(ret) = NULL;
   }
   return ret;
@@ -267,8 +267,8 @@ DLL<C, L>::push(C *e)
 {
   if (head)
     prev(head) = e;
-  next(e) = head;
-  head = e;
+  next(e)      = head;
+  head         = e;
 }
 
 template <class C, class L>
@@ -283,8 +283,8 @@ DLL<C, L>::remove(C *e)
     next(prev(e)) = next(e);
   if (next(e))
     prev(next(e)) = prev(e);
-  prev(e) = NULL;
-  next(e) = NULL;
+  prev(e)         = NULL;
+  next(e)         = NULL;
 }
 
 template <class C, class L>
@@ -296,7 +296,7 @@ DLL<C, L>::pop()
     head = next(ret);
     if (head)
       prev(head) = NULL;
-    next(ret) = NULL;
+    next(ret)    = NULL;
     return ret;
   } else
     return NULL;
@@ -310,8 +310,8 @@ DLL<C, L>::insert(C *e, C *after)
     push(e);
     return;
   }
-  prev(e) = after;
-  next(e) = next(after);
+  prev(e)     = after;
+  next(e)     = next(after);
   next(after) = e;
   if (next(e))
     prev(next(e)) = e;
@@ -403,9 +403,9 @@ Queue<C, L>::append(DLL<C, L> q)
     tail = qtail;
   } else {
     if (q.head) {
-      this->next(tail) = q.head;
+      this->next(tail)   = q.head;
       this->prev(q.head) = tail;
-      tail = qtail;
+      tail               = qtail;
     }
   }
 }
@@ -419,9 +419,9 @@ Queue<C, L>::append(Queue<C, L> q)
     tail = q.tail;
   } else {
     if (q.head) {
-      this->next(tail) = q.head;
+      this->next(tail)   = q.head;
       this->prev(q.head) = tail;
-      tail = q.tail;
+      tail               = q.tail;
     }
   }
 }
@@ -466,8 +466,8 @@ template <class C, class L = typename C::Link_link> struct SortableQueue : publi
     bool clean = false;
     while (!clean) {
       clean = true;
-      C *v = head;
-      C *n = this->next(head);
+      C *v  = head;
+      C *n  = this->next(head);
       while (n) {
         C *f = this->next(n);
         if (*n < *v) {
@@ -495,7 +495,7 @@ template <class C, class L = typename C::Link_link> struct SortableQueue : publi
           this->next(n) = v;
         } else
           v = n;
-        n = f;
+        n   = f;
       }
     }
   }
@@ -584,7 +584,7 @@ CountQueue<C, L>::append_clear(CountQueue<C, L> &q)
 {
   append(q);
   q.head = q.tail = 0;
-  q.size = 0;
+  q.size          = 0;
 }
 
 //
@@ -650,7 +650,7 @@ template <class C, class A = DefaultAlloc> struct List {
   C
   pop()
   {
-    C a = car();
+    C a  = car();
     head = cdr();
     return a;
   }
@@ -675,9 +675,9 @@ List<C, A>::reverse()
 {
   ConsCell<C, A> *n, *t;
   for (ConsCell<C, A> *p = head; p; p = n) {
-    n = p->cdr;
+    n      = p->cdr;
     p->cdr = t;
-    t = p;
+    t      = p;
   }
   head = t;
 }

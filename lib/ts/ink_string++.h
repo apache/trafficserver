@@ -50,15 +50,15 @@ struct Str {
   Str() : str(NULL), len(0), next(NULL), prev(NULL) {}
   Str(char *s)
   {
-    str = s;
-    len = strlen(s);
+    str  = s;
+    len  = strlen(s);
     next = NULL;
     prev = NULL;
   }
   Str(char *s, int l)
   {
-    str = s;
-    len = l;
+    str  = s;
+    len  = l;
     next = NULL;
     prev = NULL;
   }
@@ -66,8 +66,8 @@ struct Str {
   void
   clean()
   {
-    str = NULL;
-    len = 0;
+    str  = NULL;
+    len  = 0;
     next = NULL;
     prev = NULL;
   }
@@ -146,12 +146,12 @@ struct StrListOverflow {
 inline void
 StrList::init()
 {
-  count = 0;
+  count           = 0;
   cells_allocated = 0;
-  head = tail = NULL;
-  base_heap_size = STRLIST_BASE_HEAP_SIZE;
-  base_heap_used = 0;
-  overflow_first = NULL;
+  head = tail      = NULL;
+  base_heap_size   = STRLIST_BASE_HEAP_SIZE;
+  base_heap_used   = 0;
+  overflow_first   = NULL;
   overflow_current = NULL;
 }
 
@@ -205,7 +205,7 @@ StrList::new_cell(const char *s, int len_not_counting_nul)
 
   // allocate a cell from the array or heap
   if ((cells_allocated < STRLIST_BASE_CELLS) && (!copy_when_adding_string)) {
-    cell = &(base_cells[cells_allocated++]);
+    cell      = &(base_cells[cells_allocated++]);
     cell->str = s;
     cell->len = l;
     return (cell);
@@ -238,7 +238,7 @@ StrList::append(Str *str)
     head = tail = str;
   } else {
     tail->next = str;
-    tail = str;
+    tail       = str;
   }
 }
 
@@ -255,7 +255,7 @@ StrList::prepend(Str *str)
     head = tail = str;
   } else {
     head->prev = str;
-    head = str;
+    head       = str;
   }
 }
 
@@ -265,8 +265,8 @@ StrList::add_after(Str *prev, Str *str)
   if (str == NULL || prev == NULL)
     return;
   ++count;
-  str->next = prev->next;
-  str->prev = prev;
+  str->next  = prev->next;
+  str->prev  = prev;
   prev->next = str;
   if (tail == prev)
     tail = str;

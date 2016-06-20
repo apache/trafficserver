@@ -48,8 +48,8 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   TSPluginRegistrationInfo info;
-  info.plugin_name = "version-plugin";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "version-plugin";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
 // partial compilation

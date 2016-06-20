@@ -37,7 +37,7 @@
 
 static ink_thread_key init_thread_key();
 
-ink_hrtime Thread::cur_time = 0;
+ink_hrtime Thread::cur_time                       = 0;
 inkcoreapi ink_thread_key Thread::thread_data_key = init_thread_key();
 
 Thread::Thread()
@@ -91,8 +91,8 @@ Thread::start(const char *name, size_t stacksize, ThreadFunction f, void *a)
 {
   thread_data_internal *p = (thread_data_internal *)ats_malloc(sizeof(thread_data_internal));
 
-  p->f = f;
-  p->a = a;
+  p->f  = f;
+  p->a  = a;
   p->me = this;
   memset(p->name, 0, MAX_THREAD_NAME_LENGTH);
   ink_strlcpy(p->name, name, MAX_THREAD_NAME_LENGTH);

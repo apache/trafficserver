@@ -28,7 +28,7 @@ void
 test()
 {
   ink_hrtime t = ink_get_hrtime();
-  int i = 1000000;
+  int i        = 1000000;
   timespec ts;
   while (i--) {
     clock_gettime(CLOCK_REALTIME, &ts);

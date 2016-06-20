@@ -59,7 +59,7 @@ url_mapping::add_plugin(remap_plugin_info *i, void *ih)
   if (_plugin_count >= MAX_REMAP_PLUGIN_CHAIN)
     return false;
 
-  _plugin_list[_plugin_count] = i;
+  _plugin_list[_plugin_count]   = i;
   _instance_data[_plugin_count] = ih;
   ++_plugin_count;
 
@@ -85,7 +85,7 @@ url_mapping::get_plugin(unsigned int index) const
 void
 url_mapping::delete_instance(unsigned int index)
 {
-  void *ih = get_instance(index);
+  void *ih             = get_instance(index);
   remap_plugin_info *p = get_plugin(index);
 
   if (ih && p && p->fp_tsremap_delete_instance) {
@@ -102,7 +102,7 @@ url_mapping::~url_mapping()
   redirect_tag_str *rc;
   acl_filter_rule *afr;
 
-  tag = (char *)ats_free_null(tag);
+  tag                 = (char *)ats_free_null(tag);
   filter_redirect_url = (char *)ats_free_null(filter_redirect_url);
 
   while ((r = referer_list) != 0) {
@@ -150,7 +150,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
   char *c;
   redirect_tag_str *r, **rr;
   redirect_tag_str *list = 0;
-  char type = 0;
+  char type              = 0;
 
   if (url && *url) {
     for (rr = &list; *(c = url) != 0;) {
@@ -167,15 +167,15 @@ redirect_tag_str::parse_format_redirect_url(char *url)
       r = new redirect_tag_str();
       if (likely(r)) {
         if ((r->type = type) == 's') {
-          char svd = *c;
-          *c = 0;
+          char svd     = *c;
+          *c           = 0;
           r->chunk_str = ats_strdup(url);
-          *c = svd;
-          url = c;
+          *c           = svd;
+          url          = c;
         } else
           url += 2;
         (*rr = r)->next = 0;
-        rr = &(r->next);
+        rr              = &(r->next);
         // printf("\t***********'%c' - '%s'*******\n",r->type,r->chunk_str ? r->chunk_str : "<NULL>");
       } else
         break; /* memory allocation error */
@@ -195,7 +195,7 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
 
   if (error_flag)
     *error_flag = false;
-  regx = NULL;
+  regx          = NULL;
 
   if (_ref) {
     if (*_ref == '~') {
@@ -226,12 +226,12 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
 referer_info::~referer_info()
 {
   ats_free(referer);
-  referer = 0;
+  referer      = 0;
   referer_size = 0;
 
   if (regx_valid) {
     pcre_free(regx);
-    regx = NULL;
+    regx       = NULL;
     regx_valid = false;
   }
 }

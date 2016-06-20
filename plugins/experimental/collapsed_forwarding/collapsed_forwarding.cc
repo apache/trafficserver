@@ -67,12 +67,12 @@
 
 static const char *DEBUG_TAG = (char *)"collapsed_forwarding";
 
-static const char *LOCATION_HEADER = "Location";
-static const char *REDIRECT_REASON = "See Other";
+static const char *LOCATION_HEADER      = "Location";
+static const char *REDIRECT_REASON      = "See Other";
 static const char *ATS_INTERNAL_MESSAGE = "@Ats-Internal";
 
 static int OPEN_WRITE_FAIL_MAX_REQ_DELAY_RETRIES = 5;
-static int OPEN_WRITE_FAIL_REQ_DELAY_TIMEOUT = 500;
+static int OPEN_WRITE_FAIL_REQ_DELAY_TIMEOUT     = 500;
 
 typedef struct _RequestData {
   TSHttpTxn txnp;
@@ -233,7 +233,7 @@ on_send_response_header(RequestData *req, TSHttpTxn &txnp, TSCont &contp)
 static int
 collapsed_cont(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn txnp      = static_cast<TSHttpTxn>(edata);
   RequestData *my_req = static_cast<RequestData *>(TSContDataGet(contp));
 
   switch (event) {
@@ -294,11 +294,11 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   RequestData *req_data = new RequestData();
 
-  req_data->txnp = rh;
+  req_data->txnp     = rh;
   req_data->wl_retry = 0;
 
   int url_len = 0;
-  char *url = TSHttpTxnEffectiveUrlStringGet(rh, &url_len);
+  char *url   = TSHttpTxnEffectiveUrlStringGet(rh, &url_len);
   req_data->req_url.assign(url, url_len);
 
   TSfree(url);

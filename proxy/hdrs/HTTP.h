@@ -41,48 +41,48 @@ class Http2HeaderTable;
 enum HTTPStatus {
   HTTP_STATUS_NONE = 0,
 
-  HTTP_STATUS_CONTINUE = 100,
+  HTTP_STATUS_CONTINUE           = 100,
   HTTP_STATUS_SWITCHING_PROTOCOL = 101,
 
-  HTTP_STATUS_OK = 200,
-  HTTP_STATUS_CREATED = 201,
-  HTTP_STATUS_ACCEPTED = 202,
+  HTTP_STATUS_OK                            = 200,
+  HTTP_STATUS_CREATED                       = 201,
+  HTTP_STATUS_ACCEPTED                      = 202,
   HTTP_STATUS_NON_AUTHORITATIVE_INFORMATION = 203,
-  HTTP_STATUS_NO_CONTENT = 204,
-  HTTP_STATUS_RESET_CONTENT = 205,
-  HTTP_STATUS_PARTIAL_CONTENT = 206,
+  HTTP_STATUS_NO_CONTENT                    = 204,
+  HTTP_STATUS_RESET_CONTENT                 = 205,
+  HTTP_STATUS_PARTIAL_CONTENT               = 206,
 
-  HTTP_STATUS_MULTIPLE_CHOICES = 300,
-  HTTP_STATUS_MOVED_PERMANENTLY = 301,
-  HTTP_STATUS_MOVED_TEMPORARILY = 302,
-  HTTP_STATUS_SEE_OTHER = 303,
-  HTTP_STATUS_NOT_MODIFIED = 304,
-  HTTP_STATUS_USE_PROXY = 305,
+  HTTP_STATUS_MULTIPLE_CHOICES   = 300,
+  HTTP_STATUS_MOVED_PERMANENTLY  = 301,
+  HTTP_STATUS_MOVED_TEMPORARILY  = 302,
+  HTTP_STATUS_SEE_OTHER          = 303,
+  HTTP_STATUS_NOT_MODIFIED       = 304,
+  HTTP_STATUS_USE_PROXY          = 305,
   HTTP_STATUS_TEMPORARY_REDIRECT = 307,
 
-  HTTP_STATUS_BAD_REQUEST = 400,
-  HTTP_STATUS_UNAUTHORIZED = 401,
-  HTTP_STATUS_PAYMENT_REQUIRED = 402,
-  HTTP_STATUS_FORBIDDEN = 403,
-  HTTP_STATUS_NOT_FOUND = 404,
-  HTTP_STATUS_METHOD_NOT_ALLOWED = 405,
-  HTTP_STATUS_NOT_ACCEPTABLE = 406,
+  HTTP_STATUS_BAD_REQUEST                   = 400,
+  HTTP_STATUS_UNAUTHORIZED                  = 401,
+  HTTP_STATUS_PAYMENT_REQUIRED              = 402,
+  HTTP_STATUS_FORBIDDEN                     = 403,
+  HTTP_STATUS_NOT_FOUND                     = 404,
+  HTTP_STATUS_METHOD_NOT_ALLOWED            = 405,
+  HTTP_STATUS_NOT_ACCEPTABLE                = 406,
   HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED = 407,
-  HTTP_STATUS_REQUEST_TIMEOUT = 408,
-  HTTP_STATUS_CONFLICT = 409,
-  HTTP_STATUS_GONE = 410,
-  HTTP_STATUS_LENGTH_REQUIRED = 411,
-  HTTP_STATUS_PRECONDITION_FAILED = 412,
-  HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE = 413,
-  HTTP_STATUS_REQUEST_URI_TOO_LONG = 414,
-  HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE = 415,
-  HTTP_STATUS_RANGE_NOT_SATISFIABLE = 416,
+  HTTP_STATUS_REQUEST_TIMEOUT               = 408,
+  HTTP_STATUS_CONFLICT                      = 409,
+  HTTP_STATUS_GONE                          = 410,
+  HTTP_STATUS_LENGTH_REQUIRED               = 411,
+  HTTP_STATUS_PRECONDITION_FAILED           = 412,
+  HTTP_STATUS_REQUEST_ENTITY_TOO_LARGE      = 413,
+  HTTP_STATUS_REQUEST_URI_TOO_LONG          = 414,
+  HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE        = 415,
+  HTTP_STATUS_RANGE_NOT_SATISFIABLE         = 416,
 
   HTTP_STATUS_INTERNAL_SERVER_ERROR = 500,
-  HTTP_STATUS_NOT_IMPLEMENTED = 501,
-  HTTP_STATUS_BAD_GATEWAY = 502,
-  HTTP_STATUS_SERVICE_UNAVAILABLE = 503,
-  HTTP_STATUS_GATEWAY_TIMEOUT = 504,
+  HTTP_STATUS_NOT_IMPLEMENTED       = 501,
+  HTTP_STATUS_BAD_GATEWAY           = 502,
+  HTTP_STATUS_SERVICE_UNAVAILABLE   = 503,
+  HTTP_STATUS_GATEWAY_TIMEOUT       = 504,
   HTTP_STATUS_HTTPVER_NOT_SUPPORTED = 505
 };
 
@@ -95,139 +95,139 @@ enum HTTPKeepAlive {
 enum HTTPWarningCode {
   HTTP_WARNING_CODE_NONE = 0,
 
-  HTTP_WARNING_CODE_RESPONSE_STALE = 110,
-  HTTP_WARNING_CODE_REVALIDATION_FAILED = 111,
+  HTTP_WARNING_CODE_RESPONSE_STALE         = 110,
+  HTTP_WARNING_CODE_REVALIDATION_FAILED    = 111,
   HTTP_WARNING_CODE_DISCONNECTED_OPERATION = 112,
-  HTTP_WARNING_CODE_HERUISTIC_EXPIRATION = 113,
+  HTTP_WARNING_CODE_HERUISTIC_EXPIRATION   = 113,
   HTTP_WARNING_CODE_TRANSFORMATION_APPLIED = 114,
-  HTTP_WARNING_CODE_MISC_WARNING = 199
+  HTTP_WARNING_CODE_MISC_WARNING           = 199
 };
 
 /* squild log codes */
 enum SquidLogCode {
-  SQUID_LOG_EMPTY = '0',
-  SQUID_LOG_TCP_HIT = '1',
-  SQUID_LOG_TCP_DISK_HIT = '2',
-  SQUID_LOG_TCP_MEM_HIT = '.', // Don't want to change others codes
-  SQUID_LOG_TCP_MISS = '3',
-  SQUID_LOG_TCP_EXPIRED_MISS = '4',
-  SQUID_LOG_TCP_REFRESH_HIT = '5',
-  SQUID_LOG_TCP_REF_FAIL_HIT = '6',
-  SQUID_LOG_TCP_REFRESH_MISS = '7',
-  SQUID_LOG_TCP_CLIENT_REFRESH = '8',
-  SQUID_LOG_TCP_IMS_HIT = '9',
-  SQUID_LOG_TCP_IMS_MISS = 'a',
-  SQUID_LOG_TCP_SWAPFAIL = 'b',
-  SQUID_LOG_TCP_DENIED = 'c',
-  SQUID_LOG_TCP_WEBFETCH_MISS = 'd',
-  SQUID_LOG_TCP_FUTURE_2 = 'f',
-  SQUID_LOG_TCP_HIT_REDIRECT = '[',    // standard redirect
-  SQUID_LOG_TCP_MISS_REDIRECT = ']',   // standard redirect
-  SQUID_LOG_TCP_HIT_X_REDIRECT = '<',  // extended redirect
-  SQUID_LOG_TCP_MISS_X_REDIRECT = '>', // extended redirect
-  SQUID_LOG_UDP_HIT = 'g',
-  SQUID_LOG_UDP_WEAK_HIT = 'h',
-  SQUID_LOG_UDP_HIT_OBJ = 'i',
-  SQUID_LOG_UDP_MISS = 'j',
-  SQUID_LOG_UDP_DENIED = 'k',
-  SQUID_LOG_UDP_INVALID = 'l',
-  SQUID_LOG_UDP_RELOADING = 'm',
-  SQUID_LOG_UDP_FUTURE_1 = 'n',
-  SQUID_LOG_UDP_FUTURE_2 = 'o',
-  SQUID_LOG_ERR_READ_TIMEOUT = 'p',
-  SQUID_LOG_ERR_LIFETIME_EXP = 'q',
+  SQUID_LOG_EMPTY                     = '0',
+  SQUID_LOG_TCP_HIT                   = '1',
+  SQUID_LOG_TCP_DISK_HIT              = '2',
+  SQUID_LOG_TCP_MEM_HIT               = '.', // Don't want to change others codes
+  SQUID_LOG_TCP_MISS                  = '3',
+  SQUID_LOG_TCP_EXPIRED_MISS          = '4',
+  SQUID_LOG_TCP_REFRESH_HIT           = '5',
+  SQUID_LOG_TCP_REF_FAIL_HIT          = '6',
+  SQUID_LOG_TCP_REFRESH_MISS          = '7',
+  SQUID_LOG_TCP_CLIENT_REFRESH        = '8',
+  SQUID_LOG_TCP_IMS_HIT               = '9',
+  SQUID_LOG_TCP_IMS_MISS              = 'a',
+  SQUID_LOG_TCP_SWAPFAIL              = 'b',
+  SQUID_LOG_TCP_DENIED                = 'c',
+  SQUID_LOG_TCP_WEBFETCH_MISS         = 'd',
+  SQUID_LOG_TCP_FUTURE_2              = 'f',
+  SQUID_LOG_TCP_HIT_REDIRECT          = '[', // standard redirect
+  SQUID_LOG_TCP_MISS_REDIRECT         = ']', // standard redirect
+  SQUID_LOG_TCP_HIT_X_REDIRECT        = '<', // extended redirect
+  SQUID_LOG_TCP_MISS_X_REDIRECT       = '>', // extended redirect
+  SQUID_LOG_UDP_HIT                   = 'g',
+  SQUID_LOG_UDP_WEAK_HIT              = 'h',
+  SQUID_LOG_UDP_HIT_OBJ               = 'i',
+  SQUID_LOG_UDP_MISS                  = 'j',
+  SQUID_LOG_UDP_DENIED                = 'k',
+  SQUID_LOG_UDP_INVALID               = 'l',
+  SQUID_LOG_UDP_RELOADING             = 'm',
+  SQUID_LOG_UDP_FUTURE_1              = 'n',
+  SQUID_LOG_UDP_FUTURE_2              = 'o',
+  SQUID_LOG_ERR_READ_TIMEOUT          = 'p',
+  SQUID_LOG_ERR_LIFETIME_EXP          = 'q',
   SQUID_LOG_ERR_POST_ENTITY_TOO_LARGE = 'L',
-  SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ = 'r',
-  SQUID_LOG_ERR_READ_ERROR = 's',
-  SQUID_LOG_ERR_CLIENT_ABORT = 't',
-  SQUID_LOG_ERR_CONNECT_FAIL = 'u',
-  SQUID_LOG_ERR_INVALID_REQ = 'v',
-  SQUID_LOG_ERR_UNSUP_REQ = 'w',
-  SQUID_LOG_ERR_INVALID_URL = 'x',
-  SQUID_LOG_ERR_NO_FDS = 'y',
-  SQUID_LOG_ERR_DNS_FAIL = 'z',
-  SQUID_LOG_ERR_NOT_IMPLEMENTED = 'A',
-  SQUID_LOG_ERR_CANNOT_FETCH = 'B',
-  SQUID_LOG_ERR_NO_RELAY = 'C',
-  SQUID_LOG_ERR_DISK_IO = 'D',
-  SQUID_LOG_ERR_ZERO_SIZE_OBJECT = 'E',
-  SQUID_LOG_ERR_PROXY_DENIED = 'G',
-  SQUID_LOG_ERR_WEBFETCH_DETECTED = 'H',
-  SQUID_LOG_ERR_FUTURE_1 = 'I',
-  SQUID_LOG_ERR_UNKNOWN = 'Z'
+  SQUID_LOG_ERR_NO_CLIENTS_BIG_OBJ    = 'r',
+  SQUID_LOG_ERR_READ_ERROR            = 's',
+  SQUID_LOG_ERR_CLIENT_ABORT          = 't',
+  SQUID_LOG_ERR_CONNECT_FAIL          = 'u',
+  SQUID_LOG_ERR_INVALID_REQ           = 'v',
+  SQUID_LOG_ERR_UNSUP_REQ             = 'w',
+  SQUID_LOG_ERR_INVALID_URL           = 'x',
+  SQUID_LOG_ERR_NO_FDS                = 'y',
+  SQUID_LOG_ERR_DNS_FAIL              = 'z',
+  SQUID_LOG_ERR_NOT_IMPLEMENTED       = 'A',
+  SQUID_LOG_ERR_CANNOT_FETCH          = 'B',
+  SQUID_LOG_ERR_NO_RELAY              = 'C',
+  SQUID_LOG_ERR_DISK_IO               = 'D',
+  SQUID_LOG_ERR_ZERO_SIZE_OBJECT      = 'E',
+  SQUID_LOG_ERR_PROXY_DENIED          = 'G',
+  SQUID_LOG_ERR_WEBFETCH_DETECTED     = 'H',
+  SQUID_LOG_ERR_FUTURE_1              = 'I',
+  SQUID_LOG_ERR_UNKNOWN               = 'Z'
 };
 
 /* squid hieratchy codes */
 enum SquidHierarchyCode {
-  SQUID_HIER_EMPTY = '0',
-  SQUID_HIER_NONE = '1',
-  SQUID_HIER_DIRECT = '2',
-  SQUID_HIER_SIBLING_HIT = '3',
-  SQUID_HIER_PARENT_HIT = '4',
-  SQUID_HIER_DEFAULT_PARENT = '5',
-  SQUID_HIER_SINGLE_PARENT = '6',
-  SQUID_HIER_FIRST_UP_PARENT = '7',
-  SQUID_HIER_NO_PARENT_DIRECT = '8',
-  SQUID_HIER_FIRST_PARENT_MISS = '9',
-  SQUID_HIER_LOCAL_IP_DIRECT = 'a',
-  SQUID_HIER_FIREWALL_IP_DIRECT = 'b',
-  SQUID_HIER_NO_DIRECT_FAIL = 'c',
-  SQUID_HIER_SOURCE_FASTEST = 'd',
-  SQUID_HIER_SIBLING_UDP_HIT_OBJ = 'e',
-  SQUID_HIER_PARENT_UDP_HIT_OBJ = 'f',
-  SQUID_HIER_PASSTHROUGH_PARENT = 'g',
-  SQUID_HIER_SSL_PARENT_MISS = 'h',
-  SQUID_HIER_INVALID_CODE = 'i',
-  SQUID_HIER_TIMEOUT_DIRECT = 'j',
-  SQUID_HIER_TIMEOUT_SIBLING_HIT = 'k',
-  SQUID_HIER_TIMEOUT_PARENT_HIT = 'l',
-  SQUID_HIER_TIMEOUT_DEFAULT_PARENT = 'm',
-  SQUID_HIER_TIMEOUT_SINGLE_PARENT = 'n',
-  SQUID_HIER_TIMEOUT_FIRST_UP_PARENT = 'o',
-  SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT = 'p',
-  SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS = 'q',
-  SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT = 'r',
-  SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT = 's',
-  SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL = 't',
-  SQUID_HIER_TIMEOUT_SOURCE_FASTEST = 'u',
-  SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ = 'v',
-  SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ = 'w',
-  SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT = 'x',
+  SQUID_HIER_EMPTY                           = '0',
+  SQUID_HIER_NONE                            = '1',
+  SQUID_HIER_DIRECT                          = '2',
+  SQUID_HIER_SIBLING_HIT                     = '3',
+  SQUID_HIER_PARENT_HIT                      = '4',
+  SQUID_HIER_DEFAULT_PARENT                  = '5',
+  SQUID_HIER_SINGLE_PARENT                   = '6',
+  SQUID_HIER_FIRST_UP_PARENT                 = '7',
+  SQUID_HIER_NO_PARENT_DIRECT                = '8',
+  SQUID_HIER_FIRST_PARENT_MISS               = '9',
+  SQUID_HIER_LOCAL_IP_DIRECT                 = 'a',
+  SQUID_HIER_FIREWALL_IP_DIRECT              = 'b',
+  SQUID_HIER_NO_DIRECT_FAIL                  = 'c',
+  SQUID_HIER_SOURCE_FASTEST                  = 'd',
+  SQUID_HIER_SIBLING_UDP_HIT_OBJ             = 'e',
+  SQUID_HIER_PARENT_UDP_HIT_OBJ              = 'f',
+  SQUID_HIER_PASSTHROUGH_PARENT              = 'g',
+  SQUID_HIER_SSL_PARENT_MISS                 = 'h',
+  SQUID_HIER_INVALID_CODE                    = 'i',
+  SQUID_HIER_TIMEOUT_DIRECT                  = 'j',
+  SQUID_HIER_TIMEOUT_SIBLING_HIT             = 'k',
+  SQUID_HIER_TIMEOUT_PARENT_HIT              = 'l',
+  SQUID_HIER_TIMEOUT_DEFAULT_PARENT          = 'm',
+  SQUID_HIER_TIMEOUT_SINGLE_PARENT           = 'n',
+  SQUID_HIER_TIMEOUT_FIRST_UP_PARENT         = 'o',
+  SQUID_HIER_TIMEOUT_NO_PARENT_DIRECT        = 'p',
+  SQUID_HIER_TIMEOUT_FIRST_PARENT_MISS       = 'q',
+  SQUID_HIER_TIMEOUT_LOCAL_IP_DIRECT         = 'r',
+  SQUID_HIER_TIMEOUT_FIREWALL_IP_DIRECT      = 's',
+  SQUID_HIER_TIMEOUT_NO_DIRECT_FAIL          = 't',
+  SQUID_HIER_TIMEOUT_SOURCE_FASTEST          = 'u',
+  SQUID_HIER_TIMEOUT_SIBLING_UDP_HIT_OBJ     = 'v',
+  SQUID_HIER_TIMEOUT_PARENT_UDP_HIT_OBJ      = 'w',
+  SQUID_HIER_TIMEOUT_PASSTHROUGH_PARENT      = 'x',
   SQUID_HIER_TIMEOUT_TIMEOUT_SSL_PARENT_MISS = 'y',
-  SQUID_HIER_INVALID_ASSIGNED_CODE = 'z'
+  SQUID_HIER_INVALID_ASSIGNED_CODE           = 'z'
 };
 
 /* squid hit/miss codes */
 enum SquidHitMissCode {
-  SQUID_HIT_RESERVED = '0', // Kinda wonky that this is '0', so skipping 'A' for now
-  SQUID_HIT_LEVEL_1 = 'B',
-  SQUID_HIT_LEVEL_2 = 'C',
-  SQUID_HIT_LEVEL_3 = 'D',
-  SQUID_HIT_LEVEL_4 = 'E',
-  SQUID_HIT_LEVEL_5 = 'F',
-  SQUID_HIT_LEVEL_6 = 'G',
-  SQUID_HIT_LEVEL_7 = 'H',
-  SQUID_HIT_LEVEL_8 = 'I',
-  SQUID_HIT_LEVEl_9 = 'J',
-  SQUID_MISS_NONE = '1',
-  SQUID_MISS_ICP_AUTH = '2',
-  SQUID_MISS_HTTP_NON_CACHE = '3',
-  SQUID_MISS_ICP_STOPLIST = '4',
-  SQUID_MISS_HTTP_NO_DLE = '5',
-  SQUID_MISS_HTTP_NO_LE = '6',
-  SQUID_MISS_HTTP_CONTENT = '7',
-  SQUID_MISS_PRAGMA_NOCACHE = '8',
-  SQUID_MISS_PASS = '9',
-  SQUID_MISS_PRE_EXPIRED = 'a',
-  SQUID_MISS_ERROR = 'b',
-  SQUID_MISS_CACHE_BYPASS = 'c',
+  SQUID_HIT_RESERVED                   = '0', // Kinda wonky that this is '0', so skipping 'A' for now
+  SQUID_HIT_LEVEL_1                    = 'B',
+  SQUID_HIT_LEVEL_2                    = 'C',
+  SQUID_HIT_LEVEL_3                    = 'D',
+  SQUID_HIT_LEVEL_4                    = 'E',
+  SQUID_HIT_LEVEL_5                    = 'F',
+  SQUID_HIT_LEVEL_6                    = 'G',
+  SQUID_HIT_LEVEL_7                    = 'H',
+  SQUID_HIT_LEVEL_8                    = 'I',
+  SQUID_HIT_LEVEl_9                    = 'J',
+  SQUID_MISS_NONE                      = '1',
+  SQUID_MISS_ICP_AUTH                  = '2',
+  SQUID_MISS_HTTP_NON_CACHE            = '3',
+  SQUID_MISS_ICP_STOPLIST              = '4',
+  SQUID_MISS_HTTP_NO_DLE               = '5',
+  SQUID_MISS_HTTP_NO_LE                = '6',
+  SQUID_MISS_HTTP_CONTENT              = '7',
+  SQUID_MISS_PRAGMA_NOCACHE            = '8',
+  SQUID_MISS_PASS                      = '9',
+  SQUID_MISS_PRE_EXPIRED               = 'a',
+  SQUID_MISS_ERROR                     = 'b',
+  SQUID_MISS_CACHE_BYPASS              = 'c',
   SQUID_HIT_MISS_INVALID_ASSIGNED_CODE = 'z',
   // These are pre-allocated with special semantics, added here for convenience
-  SQUID_HIT_RAM = SQUID_HIT_LEVEL_1,
-  SQUID_HIT_SSD = SQUID_HIT_LEVEL_2,
-  SQUID_HIT_DISK = SQUID_HIT_LEVEL_3,
+  SQUID_HIT_RAM     = SQUID_HIT_LEVEL_1,
+  SQUID_HIT_SSD     = SQUID_HIT_LEVEL_2,
+  SQUID_HIT_DISK    = SQUID_HIT_LEVEL_3,
   SQUID_HIT_CLUSTER = SQUID_HIT_LEVEL_4,
-  SQUID_HIT_NET = SQUID_HIT_LEVEL_5
+  SQUID_HIT_NET     = SQUID_HIT_LEVEL_5
 };
 
 enum HTTPType {
@@ -540,7 +540,7 @@ public:
       field and not explicitly in the URL.
    */
   char *url_string_get(Arena *arena = 0, ///< Arena to use, or @c malloc if NULL.
-                       int *length = 0   ///< Store string length here.
+                       int *length  = 0  ///< Store string length here.
                        );
   /** Get a string with the effective URL in it.
       This is automatically allocated if needed in the request heap.
@@ -986,7 +986,7 @@ is_header_keep_alive(const HTTPVersion &http_version, const MIMEField *con_hdr)
     CON_TOKEN_CLOSE,
   };
 
-  int con_token = CON_TOKEN_NONE;
+  int con_token            = CON_TOKEN_NONE;
   HTTPKeepAlive keep_alive = HTTP_NO_KEEPALIVE;
   //    *unknown_tokens = false;
 
@@ -1017,12 +1017,12 @@ inline HTTPKeepAlive
 HTTPHdr::keep_alive_get() const
 {
   HTTPKeepAlive retval = HTTP_NO_KEEPALIVE;
-  const MIMEField *pc = this->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
+  const MIMEField *pc  = this->field_find(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION);
   if (pc != NULL) {
     retval = is_header_keep_alive(this->version_get(), pc);
   } else {
     const MIMEField *c = this->field_find(MIME_FIELD_CONNECTION, MIME_LEN_CONNECTION);
-    retval = is_header_keep_alive(this->version_get(), c);
+    retval             = is_header_keep_alive(this->version_get(), c);
   }
   return retval;
 }
@@ -1304,9 +1304,9 @@ HTTPHdr::scheme_get(int *length)
   -------------------------------------------------------------------------*/
 
 enum {
-  CACHE_ALT_MAGIC_ALIVE = 0xabcddeed,
+  CACHE_ALT_MAGIC_ALIVE     = 0xabcddeed,
   CACHE_ALT_MAGIC_MARSHALED = 0xdcbadeed,
-  CACHE_ALT_MAGIC_DEAD = 0xdeadeed,
+  CACHE_ALT_MAGIC_DEAD      = 0xdeadeed,
 };
 
 // struct HTTPCacheAlt
@@ -1549,10 +1549,10 @@ inline void
 HTTPInfo::object_key_get(INK_MD5 *md5)
 {
   int32_t *pi = reinterpret_cast<int32_t *>(md5);
-  pi[0] = m_alt->m_object_key[0];
-  pi[1] = m_alt->m_object_key[1];
-  pi[2] = m_alt->m_object_key[2];
-  pi[3] = m_alt->m_object_key[3];
+  pi[0]       = m_alt->m_object_key[0];
+  pi[1]       = m_alt->m_object_key[1];
+  pi[2]       = m_alt->m_object_key[2];
+  pi[3]       = m_alt->m_object_key[3];
 }
 
 inline bool
@@ -1577,7 +1577,7 @@ HTTPInfo::object_size_get()
 inline void
 HTTPInfo::object_key_set(INK_MD5 &md5)
 {
-  int32_t *pi = reinterpret_cast<int32_t *>(&md5);
+  int32_t *pi            = reinterpret_cast<int32_t *>(&md5);
   m_alt->m_object_key[0] = pi[0];
   m_alt->m_object_key[1] = pi[1];
   m_alt->m_object_key[2] = pi[2];
@@ -1587,7 +1587,7 @@ HTTPInfo::object_key_set(INK_MD5 &md5)
 inline void
 HTTPInfo::object_size_set(int64_t size)
 {
-  int32_t *pi = reinterpret_cast<int32_t *>(&size);
+  int32_t *pi             = reinterpret_cast<int32_t *>(&size);
   m_alt->m_object_size[0] = pi[0];
   m_alt->m_object_size[1] = pi[1];
 }

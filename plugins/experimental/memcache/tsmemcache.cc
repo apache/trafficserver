@@ -39,9 +39,9 @@ ClassAllocator<MC> theMCAllocator("MC");
 static time_t base_day_time;
 
 // These should be persistent.
-volatile int32_t MC::verbosity = 0;
+volatile int32_t MC::verbosity     = 0;
 volatile ink_hrtime MC::last_flush = 0;
-volatile int64_t MC::next_cas = 1;
+volatile int64_t MC::next_cas      = 1;
 
 static void
 tsmemcache_constants()
@@ -49,9 +49,9 @@ tsmemcache_constants()
   struct tm tm;
   memset(&tm, 0, sizeof(tm));
   // jan 1 2010
-  tm.tm_year = 110;
-  tm.tm_mon = 1;
-  tm.tm_mday = 1;
+  tm.tm_year    = 110;
+  tm.tm_mon     = 1;
+  tm.tm_mday    = 1;
   base_day_time = mktime(&tm);
   ink_assert(base_day_time != (time_t)-1);
 }
@@ -91,7 +91,7 @@ static uint64_t
 ink_hton64(uint64_t in)
 {
   int32_t val = 1;
-  uint8_t *c = (uint8_t *)&val;
+  uint8_t *c  = (uint8_t *)&val;
   if (*c == 1) {
     union {
       uint64_t rv;
@@ -100,8 +100,8 @@ ink_hton64(uint64_t in)
 #define SWP1B(_x, _y) \
   do {                \
     uint8_t t = (_y); \
-    (_y) = (_x);      \
-    (_x) = t;         \
+    (_y)      = (_x); \
+    (_x)      = t;    \
   } while (0)
     x.rv = in;
     SWP1B(x.b[0], x.b[7]);
@@ -120,7 +120,7 @@ MCAccept::main_event(int event, void *data)
 {
   if (event == NET_EVENT_ACCEPT) {
     NetVConnection *netvc = (NetVConnection *)data;
-    MC *mc = theMCAllocator.alloc();
+    MC *mc                = theMCAllocator.alloc();
     if (!mutex->thread_holding)
       mc->new_connection(netvc, netvc->thread);
     else
@@ -135,17 +135,17 @@ MCAccept::main_event(int event, void *data)
 void
 MC::new_connection(NetVConnection *netvc, EThread *thread)
 {
-  nvc = netvc;
-  mutex = new_ProxyMutex();
-  rbuf = new_MIOBuffer(MAX_IOBUFFER_SIZE);
+  nvc              = netvc;
+  mutex            = new_ProxyMutex();
+  rbuf             = new_MIOBuffer(MAX_IOBUFFER_SIZE);
   rbuf->water_mark = TSMEMCACHE_TMP_CMD_BUFFER_SIZE;
-  reader = rbuf->alloc_reader();
-  wbuf = new_empty_MIOBuffer();
-  cbuf = 0;
-  writer = wbuf->alloc_reader();
+  reader           = rbuf->alloc_reader();
+  wbuf             = new_empty_MIOBuffer();
+  cbuf             = 0;
+  writer           = wbuf->alloc_reader();
   SCOPED_MUTEX_LOCK(lock, mutex, thread);
-  rvio = nvc->do_io_read(this, INT64_MAX, rbuf);
-  wvio = nvc->do_io_write(this, 0, writer);
+  rvio         = nvc->do_io_read(this, INT64_MAX, rbuf);
+  wvio         = nvc->do_io_write(this, 0, writer);
   header.magic = TSMEMCACHE_HEADER_MAGIC;
   read_from_client();
 }
@@ -209,15 +209,15 @@ MC::add_binary_header(uint16_t err, uint8_t hdr_len, uint16_t key_len, uint32_t 
 {
   protocol_binary_response_header r;
 
-  r.response.magic = (uint8_t)PROTOCOL_BINARY_RES;
-  r.response.opcode = binary_header.request.opcode;
-  r.response.keylen = (uint16_t)htons(key_len);
-  r.response.extlen = (uint8_t)hdr_len;
+  r.response.magic    = (uint8_t)PROTOCOL_BINARY_RES;
+  r.response.opcode   = binary_header.request.opcode;
+  r.response.keylen   = (uint16_t)htons(key_len);
+  r.response.extlen   = (uint8_t)hdr_len;
   r.response.datatype = (uint8_t)PROTOCOL_BINARY_RAW_BYTES;
-  r.response.status = (uint16_t)htons(err);
-  r.response.bodylen = htonl(body_len);
-  r.response.opaque = binary_header.request.opaque;
-  r.response.cas = ink_hton64(header.cas);
+  r.response.status   = (uint16_t)htons(err);
+  r.response.bodylen  = htonl(body_len);
+  r.response.opaque   = binary_header.request.opaque;
+  r.response.cas      = ink_hton64(header.cas);
 
   wbuf->write(&r, sizeof(r));
 }
@@ -278,7 +278,7 @@ MC::write_binary_error(protocol_binary_response_status err, int swallow)
 int
 MC::swallow_then_read_event(int event, void *data)
 {
-  rvio->nbytes = INT64_MAX;
+  rvio->nbytes  = INT64_MAX;
   int64_t avail = reader->read_avail();
   if (avail >= swallow_bytes) {
     reader->consume(swallow_bytes);
@@ -320,17 +320,17 @@ MC::read_from_client()
   if (swallow_bytes)
     return TS_SET_CALL(&MC::swallow_then_read_event, VC_EVENT_READ_READY, rvio);
   read_offset = 0;
-  end_of_cmd = 0;
-  ngets = 0;
-  ff = 0;
+  end_of_cmd  = 0;
+  ngets       = 0;
+  ff          = 0;
   if (crvc) {
     crvc->do_io_close();
-    crvc = 0;
+    crvc  = 0;
     crvio = NULL;
   }
   if (cwvc) {
     cwvc->do_io_close();
-    cwvc = 0;
+    cwvc  = 0;
     cwvio = NULL;
   }
   if (cbuf)
@@ -409,7 +409,7 @@ MC::cache_read_event(int event, void *data)
 {
   switch (event) {
   case CACHE_EVENT_OPEN_READ: {
-    crvc = (CacheVConnection *)data;
+    crvc     = (CacheVConnection *)data;
     int hlen = 0;
     if (crvc->get_header((void **)&rcache_header, &hlen) < 0)
       goto Lfail;
@@ -428,7 +428,7 @@ MC::cache_read_event(int event, void *data)
     break;
   Lfail:
     crvc->do_io_close();
-    crvc = 0;
+    crvc  = 0;
     crvio = NULL;
     event = CACHE_EVENT_OPEN_READ_FAILED; // convert to failure
     break;
@@ -475,7 +475,7 @@ MC::binary_get_event(int event, void *data)
   ink_assert(!"EVENT_ITEM_GOT is incorrect here");
   if (event != TSMEMCACHE_EVENT_GOT_ITEM) {
     CHECK_READ_AVAIL(binary_header.request.keylen, &MC::binary_get);
-    key = binary_get_key(this);
+    key         = binary_get_key(this);
     header.nkey = binary_header.request.keylen;
     return get_item();
   } else if (event == CACHE_EVENT_OPEN_READ_FAILED) {
@@ -489,8 +489,8 @@ MC::binary_get_event(int event, void *data)
       return write_binary_error(PROTOCOL_BINARY_RESPONSE_KEY_ENOENT, 0);
   } else if (event == CACHE_EVENT_OPEN_READ) {
     protocol_binary_response_get *rsp = &res.get;
-    uint16_t keylen = 0;
-    uint32_t bodylen = sizeof(rsp->message.body) + (rcache_header->nbytes - 2);
+    uint16_t keylen                   = 0;
+    uint32_t bodylen                  = sizeof(rsp->message.body) + (rcache_header->nbytes - 2);
     bool getk =
       (binary_header.request.opcode == PROTOCOL_BINARY_CMD_GETK || binary_header.request.opcode == PROTOCOL_BINARY_CMD_GETKQ);
     if (getk) {
@@ -499,7 +499,7 @@ MC::binary_get_event(int event, void *data)
     }
     add_binary_header(0, sizeof(rsp->message.body), keylen, bodylen);
     rsp->message.header.response.cas = ink_hton64(rcache_header->cas);
-    rsp->message.body.flags = htonl(rcache_header->flags);
+    rsp->message.body.flags          = htonl(rcache_header->flags);
     wbuf->write(&rsp->message.body, sizeof(rsp->message.body));
     if (getk)
       wbuf->write(key, header.nkey);
@@ -528,9 +528,9 @@ MC::read_binary_from_client_event(int event, void *data)
   }
   int keylen = binary_header.request.keylen = ntohs(binary_header.request.keylen);
   int bodylen = binary_header.request.bodylen = ntohl(binary_header.request.bodylen);
-  binary_header.request.cas = ink_ntoh64(binary_header.request.cas);
-  int extlen = binary_header.request.extlen;
-  end_of_cmd = sizeof(binary_header) + extlen;
+  binary_header.request.cas                   = ink_ntoh64(binary_header.request.cas);
+  int extlen                                  = binary_header.request.extlen;
+  end_of_cmd                                  = sizeof(binary_header) + extlen;
 
 #define CHECK_PROTOCOL(_e) \
   if (!(_e))               \
@@ -579,12 +579,12 @@ MC::read_binary_from_client_event(int event, void *data)
   Lset:
     if (bin_read_key() < 0)
       return EVENT_CONT;
-    key = binary_get_key(this);
-    header.nkey = keylen;
+    key                              = binary_get_key(this);
+    header.nkey                      = keylen;
     protocol_binary_request_set *req = (protocol_binary_request_set *)&binary_header;
-    req->message.body.flags = ntohl(req->message.body.flags);
-    req->message.body.expiration = ntohl(req->message.body.expiration);
-    nbytes = bodylen - (header.nkey + extlen);
+    req->message.body.flags          = ntohl(req->message.body.flags);
+    req->message.body.expiration     = ntohl(req->message.body.expiration);
+    nbytes                           = bodylen - (header.nkey + extlen);
     break;
   }
   case PROTOCOL_BINARY_CMD_DELETEQ:
@@ -670,7 +670,7 @@ MC::get_ascii_input(int n, int *end)
   if (block_read_avail == read_avail)
     goto Lblock;
   char *c = tmp_cmd_buffer;
-  int e = read_avail;
+  int e   = read_avail;
   if (e > n)
     e = n;
   reader->memcpy(c, e);
@@ -703,14 +703,14 @@ MC::ascii_get_event(int event, void *data)
     }
     wbuf->WRITE("\r\n");
     int ntowrite = writer->read_avail() + rcache_header->nbytes;
-    crvio = crvc->do_io_read(this, rcache_header->nbytes, wbuf);
-    creader = reader;
+    crvio        = crvc->do_io_read(this, rcache_header->nbytes, wbuf);
+    creader      = reader;
     TS_PUSH_HANDLER(&MC::stream_event);
     return write_to_client(ntowrite);
   }
   case TSMEMCACHE_STREAM_DONE:
     crvc->do_io_close();
-    crvc = 0;
+    crvc  = 0;
     crvio = NULL;
     reader->consume(read_offset);
     read_offset = 0;
@@ -733,7 +733,7 @@ MC::ascii_set_event(int event, void *data)
   case EVENT_INTERVAL:
     return read_from_client();
   case CACHE_EVENT_OPEN_WRITE: {
-    cwvc = (CacheVConnection *)data;
+    cwvc     = (CacheVConnection *)data;
     int hlen = 0;
     if (cwvc->get_header((void **)&wcache_header, &hlen) >= 0) {
       if (hlen < (int)sizeof(MCCacheHeader) || wcache_header->magic != TSMEMCACHE_HEADER_MAGIC)
@@ -776,22 +776,22 @@ MC::ascii_set_event(int event, void *data)
       header.nbytes = nbytes;
     cwvc->set_header(&header, header.len());
     reader->consume(end_of_cmd);
-    end_of_cmd = -1;
+    end_of_cmd    = -1;
     swallow_bytes = 2; // \r\n
     if (f.set_append) {
       TS_PUSH_HANDLER(&MC::tunnel_event);
       if (!cbuf)
-        cbuf = new_empty_MIOBuffer();
+        cbuf  = new_empty_MIOBuffer();
       creader = cbuf->alloc_reader();
-      crvio = crvc->do_io_read(this, rcache_header->nbytes, cbuf);
-      cwvio = cwvc->do_io_write(this, header.nbytes, creader);
+      crvio   = crvc->do_io_read(this, rcache_header->nbytes, cbuf);
+      cwvio   = cwvc->do_io_write(this, header.nbytes, creader);
     } else {
       if (f.set_prepend) {
         int64_t a = reader->read_avail();
         if (a >= (int64_t)nbytes)
           a = (int64_t)nbytes;
         if (!cbuf)
-          cbuf = new_empty_MIOBuffer();
+          cbuf  = new_empty_MIOBuffer();
         creader = cbuf->alloc_reader();
         if (a) {
           cbuf->write(reader, a);
@@ -820,7 +820,7 @@ MC::ascii_set_event(int event, void *data)
     return ASCII_RESPONSE("STORED");
   case TSMEMCACHE_TUNNEL_DONE:
     crvc->do_io_close();
-    crvc = 0;
+    crvc  = 0;
     crvio = NULL;
     if (f.set_append) {
       int64_t a = reader->read_avail();
@@ -877,7 +877,7 @@ MC::ascii_incr_decr_event(int event, void *data)
     return read_from_client();
   case CACHE_EVENT_OPEN_WRITE: {
     int hlen = 0;
-    cwvc = (CacheVConnection *)data;
+    cwvc     = (CacheVConnection *)data;
     {
       if (cwvc->get_header((void **)&wcache_header, &hlen) >= 0) {
         if (hlen < (int)sizeof(MCCacheHeader) || wcache_header->magic != TSMEMCACHE_HEADER_MAGIC)
@@ -906,7 +906,7 @@ MC::ascii_incr_decr_event(int event, void *data)
     header.cas = ink_atomic_increment(&next_cas, 1);
     {
       char *data = 0;
-      int len = 0;
+      int len    = 0;
       // must be huge, why convert to a counter ??
       if (cwvc->get_single_data((void **)&data, &len) < 0)
         goto Lfail;
@@ -920,8 +920,8 @@ MC::ascii_incr_decr_event(int event, void *data)
           new_value -= delta;
       }
       char new_value_str_buffer[32], *e = &new_value_str_buffer[30];
-      e[0] = '\r';
-      e[1] = '\n';
+      e[0]    = '\r';
+      e[1]    = '\n';
       char *s = xutoa(new_value, e);
       creader = wbuf->clone_reader(writer);
       wbuf->write(s, e - s + 2);
@@ -1213,7 +1213,7 @@ MC::read_ascii_from_client_event(int event, void *data)
   case 'g': // get gets
     if (s[3] == 's' && s[4] == ' ') {
       f.return_cas = 1;
-      read_offset = 5;
+      read_offset  = 5;
       goto Lget;
     } else if (s[3] == ' ') {
       read_offset = 4;
@@ -1288,7 +1288,7 @@ MC::read_ascii_from_client_event(int event, void *data)
     int32_t time_offset = 0;
     if (isdigit(*s))
       GET_NUM(time_offset);
-    f.noreply = is_noreply(&s, e);
+    f.noreply                 = is_noreply(&s, e);
     ink_hrtime new_last_flush = Thread::get_hrtime() + HRTIME_SECONDS(time_offset);
 #if __WORDSIZE == 64
     last_flush = new_last_flush; // this will be atomic for native word size
@@ -1489,7 +1489,7 @@ init_tsmemcache(int port)
 {
   tsmemcache_constants();
   MCAccept *a = new MCAccept;
-  a->mutex = new_ProxyMutex();
+  a->mutex    = new_ProxyMutex();
   NetProcessor::AcceptOptions options(NetProcessor::DEFAULT_ACCEPT_OPTIONS);
   options.local_port = a->accept_port = port;
   netProcessor.accept(a, options);
@@ -1502,8 +1502,8 @@ TSPluginInit(int argc, const char *argv[])
   ink_assert(sizeof(protocol_binary_request_header) == 24);
 
   TSPluginRegistrationInfo info;
-  info.plugin_name = (char *)"tsmemcache";
-  info.vendor_name = (char *)"ats";
+  info.plugin_name   = (char *)"tsmemcache";
+  info.vendor_name   = (char *)"ats";
   info.support_email = (char *)"jplevyak@apache.org";
 
   int port = 11211;

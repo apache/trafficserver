@@ -31,9 +31,9 @@
 Parser::Parser(const std::string &line) : _cond(false), _empty(false)
 {
   TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Parser");
-  bool inquote = false;
-  bool extracting_token = false;
-  off_t cur_token_start = 0;
+  bool inquote            = false;
+  bool extracting_token   = false;
+  off_t cur_token_start   = 0;
   size_t cur_token_length = 0;
   for (size_t i = 0; i < line.size(); ++i) {
     if (!inquote && (std::isspace(line[i]) || (line[i] == '=' || line[i] == '>' || line[i] == '<'))) {
@@ -52,14 +52,14 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
       continue; /* always eat whitespace */
     } else if (line[i] == '"') {
       if (!inquote && !extracting_token) {
-        inquote = true;
+        inquote          = true;
         extracting_token = true;
-        cur_token_start = i + 1; /* eat the leading quote */
+        cur_token_start  = i + 1; /* eat the leading quote */
         continue;
       } else if (inquote && extracting_token) {
         cur_token_length = i - cur_token_start;
         _tokens.push_back(line.substr(cur_token_start, cur_token_length));
-        inquote = false;
+        inquote          = false;
         extracting_token = false;
       } else {
         /* malformed */
@@ -82,7 +82,7 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
       }
 
       extracting_token = true;
-      cur_token_start = i;
+      cur_token_start  = i;
     }
   }
 

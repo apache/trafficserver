@@ -50,7 +50,7 @@ acl_filter_rule::reset(void)
     in_ip_array[i].reset();
   }
   in_ip_valid = 0;
-  internal = 0;
+  internal    = 0;
 }
 
 acl_filter_rule::acl_filter_rule()
@@ -130,7 +130,7 @@ acl_filter_rule::print(void)
 acl_filter_rule *
 acl_filter_rule::find_byname(acl_filter_rule *list, const char *_name)
 {
-  int _name_size = 0;
+  int _name_size      = 0;
   acl_filter_rule *rp = 0;
   if (likely(list && _name && (_name_size = strlen(_name)) > 0)) {
     for (rp = list; rp; rp = rp->next) {
@@ -173,7 +173,7 @@ acl_filter_rule::requeue_in_active_list(acl_filter_rule **list, acl_filter_rule 
         if (r->active_queue_flag == 0)
           break;
       }
-      (*rpp = rp)->next = r;
+      (*rpp = rp)->next     = r;
       rp->active_queue_flag = 1;
     }
   }
@@ -193,7 +193,7 @@ acl_filter_rule::requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule
       }
       for (rpp = list; *rpp; rpp = &((*rpp)->next))
         ;
-      (*rpp = rp)->next = NULL;
+      (*rpp = rp)->next     = NULL;
       rp->active_queue_flag = 0;
     }
   }

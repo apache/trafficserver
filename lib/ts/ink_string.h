@@ -145,7 +145,7 @@ inline const char *
 ptr_len_str(const char *p1, int l1, const char *str)
 {
   if (str && str[0]) {
-    int str_index = 0;
+    int str_index           = 0;
     const char *match_start = NULL;
 
     while (l1 > 0) {
@@ -162,7 +162,7 @@ ptr_len_str(const char *p1, int l1, const char *str)
         }
       } else if (str_index > 0) {
         l1 += (p1 - match_start);
-        p1 = match_start;
+        p1        = match_start;
         str_index = 0;
       }
 
@@ -186,7 +186,7 @@ ptr_len_ncmp(const char *p1, int l1, const char *str, int n)
       return 1;
     }
 
-    char p1c = *p1;
+    char p1c  = *p1;
     char strc = *str;
 
     if (p1c != strc) {
@@ -227,7 +227,7 @@ ptr_len_ncasecmp(const char *p1, int l1, const char *str, int n)
       return 1;
     }
 
-    char p1c = ParseRules::ink_tolower(*p1);
+    char p1c  = ParseRules::ink_tolower(*p1);
     char strc = ParseRules::ink_tolower(*str);
 
     if (p1c != strc) {
@@ -268,7 +268,7 @@ ptr_len_casecmp(const char *p1, int l1, const char *str)
       return 1;
     }
 
-    char p1c = ParseRules::ink_tolower(*p1);
+    char p1c  = ParseRules::ink_tolower(*p1);
     char strc = ParseRules::ink_tolower(*str);
 
     if (p1c != strc) {
@@ -307,7 +307,7 @@ ptr_len_cmp(const char *p1, int l1, const char *str)
       return 1;
     }
 
-    char p1c = *p1;
+    char p1c  = *p1;
     char strc = *str;
 
     if (p1c != strc) {

@@ -52,8 +52,8 @@ SSLSessionCache::~SSLSessionCache()
 bool
 SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
 {
-  uint64_t hash = sid.hash();
-  uint64_t target_bucket = hash % nbuckets;
+  uint64_t hash            = sid.hash();
+  uint64_t target_bucket   = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
@@ -69,8 +69,8 @@ SSLSessionCache::getSession(const SSLSessionID &sid, SSL_SESSION **sess) const
 void
 SSLSessionCache::removeSession(const SSLSessionID &sid)
 {
-  uint64_t hash = sid.hash();
-  uint64_t target_bucket = hash % nbuckets;
+  uint64_t hash            = sid.hash();
+  uint64_t target_bucket   = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
@@ -87,8 +87,8 @@ SSLSessionCache::removeSession(const SSLSessionID &sid)
 void
 SSLSessionCache::insertSession(const SSLSessionID &sid, SSL_SESSION *sess)
 {
-  uint64_t hash = sid.hash();
-  uint64_t target_bucket = hash % nbuckets;
+  uint64_t hash            = sid.hash();
+  uint64_t target_bucket   = hash % nbuckets;
   SSLSessionBucket *bucket = &session_bucket[target_bucket];
 
   if (is_debug_tag_set("ssl.session_cache")) {
@@ -172,7 +172,7 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess)
   while (node) {
     if (node->session_id == id) {
       const unsigned char *loc = reinterpret_cast<const unsigned char *>(node->asn1_data->data());
-      *sess = d2i_SSL_SESSION(NULL, &loc, node->len_asn1_data);
+      *sess                    = d2i_SSL_SESSION(NULL, &loc, node->len_asn1_data);
 
       return true;
     }

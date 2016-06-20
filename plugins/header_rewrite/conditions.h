@@ -177,7 +177,7 @@ private:
       return TS_ERROR;
 
     start = buf;
-    end = buf + buf_len;
+    end   = buf + buf_len;
 
     while (start < end) {
       if (strncasecmp(start, name, name_len) != 0)
@@ -196,7 +196,7 @@ private:
         ;
 
       *value_len = last - start;
-      *value = start;
+      *value     = start;
       return TS_SUCCESS;
     skip:
       while (start < end) {

@@ -103,10 +103,10 @@ private:
 inline void
 HdrCsvIter::field_init(const MIMEField *m)
 {
-  m_cur_field = m;
+  m_cur_field   = m;
   m_value_start = m->m_ptr_value;
-  m_value_len = m->m_len_value;
-  m_csv_start = m_value_start;
+  m_value_len   = m->m_len_value;
+  m_csv_start   = m_value_start;
 }
 
 inline const char *
@@ -117,7 +117,7 @@ HdrCsvIter::get_first(const MIMEField *m, int *len, bool follow_dups)
   m_follow_dups = follow_dups;
 
   m_bytes_consumed = 0;
-  m_csv_index = -1;
+  m_csv_index      = -1;
 
   if (m_csv_start) {
     find_csv();

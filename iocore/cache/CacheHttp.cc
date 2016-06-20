@@ -128,7 +128,7 @@ CacheHTTPInfoVector::print(char *buffer, size_t buf_size, bool temps)
   int purl;
   int i, tmp;
 
-  p = buffer;
+  p    = buffer;
   purl = 1;
 
   for (i = 0; i < xcount; i++) {
@@ -180,7 +180,7 @@ int
 CacheHTTPInfoVector::marshal(char *buf, int length)
 {
   char *start = buf;
-  int count = 0;
+  int count   = 0;
 
   ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
 

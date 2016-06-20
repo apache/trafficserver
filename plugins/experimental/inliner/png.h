@@ -85,7 +85,7 @@ namespace inliner
       // chunk length (4) + chunk type (4) + chunk crc (4)
       const int32_t N = 12;
 
-      const char *iterator = content.data();
+      const char *iterator  = content.data();
       const char *const end = iterator + content.size();
 
       if (std::distance(iterator, end) > HEADER_SIZE) {
@@ -95,8 +95,8 @@ namespace inliner
 
         while (iterator < end) {
           const ChunkHeader *const header = reinterpret_cast<const ChunkHeader *>(iterator);
-          const std::string type = header->type();
-          const uint32_t length = header->length();
+          const std::string type          = header->type();
+          const uint32_t length           = header->length();
 
           // iterator cannot go backwards
           if (iterator >= iterator + (length + N)) {

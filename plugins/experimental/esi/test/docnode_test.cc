@@ -38,7 +38,7 @@ using namespace EsiLib;
 void
 check_node_attr(const Attribute &attr, const char *name, const char *value)
 {
-  int name_len = strlen(name);
+  int name_len  = strlen(name);
   int value_len = strlen(value);
   assert(attr.name_len == name_len);
   assert(attr.value_len == value_len);

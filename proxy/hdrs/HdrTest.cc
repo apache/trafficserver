@@ -53,7 +53,7 @@ int
 HdrTest::go(RegressionTest *t, int /* atype ATS_UNUSED */)
 {
   HdrTest::rtest = t;
-  int status = 1;
+  int status     = 1;
 
   hdrtoken_init();
   url_init();
@@ -137,7 +137,7 @@ HdrTest::test_error_page_selection()
   int i;
   int failures = 0;
 
-  int nsets = sizeof(sets) / sizeof(sets[0]);
+  int nsets  = sizeof(sets) / sizeof(sets[0]);
   int ntests = sizeof(tests) / sizeof(tests[0]);
 
   // (1) build fake hash table of sets
@@ -147,12 +147,12 @@ HdrTest::test_error_page_selection()
   for (i = 0; i < nsets; i++) {
     HttpBodySetRawData *body_set;
 
-    body_set = (HttpBodySetRawData *)ats_malloc(sizeof(HttpBodySetRawData));
-    body_set->magic = 0;
-    body_set->set_name = (char *)(sets[i].set_name);
+    body_set                   = (HttpBodySetRawData *)ats_malloc(sizeof(HttpBodySetRawData));
+    body_set->magic            = 0;
+    body_set->set_name         = (char *)(sets[i].set_name);
     body_set->content_language = (char *)(sets[i].content_language);
-    body_set->content_charset = (char *)(sets[i].content_charset);
-    body_set->table_of_pages = (RawHashTable *)1; // hack --- can't be NULL
+    body_set->content_charset  = (char *)(sets[i].content_charset);
+    body_set->table_of_pages   = (RawHashTable *)1; // hack --- can't be NULL
 
     table_of_sets->setValue((RawHashTable_Key)(body_set->set_name), (RawHashTable_Value)body_set);
   }
@@ -260,7 +260,7 @@ HdrTest::test_format_date()
   time_t t, t2, t3;
   char buffer[128], buffer2[128];
   static const char *envstr = "TZ=GMT0";
-  int failures = 0;
+  int failures              = 0;
 
   // shift into GMT timezone for cftime conversions
   putenv((char *)envstr);
@@ -383,8 +383,8 @@ HdrTest::test_url()
   failed = 0;
   for (unsigned i = 0; i < countof(strs); i++) {
     old_length = (int)strlen(strs[i]);
-    start = strs[i];
-    end = start + old_length;
+    start      = strs[i];
+    end        = start + old_length;
 
     url.create(NULL);
     err = url.parse(&start, end);
@@ -495,7 +495,7 @@ HdrTest::test_mime()
   printf("   <<< MUST BE HAND-VERIFIED FOR FULL-BENEFIT>>>\n\n");
 
   start = mime;
-  end = start + strlen(start);
+  end   = start + strlen(start);
 
   mime_parser_init(&parser);
 
@@ -640,14 +640,14 @@ HdrTest::test_http_parser_eos_boundary_cases()
     HTTPHdr req_hdr;
 
     start = tests[i].msg;
-    end = start + strlen(start); // 1 character past end of string
+    end   = start + strlen(start); // 1 character past end of string
 
     req_hdr.create(HTTP_TYPE_REQUEST);
 
     http_parser_clear(&parser);
 
-    orig_start = start;
-    ret = req_hdr.parse_req(&parser, &start, end, true);
+    orig_start     = start;
+    ret            = req_hdr.parse_req(&parser, &start, end, true);
     bytes_consumed = (int)(start - orig_start);
 
     printf("======== test %d (length=%d, consumed=%d)\n", i, (int)strlen(tests[i].msg), bytes_consumed);
@@ -687,7 +687,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   /*** (1) parse the request string into req_hdr ***/
 
   start = request;
-  end = start + strlen(start); // 1 character past end of string
+  end   = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -730,7 +730,7 @@ HdrTest::test_http_aux(const char *request, const char *response)
   /*** (3) parse the response string into rsp_hdr ***/
 
   start = response;
-  end = start + strlen(start);
+  end   = start + strlen(start);
 
   http_parser_clear(&parser);
   http_parser_init(&parser);
@@ -770,9 +770,9 @@ HdrTest::test_http_aux(const char *request, const char *response)
 
     do {
       last_bufindex = bufindex;
-      tmp = bufindex;
-      buf[0] = '#'; // make it obvious if hdr.print doesn't print anything
-      err = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
+      tmp           = bufindex;
+      buf[0]        = '#'; // make it obvious if hdr.print doesn't print anything
+      err           = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
 
       // printf("test_header: tmp = %d  err = %d  bufindex = %d\n", tmp, err, bufindex);
       putchar('{');
@@ -986,7 +986,7 @@ comp_http_hdr(HTTPHdr *h1, HTTPHdr *h2)
   h2_pbuf = (char *)ats_malloc(h2_len + 1);
 
   p_index = p_dumpoffset = 0;
-  rval = h1->print(h1_pbuf, h1_len, &p_index, &p_dumpoffset);
+  rval                   = h1->print(h1_pbuf, h1_len, &p_index, &p_dumpoffset);
   if (rval != 1) {
     ats_free(h1_pbuf);
     ats_free(h2_pbuf);
@@ -994,7 +994,7 @@ comp_http_hdr(HTTPHdr *h1, HTTPHdr *h2)
   }
 
   p_index = p_dumpoffset = 0;
-  rval = h2->print(h2_pbuf, h2_len, &p_index, &p_dumpoffset);
+  rval                   = h2->print(h2_pbuf, h2_len, &p_index, &p_dumpoffset);
   if (rval != 1) {
     ats_free(h1_pbuf);
     ats_free(h2_pbuf);
@@ -1034,7 +1034,7 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   req_hdr.create(HTTP_TYPE_REQUEST);
 
   start = request;
-  end = start + strlen(start); // 1 character past end of string
+  end   = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -1055,7 +1055,7 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   resp_hdr.create(HTTP_TYPE_RESPONSE);
 
   start = response;
-  end = start + strlen(start); // 1 character past end of string
+  end   = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -1151,7 +1151,7 @@ HdrTest::test_http_hdr_null_char(int testnum, const char *request, const char * 
   strcpy(cpy_buf, start);
 
   // Put a null character somewhere in the header
-  int length = strlen(start);
+  int length          = strlen(start);
   cpy_buf[length / 2] = '\0';
   http_parser_init(&parser);
 
@@ -1230,7 +1230,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
   int cpy_bufsize = sizeof(cpy_buf);
   int cpy_bufindex, cpy_dumpoffset, cpy_ret;
 
-  char *marshal_buf = (char *)ats_malloc(2048);
+  char *marshal_buf   = (char *)ats_malloc(2048);
   int marshal_bufsize = sizeof(cpy_buf);
 
   /*** (1) parse the request string into hdr ***/
@@ -1238,7 +1238,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
   hdr.create(HTTP_TYPE_REQUEST);
 
   start = request;
-  end = start + strlen(start); // 1 character past end of string
+  end   = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -1270,10 +1270,10 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
   /*** (3) print the request header and copy to buffers ***/
 
   prt_bufindex = prt_dumpoffset = 0;
-  prt_ret = hdr.print(prt_buf, prt_bufsize, &prt_bufindex, &prt_dumpoffset);
+  prt_ret                       = hdr.print(prt_buf, prt_bufsize, &prt_bufindex, &prt_dumpoffset);
 
   cpy_bufindex = cpy_dumpoffset = 0;
-  cpy_ret = new_hdr.print(cpy_buf, cpy_bufsize, &cpy_bufindex, &cpy_dumpoffset);
+  cpy_ret                       = new_hdr.print(cpy_buf, cpy_bufsize, &cpy_bufindex, &cpy_dumpoffset);
 
   ats_free(marshal_buf);
 
@@ -1311,7 +1311,7 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
   hdr.create(HTTP_TYPE_RESPONSE);
 
   start = response;
-  end = start + strlen(start); // 1 character past end of string
+  end   = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -1334,10 +1334,10 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
   /*** (3) print the response header and copy to buffers ***/
 
   prt_bufindex = prt_dumpoffset = 0;
-  prt_ret = hdr.print(prt_buf, prt_bufsize, &prt_bufindex, &prt_dumpoffset);
+  prt_ret                       = hdr.print(prt_buf, prt_bufsize, &prt_bufindex, &prt_dumpoffset);
 
   cpy_bufindex = cpy_dumpoffset = 0;
-  cpy_ret = new_hdr.print(cpy_buf, cpy_bufsize, &cpy_bufindex, &cpy_dumpoffset);
+  cpy_ret                       = new_hdr.print(cpy_buf, cpy_bufsize, &cpy_bufindex, &cpy_dumpoffset);
 
   if ((prt_ret != 1) || (cpy_ret != 1)) {
     printf("FAILED: (test #%d) couldn't print rsp hdr or copy --- prt_ret=%d, cpy_ret=%d\n", testnum, prt_ret, cpy_ret);
@@ -1568,7 +1568,7 @@ HdrTest::test_http_mutation()
   /*** (1) parse the response string into req_hdr ***/
 
   start = base_resp;
-  end = start + strlen(start);
+  end   = start + strlen(start);
 
   http_parser_init(&parser);
 
@@ -1639,7 +1639,7 @@ HdrTest::test_http_mutation()
 int
 HdrTest::test_arena_aux(Arena *arena, int len)
 {
-  char *str = arena->str_alloc(len);
+  char *str      = arena->str_alloc(len);
   int verify_len = (int)arena->str_length(str);
 
   if (len != verify_len) {
@@ -1859,7 +1859,7 @@ HdrTest::test_comma_vals()
   int i, j, len, failures, ntests, ncommavals;
 
   failures = 0;
-  ntests = sizeof(tests) / sizeof(tests[0]);
+  ntests   = sizeof(tests) / sizeof(tests[0]);
 
   hdr.create(HTTP_TYPE_REQUEST);
 
@@ -1886,7 +1886,7 @@ HdrTest::test_comma_vals()
 
     for (j = 0; j < tests[i].value_count; j++) {
       const char *val = mime_field_value_get_comma_val(f, &len, j);
-      int offset = ((val == NULL) ? -1 : (val - f->m_ptr_value));
+      int offset      = ((val == NULL) ? -1 : (val - f->m_ptr_value));
 
       if ((offset != tests[i].pieces[j].offset) || (len != tests[i].pieces[j].len)) {
         ++failures;
@@ -1958,7 +1958,7 @@ HdrTest::test_set_comma_vals()
   int i, failures, ntests;
 
   failures = 0;
-  ntests = sizeof(tests) / sizeof(tests[0]);
+  ntests   = sizeof(tests) / sizeof(tests[0]);
 
   hdr.create(HTTP_TYPE_REQUEST);
 

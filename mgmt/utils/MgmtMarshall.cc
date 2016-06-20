@@ -151,7 +151,7 @@ socket_read_buffer(int fd, MgmtMarshallData *data)
 
   if (data->len) {
     data->ptr = ats_malloc(data->len);
-    nread = socket_read_bytes(fd, data->ptr, data->len);
+    nread     = socket_read_bytes(fd, data->ptr, data->len);
     if (nread != (ssize_t)data->len) {
       goto fail;
     }
@@ -271,11 +271,11 @@ mgmt_message_write_v(int fd, const MgmtMarshallType *fields, unsigned count, va_
     switch (fields[n]) {
     case MGMT_MARSHALL_INT:
       ptr.m_int = va_arg(ap, MgmtMarshallInt *);
-      nwritten = socket_write_bytes(fd, ptr.m_void, 4);
+      nwritten  = socket_write_bytes(fd, ptr.m_void, 4);
       break;
     case MGMT_MARSHALL_LONG:
       ptr.m_long = va_arg(ap, MgmtMarshallLong *);
-      nwritten = socket_write_bytes(fd, ptr.m_void, 8);
+      nwritten   = socket_write_bytes(fd, ptr.m_void, 8);
       break;
     case MGMT_MARSHALL_STRING: {
       MgmtMarshallData data;
@@ -290,7 +290,7 @@ mgmt_message_write_v(int fd, const MgmtMarshallType *fields, unsigned count, va_
     }
     case MGMT_MARSHALL_DATA:
       ptr.m_data = va_arg(ap, MgmtMarshallData *);
-      nwritten = socket_write_buffer(fd, ptr.m_data);
+      nwritten   = socket_write_buffer(fd, ptr.m_data);
       break;
     default:
       errno = EINVAL;
@@ -332,11 +332,11 @@ mgmt_message_read_v(int fd, const MgmtMarshallType *fields, unsigned count, va_l
     switch (fields[n]) {
     case MGMT_MARSHALL_INT:
       ptr.m_int = va_arg(ap, MgmtMarshallInt *);
-      nread = socket_read_bytes(fd, ptr.m_void, 4);
+      nread     = socket_read_bytes(fd, ptr.m_void, 4);
       break;
     case MGMT_MARSHALL_LONG:
       ptr.m_long = va_arg(ap, MgmtMarshallLong *);
-      nread = socket_read_bytes(fd, ptr.m_void, 8);
+      nread      = socket_read_bytes(fd, ptr.m_void, 8);
       break;
     case MGMT_MARSHALL_STRING: {
       MgmtMarshallData data;
@@ -347,13 +347,13 @@ mgmt_message_read_v(int fd, const MgmtMarshallType *fields, unsigned count, va_l
       }
 
       ink_assert(data_is_nul_terminated(&data));
-      ptr.m_string = va_arg(ap, MgmtMarshallString *);
+      ptr.m_string  = va_arg(ap, MgmtMarshallString *);
       *ptr.m_string = (char *)data.ptr;
       break;
     }
     case MGMT_MARSHALL_DATA:
       ptr.m_data = va_arg(ap, MgmtMarshallData *);
-      nread = socket_read_buffer(fd, ptr.m_data);
+      nread      = socket_read_buffer(fd, ptr.m_data);
       break;
     default:
       errno = EINVAL;
@@ -502,13 +502,13 @@ mgmt_message_parse_v(const void *buf, size_t len, const MgmtMarshallType *fields
 
       ink_assert(data_is_nul_terminated(&data));
 
-      ptr.m_string = va_arg(ap, MgmtMarshallString *);
+      ptr.m_string  = va_arg(ap, MgmtMarshallString *);
       *ptr.m_string = (char *)data.ptr;
       break;
     }
     case MGMT_MARSHALL_DATA:
       ptr.m_data = va_arg(ap, MgmtMarshallData *);
-      nread = buffer_read_buffer((const uint8_t *)buf, len, ptr.m_data);
+      nread      = buffer_read_buffer((const uint8_t *)buf, len, ptr.m_data);
       if (nread == -1) {
         goto nospace;
       }

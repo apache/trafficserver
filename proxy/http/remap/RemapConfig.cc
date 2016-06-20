@@ -263,7 +263,7 @@ parse_remap_fragment(const char *path, BUILD_TABLE_INFO *bti, char *errbuf, size
   }
 
   nbti.rules_list = bti->rules_list;
-  nbti.rewrite = bti->rewrite;
+  nbti.rewrite    = bti->rewrite;
 
   // XXX at this point, we need to register the included file(s) with the management subsystem
   // so that we can correctly reload them when they change. Otherwise, the operator will have to
@@ -481,7 +481,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       else if (!strcasecmp(argptr, "PUSH"))
         m = HTTP_WKSIDX_PUSH;
       if (m != -1) {
-        m = m - HTTP_WKSIDX_CONNECT; // get method index
+        m                               = m - HTTP_WKSIDX_CONNECT; // get method index
         rule->standard_method_lookup[m] = true;
       } else {
         Debug("url_rewrite", "[validate_filter_args] Using nonstandard method [%s]", argptr);
@@ -600,7 +600,7 @@ unsigned long
 remap_check_option(const char **argv, int argc, unsigned long findmode, int *_ret_idx, const char **argptr)
 {
   unsigned long ret_flags = 0;
-  int idx = 0;
+  int idx                 = 0;
 
   if (argptr)
     *argptr = NULL;
@@ -775,12 +775,12 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
         snprintf(errbuf, errbufsize, "Can't load plugin \"%s\" - %s", c, err ? err : "Unknown dlopen() error");
         return -4;
       }
-      pi->fp_tsremap_init = (remap_plugin_info::_tsremap_init *)dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT);
-      pi->fp_tsremap_done = (remap_plugin_info::_tsremap_done *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE);
+      pi->fp_tsremap_init         = (remap_plugin_info::_tsremap_init *)dlsym(pi->dlh, TSREMAP_FUNCNAME_INIT);
+      pi->fp_tsremap_done         = (remap_plugin_info::_tsremap_done *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DONE);
       pi->fp_tsremap_new_instance = (remap_plugin_info::_tsremap_new_instance *)dlsym(pi->dlh, TSREMAP_FUNCNAME_NEW_INSTANCE);
       pi->fp_tsremap_delete_instance =
         (remap_plugin_info::_tsremap_delete_instance *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DELETE_INSTANCE);
-      pi->fp_tsremap_do_remap = (remap_plugin_info::_tsremap_do_remap *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP);
+      pi->fp_tsremap_do_remap    = (remap_plugin_info::_tsremap_do_remap *)dlsym(pi->dlh, TSREMAP_FUNCNAME_DO_REMAP);
       pi->fp_tsremap_os_response = (remap_plugin_info::_tsremap_os_response *)dlsym(pi->dlh, TSREMAP_FUNCNAME_OS_RESPONSE);
 
       if (!pi->fp_tsremap_init) {
@@ -798,7 +798,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
         return retcode;
       }
       memset(&ri, 0, sizeof(ri));
-      ri.size = sizeof(ri);
+      ri.size            = sizeof(ri);
       ri.tsremap_version = TSREMAP_VERSION;
 
       if (pi->fp_tsremap_init(&ri, tmpbuf, sizeof(tmpbuf) - 1) != TS_SUCCESS) {
@@ -858,7 +858,7 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
 
   Debug("remap_plugin", "creating new plugin instance");
 
-  void *ih = NULL;
+  void *ih         = NULL;
   TSReturnCode res = TS_SUCCESS;
   if (pi->fp_tsremap_new_instance) {
 #if defined(freebsd) || defined(darwin)
@@ -904,9 +904,9 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   int substitution_count = 0;
   int captures;
 
-  reg_map->to_url_host_template = NULL;
+  reg_map->to_url_host_template     = NULL;
   reg_map->to_url_host_template_len = 0;
-  reg_map->n_substitutions = 0;
+  reg_map->n_substitutions          = 0;
 
   reg_map->url_map = new_mapping;
 
@@ -941,7 +941,7 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
         goto lFail;
       }
       reg_map->substitution_markers[reg_map->n_substitutions] = i;
-      reg_map->substitution_ids[reg_map->n_substitutions] = substitution_id;
+      reg_map->substitution_ids[reg_map->n_substitutions]     = substitution_id;
       ++reg_map->n_substitutions;
     }
   }
@@ -949,9 +949,9 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
   // so the regex itself is stored in fromURL.host; string to match
   // will be in the request; string to use for substitutions will be
   // in this buffer
-  str = new_mapping->toUrl.host_get(&str_index); // reusing str and str_index
+  str                               = new_mapping->toUrl.host_get(&str_index); // reusing str and str_index
   reg_map->to_url_host_template_len = str_index;
-  reg_map->to_url_host_template = static_cast<char *>(ats_malloc(str_index));
+  reg_map->to_url_host_template     = static_cast<char *>(ats_malloc(str_index));
   memcpy(reg_map->to_url_host_template, str, str_index);
 
   return true;
@@ -959,7 +959,7 @@ process_regex_mapping_config(const char *from_host_lower, url_mapping *new_mappi
 lFail:
   if (reg_map->to_url_host_template) {
     ats_free(reg_map->to_url_host_template);
-    reg_map->to_url_host_template = NULL;
+    reg_map->to_url_host_template     = NULL;
     reg_map->to_url_host_template_len = 0;
   }
   return false;
@@ -985,7 +985,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   char *map_from, *map_from_start;
   char *map_to, *map_to_start;
   const char *tmp; // Appease the DEC compiler
-  char *fromHost_lower = NULL;
+  char *fromHost_lower     = NULL;
   char *fromHost_lower_ptr = NULL;
   char fromHost_lower_buf[1024];
   url_mapping *new_mapping = NULL;
@@ -1008,8 +1008,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
   Debug("url_rewrite", "[BuildTable] UrlRewrite::BuildTable()");
 
   for (cur_line = tokLine(file_buf, &tok_state, '\\'); cur_line != NULL;) {
-    reg_map = NULL;
-    new_mapping = NULL;
+    reg_map      = NULL;
+    new_mapping  = NULL;
     errStrBuf[0] = 0;
     bti->reset();
 
@@ -1072,7 +1072,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     }
 
     is_cur_mapping_regex = (strncasecmp("regex_", bti->paramv[0], 6) == 0);
-    type_id_str = is_cur_mapping_regex ? (bti->paramv[0] + 6) : bti->paramv[0];
+    type_id_str          = is_cur_mapping_regex ? (bti->paramv[0] + 6) : bti->paramv[0];
 
     // Check to see whether is a reverse or forward mapping
     if (!strcasecmp("reverse_map", type_id_str)) {
@@ -1113,13 +1113,13 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       char *c;
       int ret = remap_check_option((const char **)bti->argv, bti->argc, REMAP_OPTFLG_MAP_ID, &idx);
       if (ret & REMAP_OPTFLG_MAP_ID) {
-        c = strchr(bti->argv[idx], (int)'=');
+        c                   = strchr(bti->argv[idx], (int)'=');
         new_mapping->map_id = (unsigned int)atoi(++c);
       }
     }
 
     map_from = bti->paramv[1];
-    length = UrlWhack(map_from, &origLength);
+    length   = UrlWhack(map_from, &origLength);
 
     // FIX --- what does this comment mean?
     //
@@ -1140,13 +1140,13 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       goto MAP_ERROR;
     }
 
-    map_to = bti->paramv[2];
-    length = UrlWhack(map_to, &origLength);
+    map_to       = bti->paramv[2];
+    length       = UrlWhack(map_to, &origLength);
     map_to_start = map_to;
-    tmp = map_to;
+    tmp          = map_to;
 
     new_mapping->toUrl.create(NULL);
-    rparse = new_mapping->toUrl.parse_no_path_component_breakdown(tmp, length);
+    rparse                   = new_mapping->toUrl.parse_no_path_component_breakdown(tmp, length);
     map_to_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_DONE) {
@@ -1159,7 +1159,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     //   we need to default the scheme to http
     if (fromScheme == NULL || fromSchemeLen == 0) {
       new_mapping->fromURL.scheme_set(URL_SCHEME_HTTP, URL_LEN_HTTP);
-      fromScheme = new_mapping->fromURL.scheme_get(&fromSchemeLen);
+      fromScheme                        = new_mapping->fromURL.scheme_get(&fromSchemeLen);
       new_mapping->wildcard_from_scheme = true;
     }
     toScheme = new_mapping->toUrl.scheme_get(&toSchemeLen);
@@ -1188,7 +1188,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         if (!strcasecmp(bti->paramv[3], "<default>") || !strcasecmp(bti->paramv[3], "default") ||
             !strcasecmp(bti->paramv[3], "<default_redirect_url>") || !strcasecmp(bti->paramv[3], "default_redirect_url"))
           new_mapping->default_redirect_url = true;
-        new_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(bti->paramv[3]);
+        new_mapping->redir_chunk_list       = redirect_tag_str::parse_format_redirect_url(bti->paramv[3]);
         for (int j = bti->paramc; j > 4; j--) {
           if (bti->paramv[j - 1] != NULL) {
             char refinfo_error_buf[1024];
@@ -1213,7 +1213,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
               }
             }
             if (ri) {
-              ri->next = new_mapping->referer_list;
+              ri->next                  = new_mapping->referer_list;
               new_mapping->referer_list = ri;
             }
           }
@@ -1230,7 +1230,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
           errStr = "Relative remappings must begin with a /";
           goto MAP_ERROR;
         } else {
-          fromHost = "";
+          fromHost    = "";
           fromHostLen = 0;
         }
       } else {
@@ -1322,7 +1322,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT)) {
       if ((remap_check_option((const char **)bti->argv, bti->argc, REMAP_OPTFLG_PLUGIN, &tok_count) & REMAP_OPTFLG_PLUGIN) != 0) {
         int plugin_found_at = 0;
-        int jump_to_argc = 0;
+        int jump_to_argc    = 0;
 
         // this loads the first plugin
         if (remap_load_plugin((const char **)bti->argv, bti->argc, new_mapping, errStrBuf, sizeof(errStrBuf), 0,

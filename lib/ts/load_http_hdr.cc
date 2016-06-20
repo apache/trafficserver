@@ -66,7 +66,7 @@ print_hdr(HTTPHdr to_print)
   offset = 0;
   do {
     used = 0;
-    tmp = offset;
+    tmp  = offset;
     done = to_print.print(b, 4095, &used, &tmp);
     offset += used;
     b[used] = '\0';
@@ -116,7 +116,7 @@ load_buffer(int fd, hdr_type h_type)
     exit(1);
   }
 
-  char *file_buf = (char *)ats_malloc(sizeof(char) * (s_info.st_size + 1));
+  char *file_buf           = (char *)ats_malloc(sizeof(char) * (s_info.st_size + 1));
   file_buf[s_info.st_size] = '\0';
 
   // Read in the entire file
@@ -139,7 +139,7 @@ load_buffer(int fd, hdr_type h_type)
   Tokenizer el_tok(" \t");
 
   int num_lines = line_tok.Initialize(file_buf);
-  int num_el = el_tok.Initialize(line_tok[0]);
+  int num_el    = el_tok.Initialize(line_tok[0]);
 
   if (num_el < 3) {
     fprintf(stderr, "Corrupted data file\n");
@@ -157,9 +157,9 @@ load_buffer(int fd, hdr_type h_type)
     mbuf_size *= 2;
   }
 
-  char *mbuf = (char *)ats_malloc(mbuf_size);
+  char *mbuf     = (char *)ats_malloc(mbuf_size);
   int bytes_read = 0;
-  int cur_line = 0;
+  int cur_line   = 0;
 
   while (cur_line < num_lines && bytes_read < mbuf_size) {
     int *cur_ptr;
@@ -171,7 +171,7 @@ load_buffer(int fd, hdr_type h_type)
         fprintf(stderr, "Corrupted data file\n");
         exit(1);
       }
-      cur_ptr = (int *)(mbuf + bytes_read);
+      cur_ptr  = (int *)(mbuf + bytes_read);
       *cur_ptr = el;
       bytes_read += 4;
     }
@@ -198,7 +198,7 @@ load_buffer(int fd, hdr_type h_type)
     memset(&m_buf_struct, 0, sizeof(MBuffer));
     mbuffer_set(&m_buf_struct, mbuf);
     m_buf_struct.m_ext_refcount = 1;
-    m_buf_struct.m_size = bytes_read;
+    m_buf_struct.m_size         = bytes_read;
     walk_mbuffer(&m_buf_struct);
   } else {
     dump_hdr(mbuf, h_type);
@@ -252,7 +252,7 @@ char *marshal_type_strs[] = {"EMPTY ", "OBJ   ", "STR   ", "URL   ", "URL_F ", "
 void
 walk_mbuffer(MBuffer *bufp)
 {
-  int offset = 3;
+  int offset     = 3;
   int max_offset = (*bufp->m_length) / 4;
 
   do {
@@ -296,7 +296,7 @@ walk_mbuffer(MBuffer *bufp)
 void
 walk_mstring(MBuffer *bufp, int32_t offset)
 {
-  int bufindex = 0;
+  int bufindex   = 0;
   int dumpoffset = 0;
   char fbuf[4096];
 
@@ -314,7 +314,7 @@ walk_mstring(MBuffer *bufp, int32_t offset)
 void
 walk_mime_field(MIMEField f)
 {
-  int bufindex = 0;
+  int bufindex   = 0;
   int dumpoffset = 0;
   char fbuf[4096];
 

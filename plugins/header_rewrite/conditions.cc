@@ -99,7 +99,7 @@ ConditionMethod::append_value(std::string &s, const Resources &res)
   const char *value;
   int len;
 
-  bufp = res.client_bufp;
+  bufp    = res.client_bufp;
   hdr_loc = res.client_hdr_loc;
 
   if (bufp && hdr_loc) {
@@ -119,7 +119,7 @@ ConditionRandom::initialize(Parser &p)
 
   gettimeofday(&tv, NULL);
   _seed = getpid() * tv.tv_usec;
-  _max = strtol(_qualifier.c_str(), NULL, 10);
+  _max  = strtol(_qualifier.c_str(), NULL, 10);
 
   match->set(static_cast<unsigned int>(strtol(p.get_arg().c_str(), NULL, 10)));
   _matcher = match;
@@ -212,10 +212,10 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
   int len;
 
   if (_client) {
-    bufp = res.client_bufp;
+    bufp    = res.client_bufp;
     hdr_loc = res.client_hdr_loc;
   } else {
-    bufp = res.bufp;
+    bufp    = res.bufp;
     hdr_loc = res.hdr_loc;
   }
 
@@ -226,7 +226,7 @@ ConditionHeader::append_value(std::string &s, const Resources &res)
     TSDebug(PLUGIN_NAME, "Getting Header: %s, field_loc: %p", _qualifier.c_str(), field_loc);
 
     while (field_loc) {
-      value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
+      value          = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &len);
       next_field_loc = TSMimeHdrFieldNextDup(bufp, hdr_loc, field_loc);
       TSDebug(PLUGIN_NAME, "Appending HEADER(%s) to evaluation value -> %.*s", _qualifier.c_str(), len, value);
       s.append(value, len);
@@ -304,7 +304,7 @@ ConditionQuery::initialize(Parser &p)
 void
 ConditionQuery::append_value(std::string &s, const Resources &res)
 {
-  int query_len = 0;
+  int query_len     = 0;
   const char *query = TSUrlHttpQueryGet(res._rri->requestBufp, res._rri->requestUrl, &query_len);
 
   TSDebug(PLUGIN_NAME, "Appending QUERY to evaluation value: %.*s", query_len, query);
@@ -354,7 +354,7 @@ bool
 ConditionUrl::eval(const Resources &res)
 {
   TSDebug(PLUGIN_NAME, "ConditionUrl::eval");
-  TSMLoc url = NULL;
+  TSMLoc url     = NULL;
   TSMBuffer bufp = NULL;
   std::string s;
 
@@ -378,10 +378,10 @@ ConditionUrl::eval(const Resources &res)
   } else {
     TSMLoc hdr_loc = NULL;
     if (_type == CLIENT) {
-      bufp = res.client_bufp;
+      bufp    = res.client_bufp;
       hdr_loc = res.client_hdr_loc;
     } else if (_type == URL) {
-      bufp = res.bufp;
+      bufp    = res.bufp;
       hdr_loc = res.hdr_loc;
     } else {
       TSError("[header_rewrite] Rule not supported at this hook");
@@ -394,7 +394,7 @@ ConditionUrl::eval(const Resources &res)
   }
 
   if (_url_qual == URL_QUAL_HOST) {
-    int host_len = 0;
+    int host_len     = 0;
     const char *host = TSUrlHostGet(bufp, url, &host_len);
     s.append(host, host_len);
     TSDebug(PLUGIN_NAME, "   Host to match is: %.*s", host_len, host);
@@ -492,7 +492,7 @@ ConditionCookie::append_value(std::string &s, const Resources &res)
   const char *cookies;
   const char *cookie_value;
   const char *const cookie_name = _qualifier.c_str();
-  const int cookie_name_len = _qualifier.length();
+  const int cookie_name_len     = _qualifier.length();
 
   // Sanity
   if (bufp == NULL || hdr_loc == NULL)
@@ -584,7 +584,7 @@ bool
 ConditionIncomingPort::eval(const Resources &res)
 {
   uint16_t port = getPort(TSHttpTxnIncomingAddrGet(res.txnp));
-  bool rval = static_cast<const Matchers<uint16_t> *>(_matcher)->test(port);
+  bool rval     = static_cast<const Matchers<uint16_t> *>(_matcher)->test(port);
   TSDebug(PLUGIN_NAME, "Evaluating INCOMING-PORT(): %d: rval: %d", port, rval);
   return rval;
 }
@@ -605,7 +605,7 @@ ConditionTransactCount::initialize(Parser &p)
 {
   Condition::initialize(p);
 
-  MatcherType *match = new MatcherType(_cond_op);
+  MatcherType *match     = new MatcherType(_cond_op);
   std::string const &arg = p.get_arg();
   match->set(strtol(arg.c_str(), NULL, 10));
 
@@ -616,10 +616,10 @@ bool
 ConditionTransactCount::eval(const Resources &res)
 {
   TSHttpSsn ssn = TSHttpTxnSsnGet(res.txnp);
-  bool rval = false;
+  bool rval     = false;
   if (ssn) {
     int n = TSHttpSsnTransactionCount(ssn);
-    rval = static_cast<MatcherType *>(_matcher)->test(n);
+    rval  = static_cast<MatcherType *>(_matcher)->test(n);
     TSDebug(PLUGIN_NAME, "Evaluating TXN-COUNT(): %d: rval: %s", n, rval ? "true" : "false");
   } else {
     TSDebug(PLUGIN_NAME, "Evaluation TXN-COUNT(): No session found, returning false");
@@ -634,7 +634,7 @@ ConditionTransactCount::append_value(std::string &s, Resources const &res)
 
   if (ssn) {
     char value[32]; // enough for UINT64_MAX
-    int count = TSHttpSsnTransactionCount(ssn);
+    int count  = TSHttpSsnTransactionCount(ssn);
     int length = ink_fast_itoa(count, value, sizeof(value));
     if (length > 0) {
       TSDebug(PLUGIN_NAME, "Appending TXN-COUNT %s to evaluation value %.*s", _qualifier.c_str(), length, value);
@@ -753,7 +753,7 @@ const char *
 ConditionGeo::get_geo_string(const sockaddr *addr) const
 {
   const char *ret = NULL;
-  int v = 4;
+  int v           = 4;
 
   switch (_geo_qual) {
   // Country database
@@ -770,7 +770,7 @@ ConditionGeo::get_geo_string(const sockaddr *addr) const
       if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
         geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
-        v = 6;
+        v   = 6;
         ret = GeoIP_country_code_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
       }
     } break;
@@ -794,7 +794,7 @@ ConditionGeo::get_geo_string(const sockaddr *addr) const
       if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
         geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
-        v = 6;
+        v   = 6;
         ret = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
       }
     } break;
@@ -815,7 +815,7 @@ int64_t
 ConditionGeo::get_geo_int(const sockaddr *addr) const
 {
   int64_t ret = -1;
-  int v = 4;
+  int v       = 4;
 
   switch (_geo_qual) {
   // Country Databse
@@ -832,7 +832,7 @@ ConditionGeo::get_geo_int(const sockaddr *addr) const
       if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
         geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
-        v = 6;
+        v   = 6;
         ret = GeoIP_id_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
       }
     } break;
@@ -857,7 +857,7 @@ ConditionGeo::get_geo_int(const sockaddr *addr) const
       if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
         geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
-        v = 6;
+        v        = 6;
         asn_name = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
       }
       break;

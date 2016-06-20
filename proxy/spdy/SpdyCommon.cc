@@ -30,23 +30,23 @@ spdylay_session_callbacks spdy_callbacks;
 // statistic names
 RecRawStatBlock *spdy_rsb; ///< Container for statistics.
 
-static char const *const SPDY_STAT_CURRENT_CLIENT_SESSION_NAME = "proxy.process.spdy.current_client_sessions";
-static char const *const SPDY_STAT_CURRENT_CLIENT_STREAM_NAME = "proxy.process.spdy.current_client_streams";
-static char const *const SPDY_STAT_TOTAL_CLIENT_STREAM_NAME = "proxy.process.spdy.total_client_streams";
+static char const *const SPDY_STAT_CURRENT_CLIENT_SESSION_NAME  = "proxy.process.spdy.current_client_sessions";
+static char const *const SPDY_STAT_CURRENT_CLIENT_STREAM_NAME   = "proxy.process.spdy.current_client_streams";
+static char const *const SPDY_STAT_TOTAL_CLIENT_STREAM_NAME     = "proxy.process.spdy.total_client_streams";
 static char const *const SPDY_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.spdy.total_transactions_time";
 static char const *const SPDY_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.spdy.total_client_connections";
 
 // Configurations
-uint32_t spdy_max_concurrent_streams = 100;
-uint32_t spdy_initial_window_size = 1048576;
+uint32_t spdy_max_concurrent_streams    = 100;
+uint32_t spdy_initial_window_size       = 1048576;
 int32_t spdy_accept_no_activity_timeout = 120;
-int32_t spdy_no_activity_timeout_in = 115;
+int32_t spdy_no_activity_timeout_in     = 115;
 
 string
 http_date(time_t t)
 {
   char buf[32];
-  tm *tms = gmtime(&t); // returned struct is statically allocated.
+  tm *tms  = gmtime(&t); // returned struct is statically allocated.
   size_t r = strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M:%S GMT", tms);
   return std::string(&buf[0], &buf[r]);
 }
@@ -87,9 +87,9 @@ SpdyNV::SpdyNV(TSFetchSM fetch_sm)
   TSMBuffer bufp;
 
   bufp = TSFetchRespHdrMBufGet(fetch_sm);
-  loc = TSFetchRespHdrMLocGet(fetch_sm);
+  loc  = TSFetchRespHdrMLocGet(fetch_sm);
 
-  hdr_len = TSMimeHdrLengthGet(bufp, loc);
+  hdr_len  = TSMimeHdrLengthGet(bufp, loc);
   mime_hdr = malloc(hdr_len);
   TSReleaseAssert(mime_hdr);
 
@@ -111,17 +111,17 @@ SpdyNV::SpdyNV(TSFetchSM fetch_sm)
   i = TSHttpHdrVersionGet(bufp, loc);
   snprintf(version, sizeof(version), "HTTP/%d.%d", TS_HTTP_MAJOR(i), TS_HTTP_MINOR(i));
 
-  i = TSHttpHdrStatusGet(bufp, loc);
+  i     = TSHttpHdrStatusGet(bufp, loc);
   value = (char *)TSHttpHdrReasonGet(bufp, loc, &value_len);
   snprintf(status, sizeof(version), "%d ", i);
-  i = strlen(status);
+  i   = strlen(status);
   len = sizeof(status) - i;
   len = value_len > len ? len : value_len;
   strncpy(&status[i], value, len);
   status[len + i] = '\0';
   ;
 
-  i = 0;
+  i       = 0;
   nv[i++] = ":version";
   nv[i++] = version;
   nv[i++] = ":status";
@@ -130,7 +130,7 @@ SpdyNV::SpdyNV(TSFetchSM fetch_sm)
   //
   // Process HTTP headers
   //
-  p = (char *)mime_hdr;
+  p         = (char *)mime_hdr;
   field_loc = TSMimeHdrFieldGet(bufp, loc, 0);
   while (field_loc) {
     name = TSMimeHdrFieldNameGet(bufp, loc, field_loc, &name_len);

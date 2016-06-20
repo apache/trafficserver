@@ -35,19 +35,19 @@ public:
   void
   setInfo(int fd_, const Ptr<IOBufferBlock> &b_, int bytesTransferred_, int errno_)
   {
-    fd = fd_;
-    b = b_;
+    fd               = fd_;
+    b                = b_;
     bytesTransferred = bytesTransferred_;
-    err = errno_;
+    err              = errno_;
   };
 
   void
   setInfo(int fd_, struct msghdr *m_, int bytesTransferred_, int errno_)
   {
-    fd = fd_;
-    m = m_;
+    fd               = fd_;
+    m                = m_;
     bytesTransferred = bytesTransferred_;
-    err = errno_;
+    err              = errno_;
   };
 
   void
@@ -103,7 +103,7 @@ extern ClassAllocator<UDPIOEvent> UDPIOEventAllocator;
 TS_INLINE void
 UDPIOEvent::free(UDPIOEvent *e)
 {
-  e->b = NULL;
+  e->b     = NULL;
   e->mutex = NULL;
   UDPIOEventAllocator.free(e);
 }

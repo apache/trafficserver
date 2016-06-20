@@ -43,11 +43,11 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   eventProcessor.start(TEST_THREADS);
 
   for (unsigned i = 0; i < 100; ++i) {
-    MIOBuffer *b1 = new_MIOBuffer(default_large_iobuffer_size);
+    MIOBuffer *b1                       = new_MIOBuffer(default_large_iobuffer_size);
     IOBufferReader *b1reader ATS_UNUSED = b1->alloc_reader();
     b1->fill(b1->write_avail());
 
-    MIOBuffer *b2 = new_MIOBuffer(default_large_iobuffer_size);
+    MIOBuffer *b2                       = new_MIOBuffer(default_large_iobuffer_size);
     IOBufferReader *b2reader ATS_UNUSED = b2->alloc_reader();
     b2->fill(b2->write_avail());
 

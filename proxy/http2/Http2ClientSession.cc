@@ -120,7 +120,7 @@ Http2ClientSession::start()
   SET_HANDLER(&Http2ClientSession::main_event_handler);
   HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_read_connection_preface);
 
-  read_vio = this->do_io_read(this, INT64_MAX, this->read_buffer);
+  read_vio  = this->do_io_read(this, INT64_MAX, this->read_buffer);
   write_vio = this->do_io_write(this, INT64_MAX, this->sm_writer);
 
   // 3.5 HTTP/2 Connection Preface. Upon establishment of a TCP connection and
@@ -145,7 +145,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_release_assert(backdoor == false);
 
   // Unique client session identifier.
-  this->con_id = ProxyClientSession::next_connection_id();
+  this->con_id    = ProxyClientSession::next_connection_id();
   this->client_vc = new_vc;
   client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
   this->mutex = new_vc->mutex;
@@ -158,12 +158,12 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 
   DebugHttp2Ssn("session born, netvc %p", this->client_vc);
 
-  this->read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
+  this->read_buffer             = iobuf ? iobuf : new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
   this->read_buffer->water_mark = connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE);
-  this->sm_reader = reader ? reader : this->read_buffer->alloc_reader();
+  this->sm_reader               = reader ? reader : this->read_buffer->alloc_reader();
 
   this->write_buffer = new_MIOBuffer(HTTP2_HEADER_BUFFER_SIZE_INDEX);
-  this->sm_writer = this->write_buffer->alloc_reader();
+  this->sm_writer    = this->write_buffer->alloc_reader();
 
   do_api_callout(TS_HTTP_SSN_START_HOOK);
 }

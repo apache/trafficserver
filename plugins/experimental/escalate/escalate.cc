@@ -84,7 +84,7 @@ MakeEscalateUrl(TSMBuffer mbuf, TSMLoc url, const char *host, size_t host_len, i
 static int
 EscalateResponse(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
+  TSHttpTxn txn       = (TSHttpTxn)edata;
   EscalationState *es = static_cast<EscalationState *>(TSContDataGet(cont));
   EscalationState::StatusMapType::const_iterator entry;
   TSMBuffer mbuf;

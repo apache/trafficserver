@@ -2037,7 +2037,7 @@ extern int diags_on_for_plugins;
 enum {
   TS_LOG_MODE_ADD_TIMESTAMP = 1,
   TS_LOG_MODE_DO_NOT_RENAME = 2,
-  TS_LOG_MODE_INVALID_FLAG = 4,
+  TS_LOG_MODE_INVALID_FLAG  = 4,
 };
 
 /**

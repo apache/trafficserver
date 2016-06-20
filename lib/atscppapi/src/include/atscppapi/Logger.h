@@ -163,9 +163,9 @@ public:
    */
   enum LogLevel {
     LOG_LEVEL_NO_LOG = 128, /**< This log level is used to disable all logging */
-    LOG_LEVEL_DEBUG = 1,    /**< This log level is used for DEBUG level logging (DEBUG + INFO + ERROR) */
-    LOG_LEVEL_INFO = 2,     /**< This log level is used for INFO level logging (INFO + ERROR) */
-    LOG_LEVEL_ERROR = 4     /**< This log level is used for ERROR level logging (ERROR ONLY) */
+    LOG_LEVEL_DEBUG  = 1,   /**< This log level is used for DEBUG level logging (DEBUG + INFO + ERROR) */
+    LOG_LEVEL_INFO   = 2,   /**< This log level is used for INFO level logging (INFO + ERROR) */
+    LOG_LEVEL_ERROR  = 4    /**< This log level is used for ERROR level logging (ERROR ONLY) */
   };
 
   Logger();

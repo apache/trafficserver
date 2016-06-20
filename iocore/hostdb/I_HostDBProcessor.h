@@ -119,9 +119,9 @@ union HostDBApplicationInfo {
 
   enum HttpVersion_t {
     HTTP_VERSION_UNDEFINED = 0,
-    HTTP_VERSION_09 = 1,
-    HTTP_VERSION_10 = 2,
-    HTTP_VERSION_11 = 3,
+    HTTP_VERSION_09        = 1,
+    HTTP_VERSION_10        = 2,
+    HTTP_VERSION_11        = 3,
   };
 
   struct application_data_rr {
@@ -331,9 +331,9 @@ struct HostDBInfo {
   void
   set_empty()
   {
-    full = 0;
-    md5_high = 0;
-    md5_low = 0;
+    full        = 0;
+    md5_high    = 0;
+    md5_low     = 0;
     md5_low_low = 0;
   }
 
@@ -343,10 +343,10 @@ struct HostDBInfo {
     uint64_t ttag = folded_md5 / buckets;
 
     if (!ttag)
-      ttag = 1;
+      ttag      = 1;
     md5_low_low = (unsigned int)ttag;
-    md5_low = (unsigned int)(ttag >> 24);
-    full = 1;
+    md5_low     = (unsigned int)(ttag >> 24);
+    full        = 1;
   }
 
   void
@@ -355,12 +355,12 @@ struct HostDBInfo {
     ats_ip_invalidate(ip());
     app.allotment.application1 = 0;
     app.allotment.application2 = 0;
-    backed = 0;
-    deleted = 0;
-    hits = 0;
-    round_robin = 0;
-    reverse_dns = 0;
-    is_srv = 0;
+    backed                     = 0;
+    deleted                    = 0;
+    hits                       = 0;
+    round_robin                = 0;
+    reverse_dns                = 0;
+    is_srv                     = 0;
   }
 
   uint64_t
@@ -437,10 +437,10 @@ struct HostDBProcessor : public Processor {
   //       The HostDBInfo may be changed during the callback.
 
   enum {
-    HOSTDB_DO_NOT_FORCE_DNS = 0,
-    HOSTDB_ROUND_ROBIN = 0,
-    HOSTDB_FORCE_DNS_RELOAD = 1,
-    HOSTDB_FORCE_DNS_ALWAYS = 2,
+    HOSTDB_DO_NOT_FORCE_DNS   = 0,
+    HOSTDB_ROUND_ROBIN        = 0,
+    HOSTDB_FORCE_DNS_RELOAD   = 1,
+    HOSTDB_FORCE_DNS_ALWAYS   = 2,
     HOSTDB_DO_NOT_ROUND_ROBIN = 4
   };
 

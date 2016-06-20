@@ -45,16 +45,16 @@ namespace wccp
 
 struct CompileTimeChecks {
   static unsigned int const BUCKET_SIZE = sizeof(AssignInfoComp::Bucket);
-  static unsigned int const UINT8_SIZE = sizeof(uint8_t);
+  static unsigned int const UINT8_SIZE  = sizeof(uint8_t);
   // A compiler error for the following line means that the size of
   // an assignment bucket is incorrect. It must be exactly 1 byte.
   ts::TEST_IF_TRUE<BUCKET_SIZE == UINT8_SIZE> m_check_bucket_size;
 };
 
-ts::Errata::Code LVL_TMP = 1;   ///< Temporary message.
+ts::Errata::Code LVL_TMP   = 1; ///< Temporary message.
 ts::Errata::Code LVL_FATAL = 3; ///< Fatal, cannot continue.
-ts::Errata::Code LVL_WARN = 2;  ///< Significant, should be fixed.
-ts::Errata::Code LVL_INFO = 1;  /// Interesting, not necessarily a problem.
+ts::Errata::Code LVL_WARN  = 2; ///< Significant, should be fixed.
+ts::Errata::Code LVL_INFO  = 1; /// Interesting, not necessarily a problem.
 ts::Errata::Code LVL_DEBUG = 0; /// Debugging information.
 
 // Find a valid local IP address given an open socket.
@@ -71,8 +71,8 @@ Get_Local_Address(int s)
   conf.ifc_len = sizeof(req);
   conf.ifc_req = req;
   if (0 == ioctl(s, SIOCGIFCONF, &conf)) {
-    int idx = 0;
-    ifreq *ptr = req;
+    int idx      = 0;
+    ifreq *ptr   = req;
     ifreq *limit = req + (conf.ifc_len / sizeof(*req));
     for (; idx < N_REQ && ptr < limit; ++idx, ++ptr) {
       zret = reinterpret_cast<sockaddr_in &>(ptr->ifr_addr).sin_addr.s_addr;

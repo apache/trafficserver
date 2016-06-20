@@ -39,8 +39,8 @@ struct LogSlice {
   LogSlice()
   {
     m_enable = false;
-    m_start = 0;
-    m_end = INT_MAX;
+    m_start  = 0;
+    m_end    = INT_MAX;
   }
 
   //

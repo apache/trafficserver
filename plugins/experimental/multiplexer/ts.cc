@@ -30,7 +30,7 @@ namespace io
   IO::read(TSVConn v, TSCont c, const int64_t s)
   {
     assert(s > 0);
-    IO *io = new IO();
+    IO *io  = new IO();
     io->vio = TSVConnRead(v, c, io->buffer, s);
     return io;
   }

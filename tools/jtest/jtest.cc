@@ -103,9 +103,9 @@
 
 static AppVersionInfo appVersionInfo;
 
-static const char *hexdigits = "0123456789ABCDEFabcdef";
+static const char *hexdigits      = "0123456789ABCDEFabcdef";
 static const char *dontunescapify = "#;/?+=&:@%";
-static const char *dontescapify = "#;/?+=&:@~.-_%";
+static const char *dontescapify   = "#;/?+=&:@~.-_%";
 
 enum FTP_MODE {
   FTP_NULL,
@@ -129,108 +129,108 @@ static int is_done();
 static int open_server(unsigned short int port, accept_fn_t accept_fn);
 static int accept_ftp_data(int sock);
 
-static char **defered_urls = NULL;
-static int n_defered_urls = 0;
-static int server_fd = 0;
-static int server_port = 0;
-static int proxy_port = 8080;
+static char **defered_urls     = NULL;
+static int n_defered_urls      = 0;
+static int server_fd           = 0;
+static int server_port         = 0;
+static int proxy_port          = 8080;
 static unsigned int proxy_addr = 0;
 static unsigned int local_addr = 0;
-static char proxy_host[81] = "localhost";
+static char proxy_host[81]     = "localhost";
 static char local_host[255 + 1];
-static int verbose = 0;
-static int verbose_errors = 1;
-static int debug = 0;
-static int nclients = 100;
-static int current_clients = 0;
-static int client_speed = 0;
-static int check_content = 0;
-static int nocheck_length = 0;
-static int obey_redirects = 1;
-static int only_clients = 0;
-static int only_server = 0;
-static int drop_after_CL = 0;
-static int server_speed = 0;
-static int server_delay = 0;
-static int interval = 1;
-static int sbuffersize = SERVER_BUFSIZE;
-static int cbuffersize = CLIENT_BUFSIZE;
-static int test_time = 0;
-static int last_fd = -1;
+static int verbose           = 0;
+static int verbose_errors    = 1;
+static int debug             = 0;
+static int nclients          = 100;
+static int current_clients   = 0;
+static int client_speed      = 0;
+static int check_content     = 0;
+static int nocheck_length    = 0;
+static int obey_redirects    = 1;
+static int only_clients      = 0;
+static int only_server       = 0;
+static int drop_after_CL     = 0;
+static int server_speed      = 0;
+static int server_delay      = 0;
+static int interval          = 1;
+static int sbuffersize       = SERVER_BUFSIZE;
+static int cbuffersize       = CLIENT_BUFSIZE;
+static int test_time         = 0;
+static int last_fd           = -1;
 static char *response_buffer = NULL;
-static int errors = 0;
+static int errors            = 0;
 static int clients = 0, running_clients = 0, new_clients = 0, total_clients = 0;
 static int servers = 0, running_servers = 0, new_servers = 0, total_servers = 0;
 static float running_ops = 0;
-static int new_ops = 0;
-static float total_ops = 0;
+static int new_ops       = 0;
+static float total_ops   = 0;
 static int running_sops = 0, new_sops = 0, total_sops = 0;
 static int running_latency = 0, latency = 0;
 static int lat_ops = 0, b1_ops = 0, running_b1latency = 0, b1latency = 0;
 static uint64_t running_cbytes = 0, new_cbytes = 0, total_cbytes = 0;
 static uint64_t running_tbytes = 0, new_tbytes = 0, total_tbytes = 0;
-static int average_over = 5;
-static double hitrate = 0.4;
-static int hotset = 1000;
-static int keepalive = 4;
-static int keepalive_cons = 4;
-static int follow_arg = 0;
-static int follow = 0;
+static int average_over    = 5;
+static double hitrate      = 0.4;
+static int hotset          = 1000;
+static int keepalive       = 4;
+static int keepalive_cons  = 4;
+static int follow_arg      = 0;
+static int follow          = 0;
 static int follow_same_arg = 0;
-static int follow_same = 0;
+static int follow_same     = 0;
 static char current_host[512];
-static int fullpage = 0;
-static int show_before = 0;
-static int show_headers = 0;
-static int server_keepalive = 4;
-static int urls_mode = 0;
-static int pipeline = 1;
-static int hostrequest = 0;
-static int ftp = 0;
-static double ftp_mdtm_err_rate = 0.0;
-static int ftp_mdtm_rate = 0;
+static int fullpage                = 0;
+static int show_before             = 0;
+static int show_headers            = 0;
+static int server_keepalive        = 4;
+static int urls_mode               = 0;
+static int pipeline                = 1;
+static int hostrequest             = 0;
+static int ftp                     = 0;
+static double ftp_mdtm_err_rate    = 0.0;
+static int ftp_mdtm_rate           = 0;
 static time_t ftp_mdtm_last_update = 0;
 static char ftp_mdtm_str[64];
-static int embed_url = 1;
-static double ims_rate = 0.5;
+static int embed_url            = 1;
+static double ims_rate          = 0.5;
 static double client_abort_rate = 0.0;
 static double server_abort_rate = 0.0;
-static int compd_port = 0;
-static int compd_suite = 0;
+static int compd_port           = 0;
+static int compd_suite          = 0;
 static int ka_cache_head[500];
 static int ka_cache_tail[500];
-static int n_ka_cache = 0;
-static char urls_file[256] = "";
-static FILE *urls_fp = NULL;
-static char urlsdump_file[256] = "";
-static FILE *urlsdump_fp = NULL;
-static int drand_seed = 0;
-static int docsize = -1;
-static int url_hash_entries = 1000000;
-static char url_hash_filename[256] = "";
-static int bandwidth_test = 0;
-static int bandwidth_test_to_go = 0;
-static uint64_t total_client_request_bytes = 0;
-static uint64_t total_proxy_request_bytes = 0;
-static uint64_t total_server_response_body_bytes = 0;
+static int n_ka_cache                              = 0;
+static char urls_file[256]                         = "";
+static FILE *urls_fp                               = NULL;
+static char urlsdump_file[256]                     = "";
+static FILE *urlsdump_fp                           = NULL;
+static int drand_seed                              = 0;
+static int docsize                                 = -1;
+static int url_hash_entries                        = 1000000;
+static char url_hash_filename[256]                 = "";
+static int bandwidth_test                          = 0;
+static int bandwidth_test_to_go                    = 0;
+static uint64_t total_client_request_bytes         = 0;
+static uint64_t total_proxy_request_bytes          = 0;
+static uint64_t total_server_response_body_bytes   = 0;
 static uint64_t total_server_response_header_bytes = 0;
-static uint64_t total_proxy_response_body_bytes = 0;
-static uint64_t total_proxy_response_header_bytes = 0;
+static uint64_t total_proxy_response_body_bytes    = 0;
+static uint64_t total_proxy_response_header_bytes  = 0;
 static ink_hrtime now = 0, start_time = 0;
-static int extra_headers = 0;
-static int alternates = 0;
-static int abort_retry_speed = 0;
-static int abort_retry_bytes = 0;
-static int abort_retry_secs = 5;
-static int client_rate = 0;
-static double reload_rate = 0;
-static int vary_user_agent = 0;
+static int extra_headers       = 0;
+static int alternates          = 0;
+static int abort_retry_speed   = 0;
+static int abort_retry_bytes   = 0;
+static int abort_retry_secs    = 5;
+static int client_rate         = 0;
+static double reload_rate      = 0;
+static int vary_user_agent     = 0;
 static int server_content_type = 0;
-static int request_extension = 0;
-static int no_cache = 0;
-static double evo_rate = 0.0;
-static double zipf = 0.0;
-static int zipf_bucket_size = 1;
+static int request_extension   = 0;
+static int no_cache            = 0;
+static double evo_rate         = 0.0;
+static double zipf             = 0.0;
+static int zipf_bucket_size    = 1;
 
 static const ArgumentDescription argument_descriptions[] = {
   {"proxy_port", 'p', "Proxy Port", "I", &proxy_port, "JTEST_PROXY_PORT", NULL},
@@ -341,33 +341,33 @@ struct FD {
   void
   reset()
   {
-    next = 0;
-    fd = -1;
-    read_cb = NULL;
+    next     = 0;
+    fd       = -1;
+    read_cb  = NULL;
     write_cb = NULL;
-    state = 0;
-    start = 0;
-    active = 0;
-    ready = 0;
-    req_pos = 0;
-    length = 0;
+    state    = 0;
+    start    = 0;
+    active   = 0;
+    ready    = 0;
+    req_pos  = 0;
+    length   = 0;
     if (!urls_mode)
       response = NULL;
     if (response_header)
       response_header[0] = 0;
-    response_length = 0;
-    response_remaining = 0;
-    count = NULL;
-    bytes = 0;
-    doc = 0.0;
-    doc_length = 0;
-    ims = 0;
-    drop_after_CL = ::drop_after_CL;
-    client_abort = 0;
-    jg_compressed = 0;
-    ftp_mode = FTP_NULL;
-    ftp_peer_addr = 0;
-    ftp_peer_port = 0;
+    response_length      = 0;
+    response_remaining   = 0;
+    count                = NULL;
+    bytes                = 0;
+    doc                  = 0.0;
+    doc_length           = 0;
+    ims                  = 0;
+    drop_after_CL        = ::drop_after_CL;
+    client_abort         = 0;
+    jg_compressed        = 0;
+    ftp_mode             = FTP_NULL;
+    ftp_peer_addr        = 0;
+    ftp_peer_port        = 0;
   }
 
   void close();
@@ -389,7 +389,7 @@ FD::close()
   if (is_done())
     done();
   keepalive = 0;
-  ip = 0;
+  ip        = 0;
   if (count)
     (*count)--;
   if (count == &clients)
@@ -448,7 +448,7 @@ remove_last_seg(char *src, char *dest)
       break;
   while (src <= ptr)
     *dest++ = *src++;
-  *dest = '\0';
+  *dest     = '\0';
 }
 
 static inline void
@@ -521,8 +521,8 @@ read_ready(int fd)
 {
   struct pollfd p;
   p.events = POLLIN;
-  p.fd = fd;
-  int r = poll(&p, 1, 0);
+  p.fd     = fd;
+  int r    = poll(&p, 1, 0);
   if (r <= 0)
     return r;
   if (p.revents & (POLLERR | POLLNVAL))
@@ -549,8 +549,8 @@ poll_set(int sock, poll_cb read_cb, poll_cb write_cb = NULL)
 {
   if (verbose)
     printf("adding poll %d\n", sock);
-  fd[sock].fd = sock;
-  fd[sock].read_cb = read_cb;
+  fd[sock].fd       = sock;
+  fd[sock].read_cb  = read_cb;
   fd[sock].write_cb = write_cb;
   if (last_fd < sock)
     last_fd = sock;
@@ -568,11 +568,11 @@ fast(int sock, int speed, int d)
 {
   if (!speed)
     return 0;
-  int64_t t = now - fd[sock].start + 1;
+  int64_t t  = now - fd[sock].start + 1;
   int target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
-  int delta = d - target;
+  int delta  = d - target;
   if (delta > 0) {
-    int mwait = (delta * 1000) / speed;
+    int mwait      = (delta * 1000) / speed;
     fd[sock].ready = now + (mwait * HRTIME_MSECOND);
     return 1;
   } else
@@ -593,9 +593,9 @@ faster_than(int sock, int speed, int d)
 {
   if (!speed)
     return 1;
-  int64_t t = now - fd[sock].start + 1;
+  int64_t t  = now - fd[sock].start + 1;
   int target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
-  int delta = d - target;
+  int delta  = d - target;
   if (delta > 0)
     return 1;
   return 0;
@@ -605,7 +605,7 @@ static void
 get_path_from_req(char *buf, char **purl_start, char **purl_end)
 {
   char *url_start = buf;
-  char *url_end = NULL;
+  char *url_end   = NULL;
   if (!strncasecmp(url_start, "GET ", sizeof("GET ") - 1)) {
     url_start += sizeof("GET ") - 1;
     url_end = (char *)memchr(url_start, ' ', 70);
@@ -619,7 +619,7 @@ get_path_from_req(char *buf, char **purl_start, char **purl_end)
       url_start = (char *)memchr(url_start, '/', 70);
     }
   *purl_start = url_start;
-  *purl_end = url_end;
+  *purl_end   = url_end;
 }
 
 static int
@@ -647,7 +647,7 @@ send_response(int sock)
     if (!ftp && embed_url && fd[sock].response_length > 16) {
       get_path_from_req(fd[sock].req_header, &url_start, &url_end);
       *url_end = 0;
-      url_len = url_end - url_start;
+      url_len  = url_end - url_start;
     }
     int print_len = 0;
     if (!ftp) {
@@ -751,7 +751,7 @@ static char *
 strncasestr(char *s, const char *find, int len)
 {
   int findlen = strlen(find);
-  char *e = s + len;
+  char *e     = s + len;
   while (1) {
     char *x = (char *)memchr(s, *find, e - s);
     if (!x) {
@@ -774,7 +774,7 @@ check_keepalive(char *r, int length)
 {
   char *ka = strncasestr(r, "Connection:", length);
   if (ka) {
-    int l = length - (ka - r);
+    int l   = length - (ka - r);
     char *e = (char *)memchr(ka, '\n', l);
     if (!e)
       e = (char *)memchr(ka, '\r', l);
@@ -795,7 +795,7 @@ check_alt(char *r, int length)
   } else
     s += sizeof("Cookie:");
   if (s) {
-    int l = length - (s - r);
+    int l   = length - (s - r);
     char *e = (char *)memchr(s, '\n', l);
     if (!e)
       e = (char *)memchr(s, '\r', l);
@@ -815,9 +815,9 @@ check_alt(char *r, int length)
 static void
 make_response(int sock, int code)
 {
-  fd[sock].response = fd[sock].req_header;
-  fd[sock].length = sprintf(fd[sock].req_header, "%d\r\n", code);
-  fd[sock].req_pos = 0;
+  fd[sock].response        = fd[sock].req_header;
+  fd[sock].length          = sprintf(fd[sock].req_header, "%d\r\n", code);
+  fd[sock].req_pos         = 0;
   fd[sock].response_length = strlen(fd[sock].req_header);
   poll_set(sock, NULL, write_ftp_response);
 }
@@ -825,8 +825,8 @@ make_response(int sock, int code)
 static void
 make_long_response(int sock)
 {
-  fd[sock].response = fd[sock].req_header;
-  fd[sock].req_pos = 0;
+  fd[sock].response        = fd[sock].req_header;
+  fd[sock].req_pos         = 0;
   fd[sock].response_length = strlen(fd[sock].req_header);
   poll_set(sock, NULL, write_ftp_response);
 }
@@ -835,12 +835,12 @@ static int
 send_ftp_data_when_ready(int sock)
 {
   if (fd[sock].state == STATE_FTP_DATA_READY && fd[sock].doc_length) {
-    fd[sock].response = fd[sock].req_header;
+    fd[sock].response        = fd[sock].req_header;
     fd[sock].response_length = fd[sock].length = fd[sock].doc_length;
     if (verbose)
       printf("ftp data %d >-< %d\n", sock, fd[sock].ftp_data_fd);
     fd[sock].response = response_buffer + fd[sock].doc_length % 256;
-    fd[sock].req_pos = 0;
+    fd[sock].req_pos  = 0;
     poll_set(sock, NULL, send_response);
   }
   return 0;
@@ -888,7 +888,7 @@ read_request(int sock)
     new_tbytes += err;
     fd[sock].req_pos += err;
     fd[sock].req_header[fd[sock].req_pos] = 0;
-    char *buffer = fd[sock].req_header;
+    char *buffer                          = fd[sock].req_header;
     for (i = fd[sock].req_pos - err; i < fd[sock].req_pos; i++) {
       switch (fd[sock].state) {
       case 0:
@@ -933,17 +933,17 @@ read_request(int sock)
           char *ims = strncasestr(buffer, "If-Modified-Since:", i);
           // coverity[dont_call]
           if (drand48() > ims_rate)
-            ims = NULL;
+            ims        = NULL;
           fd[sock].ims = ims ? 1 : 0;
           if (!ims) {
             fd[sock].response_length = fd[sock].length = length;
-            fd[sock].nalternate = check_alt(fd[sock].req_header, strlen(fd[sock].req_header));
-            fd[sock].response = response_buffer + length % 256 + fd[sock].nalternate;
+            fd[sock].nalternate                        = check_alt(fd[sock].req_header, strlen(fd[sock].req_header));
+            fd[sock].response                          = response_buffer + length % 256 + fd[sock].nalternate;
           } else {
             fd[sock].nalternate = 0;
             if (verbose)
               printf("sending IMS 304: Not-Modified\n");
-            fd[sock].response = NULL;
+            fd[sock].response        = NULL;
             fd[sock].response_length = fd[sock].length = 0;
           }
           fd[sock].req_pos = 0;
@@ -954,7 +954,7 @@ read_request(int sock)
           // coverity[dont_call]
           if (fd[sock].length && drand48() < server_abort_rate) {
             // coverity[dont_call]
-            fd[sock].length = (int)(drand48() * (fd[sock].length - 1));
+            fd[sock].length    = (int)(drand48() * (fd[sock].length - 1));
             fd[sock].keepalive = 0;
           }
           poll_set(sock, NULL, send_response);
@@ -979,7 +979,7 @@ send_compd_response(int sock)
   } compd_header;
   if (fd[sock].req_pos < (int)sizeof(compd_header)) {
     compd_header.code = 0;
-    compd_header.len = htonl((fd[sock].length * 2) / 3);
+    compd_header.len  = htonl((fd[sock].length * 2) / 3);
     do {
       err = write(sock, (char *)&compd_header + fd[sock].req_pos, sizeof(compd_header) - fd[sock].req_pos);
     } while ((err == -1) && (errno == EINTR));
@@ -1112,7 +1112,7 @@ read_compd_request(int sock)
   return 0;
 
 Lcont:
-  fd[sock].req_pos = 0;
+  fd[sock].req_pos   = 0;
   fd[sock].keepalive = 0;
   poll_set(sock, NULL, send_compd_response);
   return 0;
@@ -1147,9 +1147,9 @@ read_ftp_request(int sock)
     new_tbytes += err;
     fd[sock].req_pos += err;
     fd[sock].req_header[fd[sock].req_pos] = 0;
-    char *buffer = fd[sock].req_header, *n;
-    int res = 0;
-    buffer[fd[sock].req_pos] = 0;
+    char *buffer                          = fd[sock].req_header, *n;
+    int res                               = 0;
+    buffer[fd[sock].req_pos]              = 0;
     if (verbose)
       printf("buffer [%s]\n", buffer);
 #define STREQ(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
@@ -1163,7 +1163,7 @@ read_ftp_request(int sock)
       // TS used to send "CWD 1.2110000000..."
       // TS now sends "CWD /1.2110000000^M\n", so skip 5 instead of 4
       fd[sock].doc = (buffer[4] == '/') ? atof(buffer + 5) : atof(buffer + 4);
-      res = 250;
+      res          = 250;
       goto Lhere;
     } else if (STREQ(buffer, "TYPE")) {
       res = 200;
@@ -1193,7 +1193,7 @@ read_ftp_request(int sock)
           if (mdtm_now - ftp_mdtm_last_update > ftp_mdtm_rate) {
             struct tm *mdtm_tm;
             ftp_mdtm_last_update = mdtm_now;
-            mdtm_tm = localtime(&ftp_mdtm_last_update);
+            mdtm_tm              = localtime(&ftp_mdtm_last_update);
             sprintf(ftp_mdtm_str, "213 %.4d%.2d%.2d%.2d%.2d%.2d", mdtm_tm->tm_year + 1900, mdtm_tm->tm_mon + 1, mdtm_tm->tm_mday,
                     mdtm_tm->tm_hour, mdtm_tm->tm_min, mdtm_tm->tm_sec);
           }
@@ -1212,7 +1212,7 @@ read_ftp_request(int sock)
       if (verbose)
         printf("ftp PASV %d <-> %d\n", sock, fd[sock].ftp_data_fd);
       unsigned short p = fd[fd[sock].ftp_data_fd].name.sin_port;
-      fd[sock].length = sprintf(fd[sock].req_header, "227 (%u,%u,%u,%u,%u,%u)\r\n", ((unsigned char *)&local_addr)[0],
+      fd[sock].length  = sprintf(fd[sock].req_header, "227 (%u,%u,%u,%u,%u,%u)\r\n", ((unsigned char *)&local_addr)[0],
                                 ((unsigned char *)&local_addr)[1], ((unsigned char *)&local_addr)[2],
                                 ((unsigned char *)&local_addr)[3], ((unsigned char *)&p)[0], ((unsigned char *)&p)[1]);
       if (verbose)
@@ -1233,9 +1233,9 @@ read_ftp_request(int sock)
           ;
       }
       ((unsigned char *)&(fd[sock].ftp_peer_port))[0] = strtol(start, &stop, 10);
-      start = ++stop;
+      start                                           = ++stop;
       ((unsigned char *)&(fd[sock].ftp_peer_port))[1] = strtol(start, NULL, 10);
-      fd[sock].length = sprintf(fd[sock].req_header, "200 Okay\r\n");
+      fd[sock].length                                 = sprintf(fd[sock].req_header, "200 Okay\r\n");
       if (verbose)
         puts(fd[sock].req_header);
       make_long_response(sock);
@@ -1258,13 +1258,13 @@ read_ftp_request(int sock)
         }
         fd[sock].ftp_peer_addr = ftp_peer.sin_addr.s_addr;
         fd[sock].ftp_peer_port = ftp_peer.sin_port;
-        fd[sock].ftp_mode = FTP_PORT;
+        fd[sock].ftp_mode      = FTP_PORT;
       }
       if (fd[sock].ftp_mode == FTP_PORT) {
         if ((fd[sock].ftp_data_fd = make_client(fd[sock].ftp_peer_addr, fd[sock].ftp_peer_port)) < 0)
           panic("could not open ftp PORT data connection to client\n");
         fd[fd[sock].ftp_data_fd].ftp_data_fd = sock;
-        fd[fd[sock].ftp_data_fd].state = STATE_FTP_DATA_READY;
+        fd[fd[sock].ftp_data_fd].state       = STATE_FTP_DATA_READY;
         if (verbose)
           printf("ftp PORT %d <-> %d\n", sock, fd[sock].ftp_data_fd);
       }
@@ -1278,9 +1278,9 @@ read_ftp_request(int sock)
           printf("badly formed ftp request: %s\n", buffer);
         return 1;
       }
-      fd[sock].response = fd[sock].req_header;
-      fd[sock].length = sprintf(fd[sock].req_header, "150 %d bytes\r\n", fd[fd[sock].ftp_data_fd].length);
-      fd[sock].req_pos = 0;
+      fd[sock].response        = fd[sock].req_header;
+      fd[sock].length          = sprintf(fd[sock].req_header, "150 %d bytes\r\n", fd[fd[sock].ftp_data_fd].length);
+      fd[sock].req_pos         = 0;
       fd[sock].response_length = strlen(fd[sock].req_header);
       poll_set(sock, NULL, write_ftp_response);
       return 0;
@@ -1297,7 +1297,7 @@ static int
 accept_sock(int sock)
 {
   struct sockaddr_in clientname;
-  int size = sizeof(clientname);
+  int size   = sizeof(clientname);
   int new_fd = 0;
   do {
     new_fd = accept(sock, (struct sockaddr *)&clientname,
@@ -1353,9 +1353,9 @@ accept_compd(int sock)
   servers++;
   new_servers++;
   poll_init_set(new_fd, NULL, read_compd_request);
-  fd[new_fd].count = &servers;
-  fd[new_fd].start = now;
-  fd[new_fd].ready = now + server_delay * HRTIME_MSECOND;
+  fd[new_fd].count     = &servers;
+  fd[new_fd].start     = now;
+  fd[new_fd].ready     = now + server_delay * HRTIME_MSECOND;
   fd[new_fd].keepalive = server_keepalive ? server_keepalive : INT_MAX;
 
   return 0;
@@ -1372,9 +1372,9 @@ accept_read(int sock)
     make_response(new_fd, 220);
   } else
     poll_init_set(new_fd, read_request);
-  fd[new_fd].count = &servers;
-  fd[new_fd].start = now;
-  fd[new_fd].ready = now + server_delay * HRTIME_MSECOND;
+  fd[new_fd].count     = &servers;
+  fd[new_fd].start     = now;
+  fd[new_fd].ready     = now + server_delay * HRTIME_MSECOND;
   fd[new_fd].keepalive = server_keepalive ? server_keepalive : INT_MAX;
 
   return 0;
@@ -1387,16 +1387,16 @@ accept_ftp_data(int sock)
   servers++;
   new_servers++;
   poll_init(new_fd);
-  fd[new_fd].ftp_data_fd = fd[sock].ftp_data_fd;
+  fd[new_fd].ftp_data_fd               = fd[sock].ftp_data_fd;
   fd[fd[sock].ftp_data_fd].ftp_data_fd = new_fd;
-  fd[new_fd].state = STATE_FTP_DATA_READY;
-  fd[new_fd].count = &servers;
-  fd[new_fd].start = now;
-  fd[new_fd].ready = now + server_delay * HRTIME_MSECOND;
-  fd[new_fd].keepalive = server_keepalive ? server_keepalive : INT_MAX;
-  fd[new_fd].state = STATE_FTP_DATA_READY;
-  fd[new_fd].doc = fd[sock].doc;
-  fd[new_fd].doc_length = fd[sock].doc_length;
+  fd[new_fd].state                     = STATE_FTP_DATA_READY;
+  fd[new_fd].count                     = &servers;
+  fd[new_fd].start                     = now;
+  fd[new_fd].ready                     = now + server_delay * HRTIME_MSECOND;
+  fd[new_fd].keepalive                 = server_keepalive ? server_keepalive : INT_MAX;
+  fd[new_fd].state                     = STATE_FTP_DATA_READY;
+  fd[new_fd].doc                       = fd[sock].doc;
+  fd[new_fd].doc_length                = fd[sock].doc_length;
   if (verbose)
     printf("accept_ftp_data %d for %d\n", new_fd, sock);
   send_ftp_data_when_ready(new_fd);
@@ -1420,8 +1420,8 @@ open_server(unsigned short int port, accept_fn_t accept_fn)
   struct sockaddr_in &name = fd[sock].name;
 
   /* Give the socket a name. */
-  name.sin_family = AF_INET;
-  name.sin_port = htons(port);
+  name.sin_family      = AF_INET;
+  name.sin_port        = htons(port);
   name.sin_addr.s_addr = htonl(INADDR_ANY);
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(one)) < 0) {
     perror((char *)"setsockopt");
@@ -1450,7 +1450,7 @@ open_server(unsigned short int port, accept_fn_t accept_fn)
   ink_assert(addrlen);
 
   /* Tell the socket not to linger on exit */
-  lngr.l_onoff = 0;
+  lngr.l_onoff  = 0;
   lngr.l_linger = 0;
   if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (char *)&lngr, sizeof(struct linger)) < 0) {
     perror("setsockopt");
@@ -1486,11 +1486,11 @@ poll_loop()
   }
   pollfd pfd[POLL_GROUP_SIZE];
   int ip = 0;
-  now = ink_get_hrtime_internal();
+  now    = ink_get_hrtime_internal();
   for (int i = 0; i <= last_fd; i++) {
     if (fd[i].fd > 0 && (!fd[i].ready || now >= fd[i].ready)) {
-      pfd[ip].fd = i;
-      pfd[ip].events = 0;
+      pfd[ip].fd      = i;
+      pfd[ip].events  = 0;
       pfd[ip].revents = 0;
       if (fd[i].read_cb)
         pfd[ip].events |= POLLIN;
@@ -1532,7 +1532,7 @@ gen_bfc_dist(double f = 10.0)
   if (docsize >= 0)
     return docsize;
 
-  double rand = 0.0;
+  double rand  = 0.0;
   double rand2 = 0.0;
   bool f_given = f < 9.0;
   if (!f_given) {
@@ -1541,7 +1541,7 @@ gen_bfc_dist(double f = 10.0)
     // coverity[dont_call]
     rand2 = drand48();
   } else {
-    rand = f;
+    rand  = f;
     rand2 = (f * 13.0) - floor(f * 13.0);
   }
 
@@ -1585,7 +1585,7 @@ gen_bfc_dist(double f = 10.0)
     size = size * 10;
   }
   int increment = size;
-  size = size * (file_no + 1);
+  size          = size * (file_no + 1);
   // vary about the mean doc size for
   // that class/size
   if (!f_given)
@@ -1599,9 +1599,9 @@ gen_bfc_dist(double f = 10.0)
 static void
 build_response()
 {
-  int maxsize = docsize > MAX_RESPONSE_LENGTH ? docsize : MAX_RESPONSE_LENGTH;
+  int maxsize     = docsize > MAX_RESPONSE_LENGTH ? docsize : MAX_RESPONSE_LENGTH;
   response_buffer = (char *)malloc(maxsize + HEADER_SIZE);
-  for (int i = 0; i < maxsize + HEADER_SIZE; i++)
+  for (int i           = 0; i < maxsize + HEADER_SIZE; i++)
     response_buffer[i] = i % 256;
 }
 
@@ -1618,7 +1618,7 @@ Lpush:
     fd[ka_cache_tail[i]].next = sock;
   else
     ka_cache_head[i] = sock;
-  ka_cache_tail[i] = sock;
+  ka_cache_tail[i]   = sock;
 }
 
 static int
@@ -1626,7 +1626,7 @@ get_ka(unsigned int ip)
 {
   for (int i = 0; i < n_ka_cache; i++)
     if (fd[ka_cache_head[i]].ip == ip) {
-      int res = ka_cache_head[i];
+      int res          = ka_cache_head[i];
       ka_cache_head[i] = fd[ka_cache_head[i]].next;
       if (res == ka_cache_tail[i]) {
         ink_assert(!ka_cache_head[i]);
@@ -1694,7 +1694,7 @@ init_client(int sock)
 static unsigned int
 get_addr(const char *host)
 {
-  unsigned int addr = inet_addr(host);
+  unsigned int addr         = inet_addr(host);
   struct hostent *host_info = NULL;
 
   if (!addr || (-1 == (int)addr)) {
@@ -1751,7 +1751,7 @@ find_href_start(const char *tag, char *base, int len)
     return NULL;
 
   char *start = base;
-  char *end = base + len;
+  char *end   = base + len;
 
 Lagain : {
   start = strncasestr(start, tag, len);
@@ -1823,7 +1823,7 @@ compose_all_urls(const char *tag, char *buf, char *start, char *end, int buflen,
       end = start + strlen(tag);
       continue;
     }
-    old = *end;
+    old  = *end;
     *end = 0;
     compose_url(newurl, base_url, start);
     make_url_client(newurl, base_url);
@@ -1839,7 +1839,7 @@ extract_urls(char *buf, int buflen, char *base_url)
 {
   // if (verbose) printf("EXTRACT<<%s\n>>", buf);
   char *start = NULL;
-  char *end = NULL;
+  char *end   = NULL;
   char old_base[512];
   strcpy(old_base, base_url);
 
@@ -1897,7 +1897,7 @@ follow_links(int sock)
   if (urls_mode) {
     if (fd[sock].binary)
       return;
-    int l = fd[sock].response_remaining;
+    int l   = fd[sock].response_remaining;
     char *r = fd[sock].response, *p = r, *n = r;
     if (r)
       extract_urls(r, l, fd[sock].base_url);
@@ -1924,8 +1924,8 @@ verify_content(int sock, char *buf, int done)
 {
   if (urls_mode && !check_content)
     return 1;
-  int l = fd[sock].response_length;
-  char *d = response_buffer + (l % 256) + fd[sock].nalternate;
+  int l    = fd[sock].response_length;
+  char *d  = response_buffer + (l % 256) + fd[sock].nalternate;
   int left = fd[sock].length;
   if (left > 0) {
     if (embed_url && !fd[sock].jg_compressed) {
@@ -1964,12 +1964,12 @@ static void
 build_zipf()
 {
   zipf_table = (double *)malloc(ZIPF_SIZE * sizeof(double));
-  for (int i = 0; i < ZIPF_SIZE; i++)
+  for (int i      = 0; i < ZIPF_SIZE; i++)
     zipf_table[i] = 1.0 / pow(i + 2, zipf);
-  for (int i = 1; i < ZIPF_SIZE; i++)
+  for (int i      = 1; i < ZIPF_SIZE; i++)
     zipf_table[i] = zipf_table[i - 1] + zipf_table[i];
-  double x = zipf_table[ZIPF_SIZE - 1];
-  for (int i = 0; i < ZIPF_SIZE; i++)
+  double x        = zipf_table[ZIPF_SIZE - 1];
+  for (int i      = 0; i < ZIPF_SIZE; i++)
     zipf_table[i] = zipf_table[i] / x;
 }
 
@@ -2053,10 +2053,10 @@ read_response(int sock)
     fd[sock].req_pos += err;
     fd[sock].bytes += err;
     fd[sock].active = ink_get_hrtime_internal();
-    int total_read = fd[sock].req_pos;
-    char *p = fd[sock].req_header;
-    char *cl = NULL;
-    int cli = 0;
+    int total_read  = fd[sock].req_pos;
+    char *p         = fd[sock].req_header;
+    char *cl        = NULL;
+    int cli         = 0;
     while ((p = strchr(p, '\n'))) {
       if (verbose)
         printf("read header end? [%s]\n", p);
@@ -2065,15 +2065,15 @@ read_response(int sock)
         p += off;
         strncpy(fd[sock].response_header, fd[sock].req_header, p - fd[sock].req_header);
         fd[sock].response_header[p - fd[sock].req_header] = '\0';
-        int lbody = fd[sock].req_pos - (p - fd[sock].req_header);
+        int lbody                                         = fd[sock].req_pos - (p - fd[sock].req_header);
         cl = strncasestr(fd[sock].req_header, "Content-Length:", p - fd[sock].req_header);
         if (cl) {
-          cli = atoi(cl + 16);
+          cli                 = atoi(cl + 16);
           int expected_length = fd[sock].response_length;
           if (compd_suite) {
             if (strstr(fd[sock].req_header, "x-jg")) {
               fd[sock].jg_compressed = 1;
-              expected_length = (fd[sock].response_length * 2) / 3;
+              expected_length        = (fd[sock].response_length * 2) / 3;
             }
           }
           if (fd[sock].response_length && verbose_errors && expected_length != cli && !nocheck_length)
@@ -2095,8 +2095,8 @@ read_response(int sock)
         if (fd[sock].length && drand48() < client_abort_rate) {
           fd[sock].client_abort = 1;
           // coverity[dont_call]
-          fd[sock].length = (int)(drand48() * (fd[sock].length - 1));
-          fd[sock].keepalive = 0;
+          fd[sock].length        = (int)(drand48() * (fd[sock].length - 1));
+          fd[sock].keepalive     = 0;
           fd[sock].drop_after_CL = 1;
         }
         if (verbose)
@@ -2117,7 +2117,7 @@ read_response(int sock)
     if (obey_redirects && urls_mode && fd[sock].req_header[9] == '3' && fd[sock].req_header[10] == '0' &&
         (fd[sock].req_header[11] == '1' || fd[sock].req_header[11] == '2')) {
       char *redirect = strstr(fd[sock].req_header, "http://");
-      char *e = redirect ? (char *)memchr(redirect, '\n', hlen) : 0;
+      char *e        = redirect ? (char *)memchr(redirect, '\n', hlen) : 0;
       if (!redirect || !e)
         fprintf(stderr, "bad redirect '%s'", fd[sock].req_header);
       else {
@@ -2146,9 +2146,9 @@ read_response(int sock)
       }
       return read_response_error(sock);
     }
-    char *r = fd[sock].req_header;
+    char *r    = fd[sock].req_header;
     int length = p - r;
-    char *ka = check_keepalive(r, length);
+    char *ka   = check_keepalive(r, length);
     if (urls_mode) {
       fd[sock].response_remaining = total_read - length;
       if (fd[sock].response_remaining)
@@ -2181,8 +2181,8 @@ read_response(int sock)
         if (!toread) {
           if (verbose_errors || verbose)
             fprintf(stderr, "line exceeds buffer, unable to follow links\n");
-          toread = cbuffersize;
-          r = fd[sock].response;
+          toread                      = cbuffersize;
+          r                           = fd[sock].response;
           fd[sock].response_remaining = 0;
         } else
           r = fd[sock].response + fd[sock].response_remaining;
@@ -2194,7 +2194,7 @@ read_response(int sock)
     if (fd[sock].bytes > abort_retry_bytes && (((now - fd[sock].start + 1) / HRTIME_SECOND) > abort_retry_secs) &&
         !faster_than(sock, abort_retry_speed, fd[sock].bytes)) {
       fd[sock].client_abort = 1;
-      fd[sock].keepalive = 0;
+      fd[sock].keepalive    = 0;
       if (!urls_mode && !client_rate)
         make_bfc_client(proxy_addr, proxy_port);
       goto Ldone;
@@ -2296,7 +2296,7 @@ write_request(int sock)
     if (verbose)
       printf("write complete %d %d\n", sock, fd[sock].length);
     fd[sock].req_pos = 0;
-    fd[sock].length = fd[sock].response_length;
+    fd[sock].length  = fd[sock].response_length;
     poll_set(sock, read_response);
   }
   return 0;
@@ -2344,7 +2344,7 @@ write_ftp_response(int sock)
     if (verbose)
       printf("write complete %d %d\n", sock, fd[sock].length);
     fd[sock].req_pos = 0;
-    fd[sock].length = fd[sock].response_length;
+    fd[sock].length  = fd[sock].response_length;
     poll_set(sock, read_ftp_request);
   }
   return 0;
@@ -2381,7 +2381,7 @@ make_client(unsigned int addr, int port)
     panic_perror("setsockopt");
 
   /* Tell the socket not to linger on exit */
-  lngr.l_onoff = 1;
+  lngr.l_onoff  = 1;
   lngr.l_linger = 0;
   if (!ftp) { // this causes problems for PORT ftp -- ewong
     if (setsockopt(sock, SOL_SOCKET, SO_LINGER, (char *)&lngr, sizeof(struct linger)) < 0) {
@@ -2393,8 +2393,8 @@ make_client(unsigned int addr, int port)
   /* Give the socket a name. */
   struct sockaddr_in name;
   memset(&name, 0, sizeof(sockaddr_in));
-  name.sin_family = AF_INET;
-  name.sin_port = htons(port);
+  name.sin_family      = AF_INET;
+  name.sin_port        = htons(port);
   name.sin_addr.s_addr = addr;
 
   if (verbose)
@@ -2430,7 +2430,7 @@ make_bfc_client(unsigned int addr, int port)
   if (keepalive)
     sock = get_ka(addr);
   if (sock < 0) {
-    sock = make_client(addr, port);
+    sock               = make_client(addr, port);
     fd[sock].keepalive = keepalive;
   } else {
     init_client(sock);
@@ -2445,7 +2445,7 @@ make_bfc_client(unsigned int addr, int port)
   double dr = drand48();
   if (zipf == 0.0) {
     if (h < hitrate) {
-      dr = 1.0 + (floor(dr * hotset) / hotset);
+      dr                       = 1.0 + (floor(dr * hotset) / hotset);
       fd[sock].response_length = gen_bfc_dist(dr - 1.0);
     } else
       fd[sock].response_length = gen_bfc_dist(dr);
@@ -2453,16 +2453,16 @@ make_bfc_client(unsigned int addr, int port)
     unsigned long long int doc = get_zipf(dr);
     // Some large randomish number.
     unsigned long long int doc_len_int = doc * 0x14A4D0FB0E93E3A7LL;
-    unsigned long int x = doc_len_int;
-    double y = (double)x;
+    unsigned long int x                = doc_len_int;
+    double y                           = (double)x;
     y /= 0x100000000LL; // deterministic random number between 0 and 1.0
     fd[sock].response_length = gen_bfc_dist(y);
-    dr = doc;
+    dr                       = doc;
   }
   if (verbose)
     printf("gen_bfc_dist %d\n", fd[sock].response_length);
   char eheaders[16384];
-  *eheaders = 0;
+  *eheaders    = 0;
   int nheaders = extra_headers;
   if (nheaders > 0) {
     char *eh = eheaders;
@@ -2551,8 +2551,8 @@ make_bfc_client(unsigned int addr, int port)
     printf("request %d [%s]\n", sock, fd[sock].req_header);
   fd[sock].length = strlen(fd[sock].req_header);
   {
-    char *s = fd[sock].req_header;
-    char *e = (char *)memchr(s, '\r', 512);
+    char *s   = fd[sock].req_header;
+    char *e   = (char *)memchr(s, '\r', 512);
     char *url = fd[sock].base_url;
     memcpy(url, s, e - s);
     url[e - s] = 0;
@@ -2563,10 +2563,10 @@ make_bfc_client(unsigned int addr, int port)
     printf("Request to Proxy: {\n%s}\n", fd[sock].req_header);
 }
 
-#define RUNNING(_n)                                                             \
-  total_##_n = (((total_##_n * (average_over - 1)) / average_over) + new_##_n); \
-  running_##_n = total_##_n / average_over;                                     \
-  new_##_n = 0;
+#define RUNNING(_n)                                                               \
+  total_##_n   = (((total_##_n * (average_over - 1)) / average_over) + new_##_n); \
+  running_##_n = total_##_n / average_over;                                       \
+  new_##_n     = 0;
 
 #define RUNNING_AVG(_t, _n, _o)                                        \
   _t = _o ? ((_t * (average_over - 1) + _n / _o) / average_over) : _t; \
@@ -2576,7 +2576,7 @@ void
 interval_report()
 {
   static int here = 0;
-  now = ink_get_hrtime_internal();
+  now             = ink_get_hrtime_internal();
   if (!(here++ % 20))
     printf(" con  new     ops   1B  lat      bytes/per     svrs  new  ops      total   time  err\n");
   RUNNING(clients);
@@ -2589,7 +2589,7 @@ interval_report()
   RUNNING(servers);
   RUNNING(sops);
   RUNNING(tbytes);
-  float t = (float)(now - start_time);
+  float t      = (float)(now - start_time);
   uint64_t per = current_clients ? running_cbytes / current_clients : 0;
   printf("%4d %4d %7.1f %4d %4d %10" PRIu64 "/%-6" PRIu64 "  %4d %4d %4d  %9" PRIu64 " %6.1f %4d\n",
          current_clients, // clients, n_ka_cache,
@@ -2627,7 +2627,7 @@ interval_report()
 
 #define BEGIN_HASH_LOOP                                                            \
   unsigned int bucket = (i % BUCKETS);                                             \
-  unsigned int tag = MASK_TAG((unsigned int)(i / BUCKETS));                        \
+  unsigned int tag    = MASK_TAG((unsigned int)(i / BUCKETS));                     \
   if (!tag)                                                                        \
     tag++;                                                                         \
   unsigned char *base = bytes + bucket * BYTES_PER_BUCKET;                         \
@@ -2745,7 +2745,7 @@ UrlHashTable::UrlHashTable() : numbytes(0), bytes(NULL), fd(-1)
   if (url_hash_entries > 0) {
     // if they specify the number of entries round it up
     url_hash_entries = (url_hash_entries + ENTRIES_PER_BUCKET - 1) & ~(ENTRIES_PER_BUCKET - 1);
-    numbytes = URL_HASH_BYTES;
+    numbytes         = URL_HASH_BYTES;
 
     // ensure it is either a new file or the correct size
     if (len != 0 && len != numbytes)
@@ -2797,7 +2797,7 @@ seen_it(char *url)
     unsigned char md5[16];
     uint64_t i[2];
   } u;
-  int l = 0;
+  int l      = 0;
   char *para = strrchr(url, '#');
   if (para)
     l = para - url;
@@ -2819,7 +2819,7 @@ seen_it(char *url)
 static int
 make_url_client(const char *url, const char *base_url, bool seen, bool unthrottled)
 {
-  int iport = 80;
+  int iport       = 80;
   unsigned int ip = 0;
   char curl[512];
   char sche[8], host[512], port[10], path[512], frag[512], quer[512], para[512];
@@ -2851,7 +2851,7 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
   }
   if (proxy_port) {
     iport = proxy_port;
-    ip = proxy_addr;
+    ip    = proxy_addr;
   } else {
     if (xport)
       iport = atoi(port);
@@ -2871,7 +2871,7 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
   if (keepalive)
     sock = get_ka(ip);
   if (sock < 0) {
-    sock = make_client(ip, iport);
+    sock               = make_client(ip, iport);
     fd[sock].keepalive = keepalive;
   } else {
     init_client(sock);
@@ -2881,7 +2881,7 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
   if (sock < 0)
     panic("cannot make client\n");
   char eheaders[16384];
-  *eheaders = 0;
+  *eheaders    = 0;
   int nheaders = extra_headers;
   memset(&eheaders, 0, 16384);
   if (nheaders > 0) {
@@ -2938,7 +2938,7 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
   }
 
   fd[sock].response_length = 0;
-  fd[sock].length = strlen(fd[sock].req_header);
+  fd[sock].length          = strlen(fd[sock].req_header);
   if (!fd[sock].response)
     fd[sock].response = (char *)malloc(MAX_BUFSIZE);
   strcpy(fd[sock].base_url, curl);
@@ -2989,7 +2989,7 @@ main(int argc __attribute__((unused)), const char *argv[])
   start_time = now = ink_get_hrtime_internal();
 
   urls_mode = n_file_arguments || *urls_file;
-  nclients = client_rate ? 0 : nclients;
+  nclients  = client_rate ? 0 : nclients;
 
   if (!local_host[0]) {
     if (gethostname(local_host, sizeof(local_host)) != 0) {
@@ -3037,9 +3037,9 @@ main(int argc __attribute__((unused)), const char *argv[])
   } else {
     if (check_content)
       build_response();
-    follow = follow_arg;
-    follow_same = follow_same_arg;
-    uniq_urls = new UrlHashTable;
+    follow       = follow_arg;
+    follow_same  = follow_same_arg;
+    uniq_urls    = new UrlHashTable;
     defered_urls = (char **)malloc(sizeof(char *) * MAX_DEFERED_URLS);
     average_over = 1;
     if (*urlsdump_file) {
@@ -3070,9 +3070,9 @@ main(int argc __attribute__((unused)), const char *argv[])
     }
   }
 
-  int t = now / HRTIME_SECOND;
+  int t       = now / HRTIME_SECOND;
   int tclient = now / HRTIME_SECOND;
-  int start = now / HRTIME_SECOND;
+  int start   = now / HRTIME_SECOND;
   while (1) {
     if (poll_loop())
       break;
@@ -3167,9 +3167,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
     */
 {
   const char *start = src_url;
-  int len = strlen(src_url);
-  const char *end = start + len;
-  const char *ptr = start;
+  int len           = strlen(src_url);
+  const char *end   = start + len;
+  const char *ptr   = start;
   const char *ptr2, *temp, *temp2;
   const char *sche1, *sche2;
   const char *host1, *host2;
@@ -3187,16 +3187,16 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   frag_exists = quer_exists = para_exists = 0;
   sche1 = sche2 = host1 = host2 = port1 = port2 = NULL;
   path1 = path2 = frag1 = frag2 = quer1 = quer2 = para1 = para2 = NULL;
-  leading_slash = 0;
+  leading_slash                                                 = 0;
 
   temp2 = ptr;
   /* strip fragments "#" off the end */
   while (ptr < end) {
     if (*ptr == '#') {
-      frag1 = ptr + 1;
-      frag2 = end;
+      frag1       = ptr + 1;
+      frag2       = end;
       frag_exists = 1;
-      end = ptr;
+      end         = ptr;
     }
     ptr++;
   }
@@ -3204,7 +3204,7 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
 
   /* decide if there is a sche, i.e. if it's an absolute url */
   /* find end of sche */
-  fail = false;
+  fail  = false;
   temp2 = ptr;
   while ((ptr < end) && !fail) {
     if (*ptr == ':') {
@@ -3212,10 +3212,10 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
       sche2 = ptr;
       ptr++; /* to continue to parse, skip the : */
       sche_exists = 1;
-      fail = true;
+      fail        = true;
     } else if ((!ParseRules::is_alpha(*ptr) && (*ptr != '+') && (*ptr != '.') && (*ptr != '-')) || (ptr == end)) {
       sche_exists = 0;
-      fail = true;
+      fail        = true;
     } else {
       ptr++;
     }
@@ -3224,7 +3224,7 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
     ptr = temp2;
 
   /* find start of host */
-  fail = false;
+  fail  = false;
   temp2 = ptr;
   while ((ptr < end - 1) && !fail) {
     if (*(ptr + 0) == '/') {
@@ -3232,11 +3232,11 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
         host1 = ptr + 2;
         ptr += 2; /* skip "//" */
         host_exists = 1;
-        fail = true;
+        fail        = true;
       } else {
         /* this is the start of a path, not a host */
         host_exists = 0;
-        fail = true;
+        fail        = true;
       }
     } else {
       ptr++;
@@ -3269,9 +3269,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
       temp = host2;
       while (ptr2 < temp) {
         if (*ptr2 == ':') {
-          port1 = ptr2 + 1;
-          port2 = temp;
-          host2 = ptr2;
+          port1       = ptr2 + 1;
+          port2       = temp;
+          host2       = ptr2;
           port_exists = 1;
         }
         ptr2++;
@@ -3285,10 +3285,10 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   /* strip query "?" off the end */
   while (ptr < end) {
     if (*ptr == '?') {
-      quer1 = ptr + 1;
-      quer2 = end;
+      quer1       = ptr + 1;
+      quer2       = end;
       quer_exists = 1;
-      end = ptr;
+      end         = ptr;
     }
     ptr++;
   }
@@ -3298,10 +3298,10 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   /* strip parameters ";" off the end */
   while (ptr < end) {
     if (*ptr == ';') {
-      para1 = ptr + 1;
-      para2 = end;
+      para1       = ptr + 1;
+      para2       = end;
       para_exists = 1;
-      end = ptr;
+      end         = ptr;
     }
     ptr++;
   }
@@ -3312,17 +3312,17 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   if (ptr < end) {
     if (*ptr == '/') {
       leading_slash = 1;
-      path1 = ptr + 1;
-      path2 = end;
-      path_exists = 1;
+      path1         = ptr + 1;
+      path2         = end;
+      path_exists   = 1;
     } else {
-      path1 = ptr;
-      path2 = end;
+      path1       = ptr;
+      path2       = end;
       path_exists = 1;
     }
   } else {
-    path1 = end;
-    path2 = end;
+    path1       = end;
+    path2       = end;
     path_exists = 0;
   }
 
@@ -3430,13 +3430,13 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
       *para = 0;
     }
   }
-  *real_sche_exists = sche_exists;
-  *real_host_exists = host_exists;
-  *real_port_exists = port_exists;
-  *real_path_exists = path_exists;
-  *real_frag_exists = frag_exists;
-  *real_quer_exists = quer_exists;
-  *real_para_exists = para_exists;
+  *real_sche_exists   = sche_exists;
+  *real_host_exists   = host_exists;
+  *real_port_exists   = port_exists;
+  *real_path_exists   = path_exists;
+  *real_frag_exists   = frag_exists;
+  *real_quer_exists   = quer_exists;
+  *real_para_exists   = para_exists;
   *real_leading_slash = leading_slash;
 } /* End ink_web_decompose_url */
 
@@ -3543,7 +3543,7 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
   } else if (emb.sche_exists && ((strcasecmp(emb.sche, "telnet") == 0) || (strcasecmp(emb.sche, "mailto") == 0) ||
                                  (strcasecmp(emb.sche, "news") == 0))) {
     const char *p = emb_url;
-    char *q = dest_url;
+    char *q       = dest_url;
     while (*p) {
       *q++ = ParseRules::ink_tolower(*p++);
     }
@@ -3613,7 +3613,7 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
           /* remove "." and ".." */
 
           ink_web_remove_dots(temp2, emb.path, &leading_slash, MAX_URL_LEN);
-          emb.path_exists = 1;
+          emb.path_exists   = 1;
           emb.leading_slash = base.leading_slash;
         } /* 5 */
       }   /* 4 */
@@ -3812,8 +3812,8 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
   *leadingslash = 0;
 
   /* first quickly count the "/"s to get lower bound on # of path levels */
-  ptr = src;
-  end = src + strlen(src);
+  ptr    = src;
+  end    = src + strlen(src);
   scount = 0;
   while (ptr < end) {
     if (*ptr++ == '/')
@@ -3823,12 +3823,12 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
 
   if (scount <= STATIC_PATH_LEVELS) {
     /* we can use the statically allocated ones */
-    seg = segstatic;
+    seg  = segstatic;
     type = typestatic;
   } else {
     /* too many levels of path - must dynamically allocate */
-    seg = (char **)malloc(scount * sizeof(char *));
-    type = (int *)malloc(scount * sizeof(int));
+    seg       = (char **)malloc(scount * sizeof(char *));
+    type      = (int *)malloc(scount * sizeof(int));
     free_flag = 1;
   }
 
@@ -3841,7 +3841,7 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
    * Makes my head hurt just to think about it.
    *
    */
-  ptr = src;
+  ptr    = src;
   scount = 0;
   /* a segstart starts with start-of-string or a '/' */
   segstart = 1;
@@ -3850,10 +3850,10 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
       /* include leading '/' in first segment */
       if (ptr == src)
         *leadingslash = 1;
-      segstart = 1;
+      segstart        = 1;
     } else if (segstart == 1) {
       seg[scount++] = ptr;
-      segstart = 0;
+      segstart      = 0;
     } else {
       /* this is neither a "/" nor the first char of another segment */
     }
@@ -3887,27 +3887,27 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
       type[i] = ZAP;
     } else if (type[i] == DOTDOT) {
       /* got a DOTDOT, count back to find first NORMAL segment */
-      temp = i - 1;
+      temp    = i - 1;
       zapflag = 0;
       while ((temp >= 0) && (zapflag == 0)) {
         if (type[temp] == NORMAL) {
           /* found a NORMAL one, ZAP this pair */
           type[temp] = ZAP;
-          type[i] = ZAP;
-          zapflag = 1;
+          type[i]    = ZAP;
+          zapflag    = 1;
         } else {
           temp--;
         }
       }
       if (zapflag == 0) {
         type[i] = ERROR;
-        error = 1;
+        error   = 1;
       }
     }
   }
 
   /* now write out the fixed path */
-  doff = 0;
+  doff  = 0;
   *dest = 0;
   if (*leadingslash) {
     strncpy(dest + doff, "/", 2);
@@ -3960,15 +3960,15 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
 static int
 ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_len)
 {
-  char *src = src_in;
+  char *src  = src_in;
   char *dest = dest_in;
   const char *c1;
   const char *c2;
-  int quit = 0;
+  int quit   = 0;
   int dcount = 0;
-  int num = 0;
-  int dig1 = 0;
-  int dig2 = 0;
+  int num    = 0;
+  int dig1   = 0;
+  int dig2   = 0;
 
   while ((*src != 0) && !quit) {
     if (*src == '%') {
@@ -4076,10 +4076,10 @@ static int
 ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len)
 {
   int d1, d2;
-  char *src = src_in;
+  char *src  = src_in;
   char *dest = dest_in;
   int dcount = 0;
-  int quit = 0;
+  int quit   = 0;
 
   while ((*src != 0) && (dcount < max_dest_len) && (quit == 0)) {
     if ((char *)memchr(dontescapify, *src, INT_MAX) || ParseRules::is_alpha(*src) || ParseRules::is_digit(*src)) {

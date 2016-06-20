@@ -87,9 +87,9 @@ class LogObject : public RefCountObj
 {
 public:
   enum LogObjectFlags {
-    BINARY = 1,
-    REMOTE_DATA = 2,
-    WRITES_TO_PIPE = 4,
+    BINARY                   = 1,
+    REMOTE_DATA              = 2,
+    WRITES_TO_PIPE           = 4,
     LOG_OBJECT_FMT_TIMESTAMP = 8, // always format a timestamp into each log line (for raw text logs)
   };
 

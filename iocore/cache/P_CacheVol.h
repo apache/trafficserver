@@ -272,7 +272,7 @@ struct Vol : public Continuation {
       writing_end_marker(0)
   {
     open_dir.mutex = mutex;
-    agg_buffer = (char *)ats_memalign(ats_pagesize(), AGG_SIZE);
+    agg_buffer     = (char *)ats_memalign(ats_pagesize(), AGG_SIZE);
     memset(agg_buffer, 0, AGG_SIZE);
     SET_HANDLER(&Vol::aggWrite);
   }
@@ -473,10 +473,10 @@ Vol::cancel_trigger()
 TS_INLINE EvacuationBlock *
 new_EvacuationBlock(EThread *t)
 {
-  EvacuationBlock *b = THREAD_ALLOC(evacuationBlockAllocator, t);
-  b->init = 0;
-  b->readers = 0;
-  b->earliest_evacuator = 0;
+  EvacuationBlock *b      = THREAD_ALLOC(evacuationBlockAllocator, t);
+  b->init                 = 0;
+  b->readers              = 0;
+  b->earliest_evacuator   = 0;
   b->evac_frags.link.next = 0;
   return b;
 }
@@ -502,9 +502,9 @@ Vol::open_read(const CryptoHash *key)
 TS_INLINE int
 Vol::within_hit_evacuate_window(Dir *xdir)
 {
-  off_t oft = dir_offset(xdir) - 1;
+  off_t oft       = dir_offset(xdir) - 1;
   off_t write_off = (header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
-  off_t delta = oft - write_off;
+  off_t delta     = oft - write_off;
   if (delta >= 0)
     return delta < hit_evacuate_window;
   else

@@ -174,7 +174,7 @@ OperatorSetDestination::exec(const Resources &res) const
     TSMBuffer bufp;
     TSMLoc url_m_loc;
     if (res._rri) {
-      bufp = res._rri->requestBufp;
+      bufp      = res._rri->requestBufp;
       url_m_loc = res._rri->requestUrl;
     } else {
       bufp = res.bufp;
@@ -215,7 +215,7 @@ OperatorSetDestination::exec(const Resources &res) const
       } else {
         // 1.6.4--Support for preserving QSA in case of set-destination
         if (get_oper_modifiers() & OPER_QSA) {
-          int query_len = 0;
+          int query_len     = 0;
           const char *query = TSUrlHttpQueryGet(bufp, url_m_loc, &query_len);
           TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
           // std::string connector = (value.find("?") == std::string::npos)? "?" : "&";
@@ -243,7 +243,7 @@ OperatorSetDestination::exec(const Resources &res) const
         TSDebug(PLUGIN_NAME, "Would set destination URL to an empty value, skipping");
       } else {
         const char *start = _value.get_value().c_str();
-        const char *end = _value.get_value().size() + start;
+        const char *end   = _value.get_value().size() + start;
         TSMLoc new_url_loc;
         if (TSUrlCreate(bufp, &new_url_loc) == TS_SUCCESS && TSUrlParse(bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
             TSHttpHdrUrlSet(bufp, res.hdr_loc, new_url_loc) == TS_SUCCESS) {
@@ -316,7 +316,7 @@ OperatorSetRedirect::exec(const Resources &res) const
     TSMLoc url_loc;
     if (remap) {
       // Handle when called from remap plugin.
-      bufp = res._rri->requestBufp;
+      bufp    = res._rri->requestBufp;
       url_loc = res._rri->requestUrl;
     } else {
       // Handle when not called from remap plugin.
@@ -330,9 +330,9 @@ OperatorSetRedirect::exec(const Resources &res) const
     size_t pos_path = 0;
     if ((pos_path = value.find("%{PATH}")) != std::string::npos) {
       value.erase(pos_path, 7); // erase %{PATH} from the rewritten to url
-      int path_len = 0;
+      int path_len     = 0;
       const char *path = NULL;
-      path = TSUrlPathGet(bufp, url_loc, &path_len);
+      path             = TSUrlPathGet(bufp, url_loc, &path_len);
       if (path_len > 0) {
         TSDebug(PLUGIN_NAME, "Find %%{PATH} in redirect url, replace it with: %.*s", path_len, path);
         value.insert(pos_path, path, path_len);
@@ -340,9 +340,9 @@ OperatorSetRedirect::exec(const Resources &res) const
     }
 
     // Append the original query string
-    int query_len = 0;
+    int query_len     = 0;
     const char *query = NULL;
-    query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
+    query             = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
     if ((get_oper_modifiers() & OPER_QSA) && (query_len > 0)) {
       TSDebug(PLUGIN_NAME, "QSA mode, append original query string: %.*s", query_len, query);
       std::string connector = (value.find("?") == std::string::npos) ? "?" : "&";
@@ -352,14 +352,14 @@ OperatorSetRedirect::exec(const Resources &res) const
 
     // Prepare the destination URL for the redirect.
     const char *start = value.c_str();
-    const char *end = value.size() + start;
+    const char *end   = value.size() + start;
     if (remap) {
       // Set new location.
       TSUrlParse(bufp, url_loc, &start, end);
       // Set the new status.
       TSHttpTxnSetHttpRetStatus(res.txnp, (TSHttpStatus)_status.get_int_value());
       const_cast<Resources &>(res).changed_url = true;
-      res._rri->redirect = 1;
+      res._rri->redirect                       = 1;
     } else {
       // Set new location.
       TSMLoc field_loc;
@@ -374,8 +374,8 @@ OperatorSetRedirect::exec(const Resources &res) const
 
       // Set the new status code and reason.
       TSHttpStatus status = (TSHttpStatus)_status.get_int_value();
-      const char *reason = TSHttpHdrReasonLookup(status);
-      size_t len = strlen(reason);
+      const char *reason  = TSHttpHdrReasonLookup(status);
+      size_t len          = strlen(reason);
       TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status);
       TSHttpHdrReasonSet(res.bufp, res.hdr_loc, reason, len);
 

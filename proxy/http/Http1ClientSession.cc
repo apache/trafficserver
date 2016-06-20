@@ -51,7 +51,7 @@
 
 enum {
   HTTP_CS_MAGIC_ALIVE = 0x0123F00D,
-  HTTP_CS_MAGIC_DEAD = 0xDEADF00D,
+  HTTP_CS_MAGIC_DEAD  = 0xDEADF00D,
 };
 
 // We have debugging list that we can use to find stuck
@@ -119,10 +119,10 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
 {
   ink_assert(new_vc != NULL);
   ink_assert(client_vc == NULL);
-  client_vc = new_vc;
-  magic = HTTP_CS_MAGIC_ALIVE;
-  mutex = new_vc->mutex;
-  trans.mutex = mutex; // Share this mutex with the transaction
+  client_vc      = new_vc;
+  magic          = HTTP_CS_MAGIC_ALIVE;
+  mutex          = new_vc->mutex;
+  trans.mutex    = mutex; // Share this mutex with the transaction
   ssn_start_time = Thread::get_hrtime();
 
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
@@ -171,13 +171,13 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   DebugHttpSsn("[%" PRId64 "] session born, netvc %p", con_id, new_vc);
 
   read_buffer = iobuf ? iobuf : new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
-  sm_reader = reader ? reader : read_buffer->alloc_reader();
+  sm_reader   = reader ? reader : read_buffer->alloc_reader();
   trans.set_reader(sm_reader);
 
   // INKqa11186: Use a local pointer to the mutex as
   // when we return from do_api_callout, the ClientSession may
   // have already been deallocated.
-  EThread *ethis = this_ethread();
+  EThread *ethis         = this_ethread();
   Ptr<ProxyMutex> lmutex = this->mutex;
   MUTEX_TAKE_LOCK(lmutex, ethis);
   do_api_callout(TS_HTTP_SSN_START_HOOK);
@@ -242,7 +242,7 @@ Http1ClientSession::do_io_close(int alerrno)
   //   it back to our shared pool
   if (bound_ss) {
     bound_ss->release();
-    bound_ss = NULL;
+    bound_ss     = NULL;
     slave_ka_vio = NULL;
   }
 
@@ -329,7 +329,7 @@ Http1ClientSession::state_slave_keep_alive(int event, void *data)
   case VC_EVENT_EOS:
     // The server session closed or something is amiss
     bound_ss->do_io_close();
-    bound_ss = NULL;
+    bound_ss     = NULL;
     slave_ka_vio = NULL;
     break;
 
@@ -337,7 +337,7 @@ Http1ClientSession::state_slave_keep_alive(int event, void *data)
   case VC_EVENT_INACTIVITY_TIMEOUT:
     // Timeout - place the session on the shared pool
     bound_ss->release();
-    bound_ss = NULL;
+    bound_ss     = NULL;
     slave_ka_vio = NULL;
     break;
   }
@@ -463,7 +463,7 @@ Http1ClientSession::attach_server_session(HttpServerSession *ssession, bool tran
   if (ssession) {
     ink_assert(bound_ss == NULL);
     ssession->state = HSS_KA_CLIENT_SLAVE;
-    bound_ss = ssession;
+    bound_ss        = ssession;
     DebugHttpSsn("[%" PRId64 "] attaching server session [%" PRId64 "] as slave", con_id, ssession->con_id);
     ink_assert(ssession->get_reader()->read_avail() == 0);
     ink_assert(ssession->get_netvc() != this->get_netvc());
@@ -494,7 +494,7 @@ Http1ClientSession::attach_server_session(HttpServerSession *ssession, bool tran
     }
   } else {
     ink_assert(bound_ss != NULL);
-    bound_ss = NULL;
+    bound_ss     = NULL;
     slave_ka_vio = NULL;
   }
 }

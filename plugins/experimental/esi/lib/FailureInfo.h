@@ -30,7 +30,7 @@
 #if defined(solaris) && !defined(timersub)
 #define timersub(a, b, result)                       \
   do {                                               \
-    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;    \
+    (result)->tv_sec  = (a)->tv_sec - (b)->tv_sec;   \
     (result)->tv_usec = (a)->tv_usec - (b)->tv_usec; \
     if ((result)->tv_usec < 0) {                     \
       --(result)->tv_sec;                            \
@@ -46,7 +46,7 @@ using namespace std;
 typedef std::vector<std::pair<double, double>> FailureToSuccess;
 typedef std::map<std::string, class FailureInfo *> FailureData;
 
-static const int WINDOW_SIZE = 200;
+static const int WINDOW_SIZE    = 200;
 static const int TOTAL_DURATION = 2000;
 
 class FailureInfo : private EsiLib::ComponentBase
@@ -55,7 +55,7 @@ public:
   FailureInfo(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
     : ComponentBase(debug_tag, debug_func, error_func), _windowsPassed(0), _avgOverWindow(0), _requestMade(true)
   {
-    _totalSlots = TOTAL_DURATION / WINDOW_SIZE;
+    _totalSlots   = TOTAL_DURATION / WINDOW_SIZE;
     _windowMarker = 0;
     for (size_t i = 0; i < _totalSlots; i++) {
       _statistics.push_back(make_pair(0, 0));

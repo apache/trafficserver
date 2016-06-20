@@ -127,13 +127,13 @@ PluginVC::main_handler(int event, void *data)
   ink_assert(!deletable);
   ink_assert(data != NULL);
 
-  Event *call_event = (Event *)data;
+  Event *call_event   = (Event *)data;
   EThread *my_ethread = mutex->thread_holding;
   ink_release_assert(my_ethread != NULL);
 
-  bool read_mutex_held = false;
-  bool write_mutex_held = false;
-  Ptr<ProxyMutex> read_side_mutex = read_state.vio.mutex;
+  bool read_mutex_held             = false;
+  bool write_mutex_held            = false;
+  Ptr<ProxyMutex> read_side_mutex  = read_state.vio.mutex;
   Ptr<ProxyMutex> write_side_mutex = write_state.vio.mutex;
 
   if (read_side_mutex) {
@@ -256,12 +256,12 @@ PluginVC::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 
   // Note: we set vio.op last because process_read_side looks at it to
   //  tell if the VConnection is active.
-  read_state.vio.mutex = c->mutex;
-  read_state.vio._cont = c;
-  read_state.vio.nbytes = nbytes;
-  read_state.vio.ndone = 0;
+  read_state.vio.mutex     = c->mutex;
+  read_state.vio._cont     = c;
+  read_state.vio.nbytes    = nbytes;
+  read_state.vio.ndone     = 0;
   read_state.vio.vc_server = (VConnection *)this;
-  read_state.vio.op = VIO::READ;
+  read_state.vio.op        = VIO::READ;
 
   Debug("pvc", "[%u] %s: do_io_read for %" PRId64 " bytes", core_obj->id, PVC_TYPE, nbytes);
 
@@ -288,12 +288,12 @@ PluginVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, 
 
   // Note: we set vio.op last because process_write_side looks at it to
   //  tell if the VConnection is active.
-  write_state.vio.mutex = c ? c->mutex : this->mutex;
-  write_state.vio._cont = c;
-  write_state.vio.nbytes = nbytes;
-  write_state.vio.ndone = 0;
+  write_state.vio.mutex     = c ? c->mutex : this->mutex;
+  write_state.vio._cont     = c;
+  write_state.vio.nbytes    = nbytes;
+  write_state.vio.ndone     = 0;
   write_state.vio.vc_server = (VConnection *)this;
-  write_state.vio.op = VIO::WRITE;
+  write_state.vio.op        = VIO::WRITE;
 
   Debug("pvc", "[%u] %s: do_io_write for %" PRId64 " bytes", core_obj->id, PVC_TYPE, nbytes);
 
@@ -394,7 +394,7 @@ PluginVC::do_io_shutdown(ShutdownHowTo_t howto)
     write_state.shutdown = true;
     break;
   case IO_SHUTDOWN_READWRITE:
-    read_state.shutdown = true;
+    read_state.shutdown  = true;
     write_state.shutdown = true;
     break;
   }
@@ -425,8 +425,8 @@ PluginVC::transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, 
 
   while (act_on > 0) {
     int64_t block_read_avail = transfer_from->block_read_avail();
-    int64_t to_move = MIN(act_on, block_read_avail);
-    int64_t moved = 0;
+    int64_t to_move          = MIN(act_on, block_read_avail);
+    int64_t moved            = 0;
 
     if (to_move <= 0) {
       break;
@@ -499,8 +499,8 @@ PluginVC::process_write_side(bool other_side_call)
   }
 
   IOBufferReader *reader = write_state.vio.get_reader();
-  int64_t bytes_avail = reader->read_avail();
-  int64_t act_on = MIN(bytes_avail, ntodo);
+  int64_t bytes_avail    = reader->read_avail();
+  int64_t act_on         = MIN(bytes_avail, ntodo);
 
   Debug("pvc", "[%u] %s: process_write_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
@@ -618,7 +618,7 @@ PluginVC::process_read_side(bool other_side_call)
   }
 
   int64_t bytes_avail = core_reader->read_avail();
-  int64_t act_on = MIN(bytes_avail, ntodo);
+  int64_t act_on      = MIN(bytes_avail, ntodo);
 
   Debug("pvc", "[%u] %s: process_read_side; act_on %" PRId64 "", core_obj->id, PVC_TYPE, act_on);
 
@@ -634,8 +634,8 @@ PluginVC::process_read_side(bool other_side_call)
   MIOBuffer *output_buffer = read_state.vio.get_writer();
 
   int64_t water_mark = output_buffer->water_mark;
-  water_mark = MAX(water_mark, PVC_DEFAULT_MAX_BYTES);
-  int64_t buf_space = water_mark - output_buffer->max_read_avail();
+  water_mark         = MAX(water_mark, PVC_DEFAULT_MAX_BYTES);
+  int64_t buf_space  = water_mark - output_buffer->max_read_avail();
   if (buf_space <= 0) {
     Debug("pvc", "[%u] %s: process_read_side no buffer space", core_obj->id, PVC_TYPE);
     return;
@@ -709,7 +709,7 @@ PluginVC::process_close()
 
   if (inactive_event) {
     inactive_event->cancel();
-    inactive_event = NULL;
+    inactive_event      = NULL;
     inactive_timeout_at = 0;
   }
   // If the other side of the PluginVC is not closed
@@ -718,7 +718,7 @@ PluginVC::process_close()
   //  the close
   if (!other_side->closed && core_obj->connected) {
     other_side->need_write_process = true;
-    other_side->need_read_process = true;
+    other_side->need_read_process  = true;
     other_side->setup_event_cb(0, &other_side->core_lock_retry_event);
   }
 
@@ -1008,17 +1008,17 @@ PluginVCCore::init()
 {
   mutex = new_ProxyMutex();
 
-  active_vc.vc_type = PLUGIN_VC_ACTIVE;
+  active_vc.vc_type    = PLUGIN_VC_ACTIVE;
   active_vc.other_side = &passive_vc;
-  active_vc.core_obj = this;
-  active_vc.mutex = mutex;
-  active_vc.thread = this_ethread();
+  active_vc.core_obj   = this;
+  active_vc.mutex      = mutex;
+  active_vc.thread     = this_ethread();
 
-  passive_vc.vc_type = PLUGIN_VC_PASSIVE;
+  passive_vc.vc_type    = PLUGIN_VC_PASSIVE;
   passive_vc.other_side = &active_vc;
-  passive_vc.core_obj = this;
-  passive_vc.mutex = mutex;
-  passive_vc.thread = active_vc.thread;
+  passive_vc.core_obj   = this;
+  passive_vc.mutex      = mutex;
+  passive_vc.thread     = active_vc.thread;
 
   p_to_a_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
   p_to_a_reader = p_to_a_buffer->alloc_reader();
@@ -1258,7 +1258,7 @@ PVCTestDriver::start_tests(RegressionTest *r_arg, int *pstatus_arg)
   mutex = new_ProxyMutex();
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
 
-  r = r_arg;
+  r       = r_arg;
   pstatus = pstatus_arg;
 
   run_next_test();
@@ -1287,8 +1287,8 @@ PVCTestDriver::run_next_test()
 
   Debug("pvc_test", "Starting test %s", netvc_tests_def[a_index].test_name);
 
-  NetVCTest *p = new NetVCTest;
-  NetVCTest *a = new NetVCTest;
+  NetVCTest *p       = new NetVCTest;
+  NetVCTest *a       = new NetVCTest;
   PluginVCCore *core = PluginVCCore::alloc();
   core->set_accept_cont(p);
 

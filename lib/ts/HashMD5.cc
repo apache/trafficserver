@@ -25,7 +25,7 @@ ATSHashMD5::ATSHashMD5(void)
 {
   ctx = EVP_MD_CTX_create();
   EVP_DigestInit(ctx, EVP_md5());
-  md_len = 0;
+  md_len    = 0;
   finalized = false;
 }
 
@@ -68,7 +68,7 @@ ATSHashMD5::clear(void)
   EVP_MD_CTX_destroy(ctx);
   ctx = EVP_MD_CTX_create();
   EVP_DigestInit(ctx, EVP_md5());
-  md_len = 0;
+  md_len    = 0;
   finalized = false;
 }
 

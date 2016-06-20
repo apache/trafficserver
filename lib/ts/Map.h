@@ -41,7 +41,7 @@ template <class A>
 static inline char *
 _dupstr(cchar *s, cchar *e = 0)
 {
-  int l = e ? e - s : strlen(s);
+  int l    = e ? e - s : strlen(s);
   char *ss = (char *)A::alloc(l + 1);
   memcpy(ss, s, l);
   ss[l] = 0;
@@ -437,7 +437,7 @@ HashSet<K, AHashFns, C, A>::get(K akey)
     return 0;
   }
   uintptr_t h = AHashFns::hash(akey);
-  h = h % n;
+  h           = h % n;
   for (int k = h, j = 0; j < i + 3; j++) {
     if (!v[k])
       return 0;
@@ -464,7 +464,7 @@ HashSet<K, AHashFns, C, A>::put(C avalue)
   }
   if (n > MAP_INTEGRAL_SIZE) {
     uintptr_t h = AHashFns::hash(avalue);
-    h = h % n;
+    h           = h % n;
     for (int k = h, j = 0; j < i + 3; j++) {
       if (!v[k]) {
         v[k] = avalue;
@@ -496,7 +496,7 @@ HashMap<K, AHashFns, C, A>::get_internal(K akey)
     return 0;
   }
   uintptr_t h = AHashFns::hash(akey);
-  h = h % n;
+  h           = h % n;
   for (size_t k = h, j = 0; j < i + 3; j++) {
     if (!v[k].key)
       return 0;
@@ -528,18 +528,18 @@ HashMap<K, AHashFns, C, A>::put(K akey, C avalue)
   } else {
     if (n < MAP_INTEGRAL_SIZE) {
       if (!v)
-        v = e;
-      v[n].key = akey;
+        v        = e;
+      v[n].key   = akey;
       v[n].value = avalue;
       n++;
       return &v[n - 1];
     }
     if (n > MAP_INTEGRAL_SIZE) {
       uintptr_t h = AHashFns::hash(akey);
-      h = h % n;
+      h           = h % n;
       for (size_t k = h, j = 0; j < i + 3; j++) {
         if (!v[k].key) {
-          v[k].key = akey;
+          v[k].key   = akey;
           v[k].value = avalue;
           return &v[k];
         }
@@ -814,7 +814,7 @@ inline cchar *
 StringChainHash<F, A>::canonicalize(cchar *s, cchar *e)
 {
   uintptr_t h = 0;
-  cchar *a = s;
+  cchar *a    = s;
   // 31 changed to 27, to avoid prime2 in vec.cpp
   if (e)
     while (a != e)
@@ -829,7 +829,7 @@ StringChainHash<F, A>::canonicalize(cchar *s, cchar *e)
     typedef ConsCell<cchar *, A> TT;
     forc_List(TT, x, *l)
     {
-      a = s;
+      a        = s;
       cchar *b = x->car;
       while (1) {
         if (!*b) {
@@ -844,7 +844,7 @@ StringChainHash<F, A>::canonicalize(cchar *s, cchar *e)
       }
     }
   }
-  s = _dupstr<A>(s, e);
+  s         = _dupstr<A>(s, e);
   cchar *ss = ChainHash<cchar *, F, A>::put(s);
   if (ss)
     return ss;
@@ -922,7 +922,7 @@ NBlockHash<C, AHashFns, N, A>::put(C c)
 {
   int a;
   uintptr_t h = AHashFns::hash(c);
-  C *x = &v[(h % n) * N];
+  C *x        = &v[(h % n) * N];
   for (a = 0; a < N; a++) {
     if (!x[a])
       break;
@@ -935,7 +935,7 @@ NBlockHash<C, AHashFns, N, A>::put(C c)
   }
   C *vv = first(), *ve = last();
   C *old_v = v;
-  i = i + 1;
+  i        = i + 1;
   size(i);
   for (; vv < ve; vv++)
     if (*vv)
@@ -961,7 +961,7 @@ NBlockHash<C, AHashFns, N, A>::get(C c)
   if (!n)
     return (C)0;
   uintptr_t h = AHashFns::hash(c);
-  C *x = &v[(h % n) * N];
+  C *x        = &v[(h % n) * N];
   for (int a = 0; a < N; a++) {
     if (!x[a])
       return (C)0;
@@ -978,8 +978,8 @@ NBlockHash<C, AHashFns, N, A>::assoc_get(C *c)
   if (!n)
     return (C *)0;
   uintptr_t h = AHashFns::hash(*c);
-  C *x = &v[(h % n) * N];
-  int a = 0;
+  C *x        = &v[(h % n) * N];
+  int a       = 0;
   if (c >= x && c < x + N)
     a = c - x + 1;
   for (; a < N; a++) {
@@ -997,7 +997,7 @@ NBlockHash<C, AHashFns, N, A>::assoc_put(C *c)
 {
   int a;
   uintptr_t h = AHashFns::hash(*c);
-  C *x = &v[(h % n) * N];
+  C *x        = &v[(h % n) * N];
   for (a = 0; a < N; a++) {
     if (!x[a])
       break;
@@ -1019,7 +1019,7 @@ NBlockHash<C, AHashFns, N, A>::del(C c)
   if (!n)
     return 0;
   uintptr_t h = AHashFns::hash(c);
-  C *x = &v[(h % n) * N];
+  C *x        = &v[(h % n) * N];
   for (a = 0; a < N; a++) {
     if (!x[a])
       return 0;
@@ -1030,7 +1030,7 @@ NBlockHash<C, AHashFns, N, A>::del(C c)
             break;
         }
         if (b != a + 1)
-          x[a] = x[b - 1];
+          x[a]   = x[b - 1];
         x[b - 1] = (C)0;
         return 1;
       } else {
@@ -1065,7 +1065,7 @@ inline int
 NBlockHash<C, AHashFns, N, A>::count()
 {
   int nelements = 0;
-  C *l = last();
+  C *l          = last();
   for (C *xx = first(); xx < l; xx++)
     if (*xx)
       nelements++;
@@ -1522,7 +1522,7 @@ template <typename H>
 void
 TSHashTable<H>::findBucket(Key key, Location &location)
 {
-  location.m_id = Hasher::hash(key);
+  location.m_id     = Hasher::hash(key);
   location.m_bucket = &(m_array[location.m_id % m_array.n]);
 }
 
@@ -1537,7 +1537,7 @@ TSHashTable<H>::find(Key key)
   v = zret.m_bucket->m_chain.head;
   // Search for first matching key.
   while (0 != v && !Hasher::equal(key, Hasher::key(v)))
-    v = ListHead::next(v);
+    v          = ListHead::next(v);
   zret.m_value = v;
   return zret;
 }
@@ -1557,7 +1557,7 @@ template <typename H>
 void
 TSHashTable<H>::insert(Value *value)
 {
-  Key key = Hasher::key(value);
+  Key key        = Hasher::key(value);
   Bucket *bucket = &(m_array[Hasher::hash(key) % m_array.n]);
 
   // Bad client if already in a list!
@@ -1592,7 +1592,7 @@ TSHashTable<H>::remove(Location const &l)
       m_bucket_chain.remove(l.m_bucket);
     else if (1 == l.m_bucket->m_count) // if count drops to 1, then it's not mixed any more.
       l.m_bucket->m_mixed_p = false;
-    zret = true;
+    zret                    = true;
   }
   return zret;
 }
@@ -1602,7 +1602,7 @@ bool
 TSHashTable<H>::remove(Key key)
 {
   Location loc = this->find(key);
-  bool zret = loc.isValid();
+  bool zret    = loc.isValid();
   while (loc.isValid()) {
     Location target(loc);
     loc.advance();
@@ -1629,7 +1629,7 @@ template <typename H>
 void
 TSHashTable<H>::expand()
 {
-  Bucket *b = m_bucket_chain.head; // stash before reset.
+  Bucket *b                            = m_bucket_chain.head; // stash before reset.
   ExpansionPolicy org_expansion_policy = m_expansion_policy;
   Array tmp;
   tmp.move(m_array); // stash the current array here.

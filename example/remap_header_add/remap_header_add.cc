@@ -60,7 +60,7 @@ ParseArgIntoNv(const char *arg, char **n, char **v)
   }
 
   size_t name_len = colon_pos - arg;
-  *n = (char *)TSmalloc(name_len + 1);
+  *n              = (char *)TSmalloc(name_len + 1);
   memcpy(*n, arg, colon_pos - arg);
   (*n)[name_len] = '\0';
 
@@ -99,13 +99,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, NOWARN_UNUSED char *errbuf
 
   // print all arguments for this particular remapping
 
-  rl = (remap_line *)TSmalloc(sizeof(remap_line));
+  rl       = (remap_line *)TSmalloc(sizeof(remap_line));
   rl->argc = argc;
   rl->argv = argv;
-  rl->nvc = argc - 2; // the first two are the remap from and to
+  rl->nvc  = argc - 2; // the first two are the remap from and to
   if (rl->nvc) {
     rl->name = (char **)TSmalloc(sizeof(char *) * rl->nvc);
-    rl->val = (char **)TSmalloc(sizeof(char *) * rl->nvc);
+    rl->val  = (char **)TSmalloc(sizeof(char *) * rl->nvc);
   }
 
   TSDebug(TAG, "NewInstance:");

@@ -34,7 +34,7 @@ enum LogFormatType {
   // We start the numbering at 4 to compatibility with Traffic Server 4.x, which used
   // to have the predefined log formats enumerated above ...
   LOG_FORMAT_CUSTOM = 4,
-  LOG_FORMAT_TEXT = 5
+  LOG_FORMAT_TEXT   = 5
 };
 
 enum LogFileFormat {

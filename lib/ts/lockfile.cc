@@ -58,10 +58,10 @@ Lockfile::Open(pid_t *holding_pid)
 
   // Lock it. Note that if we can't get the lock EAGAIN will be the
   // error we receive.
-  lock.l_type = F_WRLCK;
-  lock.l_start = 0;
+  lock.l_type   = F_WRLCK;
+  lock.l_start  = 0;
   lock.l_whence = SEEK_SET;
-  lock.l_len = 0;
+  lock.l_len    = 0;
 
   do {
     err = fcntl(fd, F_SETLK, &lock);

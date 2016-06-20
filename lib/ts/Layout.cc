@@ -170,20 +170,20 @@ Layout::Layout(const char *_prefix)
 
     prefix = ats_strdup(path);
   }
-  exec_prefix = layout_relative(prefix, TS_BUILD_EXEC_PREFIX);
-  bindir = layout_relative(prefix, TS_BUILD_BINDIR);
-  sbindir = layout_relative(prefix, TS_BUILD_SBINDIR);
-  sysconfdir = layout_relative(prefix, TS_BUILD_SYSCONFDIR);
-  datadir = layout_relative(prefix, TS_BUILD_DATADIR);
-  includedir = layout_relative(prefix, TS_BUILD_INCLUDEDIR);
-  libdir = layout_relative(prefix, TS_BUILD_LIBDIR);
-  libexecdir = layout_relative(prefix, TS_BUILD_LIBEXECDIR);
+  exec_prefix   = layout_relative(prefix, TS_BUILD_EXEC_PREFIX);
+  bindir        = layout_relative(prefix, TS_BUILD_BINDIR);
+  sbindir       = layout_relative(prefix, TS_BUILD_SBINDIR);
+  sysconfdir    = layout_relative(prefix, TS_BUILD_SYSCONFDIR);
+  datadir       = layout_relative(prefix, TS_BUILD_DATADIR);
+  includedir    = layout_relative(prefix, TS_BUILD_INCLUDEDIR);
+  libdir        = layout_relative(prefix, TS_BUILD_LIBDIR);
+  libexecdir    = layout_relative(prefix, TS_BUILD_LIBEXECDIR);
   localstatedir = layout_relative(prefix, TS_BUILD_LOCALSTATEDIR);
-  runtimedir = layout_relative(prefix, TS_BUILD_RUNTIMEDIR);
-  logdir = layout_relative(prefix, TS_BUILD_LOGDIR);
-  mandir = layout_relative(prefix, TS_BUILD_MANDIR);
-  infodir = layout_relative(prefix, TS_BUILD_INFODIR);
-  cachedir = layout_relative(prefix, TS_BUILD_CACHEDIR);
+  runtimedir    = layout_relative(prefix, TS_BUILD_RUNTIMEDIR);
+  logdir        = layout_relative(prefix, TS_BUILD_LOGDIR);
+  mandir        = layout_relative(prefix, TS_BUILD_MANDIR);
+  infodir       = layout_relative(prefix, TS_BUILD_INFODIR);
+  cachedir      = layout_relative(prefix, TS_BUILD_CACHEDIR);
 }
 
 Layout::~Layout()

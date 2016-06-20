@@ -40,7 +40,7 @@ namespace
 {
 // This is the highest txn arg that can be used, we choose this
 // value to minimize the likelihood of it causing any problems.
-const int MAX_TXN_ARG = 15;
+const int MAX_TXN_ARG               = 15;
 const int TRANSACTION_STORAGE_INDEX = MAX_TXN_ARG;
 
 void
@@ -105,7 +105,7 @@ setupTransactionManagement()
 {
   // We must always have a cleanup handler available
   TSMutex mutex = NULL;
-  TSCont cont = TSContCreate(handleTransactionEvents, mutex);
+  TSCont cont   = TSContCreate(handleTransactionEvents, mutex);
   TSHttpHookAdd(TS_HTTP_POST_REMAP_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_SEND_REQUEST_HDR_HOOK, cont);
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, cont);

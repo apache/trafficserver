@@ -282,7 +282,7 @@ TSVIONBytesSet(TSVIO viop, int64_t nbytes)
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
   sdk_assert(nbytes >= 0);
 
-  VIO *vio = (VIO *)viop;
+  VIO *vio    = (VIO *)viop;
   vio->nbytes = nbytes;
 }
 
@@ -301,7 +301,7 @@ TSVIONDoneSet(TSVIO viop, int64_t ndone)
   sdk_assert(sdk_sanity_check_iocore_structure(viop) == TS_SUCCESS);
   sdk_assert(ndone >= 0);
 
-  VIO *vio = (VIO *)viop;
+  VIO *vio   = (VIO *)viop;
   vio->ndone = ndone;
 }
 
@@ -371,7 +371,7 @@ INKUDPSendTo(TSCont contp, INKUDPConn udp, unsigned int ip, int port, char *data
   sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
 
   FORCE_PLUGIN_SCOPED_MUTEX(contp);
-  UDPPacket *packet = new_UDPPacket();
+  UDPPacket *packet   = new_UDPPacket();
   UDPConnection *conn = (UDPConnection *)udp;
 
   ats_ip4_set(&packet->to, ip, htons(port));
@@ -517,7 +517,7 @@ TSIOBufferStart(TSIOBuffer bufp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
 
-  MIOBuffer *b = (MIOBuffer *)bufp;
+  MIOBuffer *b       = (MIOBuffer *)bufp;
   IOBufferBlock *blk = b->get_current_block();
 
   if (!blk || (blk->write_avail() == 0))
@@ -537,7 +537,7 @@ TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64_t length, int64_
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
   sdk_assert((length >= 0) && (offset >= 0));
 
-  MIOBuffer *b = (MIOBuffer *)bufp;
+  MIOBuffer *b      = (MIOBuffer *)bufp;
   IOBufferReader *r = (IOBufferReader *)readerp;
 
   return b->write(r, length, offset);
@@ -607,7 +607,7 @@ TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferBlock *blk = (IOBufferBlock *)blockp;
+  IOBufferBlock *blk     = (IOBufferBlock *)blockp;
   IOBufferReader *reader = (IOBufferReader *)readerp;
   char *p;
 
@@ -634,7 +634,7 @@ TSIOBufferBlockReadAvail(TSIOBufferBlock blockp, TSIOBufferReader readerp)
   sdk_assert(sdk_sanity_check_iocore_structure(blockp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
-  IOBufferBlock *blk = (IOBufferBlock *)blockp;
+  IOBufferBlock *blk     = (IOBufferBlock *)blockp;
   IOBufferReader *reader = (IOBufferReader *)readerp;
   int64_t avail;
 
@@ -686,7 +686,7 @@ TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64_t water_mark)
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
   sdk_assert(water_mark >= 0);
 
-  MIOBuffer *b = (MIOBuffer *)bufp;
+  MIOBuffer *b  = (MIOBuffer *)bufp;
   b->water_mark = water_mark;
 }
 
@@ -695,7 +695,7 @@ TSIOBufferReaderAlloc(TSIOBuffer bufp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
 
-  MIOBuffer *b = (MIOBuffer *)bufp;
+  MIOBuffer *b             = (MIOBuffer *)bufp;
   TSIOBufferReader readerp = (TSIOBufferReader)b->alloc_reader();
 
   // TODO: Should remove this when memory allocation can't fail.

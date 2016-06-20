@@ -116,10 +116,10 @@ InterceptCtx::init(TSVConn vconn)
 
   input.buffer = TSIOBufferCreate();
   input.reader = TSIOBufferReaderAlloc(input.buffer);
-  input.vio = TSVConnRead(net_vc, contp, input.buffer, INT_MAX);
+  input.vio    = TSVConnRead(net_vc, contp, input.buffer, INT_MAX);
 
   req_hdr_bufp = TSMBufferCreate();
-  req_hdr_loc = TSHttpHdrCreate(req_hdr_bufp);
+  req_hdr_loc  = TSHttpHdrCreate(req_hdr_bufp);
   TSHttpHdrTypeSet(req_hdr_bufp, req_hdr_loc, TS_HTTP_TYPE_REQUEST);
 
   initialized = true;
@@ -133,7 +133,7 @@ InterceptCtx::setupWrite()
   TSAssert(output.buffer == 0);
   output.buffer = TSIOBufferCreate();
   output.reader = TSIOBufferReaderAlloc(output.buffer);
-  output.vio = TSVConnWrite(net_vc, contp, output.reader, INT_MAX);
+  output.vio    = TSVConnWrite(net_vc, contp, output.reader, INT_MAX);
 }
 
 // Parses out query params from the request.
@@ -256,7 +256,7 @@ processRequest(InterceptCtx *cont_data)
   StringPiece query_param_beacon_data;
   ps_query_params_handler(cont_data->request_context->url_string->c_str(), &query_param_beacon_data);
 
-  GoogleString beacon_data = net_instaweb::StrCat(query_param_beacon_data, "&", cont_data->body);
+  GoogleString beacon_data      = net_instaweb::StrCat(query_param_beacon_data, "&", cont_data->body);
   ServerContext *server_context = cont_data->request_context->server_context;
 
   SystemRequestContext *system_request_context =
@@ -295,8 +295,8 @@ txn_intercept(TSCont contp, TSEvent event, void *edata)
   TSDebug(DEBUG_TAG, "[%s] Received event: %d", __FUNCTION__, (int)event);
 
   InterceptCtx *cont_data = static_cast<InterceptCtx *>(TSContDataGet(contp));
-  bool read_complete = false;
-  bool shutdown = false;
+  bool read_complete      = false;
+  bool shutdown           = false;
   switch (event) {
   case TS_EVENT_NET_ACCEPT:
     TSDebug(DEBUG_TAG, "[%s] Received net accept event", __FUNCTION__);
@@ -365,7 +365,7 @@ hook_beacon_intercept(TSHttpTxn txnp)
     TSError("[ats_beacon_intercept][%s] Could not create intercept request", __FUNCTION__);
     return false;
   }
-  InterceptCtx *cont_data = new InterceptCtx(contp);
+  InterceptCtx *cont_data    = new InterceptCtx(contp);
   cont_data->request_context = get_transaction_context(txnp);
   TSContDataSet(contp, cont_data);
   TSHttpTxnIntercept(contp, txnp);

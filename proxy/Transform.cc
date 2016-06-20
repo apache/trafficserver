@@ -277,8 +277,8 @@ TransformTerminus::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
   m_read_vio.buffer.writer_for(buf);
   m_read_vio.op = VIO::READ;
   m_read_vio.set_continuation(c);
-  m_read_vio.nbytes = nbytes;
-  m_read_vio.ndone = 0;
+  m_read_vio.nbytes    = nbytes;
+  m_read_vio.ndone     = 0;
   m_read_vio.vc_server = this;
 
   if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
@@ -302,8 +302,8 @@ TransformTerminus::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *
   m_write_vio.buffer.reader_for(buf);
   m_write_vio.op = VIO::WRITE;
   m_write_vio.set_continuation(c);
-  m_write_vio.nbytes = nbytes;
-  m_write_vio.ndone = 0;
+  m_write_vio.nbytes    = nbytes;
+  m_write_vio.ndone     = 0;
   m_write_vio.vc_server = this;
 
   if (ink_atomic_increment((int *)&m_event_count, 1) < 0) {
@@ -329,7 +329,7 @@ TransformTerminus::do_io_close(int error)
   INK_WRITE_MEMORY_BARRIER;
 
   if (error != -1) {
-    lerrno = error;
+    lerrno   = error;
     m_closed = TS_VC_CLOSE_ABORT;
   } else {
     m_closed = TS_VC_CLOSE_NORMAL;
@@ -415,7 +415,7 @@ TransformVConnection::~TransformVConnection()
   m_terminus.m_read_vio.set_continuation(NULL);
   m_terminus.m_write_vio.set_continuation(NULL);
   m_terminus.mutex = NULL;
-  this->mutex = NULL;
+  this->mutex      = NULL;
 }
 
 /*-------------------------------------------------------------------------
@@ -495,7 +495,7 @@ TransformVConnection::reenable(VIO * /* vio ATS_UNUSED */)
 uint64_t
 TransformVConnection::backlog(uint64_t limit)
 {
-  uint64_t b = 0; // backlog
+  uint64_t b          = 0; // backlog
   VConnection *raw_vc = m_transform;
   MIOBuffer *w;
   while (raw_vc && raw_vc != &m_terminus) {
@@ -546,8 +546,8 @@ TransformControl::handle_event(int event, void * /* edata ATS_UNUSED */)
     ink_assert(m_tvc != NULL);
 
     m_write_buf = new_MIOBuffer();
-    s = m_write_buf->end();
-    e = m_write_buf->buf_end();
+    s           = m_write_buf->end();
+    e           = m_write_buf->buf_end();
 
     memset(s, 'a', e - s);
     m_write_buf->fill(e - s);
@@ -645,9 +645,9 @@ NullTransform::handle_event(int event, void *edata)
       ink_assert(m_output_vc != NULL);
 
       if (!m_output_vio) {
-        m_output_buf = new_empty_MIOBuffer();
+        m_output_buf    = new_empty_MIOBuffer();
         m_output_reader = m_output_buf->alloc_reader();
-        m_output_vio = m_output_vc->do_io_write(this, m_write_vio.nbytes, m_output_reader);
+        m_output_vio    = m_output_vc->do_io_write(this, m_write_vio.nbytes, m_output_reader);
       }
 
       MUTEX_TRY_LOCK(trylock, m_write_vio.mutex, this_ethread());
@@ -789,9 +789,9 @@ RangeTransform::handle_event(int event, void *edata)
       ink_assert(m_output_vc != NULL);
 
       if (!m_output_vio) {
-        m_output_buf = new_empty_MIOBuffer();
+        m_output_buf    = new_empty_MIOBuffer();
         m_output_reader = m_output_buf->alloc_reader();
-        m_output_vio = m_output_vc->do_io_write(this, m_output_cl, m_output_reader);
+        m_output_vio    = m_output_vc->do_io_write(this, m_output_cl, m_output_reader);
 
         change_response_header();
 
@@ -837,10 +837,10 @@ RangeTransform::transform_to_range()
   int64_t prev_end = 0;
   int64_t *done_byte;
 
-  end = &m_ranges[m_current_range]._end;
+  end       = &m_ranges[m_current_range]._end;
   done_byte = &m_ranges[m_current_range]._done_byte;
-  start = &m_ranges[m_current_range]._start;
-  avail = reader->read_avail();
+  start     = &m_ranges[m_current_range]._start;
+  avail     = reader->read_avail();
 
   while (true) {
     if (*done_byte < (*start - 1)) {
@@ -895,9 +895,9 @@ RangeTransform::transform_to_range()
         return;
       }
 
-      end = &m_ranges[m_current_range]._end;
+      end       = &m_ranges[m_current_range]._end;
       done_byte = &m_ranges[m_current_range]._done_byte;
-      start = &m_ranges[m_current_range]._start;
+      start     = &m_ranges[m_current_range]._start;
 
       // if this is a good Range
       if (*end != -1) {
@@ -936,9 +936,9 @@ RangeTransform::transform_to_range()
  * these two need be changed at the same time
  */
 
-static char bound[] = "RANGE_SEPARATOR";
+static char bound[]      = "RANGE_SEPARATOR";
 static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
-static char cont_type[] = "Content-type: ";
+static char cont_type[]  = "Content-type: ";
 static char cont_range[] = "Content-range: bytes ";
 
 void

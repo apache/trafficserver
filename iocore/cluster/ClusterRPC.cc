@@ -56,7 +56,7 @@ machine_list_ClusterFunction(ClusterHandler *from, void *data, int len)
 {
   (void)from;
   ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
-  MachineListMessage *m = (MachineListMessage *)data;
+  MachineListMessage *m    = (MachineListMessage *)data;
 
   if (mh->GetMsgVersion() != MachineListMessage::MACHINE_LIST_MESSAGE_VERSION) { ////////////////////////////////////////////////
     // Convert from old to current message format
@@ -94,7 +94,7 @@ void
 close_channel_ClusterFunction(ClusterHandler *ch, void *data, int len)
 {
   ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
-  CloseMessage *m = (CloseMessage *)data;
+  CloseMessage *m          = (CloseMessage *)data;
 
   if (mh->GetMsgVersion() != CloseMessage::CLOSE_CHAN_MESSAGE_VERSION) { ////////////////////////////////////////////////
     // Convert from old to current message format
@@ -131,7 +131,7 @@ test_ClusterFunction(ClusterHandler *ch, void *data, int len)
 CacheVC *
 ChannelToCacheWriteVC(ClusterHandler *ch, int channel, uint32_t channel_seqno, ClusterVConnection **cluster_vc)
 {
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex.get();
 
   ClusterVConnection *cvc = ch->channels[channel];
@@ -159,7 +159,7 @@ ChannelToCacheWriteVC(ClusterHandler *ch, int channel, uint32_t channel_seqno, C
 void
 set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
 {
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex.get();
   // We are called on the ET_CLUSTER thread.
 
@@ -169,7 +169,7 @@ set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
 
   // Allocate memory for set channel data and pass it to the cache
   IncomingControl *ic = IncomingControl::alloc();
-  ic->len = tlen;
+  ic->len             = tlen;
   ic->alloc_data();
 
   data = ic->data + sizeof(int32_t); // free_remote_data expects d+sizeof(int32_t)
@@ -177,7 +177,7 @@ set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
   len = tlen;
 
   ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
-  SetChanDataMessage *m = (SetChanDataMessage *)data;
+  SetChanDataMessage *m    = (SetChanDataMessage *)data;
 
   if (mh->GetMsgVersion() !=
       SetChanDataMessage::SET_CHANNEL_DATA_MESSAGE_VERSION) { ////////////////////////////////////////////////
@@ -203,7 +203,7 @@ set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
       char *p = (char *)m + SetChanDataMessage::sizeof_fixedlen_msg();
 
       IOBufferBlock *block_ref = ic->get_block();
-      res = HTTPInfo::unmarshal(p, len, block_ref);
+      res                      = HTTPInfo::unmarshal(p, len, block_ref);
       ink_assert(res > 0);
 
       CacheHTTPInfo h;
@@ -228,7 +228,7 @@ set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
 void
 post_setchan_send_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex.get();
   // We are called on the ET_CLUSTER thread.
   // set_data() control message has been queued into cluster transfer message.
@@ -261,7 +261,7 @@ set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_U
   // We are called on the ET_CLUSTER thread.
 
   ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
-  SetChanPinMessage *m = (SetChanPinMessage *)data;
+  SetChanPinMessage *m     = (SetChanPinMessage *)data;
 
   if (mh->GetMsgVersion() != SetChanPinMessage::SET_CHANNEL_PIN_MESSAGE_VERSION) { ////////////////////////////////////////////////
     // Convert from old to current message format
@@ -288,7 +288,7 @@ set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_U
 void
 post_setchan_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex.get();
   // We are called on the ET_CLUSTER thread.
   // Control message has been queued into cluster transfer message.
@@ -320,7 +320,7 @@ set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len 
 
   // We are called on the ET_CLUSTER thread.
 
-  ClusterMessageHeader *mh = (ClusterMessageHeader *)data;
+  ClusterMessageHeader *mh  = (ClusterMessageHeader *)data;
   SetChanPriorityMessage *m = (SetChanPriorityMessage *)data;
 
   if (mh->GetMsgVersion() !=
@@ -348,7 +348,7 @@ set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len 
 void
 post_setchan_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
 {
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex.get();
 
   // We are called on the ET_CLUSTER thread.

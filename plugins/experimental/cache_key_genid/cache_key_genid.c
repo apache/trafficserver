@@ -44,7 +44,7 @@ get_genid_host(char **host, char *url)
 
   if (pt1 && pt2 && pt2 > pt1) {
     host_len = pt2 - pt1;
-    *host = calloc(num, host_len + 1);
+    *host    = calloc(num, host_len + 1);
     strncpy(*host, pt1, host_len);
   }
 }
@@ -154,8 +154,8 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)PLUGIN_NAME;
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (argc > 1) {

@@ -44,7 +44,7 @@
 #include "ts/ink_thread.h"
 #include "ts/Diags.h"
 
-int diags_on_for_plugins = 0;
+int diags_on_for_plugins          = 0;
 bool DiagsConfigState::enabled[2] = {false, false};
 
 // Global, used for all diagnostics
@@ -108,14 +108,14 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
     base_action_tags = ats_strdup(bat);
   }
 
-  config.enabled[DiagsTagType_Debug] = (base_debug_tags != NULL);
+  config.enabled[DiagsTagType_Debug]  = (base_debug_tags != NULL);
   config.enabled[DiagsTagType_Action] = (base_action_tags != NULL);
-  diags_on_for_plugins = config.enabled[DiagsTagType_Debug];
+  diags_on_for_plugins                = config.enabled[DiagsTagType_Debug];
 
   for (i = 0; i < DiagsLevel_Count; i++) {
-    config.outputs[i].to_stdout = false;
-    config.outputs[i].to_stderr = false;
-    config.outputs[i].to_syslog = false;
+    config.outputs[i].to_stdout   = false;
+    config.outputs[i].to_stderr   = false;
+    config.outputs[i].to_syslog   = false;
     config.outputs[i].to_diagslog = true;
   }
 
@@ -134,19 +134,19 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
   // start off with empty tag tables, will build in reconfigure() //
   //////////////////////////////////////////////////////////////////
 
-  activated_tags[DiagsTagType_Debug] = NULL;
+  activated_tags[DiagsTagType_Debug]  = NULL;
   activated_tags[DiagsTagType_Action] = NULL;
-  prefix_str = "";
+  prefix_str                          = "";
 
-  outputlog_rolling_enabled = RollingEnabledValues::NO_ROLLING;
+  outputlog_rolling_enabled  = RollingEnabledValues::NO_ROLLING;
   outputlog_rolling_interval = -1;
-  outputlog_rolling_size = -1;
-  diagslog_rolling_enabled = RollingEnabledValues::NO_ROLLING;
-  diagslog_rolling_interval = -1;
-  diagslog_rolling_size = -1;
+  outputlog_rolling_size     = -1;
+  diagslog_rolling_enabled   = RollingEnabledValues::NO_ROLLING;
+  diagslog_rolling_interval  = -1;
+  diagslog_rolling_size      = -1;
 
   outputlog_time_last_roll = time(0);
-  diagslog_time_last_roll = time(0);
+  diagslog_time_last_roll  = time(0);
 }
 
 Diags::~Diags()
@@ -217,7 +217,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // and format_buf_w_ts has the same thing with a prepended timestamp. //
   ////////////////////////////////////////////////////////////////////////
 
-  format_buf[0] = NUL;
+  format_buf[0]      = NUL;
   format_buf_w_ts[0] = NUL;
 
   /////////////////////////////////////////////////////
@@ -225,7 +225,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // points to the current available character       //
   /////////////////////////////////////////////////////
 
-  end_of_format = format_buf;
+  end_of_format  = format_buf;
   *end_of_format = NUL;
 
   // add the thread id
@@ -278,17 +278,17 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // prepend timestamp into the timestamped version of the buffer //
   //////////////////////////////////////////////////////////////////
 
-  tp = ink_gettimeofday();
+  tp               = ink_gettimeofday();
   time_t cur_clock = (time_t)tp.tv_sec;
-  buffer = ink_ctime_r(&cur_clock, timestamp_buf);
+  buffer           = ink_ctime_r(&cur_clock, timestamp_buf);
   snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", (int)(tp.tv_usec / 1000));
 
-  d = format_buf_w_ts;
+  d    = format_buf_w_ts;
   *d++ = '[';
   for (int i = 4; buffer[i]; i++)
     *d++ = buffer[i];
-  *d++ = ']';
-  *d++ = ' ';
+  *d++   = ']';
+  *d++   = ' ';
 
   for (int k = 0; prefix_str[k]; k++)
     *d++ = prefix_str[k];
@@ -575,17 +575,17 @@ setup_diagslog(BaseLogFile *blf)
 void
 Diags::config_roll_diagslog(RollingEnabledValues re, int ri, int rs)
 {
-  diagslog_rolling_enabled = re;
+  diagslog_rolling_enabled  = re;
   diagslog_rolling_interval = ri;
-  diagslog_rolling_size = rs;
+  diagslog_rolling_size     = rs;
 }
 
 void
 Diags::config_roll_outputlog(RollingEnabledValues re, int ri, int rs)
 {
-  outputlog_rolling_enabled = re;
+  outputlog_rolling_enabled  = re;
   outputlog_rolling_interval = ri;
-  outputlog_rolling_size = rs;
+  outputlog_rolling_size     = rs;
 }
 
 /*
@@ -641,7 +641,7 @@ Diags::should_roll_diagslog()
         fflush(diags_log->m_fp);
         if (diags_log->roll()) {
           diagslog_time_last_roll = now;
-          char *oldname = ats_strdup(diags_log->get_name());
+          char *oldname           = ats_strdup(diags_log->get_name());
           log_log_trace("in should_roll_logs() for diags.log, oldname=%s\n", oldname);
           BaseLogFile *n = new BaseLogFile(oldname);
           if (setup_diagslog(n)) {
@@ -678,7 +678,7 @@ Diags::should_roll_outputlog()
   ink_assert(stdout_log != NULL);
   ink_assert(stderr_log != NULL);
 
-  bool ret_val = false;
+  bool ret_val              = false;
   bool need_consider_stderr = true;
 
   /*
@@ -733,7 +733,7 @@ Diags::should_roll_outputlog()
 
         if (stdout_log->roll()) {
           outputlog_time_last_roll = now;
-          char *oldname = ats_strdup(stdout_log->get_name());
+          char *oldname            = ats_strdup(stdout_log->get_name());
           log_log_trace("in should_roll_logs(), oldname=%s\n", oldname);
           set_stdout_output(oldname);
 

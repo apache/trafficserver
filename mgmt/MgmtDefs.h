@@ -47,11 +47,11 @@ typedef float MgmtFloat;
 typedef char *MgmtString;
 
 typedef enum {
-  MGMT_INVALID = -1,
-  MGMT_INT = 0,
-  MGMT_FLOAT = 1,
-  MGMT_STRING = 2,
-  MGMT_COUNTER = 3,
+  MGMT_INVALID  = -1,
+  MGMT_INT      = 0,
+  MGMT_FLOAT    = 1,
+  MGMT_STRING   = 2,
+  MGMT_COUNTER  = 3,
   MGMT_TYPE_MAX = 4,
 } MgmtType;
 

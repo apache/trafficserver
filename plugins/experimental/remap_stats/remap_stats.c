@@ -56,7 +56,7 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
     TSDebug(DEBUG_TAG, "stat cache hash init");
   }
 
-  search.key = name;
+  search.key  = name;
   search.data = 0;
   hsearch_r(search, FIND, &result, &stat_cache);
 
@@ -75,7 +75,7 @@ stat_add(char *name, TSMgmtInt amount, TSStatPersistence persist_type, TSMutex c
     TSMutexUnlock(create_mutex);
 
     if (stat_id >= 0) {
-      search.key = TSstrdup(name);
+      search.key  = TSstrdup(name);
       search.data = (void *)((intptr_t)stat_id);
       hsearch_r(search, ENTER, &result, &stat_cache);
       TSDebug(DEBUG_TAG, "Cached stat_name: %s stat_id: %d", name, stat_id);
@@ -99,13 +99,13 @@ get_effective_host(TSHttpTxn txn)
   TSMLoc url_loc;
 
   effective_url = TSHttpTxnEffectiveUrlStringGet(txn, &len);
-  buf = TSMBufferCreate();
+  buf           = TSMBufferCreate();
   TSUrlCreate(buf, &url_loc);
   tmp = effective_url;
   TSUrlParse(buf, url_loc, (const char **)(&tmp), (const char *)(effective_url + len));
   TSfree(effective_url);
   host = TSUrlHostGet(buf, url_loc, &len);
-  tmp = TSstrndup(host, len);
+  tmp  = TSstrndup(host, len);
   TSHandleMLocRelease(buf, TS_NULL_MLOC, url_loc);
   TSMBufferDestroy(buf);
   return tmp;
@@ -119,7 +119,7 @@ handle_read_req_hdr(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   void *txnd;
 
   config = (config_t *)TSContDataGet(cont);
-  txnd = (void *)get_effective_host(txn); // low bit left 0 because we do not know that remap succeeded yet
+  txnd   = (void *)get_effective_host(txn); // low bit left 0 because we do not know that remap succeeded yet
   TSHttpTxnArgSet(txn, config->txn_slot, txnd);
 
   TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
@@ -165,7 +165,7 @@ handle_txn_close(TSCont cont, TSEvent event ATS_UNUSED, void *edata)
   char stat_name[MAX_STAT_LENGTH];
 
   config = (config_t *)TSContDataGet(cont);
-  txnd = TSHttpTxnArgGet(txn, config->txn_slot);
+  txnd   = TSHttpTxnArgGet(txn, config->txn_slot);
 
   hostname = (char *)((uintptr_t)txnd & (~((uintptr_t)0x01))); // Get hostname
 
@@ -233,8 +233,8 @@ TSPluginInit(int argc, const char *argv[])
   TSCont pre_remap_cont, post_remap_cont, global_cont;
   config_t *config;
 
-  info.plugin_name = PLUGIN_NAME;
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -244,9 +244,9 @@ TSPluginInit(int argc, const char *argv[])
   } else
     TSDebug(DEBUG_TAG, "Plugin registration succeeded.");
 
-  config = TSmalloc(sizeof(config_t));
-  config->post_remap_host = false;
-  config->persist_type = TS_STAT_NON_PERSISTENT;
+  config                      = TSmalloc(sizeof(config_t));
+  config->post_remap_host     = false;
+  config->persist_type        = TS_STAT_NON_PERSISTENT;
   config->stat_creation_mutex = TSMutexCreate();
 
   if (argc > 1) {

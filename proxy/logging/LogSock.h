@@ -37,22 +37,22 @@ class LogSock
 {
 public:
   enum Constant {
-    LS_CONST_PACKETSIZE = 1024,
+    LS_CONST_PACKETSIZE           = 1024,
     LS_CONST_CLUSTER_MAX_MACHINES = 256,
   };
 
   enum Err {
-    LS_ERROR_UNKNOWN = -1,
+    LS_ERROR_UNKNOWN            = -1,
     LS_ERROR_CONNECT_TABLE_FULL = -3,
-    LS_ERROR_SOCKET = -4,
-    LS_ERROR_BIND = -5,
-    LS_ERROR_CONNECT = -6,
-    LS_ERROR_ACCEPT = -7,
-    LS_ERROR_NO_SUCH_HOST = -8,
-    LS_ERROR_NO_CONNECTION = -9,
-    LS_ERROR_STATE = -10,
-    LS_ERROR_WRITE = -11,
-    LS_ERROR_READ = -12
+    LS_ERROR_SOCKET             = -4,
+    LS_ERROR_BIND               = -5,
+    LS_ERROR_CONNECT            = -6,
+    LS_ERROR_ACCEPT             = -7,
+    LS_ERROR_NO_SUCH_HOST       = -8,
+    LS_ERROR_NO_CONNECTION      = -9,
+    LS_ERROR_STATE              = -10,
+    LS_ERROR_WRITE              = -11,
+    LS_ERROR_READ               = -12
   };
 
   enum State {

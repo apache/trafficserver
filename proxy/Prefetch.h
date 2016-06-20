@@ -219,10 +219,10 @@ public:
   init(TSPrefetchBlastData const &bdata = UDP_BLAST_DATA, int tout = 0, int xmtu = INT_MAX)
   {
     SET_HANDLER((int (BlasterUrlList::*)(int, void *))(&BlasterUrlList::handleEvent));
-    mutex = new_ProxyMutex();
-    blast = bdata;
+    mutex   = new_ProxyMutex();
+    blast   = bdata;
     timeout = tout;
-    mtu = xmtu;
+    mtu     = xmtu;
   }
 
   void free();
@@ -270,7 +270,7 @@ PrefetchUrlBlaster::init(PrefetchUrlEntry *list_head, TSPrefetchBlastData const 
   mutex = new_ProxyMutex();
 
   url_head = list_head;
-  blast = u_bd;
+  blast    = u_bd;
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
 
@@ -283,7 +283,7 @@ BlasterUrlList::invokeUrlBlaster()
   PrefetchUrlBlaster *u_blaster = prefetchUrlBlasterAllocator.alloc();
   u_blaster->init(list_head, blast);
   list_head = NULL;
-  cur_len = 0;
+  cur_len   = 0;
 }
 
 class PrefetchBlaster : public Continuation
@@ -411,7 +411,7 @@ public:
     mutex = g_conn_table->arr[KeepAliveConnTable::ip_hash(xip)].mutex;
 
     ats_ip_copy(&ip, &xip);
-    buf = xbuf;
+    buf    = xbuf;
     reader = xreader;
 
     SET_HANDLER(&KeepAliveLockHandler::handleEvent);

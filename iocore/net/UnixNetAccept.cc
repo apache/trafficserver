@@ -30,7 +30,7 @@
 
 typedef int (NetAccept::*NetAcceptHandler)(int, void *);
 volatile int dummy_volatile = 0;
-int accept_till_done = 1;
+int accept_till_done        = 1;
 
 static void
 safe_delay(int msec)
@@ -49,7 +49,7 @@ send_throttle_message(NetAccept *na)
   Connection con[100];
   char dummy_read_request[4096];
 
-  afd.fd = na->server.fd;
+  afd.fd     = na->server.fd;
   afd.events = POLLIN;
 
   int n = 0;
@@ -77,10 +77,10 @@ send_throttle_message(NetAccept *na)
 int
 net_accept(NetAccept *na, void *ep, bool blockable)
 {
-  Event *e = (Event *)ep;
-  int res = 0;
-  int count = 0;
-  int loop = accept_till_done;
+  Event *e               = (Event *)ep;
+  int res                = 0;
+  int count              = 0;
+  int loop               = accept_till_done;
   UnixNetVConnection *vc = NULL;
   Connection con;
 
@@ -118,7 +118,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->con.move(con);
     vc->submit_time = Thread::get_hrtime();
     ats_ip_copy(&vc->server_addr, &vc->con.addr);
-    vc->mutex = new_ProxyMutex();
+    vc->mutex   = new_ProxyMutex();
     vc->action_ = *na->action_;
     vc->set_is_transparent(na->server.f_inbound_transparent);
     vc->closed = 0;
@@ -165,7 +165,7 @@ NetAccept::init_accept(EThread *t, bool isTransparent)
 
   if (!action_->continuation->mutex) {
     action_->continuation->mutex = t->mutex;
-    action_->mutex = t->mutex;
+    action_->mutex               = t->mutex;
   }
   if (do_listen(NON_BLOCKING, isTransparent))
     return;
@@ -193,8 +193,8 @@ NetAccept::init_accept_per_thread(bool isTransparent)
     if (i < n - 1)
       a = clone();
     else
-      a = this;
-    EThread *t = eventProcessor.eventthread[ET_NET][i];
+      a                = this;
+    EThread *t         = eventProcessor.eventthread[ET_NET][i];
     PollDescriptor *pd = get_PollDescriptor(t);
     if (a->ep.start(pd, a, EVENTIO_READ) < 0)
       Warning("[NetAccept::init_accept_per_thread]:error starting EventIO");
@@ -231,8 +231,8 @@ NetAccept::do_listen(bool non_blocking, bool transparent)
 int
 NetAccept::do_blocking_accept(EThread *t)
 {
-  int res = 0;
-  int loop = accept_till_done;
+  int res                = 0;
+  int loop               = accept_till_done;
   UnixNetVConnection *vc = NULL;
   Connection con;
 
@@ -276,12 +276,12 @@ NetAccept::do_blocking_accept(EThread *t)
       con.close();
       return -1;
     }
-    vc->con = con;
+    vc->con                 = con;
     vc->options.packet_mark = packet_mark;
-    vc->options.packet_tos = packet_tos;
+    vc->options.packet_tos  = packet_tos;
     vc->apply_options();
     vc->from_accept_thread = true;
-    vc->id = net_next_connection_number();
+    vc->id                 = net_next_connection_number();
 
     check_emergency_throttle(con);
 
@@ -289,7 +289,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->submit_time = now;
     ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
-    vc->mutex = new_ProxyMutex();
+    vc->mutex   = new_ProxyMutex();
     vc->action_ = *action_;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
     // eventProcessor.schedule_imm(vc, getEtype());
@@ -351,9 +351,9 @@ NetAccept::acceptFastEvent(int event, void *ep)
   int bufsz, res;
   Connection con;
 
-  PollDescriptor *pd = get_PollDescriptor(e->ethread);
+  PollDescriptor *pd     = get_PollDescriptor(e->ethread);
   UnixNetVConnection *vc = NULL;
-  int loop = accept_till_done;
+  int loop               = accept_till_done;
 
   do {
     if (!backdoor && check_net_throttle(ACCEPT, Thread::get_hrtime())) {
@@ -362,8 +362,8 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
 
     socklen_t sz = sizeof(con.addr);
-    int fd = socketManager.accept(server.fd, &con.addr.sa, &sz);
-    con.fd = fd;
+    int fd       = socketManager.accept(server.fd, &con.addr.sa, &sz);
+    con.fd       = fd;
 
     if (likely(fd >= 0)) {
       Debug("iocore_net", "accepted a new socket: %d", fd);
@@ -408,7 +408,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
       vc->con = con;
 
       vc->options.packet_mark = packet_mark;
-      vc->options.packet_tos = packet_tos;
+      vc->options.packet_tos  = packet_tos;
       vc->apply_options();
     } else {
       res = fd;
@@ -436,7 +436,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->submit_time = Thread::get_hrtime();
     ats_ip_copy(&vc->server_addr, &vc->con.addr);
     vc->set_is_transparent(server.f_inbound_transparent);
-    vc->mutex = new_ProxyMutex();
+    vc->mutex  = new_ProxyMutex();
     vc->thread = e->ethread;
 
     vc->nh = get_NetHandler(e->ethread);
@@ -532,7 +532,7 @@ NetAccept *
 NetAccept::clone() const
 {
   NetAccept *na;
-  na = new NetAccept;
+  na  = new NetAccept;
   *na = *this;
   return na;
 }

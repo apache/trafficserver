@@ -67,7 +67,7 @@ handle_transform(const TSCont c)
 
   if (todo > 0) {
     const TSIOBufferReader reader = TSVIOReaderGet(vio);
-    todo = std::min(todo, TSIOBufferReaderAvail(reader));
+    todo                          = std::min(todo, TSIOBufferReaderAvail(reader));
 
     if (todo > 0) {
       if (!data) {
@@ -140,11 +140,11 @@ transformable(TSHttpTxn txnp)
   returnValue = TSHttpHdrStatusGet(buffer, location) == TS_HTTP_STATUS_OK;
 
   if (returnValue) {
-    returnValue = false;
+    returnValue        = false;
     const TSMLoc field = TSMimeHdrFieldFind(buffer, location, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
 
     if (field != TS_NULL_MLOC) {
-      int length = 0;
+      int length                = 0;
       const char *const content = TSMimeHdrFieldValueStringGet(buffer, location, field, 0, &length);
 
       if (content != NULL && length > 0) {
@@ -200,8 +200,8 @@ TSPluginInit(int, const char **)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = const_cast<char *>(PLUGIN_TAG);
-  info.vendor_name = const_cast<char *>("MyCompany");
+  info.plugin_name   = const_cast<char *>(PLUGIN_TAG);
+  info.vendor_name   = const_cast<char *>("MyCompany");
   info.support_email = const_cast<char *>("ts-api-support@MyCompany.com");
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

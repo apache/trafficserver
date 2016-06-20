@@ -39,7 +39,7 @@
 BaseManager::BaseManager()
 {
   /* Setup the event queue and callback tables */
-  mgmt_event_queue = create_queue();
+  mgmt_event_queue    = create_queue();
   mgmt_callback_table = ink_hash_table_create(InkHashTableKeyType_Word);
 
 } /* End BaseManager::BaseManager */
@@ -98,15 +98,15 @@ BaseManager::registerMgmtCallback(int msg_id, MgmtCallback cb, void *opaque_cb_d
 
     for (tmp = cb_list; tmp->next; tmp = tmp->next)
       ;
-    tmp->next = (MgmtCallbackList *)ats_malloc(sizeof(MgmtCallbackList));
-    tmp->next->func = cb;
+    tmp->next              = (MgmtCallbackList *)ats_malloc(sizeof(MgmtCallbackList));
+    tmp->next->func        = cb;
     tmp->next->opaque_data = opaque_cb_data;
-    tmp->next->next = NULL;
+    tmp->next->next        = NULL;
   } else {
-    cb_list = (MgmtCallbackList *)ats_malloc(sizeof(MgmtCallbackList));
-    cb_list->func = cb;
+    cb_list              = (MgmtCallbackList *)ats_malloc(sizeof(MgmtCallbackList));
+    cb_list->func        = cb;
     cb_list->opaque_data = opaque_cb_data;
-    cb_list->next = NULL;
+    cb_list->next        = NULL;
     ink_hash_table_insert(mgmt_callback_table, (InkHashTableKey)(intptr_t)msg_id, cb_list);
   }
   return msg_id;
@@ -135,13 +135,13 @@ BaseManager::signalMgmtEntity(int msg_id, char *data_raw, int data_len)
   MgmtMessageHdr *mh;
 
   if (data_raw) {
-    mh = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
-    mh->msg_id = msg_id;
+    mh           = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
+    mh->msg_id   = msg_id;
     mh->data_len = data_len;
     memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
   } else {
-    mh = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr));
-    mh->msg_id = msg_id;
+    mh           = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr));
+    mh->msg_id   = msg_id;
     mh->data_len = 0;
   }
   ink_assert(enqueue(mgmt_event_queue, mh));

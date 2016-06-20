@@ -98,18 +98,18 @@ transform_create(TSHttpTxn txnp)
 
   contp = TSTransformCreate(transform_handler, txnp);
 
-  data = (TransformData *)TSmalloc(sizeof(TransformData));
-  data->state = STATE_BUFFER;
-  data->txn = txnp;
-  data->input_buf = NULL;
-  data->input_reader = NULL;
-  data->output_buf = NULL;
-  data->output_reader = NULL;
-  data->output_vio = NULL;
-  data->output_vc = NULL;
+  data                 = (TransformData *)TSmalloc(sizeof(TransformData));
+  data->state          = STATE_BUFFER;
+  data->txn            = txnp;
+  data->input_buf      = NULL;
+  data->input_reader   = NULL;
+  data->output_buf     = NULL;
+  data->output_reader  = NULL;
+  data->output_vio     = NULL;
+  data->output_vc      = NULL;
   data->pending_action = NULL;
-  data->server_vc = NULL;
-  data->server_vio = NULL;
+  data->server_vc      = NULL;
+  data->server_vio     = NULL;
   data->content_length = 0;
 
   TSContDataSet(contp, data);
@@ -167,7 +167,7 @@ transform_connect(TSCont contp, TransformData *data)
       TSIOBuffer temp;
       TSIOBufferReader tempReader;
 
-      temp = TSIOBufferCreate();
+      temp       = TSIOBufferCreate();
       tempReader = TSIOBufferReaderAlloc(temp);
 
       TSIOBufferWrite(temp, (const char *)&content_length, sizeof(int));
@@ -175,7 +175,7 @@ transform_connect(TSCont contp, TransformData *data)
 
       TSIOBufferReaderFree(data->input_reader);
       TSIOBufferDestroy(data->input_buf);
-      data->input_buf = temp;
+      data->input_buf    = temp;
       data->input_reader = tempReader;
     }
   } else {
@@ -186,9 +186,9 @@ transform_connect(TSCont contp, TransformData *data)
   /* TODO: This only supports IPv4, probably should be changed at some point, but
      it's an example ... */
   memset(&ip_addr, 0, sizeof(ip_addr));
-  ip_addr.sin_family = AF_INET;
+  ip_addr.sin_family      = AF_INET;
   ip_addr.sin_addr.s_addr = server_ip; /* Should be in network byte order */
-  ip_addr.sin_port = server_port;
+  ip_addr.sin_port        = server_port;
   TSDebug("strans", "net connect..");
   action = TSNetConnect(contp, (struct sockaddr const *)&ip_addr);
 
@@ -220,7 +220,7 @@ transform_read_status(TSCont contp, TransformData *data)
 {
   data->state = STATE_READ_STATUS;
 
-  data->output_buf = TSIOBufferCreate();
+  data->output_buf    = TSIOBufferCreate();
   data->output_reader = TSIOBufferReaderAlloc(data->output_buf);
   if (data->output_reader != NULL) {
     data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, sizeof(int));
@@ -237,11 +237,11 @@ transform_read(TSCont contp, TransformData *data)
   data->state = STATE_READ;
 
   TSIOBufferDestroy(data->input_buf);
-  data->input_buf = NULL;
+  data->input_buf    = NULL;
   data->input_reader = NULL;
 
   data->server_vio = TSVConnRead(data->server_vc, contp, data->output_buf, data->content_length);
-  data->output_vc = TSTransformOutputVConnGet((TSVConn)contp);
+  data->output_vc  = TSTransformOutputVConnGet((TSVConn)contp);
   if (data->output_vc == NULL) {
     TSError("[server_transform] TSTransformOutputVConnGet returns NULL");
   } else {
@@ -261,13 +261,13 @@ transform_bypass(TSCont contp, TransformData *data)
 
   if (data->server_vc) {
     TSVConnAbort(data->server_vc, 1);
-    data->server_vc = NULL;
+    data->server_vc  = NULL;
     data->server_vio = NULL;
   }
 
   if (data->output_buf) {
     TSIOBufferDestroy(data->output_buf);
-    data->output_buf = NULL;
+    data->output_buf    = NULL;
     data->output_reader = NULL;
   }
 
@@ -292,7 +292,7 @@ transform_buffer_event(TSCont contp, TransformData *data, TSEvent event ATS_UNUS
   int avail;
 
   if (!data->input_buf) {
-    data->input_buf = TSIOBufferCreate();
+    data->input_buf    = TSIOBufferCreate();
     data->input_reader = TSIOBufferReaderAlloc(data->input_buf);
   }
 
@@ -363,7 +363,7 @@ transform_connect_event(TSCont contp, TransformData *data, TSEvent event, void *
     TSDebug("strans", "connected");
 
     data->pending_action = NULL;
-    data->server_vc = (TSVConn)edata;
+    data->server_vc      = (TSVConn)edata;
     return transform_write(contp, data);
   case TS_EVENT_NET_CONNECT_FAILED:
     TSDebug("strans", "connect failed");
@@ -413,12 +413,12 @@ transform_read_status_event(TSCont contp, TransformData *data, TSEvent event, vo
       void *buf_ptr;
       int64_t avail;
       int64_t read_nbytes = sizeof(int);
-      int64_t read_ndone = 0;
+      int64_t read_ndone  = 0;
 
       buf_ptr = &data->content_length;
       while (read_nbytes > 0) {
-        blk = TSIOBufferReaderStart(data->output_reader);
-        buf = (char *)TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
+        blk        = TSIOBufferReaderStart(data->output_reader);
+        buf        = (char *)TSIOBufferBlockReadStart(blk, data->output_reader, &avail);
         read_ndone = (avail >= read_nbytes) ? read_nbytes : avail;
         memcpy(buf_ptr, buf, read_ndone);
         if (read_ndone > 0) {
@@ -445,25 +445,25 @@ transform_read_event(TSCont contp ATS_UNUSED, TransformData *data, TSEvent event
   switch (event) {
   case TS_EVENT_ERROR:
     TSVConnAbort(data->server_vc, 1);
-    data->server_vc = NULL;
+    data->server_vc  = NULL;
     data->server_vio = NULL;
 
     TSVConnAbort(data->output_vc, 1);
-    data->output_vc = NULL;
+    data->output_vc  = NULL;
     data->output_vio = NULL;
     break;
   case TS_EVENT_VCONN_EOS:
     TSVConnAbort(data->server_vc, 1);
-    data->server_vc = NULL;
+    data->server_vc  = NULL;
     data->server_vio = NULL;
 
     TSVConnAbort(data->output_vc, 1);
-    data->output_vc = NULL;
+    data->output_vc  = NULL;
     data->output_vio = NULL;
     break;
   case TS_EVENT_VCONN_READ_COMPLETE:
     TSVConnClose(data->server_vc);
-    data->server_vc = NULL;
+    data->server_vc  = NULL;
     data->server_vio = NULL;
 
     TSVIOReenable(data->output_vio);
@@ -638,8 +638,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   TSPluginRegistrationInfo info;
   TSCont cont;
 
-  info.plugin_name = "server-transform";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "server-transform";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -647,8 +647,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   }
 
   /* connect to the echo port on localhost */
-  server_ip = (127 << 24) | (0 << 16) | (0 << 8) | (1);
-  server_ip = htonl(server_ip);
+  server_ip   = (127 << 24) | (0 << 16) | (0 << 8) | (1);
+  server_ip   = htonl(server_ip);
   server_port = 7;
 
   cont = TSContCreate(transform_plugin, NULL);

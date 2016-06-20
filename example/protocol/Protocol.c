@@ -106,8 +106,8 @@ TSPluginInit(int argc, const char *argv[])
   char *end;
   int tmp;
 
-  info.plugin_name = "output-header";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "output-header";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

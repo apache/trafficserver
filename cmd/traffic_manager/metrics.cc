@@ -187,7 +187,7 @@ metrics_register_evaluator(lua_State *L)
   // The evaluation chunk is the (only) argument.
   chunk = lua_tostring(L, -1);
 
-  binding = BindingInstance::self(L);
+  binding    = BindingInstance::self(L);
   evaluators = (EvaluatorList *)binding->retrieve_ptr("evaluators");
 
   ink_release_assert(evaluators != NULL);
@@ -204,7 +204,7 @@ metrics_create_record(lua_State *L, RecDataT data_type)
 {
   const char *name;
   RecT rec_type = RECT_NULL;
-  int error = REC_ERR_FAIL;
+  int error     = REC_ERR_FAIL;
 
   BindingInstance::typecheck(L, "record.create", LUA_TSTRING, LUA_TNONE);
 

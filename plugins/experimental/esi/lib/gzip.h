@@ -30,14 +30,14 @@
 
 // Defines for various GZIP constants
 static const int COMPRESSION_LEVEL = 6;
-static const int ZLIB_MEM_LEVEL = 8;
+static const int ZLIB_MEM_LEVEL    = 8;
 
-static const int GZIP_HEADER_SIZE = 10;
+static const int GZIP_HEADER_SIZE  = 10;
 static const int GZIP_TRAILER_SIZE = 8;
 
 static const char MAGIC_BYTE_1 = 0x1f;
 static const char MAGIC_BYTE_2 = 0x8b;
-static const char OS_TYPE = 3; // Unix
+static const char OS_TYPE      = 3; // Unix
 
 static const int BUF_SIZE = 1 << 15; // 32k buffer
 

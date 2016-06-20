@@ -24,7 +24,7 @@
 
 #define TS_LUA_MAX_STATE_COUNT 256
 
-static uint64_t ts_lua_http_next_id = 0;
+static uint64_t ts_lua_http_next_id   = 0;
 static uint64_t ts_lua_g_http_next_id = 0;
 
 static ts_lua_main_ctx *ts_lua_main_ctx_array;
@@ -132,7 +132,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   ts_lua_instance_conf *instance_conf;
 
   instance_conf = (ts_lua_instance_conf *)ih;
-  req_id = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
+  req_id        = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
 
   main_ctx = &ts_lua_main_ctx_array[req_id % TS_LUA_MAX_STATE_COUNT];
 
@@ -140,16 +140,16 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   http_ctx = ts_lua_create_http_ctx(main_ctx, instance_conf);
 
-  http_ctx->txnp = rh;
+  http_ctx->txnp                = rh;
   http_ctx->client_request_bufp = rri->requestBufp;
   http_ctx->client_request_hdrp = rri->requestHdrp;
-  http_ctx->client_request_url = rri->requestUrl;
-  http_ctx->rri = rri;
-  http_ctx->remap = 1;
-  http_ctx->has_hook = 0;
+  http_ctx->client_request_url  = rri->requestUrl;
+  http_ctx->rri                 = rri;
+  http_ctx->remap               = 1;
+  http_ctx->has_hook            = 0;
 
   ci = &http_ctx->cinfo;
-  L = ci->routine.lua;
+  L  = ci->routine.lua;
 
   contp = TSContCreate(ts_lua_http_cont_handler, NULL);
   TSContDataSet(contp, http_ctx);
@@ -215,10 +215,10 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
   TSMutexLock(main_ctx->mutexp);
 
-  http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
-  http_ctx->txnp = txnp;
-  http_ctx->rri = NULL;
-  http_ctx->remap = 0;
+  http_ctx           = ts_lua_create_http_ctx(main_ctx, conf);
+  http_ctx->txnp     = txnp;
+  http_ctx->rri      = NULL;
+  http_ctx->remap    = 0;
   http_ctx->has_hook = 0;
 
   if (!http_ctx->client_request_bufp) {
@@ -243,7 +243,7 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   txn_contp = TSContCreate(ts_lua_http_cont_handler, NULL);
   TSContDataSet(txn_contp, http_ctx);
 
-  ci = &http_ctx->cinfo;
+  ci        = &http_ctx->cinfo;
   ci->contp = txn_contp;
   ci->mutex = TSContMutexGet((TSCont)txnp);
 
@@ -348,15 +348,15 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "ts_lua";
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = "ts_lua";
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[ts_lua] Plugin registration failed.");
   }
 
-  int ret = 0;
+  int ret                 = 0;
   ts_lua_g_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
   memset(ts_lua_g_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
 
@@ -410,7 +410,7 @@ TSPluginInit(int argc, const char *argv[])
   // adding hook based on whether the lua global function exists.
   ts_lua_main_ctx *main_ctx = &ts_lua_g_main_ctx_array[0];
   ts_lua_http_ctx *http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
-  lua_State *l = http_ctx->cinfo.routine.lua;
+  lua_State *l              = http_ctx->cinfo.routine.lua;
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_REQUEST);
   if (lua_type(l, -1) == LUA_TFUNCTION) {

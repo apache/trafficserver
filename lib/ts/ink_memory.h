@@ -105,7 +105,7 @@ static inline size_t __attribute__((const)) ats_pagesize(void)
     return page_size;
 
 #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
-  long ret = sysconf(_SC_PAGESIZE);
+  long ret  = sysconf(_SC_PAGESIZE);
   page_size = (size_t)((ret > -1) ? ret : 8192);
 #elif defined(HAVE_GETPAGESIZE)
   page_size = (size_t)getpagesize()
@@ -285,7 +285,7 @@ public:
   release()
   {
     value_type zret = _r;
-    _r = Traits::initValue();
+    _r              = Traits::initValue();
     return zret;
   }
 
@@ -503,8 +503,8 @@ public:
 inline char *
 path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
 {
-  size_t ln = strlen(lhs);
-  size_t rn = strlen(rhs);
+  size_t ln        = strlen(lhs);
+  size_t rn        = strlen(rhs);
   char const *rptr = rhs; // May need to be modified.
 
   if (ln && lhs[ln - 1] == '/')

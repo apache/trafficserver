@@ -168,8 +168,8 @@ void
 PriorityQueue<T, Comp>::_swap(uint32_t i, uint32_t j)
 {
   PriorityQueueEntry<T> *tmp = _v[i];
-  _v[i] = _v[j];
-  _v[j] = tmp;
+  _v[i]                      = _v[j];
+  _v[j]                      = tmp;
 
   _v[i]->index = i;
   _v[j]->index = j;

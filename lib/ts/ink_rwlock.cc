@@ -43,7 +43,7 @@ ink_rwlock_init(ink_rwlock *rw)
   rw->rw_nwaitwriters = 0;
   // coverity[missing_lock]
   rw->rw_refcount = 0;
-  rw->rw_magic = RW_MAGIC;
+  rw->rw_magic    = RW_MAGIC;
 
   return 0;
 

@@ -198,7 +198,7 @@ struct CacheContinuation : public Continuation {
     ink_assert(!rw_buf_msg);
     ink_assert(rw_buf_msg_len == 0);
 
-    rw_buf_msg = b;
+    rw_buf_msg     = b;
     rw_buf_msg_len = l;
   }
 
@@ -237,7 +237,7 @@ struct CacheContinuation : public Continuation {
   freeMsgBuffer()
   {
     if (rw_buf_msg) {
-      rw_buf_msg = 0;
+      rw_buf_msg     = 0;
       rw_buf_msg_len = 0;
     }
   }
@@ -270,9 +270,9 @@ struct CacheContinuation : public Continuation {
     ic_arena.reset();
     freeMsgBuffer();
 
-    tunnel_mutex = 0;
+    tunnel_mutex   = 0;
     readahead_data = 0;
-    ic_hostname = 0;
+    ic_hostname    = 0;
   }
 
   CacheContinuation()
@@ -400,8 +400,8 @@ struct CacheLookupMsg : public ClusterMessageHeader {
   uint32_t frag_type;
   Alias32 moi;
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                  = 1,
+    MAX_VERSION                  = 1,
     CACHE_LOOKUP_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheLookupMsg(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION) : ClusterMessageHeader(vers), seq_number(0), frag_type(0)
@@ -451,8 +451,8 @@ struct CacheOpMsg_long : public ClusterMessageHeader {
   int32_t buffer_size; // used by open read interface
   Alias32 moi;
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                   = 1,
+    MAX_VERSION                   = 1,
     CACHE_OP_LONG_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpMsg_long(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION)
@@ -519,8 +519,8 @@ struct CacheOpMsg_short : public ClusterMessageHeader {
   // Variable portion of message
   Alias32 moi;
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                    = 1,
+    MAX_VERSION                    = 1,
     CACHE_OP_SHORT_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpMsg_short(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION)
@@ -582,8 +582,8 @@ struct CacheOpMsg_short_2 : public ClusterMessageHeader {
   uint32_t seq_number;
   Alias32 moi;
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                      = 1,
+    MAX_VERSION                      = 1,
     CACHE_OP_SHORT_2_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpMsg_short_2(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION)
@@ -628,8 +628,8 @@ struct CacheOpReplyMsg : public ClusterMessageHeader {
   bool is_ram_cache_hit; // Entire object was from ram cache
   Alias32 moi;           // Used by CACHE_OPEN_READ & CACHE_LINK reply
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                    = 1,
+    MAX_VERSION                    = 1,
     CACHE_OP_REPLY_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpReplyMsg(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION)

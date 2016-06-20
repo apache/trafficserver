@@ -30,9 +30,9 @@
 /*************************************************************************/
 // ClusterProcessor member functions (Public class)
 /*************************************************************************/
-int cluster_port_number = DEFAULT_CLUSTER_PORT_NUMBER;
+int cluster_port_number      = DEFAULT_CLUSTER_PORT_NUMBER;
 int cache_clustering_enabled = 0;
-int num_of_cluster_threads = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
+int num_of_cluster_threads   = DEFAULT_NUMBER_OF_CLUSTER_THREADS;
 
 ClusterProcessor clusterProcessor;
 RecRawStatBlock *cluster_rsb = NULL;
@@ -58,10 +58,10 @@ ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn, voi
   // RPC facility for intercluster communication available to other
   //  subsystems.
   //
-  bool steal = (options & CLUSTER_OPT_STEAL ? true : false);
-  bool delay = (options & CLUSTER_OPT_DELAY ? true : false);
+  bool steal         = (options & CLUSTER_OPT_STEAL ? true : false);
+  bool delay         = (options & CLUSTER_OPT_DELAY ? true : false);
   bool data_in_ocntl = (options & CLUSTER_OPT_DATA_IS_OCONTROL ? true : false);
-  bool malloced = (cluster_fn == CLUSTER_FUNCTION_MALLOCED);
+  bool malloced      = (cluster_fn == CLUSTER_FUNCTION_MALLOCED);
   OutgoingControl *c;
 
   if (!ch || (!malloced && !((unsigned int)cluster_fn < (uint32_t)SIZE_clusterFunction))) {
@@ -116,7 +116,7 @@ ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn, voi
     invoke_remote_data_args *args = (invoke_remote_data_args *)(((OutgoingControl *)cmsg)->data + sizeof(int32_t));
     ink_assert(args->magicno == invoke_remote_data_args::MagicNo);
     args->msg_oc = c;
-    c = (OutgoingControl *)cmsg;
+    c            = (OutgoingControl *)cmsg;
   }
 #ifndef CLUSTER_THREAD_STEALING
   delay = true;
@@ -176,14 +176,14 @@ ClusterProcessor::invoke_remote_data(ClusterHandler *ch, int cluster_fn, void *d
 
   // Build OutgoingControl for compound message header
   invoke_remote_data_args mh;
-  mh.msg_oc = 0;
-  mh.data_oc = bufdata_oc;
+  mh.msg_oc       = 0;
+  mh.data_oc      = bufdata_oc;
   mh.dest_channel = dest_channel;
-  mh.token = *token;
+  mh.token        = *token;
 
   OutgoingControl *chdr = OutgoingControl::alloc();
-  chdr->submit_time = Thread::get_hrtime();
-  chdr->len = sizeof(int32_t) + sizeof(mh);
+  chdr->submit_time     = Thread::get_hrtime();
+  chdr->len             = sizeof(int32_t) + sizeof(mh);
   chdr->alloc_data();
   *(int32_t *)chdr->data = -1; // always -1 for compound message
   memcpy(chdr->data + sizeof(int32_t), (char *)&mh, sizeof(mh));
@@ -195,7 +195,7 @@ ClusterProcessor::invoke_remote_data(ClusterHandler *ch, int cluster_fn, void *d
 void
 ClusterProcessor::free_remote_data(char *p, int /* l ATS_UNUSED */)
 {
-  char *d = p - sizeof(int32_t); // reset to ptr to function code
+  char *d      = p - sizeof(int32_t); // reset to ptr to function code
   int data_hdr = ClusterControl::DATA_HDR;
 
   ink_release_assert(*((uint8_t *)(d - data_hdr + 1)) == (uint8_t)ALLOC_DATA_MAGIC);
@@ -227,7 +227,7 @@ ClusterProcessor::open_local(Continuation *cont, ClusterMachine * /* m ATS_UNUSE
   //  token and channel id in the remote request.  The remote handler calls
   //  connect_local to establish the remote side of the connection.
   //
-  bool immediate = ((options & CLUSTER_OPT_IMMEDIATE) ? true : false);
+  bool immediate       = ((options & CLUSTER_OPT_IMMEDIATE) ? true : false);
   bool allow_immediate = ((options & CLUSTER_OPT_ALLOW_IMMEDIATE) ? true : false);
 
   ClusterHandler *ch = ((CacheContinuation *)cont)->ch;
@@ -237,16 +237,16 @@ ClusterProcessor::open_local(Continuation *cont, ClusterMachine * /* m ATS_UNUSE
   if (!t)
     return NULL;
 
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex.get();
+  EThread *thread        = this_ethread();
+  ProxyMutex *mutex      = thread->mutex.get();
   ClusterVConnection *vc = clusterVCAllocator.alloc();
-  vc->new_connect_read = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
-  vc->start_time = Thread::get_hrtime();
+  vc->new_connect_read   = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
+  vc->start_time         = Thread::get_hrtime();
   vc->last_activity_time = vc->start_time;
-  vc->ch = ch;
+  vc->ch                 = ch;
   vc->token.alloc();
   vc->token.ch_id = ch->id;
-  token = vc->token;
+  token           = vc->token;
 #ifdef CLUSTER_THREAD_STEALING
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPENNED_STAT);
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPEN_STAT);
@@ -286,7 +286,7 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
   // Establish VC connection initiated by remote node on the local node
   // using the given token and channel id.
   //
-  bool immediate = ((options & CLUSTER_OPT_IMMEDIATE) ? true : false);
+  bool immediate       = ((options & CLUSTER_OPT_IMMEDIATE) ? true : false);
   bool allow_immediate = ((options & CLUSTER_OPT_ALLOW_IMMEDIATE) ? true : false);
 
 #ifdef LOCAL_CLUSTER_TEST_MODE
@@ -307,15 +307,15 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
   if (!t)
     return NULL;
 
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex.get();
+  EThread *thread        = this_ethread();
+  ProxyMutex *mutex      = thread->mutex.get();
   ClusterVConnection *vc = clusterVCAllocator.alloc();
-  vc->new_connect_read = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
-  vc->start_time = Thread::get_hrtime();
+  vc->new_connect_read   = (options & CLUSTER_OPT_CONN_READ ? 1 : 0);
+  vc->start_time         = Thread::get_hrtime();
   vc->last_activity_time = vc->start_time;
-  vc->ch = ch;
-  vc->token = *token;
-  vc->channel = channel;
+  vc->ch                 = ch;
+  vc->token              = *token;
+  vc->channel            = channel;
 #ifdef CLUSTER_THREAD_STEALING
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPENNED_STAT);
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPEN_STAT);
@@ -326,7 +326,7 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
       clusterVCAllocator_free(vc);
       return NULL;
     }
-    vc->mutex = ch->mutex;
+    vc->mutex   = ch->mutex;
     vc->action_ = cont;
     ch->thread->schedule_imm_signal(vc);
     return CLUSTER_DELAYED_OPEN;
@@ -367,14 +367,14 @@ GlobalClusterPeriodicEvent *PeriodicClusterEvent;
 #ifdef CLUSTER_TOMCAT
 extern int cache_clustering_enabled;
 
-int CacheClusterMonitorEnabled = 0;
+int CacheClusterMonitorEnabled      = 0;
 int CacheClusterMonitorIntervalSecs = 1;
 
-int cluster_send_buffer_size = 0;
-int cluster_receive_buffer_size = 0;
+int cluster_send_buffer_size        = 0;
+int cluster_receive_buffer_size     = 0;
 unsigned long cluster_sockopt_flags = 0;
-unsigned long cluster_packet_mark = 0;
-unsigned long cluster_packet_tos = 0;
+unsigned long cluster_packet_mark   = 0;
+unsigned long cluster_packet_tos    = 0;
 
 int RPC_only_CacheCluster = 0;
 #endif
@@ -630,10 +630,10 @@ ClusterProcessor::init()
   PeriodicClusterEvent = new GlobalClusterPeriodicEvent;
   PeriodicClusterEvent->init();
 
-  this_cluster = new Cluster;
+  this_cluster             = new Cluster;
   ClusterConfiguration *cc = new ClusterConfiguration;
   this_cluster->configurations.push(cc);
-  cc->n_machines = 1;
+  cc->n_machines  = 1;
   cc->machines[0] = this_cluster_machine();
   memset(cc->hash_table, 0, CLUSTER_HASH_TABLE_SIZE);
   // 0 dummy output data
@@ -694,9 +694,9 @@ ClusterProcessor::connect(char *hostname, int16_t id)
   //
   ClusterHandler *ch = new ClusterHandler;
   SET_CONTINUATION_HANDLER(ch, (ClusterContHandler)&ClusterHandler::connectClusterEvent);
-  ch->hostname = ats_strdup(hostname);
+  ch->hostname  = ats_strdup(hostname);
   ch->connector = true;
-  ch->id = id;
+  ch->id        = id;
   eventProcessor.schedule_imm(ch, ET_CLUSTER);
 }
 
@@ -708,10 +708,10 @@ ClusterProcessor::connect(unsigned int ip, int port, int16_t id, bool delay)
   //
   ClusterHandler *ch = new ClusterHandler;
   SET_CONTINUATION_HANDLER(ch, (ClusterContHandler)&ClusterHandler::connectClusterEvent);
-  ch->ip = ip;
-  ch->port = port;
+  ch->ip        = ip;
+  ch->port      = port;
   ch->connector = true;
-  ch->id = id;
+  ch->id        = id;
   if (delay)
     eventProcessor.schedule_in(ch, CLUSTER_MEMBER_DELAY, ET_CLUSTER);
   else
@@ -727,13 +727,13 @@ ClusterProcessor::send_machine_list(ClusterMachine *m)
   // lists.
   //
   MachineListMessage mlistmsg;
-  int vers = MachineListMessage::protoToVersion(m->msg_proto_major);
+  int vers                 = MachineListMessage::protoToVersion(m->msg_proto_major);
   ClusterConfiguration *cc = this_cluster->current_configuration();
   void *data;
   int len;
 
   if (vers == MachineListMessage::MACHINE_LIST_MESSAGE_VERSION) {
-    int n = 0;
+    int n                   = 0;
     MachineListMessage *msg = &mlistmsg;
 
     while (n < cc->n_machines) {
@@ -741,8 +741,8 @@ ClusterProcessor::send_machine_list(ClusterMachine *m)
       n++;
     }
     msg->n_ip = n;
-    data = (void *)msg;
-    len = msg->sizeof_fixedlen_msg() + (n * sizeof(uint32_t));
+    data      = (void *)msg;
+    len       = msg->sizeof_fixedlen_msg() + (n * sizeof(uint32_t));
 
   } else {
     //////////////////////////////////////////////////////////////

@@ -66,7 +66,7 @@ enum {
 
 enum {
   PLUGIN_VC_MAGIC_ALIVE = 0xaabbccdd,
-  PLUGIN_VC_MAGIC_DEAD = 0xaabbdead,
+  PLUGIN_VC_MAGIC_DEAD  = 0xaabbdead,
 };
 
 class PluginVC : public NetVConnection, public PluginIdentity

@@ -73,40 +73,40 @@ LogConfig::setup_default_values()
   }
   hostname = ats_strdup(name);
 
-  log_buffer_size = (int)(10 * LOG_KILOBYTE);
-  max_secs_per_buffer = 5;
-  max_space_mb_for_logs = 100;
+  log_buffer_size              = (int)(10 * LOG_KILOBYTE);
+  max_secs_per_buffer          = 5;
+  max_space_mb_for_logs        = 100;
   max_space_mb_for_orphan_logs = 25;
-  max_space_mb_headroom = 10;
-  logfile_perm = 0644;
-  logfile_dir = ats_strdup(".");
+  max_space_mb_headroom        = 10;
+  logfile_perm                 = 0644;
+  logfile_dir                  = ats_strdup(".");
 
-  collation_mode = Log::NO_COLLATION;
-  collation_host = ats_strdup("none");
-  collation_port = 0;
-  collation_host_tagged = false;
-  collation_preproc_threads = 1;
-  collation_secret = ats_strdup("foobar");
-  collation_retry_sec = 0;
+  collation_mode             = Log::NO_COLLATION;
+  collation_host             = ats_strdup("none");
+  collation_port             = 0;
+  collation_host_tagged      = false;
+  collation_preproc_threads  = 1;
+  collation_secret           = ats_strdup("foobar");
+  collation_retry_sec        = 0;
   collation_max_send_buffers = 0;
 
-  rolling_enabled = Log::NO_ROLLING;
-  rolling_interval_sec = 86400; // 24 hours
-  rolling_offset_hr = 0;
-  rolling_size_mb = 10;
+  rolling_enabled          = Log::NO_ROLLING;
+  rolling_interval_sec     = 86400; // 24 hours
+  rolling_offset_hr        = 0;
+  rolling_size_mb          = 10;
   auto_delete_rolled_files = true;
-  roll_log_files_now = false;
+  roll_log_files_now       = false;
 
   custom_logs_enabled = false;
 
-  sampling_frequency = 1;
-  file_stat_frequency = 16;
+  sampling_frequency   = 1;
+  file_stat_frequency  = 16;
   space_used_frequency = 900;
 
   use_orphan_log_space_value = false;
 
   ascii_buffer_size = 4 * 9216;
-  max_line_size = 9216; // size of pipe buffer for SunOS 5.6
+  max_line_size     = 9216; // size of pipe buffer for SunOS 5.6
 }
 
 void *
@@ -149,7 +149,7 @@ LogConfig::read_configuration_variables()
     max_space_mb_headroom = val;
   }
 
-  ptr = REC_ConfigReadString("proxy.config.log.logfile_perm");
+  ptr                     = REC_ConfigReadString("proxy.config.log.logfile_perm");
   int logfile_perm_parsed = ink_fileperm_parse(ptr);
   if (logfile_perm_parsed != -1)
     logfile_perm = logfile_perm_parsed;
@@ -188,7 +188,7 @@ LogConfig::read_configuration_variables()
     collation_port = val;
   }
 
-  val = (int)REC_ConfigReadInteger("proxy.config.log.collation_host_tagged");
+  val                   = (int)REC_ConfigReadInteger("proxy.config.log.collation_host_tagged");
   collation_host_tagged = (val > 0);
 
   val = (int)REC_ConfigReadInteger("proxy.config.log.collation_preproc_threads");
@@ -218,8 +218,8 @@ LogConfig::read_configuration_variables()
   // rolling_offset_hr, or rolling_size_mb because the LogObject takes care of this
   //
   rolling_interval_sec = (int)REC_ConfigReadInteger("proxy.config.log.rolling_interval_sec");
-  rolling_offset_hr = (int)REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
-  rolling_size_mb = (int)REC_ConfigReadInteger("proxy.config.log.rolling_size_mb");
+  rolling_offset_hr    = (int)REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
+  rolling_size_mb      = (int)REC_ConfigReadInteger("proxy.config.log.rolling_size_mb");
 
   val = (int)REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
   if (LogRollingEnabledIsValid(val)) {
@@ -229,11 +229,11 @@ LogConfig::read_configuration_variables()
     rolling_enabled = Log::NO_ROLLING;
   }
 
-  val = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
+  val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
 
   // CUSTOM LOGGING
-  val = (int)REC_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
+  val                 = (int)REC_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
   custom_logs_enabled = (val > 0);
 
   // PERFORMANCE
@@ -355,7 +355,7 @@ LogConfig::setup_collation(LogConfig *prev_config)
         }
 
         if (!m_log_collation_accept) {
-          Log::collation_port = collation_port;
+          Log::collation_port    = collation_port;
           m_log_collation_accept = new LogCollationAccept(collation_port);
         }
         Debug("log", "I am a collation host listening on port %d.", collation_port);
@@ -681,10 +681,10 @@ LogConfig::space_to_write(int64_t bytes_to_write)
   int64_t logical_space_used, physical_space_left;
   bool space;
 
-  config_space = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
+  config_space       = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
   partition_headroom = (int64_t)PARTITION_HEADROOM_MB * LOG_MEGABYTE;
 
-  logical_space_used = m_space_used + bytes_to_write;
+  logical_space_used  = m_space_used + bytes_to_write;
   physical_space_left = m_partition_space_left - (int64_t)bytes_to_write;
 
   space = ((logical_space_used < config_space) && (physical_space_left > partition_headroom));
@@ -769,7 +769,7 @@ LogConfig::update_space_used()
 
   if (!m_dir_entry) {
     size_t name_max = ink_file_namemax(logfile_dir);
-    m_dir_entry = (struct dirent *)ats_malloc(sizeof(struct dirent) + name_max + 1);
+    m_dir_entry     = (struct dirent *)ats_malloc(sizeof(struct dirent) + name_max + 1);
   }
 
   total_space_used = 0LL;
@@ -791,8 +791,8 @@ LogConfig::update_space_used()
         //
         // then add this entry to the candidate list
         //
-        candidates[candidate_count].name = ats_strdup(path);
-        candidates[candidate_count].size = (int64_t)sbuf.st_size;
+        candidates[candidate_count].name  = ats_strdup(path);
+        candidates[candidate_count].size  = (int64_t)sbuf.st_size;
         candidates[candidate_count].mtime = sbuf.st_mtime;
         candidate_count++;
       }
@@ -814,7 +814,7 @@ LogConfig::update_space_used()
   //
   // Update the config variables for space used/left
   //
-  m_space_used = total_space_used;
+  m_space_used           = total_space_used;
   m_partition_space_left = partition_space_left;
   RecSetRawStatSum(log_rsb, log_stat_log_files_space_used_stat, m_space_used);
   RecSetRawStatCount(log_rsb, log_stat_log_files_space_used_stat, 1);
@@ -834,7 +834,7 @@ LogConfig::update_space_used()
   //
 
   int64_t max_space = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
-  int64_t headroom = (int64_t)max_space_mb_headroom * LOG_MEGABYTE;
+  int64_t headroom  = (int64_t)max_space_mb_headroom * LOG_MEGABYTE;
 
   if (candidate_count > 0 && !space_to_write(headroom)) {
     Debug("logspace", "headroom reached, trying to clear space ...");
@@ -928,12 +928,12 @@ LogConfig::update_space_used()
     logging_space_exhausted = false;
     if (m_disk_full || m_partition_full) {
       Note("Logging disk is no longer full; access logging to local log directory resumed.");
-      m_disk_full = false;
+      m_disk_full      = false;
       m_partition_full = false;
     }
     if (m_disk_low || m_partition_low) {
       Note("Logging disk is no longer low; access logging to local log directory resumed.");
-      m_disk_low = false;
+      m_disk_low      = false;
       m_partition_low = false;
     }
   }
@@ -1020,8 +1020,8 @@ LogConfig::read_xml_log_config()
         Note("Multiple values for 'Format' attribute in %s; using the first one", xobj->object_name());
       }
 
-      char *format_str = format.dequeue();
-      char *name_str = name.dequeue();
+      char *format_str      = format.dequeue();
+      char *name_str        = name.dequeue();
       unsigned interval_num = 0;
 
       // if the format_str contains any of the aggregate operators,
@@ -1112,7 +1112,7 @@ LogConfig::read_xml_log_config()
 
       // convert the action string to an enum value and validate it
       //
-      char *action_str = action.dequeue();
+      char *action_str      = action.dequeue();
       LogFilter::Action act = LogFilter::REJECT; /* lv: make gcc happy */
       for (i = 0; i < LogFilter::N_ACTIONS; i++) {
         if (strcasecmp(action_str, LogFilter::ACTION_NAME[i]) == 0) {
@@ -1137,8 +1137,8 @@ LogConfig::read_xml_log_config()
       }
 
       char *field_str = tok.getNext();
-      char *oper_str = tok.getNext();
-      char *val_str = tok.getRest();
+      char *oper_str  = tok.getNext();
+      char *val_str   = tok.getRest();
 
       // validate field symbol
       //
@@ -1160,7 +1160,7 @@ LogConfig::read_xml_log_config()
           char *fname_end = strchr(field_str, '}');
           if (NULL != fname_end) {
             char *fname = field_str + 1;
-            *fname_end = 0;              // changes '}' to '\0'
+            *fname_end  = 0;             // changes '}' to '\0'
             char *cname = fname_end + 1; // start of container symbol
             Note("Found Container Field: Name = %s, symbol = %s", fname, cname);
             LogField::Container container = LogField::valid_container_name(cname);
@@ -1199,7 +1199,7 @@ LogConfig::read_xml_log_config()
       }
       // now create the correct LogFilter
       //
-      LogFilter *filter = NULL;
+      LogFilter *filter         = NULL;
       LogField::Type field_type = logfield->type();
 
       switch (field_type) {
@@ -1353,14 +1353,14 @@ LogConfig::read_xml_log_config()
       LogFileFormat file_type = LOG_FILE_ASCII; // default value
       if (mode.count()) {
         char *mode_str = mode.dequeue();
-        file_type = (strncasecmp(mode_str, "bin", 3) == 0 || (mode_str[0] == 'b' && mode_str[1] == 0) ?
+        file_type      = (strncasecmp(mode_str, "bin", 3) == 0 || (mode_str[0] == 'b' && mode_str[1] == 0) ?
                        LOG_FILE_BINARY :
                        (strcasecmp(mode_str, "ascii_pipe") == 0 ? LOG_FILE_PIPE : LOG_FILE_ASCII));
       }
       // rolling
       //
       char *rollingEnabled_str = rollingEnabled.dequeue();
-      int obj_rolling_enabled = rollingEnabled_str ? ink_atoui(rollingEnabled_str) : rolling_enabled;
+      int obj_rolling_enabled  = rollingEnabled_str ? ink_atoui(rollingEnabled_str) : rolling_enabled;
 
       char *rollingIntervalSec_str = rollingIntervalSec.dequeue();
       int obj_rolling_interval_sec = rollingIntervalSec_str ? ink_atoui(rollingIntervalSec_str) : rolling_interval_sec;
@@ -1409,7 +1409,7 @@ LogConfig::read_xml_log_config()
 
         if (n) {
           int64_t *val_array = new int64_t[n];
-          size_t numValid = 0;
+          size_t numValid    = 0;
           char *t;
           while (t = tok.getNext(), t != NULL) {
             if (strcasecmp(t, "icp") == 0) {
@@ -1479,7 +1479,7 @@ LogConfig::read_xml_log_config()
               prev = lh;
             } else {
               prev->failover_link.next = lh;
-              prev = lh;
+              prev                     = lh;
             }
           }
         }
@@ -1513,7 +1513,7 @@ LogConfig::read_log_hosts_file(size_t *num_hosts)
   Debug("log-config", "Reading log hosts from %s", (const char *)config_path);
 
   size_t nhosts = 0;
-  int fd = open(config_path, O_RDONLY);
+  int fd        = open(config_path, O_RDONLY);
   if (fd < 0) {
     Warning("Traffic Server can't open %s for reading log hosts for splitting: %s.", (const char *)config_path, strerror(errno));
   } else {

@@ -35,7 +35,7 @@ SpecialIncludeHandler *
 HandlerManager::getHandler(Variables &esi_vars, Expression &esi_expr, HttpDataFetcher &fetcher, const std::string &id) const
 {
   StubIncludeHandler *handler = new StubIncludeHandler(esi_vars, esi_expr, fetcher);
-  gHandlerMap[id] = handler;
+  gHandlerMap[id]             = handler;
   return handler;
 }
 

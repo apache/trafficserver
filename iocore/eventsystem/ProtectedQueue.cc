@@ -47,9 +47,9 @@ void
 ProtectedQueue::enqueue(Event *e, bool fast_signal)
 {
   ink_assert(!e->in_the_prot_queue && !e->in_the_priority_queue);
-  EThread *e_ethread = e->ethread;
+  EThread *e_ethread   = e->ethread;
   e->in_the_prot_queue = 1;
-  bool was_empty = (ink_atomiclist_push(&al, e) == NULL);
+  bool was_empty       = (ink_atomiclist_push(&al, e) == NULL);
 
   if (was_empty) {
     EThread *inserting_thread = this_ethread();
@@ -72,7 +72,7 @@ ProtectedQueue::enqueue(Event *e, bool fast_signal)
           if (e_ethread->signal_hook)
             e_ethread->signal_hook(e_ethread);
         }
-        int &t = inserting_thread->n_ethreads_to_be_signalled;
+        int &t          = inserting_thread->n_ethreads_to_be_signalled;
         EThread **sig_e = inserting_thread->ethreads_to_be_signalled;
         if ((t + 1) >= eventProcessor.n_ethreads) {
           // we have run out of room
@@ -86,7 +86,7 @@ ProtectedQueue::enqueue(Event *e, bool fast_signal)
                 if (next == cur)
                   break;
                 sig_e[cur->id] = cur;
-                cur = next;
+                cur            = next;
               }
               // if not overwritten
               if (sig_e[i] && sig_e[i]->id != i)

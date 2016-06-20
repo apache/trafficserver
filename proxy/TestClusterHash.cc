@@ -49,15 +49,15 @@ test()
     // the select the version
     //
     machineClusterHash = !!(version & 1);
-    boundClusterHash = !!(version & 2);
-    randClusterHash = !!(version & 4);
+    boundClusterHash   = !!(version & 2);
+    randClusterHash    = !!(version & 4);
 
     // fabricate fake cluster
 
     clusterProcessor.this_cluster = new Cluster;
-    ClusterConfiguration *cc = new ClusterConfiguration;
-    cc->n_machines = 1;
-    cc->machines[0] = this_cluster_machine();
+    ClusterConfiguration *cc      = new ClusterConfiguration;
+    cc->n_machines                = 1;
+    cc->machines[0]               = this_cluster_machine();
     memset(cc->hash_table, 0, CLUSTER_HASH_TABLE_SIZE);
     clusterProcessor.this_cluster->configurations.push(cc);
 
@@ -71,7 +71,7 @@ test()
     for (i = 1; i < 32; i++) {
       m = new ClusterMachine(*this_cluster_machine());
       m->ip += i;
-      t = ink_get_hrtime();
+      t  = ink_get_hrtime();
       cc = configuration_add_machine(c, m);
       t2 = ink_get_hrtime();
 
@@ -79,7 +79,7 @@ test()
       // Compute new distribution
       //
       high = 0;
-      low = CLUSTER_HASH_TABLE_SIZE + 1;
+      low  = CLUSTER_HASH_TABLE_SIZE + 1;
       for (j = 0; j < cc->n_machines; j++)
         n[j] = 0;
       for (j = 0; j < CLUSTER_HASH_TABLE_SIZE; j++) {

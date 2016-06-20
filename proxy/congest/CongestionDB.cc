@@ -98,7 +98,7 @@ inline void
 Free_CongestionDBCont(CongestionDBCont *cont)
 {
   cont->m_action = NULL;
-  cont->mutex = NULL;
+  cont->mutex    = NULL;
   CongestionDBContAllocator.free(cont);
 }
 
@@ -173,9 +173,9 @@ CongestionDB::addRecord(uint64_t key, CongestionEntry *pEntry)
       tmp->put();
   } else {
     CongestRequestParam *param = CongestRequestParamAllocator.alloc();
-    param->m_op = CongestRequestParam::ADD_RECORD;
-    param->m_key = key;
-    param->m_pEntry = pEntry;
+    param->m_op                = CongestRequestParam::ADD_RECORD;
+    param->m_key               = key;
+    param->m_pEntry            = pEntry;
     ink_atomiclist_push(&todo_lists[part_num(key)], param);
   }
 }
@@ -198,8 +198,8 @@ CongestionDB::removeAllRecords()
       }
     } else {
       CongestRequestParam *param = CongestRequestParamAllocator.alloc();
-      param->m_op = CongestRequestParam::REMOVE_ALL_RECORDS;
-      param->m_key = part;
+      param->m_op                = CongestRequestParam::REMOVE_ALL_RECORDS;
+      param->m_key               = part;
       ink_atomiclist_push(&todo_lists[part], param);
     }
   }
@@ -218,8 +218,8 @@ CongestionDB::removeRecord(uint64_t key)
       tmp->put();
   } else {
     CongestRequestParam *param = CongestRequestParamAllocator.alloc();
-    param->m_op = CongestRequestParam::REMOVE_RECORD;
-    param->m_key = key;
+    param->m_op                = CongestRequestParam::REMOVE_RECORD;
+    param->m_key               = key;
     ink_atomiclist_push(&todo_lists[part_num(key)], param);
   }
 }
@@ -269,11 +269,11 @@ CongestionDB::RunTodoList(int buckId)
     param->link.prev = NULL;
     while (param->link.next) {
       param->link.next->link.prev = param;
-      param = param->link.next;
+      param                       = param->link.next;
     };
     while (param) {
       process(buckId, param);
-      cur = param;
+      cur   = param;
       param = param->link.prev;
       Free_CongestRequestParam(cur);
     }
@@ -285,7 +285,7 @@ CongestionDB::revalidateBucket(int buckId)
 {
   Iter it;
   CongestionEntry *cur = NULL;
-  cur = first_entry(buckId, &it);
+  cur                  = first_entry(buckId, &it);
   while (cur != NULL) {
     if (!cur->validate()) {
       remove_entry(buckId, &it);
@@ -314,7 +314,7 @@ CongestionDBCont::GC(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         MUTEX_TRY_LOCK(lock, bucket_mutex, this_ethread());
         if (lock.is_locked()) {
           ink_hrtime now = Thread::get_hrtime();
-          now = ink_hrtime_to_sec(now);
+          now            = ink_hrtime_to_sec(now);
           theCongestionDB->RunTodoList(CDBC_pid);
           Iter it;
           CongestionEntry *pEntry = theCongestionDB->first_entry(CDBC_pid, &it);
@@ -443,7 +443,7 @@ revalidateCongestionDB()
         theCongestionDB->revalidateBucket(i);
       } else {
         CongestRequestParam *param = CongestRequestParamAllocator.alloc();
-        param->m_op = CongestRequestParam::REVALIDATE_BUCKET;
+        param->m_op                = CongestRequestParam::REVALIDATE_BUCKET;
         ink_atomiclist_push(&theCongestionDB->todo_lists[i], param);
       }
     }
@@ -489,14 +489,14 @@ get_congest_entry(Continuation *cont, HttpRequestData *data, CongestionEntry **p
   } else {
     Debug("congestion_control", "get_congest_entry, trylock failed, schedule cont");
     CongestionDBCont *Ccont = CongestionDBContAllocator.alloc();
-    Ccont->m_action = cont;
-    Ccont->mutex = cont->mutex;
-    Ccont->CDBC_key = key;
-    Ccont->CDBC_host = (char *)data->get_host();
+    Ccont->m_action         = cont;
+    Ccont->mutex            = cont->mutex;
+    Ccont->CDBC_key         = key;
+    Ccont->CDBC_host        = (char *)data->get_host();
     ats_ip_copy(&Ccont->CDBC_ip.sa, data->get_ip());
     p->get();
     Ccont->CDBC_rule = p;
-    Ccont->CDBC_ppE = ppEntry;
+    Ccont->CDBC_ppE  = ppEntry;
 
     SET_CONTINUATION_HANDLER(Ccont, &CongestionDBCont::get_congest_entry);
     eventProcessor.schedule_in(Ccont, SCHEDULE_CONGEST_CONT_INTERVAL, ET_NET);
@@ -529,11 +529,11 @@ get_congest_list(Continuation *cont, MIOBuffer *buffer, int format)
       } else {
         /* we did not get the lock, schedule it */
         CongestionDBCont *CCcont = CongestionDBContAllocator.alloc();
-        CCcont->CDBC_pid = i;
-        CCcont->CDBC_buf = buffer;
-        CCcont->m_action = cont;
-        CCcont->mutex = cont->mutex;
-        CCcont->CDBC_lf = format;
+        CCcont->CDBC_pid         = i;
+        CCcont->CDBC_buf         = buffer;
+        CCcont->m_action         = cont;
+        CCcont->mutex            = cont->mutex;
+        CCcont->CDBC_lf          = format;
         SET_CONTINUATION_HANDLER(CCcont, &CongestionDBCont::get_congest_list);
         eventProcessor.schedule_in(CCcont, SCHEDULE_CONGEST_CONT_INTERVAL, ET_NET);
         return &CCcont->m_action;
@@ -589,9 +589,9 @@ remove_congested_entry(char *buf, MIOBuffer *out_buffer)
     remove_congested_entry(key);
     len = snprintf(msg, MSG_LEN, "key %" PRIu64 " removed\n", key);
   } else if (strncasecmp(buf, "host=", 5) == 0) {
-    char *p = buf + 5;
+    char *p      = buf + 5;
     char *prefix = strchr(p, '/');
-    int prelen = 0;
+    int prelen   = 0;
     if (prefix) {
       *prefix = '\0';
       prefix++;
@@ -604,9 +604,9 @@ remove_congested_entry(char *buf, MIOBuffer *out_buffer)
     IpEndpoint ip;
     memset(&ip, 0, sizeof(ip));
 
-    char *p = buf + 3;
+    char *p      = buf + 3;
     char *prefix = strchr(p, '/');
-    int prelen = 0;
+    int prelen   = 0;
     if (prefix) {
       *prefix = '\0';
       prefix++;

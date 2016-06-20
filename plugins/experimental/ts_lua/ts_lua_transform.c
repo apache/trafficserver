@@ -27,7 +27,7 @@ ts_lua_transform_entry(TSCont contp, TSEvent ev, void *edata)
   TSVIO input_vio;
   ts_lua_http_transform_ctx *transform_ctx;
 
-  event = (int)ev;
+  event         = (int)ev;
   transform_ctx = (ts_lua_http_transform_ctx *)TSContDataGet(contp);
 
   if (TSVConnClosedGet(contp)) {
@@ -77,14 +77,14 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
   lua_State *L;
   TSMutex mtxp;
 
-  ci = &transform_ctx->cinfo;
+  ci  = &transform_ctx->cinfo;
   crt = &ci->routine;
 
   mtxp = crt->mctx->mutexp;
-  L = crt->lua;
+  L    = crt->lua;
 
   output_conn = TSTransformOutputVConnGet(contp);
-  input_vio = TSVConnWriteVIOGet(contp);
+  input_vio   = TSVConnWriteVIOGet(contp);
 
   if (!TSVIOBufferGet(input_vio)) {
     if (transform_ctx->output.vio) {
@@ -103,13 +103,13 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
     transform_ctx->reserved.buffer = TSIOBufferCreate();
     transform_ctx->reserved.reader = TSIOBufferReaderAlloc(transform_ctx->reserved.buffer);
 
-    transform_ctx->upstream_bytes = TSVIONBytesGet(input_vio);
+    transform_ctx->upstream_bytes   = TSVIONBytesGet(input_vio);
     transform_ctx->downstream_bytes = INT64_MAX;
   }
 
-  input_avail = TSIOBufferReaderAvail(input_reader);
+  input_avail   = TSIOBufferReaderAvail(input_reader);
   upstream_done = TSVIONDoneGet(input_vio);
-  toread = TSVIONTodoGet(input_vio);
+  toread        = TSVIONTodoGet(input_vio);
 
   if (toread <= input_avail) { // upstream finished
     eos = 1;
@@ -127,7 +127,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
   }
 
   write_down = 0;
-  towrite = TSIOBufferReaderAvail(transform_ctx->reserved.reader);
+  towrite    = TSIOBufferReaderAvail(transform_ctx->reserved.reader);
 
   TSMutexLock(mtxp);
   ts_lua_set_cont_info(L, ci);
@@ -143,7 +143,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
     if (towrite == 0)
       break;
 
-    blk = TSIOBufferReaderStart(transform_ctx->reserved.reader);
+    blk   = TSIOBufferReaderStart(transform_ctx->reserved.reader);
     start = TSIOBufferBlockReadStart(blk, transform_ctx->reserved.reader, &blk_len);
 
     lua_pushlightuserdata(L, transform_ctx);
@@ -166,7 +166,7 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
     }
 
   launch:
-    rc = lua_resume(L, n);
+    rc  = lua_resume(L, n);
     top = lua_gettop(L);
 
     switch (rc) {
@@ -179,16 +179,16 @@ ts_lua_transform_handler(TSCont contp, ts_lua_http_transform_ctx *transform_ctx,
         ret = lua_tointeger(L, -1); /* 0 is not finished, 1 is finished */
         res = lua_tolstring(L, -2, &res_len);
       } else { // what hells code are you writing ?
-        ret = 0;
-        res = NULL;
+        ret     = 0;
+        res     = NULL;
         res_len = 0;
       }
       break;
 
     default: // coroutine failed
       TSError("[ts_lua] lua_resume failed: %s", lua_tostring(L, -1));
-      ret = 1;
-      res = NULL;
+      ret     = 1;
+      res     = NULL;
       res_len = 0;
       break;
     }

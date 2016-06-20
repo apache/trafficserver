@@ -69,14 +69,14 @@ BgFetchConfig::readConfig(const char *config_file)
     }
 
     char *savePtr = NULL;
-    char *cfg = strtok_r(buffer, "\n\r\n", &savePtr);
+    char *cfg     = strtok_r(buffer, "\n\r\n", &savePtr);
 
     if (NULL != cfg) {
       TSDebug(PLUGIN_NAME, "setting background_fetch exclusion criterion based on string: %s", cfg);
-      char *cfg_type = strtok_r(buffer, " ", &savePtr);
-      char *cfg_name = NULL;
+      char *cfg_type  = strtok_r(buffer, " ", &savePtr);
+      char *cfg_name  = NULL;
       char *cfg_value = NULL;
-      bool exclude = false;
+      bool exclude    = false;
 
       if (cfg_type) {
         if (!strcmp(cfg_type, "exclude")) {

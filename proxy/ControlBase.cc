@@ -141,9 +141,9 @@ TimeMod::make(char *value, char const **error)
 const char *
 TimeMod::timeOfDayToSeconds(const char *time_str, time_t *seconds)
 {
-  int hour = 0;
-  int min = 0;
-  int sec = 0;
+  int hour   = 0;
+  int min    = 0;
+  int sec    = 0;
   time_t tmp = 0;
 
   // coverity[secure_coding]
@@ -327,7 +327,7 @@ SrcIPMod::make(char *value, char const **error)
 {
   SrcIPMod tmp;
   SrcIPMod *zret = 0;
-  *error = ExtractIpRange(value, &tmp.start_addr.sa, &tmp.end_addr.sa);
+  *error         = ExtractIpRange(value, &tmp.start_addr.sa, &tmp.end_addr.sa);
 
   if (!*error)
     zret = new SrcIPMod(tmp);
@@ -387,7 +387,7 @@ SchemeMod *
 SchemeMod::make(char *value, char const **error)
 {
   SchemeMod *zret = 0;
-  int scheme = hdrtoken_tokenize(value, strlen(value));
+  int scheme      = hdrtoken_tokenize(value, strlen(value));
   if (scheme < 0) {
     *error = "Unknown scheme";
   } else {
@@ -534,7 +534,7 @@ PrefixMod::check(HttpRequestData *req) const
 {
   int path_len;
   char const *path = req->hdr->url_get()->path_get(&path_len);
-  bool zret = path_len >= static_cast<int>(text.size()) && 0 == memcmp(path, text.data(), text.size());
+  bool zret        = path_len >= static_cast<int>(text.size()) && 0 == memcmp(path, text.data(), text.size());
   /*
     Debug("cache_control", "Prefix check: URL=%0.*s Mod=%0.*s Z=%s",
       path_len, path, text.size(), text.data(),
@@ -721,7 +721,7 @@ char const *
 ControlBase::getSchemeModText() const
 {
   char const *zret = 0;
-  Modifier *mod = this->findModOfType(Modifier::MOD_SCHEME);
+  Modifier *mod    = this->findModOfType(Modifier::MOD_SCHEME);
   if (mod)
     zret = static_cast<SchemeMod *>(mod)->getWksText();
   return zret;
@@ -769,7 +769,7 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
 {
   // Variables for error processing
   const char *errBuf = NULL;
-  mod_errors err = ME_UNKNOWN;
+  mod_errors err     = ME_UNKNOWN;
 
   int n_elts = line_info->num_el; // Element count for line.
 

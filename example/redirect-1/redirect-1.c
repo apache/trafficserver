@@ -102,7 +102,7 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
   /*
    * Create the local copies of the global coupled stats:
    */
-  local_requests_all = INKStatCoupledLocalAdd(local_request_outcomes, "requests.all.local", INKSTAT_TYPE_FLOAT);
+  local_requests_all       = INKStatCoupledLocalAdd(local_request_outcomes, "requests.all.local", INKSTAT_TYPE_FLOAT);
   local_requests_redirects = INKStatCoupledLocalAdd(local_request_outcomes, "requests.redirects.local", INKSTAT_TYPE_INT64);
   local_requests_unchanged = INKStatCoupledLocalAdd(local_request_outcomes, "requests.unchanged.local", INKSTAT_TYPE_INT64);
 
@@ -258,21 +258,21 @@ void
 init_stats(void)
 {
   /* noncoupled: */
-  method_count_redirected_connect = INKStatCreate("method.count.redirected.connect", INKSTAT_TYPE_INT64);
-  method_count_redirected_delete = INKStatCreate("method.count.redirected.delete", INKSTAT_TYPE_INT64);
-  method_count_redirected_get = INKStatCreate("method.count.redirected.get", INKSTAT_TYPE_INT64);
-  method_count_redirected_head = INKStatCreate("method.count.redirected.head", INKSTAT_TYPE_FLOAT);
+  method_count_redirected_connect   = INKStatCreate("method.count.redirected.connect", INKSTAT_TYPE_INT64);
+  method_count_redirected_delete    = INKStatCreate("method.count.redirected.delete", INKSTAT_TYPE_INT64);
+  method_count_redirected_get       = INKStatCreate("method.count.redirected.get", INKSTAT_TYPE_INT64);
+  method_count_redirected_head      = INKStatCreate("method.count.redirected.head", INKSTAT_TYPE_FLOAT);
   method_count_redirected_icp_query = INKStatCreate("method.count.redirected.icp_query", INKSTAT_TYPE_FLOAT);
-  method_count_redirected_options = INKStatCreate("method.count.redirected.options", INKSTAT_TYPE_INT64);
-  method_count_redirected_post = INKStatCreate("method.count.redirected.post", INKSTAT_TYPE_INT64);
-  method_count_redirected_purge = INKStatCreate("method.count.redirected.purge", INKSTAT_TYPE_INT64);
-  method_count_redirected_put = INKStatCreate("method.count.redirected.put", INKSTAT_TYPE_INT64);
-  method_count_redirected_trace = INKStatCreate("method.count.redirected.trace", INKSTAT_TYPE_INT64);
-  method_count_redirected_unknown = INKStatCreate("method.count.redirected.unknown", INKSTAT_TYPE_INT64);
+  method_count_redirected_options   = INKStatCreate("method.count.redirected.options", INKSTAT_TYPE_INT64);
+  method_count_redirected_post      = INKStatCreate("method.count.redirected.post", INKSTAT_TYPE_INT64);
+  method_count_redirected_purge     = INKStatCreate("method.count.redirected.purge", INKSTAT_TYPE_INT64);
+  method_count_redirected_put       = INKStatCreate("method.count.redirected.put", INKSTAT_TYPE_INT64);
+  method_count_redirected_trace     = INKStatCreate("method.count.redirected.trace", INKSTAT_TYPE_INT64);
+  method_count_redirected_unknown   = INKStatCreate("method.count.redirected.unknown", INKSTAT_TYPE_INT64);
 
   /* coupled: */
-  request_outcomes = INKStatCoupledGlobalCategoryCreate("request_outcomes");
-  requests_all = INKStatCoupledGlobalAdd(request_outcomes, "requests.all", INKSTAT_TYPE_FLOAT);
+  request_outcomes   = INKStatCoupledGlobalCategoryCreate("request_outcomes");
+  requests_all       = INKStatCoupledGlobalAdd(request_outcomes, "requests.all", INKSTAT_TYPE_FLOAT);
   requests_redirects = INKStatCoupledGlobalAdd(request_outcomes, "requests.redirects", INKSTAT_TYPE_INT64);
   requests_unchanged = INKStatCoupledGlobalAdd(request_outcomes, "requests.unchanged", INKSTAT_TYPE_INT64);
 }
@@ -332,8 +332,8 @@ TSPluginInit(int argc, const char *argv[])
   int uri_len;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "redirect-1";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "redirect-1";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -348,7 +348,7 @@ TSPluginInit(int argc, const char *argv[])
      */
 
     url_redirect = TSstrdup(argv[2]);
-    uri_len = strlen(prefix) + strlen(url_redirect) + 1;
+    uri_len      = strlen(prefix) + strlen(url_redirect) + 1;
     uri_redirect = TSmalloc(uri_len);
     TSstrlcpy(uri_redirect, prefix, uri_len);
     TSstrlcat(uri_redirect, url_redirect, uri_len);

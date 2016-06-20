@@ -206,7 +206,7 @@ AtsRewriteDriverFactory::StartThreads()
     CHECK(false) << "threads already started";
   }
   SchedulerThread *thread = new SchedulerThread(thread_system(), scheduler());
-  bool ok = thread->Start();
+  bool ok                 = thread->Start();
   CHECK(ok) << "Unable to start scheduler thread";
   defer_cleanup(thread->MakeDeleter());
   threads_started_ = true;

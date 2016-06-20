@@ -35,18 +35,18 @@ NetProcessor::AcceptOptions::reset()
 {
   local_port = 0;
   local_ip.invalidate();
-  accept_threads = -1;
-  ip_family = AF_INET;
-  etype = ET_NET;
-  f_callback_on_open = false;
-  localhost_only = false;
-  frequent_accept = true;
-  backdoor = false;
-  recv_bufsize = 0;
-  send_bufsize = 0;
-  sockopt_flags = 0;
-  packet_mark = 0;
-  packet_tos = 0;
+  accept_threads        = -1;
+  ip_family             = AF_INET;
+  etype                 = ET_NET;
+  f_callback_on_open    = false;
+  localhost_only        = false;
+  frequent_accept       = true;
+  backdoor              = false;
+  recv_bufsize          = 0;
+  send_bufsize          = 0;
+  sockopt_flags         = 0;
+  packet_mark           = 0;
+  packet_tos            = 0;
   f_inbound_transparent = false;
   return *this;
 }
@@ -85,9 +85,9 @@ Action *
 UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions const &opt)
 {
   EventType upgraded_etype = opt.etype; // setEtype requires non-const ref.
-  ProxyMutex *mutex = this_ethread()->mutex.get();
-  int accept_threads = opt.accept_threads; // might be changed.
-  IpEndpoint accept_ip;                    // local binding address.
+  ProxyMutex *mutex        = this_ethread()->mutex.get();
+  int accept_threads       = opt.accept_threads; // might be changed.
+  IpEndpoint accept_ip;                          // local binding address.
   char thr_name[MAX_THREAD_NAME_LENGTH];
 
   NetAccept *na = createNetAccept();
@@ -122,23 +122,23 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
     Debug("http_tproxy", "Marking accept server %p on port %d as inbound transparent", na, opt.local_port);
   }
 
-  int should_filter_int = 0;
+  int should_filter_int         = 0;
   na->server.http_accept_filter = false;
   REC_ReadConfigInteger(should_filter_int, "proxy.config.net.defer_accept");
   if (should_filter_int > 0 && opt.etype == ET_NET)
     na->server.http_accept_filter = true;
 
-  na->action_ = new NetAcceptAction();
-  *na->action_ = cont;
-  na->action_->server = &na->server;
+  na->action_          = new NetAcceptAction();
+  *na->action_         = cont;
+  na->action_->server  = &na->server;
   na->callback_on_open = opt.f_callback_on_open;
-  na->recv_bufsize = opt.recv_bufsize;
-  na->send_bufsize = opt.send_bufsize;
-  na->sockopt_flags = opt.sockopt_flags;
-  na->packet_mark = opt.packet_mark;
-  na->packet_tos = opt.packet_tos;
-  na->etype = upgraded_etype;
-  na->backdoor = opt.backdoor;
+  na->recv_bufsize     = opt.recv_bufsize;
+  na->send_bufsize     = opt.send_bufsize;
+  na->sockopt_flags    = opt.sockopt_flags;
+  na->packet_mark      = opt.packet_mark;
+  na->packet_tos       = opt.packet_tos;
+  na->etype            = upgraded_etype;
+  na->backdoor         = opt.backdoor;
   if (na->callback_on_open)
     na->mutex = cont->mutex;
   if (opt.frequent_accept) { // true
@@ -198,7 +198,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
 Action *
 UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target, NetVCOptions *opt)
 {
-  EThread *t = cont->mutex->thread_holding;
+  EThread *t             = cont->mutex->thread_holding;
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
   if (opt)
@@ -222,11 +222,11 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   SocksEntry *socksEntry = NULL;
 
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
-  vc->id = net_next_connection_number();
+  vc->id          = net_next_connection_number();
   vc->submit_time = Thread::get_hrtime();
   vc->setSSLClientConnection(true);
   ats_ip_copy(&vc->server_addr, target);
-  vc->mutex = cont->mutex;
+  vc->mutex      = cont->mutex;
   Action *result = &vc->action_;
 
   if (using_socks) {
@@ -235,14 +235,14 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
     socksEntry = socksAllocator.alloc();
     socksEntry->init(cont->mutex, vc, opt->socks_support, opt->socks_version); /*XXXX remove last two args */
     socksEntry->action_ = cont;
-    cont = socksEntry;
+    cont                = socksEntry;
     if (!ats_is_ip(&socksEntry->server_addr)) {
       socksEntry->lerrno = ESOCK_NO_SOCK_SERVER_CONN;
       socksEntry->free();
       return ACTION_RESULT_DONE;
     }
     ats_ip_copy(&vc->server_addr, &socksEntry->server_addr);
-    result = &socksEntry->action_;
+    result      = &socksEntry->action_;
     vc->action_ = socksEntry;
   } else {
     Debug("Socks", "Not Using Socks %d ", socks_conf_stuff->socks_needed);
@@ -310,7 +310,7 @@ struct CheckConnect : public Continuation {
       int sl, ret;
       socklen_t sz;
       if (!action_.cancelled) {
-        sz = sizeof(int);
+        sz  = sizeof(int);
         ret = getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, (char *)&sl, &sz);
         if (!ret && sl == 0) {
           Debug("iocore_net_connect", "connection established");
@@ -320,7 +320,7 @@ struct CheckConnect : public Continuation {
           // write_disable(get_NetHandler(this_ethread()), vc);
           /* clean up vc fields */
           vc->write.vio.nbytes = 0;
-          vc->write.vio.op = VIO::NONE;
+          vc->write.vio.op     = VIO::NONE;
           vc->write.vio.buffer.clear();
 
           action_.continuation->handleEvent(NET_EVENT_OPEN, vc);
@@ -367,7 +367,7 @@ struct CheckConnect : public Continuation {
   explicit CheckConnect(Ptr<ProxyMutex> &m) : Continuation(m.get()), connect_status(-1), recursion(0), timeout(0)
   {
     SET_HANDLER(&CheckConnect::handle_connect);
-    buf = new_empty_MIOBuffer(1);
+    buf    = new_empty_MIOBuffer(1);
     reader = buf->alloc_reader();
   }
 
@@ -396,14 +396,14 @@ UnixNetProcessor::start(int, size_t)
   EventType etype = ET_NET;
 
   netHandler_offset = eventProcessor.allocate(sizeof(NetHandler));
-  pollCont_offset = eventProcessor.allocate(sizeof(PollCont));
+  pollCont_offset   = eventProcessor.allocate(sizeof(PollCont));
 
   // etype is ET_NET for netProcessor
   // and      ET_SSL for sslNetProcessor
   upgradeEtype(etype);
 
   n_netthreads = eventProcessor.n_threads_for_type[etype];
-  netthreads = eventProcessor.eventthread[etype];
+  netthreads   = eventProcessor.eventthread[etype];
   for (int i = 0; i < n_netthreads; ++i) {
     initialize_thread_for_net(netthreads[i]);
     extern void initialize_thread_for_http_sessions(EThread * thread, int thread_index);
@@ -470,7 +470,7 @@ UnixNetProcessor::allocate_vc(EThread *t)
 }
 
 struct socks_conf_struct *NetProcessor::socks_conf_stuff = NULL;
-int NetProcessor::accept_mss = 0;
+int NetProcessor::accept_mss                             = 0;
 
 UnixNetProcessor unix_netProcessor;
 NetProcessor &netProcessor = unix_netProcessor;

@@ -461,7 +461,7 @@ SocketManager::get_sndbuf_size(int s)
   int bszsz, r;
 
   bszsz = sizeof(bsz);
-  r = safe_getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&bsz, &bszsz);
+  r     = safe_getsockopt(s, SOL_SOCKET, SO_SNDBUF, (char *)&bsz, &bszsz);
   return (r == 0 ? bsz : r);
 }
 
@@ -472,7 +472,7 @@ SocketManager::get_rcvbuf_size(int s)
   int bszsz, r;
 
   bszsz = sizeof(bsz);
-  r = safe_getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&bsz, &bszsz);
+  r     = safe_getsockopt(s, SOL_SOCKET, SO_RCVBUF, (char *)&bsz, &bszsz);
   return (r == 0 ? bsz : r);
 }
 

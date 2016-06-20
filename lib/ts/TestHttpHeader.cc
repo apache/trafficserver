@@ -187,8 +187,8 @@ TestHttpHeader()
 {
   HttpHeader h;
   h.m_message_type = HTTP_MESSAGE_TYPE_REQUEST;
-  h.m_method = HTTP_METHOD_GET;
-  h.m_version = HttpVersion(1, 0);
+  h.m_method       = HTTP_METHOD_GET;
+  h.m_version      = HttpVersion(1, 0);
 
   test_add_fields(&h);
 

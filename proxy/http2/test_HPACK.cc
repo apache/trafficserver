@@ -37,7 +37,7 @@ using namespace std;
 AppVersionInfo appVersionInfo;
 
 static int cmd_disable_freelist = 0;
-static char cmd_input_dir[512] = "";
+static char cmd_input_dir[512]  = "";
 static char cmd_output_dir[512] = "";
 
 static const ArgumentDescription argument_descriptions[] = {
@@ -49,14 +49,14 @@ static const ArgumentDescription argument_descriptions[] = {
 
 const static uint32_t INITIAL_TABLE_SIZE = 4096;
 
-string input_dir = "./hpack-tests/";
+string input_dir  = "./hpack-tests/";
 string output_dir = "./hpack-tests/results/";
 string filename_in;
 string filename_out;
-int offset_in = input_dir.length() + 6;
+int offset_in  = input_dir.length() + 6;
 int offset_out = output_dir.length() + 6;
-int first = 0;
-int last = 0;
+int first      = 0;
+int last       = 0;
 
 int
 unpack(string &packed, uint8_t *unpacked)
@@ -64,8 +64,8 @@ unpack(string &packed, uint8_t *unpacked)
   int n = packed.length() / 2;
   int u, l;
   for (int i = 0; i < n; ++i) {
-    u = packed[i * 2];
-    l = packed[i * 2 + 1];
+    u           = packed[i * 2];
+    l           = packed[i * 2 + 1];
     unpacked[i] = (((u >= 'a') ? u - 'a' + 10 : u - '0') << 4) + ((l >= 'a') ? l - 'a' + 10 : l - '0');
   }
   return n;
@@ -107,8 +107,8 @@ parse_line(string &line, int offset, string &name, string &value)
   int eon = line.find("\": \"", son); // end of name
   int sov = eon + 4;                  // start of value
   int eov = line.find_last_of('"');   // end of value
-  name = line.substr(son, eon - son);
-  value = line.substr(sov, eov - sov);
+  name    = line.substr(son, eon - son);
+  value   = line.substr(sov, eov - sov);
   unescape(value);
 }
 
@@ -263,7 +263,7 @@ test_encoding(const string filename_in, const string filename_out)
         ++seqnum;
         decoded.fields_clear();
         original.fields_clear();
-        name = "";
+        name  = "";
         value = "";
         ofs << "    {" << endl;
         ofs << "      \"seqnum\": " << seqnum << "," << endl;
@@ -316,10 +316,10 @@ test_encoding(const string filename_in, const string filename_out)
 int
 prepare()
 {
-  filename_in = input_dir + "story_00.json";
+  filename_in  = input_dir + "story_00.json";
   filename_out = output_dir + "story_00.json";
-  offset_in = input_dir.length() + 6;
-  offset_out = output_dir.length() + 6;
+  offset_in    = input_dir.length() + 6;
+  offset_out   = output_dir.length() + 6;
 
   struct dirent *d;
   DIR *dir = opendir(input_dir.c_str());
@@ -353,7 +353,7 @@ REGRESSION_TEST(HPACK_Decoding)(RegressionTest *t, int /* atype ATS_UNUSED */, i
   for (int i = first; i < last; ++i) {
     filename_in[offset_in + 0] = '0' + i / 10;
     filename_in[offset_in + 1] = '0' + i % 10;
-    result = test_decoding(filename_in);
+    result                     = test_decoding(filename_in);
     box.check(result == -1, "Story %d sequence %d failed.", i, result);
     if (result != -1) {
       break;
@@ -369,11 +369,11 @@ REGRESSION_TEST(HPACK_Encoding)(RegressionTest *t, int /* atype ATS_UNUSED */, i
   int result = -1;
 
   for (int i = first; i < last; ++i) {
-    filename_in[offset_in + 0] = '0' + i / 10;
-    filename_in[offset_in + 1] = '0' + i % 10;
+    filename_in[offset_in + 0]   = '0' + i / 10;
+    filename_in[offset_in + 1]   = '0' + i % 10;
     filename_out[offset_out + 0] = '0' + i / 10;
     filename_out[offset_out + 1] = '0' + i % 10;
-    result = test_encoding(filename_in, filename_out);
+    result                       = test_encoding(filename_in, filename_out);
     box.check(result == -1, "Story %d sequence %d failed.", i, result);
     if (result != -1) {
       break;

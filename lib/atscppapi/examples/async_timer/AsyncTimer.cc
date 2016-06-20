@@ -60,17 +60,17 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_AsyncTimer", "apache", "dev@trafficserver.apache.org");
-  int period_in_ms = 1000;
+  int period_in_ms           = 1000;
   TimerEventReceiver *timer1 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms);
   TS_DEBUG(TAG, "Created periodic timer %p with initial period 0, regular period %d and max instances 0", timer1, period_in_ms);
 
-  int initial_period_in_ms = 100;
+  int initial_period_in_ms   = 100;
   TimerEventReceiver *timer2 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms, initial_period_in_ms);
   TS_DEBUG(TAG, "Created periodic timer %p with initial period %d, regular period %d and max instances 0", timer2,
            initial_period_in_ms, period_in_ms);
 
-  initial_period_in_ms = 200;
-  int max_instances = 10;
+  initial_period_in_ms       = 200;
+  int max_instances          = 10;
   TimerEventReceiver *timer3 = new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms, initial_period_in_ms, max_instances);
   TS_DEBUG(TAG, "Created periodic timer %p with initial period %d, regular period %d and max instances %d", timer3,
            initial_period_in_ms, period_in_ms, max_instances);
@@ -79,7 +79,7 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
   TS_DEBUG(TAG, "Created one-off timer %p with period %d", timer4, period_in_ms);
 
   initial_period_in_ms = 0;
-  max_instances = 5;
+  max_instances        = 5;
   TimerEventReceiver *timer5 =
     new TimerEventReceiver(AsyncTimer::TYPE_PERIODIC, period_in_ms, initial_period_in_ms, max_instances, true /* cancel */);
   TS_DEBUG(TAG, "Created canceling timer %p with initial period %d, regular period %d and max instances %d", timer5,

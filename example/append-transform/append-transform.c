@@ -64,7 +64,7 @@ my_data_alloc()
   data = (MyData *)TSmalloc(sizeof(MyData));
   TSReleaseAssert(data);
 
-  data->output_vio = NULL;
+  data->output_vio    = NULL;
   data->output_buffer = NULL;
   data->output_reader = NULL;
   data->append_needed = 1;
@@ -110,10 +110,10 @@ handle_transform(TSCont contp)
     if (towrite != INT64_MAX) {
       towrite += append_buffer_length;
     }
-    data = my_data_alloc();
+    data                = my_data_alloc();
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
-    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, towrite);
+    data->output_vio    = TSVConnWrite(output_conn, contp, data->output_reader, towrite);
     TSContDataSet(contp, data);
   }
 
@@ -322,12 +322,12 @@ load(const char *filename)
     return 0;
   }
 
-  append_buffer = TSIOBufferCreate();
+  append_buffer        = TSIOBufferCreate();
   append_buffer_reader = TSIOBufferReaderAlloc(append_buffer);
 
   for (;;) {
     blk = TSIOBufferStart(append_buffer);
-    p = TSIOBufferBlockWriteStart(blk, &avail);
+    p   = TSIOBufferBlockWriteStart(blk, &avail);
 
     err = TSfread(fp, p, avail);
     if (err > 0) {
@@ -348,8 +348,8 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "append-transform";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "append-transform";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

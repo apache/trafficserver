@@ -32,7 +32,7 @@ using namespace EsiLib;
 EsiGunzip::EsiGunzip(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
   : ComponentBase(debug_tag, debug_func, error_func), _downstream_length(0), _total_data_length(0)
 {
-  _init = false;
+  _init    = false;
   _success = true;
 }
 
@@ -56,10 +56,10 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
   BufferList buf_list;
 
   if (!_init) {
-    _zstrm.zalloc = Z_NULL;
-    _zstrm.zfree = Z_NULL;
-    _zstrm.opaque = Z_NULL;
-    _zstrm.next_in = 0;
+    _zstrm.zalloc   = Z_NULL;
+    _zstrm.zfree    = Z_NULL;
+    _zstrm.opaque   = Z_NULL;
+    _zstrm.next_in  = 0;
     _zstrm.avail_in = 0;
 
     if (inflateInit2(&_zstrm, MAX_WBITS + 16) != Z_OK) {
@@ -71,7 +71,7 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
   }
 
   if (data && (data_len > 0)) {
-    _zstrm.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data));
+    _zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(data));
     _zstrm.avail_in = data_len;
     char raw_buf[BUF_SIZE];
     int inflate_result;
@@ -79,10 +79,10 @@ EsiGunzip::stream_decode(const char *data, int data_len, std::string &udata)
     int32_t curr_buf_size;
 
     do {
-      _zstrm.next_out = reinterpret_cast<Bytef *>(raw_buf);
+      _zstrm.next_out  = reinterpret_cast<Bytef *>(raw_buf);
       _zstrm.avail_out = BUF_SIZE;
-      inflate_result = inflate(&_zstrm, Z_SYNC_FLUSH);
-      curr_buf_size = -1;
+      inflate_result   = inflate(&_zstrm, Z_SYNC_FLUSH);
+      curr_buf_size    = -1;
       if ((inflate_result == Z_OK) || (inflate_result == Z_BUF_ERROR)) {
         curr_buf_size = BUF_SIZE - _zstrm.avail_out;
       } else if (inflate_result == Z_STREAM_END) {
@@ -123,6 +123,6 @@ EsiGunzip::~EsiGunzip()
 {
   _downstream_length = 0;
   _total_data_length = 0;
-  _init = false;
-  _success = true;
+  _init              = false;
+  _success           = true;
 }

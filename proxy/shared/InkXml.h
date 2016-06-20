@@ -202,7 +202,7 @@ public:
   char *
   dequeue()
   {
-    char *ret = NULL;
+    char *ret   = NULL;
     ListElem *e = m_list.dequeue();
 
     if (e) {

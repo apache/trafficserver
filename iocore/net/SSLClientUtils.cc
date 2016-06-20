@@ -53,8 +53,8 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 
   SSLDebug("Entered verify cb");
   depth = X509_STORE_CTX_get_error_depth(ctx);
-  cert = X509_STORE_CTX_get_current_cert(ctx);
-  err = X509_STORE_CTX_get_error(ctx);
+  cert  = X509_STORE_CTX_get_current_cert(ctx);
+  err   = X509_STORE_CTX_get_error(ctx);
 
   if (!preverify_ok) {
     // Don't bother to check the hostname if we failed openssl's verification
@@ -69,7 +69,7 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
    * Retrieve the pointer to the SSL of the connection currently treated
    * and the application specific data stored into the SSL object.
    */
-  ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  ssl                      = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
   SSLNetVConnection *netvc = static_cast<SSLNetVConnection *>(SSL_get_ex_data(ssl, ssl_client_data_index));
   if (netvc != NULL) {
     // Match SNI if present
@@ -101,14 +101,14 @@ SSL_CTX *
 SSLInitClientContext(const SSLConfigParams *params)
 {
   ink_ssl_method_t meth = NULL;
-  SSL_CTX *client_ctx = NULL;
-  char *clientKeyPtr = NULL;
+  SSL_CTX *client_ctx   = NULL;
+  char *clientKeyPtr    = NULL;
 
   // Note that we do not call RAND_seed() explicitly here, we depend on OpenSSL
   // to do the seeding of the PRNG for us. This is the case for all platforms that
   // has /dev/urandom for example.
 
-  meth = SSLv23_client_method();
+  meth       = SSLv23_client_method();
   client_ctx = SSL_CTX_new(meth);
 
   // disable selected protocols

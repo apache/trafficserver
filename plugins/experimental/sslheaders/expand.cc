@@ -71,8 +71,8 @@ static void
 x509_expand_signature(X509 *x509, BIO *bio)
 {
   ASN1_BIT_STRING *sig = x509->signature;
-  const char *ptr = (const char *)sig->data;
-  const char *end = ptr + sig->length;
+  const char *ptr      = (const char *)sig->data;
+  const char *end      = ptr + sig->length;
 
   // The canonical OpenSSL way to format the signature seems to be
   // X509_signature_dump(). However that separates each byte with a ':', which is

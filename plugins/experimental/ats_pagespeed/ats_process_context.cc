@@ -43,9 +43,9 @@ AtsProcessContext::AtsProcessContext() : ProcessContext()
   driver_factory_->Init();
   server_context_ = driver_factory()->MakeAtsServerContext();
 
-  AtsRewriteOptions *root_options_ = (AtsRewriteOptions *)driver_factory_->default_options();
+  AtsRewriteOptions *root_options_  = (AtsRewriteOptions *)driver_factory_->default_options();
   AtsRewriteOptions *server_options = root_options_->Clone();
-  AtsRewriteOptions *options = new AtsRewriteOptions(driver_factory_->thread_system());
+  AtsRewriteOptions *options        = new AtsRewriteOptions(driver_factory_->thread_system());
   server_options->Merge(*options);
   delete options;
 
@@ -62,7 +62,7 @@ AtsProcessContext::AtsProcessContext() : ProcessContext()
   // Statistics* statistics =
   //    driver_factory_->MakeGlobalSharedMemStatistics(*(SystemRewriteOptions*)server_context_->global_options());
   GoogleString error_message;
-  int error_index = -1;
+  int error_index               = -1;
   Statistics *global_statistics = NULL;
   driver_factory_.get()->PostConfig(server_contexts, &error_message, &error_index, &global_statistics);
   if (error_index != -1) {

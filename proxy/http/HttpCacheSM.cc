@@ -126,7 +126,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
       // redirect follow in progress, close the previous cache_read_vc
       close_read();
     }
-    open_read_cb = true;
+    open_read_cb  = true;
     cache_read_vc = (CacheVConnection *)data;
     master_sm->handleEvent(event, data);
     break;
@@ -182,7 +182,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     HTTP_INCREMENT_DYN_STAT(http_current_cache_connections_stat);
     ink_assert(cache_write_vc == NULL);
     cache_write_vc = (CacheVConnection *)data;
-    open_write_cb = true;
+    open_write_cb  = true;
     master_sm->handleEvent(event, data);
     break;
 
@@ -249,7 +249,7 @@ HttpCacheSM::do_cache_open_read(const HttpCacheKey &key)
   }
   // Initialising read-while-write-inprogress flag
   this->readwhilewrite_inprogress = false;
-  Action *action_handle = cacheProcessor.open_read(this, &key, master_sm->t_state.cache_control.cluster_cache_local,
+  Action *action_handle           = cacheProcessor.open_read(this, &key, master_sm->t_state.cache_control.cluster_cache_local,
                                                    this->read_request_hdr, this->read_config, this->read_pin_in_cache);
 
   if (action_handle != ACTION_RESULT_DONE) {
@@ -272,10 +272,10 @@ HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, CacheLoo
 {
   Action *act_return;
 
-  cache_key = *key;
-  lookup_url = url;
-  read_request_hdr = hdr;
-  read_config = params;
+  cache_key         = *key;
+  lookup_url        = url;
+  read_request_hdr  = hdr;
+  read_config       = params;
   read_pin_in_cache = pin_in_cache;
   ink_assert(pending_action == NULL);
   SET_HANDLER(&HttpCacheSM::state_cache_open_read);
@@ -283,7 +283,7 @@ HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, CacheLoo
   lookup_max_recursive++;
   current_lookup_level++;
   open_read_cb = false;
-  act_return = do_cache_open_read(cache_key);
+  act_return   = do_cache_open_read(cache_key);
   // the following logic is based on the assumption that the secnod
   // lookup won't happen if the HttpSM hasn't been called back for the
   // first lookup
@@ -322,9 +322,9 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   // this is no longer true for multiple cache lookup
   // ink_assert(url == lookup_url || lookup_url == NULL);
   ink_assert(request == read_request_hdr || read_request_hdr == NULL);
-  this->lookup_url = url;
+  this->lookup_url       = url;
   this->read_request_hdr = request;
-  cache_key = *key;
+  cache_key              = *key;
 
   // Make sure we are not stuck in a loop where the write
   //  fails but the retry read succeeds causing to issue

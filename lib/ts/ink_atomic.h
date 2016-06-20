@@ -114,7 +114,7 @@ ink_atomic_swap<int64_t>(pvint64 mem, int64_t value)
 {
   int64_t old;
   ink_mutex_acquire(&__global_death);
-  old = *mem;
+  old  = *mem;
   *mem = value;
   ink_mutex_release(&__global_death);
   return old;

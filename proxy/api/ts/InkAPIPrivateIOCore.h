@@ -36,7 +36,7 @@
 
 enum INKContInternalMagic_t {
   INKCONT_INTERN_MAGIC_ALIVE = 0x00009631,
-  INKCONT_INTERN_MAGIC_DEAD = 0xDEAD9631,
+  INKCONT_INTERN_MAGIC_DEAD  = 0xDEAD9631,
 };
 
 class INKContInternal : public DummyVConnection

@@ -129,8 +129,8 @@ mgmt_writeline(int soc, const char *data, int nbytes)
 int
 mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
 {
-  int err = 0;
-  char *p = buf;
+  int err        = 0;
+  char *p        = buf;
   int bytes_read = 0;
   while (bytes_to_read > 0) {
     err = read_socket(fd, p, bytes_to_read);
@@ -171,8 +171,8 @@ mgmt_read_pipe(int fd, char *buf, int bytes_to_read)
 int
 mgmt_write_pipe(int fd, char *buf, int bytes_to_write)
 {
-  int err = 0;
-  char *p = buf;
+  int err           = 0;
+  char *p           = buf;
   int bytes_written = 0;
   while (bytes_to_write > 0) {
     err = write_socket(fd, p, bytes_to_write);
@@ -467,9 +467,9 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
   // INKqa06739
   // Fetch the list of network interfaces
   // . from Stevens, Unix Network Prog., pg 434-435
-  ifbuf = 0;
+  ifbuf   = 0;
   lastlen = 0;
-  len = 128 * sizeof(struct ifreq); // initial buffer size guess
+  len     = 128 * sizeof(struct ifreq); // initial buffer size guess
   for (;;) {
     ifbuf = (char *)ats_malloc(len);
     memset(ifbuf, 0, len); // prevent UMRs
@@ -535,12 +535,12 @@ mgmt_sortipaddrs(int num, struct in_addr **list)
   unsigned long min;
   struct in_addr *entry, *tmp;
 
-  min = (list[0])->s_addr;
+  min   = (list[0])->s_addr;
   entry = list[0];
   while (i < num && (tmp = (struct in_addr *)list[i]) != NULL) {
     i++;
     if (min > tmp->s_addr) {
-      min = tmp->s_addr;
+      min   = tmp->s_addr;
       entry = tmp;
     }
   }

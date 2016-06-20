@@ -42,7 +42,7 @@ setup_client_request(HttpSM *sm, const char *scheme, const char *request)
 {
   init_sm(sm);
 
-  MIOBuffer *read_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
+  MIOBuffer *read_buffer        = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
   IOBufferReader *buffer_reader = read_buffer->alloc_reader();
   read_buffer->write(request, strlen(request));
 

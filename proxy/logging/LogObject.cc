@@ -102,7 +102,7 @@ LogObject::LogObject(const LogFormat *format, const char *log_dir, const char *b
     m_buffer_manager_idx(0)
 {
   ink_release_assert(format);
-  m_format = new LogFormat(*format);
+  m_format         = new LogFormat(*format);
   m_buffer_manager = new LogBufferManager[m_flush_threads];
 
   if (file_format == LOG_FILE_BINARY) {
@@ -140,7 +140,7 @@ LogObject::LogObject(LogObject &rhs)
     m_rolling_interval_sec(rhs.m_rolling_interval_sec),
     m_last_roll_time(rhs.m_last_roll_time)
 {
-  m_format = new LogFormat(*(rhs.m_format));
+  m_format         = new LogFormat(*(rhs.m_format));
   m_buffer_manager = new LogBufferManager[m_flush_threads];
 
   if (rhs.m_logFile) {
@@ -220,19 +220,19 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
   }; // remove dot at end of name
 
   const char *ext = 0;
-  int ext_len = 0;
+  int ext_len     = 0;
   if (i < 0) { // no extension, add one
     switch (file_format) {
     case LOG_FILE_ASCII:
-      ext = LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION;
+      ext     = LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION;
       ext_len = 4;
       break;
     case LOG_FILE_BINARY:
-      ext = LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION;
+      ext     = LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION;
       ext_len = 5;
       break;
     case LOG_FILE_PIPE:
-      ext = LOG_FILE_PIPE_OBJECT_FILENAME_EXTENSION;
+      ext     = LOG_FILE_PIPE_OBJECT_FILENAME_EXTENSION;
       ext_len = 5;
       break;
     default:
@@ -240,9 +240,9 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
     }
   }
 
-  int dir_len = (int)strlen(log_dir);
-  int basename_len = len + ext_len + 1;       // include null terminator
-  int total_len = dir_len + 1 + basename_len; // include '/'
+  int dir_len      = (int)strlen(log_dir);
+  int basename_len = len + ext_len + 1;          // include null terminator
+  int total_len    = dir_len + 1 + basename_len; // include '/'
 
   m_filename = (char *)ats_malloc(total_len);
   m_basename = (char *)ats_malloc(basename_len);
@@ -256,7 +256,7 @@ LogObject::generate_filenames(const char *log_dir, const char *basename, LogFile
     memcpy(&m_filename[dir_len + len], ext, ext_len);
     memcpy(&m_basename[len], ext, ext_len);
   }
-  m_filename[total_len - 1] = 0;
+  m_filename[total_len - 1]    = 0;
   m_basename[basename_len - 1] = 0;
 }
 
@@ -315,8 +315,8 @@ LogObject::add_loghost(LogHost *host, bool copy)
 uint64_t
 LogObject::compute_signature(LogFormat *format, char *filename, unsigned int flags)
 {
-  char *fl = format->fieldlist();
-  char *ps = format->printf_str();
+  char *fl           = format->fieldlist();
+  char *ps           = format->printf_str();
   uint64_t signature = 0;
 
   if (fl && ps && filename) {
@@ -399,8 +399,8 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
       SET_FREELIST_POINTER_VERSION(new_h, FREELIST_POINTER(h), FREELIST_VERSION(h) + 1);
       result = ink_atomic_cas(&m_log_buffer.data, h.data, new_h.data);
     } while (!result);
-    buffer = (LogBuffer *)FREELIST_POINTER(h);
-    result_code = buffer->checkout_write(write_offset, bytes_needed);
+    buffer           = (LogBuffer *)FREELIST_POINTER(h);
+    result_code      = buffer->checkout_write(write_offset, bytes_needed);
     bool decremented = false;
 
     switch (result_code) {
@@ -518,7 +518,7 @@ int
 LogObject::log(LogAccess *lad, const char *text_entry)
 {
   LogBuffer *buffer;
-  size_t offset = 0; // prevent warning
+  size_t offset       = 0; // prevent warning
   size_t bytes_needed = 0, bytes_used = 0;
 
   // log to a pipe even if space is exhausted since pipe uses no space
@@ -558,7 +558,7 @@ LogObject::log(LogAccess *lad, const char *text_entry)
     // step through each of the fields and update the LogField object
     // with the newly-marshalled data
     LogFieldList *fl = &m_format->m_field_list;
-    char *data_ptr = m_format->m_agg_marshal_space;
+    char *data_ptr   = m_format->m_agg_marshal_space;
     LogField *f;
     int64_t val;
     for (f = fl->first(); f; f = fl->next(f)) {
@@ -627,10 +627,10 @@ LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling
                           int rolling_size_mb)
 {
   if (!LogRollingEnabledIsValid((int)rolling_enabled)) {
-    m_rolling_enabled = Log::NO_ROLLING;
+    m_rolling_enabled      = Log::NO_ROLLING;
     m_rolling_interval_sec = 0;
-    m_rolling_offset_hr = 0;
-    m_rolling_size_mb = 0;
+    m_rolling_offset_hr    = 0;
+    m_rolling_size_mb      = 0;
     if (rolling_enabled != Log::NO_ROLLING) {
       Warning("Valid rolling_enabled values are %d to %d, invalid value "
               "(%d) specified for %s, rolling will be disabled for this file.",
@@ -669,8 +669,8 @@ LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling
       }
 
       m_rolling_offset_hr = rolling_offset_hr;
-      m_rolling_size_mb = 0; // it is safe to set it as 0, if we set SIZE rolling,
-                             // it will be updated later
+      m_rolling_size_mb   = 0; // it is safe to set it as 0, if we set SIZE rolling,
+                               // it will be updated later
     }
 
     if (rolling_enabled == Log::ROLL_ON_SIZE_ONLY || rolling_enabled == Log::ROLL_ON_TIME_OR_SIZE ||
@@ -694,8 +694,8 @@ LogObject::roll_files(long time_now)
     return 0;
 
   unsigned num_rolled = 0;
-  bool roll_on_time = false;
-  bool roll_on_size = false;
+  bool roll_on_time   = false;
+  bool roll_on_size   = false;
 
   if (!time_now)
     time_now = LogUtils::timestamp();
@@ -879,7 +879,7 @@ LogObjectManager::_manage_object(LogObject *log_object, bool is_api_object, int 
   }
 
   bool col_client = log_object->is_collation_client();
-  int retVal = _solve_internal_filename_conflicts(log_object, maxConflicts);
+  int retVal      = _solve_internal_filename_conflicts(log_object, maxConflicts);
 
   if (retVal == NO_FILENAME_CONFLICTS) {
     // check for external conflicts only if the object is not a collation
@@ -941,7 +941,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
   if (access(filename, F_OK)) {
     if (errno != ENOENT) {
       const char *msg = "Cannot access log file %s: %s";
-      const char *se = strerror(errno);
+      const char *se  = strerror(errno);
 
       Error(msg, filename, se);
       LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename, se);
@@ -955,7 +955,7 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
     bool conflicts = true;
 
     if (meta_info.file_open_successful()) {
-      bool got_sig = meta_info.get_log_object_signature(&signature);
+      bool got_sig     = meta_info.get_log_object_signature(&signature);
       uint64_t obj_sig = log_object->get_signature();
 
       if (got_sig && signature == obj_sig) {
@@ -998,11 +998,11 @@ LogObjectManager::_solve_filename_conflicts(LogObject *log_object, int maxConfli
             // an error happened while trying to get file info
             //
             const char *msg = "Cannot stat log file %s: %s";
-            char *se = strerror(errno);
+            char *se        = strerror(errno);
 
             Error(msg, filename, se);
             LogUtils::manager_alarm(LogUtils::LOG_ALARM_ERROR, msg, filename, se);
-            retVal = ERROR_DETERMINING_FILE_INFO;
+            retVal    = ERROR_DETERMINING_FILE_INFO;
             roll_file = false;
           } else {
             if (S_ISFIFO(s.st_mode)) {
@@ -1067,7 +1067,7 @@ LogObjectManager::_has_internal_filename_conflict(const char *filename, LogObjec
 int
 LogObjectManager::_solve_internal_filename_conflicts(LogObject *log_object, int maxConflicts, int fileNum)
 {
-  int retVal = NO_FILENAME_CONFLICTS;
+  int retVal           = NO_FILENAME_CONFLICTS;
   const char *filename = log_object->get_full_filename();
 
   if (_has_internal_filename_conflict(filename, _objects) || _has_internal_filename_conflict(filename, _APIobjects)) {
@@ -1300,7 +1300,7 @@ LogObjectManager::get_num_collation_clients() const
 int
 LogObjectManager::log(LogAccess *lad)
 {
-  int ret = Log::SKIP;
+  int ret           = Log::SKIP;
   ProxyMutex *mutex = this_thread()->mutex.get();
 
   for (unsigned i = 0; i < this->_objects.length(); i++) {

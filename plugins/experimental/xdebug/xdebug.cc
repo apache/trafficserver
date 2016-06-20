@@ -35,7 +35,7 @@ static struct {
 #define XHEADER_X_CACHE 0x0010u
 #define XHEADER_X_GENERATION 0x0020u
 
-static int XArgIndex = 0;
+static int XArgIndex             = 0;
 static TSCont XInjectHeadersCont = NULL;
 
 // Return the length of a string literal.
@@ -222,7 +222,7 @@ InjectMilestonesHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     TSHttpTxnMilestoneGet(txn, milestones[i].mstype, &time);
     if (time > 0) {
       double elapsed = (double)(time - epoch) / 1000000000.0;
-      int len = (int)snprintf(hdrval, sizeof(hdrval), "%s=%1.9lf", milestones[i].msname, elapsed);
+      int len        = (int)snprintf(hdrval, sizeof(hdrval), "%s=%1.9lf", milestones[i].msname, elapsed);
 
       TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, 0 /* idx */, hdrval, len) == TS_SUCCESS);
     }
@@ -237,7 +237,7 @@ done:
 static int
 XInjectResponseHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
+  TSHttpTxn txn     = (TSHttpTxn)edata;
   intptr_t xheaders = 0;
   TSMBuffer buffer;
   TSMLoc hdr;
@@ -279,7 +279,7 @@ done:
 static int
 XScanRequestHeaders(TSCont /* contp */, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
+  TSHttpTxn txn     = (TSHttpTxn)edata;
   intptr_t xheaders = 0;
   TSMLoc field, next;
   TSMBuffer buffer;
@@ -361,8 +361,8 @@ TSPluginInit(int argc, const char *argv[])
                                           {NULL, no_argument, NULL, '\0'}};
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)"xdebug";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"xdebug";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

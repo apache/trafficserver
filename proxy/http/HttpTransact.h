@@ -65,7 +65,7 @@
       if ((H)->valid()) {                                       \
         do {                                                    \
           used = 0;                                             \
-          tmp = offset;                                         \
+          tmp  = offset;                                        \
           done = (H)->print(b, 4095, &used, &tmp);              \
           offset += used;                                       \
           b[used] = '\0';                                       \
@@ -77,7 +77,7 @@
   }
 
 #define TRANSACT_SETUP_RETURN(n, r) \
-  s->next_action = n;               \
+  s->next_action           = n;     \
   s->transact_return_point = r;     \
   DebugSpecific((s->state_machine && s->state_machine->debug_on), "http_trans", "Next action %s; %s", #n, #r);
 
@@ -144,45 +144,45 @@ enum ViaStringIndex_t {
 
 enum ViaString_t {
   // client stuff
-  VIA_CLIENT_STRING = 'u',
-  VIA_CLIENT_ERROR = 'E',
-  VIA_CLIENT_IMS = 'I',
+  VIA_CLIENT_STRING   = 'u',
+  VIA_CLIENT_ERROR    = 'E',
+  VIA_CLIENT_IMS      = 'I',
   VIA_CLIENT_NO_CACHE = 'N',
-  VIA_CLIENT_COOKIE = 'C',
-  VIA_CLIENT_SIMPLE = 'S',
+  VIA_CLIENT_COOKIE   = 'C',
+  VIA_CLIENT_SIMPLE   = 'S',
   // cache lookup stuff
-  VIA_CACHE_STRING = 'c',
-  VIA_CACHE_MISS = 'M',
+  VIA_CACHE_STRING            = 'c',
+  VIA_CACHE_MISS              = 'M',
   VIA_IN_CACHE_NOT_ACCEPTABLE = 'A',
-  VIA_IN_CACHE_STALE = 'S',
-  VIA_IN_CACHE_FRESH = 'H',
-  VIA_IN_RAM_CACHE_FRESH = 'R',
+  VIA_IN_CACHE_STALE          = 'S',
+  VIA_IN_CACHE_FRESH          = 'H',
+  VIA_IN_RAM_CACHE_FRESH      = 'R',
   // server stuff
-  VIA_SERVER_STRING = 's',
-  VIA_SERVER_ERROR = 'E',
+  VIA_SERVER_STRING       = 's',
+  VIA_SERVER_ERROR        = 'E',
   VIA_SERVER_NOT_MODIFIED = 'N',
-  VIA_SERVER_SERVED = 'S',
+  VIA_SERVER_SERVED       = 'S',
   // cache fill stuff
   VIA_CACHE_FILL_STRING = 'f',
-  VIA_CACHE_DELETED = 'D',
-  VIA_CACHE_WRITTEN = 'W',
-  VIA_CACHE_UPDATED = 'U',
+  VIA_CACHE_DELETED     = 'D',
+  VIA_CACHE_WRITTEN     = 'W',
+  VIA_CACHE_UPDATED     = 'U',
   // proxy stuff
-  VIA_PROXY_STRING = 'p',
-  VIA_PROXY_NOT_MODIFIED = 'N',
-  VIA_PROXY_SERVED = 'S',
+  VIA_PROXY_STRING             = 'p',
+  VIA_PROXY_NOT_MODIFIED       = 'N',
+  VIA_PROXY_SERVED             = 'S',
   VIA_PROXY_SERVER_REVALIDATED = 'R',
   // errors
-  VIA_ERROR_STRING = 'e',
-  VIA_ERROR_NO_ERROR = 'N',
-  VIA_ERROR_AUTHORIZATION = 'A',
-  VIA_ERROR_CONNECTION = 'C',
-  VIA_ERROR_DNS_FAILURE = 'D',
-  VIA_ERROR_FORBIDDEN = 'F',
-  VIA_ERROR_HEADER_SYNTAX = 'H',
-  VIA_ERROR_SERVER = 'S',
-  VIA_ERROR_TIMEOUT = 'T',
-  VIA_ERROR_CACHE_READ = 'R',
+  VIA_ERROR_STRING            = 'e',
+  VIA_ERROR_NO_ERROR          = 'N',
+  VIA_ERROR_AUTHORIZATION     = 'A',
+  VIA_ERROR_CONNECTION        = 'C',
+  VIA_ERROR_DNS_FAILURE       = 'D',
+  VIA_ERROR_FORBIDDEN         = 'F',
+  VIA_ERROR_HEADER_SYNTAX     = 'H',
+  VIA_ERROR_SERVER            = 'S',
+  VIA_ERROR_TIMEOUT           = 'T',
+  VIA_ERROR_CACHE_READ        = 'R',
   VIA_ERROR_MOVED_TEMPORARILY = 'M',
   //
   // Now the detailed stuff
@@ -190,41 +190,41 @@ enum ViaString_t {
   VIA_DETAIL_SEPARATOR_STRING = ':',
   // tunnelling
   VIA_DETAIL_TUNNEL_DESCRIPTOR_STRING = 't',
-  VIA_DETAIL_TUNNEL_HEADER_FIELD = 'F',
-  VIA_DETAIL_TUNNEL_METHOD = 'M',
-  VIA_DETAIL_TUNNEL_CACHE_OFF = 'O',
-  VIA_DETAIL_TUNNEL_URL = 'U',
-  VIA_DETAIL_TUNNEL_NO_FORWARD = 'N',
-  VIA_DETAIL_TUNNEL_AUTHORIZATION = 'A',
+  VIA_DETAIL_TUNNEL_HEADER_FIELD      = 'F',
+  VIA_DETAIL_TUNNEL_METHOD            = 'M',
+  VIA_DETAIL_TUNNEL_CACHE_OFF         = 'O',
+  VIA_DETAIL_TUNNEL_URL               = 'U',
+  VIA_DETAIL_TUNNEL_NO_FORWARD        = 'N',
+  VIA_DETAIL_TUNNEL_AUTHORIZATION     = 'A',
   // cache type
   VIA_DETAIL_CACHE_DESCRIPTOR_STRING = 'c',
-  VIA_DETAIL_CACHE = 'C',
-  VIA_DETAIL_CLUSTER = 'L',
-  VIA_DETAIL_ICP = 'I',
-  VIA_DETAIL_PARENT = 'P',
-  VIA_DETAIL_SERVER = 'S',
+  VIA_DETAIL_CACHE                   = 'C',
+  VIA_DETAIL_CLUSTER                 = 'L',
+  VIA_DETAIL_ICP                     = 'I',
+  VIA_DETAIL_PARENT                  = 'P',
+  VIA_DETAIL_SERVER                  = 'S',
   // result of cache lookup
-  VIA_DETAIL_HIT_CONDITIONAL = 'N',
-  VIA_DETAIL_HIT_SERVED = 'H',
+  VIA_DETAIL_HIT_CONDITIONAL  = 'N',
+  VIA_DETAIL_HIT_SERVED       = 'H',
   VIA_DETAIL_MISS_CONDITIONAL = 'I',
-  VIA_DETAIL_MISS_NOT_CACHED = 'M',
-  VIA_DETAIL_MISS_EXPIRED = 'S',
-  VIA_DETAIL_MISS_CONFIG = 'C',
-  VIA_DETAIL_MISS_CLIENT = 'U',
-  VIA_DETAIL_MISS_METHOD = 'D',
-  VIA_DETAIL_MISS_COOKIE = 'K',
+  VIA_DETAIL_MISS_NOT_CACHED  = 'M',
+  VIA_DETAIL_MISS_EXPIRED     = 'S',
+  VIA_DETAIL_MISS_CONFIG      = 'C',
+  VIA_DETAIL_MISS_CLIENT      = 'U',
+  VIA_DETAIL_MISS_METHOD      = 'D',
+  VIA_DETAIL_MISS_COOKIE      = 'K',
   // result of icp suggested host lookup
   VIA_DETAIL_ICP_DESCRIPTOR_STRING = 'i',
-  VIA_DETAIL_ICP_SUCCESS = 'S',
-  VIA_DETAIL_ICP_FAILURE = 'F',
+  VIA_DETAIL_ICP_SUCCESS           = 'S',
+  VIA_DETAIL_ICP_FAILURE           = 'F',
   // result of pp suggested host lookup
   VIA_DETAIL_PP_DESCRIPTOR_STRING = 'p',
-  VIA_DETAIL_PP_SUCCESS = 'S',
-  VIA_DETAIL_PP_FAILURE = 'F',
+  VIA_DETAIL_PP_SUCCESS           = 'S',
+  VIA_DETAIL_PP_FAILURE           = 'F',
   // result of server suggested host lookup
   VIA_DETAIL_SERVER_DESCRIPTOR_STRING = 's',
-  VIA_DETAIL_SERVER_SUCCESS = 'S',
-  VIA_DETAIL_SERVER_FAILURE = 'F'
+  VIA_DETAIL_SERVER_SUCCESS           = 'S',
+  VIA_DETAIL_SERVER_FAILURE           = 'F'
 };
 
 struct HttpApiInfo {
@@ -302,11 +302,11 @@ public:
   };
 
   enum CacheOpenWriteFailAction_t {
-    CACHE_WL_FAIL_ACTION_DEFAULT = 0x00,
-    CACHE_WL_FAIL_ACTION_ERROR_ON_MISS = 0x01,
-    CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE = 0x02,
+    CACHE_WL_FAIL_ACTION_DEFAULT                           = 0x00,
+    CACHE_WL_FAIL_ACTION_ERROR_ON_MISS                     = 0x01,
+    CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE               = 0x02,
     CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE = 0x03,
-    CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE = 0x04,
+    CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE       = 0x04,
     TOTAL_CACHE_WL_FAIL_ACTION_TYPES
   };
 
@@ -347,14 +347,14 @@ public:
   };
 
   enum HttpTransactMagic_t {
-    HTTP_TRANSACT_MAGIC_ALIVE = 0x00001234,
-    HTTP_TRANSACT_MAGIC_DEAD = 0xDEAD1234,
+    HTTP_TRANSACT_MAGIC_ALIVE     = 0x00001234,
+    HTTP_TRANSACT_MAGIC_DEAD      = 0xDEAD1234,
     HTTP_TRANSACT_MAGIC_SEPARATOR = 0x12345678
   };
 
   enum ParentOriginRetry_t {
-    PARENT_ORIGIN_UNDEFINED_RETRY = 0x0,
-    PARENT_ORIGIN_SIMPLE_RETRY = 0x1,
+    PARENT_ORIGIN_UNDEFINED_RETRY          = 0x0,
+    PARENT_ORIGIN_SIMPLE_RETRY             = 0x1,
     PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY = 0x2
   };
 
@@ -428,9 +428,9 @@ public:
   };
 
   enum HttpRequestFlavor_t {
-    REQ_FLAVOR_INTERCEPTED = 0,
-    REQ_FLAVOR_REVPROXY = 1,
-    REQ_FLAVOR_FWDPROXY = 2,
+    REQ_FLAVOR_INTERCEPTED      = 0,
+    REQ_FLAVOR_REVPROXY         = 1,
+    REQ_FLAVOR_FWDPROXY         = 2,
     REQ_FLAVOR_SCHEDULED_UPDATE = 3
   };
 
@@ -777,7 +777,7 @@ public:
         srv_port(0),
         lookup_validated(true)
     {
-      srv_hostname[0] = '\0';
+      srv_hostname[0]                = '\0';
       srv_app.allotment.application1 = 0;
       srv_app.allotment.application2 = 0;
     }
@@ -1104,20 +1104,20 @@ public:
         *via_ptr++ = ' ';
       }
 
-      via_string[VIA_CLIENT] = VIA_CLIENT_STRING;
-      via_string[VIA_CACHE] = VIA_CACHE_STRING;
-      via_string[VIA_SERVER] = VIA_SERVER_STRING;
-      via_string[VIA_CACHE_FILL] = VIA_CACHE_FILL_STRING;
-      via_string[VIA_PROXY] = VIA_PROXY_STRING;
-      via_string[VIA_ERROR] = VIA_ERROR_STRING;
-      via_string[VIA_ERROR_TYPE] = VIA_ERROR_NO_ERROR;
-      via_string[VIA_DETAIL_SEPARATOR] = VIA_DETAIL_SEPARATOR_STRING;
+      via_string[VIA_CLIENT]                   = VIA_CLIENT_STRING;
+      via_string[VIA_CACHE]                    = VIA_CACHE_STRING;
+      via_string[VIA_SERVER]                   = VIA_SERVER_STRING;
+      via_string[VIA_CACHE_FILL]               = VIA_CACHE_FILL_STRING;
+      via_string[VIA_PROXY]                    = VIA_PROXY_STRING;
+      via_string[VIA_ERROR]                    = VIA_ERROR_STRING;
+      via_string[VIA_ERROR_TYPE]               = VIA_ERROR_NO_ERROR;
+      via_string[VIA_DETAIL_SEPARATOR]         = VIA_DETAIL_SEPARATOR_STRING;
       via_string[VIA_DETAIL_TUNNEL_DESCRIPTOR] = VIA_DETAIL_TUNNEL_DESCRIPTOR_STRING;
-      via_string[VIA_DETAIL_CACHE_DESCRIPTOR] = VIA_DETAIL_CACHE_DESCRIPTOR_STRING;
-      via_string[VIA_DETAIL_ICP_DESCRIPTOR] = VIA_DETAIL_ICP_DESCRIPTOR_STRING;
-      via_string[VIA_DETAIL_PP_DESCRIPTOR] = VIA_DETAIL_PP_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_CACHE_DESCRIPTOR]  = VIA_DETAIL_CACHE_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_ICP_DESCRIPTOR]    = VIA_DETAIL_ICP_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_PP_DESCRIPTOR]     = VIA_DETAIL_PP_DESCRIPTOR_STRING;
       via_string[VIA_DETAIL_SERVER_DESCRIPTOR] = VIA_DETAIL_SERVER_DESCRIPTOR_STRING;
-      via_string[MAX_VIA_INDICES] = '\0';
+      via_string[MAX_VIA_INDICES]              = '\0';
 
       memset(user_args, 0, sizeof(user_args));
       memset(&host_db_info, 0, sizeof(host_db_info));
@@ -1160,7 +1160,7 @@ public:
       pristine_url.clear();
 
       delete[] ranges;
-      ranges = NULL;
+      ranges      = NULL;
       range_setup = RANGE_NONE;
       return;
     }

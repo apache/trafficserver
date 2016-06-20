@@ -28,7 +28,7 @@
 
 volatile int res_track_memory = 0; // Disabled by default
 uint64_t ssl_memory_allocated = 0;
-uint64_t ssl_memory_freed = 0;
+uint64_t ssl_memory_freed     = 0;
 
 std::map<const char *, Resource *> ResourceTracker::_resourceMap;
 ink_mutex ResourceTracker::resourceLock = PTHREAD_MUTEX_INITIALIZER;
@@ -107,7 +107,7 @@ Resource::increment(const int64_t size)
 void
 ResourceTracker::increment(const char *name, const int64_t size)
 {
-  Resource &resource = lookup(name);
+  Resource &resource      = lookup(name);
   const char *lookup_name = resource.getName();
   if (lookup_name[0] == '\0') {
     resource.setName(name);
@@ -136,7 +136,7 @@ ResourceTracker::lookup(const char *name)
     resource = it->second;
   } else {
     // create a new entry
-    resource = new Resource;
+    resource           = new Resource;
     _resourceMap[name] = resource;
   }
   ink_mutex_release(&resourceLock);
@@ -159,7 +159,7 @@ ResourceTracker::dump(FILE *fd)
                 "--------------------------------------------------------------------\n");
     for (std::map<const char *, Resource *>::const_iterator it = _resourceMap.begin(); it != _resourceMap.end(); ++it) {
       const Resource &resource = *it->second;
-      int64_t average_size = 0;
+      int64_t average_size     = 0;
       if (resource.getIncrement() - resource.getDecrement() > 0) {
         average_size = resource.getValue() / (resource.getIncrement() - resource.getDecrement());
       }

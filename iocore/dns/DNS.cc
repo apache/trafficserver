@@ -39,23 +39,23 @@ EventType ET_DNS = ET_CALL;
 //
 // Config
 //
-int dns_timeout = DEFAULT_DNS_TIMEOUT;
-int dns_retries = DEFAULT_DNS_RETRIES;
-int dns_search = DEFAULT_DNS_SEARCH;
-int dns_failover_number = DEFAULT_FAILOVER_NUMBER;
-int dns_failover_period = DEFAULT_FAILOVER_PERIOD;
-int dns_failover_try_period = DEFAULT_FAILOVER_TRY_PERIOD;
-int dns_max_dns_in_flight = MAX_DNS_IN_FLIGHT;
-int dns_validate_qname = 0;
+int dns_timeout                      = DEFAULT_DNS_TIMEOUT;
+int dns_retries                      = DEFAULT_DNS_RETRIES;
+int dns_search                       = DEFAULT_DNS_SEARCH;
+int dns_failover_number              = DEFAULT_FAILOVER_NUMBER;
+int dns_failover_period              = DEFAULT_FAILOVER_PERIOD;
+int dns_failover_try_period          = DEFAULT_FAILOVER_TRY_PERIOD;
+int dns_max_dns_in_flight            = MAX_DNS_IN_FLIGHT;
+int dns_validate_qname               = 0;
 unsigned int dns_handler_initialized = 0;
-int dns_ns_rr = 0;
-int dns_ns_rr_init_down = 1;
-char *dns_ns_list = NULL;
-char *dns_resolv_conf = NULL;
-char *dns_local_ipv6 = NULL;
-char *dns_local_ipv4 = NULL;
-int dns_thread = 0;
-int dns_prefer_ipv6 = 0;
+int dns_ns_rr                        = 0;
+int dns_ns_rr_init_down              = 1;
+char *dns_ns_list                    = NULL;
+char *dns_resolv_conf                = NULL;
+char *dns_local_ipv6                 = NULL;
+char *dns_local_ipv4                 = NULL;
+int dns_thread                       = 0;
+int dns_prefer_ipv6                  = 0;
 namespace
 {
 // Currently only used for A and AAAA.
@@ -88,8 +88,8 @@ static void write_dns(DNSHandler *h);
 static bool write_dns_event(DNSHandler *h, DNSEntry *e);
 
 // "reliable" name to try. need to build up first.
-static int try_servers = 0;
-static int local_num_entries = 1;
+static int try_servers         = 0;
+static int local_num_entries   = 1;
 static int attempt_num_entries = 1;
 char try_server_names[DEFAULT_NUM_TRY_SERVER][MAXDNAME];
 
@@ -119,33 +119,33 @@ HostEnt::free()
 void
 make_ipv4_ptr(in_addr_t addr, char *buffer)
 {
-  char *p = buffer;
+  char *p          = buffer;
   uint8_t const *u = reinterpret_cast<uint8_t *>(&addr);
 
   if (u[3] > 99)
     *p++ = (u[3] / 100) + '0';
   if (u[3] > 9)
     *p++ = ((u[3] / 10) % 10) + '0';
-  *p++ = u[3] % 10 + '0';
-  *p++ = '.';
+  *p++   = u[3] % 10 + '0';
+  *p++   = '.';
   if (u[2] > 99)
     *p++ = (u[2] / 100) + '0';
   if (u[2] > 9)
     *p++ = ((u[2] / 10) % 10) + '0';
-  *p++ = u[2] % 10 + '0';
-  *p++ = '.';
+  *p++   = u[2] % 10 + '0';
+  *p++   = '.';
   if (u[1] > 99)
     *p++ = (u[1] / 100) + '0';
   if (u[1] > 9)
     *p++ = ((u[1] / 10) % 10) + '0';
-  *p++ = u[1] % 10 + '0';
-  *p++ = '.';
+  *p++   = u[1] % 10 + '0';
+  *p++   = '.';
   if (u[0] > 99)
     *p++ = (u[0] / 100) + '0';
   if (u[0] > 9)
     *p++ = ((u[0] / 10) % 10) + '0';
-  *p++ = u[0] % 10 + '0';
-  *p++ = '.';
+  *p++   = u[0] % 10 + '0';
+  *p++   = '.';
   ink_strlcpy(p, "in-addr.arpa", MAXDNAME - (p - buffer + 1));
 }
 
@@ -153,8 +153,8 @@ void
 make_ipv6_ptr(in6_addr const *addr, char *buffer)
 {
   const char hex_digit[] = "0123456789abcdef";
-  char *p = buffer;
-  uint8_t const *src = addr->s6_addr;
+  char *p                = buffer;
+  uint8_t const *src     = addr->s6_addr;
   int i;
 
   for (i = TS_IP6_SIZE - 1; i >= 0; --i) {
@@ -255,12 +255,12 @@ DNSProcessor::dns_init()
     int i;
     char *last;
     char *ns_list = ats_strdup(dns_ns_list);
-    char *ns = (char *)strtok_r(ns_list, " ,;\t\r", &last);
+    char *ns      = (char *)strtok_r(ns_list, " ,;\t\r", &last);
 
     for (i = 0, nserv = 0; (i < MAX_NAMED) && ns; ++i) {
       Debug("dns", "Nameserver list - parsing \"%s\"", ns);
-      bool err = false;
-      int prt = DOMAIN_SERVICE_PORT;
+      bool err    = false;
+      int prt     = DOMAIN_SERVICE_PORT;
       char *colon = 0; // where the port colon is.
       // Check for IPv6 notation.
       if ('[' == *ns) {
@@ -356,7 +356,7 @@ DNSProcessor::DNSProcessor() : thread(NULL), handler(NULL)
 void
 DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSProcessor::Options const &opt)
 {
-  qtype = qtype_arg;
+  qtype          = qtype_arg;
   host_res_style = opt.host_res_style;
   if (is_addr_query(qtype)) {
     // adjust things based on family preference.
@@ -366,8 +366,8 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
       qtype = T_AAAA;
     }
   }
-  submit_time = Thread::get_hrtime();
-  action = acont;
+  submit_time   = Thread::get_hrtime();
+  action        = acont;
   submit_thread = acont->mutex->thread_holding;
 
 #ifdef SPLIT_DNS
@@ -388,10 +388,10 @@ DNSEntry::init(const char *x, int len, int qtype_arg, Continuation *acont, DNSPr
     if (len) {
       len = len > (MAXDNAME - 1) ? (MAXDNAME - 1) : len;
       memcpy(qname, x, len);
-      qname[len] = 0;
+      qname[len]     = 0;
       orig_qname_len = qname_len = len;
     } else {
-      qname_len = ink_strlcpy(qname, x, MAXDNAME);
+      qname_len      = ink_strlcpy(qname, x, MAXDNAME);
       orig_qname_len = qname_len;
     }
   } else { // T_PTR
@@ -494,7 +494,7 @@ DNSHandler::startEvent(int /* event ATS_UNUSED */, Event *e)
       int max_nscount = m_res->nscount;
       if (max_nscount > MAX_NAMED)
         max_nscount = MAX_NAMED;
-      n_con = 0;
+      n_con         = 0;
       for (int i = 0; i < max_nscount; i++) {
         ip_port_text_buffer buff;
         sockaddr *sa = &m_res->nsaddr_list[i].sa;
@@ -564,7 +564,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
 
   char buffer[MAX_DNS_PACKET_LEN];
   Debug("dns", "trying to resolve '%s' from DNS connection, ndx %d", try_server_names[try_servers], ndx);
-  int r = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
+  int r       = _ink_res_mkquery(m_res, try_server_names[try_servers], T_A, buffer);
   try_servers = (try_servers + 1) % countof(try_server_names);
   ink_assert(r >= 0);
   if (r >= 0) { // looking for a bounce
@@ -625,9 +625,9 @@ DNSHandler::failover()
     int max_nscount = m_res->nscount;
 
     if (max_nscount > MAX_NAMED)
-      max_nscount = MAX_NAMED;
+      max_nscount            = MAX_NAMED;
     sockaddr const *old_addr = &m_res->nsaddr_list[name_server].sa;
-    name_server = (name_server + 1) % max_nscount;
+    name_server              = (name_server + 1) % max_nscount;
     Debug("dns", "failover: failing over to name_server=%d", name_server);
 
     IpEndpoint target;
@@ -733,7 +733,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 
       if (!hostent_cache)
         hostent_cache = dnsBufAllocator.alloc();
-      HostEnt *buf = hostent_cache;
+      HostEnt *buf    = hostent_cache;
 
       int res = socketManager.recvfrom(dnsc->fd, buf->buf, MAX_DNS_PACKET_LEN, 0, &from_ip.sa, &from_length);
 
@@ -754,7 +754,7 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
                 ats_ip_ntop(&dnsc->ip.sa, ipbuff2, sizeof ipbuff2));
         continue;
       }
-      hostent_cache = 0;
+      hostent_cache    = 0;
       buf->packet_size = res;
       Debug("dns", "received packet size = %d", res);
       if (dns_ns_rr) {
@@ -990,8 +990,8 @@ write_dns_event(DNSHandler *h, DNSEntry *e)
     return false;
   }
 
-  e->written_flag = true;
-  e->which_ns = h->name_server;
+  e->written_flag      = true;
+  e->which_ns          = h->name_server;
   e->once_written_flag = true;
   ++h->in_flight;
   DNS_INCREMENT_DYN_STAT(dns_in_flight_stat);
@@ -1093,7 +1093,7 @@ DNSProcessor::getby(const char *x, int len, int type, Continuation *cont, Option
     Debug("dns_srv", "DNSProcessor::getby attempting an SRV lookup for %s, timeout = %d", x, opt.timeout);
   }
   DNSEntry *e = dnsEntryAllocator.alloc();
-  e->retries = dns_retries;
+  e->retries  = dns_retries;
   e->init(x, len, type, cont, opt);
   MUTEX_TRY_LOCK(lock, e->mutex, this_ethread());
   if (!lock.is_locked())
@@ -1111,7 +1111,7 @@ static void
 dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
 {
   ProxyMutex *mutex = h->mutex.get();
-  bool cancelled = (e->action.cancelled ? true : false);
+  bool cancelled    = (e->action.cancelled ? true : false);
 
   if (!ent && !cancelled) {
     // try to retry operation
@@ -1171,11 +1171,11 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
   if (is_debug_tag_set("dns")) {
     if (is_addr_query(e->qtype)) {
       ip_text_buffer buff;
-      char const *ptr = "<none>";
+      char const *ptr    = "<none>";
       char const *result = "FAIL";
       if (ent) {
         result = "SUCCESS";
-        ptr = inet_ntop(e->qtype == T_AAAA ? AF_INET6 : AF_INET, ent->ent.h_addr_list[0], buff, sizeof(buff));
+        ptr    = inet_ntop(e->qtype == T_AAAA ? AF_INET6 : AF_INET, ent->ent.h_addr_list[0], buff, sizeof(buff));
       }
       Debug("dns", "%s result for %s = %s retry %d", result, e->qname, ptr, retry);
     } else {
@@ -1232,7 +1232,7 @@ dns_result(DNSHandler *h, DNSEntry *e, HostEnt *ent, bool retry)
   return;
 Lretry:
   e->result_ent = ent;
-  e->retries = 0;
+  e->retries    = 0;
   if (e->timeout)
     e->timeout->cancel();
   e->timeout = h->mutex->thread_holding->schedule_in(e, DNS_PERIOD);
@@ -1268,9 +1268,9 @@ DNSEntry::postEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     Debug("dns", "called back continuation for %s", qname);
     action.continuation->handleEvent(DNS_EVENT_LOOKUP, result_ent.get());
   }
-  result_ent = NULL;
+  result_ent   = NULL;
   action.mutex = NULL;
-  mutex = NULL;
+  mutex        = NULL;
   dnsEntryAllocator.free(this);
   return EVENT_DONE;
 }
@@ -1280,10 +1280,10 @@ static bool
 dns_process(DNSHandler *handler, HostEnt *buf, int len)
 {
   ProxyMutex *mutex = handler->mutex.get();
-  HEADER *h = (HEADER *)(buf->buf);
-  DNSEntry *e = get_dns(handler, (uint16_t)ntohs(h->id));
-  bool retry = false;
-  bool server_ok = true;
+  HEADER *h         = (HEADER *)(buf->buf);
+  DNSEntry *e       = get_dns(handler, (uint16_t)ntohs(h->id));
+  bool retry        = false;
+  bool server_ok    = true;
   uint32_t temp_ttl = 0;
 
   //
@@ -1307,7 +1307,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     switch (h->rcode) {
     default:
       Warning("Unknown DNS error %d for [%s]", h->rcode, e->qname);
-      retry = true;
+      retry     = true;
       server_ok = false; // could be server problems
       goto Lerror;
     case SERVFAIL: // recoverable error
@@ -1336,17 +1336,17 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     u_char tbuf[MAXDNAME + 1];
     buf->ent.h_name = NULL;
 
-    int ancount = ntohs(h->ancount);
+    int ancount       = ntohs(h->ancount);
     unsigned char *bp = buf->hostbuf;
-    int buflen = sizeof(buf->hostbuf);
-    u_char *cp = ((u_char *)h) + HFIXEDSZ;
-    u_char *eom = (u_char *)h + len;
+    int buflen        = sizeof(buf->hostbuf);
+    u_char *cp        = ((u_char *)h) + HFIXEDSZ;
+    u_char *eom       = (u_char *)h + len;
     int n;
     ink_assert(buf->srv_hosts.srv_host_count == 0 && buf->srv_hosts.srv_hosts_length == 0);
-    buf->srv_hosts.srv_host_count = 0;
+    buf->srv_hosts.srv_host_count   = 0;
     buf->srv_hosts.srv_hosts_length = 0;
-    unsigned &num_srv = buf->srv_hosts.srv_host_count;
-    int rname_len = -1;
+    unsigned &num_srv               = buf->srv_hosts.srv_host_count;
+    int rname_len                   = -1;
 
     //
     // Expand name
@@ -1381,7 +1381,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       if (-1 == rname_len)
         n = strlen((char *)bp) + 1;
       else
-        n = rname_len + 1;
+        n             = rname_len + 1;
       buf->ent.h_name = (char *)bp;
       bp += n;
       buflen -= n;
@@ -1389,10 +1389,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     //
     // Configure HostEnt data structure
     //
-    u_char **ap = buf->host_aliases;
-    buf->ent.h_aliases = (char **)buf->host_aliases;
-    u_char **hap = (u_char **)buf->h_addr_ptrs;
-    *hap = NULL;
+    u_char **ap          = buf->host_aliases;
+    buf->ent.h_aliases   = (char **)buf->host_aliases;
+    u_char **hap         = (u_char **)buf->h_addr_ptrs;
+    *hap                 = NULL;
     buf->ent.h_addr_list = (char **)buf->h_addr_ptrs;
 
     //
@@ -1462,7 +1462,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         }
         cp += n;
         *ap++ = (unsigned char *)bp;
-        n = strlen((char *)bp) + 1;
+        n     = strlen((char *)bp) + 1;
         bp += n;
         buflen -= n;
         n = strlen((char *)tbuf) + 1;
@@ -1506,15 +1506,15 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       } else if (type == T_SRV) {
         if (num_srv >= HOST_DB_MAX_ROUND_ROBIN_INFO)
           break;
-        cp = here; /* hack */
+        cp         = here; /* hack */
         int strlen = dn_skipname(cp, eom);
         cp += strlen;
         const unsigned char *srv_off = cp;
         cp += SRV_FIXEDSZ;
         cp += dn_skipname(cp, eom);
-        here = cp; /* hack */
+        here     = cp; /* hack */
         SRV *srv = &buf->srv_hosts.hosts[num_srv];
-        int r = ink_ns_name_ntop(srv_off + SRV_SERVER, srv->host, MAXDNAME);
+        int r    = ink_ns_name_ntop(srv_off + SRV_SERVER, srv->host, MAXDNAME);
         if (r <= 0) {
           /* FIXME: is this really an error? or just a continue; */
           ++error;
@@ -1523,12 +1523,12 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         Debug("dns_srv", "Discovered SRV record [from NS lookup] with cost:%d weight:%d port:%d with host:%s",
               ink_get16(srv_off + SRV_COST), ink_get16(srv_off + SRV_WEIGHT), ink_get16(srv_off + SRV_PORT), srv->host);
 
-        srv->port = ink_get16(srv_off + SRV_PORT);
-        srv->priority = ink_get16(srv_off + SRV_COST);
-        srv->weight = ink_get16(srv_off + SRV_WEIGHT);
-        srv->host_len = r;
+        srv->port        = ink_get16(srv_off + SRV_PORT);
+        srv->priority    = ink_get16(srv_off + SRV_COST);
+        srv->weight      = ink_get16(srv_off + SRV_WEIGHT);
+        srv->host_len    = r;
         srv->host[r - 1] = '\0';
-        srv->key = makeHostHash(srv->host);
+        srv->key         = makeHostHash(srv->host);
 
         if (srv->host[0] != '\0')
           buf->srv_hosts.srv_hosts_length += r;
@@ -1543,10 +1543,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           }
         } else {
           int nn;
-          buf->ent.h_length = n;
+          buf->ent.h_length   = n;
           buf->ent.h_addrtype = T_A == type ? AF_INET : AF_INET6;
-          buf->ent.h_name = (char *)bp;
-          nn = strlen((char *)bp) + 1;
+          buf->ent.h_name     = (char *)bp;
+          nn                  = strlen((char *)bp) + 1;
           Debug("dns", "received %s name = %s", QtypeName(type), bp);
           bp += nn;
           buflen -= nn;
@@ -1573,7 +1573,7 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
       ++answer;
     }
     if (answer) {
-      *ap = NULL;
+      *ap  = NULL;
       *hap = NULL;
       //
       // If the named didn't send us the name, insert the one

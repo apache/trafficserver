@@ -28,7 +28,7 @@
 #include <ts/ink_memory.h>
 
 static size_t const ERR_STRING_LEN = 256;
-static size_t const MAX_LINE_SIZE = 2048;
+static size_t const MAX_LINE_SIZE  = 2048;
 
 // Returns 0 if successful, 1 if failed
 // line  Input text (source line).
@@ -41,7 +41,7 @@ read_addr(char *line, int n, int *i, sockaddr *addr, char *err)
 {
   int k;
   char dst[INET6_ADDRSTRLEN];
-  char *src = line + *i;
+  char *src        = line + *i;
   bool bracketed_p = false;
 
   // Allow enclosing brackets to be more consistent but
@@ -76,8 +76,8 @@ char *
 Load_IpMap_From_File(IpMap *map, int fd, const char *key_str)
 {
   char *zret = 0;
-  int fd2 = dup(fd); // dup to avoid closing the original file.
-  FILE *f = NULL;
+  int fd2    = dup(fd); // dup to avoid closing the original file.
+  FILE *f    = NULL;
 
   if (fd2 >= 0)
     f = fdopen(fd2, "r");

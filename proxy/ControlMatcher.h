@@ -121,8 +121,8 @@ public:
   //  depending on how the module user wants to key
   //  the table
   virtual ~RequestData() {}
-  virtual char *get_string() = 0;
-  virtual const char *get_host() = 0;
+  virtual char *get_string()       = 0;
+  virtual const char *get_host()   = 0;
   virtual sockaddr const *get_ip() = 0;
 
   virtual sockaddr const *get_client_ip() = 0;

@@ -49,10 +49,10 @@ public:
 
   virtual ~CfgEleObj() {} // virtual destructor
   virtual char *formatEleToRule() = 0;
-  virtual bool isValid() = 0;
+  virtual bool isValid()          = 0;
 
   /* these are implemented as inline functons by subclasses */
-  virtual TSCfgEle *getCfgEle() = 0;     /* returns actual ele */
+  virtual TSCfgEle *getCfgEle()     = 0; /* returns actual ele */
   virtual TSCfgEle *getCfgEleCopy() = 0; /* returns copy of ele */
   virtual TSRuleTypeT getRuleType() = 0;
 

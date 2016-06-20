@@ -29,9 +29,9 @@
 #include <strings.h>
 #include <stdio.h>
 
-const char *ECHO_HEADER_PREFIX = "Echo-";
-const int ECHO_HEADER_PREFIX_LEN = 5;
-const char *SERVER_INTERCEPT_HEADER = "Esi-Internal";
+const char *ECHO_HEADER_PREFIX        = "Echo-";
+const int ECHO_HEADER_PREFIX_LEN      = 5;
+const char *SERVER_INTERCEPT_HEADER   = "Esi-Internal";
 const int SERVER_INTERCEPT_HEADER_LEN = 12;
 
 using std::string;
@@ -113,10 +113,10 @@ SContData::init(TSVConn vconn)
 
   input.buffer = TSIOBufferCreate();
   input.reader = TSIOBufferReaderAlloc(input.buffer);
-  input.vio = TSVConnRead(net_vc, contp, input.buffer, INT_MAX);
+  input.vio    = TSVConnRead(net_vc, contp, input.buffer, INT_MAX);
 
   req_hdr_bufp = TSMBufferCreate();
-  req_hdr_loc = TSHttpHdrCreate(req_hdr_bufp);
+  req_hdr_loc  = TSHttpHdrCreate(req_hdr_bufp);
   TSHttpHdrTypeSet(req_hdr_bufp, req_hdr_loc, TS_HTTP_TYPE_REQUEST);
 
   initialized = true;
@@ -130,7 +130,7 @@ SContData::setupWrite()
   TSAssert(output.buffer == 0);
   output.buffer = TSIOBufferCreate();
   output.reader = TSIOBufferReaderAlloc(output.buffer);
-  output.vio = TSVConnWrite(net_vc, contp, output.reader, INT_MAX);
+  output.vio    = TSVConnWrite(net_vc, contp, output.reader, INT_MAX);
 }
 
 static bool
@@ -289,8 +289,8 @@ serverIntercept(TSCont contp, TSEvent event, void *edata)
   TSDebug(DEBUG_TAG, "[%s] Received event: %d", __FUNCTION__, (int)event);
 
   SContData *cont_data = static_cast<SContData *>(TSContDataGet(contp));
-  bool read_complete = false;
-  bool shutdown = false;
+  bool read_complete   = false;
+  bool shutdown        = false;
   switch (event) {
   case TS_EVENT_NET_ACCEPT:
     TSDebug(DEBUG_TAG, "[%s] Received net accept event", __FUNCTION__);

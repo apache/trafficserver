@@ -37,12 +37,12 @@ extern GeoIP *gGeoIP[NUM_DB_TYPES];
 #define TS_REMAP_PSEUDO_HOOK TS_HTTP_LAST_HOOK // Ugly, but use the "last hook" for remap instances.
 
 enum ResourceIDs {
-  RSRC_NONE = 0,
+  RSRC_NONE                    = 0,
   RSRC_SERVER_RESPONSE_HEADERS = 1,
-  RSRC_SERVER_REQUEST_HEADERS = 2,
-  RSRC_CLIENT_REQUEST_HEADERS = 4,
+  RSRC_SERVER_REQUEST_HEADERS  = 2,
+  RSRC_CLIENT_REQUEST_HEADERS  = 4,
   RSRC_CLIENT_RESPONSE_HEADERS = 8,
-  RSRC_RESPONSE_STATUS = 16,
+  RSRC_RESPONSE_STATUS         = 16,
 };
 
 ///////////////////////////////////////////////////////////////////////////////

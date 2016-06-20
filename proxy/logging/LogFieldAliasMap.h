@@ -147,7 +147,7 @@ public:
         found = false;
       }
       if (found) {
-        *val = (unsigned int)(i + m_min);
+        *val   = (unsigned int)(i + m_min);
         retVal = ALL_OK;
         break;
       }
@@ -168,14 +168,14 @@ public:
       if (l < bufLen) {
         ink_strlcpy(buf, m_table[key - m_min].name, bufLen);
         numChars = l;
-        retVal = ALL_OK;
+        retVal   = ALL_OK;
       } else {
         numChars = 0;
-        retVal = BUFFER_TOO_SMALL;
+        retVal   = BUFFER_TOO_SMALL;
       }
     } else {
       numChars = 0;
-      retVal = INVALID_INT;
+      retVal   = INVALID_INT;
     }
     if (numCharsPtr) {
       *numCharsPtr = numChars;

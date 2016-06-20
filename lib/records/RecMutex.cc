@@ -28,7 +28,7 @@ int
 rec_mutex_init(RecMutex *m, const char *name)
 {
   m->nthread_holding = 0;
-  m->thread_holding = 0;
+  m->thread_holding  = 0;
   return ink_mutex_init(&(m->the_mutex), name);
 }
 

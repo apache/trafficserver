@@ -42,7 +42,7 @@ UnixUDPConnection::~UnixUDPConnection()
   if (p) {
     UDPPacketInternal *pnext = NULL;
     while (p) {
-      pnext = p->alink.next;
+      pnext         = p->alink.next;
       p->alink.next = NULL;
       p->free();
       p = pnext;
@@ -83,7 +83,7 @@ UnixUDPConnection::callbackHandler(int event, void *data)
       UDPPacketInternal *pnext = NULL;
       Queue<UDPPacketInternal> result;
       while (p) {
-        pnext = p->alink.next;
+        pnext         = p->alink.next;
         p->alink.next = NULL;
         result.push(p);
         p = pnext;
@@ -111,14 +111,14 @@ UDPConnection::bindToThread(Continuation *c)
   uc->ethread = t;
   AddRef();
   uc->continuation = c;
-  mutex = c->mutex;
+  mutex            = c->mutex;
   ink_atomiclist_push(&get_UDPNetHandler(t)->udpNewConnections, uc);
 }
 
 Action *
 UDPConnection::send(Continuation *c, UDPPacket *xp)
 {
-  UDPPacketInternal *p = (UDPPacketInternal *)xp;
+  UDPPacketInternal *p    = (UDPPacketInternal *)xp;
   UnixUDPConnection *conn = (UnixUDPConnection *)this;
 
   if (shouldDestroy()) {
@@ -132,7 +132,7 @@ UDPConnection::send(Continuation *c, UDPPacket *xp)
   p->setConnection(this);
   conn->continuation = c;
   ink_assert(conn->continuation != NULL);
-  mutex = c->mutex;
+  mutex               = c->mutex;
   p->reqGenerationNum = conn->sendGenerationNum;
   get_UDPNetHandler(conn->ethread)->udpOutQueue.send(p);
   return ACTION_RESULT_NONE;

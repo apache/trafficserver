@@ -65,7 +65,7 @@ CacheHashIdElt &
 CacheHashIdElt::setBucket(int idx, bool state)
 {
   uint8_t &bucket = m_buckets[idx >> 3];
-  uint8_t mask = 1 << (idx & 7);
+  uint8_t mask    = 1 << (idx & 7);
   if (state)
     bucket |= mask;
   else
@@ -97,7 +97,7 @@ CacheIdBox::require(size_t n)
     if (m_base && m_cap)
       ats_free(m_base);
     m_base = static_cast<CacheIdElt *>(ats_malloc(n));
-    m_cap = n;
+    m_cap  = n;
   }
   memset(m_base, 0, m_cap);
   m_size = 0;
@@ -110,7 +110,7 @@ CacheIdBox::initDefaultHash(uint32_t addr)
   this->require(sizeof(CacheHashIdElt));
   m_size = sizeof(CacheHashIdElt);
   m_base->initHashRev().setUnassigned(true).setMask(false).setAddr(addr);
-  m_tail = static_cast<CacheHashIdElt *>(m_base)->getTailPtr();
+  m_tail           = static_cast<CacheHashIdElt *>(m_base)->getTailPtr();
   m_tail->m_weight = htons(0);
   m_tail->m_status = htons(0);
   return *this;
@@ -124,8 +124,8 @@ CacheIdBox::initDefaultMask(uint32_t addr)
   CacheMaskIdElt *mid = static_cast<CacheMaskIdElt *>(m_base);
   mid->initHashRev().setUnassigned(true).setMask(true).setAddr(addr);
   mid->m_assign.init(0, 0, 0, 0)->addValue(addr, 0, 0, 0, 0);
-  m_size = mid->getSize();
-  m_tail = mid->getTailPtr();
+  m_size           = mid->getSize();
+  m_tail           = mid->getTailPtr();
   m_tail->m_weight = htons(0);
   m_tail->m_status = htons(0);
   return *this;
@@ -151,7 +151,7 @@ CacheIdBox &
 CacheIdBox::fill(void *base, self const &src)
 {
   m_size = src.getSize();
-  m_cap = 0;
+  m_cap  = 0;
   m_base = static_cast<CacheIdElt *>(base);
   memcpy(m_base, src.m_base, m_size);
   return *this;
@@ -160,13 +160,13 @@ CacheIdBox::fill(void *base, self const &src)
 int
 CacheIdBox::parse(MsgBuffer base)
 {
-  int zret = PARSE_SUCCESS;
+  int zret        = PARSE_SUCCESS;
   CacheIdElt *ptr = reinterpret_cast<CacheIdElt *>(base.getTail());
-  size_t n = base.getSpace();
-  m_cap = 0;
+  size_t n        = base.getSpace();
+  m_cap           = 0;
   if (ptr->isMask()) {
     CacheMaskIdElt *mptr = static_cast<CacheMaskIdElt *>(ptr);
-    size_t size = sizeof(CacheMaskIdElt);
+    size_t size          = sizeof(CacheMaskIdElt);
     // Sanity check - verify enough room for empty elements.
     if (n < size || n < size + MaskValueSetElt::calcSize(0) * mptr->getCount()) {
       zret = PARSE_BUFFER_TOO_SMALL;
@@ -308,7 +308,7 @@ size_t
 MaskAssignElt::getVarSize() const
 {
   size_t zret = 0;
-  int n = this->getCount();
+  int n       = this->getCount();
 
   MaskValueSetElt const *set = reinterpret_cast<MaskValueSetElt const *>(this + 1);
   while (n--) {
@@ -323,7 +323,7 @@ HashAssignElt &
 HashAssignElt::round_robin_assign()
 {
   uint32_t v_caches = this->getCount();
-  Bucket *buckets = this->getBucketBase();
+  Bucket *buckets   = this->getBucketBase();
   if (1 == v_caches)
     memset(buckets, 0, sizeof(Bucket) * N_BUCKETS);
   else { // Assign round robin.
@@ -331,7 +331,7 @@ HashAssignElt::round_robin_assign()
     for (Bucket *spot = buckets, *limit = spot + N_BUCKETS; spot < limit; ++spot) {
       spot->m_idx = x;
       spot->m_alt = 0;
-      x = (x + 1) % v_caches;
+      x           = (x + 1) % v_caches;
     }
   }
   return *this;
@@ -340,7 +340,7 @@ HashAssignElt::round_robin_assign()
 RouterAssignListElt &
 RouterAssignListElt::updateRouterId(uint32_t addr, uint32_t rcvid, uint32_t cno)
 {
-  uint32_t n = this->getCount();
+  uint32_t n           = this->getCount();
   RouterAssignElt *elt = access_array<RouterAssignElt>(this + 1);
   for (uint32_t i = 0; i < n; ++i, ++elt) {
     if (addr == elt->getAddr()) {
@@ -411,7 +411,7 @@ MsgHeaderComp::fill(MsgBuffer &buffer, message_type_t t)
 int
 MsgHeaderComp::parse(MsgBuffer &base)
 {
-  int zret = PARSE_SUCCESS;
+  int zret         = PARSE_SUCCESS;
   size_t comp_size = this->calcSize();
   if (base.getSpace() < comp_size) {
     zret = PARSE_BUFFER_TOO_SMALL;
@@ -528,7 +528,7 @@ SecurityComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       Option opt = this->getOption();
       if (SECURITY_NONE != opt && SECURITY_MD5 != opt)
@@ -595,13 +595,13 @@ ServiceComp::fill(MsgBuffer &buffer, ServiceGroup const &svc)
 int
 ServiceComp::parse(MsgBuffer &buffer)
 {
-  int zret = PARSE_SUCCESS;
+  int zret         = PARSE_SUCCESS;
   size_t comp_size = this->calcSize();
   if (buffer.getSpace() < comp_size)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       ServiceGroup::Type svc = this->getSvcType();
       if (ServiceGroup::DYNAMIC != svc && ServiceGroup::STANDARD != svc)
@@ -694,7 +694,7 @@ RouterIdComp::setFromAddr(int idx, uint32_t addr)
 int
 RouterIdComp::findFromAddr(uint32_t addr)
 {
-  int n = this->getFromCount();
+  int n           = this->getFromCount();
   uint32_t *addrs = access_array<uint32_t>(m_base + sizeof(raw_t)) + n;
   while (n-- != 0 && *--addrs != addr)
     ;
@@ -746,7 +746,7 @@ RouterIdComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       size_t comp_size = this->calcSize(this->getFromCount());
       if (this->getLength() != comp_size - sizeof(super::raw_t))
@@ -856,7 +856,7 @@ RouterViewComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       uint32_t ncaches; // # of caches.
       if (this->getRouterCount() > MAX_ROUTERS)
@@ -872,7 +872,7 @@ RouterViewComp::parse(MsgBuffer &buffer)
         // Walk the cache ID elements.
         MsgBuffer spot(buffer);
         CacheIdBox *box = m_cache_ids;
-        uint32_t idx = 0;
+        uint32_t idx    = 0;
         spot.use(comp_size);
         while (idx < ncaches && PARSE_SUCCESS == (zret = box->parse(spot))) {
           size_t k = box->getSize();
@@ -912,7 +912,7 @@ CacheIdComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       MsgBuffer tmp(buffer);
       tmp.use(reinterpret_cast<char *>(&(access_field(&raw_t::m_id, m_base))) - m_base);
@@ -1000,7 +1000,7 @@ CacheViewComp::fill(MsgBuffer &buffer, detail::cache::GroupData const &group)
 {
   int i;
   size_t n_routers = group.m_routers.size();
-  size_t n_caches = group.m_caches.size();
+  size_t n_caches  = group.m_caches.size();
   size_t comp_size = this->calcSize(n_routers, n_caches);
 
   if (buffer.getSpace() < comp_size)
@@ -1012,7 +1012,7 @@ CacheViewComp::fill(MsgBuffer &buffer, detail::cache::GroupData const &group)
 
   set_field(&raw_t::m_router_count, m_base, n_routers);
   // Set the pointer to the count of caches.
-  m_cache_count = reinterpret_cast<uint32_t *>(m_base + sizeof(raw_t) + n_routers * sizeof(RouterIdElt));
+  m_cache_count  = reinterpret_cast<uint32_t *>(m_base + sizeof(raw_t) + n_routers * sizeof(RouterIdElt));
   *m_cache_count = htonl(n_caches); // set the actual count.
 
   // Fill routers.
@@ -1042,9 +1042,9 @@ CacheViewComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
-      m_cache_count = reinterpret_cast<uint32_t *>(m_base + sizeof(raw_t) + this->getRouterCount() * sizeof(RouterIdElt));
+      m_cache_count    = reinterpret_cast<uint32_t *>(m_base + sizeof(raw_t) + this->getRouterCount() * sizeof(RouterIdElt));
       size_t comp_size = this->calcSize(this->getRouterCount(), this->getCacheCount());
       if (this->getLength() != comp_size - sizeof(super::raw_t))
         zret = PARSE_COMP_WRONG_SIZE;
@@ -1146,10 +1146,10 @@ AssignInfoComp &
 AssignInfoComp::fill(MsgBuffer &buffer, detail::Assignment const &assign)
 {
   RouterAssignListElt const &ralist = assign.getRouterList();
-  HashAssignElt const &ha = assign.getHash();
-  size_t n_routers = ralist.getCount();
-  size_t n_caches = ha.getCount();
-  size_t comp_size = this->calcSize(n_routers, n_caches);
+  HashAssignElt const &ha           = assign.getHash();
+  size_t n_routers                  = ralist.getCount();
+  size_t n_caches                   = ha.getCount();
+  size_t comp_size                  = this->calcSize(n_routers, n_caches);
 
   if (buffer.getSpace() < comp_size)
     throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
@@ -1177,13 +1177,13 @@ AssignInfoComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       int n_routers = this->getRouterCount();
       int n_caches;
-      m_cache_count = this->calcCacheCountPtr();
-      n_caches = this->getCacheCount();
-      m_buckets = this->calcBucketPtr();
+      m_cache_count    = this->calcCacheCountPtr();
+      n_caches         = this->getCacheCount();
+      m_buckets        = this->calcBucketPtr();
       size_t comp_size = this->calcSize(n_routers, n_caches);
       if (this->getLength() != comp_size - HEADER_SIZE)
         zret = PARSE_COMP_WRONG_SIZE;
@@ -1236,10 +1236,10 @@ AltHashAssignComp &
 AltHashAssignComp::fill(MsgBuffer &buffer, detail::Assignment const &assign)
 {
   RouterAssignListElt const &ralist = assign.getRouterList();
-  HashAssignElt const &ha = assign.getHash();
-  size_t n_routers = ralist.getCount();
-  size_t n_caches = ha.getCount();
-  size_t comp_size = this->calcSize(n_routers, n_caches);
+  HashAssignElt const &ha           = assign.getHash();
+  size_t n_routers                  = ralist.getCount();
+  size_t n_caches                   = ha.getCount();
+  size_t comp_size                  = this->calcSize(n_routers, n_caches);
 
   if (buffer.getSpace() < comp_size)
     throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
@@ -1269,12 +1269,12 @@ AltHashAssignComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       int n_routers = this->getRouterCount();
       int n_caches;
-      m_cache_count = static_cast<uint32_t *>(this->calcVarPtr());
-      n_caches = this->getCacheCount();
+      m_cache_count    = static_cast<uint32_t *>(this->calcVarPtr());
+      n_caches         = this->getCacheCount();
       size_t comp_size = this->calcSize(n_routers, n_caches);
       if (this->getLength() != comp_size - HEADER_SIZE)
         zret = PARSE_COMP_WRONG_SIZE;
@@ -1291,8 +1291,8 @@ AltMaskAssignComp &
 AltMaskAssignComp::fill(MsgBuffer &buffer, detail::Assignment const &assign)
 {
   RouterAssignListElt const &ralist = assign.getRouterList();
-  MaskAssignElt const &ma = assign.getMask();
-  size_t comp_size = sizeof(raw_t) + ralist.getVarSize() + ma.getSize();
+  MaskAssignElt const &ma           = assign.getMask();
+  size_t comp_size                  = sizeof(raw_t) + ralist.getVarSize() + ma.getSize();
 
   if (buffer.getSpace() < comp_size)
     throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
@@ -1322,11 +1322,11 @@ AltMaskAssignComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       RouterAssignListElt *ralist = &(access_field(&raw_t::m_routers, m_base));
-      m_mask_elt = static_cast<MaskAssignElt *>(this->calcVarPtr());
-      size_t comp_size = sizeof(raw_t) + ralist->getVarSize() + m_mask_elt->getSize();
+      m_mask_elt                  = static_cast<MaskAssignElt *>(this->calcVarPtr());
+      size_t comp_size            = sizeof(raw_t) + ralist->getVarSize() + m_mask_elt->getSize();
       if (this->getLength() != comp_size - HEADER_SIZE)
         zret = PARSE_COMP_WRONG_SIZE;
       else
@@ -1396,7 +1396,7 @@ CmdComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       if (this->getLength() + sizeof(super::raw_t) != this->calcSize())
         zret = PARSE_COMP_WRONG_SIZE;
@@ -1423,8 +1423,8 @@ CapComp::cache() const
   uint32_t x; // scratch for bounds checking.
   // Reset all values.
   m_packet_forward = ServiceGroup::NO_PACKET_STYLE;
-  m_packet_return = ServiceGroup::NO_PACKET_STYLE;
-  m_cache_assign = ServiceGroup::NO_CACHE_ASSIGN_STYLE;
+  m_packet_return  = ServiceGroup::NO_PACKET_STYLE;
+  m_cache_assign   = ServiceGroup::NO_CACHE_ASSIGN_STYLE;
   if (!m_base)
     return; // No data, everything is default.
   // Load from data.
@@ -1458,7 +1458,7 @@ CapComp &
 CapComp::fill(MsgBuffer &buffer, int n)
 {
   size_t comp_size = this->calcSize(n);
-  m_cached = false;
+  m_cached         = false;
 
   if (buffer.getSpace() < comp_size)
     throw ts::Exception(BUFFER_TOO_SMALL_FOR_COMP_TEXT);
@@ -1480,7 +1480,7 @@ CapComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       // No explicit count, compute it from length.
       m_count = this->getLength() / sizeof(CapabilityElt);
@@ -1498,7 +1498,7 @@ QueryComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret)
       buffer.use(this->calcSize());
   }
@@ -1514,9 +1514,9 @@ AssignMapComp::getCount() const
 AssignMapComp &
 AssignMapComp::fill(MsgBuffer &buffer, detail::Assignment const &assign)
 {
-  size_t comp_size = sizeof(raw_t);
+  size_t comp_size        = sizeof(raw_t);
   MaskAssignElt const &ma = assign.getMask();
-  size_t ma_size = ma.getSize(); // Not constant time.
+  size_t ma_size          = ma.getSize(); // Not constant time.
 
   // Can't be precise, but we need at least one mask/value set with
   // at least one value. If we don't have that it's a clear fail.
@@ -1541,7 +1541,7 @@ AssignMapComp::parse(MsgBuffer &buffer)
     zret = PARSE_BUFFER_TOO_SMALL;
   else {
     m_base = buffer.getTail();
-    zret = this->checkHeader(buffer, COMP_TYPE);
+    zret   = this->checkHeader(buffer, COMP_TYPE);
     if (PARSE_SUCCESS == zret) {
       // TBD - Actually check the mask/value set data !!
       buffer.use(this->getLength() + HEADER_SIZE);
@@ -1566,7 +1566,7 @@ detail::Assignment::fill(cache::GroupData &group, uint32_t addr)
   // mentioned by at least one router are purged.
 
   size_t n_routers = group.m_routers.size(); // routers in group
-  size_t n_caches = group.m_caches.size();   // caches in group
+  size_t n_caches  = group.m_caches.size();  // caches in group
 
   // We need both routers and caches to do something useful.
   if (!(n_routers && n_caches))

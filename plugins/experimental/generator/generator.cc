@@ -76,7 +76,7 @@
 static TSCont TxnHook;
 static uint8_t GeneratorData[32 * 1024];
 
-static int StatCountBytes = -1;
+static int StatCountBytes     = -1;
 static int StatCountResponses = -1;
 
 static int GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata);
@@ -162,7 +162,7 @@ struct GeneratorRequest {
 
   enum {
     CACHEABLE = 0x0001,
-    ISHEAD = 0x0002,
+    ISHEAD    = 0x0002,
   };
 
   GeneratorRequest() : nbytes(0), flags(0) {}
@@ -413,13 +413,13 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
   }
 
   case TS_EVENT_VCONN_READ_READY: {
-    argument_type cdata = TSContDataGet(contp);
+    argument_type cdata           = TSContDataGet(contp);
     GeneratorHttpHeader &rqheader = cdata.grq->rqheader;
 
     VDEBUG("reading vio=%p vc=%p, grq=%p", arg.vio, TSVIOVConnGet(arg.vio), cdata.grq);
 
     TSIOBufferBlock blk;
-    ssize_t consumed = 0;
+    ssize_t consumed     = 0;
     TSParseResult result = TS_PARSE_CONT;
 
     for (blk = TSIOBufferReaderStart(cdata.grq->readio.reader); blk; blk = TSIOBufferBlockNext(blk)) {
@@ -432,7 +432,7 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
         continue;
       }
 
-      end = ptr + nbytes;
+      end    = ptr + nbytes;
       result = TSHttpHdrParseReq(rqheader.parser, rqheader.buffer, rqheader.header, &ptr, end);
       switch (result) {
       case TS_PARSE_ERROR:
@@ -590,8 +590,8 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)PLUGIN;
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)PLUGIN;
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

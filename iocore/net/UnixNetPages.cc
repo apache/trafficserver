@@ -53,7 +53,7 @@ struct ShowNet : public ShowCont {
   showConnectionsOnThread(int event, Event *e)
   {
     EThread *ethread = e->ethread;
-    NetHandler *nh = get_NetHandler(ethread);
+    NetHandler *nh   = get_NetHandler(ethread);
     MUTEX_TRY_LOCK(lock, nh->mutex, ethread);
     if (!lock.is_locked()) {
       ethread->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
@@ -145,8 +145,8 @@ struct ShowNet : public ShowCont {
   int
   showSingleThread(int event, Event *e)
   {
-    EThread *ethread = e->ethread;
-    NetHandler *nh = get_NetHandler(ethread);
+    EThread *ethread               = e->ethread;
+    NetHandler *nh                 = get_NetHandler(ethread);
     PollDescriptor *pollDescriptor = get_PollDescriptor(ethread);
     MUTEX_TRY_LOCK(lock, nh->mutex, ethread);
     if (!lock.is_locked()) {
@@ -218,8 +218,8 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
   } else if (STREQ_PREFIX(path, path_len, "ips")) {
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
-    s->sarg = ats_strndup(query, query_len);
-    char *gn = NULL;
+    s->sarg           = ats_strndup(query, query_len);
+    char *gn          = NULL;
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)
@@ -228,8 +228,8 @@ register_ShowNet(Continuation *c, HTTPHdr *h)
   } else if (STREQ_PREFIX(path, path_len, "ports")) {
     int query_len;
     const char *query = h->url_get()->query_get(&query_len);
-    s->sarg = ats_strndup(query, query_len);
-    char *gn = NULL;
+    s->sarg           = ats_strndup(query, query_len);
+    char *gn          = NULL;
     if (s->sarg)
       gn = (char *)memchr(s->sarg, '=', strlen(s->sarg));
     if (gn)

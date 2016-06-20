@@ -50,9 +50,9 @@ runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata)
   char buf[BUF_SIZE];
   int deflate_result = Z_OK;
   do {
-    zstrm.next_out = reinterpret_cast<Bytef *>(buf);
+    zstrm.next_out  = reinterpret_cast<Bytef *>(buf);
     zstrm.avail_out = BUF_SIZE;
-    deflate_result = deflate(&zstrm, flush);
+    deflate_result  = deflate(&zstrm, flush);
     if ((deflate_result == Z_OK) || (deflate_result == Z_STREAM_END)) {
       cdata.append(buf, BUF_SIZE - zstrm.avail_out);
       if ((deflate_result == Z_STREAM_END) || zstrm.avail_out > 6) {
@@ -88,7 +88,7 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
   }
 
   _zstrm.zalloc = Z_NULL;
-  _zstrm.zfree = Z_NULL;
+  _zstrm.zfree  = Z_NULL;
   _zstrm.opaque = Z_NULL;
   if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
     _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
@@ -97,9 +97,9 @@ EsiGzip::stream_encode(const char *data, int data_len, std::string &cdata)
 
   int deflate_result = Z_OK;
   if (data && (data_len > 0)) {
-    _zstrm.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data));
+    _zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(data));
     _zstrm.avail_in = data_len;
-    deflate_result = runDeflateLoop(_zstrm, Z_FULL_FLUSH, cdata);
+    deflate_result  = runDeflateLoop(_zstrm, Z_FULL_FLUSH, cdata);
     if (deflate_result != Z_OK) {
       _errorLog("[%s] runDeflateLoop failed!", __FUNCTION__);
 
@@ -123,14 +123,14 @@ EsiGzip::stream_finish(std::string &cdata, int &downstream_length)
   char buf[BUF_SIZE];
 
   _zstrm.zalloc = Z_NULL;
-  _zstrm.zfree = Z_NULL;
+  _zstrm.zfree  = Z_NULL;
   _zstrm.opaque = Z_NULL;
   if (deflateInit2(&_zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
     _errorLog("[%s] deflateInit2 failed!", __FUNCTION__);
     return false;
   }
 
-  _zstrm.next_in = reinterpret_cast<Bytef *>(buf);
+  _zstrm.next_in  = reinterpret_cast<Bytef *>(buf);
   _zstrm.avail_in = 0;
   // required for the "finish" loop as no data has been given so far
   int deflate_result = runDeflateLoop(_zstrm, Z_FINISH, cdata);

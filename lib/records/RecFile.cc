@@ -258,9 +258,9 @@ RecPipeConnect(const char *base_path, const char *name)
 int
 RecPipeRead(RecHandle h_pipe, char *buf, int size)
 {
-  int bytes_read = 0;
+  int bytes_read   = 0;
   int bytes_wanted = size;
-  char *p = buf;
+  char *p          = buf;
   while (bytes_wanted > 0) {
     bytes_read = read(h_pipe, p, bytes_wanted);
     if (bytes_read < 0) {
@@ -280,9 +280,9 @@ RecPipeRead(RecHandle h_pipe, char *buf, int size)
 int
 RecPipeWrite(RecHandle h_pipe, char *buf, int size)
 {
-  int bytes_written = 0;
+  int bytes_written  = 0;
   int bytes_to_write = size;
-  char *p = buf;
+  char *p            = buf;
   while (bytes_to_write > 0) {
     bytes_written = write(h_pipe, p, bytes_to_write);
     if (bytes_written < 0) {

@@ -60,7 +60,7 @@ int
 CheckVersion()
 {
   const char *ts_version = TSTrafficServerVersionGet();
-  int result = 0;
+  int result             = 0;
 
   if (ts_version) {
     int major_ts_version = 0;
@@ -89,8 +89,8 @@ TSPluginInit(int argc, const char *argv[])
   (void)argc;
   (void)argv;
 
-  info.plugin_name = "lifecycle-plugin";
-  info.vendor_name = "My Company";
+  info.plugin_name   = "lifecycle-plugin";
+  info.vendor_name   = "My Company";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

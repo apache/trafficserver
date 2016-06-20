@@ -48,7 +48,7 @@ vmapEnableHandler(const char *tok, RecDataT /* data_type ATS_UNUSED */, RecData 
   bool before = true;
   ink_assert(!tok);
   if (!lmgmt->virt_map->enabled)
-    before = false;
+    before                 = false;
   lmgmt->virt_map->enabled = (RecInt)data.rec_int;
   if (!lmgmt->virt_map->enabled && before) {
     lmgmt->virt_map->turning_off = true; // turing VIP from off to on
@@ -66,18 +66,18 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
   } // Wait until mutex pointer is initialized
   mutex = m;
 
-  our_ip = ip;
-  num_interfaces = 0;
-  id_map = NULL;
+  our_ip               = ip;
+  num_interfaces       = 0;
+  id_map               = NULL;
   interface_realip_map = ink_hash_table_create(InkHashTableKeyType_String);
-  our_map = ink_hash_table_create(InkHashTableKeyType_String);
-  ext_map = ink_hash_table_create(InkHashTableKeyType_String);
-  addr_list = NULL;
-  num_addrs = 0;
-  num_nics = 0;
+  our_map              = ink_hash_table_create(InkHashTableKeyType_String);
+  ext_map              = ink_hash_table_create(InkHashTableKeyType_String);
+  addr_list            = NULL;
+  num_addrs            = 0;
+  num_nics             = 0;
 
   this->interface = ats_strdup(interface);
-  turning_off = false; // we are not turning off VIP
+  turning_off     = false; // we are not turning off VIP
 
   enabled = REC_readInteger("proxy.config.vmap.enabled", &found);
   /*
@@ -94,8 +94,8 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
 
     tmp_addr.s_addr = ip;
 
-    tmp_realip_info = (RealIPInfo *)ats_malloc(sizeof(RealIPInfo));
-    tmp_realip_info->real_ip = tmp_addr;
+    tmp_realip_info                         = (RealIPInfo *)ats_malloc(sizeof(RealIPInfo));
+    tmp_realip_info->real_ip                = tmp_addr;
     tmp_realip_info->mappings_for_interface = true;
 
     num_nics++;
@@ -120,9 +120,9 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
     // INKqa06739
     // Fetch the list of network interfaces
     // . from Stevens, Unix Network Prog., pg 434-435
-    ifbuf = 0;
+    ifbuf   = 0;
     lastlen = 0;
-    len = 128 * sizeof(struct ifreq); // initial buffer size guess
+    len     = 128 * sizeof(struct ifreq); // initial buffer size guess
     for (;;) {
       ifbuf = (char *)ats_malloc(len);
       memset(ifbuf, 0, len); // prevent UMRs
@@ -160,8 +160,8 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
 
             tmp = (struct sockaddr_in *)&ifr->ifr_ifru.ifru_addr;
 
-            tmp_realip_info = (RealIPInfo *)ats_malloc(sizeof(RealIPInfo));
-            tmp_realip_info->real_ip = tmp->sin_addr;
+            tmp_realip_info                         = (RealIPInfo *)ats_malloc(sizeof(RealIPInfo));
+            tmp_realip_info->real_ip                = tmp->sin_addr;
             tmp_realip_info->mappings_for_interface = false;
 
             if (ink_hash_table_lookup(interface_realip_map, ifr->ifr_name, &hash_value) != 0) {
@@ -203,7 +203,7 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
   lt_readAListFile(addr_list_fname);
 
   map_change_thresh = 10;
-  last_map_change = time(NULL);
+  last_map_change   = time(NULL);
 
   return;
 
@@ -500,7 +500,7 @@ VMap::rl_map(char *virt_ip, char *real_ip)
     return false;
   }
 
-  entry = (bool *)ats_malloc(sizeof(bool));
+  entry  = (bool *)ats_malloc(sizeof(bool));
   *entry = true;
 
   if (!real_ip) {
@@ -547,7 +547,7 @@ VMap::rl_unmap(char *virt_ip, char *real_ip)
 char *
 VMap::rl_checkConflict(char *virt_ip)
 {
-  char *key = NULL;
+  char *key       = NULL;
   bool in_our_map = false, in_ext_map = false;
   InkHashTableValue hash_value;
   InkHashTableEntry *entry;

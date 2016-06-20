@@ -104,7 +104,7 @@ REGRESSION_TEST(CN_match)(RegressionTest *t, int /* atype ATS_UNUSED */, int *ps
   TestBox box(t, pstatus);
   char *matching;
 
-  box = REGRESSION_TEST_PASSED;
+  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn);
   box.check(x != NULL, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true, "Hostname should match");
@@ -117,7 +117,7 @@ REGRESSION_TEST(bad_wildcard_SANs)(RegressionTest *t, int /* atype ATS_UNUSED */
 {
   TestBox box(t, pstatus);
 
-  box = REGRESSION_TEST_PASSED;
+  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_bad_sans);
   box.check(x != NULL, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)"something.or.other", false, NULL) == false, "Hostname shouldn't match");
@@ -132,7 +132,7 @@ REGRESSION_TEST(wildcard_SAN_and_CN)(RegressionTest *t, int /* atype ATS_UNUSED 
   TestBox box(t, pstatus);
   char *matching;
 
-  box = REGRESSION_TEST_PASSED;
+  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
   box.check(x != NULL, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)test_certificate_cn_name, false, &matching) == true, "Hostname should match");
@@ -150,7 +150,7 @@ REGRESSION_TEST(IDNA_hostnames)(RegressionTest *t, int /* atype ATS_UNUSED */, i
 {
   TestBox box(t, pstatus);
   char *matching;
-  box = REGRESSION_TEST_PASSED;
+  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
   box.check(x != NULL, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)"xn--foobar.trafficserver.org", false, &matching) == true,
@@ -167,7 +167,7 @@ REGRESSION_TEST(middle_label_match)(RegressionTest *t, int /* atype ATS_UNUSED *
 {
   TestBox box(t, pstatus);
   char *matching;
-  box = REGRESSION_TEST_PASSED;
+  box     = REGRESSION_TEST_PASSED;
   X509 *x = load_cert_from_string(test_certificate_cn_and_SANs);
   box.check(x != NULL, "failed to load the test certificate");
   box.check(validate_hostname(x, (unsigned char *)"foosomething.trafficserver.com", false, &matching) == true,
@@ -187,7 +187,7 @@ int
 main(int argc, const char **argv)
 {
   BaseLogFile *blf = new BaseLogFile("stdout");
-  diags = new Diags(NULL, NULL, blf);
+  diags            = new Diags(NULL, NULL, blf);
   res_track_memory = 1;
 
   SSL_library_init();

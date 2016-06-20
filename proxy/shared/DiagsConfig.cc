@@ -64,7 +64,7 @@ DiagsConfig::reconfigure_diags()
   all_found = true;
 
   // initial value set to 0 or 1 based on command line tags
-  c.enabled[DiagsTagType_Debug] = (diags->base_debug_tags != NULL);
+  c.enabled[DiagsTagType_Debug]  = (diags->base_debug_tags != NULL);
   c.enabled[DiagsTagType_Action] = (diags->base_action_tags != NULL);
 
   // enabled if records.config set
@@ -72,25 +72,25 @@ DiagsConfig::reconfigure_diags()
   e = (int)REC_readInteger("proxy.config.diags.debug.enabled", &found);
   if (e && found)
     c.enabled[DiagsTagType_Debug] = 1; // implement OR logic
-  all_found = all_found && found;
+  all_found                       = all_found && found;
 
   e = (int)REC_readInteger("proxy.config.diags.action.enabled", &found);
   if (e && found)
     c.enabled[DiagsTagType_Action] = 1; // implement OR logic
-  all_found = all_found && found;
+  all_found                        = all_found && found;
 
-  e = (int)REC_readInteger("proxy.config.diags.show_location", &found);
+  e                    = (int)REC_readInteger("proxy.config.diags.show_location", &found);
   diags->show_location = ((e && found) ? 1 : 0);
-  all_found = all_found && found;
+  all_found            = all_found && found;
 
   // read output routing values
   for (i = 0;; i++) {
     const char *record_name = output_records[i].config_name;
-    DiagsLevel l = output_records[i].level;
+    DiagsLevel l            = output_records[i].level;
 
     if (!record_name)
       break;
-    p = REC_readString(record_name, &found);
+    p         = REC_readString(record_name, &found);
     all_found = all_found && found;
     if (found) {
       parse_output_string(p, &(c.outputs[l]));
@@ -100,12 +100,12 @@ DiagsConfig::reconfigure_diags()
     }
   }
 
-  p = REC_readString("proxy.config.diags.debug.tags", &found);
-  dt = (found ? p : NULL); // NOTE: needs to be freed
+  p         = REC_readString("proxy.config.diags.debug.tags", &found);
+  dt        = (found ? p : NULL); // NOTE: needs to be freed
   all_found = all_found && found;
 
-  p = REC_readString("proxy.config.diags.action.tags", &found);
-  at = (found ? p : NULL); // NOTE: needs to be freed
+  p         = REC_readString("proxy.config.diags.action.tags", &found);
+  at        = (found ? p : NULL); // NOTE: needs to be freed
   all_found = all_found && found;
 
   ///////////////////////////////////////////////////////////////////
@@ -186,9 +186,9 @@ diags_config_callback(const char * /* name ATS_UNUSED */, RecDataT /* data_type 
 void
 DiagsConfig::parse_output_string(char *s, DiagsModeOutput *o)
 {
-  o->to_stdout = (s && strchr(s, 'O'));
-  o->to_stderr = (s && strchr(s, 'E'));
-  o->to_syslog = (s && strchr(s, 'S'));
+  o->to_stdout   = (s && strchr(s, 'O'));
+  o->to_stderr   = (s && strchr(s, 'E'));
+  o->to_syslog   = (s && strchr(s, 'S'));
   o->to_diagslog = (s && strchr(s, 'L'));
 }
 
@@ -261,7 +261,7 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
   ats_scoped_str logpath;
 
   callbacks_established = false;
-  diags = NULL;
+  diags                 = NULL;
 
   ////////////////////////////////////////////////////////////////////
   //  If we aren't using the manager records for configuation       //
@@ -289,16 +289,16 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
 
   // Grab rolling intervals from configuration
   // TODO error check these values
-  int output_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec");
-  int output_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
+  int output_log_roll_int    = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec");
+  int output_log_roll_size   = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
   int output_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled");
-  int diags_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
-  int diags_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
-  int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
+  int diags_log_roll_int     = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
+  int diags_log_roll_size    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
+  int diags_log_roll_enable  = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
 
   // Set up diags, FILE streams are opened in Diags constructor
   diags_log = new BaseLogFile(diags_logpath);
-  diags = new Diags(tags, actions, diags_log);
+  diags     = new Diags(tags, actions, diags_log);
   diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
   diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
 

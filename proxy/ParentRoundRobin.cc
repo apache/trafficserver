@@ -53,8 +53,8 @@ void
 ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_call, ParentResult *result, RequestData *rdata)
 {
   Debug("parent_select", "In ParentRoundRobin::selectParent(): Using a round robin parent selection strategy.");
-  int cur_index = 0;
-  bool parentUp = false;
+  int cur_index    = 0;
+  bool parentUp    = false;
   bool parentRetry = false;
 
   HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
@@ -74,7 +74,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       }
 
       result->hostname = NULL;
-      result->port = 0;
+      result->port     = 0;
       return;
     } else {
       switch (round_robin_type) {
@@ -116,7 +116,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
           result->result = PARENT_FAIL;
         }
         result->hostname = NULL;
-        result->port = 0;
+        result->port     = 0;
         return;
       }
     }
@@ -138,7 +138,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
               (unsigned)result->rec->parents[cur_index].failedAt, policy->ParentRetryTime, (int64_t)request_info->xact_start,
               result->wrap_around);
         // Reuse the parent
-        parentUp = true;
+        parentUp    = true;
         parentRetry = true;
         Debug("parent_select", "Parent marked for retry %s:%d", result->rec->parents[cur_index].hostname,
               result->rec->parents[cur_index].port);
@@ -148,11 +148,11 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     }
 
     if (parentUp == true) {
-      result->result = PARENT_SPECIFIED;
-      result->hostname = result->rec->parents[cur_index].hostname;
-      result->port = result->rec->parents[cur_index].port;
+      result->result      = PARENT_SPECIFIED;
+      result->hostname    = result->rec->parents[cur_index].hostname;
+      result->port        = result->rec->parents[cur_index].port;
       result->last_parent = cur_index;
-      result->retry = parentRetry;
+      result->retry       = parentRetry;
       ink_assert(result->hostname != NULL);
       ink_assert(result->port != 0);
       Debug("parent_select", "Chosen parent = %s.%d", result->hostname, result->port);
@@ -168,7 +168,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
   }
 
   result->hostname = NULL;
-  result->port = 0;
+  result->port     = 0;
 }
 
 uint32_t

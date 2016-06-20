@@ -71,9 +71,9 @@ public:
   void
   init(Http2StreamId sid, ssize_t initial_rwnd)
   {
-    _id = sid;
-    _start_time = Thread::get_hrtime();
-    _thread = this_ethread();
+    _id               = sid;
+    _start_time       = Thread::get_hrtime();
+    _thread           = this_ethread();
     this->client_rwnd = initial_rwnd;
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
     sm_reader = request_reader = request_buffer.alloc_reader();

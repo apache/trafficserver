@@ -110,7 +110,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
   }
 
   // reset args
-  left = val - sizeof("start") - query;
+  left  = val - sizeof("start") - query;
   right = query + query_len - val - val_len;
 
   if (left > 0) {
@@ -138,7 +138,7 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
     TSHandleMLocRelease(rri->requestBufp, rri->requestHdrp, range_field);
   }
 
-  mc = new Mp4Context(start);
+  mc    = new Mp4Context(start);
   contp = TSContCreate(mp4_handler, NULL);
   TSContDataSet(contp, mc);
 
@@ -155,7 +155,7 @@ mp4_handler(TSCont contp, TSEvent event, void *edata)
   Mp4Context *mc;
 
   txnp = (TSHttpTxn)edata;
-  mc = (Mp4Context *)TSContDataGet(contp);
+  mc   = (Mp4Context *)TSContDataGet(contp);
 
   switch (event) {
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
@@ -244,7 +244,7 @@ mp4_read_response(Mp4Context *mc, TSHttpTxn txnp)
   if (status != TS_HTTP_STATUS_OK)
     goto release;
 
-  n = 0;
+  n        = 0;
   cl_field = TSMimeHdrFieldFind(bufp, hdrp, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
   if (cl_field) {
     n = TSMimeHdrFieldValueInt64Get(bufp, hdrp, cl_field, -1);
@@ -325,8 +325,8 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
 
   mtc = mc->mtc;
 
-  output_conn = TSTransformOutputVConnGet(contp);
-  input_vio = TSVConnWriteVIOGet(contp);
+  output_conn  = TSTransformOutputVConnGet(contp);
+  input_vio    = TSVConnWriteVIOGet(contp);
   input_reader = TSVIOReaderGet(input_vio);
 
   if (!TSVIOBufferGet(input_vio)) {
@@ -337,14 +337,14 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
     return 1;
   }
 
-  avail = TSIOBufferReaderAvail(input_reader);
+  avail         = TSIOBufferReaderAvail(input_reader);
   upstream_done = TSVIONDoneGet(input_vio);
 
   TSIOBufferCopy(mtc->res_buffer, input_reader, avail, 0);
   TSIOBufferReaderConsume(input_reader, avail);
   TSVIONDoneSet(input_vio, upstream_done + avail);
 
-  toread = TSVIONTodoGet(input_vio);
+  toread     = TSVIONTodoGet(input_vio);
   write_down = false;
 
   if (!mtc->parse_over) {
@@ -352,12 +352,12 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
     if (ret == 0)
       goto trans;
 
-    mtc->parse_over = true;
+    mtc->parse_over    = true;
     mtc->output.buffer = TSIOBufferCreate();
     mtc->output.reader = TSIOBufferReaderAlloc(mtc->output.buffer);
 
     if (ret < 0) {
-      mtc->output.vio = TSVConnWrite(output_conn, contp, mtc->output.reader, mc->cl);
+      mtc->output.vio    = TSVConnWrite(output_conn, contp, mtc->output.reader, mc->cl);
       mtc->raw_transform = true;
 
     } else {
@@ -386,7 +386,7 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
     // ignore useless part
     if (mtc->pos < mtc->tail) {
       avail = TSIOBufferReaderAvail(mtc->res_reader);
-      need = mtc->tail - mtc->pos;
+      need  = mtc->tail - mtc->pos;
       if (need > avail) {
         need = avail;
       }
@@ -440,7 +440,7 @@ mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
   mm = &mtc->mm;
 
   avail = TSIOBufferReaderAvail(mtc->dup_reader);
-  blk = TSIOBufferReaderStart(mtc->dup_reader);
+  blk   = TSIOBufferReaderStart(mtc->dup_reader);
 
   while (blk != NULL) {
     data = TSIOBufferBlockReadStart(blk, mtc->dup_reader, &bytes);
@@ -456,9 +456,9 @@ mp4_parse_meta(Mp4TransformContext *mtc, bool body_complete)
   ret = mm->parse_meta(body_complete);
 
   if (ret > 0) { // meta success
-    mtc->tail = mm->start_pos;
+    mtc->tail           = mm->start_pos;
     mtc->content_length = mm->content_length;
-    mtc->meta_length = TSIOBufferReaderAvail(mm->out_handle.reader);
+    mtc->meta_length    = TSIOBufferReaderAvail(mm->out_handle.reader);
   }
 
   if (ret != 0) {
@@ -480,7 +480,7 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
   if (!param || !param_len)
     return NULL;
 
-  p = param;
+  p    = param;
   last = p + param_len;
 
   for (; p < last; p++) {

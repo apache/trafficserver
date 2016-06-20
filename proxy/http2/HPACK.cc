@@ -205,7 +205,7 @@ HpackLookupResult
 HpackIndexingTable::lookup(const MIMEFieldWrapper &field) const
 {
   int target_name_len = 0, target_value_len = 0;
-  const char *target_name = field.name_get(&target_name_len);
+  const char *target_name  = field.name_get(&target_name_len);
   const char *target_value = field.value_get(&target_value_len);
   return lookup(target_name, target_name_len, target_value, target_value_len);
 }
@@ -222,26 +222,26 @@ HpackIndexingTable::lookup(const char *name, int name_len, const char *value, in
 
     if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
       // static table
-      table_name = STATIC_TABLE[index].name;
-      table_value = STATIC_TABLE[index].value;
-      table_name_len = strlen(table_name);
+      table_name      = STATIC_TABLE[index].name;
+      table_value     = STATIC_TABLE[index].value;
+      table_name_len  = strlen(table_name);
       table_value_len = strlen(table_value);
     } else {
       // dynamic table
       const MIMEField *m_field = _dynamic_table->get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
 
-      table_name = m_field->name_get(&table_name_len);
+      table_name  = m_field->name_get(&table_name_len);
       table_value = m_field->value_get(&table_value_len);
     }
 
     // Check whether name (and value) are matched
     if (ptr_len_casecmp(name, name_len, table_name, table_name_len) == 0) {
       if (ptr_len_cmp(value, value_len, table_value, table_value_len) == 0) {
-        result.index = index;
+        result.index      = index;
         result.match_type = HPACK_EXACT_MATCH;
         break;
       } else if (!result.index) {
-        result.index = index;
+        result.index      = index;
         result.match_type = HPACK_NAME_MATCH;
       }
     }
@@ -273,7 +273,7 @@ HpackIndexingTable::get_header_field(uint32_t index, MIMEFieldWrapper &field) co
     const MIMEField *m_field = _dynamic_table->get_header_field(index - TS_HPACK_STATIC_TABLE_ENTRY_NUM);
 
     int name_len, value_len;
-    const char *name = m_field->name_get(&name_len);
+    const char *name  = m_field->name_get(&name_len);
     const char *value = m_field->value_get(&value_len);
 
     field.name_set(name, name_len);
@@ -316,8 +316,8 @@ void
 HpackDynamicTable::add_header_field(const MIMEField *field)
 {
   int name_len, value_len;
-  const char *name = field->name_get(&name_len);
-  const char *value = field->value_get(&value_len);
+  const char *name     = field->name_get(&name_len);
+  const char *value    = field->value_get(&value_len);
   uint32_t header_size = ADDITIONAL_OCTETS + name_len + value_len;
 
   if (header_size > _maximum_size) {
@@ -412,7 +412,7 @@ encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8
         return -1;
       }
       *(p++) = (value & 0x7F) | 0x80;
-      value = value >> 7;
+      value  = value >> 7;
     }
     if (p + 1 >= buf_end) {
       return -1;
@@ -425,9 +425,9 @@ encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8
 int64_t
 encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, size_t value_len)
 {
-  uint8_t *p = buf_start;
+  uint8_t *p       = buf_start;
   bool use_huffman = true;
-  char *data = NULL;
+  char *data       = NULL;
   int64_t data_len = 0;
 
   // TODO Choose whether to use Huffman encoding wisely
@@ -514,15 +514,15 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   case HPACK_FIELD_INDEXED_LITERAL:
     indexing_table.add_header_field(header.field_get());
     prefix = 6;
-    flag = 0x40;
+    flag   = 0x40;
     break;
   case HPACK_FIELD_NOINDEX_LITERAL:
     prefix = 4;
-    flag = 0x00;
+    flag   = 0x00;
     break;
   case HPACK_FIELD_NEVERINDEX_LITERAL:
     prefix = 4;
-    flag = 0x10;
+    flag   = 0x10;
     break;
   default:
     return -1;
@@ -543,7 +543,7 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   // Value String
   int value_len;
   const char *value = header.value_get(&value_len);
-  len = encode_string(p, buf_end, value, value_len);
+  len               = encode_string(p, buf_end, value, value_len);
   if (len == -1)
     return -1;
   p += len;
@@ -587,7 +587,7 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   int name_len;
   const char *name = header.name_get(&name_len);
   char *lower_name = arena.str_store(name, name_len);
-  for (int i = 0; i < name_len; i++)
+  for (int i      = 0; i < name_len; i++)
     lower_name[i] = ParseRules::ink_tolower(lower_name[i]);
 
   // Name String
@@ -600,7 +600,7 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   // Value String
   int value_len;
   const char *value = header.value_get(&value_len);
-  len = encode_string(p, buf_end, value, value_len);
+  len               = encode_string(p, buf_end, value, value_len);
   if (len == -1) {
     return -1;
   }
@@ -655,10 +655,10 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
-  const uint8_t *p = buf_start;
-  bool isHuffman = *p & 0x80;
+  const uint8_t *p            = buf_start;
+  bool isHuffman              = *p & 0x80;
   uint32_t encoded_string_len = 0;
-  int64_t len = 0;
+  int64_t len                 = 0;
 
   len = decode_integer(encoded_string_len, p, buf_end, 7);
   if (len == HPACK_ERROR_COMPRESSION_ERROR)
@@ -696,7 +696,7 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
                             HpackIndexingTable &indexing_table)
 {
   uint32_t index = 0;
-  int64_t len = 0;
+  int64_t len    = 0;
 
   len = decode_integer(index, buf_start, buf_end, 7);
   if (len == HPACK_ERROR_COMPRESSION_ERROR)
@@ -728,15 +728,15 @@ int64_t
 decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
                             HpackIndexingTable &indexing_table)
 {
-  const uint8_t *p = buf_start;
-  bool isIncremental = false;
-  uint32_t index = 0;
-  int64_t len = 0;
-  HpackFieldType ftype = hpack_parse_field_type(*p);
+  const uint8_t *p         = buf_start;
+  bool isIncremental       = false;
+  uint32_t index           = 0;
+  int64_t len              = 0;
+  HpackFieldType ftype     = hpack_parse_field_type(*p);
   bool has_http2_violation = false;
 
   if (ftype == HPACK_FIELD_INDEXED_LITERAL) {
-    len = decode_integer(index, p, buf_end, 6);
+    len           = decode_integer(index, p, buf_end, 6);
     isIncremental = true;
   } else if (ftype == HPACK_FIELD_NEVERINDEX_LITERAL) {
     len = decode_integer(index, p, buf_end, 4);
@@ -756,7 +756,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   if (index) {
     indexing_table.get_header_field(index, header);
   } else {
-    char *name_str = NULL;
+    char *name_str        = NULL;
     uint32_t name_str_len = 0;
 
     len = decode_string(arena, &name_str, name_str_len, p, buf_end);
@@ -777,7 +777,7 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   }
 
   // Decode header field value
-  char *value_str = NULL;
+  char *value_str        = NULL;
   uint32_t value_str_len = 0;
 
   len = decode_string(arena, &value_str, value_str_len, p, buf_end);
@@ -822,7 +822,7 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
 
   // Update header table size if its required.
   uint32_t size = 0;
-  int64_t len = decode_integer(size, buf_start, buf_end, 5);
+  int64_t len   = decode_integer(size, buf_start, buf_end, 5);
   if (len == HPACK_ERROR_COMPRESSION_ERROR)
     return HPACK_ERROR_COMPRESSION_ERROR;
 
@@ -836,12 +836,12 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
 int64_t
 hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len)
 {
-  const uint8_t *cursor = in_buf;
+  const uint8_t *cursor           = in_buf;
   const uint8_t *const in_buf_end = in_buf + in_buf_len;
-  HdrHeap *heap = hdr->m_heap;
-  HTTPHdrImpl *hh = hdr->m_http;
-  bool header_field_started = false;
-  bool has_http2_violation = false;
+  HdrHeap *heap                   = hdr->m_heap;
+  HTTPHdrImpl *hh                 = hdr->m_http;
+  bool header_field_started       = false;
+  bool has_http2_violation        = false;
 
   while (cursor < in_buf_end) {
     int64_t read_bytes = 0;
@@ -869,7 +869,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
       }
       if (read_bytes < 0) {
         has_http2_violation = true;
-        read_bytes = -read_bytes;
+        read_bytes          = -read_bytes;
       }
       cursor += read_bytes;
       header_field_started = true;
@@ -899,9 +899,9 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
 int64_t
 hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr)
 {
-  uint8_t *cursor = out_buf;
+  uint8_t *cursor                  = out_buf;
   const uint8_t *const out_buf_end = out_buf + out_buf_len;
-  int64_t written = 0;
+  int64_t written                  = 0;
 
   ink_assert(http_hdr_type_get(hdr->m_http) != HTTP_TYPE_UNKNOWN);
 

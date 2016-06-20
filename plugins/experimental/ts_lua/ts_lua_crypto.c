@@ -87,7 +87,7 @@ ts_lua_md5(lua_State *L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *)"";
+    src  = (u_char *)"";
     slen = 0;
 
   } else {
@@ -119,7 +119,7 @@ ts_lua_md5_bin(lua_State *L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *)"";
+    src  = (u_char *)"";
     slen = 0;
 
   } else {
@@ -150,7 +150,7 @@ ts_lua_sha1(lua_State *L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *)"";
+    src  = (u_char *)"";
     slen = 0;
 
   } else {
@@ -181,7 +181,7 @@ ts_lua_sha1_bin(lua_State *L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *)"";
+    src  = (u_char *)"";
     slen = 0;
 
   } else {
@@ -212,14 +212,14 @@ ts_lua_base64_encode(lua_State *L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *)"";
+    src  = (u_char *)"";
     slen = 0;
   } else {
     src = (u_char *)luaL_checklstring(L, 1, &slen);
   }
 
   dlen = TS_LUA_MAX_STR_LENGTH;
-  dst = lua_newuserdata(L, dlen);
+  dst  = lua_newuserdata(L, dlen);
 
   if (TS_SUCCESS == TSBase64Encode((const char *)src, slen, (char *)dst, dlen, &length)) {
     lua_pushlstring(L, (char *)dst, length);
@@ -244,14 +244,14 @@ ts_lua_base64_decode(lua_State *L)
   }
 
   if (lua_isnil(L, 1)) {
-    src = (u_char *)"";
+    src  = (u_char *)"";
     slen = 0;
   } else {
     src = (u_char *)luaL_checklstring(L, 1, &slen);
   }
 
   dlen = TS_LUA_MAX_STR_LENGTH;
-  dst = lua_newuserdata(L, dlen);
+  dst  = lua_newuserdata(L, dlen);
 
   if (TS_SUCCESS == TSBase64Decode((const char *)src, slen, (unsigned char *)dst, dlen, &length)) {
     lua_pushlstring(L, (char *)dst, length);
@@ -283,7 +283,7 @@ ts_lua_escape_uri(lua_State *L)
     return 1;
 
   dlen = TS_LUA_MAX_STR_LENGTH;
-  dst = lua_newuserdata(L, dlen);
+  dst  = lua_newuserdata(L, dlen);
 
   if (TS_SUCCESS == TSStringPercentEncode((const char *)src, len, (char *)dst, dlen, &length, NULL)) {
     lua_pushlstring(L, (char *)dst, length);
@@ -316,7 +316,7 @@ ts_lua_unescape_uri(lua_State *L)
 
   /* the unescaped string can only be smaller */
   dlen = len;
-  dst = lua_newuserdata(L, dlen);
+  dst  = lua_newuserdata(L, dlen);
 
   if (TS_SUCCESS == TSStringPercentDecode((const char *)src, len, (char *)dst, dlen, &length)) {
     lua_pushlstring(L, (char *)dst, length);

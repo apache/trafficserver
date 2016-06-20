@@ -102,8 +102,8 @@ ClassAllocator<SocksProxy> socksProxyAllocator("socksProxyAllocator");
 void
 SocksProxy::init(NetVConnection *netVC)
 {
-  mutex = new_ProxyMutex();
-  buf = new_MIOBuffer();
+  mutex  = new_ProxyMutex();
+  buf    = new_MIOBuffer();
   reader = buf->alloc_reader();
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
@@ -205,7 +205,7 @@ SocksProxy::mainEvent(int event, void *data)
             i++;
 
           if (p[i] == 0) {
-            port_ptr = &p[2];
+            port_ptr                  = &p[2];
             clientVC->socks_addr.type = SOCKS_ATYPE_IPV4;
             reader->consume(i + 1);
             // n_consume = i+1;
@@ -219,7 +219,7 @@ SocksProxy::mainEvent(int event, void *data)
         if (state == SOCKS_ACCEPT) {
           if (n_read_avail >= 2 + p[1]) {
             auth_handler = &socks5ServerAuthHandler;
-            ret = EVENT_DONE;
+            ret          = EVENT_DONE;
           }
         } else {
           ink_assert(state == AUTH_DONE);
@@ -243,9 +243,9 @@ SocksProxy::mainEvent(int event, void *data)
             }
 
             if (n_read_avail >= req_len) {
-              port_ptr = &p[req_len - 2];
+              port_ptr                  = &p[req_len - 2];
               clientVC->socks_addr.type = p[3];
-              auth_handler = NULL;
+              auth_handler              = NULL;
               reader->consume(req_len);
               ret = EVENT_DONE;
             }
@@ -287,7 +287,7 @@ SocksProxy::mainEvent(int event, void *data)
 
       } else {
         int port = port_ptr[0] * 256 + port_ptr[1];
-        version = p[0];
+        version  = p[0];
 
         if (port == netProcessor.socks_conf_stuff->http_port && p[1] == SOCKS_CONNECT) {
           /* disable further reads */
@@ -314,7 +314,7 @@ SocksProxy::mainEvent(int event, void *data)
           memcpy(&ip, &p[4], 4);
           ats_ip4_set(&addr, ip, htons(port));
 
-          state = SERVER_TUNNEL;
+          state     = SERVER_TUNNEL;
           clientVIO = vio; // used in the tunnel
 
           // tunnel the connection.
@@ -351,7 +351,7 @@ SocksProxy::mainEvent(int event, void *data)
 
     OneWayTunnel::SetupTwoWayTunnel(c_to_s, s_to_c);
 
-    buf = 0; // do not free buf. Tunnel will do that.
+    buf   = 0; // do not free buf. Tunnel will do that.
     state = ALL_DONE;
     break;
   }
@@ -422,8 +422,8 @@ SocksProxy::sendResp(bool granted)
   unsigned char *p = (unsigned char *)buf->start();
 
   if (version == SOCKS4_VERSION) {
-    p[0] = 0;
-    p[1] = (granted) ? SOCKS4_REQ_GRANTED : SOCKS4_CONN_FAILED;
+    p[0]    = 0;
+    p[1]    = (granted) ? SOCKS4_REQ_GRANTED : SOCKS4_CONN_FAILED;
     n_bytes = 8;
   } else {
     p[0] = SOCKS5_VERSION;
@@ -431,7 +431,7 @@ SocksProxy::sendResp(bool granted)
     p[2] = 0;
     p[3] = SOCKS_ATYPE_IPV4;
     p[4] = p[5] = p[6] = p[7] = p[8] = p[9] = 0;
-    n_bytes = 10;
+    n_bytes                                 = 10;
   }
 
   buf->fill(n_bytes);
@@ -468,7 +468,7 @@ SocksProxy::setupHttpRequest(unsigned char *p)
     // memcpy(a->addr.buf, &p[4], 16);
     // dont think we will use "proper" IPv6 addr anytime soon.
     // just use the last 4 octets as IPv4 addr:
-    a->type = SOCKS_ATYPE_IPV4;
+    a->type         = SOCKS_ATYPE_IPV4;
     a->addr.ipv4[0] = p[16];
     a->addr.ipv4[1] = p[17];
     a->addr.ipv4[2] = p[18];
@@ -544,7 +544,7 @@ socks5ServerAuthHandler(int event, unsigned char *p, void (**h_ptr)(void))
     Debug("SocksProxy", "No authentication is required");
     p[0] = SOCKS5_VERSION;
     p[1] = 0; // no authentication necessary
-    ret = 2;
+    ret  = 2;
   // FALLTHROUGH
   case SOCKS_AUTH_WRITE_COMPLETE:
     // nothing to do

@@ -164,7 +164,7 @@ public:
   detach()
   {
     T *tmp = m_ptr;
-    m_ptr = NULL;
+    m_ptr  = NULL;
     return tmp;
   }
 

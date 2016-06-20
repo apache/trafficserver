@@ -44,7 +44,7 @@ public:
   {
     ink_mutex_init(&mutex, name);
     destroy_and_free = free_on_delete;
-    ht = ink_hash_table_create(type);
+    ht               = ink_hash_table_create(type);
   }
 
   ~MgmtHashTable()

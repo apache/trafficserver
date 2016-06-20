@@ -65,7 +65,7 @@ public:
     dup_reader = TSIOBufferReaderAlloc(res_buffer);
 
     mm.start = offset * 1000;
-    mm.cl = cl;
+    mm.cl    = cl;
   }
 
   ~Mp4TransformContext()
