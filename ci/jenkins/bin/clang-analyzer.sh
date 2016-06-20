@@ -21,9 +21,12 @@
 # to talk to the author of it, or ideally, figure out how to get clang-analyzer to
 # ignore them ?
 
+# Where are our LLVM tools?
+LLVM_BASE=${LLVM:-/opt/llvm}
+
 # Options
 options="--status-bugs --keep-empty"
-configure="--enable-experimental-plugins --enable-cppapi --disable-luajit"
+configure="--enable-experimental-plugins --enable-cppapi"
 
 # Additional checkers
 # Phil says these are all FP's: -enable-checker alpha.security.ArrayBoundV2
@@ -44,8 +47,8 @@ test -d "/home/jenkins/clang-analyzer" && output="/home/jenkins/clang-analyzer"
 
 autoreconf -fi
 #scan-build ./configure ${configure}
-./configure ${configure}
-/opt/llvm/bin/scan-build ${checkers} ${options} -o ${output} --html-title="ATS master branch"  ${ATS_MAKE} -j4
+./configure ${configure} CC=${LLVM_BASE}/bin/clang CXX=${LLVM_BASE}/bin/clang++
+${LLVM_BASE}/bin/scan-build ${checkers} ${options} -o ${output} --html-title="ATS master branch"  ${ATS_MAKE} -j4
 status=$?
 
 ${ATS_MAKE} distclean

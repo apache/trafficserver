@@ -821,7 +821,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof"
-      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare -analyzer-disable-all-checks"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
