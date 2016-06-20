@@ -23,6 +23,8 @@
 
 # Where are our LLVM tools?
 LLVM_BASE=${LLVM:-/opt/llvm}
+NPROCS=${NPROCS:-$(getconf _NPROCESSORS_ONLN)}
+NOCLEAN=${NOCLEAN:-}
 
 # Options
 options="--status-bugs --keep-empty"
@@ -45,13 +47,26 @@ test ! -z "${WORKSPACE}" && cd "${WORKSPACE}/src"
 output="/tmp"
 test -d "/home/jenkins/clang-analyzer" && output="/home/jenkins/clang-analyzer"
 
+# Tell scan-build to use clang as the underlying compiler to actually build
+# source. If you don't do this, it will default to GCC.
+export CCC_CC=${LLVM_BASE}/bin/clang
+export CCC_CXX=${LLVM_BASE}/bin/clang++
+
 autoreconf -fi
-#scan-build ./configure ${configure}
-./configure ${configure} CC=${LLVM_BASE}/bin/clang CXX=${LLVM_BASE}/bin/clang++
-${LLVM_BASE}/bin/scan-build ${checkers} ${options} -o ${output} --html-title="ATS master branch"  ${ATS_MAKE} -j4
+scan-build ./configure ${configure}
+
+# Since we don't want the analyzer to look at LuaJIT, build it first
+# without scan-build. The subsequent make will then skip it.
+${ATS_MAKE} -j $NPROCS -C lib all-local V=1 Q=
+
+${LLVM_BASE}/bin/scan-build ${checkers} ${options} -o ${output} --html-title="ATS master branch"  ${ATS_MAKE} -j $NPROCS V=1 Q=
 status=$?
 
-${ATS_MAKE} distclean
+# Clean the work area unless NOCLEAN is set. This is jsut for debugging when you
+# need to see what the generated build did.
+if [ ! -z "$NOCLEAN" ]; then
+  ${ATS_MAKE} distclean
+fi
 
 # Cleanup old reports (save the last 10 reports), but only for the CI
 if [ "/tmp" !=  "$output" ]; then
