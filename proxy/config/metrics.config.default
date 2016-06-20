@@ -341,7 +341,7 @@ integer 'proxy.node.http.user_agent_xacts_per_second' [[
   )
 ]]
 
-integer'proxy.cluster.http.user_agent_xacts_per_second' [[
+integer 'proxy.cluster.http.user_agent_xacts_per_second' [[
   return cluster('proxy.node.http.user_agent_xacts_per_second')
 ]]
 
@@ -453,6 +453,14 @@ counter 'proxy.node.http.origin_server_total_response_bytes' [[
 
 counter 'proxy.cluster.http.origin_server_total_response_bytes' [[
   return cluster('proxy.node.http.origin_server_total_response_bytes')
+]]
+
+counter 'proxy.node.http.parent_proxy_total_request_bytes' [[
+  return cluster('proxy.process.http.parent_proxy_request_total_bytes')
+]]
+
+counter 'proxy.node.http.parent_proxy_total_response_bytes' [[
+  return cluster('proxy.process.http.parent_proxy_response_total_bytes')
 ]]
 
 -- Add up the downstream (client <-> proxy) traffic volume.
@@ -1473,6 +1481,10 @@ integer 'proxy.cluster.hostdb.hit_ratio_int_pct' [[
   return proxy.cluster.hostdb.hit_ratio * 100
 ]]
 
+float 'proxy.cluster.hostdb.hit_ratio' [[
+  return cluster('proxy.node.hostdb.hit_ratio')
+]]
+
 integer 'proxy.node.cache.bytes_total_mb' [[
   return mbytes(proxy.process.cache.bytes_total)
 ]]
@@ -1481,8 +1493,16 @@ integer 'proxy.node.cache.bytes_free_mb' [[
   return mbytes(proxy.node.cache.bytes_free)
 ]]
 
+integer 'proxy.cluster.cache.bytes_free' [[
+  return cluster('proxy.cluster.cache.bytes_free')
+]]
+
 integer 'proxy.cluster.cache.bytes_free_mb' [[
   return mbytes(proxy.cluster.cache.bytes_free)
+]]
+
+integer 'proxy.node.http.current_parent_proxy_connections' [[
+  return proxy.process.http.current_parent_proxy_connections
 ]]
 
 integer 'proxy.cluster.http.current_parent_proxy_connections' [[
@@ -1625,7 +1645,7 @@ integer 'proxy.node.log.bytes_sent_to_network_avg_10s' [[
 ]]
 
 integer 'proxy.cluster.log.bytes_sent_to_network_avg_10s' [[
-  return cluster(' proxy.node.log.bytes_sent_to_network_avg_10s')
+  return cluster('proxy.node.log.bytes_sent_to_network_avg_10s')
 ]]
 
 integer 'proxy.node.log.bytes_received_from_network_avg_10s' [[
