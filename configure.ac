@@ -1888,8 +1888,8 @@ iocore_include_dirs="\
 # of the generic flags, plus any Lua-specific flags so that we
 # can strip the coverage flags from Lua while keeping them by
 # default everywhere else.
-AC_SUBST([LUA_CFLAGS], [$CFLAGS $lua_cflags])
-AC_SUBST(LUA_LDFLAGS)
+TS_ADDTO(LUA_CFLAGS, [$CFLAGS $lua_cflags])
+AC_SUBST([LUA_CFLAGS])
 
 TS_REMOVEFROM(LUA_CFLAGS, "-fsanitize=address")
 TS_REMOVEFROM(LUA_CFLAGS, "-fsanitize=thread")
