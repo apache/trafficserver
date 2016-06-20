@@ -25,7 +25,7 @@
 #ifndef ATSCPPAPI_SHARED_PTR_H_
 #define ATSCPPAPI_SHARED_PTR_H_
 
-#define ATSCPPAPI_USE_STD_SHARED_PTR @have_std_shared_ptr @
+#define ATSCPPAPI_USE_STD_SHARED_PTR @have_std_shared_ptr@
 
 #if ATSCPPAPI_USE_STD_SHARED_PTR
 #include <memory>
