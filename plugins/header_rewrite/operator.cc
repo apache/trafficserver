@@ -58,3 +58,14 @@ OperatorHeaders::initialize(Parser &p)
   require_resources(RSRC_CLIENT_REQUEST_HEADERS);
   require_resources(RSRC_CLIENT_RESPONSE_HEADERS);
 }
+
+void
+OperatorCookies::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _cookie = p.get_arg();
+
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+}

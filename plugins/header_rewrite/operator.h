@@ -83,4 +83,21 @@ private:
   DISALLOW_COPY_AND_ASSIGN(OperatorHeaders);
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// Base class for all Cookie based Operators, this is obviously also an
+// Operator interface.
+//
+class OperatorCookies : public Operator
+{
+public:
+  OperatorCookies() : _cookie("") { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorCookies"); }
+  void initialize(Parser &p);
+
+protected:
+  std::string _cookie;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorCookies);
+};
+
 #endif // __OPERATOR_H

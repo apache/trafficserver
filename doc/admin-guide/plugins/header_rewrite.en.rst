@@ -458,6 +458,15 @@ occurs first).
 
 The following operators are available:
 
+add-cookie
+~~~~~~~~~~
+::
+
+  add-cookie <name> <value>
+
+Adds a new ``<name>`` cookie line with the contents ``<value>``. Note that this
+operator will do nothing if a cookie pair with ``<name>`` already exists.
+
 add-header
 ~~~~~~~~~~
 ::
@@ -511,6 +520,14 @@ rm-header
   rm-header <name>
 
 Removes the header ``<name>``.
+
+rm-cookie
+~~~~~~~~~
+::
+
+  rm-cookie <name>
+
+Removes the cookie ``<name>``.
 
 set-config
 ~~~~~~~~~~
@@ -625,6 +642,15 @@ skip-remap
 When invoked, and when ``<value>`` is any of ``1``, ``true``, or ``TRUE``, this
 operator causes |TS| to abort further request remapping. Any other value and
 the operator will effectively be a no-op.
+
+set-cookie
+~~~~~~~~~~
+::
+
+  set-cookie <name> <value>
+
+Replaces the value of cookie ``<name>`` with ``<value>``, creating the cookie
+if necessary.
 
 Operator Flags
 --------------
