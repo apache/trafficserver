@@ -171,8 +171,6 @@ ts_lua_schedule_handler(TSCont contp, TSEvent ev, void *edata)
   main_ctx = crt->mctx;
   L        = crt->lua;
 
-  ret = 0;
-
   TSMutexLock(main_ctx->mutexp);
   ts_lua_set_cont_info(L, ci);
 
