@@ -100,7 +100,10 @@ get_effective_host(TSHttpTxn txn)
 
   effective_url = TSHttpTxnEffectiveUrlStringGet(txn, &len);
   buf           = TSMBufferCreate();
-  TSUrlCreate(buf, &url_loc);
+  if (TS_SUCCESS != TSUrlCreate(buf, &url_loc)) {
+    TSDebug(DEBUG_TAG, "unable to create url");
+    return NULL;
+  }
   tmp = effective_url;
   TSUrlParse(buf, url_loc, (const char **)(&tmp), (const char *)(effective_url + len));
   TSfree(effective_url);
