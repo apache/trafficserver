@@ -140,9 +140,10 @@ GTAGS
 ETAGS
 CTAGS
 
+lib/atscppapi/src/include/atscppapi/shared_ptr.h
 lib/tsconfig/TsConfigGrammar.hpp
-lib/tsconfig/test-tsconfig
 lib/tsconfig/TsConfigSyntax.c
+lib/tsconfig/test-tsconfig
 
 tools/http_load/http_load
 tools/jtest/jtest
