@@ -364,7 +364,7 @@ struct CheckConnect : public Continuation {
     }
   }
 
-  explicit CheckConnect(Ptr<ProxyMutex> &m) : Continuation(m.get()), connect_status(-1), recursion(0), timeout(0)
+  explicit CheckConnect(Ptr<ProxyMutex> &m) : Continuation(m.get()), vc(NULL), connect_status(-1), recursion(0), timeout(0)
   {
     SET_HANDLER(&CheckConnect::handle_connect);
     buf    = new_empty_MIOBuffer(1);

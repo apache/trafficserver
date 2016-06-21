@@ -87,7 +87,7 @@ class TransactionHookPlugin : public TransactionPlugin,
 {
 public:
   TransactionHookPlugin(Transaction &transaction)
-    : TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0)
+    : TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0), post_request_(NULL)
   {
     TS_DEBUG(TAG, "Constructed TransactionHookPlugin, saved a reference to this transaction.");
     registerHook(HOOK_SEND_REQUEST_HEADERS);
