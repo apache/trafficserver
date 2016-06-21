@@ -65,14 +65,14 @@ class Http2Frame
 public:
   Http2Frame(const Http2FrameHeader &h, IOBufferReader *r)
   {
-    this->hdr.cooked = h;
-    this->ioreader   = r;
+    this->hdr      = h;
+    this->ioreader = r;
   }
 
   Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags)
   {
-    Http2FrameHeader hdr = {0, (uint8_t)type, flags, streamid};
-    http2_write_frame_header(hdr, make_iovec(this->hdr.raw));
+    this->hdr      = {0, (uint8_t)type, flags, streamid};
+    this->ioreader = NULL;
   }
 
   IOBufferReader *
@@ -84,30 +84,25 @@ public:
   const Http2FrameHeader &
   header() const
   {
-    return this->hdr.cooked;
+    return this->hdr;
   }
 
-  // Allocate an IOBufferBlock for this frame. This switches us from using the in-line header
-  // buffer, to an external buffer block.
+  // Allocate an IOBufferBlock for payload of this frame.
   void
   alloc(int index)
   {
     this->ioblock = new_IOBufferBlock();
     this->ioblock->alloc(index);
-    memcpy(this->ioblock->start(), this->hdr.raw, sizeof(this->hdr.raw));
-    this->ioblock->fill(sizeof(this->hdr.raw));
-
-    http2_parse_frame_header(make_iovec(this->ioblock->start(), HTTP2_FRAME_HEADER_LEN), this->hdr.cooked);
   }
 
-  // Return the writeable buffer space.
+  // Return the writeable buffer space for frame payload
   IOVec
   write()
   {
     return make_iovec(this->ioblock->end(), this->ioblock->write_avail());
   }
 
-  // Once the frame has been serialized, update the length.
+  // Once the frame has been serialized, update the payload length of frame header.
   void
   finalize(size_t nbytes)
   {
@@ -115,18 +110,22 @@ public:
       ink_assert((int64_t)nbytes <= this->ioblock->write_avail());
       this->ioblock->fill(nbytes);
 
-      this->hdr.cooked.length = this->ioblock->size() - HTTP2_FRAME_HEADER_LEN;
-      http2_write_frame_header(this->hdr.cooked, make_iovec(this->ioblock->start(), HTTP2_FRAME_HEADER_LEN));
+      this->hdr.length = this->ioblock->size();
     }
   }
 
   void
   xmit(MIOBuffer *iobuffer)
   {
-    if (ioblock) {
+    // Write frame header
+    uint8_t buf[HTTP2_FRAME_HEADER_LEN];
+    http2_write_frame_header(hdr, make_iovec(buf));
+    iobuffer->write(buf, sizeof(buf));
+
+    // Write frame payload
+    // It could be empty (e.g. SETTINGS frame with ACK flag)
+    if (ioblock && ioblock->read_avail() > 0) {
       iobuffer->append_block(this->ioblock.get());
-    } else {
-      iobuffer->write(this->hdr.raw, sizeof(this->hdr.raw));
     }
   }
 
@@ -134,9 +133,9 @@ public:
   size()
   {
     if (ioblock) {
-      return ioblock->size();
+      return HTTP2_FRAME_HEADER_LEN + ioblock->size();
     } else {
-      return sizeof(this->hdr.raw);
+      return HTTP2_FRAME_HEADER_LEN;
     }
   }
 
@@ -144,13 +143,9 @@ private:
   Http2Frame(Http2Frame &);                  // noncopyable
   Http2Frame &operator=(const Http2Frame &); // noncopyable
 
-  Ptr<IOBufferBlock> ioblock;
+  Http2FrameHeader hdr;       // frame header
+  Ptr<IOBufferBlock> ioblock; // frame payload
   IOBufferReader *ioreader;
-
-  union {
-    Http2FrameHeader cooked;
-    uint8_t raw[HTTP2_FRAME_HEADER_LEN];
-  } hdr;
 };
 
 class Http2ClientSession : public ProxyClientSession, public PluginIdentity
