@@ -54,7 +54,7 @@ if [ 0 == $? ]; then
     curl -o /dev/null -s ${URL}/docs-master/${TOKEN}
 fi
 
-echo -n ${DIFF_master} | fgrep -v -e doc/
+echo -n ${DIFF_master} | fgrep -v -e doc/ > /dev/null
 if [ 0 == $? ]; then
     echo "Triggered main build for master"
     curl -o /dev/null -s ${URL}/in_tree-master/${TOKEN}
