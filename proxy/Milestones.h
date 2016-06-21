@@ -44,7 +44,7 @@ public:
    * Takes two milestones and returns the difference.
    * @param start The start time
    * @param end The end time
-   * @return A double that is the time in seconds
+   * @return The difference time in milliseconds
    */
   int64_t
   difference_msec(TSMilestonesType ms_start, TSMilestonesType ms_end) const
@@ -55,10 +55,16 @@ public:
     return ink_hrtime_to_msec(milestones[ms_end] - milestones[ms_start]);
   }
 
+  /**
+   * Takes two milestones and returns the difference.
+   * @param start The start time
+   * @param end The end time
+   * @return A double that is the difference time in seconds
+   */
   double
-  difference(TSMilestonesType ms_start, TSMilestonesType ms_end) const
+  difference_sec(TSMilestonesType ms_start, TSMilestonesType ms_end) const
   {
-    return (double)difference_msec(ms_start, ms_end);
+    return (double)difference_msec(ms_start, ms_end) / 1000.0;
   }
 
   ink_hrtime
