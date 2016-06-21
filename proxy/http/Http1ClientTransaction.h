@@ -33,7 +33,7 @@ class Http1ClientTransaction : public ProxyClientTransaction
 public:
   typedef ProxyClientTransaction super;
 
-  Http1ClientTransaction() : super() {}
+  Http1ClientTransaction() : super(), outbound_port(0), outbound_transparent(false) {}
   // Implement VConnection interface.
   virtual VIO *
   do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0)

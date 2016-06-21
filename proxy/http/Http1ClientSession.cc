@@ -70,11 +70,14 @@ Http1ClientSession::Http1ClientSession()
     half_close(false),
     conn_decrease(false),
     read_buffer(NULL),
+    sm_reader(NULL),
     read_state(HCS_INIT),
     ka_vio(NULL),
     slave_ka_vio(NULL),
+    bound_ss(NULL),
     outbound_port(0),
     f_outbound_transparent(false),
+    f_transparent_passthrough(false),
     m_active(false)
 {
 }
