@@ -534,6 +534,7 @@ ParentRecord::Init(matcher_line *line_info)
   char *val;
   bool used = false;
   ParentRR_t round_robin = P_NO_ROUND_ROBIN;
+  char buf[128];
 
   this->line_num = line_info->line_num;
   this->scheme = NULL;
@@ -613,8 +614,8 @@ ParentRecord::Init(matcher_line *line_info)
         max_simple_retries = v;
         used = true;
       } else {
-        char buf[128];
-        sprintf(buf, "invalid argument to max_simple_retries.  Argument must be between 1 and %d.", MAX_SIMPLE_RETRIES);
+        snprintf(buf, sizeof(buf), "invalid argument to max_simple_retries.  Argument must be between 1 and %d.",
+                 MAX_SIMPLE_RETRIES);
         errPtr = buf;
       }
     } else if (strcasecmp(label, "max_unavailable_server_retries") == 0) {
@@ -623,9 +624,8 @@ ParentRecord::Init(matcher_line *line_info)
         max_unavailable_server_retries = v;
         used = true;
       } else {
-        char buf[128];
-        sprintf(buf, "invalid argument to max_unavailable_server_retries.  Argument must be between 1 and %d.",
-                MAX_UNAVAILABLE_SERVER_RETRIES);
+        snprintf(buf, sizeof(buf), "invalid argument to max_unavailable_server_retries.  Argument must be between 1 and %d.",
+                 MAX_UNAVAILABLE_SERVER_RETRIES);
         errPtr = buf;
       }
     }
