@@ -48,13 +48,13 @@ DIFF_6_2=$(${GIT} log --name-only --pretty=format: ${REF_6_2}..refs/heads/6.2.x 
 DIFF_master=$(${GIT} log --name-only --pretty=format: ${REF_master}..refs/heads/master | ${GREP} -v '^$')
 
 # Check master, we have to diff twice, because some commits could trigger both
-echo -n ${DIFF_master} | fgrep -e doc/ > /dev/null
+echo -n "$DIFF_master" | ${GREP} -F -e doc/ > /dev/null
 if [ 0 == $? ]; then
     echo "Triggerd Docs build for master"
     curl -o /dev/null -s ${URL}/docs-master/${TOKEN}
 fi
 
-echo -n ${DIFF_master} | fgrep -v -e doc/ > /dev/null
+echo -n "$DIFF_master" | ${GREP} -F -v -e doc/ > /dev/null
 if [ 0 == $? ]; then
     echo "Triggered main build for master"
     curl -o /dev/null -s ${URL}/in_tree-master/${TOKEN}
