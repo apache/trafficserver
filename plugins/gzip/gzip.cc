@@ -856,8 +856,8 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
 
   if (argc > 4) {
     fatal("The gzip plugin does not accept more than one plugin argument");
-  } else if (argc == 3) {
-    config_path = TSstrdup(argv[2]);
+  } else {
+    config_path = TSstrdup(3 == argc ? argv[2] : "");
   }
   global_hidden_header_name = init_hidden_header_name();
 
