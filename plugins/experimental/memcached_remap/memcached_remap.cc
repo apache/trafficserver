@@ -43,7 +43,7 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
   int request_host_length = 0;
   const char *request_scheme;
   int request_scheme_length = 0;
-  int request_port = 80;
+  int request_port          = 80;
   char ikey[1024];
   char *m_result = NULL;
   size_t oval_length;
@@ -74,7 +74,7 @@ do_memcached_remap(TSCont contp, TSHttpTxn txnp)
   }
 
   request_scheme = TSUrlSchemeGet(reqp, url_loc, &request_scheme_length);
-  request_port = TSUrlPortGet(reqp, url_loc);
+  request_port   = TSUrlPortGet(reqp, url_loc);
 
   TSDebug(PLUGIN_NAME, "      +++++MEMCACHED REMAP+++++      ");
 
@@ -143,7 +143,7 @@ release_hdr:
 static int
 memcached_remap(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp   = (TSHttpTxn)edata;
   TSEvent reenable = TS_EVENT_HTTP_CONTINUE;
 
   if (event == TS_EVENT_HTTP_READ_REQUEST_HDR) {
@@ -166,8 +166,8 @@ TSPluginInit(int argc, const char *argv[])
   // FILE *fp;
   // char servers_string[8192];
 
-  info.plugin_name = const_cast<char *>(PLUGIN_NAME);
-  info.vendor_name = const_cast<char *>("Apache Software Foundation");
+  info.plugin_name   = const_cast<char *>(PLUGIN_NAME);
+  info.vendor_name   = const_cast<char *>("Apache Software Foundation");
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
   TSDebug(PLUGIN_NAME, "about to init memcached");

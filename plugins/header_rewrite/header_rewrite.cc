@@ -28,7 +28,7 @@
 #include "resources.h"
 
 // Debugs
-const char PLUGIN_NAME[] = "header_rewrite";
+const char PLUGIN_NAME[]     = "header_rewrite";
 const char PLUGIN_NAME_DBG[] = "dbg_header_rewrite";
 
 // Geo information, currently only Maxmind. These have to be initialized when the plugin loads.
@@ -255,7 +255,7 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
 static int
 cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = static_cast<TSHttpTxn>(edata);
+  TSHttpTxn txnp    = static_cast<TSHttpTxn>(edata);
   TSHttpHookID hook = TS_HTTP_LAST_HOOK;
   RulesConfig *conf = static_cast<RulesConfig *>(TSContDataGet(contp));
 
@@ -316,8 +316,8 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)PLUGIN_NAME;
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {
@@ -327,7 +327,7 @@ TSPluginInit(int argc, const char *argv[])
   // Parse the global config file(s). All rules are just appended
   // to the "global" Rules configuration.
   RulesConfig *conf = new RulesConfig;
-  bool got_config = false;
+  bool got_config   = false;
 
   initGeoIP();
   conf->hold();
@@ -448,7 +448,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   }
 
   TSRemapStatus rval = TSREMAP_NO_REMAP;
-  RulesConfig *conf = static_cast<RulesConfig *>(ih);
+  RulesConfig *conf  = static_cast<RulesConfig *>(ih);
 
   // Go through all hooks we support, and setup the txn hook(s) as necessary
   for (int i = TS_HTTP_READ_REQUEST_HDR_HOOK; i < TS_HTTP_LAST_HOOK; ++i) {

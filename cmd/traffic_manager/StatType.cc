@@ -66,21 +66,21 @@ StatExprToken::copy(const StatExprToken &source)
     m_token_name = ats_strdup(source.m_token_name);
   }
 
-  m_token_type = source.m_token_type;
-  m_token_value = source.m_token_value;
+  m_token_type      = source.m_token_type;
+  m_token_value     = source.m_token_value;
   m_token_value_min = source.m_token_value_min;
   m_token_value_max = source.m_token_value_max;
 
   if (source.m_token_value_delta) {
-    m_token_value_delta = new StatDataSamples();
-    m_token_value_delta->previous_time = source.m_token_value_delta->previous_time;
-    m_token_value_delta->current_time = source.m_token_value_delta->current_time;
+    m_token_value_delta                 = new StatDataSamples();
+    m_token_value_delta->previous_time  = source.m_token_value_delta->previous_time;
+    m_token_value_delta->current_time   = source.m_token_value_delta->current_time;
     m_token_value_delta->previous_value = source.m_token_value_delta->previous_value;
-    m_token_value_delta->current_value = source.m_token_value_delta->current_value;
+    m_token_value_delta->current_value  = source.m_token_value_delta->current_value;
   }
 
   m_node_var = source.m_node_var;
-  m_sum_var = source.m_sum_var;
+  m_sum_var  = source.m_sum_var;
 }
 
 /**
@@ -463,7 +463,7 @@ StatObject::assignDst(const char *str, bool m_node_var, bool m_sum_var)
 
   statToken->assignTokenName(str);
   statToken->m_node_var = m_node_var;
-  statToken->m_sum_var = m_sum_var;
+  statToken->m_sum_var  = m_sum_var;
 
   // The type of dst token should be always not NULL
   if (statToken->m_token_type == RECD_NULL) {
@@ -531,10 +531,10 @@ StatObject::assignExpr(char *str)
       // delta
       if (token[0] == '#') {
         token += 1; // skip '#'
-        statToken->m_token_value_delta = new StatDataSamples();
+        statToken->m_token_value_delta                = new StatDataSamples();
         statToken->m_token_value_delta->previous_time = (ink_hrtime)0;
-        statToken->m_token_value_delta->current_time = (ink_hrtime)0;
-        statToken->m_token_value_delta->data_type = RECD_NULL;
+        statToken->m_token_value_delta->current_time  = (ink_hrtime)0;
+        statToken->m_token_value_delta->data_type     = RECD_NULL;
         RecDataZero(RECD_NULL, &statToken->m_token_value_delta->previous_value);
         RecDataZero(RECD_NULL, &statToken->m_token_value_delta->current_value);
       }
@@ -566,8 +566,8 @@ StatObject::infix2postfix()
 {
   StatExprList stack;
   StatExprToken *tempToken = NULL;
-  StatExprToken *curToken = NULL;
-  m_postfix = new StatExprList();
+  StatExprToken *curToken  = NULL;
+  m_postfix                = new StatExprList();
 
   while (m_expression->top()) {
     curToken = m_expression->dequeue();
@@ -637,9 +637,9 @@ RecData
 StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
 {
   StatExprList stack;
-  StatExprToken *left = NULL;
-  StatExprToken *right = NULL;
-  StatExprToken *result = NULL;
+  StatExprToken *left     = NULL;
+  StatExprToken *right    = NULL;
+  StatExprToken *result   = NULL;
   StatExprToken *curToken = NULL;
   RecData tempValue;
   RecDataZero(RECD_NULL, &tempValue);
@@ -682,7 +682,7 @@ StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
       } else {
         ink_assert(isOperator(curToken->m_arith_symbol));
         right = stack.pop();
-        left = stack.pop();
+        left  = stack.pop();
 
         if (left->m_token_type == RECD_NULL) {
           left->assignTokenType();
@@ -707,7 +707,7 @@ StatObject::NodeStatEval(RecDataT *result_type, bool cluster)
     }
 
     *result_type = stack.top()->m_token_type;
-    tempValue = stack.top()->m_token_value;
+    tempValue    = stack.top()->m_token_value;
   }
 
   return tempValue;
@@ -816,7 +816,7 @@ StatObject::StatBinaryEval(StatExprToken *left, char op, StatExprToken *right, b
 {
   RecData l, r;
   StatExprToken *result = new StatExprToken();
-  result->m_token_type = RECD_INT;
+  result->m_token_type  = RECD_INT;
 
   if (left->m_token_type == RECD_NULL && right->m_token_type == RECD_NULL) {
     return result;
@@ -909,10 +909,10 @@ StatObject::StatBinaryEval(StatExprToken *left, char op, StatExprToken *right, b
 
       result->m_token_type = RECD_FLOAT;
 
-      t = (RecFloat)l.rec_int;
+      t           = (RecFloat)l.rec_int;
       l.rec_float = t;
 
-      t = (RecFloat)r.rec_int;
+      t           = (RecFloat)r.rec_int;
       r.rec_float = t;
     }
 
@@ -988,8 +988,8 @@ StatObjectList::Eval()
   RecData result;
   RecDataT result_type;
   ink_hrtime threshold = 0;
-  ink_hrtime delta = 0;
-  short count = 0;
+  ink_hrtime delta     = 0;
+  short count          = 0;
 
   RecDataZero(RECD_NULL, &tempValue);
   RecDataZero(RECD_NULL, &result);
@@ -1022,7 +1022,7 @@ StatObjectList::Eval()
       object->m_current_time = ink_get_hrtime_internal();
 
       threshold = object->m_update_interval * HRTIME_SECOND;
-      delta = object->m_current_time - object->m_last_update;
+      delta     = object->m_current_time - object->m_last_update;
 
       if (StatDebug) {
         Debug(MODULE, "\tUPDATE:%" PRId64 " THRESHOLD:%" PRId64 ", DELTA:%" PRId64 "\n", object->m_update_interval, threshold,
@@ -1080,10 +1080,10 @@ StatObjectList::Eval()
                 RecDataZero(RECD_NULL, &tempValue);
               }
 
-              token->m_token_value_delta->previous_time = token->m_token_value_delta->current_time;
+              token->m_token_value_delta->previous_time  = token->m_token_value_delta->current_time;
               token->m_token_value_delta->previous_value = token->m_token_value_delta->current_value;
-              token->m_token_value_delta->current_time = object->m_current_time;
-              token->m_token_value_delta->current_value = tempValue;
+              token->m_token_value_delta->current_time   = object->m_current_time;
+              token->m_token_value_delta->current_value  = tempValue;
             }
           }
 

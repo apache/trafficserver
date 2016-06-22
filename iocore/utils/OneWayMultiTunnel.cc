@@ -63,11 +63,11 @@ OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vc
                         bool aclose_targets,                 /* = false */
                         Transform_fn aManipulate_fn, int water_mark)
 {
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
-  cont = aCont;
-  manipulate_fn = aManipulate_fn;
-  close_source = aclose_source;
-  close_target = aclose_targets;
+  mutex                            = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
+  cont                             = aCont;
+  manipulate_fn                    = aManipulate_fn;
+  close_source                     = aclose_source;
+  close_target                     = aclose_targets;
   source_read_previously_completed = false;
 
   SET_HANDLER(&OneWayMultiTunnel::startEvent);
@@ -98,7 +98,7 @@ OneWayMultiTunnel::init(VConnection *vcSource, VConnection **vcTargets, int n_vc
   vioSource = vcSource->do_io(VIO::READ, this, nbytes, buf1, 0);
 
   ink_assert(n_vcTargets <= ONE_WAY_MULTI_TUNNEL_LIMIT);
-  for (int i = 0; i < n_vcTargets; i++)
+  for (int i      = 0; i < n_vcTargets; i++)
     vioTargets[i] = vcTargets[i]->do_io(VIO::WRITE, this, INT64_MAX, buf2, 0);
 
   return;
@@ -108,8 +108,8 @@ void
 OneWayMultiTunnel::init(Continuation *aCont, VIO *SourceVio, VIO **TargetVios, int n_TargetVios, bool aclose_source,
                         bool aclose_targets)
 {
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
-  cont = aCont;
+  mutex         = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
+  cont          = aCont;
   single_buffer = true;
   manipulate_fn = 0;
   n_connections = n_TargetVios + 1;
@@ -120,8 +120,8 @@ OneWayMultiTunnel::init(Continuation *aCont, VIO *SourceVio, VIO **TargetVios, i
   // we still need to write data into the target buffers.  Note this
   // fact as we'll not get a VC_EVENT_READ_COMPLETE callback later.
   source_read_previously_completed = (SourceVio->ntodo() == 0);
-  tunnel_till_done = true;
-  n_vioTargets = n_TargetVios;
+  tunnel_till_done                 = true;
+  n_vioTargets                     = n_TargetVios;
   topOutBuffer.writer_for(SourceVio->buffer.writer());
 
   // do_io_read() read already posted on vcSource.
@@ -146,8 +146,8 @@ OneWayMultiTunnel::init(Continuation *aCont, VIO *SourceVio, VIO **TargetVios, i
 int
 OneWayMultiTunnel::startEvent(int event, void *data)
 {
-  VIO *vio = (VIO *)data;
-  int ret = VC_EVENT_DONE;
+  VIO *vio   = (VIO *)data;
+  int ret    = VC_EVENT_DONE;
   int result = 0;
 
 #ifdef TEST

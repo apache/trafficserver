@@ -58,9 +58,9 @@ runDeflateLoop(z_stream &zstrm, int flush, std::string &cdata)
   char buf[BUF_SIZE];
   int deflate_result = Z_OK;
   do {
-    zstrm.next_out = reinterpret_cast<Bytef *>(buf);
+    zstrm.next_out  = reinterpret_cast<Bytef *>(buf);
     zstrm.avail_out = BUF_SIZE;
-    deflate_result = deflate(&zstrm, flush);
+    deflate_result  = deflate(&zstrm, flush);
     if ((deflate_result == Z_OK) || (deflate_result == Z_STREAM_END)) {
       cdata.append(buf, BUF_SIZE - zstrm.avail_out);
       if ((deflate_result == Z_STREAM_END) || zstrm.avail_out) {
@@ -79,7 +79,7 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
   cdata.assign(GZIP_HEADER_SIZE, 0); // reserving space for the header
   z_stream zstrm;
   zstrm.zalloc = Z_NULL;
-  zstrm.zfree = Z_NULL;
+  zstrm.zfree  = Z_NULL;
   zstrm.opaque = Z_NULL;
   if (deflateInit2(&zstrm, COMPRESSION_LEVEL, Z_DEFLATED, -MAX_WBITS, ZLIB_MEM_LEVEL, Z_DEFAULT_STRATEGY) != Z_OK) {
     Utils::ERROR_LOG("[%s] deflateInit2 failed!", __FUNCTION__);
@@ -87,12 +87,12 @@ EsiLib::gzip(const ByteBlockList &blocks, std::string &cdata)
   }
 
   int total_data_len = 0;
-  uLong crc = crc32(0, Z_NULL, 0);
+  uLong crc          = crc32(0, Z_NULL, 0);
   int deflate_result = Z_OK;
-  int in_data_size = 0;
+  int in_data_size   = 0;
   for (ByteBlockList::const_iterator iter = blocks.begin(); iter != blocks.end(); ++iter) {
     if (iter->data && (iter->data_len > 0)) {
-      zstrm.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(iter->data));
+      zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(iter->data));
       zstrm.avail_in = iter->data_len;
       in_data_size += iter->data_len;
       deflate_result = runDeflateLoop(zstrm, 0, cdata);
@@ -138,16 +138,16 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
   data_len -= (GZIP_HEADER_SIZE + GZIP_TRAILER_SIZE);
   buf_list.clear();
   z_stream zstrm;
-  zstrm.zalloc = Z_NULL;
-  zstrm.zfree = Z_NULL;
-  zstrm.opaque = Z_NULL;
-  zstrm.next_in = 0;
+  zstrm.zalloc   = Z_NULL;
+  zstrm.zfree    = Z_NULL;
+  zstrm.opaque   = Z_NULL;
+  zstrm.next_in  = 0;
   zstrm.avail_in = 0;
   if (inflateInit2(&zstrm, -MAX_WBITS) != Z_OK) {
     Utils::ERROR_LOG("[%s] inflateInit2 failed!", __FUNCTION__);
     return false;
   }
-  zstrm.next_in = reinterpret_cast<Bytef *>(const_cast<char *>(data));
+  zstrm.next_in  = reinterpret_cast<Bytef *>(const_cast<char *>(data));
   zstrm.avail_in = data_len;
   char raw_buf[BUF_SIZE];
   int inflate_result;
@@ -155,10 +155,10 @@ EsiLib::gunzip(const char *data, int data_len, BufferList &buf_list)
   int32_t curr_buf_size;
   uLong crc = crc32(0, Z_NULL, 0);
   do {
-    zstrm.next_out = reinterpret_cast<Bytef *>(raw_buf);
+    zstrm.next_out  = reinterpret_cast<Bytef *>(raw_buf);
     zstrm.avail_out = BUF_SIZE;
-    inflate_result = inflate(&zstrm, Z_SYNC_FLUSH);
-    curr_buf_size = -1;
+    inflate_result  = inflate(&zstrm, Z_SYNC_FLUSH);
+    curr_buf_size   = -1;
     if ((inflate_result == Z_OK) || (inflate_result == Z_BUF_ERROR)) {
       curr_buf_size = BUF_SIZE;
     } else if (inflate_result == Z_STREAM_END) {

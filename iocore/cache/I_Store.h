@@ -176,7 +176,7 @@ public:
       pathname = ats_strdup(that.pathname);
     if (that.hash_base_string)
       hash_base_string = ats_strdup(that.hash_base_string);
-    link.next = NULL;
+    link.next          = NULL;
   }
 
   ~Span();
@@ -200,7 +200,7 @@ struct Store {
     Store s;
     alloc(s, blocks, true, mmapable);
     if (s.n_disks) {
-      Span *t = s.disk[0];
+      Span *t   = s.disk[0];
       s.disk[0] = NULL;
       return t;
     }

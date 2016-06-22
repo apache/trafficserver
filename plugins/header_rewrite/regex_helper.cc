@@ -20,12 +20,12 @@
 bool
 regexHelper::setRegexMatch(const std::string &s)
 {
-  const char *errorComp = NULL;
+  const char *errorComp  = NULL;
   const char *errorStudy = NULL;
   int erroffset;
 
   regexString = s;
-  regex = pcre_compile(regexString.c_str(), 0, &errorComp, &erroffset, NULL);
+  regex       = pcre_compile(regexString.c_str(), 0, &errorComp, &erroffset, NULL);
 
   if (regex == NULL) {
     return false;

@@ -490,16 +490,16 @@ synclient_txn_create(void)
   else
     txn->connect_port = proxy_port->m_port;
 
-  txn->local_port = (int)0;
-  txn->connect_ip = IP(127, 0, 0, 1);
-  txn->status = REQUEST_INPROGRESS;
-  txn->request = NULL;
-  txn->vconn = NULL;
-  txn->req_buffer = NULL;
-  txn->req_reader = NULL;
-  txn->resp_buffer = NULL;
-  txn->resp_reader = NULL;
-  txn->magic = MAGIC_ALIVE;
+  txn->local_port     = (int)0;
+  txn->connect_ip     = IP(127, 0, 0, 1);
+  txn->status         = REQUEST_INPROGRESS;
+  txn->request        = NULL;
+  txn->vconn          = NULL;
+  txn->req_buffer     = NULL;
+  txn->req_reader     = NULL;
+  txn->resp_buffer    = NULL;
+  txn->resp_reader    = NULL;
+  txn->magic          = MAGIC_ALIVE;
   txn->connect_action = NULL;
 
   TSDebug(CDBG_TAG, "Connecting to proxy 127.0.0.1 on port %d", txn->connect_port);
@@ -670,9 +670,9 @@ synclient_txn_write_request(TSCont contp)
   ndone = 0;
   ntodo = len;
   while (ntodo > 0) {
-    block = TSIOBufferStart(txn->req_buffer);
+    block     = TSIOBufferStart(txn->req_buffer);
     ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-    towrite = MIN(ntodo, avail);
+    towrite   = MIN(ntodo, avail);
     memcpy(ptr_block, txn->request + ndone, towrite);
     TSIOBufferProduce(txn->req_buffer, towrite);
     ntodo -= towrite;
@@ -740,19 +740,19 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
   if (event == TS_EVENT_NET_CONNECT) {
     TSDebug(CDBG_TAG, "NET_CONNECT");
 
-    txn->req_buffer = TSIOBufferCreate();
-    txn->req_reader = TSIOBufferReaderAlloc(txn->req_buffer);
+    txn->req_buffer  = TSIOBufferCreate();
+    txn->req_reader  = TSIOBufferReaderAlloc(txn->req_buffer);
     txn->resp_buffer = TSIOBufferCreate();
     txn->resp_reader = TSIOBufferReaderAlloc(txn->resp_buffer);
 
-    txn->response[0] = '\0';
+    txn->response[0]  = '\0';
     txn->response_len = 0;
 
-    txn->vconn = (TSVConn)data;
+    txn->vconn      = (TSVConn)data;
     txn->local_port = (int)((NetVConnection *)data)->get_local_port();
 
     txn->write_vio = NULL;
-    txn->read_vio = NULL;
+    txn->read_vio  = NULL;
 
     /* start writing */
     SET_TEST_HANDLER(txn->current_handler, synclient_txn_write_request_handler);
@@ -791,11 +791,11 @@ synserver_create(int port, TSCont cont)
     TSAssert(port < INT16_MAX);
   }
 
-  SocketServer *s = (SocketServer *)TSmalloc(sizeof(SocketServer));
-  s->magic = MAGIC_ALIVE;
-  s->accept_port = port;
+  SocketServer *s  = (SocketServer *)TSmalloc(sizeof(SocketServer));
+  s->magic         = MAGIC_ALIVE;
+  s->accept_port   = port;
   s->accept_action = NULL;
-  s->accept_cont = cont;
+  s->accept_cont   = cont;
   TSContDataSet(s->accept_cont, s);
   return s;
 }
@@ -896,7 +896,7 @@ synserver_vc_accept(TSCont contp, TSEvent event, void *data)
 
   /* Create a new transaction */
   ServerTxn *txn = (ServerTxn *)TSmalloc(sizeof(ServerTxn));
-  txn->magic = MAGIC_ALIVE;
+  txn->magic     = MAGIC_ALIVE;
 
   SET_TEST_HANDLER(txn->current_handler, synserver_txn_read_request_handler);
 
@@ -909,7 +909,7 @@ synserver_vc_accept(TSCont contp, TSEvent event, void *data)
   txn->resp_buffer = TSIOBufferCreate();
   txn->resp_reader = TSIOBufferReaderAlloc(txn->resp_buffer);
 
-  txn->request[0] = '\0';
+  txn->request[0]  = '\0';
   txn->request_len = 0;
 
   txn->vconn = (TSVConn)data;
@@ -960,14 +960,14 @@ synserver_txn_write_response(TSCont contp)
   char *response;
 
   response = generate_response(txn->request);
-  len = strlen(response);
+  len      = strlen(response);
 
   ndone = 0;
   ntodo = len;
   while (ntodo > 0) {
-    block = TSIOBufferStart(txn->resp_buffer);
+    block     = TSIOBufferStart(txn->resp_buffer);
     ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-    towrite = MIN(ntodo, avail);
+    towrite   = MIN(ntodo, avail);
     memcpy(ptr_block, response + ndone, towrite);
     TSIOBufferProduce(txn->resp_buffer, towrite);
     ntodo -= towrite;

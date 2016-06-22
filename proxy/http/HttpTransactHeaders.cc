@@ -87,7 +87,7 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
 
   char *p;
   int i, is_supported;
-  size_t bytes = 0;
+  size_t bytes              = 0;
   int num_methods_supported = 0;
   MIMEField *field;
 
@@ -118,10 +118,10 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
   // step 3: get a big enough buffer
   if (bytes <= sizeof(inline_buffer)) {
     alloced_buffer = NULL;
-    value_buffer = inline_buffer;
+    value_buffer   = inline_buffer;
   } else {
     alloced_buffer = (char *)ats_malloc(bytes);
-    value_buffer = alloced_buffer;
+    value_buffer   = alloced_buffer;
   }
 
   // step 4: build the value
@@ -369,19 +369,19 @@ ink_time_t
 HttpTransactHeaders::calculate_document_age(ink_time_t request_time, ink_time_t response_time, HTTPHdr *base_response,
                                             ink_time_t base_response_date, ink_time_t now)
 {
-  ink_time_t age_value = base_response->get_age();
-  ink_time_t date_value = 0;
-  ink_time_t apparent_age = 0;
+  ink_time_t age_value              = base_response->get_age();
+  ink_time_t date_value             = 0;
+  ink_time_t apparent_age           = 0;
   ink_time_t corrected_received_age = 0;
-  ink_time_t response_delay = 0;
-  ink_time_t corrected_initial_age = 0;
-  ink_time_t current_age = 0;
-  ink_time_t resident_time = 0;
-  ink_time_t now_value = 0;
+  ink_time_t response_delay         = 0;
+  ink_time_t corrected_initial_age  = 0;
+  ink_time_t current_age            = 0;
+  ink_time_t resident_time          = 0;
+  ink_time_t now_value              = 0;
 
   ink_time_t tmp_value = 0;
 
-  tmp_value = base_response_date;
+  tmp_value  = base_response_date;
   date_value = (tmp_value > 0) ? tmp_value : 0;
 
   // Deal with clock skew. Sigh.
@@ -401,10 +401,10 @@ HttpTransactHeaders::calculate_document_age(ink_time_t request_time, ink_time_t 
     current_age = -1; // Overflow from Age: header
   } else {
     corrected_received_age = max(apparent_age, age_value);
-    response_delay = response_time - request_time;
-    corrected_initial_age = corrected_received_age + response_delay;
-    resident_time = now_value - response_time;
-    current_age = corrected_initial_age + resident_time;
+    response_delay         = response_time - request_time;
+    corrected_initial_age  = corrected_received_age + response_delay;
+    resident_time          = now_value - response_time;
+    current_age            = corrected_initial_age + resident_time;
   }
 
   Debug("http_age", "[calculate_document_age] age_value:              %" PRId64, (int64_t)age_value);
@@ -575,14 +575,14 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     }
     break;
   case VIA_ERROR_DNS_FAILURE:
-    log_code = SQUID_LOG_ERR_DNS_FAIL;
+    log_code  = SQUID_LOG_ERR_DNS_FAIL;
     hier_code = SQUID_HIER_NONE;
     break;
   case VIA_ERROR_FORBIDDEN:
     log_code = SQUID_LOG_ERR_PROXY_DENIED;
     break;
   case VIA_ERROR_HEADER_SYNTAX:
-    log_code = SQUID_LOG_ERR_INVALID_REQ;
+    log_code  = SQUID_LOG_ERR_INVALID_REQ;
     hier_code = SQUID_HIER_NONE;
     break;
   case VIA_ERROR_SERVER:
@@ -603,7 +603,7 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     }
     break;
   case VIA_ERROR_CACHE_READ:
-    log_code = SQUID_LOG_TCP_SWAPFAIL;
+    log_code  = SQUID_LOG_TCP_SWAPFAIL;
     hier_code = SQUID_HIER_NONE;
     break;
   default:
@@ -612,8 +612,8 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
 
   Debug("http_trans", "[Squid code generation] Hit/Miss: %c, Log: %c, Hier: %c", hit_miss_code, log_code, hier_code);
 
-  squid_codes->log_code = log_code;
-  squid_codes->hier_code = hier_code;
+  squid_codes->log_code      = log_code;
+  squid_codes->hier_code     = hier_code;
   squid_codes->hit_miss_code = hit_miss_code;
 }
 
@@ -644,7 +644,7 @@ void
 HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_sent_time, ink_time_t response_received_time,
                                                              ink_time_t now, HTTPHdr *base, HTTPHdr *outgoing)
 {
-  ink_time_t date = base->get_date();
+  ink_time_t date        = base->get_date();
   ink_time_t current_age = calculate_document_age(request_sent_time, response_received_time, base, date, now);
 
   outgoing->set_age(current_age); // set_age() deals with overflow properly, so pass it along
@@ -719,10 +719,10 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   }
 
   char *incoming_via = s->via_string;
-  int scheme = s->orig_scheme;
+  int scheme         = s->orig_scheme;
   ink_assert(scheme >= 0);
 
-  int scheme_len = hdrtoken_index_to_length(scheme);
+  int scheme_len   = hdrtoken_index_to_length(scheme);
   int32_t hversion = header->version_get().m_version;
 
   memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
@@ -770,7 +770,7 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   }
 
   *via_string++ = ')';
-  *via_string = 0;
+  *via_string   = 0;
 
   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
@@ -780,7 +780,7 @@ void
 HttpTransactHeaders::insert_hsts_header_in_response(HttpTransact::State *s, HTTPHdr *header)
 {
   char new_hsts_string[64];
-  char *hsts_string = new_hsts_string;
+  char *hsts_string               = new_hsts_string;
   const char include_subdomains[] = "; includeSubDomains";
 
   // add max-age
@@ -808,10 +808,10 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   }
 
   char *incoming_via = s->via_string;
-  int scheme = s->next_hop_scheme;
+  int scheme         = s->next_hop_scheme;
 
   ink_assert(scheme >= 0);
-  int scheme_len = hdrtoken_index_to_length(scheme);
+  int scheme_len   = hdrtoken_index_to_length(scheme);
   int32_t hversion = header->version_get().m_version;
 
   memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
@@ -850,7 +850,7 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   }
 
   *via_string++ = ')';
-  *via_string = 0;
+  *via_string   = 0;
 
   ink_assert((size_t)(via_string - new_via_string) < (sizeof(new_via_string) - 1));
   header->value_append(MIME_FIELD_VIA, MIME_LEN_VIA, new_via_string, via_string - new_via_string, true);
@@ -872,7 +872,7 @@ HttpTransactHeaders::insert_basic_realm_in_proxy_authenticate(const char *realm,
   basic_realm += nstrcpy(basic_realm, "Basic realm=\"");
   basic_realm += nstrcpy(basic_realm, (char *)realm);
   *basic_realm++ = '"';
-  *basic_realm = 0;
+  *basic_realm   = 0;
 
   MIMEField *auth;
   if (false == bRevPrxy) {
@@ -901,7 +901,7 @@ HttpTransactHeaders::remove_conditional_headers(HTTPHdr *outgoing)
 void
 HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr *outgoing)
 {
-  int len = 0;
+  int len            = 0;
   const char *expect = s->hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
 
   if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {

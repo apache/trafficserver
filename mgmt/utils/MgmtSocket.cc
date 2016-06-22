@@ -43,7 +43,7 @@ bool
 mgmt_transient_error()
 {
   bool transient = false;
-  transient = (errno == EINTR);
+  transient      = (errno == EINTR);
 #ifdef ENOMEM
   transient = transient || (errno == ENOMEM);
 #endif
@@ -217,7 +217,7 @@ mgmt_write_timeout(int fd, int sec, int usec)
 {
   struct timeval timeout;
   fd_set writeSet;
-  timeout.tv_sec = sec;
+  timeout.tv_sec  = sec;
   timeout.tv_usec = usec;
 
   if (fd < 0 || fd >= FD_SETSIZE) {
@@ -255,7 +255,7 @@ mgmt_read_timeout(int fd, int sec, int usec)
 {
   struct timeval timeout;
   fd_set readSet;
-  timeout.tv_sec = sec;
+  timeout.tv_sec  = sec;
   timeout.tv_usec = usec;
 
   if (fd < 0 || fd >= FD_SETSIZE) {

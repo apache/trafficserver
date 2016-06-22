@@ -190,7 +190,7 @@ AtsConfig::Parse(const char *path)
     if (v.size() == 1) {
       string token = v[0];
       if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
-        GoogleString current_host = token.substr(1, token.size() - 2);
+        GoogleString current_host  = token.substr(1, token.size() - 2);
         current_host_configuration = new AtsHostConfig(current_host, new AtsRewriteOptions(thread_system_));
         AddHostConfig(current_host_configuration);
       } else if (StringCaseEqual(token, "override_expiry")) {

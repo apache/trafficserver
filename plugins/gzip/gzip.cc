@@ -53,7 +53,7 @@ const char *global_hidden_header_name;
 const char *dictionary = NULL;
 
 // Current global configuration, and the previous one (for cleanup)
-Configuration *cur_config = NULL;
+Configuration *cur_config  = NULL;
 Configuration *prev_config = NULL;
 
 static GzipData *
@@ -62,23 +62,23 @@ gzip_data_alloc(int compression_type)
   GzipData *data;
   int err;
 
-  data = (GzipData *)TSmalloc(sizeof(GzipData));
-  data->downstream_vio = NULL;
+  data                    = (GzipData *)TSmalloc(sizeof(GzipData));
+  data->downstream_vio    = NULL;
   data->downstream_buffer = NULL;
   data->downstream_reader = NULL;
   data->downstream_length = 0;
-  data->state = transform_state_initialized;
-  data->compression_type = compression_type;
-  data->zstrm.next_in = Z_NULL;
-  data->zstrm.avail_in = 0;
-  data->zstrm.total_in = 0;
-  data->zstrm.next_out = Z_NULL;
-  data->zstrm.avail_out = 0;
-  data->zstrm.total_out = 0;
-  data->zstrm.zalloc = gzip_alloc;
-  data->zstrm.zfree = gzip_free;
-  data->zstrm.opaque = (voidpf)0;
-  data->zstrm.data_type = Z_ASCII;
+  data->state             = transform_state_initialized;
+  data->compression_type  = compression_type;
+  data->zstrm.next_in     = Z_NULL;
+  data->zstrm.avail_in    = 0;
+  data->zstrm.total_in    = 0;
+  data->zstrm.next_out    = Z_NULL;
+  data->zstrm.avail_out   = 0;
+  data->zstrm.total_out   = 0;
+  data->zstrm.zalloc      = gzip_alloc;
+  data->zstrm.zfree       = gzip_free;
+  data->zstrm.opaque      = (voidpf)0;
+  data->zstrm.data_type   = Z_ASCII;
 
   int window_bits = (compression_type == COMPRESSION_TYPE_GZIP) ? WINDOW_BITS_GZIP : WINDOW_BITS_DEFLATE;
 
@@ -237,10 +237,10 @@ gzip_transform_init(TSCont contp, GzipData *data)
 
   if (gzip_content_encoding_header(bufp, hdr_loc, data->compression_type) == TS_SUCCESS &&
       gzip_vary_header(bufp, hdr_loc) == TS_SUCCESS && gzip_etag_header(bufp, hdr_loc) == TS_SUCCESS) {
-    downstream_conn = TSTransformOutputVConnGet(contp);
+    downstream_conn         = TSTransformOutputVConnGet(contp);
     data->downstream_buffer = TSIOBufferCreate();
     data->downstream_reader = TSIOBufferReaderAlloc(data->downstream_buffer);
-    data->downstream_vio = TSVConnWrite(downstream_conn, contp, data->downstream_reader, INT64_MAX);
+    data->downstream_vio    = TSVConnWrite(downstream_conn, contp, data->downstream_reader, INT64_MAX);
   }
 
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
@@ -272,14 +272,14 @@ gzip_transform_one(GzipData *data, TSIOBufferReader upstream_reader, int amount)
       upstream_length = amount;
     }
 
-    data->zstrm.next_in = (unsigned char *)upstream_buffer;
+    data->zstrm.next_in  = (unsigned char *)upstream_buffer;
     data->zstrm.avail_in = upstream_length;
 
     while (data->zstrm.avail_in > 0) {
-      downstream_blkp = TSIOBufferStart(data->downstream_buffer);
+      downstream_blkp   = TSIOBufferStart(data->downstream_buffer);
       downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
 
-      data->zstrm.next_out = (unsigned char *)downstream_buffer;
+      data->zstrm.next_out  = (unsigned char *)downstream_buffer;
       data->zstrm.avail_out = downstream_length;
 
       if (!data->hc->flush()) {
@@ -324,8 +324,8 @@ gzip_transform_finish(GzipData *data)
     for (;;) {
       downstream_blkp = TSIOBufferStart(data->downstream_buffer);
 
-      downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
-      data->zstrm.next_out = (unsigned char *)downstream_buffer;
+      downstream_buffer     = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
+      data->zstrm.next_out  = (unsigned char *)downstream_buffer;
       data->zstrm.avail_out = downstream_length;
 
       err = deflate(&data->zstrm, Z_FINISH);
@@ -367,7 +367,7 @@ gzip_transform_do(TSCont contp)
     gzip_transform_init(contp, data);
   }
 
-  upstream_vio = TSVConnWriteVIOGet(contp);
+  upstream_vio             = TSVConnWriteVIOGet(contp);
   downstream_bytes_written = data->downstream_length;
 
   if (!TSVIOBufferGet(upstream_vio)) {
@@ -504,7 +504,7 @@ gzip_transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configur
   cfield = TSMimeHdrFieldFind(cbuf, chdr, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
   if (cfield != TS_NULL_MLOC) {
     compression_acceptable = 0;
-    nvalues = TSMimeHdrFieldValuesCount(cbuf, chdr, cfield);
+    nvalues                = TSMimeHdrFieldValuesCount(cbuf, chdr, cfield);
     for (i = 0; i < nvalues; i++) {
       value = TSMimeHdrFieldValueStringGet(cbuf, chdr, cfield, i, &len);
       if (!value) {
@@ -513,11 +513,11 @@ gzip_transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configur
 
       if (strncasecmp(value, "deflate", sizeof("deflate") - 1) == 0) {
         compression_acceptable = 1;
-        *compress_type = COMPRESSION_TYPE_DEFLATE;
+        *compress_type         = COMPRESSION_TYPE_DEFLATE;
         break;
       } else if (strncasecmp(value, "gzip", sizeof("gzip") - 1) == 0) {
         compression_acceptable = 1;
-        *compress_type = COMPRESSION_TYPE_GZIP;
+        *compress_type         = COMPRESSION_TYPE_GZIP;
         break;
       }
     }
@@ -585,10 +585,10 @@ gzip_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type)
     TSHttpTxnTransformedRespCache(txnp, 1);
   }
 
-  connp = TSTransformCreate(gzip_transform, txnp);
-  data = gzip_data_alloc(compress_type);
+  connp     = TSTransformCreate(gzip_transform, txnp);
+  data      = gzip_data_alloc(compress_type);
   data->txn = txnp;
-  data->hc = hc;
+  data->hc  = hc;
 
   TSContDataSet(connp, data);
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, connp);
@@ -597,8 +597,8 @@ gzip_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type)
 HostConfiguration *
 find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc locp, Configuration *config)
 {
-  TSMLoc fieldp = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
-  int strl = 0;
+  TSMLoc fieldp    = TSMimeHdrFieldFind(bufp, locp, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
+  int strl         = 0;
   const char *strv = NULL;
   HostConfiguration *host_configuration;
 
@@ -617,8 +617,8 @@ find_host_configuration(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer bufp, TSMLoc 
 static int
 transform_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txnp = (TSHttpTxn)edata;
-  int compress_type = COMPRESSION_TYPE_DEFLATE;
+  TSHttpTxn txnp        = (TSHttpTxn)edata;
+  int compress_type     = COMPRESSION_TYPE_DEFLATE;
   HostConfiguration *hc = (HostConfiguration *)TSContDataGet(contp);
 
   switch (event) {
@@ -766,7 +766,7 @@ transform_global_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edat
 static void
 load_global_configuration(TSCont contp)
 {
-  const char *path = (const char *)TSContDataGet(contp);
+  const char *path         = (const char *)TSContDataGet(contp);
   Configuration *newconfig = Configuration::Parse(path);
   Configuration *oldconfig = __sync_lock_test_and_set(&cur_config, newconfig);
 
@@ -862,7 +862,7 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
   global_hidden_header_name = init_hidden_header_name();
 
   Configuration *config = Configuration::Parse(config_path);
-  *instance = config;
+  *instance             = config;
 
   free((void *)config_path);
   info("Configuration loaded");

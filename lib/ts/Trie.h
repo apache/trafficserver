@@ -64,9 +64,9 @@ private:
     void
     Clear()
     {
-      value = NULL;
+      value    = NULL;
       occupied = false;
-      rank = 0;
+      rank     = 0;
       ink_zero(children);
     }
 
@@ -125,7 +125,7 @@ Trie<T>::Insert(const char *key, T *value, int rank, int key_len /* = -1 */)
 
   Node *next_node;
   Node *curr_node = &m_root;
-  int i = 0;
+  int i           = 0;
 
   while (true) {
     if (is_debug_tag_set("Trie::Insert")) {
@@ -156,8 +156,8 @@ Trie<T>::Insert(const char *key, T *value, int rank, int key_len /* = -1 */)
   }
 
   curr_node->occupied = true;
-  curr_node->value = value;
-  curr_node->rank = rank;
+  curr_node->value    = value;
+  curr_node->rank     = rank;
   m_value_list.enqueue(curr_node->value);
   Debug("Trie::Insert", "inserted new element!");
   return true;
@@ -170,8 +170,8 @@ Trie<T>::Search(const char *key, int key_len /* = -1 */) const
   _CheckArgs(key, key_len);
 
   const Node *found_node = 0;
-  const Node *curr_node = &m_root;
-  int i = 0;
+  const Node *curr_node  = &m_root;
+  int i                  = 0;
 
   while (curr_node) {
     if (is_debug_tag_set("Trie::Search")) {

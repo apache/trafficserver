@@ -54,13 +54,13 @@ RecAlloc(RecT rec_type, const char *name, RecDataT data_type)
     return NULL;
   }
 
-  int i = ink_atomic_increment(&g_num_records, 1);
+  int i        = ink_atomic_increment(&g_num_records, 1);
   RecRecord *r = &(g_records[i]);
 
   RecRecordInit(r);
-  r->rec_type = rec_type;
-  r->name = ats_strdup(name);
-  r->order = i;
+  r->rec_type  = rec_type;
+  r->name      = ats_strdup(name);
+  r->order     = i;
   r->data_type = data_type;
 
   return r;
@@ -136,7 +136,7 @@ RecDataSet(RecDataT data_type, RecData *data_dst, RecData *data_src)
       if (data_dst->rec_string != NULL) {
         ats_free(data_dst->rec_string);
         data_dst->rec_string = NULL;
-        rec_set = true;
+        rec_set              = true;
       }
     } else if (((data_dst->rec_string) && (strcmp(data_dst->rec_string, data_src->rec_string) != 0)) ||
                ((data_dst->rec_string == NULL) && (data_src->rec_string != NULL))) {
@@ -144,7 +144,7 @@ RecDataSet(RecDataT data_type, RecData *data_dst, RecData *data_src)
         ats_free(data_dst->rec_string);
 
       data_dst->rec_string = ats_strdup(data_src->rec_string);
-      rec_set = true;
+      rec_set              = true;
       // Chop trailing spaces
       char *end = data_dst->rec_string + strlen(data_dst->rec_string) - 1;
 
@@ -156,19 +156,19 @@ RecDataSet(RecDataT data_type, RecData *data_dst, RecData *data_src)
   case RECD_INT:
     if (data_dst->rec_int != data_src->rec_int) {
       data_dst->rec_int = data_src->rec_int;
-      rec_set = true;
+      rec_set           = true;
     }
     break;
   case RECD_FLOAT:
     if (data_dst->rec_float != data_src->rec_float) {
       data_dst->rec_float = data_src->rec_float;
-      rec_set = true;
+      rec_set             = true;
     }
     break;
   case RECD_COUNTER:
     if (data_dst->rec_counter != data_src->rec_counter) {
       data_dst->rec_counter = data_src->rec_counter;
-      rec_set = true;
+      rec_set               = true;
     }
     break;
   default:

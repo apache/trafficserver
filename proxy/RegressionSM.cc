@@ -117,14 +117,14 @@ r_sequential(RegressionTest *t, RegressionSM *sm, ...)
   RegressionSM *new_sm = new RegressionSM(t);
   va_list ap;
   va_start(ap, sm);
-  new_sm->par = false;
-  new_sm->rep = false;
-  new_sm->ichild = 0;
+  new_sm->par       = false;
+  new_sm->rep       = false;
+  new_sm->ichild    = 0;
   new_sm->nchildren = 0;
-  new_sm->nwaiting = 0;
+  new_sm->nwaiting  = 0;
   while (0 != sm) {
     new_sm->children(new_sm->nchildren++) = sm;
-    sm = va_arg(ap, RegressionSM *);
+    sm                                    = va_arg(ap, RegressionSM *);
   }
   new_sm->n = new_sm->nchildren;
   va_end(ap);
@@ -135,13 +135,13 @@ RegressionSM *
 r_sequential(RegressionTest *t, int an, RegressionSM *sm)
 {
   RegressionSM *new_sm = new RegressionSM(t);
-  new_sm->par = false;
-  new_sm->rep = true;
-  new_sm->ichild = 0;
-  new_sm->nchildren = 1;
-  new_sm->children(0) = sm;
-  new_sm->nwaiting = 0;
-  new_sm->n = an;
+  new_sm->par          = false;
+  new_sm->rep          = true;
+  new_sm->ichild       = 0;
+  new_sm->nchildren    = 1;
+  new_sm->children(0)  = sm;
+  new_sm->nwaiting     = 0;
+  new_sm->n            = an;
   return new_sm;
 }
 
@@ -151,14 +151,14 @@ r_parallel(RegressionTest *t, RegressionSM *sm, ...)
   RegressionSM *new_sm = new RegressionSM(t);
   va_list ap;
   va_start(ap, sm);
-  new_sm->par = true;
-  new_sm->rep = false;
-  new_sm->ichild = 0;
+  new_sm->par       = true;
+  new_sm->rep       = false;
+  new_sm->ichild    = 0;
   new_sm->nchildren = 0;
-  new_sm->nwaiting = 0;
+  new_sm->nwaiting  = 0;
   while (sm) {
     new_sm->children(new_sm->nchildren++) = sm;
-    sm = va_arg(ap, RegressionSM *);
+    sm                                    = va_arg(ap, RegressionSM *);
   }
   new_sm->n = new_sm->nchildren;
   va_end(ap);
@@ -169,13 +169,13 @@ RegressionSM *
 r_parallel(RegressionTest *t, int an, RegressionSM *sm)
 {
   RegressionSM *new_sm = new RegressionSM(t);
-  new_sm->par = true;
-  new_sm->rep = true;
-  new_sm->ichild = 0;
-  new_sm->nchildren = 1;
-  new_sm->children(0) = sm;
-  new_sm->nwaiting = 0;
-  new_sm->n = an;
+  new_sm->par          = true;
+  new_sm->rep          = true;
+  new_sm->ichild       = 0;
+  new_sm->nchildren    = 1;
+  new_sm->children(0)  = sm;
+  new_sm->nwaiting     = 0;
+  new_sm->n            = an;
   return new_sm;
 }
 
@@ -219,19 +219,19 @@ Lretry:
 RegressionSM::RegressionSM(const RegressionSM &ao)
 {
   RegressionSM &o = *(RegressionSM *)&ao;
-  t = o.t;
-  status = o.status;
-  pstatus = o.pstatus;
-  parent = &o;
-  nwaiting = o.nwaiting;
-  nchildren = o.nchildren;
+  t               = o.t;
+  status          = o.status;
+  pstatus         = o.pstatus;
+  parent          = &o;
+  nwaiting        = o.nwaiting;
+  nchildren       = o.nchildren;
   for (intptr_t i = 0; i < nchildren; i++)
-    children(i) = o.children[i]->clone();
-  n = o.n;
-  ichild = o.ichild;
-  par = o.par;
-  rep = o.rep;
-  pending_action = o.pending_action;
+    children(i)   = o.children[i]->clone();
+  n               = o.n;
+  ichild          = o.ichild;
+  par             = o.par;
+  rep             = o.rep;
+  pending_action  = o.pending_action;
   ink_assert(status == REGRESSION_TEST_INPROGRESS);
   ink_assert(nwaiting == 0);
   ink_assert(ichild == 0);

@@ -216,7 +216,7 @@ public:
   {
     void *callstack[3];
     int frames = backtrace(callstack, 3);
-    C *ptr = ClassAllocator<C>::alloc();
+    C *ptr     = ClassAllocator<C>::alloc();
 
     const void *symbol = NULL;
     if (frames == 3 && callstack[2] != NULL) {

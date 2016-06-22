@@ -28,7 +28,7 @@ Statement::append(Statement *stmt)
 
   TSReleaseAssert(stmt->_next == NULL);
   while (tmp->_next)
-    tmp = tmp->_next;
+    tmp      = tmp->_next;
   tmp->_next = stmt;
 }
 
@@ -36,10 +36,10 @@ const ResourceIDs
 Statement::get_resource_ids() const
 {
   const Statement *stmt = this;
-  ResourceIDs ids = RSRC_NONE;
+  ResourceIDs ids       = RSRC_NONE;
 
   while (stmt) {
-    ids = static_cast<ResourceIDs>(ids | stmt->_rsrc);
+    ids  = static_cast<ResourceIDs>(ids | stmt->_rsrc);
     stmt = stmt->_next;
   }
 

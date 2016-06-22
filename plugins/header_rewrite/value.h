@@ -62,7 +62,7 @@ public:
       // TODO: This is still not optimal, we should pre-parse the _value string here,
       // and perhaps populate a per-Value VariableExpander that holds state.
     } else {
-      _int_value = strtol(_value.c_str(), NULL, 10);
+      _int_value   = strtol(_value.c_str(), NULL, 10);
       _float_value = strtod(_value.c_str(), NULL);
     }
   }

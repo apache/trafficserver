@@ -31,16 +31,16 @@
 #include <stdio.h>
 
 // zlib stuff, see [deflateInit2] at http://www.zlib.net/manual.html
-static const int ZLIB_MEMLEVEL = 9; // min=1 (optimize for memory),max=9 (optimized for speed)
+static const int ZLIB_MEMLEVEL       = 9; // min=1 (optimize for memory),max=9 (optimized for speed)
 static const int WINDOW_BITS_DEFLATE = -15;
-static const int WINDOW_BITS_GZIP = 31;
+static const int WINDOW_BITS_GZIP    = 31;
 
 // misc
 static const int COMPRESSION_TYPE_DEFLATE = 1;
-static const int COMPRESSION_TYPE_GZIP = 2;
+static const int COMPRESSION_TYPE_GZIP    = 2;
 // this one is just for txnargset/get to point to
-static const int GZIP_ONE = 1;
-static const int DICT_PATH_MAX = 512;
+static const int GZIP_ONE       = 1;
+static const int DICT_PATH_MAX  = 512;
 static const int DICT_ENTRY_MAX = 2048;
 
 // this one is used to rename the accept encoding header

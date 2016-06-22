@@ -59,9 +59,9 @@ namespace detail
 
 /// Basic time unit for WCCP in seconds
 /// @note Sec 4.14: HERE_I_AM_T.
-static time_t const TIME_UNIT = 10;
+static time_t const TIME_UNIT   = 10;
 static time_t const ASSIGN_WAIT = (3 * TIME_UNIT) / 2;
-static time_t const RAPID_TIME = TIME_UNIT / 10;
+static time_t const RAPID_TIME  = TIME_UNIT / 10;
 
 /// Service group related constants.
 /// @internal In a struct so enum values can be imported to more than
@@ -71,18 +71,18 @@ struct ServiceConstants {
   /// @internal Enumerations values match protocol values.
   enum PacketStyle {
     NO_PACKET_STYLE = 0, ///< Undefined or invalid.
-    GRE = 1,             ///< GRE tunnel only. [default]
-    L2 = 2,              ///< L2 rewrite only.
-    GRE_OR_L2 = 3        ///< L2 rewrite or GRE tunnel.
+    GRE             = 1, ///< GRE tunnel only. [default]
+    L2              = 2, ///< L2 rewrite only.
+    GRE_OR_L2       = 3  ///< L2 rewrite or GRE tunnel.
   };
 
   /// Cache assignment supported methods.
   /// @internal Enumerations values match protocol values.
   enum CacheAssignmentStyle {
     NO_CACHE_ASSIGN_STYLE = 0, ///< Undefined or invalid.
-    HASH_ONLY = 1,             ///< Use only hash assignment. [default]
-    MASK_ONLY = 2,             ///< Use only mask assignment.
-    HASH_OR_MASK = 3           ///< Use hash or mask assignment.
+    HASH_ONLY             = 1, ///< Use only hash assignment. [default]
+    MASK_ONLY             = 2, ///< Use only mask assignment.
+    HASH_OR_MASK          = 3  ///< Use hash or mask assignment.
   };
 };
 
@@ -100,14 +100,14 @@ public:
   /// Type of service.
   enum Type {
     STANDARD = 0, ///< Well known service.
-    DYNAMIC = 1   ///< Dynamic (locally defined) service.
+    DYNAMIC  = 1  ///< Dynamic (locally defined) service.
   };
 
   /// Result codes for service definition.
   enum Result {
-    DEFINED = 0, ///< Service group was created by the call.
-    EXISTS = 1,  ///< Service group already existed.
-    CONFLICT = 2 ///< Service group existed but didn't match new definition.
+    DEFINED  = 0, ///< Service group was created by the call.
+    EXISTS   = 1, ///< Service group already existed.
+    CONFLICT = 2  ///< Service group existed but didn't match new definition.
   };
 
   /// @name Well known (standard) services.
@@ -206,7 +206,7 @@ protected:
 /// Security component option (sub-type)
 enum SecurityOption {
   SECURITY_NONE = 0, ///< No security @c WCCP2_NO_SECURITY
-  SECURITY_MD5 = 1   ///< MD5 security @c WCCP2_MD5_SECURITY
+  SECURITY_MD5  = 1  ///< MD5 security @c WCCP2_MD5_SECURITY
 };
 
 class EndPoint

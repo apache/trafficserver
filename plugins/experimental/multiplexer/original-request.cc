@@ -29,7 +29,7 @@ template <class T>
 std::string
 get(const TSMBuffer &b, const TSMLoc &l, const T &t)
 {
-  int length = 0;
+  int length               = 0;
   const char *const buffer = t(b, l, &length);
 
   assert(buffer != NULL);
@@ -42,7 +42,7 @@ get(const TSMBuffer &b, const TSMLoc &l, const T &t)
 std::string
 get(const TSMBuffer &b, const TSMLoc &l, const TSMLoc &f, const int i = 0)
 {
-  int length = 0;
+  int length               = 0;
   const char *const buffer = TSMimeHdrFieldValueStringGet(b, l, f, i, &length);
 
   assert(buffer != NULL);
@@ -59,7 +59,7 @@ OriginalRequest::OriginalRequest(const TSMBuffer b, const TSMLoc l) : buffer_(b)
   assert(url_ != NULL);
 
   const_cast<std::string &>(original.urlScheme) = get(buffer_, url_, TSUrlSchemeGet);
-  const_cast<std::string &>(original.urlHost) = get(buffer_, url_, TSUrlHostGet);
+  const_cast<std::string &>(original.urlHost)   = get(buffer_, url_, TSUrlHostGet);
   // TODO(dmorilha): handle port
 
   /*

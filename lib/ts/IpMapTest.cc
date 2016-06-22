@@ -53,7 +53,7 @@ REGRESSION_TEST(IpMap_Basic)(RegressionTest *t, int /* atype ATS_UNUSED */, int 
   in_addr_t ip100 = htonl(100), ip120 = htonl(120), ip140 = htonl(140);
   in_addr_t ip150 = htonl(150), ip160 = htonl(160);
   in_addr_t ip200 = htonl(200);
-  in_addr_t ip0 = 0;
+  in_addr_t ip0   = 0;
   in_addr_t ipmax = ~static_cast<in_addr_t>(0);
 
   *pstatus = REGRESSION_TEST_PASSED;
@@ -160,7 +160,7 @@ REGRESSION_TEST(IpMap_Fill)(RegressionTest *t, int /* atype ATS_UNUSED */, int *
   IpMap map;
   ip_text_buffer ipb1, ipb2;
   void *const allow = reinterpret_cast<void *>(0);
-  void *const deny = reinterpret_cast<void *>(~0);
+  void *const deny  = reinterpret_cast<void *>(~0);
   void *const markA = reinterpret_cast<void *>(1);
   void *const markB = reinterpret_cast<void *>(2);
   void *const markC = reinterpret_cast<void *>(3);

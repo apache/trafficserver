@@ -70,8 +70,8 @@ StrList::_new_cell(const char *s, int len_not_counting_nul)
   } else {
     p = (char *)alloc(sizeof(Str) + 7);
     if (p == NULL)
-      return (NULL);                         // FIX: scale heap
-    p = (char *)((((uintptr_t)p) + 7) & ~7); // round up to multiple of 8
+      return (NULL);                            // FIX: scale heap
+    p    = (char *)((((uintptr_t)p) + 7) & ~7); // round up to multiple of 8
     cell = (Str *)p;
   }
   ++cells_allocated;
@@ -124,7 +124,7 @@ const int overflow_head_hdr_size = INK_ALIGN(sizeof(StrListOverflow), INIT_OVERF
 void
 StrListOverflow::init()
 {
-  next = NULL;
+  next      = NULL;
   heap_size = 0;
   heap_used = 0;
 }
@@ -159,7 +159,7 @@ StrListOverflow::alloc(int size, StrListOverflow **new_heap_ptr)
   }
 
   char *start = ((char *)this) + overflow_head_hdr_size;
-  char *rval = start + heap_used;
+  char *rval  = start + heap_used;
   heap_used += size;
   ink_assert(heap_used <= heap_size);
   return (void *)rval;

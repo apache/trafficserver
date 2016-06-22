@@ -370,9 +370,9 @@ typedef enum {
 } TSInitOptionT;
 
 typedef enum {
-  TS_RESTART_OPT_NONE = 0x0,
+  TS_RESTART_OPT_NONE    = 0x0,
   TS_RESTART_OPT_CLUSTER = 0x01, /* Restart across the cluster */
-  TS_RESTART_OPT_DRAIN = 0x02,   /* Wait for traffic to drain before restarting. */
+  TS_RESTART_OPT_DRAIN   = 0x02, /* Wait for traffic to drain before restarting. */
 } TSRestartOptionT;
 
 /***************************************************************************

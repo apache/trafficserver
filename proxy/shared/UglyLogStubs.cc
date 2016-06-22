@@ -131,16 +131,16 @@ DNSConnection::Options const DNSConnection::DEFAULT_OPTIONS;
 NetProcessor::AcceptOptions &
 NetProcessor::AcceptOptions::reset()
 {
-  local_port = 0;
-  accept_threads = 0;
-  ip_family = AF_INET;
-  etype = ET_NET;
-  f_callback_on_open = false;
-  recv_bufsize = 0;
-  send_bufsize = 0;
-  sockopt_flags = 0;
-  packet_mark = 0;
-  packet_tos = 0;
+  local_port            = 0;
+  accept_threads        = 0;
+  ip_family             = AF_INET;
+  etype                 = ET_NET;
+  f_callback_on_open    = false;
+  recv_bufsize          = 0;
+  send_bufsize          = 0;
+  sockopt_flags         = 0;
+  packet_mark           = 0;
+  packet_tos            = 0;
   f_inbound_transparent = false;
   return *this;
 }

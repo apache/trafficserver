@@ -60,7 +60,7 @@ int
 main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 {
   RecModeT mode_type = RECM_STAND_ALONE;
-  count = 0;
+  count              = 0;
 
   Layout::create();
   init_diags("", NULL);
@@ -69,7 +69,7 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(TEST_THREADS, 1048576); // Hardcoded stacksize at 1MB
 
-  alarm_printer *alrm = new alarm_printer(new_ProxyMutex());
+  alarm_printer *alrm    = new alarm_printer(new_ProxyMutex());
   process_killer *killer = new process_killer(new_ProxyMutex());
   eventProcessor.schedule_in(killer, HRTIME_SECONDS(10));
   eventProcessor.schedule_every(alrm, HRTIME_SECONDS(1));

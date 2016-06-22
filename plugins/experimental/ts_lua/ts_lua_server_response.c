@@ -183,7 +183,7 @@ ts_lua_server_response_header_set(lua_State *L)
   GET_HTTP_CONTEXT(http_ctx, L);
 
   remove = 0;
-  val = NULL;
+  val    = NULL;
 
   /*   we skip the first argument that is the table */
   key = luaL_checklstring(L, 2, &key_len);
@@ -253,7 +253,7 @@ ts_lua_server_response_set_status(lua_State *L)
 
   status = luaL_checkint(L, 1);
 
-  reason = TSHttpHdrReasonLookup(status);
+  reason     = TSHttpHdrReasonLookup(status);
   reason_len = strlen(reason);
 
   TSHttpHdrStatusSet(http_ctx->server_response_bufp, http_ctx->server_response_hdrp, status);

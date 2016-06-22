@@ -53,7 +53,7 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
 
   inetAddr = inet_addr;
 
-  this->up = false;
+  this->up        = false;
   this->localNode = local;
 
   // If this is the local node, there is no cluster peer info
@@ -63,13 +63,13 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
   // Set up the copy of the records array and initialize it
   if (local == true) {
     node_rec_data.num_recs = 0;
-    node_rec_data.recs = NULL;
-    recordArraySize = 0;
-    node_rec_first_ix = 0;
+    node_rec_data.recs     = NULL;
+    recordArraySize        = 0;
+    node_rec_first_ix      = 0;
   } else {
     node_rec_data.num_recs = cpi->node_rec_data.num_recs;
-    recordArraySize = node_rec_data.num_recs * sizeof(RecRecord);
-    node_rec_data.recs = new RecRecord[recordArraySize];
+    recordArraySize        = node_rec_data.num_recs * sizeof(RecRecord);
+    node_rec_data.recs     = new RecRecord[recordArraySize];
     memcpy(node_rec_data.recs, cpi->node_rec_data.recs, recordArraySize);
 
     // Recaculate the old relative index
@@ -87,7 +87,7 @@ overviewRecord::overviewRecord(unsigned long inet_addr, bool local, ClusterPeerI
   }
 
   const size_t hostNameLen = strlen(name_l) + 1;
-  this->hostname = new char[hostNameLen];
+  this->hostname           = new char[hostNameLen];
   ink_strlcpy(this->hostname, name_l, hostNameLen);
   ats_free(name_l);
 }
@@ -145,9 +145,9 @@ overviewRecord::updateStatus(time_t currentTime, ClusterPeerInfo *cpi)
 RecInt
 overviewRecord::readInteger(const char *name, bool *found)
 {
-  RecInt rec = 0;
+  RecInt rec     = 0;
   int rec_status = REC_ERR_OKAY;
-  int order = -1;
+  int order      = -1;
   if (localNode == false) {
     rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
@@ -171,9 +171,9 @@ overviewRecord::readInteger(const char *name, bool *found)
 RecFloat
 overviewRecord::readFloat(const char *name, bool *found)
 {
-  RecFloat rec = 0.0;
+  RecFloat rec   = 0.0;
   int rec_status = REC_ERR_OKAY;
-  int order = -1;
+  int order      = -1;
   if (localNode == false) {
     rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
@@ -197,9 +197,9 @@ overviewRecord::readFloat(const char *name, bool *found)
 RecString
 overviewRecord::readString(const char *name, bool *found)
 {
-  RecString rec = NULL;
+  RecString rec  = NULL;
   int rec_status = REC_ERR_OKAY;
-  int order = -1;
+  int order      = -1;
   if (localNode == false) {
     rec_status = RecGetRecordOrderAndId(name, &order, NULL);
     if (rec_status == REC_ERR_OKAY) {
@@ -235,7 +235,7 @@ RecData
 overviewRecord::readData(RecDataT varType, const char *name, bool *found)
 {
   int rec_status = REC_ERR_OKAY;
-  int order = -1;
+  int order      = -1;
   RecData rec;
   RecDataZero(RECD_NULL, &rec);
 
@@ -275,8 +275,8 @@ overviewPage::overviewPage() : sortRecords(10, false)
 {
   ink_mutex_init(&accessLock, "overviewRecord");
   nodeRecords = ink_hash_table_create(InkHashTableKeyType_Word);
-  numHosts = 0;
-  ourAddr = 0; // We will update this when we add the record for
+  numHosts    = 0;
+  ourAddr     = 0; // We will update this when we add the record for
   //  this machine
 }
 
@@ -383,7 +383,7 @@ overviewPage::addSelfRecord()
   //   from cluster com
   this->ourAddr = lmgmt->ccom->getIP();
 
-  newRec = new overviewRecord(ourAddr, true);
+  newRec     = new overviewRecord(ourAddr, true);
   newRec->up = true;
 
   ink_hash_table_insert(nodeRecords, (InkHashTableKey)this->ourAddr, (InkHashTableEntry *)newRec);
@@ -404,7 +404,7 @@ overviewRecord *
 overviewPage::findNodeByName(const char *nodeName)
 {
   overviewRecord *current = NULL;
-  bool nodeFound = false;
+  bool nodeFound          = false;
 
   // Do a linear search of the nodes for this nodeName.
   //   Yes, I know this is slow but the current word is ten
@@ -522,7 +522,7 @@ overviewPage::readFloat(const char *nodeName, const char *name, bool *found)
 int
 overviewPage::clusterSumData(RecDataT varType, const char *nodeVar, RecData *sum)
 {
-  int numUsed = 0;
+  int numUsed        = 0;
   int numHosts_local = sortRecords.getNumEntries();
   overviewRecord *current;
   bool found;
@@ -536,7 +536,7 @@ overviewPage::clusterSumData(RecDataT varType, const char *nodeVar, RecData *sum
     if (current->up == true) {
       numUsed++;
       recTmp = current->readData(varType, nodeVar, &found);
-      *sum = RecDataAdd(varType, *sum, recTmp);
+      *sum   = RecDataAdd(varType, *sum, recTmp);
       if (found == false) {
       }
     }

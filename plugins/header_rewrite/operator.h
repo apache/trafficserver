@@ -35,7 +35,7 @@ enum OperModifiers {
   OPER_NONE = 0,
   OPER_LAST = 1,
   OPER_NEXT = 2,
-  OPER_QSA = 4,
+  OPER_QSA  = 4,
 };
 
 ///////////////////////////////////////////////////////////////////////////////

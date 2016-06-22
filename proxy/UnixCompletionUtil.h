@@ -45,13 +45,13 @@ inline void
 completionUtil::setThread(Event *e, EThread *t)
 {
   UDPIOEvent *u = (UDPIOEvent *)e;
-  u->ethread = t;
+  u->ethread    = t;
 }
 inline void
 completionUtil::setContinuation(Event *e, Continuation *c)
 {
   UDPIOEvent *u = (UDPIOEvent *)e;
-  *(Action *)u = c;
+  *(Action *)u  = c;
 }
 inline void *
 completionUtil::getHandle(Event *e)

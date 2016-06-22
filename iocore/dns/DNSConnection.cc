@@ -63,7 +63,7 @@ DNSConnection::close()
   // don't close any of the standards
   if (fd >= 2) {
     int fd_save = fd;
-    fd = NO_FD;
+    fd          = NO_FD;
     return socketManager.close(fd_save);
   } else {
     fd = NO_FD;
@@ -117,7 +117,7 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
       ats_ip_copy(&bind_addr.sa, opt._local_ipv4);
     else
       bind_addr.sin.sin_addr.s_addr = INADDR_ANY;
-    bind_size = sizeof(sockaddr_in);
+    bind_size                       = sizeof(sockaddr_in);
   } else {
     ink_assert(!"Target DNS address must be IP.");
   }
@@ -130,15 +130,15 @@ DNSConnection::connect(sockaddr const *addr, Options const &opt)
     bind_addr.sa.sa_family = af;
     if (AF_INET6 == af) {
       bind_addr.sin6.sin6_addr = in6addr_any;
-      bind_size = sizeof bind_addr.sin6;
+      bind_size                = sizeof bind_addr.sin6;
     } else {
       bind_addr.sin.sin_addr.s_addr = INADDR_ANY;
-      bind_size = sizeof bind_addr.sin;
+      bind_size                     = sizeof bind_addr.sin;
     }
     while (retries++ < 10000) {
       ip_port_text_buffer b;
-      uint32_t p = generator.random();
-      p = static_cast<uint16_t>((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
+      uint32_t p                      = generator.random();
+      p                               = static_cast<uint16_t>((p % (LAST_RANDOM_PORT - FIRST_RANDOM_PORT)) + FIRST_RANDOM_PORT);
       ats_ip_port_cast(&bind_addr.sa) = htons(p); // stuff port in sockaddr.
       Debug("dns", "random port = %s\n", ats_ip_nptop(&bind_addr.sa, b, sizeof b));
       if ((res = socketManager.ink_bind(fd, &bind_addr.sa, bind_size, Proto)) < 0) {

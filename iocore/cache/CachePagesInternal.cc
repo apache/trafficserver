@@ -67,7 +67,7 @@ Action *
 register_ShowCacheInternal(Continuation *c, HTTPHdr *h)
 {
   theshowcacheInternal = new ShowCacheInternal(c, h);
-  URL *u = h->url_get();
+  URL *u               = h->url_get();
 
   int path_len;
   const char *path = u->path_get(&path_len);
@@ -261,9 +261,9 @@ ShowCacheInternal::showVolVolumes(int event, Event *e)
   char ctime[256];
   ink_ctime_r(&p->header->create_time, ctime);
   ctime[strlen(ctime) - 1] = 0;
-  int agg_todo = 0;
-  int agg_done = p->agg_buf_pos;
-  CacheVC *c = 0;
+  int agg_todo             = 0;
+  int agg_done             = p->agg_buf_pos;
+  CacheVC *c               = 0;
   for (c = p->agg.head; c; c = (CacheVC *)c->link.next)
     agg_todo++;
   CHECK_SHOW(show("<tr>"

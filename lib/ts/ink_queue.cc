@@ -84,11 +84,11 @@ static void *malloc_new(InkFreeList *f);
 static void malloc_free(InkFreeList *f, void *item);
 static void malloc_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item);
 
-static const ink_freelist_ops malloc_ops = {malloc_new, malloc_free, malloc_bulkfree};
+static const ink_freelist_ops malloc_ops   = {malloc_new, malloc_free, malloc_bulkfree};
 static const ink_freelist_ops freelist_ops = {freelist_new, freelist_free, freelist_bulkfree};
 static const ink_freelist_ops *default_ops = &freelist_ops;
 
-static ink_freelist_list *freelists = NULL;
+static ink_freelist_list *freelists                  = NULL;
 static const ink_freelist_ops *freelist_freelist_ops = default_ops;
 
 const InkFreeListOps *
@@ -124,8 +124,8 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   f = (InkFreeList *)ats_memalign(alignment, sizeof(InkFreeList));
   ink_zero(*f);
 
-  fll = (ink_freelist_list *)ats_malloc(sizeof(ink_freelist_list));
-  fll->fl = f;
+  fll       = (ink_freelist_list *)ats_malloc(sizeof(ink_freelist_list));
+  fll->fl   = f;
   fll->next = freelists;
   freelists = fll;
 
@@ -198,18 +198,18 @@ freelist_new(InkFreeList *f)
     INK_QUEUE_LD(item, f->head);
     if (TO_PTR(FREELIST_POINTER(item)) == NULL) {
       uint32_t i;
-      void *newp = NULL;
+      void *newp        = NULL;
       size_t alloc_size = f->chunk_size * f->type_size;
-      size_t alignment = 0;
+      size_t alignment  = 0;
 
       if (ats_hugepage_enabled()) {
         alignment = ats_hugepage_size();
-        newp = ats_alloc_hugepage(alloc_size);
+        newp      = ats_alloc_hugepage(alloc_size);
       }
 
       if (newp == NULL) {
         alignment = ats_pagesize();
-        newp = ats_memalign(alignment, INK_ALIGN(alloc_size, alignment));
+        newp      = ats_memalign(alignment, INK_ALIGN(alloc_size, alignment));
       }
 
       ats_madvise((caddr_t)newp, INK_ALIGN(alloc_size, alignment), f->advice);
@@ -223,7 +223,7 @@ freelist_new(InkFreeList *f)
 #ifdef DEADBEEF
         const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
         for (int j = 0; j < (int)f->type_size; j++)
-          a[j] = str[j % 4];
+          a[j]     = str[j % 4];
 #endif
         freelist_free(f, a);
       }
@@ -287,7 +287,7 @@ freelist_free(InkFreeList *f, void *item)
     static const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
 
     // set the entire item to DEADBEEF
-    for (int j = 0; j < (int)f->type_size; j++)
+    for (int j          = 0; j < (int)f->type_size; j++)
       ((char *)item)[j] = str[j % 4];
   }
 #endif /* DEADBEEF */
@@ -344,7 +344,7 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
     // set the entire item to DEADBEEF;
     void *temp = head;
     for (size_t i = 0; i < num_item; i++) {
-      for (int j = sizeof(void *); j < (int)f->type_size; j++)
+      for (int j          = sizeof(void *); j < (int)f->type_size; j++)
         ((char *)temp)[j] = str[j % 4];
       *ADDRESS_OF_NEXT(temp, 0) = FROM_PTR(*ADDRESS_OF_NEXT(temp, 0));
       temp = TO_PTR(*ADDRESS_OF_NEXT(temp, 0));
@@ -398,8 +398,8 @@ ink_freelists_snap_baseline()
   fll = freelists;
   while (fll) {
     fll->fl->allocated_base = fll->fl->allocated;
-    fll->fl->used_base = fll->fl->used;
-    fll = fll->next;
+    fll->fl->used_base      = fll->fl->used;
+    fll                     = fll->next;
   }
 }
 
@@ -439,8 +439,8 @@ ink_freelists_dump(FILE *f)
   fprintf(f, "--------------------|--------------------|------------|----------------------------------\n");
 
   uint64_t total_allocated = 0;
-  uint64_t total_used = 0;
-  fll = freelists;
+  uint64_t total_used      = 0;
+  fll                      = freelists;
   while (fll) {
     fprintf(f, " %18" PRIu64 " | %18" PRIu64 " | %10u | memory/%s\n", (uint64_t)fll->fl->allocated * (uint64_t)fll->fl->type_size,
             (uint64_t)fll->fl->used * (uint64_t)fll->fl->type_size, fll->fl->type_size,
@@ -456,7 +456,7 @@ ink_freelists_dump(FILE *f)
 void
 ink_atomiclist_init(InkAtomicList *l, const char *name, uint32_t offset_to_next)
 {
-  l->name = name;
+  l->name   = name;
   l->offset = offset_to_next;
   SET_FREELIST_POINTER_VERSION(l->head, FROM_PTR(0), 0);
 }
@@ -496,7 +496,7 @@ ink_atomiclist_popall(InkAtomicList *l)
   } while (result == 0);
   {
     void *ret = TO_PTR(FREELIST_POINTER(item));
-    void *e = ret;
+    void *e   = ret;
     /* fixup forward pointers */
     while (e) {
       void *n = TO_PTR(*ADDRESS_OF_NEXT(e, l->offset));
@@ -513,11 +513,11 @@ ink_atomiclist_push(InkAtomicList *l, void *item)
   volatile void **adr_of_next = (volatile void **)ADDRESS_OF_NEXT(item, l->offset);
   head_p head;
   head_p item_pair;
-  int result = 0;
+  int result       = 0;
   volatile void *h = NULL;
   do {
     INK_QUEUE_LD(head, l->head);
-    h = FREELIST_POINTER(head);
+    h            = FREELIST_POINTER(head);
     *adr_of_next = h;
     ink_assert(item != TO_PTR(h));
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(head));
@@ -532,10 +532,10 @@ void *
 ink_atomiclist_remove(InkAtomicList *l, void *item)
 {
   head_p head;
-  void *prev = NULL;
+  void *prev       = NULL;
   void **addr_next = ADDRESS_OF_NEXT(item, l->offset);
-  void *item_next = *addr_next;
-  int result = 0;
+  void *item_next  = *addr_next;
+  int result       = 0;
 
   /*
    * first, try to pop it if it is first
@@ -559,12 +559,12 @@ ink_atomiclist_remove(InkAtomicList *l, void *item)
   prev = TO_PTR(FREELIST_POINTER(head));
   while (prev) {
     void **prev_adr_of_next = ADDRESS_OF_NEXT(prev, l->offset);
-    void *prev_prev = prev;
-    prev = TO_PTR(*prev_adr_of_next);
+    void *prev_prev         = prev;
+    prev                    = TO_PTR(*prev_adr_of_next);
     if (prev == item) {
       ink_assert(prev_prev != item_next);
       *prev_adr_of_next = item_next;
-      *addr_next = NULL;
+      *addr_next        = NULL;
       return item;
     }
   }

@@ -38,9 +38,9 @@
 #define STAT_CONFIG_FILE "stats.config.xml"
 
 StatObjectList statObjectList;
-StatXMLTag currentTag = INVALID_TAG;
-StatObject *statObject = NULL;
-char *exprContent = NULL;
+StatXMLTag currentTag     = INVALID_TAG;
+StatObject *statObject    = NULL;
+char *exprContent         = NULL;
 static unsigned statCount = 0; // global statistics object counter
 bool nodeVar;
 bool sumClusterVar;
@@ -92,10 +92,10 @@ elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlcha
 
         if (!xml_strcmp(atts[i], "minimum")) {
           statObject->m_stats_min = (MgmtFloat)xml_atof(atts[i + 1]);
-          statObject->m_has_min = true;
+          statObject->m_has_min   = true;
         } else if (!xml_strcmp(atts[i], "maximum")) {
           statObject->m_stats_max = (MgmtFloat)xml_atof(atts[i + 1]);
-          statObject->m_has_max = true;
+          statObject->m_has_max   = true;
         } else if (!xml_strcmp(atts[i], "interval")) {
           statObject->m_update_interval = (ink_hrtime)xml_atoi(atts[i + 1]);
         } else if (!xml_strcmp(atts[i], "debug")) {
@@ -112,7 +112,7 @@ elementStart(void * /* userData ATS_UNUSED */, const xmlchar *name, const xmlcha
     break;
 
   case DST_TAG:
-    nodeVar = true;
+    nodeVar       = true;
     sumClusterVar = true; // Should only be used with cluster variable
 
     if (atts)
@@ -186,8 +186,8 @@ void
 StatProcessor::rereadConfig(FileManager *configFiles)
 {
   textBuffer *fileContent = NULL;
-  Rollback *fileRB = NULL;
-  char *fileBuffer = NULL;
+  Rollback *fileRB        = NULL;
+  char *fileBuffer        = NULL;
   version_t fileVersion;
   int fileLen;
 
@@ -201,7 +201,7 @@ StatProcessor::rereadConfig(FileManager *configFiles)
   fileVersion = fileRB->getCurrentVersion();
   fileRB->getVersion(fileVersion, &fileContent);
   fileBuffer = fileContent->bufPtr();
-  fileLen = strlen(fileBuffer);
+  fileLen    = strlen(fileBuffer);
 
 #if HAVE_LIBEXPAT
   /*
@@ -238,10 +238,10 @@ StatProcessor::rereadConfig(FileManager *configFiles)
   /* Parse XML with libxml2 */
   xmlSAXHandler sax;
   memset(&sax, 0, sizeof(xmlSAXHandler));
-  sax.startElement = elementStart;
-  sax.endElement = elementEnd;
-  sax.characters = charDataHandler;
-  sax.initialized = 1;
+  sax.startElement        = elementStart;
+  sax.endElement          = elementEnd;
+  sax.characters          = charDataHandler;
+  sax.initialized         = 1;
   xmlParserCtxtPtr parser = xmlCreatePushParserCtxt(&sax, NULL, NULL, 0, NULL);
 
   int status = xmlParseChunk(parser, fileBuffer, fileLen, 1);

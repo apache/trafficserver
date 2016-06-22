@@ -84,15 +84,15 @@ BaseLogFile::~BaseLogFile()
 void
 BaseLogFile::init(const char *name)
 {
-  m_fp = NULL;
-  m_start_time = time(0);
-  m_end_time = 0L;
+  m_fp            = NULL;
+  m_start_time    = time(0);
+  m_end_time      = 0L;
   m_bytes_written = 0;
-  m_name = ats_strdup(name);
-  m_hostname = NULL;
-  m_is_regfile = false;
-  m_is_init = false;
-  m_meta_info = NULL;
+  m_name          = ats_strdup(name);
+  m_hostname      = NULL;
+  m_is_regfile    = false;
+  m_is_init       = false;
+  m_meta_info     = NULL;
 }
 
 /*
@@ -157,7 +157,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
   // Start with conservative values for the start and end bounds, then
   // try to refine.
   start = 0L;
-  end = (interval_end >= m_end_time) ? interval_end : m_end_time;
+  end   = (interval_end >= m_end_time) ? interval_end : m_end_time;
 
   if (m_meta_info->data_from_metafile()) {
     // If the metadata came from the metafile, this means that
@@ -217,7 +217,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
   }
 
   // reset m_start_time
-  m_start_time = 0;
+  m_start_time    = 0;
   m_bytes_written = 0;
 
   log_log_trace("The logfile %s was rolled to %s.\n", m_name.get(), roll_name);
@@ -258,7 +258,7 @@ bool
 BaseLogFile::rolled_logfile(char *path)
 {
   const int target_len = (int)strlen(LOGFILE_ROLLED_EXTENSION);
-  int len = (int)strlen(path);
+  int len              = (int)strlen(path);
   if (len > target_len) {
     char *str = &path[len - target_len];
     if (!strcmp(str, LOGFILE_ROLLED_EXTENSION)) {
@@ -295,12 +295,12 @@ BaseLogFile::open_file(int perm)
     return LOG_FILE_COULD_NOT_OPEN_FILE;
   } else if (!strcmp(m_name.get(), "stdout")) {
     log_log_trace("BaseLogFile: stdout opened\n");
-    m_fp = stdout;
+    m_fp      = stdout;
     m_is_init = true;
     return LOG_FILE_NO_ERROR;
   } else if (!strcmp(m_name.get(), "stderr")) {
     log_log_trace("BaseLogFile: stderr opened\n");
-    m_fp = stderr;
+    m_fp      = stderr;
     m_is_init = true;
     return LOG_FILE_NO_ERROR;
   }
@@ -366,7 +366,7 @@ BaseLogFile::close_file()
   if (is_open()) {
     fclose(m_fp);
     log_log_trace("BaseLogFile %s is closed\n", m_name.get());
-    m_fp = NULL;
+    m_fp      = NULL;
     m_is_init = false;
   }
 }
@@ -405,7 +405,7 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
   va_list args;
 
   const char *priority_name = NULL;
-  FILE *output = stdout;
+  FILE *output              = stdout;
   switch (priority) {
   case LL_Debug:
     priority_name = "DEBUG";
@@ -415,15 +415,15 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
     break;
   case LL_Warning:
     priority_name = "WARNING";
-    output = stderr;
+    output        = stderr;
     break;
   case LL_Error:
     priority_name = "ERROR";
-    output = stderr;
+    output        = stderr;
     break;
   case LL_Fatal:
     priority_name = "FATAL";
-    output = stderr;
+    output        = stderr;
     break;
   default:
     priority_name = "unknown priority";

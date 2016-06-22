@@ -26,12 +26,12 @@
 
 using namespace EsiLib;
 
-bool StubIncludeHandler::includeResult = true;
+bool StubIncludeHandler::includeResult            = true;
 const char *const StubIncludeHandler::DATA_PREFIX = "Special data for include id ";
-const int StubIncludeHandler::DATA_PREFIX_SIZE = strlen(StubIncludeHandler::DATA_PREFIX);
+const int StubIncludeHandler::DATA_PREFIX_SIZE    = strlen(StubIncludeHandler::DATA_PREFIX);
 
 const char *StubIncludeHandler::FOOTER = 0;
-int StubIncludeHandler::FOOTER_SIZE = 0;
+int StubIncludeHandler::FOOTER_SIZE    = 0;
 
 int
 StubIncludeHandler::handleInclude(const char *data, int data_len)
@@ -55,8 +55,8 @@ StubIncludeHandler::getData(int include_id, const char *&data, int &data_len)
   TestHttpDataFetcher &test_fetcher = dynamic_cast<TestHttpDataFetcher &>(_http_fetcher);
   if (test_fetcher.getReturnData()) {
     char *buf = new char[1024];
-    data_len = snprintf(buf, 1024, "%s%d", DATA_PREFIX, include_id);
-    data = buf;
+    data_len  = snprintf(buf, 1024, "%s%d", DATA_PREFIX, include_id);
+    data      = buf;
     heap_strings.push_back(buf);
     return true;
   }
@@ -66,7 +66,7 @@ StubIncludeHandler::getData(int include_id, const char *&data, int &data_len)
 void
 StubIncludeHandler::getFooter(const char *&footer, int &footer_len)
 {
-  footer = FOOTER;
+  footer     = FOOTER;
   footer_len = FOOTER_SIZE;
 }
 

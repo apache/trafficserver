@@ -24,7 +24,7 @@
 #include "FailureInfo.h"
 #include <cstdlib>
 
-static int LOWER_CUT_OFF = 300;
+static int LOWER_CUT_OFF  = 300;
 static int HIGHER_CUT_OFF = 1000;
 
 void

@@ -45,22 +45,22 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
   const unsigned int local_buf_size = 32;
   char local_buf[local_buf_size];
   bool using_local_buffer = false;
-  bool negative = false;
+  bool negative           = false;
   char *out_buf;
 
   if (buf_size < 22) {
     // int64_t may not fit in provided buffer, use the local one
-    out_buf = &local_buf[local_buf_size - 1];
+    out_buf            = &local_buf[local_buf_size - 1];
     using_local_buffer = true;
   } else {
     out_buf = &buf[buf_size - 1];
   }
 
   unsigned int num_chars = 1; // includes eos
-  *out_buf-- = 0;
+  *out_buf--             = 0;
 
   if (val < 0) {
-    val = -val;
+    val      = -val;
     negative = true;
   }
 
@@ -86,7 +86,7 @@ int64_to_str(char *buf, unsigned int buf_size, int64_t val, unsigned int *total_
       out_buf++;
     }
     if (req_width > buf_size)
-      req_width = buf_size;
+      req_width              = buf_size;
     unsigned int num_padding = 0;
     if (req_width > num_chars) {
       num_padding = req_width - num_chars;
@@ -149,7 +149,7 @@ squid_timestamp_to_buf(char *buf, unsigned int buf_size, long timestamp_sec, lon
   // convert milliseconds
   //
   tmp_buf[tmp_buf_size - 5] = '.';
-  int ms = timestamp_usec / 1000;
+  int ms                    = timestamp_usec / 1000;
   unsigned int num_chars_ms;
   char ATS_UNUSED *ts_ms = int64_to_str(&tmp_buf[tmp_buf_size - 4], 4, ms, &num_chars_ms, 4, '0');
   ink_assert(ts_ms && num_chars_ms == 4);
@@ -180,7 +180,7 @@ init_hrtime_TCS()
 }
 
 double hrtime_freq_float = 0.5; // 500 Mhz
-uint32_t hrtime_freq = init_hrtime_TCS();
+uint32_t hrtime_freq     = init_hrtime_TCS();
 #endif
 
 #ifdef NEED_HRTIME_BASIS
@@ -204,19 +204,19 @@ init_hrtime_basis()
     {
       struct timeval tnow;
       ink_assert(!gettimeofday(&tnow, NULL));
-      timespec_basis.tv_sec = tnow.tv_sec;
+      timespec_basis.tv_sec  = tnow.tv_sec;
       timespec_basis.tv_nsec = tnow.tv_usec * 1000;
     }
 #endif
     t2 = ink_get_hrtime_internal();
     // accuracy must be at least 100 microseconds
   } while (t2 - t1 > HRTIME_USECONDS(100));
-  b = (t2 + t1) / 2;
+  b   = (t2 + t1) / 2;
   now = ink_hrtime_from_timespec(&timespec_basis);
-  ts = ink_hrtime_to_timespec(now);
+  ts  = ink_hrtime_to_timespec(now);
   ink_assert(ts.tv_sec == timespec_basis.tv_sec && ts.tv_nsec == timespec_basis.tv_nsec);
   hrtime_offset = now - b;
-  hrtime_basis = b;
+  hrtime_basis  = b;
   return b;
 }
 #endif

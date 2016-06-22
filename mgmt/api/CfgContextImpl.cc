@@ -39,7 +39,7 @@
 //--------------------------------------------------------------------------
 CommentObj::CommentObj(char *comment)
 {
-  m_ele = comment_ele_create(comment);
+  m_ele   = comment_ele_create(comment);
   m_valid = (comment ? true : false);
 }
 
@@ -71,7 +71,7 @@ CommentObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 CacheObj::CacheObj(TSCacheEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -80,9 +80,9 @@ CacheObj::CacheObj(TSCacheEle *ele)
 CacheObj::CacheObj(TokenList *tokens)
 {
   Token *tok;
-  m_ele = TSCacheEleCreate(TS_TYPE_UNDEFINED);
+  m_ele                = TSCacheEleCreate(TS_TYPE_UNDEFINED);
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens) {
     goto FORMAT_ERR;
@@ -115,7 +115,7 @@ CacheObj::CacheObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 CacheObj::~CacheObj()
@@ -250,7 +250,7 @@ CacheObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 CongestionObj::CongestionObj(TSCongestionEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -258,9 +258,9 @@ CongestionObj::CongestionObj(TSCongestionEle *ele)
 CongestionObj::CongestionObj(TokenList *tokens)
 {
   Token *tok;
-  m_ele = TSCongestionEleCreate();
+  m_ele                = TSCongestionEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens) {
     goto FORMAT_ERR;
@@ -337,7 +337,7 @@ CongestionObj::CongestionObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 CongestionObj::~CongestionObj()
@@ -467,7 +467,7 @@ CongestionObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 HostingObj::HostingObj(TSHostingEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -476,9 +476,9 @@ HostingObj::HostingObj(TokenList *tokens)
 {
   Token *token;
 
-  m_ele = TSHostingEleCreate();
+  m_ele                = TSHostingEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length != 2) {
     goto FORMAT_ERR;
@@ -515,7 +515,7 @@ HostingObj::HostingObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 HostingObj::~HostingObj()
@@ -607,7 +607,7 @@ HostingObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 IcpObj::IcpObj(TSIcpEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -617,9 +617,9 @@ IcpObj::IcpObj(TokenList *tokens)
   Token *token;
   int i;
 
-  m_ele = TSIcpEleCreate();
+  m_ele                = TSIcpEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length < 8) {
     goto FORMAT_ERR;
@@ -715,7 +715,7 @@ IcpObj::IcpObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 IcpObj::~IcpObj()
@@ -842,7 +842,7 @@ IcpObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 IpAllowObj::IpAllowObj(TSIpAllowEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -851,9 +851,9 @@ IpAllowObj::IpAllowObj(TokenList *tokens)
 {
   Token *token;
 
-  m_ele = TSIpAllowEleCreate();
+  m_ele                = TSIpAllowEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || (tokens->length != 2)) {
     goto FORMAT_ERR;
@@ -893,7 +893,7 @@ IpAllowObj::IpAllowObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 IpAllowObj::~IpAllowObj()
@@ -977,7 +977,7 @@ IpAllowObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 ParentProxyObj::ParentProxyObj(TSParentProxyEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -985,9 +985,9 @@ ParentProxyObj::ParentProxyObj(TSParentProxyEle *ele)
 ParentProxyObj::ParentProxyObj(TokenList *tokens)
 {
   Token *tok;
-  m_ele = TSParentProxyEleCreate(TS_TYPE_UNDEFINED);
+  m_ele                = TSParentProxyEleCreate(TS_TYPE_UNDEFINED);
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length < 1) {
     goto FORMAT_ERR;
@@ -1174,7 +1174,7 @@ ParentProxyObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 VolumeObj::VolumeObj(TSVolumeEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1183,9 +1183,9 @@ VolumeObj::VolumeObj(TokenList *tokens)
 {
   Token *token;
 
-  m_ele = TSVolumeEleCreate();
+  m_ele                = TSVolumeEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length != 3) {
     goto FORMAT_ERR;
@@ -1228,7 +1228,7 @@ VolumeObj::VolumeObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 VolumeObj::~VolumeObj()
@@ -1320,7 +1320,7 @@ VolumeObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 PluginObj::PluginObj(TSPluginEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1329,9 +1329,9 @@ PluginObj::PluginObj(TokenList *tokens)
 {
   Token *token;
 
-  m_ele = TSPluginEleCreate();
+  m_ele                = TSPluginEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length < 1) {
     goto FORMAT_ERR;
@@ -1362,7 +1362,7 @@ PluginObj::PluginObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 PluginObj::~PluginObj()
@@ -1418,7 +1418,7 @@ PluginObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 RemapObj::RemapObj(TSRemapEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1431,9 +1431,9 @@ RemapObj::RemapObj(TokenList *tokens)
   Tokenizer toTok(":/");
   char buf[MAX_RULE_SIZE];
 
-  m_ele = TSRemapEleCreate(TS_TYPE_UNDEFINED);
+  m_ele                = TSRemapEleCreate(TS_TYPE_UNDEFINED);
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || ((tokens->length != 2) && (tokens->length != 3))) {
     goto FORMAT_ERR;
@@ -1561,7 +1561,7 @@ RemapObj::RemapObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 RemapObj::~RemapObj()
@@ -1729,7 +1729,7 @@ RemapObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 SocksObj::SocksObj(TSSocksEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1738,9 +1738,9 @@ SocksObj::SocksObj(TokenList *tokens)
 {
   Token *tok;
 
-  m_ele = TSSocksEleCreate(TS_TYPE_UNDEFINED);
+  m_ele                = TSSocksEleCreate(TS_TYPE_UNDEFINED);
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens) {
     goto FORMAT_ERR;
@@ -1767,7 +1767,7 @@ SocksObj::SocksObj(TokenList *tokens)
         goto FORMAT_ERR;
       }
       if (tok && tok->name) {
-        tok = tokens->next(tok);
+        tok             = tokens->next(tok);
         m_ele->password = ats_strdup(tok->name);
       } else {
         goto FORMAT_ERR;
@@ -1816,7 +1816,7 @@ SocksObj::SocksObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 SocksObj::~SocksObj()
@@ -1953,7 +1953,7 @@ SocksObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 SplitDnsObj::SplitDnsObj(TSSplitDnsEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1962,9 +1962,9 @@ SplitDnsObj::SplitDnsObj(TokenList *tokens)
 {
   Token *tok;
 
-  m_ele = TSSplitDnsEleCreate();
+  m_ele                = TSSplitDnsEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || (tokens->length > 6)) {
     goto FORMAT_ERR;
@@ -1983,28 +1983,28 @@ SplitDnsObj::SplitDnsObj(TokenList *tokens)
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_DOMAIN;
-      m_ele->pd_val = ats_strdup(tok->value);
+      m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "dest_host") == 0) {
       if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_HOST;
-      m_ele->pd_val = ats_strdup(tok->value);
+      m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "url_regex") == 0) {
       if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_URL_REGEX;
-      m_ele->pd_val = ats_strdup(tok->value);
+      m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "url") == 0) {
       if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_URL;
-      m_ele->pd_val = ats_strdup(tok->value);
+      m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "named") == 0) {
       if ((m_ele->dns_servers_addrs != NULL) || (!tok->value)) {
         // fields are already defined!!
@@ -2034,7 +2034,7 @@ SplitDnsObj::SplitDnsObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 SplitDnsObj::~SplitDnsObj()
@@ -2185,7 +2185,7 @@ SplitDnsObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 StorageObj::StorageObj(TSStorageEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid(); // now validate
 }
@@ -2195,9 +2195,9 @@ StorageObj::StorageObj(TokenList *tokens)
 {
   Token *tok;
 
-  m_ele = TSStorageEleCreate();
+  m_ele                = TSStorageEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || (tokens->length > 6)) {
     goto FORMAT_ERR;
@@ -2223,7 +2223,7 @@ StorageObj::StorageObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 StorageObj::~StorageObj()
@@ -2278,7 +2278,7 @@ StorageObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 VirtIpAddrObj::VirtIpAddrObj(TSVirtIpAddrEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -2287,9 +2287,9 @@ VirtIpAddrObj::VirtIpAddrObj(TokenList *tokens)
 {
   Token *tok;
 
-  m_ele = TSVirtIpAddrEleCreate();
+  m_ele                = TSVirtIpAddrEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || (tokens->length != 3)) {
     goto FORMAT_ERR;
@@ -2324,7 +2324,7 @@ VirtIpAddrObj::VirtIpAddrObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 VirtIpAddrObj::~VirtIpAddrObj()
@@ -2388,7 +2388,7 @@ VirtIpAddrObj::getCfgEleCopy()
 CfgContext::CfgContext(TSFileNameT filename)
 {
   m_file = filename;
-  m_ver = -1;
+  m_ver  = -1;
 }
 
 CfgContext::~CfgContext()

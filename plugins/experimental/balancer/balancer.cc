@@ -37,7 +37,7 @@ static BalancerInstance *
 MakeBalancerInstance(const char *opt)
 {
   const char *end = strchr(opt, ',');
-  size_t len = end ? std::distance(opt, end) : strlen(opt);
+  size_t len      = end ? std::distance(opt, end) : strlen(opt);
 
   if (len == lengthof("hash") && strncmp(opt, "hash", len) == 0) {
     return MakeHashBalancer(end ? end + 1 : NULL);
@@ -163,7 +163,7 @@ TSRemapDeleteInstance(void *instance)
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
 {
-  BalancerInstance *balancer = (BalancerInstance *)instance;
+  BalancerInstance *balancer   = (BalancerInstance *)instance;
   const BalancerTarget &target = balancer->balance(txn, rri);
 
   if (TSIsDebugTagSet("balancer")) {

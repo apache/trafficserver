@@ -22,7 +22,7 @@ static void
 ts_lua_async_push_item(ts_lua_async_item **head, ts_lua_async_item *node)
 {
   node->next = *head;
-  *head = node;
+  *head      = node;
 }
 
 static void
@@ -61,8 +61,8 @@ ts_lua_async_create_item(TSCont cont, async_clean func, void *d, ts_lua_cont_inf
   ai->cinfo = ci;
 
   ai->cleanup = func;
-  ai->data = d;
-  ai->contp = cont;
+  ai->data    = d;
+  ai->contp   = cont;
   ai->deleted = 0;
 
   ts_lua_async_push_item(&ci->async_chain, ai);
@@ -76,7 +76,7 @@ ts_lua_release_cont_info(ts_lua_cont_info *ci)
   ts_lua_main_ctx *mctx;
   ts_lua_coroutine *crt;
 
-  crt = &ci->routine;
+  crt  = &ci->routine;
   mctx = crt->mctx;
 
   ts_lua_async_destroy_chain(&ci->async_chain);

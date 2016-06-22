@@ -103,7 +103,7 @@ public:
   {
     commits_.emplace_back(new LogEntry(entry));
     string s = entry.data();
-    auto p = s.find("=");
+    auto p   = s.find("=");
     if (p != string::npos)
       state_[s.substr(0, p)] = make_pair(entry.index(), s.substr(p + 1));
   }
@@ -431,7 +431,7 @@ TEST_F(RaftTest, OneTwoThreeThenAbdicate)
   StartUp(3, config_log_entry);
   Ticks(20);
   int ileader = servers_[0]->leader_[0] - '0';
-  auto &raft = *servers_[ileader]->raft_.get();
+  auto &raft  = *servers_[ileader]->raft_.get();
   raft.Stop();
   down_.insert(to_string(ileader));
   Ticks(1); // Abdication will cause immediate reelection.
@@ -509,8 +509,8 @@ TEST_F(RaftTest, OneTwoLogLog)
   StartUp(2, config_log_entry);
   Ticks(20);
   int ileader = servers_[0]->leader_[0] - '0';
-  int iother = ileader ? 0 : 1;
-  auto &raft = *servers_[ileader]->raft_.get();
+  int iother  = ileader ? 0 : 1;
+  auto &raft  = *servers_[ileader]->raft_.get();
   LogEntry log_entry;
   log_entry.set_data("a");
   raft.Propose(log_entry);
@@ -540,7 +540,7 @@ TEST_F(RaftTest, OneTwoThreeLogDownLogUp)
   StartUp(3, config_log_entry);
   Ticks(20);
   int ileader = servers_[0]->leader_[0] - '0';
-  auto &raft = *servers_[ileader]->raft_.get();
+  auto &raft  = *servers_[ileader]->raft_.get();
   LogEntry log_entry;
   log_entry.set_data("a");
   raft.Propose(log_entry);
@@ -569,7 +569,7 @@ TEST_F(RaftTest, OneTwoThreeLogLogThreeDamagedLogRestore)
   StartUp(3, config_log_entry);
   Ticks(20);
   int ileader = servers_[0]->leader_[0] - '0';
-  auto &raft = *servers_[ileader]->raft_.get();
+  auto &raft  = *servers_[ileader]->raft_.get();
   LogEntry log_entry;
   log_entry.set_data("a");
   raft.Propose(log_entry);
@@ -597,7 +597,7 @@ TEST_F(RaftTest, OneTwoLogLogThenThree)
   StartUp(2, config_log_entry);
   Ticks(20);
   int ileader = servers_[0]->leader_[0] - '0';
-  auto &raft = *servers_[ileader]->raft_.get();
+  auto &raft  = *servers_[ileader]->raft_.get();
   LogEntry log_entry;
   log_entry.set_data("a");
   raft.Propose(log_entry);
@@ -644,7 +644,7 @@ TEST_F(RaftTest, OneTwoThreeCrashAndBurnLeader)
   StartUp(3, config_log_entry);
   Ticks(20);
   int ileader = servers_[0]->leader_[0] - '0';
-  auto &raft = *servers_[ileader]->raft_.get();
+  auto &raft  = *servers_[ileader]->raft_.get();
   LogEntry log_entry;
   log_entry.set_data("a");
   raft.Propose(log_entry);
@@ -670,7 +670,7 @@ TEST_F(RaftTest, FiveCrashLeaderAndAnotherAndRecover)
   StartUp(5, config_log_entry);
   Ticks(20);
   int ileader = servers_[0]->leader_[0] - '0';
-  auto &raft = *servers_[ileader]->raft_.get();
+  auto &raft  = *servers_[ileader]->raft_.get();
   LogEntry log_entry;
   log_entry.set_data("a");
   raft.Propose(log_entry);
@@ -698,7 +698,7 @@ TEST_F(RaftTest, FiveCrashAndBurnLeaderAndAnother)
   StartUp(5, config_log_entry);
   Ticks(20);
   int ileader = servers_[0]->leader_[0] - '0';
-  auto &raft = *servers_[ileader]->raft_.get();
+  auto &raft  = *servers_[ileader]->raft_.get();
   LogEntry log_entry;
   log_entry.set_data("a");
   raft.Propose(log_entry);
@@ -740,7 +740,7 @@ TEST_F(RaftTest, FiveLogDown3LogDown2Up3LogUp2)
   down_.insert(to_string(ileader));
   Ticks(20);
   int ileader2 = servers_[((ileader + 1) % 5)]->leader_[0] - '0';
-  auto &raft2 = *servers_[ileader2]->raft_.get();
+  auto &raft2  = *servers_[ileader2]->raft_.get();
   log_entry.set_data("c");
   raft2.Propose(log_entry);
   log_entry.set_data("d");
@@ -827,7 +827,7 @@ TEST_F(RaftTest, OneTwoThreeSnapshotOneTwoCrashAndBurnThree)
   StartUp(3, config_log_entry);
   Ticks(20);
   int ileader = servers_[0]->leader_[0] - '0';
-  auto &raft = *servers_[ileader]->raft_.get();
+  auto &raft  = *servers_[ileader]->raft_.get();
   LogEntry log_entry;
   log_entry.set_data("a=1");
   raft.Propose(log_entry);

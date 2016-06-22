@@ -76,7 +76,7 @@ ProcessManager::ProcessManager(bool rlm) : BaseManager(), require_lm(rlm), local
   // Making the process_manager thread a spinning thread to start traffic server
   // as quickly as possible. Will reset this timeout when reconfigure()
   timeout = 0;
-  pid = getpid();
+  pid     = getpid();
 } /* End ProcessManager::ProcessManager */
 
 void
@@ -95,8 +95,8 @@ ProcessManager::signalConfigFileChild(const char *parent, const char *child, uns
   static const MgmtMarshallType fields[] = {MGMT_MARSHALL_STRING, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT};
 
   MgmtMarshallInt mgmtopt = options;
-  size_t len = mgmt_message_length(fields, countof(fields), &parent, &child, &mgmtopt);
-  void *buffer = ats_malloc(len);
+  size_t len              = mgmt_message_length(fields, countof(fields), &parent, &child, &mgmtopt);
+  void *buffer            = ats_malloc(len);
 
   mgmt_message_marshall(buffer, len, fields, countof(fields), &parent, &child, &mgmtopt);
   signalManager(MGMT_SIGNAL_CONFIG_FILE_CHILD, (const char *)buffer, len);
@@ -116,8 +116,8 @@ ProcessManager::signalManager(int msg_id, const char *data_raw, int data_len)
 {
   MgmtMessageHdr *mh;
 
-  mh = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
-  mh->msg_id = msg_id;
+  mh           = (MgmtMessageHdr *)ats_malloc(sizeof(MgmtMessageHdr) + data_len);
+  mh->msg_id   = msg_id;
   mh->data_len = data_len;
   memcpy((char *)mh + sizeof(MgmtMessageHdr), data_raw, data_len);
   ink_assert(enqueue(mgmt_signal_queue, mh));
@@ -206,9 +206,9 @@ ProcessManager::initLMConnection()
                (const char *)sockpath);
   }
 
-  data_len = sizeof(pid_t);
-  mh_full = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + data_len);
-  mh_full->msg_id = MGMT_SIGNAL_PID;
+  data_len          = sizeof(pid_t);
+  mh_full           = (MgmtMessageHdr *)alloca(sizeof(MgmtMessageHdr) + data_len);
+  mh_full->msg_id   = MGMT_SIGNAL_PID;
   mh_full->data_len = data_len;
   memcpy((char *)mh_full + sizeof(MgmtMessageHdr), &(pid), data_len);
   if (mgmt_write_pipe(local_manager_sockfd, (char *)mh_full, sizeof(MgmtMessageHdr) + data_len) <= 0) {
@@ -237,7 +237,7 @@ ProcessManager::pollLMConnection()
     } else if (num > 0) { /* We have a message */
       if ((res = mgmt_read_pipe(local_manager_sockfd, (char *)&mh_hdr, sizeof(MgmtMessageHdr))) > 0) {
         size_t mh_full_size = sizeof(MgmtMessageHdr) + mh_hdr.data_len;
-        mh_full = (MgmtMessageHdr *)ats_malloc(mh_full_size);
+        mh_full             = (MgmtMessageHdr *)ats_malloc(mh_full_size);
 
         memcpy(mh_full, &mh_hdr, sizeof(MgmtMessageHdr));
         data_raw = (char *)mh_full + sizeof(MgmtMessageHdr);

@@ -75,17 +75,17 @@ string_to_ip_addr_ele(const char *str)
     } else { // Single, CIDR TYPE
       if (!isNumber(cidr_tokens[1]))
         goto Lerror;
-      ele->ip_a = string_to_ip_addr(cidr_tokens[0]);
+      ele->ip_a   = string_to_ip_addr(cidr_tokens[0]);
       ele->cidr_a = ink_atoi(cidr_tokens[1]);
     }
     if (!ele->ip_a) // ERROR: Invalid ip
       goto Lerror;
   } else { // RANGE TYPE
-    ele->type = TS_IP_RANGE;
+    ele->type  = TS_IP_RANGE;
     const_ip_a = range_tokens[0];
     const_ip_b = range_tokens[1];
-    ip_a = ats_strdup(const_ip_a);
-    ip_b = ats_strdup(const_ip_b);
+    ip_a       = ats_strdup(const_ip_a);
+    ip_b       = ats_strdup(const_ip_b);
 
     // determine if ip's are cidr type; only test if ip_a is cidr, assume both are same
     cidr_tokens.Initialize(ip_a, COPY_TOKS);
@@ -94,10 +94,10 @@ string_to_ip_addr_ele(const char *str)
       ele->ip_a = string_to_ip_addr(ip_a);
       ele->ip_b = string_to_ip_addr(ip_b);
     } else { // Range, CIDR TYPE */
-      ele->ip_a = string_to_ip_addr(cidr_tokens[0]);
+      ele->ip_a   = string_to_ip_addr(cidr_tokens[0]);
       ele->cidr_a = ink_atoi(cidr_tokens[1]);
       cidr_tokens2.Initialize(ip_b, COPY_TOKS);
-      ele->ip_b = string_to_ip_addr(cidr_tokens2[0]);
+      ele->ip_b   = string_to_ip_addr(cidr_tokens2[0]);
       ele->cidr_b = ink_atoi(cidr_tokens2[1]);
       if (!isNumber(cidr_tokens[1]) || !isNumber(cidr_tokens2[1]))
         goto Lerror;
@@ -598,12 +598,12 @@ string_to_int_list(const char *str_list, const char *delimiter)
   tokens.Initialize(str_list);
 
   numToks = tokens.count();
-  list = TSIntListCreate();
+  list    = TSIntListCreate();
 
   for (i = 0; i < numToks; i++) {
     if (!isNumber(tokens[i]))
       goto Lerror;
-    ele = (int *)ats_malloc(sizeof(int));
+    ele  = (int *)ats_malloc(sizeof(int));
     *ele = ink_atoi(tokens[i]); // What about we can't convert? ERROR?
     TSIntListEnqueue(list, ele);
   }
@@ -753,7 +753,7 @@ string_to_domain(const char *str)
 
   // get hostname
   ink_strlcpy(buf, str, sizeof(buf));
-  token = strtok_r(buf, ":", &token_pos);
+  token  = strtok_r(buf, ":", &token_pos);
   remain = token_pos;
   if (token)
     dom->domain_val = ats_strdup(token);
@@ -1072,7 +1072,7 @@ string_to_hms_time(const char *str, TSHmsTime *time)
     return TS_ERR_PARAMS;
 
   memset(unit, 0, 10);
-  len = strlen(str);
+  len     = strlen(str);
   time->d = time->h = time->m = time->s = 0;
   for (i = 0; i < len; i++) {
     valid = false;
@@ -1081,28 +1081,28 @@ string_to_hms_time(const char *str, TSHmsTime *time)
         goto Lerror;
       time->d = ink_atoi(unit);
       memset(unit, 0, 10);
-      pos = 0;
+      pos   = 0;
       valid = true;
     } else if ((*str) == 'h') {
       if (time->h > 0 || !isNumber(unit))
         goto Lerror;
       time->h = ink_atoi(unit);
       memset(unit, 0, 10);
-      pos = 0;
+      pos   = 0;
       valid = true;
     } else if ((*str) == 'm') {
       if (time->m > 0 || !isNumber(unit))
         goto Lerror;
       time->m = ink_atoi(unit);
       memset(unit, 0, 10);
-      pos = 0;
+      pos   = 0;
       valid = true;
     } else if ((*str) == 's') {
       if (time->s > 0 || !isNumber(unit))
         goto Lerror;
       time->s = ink_atoi(unit);
       memset(unit, 0, 10);
-      pos = 0;
+      pos   = 0;
       valid = true;
     } else {
       unit[pos] = *str;
@@ -1498,7 +1498,7 @@ Token *
 tokens_to_pdss_format(TokenList *tokens, Token *first_tok, TSPdSsFormat *pdss)
 {
   Token *tok, *last_tok;
-  int i = 0;
+  int i                             = 0;
   const char *sspecs[NUM_SEC_SPECS] = {"time", "src_ip", "prefix", "suffix", "port", "method", "scheme", "tag"};
 
   // ink_assert(tokens && first_tok && pdss);
@@ -1527,7 +1527,7 @@ tokens_to_pdss_format(TokenList *tokens, Token *first_tok, TSPdSsFormat *pdss)
   // state determines which sec specifier being checked
   // the state is only set if there's a sec spec match
   last_tok = first_tok;
-  tok = tokens->next(first_tok);
+  tok      = tokens->next(first_tok);
   while (tok) {
     bool matchFound = false;
     for (i = 0; i < NUM_SEC_SPECS; i++) {
@@ -1571,7 +1571,7 @@ tokens_to_pdss_format(TokenList *tokens, Token *first_tok, TSPdSsFormat *pdss)
 
   next_token: // Get the next token
     last_tok = tok;
-    tok = tokens->next(tok);
+    tok      = tokens->next(tok);
 
   } // end while loop
 
@@ -2173,7 +2173,7 @@ copy_cfg_ele(TSCfgEle *src_ele, TSCfgEle *dst_ele)
   if (!src_ele || !dst_ele)
     return;
 
-  dst_ele->type = src_ele->type;
+  dst_ele->type  = src_ele->type;
   dst_ele->error = src_ele->error;
 }
 
@@ -2184,20 +2184,20 @@ copy_sspec(TSSspec *src, TSSspec *dst)
   if (!src || !dst)
     return;
 
-  dst->active = src->active;
+  dst->active      = src->active;
   dst->time.hour_a = src->time.hour_a;
-  dst->time.min_a = src->time.min_a;
+  dst->time.min_a  = src->time.min_a;
   dst->time.hour_b = src->time.hour_b;
-  dst->time.min_b = src->time.min_b;
+  dst->time.min_b  = src->time.min_b;
   if (src->src_ip)
     dst->src_ip = ats_strdup(src->src_ip);
   if (src->prefix)
     dst->prefix = ats_strdup(src->prefix);
   if (src->suffix)
     dst->suffix = ats_strdup(src->suffix);
-  dst->port = copy_port_ele(src->port);
-  dst->method = src->method;
-  dst->scheme = src->scheme;
+  dst->port     = copy_port_ele(src->port);
+  dst->method   = src->method;
+  dst->scheme   = src->scheme;
 }
 
 void
@@ -2233,7 +2233,7 @@ copy_ip_addr_ele(TSIpAddrEle *src_ele)
   if (!src_ele)
     return NULL;
 
-  dst_ele = TSIpAddrEleCreate();
+  dst_ele       = TSIpAddrEleCreate();
   dst_ele->type = src_ele->type;
   if (src_ele->ip_a)
     dst_ele->ip_a = ats_strdup(src_ele->ip_a);
@@ -2255,7 +2255,7 @@ copy_port_ele(TSPortEle *src_ele)
   if (!src_ele)
     return NULL;
 
-  dst_ele = TSPortEleCreate();
+  dst_ele         = TSPortEleCreate();
   dst_ele->port_a = src_ele->port_a;
   dst_ele->port_b = src_ele->port_b;
 
@@ -2273,7 +2273,7 @@ copy_domain(TSDomain *src_dom)
   dst_dom = TSDomainCreate();
   if (src_dom->domain_val)
     dst_dom->domain_val = ats_strdup(src_dom->domain_val);
-  dst_dom->port = src_dom->port;
+  dst_dom->port         = src_dom->port;
 
   return dst_dom;
 }
@@ -2291,7 +2291,7 @@ copy_ip_addr_list(TSIpAddrList list)
   nlist = TSIpAddrListCreate();
   count = TSIpAddrListLen(list);
   for (i = 0; i < count; i++) {
-    ele = TSIpAddrListDequeue(list);
+    ele  = TSIpAddrListDequeue(list);
     nele = copy_ip_addr_ele(ele);
     TSIpAddrListEnqueue(list, ele);
     TSIpAddrListEnqueue(nlist, nele);
@@ -2313,7 +2313,7 @@ copy_port_list(TSPortList list)
   nlist = TSPortListCreate();
   count = TSPortListLen(list);
   for (i = 0; i < count; i++) {
-    ele = TSPortListDequeue(list);
+    ele  = TSPortListDequeue(list);
     nele = copy_port_ele(ele);
     TSPortListEnqueue(list, ele);
     TSPortListEnqueue(nlist, nele);
@@ -2335,7 +2335,7 @@ copy_domain_list(TSDomainList list)
   nlist = TSDomainListCreate();
   count = TSDomainListLen(list);
   for (i = 0; i < count; i++) {
-    ele = TSDomainListDequeue(list);
+    ele  = TSDomainListDequeue(list);
     nele = copy_domain(ele);
     TSDomainListEnqueue(list, ele);
     TSDomainListEnqueue(nlist, nele);
@@ -2357,7 +2357,7 @@ copy_string_list(TSStringList list)
   nlist = TSStringListCreate();
   count = TSStringListLen(list);
   for (i = 0; i < count; i++) {
-    ele = TSStringListDequeue(list);
+    ele  = TSStringListDequeue(list);
     nele = ats_strdup(ele);
     TSStringListEnqueue(list, ele);
     TSStringListEnqueue(nlist, nele);
@@ -2379,8 +2379,8 @@ copy_int_list(TSIntList list)
   nlist = TSIntListCreate();
   count = TSIntListLen(list);
   for (i = 0; i < count; i++) {
-    elem = TSIntListDequeue(list);
-    nelem = (int *)ats_malloc(sizeof(int));
+    elem   = TSIntListDequeue(list);
+    nelem  = (int *)ats_malloc(sizeof(int));
     *nelem = *elem;
     TSIntListEnqueue(list, elem);
     TSIntListEnqueue(nlist, nelem);
@@ -2420,21 +2420,21 @@ copy_congestion_ele(TSCongestionEle *ele)
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   // copy_pdss_format(&(ele->congestion_info), &(nele->congestion_info));
   nele->pd_type = ele->pd_type;
-  nele->pd_val = ats_strdup(ele->pd_val);
+  nele->pd_val  = ats_strdup(ele->pd_val);
   if (ele->prefix)
-    nele->prefix = ats_strdup(ele->prefix);
-  nele->port = ele->port;
-  nele->scheme = ele->scheme;
+    nele->prefix                = ats_strdup(ele->prefix);
+  nele->port                    = ele->port;
+  nele->scheme                  = ele->scheme;
   nele->max_connection_failures = ele->max_connection_failures;
-  nele->fail_window = ele->fail_window;
-  nele->proxy_retry_interval = ele->proxy_retry_interval;
-  nele->client_wait_interval = ele->client_wait_interval;
-  nele->wait_interval_alpha = ele->wait_interval_alpha;
-  nele->live_os_conn_timeout = ele->live_os_conn_timeout;
-  nele->live_os_conn_retries = ele->live_os_conn_retries;
-  nele->dead_os_conn_timeout = ele->dead_os_conn_timeout;
-  nele->dead_os_conn_retries = ele->dead_os_conn_retries;
-  nele->max_connection = ele->max_connection;
+  nele->fail_window             = ele->fail_window;
+  nele->proxy_retry_interval    = ele->proxy_retry_interval;
+  nele->client_wait_interval    = ele->client_wait_interval;
+  nele->wait_interval_alpha     = ele->wait_interval_alpha;
+  nele->live_os_conn_timeout    = ele->live_os_conn_timeout;
+  nele->live_os_conn_retries    = ele->live_os_conn_retries;
+  nele->dead_os_conn_timeout    = ele->dead_os_conn_timeout;
+  nele->dead_os_conn_retries    = ele->dead_os_conn_retries;
+  nele->max_connection          = ele->max_connection;
   if (ele->error_page_uri)
     nele->error_page_uri = ats_strdup(ele->error_page_uri);
 
@@ -2456,7 +2456,7 @@ copy_hosting_ele(TSHostingEle *ele)
   nele->pd_type = ele->pd_type;
   if (ele->pd_val)
     nele->pd_val = ats_strdup(ele->pd_val);
-  ele->volumes = copy_int_list(ele->volumes);
+  ele->volumes   = copy_int_list(ele->volumes);
 
   return nele;
 }
@@ -2477,13 +2477,13 @@ copy_icp_ele(TSIcpEle *ele)
     nele->peer_hostname = ats_strdup(ele->peer_hostname);
   if (ele->peer_host_ip_addr)
     nele->peer_host_ip_addr = ats_strdup(ele->peer_host_ip_addr);
-  nele->peer_type = ele->peer_type;
-  nele->peer_proxy_port = ele->peer_proxy_port;
-  nele->peer_icp_port = ele->peer_icp_port;
-  nele->is_multicast = ele->is_multicast;
+  nele->peer_type           = ele->peer_type;
+  nele->peer_proxy_port     = ele->peer_proxy_port;
+  nele->peer_icp_port       = ele->peer_icp_port;
+  nele->is_multicast        = ele->is_multicast;
   if (ele->mc_ip_addr)
     nele->mc_ip_addr = ats_strdup(ele->mc_ip_addr);
-  nele->mc_ttl = ele->mc_ttl;
+  nele->mc_ttl       = ele->mc_ttl;
 
   return nele;
 }
@@ -2500,7 +2500,7 @@ copy_ip_allow_ele(TSIpAllowEle *ele)
     return NULL;
   if (ele->src_ip_addr)
     nele->src_ip_addr = copy_ip_addr_ele(ele->src_ip_addr);
-  nele->action = ele->action;
+  nele->action        = ele->action;
   return nele;
 }
 
@@ -2521,10 +2521,10 @@ copy_log_filter_ele(TSLogFilterEle *ele)
     ele->filter_name = ats_strdup(nele->filter_name);
   if (ele->log_field)
     nele->log_field = ats_strdup(ele->log_field);
-  nele->compare_op = ele->compare_op;
+  nele->compare_op  = ele->compare_op;
   if (ele->compare_str)
     nele->compare_str = ats_strdup(ele->compare_str);
-  nele->compare_int = ele->compare_int;
+  nele->compare_int   = ele->compare_int;
 
   return nele;
 }
@@ -2544,7 +2544,7 @@ copy_log_format_ele(TSLogFormatEle *ele)
   if (ele->name)
     nele->name = ats_strdup(ele->name);
   if (ele->format)
-    nele->format = ats_strdup(ele->format);
+    nele->format                = ats_strdup(ele->format);
   nele->aggregate_interval_secs = ele->aggregate_interval_secs;
 
   return nele;
@@ -2565,12 +2565,12 @@ copy_log_object_ele(TSLogObjectEle *ele)
   if (ele->format_name)
     nele->format_name = ats_strdup(ele->format_name);
   if (ele->file_name)
-    nele->file_name = ats_strdup(ele->file_name);
-  nele->log_mode = ele->log_mode;
+    nele->file_name     = ats_strdup(ele->file_name);
+  nele->log_mode        = ele->log_mode;
   nele->collation_hosts = copy_domain_list(ele->collation_hosts);
-  nele->filters = copy_string_list(ele->filters);
-  nele->protocols = copy_string_list(ele->protocols);
-  nele->server_hosts = copy_string_list(ele->server_hosts);
+  nele->filters         = copy_string_list(ele->filters);
+  nele->protocols       = copy_string_list(ele->protocols);
+  nele->server_hosts    = copy_string_list(ele->server_hosts);
 
   return nele;
 }
@@ -2588,9 +2588,9 @@ copy_parent_proxy_ele(TSParentProxyEle *ele)
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   copy_pdss_format(&(ele->parent_info), &(nele->parent_info));
-  nele->rr = ele->rr;
+  nele->rr         = ele->rr;
   nele->proxy_list = copy_domain_list(ele->proxy_list);
-  nele->direct = ele->direct;
+  nele->direct     = ele->direct;
 
   return nele;
 }
@@ -2607,8 +2607,8 @@ copy_volume_ele(TSVolumeEle *ele)
     return NULL;
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  nele->volume_num = ele->volume_num;
-  nele->scheme = ele->scheme;
+  nele->volume_num  = ele->volume_num;
+  nele->scheme      = ele->scheme;
   nele->volume_size = ele->volume_size;
   nele->size_format = ele->size_format;
 
@@ -2629,7 +2629,7 @@ copy_plugin_ele(TSPluginEle *ele)
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   if (ele->name)
     nele->name = ats_strdup(ele->name);
-  nele->args = copy_string_list(ele->args);
+  nele->args   = copy_string_list(ele->args);
 
   return nele;
 }
@@ -2646,17 +2646,17 @@ copy_remap_ele(TSRemapEle *ele)
     return NULL;
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  nele->map = ele->map;
+  nele->map         = ele->map;
   nele->from_scheme = ele->from_scheme;
   if (ele->from_host)
     nele->from_host = ats_strdup(ele->from_host);
-  nele->from_port = ele->from_port;
+  nele->from_port   = ele->from_port;
   if (ele->from_path_prefix)
     nele->from_path_prefix = ats_strdup(ele->from_path_prefix);
-  nele->to_scheme = ele->to_scheme;
+  nele->to_scheme          = ele->to_scheme;
   if (ele->to_host)
     nele->to_host = ats_strdup(ele->to_host);
-  nele->to_port = ele->to_port;
+  nele->to_port   = ele->to_port;
   if (ele->to_path_prefix)
     nele->to_path_prefix = ats_strdup(ele->to_path_prefix);
 
@@ -2675,10 +2675,10 @@ copy_socks_ele(TSSocksEle *ele)
     return NULL;
 
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  nele->ip_addrs = copy_ip_addr_list(ele->ip_addrs);
-  nele->dest_ip_addr = copy_ip_addr_ele(ele->dest_ip_addr);
+  nele->ip_addrs      = copy_ip_addr_list(ele->ip_addrs);
+  nele->dest_ip_addr  = copy_ip_addr_ele(ele->dest_ip_addr);
   nele->socks_servers = copy_domain_list(ele->socks_servers);
-  nele->rr = ele->rr;
+  nele->rr            = ele->rr;
   if (ele->username)
     nele->username = ats_strdup(ele->username);
   if (ele->password)
@@ -2701,11 +2701,11 @@ copy_split_dns_ele(TSSplitDnsEle *ele)
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   nele->pd_type = ele->pd_type;
   if (ele->pd_val)
-    nele->pd_val = ats_strdup(ele->pd_val);
+    nele->pd_val          = ats_strdup(ele->pd_val);
   nele->dns_servers_addrs = copy_domain_list(ele->dns_servers_addrs);
   if (ele->def_domain)
     nele->def_domain = ats_strdup(ele->def_domain);
-  nele->search_list = copy_domain_list(ele->search_list);
+  nele->search_list  = copy_domain_list(ele->search_list);
 
   return nele;
 }
@@ -2724,7 +2724,7 @@ copy_storage_ele(TSStorageEle *ele)
   copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
   if (ele->pathname)
     nele->pathname = ats_strdup(ele->pathname);
-  nele->size = ele->size;
+  nele->size       = ele->size;
 
   return nele;
 }
@@ -2744,8 +2744,8 @@ copy_virt_ip_addr_ele(TSVirtIpAddrEle *ele)
 
   // copy cfg ele
   copy_cfg_ele(&(ele->cfg_ele), &(new_ele->cfg_ele));
-  new_ele->ip_addr = ats_strdup(ele->ip_addr);
-  new_ele->intr = ats_strdup(ele->intr);
+  new_ele->ip_addr  = ats_strdup(ele->ip_addr);
+  new_ele->intr     = ats_strdup(ele->intr);
   new_ele->sub_intr = ele->sub_intr;
 
   return new_ele;
@@ -2771,7 +2771,7 @@ comment_ele_create(char *comment)
 
   ele = (INKCommentEle *)ats_malloc(sizeof(INKCommentEle));
 
-  ele->cfg_ele.type = TS_TYPE_COMMENT;
+  ele->cfg_ele.type  = TS_TYPE_COMMENT;
   ele->cfg_ele.error = TS_ERR_OKAY;
   if (comment)
     ele->comment = ats_strdup(comment);

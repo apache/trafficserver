@@ -271,9 +271,9 @@ public:
   {
     const char *match = icase ? strcasestr(buf, str) : strstr(buf, str);
     if (match) {
-      found = match - buf;
+      found     = match - buf;
       found_len = slen;
-      repl = to;
+      repl      = to;
       return (found + slen > len) ? false : true;
     } else {
       return false;
@@ -307,7 +307,7 @@ public:
     if (regexec(&rx, buf, MAX_RX_MATCH, pmatch, REG_NOTEOL) == 0) {
       char c;
       int n;
-      found = pmatch[0].rm_so;
+      found     = pmatch[0].rm_so;
       found_len = pmatch[0].rm_eo - found;
       while (c = *tmpl++, c != '\0') {
         switch (c) {
@@ -382,12 +382,12 @@ public:
   rule_t(const char *line) : scope(NULL), priority(5), from(NULL), to(NULL), refcount(NULL)
   {
     const char *scope_spec = strcasestr(line, "scope:");
-    const char *from_spec = strcasestr(line, "from:");
-    const char *to_spec = strcasestr(line, "to:");
-    const char *prio_spec = strcasestr(line, "prio:");
-    const char *len_spec = strcasestr(line, "len:");
-    bool icase = false;
-    bool rx = false;
+    const char *from_spec  = strcasestr(line, "from:");
+    const char *to_spec    = strcasestr(line, "to:");
+    const char *prio_spec  = strcasestr(line, "prio:");
+    const char *len_spec   = strcasestr(line, "len:");
+    bool icase             = false;
+    bool rx                = false;
     bool uri;
     size_t len, match_len;
     char delim;
@@ -443,8 +443,8 @@ public:
 
     if (scope_spec) {
       icase = false;
-      rx = false;
-      uri = true;
+      rx    = false;
+      uri   = true;
       for (scope_spec += 6; *scope_spec != ':'; ++scope_spec) {
         switch (*scope_spec) {
         case 'i':
@@ -584,20 +584,20 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
   TSIOBufferBlock block;
 
   if (reader == NULL) { // We're just flushing anything we have buffered
-    keep = 0;
-    buf = contdata->contbuf.c_str();
+    keep   = 0;
+    buf    = contdata->contbuf.c_str();
     buflen = contdata->contbuf.length();
     nbytes = 0;
   } else {
     block = TSIOBufferReaderStart(reader);
-    buf = TSIOBufferBlockReadStart(block, reader, &nbytes);
+    buf   = TSIOBufferBlockReadStart(block, reader, &nbytes);
 
     if (contdata->contbuf.empty()) {
       /* Use the data as-is */
       buflen = nbytes;
     } else {
       contdata->contbuf.append(buf, nbytes);
-      buf = contdata->contbuf.c_str();
+      buf    = contdata->contbuf.c_str();
       buflen = contdata->contbuf.length();
     }
     keep = contdata->contbuf_sz;
@@ -661,13 +661,13 @@ streamedit_process(TSCont contp)
   // Loop over edits, and apply them to the stream
   // Retain buffered data at the end
   int64_t ntodo, nbytes;
-  contdata_t *contdata = (contdata_t *)TSContDataGet(contp);
-  TSVIO input_vio = TSVConnWriteVIOGet(contp);
+  contdata_t *contdata      = (contdata_t *)TSContDataGet(contp);
+  TSVIO input_vio           = TSVConnWriteVIOGet(contp);
   TSIOBufferReader input_rd = TSVIOReaderGet(input_vio);
 
   if (contdata->out_buf == NULL) {
     contdata->out_buf = TSIOBufferCreate();
-    contdata->out_rd = TSIOBufferReaderAlloc(contdata->out_buf);
+    contdata->out_rd  = TSIOBufferReaderAlloc(contdata->out_buf);
     contdata->out_vio = TSVConnWrite(TSTransformOutputVConnGet(contp), contp, contdata->out_rd, INT64_MAX);
   }
 
@@ -748,8 +748,8 @@ streamedit_filter(TSCont contp, TSEvent event, void *edata)
 static int
 streamedit_setup(TSCont contp, TSEvent event, void *edata)
 {
-  TSHttpTxn txn = (TSHttpTxn)edata;
-  ruleset_t *rules_in = (ruleset_t *)TSContDataGet(contp);
+  TSHttpTxn txn        = (TSHttpTxn)edata;
+  ruleset_t *rules_in  = (ruleset_t *)TSContDataGet(contp);
   contdata_t *contdata = NULL;
 
   assert((event == TS_EVENT_HTTP_READ_RESPONSE_HDR) || (event == TS_EVENT_HTTP_READ_REQUEST_HDR));
@@ -820,11 +820,11 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
   TSCont inputcont, outputcont;
-  ruleset_t *rewrites_in = NULL;
+  ruleset_t *rewrites_in  = NULL;
   ruleset_t *rewrites_out = NULL;
 
-  info.plugin_name = (char *)"stream-editor";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"stream-editor";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"users@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

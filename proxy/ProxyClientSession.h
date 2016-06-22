@@ -61,7 +61,7 @@ public:
   }
 
   virtual NetVConnection *get_netvc() const = 0;
-  virtual void release_netvc() = 0;
+  virtual void release_netvc()              = 0;
 
   APIHook *
   ssn_hook_get(TSHttpHookID id) const

@@ -193,20 +193,20 @@ extern void parse_host_res_preference(char const *value,           ///< [in] Con
                                       );
 
 #ifndef NS_GET16
-#define NS_GET16(s, cp)                                   \
-  do {                                                    \
-    const u_char *t_cp = (const u_char *)(cp);            \
-    (s) = ((uint16_t)t_cp[0] << 8) | ((uint16_t)t_cp[1]); \
-    (cp) += NS_INT16SZ;                                   \
+#define NS_GET16(s, cp)                                                  \
+  do {                                                                   \
+    const u_char *t_cp = (const u_char *)(cp);                           \
+    (s)                = ((uint16_t)t_cp[0] << 8) | ((uint16_t)t_cp[1]); \
+    (cp) += NS_INT16SZ;                                                  \
   } while (0)
 #endif
 
 #ifndef NS_GET32
-#define NS_GET32(l, cp)                                                                                           \
-  do {                                                                                                            \
-    const u_char *t_cp = (const u_char *)(cp);                                                                    \
-    (l) = ((uint32_t)t_cp[0] << 24) | ((uint32_t)t_cp[1] << 16) | ((uint32_t)t_cp[2] << 8) | ((uint32_t)t_cp[3]); \
-    (cp) += NS_INT32SZ;                                                                                           \
+#define NS_GET32(l, cp)                                                                                                          \
+  do {                                                                                                                           \
+    const u_char *t_cp = (const u_char *)(cp);                                                                                   \
+    (l)                = ((uint32_t)t_cp[0] << 24) | ((uint32_t)t_cp[1] << 16) | ((uint32_t)t_cp[2] << 8) | ((uint32_t)t_cp[3]); \
+    (cp) += NS_INT32SZ;                                                                                                          \
   } while (0)
 #endif
 
@@ -215,8 +215,8 @@ extern void parse_host_res_preference(char const *value,           ///< [in] Con
   do {                             \
     uint16_t t_s = (uint16_t)(s);  \
     u_char *t_cp = (u_char *)(cp); \
-    *t_cp++ = t_s >> 8;            \
-    *t_cp = t_s;                   \
+    *t_cp++      = t_s >> 8;       \
+    *t_cp        = t_s;            \
     (cp) += NS_INT16SZ;            \
   } while (0)
 #endif
@@ -226,10 +226,10 @@ extern void parse_host_res_preference(char const *value,           ///< [in] Con
   do {                             \
     uint32_t t_l = (uint32_t)(l);  \
     u_char *t_cp = (u_char *)(cp); \
-    *t_cp++ = t_l >> 24;           \
-    *t_cp++ = t_l >> 16;           \
-    *t_cp++ = t_l >> 8;            \
-    *t_cp = t_l;                   \
+    *t_cp++      = t_l >> 24;      \
+    *t_cp++      = t_l >> 16;      \
+    *t_cp++      = t_l >> 8;       \
+    *t_cp        = t_l;            \
     (cp) += NS_INT32SZ;            \
   } while (0)
 #endif

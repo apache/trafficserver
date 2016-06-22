@@ -1005,8 +1005,8 @@ main()
                       "</esi:try>");
 
     const char *output_data;
-    int output_data_len = 0;
-    StubIncludeHandler::FOOTER = "<!--footer-->";
+    int output_data_len             = 0;
+    StubIncludeHandler::FOOTER      = "<!--footer-->";
     StubIncludeHandler::FOOTER_SIZE = strlen(StubIncludeHandler::FOOTER);
     assert(esi_proc.completeParse(input_data) == true);
     data_fetcher.setReturnData(false);
@@ -1017,7 +1017,7 @@ main()
     assert(strncmp(output_data, "Special data for include id 2", output_data_len - StubIncludeHandler::FOOTER_SIZE) == 0);
     assert(strncmp(output_data + StubIncludeHandler::DATA_PREFIX_SIZE + 1, StubIncludeHandler::FOOTER,
                    StubIncludeHandler::FOOTER_SIZE) == 0);
-    StubIncludeHandler::FOOTER = 0;
+    StubIncludeHandler::FOOTER      = 0;
     StubIncludeHandler::FOOTER_SIZE = 0;
   }
 

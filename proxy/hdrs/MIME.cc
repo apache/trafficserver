@@ -48,7 +48,7 @@
  *                          C O N S T A N T S                          *
  *                                                                     *
  ***********************************************************************/
-static DFA *day_names_dfa = NULL;
+static DFA *day_names_dfa   = NULL;
 static DFA *month_names_dfa = NULL;
 
 static const char *day_names[] = {
@@ -431,7 +431,7 @@ mime_hdr_presence_unset(MIMEHdrImpl *h, int well_known_str_index)
 inline void
 mime_hdr_init_accelerators_and_presence_bits(MIMEHdrImpl *mh)
 {
-  mh->m_presence_bits = 0;
+  mh->m_presence_bits        = 0;
   mh->m_slot_accelerators[0] = 0xFFFFFFFF;
   mh->m_slot_accelerators[1] = 0xFFFFFFFF;
   mh->m_slot_accelerators[2] = 0xFFFFFFFF;
@@ -443,10 +443,10 @@ mime_hdr_get_accelerator_slotnum(MIMEHdrImpl *mh, int32_t slot_id)
 {
   ink_assert((slot_id != MIME_SLOTID_NONE) && (slot_id < 32));
 
-  uint32_t word_index = slot_id / 8;                   // 4 words of 8 slots
-  uint32_t word = mh->m_slot_accelerators[word_index]; // 8 slots of 4 bits each
-  uint32_t nybble = slot_id % 8;                       // which of the 8 nybbles?
-  uint32_t slot = ((word >> (nybble * 4)) & 15);       // grab the 4 bit slotnum
+  uint32_t word_index = slot_id / 8;                         // 4 words of 8 slots
+  uint32_t word       = mh->m_slot_accelerators[word_index]; // 8 slots of 4 bits each
+  uint32_t nybble     = slot_id % 8;                         // which of the 8 nybbles?
+  uint32_t slot       = ((word >> (nybble * 4)) & 15);       // grab the 4 bit slotnum
   return slot;
 }
 
@@ -456,13 +456,13 @@ mime_hdr_set_accelerator_slotnum(MIMEHdrImpl *mh, int32_t slot_id, uint32_t slot
   ink_assert((slot_id != MIME_SLOTID_NONE) && (slot_id < 32));
   ink_assert(slot_num < 16);
 
-  uint32_t word_index = slot_id / 8;                   // 4 words of 8 slots
-  uint32_t word = mh->m_slot_accelerators[word_index]; // 8 slots of 4 bits each
-  uint32_t nybble = slot_id % 8;                       // which of the 8 nybbles?
-  uint32_t shift = nybble * 4;                         // shift in chunks of 4 bits
-  uint32_t mask = ~(MIME_FIELD_SLOTNUM_MASK << shift); // mask to zero out old slot
-  uint32_t graft = (slot_num << shift);                // plug to insert into slot
-  uint32_t new_word = (word & mask) | graft;           // new value
+  uint32_t word_index = slot_id / 8;                         // 4 words of 8 slots
+  uint32_t word       = mh->m_slot_accelerators[word_index]; // 8 slots of 4 bits each
+  uint32_t nybble     = slot_id % 8;                         // which of the 8 nybbles?
+  uint32_t shift      = nybble * 4;                          // shift in chunks of 4 bits
+  uint32_t mask       = ~(MIME_FIELD_SLOTNUM_MASK << shift); // mask to zero out old slot
+  uint32_t graft      = (slot_num << shift);                 // plug to insert into slot
+  uint32_t new_word   = (word & mask) | graft;               // new value
 
   mh->m_slot_accelerators[word_index] = new_word;
 }
@@ -547,8 +547,8 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
   uint32_t slot_index, index;
   uint64_t masksum;
 
-  masksum = 0;
-  slot_index = 0;
+  masksum     = 0;
+  slot_index  = 0;
   last_fblock = NULL;
 
   for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
@@ -582,7 +582,7 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
         // if this is a well known string, check presence bits & slot accelerators
         if (field->m_wks_idx >= 0) {
           const char *wks = hdrtoken_index_to_wks(field->m_wks_idx);
-          int len = hdrtoken_index_to_length(field->m_wks_idx);
+          int len         = hdrtoken_index_to_length(field->m_wks_idx);
 
           if (field->m_len_name != len || strncasecmp(field->m_ptr_name, wks, field->m_len_name) != 0)
             Warning("Encountered WKS hash collision on '%.*s'", field->m_len_name, field->m_ptr_name);
@@ -648,267 +648,267 @@ mime_init()
     month_names_dfa = new DFA;
     month_names_dfa->compile(month_names, SIZEOF(month_names), RE_CASE_INSENSITIVE);
 
-    MIME_FIELD_ACCEPT = hdrtoken_string_to_wks("Accept");
-    MIME_FIELD_ACCEPT_CHARSET = hdrtoken_string_to_wks("Accept-Charset");
-    MIME_FIELD_ACCEPT_ENCODING = hdrtoken_string_to_wks("Accept-Encoding");
-    MIME_FIELD_ACCEPT_LANGUAGE = hdrtoken_string_to_wks("Accept-Language");
-    MIME_FIELD_ACCEPT_RANGES = hdrtoken_string_to_wks("Accept-Ranges");
-    MIME_FIELD_AGE = hdrtoken_string_to_wks("Age");
-    MIME_FIELD_ALLOW = hdrtoken_string_to_wks("Allow");
-    MIME_FIELD_APPROVED = hdrtoken_string_to_wks("Approved");
-    MIME_FIELD_AUTHORIZATION = hdrtoken_string_to_wks("Authorization");
-    MIME_FIELD_BYTES = hdrtoken_string_to_wks("Bytes");
-    MIME_FIELD_CACHE_CONTROL = hdrtoken_string_to_wks("Cache-Control");
-    MIME_FIELD_CLIENT_IP = hdrtoken_string_to_wks("Client-ip");
-    MIME_FIELD_CONNECTION = hdrtoken_string_to_wks("Connection");
-    MIME_FIELD_CONTENT_BASE = hdrtoken_string_to_wks("Content-Base");
-    MIME_FIELD_CONTENT_ENCODING = hdrtoken_string_to_wks("Content-Encoding");
-    MIME_FIELD_CONTENT_LANGUAGE = hdrtoken_string_to_wks("Content-Language");
-    MIME_FIELD_CONTENT_LENGTH = hdrtoken_string_to_wks("Content-Length");
-    MIME_FIELD_CONTENT_LOCATION = hdrtoken_string_to_wks("Content-Location");
-    MIME_FIELD_CONTENT_MD5 = hdrtoken_string_to_wks("Content-MD5");
-    MIME_FIELD_CONTENT_RANGE = hdrtoken_string_to_wks("Content-Range");
-    MIME_FIELD_CONTENT_TYPE = hdrtoken_string_to_wks("Content-Type");
-    MIME_FIELD_CONTROL = hdrtoken_string_to_wks("Control");
-    MIME_FIELD_COOKIE = hdrtoken_string_to_wks("Cookie");
-    MIME_FIELD_DATE = hdrtoken_string_to_wks("Date");
-    MIME_FIELD_DISTRIBUTION = hdrtoken_string_to_wks("Distribution");
-    MIME_FIELD_ETAG = hdrtoken_string_to_wks("Etag");
-    MIME_FIELD_EXPECT = hdrtoken_string_to_wks("Expect");
-    MIME_FIELD_EXPIRES = hdrtoken_string_to_wks("Expires");
-    MIME_FIELD_FOLLOWUP_TO = hdrtoken_string_to_wks("Followup-To");
-    MIME_FIELD_FROM = hdrtoken_string_to_wks("From");
-    MIME_FIELD_HOST = hdrtoken_string_to_wks("Host");
-    MIME_FIELD_IF_MATCH = hdrtoken_string_to_wks("If-Match");
-    MIME_FIELD_IF_MODIFIED_SINCE = hdrtoken_string_to_wks("If-Modified-Since");
-    MIME_FIELD_IF_NONE_MATCH = hdrtoken_string_to_wks("If-None-Match");
-    MIME_FIELD_IF_RANGE = hdrtoken_string_to_wks("If-Range");
-    MIME_FIELD_IF_UNMODIFIED_SINCE = hdrtoken_string_to_wks("If-Unmodified-Since");
-    MIME_FIELD_KEEP_ALIVE = hdrtoken_string_to_wks("Keep-Alive");
-    MIME_FIELD_KEYWORDS = hdrtoken_string_to_wks("Keywords");
-    MIME_FIELD_LAST_MODIFIED = hdrtoken_string_to_wks("Last-Modified");
-    MIME_FIELD_LINES = hdrtoken_string_to_wks("Lines");
-    MIME_FIELD_LOCATION = hdrtoken_string_to_wks("Location");
-    MIME_FIELD_MAX_FORWARDS = hdrtoken_string_to_wks("Max-Forwards");
-    MIME_FIELD_MESSAGE_ID = hdrtoken_string_to_wks("Message-ID");
-    MIME_FIELD_NEWSGROUPS = hdrtoken_string_to_wks("Newsgroups");
-    MIME_FIELD_ORGANIZATION = hdrtoken_string_to_wks("Organization");
-    MIME_FIELD_PATH = hdrtoken_string_to_wks("Path");
-    MIME_FIELD_PRAGMA = hdrtoken_string_to_wks("Pragma");
-    MIME_FIELD_PROXY_AUTHENTICATE = hdrtoken_string_to_wks("Proxy-Authenticate");
-    MIME_FIELD_PROXY_AUTHORIZATION = hdrtoken_string_to_wks("Proxy-Authorization");
-    MIME_FIELD_PROXY_CONNECTION = hdrtoken_string_to_wks("Proxy-Connection");
-    MIME_FIELD_PUBLIC = hdrtoken_string_to_wks("Public");
-    MIME_FIELD_RANGE = hdrtoken_string_to_wks("Range");
-    MIME_FIELD_REFERENCES = hdrtoken_string_to_wks("References");
-    MIME_FIELD_REFERER = hdrtoken_string_to_wks("Referer");
-    MIME_FIELD_REPLY_TO = hdrtoken_string_to_wks("Reply-To");
-    MIME_FIELD_RETRY_AFTER = hdrtoken_string_to_wks("Retry-After");
-    MIME_FIELD_SENDER = hdrtoken_string_to_wks("Sender");
-    MIME_FIELD_SERVER = hdrtoken_string_to_wks("Server");
-    MIME_FIELD_SET_COOKIE = hdrtoken_string_to_wks("Set-Cookie");
+    MIME_FIELD_ACCEPT                    = hdrtoken_string_to_wks("Accept");
+    MIME_FIELD_ACCEPT_CHARSET            = hdrtoken_string_to_wks("Accept-Charset");
+    MIME_FIELD_ACCEPT_ENCODING           = hdrtoken_string_to_wks("Accept-Encoding");
+    MIME_FIELD_ACCEPT_LANGUAGE           = hdrtoken_string_to_wks("Accept-Language");
+    MIME_FIELD_ACCEPT_RANGES             = hdrtoken_string_to_wks("Accept-Ranges");
+    MIME_FIELD_AGE                       = hdrtoken_string_to_wks("Age");
+    MIME_FIELD_ALLOW                     = hdrtoken_string_to_wks("Allow");
+    MIME_FIELD_APPROVED                  = hdrtoken_string_to_wks("Approved");
+    MIME_FIELD_AUTHORIZATION             = hdrtoken_string_to_wks("Authorization");
+    MIME_FIELD_BYTES                     = hdrtoken_string_to_wks("Bytes");
+    MIME_FIELD_CACHE_CONTROL             = hdrtoken_string_to_wks("Cache-Control");
+    MIME_FIELD_CLIENT_IP                 = hdrtoken_string_to_wks("Client-ip");
+    MIME_FIELD_CONNECTION                = hdrtoken_string_to_wks("Connection");
+    MIME_FIELD_CONTENT_BASE              = hdrtoken_string_to_wks("Content-Base");
+    MIME_FIELD_CONTENT_ENCODING          = hdrtoken_string_to_wks("Content-Encoding");
+    MIME_FIELD_CONTENT_LANGUAGE          = hdrtoken_string_to_wks("Content-Language");
+    MIME_FIELD_CONTENT_LENGTH            = hdrtoken_string_to_wks("Content-Length");
+    MIME_FIELD_CONTENT_LOCATION          = hdrtoken_string_to_wks("Content-Location");
+    MIME_FIELD_CONTENT_MD5               = hdrtoken_string_to_wks("Content-MD5");
+    MIME_FIELD_CONTENT_RANGE             = hdrtoken_string_to_wks("Content-Range");
+    MIME_FIELD_CONTENT_TYPE              = hdrtoken_string_to_wks("Content-Type");
+    MIME_FIELD_CONTROL                   = hdrtoken_string_to_wks("Control");
+    MIME_FIELD_COOKIE                    = hdrtoken_string_to_wks("Cookie");
+    MIME_FIELD_DATE                      = hdrtoken_string_to_wks("Date");
+    MIME_FIELD_DISTRIBUTION              = hdrtoken_string_to_wks("Distribution");
+    MIME_FIELD_ETAG                      = hdrtoken_string_to_wks("Etag");
+    MIME_FIELD_EXPECT                    = hdrtoken_string_to_wks("Expect");
+    MIME_FIELD_EXPIRES                   = hdrtoken_string_to_wks("Expires");
+    MIME_FIELD_FOLLOWUP_TO               = hdrtoken_string_to_wks("Followup-To");
+    MIME_FIELD_FROM                      = hdrtoken_string_to_wks("From");
+    MIME_FIELD_HOST                      = hdrtoken_string_to_wks("Host");
+    MIME_FIELD_IF_MATCH                  = hdrtoken_string_to_wks("If-Match");
+    MIME_FIELD_IF_MODIFIED_SINCE         = hdrtoken_string_to_wks("If-Modified-Since");
+    MIME_FIELD_IF_NONE_MATCH             = hdrtoken_string_to_wks("If-None-Match");
+    MIME_FIELD_IF_RANGE                  = hdrtoken_string_to_wks("If-Range");
+    MIME_FIELD_IF_UNMODIFIED_SINCE       = hdrtoken_string_to_wks("If-Unmodified-Since");
+    MIME_FIELD_KEEP_ALIVE                = hdrtoken_string_to_wks("Keep-Alive");
+    MIME_FIELD_KEYWORDS                  = hdrtoken_string_to_wks("Keywords");
+    MIME_FIELD_LAST_MODIFIED             = hdrtoken_string_to_wks("Last-Modified");
+    MIME_FIELD_LINES                     = hdrtoken_string_to_wks("Lines");
+    MIME_FIELD_LOCATION                  = hdrtoken_string_to_wks("Location");
+    MIME_FIELD_MAX_FORWARDS              = hdrtoken_string_to_wks("Max-Forwards");
+    MIME_FIELD_MESSAGE_ID                = hdrtoken_string_to_wks("Message-ID");
+    MIME_FIELD_NEWSGROUPS                = hdrtoken_string_to_wks("Newsgroups");
+    MIME_FIELD_ORGANIZATION              = hdrtoken_string_to_wks("Organization");
+    MIME_FIELD_PATH                      = hdrtoken_string_to_wks("Path");
+    MIME_FIELD_PRAGMA                    = hdrtoken_string_to_wks("Pragma");
+    MIME_FIELD_PROXY_AUTHENTICATE        = hdrtoken_string_to_wks("Proxy-Authenticate");
+    MIME_FIELD_PROXY_AUTHORIZATION       = hdrtoken_string_to_wks("Proxy-Authorization");
+    MIME_FIELD_PROXY_CONNECTION          = hdrtoken_string_to_wks("Proxy-Connection");
+    MIME_FIELD_PUBLIC                    = hdrtoken_string_to_wks("Public");
+    MIME_FIELD_RANGE                     = hdrtoken_string_to_wks("Range");
+    MIME_FIELD_REFERENCES                = hdrtoken_string_to_wks("References");
+    MIME_FIELD_REFERER                   = hdrtoken_string_to_wks("Referer");
+    MIME_FIELD_REPLY_TO                  = hdrtoken_string_to_wks("Reply-To");
+    MIME_FIELD_RETRY_AFTER               = hdrtoken_string_to_wks("Retry-After");
+    MIME_FIELD_SENDER                    = hdrtoken_string_to_wks("Sender");
+    MIME_FIELD_SERVER                    = hdrtoken_string_to_wks("Server");
+    MIME_FIELD_SET_COOKIE                = hdrtoken_string_to_wks("Set-Cookie");
     MIME_FIELD_STRICT_TRANSPORT_SECURITY = hdrtoken_string_to_wks("Strict-Transport-Security");
-    MIME_FIELD_SUBJECT = hdrtoken_string_to_wks("Subject");
-    MIME_FIELD_SUMMARY = hdrtoken_string_to_wks("Summary");
-    MIME_FIELD_TE = hdrtoken_string_to_wks("TE");
-    MIME_FIELD_TRANSFER_ENCODING = hdrtoken_string_to_wks("Transfer-Encoding");
-    MIME_FIELD_UPGRADE = hdrtoken_string_to_wks("Upgrade");
-    MIME_FIELD_USER_AGENT = hdrtoken_string_to_wks("User-Agent");
-    MIME_FIELD_VARY = hdrtoken_string_to_wks("Vary");
-    MIME_FIELD_VIA = hdrtoken_string_to_wks("Via");
-    MIME_FIELD_WARNING = hdrtoken_string_to_wks("Warning");
-    MIME_FIELD_WWW_AUTHENTICATE = hdrtoken_string_to_wks("Www-Authenticate");
-    MIME_FIELD_XREF = hdrtoken_string_to_wks("Xref");
-    MIME_FIELD_ATS_INTERNAL = hdrtoken_string_to_wks("@Ats-Internal");
-    MIME_FIELD_X_ID = hdrtoken_string_to_wks("X-ID");
-    MIME_FIELD_X_FORWARDED_FOR = hdrtoken_string_to_wks("X-Forwarded-For");
+    MIME_FIELD_SUBJECT                   = hdrtoken_string_to_wks("Subject");
+    MIME_FIELD_SUMMARY                   = hdrtoken_string_to_wks("Summary");
+    MIME_FIELD_TE                        = hdrtoken_string_to_wks("TE");
+    MIME_FIELD_TRANSFER_ENCODING         = hdrtoken_string_to_wks("Transfer-Encoding");
+    MIME_FIELD_UPGRADE                   = hdrtoken_string_to_wks("Upgrade");
+    MIME_FIELD_USER_AGENT                = hdrtoken_string_to_wks("User-Agent");
+    MIME_FIELD_VARY                      = hdrtoken_string_to_wks("Vary");
+    MIME_FIELD_VIA                       = hdrtoken_string_to_wks("Via");
+    MIME_FIELD_WARNING                   = hdrtoken_string_to_wks("Warning");
+    MIME_FIELD_WWW_AUTHENTICATE          = hdrtoken_string_to_wks("Www-Authenticate");
+    MIME_FIELD_XREF                      = hdrtoken_string_to_wks("Xref");
+    MIME_FIELD_ATS_INTERNAL              = hdrtoken_string_to_wks("@Ats-Internal");
+    MIME_FIELD_X_ID                      = hdrtoken_string_to_wks("X-ID");
+    MIME_FIELD_X_FORWARDED_FOR           = hdrtoken_string_to_wks("X-Forwarded-For");
 
-    MIME_FIELD_SEC_WEBSOCKET_KEY = hdrtoken_string_to_wks("Sec-WebSocket-Key");
+    MIME_FIELD_SEC_WEBSOCKET_KEY     = hdrtoken_string_to_wks("Sec-WebSocket-Key");
     MIME_FIELD_SEC_WEBSOCKET_VERSION = hdrtoken_string_to_wks("Sec-WebSocket-Version");
 
     MIME_FIELD_HTTP2_SETTINGS = hdrtoken_string_to_wks("HTTP2-Settings");
 
-    MIME_LEN_ACCEPT = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT);
-    MIME_LEN_ACCEPT_CHARSET = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_CHARSET);
-    MIME_LEN_ACCEPT_ENCODING = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_ENCODING);
-    MIME_LEN_ACCEPT_LANGUAGE = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_LANGUAGE);
-    MIME_LEN_ACCEPT_RANGES = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_RANGES);
-    MIME_LEN_AGE = hdrtoken_wks_to_length(MIME_FIELD_AGE);
-    MIME_LEN_ALLOW = hdrtoken_wks_to_length(MIME_FIELD_ALLOW);
-    MIME_LEN_APPROVED = hdrtoken_wks_to_length(MIME_FIELD_APPROVED);
-    MIME_LEN_AUTHORIZATION = hdrtoken_wks_to_length(MIME_FIELD_AUTHORIZATION);
-    MIME_LEN_BYTES = hdrtoken_wks_to_length(MIME_FIELD_BYTES);
-    MIME_LEN_CACHE_CONTROL = hdrtoken_wks_to_length(MIME_FIELD_CACHE_CONTROL);
-    MIME_LEN_CLIENT_IP = hdrtoken_wks_to_length(MIME_FIELD_CLIENT_IP);
-    MIME_LEN_CONNECTION = hdrtoken_wks_to_length(MIME_FIELD_CONNECTION);
-    MIME_LEN_CONTENT_BASE = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_BASE);
-    MIME_LEN_CONTENT_ENCODING = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_ENCODING);
-    MIME_LEN_CONTENT_LANGUAGE = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_LANGUAGE);
-    MIME_LEN_CONTENT_LENGTH = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_LENGTH);
-    MIME_LEN_CONTENT_LOCATION = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_LOCATION);
-    MIME_LEN_CONTENT_MD5 = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_MD5);
-    MIME_LEN_CONTENT_RANGE = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_RANGE);
-    MIME_LEN_CONTENT_TYPE = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_TYPE);
-    MIME_LEN_CONTROL = hdrtoken_wks_to_length(MIME_FIELD_CONTROL);
-    MIME_LEN_COOKIE = hdrtoken_wks_to_length(MIME_FIELD_COOKIE);
-    MIME_LEN_DATE = hdrtoken_wks_to_length(MIME_FIELD_DATE);
-    MIME_LEN_DISTRIBUTION = hdrtoken_wks_to_length(MIME_FIELD_DISTRIBUTION);
-    MIME_LEN_ETAG = hdrtoken_wks_to_length(MIME_FIELD_ETAG);
-    MIME_LEN_EXPECT = hdrtoken_wks_to_length(MIME_FIELD_EXPECT);
-    MIME_LEN_EXPIRES = hdrtoken_wks_to_length(MIME_FIELD_EXPIRES);
-    MIME_LEN_FOLLOWUP_TO = hdrtoken_wks_to_length(MIME_FIELD_FOLLOWUP_TO);
-    MIME_LEN_FROM = hdrtoken_wks_to_length(MIME_FIELD_FROM);
-    MIME_LEN_HOST = hdrtoken_wks_to_length(MIME_FIELD_HOST);
-    MIME_LEN_IF_MATCH = hdrtoken_wks_to_length(MIME_FIELD_IF_MATCH);
-    MIME_LEN_IF_MODIFIED_SINCE = hdrtoken_wks_to_length(MIME_FIELD_IF_MODIFIED_SINCE);
-    MIME_LEN_IF_NONE_MATCH = hdrtoken_wks_to_length(MIME_FIELD_IF_NONE_MATCH);
-    MIME_LEN_IF_RANGE = hdrtoken_wks_to_length(MIME_FIELD_IF_RANGE);
-    MIME_LEN_IF_UNMODIFIED_SINCE = hdrtoken_wks_to_length(MIME_FIELD_IF_UNMODIFIED_SINCE);
-    MIME_LEN_KEEP_ALIVE = hdrtoken_wks_to_length(MIME_FIELD_KEEP_ALIVE);
-    MIME_LEN_KEYWORDS = hdrtoken_wks_to_length(MIME_FIELD_KEYWORDS);
-    MIME_LEN_LAST_MODIFIED = hdrtoken_wks_to_length(MIME_FIELD_LAST_MODIFIED);
-    MIME_LEN_LINES = hdrtoken_wks_to_length(MIME_FIELD_LINES);
-    MIME_LEN_LOCATION = hdrtoken_wks_to_length(MIME_FIELD_LOCATION);
-    MIME_LEN_MAX_FORWARDS = hdrtoken_wks_to_length(MIME_FIELD_MAX_FORWARDS);
-    MIME_LEN_MESSAGE_ID = hdrtoken_wks_to_length(MIME_FIELD_MESSAGE_ID);
-    MIME_LEN_NEWSGROUPS = hdrtoken_wks_to_length(MIME_FIELD_NEWSGROUPS);
-    MIME_LEN_ORGANIZATION = hdrtoken_wks_to_length(MIME_FIELD_ORGANIZATION);
-    MIME_LEN_PATH = hdrtoken_wks_to_length(MIME_FIELD_PATH);
-    MIME_LEN_PRAGMA = hdrtoken_wks_to_length(MIME_FIELD_PRAGMA);
-    MIME_LEN_PROXY_AUTHENTICATE = hdrtoken_wks_to_length(MIME_FIELD_PROXY_AUTHENTICATE);
-    MIME_LEN_PROXY_AUTHORIZATION = hdrtoken_wks_to_length(MIME_FIELD_PROXY_AUTHORIZATION);
-    MIME_LEN_PROXY_CONNECTION = hdrtoken_wks_to_length(MIME_FIELD_PROXY_CONNECTION);
-    MIME_LEN_PUBLIC = hdrtoken_wks_to_length(MIME_FIELD_PUBLIC);
-    MIME_LEN_RANGE = hdrtoken_wks_to_length(MIME_FIELD_RANGE);
-    MIME_LEN_REFERENCES = hdrtoken_wks_to_length(MIME_FIELD_REFERENCES);
-    MIME_LEN_REFERER = hdrtoken_wks_to_length(MIME_FIELD_REFERER);
-    MIME_LEN_REPLY_TO = hdrtoken_wks_to_length(MIME_FIELD_REPLY_TO);
-    MIME_LEN_RETRY_AFTER = hdrtoken_wks_to_length(MIME_FIELD_RETRY_AFTER);
-    MIME_LEN_SENDER = hdrtoken_wks_to_length(MIME_FIELD_SENDER);
-    MIME_LEN_SERVER = hdrtoken_wks_to_length(MIME_FIELD_SERVER);
-    MIME_LEN_SET_COOKIE = hdrtoken_wks_to_length(MIME_FIELD_SET_COOKIE);
+    MIME_LEN_ACCEPT                    = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT);
+    MIME_LEN_ACCEPT_CHARSET            = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_CHARSET);
+    MIME_LEN_ACCEPT_ENCODING           = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_ENCODING);
+    MIME_LEN_ACCEPT_LANGUAGE           = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_LANGUAGE);
+    MIME_LEN_ACCEPT_RANGES             = hdrtoken_wks_to_length(MIME_FIELD_ACCEPT_RANGES);
+    MIME_LEN_AGE                       = hdrtoken_wks_to_length(MIME_FIELD_AGE);
+    MIME_LEN_ALLOW                     = hdrtoken_wks_to_length(MIME_FIELD_ALLOW);
+    MIME_LEN_APPROVED                  = hdrtoken_wks_to_length(MIME_FIELD_APPROVED);
+    MIME_LEN_AUTHORIZATION             = hdrtoken_wks_to_length(MIME_FIELD_AUTHORIZATION);
+    MIME_LEN_BYTES                     = hdrtoken_wks_to_length(MIME_FIELD_BYTES);
+    MIME_LEN_CACHE_CONTROL             = hdrtoken_wks_to_length(MIME_FIELD_CACHE_CONTROL);
+    MIME_LEN_CLIENT_IP                 = hdrtoken_wks_to_length(MIME_FIELD_CLIENT_IP);
+    MIME_LEN_CONNECTION                = hdrtoken_wks_to_length(MIME_FIELD_CONNECTION);
+    MIME_LEN_CONTENT_BASE              = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_BASE);
+    MIME_LEN_CONTENT_ENCODING          = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_ENCODING);
+    MIME_LEN_CONTENT_LANGUAGE          = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_LANGUAGE);
+    MIME_LEN_CONTENT_LENGTH            = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_LENGTH);
+    MIME_LEN_CONTENT_LOCATION          = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_LOCATION);
+    MIME_LEN_CONTENT_MD5               = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_MD5);
+    MIME_LEN_CONTENT_RANGE             = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_RANGE);
+    MIME_LEN_CONTENT_TYPE              = hdrtoken_wks_to_length(MIME_FIELD_CONTENT_TYPE);
+    MIME_LEN_CONTROL                   = hdrtoken_wks_to_length(MIME_FIELD_CONTROL);
+    MIME_LEN_COOKIE                    = hdrtoken_wks_to_length(MIME_FIELD_COOKIE);
+    MIME_LEN_DATE                      = hdrtoken_wks_to_length(MIME_FIELD_DATE);
+    MIME_LEN_DISTRIBUTION              = hdrtoken_wks_to_length(MIME_FIELD_DISTRIBUTION);
+    MIME_LEN_ETAG                      = hdrtoken_wks_to_length(MIME_FIELD_ETAG);
+    MIME_LEN_EXPECT                    = hdrtoken_wks_to_length(MIME_FIELD_EXPECT);
+    MIME_LEN_EXPIRES                   = hdrtoken_wks_to_length(MIME_FIELD_EXPIRES);
+    MIME_LEN_FOLLOWUP_TO               = hdrtoken_wks_to_length(MIME_FIELD_FOLLOWUP_TO);
+    MIME_LEN_FROM                      = hdrtoken_wks_to_length(MIME_FIELD_FROM);
+    MIME_LEN_HOST                      = hdrtoken_wks_to_length(MIME_FIELD_HOST);
+    MIME_LEN_IF_MATCH                  = hdrtoken_wks_to_length(MIME_FIELD_IF_MATCH);
+    MIME_LEN_IF_MODIFIED_SINCE         = hdrtoken_wks_to_length(MIME_FIELD_IF_MODIFIED_SINCE);
+    MIME_LEN_IF_NONE_MATCH             = hdrtoken_wks_to_length(MIME_FIELD_IF_NONE_MATCH);
+    MIME_LEN_IF_RANGE                  = hdrtoken_wks_to_length(MIME_FIELD_IF_RANGE);
+    MIME_LEN_IF_UNMODIFIED_SINCE       = hdrtoken_wks_to_length(MIME_FIELD_IF_UNMODIFIED_SINCE);
+    MIME_LEN_KEEP_ALIVE                = hdrtoken_wks_to_length(MIME_FIELD_KEEP_ALIVE);
+    MIME_LEN_KEYWORDS                  = hdrtoken_wks_to_length(MIME_FIELD_KEYWORDS);
+    MIME_LEN_LAST_MODIFIED             = hdrtoken_wks_to_length(MIME_FIELD_LAST_MODIFIED);
+    MIME_LEN_LINES                     = hdrtoken_wks_to_length(MIME_FIELD_LINES);
+    MIME_LEN_LOCATION                  = hdrtoken_wks_to_length(MIME_FIELD_LOCATION);
+    MIME_LEN_MAX_FORWARDS              = hdrtoken_wks_to_length(MIME_FIELD_MAX_FORWARDS);
+    MIME_LEN_MESSAGE_ID                = hdrtoken_wks_to_length(MIME_FIELD_MESSAGE_ID);
+    MIME_LEN_NEWSGROUPS                = hdrtoken_wks_to_length(MIME_FIELD_NEWSGROUPS);
+    MIME_LEN_ORGANIZATION              = hdrtoken_wks_to_length(MIME_FIELD_ORGANIZATION);
+    MIME_LEN_PATH                      = hdrtoken_wks_to_length(MIME_FIELD_PATH);
+    MIME_LEN_PRAGMA                    = hdrtoken_wks_to_length(MIME_FIELD_PRAGMA);
+    MIME_LEN_PROXY_AUTHENTICATE        = hdrtoken_wks_to_length(MIME_FIELD_PROXY_AUTHENTICATE);
+    MIME_LEN_PROXY_AUTHORIZATION       = hdrtoken_wks_to_length(MIME_FIELD_PROXY_AUTHORIZATION);
+    MIME_LEN_PROXY_CONNECTION          = hdrtoken_wks_to_length(MIME_FIELD_PROXY_CONNECTION);
+    MIME_LEN_PUBLIC                    = hdrtoken_wks_to_length(MIME_FIELD_PUBLIC);
+    MIME_LEN_RANGE                     = hdrtoken_wks_to_length(MIME_FIELD_RANGE);
+    MIME_LEN_REFERENCES                = hdrtoken_wks_to_length(MIME_FIELD_REFERENCES);
+    MIME_LEN_REFERER                   = hdrtoken_wks_to_length(MIME_FIELD_REFERER);
+    MIME_LEN_REPLY_TO                  = hdrtoken_wks_to_length(MIME_FIELD_REPLY_TO);
+    MIME_LEN_RETRY_AFTER               = hdrtoken_wks_to_length(MIME_FIELD_RETRY_AFTER);
+    MIME_LEN_SENDER                    = hdrtoken_wks_to_length(MIME_FIELD_SENDER);
+    MIME_LEN_SERVER                    = hdrtoken_wks_to_length(MIME_FIELD_SERVER);
+    MIME_LEN_SET_COOKIE                = hdrtoken_wks_to_length(MIME_FIELD_SET_COOKIE);
     MIME_LEN_STRICT_TRANSPORT_SECURITY = hdrtoken_wks_to_length(MIME_FIELD_STRICT_TRANSPORT_SECURITY);
-    MIME_LEN_SUBJECT = hdrtoken_wks_to_length(MIME_FIELD_SUBJECT);
-    MIME_LEN_SUMMARY = hdrtoken_wks_to_length(MIME_FIELD_SUMMARY);
-    MIME_LEN_TE = hdrtoken_wks_to_length(MIME_FIELD_TE);
-    MIME_LEN_TRANSFER_ENCODING = hdrtoken_wks_to_length(MIME_FIELD_TRANSFER_ENCODING);
-    MIME_LEN_UPGRADE = hdrtoken_wks_to_length(MIME_FIELD_UPGRADE);
-    MIME_LEN_USER_AGENT = hdrtoken_wks_to_length(MIME_FIELD_USER_AGENT);
-    MIME_LEN_VARY = hdrtoken_wks_to_length(MIME_FIELD_VARY);
-    MIME_LEN_VIA = hdrtoken_wks_to_length(MIME_FIELD_VIA);
-    MIME_LEN_WARNING = hdrtoken_wks_to_length(MIME_FIELD_WARNING);
-    MIME_LEN_WWW_AUTHENTICATE = hdrtoken_wks_to_length(MIME_FIELD_WWW_AUTHENTICATE);
-    MIME_LEN_XREF = hdrtoken_wks_to_length(MIME_FIELD_XREF);
-    MIME_LEN_ATS_INTERNAL = hdrtoken_wks_to_length(MIME_FIELD_ATS_INTERNAL);
-    MIME_LEN_X_ID = hdrtoken_wks_to_length(MIME_FIELD_X_ID);
-    MIME_LEN_X_FORWARDED_FOR = hdrtoken_wks_to_length(MIME_FIELD_X_FORWARDED_FOR);
+    MIME_LEN_SUBJECT                   = hdrtoken_wks_to_length(MIME_FIELD_SUBJECT);
+    MIME_LEN_SUMMARY                   = hdrtoken_wks_to_length(MIME_FIELD_SUMMARY);
+    MIME_LEN_TE                        = hdrtoken_wks_to_length(MIME_FIELD_TE);
+    MIME_LEN_TRANSFER_ENCODING         = hdrtoken_wks_to_length(MIME_FIELD_TRANSFER_ENCODING);
+    MIME_LEN_UPGRADE                   = hdrtoken_wks_to_length(MIME_FIELD_UPGRADE);
+    MIME_LEN_USER_AGENT                = hdrtoken_wks_to_length(MIME_FIELD_USER_AGENT);
+    MIME_LEN_VARY                      = hdrtoken_wks_to_length(MIME_FIELD_VARY);
+    MIME_LEN_VIA                       = hdrtoken_wks_to_length(MIME_FIELD_VIA);
+    MIME_LEN_WARNING                   = hdrtoken_wks_to_length(MIME_FIELD_WARNING);
+    MIME_LEN_WWW_AUTHENTICATE          = hdrtoken_wks_to_length(MIME_FIELD_WWW_AUTHENTICATE);
+    MIME_LEN_XREF                      = hdrtoken_wks_to_length(MIME_FIELD_XREF);
+    MIME_LEN_ATS_INTERNAL              = hdrtoken_wks_to_length(MIME_FIELD_ATS_INTERNAL);
+    MIME_LEN_X_ID                      = hdrtoken_wks_to_length(MIME_FIELD_X_ID);
+    MIME_LEN_X_FORWARDED_FOR           = hdrtoken_wks_to_length(MIME_FIELD_X_FORWARDED_FOR);
 
-    MIME_LEN_SEC_WEBSOCKET_KEY = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_KEY);
+    MIME_LEN_SEC_WEBSOCKET_KEY     = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_KEY);
     MIME_LEN_SEC_WEBSOCKET_VERSION = hdrtoken_wks_to_length(MIME_FIELD_SEC_WEBSOCKET_VERSION);
 
     MIME_LEN_HTTP2_SETTINGS = hdrtoken_wks_to_length(MIME_FIELD_HTTP2_SETTINGS);
 
-    MIME_WKSIDX_ACCEPT = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT);
-    MIME_WKSIDX_ACCEPT_CHARSET = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_CHARSET);
-    MIME_WKSIDX_ACCEPT_ENCODING = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_ENCODING);
-    MIME_WKSIDX_ACCEPT_LANGUAGE = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_LANGUAGE);
-    MIME_WKSIDX_ACCEPT_RANGES = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_RANGES);
-    MIME_WKSIDX_AGE = hdrtoken_wks_to_index(MIME_FIELD_AGE);
-    MIME_WKSIDX_ALLOW = hdrtoken_wks_to_index(MIME_FIELD_ALLOW);
-    MIME_WKSIDX_APPROVED = hdrtoken_wks_to_index(MIME_FIELD_APPROVED);
-    MIME_WKSIDX_AUTHORIZATION = hdrtoken_wks_to_index(MIME_FIELD_AUTHORIZATION);
-    MIME_WKSIDX_BYTES = hdrtoken_wks_to_index(MIME_FIELD_BYTES);
-    MIME_WKSIDX_CACHE_CONTROL = hdrtoken_wks_to_index(MIME_FIELD_CACHE_CONTROL);
-    MIME_WKSIDX_CLIENT_IP = hdrtoken_wks_to_index(MIME_FIELD_CLIENT_IP);
-    MIME_WKSIDX_CONNECTION = hdrtoken_wks_to_index(MIME_FIELD_CONNECTION);
-    MIME_WKSIDX_CONTENT_BASE = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_BASE);
-    MIME_WKSIDX_CONTENT_ENCODING = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_ENCODING);
-    MIME_WKSIDX_CONTENT_LANGUAGE = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_LANGUAGE);
-    MIME_WKSIDX_CONTENT_LENGTH = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_LENGTH);
-    MIME_WKSIDX_CONTENT_LOCATION = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_LOCATION);
-    MIME_WKSIDX_CONTENT_MD5 = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_MD5);
-    MIME_WKSIDX_CONTENT_RANGE = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_RANGE);
-    MIME_WKSIDX_CONTENT_TYPE = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_TYPE);
-    MIME_WKSIDX_CONTROL = hdrtoken_wks_to_index(MIME_FIELD_CONTROL);
-    MIME_WKSIDX_COOKIE = hdrtoken_wks_to_index(MIME_FIELD_COOKIE);
-    MIME_WKSIDX_DATE = hdrtoken_wks_to_index(MIME_FIELD_DATE);
-    MIME_WKSIDX_DISTRIBUTION = hdrtoken_wks_to_index(MIME_FIELD_DISTRIBUTION);
-    MIME_WKSIDX_ETAG = hdrtoken_wks_to_index(MIME_FIELD_ETAG);
-    MIME_WKSIDX_EXPECT = hdrtoken_wks_to_index(MIME_FIELD_EXPECT);
-    MIME_WKSIDX_EXPIRES = hdrtoken_wks_to_index(MIME_FIELD_EXPIRES);
-    MIME_WKSIDX_FOLLOWUP_TO = hdrtoken_wks_to_index(MIME_FIELD_FOLLOWUP_TO);
-    MIME_WKSIDX_FROM = hdrtoken_wks_to_index(MIME_FIELD_FROM);
-    MIME_WKSIDX_HOST = hdrtoken_wks_to_index(MIME_FIELD_HOST);
-    MIME_WKSIDX_IF_MATCH = hdrtoken_wks_to_index(MIME_FIELD_IF_MATCH);
-    MIME_WKSIDX_IF_MODIFIED_SINCE = hdrtoken_wks_to_index(MIME_FIELD_IF_MODIFIED_SINCE);
-    MIME_WKSIDX_IF_NONE_MATCH = hdrtoken_wks_to_index(MIME_FIELD_IF_NONE_MATCH);
-    MIME_WKSIDX_IF_RANGE = hdrtoken_wks_to_index(MIME_FIELD_IF_RANGE);
-    MIME_WKSIDX_IF_UNMODIFIED_SINCE = hdrtoken_wks_to_index(MIME_FIELD_IF_UNMODIFIED_SINCE);
-    MIME_WKSIDX_KEEP_ALIVE = hdrtoken_wks_to_index(MIME_FIELD_KEEP_ALIVE);
-    MIME_WKSIDX_KEYWORDS = hdrtoken_wks_to_index(MIME_FIELD_KEYWORDS);
-    MIME_WKSIDX_LAST_MODIFIED = hdrtoken_wks_to_index(MIME_FIELD_LAST_MODIFIED);
-    MIME_WKSIDX_LINES = hdrtoken_wks_to_index(MIME_FIELD_LINES);
-    MIME_WKSIDX_LOCATION = hdrtoken_wks_to_index(MIME_FIELD_LOCATION);
-    MIME_WKSIDX_MAX_FORWARDS = hdrtoken_wks_to_index(MIME_FIELD_MAX_FORWARDS);
-    MIME_WKSIDX_MESSAGE_ID = hdrtoken_wks_to_index(MIME_FIELD_MESSAGE_ID);
-    MIME_WKSIDX_NEWSGROUPS = hdrtoken_wks_to_index(MIME_FIELD_NEWSGROUPS);
-    MIME_WKSIDX_ORGANIZATION = hdrtoken_wks_to_index(MIME_FIELD_ORGANIZATION);
-    MIME_WKSIDX_PATH = hdrtoken_wks_to_index(MIME_FIELD_PATH);
-    MIME_WKSIDX_PRAGMA = hdrtoken_wks_to_index(MIME_FIELD_PRAGMA);
-    MIME_WKSIDX_PROXY_AUTHENTICATE = hdrtoken_wks_to_index(MIME_FIELD_PROXY_AUTHENTICATE);
-    MIME_WKSIDX_PROXY_AUTHORIZATION = hdrtoken_wks_to_index(MIME_FIELD_PROXY_AUTHORIZATION);
-    MIME_WKSIDX_PROXY_CONNECTION = hdrtoken_wks_to_index(MIME_FIELD_PROXY_CONNECTION);
-    MIME_WKSIDX_PUBLIC = hdrtoken_wks_to_index(MIME_FIELD_PUBLIC);
-    MIME_WKSIDX_RANGE = hdrtoken_wks_to_index(MIME_FIELD_RANGE);
-    MIME_WKSIDX_REFERENCES = hdrtoken_wks_to_index(MIME_FIELD_REFERENCES);
-    MIME_WKSIDX_REFERER = hdrtoken_wks_to_index(MIME_FIELD_REFERER);
-    MIME_WKSIDX_REPLY_TO = hdrtoken_wks_to_index(MIME_FIELD_REPLY_TO);
-    MIME_WKSIDX_RETRY_AFTER = hdrtoken_wks_to_index(MIME_FIELD_RETRY_AFTER);
-    MIME_WKSIDX_SENDER = hdrtoken_wks_to_index(MIME_FIELD_SENDER);
-    MIME_WKSIDX_SERVER = hdrtoken_wks_to_index(MIME_FIELD_SERVER);
-    MIME_WKSIDX_SET_COOKIE = hdrtoken_wks_to_index(MIME_FIELD_SET_COOKIE);
+    MIME_WKSIDX_ACCEPT                    = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT);
+    MIME_WKSIDX_ACCEPT_CHARSET            = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_CHARSET);
+    MIME_WKSIDX_ACCEPT_ENCODING           = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_ENCODING);
+    MIME_WKSIDX_ACCEPT_LANGUAGE           = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_LANGUAGE);
+    MIME_WKSIDX_ACCEPT_RANGES             = hdrtoken_wks_to_index(MIME_FIELD_ACCEPT_RANGES);
+    MIME_WKSIDX_AGE                       = hdrtoken_wks_to_index(MIME_FIELD_AGE);
+    MIME_WKSIDX_ALLOW                     = hdrtoken_wks_to_index(MIME_FIELD_ALLOW);
+    MIME_WKSIDX_APPROVED                  = hdrtoken_wks_to_index(MIME_FIELD_APPROVED);
+    MIME_WKSIDX_AUTHORIZATION             = hdrtoken_wks_to_index(MIME_FIELD_AUTHORIZATION);
+    MIME_WKSIDX_BYTES                     = hdrtoken_wks_to_index(MIME_FIELD_BYTES);
+    MIME_WKSIDX_CACHE_CONTROL             = hdrtoken_wks_to_index(MIME_FIELD_CACHE_CONTROL);
+    MIME_WKSIDX_CLIENT_IP                 = hdrtoken_wks_to_index(MIME_FIELD_CLIENT_IP);
+    MIME_WKSIDX_CONNECTION                = hdrtoken_wks_to_index(MIME_FIELD_CONNECTION);
+    MIME_WKSIDX_CONTENT_BASE              = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_BASE);
+    MIME_WKSIDX_CONTENT_ENCODING          = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_ENCODING);
+    MIME_WKSIDX_CONTENT_LANGUAGE          = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_LANGUAGE);
+    MIME_WKSIDX_CONTENT_LENGTH            = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_LENGTH);
+    MIME_WKSIDX_CONTENT_LOCATION          = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_LOCATION);
+    MIME_WKSIDX_CONTENT_MD5               = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_MD5);
+    MIME_WKSIDX_CONTENT_RANGE             = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_RANGE);
+    MIME_WKSIDX_CONTENT_TYPE              = hdrtoken_wks_to_index(MIME_FIELD_CONTENT_TYPE);
+    MIME_WKSIDX_CONTROL                   = hdrtoken_wks_to_index(MIME_FIELD_CONTROL);
+    MIME_WKSIDX_COOKIE                    = hdrtoken_wks_to_index(MIME_FIELD_COOKIE);
+    MIME_WKSIDX_DATE                      = hdrtoken_wks_to_index(MIME_FIELD_DATE);
+    MIME_WKSIDX_DISTRIBUTION              = hdrtoken_wks_to_index(MIME_FIELD_DISTRIBUTION);
+    MIME_WKSIDX_ETAG                      = hdrtoken_wks_to_index(MIME_FIELD_ETAG);
+    MIME_WKSIDX_EXPECT                    = hdrtoken_wks_to_index(MIME_FIELD_EXPECT);
+    MIME_WKSIDX_EXPIRES                   = hdrtoken_wks_to_index(MIME_FIELD_EXPIRES);
+    MIME_WKSIDX_FOLLOWUP_TO               = hdrtoken_wks_to_index(MIME_FIELD_FOLLOWUP_TO);
+    MIME_WKSIDX_FROM                      = hdrtoken_wks_to_index(MIME_FIELD_FROM);
+    MIME_WKSIDX_HOST                      = hdrtoken_wks_to_index(MIME_FIELD_HOST);
+    MIME_WKSIDX_IF_MATCH                  = hdrtoken_wks_to_index(MIME_FIELD_IF_MATCH);
+    MIME_WKSIDX_IF_MODIFIED_SINCE         = hdrtoken_wks_to_index(MIME_FIELD_IF_MODIFIED_SINCE);
+    MIME_WKSIDX_IF_NONE_MATCH             = hdrtoken_wks_to_index(MIME_FIELD_IF_NONE_MATCH);
+    MIME_WKSIDX_IF_RANGE                  = hdrtoken_wks_to_index(MIME_FIELD_IF_RANGE);
+    MIME_WKSIDX_IF_UNMODIFIED_SINCE       = hdrtoken_wks_to_index(MIME_FIELD_IF_UNMODIFIED_SINCE);
+    MIME_WKSIDX_KEEP_ALIVE                = hdrtoken_wks_to_index(MIME_FIELD_KEEP_ALIVE);
+    MIME_WKSIDX_KEYWORDS                  = hdrtoken_wks_to_index(MIME_FIELD_KEYWORDS);
+    MIME_WKSIDX_LAST_MODIFIED             = hdrtoken_wks_to_index(MIME_FIELD_LAST_MODIFIED);
+    MIME_WKSIDX_LINES                     = hdrtoken_wks_to_index(MIME_FIELD_LINES);
+    MIME_WKSIDX_LOCATION                  = hdrtoken_wks_to_index(MIME_FIELD_LOCATION);
+    MIME_WKSIDX_MAX_FORWARDS              = hdrtoken_wks_to_index(MIME_FIELD_MAX_FORWARDS);
+    MIME_WKSIDX_MESSAGE_ID                = hdrtoken_wks_to_index(MIME_FIELD_MESSAGE_ID);
+    MIME_WKSIDX_NEWSGROUPS                = hdrtoken_wks_to_index(MIME_FIELD_NEWSGROUPS);
+    MIME_WKSIDX_ORGANIZATION              = hdrtoken_wks_to_index(MIME_FIELD_ORGANIZATION);
+    MIME_WKSIDX_PATH                      = hdrtoken_wks_to_index(MIME_FIELD_PATH);
+    MIME_WKSIDX_PRAGMA                    = hdrtoken_wks_to_index(MIME_FIELD_PRAGMA);
+    MIME_WKSIDX_PROXY_AUTHENTICATE        = hdrtoken_wks_to_index(MIME_FIELD_PROXY_AUTHENTICATE);
+    MIME_WKSIDX_PROXY_AUTHORIZATION       = hdrtoken_wks_to_index(MIME_FIELD_PROXY_AUTHORIZATION);
+    MIME_WKSIDX_PROXY_CONNECTION          = hdrtoken_wks_to_index(MIME_FIELD_PROXY_CONNECTION);
+    MIME_WKSIDX_PUBLIC                    = hdrtoken_wks_to_index(MIME_FIELD_PUBLIC);
+    MIME_WKSIDX_RANGE                     = hdrtoken_wks_to_index(MIME_FIELD_RANGE);
+    MIME_WKSIDX_REFERENCES                = hdrtoken_wks_to_index(MIME_FIELD_REFERENCES);
+    MIME_WKSIDX_REFERER                   = hdrtoken_wks_to_index(MIME_FIELD_REFERER);
+    MIME_WKSIDX_REPLY_TO                  = hdrtoken_wks_to_index(MIME_FIELD_REPLY_TO);
+    MIME_WKSIDX_RETRY_AFTER               = hdrtoken_wks_to_index(MIME_FIELD_RETRY_AFTER);
+    MIME_WKSIDX_SENDER                    = hdrtoken_wks_to_index(MIME_FIELD_SENDER);
+    MIME_WKSIDX_SERVER                    = hdrtoken_wks_to_index(MIME_FIELD_SERVER);
+    MIME_WKSIDX_SET_COOKIE                = hdrtoken_wks_to_index(MIME_FIELD_SET_COOKIE);
     MIME_WKSIDX_STRICT_TRANSPORT_SECURITY = hdrtoken_wks_to_index(MIME_FIELD_STRICT_TRANSPORT_SECURITY);
-    MIME_WKSIDX_SUBJECT = hdrtoken_wks_to_index(MIME_FIELD_SUBJECT);
-    MIME_WKSIDX_SUMMARY = hdrtoken_wks_to_index(MIME_FIELD_SUMMARY);
-    MIME_WKSIDX_TE = hdrtoken_wks_to_index(MIME_FIELD_TE);
-    MIME_WKSIDX_TRANSFER_ENCODING = hdrtoken_wks_to_index(MIME_FIELD_TRANSFER_ENCODING);
-    MIME_WKSIDX_UPGRADE = hdrtoken_wks_to_index(MIME_FIELD_UPGRADE);
-    MIME_WKSIDX_USER_AGENT = hdrtoken_wks_to_index(MIME_FIELD_USER_AGENT);
-    MIME_WKSIDX_VARY = hdrtoken_wks_to_index(MIME_FIELD_VARY);
-    MIME_WKSIDX_VIA = hdrtoken_wks_to_index(MIME_FIELD_VIA);
-    MIME_WKSIDX_WARNING = hdrtoken_wks_to_index(MIME_FIELD_WARNING);
-    MIME_WKSIDX_WWW_AUTHENTICATE = hdrtoken_wks_to_index(MIME_FIELD_WWW_AUTHENTICATE);
-    MIME_WKSIDX_XREF = hdrtoken_wks_to_index(MIME_FIELD_XREF);
-    MIME_WKSIDX_X_ID = hdrtoken_wks_to_index(MIME_FIELD_X_ID);
-    MIME_WKSIDX_X_FORWARDED_FOR = hdrtoken_wks_to_index(MIME_FIELD_X_FORWARDED_FOR);
-    MIME_WKSIDX_SEC_WEBSOCKET_KEY = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_KEY);
-    MIME_WKSIDX_SEC_WEBSOCKET_VERSION = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_VERSION);
-    MIME_WKSIDX_HTTP2_SETTINGS = hdrtoken_wks_to_index(MIME_FIELD_HTTP2_SETTINGS);
+    MIME_WKSIDX_SUBJECT                   = hdrtoken_wks_to_index(MIME_FIELD_SUBJECT);
+    MIME_WKSIDX_SUMMARY                   = hdrtoken_wks_to_index(MIME_FIELD_SUMMARY);
+    MIME_WKSIDX_TE                        = hdrtoken_wks_to_index(MIME_FIELD_TE);
+    MIME_WKSIDX_TRANSFER_ENCODING         = hdrtoken_wks_to_index(MIME_FIELD_TRANSFER_ENCODING);
+    MIME_WKSIDX_UPGRADE                   = hdrtoken_wks_to_index(MIME_FIELD_UPGRADE);
+    MIME_WKSIDX_USER_AGENT                = hdrtoken_wks_to_index(MIME_FIELD_USER_AGENT);
+    MIME_WKSIDX_VARY                      = hdrtoken_wks_to_index(MIME_FIELD_VARY);
+    MIME_WKSIDX_VIA                       = hdrtoken_wks_to_index(MIME_FIELD_VIA);
+    MIME_WKSIDX_WARNING                   = hdrtoken_wks_to_index(MIME_FIELD_WARNING);
+    MIME_WKSIDX_WWW_AUTHENTICATE          = hdrtoken_wks_to_index(MIME_FIELD_WWW_AUTHENTICATE);
+    MIME_WKSIDX_XREF                      = hdrtoken_wks_to_index(MIME_FIELD_XREF);
+    MIME_WKSIDX_X_ID                      = hdrtoken_wks_to_index(MIME_FIELD_X_ID);
+    MIME_WKSIDX_X_FORWARDED_FOR           = hdrtoken_wks_to_index(MIME_FIELD_X_FORWARDED_FOR);
+    MIME_WKSIDX_SEC_WEBSOCKET_KEY         = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_KEY);
+    MIME_WKSIDX_SEC_WEBSOCKET_VERSION     = hdrtoken_wks_to_index(MIME_FIELD_SEC_WEBSOCKET_VERSION);
+    MIME_WKSIDX_HTTP2_SETTINGS            = hdrtoken_wks_to_index(MIME_FIELD_HTTP2_SETTINGS);
 
-    MIME_VALUE_BYTES = hdrtoken_string_to_wks("bytes");
-    MIME_VALUE_CHUNKED = hdrtoken_string_to_wks("chunked");
-    MIME_VALUE_CLOSE = hdrtoken_string_to_wks("close");
-    MIME_VALUE_COMPRESS = hdrtoken_string_to_wks("compress");
-    MIME_VALUE_DEFLATE = hdrtoken_string_to_wks("deflate");
-    MIME_VALUE_GZIP = hdrtoken_string_to_wks("gzip");
-    MIME_VALUE_IDENTITY = hdrtoken_string_to_wks("identity");
-    MIME_VALUE_KEEP_ALIVE = hdrtoken_string_to_wks("keep-alive");
-    MIME_VALUE_MAX_AGE = hdrtoken_string_to_wks("max-age");
-    MIME_VALUE_MAX_STALE = hdrtoken_string_to_wks("max-stale");
-    MIME_VALUE_MIN_FRESH = hdrtoken_string_to_wks("min-fresh");
-    MIME_VALUE_MUST_REVALIDATE = hdrtoken_string_to_wks("must-revalidate");
-    MIME_VALUE_NONE = hdrtoken_string_to_wks("none");
-    MIME_VALUE_NO_CACHE = hdrtoken_string_to_wks("no-cache");
-    MIME_VALUE_NO_STORE = hdrtoken_string_to_wks("no-store");
-    MIME_VALUE_NO_TRANSFORM = hdrtoken_string_to_wks("no-transform");
-    MIME_VALUE_ONLY_IF_CACHED = hdrtoken_string_to_wks("only-if-cached");
-    MIME_VALUE_PRIVATE = hdrtoken_string_to_wks("private");
-    MIME_VALUE_PROXY_REVALIDATE = hdrtoken_string_to_wks("proxy-revalidate");
-    MIME_VALUE_PUBLIC = hdrtoken_string_to_wks("public");
-    MIME_VALUE_S_MAXAGE = hdrtoken_string_to_wks("s-maxage");
+    MIME_VALUE_BYTES                = hdrtoken_string_to_wks("bytes");
+    MIME_VALUE_CHUNKED              = hdrtoken_string_to_wks("chunked");
+    MIME_VALUE_CLOSE                = hdrtoken_string_to_wks("close");
+    MIME_VALUE_COMPRESS             = hdrtoken_string_to_wks("compress");
+    MIME_VALUE_DEFLATE              = hdrtoken_string_to_wks("deflate");
+    MIME_VALUE_GZIP                 = hdrtoken_string_to_wks("gzip");
+    MIME_VALUE_IDENTITY             = hdrtoken_string_to_wks("identity");
+    MIME_VALUE_KEEP_ALIVE           = hdrtoken_string_to_wks("keep-alive");
+    MIME_VALUE_MAX_AGE              = hdrtoken_string_to_wks("max-age");
+    MIME_VALUE_MAX_STALE            = hdrtoken_string_to_wks("max-stale");
+    MIME_VALUE_MIN_FRESH            = hdrtoken_string_to_wks("min-fresh");
+    MIME_VALUE_MUST_REVALIDATE      = hdrtoken_string_to_wks("must-revalidate");
+    MIME_VALUE_NONE                 = hdrtoken_string_to_wks("none");
+    MIME_VALUE_NO_CACHE             = hdrtoken_string_to_wks("no-cache");
+    MIME_VALUE_NO_STORE             = hdrtoken_string_to_wks("no-store");
+    MIME_VALUE_NO_TRANSFORM         = hdrtoken_string_to_wks("no-transform");
+    MIME_VALUE_ONLY_IF_CACHED       = hdrtoken_string_to_wks("only-if-cached");
+    MIME_VALUE_PRIVATE              = hdrtoken_string_to_wks("private");
+    MIME_VALUE_PROXY_REVALIDATE     = hdrtoken_string_to_wks("proxy-revalidate");
+    MIME_VALUE_PUBLIC               = hdrtoken_string_to_wks("public");
+    MIME_VALUE_S_MAXAGE             = hdrtoken_string_to_wks("s-maxage");
     MIME_VALUE_NEED_REVALIDATE_ONCE = hdrtoken_string_to_wks("need-revalidate-once");
-    MIME_VALUE_WEBSOCKET = hdrtoken_string_to_wks("websocket");
-    MIME_VALUE_H2C = hdrtoken_string_to_wks(MIME_UPGRADE_H2C_TOKEN);
+    MIME_VALUE_WEBSOCKET            = hdrtoken_string_to_wks("websocket");
+    MIME_VALUE_H2C                  = hdrtoken_string_to_wks(MIME_UPGRADE_H2C_TOKEN);
 
     mime_init_date_format_table();
     mime_init_cache_control_cooking_masks();
@@ -937,8 +937,8 @@ mime_init_cache_control_cooking_masks()
                        {NULL, 0}};
 
   for (int i = 0; cc_mask_table[i].name != NULL; i++) {
-    const char *wks = hdrtoken_string_to_wks(cc_mask_table[i].name);
-    HdrTokenHeapPrefix *p = hdrtoken_wks_to_prefix(wks);
+    const char *wks                              = hdrtoken_string_to_wks(cc_mask_table[i].name);
+    HdrTokenHeapPrefix *p                        = hdrtoken_wks_to_prefix(wks);
     p->wks_type_specific.u.cache_control.cc_mask = cc_mask_table[i].mask;
   }
 }
@@ -958,14 +958,14 @@ mime_init_date_format_table()
   int m = 0, d = 0, y = 0;
 
   time(&now_secs);
-  now_days = (int)(now_secs / (60 * 60 * 24));
+  now_days   = (int)(now_secs / (60 * 60 * 24));
   first_days = now_days - 366;
-  last_days = now_days + 366;
-  num_days = last_days - first_days + 1;
+  last_days  = now_days + 366;
+  num_days   = last_days - first_days + 1;
 
-  _days_to_mdy_fast_lookup_table = (MDY *)ats_malloc(num_days * sizeof(MDY));
+  _days_to_mdy_fast_lookup_table           = (MDY *)ats_malloc(num_days * sizeof(MDY));
   _days_to_mdy_fast_lookup_table_first_day = first_days;
-  _days_to_mdy_fast_lookup_table_last_day = last_days;
+  _days_to_mdy_fast_lookup_table_last_day  = last_days;
 
   for (i = 0; i < num_days; i++) {
     mime_days_since_epoch_to_mdy_slowcase(first_days + i, &m, &d, &y);
@@ -989,7 +989,7 @@ void
 _mime_hdr_field_block_init(MIMEFieldBlockImpl *fblock)
 {
   fblock->m_freetop = 0;
-  fblock->m_next = NULL;
+  fblock->m_next    = NULL;
 
 #ifdef BLOCK_INIT_PARANOIA
   int i;
@@ -1000,7 +1000,7 @@ _mime_hdr_field_block_init(MIMEFieldBlockImpl *fblock)
   //      the cost of initializing all slots in a block.
 
   for (i = 0; i < MIME_FIELD_BLOCK_SLOTS; i++) {
-    MIMEField *field = &(fblock->m_field_slots[i]);
+    MIMEField *field   = &(fblock->m_field_slots[i]);
     field->m_readiness = MIME_FIELD_SLOT_READINESS_EMPTY;
   }
 #endif
@@ -1011,9 +1011,9 @@ mime_hdr_cooked_stuff_init(MIMEHdrImpl *mh, MIMEField *changing_field_or_null)
 {
   // to be safe, reinitialize unless you know this call is for other cooked field
   if ((changing_field_or_null == NULL) || (changing_field_or_null->m_wks_idx != MIME_WKSIDX_PRAGMA)) {
-    mh->m_cooked_stuff.m_cache_control.m_mask = 0;
-    mh->m_cooked_stuff.m_cache_control.m_secs_max_age = 0;
-    mh->m_cooked_stuff.m_cache_control.m_secs_s_maxage = 0;
+    mh->m_cooked_stuff.m_cache_control.m_mask           = 0;
+    mh->m_cooked_stuff.m_cache_control.m_secs_max_age   = 0;
+    mh->m_cooked_stuff.m_cache_control.m_secs_s_maxage  = 0;
     mh->m_cooked_stuff.m_cache_control.m_secs_max_stale = 0;
     mh->m_cooked_stuff.m_cache_control.m_secs_min_fresh = 0;
   }
@@ -1094,8 +1094,8 @@ mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHea
 
   ink_assert(((char *)&(s_mh->m_first_fblock.m_field_slots[MIME_FIELD_BLOCK_SLOTS]) - (char *)s_mh) == sizeof(struct MIMEHdrImpl));
 
-  int top = s_mh->m_first_fblock.m_freetop;
-  char *end = (char *)&(s_mh->m_first_fblock.m_field_slots[top]);
+  int top             = s_mh->m_first_fblock.m_freetop;
+  char *end           = (char *)&(s_mh->m_first_fblock.m_field_slots[top]);
   int bytes_below_top = end - (char *)s_mh;
 
   // copies useful part of enclosed first block too
@@ -1104,16 +1104,16 @@ mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHea
   if (d_mh->m_first_fblock.m_next == NULL) // common case: no other block
   {
     d_mh->m_fblock_list_tail = &(d_mh->m_first_fblock);
-    block_count = 1;
+    block_count              = 1;
   } else // uncommon case: block list exists
   {
     prev_d_fblock = &(d_mh->m_first_fblock);
-    block_count = 1;
+    block_count   = 1;
     for (s_fblock = s_mh->m_first_fblock.m_next; s_fblock != NULL; s_fblock = s_fblock->m_next) {
       ++block_count;
-      d_fblock = _mime_field_block_copy(s_fblock, s_heap, d_heap);
+      d_fblock              = _mime_field_block_copy(s_fblock, s_heap, d_heap);
       prev_d_fblock->m_next = d_fblock;
-      prev_d_fblock = d_fblock;
+      prev_d_fblock         = d_fblock;
     }
     d_mh->m_fblock_list_tail = prev_d_fblock;
   }
@@ -1256,7 +1256,7 @@ _mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum)
   MIMEFieldBlockImpl *fblock;
 
   if (slotnum < MIME_FIELD_BLOCK_SLOTS) {
-    fblock = &(mh->m_first_fblock);
+    fblock      = &(mh->m_first_fblock);
     block_index = slotnum;
     if (block_index >= fblock->m_freetop) {
       return NULL;
@@ -1264,7 +1264,7 @@ _mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum)
       return &(fblock->m_field_slots[block_index]);
     }
   } else {
-    block_num = slotnum / MIME_FIELD_BLOCK_SLOTS;
+    block_num   = slotnum / MIME_FIELD_BLOCK_SLOTS;
     block_index = slotnum % MIME_FIELD_BLOCK_SLOTS;
 
     fblock = &(mh->m_first_fblock);
@@ -1400,7 +1400,7 @@ mime_field_init(MIMEField *field)
 {
   memset(field, 0, sizeof(MIMEField));
   field->m_readiness = MIME_FIELD_SLOT_READINESS_DETACHED;
-  field->m_wks_idx = -1;
+  field->m_wks_idx   = -1;
 }
 
 MIMEField *
@@ -1413,8 +1413,8 @@ mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh)
   if (tail_fblock->m_freetop >= MIME_FIELD_BLOCK_SLOTS) {
     new_fblock = (MIMEFieldBlockImpl *)heap->allocate_obj(sizeof(MIMEFieldBlockImpl), HDR_HEAP_OBJ_FIELD_BLOCK);
     _mime_hdr_field_block_init(new_fblock);
-    tail_fblock->m_next = new_fblock;
-    tail_fblock = new_fblock;
+    tail_fblock->m_next    = new_fblock;
+    tail_fblock            = new_fblock;
     mh->m_fblock_list_tail = new_fblock;
   }
 
@@ -1429,7 +1429,7 @@ mime_field_create(HdrHeap *heap, MIMEHdrImpl *mh)
 MIMEField *
 mime_field_create_named(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length)
 {
-  MIMEField *field = mime_field_create(heap, mh);
+  MIMEField *field       = mime_field_create(heap, mh);
   int field_name_wks_idx = hdrtoken_tokenize(name, length);
   mime_field_name_set(heap, mh, field, field_name_wks_idx, name, length, 1);
   return field;
@@ -1454,7 +1454,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
   if (check_for_dups || (prev_dup && (!prev_dup->is_dup_head()))) {
     int length;
     const char *name = mime_field_name_get(field, &length);
-    prev_dup = mime_hdr_field_find(mh, name, length);
+    prev_dup         = mime_hdr_field_find(mh, name, length);
     ink_assert((prev_dup == NULL) || (prev_dup->is_dup_head()));
   }
 
@@ -1478,9 +1478,9 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
     /////////////////////////////////////////////////////////////////
 
     field_slotnum = mime_hdr_field_slotnum(mh, field);
-    prev_slotnum = mime_hdr_field_slotnum(mh, prev_dup);
-    next_dup = prev_dup->m_next_dup;
-    next_slotnum = (next_dup ? mime_hdr_field_slotnum(mh, next_dup) : -1);
+    prev_slotnum  = mime_hdr_field_slotnum(mh, prev_dup);
+    next_dup      = prev_dup->m_next_dup;
+    next_slotnum  = (next_dup ? mime_hdr_field_slotnum(mh, next_dup) : -1);
 
     ink_assert(field_slotnum != prev_slotnum);
 
@@ -1490,9 +1490,9 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
         break; // no next dup, we're done
       if (next_slotnum > field_slotnum)
         break; // next dup is after us, we're done
-      prev_dup = next_dup;
+      prev_dup     = next_dup;
       prev_slotnum = next_slotnum;
-      next_dup = prev_dup->m_next_dup;
+      next_dup     = prev_dup->m_next_dup;
     }
 
     /////////////////////////////////////////////////////
@@ -1509,7 +1509,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
       // of a misnomer, it is actually, the NEXT field!          //
       /////////////////////////////////////////////////////////////
 
-      field->m_flags = (field->m_flags | MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
+      field->m_flags    = (field->m_flags | MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
       field->m_next_dup = prev_dup;
       prev_dup->m_flags = (prev_dup->m_flags & ~MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
       mime_hdr_set_accelerators_and_presence_bits(mh, field);
@@ -1520,7 +1520,7 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
       field->m_flags = (field->m_flags & ~MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
       ink_assert((next_dup == NULL) || next_dup->is_live());
       prev_dup->m_next_dup = field;
-      field->m_next_dup = next_dup;
+      field->m_next_dup    = next_dup;
     }
   } else {
     field->m_flags = (field->m_flags | MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
@@ -1570,7 +1570,7 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
   {
     int name_length;
     const char *name = mime_field_name_get(field, &name_length);
-    MIMEField *prev = mime_hdr_field_find(mh, name, name_length);
+    MIMEField *prev  = mime_hdr_field_find(mh, name, name_length);
 
     while (prev && (prev->m_next_dup != field))
       prev = prev->m_next_dup;
@@ -1582,7 +1582,7 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
 
   // Field is now detached and alone
   field->m_readiness = MIME_FIELD_SLOT_READINESS_DETACHED;
-  field->m_next_dup = NULL;
+  field->m_next_dup  = NULL;
 
   // Because we changed the values through detaching,update the cooked cache
   if (field->is_cooked())
@@ -1643,7 +1643,7 @@ mime_hdr_field_slotnum(MIMEHdrImpl *mh, MIMEField *field)
   slots_so_far = 0;
   for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
     if (fblock->contains(field)) {
-      MIMEField *first = &(fblock->m_field_slots[0]);
+      MIMEField *first     = &(fblock->m_field_slots[0]);
       ptrdiff_t block_slot = field - first; // in units of MIMEField
       return slots_so_far + block_slot;
     }
@@ -1673,7 +1673,7 @@ mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name,
   if (field == NULL) // no fields of this name
   {
     wks_idx = hdrtoken_tokenize(name, name_length);
-    field = mime_field_create(heap, mh);
+    field   = mime_field_create(heap, mh);
     mime_field_name_set(heap, mh, field, wks_idx, name, name_length, 1);
     mime_hdr_field_attach(mh, field, 0, NULL);
 
@@ -1732,7 +1732,7 @@ MIMEField::value_get_index(char const *value, int length) const
   } else {
     HdrCsvIter iter;
     int tok_len;
-    int index = 0;
+    int index       = 0;
     const char *tok = iter.get_first(this, &tok_len);
 
     while (tok) {
@@ -2079,7 +2079,7 @@ mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const cha
   else
     field->m_ptr_value = value;
 
-  field->m_len_value = length;
+  field->m_len_value         = length;
   field->m_n_v_raw_printable = 0;
 
   // Now keep the cooked cache consistent
@@ -2132,13 +2132,13 @@ mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int1
     mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1, name, name_length, 1);
     mime_field_value_set(heap, mh, field, value, value_length, 1);
   } else {
-    field->m_wks_idx = name_wks_idx_or_neg1;
-    field->m_ptr_name = name;
+    field->m_wks_idx   = name_wks_idx_or_neg1;
+    field->m_ptr_name  = name;
     field->m_ptr_value = value;
-    field->m_len_name = name_length;
+    field->m_len_name  = name_length;
     field->m_len_value = value_length;
     if (n_v_raw_printable && (n_v_raw_pad <= 7)) {
-      field->m_n_v_raw_printable = n_v_raw_printable;
+      field->m_n_v_raw_printable     = n_v_raw_printable;
       field->m_n_v_raw_printable_pad = n_v_raw_pad;
     } else {
       field->m_n_v_raw_printable = 0;
@@ -2178,8 +2178,8 @@ mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const 
 
   memcpy(ptr, value, length);
 
-  field->m_ptr_value = new_str;
-  field->m_len_value = new_length;
+  field->m_ptr_value         = new_str;
+  field->m_len_value         = new_length;
   field->m_n_v_raw_printable = 0;
 
   // Now keep the cooked cache consistent
@@ -2255,10 +2255,10 @@ MIMEHdr::get_host_port_values(char const **host_ptr, ///< Pointer to host.
 void
 _mime_scanner_init(MIMEScanner *scanner)
 {
-  scanner->m_line = NULL;
-  scanner->m_line_size = 0;
+  scanner->m_line        = NULL;
+  scanner->m_line_size   = 0;
   scanner->m_line_length = 0;
-  scanner->m_state = MIME_PARSE_BEFORE;
+  scanner->m_state       = MIME_PARSE_BEFORE;
 }
 
 //////////////////////////////////////////////////////
@@ -2367,7 +2367,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
       if (lf_ptr) {
         raw_input_c = lf_ptr + 1;
         if (MIME_SCANNER_TYPE_LINE == raw_input_scan_type) {
-          zret = PARSE_OK;
+          zret       = PARSE_OK;
           S->m_state = MIME_PARSE_BEFORE;
         } else {
           S->m_state = MIME_PARSE_AFTER;
@@ -2382,7 +2382,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
         S->m_state = MIME_PARSE_INSIDE; // back inside the field.
       } else {
         S->m_state = MIME_PARSE_BEFORE; // field terminated.
-        zret = PARSE_OK;
+        zret       = PARSE_OK;
       }
       break;
     }
@@ -2401,7 +2401,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
         // all input previously consumed. If we're between fields, that's cool.
         if (MIME_PARSE_INSIDE != S->m_state) {
           S->m_state = MIME_PARSE_BEFORE; // probably not needed...
-          zret = PARSE_DONE;
+          zret       = PARSE_DONE;
         } else {
           zret = PARSE_ERROR; // unterminated field.
         }
@@ -2411,7 +2411,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
         // absolute end of input because otherwise this might be
         // a multiline field where we haven't seen the next leading space.
         S->m_state = MIME_PARSE_BEFORE;
-        zret = PARSE_OK;
+        zret       = PARSE_OK;
       } else {
         // Partial input, no field / line CR LF
         zret = PARSE_ERROR; // Unterminated field.
@@ -2433,8 +2433,8 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
   // adjust out arguments.
   if (PARSE_CONT != zret) {
     if (0 != S->m_line_length) {
-      *output_s = S->m_line;
-      *output_e = *output_s + S->m_line_length;
+      *output_s        = S->m_line;
+      *output_e        = *output_s + S->m_line_length;
       S->m_line_length = 0;
     } else {
       *output_s = *raw_input_s;
@@ -2453,9 +2453,9 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
 void
 _mime_parser_init(MIMEParser *parser)
 {
-  parser->m_field = 0;
+  parser->m_field       = 0;
   parser->m_field_flags = 0;
-  parser->m_value = -1;
+  parser->m_value       = -1;
 }
 //////////////////////////////////////////////////////
 // init     first time structure setup              //
@@ -2521,7 +2521,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     /////////////////////////////////////////////
 
     field_line_first = line_c;
-    field_line_last = line_e - 1;
+    field_line_last  = line_e - 1;
 
     // find name first
     field_name_first = line_c;
@@ -2552,7 +2552,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     while ((field_value_last >= field_value_first) && ParseRules::is_wslfcr(*field_value_last))
       --field_value_last;
 
-    field_name_length = (int)(field_name_last - field_name_first + 1);
+    field_name_length  = (int)(field_name_last - field_name_first + 1);
     field_value_length = (int)(field_value_last - field_value_first + 1);
 
     // Make sure the name or value is not longer than 64K
@@ -2566,8 +2566,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     //////////////////////////////////////////////////////////////////////
 
     if (must_copy_strings || (!line_is_real)) {
-      int length = total_line_length;
-      char *dup = heap->duplicate_str(field_name_first, length);
+      int length     = total_line_length;
+      char *dup      = heap->duplicate_str(field_name_first, length);
       intptr_t delta = dup - field_name_first;
 
       field_name_first += delta;
@@ -2669,7 +2669,7 @@ mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start
     const char *contig_start = NULL;
     int this_length, contig_length = 0;
     for (index = 0; index < fblock->m_freetop; index++) {
-      field = &(fblock->m_field_slots[index]);
+      field       = &(fblock->m_field_slots[index]);
       this_length = field->m_len_name + field->m_len_value + field->m_n_v_raw_printable_pad;
       if (field->is_live()) {
         if ((field->m_ptr_name == contig_start + contig_length) && field->m_n_v_raw_printable &&
@@ -2680,7 +2680,7 @@ mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start
             if (!mime_mem_print(contig_start, contig_length, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout))
               return 0;
           }
-          contig_start = field->m_ptr_name;
+          contig_start  = field->m_ptr_name;
           contig_length = this_length;
         }
       }
@@ -2911,7 +2911,7 @@ mime_days_since_epoch_to_mdy(unsigned int days_since_jan_1_1970, int *m_return, 
     // of dates that are +/- one year from today.                 //
     ////////////////////////////////////////////////////////////////
 
-    int i = days_since_jan_1_1970 - _days_to_mdy_fast_lookup_table_first_day;
+    int i     = days_since_jan_1_1970 - _days_to_mdy_fast_lookup_table_first_day;
     *m_return = _days_to_mdy_fast_lookup_table[i].m;
     *d_return = _days_to_mdy_fast_lookup_table[i].d;
     *y_return = _days_to_mdy_fast_lookup_table[i].y;
@@ -2971,9 +2971,9 @@ mime_format_date(char *buffer, time_t value)
 
   /* the day string */
   const char *three_char_day = daystrs[wday];
-  buf[0] = three_char_day[0];
-  buf[1] = three_char_day[1];
-  buf[2] = three_char_day[2];
+  buf[0]                     = three_char_day[0];
+  buf[1]                     = three_char_day[1];
+  buf[2]                     = three_char_day[2];
   buf += 3;
 
   buf[0] = ',';
@@ -2988,9 +2988,9 @@ mime_format_date(char *buffer, time_t value)
 
   /* the month string */
   const char *three_char_month = monthstrs[month];
-  buf[0] = three_char_month[0];
-  buf[1] = three_char_month[1];
-  buf[2] = three_char_month[2];
+  buf[0]                       = three_char_month[0];
+  buf[1]                       = three_char_month[1];
+  buf[2]                       = three_char_month[2];
   buf += 3;
 
   /* the year */
@@ -3062,7 +3062,7 @@ mime_parse_int(const char *buf, const char *end)
       num = (num * 10) + (*buf++ - '0');
     return num;
   } else {
-    num = 0;
+    num      = 0;
     negative = false;
 
     while ((buf != end) && ParseRules::is_space(*buf))
@@ -3124,7 +3124,7 @@ mime_parse_int64(const char *buf, const char *end)
       num = (num * 10) + (*buf++ - '0');
     return num;
   } else {
-    num = 0;
+    num      = 0;
     negative = false;
 
     while ((buf != end) && ParseRules::is_space(*buf))
@@ -3192,7 +3192,7 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
   ////////////////////////////
   // binary search for wday //
   ////////////////////////////
-  tp->tm_wday = -1;
+  tp->tm_wday     = -1;
   three_char_wday = (buf[0] << 16) | (buf[1] << 8) | buf[2];
   if (three_char_wday <= 0x53756E) {
     if (three_char_wday == 0x467269)
@@ -3224,7 +3224,7 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
   /////////////////////////////
   // binary search for month //
   /////////////////////////////
-  tp->tm_mon = -1;
+  tp->tm_mon     = -1;
   three_char_mon = (buf[8] << 16) | (buf[9] << 8) | buf[10];
   if (three_char_mon <= 0x4A756C) {
     if (three_char_mon <= 0x446563) {
@@ -3273,8 +3273,8 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
   // extract time //
   //////////////////
   tp->tm_hour = (buf[17] - '0') * 10 + (buf[18] - '0');
-  tp->tm_min = (buf[20] - '0') * 10 + (buf[21] - '0');
-  tp->tm_sec = (buf[23] - '0') * 10 + (buf[24] - '0');
+  tp->tm_min  = (buf[20] - '0') * 10 + (buf[21] - '0');
+  tp->tm_sec  = (buf[23] - '0') * 10 + (buf[24] - '0');
   if ((buf[19] != ':') || (buf[22] != ':'))
     return 0;
   return 1;
@@ -3290,7 +3290,7 @@ time_t
 mime_parse_date(const char *buf, const char *end)
 {
   static const int DAYS_OFFSET = 25508;
-  static const int days[12] = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
+  static const int days[12]    = {305, 336, -1, 30, 60, 91, 121, 152, 183, 213, 244, 274};
 
   struct tm tp;
   time_t t;
@@ -3361,9 +3361,9 @@ mime_parse_date(const char *buf, const char *end)
     }
   }
 
-  year = tp.tm_year;
+  year  = tp.tm_year;
   month = tp.tm_mon;
-  mday = tp.tm_mday;
+  mday  = tp.tm_mday;
 
   // what should we do?
   if (year > 137) {
@@ -3617,7 +3617,7 @@ bool
 MIMEFieldBlockImpl::contains(const MIMEField *field)
 {
   MIMEField *first = &(m_field_slots[0]);
-  MIMEField *last = &(m_field_slots[MIME_FIELD_BLOCK_SLOTS - 1]);
+  MIMEField *last  = &(m_field_slots[MIME_FIELD_BLOCK_SLOTS - 1]);
   return (field >= first) && (field <= last);
 }
 
@@ -3739,7 +3739,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 #endif
 
             HdrTokenHeapPrefix *p = hdrtoken_wks_to_prefix(token_wks);
-            mask = p->wks_type_specific.u.cache_control.cc_mask;
+            mask                  = p->wks_type_specific.u.cache_control.cc_mask;
             m_cooked_stuff.m_cache_control.m_mask |= mask;
 
 #if TRACK_COOKING

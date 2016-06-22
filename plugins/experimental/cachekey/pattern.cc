@@ -82,12 +82,12 @@ Pattern::init(const String &config)
     String pattern;
     String replacement;
 
-    size_t start = 1;
+    size_t start   = 1;
     size_t current = 0;
-    size_t next = 1;
+    size_t next    = 1;
     do {
       current = next + 1;
-      next = config.find_first_of("/", current);
+      next    = config.find_first_of("/", current);
     } while (next != String::npos && '\\' == config[next - 1]);
 
     if (next != String::npos) {
@@ -101,7 +101,7 @@ Pattern::init(const String &config)
     start = next + 1;
     do {
       current = next + 1;
-      next = config.find_first_of("/", current);
+      next    = config.find_first_of("/", current);
     } while (next != String::npos && '\\' == config[next - 1]);
 
     if (next != String::npos) {
@@ -265,7 +265,7 @@ Pattern::capture(const String &subject, StringVector &result)
   }
 
   for (int i = 0; i < _matchCount; i++) {
-    int start = _ovector[2 * i];
+    int start  = _ovector[2 * i];
     int length = _ovector[2 * i + 1] - _ovector[2 * i];
 
     String dst(subject, start, length);
@@ -308,8 +308,8 @@ Pattern::replace(const String &subject, String &result)
   int previous = 0;
   for (int i = 0; i < _tokenCount; i++) {
     int replIndex = _tokens[i];
-    int start = _ovector[2 * replIndex];
-    int length = _ovector[2 * replIndex + 1] - _ovector[2 * replIndex];
+    int start     = _ovector[2 * replIndex];
+    int length    = _ovector[2 * replIndex + 1] - _ovector[2 * replIndex];
 
     String src(_replacement, _tokenOffset[i], 2);
     String dst(subject, start, length);
@@ -368,7 +368,7 @@ Pattern::compile()
     return true;
   }
 
-  _tokenCount = 0;
+  _tokenCount  = 0;
   bool success = true;
 
   for (unsigned i = 0; i < _replacement.length(); i++) {
@@ -386,7 +386,7 @@ Pattern::compile()
       } else {
         /* Store the location of the replacement */
         /* Convert '0' to 0 */
-        _tokens[_tokenCount] = _replacement[i + 1] - '0';
+        _tokens[_tokenCount]      = _replacement[i + 1] - '0';
         _tokenOffset[_tokenCount] = i;
         _tokenCount++;
         /* Skip the next char */
@@ -484,7 +484,7 @@ Classifier::classify(const String &subject, String &name) const
     if ((*p)->empty()) {
       continue;
     } else if ((*p)->match(subject)) {
-      name = (*p)->name();
+      name    = (*p)->name();
       matched = true;
       break;
     }

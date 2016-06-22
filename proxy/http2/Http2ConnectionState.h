@@ -32,8 +32,8 @@
 class Http2ClientSession;
 
 enum Http2SendADataFrameResult {
-  HTTP2_SEND_A_DATA_FRAME_NO_ERROR = 0,
-  HTTP2_SEND_A_DATA_FRAME_NO_WINDOW = 1,
+  HTTP2_SEND_A_DATA_FRAME_NO_ERROR   = 0,
+  HTTP2_SEND_A_DATA_FRAME_NO_WINDOW  = 1,
   HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD = 2,
 };
 
@@ -48,20 +48,20 @@ public:
     settings[indexof(HTTP2_SETTINGS_ENABLE_PUSH)] = 0; // Disabled for now
 
     settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = HTTP2_MAX_CONCURRENT_STREAMS;
-    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)] = HTTP2_INITIAL_WINDOW_SIZE;
-    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)] = HTTP2_MAX_FRAME_SIZE;
-    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)] = HTTP2_HEADER_TABLE_SIZE;
-    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)] = HTTP2_MAX_HEADER_LIST_SIZE;
+    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = HTTP2_INITIAL_WINDOW_SIZE;
+    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = HTTP2_MAX_FRAME_SIZE;
+    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = HTTP2_HEADER_TABLE_SIZE;
+    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = HTTP2_MAX_HEADER_LIST_SIZE;
   }
 
   void
   settings_from_configs()
   {
     settings[indexof(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)] = Http2::max_concurrent_streams_in;
-    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)] = Http2::initial_window_size;
-    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)] = Http2::max_frame_size;
-    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)] = Http2::header_table_size;
-    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)] = Http2::max_header_list_size;
+    settings[indexof(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE)]    = Http2::initial_window_size;
+    settings[indexof(HTTP2_SETTINGS_MAX_FRAME_SIZE)]         = Http2::max_frame_size;
+    settings[indexof(HTTP2_SETTINGS_HEADER_TABLE_SIZE)]      = Http2::header_table_size;
+    settings[indexof(HTTP2_SETTINGS_MAX_HEADER_LIST_SIZE)]   = Http2::max_header_list_size;
   }
 
   unsigned
@@ -137,11 +137,11 @@ public:
   void
   init()
   {
-    local_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
+    local_hpack_handle  = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
     remote_hpack_handle = new HpackHandle(HTTP2_HEADER_TABLE_SIZE);
 
     continued_buffer.iov_base = NULL;
-    continued_buffer.iov_len = 0;
+    continued_buffer.iov_len  = 0;
 
     dependency_tree = new DependencyTree();
   }

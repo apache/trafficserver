@@ -154,7 +154,7 @@ make_pem_header(const char *pem)
   unsigned remain;
 
   hdr = ptr = strdup(pem);
-  remain = strlen(hdr);
+  remain    = strlen(hdr);
 
   for (char *nl; (nl = (char *)memchr(ptr, '\n', remain)); ptr = nl) {
     *nl = ' ';
@@ -204,8 +204,8 @@ REGRESSION_TEST(ParseX509Fields)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   box = REGRESSION_TEST_PASSED;
 
-  BIO *exp = BIO_new(BIO_s_mem());
-  BIO *bio = BIO_new_mem_buf((void *)test_certificate, -1);
+  BIO *exp   = BIO_new(BIO_s_mem());
+  BIO *bio   = BIO_new_mem_buf((void *)test_certificate, -1);
   X509 *x509 = PEM_read_bio_X509(bio, NULL, 0, NULL);
 
   box.check(x509 != NULL, "failed to load the test certificate");

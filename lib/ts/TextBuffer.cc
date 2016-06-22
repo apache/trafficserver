@@ -37,7 +37,7 @@
 textBuffer::textBuffer(int size)
 {
   bufferStart = NULL;
-  nextAdd = NULL;
+  nextAdd     = NULL;
   currentSize = spaceLeft = 0;
   if (size > 0) {
     // Insitute a minimum size
@@ -46,10 +46,10 @@ textBuffer::textBuffer(int size)
     }
 
     bufferStart = (char *)ats_malloc(size);
-    nextAdd = bufferStart;
+    nextAdd     = bufferStart;
     currentSize = size;
-    spaceLeft = size - 1; // Leave room for a terminator;
-    nextAdd[0] = '\0';
+    spaceLeft   = size - 1; // Leave room for a terminator;
+    nextAdd[0]  = '\0';
   }
 }
 
@@ -78,8 +78,8 @@ void
 textBuffer::reUse()
 {
   if (bufferStart != NULL) {
-    nextAdd = bufferStart;
-    spaceLeft = currentSize - 1;
+    nextAdd    = bufferStart;
+    spaceLeft  = currentSize - 1;
     nextAdd[0] = '\0';
   }
 }
@@ -124,7 +124,7 @@ int
 textBuffer::enlargeBuffer(unsigned N)
 {
   unsigned addedSize = 0;
-  unsigned newSize = (currentSize ? currentSize : 1) * 2;
+  unsigned newSize   = (currentSize ? currentSize : 1) * 2;
   char *newSpace;
 
   if (spaceLeft < N) {
@@ -136,7 +136,7 @@ textBuffer::enlargeBuffer(unsigned N)
 
     newSpace = (char *)ats_realloc(bufferStart, newSize);
     if (newSpace != NULL) {
-      nextAdd = newSpace + (unsigned)(nextAdd - bufferStart);
+      nextAdd     = newSpace + (unsigned)(nextAdd - bufferStart);
       bufferStart = newSpace;
       spaceLeft += addedSize;
       currentSize = newSize;
@@ -222,7 +222,7 @@ textBuffer::readFromFD(int fd)
     // Error on read
     return readSize;
   } else {
-    nextAdd = nextAdd + readSize;
+    nextAdd    = nextAdd + readSize;
     nextAdd[0] = '\0';
     spaceLeft -= readSize + 1;
     return readSize;

@@ -65,8 +65,8 @@ RecordsConfigOverrideFromEnvironment()
 static void
 initialize_record(const RecordElement *record, void *)
 {
-  RecInt tempInt = 0;
-  RecFloat tempFloat = 0.0;
+  RecInt tempInt         = 0;
+  RecFloat tempFloat     = 0.0;
   RecCounter tempCounter = 0;
 
   RecUpdateT update;
@@ -75,14 +75,14 @@ initialize_record(const RecordElement *record, void *)
   RecT type;
 
   // Less typing ...
-  type = record->type;
+  type   = record->type;
   update = record->update;
-  check = record->check;
+  check  = record->check;
   access = record->access;
 
   if (REC_TYPE_IS_CONFIG(type)) {
     const char *value = RecConfigOverrideFromEnvironment(record->name, record->value);
-    RecData data = {0};
+    RecData data      = {0};
     RecSourceT source = value == record->value ? REC_SOURCE_DEFAULT : REC_SOURCE_ENV;
 
     // If you specify a consistency check, you have to specify a regex expression. We abort here

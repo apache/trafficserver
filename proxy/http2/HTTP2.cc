@@ -31,35 +31,35 @@
 const char *const HTTP2_CONNECTION_PREFACE = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
 // Constant strings for pseudo headers
-const char *HTTP2_VALUE_SCHEME = ":scheme";
-const char *HTTP2_VALUE_METHOD = ":method";
+const char *HTTP2_VALUE_SCHEME    = ":scheme";
+const char *HTTP2_VALUE_METHOD    = ":method";
 const char *HTTP2_VALUE_AUTHORITY = ":authority";
-const char *HTTP2_VALUE_PATH = ":path";
-const char *HTTP2_VALUE_STATUS = ":status";
+const char *HTTP2_VALUE_PATH      = ":path";
+const char *HTTP2_VALUE_STATUS    = ":status";
 
-const unsigned HTTP2_LEN_SCHEME = countof(":scheme") - 1;
-const unsigned HTTP2_LEN_METHOD = countof(":method") - 1;
+const unsigned HTTP2_LEN_SCHEME    = countof(":scheme") - 1;
+const unsigned HTTP2_LEN_METHOD    = countof(":method") - 1;
 const unsigned HTTP2_LEN_AUTHORITY = countof(":authority") - 1;
-const unsigned HTTP2_LEN_PATH = countof(":path") - 1;
-const unsigned HTTP2_LEN_STATUS = countof(":status") - 1;
+const unsigned HTTP2_LEN_PATH      = countof(":path") - 1;
+const unsigned HTTP2_LEN_STATUS    = countof(":status") - 1;
 
 static size_t HTTP2_LEN_STATUS_VALUE_STR = 3;
 
 // Statistics
 RecRawStatBlock *http2_rsb;
-static char const *const HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME = "proxy.process.http2.current_client_sessions";
-static char const *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME = "proxy.process.http2.current_client_streams";
-static char const *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME = "proxy.process.http2.total_client_streams";
+static char const *const HTTP2_STAT_CURRENT_CLIENT_SESSION_NAME  = "proxy.process.http2.current_client_sessions";
+static char const *const HTTP2_STAT_CURRENT_CLIENT_STREAM_NAME   = "proxy.process.http2.current_client_streams";
+static char const *const HTTP2_STAT_TOTAL_CLIENT_STREAM_NAME     = "proxy.process.http2.total_client_streams";
 static char const *const HTTP2_STAT_TOTAL_TRANSACTIONS_TIME_NAME = "proxy.process.http2.total_transactions_time";
 static char const *const HTTP2_STAT_TOTAL_CLIENT_CONNECTION_NAME = "proxy.process.http2.total_client_connections";
-static char const *const HTTP2_STAT_CONNECTION_ERRORS_NAME = "proxy.process.http2.connection_errors";
-static char const *const HTTP2_STAT_STREAM_ERRORS_NAME = "proxy.process.http2.stream_errors";
-static char const *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME = "proxy.process.http2.session_die_default";
-static char const *const HTTP2_STAT_SESSION_DIE_OTHER_NAME = "proxy.process.http2.session_die_other";
-static char const *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME = "proxy.process.http2.session_die_active";
-static char const *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME = "proxy.process.http2.session_die_inactive";
-static char const *const HTTP2_STAT_SESSION_DIE_EOS_NAME = "proxy.process.http2.session_die_eos";
-static char const *const HTTP2_STAT_SESSION_DIE_ERROR_NAME = "proxy.process.http2.session_die_error";
+static char const *const HTTP2_STAT_CONNECTION_ERRORS_NAME       = "proxy.process.http2.connection_errors";
+static char const *const HTTP2_STAT_STREAM_ERRORS_NAME           = "proxy.process.http2.stream_errors";
+static char const *const HTTP2_STAT_SESSION_DIE_DEFAULT_NAME     = "proxy.process.http2.session_die_default";
+static char const *const HTTP2_STAT_SESSION_DIE_OTHER_NAME       = "proxy.process.http2.session_die_other";
+static char const *const HTTP2_STAT_SESSION_DIE_ACTIVE_NAME      = "proxy.process.http2.session_die_active";
+static char const *const HTTP2_STAT_SESSION_DIE_INACTIVE_NAME    = "proxy.process.http2.session_die_inactive";
+static char const *const HTTP2_STAT_SESSION_DIE_EOS_NAME         = "proxy.process.http2.session_die_eos";
+static char const *const HTTP2_STAT_SESSION_DIE_ERROR_NAME       = "proxy.process.http2.session_die_error";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -214,7 +214,7 @@ http2_parse_frame_header(IOVec iov, Http2FrameHeader &hdr)
   memcpy_and_advance(streamid.bytes, ptr);
 
   hdr.length = ntohl(length_and_type.value) >> 8;
-  hdr.type = ntohl(length_and_type.value) & 0xff;
+  hdr.type   = ntohl(length_and_type.value) & 0xff;
   streamid.bytes[0] &= 0x7f; // Clear the high reserved bit
   hdr.streamid = ntohl(streamid.value);
 
@@ -379,7 +379,7 @@ http2_parse_settings_parameter(IOVec iov, Http2SettingsParameter &param)
   memcpy_and_advance(pid.bytes, ptr);
   memcpy_and_advance(pval.bytes, ptr);
 
-  param.id = ntohs(pid.value);
+  param.id    = ntohs(pid.value);
   param.value = ntohl(pval.value);
 
   return true;
@@ -396,7 +396,7 @@ http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
   memcpy_and_advance(ec.bytes, ptr);
 
   goaway.last_streamid = ntohl(sid.value);
-  goaway.error_code = ntohl(ec.value);
+  goaway.error_code    = ntohl(ec.value);
   return true;
 }
 
@@ -445,8 +445,8 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 
     // Parse URL
     Arena arena;
-    size_t url_length = scheme_len + 3 + authority_len + path_len;
-    char *url = arena.str_alloc(url_length);
+    size_t url_length     = scheme_len + 3 + authority_len + path_len;
+    char *url             = arena.str_alloc(url_length);
     const char *url_start = url;
 
     memcpy(url, scheme, scheme_len);
@@ -538,9 +538,9 @@ http2_generate_h2_header_from_1_1(HTTPHdr *headers, HTTPHdr *h2_headers)
       }
 
       MIMEField *newfield;
-      name = field->name_get(&name_len);
+      name     = field->name_get(&name_len);
       newfield = h2_headers->field_create(name, name_len);
-      value = field->value_get(&value_len);
+      value    = field->value_get(&value_len);
       newfield->value_set(h2_headers->m_heap, h2_headers->m_mime, value, value_len);
       h2_headers->field_attach(newfield);
     }
@@ -572,7 +572,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   const char *value;
   int len;
   bool is_trailing_header = trailing_header;
-  int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len);
+  int64_t result          = hpack_decode_header_block(handle, hdr, buf_start, buf_len);
 
   if (result < 0) {
     if (result == HPACK_ERROR_COMPRESSION_ERROR) {
@@ -586,7 +586,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 
   MIMEFieldIter iter;
   unsigned int expected_pseudo_header_count = 4;
-  unsigned int pseudo_header_count = 0;
+  unsigned int pseudo_header_count          = 0;
 
   if (is_trailing_header) {
     expected_pseudo_header_count = 0;
@@ -630,7 +630,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 
   // turn on that we have a trailer header
   const char trailer_name[] = "trailer";
-  field = hdr->field_find(trailer_name, sizeof(trailer_name) - 1);
+  field                     = hdr->field_find(trailer_name, sizeof(trailer_name) - 1);
   if (field) {
     trailing_header = true;
   }
@@ -666,19 +666,19 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 }
 
 // Initialize this subsystem with librecords configs (for now)
-uint32_t Http2::max_concurrent_streams_in = 100;
-uint32_t Http2::min_concurrent_streams_in = 10;
-uint32_t Http2::max_active_streams_in = 0;
-bool Http2::throttling = false;
-uint32_t Http2::stream_priority_enabled = 0;
-uint32_t Http2::initial_window_size = 1048576;
-uint32_t Http2::max_frame_size = 16384;
-uint32_t Http2::header_table_size = 4096;
-uint32_t Http2::max_header_list_size = 4294967295;
-uint32_t Http2::max_request_header_size = 131072;
+uint32_t Http2::max_concurrent_streams_in  = 100;
+uint32_t Http2::min_concurrent_streams_in  = 10;
+uint32_t Http2::max_active_streams_in      = 0;
+bool Http2::throttling                     = false;
+uint32_t Http2::stream_priority_enabled    = 0;
+uint32_t Http2::initial_window_size        = 1048576;
+uint32_t Http2::max_frame_size             = 16384;
+uint32_t Http2::header_table_size          = 4096;
+uint32_t Http2::max_header_list_size       = 4294967295;
+uint32_t Http2::max_request_header_size    = 131072;
 uint32_t Http2::accept_no_activity_timeout = 120;
-uint32_t Http2::no_activity_timeout_in = 115;
-uint32_t Http2::active_timeout_in = 0;
+uint32_t Http2::no_activity_timeout_in     = 115;
+uint32_t Http2::active_timeout_in          = 0;
 
 void
 Http2::init()

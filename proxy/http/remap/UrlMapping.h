@@ -160,7 +160,7 @@ public:
   set(url_mapping *m)
   {
     deleteToURL();
-    _mapping = m;
+    _mapping  = m;
     _toURLPtr = m ? &(m->toUrl) : NULL;
   }
 
@@ -192,9 +192,9 @@ public:
   clear()
   {
     deleteToURL();
-    _mapping = NULL;
+    _mapping  = NULL;
     _toURLPtr = NULL;
-    _heap = NULL;
+    _heap     = NULL;
   }
 
 private:

@@ -34,7 +34,7 @@
 extern int num_of_cluster_threads;
 
 MachineList *machines_config = NULL;
-MachineList *cluster_config = NULL;
+MachineList *cluster_config  = NULL;
 
 ProxyMutex *the_cluster_config_mutex;
 
@@ -62,7 +62,7 @@ void
 create_this_cluster_machine()
 {
   the_cluster_config_mutex = new_ProxyMutex();
-  cluster_machine = new ClusterMachine;
+  cluster_machine          = new ClusterMachine;
 }
 
 ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
@@ -78,7 +78,7 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
     msg_proto_minor(0),
     clusterHandlers(0)
 {
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_MACHINES_ALLOCATED_STAT);
   if (!aip) {
@@ -148,7 +148,7 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
 ClusterHandler *
 ClusterMachine::pop_ClusterHandler(int no_rr)
 {
-  int find = 0;
+  int find    = 0;
   int64_t now = rr_count;
   if (no_rr == 0) {
     ink_atomic_increment(&rr_count, 1);
@@ -191,7 +191,7 @@ struct MachineTimeoutContinuation : public Continuation {
 void
 free_ClusterMachine(ClusterMachine *m)
 {
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex;
   // delay before the final free
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_MACHINES_FREED_STAT);
@@ -223,7 +223,7 @@ read_MachineList(const char *filename, int afd)
       if (n == -1 && ParseRules::is_digit(*line)) {
         n = atoi(line);
         if (n > 0) {
-          l = (MachineList *)ats_malloc(sizeof(MachineList) + (n - 1) * sizeof(MachineListElement));
+          l    = (MachineList *)ats_malloc(sizeof(MachineList) + (n - 1) * sizeof(MachineListElement));
           l->n = 0;
         } else {
           l = NULL;
@@ -234,7 +234,7 @@ read_MachineList(const char *filename, int afd)
         char *port = strchr(line, ':');
         if (!port)
           goto Lfail;
-        *port++ = 0;
+        *port++          = 0;
         l->machine[i].ip = inet_addr(line);
         if (-1 == (int)l->machine[i].ip) {
           if (afd == -1) {

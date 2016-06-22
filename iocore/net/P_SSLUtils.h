@@ -96,7 +96,7 @@ enum SSL_Stats {
   ssl_ocsp_unknown_cert_stat,
 
   ssl_cipher_stats_start = 100,
-  ssl_cipher_stats_end = 300,
+  ssl_cipher_stats_end   = 300,
 
   Ssl_Stat_Count
 };

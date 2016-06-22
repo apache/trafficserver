@@ -211,24 +211,24 @@ info_t cache_controls[] = {
   {NULL, "HTTP_CACHE_DIRECTIVE_CACHE_EXTENSION", -1},
 };
 
-state_t *start = NULL;
+state_t *start  = NULL;
 int state_count = 0;
 
-int *map = NULL;
-int *basetbl = NULL;
-int *nexttbl = NULL;
-int *checktbl = NULL;
+int *map               = NULL;
+int *basetbl           = NULL;
+int *nexttbl           = NULL;
+int *checktbl          = NULL;
 const char **accepttbl = NULL;
-char **prefixtbl = NULL;
+char **prefixtbl       = NULL;
 
 state_t *
 mkstate()
 {
   state_t *state;
 
-  state = (state_t *)malloc(sizeof(state_t));
-  state->num = state_count++;
-  state->value = NULL;
+  state              = (state_t *)malloc(sizeof(state_t));
+  state->num         = state_count++;
+  state->value       = NULL;
   state->transitions = NULL;
 
   return state;
@@ -239,10 +239,10 @@ mktransition()
 {
   transition_t *transition;
 
-  transition = (transition_t *)malloc(sizeof(transition_t));
+  transition        = (transition_t *)malloc(sizeof(transition_t));
   transition->value = 0;
   transition->state = NULL;
-  transition->next = NULL;
+  transition->next  = NULL;
 
   return transition;
 }
@@ -299,9 +299,9 @@ add_states(state_t *state, info_t *info, int pos)
       transitions = transitions->next;
 
     transitions->next = mktransition();
-    transitions = transitions->next;
+    transitions       = transitions->next;
   } else {
-    transitions = mktransition();
+    transitions        = mktransition();
     state->transitions = transitions;
   }
 
@@ -428,8 +428,8 @@ mktranstables(state_t *state)
     assert(checktbl[basetbl[state->num] + map[transitions->value]] == -1);
 
     checktbl[basetbl[state->num] + map[transitions->value]] = state->num;
-    nexttbl[basetbl[state->num] + map[transitions->value]] = transitions->state->num;
-    transitions = transitions->next;
+    nexttbl[basetbl[state->num] + map[transitions->value]]  = transitions->state->num;
+    transitions                                             = transitions->next;
   }
 
   transitions = state->transitions;
@@ -448,7 +448,7 @@ mktables(state_t *state, const char *defvalue, int useprefix)
 
   /* make the character map */
   map = (int *)malloc(sizeof(int) * 256);
-  for (i = 0; i < 256; i++)
+  for (i   = 0; i < 256; i++)
     map[i] = 0;
 
   char_count = mkmap(state);
@@ -458,7 +458,7 @@ mktables(state_t *state, const char *defvalue, int useprefix)
 
   /* make the accept state table */
   accepttbl = (const char **)malloc(sizeof(const char *) * state_count);
-  for (i = 0; i < state_count; i++)
+  for (i         = 0; i < state_count; i++)
     accepttbl[i] = NULL;
 
   mkaccept(state, defvalue);
@@ -475,7 +475,7 @@ mktables(state_t *state, const char *defvalue, int useprefix)
   /* make the prefix table */
   if (useprefix) {
     prefixtbl = (char **)malloc(sizeof(char *) * state_count);
-    for (i = 0; i < state_count; i++)
+    for (i         = 0; i < state_count; i++)
       prefixtbl[i] = NULL;
 
     mkprefix(state, prefix, 0);
@@ -492,8 +492,8 @@ mktables(state_t *state, const char *defvalue, int useprefix)
 
   /* make the state transition tables */
 
-  basetbl = (int *)malloc(sizeof(int) * state_count);
-  nexttbl = (int *)malloc(sizeof(int) * (state_count + char_count));
+  basetbl  = (int *)malloc(sizeof(int) * state_count);
+  nexttbl  = (int *)malloc(sizeof(int) * (state_count + char_count));
   checktbl = (int *)malloc(sizeof(int) * (state_count + char_count));
 
   for (i = 0; i < state_count; i++) {
@@ -501,7 +501,7 @@ mktables(state_t *state, const char *defvalue, int useprefix)
   }
 
   for (i = 0; i < (state_count + char_count); i++) {
-    nexttbl[i] = 0;
+    nexttbl[i]  = 0;
     checktbl[i] = -1;
   }
 
@@ -522,7 +522,7 @@ rundfa(const char *buf, int length)
   int ch, tmp;
 
   state = 0;
-  end = buf + length;
+  end   = buf + length;
 
   while (buf != end) {
     ch = map[(int)*buf++];
@@ -556,7 +556,7 @@ mkdfa(info_t *infos, int ninfos, int useprefix, int debug)
 
   start = mkstate();
 
-  for (i = 0; i < (ninfos - 1); i++)
+  for (i             = 0; i < (ninfos - 1); i++)
     infos[i].namelen = strlen(infos[i].name);
 
   for (i = 0; i < (ninfos - 1); i++)

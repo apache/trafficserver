@@ -123,7 +123,7 @@ private:
   {
     result = 0;
 #if TS_USE_EPOLL
-    nfds = 0;
+    nfds     = 0;
     epoll_fd = epoll_create(POLL_DESCRIPTOR_SIZE);
     memset(ePoll_Triggered_Events, 0, sizeof(ePoll_Triggered_Events));
     memset(pfd, 0, sizeof(pfd));

@@ -56,7 +56,7 @@ remap_plugin_info::~remap_plugin_info()
 remap_plugin_info *
 remap_plugin_info::find_by_path(char *_path)
 {
-  int _path_size = 0;
+  int _path_size        = 0;
   remap_plugin_info *pi = 0;
 
   if (likely(_path && (_path_size = strlen(_path)) > 0)) {
@@ -81,7 +81,7 @@ remap_plugin_info::add_to_list(remap_plugin_info *pi)
     while (p->next)
       p = p->next;
 
-    p->next = pi;
+    p->next  = pi;
     pi->next = NULL;
   }
 }

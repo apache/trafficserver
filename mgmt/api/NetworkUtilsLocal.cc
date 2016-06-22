@@ -57,7 +57,7 @@ preprocess_msg(int fd, void **req, size_t *reqlen)
   TSMgmtError ret;
   MgmtMarshallData msg;
 
-  *req = NULL;
+  *req    = NULL;
   *reqlen = 0;
 
   ret = recv_mgmt_message(fd, msg);
@@ -70,7 +70,7 @@ preprocess_msg(int fd, void **req, size_t *reqlen)
     return TS_ERR_NET_READ;
   }
 
-  *req = msg.ptr;
+  *req    = msg.ptr;
   *reqlen = msg.len;
   Debug("ts_main", "[preprocess_msg] read message length = %zd\n", msg.len);
   return TS_ERR_OKAY;

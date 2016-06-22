@@ -189,7 +189,7 @@ PollCont::pollEvent(int event, Event *e)
            poll_timeout, pollDescriptor->result);
 #elif TS_USE_KQUEUE
   struct timespec tv;
-  tv.tv_sec = poll_timeout / 1000;
+  tv.tv_sec  = poll_timeout / 1000;
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
   pollDescriptor->result =
     kevent(pollDescriptor->kqueue_fd, NULL, 0, pollDescriptor->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
@@ -198,9 +198,9 @@ PollCont::pollEvent(int event, Event *e)
 #elif TS_USE_PORT
   int retval;
   timespec_t ptimeout;
-  ptimeout.tv_sec = poll_timeout / 1000;
+  ptimeout.tv_sec  = poll_timeout / 1000;
   ptimeout.tv_nsec = 1000000 * (poll_timeout % 1000);
-  unsigned nget = 1;
+  unsigned nget    = 1;
   if ((retval = port_getn(pollDescriptor->port_fd, pollDescriptor->Port_Triggered_Events, POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) <
       0) {
     pollDescriptor->result = 0;
@@ -263,22 +263,22 @@ initialize_thread_for_net(EThread *thread)
   new ((ink_dummy_for_new *)get_NetHandler(thread)) NetHandler();
   new ((ink_dummy_for_new *)get_PollCont(thread)) PollCont(thread->mutex, get_NetHandler(thread));
   get_NetHandler(thread)->mutex = new_ProxyMutex();
-  PollCont *pc = get_PollCont(thread);
-  PollDescriptor *pd = pc->pollDescriptor;
+  PollCont *pc                  = get_PollCont(thread);
+  PollDescriptor *pd            = pc->pollDescriptor;
 
   thread->schedule_imm(get_NetHandler(thread));
 
 #ifndef INACTIVITY_TIMEOUT
   InactivityCop *inactivityCop = new InactivityCop(get_NetHandler(thread)->mutex);
-  int cop_freq = 1;
+  int cop_freq                 = 1;
 
   REC_ReadConfigInteger(cop_freq, "proxy.config.net.inactivity_check_frequency");
   thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
 #endif
 
   thread->signal_hook = net_signal_hook_function;
-  thread->ep = (EventIO *)ats_malloc(sizeof(EventIO));
-  thread->ep->type = EVENTIO_ASYNC_SIGNAL;
+  thread->ep          = (EventIO *)ats_malloc(sizeof(EventIO));
+  thread->ep->type    = EVENTIO_ASYNC_SIGNAL;
 #if HAVE_EVENTFD
   thread->ep->start(pd, thread->evfd, 0, EVENTIO_READ);
 #else
@@ -303,12 +303,12 @@ update_nethandler_config(const char *name, RecDataT data_type ATS_UNUSED, RecDat
   if (nh != NULL) {
     if (strcmp(name, "proxy.config.net.max_connections_in") == 0) {
       Debug("net_queue", "proxy.config.net.max_connections_in updated to %" PRId64, data.rec_int);
-      nh->max_connections_in = data.rec_int;
+      nh->max_connections_in          = data.rec_int;
       update_per_thread_configuration = true;
     }
     if (strcmp(name, "proxy.config.net.max_active_connections_in") == 0) {
       Debug("net_queue", "proxy.config.net.max_active_connections_in updated to %" PRId64, data.rec_int);
-      nh->max_connections_active_in = data.rec_int;
+      nh->max_connections_active_in   = data.rec_int;
       update_per_thread_configuration = true;
     }
     if (strcmp(name, "proxy.config.net.inactive_threashold_in") == 0) {
@@ -416,7 +416,7 @@ NetHandler::mainNetEvent(int event, Event *e)
   else
     poll_timeout = net_config_poll_timeout;
 
-  PollDescriptor *pd = get_PollDescriptor(trigger_event->ethread);
+  PollDescriptor *pd     = get_PollDescriptor(trigger_event->ethread);
   UnixNetVConnection *vc = NULL;
 #if TS_USE_EPOLL
   pd->result = epoll_wait(pd->epoll_fd, pd->ePoll_Triggered_Events, POLL_DESCRIPTOR_SIZE, poll_timeout);
@@ -424,16 +424,16 @@ NetHandler::mainNetEvent(int event, Event *e)
            pd->result);
 #elif TS_USE_KQUEUE
   struct timespec tv;
-  tv.tv_sec = poll_timeout / 1000;
+  tv.tv_sec  = poll_timeout / 1000;
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
   pd->result = kevent(pd->kqueue_fd, NULL, 0, pd->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
   NetDebug("iocore_net_main_poll", "[NetHandler::mainNetEvent] kevent(%d,%d), result=%d", pd->kqueue_fd, poll_timeout, pd->result);
 #elif TS_USE_PORT
   int retval;
   timespec_t ptimeout;
-  ptimeout.tv_sec = poll_timeout / 1000;
+  ptimeout.tv_sec  = poll_timeout / 1000;
   ptimeout.tv_nsec = 1000000 * (poll_timeout % 1000);
-  unsigned nget = 1;
+  unsigned nget    = 1;
   if ((retval = port_getn(pd->port_fd, pd->Port_Triggered_Events, POLL_DESCRIPTOR_SIZE, &nget, &ptimeout)) < 0) {
     pd->result = 0;
     switch (errno) {
@@ -579,12 +579,12 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
   ink_hrtime now = Thread::get_hrtime();
 
   // loop over the non-active connections and try to close them
-  UnixNetVConnection *vc = active_queue.head;
+  UnixNetVConnection *vc      = active_queue.head;
   UnixNetVConnection *vc_next = NULL;
-  int closed = 0;
-  int handle_event = 0;
-  int total_idle_time = 0;
-  int total_idle_count = 0;
+  int closed                  = 0;
+  int handle_event            = 0;
+  int total_idle_time         = 0;
+  int total_idle_count        = 0;
   for (; vc != NULL; vc = vc_next) {
     vc_next = vc->active_queue_link.next;
     if ((vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) ||
@@ -609,7 +609,7 @@ NetHandler::configure_per_thread()
   // figure out the number of threads and calculate the number of connections per thread
   int threads = eventProcessor.n_threads_for_type[ET_NET];
   threads += (ET_NET == SSLNetProcessor::ET_SSL) ? 0 : eventProcessor.n_threads_for_type[SSLNetProcessor::ET_SSL];
-  max_connections_per_thread_in = max_connections_in / threads;
+  max_connections_per_thread_in        = max_connections_in / threads;
   max_connections_active_per_thread_in = max_connections_active_in / threads;
   Debug("net_queue", "max_connections_per_thread_in updated to %d threads: %d", max_connections_per_thread_in, threads);
   Debug("net_queue", "max_connections_active_per_thread_in updated to %d threads: %d", max_connections_active_per_thread_in,
@@ -620,7 +620,7 @@ void
 NetHandler::manage_keep_alive_queue()
 {
   uint32_t total_connections_in = active_queue_size + keep_alive_queue_size;
-  ink_hrtime now = Thread::get_hrtime();
+  ink_hrtime now                = Thread::get_hrtime();
 
   Debug("net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
@@ -631,10 +631,10 @@ NetHandler::manage_keep_alive_queue()
 
   // loop over the non-active connections and try to close them
   UnixNetVConnection *vc_next = NULL;
-  int closed = 0;
-  int handle_event = 0;
-  int total_idle_time = 0;
-  int total_idle_count = 0;
+  int closed                  = 0;
+  int handle_event            = 0;
+  int total_idle_time         = 0;
+  int total_idle_count        = 0;
   for (UnixNetVConnection *vc = keep_alive_queue.head; vc != NULL; vc = vc_next) {
     vc_next = vc->keep_alive_queue_link.next;
     _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);

@@ -105,11 +105,11 @@ ink_hash_table_iterator_first(InkHashTable *ht_ptr, InkHashTableIteratorState *s
   Tcl_HashEntry *tcl_he_ptr;
   InkHashTableEntry *he_ptr;
 
-  tcl_ht_ptr = (Tcl_HashTable *)ht_ptr;
+  tcl_ht_ptr           = (Tcl_HashTable *)ht_ptr;
   tcl_search_state_ptr = (Tcl_HashSearch *)state_ptr;
 
   tcl_he_ptr = Tcl_FirstHashEntry(tcl_ht_ptr, tcl_search_state_ptr);
-  he_ptr = (InkHashTableEntry *)tcl_he_ptr;
+  he_ptr     = (InkHashTableEntry *)tcl_he_ptr;
 
   return (he_ptr);
 } /* End ink_hash_table_iterator_first */
@@ -136,7 +136,7 @@ ink_hash_table_iterator_next(InkHashTable *ht_ptr, InkHashTableIteratorState *st
   tcl_search_state_ptr = (Tcl_HashSearch *)state_ptr;
 
   tcl_he_ptr = Tcl_NextHashEntry(tcl_search_state_ptr);
-  he_ptr = (InkHashTableEntry *)tcl_he_ptr;
+  he_ptr     = (InkHashTableEntry *)tcl_he_ptr;
 
   return (he_ptr);
 } /* End ink_hash_table_iterator_next */

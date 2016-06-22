@@ -51,7 +51,7 @@ struct ATSHash : ATSHashBase {
   };
 
   virtual const void *get(void) const = 0;
-  virtual size_t size(void) const = 0;
+  virtual size_t size(void) const     = 0;
   virtual bool operator==(const ATSHash &) const;
 };
 

@@ -85,7 +85,7 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
   static char timebuf[64]; // NOTE: not MT safe
   static char gmtstr[16];
   static long last_timestamp = 0;
-  static char bad_time[] = "Bad timestamp";
+  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
@@ -113,10 +113,10 @@ LogUtils::timestamp_to_netscape_str(long timestamp)
 
     if (zone >= 0) {
       offset = zone / 60;
-      sign = '-';
+      sign   = '-';
     } else {
       offset = zone / -60;
-      sign = '+';
+      sign   = '+';
     }
     int glen = snprintf(gmtstr, 16, "%c%.2d%.2d", sign, offset / 60, offset % 60);
 
@@ -139,7 +139,7 @@ LogUtils::timestamp_to_date_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[] = "Bad timestamp";
+  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
@@ -171,7 +171,7 @@ LogUtils::timestamp_to_time_str(long timestamp)
 {
   static char timebuf[64]; // NOTE: not MT safe
   static long last_timestamp = 0;
-  static char bad_time[] = "Bad timestamp";
+  static char bad_time[]     = "Bad timestamp";
 
   // safety check
   if (timestamp < 0) {
@@ -304,8 +304,8 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
 
   // Count specials in the url, assuming that there won't be any.
   //
-  int count = 0;
-  char *p = url;
+  int count        = 0;
+  char *p          = url;
   char *in_url_end = url + len_in;
 
   while (p < in_url_end) {
@@ -351,7 +351,7 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
     new_url = (char *)arena->str_alloc(out_len + 1);
 
   char *from = url;
-  char *to = new_url;
+  char *to   = new_url;
 
   while (from < in_url_end) {
     unsigned char c = *from;
@@ -411,8 +411,8 @@ int
 LogUtils::timestamp_to_hex_str(unsigned ip, char *buf, size_t bufLen, size_t *numCharsPtr)
 {
   static const char *table = "0123456789abcdef@";
-  int retVal = 1;
-  int shift = 28;
+  int retVal               = 1;
+  int shift                = 28;
   if (buf && bufLen > 0) {
     if (bufLen > 8)
       bufLen = 8;
@@ -452,7 +452,7 @@ LogUtils::seconds_to_next_roll(time_t time_now, int rolling_offset, int rolling_
   struct tm lt;
   ink_localtime_r((const time_t *)&time_now, &lt);
   int sidl = lt.tm_sec + lt.tm_min * 60 + lt.tm_hour * 3600;
-  int tr = rolling_offset * 3600;
+  int tr   = rolling_offset * 3600;
   return ((tr >= sidl ? (tr - sidl) % rolling_interval : (86400 - (sidl - tr)) % rolling_interval));
 }
 
@@ -490,7 +490,7 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
     if (!(S_ISREG(stat_data.st_mode) || S_ISFIFO(stat_data.st_mode))) {
       ret_val = 1;
     } else if (!(stat_data.st_mode & S_IWUSR)) {
-      errno = EACCES;
+      errno   = EACCES;
       ret_val = -1;
     }
     if (size_bytes)
@@ -515,10 +515,10 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
       const char *slash = strrchr(full_filename, '/');
       if (slash) {
         size_t prefix_len = slash - full_filename + 1;
-        prefix = new char[prefix_len + 1];
+        prefix            = new char[prefix_len + 1];
         memcpy(prefix, full_filename, prefix_len);
         prefix[prefix_len] = 0;
-        dir = prefix;
+        dir                = prefix;
       } else {
         dir = (char *)"."; // full_filename has no prefix, use .
       }

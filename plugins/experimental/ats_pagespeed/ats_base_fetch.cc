@@ -131,8 +131,8 @@ AtsBaseFetch::ForwardData(const StringPiece &sp, bool reenable, bool last)
   Lock();
   if (references_ == 2) {
     while (to_write > 0) {
-      downstream_blkp = TSIOBufferStart(downstream_buffer_);
-      downstream_buffer = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
+      downstream_blkp       = TSIOBufferStart(downstream_buffer_);
+      downstream_buffer     = TSIOBufferBlockWriteStart(downstream_blkp, &downstream_length);
       int64_t bytes_written = to_write > downstream_length ? downstream_length : to_write;
       memcpy(downstream_buffer, sp.data() + (sp.size() - to_write), bytes_written);
       to_write -= bytes_written;
@@ -164,7 +164,7 @@ AtsBaseFetch::HandleDone(bool success)
     done_called_ = true;
 
     int status_code = response_headers()->status_code();
-    bool status_ok = (status_code != 0) && (status_code < 400);
+    bool status_ok  = (status_code != 0) && (status_code < 400);
     if (status_code == CacheUrlAsyncFetcher::kNotInCacheStatus) {
       TSDebug("ats-speed", "ipro lookup base fetch -> not found in cache");
       ctx_->record_in_place = true;
@@ -180,8 +180,8 @@ AtsBaseFetch::HandleDone(bool success)
       return;
     }
     ctx_->serve_in_place = true;
-    TransformCtx *ctx = ctx_;
-    TSHttpTxn txn = ctx_->txn;
+    TransformCtx *ctx    = ctx_;
+    TSHttpTxn txn        = ctx_->txn;
     // TODO(oschaaf): deduplicate with code that hooks the resource intercept
     TSHttpTxnServerRespNoStoreSet(txn, 1);
 
@@ -195,9 +195,9 @@ AtsBaseFetch::HandleDone(bool success)
       return;
     }
 
-    TSCont interceptCont = TSContCreate((int (*)(tsapi_cont *, TSEvent, void *))ipro_callback_, TSMutexCreate());
-    InterceptCtx *intercept_ctx = new InterceptCtx();
-    intercept_ctx->request_ctx = ctx;
+    TSCont interceptCont           = TSContCreate((int (*)(tsapi_cont *, TSEvent, void *))ipro_callback_, TSMutexCreate());
+    InterceptCtx *intercept_ctx    = new InterceptCtx();
+    intercept_ctx->request_ctx     = ctx;
     intercept_ctx->request_headers = new RequestHeaders();
     intercept_ctx->response->append(buffer_);
     copy_request_headers_to_psol(reqp, req_hdr_loc, intercept_ctx->request_headers);
@@ -211,7 +211,7 @@ AtsBaseFetch::HandleDone(bool success)
     // TODO(oschaaf): I don't think we need to lock here, but double check that
     // to make sure.
     ctx_->base_fetch = NULL;
-    ctx_ = NULL;
+    ctx_             = NULL;
     DecrefAndDeleteIfUnreferenced();
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
     return;

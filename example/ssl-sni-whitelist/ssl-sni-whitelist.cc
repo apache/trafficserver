@@ -72,9 +72,9 @@ Load_Configuration()
 int
 CB_servername_whitelist(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
-  TSVConn ssl_vc = reinterpret_cast<TSVConn>(edata);
+  TSVConn ssl_vc         = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj = TSVConnSSLConnectionGet(ssl_vc);
-  SSL *ssl = reinterpret_cast<SSL *>(sslobj);
+  SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
   const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
   bool do_blind_tunnel = true;
@@ -107,12 +107,12 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_sni = 0; // sni callback continuation
+  TSCont cb_sni                        = 0; // sni callback continuation
   static const struct option longopt[] = {{const_cast<char *>("config"), required_argument, NULL, 'c'},
                                           {NULL, no_argument, NULL, '\0'}};
 
-  info.plugin_name = const_cast<char *>("SSL SNI whitelist");
-  info.vendor_name = const_cast<char *>("Network Geographics");
+  info.plugin_name   = const_cast<char *>("SSL SNI whitelist");
+  info.vendor_name   = const_cast<char *>("Network Geographics");
   info.support_email = const_cast<char *>("shinrich@network-geographics.com");
 
   int opt = 0;
@@ -127,7 +127,7 @@ TSPluginInit(int argc, const char *argv[])
   }
   if (ConfigPath.length() == 0) {
     static char const *const DEFAULT_CONFIG_PATH = "ssl_sni_whitelist.config";
-    ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
+    ConfigPath                                   = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
     TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }
 

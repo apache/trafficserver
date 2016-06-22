@@ -50,7 +50,7 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
     ERROR_LOG("[%s] Tag has no [%.*s] attribute", __FUNCTION__, attr.size(), attr.data());
     return false;
   }
-  curr_pos = attr_start + attr.size();
+  curr_pos          = attr_start + attr.size();
   bool equals_found = false;
   for (; curr_pos < end_pos; ++curr_pos) {
     if (data[curr_pos] == ' ') {
@@ -72,11 +72,11 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
     return false;
   }
   bool in_quoted_part = false;
-  bool quoted = false;
+  bool quoted         = false;
   size_t i;
   for (i = curr_pos; i < end_pos; ++i) {
     if (data[i] == '"') {
-      quoted = true;
+      quoted         = true;
       in_quoted_part = !in_quoted_part;
     } else if (data[i] == ' ') {
       if (!in_quoted_part) {
@@ -99,9 +99,9 @@ Utils::getAttribute(const string &data, const string &attr, size_t curr_pos, siz
       return false;
     }
   }
-  attr_info.name = data_start_ptr + attr_start;
-  attr_info.name_len = attr.size();
-  attr_info.value = data_start_ptr + curr_pos;
+  attr_info.name      = data_start_ptr + attr_start;
+  attr_info.name_len  = attr.size();
+  attr_info.value     = data_start_ptr + curr_pos;
   attr_info.value_len = i - curr_pos;
   if (quoted) {
     ++attr_info.value;
@@ -149,10 +149,10 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
   }
   Attribute attr;
   bool inside_quotes = false, end_of_attribute;
-  bool escape_on = false;
+  bool escape_on     = false;
   for (i = 0; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<unsigned int>(data[i])])); ++i)
     ;
-  attr.name = data + i;
+  attr.name  = data + i;
   attr.value = 0;
   for (; i <= data_len; ++i) {
     end_of_attribute = false;
@@ -180,15 +180,15 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
       }     // else ignore variable with unterminated quotes
       for (; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<unsigned int>(data[i])])); ++i)
         ;
-      attr.name = data + i;
-      attr.value = 0;
+      attr.name     = data + i;
+      attr.value    = 0;
       inside_quotes = false;
     } else if (data[i] == '"') {
       if (!escape_on) {
         inside_quotes = !inside_quotes;
       }
     } else if ((data[i] == '=') && !attr.value && !inside_quotes) {
-      attr.value = data + i + 1;
+      attr.value    = data + i + 1;
       attr.name_len = data + i - attr.name;
     }
     escape_on = (data[i] == '\\') ? true : false;

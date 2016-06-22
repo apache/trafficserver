@@ -144,9 +144,9 @@ convert_tm(const struct tm *tp)
   int month;
   int mday;
 
-  year = tp->tm_year;
+  year  = tp->tm_year;
   month = tp->tm_mon;
-  mday = tp->tm_mday;
+  mday  = tp->tm_mday;
 
   /* what should we do? */
   if ((year < 70) || (year > 137))

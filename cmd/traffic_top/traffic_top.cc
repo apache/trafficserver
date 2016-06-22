@@ -59,13 +59,13 @@ string response;
 
 namespace colorPair
 {
-const short red = 1;
+const short red    = 1;
 const short yellow = 2;
-const short green = 3;
-const short blue = 4;
+const short green  = 3;
+const short blue   = 4;
 //  const short black = 5;
-const short grey = 6;
-const short cyan = 7;
+const short grey   = 6;
+const short cyan   = 7;
 const short border = 8;
 };
 
@@ -74,25 +74,25 @@ static void
 prettyPrint(const int x, const int y, const double number, const int type)
 {
   char buffer[32];
-  char exp = ' ';
+  char exp         = ' ';
   double my_number = number;
   short color;
   if (number > 1000000000000LL) {
     my_number = number / 1000000000000LL;
-    exp = 'T';
-    color = colorPair::red;
+    exp       = 'T';
+    color     = colorPair::red;
   } else if (number > 1000000000) {
     my_number = number / 1000000000;
-    exp = 'G';
-    color = colorPair::red;
+    exp       = 'G';
+    color     = colorPair::red;
   } else if (number > 1000000) {
     my_number = number / 1000000;
-    exp = 'M';
-    color = colorPair::yellow;
+    exp       = 'M';
+    color     = colorPair::yellow;
   } else if (number > 1000) {
     my_number = number / 1000;
-    exp = 'K';
-    color = colorPair::cyan;
+    exp       = 'K';
+    color     = colorPair::cyan;
   } else if (my_number <= .09) {
     color = colorPair::grey;
   } else {
@@ -220,7 +220,7 @@ help(const string &host, const string &version)
 
   while (1) {
     clear();
-    time_t now = time(NULL);
+    time_t now       = time(NULL);
     struct tm *nowtm = localtime(&now);
     char timeBuf[32];
     strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);
@@ -385,7 +385,7 @@ int
 main(int argc, char **argv)
 {
   int sleep_time = 6000;
-  bool absolute = false;
+  bool absolute  = false;
   int opt;
   while ((opt = getopt(argc, argv, "s:")) != -1) {
     switch (opt) {
@@ -428,7 +428,7 @@ main(int argc, char **argv)
     MAIN_PAGE,
     RESPONSE_PAGE,
   };
-  Page page = MAIN_PAGE;
+  Page page       = MAIN_PAGE;
   string page_alt = "(r)esponse";
 
   while (1) {
@@ -436,7 +436,7 @@ main(int argc, char **argv)
     attron(A_BOLD);
 
     string version;
-    time_t now = time(NULL);
+    time_t now       = time(NULL);
     struct tm *nowtm = localtime(&now);
     char timeBuf[32];
     strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", nowtm);
@@ -464,11 +464,11 @@ main(int argc, char **argv)
     case 'q':
       goto quit;
     case 'm':
-      page = MAIN_PAGE;
+      page     = MAIN_PAGE;
       page_alt = "(r)esponse";
       break;
     case 'r':
-      page = RESPONSE_PAGE;
+      page     = RESPONSE_PAGE;
       page_alt = "(m)ain";
       break;
     case 'a':

@@ -65,8 +65,8 @@ REGRESSION_TEST(PriorityQueue_1)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   TestBox box(t, pstatus);
   box = REGRESSION_TEST_PASSED;
 
-  PQ *pq = new PQ();
-  N *a = new N(6, "A");
+  PQ *pq         = new PQ();
+  N *a           = new N(6, "A");
   Entry *entry_a = new Entry(a);
 
   pq->push(entry_a);

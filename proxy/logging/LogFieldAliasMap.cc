@@ -68,16 +68,16 @@ LogFieldAliasTable::init(size_t numPairs, ...)
   va_start(ap, numPairs);
 
   m_entries = m_max - m_min + 1;
-  m_table = new LogFieldAliasTableEntry[m_entries];
+  m_table   = new LogFieldAliasTableEntry[m_entries];
 
   for (n = 0; n < numPairs; n++) {
     IntType val = va_arg(ap, int);
-    size_t i = val - m_min;
-    name = va_arg(ap, char *);
+    size_t i    = val - m_min;
+    name        = va_arg(ap, char *);
 
-    m_table[i].name = ats_strdup(name);
+    m_table[i].name   = ats_strdup(name);
     m_table[i].length = strlen(name);
-    m_table[i].valid = true;
+    m_table[i].valid  = true;
   }
 
   va_end(ap);

@@ -148,73 +148,73 @@ url_init()
 
     hdrtoken_init();
 
-    URL_SCHEME_FILE = hdrtoken_string_to_wks("file");
-    URL_SCHEME_FTP = hdrtoken_string_to_wks("ftp");
-    URL_SCHEME_GOPHER = hdrtoken_string_to_wks("gopher");
-    URL_SCHEME_HTTP = hdrtoken_string_to_wks("http");
-    URL_SCHEME_HTTPS = hdrtoken_string_to_wks("https");
-    URL_SCHEME_WSS = hdrtoken_string_to_wks("wss");
-    URL_SCHEME_WS = hdrtoken_string_to_wks("ws");
-    URL_SCHEME_MAILTO = hdrtoken_string_to_wks("mailto");
-    URL_SCHEME_NEWS = hdrtoken_string_to_wks("news");
-    URL_SCHEME_NNTP = hdrtoken_string_to_wks("nntp");
+    URL_SCHEME_FILE     = hdrtoken_string_to_wks("file");
+    URL_SCHEME_FTP      = hdrtoken_string_to_wks("ftp");
+    URL_SCHEME_GOPHER   = hdrtoken_string_to_wks("gopher");
+    URL_SCHEME_HTTP     = hdrtoken_string_to_wks("http");
+    URL_SCHEME_HTTPS    = hdrtoken_string_to_wks("https");
+    URL_SCHEME_WSS      = hdrtoken_string_to_wks("wss");
+    URL_SCHEME_WS       = hdrtoken_string_to_wks("ws");
+    URL_SCHEME_MAILTO   = hdrtoken_string_to_wks("mailto");
+    URL_SCHEME_NEWS     = hdrtoken_string_to_wks("news");
+    URL_SCHEME_NNTP     = hdrtoken_string_to_wks("nntp");
     URL_SCHEME_PROSPERO = hdrtoken_string_to_wks("prospero");
-    URL_SCHEME_TELNET = hdrtoken_string_to_wks("telnet");
-    URL_SCHEME_TUNNEL = hdrtoken_string_to_wks("tunnel");
-    URL_SCHEME_WAIS = hdrtoken_string_to_wks("wais");
-    URL_SCHEME_PNM = hdrtoken_string_to_wks("pnm");
-    URL_SCHEME_RTSP = hdrtoken_string_to_wks("rtsp");
-    URL_SCHEME_RTSPU = hdrtoken_string_to_wks("rtspu");
-    URL_SCHEME_MMS = hdrtoken_string_to_wks("mms");
-    URL_SCHEME_MMSU = hdrtoken_string_to_wks("mmsu");
-    URL_SCHEME_MMST = hdrtoken_string_to_wks("mmst");
+    URL_SCHEME_TELNET   = hdrtoken_string_to_wks("telnet");
+    URL_SCHEME_TUNNEL   = hdrtoken_string_to_wks("tunnel");
+    URL_SCHEME_WAIS     = hdrtoken_string_to_wks("wais");
+    URL_SCHEME_PNM      = hdrtoken_string_to_wks("pnm");
+    URL_SCHEME_RTSP     = hdrtoken_string_to_wks("rtsp");
+    URL_SCHEME_RTSPU    = hdrtoken_string_to_wks("rtspu");
+    URL_SCHEME_MMS      = hdrtoken_string_to_wks("mms");
+    URL_SCHEME_MMSU     = hdrtoken_string_to_wks("mmsu");
+    URL_SCHEME_MMST     = hdrtoken_string_to_wks("mmst");
 
     ink_assert(URL_SCHEME_FILE && URL_SCHEME_FTP && URL_SCHEME_GOPHER && URL_SCHEME_HTTP && URL_SCHEME_HTTPS && URL_SCHEME_WS &&
                URL_SCHEME_WSS && URL_SCHEME_MAILTO && URL_SCHEME_NEWS && URL_SCHEME_NNTP && URL_SCHEME_PROSPERO &&
                URL_SCHEME_TELNET && URL_SCHEME_TUNNEL && URL_SCHEME_WAIS && URL_SCHEME_PNM && URL_SCHEME_RTSP && URL_SCHEME_RTSPU &&
                URL_SCHEME_MMS && URL_SCHEME_MMSU && URL_SCHEME_MMST);
 
-    URL_WKSIDX_FILE = hdrtoken_wks_to_index(URL_SCHEME_FILE);
-    URL_WKSIDX_FTP = hdrtoken_wks_to_index(URL_SCHEME_FTP);
-    URL_WKSIDX_GOPHER = hdrtoken_wks_to_index(URL_SCHEME_GOPHER);
-    URL_WKSIDX_HTTP = hdrtoken_wks_to_index(URL_SCHEME_HTTP);
-    URL_WKSIDX_HTTPS = hdrtoken_wks_to_index(URL_SCHEME_HTTPS);
-    URL_WKSIDX_WS = hdrtoken_wks_to_index(URL_SCHEME_WS);
-    URL_WKSIDX_WSS = hdrtoken_wks_to_index(URL_SCHEME_WSS);
-    URL_WKSIDX_MAILTO = hdrtoken_wks_to_index(URL_SCHEME_MAILTO);
-    URL_WKSIDX_NEWS = hdrtoken_wks_to_index(URL_SCHEME_NEWS);
-    URL_WKSIDX_NNTP = hdrtoken_wks_to_index(URL_SCHEME_NNTP);
+    URL_WKSIDX_FILE     = hdrtoken_wks_to_index(URL_SCHEME_FILE);
+    URL_WKSIDX_FTP      = hdrtoken_wks_to_index(URL_SCHEME_FTP);
+    URL_WKSIDX_GOPHER   = hdrtoken_wks_to_index(URL_SCHEME_GOPHER);
+    URL_WKSIDX_HTTP     = hdrtoken_wks_to_index(URL_SCHEME_HTTP);
+    URL_WKSIDX_HTTPS    = hdrtoken_wks_to_index(URL_SCHEME_HTTPS);
+    URL_WKSIDX_WS       = hdrtoken_wks_to_index(URL_SCHEME_WS);
+    URL_WKSIDX_WSS      = hdrtoken_wks_to_index(URL_SCHEME_WSS);
+    URL_WKSIDX_MAILTO   = hdrtoken_wks_to_index(URL_SCHEME_MAILTO);
+    URL_WKSIDX_NEWS     = hdrtoken_wks_to_index(URL_SCHEME_NEWS);
+    URL_WKSIDX_NNTP     = hdrtoken_wks_to_index(URL_SCHEME_NNTP);
     URL_WKSIDX_PROSPERO = hdrtoken_wks_to_index(URL_SCHEME_PROSPERO);
-    URL_WKSIDX_TELNET = hdrtoken_wks_to_index(URL_SCHEME_TELNET);
-    URL_WKSIDX_TUNNEL = hdrtoken_wks_to_index(URL_SCHEME_TUNNEL);
-    URL_WKSIDX_WAIS = hdrtoken_wks_to_index(URL_SCHEME_WAIS);
-    URL_WKSIDX_PNM = hdrtoken_wks_to_index(URL_SCHEME_PNM);
-    URL_WKSIDX_RTSP = hdrtoken_wks_to_index(URL_SCHEME_RTSP);
-    URL_WKSIDX_RTSPU = hdrtoken_wks_to_index(URL_SCHEME_RTSPU);
-    URL_WKSIDX_MMS = hdrtoken_wks_to_index(URL_SCHEME_MMS);
-    URL_WKSIDX_MMSU = hdrtoken_wks_to_index(URL_SCHEME_MMSU);
-    URL_WKSIDX_MMST = hdrtoken_wks_to_index(URL_SCHEME_MMST);
+    URL_WKSIDX_TELNET   = hdrtoken_wks_to_index(URL_SCHEME_TELNET);
+    URL_WKSIDX_TUNNEL   = hdrtoken_wks_to_index(URL_SCHEME_TUNNEL);
+    URL_WKSIDX_WAIS     = hdrtoken_wks_to_index(URL_SCHEME_WAIS);
+    URL_WKSIDX_PNM      = hdrtoken_wks_to_index(URL_SCHEME_PNM);
+    URL_WKSIDX_RTSP     = hdrtoken_wks_to_index(URL_SCHEME_RTSP);
+    URL_WKSIDX_RTSPU    = hdrtoken_wks_to_index(URL_SCHEME_RTSPU);
+    URL_WKSIDX_MMS      = hdrtoken_wks_to_index(URL_SCHEME_MMS);
+    URL_WKSIDX_MMSU     = hdrtoken_wks_to_index(URL_SCHEME_MMSU);
+    URL_WKSIDX_MMST     = hdrtoken_wks_to_index(URL_SCHEME_MMST);
 
-    URL_LEN_FILE = hdrtoken_wks_to_length(URL_SCHEME_FILE);
-    URL_LEN_FTP = hdrtoken_wks_to_length(URL_SCHEME_FTP);
-    URL_LEN_GOPHER = hdrtoken_wks_to_length(URL_SCHEME_GOPHER);
-    URL_LEN_HTTP = hdrtoken_wks_to_length(URL_SCHEME_HTTP);
-    URL_LEN_HTTPS = hdrtoken_wks_to_length(URL_SCHEME_HTTPS);
-    URL_LEN_WS = hdrtoken_wks_to_length(URL_SCHEME_WS);
-    URL_LEN_WSS = hdrtoken_wks_to_length(URL_SCHEME_WSS);
-    URL_LEN_MAILTO = hdrtoken_wks_to_length(URL_SCHEME_MAILTO);
-    URL_LEN_NEWS = hdrtoken_wks_to_length(URL_SCHEME_NEWS);
-    URL_LEN_NNTP = hdrtoken_wks_to_length(URL_SCHEME_NNTP);
+    URL_LEN_FILE     = hdrtoken_wks_to_length(URL_SCHEME_FILE);
+    URL_LEN_FTP      = hdrtoken_wks_to_length(URL_SCHEME_FTP);
+    URL_LEN_GOPHER   = hdrtoken_wks_to_length(URL_SCHEME_GOPHER);
+    URL_LEN_HTTP     = hdrtoken_wks_to_length(URL_SCHEME_HTTP);
+    URL_LEN_HTTPS    = hdrtoken_wks_to_length(URL_SCHEME_HTTPS);
+    URL_LEN_WS       = hdrtoken_wks_to_length(URL_SCHEME_WS);
+    URL_LEN_WSS      = hdrtoken_wks_to_length(URL_SCHEME_WSS);
+    URL_LEN_MAILTO   = hdrtoken_wks_to_length(URL_SCHEME_MAILTO);
+    URL_LEN_NEWS     = hdrtoken_wks_to_length(URL_SCHEME_NEWS);
+    URL_LEN_NNTP     = hdrtoken_wks_to_length(URL_SCHEME_NNTP);
     URL_LEN_PROSPERO = hdrtoken_wks_to_length(URL_SCHEME_PROSPERO);
-    URL_LEN_TELNET = hdrtoken_wks_to_length(URL_SCHEME_TELNET);
-    URL_LEN_TUNNEL = hdrtoken_wks_to_length(URL_SCHEME_TUNNEL);
-    URL_LEN_WAIS = hdrtoken_wks_to_length(URL_SCHEME_WAIS);
-    URL_LEN_PNM = hdrtoken_wks_to_length(URL_SCHEME_PNM);
-    URL_LEN_RTSP = hdrtoken_wks_to_length(URL_SCHEME_RTSP);
-    URL_LEN_RTSPU = hdrtoken_wks_to_length(URL_SCHEME_RTSPU);
-    URL_LEN_MMS = hdrtoken_wks_to_length(URL_SCHEME_MMS);
-    URL_LEN_MMSU = hdrtoken_wks_to_length(URL_SCHEME_MMSU);
-    URL_LEN_MMST = hdrtoken_wks_to_length(URL_SCHEME_MMST);
+    URL_LEN_TELNET   = hdrtoken_wks_to_length(URL_SCHEME_TELNET);
+    URL_LEN_TUNNEL   = hdrtoken_wks_to_length(URL_SCHEME_TUNNEL);
+    URL_LEN_WAIS     = hdrtoken_wks_to_length(URL_SCHEME_WAIS);
+    URL_LEN_PNM      = hdrtoken_wks_to_length(URL_SCHEME_PNM);
+    URL_LEN_RTSP     = hdrtoken_wks_to_length(URL_SCHEME_RTSP);
+    URL_LEN_RTSPU    = hdrtoken_wks_to_length(URL_SCHEME_RTSPU);
+    URL_LEN_MMS      = hdrtoken_wks_to_length(URL_SCHEME_MMS);
+    URL_LEN_MMSU     = hdrtoken_wks_to_length(URL_SCHEME_MMSU);
+    URL_LEN_MMST     = hdrtoken_wks_to_length(URL_SCHEME_MMST);
 
     ink_assert(URLHashContext::OBJ_SIZE >= sizeof(MD5Context));
     ink_assert(URLHashContext::OBJ_SIZE >= sizeof(MMHContext));
@@ -237,7 +237,7 @@ url_create(HdrHeap *heap)
 
   url = (URLImpl *)heap->allocate_obj(sizeof(URLImpl), HDR_HEAP_OBJ_URL);
   obj_clear_data((HdrHeapObjImpl *)url);
-  url->m_url_type = URL_TYPE_NONE;
+  url->m_url_type       = URL_TYPE_NONE;
   url->m_scheme_wks_idx = -1;
   url_clear_string_ref(url);
   return url;
@@ -250,7 +250,7 @@ void
 url_clear(URLImpl *url_impl)
 {
   obj_clear_data((HdrHeapObjImpl *)url_impl);
-  url_impl->m_url_type = URL_TYPE_NONE;
+  url_impl->m_url_type       = URL_TYPE_NONE;
   url_impl->m_scheme_wks_idx = -1;
 }
 
@@ -284,20 +284,20 @@ url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, 
 void
 url_nuke_proxy_stuff(URLImpl *d_url)
 {
-  d_url->m_len_scheme = 0;
-  d_url->m_len_user = 0;
+  d_url->m_len_scheme   = 0;
+  d_url->m_len_user     = 0;
   d_url->m_len_password = 0;
-  d_url->m_len_host = 0;
-  d_url->m_len_port = 0;
+  d_url->m_len_host     = 0;
+  d_url->m_len_port     = 0;
 
-  d_url->m_ptr_scheme = NULL;
-  d_url->m_ptr_user = NULL;
+  d_url->m_ptr_scheme   = NULL;
+  d_url->m_ptr_user     = NULL;
   d_url->m_ptr_password = NULL;
-  d_url->m_ptr_host = NULL;
-  d_url->m_ptr_port = NULL;
+  d_url->m_ptr_host     = NULL;
+  d_url->m_ptr_port     = NULL;
 
   d_url->m_scheme_wks_idx = -1;
-  d_url->m_port = 0;
+  d_url->m_port           = 0;
 }
 
 /*-------------------------------------------------------------------------
@@ -313,18 +313,18 @@ url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, Hdr
 {
   url_nuke_proxy_stuff(d_url);
 
-  d_url->m_ptr_path = s_url->m_ptr_path;
-  d_url->m_ptr_params = s_url->m_ptr_params;
-  d_url->m_ptr_query = s_url->m_ptr_query;
+  d_url->m_ptr_path     = s_url->m_ptr_path;
+  d_url->m_ptr_params   = s_url->m_ptr_params;
+  d_url->m_ptr_query    = s_url->m_ptr_query;
   d_url->m_ptr_fragment = s_url->m_ptr_fragment;
   url_clear_string_ref(d_url);
 
-  d_url->m_len_path = s_url->m_len_path;
-  d_url->m_len_params = s_url->m_len_params;
-  d_url->m_len_query = s_url->m_len_query;
+  d_url->m_len_path     = s_url->m_len_path;
+  d_url->m_len_params   = s_url->m_len_params;
+  d_url->m_len_query    = s_url->m_len_query;
   d_url->m_len_fragment = s_url->m_len_fragment;
 
-  d_url->m_url_type = s_url->m_url_type;
+  d_url->m_url_type  = s_url->m_url_type;
   d_url->m_type_code = s_url->m_type_code;
 
   if (inherit_strs && (s_heap != d_heap))
@@ -603,7 +603,7 @@ url_clear_string_ref(URLImpl *url)
   if (url->m_ptr_printed_string) {
     url->m_len_printed_string = 0;
     url->m_ptr_printed_string = NULL;
-    url->m_clean = true;
+    url->m_clean              = true;
   }
   return;
 }
@@ -621,7 +621,7 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
   } else { // either not clean or never printed
     int len = url_length_get(url);
     char *buf;
-    int index = 0;
+    int index  = 0;
     int offset = 0;
 
     /* stuff alloc'd here gets gc'd on HdrHeap::destroy() */
@@ -632,7 +632,7 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
     if (length) {
       *length = len;
     }
-    url->m_clean = true; // reset since we have url_print()'ed again
+    url->m_clean              = true; // reset since we have url_print()'ed again
     url->m_len_printed_string = len;
     url->m_ptr_printed_string = buf;
     return buf;
@@ -645,7 +645,7 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
   int len = url_length_get(url);
   char *buf;
   char *buf2;
-  int index = 0;
+  int index  = 0;
   int offset = 0;
 
   buf = arena ? arena->str_alloc(len) : (char *)ats_malloc(len + 1);
@@ -657,8 +657,8 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
   if (heap) {
     buf2 = heap->allocate_str(len + 1);
     memcpy(buf2, buf, len);
-    buf2[len] = '\0';
-    url->m_clean = true; // reset since we have url_print()'ed again
+    buf2[len]                 = '\0';
+    url->m_clean              = true; // reset since we have url_print()'ed again
     url->m_len_printed_string = len;
     url->m_ptr_printed_string = buf2;
   }
@@ -675,10 +675,10 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
 char *
 url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
 {
-  int len = url_length_get(url);
-  int index = 0;
+  int len    = url_length_get(url);
+  int index  = 0;
   int offset = 0;
-  char *buf = 0;
+  char *buf  = 0;
 
   if (dstbuf && dstbuf_size > 0) {
     buf = dstbuf;
@@ -702,10 +702,10 @@ url_scheme_get(URLImpl *url, int *length)
   const char *str;
 
   if (url->m_scheme_wks_idx >= 0) {
-    str = hdrtoken_index_to_wks(url->m_scheme_wks_idx);
+    str     = hdrtoken_index_to_wks(url->m_scheme_wks_idx);
     *length = hdrtoken_index_to_length(url->m_scheme_wks_idx);
   } else {
-    str = url->m_ptr_scheme;
+    str     = url->m_ptr_scheme;
     *length = url->m_len_scheme;
   }
   return str;
@@ -958,7 +958,7 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
   int min_len = (int)(str_len < buf_len ? str_len : buf_len);
 
   first_pct = ink_memcpy_until_char(buf, (char *)str, min_len, '%');
-  copy_len = (int)(first_pct - str);
+  copy_len  = (int)(first_pct - str);
   str += copy_len;
   buf += copy_len;
   if (copy_len == min_len)
@@ -981,7 +981,7 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
         state = 2;
       } else {
         *buf++ = str[-1];
-        state = 0;
+        state  = 0;
       }
       break;
     case 2:
@@ -1004,12 +1004,12 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
         state = 0;
       } else {
         *buf++ = str[-2];
-        state = 3;
+        state  = 3;
       }
       break;
     case 3:
       *buf++ = str[-1];
-      state = 0;
+      state  = 0;
       break;
     }
   }
@@ -1038,7 +1038,7 @@ unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e,
         state = 2;
       } else {
         *buf++ = ParseRules::ink_tolower(str[-1]);
-        state = 0;
+        state  = 0;
       }
       break;
     case 2:
@@ -1061,12 +1061,12 @@ unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e,
         state = 0;
       } else {
         *buf++ = ParseRules::ink_tolower(str[-2]);
-        state = 3;
+        state  = 3;
       }
       break;
     case 3:
       *buf++ = ParseRules::ink_tolower(str[-1]);
-      state = 0;
+      state  = 0;
       break;
     }
   }
@@ -1086,9 +1086,9 @@ url_unescapify(Arena *arena, const char *str, int length)
     length = (int)strlen(str);
 
   buffer = arena->str_alloc(length);
-  t = buffer;
-  e = buffer + length;
-  s = 0;
+  t      = buffer;
+  e      = buffer + length;
+  s      = 0;
 
   unescape_str(t, e, str, str + length, s);
   *t = '\0';
@@ -1119,7 +1119,7 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
   const char *cur = *start;
   const char *scheme_wks;
   const char *scheme_start = NULL;
-  const char *scheme_end = NULL;
+  const char *scheme_end   = NULL;
   int scheme_wks_idx;
 
   while (' ' == *cur && ++cur < end)
@@ -1194,8 +1194,8 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
   char const *bracket = 0; // marker for open bracket, if any.
   ts::ConstBuffer user, passw, host, port;
   static size_t const MAX_COLON = 8; // max # of valid colons.
-  size_t n_colon = 0;
-  char const *last_colon = 0; // pointer to last colon seen.
+  size_t n_colon                = 0;
+  char const *last_colon        = 0; // pointer to last colon seen.
 
   // Do a quick check for "://"
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
@@ -1245,7 +1245,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       if (n_colon) {
         user.set(base, last_colon);
         passw.set(last_colon + 1, cur);
-        n_colon = 0;
+        n_colon    = 0;
         last_colon = 0;
       } else {
         user.set(base, cur);
@@ -1315,14 +1315,14 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
 {
   MIMEParseResult err;
   const char *cur;
-  const char *path_start = NULL;
-  const char *path_end = NULL;
-  const char *params_start = NULL;
-  const char *params_end = NULL;
-  const char *query_start = NULL;
-  const char *query_end = NULL;
+  const char *path_start     = NULL;
+  const char *path_end       = NULL;
+  const char *params_start   = NULL;
+  const char *params_end     = NULL;
+  const char *query_start    = NULL;
+  const char *query_end      = NULL;
   const char *fragment_start = NULL;
-  const char *fragment_end = NULL;
+  const char *fragment_end   = NULL;
   char mask;
 
   err = url_parse_internet(heap, url, start, end, copy_strings);
@@ -1334,7 +1334,7 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
     goto done;
 
   path_start = cur;
-  mask = ';' & '?' & '#';
+  mask       = ';' & '?' & '#';
 parse_path2:
   if ((*cur & mask) == mask) {
     if (*cur == ';') {
@@ -1427,7 +1427,7 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
 
   // Grab everything until EOS or slash.
   char const *base = cur;
-  cur = static_cast<char const *>(memchr(cur, '/', end - cur));
+  cur              = static_cast<char const *>(memchr(cur, '/', end - cur));
   if (cur) {
     host_end = cur;
     ++cur;
@@ -1438,11 +1438,11 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
   // Did we find something for the host?
   if (base != host_end) {
     char const *port = 0;
-    int port_len = 0;
+    int port_len     = 0;
 
     // Check for port. Search from the end stopping on the first non-digit
     // or more than 5 digits and a delimiter.
-    port = host_end - 1;
+    port                   = host_end - 1;
     char const *port_limit = host_end - 6;
     if (port_limit < base)
       port_limit = base; // don't go past start.
@@ -1508,7 +1508,7 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
   if (url->m_ptr_host) {
     // Force brackets for IPv6. Note colon must occur in first 5 characters.
     // But it can be less (e.g. "::1").
-    int n = url->m_len_host;
+    int n          = url->m_len_host;
     bool bracket_p = '[' != *url->m_ptr_host && (0 != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
     if (bracket_p)
       TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
@@ -1625,8 +1625,8 @@ url_MD5_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash, cache
 
   ink_assert(sizeof(url->m_port) == 2);
   uint16_t port = (uint16_t)url_canonicalize_port(url->m_url_type, url->m_port);
-  *p++ = ((char *)&port)[0];
-  *p++ = ((char *)&port)[1];
+  *p++          = ((char *)&port)[0];
+  *p++          = ((char *)&port)[1];
 
   ctx.update(buffer, p - buffer);
   if (generation != -1) {
@@ -1666,11 +1666,11 @@ url_MD5_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, ca
   ends[7] = strs[7] + 1;
   ends[8] = strs[8] + url->m_len_path;
 
-  strs[9] = ";";
+  strs[9]  = ";";
   strs[10] = url->m_ptr_params;
   strs[11] = "?";
   strs[12] = url->m_ptr_query;
-  ends[9] = strs[9] + 1;
+  ends[9]  = strs[9] + 1;
   ends[10] = strs[10] + url->m_len_params;
   ends[11] = strs[11] + 1;
   ends[12] = strs[12] + url->m_len_query;
@@ -1791,7 +1791,7 @@ REGRESSION_TEST(VALIDATE_HDR_FIELD)(RegressionTest *t, int /* level ATS_UNUSED *
 
   for (unsigned int i = 0; i < sizeof(http_validate_hdr_field_test_case) / sizeof(http_validate_hdr_field_test_case[0]); ++i) {
     const char *const txt = http_validate_hdr_field_test_case[i].text;
-    ts::ConstBuffer tmp = ts::ConstBuffer(txt, strlen(txt));
+    ts::ConstBuffer tmp   = ts::ConstBuffer(txt, strlen(txt));
     box.check(validate_host_name(tmp) == http_validate_hdr_field_test_case[i].valid,
               "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
               (http_validate_hdr_field_test_case[i].valid ? "true" : "false"));

@@ -34,8 +34,8 @@ ExpandingArray::ExpandingArray(int initialSize, bool freeContents)
   internalArray = (void **)ats_malloc(initialSize * sizeof(void *));
 
   freeContentsOnDestruct = freeContents;
-  internalArraySize = initialSize;
-  numValidValues = 0;
+  internalArraySize      = initialSize;
+  numValidValues         = 0;
 }
 
 ExpandingArray::~ExpandingArray()

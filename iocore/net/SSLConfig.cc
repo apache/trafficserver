@@ -40,26 +40,26 @@
 #include "SSLSessionCache.h"
 #include <records/I_RecHttp.h>
 
-int SSLConfig::configid = 0;
-int SSLCertificateConfig::configid = 0;
-int SSLConfigParams::ssl_maxrecord = 0;
-bool SSLConfigParams::ssl_allow_client_renegotiation = false;
-bool SSLConfigParams::ssl_ocsp_enabled = false;
-int SSLConfigParams::ssl_ocsp_cache_timeout = 3600;
-int SSLConfigParams::ssl_ocsp_request_timeout = 10;
-int SSLConfigParams::ssl_ocsp_update_period = 60;
-int SSLConfigParams::ssl_handshake_timeout_in = 0;
-size_t SSLConfigParams::session_cache_number_buckets = 1024;
+int SSLConfig::configid                                     = 0;
+int SSLCertificateConfig::configid                          = 0;
+int SSLConfigParams::ssl_maxrecord                          = 0;
+bool SSLConfigParams::ssl_allow_client_renegotiation        = false;
+bool SSLConfigParams::ssl_ocsp_enabled                      = false;
+int SSLConfigParams::ssl_ocsp_cache_timeout                 = 3600;
+int SSLConfigParams::ssl_ocsp_request_timeout               = 10;
+int SSLConfigParams::ssl_ocsp_update_period                 = 60;
+int SSLConfigParams::ssl_handshake_timeout_in               = 0;
+size_t SSLConfigParams::session_cache_number_buckets        = 1024;
 bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
-size_t SSLConfigParams::session_cache_max_bucket_size = 100;
-init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
-load_ssl_file_func SSLConfigParams::load_ssl_file_cb = NULL;
+size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
+init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = NULL;
+load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = NULL;
 
 // TS-3534 Wiretracing for SSL Connections
-int SSLConfigParams::ssl_wire_trace_enabled = 0;
-char *SSLConfigParams::ssl_wire_trace_addr = NULL;
-IpAddr *SSLConfigParams::ssl_wire_trace_ip = NULL;
-int SSLConfigParams::ssl_wire_trace_percentage = 0;
+int SSLConfigParams::ssl_wire_trace_enabled       = 0;
+char *SSLConfigParams::ssl_wire_trace_addr        = NULL;
+IpAddr *SSLConfigParams::ssl_wire_trace_ip        = NULL;
+int SSLConfigParams::ssl_wire_trace_percentage    = 0;
 char *SSLConfigParams::ssl_wire_trace_server_name = NULL;
 
 static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
@@ -72,15 +72,15 @@ SSLConfigParams::SSLConfigParams()
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 
-  ssl_ctx_options = 0;
-  ssl_client_ctx_protocols = 0;
-  ssl_session_cache = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
-  ssl_session_cache_size = 1024 * 100;
+  ssl_ctx_options               = 0;
+  ssl_client_ctx_protocols      = 0;
+  ssl_session_cache             = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
+  ssl_session_cache_size        = 1024 * 100;
   ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
   ssl_session_cache_skip_on_contention = 0;
-  ssl_session_cache_timeout = 0;
-  ssl_session_cache_auto_clear = 1;
-  configExitOnLoadError = 0;
+  ssl_session_cache_timeout            = 0;
+  ssl_session_cache_auto_clear         = 1;
+  configExitOnLoadError                = 0;
 }
 
 SSLConfigParams::~SSLConfigParams()
@@ -138,16 +138,16 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 void
 SSLConfigParams::initialize()
 {
-  char *serverCertRelativePath = NULL;
-  char *ssl_server_private_key_path = NULL;
-  char *CACertRelativePath = NULL;
-  char *ssl_client_cert_filename = NULL;
-  char *ssl_client_cert_path = NULL;
+  char *serverCertRelativePath          = NULL;
+  char *ssl_server_private_key_path     = NULL;
+  char *CACertRelativePath              = NULL;
+  char *ssl_client_cert_filename        = NULL;
+  char *ssl_client_cert_path            = NULL;
   char *ssl_client_private_key_filename = NULL;
-  char *ssl_client_private_key_path = NULL;
-  char *clientCACertRelativePath = NULL;
-  char *ssl_server_ca_cert_filename = NULL;
-  char *ssl_client_ca_cert_filename = NULL;
+  char *ssl_client_private_key_path     = NULL;
+  char *clientCACertRelativePath        = NULL;
+  char *ssl_server_ca_cert_filename     = NULL;
+  char *ssl_client_ca_cert_filename     = NULL;
 
   cleanup();
 
@@ -263,7 +263,7 @@ SSLConfigParams::initialize()
 
   SSLConfigParams::session_cache_max_bucket_size = (size_t)ceil((double)ssl_session_cache_size / ssl_session_cache_num_buckets);
   SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
-  SSLConfigParams::session_cache_number_buckets = ssl_session_cache_num_buckets;
+  SSLConfigParams::session_cache_number_buckets          = ssl_session_cache_num_buckets;
 
   if (ssl_session_cache == SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL) {
     session_cache = new SSLSessionCache();
@@ -285,7 +285,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(clientVerify, "proxy.config.ssl.client.verify.server");
 
   ssl_client_cert_filename = NULL;
-  ssl_client_cert_path = NULL;
+  ssl_client_cert_path     = NULL;
   REC_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   REC_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
   set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, NULL, &clientCertPath);
@@ -321,9 +321,9 @@ SSLConfigParams::initialize()
     REC_EstablishStaticConfigInt32(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
     REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
   } else {
-    ssl_wire_trace_addr = NULL;
-    ssl_wire_trace_ip = NULL;
-    ssl_wire_trace_percentage = 0;
+    ssl_wire_trace_addr        = NULL;
+    ssl_wire_trace_ip          = NULL;
+    ssl_wire_trace_percentage  = 0;
     ssl_wire_trace_server_name = NULL;
   }
 }

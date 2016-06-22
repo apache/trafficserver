@@ -46,8 +46,8 @@ LogSlice::LogSlice(char *str)
   char *a, *b, *c;
 
   m_enable = false;
-  m_start = 0;
-  m_end = INT_MAX;
+  m_start  = 0;
+  m_end    = INT_MAX;
 
   if ((a = strchr(str, '[')) == NULL)
     return;

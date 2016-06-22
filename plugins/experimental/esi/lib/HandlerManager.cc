@@ -39,7 +39,7 @@ HandlerManager::loadObjects(const Utils::KeyValueMap &handlers)
   ModuleHandleMap::iterator path_map_iter;
 
   for (Utils::KeyValueMap::const_iterator id_map_iter = handlers.begin(); id_map_iter != handlers.end(); ++id_map_iter) {
-    const string &id = id_map_iter->first;
+    const string &id   = id_map_iter->first;
     const string &path = id_map_iter->second;
 
     path_map_iter = _path_to_module_map.find(path);

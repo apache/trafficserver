@@ -115,7 +115,7 @@ cache_open_write(TSCont contp, void *edata)
   int length;
 
   WriteData *data = (WriteData *)TSContDataGet(contp);
-  data->connp = (TSVConn)edata;
+  data->connp     = (TSVConn)edata;
 
   TSCacheKeyDestroy(data->key);
 
@@ -157,7 +157,7 @@ cache_open_write(TSCont contp, void *edata)
 
   /* Store the request URL */
 
-  data->cache_bufp = TSIOBufferCreate();
+  data->cache_bufp         = TSIOBufferCreate();
   TSIOBufferReader readerp = TSIOBufferReaderAlloc(data->cache_bufp);
 
   int nbytes = TSIOBufferWrite(data->cache_bufp, value, length);
@@ -374,13 +374,13 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     TSVConn output_connp = TSTransformOutputVConnGet(contp);
 
     transform_data->output_bufp = TSIOBufferCreate();
-    TSIOBufferReader readerp = TSIOBufferReaderAlloc(transform_data->output_bufp);
+    TSIOBufferReader readerp    = TSIOBufferReaderAlloc(transform_data->output_bufp);
 
     /* Determines the Content-Length header (or a chunked response) */
 
     /* Reentrant!  Avoid failed assert "nbytes >= 0" if the response
      * is chunked. */
-    int nbytes = TSVIONBytesGet(input_viop);
+    int nbytes                  = TSVIONBytesGet(input_viop);
     transform_data->output_viop = TSVConnWrite(output_connp, contp, readerp, nbytes < 0 ? INT64_MAX : nbytes);
 
     SHA256_Init(&transform_data->c);
@@ -449,7 +449,7 @@ vconn_write_ready(TSCont contp, void * /* edata ATS_UNUSED */)
     SHA256_Final((unsigned char *)digest, &transform_data->c);
 
     WriteData *write_data = (WriteData *)TSmalloc(sizeof(WriteData));
-    write_data->txnp = transform_data->txnp;
+    write_data->txnp      = transform_data->txnp;
 
     /* Don't finish computing the digest more than once! */
     transform_data->txnp = NULL;
@@ -516,7 +516,7 @@ static int
 http_read_response_hdr(TSCont /* contp ATS_UNUSED */, void *edata)
 {
   TransformData *data = (TransformData *)TSmalloc(sizeof(TransformData));
-  data->txnp = (TSHttpTxn)edata;
+  data->txnp          = (TSHttpTxn)edata;
 
   /* Can't initialize data here because we can't call TSVConnWrite()
    * before TS_HTTP_RESPONSE_TRANSFORM_HOOK */
@@ -541,7 +541,7 @@ static int
 cache_open_read(TSCont contp, void *edata)
 {
   SendData *data = (SendData *)TSContDataGet(contp);
-  data->connp = (TSVConn)edata;
+  data->connp    = (TSVConn)edata;
 
   data->cache_bufp = TSIOBufferCreate();
 
@@ -770,7 +770,7 @@ http_send_response_hdr(TSCont contp, void *edata)
   int length;
 
   SendData *data = (SendData *)TSmalloc(sizeof(SendData));
-  data->txnp = (TSHttpTxn)edata;
+  data->txnp     = (TSHttpTxn)edata;
 
   if (TSHttpTxnClientRespGet(data->txnp, &data->resp_bufp, &data->hdr_loc) != TS_SUCCESS) {
     TSError("[metalink] Couldn't retrieve client response header");
@@ -905,8 +905,8 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)"metalink";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"metalink";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

@@ -167,7 +167,7 @@ HostConfiguration::is_content_type_compressible(const char *content_type, int co
 
   for (StringContainer::iterator it = compressible_content_types_.begin(); it != compressible_content_types_.end(); ++it) {
     const char *match_string = it->c_str();
-    bool exclude = match_string[0] == '!';
+    bool exclude             = match_string[0] == '!';
 
     if (exclude) {
       ++match_string; // skip '!'
@@ -196,7 +196,7 @@ Configuration::Parse(const char *path)
 
   trim_if(pathstring, isspace);
 
-  Configuration *c = new Configuration();
+  Configuration *c                              = new Configuration();
   HostConfiguration *current_host_configuration = new HostConfiguration("");
   c->add_host_configuration(current_host_configuration);
 
@@ -246,7 +246,7 @@ Configuration::Parse(const char *path)
       switch (state) {
       case kParseStart:
         if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
-          std::string current_host = token.substr(1, token.size() - 2);
+          std::string current_host   = token.substr(1, token.size() - 2);
           current_host_configuration = new HostConfiguration(current_host);
           c->add_host_configuration(current_host_configuration);
         } else if (token == "compressible-content-type") {

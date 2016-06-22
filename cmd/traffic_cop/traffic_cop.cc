@@ -77,31 +77,31 @@ static char manager_lockfile[PATH_NAME_MAX];
 static char server_lockfile[PATH_NAME_MAX];
 
 static int check_memory_min_swapfree_kb = 0;
-static int check_memory_min_memfree_kb = 0;
+static int check_memory_min_memfree_kb  = 0;
 
-static int syslog_facility = LOG_DAEMON;
+static int syslog_facility                = LOG_DAEMON;
 static char syslog_fac_str[PATH_NAME_MAX] = "LOG_DAEMON";
 
 static int killsig = SIGKILL;
 static int coresig = 0;
 
-static int debug_flag = false;
+static int debug_flag  = false;
 static int stdout_flag = false;
-static int stop_flag = false;
+static int stop_flag   = false;
 
 static char *admin_user;
 static uid_t admin_uid;
 static gid_t admin_gid;
-static bool admin_user_p = false;
+static bool admin_user_p                  = false;
 static char manager_binary[PATH_NAME_MAX] = "traffic_manager";
-static char server_binary[PATH_NAME_MAX] = "traffic_server";
+static char server_binary[PATH_NAME_MAX]  = "traffic_server";
 
 static char log_file[PATH_NAME_MAX] = "traffic.out";
 
-static int synthetic_port = 8083;
-static int rs_port = 8088;
+static int synthetic_port           = 8083;
+static int rs_port                  = 8088;
 static MgmtClusterType cluster_type = NO_CLUSTER;
-static int http_backdoor_port = 8084;
+static int http_backdoor_port       = 8084;
 
 #if defined(linux)
 // TS-1075 : auto-port ::connect DoS on high traffic linux systems
@@ -109,26 +109,26 @@ static int source_port = 0;
 #endif
 
 static int manager_failures = 0;
-static int server_failures = 0;
+static int server_failures  = 0;
 static int server_not_found = 0;
-static int init_sleep_time = cop_sleep_time; // 10 sec
+static int init_sleep_time  = cop_sleep_time; // 10 sec
 
 // traffic_manager flap detection
 #define MANAGER_FLAP_DETECTION 1
 #if defined(MANAGER_FLAP_DETECTION)
-#define MANAGER_MAX_FLAP_COUNT 3                        // if flap this many times, give up for a while
-#define MANAGER_FLAP_INTERVAL_MSEC 60000                // if x number of flaps happen in this interval, declare flapping
-#define MANAGER_FLAP_RETRY_MSEC 60000                   // if flapping, don't try to restart until after this retry duration
-static bool manager_flapping = false;                   // is the manager flapping?
-static int manager_flap_count = 0;                      // how many times has the manager flapped?
-static ink_hrtime manager_flap_interval_start_time = 0; // first time we attempted to start the manager in past little while)
-static ink_hrtime manager_flap_retry_start_time = 0;    // first time we attempted to start the manager in past little while)
+#define MANAGER_MAX_FLAP_COUNT 3                            // if flap this many times, give up for a while
+#define MANAGER_FLAP_INTERVAL_MSEC 60000                    // if x number of flaps happen in this interval, declare flapping
+#define MANAGER_FLAP_RETRY_MSEC 60000                       // if flapping, don't try to restart until after this retry duration
+static bool manager_flapping                       = false; // is the manager flapping?
+static int manager_flap_count                      = 0;     // how many times has the manager flapped?
+static ink_hrtime manager_flap_interval_start_time = 0;     // first time we attempted to start the manager in past little while)
+static ink_hrtime manager_flap_retry_start_time    = 0;     // first time we attempted to start the manager in past little while)
 #endif
 
 // transient syscall error timeout
 #define TRANSIENT_ERROR_WAIT_MS 500
 
-static int child_pid = 0;
+static int child_pid    = 0;
 static int child_status = 0;
 
 AppVersionInfo appVersionInfo;
@@ -184,7 +184,7 @@ cop_log(int priority, const char *format, ...)
     struct timeval now;
     double now_f;
 
-    now = ink_gettimeofday();
+    now   = ink_gettimeofday();
     now_f = now.tv_sec + now.tv_usec / 1000000.0f;
 
     fprintf(stdout, "<%.4f> [%s]: ", now_f, priority_name(priority));
@@ -213,7 +213,7 @@ chown_file_to_admin_user(const char *file)
 static void
 sig_child(int signum)
 {
-  pid_t pid = 0;
+  pid_t pid  = 0;
   int status = 0;
 
   cop_log_trace("Entering sig_child(%d)\n", signum);
@@ -229,7 +229,7 @@ sig_child(int signum)
     //   next time through the event loop.  We will occasionally
     //   lose some information if we get two sig childs in rapid
     //   succession
-    child_pid = pid;
+    child_pid    = pid;
     child_status = status;
   }
   cop_log_trace("Leaving sig_child(%d)\n", signum);
@@ -238,7 +238,7 @@ sig_child(int signum)
 static void
 sig_term(int signum)
 {
-  pid_t pid = 0;
+  pid_t pid  = 0;
   int status = 0;
 
   // killsig = SIGTERM;
@@ -263,7 +263,7 @@ sig_term(int signum)
     //   next time through the event loop.  We will occasionally
     //   lose some information if we get two sig childs in rapid
     //   succession
-    child_pid = pid;
+    child_pid    = pid;
     child_status = status;
   }
   cop_log_trace("Leaving sig_term(%d), exiting traffic_cop\n", signum);
@@ -330,14 +330,14 @@ set_alarm_death()
 
   cop_log_trace("Entering set_alarm_death()\n");
 #if defined(solaris)
-  action.sa_handler = NULL;
+  action.sa_handler   = NULL;
   action.sa_sigaction = sig_fatal;
   sigemptyset(&action.sa_mask);
   action.sa_flags = SA_SIGINFO;
 #else
   action.sa_handler = sig_fatal;
   sigemptyset(&action.sa_mask);
-  action.sa_flags = 0;
+  action.sa_flags   = 0;
 #endif
 
   sigaction(SIGALRM, &action, NULL);
@@ -351,7 +351,7 @@ set_alarm_warn()
 
   cop_log_trace("Entering set_alarm_warn()\n");
 #if defined(solaris)
-  action.sa_handler = NULL;
+  action.sa_handler   = NULL;
   action.sa_sigaction = sig_alarm_warn;
   sigemptyset(&action.sa_mask);
   action.sa_flags = SA_SIGINFO;
@@ -430,7 +430,7 @@ millisleep(int ms)
   struct timespec ts;
 
   cop_log_trace("Entering millisleep(%d)\n", ms);
-  ts.tv_sec = ms / 1000;
+  ts.tv_sec  = ms / 1000;
   ts.tv_nsec = (ms - ts.tv_sec * 1000) * 1000 * 1000;
   nanosleep(&ts, NULL);
   cop_log_trace("Leaving millisleep(%d)\n", ms);
@@ -700,8 +700,8 @@ get_admin_user()
     }
 
     if (pwd) {
-      admin_uid = pwd->pw_uid;
-      admin_gid = pwd->pw_gid;
+      admin_uid    = pwd->pw_uid;
+      admin_gid    = pwd->pw_gid;
       admin_user_p = true;
     } else {
       cop_log(COP_FATAL, "can't get passwd entry for the admin user '%s' - [%d] %s\n", admin_user, errno, strerror(errno));
@@ -762,8 +762,8 @@ poll_read_or_write(int fd, int timeout, int inorout)
   struct pollfd info;
   int err;
 
-  info.fd = fd;
-  info.events = inorout;
+  info.fd      = fd;
+  info.events  = inorout;
   info.revents = 0;
 
   do {
@@ -794,10 +794,10 @@ open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
 {
   int sock = 0;
   struct addrinfo hints;
-  struct addrinfo *result = NULL;
+  struct addrinfo *result         = NULL;
   struct addrinfo *result_to_bind = NULL;
-  char port_str[8] = {'\0'};
-  int err = 0;
+  char port_str[8]                = {'\0'};
+  int err                         = 0;
 
   cop_log_trace("Entering open_socket(%d, %s, %s)\n", port, ip, ip_to_bind);
   if (!ip) {
@@ -814,7 +814,7 @@ open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
 
   snprintf(port_str, sizeof(port_str), "%d", port);
   memset(&hints, 0, sizeof(hints));
-  hints.ai_family = AF_UNSPEC;
+  hints.ai_family   = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
 
   err = getaddrinfo(ip, port_str, &hints, &result);
@@ -835,7 +835,7 @@ open_socket(int port, const char *ip = NULL, char const *ip_to_bind = NULL)
 
   if (ip_to_bind) {
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = result->ai_family;
+    hints.ai_family   = result->ai_family;
     hints.ai_socktype = result->ai_socktype;
 
     err = getaddrinfo(ip_to_bind, NULL, &hints, &result_to_bind);
@@ -1137,7 +1137,7 @@ static int
 test_mgmt_cli_port()
 {
   TSString val = NULL;
-  int ret = 0;
+  int ret      = 0;
 
   if (TSRecordGetString("proxy.config.manager_binary", &val) != TS_ERR_OKAY) {
     cop_log(COP_WARNING, "(cli test) unable to retrieve manager_binary\n");
@@ -1305,7 +1305,7 @@ static int
 server_up()
 {
   static int old_val = 0;
-  int val = -1;
+  int val            = -1;
   int err;
 
   cop_log_trace("Entering server_up()\n");
@@ -1322,9 +1322,9 @@ server_up()
   }
 
   if (val != old_val) {
-    server_failures = 0;
+    server_failures  = 0;
     server_not_found = 0;
-    old_val = val;
+    old_val          = val;
   }
 
   if (val == 1) {
@@ -1398,7 +1398,7 @@ check_programs()
       if (manager_flap_count >= MANAGER_MAX_FLAP_COUNT) {
         // we've flapped too many times, hold off for a while
         cop_log(COP_WARNING, "unable to start traffic_manager, retrying in %d second(s)\n", MANAGER_FLAP_RETRY_MSEC / 1000);
-        manager_flapping = true;
+        manager_flapping              = true;
         manager_flap_retry_start_time = now;
       } else {
         // try to spawn traffic_manager
@@ -1414,7 +1414,7 @@ check_programs()
       // we were flapping, take some time off and don't call
       // spawn_manager
       if (now - manager_flap_retry_start_time > MANAGER_FLAP_RETRY_MSEC) {
-        manager_flapping = false;
+        manager_flapping                 = false;
         manager_flap_interval_start_time = 0;
       }
     }
@@ -1568,7 +1568,7 @@ check(void *arg)
         cop_log(COP_WARNING, "child terminated due to signal %d: %s\n", sig, strsignal(sig));
       }
 
-      child_pid = 0;
+      child_pid    = 0;
       child_status = 0;
     }
 
@@ -1655,7 +1655,7 @@ init_signals()
 // difficulty with generating core files when linking with libthread
 // under solaris.
 #if defined(solaris)
-  action.sa_handler = NULL;
+  action.sa_handler   = NULL;
   action.sa_sigaction = sig_fatal;
 #else
   action.sa_handler = sig_fatal;
@@ -1664,7 +1664,7 @@ init_signals()
 #if defined(solaris)
   action.sa_flags = SA_SIGINFO;
 #else
-  action.sa_flags = 0;
+  action.sa_flags   = 0;
 #endif
 
   sigaction(SIGQUIT, &action, NULL);

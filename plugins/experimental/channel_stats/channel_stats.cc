@@ -227,10 +227,10 @@ get_api_params(TSMBuffer bufp, TSMLoc url_loc, int *show_global, char **channel,
 {
   const char *query;      // not null-terminated, get from TS api
   char *tmp_query = NULL; // null-terminated
-  int query_len = 0;
+  int query_len   = 0;
 
   *show_global = 0;
-  *topn = -1;
+  *topn        = -1;
 
   query = TSUrlHttpQueryGet(bufp, url_loc, &query_len);
   if (query_len == 0)
@@ -418,9 +418,9 @@ get_channel_stat(const std::string &host, channel_stat *&stat, int status_code_t
 static uint64_t
 get_txn_user_speed(TSHttpTxn txnp, uint64_t body_bytes)
 {
-  uint64_t user_speed = 0;
-  TSHRTime start_time = 0;
-  TSHRTime end_time = 0;
+  uint64_t user_speed    = 0;
+  TSHRTime start_time    = 0;
+  TSHRTime end_time      = 0;
   TSHRTime interval_time = 0;
 
 #if (TS_VERSION_NUMBER < 3003001)
@@ -469,9 +469,9 @@ handle_txn_close(TSCont /* contp ATS_UNUSED */, TSHttpTxn txnp)
     return;
   }
 
-  status_code = TSHttpHdrStatusGet(bufp, hdr_loc);
+  status_code      = TSHttpHdrStatusGet(bufp, hdr_loc);
   status_code_type = status_code / 100;
-  body_bytes = TSHttpTxnClientRespBodyBytesGet(txnp);
+  body_bytes       = TSHttpTxnClientRespBodyBytesGet(txnp);
 
   __sync_fetch_and_add(&global_response_bytes_content, body_bytes);
   if (status_code_type == 2)
@@ -544,10 +544,10 @@ stats_cleanup(TSCont contp, intercept_state *api_state)
 static void
 stats_process_accept(TSCont contp, intercept_state *api_state)
 {
-  api_state->req_buffer = TSIOBufferCreate();
+  api_state->req_buffer  = TSIOBufferCreate();
   api_state->resp_buffer = TSIOBufferCreate();
   api_state->resp_reader = TSIOBufferReaderAlloc(api_state->resp_buffer);
-  api_state->read_vio = TSVConnRead(api_state->net_vc, contp, api_state->req_buffer, INT64_MAX);
+  api_state->read_vio    = TSVConnRead(api_state->net_vc, contp, api_state->req_buffer, INT64_MAX);
 }
 
 static int
@@ -798,8 +798,8 @@ TSPluginInit(int argc, const char *argv[])
 
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)PLUGIN_NAME;
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

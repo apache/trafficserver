@@ -167,7 +167,7 @@ struct CacheHostTableConfig : public Continuation {
   {
     (void)e;
     (void)event;
-    CacheHostTable *t = new CacheHostTable((*ppt)->cache, (*ppt)->type);
+    CacheHostTable *t   = new CacheHostTable((*ppt)->cache, (*ppt)->type);
     CacheHostTable *old = (CacheHostTable *)ink_atomic_swap(&t, *ppt);
     new_Deleter(old, CACHE_MEM_FREE_TIMEOUT);
     return EVENT_DONE;
@@ -201,8 +201,8 @@ struct ConfigVolumes {
       cp_queue.pop();
     }
     // reset count variables
-    num_volumes = 0;
-    num_http_volumes = 0;
+    num_volumes        = 0;
+    num_http_volumes   = 0;
     num_stream_volumes = 0;
   }
 };

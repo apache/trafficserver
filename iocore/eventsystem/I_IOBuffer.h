@@ -1208,7 +1208,7 @@ struct MIOBufferAccessor {
   void
   clear()
   {
-    mbuf = NULL;
+    mbuf  = NULL;
     entry = NULL;
   }
 

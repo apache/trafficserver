@@ -41,9 +41,9 @@
 
 enum MIMEParseResult {
   PARSE_ERROR = -1,
-  PARSE_DONE = 0,
-  PARSE_OK = 1,
-  PARSE_CONT = 2,
+  PARSE_DONE  = 0,
+  PARSE_OK    = 1,
+  PARSE_CONT  = 2,
 };
 
 enum {
@@ -207,20 +207,20 @@ struct MIMEFieldBlockImpl : public HdrHeapObjImpl {
  ***********************************************************************/
 
 enum MIMECookedMask {
-  MIME_COOKED_MASK_CC_MAX_AGE = (1 << 0),
-  MIME_COOKED_MASK_CC_NO_CACHE = (1 << 1),
-  MIME_COOKED_MASK_CC_NO_STORE = (1 << 2),
-  MIME_COOKED_MASK_CC_NO_TRANSFORM = (1 << 3),
-  MIME_COOKED_MASK_CC_MAX_STALE = (1 << 4),
-  MIME_COOKED_MASK_CC_MIN_FRESH = (1 << 5),
-  MIME_COOKED_MASK_CC_ONLY_IF_CACHED = (1 << 6),
-  MIME_COOKED_MASK_CC_PUBLIC = (1 << 7),
-  MIME_COOKED_MASK_CC_PRIVATE = (1 << 8),
-  MIME_COOKED_MASK_CC_MUST_REVALIDATE = (1 << 9),
-  MIME_COOKED_MASK_CC_PROXY_REVALIDATE = (1 << 10),
-  MIME_COOKED_MASK_CC_S_MAXAGE = (1 << 11),
+  MIME_COOKED_MASK_CC_MAX_AGE              = (1 << 0),
+  MIME_COOKED_MASK_CC_NO_CACHE             = (1 << 1),
+  MIME_COOKED_MASK_CC_NO_STORE             = (1 << 2),
+  MIME_COOKED_MASK_CC_NO_TRANSFORM         = (1 << 3),
+  MIME_COOKED_MASK_CC_MAX_STALE            = (1 << 4),
+  MIME_COOKED_MASK_CC_MIN_FRESH            = (1 << 5),
+  MIME_COOKED_MASK_CC_ONLY_IF_CACHED       = (1 << 6),
+  MIME_COOKED_MASK_CC_PUBLIC               = (1 << 7),
+  MIME_COOKED_MASK_CC_PRIVATE              = (1 << 8),
+  MIME_COOKED_MASK_CC_MUST_REVALIDATE      = (1 << 9),
+  MIME_COOKED_MASK_CC_PROXY_REVALIDATE     = (1 << 10),
+  MIME_COOKED_MASK_CC_S_MAXAGE             = (1 << 11),
   MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE = (1 << 12),
-  MIME_COOKED_MASK_CC_EXTENSION = (1 << 13)
+  MIME_COOKED_MASK_CC_EXTENSION            = (1 << 13)
 };
 
 struct MIMECookedCacheControl {
@@ -1180,7 +1180,7 @@ inline MIMEField *
 MIMEHdr::iter_get_first(MIMEFieldIter *iter)
 {
   iter->m_block = &m_mime->m_first_fblock;
-  iter->m_slot = 0;
+  iter->m_slot  = 0;
   return iter_get(iter);
 }
 
@@ -1196,12 +1196,12 @@ MIMEHdr::iter_get(MIMEFieldIter *iter)
     for (; slot < (int)b->m_freetop; slot++) {
       f = &(b->m_field_slots[slot]);
       if (f->is_live()) {
-        iter->m_slot = slot;
+        iter->m_slot  = slot;
         iter->m_block = b;
         return f;
       }
     }
-    b = b->m_next;
+    b    = b->m_next;
     slot = 0;
   }
 
@@ -1379,7 +1379,7 @@ MIMEHdr::field_combine_dups(MIMEField *field, bool prepend_comma, const char sep
   MIMEField *current = field->m_next_dup;
 
   while (current) {
-    int value_len = 0;
+    int value_len         = 0;
     const char *value_str = current->value_get(&value_len);
 
     if (value_len > 0) {

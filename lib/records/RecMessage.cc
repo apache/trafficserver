@@ -33,7 +33,7 @@
 #include "ts/I_Layout.h"
 
 static RecMessageRecvCb g_recv_cb = NULL;
-static void *g_recv_cookie = NULL;
+static void *g_recv_cookie        = NULL;
 
 //-------------------------------------------------------------------------
 // RecMessageAlloc
@@ -46,10 +46,10 @@ RecMessageAlloc(RecMessageT msg_type, int initial_size)
   msg = (RecMessage *)ats_malloc(sizeof(RecMessageHdr) + initial_size);
   memset(msg, 0, sizeof(RecMessageHdr) + initial_size);
   msg->msg_type = msg_type;
-  msg->o_start = sizeof(RecMessageHdr);
-  msg->o_write = sizeof(RecMessageHdr);
-  msg->o_end = sizeof(RecMessageHdr) + initial_size;
-  msg->entries = 0;
+  msg->o_start  = sizeof(RecMessageHdr);
+  msg->o_write  = sizeof(RecMessageHdr);
+  msg->o_end    = sizeof(RecMessageHdr) + initial_size;
+  msg->entries  = 0;
 
   return msg;
 }
@@ -72,10 +72,10 @@ RecMessage *
 RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
 {
   int msg_ele_size;
-  int rec_name_len = -1;
-  int rec_data_str_len = -1;
+  int rec_name_len         = -1;
+  int rec_data_str_len     = -1;
   int rec_data_def_str_len = -1;
-  int rec_cfg_chk_len = -1;
+  int rec_cfg_chk_len      = -1;
   RecMessageEleHdr *ele_hdr;
   RecRecord *r;
   char *p;
@@ -109,8 +109,8 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
   // get some space in our buffer
   while (msg->o_end - msg->o_write < msg_ele_size) {
     int realloc_size = (msg->o_end - msg->o_start) * 2;
-    msg = (RecMessage *)ats_realloc(msg, sizeof(RecMessageHdr) + realloc_size);
-    msg->o_end = msg->o_start + realloc_size;
+    msg              = (RecMessage *)ats_realloc(msg, sizeof(RecMessageHdr) + realloc_size);
+    msg->o_end       = msg->o_start + realloc_size;
   }
   ele_hdr = (RecMessageEleHdr *)((char *)msg + msg->o_write);
   // The following memset() is pretty CPU intensive, replacing it with something
@@ -120,9 +120,9 @@ RecMessageMarshal_Realloc(RecMessage *msg, const RecRecord *record)
   msg->o_write += msg_ele_size;
 
   // store the record
-  ele_hdr->magic = REC_MESSAGE_ELE_MAGIC;
+  ele_hdr->magic  = REC_MESSAGE_ELE_MAGIC;
   ele_hdr->o_next = msg->o_write;
-  p = (char *)ele_hdr + sizeof(RecMessageEleHdr);
+  p               = (char *)ele_hdr + sizeof(RecMessageEleHdr);
   memcpy(p, record, sizeof(RecRecord));
   r = (RecRecord *)p;
   p += sizeof(RecRecord);
@@ -163,7 +163,7 @@ int
 RecMessageUnmarshalFirst(RecMessage *msg, RecMessageItr *itr, RecRecord **record)
 {
   itr->ele_hdr = (RecMessageEleHdr *)((char *)msg + msg->o_start);
-  itr->next = 1;
+  itr->next    = 1;
 
   return RecMessageUnmarshalNext(msg, NULL, record);
 }
@@ -234,7 +234,7 @@ RecMessageRegisterRecvCb(RecMessageRecvCb recv_cb, void *cookie)
     return REC_ERR_FAIL;
   }
   g_recv_cookie = cookie;
-  g_recv_cb = recv_cb;
+  g_recv_cb     = recv_cb;
 
   return REC_ERR_OKAY;
 }

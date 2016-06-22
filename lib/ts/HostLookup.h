@@ -32,7 +32,7 @@
 #define _HOST_LOOKUP_H_
 // HostLookup  constantss
 const int HOST_TABLE_DEPTH = 3; // Controls the max number of levels in the logical tree
-const int HOST_ARRAY_MAX = 8;   // Sets the fixed array size
+const int HOST_ARRAY_MAX   = 8; // Sets the fixed array size
 
 //
 //  Begin Host Lookup Helper types

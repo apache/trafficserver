@@ -112,7 +112,7 @@ regex_substitute(char **buf, char *str, regex_info *info)
 
   /* perform string replacement */
   offset = 0; /* Where we are adding new data in the string */
-  prev = 0;
+  prev   = 0;
   for (i = 0; i < info->tokcount; i++) {
     memcpy(*buf + offset, info->replacement + prev, info->tokenoffset[i] - prev);
     offset += (info->tokenoffset[i] - prev);
@@ -134,10 +134,10 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
   int reerroffset;     /* Offset where any pcre error occured */
 
   int tokcount;
-  int *tokens = NULL;
+  int *tokens      = NULL;
   int *tokenoffset = NULL;
 
-  int status = 1; /* Status (return value) of the function */
+  int status       = 1; /* Status (return value) of the function */
   regex_info *info = (regex_info *)TSmalloc(sizeof(regex_info));
 
   /* Precompile the regular expression */
@@ -150,7 +150,7 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
   /* Precalculate the location of $X tokens in the replacement */
   tokcount = 0;
   if (status) {
-    tokens = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
+    tokens      = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
     tokenoffset = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
     for (unsigned i = 0; i < strlen(replacement); i++) {
       if (replacement[i] == '$') {
@@ -168,7 +168,7 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
         } else {
           /* Store the location of the replacement */
           /* Convert '0' to 0 */
-          tokens[tokcount] = replacement[i + 1] - '0';
+          tokens[tokcount]      = replacement[i + 1] - '0';
           tokenoffset[tokcount] = i;
           tokcount++;
           /* Skip the next char */
@@ -180,11 +180,11 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
 
   if (status) {
     /* Everything went OK */
-    info->tokcount = tokcount;
-    info->tokens = tokens;
+    info->tokcount    = tokcount;
+    info->tokens      = tokens;
     info->tokenoffset = tokenoffset;
 
-    info->pattern = TSstrdup(pattern);
+    info->pattern     = TSstrdup(pattern);
     info->replacement = TSstrdup(replacement);
 
     *buf = info;
@@ -304,7 +304,7 @@ load_config_file(const char *config_file)
 static int
 rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp)
 {
-  int ok = 1;
+  int ok       = 1;
   char *newurl = 0;
   int retval;
   char *url;
@@ -438,8 +438,8 @@ TSPluginInit(int argc, const char *argv[])
   TSCont contp;
   pr_list *prl;
 
-  info.plugin_name = (char *)PLUGIN_NAME;
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

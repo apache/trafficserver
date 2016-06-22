@@ -69,8 +69,8 @@ newTcpSocket(int port)
   }
   // Specify our port number is network order
   memset(&socketInfo, 0, sizeof(socketInfo));
-  socketInfo.sin_family = AF_INET;
-  socketInfo.sin_port = htons(port);
+  socketInfo.sin_family      = AF_INET;
+  socketInfo.sin_port        = htons(port);
   socketInfo.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
   // Allow for immediate re-binding to port
@@ -222,7 +222,7 @@ void *
 mgmt_synthetic_main(void *)
 {
   int autoconfFD = -1; // FD for incoming autoconf connections
-  int clientFD = -1;   // FD for accepted connections
+  int clientFD   = -1; // FD for accepted connections
   int publicPort = -1; // Port for incoming autoconf connections
 
 #if !defined(linux)

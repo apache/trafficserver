@@ -120,10 +120,10 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 static int ssl_session_ticket_index = -1;
 #endif
 
-static ink_mutex *mutex_buf = NULL;
+static ink_mutex *mutex_buf      = NULL;
 static bool open_ssl_initialized = false;
 
-RecRawStatBlock *ssl_rsb = NULL;
+RecRawStatBlock *ssl_rsb                   = NULL;
 static InkHashTable *ssl_cipher_name_table = NULL;
 
 /* Using pthread thread ID and mutex functions directly, instead of
@@ -234,7 +234,7 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
 static int
 ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 {
-  unsigned int len = 0;
+  unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
 
@@ -256,7 +256,7 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 {
   SSL_CTX_remove_session(ctx, sess);
 
-  unsigned int len = 0;
+  unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
 
@@ -273,13 +273,13 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 int
 set_context_cert(SSL *ssl)
 {
-  SSL_CTX *ctx = NULL;
+  SSL_CTX *ctx       = NULL;
   SSLCertContext *cc = NULL;
   SSLCertificateConfig::scoped_config lookup;
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
-  bool found = true;
-  int retval = 1;
+  bool found               = true;
+  int retval               = 1;
 
   Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername, netvc->getSSLHandShakeComplete());
   // set SSL trace (we do this a little later in the USE_TLS_SNI case so we can get the servername
@@ -538,9 +538,9 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
     }
   } else {
     // Generate a random ticket key
-    ticket_key_len = 48;
+    ticket_key_len  = 48;
     ticket_key_data = (char *)ats_malloc(ticket_key_len);
-    char *tmp_ptr = ticket_key_data;
+    char *tmp_ptr   = ticket_key_data;
     RAND_bytes(reinterpret_cast<unsigned char *>(tmp_ptr), ticket_key_len);
   }
 
@@ -652,7 +652,7 @@ ssl_getpassword(const char *prompt, char *buffer, int size)
     return -1;
   }
 
-  int i = 0;
+  int i  = 0;
   int ch = 0;
 
   *buffer = 0;
@@ -662,7 +662,7 @@ ssl_getpassword(const char *prompt, char *buffer, int size)
       return -1;
     }
 
-    buffer[i] = ch;
+    buffer[i]   = ch;
     buffer[++i] = 0;
   }
 
@@ -676,7 +676,7 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
     return 0;
   }
 
-  *buf = 0;
+  *buf                       = 0;
   passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
 
   Debug("ssl", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
@@ -710,7 +710,7 @@ ssl_private_key_passphrase_callback_builtin(char *buf, int size, int rwflag, voi
     return 0;
   }
 
-  *buf = 0;
+  *buf                       = 0;
   passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
 
   Debug("ssl", "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
@@ -743,9 +743,9 @@ ssl_private_key_validate_exec(const char *cmdLine)
     return false;
   }
 
-  bool bReturn = false;
+  bool bReturn      = false;
   char *cmdLineCopy = ats_strdup(cmdLine);
-  char *ptr = cmdLineCopy;
+  char *ptr         = cmdLineCopy;
 
   while (*ptr && !isspace(*ptr))
     ++ptr;
@@ -765,8 +765,8 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   SSLCertificateConfig::scoped_config certLookup;
 
   int64_t sessions = 0;
-  int64_t hits = 0;
-  int64_t misses = 0;
+  int64_t hits     = 0;
+  int64_t misses   = 0;
   int64_t timeouts = 0;
 
   if (certLookup) {
@@ -992,15 +992,15 @@ SSLInitializeStatistics()
   // initialize stat name->index hash table
   ssl_cipher_name_table = ink_hash_table_create(InkHashTableKeyType_Word);
 
-  ctx = SSLDefaultServerContext();
-  ssl = SSL_new(ctx);
+  ctx     = SSLDefaultServerContext();
+  ssl     = SSL_new(ctx);
   ciphers = SSL_get_ciphers(ssl);
 
   // BoringSSL has sk_SSL_CIPHER_num() return a size_t (well, sk_num() is)
   for (int index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
-    SSL_CIPHER *cipher = const_cast<SSL_CIPHER *>(sk_SSL_CIPHER_value(ciphers, index));
+    SSL_CIPHER *cipher     = const_cast<SSL_CIPHER *>(sk_SSL_CIPHER_value(ciphers, index));
     const char *cipherName = SSL_CIPHER_get_name(cipher);
-    std::string statName = "proxy.process.ssl.cipher.user_agent." + std::string(cipherName);
+    std::string statName   = "proxy.process.ssl.cipher.user_agent." + std::string(cipherName);
 
     // If room in allocated space ...
     if ((ssl_cipher_stats_start + index) > ssl_cipher_stats_end) {
@@ -1292,7 +1292,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
   EVP_MD_CTX digest;
   STACK_OF(X509_NAME) *ca_list = NULL;
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
-  unsigned int hash_len = 0;
+  unsigned int hash_len    = 0;
   char const *setting_cert = sslMultCertSettings.cert.get();
 
   // disable selected protocols
@@ -1607,7 +1607,7 @@ static bool
 ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname)
 {
   X509_NAME *subject = NULL;
-  bool inserted = false;
+  bool inserted      = false;
 
   if (NULL == cert) {
     Error("Failed to load certificate %s", certname);
@@ -1627,8 +1627,8 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
       }
 
       X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
-      ASN1_STRING *cn = X509_NAME_ENTRY_get_data(e);
-      subj_name = asn1_strdup(cn);
+      ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
+      subj_name          = asn1_strdup(cn);
 
       Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
       if (lookup->insert(subj_name, cc) >= 0)
@@ -1717,9 +1717,9 @@ static SSL_CTX *
 ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, const ssl_user_config &sslMultCertSettings)
 {
   Vec<X509 *> cert_list;
-  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
+  SSL_CTX *ctx                   = SSLInitServerContext(params, sslMultCertSettings, cert_list);
   ssl_ticket_key_block *keyblock = NULL;
-  bool inserted = false;
+  bool inserted                  = false;
 
   if (!ctx) {
     lookup->is_valid = false;
@@ -1761,7 +1761,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
   if (sslMultCertSettings.addr) {
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
       if (lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
-        inserted = true;
+        inserted            = true;
         lookup->ssl_default = ctx;
         ssl_set_handshake_callbacks(ctx);
       }
@@ -1908,7 +1908,7 @@ bool
 SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup)
 {
   char *tok_state = NULL;
-  char *line = NULL;
+  char *line      = NULL;
   ats_scoped_str file_buf;
   unsigned line_num = 0;
   matcher_line line_info;

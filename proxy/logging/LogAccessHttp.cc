@@ -110,7 +110,7 @@ LogAccessHttp::init()
 
     // make a copy of the incoming url into the arena
     const char *url_string_ref = m_client_request->url_string_get_ref(&m_client_req_url_len);
-    m_client_req_url_str = m_arena.str_alloc(m_client_req_url_len + 1);
+    m_client_req_url_str       = m_arena.str_alloc(m_client_req_url_len + 1);
     memcpy(m_client_req_url_str, url_string_ref, m_client_req_url_len);
     m_client_req_url_str[m_client_req_url_len] = '\0';
 
@@ -232,7 +232,7 @@ LogAccessHttp::marshal_plugin_identity_id(char *buf)
 int
 LogAccessHttp::marshal_plugin_identity_tag(char *buf)
 {
-  int len = INK_MIN_ALIGN;
+  int len         = INK_MIN_ALIGN;
   char const *tag = m_http_sm->plugin_tag;
 
   if (!tag)
@@ -295,7 +295,7 @@ int
 LogAccessHttp::marshal_client_auth_user_name(char *buf)
 {
   char *str = NULL;
-  int len = INK_MIN_ALIGN;
+  int len   = INK_MIN_ALIGN;
 
   // Jira TS-40:
   // NOTE: Authentication related code and modules were removed/disabled.
@@ -417,8 +417,8 @@ int
 LogAccessHttp::marshal_client_req_http_method(char *buf)
 {
   char *str = NULL;
-  int alen = 0;
-  int plen = INK_MIN_ALIGN;
+  int alen  = 0;
+  int plen  = INK_MIN_ALIGN;
 
   if (m_client_request) {
     str = (char *)m_client_request->method_get(&alen);
@@ -556,17 +556,17 @@ LogAccessHttp::marshal_client_req_url_path(char *buf)
 int
 LogAccessHttp::marshal_client_req_url_scheme(char *buf)
 {
-  int scheme = m_http_sm->t_state.orig_scheme;
+  int scheme      = m_http_sm->t_state.orig_scheme;
   const char *str = NULL;
   int alen;
   int plen = INK_MIN_ALIGN;
 
   // If the transaction aborts very early, the scheme may not be set, or so ASAN reports.
   if (scheme >= 0) {
-    str = hdrtoken_index_to_wks(scheme);
+    str  = hdrtoken_index_to_wks(scheme);
     alen = hdrtoken_index_to_length(scheme);
   } else {
-    str = "UNKNOWN";
+    str  = "UNKNOWN";
     alen = strlen(str);
   }
 
@@ -599,8 +599,8 @@ LogAccessHttp::marshal_client_req_http_version(char *buf)
     int64_t minor = 0;
     if (m_client_request) {
       HTTPVersion versionObject = m_client_request->version_get();
-      major = HTTP_MAJOR(versionObject.m_version);
-      minor = HTTP_MINOR(versionObject.m_version);
+      major                     = HTTP_MAJOR(versionObject.m_version);
+      minor                     = HTTP_MINOR(versionObject.m_version);
     }
     marshal_int(buf, major);
     marshal_int((buf + INK_MIN_ALIGN), minor);
@@ -614,14 +614,14 @@ LogAccessHttp::marshal_client_req_http_version(char *buf)
 int
 LogAccessHttp::marshal_client_req_protocol_version(char *buf)
 {
-  int len = INK_MIN_ALIGN;
+  int len         = INK_MIN_ALIGN;
   char const *tag = m_http_sm->plugin_tag;
 
   if (!tag) {
     if (m_client_request) {
       HTTPVersion versionObject = m_client_request->version_get();
-      int64_t major = HTTP_MAJOR(versionObject.m_version);
-      int64_t minor = HTTP_MINOR(versionObject.m_version);
+      int64_t major             = HTTP_MAJOR(versionObject.m_version);
+      int64_t minor             = HTTP_MINOR(versionObject.m_version);
       if (major == 1 && minor == 1) {
         tag = "http/1.1";
       } else if (major == 1 && minor == 0) {
@@ -722,7 +722,7 @@ int
 LogAccessHttp::marshal_client_finish_status_code(char *buf)
 {
   if (buf) {
-    int code = LOG_FINISH_FIN;
+    int code                                  = LOG_FINISH_FIN;
     HttpTransact::AbortState_t cl_abort_state = m_http_sm->t_state.client_info.abort;
     if (cl_abort_state == HttpTransact::ABORTED) {
       // Check to see if the abort is due to a timeout
@@ -744,7 +744,7 @@ int
 LogAccessHttp::marshal_client_security_protocol(char *buf)
 {
   const char *proto = m_http_sm->client_sec_protocol;
-  int round_len = LogAccess::strlen(proto);
+  int round_len     = LogAccess::strlen(proto);
 
   if (buf) {
     marshal_str(buf, proto, round_len);
@@ -757,7 +757,7 @@ int
 LogAccessHttp::marshal_client_security_cipher_suite(char *buf)
 {
   const char *cipher = m_http_sm->client_cipher_suite;
-  int round_len = LogAccess::strlen(cipher);
+  int round_len      = LogAccess::strlen(cipher);
 
   if (buf) {
     marshal_str(buf, cipher, round_len);
@@ -952,7 +952,7 @@ int
 LogAccessHttp::marshal_proxy_req_server_name(char *buf)
 {
   char *str = NULL;
-  int len = INK_MIN_ALIGN;
+  int len   = INK_MIN_ALIGN;
 
   if (m_http_sm->t_state.current.server) {
     str = m_http_sm->t_state.current.server->name;
@@ -1017,7 +1017,7 @@ int
 LogAccessHttp::marshal_server_host_ip(char *buf)
 {
   sockaddr const *ip = 0;
-  ip = &m_http_sm->t_state.server_info.dst_addr.sa;
+  ip                 = &m_http_sm->t_state.server_info.dst_addr.sa;
   if (!ats_is_ip(ip)) {
     if (m_http_sm->t_state.current.server) {
       ip = &m_http_sm->t_state.current.server->dst_addr.sa;
@@ -1037,8 +1037,8 @@ int
 LogAccessHttp::marshal_server_host_name(char *buf)
 {
   char const *str = NULL;
-  int padded_len = INK_MIN_ALIGN;
-  int actual_len = 0;
+  int padded_len  = INK_MIN_ALIGN;
+  int actual_len  = 0;
 
   if (m_client_request) {
     str = m_client_request->host_get(&actual_len);
@@ -1125,7 +1125,7 @@ LogAccessHttp::marshal_server_resp_time_ms(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -1136,7 +1136,7 @@ LogAccessHttp::marshal_server_resp_time_s(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SERVER_CLOSE] - m_http_sm->milestones[TS_MILESTONE_SERVER_CONNECT];
-    int64_t val = (int64_t)ink_hrtime_to_sec(elapsed);
+    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -1308,7 +1308,7 @@ LogAccessHttp::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -1319,7 +1319,7 @@ LogAccessHttp::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones[TS_MILESTONE_SM_FINISH] - m_http_sm->milestones[TS_MILESTONE_SM_START];
-    int64_t val = (int64_t)ink_hrtime_to_sec(elapsed);
+    int64_t val        = (int64_t)ink_hrtime_to_sec(elapsed);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;
@@ -1364,9 +1364,9 @@ LogAccessHttp::marshal_file_size(char *buf)
 int
 LogAccessHttp::marshal_http_header_field(LogField::Container container, char *field, char *buf)
 {
-  char *str = NULL;
-  int padded_len = INK_MIN_ALIGN;
-  int actual_len = 0;
+  char *str        = NULL;
+  int padded_len   = INK_MIN_ALIGN;
+  int actual_len   = 0;
   bool valid_field = false;
   HTTPHdr *header;
 
@@ -1507,7 +1507,7 @@ LogAccessHttp::marshal_http_header_field_escapify(LogField::Container container,
       //
       int running_len = 0;
       while (fld) {
-        str = (char *)fld->value_get(&actual_len);
+        str     = (char *)fld->value_get(&actual_len);
         new_str = LogUtils::escapify_url(&m_arena, str, actual_len, &new_len);
         if (buf) {
           memcpy(buf, new_str, new_len);
@@ -1579,7 +1579,7 @@ LogAccessHttp::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2
 {
   if (buf) {
     ink_hrtime elapsed = m_http_sm->milestones.elapsed(ms2, ms1);
-    int64_t val = (int64_t)ink_hrtime_to_msec(elapsed);
+    int64_t val        = (int64_t)ink_hrtime_to_msec(elapsed);
     marshal_int(buf, val);
   }
   return INK_MIN_ALIGN;

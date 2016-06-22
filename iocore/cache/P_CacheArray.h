@@ -124,7 +124,7 @@ CacheArray<T>::detach()
 {
   T *d;
 
-  d = data;
+  d    = data;
   data = NULL;
 
   return d;
@@ -149,7 +149,7 @@ CacheArray<T>::clear()
   }
 
   size = 0;
-  pos = -1;
+  pos  = -1;
 }
 
 template <class T>

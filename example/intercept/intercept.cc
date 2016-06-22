@@ -120,7 +120,7 @@ struct InterceptIO {
     if (this->vc) {
       TSVConnClose(this->vc);
     }
-    this->vc = NULL;
+    this->vc         = NULL;
     this->readio.vio = this->writeio.vio = NULL;
   }
 };
@@ -282,7 +282,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     socket_type addr;
     argument_type cdata(TSContDataGet(contp));
     InterceptState *istate = new InterceptState();
-    int fd = -1;
+    int fd                 = -1;
 
     // This event is delivered by the continuation that we
     // attached in InterceptTxnHook, so the continuation data is
@@ -292,9 +292,9 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     // Set up a connection to our real origin, which will be
     // 127.0.0.1:$PORT.
     memset(&addr, 0, sizeof(addr));
-    addr.sin.sin_family = AF_INET;
+    addr.sin.sin_family      = AF_INET;
     addr.sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // XXX config option
-    addr.sin.sin_port = htons(PORT);                   // XXX config option
+    addr.sin.sin_port        = htons(PORT);            // XXX config option
 
     // Normally, we would use TSNetConnect to connect to a secondary service, but to demonstrate
     // the use of TSVConnFdCreate, we do a blocking connect inline. This it not recommended for
@@ -318,7 +318,7 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     VDEBUG("binding client vc=%p to %s:%u", istate->client.vc, inet_ntop(AF_INET, &addr.sin.sin_addr, buf, sizeof(buf)),
            (unsigned)ntohs(addr.sin.sin_port));
 
-    istate->txn = cdata.txn;
+    istate->txn       = cdata.txn;
     istate->client.vc = arg.vc;
     istate->server.vc = TSVConnFdCreate(fd);
 
@@ -369,9 +369,9 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
 
   case TS_EVENT_VCONN_READ_READY: {
     argument_type cdata = TSContDataGet(contp);
-    TSVConn vc = TSVIOVConnGet(arg.vio);
-    InterceptIO *from = InterceptGetThisSide(cdata.istate, vc);
-    InterceptIO *to = InterceptGetOtherSide(cdata.istate, vc);
+    TSVConn vc          = TSVIOVConnGet(arg.vio);
+    InterceptIO *from   = InterceptGetThisSide(cdata.istate, vc);
+    InterceptIO *to     = InterceptGetOtherSide(cdata.istate, vc);
     ;
     int64_t nbytes;
 
@@ -416,9 +416,9 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     // The exception is where one side of the proxied connection
     // has been closed. Then we want to close the other side.
     argument_type cdata = TSContDataGet(contp);
-    TSVConn vc = TSVIOVConnGet(arg.vio);
-    InterceptIO *to = InterceptGetThisSide(cdata.istate, vc);
-    InterceptIO *from = InterceptGetOtherSide(cdata.istate, vc);
+    TSVConn vc          = TSVIOVConnGet(arg.vio);
+    InterceptIO *to     = InterceptGetThisSide(cdata.istate, vc);
+    InterceptIO *from   = InterceptGetOtherSide(cdata.istate, vc);
     ;
 
     // If the other side is closed, close this side too, but only if there
@@ -445,11 +445,11 @@ InterceptInterceptionHook(TSCont contp, TSEvent event, void *edata)
     // to receiving EOS from the intercepted origin server, and
     // when handling errors.
 
-    TSVConn vc = TSVIOVConnGet(arg.vio);
+    TSVConn vc          = TSVIOVConnGet(arg.vio);
     argument_type cdata = TSContDataGet(contp);
 
     InterceptIO *from = InterceptGetThisSide(cdata.istate, vc);
-    InterceptIO *to = InterceptGetOtherSide(cdata.istate, vc);
+    InterceptIO *to   = InterceptGetOtherSide(cdata.istate, vc);
     ;
 
     VIODEBUG(arg.vio, "received EOS or ERROR from %s side", InterceptProxySideVC(cdata.istate, vc));
@@ -531,8 +531,8 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)PLUGIN;
-  info.vendor_name = (char *)"MyCompany";
+  info.plugin_name   = (char *)PLUGIN;
+  info.vendor_name   = (char *)"MyCompany";
   info.support_email = (char *)"ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -541,7 +541,7 @@ TSPluginInit(int /* argc */, const char * /* argv */ [])
 
   // XXX accept hostname and port arguments
 
-  TxnHook = InterceptContCreate(InterceptTxnHook, NULL, NULL);
+  TxnHook       = InterceptContCreate(InterceptTxnHook, NULL, NULL);
   InterceptHook = InterceptContCreate(InterceptInterceptionHook, NULL, NULL);
 
   // Wait until after the cache lookup to decide whether to

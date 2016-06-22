@@ -32,13 +32,13 @@
 #include "ts/ink_assert.h"
 #include "ts/Regression.h"
 
-static RegressionTest *test = NULL;
+static RegressionTest *test           = NULL;
 static RegressionTest *exclusive_test = NULL;
 
 RegressionTest *RegressionTest::current = 0;
-int RegressionTest::ran_tests = 0;
+int RegressionTest::ran_tests           = 0;
 DFA RegressionTest::dfa;
-int regression_level = 0;
+int regression_level             = 0;
 int RegressionTest::final_status = REGRESSION_TEST_PASSED;
 
 char *
@@ -52,20 +52,20 @@ regression_status_string(int status)
 
 RegressionTest::RegressionTest(const char *name_arg, TestFunction *function_arg, int aopt)
 {
-  name = name_arg;
+  name     = name_arg;
   function = function_arg;
-  status = REGRESSION_TEST_NOT_RUN;
-  printed = 0;
-  opt = aopt;
+  status   = REGRESSION_TEST_NOT_RUN;
+  printed  = 0;
+  opt      = aopt;
 
   if (opt == REGRESSION_OPT_EXCLUSIVE) {
     if (exclusive_test)
-      this->next = exclusive_test;
+      this->next   = exclusive_test;
     exclusive_test = this;
   } else {
     if (test)
       this->next = test;
-    test = this;
+    test         = this;
   }
 }
 
@@ -143,7 +143,7 @@ RegressionTest::check_status()
       return status;
   }
   RegressionTest *t = test;
-  int exclusive = 0;
+  int exclusive     = 0;
 
 check_test_list:
   while (t) {
@@ -168,7 +168,7 @@ check_test_list:
   }
   if (!exclusive) {
     exclusive = 1;
-    t = exclusive_test;
+    t         = exclusive_test;
     goto check_test_list;
   }
 

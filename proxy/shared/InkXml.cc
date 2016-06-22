@@ -38,7 +38,7 @@
 
 InkXmlAttr::InkXmlAttr(const char *tag, const char *value)
 {
-  m_tag = ats_strdup(tag);
+  m_tag   = ats_strdup(tag);
   m_value = ats_strdup(value);
 }
 
@@ -60,7 +60,7 @@ InkXmlAttr::display(FILE *fd)
 
 InkXmlObject::InkXmlObject(const char *object_name, bool dup_attrs_allowed)
 {
-  m_object_name = ats_strdup(object_name);
+  m_object_name       = ats_strdup(object_name);
   m_dup_attrs_allowed = dup_attrs_allowed;
 }
 
@@ -160,7 +160,7 @@ InkXmlConfigFile::parse(int fd)
   Debug("log", "Parsing XML config info from memory..");
 
   m_line = 1;
-  m_col = 0;
+  m_col  = 0;
 
   InkXmlObject *obj;
   while ((obj = get_next_xml_object(fd)) != NULL) {
@@ -186,7 +186,7 @@ InkXmlConfigFile::parse()
   }
 
   m_line = 1;
-  m_col = 0;
+  m_col  = 0;
 
   InkXmlObject *obj;
   while ((obj = get_next_xml_object(fd)) != NULL) {
@@ -295,7 +295,7 @@ InkXmlConfigFile::scan_object(int fd, char token)
 
   while (token != '>' && ident_len < max_ident_len) {
     ident[ident_len++] = token;
-    token = next_token(fd);
+    token              = next_token(fd);
     if (token == EOF)
       return parse_error();
   }
@@ -303,7 +303,7 @@ InkXmlConfigFile::scan_object(int fd, char token)
     return parse_error();
   }
 
-  ident[ident_len] = 0;
+  ident[ident_len]  = 0;
   InkXmlObject *obj = new InkXmlObject(ident);
   ink_assert(obj != NULL);
 
@@ -333,10 +333,10 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
   char name[buf_size];
   char value[buf_size];
   char ident[buf_size];
-  char *write_to = NULL;
-  int write_len = 0;
-  bool start_attr = false;
-  bool in_quotes = false;
+  char *write_to   = NULL;
+  int write_len    = 0;
+  bool start_attr  = false;
+  bool in_quotes   = false;
   InkXmlAttr *attr = NULL;
 
   prev = next = 0;
@@ -350,8 +350,8 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
         break;
       }
       start_attr = true;
-      write_to = name;
-      write_len = 0;
+      write_to   = name;
+      write_len  = 0;
       break;
 
     case '=':
@@ -364,8 +364,8 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
       if (!start_attr)
         return BAD_ATTR;
       write_to[write_len] = 0;
-      write_to = value;
-      write_len = 0;
+      write_to            = value;
+      write_len           = 0;
       break;
 
     case '"':
@@ -391,10 +391,10 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
         return BAD_ATTR;
       if (prev == '<') {
         write_len = 0;
-        token = next_token(fd, !in_quotes);
+        token     = next_token(fd, !in_quotes);
         while (token != '>' && write_len < buf_size) {
           ident[write_len++] = token;
-          token = next_token(fd, !in_quotes);
+          token              = next_token(fd, !in_quotes);
           if (token == EOF)
             return BAD_ATTR;
         }
@@ -411,7 +411,7 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
       if (next != '>')
         return BAD_ATTR;
       write_to[write_len] = 0;
-      attr = new InkXmlAttr(name, value);
+      attr                = new InkXmlAttr(name, value);
       ink_assert(attr != NULL);
       return attr;
 

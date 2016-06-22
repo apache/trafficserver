@@ -36,14 +36,14 @@ Cache::scan(Continuation *cont, const char *hostname, int host_len, int KB_per_s
   }
 
   CacheVC *c = new_CacheVC(cont);
-  c->vol = NULL;
+  c->vol     = NULL;
   /* do we need to make a copy */
-  c->hostname = const_cast<char *>(hostname);
-  c->host_len = host_len;
-  c->base_stat = cache_scan_active_stat;
-  c->buf = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(SCAN_BUF_SIZE), MEMALIGNED);
+  c->hostname        = const_cast<char *>(hostname);
+  c->host_len        = host_len;
+  c->base_stat       = cache_scan_active_stat;
+  c->buf             = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(SCAN_BUF_SIZE), MEMALIGNED);
   c->scan_msec_delay = (SCAN_BUF_SIZE / KB_per_second);
-  c->offset = 0;
+  c->offset          = 0;
   SET_CONTINUATION_HANDLER(c, &CacheVC::scanVol);
   eventProcessor.schedule_in(c, HRTIME_MSECONDS(c->scan_msec_delay));
   cont->handleEvent(CACHE_EVENT_SCAN, c);
@@ -95,8 +95,8 @@ static off_t
 next_in_map(Vol *d, char *vol_map, off_t offset)
 {
   off_t start_offset = vol_offset_to_offset(d, 0);
-  off_t new_off = (offset - start_offset);
-  off_t vol_len = vol_relative_length(d, start_offset);
+  off_t new_off      = (offset - start_offset);
+  off_t vol_len      = vol_relative_length(d, start_offset);
 
   while (new_off < vol_len && !vol_map[new_off / SCAN_BUF_SIZE])
     new_off += SCAN_BUF_SIZE;
@@ -119,9 +119,9 @@ make_vol_map(Vol *d)
 {
   // Map will be one byte for each SCAN_BUF_SIZE bytes.
   off_t start_offset = vol_offset_to_offset(d, 0);
-  off_t vol_len = vol_relative_length(d, start_offset);
-  size_t map_len = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
-  char *vol_map = (char *)ats_malloc(map_len);
+  off_t vol_len      = vol_relative_length(d, start_offset);
+  size_t map_len     = (vol_len + (SCAN_BUF_SIZE - 1)) / SCAN_BUF_SIZE;
+  char *vol_map      = (char *)ats_malloc(map_len);
 
   memset(vol_map, 0, map_len);
 
@@ -154,14 +154,14 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   Debug("cache_scan_truss", "inside %p:scanObject", this);
 
-  Doc *doc = NULL;
+  Doc *doc     = NULL;
   void *result = NULL;
 #ifdef HTTP_CACHE
   int hlen = 0;
   char hname[500];
   bool hostinfo_copied = false;
 #endif
-  off_t next_object_len = 0;
+  off_t next_object_len        = 0;
   bool might_need_overlap_read = false;
 
   cancel_trigger();
@@ -177,15 +177,15 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   }
 
   if (!fragment) { // initialize for first read
-    fragment = 1;
-    scan_vol_map = make_vol_map(vol);
+    fragment            = 1;
+    scan_vol_map        = make_vol_map(vol);
     io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, vol_offset_to_offset(vol, 0));
     if (io.aiocb.aio_offset >= (off_t)(vol->skip + vol->len))
       goto Lnext_vol;
     io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
-    io.aiocb.aio_buf = buf->data();
-    io.action = this;
-    io.thread = AIO_CALLBACK_THREAD_ANY;
+    io.aiocb.aio_buf    = buf->data();
+    io.action           = this;
+    io.thread           = AIO_CALLBACK_THREAD_ANY;
     Debug("cache_scan_truss", "read %p:scanObject", this);
     goto Lread;
   }
@@ -202,13 +202,13 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     io.aio_result += scan_fix_buffer_offset;
     io.aiocb.aio_nbytes += scan_fix_buffer_offset;
     io.aiocb.aio_offset -= scan_fix_buffer_offset;
-    io.aiocb.aio_buf = (char *)io.aiocb.aio_buf - scan_fix_buffer_offset;
+    io.aiocb.aio_buf       = (char *)io.aiocb.aio_buf - scan_fix_buffer_offset;
     scan_fix_buffer_offset = 0;
   }
   while ((off_t)((char *)doc - buf->data()) + next_object_len < (off_t)io.aiocb.aio_nbytes) {
     might_need_overlap_read = false;
-    doc = (Doc *)((char *)doc + next_object_len);
-    next_object_len = vol->round_to_approx_size(doc->len);
+    doc                     = (Doc *)((char *)doc + next_object_len);
+    next_object_len         = vol->round_to_approx_size(doc->len);
 #ifdef HTTP_CACHE
     int i;
     bool changed;
@@ -237,7 +237,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
     {
       char *tmp = doc->hdr();
-      int len = doc->hlen;
+      int len   = doc->hlen;
       while (len > 0) {
         int r = HTTPInfo::unmarshal(tmp, len, buf._ptr());
         if (r < 0) {
@@ -250,7 +250,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     }
     if (this->load_http_info(&vector, doc) != doc->hlen)
       goto Lskip;
-    changed = false;
+    changed         = false;
     hostinfo_copied = 0;
     for (i = 0; i < vector.count(); i++) {
       if (!vector.get(i)->valid())
@@ -270,7 +270,7 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           continue;
       }
       earliest_key = key;
-      int result1 = _action.continuation->handleEvent(CACHE_EVENT_SCAN_OBJECT, vector.get(i));
+      int result1  = _action.continuation->handleEvent(CACHE_EVENT_SCAN_OBJECT, vector.get(i));
       switch (result1) {
       case CACHE_SCAN_RESULT_CONTINUE:
         continue;
@@ -306,14 +306,14 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         cacheProcessor.remove(this, &doc->first_key, true, CACHE_FRAG_TYPE_HTTP, hname, hlen);
         return EVENT_CONT;
       } else {
-        offset = (char *)doc - buf->data();
-        write_len = 0;
-        frag_type = CACHE_FRAG_TYPE_HTTP;
+        offset          = (char *)doc - buf->data();
+        write_len       = 0;
+        frag_type       = CACHE_FRAG_TYPE_HTTP;
         f.use_first_key = 1;
-        f.evac_vector = 1;
-        first_key = key = doc->first_key;
-        alternate_index = CACHE_ALT_REMOVED;
-        earliest_key = zero_key;
+        f.evac_vector   = 1;
+        first_key = key   = doc->first_key;
+        alternate_index   = CACHE_ALT_REMOVED;
+        earliest_key      = zero_key;
         writer_lock_retry = 0;
         SET_HANDLER(&CacheVC::scanOpenWrite);
         return scanOpenWrite(EVENT_NONE, 0);
@@ -334,16 +334,16 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     // Copy partial object to beginning of the buffer.
     memmove(buf->data(), (char *)doc, partial_object_len);
     io.aiocb.aio_offset += io.aiocb.aio_nbytes;
-    io.aiocb.aio_nbytes = SCAN_BUF_SIZE - partial_object_len;
-    io.aiocb.aio_buf = buf->data() + partial_object_len;
+    io.aiocb.aio_nbytes    = SCAN_BUF_SIZE - partial_object_len;
+    io.aiocb.aio_buf       = buf->data() + partial_object_len;
     scan_fix_buffer_offset = partial_object_len;
   } else { // Normal case, where we ended on a object boundary.
     io.aiocb.aio_offset += ((char *)doc - buf->data()) + next_object_len;
     Debug("cache_scan_truss", "next %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
     io.aiocb.aio_offset = next_in_map(vol, scan_vol_map, io.aiocb.aio_offset);
     Debug("cache_scan_truss", "next_in_map %p:scanObject %" PRId64, this, (int64_t)io.aiocb.aio_offset);
-    io.aiocb.aio_nbytes = SCAN_BUF_SIZE;
-    io.aiocb.aio_buf = buf->data();
+    io.aiocb.aio_nbytes    = SCAN_BUF_SIZE;
+    io.aiocb.aio_buf       = buf->data();
     scan_fix_buffer_offset = 0;
   }
 
@@ -358,7 +358,7 @@ Lread:
   io.aiocb.aio_fildes = vol->fd;
   if ((off_t)(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > (off_t)(vol->skip + vol->len))
     io.aiocb.aio_nbytes = vol->skip + vol->len - io.aiocb.aio_offset;
-  offset = 0;
+  offset                = 0;
   ink_assert(ink_aio_read(&io) >= 0);
   Debug("cache_scan_truss", "read %p:scanObject %" PRId64 " %zu", this, (int64_t)io.aiocb.aio_offset, (size_t)io.aiocb.aio_nbytes);
   return EVENT_CONT;
@@ -432,7 +432,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     Dir *l = NULL;
     Dir d;
     Doc *doc = (Doc *)(buf->data() + offset);
-    offset = (char *)doc - buf->data() + vol->round_to_approx_size(doc->len);
+    offset   = (char *)doc - buf->data() + vol->round_to_approx_size(doc->len);
     // if the doc contains some data, then we need to create
     // a new directory entry for this fragment. Remember the
     // offset and the key in earliest_key
@@ -440,7 +440,7 @@ CacheVC::scanOpenWrite(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     if (doc->total_len) {
       dir_assign(&od->single_doc_dir, &dir);
       dir_set_tag(&od->single_doc_dir, doc->key.slice32(2));
-      od->single_doc_key = doc->key;
+      od->single_doc_key    = doc->key;
       od->move_resident_alt = 1;
     }
 

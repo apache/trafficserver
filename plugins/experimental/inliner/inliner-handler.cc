@@ -71,9 +71,9 @@ namespace inliner
   {
     assert(reader_ != NULL);
     TSIOBufferBlock block = TSIOBufferReaderStart(reader_);
-    int64_t offset = 0;
+    int64_t offset        = 0;
     while (block != NULL) {
-      int64_t length = 0;
+      int64_t length           = 0;
       const char *const buffer = TSIOBufferBlockReadStart(block, reader_, &length);
       assert(buffer != NULL);
       if (length > 0) {

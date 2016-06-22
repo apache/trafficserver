@@ -39,7 +39,7 @@ Http2SessionAccept::~Http2SessionAccept()
 void
 Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const *client_ip = netvc->get_remote_addr();
+  sockaddr const *client_ip           = netvc->get_remote_addr();
   const AclRecord *session_acl_record = testIpAllowPolicy(client_ip);
   if (!session_acl_record) {
     ip_port_text_buffer ipb;
@@ -57,7 +57,7 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
   }
 
   Http2ClientSession *new_session = THREAD_ALLOC_INIT(http2ClientSessionAllocator, this_ethread());
-  new_session->acl_record = session_acl_record;
+  new_session->acl_record         = session_acl_record;
   new_session->new_connection(netvc, iobuf, reader, false /* backdoor */);
 }
 

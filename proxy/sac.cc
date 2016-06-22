@@ -87,8 +87,8 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   //
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
 
-  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
-  diags = diagsConfig->diags;
+  diagsConfig       = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
+  diags             = diagsConfig->diags;
   diags->prefix_str = "Collector ";
 
   // initialize this application for standalone logging operation
@@ -101,7 +101,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   // set up IO Buffers
   //
   int config_max_iobuffer_size = DEFAULT_MAX_BUFFER_SIZE;
-  max_iobuffer_size = buffer_size_to_index(config_max_iobuffer_size, DEFAULT_BUFFER_SIZES - 1);
+  max_iobuffer_size            = buffer_size_to_index(config_max_iobuffer_size, DEFAULT_BUFFER_SIZES - 1);
   if (default_small_iobuffer_size > max_iobuffer_size)
     default_small_iobuffer_size = max_iobuffer_size;
   if (default_large_iobuffer_size > max_iobuffer_size)

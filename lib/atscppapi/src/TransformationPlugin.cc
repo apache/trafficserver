@@ -71,7 +71,7 @@ struct atscppapi::TransformationPluginState : noncopyable {
       bytes_written_(0),
       input_complete_dispatched_(false)
   {
-    output_buffer_ = TSIOBufferCreate();
+    output_buffer_        = TSIOBufferCreate();
     output_buffer_reader_ = TSIOBufferReaderAlloc(output_buffer_);
   };
 
@@ -127,7 +127,7 @@ handleTransformationPluginRead(TSCont contp, TransformationPluginState *state)
 
       if (to_read > 0) {
         /* Create a buffer and a buffer reader */
-        TSIOBuffer input_buffer = TSIOBufferCreate();
+        TSIOBuffer input_buffer       = TSIOBufferCreate();
         TSIOBufferReader input_reader = TSIOBufferReaderAlloc(input_buffer);
 
         /* Copy the data from the read buffer to the input buffer. */
@@ -225,7 +225,7 @@ handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata)
     /* Get the write VIO for the write operation that was
      performed on ourself. This VIO contains the continuation of
      our parent transformation. */
-    write_vio = TSVConnWriteVIOGet(state->vconn_);
+    write_vio       = TSVConnWriteVIOGet(state->vconn_);
     TSCont vio_cont = TSVIOContGet(write_vio);
     LOG_ERROR("Transformation contp=%p tshttptxn=%p received EVENT_ERROR forwarding to write_vio=%p viocont=%p", contp, state->txn_,
               write_vio, vio_cont);
@@ -244,7 +244,7 @@ handleTransformationPluginEvents(TSCont contp, TSEvent event, void *edata)
 TransformationPlugin::TransformationPlugin(Transaction &transaction, TransformationPlugin::Type type)
   : TransactionPlugin(transaction)
 {
-  state_ = new TransformationPluginState(transaction, *this, type, static_cast<TSHttpTxn>(transaction.getAtsHandle()));
+  state_         = new TransformationPluginState(transaction, *this, type, static_cast<TSHttpTxn>(transaction.getAtsHandle()));
   state_->vconn_ = TSTransformCreate(handleTransformationPluginEvents, state_->txn_);
   TSContDataSet(state_->vconn_, static_cast<void *>(state_)); // edata in a TransformationHandler is NOT a TSHttpTxn.
   LOG_DEBUG("Creating TransformationPlugin=%p (vconn)contp=%p tshttptxn=%p transformation_type=%d", this, state_->vconn_,

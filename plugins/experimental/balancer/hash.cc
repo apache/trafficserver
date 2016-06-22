@@ -116,7 +116,7 @@ void
 HashTxnKey(TSHttpTxn txn, TSRemapRequestInfo *rri, MD5_CTX *ctx)
 {
   TSMLoc url = TS_NULL_MLOC;
-  char *str = NULL;
+  char *str  = NULL;
   int len;
 
   if (TSUrlCreate(rri->requestBufp, &url) != TS_SUCCESS) {

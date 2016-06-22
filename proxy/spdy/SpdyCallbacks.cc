@@ -30,23 +30,23 @@ spdy_callbacks_init(spdylay_session_callbacks *callbacks)
 {
   memset(callbacks, 0, sizeof(spdylay_session_callbacks));
 
-  callbacks->send_callback = spdy_send_callback;
-  callbacks->recv_callback = spdy_recv_callback;
-  callbacks->on_ctrl_recv_callback = spdy_on_ctrl_recv_callback;
-  callbacks->on_invalid_ctrl_recv_callback = spdy_on_invalid_ctrl_recv_callback;
-  callbacks->on_data_chunk_recv_callback = spdy_on_data_chunk_recv_callback;
-  callbacks->on_data_recv_callback = spdy_on_data_recv_callback;
-  callbacks->before_ctrl_send_callback = spdy_before_ctrl_send_callback;
-  callbacks->on_ctrl_send_callback = spdy_on_ctrl_send_callback;
-  callbacks->on_ctrl_not_send_callback = spdy_on_ctrl_not_send_callback;
-  callbacks->on_data_send_callback = spdy_on_data_send_callback;
-  callbacks->on_stream_close_callback = spdy_on_stream_close_callback;
-  callbacks->on_request_recv_callback = spdy_on_request_recv_callback;
-  callbacks->get_credential_proof = spdy_get_credential_proof;
-  callbacks->get_credential_ncerts = spdy_get_credential_ncerts;
-  callbacks->get_credential_cert = spdy_get_credential_cert;
+  callbacks->send_callback                     = spdy_send_callback;
+  callbacks->recv_callback                     = spdy_recv_callback;
+  callbacks->on_ctrl_recv_callback             = spdy_on_ctrl_recv_callback;
+  callbacks->on_invalid_ctrl_recv_callback     = spdy_on_invalid_ctrl_recv_callback;
+  callbacks->on_data_chunk_recv_callback       = spdy_on_data_chunk_recv_callback;
+  callbacks->on_data_recv_callback             = spdy_on_data_recv_callback;
+  callbacks->before_ctrl_send_callback         = spdy_before_ctrl_send_callback;
+  callbacks->on_ctrl_send_callback             = spdy_on_ctrl_send_callback;
+  callbacks->on_ctrl_not_send_callback         = spdy_on_ctrl_not_send_callback;
+  callbacks->on_data_send_callback             = spdy_on_data_send_callback;
+  callbacks->on_stream_close_callback          = spdy_on_stream_close_callback;
+  callbacks->on_request_recv_callback          = spdy_on_request_recv_callback;
+  callbacks->get_credential_proof              = spdy_get_credential_proof;
+  callbacks->get_credential_ncerts             = spdy_get_credential_ncerts;
+  callbacks->get_credential_cert               = spdy_get_credential_cert;
   callbacks->on_ctrl_recv_parse_error_callback = spdy_on_ctrl_recv_parse_error_callback;
-  callbacks->on_unknown_ctrl_recv_callback = spdy_on_unknown_ctrl_recv_callback;
+  callbacks->on_unknown_ctrl_recv_callback     = spdy_on_unknown_ctrl_recv_callback;
 }
 
 void
@@ -72,7 +72,7 @@ spdy_prepare_status_response_and_clean_request(SpdyClientSession *sm, int stream
   nv[7] = date_str.c_str();
 
   for (size_t i = 0; i < req->headers.size(); ++i) {
-    nv[8 + i * 2] = req->headers[i].first.c_str();
+    nv[8 + i * 2]     = req->headers[i].first.c_str();
     nv[8 + i * 2 + 1] = req->headers[i].second.c_str();
   }
   nv[8 + req->headers.size() * 2] = 0;
@@ -173,7 +173,7 @@ spdy_fetcher_launch(SpdyRequest *req)
   const sockaddr *client_addr;
   SpdyClientSession *sm = req->spdy_sm;
 
-  url = req->scheme + "://" + req->host + req->path;
+  url         = req->scheme + "://" + req->host + req->path;
   client_addr = TSNetVConnRemoteAddrGet(reinterpret_cast<TSVConn>(sm->vc));
 
   req->url = url;
@@ -228,13 +228,13 @@ spdy_recv_callback(spdylay_session * /*session*/, uint8_t *buf, size_t length, i
   SpdyClientSession *sm = (SpdyClientSession *)user_data;
 
   already = 0;
-  blk = TSIOBufferReaderStart(sm->req_reader);
+  blk     = TSIOBufferReaderStart(sm->req_reader);
 
   while (blk) {
     wavail = length - already;
 
     next_blk = TSIOBufferBlockNext(blk);
-    start = TSIOBufferBlockReadStart(blk, sm->req_reader, &blk_len);
+    start    = TSIOBufferBlockReadStart(blk, sm->req_reader, &blk_len);
 
     need = blk_len > wavail ? wavail : blk_len;
 
@@ -309,7 +309,7 @@ spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type, sp
   switch (type) {
   case SPDYLAY_SYN_STREAM:
     stream_id = frame->syn_stream.stream_id;
-    req = SpdyRequest::alloc();
+    req       = SpdyRequest::alloc();
     req->init(sm, stream_id);
     req->append_nv(frame->syn_stream.nv);
     sm->req_map[stream_id] = req;
@@ -320,7 +320,7 @@ spdy_on_ctrl_recv_callback(spdylay_session *session, spdylay_frame_type type, sp
 
   case SPDYLAY_HEADERS:
     stream_id = frame->syn_stream.stream_id;
-    req = sm->find_request(stream_id);
+    req       = sm->find_request(stream_id);
     if (!req) {
       Error("spdy_on_ctrl_recv_callback, req object null on SPDYLAY_HEADERS for sm %" PRId64 ", stream_id %d", sm->sm_id,
             stream_id);
@@ -352,7 +352,7 @@ spdy_on_data_chunk_recv_callback(spdylay_session * /*session*/, uint8_t /*flags*
                                  size_t len, void *user_data)
 {
   SpdyClientSession *sm = (SpdyClientSession *)user_data;
-  SpdyRequest *req = sm->find_request(stream_id);
+  SpdyRequest *req      = sm->find_request(stream_id);
 
   //
   // SpdyRequest has been deleted on error, drop this data;
@@ -370,7 +370,7 @@ unsigned
 spdy_session_delta_window_size(SpdyClientSession *sm)
 {
   unsigned sess_delta_window_size = 0;
-  map<int, SpdyRequest *>::iterator iter = sm->req_map.begin();
+  map<int, SpdyRequest *>::iterator iter    = sm->req_map.begin();
   map<int, SpdyRequest *>::iterator endIter = sm->req_map.end();
   for (; iter != endIter; ++iter) {
     SpdyRequest *req = iter->second;
@@ -384,7 +384,7 @@ void
 spdy_on_data_recv_callback(spdylay_session *session, uint8_t flags, int32_t stream_id, int32_t length, void *user_data)
 {
   SpdyClientSession *sm = (SpdyClientSession *)user_data;
-  SpdyRequest *req = sm->find_request(stream_id);
+  SpdyRequest *req      = sm->find_request(stream_id);
 
   spdy_show_data_frame("++++RECV", session, flags, stream_id, length, user_data);
 

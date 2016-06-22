@@ -39,11 +39,11 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
   TestBox box(t, pstatus);
   SSLCertLookup lookup;
 
-  SSL_CTX *wild = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *notwild = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX *wild      = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX *notwild   = SSL_CTX_new(SSLv23_server_method());
   SSL_CTX *b_notwild = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *foo = SSL_CTX_new(SSLv23_server_method());
-  SSL_CTX *all_com = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX *foo       = SSL_CTX_new(SSLv23_server_method());
+  SSL_CTX *all_com   = SSL_CTX_new(SSLv23_server_method());
   SSLCertContext wild_cc(wild);
   SSLCertContext notwild_cc(notwild);
   SSLCertContext b_notwild_cc(b_notwild);
@@ -111,18 +111,18 @@ REGRESSION_TEST(SSLAddressLookup)(RegressionTest *t, int /* atype ATS_UNUSED */,
     IpEndpoint ip4p;
   } endpoint;
 
-  context.ip6 = SSL_CTX_new(SSLv23_server_method());
+  context.ip6  = SSL_CTX_new(SSLv23_server_method());
   context.ip6p = SSL_CTX_new(SSLv23_server_method());
-  context.ip4 = SSL_CTX_new(SSLv23_server_method());
+  context.ip4  = SSL_CTX_new(SSLv23_server_method());
   context.ip4p = SSL_CTX_new(SSLv23_server_method());
   SSLCertContext ip6_cc(context.ip6);
   SSLCertContext ip6p_cc(context.ip6p);
   SSLCertContext ip4_cc(context.ip4);
   SSLCertContext ip4p_cc(context.ip4p);
 
-  endpoint.ip6 = make_endpoint("fe80::7ed1:c3ff:fe90:2582");
+  endpoint.ip6  = make_endpoint("fe80::7ed1:c3ff:fe90:2582");
   endpoint.ip6p = make_endpoint("[fe80::7ed1:c3ff:fe90:2582]:80");
-  endpoint.ip4 = make_endpoint("10.0.0.5");
+  endpoint.ip4  = make_endpoint("10.0.0.5");
   endpoint.ip4p = make_endpoint("10.0.0.5:80");
 
   box = REGRESSION_TEST_PASSED;
@@ -207,7 +207,7 @@ int
 main(int argc, const char **argv)
 {
   BaseLogFile *blf = new BaseLogFile("stdout");
-  diags = new Diags(NULL, NULL, blf);
+  diags            = new Diags(NULL, NULL, blf);
   res_track_memory = 1;
 
   SSL_library_init();

@@ -38,7 +38,7 @@ test(void *d)
   id = (intptr_t)d;
 
   time_t start = time(NULL);
-  int count = 0;
+  int count    = 0;
   for (;;) {
     m1 = ink_freelist_new(flist);
     m2 = ink_freelist_new(flist);

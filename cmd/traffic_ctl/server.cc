@@ -23,7 +23,7 @@
 
 #include "traffic_ctl.h"
 
-static int drain = 0;
+static int drain   = 0;
 static int manager = 0;
 
 const ArgumentDescription opts[] = {

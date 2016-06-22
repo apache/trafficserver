@@ -57,7 +57,7 @@ public:
   virtual void
   getFooter(const char *&footer, int &footer_len)
   {
-    footer = NULL;
+    footer     = NULL;
     footer_len = 0;
   }
 

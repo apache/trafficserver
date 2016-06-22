@@ -78,9 +78,9 @@ alarm_script_dir()
 
 Alarms::Alarms()
 {
-  cur_cb = 0;
-  cblist = ink_hash_table_create(InkHashTableKeyType_String);
-  local_alarms = ink_hash_table_create(InkHashTableKeyType_String);
+  cur_cb        = 0;
+  cblist        = ink_hash_table_create(InkHashTableKeyType_String);
+  local_alarms  = ink_hash_table_create(InkHashTableKeyType_String);
   remote_alarms = ink_hash_table_create(InkHashTableKeyType_String);
   ink_mutex_init(&mutex, "alarms-mutex");
   alarmOEMcount = minOEMkey;
@@ -165,7 +165,7 @@ Alarms::resolveAlarm(alarm_t a, char *ip)
 void
 Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
 {
-  static time_t last_sent = 0;
+  static time_t last_sent           = 0;
   static char prev_alarm_text[2048] = "";
 
   int priority;
@@ -257,26 +257,26 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     if (ink_hash_table_lookup(remote_alarms, buf, &hash_value) != 0) {
       // Reset the seen flag so that we know the remote alarm is
       //   still active
-      atmp = (Alarm *)hash_value;
+      atmp       = (Alarm *)hash_value;
       atmp->seen = true;
       ink_mutex_release(&mutex);
       return;
     }
   }
 
-  atmp = (Alarm *)ats_malloc(sizeof(Alarm));
-  atmp->type = a;
-  atmp->linger = true;
-  atmp->seen = true;
-  atmp->priority = priority;
+  atmp              = (Alarm *)ats_malloc(sizeof(Alarm));
+  atmp->type        = a;
+  atmp->linger      = true;
+  atmp->seen        = true;
+  atmp->priority    = priority;
   atmp->description = NULL;
 
   if (!ip) {
-    atmp->local = true;
+    atmp->local        = true;
     atmp->inet_address = 0;
     ink_hash_table_insert(local_alarms, (InkHashTableKey)(buf), (atmp));
   } else {
-    atmp->local = false;
+    atmp->local        = false;
     atmp->inet_address = inet_addr(ip);
     ink_hash_table_insert(remote_alarms, (InkHashTableKey)(buf), (atmp));
   }
@@ -329,7 +329,7 @@ Alarms::resetSeenFlag(char *ip)
   ink_mutex_acquire(&mutex);
   for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != NULL;
        entry = ink_hash_table_iterator_next(remote_alarms, &iterator_state)) {
-    char *key = (char *)ink_hash_table_entry_key(remote_alarms, entry);
+    char *key  = (char *)ink_hash_table_entry_key(remote_alarms, entry);
     Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
 
     if (strstr(key, ip)) {
@@ -354,7 +354,7 @@ Alarms::clearUnSeen(char *ip)
   ink_mutex_acquire(&mutex);
   for (entry = ink_hash_table_iterator_first(remote_alarms, &iterator_state); entry != NULL;
        entry = ink_hash_table_iterator_next(remote_alarms, &iterator_state)) {
-    char *key = (char *)ink_hash_table_entry_key(remote_alarms, entry);
+    char *key  = (char *)ink_hash_table_entry_key(remote_alarms, entry);
     Alarm *tmp = (Alarm *)ink_hash_table_entry_value(remote_alarms, entry);
 
     if (strstr(key, ip)) {                         /* Make sure alarm is for correct ip */
@@ -462,7 +462,7 @@ Alarms::execAlarmBin(const char *desc)
   // get email info
   alarm_email_from_name = REC_readString("proxy.config.product_name", NULL);
   alarm_email_from_addr = REC_readString("proxy.config.admin.admin_user", NULL);
-  alarm_email_to_addr = REC_readString("proxy.config.alarm_email", NULL);
+  alarm_email_to_addr   = REC_readString("proxy.config.alarm_email", NULL);
 
   ink_filepath_make(cmd_line, sizeof(cmd_line), bindir, alarm_bin);
 
@@ -476,7 +476,7 @@ Alarms::execAlarmBin(const char *desc)
   } else if (pid > 0) { /* Parent */
     int status;
     bool script_done = false;
-    time_t timeout = (time_t)REC_readInteger("proxy.config.alarm.script_runtime", NULL);
+    time_t timeout   = (time_t)REC_readInteger("proxy.config.alarm.script_runtime", NULL);
     if (!timeout) {
       timeout = 5; // default time = 5 secs
     }

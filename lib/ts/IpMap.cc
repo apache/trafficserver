@@ -279,8 +279,8 @@ namespace detail
   N *
   IpMapBase<N>::lowerBound(ArgType target)
   {
-    N *n = _root; // current node to test.
-    N *zret = 0;  // best node so far.
+    N *n    = _root; // current node to test.
+    N *zret = 0;     // best node so far.
     while (n) {
       if (target < n->_min)
         n = left(n);
@@ -303,7 +303,7 @@ namespace detail
     N *n = static_cast<N *>(_list.getHead());
     while (n) {
       N *x = n;
-      n = next(n);
+      n    = next(n);
       delete x;
     }
     _list.clear();
@@ -398,7 +398,7 @@ namespace detail
             return *this;
           } else { // n is contained in range, skip over it.
             x->setMaxMinusOne(n->_min);
-            x = 0;
+            x   = 0;
             min = n->_max;
             N::inc(min); // OK because n->_max maximal => next is null.
             n = next(n);
@@ -664,7 +664,7 @@ namespace detail
   IpMapBase<N>::contains(ArgType x, void **ptr) const
   {
     bool zret = false;
-    N *n = _root; // current node to test.
+    N *n      = _root; // current node to test.
     while (n) {
       if (x < n->_min)
         n = left(n);
@@ -673,7 +673,7 @@ namespace detail
       else {
         if (ptr)
           *ptr = n->_data;
-        zret = true;
+        zret   = true;
         break;
       }
     }
@@ -775,7 +775,7 @@ namespace detail
     setMin(ArgType min ///< Minimum value (host order).
            )
     {
-      _min = min;
+      _min                     = min;
       _sa._min.sin_addr.s_addr = htonl(min);
       return *this;
     }
@@ -786,7 +786,7 @@ namespace detail
     setMax(ArgType max ///< Maximum value (host order).
            )
     {
-      _max = max;
+      _max                     = max;
       _sa._max.sin_addr.s_addr = htonl(max);
       return *this;
     }
@@ -1008,7 +1008,7 @@ namespace detail
         )
     {
       uint8_t *addr = m.sin6_addr.s6_addr;
-      uint8_t *b = addr + TS_IP6_SIZE;
+      uint8_t *b    = addr + TS_IP6_SIZE;
       // Ripple carry. Walk up the address incrementing until we don't
       // have a carry.
       do {
@@ -1022,7 +1022,7 @@ namespace detail
         )
     {
       uint8_t *addr = m.sin6_addr.s6_addr;
-      uint8_t *b = addr + TS_IP6_SIZE;
+      uint8_t *b    = addr + TS_IP6_SIZE;
       // Ripple borrow. Walk up the address decrementing until we don't
       // have a borrow.
       do {
@@ -1194,7 +1194,7 @@ IpMap::iterator &IpMap::iterator::operator++()
     // and if so, move to the v6 list (if it's there).
     Node *x = static_cast<Node *>(_node->_next);
     if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m4->getTail())
-      x = _tree->_m6->getHead();
+      x   = _tree->_m6->getHead();
     _node = x;
   }
   return *this;
@@ -1207,7 +1207,7 @@ inline IpMap::iterator &IpMap::iterator::operator--()
     // start of the v6 addresses and switch to the v4, if there are any.
     Node *x = static_cast<Node *>(_node->_prev);
     if (!x && _tree->_m4 && _tree->_m6 && _node == _tree->_m6->getHead())
-      x = _tree->_m4->getTail();
+      x   = _tree->_m4->getTail();
     _node = x;
   } else if (_tree) {
     // We were at the end. Back up to v6 if possible, v4 if not.

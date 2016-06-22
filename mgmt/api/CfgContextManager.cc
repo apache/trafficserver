@@ -55,7 +55,7 @@ CfgContext *
 CfgContextCreate(TSFileNameT file)
 {
   CfgContext *ctx = NULL;
-  ctx = new CfgContext(file);
+  ctx             = new CfgContext(file);
   return ctx;
 }
 
@@ -88,29 +88,29 @@ CfgContextCommit(CfgContext *ctx, LLQ *errRules)
 {
   int ret;
   char *new_text = NULL;
-  char *rule = NULL;
+  char *rule     = NULL;
   CfgEleObj *ele;
   int ver, size = 0, index;
   int *iPtr;
-  TSMgmtError err = TS_ERR_OKAY;
+  TSMgmtError err   = TS_ERR_OKAY;
   int max_file_size = MAX_FILE_SIZE;
-  int len = 0;
+  int len           = 0;
 
   ink_assert(ctx);
   if (!ctx)
     return TS_ERR_PARAMS;
 
-  new_text = (char *)ats_malloc(max_file_size + 1);
+  new_text    = (char *)ats_malloc(max_file_size + 1);
   new_text[0] = '\0';
-  ele = ctx->first();
-  index = 0;
+  ele         = ctx->first();
+  index       = 0;
   while (ele) {
     rule = ele->formatEleToRule(); // use polymorphism
     if (!rule) {
-      err = TS_ERR_INVALID_CONFIG_RULE;
+      err  = TS_ERR_INVALID_CONFIG_RULE;
       rule = ats_strdup(FORMAT_TO_RULE_ERROR);
       if (errRules) {
-        iPtr = (int *)ats_malloc(sizeof(int));
+        iPtr  = (int *)ats_malloc(sizeof(int));
         *iPtr = index;
         enqueue(errRules, (void *)iPtr);
       }
@@ -154,9 +154,9 @@ CfgContextGet(CfgContext *ctx)
 {
   TSMgmtError ret;
   int size, ver;
-  char *old_text = NULL;
+  char *old_text      = NULL;
   RuleList *rule_list = NULL;
-  CfgEleObj *ele = NULL;
+  CfgEleObj *ele      = NULL;
 
   ink_assert(ctx);
   if (!ctx)
@@ -383,7 +383,7 @@ CfgContextMoveEleUp(CfgContext *ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
   TSCfgEle *ele_copy = 0; /* lv: just to make gcc happy */
-  int count = 0;          // start counting from 0
+  int count          = 0; // start counting from 0
   TSMgmtError ret;
 
   ink_assert(ctx && index >= 0);
@@ -435,7 +435,7 @@ CfgContextMoveEleDown(CfgContext *ctx, int index)
 {
   CfgEleObj *curr_ele_obj;
   TSCfgEle *ele_copy = 0; /* lv: just to make gcc happy */
-  int count = 0;          // start counting from 0
+  int count          = 0; // start counting from 0
   TSMgmtError ret;
   int tot_ele;
 
@@ -514,8 +514,8 @@ TSMgmtError
 CfgContextInsertEleAt(CfgContext *ctx, TSCfgEle *ele, int index)
 {
   CfgEleObj *ele_obj, *curr_ele_obj, *last_comment = NULL;
-  int count = 0;
-  TSMgmtError err = TS_ERR_OKAY;
+  int count        = 0;
+  TSMgmtError err  = TS_ERR_OKAY;
   bool has_comment = false;
 
   // need to convert the ele into appropriate Ele object type
@@ -528,7 +528,7 @@ CfgContextInsertEleAt(CfgContext *ctx, TSCfgEle *ele, int index)
     if (curr_ele_obj->getRuleType() == TS_TYPE_COMMENT) { /* a comment ele */
       last_comment = curr_ele_obj;
       curr_ele_obj = ctx->next(curr_ele_obj);
-      has_comment = true;
+      has_comment  = true;
       continue;
     } else {
       // special case if inserting the ele at head of CfgContext

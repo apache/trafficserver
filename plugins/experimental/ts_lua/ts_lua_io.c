@@ -25,12 +25,12 @@ IOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length)
   const char *start;
   TSIOBufferBlock blk;
 
-  n = 0;
+  n   = 0;
   blk = TSIOBufferReaderStart(readerp);
 
   while (blk) {
     start = TSIOBufferBlockReadStart(blk, readerp, &avail);
-    need = length < avail ? length : avail;
+    need  = length < avail ? length : avail;
 
     if (need > 0) {
       memcpy((char *)buf + n, start, need);

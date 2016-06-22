@@ -48,7 +48,7 @@ VariableExpander::expand(const Resources &res)
       break;
 
     std::string first_part = result.substr(0, start);
-    std::string last_part = result.substr(end + 1);
+    std::string last_part  = result.substr(end + 1);
 
     // Now evaluate the variable
     std::string variable = result.substr(start, end - start + 1);

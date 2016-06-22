@@ -51,9 +51,9 @@ Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool
 {
   (void)c;
   ink_assert(fd == NO_FD);
-  int res = 0;
+  int res              = 0;
   int enable_reuseaddr = 1;
-  in_addr_t mc_if = ats_ip4_addr_cast(my_addr);
+  in_addr_t mc_if      = ats_ip4_addr_cast(my_addr);
 
   if ((res = socketManager.mc_socket(my_addr->sa_family, SOCK_DGRAM, 0, non_blocking)) < 0)
     goto Lerror;
@@ -109,7 +109,7 @@ Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, b
   ink_assert(fd == NO_FD);
   (void)sendChan;
   (void)c;
-  int res = 0;
+  int res              = 0;
   int enable_reuseaddr = 1;
   IpAddr inaddr_any(INADDR_ANY);
 
@@ -223,7 +223,7 @@ Connection::open(NetVCOptions const &opt)
 {
   ink_assert(fd == NO_FD);
   int enable_reuseaddr = 1; // used for sockopt setting
-  int res = 0;              // temp result
+  int res              = 0; // temp result
   IpEndpoint local_addr;
   sock_type = NetVCOptions::USE_UDP == opt.ip_proto ? SOCK_DGRAM : SOCK_STREAM;
   int family;
@@ -244,7 +244,7 @@ Connection::open(NetVCOptions const &opt)
     // No local address specified, so use family option if possible.
     family = ats_is_ip(opt.ip_family) ? opt.ip_family : AF_INET;
     local_addr.setToAnyAddr(family);
-    is_any_address = true;
+    is_any_address    = true;
     local_addr.port() = htons(opt.local_port);
   }
 
@@ -371,7 +371,7 @@ Connection::apply_options(NetVCOptions const &opt)
     }
     if (opt.sockopt_flags & NetVCOptions::SOCK_OPT_LINGER_ON) {
       struct linger l;
-      l.l_onoff = 1;
+      l.l_onoff  = 1;
       l.l_linger = 0;
       safe_setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l));
       Debug("socket", "::open:: setsockopt() turn on SO_LINGER on socket");

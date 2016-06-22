@@ -186,7 +186,7 @@ ts_lua_client_request_header_set(lua_State *L)
   GET_HTTP_CONTEXT(http_ctx, L);
 
   remove = 0;
-  val = NULL;
+  val    = NULL;
 
   /*   we skip the first argument that is the table */
   key = luaL_checklstring(L, 2, &key_len);
@@ -366,7 +366,7 @@ ts_lua_client_request_get_url_host(lua_State *L)
   host = TSUrlHostGet(http_ctx->client_request_bufp, http_ctx->client_request_url, &len);
 
   if (len == 0) {
-    char *key = "Host";
+    char *key   = "Host";
     char *l_key = "host";
     int key_len = 4;
 

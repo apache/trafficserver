@@ -178,7 +178,7 @@ read_blacklist(TSCont contp)
   TSFile file;
 
   sprintf(blacklist_file, "%s/blacklist.txt", TSPluginDirGet());
-  file = TSfopen(blacklist_file, "r");
+  file   = TSfopen(blacklist_file, "r");
   nsites = 0;
 
   /* If the Mutext lock is not successful try again in RETRY_TIME */
@@ -233,7 +233,7 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
     return 0;
   case TS_EVENT_HTTP_OS_DNS:
     if (contp != global_contp) {
-      cd = (cdata *)TSContDataGet(contp);
+      cd     = (cdata *)TSContDataGet(contp);
       cd->cf = HANDLE_DNS;
       handle_dns(cd->txnp, contp);
       return 0;
@@ -248,7 +248,7 @@ blacklist_plugin(TSCont contp, TSEvent event, void *edata)
     break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     if (contp != global_contp) {
-      cd = (cdata *)TSContDataGet(contp);
+      cd     = (cdata *)TSContDataGet(contp);
       cd->cf = HANDLE_RESPONSE;
       handle_response(cd->txnp, contp);
       return 0;
@@ -309,8 +309,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   TSPluginRegistrationInfo info;
   TSReturnCode error;
 
-  info.plugin_name = "blacklist-1";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "blacklist-1";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

@@ -186,7 +186,7 @@ ts_lua_server_request_header_set(lua_State *L)
   GET_HTTP_CONTEXT(http_ctx, L);
 
   remove = 0;
-  val = NULL;
+  val    = NULL;
 
   /*   we skip the first argument that is the table */
   key = luaL_checklstring(L, 2, &key_len);

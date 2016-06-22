@@ -40,8 +40,8 @@
 class Pattern
 {
 public:
-  static const int TOKENCOUNT = 10;           /**< @brief Capturing groups $0..$9 */
-  static const int OVECOUNT = TOKENCOUNT * 3; /**< @brief pcre_exec() array count, handle 10 capture groups */
+  static const int TOKENCOUNT = 10;             /**< @brief Capturing groups $0..$9 */
+  static const int OVECOUNT   = TOKENCOUNT * 3; /**< @brief pcre_exec() array count, handle 10 capture groups */
 
   Pattern();
   virtual ~Pattern();

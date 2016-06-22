@@ -80,7 +80,7 @@ handleArgInvocation()
   } else if (*ZeroNode != '\0' || *ZeroCluster != '\0') {
     TSMgmtError err;
     TSRecordEle *rec_ele = TSRecordEleCreate();
-    char *name = *ZeroNode ? ZeroNode : ZeroCluster;
+    char *name           = *ZeroNode ? ZeroNode : ZeroCluster;
 
     if ((err = TSRecordGet(name, rec_ele)) != TS_ERR_OKAY) {
       fprintf(stderr, "%s: %s\n", program_name, TSGetErrorMessage(err));
@@ -121,7 +121,7 @@ handleArgInvocation()
   } else if (*ClearAlarms != '\0') {
     // Clear (some) active alarms, this was moved from the old traffic_shell implementation (config:alarm)
     TSList events = TSListCreate();
-    size_t len = strlen(ClearAlarms);
+    size_t len    = strlen(ClearAlarms);
 
     if (TS_ERR_OKAY != TSActiveEventGetMlt(events)) {
       TSListDestroy(events);
@@ -138,8 +138,8 @@ handleArgInvocation()
     }
 
     int errors = 0;
-    bool all = false;
-    int num = -1;
+    bool all   = false;
+    int num    = -1;
 
     if ((3 == len) && (0 == strncasecmp(ClearAlarms, "all", len))) {
       all = true;
@@ -313,26 +313,26 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   program_name = appVersionInfo.AppStr;
 
-  ReadVar[0] = '\0';
-  MatchVar[0] = '\0';
-  SetVar[0] = '\0';
-  VarValue[0] = '\0';
-  ReRead = 0;
-  Shutdown = 0;
-  BounceCluster = 0;
-  BounceLocal = 0;
-  QueryDeadhosts = 0;
-  Startup = 0;
+  ReadVar[0]          = '\0';
+  MatchVar[0]         = '\0';
+  SetVar[0]           = '\0';
+  VarValue[0]         = '\0';
+  ReRead              = 0;
+  Shutdown            = 0;
+  BounceCluster       = 0;
+  BounceLocal         = 0;
+  QueryDeadhosts      = 0;
+  Startup             = 0;
   ShutdownMgmtCluster = 0;
-  ShutdownMgmtLocal = 0;
-  ClearCluster = 0;
-  ClearNode = 0;
-  ZeroCluster[0] = '\0';
-  ZeroNode[0] = '\0';
-  *StorageCmdOffline = 0;
-  ShowAlarms = 0;
-  ShowStatus = 0;
-  ClearAlarms[0] = '\0';
+  ShutdownMgmtLocal   = 0;
+  ClearCluster        = 0;
+  ClearNode           = 0;
+  ZeroCluster[0]      = '\0';
+  ZeroNode[0]         = '\0';
+  *StorageCmdOffline  = 0;
+  ShowAlarms          = 0;
+  ShowStatus          = 0;
+  ClearAlarms[0]      = '\0';
 
   /* Argument description table used to describe how to parse command line args, */
   /* see 'ink_args.h' for meanings of the various fields */

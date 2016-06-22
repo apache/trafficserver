@@ -129,7 +129,7 @@ REGRESSION_TEST(AppVersionInfo)(RegressionTest *t, int /* atype ATS_UNUSED */, i
   TestBox tb(t, pstatus);
 
   const char *errMsgFormat = "wrong build number, expected '%s', got '%s'";
-  const char *bench[][3] = {// date, time, resulting build number
+  const char *bench[][3]   = {// date, time, resulting build number
                             {"Oct  4 1957", "19:28:34", BUILD_NUMBER},
                             {"Oct  4 1957", "19:28:34", "100419"},
                             {"Apr  4 1957", "09:08:04", "040409"},

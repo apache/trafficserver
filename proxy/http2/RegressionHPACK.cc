@@ -27,8 +27,8 @@
 
 // Constants for regression test
 const static int DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;
-const static int BUFSIZE_FOR_REGRESSION_TEST = 128;
-const static int MAX_TEST_FIELD_NUM = 8;
+const static int BUFSIZE_FOR_REGRESSION_TEST            = 128;
+const static int MAX_TEST_FIELD_NUM                     = 8;
 
 /***********************************************************************************
  *                                                                                 *
@@ -401,7 +401,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
     headers->create(HTTP_TYPE_RESPONSE);
 
     for (unsigned int j = 0; j < sizeof(raw_field_response_test_case[i]) / sizeof(raw_field_response_test_case[i][0]); j++) {
-      const char *expected_name = raw_field_response_test_case[i][j].raw_name;
+      const char *expected_name  = raw_field_response_test_case[i][j].raw_name;
       const char *expected_value = raw_field_response_test_case[i][j].raw_value;
       if (strlen(expected_name) == 0)
         break;
@@ -414,7 +414,7 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
 
     memset(buf, 0, BUFSIZE_FOR_REGRESSION_TEST);
     uint64_t buf_len = BUFSIZE_FOR_REGRESSION_TEST;
-    int64_t len = hpack_encode_header_block(indexing_table, buf, buf_len, headers);
+    int64_t len      = hpack_encode_header_block(indexing_table, buf, buf_len, headers);
 
     if (len < 0) {
       box.check(false, "hpack_encode_header_blocks returned negative value: %" PRId64, len);
@@ -429,10 +429,10 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
     uint32_t expected_dynamic_table_size = 0;
     for (unsigned int j = 0; j < sizeof(dynamic_table_response_test_case[i]) / sizeof(dynamic_table_response_test_case[i][0]);
          j++) {
-      const char *expected_name = dynamic_table_response_test_case[i][j].name;
+      const char *expected_name  = dynamic_table_response_test_case[i][j].name;
       const char *expected_value = dynamic_table_response_test_case[i][j].value;
-      int expected_name_len = strlen(expected_name);
-      int expected_value_len = strlen(expected_value);
+      int expected_name_len      = strlen(expected_name);
+      int expected_value_len     = strlen(expected_value);
 
       if (expected_name_len == 0)
         break;
@@ -472,7 +472,7 @@ REGRESSION_TEST(HPACK_DecodeString)(RegressionTest *t, int, int *pstatus)
   box = REGRESSION_TEST_PASSED;
 
   Arena arena;
-  char *actual = NULL;
+  char *actual        = NULL;
   uint32_t actual_len = 0;
 
   hpack_huffman_init();
@@ -565,7 +565,7 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
                               encoded_field_request_test_case[i].encoded_field_len);
 
     for (unsigned int j = 0; j < sizeof(raw_field_request_test_case[i]) / sizeof(raw_field_request_test_case[i][0]); j++) {
-      const char *expected_name = raw_field_request_test_case[i][j].raw_name;
+      const char *expected_name  = raw_field_request_test_case[i][j].raw_name;
       const char *expected_value = raw_field_request_test_case[i][j].raw_value;
       if (strlen(expected_name) == 0)
         break;

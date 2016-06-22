@@ -307,8 +307,8 @@ public:
   to_ptr()
   {
     if (m_ptr && m_ptr->m_refcount == 1) {
-      T *ptr = m_ptr;
-      m_ptr = 0;
+      T *ptr          = m_ptr;
+      m_ptr           = 0;
       ptr->m_refcount = 0;
       return ptr;
     }

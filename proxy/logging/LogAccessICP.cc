@@ -89,7 +89,7 @@ int
 LogAccessICP::marshal_client_auth_user_name(char *buf)
 {
   char *str = (char *)m_icp_log->GetIdent();
-  int len = LogAccess::strlen(str);
+  int len   = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
   }
@@ -121,7 +121,7 @@ int
 LogAccessICP::marshal_client_req_http_method(char *buf)
 {
   char *str = (char *)m_icp_log->GetMethod();
-  int len = LogAccess::strlen(str);
+  int len   = LogAccess::strlen(str);
 
   if (buf) {
     marshal_str(buf, str, len);
@@ -136,7 +136,7 @@ int
 LogAccessICP::marshal_client_req_url(char *buf)
 {
   char *str = (char *)m_icp_log->GetURI();
-  int len = LogAccess::strlen(str);
+  int len   = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
   }
@@ -155,8 +155,8 @@ LogAccessICP::marshal_client_req_url_canon(char *buf)
   // FIXME: need to ensure that m_icp_log->GetURI() is NUL-terminated
   //
   char *uri_str = (char *)m_icp_log->GetURI();
-  int uri_len = ::strlen(uri_str);
-  char *str = LogUtils::escapify_url(&arena, uri_str, uri_len, &escapified_len);
+  int uri_len   = ::strlen(uri_str);
+  char *str     = LogUtils::escapify_url(&arena, uri_str, uri_len, &escapified_len);
 
   int len = round_strlen(escapified_len + 1); // the padded len
   if (buf)
@@ -173,7 +173,7 @@ LogAccessICP::marshal_proxy_resp_content_type(char *buf)
   // FIXME: need to ensure that m_icp_log->GetContentType() is NUL-terminated
   //
   char *ct_str = (char *)m_icp_log->GetContentType();
-  int ct_len = ::strlen(ct_str);
+  int ct_len   = ::strlen(ct_str);
 
   // FIXME: need to be sure remove_content_type_attributecan mutate ct_str
   //
@@ -256,7 +256,7 @@ int
 LogAccessICP::marshal_server_host_name(char *buf)
 {
   char *str = (char *)m_icp_log->GetFromHost();
-  int len = LogAccess::strlen(str);
+  int len   = LogAccess::strlen(str);
   if (buf) {
     marshal_str(buf, str, len);
   }

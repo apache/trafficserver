@@ -77,9 +77,9 @@ set_signal(int signo, signal_handler_t handler)
 {
   struct sigaction act;
 
-  act.sa_handler = NULL;
+  act.sa_handler   = NULL;
   act.sa_sigaction = handler;
-  act.sa_flags = SA_SIGINFO;
+  act.sa_flags     = SA_SIGINFO;
   sigemptyset(&(act.sa_mask));
 
   ink_release_assert(sigaction(signo, &act, NULL) == 0);
@@ -92,7 +92,7 @@ signal_reset_default(int signo)
   struct sigaction act;
 
   act.sa_handler = SIG_DFL;
-  act.sa_flags = SA_NODEFER | SA_ONSTACK | SA_RESETHAND;
+  act.sa_flags   = SA_NODEFER | SA_ONSTACK | SA_RESETHAND;
   sigemptyset(&(act.sa_mask));
 
   ink_release_assert(sigaction(signo, &act, NULL) == 0);

@@ -63,7 +63,7 @@ public:
   init(HttpSM *sm_arg, ProxyMutex *amutex)
   {
     master_sm = sm_arg;
-    mutex = amutex;
+    mutex     = amutex;
     captive_action.init(this);
   }
 

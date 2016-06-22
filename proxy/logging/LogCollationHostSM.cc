@@ -79,7 +79,7 @@ LogCollationHostSM::LogCollationHostSM(NetVConnection *client_vc)
   ink_assert(m_client_vc != NULL);
 
   // get client info
-  m_client_ip = m_client_vc->get_remote_ip();
+  m_client_ip   = m_client_vc->get_remote_ip();
   m_client_port = m_client_vc->get_remote_port();
   Note("[log-coll] client connected [%d.%d.%d.%d:%d]", ((unsigned char *)(&m_client_ip))[0], ((unsigned char *)(&m_client_ip))[1],
        ((unsigned char *)(&m_client_ip))[2], ((unsigned char *)(&m_client_ip))[3], m_client_port);
@@ -245,7 +245,7 @@ LogCollationHostSM::host_init(int event, void * /* data ATS_UNUSED */)
 
   switch (event) {
   case LOG_COLL_EVENT_SWITCH:
-    m_host_state = LOG_COLL_HOST_INIT;
+    m_host_state    = LOG_COLL_HOST_INIT;
     m_pending_event = eventProcessor.schedule_imm(this);
     return EVENT_CONT;
 
@@ -388,9 +388,9 @@ LogCollationHostSM::read_hdr(int event, VIO *vio)
     Debug("log-coll", "[%d]host:read_hdr - SWITCH", m_id);
     m_read_state = LOG_COLL_READ_HDR;
 
-    m_read_bytes_wanted = sizeof(NetMsgHeader);
+    m_read_bytes_wanted   = sizeof(NetMsgHeader);
     m_read_bytes_received = 0;
-    m_read_buffer = (char *)&m_net_msg_header;
+    m_read_buffer         = (char *)&m_net_msg_header;
     ink_assert(m_client_vc != NULL);
     Debug("log-coll", "[%d]host:read_hdr - do_io_read(%" PRId64 ")", m_id, m_read_bytes_wanted);
     m_client_vio = m_client_vc->do_io_read(this, m_read_bytes_wanted, m_client_buffer);
@@ -443,10 +443,10 @@ LogCollationHostSM::read_body(int event, VIO *vio)
     m_read_bytes_received = 0;
     if (m_read_bytes_wanted <= max_iobuffer_size) {
       m_read_buffer_fast_allocator_size = buffer_size_to_index(m_read_bytes_wanted);
-      m_read_buffer = (char *)ioBufAllocator[m_read_buffer_fast_allocator_size].alloc_void();
+      m_read_buffer                     = (char *)ioBufAllocator[m_read_buffer_fast_allocator_size].alloc_void();
     } else {
       m_read_buffer_fast_allocator_size = -1;
-      m_read_buffer = (char *)ats_malloc(m_read_bytes_wanted);
+      m_read_buffer                     = (char *)ats_malloc(m_read_bytes_wanted);
     }
     ink_assert(m_read_buffer != NULL);
     ink_assert(m_client_vc != NULL);
@@ -507,8 +507,8 @@ LogCollationHostSM::read_partial(VIO *vio)
   ink_assert(m_client_reader != NULL);
 
   // careful not to read more than we have memory for
-  char *p = &(m_read_buffer[m_read_bytes_received]);
-  int64_t bytes_wanted_now = m_read_bytes_wanted - m_read_bytes_received;
+  char *p                    = &(m_read_buffer[m_read_bytes_received]);
+  int64_t bytes_wanted_now   = m_read_bytes_wanted - m_read_bytes_received;
   int64_t bytes_received_now = m_client_reader->read(p, bytes_wanted_now);
 
   m_read_bytes_received += bytes_received_now;

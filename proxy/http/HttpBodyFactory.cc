@@ -65,13 +65,13 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
                                         size_t content_language_buf_size, char *content_type_out_buf, size_t content_type_buf_size,
                                         const char *format, va_list ap)
 {
-  char *buffer = NULL;
-  const char *lang_ptr = NULL;
+  char *buffer            = NULL;
+  const char *lang_ptr    = NULL;
   const char *charset_ptr = NULL;
   char url[1024];
-  const char *set = NULL;
+  const char *set               = NULL;
   bool found_requested_template = false;
-  bool plain_flag = false;
+  bool plain_flag               = false;
 
   lock();
 
@@ -90,9 +90,9 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
     if (u->valid()) { /* if url exists, copy the string into buffer */
       size_t i;
       char *s = u->string_get(&context->arena);
-      for (i = 0; (i < sizeof(url) - 1) && s[i]; i++)
+      for (i   = 0; (i < sizeof(url) - 1) && s[i]; i++)
         url[i] = s[i];
-      url[i] = '\0';
+      url[i]   = '\0';
       if (s)
         context->arena.str_free(s);
     }
@@ -127,9 +127,9 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
     // length accordingly.
     int l = ink_bvsprintf(NULL, format, ap);
     if (l <= max_buffer_length) {
-      buffer = (char *)ats_malloc(l);
+      buffer                   = (char *)ats_malloc(l);
       *resulting_buffer_length = ink_bvsprintf(buffer, format, ap) - 1;
-      plain_flag = true;
+      plain_flag               = true;
     }
   }
   /////////////////////////////////////////////////////////
@@ -158,7 +158,7 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
                  set, type, *resulting_buffer_length, max_buffer_length);
     }
     *resulting_buffer_length = 0;
-    buffer = (char *)ats_free_null(buffer);
+    buffer                   = (char *)ats_free_null(buffer);
   }
   /////////////////////////////////////////////////////////////////////
   // handle return of instantiated template and generate the content //
@@ -212,8 +212,8 @@ HttpBodyFactory::dump_template_tables(FILE *fp)
     ///////////////////////////////////////////
 
     for (b1 = h1->firstBinding(&i1); b1 != NULL; b1 = h1->nextBinding(&i1)) {
-      k1 = table_of_sets->getKeyFromBinding(b1);
-      v1 = table_of_sets->getValueFromBinding(b1);
+      k1       = table_of_sets->getKeyFromBinding(b1);
+      v1       = table_of_sets->getValueFromBinding(b1);
       body_set = (HttpBodySet *)v1;
 
       if (body_set != NULL) {
@@ -228,8 +228,8 @@ HttpBodyFactory::dump_template_tables(FILE *fp)
         h2 = body_set->table_of_pages;
 
         for (b2 = h2->firstBinding(&i2); b2 != NULL; b2 = h2->nextBinding(&i2)) {
-          k2 = table_of_sets->getKeyFromBinding(b2);
-          v2 = table_of_sets->getValueFromBinding(b2);
+          k2                  = table_of_sets->getKeyFromBinding(b2);
+          v2                  = table_of_sets->getValueFromBinding(b2);
           HttpBodyTemplate *t = (HttpBodyTemplate *)v2;
 
           fprintf(fp, "  %-30s: %" PRId64 " bytes\n", k2, t->byte_count);
@@ -282,24 +282,24 @@ HttpBodyFactory::reconfigure()
   all_found = true;
 
   // enable_customizations if records.config set
-  rec_err = RecGetRecordInt("proxy.config.body_factory.enable_customizations", &e);
+  rec_err               = RecGetRecordInt("proxy.config.body_factory.enable_customizations", &e);
   enable_customizations = ((rec_err == REC_ERR_OKAY) ? e : 0);
-  all_found = all_found && (rec_err == REC_ERR_OKAY);
+  all_found             = all_found && (rec_err == REC_ERR_OKAY);
   Debug("body_factory", "enable_customizations = %d (found = %" PRId64 ")", enable_customizations, e);
 
-  rec_err = RecGetRecordInt("proxy.config.body_factory.enable_logging", &e);
+  rec_err        = RecGetRecordInt("proxy.config.body_factory.enable_logging", &e);
   enable_logging = ((rec_err == REC_ERR_OKAY) ? (e ? true : false) : false);
-  all_found = all_found && (rec_err == REC_ERR_OKAY);
+  all_found      = all_found && (rec_err == REC_ERR_OKAY);
   Debug("body_factory", "enable_logging = %d (found = %" PRId64 ")", enable_logging, e);
 
-  rec_err = RecGetRecordInt("proxy.config.body_factory.response_suppression_mode", &e);
+  rec_err                   = RecGetRecordInt("proxy.config.body_factory.response_suppression_mode", &e);
   response_suppression_mode = ((rec_err == REC_ERR_OKAY) ? e : 0);
-  all_found = all_found && (rec_err == REC_ERR_OKAY);
+  all_found                 = all_found && (rec_err == REC_ERR_OKAY);
   Debug("body_factory", "response_suppression_mode = %d (found = %" PRId64 ")", response_suppression_mode, e);
 
   ats_scoped_str directory_of_template_sets;
 
-  rec_err = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
+  rec_err   = RecGetRecordString_Xmalloc("proxy.config.body_factory.template_sets_dir", &s);
   all_found = all_found && (rec_err == REC_ERR_OKAY);
   if (rec_err == REC_ERR_OKAY) {
     directory_of_template_sets = Layout::get()->relative(s);
@@ -351,9 +351,9 @@ HttpBodyFactory::HttpBodyFactory()
   magic = HTTP_BODY_FACTORY_MAGIC;
   ink_mutex_init(&mutex, "HttpBodyFactory::lock");
 
-  table_of_sets = NULL;
+  table_of_sets         = NULL;
   enable_customizations = 0;
-  enable_logging = true;
+  enable_logging        = true;
   callbacks_established = false;
 
   //////////////////////////////////////////////////////
@@ -402,9 +402,9 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   char template_base[PATH_NAME_MAX];
 
   if (set_return)
-    *set_return = "???";
+    *set_return            = "???";
   *content_language_return = NULL;
-  *content_charset_return = NULL;
+  *content_charset_return  = NULL;
 
   Debug("body_factory", "calling fabricate(type '%s')", type);
   *buffer_length_return = 0;
@@ -445,7 +445,7 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   }
 
   *content_language_return = body_set->content_language;
-  *content_charset_return = body_set->content_charset;
+  *content_charset_return  = body_set->content_charset;
 
   // build the custom error page
   buffer = t->build_instantiated_buffer(context, buffer_length_return);
@@ -497,7 +497,7 @@ HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **
   if (table_of_sets == NULL)
     return (NULL);
   if (table_of_sets->getValue((RawHashTable_Key)set, &v)) {
-    HttpBodySet *body_set = (HttpBodySet *)v;
+    HttpBodySet *body_set        = (HttpBodySet *)v;
     RawHashTable *table_of_types = body_set->table_of_pages;
 
     if (table_of_types == NULL)
@@ -630,7 +630,7 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   }
 
   new_table_of_sets = new RawHashTable(RawHashTable_KeyType_String);
-  entry_buffer = (struct dirent *)ats_malloc(sizeof(struct dirent) + MAXPATHLEN + 1);
+  entry_buffer      = (struct dirent *)ats_malloc(sizeof(struct dirent) + MAXPATHLEN + 1);
 
   //////////////////////////////////////////
   // loop over each language subdirectory //
@@ -757,9 +757,9 @@ HttpBodySet::HttpBodySet()
 {
   magic = HTTP_BODY_SET_MAGIC;
 
-  set_name = NULL;
+  set_name         = NULL;
   content_language = NULL;
-  content_charset = NULL;
+  content_charset  = NULL;
 
   table_of_pages = NULL;
 }
@@ -919,9 +919,9 @@ HttpBodySet::set_template_by_name(const char *name, HttpBodyTemplate *t)
 
 HttpBodyTemplate::HttpBodyTemplate()
 {
-  magic = HTTP_BODY_TEMPLATE_MAGIC;
-  byte_count = 0;
-  template_buffer = NULL;
+  magic             = HTTP_BODY_TEMPLATE_MAGIC;
+  byte_count        = 0;
+  template_buffer   = NULL;
   template_pathname = NULL;
 }
 
@@ -935,7 +935,7 @@ HttpBodyTemplate::reset()
 {
   ats_free(template_buffer);
   template_buffer = NULL;
-  byte_count = 0;
+  byte_count      = 0;
   ats_free(template_pathname);
 }
 
@@ -974,9 +974,9 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   // read in the template file contents //
   ////////////////////////////////////////
 
-  new_byte_count = stat_buf.st_size;
-  new_template_buffer = (char *)ats_malloc(new_byte_count + 1);
-  bytes_read = read(fd, new_template_buffer, new_byte_count);
+  new_byte_count                      = stat_buf.st_size;
+  new_template_buffer                 = (char *)ats_malloc(new_byte_count + 1);
+  bytes_read                          = read(fd, new_template_buffer, new_byte_count);
   new_template_buffer[new_byte_count] = '\0';
   close(fd);
 
@@ -998,8 +998,8 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   /////////////////////////////////
 
   reset();
-  template_buffer = new_template_buffer;
-  byte_count = new_byte_count;
+  template_buffer   = new_template_buffer;
+  byte_count        = new_byte_count;
   template_pathname = ats_strdup(path);
 
   return (1);

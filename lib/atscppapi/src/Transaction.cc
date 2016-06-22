@@ -275,7 +275,7 @@ Transaction::getEffectiveUrl()
 {
   string ret_val;
   int length = 0;
-  char *buf = TSHttpTxnEffectiveUrlStringGet(state_->txn_, &length);
+  char *buf  = TSHttpTxnEffectiveUrlStringGet(state_->txn_, &length);
   if (buf && length) {
     ret_val.assign(buf, length);
   }

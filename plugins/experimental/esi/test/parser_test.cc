@@ -38,7 +38,7 @@ using namespace EsiLib;
 void
 check_node_attr(const Attribute &attr, const char *name, const char *value)
 {
-  int name_len = strlen(name);
+  int name_len  = strlen(name);
   int value_len = strlen(value);
   assert(attr.name_len == name_len);
   assert(attr.value_len == value_len);
@@ -842,7 +842,7 @@ main()
     input_data[0] = 'b';
     input_data[1] = 'a';
     input_data[2] = 'r';
-    list_iter = new_node_list.begin();
+    list_iter     = new_node_list.begin();
     assert(strncmp(list_iter->data, "bar", 3) == 0);
   }
 
@@ -1553,7 +1553,7 @@ main()
                       "</esi:choose>");
     DocNodeList node_list;
     assert(parser.completeParse(node_list, input_data) == true);
-    DocNodeList::iterator list_iter = node_list.begin()->child_nodes.begin();
+    DocNodeList::iterator list_iter   = node_list.begin()->child_nodes.begin();
     AttributeList::iterator attr_iter = list_iter->attr_list.begin();
     assert(attr_iter->value_len == 3);
     assert(strncmp(attr_iter->value, "a>b", attr_iter->value_len) == 0);

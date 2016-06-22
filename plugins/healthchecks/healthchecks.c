@@ -37,7 +37,7 @@ limitations under the License.
 #include "ts/ink_defs.h"
 
 static const char PLUGIN_NAME[] = "healthchecks";
-static const char SEPARATORS[] = " \t\n";
+static const char SEPARATORS[]  = " \t\n";
 
 #define MAX_PATH_LEN 4096
 #define MAX_BODY_LEN 16384
@@ -136,7 +136,7 @@ find_direntry(const char *dname, HCDirEntry *dir)
 static HCDirEntry *
 setup_watchers(int fd)
 {
-  HCFileInfo *conf = g_config;
+  HCFileInfo *conf     = g_config;
   HCDirEntry *head_dir = NULL, *last_dir = NULL, *dir;
   char fname[MAX_PATH_LEN];
   char *dname;
@@ -157,10 +157,10 @@ setup_watchers(int fd)
         head_dir = dir;
       else
         last_dir->_next = dir;
-      last_dir = dir;
+      last_dir          = dir;
     }
     conf->dir = dir;
-    conf = conf->_next;
+    conf      = conf->_next;
   }
 
   return head_dir;
@@ -213,7 +213,7 @@ hc_thread(void *data ATS_UNUSED)
         break; /* Stop the loop, there's nothing else left to examine */
       }
       fdata_prev = fdata;
-      fdata = fdata->_next;
+      fdata      = fdata->_next;
     }
 
     if (len >= 0) {
@@ -221,7 +221,7 @@ hc_thread(void *data ATS_UNUSED)
 
       while (i < len) {
         struct inotify_event *event = (struct inotify_event *)&buffer[i];
-        HCFileInfo *finfo = g_config;
+        HCFileInfo *finfo           = g_config;
 
         while (
           finfo &&
@@ -249,8 +249,8 @@ hc_thread(void *data ATS_UNUSED)
 
           /* Add the old data to the head of the freelist */
           old_data->remove = now.tv_sec + FREELIST_TIMEOUT;
-          old_data->_next = fl_head;
-          fl_head = old_data;
+          old_data->_next  = fl_head;
+          fl_head          = old_data;
         }
         i += sizeof(struct inotify_event) + event->len;
       }
@@ -285,7 +285,7 @@ gen_header(char *status_str, char *mime, int *header_len)
     status_reason = TSHttpHdrReasonLookup(status);
     len += strlen(status_reason);
     len += strlen(mime);
-    buf = TSmalloc(len);
+    buf         = TSmalloc(len);
     *header_len = snprintf(buf, len, HEADER_TEMPLATE, status, status_reason, mime);
   } else {
     *header_len = 0;
@@ -347,7 +347,7 @@ parse_configs(const char *fname)
       /* Fill in the info if everything was ok */
       if (state > 4) {
         TSDebug(PLUGIN_NAME, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
-        finfo->ok = gen_header(ok, mime, &finfo->o_len);
+        finfo->ok   = gen_header(ok, mime, &finfo->o_len);
         finfo->miss = gen_header(miss, mime, &finfo->m_len);
         finfo->data = TSmalloc(sizeof(HCFileData));
         memset(finfo->data, 0, sizeof(HCFileData));
@@ -453,10 +453,10 @@ hc_process_write(TSCont contp, TSEvent event, HCState *my_state)
 static void
 hc_process_accept(TSCont contp, HCState *my_state)
 {
-  my_state->req_buffer = TSIOBufferCreate();
+  my_state->req_buffer  = TSIOBufferCreate();
   my_state->resp_buffer = TSIOBufferCreate();
   my_state->resp_reader = TSIOBufferReaderAlloc(my_state->resp_buffer);
-  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
+  my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
 /* Imlement the server intercept */
@@ -487,11 +487,11 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
   TSMLoc hdr_loc = NULL, url_loc = NULL;
   TSCont icontp;
   HCState *my_state;
-  TSHttpTxn txnp = (TSHttpTxn)edata;
+  TSHttpTxn txnp   = (TSHttpTxn)edata;
   HCFileInfo *info = g_config;
 
   if ((TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) && (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc))) {
-    int path_len = 0;
+    int path_len     = 0;
     const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
     /* Short circuit the / path, common case, and we won't allow healthecks on / */
@@ -512,7 +512,7 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
     TSSkipRemappingSet(txnp, 1); /* not strictly necessary, but speed is everything these days */
 
     /* This is us -- register our intercept */
-    icontp = TSContCreate(hc_intercept, TSMutexCreate());
+    icontp   = TSContCreate(hc_intercept, TSMutexCreate());
     my_state = (HCState *)TSmalloc(sizeof(*my_state));
     memset(my_state, 0, sizeof(*my_state));
     my_state->info = info;
@@ -543,8 +543,8 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
-  info.plugin_name = "health_checks";
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = "health_checks";
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {

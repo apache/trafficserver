@@ -67,9 +67,9 @@ static Http2Error
 rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   char buf[BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA])];
-  unsigned nbytes = 0;
-  Http2StreamId id = frame.header().streamid;
-  uint8_t pad_length = 0;
+  unsigned nbytes               = 0;
+  Http2StreamId id              = frame.header().streamid;
+  uint8_t pad_length            = 0;
   const uint32_t payload_length = frame.header().length;
 
   DebugHttp2Stream(cstate.ua_session, id, "Received DATA frame");
@@ -153,7 +153,7 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   myreader->writer()->dealloc_reader(myreader);
 
   uint32_t initial_rwnd = cstate.server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-  uint32_t min_rwnd = min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
+  uint32_t min_rwnd     = min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
   // Connection level WINDOW UPDATE
   if (cstate.server_rwnd <= min_rwnd) {
     Http2WindowSize diff_size = initial_rwnd - cstate.server_rwnd;
@@ -192,7 +192,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   }
 
   Http2Stream *stream = NULL;
-  bool new_stream = false;
+  bool new_stream     = false;
 
   if (stream_id <= cstate.get_latest_stream_id()) {
     stream = cstate.find_stream(stream_id);
@@ -202,7 +202,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   } else {
     // Create new stream
     new_stream = true;
-    stream = cstate.create_stream(stream_id);
+    stream     = cstate.create_stream(stream_id);
     if (!stream) {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
@@ -436,7 +436,7 @@ rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   Http2SettingsParameter param;
   char buf[HTTP2_SETTINGS_PARAMETER_LEN];
-  unsigned nbytes = 0;
+  unsigned nbytes               = 0;
   const Http2StreamId stream_id = frame.header().streamid;
 
   DebugHttp2Stream(cstate.ua_session, stream_id, "Received SETTINGS frame");
@@ -552,7 +552,7 @@ rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   Http2Goaway goaway;
   char buf[HTTP2_GOAWAY_LEN];
-  unsigned nbytes = 0;
+  unsigned nbytes               = 0;
   const Http2StreamId stream_id = frame.header().streamid;
 
   DebugHttp2Stream(cstate.ua_session, stream_id, "Received GOAWAY frame");
@@ -808,7 +808,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
 
   // Parse received HTTP/2 frames
   case HTTP2_SESSION_EVENT_RECV: {
-    const Http2Frame *frame = (Http2Frame *)edata;
+    const Http2Frame *frame       = (Http2Frame *)edata;
     const Http2StreamId stream_id = frame->header().streamid;
     Http2Error error;
 
@@ -996,7 +996,7 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
   ink_release_assert(stream != NULL);
   DebugHttp2Stream(ua_session, stream->get_id(), "top node, point=%d", node->point);
 
-  size_t len = 0;
+  size_t len                       = 0;
   Http2SendADataFrameResult result = send_a_data_frame(stream, len);
 
   if (result != HTTP2_SEND_A_DATA_FRAME_NO_ERROR) {
@@ -1030,7 +1030,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   if (window_size <= 0) {
     return HTTP2_SEND_A_DATA_FRAME_NO_WINDOW;
   }
-  const size_t buf_len = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]) - HTTP2_FRAME_HEADER_LEN;
+  const size_t buf_len        = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]) - HTTP2_FRAME_HEADER_LEN;
   const size_t available_size = min(buf_len, static_cast<size_t>(window_size));
 
   uint8_t flags = 0x00;
@@ -1111,12 +1111,12 @@ Http2ConnectionState::send_data_frames(Http2Stream *stream)
 void
 Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 {
-  uint8_t *buf = NULL;
-  uint32_t buf_len = 0;
+  uint8_t *buf                = NULL;
+  uint32_t buf_len            = 0;
   uint32_t header_blocks_size = 0;
-  int payload_length = 0;
-  uint64_t sent = 0;
-  uint8_t flags = 0x00;
+  int payload_length          = 0;
+  uint64_t sent               = 0;
+  uint8_t flags               = 0x00;
 
   HTTPHdr *resp_header = &stream->response_header;
 
@@ -1126,7 +1126,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   http2_generate_h2_header_from_1_1(resp_header, &h2_hdr);
 
   buf_len = resp_header->length_get() * 2; // Make it double just in case
-  buf = (uint8_t *)ats_malloc(buf_len);
+  buf     = (uint8_t *)ats_malloc(buf_len);
   if (buf == NULL) {
     h2_hdr.destroy();
     return;
@@ -1219,12 +1219,12 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
   Http2Frame settings(HTTP2_FRAME_TYPE_SETTINGS, stream_id, 0);
   settings.alloc(buffer_size_index[HTTP2_FRAME_TYPE_SETTINGS]);
 
-  IOVec iov = settings.write();
+  IOVec iov                = settings.write();
   uint32_t settings_length = 0;
 
   for (int i = HTTP2_SETTINGS_HEADER_TABLE_SIZE; i < HTTP2_SETTINGS_MAX; ++i) {
     Http2SettingsIdentifier id = static_cast<Http2SettingsIdentifier>(i);
-    unsigned settings_value = new_settings.get(id);
+    unsigned settings_value    = new_settings.get(id);
 
     // Send only difference
     if (settings_value != server_settings.get(id)) {
@@ -1282,7 +1282,7 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
   ink_assert(this->ua_session != NULL);
 
   goaway.last_streamid = id;
-  goaway.error_code = ec;
+  goaway.error_code    = ec;
 
   frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_GOAWAY]);
   http2_write_goaway(goaway, frame.write());

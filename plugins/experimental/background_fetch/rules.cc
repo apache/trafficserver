@@ -124,7 +124,7 @@ check_field_configured(TSHttpTxn txnp, const char *field_name, const char *cfg_v
         TSDebug(PLUGIN_NAME, "Found %s wild card", field_name);
         hdr_found = true;
       } else {
-        int val_len = 0;
+        int val_len         = 0;
         const char *val_str = TSMimeHdrFieldValueStringGet(hdr_bufp, hdr_loc, loc, 0, &val_len);
 
         if (!val_str || val_len <= 0) {

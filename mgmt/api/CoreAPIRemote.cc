@@ -82,7 +82,7 @@ send_and_parse_list(OpType op, LLQ *list)
 
   MgmtMarshallInt optype = op;
   MgmtMarshallInt err;
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply    = {NULL, 0};
   MgmtMarshallString strval = NULL;
 
   if (!list) {
@@ -142,8 +142,8 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action
 {
   TSMgmtError ret;
 
-  MgmtMarshallInt optype = RECORD_SET;
-  MgmtMarshallString name = const_cast<MgmtMarshallString>(rec_name);
+  MgmtMarshallInt optype   = RECORD_SET;
+  MgmtMarshallString name  = const_cast<MgmtMarshallString>(rec_name);
   MgmtMarshallString value = const_cast<MgmtMarshallString>(rec_val);
 
   MgmtMarshallData reply = {NULL, 0};
@@ -276,7 +276,7 @@ Terminate()
     ink_thread_join(ts_event_thread);
 
   // Clear operation
-  ts_test_thread = static_cast<ink_thread>(NULL);
+  ts_test_thread  = static_cast<ink_thread>(NULL);
   ts_event_thread = static_cast<ink_thread>(NULL);
   set_socket_paths(NULL); // clear the socket_path
 
@@ -293,7 +293,7 @@ DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
   char diag_msg[MAX_BUF_SIZE];
 
   MgmtMarshallInt optype = DIAGS;
-  MgmtMarshallInt level = mode;
+  MgmtMarshallInt level  = mode;
   MgmtMarshallString msg = diag_msg;
 
   // format the diag message now so it can be sent
@@ -353,8 +353,8 @@ ServerBacktrace(unsigned options, char **trace)
   TSMgmtError ret;
   MgmtMarshallInt optype = SERVER_BACKTRACE;
   MgmtMarshallInt err;
-  MgmtMarshallInt flags = options;
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallInt flags     = options;
+  MgmtMarshallData reply    = {NULL, 0};
   MgmtMarshallString strval = NULL;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, SERVER_BACKTRACE, &optype, &flags);
@@ -411,7 +411,7 @@ Restart(unsigned options)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = RESTART;
-  MgmtMarshallInt oval = options;
+  MgmtMarshallInt oval   = options;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RESTART, &optype, &oval);
   if (ret != TS_ERR_OKAY) {
@@ -436,7 +436,7 @@ Bounce(unsigned options)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = BOUNCE;
-  MgmtMarshallInt oval = options;
+  MgmtMarshallInt oval   = options;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, BOUNCE, &optype, &oval);
 
@@ -452,7 +452,7 @@ TSMgmtError
 StorageDeviceCmdOffline(char const *dev)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = STORAGE_DEVICE_CMD_OFFLINE;
+  MgmtMarshallInt optype  = STORAGE_DEVICE_CMD_OFFLINE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(dev);
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, STORAGE_DEVICE_CMD_OFFLINE, &optype, &name);
@@ -500,7 +500,7 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
   MgmtMarshallInt rclass;
   MgmtMarshallInt type;
   MgmtMarshallString name = NULL;
-  MgmtMarshallData value = {NULL, 0};
+  MgmtMarshallData value  = {NULL, 0};
 
   ink_zero(*rec_ele);
   rec_ele->rec_type = TS_REC_UNDEFINED;
@@ -523,8 +523,8 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
   }
 
   rec_ele->rec_class = (TSInt)rclass;
-  rec_ele->rec_type = (TSRecordT)type;
-  rec_ele->rec_name = ats_strdup(name);
+  rec_ele->rec_type  = (TSRecordT)type;
+  rec_ele->rec_name  = ats_strdup(name);
   mgmt_record_convert_value(rec_ele->rec_type, value, rec_ele->valueT);
 
 done:
@@ -547,8 +547,8 @@ mgmt_record_describe_reply(TSConfigRecordDescription *val)
   MgmtMarshallInt err;
   MgmtMarshallString name = NULL;
   MgmtMarshallString expr = NULL;
-  MgmtMarshallData value = {NULL, 0};
-  MgmtMarshallData deflt = {NULL, 0};
+  MgmtMarshallData value  = {NULL, 0};
+  MgmtMarshallData deflt  = {NULL, 0};
 
   MgmtMarshallInt rtype;
   MgmtMarshallInt rclass;
@@ -576,17 +576,17 @@ mgmt_record_describe_reply(TSConfigRecordDescription *val)
   }
 
   // Everything is cool, populate the description ...
-  val->rec_name = ats_strdup(name);
-  val->rec_checkexpr = ats_strdup(expr);
-  val->rec_type = (TSRecordT)rtype;
-  val->rec_class = rclass;
-  val->rec_version = version;
-  val->rec_rsb = rsb;
-  val->rec_order = order;
-  val->rec_access = access;
+  val->rec_name       = ats_strdup(name);
+  val->rec_checkexpr  = ats_strdup(expr);
+  val->rec_type       = (TSRecordT)rtype;
+  val->rec_class      = rclass;
+  val->rec_version    = version;
+  val->rec_rsb        = rsb;
+  val->rec_order      = order;
+  val->rec_access     = access;
   val->rec_updatetype = updatetype;
-  val->rec_checktype = checktype;
-  val->rec_source = source;
+  val->rec_checktype  = checktype;
+  val->rec_source     = source;
 
   mgmt_record_convert_value(val->rec_type, value, val->rec_value);
   mgmt_record_convert_value(val->rec_type, deflt, val->rec_default);
@@ -605,7 +605,7 @@ TSMgmtError
 MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = RECORD_GET;
+  MgmtMarshallInt optype    = RECORD_GET;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   if (!rec_name || !rec_ele) {
@@ -621,8 +621,8 @@ TSMgmtError
 MgmtConfigRecordDescribeMatching(const char *rec_name, unsigned options, TSList rec_vals)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = RECORD_DESCRIBE_CONFIG;
-  MgmtMarshallInt flags = options | RECORD_DESCRIBE_FLAGS_MATCH;
+  MgmtMarshallInt optype    = RECORD_DESCRIBE_CONFIG;
+  MgmtMarshallInt flags     = options | RECORD_DESCRIBE_FLAGS_MATCH;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   // create and send request
@@ -667,8 +667,8 @@ TSMgmtError
 MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordDescription *val)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = RECORD_DESCRIBE_CONFIG;
-  MgmtMarshallInt flags = options & ~RECORD_DESCRIBE_FLAGS_MATCH;
+  MgmtMarshallInt optype    = RECORD_DESCRIBE_CONFIG;
+  MgmtMarshallInt flags     = options & ~RECORD_DESCRIBE_FLAGS_MATCH;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   // create and send request
@@ -686,7 +686,7 @@ MgmtRecordGetMatching(const char *regex, TSList rec_vals)
   TSMgmtError ret;
   TSRecordEle *rec_ele;
 
-  MgmtMarshallInt optype = RECORD_MATCH_GET;
+  MgmtMarshallInt optype    = RECORD_MATCH_GET;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(regex);
 
   if (!regex || !rec_vals) {
@@ -823,7 +823,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = FILE_READ;
-  MgmtMarshallInt fid = file;
+  MgmtMarshallInt fid    = file;
 
   MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallInt err;
@@ -855,8 +855,8 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   }
 
   *version = vers;
-  *text = (char *)data.ptr;
-  *size = (int)data.len;
+  *text    = (char *)data.ptr;
+  *size    = (int)data.len;
   return TS_ERR_OKAY;
 }
 
@@ -880,9 +880,9 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
   TSMgmtError ret;
 
   MgmtMarshallInt optype = FILE_WRITE;
-  MgmtMarshallInt fid = file;
-  MgmtMarshallInt vers = version;
-  MgmtMarshallData data = {(void *)text, (size_t)size};
+  MgmtMarshallInt fid    = file;
+  MgmtMarshallInt vers   = version;
+  MgmtMarshallData data  = {(void *)text, (size_t)size};
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, FILE_WRITE, &optype, &fid, &vers, &data);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(FILE_WRITE, main_socket_fd) : ret;
@@ -913,7 +913,7 @@ TSMgmtError
 EventResolve(const char *event_name)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = EVENT_RESOLVE;
+  MgmtMarshallInt optype  = EVENT_RESOLVE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
   if (!event_name)
@@ -947,7 +947,7 @@ TSMgmtError
 EventIsActive(const char *event_name, bool *is_current)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = EVENT_ACTIVE;
+  MgmtMarshallInt optype  = EVENT_ACTIVE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
   MgmtMarshallData reply = {NULL, 0};
@@ -1005,7 +1005,7 @@ EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data
 
   // if we need to notify traffic manager of the event then send msg
   if (first_time) {
-    MgmtMarshallInt optype = EVENT_REG_CALLBACK;
+    MgmtMarshallInt optype  = EVENT_REG_CALLBACK;
     MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
     ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, EVENT_REG_CALLBACK, &optype, &name);
@@ -1059,7 +1059,7 @@ static TSMgmtError
 snapshot_message(OpType op, const char *snapshot_name)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = op;
+  MgmtMarshallInt optype  = op;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(snapshot_name);
 
   if (!snapshot_name)
@@ -1100,8 +1100,8 @@ TSMgmtError
 StatsReset(bool cluster, const char *stat_name)
 {
   TSMgmtError ret;
-  OpType op = cluster ? STATS_RESET_CLUSTER : STATS_RESET_NODE;
-  MgmtMarshallInt optype = op;
+  OpType op               = cluster ? STATS_RESET_CLUSTER : STATS_RESET_NODE;
+  MgmtMarshallInt optype  = op;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(stat_name);
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);

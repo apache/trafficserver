@@ -71,9 +71,9 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
   query_remap_info *qri = (query_remap_info *)TSmalloc(sizeof(query_remap_info));
 
   qri->param_name = TSstrdup(argv[2]);
-  qri->param_len = strlen(qri->param_name);
-  qri->num_hosts = argc - 3;
-  qri->hosts = (char **)TSmalloc(qri->num_hosts * sizeof(char *));
+  qri->param_len  = strlen(qri->param_name);
+  qri->num_hosts  = argc - 3;
+  qri->hosts      = (char **)TSmalloc(qri->num_hosts * sizeof(char *));
 
   TSDebug(PLUGIN_NAME, " - Hash using query parameter [%s] with %d hosts", qri->param_name, qri->num_hosts);
 
@@ -111,7 +111,7 @@ TSRemapDeleteInstance(void *ih)
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn rh ATS_UNUSED, TSRemapRequestInfo *rri)
 {
-  int hostidx = -1;
+  int hostidx           = -1;
   query_remap_info *qri = (query_remap_info *)ih;
 
   if (!qri || !rri) {

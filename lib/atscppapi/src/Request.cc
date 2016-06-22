@@ -66,14 +66,14 @@ Request::Request(void *hdr_buf, void *hdr_loc)
 
 Request::Request(const string &url_str, HttpMethod method, HttpVersion version)
 {
-  state_ = new RequestState();
-  state_->method_ = method;
-  state_->version_ = version;
+  state_               = new RequestState();
+  state_->method_      = method;
+  state_->version_     = version;
   state_->destroy_buf_ = true;
-  state_->hdr_buf_ = TSMBufferCreate();
+  state_->hdr_buf_     = TSMBufferCreate();
   if (TSUrlCreate(state_->hdr_buf_, &state_->url_loc_) == TS_SUCCESS) {
     const char *url_str_start = url_str.c_str();
-    const char *url_str_end = url_str_start + url_str.size();
+    const char *url_str_end   = url_str_start + url_str.size();
     if (TSUrlParse(state_->hdr_buf_, state_->url_loc_, &url_str_start, url_str_end) != TS_PARSE_DONE) {
       LOG_ERROR("[%s] does not represent a valid url", url_str.c_str());
     } else {

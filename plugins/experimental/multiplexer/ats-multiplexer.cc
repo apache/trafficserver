@@ -44,7 +44,7 @@ TSReturnCode
 TSRemapInit(TSRemapInterface *, char *, int)
 {
   {
-    timeout = 0;
+    timeout                      = 0;
     const char *const timeoutEnv = getenv(PLUGIN_TAG "__timeout");
     if (timeoutEnv != NULL) {
       timeout = atol(timeoutEnv);

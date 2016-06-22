@@ -43,7 +43,7 @@ MultiCacheBase::MultiCacheBase()
   filename[0] = 0;
   memset(hit_stat, 0, sizeof(hit_stat));
   memset(unsunk, 0, sizeof(unsunk));
-  for (int i = 0; i < MULTI_CACHE_PARTITIONS; i++)
+  for (int i     = 0; i < MULTI_CACHE_PARTITIONS; i++)
     unsunk[i].mc = this;
 }
 
@@ -77,8 +77,8 @@ MultiCacheHeader::MultiCacheHeader()
   memset(level_offset, 0, sizeof(level_offset));
   memset(bucketsize, 0, sizeof(bucketsize));
   memset(elements, 0, sizeof(elements));
-  heap_used[0] = 8;
-  heap_used[1] = 8;
+  heap_used[0]      = 8;
+  heap_used[1]      = 8;
   version.ink_major = MULTI_CACHE_MAJOR_VERSION;
   version.ink_minor = MULTI_CACHE_MINOR_VERSION;
 }
@@ -93,13 +93,13 @@ inline int
 MultiCacheBase::blocks_in_level(unsigned int level)
 {
   int64_t sumbytes = 0;
-  int prevblocks = 0;
-  int b = 0;
+  int prevblocks   = 0;
+  int b            = 0;
   for (unsigned int i = 0; i <= level; i++) {
     sumbytes += buckets * ((int64_t)bucketsize[i]);
     int sumblocks = bytes_to_blocks(sumbytes);
-    b = sumblocks - prevblocks;
-    prevblocks = sumblocks;
+    b             = sumblocks - prevblocks;
+    prevblocks    = sumblocks;
   }
   return b;
 }
@@ -121,11 +121,11 @@ MultiCacheBase::initialize(Store *astore, char *afilename, int aelements, int ab
     Warning("Alevels too large %d, cannot initialize MultiCache", MULTI_CACHE_MAX_LEVELS);
     return -1;
   }
-  levels = alevels;
-  elementsize = get_elementsize();
-  totalelements = 0;
+  levels           = alevels;
+  elementsize      = get_elementsize();
+  totalelements    = 0;
   nominal_elements = aelements;
-  buckets = abuckets;
+  buckets          = abuckets;
 
   ink_strlcpy(filename, afilename, sizeof(filename));
   //
@@ -139,7 +139,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename, int aelements, int ab
     }
     if (levels == 3)
       level2_elements_per_bucket = aelements / buckets;
-    elements[2] = level2_elements_per_bucket;
+    elements[2]                  = level2_elements_per_bucket;
     totalelements += buckets * level2_elements_per_bucket;
     bucketsize[2] = elementsize * level2_elements_per_bucket;
     size += (int64_t)bucketsize[2] * (int64_t)buckets;
@@ -162,7 +162,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename, int aelements, int ab
     }
     if (levels == 2)
       level1_elements_per_bucket = aelements / buckets;
-    elements[1] = level1_elements_per_bucket;
+    elements[1]                  = level1_elements_per_bucket;
     totalelements += buckets * level1_elements_per_bucket;
     bucketsize[1] = elementsize * level1_elements_per_bucket;
     size += (int64_t)bucketsize[1] * (int64_t)buckets;
@@ -182,7 +182,7 @@ MultiCacheBase::initialize(Store *astore, char *afilename, int aelements, int ab
   }
   if (levels == 1)
     level0_elements_per_bucket = aelements / buckets;
-  elements[0] = level0_elements_per_bucket;
+  elements[0]                  = level0_elements_per_bucket;
   totalelements += buckets * level0_elements_per_bucket;
   bucketsize[0] = elementsize * level0_elements_per_bucket;
   size += (int64_t)bucketsize[0] * (int64_t)buckets;
@@ -235,10 +235,10 @@ MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, size_t &total_lengt
 {
   if (!blocks)
     return cur;
-  int p = 0;
+  int p     = 0;
   char *res = 0;
   for (unsigned i = 0; i < store->n_disks; i++) {
-    unsigned int target = blocks / (store->n_disks - i);
+    unsigned int target    = blocks / (store->n_disks - i);
     unsigned int following = store->total_blocks(i + 1);
     if (blocks - target > following)
       target = blocks - following;
@@ -254,7 +254,7 @@ MultiCacheBase::mmap_region(int blocks, int *fds, char *cur, size_t &total_lengt
           b = target;
         d->blocks -= b;
         unsigned int nbytes = b * STORE_BLOCK_SIZE;
-        int fd = fds[p] ? fds[p] : zero_fill;
+        int fd              = fds[p] ? fds[p] : zero_fill;
         ink_assert(-1 != fd);
         int flags = private_flag ? MAP_PRIVATE : MAP_SHARED_MAP_NORESERVE;
 
@@ -297,7 +297,7 @@ MultiCacheBase::unmap_data()
 {
   int res = 0;
   if (data) {
-    res = munmap(data, totalsize);
+    res  = munmap(data, totalsize);
     data = NULL;
     return res;
   }
@@ -309,8 +309,8 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 {
   ats_scoped_fd fd;
   int fds[MULTI_CACHE_MAX_FILES] = {0};
-  int n_fds = 0;
-  size_t total_mapped = 0; // total mapped memory from storage.
+  int n_fds                      = 0;
+  size_t total_mapped            = 0; // total mapped memory from storage.
 
   // open files
   //
@@ -321,7 +321,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     for (unsigned j = 0; j < store->disk[i]->paths(); j++) {
       char path[PATH_NAME_MAX];
       Span *d = ds->nth(j);
-      int r = d->path(filename, NULL, path, PATH_NAME_MAX);
+      int r   = d->path(filename, NULL, path, PATH_NAME_MAX);
       if (r < 0) {
         Warning("filename too large '%s'", filename);
         goto Labort;
@@ -366,7 +366,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
     Store tStore;
     store->dup(tStore);
     Store *saved = store;
-    store = &tStore;
+    store        = &tStore;
 
     char *cur = 0;
 
@@ -432,7 +432,7 @@ MultiCacheBase::mmap_data(bool private_flag, bool zero_fill)
 
     if (heap_size) {
       heap = cur;
-      cur = mmap_region(bytes_to_blocks(heap_size), fds, cur, total_mapped, private_flag, fd);
+      cur  = mmap_region(bytes_to_blocks(heap_size), fds, cur, total_mapped, private_flag, fd);
       if (!cur) {
         store = saved;
         goto Labort;
@@ -460,7 +460,7 @@ Lalloc : {
   char *cur = 0;
 
   data = (char *)ats_memalign(ats_pagesize(), totalsize);
-  cur = data + STORE_BLOCK_SIZE * blocks_in_level(0);
+  cur  = data + STORE_BLOCK_SIZE * blocks_in_level(0);
   if (levels > 1)
     cur = data + STORE_BLOCK_SIZE * blocks_in_level(1);
   if (levels > 2)
@@ -493,8 +493,8 @@ void
 MultiCacheBase::clear()
 {
   memset(data, 0, totalsize);
-  heap_used[0] = 8;
-  heap_used[1] = 8;
+  heap_used[0]   = 8;
+  heap_used[1]   = 8;
   heap_halfspace = 0;
   *mapped_header = *(MultiCacheHeader *)this;
 }
@@ -567,13 +567,13 @@ MultiCacheBase::write_config(const char *config_filename, int nominal_size, int 
 int
 MultiCacheBase::open(Store *s, const char *config_filename, char *db_filename, int db_size, bool reconfigure, bool fix, bool silent)
 {
-  int ret = 0;
+  int ret         = 0;
   const char *err = NULL;
-  char *serr = NULL;
+  char *serr      = NULL;
   char t_db_filename[PATH_NAME_MAX];
-  int t_db_size = 0;
+  int t_db_size    = 0;
   int t_db_buckets = 0;
-  int change = 0;
+  int change       = 0;
 
   t_db_filename[0] = 0;
 
@@ -699,12 +699,12 @@ LheaderCorrupt:
   goto Lfail;
 
 LfailWrite:
-  err = "unable to write";
+  err  = "unable to write";
   serr = strerror(errno);
   goto Lfail;
 
 LfailRead:
-  err = "unable to read";
+  err  = "unable to read";
   serr = strerror(errno);
   goto Lfail;
 
@@ -729,7 +729,7 @@ LfailFix:
   goto Lfail;
 
 LfailMap:
-  err = "unable to mmap";
+  err  = "unable to mmap";
   serr = strerror(errno);
   goto Lfail;
 
@@ -819,7 +819,7 @@ MultiCacheBase::rebuild(MultiCacheBase &old, int kind)
     if (kind == MC_REBUILD_CHECK) {
       // old.data is the original, data is the copy
       old.data = data;
-      data = new_data;
+      data     = new_data;
     } else {
       memcpy(new_data, data, old.totalsize);
       // old.data is the copy, data is the original
@@ -836,16 +836,16 @@ MultiCacheBase::rebuild(MultiCacheBase &old, int kind)
   r.data = old.data;
 
   r.rebuild = kind == MC_REBUILD;
-  r.check = kind == MC_REBUILD_CHECK;
-  r.fix = kind == MC_REBUILD_FIX;
+  r.check   = kind == MC_REBUILD_CHECK;
+  r.fix     = kind == MC_REBUILD_FIX;
 
-  r.deleted = 0;
-  r.backed = 0;
+  r.deleted    = 0;
+  r.backed     = 0;
   r.duplicates = 0;
-  r.stale = 0;
-  r.corrupt = 0;
-  r.good = 0;
-  r.total = 0;
+  r.stale      = 0;
+  r.corrupt    = 0;
+  r.good       = 0;
+  r.total      = 0;
 
   if (r.rebuild)
     fprintf(diag_output_fp, "New:\n");
@@ -941,8 +941,8 @@ int
 MultiCacheBase::sync_partition(int partition)
 {
   int res = 0;
-  int b = first_bucket_of_partition(partition);
-  int n = buckets_of_partition(partition);
+  int b   = first_bucket_of_partition(partition);
+  int n   = buckets_of_partition(partition);
   // L3
   if (levels > 2) {
     if (ats_msync(data + level_offset[2] + b * bucketsize[2], n * bucketsize[2], data + totalsize, MS_SYNC) < 0)
@@ -997,7 +997,7 @@ struct MultiCacheSync : public Continuation {
   heapEvent(int event, Event *e)
   {
     if (!partition) {
-      before_used = mc->heap_used[mc->heap_halfspace];
+      before_used     = mc->heap_used[mc->heap_halfspace];
       mc->header_snap = *(MultiCacheHeader *)mc;
     }
     if (partition < MULTI_CACHE_PARTITIONS) {
@@ -1061,7 +1061,7 @@ UnsunkPtrRegistry *
 MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegistry *r, int base)
 {
   if (!r)
-    r = &unsunk[partition];
+    r        = &unsunk[partition];
   bool found = 0;
   for (int i = 0; i < r->n; i++) {
     UnsunkPtr &p = r->ptrs[i];
@@ -1083,14 +1083,14 @@ MultiCacheBase::fixup_heap_offsets(int partition, int before_used, UnsunkPtrRegi
         Debug("multicache", "not found %" PRId64 " i %d base %d *p.poffset = %d", (int64_t)((char *)p.poffset - data), i, base,
               *p.poffset);
       }
-      p.offset = 0;
-      p.poffset = (int *)r->next_free;
+      p.offset     = 0;
+      p.poffset    = (int *)r->next_free;
       r->next_free = &p;
-      found = true;
+      found        = true;
     }
   }
   if (r->next) {
-    int s = MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(totalelements);
+    int s   = MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(totalelements);
     r->next = fixup_heap_offsets(partition, before_used, r->next, base + s);
   }
   if (!r->next && !found && r != &unsunk[partition]) {
@@ -1137,8 +1137,8 @@ struct MultiCacheHeapGC : public Continuation {
         int *i1, i2;
         // BAD CODE GENERATION ON THE ALPHA
         //*(offset_table[i].poffset) = offset_table[i].new_offset + 1;
-        i1 = offset_table[i].poffset;
-        i2 = offset_table[i].new_offset + 1;
+        i1  = offset_table[i].poffset;
+        i2  = offset_table[i].new_offset + 1;
         *i1 = i2;
       }
       n_offsets = 0;
@@ -1165,7 +1165,7 @@ struct MultiCacheHeapGC : public Continuation {
     offset_table = (OffsetTable *)ats_malloc(sizeof(OffsetTable) *
                                              ((mc->totalelements / MULTI_CACHE_PARTITIONS) + mc->elements[mc->levels - 1] * 3 + 1));
     // flip halfspaces
-    mutex = mc->locks[partition];
+    mutex              = mc->locks[partition];
     mc->heap_halfspace = mc->heap_halfspace ? 0 : 1;
   }
   ~MultiCacheHeapGC() { ats_free(offset_table); }
@@ -1200,7 +1200,7 @@ MultiCacheBase::copy_heap_data(char *src, int s, int *pi, int partition, MultiCa
       }
     } else {
       gc->offset_table[gc->n_offsets].new_offset = dest - heap;
-      gc->offset_table[gc->n_offsets].poffset = pi;
+      gc->offset_table[gc->n_offsets].poffset    = pi;
       gc->n_offsets++;
     }
   } else {
@@ -1221,16 +1221,16 @@ UnsunkPtrRegistry::~UnsunkPtrRegistry()
 void
 UnsunkPtrRegistry::alloc_data()
 {
-  int bs = MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(mc->totalelements);
+  int bs   = MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(mc->totalelements);
   size_t s = bs * sizeof(UnsunkPtr);
-  ptrs = (UnsunkPtr *)ats_malloc(s);
+  ptrs     = (UnsunkPtr *)ats_malloc(s);
   for (int i = 0; i < bs; i++) {
-    ptrs[i].offset = 0;
+    ptrs[i].offset  = 0;
     ptrs[i].poffset = (int *)&ptrs[i + 1];
   }
   ptrs[bs - 1].poffset = NULL;
-  next_free = ptrs;
-  n = bs;
+  next_free            = ptrs;
+  n                    = bs;
 }
 
 UnsunkPtr *
@@ -1238,8 +1238,8 @@ UnsunkPtrRegistry::alloc(int *poffset, int base)
 {
   if (next_free) {
     UnsunkPtr *res = next_free;
-    next_free = (UnsunkPtr *)next_free->poffset;
-    *poffset = -(base + (res - ptrs)) - 1;
+    next_free      = (UnsunkPtr *)next_free->poffset;
+    *poffset       = -(base + (res - ptrs)) - 1;
     ink_assert(*poffset);
     return res;
   } else {
@@ -1248,7 +1248,7 @@ UnsunkPtrRegistry::alloc(int *poffset, int base)
       return alloc(poffset, base);
     }
     if (!next) {
-      next = new UnsunkPtrRegistry;
+      next     = new UnsunkPtrRegistry;
       next->mc = mc;
     }
     int s = MULTI_CACHE_UNSUNK_PTR_BLOCK_SIZE(mc->totalelements);
@@ -1259,9 +1259,9 @@ UnsunkPtrRegistry::alloc(int *poffset, int base)
 void *
 MultiCacheBase::alloc(int *poffset, int asize)
 {
-  int h = heap_halfspace;
+  int h    = heap_halfspace;
   int size = (asize + MULTI_CACHE_HEAP_ALIGNMENT - 1) & ~(MULTI_CACHE_HEAP_ALIGNMENT - 1);
-  int o = ink_atomic_increment((int *)&heap_used[h], size);
+  int o    = ink_atomic_increment((int *)&heap_used[h], size);
 
   if (o + size > halfspace_size()) {
     ink_atomic_increment((int *)&heap_used[h], -size);
@@ -1271,14 +1271,14 @@ MultiCacheBase::alloc(int *poffset, int asize)
     return NULL;
   }
   int offset = (h ? halfspace_size() : 0) + o;
-  char *p = heap + offset;
+  char *p    = heap + offset;
   if (poffset) {
     int part = ptr_to_partition((char *)poffset);
     if (part < 0)
       return NULL;
     UnsunkPtr *up = unsunk[part].alloc(poffset);
-    up->offset = offset;
-    up->poffset = poffset;
+    up->offset    = offset;
+    up->poffset   = poffset;
     Debug("multicache", "alloc unsunk %d at %" PRId64 " part %d offset %d", *poffset, (int64_t)((char *)poffset - data), part,
           offset);
   }
@@ -1350,8 +1350,8 @@ MultiCacheBase::update(int *poffset, int *old_poffset)
   }
   ink_assert(p->poffset != poffset);
   UnsunkPtr *n = unsunk[part].alloc(poffset);
-  n->poffset = poffset;
-  n->offset = p->offset;
+  n->poffset   = poffset;
+  n->offset    = p->offset;
 }
 
 int

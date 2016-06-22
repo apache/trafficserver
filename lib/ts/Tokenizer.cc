@@ -42,7 +42,7 @@ Tokenizer::Tokenizer(const char *StrOfDelimiters)
   if (StrOfDelimiters == NULL) {
     strOfDelimit = NULL;
   } else {
-    length = (int)(strlen(StrOfDelimiters) + 1);
+    length       = (int)(strlen(StrOfDelimiters) + 1);
     strOfDelimit = new char[length];
     memcpy(strOfDelimit, StrOfDelimiters, length);
   }
@@ -50,17 +50,17 @@ Tokenizer::Tokenizer(const char *StrOfDelimiters)
   memset(&start_node, 0, sizeof(tok_node));
 
   numValidTokens = 0;
-  maxTokens = UINT_MAX;
-  options = 0;
+  maxTokens      = UINT_MAX;
+  options        = 0;
 
-  add_node = &start_node;
-  add_index = 0;
+  add_node   = &start_node;
+  add_index  = 0;
   quoteFound = false;
 }
 
 Tokenizer::~Tokenizer()
 {
-  bool root = true;
+  bool root     = true;
   tok_node *cur = &start_node;
   ;
   tok_node *next = NULL;
@@ -118,9 +118,9 @@ Tokenizer::Initialize(char *str, unsigned opt)
 {
   char *strStart;
   int priorCharWasDelimit = 1;
-  char *tokStart = NULL;
-  unsigned tok_count = 0;
-  bool max_limit_hit = false;
+  char *tokStart          = NULL;
+  unsigned tok_count      = 0;
+  bool max_limit_hit      = false;
 
   // We can't depend on ReUse() being called so just do it
   //   if the object needs it
@@ -138,11 +138,11 @@ Tokenizer::Initialize(char *str, unsigned opt)
   // Make sure that both options are not set
   ink_assert(!((opt & COPY_TOKS) && (opt & SHARE_TOKS)));
 
-  str = strStart;
+  str                 = strStart;
   priorCharWasDelimit = 1;
 
   tok_count = 0;
-  tokStart = str;
+  tokStart  = str;
 
   while (*str != '\0') {
     // Check to see if we've run to maxToken limit
@@ -163,7 +163,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
       if (isDelimiter(*str)) {
         addToken(tokStart, (int)(str - tokStart));
         tok_count++;
-        tokStart = str + 1;
+        tokStart            = str + 1;
         priorCharWasDelimit = 1;
       } else {
         priorCharWasDelimit = 0;
@@ -211,7 +211,7 @@ Tokenizer::Initialize(char *str, unsigned opt)
         priorCharWasDelimit = 1;
       } else {
         // There is stuff to copy for the last token
-        tokStart = str;
+        tokStart            = str;
         priorCharWasDelimit = 0;
 
         // Advance until the end of the string
@@ -244,7 +244,7 @@ Tokenizer::addToken(char *startAddr, int length)
   char *add_ptr;
   if (options & SHARE_TOKS) {
     startAddr[length] = '\0';
-    add_ptr = startAddr;
+    add_ptr           = startAddr;
   } else {
     add_ptr = (char *)ats_malloc(length + 1);
     memcpy(add_ptr, startAddr, length);
@@ -264,7 +264,7 @@ Tokenizer::addToken(char *startAddr, int length)
       add_node->next = (tok_node *)ats_malloc(sizeof(tok_node));
       memset(add_node->next, 0, sizeof(tok_node));
     }
-    add_node = add_node->next;
+    add_node  = add_node->next;
     add_index = 0;
   }
 }
@@ -272,7 +272,7 @@ Tokenizer::addToken(char *startAddr, int length)
 const char *Tokenizer::operator[](unsigned index) const
 {
   const tok_node *cur_node = &start_node;
-  unsigned cur_start = 0;
+  unsigned cur_start       = 0;
 
   if (index >= numValidTokens) {
     return NULL;
@@ -295,7 +295,7 @@ Tokenizer::count() const
 const char *
 Tokenizer::iterFirst(tok_iter_state *state)
 {
-  state->node = &start_node;
+  state->node  = &start_node;
   state->index = -1;
   return iterNext(state);
 }
@@ -318,7 +318,7 @@ Tokenizer::iterNext(tok_iter_state *state)
   }
 
   if (node->el[index] != NULL) {
-    state->node = node;
+    state->node  = node;
     state->index = index;
     return node->el[index];
   } else {
@@ -330,8 +330,8 @@ void
 Tokenizer::Print()
 {
   tok_node *cur_node = &start_node;
-  int node_index = 0;
-  int count = 0;
+  int node_index     = 0;
+  int count          = 0;
 
   while (cur_node != NULL) {
     if (cur_node->el[node_index] != NULL) {
@@ -343,7 +343,7 @@ Tokenizer::Print()
 
     node_index++;
     if (node_index >= TOK_NODE_ELEMENTS) {
-      cur_node = cur_node->next;
+      cur_node   = cur_node->next;
       node_index = 0;
     }
   }
@@ -364,8 +364,8 @@ Tokenizer::ReUse()
   }
 
   numValidTokens = 0;
-  add_node = &start_node;
-  add_index = 0;
+  add_node       = &start_node;
+  add_index      = 0;
 }
 
 #if TS_HAS_TESTS

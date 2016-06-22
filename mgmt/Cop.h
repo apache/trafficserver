@@ -21,7 +21,7 @@
     limitations under the License.
 */
 
-static const int cop_sleep_time = 10;          // 10 sec
+static const int cop_sleep_time      = 10;     // 10 sec
 static const int cop_manager_timeout = 3 * 60; //  3 min
-static const int cop_server_timeout = 3 * 60;  //  3 min
-static const int cop_kill_timeout = 1 * 60;    //  1 min
+static const int cop_server_timeout  = 3 * 60; //  3 min
+static const int cop_kill_timeout    = 1 * 60; //  1 min

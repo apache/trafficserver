@@ -58,8 +58,8 @@ TSPluginInit(int argc, const char *argv[])
   int i;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)"libloader";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"libloader";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -71,12 +71,12 @@ TSPluginInit(int argc, const char *argv[])
 
   for (i = 1; i < argc; ++i) {
     const char *lib = argv[i];
-    void *handle = dlopen(lib, RTLD_GLOBAL | RTLD_NOW);
+    void *handle    = dlopen(lib, RTLD_GLOBAL | RTLD_NOW);
     if (handle) {
       link_handle *l = TSmalloc(sizeof(link_handle));
-      l->handle = handle;
-      l->next = libs;
-      libs = l;
+      l->handle      = handle;
+      l->next        = libs;
+      libs           = l;
       TSDebug("libloader", " loaded %s\n", lib);
     } else {
       TSError("[libloader] failed to load %s: %s\n", lib, dlerror());

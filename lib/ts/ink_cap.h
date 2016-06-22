@@ -72,9 +72,9 @@ class ElevateAccess
 {
 public:
   typedef enum {
-    FILE_PRIVILEGE = 0x1u,    ///< Access filesystem objects with privilege
-    TRACE_PRIVILEGE = 0x2u,   ///< Trace other processes with privilege
-    LOW_PORT_PRIVILEGE = 0x4u ///< Bind to privilege ports.
+    FILE_PRIVILEGE     = 0x1u, ///< Access filesystem objects with privilege
+    TRACE_PRIVILEGE    = 0x2u, ///< Trace other processes with privilege
+    LOW_PORT_PRIVILEGE = 0x4u  ///< Bind to privilege ports.
   } privilege_level;
 
   ElevateAccess(unsigned level = FILE_PRIVILEGE);

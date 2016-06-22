@@ -66,7 +66,7 @@ public:
   Http2Frame(const Http2FrameHeader &h, IOBufferReader *r)
   {
     this->hdr.cooked = h;
-    this->ioreader = r;
+    this->ioreader   = r;
   }
 
   Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags)

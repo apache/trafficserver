@@ -123,7 +123,7 @@ ts_ctrl_main(void *arg)
   int *socket_fd;
   int con_socket_fd; // main socket for listening to new connections
 
-  socket_fd = (int *)arg;
+  socket_fd     = (int *)arg;
   con_socket_fd = *socket_fd;
 
   // initialize queue for accepted con
@@ -147,7 +147,7 @@ ts_ctrl_main(void *arg)
   // loops until TM dies; waits for and processes requests from clients
   while (1) {
     // LINUX: to prevent hard-spin of CPU,  reset timeout on each loop
-    timeout.tv_sec = TIMEOUT_SECS;
+    timeout.tv_sec  = TIMEOUT_SECS;
     timeout.tv_usec = 0;
 
     FD_ZERO(&selectFDs);
@@ -185,7 +185,7 @@ ts_ctrl_main(void *arg)
           Debug("ts_main", "[ts_ctrl_main] can't allocate new ClientT\n");
         } else { // accept connection
           socklen_t addr_len = (sizeof(struct sockaddr));
-          new_con_fd = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
+          new_con_fd         = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
           new_client_con->fd = new_con_fd;
           ink_hash_table_insert(accepted_con, (char *)&new_client_con->fd, new_client_con);
           Debug("ts_main", "[ts_ctrl_main] Add new client connection \n");
@@ -310,28 +310,28 @@ send_record_get_response(int fd, const RecRecord *rec)
   MgmtMarshallData value = {NULL, 0};
 
   if (rec) {
-    type = rec->data_type;
+    type   = rec->data_type;
     rclass = rec->rec_type;
-    name = const_cast<MgmtMarshallString>(rec->name);
+    name   = const_cast<MgmtMarshallString>(rec->name);
   } else {
-    type = RECD_NULL;
+    type   = RECD_NULL;
     rclass = RECT_NULL;
-    name = NULL;
+    name   = NULL;
   }
 
   switch (type) {
   case RECD_INT:
-    type = TS_REC_INT;
+    type      = TS_REC_INT;
     value.ptr = (void *)&rec->data.rec_int;
     value.len = sizeof(RecInt);
     break;
   case RECD_COUNTER:
-    type = TS_REC_COUNTER;
+    type      = TS_REC_COUNTER;
     value.ptr = (void *)&rec->data.rec_counter;
     value.len = sizeof(RecCounter);
     break;
   case RECD_FLOAT:
-    type = TS_REC_FLOAT;
+    type      = TS_REC_FLOAT;
     value.ptr = (void *)&rec->data.rec_float;
     value.len = sizeof(RecFloat);
     break;
@@ -369,7 +369,7 @@ static void
 send_record_get(const RecRecord *rec, void *edata)
 {
   int *fd = (int *)edata;
-  *fd = send_record_get_response(*fd, rec);
+  *fd     = send_record_get_response(*fd, rec);
 }
 
 static TSMgmtError
@@ -443,7 +443,7 @@ handle_record_match(int fd, void *req, size_t reqlen)
   }
 
   match.err = TS_ERR_OKAY;
-  match.fd = fd;
+  match.fd  = fd;
 
   if (RecLookupMatchingRecords(RECT_ALL, name, send_record_match, &match) != REC_ERR_OKAY) {
     ats_free(name);
@@ -473,7 +473,7 @@ handle_record_set(int fd, void *req, size_t reqlen)
   TSMgmtError ret;
   TSActionNeedT action = TS_ACTION_UNDEFINED;
   MgmtMarshallInt optype;
-  MgmtMarshallString name = NULL;
+  MgmtMarshallString name  = NULL;
   MgmtMarshallString value = NULL;
 
   ret = recv_mgmt_request(req, reqlen, RECORD_SET, &optype, &name, &value);
@@ -516,7 +516,7 @@ handle_file_read(int fd, void *req, size_t reqlen)
   MgmtMarshallInt fid;
 
   MgmtMarshallInt err;
-  MgmtMarshallInt vers = 0;
+  MgmtMarshallInt vers  = 0;
   MgmtMarshallData data = {NULL, 0};
 
   err = recv_mgmt_request(req, reqlen, FILE_READ, &optype, &fid);
@@ -527,7 +527,7 @@ handle_file_read(int fd, void *req, size_t reqlen)
   // make CoreAPI call on Traffic Manager side
   err = ReadFile((TSFileNameT)fid, &text, &size, &version);
   if (err == TS_ERR_OKAY) {
-    vers = version;
+    vers     = version;
     data.ptr = text;
     data.len = size;
   }
@@ -1023,19 +1023,19 @@ handle_server_backtrace(int fd, void *req, size_t reqlen)
 static void
 send_record_describe(const RecRecord *rec, void *edata)
 {
-  MgmtMarshallString rec_name = NULL;
-  MgmtMarshallData rec_value = {NULL, 0};
-  MgmtMarshallData rec_default = {NULL, 0};
-  MgmtMarshallInt rec_type = TS_REC_UNDEFINED;
-  MgmtMarshallInt rec_class = RECT_NULL;
-  MgmtMarshallInt rec_version = 0;
-  MgmtMarshallInt rec_rsb = 0;
-  MgmtMarshallInt rec_order = 0;
-  MgmtMarshallInt rec_access = RECA_NULL;
-  MgmtMarshallInt rec_update = RECU_NULL;
-  MgmtMarshallInt rec_updatetype = 0;
-  MgmtMarshallInt rec_checktype = RECC_NULL;
-  MgmtMarshallInt rec_source = REC_SOURCE_NULL;
+  MgmtMarshallString rec_name      = NULL;
+  MgmtMarshallData rec_value       = {NULL, 0};
+  MgmtMarshallData rec_default     = {NULL, 0};
+  MgmtMarshallInt rec_type         = TS_REC_UNDEFINED;
+  MgmtMarshallInt rec_class        = RECT_NULL;
+  MgmtMarshallInt rec_version      = 0;
+  MgmtMarshallInt rec_rsb          = 0;
+  MgmtMarshallInt rec_order        = 0;
+  MgmtMarshallInt rec_access       = RECA_NULL;
+  MgmtMarshallInt rec_update       = RECU_NULL;
+  MgmtMarshallInt rec_updatetype   = 0;
+  MgmtMarshallInt rec_checktype    = RECC_NULL;
+  MgmtMarshallInt rec_source       = REC_SOURCE_NULL;
   MgmtMarshallString rec_checkexpr = NULL;
 
   TSMgmtError err = TS_ERR_OKAY;
@@ -1053,18 +1053,18 @@ send_record_describe(const RecRecord *rec, void *edata)
       return;
     }
 
-    rec_name = const_cast<char *>(rec->name);
-    rec_type = rec->data_type;
-    rec_class = rec->rec_type;
-    rec_version = rec->version;
-    rec_rsb = rec->rsb_id;
-    rec_order = rec->order;
-    rec_access = rec->config_meta.access_type;
-    rec_update = rec->config_meta.update_required;
+    rec_name       = const_cast<char *>(rec->name);
+    rec_type       = rec->data_type;
+    rec_class      = rec->rec_type;
+    rec_version    = rec->version;
+    rec_rsb        = rec->rsb_id;
+    rec_order      = rec->order;
+    rec_access     = rec->config_meta.access_type;
+    rec_update     = rec->config_meta.update_required;
     rec_updatetype = rec->config_meta.update_type;
-    rec_checktype = rec->config_meta.check_type;
-    rec_source = rec->config_meta.source;
-    rec_checkexpr = rec->config_meta.check_expr;
+    rec_checktype  = rec->config_meta.check_type;
+    rec_source     = rec->config_meta.source;
+    rec_checkexpr  = rec->config_meta.check_expr;
 
     switch (rec_type) {
     case RECD_INT:
@@ -1122,7 +1122,7 @@ handle_record_describe(int fd, void *req, size_t reqlen)
   }
 
   match.err = TS_ERR_OKAY;
-  match.fd = fd;
+  match.fd  = fd;
 
   if (options & RECORD_DESCRIBE_FLAGS_MATCH) {
     if (RecLookupMatchingRecords(RECT_CONFIG | RECT_LOCAL, name, send_record_describe, &match) != REC_ERR_OKAY) {

@@ -67,16 +67,16 @@ uint32_t test_values[] = {
 void
 random_test()
 {
-  const int size = 1024;
+  const int size  = 1024;
   char *dst_start = (char *)malloc(size * 2);
   char string[size];
   for (int i = 0; i < size; i++) {
     // coverity[dont_call]
-    long num = lrand48();
+    long num  = lrand48();
     string[i] = (char)num;
   }
   const uint8_t *src = (const uint8_t *)string;
-  uint32_t src_len = sizeof(string);
+  uint32_t src_len   = sizeof(string);
 
   int bytes = huffman_decode(dst_start, src, src_len);
 
@@ -100,12 +100,12 @@ values_test()
   int size = sizeof(test_values) / 4;
   for (int i = 0; i < size; i += 2) {
     const uint32_t value = test_values[i];
-    const uint32_t bits = test_values[i + 1];
+    const uint32_t bits  = test_values[i + 1];
 
     // copy the bits and set remaining bits to 1
     union Value encoded;
     union Value encoded_mapped;
-    encoded.x = 0;
+    encoded.x             = 0;
     uint32_t bits_counter = bits;
     for (uint32_t pos = 32; pos > 0; pos--) {
       if (bits_counter > 0) {
@@ -134,7 +134,7 @@ values_test()
     encoded_mapped.y[2] = encoded.y[1];
     encoded_mapped.y[3] = encoded.y[0];
 
-    int bytes = huffman_decode(dst_start, encoded_mapped.y, encoded_size);
+    int bytes        = huffman_decode(dst_start, encoded_mapped.y, encoded_size);
     char ascii_value = i / 2;
     assert(dst_start[0] == ascii_value);
     assert(bytes == 1);
@@ -161,7 +161,7 @@ void
 encode_test()
 {
   for (uint64_t i = 0; i < sizeof(huffman_encode_test_data) / sizeof(huffman_encode_test_data[0]); ++i) {
-    uint8_t *dst = static_cast<uint8_t *>(malloc(huffman_encode_test_data[i].expect_len));
+    uint8_t *dst        = static_cast<uint8_t *>(malloc(huffman_encode_test_data[i].expect_len));
     int64_t encoded_len = huffman_encode(dst, huffman_encode_test_data[i].src, huffman_encode_test_data[i].src_len);
 
     assert(encoded_len == huffman_encode_test_data[i].expect_len);

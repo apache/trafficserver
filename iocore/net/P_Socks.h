@@ -171,7 +171,7 @@ SocksAddrType::reset()
   }
 
   addr.buf = 0;
-  type = SOCKS_ATYPE_NONE;
+  type     = SOCKS_ATYPE_NONE;
 }
 
 #endif

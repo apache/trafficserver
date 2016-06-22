@@ -50,7 +50,7 @@ class Diags;
 
 // extern int diags_on_for_plugins;
 typedef enum {
-  DiagsTagType_Debug = 0, // do not renumber --- used as array index
+  DiagsTagType_Debug  = 0, // do not renumber --- used as array index
   DiagsTagType_Action = 1
 } DiagsTagType;
 

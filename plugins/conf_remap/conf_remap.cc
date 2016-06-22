@@ -84,7 +84,7 @@ RemapConfigs::parse_inline(const char *arg)
     return false;
   }
 
-  key = std::string(arg, std::distance(arg, sep));
+  key   = std::string(arg, std::distance(arg, sep));
   value = std::string(sep + 1, std::distance(sep + 1, arg + strlen(arg)));
 
   if (TSHttpTxnConfigFind(key.c_str(), -1 /* len */, &name, &type) != TS_SUCCESS) {
@@ -99,10 +99,10 @@ RemapConfigs::parse_inline(const char *arg)
   case TS_RECORDDATATYPE_STRING:
     if (strcmp(value.c_str(), "NULL") == 0) {
       _items[_current]._data.rec_string = NULL;
-      _items[_current]._data_len = 0;
+      _items[_current]._data_len        = 0;
     } else {
       _items[_current]._data.rec_string = TSstrdup(value.c_str());
-      _items[_current]._data_len = value.size();
+      _items[_current]._data_len        = value.size();
     }
     break;
   default:
@@ -217,10 +217,10 @@ RemapConfigs::parse_file(const char *filename)
     case TS_RECORDDATATYPE_STRING:
       if (strcmp(tok, "NULL") == 0) {
         _items[_current]._data.rec_string = NULL;
-        _items[_current]._data_len = 0;
+        _items[_current]._data_len        = 0;
       } else {
         _items[_current]._data.rec_string = TSstrdup(tok);
-        _items[_current]._data_len = strlen(tok);
+        _items[_current]._data_len        = strlen(tok);
       }
       break;
     default:
@@ -309,7 +309,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
 {
   if (NULL != ih) {
     RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
-    TSHttpTxn txnp = static_cast<TSHttpTxn>(rh);
+    TSHttpTxn txnp     = static_cast<TSHttpTxn>(rh);
 
     for (int ix = 0; ix < conf->_current; ++ix) {
       switch (conf->_items[ix]._type) {

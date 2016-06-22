@@ -143,7 +143,7 @@ ChunkDecoder::decode(const TSIOBufferReader &r)
     if (p != NULL) {
       if (size > size_) {
         length += size_;
-        size_ = 0;
+        size_  = 0;
         state_ = State::kSizeR;
         break;
       } else {

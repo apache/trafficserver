@@ -67,13 +67,13 @@ ClusterControl::ClusterControl()
 void
 ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_boundary)
 {
-  EThread *thread = this_ethread();
+  EThread *thread   = this_ethread();
   ProxyMutex *mutex = thread->mutex;
 
   ink_assert(!data);
   if ((len + DATA_HDR + sizeof(int32_t)) <= DEFAULT_MAX_BUFFER_SIZE) {
     size_index = buffer_size_to_index(len + DATA_HDR + sizeof(int32_t), MAX_BUFFER_SIZE_INDEX);
-    iob_block = new_IOBufferBlock();
+    iob_block  = new_IOBufferBlock();
     iob_block->alloc(size_index); // aligns on 8 byte boundary
     real_data = (int64_t *)iob_block->buf();
 
@@ -83,9 +83,9 @@ ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_b
       data = ((char *)real_data) + DATA_HDR;
     }
   } else {
-    int size = sizeof(int64_t) * (((len + DATA_HDR + sizeof(int32_t) + sizeof(int64_t) - 1) / sizeof(int64_t)) + 1);
+    int size   = sizeof(int64_t) * (((len + DATA_HDR + sizeof(int32_t) + sizeof(int64_t) - 1) / sizeof(int64_t)) + 1);
     size_index = -1;
-    iob_block = new_IOBufferBlock();
+    iob_block  = new_IOBufferBlock();
     iob_block->alloc(BUFFER_SIZE_FOR_XMALLOC(size));
     real_data = (int64_t *)iob_block->buf();
 
@@ -112,7 +112,7 @@ ClusterControl::real_alloc_data(int read_access, bool align_int32_on_non_int64_b
 
   // Write size_index, magic number and 'this' in leading bytes
   char *size_index_ptr = (char *)data - DATA_HDR;
-  *size_index_ptr = size_index;
+  *size_index_ptr      = size_index;
   ++size_index_ptr;
 
   *size_index_ptr = (char)ALLOC_DATA_MAGIC;
@@ -192,7 +192,7 @@ OutgoingControl::startEvent(int event, Event *e)
     return EVENT_DONE;
 
   int32_t cluster_fn = *(int32_t *)this->data;
-  int32_t pri = ClusterFuncToQpri(cluster_fn);
+  int32_t pri        = ClusterFuncToQpri(cluster_fn);
   ink_atomiclist_push(&ch->outgoing_control_al[pri], (void *)this);
 
   return EVENT_DONE;
@@ -242,7 +242,7 @@ ClusterState::ClusterState(ClusterHandler *c, bool read_chan)
     state = ClusterState::WRITE_START;
     SET_HANDLER(&ClusterState::doIO_write_event);
   }
-  last_time = HRTIME_SECONDS(0);
+  last_time  = HRTIME_SECONDS(0);
   start_time = HRTIME_SECONDS(0);
   int size;
   //
@@ -254,16 +254,16 @@ ClusterState::ClusterState(ClusterHandler *c, bool read_chan)
   // Place an invalid page in front of iovec data.
   //////////////////////////////////////////////////
   size_t pagesize = ats_pagesize();
-  size = ((MAX_TCOUNT + 1) * sizeof(IOVec)) + (2 * pagesize);
-  iob_iov = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
-  char *addr = (char *)align_pointer_forward(iob_iov->data(), pagesize);
+  size            = ((MAX_TCOUNT + 1) * sizeof(IOVec)) + (2 * pagesize);
+  iob_iov         = new_IOBufferData(BUFFER_SIZE_FOR_XMALLOC(size));
+  char *addr      = (char *)align_pointer_forward(iob_iov->data(), pagesize);
 
   iov = (IOVec *)(addr + pagesize);
 
   ///////////////////////////////////////////////////
   // Place an invalid page in front of message data.
   ///////////////////////////////////////////////////
-  size = sizeof(ClusterMsgHeader) + (MAX_TCOUNT + 1) * sizeof(Descriptor) + CONTROL_DATA + (2 * pagesize);
+  size                     = sizeof(ClusterMsgHeader) + (MAX_TCOUNT + 1) * sizeof(Descriptor) + CONTROL_DATA + (2 * pagesize);
   msg.iob_descriptor_block = new_IOBufferBlock();
   msg.iob_descriptor_block->alloc(BUFFER_SIZE_FOR_XMALLOC(size));
 
@@ -385,7 +385,7 @@ ClusterState::doIO()
     v->nbytes = to_do + did;
     ink_release_assert(v->nbytes > v->ndone);
 
-    io_complete = false;
+    io_complete       = false;
     io_complete_event = 0;
     REENABLE_IO();
 
@@ -393,10 +393,10 @@ ClusterState::doIO()
     // Start new do_io_xxx operation.
     // Initialize globals
 
-    io_complete = false;
+    io_complete       = false;
     io_complete_event = 0;
-    bytes_xfered = 0;
-    last_ndone = 0;
+    bytes_xfered      = 0;
+    last_ndone        = 0;
 
     build_do_io_vector();
 
@@ -411,7 +411,7 @@ ClusterState::doIO()
 
     } else {
       IOBufferReader *r = mbuf->alloc_reader();
-      r->block = mbuf->_writer;
+      r->block          = mbuf->_writer;
       ink_assert(r->read_avail() == to_do);
 #ifdef CLUSTER_IMMEDIATE_NETIO
       v = ch->net_vc->do_io_write_now(this, to_do, r);
@@ -446,7 +446,7 @@ ClusterState::doIO_read_event(int event, void *d)
       did += bytes_xfered;
       to_do -= bytes_xfered;
     }
-    last_ndone = v->ndone;
+    last_ndone        = v->ndone;
     io_complete_event = event;
     INK_WRITE_MEMORY_BARRIER;
 
@@ -622,17 +622,17 @@ ClusterHandler::check_channel(int c)
     for (int i = old_channels; i < n_channels; i++) {
       if (local_channel(i)) {
         if (i > LAST_DEDICATED_CHANNEL) {
-          channels[i] = (ClusterVConnection *)1; // mark as invalid
+          channels[i]     = (ClusterVConnection *)1; // mark as invalid
           channel_data[i] = (struct ChannelData *)ats_malloc(sizeof(struct ChannelData));
           memset(channel_data[i], 0, sizeof(struct ChannelData));
           channel_data[i]->channel_number = i;
           free_local_channels.enqueue(channel_data[i]);
         } else {
-          channels[i] = NULL;
+          channels[i]     = NULL;
           channel_data[i] = NULL;
         }
       } else {
-        channels[i] = NULL;
+        channels[i]     = NULL;
         channel_data[i] = NULL;
       }
     }
@@ -647,7 +647,7 @@ ClusterHandler::alloc_channel(ClusterVConnection *vc, int requested)
   // Allocate a channel
   //
   struct ChannelData *cdp = 0;
-  int i = requested;
+  int i                   = requested;
 
   if (!i) {
     int loops = 1;
@@ -732,11 +732,11 @@ ClusterHandler::machine_down()
     net_vc = 0;
   }
   // Cancel pending cluster reads and writes
-  read.io_complete = -1;
+  read.io_complete  = -1;
   write.io_complete = -1;
 
   MUTEX_TAKE_LOCK(the_cluster_config_mutex, this_ethread());
-  ClusterConfiguration *c = this_cluster()->current_configuration();
+  ClusterConfiguration *c      = this_cluster()->current_configuration();
   machine->clusterHandlers[id] = NULL;
   if ((--machine->now_connections == 0) && c->find(ip, port)) {
     ClusterConfiguration *cc = configuration_remove_machine(c, machine);
@@ -808,12 +808,12 @@ ClusterHandler::connectClusterEvent(int event, Event *e)
     NetVCOptions opt;
     opt.socket_send_bufsize = cluster_send_buffer_size;
     opt.socket_recv_bufsize = cluster_receive_buffer_size;
-    opt.sockopt_flags = cluster_sockopt_flags;
-    opt.packet_mark = cluster_packet_mark;
-    opt.packet_tos = cluster_packet_tos;
-    opt.etype = ET_CLUSTER;
-    opt.addr_binding = NetVCOptions::INTF_ADDR;
-    opt.local_ip = this_cluster_machine()->ip;
+    opt.sockopt_flags       = cluster_sockopt_flags;
+    opt.packet_mark         = cluster_packet_mark;
+    opt.packet_tos          = cluster_packet_tos;
+    opt.etype               = ET_CLUSTER;
+    opt.addr_binding        = NetVCOptions::INTF_ADDR;
+    opt.local_ip            = this_cluster_machine()->ip;
 
     struct sockaddr_in addr;
     ats_ip4_set(&addr, machine->ip, htons(machine->cluster_port ? machine->cluster_port : cluster_port));
@@ -1034,7 +1034,7 @@ ClusterHandler::startClusterEvent(int event, Event *e)
 
     case ClusterHandler::CLCON_CONN_BIND: {
       //
-      NetHandler *nh = get_NetHandler(e->ethread);
+      NetHandler *nh         = get_NetHandler(e->ethread);
       UnixNetVConnection *vc = (UnixNetVConnection *)net_vc;
       MUTEX_TRY_LOCK(lock, nh->mutex, e->ethread);
       MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
@@ -1044,8 +1044,8 @@ ClusterHandler::startClusterEvent(int event, Event *e)
         if (vc->write.in_enabled_list)
           nh->write_enable_list.push(vc);
 
-        vc->nh = nh;
-        vc->thread = e->ethread;
+        vc->nh             = nh;
+        vc->thread         = e->ethread;
         PollDescriptor *pd = get_PollDescriptor(e->ethread);
         if (vc->ep.start(pd, vc, EVENTIO_READ | EVENTIO_WRITE) < 0) {
           cluster_connect_state = ClusterHandler::CLCON_DELETE_CONNECT;
@@ -1068,7 +1068,7 @@ ClusterHandler::startClusterEvent(int event, Event *e)
       MachineList *cc = the_cluster_config();
       if (cc && cc->find(ip, port)) {
         ClusterConfiguration *c = this_cluster()->current_configuration();
-        ClusterMachine *m = c->find(ip, port);
+        ClusterMachine *m       = c->find(ip, port);
 
         if (!m) { // this first connection
           ClusterConfiguration *cconf = configuration_add_machine(c, machine);
@@ -1085,8 +1085,8 @@ ClusterHandler::startClusterEvent(int event, Event *e)
         }
         machine->now_connections++;
         machine->clusterHandlers[id] = this;
-        machine->dead = false;
-        dead = false;
+        machine->dead                = false;
+        dead                         = false;
       } else {
         Debug(CL_NOTE, "cluster connect aborted, machine %u.%u.%u.%u:%d not in cluster", DOT_SEPARATED(ip), port);
         failed = -1;
@@ -1118,12 +1118,12 @@ ClusterHandler::startClusterEvent(int event, Event *e)
            clusteringVersion._minor);
 #endif
 
-      read_vcs = new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link>[CLUSTER_BUCKETS];
+      read_vcs  = new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_read_link>[CLUSTER_BUCKETS];
       write_vcs = new Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link>[CLUSTER_BUCKETS];
       SET_HANDLER((ClusterContHandler)&ClusterHandler::beginClusterEvent);
 
       // enable schedule_imm() on i/o completion (optimization)
-      read.do_iodone_event = true;
+      read.do_iodone_event  = true;
       write.do_iodone_event = true;
 
       cluster_periodic_event = thread->schedule_every(this, -CLUSTER_PERIOD);
@@ -1131,10 +1131,10 @@ ClusterHandler::startClusterEvent(int event, Event *e)
       // Startup the periodic events to process entries in
       //  external_incoming_control.
 
-      int procs_online = ink_number_of_processors();
+      int procs_online    = ink_number_of_processors();
       int total_callbacks = min(procs_online, MAX_COMPLETION_CALLBACK_EVENTS);
       for (int n = 0; n < total_callbacks; ++n) {
-        callout_cont[n] = new ClusterCalloutContinuation(this);
+        callout_cont[n]   = new ClusterCalloutContinuation(this);
         callout_events[n] = eventProcessor.schedule_every(callout_cont[n], COMPLETION_CALLBACK_PERIOD, ET_NET);
       }
 
@@ -1216,9 +1216,9 @@ ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event *e)
   // After cleanup is complete, setup handler to delete *this
   // after NO_RACE_DELAY
   //
-  bool failed = false;
+  bool failed      = false;
   ink_hrtime delay = CLUSTER_MEMBER_DELAY * 5;
-  EThread *t = e ? e->ethread : this_ethread();
+  EThread *t       = e ? e->ethread : this_ethread();
   head_p item;
 
   /////////////////////////////////////////////////////////////////
@@ -1243,7 +1243,7 @@ ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event *e)
   ///////////////////////////////////////////////////////////////
   IncomingControl *ic;
   while ((ic = incoming_control.dequeue())) {
-    failed = true;
+    failed    = true;
     ic->mutex = NULL;
     ic->freeall();
   }
@@ -1275,10 +1275,10 @@ ClusterHandler::protoZombieEvent(int /* event ATS_UNUSED */, Event *e)
       vc = channels[i];
       if (VALID_CHANNEL(vc)) {
         if (vc->closed) {
-          vc->ch = 0;
-          vc->write_list = 0;
-          vc->write_list_tail = 0;
-          vc->write_list_bytes = 0;
+          vc->ch                     = 0;
+          vc->write_list             = 0;
+          vc->write_list_tail        = 0;
+          vc->write_list_bytes       = 0;
           vc->write_bytes_in_transit = 0;
           close_ClusterVConnection(vc);
         } else {
@@ -1331,7 +1331,7 @@ int
 ClusterHandler::compute_active_channels()
 {
   ClusterHandler *ch = this;
-  int active_chans = 0;
+  int active_chans   = 0;
 
   for (int i = LAST_DEDICATED_CHANNEL + 1; i < ch->n_channels; i++) {
     ClusterVConnection *vc = ch->channels[i];
@@ -1355,8 +1355,8 @@ ClusterHandler::dump_internal_data()
     message_blk->alloc(MAX_IOBUFFER_SIZE);
   }
   int r;
-  int n = 0;
-  char *b = message_blk->data->data();
+  int n               = 0;
+  char *b             = message_blk->data->data();
   unsigned int b_size = message_blk->data->block_size();
 
   r = snprintf(&b[n], b_size - n, "Host: %hhu.%hhu.%hhu.%hhu\n", DOT_SEPARATED(ip));

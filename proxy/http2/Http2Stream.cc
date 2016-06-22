@@ -37,7 +37,7 @@ Http2Stream::main_event_handler(int event, void *edata)
   if (e == cross_thread_event) {
     cross_thread_event = NULL;
   } else if (e == active_event) {
-    event = VC_EVENT_ACTIVE_TIMEOUT;
+    event        = VC_EVENT_ACTIVE_TIMEOUT;
     active_event = NULL;
   } else if (e == inactive_event) {
     if (inactive_timeout_at && inactive_timeout_at < Thread::get_hrtime()) {
@@ -111,8 +111,8 @@ Http2Stream::send_request(Http2ConnectionState &cstate)
   IOBufferBlock *block;
   do {
     bufindex = 0;
-    tmp = dumpoffset;
-    block = request_buffer.get_current_block();
+    tmp      = dumpoffset;
+    block    = request_buffer.get_current_block();
     if (!block) {
       request_buffer.add_block();
       block = request_buffer.get_current_block();
@@ -205,12 +205,12 @@ Http2Stream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
     read_vio.buffer.clear();
   }
 
-  read_vio.mutex = c ? c->mutex : this->mutex;
-  read_vio._cont = c;
-  read_vio.nbytes = nbytes;
-  read_vio.ndone = 0;
+  read_vio.mutex     = c ? c->mutex : this->mutex;
+  read_vio._cont     = c;
+  read_vio.nbytes    = nbytes;
+  read_vio.ndone     = 0;
   read_vio.vc_server = this;
-  read_vio.op = VIO::READ;
+  read_vio.op        = VIO::READ;
 
   // Is there already data in the request_buffer?  If so, copy it over and then
   // schedule a READ_READY or READ_COMPLETE event after we return.
@@ -227,13 +227,13 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
   } else {
     write_vio.buffer.clear();
   }
-  write_vio.mutex = c ? c->mutex : this->mutex;
-  write_vio._cont = c;
-  write_vio.nbytes = nbytes;
-  write_vio.ndone = 0;
+  write_vio.mutex     = c ? c->mutex : this->mutex;
+  write_vio._cont     = c;
+  write_vio.nbytes    = nbytes;
+  write_vio.ndone     = 0;
   write_vio.vc_server = this;
-  write_vio.op = VIO::WRITE;
-  response_reader = response_buffer.alloc_reader();
+  write_vio.op        = VIO::WRITE;
+  response_reader     = response_buffer.alloc_reader();
   return update_write_request(abuffer, nbytes, false) ? &write_vio : NULL;
 }
 
@@ -438,7 +438,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   if (write_vio.nbytes > 0 && write_vio.ndone < write_vio.nbytes) {
     int64_t num_to_write = write_vio.nbytes - write_vio.ndone;
     if (num_to_write > write_len)
-      num_to_write = write_len;
+      num_to_write      = write_len;
     int64_t bytes_avail = buf_reader->read_avail();
     if (bytes_avail > num_to_write)
       bytes_avail = num_to_write;
@@ -457,7 +457,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
     if (!this->response_header_done) {
       // Still parsing the response_header
       int bytes_used = 0;
-      int state = this->response_header.parse_resp(&http_parser, this->response_reader, &bytes_used, false);
+      int state      = this->response_header.parse_resp(&http_parser, this->response_reader, &bytes_used, false);
       // this->response_reader->consume(bytes_used);
       switch (state) {
       case PARSE_DONE: {
@@ -606,8 +606,8 @@ check_continuation(Continuation *cont)
 bool
 Http2Stream::response_initialize_data_handling()
 {
-  bool is_done = false;
-  const char *name = "transfer-encoding";
+  bool is_done      = false;
+  const char *name  = "transfer-encoding";
   const char *value = "chunked";
   int chunked_index = response_header.value_get_index(name, strlen(name), value, strlen(value));
   // -1 means this value was not found for this field
@@ -615,7 +615,7 @@ Http2Stream::response_initialize_data_handling()
     Debug("http2_stream", "Response is chunked");
     chunked = true;
     this->chunked_handler.init_by_action(this->response_reader, ChunkedHandler::ACTION_DECHUNK);
-    this->chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE;
+    this->chunked_handler.state            = ChunkedHandler::CHUNK_READ_SIZE;
     this->chunked_handler.dechunked_reader = this->chunked_handler.dechunked_buffer->alloc_reader();
     this->response_reader->dealloc();
     this->response_reader = NULL;

@@ -33,28 +33,28 @@ SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
    These are also used for NPN setup.
 */
 
-const char *const TS_NPN_PROTOCOL_HTTP_0_9 = "http/0.9";
-const char *const TS_NPN_PROTOCOL_HTTP_1_0 = "http/1.0";
-const char *const TS_NPN_PROTOCOL_HTTP_1_1 = "http/1.1";
-const char *const TS_NPN_PROTOCOL_HTTP_2_0_14 = "h2-14"; // Last H2 interrop draft. TODO: Should be removed later
-const char *const TS_NPN_PROTOCOL_HTTP_2_0 = "h2";       // HTTP/2 over TLS
-const char *const TS_NPN_PROTOCOL_SPDY_1 = "spdy/1";     // obsolete
-const char *const TS_NPN_PROTOCOL_SPDY_2 = "spdy/2";
-const char *const TS_NPN_PROTOCOL_SPDY_3 = "spdy/3";
-const char *const TS_NPN_PROTOCOL_SPDY_3_1 = "spdy/3.1";
+const char *const TS_NPN_PROTOCOL_HTTP_0_9    = "http/0.9";
+const char *const TS_NPN_PROTOCOL_HTTP_1_0    = "http/1.0";
+const char *const TS_NPN_PROTOCOL_HTTP_1_1    = "http/1.1";
+const char *const TS_NPN_PROTOCOL_HTTP_2_0_14 = "h2-14";  // Last H2 interrop draft. TODO: Should be removed later
+const char *const TS_NPN_PROTOCOL_HTTP_2_0    = "h2";     // HTTP/2 over TLS
+const char *const TS_NPN_PROTOCOL_SPDY_1      = "spdy/1"; // obsolete
+const char *const TS_NPN_PROTOCOL_SPDY_2      = "spdy/2";
+const char *const TS_NPN_PROTOCOL_SPDY_3      = "spdy/3";
+const char *const TS_NPN_PROTOCOL_SPDY_3_1    = "spdy/3.1";
 
-const char *const TS_NPN_PROTOCOL_GROUP_HTTP = "http";
+const char *const TS_NPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_NPN_PROTOCOL_GROUP_HTTP2 = "http2";
-const char *const TS_NPN_PROTOCOL_GROUP_SPDY = "spdy";
+const char *const TS_NPN_PROTOCOL_GROUP_SPDY  = "spdy";
 
 // Precomputed indices for ease of use.
 int TS_NPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
 int TS_NPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
 int TS_NPN_PROTOCOL_INDEX_HTTP_1_1 = SessionProtocolNameRegistry::INVALID;
 int TS_NPN_PROTOCOL_INDEX_HTTP_2_0 = SessionProtocolNameRegistry::INVALID;
-int TS_NPN_PROTOCOL_INDEX_SPDY_1 = SessionProtocolNameRegistry::INVALID;
-int TS_NPN_PROTOCOL_INDEX_SPDY_2 = SessionProtocolNameRegistry::INVALID;
-int TS_NPN_PROTOCOL_INDEX_SPDY_3 = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_SPDY_1   = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_SPDY_2   = SessionProtocolNameRegistry::INVALID;
+int TS_NPN_PROTOCOL_INDEX_SPDY_3   = SessionProtocolNameRegistry::INVALID;
 int TS_NPN_PROTOCOL_INDEX_SPDY_3_1 = SessionProtocolNameRegistry::INVALID;
 
 // Predefined protocol sets for ease of use.
@@ -106,32 +106,32 @@ char const *const HttpProxyPort::PORTS_CONFIG_NAME = "proxy.config.http.server_p
 // Each has a corresponding _LEN value that is the length of the option text.
 // Options without _PREFIX are just flags with no additional data.
 
-char const *const HttpProxyPort::OPT_FD_PREFIX = "fd";
+char const *const HttpProxyPort::OPT_FD_PREFIX          = "fd";
 char const *const HttpProxyPort::OPT_OUTBOUND_IP_PREFIX = "ip-out";
-char const *const HttpProxyPort::OPT_INBOUND_IP_PREFIX = "ip-in";
-char const *const HttpProxyPort::OPT_HOST_RES_PREFIX = "ip-resolve";
-char const *const HttpProxyPort::OPT_PROTO_PREFIX = "proto";
+char const *const HttpProxyPort::OPT_INBOUND_IP_PREFIX  = "ip-in";
+char const *const HttpProxyPort::OPT_HOST_RES_PREFIX    = "ip-resolve";
+char const *const HttpProxyPort::OPT_PROTO_PREFIX       = "proto";
 
-char const *const HttpProxyPort::OPT_IPV6 = "ipv6";
-char const *const HttpProxyPort::OPT_IPV4 = "ipv4";
-char const *const HttpProxyPort::OPT_TRANSPARENT_INBOUND = "tr-in";
-char const *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND = "tr-out";
-char const *const HttpProxyPort::OPT_TRANSPARENT_FULL = "tr-full";
+char const *const HttpProxyPort::OPT_IPV6                    = "ipv6";
+char const *const HttpProxyPort::OPT_IPV4                    = "ipv4";
+char const *const HttpProxyPort::OPT_TRANSPARENT_INBOUND     = "tr-in";
+char const *const HttpProxyPort::OPT_TRANSPARENT_OUTBOUND    = "tr-out";
+char const *const HttpProxyPort::OPT_TRANSPARENT_FULL        = "tr-full";
 char const *const HttpProxyPort::OPT_TRANSPARENT_PASSTHROUGH = "tr-pass";
-char const *const HttpProxyPort::OPT_SSL = "ssl";
-char const *const HttpProxyPort::OPT_PLUGIN = "plugin";
-char const *const HttpProxyPort::OPT_BLIND_TUNNEL = "blind";
-char const *const HttpProxyPort::OPT_COMPRESSED = "compressed";
+char const *const HttpProxyPort::OPT_SSL                     = "ssl";
+char const *const HttpProxyPort::OPT_PLUGIN                  = "plugin";
+char const *const HttpProxyPort::OPT_BLIND_TUNNEL            = "blind";
+char const *const HttpProxyPort::OPT_COMPRESSED              = "compressed";
 
 // File local constants.
 namespace
 {
 // Length values for _PREFIX options.
-size_t const OPT_FD_PREFIX_LEN = strlen(HttpProxyPort::OPT_FD_PREFIX);
+size_t const OPT_FD_PREFIX_LEN          = strlen(HttpProxyPort::OPT_FD_PREFIX);
 size_t const OPT_OUTBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_OUTBOUND_IP_PREFIX);
-size_t const OPT_INBOUND_IP_PREFIX_LEN = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
-size_t const OPT_HOST_RES_PREFIX_LEN = strlen(HttpProxyPort::OPT_HOST_RES_PREFIX);
-size_t const OPT_PROTO_PREFIX_LEN = strlen(HttpProxyPort::OPT_PROTO_PREFIX);
+size_t const OPT_INBOUND_IP_PREFIX_LEN  = strlen(HttpProxyPort::OPT_INBOUND_IP_PREFIX);
+size_t const OPT_HOST_RES_PREFIX_LEN    = strlen(HttpProxyPort::OPT_HOST_RES_PREFIX);
+size_t const OPT_PROTO_PREFIX_LEN       = strlen(HttpProxyPort::OPT_PROTO_PREFIX);
 }
 
 namespace
@@ -172,7 +172,7 @@ HttpProxyPort *
 HttpProxyPort::findHttp(Group const &ports, uint16_t family)
 {
   bool check_family_p = ats_is_ip(family);
-  self *zret = 0;
+  self *zret          = 0;
   for (int i = 0, n = ports.length(); i < n && !zret; ++i) {
     HttpProxyPort &p = ports[i];
     if (p.m_port &&                               // has a valid port
@@ -245,18 +245,18 @@ HttpProxyPort::loadValue(Vec<self> &ports, char const *text)
 bool
 HttpProxyPort::processOptions(char const *opts)
 {
-  bool zret = false;           // found a port?
-  bool af_set_p = false;       // AF explicitly specified?
+  bool zret           = false; // found a port?
+  bool af_set_p       = false; // AF explicitly specified?
   bool host_res_set_p = false; // Host resolution order set explicitly?
-  bool sp_set_p = false;       // Session protocol set explicitly?
-  bool bracket_p = false;      // found an open bracket in the input?
+  bool sp_set_p       = false; // Session protocol set explicitly?
+  bool bracket_p      = false; // found an open bracket in the input?
   char const *value;           // Temp holder for value of a prefix option.
   IpAddr ip;                   // temp for loading IP addresses.
   Vec<char *> values;          // Pointers to single option values.
 
   // Make a copy we can modify safely.
   size_t opts_len = strlen(opts) + 1;
-  char *text = static_cast<char *>(alloca(opts_len));
+  char *text      = static_cast<char *>(alloca(opts_len));
   memcpy(text, opts, opts_len);
 
   // Split the copy in to tokens.
@@ -294,7 +294,7 @@ HttpProxyPort::processOptions(char const *opts)
         Warning("Port value '%s' out of range (1..65535) in port configuration '%s'", item, opts);
       } else {
         m_port = port;
-        zret = true;
+        zret   = true;
       }
     } else if (0 != (value = this->checkPrefix(item, OPT_FD_PREFIX, OPT_FD_PREFIX_LEN))) {
       char *ptr; // tmp for syntax check.
@@ -343,7 +343,7 @@ HttpProxyPort::processOptions(char const *opts)
 #endif
     } else if (0 == strcasecmp(OPT_TRANSPARENT_FULL, item)) {
 #if TS_USE_TPROXY
-      m_inbound_transparent_p = true;
+      m_inbound_transparent_p  = true;
       m_outbound_transparent_p = true;
 #else
       Warning("Transparency requested [%s] in port descriptor '%s' but TPROXY was not configured.", item, opts);
@@ -532,7 +532,7 @@ HttpProxyPort::print(char *out, size_t n)
   // session protocol options - look for condensed options first
   // first two cases are the defaults so if those match, print nothing.
   SessionProtocolSet sp_set = m_session_protocol_preference; // need to modify so copy.
-  need_colon_p = true;                                       // for listing case, turned off if we do a special case.
+  need_colon_p              = true;                          // for listing case, turned off if we do a special case.
   if (sp_set == DEFAULT_NON_TLS_SESSION_PROTOCOL_SET && !this->isSSL()) {
     sp_set.markOut(DEFAULT_NON_TLS_SESSION_PROTOCOL_SET);
   } else if (sp_set == DEFAULT_TLS_SESSION_PROTOCOL_SET && this->isSSL()) {
@@ -601,9 +601,9 @@ ts_session_protocol_well_known_name_indices_init()
   TS_NPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_1_0);
   TS_NPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_1_1);
   TS_NPN_PROTOCOL_INDEX_HTTP_2_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_2_0);
-  TS_NPN_PROTOCOL_INDEX_SPDY_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_1);
-  TS_NPN_PROTOCOL_INDEX_SPDY_2 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_2);
-  TS_NPN_PROTOCOL_INDEX_SPDY_3 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_3);
+  TS_NPN_PROTOCOL_INDEX_SPDY_1   = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_1);
+  TS_NPN_PROTOCOL_INDEX_SPDY_2   = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_2);
+  TS_NPN_PROTOCOL_INDEX_SPDY_3   = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_3);
   TS_NPN_PROTOCOL_INDEX_SPDY_3_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_SPDY_3_1);
 
   // Now do the predefined protocol sets.
@@ -648,7 +648,7 @@ SessionProtocolNameRegistry::toIndex(char const *name)
     if (m_n < static_cast<size_t>(MAX)) {
       m_names[m_n] = ats_strdup(name);
       m_flags[m_n] = F_ALLOCATED;
-      zret = m_n++;
+      zret         = m_n++;
     } else {
       ink_release_assert(!"Session protocol name registry overflow");
     }
@@ -663,7 +663,7 @@ SessionProtocolNameRegistry::toIndexConst(char const *name)
   if (INVALID == zret) {
     if (m_n < static_cast<size_t>(MAX)) {
       m_names[m_n] = name;
-      zret = m_n++;
+      zret         = m_n++;
     } else {
       ink_release_assert(!"Session protocol name registry overflow");
     }

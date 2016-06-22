@@ -104,7 +104,7 @@ send_push_message()
   int i, num_records;
   bool send_msg = false;
 
-  m = RecMessageAlloc(RECG_PUSH);
+  m           = RecMessageAlloc(RECG_PUSH);
   num_records = g_num_records;
   for (i = 0; i < num_records; i++) {
     r = &(g_records[i]);
@@ -380,19 +380,19 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
           switch (r1->data_type) {
           case RECD_INT:
             r1->data.rec_int = ink_atoi64(data->rec_string);
-            data_type = RECD_INT;
+            data_type        = RECD_INT;
             break;
           case RECD_FLOAT:
             r1->data.rec_float = atof(data->rec_string);
-            data_type = RECD_FLOAT;
+            data_type          = RECD_FLOAT;
             break;
           case RECD_STRING:
-            data_type = RECD_STRING;
+            data_type           = RECD_STRING;
             r1->data.rec_string = data->rec_string;
             break;
           case RECD_COUNTER:
             r1->data.rec_int = ink_atoi64(data->rec_string);
-            data_type = RECD_COUNTER;
+            data_type        = RECD_COUNTER;
             break;
           default:
             err = REC_ERR_FAIL;
@@ -422,10 +422,10 @@ RecSetRecord(RecT rec_type, const char *name, RecDataT data_type, RecData *data,
       RecRecord r2;
 
       RecRecordInit(&r2);
-      r2.rec_type = rec_type;
-      r2.name = name;
+      r2.rec_type  = rec_type;
+      r2.name      = name;
       r2.data_type = (data_type != RECD_NULL) ? data_type : r1->data_type;
-      r2.data = *data;
+      r2.data      = *data;
       if (REC_TYPE_IS_STAT(r2.rec_type) && (data_raw != NULL)) {
         r2.stat_meta.data_raw = *data_raw;
       } else if (REC_TYPE_IS_CONFIG(r2.rec_type)) {
@@ -582,15 +582,15 @@ RecSyncStatsFile()
   ink_assert(g_mode_type != RECM_NULL);
 
   if (g_mode_type == RECM_SERVER || g_mode_type == RECM_STAND_ALONE) {
-    m = RecMessageAlloc(RECG_NULL);
-    num_records = g_num_records;
+    m            = RecMessageAlloc(RECG_NULL);
+    num_records  = g_num_records;
     sync_to_disk = false;
     for (i = 0; i < num_records; i++) {
       r = &(g_records[i]);
       rec_mutex_acquire(&(r->lock));
       if (REC_TYPE_IS_STAT(r->rec_type)) {
         if (r->stat_meta.persist_type == RECP_PERSISTENT) {
-          m = RecMessageMarshal_Realloc(m, r);
+          m            = RecMessageMarshal_Realloc(m, r);
           sync_to_disk = true;
         }
       }
@@ -663,7 +663,7 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
 
     ink_mutex_acquire(&g_rec_config_lock);
 
-    num_records = g_num_records;
+    num_records  = g_num_records;
     sync_to_disk = false;
     for (i = 0; i < num_records; i++) {
       r = &(g_records[i]);
@@ -671,14 +671,14 @@ RecSyncConfigToTB(textBuffer *tb, bool *inc_version)
       if (REC_TYPE_IS_CONFIG(r->rec_type)) {
         if (r->sync_required & REC_DISK_SYNC_REQUIRED) {
           if (!ink_hash_table_isbound(g_rec_config_contents_ht, r->name)) {
-            cfe = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
+            cfe             = (RecConfigFileEntry *)ats_malloc(sizeof(RecConfigFileEntry));
             cfe->entry_type = RECE_RECORD;
-            cfe->entry = ats_strdup(r->name);
+            cfe->entry      = ats_strdup(r->name);
             enqueue(g_rec_config_contents_llq, (void *)cfe);
             ink_hash_table_insert(g_rec_config_contents_ht, r->name, NULL);
           }
           r->sync_required = r->sync_required & ~REC_DISK_SYNC_REQUIRED;
-          sync_to_disk = true;
+          sync_to_disk     = true;
           if (r->sync_required & REC_INC_CONFIG_VERSION) {
             r->sync_required = r->sync_required & ~REC_INC_CONFIG_VERSION;
             if (r->rec_type != RECT_LOCAL && inc_version != NULL) {
@@ -827,7 +827,7 @@ int
 RecResetStatRecord(const char *name)
 {
   RecRecord *r1 = NULL;
-  int err = REC_ERR_OKAY;
+  int err       = REC_ERR_OKAY;
 
   if (ink_hash_table_lookup(g_records_ht, name, (void **)&r1)) {
     if (i_am_the_record_owner(r1->rec_type)) {
@@ -840,10 +840,10 @@ RecResetStatRecord(const char *name)
       RecRecord r2;
 
       RecRecordInit(&r2);
-      r2.rec_type = r1->rec_type;
-      r2.name = r1->name;
+      r2.rec_type  = r1->rec_type;
+      r2.name      = r1->name;
       r2.data_type = r1->data_type;
-      r2.data = r1->data_default;
+      r2.data      = r1->data_default;
 
       err = send_reset_message(&r2);
       RecRecordFree(&r2);
@@ -883,10 +883,10 @@ RecResetStatRecord(RecT type, bool all)
         RecRecord r2;
 
         RecRecordInit(&r2);
-        r2.rec_type = r1->rec_type;
-        r2.name = r1->name;
+        r2.rec_type  = r1->rec_type;
+        r2.name      = r1->name;
         r2.data_type = r1->data_type;
-        r2.data = r1->data_default;
+        r2.data      = r1->data_default;
 
         err = send_reset_message(&r2);
         RecRecordFree(&r2);
@@ -958,7 +958,7 @@ RecWriteConfigFile(textBuffer *tb)
   char buff[1024];
   char *tmp_filename;
 
-  filename_len = strlen(g_rec_config_fpath);
+  filename_len     = strlen(g_rec_config_fpath);
   tmp_filename_len = filename_len + TMP_FILENAME_EXT_LEN;
   if (tmp_filename_len < (int)sizeof(buff)) {
     tmp_filename = buff;

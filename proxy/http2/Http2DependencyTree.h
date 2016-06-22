@@ -265,7 +265,7 @@ Http2DependencyTree<T>::activate(Node *node)
   while (node->parent != NULL && !node->queued) {
     node->parent->queue->push(node->entry);
     node->queued = true;
-    node = node->parent;
+    node         = node->parent;
   }
 }
 

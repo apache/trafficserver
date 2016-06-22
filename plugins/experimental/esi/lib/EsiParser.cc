@@ -29,7 +29,7 @@
 using std::string;
 using namespace EsiLib;
 
-const char *EsiParser::ESI_TAG_PREFIX = "<esi:";
+const char *EsiParser::ESI_TAG_PREFIX   = "<esi:";
 const int EsiParser::ESI_TAG_PREFIX_LEN = 5;
 
 const string EsiParser::SRC_ATTR_STR("src");
@@ -83,7 +83,7 @@ EsiParser::_setup(string &data, int &parse_start_pos, size_t &orig_output_list_s
     }
   }
   if (parse_start_pos == -1) { // first time this cycle that input is being provided
-    parse_start_pos = 0;
+    parse_start_pos       = 0;
     orig_output_list_size = node_list.size();
   }
   return retval;
@@ -127,7 +127,7 @@ EsiParser::MATCH_TYPE
 EsiParser::_searchData(const string &data, size_t start_pos, const char *str, int str_len, size_t &pos) const
 {
   const char *data_ptr = data.data() + start_pos;
-  int data_len = data.size() - start_pos;
+  int data_len         = data.size() - start_pos;
   int i_data = 0, i_str = 0;
 
   while (i_data < data_len) {
@@ -161,7 +161,7 @@ EsiParser::_searchData(const string &data, size_t start_pos, const char *str, in
 EsiParser::MATCH_TYPE
 EsiParser::_compareData(const string &data, size_t pos, const char *str, int str_len) const
 {
-  int i_str = 0;
+  int i_str     = 0;
   size_t i_data = pos;
   for (; i_data < data.size(); ++i_data) {
     if (data[i_data] == str[i_str]) {
@@ -196,7 +196,7 @@ EsiParser::_findOpeningTag(const string &data, size_t start_pos, size_t &opening
     if (data[i_data] == ESI_TAG_PREFIX[i_esi]) {
       if (++i_esi == ESI_TAG_PREFIX_LEN) {
         is_html_comment_node = false;
-        opening_tag_pos = i_data - i_esi + 1;
+        opening_tag_pos      = i_data - i_esi + 1;
         return COMPLETE_MATCH;
       }
     } else {
@@ -215,7 +215,7 @@ EsiParser::_findOpeningTag(const string &data, size_t start_pos, size_t &opening
         char ch = data[i_data + 1]; //<!--esi must follow by a space char
         if (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') {
           is_html_comment_node = true;
-          opening_tag_pos = i_data - i_html_comment + 1;
+          opening_tag_pos      = i_data - i_html_comment + 1;
           return COMPLETE_MATCH;
         }
       }
@@ -237,12 +237,12 @@ EsiParser::_findOpeningTag(const string &data, size_t start_pos, size_t &opening
   // takes no action for a partial match
   if (i_esi) {
     is_html_comment_node = false;
-    opening_tag_pos = i_data - i_esi;
+    opening_tag_pos      = i_data - i_esi;
     return PARTIAL_MATCH;
   }
   if (i_html_comment) {
     is_html_comment_node = true;
-    opening_tag_pos = i_data - i_html_comment;
+    opening_tag_pos      = i_data - i_html_comment;
     return PARTIAL_MATCH;
   }
   return NO_MATCH;
@@ -267,7 +267,7 @@ EsiParser::_parse(const string &data, int &parse_start_pos, DocNodeList &node_li
   size_t curr_pos, end_pos;
   const char *data_ptr;
   const char *const data_start_ptr = data.data();
-  size_t data_size = data.size();
+  size_t data_size                 = data.size();
   const EsiNodeInfo *node_info;
   MATCH_TYPE search_result;
   bool is_html_comment_node;
@@ -300,7 +300,7 @@ EsiParser::_parse(const string &data, int &parse_start_pos, DocNodeList &node_li
 
     if (is_html_comment_node) {
       _debugLog(_debug_tag, "[%s] Found html comment tag at position %d", __FUNCTION__, curr_pos);
-      data_ptr = data_start_ptr + curr_pos;
+      data_ptr  = data_start_ptr + curr_pos;
       node_info = &HTML_COMMENT_NODE_INFO;
       ++curr_pos;
     } else {
@@ -454,7 +454,7 @@ EsiParser::_processSpecialIncludeTag(const string &data, size_t curr_pos, size_t
   node_list.push_back(DocNode(DocNode::TYPE_SPECIAL_INCLUDE));
   DocNode &node = node_list.back();
   node.attr_list.push_back(handler_info);
-  node.data = data.data() + curr_pos;
+  node.data     = data.data() + curr_pos;
   node.data_len = end_pos - curr_pos;
   _debugLog(_debug_tag, "[%s] Added special include tag with handler [%.*s] and data [%.*s]", __FUNCTION__, handler_info.value_len,
             handler_info.value, node.data_len, node.data);
@@ -483,7 +483,7 @@ EsiParser::_processWhenTag(const string &data, size_t curr_pos, size_t end_pos, 
   }
   ++term_pos; // go past the terminator
   const char *data_start_ptr = data.data() + term_pos;
-  int data_size = end_pos - term_pos;
+  int data_size              = end_pos - term_pos;
   if (!_processSimpleContentTag(DocNode::TYPE_WHEN, data_start_ptr, data_size, node_list)) {
     _errorLog("[%s] Could not parse when node's content", __FUNCTION__);
     return false;
@@ -498,7 +498,7 @@ bool
 EsiParser::_processTryTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
 {
   const char *data_start_ptr = data.data() + curr_pos;
-  int data_size = end_pos - curr_pos;
+  int data_size              = end_pos - curr_pos;
   DocNode try_node(DocNode::TYPE_TRY);
   if (!parse(try_node.child_nodes, data_start_ptr, data_size)) {
     _errorLog("[%s] Could not parse try node's content", __FUNCTION__);
@@ -506,9 +506,9 @@ EsiParser::_processTryTag(const string &data, size_t curr_pos, size_t end_pos, D
   }
 
   DocNodeList::iterator iter, end_node, attempt_node, except_node, temp_iter;
-  end_node = try_node.child_nodes.end();
+  end_node     = try_node.child_nodes.end();
   attempt_node = except_node = end_node;
-  iter = try_node.child_nodes.begin();
+  iter                       = try_node.child_nodes.begin();
   while (iter != end_node) {
     if (iter->type == DocNode::TYPE_ATTEMPT) {
       if (attempt_node != end_node) {
@@ -553,15 +553,15 @@ bool
 EsiParser::_processChooseTag(const string &data, size_t curr_pos, size_t end_pos, DocNodeList &node_list) const
 {
   const char *data_start_ptr = data.data() + curr_pos;
-  size_t data_size = end_pos - curr_pos;
+  size_t data_size           = end_pos - curr_pos;
   DocNode choose_node(DocNode::TYPE_CHOOSE);
   if (!parse(choose_node.child_nodes, data_start_ptr, data_size)) {
     _errorLog("[%s] Couldn't parse choose node content", __FUNCTION__);
     return false;
   }
-  DocNodeList::iterator end_node = choose_node.child_nodes.end();
+  DocNodeList::iterator end_node       = choose_node.child_nodes.end();
   DocNodeList::iterator otherwise_node = end_node, iter, temp_iter;
-  iter = choose_node.child_nodes.begin();
+  iter                                 = choose_node.child_nodes.begin();
   while (iter != end_node) {
     if (iter->type == DocNode::TYPE_OTHERWISE) {
       if (otherwise_node != end_node) {
@@ -633,10 +633,10 @@ EsiParser::parse(DocNodeList &node_list, const char *ext_data_ptr, int data_len 
   string data;
   size_t orig_output_list_size;
   int parse_start_pos = -1;
-  bool retval = _completeParse(data, parse_start_pos, orig_output_list_size, node_list, ext_data_ptr, data_len);
+  bool retval         = _completeParse(data, parse_start_pos, orig_output_list_size, node_list, ext_data_ptr, data_len);
   if (retval && (node_list.size() - orig_output_list_size)) {
     // adjust all pointers to addresses in input parameter
-    const char *int_data_start = data.data();
+    const char *int_data_start      = data.data();
     DocNodeList::iterator node_iter = node_list.begin();
     for (size_t i = 0; i < orig_output_list_size; ++i, ++node_iter)
       ;

@@ -54,7 +54,7 @@ typedef int8_t TSMgmtByte; // Not for external use
 // For memory corruption detection
 enum CacheInfoMagic {
   CACHE_INFO_MAGIC_ALIVE = 0xfeedbabe,
-  CACHE_INFO_MAGIC_DEAD = 0xdeadbeef,
+  CACHE_INFO_MAGIC_DEAD  = 0xdeadbeef,
 };
 
 struct CacheInfo {
@@ -67,11 +67,11 @@ struct CacheInfo {
 
   CacheInfo()
   {
-    frag_type = CACHE_FRAG_TYPE_NONE;
-    hostname = NULL;
-    len = 0;
+    frag_type    = CACHE_FRAG_TYPE_NONE;
+    hostname     = NULL;
+    len          = 0;
     pin_in_cache = 0;
-    magic = CACHE_INFO_MAGIC_ALIVE;
+    magic        = CACHE_INFO_MAGIC_ALIVE;
   }
 };
 
@@ -79,8 +79,8 @@ class FileImpl
 {
   enum {
     CLOSED = 0,
-    READ = 1,
-    WRITE = 2,
+    READ   = 1,
+    WRITE  = 2,
   };
 
 public:

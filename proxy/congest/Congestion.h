@@ -158,7 +158,7 @@ CongestionControlRecord::cleanup()
     pRecord->put();
     pRecord = NULL;
   }
-  ats_free(prefix), prefix = NULL;
+  ats_free(prefix), prefix         = NULL;
   ats_free(error_page), error_page = NULL;
 }
 

@@ -44,7 +44,7 @@
 class HttpSM;
 
 const int HTTP_LIST_BUCKETS = 63;
-const int HTTP_LIST_RETRY = HRTIME_MSECONDS(10);
+const int HTTP_LIST_RETRY   = HRTIME_MSECONDS(10);
 
 struct HttpSMListBucket {
   Ptr<ProxyMutex> mutex;

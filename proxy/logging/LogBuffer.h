@@ -304,7 +304,7 @@ inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header, bool in_net
 
   switch (header->version) {
   case LOG_SEGMENT_VERSION:
-    m_next = (char *)header + header->data_offset;
+    m_next               = (char *)header + header->data_offset;
     m_buffer_entry_count = header->entry_count;
     break;
 

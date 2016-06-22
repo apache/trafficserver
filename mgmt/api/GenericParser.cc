@@ -62,8 +62,8 @@ Token::setValue(const char *str)
   ink_assert(value == NULL);
   if (str_copy) {
     size_t len = strlen(str_copy);
-    value = (char *)ats_malloc(sizeof(char) * (BUFSIZ));
-    len = (len < BUFSIZ) ? len : BUFSIZ - 1;
+    value      = (char *)ats_malloc(sizeof(char) * (BUFSIZ));
+    len        = (len < BUFSIZ) ? len : BUFSIZ - 1;
     memcpy(value, str_copy, len);
     value[len] = '\0';
     ats_free(str_copy);
@@ -73,7 +73,7 @@ Token::setValue(const char *str)
 void
 Token::appendValue(const char *str)
 {
-  char *str_copy = (char *)strtrim(str);
+  char *str_copy        = (char *)strtrim(str);
   static bool firstTime = true;
 
   if (value == NULL) {
@@ -233,8 +233,8 @@ Rule::arm_securityParse(char *rule)
   Tokenizer ruleTok(" \t");
   ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
-  const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token = (Token *)NULL;
+  const char *tokenStr   = ruleTok.iterFirst(&ruleTok_state);
+  Token *token           = (Token *)NULL;
   TokenList *m_tokenList = new TokenList();
 
   // ASSUMPTIONS:
@@ -278,8 +278,8 @@ Rule::cacheParse(char *rule, unsigned short minNumToken, unsigned short maxNumTo
   int numRuleTok = ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token = NULL;
-  bool insideQuote = false;
+  Token *token         = NULL;
+  bool insideQuote     = false;
   const char *newStr;
 
   // Sanity Check -- number of token
@@ -450,7 +450,7 @@ Rule::log_hostsParse(char *rule)
     return NULL;
   }
 
-  Token *token = new Token();
+  Token *token           = new Token();
   TokenList *m_tokenList = new TokenList();
   token->setName(rule);
   m_tokenList->enqueue(token);
@@ -558,8 +558,8 @@ Rule::socksParse(char *rule)
   int numRuleTok = ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token = NULL;
-  bool insideQuote = false;
+  Token *token         = NULL;
+  bool insideQuote     = false;
   const char *newStr;
 
   if (numRuleTok < 2) {
@@ -670,8 +670,8 @@ Rule::splitdnsParse(char *rule)
   int numRuleTok = ruleTok.Initialize(rule);
   tok_iter_state ruleTok_state;
   const char *tokenStr = ruleTok.iterFirst(&ruleTok_state);
-  Token *token = NULL;
-  bool insideQuote = false;
+  Token *token         = NULL;
+  bool insideQuote     = false;
   const char *newStr;
 
   // Sanity Check -- number of token
@@ -973,7 +973,7 @@ RuleList::parse(char *fileBuf, TSFileNameT filetype)
       } else {
         // rule->setComment("## WARNING: The following configuration rule is invalid!");
         size_t error_rule_size = sizeof(char) * (strlen(line) + strlen("#ERROR: ") + 1);
-        char *error_rule = (char *)ats_malloc(error_rule_size);
+        char *error_rule       = (char *)ats_malloc(error_rule_size);
 
         snprintf(error_rule, error_rule_size, "#ERROR: %s", line);
         rule->setComment(error_rule);

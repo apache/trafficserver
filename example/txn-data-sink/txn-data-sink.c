@@ -41,7 +41,7 @@
 
 // Activate the data sink if this field is present in the request.
 static char const FLAG_MIME_FIELD[] = "TS-Agent";
-static size_t const FLAG_MIME_LEN = sizeof(FLAG_MIME_FIELD) - 1;
+static size_t const FLAG_MIME_LEN   = sizeof(FLAG_MIME_FIELD) - 1;
 
 typedef struct {
   int64_t total;
@@ -65,7 +65,7 @@ client_reader(TSCont contp, TSEvent event, void *edata)
   TSVIO input_vio = TSVConnWriteVIOGet(contp);
 
   if (!data) {
-    data = TSmalloc(sizeof(SinkData));
+    data        = TSmalloc(sizeof(SinkData));
     data->total = 0;
     TSContDataSet(contp, data);
   }
@@ -84,7 +84,7 @@ client_reader(TSCont contp, TSEvent event, void *edata)
     // Look for data and if we find any, consume.
     if (TSVIOBufferGet(input_vio)) {
       TSIOBufferReader reader = TSVIOReaderGet(input_vio);
-      int64_t n = TSIOBufferReaderAvail(reader);
+      int64_t n               = TSIOBufferReaderAvail(reader);
       if (n > 0) {
         TSIOBufferReaderConsume(reader, n);
         TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + n);
@@ -120,7 +120,7 @@ enable_agent_check(TSHttpTxn txnp)
   // Enable the sink agent if the header is present.
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc)) {
     TSMLoc range_field = TSMimeHdrFieldFind(req_buf, req_loc, FLAG_MIME_FIELD, FLAG_MIME_LEN);
-    zret = NULL == range_field ? 0 : 1;
+    zret               = NULL == range_field ? 0 : 1;
   }
 
   return zret;
@@ -162,8 +162,8 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = PLUGIN_NAME;
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

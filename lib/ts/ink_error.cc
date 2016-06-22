@@ -86,7 +86,7 @@ ink_pfatal(const char *message_format, ...)
   va_list ap;
   char extended_format[4096], message[4096];
 
-  int errsav = errno;
+  int errsav               = errno;
   const char *errno_string = strerror(errsav);
 
   va_start(ap, message_format);

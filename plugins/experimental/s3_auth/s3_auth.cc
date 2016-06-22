@@ -38,7 +38,7 @@
 // Some constants.
 //
 static const char PLUGIN_NAME[] = "s3_auth";
-static const char DATE_FMT[] = "%a, %d %b %Y %H:%M:%S %z";
+static const char DATE_FMT[]    = "%a, %d %b %Y %H:%M:%S %z";
 
 ///////////////////////////////////////////////////////////////////////////////
 // One configuration setup
@@ -101,14 +101,14 @@ public:
   set_secret(const char *s)
   {
     TSfree(_secret);
-    _secret = TSstrdup(s);
+    _secret     = TSstrdup(s);
     _secret_len = strlen(s);
   }
   void
   set_keyid(const char *s)
   {
     TSfree(_keyid);
-    _keyid = TSstrdup(s);
+    _keyid     = TSstrdup(s);
     _keyid_len = strlen(s);
   }
   void
@@ -251,7 +251,7 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
     return false;
   }
 
-  bool ret = false;
+  bool ret         = false;
   TSMLoc field_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, header, header_len);
 
   if (!field_loc) {
@@ -357,7 +357,7 @@ S3Request::authorize(S3Config *s3)
   if (s3->virt_host()) {
     host_loc = TSMimeHdrFieldFind(_bufp, _hdr_loc, TS_MIME_FIELD_HOST, TS_MIME_LEN_HOST);
     if (host_loc) {
-      host = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, host_loc, -1, &host_len);
+      host      = TSMimeHdrFieldValueStringGet(_bufp, _hdr_loc, host_loc, -1, &host_len);
       host_endp = static_cast<const char *>(memchr(host, '.', host_len));
     } else {
       return TS_HTTP_STATUS_INTERNAL_SERVER_ERROR;
@@ -390,9 +390,9 @@ S3Request::authorize(S3Config *s3)
 
     TSDebug(PLUGIN_NAME, "%.*s", date_len, date);
 
-    const size_t left_size = 1024;
+    const size_t left_size   = 1024;
     char left[left_size + 1] = "/";
-    size_t loff = 1;
+    size_t loff              = 1;
 
     // ToDo: What to do with the CanonicalizedAmzHeaders ...
     if (host && host_endp) {

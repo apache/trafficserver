@@ -553,7 +553,7 @@ ParseRules::ink_toupper(char c)
 #ifndef COMPILE_PARSE_RULES
   return parseRulesCTypeToUpper[(unsigned char)c];
 #else
-  int up_case = c;
+  int up_case            = c;
   const int up_case_diff = 'a' - 'A';
 
   if (c >= 'a' && c <= 'z') {
@@ -569,7 +569,7 @@ ParseRules::ink_tolower(char c)
 #ifndef COMPILE_PARSE_RULES
   return parseRulesCTypeToLower[(unsigned char)c];
 #else
-  int lo_case = c;
+  int lo_case            = c;
   const int lo_case_diff = 'a' - 'A';
 
   if (c >= 'A' && c <= 'Z') {

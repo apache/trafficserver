@@ -71,7 +71,7 @@ init_reverse_proxy()
 {
   ink_assert(rewrite_table == NULL);
   reconfig_mutex = new_ProxyMutex();
-  rewrite_table = new UrlRewrite();
+  rewrite_table  = new UrlRewrite();
 
   if (!rewrite_table->is_valid()) {
     Warning("Can not load the remap table, exiting out!");

@@ -65,7 +65,7 @@ main()
 #ifdef USE_SOCKS
   net_config_socks_server_host = "209.131.52.54";
   net_config_socks_server_port = 1080;
-  net_config_socks_needed = 1;
+  net_config_socks_needed      = 1;
 #endif
 
   netProcessor.start();

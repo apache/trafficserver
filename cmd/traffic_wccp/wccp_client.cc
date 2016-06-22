@@ -44,7 +44,7 @@
 
 #define WCCP_LOCK "wccp.pid"
 
-bool do_debug = false;
+bool do_debug  = false;
 bool do_daemon = false;
 
 static char const USAGE_TEXT[] = "%s\n"
@@ -117,11 +117,11 @@ main(int argc, char **argv)
   // getopt return values. Selected to avoid collisions with
   // short arguments.
   static int const OPT_ADDRESS = 257; ///< Bind to IP address option.
-  static int const OPT_HELP = 258;    ///< Print help message.
-  static int const OPT_ROUTER = 259;  ///< Seeded router IP address.
+  static int const OPT_HELP    = 258; ///< Print help message.
+  static int const OPT_ROUTER  = 259; ///< Seeded router IP address.
   static int const OPT_SERVICE = 260; ///< Service group definition.
-  static int const OPT_DEBUG = 261;   ///< Enable debug printing
-  static int const OPT_DAEMON = 262;  ///< Disconnect and run as daemon
+  static int const OPT_DEBUG   = 261; ///< Enable debug printing
+  static int const OPT_DAEMON  = 262; ///< Disconnect and run as daemon
 
   static option OPTIONS[] = {
     {"address", 1, 0, OPT_ADDRESS},
@@ -133,34 +133,34 @@ main(int argc, char **argv)
     {0, 0, 0, 0} // required terminator.
   };
 
-  in_addr ip_addr = {INADDR_ANY};
+  in_addr ip_addr     = {INADDR_ANY};
   in_addr router_addr = {INADDR_ANY};
 
   int zret; // getopt return.
   int zidx; // option index.
-  bool fail = false;
+  bool fail            = false;
   char const *FAIL_MSG = "";
 
   while (-1 != (zret = getopt_long_only(argc, argv, "", OPTIONS, &zidx))) {
     switch (zret) {
     case OPT_HELP:
       FAIL_MSG = "Usage:";
-      fail = true;
+      fail     = true;
       break;
     case '?':
       FAIL_MSG = "Invalid option specified.";
-      fail = true;
+      fail     = true;
       break;
     case OPT_ADDRESS:
       if (0 == inet_aton(optarg, &ip_addr)) {
         FAIL_MSG = "Invalid IP address specified for client.";
-        fail = true;
+        fail     = true;
       }
       break;
     case OPT_ROUTER:
       if (0 == inet_aton(optarg, &router_addr)) {
         FAIL_MSG = "Invalid IP address specified for router.";
-        fail = true;
+        fail     = true;
       }
       break;
     case OPT_SERVICE: {
@@ -205,7 +205,7 @@ main(int argc, char **argv)
   pollfd pfa[POLL_FD_COUNT];
 
   // Poll on the socket.
-  pfa[0].fd = wcp.getSocket();
+  pfa[0].fd     = wcp.getSocket();
   pfa[0].events = POLLIN;
 
   wcp.housekeeping();

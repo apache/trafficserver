@@ -53,8 +53,8 @@ public:
       return RESULT_ERROR;
     }
     const string &remap = query_params["remap"];
-    bool stop = (query_params["stop"] == "true");
-    Result result = stop ? RESULT_NO_REMAP_STOP : RESULT_NO_REMAP;
+    bool stop           = (query_params["stop"] == "true");
+    Result result       = stop ? RESULT_NO_REMAP_STOP : RESULT_NO_REMAP;
     if (remap == "true") {
       const string &path = query_params["path"];
       if (path.size()) {

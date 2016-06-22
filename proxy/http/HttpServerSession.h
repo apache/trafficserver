@@ -62,7 +62,7 @@ enum HSS_State {
 
 enum {
   HTTP_SS_MAGIC_ALIVE = 0x0123FEED,
-  HTTP_SS_MAGIC_DEAD = 0xDEADFEED,
+  HTTP_SS_MAGIC_DEAD  = 0xDEADFEED,
 };
 
 class HttpServerSession : public VConnection
@@ -99,7 +99,7 @@ public:
     ink_assert(buf_reader != NULL);
     read_buffer->dealloc_all_readers();
     read_buffer->_writer = NULL;
-    buf_reader = read_buffer->alloc_reader();
+    buf_reader           = read_buffer->alloc_reader();
   }
 
   IOBufferReader *

@@ -50,9 +50,9 @@ typedef void (*load_ssl_file_func)(const char *, unsigned int);
 
 struct SSLConfigParams : public ConfigInfo {
   enum SSL_SESSION_CACHE_MODE {
-    SSL_SESSION_CACHE_MODE_OFF = 0,
+    SSL_SESSION_CACHE_MODE_OFF                 = 0,
     SSL_SESSION_CACHE_MODE_SERVER_OPENSSL_IMPL = 1,
-    SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL = 2
+    SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL     = 2
   };
 
   SSLConfigParams();

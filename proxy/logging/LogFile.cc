@@ -76,7 +76,7 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
     m_log = NULL;
   }
 
-  m_fd = -1;
+  m_fd                = -1;
   m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
 
   Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
@@ -298,7 +298,7 @@ LogFile::preproc_and_try_delete(LogBuffer *lb)
   //
   if (!m_log->m_start_time)
     m_log->m_start_time = buffer_header->low_timestamp;
-  m_log->m_end_time = buffer_header->high_timestamp;
+  m_log->m_end_time     = buffer_header->high_timestamp;
 
   if (m_file_format == LOG_FILE_BINARY) {
     //
@@ -357,9 +357,9 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
   char fmt_line[LOG_MAX_FORMATTED_LINE];
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
-  int fmt_buf_bytes = 0;
+  int fmt_buf_bytes  = 0;
   int fmt_line_bytes = 0;
-  int bytes = 0;
+  int bytes          = 0;
 
   LogFormatType format_type;
   char *fieldlist_str;
@@ -370,7 +370,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
     format_type = (LogFormatType)buffer_header->format_type;
 
     fieldlist_str = buffer_header->fmt_fieldlist();
-    printf_str = buffer_header->fmt_printf();
+    printf_str    = buffer_header->fmt_printf();
     break;
 
   default:
@@ -423,8 +423,8 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
   int fmt_entry_count = 0;
-  int fmt_buf_bytes = 0;
-  int total_bytes = 0;
+  int fmt_buf_bytes   = 0;
+  int total_bytes     = 0;
 
   LogFormatType format_type;
   char *fieldlist_str;
@@ -433,9 +433,9 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type = (LogFormatType)buffer_header->format_type;
+    format_type   = (LogFormatType)buffer_header->format_type;
     fieldlist_str = buffer_header->fmt_fieldlist();
-    printf_str = buffer_header->fmt_printf();
+    printf_str    = buffer_header->fmt_printf();
     break;
 
   default:
@@ -447,7 +447,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
   while ((entry_header = iter.next())) {
     fmt_entry_count = 0;
-    fmt_buf_bytes = 0;
+    fmt_buf_bytes   = 0;
 
     if (m_file_format == LOG_FILE_PIPE)
       ascii_buffer = (char *)malloc(m_max_line_size);
@@ -573,7 +573,7 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 void
 LogFile::check_fd()
 {
-  static bool failure_last_call = false;
+  static bool failure_last_call    = false;
   static unsigned stat_check_count = 1;
 
   if ((stat_check_count % Log::config->file_stat_frequency) == 0) {

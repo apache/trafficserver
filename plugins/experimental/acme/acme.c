@@ -28,9 +28,9 @@ limitations under the License.
 #include "ts/ink_platform.h"
 #include "ts/ink_defs.h"
 
-static const char PLUGIN_NAME[] = "acme";
-static const char ACME_WK_PATH[] = ".well-known/acme-challenge/";
-static const char ACME_OK_RESP[] = "HTTP/1.1 200 OK\r\nContent-Type: application/jose\r\nCache-Control: no-cache\r\n";
+static const char PLUGIN_NAME[]      = "acme";
+static const char ACME_WK_PATH[]     = ".well-known/acme-challenge/";
+static const char ACME_OK_RESP[]     = "HTTP/1.1 200 OK\r\nContent-Type: application/jose\r\nCache-Control: no-cache\r\n";
 static const char ACME_DENIED_RESP[] = "HTTP/1.1 404 Not Found\r\nContent-Type: application/jose\r\nCache-Control: no-cache\r\n";
 
 #define MAX_PATH_LEN 4096
@@ -221,10 +221,10 @@ acme_process_write(TSCont contp, TSEvent event, AcmeState *my_state)
 static void
 acme_process_accept(TSCont contp, AcmeState *my_state)
 {
-  my_state->req_buffer = TSIOBufferCreate();
+  my_state->req_buffer  = TSIOBufferCreate();
   my_state->resp_buffer = TSIOBufferCreate();
   my_state->resp_reader = TSIOBufferReaderAlloc(my_state->resp_buffer);
-  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
+  my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
 /* Implement the server intercept */
@@ -260,7 +260,7 @@ acme_hook(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   TSDebug(PLUGIN_NAME, "kicking off ACME hook");
 
   if ((TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) && (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc))) {
-    int path_len = 0;
+    int path_len     = 0;
     const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
     /* Short circuit the / path, common case */
@@ -324,7 +324,7 @@ TSPluginInit(int argc, const char *argv[])
 
   if ('/' != *proof) {
     const char *confdir = TSConfigDirGet();
-    int len = strlen(proof) + strlen(confdir) + 8;
+    int len             = strlen(proof) + strlen(confdir) + 8;
 
     gConfig.proof = TSmalloc(len);
     snprintf(gConfig.proof, len - 1, "%s/%s", confdir, proof);
@@ -333,8 +333,8 @@ TSPluginInit(int argc, const char *argv[])
     gConfig.proof = TSstrdup(proof);
   }
 
-  info.plugin_name = "acme";
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = "acme";
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TS_SUCCESS != TSPluginRegister(&info)) {

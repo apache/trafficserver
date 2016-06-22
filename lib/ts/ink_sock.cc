@@ -43,7 +43,7 @@
 inline void
 check_valid_sockaddr(sockaddr *sa, char *file, int line)
 {
-  sockaddr_in *si = (sockaddr_in *)sa;
+  sockaddr_in *si     = (sockaddr_in *)sa;
   unsigned short port = ntohs(si->sin_port);
   unsigned short addr = ntohl(si->sin_addr.s_addr);
 
@@ -126,8 +126,8 @@ write_ready(int fd, int timeout_msec)
 {
   struct pollfd p;
   p.events = POLLOUT;
-  p.fd = fd;
-  int r = poll(&p, 1, timeout_msec);
+  p.fd     = fd;
+  int r    = poll(&p, 1, timeout_msec);
   if (r <= 0)
     return r;
   if (p.revents & (POLLERR | POLLNVAL))
@@ -142,8 +142,8 @@ read_ready(int fd, int timeout_msec)
 {
   struct pollfd p;
   p.events = POLLIN;
-  p.fd = fd;
-  int r = poll(&p, 1, timeout_msec);
+  p.fd     = fd;
+  int r    = poll(&p, 1, timeout_msec);
   if (r <= 0)
     return r;
   if (p.revents & (POLLERR | POLLNVAL))

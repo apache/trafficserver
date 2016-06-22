@@ -51,8 +51,8 @@ public:
   Acl() : _allow(true), _added_tokens(0) {}
   virtual ~Acl() {}
   // These have to be implemented for each ACL type
-  virtual void read_regex(const char *fn, int &tokens) = 0;
-  virtual int process_args(int argc, char *argv[]) = 0;
+  virtual void read_regex(const char *fn, int &tokens)             = 0;
+  virtual int process_args(int argc, char *argv[])                 = 0;
   virtual bool eval(TSRemapRequestInfo *rri, TSHttpTxn txnp) const = 0;
   virtual void add_token(const std::string &str) = 0;
 

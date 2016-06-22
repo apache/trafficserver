@@ -47,12 +47,12 @@ ParseRules::ink_tolower_buffer(char *ptr, unsigned int n)
   unsigned int i;
 
   if (n < 8) {
-    for (i = 0; i < n; i++)
+    for (i   = 0; i < n; i++)
       ptr[i] = ParseRules::ink_tolower(ptr[i]);
   } else {
-    uintptr_t fpad = 4 - ((uintptr_t)ptr & 3);
+    uintptr_t fpad  = 4 - ((uintptr_t)ptr & 3);
     uintptr_t words = (n - fpad) >> 2;
-    uintptr_t bpad = n - fpad - (words << 2);
+    uintptr_t bpad  = n - fpad - (words << 2);
 
     switch (fpad) {
     case 3:
@@ -70,12 +70,12 @@ ParseRules::ink_tolower_buffer(char *ptr, unsigned int n)
 
     uint32_t *wptr = (uint32_t *)ptr;
     for (i = 0; i < words; i++) {
-      uint32_t word = *wptr;
+      uint32_t word               = *wptr;
       ((unsigned char *)&word)[0] = ParseRules::ink_tolower(((unsigned char *)&word)[0]);
       ((unsigned char *)&word)[1] = ParseRules::ink_tolower(((unsigned char *)&word)[1]);
       ((unsigned char *)&word)[2] = ParseRules::ink_tolower(((unsigned char *)&word)[2]);
       ((unsigned char *)&word)[3] = ParseRules::ink_tolower(((unsigned char *)&word)[3]);
-      *wptr++ = word;
+      *wptr++                     = word;
     }
 
     switch (bpad) {
@@ -103,7 +103,7 @@ ParseRules::ink_tolower_buffer(char *ptr, unsigned int n)
 int64_t
 ink_atoi64(const char *str)
 {
-  int64_t num = 0;
+  int64_t num  = 0;
   int negative = 0;
 
   while (*str && ParseRules::is_wslfcr(*str))
@@ -177,7 +177,7 @@ ink_atoui64(const char *str)
 int64_t
 ink_atoi64(const char *str, int len)
 {
-  int64_t num = 0;
+  int64_t num  = 0;
   int negative = 0;
 
   while (len > 0 && *str && ParseRules::is_wslfcr(*str)) {

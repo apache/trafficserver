@@ -75,8 +75,8 @@
 
 typedef enum {
   STATE_READ_DATA = 1,
-  STATE_READ_PSI = 2,
-  STATE_DUMP_PSI = 3,
+  STATE_READ_PSI  = 2,
+  STATE_DUMP_PSI  = 3,
 } PluginState;
 
 typedef enum {
@@ -134,21 +134,21 @@ cont_data_alloc()
 {
   ContData *data;
 
-  data = (ContData *)TSmalloc(sizeof(ContData));
-  data->magic = MAGIC_ALIVE;
-  data->output_vio = NULL;
+  data                = (ContData *)TSmalloc(sizeof(ContData));
+  data->magic         = MAGIC_ALIVE;
+  data->output_vio    = NULL;
   data->output_buffer = NULL;
   data->output_reader = NULL;
 
-  data->psi_buffer = NULL;
-  data->psi_reader = NULL;
-  data->psi_filename[0] = '\0';
+  data->psi_buffer       = NULL;
+  data->psi_reader       = NULL;
+  data->psi_filename[0]  = '\0';
   data->psi_filename_len = 0;
-  data->psi_success = 0;
+  data->psi_success      = 0;
 
   data->parse_state = PARSE_SEARCH;
 
-  data->state = STATE_READ_DATA;
+  data->state           = STATE_READ_DATA;
   data->transform_bytes = 0;
 
   return data;
@@ -208,9 +208,9 @@ cont_data_destroy(ContData *data)
 static StrOperationResult
 strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
 {
-  int index = 0;
+  int index             = 0;
   TSIOBufferBlock block = TSIOBufferReaderStart(reader);
-  int slen = strlen(pattern);
+  int slen              = strlen(pattern);
 
   if (slen <= 0) {
     return STR_FAIL;
@@ -274,10 +274,10 @@ strsearch_ioreader(TSIOBufferReader reader, const char *pattern, int *nparse)
 static int
 strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern, char *buffer, int *buflen)
 {
-  int buf_idx = 0;
-  int p_idx = 0;
+  int buf_idx       = 0;
+  int p_idx         = 0;
   int nbytes_so_far = 0;
-  int plen = strlen(end_pattern);
+  int plen          = strlen(end_pattern);
   const char *ptr;
   TSIOBufferBlock block = TSIOBufferReaderStart(reader);
 
@@ -325,7 +325,7 @@ strextract_ioreader(TSIOBufferReader reader, int offset, const char *end_pattern
   /* Full Match */
   if (p_idx == plen) {
     /* Nul terminate the filename, remove the end_pattern copied into the buffer */
-    *buflen = buf_idx - plen;
+    *buflen         = buf_idx - plen;
     buffer[*buflen] = '\0';
     TSDebug(DBG_TAG, "strextract: filename = |%s|", buffer);
     return STR_SUCCESS;
@@ -370,21 +370,21 @@ parse_data(TSCont contp, TSIOBufferReader input_reader, int avail, int *toconsum
     switch (status) {
     case STR_FAIL:
       /* We didn't found the pattern */
-      *toconsume = avail;
-      *towrite = avail;
+      *toconsume        = avail;
+      *towrite          = avail;
       data->parse_state = PARSE_SEARCH;
       return 0;
     case STR_PARTIAL:
       /* We need to read some more data */
-      *toconsume = nparse;
-      *towrite = nparse;
+      *toconsume        = nparse;
+      *towrite          = nparse;
       data->parse_state = PARSE_SEARCH;
       return 0;
     case STR_SUCCESS:
       /* We found the start_pattern, let's go ahead */
       data->psi_filename_len = 0;
-      data->psi_filename[0] = '\0';
-      data->parse_state = PARSE_EXTRACT;
+      data->psi_filename[0]  = '\0';
+      data->parse_state      = PARSE_EXTRACT;
       break;
     default:
       TSAssert(!"strsearch_ioreader returned unexpected status");
@@ -396,20 +396,20 @@ parse_data(TSCont contp, TSIOBufferReader input_reader, int avail, int *toconsum
   switch (status) {
   case STR_FAIL:
     /* We couldn't extract a valid filename */
-    *toconsume = nparse;
-    *towrite = nparse;
+    *toconsume        = nparse;
+    *towrite          = nparse;
     data->parse_state = PARSE_SEARCH;
     return 0;
   case STR_PARTIAL:
     /* We need to read some more data */
-    *toconsume = nparse;
-    *towrite = nparse;
+    *toconsume        = nparse;
+    *towrite          = nparse;
     data->parse_state = PARSE_EXTRACT;
     return 0;
   case STR_SUCCESS:
     /* We got a valid filename */
-    *toconsume = nparse + PSI_START_TAG_LEN + data->psi_filename_len + PSI_END_TAG_LEN;
-    *towrite = nparse;
+    *toconsume        = nparse + PSI_START_TAG_LEN + data->psi_filename_len + PSI_END_TAG_LEN;
+    *towrite          = nparse;
     data->parse_state = PARSE_SEARCH;
     return 1;
   default:
@@ -492,14 +492,14 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
       int64_t len, avail, ndone, ntodo, towrite;
       char *ptr_block;
 
-      len = strlen(buf);
+      len   = strlen(buf);
       ndone = 0;
       ntodo = len;
       while (ntodo > 0) {
         /* TSIOBufferStart allocates more blocks if required */
-        block = TSIOBufferStart(data->psi_buffer);
+        block     = TSIOBufferStart(data->psi_buffer);
         ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-        towrite = MIN(ntodo, avail);
+        towrite   = MIN(ntodo, avail);
 
         memcpy(ptr_block, buf + ndone, towrite);
         TSIOBufferProduce(data->psi_buffer, towrite);
@@ -528,7 +528,7 @@ psi_include(TSCont contp, void *edata ATS_UNUSED)
 
   TSContSchedule(contp, 0, TS_THREAD_POOL_DEFAULT);
   data->psi_success = 0;
-  data->state = STATE_READ_DATA;
+  data->state       = STATE_READ_DATA;
   TSMutexUnlock(TSContMutexGet(contp));
 
   return 0;
@@ -558,7 +558,7 @@ wake_up_streams(TSCont contp)
   TSAssert(data->magic == MAGIC_ALIVE);
 
   input_vio = TSVConnWriteVIOGet(contp);
-  ntodo = TSVIONTodoGet(input_vio);
+  ntodo     = TSVIONTodoGet(input_vio);
 
   if (ntodo > 0) {
     TSVIOReenable(data->output_vio);
@@ -602,7 +602,7 @@ handle_transform(TSCont contp)
 
   /* Get upstream vio */
   input_vio = TSVConnWriteVIOGet(contp);
-  data = TSContDataGet(contp);
+  data      = TSContDataGet(contp);
   TSAssert(data->magic == MAGIC_ALIVE);
 
   if (!data->output_buffer) {
@@ -626,7 +626,7 @@ handle_transform(TSCont contp)
 
   if (toread > 0) {
     input_reader = TSVIOReaderGet(input_vio);
-    avail = TSIOBufferReaderAvail(input_reader);
+    avail        = TSIOBufferReaderAvail(input_reader);
 
     /* There are some data available for reading. Let's parse it */
     if (avail > 0) {
@@ -635,9 +635,9 @@ handle_transform(TSCont contp)
       if (toread > (PSI_START_TAG_LEN + PSI_END_TAG_LEN)) {
         psi = parse_data(contp, input_reader, avail, &toconsume, &towrite);
       } else {
-        towrite = avail;
+        towrite   = avail;
         toconsume = avail;
-        psi = 0;
+        psi       = 0;
       }
 
       if (towrite > 0) {
@@ -758,7 +758,7 @@ transform_handler(TSCont contp, TSEvent event, void *edata ATS_UNUSED)
 
   /* Handle TryLock result */
   if (TSMutexLockTry(TSContMutexGet(contp)) != TS_SUCCESS) {
-    TSCont c = TSContCreate(trylock_handler, NULL);
+    TSCont c       = TSContCreate(trylock_handler, NULL);
     TryLockData *d = TSmalloc(sizeof(TryLockData));
 
     d->contp = contp;
@@ -922,7 +922,7 @@ transform_add(TSHttpTxn txnp)
   ContData *data;
 
   contp = TSTransformCreate(transform_handler, txnp);
-  data = cont_data_alloc();
+  data  = cont_data_alloc();
   TSContDataSet(contp, data);
 
   TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, contp);
@@ -977,8 +977,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   int i;
   TSReturnCode retval;
 
-  info.plugin_name = "psi";
-  info.vendor_name = "Apache";
+  info.plugin_name   = "psi";
+  info.vendor_name   = "Apache";
   info.support_email = "";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
