@@ -516,6 +516,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         }
         return (const char *)errStrBuf;
       }
+      Debug("url_rewrite", "[validate_src_ip]");
       for (j = 0; j < rule->src_ip_cnt; j++) {
         if (rule->src_ip_array[j].start == ipi->start && rule->src_ip_array[j].end == ipi->end) {
           ipi->reset();
@@ -527,6 +528,7 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         rule->src_ip_cnt++;
         rule->src_ip_valid = 1;
       }
+      Debug("url_rewrite", "[validate_src_ip] valid ip? %d", rule->src_ip_valid);
     }
 
     if (ul & REMAP_OPTFLG_IN_IP) { /* "dst_ip=" option */
