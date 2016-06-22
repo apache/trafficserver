@@ -229,6 +229,59 @@ private:
   int _counter;
 };
 
+class OperatorRMCookie : public OperatorCookies
+{
+public:
+  OperatorRMCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMCookie"); }
+protected:
+  void exec(const Resources &res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorRMCookie);
+};
+
+class OperatorAddCookie : public OperatorCookies
+{
+public:
+  OperatorAddCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorAddCookie"); }
+  void initialize(Parser &p);
+
+protected:
+  void exec(const Resources &res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorAddCookie);
+
+  Value _value;
+};
+
+class OperatorSetCookie : public OperatorCookies
+{
+public:
+  OperatorSetCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetCookie"); }
+  void initialize(Parser &p);
+
+protected:
+  void exec(const Resources &res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorSetCookie);
+
+  Value _value;
+};
+
+namespace CookieHelper
+{
+enum CookieOp { COOKIE_OP_DEL, COOKIE_OP_ADD, COOKIE_OP_SET };
+
+/*
+ * This function returns if cookies need to be changed or not.
+ * If the return value is true, updated_cookies would be cookies after the change.
+ */
+bool cookieModifyHelper(const char *cookies, const size_t cookies_len, std::string &updated_cookies, const CookieOp cookie_op,
+                        const std::string &cookie_key, const std::string &cookie_value = std::string());
+}
+
 class OperatorSetConnDSCP : public Operator
 {
 public:
