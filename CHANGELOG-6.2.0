@@ -123,6 +123,7 @@ Bug:
   *) [TS-4445] HttpSM disables read eventing twice before settup up a tunnel binding
   *) [TS-4461] Not closing client connections
   *) [TS-4469] TS-3612 changes cause crashes with some plugins
+  *) [TS-4470] ASAN stack-buffer-overflow when slow log is enabled
   *) [TS-4472] Number of active connections is incorrect
   *) [TS-4473] Parent proxy test configuration race.
   *) [TS-4477] Decrement proxy.process.http.current_client_transactions in HTTP/2
@@ -130,6 +131,13 @@ Bug:
   *) [TS-4485] MultiCache sync causes significant stalls to various in-flight requests
   *) [TS-4489] Assert fails at Http2ConnectionState::delete_stream
   *) [TS-4494] Assert fails at ink_code_md5_stringify with origin_max_connections
+  *) [TS-4527] vc error messages in 6.2.0 release
+  *) [TS-4529] HttpSM doesn't assign the right continuation when adjusting threads
+  *) [TS-4534] hostdb `showall` endpoint with format=json is invalid json
+  *) [TS-4543] Crash due to shutdown race in HttpSM::tunnel_handler_post
+  *) [TS-4560] C++ API should not depend on ink_autoconf.h
+  *) [TS-4568] Milestones where changed from seconds to milliseconds
+  *) [TS-4571] Fix "pointer to local outside scope" (CID 1356978)
 
 Improvement:
   *) [TS-1775] Cleanup of ink_hrtime.{cc,h}
