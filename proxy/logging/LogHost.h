@@ -56,7 +56,7 @@ public:
   int preproc_and_try_delete(LogBuffer *lb);
 
   //
-  // write the given buffer data to orhpan file and
+  // write the given buffer data to orphan file and
   // try to delete it when its reference become zero.
   //
   void orphan_write_and_try_delete(LogBuffer *lb);

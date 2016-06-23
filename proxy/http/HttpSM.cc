@@ -59,7 +59,7 @@
   }
 
 /*
- * Comment this off if you dont
+ * Comment this off if you don't
  * want httpSM to use new_empty_MIOBuffer(..) call
  */
 
@@ -465,7 +465,7 @@ HttpSM::state_remove_from_list(int event, void * /* data ATS_UNUSED */)
 {
   // The config parameters are guaranteed not change
   //   across the life of a transaction so it safe to
-  //   check the config here and use it detrmine
+  //   check the config here and use it determine
   //   whether we need to strip ourselves off of the
   //   state page list
   if (t_state.http_config_param->enable_http_info) {
@@ -775,7 +775,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       int len            = 0;
       const char *expect = t_state.hdr_info.client_request.value_get(MIME_FIELD_EXPECT, MIME_LEN_EXPECT, &len);
       // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
-      // imediately, before receive the real response from original server.
+      // immediately, before receive the real response from original server.
       if ((len == HTTP_LEN_100_CONTINUE) && (strncasecmp(expect, HTTP_VALUE_100_CONTINUE, HTTP_LEN_100_CONTINUE) == 0)) {
         int64_t alloc_index = buffer_size_to_index(len_100_continue_response);
         if (ua_entry->write_buffer) {
@@ -1621,7 +1621,7 @@ HttpSM::handle_api_return()
   }
   case HttpTransact::SM_ACTION_SERVER_READ: {
     if (unlikely(t_state.did_upgrade_succeed)) {
-      // We've sucessfully handled the upgrade, let's now setup
+      // We've successfully handled the upgrade, let's now setup
       // a blind tunnel.
       if (t_state.is_websocket) {
         HTTP_INCREMENT_DYN_STAT(http_websocket_current_active_client_connections_stat);
@@ -1919,7 +1919,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     // however.  We do not need to reset the inactivity timeout
     // if the request contains a body (noted by the
     // request_content_length field) because it was never
-    // cancelled.
+    // canceled.
     //
 
     // we now reset the client inactivity timeout only
@@ -2062,7 +2062,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
 {
   DebugSM("dns_srv", "beginning process_srv_info");
 
-  /* we didnt get any SRV records, continue w normal lookup */
+  /* we didn't get any SRV records, continue w normal lookup */
   if (!r || !r->is_srv || !r->round_robin) {
     t_state.dns_info.srv_hostname[0]    = '\0';
     t_state.dns_info.srv_lookup_success = false;
@@ -2890,7 +2890,7 @@ HttpSM::tunnel_handler(int event, void *data)
 }
 
 /****************************************************
-   TUNNELLING HANDLERS
+   TUNNELING HANDLERS
    ******************************************************/
 
 bool
@@ -3484,7 +3484,7 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
   // My reading of spec says that user agents can not terminate
   //  posts with a half close so this is an error
   case VC_EVENT_ERROR:
-    //  Did not complete post tunnling.  Abort the
+    //  Did not complete post tunneling.  Abort the
     //   server and close the ua
     p->handler_state = HTTP_SM_POST_UA_FAIL;
     set_ua_abort(HttpTransact::ABORTED, event);
@@ -4446,7 +4446,7 @@ HttpSM::do_range_setup_if_necessary()
 
     if (t_state.range_setup == HttpTransact::RANGE_REQUESTED) {
       if (!t_state.range_in_cache) {
-        Debug("http_range", "range can't be satisifed from cache, force origin request");
+        Debug("http_range", "range can't be satisfied from cache, force origin request");
         t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;
         return;
       }
@@ -5825,7 +5825,7 @@ HttpSM::attach_server_session(HttpServerSession *s)
   //  buffer
   server_buffer_reader = server_session->get_reader();
   // ts-3189 We are only setting up an empty read at this point.  This
-  // is suffient to have the timeout errors directed to the appropriate
+  // is sufficient to have the timeout errors directed to the appropriate
   // SM handler, but we don't want to read any data until the tunnel has
   // been set up.  This isn't such a big deal with GET results, since
   // if no tunnels are set up, there is no danger of data being delivered
@@ -6751,7 +6751,7 @@ HttpSM::kill_this()
   reentrancy_count--;
   ink_release_assert(reentrancy_count == 0);
 
-  // If the api shutdown & list removeal was synchronous
+  // If the api shutdown & list removal was synchronous
   //   then the value of kill_this_async_done has changed so
   //   we must check it again
   if (kill_this_async_done == true) {

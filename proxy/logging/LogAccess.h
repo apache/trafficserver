@@ -122,7 +122,7 @@
     return len;                    \
   }
 
-// should be at least 22 bytes to always accomodate a converted
+// should be at least 22 bytes to always accommodate a converted
 // MgmtInt, MgmtIntCounter or MgmtFloat. 22 bytes is enough for 64 bit
 // ints + sign + eos, and enough for %e floating point representation
 // + eos

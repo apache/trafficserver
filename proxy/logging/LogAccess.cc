@@ -753,7 +753,7 @@ LogAccess::marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, ch
 // the length of the record, and later with a non-null *buf to
 // actually request the record to be inserted in the buffer, and both
 // calls should return the same number of characters. If we did not
-// enforce a fixed size, this would not necesarilly be the case
+// enforce a fixed size, this would not necessarily be the case
 // because records --statistics in particular-- can potentially change
 // between one call and the other.
 //
