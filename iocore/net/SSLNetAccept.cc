@@ -22,50 +22,10 @@
 #include "ts/ink_config.h"
 #include "P_Net.h"
 
-typedef int (SSLNetAccept::*SSLNetAcceptHandler)(int, void *);
-
-// Virtual function allows the correct
-// etype to be used in NetAccept functions (ET_SSL
-// or ET_NET).
-EventType
-SSLNetAccept::getEtype() const
-{
-  return SSLNetProcessor::ET_SSL;
-}
-
 NetProcessor *
 SSLNetAccept::getNetProcessor() const
 {
   return &sslNetProcessor;
-}
-
-void
-SSLNetAccept::init_accept_per_thread(bool isTransparent)
-{
-  int i, n;
-  NetAccept *a;
-
-  if (do_listen(NON_BLOCKING, isTransparent))
-    return;
-  if (accept_fn == net_accept)
-    SET_HANDLER((SSLNetAcceptHandler)&SSLNetAccept::acceptFastEvent);
-  else
-    SET_HANDLER((SSLNetAcceptHandler)&SSLNetAccept::acceptEvent);
-  period = -HRTIME_MSECONDS(net_accept_period);
-  n      = eventProcessor.n_threads_for_type[SSLNetProcessor::ET_SSL];
-  for (i = 0; i < n; i++) {
-    if (i < n - 1)
-      a = clone();
-    else
-      a        = this;
-    EThread *t = eventProcessor.eventthread[SSLNetProcessor::ET_SSL][i];
-
-    PollDescriptor *pd = get_PollDescriptor(t);
-    if (ep.start(pd, this, EVENTIO_READ) < 0)
-      Debug("iocore_net", "error starting EventIO");
-    a->mutex = get_NetHandler(t)->mutex;
-    t->schedule_every(a, period, etype);
-  }
 }
 
 NetAccept *

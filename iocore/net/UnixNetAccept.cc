@@ -181,6 +181,8 @@ NetAccept::init_accept_per_thread(bool isTransparent)
 {
   int i, n;
 
+  ink_assert(etype >= 0);
+
   if (do_listen(NON_BLOCKING, isTransparent))
     return;
 
@@ -190,7 +192,7 @@ NetAccept::init_accept_per_thread(bool isTransparent)
     SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
 
   period = -HRTIME_MSECONDS(net_accept_period);
-  n      = eventProcessor.n_threads_for_type[ET_NET];
+  n      = eventProcessor.n_threads_for_type[etype];
 
   for (i = 0; i < n; i++) {
     NetAccept *a;
@@ -201,7 +203,7 @@ NetAccept::init_accept_per_thread(bool isTransparent)
       a = this;
     }
 
-    EThread *t         = eventProcessor.eventthread[ET_NET][i];
+    EThread *t         = eventProcessor.eventthread[etype][i];
     PollDescriptor *pd = get_PollDescriptor(t);
 
     if (a->ep.start(pd, a, EVENTIO_READ) < 0)
@@ -304,7 +306,7 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->action_ = *action_;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
     // eventProcessor.schedule_imm(vc, getEtype());
-    eventProcessor.schedule_imm_signal(vc, getEtype());
+    eventProcessor.schedule_imm_signal(vc, etype);
   } while (loop);
 
   return 1;
