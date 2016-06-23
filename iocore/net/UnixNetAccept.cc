@@ -167,8 +167,10 @@ NetAccept::init_accept(EThread *t, bool isTransparent)
     action_->continuation->mutex = t->mutex;
     action_->mutex               = t->mutex;
   }
+
   if (do_listen(NON_BLOCKING, isTransparent))
     return;
+
   SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
   period = -HRTIME_MSECONDS(net_accept_period);
   t->schedule_every(this, period, etype);
@@ -181,23 +183,30 @@ NetAccept::init_accept_per_thread(bool isTransparent)
 
   if (do_listen(NON_BLOCKING, isTransparent))
     return;
+
   if (accept_fn == net_accept)
     SET_HANDLER((NetAcceptHandler)&NetAccept::acceptFastEvent);
   else
     SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
-  period = -HRTIME_MSECONDS(net_accept_period);
 
-  NetAccept *a;
-  n = eventProcessor.n_threads_for_type[ET_NET];
+  period = -HRTIME_MSECONDS(net_accept_period);
+  n      = eventProcessor.n_threads_for_type[ET_NET];
+
   for (i = 0; i < n; i++) {
-    if (i < n - 1)
+    NetAccept *a;
+
+    if (i < n - 1) {
       a = clone();
-    else
-      a                = this;
+    } else {
+      a = this;
+    }
+
     EThread *t         = eventProcessor.eventthread[ET_NET][i];
     PollDescriptor *pd = get_PollDescriptor(t);
+
     if (a->ep.start(pd, a, EVENTIO_READ) < 0)
       Warning("[NetAccept::init_accept_per_thread]:error starting EventIO");
+
     a->mutex = get_NetHandler(t)->mutex;
     t->schedule_every(a, period, etype);
   }
@@ -276,12 +285,14 @@ NetAccept::do_blocking_accept(EThread *t)
       con.close();
       return -1;
     }
+
     vc->con                 = con;
+    vc->id                  = net_next_connection_number();
+    vc->from_accept_thread  = true;
     vc->options.packet_mark = packet_mark;
     vc->options.packet_tos  = packet_tos;
+
     vc->apply_options();
-    vc->from_accept_thread = true;
-    vc->id                 = net_next_connection_number();
 
     check_emergency_throttle(con);
 
