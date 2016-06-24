@@ -28,6 +28,7 @@ plugins = \
   cache-scan.la \
   file-1.la \
   hello.la \
+  hook-trace.la \
   intercept.la \
   lifecycle-plugin.la \
   null-transform.la \
@@ -36,14 +37,14 @@ plugins = \
   psi.la \
   query-remap.la \
   remap.la \
+  remap_header_add.la \
   replace-header.la \
   response-header-1.la \
   secure-link.la \
   server-transform.la \
   ssl-preaccept.la \
-  remap_header_add.la \
-  ssl-sni.la \
   ssl-sni-whitelist.la \
+  ssl-sni.la \
   thread-1.la \
   txn-data-sink.la \
   version.la
@@ -63,25 +64,26 @@ bnull_transform_la_SOURCES = bnull-transform/bnull-transform.c
 cache_scan_la_SOURCES = cache-scan/cache-scan.cc
 file_1_la_SOURCES = file-1/file-1.c
 hello_la_SOURCES = hello/hello.c
+hook_trace_la_SOURCES = hook-trace/hook-trace.cc
 intercept_la_SOURCES = intercept/intercept.cc
 lifecycle_plugin_la_SOURCES = lifecycle-plugin/lifecycle-plugin.c
 null_transform_la_SOURCES = null-transform/null-transform.c
 output_header_la_SOURCES = output-header/output-header.c
 protocol_la_SOURCES = protocol/Protocol.c protocol/TxnSM.c
+psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
 query_remap_la_SOURCES = query-remap/query-remap.c
+remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc
 remap_la_SOURCES = remap/remap.cc
 replace_header_la_SOURCES = replace-header/replace-header.c
-remap_header_add_la_SOURCES = remap_header_add/remap_header_add.cc
 response_header_1_la_SOURCES = response-header-1/response-header-1.c
+secure_link_la_SOURCES = secure-link/secure-link.c
 server_transform_la_SOURCES = server-transform/server-transform.c
+ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc
+ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc
+ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc
 thread_1_la_SOURCES = thread-1/thread-1.c
 txn_data_sink_la_SOURCES = txn-data-sink/txn-data-sink.c
-psi_la_SOURCES = thread-pool/psi.c thread-pool/thread.c
 version_la_SOURCES = version/version.c
-secure_link_la_SOURCES = secure-link/secure-link.c
-ssl_preaccept_la_SOURCES = ssl-preaccept/ssl-preaccept.cc 
-ssl_sni_la_SOURCES = ssl-sni/ssl-sni.cc 
-ssl_sni_whitelist_la_SOURCES = ssl-sni-whitelist/ssl-sni-whitelist.cc 
 
 # The following examples do not build:
 #
