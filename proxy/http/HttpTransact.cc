@@ -3771,6 +3771,16 @@ HttpTransact::handle_response_from_server(State *s)
         retry_server_connection_not_open(s, s->current.state, max_connect_retries);
         DebugTxn("http_trans", "[handle_response_from_server] Error. Retrying...");
         s->next_action = how_to_open_connection(s);
+
+        if (s->api_server_addr_set) {
+          // If the plugin set a server address, back up to the OS_DNS hook
+          // to let it try another one. Force OS_ADDR_USE_CLIENT so that
+          // in OSDNSLoopkup, we back up to how_to_open_connections which
+          // will tell HttpSM to connect the origin server.
+
+          s->dns_info.os_addr_style = DNSLookupInfo::OS_ADDR_USE_CLIENT;
+          TRANSACT_RETURN(SM_ACTION_API_OS_DNS, OSDNSLookup);
+        }
         return;
       }
     } else {
