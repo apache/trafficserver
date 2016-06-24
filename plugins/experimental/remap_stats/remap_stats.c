@@ -98,13 +98,13 @@ get_effective_host(TSHttpTxn txn)
   TSMBuffer buf;
   TSMLoc url_loc;
 
-  effective_url = TSHttpTxnEffectiveUrlStringGet(txn, &len);
-  buf           = TSMBufferCreate();
+  buf = TSMBufferCreate();
   if (TS_SUCCESS != TSUrlCreate(buf, &url_loc)) {
     TSDebug(DEBUG_TAG, "unable to create url");
+    TSMBufferDestroy(buf);
     return NULL;
   }
-  tmp = effective_url;
+  tmp = effective_url = TSHttpTxnEffectiveUrlStringGet(txn, &len);
   TSUrlParse(buf, url_loc, (const char **)(&tmp), (const char *)(effective_url + len));
   TSfree(effective_url);
   host = TSUrlHostGet(buf, url_loc, &len);
