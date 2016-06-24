@@ -1083,12 +1083,13 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
       return PARSE_RESULT_ERROR;
     }
 
+    // checking these with an if statement makes coverity flag as dead code because
+    // url_start and url_end logically cannot be 0 at this time
+    ink_assert(url_start);
+    ink_assert(url_end);
+
     int method_wks_idx = hdrtoken_tokenize(method_start, (int)(method_end - method_start));
     http_hdr_method_set(heap, hh, method_start, method_wks_idx, (int)(method_end - method_start), must_copy_strings);
-
-    if (!url_start || !url_end) {
-      return PARSE_RESULT_ERROR;
-    }
 
     ink_assert(hh->u.req.m_url_impl != NULL);
 
