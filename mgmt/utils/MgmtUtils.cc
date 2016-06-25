@@ -434,127 +434,118 @@ get_interface_mtu(int sock_fd, struct ifreq *ifr)
                      "interface '%s'",
              ifr->ifr_name);
     return 0;
-  } else
+  } else {
 #if defined(solaris) || defined(hpux)
     return ifr->ifr_metric;
 #else
     return ifr->ifr_mtu;
+  }
 #endif
-}
-
-bool
-mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
-{
-  bool found = false;
-
-  if (intrName == NULL) {
-    return false;
   }
 
-  int fakeSocket;            // a temporary socket to pass to ioctl
-  struct ifconf ifc;         // ifconf information
-  char *ifbuf;               // ifconf buffer
-  struct ifreq *ifr, *ifend; // pointer to individual inferface info
-  int lastlen;
-  int len;
+  bool mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
+  {
+    bool found = false;
 
-  // Prevent UMRs
-  memset(addr, 0, sizeof(struct in_addr));
-
-  if ((fakeSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    mgmt_fatal(stderr, errno, "[getAddrForIntr] Unable to create socket\n");
-  }
-  // INKqa06739
-  // Fetch the list of network interfaces
-  // . from Stevens, Unix Network Prog., pg 434-435
-  ifbuf   = 0;
-  lastlen = 0;
-  len     = 128 * sizeof(struct ifreq); // initial buffer size guess
-  for (;;) {
-    ifbuf = (char *)ats_malloc(len);
-    memset(ifbuf, 0, len); // prevent UMRs
-    ifc.ifc_len = len;
-    ifc.ifc_buf = ifbuf;
-    if (ioctl(fakeSocket, SIOCGIFCONF, &ifc) < 0) {
-      if (errno != EINVAL || lastlen != 0) {
-        mgmt_fatal(stderr, errno, "[getAddrForIntr] Unable to read network interface configuration\n");
-      }
-    } else {
-      if (ifc.ifc_len == lastlen) {
-        break;
-      }
-      lastlen = ifc.ifc_len;
+    if (intrName == NULL) {
+      return false;
     }
-    len *= 2;
-    ats_free(ifbuf);
-  }
 
-  found = false;
-  // Loop through the list of interfaces
-  ifend = (struct ifreq *)(ifc.ifc_buf + ifc.ifc_len);
-  for (ifr = ifc.ifc_req; ifr < ifend;) {
-    if (ifr->ifr_addr.sa_family == AF_INET && strcmp(ifr->ifr_name, intrName) == 0) {
-      // Get the address of the interface
-      if (ioctl(fakeSocket, SIOCGIFADDR, (char *)ifr) < 0) {
-        mgmt_log(stderr, "[getAddrForIntr] Unable obtain address for network interface %s\n", intrName);
+    int fakeSocket;            // a temporary socket to pass to ioctl
+    struct ifconf ifc;         // ifconf information
+    char *ifbuf;               // ifconf buffer
+    struct ifreq *ifr, *ifend; // pointer to individual inferface info
+    int lastlen;
+    int len;
+
+    // Prevent UMRs
+    memset(addr, 0, sizeof(struct in_addr));
+
+    if ((fakeSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+      mgmt_fatal(stderr, errno, "[getAddrForIntr] Unable to create socket\n");
+    }
+    // INKqa06739
+    // Fetch the list of network interfaces
+    // . from Stevens, Unix Network Prog., pg 434-435
+    ifbuf   = 0;
+    lastlen = 0;
+    len     = 128 * sizeof(struct ifreq); // initial buffer size guess
+    for (;;) {
+      ifbuf = (char *)ats_malloc(len);
+      memset(ifbuf, 0, len); // prevent UMRs
+      ifc.ifc_len = len;
+      ifc.ifc_buf = ifbuf;
+      if (ioctl(fakeSocket, SIOCGIFCONF, &ifc) < 0) {
+        if (errno != EINVAL || lastlen != 0) {
+          mgmt_fatal(stderr, errno, "[getAddrForIntr] Unable to read network interface configuration\n");
+        }
       } else {
-        // Only look at the address if it an internet address
-        if (ifr->ifr_ifru.ifru_addr.sa_family == AF_INET) {
-          ats_ip_copy(addr, &ifr->ifr_ifru.ifru_addr);
-          found = true;
-
-          if (mtu)
-            *mtu = get_interface_mtu(fakeSocket, ifr);
-
+        if (ifc.ifc_len == lastlen) {
           break;
+        }
+        lastlen = ifc.ifc_len;
+      }
+      len *= 2;
+      ats_free(ifbuf);
+    }
+
+    found = false;
+    // Loop through the list of interfaces
+    ifend = (struct ifreq *)(ifc.ifc_buf + ifc.ifc_len);
+    for (ifr = ifc.ifc_req; ifr < ifend;) {
+      if (ifr->ifr_addr.sa_family == AF_INET && strcmp(ifr->ifr_name, intrName) == 0) {
+        // Get the address of the interface
+        if (ioctl(fakeSocket, SIOCGIFADDR, (char *)ifr) < 0) {
+          mgmt_log(stderr, "[getAddrForIntr] Unable obtain address for network interface %s\n", intrName);
         } else {
-          mgmt_log(stderr, "[getAddrForIntr] Interface %s is not configured for IP.\n", intrName);
+          // Only look at the address if it an internet address
+          if (ifr->ifr_ifru.ifru_addr.sa_family == AF_INET) {
+            ats_ip_copy(addr, &ifr->ifr_ifru.ifru_addr);
+            found = true;
+
+            if (mtu) {
+              *mtu = get_interface_mtu(fakeSocket, ifr);
+            }
+
+            break;
+          } else {
+            mgmt_log(stderr, "[getAddrForIntr] Interface %s is not configured for IP.\n", intrName);
+          }
         }
       }
-    }
 #if defined(freebsd) || defined(darwin)
-    ifr = (struct ifreq *)((char *)&ifr->ifr_addr + ifr->ifr_addr.sa_len);
+      ifr = (struct ifreq *)((char *)&ifr->ifr_addr + ifr->ifr_addr.sa_len);
 #else
     ifr = (struct ifreq *)(((char *)ifr) + sizeof(*ifr));
 #endif
-  }
-  ats_free(ifbuf);
-  close(fakeSocket);
-
-  return found;
-} /* End mgmt_getAddrForIntr */
-
-/*
- * mgmt_sortipaddrs(...)
- *   Routine to sort and pick smallest ip addr.
- */
-struct in_addr *
-mgmt_sortipaddrs(int num, struct in_addr **list)
-{
-  int i = 0;
-  unsigned long min;
-  struct in_addr *entry, *tmp;
-
-  min   = (list[0])->s_addr;
-  entry = list[0];
-  while (i < num && (tmp = (struct in_addr *)list[i]) != NULL) {
-    i++;
-    if (min > tmp->s_addr) {
-      min   = tmp->s_addr;
-      entry = tmp;
     }
-  }
-  return entry;
-} /* End mgmt_sortipaddrs */
+    ats_free(ifbuf);
+    close(fakeSocket);
 
-void
-mgmt_sleep_sec(int seconds)
-{
-  sleep(seconds);
-}
+    return found;
+  } /* End mgmt_getAddrForIntr */
 
-void
-mgmt_sleep_msec(int msec)
-{
-  usleep(msec * 1000);
-}
+  /*
+   * mgmt_sortipaddrs(...)
+   *   Routine to sort and pick smallest ip addr.
+   */
+  struct in_addr *mgmt_sortipaddrs(int num, struct in_addr **list)
+  {
+    int i = 0;
+    unsigned long min;
+    struct in_addr *entry, *tmp;
+
+    min   = (list[0])->s_addr;
+    entry = list[0];
+    while (i < num && (tmp = (struct in_addr *)list[i]) != NULL) {
+      i++;
+      if (min > tmp->s_addr) {
+        min   = tmp->s_addr;
+        entry = tmp;
+      }
+    }
+    return entry;
+  } /* End mgmt_sortipaddrs */
+
+  void mgmt_sleep_sec(int seconds) { sleep(seconds); }
+  void mgmt_sleep_msec(int msec) { usleep(msec * 1000); }

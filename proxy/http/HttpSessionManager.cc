@@ -83,8 +83,9 @@ ServerSessionPool::acquireSession(sockaddr const *addr, INK_MD5 const &hostname_
     // This is broken out because only in this case do we check the host hash first.
     HostHashTable::Location loc = m_host_pool.find(hostname_hash);
     in_port_t port              = ats_ip_port_cast(addr);
-    while (loc && port != ats_ip_port_cast(loc->server_ip))
+    while (loc && port != ats_ip_port_cast(loc->server_ip)) {
       ++loc; // scan for matching port.
+    }
     if (loc) {
       to_return = loc;
       m_host_pool.remove(loc);
@@ -96,8 +97,9 @@ ServerSessionPool::acquireSession(sockaddr const *addr, INK_MD5 const &hostname_
     // Otherwise we need to scan further matches to match the host name as well.
     // Note we don't have to check the port because it's checked as part of the IP address key.
     if (TS_SERVER_SESSION_SHARING_MATCH_IP != match_style) {
-      while (loc && loc->hostname_hash != hostname_hash)
+      while (loc && loc->hostname_hash != hostname_hash) {
         ++loc;
+      }
     }
     if (loc) {
       to_return = loc;

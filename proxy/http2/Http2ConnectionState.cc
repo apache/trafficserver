@@ -143,8 +143,9 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   IOBufferReader *myreader = frame.reader()->clone();
   while (nbytes < payload_length - pad_length) {
     size_t read_len = sizeof(buf);
-    if (nbytes + read_len > unpadded_length)
+    if (nbytes + read_len > unpadded_length) {
       read_len -= nbytes + read_len - unpadded_length;
+    }
     nbytes += stream->request_buffer.write(myreader, read_len);
     myreader->consume(nbytes);
     // If there is an outstanding read, update the buffer
@@ -897,8 +898,9 @@ Http2Stream *
 Http2ConnectionState::find_stream(Http2StreamId id) const
 {
   for (Http2Stream *s = stream_list.head; s; s = s->link.next) {
-    if (s->get_id() == id)
+    if (s->get_id() == id) {
       return s;
+    }
   }
   return NULL;
 }

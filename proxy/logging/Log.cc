@@ -321,8 +321,9 @@ struct LoggingCollateContinuation : public Continuation {
 void
 Log::init_fields()
 {
-  if (init_status & FIELDS_INITIALIZED)
+  if (init_status & FIELDS_INITIALIZED) {
     return;
+  }
 
   LogField *field;
 
@@ -1209,8 +1210,9 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
     // invert the list
     //
     link.head = fdata;
-    while ((fdata = link.pop()))
+    while ((fdata = link.pop())) {
       invert_link.push(fdata);
+    }
 
     // process each flush data
     //
@@ -1276,8 +1278,9 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
 
       RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_bytes_written_to_disk_stat, bytes_written);
 
-      if (logfile->m_log)
+      if (logfile->m_log) {
         ink_atomic_increment(&logfile->m_log->m_bytes_written, bytes_written);
+      }
 
       delete fdata;
     }
@@ -1430,8 +1433,9 @@ Log::collate_thread_main(void * /* args ATS_UNUSED */)
 LogObject *
 Log::match_logobject(LogBufferHeader *header)
 {
-  if (!header)
+  if (!header) {
     return NULL;
+  }
 
   LogObject *obj;
   obj = Log::config->log_object_manager.get_object_with_signature(header->log_object_signature);

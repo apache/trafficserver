@@ -67,8 +67,9 @@ Init(const char * /* socket_path ATS_UNUSED */, TSInitOptionT options)
   // socket_path should be null; only applies to remote clients
   if (0 == (options & TS_MGMT_OPT_NO_EVENTS)) {
     local_event_callbacks = create_callback_table("local_callbacks");
-    if (!local_event_callbacks)
+    if (!local_event_callbacks) {
       return TS_ERR_SYS_CALL;
+    }
   } else {
     local_event_callbacks = NULL;
   }
@@ -183,10 +184,11 @@ ProxyShutdown()
 TSProxyStateT
 ProxyStateGet()
 {
-  if (!lmgmt->processRunning())
+  if (!lmgmt->processRunning()) {
     return TS_PROXY_OFF;
-  else
+  } else {
     return TS_PROXY_ON;
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -208,8 +210,9 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
 
   switch (state) {
   case TS_PROXY_OFF:
-    if (!ProxyShutdown()) // from WebMgmtUtils
-      goto Lerror;        // unsuccessful shutdown
+    if (!ProxyShutdown()) { // from WebMgmtUtils
+      goto Lerror;          // unsuccessful shutdown
+    }
     break;
   case TS_PROXY_ON:
     if (lmgmt->processRunning()) { // already on
@@ -541,8 +544,9 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
   switch (rec_type) {
   case RECD_COUNTER:
     rec_ele->rec_type = TS_REC_COUNTER;
-    if (!varCounterFromName(rec_name, &(counter_val)))
+    if (!varCounterFromName(rec_name, &(counter_val))) {
       return TS_ERR_FAIL;
+    }
     rec_ele->valueT.counter_val = (TSCounter)counter_val;
 
     Debug("RecOp", "[MgmtRecordGet] Get Counter Var %s = %" PRId64 "", rec_ele->rec_name, rec_ele->valueT.counter_val);
@@ -550,8 +554,9 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 
   case RECD_INT:
     rec_ele->rec_type = TS_REC_INT;
-    if (!varIntFromName(rec_name, &(int_val)))
+    if (!varIntFromName(rec_name, &(int_val))) {
       return TS_ERR_FAIL;
+    }
     rec_ele->valueT.int_val = (TSInt)int_val;
 
     Debug("RecOp", "[MgmtRecordGet] Get Int Var %s = %" PRId64 "", rec_ele->rec_name, rec_ele->valueT.int_val);
@@ -559,15 +564,17 @@ MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 
   case RECD_FLOAT:
     rec_ele->rec_type = TS_REC_FLOAT;
-    if (!varFloatFromName(rec_name, &(rec_ele->valueT.float_val)))
+    if (!varFloatFromName(rec_name, &(rec_ele->valueT.float_val))) {
       return TS_ERR_FAIL;
+    }
 
     Debug("RecOp", "[MgmtRecordGet] Get Float Var %s = %f", rec_ele->rec_name, rec_ele->valueT.float_val);
     break;
 
   case RECD_STRING:
-    if (!varStrFromName(rec_name, rec_val, MAX_BUF_SIZE))
+    if (!varStrFromName(rec_name, rec_val, MAX_BUF_SIZE)) {
       return TS_ERR_FAIL;
+    }
 
     if (rec_val[0] != '\0') { // non-NULL string value
       // allocate memory & duplicate string value
@@ -621,8 +628,9 @@ determine_action_need(const char *rec_name)
 {
   RecUpdateT update_t;
 
-  if (REC_ERR_OKAY != RecGetRecordUpdateType(rec_name, &update_t))
+  if (REC_ERR_OKAY != RecGetRecordUpdateType(rec_name, &update_t)) {
     return TS_ACTION_UNDEFINED;
+  }
 
   switch (update_t) {
   case RECU_NULL: // default:don't know behaviour
@@ -661,14 +669,16 @@ MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT *action_need)
 {
   Debug("RecOp", "[MgmtRecordSet] Start");
 
-  if (!rec_name || !val || !action_need)
+  if (!rec_name || !val || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   *action_need = determine_action_need(rec_name);
 
   if (recordValidityCheck(rec_name, val)) {
-    if (varSetFromStr(rec_name, val))
+    if (varSetFromStr(rec_name, val)) {
       return TS_ERR_OKAY;
+    }
   }
 
   return TS_ERR_FAIL;
@@ -684,8 +694,9 @@ MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT *action_need)
 TSMgmtError
 MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT *action_need)
 {
-  if (!rec_name || !action_need)
+  if (!rec_name || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   // convert int value to string for validity check
   char str_val[MAX_RECORD_SIZE];
@@ -704,8 +715,9 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT *action_ne
 TSMgmtError
 MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionNeedT *action_need)
 {
-  if (!rec_name || !action_need)
+  if (!rec_name || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   // convert int value to string for validity check
   char str_val[MAX_RECORD_SIZE];
@@ -725,8 +737,9 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionN
 TSMgmtError
 MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT *action_need)
 {
-  if (!rec_name || !action_need)
+  if (!rec_name || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   // convert float value to string for validity check
   char str_val[MAX_RECORD_SIZE];
@@ -775,8 +788,9 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   Debug("FileOp", "[get_lines_from_file] START");
 
   fname = filename_to_string(file);
-  if (!fname)
+  if (!fname) {
     return TS_ERR_READ_FILE;
+  }
 
   ret = configFiles->getRollbackObj(fname, &file_rb);
   if (ret != true) {
@@ -821,8 +835,9 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
   version_t ver;
 
   fname = filename_to_string(file);
-  if (!fname)
+  if (!fname) {
     return TS_ERR_WRITE_FILE;
+  }
 
   // get rollback object for config file
   mgmt_log(stderr, "[CfgFileIO::WriteFile] %s\n", fname);
@@ -837,8 +852,9 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
     // check that the current version is equal to or less than the version
     // that wants to be written
     ver = file_rb->getCurrentVersion();
-    if (ver != version) // trying to commit an old version
+    if (ver != version) { // trying to commit an old version
       return TS_ERR_WRITE_FILE;
+    }
   }
   // use rollback object to update file with new content
   file_content = new textBuffer(size + 1);
@@ -894,8 +910,9 @@ EventResolve(const char *event_name)
 {
   alarm_t a;
 
-  if (!event_name)
+  if (!event_name) {
     return TS_ERR_PARAMS;
+  }
 
   a = get_event_id(event_name);
   lmgmt->alarm_keeper->resolveAlarm(a);
@@ -919,8 +936,9 @@ ActiveEventGetMlt(LLQ *active_events)
   int event_id;
   char *event_name;
 
-  if (!active_events)
+  if (!active_events) {
     return TS_ERR_PARAMS;
+  }
 
   // Alarms stores a hashtable of all active alarms where:
   // key = alarm_t,
@@ -936,8 +954,9 @@ ActiveEventGetMlt(LLQ *active_events)
     event_id   = ink_atoi(key);
     event_name = get_event_name(event_id);
     if (event_name) {
-      if (!enqueue(active_events, event_name)) // returns true if successful
+      if (!enqueue(active_events, event_name)) { // returns true if successful
         return TS_ERR_FAIL;
+      }
     }
   }
 
@@ -955,17 +974,20 @@ EventIsActive(const char *event_name, bool *is_current)
 {
   alarm_t a;
 
-  if (!event_name || !is_current)
+  if (!event_name || !is_current) {
     return TS_ERR_PARAMS;
+  }
 
   a = get_event_id(event_name);
   // consider an invalid event_name an error
-  if (a < 0)
+  if (a < 0) {
     return TS_ERR_PARAMS;
-  if (lmgmt->alarm_keeper->isCurrentAlarm(a))
+  }
+  if (lmgmt->alarm_keeper->isCurrentAlarm(a)) {
     *is_current = true; // currently an event
-  else
+  } else {
     *is_current = false;
+  }
 
   return TS_ERR_OKAY;
 }
@@ -1006,16 +1028,18 @@ SnapshotTake(const char *snapshot_name)
 {
   ats_scoped_str snapdir;
 
-  if (!snapshot_name)
+  if (!snapshot_name) {
     return TS_ERR_PARAMS;
+  }
 
   snapdir = RecConfigReadSnapshotDir();
 
   SnapResult result = configFiles->takeSnap(snapshot_name, snapdir);
-  if (result != SNAP_OK)
+  if (result != SNAP_OK) {
     return TS_ERR_FAIL;
-  else
+  } else {
     return TS_ERR_OKAY;
+  }
 }
 
 TSMgmtError
@@ -1023,16 +1047,18 @@ SnapshotRestore(const char *snapshot_name)
 {
   ats_scoped_str snapdir;
 
-  if (!snapshot_name)
+  if (!snapshot_name) {
     return TS_ERR_PARAMS;
+  }
 
   snapdir = RecConfigReadSnapshotDir();
 
   SnapResult result = configFiles->restoreSnap(snapshot_name, snapdir);
-  if (result != SNAP_OK)
+  if (result != SNAP_OK) {
     return TS_ERR_FAIL;
-  else
+  } else {
     return TS_ERR_OKAY;
+  }
 }
 
 TSMgmtError
@@ -1040,16 +1066,18 @@ SnapshotRemove(const char *snapshot_name)
 {
   ats_scoped_str snapdir;
 
-  if (!snapshot_name)
+  if (!snapshot_name) {
     return TS_ERR_PARAMS;
+  }
 
   snapdir = RecConfigReadSnapshotDir();
 
   SnapResult result = configFiles->removeSnap(snapshot_name, snapdir);
-  if (result != SNAP_OK)
+  if (result != SNAP_OK) {
     return TS_ERR_FAIL;
-  else
+  } else {
     return TS_ERR_OKAY;
+  }
 }
 
 /* based on FileManager.cc::displaySnapOption() */
@@ -1062,14 +1090,16 @@ SnapshotGetMlt(LLQ *snapshots)
   char *snap_name;
 
   snap_result = configFiles->WalkSnaps(&snap_list);
-  if (snap_result != SNAP_OK)
+  if (snap_result != SNAP_OK) {
     return TS_ERR_FAIL;
+  }
 
   num_snaps = snap_list.getNumEntries();
   for (int i = 0; i < num_snaps; i++) {
     snap_name = (char *)(snap_list[i]);
-    if (snap_name)
+    if (snap_name) {
       enqueue(snapshots, ats_strdup(snap_name));
+    }
   }
 
   return TS_ERR_OKAY;
@@ -1087,10 +1117,11 @@ SnapshotGetMlt(LLQ *snapshots)
 TSMgmtError
 StatsReset(bool cluster, const char *name)
 {
-  if (cluster)
+  if (cluster) {
     lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_CLEAR_STATS, name);
-  else
+  } else {
     lmgmt->clearStats(name);
+  }
   return TS_ERR_OKAY;
 }
 

@@ -66,8 +66,9 @@ Http2Stream::main_event_handler(int event, void *edata)
     if (e->cookie == &write_vio) {
       if (write_vio.mutex) {
         SCOPED_MUTEX_LOCK(lock, write_vio.mutex, this_ethread());
-        if (write_vio._cont && this->current_reader)
+        if (write_vio._cont && this->current_reader) {
           write_vio._cont->handleEvent(event, &write_vio);
+        }
       }
     } else {
       update_write_request(write_vio.get_reader(), INT64_MAX, true);
@@ -79,8 +80,9 @@ Http2Stream::main_event_handler(int event, void *edata)
     if (e->cookie == &read_vio) {
       if (read_vio.mutex) {
         SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
-        if (read_vio._cont && this->current_reader)
+        if (read_vio._cont && this->current_reader) {
           read_vio._cont->handleEvent(event, &read_vio);
+        }
       }
     } else {
       this->update_read_request(INT64_MAX, true);
@@ -273,8 +275,9 @@ Http2Stream::do_io_close(int /* flags */)
     clear_timers();
     clear_io_events();
 
-    if (cross_thread_event != NULL)
+    if (cross_thread_event != NULL) {
       cross_thread_event->cancel();
+    }
     cross_thread_event = NULL;
 
     // Send an event to get the stream to kill itself
@@ -334,8 +337,9 @@ Http2Stream::initiating_close()
       // Send an event to get the stream to kill itself
       // Thus if any events for the stream are in the queue, they will be handled first.
       // We have marked the stream closed, so no new events should be queued
-      if (cross_thread_event != NULL)
+      if (cross_thread_event != NULL) {
         cross_thread_event->cancel();
+      }
       cross_thread_event = this_ethread()->schedule_imm(this, VC_EVENT_EOS);
     }
   }
@@ -361,8 +365,9 @@ Http2Stream::send_tracked_event(Event *in_event, int send_event, VIO *vio)
 void
 Http2Stream::update_read_request(int64_t read_len, bool call_update)
 {
-  if (closed || this->current_reader == NULL)
+  if (closed || this->current_reader == NULL) {
     return;
+  }
   if (this->get_thread() != this_ethread()) {
     SCOPED_MUTEX_LOCK(stream_lock, this->mutex, this_ethread());
     if (cross_thread_event == NULL) {
@@ -378,8 +383,9 @@ Http2Stream::update_read_request(int64_t read_len, bool call_update)
     ink_release_assert(this_ethread() == this->_thread);
     if (read_vio.buffer.writer() != (&request_buffer)) {
       int64_t num_to_read = read_vio.nbytes - read_vio.ndone;
-      if (num_to_read > read_len)
+      if (num_to_read > read_len) {
         num_to_read = read_len;
+      }
       if (num_to_read > 0) {
         int bytes_added = read_vio.buffer.writer()->write(request_reader, num_to_read);
         if (bytes_added > 0) {
@@ -419,8 +425,9 @@ bool
 Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool call_update)
 {
   bool retval = true;
-  if (closed || parent == NULL)
+  if (closed || parent == NULL) {
     return retval;
+  }
   if (this->get_thread() != this_ethread()) {
     SCOPED_MUTEX_LOCK(stream_lock, this->mutex, this_ethread());
     if (cross_thread_event == NULL) {
@@ -437,11 +444,13 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   int64_t total_added = 0;
   if (write_vio.nbytes > 0 && write_vio.ndone < write_vio.nbytes) {
     int64_t num_to_write = write_vio.nbytes - write_vio.ndone;
-    if (num_to_write > write_len)
-      num_to_write      = write_len;
+    if (num_to_write > write_len) {
+      num_to_write = write_len;
+    }
     int64_t bytes_avail = buf_reader->read_avail();
-    if (bytes_avail > num_to_write)
+    if (bytes_avail > num_to_write) {
       bytes_avail = num_to_write;
+    }
     while (total_added < bytes_avail) {
       int64_t bytes_added = response_buffer.write(buf_reader, bytes_avail);
       buf_reader->consume(bytes_added);
@@ -593,8 +602,9 @@ check_stream_thread(Continuation *cont)
   Http2Stream *stream = dynamic_cast<Http2Stream *>(cont);
   if (stream) {
     return stream->get_thread() == this_ethread();
-  } else
+  } else {
     return true;
+  }
 }
 bool
 check_continuation(Continuation *cont)
@@ -712,10 +722,12 @@ Http2Stream::clear_timers()
 void
 Http2Stream::clear_io_events()
 {
-  if (read_event)
+  if (read_event) {
     read_event->cancel();
+  }
   read_event = NULL;
-  if (write_event)
+  if (write_event) {
     write_event->cancel();
+  }
   write_event = NULL;
 }

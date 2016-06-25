@@ -55,8 +55,9 @@ send_throttle_message(NetAccept *na)
   int n = 0;
   while (check_net_throttle(ACCEPT, Thread::get_hrtime()) && n < THROTTLE_AT_ONCE - 1 && (socketManager.poll(&afd, 1, 0) > 0)) {
     int res = 0;
-    if ((res = na->server.accept(&con[n])) < 0)
+    if ((res = na->server.accept(&con[n])) < 0) {
       return res;
+    }
     n++;
   }
   safe_delay(net_throttle_delay / 2);
@@ -66,8 +67,9 @@ send_throttle_message(NetAccept *na)
     socketManager.write(con[i].fd, unix_netProcessor.throttle_error_message, strlen(unix_netProcessor.throttle_error_message));
   }
   safe_delay(net_throttle_delay / 2);
-  for (i = 0; i < n; i++)
+  for (i = 0; i < n; i++) {
     con[i].close();
+  }
   return 0;
 }
 
@@ -94,12 +96,13 @@ net_accept(NetAccept *na, void *ep, bool blockable)
   // added by YTS Team, yamsat
   do {
     if ((res = na->server.accept(&con)) < 0) {
-      if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE)
+      if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE) {
         goto Ldone;
+      }
       if (na->server.fd != NO_FD && !na->action_->cancelled) {
-        if (!blockable)
+        if (!blockable) {
           na->action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
-        else {
+        } else {
           SCOPED_MUTEX_LOCK(lock, na->action_->mutex, e->ethread);
           na->action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
         }
@@ -109,8 +112,9 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     }
 
     vc = static_cast<UnixNetVConnection *>(na->getNetProcessor()->allocate_vc(e->ethread));
-    if (!vc)
+    if (!vc) {
       goto Ldone; // note: @a con will clean up the socket when it goes out of scope.
+    }
 
     ++count;
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
@@ -124,15 +128,17 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->closed = 0;
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
 
-    if (e->ethread->is_event_type(na->etype))
+    if (e->ethread->is_event_type(na->etype)) {
       vc->handleEvent(EVENT_NONE, e);
-    else
+    } else {
       eventProcessor.schedule_imm(vc, na->etype);
+    }
   } while (loop);
 
 Ldone:
-  if (!blockable)
+  if (!blockable) {
     MUTEX_UNTAKE_LOCK(na->action_->mutex.get(), e->ethread);
+  }
   return count;
 }
 
@@ -160,16 +166,18 @@ NetAccept::init_accept_loop(const char *thr_name)
 void
 NetAccept::init_accept(EThread *t, bool isTransparent)
 {
-  if (!t)
+  if (!t) {
     t = eventProcessor.assign_thread(etype);
+  }
 
   if (!action_->continuation->mutex) {
     action_->continuation->mutex = t->mutex;
     action_->mutex               = t->mutex;
   }
 
-  if (do_listen(NON_BLOCKING, isTransparent))
+  if (do_listen(NON_BLOCKING, isTransparent)) {
     return;
+  }
 
   SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
   period = -HRTIME_MSECONDS(net_accept_period);
@@ -181,13 +189,15 @@ NetAccept::init_accept_per_thread(bool isTransparent)
 {
   int i, n;
 
-  if (do_listen(NON_BLOCKING, isTransparent))
+  if (do_listen(NON_BLOCKING, isTransparent)) {
     return;
+  }
 
-  if (accept_fn == net_accept)
+  if (accept_fn == net_accept) {
     SET_HANDLER((NetAcceptHandler)&NetAccept::acceptFastEvent);
-  else
+  } else {
     SET_HANDLER((NetAcceptHandler)&NetAccept::acceptEvent);
+  }
 
   period = -HRTIME_MSECONDS(net_accept_period);
   n      = eventProcessor.n_threads_for_type[ET_NET];
@@ -204,8 +214,9 @@ NetAccept::init_accept_per_thread(bool isTransparent)
     EThread *t         = eventProcessor.eventthread[ET_NET][i];
     PollDescriptor *pd = get_PollDescriptor(t);
 
-    if (a->ep.start(pd, a, EVENTIO_READ) < 0)
+    if (a->ep.start(pd, a, EVENTIO_READ) < 0) {
       Warning("[NetAccept::init_accept_per_thread]:error starting EventIO");
+    }
 
     a->mutex = get_NetHandler(t)->mutex;
     t->schedule_every(a, period, etype);
@@ -224,14 +235,16 @@ NetAccept::do_listen(bool non_blocking, bool transparent)
     }
   } else {
   Lretry:
-    if ((res = server.listen(non_blocking, recv_bufsize, send_bufsize, transparent)))
+    if ((res = server.listen(non_blocking, recv_bufsize, send_bufsize, transparent))) {
       Warning("unable to listen on port %d: %d %d, %s", ntohs(server.accept_addr.port()), res, errno, strerror(errno));
+    }
   }
   if (callback_on_open && !action_->cancelled) {
-    if (res)
+    if (res) {
       action_->continuation->handleEvent(NET_EVENT_ACCEPT_FAILED, this);
-    else
+    } else {
       action_->continuation->handleEvent(NET_EVENT_ACCEPT_SUCCEED, this);
+    }
     mutex = NULL;
   }
   return res;
@@ -266,8 +279,9 @@ NetAccept::do_blocking_accept(EThread *t)
     Lerror:
       int seriousness = accept_error_seriousness(res);
       if (seriousness >= 0) { // not so bad
-        if (!seriousness)     // bad enough to warn about
+        if (!seriousness) {   // bad enough to warn about
           check_transient_accept_error(res);
+        }
         safe_delay(net_throttle_delay);
         return 0;
       }
@@ -382,8 +396,9 @@ NetAccept::acceptFastEvent(int event, void *ep)
         if (unlikely(socketManager.set_sndbuf_size(fd, send_bufsize))) {
           bufsz = ROUNDUP(send_bufsize, 1024);
           while (bufsz > 0) {
-            if (!socketManager.set_sndbuf_size(fd, bufsz))
+            if (!socketManager.set_sndbuf_size(fd, bufsz)) {
               break;
+            }
             bufsz -= 1024;
           }
         }
@@ -392,8 +407,9 @@ NetAccept::acceptFastEvent(int event, void *ep)
         if (unlikely(socketManager.set_rcvbuf_size(fd, recv_bufsize))) {
           bufsz = ROUNDUP(recv_bufsize, 1024);
           while (bufsz > 0) {
-            if (!socketManager.set_rcvbuf_size(fd, bufsz))
+            if (!socketManager.set_rcvbuf_size(fd, bufsz)) {
               break;
+            }
             bufsz -= 1024;
           }
         }
@@ -436,8 +452,9 @@ NetAccept::acceptFastEvent(int event, void *ep)
         check_transient_accept_error(res);
         goto Ldone;
       }
-      if (!action_->cancelled)
+      if (!action_->cancelled) {
         action_->continuation->handleEvent(EVENT_ERROR, (void *)(intptr_t)res);
+      }
       goto Lerror;
     }
 
@@ -485,8 +502,9 @@ Ldone:
 Lerror:
   server.close();
   e->cancel();
-  if (vc)
+  if (vc) {
     vc->free(e->ethread);
+  }
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);
   delete this;
   return EVENT_DONE;
@@ -499,8 +517,9 @@ NetAccept::acceptLoopEvent(int event, Event *e)
   (void)e;
   EThread *t = this_ethread();
 
-  while (do_blocking_accept(t) >= 0)
+  while (do_blocking_accept(t) >= 0) {
     ;
+  }
 
   // Don't think this ever happens ...
   NET_DECREMENT_DYN_STAT(net_accepts_currently_open_stat);

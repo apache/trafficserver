@@ -136,8 +136,9 @@ print_err(const char *module, TSMgmtError err)
   err_msg = TSGetErrorMessage(err);
   printf("(%s) ERROR: %s\n", module, err_msg);
 
-  if (err_msg)
+  if (err_msg) {
     TSfree(err_msg);
+  }
 }
 
 /*--------------------------------------------------------------
@@ -153,8 +154,9 @@ print_ports(TSPortList list)
   for (i = 0; i < count; i++) {
     port_ele = TSPortListDequeue(list);
     printf(" %d \n", port_ele->port_a);
-    if (port_ele->port_b != -1)
+    if (port_ele->port_b != -1) {
       printf(" %d - %d \n", port_ele->port_a, port_ele->port_b);
+    }
     TSPortListEnqueue(list, port_ele);
   }
 
@@ -171,8 +173,9 @@ print_string_list(TSStringList list)
   char *str;
   char buf[1000];
 
-  if (!list)
+  if (!list) {
     return;
+  }
   count = TSStringListLen(list);
   for (i = 0; i < count; i++) {
     str = TSStringListDequeue(list);
@@ -215,8 +218,9 @@ print_domain_list(TSDomainList list)
   count = TSDomainListLen(list);
   for (i = 0; i < count; i++) {
     proxy = TSDomainListDequeue(list);
-    if (proxy->domain_val)
+    if (proxy->domain_val) {
       printf("%s:%d\n", proxy->domain_val, proxy->port);
+    }
     TSDomainListEnqueue(list, proxy);
   }
 }
@@ -224,19 +228,22 @@ print_domain_list(TSDomainList list)
 void
 print_ip_addr_ele(TSIpAddrEle *ele)
 {
-  if (!ele)
+  if (!ele) {
     return;
+  }
 
   if (ele->type == TS_IP_RANGE) {
-    if (ele->cidr_a != -1)
+    if (ele->cidr_a != -1) {
       printf("IP_addr: %s/%d - %s/%d\n", ele->ip_a, ele->cidr_a, ele->ip_b, ele->cidr_b);
-    else
+    } else {
       printf("IP_addr: %s - %s\n", ele->ip_a, ele->ip_b);
+    }
   } else {
-    if (ele->cidr_a != -1)
+    if (ele->cidr_a != -1) {
       printf("IP_addr: %s/%d \n", ele->ip_a, ele->cidr_a);
-    else
+    } else {
       printf("IP_addr: %s \n", ele->ip_a);
+    }
   }
 }
 
@@ -307,14 +314,17 @@ print_pd_sspec(TSPdSsFormat info)
   printf("\ttime: %d:%d-%d:%d\n", info.sec_spec.time.hour_a, info.sec_spec.time.min_a, info.sec_spec.time.hour_b,
          info.sec_spec.time.min_b);
 
-  if (info.sec_spec.src_ip)
+  if (info.sec_spec.src_ip) {
     printf("\tsrc_ip: %s\n", info.sec_spec.src_ip);
+  }
 
-  if (info.sec_spec.prefix)
+  if (info.sec_spec.prefix) {
     printf("\tprefix: %s\n", info.sec_spec.prefix);
+  }
 
-  if (info.sec_spec.suffix)
+  if (info.sec_spec.suffix) {
     printf("\tsuffix: %s\n", info.sec_spec.suffix);
+  }
 
   printf("\tport-a: %d\n", info.sec_spec.port->port_a);
   printf("\tport-b: %d\n", info.sec_spec.port->port_b);
@@ -409,15 +419,17 @@ print_cache_ele(TSCacheEle *ele)
     break;
   case TS_CACHE_PIN_IN_CACHE:
     time_str = hms_time_to_string(ele->time_period);
-    if (!time_str)
+    if (!time_str) {
       return;
+    }
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "pin-in-cache=%s", time_str);
     ats_free(time_str);
     break;
   case TS_CACHE_REVALIDATE:
     time_str = hms_time_to_string(ele->time_period);
-    if (!time_str)
+    if (!time_str) {
       return;
+    }
     snprintf(buf + buf_pos, sizeof(buf) - buf_pos, "revalidate=%s", time_str);
     ats_free(time_str);
     break;
@@ -748,8 +760,9 @@ print_storage_ele(TSStorageEle *ele)
     return;
   }
 
-  if (ele->pathname)
+  if (ele->pathname) {
     printf("pathname=%s, size=%d\n", ele->pathname, ele->size);
+  }
 }
 
 void
@@ -865,17 +878,19 @@ start_TS(char *tsArgs)
   strtok(tsArgs, ":");
   args = strtok(NULL, ":");
   if (args) {
-    if (strcmp(args, "all\n") == 0)
+    if (strcmp(args, "all\n") == 0) {
       clear = TS_CACHE_CLEAR_CACHE;
-    else if (strcmp(args, "hostdb\n") == 0)
+    } else if (strcmp(args, "hostdb\n") == 0) {
       clear = TS_CACHE_CLEAR_HOSTDB;
+    }
   } else {
     clear = TS_CACHE_CLEAR_NONE;
   }
 
   printf("STARTING PROXY with cache: %d\n", clear);
-  if ((ret = TSProxyStateSet(TS_PROXY_ON, clear)) != TS_ERR_OKAY)
+  if ((ret = TSProxyStateSet(TS_PROXY_ON, clear)) != TS_ERR_OKAY) {
     printf("[TSProxyStateSet] turn on FAILED\n");
+  }
   print_err("start_TS", ret);
 }
 
@@ -886,8 +901,9 @@ stop_TS()
   TSMgmtError ret;
 
   printf("STOPPING PROXY\n");
-  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE)) != TS_ERR_OKAY)
+  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE)) != TS_ERR_OKAY) {
     printf("[TSProxyStateSet] turn off FAILED\n");
+  }
   print_err("stop_TS", ret);
 }
 
@@ -898,8 +914,9 @@ restart()
   TSMgmtError ret;
 
   printf("RESTART - Cluster wide\n");
-  if ((ret = TSRestart(true)) != TS_ERR_OKAY)
+  if ((ret = TSRestart(true)) != TS_ERR_OKAY) {
     printf("[TSRestart] FAILED\n");
+  }
 
   print_err("restart", ret);
 }
@@ -911,8 +928,9 @@ reconfigure()
   TSMgmtError ret;
 
   printf("RECONFIGURE\n");
-  if ((ret = TSReconfigure()) != TS_ERR_OKAY)
+  if ((ret = TSReconfigure()) != TS_ERR_OKAY) {
     printf("[TSReconfigure] FAILED\n");
+  }
 
   print_err("reconfigure", ret);
 }
@@ -945,8 +963,9 @@ bounce()
   TSMgmtError ret;
 
   printf("BOUNCER - Cluster wide\n");
-  if ((ret = TSBounce(true)) != TS_ERR_OKAY)
+  if ((ret = TSBounce(true)) != TS_ERR_OKAY) {
     printf("[TSBounce] FAILED\n");
+  }
 
   print_err("bounce", ret);
 }
@@ -977,24 +996,27 @@ test_error_records()
   ret = TSRecordGetInt("proy.config.cop.core_signal", &port1);
   if (ret != TS_ERR_OKAY) {
     print_err("TSRecordGetInt", ret);
-  } else
+  } else {
     printf("[TSRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port1);
+  }
 
   // test set integer
   ret = TSRecordSetInt("proy.config.cop.core_signal", new_port, &action);
   print_err("TSRecordSetInt", ret);
 
   printf("\n");
-  if (TSRecordGetCounter("proxy.press.socks.connections_successful", &ctr1) != TS_ERR_OKAY)
+  if (TSRecordGetCounter("proxy.press.socks.connections_successful", &ctr1) != TS_ERR_OKAY) {
     printf("TSRecordGetCounter FAILED!\n");
-  else
+  } else {
     printf("[TSRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr1);
+  }
 
   printf("\n");
-  if (TSRecordGetFloat("proxy.conig.http.cache.fuzz.probability", &flt1) != TS_ERR_OKAY)
+  if (TSRecordGetFloat("proxy.conig.http.cache.fuzz.probability", &flt1) != TS_ERR_OKAY) {
     printf("TSRecordGetFloat FAILED!\n");
-  else
+  } else {
     printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt1);
+  }
 }
 
 /* ------------------------------------------------------------------------
@@ -1054,26 +1076,29 @@ test_records()
 #if TEST_STRING
   // retrieve an string value record using GetString
   err = TSRecordGetString("proxy.config.proxy_name", &rec_value);
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     print_err("TSRecordGetString", err);
-  else
+  } else {
     printf("[TSRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
+  }
   TSfree(rec_value);
   rec_value = NULL;
 
   // test RecordSet
   err = TSRecordSetString("proxy.config.proxy_name", (TSString)new_str, &action);
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     print_err("TSRecordSetString", err);
-  else
+  } else {
     printf("[TSRecordSetString] proxy.config.proxy_name=%s\n", new_str);
+  }
 
   // get
   err = TSRecordGetString("proxy.config.proxy_name", &rec_value);
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     print_err("TSRecordGetString", err);
-  else
+  } else {
     printf("[TSRecordGetString] proxy.config.proxy_name=%s\n", rec_value);
+  }
   printf("\n");
   TSfree(rec_value);
 #endif
@@ -1081,74 +1106,85 @@ test_records()
 #if TEST_INT
   printf("\n");
   // test get integer
-  if (TSRecordGetInt("proxy.config.cop.core_signal", &port1) != TS_ERR_OKAY)
+  if (TSRecordGetInt("proxy.config.cop.core_signal", &port1) != TS_ERR_OKAY) {
     printf("TSRecordGetInt FAILED!\n");
-  else
+  } else {
     printf("[TSRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port1);
+  }
 
   // test set integer
-  if (TSRecordSetInt("proxy.config.cop.core_signal", new_port, &action) != TS_ERR_OKAY)
+  if (TSRecordSetInt("proxy.config.cop.core_signal", new_port, &action) != TS_ERR_OKAY) {
     printf("TSRecordSetInt FAILED!\n");
-  else
+  } else {
     printf("[TSRecordSetInt] proxy.config.cop.core_signal=%" PRId64 " \n", new_port);
+  }
 
-  if (TSRecordGetInt("proxy.config.cop.core_signal", &port2) != TS_ERR_OKAY)
+  if (TSRecordGetInt("proxy.config.cop.core_signal", &port2) != TS_ERR_OKAY) {
     printf("TSRecordGetInt FAILED!\n");
-  else
+  } else {
     printf("[TSRecordGetInt] proxy.config.cop.core_signal=%" PRId64 " \n", port2);
+  }
   printf("\n");
 #endif
 
 #if TEST_COUNTER
   printf("\n");
 
-  if (TSRecordGetCounter("proxy.process.socks.connections_successful", &ctr1) != TS_ERR_OKAY)
+  if (TSRecordGetCounter("proxy.process.socks.connections_successful", &ctr1) != TS_ERR_OKAY) {
     printf("TSRecordGetCounter FAILED!\n");
-  else
+  } else {
     printf("[TSRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr1);
+  }
 
-  if (TSRecordSetCounter("proxy.process.socks.connections_successful", new_ctr, &action) != TS_ERR_OKAY)
+  if (TSRecordSetCounter("proxy.process.socks.connections_successful", new_ctr, &action) != TS_ERR_OKAY) {
     printf("TSRecordSetCounter FAILED!\n");
-  else
+  } else {
     printf("[TSRecordSetCounter] proxy.process.socks.connections_successful=%" PRId64 " \n", new_ctr);
+  }
 
-  if (TSRecordGetCounter("proxy.process.socks.connections_successful", &ctr2) != TS_ERR_OKAY)
+  if (TSRecordGetCounter("proxy.process.socks.connections_successful", &ctr2) != TS_ERR_OKAY) {
     printf("TSRecordGetCounter FAILED!\n");
-  else
+  } else {
     printf("[TSRecordGetCounter]proxy.process.socks.connections_successful=%" PRId64 " \n", ctr2);
+  }
   printf("\n");
 #endif
 
 #if TEST_FLOAT
   printf("\n");
-  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt1) != TS_ERR_OKAY)
+  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt1) != TS_ERR_OKAY) {
     printf("TSRecordGetFloat FAILED!\n");
-  else
+  } else {
     printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt1);
+  }
 
-  if (TSRecordSetFloat("proxy.config.http.cache.fuzz.probability", new_flt, &action) != TS_ERR_OKAY)
+  if (TSRecordSetFloat("proxy.config.http.cache.fuzz.probability", new_flt, &action) != TS_ERR_OKAY) {
     printf("TSRecordSetFloat FAILED!\n");
-  else
+  } else {
     printf("[TSRecordSetFloat] proxy.config.http.cache.fuzz.probability=%f\n", new_flt);
+  }
 
-  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != TS_ERR_OKAY)
+  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != TS_ERR_OKAY) {
     printf("TSRecordGetFloat FAILED!\n");
-  else
+  } else {
     printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt2);
+  }
   printf("\n");
 #endif
 
 #if TEST_REC_SET
   printf("\n");
-  if (TSRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3456", &action) != TS_ERR_OKAY)
+  if (TSRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3456", &action) != TS_ERR_OKAY) {
     printf("TSRecordSet FAILED!\n");
-  else
+  } else {
     printf("[TSRecordSet] proxy.config.http.cache.fuzz.probability=-0.3456\n");
+  }
 
-  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != TS_ERR_OKAY)
+  if (TSRecordGetFloat("proxy.config.http.cache.fuzz.probability", &flt2) != TS_ERR_OKAY) {
     printf("TSRecordGetFloat FAILED!\n");
-  else
+  } else {
     printf("[TSRecordGetFloat] proxy.config.http.cache.fuzz.probability=%f\n", flt2);
+  }
 #endif
 }
 
@@ -1165,9 +1201,9 @@ test_rec_get(char *rec_name)
 
   // retrieve a string value record using generic RecordGet
   rec_ele = TSRecordEleCreate();
-  if ((ret = TSRecordGet(name, rec_ele)) != TS_ERR_OKAY)
+  if ((ret = TSRecordGet(name, rec_ele)) != TS_ERR_OKAY) {
     printf("TSRecordGet FAILED!\n");
-  else {
+  } else {
     switch (rec_ele->rec_type) {
     case TS_REC_INT:
       printf("[TSRecordGet] %s=%" PRId64 "\n", name, rec_ele->valueT.int_val);
@@ -1368,10 +1404,12 @@ test_read_url(bool valid)
       printf("--------------------------------------------------------------\n");
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
-    if (body)
+    if (body) {
       TSfree(body);
-    if (header)
+    }
+    if (header) {
       TSfree(header);
+    }
 
     err = TSReadFromUrlEx("http://sadfasdfi.com:80/", &header, &headerSize, &body, &bodySize, 50000);
     if (err != TS_ERR_OKAY) {
@@ -1382,10 +1420,12 @@ test_read_url(bool valid)
       printf("-------------------------------------------------------------\n");
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
-    if (header)
+    if (header) {
       TSfree(header);
-    if (body)
+    }
+    if (body) {
       TSfree(body);
+    }
 
   } else { // use valid urls
     err = TSReadFromUrlEx("lakota.example.com:80/", &header, &headerSize, &body, &bodySize, 50000);
@@ -1398,10 +1438,12 @@ test_read_url(bool valid)
       printf("-------------------------------------------------------------\n");
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
-    if (header)
+    if (header) {
       TSfree(header);
-    if (body)
+    }
+    if (body) {
       TSfree(body);
+    }
 
     // read second url
     err = TSReadFromUrlEx("http://www.apache.org:80/index.html", &header, &headerSize, &body, &bodySize, 50000);
@@ -1413,10 +1455,12 @@ test_read_url(bool valid)
       printf("-------------------------------------------------------------\n");
       printf("The body...\n%s\n%d\n", body, bodySize);
     }
-    if (header)
+    if (header) {
       TSfree(header);
-    if (body)
+    }
+    if (body) {
       TSfree(body);
+    }
   }
 }
 
@@ -1433,9 +1477,9 @@ test_read_file()
   int f_ver    = -1;
 
   printf("\n");
-  if (TSConfigFileRead(TS_FNAME_HOSTING, &f_text, &f_size, &f_ver) != TS_ERR_OKAY)
+  if (TSConfigFileRead(TS_FNAME_HOSTING, &f_text, &f_size, &f_ver) != TS_ERR_OKAY) {
     printf("[TSConfigFileRead] FAILED!\n");
-  else {
+  } else {
     printf("[TSConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
     TSfree(f_text);
   }
@@ -1457,16 +1501,17 @@ test_write_file()
   int new_f_size    = strlen(new_f_text);
 
   printf("\n");
-  if (TSConfigFileWrite(TS_FNAME_HOSTING, new_f_text, new_f_size, -1) != TS_ERR_OKAY)
+  if (TSConfigFileWrite(TS_FNAME_HOSTING, new_f_text, new_f_size, -1) != TS_ERR_OKAY) {
     printf("[TSConfigFileWrite] FAILED!\n");
-  else
+  } else {
     printf("[TSConfigFileWrite] SUCCESS!\n");
+  }
   printf("\n");
 
   // should free f_text???
-  if (TSConfigFileRead(TS_FNAME_HOSTING, &f_text, &f_size, &f_ver) != TS_ERR_OKAY)
+  if (TSConfigFileRead(TS_FNAME_HOSTING, &f_text, &f_size, &f_ver) != TS_ERR_OKAY) {
     printf("[TSConfigFileRead] FAILED!\n");
-  else {
+  } else {
     printf("[TSConfigFileRead]\n\tFile Size=%d, Version=%d\n%s\n", f_size, f_ver, f_text);
     TSfree(f_text);
   }
@@ -1526,8 +1571,9 @@ test_cfg_context_get(char *args)
   }
 
   ctx = TSCfgContextCreate(file);
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
     printf("ERROR READING FILE\n");
+  }
 
   int count = TSCfgContextGetCount(ctx);
   printf("%d rules in file: %s\n", count, name);
@@ -1593,8 +1639,9 @@ test_cfg_context_move(char *args)
   }
 
   ctx = TSCfgContextCreate(file);
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
     printf("ERROR READING FILE\n");
+  }
 
   int count = TSCfgContextGetCount(ctx);
   printf("%d rules in file: %s\n", count, name);
@@ -1643,8 +1690,9 @@ test_cfg_context_ops()
 
   ctx = TSCfgContextCreate(TS_FNAME_VADDRS);
 
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
     printf("ERROR READING FILE\n");
+  }
 
   printf("\nBEFORE CHANGE:\n");
   //  print_VirtIpAddr_ele_list(ctx);
@@ -1763,8 +1811,9 @@ test_cfg_plugin()
   TSPluginEle *ele;
 
   ctx = TSCfgContextCreate(TS_FNAME_PLUGIN);
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
     printf("ERROR READING FILE\n");
+  }
 
   // retrieve and modify ele
   printf("test_cfg_plugin: modifying the first ele...\n");
@@ -1812,16 +1861,18 @@ test_cfg_socks()
   TSSocksEle *ele;
 
   ctx = TSCfgContextCreate(TS_FNAME_SOCKS);
-  if (TSCfgContextGet(ctx) != TS_ERR_OKAY)
+  if (TSCfgContextGet(ctx) != TS_ERR_OKAY) {
     printf("ERROR READING FILE\n");
+  }
 
   // retrieving an ele
   printf("test_socks_set: modifying the fourth ele...\n");
   cfg_ele = TSCfgContextGetEleAt(ctx, 3);
   ele     = (TSSocksEle *)cfg_ele;
   if (ele) {
-    if (ele->rr != TS_RR_NONE)
+    if (ele->rr != TS_RR_NONE) {
       ele->rr = TS_RR_FALSE;
+    }
   }
 
   // remove the second ele
@@ -1922,10 +1973,11 @@ check_active(char *event_name)
   ret = TSEventIsActive(event_name, &active);
   print_err("TSEventIsActive", ret);
 
-  if (active)
+  if (active) {
     printf("%s is ACTIVE\n", event_name);
-  else
+  } else {
     printf("%s is NOT-ACTIVE\n", event_name);
+  }
 
   return active;
 }
@@ -2025,8 +2077,9 @@ print_snapshots()
     int num = TSStringListLen(list);
     for (int i = 0; i < num; i++) {
       name = TSStringListDequeue(list);
-      if (name)
+      if (name) {
         printf("%s\n", name);
+      }
       TSfree(name);
     }
   }
@@ -2261,14 +2314,16 @@ sync_test()
   printf("[TSRecordSetInt] proxy.config.cluster.cluster_port\n\tAction Should: [%d]\n\tAction is    : [%d]\n", TS_ACTION_RESTART,
          action);
 
-  if (TSRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3333", &action) != TS_ERR_OKAY)
+  if (TSRecordSet("proxy.config.http.cache.fuzz.probability", "-0.3333", &action) != TS_ERR_OKAY) {
     printf("TSRecordSet FAILED!\n");
-  else
+  } else {
     printf("[TSRecordSet] proxy.config.http.cache.fuzz.probability=-0.3333\n");
+  }
 
   TSMgmtError ret;
-  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE)) != TS_ERR_OKAY)
+  if ((ret = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE)) != TS_ERR_OKAY) {
     printf("[TSProxyStateSet] turn off FAILED\n");
+  }
   print_err("stop_TS", ret);
 }
 

@@ -170,8 +170,9 @@ S3Config::parse_config(const char *config)
 
       // Skip leading white spaces
       pos1 = line;
-      while (*pos1 && isspace(*pos1))
+      while (*pos1 && isspace(*pos1)) {
         ++pos1;
+      }
       if (!*pos1 || ('#' == *pos1)) {
         continue;
       }
@@ -179,8 +180,9 @@ S3Config::parse_config(const char *config)
       // Skip trailig white spaces
       pos2 = pos1;
       pos1 = pos2 + strlen(pos2) - 1;
-      while ((pos1 > pos2) && isspace(*pos1))
+      while ((pos1 > pos2) && isspace(*pos1)) {
         *(pos1--) = '\0';
+      }
       if (pos1 == pos2) {
         continue;
       }
@@ -296,8 +298,9 @@ str_concat(char *dst, size_t dst_len, const char *src, size_t src_len)
 {
   size_t to_copy = (src_len < dst_len) ? src_len : dst_len;
 
-  if (to_copy > 0)
+  if (to_copy > 0) {
     (void)strncat(dst, src, to_copy);
+  }
 
   return to_copy;
 }
@@ -382,11 +385,13 @@ S3Request::authorize(S3Config *s3)
     TSDebug(PLUGIN_NAME, "Signature string is:");
     // ToDo: This should include the Content-MD5 and Content-Type (for POST)
     TSDebug(PLUGIN_NAME, "%.*s", method_len, method);
-    if (con_md5)
+    if (con_md5) {
       TSDebug(PLUGIN_NAME, "%.*s", con_md5_len, con_md5);
+    }
 
-    if (con_type)
+    if (con_type) {
       TSDebug(PLUGIN_NAME, "%.*s", con_type_len, con_type);
+    }
 
     TSDebug(PLUGIN_NAME, "%.*s", date_len, date);
 

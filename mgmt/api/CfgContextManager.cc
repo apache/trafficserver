@@ -67,8 +67,9 @@ CfgContextCreate(TSFileNameT file)
 TSMgmtError
 CfgContextDestroy(CfgContext *ctx)
 {
-  if (!ctx)
+  if (!ctx) {
     return TS_ERR_PARAMS;
+  }
   delete ctx;
   return TS_ERR_OKAY;
 }
@@ -97,8 +98,9 @@ CfgContextCommit(CfgContext *ctx, LLQ *errRules)
   int len           = 0;
 
   ink_assert(ctx);
-  if (!ctx)
+  if (!ctx) {
     return TS_ERR_PARAMS;
+  }
 
   new_text    = (char *)ats_malloc(max_file_size + 1);
   new_text[0] = '\0';
@@ -126,8 +128,9 @@ CfgContextCommit(CfgContext *ctx, LLQ *errRules)
     ink_strlcat(new_text, "\n", max_file_size + 1);
 
     ats_free(rule);
-    if (ele->getRuleType() != TS_TYPE_COMMENT)
+    if (ele->getRuleType() != TS_TYPE_COMMENT) {
       index++;
+    }
     ele = ctx->next(ele);
   }
 
@@ -135,8 +138,9 @@ CfgContextCommit(CfgContext *ctx, LLQ *errRules)
   ver = ctx->getVersion();
   ret = WriteFile(ctx->getFilename(), new_text, size, ver);
   ats_free(new_text);
-  if (ret != TS_ERR_OKAY)
+  if (ret != TS_ERR_OKAY) {
     return TS_ERR_FAIL; // couldn't write file
+  }
 
   return err;
 }
@@ -159,16 +163,18 @@ CfgContextGet(CfgContext *ctx)
   CfgEleObj *ele      = NULL;
 
   ink_assert(ctx);
-  if (!ctx)
+  if (!ctx) {
     return TS_ERR_PARAMS;
+  }
 
   // get copy of the file
   ret = ReadFile(ctx->getFilename(), &old_text, &size, &ver);
   if (ret != TS_ERR_OKAY) {
     // TODO: Hmmm, this looks almost like a memory leak, why the strcmp ??
-    if (old_text && strcmp(old_text, "") != 0)
+    if (old_text && strcmp(old_text, "") != 0) {
       ats_free(old_text); // need to free memory
-    return ret;           // Pass the error code along
+    }
+    return ret; // Pass the error code along
   }
   // store version number
   ctx->setVersion(ver);
@@ -192,8 +198,9 @@ CfgContextGet(CfgContext *ctx)
   }
   delete (rule_list); // free RuleList memory
   // TODO: Hmmm, this looks almost like a memory leak, why the strcmp ??
-  if (old_text && strcmp(old_text, "") != 0)
+  if (old_text && strcmp(old_text, "") != 0) {
     ats_free(old_text); // need to free memory
+  }
   return TS_ERR_OKAY;
 }
 
@@ -213,8 +220,9 @@ CfgContextGetCount(CfgContext *ctx)
   int count = 0;
 
   ink_assert(ctx);
-  if (!ctx)
+  if (!ctx) {
     return -1;
+  }
 
   // iterate CfgContext; return the first EleObj that's not a comment
   curr_ele = ctx->first(); // get head of ele
@@ -242,8 +250,9 @@ CfgContextGetObjAt(CfgContext *ctx, int index)
   int count = 0; // start counting from 0
 
   ink_assert(ctx);
-  if (!ctx)
+  if (!ctx) {
     return NULL;
+  }
 
   // iterate through the ctx, keep count of all NON-Comment Obj Objects
   curr_ele = ctx->first(); // get head of ele
@@ -278,8 +287,9 @@ CfgContextGetEleAt(CfgContext *ctx, int index)
   int count = 0; // start counting from 0
 
   ink_assert(ctx);
-  if (!ctx)
+  if (!ctx) {
     return NULL;
+  }
 
   // iterate through the ctx, keep count of all NON-Comment Ele Objects
   curr_ele = ctx->first(); // get head of ele
@@ -313,8 +323,9 @@ CfgContextGetFirst(CfgContext *ctx, TSCfgIterState *state)
   CfgEleObj *curr_ele;
 
   ink_assert(ctx && state);
-  if (!ctx || !state)
+  if (!ctx || !state) {
     return NULL;
+  }
 
   // iterate; return the first CfgEleObj that's not a comment
   curr_ele = ctx->first(); // get head of ele
@@ -343,8 +354,9 @@ CfgContextGetNext(CfgContext *ctx, TSCfgIterState *state)
   CfgEleObj *curr_ele;
 
   ink_assert(ctx && state);
-  if (!ctx || !state)
+  if (!ctx || !state) {
     return NULL;
+  }
 
   // iterate through the ctx, keep count of all NON-Comment Ele Objects
   // when count == state->index, then return next ele
@@ -387,12 +399,14 @@ CfgContextMoveEleUp(CfgContext *ctx, int index)
   TSMgmtError ret;
 
   ink_assert(ctx && index >= 0);
-  if (!ctx || index < 0)
+  if (!ctx || index < 0) {
     return TS_ERR_PARAMS;
+  }
 
   // moving the first Ele up does nothing
-  if (index == 0)
+  if (index == 0) {
     return TS_ERR_OKAY;
+  }
 
   // retrieve the ELe and make a copy of it
   curr_ele_obj = ctx->first(); // get head of ele
@@ -414,8 +428,9 @@ CfgContextMoveEleUp(CfgContext *ctx, int index)
     }
   }
   // reached end of CfgContext before hit index
-  if (count != index)
+  if (count != index) {
     return TS_ERR_FAIL;
+  }
 
   // reinsert  the ele at index-1
   ret = CfgContextInsertEleAt(ctx, ele_copy, index - 1);
@@ -440,16 +455,19 @@ CfgContextMoveEleDown(CfgContext *ctx, int index)
   int tot_ele;
 
   ink_assert(ctx);
-  if (!ctx)
+  if (!ctx) {
     return TS_ERR_PARAMS;
+  }
 
   tot_ele = CfgContextGetCount(ctx); // inefficient!
-  if (index < 0 || index >= tot_ele)
+  if (index < 0 || index >= tot_ele) {
     return TS_ERR_PARAMS;
+  }
 
   // moving the last ele down does nothing
-  if (index == (tot_ele - 1))
+  if (index == (tot_ele - 1)) {
     return TS_ERR_OKAY;
+  }
 
   // retrieve the ELe and make a copy of it
   curr_ele_obj = ctx->first(); // get head of ele
@@ -471,8 +489,9 @@ CfgContextMoveEleDown(CfgContext *ctx, int index)
     }
   }
   // reached end of CfgContext before hit index
-  if (count != index)
+  if (count != index) {
     return TS_ERR_FAIL;
+  }
 
   // reinsert  the ele at index+1
   ret = CfgContextInsertEleAt(ctx, ele_copy, index + 1);

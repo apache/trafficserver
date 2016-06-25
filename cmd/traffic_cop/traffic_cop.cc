@@ -456,8 +456,9 @@ transient_error(int error, int wait_ms)
 #if defined(ENOSR) && !defined(freebsd) && !defined(darwin)
   case ENOSR:
 #endif
-    if (wait_ms)
+    if (wait_ms) {
       millisleep(wait_ms);
+    }
     break;
 
   default:
@@ -491,10 +492,11 @@ config_read_string(const char *name, char *val, size_t val_len, bool miss_ok = f
 
   config = configTable.find(name);
   if (config == configTable.end()) {
-    if (miss_ok)
+    if (miss_ok) {
       return;
-    else
+    } else {
       goto ConfigStrFatalError;
+    }
   }
 
   if (config->second.data_type != RECD_STRING) {
@@ -516,10 +518,11 @@ config_read_int(const char *name, int *val, bool miss_ok = false)
 
   config = configTable.find(name);
   if (config == configTable.end()) {
-    if (miss_ok)
+    if (miss_ok) {
       return;
-    else
+    } else {
       goto ConfigIntFatalError;
+    }
   }
 
   if (config->second.data_type != RECD_INT) {
@@ -675,8 +678,9 @@ get_admin_user()
 {
   struct passwd *pwd = NULL;
 
-  if (!admin_user)
+  if (!admin_user) {
     admin_user = (char *)ats_malloc(MAX_LOGIN);
+  }
 
   config_read_string("proxy.config.admin.user_id", admin_user, MAX_LOGIN);
 
@@ -684,8 +688,9 @@ get_admin_user()
     char *end = admin_user + strlen(admin_user) - 1;
 
     // Trim trailing spaces.
-    while (end >= admin_user && isspace(*end))
+    while (end >= admin_user && isspace(*end)) {
       end--;
+    }
     *(end + 1) = '\0';
 
     if (*admin_user == '#') {
@@ -1149,8 +1154,9 @@ test_mgmt_cli_port()
     }
   }
 
-  if (val)
+  if (val) {
     TSfree(val);
+  }
   return ret;
 }
 
@@ -1232,8 +1238,9 @@ heartbeat_manager()
   cop_log_trace("Entering heartbeat_manager()\n");
   // the CLI, and the rsport if cluster is enabled.
   err = test_mgmt_cli_port();
-  if ((0 == err) && (cluster_type != NO_CLUSTER))
+  if ((0 == err) && (cluster_type != NO_CLUSTER)) {
     err = test_rs_port();
+  }
 
   if (err < 0) {
     // See heartbeat_server()'s comments for how we determine a server/manager failure.
@@ -1292,8 +1299,9 @@ heartbeat_server()
       millisleep(init_sleep_time * 1000);
     }
   } else {
-    if (server_failures)
+    if (server_failures) {
       cop_log(COP_WARNING, "server heartbeat succeeded\n");
+    }
     server_failures = 0;
   }
 

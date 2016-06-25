@@ -199,8 +199,9 @@ RegexAcl::append(RegexAcl *ra)
   } else {
     RegexAcl *cur = _next;
 
-    while (cur->_next)
-      cur      = cur->_next;
+    while (cur->_next) {
+      cur = cur->_next;
+    }
     cur->_next = ra;
   }
 }

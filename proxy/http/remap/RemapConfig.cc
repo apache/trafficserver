@@ -108,16 +108,19 @@ process_filter_opt(url_mapping *mp, const BUILD_TABLE_INFO *bti, char *errStrBuf
     if (rp->active_queue_flag) {
       Debug("url_rewrite", "[process_filter_opt] Add active main filter \"%s\" (argc=%d)",
             rp->filter_name ? rp->filter_name : "<NULL>", rp->argc);
-      for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next))
+      for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
         ;
-      if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize)) != NULL)
+      }
+      if ((errStr = remap_validate_filter_args(rpp, (const char **)rp->argv, rp->argc, errStrBuf, errStrBufSize)) != NULL) {
         break;
+      }
     }
   }
   if (!errStr && (bti->remap_optflg & REMAP_OPTFLG_ALL_FILTERS) != 0) {
     Debug("url_rewrite", "[process_filter_opt] Add per remap filter");
-    for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next))
+    for (rpp = &mp->filter; *rpp; rpp = &((*rpp)->next)) {
       ;
+    }
     errStr = remap_validate_filter_args(rpp, (const char **)bti->argv, bti->argc, errStrBuf, errStrBufSize);
   }
   return errStr;
@@ -172,8 +175,9 @@ parse_define_directive(const char *directive, BUILD_TABLE_INFO *bti, char *errbu
   if ((cstr = remap_validate_filter_args(&rp, (const char **)bti->argv, bti->argc, errbuf, errbufsize)) == NULL && rp) {
     if (flg) { // new filter - add to list
       Debug("url_rewrite", "[parse_directive] new rule \"%s\" was created", bti->paramv[1]);
-      for (rpp = &bti->rules_list; *rpp; rpp = &((*rpp)->next))
+      for (rpp = &bti->rules_list; *rpp; rpp = &((*rpp)->next)) {
         ;
+      }
       (*rpp = rp)->name(bti->paramv[1]);
     }
     Debug("url_rewrite", "[parse_directive] %d argument(s) were added to rule \"%s\"", bti->argc, bti->paramv[1]);
@@ -411,8 +415,9 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
 
   if (is_debug_tag_set("url_rewrite")) {
     printf("validate_filter_args: ");
-    for (i = 0; i < argc; i++)
+    for (i = 0; i < argc; i++) {
       printf("\"%s\" ", argv[i]);
+    }
     printf("\n");
   }
 
@@ -458,28 +463,29 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
       // Please remember that the order of hash idx creation is very important and it is defined
       // in HTTP.cc file
       m = -1;
-      if (!strcasecmp(argptr, "CONNECT"))
+      if (!strcasecmp(argptr, "CONNECT")) {
         m = HTTP_WKSIDX_CONNECT;
-      else if (!strcasecmp(argptr, "DELETE"))
+      } else if (!strcasecmp(argptr, "DELETE")) {
         m = HTTP_WKSIDX_DELETE;
-      else if (!strcasecmp(argptr, "GET"))
+      } else if (!strcasecmp(argptr, "GET")) {
         m = HTTP_WKSIDX_GET;
-      else if (!strcasecmp(argptr, "HEAD"))
+      } else if (!strcasecmp(argptr, "HEAD")) {
         m = HTTP_WKSIDX_HEAD;
-      else if (!strcasecmp(argptr, "ICP_QUERY"))
+      } else if (!strcasecmp(argptr, "ICP_QUERY")) {
         m = HTTP_WKSIDX_ICP_QUERY;
-      else if (!strcasecmp(argptr, "OPTIONS"))
+      } else if (!strcasecmp(argptr, "OPTIONS")) {
         m = HTTP_WKSIDX_OPTIONS;
-      else if (!strcasecmp(argptr, "POST"))
+      } else if (!strcasecmp(argptr, "POST")) {
         m = HTTP_WKSIDX_POST;
-      else if (!strcasecmp(argptr, "PURGE"))
+      } else if (!strcasecmp(argptr, "PURGE")) {
         m = HTTP_WKSIDX_PURGE;
-      else if (!strcasecmp(argptr, "PUT"))
+      } else if (!strcasecmp(argptr, "PUT")) {
         m = HTTP_WKSIDX_PUT;
-      else if (!strcasecmp(argptr, "TRACE"))
+      } else if (!strcasecmp(argptr, "TRACE")) {
         m = HTTP_WKSIDX_TRACE;
-      else if (!strcasecmp(argptr, "PUSH"))
+      } else if (!strcasecmp(argptr, "PUSH")) {
         m = HTTP_WKSIDX_PUSH;
+      }
       if (m != -1) {
         m                               = m - HTTP_WKSIDX_CONNECT; // get method index
         rule->standard_method_lookup[m] = true;
@@ -502,8 +508,9 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         return (const char *)errStrBuf;
       }
       ipi = &rule->src_ip_array[rule->src_ip_cnt];
-      if (ul & REMAP_OPTFLG_INVERT)
+      if (ul & REMAP_OPTFLG_INVERT) {
         ipi->invert = true;
+      }
       ink_strlcpy(tmpbuf, argptr, sizeof(tmpbuf));
       // important! use copy of argument
       if (ExtractIpRange(tmpbuf, &ipi->start.sa, &ipi->end.sa) != NULL) {
@@ -541,8 +548,9 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
         return (const char *)errStrBuf;
       }
       ipi = &rule->in_ip_array[rule->in_ip_cnt];
-      if (ul & REMAP_OPTFLG_INVERT)
+      if (ul & REMAP_OPTFLG_INVERT) {
         ipi->invert = true;
+      }
       ink_strlcpy(tmpbuf, argptr, sizeof(tmpbuf));
       // important! use copy of argument
       if (ExtractIpRange(tmpbuf, &ipi->start.sa, &ipi->end.sa) != NULL) {
@@ -590,8 +598,9 @@ remap_validate_filter_args(acl_filter_rule **rule_pp, const char **argv, int arg
     }
   }
 
-  if (is_debug_tag_set("url_rewrite"))
+  if (is_debug_tag_set("url_rewrite")) {
     rule->print();
+  }
 
   return NULL; /* success */
 }
@@ -602,67 +611,87 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
   unsigned long ret_flags = 0;
   int idx                 = 0;
 
-  if (argptr)
+  if (argptr) {
     *argptr = NULL;
+  }
   if (argv && argc > 0) {
     for (int i = 0; i < argc; i++) {
       if (!strcasecmp(argv[i], "map_with_referer")) {
-        if ((findmode & REMAP_OPTFLG_MAP_WITH_REFERER) != 0)
+        if ((findmode & REMAP_OPTFLG_MAP_WITH_REFERER) != 0) {
           idx = i;
+        }
         ret_flags |= REMAP_OPTFLG_MAP_WITH_REFERER;
       } else if (!strncasecmp(argv[i], "plugin=", 7)) {
-        if ((findmode & REMAP_OPTFLG_PLUGIN) != 0)
+        if ((findmode & REMAP_OPTFLG_PLUGIN) != 0) {
           idx = i;
-        if (argptr)
+        }
+        if (argptr) {
           *argptr = &argv[i][7];
+        }
         ret_flags |= REMAP_OPTFLG_PLUGIN;
       } else if (!strncasecmp(argv[i], "pparam=", 7)) {
-        if ((findmode & REMAP_OPTFLG_PPARAM) != 0)
+        if ((findmode & REMAP_OPTFLG_PPARAM) != 0) {
           idx = i;
-        if (argptr)
+        }
+        if (argptr) {
           *argptr = &argv[i][7];
+        }
         ret_flags |= REMAP_OPTFLG_PPARAM;
       } else if (!strncasecmp(argv[i], "method=", 7)) {
-        if ((findmode & REMAP_OPTFLG_METHOD) != 0)
+        if ((findmode & REMAP_OPTFLG_METHOD) != 0) {
           idx = i;
-        if (argptr)
+        }
+        if (argptr) {
           *argptr = &argv[i][7];
+        }
         ret_flags |= REMAP_OPTFLG_METHOD;
       } else if (!strncasecmp(argv[i], "src_ip=~", 8)) {
-        if ((findmode & REMAP_OPTFLG_SRC_IP) != 0)
+        if ((findmode & REMAP_OPTFLG_SRC_IP) != 0) {
           idx = i;
-        if (argptr)
+        }
+        if (argptr) {
           *argptr = &argv[i][8];
+        }
         ret_flags |= (REMAP_OPTFLG_SRC_IP | REMAP_OPTFLG_INVERT);
       } else if (!strncasecmp(argv[i], "src_ip=", 7)) {
-        if ((findmode & REMAP_OPTFLG_SRC_IP) != 0)
+        if ((findmode & REMAP_OPTFLG_SRC_IP) != 0) {
           idx = i;
-        if (argptr)
+        }
+        if (argptr) {
           *argptr = &argv[i][7];
+        }
         ret_flags |= REMAP_OPTFLG_SRC_IP;
       } else if (!strncasecmp(argv[i], "in_ip=~", 7)) {
-        if ((findmode & REMAP_OPTFLG_IN_IP) != 0)
+        if ((findmode & REMAP_OPTFLG_IN_IP) != 0) {
           idx = i;
-        if (argptr)
+        }
+        if (argptr) {
           *argptr = &argv[i][7];
+        }
         ret_flags |= (REMAP_OPTFLG_IN_IP | REMAP_OPTFLG_INVERT);
       } else if (!strncasecmp(argv[i], "in_ip=", 6)) {
-        if ((findmode & REMAP_OPTFLG_IN_IP) != 0)
+        if ((findmode & REMAP_OPTFLG_IN_IP) != 0) {
           idx = i;
-        if (argptr)
+        }
+        if (argptr) {
           *argptr = &argv[i][6];
+        }
         ret_flags |= REMAP_OPTFLG_IN_IP;
       } else if (!strncasecmp(argv[i], "action=", 7)) {
-        if ((findmode & REMAP_OPTFLG_ACTION) != 0)
+        if ((findmode & REMAP_OPTFLG_ACTION) != 0) {
           idx = i;
-        if (argptr)
+        }
+        if (argptr) {
           *argptr = &argv[i][7];
+        }
         ret_flags |= REMAP_OPTFLG_ACTION;
       } else if (!strncasecmp(argv[i], "mapid=", 6)) {
-        if ((findmode & REMAP_OPTFLG_MAP_ID) != 0)
+        if ((findmode & REMAP_OPTFLG_MAP_ID) != 0) {
           idx = i;
-        if (argptr)
+        }
+        if (argptr) {
           *argptr = &argv[i][6];
+        }
         ret_flags |= REMAP_OPTFLG_MAP_ID;
       } else if (!strncasecmp(argv[i], "internal", 8)) {
         if ((findmode & REMAP_OPTFLG_INTERNAL) != 0) {
@@ -674,14 +703,16 @@ remap_check_option(const char **argv, int argc, unsigned long findmode, int *_re
       }
 
       if ((findmode & ret_flags) && !argptr) {
-        if (_ret_idx)
+        if (_ret_idx) {
           *_ret_idx = idx;
+        }
         return ret_flags;
       }
     }
   }
-  if (_ret_idx)
+  if (_ret_idx) {
     *_ret_idx = idx;
+  }
   return ret_flags;
 }
 
@@ -1014,8 +1045,9 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     bti->reset();
 
     // Strip leading whitespace
-    while (*cur_line && isascii(*cur_line) && isspace(*cur_line))
+    while (*cur_line && isascii(*cur_line) && isspace(*cur_line)) {
       ++cur_line;
+    }
 
     if ((cur_line_size = strlen((char *)cur_line)) <= 0) {
       cur_line = tokLine(NULL, &tok_state, '\\');
@@ -1042,8 +1074,9 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     for (int j = 0; j < tok_count; j++) {
       if (((char *)whiteTok[j])[0] == '@') {
-        if (((char *)whiteTok[j])[1])
+        if (((char *)whiteTok[j])[1]) {
           bti->argv[bti->argc++] = ats_strdup(&(((char *)whiteTok[j])[1]));
+        }
       } else {
         bti->paramv[bti->paramc++] = ats_strdup((char *)whiteTok[j]);
       }
@@ -1186,9 +1219,10 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       if (maptype == FORWARD_MAP_REFERER) {
         new_mapping->filter_redirect_url = ats_strdup(bti->paramv[3]);
         if (!strcasecmp(bti->paramv[3], "<default>") || !strcasecmp(bti->paramv[3], "default") ||
-            !strcasecmp(bti->paramv[3], "<default_redirect_url>") || !strcasecmp(bti->paramv[3], "default_redirect_url"))
+            !strcasecmp(bti->paramv[3], "<default_redirect_url>") || !strcasecmp(bti->paramv[3], "default_redirect_url")) {
           new_mapping->default_redirect_url = true;
-        new_mapping->redir_chunk_list       = redirect_tag_str::parse_format_redirect_url(bti->paramv[3]);
+        }
+        new_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(bti->paramv[3]);
         for (int j = bti->paramc; j > 4; j--) {
           if (bti->paramv[j - 1] != NULL) {
             char refinfo_error_buf[1024];

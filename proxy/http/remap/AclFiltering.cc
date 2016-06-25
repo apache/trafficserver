@@ -134,8 +134,9 @@ acl_filter_rule::find_byname(acl_filter_rule *list, const char *_name)
   acl_filter_rule *rp = 0;
   if (likely(list && _name && (_name_size = strlen(_name)) > 0)) {
     for (rp = list; rp; rp = rp->next) {
-      if (strcasecmp(rp->filter_name, _name) == 0)
+      if (strcasecmp(rp->filter_name, _name) == 0) {
         break;
+      }
     }
   }
   return rp;
@@ -170,8 +171,9 @@ acl_filter_rule::requeue_in_active_list(acl_filter_rule **list, acl_filter_rule 
         }
       }
       for (rpp = list; ((r = *rpp) != NULL); rpp = &(r->next)) {
-        if (r->active_queue_flag == 0)
+        if (r->active_queue_flag == 0) {
           break;
+        }
       }
       (*rpp = rp)->next     = r;
       rp->active_queue_flag = 1;
@@ -191,8 +193,9 @@ acl_filter_rule::requeue_in_passive_list(acl_filter_rule **list, acl_filter_rule
           break;
         }
       }
-      for (rpp = list; *rpp; rpp = &((*rpp)->next))
+      for (rpp = list; *rpp; rpp = &((*rpp)->next)) {
         ;
+      }
       (*rpp = rp)->next     = NULL;
       rp->active_queue_flag = 0;
     }

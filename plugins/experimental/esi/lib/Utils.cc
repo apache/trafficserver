@@ -150,8 +150,9 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
   Attribute attr;
   bool inside_quotes = false, end_of_attribute;
   bool escape_on     = false;
-  for (i = 0; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<uint8_t>(data[i])])); ++i)
+  for (i = 0; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<uint8_t>(data[i])])); ++i) {
     ;
+  }
   attr.name  = data + i;
   attr.value = 0;
   for (; i <= data_len; ++i) {
@@ -178,8 +179,9 @@ Utils::parseAttributes(const char *data, int data_len, AttributeList &attr_list,
           } // else ignore empty name/value
         }   // else ignore attribute with no value
       }     // else ignore variable with unterminated quotes
-      for (; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<uint8_t>(data[i])])); ++i)
+      for (; (i < data_len) && ((isspace(data[i]) || separator_lookup[static_cast<uint8_t>(data[i])])); ++i) {
         ;
+      }
       attr.name     = data + i;
       attr.value    = 0;
       inside_quotes = false;

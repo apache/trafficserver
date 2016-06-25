@@ -665,8 +665,9 @@ Rollback::findVersions_ml(ExpandingArray *listNames)
   dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
   while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
-    if (!entryPtr)
+    if (!entryPtr) {
       break;
+    }
 
     if ((version = extractVersionInfo(listNames, entryPtr->d_name)) != INVALID_VERSION) {
       count++;
@@ -710,8 +711,9 @@ Rollback::extractVersionInfo(ExpandingArray *listNames, const char *testFileName
         // Check for the integer version number
         currentVersionStr = str = testFileName + fileNameLen + 1;
 
-        for (; isdigit(*str) && *str != '\0'; str++)
+        for (; isdigit(*str) && *str != '\0'; str++) {
           ;
+        }
 
         // Do not tolerate anything but numbers on the end
         //   of the file

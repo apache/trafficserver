@@ -66,11 +66,12 @@ skip_leading_whitespace:
 parse_value:
   // ink_assert((',' > '"') && (',' > ' ') && (',' > '\t'));
   // Cookie/Set-Cookie use ';' as the separator
-  if (m_separator == ',')
+  if (m_separator == ',') {
     while ((cur < end - 1) && (*cur > ',')) {
       last_data = cur;
       cur++;
     }
+  }
 
   if (*cur == m_separator) {
     goto done;

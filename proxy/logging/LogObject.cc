@@ -464,14 +464,16 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
       head_p old_h;
       do {
         INK_QUEUE_LD(old_h, m_log_buffer);
-        if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h))
+        if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
           break;
+        }
         head_p tmp_h;
         SET_FREELIST_POINTER_VERSION(tmp_h, FREELIST_POINTER(h), FREELIST_VERSION(old_h) - 1);
         result = ink_atomic_cas(&m_log_buffer.data, old_h.data, tmp_h.data);
       } while (!result);
-      if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h))
+      if (FREELIST_POINTER(old_h) != FREELIST_POINTER(h)) {
         ink_atomic_increment(&buffer->m_references, -1);
+      }
     }
   } while (retry && write_offset); // if write_offset is null, we do
   // not retry because we really do
@@ -655,8 +657,9 @@ LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling
       } else {
         m_rolling_interval_sec = rolling_interval_sec;
         // increase so it divides day evenly
-        while (Log::MAX_ROLLING_INTERVAL_SEC % ++m_rolling_interval_sec)
+        while (Log::MAX_ROLLING_INTERVAL_SEC % ++m_rolling_interval_sec) {
           ;
+        }
       }
 
       if (m_rolling_interval_sec != rolling_interval_sec) {
@@ -690,15 +693,17 @@ LogObject::_setup_rolling(Log::RollingEnabledValues rolling_enabled, int rolling
 unsigned
 LogObject::roll_files(long time_now)
 {
-  if (!m_rolling_enabled)
+  if (!m_rolling_enabled) {
     return 0;
+  }
 
   unsigned num_rolled = 0;
   bool roll_on_time   = false;
   bool roll_on_size   = false;
 
-  if (!time_now)
+  if (!time_now) {
     time_now = LogUtils::timestamp();
+  }
 
   if (m_rolling_enabled != Log::ROLL_ON_SIZE_ONLY) {
     if (m_rolling_interval_sec > 0) {
@@ -1309,8 +1314,9 @@ LogObjectManager::log(LogAccess *lad)
     // data received from network in collation host. It should
     // be ignored here.
     //
-    if (_objects[i]->m_auto_created)
+    if (_objects[i]->m_auto_created) {
       continue;
+    }
 
     ret |= _objects[i]->log(lad);
   }

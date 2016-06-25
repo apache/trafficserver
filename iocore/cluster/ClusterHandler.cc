@@ -242,11 +242,13 @@ ClusterHandler::~ClusterHandler()
   }
   if (machine) {
     MUTEX_TAKE_LOCK(the_cluster_config_mutex, this_ethread());
-    if (++machine->free_connections >= machine->num_connections)
+    if (++machine->free_connections >= machine->num_connections) {
       free_m = true;
+    }
     MUTEX_UNTAKE_LOCK(the_cluster_config_mutex, this_ethread());
-    if (free_m)
+    if (free_m) {
       free_ClusterMachine(machine);
+    }
   }
   machine = NULL;
   ats_free(hostname);
@@ -263,12 +265,14 @@ ClusterHandler::~ClusterHandler()
     ats_free(channel_data);
     channel_data = NULL;
   }
-  if (read_vcs)
+  if (read_vcs) {
     delete[] read_vcs;
+  }
   read_vcs = NULL;
 
-  if (write_vcs)
+  if (write_vcs) {
     delete[] write_vcs;
+  }
   write_vcs = NULL;
 
   if (clm) {
@@ -286,14 +290,18 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection *vc)
   //
   // Close down a ClusterVConnection
   //
-  if (vc->inactivity_timeout)
+  if (vc->inactivity_timeout) {
     vc->inactivity_timeout->cancel(vc);
-  if (vc->active_timeout)
+  }
+  if (vc->active_timeout) {
     vc->active_timeout->cancel(vc);
-  if (vc->read.queue)
+  }
+  if (vc->read.queue) {
     ClusterVC_remove_read(vc);
-  if (vc->write.queue)
+  }
+  if (vc->write.queue) {
     ClusterVC_remove_write(vc);
+  }
   vc->read.vio.mutex  = NULL;
   vc->write.vio.mutex = NULL;
 
@@ -369,12 +377,14 @@ ClusterHandler::close_free_lock(ClusterVConnection *vc, ClusterVConnState *s)
 {
   Ptr<ProxyMutex> m(s->vio.mutex);
   if (s == &vc->read) {
-    if (vc->read_locked)
+    if (vc->read_locked) {
       MUTEX_UNTAKE_LOCK(vc->read_locked, thread);
+    }
     vc->read_locked = NULL;
   } else {
-    if (vc->write_locked)
+    if (vc->write_locked) {
       MUTEX_UNTAKE_LOCK(vc->write_locked, thread);
+    }
     vc->write_locked = NULL;
   }
   close_ClusterVConnection(vc);
@@ -1009,8 +1019,9 @@ ClusterHandler::process_large_control_msgs()
       // SET_CHANNEL_DATA_CLUSTER_FUNCTION already processed.
       // Just do memory deallocation.
 
-      if (!clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].fMalloced)
+      if (!clusterFunction[SET_CHANNEL_DATA_CLUSTER_FUNCTION].fMalloced) {
         ic->freeall();
+      }
       continue;
     }
 
@@ -1023,8 +1034,9 @@ ClusterHandler::process_large_control_msgs()
       clusterFunction[cluster_function_index].pfn(this, (void *)(ic->data + sizeof(int32_t)), ic->len - sizeof(int32_t));
 
       // Deallocate memory
-      if (!clusterFunction[cluster_function_index].fMalloced)
+      if (!clusterFunction[cluster_function_index].fMalloced) {
         ic->freeall();
+      }
 
     } else {
       // Non Cluster message, process in non ET_CLUSTER thread
@@ -1161,8 +1173,9 @@ ClusterHandler::process_incoming_callouts(ProxyMutex *mutex)
 
   while (true) {
     ic_ext = (IncomingControl *)ink_atomiclist_popall(&external_incoming_control);
-    if (!ic_ext)
+    if (!ic_ext) {
       break;
+    }
 
     while (ic_ext) {
       ic_ext_next       = (IncomingControl *)ic_ext->link.next;
@@ -1200,8 +1213,9 @@ ClusterHandler::process_incoming_callouts(ProxyMutex *mutex)
           Warning("2Bad cluster function index (small control)");
         }
         // Deallocate memory
-        if (!clusterFunction[cluster_function_index].fMalloced)
+        if (!clusterFunction[cluster_function_index].fMalloced) {
           ic->freeall();
+        }
 
       } else {
         ink_assert(ic->len > 4);
@@ -1221,8 +1235,9 @@ ClusterHandler::process_incoming_callouts(ProxyMutex *mutex)
           valid_index = false;
           Warning("2Bad cluster function index (large control)");
         }
-        if (valid_index && !clusterFunction[cluster_function_index].fMalloced)
+        if (valid_index && !clusterFunction[cluster_function_index].fMalloced) {
           ic->freeall();
+        }
       }
     }
   }
@@ -1355,8 +1370,9 @@ ClusterHandler::complete_channel_read(int len, ClusterVConnection *vc)
     return (vc->closed ? false : true);
   }
 
-  if (vc->closed)
+  if (vc->closed) {
     return false; // No action if already closed
+  }
 
   ink_assert(s->vio.mutex == s->vio._cont->mutex);
 
@@ -1365,13 +1381,16 @@ ClusterHandler::complete_channel_read(int len, ClusterVConnection *vc)
 
   if (s->vio.ntodo() <= 0) {
     s->enabled = 0;
-    if (cluster_signal_and_update_locked(VC_EVENT_READ_COMPLETE, vc, s) == EVENT_DONE)
+    if (cluster_signal_and_update_locked(VC_EVENT_READ_COMPLETE, vc, s) == EVENT_DONE) {
       return false;
+    }
   } else {
-    if (cluster_signal_and_update_locked(VC_EVENT_READ_READY, vc, s) == EVENT_DONE)
+    if (cluster_signal_and_update_locked(VC_EVENT_READ_READY, vc, s) == EVENT_DONE) {
       return false;
-    if (s->vio.ntodo() <= 0)
+    }
+    if (s->vio.ntodo() <= 0) {
       s->enabled = 0;
+    }
   }
 
   vcs_push(vc, VC_CLUSTER_READ);
@@ -1413,8 +1432,9 @@ ClusterHandler::finish_delayed_reads()
           }
         }
       }
-    } else
+    } else {
       l.push(vc);
+    }
   }
   delayed_reads = l;
 }
@@ -1555,8 +1575,9 @@ ClusterHandler::build_write_descriptors()
       continue;
     }
 
-    if (tcount >= MAX_TCOUNT)
+    if (tcount >= MAX_TCOUNT) {
       break;
+    }
 
     valid = valid_for_data_write(vc);
     if (-1 == valid) {
@@ -1574,11 +1595,13 @@ ClusterHandler::build_write_descriptors()
         ink_release_assert(s <= MAX_CLUSTER_SEND_LENGTH);
 
         // Transfer no more than nbytes
-        if ((vc->write.vio.ndone - s) > vc->write.vio.nbytes)
+        if ((vc->write.vio.ndone - s) > vc->write.vio.nbytes) {
           s = vc->write.vio.nbytes - (vc->write.vio.ndone - s);
+        }
 
-        if ((vc->write.vio.ndone - s) > vc->remote_free)
-          s                            = vc->remote_free - (vc->write.vio.ndone - s);
+        if ((vc->write.vio.ndone - s) > vc->remote_free) {
+          s = vc->remote_free - (vc->write.vio.ndone - s);
+        }
         write.msg.descriptor[d].length = s;
         write.msg.count++;
         tcount++;
@@ -1659,8 +1682,9 @@ ClusterHandler::build_freespace_descriptors()
       continue;
     }
 
-    if (tcount >= MAX_TCOUNT)
+    if (tcount >= MAX_TCOUNT) {
       break;
+    }
 
     s = valid_for_freespace_write(vc);
     if (-1 == s) {
@@ -1944,8 +1968,9 @@ retry:
   }
 
   if (vc->pending_remote_fill) {
-    if (vc->was_remote_closed())
+    if (vc->was_remote_closed()) {
       close_ClusterVConnection(vc);
+    }
 
 #ifdef CLUSTER_STATS
     _dw_wait_remote_fill++;
@@ -2011,8 +2036,9 @@ retry:
   int64_t ntodo        = s->vio.ntodo();
   bool write_vc_signal = false;
 
-  if (towrite > ntodo)
+  if (towrite > ntodo) {
     towrite = ntodo;
+  }
 
   ink_assert(ntodo >= 0);
   if (ntodo <= 0) {
@@ -2021,8 +2047,9 @@ retry:
   }
   if (buf.writer()->write_avail() && towrite != ntodo) {
     write_vc_signal = true;
-    if (cluster_signal_and_update(VC_EVENT_WRITE_READY, vc, s) == EVENT_DONE)
+    if (cluster_signal_and_update(VC_EVENT_WRITE_READY, vc, s) == EVENT_DONE) {
       return 0;
+    }
     ink_assert(s->vio.ntodo() >= 0);
     if (s->vio.ntodo() <= 0) {
       cluster_signal_and_update(VC_EVENT_WRITE_COMPLETE, vc, s);
@@ -2073,8 +2100,9 @@ retry:
     lock.have_lock   = false;
     return 1;
   } else {
-    if (!write_vc_signal && buf.writer()->write_avail() && towrite != ntodo)
+    if (!write_vc_signal && buf.writer()->write_avail() && towrite != ntodo) {
       cluster_signal_and_update(VC_EVENT_WRITE_READY, vc, s);
+    }
     return 0;
   }
 }
@@ -2122,8 +2150,9 @@ retry:
   }
 
   if (vc->pending_remote_fill) {
-    if (vc->was_remote_closed())
+    if (vc->was_remote_closed()) {
       close_ClusterVConnection(vc);
+    }
 
 #ifdef CLUSTER_STATS
     _fw_wait_remote_fill++;
@@ -2209,14 +2238,17 @@ retry:
           return 0;
         }
       }
-      if (cluster_signal_and_update_locked(VC_EVENT_READ_READY, vc, s) == EVENT_DONE)
+      if (cluster_signal_and_update_locked(VC_EVENT_READ_READY, vc, s) == EVENT_DONE) {
         return false;
+      }
 
-      if (s->vio.ntodo() <= 0)
+      if (s->vio.ntodo() <= 0) {
         s->enabled = 0;
+      }
 
-      if (vc->initial_data_bytes)
+      if (vc->initial_data_bytes) {
         return 0;
+      }
     }
   }
   // At this point, all initial read data passed in the open_read reply
@@ -2248,14 +2280,16 @@ retry:
 void
 ClusterHandler::vcs_push(ClusterVConnection *vc, int type)
 {
-  if (vc->type <= VC_CLUSTER)
+  if (vc->type <= VC_CLUSTER) {
     vc->type = type;
+  }
 
   while ((vc->type > VC_CLUSTER) && !vc->in_vcs && ink_atomic_cas(pvint32(&vc->in_vcs), 0, 1)) {
-    if (vc->type == VC_CLUSTER_READ)
+    if (vc->type == VC_CLUSTER_READ) {
       ink_atomiclist_push(&vc->ch->read_vcs_ready, (void *)vc);
-    else
+    } else {
       ink_atomiclist_push(&vc->ch->write_vcs_ready, (void *)vc);
+    }
     return;
   }
 }
@@ -2473,8 +2507,9 @@ ClusterHandler::mainClusterEvent(int event, Event *e)
     // Process deferred open_local requests
     /////////////////////////////////////////
     if (!on_stolen_thread) {
-      if (do_open_local_requests())
+      if (do_open_local_requests()) {
         thread->signal_hook(thread);
+      }
     }
   }
 
@@ -2765,8 +2800,9 @@ int ClusterHandler::process_read(ink_hrtime /* now ATS_UNUSED */)
         ink_hrtime rdmsg_end_time = Thread::get_hrtime();
         CLUSTER_SUM_DYN_STAT(CLUSTER_RDMSG_ASSEMBLE_TIME_STAT, rdmsg_end_time - read.start_time);
         read.start_time = HRTIME_MSECONDS(0);
-        if (dump_msgs)
+        if (dump_msgs) {
           dump_read_msg();
+        }
         read.sequence_number++;
         update_channels_read();
         free_locks(CLUSTER_READ);
@@ -3030,8 +3066,9 @@ ClusterHandler::do_open_local_requests()
   //
   while (true) {
     cvc_ext = (ClusterVConnection *)ink_atomiclist_popall(&external_incoming_open_local);
-    if (cvc_ext == 0)
+    if (cvc_ext == 0) {
       break;
+    }
 
     while (cvc_ext) {
       cvc_ext_next       = (ClusterVConnection *)cvc_ext->link.next;

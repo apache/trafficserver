@@ -86,8 +86,9 @@ FailureInfo::isAttemptReq()
       prob = mapFactor / 1000;
     }
 
-    if (static_cast<int>(prob))
+    if (static_cast<int>(prob)) {
       prob = _avgOverWindow;
+    }
 
     _debugLog(_debug_tag, "[%s] Calculated probability is %lf", __FUNCTION__, prob);
     // coverity[dont_call]

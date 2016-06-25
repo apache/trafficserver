@@ -113,11 +113,14 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
         // lowest IP address
 
         ip = (unsigned int)-1; // 0xFFFFFFFF
-        for (int i = 0; r->h_addr_list[i]; i++)
-          if (ip > *(unsigned int *)r->h_addr_list[i])
+        for (int i = 0; r->h_addr_list[i]; i++) {
+          if (ip > *(unsigned int *)r->h_addr_list[i]) {
             ip = *(unsigned int *)r->h_addr_list[i];
-        if (ip == (unsigned int)-1)
+          }
+        }
+        if (ip == (unsigned int)-1) {
           ip = 0;
+        }
       }
       // ip = htonl(ip); for the alpha!
     }
@@ -132,13 +135,15 @@ ClusterMachine::ClusterMachine(char *ahostname, unsigned int aip, int aport)
       Alias32 x;
       memcpy(&x.u32, &ip, sizeof(x.u32));
       Debug("machine_debug", "unable to reverse DNS %u.%u.%u.%u: %d", x.byte[0], x.byte[1], x.byte[2], x.byte[3], data.herrno);
-    } else
+    } else {
       hostname = ats_strdup(r->h_name);
+    }
   }
-  if (hostname)
+  if (hostname) {
     hostname_len = strlen(hostname);
-  else
+  } else {
     hostname_len = 0;
+  }
 
   num_connections = num_of_cluster_threads;
   clusterHandlers = (ClusterHandler **)ats_calloc(num_connections, sizeof(ClusterHandler *));
@@ -216,8 +221,9 @@ read_MachineList(const char *filename, int afd)
   if (fd >= 0) {
     while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
       ln++;
-      if (*line == '#')
+      if (*line == '#') {
         continue;
+      }
       if (n == -1 && ParseRules::is_digit(*line)) {
         n = atoi(line);
         if (n > 0) {
@@ -230,8 +236,9 @@ read_MachineList(const char *filename, int afd)
       }
       if (l && ParseRules::is_digit(*line) && i < n) {
         char *port = strchr(line, ':');
-        if (!port)
+        if (!port) {
           goto Lfail;
+        }
         *port++          = 0;
         l->machine[i].ip = inet_addr(line);
         if (-1 == (int)l->machine[i].ip) {
@@ -245,8 +252,9 @@ read_MachineList(const char *filename, int afd)
           }
         }
         l->machine[i].port = atoi(port);
-        if (!l->machine[i].port)
+        if (!l->machine[i].port) {
           goto Lfail;
+        }
         i++;
         l->n++;
         continue;
@@ -271,8 +279,9 @@ read_MachineList(const char *filename, int afd)
       if (afd == -1) {
         Warning("read machine list failure, length mismatch");
         return NULL;
-      } else
+      } else {
         ats_free(l);
+      }
       return (MachineList *)ats_strdup("number of machines does not match length of list\n");
     }
   }

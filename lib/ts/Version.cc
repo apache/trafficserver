@@ -56,8 +56,9 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
 
   // Jan=1, Feb=2 ... Dec=12, ???=13
   for (month = 0; month < 11; month++) {
-    if (strcasecmp(months[month], month_name) == 0)
+    if (strcasecmp(months[month], month_name) == 0) {
       break;
+    }
   }
   month++;
 
@@ -87,26 +88,36 @@ AppVersionInfo::setup(const char *pkg_name, const char *app_name, const char *ap
   /////////////////////////////////////////////////////////////
   // the manager doesn't like empty strings, so prevent them //
   /////////////////////////////////////////////////////////////
-  if (PkgStr[0] == '\0')
+  if (PkgStr[0] == '\0') {
     ink_strlcpy(PkgStr, "?", sizeof(PkgStr));
-  if (AppStr[0] == '\0')
+  }
+  if (AppStr[0] == '\0') {
     ink_strlcpy(AppStr, "?", sizeof(AppStr));
-  if (VersionStr[0] == '\0')
+  }
+  if (VersionStr[0] == '\0') {
     ink_strlcpy(VersionStr, "?", sizeof(VersionStr));
-  if (BldNumStr[0] == '\0')
+  }
+  if (BldNumStr[0] == '\0') {
     ink_strlcpy(BldNumStr, "?", sizeof(BldNumStr));
-  if (BldTimeStr[0] == '\0')
+  }
+  if (BldTimeStr[0] == '\0') {
     ink_strlcpy(BldTimeStr, "?", sizeof(BldTimeStr));
-  if (BldDateStr[0] == '\0')
+  }
+  if (BldDateStr[0] == '\0') {
     ink_strlcpy(BldDateStr, "?", sizeof(BldDateStr));
-  if (BldMachineStr[0] == '\0')
+  }
+  if (BldMachineStr[0] == '\0') {
     ink_strlcpy(BldMachineStr, "?", sizeof(BldMachineStr));
-  if (BldPersonStr[0] == '\0')
+  }
+  if (BldPersonStr[0] == '\0') {
     ink_strlcpy(BldPersonStr, "?", sizeof(BldPersonStr));
-  if (BldCompileFlagsStr[0] == '\0')
+  }
+  if (BldCompileFlagsStr[0] == '\0') {
     ink_strlcpy(BldCompileFlagsStr, "?", sizeof(BldCompileFlagsStr));
-  if (FullVersionInfoStr[0] == '\0')
+  }
+  if (FullVersionInfoStr[0] == '\0') {
     ink_strlcpy(FullVersionInfoStr, "?", sizeof(FullVersionInfoStr));
+  }
 
   snprintf(FullVersionInfoStr, sizeof(FullVersionInfoStr), "%s - %s - %s - (build # %s on %s at %s)", PkgStr, AppStr, VersionStr,
            BldNumStr, BldDateStr, BldTimeStr);

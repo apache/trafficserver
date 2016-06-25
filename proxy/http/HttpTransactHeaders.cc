@@ -49,8 +49,9 @@ HttpTransactHeaders::is_method_cache_lookupable(int method)
 bool
 HttpTransactHeaders::is_this_a_hop_by_hop_header(const char *field_name)
 {
-  if (!hdrtoken_is_wks(field_name))
+  if (!hdrtoken_is_wks(field_name)) {
     return (false);
+  }
   if ((hdrtoken_wks_to_flags(field_name) & MIME_FLAGS_HOPBYHOP) && (field_name != MIME_FIELD_KEEP_ALIVE)) {
     return (true);
   } else {
@@ -67,8 +68,9 @@ HttpTransactHeaders::is_this_method_supported(int the_scheme, int the_method)
     return is_this_http_method_supported(the_method);
   } else if ((the_scheme == URL_WKSIDX_WS || the_scheme == URL_WKSIDX_WSS) && the_method == HTTP_WKSIDX_GET) {
     return true;
-  } else
+  } else {
     return false;
+  }
 }
 
 void
@@ -102,8 +104,9 @@ HttpTransactHeaders::insert_supported_methods_in_response(HTTPHdr *response, int
       ++num_methods_supported;
       method_output_lengths[i] = hdrtoken_wks_to_length(method_wks);
       bytes += method_output_lengths[i];
-      if (num_methods_supported > 1)
+      if (num_methods_supported > 1) {
         bytes += 2; // +2 if need leading ", "
+      }
     } else {
       method_output_lengths[i] = 0;
     }
@@ -196,8 +199,9 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   //         should be modified when when the decision is made to dechunk it
 
   for (field = new_hdr->iter_get_first(&field_iter); field != NULL; field = new_hdr->iter_get_next(&field_iter)) {
-    if (field->m_wks_idx == -1)
+    if (field->m_wks_idx == -1) {
       continue;
+    }
 
     int field_flags = hdrtoken_index_to_flags(field->m_wks_idx);
 
@@ -212,8 +216,9 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
   }
 
   // Set date hdr if not already set and valid value passed in
-  if ((date_hdr == false) && (date > 0))
+  if ((date_hdr == false) && (date > 0)) {
     new_hdr->set_date(date);
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -427,10 +432,11 @@ HttpTransactHeaders::does_server_allow_response_to_be_stored(HTTPHdr *resp)
 {
   uint32_t cc_mask = (MIME_COOKED_MASK_CC_NO_CACHE | MIME_COOKED_MASK_CC_NO_STORE | MIME_COOKED_MASK_CC_PRIVATE);
 
-  if ((resp->get_cooked_cc_mask() & cc_mask) || (resp->get_cooked_pragma_no_cache()))
+  if ((resp->get_cooked_cc_mask() & cc_mask) || (resp->get_cooked_pragma_no_cache())) {
     return false;
-  else
+  } else {
     return true;
+  }
 }
 
 bool
@@ -482,10 +488,10 @@ HttpTransactHeaders::generate_and_set_squid_codes(HTTPHdr *header, char *via_str
     int reason_len;
     const char *reason = header->reason_get(&reason_len);
 
-    if (reason != NULL && reason_len >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED)
+    if (reason != NULL && reason_len >= 24 && reason[0] == '!' && reason[1] == SQUID_HIT_RESERVED) {
       hit_miss_code = SQUID_HIT_RESERVED;
-    // its a miss in the cache. find out why.
-    else if (via_string[VIA_DETAIL_CACHE_LOOKUP] == VIA_DETAIL_MISS_EXPIRED) {
+      // its a miss in the cache. find out why.
+    } else if (via_string[VIA_DETAIL_CACHE_LOOKUP] == VIA_DETAIL_MISS_EXPIRED) {
       hit_miss_code = SQUID_MISS_PRE_EXPIRED;
     } else if (via_string[VIA_DETAIL_CACHE_LOOKUP] == VIA_DETAIL_MISS_CONFIG) {
       hit_miss_code = SQUID_MISS_NONE;
@@ -628,10 +634,11 @@ HttpTransactHeaders::insert_warning_header(HttpConfigParams *http_config_param, 
   // + 23 for 20 possible digits of warning code (long long max
   //  digits) & 2 spaces & the string terminator
   bufsize = http_config_param->proxy_response_via_string_len + 23;
-  if (warn_text != NULL)
+  if (warn_text != NULL) {
     bufsize += warn_text_len;
-  else
+  } else {
     warn_text_len = 0; // Make sure it's really zero
+  }
 
   char *warning_text = (char *)alloca(bufsize);
 
@@ -651,8 +658,9 @@ HttpTransactHeaders::insert_time_and_age_headers_in_response(ink_time_t request_
 
   // FIX: should handle missing date when response is received, not here.
   //      See INKqa09852.
-  if (date <= 0)
+  if (date <= 0) {
     outgoing->set_date(now);
+  }
 }
 
 void
@@ -926,12 +934,14 @@ HttpTransactHeaders::add_global_user_agent_header_to_request(OverridableHttpConf
 
     Debug("http_trans", "Adding User-Agent: %s", http_txn_conf->global_user_agent_header);
     if ((ua_field = header->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) == NULL) {
-      if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != NULL))
+      if (likely((ua_field = header->field_create(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != NULL)) {
         header->field_attach(ua_field);
+      }
     }
     // This will remove any old string (free it), and set our User-Agent.
-    if (likely(ua_field))
+    if (likely(ua_field)) {
       header->field_value_set(ua_field, http_txn_conf->global_user_agent_header, http_txn_conf->global_user_agent_header_size);
+    }
   }
 }
 
@@ -943,8 +953,9 @@ HttpTransactHeaders::add_server_header_to_response(OverridableHttpConfigParams *
     bool do_add = true;
 
     if ((ua_field = header->field_find(MIME_FIELD_SERVER, MIME_LEN_SERVER)) == NULL) {
-      if (likely((ua_field = header->field_create(MIME_FIELD_SERVER, MIME_LEN_SERVER)) != NULL))
+      if (likely((ua_field = header->field_create(MIME_FIELD_SERVER, MIME_LEN_SERVER)) != NULL)) {
         header->field_attach(ua_field);
+      }
     } else {
       // There was an existing header from Origin, so only add if setting allows to overwrite.
       do_add = (1 == http_txn_conf->proxy_response_server_enabled);
@@ -963,8 +974,9 @@ void
 HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams *http_config_param,
                                                          OverridableHttpConfigParams *http_txn_conf, HTTPHdr *header)
 {
-  if (!header)
+  if (!header) {
     return;
+  }
 
   // From
   if (http_txn_conf->anonymize_remove_from) {

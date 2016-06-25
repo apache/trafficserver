@@ -236,12 +236,14 @@ Configuration::Parse(const char *path)
       trim_if(token, isspace);
 
       // should not happen
-      if (!token.size())
+      if (!token.size()) {
         continue;
+      }
 
       // once a comment is encountered, we are done processing the line
-      if (token[0] == '#')
+      if (token[0] == '#') {
         break;
+      }
 
       switch (state) {
       case kParseStart:

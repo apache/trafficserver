@@ -125,8 +125,9 @@ struct edit_t {
        * and comparing to ourself then re-throws.
        * Need to exclude that case.
        */
-      if (*this != x)
+      if (*this != x) {
         throw x;
+      }
     }
     return start < x.start;
   }
@@ -246,8 +247,9 @@ public:
   strscope(const bool u, const bool i, const char *pattern, int len) : scope_t(u), icase(i) { str = TSstrndup(pattern, len); }
   virtual ~strscope()
   {
-    if (str)
+    if (str) {
       TSfree(str);
+    }
   }
 };
 
@@ -283,8 +285,9 @@ public:
   strmatch(const bool i, const char *pattern, int len) : icase(i), slen(len) { str = TSstrndup(pattern, len); }
   virtual ~strmatch()
   {
-    if (str)
+    if (str) {
       TSfree(str);
+    }
   }
 
   virtual size_t
@@ -497,12 +500,15 @@ public:
   {
     if (refcount) {
       if (!--*refcount) {
-        if (scope)
+        if (scope) {
           delete scope;
-        if (from)
+        }
+        if (from) {
           delete from;
-        if (to)
+        }
+        if (to) {
           TSfree(to);
+        }
         delete refcount;
       }
     }
@@ -558,18 +564,22 @@ typedef struct contdata_t {
   contdata_t() : cont(NULL), out_buf(NULL), out_rd(NULL), out_vio(NULL), contbuf_sz(0), bytes_in(0), bytes_out(0) {}
   ~contdata_t()
   {
-    if (out_rd)
+    if (out_rd) {
       TSIOBufferReaderFree(out_rd);
-    if (out_buf)
+    }
+    if (out_buf) {
       TSIOBufferDestroy(out_buf);
-    if (cont)
+    }
+    if (cont) {
       TSContDestroy(cont);
+    }
   }
   void
   set_cont_size(size_t sz)
   {
-    if (contbuf_sz < 2 * sz)
+    if (contbuf_sz < 2 * sz) {
       contbuf_sz = 2 * sz - 1;
+    }
   }
 } contdata_t;
 
@@ -612,8 +622,9 @@ process_block(contdata_t *contdata, TSIOBufferReader reader)
 
   for (edit_p p = edits.begin(); p != edits.end(); ++p) {
     /* Preserve continuity buffer */
-    if (p->start >= buflen - keep)
+    if (p->start >= buflen - keep) {
       break;
+    }
 
     /* pass through bytes before edit */
     start = p->start - bytes_read;

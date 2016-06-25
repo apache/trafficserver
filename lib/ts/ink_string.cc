@@ -37,8 +37,9 @@ char *
 ink_memcpy_until_char(char *dst, char *src, unsigned int n, unsigned char c)
 {
   unsigned int i = 0;
-  for (; ((i < n) && (((unsigned char)src[i]) != c)); i++)
+  for (; ((i < n) && (((unsigned char)src[i]) != c)); i++) {
     dst[i] = src[i];
+  }
   return &src[i];
 }
 
@@ -64,11 +65,13 @@ ink_string_concatenate_strings(char *dest, ...)
 
   while (1) {
     s = va_arg(ap, char *);
-    if (s == NULL)
+    if (s == NULL) {
       break;
+    }
 
-    while (*s)
+    while (*s) {
       *d++ = *s++;
+    }
   }
   *d++ = '\0';
   va_end(ap);
@@ -98,15 +101,17 @@ ink_string_concatenate_strings_n(char *dest, int n, ...)
 
   while (n > 1) {
     s = va_arg(ap, char *);
-    if (s == NULL)
+    if (s == NULL) {
       break;
+    }
     while (*s && (n > 1)) {
       *d++ = *s++;
       n--;
     }
   }
-  if (n >= 1)
+  if (n >= 1) {
     *d = '\0';
+  }
   va_end(ap);
   return (dest);
 } /* End ink_string_concatenate_strings_n */
@@ -130,15 +135,17 @@ ink_string_append(char *dest, char *src, int n)
   ink_assert(dest != NULL);
   ink_assert(n >= 0);
 
-  if (n == 0)
+  if (n == 0) {
     return (dest);
+  }
 
   last_valid_char = dest + n - 1;
 
   /* Scan For End Of Dest */
 
-  for (d = dest; (d <= last_valid_char) && (*d != '\0'); d++)
+  for (d = dest; (d <= last_valid_char) && (*d != '\0'); d++) {
     ;
+  }
 
   /* If At End Of String, NUL Terminate & Exit */
 
@@ -150,16 +157,17 @@ ink_string_append(char *dest, char *src, int n)
   /* Append src To String */
 
   s = src;
-  while ((d < last_valid_char) && (*s != '\0'))
+  while ((d < last_valid_char) && (*s != '\0')) {
     *d++ = *s++;
+  }
 
   /* If At End Of String, NUL Terminate & Exit */
 
-  if (d > last_valid_char)
+  if (d > last_valid_char) {
     dest[n - 1] = '\0';
-  else
+  } else {
     *d = '\0';
-
+  }
   return (dest);
 } /* End ink_string_append */
 

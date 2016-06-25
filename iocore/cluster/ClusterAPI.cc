@@ -427,8 +427,9 @@ TSAddClusterRPCFunction(TSClusterRPCKey_t k, TSClusterRPCFunction func, TSCluste
   handle.u.internal.magic            = RPC_HANDLE_MAGIC;
 
   MUTEX_TAKE_LOCK(ClusterAPI_mutex, e);
-  if (n < API_END_CLUSTER_FUNCTION)
+  if (n < API_END_CLUSTER_FUNCTION) {
     RPC_Functions[n] = func;
+  }
   MUTEX_UNTAKE_LOCK(ClusterAPI_mutex, e);
 
   *h = handle.u.external;

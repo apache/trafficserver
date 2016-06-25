@@ -385,8 +385,9 @@ int
 LogFilterInt::_convertStringToInt(char *value, int64_t *ival, LogFieldAliasMap *map)
 {
   size_t i, l = strlen(value);
-  for (i = 0; i < l && ParseRules::is_digit(value[i]); i++)
+  for (i = 0; i < l && ParseRules::is_digit(value[i]); i++) {
     ;
+  }
 
   if (i < l) {
     // not all characters of value are digits, assume that
@@ -630,8 +631,9 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
                          IpAddr *value)
   : LogFilter(name, field, action, oper)
 {
-  for (IpAddr *limit = value + num_values; value != limit; ++value)
+  for (IpAddr *limit = value + num_values; value != limit; ++value) {
     m_map.mark(*value, *value);
+  }
   this->init();
 }
 
@@ -649,8 +651,9 @@ LogFilterIP::LogFilterIP(const char *name, LogField *field, LogFilter::Action ac
     while (t = tok.getNext(), t != NULL) {
       IpAddr min, max;
       char *x = strchr(t, '-');
-      if (x)
+      if (x) {
         *x++ = 0;
+      }
       if (0 == min.load(t)) {
         if (x) {
           if (0 != max.load(x)) {
@@ -721,8 +724,9 @@ LogFilterIP::operator==(LogFilterIP &rhs)
     IpMap::iterator right_limit(rhs.m_map.end());
 
     while (left_spot != left_limit && right_spot != right_limit) {
-      if (!ats_ip_addr_eq(left_spot->min(), right_spot->min()) || !ats_ip_addr_eq(left_spot->max(), right_spot->max()))
+      if (!ats_ip_addr_eq(left_spot->min(), right_spot->min()) || !ats_ip_addr_eq(left_spot->max(), right_spot->max())) {
         break;
+      }
       ++left_spot;
       ++right_spot;
     }
@@ -784,8 +788,9 @@ LogFilterIP::displayRange(FILE *fd, IpMap::iterator const &iter)
 
   fprintf(fd, "%s", ats_ip_ntop(iter->min(), ipb, sizeof(ipb)));
 
-  if (!ats_ip_addr_eq(iter->min(), iter->max()))
+  if (!ats_ip_addr_eq(iter->min(), iter->max())) {
     fprintf(fd, "-%s", ats_ip_ntop(iter->max(), ipb, sizeof(ipb)));
+  }
 }
 
 void

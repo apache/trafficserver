@@ -47,8 +47,9 @@ str_to_datatype(const char *str)
 {
   TSRecordDataType type = TS_RECORDDATATYPE_NULL;
 
-  if (!str || !*str)
+  if (!str || !*str) {
     return TS_RECORDDATATYPE_NULL;
+  }
 
   if (!strcmp(str, "INT")) {
     type = TS_RECORDDATATYPE_INT;
@@ -75,8 +76,9 @@ CcHttpTxnConfigFind(const char *name, int length, CcConfigKey *conf, TSRecordDat
 {
   *type = TS_RECORDDATATYPE_NULL;
 
-  if (length == -1)
+  if (length == -1) {
     length = strlen(name);
+  }
 
   switch (length) {
   case 46:
@@ -169,13 +171,15 @@ initConfig(const char *fn)
           char *s = buf;
 
           ++line_num; // First line is #1 ...
-          while (isspace(*s))
+          while (isspace(*s)) {
             ++s;
+          }
           tok = strtok_r(s, " \t", &ln);
 
           // check for blank lines and comments
-          if ((!tok) || (tok && ('#' == *tok)))
+          if ((!tok) || (tok && ('#' == *tok))) {
             continue;
+          }
 
           if (strncmp(tok, "CONFIG", 6)) {
             TSError("[collapsed_connection] File %s, line %d: non-CONFIG line encountered", fn, line_num);
@@ -200,17 +204,20 @@ initConfig(const char *fn)
           }
           // Find the value (which depends on the type above)
           if (ln) {
-            while (isspace(*ln))
+            while (isspace(*ln)) {
               ++ln;
+            }
             if ('\0' == *ln) {
               tok = NULL;
             } else {
               tok = ln;
-              while (*ln != '\0')
+              while (*ln != '\0') {
                 ++ln;
+              }
               --ln;
-              while (isspace(*ln) && (ln > tok))
+              while (isspace(*ln) && (ln > tok)) {
                 --ln;
+              }
               ++ln;
               *ln = '\0';
             }

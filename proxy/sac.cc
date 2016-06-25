@@ -102,10 +102,12 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   //
   int config_max_iobuffer_size = DEFAULT_MAX_BUFFER_SIZE;
   max_iobuffer_size            = buffer_size_to_index(config_max_iobuffer_size, DEFAULT_BUFFER_SIZES - 1);
-  if (default_small_iobuffer_size > max_iobuffer_size)
+  if (default_small_iobuffer_size > max_iobuffer_size) {
     default_small_iobuffer_size = max_iobuffer_size;
-  if (default_large_iobuffer_size > max_iobuffer_size)
+  }
+  if (default_large_iobuffer_size > max_iobuffer_size) {
     default_large_iobuffer_size = max_iobuffer_size;
+  }
   init_buffer_allocators();
 
   // initialize the event and net processor

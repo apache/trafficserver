@@ -594,8 +594,9 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
   const char *str;
   int len, port;
 
-  if (TSHttpHdrUrlGet(req_bufp, req_loc, &url_loc) == TS_ERROR)
+  if (TSHttpHdrUrlGet(req_bufp, req_loc, &url_loc) == TS_ERROR) {
     return;
+  }
 
   char *hostname = (char *)getenv("HOSTNAME");
 
@@ -962,18 +963,21 @@ create_directory()
       }
     }
     dir = opendir(".");
-    if (dir == NULL)
+    if (dir == NULL) {
       goto error_out;
+    }
     while ((d = readdir(dir))) {
       remove(d->d_name);
     }
     closedir(dir);
-    if (chdir("..") == -1)
+    if (chdir("..") == -1) {
       return 0;
+    }
   }
 
-  if (chdir(cwd) == -1)
+  if (chdir(cwd) == -1) {
     return 0;
+  }
 
   return 1;
 
@@ -982,8 +986,9 @@ error_out:
       value of chdir() and cannot be silenced
       The reason is the combination of -D_FORTIFY_SOURCE=2 -O
    */
-  if (chdir(cwd) == -1)
+  if (chdir(cwd) == -1) {
     return 0;
+  }
 
   return 0;
 }
@@ -1098,10 +1103,11 @@ parse_config_line(char *line, const struct config_val_ul *cv)
         case TYPE_BOOL: {
           size_t len = strlen(tok);
           if (len > 0) {
-            if (*tok == '1' || *tok == 't')
+            if (*tok == '1' || *tok == 't') {
               *((bool *)cv->val) = true;
-            else
+            } else {
               *((bool *)cv->val) = false;
+            }
             TSError("[buffer_upload] Parsed bool config value %s : %d", cv->str, *((bool *)cv->val));
             TSDebug(DEBUG_TAG, "Parsed bool config value %s : %d", cv->str, *((bool *)cv->val));
           }

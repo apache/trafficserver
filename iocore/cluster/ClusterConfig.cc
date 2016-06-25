@@ -205,8 +205,9 @@ machine_config_change(const char * /* name ATS_UNUSED */, RecDataT /* data_type 
   cluster_config  = l;
   make_cluster_connections(l);
 #endif
-  if (old)
+  if (old) {
     free_MachineList(old);
+  }
   return 0;
 }
 
@@ -292,14 +293,16 @@ configuration_add_machine(ClusterConfiguration *c, ClusterMachine *m)
   // Find the place to insert this new machine
   //
   for (i = 0; i < cc->n_machines; i++) {
-    if (cc->machines[i]->ip > m->ip)
+    if (cc->machines[i]->ip > m->ip) {
       break;
+    }
   }
 
   // Move the other machines out of the way
   //
-  for (int j            = cc->n_machines - 1; j >= i; j--)
+  for (int j = cc->n_machines - 1; j >= i; j--) {
     cc->machines[j + 1] = cc->machines[j];
+  }
 
   // Insert it
   //
@@ -330,9 +333,11 @@ configuration_remove_machine(ClusterConfiguration *c, ClusterMachine *m)
   //
   // remove m and move others down
   //
-  for (int i = 0; i < cc->n_machines - 1; i++)
-    if (m == cc->machines[i])
+  for (int i = 0; i < cc->n_machines - 1; i++) {
+    if (m == cc->machines[i]) {
       m = cc->machines[i] = cc->machines[i + 1];
+    }
+  }
   cc->n_machines--;
 
   ink_assert(cc->n_machines > 0);
@@ -360,8 +365,9 @@ ClusterMachine *
 cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **past_probes)
 {
 #ifdef CLUSTER_TOMCAT
-  if (!cache_clustering_enabled)
+  if (!cache_clustering_enabled) {
     return NULL;
+  }
 #endif
   ClusterConfiguration *cc      = this_cluster()->current_configuration();
   ClusterConfiguration *next_cc = cc;
@@ -383,13 +389,15 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
   while (1) {
     // If we are out of our depth, fail
     //
-    if (probe_depth > CONFIGURATION_HISTORY_PROBE_DEPTH)
+    if (probe_depth > CONFIGURATION_HISTORY_PROBE_DEPTH) {
       break;
+    }
 
     // If there is no configuration, fail
     //
-    if (!cc || !next_cc)
+    if (!cc || !next_cc) {
       break;
+    }
 
     cc      = next_cc;
     next_cc = next_cc->link.next;
@@ -397,8 +405,9 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
     // Find the correct configuration
     //
     if (tprobe_depth) {
-      if (cc->changed > (now + CLUSTER_CONFIGURATION_TIMEOUT))
+      if (cc->changed > (now + CLUSTER_CONFIGURATION_TIMEOUT)) {
         break;
+      }
       tprobe_depth--;
       continue;
     }
@@ -413,13 +422,15 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
     // Store the all but the last probe, so that we never return
     // the same machine
     //
-    if (past_probes && probe_depth < CONFIGURATION_HISTORY_PROBE_DEPTH)
+    if (past_probes && probe_depth < CONFIGURATION_HISTORY_PROBE_DEPTH) {
       past_probes[probe_depth] = m;
+    }
     probe_depth++;
 
     if (!ok) {
-      if (!pprobe_depth)
+      if (!pprobe_depth) {
         break; // don't go down if we don't have a depth
+      }
       continue;
     }
 

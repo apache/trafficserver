@@ -121,8 +121,9 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
     fhash       = chash[PRIMARY];
     if (path_hash) {
       prtmp = (pRecord *)fhash->lookup_by_hashval(path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup]);
-      if (prtmp)
+      if (prtmp) {
         pRec = (parents[last_lookup] + prtmp->idx);
+      }
     }
     // else called by nextParent().
   } else {
@@ -131,15 +132,17 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
       fhash       = chash[SECONDARY];
       path_hash   = getPathHash(request_info, (ATSHash64 *)&hash);
       prtmp       = (pRecord *)fhash->lookup_by_hashval(path_hash, &result->chashIter[last_lookup], &wrap_around[last_lookup]);
-      if (prtmp)
+      if (prtmp) {
         pRec = (parents[last_lookup] + prtmp->idx);
+      }
     } else {
       last_lookup = PRIMARY;
       fhash       = chash[PRIMARY];
       do { // search until we've selected a different parent.
         prtmp = (pRecord *)fhash->lookup(NULL, &result->chashIter[last_lookup], &wrap_around[last_lookup], &hash);
-        if (prtmp)
+        if (prtmp) {
           pRec = (parents[last_lookup] + prtmp->idx);
+        }
       } while (prtmp && strcmp(prtmp->hostname, result->hostname) == 0);
     }
   }

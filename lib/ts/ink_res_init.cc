@@ -136,8 +136,9 @@ ink_res_setservers(ink_res_state statp, IpEndpoint const *set, int cnt)
     IpEndpoint *dst = &statp->nsaddr_list[nserv];
 
     if (dst == set) {
-      if (ats_is_ip(&set->sa))
+      if (ats_is_ip(&set->sa)) {
         ++nserv;
+      }
     } else if (ats_ip_copy(&dst->sa, &set->sa)) {
       ++nserv;
     }
@@ -167,33 +168,39 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
   int i;
 
 #ifdef DEBUG
-  if (statp->options & INK_RES_DEBUG)
+  if (statp->options & INK_RES_DEBUG) {
     printf(";; res_setoptions(\"%s\", \"%s\")...\n", options, source);
+  }
 #endif
   while (*cp) {
     /* skip leading and inner runs of spaces */
-    while (*cp == ' ' || *cp == '\t')
+    while (*cp == ' ' || *cp == '\t') {
       cp++;
+    }
     /* search for and process individual options */
     if (!strncmp(cp, "ndots:", sizeof("ndots:") - 1)) {
       i = atoi(cp + sizeof("ndots:") - 1);
-      if (i <= INK_RES_MAXNDOTS)
+      if (i <= INK_RES_MAXNDOTS) {
         statp->ndots = i;
-      else
+      } else {
         statp->ndots = INK_RES_MAXNDOTS;
+      }
 #ifdef DEBUG
-      if (statp->options & INK_RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG) {
         printf(";;\tndots=%d\n", statp->ndots);
+      }
 #endif
     } else if (!strncmp(cp, "timeout:", sizeof("timeout:") - 1)) {
       i = atoi(cp + sizeof("timeout:") - 1);
-      if (i <= INK_RES_MAXRETRANS)
+      if (i <= INK_RES_MAXRETRANS) {
         statp->retrans = i;
-      else
+      } else {
         statp->retrans = INK_RES_MAXRETRANS;
+      }
 #ifdef DEBUG
-      if (statp->options & INK_RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG) {
         printf(";;\ttimeout=%d\n", statp->retrans);
+      }
 #endif
 #ifdef SOLARIS2
     } else if (!strncmp(cp, "retrans:", sizeof("retrans:") - 1)) {
@@ -213,13 +220,15 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
 #endif /* SOLARIS2 */
     } else if (!strncmp(cp, "attempts:", sizeof("attempts:") - 1)) {
       i = atoi(cp + sizeof("attempts:") - 1);
-      if (i <= INK_RES_MAXRETRY)
+      if (i <= INK_RES_MAXRETRY) {
         statp->retry = i;
-      else
+      } else {
         statp->retry = INK_RES_MAXRETRY;
+      }
 #ifdef DEBUG
-      if (statp->options & INK_RES_DEBUG)
+      if (statp->options & INK_RES_DEBUG) {
         printf(";;\tattempts=%d\n", statp->retry);
+      }
 #endif
     } else if (!strncmp(cp, "debug", sizeof("debug") - 1)) {
 #ifdef DEBUG
@@ -250,8 +259,9 @@ ink_res_setoptions(ink_res_state statp, const char *options, const char *source 
       /* XXX - print a warning here? */
     }
     /* skip to next run of spaces */
-    while (*cp && *cp != ' ' && *cp != '\t')
+    while (*cp && *cp != ' ' && *cp != '\t') {
       cp++;
+    }
   }
 }
 
@@ -358,9 +368,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
     pp    = statp->dnsrch;
     *pp++ = cp;
     for (n = 0; *cp && pp < statp->dnsrch + INK_MAXDNSRCH; cp++) {
-      if (*cp == '\n') /*%< silly backwards compat */
+      if (*cp == '\n') { /*%< silly backwards compat */
         break;
-      else if (*cp == ' ' || *cp == '\t') {
+      } else if (*cp == ' ' || *cp == '\t') {
         *cp = 0;
         n   = 1;
       } else if (n) {
@@ -370,8 +380,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
       }
     }
     /* null terminate last domain if there are excess */
-    while (*cp != '\0' && *cp != ' ' && *cp != '\t' && *cp != '\n')
+    while (*cp != '\0' && *cp != ' ' && *cp != '\t' && *cp != '\n') {
       cp++;
+    }
     *cp   = '\0';
     *pp++ = 0;
   }
@@ -387,17 +398,19 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 
   if (pDefDomain && '\0' != *pDefDomain && '\n' != *pDefDomain) {
     ink_strlcpy(statp->defdname, pDefDomain, sizeof(statp->defdname));
-    if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL)
+    if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL) {
       *cp = '\0';
+    }
   }
   if (pSearchList && '\0' != *pSearchList && '\n' != *pSearchList) {
     ink_strlcpy(statp->defdname, pSearchList, sizeof(statp->defdname));
-    if ((cp = strchr(statp->defdname, '\n')) != NULL)
+    if ((cp = strchr(statp->defdname, '\n')) != NULL) {
       *cp = '\0';
-    /*
-     * Set search list to be blank-separated strings
-     * on rest of line.
-     */
+      /*
+       * Set search list to be blank-separated strings
+       * on rest of line.
+       */
+    }
     cp    = statp->defdname;
     pp    = statp->dnsrch;
     *pp++ = cp;
@@ -411,8 +424,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
       }
     }
     /* null terminate last domain if there are excess */
-    while (*cp != '\0' && *cp != ' ' && *cp != '\t')
+    while (*cp != '\0' && *cp != ' ' && *cp != '\t') {
       cp++;
+    }
     *cp        = '\0';
     *pp++      = 0;
     havesearch = 1;
@@ -422,8 +436,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
      we must be provided with atleast a named!
      ------------------------------------------- */
   if (pHostList) {
-    if (pHostListSize > INK_MAXNS)
+    if (pHostListSize > INK_MAXNS) {
       pHostListSize = INK_MAXNS;
+    }
     for (; nserv < pHostListSize && ats_is_ip(&pHostList[nserv].sa); ++nserv) {
       ats_ip_copy(&statp->nsaddr_list[nserv].sa, &pHostList[nserv].sa);
     }
@@ -436,39 +451,48 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
     /* read the config file */
     while (fgets(buf, sizeof(buf), fp) != NULL) {
       /* skip comments */
-      if (*buf == ';' || *buf == '#')
+      if (*buf == ';' || *buf == '#') {
         continue;
+      }
       /* read default domain name */
       if (MATCH(buf, "domain")) {
-        if (haveenv) /*%< skip if have from environ */
+        if (haveenv) { /*%< skip if have from environ */
           continue;
+        }
         cp = buf + sizeof("domain") - 1;
-        while (*cp == ' ' || *cp == '\t')
+        while (*cp == ' ' || *cp == '\t') {
           cp++;
-        if ((*cp == '\0') || (*cp == '\n'))
+        }
+        if ((*cp == '\0') || (*cp == '\n')) {
           continue;
+        }
         ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
-        if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL)
-          *cp      = '\0';
+        if ((cp = strpbrk(statp->defdname, " \t\n")) != NULL) {
+          *cp = '\0';
+        }
         havesearch = 0;
         continue;
       }
       /* set search list */
       if (MATCH(buf, "search")) {
-        if (haveenv) /*%< skip if have from environ */
+        if (haveenv) { /*%< skip if have from environ */
           continue;
+        }
         cp = buf + sizeof("search") - 1;
-        while (*cp == ' ' || *cp == '\t')
+        while (*cp == ' ' || *cp == '\t') {
           cp++;
-        if ((*cp == '\0') || (*cp == '\n'))
+        }
+        if ((*cp == '\0') || (*cp == '\n')) {
           continue;
+        }
         ink_strlcpy(statp->defdname, cp, sizeof(statp->defdname));
-        if ((cp = strchr(statp->defdname, '\n')) != NULL)
+        if ((cp = strchr(statp->defdname, '\n')) != NULL) {
           *cp = '\0';
-        /*
-         * Set search list to be blank-separated strings
-         * on rest of line.
-         */
+          /*
+           * Set search list to be blank-separated strings
+           * on rest of line.
+           */
+        }
         cp    = statp->defdname;
         pp    = statp->dnsrch;
         *pp++ = cp;
@@ -482,8 +506,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
           }
         }
         /* null terminate last domain if there are excess */
-        while (*cp != '\0' && *cp != ' ' && *cp != '\t')
+        while (*cp != '\0' && *cp != ' ' && *cp != '\t') {
           cp++;
+        }
         *cp        = '\0';
         *pp++      = 0;
         havesearch = 1;
@@ -492,8 +517,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
       /* read nameservers to query */
       if (MATCH(buf, "nameserver") && nserv < maxns) {
         cp = buf + sizeof("nameserver") - 1;
-        while (*cp == ' ' || *cp == '\t')
+        while (*cp == ' ' || *cp == '\t') {
           cp++;
+        }
         if ((*cp != '\0') && (*cp != '\n')) {
           ts::ConstBuffer host(cp, strcspn(cp, ";# \t\n"));
           if (0 == ats_ip_pton(host, &statp->nsaddr_list[nserv].sa)) {
@@ -514,11 +540,13 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
     (void)fclose(fp);
   }
 
-  if (nserv > 0)
+  if (nserv > 0) {
     statp->nscount = nserv;
+  }
 
-  if (statp->defdname[0] == 0 && gethostname(buf, sizeof(statp->defdname) - 1) == 0 && (cp = strchr(buf, '.')) != NULL)
+  if (statp->defdname[0] == 0 && gethostname(buf, sizeof(statp->defdname) - 1) == 0 && (cp = strchr(buf, '.')) != NULL) {
     ink_strlcpy(statp->defdname, cp + 1, sizeof(statp->defdname));
+  }
 
   /* find components of local domain that might be searched */
   if (havesearch == 0) {
@@ -528,13 +556,15 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 
     if (dnsSearch == 1) {
       dots = 0;
-      for (cp = statp->defdname; *cp; cp++)
+      for (cp = statp->defdname; *cp; cp++) {
         dots += (*cp == '.');
+      }
 
       cp = statp->defdname;
       while (pp < statp->dnsrch + INK_MAXDFLSRCH) {
-        if (dots < INK_LOCALDOMAINPARTS)
+        if (dots < INK_LOCALDOMAINPARTS) {
           break;
+        }
         cp    = strchr(cp, '.') + 1; /*%< we know there is one */
         *pp++ = cp;
         dots--;
@@ -544,8 +574,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
 #ifdef DEBUG
     if (statp->options & INK_RES_DEBUG) {
       printf(";; res_init()... default dnsrch list:\n");
-      for (pp = statp->dnsrch; *pp; pp++)
+      for (pp = statp->dnsrch; *pp; pp++) {
         printf(";;\t%s\n", *pp);
+      }
       printf(";;\t..END..\n");
     }
 #endif
@@ -554,8 +585,9 @@ ink_res_init(ink_res_state statp,         ///< State object to update.
   /* export all ns servers to DNSprocessor. */
   ink_res_setservers(statp, &statp->nsaddr_list[0], statp->nscount);
 
-  if ((cp = getenv("RES_OPTIONS")) != NULL)
+  if ((cp = getenv("RES_OPTIONS")) != NULL) {
     ink_res_setoptions(statp, cp, "env");
+  }
   statp->options |= INK_RES_INIT;
   return (statp->res_h_errno);
 }
@@ -572,8 +604,9 @@ parse_host_res_preference(char const *value, HostResPreferenceOrder order)
 
   n = tokens.Initialize(value);
 
-  for (i     = 0; i < N_HOST_RES_PREFERENCE; ++i)
+  for (i = 0; i < N_HOST_RES_PREFERENCE; ++i) {
     found[i] = false;
+  }
 
   for (i = 0; i < n && np < N_HOST_RES_PREFERENCE_ORDER; ++i) {
     char const *elt = tokens[i];
@@ -600,12 +633,15 @@ parse_host_res_preference(char const *value, HostResPreferenceOrder order)
 
   if (!found[HOST_RES_PREFER_NONE]) {
     // If 'only' wasn't explicit, fill in the rest by default.
-    if (!found[HOST_RES_PREFER_IPV4])
+    if (!found[HOST_RES_PREFER_IPV4]) {
       order[np++] = HOST_RES_PREFER_IPV4;
-    if (!found[HOST_RES_PREFER_IPV6])
+    }
+    if (!found[HOST_RES_PREFER_IPV6]) {
       order[np++] = HOST_RES_PREFER_IPV6;
-    if (np < N_HOST_RES_PREFERENCE_ORDER) // was N_HOST_RES_PREFERENCE)
+    }
+    if (np < N_HOST_RES_PREFERENCE_ORDER) { // was N_HOST_RES_PREFERENCE)
       order[np] = HOST_RES_PREFER_NONE;
+    }
   }
 }
 
@@ -621,8 +657,9 @@ ts_host_res_order_to_string(HostResPreferenceOrder const &order, char *out, int 
      * resolution key words.
      */
     zret += snprintf(out + zret, size - zret, "%s%s", !first ? ";" : "", HOST_RES_PREFERENCE_STRING[order[i]]);
-    if (HOST_RES_PREFER_NONE == order[i])
+    if (HOST_RES_PREFER_NONE == order[i]) {
       break;
+    }
     first = false;
   }
   return zret;

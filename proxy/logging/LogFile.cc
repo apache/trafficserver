@@ -128,8 +128,9 @@ void
 LogFile::change_name(const char *new_name)
 {
   ats_free(m_name);
-  if (m_log)
+  if (m_log) {
     m_log->change_name(new_name);
+  }
   m_name = ats_strdup(new_name);
 }
 
@@ -185,8 +186,9 @@ LogFile::open_file()
   } else {
     if (m_log) {
       int status = m_log->open_file(Log::config->logfile_perm);
-      if (status == BaseLogFile::LOG_FILE_COULD_NOT_OPEN_FILE)
+      if (status == BaseLogFile::LOG_FILE_COULD_NOT_OPEN_FILE) {
         return LOG_FILE_COULD_NOT_OPEN_FILE;
+      }
     } else {
       return LOG_FILE_COULD_NOT_OPEN_FILE;
     }
@@ -452,10 +454,11 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
     fmt_entry_count = 0;
     fmt_buf_bytes   = 0;
 
-    if (m_file_format == LOG_FILE_PIPE)
+    if (m_file_format == LOG_FILE_PIPE) {
       ascii_buffer = (char *)malloc(m_max_line_size);
-    else
+    } else {
       ascii_buffer = (char *)malloc(m_ascii_buffer_size);
+    }
 
     // fill the buffer with as many records as possible
     //
@@ -483,11 +486,13 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
       // record to avoid as much as possible overflowing the
       // pipe buffer
       //
-      if (m_file_format == LOG_FILE_PIPE)
+      if (m_file_format == LOG_FILE_PIPE) {
         break;
+      }
 
-      if (m_ascii_buffer_size - fmt_buf_bytes < m_max_line_size)
+      if (m_ascii_buffer_size - fmt_buf_bytes < m_max_line_size) {
         break;
+      }
     } while ((entry_header = iter.next()));
 
     // send the buffer to flush thread
@@ -557,8 +562,9 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 
     if ((bytes_this_write = (int)::writev(fd, (const struct iovec *)wvec, vcnt)) < 0) {
       Warning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
-    } else
+    } else {
       total_bytes = bytes_this_write;
+    }
   }
   return total_bytes;
 }
@@ -616,10 +622,11 @@ LogFile::display(FILE *fd)
 bool
 LogFile::is_open()
 {
-  if (m_file_format == LOG_FILE_PIPE)
+  if (m_file_format == LOG_FILE_PIPE) {
     return m_fd >= 0;
-  else
+  } else {
     return m_log && m_log->is_open();
+  }
 }
 
 /*

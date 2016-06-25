@@ -42,8 +42,9 @@ cluster_schedule(ClusterHandler *ch, ClusterVConnection *vc, ClusterVConnState *
   //
   int new_bucket = ch->cur_vcs;
 
-  if (vc->type == VC_NULL)
+  if (vc->type == VC_NULL) {
     vc->type = VC_CLUSTER;
+  }
   if (ns == &vc->read) {
     ClusterVC_enqueue_read(ch->read_vcs[new_bucket], vc);
   } else {
@@ -55,12 +56,14 @@ void
 cluster_reschedule_offset(ClusterHandler *ch, ClusterVConnection *vc, ClusterVConnState *ns, int offset)
 {
   if (ns == &vc->read) {
-    if (vc->read.queue)
+    if (vc->read.queue) {
       ClusterVC_remove_read(vc);
+    }
     ClusterVC_enqueue_read(ch->read_vcs[(ch->cur_vcs + offset) % CLUSTER_BUCKETS], vc);
   } else {
-    if (vc->write.queue)
+    if (vc->write.queue) {
       ClusterVC_remove_write(vc);
+    }
     ClusterVC_enqueue_write(ch->write_vcs[(ch->cur_vcs + offset) % CLUSTER_BUCKETS], vc);
   }
 }

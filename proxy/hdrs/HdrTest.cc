@@ -402,8 +402,9 @@ HdrTest::test_url()
     const char *fail_text = NULL;
 
     if (old_length == new_length) {
-      if (memcmp(print_buf, strs[i], new_length) != 0)
+      if (memcmp(print_buf, strs[i], new_length) != 0) {
         fail_text = "URLS DIFFER";
+      }
     } else if (old_length == new_length - 1) {
       // Check to see if the difference is the trailing
       //   slash we add
@@ -504,8 +505,9 @@ HdrTest::test_mime()
   hdr.create(NULL);
   err = hdr.parse(&parser, &start, end, must_copy_strs, false);
 
-  if (err < 0)
+  if (err < 0) {
     return (failures_to_status("test_mime", 1));
+  }
 
   hdr.field_delete("not_there", 9);
   hdr.field_delete("accept", 6);
@@ -697,8 +699,9 @@ HdrTest::test_http_aux(const char *request, const char *response)
   printf("======== parsing\n\n");
   while (1) {
     err = req_hdr.parse_req(&parser, &start, end, true);
-    if (err != PARSE_CONT)
+    if (err != PARSE_CONT) {
       break;
+    }
   }
   if (err == PARSE_ERROR) {
     req_hdr.destroy();
@@ -737,8 +740,9 @@ HdrTest::test_http_aux(const char *request, const char *response)
 
   while (1) {
     err = rsp_hdr.parse_resp(&parser, &start, end, true);
-    if (err != PARSE_CONT)
+    if (err != PARSE_CONT) {
       break;
+    }
   }
   if (err == PARSE_ERROR) {
     req_hdr.destroy();
@@ -777,10 +781,11 @@ HdrTest::test_http_aux(const char *request, const char *response)
       // printf("test_header: tmp = %d  err = %d  bufindex = %d\n", tmp, err, bufindex);
       putchar('{');
       for (i = 0; i < bufindex - last_bufindex; i++) {
-        if (!iscntrl(buf[i]))
+        if (!iscntrl(buf[i])) {
           putchar(buf[i]);
-        else
+        } else {
           printf("\\%o", buf[i]);
+        }
       }
       putchar('}');
     } while (!err);
@@ -948,19 +953,22 @@ HdrTest::test_http_hdr_print_and_copy()
 
   for (i = 0; i < ntests; i++) {
     int status = test_http_hdr_print_and_copy_aux(i + 1, tests[i].req, tests[i].req_tgt, tests[i].rsp, tests[i].rsp_tgt);
-    if (status == 0)
+    if (status == 0) {
       ++failures;
+    }
 
     // Test for expected failures
     // parse with a '\0' in the header.  Should fail
     status = test_http_hdr_null_char(i + 1, tests[i].req, tests[i].req_tgt);
-    if (status == 0)
+    if (status == 0) {
       ++failures;
+    }
 
     // Parse with a CTL character in the method name.  Should fail
     status = test_http_hdr_ctl_char(i + 1, tests[i].req, tests[i].req_tgt);
-    if (status == 0)
+    if (status == 0) {
       ++failures;
+    }
   }
 
   return (failures_to_status("test_http_hdr_print_and_copy", failures));
@@ -1040,8 +1048,9 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
 
   while (1) {
     err = req_hdr.parse_req(&parser, &start, end, true);
-    if (err != PARSE_CONT)
+    if (err != PARSE_CONT) {
       break;
+    }
   }
 
   if (err == PARSE_ERROR) {
@@ -1061,8 +1070,9 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
 
   while (1) {
     err = resp_hdr.parse_resp(&parser, &start, end, true);
-    if (err != PARSE_CONT)
+    if (err != PARSE_CONT) {
       break;
+    }
   }
 
   if (err == PARSE_ERROR) {
@@ -1074,14 +1084,16 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   copy1.create(HTTP_TYPE_REQUEST);
   copy1.copy(&req_hdr);
   comp_str = comp_http_hdr(&req_hdr, &copy1);
-  if (comp_str)
+  if (comp_str) {
     goto done;
+  }
 
   copy2.create(HTTP_TYPE_RESPONSE);
   copy2.copy(&resp_hdr);
   comp_str = comp_http_hdr(&resp_hdr, &copy2);
-  if (comp_str)
+  if (comp_str) {
     goto done;
+  }
 
 // The APIs for copying headers uses memcpy() which can be unsafe for
 // overlapping memory areas. It's unclear to me why these tests were
@@ -1102,13 +1114,15 @@ HdrTest::test_http_hdr_copy_over_aux(int testnum, const char *request, const cha
   /*** (5) Gender bending copying ***/
   copy1.copy(&resp_hdr);
   comp_str = comp_http_hdr(&resp_hdr, &copy1);
-  if (comp_str)
+  if (comp_str) {
     goto done;
+  }
 
   copy2.copy(&req_hdr);
   comp_str = comp_http_hdr(&req_hdr, &copy2);
-  if (comp_str)
+  if (comp_str) {
     goto done;
+  }
 
 done:
   req_hdr.destroy();
@@ -1157,8 +1171,9 @@ HdrTest::test_http_hdr_null_char(int testnum, const char *request, const char * 
 
   while (1) {
     err = hdr.parse_req(&parser, &cpy_buf_ptr, cpy_buf_ptr + length, true);
-    if (err != PARSE_CONT)
+    if (err != PARSE_CONT) {
       break;
+    }
   }
   if (err != PARSE_ERROR) {
     printf("FAILED: (test #%d) no parse error parsing request with null char\n", testnum);
@@ -1198,8 +1213,9 @@ HdrTest::test_http_hdr_ctl_char(int testnum, const char *request, const char * /
 
   while (1) {
     err = hdr.parse_req(&parser, &cpy_buf_ptr, cpy_buf_ptr + strlen(start), true);
-    if (err != PARSE_CONT)
+    if (err != PARSE_CONT) {
       break;
+    }
   }
 
   if (err != PARSE_ERROR) {
@@ -1244,8 +1260,9 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
 
   while (1) {
     err = hdr.parse_req(&parser, &start, end, true);
-    if (err != PARSE_CONT)
+    if (err != PARSE_CONT) {
       break;
+    }
   }
 
   if (err == PARSE_ERROR) {
@@ -1317,8 +1334,9 @@ HdrTest::test_http_hdr_print_and_copy_aux(int testnum, const char *request, cons
 
   while (1) {
     err = hdr.parse_resp(&parser, &start, end, true);
-    if (err != PARSE_CONT)
+    if (err != PARSE_CONT) {
       break;
+    }
   }
 
   if (err == PARSE_ERROR) {
@@ -1576,8 +1594,9 @@ HdrTest::test_http_mutation()
 
   while (1) {
     err = resp_hdr.parse_resp(&parser, &start, end, true);
-    if (err != PARSE_CONT)
+    if (err != PARSE_CONT) {
       break;
+    }
   }
 
   printf("\n======== before mutation ==========\n\n");
@@ -2082,8 +2101,9 @@ HdrTest::test_parse_comma_list()
 
     for (j = 0; j < tests[i].count; j++) {
       Str *cell = list.get_idx(j);
-      if (cell != NULL)
+      if (cell != NULL) {
         offset = cell->str - tests[i].value;
+      }
 
       if (tests[i].pieces[j].offset == -1) // should not have a piece
       {
@@ -2120,13 +2140,15 @@ HdrTest::bri_box(const char *s)
 
   len = (int)strlen(s);
   printf("\n+-");
-  for (i = 0; i < len; i++)
+  for (i = 0; i < len; i++) {
     putchar('-');
+  }
   printf("-+\n");
   printf("| %s |\n", s);
   printf("+-");
-  for (i = 0; i < len; i++)
+  for (i = 0; i < len; i++) {
     putchar('-');
+  }
   printf("-+\n\n");
 }
 

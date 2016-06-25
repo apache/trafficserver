@@ -381,8 +381,9 @@ NetHandler::process_enabled_list(NetHandler *nh)
     vc->ep.modify(EVENTIO_READ);
     vc->ep.refresh(EVENTIO_READ);
     vc->read.in_enabled_list = 0;
-    if ((vc->read.enabled && vc->read.triggered) || vc->closed)
+    if ((vc->read.enabled && vc->read.triggered) || vc->closed) {
       nh->read_ready_list.in_or_enqueue(vc);
+    }
   }
 
   SListM(UnixNetVConnection, NetState, write, enable_link) wq(nh->write_enable_list.popall());
@@ -390,8 +391,9 @@ NetHandler::process_enabled_list(NetHandler *nh)
     vc->ep.modify(EVENTIO_WRITE);
     vc->ep.refresh(EVENTIO_WRITE);
     vc->write.in_enabled_list = 0;
-    if ((vc->write.enabled && vc->write.triggered) || vc->closed)
+    if ((vc->write.enabled && vc->write.triggered) || vc->closed) {
       nh->write_ready_list.in_or_enqueue(vc);
+    }
   }
 }
 
@@ -412,10 +414,11 @@ NetHandler::mainNetEvent(int event, Event *e)
   NET_INCREMENT_DYN_STAT(net_handler_run_stat);
 
   process_enabled_list(this);
-  if (likely(!read_ready_list.empty() || !write_ready_list.empty() || !read_enable_list.empty() || !write_enable_list.empty()))
+  if (likely(!read_ready_list.empty() || !write_ready_list.empty() || !read_enable_list.empty() || !write_enable_list.empty())) {
     poll_timeout = 0; // poll immediately returns -- we have triggered stuff to process right now
-  else
+  } else {
     poll_timeout = net_config_poll_timeout;
+  }
 
   PollDescriptor *pd     = get_PollDescriptor(trigger_event->ethread);
   UnixNetVConnection *vc = NULL;
@@ -508,11 +511,11 @@ NetHandler::mainNetEvent(int event, Event *e)
   while ((vc = read_ready_list.dequeue())) {
     // Initialize the thread-local continuation flags
     set_cont_flags(vc->control_flags);
-    if (vc->closed)
+    if (vc->closed) {
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->read.enabled && vc->read.triggered)
+    } else if (vc->read.enabled && vc->read.triggered) {
       vc->net_read_io(this, trigger_event->ethread);
-    else if (!vc->read.enabled) {
+    } else if (!vc->read.enabled) {
       read_ready_list.remove(vc);
 #if defined(solaris)
       if (vc->read.triggered && vc->write.enabled) {
@@ -525,11 +528,11 @@ NetHandler::mainNetEvent(int event, Event *e)
   }
   while ((vc = write_ready_list.dequeue())) {
     set_cont_flags(vc->control_flags);
-    if (vc->closed)
+    if (vc->closed) {
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->write.enabled && vc->write.triggered)
+    } else if (vc->write.enabled && vc->write.triggered) {
       write_to_net(this, vc, trigger_event->ethread);
-    else if (!vc->write.enabled) {
+    } else if (!vc->write.enabled) {
       write_ready_list.remove(vc);
 #if defined(solaris)
       if (vc->write.triggered && vc->read.enabled) {

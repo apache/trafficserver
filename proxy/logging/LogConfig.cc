@@ -151,8 +151,9 @@ LogConfig::read_configuration_variables()
 
   ptr                     = REC_ConfigReadString("proxy.config.log.logfile_perm");
   int logfile_perm_parsed = ink_fileperm_parse(ptr);
-  if (logfile_perm_parsed != -1)
+  if (logfile_perm_parsed != -1) {
     logfile_perm = logfile_perm_parsed;
+  }
   ats_free(ptr);
 
   ptr = REC_ConfigReadString("proxy.config.log.hostname");
@@ -721,8 +722,9 @@ LogConfig::update_space_used()
 {
   // no need to update space used if log directory is inaccessible
   //
-  if (m_log_directory_inaccessible)
+  if (m_log_directory_inaccessible) {
     return;
+  }
 
   static const int MAX_CANDIDATES = 128;
   LogDeleteCandidate candidates[MAX_CANDIDATES];
@@ -875,8 +877,9 @@ LogConfig::update_space_used()
   //
 
   if (!space_to_write(headroom)) {
-    if (!logging_space_exhausted)
+    if (!logging_space_exhausted) {
       Note("Logging space exhausted, any logs writing to local disk will be dropped!");
+    }
 
     logging_space_exhausted = true;
     //
@@ -922,8 +925,9 @@ LogConfig::update_space_used()
     //
     // We have enough space to log again; clear any previous messages
     //
-    if (logging_space_exhausted)
+    if (logging_space_exhausted) {
       Note("Logging space is no longer exhausted.");
+    }
 
     logging_space_exhausted = false;
     if (m_disk_full || m_partition_full) {
@@ -1145,8 +1149,9 @@ LogConfig::read_xml_log_config()
       if (strlen(field_str) > 2 && field_str[0] == '%' && field_str[1] == '<') {
         Debug("xml", "Field symbol has <> form: %s", field_str);
         char *end = field_str;
-        while (*end && *end != '>')
+        while (*end && *end != '>') {
           end++;
+        }
         *end = '\0';
         field_str += 2;
         Debug("xml", "... now field symbol is %s", field_str);

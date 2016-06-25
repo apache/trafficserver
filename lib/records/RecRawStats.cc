@@ -271,8 +271,9 @@ _RecRegisterRawStat(RecRawStatBlock *rsb, RecT rec_type, const char *name, RecDa
   rsb->global[id]->last_count = 0;
 
   // setup the periodic sync callback
-  if (sync_cb)
+  if (sync_cb) {
     RecRegisterRawStatSyncCb(name, sync_cb, rsb, id);
+  }
 
 Ldone:
   return err;
@@ -322,8 +323,9 @@ RecRawStatSyncAvg(const char *name, RecDataT data_type, RecData *data, RecRawSta
   raw_stat_sync_to_global(rsb, id);
   total.sum   = rsb->global[id]->sum;
   total.count = rsb->global[id]->count;
-  if (total.count != 0)
+  if (total.count != 0) {
     avg = (float)((double)total.sum / (double)total.count);
+  }
   RecDataSetFromFloat(data_type, data, avg);
   return REC_ERR_OKAY;
 }

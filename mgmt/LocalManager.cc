@@ -391,8 +391,9 @@ LocalManager::pollMgmtProcessServer()
     timeout.tv_usec = process_server_timeout_msecs * 1000;
     FD_ZERO(&fdlist);
     FD_SET(process_server_sockfd, &fdlist);
-    if (watched_process_fd != ts::NO_FD)
+    if (watched_process_fd != ts::NO_FD) {
       FD_SET(watched_process_fd, &fdlist);
+    }
 
 #if TS_HAS_WCCP
     // Only run WCCP housekeeping while we have a server process.
@@ -971,8 +972,9 @@ LocalManager::closeProxyPorts()
 void
 LocalManager::listenForProxy()
 {
-  if (!run_proxy)
+  if (!run_proxy) {
     return;
+  }
 
   // We are not already bound, bind the port
   for (int i = 0, n = lmgmt->m_proxy_ports.length(); i < n; ++i) {
@@ -1047,15 +1049,17 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
   if (port.m_inbound_ip.isValid()) {
     ip.assign(port.m_inbound_ip);
   } else if (AF_INET6 == port.m_family) {
-    if (m_inbound_ip6.isValid())
+    if (m_inbound_ip6.isValid()) {
       ip.assign(m_inbound_ip6);
-    else
+    } else {
       ip.setToAnyAddr(AF_INET6);
+    }
   } else if (AF_INET == port.m_family) {
-    if (m_inbound_ip4.isValid())
+    if (m_inbound_ip4.isValid()) {
       ip.assign(m_inbound_ip4);
-    else
+    } else {
       ip.setToAnyAddr(AF_INET);
+    }
   } else {
     mgmt_fatal(stderr, 0, "[bindProxyPort] Proxy port with invalid address type %d\n", port.m_family);
   }
@@ -1070,6 +1074,7 @@ LocalManager::bindProxyPort(HttpProxyPort &port)
 void
 LocalManager::signalAlarm(int alarm_id, const char *desc, const char *ip)
 {
-  if (alarm_keeper)
+  if (alarm_keeper) {
     alarm_keeper->signalAlarm((alarm_t)alarm_id, desc, ip);
+  }
 }

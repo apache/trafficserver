@@ -74,12 +74,14 @@ RemapPlugins::run_plugin(remap_plugin_info *plugin)
 
   plugin_retcode = plugin->fp_tsremap_do_remap(ih, _s ? reinterpret_cast<TSHttpTxn>(_s->state_machine) : NULL, &rri);
   // TODO: Deal with negative return codes here
-  if (plugin_retcode < 0)
+  if (plugin_retcode < 0) {
     plugin_retcode = TSREMAP_NO_REMAP;
+  }
 
   // First step after plugin remap must be "redirect url" check
-  if ((TSREMAP_DID_REMAP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) && rri.redirect)
+  if ((TSREMAP_DID_REMAP == plugin_retcode || TSREMAP_DID_REMAP_STOP == plugin_retcode) && rri.redirect) {
     _s->remap_redirect = _request_url->string_get(NULL);
+  }
 
   return plugin_retcode;
 }

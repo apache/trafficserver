@@ -120,8 +120,9 @@ ClusterLoadMonitor::~ClusterLoadMonitor()
 void
 ClusterLoadMonitor::cancel_monitor()
 {
-  if (!cancel_periodic)
+  if (!cancel_periodic) {
     cancel_periodic = 1;
+  }
 }
 
 bool
@@ -180,8 +181,9 @@ ClusterLoadMonitor::compute_cluster_load()
   ink_hrtime ping_latency_threshold = HRTIME_MSECONDS(ping_latency_threshold_msecs);
 
   start = ping_history_buf_head - 1;
-  if (start < 0)
+  if (start < 0) {
     start += ping_history_buf_length;
+  }
   end = start;
 
   if (cluster_overloaded) {
@@ -189,26 +191,31 @@ ClusterLoadMonitor::compute_cluster_load()
   } else {
     end -= (cluster_load_exceed_duration <= ping_history_buf_length ? cluster_load_exceed_duration : ping_history_buf_length);
   }
-  if (end < 0)
+  if (end < 0) {
     end += ping_history_buf_length;
+  }
 
   int threshold_clear    = 0;
   int threshold_exceeded = 0;
   do {
-    if (ping_response_history_buf[start] >= ping_latency_threshold)
+    if (ping_response_history_buf[start] >= ping_latency_threshold) {
       ++threshold_exceeded;
-    else
+    } else {
       ++threshold_clear;
-    if (--start < 0)
+    }
+    if (--start < 0) {
       start = start + ping_history_buf_length;
+    }
   } while (start != end);
 
   if (cluster_overloaded) {
-    if (threshold_exceeded == 0)
+    if (threshold_exceeded == 0) {
       cluster_overloaded = 0;
+    }
   } else {
-    if (threshold_exceeded && (threshold_clear == 0))
+    if (threshold_exceeded && (threshold_clear == 0)) {
       cluster_overloaded = 1;
+    }
   }
   Debug("cluster_monitor", "[%u.%u.%u.%u] overload=%d, clear=%d, exceed=%d, latency=%d", DOT_SEPARATED(this->ch->machine->ip),
         cluster_overloaded, threshold_clear, threshold_exceeded, n_bucket);
@@ -225,8 +232,9 @@ ClusterLoadMonitor::note_ping_response_time(ink_hrtime response_time, int sequen
   int bucket = (int)(response_time / HRTIME_MSECONDS(msecs_per_ping_response_bucket));
   Debug("cluster_monitor_ping", "[%u.%u.%u.%u] ping: %d %d", DOT_SEPARATED(this->ch->machine->ip), bucket, sequence_number);
 
-  if (bucket >= num_ping_response_buckets)
+  if (bucket >= num_ping_response_buckets) {
     bucket = num_ping_response_buckets - 1;
+  }
   ink_atomic_increment(&ping_response_buckets[bucket], 1);
 }
 

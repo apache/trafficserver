@@ -204,10 +204,11 @@ Http1ClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
     tcp_init_cwnd_set = true;
     set_tcp_init_cwnd();
   }
-  if (client_vc)
+  if (client_vc) {
     return client_vc->do_io_write(c, nbytes, buf, owner);
-  else
+  } else {
     return NULL;
+  }
 }
 
 void
@@ -215,10 +216,12 @@ Http1ClientSession::set_tcp_init_cwnd()
 {
   int desired_tcp_init_cwnd = trans.get_sm()->t_state.txn_conf->server_tcp_init_cwnd;
   DebugHttpSsn("desired TCP congestion window is %d", desired_tcp_init_cwnd);
-  if (desired_tcp_init_cwnd == 0)
+  if (desired_tcp_init_cwnd == 0) {
     return;
-  if (get_netvc()->set_tcp_init_cwnd(desired_tcp_init_cwnd) != 0)
+  }
+  if (get_netvc()->set_tcp_init_cwnd(desired_tcp_init_cwnd) != 0) {
     DebugHttpSsn("set_tcp_init_cwnd(%d) failed", desired_tcp_init_cwnd);
+  }
 }
 
 void

@@ -56,17 +56,21 @@ parseHTTPResponse(char *buffer, char **header, int *hdr_size, char **body, int *
     goto END;
   }
   // calculate header info
-  if (header)
+  if (header) {
     *header = buffer;
-  if (hdr_size)
+  }
+  if (hdr_size) {
     *hdr_size = buf - buffer;
+  }
 
   // calculate body info
   buf += strlen(HTTP_DIVIDER);
-  if (body)
+  if (body) {
     *body = buf;
-  if (bdy_size)
+  }
+  if (bdy_size) {
     *bdy_size = strlen(buf);
+  }
 
 END:
   return err;

@@ -394,8 +394,9 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
   dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
   while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
-    if (!entryPtr)
+    if (!entryPtr) {
       break;
+    }
 
     if (strcmp(".", entryPtr->d_name) == 0 || strcmp("..", entryPtr->d_name) == 0) {
       continue;
@@ -526,8 +527,9 @@ FileManager::readFile(const char *filePath, textBuffer *contents)
 
   fcntl(diskFD, F_SETFD, 1);
 
-  while ((readResult = contents->readFromFD(diskFD)) > 0)
+  while ((readResult = contents->readFromFD(diskFD)) > 0) {
     ;
+  }
   close(diskFD);
 
   if (readResult < 0) {
@@ -644,8 +646,9 @@ FileManager::rereadConfig()
 
   Vec<Rollback *> childFileNeedDelete;
   for (size_t i = 0; i < changedFiles.n; i++) {
-    if (changedFiles[i]->isChildRollback())
+    if (changedFiles[i]->isChildRollback()) {
       continue;
+    }
     // for each parent file, if it is changed, then delete all its children
     for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
          entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
@@ -779,10 +782,12 @@ FileManager::checkValidName(const char *name)
   int length = strlen(name);
 
   for (int i = 0; i < length; i++) {
-    if (!isprint(name[i]))
+    if (!isprint(name[i])) {
       return false; // invalid - unprintable char
-    if (!isspace(name[i]))
+    }
+    if (!isspace(name[i])) {
       return true; // has non-white space that is printable
+    }
   }
 
   return false; // all white spaces

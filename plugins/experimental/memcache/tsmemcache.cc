@@ -62,12 +62,15 @@ static char *
 mc_string(const char *s, int len)
 {
   int l = len;
-  while (l && (s[l - 1] == '\r' || s[l - 1] == '\n'))
+  while (l && (s[l - 1] == '\r' || s[l - 1] == '\n')) {
     l--;
-  if (l > TSMEMCACHE_TMP_CMD_BUFFER_SIZE - 1)
+  }
+  if (l > TSMEMCACHE_TMP_CMD_BUFFER_SIZE - 1) {
     l = TSMEMCACHE_TMP_CMD_BUFFER_SIZE - 1;
-  if (l)
+  }
+  if (l) {
     memcpy(debug_string_buffer, s, l);
+  }
   debug_string_buffer[l] = 0;
   return debug_string_buffer;
 }
@@ -110,8 +113,9 @@ ink_hton64(uint64_t in)
     SWP1B(x.b[3], x.b[4]);
 #undef SWP1B
     return x.rv;
-  } else
+  } else {
     return in;
+  }
 }
 #define ink_ntoh64 ink_hton64
 
@@ -121,10 +125,11 @@ MCAccept::main_event(int event, void *data)
   if (event == NET_EVENT_ACCEPT) {
     NetVConnection *netvc = (NetVConnection *)data;
     MC *mc                = theMCAllocator.alloc();
-    if (!mutex->thread_holding)
+    if (!mutex->thread_holding) {
       mc->new_connection(netvc, netvc->thread);
-    else
+    } else {
       mc->new_connection(netvc, mutex->thread_holding);
+    }
     return EVENT_CONT;
   } else {
     Fatal("tsmemcache accept received fatal error: errno = %d", -((int)(intptr_t)data));
@@ -153,22 +158,30 @@ MC::new_connection(NetVConnection *netvc, EThread *thread)
 int
 MC::die()
 {
-  if (pending_action && pending_action != ACTION_RESULT_DONE)
+  if (pending_action && pending_action != ACTION_RESULT_DONE) {
     pending_action->cancel();
-  if (nvc)
+  }
+  if (nvc) {
     nvc->do_io_close(1); // abort
-  if (crvc)
+  }
+  if (crvc) {
     crvc->do_io_close(1); // abort
-  if (cwvc)
+  }
+  if (cwvc) {
     cwvc->do_io_close(1); // abort
-  if (rbuf)
+  }
+  if (rbuf) {
     free_MIOBuffer(rbuf);
-  if (wbuf)
+  }
+  if (wbuf) {
     free_MIOBuffer(wbuf);
-  if (cbuf)
+  }
+  if (cbuf) {
     free_MIOBuffer(cbuf);
-  if (tbuf)
+  }
+  if (tbuf) {
     ats_free(tbuf);
+  }
   mutex = NULL;
   theMCAllocator.free(this);
   return EVENT_DONE;
@@ -317,8 +330,9 @@ MC::protocol_error()
 int
 MC::read_from_client()
 {
-  if (swallow_bytes)
+  if (swallow_bytes) {
     return TS_SET_CALL(&MC::swallow_then_read_event, VC_EVENT_READ_READY, rvio);
+  }
   read_offset = 0;
   end_of_cmd  = 0;
   ngets       = 0;
@@ -333,11 +347,13 @@ MC::read_from_client()
     cwvc  = 0;
     cwvio = NULL;
   }
-  if (cbuf)
+  if (cbuf) {
     cbuf->clear();
+  }
   ink_assert(!crvc && !cwvc);
-  if (tbuf)
+  if (tbuf) {
     ats_free(tbuf);
+  }
   return TS_SET_CALL(&MC::read_from_client_event, VC_EVENT_READ_READY, rvio);
 }
 
@@ -389,8 +405,9 @@ MC::write_binary_response(const void *d, int hlen, int keylen, int dlen)
 static char *
 get_pointer(MC *mc, int start, int len)
 {
-  if (mc->reader->block_read_avail() >= start + len)
+  if (mc->reader->block_read_avail() >= start + len) {
     return mc->reader->start() + start;
+  }
   // the block of data straddles an IOBufferBlock boundary, exceptional case, malloc
   ink_assert(!mc->tbuf);
   mc->tbuf = (char *)ats_malloc(len);
@@ -411,19 +428,24 @@ MC::cache_read_event(int event, void *data)
   case CACHE_EVENT_OPEN_READ: {
     crvc     = (CacheVConnection *)data;
     int hlen = 0;
-    if (crvc->get_header((void **)&rcache_header, &hlen) < 0)
+    if (crvc->get_header((void **)&rcache_header, &hlen) < 0) {
       goto Lfail;
-    if (hlen < (int)sizeof(MCCacheHeader) || rcache_header->magic != TSMEMCACHE_HEADER_MAGIC)
+    }
+    if (hlen < (int)sizeof(MCCacheHeader) || rcache_header->magic != TSMEMCACHE_HEADER_MAGIC) {
       goto Lfail;
-    if (header.nkey != rcache_header->nkey || hlen < (int)(sizeof(MCCacheHeader) + rcache_header->nkey))
+    }
+    if (header.nkey != rcache_header->nkey || hlen < (int)(sizeof(MCCacheHeader) + rcache_header->nkey)) {
       goto Lfail;
-    if (memcmp(key, rcache_header->key(), header.nkey))
+    }
+    if (memcmp(key, rcache_header->key(), header.nkey)) {
       goto Lfail;
+    }
     {
       ink_hrtime t = Thread::get_hrtime();
       if (((ink_hrtime)rcache_header->settime) <= last_flush ||
-          t >= ((ink_hrtime)rcache_header->settime) + HRTIME_SECONDS(rcache_header->exptime))
+          t >= ((ink_hrtime)rcache_header->settime) + HRTIME_SECONDS(rcache_header->exptime)) {
         goto Lfail;
+      }
     }
     break;
   Lfail:
@@ -479,14 +501,16 @@ MC::binary_get_event(int event, void *data)
     header.nkey = binary_header.request.keylen;
     return get_item();
   } else if (event == CACHE_EVENT_OPEN_READ_FAILED) {
-    if (f.noreply)
+    if (f.noreply) {
       return read_from_client();
+    }
     if (binary_header.request.opcode == PROTOCOL_BINARY_CMD_GETK) {
       add_binary_header(PROTOCOL_BINARY_RESPONSE_KEY_ENOENT, 0, header.nkey, header.nkey);
       wbuf->write(key, header.nkey);
       return write_then_read_from_client();
-    } else
+    } else {
       return write_binary_error(PROTOCOL_BINARY_RESPONSE_KEY_ENOENT, 0);
+    }
   } else if (event == CACHE_EVENT_OPEN_READ) {
     protocol_binary_response_get *rsp = &res.get;
     uint16_t keylen                   = 0;
@@ -501,12 +525,14 @@ MC::binary_get_event(int event, void *data)
     rsp->message.header.response.cas = ink_hton64(rcache_header->cas);
     rsp->message.body.flags          = htonl(rcache_header->flags);
     wbuf->write(&rsp->message.body, sizeof(rsp->message.body));
-    if (getk)
+    if (getk) {
       wbuf->write(key, header.nkey);
+    }
     crvio = crvc->do_io_read(this, rcache_header->nbytes, wbuf);
     return stream_then_read_from_client(rcache_header->nbytes);
-  } else
+  } else {
     return unexpected_event();
+  }
   return 0;
 }
 
@@ -519,8 +545,9 @@ MC::bin_read_key()
 int
 MC::read_binary_from_client_event(int event, void *data)
 {
-  if (reader->read_avail() < (int)sizeof(binary_header))
+  if (reader->read_avail() < (int)sizeof(binary_header)) {
     return EVENT_CONT;
+  }
   reader->memcpy(&binary_header, sizeof(binary_header));
   if (binary_header.request.magic != PROTOCOL_BINARY_REQ) {
     Warning("tsmemcache: bad binary magic: %x", binary_header.request.magic);
@@ -577,8 +604,9 @@ MC::read_binary_from_client_event(int event, void *data)
   case PROTOCOL_BINARY_CMD_SET: {
     CHECK_PROTOCOL(extlen == 8 && keylen != 0 && bodylen >= keylen + 8);
   Lset:
-    if (bin_read_key() < 0)
+    if (bin_read_key() < 0) {
       return EVENT_CONT;
+    }
     key                              = binary_get_key(this);
     header.nkey                      = keylen;
     protocol_binary_request_set *req = (protocol_binary_request_set *)&binary_header;
@@ -602,8 +630,9 @@ MC::read_binary_from_client_event(int event, void *data)
   case PROTOCOL_BINARY_CMD_QUITQ:
     f.noreply = 1; // fall through
   case PROTOCOL_BINARY_CMD_QUIT:
-    if (f.noreply)
+    if (f.noreply) {
       return die();
+    }
     return write_then_close(write_binary_response(NULL, 0, 0, 0));
   case PROTOCOL_BINARY_CMD_FLUSHQ:
     f.noreply = 1; // fall through
@@ -651,10 +680,11 @@ MC::ascii_response(const char *s, int len)
   if (end_of_cmd > 0) {
     reader->consume(end_of_cmd);
     return read_from_client();
-  } else if (end_of_cmd < 0)
+  } else if (end_of_cmd < 0) {
     return read_from_client();
-  else
+  } else {
     return TS_SET_CALL(&MC::swallow_cmd_then_read_from_client_event, EVENT_NONE, NULL);
+  }
 }
 
 char *
@@ -667,12 +697,14 @@ MC::get_ascii_input(int n, int *end)
     return reader->start();
   }
   int read_avail = reader->read_avail();
-  if (block_read_avail == read_avail)
+  if (block_read_avail == read_avail) {
     goto Lblock;
+  }
   char *c = tmp_cmd_buffer;
   int e   = read_avail;
-  if (e > n)
+  if (e > n) {
     e = n;
+  }
   reader->memcpy(c, e);
   *end = e;
   return c;
@@ -736,62 +768,76 @@ MC::ascii_set_event(int event, void *data)
     cwvc     = (CacheVConnection *)data;
     int hlen = 0;
     if (cwvc->get_header((void **)&wcache_header, &hlen) >= 0) {
-      if (hlen < (int)sizeof(MCCacheHeader) || wcache_header->magic != TSMEMCACHE_HEADER_MAGIC)
+      if (hlen < (int)sizeof(MCCacheHeader) || wcache_header->magic != TSMEMCACHE_HEADER_MAGIC) {
         goto Lfail;
-      if (header.nkey != wcache_header->nkey || hlen < (int)(sizeof(MCCacheHeader) + wcache_header->nkey))
+      }
+      if (header.nkey != wcache_header->nkey || hlen < (int)(sizeof(MCCacheHeader) + wcache_header->nkey)) {
         goto Lfail;
+      }
       ink_hrtime t = Thread::get_hrtime();
       if (((ink_hrtime)wcache_header->settime) <= last_flush ||
-          t >= ((ink_hrtime)wcache_header->settime) + HRTIME_SECONDS(wcache_header->exptime))
+          t >= ((ink_hrtime)wcache_header->settime) + HRTIME_SECONDS(wcache_header->exptime)) {
         goto Lstale;
-      if (f.set_add)
+      }
+      if (f.set_add) {
         return ASCII_RESPONSE("NOT_STORED");
+      }
     } else {
     Lstale:
-      if (f.set_replace)
+      if (f.set_replace) {
         return ASCII_RESPONSE("NOT_STORED");
+      }
     }
     memcpy(tmp_cache_header_key, key, header.nkey);
     header.settime = Thread::get_hrtime();
     if (exptime) {
       if (exptime > REALTIME_MAXDELTA) {
-        if (HRTIME_SECONDS(exptime) <= ((ink_hrtime)header.settime))
+        if (HRTIME_SECONDS(exptime) <= ((ink_hrtime)header.settime)) {
           header.exptime = 0;
-        else
+        } else {
           header.exptime = (int32_t)(exptime - (header.settime / HRTIME_SECOND));
-      } else
+        }
+      } else {
         header.exptime = exptime;
-    } else
+      }
+    } else {
       header.exptime = UINT32_MAX; // 136 years
+    }
     if (f.set_cas) {
-      if (!wcache_header)
+      if (!wcache_header) {
         return ASCII_RESPONSE("NOT_FOUND");
-      if (header.cas && header.cas != wcache_header->cas)
+      }
+      if (header.cas && header.cas != wcache_header->cas) {
         return ASCII_RESPONSE("EXISTS");
+      }
     }
     header.cas = ink_atomic_increment(&next_cas, 1);
-    if (f.set_append || f.set_prepend)
+    if (f.set_append || f.set_prepend) {
       header.nbytes = nbytes + rcache_header->nbytes;
-    else
+    } else {
       header.nbytes = nbytes;
+    }
     cwvc->set_header(&header, header.len());
     reader->consume(end_of_cmd);
     end_of_cmd    = -1;
     swallow_bytes = 2; // \r\n
     if (f.set_append) {
       TS_PUSH_HANDLER(&MC::tunnel_event);
-      if (!cbuf)
-        cbuf  = new_empty_MIOBuffer();
+      if (!cbuf) {
+        cbuf = new_empty_MIOBuffer();
+      }
       creader = cbuf->alloc_reader();
       crvio   = crvc->do_io_read(this, rcache_header->nbytes, cbuf);
       cwvio   = cwvc->do_io_write(this, header.nbytes, creader);
     } else {
       if (f.set_prepend) {
         int64_t a = reader->read_avail();
-        if (a >= (int64_t)nbytes)
+        if (a >= (int64_t)nbytes) {
           a = (int64_t)nbytes;
-        if (!cbuf)
-          cbuf  = new_empty_MIOBuffer();
+        }
+        if (!cbuf) {
+          cbuf = new_empty_MIOBuffer();
+        }
         creader = cbuf->alloc_reader();
         if (a) {
           cbuf->write(reader, a);
@@ -802,8 +848,9 @@ MC::ascii_set_event(int event, void *data)
           goto Lstreamdone;
         }
         rvio->nbytes = rvio->ndone + (int64_t)nbytes - a;
-      } else
+      } else {
         creader = reader;
+      }
       TS_PUSH_HANDLER(&MC::stream_event);
       cwvio = cwvc->do_io_write(this, header.nbytes, creader);
     }
@@ -824,8 +871,9 @@ MC::ascii_set_event(int event, void *data)
     crvio = NULL;
     if (f.set_append) {
       int64_t a = reader->read_avail();
-      if (a > (int64_t)nbytes)
+      if (a > (int64_t)nbytes) {
         a = (int64_t)nbytes;
+      }
       if (a) {
         cbuf->write(reader, a);
         reader->consume(a);
@@ -880,44 +928,53 @@ MC::ascii_incr_decr_event(int event, void *data)
     cwvc     = (CacheVConnection *)data;
     {
       if (cwvc->get_header((void **)&wcache_header, &hlen) >= 0) {
-        if (hlen < (int)sizeof(MCCacheHeader) || wcache_header->magic != TSMEMCACHE_HEADER_MAGIC)
+        if (hlen < (int)sizeof(MCCacheHeader) || wcache_header->magic != TSMEMCACHE_HEADER_MAGIC) {
           goto Lfail;
-        if (header.nkey != wcache_header->nkey || hlen < (int)(sizeof(MCCacheHeader) + wcache_header->nkey))
+        }
+        if (header.nkey != wcache_header->nkey || hlen < (int)(sizeof(MCCacheHeader) + wcache_header->nkey)) {
           goto Lfail;
+        }
         ink_hrtime t = Thread::get_hrtime();
         if (((ink_hrtime)wcache_header->settime) <= last_flush ||
-            t >= ((ink_hrtime)wcache_header->settime) + HRTIME_SECONDS(wcache_header->exptime))
+            t >= ((ink_hrtime)wcache_header->settime) + HRTIME_SECONDS(wcache_header->exptime)) {
           goto Lfail;
-      } else
+        }
+      } else {
         goto Lfail;
+      }
       memcpy(tmp_cache_header_key, key, header.nkey);
       header.settime = Thread::get_hrtime();
       if (exptime) {
         if (exptime > REALTIME_MAXDELTA) {
-          if (HRTIME_SECONDS(exptime) <= ((ink_hrtime)header.settime))
+          if (HRTIME_SECONDS(exptime) <= ((ink_hrtime)header.settime)) {
             header.exptime = 0;
-          else
+          } else {
             header.exptime = (int32_t)(exptime - (header.settime / HRTIME_SECOND));
-        } else
+          }
+        } else {
           header.exptime = exptime;
-      } else
+        }
+      } else {
         header.exptime = UINT32_MAX; // 136 years
+      }
     }
     header.cas = ink_atomic_increment(&next_cas, 1);
     {
       char *data = 0;
       int len    = 0;
       // must be huge, why convert to a counter ??
-      if (cwvc->get_single_data((void **)&data, &len) < 0)
+      if (cwvc->get_single_data((void **)&data, &len) < 0) {
         goto Lfail;
+      }
       uint64_t new_value = xatoull(data, data + len);
-      if (f.set_incr)
+      if (f.set_incr) {
         new_value += delta;
-      else {
-        if (delta > new_value)
+      } else {
+        if (delta > new_value) {
           new_value = 0;
-        else
+        } else {
           new_value -= delta;
+        }
       }
       char new_value_str_buffer[32], *e = &new_value_str_buffer[30];
       e[0]    = '\r';
@@ -925,10 +982,11 @@ MC::ascii_incr_decr_event(int event, void *data)
       char *s = xutoa(new_value, e);
       creader = wbuf->clone_reader(writer);
       wbuf->write(s, e - s + 2);
-      if (f.noreply)
+      if (f.noreply) {
         writer->consume(e - s + 2);
-      else
+      } else {
         wvio->reenable();
+      }
       MCDebugBuf("tsmemcache_ascii_response", s, e - s + 2);
       header.nbytes = e - s;
       cwvc->set_header(&header, header.len());
@@ -960,8 +1018,9 @@ MC::get_ascii_key(char *as, char *e)
   while (*s == ' ') {
     s++;
     if (s >= e) {
-      if (as - e >= TSMEMCACHE_TMP_CMD_BUFFER_SIZE)
+      if (as - e >= TSMEMCACHE_TMP_CMD_BUFFER_SIZE) {
         return ASCII_CLIENT_ERROR("bad command line");
+      }
       return EVENT_CONT;
     }
   }
@@ -969,21 +1028,25 @@ MC::get_ascii_key(char *as, char *e)
   key = s;
   while (!isspace(*s)) {
     if (s >= e) {
-      if (as - e >= TSMEMCACHE_TMP_CMD_BUFFER_SIZE)
+      if (as - e >= TSMEMCACHE_TMP_CMD_BUFFER_SIZE) {
         return ASCII_RESPONSE("key too large");
+      }
       return EVENT_CONT;
     }
     s++;
   }
-  if (s - key > TSMEMCACHE_MAX_KEY_LEN)
+  if (s - key > TSMEMCACHE_MAX_KEY_LEN) {
     return ASCII_CLIENT_ERROR("bad command line");
+  }
   header.nkey = s - key;
   if (!header.nkey) {
     if (e - s >= 2) {
-      if (*s == '\r')
+      if (*s == '\r') {
         s++;
-      if (*s == '\n' && ngets)
+      }
+      if (*s == '\n' && ngets) {
         return ASCII_RESPONSE("END");
+      }
       return ASCII_CLIENT_ERROR("bad command line");
     }
     return EVENT_CONT; // get some more
@@ -1087,27 +1150,33 @@ MC::ascii_set(char *s, char *e)
   if (f.set_cas) {
     SKIP_SPACE;
     GET_NUM(header.cas);
-  } else
+  } else {
     header.cas = 0;
+  }
   SKIP_SPACE;
   if (*s == 'n' && !STRCMP_REST("oreply", s + 1, e)) {
     f.noreply = 1;
     s += 7;
-    if (s >= e)
+    if (s >= e) {
       return ASCII_CLIENT_ERROR("bad command line");
+    }
     SKIP_SPACE;
   }
-  if (*s == '\r')
+  if (*s == '\r') {
     s++;
-  if (*s == '\n')
+  }
+  if (*s == '\n') {
     s++;
-  if (s != e)
+  }
+  if (s != e) {
     return ASCII_CLIENT_ERROR("bad command line");
+  }
   SET_HANDLER(&MC::ascii_set_event);
-  if (f.set_append || f.set_prepend)
+  if (f.set_append || f.set_prepend) {
     return get_item();
-  else
+  } else {
     return set_item();
+  }
 }
 
 int
@@ -1121,16 +1190,20 @@ MC::ascii_delete(char *s, char *e)
   if (*s == 'n' && !STRCMP_REST("oreply", s + 1, e)) {
     f.noreply = 1;
     s += 7;
-    if (s >= e)
+    if (s >= e) {
       return ASCII_CLIENT_ERROR("bad command line");
+    }
     SKIP_SPACE;
   }
-  if (*s == '\r')
+  if (*s == '\r') {
     s++;
-  if (*s == '\n')
+  }
+  if (*s == '\n') {
     s++;
-  if (s != e)
+  }
+  if (s != e) {
     return ASCII_CLIENT_ERROR("bad command line");
+  }
   SET_HANDLER(&MC::ascii_delete_event);
   return delete_item();
 }
@@ -1148,16 +1221,20 @@ MC::ascii_incr_decr(char *s, char *e)
   if (*s == 'n' && !STRCMP_REST("oreply", s + 1, e)) {
     f.noreply = 1;
     s += 7;
-    if (s >= e)
+    if (s >= e) {
       return ASCII_CLIENT_ERROR("bad command line");
+    }
     SKIP_SPACE;
   }
-  if (*s == '\r')
+  if (*s == '\r') {
     s++;
-  if (*s == '\n')
+  }
+  if (*s == '\n') {
     s++;
-  if (s != e)
+  }
+  if (s != e) {
     return ASCII_CLIENT_ERROR("bad command line");
+  }
   SET_HANDLER(&MC::ascii_incr_decr_event);
   return set_item();
 }
@@ -1165,12 +1242,15 @@ MC::ascii_incr_decr(char *s, char *e)
 static int
 is_end_of_cmd(char *t, char *e)
 {
-  while (*t == ' ' && t < e)
+  while (*t == ' ' && t < e) {
     t++; // skip spaces
-  if (*t == '\r')
+  }
+  if (*t == '\r') {
     t++;
-  if (t != e - 1)
+  }
+  if (t != e - 1) {
     return 0;
+  }
   return 1;
 }
 
@@ -1181,8 +1261,9 @@ is_noreply(char **pt, char *e)
   char *t = *pt;
   if (t < e - 8) {
     while (*t == ' ') {
-      if (t > e - 8)
+      if (t > e - 8) {
         return 0;
+      }
       t++;
     }
     if (t[0] == 'n' && !STRCMP(t + 1, "oreply") && isspace(t[7])) {
@@ -1200,11 +1281,13 @@ MC::read_ascii_from_client_event(int event, void *data)
   char *c = get_ascii_input(TSMEMCACHE_TMP_CMD_BUFFER_SIZE, &len), *s = c;
   MCDebugBuf("tsmemcache_ascii_cmd", c, len);
   char *e = c + len - 5; // at least 6 chars
-  while (*s == ' ' && s < e)
+  while (*s == ' ' && s < e) {
     s++; // skip leading spaces
+  }
   if (s >= e) {
-    if (len >= TSMEMCACHE_TMP_CMD_BUFFER_SIZE || memchr(c, '\n', len))
+    if (len >= TSMEMCACHE_TMP_CMD_BUFFER_SIZE || memchr(c, '\n', len)) {
       return ASCII_CLIENT_ERROR("bad command line");
+    }
     return EVENT_CONT;
   }
   // gets can be large, so do not require the full cmd fit in the buffer
@@ -1219,15 +1302,17 @@ MC::read_ascii_from_client_event(int event, void *data)
       read_offset = 4;
     Lget:
       reader->consume(read_offset);
-      if (c != tmp_cmd_buffer) // all in the block
+      if (c != tmp_cmd_buffer) { // all in the block
         return ascii_get(s + read_offset, e);
-      else
+      } else {
         return ascii_gets();
+      }
     }
     break;
   case 'b': // bget
-    if (s[4] != ' ')
+    if (s[4] != ' ') {
       break;
+    }
     read_offset = 5;
     goto Lget;
     break;
@@ -1237,35 +1322,41 @@ MC::read_ascii_from_client_event(int event, void *data)
   // find the end of the command
   e = (char *)memchr(s, '\n', len);
   if (!e) {
-    if (reader->read_avail() > TSMEMCACHE_MAX_CMD_SIZE)
+    if (reader->read_avail() > TSMEMCACHE_MAX_CMD_SIZE) {
       return ASCII_CLIENT_ERROR("bad command line");
+    }
     return EVENT_CONT;
   }
   e++; // skip nl
   end_of_cmd = e - c;
   switch (*s) {
   case 's': // set stats
-    if (s[1] == 'e' && s[2] == 't' && s[3] == ' ')
+    if (s[1] == 'e' && s[2] == 't' && s[3] == ' ') {
       return ascii_set(s + sizeof("set") - 1, e);
-    if (STRCMP_REST("tats", s + 1, e))
+    }
+    if (STRCMP_REST("tats", s + 1, e)) {
       break;
+    }
     s += sizeof("stats") - 1;
-    if (is_noreply(&s, e))
+    if (is_noreply(&s, e)) {
       break; // to please memcapable
-    else
+    } else {
       return ASCII_RESPONSE("END");
+    }
   case 'a': // add
     if (s[1] == 'd' && s[2] == 'd' && s[3] == ' ') {
       f.set_add = 1;
       return ascii_set(s + sizeof("add") - 1, e);
     }
-    if (STRCMP_REST("ppend", s + 1, e))
+    if (STRCMP_REST("ppend", s + 1, e)) {
       break;
+    }
     f.set_append = 1;
     return ascii_set(s + sizeof("append") - 1, e);
   case 'p': // prepend
-    if (STRCMP_REST("repend", s + 1, e))
+    if (STRCMP_REST("repend", s + 1, e)) {
       break;
+    }
     f.set_prepend = 1;
     return ascii_set(s + sizeof("prepend") - 1, e);
   case 'c': // cas
@@ -1281,13 +1372,15 @@ MC::read_ascii_from_client_event(int event, void *data)
     }
     break;
   case 'f': { // flush_all
-    if (STRCMP_REST("lush_all", s + 1, e))
+    if (STRCMP_REST("lush_all", s + 1, e)) {
       break;
+    }
     s += sizeof("flush_all") - 1;
     SKIP_SPACE;
     int32_t time_offset = 0;
-    if (isdigit(*s))
+    if (isdigit(*s)) {
       GET_NUM(time_offset);
+    }
     f.noreply                 = is_noreply(&s, e);
     ink_hrtime new_last_flush = Thread::get_hrtime() + HRTIME_SECONDS(time_offset);
 #if __WORDSIZE == 64
@@ -1295,50 +1388,61 @@ MC::read_ascii_from_client_event(int event, void *data)
 #else
     ink_atomic_swap(&last_flush, new_last_flush);
 #endif
-    if (!is_end_of_cmd(s, e))
+    if (!is_end_of_cmd(s, e)) {
       break;
+    }
     return ASCII_RESPONSE("OK");
   }
   case 'd': // delete decr
-    if (e - s < 5)
+    if (e - s < 5) {
       break;
+    }
     if (s[2] == 'l') {
-      if (s[1] == 'e' && s[3] == 'e' && s[4] == 't' && s[5] == 'e' && s[6] == ' ')
+      if (s[1] == 'e' && s[3] == 'e' && s[4] == 't' && s[5] == 'e' && s[6] == ' ') {
         return ascii_delete(s + sizeof("delete") - 1, e);
+      }
     } else if (s[1] == 'e' && s[2] == 'c' && s[3] == 'r' && s[4] == ' ') { // decr
       f.set_decr = 1;
       return ascii_incr_decr(s + sizeof("decr") - 1, e);
     }
     break;
   case 'r': // replace
-    if (STRCMP_REST("eplace", s + 1, e))
+    if (STRCMP_REST("eplace", s + 1, e)) {
       break;
+    }
     f.set_replace = 1;
     return ascii_set(s + sizeof("replace") - 1, e);
   case 'q': // quit
-    if (STRCMP_REST("uit", s + 1, e))
+    if (STRCMP_REST("uit", s + 1, e)) {
       break;
-    if (!is_end_of_cmd(s + sizeof("quit") - 1, e))
+    }
+    if (!is_end_of_cmd(s + sizeof("quit") - 1, e)) {
       break;
+    }
     return die();
   case 'v': { // version
     if (s[3] == 's') {
-      if (STRCMP_REST("ersion", s + 1, e))
+      if (STRCMP_REST("ersion", s + 1, e)) {
         break;
-      if (!is_end_of_cmd(s + sizeof("version") - 1, e))
+      }
+      if (!is_end_of_cmd(s + sizeof("version") - 1, e)) {
         break;
+      }
       return ASCII_RESPONSE("VERSION " TSMEMCACHE_VERSION);
     } else if (s[3] == 'b') {
-      if (STRCMP_REST("erbosity", s + 1, e))
+      if (STRCMP_REST("erbosity", s + 1, e)) {
         break;
+      }
       s += sizeof("verbosity") - 1;
       SKIP_SPACE;
-      if (!isdigit(*s))
+      if (!isdigit(*s)) {
         break;
+      }
       GET_NUM(verbosity);
       f.noreply = is_noreply(&s, e);
-      if (!is_end_of_cmd(s, e))
+      if (!is_end_of_cmd(s, e)) {
         break;
+      }
       return ASCII_RESPONSE("OK");
     }
     break;
@@ -1352,14 +1456,16 @@ MC::write_then_close_event(int event, void *data)
 {
   switch (event) {
   case VC_EVENT_EOS:
-    if ((VIO *)data == wvio)
+    if ((VIO *)data == wvio) {
       break;
+    }
   // fall through
   case VC_EVENT_READ_READY:
     return EVENT_DONE; // no more of that stuff
   case VC_EVENT_WRITE_READY:
-    if (wvio->buffer.reader()->read_avail() > 0)
+    if (wvio->buffer.reader()->read_avail() > 0) {
       return EVENT_CONT;
+    }
     break;
   default:
     break;
@@ -1375,12 +1481,14 @@ MC::read_from_client_event(int event, void *data)
     return read_from_client();
   case VC_EVENT_READ_READY:
   case VC_EVENT_EOS:
-    if (reader->read_avail() < 1)
+    if (reader->read_avail() < 1) {
       return EVENT_CONT;
-    if ((uint8_t)reader->start()[0] == (uint8_t)PROTOCOL_BINARY_REQ)
+    }
+    if ((uint8_t)reader->start()[0] == (uint8_t)PROTOCOL_BINARY_REQ) {
       return TS_SET_CALL(&MC::read_binary_from_client_event, event, data);
-    else
+    } else {
       return TS_SET_CALL(&MC::read_ascii_from_client_event, event, data);
+    }
   case VC_EVENT_WRITE_READY:
   case VC_EVENT_WRITE_COMPLETE:
     break;
@@ -1415,8 +1523,9 @@ MC::stream_event(int event, void *data)
       if (cwvio) {
         if (creader != reader && creader->read_avail() < cwvio->nbytes) {
           int64_t a = reader->read_avail();
-          if (a > (int64_t)nbytes)
+          if (a > (int64_t)nbytes) {
             a = (int64_t)nbytes;
+          }
           if (a) {
             cbuf->write(reader, a);
             reader->consume(a);
@@ -1426,8 +1535,9 @@ MC::stream_event(int event, void *data)
       }
       break;
     case VC_EVENT_WRITE_READY:
-      if (crvio)
+      if (crvio) {
         crvio->reenable();
+      }
       break;
     case VC_EVENT_WRITE_COMPLETE:
     case VC_EVENT_READ_COMPLETE:

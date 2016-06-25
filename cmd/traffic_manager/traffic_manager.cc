@@ -136,12 +136,14 @@ rotateLogs()
     // synced across processes
     mgmt_log("Sending SIGUSR2 to TS");
     pid_t tspid = lmgmt->watched_process_pid;
-    if (tspid <= 0)
+    if (tspid <= 0) {
       return;
-    if (kill(tspid, SIGUSR2) != 0)
+    }
+    if (kill(tspid, SIGUSR2) != 0) {
       mgmt_log("Could not send SIGUSR2 to TS: %s", strerror(errno));
-    else
+    } else {
       mgmt_log("Succesfully sent SIGUSR2 to TS!");
+    }
   }
 }
 
@@ -483,11 +485,13 @@ main(int argc, const char **argv)
   // Line buffer standard output & standard error
   int status;
   status = setvbuf(stdout, NULL, _IOLBF, 0);
-  if (status != 0)
+  if (status != 0) {
     perror("WARNING: can't line buffer stdout");
+  }
   status = setvbuf(stderr, NULL, _IOLBF, 0);
-  if (status != 0)
+  if (status != 0) {
     perror("WARNING: can't line buffer stderr");
+  }
 
   initSignalHandlers();
 
@@ -554,8 +558,9 @@ main(int argc, const char **argv)
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
 
-  if (is_debug_tag_set("diags"))
+  if (is_debug_tag_set("diags")) {
     diags->dump();
+  }
   diags->cleanup_func = mgmt_cleanup;
 
   // Setup the exported manager version records.

@@ -56,8 +56,9 @@ url_mapping::url_mapping(int rank /* = 0 */)
 bool
 url_mapping::add_plugin(remap_plugin_info *i, void *ih)
 {
-  if (_plugin_count >= MAX_REMAP_PLUGIN_CHAIN)
+  if (_plugin_count >= MAX_REMAP_PLUGIN_CHAIN) {
     return false;
+  }
 
   _plugin_list[_plugin_count]   = i;
   _instance_data[_plugin_count] = ih;
@@ -73,8 +74,9 @@ remap_plugin_info *
 url_mapping::get_plugin(unsigned int index) const
 {
   Debug("url_rewrite", "get_plugin says we have %d plugins and asking for plugin %d", _plugin_count, index);
-  if ((_plugin_count == 0) || unlikely(index > _plugin_count))
+  if ((_plugin_count == 0) || unlikely(index > _plugin_count)) {
     return NULL;
+  }
 
   return _plugin_list[index];
 }
@@ -116,8 +118,9 @@ url_mapping::~url_mapping()
   }
 
   // Delete all instance data
-  for (unsigned int i = 0; i < _plugin_count; ++i)
+  for (unsigned int i = 0; i < _plugin_count; ++i) {
     delete_instance(i);
+  }
 
   // Delete filters
   while ((afr = filter) != NULL) {
@@ -158,8 +161,9 @@ redirect_tag_str::parse_format_redirect_url(char *url)
         if (c[0] == '%') {
           char tmp_type = (char)tolower((int)c[1]);
           if (tmp_type == 'r' || tmp_type == 'f' || tmp_type == 't' || tmp_type == 'o') {
-            if (url == c)
+            if (url == c) {
               type = tmp_type;
+            }
             break;
           }
         }
@@ -172,13 +176,15 @@ redirect_tag_str::parse_format_redirect_url(char *url)
           r->chunk_str = ats_strdup(url);
           *c           = svd;
           url          = c;
-        } else
+        } else {
           url += 2;
+        }
         (*rr = r)->next = 0;
         rr              = &(r->next);
         // printf("\t***********'%c' - '%s'*******\n",r->type,r->chunk_str ? r->chunk_str : "<NULL>");
-      } else
+      } else {
         break; /* memory allocation error */
+      }
     }
   }
   return list;
@@ -193,9 +199,10 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
   const char *error;
   int erroffset;
 
-  if (error_flag)
+  if (error_flag) {
     *error_flag = false;
-  regx          = NULL;
+  }
+  regx = NULL;
 
   if (_ref) {
     if (*_ref == '~') {
@@ -204,17 +211,20 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
     }
     if ((referer = ats_strdup(_ref)) != 0) {
       referer_size = strlen(referer);
-      if (!strcmp(referer, "*"))
+      if (!strcmp(referer, "*")) {
         any = true;
-      else {
+      } else {
         regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, NULL);
         if (!regx) {
-          if (errmsgbuf && (errmsgbuf_size - 1) > 0)
+          if (errmsgbuf && (errmsgbuf_size - 1) > 0) {
             ink_strlcpy(errmsgbuf, error, errmsgbuf_size);
-          if (error_flag)
+          }
+          if (error_flag) {
             *error_flag = true;
-        } else
+          }
+        } else {
           regx_valid = true;
+        }
       }
     }
   }

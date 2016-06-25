@@ -47,8 +47,9 @@ vmapEnableHandler(const char *tok, RecDataT /* data_type ATS_UNUSED */, RecData 
 {
   bool before = true;
   ink_assert(!tok);
-  if (!lmgmt->virt_map->enabled)
-    before                 = false;
+  if (!lmgmt->virt_map->enabled) {
+    before = false;
+  }
   lmgmt->virt_map->enabled = (RecInt)data.rec_int;
   if (!lmgmt->virt_map->enabled && before) {
     lmgmt->virt_map->turning_off = true; // turing VIP from off to on
@@ -211,8 +212,9 @@ VMap::VMap(char *interface, unsigned long ip, ink_mutex *m)
 
 VMap::~VMap()
 {
-  if (id_map)
+  if (id_map) {
     ink_hash_table_destroy_and_free_values(id_map);
+  }
 
   ink_hash_table_destroy_and_free_values(interface_realip_map);
   ink_hash_table_destroy(our_map);

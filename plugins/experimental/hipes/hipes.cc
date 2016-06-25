@@ -51,14 +51,16 @@ escapify_url(const char *src, int src_len, char *dst, int dst_len)
   int len          = 0;
 
   // Sanity check
-  if (!src)
+  if (!src) {
     return -1;
+  }
 
   while (from < (src + src_len)) {
     unsigned char c = *from;
 
-    if (len >= dst_len)
+    if (len >= dst_len) {
       return -1; // Does not fit.... abort!
+    }
 
     if (codes_to_escape[c / 8] & (1 << (7 - c % 8))) {
       *to++ = '%';
@@ -202,10 +204,11 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
         ri->url_param = arg_val;
       } else if (arg.compare(0, 4, "path") == 0) {
         ri->path = arg_val;
-        if (arg_val[0] == '/')
+        if (arg_val[0] == '/') {
           ri->path = arg_val.substr(1);
-        else
+        } else {
           ri->path = arg_val;
+        }
       } else if (arg.compare(0, 3, "ssl") == 0) {
         ri->ssl = true;
       } else if (arg.compare(0, 7, "service") == 0) {
@@ -328,9 +331,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     query_len = (slash - param);
     memcpy(new_query, param, query_len);
     ptr = new_query;
-    while ((ptr = static_cast<char *>(memchr(ptr, ';', (new_query + query_len) - ptr))))
+    while ((ptr = static_cast<char *>(memchr(ptr, ';', (new_query + query_len) - ptr)))) {
       *ptr = '&';
-
+    }
     new_query[query_len++] = '&';
     memcpy(new_query + query_len, h_conf->url_param.c_str(), h_conf->url_param.size());
     query_len += h_conf->url_param.size();
@@ -344,9 +347,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     new_query_size = param_len;
     memcpy(new_query, param, param_len);
     ptr = new_query;
-    while ((ptr = static_cast<char *>(memchr(ptr, ';', (new_query + new_query_size) - ptr))))
+    while ((ptr = static_cast<char *>(memchr(ptr, ';', (new_query + new_query_size) - ptr)))) {
       *ptr = '&';
-
+    }
     TSDebug(PLUGIN_NAME, "New query is %.*s(%d)", new_query_size, new_query, new_query_size);
   }
 
@@ -363,8 +366,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       } else {
         if ((*pos == 'r') && (!strncmp(pos, "redirect=", 9))) {
           redirect_flag = *(pos + 9) - '0';
-          if ((redirect_flag < 0) || (redirect_flag > 2))
+          if ((redirect_flag < 0) || (redirect_flag > 2)) {
             redirect_flag = h_conf->default_redirect_flag;
+          }
           TSDebug(PLUGIN_NAME, "Found _redirect flag in URL: %d", redirect_flag);
           pos = NULL;
         }
@@ -423,8 +427,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       TSHttpTxnSetHttpRetStatus(rh, TS_HTTP_STATUS_BAD_REQUEST);
       has_error = true;
     }
-    if (has_error)
+    if (has_error) {
       return TSREMAP_NO_REMAP;
+    }
   }
 
   // If we redirect, just generate a 302 URL, otherwise update the RRI struct properly.
@@ -451,13 +456,15 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       if (h_conf->ssl) {
         memcpy(pos, "https://", 8);
         pos += 8;
-        if (h_conf->svc_port != 443)
+        if (h_conf->svc_port != 443) {
           port = h_conf->svc_port;
+        }
       } else {
         memcpy(pos, "http://", 7);
         pos += 7;
-        if (h_conf->svc_port != 80)
+        if (h_conf->svc_port != 80) {
           port = h_conf->svc_port;
+        }
       }
 
       // Server
@@ -465,8 +472,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
       pos += h_conf->svc_server.size();
 
       // Port
-      if (port != -1)
+      if (port != -1) {
         pos += snprintf(pos, 6, ":%d", port);
+      }
 
       // Path
       *(pos++) = '/';
@@ -525,8 +533,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     TSDebug(PLUGIN_NAME, "New path is %.*s", (int)h_conf->path.size(), h_conf->path.c_str());
 
     // Enable SSL?
-    if (h_conf->ssl)
+    if (h_conf->ssl) {
       TSUrlSchemeSet(rri->requestBufp, rri->requestUrl, "https", 5);
+    }
 
     // Clear previous matrix params
     TSUrlHttpParamsSet(rri->requestBufp, rri->requestUrl, "", 0);

@@ -612,8 +612,9 @@ void
 OperatorCounter::exec(const Resources & /* ATS_UNUSED res */) const
 {
   // Sanity
-  if (_counter == TS_ERROR)
+  if (_counter == TS_ERROR) {
     return;
+  }
 
   TSDebug(PLUGIN_NAME, "OperatorCounter::exec() invoked on counter %s", _counter_name.c_str());
   TSStatIntIncrement(_counter, 1);
@@ -761,23 +762,27 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
 
   for (size_t idx = 0; idx < cookies_len;) {
     // advance any leading spaces
-    for (; idx < cookies_len && std::isspace(cookies[idx]); idx++)
+    for (; idx < cookies_len && std::isspace(cookies[idx]); idx++) {
       ;
+    }
     if (0 == strncmp(cookies + idx, cookie_key.c_str(), cookie_key.size())) {
       size_t key_start_idx = idx;
       // advance to past the name and any subsequent spaces
-      for (idx += cookie_key.size(); idx < cookies_len && std::isspace(cookies[idx]); idx++)
+      for (idx += cookie_key.size(); idx < cookies_len && std::isspace(cookies[idx]); idx++) {
         ;
+      }
       if (idx < cookies_len && cookies[idx++] == '=') {
         // cookie_key is found, then we don't need to add it.
         if (CookieHelper::COOKIE_OP_ADD == cookie_op) {
           return false;
         }
-        for (; idx < cookies_len && std::isspace(cookies[idx]); idx++)
+        for (; idx < cookies_len && std::isspace(cookies[idx]); idx++) {
           ;
+        }
         size_t value_start_idx = idx;
-        for (; idx < cookies_len && cookies[idx] != ';'; idx++)
+        for (; idx < cookies_len && cookies[idx] != ';'; idx++) {
           ;
+        }
         // cookie value is found
         size_t value_end_idx = idx;
         if (CookieHelper::COOKIE_OP_SET == cookie_op) {
@@ -814,8 +819,9 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
       }
     }
     // find the next cookie pair followed by semi-colon
-    while (idx < cookies_len && cookies[idx++] != ';')
+    while (idx < cookies_len && cookies[idx++] != ';') {
       ;
+    }
   }
 
   if (CookieHelper::COOKIE_OP_ADD == cookie_op || CookieHelper::COOKIE_OP_SET == cookie_op) {

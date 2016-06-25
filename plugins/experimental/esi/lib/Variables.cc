@@ -379,21 +379,24 @@ void
 Variables::_parseAcceptLangString(const char *str, int str_len)
 {
   int i;
-  for (i = 0; (i < str_len) && ((isspace(str[i]) || str[i] == ',')); ++i)
+  for (i = 0; (i < str_len) && ((isspace(str[i]) || str[i] == ',')); ++i) {
     ;
+  }
   const char *lang = str + i;
   int lang_len;
   for (; i <= str_len; ++i) {
     if ((i == str_len) || (str[i] == ',')) {
       lang_len = str + i - lang;
-      for (; lang_len && isspace(lang[lang_len - 1]); --lang_len)
+      for (; lang_len && isspace(lang[lang_len - 1]); --lang_len) {
         ;
+      }
       if (lang_len) {
         _insert(_dict_data[HTTP_ACCEPT_LANGUAGE], string(lang, lang_len), EMPTY_STRING);
         _debugLog(_debug_tag, "[%s] Added language [%.*s]", __FUNCTION__, lang_len, lang);
       }
-      for (; (i < str_len) && ((isspace(str[i]) || str[i] == ',')); ++i)
+      for (; (i < str_len) && ((isspace(str[i]) || str[i] == ',')); ++i) {
         ;
+      }
       lang = str + i;
     }
   }

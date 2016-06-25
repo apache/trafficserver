@@ -112,8 +112,9 @@ bool
 validate_host_name(ts::ConstBuffer addr)
 {
   while (addr) {
-    if (!(is_host_char(*addr)))
+    if (!(is_host_char(*addr))) {
       return false;
+    }
     ++addr;
   }
   return true;
@@ -273,8 +274,9 @@ url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, 
 {
   if (s_url != d_url) {
     obj_copy_data((HdrHeapObjImpl *)s_url, (HdrHeapObjImpl *)d_url);
-    if (inherit_strs && (s_heap != d_heap))
+    if (inherit_strs && (s_heap != d_heap)) {
       d_heap->inherit_string_heaps(s_heap);
+    }
   }
 }
 
@@ -327,8 +329,9 @@ url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, Hdr
   d_url->m_url_type  = s_url->m_url_type;
   d_url->m_type_code = s_url->m_type_code;
 
-  if (inherit_strs && (s_heap != d_heap))
+  if (inherit_strs && (s_heap != d_heap)) {
     d_heap->inherit_string_heaps(s_heap);
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -429,23 +432,26 @@ url_scheme_set(HdrHeap *heap, URLImpl *url, const char *scheme_str, int scheme_w
 {
   const char *scheme_wks;
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     scheme_str = NULL;
+  }
 
   mime_str_u16_set(heap, scheme_str, length, &(url->m_ptr_scheme), &(url->m_len_scheme), copy_string);
 
   url->m_scheme_wks_idx = scheme_wks_idx;
-  if (scheme_wks_idx >= 0)
+  if (scheme_wks_idx >= 0) {
     scheme_wks = hdrtoken_index_to_wks(scheme_wks_idx);
-  else
+  } else {
     scheme_wks = NULL;
+  }
 
-  if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS)
+  if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS) {
     url->m_url_type = URL_TYPE_HTTP;
-  else if (scheme_wks == URL_SCHEME_HTTPS || scheme_wks == URL_SCHEME_WSS)
+  } else if (scheme_wks == URL_SCHEME_HTTPS || scheme_wks == URL_SCHEME_WSS) {
     url->m_url_type = URL_TYPE_HTTPS;
-  else
+  } else {
     url->m_url_type = URL_TYPE_HTTP;
+  }
 
   return scheme_wks; // tokenized string or NULL if not well known
 }
@@ -457,8 +463,9 @@ void
 url_user_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_user), &(url->m_len_user), copy_string);
 }
 
@@ -469,8 +476,9 @@ void
 url_password_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_password), &(url->m_len_password), copy_string);
 }
 
@@ -481,8 +489,9 @@ void
 url_host_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_host), &(url->m_len_host), copy_string);
 }
 
@@ -493,14 +502,16 @@ void
 url_port_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_port), &(url->m_len_port), copy_string);
 
   url->m_port = 0;
   for (int i = 0; i < length; i++) {
-    if (!ParseRules::is_digit(value[i]))
+    if (!ParseRules::is_digit(value[i])) {
       break;
+    }
     url->m_port = url->m_port * 10 + (value[i] - '0');
   }
 }
@@ -531,8 +542,9 @@ void
 url_path_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_path), &(url->m_len_path), copy_string);
 }
 
@@ -611,12 +623,14 @@ url_clear_string_ref(URLImpl *url)
 char *
 url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
 {
-  if (!url)
+  if (!url) {
     return NULL;
+  }
 
   if (url->m_ptr_printed_string && url->m_clean) {
-    if (length)
+    if (length) {
       *length = url->m_len_printed_string;
+    }
     return (char *)url->m_ptr_printed_string;
   } else { // either not clean or never printed
     int len = url_length_get(url);
@@ -682,13 +696,15 @@ url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
 
   if (dstbuf && dstbuf_size > 0) {
     buf = dstbuf;
-    if (len >= dstbuf_size)
+    if (len >= dstbuf_size) {
       len = dstbuf_size - 1;
+    }
     url_print(url, dstbuf, len, &index, &offset);
     buf[len] = 0;
 
-    if (length)
+    if (length) {
       *length = len;
+    }
   }
   return buf;
 }
@@ -817,22 +833,25 @@ url_length_get(URLImpl *url)
   int length = 0;
 
   if (url->m_ptr_scheme) {
-    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE))
+    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
       length += url->m_len_scheme + 1; // +1 for ":"
-    else
+    } else {
       length += url->m_len_scheme + 3; // +3 for "://"
+    }
   }
 
   if (url->m_ptr_user) {
     length += url->m_len_user + 1; // +1 for "@"
-    if (url->m_ptr_password)
+    if (url->m_ptr_password) {
       length += url->m_len_password + 1; // +1 for ":"
+    }
   }
 
   if (url->m_ptr_host) {
     length += url->m_len_host;
-    if (url->m_ptr_port && url->m_port)
+    if (url->m_ptr_port && url->m_port) {
       length += url->m_len_port + 1; // +1 for ":"
+    }
   }
 
   if (url->m_ptr_path) {
@@ -868,13 +887,15 @@ url_to_string(URLImpl *url, Arena *arena, int *length)
 
   len = url_length_get(url) + 1;
 
-  if (length)
+  if (length) {
     *length = len;
+  }
 
-  if (arena)
+  if (arena) {
     str = arena->str_alloc(len);
-  else
+  } else {
     str = (char *)ats_malloc(len + 1);
+  }
 
   idx = 0;
 
@@ -961,8 +982,9 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
   copy_len  = (int)(first_pct - str);
   str += copy_len;
   buf += copy_len;
-  if (copy_len == min_len)
+  if (copy_len == min_len) {
     return;
+  }
 
   while (str < str_e && (buf != buf_e)) {
     switch (state) {
@@ -1082,8 +1104,9 @@ url_unescapify(Arena *arena, const char *str, int length)
   char *t, *e;
   int s;
 
-  if (length == -1)
+  if (length == -1) {
     length = (int)strlen(str);
+  }
 
   buffer = arena->str_alloc(length);
   t      = buffer;
@@ -1122,8 +1145,9 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
   const char *scheme_end   = NULL;
   int scheme_wks_idx;
 
-  while (' ' == *cur && ++cur < end)
+  while (' ' == *cur && ++cur < end) {
     ;
+  }
   if (cur < end) {
     scheme_start = scheme_end = cur;
     // special case 'http:' for performance
@@ -1134,8 +1158,9 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
       // For forward transparent mode, the URL for the method can just be a path,
       // so don't scan that for a scheme, as we could find a false positive if there
       // is a URL in the parameters (which is legal).
-      while (':' != *cur && ++cur < end)
+      while (':' != *cur && ++cur < end) {
         ;
+      }
       if (cur < end) { // found a colon
         scheme_wks_idx = hdrtoken_tokenize(scheme_start, cur - scheme_start, &scheme_wks);
 
@@ -1175,8 +1200,9 @@ url_is_strictly_compliant(const char *start, const char *end)
 MIMEParseResult
 url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, bool strict_uri_parsing)
 {
-  if (strict_uri_parsing && !url_is_strictly_compliant(*start, end))
+  if (strict_uri_parsing && !url_is_strictly_compliant(*start, end)) {
     return PARSE_ERROR;
+  }
 
   MIMEParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
   return PARSE_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p) : zret;
@@ -1229,8 +1255,9 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
     // appropriate!
     switch (*cur) {
     case ']': // address close
-      if (0 == bracket || n_colon >= MAX_COLON)
+      if (0 == bracket || n_colon >= MAX_COLON) {
         return PARSE_ERROR;
+      }
       ++cur;
       /* We keep the brackets because there are too many other places
          that depend on them and it's too painful to keep track if
@@ -1253,14 +1280,16 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       n_colon = MAX_COLON - 1;
     // FALL THROUGH
     case ':': // track colons, fail if too many.
-      if (++n_colon > MAX_COLON)
+      if (++n_colon > MAX_COLON) {
         return PARSE_ERROR;
+      }
       last_colon = cur;
       ++cur;
       break;
     case '@': // user/password marker.
-      if (user || n_colon > 1)
+      if (user || n_colon > 1) {
         return PARSE_ERROR; // we already got one, or too many colons.
+      }
       if (n_colon) {
         user.set(base, last_colon);
         passw.set(last_colon + 1, cur);
@@ -1272,9 +1301,10 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       ++cur;
       base = cur;
       break;
-    case '[':                     // address open
-      if (bracket || base != cur) // must be first char in field
+    case '[':                       // address open
+      if (bracket || base != cur) { // must be first char in field
         return PARSE_ERROR;
+      }
       bracket = cur; // location and flag.
       ++cur;
       break;
@@ -1291,8 +1321,9 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
 
   if (user) {
     url_user_set(heap, url, user._ptr, user._size, copy_strings_p);
-    if (passw)
+    if (passw) {
       url_password_set(heap, url, passw._ptr, passw._size, copy_strings_p);
+    }
   }
 
   // @a host not set means no brackets to mark explicit host.
@@ -1305,21 +1336,24 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
     }
   }
   if (host._size) {
-    if (validate_host_name(host))
+    if (validate_host_name(host)) {
       url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
-    else
+    } else {
       return PARSE_ERROR;
+    }
   }
 
   if (last_colon) {
     ink_assert(n_colon);
     port.set(last_colon + 1, cur);
-    if (!port._size)
+    if (!port._size) {
       return PARSE_ERROR; // colon w/o port value.
+    }
     url_port_set(heap, url, port._ptr, port._size, copy_strings_p);
   }
-  if ('/' == *cur)
+  if ('/' == *cur) {
     ++cur; // must do this after filling in host/port.
+  }
   *start = cur;
   return PARSE_DONE;
 }
@@ -1345,12 +1379,14 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
   char mask;
 
   err = url_parse_internet(heap, url, start, end, copy_strings);
-  if (err < 0)
+  if (err < 0) {
     return err;
+  }
 
   cur = *start;
-  if (*start == end)
+  if (*start == end) {
     goto done;
+  }
 
   path_start = cur;
   mask       = ';' & '?' & '#';
@@ -1407,23 +1443,27 @@ parse_fragment1:
 
 done:
   if (path_start) {
-    if (!path_end)
+    if (!path_end) {
       path_end = cur;
+    }
     url_path_set(heap, url, path_start, path_end - path_start, copy_strings);
   }
   if (params_start) {
-    if (!params_end)
+    if (!params_end) {
       params_end = cur;
+    }
     url_params_set(heap, url, params_start, params_end - params_start, copy_strings);
   }
   if (query_start) {
-    if (!query_end)
+    if (!query_end) {
       query_end = cur;
+    }
     url_query_set(heap, url, query_start, query_end - query_start, copy_strings);
   }
   if (fragment_start) {
-    if (!fragment_end)
+    if (!fragment_end) {
       fragment_end = cur;
+    }
     url_fragment_set(heap, url, fragment_start, fragment_end - fragment_start, copy_strings);
   }
 
@@ -1463,10 +1503,12 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
     // or more than 5 digits and a delimiter.
     port                   = host_end - 1;
     char const *port_limit = host_end - 6;
-    if (port_limit < base)
+    if (port_limit < base) {
       port_limit = base; // don't go past start.
-    while (port >= port_limit && isdigit(*port))
+    }
+    while (port >= port_limit && isdigit(*port)) {
       --port;
+    }
     // A port if we're still in the host area and we found a ':' as
     // the immediately preceeding character.
     if (port >= base && ':' == *port) {
@@ -1529,11 +1571,13 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
     // But it can be less (e.g. "::1").
     int n          = url->m_len_host;
     bool bracket_p = '[' != *url->m_ptr_host && (0 != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
-    if (bracket_p)
+    if (bracket_p) {
       TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    }
     TRY(mime_mem_print(url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    if (bracket_p)
+    if (bracket_p) {
       TRY(mime_mem_print("]", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    }
     if (url->m_ptr_port && url->m_port) {
       TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
       TRY(mime_mem_print(url->m_ptr_port, url->m_len_port, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
@@ -1714,8 +1758,9 @@ url_MD5_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, ca
     }
   }
 
-  if (p != buffer)
+  if (p != buffer) {
     ctx.update(buffer, p - buffer);
+  }
 
   port = url_canonicalize_port(url->m_url_type, url->m_port);
 

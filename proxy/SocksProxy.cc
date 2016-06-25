@@ -116,8 +116,9 @@ SocksProxy::init(NetVConnection *netVC)
 void
 SocksProxy::free()
 {
-  if (buf)
+  if (buf) {
     free_MIOBuffer(buf);
+  }
 
   mutex = NULL;
 
@@ -201,8 +202,9 @@ SocksProxy::mainEvent(int event, void *data)
         if (n_read_avail > 8) {
           // read the user name
           int i = 8;
-          while (p[i] != 0 && n_read_avail > i)
+          while (p[i] != 0 && n_read_avail > i) {
             i++;
+          }
 
           if (p[i] == 0) {
             port_ptr                  = &p[2];
@@ -383,11 +385,13 @@ SocksProxy::mainEvent(int event, void *data)
   }
 
   if (state == SOCKS_ERROR) {
-    if (pending_action)
+    if (pending_action) {
       pending_action->cancel();
+    }
 
-    if (timeout)
+    if (timeout) {
       timeout->cancel(this);
+    }
 
     if (clientVC) {
       Debug("SocksProxy", "Closing clientVC on error");
