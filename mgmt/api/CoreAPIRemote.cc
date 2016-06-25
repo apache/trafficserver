@@ -208,8 +208,9 @@ Init(const char *socket_path, TSInitOptionT options)
   // EVENT setup - initialize callback queue
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
     remote_event_callbacks = create_callback_table("remote_callbacks");
-    if (!remote_event_callbacks)
+    if (!remote_event_callbacks) {
       return TS_ERR_SYS_CALL;
+    }
   } else {
     remote_event_callbacks = NULL;
   }
@@ -219,8 +220,9 @@ Init(const char *socket_path, TSInitOptionT options)
   // connection fails; this might happen if client is set up and running
   // before TM
   err = ts_connect();
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     goto END;
+  }
 
   // if connected, create event thread that listens for events from TM
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
@@ -248,13 +250,15 @@ Terminate()
 {
   TSMgmtError err;
 
-  if (remote_event_callbacks)
+  if (remote_event_callbacks) {
     delete_callback_table(remote_event_callbacks);
+  }
 
   // be sure to do this before reset socket_fd's
   err = disconnect();
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     return err;
+  }
 
   // cancel the listening socket thread
   // it's important to call this before setting paths to NULL because the
@@ -262,18 +266,22 @@ Terminate()
   // will seg fault if the socket paths are NULL while it is connecting;
   // the thread will be cancelled at a cancellation point in the
   // socket_test_thread, eg. sleep
-  if (ts_test_thread)
+  if (ts_test_thread) {
     ink_thread_cancel(ts_test_thread);
-  if (ts_event_thread)
+  }
+  if (ts_event_thread) {
     ink_thread_cancel(ts_event_thread);
+  }
 
   // Before clear, we should confirm these
   // two threads have finished. Or the clear
   // operation may lead them crash.
-  if (ts_test_thread)
+  if (ts_test_thread) {
     ink_thread_join(ts_test_thread);
-  if (ts_event_thread)
+  }
+  if (ts_event_thread) {
     ink_thread_join(ts_event_thread);
+  }
 
   // Clear operation
   ts_test_thread  = static_cast<ink_thread>(NULL);
@@ -750,8 +758,9 @@ MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT *action_need)
 {
   TSMgmtError ret;
 
-  if (!rec_name || !val || !action_need)
+  if (!rec_name || !val || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   ret = mgmt_record_set(rec_name, val, action_need);
   return ret;
@@ -765,8 +774,9 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT *action_ne
   char str_val[MAX_RECORD_SIZE];
   TSMgmtError ret;
 
-  if (!rec_name || !action_need)
+  if (!rec_name || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   bzero(str_val, MAX_RECORD_SIZE);
   snprintf(str_val, sizeof(str_val), "%" PRId64 "", int_val);
@@ -782,8 +792,9 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionN
   char str_val[MAX_RECORD_SIZE];
   TSMgmtError ret;
 
-  if (!rec_name || !action_need)
+  if (!rec_name || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   bzero(str_val, MAX_RECORD_SIZE);
   snprintf(str_val, sizeof(str_val), "%" PRId64 "", counter_val);
@@ -800,8 +811,9 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT *act
   TSMgmtError ret;
 
   bzero(str_val, MAX_RECORD_SIZE);
-  if (snprintf(str_val, sizeof(str_val), "%f", float_val) < 0)
+  if (snprintf(str_val, sizeof(str_val), "%f", float_val) < 0) {
     return TS_ERR_SYS_CALL;
+  }
   ret = mgmt_record_set(rec_name, str_val, action_need);
 
   return ret;
@@ -812,8 +824,9 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT 
 {
   TSMgmtError ret;
 
-  if (!rec_name || !action_need)
+  if (!rec_name || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   ret = mgmt_record_set(rec_name, string_val, action_need);
   return ret;
@@ -933,8 +946,9 @@ EventResolve(const char *event_name)
   MgmtMarshallInt optype  = EVENT_RESOLVE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
-  if (!event_name)
+  if (!event_name) {
     return TS_ERR_PARAMS;
+  }
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, EVENT_RESOLVE, &optype, &name);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(EVENT_RESOLVE, main_socket_fd) : ret;
@@ -949,8 +963,9 @@ EventResolve(const char *event_name)
 TSMgmtError
 ActiveEventGetMlt(LLQ *active_events)
 {
-  if (!active_events)
+  if (!active_events) {
     return TS_ERR_PARAMS;
+  }
 
   return (send_and_parse_list(EVENT_GET_MLT, active_events));
 }
@@ -971,8 +986,9 @@ EventIsActive(const char *event_name, bool *is_current)
   MgmtMarshallInt err;
   MgmtMarshallInt bval;
 
-  if (!event_name || !is_current)
+  if (!event_name || !is_current) {
     return TS_ERR_PARAMS;
+  }
 
   // create and send request
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, EVENT_ACTIVE, &optype, &name);
@@ -1011,14 +1027,17 @@ EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data
   bool first_time = false;
   TSMgmtError ret;
 
-  if (func == NULL)
+  if (func == NULL) {
     return TS_ERR_PARAMS;
-  if (!remote_event_callbacks)
+  }
+  if (!remote_event_callbacks) {
     return TS_ERR_FAIL;
+  }
 
   ret = cb_table_register(remote_event_callbacks, event_name, func, data, &first_time);
-  if (ret != TS_ERR_OKAY)
+  if (ret != TS_ERR_OKAY) {
     return ret;
+  }
 
   // if we need to notify traffic manager of the event then send msg
   if (first_time) {
@@ -1026,8 +1045,9 @@ EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data
     MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
     ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, EVENT_REG_CALLBACK, &optype, &name);
-    if (ret != TS_ERR_OKAY)
+    if (ret != TS_ERR_OKAY) {
       return ret;
+    }
   }
 
   return TS_ERR_OKAY;
@@ -1052,19 +1072,22 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
 {
   TSMgmtError err;
 
-  if (!remote_event_callbacks)
+  if (!remote_event_callbacks) {
     return TS_ERR_FAIL;
+  }
 
   // remove the callback function from the table
   err = cb_table_unregister(remote_event_callbacks, event_name, func);
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     return err;
+  }
 
   // check if we need to notify traffic manager of the event (notify TM
   // only if the event has no callbacks)
   err = send_unregister_all_callbacks(event_socket_fd, remote_event_callbacks);
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     return err;
+  }
 
   return TS_ERR_OKAY;
 }
@@ -1079,8 +1102,9 @@ snapshot_message(OpType op, const char *snapshot_name)
   MgmtMarshallInt optype  = op;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(snapshot_name);
 
-  if (!snapshot_name)
+  if (!snapshot_name) {
     return TS_ERR_PARAMS;
+  }
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
@@ -1107,8 +1131,9 @@ SnapshotRemove(const char *snapshot_name)
 TSMgmtError
 SnapshotGetMlt(LLQ *snapshots)
 {
-  if (!snapshots)
+  if (!snapshots) {
     return TS_ERR_PARAMS;
+  }
 
   return send_and_parse_list(SNAPSHOT_GET_MLT, snapshots);
 }

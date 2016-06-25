@@ -217,11 +217,13 @@ cleanup(TSCont contp)
   if (cstate) {
     // cancel any pending cache scan actions, since we will be destroying the
     // continuation
-    if (cstate->pending_action)
+    if (cstate->pending_action) {
       TSActionCancel(cstate->pending_action);
+    }
 
-    if (cstate->net_vc)
+    if (cstate->net_vc) {
       TSVConnShutdown(cstate->net_vc, 1, 1);
+    }
 
     if (cstate->req_buffer) {
       TSIOBufferDestroy(cstate->req_buffer);
@@ -423,8 +425,9 @@ setup_request(TSCont contp, TSHttpTxn txnp)
       start = strstr(querybuf, "remove_url=");
       if (start && (start == querybuf || *(start - 1) == '&')) {
         start += 11;
-        if ((end = strstr(start, "&")) != NULL)
-          *end      = '\0';
+        if ((end = strstr(start, "&")) != NULL) {
+          *end = '\0';
+        }
         del_url_len = unescapifyStr(start);
         end         = start + del_url_len;
 

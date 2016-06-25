@@ -345,8 +345,9 @@ int
 CacheContinuation::init()
 {
   int n;
-  for (n                         = 0; n < REMOTE_CONNECT_HASH; ++n)
+  for (n = 0; n < REMOTE_CONNECT_HASH; ++n) {
     remoteCacheContQueueMutex[n] = new_ProxyMutex();
+  }
 
   GlobalOpenWriteVCcache = new ClusterVConnectionCache;
   GlobalOpenWriteVCcache->init();
@@ -382,8 +383,9 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
     break;
   }
 
-  if (!ch)
+  if (!ch) {
     goto no_send_exit;
+  }
 
   if (c) {
     cc                   = cacheContAllocator_alloc();
@@ -562,10 +564,11 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
     m->opcode    = opcode;
     m->frag_type = ((CacheOpArgs_Deref *)args)->frag_type;
     m->cfl_flags = ((CacheOpArgs_Deref *)args)->cfl_flags;
-    if (opcode == CACHE_DEREF)
+    if (opcode == CACHE_DEREF) {
       m->md5 = *((CacheOpArgs_Deref *)args)->md5;
-    else
-      m->md5      = *((CacheOpArgs_General *)args)->url_md5;
+    } else {
+      m->md5 = *((CacheOpArgs_General *)args)->url_md5;
+    }
     m->seq_number = (c ? cc->seq_number : CACHE_NO_RESPONSE);
     break;
   }
@@ -640,8 +643,9 @@ CacheContinuation::setup_local_vc(char *data, int data_len, CacheContinuation *c
       Debug("cache_proto", "1open_local-l (%s) failed, seqno=%d", (read_op ? "R" : "W"), ((CacheOpMsg_long *)data)->seq_number);
     }
     cc->freeMsgBuffer();
-    if (cc->timeout)
+    if (cc->timeout) {
       cc->timeout->cancel();
+    }
     cc->timeout = NULL;
 
     // Post async failure callback on a different continuation.
@@ -766,10 +770,11 @@ CacheContinuation::remove_and_delete(int /* event ATS_UNUSED */, Event *e)
       remoteCacheContQueue[hash].remove(this);
     }
     MUTEX_RELEASE(queuelock);
-    if (use_deferred_callback)
+    if (use_deferred_callback) {
       callback_failure(&action, result, result_error, this);
-    else
+    } else {
       cacheContAllocator_free(this);
+    }
 
   } else {
     SET_HANDLER((CacheContHandler)&CacheContinuation::remove_and_delete);
@@ -824,8 +829,9 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
       //       the CacheContinuation is deferred until we receive the
       //       open_local() callback.
       /////////////////////////////////////////////////////////////////
-      if (!action.cancelled)
+      if (!action.cancelled) {
         action.continuation->handleEvent((read_op ? CACHE_EVENT_OPEN_READ_FAILED : CACHE_EVENT_OPEN_WRITE_FAILED), 0);
+      }
       return EVENT_DONE;
     }
 
@@ -894,8 +900,9 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
       send_failure_callback = 0; // already sent.
     }
 
-    if (this->timeout)
+    if (this->timeout) {
       this->timeout->cancel();
+    }
     this->timeout = NULL;
 
     freeMsgBuffer();
@@ -933,24 +940,27 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
 inline CacheOpMsg_long *
 unmarshal_CacheOpMsg_long(void *data, int NeedByteSwap)
 {
-  if (NeedByteSwap)
+  if (NeedByteSwap) {
     ((CacheOpMsg_long *)data)->SwapBytes();
+  }
   return (CacheOpMsg_long *)data;
 }
 
 inline CacheOpMsg_short *
 unmarshal_CacheOpMsg_short(void *data, int NeedByteSwap)
 {
-  if (NeedByteSwap)
+  if (NeedByteSwap) {
     ((CacheOpMsg_short *)data)->SwapBytes();
+  }
   return (CacheOpMsg_short *)data;
 }
 
 inline CacheOpMsg_short_2 *
 unmarshal_CacheOpMsg_short_2(void *data, int NeedByteSwap)
 {
-  if (NeedByteSwap)
+  if (NeedByteSwap) {
     ((CacheOpMsg_short_2 *)data)->SwapBytes();
+  }
   return (CacheOpMsg_short_2 *)data;
 }
 
@@ -1588,8 +1598,9 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
 
   int results_expected = 1;
 
-  if (no_reply_message) // CACHE_NO_RESPONSE request
+  if (no_reply_message) { // CACHE_NO_RESPONSE request
     goto free_exit;
+  }
 
   if (open) {
     // prepare for CACHE_OPEN_EVENT
@@ -1894,8 +1905,9 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
   }
 
   flen = CacheOpReplyMsg::sizeof_fixedlen_msg();
-  if (mh->NeedByteSwap())
+  if (mh->NeedByteSwap()) {
     msg->SwapBytes();
+  }
 
   Debug("cluster_cache", "received cache op result, seqno=%d result=%d", msg->seq_number, msg->result);
 
@@ -1924,8 +1936,9 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
       // Unmarshal the error code
       ink_assert(((len - flen) == sizeof(int32_t)));
       op_result_error = msg->moi.u32;
-      if (mh->NeedByteSwap())
+      if (mh->NeedByteSwap()) {
         ats_swap32((uint32_t *)&op_result_error);
+      }
       op_result_error = -op_result_error;
       break;
     }
@@ -1949,14 +1962,16 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
       MUTEX_UNTAKE_LOCK(remoteCacheContQueueMutex[hash], thread);
       Debug("cluster_timeout", "0cache reply timeout: %d", msg->seq_number);
       CLUSTER_INCREMENT_DYN_STAT(CLUSTER_REMOTE_OP_REPLY_TIMEOUTS_STAT);
-      if (ci.valid())
+      if (ci.valid()) {
         ci.destroy();
+      }
       return;
     }
 
     // Update remote ram cache hit flag
-    if (msg->result == CACHE_EVENT_OPEN_READ)
+    if (msg->result == CACHE_EVENT_OPEN_READ) {
       c->read_cluster_vc->set_ram_cache_hit(msg->is_ram_cache_hit);
+    }
 
     // Try to send the message
 
@@ -1992,8 +2007,9 @@ cache_op_result_ClusterFunction(ClusterHandler *ch, void *d, int l)
     SET_CONTINUATION_HANDLER(c, (CacheContHandler)&CacheContinuation::handleReplyEvent);
     c->start_time = Thread::get_hrtime();
     c->result     = msg->result;
-    if (event_is_open(msg->result))
+    if (event_is_open(msg->result)) {
       c->token = msg->token;
+    }
     if (ci.valid()) {
       // Unmarshaled CacheHTTPInfo contained in reply message, copy it.
       c->setMsgBufferLen(len, iob.get());
@@ -2146,8 +2162,9 @@ retry:
       // the continuation until we receive the reply or the
       // target node goes down.
       //
-      if (!action.cancelled)
+      if (!action.cancelled) {
         action.continuation->handleEvent(result, (void *)-ECLUSTER_OP_TIMEOUT);
+      }
       action.cancelled = 1;
 
       if (target_machine->dead) {
@@ -2408,18 +2425,22 @@ CacheContinuation::do_remote_lookup(Continuation *cont, const CacheKey *key, Cac
   } else {
     // If migrate-on-demand is off, do not probe beyond one level.
 
-    if (c && c->probe_depth)
+    if (c && c->probe_depth) {
       return (Action *)0;
+    }
     m = cluster_machine_at_depth(cache_hash(msg->url_md5));
-    if (c)
+    if (c) {
       c->probe_depth = 1;
+    }
   }
 
-  if (!m)
+  if (!m) {
     return (Action *)0;
+  }
   ClusterHandler *ch = m->pop_ClusterHandler();
-  if (!ch)
+  if (!ch) {
     return (Action *)0;
+  }
 
   // If we do not have a continuation, build one
 
@@ -2518,8 +2539,9 @@ cache_lookup_ClusterFunction(ClusterHandler *ch, void *data, int len)
     ink_release_assert(!"cache_lookup_ClusterFunction() bad msg version");
   }
 
-  if (mh->NeedByteSwap())
+  if (mh->NeedByteSwap()) {
     msg->SwapBytes();
+  }
 
   CLUSTER_INCREMENT_DYN_STAT(CLUSTER_CACHE_OUTSTANDING_STAT);
 
@@ -2702,8 +2724,9 @@ CacheContinuation::defer_callback_result(int r, void *e)
 int
 CacheContinuation::callbackResultEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  if (!action.cancelled)
+  if (!action.cancelled) {
     action.continuation->handleEvent(result, callback_data);
+  }
   cacheContAllocator_free(this);
   return EVENT_DONE;
 }
@@ -2776,8 +2799,9 @@ CacheContinuation::callback_failure(Action *a, int result, int err, CacheContinu
 int
 CacheContinuation::callbackEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  if (!action.cancelled)
+  if (!action.cancelled) {
     action.continuation->handleEvent(result, (void *)(intptr_t)result_error);
+  }
   cacheContAllocator_free(this);
   return EVENT_DONE;
 }

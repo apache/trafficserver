@@ -287,8 +287,9 @@ drainIncomingChannel(void *arg)
             const char *msg = "file: failed";
             mgmt_writeline(req_fd, msg, strlen(msg));
           }
-          if (buff)
+          if (buff) {
             delete buff;
+          }
         } else if (strstr(message, "cmd: shutdown_manager")) {
           mgmt_log("[ClusterCom::drainIncomingChannel] Received manager shutdown request\n");
           lmgmt->mgmt_shutdown_outstanding = MGMT_PENDING_RESTART;
@@ -485,8 +486,9 @@ ClusterCom::checkPeers(time_t *ticker)
   // a hack, but it helps break the dependency on global FileManager in traffic_manager.
   cluster_file_rb->configFiles = configFiles;
 
-  if (cluster_type == NO_CLUSTER)
+  if (cluster_type == NO_CLUSTER) {
     return;
+  }
 
   if ((t - *ticker) > 5) {
     int num_peers = 0;
@@ -663,8 +665,9 @@ ClusterCom::generateClusterDelta(void)
   InkHashTableEntry *entry;
   InkHashTableIteratorState iterator_state;
 
-  if (cluster_type == NO_CLUSTER)
+  if (cluster_type == NO_CLUSTER) {
     return;
+  }
 
   ink_mutex_acquire(&(mutex));
   for (entry = ink_hash_table_iterator_first(peers, &iterator_state); entry != NULL;
@@ -712,12 +715,14 @@ ClusterCom::handleMultiCastMessage(char *message)
 
   /* Grab the ip address, we need to know this so that we only complain
      once about a cluster name or traffic server version mismatch */
-  if ((line = strtok_r(message, "\n", &last)) == NULL)
+  if ((line = strtok_r(message, "\n", &last)) == NULL) {
     goto Lbogus; /* IP of sender */
+  }
 
   // coverity[secure_coding]
-  if (strlen(line) >= sizeof(ip) || sscanf(line, "ip: %s", ip) != 1)
+  if (strlen(line) >= sizeof(ip) || sscanf(line, "ip: %s", ip) != 1) {
     goto Lbogus;
+  }
 
   // FIX THIS: elam 02/23/1999
   //   Loopback disable is currently not working on NT.
@@ -727,12 +732,14 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Make sure this is a message for the cluster we belong to */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
     goto Lbogus; /* ClusterName of sender */
+  }
 
   // coverity[secure_coding]
-  if (strlen(line) >= sizeof(cluster_name) || sscanf(line, "cluster: %s", cluster_name) != 1)
+  if (strlen(line) >= sizeof(cluster_name) || sscanf(line, "cluster: %s", cluster_name) != 1) {
     goto Lbogus;
+  }
 
   if (strcmp(cluster_name, lmgmt->proxy_name) != 0) {
     logClusterMismatch(ip, TS_NAME_MISMATCH, cluster_name);
@@ -740,8 +747,9 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Make sure this a message from a Traffic Server of the same version */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
     goto Lbogus; /* TS version of sender */
+  }
 
   // coverity[secure_coding]
   if (strlen(line) >= sizeof(tsver) || sscanf(line, "tsver: %s", tsver) != 1 || strcmp(line + 7, appVersionInfo.VersionStr) != 0) {
@@ -750,8 +758,9 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Figure out what type of message this is */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
     goto Lbogus;
+  }
   if (strcmp("type: files", line) == 0) { /* Config Files report */
     handleMultiCastFilePacket(last, ip);
     return;
@@ -769,8 +778,9 @@ ClusterCom::handleMultiCastMessage(char *message)
   }
 
   /* Check OS and version info */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
     goto Lbogus; /* OS of sender */
+  }
   if (!strstr(line, "os: ") || !strstr(line, sys_name)) {
     /*
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
@@ -782,8 +792,9 @@ ClusterCom::handleMultiCastMessage(char *message)
           line, sys_name, sys_release);
   }
 
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
     goto Lbogus; /* OS-Version of sender */
+  }
   if (!strstr(line, "rel: ") || !strstr(line, sys_release)) {
     /*
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_PROXY_SYSTEM_ERROR,
@@ -795,30 +806,34 @@ ClusterCom::handleMultiCastMessage(char *message)
           line, sys_name, sys_release);
   }
 
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
     goto Lbogus; /* Hostname of sender */
+  }
   if (strlen(line) >= sizeof(hostname) || sscanf(line, "hostname: %s", hostname) != 1) {
     mgmt_elog(0, "[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
 
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
     goto Lbogus; /* mc_port of sender */
+  }
   if (sscanf(line, "port: %d", &peer_cluster_port) != 1) {
     mgmt_elog(0, "[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
 
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
     goto Lbogus; /* rs_port of sender */
+  }
   if (sscanf(line, "ccomport: %d", &ccom_port) != 1) {
     mgmt_elog(0, "[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
     return;
   }
 
   /* Their wall clock time and last config change time */
-  if ((line = strtok_r(NULL, "\n", &last)) == NULL)
+  if ((line = strtok_r(NULL, "\n", &last)) == NULL) {
     goto Lbogus;
+  }
   int64_t tt;
   if (sscanf(line, "time: %" PRId64 "", &tt) != 1) {
     mgmt_elog(0, "[ClusterCom::handleMultiCastMessage] Invalid message-line(%d) '%s'\n", __LINE__, line);
@@ -926,8 +941,9 @@ ClusterCom::handleMultiCastStatPacket(char *last, ClusterPeerInfo *peer)
       if (v2) {
         tmp_type = (RecDataT)ink_atoi(v2 + 1);
         v3       = strchr(v2 + 1, ':');
-        if (v3)
+        if (v3) {
           tmp_msg_val = ink_atoi64(v3 + 1);
+        }
       }
       if (!v2 || !v3) {
         mgmt_elog(0, "[ClusterCom::handleMultiCastStatPacket] Invalid message-line(%d) '%s'\n", __LINE__, line);
@@ -1007,16 +1023,19 @@ bool
 scan_and_terminate(char *&p, char a, char b)
 {
   bool eob = false; // 'eob' is end-of-buffer
-  while ((*p != a) && (*p != b) && (*p != '\0'))
+  while ((*p != a) && (*p != b) && (*p != '\0')) {
     p++;
+  }
   if (*p == '\0') {
     eob = true;
   } else {
     *(p++) = '\0';
-    while ((*p == a) || ((*p == b) && (*p != '\0')))
+    while ((*p == a) || ((*p == b) && (*p != '\0'))) {
       p++;
-    if (*p == '\0')
+    }
+    if (*p == '\0') {
       eob = true;
+    }
   }
   return eob;
 }
@@ -1031,14 +1050,16 @@ extract_locals(MgmtHashTable *local_ht, char *record_buffer)
     line = q = p;
     eof      = scan_and_terminate(p, '\r', '\n');
     Debug("ccom_rec", "[extract_locals] %s", line);
-    while ((*q == ' ') || (*q == '\t'))
+    while ((*q == ' ') || (*q == '\t')) {
       q++;
+    }
     // is this line a LOCAL?
     if (strncmp(q, "LOCAL", strlen("LOCAL")) == 0) {
       line_cp = ats_strdup(line);
       q += strlen("LOCAL");
-      while ((*q == ' ') || (*q == '\t'))
+      while ((*q == ' ') || (*q == '\t')) {
         q++;
+      }
       name = q;
       if (scan_and_terminate(q, ' ', '\t')) {
         Debug("ccom_rec", "[extract_locals] malformed line: %s", name);
@@ -1063,13 +1084,15 @@ insert_locals(textBuffer *rec_cfg_new, textBuffer *rec_cfg, MgmtHashTable *local
     line = q = p;
     eof      = scan_and_terminate(p, '\r', '\n');
     Debug("ccom_rec", "[insert_locals] %s", line);
-    while ((*q == ' ') || (*q == '\t'))
+    while ((*q == ' ') || (*q == '\t')) {
       q++;
+    }
     // is this line a local?
     if (strncmp(q, "LOCAL", strlen("LOCAL")) == 0) {
       q += strlen("LOCAL");
-      while ((*q == ' ') || (*q == '\t'))
+      while ((*q == ' ') || (*q == '\t')) {
         q++;
+      }
       name = q;
       if (scan_and_terminate(q, ' ', '\t')) {
         Debug("ccom_rec", "[insert_locals] malformed line: %s", name);

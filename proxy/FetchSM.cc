@@ -109,11 +109,13 @@ FetchSM::has_body()
   int status_code;
   HTTPHdr *hdr;
 
-  if (!header_done)
+  if (!header_done) {
     return false;
+  }
 
-  if (is_method_head)
+  if (is_method_head) {
     return false;
+  }
   //
   // The following code comply with HTTP/1.1:
   // http://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.4
@@ -122,11 +124,13 @@ FetchSM::has_body()
   hdr = &client_response_hdr;
 
   status_code = hdr->status_get();
-  if (status_code < 200 || status_code == 204 || status_code == 304)
+  if (status_code < 200 || status_code == 204 || status_code == 304) {
     return false;
+  }
 
-  if (check_chunked())
+  if (check_chunked()) {
     return true;
+  }
 
   resp_content_length = hdr->value_get_int64(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
   if (!resp_content_length) {
@@ -144,8 +148,9 @@ bool
 FetchSM::check_body_done()
 {
   if (!check_chunked()) {
-    if (resp_content_length == resp_received_body_len + resp_reader->read_avail())
+    if (resp_content_length == resp_received_body_len + resp_reader->read_avail()) {
       return true;
+    }
 
     return false;
   }
@@ -223,11 +228,13 @@ FetchSM::dechunk_body()
   //  - TS_FETCH_EVENT_EXT_BODY_READY.
   //  - TS_FETCH_EVENT_EXT_BODY_DONE.
   //
-  if (chunked_handler.process_chunked_content())
+  if (chunked_handler.process_chunked_content()) {
     return TS_FETCH_EVENT_EXT_BODY_DONE;
+  }
 
-  if (chunked_handler.dechunked_reader->read_avail())
+  if (chunked_handler.dechunked_reader->read_avail()) {
     return TS_FETCH_EVENT_EXT_BODY_READY;
+  }
 
   return 0;
 }
@@ -249,8 +256,9 @@ FetchSM::InvokePluginExt(int fetch_event)
     MUTEX_TAKE_LOCK(cont_mutex, mythread);
   }
 
-  if (!contp)
+  if (!contp) {
     goto out;
+  }
 
   if (fetch_event && !read_complete_event) {
     contp->handleEvent(fetch_event, this);
@@ -274,8 +282,9 @@ FetchSM::InvokePluginExt(int fetch_event)
   // since, it¹s in a tight loop protected by 'recursion' counter.
   // When handleEvent returns, 'recursion' is decremented and contp is
   // already null, so, FetchSM gets destroyed.
-  if (!contp)
+  if (!contp) {
     goto out;
+  }
 
   if (!has_body()) {
     contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_DONE, this);
@@ -301,10 +310,11 @@ FetchSM::InvokePluginExt(int fetch_event)
   }
 
   if (!check_chunked()) {
-    if (!check_body_done() && !read_complete_event)
+    if (!check_body_done() && !read_complete_event) {
       contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_READY, this);
-    else
+    } else {
       contp->handleEvent(TS_FETCH_EVENT_EXT_BODY_DONE, this);
+    }
   } else if (fetch_flags & TS_FETCH_FLAGS_DECHUNK) {
     do {
       if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
@@ -320,8 +330,9 @@ FetchSM::InvokePluginExt(int fetch_event)
       contp->handleEvent(event, this);
 
       // contp may be null after handleEvent
-      if (!contp)
+      if (!contp) {
         goto out;
+      }
 
     } while (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL);
   } else if (check_body_done()) {
@@ -336,8 +347,9 @@ out:
   }
   recursion--;
 
-  if (!contp && !recursion)
+  if (!contp && !recursion) {
     cleanUp();
+  }
 
   return;
 }
@@ -395,8 +407,9 @@ FetchSM::get_info_from_buffer(IOBufferReader *reader)
       chunked_handler.state = ChunkedHandler::CHUNK_READ_SIZE_START;
     }
 
-    if (!dechunk_body())
+    if (!dechunk_body()) {
       break;
+    }
 
     /* Read the data out of the reader */
     read_avail = reader->read_avail();
@@ -456,21 +469,24 @@ FetchSM::process_fetch_read(int event)
     if (header_done == 0 && ((fetch_flags & TS_FETCH_FLAGS_STREAM) || callback_options == AFTER_HEADER)) {
       if (client_response_hdr.parse_resp(&http_parser, resp_reader, &bytes_used, 0) == PARSE_DONE) {
         header_done = 1;
-        if (fetch_flags & TS_FETCH_FLAGS_STREAM)
+        if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
           return InvokePluginExt();
-        else
+        } else {
           InvokePlugin(callback_events.success_event_id, (void *)&client_response_hdr);
+        }
       }
     } else {
-      if (fetch_flags & TS_FETCH_FLAGS_STREAM)
+      if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
         return InvokePluginExt();
+      }
     }
     read_vio->reenable();
     break;
   case TS_EVENT_VCONN_READ_COMPLETE:
   case TS_EVENT_VCONN_EOS:
-    if (fetch_flags & TS_FETCH_FLAGS_STREAM)
+    if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
       return InvokePluginExt(event);
+    }
     if (callback_options == AFTER_HEADER || callback_options == AFTER_BODY) {
       get_info_from_buffer(resp_reader);
       InvokePlugin(callback_events.success_event_id, (void *)this);
@@ -480,8 +496,9 @@ FetchSM::process_fetch_read(int event)
     break;
   case TS_EVENT_ERROR:
   default:
-    if (fetch_flags & TS_FETCH_FLAGS_STREAM)
+    if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
       return InvokePluginExt(event);
+    }
     InvokePlugin(callback_events.failure_event_id, NULL);
     cleanUp();
     break;
@@ -500,12 +517,14 @@ FetchSM::process_fetch_write(int event)
     // data is processed in chunks of 32k; if there is more than 32k
     // of input data, we have to continue reenabling until all data is
     // read (we have already written all the data to the buffer)
-    if (req_reader->read_avail() > 0)
+    if (req_reader->read_avail() > 0) {
       ((PluginVC *)http_vc)->reenable(write_vio);
+    }
     break;
   case TS_EVENT_ERROR:
-    if (fetch_flags & TS_FETCH_FLAGS_STREAM)
+    if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
       return InvokePluginExt(event);
+    }
     InvokePlugin(callback_events.failure_event_id, NULL);
     cleanUp();
   default:
@@ -623,17 +642,20 @@ FetchSM::ext_read_data(char *buf, size_t len)
 
   if (fetch_flags & TS_FETCH_FLAGS_NEWLOCK) {
     MUTEX_TRY_LOCK(lock, mutex, this_ethread());
-    if (!lock.is_locked())
+    if (!lock.is_locked()) {
       return 0;
+    }
   }
 
-  if (!header_done)
+  if (!header_done) {
     return 0;
+  }
 
-  if (check_chunked() && (fetch_flags & TS_FETCH_FLAGS_DECHUNK))
+  if (check_chunked() && (fetch_flags & TS_FETCH_FLAGS_DECHUNK)) {
     reader = (tsapi_bufferreader *)chunked_handler.dechunked_reader;
-  else
+  } else {
     reader = (TSIOBufferReader)resp_reader;
+  }
 
   already = 0;
   blk     = TSIOBufferReaderStart(reader);
@@ -649,8 +671,9 @@ FetchSM::ext_read_data(char *buf, size_t len)
     memcpy(&buf[already], start, need);
     already += need;
 
-    if (already >= (int64_t)len)
+    if (already >= (int64_t)len) {
       break;
+    }
 
     blk = next_blk;
   }
@@ -667,8 +690,9 @@ FetchSM::ext_destroy()
 {
   contp = NULL;
 
-  if (recursion)
+  if (recursion) {
     return;
+  }
 
   if (fetch_flags & TS_FETCH_FLAGS_NEWLOCK) {
     MUTEX_TRY_LOCK(lock, mutex, this_ethread());

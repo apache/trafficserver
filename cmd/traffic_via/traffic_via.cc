@@ -293,8 +293,9 @@ filterViaHeader()
       pcre_exec(compiledReg, extraReg, viaHeader, (int)sizeof(viaHeader), 0, 0, subStringVector, SUBSTRING_VECTOR_COUNT);
 
     // Match failed, don't worry. Continue to next line.
-    if (pcreExecCode < 0)
+    if (pcreExecCode < 0) {
       continue;
+    }
 
     // Match successful, but too many substrings
     if (pcreExecCode == 0) {

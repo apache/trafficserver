@@ -83,8 +83,9 @@ config_string_alloc_cb(void *data, void *value)
   *(char **)data = _new_value;
 
   // free old data
-  if (_temp2 != 0)
+  if (_temp2 != 0) {
     new_Freer(_temp2, HRTIME_DAY);
+  }
 
   return NULL;
 }

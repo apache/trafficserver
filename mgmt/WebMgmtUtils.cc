@@ -701,8 +701,9 @@ MgmtData::MgmtData()
 
 MgmtData::~MgmtData()
 {
-  if (type == RECD_STRING)
+  if (type == RECD_STRING) {
     ats_free(data.rec_string);
+  }
 }
 
 // MgmtData::compareFromString(const char* str, strLen)
@@ -1251,8 +1252,9 @@ getFilesInDirectory(char *managedDir, ExpandingArray *fileList)
 
   struct dirent *result;
   while (readdir_r(dir, dirEntry, &result) == 0) {
-    if (!result)
+    if (!result) {
       break;
+    }
     fileName = dirEntry->d_name;
     if (!fileName || !*fileName) {
       continue;
@@ -1292,8 +1294,9 @@ newPathString(const char *s1, const char *s2)
   int addLen; // maximum total path length
 
   // Treat null as an empty path.
-  if (!s2)
-    s2   = "";
+  if (!s2) {
+    s2 = "";
+  }
   addLen = strlen(s2) + 1;
   if (*s2 == '/') {
     // If addpath is rooted, then rootpath is unused.
@@ -1312,8 +1315,9 @@ newPathString(const char *s1, const char *s2)
   ink_assert(newStr != NULL);
 
   ink_strlcpy(newStr, s1, srcLen + addLen + 1);
-  if (newStr[srcLen - 1] != '/')
+  if (newStr[srcLen - 1] != '/') {
     newStr[srcLen++] = '/';
+  }
   ink_strlcpy(&newStr[srcLen], s2, srcLen + addLen + 1);
 
   return newStr;

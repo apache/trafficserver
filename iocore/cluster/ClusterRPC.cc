@@ -63,8 +63,9 @@ machine_list_ClusterFunction(ClusterHandler *from, void *data, int len)
     ////////////////////////////////////////////////
     ink_release_assert(!"machine_list_ClusterFunction() bad msg version");
   }
-  if (m->NeedByteSwap())
+  if (m->NeedByteSwap()) {
     m->SwapBytes();
+  }
 
   ink_assert(m->n_ip == ((len - m->sizeof_fixedlen_msg()) / sizeof(uint32_t)));
 
@@ -76,8 +77,9 @@ machine_list_ClusterFunction(ClusterHandler *from, void *data, int len)
 
   for (unsigned int i = 0; i < m->n_ip; i++) {
     for (int j = 0; j < cc->n_machines; j++) {
-      if (cc->machines[j]->ip == m->ip[i])
+      if (cc->machines[j]->ip == m->ip[i]) {
         goto Lfound;
+      }
     }
     // not found, must be a new machine
     {
@@ -101,15 +103,17 @@ close_channel_ClusterFunction(ClusterHandler *ch, void *data, int len)
     ////////////////////////////////////////////////
     ink_release_assert(!"close_channel_ClusterFunction() bad msg version");
   }
-  if (m->NeedByteSwap())
+  if (m->NeedByteSwap()) {
     m->SwapBytes();
+  }
 
   //
   // Close the remote side of a VC connection (remote node is originator)
   //
   ink_assert(len >= (int)sizeof(CloseMessage));
-  if (!ch || !ch->channels)
+  if (!ch || !ch->channels) {
     return;
+  }
   ClusterVConnection *vc = ch->channels[m->channel];
   if (VALID_CHANNEL(vc) && vc->token.sequence_number == m->sequence_number) {
     vc->remote_closed = m->status;
@@ -124,8 +128,9 @@ test_ClusterFunction(ClusterHandler *ch, void *data, int len)
   //
   // Note: Only for testing.
   //
-  if (ptest_ClusterFunction)
+  if (ptest_ClusterFunction) {
     ptest_ClusterFunction(ch, data, len);
+  }
 }
 
 CacheVC *
@@ -185,8 +190,9 @@ set_channel_data_ClusterFunction(ClusterHandler *ch, void *tdata, int tlen)
     ////////////////////////////////////////////////
     ink_release_assert(!"set_channel_data_ClusterFunction() bad msg version");
   }
-  if (m->NeedByteSwap())
+  if (m->NeedByteSwap()) {
     m->SwapBytes();
+  }
 
   ClusterVConnection *cvc;
   CacheVC *cache_vc;
@@ -269,8 +275,9 @@ set_channel_pin_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_U
     ink_release_assert(!"set_channel_pin_ClusterFunction() bad msg version");
   }
 
-  if (m->NeedByteSwap())
+  if (m->NeedByteSwap()) {
     m->SwapBytes();
+  }
 
   ClusterVConnection *cvc = NULL; // Just to make GCC happy
   CacheVC *cache_vc;
@@ -329,8 +336,9 @@ set_channel_priority_ClusterFunction(ClusterHandler *ch, void *data, int /* len 
     ////////////////////////////////////////////////
     ink_release_assert(!"set_channel_priority_ClusterFunction() bad msg version");
   }
-  if (m->NeedByteSwap())
+  if (m->NeedByteSwap()) {
     m->SwapBytes();
+  }
 
   ClusterVConnection *cvc = NULL; // Just to make GCC happy
   CacheVC *cache_vc;

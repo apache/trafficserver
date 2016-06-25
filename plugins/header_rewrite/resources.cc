@@ -110,13 +110,15 @@ void
 Resources::destroy()
 {
   if (bufp) {
-    if (hdr_loc)
+    if (hdr_loc) {
       TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+    }
   }
 
   if (client_bufp && (client_bufp != bufp)) {
-    if (client_hdr_loc && (client_hdr_loc != hdr_loc)) // TODO: Is this check really necessary?
+    if (client_hdr_loc && (client_hdr_loc != hdr_loc)) { // TODO: Is this check really necessary?
       TSHandleMLocRelease(client_bufp, TS_NULL_MLOC, client_hdr_loc);
+    }
   }
 
   _ready = false;

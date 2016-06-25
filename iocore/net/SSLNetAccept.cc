@@ -45,19 +45,22 @@ SSLNetAccept::init_accept_per_thread(bool isTransparent)
   int i, n;
   NetAccept *a;
 
-  if (do_listen(NON_BLOCKING, isTransparent))
+  if (do_listen(NON_BLOCKING, isTransparent)) {
     return;
-  if (accept_fn == net_accept)
+  }
+  if (accept_fn == net_accept) {
     SET_HANDLER((SSLNetAcceptHandler)&SSLNetAccept::acceptFastEvent);
-  else
+  } else {
     SET_HANDLER((SSLNetAcceptHandler)&SSLNetAccept::acceptEvent);
+  }
   period = -HRTIME_MSECONDS(net_accept_period);
   n      = eventProcessor.n_threads_for_type[SSLNetProcessor::ET_SSL];
   for (i = 0; i < n; i++) {
-    if (i < n - 1)
+    if (i < n - 1) {
       a = clone();
-    else
-      a        = this;
+    } else {
+      a = this;
+    }
     EThread *t = eventProcessor.eventthread[SSLNetProcessor::ET_SSL][i];
 
     PollDescriptor *pd = get_PollDescriptor(t);

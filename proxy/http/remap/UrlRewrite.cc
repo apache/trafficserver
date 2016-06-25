@@ -125,8 +125,9 @@ void
 UrlRewrite::SetReverseFlag(int flag)
 {
   reverse_proxy = flag;
-  if (is_debug_tag_set("url_rewrite"))
+  if (is_debug_tag_set("url_rewrite")) {
     Print();
+  }
 }
 
 /**
@@ -369,8 +370,9 @@ UrlRewrite::ReverseMap(HTTPHdr *response_header)
     UrlMappingContainer reverse_mapping(response_header->m_heap);
 
     if (reverseMappingLookup(&location_url, location_url.port_get(), host, host_len, reverse_mapping)) {
-      if (i == 0)
+      if (i == 0) {
         remap_found = true;
+      }
       url_rewrite_remap_request(reverse_mapping, &location_url);
       new_loc_hdr = location_url.string_get_ref(&new_loc_length);
       response_header->value_set(url_headers[i].field, url_headers[i].len, new_loc_hdr, new_loc_length);
@@ -493,8 +495,9 @@ UrlRewrite::Remap_redirect(HTTPHdr *request_header, URL *redirect_url)
   prt = (num_rules_redirect_permanent != 0);
   trt = (num_rules_redirect_temporary != 0);
 
-  if (prt + trt == 0)
+  if (prt + trt == 0) {
     return NONE;
+  }
 
   // Since are called before request validity checking
   //  occurs, make sure that we have both a valid request

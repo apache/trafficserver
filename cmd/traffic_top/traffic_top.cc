@@ -112,8 +112,9 @@ prettyPrint(const int x, const int y, const double number, const int type)
       color = colorPair::green;
     }
     snprintf(buffer, sizeof(buffer), "%6.1f%%%%", (double)my_number);
-  } else
+  } else {
     snprintf(buffer, sizeof(buffer), "%6.1f%c", (double)my_number, exp);
+  }
   attron(COLOR_PAIR(color));
   attron(A_BOLD);
   mvprintw(y, x, buffer);
@@ -253,8 +254,9 @@ help(const string &host, const string &version)
     attroff(A_BOLD);
     refresh();
     int x = getch();
-    if (x == 'b')
+    if (x == 'b') {
       break;
+    }
   }
 }
 

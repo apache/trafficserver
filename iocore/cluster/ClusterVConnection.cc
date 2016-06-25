@@ -140,8 +140,9 @@ ClusterVConnectionBase::do_io_close(int alerrno)
   read.vio.buffer.clear();
   write.vio.buffer.clear();
   INK_WRITE_MEMORY_BARRIER;
-  if (alerrno && alerrno != -1)
+  if (alerrno && alerrno != -1) {
     this->lerrno = alerrno;
+  }
 
   if (alerrno == -1) {
     closed = 1;
@@ -153,8 +154,9 @@ ClusterVConnectionBase::do_io_close(int alerrno)
 void
 ClusterVConnection::reenable(VIO *vio)
 {
-  if (type == VC_CLUSTER_WRITE)
+  if (type == VC_CLUSTER_WRITE) {
     ch->vcs_push(this, VC_CLUSTER_WRITE);
+  }
 
   ClusterVConnectionBase::reenable(vio);
 }
@@ -166,14 +168,16 @@ ClusterVConnectionBase::reenable(VIO *vio)
   if (vio == &read.vio) {
     read.enabled = 1;
 #ifdef DEBUG
-    if (enable_debug_trace && (vio->buffer.writer() && !vio->buffer.writer()->write_avail()))
+    if (enable_debug_trace && (vio->buffer.writer() && !vio->buffer.writer()->write_avail())) {
       printf("NetVConnection re-enabled for read when full\n");
+    }
 #endif
   } else if (vio == &write.vio) {
     write.enabled = 1;
 #ifdef DEBUG
-    if (enable_debug_trace && (vio->buffer.writer() && !vio->buffer.reader()->read_avail()))
+    if (enable_debug_trace && (vio->buffer.writer() && !vio->buffer.reader()->read_avail())) {
       printf("NetVConnection re-enabled for write when empty\n");
+    }
 #endif
   } else {
     ink_assert(!"bad vio");
@@ -249,8 +253,9 @@ ClusterVConnection::free()
 VIO *
 ClusterVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  if (type == VC_CLUSTER)
+  if (type == VC_CLUSTER) {
     type = VC_CLUSTER_READ;
+  }
   ch->vcs_push(this, VC_CLUSTER_READ);
 
   return ClusterVConnectionBase::do_io_read(c, nbytes, buf);
@@ -259,8 +264,9 @@ ClusterVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 ClusterVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
-  if (type == VC_CLUSTER)
+  if (type == VC_CLUSTER) {
     type = VC_CLUSTER_WRITE;
+  }
   ch->vcs_push(this, VC_CLUSTER_WRITE);
 
   return ClusterVConnectionBase::do_io_write(c, nbytes, buf, owner);
@@ -270,10 +276,11 @@ void
 ClusterVConnection::do_io_close(int alerrno)
 {
   if ((type == VC_CLUSTER) && current_cont) {
-    if (((CacheContinuation *)current_cont)->read_cluster_vc == this)
+    if (((CacheContinuation *)current_cont)->read_cluster_vc == this) {
       type = VC_CLUSTER_READ;
-    else if (((CacheContinuation *)current_cont)->write_cluster_vc == this)
+    } else if (((CacheContinuation *)current_cont)->write_cluster_vc == this) {
       type = VC_CLUSTER_WRITE;
+    }
   }
   ch->vcs_push(this, type);
 
@@ -374,8 +381,9 @@ ClusterVConnection::start(EThread *t)
 
     } else {
       Debug(CL_TRACE, "VC start alloc local chan=%d VC=%p", channel, this);
-      if (new_connect_read)
+      if (new_connect_read) {
         this->pending_remote_fill = 1;
+      }
     }
 
   } else {
@@ -386,9 +394,10 @@ ClusterVConnection::start(EThread *t)
       return status; // Channel active or no more channels
     } else {
       Debug(CL_TRACE, "VC start alloc remote chan=%d VC=%p", channel, this);
-      if (new_connect_read)
+      if (new_connect_read) {
         this->pending_remote_fill = 1;
-      this->iov_map               = CLUSTER_IOV_NONE; // disable connect timeout
+      }
+      this->iov_map = CLUSTER_IOV_NONE; // disable connect timeout
     }
   }
   cluster_schedule(ch, this, &read);
@@ -421,10 +430,11 @@ ClusterVConnection::disable_close()
 int
 ClusterVConnection::was_remote_closed()
 {
-  if (!byte_bank_q.head && !remote_close_disabled)
+  if (!byte_bank_q.head && !remote_close_disabled) {
     return remote_closed;
-  else
+  } else {
     return 0;
+  }
 }
 
 void

@@ -101,13 +101,15 @@ build_hash_table_machine(ClusterConfiguration *c)
   // seed the random number generator with the ip address
   // do a little xor folding to get it into 15 bits
   //
-  for (m   = 0; m < c->n_machines; m++)
+  for (m = 0; m < c->n_machines; m++) {
     rnd[m] = (((c->machines[m]->ip >> 15) & 0x7FFF) ^ (c->machines[m]->ip & 0x7FFF)) ^ (c->machines[m]->ip >> 30);
+  }
 
   // Initialize the table to "empty"
   //
-  for (i             = 0; i < CLUSTER_HASH_TABLE_SIZE; i++)
+  for (i = 0; i < CLUSTER_HASH_TABLE_SIZE; i++) {
     c->hash_table[i] = 255;
+  }
 
   // Until we have hit every element of the table, give each
   // machine a chance to select it's favorites.
@@ -121,8 +123,9 @@ build_hash_table_machine(ClusterConfiguration *c)
     do {
       if (randClusterHash) {
         i = ink_rand_r(&rnd[m]) % CLUSTER_HASH_TABLE_SIZE;
-      } else
+      } else {
         i = next_rand(&rnd[m]) % CLUSTER_HASH_TABLE_SIZE;
+      }
     } while (c->hash_table[i] != 255);
     mach[m]--;
     c->hash_table[i] = m;
@@ -145,16 +148,18 @@ build_hash_table_bucket(ClusterConfiguration *c)
     total -= mine;
   }
 
-  for (i   = 0; i < CLUSTER_HASH_TABLE_SIZE; i++)
+  for (i = 0; i < CLUSTER_HASH_TABLE_SIZE; i++) {
     rnd[i] = i;
+  }
 
   for (i = 0; i < CLUSTER_HASH_TABLE_SIZE; i++) {
     unsigned char x = 0;
     do {
       if (randClusterHash) {
         x = ink_rand_r(&rnd[i]) % CLUSTER_MAX_MACHINES;
-      } else
+      } else {
         x = next_rand(&rnd[i]) % CLUSTER_MAX_MACHINES;
+      }
     } while (x >= c->n_machines || (!mach[x] && boundClusterHash));
     mach[x]--;
     c->hash_table[i] = x;
@@ -164,8 +169,9 @@ build_hash_table_bucket(ClusterConfiguration *c)
 void
 build_cluster_hash_table(ClusterConfiguration *c)
 {
-  if (machineClusterHash)
+  if (machineClusterHash) {
     build_hash_table_machine(c);
-  else
+  } else {
     build_hash_table_bucket(c);
+  }
 }

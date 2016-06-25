@@ -34,8 +34,9 @@ ink_rwlock_init(ink_rwlock *rw)
 {
   int result;
 
-  if ((result = ink_mutex_init(&rw->rw_mutex, NULL)) != 0)
+  if ((result = ink_mutex_init(&rw->rw_mutex, NULL)) != 0) {
     goto Lerror;
+  }
 
   ink_cond_init(&rw->rw_condreaders);
   ink_cond_init(&rw->rw_condwriters);
@@ -58,10 +59,12 @@ Lerror:
 int
 ink_rwlock_destroy(ink_rwlock *rw)
 {
-  if (rw->rw_magic != RW_MAGIC)
+  if (rw->rw_magic != RW_MAGIC) {
     return EINVAL;
-  if (rw->rw_refcount != 0 || rw->rw_nwaitreaders != 0 || rw->rw_nwaitwriters != 0)
+  }
+  if (rw->rw_refcount != 0 || rw->rw_nwaitreaders != 0 || rw->rw_nwaitwriters != 0) {
     return EBUSY;
+  }
 
   ink_mutex_destroy(&rw->rw_mutex);
   ink_cond_destroy(&rw->rw_condreaders);
@@ -80,11 +83,13 @@ ink_rwlock_rdlock(ink_rwlock *rw)
 {
   int result;
 
-  if (rw->rw_magic != RW_MAGIC)
+  if (rw->rw_magic != RW_MAGIC) {
     return EINVAL;
+  }
 
-  if ((result = ink_mutex_acquire(&rw->rw_mutex)) != 0)
+  if ((result = ink_mutex_acquire(&rw->rw_mutex)) != 0) {
     return result;
+  }
 
   /* give preference to waiting writers */
   while (rw->rw_refcount < 0 || rw->rw_nwaitwriters > 0) {
@@ -108,11 +113,13 @@ ink_rwlock_wrlock(ink_rwlock *rw)
 {
   int result;
 
-  if (rw->rw_magic != RW_MAGIC)
+  if (rw->rw_magic != RW_MAGIC) {
     return EINVAL;
+  }
 
-  if ((result = ink_mutex_acquire(&rw->rw_mutex)) != 0)
+  if ((result = ink_mutex_acquire(&rw->rw_mutex)) != 0) {
     return result;
+  }
 
   while (rw->rw_refcount != 0) {
     rw->rw_nwaitwriters++;
@@ -135,25 +142,30 @@ ink_rwlock_unlock(ink_rwlock *rw)
 {
   int result;
 
-  if (rw->rw_magic != RW_MAGIC)
+  if (rw->rw_magic != RW_MAGIC) {
     return EINVAL;
+  }
 
-  if ((result = ink_mutex_acquire(&rw->rw_mutex)) != 0)
+  if ((result = ink_mutex_acquire(&rw->rw_mutex)) != 0) {
     return result;
+  }
 
-  if (rw->rw_refcount > 0)
+  if (rw->rw_refcount > 0) {
     rw->rw_refcount--; /* releasing a reader */
-  else if (rw->rw_refcount == -1)
+  } else if (rw->rw_refcount == -1) {
     rw->rw_refcount = 0; /* releasing a reader */
-  else
+  } else {
     ink_release_assert("invalid rw_refcount!");
+  }
 
   /* give preference to waiting writers over waiting readers */
   if (rw->rw_nwaitwriters > 0) {
-    if (rw->rw_refcount == 0)
+    if (rw->rw_refcount == 0) {
       ink_cond_signal(&rw->rw_condwriters);
-  } else if (rw->rw_nwaitreaders > 0)
+    }
+  } else if (rw->rw_nwaitreaders > 0) {
     ink_cond_broadcast(&rw->rw_condreaders);
+  }
 
   ink_mutex_release(&rw->rw_mutex);
 

@@ -216,8 +216,9 @@ BitMap::~BitMap()
 void
 BitMap::SetBit(int bit)
 {
-  if (bit >= _bitmap_size)
+  if (bit >= _bitmap_size) {
     return;
+  }
 
   char *pbyte = &_bitmap[bit / BITS_PER_BYTE];
   *pbyte |= (1 << (bit % BITS_PER_BYTE));
@@ -226,8 +227,9 @@ BitMap::SetBit(int bit)
 void
 BitMap::ClearBit(int bit)
 {
-  if (bit >= _bitmap_size)
+  if (bit >= _bitmap_size) {
     return;
+  }
 
   char *pbyte = &_bitmap[bit / BITS_PER_BYTE];
   *pbyte &= ~(1 << (bit % BITS_PER_BYTE));
@@ -236,14 +238,16 @@ BitMap::ClearBit(int bit)
 int
 BitMap::IsBitSet(int bit)
 {
-  if (bit >= _bitmap_size)
+  if (bit >= _bitmap_size) {
     return 0;
+  }
 
   char *pbyte = &_bitmap[bit / BITS_PER_BYTE];
-  if (*pbyte & (1 << (bit % BITS_PER_BYTE)))
+  if (*pbyte & (1 << (bit % BITS_PER_BYTE))) {
     return 1;
-  else
+  } else {
     return 0;
+  }
 }
 
 //-----------------------------------------------------------------------
@@ -254,24 +258,33 @@ BitMap::IsBitSet(int bit)
 int
 ICPConfigData::operator==(ICPConfigData &ICPData)
 {
-  if (ICPData._icp_enabled != _icp_enabled)
+  if (ICPData._icp_enabled != _icp_enabled) {
     return 0;
-  if (ICPData._icp_port != _icp_port)
+  }
+  if (ICPData._icp_port != _icp_port) {
     return 0;
-  if (ICPData._icp_interface != _icp_interface)
+  }
+  if (ICPData._icp_interface != _icp_interface) {
     return 0;
-  if (ICPData._multicast_enabled != _multicast_enabled)
+  }
+  if (ICPData._multicast_enabled != _multicast_enabled) {
     return 0;
-  if (ICPData._icp_query_timeout != _icp_query_timeout)
+  }
+  if (ICPData._icp_query_timeout != _icp_query_timeout) {
     return 0;
-  if (ICPData._cache_lookup_local != _cache_lookup_local)
+  }
+  if (ICPData._cache_lookup_local != _cache_lookup_local) {
     return 0;
-  if (ICPData._stale_lookup != _stale_lookup)
+  }
+  if (ICPData._stale_lookup != _stale_lookup) {
     return 0;
-  if (ICPData._reply_to_unknown_peer != _reply_to_unknown_peer)
+  }
+  if (ICPData._reply_to_unknown_peer != _reply_to_unknown_peer) {
     return 0;
-  if (ICPData._default_reply_port != _default_reply_port)
+  }
+  if (ICPData._default_reply_port != _default_reply_port) {
     return 0;
+  }
   return 1;
 }
 
@@ -307,8 +320,9 @@ int
 PeerConfigData::GetHostIPByName(char *hostname, IpAddr &rip)
 {
   // Short circuit NULL hostname case
-  if (0 == hostname || 0 == *hostname)
+  if (0 == hostname || 0 == *hostname) {
     return 1; // Unable to map to IP address
+  }
 
   addrinfo hints;
   addrinfo *ai;
@@ -325,8 +339,9 @@ PeerConfigData::GetHostIPByName(char *hostname, IpAddr &rip)
         best = spot->ai_addr;
       }
     }
-    if (best)
+    if (best) {
       rip.assign(best);
+    }
     freeaddrinfo(ai);
   }
   return best ? 0 : 1;
@@ -335,22 +350,30 @@ PeerConfigData::GetHostIPByName(char *hostname, IpAddr &rip)
 bool
 PeerConfigData::operator==(PeerConfigData &PeerData)
 {
-  if (strncmp(PeerData._hostname, _hostname, PeerConfigData::HOSTNAME_SIZE) != 0)
+  if (strncmp(PeerData._hostname, _hostname, PeerConfigData::HOSTNAME_SIZE) != 0) {
     return false;
-  if (PeerData._ctype != _ctype)
+  }
+  if (PeerData._ctype != _ctype) {
     return false;
-  if (PeerData._ip_addr != _ip_addr)
+  }
+  if (PeerData._ip_addr != _ip_addr) {
     return false;
-  if (PeerData._proxy_port != _proxy_port)
+  }
+  if (PeerData._proxy_port != _proxy_port) {
     return false;
-  if (PeerData._icp_port != _icp_port)
+  }
+  if (PeerData._icp_port != _icp_port) {
     return false;
-  if (PeerData._mc_member != _mc_member)
+  }
+  if (PeerData._mc_member != _mc_member) {
     return false;
-  if (PeerData._mc_ip_addr != _mc_ip_addr)
+  }
+  if (PeerData._mc_ip_addr != _mc_ip_addr) {
     return false;
-  if (PeerData._mc_ttl != _mc_ttl)
+  }
+  if (PeerData._mc_ttl != _mc_ttl) {
     return false;
+  }
   return true;
 }
 
@@ -456,8 +479,9 @@ ICPConfiguration::PeerConfigChange()
 {
   // Note: Entry zero reserved for "localhost"
   for (int i = 1; i <= MAX_DEFINED_PEERS; ++i) {
-    if (!(*_peer_cdata[i] == *_peer_cdata_current[i]))
+    if (!(*_peer_cdata[i] == *_peer_cdata_current[i])) {
       return 1;
+    }
   }
   return 0;
 }
@@ -507,9 +531,11 @@ next_field(char *text, char fs)
 {
   text = strchr(text, fs);
   // Compress contiguous whitespace by leaving zret pointing at the last space.
-  if (text && *text == fs)
-    while (text[1] == fs)
+  if (text && *text == fs) {
+    while (text[1] == fs) {
       ++text;
+    }
+  }
   return text;
 }
 }
@@ -590,10 +616,12 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   while ((len = ink_file_fd_readline(fd, sizeof(line) - 1, line)) > 0) {
     ln++;
     cur = line;
-    while (isspace(*cur))
+    while (isspace(*cur)) {
       ++cur, --len; // skip leading space.
-    if (!*cur || *cur == '#')
+    }
+    if (!*cur || *cur == '#') {
       continue;
+    }
 
     if (n >= MAX_DEFINED_PEERS) {
       RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, maximum peer entries exceeded");
@@ -609,8 +637,9 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
        consistent. It still must be an acceptable character.
     */
     char *last = cur + len - 1; // last character.
-    if ('\n' == *last)
+    if ('\n' == *last) {
       --last; // back over trailing LF.
+    }
     if (NULL == strchr(" ;:|,", *last)) {
       RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, invalid separator [value %d]", *last);
       error = 1;
@@ -777,12 +806,14 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   close(fd);
 
   if (!error) {
-    for (int i                           = 0; i <= MAX_DEFINED_PEERS; i++)
+    for (int i = 0; i <= MAX_DEFINED_PEERS; i++) {
       *ICPconfig->_peer_cdata_current[i] = P[i];
+    }
   }
   delete[] P; // free working buffer
-  if (!startup)
+  if (!startup) {
     ICPconfig->Unlock();
+  }
   return EVENT_DONE;
 }
 
@@ -1086,8 +1117,9 @@ MultiCastPeer::LogSendMsg(ICPMsg_t *m, sockaddr const *sa)
     //
     Peer *p;
     p = FindMultiCastChild(IpAddr(sa), ats_ip_port_host_order(sa));
-    if (p)
+    if (p) {
       ((ParentSiblingPeer *)p)->LogSendMsg(m, sa);
+    }
 
   } else {
     // Note numerous stats on MultiCast peer and each member peer
@@ -1174,8 +1206,9 @@ ICPPeriodicCont::PeriodicEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUS
   int do_reconfig     = 0;
   ICPConfiguration *C = _ICPpr->GetConfig();
 
-  if (C->GlobalConfigChange())
+  if (C->GlobalConfigChange()) {
     do_reconfig = 1;
+  }
 
   int configcallouts = C->ICPConfigCallouts();
   if (_last_icp_config_callouts != configcallouts) {
@@ -1293,10 +1326,11 @@ ICPlog::GetClientPort()
 SquidLogCode
 ICPlog::GetAction()
 {
-  if (_s->_queryResult == CACHE_EVENT_LOOKUP)
+  if (_s->_queryResult == CACHE_EVENT_LOOKUP) {
     return SQUID_LOG_UDP_HIT;
-  else
+  } else {
     return SQUID_LOG_UDP_MISS;
+  }
 }
 
 const char *

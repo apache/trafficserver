@@ -241,10 +241,12 @@ public:
       // TODO: TS-567 Integrate with debugging allocators "dump" features?
       ink_freelists_dump(stderr);
       ResourceTracker::dump(stderr);
-      if (!end)
+      if (!end) {
         end = (char *)sbrk(0);
-      if (!snap)
-        snap    = (char *)sbrk(0);
+      }
+      if (!snap) {
+        snap = (char *)sbrk(0);
+      }
       char *now = (char *)sbrk(0);
       // TODO: Use logging instead directly writing to stderr
       //       This is not error condition at the first place
@@ -553,8 +555,9 @@ skip(char *cmd, int null_ok = 0)
   cmd += strspn(cmd, " \t");
   cmd = strpbrk(cmd, " \t");
   if (!cmd) {
-    if (!null_ok)
+    if (!null_ok) {
       printf("Error: argument missing\n");
+    }
     return cmd;
   }
   cmd += strspn(cmd, " \t");
@@ -685,8 +688,9 @@ cmd_clear(char *cmd)
     ats_scoped_str config(Layout::relative_to(rundir, "hostdb.config"));
 
     Note("Clearing HostDB Configuration");
-    if (unlink(config) < 0)
+    if (unlink(config) < 0) {
       Note("unable to unlink %s", (const char *)config);
+    }
   }
 
   if (c_hdb || c_all) {
@@ -696,8 +700,9 @@ cmd_clear(char *cmd)
       return CMD_FAILED;
     }
     hostDBProcessor.cache()->reset();
-    if (c_hdb)
+    if (c_hdb) {
       return CMD_OK;
+    }
   }
 
   //#ifndef INK_NO_ACC
@@ -862,8 +867,9 @@ find_cmd_index(char const *p)
       char const *e = strpbrk(p, " \t\n");
       int len       = s ? s - l : strlen(l);
       int lenp      = e ? e - p : strlen(p);
-      if ((len == lenp) && !strncasecmp(p, l, len))
+      if ((len == lenp) && !strncasecmp(p, l, len)) {
         return c;
+      }
       l = s ? s + 1 : 0;
     }
   }
@@ -899,8 +905,9 @@ check_fd_limit()
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
   if (fds_throttle > fds_limit + THROTTLE_FD_HEADROOM) {
     int new_fds_throttle = fds_limit - THROTTLE_FD_HEADROOM;
-    if (new_fds_throttle < 1)
+    if (new_fds_throttle < 1) {
       MachineFatal("too few file descritors (%d) available", fds_limit);
+    }
     char msg[256];
     snprintf(msg, sizeof(msg), "connection throttle too high, "
                                "%d (throttle) + %d (internal use) > %d (file descriptor limit), "
@@ -1064,8 +1071,9 @@ struct ShowStats : public Continuation {
   {
     (void)event;
     (void)e;
-    if (!(cycle++ % 24))
+    if (!(cycle++ % 24)) {
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
+    }
     int64_t sval, cval;
 
     NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
@@ -1245,8 +1253,9 @@ struct AutoStopCont : public Continuation {
 static void
 run_AutoStop()
 {
-  if (getenv("PROXY_AUTO_EXIT"))
+  if (getenv("PROXY_AUTO_EXIT")) {
     eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
+  }
 }
 
 #if TS_HAS_TESTS
@@ -1290,8 +1299,9 @@ struct RegressionCont : public Continuation {
 static void
 run_RegressionTest()
 {
-  if (regression_level)
+  if (regression_level) {
     eventProcessor.schedule_every(new RegressionCont(), HRTIME_SECONDS(1));
+  }
 }
 #endif // TS_HAS_TESTS
 
@@ -1335,8 +1345,9 @@ getNumSSLThreads(void)
       num_of_ssl_threads = (int)((float)ink_number_of_processors() * autoconfig_scale);
 
       // Last resort
-      if (num_of_ssl_threads <= 0)
+      if (num_of_ssl_threads <= 0) {
         num_of_ssl_threads = config_num_ssl_threads * 2;
+      }
     }
   }
 
@@ -1543,8 +1554,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   diags->prefix_str = "Server ";
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
-  if (is_debug_tag_set("diags"))
+  if (is_debug_tag_set("diags")) {
     diags->dump();
+  }
 
   // Bind stdout and stderr to specified switches
   // Still needed despite the set_std{err,out}_output() calls later since there are
@@ -1556,8 +1568,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   // Ensure only one copy of traffic server is running, unless it's a command
   // that doesn't require a lock.
-  if (!(command_valid && commands[command_index].no_process_lock))
+  if (!(command_valid && commands[command_index].no_process_lock)) {
     check_lockfile();
+  }
 
   // Set the core limit for the process
   init_core_size();
@@ -1576,11 +1589,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   Debug("hugepages", "ats_pagesize reporting %zu", ats_pagesize());
   Debug("hugepages", "ats_hugepage_size reporting %zu", ats_hugepage_size());
 
-  if (!num_accept_threads)
+  if (!num_accept_threads) {
     REC_ReadConfigInteger(num_accept_threads, "proxy.config.accept_threads");
+  }
 
-  if (!num_task_threads)
+  if (!num_task_threads) {
     REC_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
+  }
 
   // Set up crash logging. We need to do this while we are still privileged so that the crash
   // logging helper runs as root. Don't bother setting up a crash logger if we are going into
@@ -1630,8 +1645,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   diags->prefix_str = "Server ";
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
-  if (is_debug_tag_set("diags"))
+  if (is_debug_tag_set("diags")) {
     diags->dump();
+  }
 
   DebugCapabilities("privileges"); // Can do this now, logging is up.
 
@@ -1641,9 +1657,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   REC_ReadConfigInteger(mlock_flags, "proxy.config.mlock_enabled");
 
   if (mlock_flags == 2) {
-    if (0 != mlockall(MCL_CURRENT | MCL_FUTURE))
+    if (0 != mlockall(MCL_CURRENT | MCL_FUTURE)) {
       Warning("Unable to mlockall() on startup");
-    else
+    } else
       Debug("server", "Successfully called mlockall()");
   }
 #endif
@@ -1664,14 +1680,15 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   */
   IpEndpoint machine_addr;
   ink_zero(machine_addr);
-  if (HttpConfig::m_master.outbound_ip4.isValid())
+  if (HttpConfig::m_master.outbound_ip4.isValid()) {
     machine_addr.assign(HttpConfig::m_master.outbound_ip4);
-  else if (HttpConfig::m_master.outbound_ip6.isValid())
+  } else if (HttpConfig::m_master.outbound_ip6.isValid()) {
     machine_addr.assign(HttpConfig::m_master.outbound_ip6);
-  else if (HttpConfig::m_master.inbound_ip4.isValid())
+  } else if (HttpConfig::m_master.inbound_ip4.isValid()) {
     machine_addr.assign(HttpConfig::m_master.inbound_ip4);
-  else if (HttpConfig::m_master.inbound_ip6.isValid())
+  } else if (HttpConfig::m_master.inbound_ip6.isValid()) {
     machine_addr.assign(HttpConfig::m_master.inbound_ip6);
+  }
   Machine::init(0, &machine_addr.sa);
 
   // pmgmt->start() must occur after initialization of Diags but
@@ -1711,8 +1728,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   cache_clustering_enabled = 0;
 
   if (RecGetRecordInt("proxy.local.cluster.type", &cluster_type) == REC_ERR_OKAY) {
-    if (cluster_type == 1)
+    if (cluster_type == 1) {
       cache_clustering_enabled = 1;
+    }
   }
   Note("cache clustering %s", cache_clustering_enabled ? "enabled" : "disabled");
 
@@ -1745,8 +1763,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   int num_remap_threads = 0;
   REC_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
-  if (num_remap_threads < 1)
+  if (num_remap_threads < 1) {
     num_remap_threads = 0;
+  }
 
   if (num_remap_threads > 0) {
     Note("using the new remap processor system with %d threads", num_remap_threads);
@@ -1764,10 +1783,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     int cmd_ret = cmd_mode();
 
     if (cmd_ret != CMD_IN_PROGRESS) {
-      if (cmd_ret >= 0)
+      if (cmd_ret >= 0) {
         ::exit(0); // everything is OK
-      else
+      } else {
         ::exit(1); // in error
+      }
     }
   } else {
     remapProcessor.start(num_remap_threads, stacksize);
@@ -1789,12 +1809,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     Http2::init();
 
     // Load HTTP port data. getNumSSLThreads depends on this.
-    if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
+    if (!HttpProxyPort::loadValue(http_accept_port_descriptor)) {
       HttpProxyPort::loadConfig();
+    }
     HttpProxyPort::loadDefaultIfEmpty();
 
-    if (!accept_mss)
+    if (!accept_mss) {
       REC_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
+    }
 
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start(0, stacksize);
@@ -1820,10 +1842,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     cacheProcessor.start();
 
     // UDP net-threads are turned off by default.
-    if (!num_of_udp_threads)
+    if (!num_of_udp_threads) {
       REC_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
-    if (num_of_udp_threads)
+    }
+    if (num_of_udp_threads) {
       udpNet.start(num_of_udp_threads, stacksize);
+    }
 
     // acc.init();
     // if (auto_clear_authdb_flag)
@@ -1847,8 +1871,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     //   Raft::init();
 
     // Continuation Statistics Dump
-    if (show_statistics)
+    if (show_statistics) {
       eventProcessor.schedule_every(new ShowStats(), HRTIME_SECONDS(show_statistics), ET_CALL);
+    }
 
     //////////////////////////////////////
     // main server logic initiated here //
@@ -1882,8 +1907,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       } else {
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
       }
-      if (icp_enabled)
+      if (icp_enabled) {
         icpProcessor.start();
+      }
     }
 
     // "Task" processor, possibly with its own set of task threads
@@ -1891,8 +1917,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     int back_door_port = NO_FD;
     REC_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
-    if (back_door_port != NO_FD)
+    if (back_door_port != NO_FD) {
       start_HttpProxyServerBackDoor(back_door_port, num_accept_threads > 0 ? 1 : 0); // One accept thread is enough
+    }
 
     if (netProcessor.socks_conf_stuff->accept_enabled) {
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);

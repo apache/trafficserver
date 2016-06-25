@@ -273,8 +273,9 @@ EsiProcessor::process(const char *&data, int &data_len)
   bool attempt_succeeded;
   std::vector<std::string> attemptUrls;
   TryBlockList::iterator try_iter = _try_blocks.begin();
-  for (int i = 0; i < _n_try_blocks_processed; ++i, ++try_iter)
+  for (int i = 0; i < _n_try_blocks_processed; ++i, ++try_iter) {
     ;
+  }
   for (; _n_try_blocks_processed < static_cast<int>(_try_blocks.size()); ++try_iter) {
     ++_n_try_blocks_processed;
     attempt_succeeded = true;
@@ -297,8 +298,9 @@ EsiProcessor::process(const char *&data, int &data_len)
 
     for (iter = try_iter->attempt_nodes.begin(); iter != try_iter->attempt_nodes.end(); ++iter) {
       if ((iter->type == DocNode::TYPE_INCLUDE) || iter->type == DocNode::TYPE_SPECIAL_INCLUDE) {
-        if (!attempt_succeeded && iter == node_iter)
+        if (!attempt_succeeded && iter == node_iter) {
           continue;
+        }
         const Attribute &url = (*iter).attr_list.front();
         string raw_url(url.value, url.value_len);
         attemptUrls.push_back(_expression.expand(raw_url));
@@ -323,8 +325,9 @@ EsiProcessor::process(const char *&data, int &data_len)
         info = it->second;
         // Should be registered only if attemp was made
         // and it failed
-        if (_reqAdded)
+        if (_reqAdded) {
           info->registerSuccFail(attempt_succeeded);
+        }
       }
     }
     if (attempt_succeeded) {
@@ -387,8 +390,9 @@ EsiProcessor::flush(string &data, int &overall_len)
   std::vector<std::string> attemptUrls;
   _output_data.clear();
   TryBlockList::iterator try_iter = _try_blocks.begin();
-  for (int i = 0; i < _n_try_blocks_processed; ++i, ++try_iter)
+  for (int i = 0; i < _n_try_blocks_processed; ++i, ++try_iter) {
     ;
+  }
   for (; _n_try_blocks_processed < static_cast<int>(_try_blocks.size()); ++try_iter) {
     attempt_pending = false;
     for (node_iter = try_iter->attempt_nodes.begin(); node_iter != try_iter->attempt_nodes.end(); ++node_iter) {
@@ -424,8 +428,9 @@ EsiProcessor::flush(string &data, int &overall_len)
 
     for (iter = try_iter->attempt_nodes.begin(); iter != try_iter->attempt_nodes.end(); ++iter) {
       if ((iter->type == DocNode::TYPE_INCLUDE) || iter->type == DocNode::TYPE_SPECIAL_INCLUDE) {
-        if (!attempt_succeeded && iter == node_iter)
+        if (!attempt_succeeded && iter == node_iter) {
           continue;
+        }
         const Attribute &url = (*iter).attr_list.front();
         string raw_url(url.value, url.value_len);
         attemptUrls.push_back(_expression.expand(raw_url));
@@ -450,8 +455,9 @@ EsiProcessor::flush(string &data, int &overall_len)
         info = it->second;
         // Should be registered only if attemp was made
         // and it failed
-        if (_reqAdded)
+        if (_reqAdded) {
           info->registerSuccFail(attempt_succeeded);
+        }
       }
     }
     if (attempt_succeeded) {
@@ -476,8 +482,9 @@ EsiProcessor::flush(string &data, int &overall_len)
 
   node_pending = false;
   node_iter    = _node_list.begin();
-  for (int i = 0; i < _n_processed_nodes; ++i, ++node_iter)
+  for (int i = 0; i < _n_processed_nodes; ++i, ++node_iter) {
     ;
+  }
   for (; node_iter != _node_list.end(); ++node_iter) {
     DocNode &doc_node = *node_iter; // handy reference
     _debugLog(_debug_tag, "[%s] Processing ESI node [%s] with data of size %d starting with [%.10s...]", __FUNCTION__,
@@ -691,8 +698,9 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
   string raw_url;
 
   // skip previously examined nodes
-  for (int i = 0; i < n_prescanned_nodes; ++i, ++list_iter)
+  for (int i = 0; i < n_prescanned_nodes; ++i, ++list_iter) {
     ;
+  }
 
   for (; list_iter != node_list.end(); ++list_iter, ++n_prescanned_nodes) {
     switch (list_iter->type) {

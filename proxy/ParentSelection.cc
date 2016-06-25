@@ -317,8 +317,9 @@ UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
   numTok = pTok.Initialize(val, SHARE_TOKS);
   if (numTok == 0) {
     c = atoi(val);
-    if (c > 500 && c < 600)
+    if (c > 500 && c < 600) {
       codes.push_back(HTTP_STATUS_SERVICE_UNAVAILABLE);
+    }
   }
   for (int i = 0; i < numTok; i++) {
     c = atoi(pTok[i]);
@@ -408,10 +409,12 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     } else {
       scan = tmp + 1;
     }
-    for (; *scan != '\0' && (ParseRules::is_digit(*scan) || *scan == '.'); scan++)
+    for (; *scan != '\0' && (ParseRules::is_digit(*scan) || *scan == '.'); scan++) {
       ;
-    for (; *scan != '\0' && ParseRules::is_wslfcr(*scan); scan++)
+    }
+    for (; *scan != '\0' && ParseRules::is_wslfcr(*scan); scan++) {
       ;
+    }
     if (*scan != '\0') {
       errPtr = "Garbage trailing entry or invalid separator";
       goto MERROR;
@@ -815,10 +818,12 @@ SocksServerConfig::reconfigure()
   params->DefaultParent = createDefaultParent(default_val);
   ats_free(default_val);
 
-  if (params->DefaultParent)
+  if (params->DefaultParent) {
     setup_socks_servers(params->DefaultParent, 1);
-  if (params->parent_table->ipMatch)
+  }
+  if (params->parent_table->ipMatch) {
     setup_socks_servers(params->parent_table->ipMatch->data_array, params->parent_table->ipMatch->array_len);
+  }
 
   // Handle parent timeout
   REC_ReadConfigInteger(retry_time, "proxy.config.socks.server_retry_time");
@@ -1287,8 +1292,9 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 int
 verify(ParentResult *r, ParentResultType e, const char *h, int p)
 {
-  if (is_debug_tag_set("parent_select"))
+  if (is_debug_tag_set("parent_select")) {
     show_result(r);
+  }
   return (r->result != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));
 }
 

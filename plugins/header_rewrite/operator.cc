@@ -26,8 +26,9 @@
 const OperModifiers
 Operator::get_oper_modifiers() const
 {
-  if (_next)
+  if (_next) {
     return static_cast<OperModifiers>(_mods | static_cast<Operator *>(_next)->get_oper_modifiers());
+  }
 
   return _mods;
 }

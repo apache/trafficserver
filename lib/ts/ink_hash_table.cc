@@ -60,12 +60,13 @@ ink_hash_table_create(InkHashTableKeyType key_type)
 
   tcl_ht_ptr = (Tcl_HashTable *)ats_malloc(sizeof(Tcl_HashTable));
 
-  if (key_type == InkHashTableKeyType_String)
+  if (key_type == InkHashTableKeyType_String) {
     tcl_key_type = TCL_STRING_KEYS;
-  else if (key_type == InkHashTableKeyType_Word)
+  } else if (key_type == InkHashTableKeyType_Word) {
     tcl_key_type = TCL_ONE_WORD_KEYS;
-  else
+  } else {
     ink_fatal("ink_hash_table_create: bad key_type %d", key_type);
+  }
 
   Tcl_InitHashTable(tcl_ht_ptr, tcl_key_type);
 
@@ -159,8 +160,9 @@ ink_hash_table_lookup(InkHashTable *ht_ptr, const char *key, InkHashTableValue *
   InkHashTableValue value;
 
   he_ptr = ink_hash_table_lookup_entry(ht_ptr, key);
-  if (he_ptr == NULL)
+  if (he_ptr == NULL) {
     return (0);
+  }
 
   value      = ink_hash_table_entry_value(ht_ptr, he_ptr);
   *value_ptr = value;
@@ -188,8 +190,9 @@ ink_hash_table_delete(InkHashTable *ht_ptr, const char *key)
   tcl_ht_ptr = (Tcl_HashTable *)ht_ptr;
   tcl_he_ptr = Tcl_FindHashEntry(tcl_ht_ptr, tcl_key);
 
-  if (!tcl_he_ptr)
+  if (!tcl_he_ptr) {
     return (0);
+  }
   Tcl_DeleteHashEntry(tcl_he_ptr);
 
   return (1);
@@ -310,8 +313,9 @@ ink_hash_table_map(InkHashTable *ht_ptr, InkHashTableEntryFunction map)
 
   for (e = ink_hash_table_iterator_first(ht_ptr, &state); e != NULL; e = ink_hash_table_iterator_next(ht_ptr, &state)) {
     retcode = (*map)(ht_ptr, e);
-    if (retcode != 0)
+    if (retcode != 0) {
       break;
+    }
   }
 } /* End ink_hash_table_map */
 
@@ -412,8 +416,9 @@ ink_hash_table_replace_string(InkHashTable *ht_ptr, char *string_key, char *stri
   he_ptr = ink_hash_table_get_entry(ht_ptr, (InkHashTableKey)string_key, &new_value);
   if (new_value == 0) {
     old_str = (char *)ink_hash_table_entry_value(ht_ptr, he_ptr);
-    if (old_str)
+    if (old_str) {
       ats_free(old_str);
+    }
   }
 
   ink_hash_table_set_entry(ht_ptr, he_ptr, (InkHashTableValue)(ats_strdup(string_value)));

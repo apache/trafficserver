@@ -144,15 +144,17 @@ CoreUtils::find_vaddr(intptr_t vaddr, intptr_t upper, intptr_t lower)
     // no match
   } else if (index == lower) {
     inTable = false;
-    if ((index == 0) && (arrayMem[index].vaddr > vaddr))
+    if ((index == 0) && (arrayMem[index].vaddr > vaddr)) {
       return 0;
-    else
+    } else {
       return index + 1;
+    }
   } else {
-    if (arrayMem[index].vaddr > vaddr)
+    if (arrayMem[index].vaddr > vaddr) {
       return find_vaddr(vaddr, index, lower);
-    else
+    } else {
       return find_vaddr(vaddr, upper, index);
+    }
   }
   assert(0);
   return -1;
@@ -217,9 +219,9 @@ CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
   intptr_t size    = arrayMem[index - 1].fsize;
   intptr_t offset2 = std::abs(vaddr - vadd);
 
-  if (bytes > (size - offset2))
+  if (bytes > (size - offset2)) {
     return -1;
-  else {
+  } else {
     if (fseek(fp, offset2 + offset, SEEK_SET) != -1) {
       char *frameoff;
       if ((frameoff = (char *)ats_malloc(sizeof(char) * bytes))) {
@@ -234,8 +236,9 @@ CoreUtils::read_from_core(intptr_t vaddr, intptr_t bytes, char *buf)
         }
         ats_free(frameoff);
       }
-    } else
+    } else {
       return -1;
+    }
   }
 
   return -1;
@@ -389,8 +392,9 @@ CoreUtils::test_HttpSM_from_tunnel(void *arg)
   HttpSM **hsm_ptr = (HttpSM **)(tmp + offset);
   HttpSM *hsm_test;
 
-  if (read_from_core((intptr_t)hsm_ptr, sizeof(HttpSM *), (char *)&hsm_test) == 0)
+  if (read_from_core((intptr_t)hsm_ptr, sizeof(HttpSM *), (char *)&hsm_test) == 0) {
     return;
+  }
 
   unsigned int *magic_ptr = &(hsm_test->magic);
   unsigned int magic      = 0;
@@ -459,8 +463,9 @@ CoreUtils::process_HttpSM(HttpSM *core_ptr)
       }
     }
     ats_free(http_sm);
-  } else
+  } else {
     printf("process_HttpSM : last_seen_http_sm == core_ptr\n");
+  }
 }
 
 void
@@ -569,8 +574,9 @@ CoreUtils::load_http_hdr(HTTPHdr *core_hdr, HTTPHdr *live_hdr)
   swizzle_heap->m_ronly_heap[0].m_heap_start          = (char *)(intptr_t)swizzle_heap->m_size; // offset
   swizzle_heap->m_ronly_heap[0].m_ref_count_ptr.m_ptr = NULL;
 
-  for (int i                                   = 1; i < HDR_BUF_RONLY_HEAPS; i++)
+  for (int i = 1; i < HDR_BUF_RONLY_HEAPS; i++) {
     swizzle_heap->m_ronly_heap[i].m_heap_start = NULL;
+  }
 
   // Next order of business is to copy over string heaps
   //   As we are copying over the string heaps, build

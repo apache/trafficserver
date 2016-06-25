@@ -234,8 +234,9 @@ CacheControlRecord::Print()
     printf("\t\tDirective: INVALID\n");
     break;
   }
-  if (cache_responses_to_cookies >= 0)
+  if (cache_responses_to_cookies >= 0) {
     printf("\t\t  - " TWEAK_CACHE_RESPONSES_TO_COOKIES ":%d\n", cache_responses_to_cookies);
+  }
   ControlBase::Print();
 }
 
@@ -264,8 +265,9 @@ CacheControlRecord::Init(matcher_line *line_info)
     bool used = false;
     label     = line_info->line[0][i];
     val       = line_info->line[1][i];
-    if (!label)
+    if (!label) {
       continue;
+    }
 
     if (strcasecmp(label, TWEAK_CACHE_RESPONSES_TO_COOKIES) == 0) {
       char *ptr = 0;
@@ -450,15 +452,17 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
     break;
   }
 
-  if (cache_responses_to_cookies >= 0)
+  if (cache_responses_to_cookies >= 0) {
     result->cache_responses_to_cookies = cache_responses_to_cookies;
+  }
 
   if (match == true) {
     char crtc_debug[80];
-    if (result->cache_responses_to_cookies >= 0)
+    if (result->cache_responses_to_cookies >= 0) {
       snprintf(crtc_debug, sizeof(crtc_debug), " [" TWEAK_CACHE_RESPONSES_TO_COOKIES "=%d]", result->cache_responses_to_cookies);
-    else
+    } else {
       crtc_debug[0] = 0;
+    }
 
     Debug("cache_control", "Matched with for %s at line %d%s", CC_directive_str[this->directive], this->line_num, crtc_debug);
   }

@@ -129,12 +129,14 @@ ClusterProcessor::internal_invoke_remote(ClusterHandler *ch, int cluster_fn, voi
 
       MUTEX_TRY_LOCK(lock, ch->mutex, tt);
       if (!lock.is_locked()) {
-        if (ch->thread && ch->thread->signal_hook)
+        if (ch->thread && ch->thread->signal_hook) {
           ch->thread->signal_hook(ch->thread);
+        }
         return 1;
       }
-      if (steal)
+      if (steal) {
         ch->steal_thread(tt);
+      }
       return 1;
     }
   } else {
@@ -231,11 +233,13 @@ ClusterProcessor::open_local(Continuation *cont, ClusterMachine * /* m ATS_UNUSE
   bool allow_immediate = ((options & CLUSTER_OPT_ALLOW_IMMEDIATE) ? true : false);
 
   ClusterHandler *ch = ((CacheContinuation *)cont)->ch;
-  if (!ch)
+  if (!ch) {
     return NULL;
+  }
   EThread *t = ch->thread;
-  if (!t)
+  if (!t) {
     return NULL;
+  }
 
   EThread *thread        = this_ethread();
   ProxyMutex *mutex      = thread->mutex.get();
@@ -259,14 +263,16 @@ ClusterProcessor::open_local(Continuation *cont, ClusterMachine * /* m ATS_UNUSE
     }
     vc->action_ = cont;
     ink_atomiclist_push(&ch->external_incoming_open_local, (void *)vc);
-    if (ch->thread && ch->thread->signal_hook)
+    if (ch->thread && ch->thread->signal_hook) {
       ch->thread->signal_hook(ch->thread);
+    }
     return CLUSTER_DELAYED_OPEN;
 
 #ifdef CLUSTER_THREAD_STEALING
   } else {
-    if (!(immediate || allow_immediate))
+    if (!(immediate || allow_immediate)) {
       vc->action_ = cont;
+    }
     if (vc->start(thread) < 0) {
       return NULL;
     }
@@ -296,16 +302,20 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
 #else
   ClusterMachine *m = this_cluster->current_configuration()->find(token->ip_created);
 #endif
-  if (!m)
+  if (!m) {
     return NULL;
-  if (token->ch_id >= (uint32_t)m->num_connections)
+  }
+  if (token->ch_id >= (uint32_t)m->num_connections) {
     return NULL;
+  }
   ClusterHandler *ch = m->clusterHandlers[token->ch_id];
-  if (!ch)
+  if (!ch) {
     return NULL;
+  }
   EThread *t = ch->thread;
-  if (!t)
+  if (!t) {
     return NULL;
+  }
 
   EThread *thread        = this_ethread();
   ProxyMutex *mutex      = thread->mutex.get();
@@ -332,8 +342,9 @@ ClusterProcessor::connect_local(Continuation *cont, ClusterVCToken *token, int c
     return CLUSTER_DELAYED_OPEN;
 #ifdef CLUSTER_THREAD_STEALING
   } else {
-    if (!(immediate || allow_immediate))
+    if (!(immediate || allow_immediate)) {
       vc->action_ = cont;
+    }
     if (vc->start(thread) < 0) {
       return NULL;
     }
@@ -603,13 +614,14 @@ ClusterProcessor::init()
   //
   // Configuration callbacks
   //
-  if (cluster_port_number != DEFAULT_CLUSTER_PORT_NUMBER)
+  if (cluster_port_number != DEFAULT_CLUSTER_PORT_NUMBER) {
     cluster_port = cluster_port_number;
-  else {
+  } else {
     REC_ReadConfigInteger(cluster_port, "proxy.config.cluster.cluster_port");
   }
-  if (num_of_cluster_threads == DEFAULT_NUMBER_OF_CLUSTER_THREADS)
+  if (num_of_cluster_threads == DEFAULT_NUMBER_OF_CLUSTER_THREADS) {
     REC_ReadConfigInteger(num_of_cluster_threads, "proxy.config.cluster.threads");
+  }
 
   REC_EstablishStaticConfigInt32(CacheClusterMonitorEnabled, "proxy.config.cluster.enable_monitor");
   REC_EstablishStaticConfigInt32(CacheClusterMonitorIntervalSecs, "proxy.config.cluster.monitor_interval_secs");
@@ -712,10 +724,11 @@ ClusterProcessor::connect(unsigned int ip, int port, int16_t id, bool delay)
   ch->port      = port;
   ch->connector = true;
   ch->id        = id;
-  if (delay)
+  if (delay) {
     eventProcessor.schedule_in(ch, CLUSTER_MEMBER_DELAY, ET_CLUSTER);
-  else
+  } else {
     eventProcessor.schedule_imm(ch, ET_CLUSTER);
+  }
 }
 
 void

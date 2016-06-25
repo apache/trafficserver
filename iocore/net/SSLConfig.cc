@@ -162,8 +162,9 @@ SSLConfigParams::initialize()
   int options;
   int client_ssl_options;
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1");
-  if (!options)
+  if (!options) {
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
+  }
 
 #if TS_USE_SSLV3_CLIENT
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.SSLv3");
@@ -171,33 +172,39 @@ SSLConfigParams::initialize()
     ssl_client_ctx_protocols &= ~SSL_OP_NO_SSLv3;
 #endif
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1");
-  if (!client_ssl_options)
+  if (!client_ssl_options) {
     ssl_client_ctx_protocols |= SSL_OP_NO_TLSv1;
+  }
 
 // These are not available in all versions of OpenSSL (e.g. CentOS6). Also see http://s.apache.org/TS-2355.
 #ifdef SSL_OP_NO_TLSv1_1
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_1");
-  if (!options)
+  if (!options) {
     ssl_ctx_options |= SSL_OP_NO_TLSv1_1;
+  }
 
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1_1");
-  if (!client_ssl_options)
+  if (!client_ssl_options) {
     ssl_client_ctx_protocols |= SSL_OP_NO_TLSv1_1;
+  }
 #endif
 #ifdef SSL_OP_NO_TLSv1_2
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1_2");
-  if (!options)
+  if (!options) {
     ssl_ctx_options |= SSL_OP_NO_TLSv1_2;
+  }
 
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1_2");
-  if (!client_ssl_options)
+  if (!client_ssl_options) {
     ssl_client_ctx_protocols |= SSL_OP_NO_TLSv1_2;
+  }
 #endif
 
 #ifdef SSL_OP_CIPHER_SERVER_PREFERENCE
   REC_ReadConfigInteger(options, "proxy.config.ssl.server.honor_cipher_order");
-  if (options)
+  if (options) {
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
+  }
 #endif
 
   REC_ReadConfigInteger(options, "proxy.config.ssl.compression");

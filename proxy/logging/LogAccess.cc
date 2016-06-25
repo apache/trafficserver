@@ -970,8 +970,9 @@ LogAccess::marshal_ip(char *dest, sockaddr const *ip)
     data._ip._family = AF_UNSPEC;
   }
 
-  if (dest)
+  if (dest) {
     memcpy(dest, &data, len);
+  }
   return INK_ALIGN_DEFAULT(len);
 }
 
@@ -1158,11 +1159,13 @@ LogAccess::unmarshal_str(char **buf, char *dest, int len, LogSlice *slice)
     int offset, n;
 
     n = slice->toStrOffset(val_len, &offset);
-    if (n <= 0)
+    if (n <= 0) {
       return 0;
+    }
 
-    if (n >= len)
+    if (n >= len) {
       return -1;
+    }
 
     memcpy(dest, (val_buf + offset), n);
     return n;
@@ -1586,8 +1589,9 @@ resolve_logfield_string(LogAccess *context, const char *format_str)
   if (!bytes_resolved) {
     ats_free(result);
     result = NULL;
-  } else
+  } else {
     result[bytes_resolved] = 0; // NULL terminate
+  }
 
   ats_free(printf_str);
   ats_free(fields_str);

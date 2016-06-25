@@ -78,8 +78,9 @@ Server::accept(Connection *c)
   socklen_t sz = sizeof(c->addr);
 
   res = socketManager.accept(fd, &c->addr.sa, &sz);
-  if (res < 0)
+  if (res < 0) {
     return res;
+  }
   c->fd = res;
   if (is_debug_tag_set("iocore_net_server")) {
     ip_port_text_buffer ipb1, ipb2;
@@ -91,8 +92,9 @@ Server::accept(Connection *c)
   if ((res = safe_fcntl(fd, F_SETFD, FD_CLOEXEC)) < 0)
     goto Lerror;
 #endif
-  if ((res = safe_nonblocking(c->fd)) < 0)
+  if ((res = safe_nonblocking(c->fd)) < 0) {
     goto Lerror;
+  }
 #ifdef SEND_BUF_SIZE
   socketManager.set_sndbuf_size(c->fd, SEND_BUF_SIZE);
 #endif

@@ -47,7 +47,7 @@ all-local:
 		CC="$(CC)" \
 		CFLAGS="$(LUA_CFLAGS)" \
 		XCFLAGS="" \
-		LDFLAGS="$(LUA_LDFLAGS)"
+		LDFLAGS="$(LUA_LDFLAGS) $(LDFLAGS)"
 
 clean-local:
 	test "$(top_srcdir)" != "$(top_builddir)" || (cd "$(top_builddir)/$(subdir)/luajit" && $(MAKE) clean)

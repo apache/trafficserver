@@ -638,8 +638,9 @@ EsiParser::parse(DocNodeList &node_list, const char *ext_data_ptr, int data_len 
     // adjust all pointers to addresses in input parameter
     const char *int_data_start      = data.data();
     DocNodeList::iterator node_iter = node_list.begin();
-    for (size_t i = 0; i < orig_output_list_size; ++i, ++node_iter)
+    for (size_t i = 0; i < orig_output_list_size; ++i, ++node_iter) {
       ;
+    }
     _adjustPointers(node_iter, node_list.end(), ext_data_ptr, int_data_start);
   }
   return retval;

@@ -290,8 +290,9 @@ gzip_transform_one(GzipData *data, TSIOBufferReader upstream_reader, int amount)
         err = deflate(&data->zstrm, Z_SYNC_FLUSH);
       }
 
-      if (err != Z_OK)
+      if (err != Z_OK) {
         warning("deflate() call failed: %d", err);
+      }
 
       if (downstream_length > data->zstrm.avail_out) {
         TSIOBufferProduce(data->downstream_buffer, downstream_length - data->zstrm.avail_out);

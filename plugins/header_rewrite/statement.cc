@@ -27,8 +27,9 @@ Statement::append(Statement *stmt)
   Statement *tmp = this;
 
   TSReleaseAssert(stmt->_next == NULL);
-  while (tmp->_next)
-    tmp      = tmp->_next;
+  while (tmp->_next) {
+    tmp = tmp->_next;
+  }
   tmp->_next = stmt;
 }
 

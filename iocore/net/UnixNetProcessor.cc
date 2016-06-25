@@ -125,8 +125,9 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   int should_filter_int         = 0;
   na->server.http_accept_filter = false;
   REC_ReadConfigInteger(should_filter_int, "proxy.config.net.defer_accept");
-  if (should_filter_int > 0 && opt.etype == ET_NET)
+  if (should_filter_int > 0 && opt.etype == ET_NET) {
     na->server.http_accept_filter = true;
+  }
 
   na->action_          = new NetAcceptAction();
   *na->action_         = cont;
@@ -139,8 +140,9 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->packet_tos       = opt.packet_tos;
   na->etype            = upgraded_etype;
   na->backdoor         = opt.backdoor;
-  if (na->callback_on_open)
+  if (na->callback_on_open) {
     na->mutex = cont->mutex;
+  }
   if (opt.frequent_accept) { // true
     if (accept_threads > 0) {
       if (0 == na->do_listen(BLOCKING, opt.f_inbound_transparent)) {
@@ -201,10 +203,11 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   EThread *t             = cont->mutex->thread_holding;
   UnixNetVConnection *vc = (UnixNetVConnection *)this->allocate_vc(t);
 
-  if (opt)
+  if (opt) {
     vc->options = *opt;
-  else
+  } else {
     opt = &vc->options;
+  }
 
   // virtual function used to upgrade etype to ET_SSL for SSLNetProcessor.
   upgradeEtype(opt->etype);
@@ -256,18 +259,20 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
       if (lock2.is_locked()) {
         int ret;
         ret = vc->connectUp(t, NO_FD);
-        if ((using_socks) && (ret == CONNECT_SUCCESS))
+        if ((using_socks) && (ret == CONNECT_SUCCESS)) {
           return &socksEntry->action_;
-        else
+        } else {
           return ACTION_RESULT_DONE;
+        }
       }
     }
   }
   t->schedule_imm(vc);
   if (using_socks) {
     return &socksEntry->action_;
-  } else
+  } else {
     return result;
+  }
 }
 
 Action *
@@ -302,8 +307,9 @@ struct CheckConnect : public Continuation {
 
     case NET_EVENT_OPEN_FAILED:
       Debug("iocore_net_connect", "connect Net open failed");
-      if (!action_.cancelled)
+      if (!action_.cancelled) {
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)e);
+      }
       break;
 
     case VC_EVENT_WRITE_READY:
@@ -329,22 +335,26 @@ struct CheckConnect : public Continuation {
         }
       }
       vc->do_io_close();
-      if (!action_.cancelled)
+      if (!action_.cancelled) {
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_CONNECT_FAILED);
+      }
       break;
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Debug("iocore_net_connect", "connect timed out");
       vc->do_io_close();
-      if (!action_.cancelled)
+      if (!action_.cancelled) {
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_CONNECT_TIMEOUT);
+      }
       break;
     default:
       ink_assert(!"unknown connect event");
-      if (!action_.cancelled)
+      if (!action_.cancelled) {
         action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_CONNECT_FAILED);
+      }
     }
-    if (!recursion)
+    if (!recursion) {
       delete this;
+    }
     return EVENT_DONE;
   }
 
@@ -356,9 +366,9 @@ struct CheckConnect : public Continuation {
     recursion++;
     netProcessor.connect_re(this, target, opt);
     recursion--;
-    if (connect_status != NET_EVENT_OPEN_FAILED)
+    if (connect_status != NET_EVENT_OPEN_FAILED) {
       return &action_;
-    else {
+    } else {
       delete this;
       return ACTION_RESULT_DONE;
     }
@@ -440,8 +450,9 @@ UnixNetProcessor::start(int, size_t)
    * Stat pages
    */
   extern Action *register_ShowNet(Continuation * c, HTTPHdr * h);
-  if (etype == ET_NET)
+  if (etype == ET_NET) {
     statPagesManager.register_http("net", register_ShowNet);
+  }
   return 1;
 }
 

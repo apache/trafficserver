@@ -66,10 +66,12 @@ i_find(const Intervals *i, int x)
   int l = 0, h = i->n;
 Lrecurse:
   if (h <= l + 2) {
-    if (h <= l)
+    if (h <= l) {
       return -(l + 1);
-    if (x < i->v[l] || x > i->v[l + 1])
+    }
+    if (x < i->v[l] || x > i->v[l + 1]) {
       return -(l + 1);
+    }
     return h;
   }
   int m = (((h - l) / 4) * 2) + l;
@@ -87,10 +89,12 @@ Lrecurse:
 bool
 Intervals::in(int x) const
 {
-  if (!n)
+  if (!n) {
     return false;
-  if (i_find(this, x) > 0)
+  }
+  if (i_find(this, x) > 0) {
     return true;
+  }
   return false;
 }
 
@@ -104,8 +108,9 @@ Intervals::insert(int x)
     return;
   }
   int l = i_find(this, x);
-  if (l > 0)
+  if (l > 0) {
     return;
+  }
   l = -l - 1;
 
   if (x > v[l + 1]) {
@@ -127,8 +132,9 @@ Intervals::insert(int x)
       v[l]--;
       goto Lmerge;
     }
-    if (!l)
+    if (!l) {
       goto Lmore;
+    }
     l -= 2;
     if (x == v[l + 1] + 1) {
       v[l + 1]++;
@@ -137,8 +143,9 @@ Intervals::insert(int x)
   }
 Lmore:
   fill(n + 2);
-  if (n - 2 - l > 0)
+  if (n - 2 - l > 0) {
     memmove(v + l + 2, v + l, sizeof(int) * (n - 2 - l));
+  }
   v[l]     = x;
   v[l + 1] = x;
   return;
@@ -150,8 +157,9 @@ Lmerge:
     }
   }
   if (l < (int)(n - 2)) {
-    if (v[l + 2] - v[l + 1] < 2)
+    if (v[l + 2] - v[l + 1] < 2) {
       goto Ldomerge;
+    }
   }
   return;
 Ldomerge:
@@ -165,16 +173,18 @@ UnionFind::size(int s)
 {
   size_t nn = n;
   fill(s);
-  for (size_t i = nn; i < n; i++)
-    v[i]        = -1;
+  for (size_t i = nn; i < n; i++) {
+    v[i] = -1;
+  }
 }
 
 int
 UnionFind::find(int n)
 {
   int i, t;
-  for (i = n; v[i] >= 0; i = v[i])
+  for (i = n; v[i] >= 0; i = v[i]) {
     ;
+  }
   while (v[n] >= 0) {
     t    = n;
     n    = v[n];

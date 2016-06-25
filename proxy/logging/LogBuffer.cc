@@ -464,8 +464,9 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
                                 long timestamp, long timestamp_usec, unsigned buffer_version, LogFieldList *alt_fieldlist,
                                 char *alt_printf_str)
 {
-  if (fieldlist == NULL || printf_str == NULL)
+  if (fieldlist == NULL || printf_str == NULL) {
     return 0;
+  }
 
   int *readfrom_map = NULL;
 
@@ -546,8 +547,9 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
           } else if (strcmp(sym, "cqtq") == 0) {
             // From lib/ts
             res = squid_timestamp_to_buf(to, write_to_len - bytes_written, timestamp, timestamp_usec);
-            if (res < 0)
+            if (res < 0) {
               res = -1;
+            }
 
             if (buffer_version > 1) {
               // space was reserved in read buffer; remove it
@@ -743,8 +745,9 @@ LogBuffer::to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int bu
   delete alt_fieldlist;
   ats_free(alt_printf_str);
   ats_free(alt_symbol_str);
-  if (delete_fieldlist_p)
+  if (delete_fieldlist_p) {
     delete fieldlist;
+  }
 
   return ret;
 }

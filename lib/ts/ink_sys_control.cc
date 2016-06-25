@@ -40,10 +40,11 @@ ink_max_out_rlimit(int which, bool max_it, bool unlim_it)
     ink_release_assert(getrlimit(MAGIC_CAST(which), &rl) >= 0);
     if (rl.rlim_cur != rl.rlim_max) {
 #if defined(darwin)
-      if (which == RLIMIT_NOFILE)
+      if (which == RLIMIT_NOFILE) {
         rl.rlim_cur = fmin(OPEN_MAX, rl.rlim_max);
-      else
+      } else {
         rl.rlim_cur = rl.rlim_max;
+      }
 #else
       rl.rlim_cur = rl.rlim_max;
 #endif

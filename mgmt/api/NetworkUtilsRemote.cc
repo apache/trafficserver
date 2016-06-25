@@ -111,8 +111,9 @@ ts_connect()
   int sockaddr_len;
 
   // make sure a socket path is set up
-  if (!main_socket_path || !event_socket_path)
+  if (!main_socket_path || !event_socket_path) {
     goto ERROR;
+  }
 
   // create a socket
   main_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -182,15 +183,17 @@ disconnect()
   if (main_socket_fd > 0) {
     ret            = close(main_socket_fd);
     main_socket_fd = -1;
-    if (ret < 0)
+    if (ret < 0) {
       return TS_ERR_FAIL;
+    }
   }
 
   if (event_socket_fd > 0) {
     ret             = close(event_socket_fd);
     event_socket_fd = -1;
-    if (ret < 0)
+    if (ret < 0) {
       return TS_ERR_FAIL;
+    }
   }
 
   return TS_ERR_OKAY;
@@ -214,15 +217,17 @@ reconnect()
   TSMgmtError err;
 
   err = disconnect();
-  if (err != TS_ERR_OKAY) // problem disconnecting
+  if (err != TS_ERR_OKAY) { // problem disconnecting
     return err;
+  }
 
   // use the socket_path that was called by remote client on first init
   // use connect instead of TSInit() b/c if TM restarted, client-side tables
   // would be recreated; just want to reconnect to same socket_path
   err = ts_connect();
-  if (err != TS_ERR_OKAY) // problem establishing connection
+  if (err != TS_ERR_OKAY) { // problem establishing connection
     return err;
+  }
 
   // relaunch a new event thread since socket_fd changed
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
@@ -230,8 +235,9 @@ reconnect()
     // reregister the callbacks on the TM side for this new client connection
     if (remote_event_callbacks) {
       err = send_register_all_callbacks(event_socket_fd, remote_event_callbacks);
-      if (err != TS_ERR_OKAY) // problem establishing connection
+      if (err != TS_ERR_OKAY) { // problem establishing connection
         return err;
+      }
     }
   } else {
     ts_event_thread = static_cast<ink_thread>(NULL);
@@ -299,8 +305,9 @@ main_socket_reconnect()
 
   // connects to TM and does all necessary event updates required
   err = reconnect();
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     return err;
+  }
 
   // makes sure the descriptor is writable
   if (mgmt_write_timeout(main_socket_fd, MAX_TIME_WAIT, 0) <= 0) {
@@ -447,8 +454,9 @@ send_register_all_callbacks(int fd, CallbackTable *cb_table)
     MgmtMarshallString event_name = NULL;
 
     err = MGMTAPI_SEND_MESSAGE(fd, EVENT_REG_CALLBACK, &optype, &event_name);
-    if (err != TS_ERR_OKAY)
+    if (err != TS_ERR_OKAY) {
       return err;
+    }
   } else {
     int num_events = queue_len(events_with_cb);
     // iterate through the LLQ and send request for each event
@@ -469,13 +477,15 @@ send_register_all_callbacks(int fd, CallbackTable *cb_table)
     }
   }
 
-  if (events_with_cb)
+  if (events_with_cb) {
     delete_queue(events_with_cb);
+  }
 
-  if (no_errors)
+  if (no_errors) {
     return TS_ERR_OKAY;
-  else
+  } else {
     return send_err;
+  }
 }
 
 /**********************************************************************
@@ -532,10 +542,11 @@ send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
     }
   }
 
-  if (no_errors)
+  if (no_errors) {
     return TS_ERR_OKAY;
-  else
+  } else {
     return send_err;
+  }
 }
 
 /**********************************************************************
@@ -663,8 +674,9 @@ event_callback_thread(void *arg)
 
   func_q = create_queue();
   if (!func_q) {
-    if (event_notice)
+    if (event_notice) {
       TSEventDestroy(event_notice);
+    }
     return NULL;
   }
 

@@ -135,8 +135,9 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   // It is never useful to have alignment requirement looser than a page size
   // so clip it. This makes the item alignment checks in the actual allocator simpler.
   f->alignment = alignment;
-  if (f->alignment > ats_pagesize())
+  if (f->alignment > ats_pagesize()) {
     f->alignment = ats_pagesize();
+  }
   Debug(DEBUG_TAG "_init", "<%s> Alignment request/actual (%" PRIu32 "/%" PRIu32 ")", name, alignment, f->alignment);
   // Make sure we align *all* the objects in the allocation, not just the first one
   f->type_size = INK_ALIGN(type_size, f->alignment);
@@ -222,8 +223,9 @@ freelist_new(InkFreeList *f)
         char *a = ((char *)FREELIST_POINTER(item)) + i * f->type_size;
 #ifdef DEADBEEF
         const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
-        for (int j = 0; j < (int)f->type_size; j++)
-          a[j]     = str[j % 4];
+        for (int j = 0; j < (int)f->type_size; j++) {
+          a[j] = str[j % 4];
+        }
 #endif
         freelist_free(f, a);
       }
@@ -234,12 +236,15 @@ freelist_new(InkFreeList *f)
 
 #ifdef SANITY
       if (result) {
-        if (FREELIST_POINTER(item) == TO_PTR(FREELIST_POINTER(next)))
+        if (FREELIST_POINTER(item) == TO_PTR(FREELIST_POINTER(next))) {
           ink_abort("ink_freelist_new: loop detected");
-        if (((uintptr_t)(TO_PTR(FREELIST_POINTER(next)))) & 3)
+        }
+        if (((uintptr_t)(TO_PTR(FREELIST_POINTER(next)))) & 3) {
           ink_abort("ink_freelist_new: bad list");
-        if (TO_PTR(FREELIST_POINTER(next)))
+        }
+        if (TO_PTR(FREELIST_POINTER(next))) {
           fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(next));
+        }
       }
 #endif /* SANITY */
     }
@@ -254,10 +259,11 @@ malloc_new(InkFreeList *f)
 {
   void *newp = NULL;
 
-  if (f->alignment)
+  if (f->alignment) {
     newp = ats_memalign(f->alignment, f->type_size);
-  else
+  } else {
     newp = ats_malloc(f->type_size);
+  }
 
   return newp;
 }
@@ -287,20 +293,24 @@ freelist_free(InkFreeList *f, void *item)
     static const char str[4] = {(char)0xde, (char)0xad, (char)0xbe, (char)0xef};
 
     // set the entire item to DEADBEEF
-    for (int j          = 0; j < (int)f->type_size; j++)
+    for (int j = 0; j < (int)f->type_size; j++) {
       ((char *)item)[j] = str[j % 4];
+    }
   }
 #endif /* DEADBEEF */
 
   while (!result) {
     INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
-    if (TO_PTR(FREELIST_POINTER(h)) == item)
+    if (TO_PTR(FREELIST_POINTER(h)) == item) {
       ink_abort("ink_freelist_free: trying to free item twice");
-    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
+    }
+    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3) {
       ink_abort("ink_freelist_free: bad list");
-    if (TO_PTR(FREELIST_POINTER(h)))
+    }
+    if (TO_PTR(FREELIST_POINTER(h))) {
       fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
+    }
 #endif /* SANITY */
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(item), FREELIST_VERSION(h));
@@ -312,10 +322,11 @@ freelist_free(InkFreeList *f, void *item)
 static void
 malloc_free(InkFreeList *f, void *item)
 {
-  if (f->alignment)
+  if (f->alignment) {
     ats_memalign_free(item);
-  else
+  } else {
     ats_free(item);
+  }
 }
 
 void
@@ -344,8 +355,9 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
     // set the entire item to DEADBEEF;
     void *temp = head;
     for (size_t i = 0; i < num_item; i++) {
-      for (int j          = sizeof(void *); j < (int)f->type_size; j++)
+      for (int j = sizeof(void *); j < (int)f->type_size; j++) {
         ((char *)temp)[j] = str[j % 4];
+      }
       *ADDRESS_OF_NEXT(temp, 0) = FROM_PTR(*ADDRESS_OF_NEXT(temp, 0));
       temp = TO_PTR(*ADDRESS_OF_NEXT(temp, 0));
     }
@@ -355,12 +367,15 @@ freelist_bulkfree(InkFreeList *f, void *head, void *tail, size_t num_item)
   while (!result) {
     INK_QUEUE_LD(h, f->head);
 #ifdef SANITY
-    if (TO_PTR(FREELIST_POINTER(h)) == head)
+    if (TO_PTR(FREELIST_POINTER(h)) == head) {
       ink_abort("ink_freelist_free: trying to free item twice");
-    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3)
+    }
+    if (((uintptr_t)(TO_PTR(FREELIST_POINTER(h)))) & 3) {
       ink_abort("ink_freelist_free: bad list");
-    if (TO_PTR(FREELIST_POINTER(h)))
+    }
+    if (TO_PTR(FREELIST_POINTER(h))) {
       fake_global_for_ink_queue = *(int *)TO_PTR(FREELIST_POINTER(h));
+    }
 #endif /* SANITY */
     *adr_of_next = FREELIST_POINTER(h);
     SET_FREELIST_POINTER_VERSION(item_pair, FROM_PTR(head), FREELIST_VERSION(h));
@@ -407,8 +422,9 @@ void
 ink_freelists_dump_baselinerel(FILE *f)
 {
   ink_freelist_list *fll;
-  if (f == NULL)
+  if (f == NULL) {
     f = stderr;
+  }
 
   fprintf(f, "     allocated      |       in-use       |  count  | type size  |   free list name\n");
   fprintf(f, "  relative to base  |  relative to base  |         |            |                 \n");
@@ -432,8 +448,9 @@ void
 ink_freelists_dump(FILE *f)
 {
   ink_freelist_list *fll;
-  if (f == NULL)
+  if (f == NULL) {
     f = stderr;
+  }
 
   fprintf(f, "     Allocated      |        In-Use      | Type Size  |   Free List Name\n");
   fprintf(f, "--------------------|--------------------|------------|----------------------------------\n");
@@ -469,8 +486,9 @@ ink_atomiclist_pop(InkAtomicList *l)
   int result = 0;
   do {
     INK_QUEUE_LD(item, l->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == NULL)
+    if (TO_PTR(FREELIST_POINTER(item)) == NULL) {
       return NULL;
+    }
     SET_FREELIST_POINTER_VERSION(next, *ADDRESS_OF_NEXT(TO_PTR(FREELIST_POINTER(item)), l->offset), FREELIST_VERSION(item) + 1);
     result = ink_atomic_cas(&l->head.data, item.data, next.data);
   } while (result == 0);
@@ -489,8 +507,9 @@ ink_atomiclist_popall(InkAtomicList *l)
   int result = 0;
   do {
     INK_QUEUE_LD(item, l->head);
-    if (TO_PTR(FREELIST_POINTER(item)) == NULL)
+    if (TO_PTR(FREELIST_POINTER(item)) == NULL) {
       return NULL;
+    }
     SET_FREELIST_POINTER_VERSION(next, FROM_PTR(NULL), FREELIST_VERSION(item) + 1);
     result = ink_atomic_cas(&l->head.data, item.data, next.data);
   } while (result == 0);

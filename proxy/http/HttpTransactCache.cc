@@ -59,8 +59,9 @@ find_etag(const char *raw_tag_field, int raw_tag_field_len, int *length)
     ++etag_start;
     --etag_length;
     quote = (const char *)memchr(etag_start, '"', etag_length);
-    if (quote)
+    if (quote) {
       etag_length = quote - etag_start;
+    }
   }
   *length = etag_length;
   return etag_start;
@@ -92,8 +93,9 @@ do_strings_match_strongly(const char *raw_tag_field, int raw_tag_field_len, cons
   // Loop over all the tags in the tag list
   for (Str *tag = tag_list.head; tag; tag = tag->next) {
     // If field is "*", then we got a match
-    if ((tag->len == 1) && (tag->str[0] == '*'))
+    if ((tag->len == 1) && (tag->str[0] == '*')) {
       return true;
+    }
 
     n = 0;
 
@@ -127,14 +129,16 @@ do_strings_match_weakly(const char *raw_tag_field, int raw_tag_field_len, const 
 
   for (Str *tag = tag_list.head; tag; tag = tag->next) {
     // If field is "*", then we got a match
-    if ((tag->len == 1) && (tag->str[0] == '*'))
+    if ((tag->len == 1) && (tag->str[0] == '*')) {
       return true;
+    }
 
     // strip off the leading 'W/' and quotation marks from the
     // current tag, then compare for equality with above tag.
     cur_tag = find_etag(tag->str, tag->len, &cur_tag_len);
-    if ((cur_tag_len == etag_length) && (strncmp(cur_tag, etag_start, cur_tag_len) == 0))
+    if ((cur_tag_len == etag_length) && (strncmp(cur_tag, etag_start, cur_tag_len) == 0)) {
       return true;
+    }
   }
   return false;
 }
@@ -186,8 +190,9 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
     RELEASE_PRINT_LOCK()
   }
   // used by ICP to bypass this function
-  if (http_config_params == &global_cache_lookup_config)
+  if (http_config_params == &global_cache_lookup_config) {
     return 0;
+  }
 
   if (!client_request->valid()) {
     return 0;
@@ -211,8 +216,9 @@ HttpTransactCache::SelectFromAlternates(CacheHTTPInfoVector *cache_vector, HTTPH
       Q = calculate_quality_of_match(http_config_params, client_request, cached_request, cached_response);
 
       if (alt_count > 1) {
-        if (t_now == 0)
-          t_now     = ink_cluster_time();
+        if (t_now == 0) {
+          t_now = ink_cluster_time();
+        }
         current_age = HttpTransactHeaders::calculate_document_age(obj->request_sent_time_get(), obj->response_received_time_get(),
                                                                   cached_response, cached_response->get_date(), t_now);
         // Overflow?
@@ -298,8 +304,9 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig *http_config
                                               HTTPHdr *obj_client_request, HTTPHdr *obj_origin_server_response)
 {
   // For PURGE requests, any alternate is good really.
-  if (client_request->method_get_wksidx() == HTTP_WKSIDX_PURGE)
+  if (client_request->method_get_wksidx() == HTTP_WKSIDX_PURGE) {
     return (float)1.0;
+  }
 
   // Now calculate a quality based on all sorts of logic
   float q[4], Q;
@@ -442,8 +449,9 @@ HttpTransactCache::calculate_quality_of_match(CacheLookupHttpConfig *http_config
         if (info.m_qvalue < 0.0) {
           info.m_qvalue = 0.0;
         } else if (info.m_qvalue > 1.0) {
-          if (info.m_qvalue == FLT_MAX)
-            force_alt   = 1;
+          if (info.m_qvalue == FLT_MAX) {
+            force_alt = 1;
+          }
           info.m_qvalue = 1.0;
         }
         qvalue *= info.m_qvalue;
@@ -549,8 +557,9 @@ HttpTransactCache::calculate_quality_of_accept_match(MIMEField *accept_field, MI
 
     // Read the next type/subtype media-range
     Str *a_param = a_param_list.head;
-    if (!a_param)
+    if (!a_param) {
       continue;
+    }
 
     // Parse the type and subtype of the Accept field
     char a_type[32], a_subtype[32];
@@ -666,8 +675,9 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
     if (a_param_list.head) {
       a_charset     = (char *)a_param_list.head->str;
       a_charset_len = a_param_list.head->len;
-    } else
+    } else {
       continue;
+    }
 
     //      printf("matching Content-type; '%s' with Accept-Charset value '%s'\n",
     //             c_charset,a_charset);
@@ -733,8 +743,9 @@ HttpTransactCache::calculate_quality_of_accept_charset_match(MIMEField *accept_f
 static inline bool
 does_encoding_match(char *enc1, const char *enc2)
 {
-  if (is_asterisk(enc1) || ((strcasecmp(enc1, enc2)) == 0))
+  if (is_asterisk(enc1) || ((strcasecmp(enc1, enc2)) == 0)) {
     return true;
+  }
 
   // rfc2616,sec3.5: applications SHOULD consider "x-gzip" and "x-compress" to be
   //                equivalent to "gzip" and "compress" respectively
@@ -764,10 +775,11 @@ HttpTransactCache::match_gzip(MIMEField *accept_field)
     StrList a_param_list;
     a_raw = a_value->str;
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw);
-    if (a_param_list.head)
+    if (a_param_list.head) {
       a_encoding = (char *)a_param_list.head->str;
-    else
+    } else {
       continue;
+    }
     float q;
     q = HttpCompat::find_Q_param_in_strlist(&a_param_list);
     if (q != 0 && does_encoding_match(a_encoding, "gzip")) {
@@ -801,10 +813,11 @@ match_accept_content_encoding(const char *c_raw, MIMEField *accept_field, bool *
 
     // break Accept-Encoding piece into semi-colon separated parts //
     HttpCompat::parse_semicolon_list(&a_param_list, a_raw);
-    if (a_param_list.head)
+    if (a_param_list.head) {
       a_encoding = (char *)a_param_list.head->str;
-    else
+    } else {
       continue;
+    }
 
     if (is_asterisk(a_encoding)) {
       *wildcard_present = true;
@@ -1191,8 +1204,9 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig *http_config_params, HT
 
     // for each field that varies, see if current & original hdrs match //
     for (Str *field = vary_list.head; field != NULL; field = field->next) {
-      if (field->len == 0)
+      if (field->len == 0) {
         continue;
+      }
 
       /////////////////////////////////////////////////////////////
       // If the field name is unhandled, we should probably do a //
@@ -1210,13 +1224,15 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig *http_config_params, HT
       // Special case: if 'proxy.config.http.global_user_agent_header' set                  //
       // we should ignore Vary: User-Agent.                                                 //
       ////////////////////////////////////////////////////////////////////////////////////////
-      if (http_config_params->cache_global_user_agent_header && !strcasecmp((char *)field->str, "User-Agent"))
+      if (http_config_params->cache_global_user_agent_header && !strcasecmp((char *)field->str, "User-Agent")) {
         continue;
+      }
 
       // Disable Vary mismatch checking for Accept-Encoding.  This is only safe to
       // set if you are promising to fix any Accept-Encoding/Content-Encoding mismatches.
-      if (http_config_params->ignore_accept_encoding_mismatch && !strcasecmp((char *)field->str, "Accept-Encoding"))
+      if (http_config_params->ignore_accept_encoding_mismatch && !strcasecmp((char *)field->str, "Accept-Encoding")) {
         continue;
+      }
 
       ///////////////////////////////////////////////////////////////////
       // Take the current vary field and look up the headers in        //
@@ -1236,8 +1252,9 @@ HttpTransactCache::CalcVariability(CacheLookupHttpConfig *http_config_params, HT
       ink_assert(strlen(field->str) == field->len);
 
       char *field_name_str = (char *)hdrtoken_string_to_wks(field->str, field->len);
-      if (field_name_str == NULL)
+      if (field_name_str == NULL) {
         field_name_str = (char *)field->str;
+      }
 
       MIMEField *cached_hdr_field  = obj_client_request->field_find(field_name_str, field->len);
       MIMEField *current_hdr_field = client_request->field_find(field_name_str, field->len);
@@ -1472,28 +1489,32 @@ CacheLookupHttpConfig::marshal(char *buf, int length)
   char *p = buf;
   int len;
 
-  if ((length -= sizeof(int32_t)) < 0)
+  if ((length -= sizeof(int32_t)) < 0) {
     return -1;
+  }
 
   i32_tmp = (int32_t)cache_enable_default_vary_headers;
   memcpy(p, &i32_tmp, sizeof(int32_t));
   p += sizeof(int32_t);
 
   len = (cache_vary_default_text ? strlen(cache_vary_default_text) + 1 : 1);
-  if ((length -= len) < 0)
+  if ((length -= len) < 0) {
     return -1;
+  }
   ink_strlcpy(p, (cache_vary_default_text ? cache_vary_default_text : ""), length);
   p += len;
 
   len = (cache_vary_default_images ? strlen(cache_vary_default_images) + 1 : 1);
-  if ((length -= len) < 0)
+  if ((length -= len) < 0) {
     return -1;
+  }
   ink_strlcpy(p, (cache_vary_default_images ? cache_vary_default_images : ""), length);
   p += len;
 
   len = (cache_vary_default_other ? strlen(cache_vary_default_other) + 1 : 1);
-  if ((length -= len) < 0)
+  if ((length -= len) < 0) {
     return -1;
+  }
   ink_strlcpy(p, (cache_vary_default_other ? cache_vary_default_other : ""), length);
   p += len;
 
@@ -1508,28 +1529,32 @@ CacheLookupHttpConfig::unmarshal(Arena *arena, const char *buf, int buflen)
   int len;
   int32_t i32_tmp;
 
-  if ((length -= sizeof(int32_t)) < 0)
+  if ((length -= sizeof(int32_t)) < 0) {
     return -1;
+  }
 
   memcpy(&i32_tmp, p, sizeof(int32_t));
   cache_enable_default_vary_headers = (bool)i32_tmp;
   p += sizeof(int32_t);
 
   len = strlen(p) + 1;
-  if ((length -= len) < 0)
+  if ((length -= len) < 0) {
     return -1;
+  }
   cache_vary_default_text = arena->str_store(((len == 2) ? "" : p), len - 1);
   p += len;
 
   len = strlen(p) + 1;
-  if ((length -= len) < 0)
+  if ((length -= len) < 0) {
     return -1;
+  }
   cache_vary_default_images = arena->str_store(((len == 2) ? "" : p), len - 1);
   p += len;
 
   len = strlen(p) + 1;
-  if ((length -= len) < 0)
+  if ((length -= len) < 0) {
     return -1;
+  }
   cache_vary_default_other = arena->str_store(((len == 2) ? "" : p), len - 1);
   p += len;
 

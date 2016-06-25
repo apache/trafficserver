@@ -187,8 +187,9 @@ OutgoingControl::startEvent(int event, Event *e)
   (void)event;
   (void)e;
   // verify that the machine has not gone down
-  if (!ch || !ch->thread)
+  if (!ch || !ch->thread) {
     return EVENT_DONE;
+  }
 
   int32_t cluster_fn = *(int32_t *)this->data;
   int32_t pri        = ClusterFuncToQpri(cluster_fn);
@@ -584,8 +585,9 @@ ClusterHandler::cluster_signal_and_update_locked(int event, ClusterVConnection *
       close_free_lock(vc, s);
     }
     return EVENT_DONE;
-  } else
+  } else {
     return EVENT_CONT;
+  }
 }
 
 int
@@ -786,8 +788,9 @@ ClusterHandler::connectClusterEvent(int event, Event *e)
     // Initiated via ClusterProcessor::connect().
     //
     MachineList *cc = the_cluster_config();
-    if (!machine)
+    if (!machine) {
       machine = new ClusterMachine(hostname, ip, port);
+    }
 #ifdef LOCAL_CLUSTER_TEST_MODE
     if (!(cc && cc->find(ip, port))) {
 #else
@@ -873,8 +876,9 @@ ClusterHandler::startClusterEvent(int event, Event *e)
         nodeClusteringVersion._port = cluster_port;
 #endif
         cluster_connect_state = ClusterHandler::CLCON_SEND_MSG_COMPLETE;
-        if (connector)
+        if (connector) {
           nodeClusteringVersion._id = id;
+        }
         build_data_vector((char *)&nodeClusteringVersion, sizeof(nodeClusteringVersion), false);
         if (!write.doIO()) {
           // i/o not initiated, delay and retry
@@ -967,9 +971,10 @@ ClusterHandler::startClusterEvent(int event, Event *e)
           if (proto_major == clusteringVersion._major) {
             proto_minor = clusteringVersion._minor;
 
-            if (proto_minor != nodeClusteringVersion._minor)
+            if (proto_minor != nodeClusteringVersion._minor) {
               Warning("Different clustering minor versions (%d,%d) for node %u.%u.%u.%u, continuing", proto_minor,
                       nodeClusteringVersion._minor, DOT_SEPARATED(ip));
+            }
           } else {
             proto_minor = 0;
           }
@@ -984,8 +989,9 @@ ClusterHandler::startClusterEvent(int event, Event *e)
 #ifdef LOCAL_CLUSTER_TEST_MODE
         port = clusteringVersion._port & 0xffff;
 #endif
-        if (!connector)
+        if (!connector) {
           id = clusteringVersion._id & 0xffff;
+        }
 
         machine->msg_proto_major = proto_major;
         machine->msg_proto_minor = proto_minor;
@@ -1012,14 +1018,18 @@ ClusterHandler::startClusterEvent(int event, Event *e)
         vc->ep.stop();
         vc->nh->open_list.remove(vc);
         vc->thread = NULL;
-        if (vc->nh->read_ready_list.in(vc))
+        if (vc->nh->read_ready_list.in(vc)) {
           vc->nh->read_ready_list.remove(vc);
-        if (vc->nh->write_ready_list.in(vc))
+        }
+        if (vc->nh->write_ready_list.in(vc)) {
           vc->nh->write_ready_list.remove(vc);
-        if (vc->read.in_enabled_list)
+        }
+        if (vc->read.in_enabled_list) {
           vc->nh->read_enable_list.remove(vc);
-        if (vc->write.in_enabled_list)
+        }
+        if (vc->write.in_enabled_list) {
           vc->nh->write_enable_list.remove(vc);
+        }
 
         // CLCON_CONN_BIND handle in bind vc->thread (bind thread nh)
         cluster_connect_state = ClusterHandler::CLCON_CONN_BIND;
@@ -1039,10 +1049,12 @@ ClusterHandler::startClusterEvent(int event, Event *e)
       MUTEX_TRY_LOCK(lock, nh->mutex, e->ethread);
       MUTEX_TRY_LOCK(lock1, vc->mutex, e->ethread);
       if (lock.is_locked() && lock1.is_locked()) {
-        if (vc->read.in_enabled_list)
+        if (vc->read.in_enabled_list) {
           nh->read_enable_list.push(vc);
-        if (vc->write.in_enabled_list)
+        }
+        if (vc->write.in_enabled_list) {
           nh->write_enable_list.push(vc);
+        }
 
         vc->nh             = nh;
         vc->thread         = e->ethread;

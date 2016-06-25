@@ -82,8 +82,9 @@ ProxyClientTransaction::release(IOBufferReader *r)
   current_reader = NULL; // Clear reference to SM
 
   // Pass along the release to the session
-  if (parent)
+  if (parent) {
     parent->release(this);
+  }
 }
 
 void

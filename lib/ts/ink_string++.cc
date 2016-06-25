@@ -50,8 +50,9 @@ StrList::dump(FILE *fp)
 {
   Str *str;
 
-  for (str = head; str != NULL; str = str->next)
+  for (str = head; str != NULL; str = str->next) {
     str->dump(fp);
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -69,8 +70,9 @@ StrList::_new_cell(const char *s, int len_not_counting_nul)
     cell = &(base_cells[cells_allocated]);
   } else {
     p = (char *)alloc(sizeof(Str) + 7);
-    if (p == NULL)
-      return (NULL);                            // FIX: scale heap
+    if (p == NULL) {
+      return (NULL); // FIX: scale heap
+    }
     p    = (char *)((((uintptr_t)p) + 7) & ~7); // round up to multiple of 8
     cell = (Str *)p;
   }
@@ -79,8 +81,9 @@ StrList::_new_cell(const char *s, int len_not_counting_nul)
   // are we supposed to copy the string?
   if (copy_when_adding_string) {
     char *buf = (char *)alloc(l + 1);
-    if (buf == NULL)
+    if (buf == NULL) {
       return (NULL); // FIX: need to grow heap!
+    }
     memcpy(buf, s, l);
     buf[l] = '\0';
 
@@ -113,8 +116,9 @@ StrList::overflow_heap_alloc(int size)
 void
 StrList::overflow_heap_clean()
 {
-  if (overflow_first)
+  if (overflow_first) {
     overflow_first->clean();
+  }
 }
 
 #define INIT_OVERFLOW_ALIGNMENT 8

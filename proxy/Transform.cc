@@ -500,20 +500,25 @@ TransformVConnection::backlog(uint64_t limit)
   MIOBuffer *w;
   while (raw_vc && raw_vc != &m_terminus) {
     INKVConnInternal *vc = static_cast<INKVConnInternal *>(raw_vc);
-    if (0 != (w = vc->m_read_vio.buffer.writer()))
+    if (0 != (w = vc->m_read_vio.buffer.writer())) {
       b += w->max_read_avail();
-    if (b >= limit)
+    }
+    if (b >= limit) {
       return b;
+    }
     raw_vc = vc->m_output_vc;
   }
-  if (0 != (w = m_terminus.m_read_vio.buffer.writer()))
+  if (0 != (w = m_terminus.m_read_vio.buffer.writer())) {
     b += w->max_read_avail();
-  if (b >= limit)
+  }
+  if (b >= limit) {
     return b;
+  }
 
   IOBufferReader *r = m_terminus.m_write_vio.get_reader();
-  if (r)
+  if (r) {
     b += r->read_avail();
+  }
   return b;
 }
 
@@ -758,8 +763,9 @@ RangeTransform::RangeTransform(ProxyMutex *mut, RangeRecord *ranges, int num_fie
 
 RangeTransform::~RangeTransform()
 {
-  if (m_output_buf)
+  if (m_output_buf) {
     free_MIOBuffer(m_output_buf);
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -846,8 +852,9 @@ RangeTransform::transform_to_range()
     if (*done_byte < (*start - 1)) {
       toskip = *start - *done_byte - 1;
 
-      if (toskip > avail)
+      if (toskip > avail) {
         toskip = avail;
+      }
 
       if (toskip > 0) {
         reader->consume(toskip);
@@ -859,8 +866,9 @@ RangeTransform::transform_to_range()
     if (avail > 0) {
       tosend = *end - *done_byte;
 
-      if (tosend > avail)
+      if (tosend > avail) {
         tosend = avail;
+      }
 
       m_output_buf->write(reader, tosend);
       reader->consume(tosend);
@@ -869,8 +877,9 @@ RangeTransform::transform_to_range()
       *done_byte += tosend;
     }
 
-    if (*done_byte == *end)
+    if (*done_byte == *end) {
       prev_end = *end;
+    }
 
     // move to next Range if done one
     // ignore bad Range: _done_byte -1, _end -1
@@ -921,8 +930,9 @@ RangeTransform::transform_to_range()
 
     // When we need to read and there is nothing available
     avail = reader->read_avail();
-    if (avail == 0)
+    if (avail == 0) {
       break;
+    }
   }
 
   m_output_vio->reenable();
@@ -947,8 +957,9 @@ RangeTransform::add_boundary(bool end)
   m_done += m_output_buf->write("--", 2);
   m_done += m_output_buf->write(bound, sizeof(bound) - 1);
 
-  if (end)
+  if (end) {
     m_done += m_output_buf->write("--", 2);
+  }
 
   m_done += m_output_buf->write("\r\n", 2);
 }
@@ -966,16 +977,18 @@ RangeTransform::add_sub_header(int index)
   int len;
 
   m_done += m_output_buf->write(cont_type, sizeof(cont_type) - 1);
-  if (m_content_type)
+  if (m_content_type) {
     m_done += m_output_buf->write(m_content_type, m_content_type_len);
+  }
   m_done += m_output_buf->write("\r\n", 2);
   m_done += m_output_buf->write(cont_range, sizeof(cont_range) - 1);
 
   snprintf(numbers, sizeof(numbers), "%" PRId64 "-%" PRId64 "/%" PRId64 "", m_ranges[index]._start, m_ranges[index]._end,
            m_output_cl);
   len = strlen(numbers);
-  if (len < RANGE_NUMBERS_LENGTH)
+  if (len < RANGE_NUMBERS_LENGTH) {
     m_done += m_output_buf->write(numbers, len);
+  }
   m_done += m_output_buf->write("\r\n\r\n", 4);
 }
 
@@ -1005,8 +1018,9 @@ RangeTransform::change_response_header()
     // set the right Content-Type for multiple entry Range
     field = m_transform_resp->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
-    if (field != NULL)
+    if (field != NULL) {
       m_transform_resp->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    }
 
     field = m_transform_resp->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     field->value_append(m_transform_resp->m_heap, m_transform_resp->m_mime, range_type, sizeof(range_type) - 1);

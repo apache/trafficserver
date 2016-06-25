@@ -403,8 +403,9 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
     for (unsigned int j = 0; j < sizeof(raw_field_response_test_case[i]) / sizeof(raw_field_response_test_case[i][0]); j++) {
       const char *expected_name  = raw_field_response_test_case[i][j].raw_name;
       const char *expected_value = raw_field_response_test_case[i][j].raw_value;
-      if (strlen(expected_name) == 0)
+      if (strlen(expected_name) == 0) {
         break;
+      }
 
       MIMEField *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
       field->name_set(headers->m_heap, headers->m_http->m_fields_impl, expected_name, strlen(expected_name));
@@ -434,8 +435,9 @@ REGRESSION_TEST(HPACK_Encode)(RegressionTest *t, int, int *pstatus)
       int expected_name_len      = strlen(expected_name);
       int expected_value_len     = strlen(expected_value);
 
-      if (expected_name_len == 0)
+      if (expected_name_len == 0) {
         break;
+      }
 
       HpackLookupResult lookupResult = indexing_table.lookup(expected_name, expected_name_len, expected_value, expected_value_len);
       box.check(lookupResult.match_type == HPACK_EXACT_MATCH && lookupResult.index_type == HPACK_INDEX_TYPE_DYNAMIC,
@@ -567,8 +569,9 @@ REGRESSION_TEST(HPACK_Decode)(RegressionTest *t, int, int *pstatus)
     for (unsigned int j = 0; j < sizeof(raw_field_request_test_case[i]) / sizeof(raw_field_request_test_case[i][0]); j++) {
       const char *expected_name  = raw_field_request_test_case[i][j].raw_name;
       const char *expected_value = raw_field_request_test_case[i][j].raw_value;
-      if (strlen(expected_name) == 0)
+      if (strlen(expected_name) == 0) {
         break;
+      }
 
       MIMEField *field = headers->field_find(expected_name, strlen(expected_name));
       box.check(field != NULL, "A MIMEField that has \"%s\" as name doesn't exist", expected_name);

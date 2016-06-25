@@ -154,8 +154,9 @@ update_cache_control_information_from_config(HttpTransact::State *s)
   }
 
   // Less than 0 means it wasn't overridden, so leave it alone.
-  if (s->cache_control.cache_responses_to_cookies >= 0)
+  if (s->cache_control.cache_responses_to_cookies >= 0) {
     s->txn_conf->cache_responses_to_cookies = s->cache_control.cache_responses_to_cookies;
+  }
 }
 
 inline bool
@@ -203,8 +204,9 @@ find_appropriate_cached_resp(HttpTransact::State *s)
 
   if (s->cache_info.object_store.valid()) {
     c_resp = s->cache_info.object_store.response_get();
-    if (c_resp != NULL && c_resp->valid())
+    if (c_resp != NULL && c_resp->valid()) {
       return c_resp;
+    }
   }
 
   ink_assert(s->cache_info.object_read != NULL);
@@ -216,8 +218,9 @@ int response_cacheable_indicated_by_cc(HTTPHdr *response);
 inline static bool
 is_negative_caching_appropriate(HttpTransact::State *s)
 {
-  if (!s->txn_conf->negative_caching_enabled || !s->hdr_info.server_response.valid())
+  if (!s->txn_conf->negative_caching_enabled || !s->hdr_info.server_response.valid()) {
     return false;
+  }
 
   switch (s->hdr_info.server_response.status_get()) {
   case HTTP_STATUS_NO_CONTENT:
@@ -510,11 +513,13 @@ how_to_open_connection(HttpTransact::State *s)
     } // the URL was remapped
     if (is_debug_tag_set("cdn")) {
       char *d_url = s->hdr_info.server_request.url_get()->string_get(NULL);
-      if (d_url)
+      if (d_url) {
         DebugTxn("cdn", "URL: %s", d_url);
+      }
       char *d_hst = (char *)s->hdr_info.server_request.value_get(MIME_FIELD_HOST, MIME_LEN_HOST, &host_len);
-      if (d_hst)
+      if (d_hst) {
         DebugTxn("cdn", "Host Hdr: %s", d_hst);
+      }
       ats_free(d_url);
     }
     s->cdn_remap_complete    = true; // It doesn't matter if there was an actual remap or not
@@ -654,20 +659,23 @@ HttpTransact::perform_accept_encoding_filtering(State *s)
   // Make sense to check Accept-Encoding if UserAgent is present (and matches)
   if ((usragent_field = client_request->field_find(MIME_FIELD_USER_AGENT, MIME_LEN_USER_AGENT)) != 0 &&
       (u_agent = usragent_field->value_get(&u_agent_len)) != 0 && u_agent_len > 0) {
-    if (u_agent_len >= (int)sizeof(tmp_ua_buf))
+    if (u_agent_len >= (int)sizeof(tmp_ua_buf)) {
       u_agent_len = (int)(sizeof(tmp_ua_buf) - 1);
+    }
     memcpy(tmp_ua_buf, u_agent, u_agent_len);
     tmp_ua_buf[u_agent_len] = '\0';
 
     // TODO: Do we really want to do these hardcoded checks still?
     // Check hardcoded case MSIE>6 & Mozilla>4
     if ((c = strstr(tmp_ua_buf, "MSIE")) != NULL) {
-      if (c[5] >= '7' && c[5] <= '9')
+      if (c[5] >= '7' && c[5] <= '9') {
         return false; // Don't change anything for IE > 6
+      }
       ua_match = true;
     } else if (!strncasecmp(tmp_ua_buf, "mozilla", 7)) {
-      if (tmp_ua_buf[8] >= '5' && tmp_ua_buf[8] <= '9')
+      if (tmp_ua_buf[8] >= '5' && tmp_ua_buf[8] <= '9') {
         return false; // Don't change anything for Mozilla > 4
+      }
       ua_match = true;
     }
 
@@ -676,16 +684,19 @@ HttpTransact::perform_accept_encoding_filtering(State *s)
       for (uae = HttpConfig::user_agent_list; uae && !ua_match; uae = uae->next) {
         switch (uae->stype) {
         case HttpUserAgent_RegxEntry::STRTYPE_SUBSTR_CASE: /* .substring, .string */
-          if (u_agent_len >= uae->user_agent_str_size && !memcmp(tmp_ua_buf, uae->user_agent_str, uae->user_agent_str_size))
+          if (u_agent_len >= uae->user_agent_str_size && !memcmp(tmp_ua_buf, uae->user_agent_str, uae->user_agent_str_size)) {
             ua_match = true;
+          }
           break;
         case HttpUserAgent_RegxEntry::STRTYPE_SUBSTR_NCASE: /* .substring_ncase, .string_ncase */
-          if (u_agent_len >= uae->user_agent_str_size && !strncasecmp(uae->user_agent_str, tmp_ua_buf, uae->user_agent_str_size))
+          if (u_agent_len >= uae->user_agent_str_size && !strncasecmp(uae->user_agent_str, tmp_ua_buf, uae->user_agent_str_size)) {
             ua_match = true;
+          }
           break;
         case HttpUserAgent_RegxEntry::STRTYPE_REGEXP: /* .regexp POSIX regular expression */
-          if (uae->regx_valid && !pcre_exec(uae->regx, NULL, tmp_ua_buf, u_agent_len, 0, 0, NULL, 0))
+          if (uae->regx_valid && !pcre_exec(uae->regx, NULL, tmp_ua_buf, u_agent_len, 0, 0, NULL, 0)) {
             ua_match = true;
+          }
           break;
         default: /* unknown type in the structure - bad initialization - impossible bug! */
           /* I can use ink_error() here since we should shutdown TS immediately */
@@ -705,8 +716,9 @@ HttpTransact::perform_accept_encoding_filtering(State *s)
       accept_field = client_request->field_find(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
       if (!accept_field) {
         accept_field = client_request->field_create(MIME_FIELD_ACCEPT_ENCODING, MIME_LEN_ACCEPT_ENCODING);
-        if (accept_field)
+        if (accept_field) {
           client_request->field_attach(accept_field);
+        }
       }
       if (accept_field) {
         client_request->field_value_set(accept_field, HTTP_VALUE_IDENTITY, HTTP_LEN_IDENTITY);
@@ -780,8 +792,9 @@ HttpTransact::StartRemapRequest(State *s)
   if (url_remap_mode == URL_REMAP_DEFAULT || url_remap_mode == URL_REMAP_ALL) {
     if (s->http_config_param->referer_filter_enabled) {
       s->filter_mask = URL_REMAP_FILTER_REFERER;
-      if (s->http_config_param->referer_format_redirect)
+      if (s->http_config_param->referer_format_redirect) {
         s->filter_mask |= URL_REMAP_FILTER_REDIRECT_FMT;
+      }
     }
   }
 
@@ -1132,8 +1145,9 @@ HttpTransact::ModifyRequest(State *s)
     }
   }
 
-  if (s->method == HTTP_WKSIDX_CONNECT && !request.is_port_in_header())
+  if (s->method == HTTP_WKSIDX_CONNECT && !request.is_port_in_header()) {
     url->port_set(80);
+  }
 
   // Ugly - this must come after the call to url->scheme_set or
   // it can't get the scheme properly and the wrong data is cached.
@@ -1332,8 +1346,9 @@ HttpTransact::HandleRequest(State *s)
 
   // We still need to decide whether or not to do a cache lookup since
   // the scheduled update code depends on this info.
-  if (is_request_cache_lookupable(s))
+  if (is_request_cache_lookupable(s)) {
     s->cache_info.action = CACHE_DO_LOOKUP;
+  }
 
   // If the hostname is "$internal$" then this is a request for
   // internal proxy information.
@@ -1354,9 +1369,9 @@ HttpTransact::HandleRequest(State *s)
 
   // if ip in url or cop test page, not do srv lookup.
   if (s->srv_lookup) {
-    if (s->cop_test_page)
+    if (s->cop_test_page) {
       s->srv_lookup = false;
-    else {
+    } else {
       IpEndpoint addr;
       ats_ip_pton(s->server_info.name, &addr);
       s->srv_lookup = !ats_is_ip(&addr);
@@ -2339,8 +2354,9 @@ HttpTransact::issue_revalidate(State *s)
   case HTTP_STATUS_OK: // 200
     // don't conditionalize if we are configured to repeat the clients
     //   conditionals
-    if (s->txn_conf->cache_when_to_revalidate == 4)
+    if (s->txn_conf->cache_when_to_revalidate == 4) {
       break;
+    }
     // ok, request is either a conditional or does not have a no-cache.
     //   (or is method that we don't conditionalize but lookup the
     //    cache on like DELETE)
@@ -2492,10 +2508,12 @@ HttpTransact::need_to_revalidate(State *s)
   if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     obj = &s->cache_info.object_store;
     ink_assert(obj->valid());
-    if (!obj->valid())
+    if (!obj->valid()) {
       return true;
-  } else
+    }
+  } else {
     obj = s->cache_info.object_read;
+  }
 
   // do we have to authenticate with the server before
   // sending back the cached response to the client?
@@ -2535,8 +2553,9 @@ HttpTransact::need_to_revalidate(State *s)
   if (s->cache_lookup_result == CACHE_LOOKUP_HIT_STALE &&
       s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     needs_revalidate = true;
-  } else
+  } else {
     needs_revalidate = false;
+  }
 
   bool send_revalidate = ((needs_authenticate == true) || (needs_revalidate == true) || (is_cache_response_returnable(s) == false));
   if (needs_cache_auth == true) {
@@ -2589,8 +2608,9 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
   if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     obj = &s->cache_info.object_store;
     ink_assert(obj->valid());
-  } else
+  } else {
     obj = s->cache_info.object_read;
+  }
 
   // do we have to authenticate with the server before
   // sending back the cached response to the client?
@@ -2630,8 +2650,9 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
       s->api_update_cached_object != HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     needs_revalidate = true;
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
-  } else
+  } else {
     needs_revalidate = false;
+  }
 
   // the response may not be directly returnable to the client. there
   // are several reasons for this: config may force revalidation or
@@ -2842,8 +2863,9 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
   if (s->api_update_cached_object == HttpTransact::UPDATE_CACHED_OBJECT_CONTINUE) {
     obj = &s->cache_info.object_store;
     ink_assert(obj->valid());
-  } else
-    obj           = s->cache_info.object_read;
+  } else {
+    obj = s->cache_info.object_read;
+  }
   cached_response = obj->response_get();
 
   // If the client request is conditional, and the cached copy meets
@@ -2994,8 +3016,9 @@ HttpTransact::handle_cache_write_lock(State *s)
       HTTPHdr *header;
       header = &(s->hdr_info.client_response);
       if ((ats_field = header->field_find(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) == NULL) {
-        if (likely((ats_field = header->field_create(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) != NULL))
+        if (likely((ats_field = header->field_create(MIME_FIELD_ATS_INTERNAL, MIME_LEN_ATS_INTERNAL)) != NULL)) {
           header->field_attach(ats_field);
+        }
       }
       if (likely(ats_field)) {
         int value = (s->cache_info.object_read) ? 1 : 0;
@@ -3401,8 +3424,9 @@ HttpTransact::HandleUpdateCachedObject(State *s)
     ink_assert(s->cache_info.object_read != NULL);
     ink_assert(s->cache_info.object_read->valid());
 
-    if (!s->cache_info.object_store.request_get())
+    if (!s->cache_info.object_store.request_get()) {
       s->cache_info.object_store.request_set(s->cache_info.object_read->request_get());
+    }
     s->request_sent_time      = s->cache_info.object_read->request_sent_time_get();
     s->response_received_time = s->cache_info.object_read->response_received_time_get();
     if (s->api_update_cached_object == UPDATE_CACHED_OBJECT_CONTINUE) {
@@ -3735,8 +3759,9 @@ HttpTransact::handle_response_from_server(State *s)
   /* fall through */
   case BAD_INCOMING_RESPONSE:
     // Set to generic I/O error if not already set specifically.
-    if (!s->current.server->had_connect_fail())
+    if (!s->current.server->had_connect_fail()) {
       s->current.server->set_connect_fail(EIO);
+    }
 
     if (is_server_negative_cached(s)) {
       max_connect_retries = s->txn_conf->connect_attempts_max_retries_dead_server;
@@ -3744,8 +3769,9 @@ HttpTransact::handle_response_from_server(State *s)
       // server not yet negative cached - use default number of retries
       max_connect_retries = s->txn_conf->connect_attempts_max_retries;
     }
-    if (s->pCongestionEntry != NULL)
+    if (s->pCongestionEntry != NULL) {
       max_connect_retries = s->pCongestionEntry->connect_retries();
+    }
 
     if (is_request_retryable(s) && s->current.attempts < max_connect_retries) {
       // If this is a round robin DNS entry & we're tried configured
@@ -3853,10 +3879,11 @@ HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_stat
   // on the first connect attempt failure //
   // record the failue                   //
   //////////////////////////////////////////
-  if (0 == s->current.attempts)
+  if (0 == s->current.attempts) {
     Log::error("CONNECT:[%d] could not connect [%s] to %s for '%s'", s->current.attempts,
                HttpDebugNames::get_server_state_name(conn_state),
                ats_ip_ntop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)), url_string ? url_string : "<none>");
+  }
 
   if (url_string) {
     s->arena.str_free(url_string);
@@ -4238,11 +4265,12 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     } else if (s->cache_info.action == CACHE_DO_UPDATE && is_request_conditional(&s->hdr_info.server_request)) {
       // CACHE_DO_UPDATE and server response is cacheable
       if (is_request_conditional(&s->hdr_info.client_request)) {
-        if (s->txn_conf->cache_when_to_revalidate != 4)
+        if (s->txn_conf->cache_when_to_revalidate != 4) {
           client_response_code = HttpTransactCache::match_response_to_request_conditionals(
             &s->hdr_info.client_request, s->cache_info.object_read->response_get(), s->response_received_time);
-        else
+        } else {
           client_response_code = server_response_code;
+        }
       } else {
         client_response_code = HTTP_STATUS_OK;
       }
@@ -4724,10 +4752,11 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
 
   s->cache_info.object_store.request_set(&s->hdr_info.server_request);
 
-  if (s->redirect_info.redirect_in_process)
+  if (s->redirect_info.redirect_in_process) {
     s_url = &s->redirect_info.original_url;
-  else
+  } else {
     s_url = &s->cache_info.original_url;
+  }
   ink_assert(s_url != NULL);
 
   s->cache_info.object_store.request_get()->url_set(s_url->valid() ? s_url : s->hdr_info.client_request.url_get());
@@ -4765,10 +4794,11 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
     if (s->hdr_info.server_response.presence(MIME_PRESENCE_AGE)) {
       time_t new_age = s->hdr_info.server_response.get_age();
 
-      if (new_age >= 0)
+      if (new_age >= 0) {
         cached_hdr->set_age(date_value + new_age);
-      else
+      } else {
         cached_hdr->set_age(-1); // Overflow
+      }
     }
     delete_warning_value(cached_hdr, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   }
@@ -4896,11 +4926,13 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
      sites yields no insight. So the assert is removed and we keep the behavior that if the response
      in @a cache_info is already set, we don't override it.
   */
-  if (!s->negative_caching || !cache_info->response_get()->valid())
+  if (!s->negative_caching || !cache_info->response_get()->valid()) {
     cache_info->response_set(response);
+  }
 
-  if (s->api_server_request_body_set)
+  if (s->api_server_request_body_set) {
     cache_info->request_get()->method_set(HTTP_METHOD_GET, HTTP_LEN_GET);
+  }
 
   // Set-Cookie should not be put in the cache to prevent
   //  sending person A's cookie to person B
@@ -5217,8 +5249,9 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
   char ip_string[INET6_ADDRSTRLEN + 1] = {'\0'};
   size_t ip_string_size                = 0;
 
-  if (!ats_is_ip(&s->client_info.src_addr.sa))
+  if (!ats_is_ip(&s->client_info.src_addr.sa)) {
     return;
+  }
 
   // Always prepare the IP string.
   if (ats_ip_ntop(&s->client_info.src_addr.sa, ip_string, sizeof(ip_string)) != NULL) {
@@ -5502,8 +5535,9 @@ HttpTransact::handle_trace_and_options_requests(State *s, HTTPHdr *incoming_hdr)
   ink_assert(incoming_hdr->type_get() == HTTP_TYPE_REQUEST);
 
   // This only applies to TRACE and OPTIONS
-  if ((s->method != HTTP_WKSIDX_TRACE) && (s->method != HTTP_WKSIDX_OPTIONS))
+  if ((s->method != HTTP_WKSIDX_TRACE) && (s->method != HTTP_WKSIDX_OPTIONS)) {
     return false;
+  }
 
   // If there is no Max-Forwards request header, just return false.
   if (!incoming_hdr->presence(MIME_PRESENCE_MAX_FORWARDS)) {
@@ -5771,9 +5805,10 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
   }
 
   if (s->current.server->keep_alive == HTTP_KEEPALIVE) {
-    if (!s->cop_test_page)
+    if (!s->cop_test_page) {
       DebugTxn("http_hdrs", "[initialize_state_variables_from_response]"
                             "Server is keep-alive.");
+    }
   } else if (s->state_machine->ua_session && s->state_machine->ua_session->is_outbound_transparent() &&
              s->state_machine->t_state.http_config_param->use_client_source_port) {
     /* If we are reusing the client<->ATS 4-tuple for ATS<->server then if the server side is closed, we can't
@@ -5990,10 +6025,12 @@ HttpTransact::url_looks_dynamic(URL *url)
       if (ParseRules::ink_tolower(*p) == ParseRules::ink_tolower(*t)) {
         p -= 1;
         t -= 1;
-        if (t == asp)
+        if (t == asp) {
           return true;
-      } else
+        }
+      } else {
         break;
+      }
     }
   }
   /////////////////////////////////////////////////////////////////
@@ -6059,8 +6096,9 @@ HttpTransact::is_request_cache_lookupable(State *s)
     if (s->hdr_info.client_request.presence(MIME_PRESENCE_MAX_FORWARDS)) {
       MIMEField *max_forwards_f = s->hdr_info.client_request.field_find(MIME_FIELD_MAX_FORWARDS, MIME_LEN_MAX_FORWARDS);
 
-      if (max_forwards_f)
+      if (max_forwards_f) {
         max_forwards = max_forwards_f->value_get_int();
+      }
     }
 
     if (max_forwards != 0) {
@@ -6166,8 +6204,9 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     return false;
   }
   // already has a fresh copy in the cache
-  if (s->range_setup == RANGE_NOT_HANDLED)
+  if (s->range_setup == RANGE_NOT_HANDLED) {
     return false;
+  }
 
   // Check whether the response is cachable based on its cookie
   // If there are cookies in response but a ttl is set, allow caching
@@ -6330,8 +6369,9 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
     }
   }
   if (response_code == HTTP_STATUS_SEE_OTHER || response_code == HTTP_STATUS_UNAUTHORIZED ||
-      response_code == HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED)
+      response_code == HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED) {
     return false;
+  }
   // let is_negative_caching_approriate decide what to do
   return true;
   /* Since we weren't caching response obtained with
@@ -6364,8 +6404,9 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
   RequestError_t incoming_error;
   URL *url = NULL;
 
-  if (incoming_request)
+  if (incoming_request) {
     url = incoming_request->url_get();
+  }
 
   incoming_error = check_request_validity(s, incoming_request);
   switch (incoming_error) {
@@ -6744,8 +6785,9 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
       case SOURCE_HTTP_ORIGIN_SERVER:
         // We made our decision about whether to trust the
         //   response content length in init_state_vars_from_response()
-        if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED)
+        if (s->range_setup != HttpTransact::RANGE_NOT_TRANSFORM_REQUESTED) {
           break;
+        }
 
       case SOURCE_CACHE:
         // if we are doing a single Range: request, calculate the new
@@ -7149,8 +7191,9 @@ HttpTransact::does_client_request_permit_cached_response(const OverridableHttpCo
   ////////////////////////////////////////////////////////////////////////
 
   if (!c->ignore_client_no_cache) {
-    if (h->is_cache_control_set(HTTP_VALUE_NO_CACHE))
+    if (h->is_cache_control_set(HTTP_VALUE_NO_CACHE)) {
       return (false);
+    }
     if (h->is_pragma_no_cache_set()) {
       // if we are going to send out an ims anyway,
       // no need to flag this as a no-cache.
@@ -7180,8 +7223,9 @@ HttpTransact::does_client_request_permit_storing(CacheControlResult *c, HTTPHdr 
   // If aren't ignoring client's cache directives, meet client's wishes //
   ////////////////////////////////////////////////////////////////////////
   if (!c->ignore_client_no_cache) {
-    if (h->is_cache_control_set(HTTP_VALUE_NO_STORE))
+    if (h->is_cache_control_set(HTTP_VALUE_NO_STORE)) {
       return (false);
+    }
   }
 
   return (true);
@@ -7288,10 +7332,12 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
     max_freshness_bounds = min(max_freshness_bounds, s->txn_conf->cache_heuristic_max_lifetime);
   }
   // Now clip the freshness limit.
-  if (freshness_limit > max_freshness_bounds)
+  if (freshness_limit > max_freshness_bounds) {
     freshness_limit = max_freshness_bounds;
-  if (freshness_limit < min_freshness_bounds)
+  }
+  if (freshness_limit < min_freshness_bounds) {
     freshness_limit = min_freshness_bounds;
+  }
 
   DebugTxn("http_match", "calculate_document_freshness_limit --- final freshness_limit = %d", freshness_limit);
 
@@ -7417,10 +7463,11 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
                                                             response_date, s->current.now);
 
   // Overflow ?
-  if (current_age < 0)
+  if (current_age < 0) {
     current_age = s->txn_conf->cache_guaranteed_max_lifetime;
-  else
+  } else {
     current_age = min((time_t)s->txn_conf->cache_guaranteed_max_lifetime, current_age);
+  }
 
   DebugTxn("http_match", "[what_is_document_freshness] fresh_limit:  %d  current_age: %" PRId64, fresh_limit, (int64_t)current_age);
 
@@ -7484,10 +7531,11 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
       } else {
         int max_stale_val = client_request->get_cooked_cc_max_stale();
 
-        if (max_stale_val != INT_MAX)
+        if (max_stale_val != INT_MAX) {
           age_limit += max_stale_val;
-        else
+        } else {
           age_limit = max_stale_val;
+        }
         DebugTxn("http_match", "[..._document_freshness] max-stale set, age limit: %d", age_limit);
       }
     }
@@ -7503,9 +7551,10 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
     ///////////////////////////////////////////////////
     if (!s->cache_control.ignore_client_cc_max_age && (cooked_cc_mask & MIME_COOKED_MASK_CC_MAX_AGE)) {
       int age_val = client_request->get_cooked_cc_max_age();
-      if (age_val == 0)
+      if (age_val == 0) {
         do_revalidate = true;
-      age_limit       = min(age_limit, age_val);
+      }
+      age_limit = min(age_limit, age_val);
       DebugTxn("http_match", "[..._document_freshness] min_fresh set, age limit: %d", age_limit);
     }
   }
@@ -7591,14 +7640,16 @@ HttpTransact::AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr
     } else if (obj_response->is_cache_control_set(HTTP_VALUE_PUBLIC)) {
       return AUTHENTICATION_SUCCESS;
     } else {
-      if (obj_response->field_find("@WWW-Auth", 9) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET)
+      if (obj_response->field_find("@WWW-Auth", 9) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
         return AUTHENTICATION_CACHE_AUTH;
+      }
       return AUTHENTICATION_MUST_PROXY;
     }
   }
 
-  if (obj_response->field_find("@WWW-Auth", 9) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET)
+  if (obj_response->field_find("@WWW-Auth", 9) && client_request->method_get_wksidx() == HTTP_WKSIDX_GET) {
     return AUTHENTICATION_CACHE_AUTH;
+  }
 
   return (AUTHENTICATION_SUCCESS);
 }
@@ -7656,15 +7707,17 @@ HttpTransact::handle_server_died(State *s)
     body_type = "connect#hangup";
     break;
   case ACTIVE_TIMEOUT:
-    if (s->api_txn_active_timeout_value != -1)
+    if (s->api_txn_active_timeout_value != -1) {
       DebugTxn("http_timeout", "Maximum active time of %d msec exceeded", s->api_txn_active_timeout_value);
+    }
     status    = HTTP_STATUS_GATEWAY_TIMEOUT;
     reason    = "Maximum Transaction Time Exceeded";
     body_type = "timeout#activity";
     break;
   case INACTIVE_TIMEOUT:
-    if (s->api_txn_connect_timeout_value != -1)
+    if (s->api_txn_connect_timeout_value != -1) {
       DebugTxn("http_timeout", "Maximum connect time of %d msec exceeded", s->api_txn_connect_timeout_value);
+    }
     status    = HTTP_STATUS_GATEWAY_TIMEOUT;
     reason    = "Connection Timed Out";
     body_type = "timeout#inactivity";
@@ -7678,19 +7731,21 @@ HttpTransact::handle_server_died(State *s)
   case CONGEST_CONTROL_CONGESTED_ON_F:
     status = HTTP_STATUS_SERVICE_UNAVAILABLE;
     reason = "Origin server congested";
-    if (s->pCongestionEntry)
+    if (s->pCongestionEntry) {
       body_type = s->pCongestionEntry->getErrorPage();
-    else
-      body_type                = "congestion#retryAfter";
+    } else {
+      body_type = "congestion#retryAfter";
+    }
     s->hdr_info.response_error = TOTAL_RESPONSE_ERROR_TYPES;
     break;
   case CONGEST_CONTROL_CONGESTED_ON_M:
     status = HTTP_STATUS_SERVICE_UNAVAILABLE;
     reason = "Too many users";
-    if (s->pCongestionEntry)
+    if (s->pCongestionEntry) {
       body_type = s->pCongestionEntry->getErrorPage();
-    else
-      body_type                = "congestion#retryAfter";
+    } else {
+      body_type = "congestion#retryAfter";
+    }
     s->hdr_info.response_error = TOTAL_RESPONSE_ERROR_TYPES;
     break;
   case STATE_UNDEFINED:
@@ -7783,8 +7838,9 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
       // this is for multiple cache lookup
       URL *o_url = &s->cache_info.original_url;
 
-      if (o_url->valid())
+      if (o_url->valid()) {
         base_request->url_get()->copy(o_url);
+      }
     }
   }
 
@@ -7800,13 +7856,16 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
   // (e.g., setting the if-modfied-since header occurs in issue_revalidate
   // HttpTransactHeaders::handle_conditional_headers(&s->cache_info, outgoing_request);
 
-  if (s->next_hop_scheme < 0)
+  if (s->next_hop_scheme < 0) {
     s->next_hop_scheme = URL_WKSIDX_HTTP;
-  if (s->orig_scheme < 0)
+  }
+  if (s->orig_scheme < 0) {
     s->orig_scheme = URL_WKSIDX_HTTP;
+  }
 
-  if (s->txn_conf->insert_request_via_string)
+  if (s->txn_conf->insert_request_via_string) {
     HttpTransactHeaders::insert_via_header_in_request(s, outgoing_request);
+  }
 
   // We build 1.1 request header and then convert as necessary to
   //  the appropriate version in HttpTransact::build_request
@@ -7929,9 +7988,10 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
     if ((status_code == HTTP_STATUS_NONE) || (status_code == base_response->status_get())) {
       HttpTransactHeaders::copy_header_fields(base_response, outgoing_response, s->txn_conf->fwd_proxy_auth_to_parent);
 
-      if (s->txn_conf->insert_age_in_response)
+      if (s->txn_conf->insert_age_in_response) {
         HttpTransactHeaders::insert_time_and_age_headers_in_response(s->request_sent_time, s->response_received_time,
                                                                      s->current.now, base_response, outgoing_response);
+      }
 
       // Note: We need to handle the "Content-Length" header first here
       //  since handle_content_length_header()
@@ -7940,7 +8000,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
       //  before processing the keep_alive headers
       //
       handle_content_length_header(s, outgoing_response, base_response);
-    } else
+    } else {
       switch (status_code) {
       case HTTP_STATUS_NOT_MODIFIED:
         HttpTransactHeaders::build_base_response(outgoing_response, status_code, reason_phrase, strlen(reason_phrase),
@@ -7985,6 +8045,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
         // ink_assert(!"unexpected status code in build_response()");
         break;
       }
+    }
   }
 
   // the following is done whether base_response == NULL or not
@@ -8000,8 +8061,9 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   handle_response_keep_alive_headers(s, outgoing_version, outgoing_response);
 
-  if (s->next_hop_scheme < 0)
+  if (s->next_hop_scheme < 0) {
     s->next_hop_scheme = URL_WKSIDX_HTTP;
+  }
 
   // Add HSTS header (Strict-Transport-Security) if max-age is set and the request was https
   if (s->orig_scheme == URL_WKSIDX_HTTPS && s->txn_conf->proxy_response_hsts_max_age >= 0) {
@@ -8009,8 +8071,9 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
     HttpTransactHeaders::insert_hsts_header_in_response(s, outgoing_response);
   }
 
-  if (s->txn_conf->insert_response_via_string)
+  if (s->txn_conf->insert_response_via_string) {
     HttpTransactHeaders::insert_via_header_in_response(s, outgoing_response);
+  }
 
   HttpTransactHeaders::convert_response(outgoing_version, outgoing_response);
 
@@ -8156,10 +8219,11 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   }
 
   reason_phrase = (reason_phrase_or_null ? reason_phrase_or_null : (char *)(http_hdr_reason_lookup(status_code)));
-  if (unlikely(!reason_phrase))
+  if (unlikely(!reason_phrase)) {
     reason_phrase = "Unknown HTTP Status";
 
-  // set the source to internal so that chunking is handled correctly
+    // set the source to internal so that chunking is handled correctly
+  }
   s->source = SOURCE_INTERNAL;
   build_response(s, &s->hdr_info.client_response, s->client_info.http_version, status_code, reason_phrase);
 
@@ -8169,8 +8233,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
       int retry_after = s->pCongestionEntry->client_retry_after();
 
       s->congestion_control_crat = retry_after;
-      if (s->hdr_info.client_response.value_get(MIME_FIELD_RETRY_AFTER, MIME_LEN_RETRY_AFTER, &ret_tmp) == NULL)
+      if (s->hdr_info.client_response.value_get(MIME_FIELD_RETRY_AFTER, MIME_LEN_RETRY_AFTER, &ret_tmp) == NULL) {
         s->hdr_info.client_response.value_set_int(MIME_FIELD_RETRY_AFTER, MIME_LEN_RETRY_AFTER, retry_after);
+      }
     }
   }
   if (status_code == HTTP_STATUS_PROXY_AUTHENTICATION_REQUIRED && s->method == HTTP_WKSIDX_CONNECT &&
@@ -8186,8 +8251,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
       while (1) {
         slen = (int)(e - c);
         c    = (const char *)memchr(c, 'M', slen);
-        if (c == NULL || (e - c) < 3)
+        if (c == NULL || (e - c) < 3) {
           break;
+        }
         if ((c[1] == 'S') && (c[2] == 'I') && (c[3] == 'E')) {
           has_ua_msie = 1;
           break;
@@ -8196,8 +8262,9 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
       }
     }
 
-    if (has_ua_msie)
+    if (has_ua_msie) {
       s->hdr_info.client_response.value_set(MIME_FIELD_PROXY_CONNECTION, MIME_LEN_PROXY_CONNECTION, "close", 5);
+    }
   }
   // Add a bunch of headers to make sure that caches between
   // the Traffic Server and the client do not cache the error
@@ -8811,8 +8878,9 @@ HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hr
   case BACKGROUND_FILL_ABORTED: {
     int64_t bg_size = origin_server_response_body_size - user_agent_response_body_size;
 
-    if (bg_size < 0)
+    if (bg_size < 0) {
       bg_size = 0;
+    }
     HTTP_SUM_DYN_STAT(http_background_fill_bytes_aborted_stat, bg_size);
     break;
   }
@@ -9074,8 +9142,9 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
   if (s->num_range_fields > 1) {
     field = header->field_find(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
 
-    if (field != NULL)
+    if (field != NULL) {
       header->field_delete(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
+    }
 
     field = header->field_create(MIME_FIELD_CONTENT_TYPE, MIME_LEN_CONTENT_TYPE);
     field->value_append(header->m_heap, header->m_mime, range_type, sizeof(range_type) - 1);

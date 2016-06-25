@@ -128,8 +128,9 @@ SSLSessionBucket::insertSession(const SSLSessionID &id, SSL_SESSION *sess)
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   if (!lock.is_locked()) {
     SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
-    if (SSLConfigParams::session_cache_skip_on_lock_contention)
+    if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return;
+    }
 
     lock.acquire(this_ethread());
   }
@@ -159,8 +160,9 @@ SSLSessionBucket::getSession(const SSLSessionID &id, SSL_SESSION **sess)
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   if (!lock.is_locked()) {
     SSL_INCREMENT_DYN_STAT(ssl_session_cache_lock_contention);
-    if (SSLConfigParams::session_cache_skip_on_lock_contention)
+    if (SSLConfigParams::session_cache_skip_on_lock_contention) {
       return false;
+    }
 
     lock.acquire(this_ethread());
   }

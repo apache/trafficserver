@@ -101,13 +101,15 @@ make_huffman_tree()
     current = root;
     while (bit_len > 0) {
       if (huffman_table[i].code_as_hex & (1 << (bit_len - 1))) {
-        if (!current->right)
+        if (!current->right) {
           current->right = make_huffman_tree_node();
-        current          = current->right;
+        }
+        current = current->right;
       } else {
-        if (!current->left)
+        if (!current->left) {
           current->left = make_huffman_tree_node();
-        current         = current->left;
+        }
+        current = current->left;
       }
       bit_len--;
     }
@@ -120,10 +122,12 @@ make_huffman_tree()
 static void
 free_huffman_tree(Node *node)
 {
-  if (node->left)
+  if (node->left) {
     free_huffman_tree(node->left);
-  if (node->right)
+  }
+  if (node->right) {
     free_huffman_tree(node->right);
+  }
 
   ats_free(node);
 }
@@ -131,15 +135,17 @@ free_huffman_tree(Node *node)
 void
 hpack_huffman_init()
 {
-  if (!HUFFMAN_TREE_ROOT)
+  if (!HUFFMAN_TREE_ROOT) {
     HUFFMAN_TREE_ROOT = make_huffman_tree();
+  }
 }
 
 void
 hpack_huffman_fin()
 {
-  if (HUFFMAN_TREE_ROOT)
+  if (HUFFMAN_TREE_ROOT) {
     free_huffman_tree(HUFFMAN_TREE_ROOT);
+  }
 }
 
 int64_t

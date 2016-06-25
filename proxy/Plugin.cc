@@ -66,8 +66,9 @@ PluginRegInfo::~PluginRegInfo()
   ats_free(this->plugin_name);
   ats_free(this->vendor_name);
   ats_free(this->support_email);
-  if (dlh)
+  if (dlh) {
     dlclose(dlh);
+  }
 }
 
 static bool
@@ -245,17 +246,21 @@ plugin_init(bool validateOnly)
     p    = line;
 
     // strip leading white space and test for comment or blank line
-    while (*p && ParseRules::is_wslfcr(*p))
+    while (*p && ParseRules::is_wslfcr(*p)) {
       ++p;
-    if ((*p == '\0') || (*p == '#'))
+    }
+    if ((*p == '\0') || (*p == '#')) {
       continue;
+    }
 
     // not comment or blank, so rip line into tokens
     while (1) {
-      while (*p && ParseRules::is_wslfcr(*p))
+      while (*p && ParseRules::is_wslfcr(*p)) {
         ++p;
-      if ((*p == '\0') || (*p == '#'))
+      }
+      if ((*p == '\0') || (*p == '#')) {
         break; // EOL
+      }
 
       if (*p == '\"') {
         p += 1;
@@ -291,8 +296,9 @@ plugin_init(bool validateOnly)
 
     retVal = plugin_load(argc, argv, validateOnly);
 
-    for (i = 0; i < argc; i++)
+    for (i = 0; i < argc; i++) {
       ats_free(vars[i]);
+    }
   }
 
   close(fd);

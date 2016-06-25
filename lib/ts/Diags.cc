@@ -235,8 +235,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // start with the diag level prefix //
   //////////////////////////////////////
 
-  for (s = level_name(diags_level); *s; *end_of_format++ = *s++)
+  for (s = level_name(diags_level); *s; *end_of_format++ = *s++) {
     ;
+  }
   *end_of_format++ = ':';
   *end_of_format++ = ' ';
 
@@ -249,8 +250,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     lp = loc->str(buf, sizeof(buf));
     if (lp) {
       *end_of_format++ = '<';
-      for (s = lp; *s; *end_of_format++ = *s++)
+      for (s = lp; *s; *end_of_format++ = *s++) {
         ;
+      }
       *end_of_format++ = '>';
       *end_of_format++ = ' ';
     }
@@ -261,8 +263,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 
   if (debug_tag) {
     *end_of_format++ = '(';
-    for (s = debug_tag; *s; *end_of_format++ = *s++)
+    for (s = debug_tag; *s; *end_of_format++ = *s++) {
       ;
+    }
     *end_of_format++ = ')';
     *end_of_format++ = ' ';
   }
@@ -270,8 +273,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // append original format string, and NUL terminate //
   //////////////////////////////////////////////////////
 
-  for (s = format_string; *s; *end_of_format++ = *s++)
+  for (s = format_string; *s; *end_of_format++ = *s++) {
     ;
+  }
   *end_of_format++ = NUL;
 
   //////////////////////////////////////////////////////////////////
@@ -285,15 +289,18 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 
   d    = format_buf_w_ts;
   *d++ = '[';
-  for (int i = 4; buffer[i]; i++)
+  for (int i = 4; buffer[i]; i++) {
     *d++ = buffer[i];
-  *d++   = ']';
-  *d++   = ' ';
+  }
+  *d++ = ']';
+  *d++ = ' ';
 
-  for (int k = 0; prefix_str[k]; k++)
+  for (int k = 0; prefix_str[k]; k++) {
     *d++ = prefix_str[k];
-  for (s = format_buf; *s; *d++ = *s++)
+  }
+  for (s = format_buf; *s; *d++ = *s++) {
     ;
+  }
   *d++ = NUL;
 
   //////////////////////////////////////
@@ -392,12 +399,14 @@ Diags::tag_activated(const char *tag, DiagsTagType mode) const
 {
   bool activated = false;
 
-  if (tag == NULL)
+  if (tag == NULL) {
     return (true);
+  }
 
   lock();
-  if (activated_tags[mode])
+  if (activated_tags[mode]) {
     activated = (activated_tags[mode]->match(tag) != -1);
+  }
   unlock();
 
   return (activated);
@@ -512,8 +521,9 @@ void
 Diags::log(const char *tag, DiagsLevel level, const char *file, const char *func, const int line,
            const char *format_string...) const
 {
-  if (!on(tag))
+  if (!on(tag)) {
     return;
+  }
 
   va_list ap;
   va_start(ap, format_string);
@@ -617,8 +627,9 @@ Diags::should_roll_diagslog()
     if (diagslog_rolling_enabled == RollingEnabledValues::ROLL_ON_SIZE) {
       // if we can't even check the file, we can forget about rotating
       struct stat buf;
-      if (fstat(fileno(diags_log->m_fp), &buf) != 0)
+      if (fstat(fileno(diags_log->m_fp), &buf) != 0) {
         return false;
+      }
 
       int size = buf.st_size;
       if (diagslog_rolling_size != -1 && size >= (diagslog_rolling_size * BYTES_IN_MB)) {
@@ -695,15 +706,17 @@ Diags::should_roll_outputlog()
     if (outputlog_rolling_enabled == RollingEnabledValues::ROLL_ON_SIZE) {
       // if we can't even check the file, we can forget about rotating
       struct stat buf;
-      if (fstat(fileno(stdout_log->m_fp), &buf) != 0)
+      if (fstat(fileno(stdout_log->m_fp), &buf) != 0) {
         return false;
+      }
 
       int size = buf.st_size;
       if (outputlog_rolling_size != -1 && size >= outputlog_rolling_size * BYTES_IN_MB) {
         // since usually stdout and stderr are the same file on disk, we should just
         // play it safe and just flush both BaseLogFiles
-        if (stderr_log->is_init())
+        if (stderr_log->is_init()) {
           fflush(stderr_log->m_fp);
+        }
         fflush(stdout_log->m_fp);
 
         if (stdout_log->roll()) {
@@ -727,8 +740,9 @@ Diags::should_roll_outputlog()
       if (outputlog_rolling_interval != -1 && (now - outputlog_time_last_roll) >= outputlog_rolling_interval) {
         // since usually stdout and stderr are the same file on disk, we should just
         // play it safe and just flush both BaseLogFiles
-        if (stderr_log->is_init())
+        if (stderr_log->is_init()) {
           fflush(stderr_log->m_fp);
+        }
         fflush(stdout_log->m_fp);
 
         if (stdout_log->roll()) {
@@ -760,8 +774,9 @@ Diags::should_roll_outputlog()
   // disk, and stderr pointing to a different file on disk, and then also wants both files to
   // rotate according to the (same || different) scheme, it would not be difficult to add
   // some more config options in records.config and said feature into this function.
-  if (ret_val)
+  if (ret_val) {
     ink_assert(!need_consider_stderr);
+  }
 
   return ret_val;
 }
@@ -778,8 +793,9 @@ Diags::should_roll_outputlog()
 bool
 Diags::set_stdout_output(const char *_bind_stdout)
 {
-  if (strcmp(_bind_stdout, "") == 0)
+  if (strcmp(_bind_stdout, "") == 0) {
     return false;
+  }
 
   if (stdout_log) {
     delete stdout_log;
@@ -815,8 +831,9 @@ Diags::set_stdout_output(const char *_bind_stdout)
 bool
 Diags::set_stderr_output(const char *_bind_stderr)
 {
-  if (strcmp(_bind_stderr, "") == 0)
+  if (strcmp(_bind_stderr, "") == 0) {
     return false;
+  }
 
   if (stderr_log) {
     delete stderr_log;
@@ -851,9 +868,9 @@ Diags::set_stderr_output(const char *_bind_stderr)
 bool
 Diags::rebind_stdout(int new_fd)
 {
-  if (new_fd < 0)
+  if (new_fd < 0) {
     fprintf(stdout, "[Warning]: TS unable to bind stdout to new file descriptor=%d", new_fd);
-  else {
+  } else {
     dup2(new_fd, STDOUT_FILENO);
     return true;
   }
@@ -868,9 +885,9 @@ Diags::rebind_stdout(int new_fd)
 bool
 Diags::rebind_stderr(int new_fd)
 {
-  if (new_fd < 0)
+  if (new_fd < 0) {
     fprintf(stdout, "[Warning]: TS unable to bind stderr to new file descriptor=%d", new_fd);
-  else {
+  } else {
     dup2(new_fd, STDERR_FILENO);
     return true;
   }

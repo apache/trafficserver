@@ -312,8 +312,9 @@ set_context_cert(SSL *ssl)
   // already made a best effort to find the best match.
   if (likely(servername)) {
     cc = lookup->find((char *)servername);
-    if (cc && cc->ctx)
+    if (cc && cc->ctx) {
       ctx = cc->ctx;
+    }
     if (cc && SSLCertContext::OPT_TUNNEL == cc->opt && netvc->get_is_transparent()) {
       netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       netvc->setSSLHandShakeComplete(true);
@@ -329,8 +330,9 @@ set_context_cert(SSL *ssl)
 
     safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
     cc = lookup->find(ip);
-    if (cc && cc->ctx)
+    if (cc && cc->ctx) {
       ctx = cc->ctx;
+    }
   }
 
   if (ctx != NULL) {
@@ -760,8 +762,9 @@ ssl_private_key_validate_exec(const char *cmdLine)
   char *cmdLineCopy = ats_strdup(cmdLine);
   char *ptr         = cmdLineCopy;
 
-  while (*ptr && !isspace(*ptr))
+  while (*ptr && !isspace(*ptr)) {
     ++ptr;
+  }
   *ptr = 0;
   if (access(cmdLineCopy, X_OK) != -1) {
     bReturn = true;
@@ -1408,8 +1411,9 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
       subj_name          = asn1_strdup(cn);
 
       Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
-      if (lookup->insert(subj_name, cc) >= 0)
+      if (lookup->insert(subj_name, cc) >= 0) {
         inserted = true;
+      }
     }
   }
 
@@ -1427,8 +1431,9 @@ ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cer
         // only try to insert if the alternate name is not the main name
         if (strcmp(dns, subj_name) != 0) {
           Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
-          if (lookup->insert(dns, cc) >= 0)
+          if (lookup->insert(dns, cc) >= 0) {
             inserted = true;
+          }
         }
       }
     }
@@ -1647,8 +1652,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         scoped_BIO bio(BIO_new_file(completeServerCertChainPath, "r"));
         X509 *intermediate_cert = PEM_read_bio_X509(bio.get(), NULL, 0, NULL);
         if (!intermediate_cert || !SSL_CTX_add0_chain_cert(ctx, intermediate_cert)) {
-          if (intermediate_cert)
+          if (intermediate_cert) {
             X509_free(intermediate_cert);
+          }
 #else
         if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
 #endif
@@ -1668,8 +1674,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         scoped_BIO bio(BIO_new_file(completeServerCertChainPath, "r"));
         X509 *intermediate_cert = PEM_read_bio_X509(bio.get(), NULL, 0, NULL);
         if (!intermediate_cert || !SSL_CTX_add0_chain_cert(ctx, intermediate_cert)) {
-          if (intermediate_cert)
+          if (intermediate_cert) {
             X509_free(intermediate_cert);
+          }
 #else
         if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
 #endif
@@ -2148,8 +2155,9 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
         // Increase the total number of decrypted tickets.
         SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_stat);
 
-        if (i != 0) // The number of tickets decrypted with "older" keys.
+        if (i != 0) { // The number of tickets decrypted with "older" keys.
           SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
+        }
 
         SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
         netvc->setSSLSessionCacheHit(true);

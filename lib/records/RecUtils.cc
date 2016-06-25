@@ -140,16 +140,18 @@ RecDataSet(RecDataT data_type, RecData *data_dst, RecData *data_src)
       }
     } else if (((data_dst->rec_string) && (strcmp(data_dst->rec_string, data_src->rec_string) != 0)) ||
                ((data_dst->rec_string == NULL) && (data_src->rec_string != NULL))) {
-      if (data_dst->rec_string)
+      if (data_dst->rec_string) {
         ats_free(data_dst->rec_string);
+      }
 
       data_dst->rec_string = ats_strdup(data_src->rec_string);
       rec_set              = true;
       // Chop trailing spaces
       char *end = data_dst->rec_string + strlen(data_dst->rec_string) - 1;
 
-      while (end >= data_dst->rec_string && isspace(*end))
+      while (end >= data_dst->rec_string && isspace(*end)) {
         end--;
+      }
       *(end + 1) = '\0';
     }
     break;
@@ -186,22 +188,24 @@ RecDataCmp(RecDataT type, RecData left, RecData right)
 #endif
   case RECD_INT:
   case RECD_COUNTER:
-    if (left.rec_int > right.rec_int)
+    if (left.rec_int > right.rec_int) {
       return 1;
-    else if (left.rec_int == right.rec_int)
+    } else if (left.rec_int == right.rec_int) {
       return 0;
-    else
+    } else {
       return -1;
+    }
 #if defined(STAT_PROCESSOR)
   case RECD_CONST:
 #endif
   case RECD_FLOAT:
-    if (left.rec_float > right.rec_float)
+    if (left.rec_float > right.rec_float) {
       return 1;
-    else if (left.rec_float == right.rec_float)
+    } else if (left.rec_float == right.rec_float) {
       return 0;
-    else
+    } else {
       return -1;
+    }
   default:
     Fatal("unsupport type:%d\n", type);
     return 0;

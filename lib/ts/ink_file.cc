@@ -67,11 +67,13 @@ ink_fputln(FILE *stream, const char *s)
 {
   if (stream && s) {
     int rc = fputs(s, stream);
-    if (rc > 0)
+    if (rc > 0) {
       rc += fputc('\n', stream);
+    }
     return rc;
-  } else
+  } else {
     return -EINVAL;
+  }
 } /* End ink_fgets */
 
 /*---------------------------------------------------------------------------*
@@ -99,18 +101,22 @@ ink_file_fd_readline(int fd, int bufsz, char *buf)
   char c;
   int i = 0;
 
-  if (bufsz < 2)
+  if (bufsz < 2) {
     return (-EINVAL); /* bufsz must by >= 2 */
+  }
 
   while (i < bufsz - 1) {    /* leave 1 byte for NUL */
     int n = read(fd, &c, 1); /* read 1 byte */
-    if (n == 0)
+    if (n == 0) {
       break; /* EOF */
-    if (n < 0)
+    }
+    if (n < 0) {
       return (n); /* error */
+    }
     buf[i++] = c; /* store in buffer */
-    if (c == '\n')
+    if (c == '\n') {
       break; /* stop if stored a LF */
+    }
   }
 
   buf[i] = '\0'; /* NUL terminate buffer */
@@ -123,8 +129,9 @@ ink_file_fd_writestring(int fd, const char *buf)
 {
   int len, i = 0;
 
-  if (buf && (len = strlen(buf)) > 0 && (i = (int)write(fd, buf, (size_t)len) != len))
+  if (buf && (len = strlen(buf)) > 0 && (i = (int)write(fd, buf, (size_t)len) != len)) {
     i = -1;
+  }
 
   return i; /* return chars written */
 } /* End ink_file_fd_writestring */
@@ -141,25 +148,28 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
 
   /* Treat null as an empty path.
   */
-  if (!addpath)
+  if (!addpath) {
     addpath = "";
-
+  }
   if (addpath[0] == '/') {
     // If addpath is rooted, then rootpath is unused.
     // Ths violates any INK_FILEPATH_SECUREROOTTEST and
     // INK_FILEPATH_NOTABSOLUTE flags specified.
     //
-    if (flags & INK_FILEPATH_SECUREROOTTEST)
+    if (flags & INK_FILEPATH_SECUREROOTTEST) {
       return EACCES; // APR_EABOVEROOT;
-    if (flags & INK_FILEPATH_NOTABSOLUTE)
+    }
+    if (flags & INK_FILEPATH_NOTABSOLUTE) {
       return EISDIR; // APR_EABSOLUTE;
+    }
 
     // If INK_FILEPATH_NOTABOVEROOT wasn't specified,
     // we won't test the root again, it's ignored.
     // Waste no CPU retrieving the working path.
     //
-    if (!rootpath && !(flags & INK_FILEPATH_NOTABOVEROOT))
+    if (!rootpath && !(flags & INK_FILEPATH_NOTABOVEROOT)) {
       rootpath = "";
+    }
   } else {
     // If INK_FILEPATH_NOTABSOLUTE is specified, the caller
     // requires a relative result.  If the rootpath is
@@ -167,10 +177,11 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
     // if rootpath was supplied as absolute then fail.
     //
     if (flags & INK_FILEPATH_NOTABSOLUTE) {
-      if (!rootpath)
+      if (!rootpath) {
         rootpath = "";
-      else if (rootpath[0] == '/')
+      } else if (rootpath[0] == '/') {
         return EISDIR; // APR_EABSOLUTE;
+      }
     }
   }
   if (!rootpath) {
@@ -196,15 +207,17 @@ ink_filepath_merge(char *path, int pathsz, const char *rootpath, const char *add
     // and leave addpath at the first non-'/' character.
     //
     keptlen = 0;
-    while (addpath[0] == '/')
+    while (addpath[0] == '/') {
       ++addpath;
+    }
     path[0] = '/';
     pathlen = 1;
   } else {
     // If both paths are relative, fail early
     //
-    if (rootpath[0] != '/' && (flags & INK_FILEPATH_NOTRELATIVE))
+    if (rootpath[0] != '/' && (flags & INK_FILEPATH_NOTRELATIVE)) {
       return EBADF; // APR_ERELATIVE;
+    }
 
     // Base the result path on the rootpath
     //
@@ -330,9 +343,9 @@ ink_filepath_make(char *path, int pathsz, const char *rootpath, const char *addp
 
   /* Treat null as an empty path.
   */
-  if (!addpath)
+  if (!addpath) {
     addpath = "";
-
+  }
   if (addpath[0] == '/') {
     // If addpath is rooted, then rootpath is unused.
     ink_strlcpy(path, addpath, pathsz);
@@ -517,32 +530,41 @@ ink_fileperm_parse(const char *perms)
   if (perms && strlen(perms) == 9) {
     int re  = 0;
     char *c = (char *)perms;
-    if (*c == 'r')
+    if (*c == 'r') {
       re |= S_IRUSR;
+    }
     c++;
-    if (*c == 'w')
+    if (*c == 'w') {
       re |= S_IWUSR;
+    }
     c++;
-    if (*c == 'x')
+    if (*c == 'x') {
       re |= S_IXUSR;
+    }
     c++;
-    if (*c == 'r')
+    if (*c == 'r') {
       re |= S_IRGRP;
+    }
     c++;
-    if (*c == 'w')
+    if (*c == 'w') {
       re |= S_IWGRP;
+    }
     c++;
-    if (*c == 'x')
+    if (*c == 'x') {
       re |= S_IXGRP;
+    }
     c++;
-    if (*c == 'r')
+    if (*c == 'r') {
       re |= S_IROTH;
+    }
     c++;
-    if (*c == 'w')
+    if (*c == 'w') {
       re |= S_IWOTH;
+    }
     c++;
-    if (*c == 'x')
+    if (*c == 'x') {
       re |= S_IXOTH;
+    }
     return re;
   }
   return -1;

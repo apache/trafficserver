@@ -49,15 +49,18 @@
 TSReturnCode
 sdk_sanity_check_mutex(TSMutex mutex)
 {
-  if (mutex == NULL)
+  if (mutex == NULL) {
     return TS_ERROR;
+  }
 
   ProxyMutex *mutexp = (ProxyMutex *)mutex;
 
-  if (mutexp->refcount() < 0)
+  if (mutexp->refcount() < 0) {
     return TS_ERROR;
-  if (mutexp->nthread_holding < 0)
+  }
+  if (mutexp->nthread_holding < 0) {
     return TS_ERROR;
+  }
 
   return TS_SUCCESS;
 }
@@ -65,8 +68,9 @@ sdk_sanity_check_mutex(TSMutex mutex)
 TSReturnCode
 sdk_sanity_check_hostlookup_structure(TSHostLookupResult data)
 {
-  if (data == NULL)
+  if (data == NULL) {
     return TS_ERROR;
+  }
 
   return TS_SUCCESS;
 }
@@ -74,8 +78,9 @@ sdk_sanity_check_hostlookup_structure(TSHostLookupResult data)
 TSReturnCode
 sdk_sanity_check_iocore_structure(void *data)
 {
-  if (data == NULL)
+  if (data == NULL) {
     return TS_ERROR;
+  }
 
   return TS_SUCCESS;
 }
@@ -139,8 +144,9 @@ TSThreadInit()
   thread = new INKThreadInternal;
 
 #ifdef DEBUG
-  if (thread == NULL)
+  if (thread == NULL) {
     return (TSThread)NULL;
+  }
 #endif
 
   thread->set_specific();
@@ -210,10 +216,12 @@ TSMutexCheck(TSMutex mutex)
 {
   ProxyMutex *mutexp = (ProxyMutex *)mutex;
 
-  if (mutexp->refcount() < 0)
+  if (mutexp->refcount() < 0) {
     return -1;
-  if (mutexp->nthread_holding < 0)
+  }
+  if (mutexp->nthread_holding < 0) {
     return -1;
+  }
   return 1;
 }
 
@@ -520,8 +528,9 @@ TSIOBufferStart(TSIOBuffer bufp)
   MIOBuffer *b       = (MIOBuffer *)bufp;
   IOBufferBlock *blk = b->get_current_block();
 
-  if (!blk || (blk->write_avail() == 0))
+  if (!blk || (blk->write_avail() == 0)) {
     b->add_block();
+  }
   blk = b->get_current_block();
 
   // TODO: Remove when memory allocations can't fail.
@@ -612,8 +621,9 @@ TSIOBufferBlockReadStart(TSIOBufferBlock blockp, TSIOBufferReader readerp, int64
   char *p;
 
   p = blk->start();
-  if (avail)
+  if (avail) {
     *avail = blk->read_avail();
+  }
 
   if (reader->block.get() == blk) {
     p += reader->start_offset;
@@ -657,8 +667,9 @@ TSIOBufferBlockWriteStart(TSIOBufferBlock blockp, int64_t *avail)
 
   IOBufferBlock *blk = (IOBufferBlock *)blockp;
 
-  if (avail)
+  if (avail) {
     *avail = blk->write_avail();
+  }
   return blk->end();
 }
 

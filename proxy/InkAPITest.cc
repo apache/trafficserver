@@ -780,8 +780,9 @@ cache_handler(TSCont contp, TSEvent event, void *data)
         // no need to continue, return
         *SDK_Cache_pstatus = REGRESSION_TEST_FAILED;
         return 1;
-      } else
+      } else {
         SDK_RPRINT(SDK_Cache_test, "TSVIONDoneSet", "TestCase1", TC_PASS, "ok");
+      }
 
       Debug(UTDBG_TAG "_cache_write", "finishing up [i]");
 
@@ -965,8 +966,9 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
     return;
-  } else
+  } else {
     SDK_RPRINT(test, "TSfopen", "TestCase1", TC_PASS, "ok");
+  }
 
   // Create unique tmp _file_name_, do not use any TS file_name
   snprintf(write_file_name, PATH_NAME_MAX, "/tmp/%sXXXXXX", PFX);
@@ -976,8 +978,9 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
+    }
     return;
   }
   close(write_file_fd);
@@ -988,8 +991,9 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
+    }
     return;
   }
   SDK_RPRINT(test, "TSfopen", "TestCase2", TC_PASS, "ok");
@@ -1002,10 +1006,12 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
-    if (write_file != NULL)
+    }
+    if (write_file != NULL) {
       TSfclose(write_file);
+    }
     return;
   }
 
@@ -1017,10 +1023,12 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
-    if (write_file != NULL)
+    }
+    if (write_file != NULL) {
       TSfclose(write_file);
+    }
     return;
   } else {
     if (ret_val != input_buffer) {
@@ -1028,13 +1036,16 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
       // no need to continue, return
       *pstatus = REGRESSION_TEST_FAILED;
-      if (source_read_file != NULL)
+      if (source_read_file != NULL) {
         TSfclose(source_read_file);
-      if (write_file != NULL)
+      }
+      if (write_file != NULL) {
         TSfclose(write_file);
+      }
       return;
-    } else
+    } else {
       SDK_RPRINT(test, "TSfgets", "TestCase1", TC_PASS, "ok");
+    }
   }
 
   // TSfwrite
@@ -1044,10 +1055,12 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
-    if (write_file != NULL)
+    }
+    if (write_file != NULL) {
       TSfclose(write_file);
+    }
     return;
   }
 
@@ -1059,10 +1072,12 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
-    if (write_file != NULL)
+    }
+    if (write_file != NULL) {
       TSfclose(write_file);
+    }
     return;
   }
 
@@ -1073,10 +1088,12 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
-    if (write_file != NULL)
+    }
+    if (write_file != NULL) {
       TSfclose(write_file);
+    }
     return;
   }
 
@@ -1087,10 +1104,12 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
-    if (write_file != NULL)
+    }
+    if (write_file != NULL) {
       TSfclose(write_file);
+    }
     return;
   }
 
@@ -1102,10 +1121,12 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
-    if (write_file != NULL)
+    }
+    if (write_file != NULL) {
       TSfclose(write_file);
+    }
     return;
   }
 
@@ -1118,15 +1139,19 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
-    if (write_file != NULL)
+    }
+    if (write_file != NULL) {
       TSfclose(write_file);
-    if (cmp_read_file != NULL)
+    }
+    if (cmp_read_file != NULL) {
       TSfclose(cmp_read_file);
+    }
     return;
-  } else
+  } else {
     SDK_RPRINT(test, "TSfread", "TestCase1", TC_PASS, "ok");
+  }
 
   // compare input_buffer and cmp_buffer buffers
   if (memcmp(input_buffer, cmp_buffer, read_amount) != 0) {
@@ -1134,15 +1159,19 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
     // no need to continue, return
     *pstatus = REGRESSION_TEST_FAILED;
-    if (source_read_file != NULL)
+    if (source_read_file != NULL) {
       TSfclose(source_read_file);
-    if (write_file != NULL)
+    }
+    if (write_file != NULL) {
       TSfclose(write_file);
-    if (cmp_read_file != NULL)
+    }
+    if (cmp_read_file != NULL) {
       TSfclose(cmp_read_file);
+    }
     return;
-  } else
+  } else {
     SDK_RPRINT(test, "TSfread", "TestCase2", TC_PASS, "ok");
+  }
 
   // remove the tmp file
   if (unlink(write_file_name) != 0) {
@@ -1157,8 +1186,9 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
   SDK_RPRINT(test, "TSfclose", "TestCase2", TC_PASS, "ok");
 
   *pstatus = REGRESSION_TEST_PASSED;
-  if (cmp_read_file != NULL)
+  if (cmp_read_file != NULL) {
     TSfclose(cmp_read_file);
+  }
 }
 
 /* TSThread */
@@ -1190,10 +1220,11 @@ thread_create_handler(void * /* arg ATS_UNUSED */)
     SDK_RPRINT(SDK_Thread_test, "TSThreadCreate", "TestCase2", TC_PASS, "ok");
   }
 
-  if (thread_err_count > 0)
+  if (thread_err_count > 0) {
     *SDK_Thread_pstatus = REGRESSION_TEST_FAILED;
-  else
+  } else {
     *SDK_Thread_pstatus = REGRESSION_TEST_PASSED;
+  }
 
   return NULL;
 }
@@ -1256,17 +1287,20 @@ pthread_start_func(void * /* arg ATS_UNUSED */)
   if (!temp_thread) {
     SDK_RPRINT(SDK_ThreadInit_test, "TSThreadInit", "TestCase2", TC_FAIL, "can't init thread");
     thread_init_err_count++;
-  } else
+  } else {
     SDK_RPRINT(SDK_ThreadInit_test, "TSThreadInit", "TestCase2", TC_PASS, "ok");
+  }
 
   // Clean up this thread
-  if (temp_thread)
+  if (temp_thread) {
     TSThreadDestroy(temp_thread);
+  }
 
-  if (thread_init_err_count > 0)
+  if (thread_init_err_count > 0) {
     *SDK_ThreadInit_pstatus = REGRESSION_TEST_FAILED;
-  else
+  } else {
     *SDK_ThreadInit_pstatus = REGRESSION_TEST_PASSED;
+  }
 
   return NULL;
 }
@@ -1287,8 +1321,9 @@ REGRESSION_TEST(SDK_API_TSThreadInit)(RegressionTest *test, int /* atype ATS_UNU
   if (ret != 0) {
     thread_init_err_count++;
     SDK_RPRINT(test, "TSThreadInit", "TestCase1", TC_FAIL, "can't create pthread");
-  } else
+  } else {
     SDK_RPRINT(test, "TSThreadInit", "TestCase1", TC_PASS, "ok");
+  }
 }
 
 /* Action */
@@ -1486,8 +1521,9 @@ REGRESSION_TEST(SDK_API_TSContMutexGet)(RegressionTest *test, int /* atype ATS_U
   if (mutexp_input == mutexp_output) {
     SDK_RPRINT(test, "TSContMutexGet", "TestCase1", TC_PASS, "ok");
     test_passed = true;
-  } else
+  } else {
     SDK_RPRINT(test, "TSContMutexGet", "TestCase1", TC_FAIL, "Continutation's mutex corrupted");
+  }
 
   // Status of the whole test
   *pstatus = ((test_passed == true) ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED);
@@ -3421,8 +3457,9 @@ REGRESSION_TEST(SDK_API_TSHttpHdr)(RegressionTest *test, int /* atype ATS_UNUSED
           int64_t block_size;
 
           block_start = TSIOBufferBlockReadStart(iobufblock, iobufreader, &block_size);
-          if (block_size <= 0)
+          if (block_size <= 0) {
             break;
+          }
 
           memcpy(actual_iobuf + bytes_read, block_start, block_size);
           bytes_read += block_size;
@@ -7325,8 +7362,9 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectIntercept)(RegressionTest *test, 
   sockaddr_in addr;
   ats_ip4_set(&addr, 1, 1);
   data->vc = TSHttpConnect(ats_ip_sa_cast(&addr));
-  if (TSVConnClosedGet(data->vc))
+  if (TSVConnClosedGet(data->vc)) {
     SDK_RPRINT(data->test, "TSHttpConnect", "TestCase 1", TC_FAIL, "Connect reported as closed immediately after open");
+  }
   synclient_txn_send_request_to_vc(data->browser, data->request, data->vc);
 
   /* Wait until transaction is done */

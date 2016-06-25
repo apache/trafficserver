@@ -57,8 +57,9 @@ CacheHTTPInfoVector::~CacheHTTPInfoVector()
 int
 CacheHTTPInfoVector::insert(CacheHTTPInfo *info, int index)
 {
-  if (index == CACHE_ALT_INDEX_DEFAULT)
+  if (index == CACHE_ALT_INDEX_DEFAULT) {
     index = xcount++;
+  }
 
   data(index).alternate.copy_shallow(info);
   return index;
@@ -91,11 +92,13 @@ CacheHTTPInfoVector::detach(int idx, CacheHTTPInfo *r)
 void
 CacheHTTPInfoVector::remove(int idx, bool destroy)
 {
-  if (destroy)
+  if (destroy) {
     data[idx].alternate.destroy();
+  }
 
-  for (; idx < (xcount - 1); idx++)
+  for (; idx < (xcount - 1); idx++) {
     data[idx] = data[idx + 1];
+  }
 
   xcount--;
 }

@@ -74,8 +74,9 @@ void
 InkRand::seed(uint64_t seed)
 {
   mt[0] = seed;
-  for (mti  = 1; mti < NN; mti++)
+  for (mti = 1; mti < NN; mti++) {
     mt[mti] = (6364136223846793005ULL * (mt[mti - 1] ^ (mt[mti - 1] >> 62)) + mti);
+  }
 }
 
 uint64_t

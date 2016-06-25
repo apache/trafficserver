@@ -322,8 +322,9 @@ SSLContextStorage::insert(const char *name, SSLCertContext const &cc)
 {
   int idx = this->store(cc);
   idx     = this->insert(name, idx);
-  if (idx < 0)
+  if (idx < 0) {
     this->ctx_store.drop();
+  }
   return idx;
 }
 

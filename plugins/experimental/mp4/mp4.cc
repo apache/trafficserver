@@ -97,8 +97,9 @@ TSRemapDoRemap(void * /* ih ATS_UNUSED */, TSHttpTxn rh, TSRemapRequestInfo *rri
   val = ts_arg(query, query_len, "start", sizeof("start") - 1, &val_len);
   if (val != NULL) {
     ret = sscanf(val, "%f", &start);
-    if (ret != 1)
+    if (ret != 1) {
       start = 0;
+    }
   }
 
   if (start == 0) {
@@ -194,8 +195,9 @@ mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp)
     return;
   }
 
-  if (obj_status != TS_CACHE_LOOKUP_HIT_STALE && obj_status != TS_CACHE_LOOKUP_HIT_FRESH)
+  if (obj_status != TS_CACHE_LOOKUP_HIT_STALE && obj_status != TS_CACHE_LOOKUP_HIT_FRESH) {
     return;
+  }
 
   if (TSHttpTxnCachedRespGet(txnp, &bufp, &hdrp) != TS_SUCCESS) {
     TSError("[%s] Couldn't get cache resp", __FUNCTION__);
@@ -215,8 +217,9 @@ mp4_cache_lookup_complete(Mp4Context *mc, TSHttpTxn txnp)
     TSHandleMLocRelease(bufp, hdrp, cl_field);
   }
 
-  if (n <= 0)
+  if (n <= 0) {
     goto release;
+  }
 
   mc->cl = n;
   mp4_add_transform(mc, txnp);
@@ -241,8 +244,9 @@ mp4_read_response(Mp4Context *mc, TSHttpTxn txnp)
   }
 
   status = TSHttpHdrStatusGet(bufp, hdrp);
-  if (status != TS_HTTP_STATUS_OK)
+  if (status != TS_HTTP_STATUS_OK) {
     goto release;
+  }
 
   n        = 0;
   cl_field = TSMimeHdrFieldFind(bufp, hdrp, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH);
@@ -251,8 +255,9 @@ mp4_read_response(Mp4Context *mc, TSHttpTxn txnp)
     TSHandleMLocRelease(bufp, hdrp, cl_field);
   }
 
-  if (n <= 0)
+  if (n <= 0) {
     goto release;
+  }
 
   mc->cl = n;
   mp4_add_transform(mc, txnp);
@@ -267,8 +272,9 @@ mp4_add_transform(Mp4Context *mc, TSHttpTxn txnp)
 {
   TSVConn connp;
 
-  if (mc->transform_added)
+  if (mc->transform_added) {
     return;
+  }
 
   mc->mtc = new Mp4TransformContext(mc->start, mc->cl);
 
@@ -349,8 +355,9 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
 
   if (!mtc->parse_over) {
     ret = mp4_parse_meta(mtc, toread <= 0);
-    if (ret == 0)
+    if (ret == 0) {
       goto trans;
+    }
 
     mtc->parse_over    = true;
     mtc->output.buffer = TSIOBufferCreate();
@@ -414,8 +421,9 @@ mp4_transform_handler(TSCont contp, Mp4Context *mc)
 
 trans:
 
-  if (write_down)
+  if (write_down) {
     TSVIOReenable(mtc->output.vio);
+  }
 
   if (toread > 0) {
     TSContCall(TSVIOContGet(input_vio), TS_EVENT_VCONN_WRITE_READY, input_vio);
@@ -477,8 +485,9 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
 
   *val_len = 0;
 
-  if (!param || !param_len)
+  if (!param || !param_len) {
     return NULL;
+  }
 
   p    = param;
   last = p + param_len;
@@ -486,16 +495,18 @@ ts_arg(const char *param, size_t param_len, const char *key, size_t key_len, siz
   for (; p < last; p++) {
     p = (char *)memmem(p, last - p, key, key_len);
 
-    if (p == NULL)
+    if (p == NULL) {
       return NULL;
+    }
 
     if ((p == param || *(p - 1) == '&') && *(p + key_len) == '=') {
       val = p + key_len + 1;
 
       p = (char *)memchr(p, '&', last - p);
 
-      if (p == NULL)
+      if (p == NULL) {
         p = param + param_len;
+      }
 
       *val_len = p - val;
 

@@ -272,8 +272,9 @@ ConditionPath::append_value(std::string &s, const Resources &res)
     int path_length;
     const char *path = TSUrlPathGet(bufp, url_loc, &path_length);
 
-    if (path && path_length)
+    if (path && path_length) {
       s.append(path, path_length);
+    }
 
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
   }
@@ -495,23 +496,27 @@ ConditionCookie::append_value(std::string &s, const Resources &res)
   const int cookie_name_len     = _qualifier.length();
 
   // Sanity
-  if (bufp == NULL || hdr_loc == NULL)
+  if (bufp == NULL || hdr_loc == NULL) {
     return;
+  }
 
   // Find Cookie
   field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_COOKIE, TS_MIME_LEN_COOKIE);
-  if (field_loc == NULL)
+  if (field_loc == NULL) {
     return;
+  }
 
   // Get all cookies
   cookies = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &cookies_len);
-  if (cookies == NULL || cookies_len <= 0)
+  if (cookies == NULL || cookies_len <= 0) {
     goto out_release_field;
+  }
 
   // Find particular cookie's value
   error = get_cookie_value(cookies, cookies_len, cookie_name, cookie_name_len, &cookie_value, &cookie_value_len);
-  if (error == TS_ERROR)
+  if (error == TS_ERROR) {
     goto out_release_field;
+  }
 
   TSDebug(PLUGIN_NAME, "Appending COOKIE(%s) to evaluation value -> %.*s", cookie_name, cookie_value_len, cookie_value);
   s.append(cookie_value, cookie_value_len);

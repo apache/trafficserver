@@ -55,8 +55,9 @@ Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool
   int enable_reuseaddr = 1;
   in_addr_t mc_if      = ats_ip4_addr_cast(my_addr);
 
-  if ((res = socketManager.mc_socket(my_addr->sa_family, SOCK_DGRAM, 0, non_blocking)) < 0)
+  if ((res = socketManager.mc_socket(my_addr->sa_family, SOCK_DGRAM, 0, non_blocking)) < 0) {
     goto Lerror;
+  }
 
   fd = res;
 
@@ -75,30 +76,36 @@ Connection::setup_mc_send(sockaddr const *mc_addr, sockaddr const *my_addr, bool
     goto Lerror;
 #endif
 
-  if (non_blocking)
-    if ((res = safe_nonblocking(fd)) < 0)
+  if (non_blocking) {
+    if ((res = safe_nonblocking(fd)) < 0) {
       goto Lerror;
+    }
+  }
 
   // Set MultiCast TTL to specified value
-  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *)&mc_ttl, sizeof(mc_ttl)) < 0))
+  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *)&mc_ttl, sizeof(mc_ttl)) < 0)) {
     goto Lerror;
+  }
 
   // Set MultiCast Interface to specified value
-  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&mc_if, sizeof(mc_if)) < 0))
+  if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF, (char *)&mc_if, sizeof(mc_if)) < 0)) {
     goto Lerror;
+  }
 
   // Disable MultiCast loopback if requested
   if (!mc_loopback) {
     char loop = 0;
 
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loop, sizeof(loop)) < 0))
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&loop, sizeof(loop)) < 0)) {
       goto Lerror;
+    }
   }
   return 0;
 
 Lerror:
-  if (fd != NO_FD)
+  if (fd != NO_FD) {
     close();
+  }
   return res;
 }
 
@@ -113,8 +120,9 @@ Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, b
   int enable_reuseaddr = 1;
   IpAddr inaddr_any(INADDR_ANY);
 
-  if ((res = socketManager.socket(mc_addr->sa_family, SOCK_DGRAM, 0)) < 0)
+  if ((res = socketManager.socket(mc_addr->sa_family, SOCK_DGRAM, 0)) < 0) {
     goto Lerror;
+  }
 
   fd = res;
 
@@ -123,17 +131,21 @@ Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, b
     goto Lerror;
 #endif
 
-  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0))
+  if ((res = safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&enable_reuseaddr, sizeof(enable_reuseaddr)) < 0)) {
     goto Lerror;
+  }
 
   addr.assign(inaddr_any, ats_ip_port_cast(mc_addr));
 
-  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0)
+  if ((res = socketManager.ink_bind(fd, &addr.sa, ats_ip_size(&addr.sa), IPPROTO_TCP)) < 0) {
     goto Lerror;
+  }
 
-  if (non_blocking)
-    if ((res = safe_nonblocking(fd)) < 0)
+  if (non_blocking) {
+    if ((res = safe_nonblocking(fd)) < 0) {
       goto Lerror;
+    }
+  }
 
   if (ats_is_ip4(&addr)) {
     struct ip_mreq mc_request;
@@ -141,14 +153,16 @@ Connection::setup_mc_receive(sockaddr const *mc_addr, sockaddr const *my_addr, b
     mc_request.imr_multiaddr.s_addr = ats_ip4_addr_cast(mc_addr);
     mc_request.imr_interface.s_addr = ats_ip4_addr_cast(my_addr);
 
-    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mc_request, sizeof(mc_request)) < 0))
+    if ((res = safe_setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&mc_request, sizeof(mc_request)) < 0)) {
       goto Lerror;
+    }
   }
   return 0;
 
 Lerror:
-  if (fd != NO_FD)
+  if (fd != NO_FD) {
     close();
+  }
   return res;
 }
 
@@ -188,8 +202,9 @@ template <typename T> struct cleaner {
   cleaner(T *_obj, method _method) : obj(_obj), m(_method) {}
   ~cleaner()
   {
-    if (obj)
+    if (obj) {
       (obj->*m)();
+    }
   }
   void
   reset()
@@ -249,8 +264,9 @@ Connection::open(NetVCOptions const &opt)
   }
 
   res = socketManager.socket(family, sock_type, 0);
-  if (-1 == res)
+  if (-1 == res) {
     return -errno;
+  }
 
   fd = res;
   // mark fd for close until we succeed.
@@ -258,8 +274,9 @@ Connection::open(NetVCOptions const &opt)
 
   // Try setting the various socket options, if requested.
 
-  if (-1 == safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr)))
+  if (-1 == safe_setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char *>(&enable_reuseaddr), sizeof(enable_reuseaddr))) {
     return -errno;
+  }
 
   if (NetVCOptions::FOREIGN_ADDR == opt.addr_binding) {
     static char const *const DEBUG_TEXT = "::open setsockopt() IP_TRANSPARENT";
@@ -276,15 +293,17 @@ Connection::open(NetVCOptions const &opt)
 #endif
   }
 
-  if (!opt.f_blocking_connect && -1 == safe_nonblocking(fd))
+  if (!opt.f_blocking_connect && -1 == safe_nonblocking(fd)) {
     return -errno;
+  }
 
   if (opt.socket_recv_bufsize > 0) {
     if (socketManager.set_rcvbuf_size(fd, opt.socket_recv_bufsize)) {
       // Round down until success
       int rbufsz = ROUNDUP(opt.socket_recv_bufsize, 1024);
-      while (rbufsz && !socketManager.set_rcvbuf_size(fd, rbufsz))
+      while (rbufsz && !socketManager.set_rcvbuf_size(fd, rbufsz)) {
         rbufsz -= 1024;
+      }
       Debug("socket", "::open: recv_bufsize = %d of %d", rbufsz, opt.socket_recv_bufsize);
     }
   }
@@ -292,8 +311,9 @@ Connection::open(NetVCOptions const &opt)
     if (socketManager.set_sndbuf_size(fd, opt.socket_send_bufsize)) {
       // Round down until success
       int sbufsz = ROUNDUP(opt.socket_send_bufsize, 1024);
-      while (sbufsz && !socketManager.set_sndbuf_size(fd, sbufsz))
+      while (sbufsz && !socketManager.set_sndbuf_size(fd, sbufsz)) {
         sbufsz -= 1024;
+      }
       Debug("socket", "::open: send_bufsize = %d of %d", sbufsz, opt.socket_send_bufsize);
     }
   }
@@ -302,8 +322,9 @@ Connection::open(NetVCOptions const &opt)
   apply_options(opt);
 
   if (local_addr.port() || !is_any_address) {
-    if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa)))
+    if (-1 == socketManager.ink_bind(fd, &local_addr.sa, ats_ip_size(&local_addr.sa))) {
       return -errno;
+    }
   }
 
   cleanup.reset();
@@ -337,11 +358,13 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
   if (-1 == res && (opt.f_blocking_connect || !(EINPROGRESS == errno || EWOULDBLOCK == errno))) {
     return -errno;
   } else if (opt.f_blocking_connect && !opt.f_blocking) {
-    if (-1 == safe_nonblocking(fd))
+    if (-1 == safe_nonblocking(fd)) {
       return -errno;
+    }
   } else if (!opt.f_blocking_connect && opt.f_blocking) {
-    if (-1 == safe_blocking(fd))
+    if (-1 == safe_blocking(fd)) {
       return -errno;
+    }
   }
 
   cleanup.reset();
