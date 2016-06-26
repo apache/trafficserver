@@ -254,6 +254,11 @@ InterceptPlugin::doRead()
   // Modify the input VIO to reflect how much data we've completed.
   TSVIONDoneSet(state_->input_.vio_, TSVIONDoneGet(state_->input_.vio_) + consumed);
 
+  if (isWebsocket()) {
+    TSVIOReenable(state_->input_.vio_);
+    return true;
+  }
+
   if ((state_->hdr_parsed_) && (state_->num_body_bytes_read_ >= state_->expected_body_size_)) {
     LOG_DEBUG("Completely read body");
     if (state_->num_body_bytes_read_ > state_->expected_body_size_) {

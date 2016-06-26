@@ -4864,6 +4864,15 @@ TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
   return TS_SUCCESS;
 }
 
+int
+TSHttpTxnIsWebsocket(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+  return sm->t_state.is_upgrade_request && sm->t_state.upgrade_token_wks == MIME_VALUE_WEBSOCKET;
+}
+
 TSReturnCode
 TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 {

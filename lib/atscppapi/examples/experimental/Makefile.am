@@ -16,26 +16,4 @@
 #  limitations under the License.
 
 SUBDIRS = \
-	helloworld \
-	globalhook \
-	transactionhook \
-	multiple_transaction_hooks \
-	clientrequest \
-	serverresponse \
-	clientredirect \
-	customresponse \
-	null_transformation_plugin \
-	post_buffer \
-	logger_example \
-	boom \
-	stat_example \
-	remap_plugin \
-	custom_error_remap_plugin \
-	async_http_fetch \
-	gzip_transformation \
-	timeout_example \
-	internal_transaction_handling \
-	async_timer \
-	intercept \
-	async_http_fetch_streaming \
-	experimental
+	websocket
