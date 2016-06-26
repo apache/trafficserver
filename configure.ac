@@ -1945,28 +1945,6 @@ AC_CONFIG_FILES([
   lib/Makefile
   lib/atscppapi/Makefile
   lib/atscppapi/examples/Makefile
-  lib/atscppapi/examples/async_http_fetch/Makefile
-  lib/atscppapi/examples/async_http_fetch_streaming/Makefile
-  lib/atscppapi/examples/async_timer/Makefile
-  lib/atscppapi/examples/boom/Makefile
-  lib/atscppapi/examples/clientredirect/Makefile
-  lib/atscppapi/examples/clientrequest/Makefile
-  lib/atscppapi/examples/custom_error_remap_plugin/Makefile
-  lib/atscppapi/examples/customresponse/Makefile
-  lib/atscppapi/examples/globalhook/Makefile
-  lib/atscppapi/examples/gzip_transformation/Makefile
-  lib/atscppapi/examples/helloworld/Makefile
-  lib/atscppapi/examples/intercept/Makefile
-  lib/atscppapi/examples/internal_transaction_handling/Makefile
-  lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
-  lib/atscppapi/examples/null_transformation_plugin/Makefile
-  lib/atscppapi/examples/post_buffer/Makefile
-  lib/atscppapi/examples/remap_plugin/Makefile
-  lib/atscppapi/examples/serverresponse/Makefile
-  lib/atscppapi/examples/stat_example/Makefile
-  lib/atscppapi/examples/timeout_example/Makefile
-  lib/atscppapi/examples/transactionhook/Makefile
   lib/atscppapi/src/Makefile
   lib/atscppapi/src/include/atscppapi/shared_ptr.h
   lib/bindings/Makefile
