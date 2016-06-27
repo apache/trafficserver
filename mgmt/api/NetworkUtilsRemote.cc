@@ -674,9 +674,7 @@ event_callback_thread(void *arg)
 
   func_q = create_queue();
   if (!func_q) {
-    if (event_notice) {
-      TSEventDestroy(event_notice);
-    }
+    TSEventDestroy(event_notice);
     return NULL;
   }
 
