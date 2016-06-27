@@ -269,6 +269,8 @@ Http2Stream::do_io_close(int /* flags */)
       static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
     }
     parent = NULL;
+    // set the state to closed so we don't trying to send data on it
+    _state = HTTP2_STREAM_STATE_CLOSED;
 
     clear_timers();
     clear_io_events();
@@ -297,6 +299,9 @@ Http2Stream::initiating_close()
     // current_reader = NULL;
 
     parent = NULL;
+    // set the state to closed so we don't trying to send data on it
+    _state = HTTP2_STREAM_STATE_CLOSED;
+
     clear_timers();
     clear_io_events();
 
