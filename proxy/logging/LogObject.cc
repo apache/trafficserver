@@ -1388,6 +1388,8 @@ REGRESSION_TEST(LogObjectManager_Transfer)(RegressionTest *t, int /* atype ATS_U
     mgr2.transfer_objects(mgr1);
 
     rprintf(t, "mgr1 has %d objects, mgr2 has %d objects\n", (int)mgr1.get_num_objects(), (int)mgr2.get_num_objects());
+    box.check(mgr1.get_num_objects() == 0, "Testing that manager 1 has 0 objects");
+    box.check(mgr2.get_num_objects() == 4, "Testing that manager 2 has 4 objects");
 
     rprintf(t, "running Log::periodoc_tasks()\n");
     Log::periodic_tasks(Thread::get_hrtime() / HRTIME_SECOND);
