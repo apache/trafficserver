@@ -96,7 +96,6 @@ struct ssl_user_config {
   REC_ReadConfigInt32(session_ticket_enabled,"proxy.config.ssl.session.ticket.enabled");
   }
 
-
   int session_ticket_enabled; // ssl_ticket_enabled - session ticket enabled
   ats_scoped_str addr;        // dest_ip - IPv[64] address to match
   ats_scoped_str cert;        // ssl_cert_name - certificate

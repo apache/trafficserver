@@ -566,7 +566,6 @@ struct OverridableHttpConfigParams {
   MgmtInt slow_log_threshold;
   // IMPORTANT: Here comes all strings / floats configs.
 
-
   ///////////////////////////////////////////////////////////////////
   // Server header                                                 //
   ///////////////////////////////////////////////////////////////////
