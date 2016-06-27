@@ -48,7 +48,6 @@
 
 #include "InkAPITestTool.cc"
 #include "http/HttpSM.h"
-#include "ts/TestBox.h"
 
 #define TC_PASS 1
 #define TC_FAIL 0
