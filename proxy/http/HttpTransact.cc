@@ -63,7 +63,12 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
 
 extern HttpBodyFactory *body_factory;
 
-static const char local_host_ip_str[] = "127.0.0.1";
+inline static bool
+is_localhost(const char *name, int len)
+{
+  static const char local[] = "127.0.0.1";
+  return (len == (sizeof(local) - 1)) && (memcmp(name, local, len) == 0);
+}
 
 inline static void
 simple_or_unavailable_server_retry(HttpTransact::State *s)
@@ -249,7 +254,7 @@ find_server_and_update_current_info(HttpTransact::State *s)
   int host_len;
   const char *host = s->hdr_info.client_request.host_get(&host_len);
 
-  if (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) {
+  if (is_localhost(host, host_len)) {
     // Do not forward requests to local_host onto a parent.
     // I just wanted to do this for cop heartbeats, someone else
     // wanted it for all requests to local_host.
@@ -762,8 +767,7 @@ HttpTransact::StartRemapRequest(State *s)
 
   const char syntxt[] = "synthetic.txt";
 
-  s->cop_test_page = (ptr_len_cmp(host, host_len, local_host_ip_str, sizeof(local_host_ip_str) - 1) == 0) &&
-                     (ptr_len_cmp(path, path_len, syntxt, sizeof(syntxt) - 1) == 0) &&
+  s->cop_test_page = is_localhost(host, host_len) && ((path_len == sizeof(syntxt) - 1) && (memcmp(path, syntxt, path_len) == 0)) &&
                      port == s->http_config_param->synthetic_port && s->method == HTTP_WKSIDX_GET &&
                      s->orig_scheme == URL_WKSIDX_HTTP && ats_ip4_addr_cast(&s->client_info.dst_addr.sa) == htonl(INADDR_LOOPBACK);
 
