@@ -88,36 +88,43 @@ ink_hrtime_from_years(unsigned int years)
 {
   return (HRTIME_YEARS(years));
 }
+
 static inline ink_hrtime
 ink_hrtime_from_weeks(unsigned int weeks)
 {
   return (HRTIME_WEEKS(weeks));
 }
+
 static inline ink_hrtime
 ink_hrtime_from_days(unsigned int days)
 {
   return (HRTIME_DAYS(days));
 }
+
 static inline ink_hrtime
 ink_hrtime_from_mins(unsigned int mins)
 {
   return (HRTIME_MINUTES(mins));
 }
+
 static inline ink_hrtime
 ink_hrtime_from_sec(unsigned int sec)
 {
   return (HRTIME_SECONDS(sec));
 }
+
 static inline ink_hrtime
 ink_hrtime_from_msec(unsigned int msec)
 {
   return (HRTIME_MSECONDS(msec));
 }
+
 static inline ink_hrtime
 ink_hrtime_from_usec(unsigned int usec)
 {
   return (HRTIME_USECONDS(usec));
 }
+
 static inline ink_hrtime
 ink_hrtime_from_nsec(unsigned int nsec)
 {
@@ -147,36 +154,43 @@ ink_hrtime_to_years(ink_hrtime t)
 {
   return ((ink_hrtime)(t / HRTIME_YEAR));
 }
+
 static inline ink_hrtime
 ink_hrtime_to_weeks(ink_hrtime t)
 {
   return ((ink_hrtime)(t / HRTIME_WEEK));
 }
+
 static inline ink_hrtime
 ink_hrtime_to_days(ink_hrtime t)
 {
   return ((ink_hrtime)(t / HRTIME_DAY));
 }
+
 static inline ink_hrtime
 ink_hrtime_to_mins(ink_hrtime t)
 {
   return ((ink_hrtime)(t / HRTIME_MINUTE));
 }
+
 static inline ink_hrtime
 ink_hrtime_to_sec(ink_hrtime t)
 {
   return ((ink_hrtime)(t / HRTIME_SECOND));
 }
+
 static inline ink_hrtime
 ink_hrtime_to_msec(ink_hrtime t)
 {
   return ((ink_hrtime)(t / HRTIME_MSECOND));
 }
+
 static inline ink_hrtime
 ink_hrtime_to_usec(ink_hrtime t)
 {
   return ((ink_hrtime)(t / HRTIME_USECOND));
 }
+
 static inline ink_hrtime
 ink_hrtime_to_nsec(ink_hrtime t)
 {
