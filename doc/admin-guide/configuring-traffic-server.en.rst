@@ -31,7 +31,7 @@ Configure Traffic Server
 ========================
 
 You can quickly and easily change your Traffic
-Server configuration via command-line interface using 'traffic_ctl'.
+Server configuration via command-line interface using `traffic_ctl`.
 
 View Configuration Options
 --------------------------
