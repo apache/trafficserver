@@ -184,6 +184,7 @@ Improvement:
   *) [TS-4401] Make some more configurations overridable
   *) [TS-4418] Change .clang-format to allow ConstructorInitializerAllOnOneLineOrOnePerLine
   *) [TS-4486] Add release method to MutexLock
+  *) [TS-4565] clang_format: Align assignment on the =
 
 New Feature:
   *) [TS-2642] header_rewrite Time based Rules
