@@ -340,7 +340,6 @@ HostDBCache::start(int flags)
   int load_ret = LoadRefCountCacheFromPath<HostDBInfo>(*this->refcountcache, storage_path, full_path, HostDBInfo::unmarshall);
   if (load_ret != 0) {
     Warning("Error loading cache from %s: %d", full_path, load_ret);
-    printf("error loading %d\n", load_ret);
   }
 
   //
