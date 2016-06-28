@@ -19,3 +19,8 @@ include $(top_srcdir)/build/plugins.mk
 pkglib_LTLIBRARIES = channel_stats.la
 channel_stats_la_SOURCES = channel_stats.cc
 channel_stats_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

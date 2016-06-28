@@ -89,3 +89,8 @@ version_la_SOURCES = version/version.c
 #
 # redirect_1_la_SOURCES = redirect-1/redirect-1.c
 # session_1_la_SOURCES = session-1/session-1.c
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

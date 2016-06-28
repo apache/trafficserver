@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 # Note that hdrs is targeted from ../Makefile.am
 SUBDIRS = congest http http2 spdy logging config
 noinst_LIBRARIES =
@@ -278,6 +280,9 @@ test_xml_parser_LDADD = \
   @LIBTCL@
 
 versiondir = $(pkgsysconfdir)
+
+tidy-local: $(noinst_HEADERS) $(traffic_server_SOURCES)
+	$(CXX_Clang_Tidy)
 
 install-data-local:
 	if [ `id -un` != "root" ]; then \

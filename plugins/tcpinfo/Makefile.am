@@ -20,3 +20,8 @@ pkglib_LTLIBRARIES = tcpinfo.la
 tcpinfo_la_SOURCES = tcpinfo.cc
 tcpinfo_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

@@ -30,3 +30,8 @@ libmysql_remap_la_SOURCES = \
 
 mysql_remap_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) $(LIB_MYSQLCLIENT)
 mysql_remap_la_LIBADD = libmysql_remap.la
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CC_Clang_Tidy)

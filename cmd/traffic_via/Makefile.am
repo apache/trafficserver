@@ -38,3 +38,8 @@ traffic_via_LDADD = \
 
 TESTS = \
   test_traffic_via
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

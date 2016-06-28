@@ -76,3 +76,8 @@ libmgmt_lm_la_LIBADD = \
 libmgmt_p_la_LIBADD = \
   libmgmt_c.la \
   $(top_builddir)/mgmt/utils/libutils_p.la
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

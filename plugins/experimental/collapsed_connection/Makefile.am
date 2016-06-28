@@ -19,3 +19,8 @@ include $(top_srcdir)/build/plugins.mk
 pkglib_LTLIBRARIES = collapsed_connection.la
 collapsed_connection_la_SOURCES = collapsed_connection.cc MurmurHash3.cc
 collapsed_connection_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

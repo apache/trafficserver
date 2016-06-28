@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/proxy/api/ts \
@@ -95,3 +97,7 @@ test_HPACK_SOURCES = \
   HuffmanCodec.h \
   HPACK.cc \
   HPACK.h
+
+tidy-local: $(libhttp2_a_SOURCES) $(test_Huffmancode_SOURCES) \
+		$(test_Http2DependencyTree_SOURCES) $(test_HPACK_SOURCES)
+	$(CXX_Clang_Tidy)

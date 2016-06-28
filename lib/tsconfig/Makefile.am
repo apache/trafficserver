@@ -68,3 +68,8 @@ test_tsconfig_LDADD = libtsconfig.la ../ts/libtsutil.la
 # it more easily in C++.
 TsConfigGrammar.hpp: TsConfigGrammar.h BisonHeaderToC++.sed
 	$(SED) -f $(srcdir)/BisonHeaderToC++.sed $(srcdir)/TsConfigGrammar.h > $@
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

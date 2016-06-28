@@ -40,3 +40,8 @@ traffic_cop_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/lib/records/librecords_cop.a \
   @LIBRESOLV@
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

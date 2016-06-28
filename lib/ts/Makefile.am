@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 library_includedir=$(includedir)/ts
 
 library_include_HEADERS = apidefs.h
@@ -242,3 +244,7 @@ CompileParseRules_SOURCES = CompileParseRules.cc
 
 clean-local:
 	rm -f ParseRulesCType ParseRulesCTypeToLower ParseRulesCTypeToUpper
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)
+

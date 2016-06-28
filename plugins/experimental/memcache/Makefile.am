@@ -33,3 +33,8 @@ tsmemcache_la_SOURCES = \
   tsmemcache.cc
 
 tsmemcache_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

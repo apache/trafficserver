@@ -20,3 +20,8 @@ pkglib_LTLIBRARIES = hipes.la
 
 hipes_la_SOURCES = hipes.cc
 hipes_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CC_Clang_Tidy)

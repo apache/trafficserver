@@ -119,3 +119,8 @@ test_Event_LDFLAGS = $(test_LD_FLAGS)
 
 test_Buffer_LDADD = $(test_LD_ADD)
 test_Event_LDADD = $(test_LD_ADD)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

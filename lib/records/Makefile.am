@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = \
   -I$(top_srcdir)/iocore/eventsystem \
   -I$(top_srcdir)/iocore/utils \
@@ -67,3 +69,6 @@ librecords_cop_a_SOURCES = \
   RecConfigParse.cc \
   RecFile.cc \
   RecDebug.cc
+
+tidy-local: $(sort $(DIST_SOURCES))
+	$(CXX_Clang_Tidy)

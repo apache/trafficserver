@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
@@ -79,3 +81,6 @@ liblogcollation_a_SOURCES = \
 #test_UNUSED_SOURCES = \
 #  LogAccessTest.cc \
 #  LogAccessTest.h
+
+tidy-local: $(liblogging_a_SOURCES) $(liblogcollation_a_SOURCES) $(EXTRA_DIST)
+	$(CXX_Clang_Tidy)

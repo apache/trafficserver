@@ -20,3 +20,8 @@ pkglib_LTLIBRARIES = cache_key_genid.la
 cache_key_genid_la_SOURCES = cache_key_genid.c
 cache_key_genid_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS) $(LIB_KYOTOCABINET)
 
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CC_Clang_Tidy)
