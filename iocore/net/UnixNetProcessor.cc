@@ -203,6 +203,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   else
     opt = &vc->options;
 
+  vc->set_context(NET_VCONNECTION_OUT);
   bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
 #ifdef SOCKS_WITH_TS
                       && (opt->socks_version != SOCKS_DEFAULT_VERSION ||
@@ -218,10 +219,8 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
   vc->id          = net_next_connection_number();
   vc->submit_time = Thread::get_hrtime();
-  vc->setSSLClientConnection(true);
-  ats_ip_copy(&vc->server_addr, target);
-  vc->mutex      = cont->mutex;
-  Action *result = &vc->action_;
+  vc->mutex       = cont->mutex;
+  Action *result  = &vc->action_;
 
   if (using_socks) {
     char buff[INET6_ADDRPORTSTRLEN];
@@ -235,11 +234,12 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
       socksEntry->free();
       return ACTION_RESULT_DONE;
     }
-    ats_ip_copy(&vc->server_addr, &socksEntry->server_addr);
+    vc->con.setRemote(&socksEntry->server_addr.sa);
     result      = &socksEntry->action_;
     vc->action_ = socksEntry;
   } else {
     Debug("Socks", "Not Using Socks %d ", socks_conf_stuff->socks_needed);
+    vc->con.setRemote(target);
     vc->action_ = cont;
   }
 

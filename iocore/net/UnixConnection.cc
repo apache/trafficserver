@@ -316,14 +316,15 @@ Connection::connect(sockaddr const *target, NetVCOptions const &opt)
 
   int res;
 
-  this->setRemote(target);
+  if (target != NULL)
+    this->setRemote(target);
 
   // apply dynamic options with this.addr initialized
   apply_options(opt);
 
   cleaner<Connection> cleanup(this, &Connection::_cleanup); // mark for close until we succeed.
 
-  res = ::connect(fd, target, ats_ip_size(target));
+  res = ::connect(fd, &this->addr.sa, ats_ip_size(&this->addr.sa));
 
   // It's only really an error if either the connect was blocking
   // or it wasn't blocking and the error was other than EINPROGRESS.
