@@ -2179,16 +2179,16 @@ HostDB
 
    If not set then stale records are not served.
 
-.. ts:cv:: CONFIG proxy.config.hostdb.storage_size INT 33554432
+.. ts:cv:: CONFIG proxy.config.hostdb.storage_size INT 1073741824
    :metric: bytes
 
-   The amount of space (in bytes) used to store ``hostdb``.
-   The value of this variable must be increased if you increase the size of the
-   `proxy.config.hostdb.size`_ variable.
+   The maximum amount of space (in bytes) allocated to ``hostdb``.
+   Setting this value to ``-1`` will disable size limit enforcement.
 
-.. ts:cv:: CONFIG proxy.config.hostdb.size INT 120000
+.. ts:cv:: CONFIG proxy.config.hostdb.max_count INT -1
 
-   The maximum number of entries that can be stored in the database.
+   The maximum number of entries that can be stored in hostdb. A value of ``-1``
+   disables item count limit enforcement.
 
 .. note::
 
@@ -2257,6 +2257,12 @@ value will be used on the next check and the file will be treated as modified.
 
 The file is checked every this many seconds to see if it has changed. If so the HostDB is updated with the new values in the file.
 
+.. ts:cv:: CONFIG proxy.config.hostdb.partitions INT 64
+
+   The number of partitions for hostdb. If you are seeing lock contention within
+   hostdb's cache (due to a large number of records) you can increase the number
+   of partitions
+
 .. ts:cv:: CONFIG proxy.config.hostdb.ip_resolve STRING NULL
 
    Set the host resolution style.
@@ -2314,16 +2320,20 @@ This value is a global default that can be overridden by :ts:cv:`proxy.config.ht
    origin server is determined by the client, which forces the IP address family of the address used for the origin
    server. In effect, outbound transparent connections always use a resolution style of "``client``".
 
+.. ts:cv:: CONFIG proxy.config.hostdb.verify_after INT 720
+
+    Set the interval (in seconds) in which to re-query DNS regardless of TTL status.
+
+.. ts:cv:: CONFIG proxy.config.hostdb.filename STRING "host.db"
+
+   The filename to persist hostdb to on disk.
+
 .. ts:cv:: CONFIG proxy.config.cache.hostdb.sync_frequency INT 120
 
    Set the frequency (in seconds) to sync hostdb to disk.
 
    Note: hostdb is syncd to disk on a per-partition basis (of which there are 64).
    This means that the minumum time to sync all data to disk is :ts:cv:`proxy.config.cache.hostdb.sync_frequency` * 64
-
-.. ts:cv:: CONFIG proxy.config.hostdb.verify_after INT 720
-
-    Set the interval (in seconds) in which to re-query DNS regardless of TTL status.
 
 Logging Configuration
 =====================

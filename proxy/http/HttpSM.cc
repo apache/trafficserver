@@ -2061,6 +2061,7 @@ void
 HttpSM::process_srv_info(HostDBInfo *r)
 {
   DebugSM("dns_srv", "beginning process_srv_info");
+  t_state.hostdb_entry = Ptr<HostDBInfo>(r);
 
   /* we didn't get any SRV records, continue w normal lookup */
   if (!r || !r->is_srv || !r->round_robin) {
@@ -2081,7 +2082,6 @@ HttpSM::process_srv_info(HostDBInfo *r)
       t_state.srv_lookup                  = false;
       DebugSM("dns_srv", "SRV records empty for %s", t_state.dns_info.lookup_name);
     } else {
-      ink_assert(r->md5_high == srv->md5_high && r->md5_low == srv->md5_low && r->md5_low_low == srv->md5_low_low);
       t_state.dns_info.srv_lookup_success = true;
       t_state.dns_info.srv_port           = srv->data.srv.srv_port;
       t_state.dns_info.srv_app            = srv->app;
@@ -2096,6 +2096,9 @@ HttpSM::process_srv_info(HostDBInfo *r)
 void
 HttpSM::process_hostdb_info(HostDBInfo *r)
 {
+  // Increment the refcount to our item, since we are pointing at it
+  t_state.hostdb_entry = Ptr<HostDBInfo>(r);
+
   sockaddr const *client_addr = NULL;
   bool use_client_addr        = t_state.http_config_param->use_client_target_addr == 1 && t_state.client_info.is_transparent &&
                          t_state.dns_info.os_addr_style == HttpTransact::DNSLookupInfo::OS_ADDR_TRY_DEFAULT;
@@ -2110,7 +2113,7 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
     // Leave ret unassigned, so we don't overwrite the host_db_info
   }
 
-  if (r && !r->failed()) {
+  if (r && !r->is_failed()) {
     ink_time_t now                    = ink_cluster_time();
     HostDBInfo *ret                   = NULL;
     t_state.dns_info.lookup_success   = true;
@@ -2131,8 +2134,8 @@ HttpSM::process_hostdb_info(HostDBInfo *r)
         if (t_state.dns_info.srv_lookup_success) {
           uint32_t last_failure = 0xFFFFFFFF;
           for (int i = 0; i < rr->rrcount && last_failure != 0; ++i) {
-            if (last_failure > rr->info[i].app.http_data.last_failure)
-              last_failure = rr->info[i].app.http_data.last_failure;
+            if (last_failure > rr->info(i).app.http_data.last_failure)
+              last_failure = rr->info(i).app.http_data.last_failure;
           }
 
           if (last_failure != 0 && (uint32_t)(now - t_state.txn_conf->down_server_timeout) < last_failure) {
