@@ -22,8 +22,7 @@ noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
   traffic_logcat \
-  traffic_logstats \
-  traffic_sac
+  traffic_logstats
 
 noinst_PROGRAMS = \
   test_xml_parser
@@ -269,77 +268,6 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@ \
   @LIBEXPAT@ @LIBPROFILER@ -lm
-
-traffic_sac_SOURCES = \
-  sac.cc \
-  ICP.cc \
-  ICPConfig.cc \
-  ICPProcessor.cc \
-  ICPStats.cc \
-  IPAllow.cc \
-  ParentConsistentHash.cc \
-  ParentRoundRobin.cc \
-  ParentSelection.cc \
-  ControlBase.cc \
-  ControlMatcher.cc \
-  CacheControl.cc \
-  ReverseProxy.cc \
-  EventName.cc \
-  StatPages.cc \
-  PluginVC.cc \
-  AbstractBuffer.cc \
-  Transform.cc \
-  ProtocolProbeSessionAccept.cc \
-  ProtocolProbeSessionAccept.h \
-  ProxyClientSession.cc \
-  ProxyClientSession.h \
-  ProxyClientTransaction.cc \
-  ProxyClientTransaction.h \
-  Plugin.cc \
-  InkAPI.cc \
-  FetchSM.cc \
-  InkIOCoreAPI.cc
-
-traffic_sac_LDADD = \
-  http/libhttp.a \
-  http2/libhttp2.a \
-  spdy/libspdy.a \
-  shared/libdiagsconfig.a \
-  http/remap/libhttp_remap.a \
-  congest/libCongestionControl.a \
-  logging/liblogging.a \
-  logging/liblogcollation.a \
-  hdrs/libhdrs.a \
-  shared/liberror.a \
-  shared/libxml.a \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/iocore/cluster/libinkcluster.a \
-  $(top_builddir)/iocore/dns/libinkdns.a \
-  $(top_builddir)/iocore/hostdb/libinkhostdb.a \
-  $(top_builddir)/iocore/cluster/libinkcluster.a \
-  $(top_builddir)/iocore/cache/libinkcache.a \
-  $(top_builddir)/iocore/utils/libinkutils.a \
-  $(top_builddir)/iocore/aio/libinkaio.a \
-  $(top_builddir)/iocore/net/libinknet.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  @LIBRESOLV@ \
-  @LIBPCRE@ \
-  @LIBTCL@ \
-  @HWLOC_LIBS@ \
-  @LIBEXPAT@ \
-  @LIBZ@ \
-  @LIBLZMA@ \
-  @LIBPROFILER@ \
-  @SPDYLAY_LIBS@ \
-  @OPENSSL_LIBS@ \
-  -lm
-
-if BUILD_TESTS
-  traffic_sac_SOURCES += RegressionSM.cc
-endif
-
 
 test_xml_parser_SOURCES = test_xml_parser.cc
 test_xml_parser_LDADD = \
