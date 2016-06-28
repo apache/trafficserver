@@ -28,13 +28,13 @@ Traffic Server provides several options for configuring the system.
 .. _configure-using-traffic-line:
 
 Configure Traffic Server
-===========================================
+========================
 
-Traffic Line enables you to quickly and easily change your Traffic
-Server configuration via command-line interface.
+You can quickly and easily change your Traffic
+Server configuration via command-line interface using 'traffic_ctl'.
 
 View Configuration Options
-------------------------------------------
+--------------------------
 
 To view a configuration setting, enter the following command::
 
@@ -44,7 +44,7 @@ where *var* is the variable associated with the configuration
 option. For a list of variables, refer to :ref:`configuration-variables`.
 
 Change Configuration Options
---------------------------------------------
+----------------------------
 
 To change the value of a configuration setting, enter the following
 command::
