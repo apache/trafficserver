@@ -959,6 +959,20 @@ INKContInternal::init(TSEventFunc funcp, TSMutex mutexp)
 }
 
 void
+INKContInternal::clear()
+{
+}
+
+void
+INKContInternal::free()
+{
+  clear();
+  this->mutex.clear();
+  m_free_magic = INKCONT_INTERN_MAGIC_DEAD;
+  INKContAllocator.free(this);
+}
+
+void
 INKContInternal::destroy()
 {
   if (m_free_magic == INKCONT_INTERN_MAGIC_DEAD) {
@@ -966,9 +980,7 @@ INKContInternal::destroy()
   }
   m_deleted = 1;
   if (m_deletable) {
-    this->mutex  = NULL;
-    m_free_magic = INKCONT_INTERN_MAGIC_DEAD;
-    INKContAllocator.free(this);
+    free();
   } else {
     // TODO: Should this schedule on some other "thread" ?
     // TODO: we don't care about the return action?
@@ -1001,9 +1013,7 @@ INKContInternal::handle_event(int event, void *edata)
   handle_event_count(event);
   if (m_deleted) {
     if (m_deletable) {
-      this->mutex  = NULL;
-      m_free_magic = INKCONT_INTERN_MAGIC_DEAD;
-      INKContAllocator.free(this);
+      free();
     } else {
       Warning("INKCont Deletable but not deleted %d", m_event_count);
     }
@@ -1037,43 +1047,36 @@ INKVConnInternal::INKVConnInternal(TSEventFunc funcp, TSMutex mutexp)
   : INKContInternal(funcp, mutexp), m_read_vio(), m_write_vio(), m_output_vc(NULL)
 {
   m_closed = 0;
-  SET_HANDLER(&INKVConnInternal::handle_event);
 }
 
 void
-INKVConnInternal::init(TSEventFunc funcp, TSMutex mutexp)
+INKVConnInternal::clear()
 {
-  INKContInternal::init(funcp, mutexp);
-  SET_HANDLER(&INKVConnInternal::handle_event);
+  m_read_vio.set_continuation(NULL);
+  m_write_vio.set_continuation(NULL);
+  INKContInternal::clear();
+}
+
+void
+INKVConnInternal::free()
+{
+  clear();
+  this->mutex.clear();
+  m_free_magic = INKCONT_INTERN_MAGIC_DEAD;
+  INKVConnAllocator.free(this);
 }
 
 void
 INKVConnInternal::destroy()
 {
+  if (m_free_magic == INKCONT_INTERN_MAGIC_DEAD) {
+    ink_release_assert(!"Plugin tries to use a vconnection which is deleted");
+  }
+
   m_deleted = 1;
   if (m_deletable) {
-    this->mutex = NULL;
-    m_read_vio.set_continuation(NULL);
-    m_write_vio.set_continuation(NULL);
-    INKVConnAllocator.free(this);
+    free();
   }
-}
-
-int
-INKVConnInternal::handle_event(int event, void *edata)
-{
-  handle_event_count(event);
-  if (m_deleted) {
-    if (m_deletable) {
-      this->mutex = NULL;
-      m_read_vio.set_continuation(NULL);
-      m_write_vio.set_continuation(NULL);
-      INKVConnAllocator.free(this);
-    }
-  } else {
-    return m_event_func((TSCont)this, (TSEvent)event, edata);
-  }
-  return EVENT_DONE;
 }
 
 VIO *
