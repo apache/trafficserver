@@ -23,6 +23,7 @@ autoreconf -if
 mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/install"
 
 ./configure --prefix="${WORKSPACE}/${BUILD_NUMBER}/install" \
+            --with-user=jenkins \
             --enable-experimental-plugins \
             --enable-example-plugins \
             --enable-ccache \

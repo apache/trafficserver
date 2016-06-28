@@ -27,6 +27,7 @@ cd "${WORKSPACE}/src"
 autoreconf -fi
 mkdir -p BUILDS && cd BUILDS
 ../configure \
+    --with-user=jenkins \
     --enable-ccache \
     --enable-werror \
     --enable-experimental-plugins \
