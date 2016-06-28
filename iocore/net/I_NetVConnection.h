@@ -40,6 +40,13 @@
 #define SSL_EVENT_SERVER 0
 #define SSL_EVENT_CLIENT 1
 
+// Indicator the context for a NetVConnection
+typedef enum {
+  NET_VCONNECTION_UNSET = 0,
+  NET_VCONNECTION_IN,  // Client <--> ATS, Client-Side
+  NET_VCONNECTION_OUT, // ATS <--> Server, Server-Side
+} NetVConnectionContext_t;
+
 /** Holds client options for NetVConnection.
 
     This class holds various options a user can specify for
@@ -496,6 +503,27 @@ public:
   /** Returns remote port. */
   uint16_t get_remote_port();
 
+  /** Set the context of NetVConnection.
+   * The context is ONLY set once and will not be changed.
+   *
+   * @param context The context to be set.
+   */
+  void
+  set_context(NetVConnectionContext_t context)
+  {
+    ink_assert(NET_VCONNECTION_UNSET == netvc_context);
+    netvc_context = context;
+  }
+
+  /** Get the context.
+   * @return the context of current NetVConnection
+   */
+  NetVConnectionContext_t
+  get_context() const
+  {
+    return netvc_context;
+  }
+
   /** Structure holding user options. */
   NetVCOptions options;
 
@@ -598,6 +626,8 @@ protected:
   bool is_transparent;
   /// Set if the next write IO that empties the write buffer should generate an event.
   int write_buffer_empty_event;
+  /// NetVConnection Context.
+  NetVConnectionContext_t netvc_context;
 };
 
 inline NetVConnection::NetVConnection()
@@ -608,7 +638,8 @@ inline NetVConnection::NetVConnection()
     got_remote_addr(0),
     is_internal_request(false),
     is_transparent(false),
-    write_buffer_empty_event(0)
+    write_buffer_empty_event(0),
+    netvc_context(NET_VCONNECTION_UNSET)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

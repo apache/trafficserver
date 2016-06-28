@@ -6484,6 +6484,7 @@ TSVConnFdCreate(int fd)
   vc->submit_time = Thread::get_hrtime();
   vc->set_is_transparent(false);
   vc->mutex = new_ProxyMutex();
+  vc->set_context(NET_VCONNECTION_OUT);
 
   if (vc->connectUp(this_ethread(), fd) != CONNECT_SUCCESS) {
     return NULL;

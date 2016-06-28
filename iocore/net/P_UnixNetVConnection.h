@@ -229,18 +229,6 @@ public:
     return (true);
   }
 
-  virtual bool
-  getSSLClientConnection() const
-  {
-    return (false);
-  }
-
-  virtual void
-  setSSLClientConnection(bool state)
-  {
-    (void)state;
-  }
-
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
   void readDisable(NetHandler *nh);
@@ -283,8 +271,6 @@ public:
   EventIO ep;
   NetHandler *nh;
   unsigned int id;
-  // amc - what is this for? Why not use remote_addr or con.addr?
-  IpEndpoint server_addr; /// Server address and port.
 
   union {
     unsigned int flags;

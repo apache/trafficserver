@@ -142,7 +142,7 @@ make_ssl_connection(SSL_CTX *ctx, SSLNetVConnection *netvc)
     netvc->ssl = ssl;
 
     // Only set up the bio stuff for the server side
-    if (netvc->getSSLClientConnection()) {
+    if (netvc->get_context() == NET_VCONNECTION_OUT) {
       SSL_set_fd(ssl, netvc->get_socket());
     } else {
       netvc->initialize_handshake_buffers();
@@ -432,7 +432,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh, EThread *lthread)
   if (!getSSLHandShakeComplete()) {
     int err;
 
-    if (getSSLClientConnection()) {
+    if (get_context() == NET_VCONNECTION_OUT) {
       ret = sslStartHandShake(SSL_EVENT_CLIENT, err);
     } else {
       ret = sslStartHandShake(SSL_EVENT_SERVER, err);
@@ -786,7 +786,6 @@ SSLNetVConnection::SSLNetVConnection()
     sslTotalBytesSent(0),
     hookOpRequested(SSL_HOOK_OP_DEFAULT),
     sslHandShakeComplete(false),
-    sslClientConnection(false),
     sslClientRenegotiationAbort(false),
     sslSessionCacheHit(false),
     handShakeBuffer(NULL),
@@ -876,7 +875,6 @@ SSLNetVConnection::free(EThread *t)
   }
 
   sslHandShakeComplete        = false;
-  sslClientConnection         = false;
   sslHandshakeBeginTime       = 0;
   sslLastWriteTime            = 0;
   sslTotalBytesSent           = 0;
@@ -1502,8 +1500,6 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
   // Maybe bring over the stats?
 
   this->sslHandShakeComplete = true;
-  this->sslClientConnection  = true;
-
   SSLNetVCAttach(this->ssl, this);
   return EVENT_DONE;
 }
