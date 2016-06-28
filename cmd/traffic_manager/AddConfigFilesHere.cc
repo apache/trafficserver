@@ -23,7 +23,6 @@
 
 #include "ts/ink_platform.h"
 #include "MgmtUtils.h"
-#include "ConfigParse.h"
 #include "ts/Diags.h"
 #include "FileManager.h"
 

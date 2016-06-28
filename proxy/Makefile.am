@@ -57,7 +57,6 @@ AM_LDFLAGS = \
   @OPENSSL_LDFLAGS@
 
 noinst_HEADERS = \
-  ConfigParse.h \
   Show.h
 
 # These are currently built separate, as part of building the lib/ tree, using
