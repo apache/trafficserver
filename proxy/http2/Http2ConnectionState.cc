@@ -1026,12 +1026,10 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
 Http2SendADataFrameResult
 Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_length)
 {
-  const ssize_t window_size = min(this->client_rwnd, stream->client_rwnd);
-  if (window_size <= 0) {
-    return HTTP2_SEND_A_DATA_FRAME_NO_WINDOW;
-  }
-  const size_t buf_len        = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]) - HTTP2_FRAME_HEADER_LEN;
-  const size_t available_size = min(buf_len, static_cast<size_t>(window_size));
+  const ssize_t window_size         = min(this->client_rwnd, stream->client_rwnd);
+  const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]) - HTTP2_FRAME_HEADER_LEN;
+  const size_t write_available_size = min(buf_len, static_cast<size_t>(window_size));
+  size_t read_available_size        = 0;
 
   uint8_t flags = 0x00;
   uint8_t payload_buffer[buf_len];
@@ -1039,10 +1037,18 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
 
+  if (current_reader) {
+    read_available_size = static_cast<size_t>(current_reader->read_avail());
+  }
+
   // Select appropriate payload length
-  if (current_reader && current_reader->is_read_avail_more_than(0)) {
+  if (read_available_size > 0) {
+    // We only need to check for window size when there is a payload
+    if (window_size <= 0) {
+      return HTTP2_SEND_A_DATA_FRAME_NO_WINDOW;
+    }
     // Copy into the payload buffer. Seems like we should be able to skip this copy step
-    payload_length = current_reader->read(payload_buffer, available_size);
+    payload_length = current_reader->read(payload_buffer, write_available_size);
   } else {
     payload_length = 0;
   }
@@ -1054,7 +1060,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD;
   }
 
-  if (stream->is_body_done() && payload_length < available_size) {
+  if (stream->is_body_done() && read_available_size <= write_available_size) {
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
 
