@@ -107,5 +107,5 @@ void
 MachineFatalClass::raise(va_list ap, const char *prefix)
 {
   ErrorClass::raise(ap, prefix ? prefix : "MACHINE FATAL");
-  exit(2);
+  ink_release_assert(!"Machine Fatal"); // Go down hard.  Avoid memory cleanup that comes with exit()
 }
