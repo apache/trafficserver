@@ -49,7 +49,7 @@ Change Configuration Options
 To change the value of a configuration setting, enter the following
 command::
 
-    traffic_ctl set VARIABLE VALUE
+    traffic_ctl config set VARIABLE VALUE
 
 where *var* is the variable associated with the configuration option
 and *value* is the value you want to use. For a list of the
