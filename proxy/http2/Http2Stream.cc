@@ -269,6 +269,8 @@ Http2Stream::do_io_close(int /* flags */)
       static_cast<Http2ClientSession *>(parent)->connection_state.send_data_frames(this);
     }
     parent = NULL;
+    // Check to see if the stream is in the closed state
+    ink_assert(get_state() == HTTP2_STREAM_STATE_CLOSED);
 
     clear_timers();
     clear_io_events();
@@ -291,12 +293,17 @@ Http2Stream::initiating_close()
   if (!closed) {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
     Debug("http2_stream", "initiating_close stream %d", this->get_id());
+
+    // Set the state of the connection to closed
+    // TODO - these states should be combined
     closed = true;
-    // leaving the reference to the SM, so we can detatch from the SM
-    // when we actually destroy
-    // current_reader = NULL;
+    _state = HTTP2_STREAM_STATE_CLOSED;
 
     parent = NULL;
+
+    // leaving the reference to the SM, so we can detatch from the SM when we actually destroy
+    // current_reader = NULL;
+
     clear_timers();
     clear_io_events();
 
