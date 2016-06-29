@@ -349,8 +349,12 @@ struct HttpConfigPortRange {
   HttpConfigPortRange() : low(0), high(0), next(0) {}
   ~HttpConfigPortRange()
   {
-    if (next)
-      delete next;
+    HttpConfigPortRange* ptr = 0;
+    while (next) {
+      ptr = next;
+      next = next->next;
+      delete ptr;
+    }
   }
 };
 
