@@ -17,10 +17,6 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-AM_CXXFLAGS += -Wno-unused-variable
-AM_CPPFLAGS += -I$(top_srcdir)/$(subdir)/src/include
-AM_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
-
 plugins = \
 	AsyncHttpFetch.la \
 	AsyncHttpFetchStreaming.la \
@@ -51,6 +47,12 @@ else
 noinst_LTLIBRARIES = $(plugins)
 endif
 
+AM_CXXFLAGS += -Wno-unused-variable
+AM_CPPFLAGS += -I$(top_srcdir)/$(subdir)/src/include
+AM_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
+libatscppai = $(top_builddir)/lib/atscppapi/src/libatscppapi.la
+
 AsyncHttpFetchStreaming_la_SOURCES = async_http_fetch_streaming/AsyncHttpFetchStreaming.cc
 AsyncHttpFetch_la_SOURCES = async_http_fetch/AsyncHttpFetch.cc
 AsyncTimer_la_SOURCES = async_timer/AsyncTimer.cc
@@ -73,3 +75,26 @@ TimeoutExamplePlugin_la_SOURCES = timeout_example/TimeoutExamplePlugin.cc
 TransactionHookPlugin_la_SOURCES = transactionhook/TransactionHookPlugin.cc
 boom_la_SOURCES = boom/boom.cc
 intercept_la_SOURCES = intercept/intercept.cc
+
+AsyncHttpFetchStreaming_la_LIBADD = $(libatscppai)
+AsyncHttpFetch_la_LIBADD = $(libatscppai)
+AsyncTimer_la_LIBADD = $(libatscppai)
+ClientRedirect_la_LIBADD = $(libatscppai)
+ClientRequest_la_LIBADD = $(libatscppai)
+CustomErrorRemapPlugin_la_LIBADD = $(libatscppai)
+CustomResponse_la_LIBADD = $(libatscppai)
+GlobalHookPlugin_la_LIBADD = $(libatscppai)
+GzipTransformationPlugin_la_LIBADD = $(libatscppai)
+HelloWorldPlugin_la_LIBADD = $(libatscppai)
+InternalTransactionHandling_la_LIBADD = $(libatscppai)
+LoggerExample_la_LIBADD = $(libatscppai)
+MultipleTransactionHookPlugins_la_LIBADD = $(libatscppai)
+NullTransformationPlugin_la_LIBADD = $(libatscppai)
+PostBuffer_la_LIBADD = $(libatscppai)
+RemapPlugin_la_LIBADD = $(libatscppai)
+ServerResponse_la_LIBADD = $(libatscppai)
+StatExample_la_LIBADD = $(libatscppai)
+TimeoutExamplePlugin_la_LIBADD = $(libatscppai)
+TransactionHookPlugin_la_LIBADD = $(libatscppai)
+boom_la_LIBADD = $(libatscppai)
+intercept_la_LIBADD = $(libatscppai)
