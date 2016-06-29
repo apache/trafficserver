@@ -154,6 +154,24 @@ Transaction::configFind(std::string const &name, TSOverridableConfigKey *conf, T
   return TS_SUCCESS == TSHttpTxnConfigFind(name.data(), name.length(), conf, type);
 }
 
+bool
+Transaction::noteStringSet(std::string const &key, std::string const &value)
+{
+  return TS_SUCCESS == TSHttpTxnNoteStringSet(state_->txn_, key.data(), value.data());
+}
+
+bool
+Transaction::noteStringGet(std::string const &key, std::string &value)
+{
+  const char *svalue;
+  bool zret = TS_SUCCESS == TSHttpTxnNoteStringGet(state_->txn_, key.data(), &svalue);
+  if (zret)
+    value.assign(svalue);
+  else
+    value.clear();
+  return zret;
+}
+
 void
 Transaction::resume()
 {

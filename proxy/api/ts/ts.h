@@ -2260,6 +2260,9 @@ tsapi TSReturnCode TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigK
 
 tsapi TSReturnCode TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, TSRecordDataType *type);
 
+tsapi TSReturnCode TSHttpTxnNoteStringSet(TSHttpTxn txnp, const char *key, const char *value);
+tsapi TSReturnCode TSHttpTxnNoteStringGet(TSHttpTxn txnp, const char *key, const char **value);
+
 /**
    This API informs the core to try to follow redirections (e.g. 301 responses.
    The new URL would be provided in the standard Location header.

@@ -37,7 +37,7 @@
 #include "Log.h"
 
 const char *container_names[] = {"not-a-container", "cqh",  "psh",  "pqh",    "ssh", "cssh",  "ecqh", "epsh", "epqh", "essh",
-                                 "ecssh",           "icfg", "scfg", "record", "ms",  "msdms", ""};
+                                 "ecssh",           "icfg", "scfg", "record", "ms",  "msdms", "note", ""};
 
 const char *aggregate_names[] = {"not-an-agg-op", "COUNT", "SUM", "AVG", "FIRST", "LAST", ""};
 
@@ -304,6 +304,7 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
   case ESSH:
   case ECSSH:
   case SCFG:
+  case NOTE:
     m_unmarshal_func = (UnmarshalFunc) & (LogAccess::unmarshal_str);
     break;
 
@@ -411,6 +412,9 @@ LogField::marshal_len(LogAccess *lad)
   case MSDMS:
     return lad->marshal_milestone_diff(m_milestone1, m_milestone2, NULL);
 
+  case NOTE:
+    return lad->marshal_note_field(m_name, NULL);
+
   default:
     return 0;
   }
@@ -466,6 +470,9 @@ LogField::marshal(LogAccess *lad, char *buf)
 
   case MSDMS:
     return lad->marshal_milestone_diff(m_milestone1, m_milestone2, buf);
+
+  case NOTE:
+    return lad->marshal_note_field(m_name, buf);
 
   default:
     return 0;

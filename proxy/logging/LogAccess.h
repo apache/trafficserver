@@ -296,6 +296,10 @@ public:
   inkcoreapi virtual int marshal_milestone(TSMilestonesType ms, char *buf);
   inkcoreapi virtual int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
 
+  // named fields from note of transaction
+  //
+  inkcoreapi virtual int marshal_note_field(char *field, char *buf);
+
   //
   // unmarshalling routines
   //

@@ -232,6 +232,18 @@ public:
   }
 };
 
+template <class AHashFns = StringHashFns, class A = DefaultAlloc>
+class StringHashMap : public HashMap<cchar *, AHashFns, cchar *, A>
+{
+public:
+  using HashMap<cchar *, AHashFns, cchar *, A>::n;
+  using HashMap<cchar *, AHashFns, cchar *, A>::v;
+  MapElem<cchar *, cchar *> *put(cchar *key, cchar *value);
+  int del(cchar *key);
+  void copy(const StringHashMap<AHashFns, A> &hm);
+  void clear();
+};
+
 template <class C, class AHashFns, int N, class A = DefaultAlloc> class NBlockHash
 {
 public:
@@ -371,7 +383,7 @@ template <class K, class C, class A>
 inline void
 Map<K, C, A>::get_values(Vec<C> &values)
 {
-  for (int i = 0; i < n; i++)
+  for (size_t i = 0; i < n; i++)
     if (v[i].key)
       values.set_add(v[i].value);
   values.set_to_vec();
@@ -849,6 +861,64 @@ StringChainHash<F, A>::canonicalize(cchar *s, cchar *e)
   if (ss)
     return ss;
   return s;
+}
+
+template <class AHashFns, class A>
+inline MapElem<cchar *, cchar *> *
+StringHashMap<AHashFns, A>::put(cchar *key, cchar *value)
+{
+  MapElem<cchar *, cchar *> *x, *e = HashMap<cchar *, AHashFns, cchar *, A>::get_internal(key);
+  if (e) {
+    A::free(const_cast<char *>(e->value));
+    x = HashMap<cchar *, AHashFns, cchar *, A>::put(e->key, _dupstr<A>(value));
+  } else {
+    x = HashMap<cchar *, AHashFns, cchar *, A>::put(_dupstr<A>(key), _dupstr<A>(value));
+  }
+
+  if (x) {
+    return x;
+  }
+  return 0;
+}
+
+template <class AHashFns, class A>
+inline int
+StringHashMap<AHashFns, A>::del(cchar *key)
+{
+  MapElem<cchar *, cchar *> *e = HashMap<cchar *, AHashFns, cchar *, A>::get_internal(key);
+  if (e) {
+    A::free(const_cast<char *>(e->key));
+    A::free(const_cast<char *>(e->value));
+    Vec<MapElem<cchar *, cchar *>, A>::remove(*e);
+    return 1;
+  }
+  return 0;
+}
+
+template <class AHashFns, class A>
+void
+StringHashMap<AHashFns, A>::copy(const StringHashMap<AHashFns, A> &hm)
+{
+  for (size_t i = 0; i < n; i++) {
+    if (v[i].key) {
+      char *k = _dupstr<A>(v[i].key);
+      char *s = _dupstr<A>(v[i].value);
+      put(k, s);
+    }
+  }
+}
+
+template <class AHashFns, class A>
+void
+StringHashMap<AHashFns, A>::clear()
+{
+  for (size_t i = 0; i < n; i++) {
+    if (v[i].key) {
+      A::free(const_cast<char *>(v[i].key));
+      A::free(const_cast<char *>(v[i].value));
+    }
+  }
+  HashMap<cchar *, AHashFns, cchar *, A>::clear();
 }
 
 template <class K, class C, class A>

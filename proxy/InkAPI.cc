@@ -8652,6 +8652,38 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
 }
 
 TSReturnCode
+TSHttpTxnNoteStringSet(TSHttpTxn txnp, const char *key, const char *value)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void **)key) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void **)value) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+
+  if (!sm->t_state.note.put(key, value)) {
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSHttpTxnNoteStringGet(TSHttpTxn txnp, const char *key, const char **value)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void **)key) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+
+  *value = sm->t_state.note.get(key);
+  if (*value == 0) {
+    return TS_ERROR;
+  }
+
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session)
 {
   if (sdk_sanity_check_txn(txnp) != TS_SUCCESS) {
