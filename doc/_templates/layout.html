@@ -24,18 +24,31 @@
     <span class="fa fa-caret-down"></span>
   </span>
   <div class="rst-other-versions">
-    <dl>
+    <dl id="lang-list">
       <dt>Languages</dt>
-      <dd><a href="/en/latest/">English</a></dd>
-      <dd><a href="/ja/latest/">日本語</a></dd>
     </dl>
-    <dl>
+    <dl id="version-list">
       <dt>Versions</dt>
-      <dd><a href="/{{ language }}/latest/">latest</a></dd>
-      <dd><a href="/{{ language }}/6.2.x/">6.2.x</a></dd>
-      <dd><a href="/{{ language }}/5.3.x/">5.3.x</a></dd>
     </dl>
   </div>
 </div>
+<script>
+$(function() {
+  var curlang = "{{ language }}" == "None" ? "en" : "{{ language }}";
+  $.ajax({
+    'url': '/_static/languages.json',
+    'dataType': "json",
+    'success': function (json) {
+      for (var lang in json) {
+        $('#lang-list').append('<dd><a href="/' + lang + '/latest/">' + json[lang]['name'] + '</a></dd>');
+      }
+      for (var i in json[curlang]['versions']) {
+        var ver = json[curlang]['versions'][i];
+        $('#version-list').append('<dd><a href="/' + curlang + '/' + ver + '/">' + ver + '</a></dd>');
+      }
+    }
+  });
+});
+</script>
 {{ super() }}
 {% endblock %}
