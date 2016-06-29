@@ -167,6 +167,9 @@ struct Server : public Connection {
   /// If set, a kernel HTTP accept filter
   bool http_accept_filter;
 
+  // If set this server is free from connection throttling
+  bool no_throttle;
+
   //
   // Use this call for the main proxy accept
   //
@@ -185,7 +188,7 @@ struct Server : public Connection {
                           bool transparent = false ///< Inbound transparent.
                           );
 
-  Server() : Connection(), f_inbound_transparent(false) { ink_zero(accept_addr); }
+  Server() : Connection(), f_inbound_transparent(false), no_throttle(false) { ink_zero(accept_addr); }
 };
 
 #endif /*_Connection_h*/

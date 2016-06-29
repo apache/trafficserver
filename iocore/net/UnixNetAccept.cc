@@ -39,15 +39,14 @@ safe_delay(int msec)
 }
 
 //
-// Send the throttling message to up to THROTTLE_AT_ONCE connections,
-// delaying to let some of the current connections complete
+// Close THROTTLE_AT_ONCE connections.  We are over limit and shedding
+// new connections
 //
 static int
-send_throttle_message(NetAccept *na)
+drain_throttled_accepts(NetAccept *na)
 {
   struct pollfd afd;
   Connection con[100];
-  char dummy_read_request[4096];
 
   afd.fd     = na->server.fd;
   afd.events = POLLIN;
@@ -57,18 +56,10 @@ send_throttle_message(NetAccept *na)
     int res = 0;
     if ((res = na->server.accept(&con[n])) < 0)
       return res;
+    con[n].close();
     n++;
   }
-  safe_delay(net_throttle_delay / 2);
-  int i = 0;
-  for (i = 0; i < n; i++) {
-    socketManager.read(con[i].fd, dummy_read_request, 4096);
-    socketManager.write(con[i].fd, unix_netProcessor.throttle_error_message, strlen(unix_netProcessor.throttle_error_message));
-  }
-  safe_delay(net_throttle_delay / 2);
-  for (i = 0; i < n; i++)
-    con[i].close();
-  return 0;
+  return n;
 }
 
 //
@@ -253,15 +244,17 @@ NetAccept::do_blocking_accept(EThread *t)
     ink_hrtime now = Thread::get_hrtime();
 
     // Throttle accepts
-
-    while (!backdoor && check_net_throttle(ACCEPT, now)) {
-      check_throttle_warning();
-      if (!unix_netProcessor.throttle_error_message) {
-        safe_delay(net_throttle_delay);
-      } else if (send_throttle_message(this) < 0) {
-        goto Lerror;
+    if (!this->no_throttle()) { // Can we throttle this port?
+      while (!backdoor && check_net_throttle(ACCEPT, now)) {
+        check_throttle_warning(ACCEPT);
+        // Shutdown and go home
+        int num_throttled = drain_throttled_accepts(this);
+        if (num_throttled < 0) {
+          goto Lerror;
+        }
+        NET_SUM_DYN_STAT(net_connections_throttled_in_stat, num_throttled);
+        now = Thread::get_hrtime();
       }
-      now = Thread::get_hrtime();
     }
 
     if ((res = server.accept(&con)) < 0) {
@@ -295,8 +288,6 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->options.packet_tos  = packet_tos;
 
     vc->apply_options();
-
-    check_emergency_throttle(con);
 
     NET_SUM_GLOBAL_DYN_STAT(net_connections_currently_open_stat, 1);
     vc->submit_time = now;

@@ -77,6 +77,11 @@ register_net_stats()
                      (int)net_accepts_currently_open_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_accepts_currently_open_stat);
 
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.connections_throttled_in", RECD_INT, RECP_PERSISTENT,
+                     (int)net_connections_throttled_in_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.connections_throttled_out", RECD_INT, RECP_PERSISTENT,
+                     (int)net_connections_throttled_out_stat, RecRawStatSyncSum);
+
   RecRegisterRawStat(net_rsb, RECT_PROCESS, "proxy.process.net.calls_to_readfromnet", RECD_INT, RECP_PERSISTENT,
                      (int)net_calls_to_readfromnet_stat, RecRawStatSyncSum);
   NET_CLEAR_DYN_STAT(net_calls_to_readfromnet_stat);

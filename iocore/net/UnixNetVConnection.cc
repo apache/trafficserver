@@ -1241,8 +1241,10 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
 
   thread = t;
   if (check_net_throttle(CONNECT, submit_time)) {
-    check_throttle_warning();
+    check_throttle_warning(CONNECT);
     action_.continuation->handleEvent(NET_EVENT_OPEN_FAILED, (void *)-ENET_THROTTLING);
+    ProxyMutex *mutex = thread->mutex.get(); // Faking out the stat increment macro below
+    NET_INCREMENT_DYN_STAT(net_connections_throttled_out_stat);
     free(t);
     return CONNECT_FAILURE;
   }
@@ -1296,8 +1298,6 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
       goto fail;
     }
   }
-
-  check_emergency_throttle(con);
 
   // start up next round immediately
 
