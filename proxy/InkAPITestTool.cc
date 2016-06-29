@@ -485,22 +485,17 @@ synclient_txn_create(void)
   HttpProxyPort *proxy_port;
 
   ClientTxn *txn = (ClientTxn *)TSmalloc(sizeof(ClientTxn));
+
+  ink_zero(*txn);
+
   if (0 == (proxy_port = HttpProxyPort::findHttp(AF_INET)))
     txn->connect_port = PROXY_HTTP_DEFAULT_PORT;
   else
     txn->connect_port = proxy_port->m_port;
 
-  txn->local_port     = (int)0;
-  txn->connect_ip     = IP(127, 0, 0, 1);
-  txn->status         = REQUEST_INPROGRESS;
-  txn->request        = NULL;
-  txn->vconn          = NULL;
-  txn->req_buffer     = NULL;
-  txn->req_reader     = NULL;
-  txn->resp_buffer    = NULL;
-  txn->resp_reader    = NULL;
-  txn->magic          = MAGIC_ALIVE;
-  txn->connect_action = NULL;
+  txn->connect_ip = IP(127, 0, 0, 1);
+  txn->status     = REQUEST_INPROGRESS;
+  txn->magic      = MAGIC_ALIVE;
 
   TSDebug(CDBG_TAG, "Connecting to proxy 127.0.0.1 on port %d", txn->connect_port);
   return txn;
@@ -599,7 +594,7 @@ synclient_txn_read_response(TSCont contp)
     block = TSIOBufferBlockNext(block);
   }
 
-  txn->response[txn->response_len + 1] = '\0';
+  txn->response[txn->response_len] = '\0';
   TSDebug(CDBG_TAG, "Response = |%s|, req len = %d", txn->response, txn->response_len);
 
   return 1;
