@@ -1,3 +1,4 @@
+#
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,55 +15,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
- acme \
- authproxy \
- background_fetch \
- balancer \
- buffer_upload \
- cache_promote \
- cache_range_requests \
- cachekey \
- collapsed_connection \
- collapsed_forwarding \
- custom_redirect \
- epic \
- escalate \
- esi \
- generator \
- geoip_acl \
- header_normalize \
- hipes \
- inliner \
- memcache \
- memcached_remap \
- metalink \
- mp4 \
- multiplexer \
- regex_revalidate \
- remap_stats \
- s3_auth \
- ssl_cert_loader \
- sslheaders \
- stale_while_revalidate \
- stream_editor \
- ts_lua \
- url_sig \
- xdebug
+include $(top_srcdir)/build/plugins.mk
 
-if ENABLE_CPPAPI
-if BUILD_WEBP_TRANSFORM_PLUGIN
- SUBDIRS += webp_transform
-endif
-if BUILD_BROTLI_TRANSFORM_PLUGIN
-  SUBDIRS += brotli_transform
-endif
-endif
+AM_CPPFLAGS += \
+  -I$(top_srcdir)/lib/atscppapi/src/include \
+  $(LIBBROTLIENC_CFLAGS)
 
-if HAS_MYSQL
-  SUBDIRS += mysql_remap
-endif
+AM_CXXFLAGS += \
+  -Wno-unused-variable
 
-if HAS_KYOTOCABINET
-  SUBDIRS += cache_key_genid
-endif
+pkglib_LTLIBRARIES = brotli_transform.la
+
+brotli_transform_la_SOURCES = brotli_transform.cc
+brotli_transform_la_LDFLAGS = \
+  $(TS_PLUGIN_LDFLAGS) \
+  -L$(top_builddir)/lib/atscppapi/src
+brotli_transform_la_LIBADD = \
+  -latscppapi \
+  $(LIBBROTLIENC_LIBS)
