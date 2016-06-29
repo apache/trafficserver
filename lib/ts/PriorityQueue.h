@@ -29,7 +29,7 @@
 
 template <typename T> struct PriorityQueueEntry {
   PriorityQueueEntry(T n) : index(0), node(n){};
-  PriorityQueueEntry() : index(0){};
+  PriorityQueueEntry() : index(0), node(NULL){};
   uint32_t index;
   T node;
 };
