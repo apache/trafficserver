@@ -508,16 +508,16 @@ Transaction::getCachedResponse()
 void
 Transaction::resetHandles()
 {
-  state_->cached_request_hdr_buf_ = NULL;
-  state_->cached_request_hdr_loc_ = NULL;
+  state_->cached_request_hdr_buf_  = NULL;
+  state_->cached_request_hdr_loc_  = NULL;
   state_->cached_response_hdr_buf_ = NULL;
   state_->cached_response_hdr_loc_ = NULL;
 
   state_->client_response_hdr_buf_ = NULL;
   state_->client_response_hdr_loc_ = NULL;
 
-  state_->server_request_hdr_buf_ = NULL;
-  state_->server_request_hdr_loc_ = NULL;
+  state_->server_request_hdr_buf_  = NULL;
+  state_->server_request_hdr_loc_  = NULL;
   state_->server_response_hdr_buf_ = NULL;
   state_->server_response_hdr_loc_ = NULL;
 }
