@@ -81,10 +81,10 @@ configuration provided with the plugin's source)::
 
     gzip.so <path-to-plugin>/sample.gzip.config
 
-This can be used as remap plugin by pointing to config file in remap rule 
+This can be used as remap plugin by pointing to config file in remap rule
 :file:`remap.config`::
 
-    @plugin=gzip.so @pparam=--config=<path-to-plugin>/sample.gzip.config 
+    @plugin=gzip.so @pparam=<path-to-plugin>/sample.gzip.config
 
 The following sections detail the options you may specify in the plugin's
 configuration file. Options may be used globally, or may be specified on a
@@ -105,13 +105,14 @@ compressible-content-type
 -------------------------
 
 Provides a wildcard to match against content types, determining which are to be
-considered compressible. This defaults to ``text/*``.
+considered compressible. This defaults to ``text/*``. Takes one Content-Type
+per line.
 
 disallow
 --------
 
 Provides a wildcard pattern which will be applied to request URLs. Any which
-match the pattern will be considered uncompressable, and only deflated versions
+match the pattern will be considered incompressible, and only deflated versions
 of the objects will be cached and returned to clients. This may be useful for
 objects which already have their own compression built-in, to avoid the expense
 of multiple rounds of compression for trivial gains.
@@ -119,7 +120,7 @@ of multiple rounds of compression for trivial gains.
 enabled
 -------
 
-When set to ``true`` permits objects to be compressed, and when ``false``
+When set to ``true`` (the default) permits objects to be compressed, and when ``false``
 effectively disables the plugin in the current context.
 
 flush
@@ -149,9 +150,9 @@ might create a configuration with the following options::
 
     # Set some global options first
     cache true
-    enabled true
     remove-accept-encoding false
     compressible-content-type text/*
+    compressible-content-type application/json
     flush false
 
     # Now set a configuration for www.example.com
@@ -160,6 +161,10 @@ might create a configuration with the following options::
     remove-accept-encoding true
     disallow /notthis/*.js
     flush true
+
+    # This origin does it all
+    [bar.example.com]
+    enabled false
 
 Assuming the above options are in a file at ``/etc/trafficserver/gzip.config``
 the plugin would be enabled for |TS| in :file:`plugin.config` as::
