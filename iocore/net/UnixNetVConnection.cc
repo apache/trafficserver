@@ -1137,8 +1137,8 @@ UnixNetVConnection::mainEvent(int event, Event *e)
       (write.vio.mutex.m_ptr && wlock.get_mutex() != write.vio.mutex.m_ptr)) {
 #ifdef INACTIVITY_TIMEOUT
     if (e == active_timeout)
-#endif
       e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
+#endif
     return EVENT_CONT;
   }
 
