@@ -1299,7 +1299,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
 
     int allocSize = s_size + rrsize; // The extra space we need for the rest of the things
 
-    Debug("hostdb", "allocating %d bytes for %s with %d records", allocSize, aname, valid_records);
+    Debug("hostdb", "allocating %d bytes for %s with %d RR records", allocSize, aname, valid_records);
     HostDBInfo *r = HostDBInfo::alloc(allocSize);
     // set up the record
     r->key = md5.hash.fold(); // always set the key
