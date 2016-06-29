@@ -1,0 +1,4 @@
+{
+  "en": { "name": "English", "versions": ["latest","6.2.x","5.3.x"] },
+  "ja": { "name": "日本語", "versions": ["latest","6.2.x","5.3.x"] }
+}
