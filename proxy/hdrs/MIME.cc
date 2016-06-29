@@ -397,8 +397,9 @@ void
 mime_hdr_presence_set(MIMEHdrImpl *h, const char *well_known_str)
 {
   uint64_t mask = mime_field_presence_mask(well_known_str);
-  if (mask != 0)
+  if (mask != 0) {
     h->m_presence_bits |= mask;
+  }
 }
 
 void
@@ -412,8 +413,9 @@ void
 mime_hdr_presence_unset(MIMEHdrImpl *h, const char *well_known_str)
 {
   uint64_t mask = mime_field_presence_mask(well_known_str);
-  if (mask != 0)
+  if (mask != 0) {
     h->m_presence_bits &= (~mask);
+  }
 }
 
 void
@@ -472,8 +474,9 @@ mime_hdr_set_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
 {
   int slot_id;
   ptrdiff_t slot_num;
-  if (field->m_wks_idx < 0)
+  if (field->m_wks_idx < 0) {
     return;
+  }
 
   mime_hdr_presence_set(mh, field->m_wks_idx);
 
@@ -500,14 +503,16 @@ inline void
 mime_hdr_unset_accelerators_and_presence_bits(MIMEHdrImpl *mh, MIMEField *field)
 {
   int slot_id;
-  if (field->m_wks_idx < 0)
+  if (field->m_wks_idx < 0) {
     return;
+  }
 
   mime_hdr_presence_unset(mh, field->m_wks_idx);
 
   slot_id = hdrtoken_index_to_slotid(field->m_wks_idx);
-  if (slot_id != MIME_SLOTID_NONE)
+  if (slot_id != MIME_SLOTID_NONE) {
     mime_hdr_set_accelerator_slotnum(mh, slot_id, MIME_FIELD_SLOTNUM_MAX);
+  }
 }
 
 /// Reset data in the header.
@@ -522,8 +527,9 @@ mime_hdr_reset_accelerators_and_presence_bits(MIMEHdrImpl *mh)
     for (MIMEField *field = fblock->m_field_slots, *limit = field + fblock->m_freetop; field < limit; ++field) {
       if (field->is_live()) {
         field->m_wks_idx = hdrtoken_tokenize(field->m_ptr_name, field->m_len_name);
-        if (field->is_dup_head())
+        if (field->is_dup_head()) {
           mime_hdr_set_accelerators_and_presence_bits(mh, field);
+        }
       }
     }
   }
@@ -533,8 +539,9 @@ int
 checksum_block(const char *s, int len)
 {
   int sum = 0;
-  while (len--)
+  while (len--) {
     sum ^= *s++;
+  }
   return sum;
 }
 
@@ -558,8 +565,9 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
       if (field->is_live()) {
         // dummy operations just to make sure deref doesn't crash
         checksum_block(field->m_ptr_name, field->m_len_name);
-        if (field->m_ptr_value)
+        if (field->m_ptr_value) {
           checksum_block(field->m_ptr_value, field->m_len_value);
+        }
 
         if (field->m_n_v_raw_printable) {
           int total_len = field->m_len_name + field->m_len_value + field->m_n_v_raw_printable_pad;
@@ -584,8 +592,9 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
           const char *wks = hdrtoken_index_to_wks(field->m_wks_idx);
           int len         = hdrtoken_index_to_length(field->m_wks_idx);
 
-          if (field->m_len_name != len || strncasecmp(field->m_ptr_name, wks, field->m_len_name) != 0)
+          if (field->m_len_name != len || strncasecmp(field->m_ptr_name, wks, field->m_len_name) != 0) {
             Warning("Encountered WKS hash collision on '%.*s'", field->m_len_name, field->m_ptr_name);
+          }
 
           uint64_t mask = mime_field_presence_mask(field->m_wks_idx);
           masksum |= mask;
@@ -594,8 +603,9 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
           if ((slot_id != MIME_SLOTID_NONE) && (slot_index < MIME_FIELD_SLOTNUM_UNKNOWN) &&
               (field->m_flags & MIME_FIELD_SLOT_FLAGS_DUP_HEAD)) {
             uint32_t slot_num = mime_hdr_get_accelerator_slotnum(mh, slot_id);
-            if (slot_num <= 14)
+            if (slot_num <= 14) {
               ink_release_assert(slot_num == slot_index);
+            }
           }
         } else {
           int idx = hdrtoken_tokenize(field->m_ptr_name, field->m_len_name, NULL);
@@ -617,10 +627,11 @@ mime_hdr_sanity_check(MIMEHdrImpl *mh)
         // re-find the field --- should always find the head dup
         MIMEField *mf = mime_hdr_field_find(mh, field->m_ptr_name, field->m_len_name);
         ink_release_assert(mf != NULL);
-        if (mf == field)
+        if (mf == field) {
           ink_release_assert((field->m_flags & MIME_FIELD_SLOT_FLAGS_DUP_HEAD) != 0);
-        else
+        } else {
           ink_release_assert((field->m_flags & MIME_FIELD_SLOT_FLAGS_DUP_HEAD) == 0);
+        }
       }
 
       ++slot_index;
@@ -1118,8 +1129,9 @@ mime_hdr_copy_onto(MIMEHdrImpl *s_mh, HdrHeap *s_heap, MIMEHdrImpl *d_mh, HdrHea
     d_mh->m_fblock_list_tail = prev_d_fblock;
   }
 
-  if (inherit_strs)
+  if (inherit_strs) {
     d_heap->inherit_string_heaps(s_heap);
+  }
 
   mime_hdr_field_block_list_adjust(block_count, &(s_mh->m_first_fblock), &(d_mh->m_first_fblock));
 
@@ -1217,8 +1229,9 @@ _mime_hdr_field_list_search_by_wks(MIMEHdrImpl *mh, int wks_idx)
 
     too_far_field = &(fblock->m_field_slots[fblock->m_freetop]);
     while (field < too_far_field) {
-      if (field->is_live() && (field->m_wks_idx == wks_idx))
+      if (field->is_live() && (field->m_wks_idx == wks_idx)) {
         return field;
+      }
       ++field;
     }
   }
@@ -1268,12 +1281,14 @@ _mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum)
     block_index = slotnum % MIME_FIELD_BLOCK_SLOTS;
 
     fblock = &(mh->m_first_fblock);
-    while (block_num-- && fblock)
+    while (block_num-- && fblock) {
       fblock = fblock->m_next;
-    if ((fblock == NULL) || (block_index >= fblock->m_freetop))
+    }
+    if ((fblock == NULL) || (block_index >= fblock->m_freetop)) {
       return NULL;
-    else
+    } else {
       return &(fblock->m_field_slots[block_index]);
+    }
   }
 }
 
@@ -1358,10 +1373,12 @@ mime_hdr_field_get(MIMEHdrImpl *mh, int idx)
   for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
     for (index = 0; index < fblock->m_freetop; index++) {
       field = &(fblock->m_field_slots[index]);
-      if (field->is_live())
+      if (field->is_live()) {
         ++got_idx;
-      if (got_idx == idx)
+      }
+      if (got_idx == idx) {
         return field;
+      }
     }
   }
 
@@ -1387,8 +1404,9 @@ mime_hdr_fields_count(MIMEHdrImpl *mh)
   for (fblock = &(mh->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
     for (index = 0; index < fblock->m_freetop; index++) {
       field = &(fblock->m_field_slots[index]);
-      if (field->is_live())
+      if (field->is_live()) {
         ++count;
+      }
     }
   }
 
@@ -1486,10 +1504,12 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
 
     while (prev_slotnum < field_slotnum) // break if prev after field
     {
-      if (next_dup == NULL)
+      if (next_dup == NULL) {
         break; // no next dup, we're done
-      if (next_slotnum > field_slotnum)
+      }
+      if (next_slotnum > field_slotnum) {
         break; // next dup is after us, we're done
+      }
       prev_dup     = next_dup;
       prev_slotnum = next_slotnum;
       next_dup     = prev_dup->m_next_dup;
@@ -1529,8 +1549,9 @@ mime_hdr_field_attach(MIMEHdrImpl *mh, MIMEField *field, int check_for_dups, MIM
 
   // Now keep the cooked cache consistent
   ink_assert(field->is_live());
-  if (field->m_ptr_value && field->is_cooked())
+  if (field->m_ptr_value && field->is_cooked()) {
     mh->recompute_cooked_stuff(field);
+  }
 
   MIME_HDR_SANITY_CHECK(mh);
 }
@@ -1572,12 +1593,14 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
     const char *name = mime_field_name_get(field, &name_length);
     MIMEField *prev  = mime_hdr_field_find(mh, name, name_length);
 
-    while (prev && (prev->m_next_dup != field))
+    while (prev && (prev->m_next_dup != field)) {
       prev = prev->m_next_dup;
+    }
     ink_assert(prev != NULL);
 
-    if (prev->m_next_dup == field)
+    if (prev->m_next_dup == field) {
       prev->m_next_dup = next_dup;
+    }
   }
 
   // Field is now detached and alone
@@ -1585,8 +1608,9 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
   field->m_next_dup  = NULL;
 
   // Because we changed the values through detaching,update the cooked cache
-  if (field->is_cooked())
+  if (field->is_cooked()) {
     mh->recompute_cooked_stuff(field);
+  }
 
   MIME_HDR_SANITY_CHECK(mh);
 
@@ -1595,8 +1619,9 @@ mime_hdr_field_detach(MIMEHdrImpl *mh, MIMEField *field, bool detach_all_dups)
   // or an interior dup detached and patched around.  If we are requested
   // to delete the whole dup list, we tail-recurse to delete it.
 
-  if (detach_all_dups && next_dup)
+  if (detach_all_dups && next_dup) {
     mime_hdr_field_detach(mh, next_dup, detach_all_dups);
+  }
 }
 
 void
@@ -1699,10 +1724,11 @@ const char *
 mime_field_name_get(const MIMEField *field, int *length)
 {
   *length = field->m_len_name;
-  if (field->m_wks_idx >= 0)
+  if (field->m_wks_idx >= 0) {
     return hdrtoken_index_to_wks(field->m_wks_idx);
-  else
+  } else {
     return field->m_ptr_name;
+  }
 }
 
 void
@@ -1795,10 +1821,11 @@ mime_field_value_get_comma_val(const MIMEField *field, int *length, int idx)
 {
   // some fields (like Date) contain commas but should not be ripped apart
   if (!field->supports_commas()) {
-    if (idx == 0)
+    if (idx == 0) {
       return mime_field_value_get(field, length);
-    else
+    } else {
       return NULL;
+    }
   } else {
     Str *str;
     StrList list(false);
@@ -1837,10 +1864,11 @@ mime_field_value_get_comma_list(const MIMEField *field, StrList *list)
   str = mime_field_value_get(field, &len);
 
   // if field doesn't support commas, don't rip apart.
-  if (!field->supports_commas())
+  if (!field->supports_commas()) {
     list->append_string(str, len);
-  else
+  } else {
     HttpCompat::parse_tok_list(list, 1, str, len, ',');
+  }
 
   return list->count;
 }
@@ -1863,8 +1891,9 @@ mime_field_value_str_from_strlist(HdrHeap *heap, int *new_str_len_return, StrLis
     new_value_len += cell->len;
     cell = cell->next;
   }
-  if (list->count > 1)
+  if (list->count > 1) {
     new_value_len += (2 * (list->count - 1));
+  }
 
   // (2) allocate new heap string
   new_value = heap->allocate_str(new_value_len);
@@ -1899,8 +1928,9 @@ mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field,
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
 
   // (2) if desired index isn't valid, then don't change the field
-  if ((idx < 0) || (idx >= list.count))
+  if ((idx < 0) || (idx >= list.count)) {
     return;
+  }
 
   // (3) mutate cell idx
   cell = list.get_idx(idx);
@@ -1914,8 +1944,9 @@ mime_field_value_set_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field,
 
   // (5) keep stuff fields consistent
   field->m_n_v_raw_printable = 0;
-  if (field->is_live() && field->is_cooked())
+  if (field->is_live() && field->is_cooked()) {
     mh->recompute_cooked_stuff(field);
+  }
 }
 
 void
@@ -1929,8 +1960,9 @@ mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
 
   // (2) if desired index isn't valid, then don't change the field
-  if ((idx < 0) || (idx >= list.count))
+  if ((idx < 0) || (idx >= list.count)) {
     return;
+  }
 
   // (3) delete cell idx
   cell = list.get_idx(idx);
@@ -1958,8 +1990,9 @@ mime_field_value_delete_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 
   // (5) keep stuff fields consistent
   field->m_n_v_raw_printable = 0;
-  if (field->is_live() && field->is_cooked())
+  if (field->is_live() && field->is_cooked()) {
     mh->recompute_cooked_stuff(field);
+  }
 }
 
 void
@@ -1974,10 +2007,12 @@ mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
 
   // (2) if desired index isn't valid, then don't change the field
-  if (idx < 0)
+  if (idx < 0) {
     idx = list.count;
-  if (idx > list.count)
+  }
+  if (idx > list.count) {
     return;
+  }
 
   // (3) create a new cell
   cell = list.new_cell(new_piece_str, new_piece_len);
@@ -1996,8 +2031,9 @@ mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 
   // (6) keep stuff fields consistent
   field->m_n_v_raw_printable = 0;
-  if (field->is_live() && field->is_cooked())
+  if (field->is_live() && field->is_cooked()) {
     mh->recompute_cooked_stuff(field);
+  }
 }
 
 void
@@ -2014,8 +2050,9 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   HttpCompat::parse_tok_list(&list, 0, field->m_ptr_value, field->m_len_value, ',');
 
   // (2) if desired index isn't valid, then don't change the field
-  if ((idx < 0) || (idx >= list.count))
+  if ((idx < 0) || (idx >= list.count)) {
     return;
+  }
 
   // (3) get the cell we want to modify
   cell = list.get_idx(idx);
@@ -2034,21 +2071,24 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   extended_len = cell->len + new_piece_len + (trimmed ? 2 : 0);
 
   // (6) allocate temporary space to construct new value
-  if (extended_len <= sizeof(temp_buf))
+  if (extended_len <= sizeof(temp_buf)) {
     temp_ptr = temp_buf;
-  else
+  } else {
     temp_ptr = (char *)ats_malloc(extended_len);
+  }
 
   // (7) construct new extended token
   dest = temp_ptr;
-  if (trimmed)
+  if (trimmed) {
     *dest++ = '\"';
+  }
   memcpy(dest, cell->str, cell->len);
   dest += cell->len;
   memcpy(dest, new_piece_str, new_piece_len);
   dest += new_piece_len;
-  if (trimmed)
+  if (trimmed) {
     *dest++ = '\"';
+  }
   ink_assert((size_t)(dest - temp_ptr) == extended_len);
 
   // (8) assign the new token to the cell
@@ -2061,12 +2101,14 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
 
   // (10) keep stuff fields consistent
   field->m_n_v_raw_printable = 0;
-  if (field->is_live() && field->is_cooked())
+  if (field->is_live() && field->is_cooked()) {
     mh->recompute_cooked_stuff(field);
+  }
 
   // (11) free up any temporary storage
-  if (extended_len > sizeof(temp_buf))
+  if (extended_len > sizeof(temp_buf)) {
     ats_free(temp_ptr);
+  }
 }
 
 void
@@ -2074,17 +2116,19 @@ mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const cha
 {
   heap->free_string(field->m_ptr_value, field->m_len_value);
 
-  if (must_copy_string && value)
+  if (must_copy_string && value) {
     field->m_ptr_value = heap->duplicate_str(value, length);
-  else
+  } else {
     field->m_ptr_value = value;
+  }
 
   field->m_len_value         = length;
   field->m_n_v_raw_printable = 0;
 
   // Now keep the cooked cache consistent
-  if (field->is_live() && field->is_cooked())
+  if (field->is_live() && field->is_cooked()) {
     mh->recompute_cooked_stuff(field);
+  }
 }
 
 void
@@ -2148,8 +2192,9 @@ mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int1
     if ((name_wks_idx_or_neg1 == MIME_WKSIDX_CACHE_CONTROL) || (name_wks_idx_or_neg1 == MIME_WKSIDX_PRAGMA)) {
       field->m_flags |= MIME_FIELD_SLOT_FLAGS_COOKED;
     }
-    if (field->is_live() && field->is_cooked())
+    if (field->is_live() && field->is_cooked()) {
       mh->recompute_cooked_stuff(field);
+    }
   }
 }
 
@@ -2158,8 +2203,9 @@ mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const 
                         const char separator)
 {
   int new_length = field->m_len_value + length;
-  if (prepend_comma && field->m_len_value)
+  if (prepend_comma && field->m_len_value) {
     new_length += 2;
+  }
 
   // Start by trying expand the string we already  have
   char *new_str = heap->expand_str(field->m_ptr_value, field->m_len_value, new_length);
@@ -2183,8 +2229,9 @@ mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const 
   field->m_n_v_raw_printable = 0;
 
   // Now keep the cooked cache consistent
-  if (field->is_live() && field->is_cooked())
+  if (field->is_live() && field->is_cooked()) {
     mh->recompute_cooked_stuff(field);
+  }
 }
 
 MIMEField *
@@ -2194,14 +2241,18 @@ MIMEHdr::get_host_port_values(char const **host_ptr, ///< Pointer to host.
                               int *port_len)
 {
   MIMEField *field = this->field_find(MIME_FIELD_HOST, MIME_LEN_HOST);
-  if (host_ptr)
+  if (host_ptr) {
     *host_ptr = 0;
-  if (host_len)
+  }
+  if (host_len) {
     *host_len = 0;
-  if (port_ptr)
+  }
+  if (port_ptr) {
     *port_ptr = 0;
-  if (port_len)
+  }
+  if (port_len) {
     *port_len = 0;
+  }
 
   if (field) {
     ts::ConstBuffer b(field->m_ptr_value, field->m_len_value);
@@ -2229,16 +2280,20 @@ MIMEHdr::get_host_port_values(char const **host_ptr, ///< Pointer to host.
       }
 
       if (host) {
-        if (host_ptr)
+        if (host_ptr) {
           *host_ptr = host._ptr;
-        if (host_len)
+        }
+        if (host_len) {
           *host_len = static_cast<int>(host._size);
+        }
       }
       if (port) {
-        if (port_ptr)
+        if (port_ptr) {
           *port_ptr = port._ptr;
-        if (port_len)
+        }
+        if (port_len) {
           *port_len = static_cast<int>(port._size);
+        }
       }
     } else {
       field = 0; // no value in field, signal fail.
@@ -2287,9 +2342,10 @@ mime_scanner_append(MIMEScanner *scanner, const char *data, int data_size)
   //////////////////////////////////////////////////////
   // if not enough space, allocate or grow the buffer //
   //////////////////////////////////////////////////////
-  if (data_size > free_size) {     // need to allocate/grow the buffer
-    if (scanner->m_line_size == 0) // buffer should be at least 128 bytes
+  if (data_size > free_size) {       // need to allocate/grow the buffer
+    if (scanner->m_line_size == 0) { // buffer should be at least 128 bytes
       scanner->m_line_size = 128;
+    }
 
     while (free_size < data_size) { // grow buffer by powers of 2
       scanner->m_line_size *= 2;
@@ -2443,8 +2499,9 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
   }
 
   // Make sure there are no '\0' in the input scanned so far
-  if (zret != PARSE_ERROR && memchr(*raw_input_s, '\0', raw_input_c - *raw_input_s) != NULL)
+  if (zret != PARSE_ERROR && memchr(*raw_input_s, '\0', raw_input_c - *raw_input_s) != NULL) {
     zret = PARSE_ERROR;
+  }
 
   *raw_input_s = raw_input_c; // mark input consumed.
   return zret;
@@ -2501,8 +2558,9 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     ////////////////////////////////////////////////////////////////////////////
 
     err = mime_scanner_get(scanner, real_s, real_e, &line_s, &line_e, &line_is_real, eof, MIME_SCANNER_TYPE_FIELD);
-    if (err != PARSE_OK)
+    if (err != PARSE_OK) {
       return err;
+    }
 
     line_c = line_s;
 
@@ -2510,11 +2568,13 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // if got a LF or CR on its own, end the header //
     //////////////////////////////////////////////////
 
-    if ((line_e - line_c >= 2) && (line_c[0] == ParseRules::CHAR_CR) && (line_c[1] == ParseRules::CHAR_LF))
+    if ((line_e - line_c >= 2) && (line_c[0] == ParseRules::CHAR_CR) && (line_c[1] == ParseRules::CHAR_LF)) {
       return PARSE_DONE;
+    }
 
-    if ((line_e - line_c >= 1) && (line_c[0] == ParseRules::CHAR_LF))
+    if ((line_e - line_c >= 1) && (line_c[0] == ParseRules::CHAR_LF)) {
       return PARSE_DONE;
+    }
 
     /////////////////////////////////////////////
     // find pointers into the name:value field //
@@ -2531,33 +2591,39 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
      * have to add one more check to see if the first parameter is '@'
      * character then, the header name is valid.
      **/
-    if ((!ParseRules::is_token(*field_name_first)) && (*field_name_first != '@'))
+    if ((!ParseRules::is_token(*field_name_first)) && (*field_name_first != '@')) {
       continue; // toss away garbage line
+    }
 
     // find name last
     colon = (char *)memchr(line_c, ':', (line_e - line_c));
-    if (!colon)
+    if (!colon) {
       continue; // toss away garbage line
+    }
     field_name_last = colon - 1;
-    while ((field_name_last >= field_name_first) && is_ws(*field_name_last))
+    while ((field_name_last >= field_name_first) && is_ws(*field_name_last)) {
       --field_name_last;
+    }
 
     // find value first
     field_value_first = colon + 1;
-    while ((field_value_first < line_e) && is_ws(*field_value_first))
+    while ((field_value_first < line_e) && is_ws(*field_value_first)) {
       ++field_value_first;
+    }
 
     // find_value_last
     field_value_last = line_e - 1;
-    while ((field_value_last >= field_value_first) && ParseRules::is_wslfcr(*field_value_last))
+    while ((field_value_last >= field_value_first) && ParseRules::is_wslfcr(*field_value_last)) {
       --field_value_last;
+    }
 
     field_name_length  = (int)(field_name_last - field_name_first + 1);
     field_value_length = (int)(field_value_last - field_value_first + 1);
 
     // Make sure the name or value is not longer than 64K
-    if (field_name_length >= UINT16_MAX || field_value_length >= UINT16_MAX)
+    if (field_name_length >= UINT16_MAX || field_value_length >= UINT16_MAX) {
       return PARSE_ERROR;
+    }
 
     int total_line_length = (int)(field_line_last - field_line_first + 1);
 
@@ -2607,8 +2673,9 @@ mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse)
         obj->m_cooked_stuff.m_cache_control.m_secs_s_maxage, obj->m_cooked_stuff.m_cache_control.m_secs_max_stale,
         obj->m_cooked_stuff.m_cache_control.m_secs_min_fresh, obj->m_cooked_stuff.m_pragma.m_no_cache);
   for (fblock = &(obj->m_first_fblock); fblock != NULL; fblock = fblock->m_next) {
-    if (recurse || (fblock == &(obj->m_first_fblock)))
+    if (recurse || (fblock == &(obj->m_first_fblock))) {
       obj_describe((HdrHeapObjImpl *)fblock, recurse);
+    }
   }
 }
 
@@ -2657,8 +2724,9 @@ mime_hdr_print(HdrHeap * /* heap ATS_UNUSED */, MIMEHdrImpl *mh, char *buf_start
     for (index = 0; index < fblock->m_freetop; index++) {
       field = &(fblock->m_field_slots[index]);
       if (field->is_live()) {
-        if (!mime_field_print(field, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout))
+        if (!mime_field_print(field, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout)) {
           return 0;
+        }
       }
     }
   }
@@ -2708,8 +2776,9 @@ mime_mem_print(const char *src_d, int src_l, char *buf_start, int buf_length, in
   if (buf_start == NULL) { // this case should only be used by test_header
     ink_release_assert(buf_index_inout == NULL);
     ink_release_assert(buf_chars_to_skip_inout == NULL);
-    while (src_l--)
+    while (src_l--) {
       putchar(*src_d++);
+    }
     return 1;
   }
 
@@ -2878,12 +2947,13 @@ mime_days_since_epoch_to_mdy_slowcase(unsigned int days_since_jan_1_1970, int *m
 
   /* convert the days */
   d = mday - d;
-  if ((d < 0) || (d > 366))
+  if ((d < 0) || (d > 366)) {
     ink_assert(!"bad date");
-  else {
+  } else {
     month = months[d];
-    if (month > 1)
+    if (month > 1) {
       year -= 1;
+    }
 
     mday = d - days[month] - 1;
     year += 1900;
@@ -3052,21 +3122,24 @@ mime_parse_int(const char *buf, const char *end)
   int32_t num;
   bool negative;
 
-  if (!buf || (buf == end))
+  if (!buf || (buf == end)) {
     return 0;
+  }
 
   if (is_digit(*buf)) // fast case
   {
     num = *buf++ - '0';
-    while ((buf != end) && is_digit(*buf))
+    while ((buf != end) && is_digit(*buf)) {
       num = (num * 10) + (*buf++ - '0');
+    }
     return num;
   } else {
     num      = 0;
     negative = false;
 
-    while ((buf != end) && ParseRules::is_space(*buf))
+    while ((buf != end) && ParseRules::is_space(*buf)) {
       buf += 1;
+    }
 
     if ((buf != end) && (*buf == '-')) {
       negative = true;
@@ -3074,11 +3147,13 @@ mime_parse_int(const char *buf, const char *end)
     }
     // NOTE: we first compute the value as negative then correct the
     // sign back to positive. This enables us to correctly parse MININT.
-    while ((buf != end) && is_digit(*buf))
+    while ((buf != end) && is_digit(*buf)) {
       num = (num * 10) - (*buf++ - '0');
+    }
 
-    if (!negative)
+    if (!negative) {
       num = -num;
+    }
 
     return num;
   }
@@ -3089,21 +3164,25 @@ mime_parse_uint(const char *buf, const char *end)
 {
   uint32_t num;
 
-  if (!buf || (buf == end))
+  if (!buf || (buf == end)) {
     return 0;
+  }
 
   if (is_digit(*buf)) // fast case
   {
     num = *buf++ - '0';
-    while ((buf != end) && is_digit(*buf))
+    while ((buf != end) && is_digit(*buf)) {
       num = (num * 10) + (*buf++ - '0');
+    }
     return num;
   } else {
     num = 0;
-    while ((buf != end) && ParseRules::is_space(*buf))
+    while ((buf != end) && ParseRules::is_space(*buf)) {
       buf += 1;
-    while ((buf != end) && is_digit(*buf))
+    }
+    while ((buf != end) && is_digit(*buf)) {
       num = (num * 10) + (*buf++ - '0');
+    }
     return num;
   }
 }
@@ -3114,21 +3193,24 @@ mime_parse_int64(const char *buf, const char *end)
   int64_t num;
   bool negative;
 
-  if (!buf || (buf == end))
+  if (!buf || (buf == end)) {
     return 0;
+  }
 
   if (is_digit(*buf)) // fast case
   {
     num = *buf++ - '0';
-    while ((buf != end) && is_digit(*buf))
+    while ((buf != end) && is_digit(*buf)) {
       num = (num * 10) + (*buf++ - '0');
+    }
     return num;
   } else {
     num      = 0;
     negative = false;
 
-    while ((buf != end) && ParseRules::is_space(*buf))
+    while ((buf != end) && ParseRules::is_space(*buf)) {
       buf += 1;
+    }
 
     if ((buf != end) && (*buf == '-')) {
       negative = true;
@@ -3136,11 +3218,13 @@ mime_parse_int64(const char *buf, const char *end)
     }
     // NOTE: we first compute the value as negative then correct the
     // sign back to positive. This enables us to correctly parse MININT.
-    while ((buf != end) && is_digit(*buf))
+    while ((buf != end) && is_digit(*buf)) {
       num = (num * 10) - (*buf++ - '0');
+    }
 
-    if (!negative)
+    if (!negative) {
       num = -num;
+    }
 
     return num;
   }
@@ -3195,26 +3279,29 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
   tp->tm_wday     = -1;
   three_char_wday = (buf[0] << 16) | (buf[1] << 8) | buf[2];
   if (three_char_wday <= 0x53756E) {
-    if (three_char_wday == 0x467269)
+    if (three_char_wday == 0x467269) {
       tp->tm_wday = 5;
-    else if (three_char_wday == 0x4D6F6E)
+    } else if (three_char_wday == 0x4D6F6E) {
       tp->tm_wday = 1;
-    else if (three_char_wday == 0x536174)
+    } else if (three_char_wday == 0x536174) {
       tp->tm_wday = 6;
-    else if (three_char_wday == 0x53756E)
+    } else if (three_char_wday == 0x53756E) {
       tp->tm_wday = 0;
+    }
   } else {
-    if (three_char_wday == 0x546875)
+    if (three_char_wday == 0x546875) {
       tp->tm_wday = 4;
-    else if (three_char_wday == 0x547565)
+    } else if (three_char_wday == 0x547565) {
       tp->tm_wday = 2;
-    else if (three_char_wday == 0x576564)
+    } else if (three_char_wday == 0x576564) {
       tp->tm_wday = 3;
+    }
   }
   if (tp->tm_wday < 0) {
     tp->tm_wday = day_names_dfa->match(buf, length);
-    if (tp->tm_wday < 0)
+    if (tp->tm_wday < 0) {
       return 0;
+    }
   }
   //////////////////////////
   // extract day of month //
@@ -3228,41 +3315,46 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
   three_char_mon = (buf[8] << 16) | (buf[9] << 8) | buf[10];
   if (three_char_mon <= 0x4A756C) {
     if (three_char_mon <= 0x446563) {
-      if (three_char_mon == 0x417072)
+      if (three_char_mon == 0x417072) {
         tp->tm_mon = 3;
-      else if (three_char_mon == 0x417567)
+      } else if (three_char_mon == 0x417567) {
         tp->tm_mon = 7;
-      else if (three_char_mon == 0x446563)
+      } else if (three_char_mon == 0x446563) {
         tp->tm_mon = 11;
+      }
     } else {
-      if (three_char_mon == 0x466562)
+      if (three_char_mon == 0x466562) {
         tp->tm_mon = 1;
-      else if (three_char_mon == 0x4A616E)
+      } else if (three_char_mon == 0x4A616E) {
         tp->tm_mon = 0;
-      else if (three_char_mon == 0x4A756C)
+      } else if (three_char_mon == 0x4A756C) {
         tp->tm_mon = 6;
+      }
     }
   } else {
     if (three_char_mon <= 0x4D6179) {
-      if (three_char_mon == 0x4A756E)
+      if (three_char_mon == 0x4A756E) {
         tp->tm_mon = 5;
-      else if (three_char_mon == 0x4D6172)
+      } else if (three_char_mon == 0x4D6172) {
         tp->tm_mon = 2;
-      else if (three_char_mon == 0x4D6179)
+      } else if (three_char_mon == 0x4D6179) {
         tp->tm_mon = 4;
+      }
     } else {
-      if (three_char_mon == 0x4E6F76)
+      if (three_char_mon == 0x4E6F76) {
         tp->tm_mon = 10;
-      else if (three_char_mon == 0x4F6374)
+      } else if (three_char_mon == 0x4F6374) {
         tp->tm_mon = 9;
-      else if (three_char_mon == 0x536570)
+      } else if (three_char_mon == 0x536570) {
         tp->tm_mon = 8;
+      }
     }
   }
   if (tp->tm_mon < 0) {
     tp->tm_mon = month_names_dfa->match(buf, length);
-    if (tp->tm_mon < 0)
+    if (tp->tm_mon < 0) {
       return 0;
+    }
   }
   //////////////////
   // extract year //
@@ -3275,8 +3367,9 @@ mime_parse_rfc822_date_fastcase(const char *buf, int length, struct tm *tp)
   tp->tm_hour = (buf[17] - '0') * 10 + (buf[18] - '0');
   tp->tm_min  = (buf[20] - '0') * 10 + (buf[21] - '0');
   tp->tm_sec  = (buf[23] - '0') * 10 + (buf[24] - '0');
-  if ((buf[19] != ':') || (buf[22] != ':'))
+  if ((buf[19] != ':') || (buf[22] != ':')) {
     return 0;
+  }
   return 1;
 }
 
@@ -3298,11 +3391,13 @@ mime_parse_date(const char *buf, const char *end)
   int month;
   int mday;
 
-  if (!buf)
+  if (!buf) {
     return (time_t)0;
+  }
 
-  while ((buf != end) && is_ws(*buf))
+  while ((buf != end) && is_ws(*buf)) {
     buf += 1;
+  }
 
   if ((buf != end) && is_digit(*buf)) { // NNTP date
     if (!mime_parse_mday(buf, end, &tp.tm_mday)) {
@@ -3318,8 +3413,9 @@ mime_parse_date(const char *buf, const char *end)
       return (time_t)0;
     }
   } else if (end && (end - buf >= 29) && (buf[3] == ',')) {
-    if (!mime_parse_rfc822_date_fastcase(buf, end - buf, &tp))
+    if (!mime_parse_rfc822_date_fastcase(buf, end - buf, &tp)) {
       return (time_t)0;
+    }
   } else {
     if (!mime_parse_day(buf, end, &tp.tm_wday)) {
       return (time_t)0;
@@ -3728,8 +3824,9 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 
         for (s = csv_iter.get_first(field, &len); s != NULL; s = csv_iter.get_next(&len)) {
           e = s + len;
-          for (c = s; (c < e) && (ParseRules::is_token(*c)); c++)
+          for (c = s; (c < e) && (ParseRules::is_token(*c)); c++) {
             ;
+          }
           tlen = c - s;
 
           // If >= 0 then this is a well known token
@@ -3754,20 +3851,22 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 #if TRACK_COOKING
                 Debug("http", "                        set integer value %d", value);
 #endif
-                if (token_wks == MIME_VALUE_MAX_AGE)
+                if (token_wks == MIME_VALUE_MAX_AGE) {
                   m_cooked_stuff.m_cache_control.m_secs_max_age = value;
-                else if (token_wks == MIME_VALUE_MIN_FRESH)
+                } else if (token_wks == MIME_VALUE_MIN_FRESH) {
                   m_cooked_stuff.m_cache_control.m_secs_min_fresh = value;
-                else if (token_wks == MIME_VALUE_MAX_STALE)
+                } else if (token_wks == MIME_VALUE_MAX_STALE) {
                   m_cooked_stuff.m_cache_control.m_secs_max_stale = value;
-                else if (token_wks == MIME_VALUE_S_MAXAGE)
+                } else if (token_wks == MIME_VALUE_S_MAXAGE) {
                   m_cooked_stuff.m_cache_control.m_secs_s_maxage = value;
+                }
               } else {
 #if TRACK_COOKING
                 Debug("http", "                        set integer value %d", INT_MAX);
 #endif
-                if (token_wks == MIME_VALUE_MAX_STALE)
+                if (token_wks == MIME_VALUE_MAX_STALE) {
                   m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;
+                }
               }
             }
           }
@@ -3795,13 +3894,15 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null)
 
         for (s = csv_iter.get_first(field, &len); s != NULL; s = csv_iter.get_next(&len)) {
           e = s + len;
-          for (c = s; (c < e) && (ParseRules::is_token(*c)); c++)
+          for (c = s; (c < e) && (ParseRules::is_token(*c)); c++) {
             ;
+          }
           tlen = c - s;
 
           if (hdrtoken_tokenize(s, tlen, &token_wks) >= 0) {
-            if (token_wks == MIME_VALUE_NO_CACHE)
+            if (token_wks == MIME_VALUE_NO_CACHE) {
               m_cooked_stuff.m_pragma.m_no_cache = 1;
+            }
           }
         }
       }

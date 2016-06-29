@@ -96,8 +96,9 @@ BaseManager::registerMgmtCallback(int msg_id, MgmtCallback cb, void *opaque_cb_d
   if (cb_list) {
     MgmtCallbackList *tmp;
 
-    for (tmp = cb_list; tmp->next; tmp = tmp->next)
+    for (tmp = cb_list; tmp->next; tmp = tmp->next) {
       ;
+    }
     tmp->next              = (MgmtCallbackList *)ats_malloc(sizeof(MgmtCallbackList));
     tmp->next->func        = cb;
     tmp->next->opaque_data = opaque_cb_data;

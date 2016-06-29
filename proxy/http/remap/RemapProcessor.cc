@@ -29,8 +29,9 @@ extern ClassAllocator<RemapPlugins> pluginAllocator;
 int
 RemapProcessor::start(int num_threads, size_t stacksize)
 {
-  if (_use_separate_remap_thread)
+  if (_use_separate_remap_thread) {
     ET_REMAP = eventProcessor.spawn_event_threads(num_threads, "ET_REMAP", stacksize); // ET_REMAP is a class member
+  }
 
   return 0;
 }
@@ -166,15 +167,17 @@ RemapProcessor::finish_remap(HttpTransact::State *s)
 
     if (request_header->presence(MIME_PRESENCE_REFERER) &&
         (referer_hdr = request_header->value_get(MIME_FIELD_REFERER, MIME_LEN_REFERER, &referer_len)) != NULL) {
-      if (referer_len >= (int)sizeof(tmp_referer_buf))
+      if (referer_len >= (int)sizeof(tmp_referer_buf)) {
         referer_len = (int)(sizeof(tmp_referer_buf) - 1);
+      }
       memcpy(tmp_referer_buf, referer_hdr, referer_len);
       tmp_referer_buf[referer_len] = 0;
       for (enabled_flag = false; ri; ri = ri->next) {
         if (ri->any) {
           enabled_flag = true;
-          if (!map->negative_referer)
+          if (!map->negative_referer) {
             break;
+          }
         } else if (ri->regx_valid && (pcre_exec(ri->regx, NULL, tmp_referer_buf, referer_len, 0, 0, NULL, 0) != -1)) {
           enabled_flag = ri->negative ? false : true;
           break;

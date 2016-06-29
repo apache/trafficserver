@@ -307,8 +307,9 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
 
   if (!reg.empty()) {
     _rex_string = TSstrdup(reg.c_str());
-  } else
+  } else {
     _rex_string = NULL;
+  }
 
   if (!sub.empty()) {
     _subst     = TSstrdup(sub.c_str());
@@ -816,14 +817,16 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
         pos1  = line.find_first_not_of(" \t\n#", pos2);
         if (pos1 != std::string::npos) {
           pos2 = line.find_first_of(" \t\n", pos1);
-          if (pos2 == std::string::npos)
+          if (pos2 == std::string::npos) {
             pos2 = line.length();
-          subst  = line.substr(pos1, pos2 - pos1);
-          pos1   = line.find_first_not_of(" \t\n#", pos2);
+          }
+          subst = line.substr(pos1, pos2 - pos1);
+          pos1  = line.find_first_not_of(" \t\n#", pos2);
           if (pos1 != std::string::npos) {
             pos2 = line.find_first_of("\n#", pos1);
-            if (pos2 == std::string::npos)
-              pos2  = line.length();
+            if (pos2 == std::string::npos) {
+              pos2 = line.length();
+            }
             options = line.substr(pos1, pos2 - pos1);
           }
         }

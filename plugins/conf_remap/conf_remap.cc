@@ -55,8 +55,9 @@ str_to_datatype(const char *str)
 {
   TSRecordDataType type = TS_RECORDDATATYPE_NULL;
 
-  if (!str || !*str)
+  if (!str || !*str) {
     return TS_RECORDDATATYPE_NULL;
+  }
 
   if (!strcmp(str, "INT")) {
     type = TS_RECORDDATATYPE_INT;
@@ -128,8 +129,9 @@ RemapConfigs::parse_file(const char *filename)
 
   std::string path;
 
-  if (!filename || ('\0' == *filename))
+  if (!filename || ('\0' == *filename)) {
     return false;
+  }
 
   if (*filename == '/') {
     // Absolute path, just use it.
@@ -153,13 +155,15 @@ RemapConfigs::parse_file(const char *filename)
     char *s = buf;
 
     ++line_num; // First line is #1 ...
-    while (isspace(*s))
+    while (isspace(*s)) {
       ++s;
+    }
     tok = strtok_r(s, " \t", &ln);
 
     // check for blank lines and comments
-    if ((!tok) || (tok && ('#' == *tok)))
+    if ((!tok) || (tok && ('#' == *tok))) {
       continue;
+    }
 
     if (strncmp(tok, "CONFIG", 6)) {
       TSError("[%s] File %s, line %d: non-CONFIG line encountered", PLUGIN_NAME, path.c_str(), line_num);
@@ -187,17 +191,20 @@ RemapConfigs::parse_file(const char *filename)
 
     // Find the value (which depends on the type above)
     if (ln) {
-      while (isspace(*ln))
+      while (isspace(*ln)) {
         ++ln;
+      }
       if ('\0' == *ln) {
         tok = NULL;
       } else {
         tok = ln;
-        while (*ln != '\0')
+        while (*ln != '\0') {
           ++ln;
+        }
         --ln;
-        while (isspace(*ln) && (ln > tok))
+        while (isspace(*ln) && (ln > tok)) {
           --ln;
+        }
         ++ln;
         *ln = '\0';
       }
@@ -294,8 +301,9 @@ TSRemapDeleteInstance(void *ih)
   RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
 
   for (int ix = 0; ix < conf->_current; ++ix) {
-    if (TS_RECORDDATATYPE_STRING == conf->_items[ix]._type)
+    if (TS_RECORDDATATYPE_STRING == conf->_items[ix]._type) {
       TSfree(conf->_items[ix]._data.rec_string);
+    }
   }
 
   delete conf;

@@ -128,8 +128,11 @@ Parser::preprocess(std::vector<std::string> tokens)
         _arg = tokens[1] + tokens[2];
       } else if (tokens.size() > 1) {
         _arg = tokens[1];
-      } else
-        _arg = "";
+      } else {
+        {
+          _arg = "";
+        }
+      }
     } else {
       TSError("[%s] conditions must be embraced in %%{}", PLUGIN_NAME);
       return;

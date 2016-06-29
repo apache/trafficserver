@@ -91,8 +91,9 @@ process_file(int in_fd, int out_fd)
     LogBufferHeader *header  = (LogBufferHeader *)&buffer[0];
 
     nread = read(in_fd, buffer, first_read_size);
-    if (!nread || nread == EOF)
+    if (!nread || nread == EOF) {
       return 0;
+    }
 
     // ensure that this is a valid logbuffer header
     //
@@ -106,8 +107,9 @@ process_file(int in_fd, int out_fd)
 
     nread = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || nread == EOF) {
-      if (follow_flag)
+      if (follow_flag) {
         return 0;
+      }
 
       fprintf(stderr, "Bad LogBufferHeader read!\n");
       return 1;
@@ -121,8 +123,9 @@ process_file(int in_fd, int out_fd)
       return 1;
     }
     buffer_bytes = byte_count - header_size;
-    if (buffer_bytes == 0)
+    if (buffer_bytes == 0) {
       return 0;
+    }
     if (buffer_bytes < 0) {
       fprintf(stderr, "No buffer body!\n");
       return 1;
@@ -137,8 +140,9 @@ process_file(int in_fd, int out_fd)
         return 1;
       }
 
-      if (rc > 0)
+      if (rc > 0) {
         nread += rc;
+      }
     }
 
     if (nread > buffer_bytes) {
@@ -280,18 +284,20 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
             continue;
           }
         }
-        if (follow_flag)
+        if (follow_flag) {
           lseek(in_fd, 0, SEEK_END);
+        }
 
         while (true) {
           if (process_file(in_fd, out_fd) != 0) {
             error = DATA_PROCESSING_ERROR;
             break;
           }
-          if (!follow_flag)
+          if (!follow_flag) {
             break;
-          else
+          } else {
             usleep(10000); // This avoids burning CPU, using poll() would have been nice, but doesn't work I think.
+          }
         }
       }
     }
@@ -300,8 +306,9 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     //
     int tries = 3;
     while (--tries >= 0) {
-      if (process_file(STDIN_FILENO, out_fd) != 0)
+      if (process_file(STDIN_FILENO, out_fd) != 0) {
         tries = -1;
+      }
     }
   }
 

@@ -233,8 +233,9 @@ CacheObj::isValid()
     break;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -382,50 +383,64 @@ CongestionObj::formatEleToRule()
       // TS_PD_UNDEFINED
       break;
     }
-    if (psize > 0)
+    if (psize > 0) {
       pos += psize;
+    }
   }
   // secondary specifiers
   if (m_ele->prefix) {
-    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "prefix=%s ", m_ele->prefix)) > 0)
+    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "prefix=%s ", m_ele->prefix)) > 0) {
       pos += psize;
+    }
   }
   if (m_ele->port > 0) {
-    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "port=%d ", m_ele->port)) > 0)
+    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "port=%d ", m_ele->port)) > 0) {
       pos += psize;
+    }
   }
 
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0) {
     pos += psize;
-  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "fail_window=%d ", m_ele->fail_window)) > 0)
+  }
+  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "fail_window=%d ", m_ele->fail_window)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "proxy_retry_interval=%d ", m_ele->proxy_retry_interval)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "proxy_retry_interval=%d ", m_ele->proxy_retry_interval)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "client_wait_interval=%d ", m_ele->client_wait_interval)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "client_wait_interval=%d ", m_ele->client_wait_interval)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "wait_interval_alpha=%d ", m_ele->wait_interval_alpha)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "wait_interval_alpha=%d ", m_ele->wait_interval_alpha)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_timeout=%d ", m_ele->live_os_conn_timeout)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_timeout=%d ", m_ele->live_os_conn_timeout)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_retries=%d ", m_ele->live_os_conn_retries)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_retries=%d ", m_ele->live_os_conn_retries)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_timeout=%d ", m_ele->dead_os_conn_timeout)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_timeout=%d ", m_ele->dead_os_conn_timeout)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_retries=%d ", m_ele->dead_os_conn_retries)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_retries=%d ", m_ele->dead_os_conn_retries)) > 0) {
     pos += psize;
-  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection=%d ", m_ele->max_connection)) > 0)
+  }
+  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection=%d ", m_ele->max_connection)) > 0) {
     pos += psize;
+  }
   if (m_ele->error_page_uri) {
-    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "error_page=%s ", m_ele->error_page_uri)) > 0)
+    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "error_page=%s ", m_ele->error_page_uri)) > 0) {
       pos += psize;
+    }
   }
   switch (m_ele->scheme) {
   case TS_HTTP_CONGEST_PER_IP:
@@ -448,11 +463,13 @@ CongestionObj::isValid()
     m_valid = false;
   }
   // all Congestion Ele's should have a prim dest, sec specs are optional
-  if (!m_ele->pd_val)
+  if (!m_ele->pd_val) {
     m_valid = false;
+  }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
   return m_valid;
 }
 
@@ -644,14 +661,16 @@ IcpObj::IcpObj(TokenList *tokens)
 
     switch (i) {
     case 0:
-      if (strlen(alias) > 0)
+      if (strlen(alias) > 0) {
         m_ele->peer_hostname = ats_strdup(alias);
+      }
       break;
     case 1:
       if (strlen(alias) > 0) {
         m_ele->peer_host_ip_addr = string_to_ip_addr(alias);
-        if (!m_ele->peer_host_ip_addr)
+        if (!m_ele->peer_host_ip_addr) {
           goto FORMAT_ERR;
+        }
       }
       break;
     case 2:
@@ -689,8 +708,9 @@ IcpObj::IcpObj(TokenList *tokens)
       break;
     case 6:
       m_ele->mc_ip_addr = string_to_ip_addr(alias);
-      if (!m_ele->mc_ip_addr)
+      if (!m_ele->mc_ip_addr) {
         goto FORMAT_ERR;
+      }
       break;
     case 7:
       mc_ttl = ink_atoi(alias);
@@ -751,16 +771,18 @@ IcpObj::formatEleToRule()
   }
 
   // optional field
-  if (m_ele->peer_host_ip_addr)
+  if (m_ele->peer_host_ip_addr) {
     ip_str1 = ip_addr_to_string(m_ele->peer_host_ip_addr);
-  else
+  } else {
     ip_str1 = ats_strdup("");
+  }
 
   // optional field
-  if (m_ele->mc_ip_addr)
+  if (m_ele->mc_ip_addr) {
     ip_str2 = ip_addr_to_string(m_ele->mc_ip_addr);
-  else
+  } else {
     ip_str2 = ats_strdup("0.0.0.0");
+  }
 
   if (m_ele->peer_hostname) {
     snprintf(buf, sizeof(buf), "%s:%s:%d:%d:%d:%d:%s:", m_ele->peer_hostname, ip_str1, peer_type, m_ele->peer_proxy_port,
@@ -817,11 +839,13 @@ IcpObj::isValid()
   // check valid multicast values: mc_ttl, mc_ip, if enabled
   if (m_ele->is_multicast) {
     // a valid multicast address must be between 224.0.0.0-239.255.255.255
-    if (!ccu_checkIpAddr(m_ele->mc_ip_addr, "224.0.0.0", "239.255.255.255") || m_ele->mc_ttl == TS_MC_TTL_UNDEFINED)
+    if (!ccu_checkIpAddr(m_ele->mc_ip_addr, "224.0.0.0", "239.255.255.255") || m_ele->mc_ttl == TS_MC_TTL_UNDEFINED) {
       m_valid = false;
+    }
   } else { // multicast disabled; only valid mc ip is "0.0.0.0"
-    if (m_ele->mc_ip_addr && strcmp(m_ele->mc_ip_addr, "0.0.0.0") != 0)
+    if (m_ele->mc_ip_addr && strcmp(m_ele->mc_ip_addr, "0.0.0.0") != 0) {
       m_valid = false;
+    }
   }
 
   if (!m_valid) {
@@ -1084,8 +1108,9 @@ ParentProxyObj::formatEleToRule()
   memset(buf, 0, MAX_RULE_SIZE);
 
   pd_str = pdest_sspec_to_string(m_ele->parent_info.pd_type, m_ele->parent_info.pd_val, &(m_ele->parent_info.sec_spec));
-  if (!pd_str)
+  if (!pd_str) {
     return NULL;
+  }
   ink_strlcat(buf, pd_str, sizeof(buf));
   ats_free(pd_str);
 
@@ -1157,8 +1182,9 @@ ParentProxyObj::isValid()
     m_valid = false;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -1321,8 +1347,9 @@ VolumeObj::isValid()
     }
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -1369,10 +1396,12 @@ PluginObj::PluginObj(TokenList *tokens)
   // arguments
   token = tokens->next(token);
   while (token) {
-    if (m_ele->args == TS_INVALID_LIST)
+    if (m_ele->args == TS_INVALID_LIST) {
       m_ele->args = TSStringListCreate();
-    if (token->name)
+    }
+    if (token->name) {
       TSStringListEnqueue(m_ele->args, ats_strdup(token->name));
+    }
     token = tokens->next(token);
   }
 
@@ -1730,8 +1759,9 @@ RemapObj::isValid()
     m_valid = false;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -1954,8 +1984,9 @@ SocksObj::isValid()
     break;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -2186,8 +2217,9 @@ SplitDnsObj::isValid()
     m_valid = false;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -2234,8 +2266,9 @@ StorageObj::StorageObj(TokenList *tokens)
   }
 
   // check if size is specified
-  if (tok->value) // size is specified in second token
+  if (tok->value) { // size is specified in second token
     m_ele->size = ink_atoi(tok->value);
+  }
 
   return;
 
@@ -2276,11 +2309,13 @@ StorageObj::isValid()
     m_valid = false;
   }
 
-  if (!(m_ele->pathname))
+  if (!(m_ele->pathname)) {
     m_valid = false;
+  }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -2388,8 +2423,9 @@ VirtIpAddrObj::isValid()
     m_valid = false;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }

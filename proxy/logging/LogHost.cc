@@ -123,8 +123,9 @@ LogHost::set_ipstr_port(char *ipstr, unsigned int pt)
 
   clear(); // remove all previous state for this LogHost
 
-  if (0 != m_ip.load(ipstr))
+  if (0 != m_ip.load(ipstr)) {
     Note("Log host failed to parse IP address %s", ipstr);
+  }
   m_port = pt;
   ink_strlcpy(m_ipstr, ipstr, sizeof(m_ipstr));
   m_name = ats_strdup(ipstr);
@@ -277,8 +278,9 @@ LogHost::preproc_and_try_delete(LogBuffer *lb)
   }
 
   // send log_buffer;
-  if (m_log_collation_client_sm->send(lb) <= 0)
+  if (m_log_collation_client_sm->send(lb) <= 0) {
     goto done;
+  }
 
   return 0;
 

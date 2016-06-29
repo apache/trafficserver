@@ -90,11 +90,13 @@ HttpBodyFactory::fabricate_with_old_api(const char *type, HttpTransact::State *c
     if (u->valid()) { /* if url exists, copy the string into buffer */
       size_t i;
       char *s = u->string_get(&context->arena);
-      for (i   = 0; (i < sizeof(url) - 1) && s[i]; i++)
+      for (i = 0; (i < sizeof(url) - 1) && s[i]; i++) {
         url[i] = s[i];
-      url[i]   = '\0';
-      if (s)
+      }
+      url[i] = '\0';
+      if (s) {
         context->arena.str_free(s);
+      }
     }
   }
   ///////////////////////////////////////////////
@@ -327,8 +329,9 @@ HttpBodyFactory::reconfigure()
   // building a new one, by scanning the template directory. //
   /////////////////////////////////////////////////////////////
 
-  if (directory_of_template_sets)
+  if (directory_of_template_sets) {
     table_of_sets = load_sets_from_directory(directory_of_template_sets);
+  }
 
   unlock();
 }
@@ -401,8 +404,9 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   HttpBodySet *body_set;
   char template_base[PATH_NAME_MAX];
 
-  if (set_return)
-    *set_return            = "???";
+  if (set_return) {
+    *set_return = "???";
+  }
   *content_language_return = NULL;
   *content_charset_return  = NULL;
 
@@ -421,15 +425,16 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   }
 
   // what set should we use (language target if enable_customizations == 2)
-  if (enable_customizations == 2)
+  if (enable_customizations == 2) {
     set = determine_set_by_language(acpt_language_list, acpt_charset_list);
-  else if (enable_customizations == 3) {
+  } else if (enable_customizations == 3) {
     set = determine_set_by_host(context);
-  } else
+  } else {
     set = "default";
-
-  if (set_return)
+  }
+  if (set_return) {
     *set_return = set;
+  }
   if (pType != NULL && 0 != *pType && 0 != strncmp(pType, "NONE", 4)) {
     sprintf(template_base, "%s_%s", pType, type);
   } else {
@@ -437,8 +442,9 @@ HttpBodyFactory::fabricate(StrList *acpt_language_list, StrList *acpt_charset_li
   }
   // see if we have a custom error page template
   t = find_template(set, template_base, &body_set);
-  if (t == NULL)
+  if (t == NULL) {
     t = find_template(set, type, &body_set); // this executes if the template_base is wrong and doesn't exist
+  }
   if (t == NULL) {
     Debug("body_factory", "  can't find template, returning NULL template");
     return (NULL);
@@ -494,19 +500,22 @@ HttpBodyFactory::find_template(const char *set, const char *type, HttpBodySet **
 
   *body_set_return = NULL;
 
-  if (table_of_sets == NULL)
+  if (table_of_sets == NULL) {
     return (NULL);
+  }
   if (table_of_sets->getValue((RawHashTable_Key)set, &v)) {
     HttpBodySet *body_set        = (HttpBodySet *)v;
     RawHashTable *table_of_types = body_set->table_of_pages;
 
-    if (table_of_types == NULL)
+    if (table_of_types == NULL) {
       return (NULL);
+    }
 
     if (table_of_types->getValue((RawHashTable_Key)type, &v)) {
       HttpBodyTemplate *t = (HttpBodyTemplate *)v;
-      if ((t == NULL) || (!t->is_sane()))
+      if ((t == NULL) || (!t->is_sane())) {
         return (NULL);
+      }
       *body_set_return = body_set;
 
       Debug("body_factory", "find_template(%s,%s) -> (file %s, length %" PRId64 ", lang '%s', charset '%s')", set, type,
@@ -539,10 +548,11 @@ HttpBodyFactory::is_response_suppressed(HttpTransact::State *context)
   } else if (response_suppression_mode == 1) {
     return (true);
   } else if (response_suppression_mode == 2) {
-    if (context->req_flavor == HttpTransact::REQ_FLAVOR_INTERCEPTED)
+    if (context->req_flavor == HttpTransact::REQ_FLAVOR_INTERCEPTED) {
       return (true);
-    else
+    } else {
       return (false);
+    }
   } else {
     return (false);
   }
@@ -613,8 +623,9 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   struct dirent *entry_buffer, *result;
   RawHashTable *new_table_of_sets;
 
-  if (set_dir == NULL)
+  if (set_dir == NULL) {
     return (NULL);
+  }
 
   Debug("body_factory", "load_sets_from_directory(%s)", set_dir);
 
@@ -645,14 +656,17 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
     // ensure a subdirectory, and not starting with '.' //
     //////////////////////////////////////////////////////
 
-    if ((entry_buffer->d_name)[0] == '.')
+    if ((entry_buffer->d_name)[0] == '.') {
       continue;
+    }
     ink_filepath_make(subdir, sizeof(subdir), set_dir, entry_buffer->d_name);
     status = stat(subdir, &stat_buf);
-    if (status != 0)
+    if (status != 0) {
       continue; // can't stat
-    if (!S_ISDIR(stat_buf.st_mode))
+    }
+    if (!S_ISDIR(stat_buf.st_mode)) {
       continue; // not a dir
+    }
 
     ///////////////////////////////////////////////////////////
     // at this point, 'subdir' might be a valid template dir //
@@ -687,8 +701,9 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
 
   Debug("body_factory", "  load_body_set_from_directory(%s)", tmpl_dir);
   dir = opendir(tmpl_dir);
-  if (dir == NULL)
+  if (dir == NULL) {
     return (NULL);
+  }
 
   /////////////////////////////////////////////
   // ensure a .body_factory_info file exists //
@@ -720,15 +735,18 @@ HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
     // all template files have name of the form <type>#<subtype> //
     ///////////////////////////////////////////////////////////////
 
-    if ((strchr(entry_buffer->d_name, '#') == NULL) && (strcmp(entry_buffer->d_name, "default") != 0))
+    if ((strchr(entry_buffer->d_name, '#') == NULL) && (strcmp(entry_buffer->d_name, "default") != 0)) {
       continue;
+    }
 
     snprintf(path, sizeof(path), "%s/%s", tmpl_dir, entry_buffer->d_name);
     status = stat(path, &stat_buf);
-    if (status != 0)
+    if (status != 0) {
       continue; // can't stat
-    if (!S_ISREG(stat_buf.st_mode))
+    }
+    if (!S_ISREG(stat_buf.st_mode)) {
       continue; // not a file
+    }
 
     ////////////////////////////////
     // read in this template file //
@@ -769,8 +787,9 @@ HttpBodySet::~HttpBodySet()
   ats_free(set_name);
   ats_free(content_language);
   ats_free(content_charset);
-  if (table_of_pages)
+  if (table_of_pages) {
     delete table_of_pages;
+  }
 }
 
 int
@@ -783,13 +802,15 @@ HttpBodySet::init(char *set, char *dir)
 
   ink_filepath_make(info_path, sizeof(info_path), dir, ".body_factory_info");
   fd = open(info_path, O_RDONLY);
-  if (fd < 0)
+  if (fd < 0) {
     return (-1);
+  }
 
   this->set_name = ats_strdup(set);
 
-  if (this->table_of_pages)
+  if (this->table_of_pages) {
     delete (this->table_of_pages);
+  }
   this->table_of_pages = new RawHashTable(RawHashTable_KeyType_String);
 
   lineno = 0;
@@ -799,49 +820,56 @@ HttpBodySet::init(char *set, char *dir)
 
     ++lineno;
     int bytes = ink_file_fd_readline(fd, sizeof(buffer), buffer);
-    if (bytes <= 0)
+    if (bytes <= 0) {
       break;
+    }
 
     ///////////////////////////////////////////////
     // chop anything on and after first '#' sign //
     ///////////////////////////////////////////////
 
     hash = index(buffer, '#');
-    if (hash)
+    if (hash) {
       *hash = '\0';
 
-    ////////////////////////////////
-    // find start and end of name //
-    ////////////////////////////////
-
+      ////////////////////////////////
+      // find start and end of name //
+      ////////////////////////////////
+    }
     name_s = buffer;
-    while (*name_s && ParseRules::is_wslfcr(*name_s))
+    while (*name_s && ParseRules::is_wslfcr(*name_s)) {
       ++name_s;
+    }
 
     name_e = name_s;
-    while (*name_e && ParseRules::is_http_field_name(*name_e))
+    while (*name_e && ParseRules::is_http_field_name(*name_e)) {
       ++name_e;
+    }
 
-    if (name_s == name_e)
+    if (name_s == name_e) {
       continue; // blank line
+    }
 
     /////////////////////////////////
     // find start and end of value //
     /////////////////////////////////
 
     value_s = name_e;
-    while (*value_s && (ParseRules::is_wslfcr(*value_s)))
+    while (*value_s && (ParseRules::is_wslfcr(*value_s))) {
       ++value_s;
+    }
     if (*value_s != ':') {
       Warning("ignoring invalid body factory info line #%d in %s", lineno, info_path);
       continue;
     }
     ++value_s; // skip the colon
-    while (*value_s && (ParseRules::is_wslfcr(*value_s)))
+    while (*value_s && (ParseRules::is_wslfcr(*value_s))) {
       ++value_s;
+    }
     value_e = buffer + strlen(buffer) - 1;
-    while ((value_e > value_s) && ParseRules::is_wslfcr(*(value_e - 1)))
+    while ((value_e > value_s) && ParseRules::is_wslfcr(*(value_e - 1))) {
       --value_e;
+    }
 
     /////////////////////////////////
     // insert line into hash table //
@@ -871,13 +899,15 @@ HttpBodySet::init(char *set, char *dir)
   ////////////////////////////////////////////////////
 
   if (!this->content_language) {
-    if (strcmp(set, "default") == 0)
+    if (strcmp(set, "default") == 0) {
       this->content_language = ats_strdup("en");
-    else
+    } else {
       this->content_language = ats_strdup(set);
+    }
   }
-  if (!this->content_charset)
+  if (!this->content_charset) {
     this->content_charset = ats_strdup("utf-8");
+  }
 
   close(fd);
   return (lines_added);
@@ -890,13 +920,15 @@ HttpBodySet::get_template_by_name(const char *name)
 
   Debug("body_factory", "    calling get_template_by_name(%s)", name);
 
-  if (table_of_pages == NULL)
+  if (table_of_pages == NULL) {
     return (NULL);
+  }
 
   if (table_of_pages->getValue((RawHashTable_Key)name, &v)) {
     HttpBodyTemplate *t = (HttpBodyTemplate *)v;
-    if ((t == NULL) || (!t->is_sane()))
+    if ((t == NULL) || (!t->is_sane())) {
       return (NULL);
+    }
     Debug("body_factory", "    get_template_by_name(%s) -> (file %s, length %" PRId64 ")", name, t->template_pathname,
           t->byte_count);
     return (t);
@@ -956,10 +988,12 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
   snprintf(path, sizeof(path), "%s/%s", dir, file);
   // coverity[fs_check_call]
   status = stat(path, &stat_buf);
-  if (status != 0)
+  if (status != 0) {
     return (0);
-  if (!S_ISREG(stat_buf.st_mode))
+  }
+  if (!S_ISREG(stat_buf.st_mode)) {
     return (0);
+  }
 
   ///////////////////
   // open the file //
@@ -967,8 +1001,9 @@ HttpBodyTemplate::load_from_file(char *dir, char *file)
 
   // coverity[toctou]
   fd = open(path, O_RDONLY);
-  if (fd < 0)
+  if (fd < 0) {
     return (0);
+  }
 
   ////////////////////////////////////////
   // read in the template file contents //

@@ -63,10 +63,11 @@ normalize_accept_encoding(TSHttpTxn /* txnp ATS_UNUSED */, TSMBuffer reqp, TSMLo
         --value_count;
         val = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field, value_count, &val_len);
 
-        if (val_len == (int)strlen("gzip"))
+        if (val_len == (int)strlen("gzip")) {
           gzip = !strncmp(val, "gzip", val_len);
-        else if (val_len == (int)strlen("deflate"))
+        } else if (val_len == (int)strlen("deflate")) {
           deflate = !strncmp(val, "deflate", val_len);
+        }
       }
     }
 

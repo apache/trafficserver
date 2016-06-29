@@ -83,8 +83,9 @@ create_callback_table(const char *lock_name)
 {
   CallbackTable *cb_table = (CallbackTable *)ats_malloc(sizeof(CallbackTable));
 
-  for (int i                      = 0; i < NUM_EVENTS; i++)
+  for (int i = 0; i < NUM_EVENTS; i++) {
     cb_table->event_callback_l[i] = NULL;
+  }
 
   // initialize the mutex
   ink_mutex_init(&cb_table->event_callback_lock, lock_name);
@@ -186,8 +187,9 @@ cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignal
   EventCallbackT *event_cb; // create new EventCallbackT EACH TIME enqueue
 
   // the data and event_name can be NULL
-  if (func == NULL || !cb_table)
+  if (func == NULL || !cb_table) {
     return TS_ERR_PARAMS;
+  }
 
   ink_mutex_acquire(&(cb_table->event_callback_lock));
 
@@ -230,8 +232,9 @@ cb_table_register(CallbackTable *cb_table, const char *event_name, TSEventSignal
   // release lock on callback table
   ink_mutex_release(&cb_table->event_callback_lock);
 
-  if (first_cb)
+  if (first_cb) {
     *first_cb = first_time;
+  }
 
   return TS_ERR_OKAY;
 }
@@ -260,8 +263,9 @@ cb_table_unregister(CallbackTable *cb_table, const char *event_name, TSEventSign
   if (event_name == NULL) { // unregister the callback for ALL EVENTS
     // for each event
     for (int i = 0; i < NUM_EVENTS; i++) {
-      if (!cb_table->event_callback_l[i]) // this event has no callbacks
+      if (!cb_table->event_callback_l[i]) { // this event has no callbacks
         continue;
+      }
 
       // func == NULL means unregister all functions associated with alarm
       if (func == NULL) {

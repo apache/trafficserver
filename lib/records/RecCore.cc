@@ -366,8 +366,9 @@ RecGetRecordInt(const char *name, RecInt *rec_int, bool lock)
 {
   int err;
   RecData data;
-  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY)
+  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
     *rec_int = data.rec_int;
+  }
   return err;
 }
 
@@ -376,8 +377,9 @@ RecGetRecordFloat(const char *name, RecFloat *rec_float, bool lock)
 {
   int err;
   RecData data;
-  if ((err = RecGetRecord_Xmalloc(name, RECD_FLOAT, &data, lock)) == REC_ERR_OKAY)
+  if ((err = RecGetRecord_Xmalloc(name, RECD_FLOAT, &data, lock)) == REC_ERR_OKAY) {
     *rec_float = data.rec_float;
+  }
   return err;
 }
 
@@ -415,8 +417,9 @@ RecGetRecordString_Xmalloc(const char *name, RecString *rec_string, bool lock)
 {
   int err;
   RecData data;
-  if ((err = RecGetRecord_Xmalloc(name, RECD_STRING, &data, lock)) == REC_ERR_OKAY)
+  if ((err = RecGetRecord_Xmalloc(name, RECD_STRING, &data, lock)) == REC_ERR_OKAY) {
     *rec_string = data.rec_string;
+  }
   return err;
 }
 
@@ -425,8 +428,9 @@ RecGetRecordCounter(const char *name, RecCounter *rec_counter, bool lock)
 {
   int err;
   RecData data;
-  if ((err = RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock)) == REC_ERR_OKAY)
+  if ((err = RecGetRecord_Xmalloc(name, RECD_COUNTER, &data, lock)) == REC_ERR_OKAY) {
     *rec_counter = data.rec_counter;
+  }
   return err;
 }
 
@@ -435,8 +439,9 @@ RecGetRecordByte(const char *name, RecByte *rec_byte, bool lock)
 {
   int err;
   RecData data;
-  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY)
+  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
     *rec_byte = data.rec_int;
+  }
   return err;
 }
 
@@ -445,8 +450,9 @@ RecGetRecordBool(const char *name, RecBool *rec_bool, bool lock)
 {
   int err;
   RecData data;
-  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY)
+  if ((err = RecGetRecord_Xmalloc(name, RECD_INT, &data, lock)) == REC_ERR_OKAY) {
     *rec_bool = 0 != data.rec_int;
+  }
   return err;
 }
 
@@ -601,11 +607,13 @@ RecGetRecordOrderAndId(const char *name, int *order, int *id, bool lock)
   if (ink_hash_table_lookup(g_records_ht, name, (void **)&r)) {
     if (r->registered) {
       rec_mutex_acquire(&(r->lock));
-      if (order)
+      if (order) {
         *order = r->order;
-      if (id)
+      }
+      if (id) {
         *id = r->rsb_id;
-      err   = REC_ERR_OKAY;
+      }
+      err = REC_ERR_OKAY;
       rec_mutex_release(&(r->lock));
     }
   }
@@ -850,8 +858,9 @@ RecRegisterConfig(RecT rec_type, const char *name, RecDataT data_type, RecData d
     r->config_meta.check_expr     = ats_strdup(check_expr);
     r->config_meta.update_cb_list = NULL;
     r->config_meta.access_type    = access_type;
-    if (!updated_p)
+    if (!updated_p) {
       r->config_meta.source = source;
+    }
   }
   ink_rwlock_unlock(&g_records_rwlock);
 
@@ -1041,8 +1050,9 @@ REC_readInteger(const char *name, bool *found, bool lock)
   RecInt _tmp = 0;
   bool _found;
   _found = (RecGetRecordInt(name, &_tmp, lock) == REC_ERR_OKAY);
-  if (found)
+  if (found) {
     *found = _found;
+  }
   return _tmp;
 }
 
@@ -1053,8 +1063,9 @@ REC_readFloat(char *name, bool *found, bool lock)
   RecFloat _tmp = 0.0;
   bool _found;
   _found = (RecGetRecordFloat(name, &_tmp, lock) == REC_ERR_OKAY);
-  if (found)
+  if (found) {
     *found = _found;
+  }
   return _tmp;
 }
 
@@ -1065,8 +1076,9 @@ REC_readCounter(char *name, bool *found, bool lock)
   RecCounter _tmp = 0;
   bool _found;
   _found = (RecGetRecordCounter(name, &_tmp, lock) == REC_ERR_OKAY);
-  if (found)
+  if (found) {
     *found = _found;
+  }
   return _tmp;
 }
 
@@ -1077,8 +1089,9 @@ REC_readString(const char *name, bool *found, bool lock)
   RecString _tmp = NULL;
   bool _found;
   _found = (RecGetRecordString_Xmalloc(name, &_tmp, lock) == REC_ERR_OKAY);
-  if (found)
+  if (found) {
     *found = _found;
+  }
   return _tmp;
 }
 

@@ -169,8 +169,9 @@ CongestionDB::addRecord(uint64_t key, CongestionEntry *pEntry)
   if (lock.is_locked()) {
     RunTodoList(part_num(key));
     CongestionEntry *tmp = insert_entry(key, pEntry);
-    if (tmp)
+    if (tmp) {
       tmp->put();
+    }
   } else {
     CongestRequestParam *param = CongestRequestParamAllocator.alloc();
     param->m_op                = CongestRequestParam::ADD_RECORD;
@@ -214,8 +215,9 @@ CongestionDB::removeRecord(uint64_t key)
   if (lock.is_locked()) {
     RunTodoList(part_num(key));
     tmp = remove_entry(key);
-    if (tmp)
+    if (tmp) {
       tmp->put();
+    }
   } else {
     CongestRequestParam *param = CongestRequestParamAllocator.alloc();
     param->m_op                = CongestRequestParam::REMOVE_RECORD;
@@ -249,8 +251,9 @@ CongestionDB::process(int buckId, CongestRequestParam *param)
   }
   case CongestRequestParam::REMOVE_RECORD:
     pEntry = remove_entry(param->m_key);
-    if (pEntry)
+    if (pEntry) {
       pEntry->put();
+    }
     break;
   case CongestRequestParam::REVALIDATE_BUCKET:
     revalidateBucket(buckId);
@@ -293,8 +296,9 @@ CongestionDB::revalidateBucket(int buckId)
       // the next entry has been moved to the current pos
       // because of the remove_entry
       cur = cur_entry(buckId, &it);
-    } else
+    } else {
       cur = next_entry(buckId, &it);
+    }
   }
 }
 
@@ -306,8 +310,9 @@ int
 CongestionDBCont::GC(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
   if (congestionControlEnabled == 1 || congestionControlEnabled == 2) {
-    if (theCongestionDB == NULL)
+    if (theCongestionDB == NULL) {
       goto Ldone;
+    }
     for (; CDBC_pid < theCongestionDB->getSize(); CDBC_pid++) {
       ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(CDBC_pid);
       {
@@ -454,14 +459,16 @@ revalidateCongestionDB()
 Action *
 get_congest_entry(Continuation *cont, HttpRequestData *data, CongestionEntry **ppEntry)
 {
-  if (congestionControlEnabled != 1 && congestionControlEnabled != 2)
+  if (congestionControlEnabled != 1 && congestionControlEnabled != 2) {
     return ACTION_RESULT_DONE;
+  }
   Debug("congestion_control", "congestion control get_congest_entry start");
 
   CongestionControlRecord *p = CongestionControlled(data);
   Debug("congestion_control", "Control Matcher matched rule_num %d", p == NULL ? -1 : p->line_num);
-  if (p == NULL)
+  if (p == NULL) {
     return ACTION_RESULT_DONE;
+  }
   // if the fail_window <= 0 and the max_connection == -1, then no congestion control
   if (p->max_connection_failures <= 0 && p->max_connection < 0) {
     return ACTION_RESULT_DONE;
@@ -507,8 +514,9 @@ get_congest_entry(Continuation *cont, HttpRequestData *data, CongestionEntry **p
 Action *
 get_congest_list(Continuation *cont, MIOBuffer *buffer, int format)
 {
-  if (theCongestionDB == NULL || (congestionControlEnabled != 1 && congestionControlEnabled != 2))
+  if (theCongestionDB == NULL || (congestionControlEnabled != 1 && congestionControlEnabled != 2)) {
     return ACTION_RESULT_DONE;
+  }
   for (int i = 0; i < theCongestionDB->getSize(); i++) {
     ProxyMutex *bucket_mutex = theCongestionDB->lock_for_key(i);
     {

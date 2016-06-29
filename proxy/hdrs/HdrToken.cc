@@ -381,8 +381,9 @@ hdrtoken_hash_init()
     hdrtoken_hash_table[slot].hash = hash;
   }
 
-  if (num_collisions > 0)
+  if (num_collisions > 0) {
     abort();
+  }
 }
 
 /***********************************************************************
@@ -512,13 +513,15 @@ hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_strin
 
   wks_idx = hdrtoken_strs_dfa->match(string, string_len);
 
-  if (wks_idx < 0)
+  if (wks_idx < 0) {
     wks_idx = -1;
+  }
   if (wks_string_out) {
-    if (wks_idx >= 0)
+    if (wks_idx >= 0) {
       *wks_string_out = hdrtoken_index_to_wks(wks_idx);
-    else
+    } else {
       *wks_string_out = NULL;
+    }
   }
   // printf("hdrtoken_tokenize_dfa(%d,*s) - return %d\n",string_len,string,wks_idx);
 
@@ -538,8 +541,9 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
 
   if (hdrtoken_is_wks(string)) {
     wks_idx = hdrtoken_wks_to_index(string);
-    if (wks_string_out)
+    if (wks_string_out) {
       *wks_string_out = string;
+    }
     return wks_idx;
   }
 
@@ -549,8 +553,9 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
   bucket = &(hdrtoken_hash_table[slot]);
   if ((bucket->wks != NULL) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
     wks_idx = hdrtoken_wks_to_index(bucket->wks);
-    if (wks_string_out)
+    if (wks_string_out) {
       *wks_string_out = bucket->wks;
+    }
     return wks_idx;
   }
 

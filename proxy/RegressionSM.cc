@@ -33,8 +33,9 @@ RegressionSM::set_status(int astatus)
   // INPROGRESS < NOT_RUN < PASSED < FAILED
   if (status != REGRESSION_TEST_FAILED) {
     if (status == REGRESSION_TEST_PASSED) {
-      if (astatus != REGRESSION_TEST_NOT_RUN)
+      if (astatus != REGRESSION_TEST_NOT_RUN) {
         status = astatus;
+      }
     } else {
       // INPROGRESS or NOT_RUN
       status = astatus;
@@ -50,10 +51,12 @@ RegressionSM::done(int astatus)
     pending_action = 0;
   }
   set_status(astatus);
-  if (pstatus)
+  if (pstatus) {
     *pstatus = status;
-  if (parent)
+  }
+  if (parent) {
     parent->child_done(status);
+  }
 }
 
 void
@@ -185,8 +188,9 @@ RegressionSM::run()
   // TODO: Why introduce another scope here?
   {
     MUTEX_TRY_LOCK(l, mutex, this_ethread());
-    if (!l.is_locked() || nwaiting > 1)
+    if (!l.is_locked() || nwaiting > 1) {
       goto Lretry;
+    }
     RegressionSM *x = 0;
     while (ichild < n) {
       if (!repeat) {
@@ -198,12 +202,14 @@ RegressionSM::run()
           x = children[(intptr_t)0];
         }
       }
-      if (!ichild)
+      if (!ichild) {
         nwaiting++;
+      }
       x->xrun(this);
       ichild++;
-      if (!parallel && nwaiting > 1)
+      if (!parallel && nwaiting > 1) {
         goto Lretry;
+      }
     }
   }
   nwaiting--;
@@ -220,22 +226,28 @@ Lretry:
 RegressionSM::RegressionSM(const RegressionSM &ao)
 {
   RegressionSM &o = *(RegressionSM *)&ao;
-  t               = o.t;
-  status          = o.status;
-  pstatus         = o.pstatus;
-  parent          = &o;
-  nwaiting        = o.nwaiting;
-  nchildren       = o.nchildren;
-  for (intptr_t i = 0; i < nchildren; i++)
-    children(i)   = o.children[i]->clone();
-  n               = o.n;
-  ichild          = o.ichild;
-  parallel        = o.parallel;
-  repeat          = o.repeat;
-  pending_action  = o.pending_action;
+
+  t         = o.t;
+  status    = o.status;
+  pstatus   = o.pstatus;
+  parent    = &o;
+  nwaiting  = o.nwaiting;
+  nchildren = o.nchildren;
+
+  for (intptr_t i = 0; i < nchildren; i++) {
+    children(i) = o.children[i]->clone();
+  }
+
+  n              = o.n;
+  ichild         = o.ichild;
+  parallel       = o.parallel;
+  repeat         = o.repeat;
+  pending_action = o.pending_action;
+
   ink_assert(status == REGRESSION_TEST_INPROGRESS);
   ink_assert(nwaiting == 0);
   ink_assert(ichild == 0);
+
   mutex = new_ProxyMutex();
 }
 
@@ -246,8 +258,9 @@ struct ReRegressionSM : public RegressionSM {
     if (time(NULL) < 1) { // example test
       rprintf(t, "impossible");
       done(REGRESSION_TEST_FAILED);
-    } else
+    } else {
       done(REGRESSION_TEST_PASSED);
+    }
   }
   ReRegressionSM(RegressionTest *at) : RegressionSM(at) {}
   virtual RegressionSM *

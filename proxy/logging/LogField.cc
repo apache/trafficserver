@@ -49,32 +49,39 @@ LogSlice::LogSlice(char *str)
   m_start  = 0;
   m_end    = INT_MAX;
 
-  if ((a = strchr(str, '[')) == NULL)
+  if ((a = strchr(str, '[')) == NULL) {
     return;
+  }
 
   *a++ = '\0';
-  if ((b = strchr(a, ':')) == NULL)
+  if ((b = strchr(a, ':')) == NULL) {
     return;
+  }
 
   *b++ = '\0';
-  if ((c = strchr(b, ']')) == NULL)
+  if ((c = strchr(b, ']')) == NULL) {
     return;
+  }
 
   m_enable = true;
 
   // eat space
-  while (a != b && *a == ' ')
+  while (a != b && *a == ' ') {
     a++;
+  }
 
-  if (a != b)
+  if (a != b) {
     m_start = atoi(a);
+  }
 
   // eat space
-  while (b != c && *b == ' ')
+  while (b != c && *b == ' ') {
     b++;
+  }
 
-  if (b != c)
+  if (b != c) {
     m_end = atoi(b);
+  }
 }
 
 int
@@ -83,34 +90,41 @@ LogSlice::toStrOffset(int strlen, int *offset)
   int i, j, len;
 
   // letf index
-  if (m_start >= 0)
+  if (m_start >= 0) {
     i = m_start;
-  else
+  } else {
     i = m_start + strlen;
+  }
 
-  if (i >= strlen)
+  if (i >= strlen) {
     return 0;
+  }
 
-  if (i < 0)
+  if (i < 0) {
     i = 0;
+  }
 
   // right index
-  if (m_end >= 0)
+  if (m_end >= 0) {
     j = m_end;
-  else
+  } else {
     j = m_end + strlen;
+  }
 
-  if (j <= 0)
+  if (j <= 0) {
     return 0;
+  }
 
-  if (j > strlen)
+  if (j > strlen) {
     j = strlen;
+  }
 
   // available length
   len = j - i;
 
-  if (len > 0)
+  if (len > 0) {
     *offset = i;
+  }
 
   return len;
 }
@@ -236,8 +250,9 @@ LogField::milestone_from_m_name()
   TSMilestonesType result = TS_MILESTONE_LAST_ENTRY;
 
   it = m_milestone_map.find(ts::ConstBuffer(m_name, strlen(m_name)));
-  if (it != m_milestone_map.end())
+  if (it != m_milestone_map.end()) {
     result = it->second;
+  }
 
   return result;
 }
@@ -317,15 +332,17 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
 
   case MS:
     m_milestone1 = milestone_from_m_name();
-    if (TS_MILESTONE_LAST_ENTRY == m_milestone1)
+    if (TS_MILESTONE_LAST_ENTRY == m_milestone1) {
       Note("Invalid milestone name in LogField ctor: %s", m_name);
+    }
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
     break;
 
   case MSDMS: {
     int rv = milestones_from_m_name(&m_milestone1, &m_milestone2);
-    if (0 != rv)
+    if (0 != rv) {
       Note("Invalid milestone range in LogField ctor: %s", m_name);
+    }
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
     break;
   }
@@ -378,8 +395,9 @@ LogField::~LogField()
 unsigned
 LogField::marshal_len(LogAccess *lad)
 {
-  if (m_container == NO_CONTAINER)
+  if (m_container == NO_CONTAINER) {
     return (lad->*m_marshal_func)(NULL);
+  }
 
   switch (m_container) {
   case CQH:
@@ -636,8 +654,9 @@ LogField::fieldlist_contains_aggregates(char *fieldlist)
   for (int i = 1; i < LogField::N_AGGREGATES; i++) {
     if ((match = strstr(fieldlist, aggregate_names[i])) != NULL) {
       // verify that the aggregate string is not part of a container field name.
-      if ((strchr(fieldlist, '{') == NULL) && (strchr(match, '}') == NULL))
+      if ((strchr(fieldlist, '{') == NULL) && (strchr(match, '}') == NULL)) {
         contains_aggregates = true;
+      }
     }
   }
   return contains_aggregates;

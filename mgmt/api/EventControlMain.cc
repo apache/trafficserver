@@ -61,8 +61,9 @@ new_event_client()
   EventClientT *ele = (EventClientT *)ats_malloc(sizeof(EventClientT));
 
   // now set the alarms registered section
-  for (int i                  = 0; i < NUM_EVENTS; i++)
+  for (int i = 0; i < NUM_EVENTS; i++) {
     ele->events_registered[i] = 0;
+  }
 
   ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
   return ele;
@@ -125,8 +126,9 @@ init_mgmt_events()
 
   ret = ink_mutex_init(&mgmt_events_lock, "mgmt_event_notice");
 
-  if (ret)
+  if (ret) {
     return TS_ERR_SYS_CALL;
+  }
 
   // initialize queue
   mgmt_events = create_queue();
@@ -177,8 +179,9 @@ delete_mgmt_events()
 void
 delete_event_queue(LLQ *q)
 {
-  if (!q)
+  if (!q) {
     return;
+  }
 
   // now for every element, dequeue and free
   TSMgmtEvent *ele;
@@ -213,10 +216,11 @@ apiEventCallback(alarm_t newAlarm, const char * /* ip ATS_UNUSED */, const char 
   newEvent->id   = newAlarm;
   newEvent->name = get_event_name(newEvent->id);
   // newEvent->ip   = ats_strdup(ip);
-  if (desc)
+  if (desc) {
     newEvent->description = ats_strdup(desc);
-  else
+  } else {
     newEvent->description = ats_strdup("None");
+  }
 
   // add it to the mgmt_events list
   ink_mutex_acquire(&mgmt_events_lock);
@@ -376,8 +380,9 @@ event_callback_main(void *arg)
       event = (TSMgmtEvent *)dequeue(mgmt_events); // get what we want
       ink_mutex_release(&mgmt_events_lock);        // release lock
 
-      if (!event)
+      if (!event) {
         continue;
+      }
 
       // fprintf(stderr, "[event_callback_main] have an EVENT TO PROCESS\n");
 

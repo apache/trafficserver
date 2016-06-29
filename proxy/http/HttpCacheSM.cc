@@ -56,8 +56,9 @@ HttpCacheAction::cancel(Continuation *c)
   ink_assert(this->cancelled == 0);
 
   this->cancelled = 1;
-  if (sm->pending_action)
+  if (sm->pending_action) {
     sm->pending_action->cancel();
+  }
 }
 
 HttpCacheSM::HttpCacheSM()
@@ -298,8 +299,9 @@ HttpCacheSM::open_read(const HttpCacheKey *key, URL *url, HTTPHdr *hdr, CacheLoo
     ink_assert(current_lookup_level < lookup_max_recursive);
     current_lookup_level--;
 
-    if (current_lookup_level == 0)
+    if (current_lookup_level == 0) {
       lookup_max_recursive = 0;
+    }
 
     return ACTION_RESULT_DONE;
   }

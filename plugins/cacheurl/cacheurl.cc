@@ -192,8 +192,9 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
     /* Something went wrong, clean up */
     TSfree(tokens);
     TSfree(tokenoffset);
-    if (info->re)
+    if (info->re) {
       pcre_free(info->re);
+    }
     TSfree(info);
   }
   return status;
@@ -336,10 +337,12 @@ rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp)
   }
 
   /* Clean up */
-  if (url)
+  if (url) {
     TSfree(url);
-  if (newurl)
+  }
+  if (newurl) {
     TSfree(newurl);
+  }
 
   return ok;
 }

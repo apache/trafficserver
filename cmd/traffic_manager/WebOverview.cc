@@ -249,8 +249,9 @@ overviewRecord::readData(RecDataT varType, const char *name, bool *found)
     } else {
       Fatal("node variables '%s' not found!\n", name);
     }
-  } else
+  } else {
     rec_status = RecGetRecord_Xmalloc(name, varType, &rec, true);
+  }
 
   if (found) {
     *found = (rec_status == REC_ERR_OKAY);
@@ -265,8 +266,9 @@ overviewRecord::varFloatFromName(const char *name, MgmtFloat *value)
 {
   bool found = false;
 
-  if (value)
+  if (value) {
     *value = readFloat((char *)name, &found);
+  }
 
   return found;
 }

@@ -191,8 +191,9 @@ read_request_hook(TSCont /* contp */, TSEvent /* event */, void *edata)
     TSDebug(PLUGIN_NAME, "*** Camel Casing %u hdrs in the request", n_mime_headers);
 
     for (int i = 0; i < n_mime_headers; ++i) {
-      if (hdr == NULL)
+      if (hdr == NULL) {
         break;
+      }
       next_hdr = TSMimeHdrFieldNext(hdr_bufp, req_hdrs, hdr);
       int old_hdr_len;
       const char *old_hdr_name = TSMimeHdrFieldNameGet(hdr_bufp, req_hdrs, hdr, &old_hdr_len);

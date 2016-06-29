@@ -115,8 +115,9 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
 
   struct dirent *result;
   while (readdir_r(dir, dirEntry, &result) == 0) {
-    if (!result)
+    if (!result) {
       break;
+    }
     fileName                = dirEntry->d_name;
     filePath                = newPathString(managedDir, fileName);
     records_config_filePath = newPathString(filePath, "records.config");
@@ -217,8 +218,9 @@ MultiFile::newPathString(const char *s1, const char *s2)
   int addLen; // maximum total path length
 
   // Treat null as an empty path.
-  if (!s2)
-    s2   = "";
+  if (!s2) {
+    s2 = "";
+  }
   addLen = strlen(s2) + 1;
   if (*s2 == '/') {
     // If addpath is rooted, then rootpath is unused.
@@ -237,8 +239,9 @@ MultiFile::newPathString(const char *s1, const char *s2)
   ink_assert(newStr != NULL);
 
   ink_strlcpy(newStr, s1, addLen);
-  if (newStr[srcLen - 1] != '/')
+  if (newStr[srcLen - 1] != '/') {
     newStr[srcLen++] = '/';
+  }
   ink_strlcpy(&newStr[srcLen], s2, addLen - srcLen);
 
   return newStr;

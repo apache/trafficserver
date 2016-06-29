@@ -261,8 +261,9 @@ int
 HpackIndexingTable::get_header_field(uint32_t index, MIMEFieldWrapper &field) const
 {
   // Index Address Space starts at 1, so index == 0 is invalid.
-  if (!index)
+  if (!index) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   if (index < TS_HPACK_STATIC_TABLE_ENTRY_NUM) {
     // static table
@@ -397,8 +398,9 @@ HpackDynamicTable::length() const
 int64_t
 encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n)
 {
-  if (buf_start >= buf_end)
+  if (buf_start >= buf_end) {
     return -1;
+  }
 
   uint8_t *p = buf_start;
 
@@ -434,8 +436,9 @@ encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, siz
 
   if (use_huffman && value_len) {
     data = static_cast<char *>(ats_malloc(value_len * 4));
-    if (data == NULL)
+    if (data == NULL) {
       return -1;
+    }
     data_len = huffman_encode(reinterpret_cast<uint8_t *>(data), reinterpret_cast<const uint8_t *>(value), value_len);
   }
 
@@ -478,15 +481,17 @@ encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, siz
 int64_t
 encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index)
 {
-  if (buf_start >= buf_end)
+  if (buf_start >= buf_end) {
     return -1;
+  }
 
   uint8_t *p = buf_start;
 
   // Index
   const int64_t len = encode_integer(p, buf_end, index, 7);
-  if (len == -1)
+  if (len == -1) {
     return -1;
+  }
 
   // Representation type
   if (p + 1 >= buf_end) {
@@ -530,8 +535,9 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
 
   // Index
   len = encode_integer(p, buf_end, index, prefix);
-  if (len == -1)
+  if (len == -1) {
     return -1;
+  }
 
   // Representation type
   if (p + 1 >= buf_end) {
@@ -544,8 +550,9 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   int value_len;
   const char *value = header.value_get(&value_len);
   len               = encode_string(p, buf_end, value, value_len);
-  if (len == -1)
+  if (len == -1) {
     return -1;
+  }
   p += len;
 
   Debug("hpack_encode", "Encoded field: %d: %.*s", index, value_len, value);
@@ -587,8 +594,9 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   int name_len;
   const char *name = header.name_get(&name_len);
   char *lower_name = arena.str_store(name, name_len);
-  for (int i      = 0; i < name_len; i++)
+  for (int i = 0; i < name_len; i++) {
     lower_name[i] = ParseRules::ink_tolower(lower_name[i]);
+  }
 
   // Name String
   len = encode_string(p, buf_end, lower_name, name_len);
@@ -627,8 +635,9 @@ decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, 
   if (dst == static_cast<uint32_t>(1 << n) - 1) {
     int m = 0;
     do {
-      if (++p >= buf_end)
+      if (++p >= buf_end) {
         return HPACK_ERROR_COMPRESSION_ERROR;
+      }
 
       uint32_t added_value = *p & 0x7f;
       if ((UINT32_MAX >> m) < added_value) {
@@ -661,8 +670,9 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
   int64_t len                 = 0;
 
   len = decode_integer(encoded_string_len, p, buf_end, 7);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
   p += len;
 
   if ((p + encoded_string_len) > buf_end) {
@@ -674,8 +684,9 @@ decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf
     *str = arena.str_alloc(encoded_string_len * 2);
 
     len = huffman_decode(*str, p, encoded_string_len);
-    if (len == HPACK_ERROR_COMPRESSION_ERROR)
+    if (len == HPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
+    }
     str_length = len;
   } else {
     *str = arena.str_alloc(encoded_string_len);
@@ -699,8 +710,9 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   int64_t len    = 0;
 
   len = decode_integer(index, buf_start, buf_end, 7);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   if (indexing_table.get_header_field(index, header) == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
@@ -745,8 +757,9 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     len = decode_integer(index, p, buf_end, 4);
   }
 
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   p += len;
 
@@ -760,8 +773,9 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     uint32_t name_str_len = 0;
 
     len = decode_string(arena, &name_str, name_str_len, p, buf_end);
-    if (len == HPACK_ERROR_COMPRESSION_ERROR)
+    if (len == HPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
+    }
 
     // Check whether header field name is lower case
     // XXX This check shouldn't be here because this rule is not a part of HPACK but HTTP2.
@@ -781,8 +795,9 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   uint32_t value_str_len = 0;
 
   len = decode_string(arena, &value_str, value_str_len, p, buf_end);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   p += len;
   header.value_set(value_str, value_str_len);
@@ -817,14 +832,16 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 int64_t
 update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, HpackIndexingTable &indexing_table)
 {
-  if (buf_start == buf_end)
+  if (buf_start == buf_end) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   // Update header table size if its required.
   uint32_t size = 0;
   int64_t len   = decode_integer(size, buf_start, buf_end, 5);
-  if (len == HPACK_ERROR_COMPRESSION_ERROR)
+  if (len == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   if (indexing_table.update_maximum_size(size) == false) {
     return HPACK_ERROR_COMPRESSION_ERROR;

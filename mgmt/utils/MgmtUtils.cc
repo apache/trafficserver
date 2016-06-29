@@ -434,12 +434,13 @@ get_interface_mtu(int sock_fd, struct ifreq *ifr)
                      "interface '%s'",
              ifr->ifr_name);
     return 0;
-  } else
+  } else {
 #if defined(solaris) || defined(hpux)
     return ifr->ifr_metric;
 #else
     return ifr->ifr_mtu;
 #endif
+  }
 }
 
 bool
@@ -503,8 +504,9 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
           ats_ip_copy(addr, &ifr->ifr_ifru.ifru_addr);
           found = true;
 
-          if (mtu)
+          if (mtu) {
             *mtu = get_interface_mtu(fakeSocket, ifr);
+          }
 
           break;
         } else {
@@ -552,7 +554,6 @@ mgmt_sleep_sec(int seconds)
 {
   sleep(seconds);
 }
-
 void
 mgmt_sleep_msec(int msec)
 {

@@ -73,9 +73,10 @@ remap_entry::remap_entry(int _argc, char *_argv[]) : next(NULL), argc(0), argv(N
 
   if (_argc > 0 && _argv && (argv = (char **)TSmalloc(sizeof(char *) * (_argc + 1))) != 0) {
     argc = _argc;
-    for (i    = 0; i < argc; i++)
+    for (i = 0; i < argc; i++) {
       argv[i] = TSstrdup(_argv[i]);
-    argv[i]   = NULL;
+    }
+    argv[i] = NULL;
   }
 }
 
@@ -85,8 +86,9 @@ remap_entry::~remap_entry()
   int i;
 
   if (argc && argv) {
-    for (i = 0; i < argc; i++)
+    for (i = 0; i < argc; i++) {
       TSfree(argv[i]);
+    }
     TSfree(argv);
   }
 }
@@ -254,8 +256,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   remap_entry *ri = (remap_entry *)ih;
   fprintf(stderr, "Remap Plugin: TSRemapDoRemap()\n");
 
-  if (!ri || !rri)
+  if (!ri || !rri) {
     return TSREMAP_NO_REMAP; /* TS must remap this request */
+  }
 
   fprintf(stderr, "[TSRemapDoRemap] From: \"%s\"  To: \"%s\"\n", ri->argv[0], ri->argv[1]);
 
@@ -322,20 +325,24 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     char new_path[8192];
 
     // Ugly, but so is the rest of this "example"
-    if (len2 + 7 >= 8192)
+    if (len2 + 7 >= 8192) {
       return TSREMAP_NO_REMAP;
+    }
 
-    if (TSUrlPortSet(rri->requestBufp, rri->mapToUrl, TSUrlPortGet(rri->requestBufp, rri->mapToUrl)) != TS_SUCCESS)
+    if (TSUrlPortSet(rri->requestBufp, rri->mapToUrl, TSUrlPortGet(rri->requestBufp, rri->mapToUrl)) != TS_SUCCESS) {
       return TSREMAP_NO_REMAP;
+    }
 
-    if (TSUrlHostSet(rri->requestBufp, rri->requestUrl, "foo.bar.com", 11) != TS_SUCCESS)
+    if (TSUrlHostSet(rri->requestBufp, rri->requestUrl, "foo.bar.com", 11) != TS_SUCCESS) {
       return TSREMAP_NO_REMAP;
+    }
 
     memcpy(new_path, "47_copy", 7);
     memcpy(&new_path[7], &temp2[2], len2 - 2);
 
-    if (TSUrlPathSet(rri->requestBufp, rri->requestUrl, new_path, len2 + 5) == TS_SUCCESS)
+    if (TSUrlPathSet(rri->requestBufp, rri->requestUrl, new_path, len2 + 5) == TS_SUCCESS) {
       return TSREMAP_DID_REMAP;
+    }
   }
 
   // Failure ...
@@ -349,8 +356,9 @@ TSRemapOSResponse(void *ih ATS_UNUSED, TSHttpTxn rh, int os_response_type)
   int request_id = -1;
   void *data     = TSHttpTxnArgGet((TSHttpTxn)rh, arg_index); // read counter (we store it in TSRemapDoRemap function call)
 
-  if (data)
+  if (data) {
     request_id = *((int *)data);
+  }
   fprintf(stderr, "[TSRemapOSResponse] Read processing counter %d from request processing block\n", request_id);
   fprintf(stderr, "[TSRemapOSResponse] OS response status: %d\n", os_response_type);
 }

@@ -299,8 +299,9 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
     return NULL;
   }
 
-  if (!map)
+  if (!map) {
     map = codes_to_escape;
+  }
 
   // Count specials in the url, assuming that there won't be any.
   //
@@ -320,8 +321,9 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
     // The common case, no escapes, so just return the source string.
     //
     *len_out = len_in;
-    if (dst)
+    if (dst) {
       ink_strlcpy(dst, url, dst_size);
+    }
     return url;
   }
 
@@ -345,10 +347,11 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
   //
   char *new_url;
 
-  if (dst)
+  if (dst) {
     new_url = dst;
-  else
+  } else {
     new_url = (char *)arena->str_alloc(out_len + 1);
+  }
 
   char *from = url;
   char *to   = new_url;
@@ -414,8 +417,9 @@ LogUtils::timestamp_to_hex_str(unsigned ip, char *buf, size_t bufLen, size_t *nu
   int retVal               = 1;
   int shift                = 28;
   if (buf && bufLen > 0) {
-    if (bufLen > 8)
+    if (bufLen > 8) {
       bufLen = 8;
+    }
     for (retVal = 0; retVal < (int)bufLen;) {
       buf[retVal++] = (char)table[((ip >> shift) & 0xf)];
       shift -= 4;
@@ -493,8 +497,9 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
       errno   = EACCES;
       ret_val = -1;
     }
-    if (size_bytes)
+    if (size_bytes) {
       *size_bytes = stat_data.st_size;
+    }
   } else {
     // stat failed
     //
@@ -529,8 +534,9 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
       if (e < 0) {
         ret_val = -1;
       } else {
-        if (size_bytes)
+        if (size_bytes) {
           *size_bytes = 0;
+        }
       }
 
       if (prefix) {
@@ -548,13 +554,16 @@ LogUtils::file_is_writeable(const char *full_filename, off_t *size_bytes, bool *
       ret_val = -1;
     } else {
       if (limit_data.rlim_cur != (rlim_t)RLIM_INFINITY) {
-        if (has_size_limit)
+        if (has_size_limit) {
           *has_size_limit = true;
-        if (current_size_limit_bytes)
+        }
+        if (current_size_limit_bytes) {
           *current_size_limit_bytes = limit_data.rlim_cur;
+        }
       } else {
-        if (has_size_limit)
+        if (has_size_limit) {
           *has_size_limit = false;
+        }
       }
     }
   }

@@ -176,8 +176,9 @@ HdrHeap::destroy()
   }
 
   m_read_write_heap = NULL;
-  for (int i                        = 0; i < HDR_BUF_RONLY_HEAPS; i++)
+  for (int i = 0; i < HDR_BUF_RONLY_HEAPS; i++) {
     m_ronly_heap[i].m_ref_count_ptr = NULL;
+  }
 
   if (m_size == HDR_HEAP_DEFAULT_SIZE) {
     THREAD_FREE(this, hdrHeapAllocator, this_thread());
@@ -296,8 +297,9 @@ FAILED:
 char *
 HdrHeap::expand_str(const char *old_str, int old_len, int new_len)
 {
-  if (m_read_write_heap && m_read_write_heap->contains(old_str))
+  if (m_read_write_heap && m_read_write_heap->contains(old_str)) {
     return m_read_write_heap->expand((char *)old_str, old_len, new_len);
+  }
 
   return NULL;
 }
@@ -675,8 +677,9 @@ HdrHeap::marshal(char *buf, int len)
   marshal_hdr->m_ronly_heap[0].m_heap_start = (char *)(intptr_t)marshal_hdr->m_size; // offset
   marshal_hdr->m_ronly_heap[0].m_ref_count_ptr.detach();
 
-  for (int i                                  = 1; i < HDR_BUF_RONLY_HEAPS; i++)
+  for (int i = 1; i < HDR_BUF_RONLY_HEAPS; i++) {
     marshal_hdr->m_ronly_heap[i].m_heap_start = NULL;
+  }
 
   // Next order of business is to copy over string heaps
   //   As we are copying over the string heaps, build
@@ -978,8 +981,9 @@ HdrHeap::attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *
       //   read-only and the copy we are attaching from could be
       //   read-write and have expanded since the last time
       //   to was attached
-      if (h_len > m_ronly_heap[z].m_heap_len)
+      if (h_len > m_ronly_heap[z].m_heap_len) {
         m_ronly_heap[z].m_heap_len = h_len;
+      }
       return true;
     }
   }
@@ -1002,8 +1006,9 @@ void
 HdrHeap::inherit_string_heaps(const HdrHeap *inherit_from)
 {
   // if heaps are the same, this is a no-op
-  if (inherit_from == (const HdrHeap *)this)
+  if (inherit_from == (const HdrHeap *)this) {
     return;
+  }
 
   int index;
   int first_free       = HDR_BUF_RONLY_HEAPS; // default is out of array bounds

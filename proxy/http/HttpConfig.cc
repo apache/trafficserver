@@ -174,8 +174,9 @@ http_server_session_sharing_cb(char const *name, RecDataT dtype, RecData data, v
   }
 
   // Signal an update if valid value arrived.
-  if (valid_p)
+  if (valid_p) {
     http_config_cb(name, dtype, data, cookie);
+  }
 
   return REC_ERR_OKAY;
 }
@@ -1198,10 +1199,12 @@ HttpConfig::reconfigure()
   params->oride.flow_high_water_mark = m_master.oride.flow_high_water_mark;
   params->oride.flow_low_water_mark  = m_master.oride.flow_low_water_mark;
   // If not set (zero) then make values the same.
-  if (params->oride.flow_low_water_mark <= 0)
+  if (params->oride.flow_low_water_mark <= 0) {
     params->oride.flow_low_water_mark = params->oride.flow_high_water_mark;
-  if (params->oride.flow_high_water_mark <= 0)
+  }
+  if (params->oride.flow_high_water_mark <= 0) {
     params->oride.flow_high_water_mark = params->oride.flow_low_water_mark;
+  }
   if (params->oride.flow_high_water_mark < params->oride.flow_low_water_mark) {
     Warning("Flow control low water mark is greater than high water mark, flow control disabled");
     params->oride.flow_control_enabled = 0;
@@ -1422,8 +1425,9 @@ HttpConfig::parse_ports_list(char *ports_string)
 {
   HttpConfigPortRange *ports_list = 0;
 
-  if (!ports_string)
+  if (!ports_string) {
     return (0);
+  }
 
   if (strchr(ports_string, '*')) {
     ports_list       = new HttpConfigPortRange;
@@ -1441,42 +1445,49 @@ HttpConfig::parse_ports_list(char *ports_string)
     start = ports_string;
 
     while (1) { // eat whitespace
-      while ((start[0] != '\0') && ParseRules::is_space(start[0]))
+      while ((start[0] != '\0') && ParseRules::is_space(start[0])) {
         start++;
+      }
 
       // locate the end of the next number
       end = start;
-      while ((end[0] != '\0') && ParseRules::is_digit(end[0]))
+      while ((end[0] != '\0') && ParseRules::is_digit(end[0])) {
         end++;
+      }
 
       // if there is no next number we're done
-      if (start == end)
+      if (start == end) {
         break;
+      }
 
       pr       = new HttpConfigPortRange;
       pr->low  = atoi(start);
       pr->high = pr->low;
       pr->next = NULL;
 
-      if (prev)
+      if (prev) {
         prev->next = pr;
-      else
+      } else {
         ports_list = pr;
-      prev         = pr;
+      }
+      prev = pr;
 
       // if the next character after the current port
       //  number is a dash then we are parsing a range
       if (end[0] == '-') {
         start = end + 1;
-        while ((start[0] != '\0') && ParseRules::is_space(start[0]))
+        while ((start[0] != '\0') && ParseRules::is_space(start[0])) {
           start++;
+        }
 
         end = start;
-        while ((end[0] != '\0') && ParseRules::is_digit(end[0]))
+        while ((end[0] != '\0') && ParseRules::is_digit(end[0])) {
           end++;
+        }
 
-        if (start == end)
+        if (start == end) {
           break;
+        }
 
         pr->high = atoi(start);
       }
@@ -1508,16 +1519,19 @@ HttpConfig::parse_url_expansions(char *url_expansions_str, int *num_expansions)
   char *start = url_expansions_str, *end;
   while (1) {
     // Skip whitespace
-    while (isspace(*start))
+    while (isspace(*start)) {
       start++;
-    if (*start == '\0')
+    }
+    if (*start == '\0') {
       break;
+    }
     count++;
     end = start + 1;
 
     // Find end of expansion
-    while (!isspace(*end) && *end != '\0')
+    while (!isspace(*end) && *end != '\0') {
       end++;
+    }
     start = end;
   }
 
@@ -1527,17 +1541,20 @@ HttpConfig::parse_url_expansions(char *url_expansions_str, int *num_expansions)
     start      = url_expansions_str;
     for (i = 0; i < count; i++) {
       // Skip whitespace
-      while (isspace(*start))
+      while (isspace(*start)) {
         start++;
+      }
       expansions[i] = start;
       end           = start + 1;
 
       // Find end of expansion
-      while (!isspace(*end) && *end != '\0')
+      while (!isspace(*end) && *end != '\0') {
         end++;
+      }
       *end = '\0';
-      if (i < (count - 1))
+      if (i < (count - 1)) {
         start = end + 1;
+      }
     }
   }
 

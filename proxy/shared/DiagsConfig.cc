@@ -70,14 +70,16 @@ DiagsConfig::reconfigure_diags()
   // enabled if records.config set
 
   e = (int)REC_readInteger("proxy.config.diags.debug.enabled", &found);
-  if (e && found)
+  if (e && found) {
     c.enabled[DiagsTagType_Debug] = 1; // implement OR logic
-  all_found                       = all_found && found;
+  }
+  all_found = all_found && found;
 
   e = (int)REC_readInteger("proxy.config.diags.action.enabled", &found);
-  if (e && found)
+  if (e && found) {
     c.enabled[DiagsTagType_Action] = 1; // implement OR logic
-  all_found                        = all_found && found;
+  }
+  all_found = all_found && found;
 
   e                    = (int)REC_readInteger("proxy.config.diags.show_location", &found);
   diags->show_location = ((e && found) ? 1 : 0);
@@ -88,8 +90,9 @@ DiagsConfig::reconfigure_diags()
     const char *record_name = output_records[i].config_name;
     DiagsLevel l            = output_records[i].level;
 
-    if (!record_name)
+    if (!record_name) {
       break;
+    }
     p         = REC_readString(record_name, &found);
     all_found = all_found && found;
     if (found) {

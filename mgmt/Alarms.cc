@@ -289,11 +289,12 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
   time(&my_time_t);
   ink_ctime_r(&my_time_t, my_ctime_str);
   char *p = my_ctime_str;
-  while (*p != '\n' && *p != '\0')
+  while (*p != '\n' && *p != '\0') {
     p++;
-  if (*p == '\n')
+  }
+  if (*p == '\n') {
     *p = '\0';
-
+  }
   const size_t sz = sizeof(char) * (strlen(desc) + strlen(my_ctime_str) + 4);
   ats_free(atmp->description);
   atmp->description = (char *)ats_malloc(sz);
@@ -519,8 +520,9 @@ Alarms::execAlarmBin(const char *desc)
 const char *
 Alarms::getAlarmText(alarm_t id)
 {
-  if (id < alarmTextNum)
+  if (id < alarmTextNum) {
     return alarmText[id];
-  else
+  } else {
     return alarmText[0]; // "Unknown Alarm";
+  }
 }

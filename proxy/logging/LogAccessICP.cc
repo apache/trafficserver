@@ -159,8 +159,9 @@ LogAccessICP::marshal_client_req_url_canon(char *buf)
   char *str     = LogUtils::escapify_url(&arena, uri_str, uri_len, &escapified_len);
 
   int len = round_strlen(escapified_len + 1); // the padded len
-  if (buf)
+  if (buf) {
     marshal_str(buf, str, len);
+  }
   return len;
 }
 
@@ -179,8 +180,9 @@ LogAccessICP::marshal_proxy_resp_content_type(char *buf)
   //
   LogUtils::remove_content_type_attributes(ct_str, &ct_len);
   int len = LogAccess::strlen(ct_str);
-  if (buf)
+  if (buf) {
     marshal_str(buf, ct_str, len);
+  }
   return len;
 }
 

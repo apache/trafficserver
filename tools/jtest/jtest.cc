@@ -351,23 +351,28 @@ struct FD {
     ready    = 0;
     req_pos  = 0;
     length   = 0;
-    if (!urls_mode)
+
+    if (!urls_mode) {
       response = NULL;
-    if (response_header)
+    }
+
+    if (response_header) {
       response_header[0] = 0;
-    response_length      = 0;
-    response_remaining   = 0;
-    count                = NULL;
-    bytes                = 0;
-    doc                  = 0.0;
-    doc_length           = 0;
-    ims                  = 0;
-    drop_after_CL        = ::drop_after_CL;
-    client_abort         = 0;
-    jg_compressed        = 0;
-    ftp_mode             = FTP_NULL;
-    ftp_peer_addr        = 0;
-    ftp_peer_port        = 0;
+    }
+
+    response_length    = 0;
+    response_remaining = 0;
+    count              = NULL;
+    bytes              = 0;
+    doc                = 0.0;
+    doc_length         = 0;
+    ims                = 0;
+    drop_after_CL      = ::drop_after_CL;
+    client_abort       = 0;
+    jg_compressed      = 0;
+    ftp_mode           = FTP_NULL;
+    ftp_peer_addr      = 0;
+    ftp_peer_port      = 0;
   }
 
   void close();
@@ -383,20 +388,25 @@ FD *fd = NULL;
 void
 FD::close()
 {
-  if (verbose)
+  if (verbose) {
     printf("close: %d\n", fd);
+  }
   ::close(fd);
-  if (is_done())
+  if (is_done()) {
     done();
+  }
   keepalive = 0;
   ip        = 0;
-  if (count)
+  if (count) {
     (*count)--;
-  if (count == &clients)
+  }
+  if (count == &clients) {
     current_clients--;
+  }
   reset();
-  if (urls_mode)
+  if (urls_mode) {
     undefer_url();
+  }
   ftp_data_fd = 0;
 }
 
@@ -443,12 +453,15 @@ static void
 remove_last_seg(char *src, char *dest)
 {
   char *ptr;
-  for (ptr = src + strlen(src) - 1; ptr >= src; ptr--)
-    if (*ptr == '/')
+  for (ptr = src + strlen(src) - 1; ptr >= src; ptr--) {
+    if (*ptr == '/') {
       break;
-  while (src <= ptr)
+    }
+  }
+  while (src <= ptr) {
     *dest++ = *src++;
-  *dest     = '\0';
+  }
+  *dest = '\0';
 }
 
 static inline void
@@ -473,8 +486,9 @@ static inline void
 append_string(char *dest, const char *src, int *offset_ptr, int max_len)
 {
   int num = strlen(src);
-  if (*offset_ptr + num > max_len)
+  if (*offset_ptr + num > max_len) {
     num = max_len - *offset_ptr;
+  }
   strncpy(dest + *offset_ptr, src, num + 1);
   (*offset_ptr) += num;
 }
@@ -523,37 +537,45 @@ read_ready(int fd)
   p.events = POLLIN;
   p.fd     = fd;
   int r    = poll(&p, 1, 0);
-  if (r <= 0)
+  if (r <= 0) {
     return r;
-  if (p.revents & (POLLERR | POLLNVAL))
+  }
+  if (p.revents & (POLLERR | POLLNVAL)) {
     return -1;
-  if (p.revents & (POLLIN | POLLHUP))
+  }
+  if (p.revents & (POLLIN | POLLHUP)) {
     return 1;
+  }
   return 0;
 }
 
 static void
 poll_init(int sock)
 {
-  if (!fd[sock].req_header)
+  if (!fd[sock].req_header) {
     fd[sock].req_header = (char *)malloc(HEADER_SIZE * pipeline);
-  if (!fd[sock].response_header)
+  }
+  if (!fd[sock].response_header) {
     fd[sock].response_header = (char *)malloc(HEADER_SIZE);
-  if (!fd[sock].base_url)
+  }
+  if (!fd[sock].base_url) {
     fd[sock].base_url = (char *)malloc(HEADER_SIZE);
+  }
   fd[sock].reset();
 }
 
 static void
 poll_set(int sock, poll_cb read_cb, poll_cb write_cb = NULL)
 {
-  if (verbose)
+  if (verbose) {
     printf("adding poll %d\n", sock);
+  }
   fd[sock].fd       = sock;
   fd[sock].read_cb  = read_cb;
   fd[sock].write_cb = write_cb;
-  if (last_fd < sock)
+  if (last_fd < sock) {
     last_fd = sock;
+  }
 }
 
 static void
@@ -566,8 +588,9 @@ poll_init_set(int sock, poll_cb read_cb, poll_cb write_cb = NULL)
 static int
 fast(int sock, int speed, int d)
 {
-  if (!speed)
+  if (!speed) {
     return 0;
+  }
   int64_t t  = now - fd[sock].start + 1;
   int target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
   int delta  = d - target;
@@ -575,8 +598,9 @@ fast(int sock, int speed, int d)
     int mwait      = (delta * 1000) / speed;
     fd[sock].ready = now + (mwait * HRTIME_MSECOND);
     return 1;
-  } else
+  } else {
     fd[sock].ready = now;
+  }
   return 0;
 }
 
@@ -591,13 +615,15 @@ elapsed_from_start(int sock)
 static int
 faster_than(int sock, int speed, int d)
 {
-  if (!speed)
+  if (!speed) {
     return 1;
+  }
   int64_t t  = now - fd[sock].start + 1;
   int target = (int)(((t / HRTIME_MSECOND) * speed) / 1000);
   int delta  = d - target;
-  if (delta > 0)
+  if (delta > 0) {
     return 1;
+  }
   return 0;
 }
 
@@ -609,15 +635,18 @@ get_path_from_req(char *buf, char **purl_start, char **purl_end)
   if (!strncasecmp(url_start, "GET ", sizeof("GET ") - 1)) {
     url_start += sizeof("GET ") - 1;
     url_end = (char *)memchr(url_start, ' ', 70);
-  } else
+  } else {
     url_end = (char *)memchr(url_start, 0, 70);
-  if (!url_end)
+  }
+  if (!url_end) {
     panic("malformed request\n");
-  if (url_end - url_start > 10)
+  }
+  if (url_end - url_start > 10) {
     if (!strncasecmp(url_start, "http://", sizeof("http://") - 1)) {
       url_start += sizeof("http://") - 1;
       url_start = (char *)memchr(url_start, '/', 70);
     }
+  }
   *purl_start = url_start;
   *purl_end   = url_end;
 }
@@ -659,7 +688,7 @@ send_response(int sock)
                                     "\r\n",
                             content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "");
         url_len = 0;
-      } else
+      } else {
         print_len = sprintf(header, "HTTP/1.0 200 OK\r\n"
                                     "Content-Type: %s\r\n"
                                     "Cache-Control: max-age=630720000\r\n"
@@ -670,31 +699,38 @@ send_response(int sock)
                                     "\r\n%s",
                             content_type, fd[sock].keepalive > 0 ? "Connection: Keep-Alive\r\n" : "", fd[sock].response_length,
                             no_cache ? "Pragma: no-cache\r\nCache-Control: no-cache\r\n" : "", url_start ? url_start : "");
-    } else
+      }
+    } else {
       url_len = print_len = sprintf(header, "ftp://%s:%d/%12.10f/%d", local_host, server_port, fd[sock].doc, fd[sock].length);
-    if (show_headers)
+    }
+    if (show_headers) {
       printf("Response to Proxy: {\n%s}\n", header);
+    }
     int len = print_len - fd[sock].req_pos;
     ink_assert(len > 0);
     do {
       err = write(sock, header + fd[sock].req_pos, len);
     } while ((err == -1) && (errno == EINTR));
     if (err <= 0) {
-      if (!err)
+      if (!err) {
         return -1;
-      if (errno == EAGAIN || errno == ENOTCONN)
+      }
+      if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
+      }
       return -1;
     }
-    if (verbose)
+    if (verbose) {
       printf("wrote %d %d\n", sock, err);
+    }
     new_tbytes += err;
     fd[sock].req_pos += err;
     fd[sock].bytes += err;
-    if (fd[sock].req_pos >= len)
+    if (fd[sock].req_pos >= len) {
       fd[sock].req_pos = -1;
-    else
+    } else {
       return 0;
+    }
     fd[sock].response += url_len;
     fd[sock].length -= url_len;
     total_server_response_header_bytes += print_len - url_len;
@@ -703,23 +739,27 @@ send_response(int sock)
 
   /* then the response */
   towrite = server_speed ? server_speed : MAX_RESPONSE_LENGTH;
-  if (fd[sock].length < towrite)
+  if (fd[sock].length < towrite) {
     towrite = fd[sock].length;
+  }
   if (towrite > 0) {
-    if (fast(sock, server_speed, fd[sock].bytes))
+    if (fast(sock, server_speed, fd[sock].bytes)) {
       return 0;
+    }
     do {
       err = write(sock, fd[sock].response, towrite);
     } while ((err == -1) && (errno == EINTR));
     if (err < 0) {
-      if (errno == EAGAIN || errno == ENOTCONN)
+      if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
+      }
       fprintf(stderr, "write errno %d length %d sock %d\n", errno, towrite, sock);
       errors++;
       return -1;
     }
-    if (verbose)
+    if (verbose) {
       printf("wrote %d %d\n", sock, err);
+    }
 
     new_tbytes += err;
     total_server_response_body_bytes += err;
@@ -728,13 +768,16 @@ send_response(int sock)
     fd[sock].bytes += err;
   }
 
-  if (fast(sock, server_speed, fd[sock].bytes))
+  if (fast(sock, server_speed, fd[sock].bytes)) {
     return 0;
+  }
   if (fd[sock].length <= 0 || !err) {
-    if (fd[sock].response)
+    if (fd[sock].response) {
       new_sops++;
-    if (verbose)
+    }
+    if (verbose) {
       printf("write %d done\n", sock);
+    }
     if (fd[sock].keepalive > 0 && !ftp) {
       poll_init_set(sock, read_request);
       fd[sock].start = now;
@@ -755,15 +798,18 @@ strncasestr(char *s, const char *find, int len)
   while (1) {
     char *x = (char *)memchr(s, *find, e - s);
     if (!x) {
-      if (ParseRules::is_upalpha(*find))
+      if (ParseRules::is_upalpha(*find)) {
         x = (char *)memchr(s, ParseRules::ink_tolower(*find), e - s);
-      else
+      } else {
         x = (char *)memchr(s, ParseRules::ink_toupper(*find), e - s);
-      if (!x)
+      }
+      if (!x) {
         break;
+      }
     }
-    if (!strncasecmp(find, x, findlen))
+    if (!strncasecmp(find, x, findlen)) {
       return x;
+    }
     s = x + 1;
   }
   return NULL;
@@ -776,10 +822,12 @@ check_keepalive(char *r, int length)
   if (ka) {
     int l   = length - (ka - r);
     char *e = (char *)memchr(ka, '\n', l);
-    if (!e)
+    if (!e) {
       e = (char *)memchr(ka, '\r', l);
-    if (strncasestr(ka, "close", e - ka))
+    }
+    if (strncasestr(ka, "close", e - ka)) {
       return NULL;
+    }
   }
   return ka;
 }
@@ -790,23 +838,29 @@ check_alt(char *r, int length)
   char *s = strncasestr(r, "Cookie:", length);
   if (!s) {
     s = strncasestr(r, "User-Agent:", length);
-    if (s)
+    if (s) {
       s += sizeof("User-Agent:");
-  } else
+    }
+  } else {
     s += sizeof("Cookie:");
+  }
   if (s) {
     int l   = length - (s - r);
     char *e = (char *)memchr(s, '\n', l);
-    if (!e)
+    if (!e) {
       e = (char *)memchr(s, '\r', l);
-    if (!(s = strncasestr(s, "jtest", e - s)))
+    }
+    if (!(s = strncasestr(s, "jtest", e - s))) {
       return 0;
+    }
     s = (char *)memchr(s, '-', l);
-    if (!s)
+    if (!s) {
       return 0;
+    }
     s = (char *)memchr(s + 1, '-', l);
-    if (!s)
+    if (!s) {
       return 0;
+    }
     return ink_atoi(s + 1);
   }
   return 0;
@@ -837,8 +891,9 @@ send_ftp_data_when_ready(int sock)
   if (fd[sock].state == STATE_FTP_DATA_READY && fd[sock].doc_length) {
     fd[sock].response        = fd[sock].req_header;
     fd[sock].response_length = fd[sock].length = fd[sock].doc_length;
-    if (verbose)
+    if (verbose) {
       printf("ftp data %d >-< %d\n", sock, fd[sock].ftp_data_fd);
+    }
     fd[sock].response = response_buffer + fd[sock].doc_length % 256;
     fd[sock].req_pos  = 0;
     poll_set(sock, NULL, send_response);
@@ -850,8 +905,9 @@ static int
 send_ftp_data(int sock, char *start /*, char * end */)
 {
   int data_fd = fd[sock].ftp_data_fd;
-  if (sscanf(start, "%d", &fd[data_fd].doc_length) != 1)
+  if (sscanf(start, "%d", &fd[data_fd].doc_length) != 1) {
     return -1;
+  }
   fd[data_fd].doc = fd[sock].doc;
   send_ftp_data_when_ready(data_fd);
   return 0;
@@ -860,8 +916,9 @@ send_ftp_data(int sock, char *start /*, char * end */)
 static int
 read_request(int sock)
 {
-  if (verbose)
+  if (verbose) {
     printf("read_request %d\n", sock);
+  }
   int err = 0;
   int i;
 
@@ -872,18 +929,22 @@ read_request(int sock)
   } while ((err < 0) && (errno == EINTR));
 
   if (err < 0) {
-    if (errno == EAGAIN || errno == ENOTCONN)
+    if (errno == EAGAIN || errno == ENOTCONN) {
       return 0;
-    if (fd[sock].req_pos || errno != ECONNRESET)
+    }
+    if (fd[sock].req_pos || errno != ECONNRESET) {
       perror("read");
+    }
     return -1;
   } else if (err == 0) {
-    if (verbose)
+    if (verbose) {
       printf("eof\n");
+    }
     return -1;
   } else {
-    if (verbose)
+    if (verbose) {
       printf("read %d got %d\n", sock, err);
+    }
     total_proxy_request_bytes += err;
     new_tbytes += err;
     fd[sock].req_pos += err;
@@ -892,48 +953,55 @@ read_request(int sock)
     for (i = fd[sock].req_pos - err; i < fd[sock].req_pos; i++) {
       switch (fd[sock].state) {
       case 0:
-        if (buffer[i] == '\r')
+        if (buffer[i] == '\r') {
           fd[sock].state = 1;
-        else if (buffer[i] == '\n')
+        } else if (buffer[i] == '\n') {
           fd[sock].state = 2;
+        }
         break;
       case 1:
-        if (buffer[i] == '\n')
+        if (buffer[i] == '\n') {
           fd[sock].state = 2;
-        else
+        } else {
           fd[sock].state = 0;
+        }
         break;
       case 2:
-        if (buffer[i] == '\r')
+        if (buffer[i] == '\r') {
           fd[sock].state = 3;
-        else if (buffer[i] == '\n') {
+        } else if (buffer[i] == '\n') {
           fd[sock].state = 3;
           goto L3;
-        } else
+        } else {
           fd[sock].state = 0;
+        }
         break;
       L3:
       case 3:
         if (buffer[i] == '\n') {
-          if (show_headers)
+          if (show_headers) {
             printf("Request from Proxy: {\n%s}\n", buffer);
+          }
           char host[80];
           int port, length;
           float r;
           if (sscanf(buffer, "GET http://%[^:]:%d/%f/%d", host, &port, &r, &length) == 4) {
           } else if (sscanf(buffer, "GET /%f/%d", &r, &length) == 2) {
           } else {
-            if (verbose)
+            if (verbose) {
               printf("misscan: %s\n", buffer);
+            }
             fd[sock].close();
             return 0;
           }
-          if (verbose)
+          if (verbose) {
             printf("read_request %d got request %d\n", sock, length);
+          }
           char *ims = strncasestr(buffer, "If-Modified-Since:", i);
           // coverity[dont_call]
-          if (drand48() > ims_rate)
-            ims        = NULL;
+          if (drand48() > ims_rate) {
+            ims = NULL;
+          }
           fd[sock].ims = ims ? 1 : 0;
           if (!ims) {
             fd[sock].response_length = fd[sock].length = length;
@@ -941,16 +1009,18 @@ read_request(int sock)
             fd[sock].response                          = response_buffer + length % 256 + fd[sock].nalternate;
           } else {
             fd[sock].nalternate = 0;
-            if (verbose)
+            if (verbose) {
               printf("sending IMS 304: Not-Modified\n");
+            }
             fd[sock].response        = NULL;
             fd[sock].response_length = fd[sock].length = 0;
           }
           fd[sock].req_pos = 0;
-          if (!check_keepalive(fd[sock].req_header, strlen(fd[sock].req_header)))
+          if (!check_keepalive(fd[sock].req_header, strlen(fd[sock].req_header))) {
             fd[sock].keepalive = 0;
-          else
+          } else {
             fd[sock].keepalive--;
+          }
           // coverity[dont_call]
           if (fd[sock].length && drand48() < server_abort_rate) {
             // coverity[dont_call]
@@ -959,8 +1029,9 @@ read_request(int sock)
           }
           poll_set(sock, NULL, send_response);
           return 0;
-        } else
+        } else {
           fd[sock].state = 0;
+        }
         break;
       }
     }
@@ -985,17 +1056,20 @@ send_compd_response(int sock)
     } while ((err == -1) && (errno == EINTR));
     if (err <= 0) {
       if (!err) {
-        if (verbose_errors)
+        if (verbose_errors) {
           printf("write %d closed early\n", sock);
+        }
         goto Lerror;
       }
-      if (errno == EAGAIN || errno == ENOTCONN)
+      if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
+      }
       perror("write");
       goto Lerror;
     }
-    if (verbose)
+    if (verbose) {
       printf("write %d %d\n", sock, err);
+    }
 
     new_tbytes += err;
     fd[sock].req_pos += err;
@@ -1009,20 +1083,23 @@ send_compd_response(int sock)
     if (towrite > desired) {
       towrite = desired;
     }
-    if (fast(sock, client_speed, fd[sock].bytes))
+    if (fast(sock, client_speed, fd[sock].bytes)) {
       return 0;
+    }
     do {
       err = write(sock, fd[sock].response + fd[sock].req_pos - sizeof(compd_header), towrite);
     } while ((err == -1) && (errno == EINTR));
     if (err < 0) {
-      if (errno == EAGAIN || errno == ENOTCONN)
+      if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
+      }
       fprintf(stderr, "write errno %d length %d sock %d\n", errno, towrite, sock);
       errors++;
       return -1;
     }
-    if (verbose)
+    if (verbose) {
       printf("wrote %d %d\n", sock, err);
+    }
 
     new_tbytes += err;
     total_server_response_body_bytes += err;
@@ -1030,8 +1107,9 @@ send_compd_response(int sock)
     fd[sock].bytes += err;
   }
 
-  if (fd[sock].req_pos >= ((fd[sock].length * 2) / 3) + 4)
+  if (fd[sock].req_pos >= ((fd[sock].length * 2) / 3) + 4) {
     return -1;
+  }
 
   return 0;
 Lerror:
@@ -1042,8 +1120,9 @@ Lerror:
 static int
 read_compd_request(int sock)
 {
-  if (verbose)
+  if (verbose) {
     printf("read_compd_request %d\n", sock);
+  }
   int err = 0;
 
   if (fd[sock].req_pos < 4) {
@@ -1053,51 +1132,60 @@ read_compd_request(int sock)
     } while ((err < 0) && (errno == EINTR));
 
     if (err < 0) {
-      if (errno == EAGAIN || errno == ENOTCONN)
+      if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
+      }
       perror("read");
       return -1;
     } else if (err == 0) {
-      if (verbose)
+      if (verbose) {
         printf("eof\n");
+      }
       return -1;
     } else {
-      if (verbose)
+      if (verbose) {
         printf("read %d got %d\n", sock, err);
+      }
       total_proxy_request_bytes += err;
       new_tbytes += err;
       fd[sock].req_pos += err;
-      if (fd[sock].req_pos < 4)
+      if (fd[sock].req_pos < 4) {
         return 0;
+      }
       fd[sock].length = ntohl(*(unsigned int *)fd[sock].req_header);
     }
   }
 
-  if (fd[sock].req_pos >= fd[sock].length + 4)
+  if (fd[sock].req_pos >= fd[sock].length + 4) {
     goto Lcont;
+  }
 
   {
     char buf[MAX_BUFSIZE];
     int toread = cbuffersize;
-    if (fast(sock, client_speed, fd[sock].bytes))
+    if (fast(sock, client_speed, fd[sock].bytes)) {
       return 0;
+    }
     do {
       err = read(sock, buf, toread);
     } while ((err == -1) && (errno == EINTR));
     if (err < 0) {
-      if (errno == EAGAIN || errno == ENOTCONN)
+      if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
+      }
       if (errno == ECONNRESET) {
-        if (verbose || verbose_errors)
+        if (verbose || verbose_errors) {
           perror("read");
+        }
         errors++;
         return -1;
       }
       panic_perror("read");
     }
     if (!err) {
-      if (verbose || verbose_errors)
+      if (verbose || verbose_errors) {
         perror("read");
+      }
       errors++;
       return -1;
     }
@@ -1106,8 +1194,9 @@ read_compd_request(int sock)
     fd[sock].req_pos += err;
   }
 
-  if (fd[sock].req_pos >= fd[sock].length + 4)
+  if (fd[sock].req_pos >= fd[sock].length + 4) {
     goto Lcont;
+  }
 
   return 0;
 
@@ -1121,8 +1210,9 @@ Lcont:
 static int
 read_ftp_request(int sock)
 {
-  if (verbose)
+  if (verbose) {
     printf("read_ftp_request %d\n", sock);
+  }
   int err = 0;
   int i;
 
@@ -1133,25 +1223,29 @@ read_ftp_request(int sock)
   } while ((err < 0) && (errno == EINTR));
 
   if (err < 0) {
-    if (errno == EAGAIN || errno == ENOTCONN)
+    if (errno == EAGAIN || errno == ENOTCONN) {
       return 0;
+    }
     perror("read");
     return -1;
   } else if (err == 0) {
-    if (verbose)
+    if (verbose) {
       printf("eof\n");
+    }
     return -1;
   } else {
-    if (verbose)
+    if (verbose) {
       printf("read %d got %d\n", sock, err);
+    }
     new_tbytes += err;
     fd[sock].req_pos += err;
     fd[sock].req_header[fd[sock].req_pos] = 0;
     char *buffer                          = fd[sock].req_header, *n;
     int res                               = 0;
     buffer[fd[sock].req_pos]              = 0;
-    if (verbose)
+    if (verbose) {
       printf("buffer [%s]\n", buffer);
+    }
 #define STREQ(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
     if (STREQ(buffer, "USER")) {
       res = 331;
@@ -1169,8 +1263,9 @@ read_ftp_request(int sock)
       res = 200;
     Lhere:
       n = (char *)memchr(buffer, '\n', fd[sock].req_pos);
-      if (!n)
+      if (!n) {
         return 0;
+      }
       make_response(sock, res);
       return 0;
     } else if (STREQ(buffer, "SIZE")) {
@@ -1180,8 +1275,9 @@ read_ftp_request(int sock)
     } else if (STREQ(buffer, "MDTM")) {
       double err_rand = 1.0;
       // coverity[dont_call]
-      if (ftp_mdtm_err_rate != 0.0)
+      if (ftp_mdtm_err_rate != 0.0) {
         err_rand = drand48();
+      }
       if (err_rand < ftp_mdtm_err_rate) {
         fd[sock].length = sprintf(fd[sock].req_header, "550 mdtm file not found\r\n");
       } else {
@@ -1204,40 +1300,48 @@ read_ftp_request(int sock)
       return 0;
     } else if (STREQ(buffer, "PASV")) {
       n = (char *)memchr(buffer, '\n', fd[sock].req_pos);
-      if (!n)
+      if (!n) {
         return 0;
-      if ((fd[sock].ftp_data_fd = open_server(0, accept_ftp_data)) < 0)
+      }
+      if ((fd[sock].ftp_data_fd = open_server(0, accept_ftp_data)) < 0) {
         panic("could not open ftp data PASV accept port\n");
+      }
       fd[fd[sock].ftp_data_fd].ftp_data_fd = sock;
-      if (verbose)
+      if (verbose) {
         printf("ftp PASV %d <-> %d\n", sock, fd[sock].ftp_data_fd);
+      }
       unsigned short p = fd[fd[sock].ftp_data_fd].name.sin_port;
       fd[sock].length  = sprintf(fd[sock].req_header, "227 (%u,%u,%u,%u,%u,%u)\r\n", ((unsigned char *)&local_addr)[0],
                                 ((unsigned char *)&local_addr)[1], ((unsigned char *)&local_addr)[2],
                                 ((unsigned char *)&local_addr)[3], ((unsigned char *)&p)[0], ((unsigned char *)&p)[1]);
-      if (verbose)
+      if (verbose) {
         puts(fd[sock].req_header);
+      }
       make_long_response(sock);
       fd[sock].ftp_mode = FTP_PASV;
       return 0;
     } else if (STREQ(buffer, "PORT")) {
       // watch out for an endian problems !!!
       char *start, *stop;
-      for (start = buffer; !ParseRules::is_digit(*start); start++)
+      for (start = buffer; !ParseRules::is_digit(*start); start++) {
         ;
-      for (stop = start; *stop != ','; stop++)
+      }
+      for (stop = start; *stop != ','; stop++) {
         ;
+      }
       for (i = 0; i < 4; i++) {
         ((unsigned char *)&(fd[sock].ftp_peer_addr))[i] = strtol(start, &stop, 10);
-        for (start = ++stop; *stop != ','; stop++)
+        for (start = ++stop; *stop != ','; stop++) {
           ;
+        }
       }
       ((unsigned char *)&(fd[sock].ftp_peer_port))[0] = strtol(start, &stop, 10);
       start                                           = ++stop;
       ((unsigned char *)&(fd[sock].ftp_peer_port))[1] = strtol(start, NULL, 10);
       fd[sock].length                                 = sprintf(fd[sock].req_header, "200 Okay\r\n");
-      if (verbose)
+      if (verbose) {
         puts(fd[sock].req_header);
+      }
       make_long_response(sock);
       fd[sock].ftp_mode = FTP_PORT;
       return 0;
@@ -1261,21 +1365,25 @@ read_ftp_request(int sock)
         fd[sock].ftp_mode      = FTP_PORT;
       }
       if (fd[sock].ftp_mode == FTP_PORT) {
-        if ((fd[sock].ftp_data_fd = make_client(fd[sock].ftp_peer_addr, fd[sock].ftp_peer_port)) < 0)
+        if ((fd[sock].ftp_data_fd = make_client(fd[sock].ftp_peer_addr, fd[sock].ftp_peer_port)) < 0) {
           panic("could not open ftp PORT data connection to client\n");
+        }
         fd[fd[sock].ftp_data_fd].ftp_data_fd = sock;
         fd[fd[sock].ftp_data_fd].state       = STATE_FTP_DATA_READY;
-        if (verbose)
+        if (verbose) {
           printf("ftp PORT %d <-> %d\n", sock, fd[sock].ftp_data_fd);
+        }
       }
       n = (char *)memchr(buffer, '\n', fd[sock].req_pos);
-      if (!n)
+      if (!n) {
         return 0;
+      }
       if (send_ftp_data(sock, buffer + 5 /*, n */) < 0) {
         errors++;
         *n = 0;
-        if (verbose)
+        if (verbose) {
           printf("badly formed ftp request: %s\n", buffer);
+        }
         return 1;
       }
       fd[sock].response        = fd[sock].req_header;
@@ -1285,8 +1393,9 @@ read_ftp_request(int sock)
       poll_set(sock, NULL, write_ftp_response);
       return 0;
     } else {
-      if (verbose || verbose_errors)
+      if (verbose || verbose_errors) {
         printf("ftp junk : %s\n", buffer);
+      }
       fd[sock].req_pos = 0;
       return 0;
     }
@@ -1308,17 +1417,20 @@ accept_sock(int sock)
 #endif
                     );
     if (new_fd < 0) {
-      if (errno == EAGAIN || errno == ENOTCONN)
+      if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
-      if (errno == EINTR || errno == ECONNABORTED)
+      }
+      if (errno == EINTR || errno == ECONNABORTED) {
         continue;
+      }
       printf("accept socket was %d\n", sock);
       panic_perror("accept");
     }
   } while (new_fd < 0);
 
-  if (fcntl(new_fd, F_SETFL, O_NONBLOCK) < 0)
+  if (fcntl(new_fd, F_SETFL, O_NONBLOCK) < 0) {
     panic_perror("fcntl");
+  }
 
 #if 0
 #ifdef BUFSIZE //  make default
@@ -1370,8 +1482,9 @@ accept_read(int sock)
   if (ftp) {
     poll_init_set(new_fd, NULL, write_ftp_response);
     make_response(new_fd, 220);
-  } else
+  } else {
     poll_init_set(new_fd, read_request);
+  }
   fd[new_fd].count     = &servers;
   fd[new_fd].start     = now;
   fd[new_fd].ready     = now + server_delay * HRTIME_MSECOND;
@@ -1397,8 +1510,9 @@ accept_ftp_data(int sock)
   fd[new_fd].state                     = STATE_FTP_DATA_READY;
   fd[new_fd].doc                       = fd[sock].doc;
   fd[new_fd].doc_length                = fd[sock].doc_length;
-  if (verbose)
+  if (verbose) {
     printf("accept_ftp_data %d for %d\n", new_fd, sock);
+  }
   send_ftp_data_when_ready(new_fd);
   return 1;
 }
@@ -1468,8 +1582,9 @@ open_server(unsigned short int port, accept_fn_t accept_fn)
     exit(EXIT_FAILURE);
   }
 
-  if (verbose)
+  if (verbose) {
     printf("opening server on %d port %d\n", sock, name.sin_port);
+  }
 
   poll_init_set(sock, accept_fn);
 
@@ -1481,8 +1596,9 @@ static int
 poll_loop()
 {
   if (server_fd > 0) {
-    while (read_ready(server_fd) > 0)
+    while (read_ready(server_fd) > 0) {
       accept_read(server_fd);
+    }
   }
   pollfd pfd[POLL_GROUP_SIZE];
   int ip = 0;
@@ -1492,10 +1608,12 @@ poll_loop()
       pfd[ip].fd      = i;
       pfd[ip].events  = 0;
       pfd[ip].revents = 0;
-      if (fd[i].read_cb)
+      if (fd[i].read_cb) {
         pfd[ip].events |= POLLIN;
-      if (fd[i].write_cb)
+      }
+      if (fd[i].write_cb) {
         pfd[ip].events |= POLLOUT;
+      }
       ip++;
     }
     if (ip >= POLL_GROUP_SIZE || i == last_fd) {
@@ -1503,16 +1621,18 @@ poll_loop()
       if (n > 0) {
         for (int j = 0; j < ip; j++) {
           if (pfd[j].revents & (POLLIN | POLLERR | POLLHUP | POLLNVAL)) {
-            if (verbose)
+            if (verbose) {
               printf("poll read %d %X\n", pfd[j].fd, pfd[j].revents);
+            }
             if (fd[pfd[j].fd].read_cb && fd[pfd[j].fd].read_cb(pfd[j].fd)) {
               fd[pfd[j].fd].close();
               continue;
             }
           }
           if (pfd[j].revents & (POLLOUT | POLLERR | POLLHUP | POLLNVAL)) {
-            if (verbose)
+            if (verbose) {
               printf("poll write %d %X\n", pfd[j].fd, pfd[j].revents);
+            }
             if (fd[pfd[j].fd].write_cb && fd[pfd[j].fd].write_cb(pfd[j].fd)) {
               fd[pfd[j].fd].close();
               continue;
@@ -1529,8 +1649,9 @@ poll_loop()
 static int
 gen_bfc_dist(double f = 10.0)
 {
-  if (docsize >= 0)
+  if (docsize >= 0) {
     return docsize;
+  }
 
   double rand  = 0.0;
   double rand2 = 0.0;
@@ -1556,8 +1677,9 @@ gen_bfc_dist(double f = 10.0)
     class_no = 2;
   } else {
     class_no = 3;
-    if (f_given)
+    if (f_given) {
       rand2 = (f * 113.0) - floor(f * 113.0);
+    }
   }
 
   if (rand2 < 0.018) {
@@ -1588,11 +1710,13 @@ gen_bfc_dist(double f = 10.0)
   size          = size * (file_no + 1);
   // vary about the mean doc size for
   // that class/size
-  if (!f_given)
+  if (!f_given) {
     // coverity[dont_call]
     size += (int)((-increment * 0.5) + (increment * drand48()));
-  if (verbose)
+  }
+  if (verbose) {
     printf("gen_bfc_dist %d\n", size);
+  }
   return size;
 }
 
@@ -1601,30 +1725,34 @@ build_response()
 {
   int maxsize     = docsize > MAX_RESPONSE_LENGTH ? docsize : MAX_RESPONSE_LENGTH;
   response_buffer = (char *)malloc(maxsize + HEADER_SIZE);
-  for (int i           = 0; i < maxsize + HEADER_SIZE; i++)
+  for (int i = 0; i < maxsize + HEADER_SIZE; i++) {
     response_buffer[i] = i % 256;
+  }
 }
 
 static void
 put_ka(int sock)
 {
   int i = 0;
-  for (; i < n_ka_cache; i++)
-    if (!ka_cache_head[i] || fd[ka_cache_head[i]].ip == fd[sock].ip)
+  for (; i < n_ka_cache; i++) {
+    if (!ka_cache_head[i] || fd[ka_cache_head[i]].ip == fd[sock].ip) {
       goto Lpush;
+    }
+  }
   i = n_ka_cache++;
 Lpush:
-  if (ka_cache_tail[i])
+  if (ka_cache_tail[i]) {
     fd[ka_cache_tail[i]].next = sock;
-  else
+  } else {
     ka_cache_head[i] = sock;
-  ka_cache_tail[i]   = sock;
+  }
+  ka_cache_tail[i] = sock;
 }
 
 static int
 get_ka(unsigned int ip)
 {
-  for (int i = 0; i < n_ka_cache; i++)
+  for (int i = 0; i < n_ka_cache; i++) {
     if (fd[ka_cache_head[i]].ip == ip) {
       int res          = ka_cache_head[i];
       ka_cache_head[i] = fd[ka_cache_head[i]].next;
@@ -1634,16 +1762,18 @@ get_ka(unsigned int ip)
       }
       return res;
     }
+  }
   return -1;
 }
 
 static void
 defer_url(char *url)
 {
-  if (n_defered_urls < MAX_DEFERED_URLS - 1)
+  if (n_defered_urls < MAX_DEFERED_URLS - 1) {
     defered_urls[n_defered_urls++] = strdup(url);
-  else
+  } else {
     fprintf(stderr, "too many defered urls, dropping '%s'\n", url);
+  }
 }
 
 static int
@@ -1673,12 +1803,15 @@ undefer_url(bool unthrottled)
     char *url = defered_urls[n_defered_urls];
     make_url_client(url, 0, true, unthrottled);
     free(url);
-    if (verbose)
+    if (verbose) {
       printf("undefer_url: made client %d clients\n", current_clients);
-  } else if (verbose)
+    }
+  } else if (verbose) {
     printf("undefer_url: throttle\n");
-  if (is_done())
+  }
+  if (is_done()) {
     done();
+  }
 }
 
 static void
@@ -1713,42 +1846,53 @@ static char *
 find_href_end(char *start, int len)
 {
   char *end = start;
-  if (!start)
+  if (!start) {
     return NULL;
+  }
 
   while (*end && len > 0) {
-    if (*end == '\"')
+    if (*end == '\"') {
       break; /* " */
-    if (*end == '\'')
+    }
+    if (*end == '\'') {
       break;
-    if (*end == '>')
+    }
+    if (*end == '>') {
       break;
-    if (*end == ' ')
+    }
+    if (*end == ' ') {
       break;
-    if (*end == '\t')
+    }
+    if (*end == '\t') {
       break;
-    if (*end == '\n')
+    }
+    if (*end == '\n') {
       break;
-    if (*end == '<')
+    }
+    if (*end == '<') {
       break;
-    if (*end & 0x80)
+    }
+    if (*end & 0x80) {
       break; /* hi order bit! */
+    }
     len--;
     end++;
   }
 
-  if (*end == 0 || len == 0)
+  if (*end == 0 || len == 0) {
     return NULL;
-  else
+  } else {
     return end;
+  }
 } // find_href_end
 
 static char *
 find_href_start(const char *tag, char *base, int len)
 {
   int taglen = strlen(tag);
-  if (base == NULL)
+  if (base == NULL) {
     return NULL;
+  }
 
   char *start = base;
   char *end   = base + len;
@@ -1850,11 +1994,13 @@ extract_urls(char *buf, int buflen, char *base_url)
       char *rover = strncasestr(start, "href", end - start);
       if (rover) {
         rover += 4;
-        while (rover < end && (ParseRules::is_ws(*rover) || *rover == '=' || *rover == '\'' || *rover == '\"')) /* " */
+        while (rover < end && (ParseRules::is_ws(*rover) || *rover == '=' || *rover == '\'' || *rover == '\"')) { /* " */
           rover++;
+        }
         start = rover;
-        while (rover < end && !(ParseRules::is_ws(*rover) || *rover == '\'' || *rover == '\"'))
+        while (rover < end && !(ParseRules::is_ws(*rover) || *rover == '\'' || *rover == '\"')) {
           rover++;
+        }
         *rover = 0;
         compose_url(base_url, old_base, start);
         // fixup unqualified hostnames (e.g. http://internal/foo)
@@ -1878,8 +2024,9 @@ extract_urls(char *buf, int buflen, char *base_url)
   }
 
   end = buf;
-  if (follow)
+  if (follow) {
     compose_all_urls("href", buf, start, end, buflen, base_url);
+  }
   if (fullpage) {
     const char *tags[] = {
       "src", "image", "object", "archive", "background",
@@ -1895,35 +2042,41 @@ static void
 follow_links(int sock)
 {
   if (urls_mode) {
-    if (fd[sock].binary)
+    if (fd[sock].binary) {
       return;
+    }
     int l   = fd[sock].response_remaining;
     char *r = fd[sock].response, *p = r, *n = r;
-    if (r)
+    if (r) {
       extract_urls(r, l, fd[sock].base_url);
+    }
     if (l < MAX_BUFSIZE) {
       while (n) {
         n = (char *)memchr(p, '\n', l - (p - r));
-        if (!n)
+        if (!n) {
           n = (char *)memchr(p, '\r', l - (p - r));
-        if (n)
+        }
+        if (n) {
           p = n + 1;
+        }
       }
       int done = p - r, remaining = l - done;
       if (done) {
         memmove(r, p, remaining);
         fd[sock].response_remaining = remaining;
       }
-    } else // bail
+    } else { // bail
       fd[sock].response_length = 0;
+    }
   }
 }
 
 static int
 verify_content(int sock, char *buf, int done)
 {
-  if (urls_mode && !check_content)
+  if (urls_mode && !check_content) {
     return 1;
+  }
   int l    = fd[sock].response_length;
   char *d  = response_buffer + (l % 256) + fd[sock].nalternate;
   int left = fd[sock].length;
@@ -1933,8 +2086,9 @@ verify_content(int sock, char *buf, int done)
         char *url_end = NULL, *url_start = NULL;
         get_path_from_req(fd[sock].base_url, &url_start, &url_end);
         if (url_end - url_start < done) {
-          if (memcmp(url_start, buf, url_end - url_start))
+          if (memcmp(url_start, buf, url_end - url_start)) {
             return 0;
+          }
         }
       }
       // skip past the URL which is embedded in the document
@@ -1944,16 +2098,20 @@ verify_content(int sock, char *buf, int done)
         left -= skip;
         done -= skip;
         buf += skip;
-        if (done < 0)
+        if (done < 0) {
           done = 0;
+        }
       }
     }
-    if (!check_content)
+    if (!check_content) {
       return 1;
-    if (done > left)
+    }
+    if (done > left) {
       done = left;
-    if (memcmp(buf, d + (fd[sock].response_length - left), done))
+    }
+    if (memcmp(buf, d + (fd[sock].response_length - left), done)) {
       return 0;
+    }
   }
   return 1;
 }
@@ -1964,13 +2122,16 @@ static void
 build_zipf()
 {
   zipf_table = (double *)malloc(ZIPF_SIZE * sizeof(double));
-  for (int i      = 0; i < ZIPF_SIZE; i++)
+  for (int i = 0; i < ZIPF_SIZE; i++) {
     zipf_table[i] = 1.0 / pow(i + 2, zipf);
-  for (int i      = 1; i < ZIPF_SIZE; i++)
+  }
+  for (int i = 1; i < ZIPF_SIZE; i++) {
     zipf_table[i] = zipf_table[i - 1] + zipf_table[i];
-  double x        = zipf_table[ZIPF_SIZE - 1];
-  for (int i      = 0; i < ZIPF_SIZE; i++)
+  }
+  double x = zipf_table[ZIPF_SIZE - 1];
+  for (int i = 0; i < ZIPF_SIZE; i++) {
     zipf_table[i] = zipf_table[i] / x;
+  }
 }
 
 static int
@@ -1979,13 +2140,15 @@ get_zipf(double v)
   int l = 0, r = ZIPF_SIZE - 1, m;
   do {
     m = (r + l) / 2;
-    if (v < zipf_table[m])
+    if (v < zipf_table[m]) {
       r = m - 1;
-    else
+    } else {
       l = m + 1;
+    }
   } while (l < r);
-  if (zipf_bucket_size == 1)
+  if (zipf_bucket_size == 1) {
     return m;
+  }
   double x = zipf_table[m], y = zipf_table[m + 1];
   m += static_cast<int>((v - x) / (y - x));
   return m;
@@ -1996,8 +2159,9 @@ read_response_error(int sock)
 {
   errors++;
   fd[sock].close();
-  if (!urls_mode)
+  if (!urls_mode) {
     make_bfc_client(proxy_addr, proxy_port);
+  }
   return 0;
 }
 
@@ -2007,42 +2171,49 @@ read_response(int sock)
   int err = 0;
 
   if (fd[sock].req_pos >= 0) {
-    if (!fd[sock].req_pos)
+    if (!fd[sock].req_pos) {
       memset(fd[sock].req_header, 0, HEADER_SIZE);
+    }
     do {
       int l = HEADER_SIZE - fd[sock].req_pos - 1;
       if (l <= 0) {
-        if (verbose || verbose_errors)
+        if (verbose || verbose_errors) {
           // coverity[string_null_argument]
           printf("header too long '%s'", fd[sock].req_header);
+        }
         return read_response_error(sock);
       }
       err = read(sock, fd[sock].req_header + fd[sock].req_pos, HEADER_SIZE - fd[sock].req_pos - 1);
     } while ((err == -1) && (errno == EINTR));
     if (err <= 0) {
       if (!err) {
-        if (verbose_errors)
+        if (verbose_errors) {
           printf("read_response %d closed during header for '%s' after %d%s\n", sock, fd[sock].base_url, fd[sock].req_pos,
                  (keepalive && (fd[sock].keepalive != keepalive) && !fd[sock].req_pos) ? " -- keepalive timeout" : "");
+        }
         return read_response_error(sock);
       }
-      if (errno == EAGAIN || errno == ENOTCONN)
+      if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
+      }
       if (errno == ECONNRESET) {
         if (!fd[sock].req_pos && keepalive > 0 && fd[sock].keepalive != keepalive) {
           fd[sock].close();
-          if (!urls_mode)
+          if (!urls_mode) {
             make_bfc_client(proxy_addr, proxy_port);
+          }
           return 0;
         }
-        if (verbose || verbose_errors)
+        if (verbose || verbose_errors) {
           perror("read");
+        }
         goto Ldone;
       }
       panic_perror("read");
     }
-    if (verbose)
+    if (verbose) {
       printf("read %d header %d [%s]\n", sock, err, fd[sock].req_header);
+    }
     b1_ops++;
 
     strcpy(fd[sock].response_header, fd[sock].req_header);
@@ -2058,8 +2229,9 @@ read_response(int sock)
     char *cl        = NULL;
     int cli         = 0;
     while ((p = strchr(p, '\n'))) {
-      if (verbose)
+      if (verbose) {
         printf("read header end? [%s]\n", p);
+      }
       if (p[1] == '\n' || (p[1] == '\r' && p[2] == '\n')) {
         int off = 1 + (p[1] == '\r' ? 2 : 1);
         p += off;
@@ -2076,14 +2248,16 @@ read_response(int sock)
               expected_length        = (fd[sock].response_length * 2) / 3;
             }
           }
-          if (fd[sock].response_length && verbose_errors && expected_length != cli && !nocheck_length)
+          if (fd[sock].response_length && verbose_errors && expected_length != cli && !nocheck_length) {
             fprintf(stderr, "bad Content-Length expected %d got %d orig %d\n", expected_length, cli, fd[sock].response_length);
+          }
           fd[sock].response_length = fd[sock].length = cli;
         }
         if (fd[sock].req_header[9] == '2') {
           if (!verify_content(sock, p, lbody)) {
-            if (verbose || verbose_errors)
+            if (verbose || verbose_errors) {
               printf("content verification error '%s'\n", fd[sock].base_url);
+            }
             return read_response_error(sock);
           }
         }
@@ -2099,30 +2273,34 @@ read_response(int sock)
           fd[sock].keepalive     = 0;
           fd[sock].drop_after_CL = 1;
         }
-        if (verbose)
+        if (verbose) {
           printf("read %d header done\n", sock);
+        }
         break;
       }
       p++;
     }
-    if (!p)
+    if (!p) {
       return 0;
+    }
     int hlen = p - fd[sock].req_header;
     if (show_headers) {
       printf("Response From Proxy: {\n");
-      for (char *c = fd[sock].req_header; c < p; c++)
+      for (char *c = fd[sock].req_header; c < p; c++) {
         putc(*c, stdout);
+      }
       printf("}\n");
     }
     if (obey_redirects && urls_mode && fd[sock].req_header[9] == '3' && fd[sock].req_header[10] == '0' &&
         (fd[sock].req_header[11] == '1' || fd[sock].req_header[11] == '2')) {
       char *redirect = strstr(fd[sock].req_header, "http://");
       char *e        = redirect ? (char *)memchr(redirect, '\n', hlen) : 0;
-      if (!redirect || !e)
+      if (!redirect || !e) {
         fprintf(stderr, "bad redirect '%s'", fd[sock].req_header);
-      else {
-        if (e[-1] == '\r')
+      } else {
+        if (e[-1] == '\r') {
           e--;
+        }
         *e = 0;
         make_url_client(redirect);
       }
@@ -2132,14 +2310,15 @@ read_response(int sock)
     if (fd[sock].req_header[9] != '2') {
       if (verbose_errors) {
         char *e = (char *)memchr(fd[sock].req_header, '\r', hlen);
-        if (e)
+        if (e) {
           *e = 0;
-        else {
+        } else {
           char *e = (char *)memchr(fd[sock].req_header, '\n', hlen);
-          if (e)
+          if (e) {
             *e = 0;
-          else
+          } else {
             *p = 0;
+          }
         }
         printf("error response %d after %dms: '%s':'%s'\n", sock, (int)elapsed_from_start(sock), fd[sock].base_url,
                fd[sock].req_header);
@@ -2151,72 +2330,87 @@ read_response(int sock)
     char *ka   = check_keepalive(r, length);
     if (urls_mode) {
       fd[sock].response_remaining = total_read - length;
-      if (fd[sock].response_remaining)
+      if (fd[sock].response_remaining) {
         memcpy(fd[sock].response, p, fd[sock].response_remaining);
+      }
       if (check_content && !cl) {
-        if (verbose || verbose_errors)
+        if (verbose || verbose_errors) {
           printf("missiing Content-Length '%s'\n", fd[sock].base_url);
+        }
         return read_response_error(sock);
       }
-    } else
+    } else {
       fd[sock].response = 0;
-    if (!cl || !ka)
+    }
+    if (!cl || !ka) {
       fd[sock].keepalive = -1;
-    if (!cl)
+    }
+    if (!cl) {
       fd[sock].length = INT_MAX;
+    }
   }
 
-  if (fd[sock].length <= 0 && (fd[sock].keepalive > 0 || fd[sock].drop_after_CL))
+  if (fd[sock].length <= 0 && (fd[sock].keepalive > 0 || fd[sock].drop_after_CL)) {
     goto Ldone;
+  }
 
   {
     char *r = NULL;
     char buf[MAX_BUFSIZE];
     int toread = cbuffersize;
     if (urls_mode) {
-      if (fd[sock].response_remaining + cbuffersize < MAX_BUFSIZE)
+      if (fd[sock].response_remaining + cbuffersize < MAX_BUFSIZE) {
         r = fd[sock].response + fd[sock].response_remaining;
-      else {
+      } else {
         toread = MAX_BUFSIZE - fd[sock].response_remaining;
         if (!toread) {
-          if (verbose_errors || verbose)
+          if (verbose_errors || verbose) {
             fprintf(stderr, "line exceeds buffer, unable to follow links\n");
+          }
           toread                      = cbuffersize;
           r                           = fd[sock].response;
           fd[sock].response_remaining = 0;
-        } else
+        } else {
           r = fd[sock].response + fd[sock].response_remaining;
+        }
       }
-    } else
+    } else {
       r = buf;
-    if (fast(sock, client_speed, fd[sock].bytes))
+    }
+    if (fast(sock, client_speed, fd[sock].bytes)) {
       return 0;
+    }
     if (fd[sock].bytes > abort_retry_bytes && (((now - fd[sock].start + 1) / HRTIME_SECOND) > abort_retry_secs) &&
         !faster_than(sock, abort_retry_speed, fd[sock].bytes)) {
       fd[sock].client_abort = 1;
       fd[sock].keepalive    = 0;
-      if (!urls_mode && !client_rate)
+      if (!urls_mode && !client_rate) {
         make_bfc_client(proxy_addr, proxy_port);
+      }
       goto Ldone;
     }
     do {
       err = read(sock, r, toread);
     } while ((err == -1) && (errno == EINTR));
     if (err < 0) {
-      if (errno == EAGAIN || errno == ENOTCONN)
+      if (errno == EAGAIN || errno == ENOTCONN) {
         return 0;
+      }
       if (errno == ECONNRESET) {
-        if (verbose || verbose_errors)
+        if (verbose || verbose_errors) {
           perror("read");
+        }
         goto Ldone;
       }
       panic_perror("read");
     }
-    if (!err)
+    if (!err) {
       goto Ldone;
+    }
     if (!verify_content(sock, buf, err)) {
-      if (verbose || verbose_errors)
+      if (verbose || verbose_errors) {
         printf("content verification error '%s'\n", fd[sock].base_url);
+      }
       return read_response_error(sock);
     }
     total_proxy_response_body_bytes += err;
@@ -2225,27 +2419,32 @@ read_response(int sock)
     fd[sock].response_remaining += err;
     fd[sock].bytes += err;
     follow_links(sock);
-    if (fd[sock].length != INT_MAX)
+    if (fd[sock].length != INT_MAX) {
       fd[sock].length -= err;
+    }
     fd[sock].active = ink_get_hrtime_internal();
-    if (verbose)
+    if (verbose) {
       printf("read %d got %d togo %d %d %d\n", sock, err, fd[sock].length, fd[sock].keepalive, fd[sock].drop_after_CL);
+    }
   }
 
-  if (fd[sock].length <= 0 && (fd[sock].keepalive > 0 || fd[sock].drop_after_CL))
+  if (fd[sock].length <= 0 && (fd[sock].keepalive > 0 || fd[sock].drop_after_CL)) {
     goto Ldone;
+  }
 
   return 0;
 
 Ldone:
   if (!fd[sock].client_abort && !(server_abort_rate > 0) && fd[sock].length && fd[sock].length != INT_MAX) {
-    if (verbose || verbose_errors)
+    if (verbose || verbose_errors) {
       printf("bad length %d wanted %d after %d ms: '%s'\n", fd[sock].response_length - fd[sock].length, fd[sock].response_length,
              (int)((ink_get_hrtime_internal() - fd[sock].active) / HRTIME_MSECOND), fd[sock].base_url);
+    }
     return read_response_error(sock);
   }
-  if (verbose)
+  if (verbose) {
     printf("read %d done\n", sock);
+  }
   new_ops++;
   double thislatency = elapsed_from_start(sock);
   latency += (int)thislatency;
@@ -2258,10 +2457,12 @@ Ldone:
       undefer_url();
       return 0;
     }
-  } else
+  } else {
     fd[sock].close();
-  if (!urls_mode && !client_rate)
+  }
+  if (!urls_mode && !client_rate) {
     make_bfc_client(proxy_addr, proxy_port);
+  }
   return 0;
 }
 
@@ -2275,17 +2476,20 @@ write_request(int sock)
   } while ((err == -1) && (errno == EINTR));
   if (err <= 0) {
     if (!err) {
-      if (verbose_errors)
+      if (verbose_errors) {
         printf("write %d closed early\n", sock);
+      }
       goto Lerror;
     }
-    if (errno == EAGAIN || errno == ENOTCONN)
+    if (errno == EAGAIN || errno == ENOTCONN) {
       return 0;
+    }
     perror("write");
     goto Lerror;
   }
-  if (verbose)
+  if (verbose) {
     printf("write %d %d\n", sock, err);
+  }
 
   new_tbytes += err;
   total_client_request_bytes += err;
@@ -2293,8 +2497,9 @@ write_request(int sock)
   fd[sock].active = ink_get_hrtime_internal();
 
   if (fd[sock].req_pos >= fd[sock].length) {
-    if (verbose)
+    if (verbose) {
       printf("write complete %d %d\n", sock, fd[sock].length);
+    }
     fd[sock].req_pos = 0;
     fd[sock].length  = fd[sock].response_length;
     poll_set(sock, read_response);
@@ -2303,8 +2508,9 @@ write_request(int sock)
 Lerror:
   errors++;
 #ifndef RETRY_CLIENT_WRITE_ERRORS
-  if (!--nclients)
+  if (!--nclients) {
     panic("no more clients\n");
+  }
   return 1;
 #else
   if (!urls_mode)
@@ -2325,24 +2531,28 @@ write_ftp_response(int sock)
 
   if (err <= 0) {
     if (!err) {
-      if (verbose_errors)
+      if (verbose_errors) {
         printf("write %d closed early\n", sock);
+      }
       goto Lerror;
     }
-    if (errno == EAGAIN || errno == ENOTCONN)
+    if (errno == EAGAIN || errno == ENOTCONN) {
       return 0;
+    }
     perror("write");
     goto Lerror;
   }
-  if (verbose)
+  if (verbose) {
     printf("write %d %d\n", sock, err);
+  }
 
   new_tbytes += err;
   fd[sock].req_pos += err;
 
   if (fd[sock].req_pos >= fd[sock].length) {
-    if (verbose)
+    if (verbose) {
       printf("write complete %d %d\n", sock, fd[sock].length);
+    }
     fd[sock].req_pos = 0;
     fd[sock].length  = fd[sock].response_length;
     poll_set(sock, read_ftp_request);
@@ -2359,11 +2569,13 @@ make_client(unsigned int addr, int port)
   struct linger lngr;
 
   int sock = socket(PF_INET, SOCK_STREAM, 0);
-  if (sock < 0)
+  if (sock < 0) {
     panic_perror("socket");
+  }
 
-  if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0)
+  if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0) {
     panic_perror("fcntl");
+  }
 
 /* tweak buffer size so that remote end can't close connection too fast */
 
@@ -2377,8 +2589,9 @@ make_client(unsigned int addr, int port)
     panic_perror("setsockopt");
 #endif
   int enable = 1;
-  if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&enable, sizeof(enable)) < 0)
+  if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&enable, sizeof(enable)) < 0) {
     panic_perror("setsockopt");
+  }
 
   /* Tell the socket not to linger on exit */
   lngr.l_onoff  = 1;
@@ -2397,17 +2610,21 @@ make_client(unsigned int addr, int port)
   name.sin_port        = htons(port);
   name.sin_addr.s_addr = addr;
 
-  if (verbose)
+  if (verbose) {
     printf("connecting to %u.%u.%u.%u:%d\n", ((unsigned char *)&addr)[0], ((unsigned char *)&addr)[1], ((unsigned char *)&addr)[2],
            ((unsigned char *)&addr)[3], port);
+  }
 
   while (connect(sock, (struct sockaddr *)&name, sizeof(name)) < 0) {
-    if (errno == EINTR)
+    if (errno == EINTR) {
       continue;
-    if (errno == EINPROGRESS)
+    }
+    if (errno == EINPROGRESS) {
       break;
-    if (verbose_errors)
+    }
+    if (verbose_errors) {
       fprintf(stderr, "connect failed errno = %d\n", errno);
+    }
     errors++;
     close(sock);
     return -1;
@@ -2425,10 +2642,12 @@ static void
 make_bfc_client(unsigned int addr, int port)
 {
   int sock = -1;
-  if (bandwidth_test && bandwidth_test_to_go-- <= 0)
+  if (bandwidth_test && bandwidth_test_to_go-- <= 0) {
     return;
-  if (keepalive)
+  }
+  if (keepalive) {
     sock = get_ka(addr);
+  }
   if (sock < 0) {
     sock               = make_client(addr, port);
     fd[sock].keepalive = keepalive;
@@ -2437,8 +2656,9 @@ make_bfc_client(unsigned int addr, int port)
     current_clients++;
     fd[sock].keepalive--;
   }
-  if (sock < 0)
+  if (sock < 0) {
     panic("unable to open client connection\n");
+  }
   // coverity[dont_call]
   double h = drand48();
   // coverity[dont_call]
@@ -2447,8 +2667,9 @@ make_bfc_client(unsigned int addr, int port)
     if (h < hitrate) {
       dr                       = 1.0 + (floor(dr * hotset) / hotset);
       fd[sock].response_length = gen_bfc_dist(dr - 1.0);
-    } else
+    } else {
       fd[sock].response_length = gen_bfc_dist(dr);
+    }
   } else {
     unsigned long long int doc = get_zipf(dr);
     // Some large randomish number.
@@ -2459,8 +2680,9 @@ make_bfc_client(unsigned int addr, int port)
     fd[sock].response_length = gen_bfc_dist(y);
     dr                       = doc;
   }
-  if (verbose)
+  if (verbose) {
     printf("gen_bfc_dist %d\n", fd[sock].response_length);
+  }
   char eheaders[16384];
   *eheaders    = 0;
   int nheaders = extra_headers;
@@ -2470,10 +2692,12 @@ make_bfc_client(unsigned int addr, int port)
       eh += sprintf(eh, "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.31 i586)\r\n");
       nheaders--;
     }
-    if (nheaders > 0)
+    if (nheaders > 0) {
       eh += sprintf(eh, "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n");
-    while (--nheaders > 0)
+    }
+    while (--nheaders > 0) {
       eh += sprintf(eh, "Extra-Header%d: a lot of junk for header %d\r\n", nheaders, nheaders);
+    }
   }
   char cookie[256];
   *cookie = 0;
@@ -2547,8 +2771,9 @@ make_bfc_client(unsigned int addr, int port)
             // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", eheaders, cookie);
   }
-  if (verbose)
+  if (verbose) {
     printf("request %d [%s]\n", sock, fd[sock].req_header);
+  }
   fd[sock].length = strlen(fd[sock].req_header);
   {
     char *s   = fd[sock].req_header;
@@ -2556,11 +2781,13 @@ make_bfc_client(unsigned int addr, int port)
     char *url = fd[sock].base_url;
     memcpy(url, s, e - s);
     url[e - s] = 0;
-    if (show_before)
+    if (show_before) {
       printf("%s\n", url);
+    }
   }
-  if (show_headers)
+  if (show_headers) {
     printf("Request to Proxy: {\n%s}\n", fd[sock].req_header);
+  }
 }
 
 #define RUNNING(_n)                                                               \
@@ -2577,8 +2804,9 @@ interval_report()
 {
   static int here = 0;
   now             = ink_get_hrtime_internal();
-  if (!(here++ % 20))
+  if (!(here++ % 20)) {
     printf(" con  new     ops   1B  lat      bytes/per     svrs  new  ops      total   time  err\n");
+  }
   RUNNING(clients);
   RUNNING_AVG(running_latency, latency, lat_ops);
   lat_ops = 0;
@@ -2705,16 +2933,18 @@ struct UrlHashTable {
   {
     BEGIN_HASH_LOOP
     {
-      if (ENTRY_TAG(e) == tag)
+      if (ENTRY_TAG(e) == tag) {
         return 1;
+      }
     }
     END_HASH_LOOP;
 
     if (ENTRY_TAG((last))) {
       BEGIN_OVERFLOW_HASH_LOOP
       {
-        if (ENTRY_TAG(e) == tag)
+        if (ENTRY_TAG(e) == tag) {
           return 1;
+        }
       }
       END_HASH_LOOP;
     }
@@ -2731,8 +2961,9 @@ UrlHashTable::UrlHashTable() : numbytes(0), bytes(NULL), fd(-1)
 {
   off_t len = 0;
 
-  if (!url_hash_entries)
+  if (!url_hash_entries) {
     return;
+  }
 
   if (*url_hash_filename) {
     if ((fd = open(url_hash_filename, O_RDWR | O_CREAT, 0644)) == -1) {
@@ -2748,14 +2979,16 @@ UrlHashTable::UrlHashTable() : numbytes(0), bytes(NULL), fd(-1)
     numbytes         = URL_HASH_BYTES;
 
     // ensure it is either a new file or the correct size
-    if (len != 0 && len != numbytes)
+    if (len != 0 && len != numbytes) {
       panic("specified size != file size\n");
+    }
 
   } else {
     // otherwise make sure the file is non-zero and then use its
     // size as the size
-    if (!len)
+    if (!len) {
       panic("zero size URL Hash Table\n");
+    }
     if (len != URL_HASH_BYTES) {
       fprintf(stderr, "FATAL: hash file length (%jd) != URL_HASH_BYTES (%jd)\n", (intmax_t)len, (intmax_t)URL_HASH_BYTES);
       exit(1);
@@ -2769,8 +3002,9 @@ UrlHashTable::UrlHashTable() : numbytes(0), bytes(NULL), fd(-1)
     }
 
     bytes = (unsigned char *)mmap(NULL, numbytes, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (bytes == (unsigned char *)MAP_FAILED || !bytes)
+    if (bytes == (unsigned char *)MAP_FAILED || !bytes) {
       panic("unable to map URL Hash file\n");
+    }
   } else {
     bytes = (unsigned char *)malloc(numbytes);
     ink_assert(bytes);
@@ -2791,28 +3025,32 @@ UrlHashTable::~UrlHashTable()
 static int
 seen_it(char *url)
 {
-  if (!url_hash_entries)
+  if (!url_hash_entries) {
     return 0;
+  }
   union {
     unsigned char md5[16];
     uint64_t i[2];
   } u;
   int l      = 0;
   char *para = strrchr(url, '#');
-  if (para)
+  if (para) {
     l = para - url;
-  else
+  } else {
     l = strlen(url);
+  }
   ink_code_md5((unsigned char *)url, l, u.md5);
   uint64_t x = u.i[0] + u.i[1];
   if (uniq_urls->is_set(x)) {
-    if (verbose)
+    if (verbose) {
       printf("YES: seen it '%s'\n", url);
+    }
     return 1;
   }
   uniq_urls->set(x);
-  if (verbose)
+  if (verbose) {
     printf("NO: marked it '%s'\n", url);
+  }
   return 0;
 }
 
@@ -2828,20 +3066,25 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
   if (base_url) {
     ink_web_canonicalize_url(base_url, url, curl, 512);
     // hack for our own web server!
-    if (curl[strlen(curl) - 1] == 13)
+    if (curl[strlen(curl) - 1] == 13) {
       curl[strlen(curl) - 1] = 0;
-    if (curl[strlen(curl) - 1] == 12)
+    }
+    if (curl[strlen(curl) - 1] == 12) {
       curl[strlen(curl) - 1] = 0;
-  } else
+    }
+  } else {
     strcpy(curl, url);
-  if (!seen && seen_it(curl))
+  }
+  if (!seen && seen_it(curl)) {
     return -1;
+  }
   ink_web_decompose_url(curl, sche, host, port, path, frag, quer, para, &xsche, &xhost, &xport, &xpath, &xfrag, &xquer, &xpar, &rel,
                         &slash);
   if (follow_same) {
     if (!xhost || strcasecmp(host, current_host)) {
-      if (verbose)
+      if (verbose) {
         printf("skipping %s\n", curl);
+      }
       return -1;
     }
   }
@@ -2853,23 +3096,27 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
     iport = proxy_port;
     ip    = proxy_addr;
   } else {
-    if (xport)
+    if (xport) {
       iport = atoi(port);
+    }
     if (!xhost) {
-      if (verbose)
+      if (verbose) {
         fprintf(stderr, "bad url '%s'\n", curl);
+      }
       return -1;
     }
     ip = get_addr(host);
     if ((int)ip == -1) {
-      if (verbose || verbose_errors)
+      if (verbose || verbose_errors) {
         fprintf(stderr, "bad host '%s'\n", host);
+      }
       return -1;
     }
   }
   int sock = -1;
-  if (keepalive)
+  if (keepalive) {
     sock = get_ka(ip);
+  }
   if (sock < 0) {
     sock               = make_client(ip, iport);
     fd[sock].keepalive = keepalive;
@@ -2878,8 +3125,9 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
     current_clients++;
     fd[sock].keepalive--;
   }
-  if (sock < 0)
+  if (sock < 0) {
     panic("cannot make client\n");
+  }
   char eheaders[16384];
   *eheaders    = 0;
   int nheaders = extra_headers;
@@ -2890,12 +3138,14 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
       eh += sprintf(eh, "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.31 i586)\r\n");
       nheaders--;
     }
-    if (nheaders > 0)
+    if (nheaders > 0) {
       eh += sprintf(eh, "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n");
-    while (--nheaders > 0)
+    }
+    while (--nheaders > 0) {
       eh += sprintf(eh, "Extra-Header%d: a lot of junk for header %d\r\n", nheaders, nheaders);
+    }
   }
-  if (proxy_port)
+  if (proxy_port) {
     sprintf(fd[sock].req_header, "GET %s HTTP/1.0\r\n"
                                  "%s"
                                  "%s"
@@ -2906,7 +3156,7 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
             // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", fd[sock].keepalive ? "Proxy-Connection: Keep-Alive\r\n" : "",
             eheaders);
-  else
+  } else {
     sprintf(fd[sock].req_header, "GET /%s%s%s%s%s HTTP/1.0\r\n"
                                  "Host: %s\r\n"
                                  "%s"
@@ -2918,15 +3168,20 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
             // coverity[dont_call]
             reload_rate > drand48() ? "Pragma: no-cache\r\n" : "", fd[sock].keepalive ? "Connection: Keep-Alive\r\n" : "",
             eheaders);
+  }
 
-  if (verbose)
+  if (verbose) {
     printf("curl = '%s'\n", curl);
-  if (show_before)
+  }
+  if (show_before) {
     printf("%s\n", curl);
-  if (urlsdump_fp)
+  }
+  if (urlsdump_fp) {
     fprintf(urlsdump_fp, "%s\n", curl);
-  if (show_headers)
+  }
+  if (show_headers) {
     printf("Request to Proxy: {\n%s}\n", fd[sock].req_header);
+  }
 
   {
     const char *ext = strrchr(path, '.');
@@ -2939,8 +3194,9 @@ make_url_client(const char *url, const char *base_url, bool seen, bool unthrottl
 
   fd[sock].response_length = 0;
   fd[sock].length          = strlen(fd[sock].req_header);
-  if (!fd[sock].response)
+  if (!fd[sock].response) {
     fd[sock].response = (char *)malloc(MAX_BUFSIZE);
+  }
   strcpy(fd[sock].base_url, curl);
   return sock;
 }
@@ -2950,11 +3206,13 @@ get_defered_urls(FILE *fp)
 {
   char url[512];
   while (fgets(url, 512, fp)) {
-    if (n_defered_urls > MAX_DEFERED_URLS - 2)
+    if (n_defered_urls > MAX_DEFERED_URLS - 2) {
       return NULL;
+    }
     char *e = (char *)memchr(url, '\n', 512);
-    if (e)
+    if (e) {
       *e = 0;
+    }
     make_url_client(url);
   }
   return fp;
@@ -2974,17 +3232,20 @@ main(int argc __attribute__((unused)), const char *argv[])
   memset(fd, 0, MAXFDS * sizeof(FD));
   process_args(&appVersionInfo, argument_descriptions, n_argument_descriptions, argv);
 
-  if (!drand_seed)
+  if (!drand_seed) {
     // coverity[dont_call]
     srand48((long)time(NULL));
-  else
+  } else {
     // coverity[dont_call]
     srand48((long)drand_seed);
-  if (zipf != 0.0)
+  }
+  if (zipf != 0.0) {
     build_zipf();
+  }
   int max_fds = max_limit_fd();
-  if (verbose)
+  if (verbose) {
     printf("maximum of %d connections\n", max_fds);
+  }
   signal(SIGPIPE, SIG_IGN);
   start_time = now = ink_get_hrtime_internal();
 
@@ -3011,8 +3272,9 @@ main(int argc __attribute__((unused)), const char *argv[])
       build_response();
       open_server(compd_port, accept_compd);
     } else {
-      if (!server_port)
+      if (!server_port) {
         server_port = proxy_port + 1000;
+      }
       build_response();
       if (!only_clients) {
         for (int retry = 0; retry < 20; retry++) {
@@ -3029,14 +3291,16 @@ main(int argc __attribute__((unused)), const char *argv[])
       bandwidth_test_to_go = bandwidth_test;
       if (!only_server) {
         if (proxy_port) {
-          for (int i = 0; i < nclients; i++)
+          for (int i = 0; i < nclients; i++) {
             make_bfc_client(proxy_addr, proxy_port);
+          }
         }
       }
     }
   } else {
-    if (check_content)
+    if (check_content) {
       build_response();
+    }
     follow       = follow_arg;
     follow_same  = follow_same_arg;
     uniq_urls    = new UrlHashTable;
@@ -3044,17 +3308,20 @@ main(int argc __attribute__((unused)), const char *argv[])
     average_over = 1;
     if (*urlsdump_file) {
       urlsdump_fp = fopen(urlsdump_file, "w");
-      if (!urlsdump_fp)
+      if (!urlsdump_fp) {
         panic_perror("fopen urlsdump file");
+      }
     }
     if (*urls_file) {
       FILE *fp = fopen(urls_file, "r");
-      if (!fp)
+      if (!fp) {
         panic_perror("fopen urls file");
-      if (get_defered_urls(fp))
+      }
+      if (get_defered_urls(fp)) {
         fclose(fp);
-      else
+      } else {
         urls_fp = fp;
+      }
     }
     for (unsigned i = 0; i < n_file_arguments; i++) {
       char sche[8], host[512], port[10], path[512], frag[512], quer[512], para[512];
@@ -3074,8 +3341,9 @@ main(int argc __attribute__((unused)), const char *argv[])
   int tclient = now / HRTIME_SECOND;
   int start   = now / HRTIME_SECOND;
   while (1) {
-    if (poll_loop())
+    if (poll_loop()) {
       break;
+    }
     int t2 = now / HRTIME_SECOND;
     if (urls_fp && n_defered_urls < MAX_DEFERED_URLS - DEFERED_URLS_BLOCK - 2) {
       if (get_defered_urls(urls_fp)) {
@@ -3088,18 +3356,23 @@ main(int argc __attribute__((unused)), const char *argv[])
       interval_report();
     }
     if (t2 != tclient) {
-      for (int i = 0; i < client_rate * (t2 - tclient); i++)
-        if (!urls_mode)
+      for (int i = 0; i < client_rate * (t2 - tclient); i++) {
+        if (!urls_mode) {
           make_bfc_client(proxy_addr, proxy_port);
-        else
+        } else {
           undefer_url(true);
+        }
+      }
       tclient = t2;
     }
-    if (test_time)
-      if (t2 - start > test_time)
+    if (test_time) {
+      if (t2 - start > test_time) {
         done();
-    if (is_done())
+      }
+    }
+    if (is_done()) {
       done();
+    }
   }
 
   return 0;
@@ -3220,8 +3493,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
       ptr++;
     }
   }
-  if (sche_exists == 0)
+  if (sche_exists == 0) {
     ptr = temp2;
+  }
 
   /* find start of host */
   fail  = false;
@@ -3253,8 +3527,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
         ptr++;
       }
     }
-    if (host2 == NULL)
+    if (host2 == NULL) {
       host2 = end;
+    }
 
     if (host_exists == 1) {
       temp = host2 - 1;
@@ -3278,8 +3553,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
       }
     }
   }
-  if (host_exists == 0)
+  if (host_exists == 0) {
     ptr = temp2;
+  }
 
   temp2 = ptr;
   /* strip query "?" off the end */
@@ -3326,18 +3602,20 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
     path_exists = 0;
   }
 
-  if (sche_exists != 1)
+  if (sche_exists != 1) {
     *real_relative_url = 1;
-  else
+  } else {
     *real_relative_url = 0;
+  }
 
   /* extract strings for scheme, host, port, path, etc */
 
   if (sche != NULL) {
     if (sche_exists) {
       num = sche2 - sche1;
-      if (num > MAX_URL_LEN - 1)
+      if (num > MAX_URL_LEN - 1) {
         num = MAX_URL_LEN - 1;
+      }
       strncpy(sche, sche1, num + 1);
       *(sche + num) = '\0';
 
@@ -3355,8 +3633,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   if (host != NULL) {
     if (host_exists) {
       num = host2 - host1;
-      if (num > MAX_URL_LEN - 1)
+      if (num > MAX_URL_LEN - 1) {
         num = MAX_URL_LEN - 1;
+      }
       strncpy(host, host1, num + 1);
       *(host + num) = '\0';
 
@@ -3374,8 +3653,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   if (port != NULL) {
     if (port_exists) {
       num = port2 - port1;
-      if (num > MAX_URL_LEN - 1)
+      if (num > MAX_URL_LEN - 1) {
         num = MAX_URL_LEN - 1;
+      }
       strncpy(port, port1, num + 1);
       *(port + num) = '\0';
     } else {
@@ -3386,8 +3666,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   if (path != NULL) {
     if (path_exists) {
       num = path2 - path1;
-      if (num > MAX_URL_LEN - 1)
+      if (num > MAX_URL_LEN - 1) {
         num = MAX_URL_LEN - 1;
+      }
       strncpy(path, path1, num + 1);
       *(path + num) = '\0';
     } else {
@@ -3398,8 +3679,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   if (frag != NULL) {
     if (frag_exists) {
       num = frag2 - frag1;
-      if (num > MAX_URL_LEN - 1)
+      if (num > MAX_URL_LEN - 1) {
         num = MAX_URL_LEN - 1;
+      }
       strncpy(frag, frag1, num + 1);
       *(frag + num) = '\0';
     } else {
@@ -3410,8 +3692,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   if (quer != NULL) {
     if (quer_exists) {
       num = quer2 - quer1;
-      if (num > MAX_URL_LEN - 1)
+      if (num > MAX_URL_LEN - 1) {
         num = MAX_URL_LEN - 1;
+      }
       strncpy(quer, quer1, num + 1);
       *(quer + num) = '\0';
     } else {
@@ -3422,8 +3705,9 @@ ink_web_decompose_url(const char *src_url, char *sche, char *host, char *port, c
   if (para != NULL) {
     if (para_exists) {
       num = para2 - para1;
-      if (num > MAX_URL_LEN - 1)
+      if (num > MAX_URL_LEN - 1) {
         num = MAX_URL_LEN - 1;
+      }
       strncpy(para, para1, num + 1);
       *(para + num) = '\0';
     } else {
@@ -3660,8 +3944,9 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
 
   if (use_base_path) {
     if (base.path_exists) {
-      if (base.leading_slash)
+      if (base.leading_slash) {
         append_string(dest_url, "/", &doff, MAX_URL_LEN);
+      }
 
       ink_web_unescapify_string(temp, base.path, MAX_URL_LEN);
       ink_web_escapify_string(base.path, temp, max_dest_url_len);
@@ -3670,8 +3955,9 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
     }
   } else {
     if (emb.path_exists) {
-      if (emb.leading_slash)
+      if (emb.leading_slash) {
         append_string(dest_url, "/", &doff, MAX_URL_LEN);
+      }
       ink_web_unescapify_string(temp, emb.path, MAX_URL_LEN);
       ink_web_escapify_string(emb.path, temp, max_dest_url_len);
       append_string(dest_url, emb.path, &doff, MAX_URL_LEN);
@@ -3721,8 +4007,9 @@ ink_web_canonicalize_url(const char *base_url, const char *emb_url, char *dest_u
     }
   }
 
-  if (host_last)
+  if (host_last) {
     append_string(dest_url, "/", &doff, MAX_URL_LEN);
+  }
 }
 
 /*---------------------------------------------------------------------------*
@@ -3816,8 +4103,9 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
   end    = src + strlen(src);
   scount = 0;
   while (ptr < end) {
-    if (*ptr++ == '/')
+    if (*ptr++ == '/') {
       scount++;
+    }
   }
   scount++; /* adding one to this makes it a lower bound for any case */
 
@@ -3848,9 +4136,10 @@ ink_web_remove_dots(char *src, char *dest, int *leadingslash, int max_dest_len)
   while (ptr < end) {
     if (*ptr == '/') {
       /* include leading '/' in first segment */
-      if (ptr == src)
+      if (ptr == src) {
         *leadingslash = 1;
-      segstart        = 1;
+      }
+      segstart = 1;
     } else if (segstart == 1) {
       seg[scount++] = ptr;
       segstart      = 0;
@@ -3989,10 +4278,12 @@ ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_len)
           /* check if hex digits lowercase */
           dig1 = (int)(c1 - hexdigits);
           dig2 = (int)(c2 - hexdigits);
-          if (dig1 > 15)
+          if (dig1 > 15) {
             dig1 -= 6;
-          if (dig2 > 15)
+          }
+          if (dig2 > 15) {
             dig2 -= 6;
+          }
           /* this is the ascii char */
           num = 16 * dig1 + dig2;
 
@@ -4042,10 +4333,11 @@ ink_web_unescapify_string(char *dest_in, char *src_in, int max_dest_len)
     src++;
   }
   /* terminate string */
-  if (dcount < max_dest_len)
+  if (dcount < max_dest_len) {
     *dest = 0;
-  else
+  } else {
     *(dest_in + max_dest_len) = 0;
+  }
 
   return (quit);
 }
@@ -4108,10 +4400,11 @@ ink_web_escapify_string(char *dest_in, char *src_in, int max_dest_len)
     src++;
   }
   /* terminate string */
-  if (dcount < max_dest_len)
+  if (dcount < max_dest_len) {
     *dest = 0;
-  else
+  } else {
     *(dest_in + max_dest_len - 1) = 0;
+  }
 
   return (quit);
 }

@@ -132,8 +132,9 @@ IpAllow::Print()
       uint32_t test_mask = 1;     // mask for current method.
       for (int i = 0; i < HTTP_WKSIDX_METHODS_CNT; ++i, test_mask <<= 1) {
         if (mask & test_mask) {
-          if (leader)
+          if (leader) {
             s << '|';
+          }
           s << hdrtoken_index_to_wks(i + HTTP_WKSIDX_CONNECT);
           leader = true;
         }

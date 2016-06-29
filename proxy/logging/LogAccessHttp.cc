@@ -224,8 +224,9 @@ LogAccessHttp::set_client_req_url_path(char *buf, int len)
 int
 LogAccessHttp::marshal_plugin_identity_id(char *buf)
 {
-  if (buf)
+  if (buf) {
     marshal_int(buf, m_http_sm->plugin_id);
+  }
   return INK_MIN_ALIGN;
 }
 
@@ -235,13 +236,15 @@ LogAccessHttp::marshal_plugin_identity_tag(char *buf)
   int len         = INK_MIN_ALIGN;
   char const *tag = m_http_sm->plugin_tag;
 
-  if (!tag)
+  if (!tag) {
     tag = "*";
-  else
+  } else {
     len = LogAccess::strlen(tag);
+  }
 
-  if (buf)
+  if (buf) {
     marshal_str(buf, tag, len);
+  }
 
   return len;
 }
@@ -433,8 +436,9 @@ LogAccessHttp::marshal_client_req_http_method(char *buf)
     }
   }
 
-  if (buf)
+  if (buf) {
     marshal_mem(buf, str, alen, plen);
+  }
   return plen;
 }
 
@@ -1021,8 +1025,9 @@ LogAccessHttp::marshal_server_host_ip(char *buf)
   if (!ats_is_ip(ip)) {
     if (m_http_sm->t_state.current.server) {
       ip = &m_http_sm->t_state.current.server->dst_addr.sa;
-      if (!ats_is_ip(ip))
+      if (!ats_is_ip(ip)) {
         ip = 0;
+      }
     } else {
       ip = 0;
     }
@@ -1043,8 +1048,9 @@ LogAccessHttp::marshal_server_host_name(char *buf)
   if (m_client_request) {
     str = m_client_request->host_get(&actual_len);
 
-    if (str)
+    if (str) {
       padded_len = round_strlen(actual_len + 1); // +1 for trailing 0
+    }
   }
   if (buf) {
     marshal_mem(buf, str, actual_len, padded_len);
@@ -1347,10 +1353,11 @@ LogAccessHttp::marshal_file_size(char *buf)
       }
     } else {
       // This is semi-broken when we serveq zero length objects. See TS-2213
-      if (m_http_sm->server_response_body_bytes > 0)
+      if (m_http_sm->server_response_body_bytes > 0) {
         marshal_int(buf, m_http_sm->server_response_body_bytes);
-      else if (m_http_sm->cache_response_body_bytes > 0)
+      } else if (m_http_sm->cache_response_body_bytes > 0) {
         marshal_int(buf, m_http_sm->cache_response_body_bytes);
+      }
     }
   }
   // Else, we don't set the value at all (so, -)

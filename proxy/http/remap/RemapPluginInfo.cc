@@ -39,15 +39,17 @@ remap_plugin_info::remap_plugin_info(char *_path)
 {
   // coverity did not see ats_free
   // coverity[ctor_dtor_leak]
-  if (_path && likely((path = ats_strdup(_path)) > 0))
+  if (_path && likely((path = ats_strdup(_path)) > 0)) {
     path_size = strlen(path);
+  }
 }
 
 remap_plugin_info::~remap_plugin_info()
 {
   ats_free(path);
-  if (dlh)
+  if (dlh) {
     dlclose(dlh);
+  }
 }
 
 //
@@ -61,8 +63,9 @@ remap_plugin_info::find_by_path(char *_path)
 
   if (likely(_path && (_path_size = strlen(_path)) > 0)) {
     for (pi = this; pi; pi = pi->next) {
-      if (pi->path && pi->path_size == _path_size && !strcmp(pi->path, _path))
+      if (pi->path && pi->path_size == _path_size && !strcmp(pi->path, _path)) {
         break;
+      }
     }
   }
 
@@ -78,8 +81,9 @@ remap_plugin_info::add_to_list(remap_plugin_info *pi)
   remap_plugin_info *p = this;
 
   if (likely(pi)) {
-    while (p->next)
+    while (p->next) {
       p = p->next;
+    }
 
     p->next  = pi;
     pi->next = NULL;

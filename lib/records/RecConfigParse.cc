@@ -160,8 +160,9 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
     char *lt = lc;
     char *ln;
 
-    while (isspace(*lt))
+    while (isspace(*lt)) {
       lt++;
+    }
     rec_type_str = strtok_r(lt, " \t", &ln);
 
     // check for blank lines and comments
@@ -180,17 +181,20 @@ RecConfigFileParse(const char *path, RecConfigEntryCallback handler, bool inc_ve
       // know we didn't have a valid value.  If not, set 'data_str' to
       // the start of the token and scan until we find the end.  Once
       // the end is found, back-peddle to remove any trailing spaces.
-      while (isspace(*ln))
+      while (isspace(*ln)) {
         ln++;
+      }
       if (*ln == '\0') {
         data_str = NULL;
       } else {
         data_str = ln;
-        while (*ln != '\0')
+        while (*ln != '\0') {
           ln++;
+        }
         ln--;
-        while (isspace(*ln) && (ln > data_str))
+        while (isspace(*ln) && (ln > data_str)) {
           ln--;
+        }
         ln++;
         *ln = '\0';
       }

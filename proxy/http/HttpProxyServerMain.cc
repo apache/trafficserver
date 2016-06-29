@@ -293,11 +293,13 @@ start_HttpProxyServer()
     HttpProxyAcceptor &acceptor = HttpProxyAcceptors[i];
     HttpProxyPort &port         = proxy_ports[i];
     if (port.isSSL()) {
-      if (NULL == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt))
+      if (NULL == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
+      }
     } else if (!port.isPlugin()) {
-      if (NULL == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt))
+      if (NULL == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
+      }
     }
     // XXX although we make a good pretence here, I don't believe that NetProcessor::main_accept() ever actually returns
     // NULL. It would be useful to be able to detect errors and spew them here though.
