@@ -16,9 +16,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-GIT=${GIT:-/usr/bin/git}
-GREP=${GREP:-/usr/bin/grep}
-
 # This should probably be configurable ...
 cd /home/mirror/trafficserver.git || exit
 
@@ -27,36 +24,60 @@ if [ "" == "$1" ]; then
     echo "Must provide the auth token for Jenkins"
     exit 1
 fi
+token="build?token=$1"
 
-# Prep the URLs
-URL="https://ci.trafficserver.apache.org/view/master/job"
-TOKEN="build?token=$1"
+# Optional second argument is the base URL, no trailing slash
+BASE_URL=${2:-"https://ci.trafficserver.apache.org"}
 
-# Save away previous ref-specs
-REF_4_2=$(${GIT} show-ref -s  refs/heads/4.2.x)
-REF_5_3=$(${GIT} show-ref -s  refs/heads/5.3.x)
-REF_6_2=$(${GIT} show-ref -s  refs/heads/6.2.x)
-REF_master=$(${GIT} show-ref -s  refs/heads/master)
+# Some environment overridable defines
+GIT=${GIT:-/usr/bin/git}
+GREP=${GREP:-/usr/bin/grep}
+CURL=${CURL:-/usr/bin/curl}
 
+# Get the ref in the current version of the tree
+function getRef() {
+    local branch="$1"
+
+    ${GIT} show-ref -s refs/heads/${branch}
+}
+
+# Check the diff, and trigger builds as appropriate
+function checkBuild() {
+    local ref="$1"
+    local branch="$2"
+    local diff
+
+    # Do the actual diff from the previous ref to current branch head
+    diff=$(${GIT} log --name-only --pretty=format: ${ref}..refs/heads/${branch} | ${GREP} -v '^$')
+
+    # Check if commits have doc/ changes
+    echo -n "$diff" | ${GREP} -F -e doc/ > /dev/null
+    if [ 0 == $? ]; then
+	echo "Triggerd Docs build for ${branch}"
+	${CURL} -o /dev/null -s ${BASE_URL}/view/${branch}/job/docs-${branch}/${token}
+    fi
+
+    # Check if commits have non doc/ changes
+    echo -n "$diff" | ${GREP} -F -v -e doc/ > /dev/null
+    if [ 0 == $? ]; then
+	echo "Triggered main build for ${branch}"
+	${CURL} -o /dev/null -s ${BASE_URL}/view/${branch}/job/in_tree-${branch}/${token}
+	${CURL} -o /dev/null -s ${BASE_URL}/view/${branch}/job/out_of_tree-${branch}/${token}
+    fi
+}
+
+# Save away previous ref-specs, you must save all branches
+REF_4_2=$(getRef "4.2.x")
+REF_5_3=$(getRef "5.3.x")
+REF_6_2=$(getRef "6.2.x")
+REF_master=$(getRef "master")
+
+# Do the updates
 ${GIT} remote update > /dev/null 2>&1
 ${GIT} update-server-info
 
-# Now find the changes
-DIFF_4_2=$(${GIT} log --name-only --pretty=format: ${REF_4_2}..refs/heads/4.2.x| ${GREP} -v '^$')
-DIFF_5_3=$(${GIT} log --name-only --pretty=format: ${REF_5_3}..refs/heads/5.3.x | ${GREP} -v '^$')
-DIFF_6_2=$(${GIT} log --name-only --pretty=format: ${REF_6_2}..refs/heads/6.2.x | ${GREP} -v '^$')
-DIFF_master=$(${GIT} log --name-only --pretty=format: ${REF_master}..refs/heads/master | ${GREP} -v '^$')
-
-# Check master, we have to diff twice, because some commits could trigger both
-echo -n "$DIFF_master" | ${GREP} -F -e doc/ > /dev/null
-if [ 0 == $? ]; then
-    echo "Triggerd Docs build for master"
-    curl -o /dev/null -s ${URL}/docs-master/${TOKEN}
-fi
-
-echo -n "$DIFF_master" | ${GREP} -F -v -e doc/ > /dev/null
-if [ 0 == $? ]; then
-    echo "Triggered main build for master"
-    curl -o /dev/null -s ${URL}/in_tree-master/${TOKEN}
-    curl -o /dev/null -s ${URL}/out_of_tree-master/${TOKEN}
-fi
+# Check the branches, this makes assumptions that the Jenkins build are named after the branches
+checkBuild "$REF_4_2" "4.2.x"
+checkBuild "$REF_5_3" "5.3.x"
+checkBuild "$REF_6_2" "6.2.x"
+checkBuild "$REF_master" "master"
