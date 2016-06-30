@@ -102,9 +102,6 @@ public:
     transaction.resume();
   }
 
-  /*
-   * Move the brotli streaming encode here after Brotli library supports streaming encode
-   * */
   void
   consume(const string &data)
   {
@@ -115,11 +112,6 @@ public:
     buffer_.append(uncompressedData);
   }
 
-  /*
-   * No streaming encode for Brotli now,
-   * ungzip the gzip data,
-   * then using brotli to do compression
-   * */
   void
   handleInputComplete()
   {
