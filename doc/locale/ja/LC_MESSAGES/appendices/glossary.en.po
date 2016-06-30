@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: 2016-01-10 15:40+0900\n"
 "Last-Translator: Hiroaki Nakamura <hnakamur@gmail.com>\n"
 "Language-Team: \n"
@@ -101,8 +101,15 @@ msgstr ""
 
 #: ../../../appendices/glossary.en.rst:147
 #, fuzzy
-msgid "cache partitionglobal plugin"
-msgstr "キャッシュパーティション"
+msgid "cache partition"
+msgstr "キャッシュスパン"
+
+#: ../../../appendices/glossary.en.rst:149
+msgid ""
+"A subdivision of the cache storage in |TS| which is dedicated to objects "
+"for specific protocols, origins, or other rules. Defining and managing "
+"cache partitions is discussed in :ref:`partitioning-the-cache`."
+msgstr ""
 
 #: ../../../appendices/glossary.en.rst:59
 msgid "cache span"
@@ -235,6 +242,17 @@ msgstr ""
 "サーバー` で定義された有効期限を超えておらず、アルゴリズムで決定された :"
 "term:`新鮮でない` 経過時間にも達していません。"
 
+#: ../../../appendices/glossary.en.rst:152
+#, fuzzy
+msgid "global plugin"
+msgstr "キャッシュパーティション"
+
+#: ../../../appendices/glossary.en.rst:154
+msgid ""
+"A plugin which operates on all transactions. Contrast with :term:`remap "
+"plugin`."
+msgstr ""
+
 #: ../../../appendices/glossary.en.rst:128
 msgid "object store"
 msgstr "オブジェクトストア"
@@ -254,6 +272,16 @@ msgid ""
 msgstr ""
 "Traffic Server にキャッシュされるコンテンツの元の発信源を提供する HTTP サー"
 "バー。"
+
+#: ../../../appendices/glossary.en.rst:156
+msgid "remap plugin"
+msgstr ""
+
+#: ../../../appendices/glossary.en.rst:158
+msgid ""
+"A plugin which operates only on transactions matching specific remap rules "
+"as defined in :file:`remap.config`. Contrast with :term:`global plugin`."
+msgstr ""
 
 #: ../../../appendices/glossary.en.rst:96
 msgid "revalidation"

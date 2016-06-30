@@ -1,0 +1,148 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 7.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:22
+msgid "TSUuidCreate"
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:24
+msgid "Traffic Server UUID construction APIs."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:27
+msgid "Synopsis"
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:29
+msgid "`#include <ts/ts.h>`"
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:41
+msgid "Description"
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:43
+msgid ""
+"These APIs are used to create, manage, and use UUIDs in a plugin, "
+"implementing part of RFC 4122. Currently, only the V4 variant of the "
+"specifications is implemented. In addition, an internal, process unique "
+"UUID is provided, which can be used to uniquely identifying the running "
+"Traffic Server process."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:48
+msgid ""
+":func:`TSUuidCreate` creates a new :type:`TSUuid` object, which is returned "
+"and can be used by the other APIs. Similarly, a read-only global process "
+"UUID is returned from the function :func:`TSProcessUuidGet`. You must not "
+"attempt to modify any data as returned by either of these functions."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:53
+msgid ""
+":func:`TSUuidInitialize` initializes a :type:`TSUuid` object, using the "
+"algorithm defined for the specified version. Note that only the V4 variants "
+"is currently supported. You can call :func:`TSUuidInitialize` repeatedly, "
+"which each generates a new UUID, but this will overwrite any existing UUID "
+"data in the object. This also implies that any strings retrieved using :"
+"func:`TSUuidStringGet` are also modified accordingly."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:60
+msgid ""
+":func:`TSUuidDestroy` destroys (releases) an :type:`TSUuid` object, and "
+"frees all memory associated with this object. This includes any strings as "
+"returned by e.g. :func:`TSUuidStringGet`."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:64
+msgid ""
+":func:`TSUuidCopy` copies one :type:`TSUuid` to another, making an exact "
+"duplicate. Note that both the source and the destination UUIDs must be "
+"created appropriately, and should not have been previously destroyed."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:68
+msgid ""
+":func:`TSUuidVersionGet` returns the version number for the :type:`TSUuid`. "
+"This will work properly for any RFC 4122 initialized UUID object, e.g. if "
+"you parse a string with :func:`TSUuidStringParse` this will return the "
+"correct variant ID."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:73
+msgid ""
+":func:`TSUuidStringGet` returns a pointer to the internal string "
+"representation of the :type:`TSUuid` object. It's important to know that "
+"there is no transfer of ownership of this string. If you need a copy of it, "
+"you are responsible of doing so yourself. In particular, using a string as "
+"returned by :func:`TSUuidStringGet` **after** you have called :func:"
+"`TSUuidDestroy` on the corresponding :type:`TSUuid` object is a serious "
+"error. The UUID object does not do any sort of reference counting on the "
+"string, and you must absolutely not free the memory as returned by this API."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:82
+msgid ""
+"Finally, :func:`TSUuidStringParse` can be used to convert an existing :type:"
+"`TSUuid` string to a Traffic Server UUID object. This will only succeed if "
+"the :type:`TSUuid` string is a proper *RFC 4122* UUID. The :type:`TSUuid` "
+"argument passed to this function must be a properly :func:`TSUuidCreate` "
+"object, but it does not need to be previously initialized."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:89
+msgid "Return Values"
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:91
+msgid ""
+"The :type:`TSUuid` type is an opaque pointer to an internal representation "
+"of the UUID object. Several of the functions returns a normal Traffic "
+"Server return status code, :type:`TSReturnCode`. You should verify the "
+"success of those APIs, of course."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:96
+msgid ""
+"The :func:`TSUuidStringGet` function will return ``NULL`` if the :type:"
+"`TSUuid` object is not properly inititialized. Likewise, :func:"
+"`TSUuidVersionGet` would then return ``TS_UUID_UNDEFINED``."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:100
+msgid ""
+"The :func:`TSUuidDestroy` function can not fail, and does not have a return "
+"value,  but you are of course responsible for providing a valid :type:"
+"`TSUuid` object."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:105
+msgid "Examples"
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:132
+msgid "See Also"
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSUuidCreate.en.rst:134
+msgid ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSUuid(3ts)`, :manpage:`TSReturnCode(3ts)`,"
+msgstr ""

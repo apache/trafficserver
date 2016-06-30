@@ -9,55 +9,61 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.1.1\n"
+"Generated-By: Babel 2.2.0\n"
 
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:58
-msgid "Corresponds to the SSL_CTX * value in openssl."
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:32
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:48
-msgid "Description"
-msgstr "解説"
-
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:25
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:41
-msgid "Synopsis"
-msgstr "概要"
-
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:22
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:22
 msgid "TSSslContextFindByName"
 msgstr ""
 
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:50
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:24
+msgid "Traffic Server TLS server context lookup."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:27
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:29
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"
+
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:35
+msgid "Description"
+msgstr "解説"
+
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:37
 msgid ""
-"Look for a SSL context created from :file:`ssl_multicert.config`.  Use the "
-"server address to search."
+":func:`TSSslContextFindByName` searches for a SSL server context created "
+"from :file:`ssl_multicert.config`, matching against the server :arg:`name`."
 msgstr ""
 
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:34
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:41
 msgid ""
-"Look for a SSL context created from :file:`ssl_multicert.config`. Use the "
-"server :arg:`name` to search."
+":func:`TSSslContextFindByAddr` searches for a SSL server context created "
+"from :file:`ssl_multicert.config` matchin against the server :arg:`address`."
 msgstr ""
 
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:38
-msgid "TSSslContextFindByAddr"
-msgstr ""
-
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:54
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:46
 msgid "Type"
 msgstr "型"
 
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:27
-#: ../../developer-guide/api/functions/TSSslContextFindBy.en.rst:43
-msgid "`#include <ts/ts.h>`"
-msgstr "`#include <ts/ts.h>`"
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:50
+msgid ""
+"The SSL context object. This is an opaque type that can be cast to the "
+"underlying SSL library type (SSL_CTX * for the OpenSSL library)."
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:54
+msgid "See also"
+msgstr ""
+
+#: ../../../developer-guide/api/functions/TSSslContextFindBy.en.rst:56
+msgid ":manpage:`TSAPI(3ts)`"
+msgstr ""

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: 2016-01-03 16:12+0900\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -159,7 +159,7 @@ msgid ""
 "`0` to disable session ticket support."
 msgstr ""
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:113
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:114
 msgid "ticket_key_name=FILENAME (optional)"
 msgstr ""
 
@@ -170,10 +170,12 @@ msgid ""
 "it is resolved relative to the :ts:cv:`proxy.config.ssl.server.cert.path` "
 "configuration variable. This option has no effect if session tickets are "
 "disabled by the ``ssl_ticket_enabled`` option.  The contents of the key "
-"file should be 48 random bytes."
+"file should be 48 random (ASCII) bytes. One way to generate this would be "
+"to run ``head -c48 /dev/urandom | openssl enc -base64 | head -c48 > file."
+"ticket``."
 msgstr ""
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:110
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:111
 msgid ""
 "Session ticket support is enabled by default. If neither of the "
 "``ssl_ticket_enabled`` and ``ticket_key_name`` options are specified, and "
@@ -185,11 +187,11 @@ msgstr ""
 "ていない場合、内部セッションチケットキーが生成されます。キーは Traffic "
 "Server が起動されるたびに毎回異なります。"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:131
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:132
 msgid "ssl_key_dialog=builtin|\"exec:/path/to/program [args]\" (optional)"
 msgstr ""
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:116
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:117
 msgid ""
 "Method used to provide a pass phrase for encrypted private keys.  If the "
 "pass phrase is incorrect, SSL negotiation for this dest_ip will fail for "
@@ -200,11 +202,11 @@ msgstr ""
 "ションは失敗するでしょう。builtin と exec: の 2 つのオプションがサポートされ"
 "ています。"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:123
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:124
 msgid "``builtin`` - Requests pass phrase via stdin/stdout. User will be"
 msgstr ""
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:122
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:123
 msgid ""
 "provided the ssl_cert_name and be prompted for the pass phrase. Useful for "
 "debugging."
@@ -212,11 +214,11 @@ msgstr ""
 "stdin/stdout によるパスフレーズを要求します。ユーザーは ssl_cert_name を提示"
 "され、パスフレーズの入力を促されます。デバッグに便利です。"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:131
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:132
 msgid "``exec:`` - Executes program /path/to/program and passes args, if"
 msgstr ""
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:126
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:127
 msgid ""
 "specified, to the program and reads the output from stdout for the pass "
 "phrase.  If args are provided then the entire exec: string must be quoted "
@@ -233,11 +235,11 @@ msgstr ""
 "レーズを渡す前にシステムが攻撃者によって汚染されていないことを確かめることで"
 "す。"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:134
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:135
 msgid "Certificate Selection"
 msgstr "証明書の選択"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:136
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:137
 msgid ""
 "Traffic Server attempts two certificate selections during SSL connection "
 "setup. An initial selection is made when a TCP connection is accepted. This "
@@ -264,7 +266,7 @@ msgstr ""
 "敗すると、ワイルドカードによる証明書のマッチが試されます。いずれにもマッチし"
 "ない場合、初回の証明書の選択がそのまま有効となります。"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:150
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:151
 msgid ""
 "In all cases, Traffic Server attempts to select the most specific match. An "
 "address specification that contains a port number will take precedence over "
@@ -274,11 +276,11 @@ msgid ""
 "capable clients."
 msgstr ""
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:158
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:159
 msgid "Examples"
 msgstr "例"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:160
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:161
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` for all requests to the IP address 111.11.11.1 and the SSL "
@@ -294,14 +296,14 @@ msgstr ""
 "ミネートされます。秘密鍵は証明書に含まれているので、秘密鍵の名前は指定されて"
 "いません。"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:174
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:175
 msgid ""
 "The following example configures Traffic Server to use the ECDSA "
 "certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem`` for "
 "all requests."
 msgstr ""
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:182
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:183
 msgid ""
 "The following example configures Traffic Server to use the ECDSA "
 "certificate chain ``ecdsa.pem`` or RSA certificate chain ``rsa.pem`` for "
@@ -310,7 +312,7 @@ msgid ""
 "ssl_cert_name, and they should be presented in the same order."
 msgstr ""
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:192
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:193
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` and the private key ``serverKey.pem`` for all requests to "
@@ -322,7 +324,7 @@ msgstr ""
 "するよう設定しています。証明書 ``general.pem`` はサーバー名がマッチするもの"
 "で使用されます。"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:201
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:202
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` for all requests to the IP address 111.11.11.1. Session "
@@ -332,7 +334,7 @@ msgstr ""
 "111.11.11.1 へのすべてのリクエストに使用するように設定しています。セッション"
 "チケットは恒久的なチケットキーで有効化されています。"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:210
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:211
 msgid ""
 "The following example configures Traffic Server to use the SSL certificate "
 "``server.pem`` and disable session tickets for all requests to the IP "
@@ -342,7 +344,7 @@ msgstr ""
 "で SSL 証明書 ``server.pem`` を 使用し、セッションチケットを無効化するように"
 "設定しています。"
 
-#: ../../../admin-guide/files/ssl_multicert.config.en.rst:218
+#: ../../../admin-guide/files/ssl_multicert.config.en.rst:219
 msgid ""
 "The following examples configure Traffic Server to use the SSL certificate "
 "``server.pem`` which includes an encrypted private key. The external "

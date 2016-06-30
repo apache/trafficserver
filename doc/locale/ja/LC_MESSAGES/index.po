@@ -34,11 +34,3 @@ msgstr ":ref:`genindex`"
 #: ../../index.rst:54
 msgid ":ref:`search`"
 msgstr ":ref:`search`"
-
-#: ../../index.rst:23
-msgid "Apache Traffic Server Manual"
-msgstr ""
-
-#: ../../index.rst:35
-msgid "Indices and tables"
-msgstr "Indices and tables"

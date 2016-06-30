@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Generated-By: Babel 2.2.0\n"
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:23
-msgid "ts-lua Plugin"
+msgid "TS Lua Plugin"
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:25
@@ -169,106 +169,110 @@ msgstr ""
 #: ../../../admin-guide/plugins/ts_lua.en.rst:542
 #: ../../../admin-guide/plugins/ts_lua.en.rst:566
 #: ../../../admin-guide/plugins/ts_lua.en.rst:581
-#: ../../../admin-guide/plugins/ts_lua.en.rst:604
-#: ../../../admin-guide/plugins/ts_lua.en.rst:633
-#: ../../../admin-guide/plugins/ts_lua.en.rst:661
-#: ../../../admin-guide/plugins/ts_lua.en.rst:685
-#: ../../../admin-guide/plugins/ts_lua.en.rst:706
-#: ../../../admin-guide/plugins/ts_lua.en.rst:729
-#: ../../../admin-guide/plugins/ts_lua.en.rst:759
-#: ../../../admin-guide/plugins/ts_lua.en.rst:783
-#: ../../../admin-guide/plugins/ts_lua.en.rst:795
-#: ../../../admin-guide/plugins/ts_lua.en.rst:819
-#: ../../../admin-guide/plugins/ts_lua.en.rst:831
-#: ../../../admin-guide/plugins/ts_lua.en.rst:850
-#: ../../../admin-guide/plugins/ts_lua.en.rst:875
-#: ../../../admin-guide/plugins/ts_lua.en.rst:885
-#: ../../../admin-guide/plugins/ts_lua.en.rst:904
-#: ../../../admin-guide/plugins/ts_lua.en.rst:939
-#: ../../../admin-guide/plugins/ts_lua.en.rst:968
-#: ../../../admin-guide/plugins/ts_lua.en.rst:998
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1012
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1040
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1053
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1083
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1126
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1156
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1169
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1198
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1213
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1247
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1282
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1305
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1326
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1347
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1368
+#: ../../../admin-guide/plugins/ts_lua.en.rst:605
+#: ../../../admin-guide/plugins/ts_lua.en.rst:620
+#: ../../../admin-guide/plugins/ts_lua.en.rst:643
+#: ../../../admin-guide/plugins/ts_lua.en.rst:672
+#: ../../../admin-guide/plugins/ts_lua.en.rst:700
+#: ../../../admin-guide/plugins/ts_lua.en.rst:724
+#: ../../../admin-guide/plugins/ts_lua.en.rst:745
+#: ../../../admin-guide/plugins/ts_lua.en.rst:768
+#: ../../../admin-guide/plugins/ts_lua.en.rst:798
+#: ../../../admin-guide/plugins/ts_lua.en.rst:822
+#: ../../../admin-guide/plugins/ts_lua.en.rst:834
+#: ../../../admin-guide/plugins/ts_lua.en.rst:858
+#: ../../../admin-guide/plugins/ts_lua.en.rst:870
+#: ../../../admin-guide/plugins/ts_lua.en.rst:889
+#: ../../../admin-guide/plugins/ts_lua.en.rst:914
+#: ../../../admin-guide/plugins/ts_lua.en.rst:924
+#: ../../../admin-guide/plugins/ts_lua.en.rst:943
+#: ../../../admin-guide/plugins/ts_lua.en.rst:978
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1007
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1037
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1051
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1079
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1092
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1122
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1165
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1195
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1208
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1237
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1252
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1281
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1296
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1330
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1365
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1388
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1409
 #: ../../../admin-guide/plugins/ts_lua.en.rst:1430
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1444
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1519
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1545
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1569
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1581
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1595
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1629
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1670
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1714
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1727
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1754
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1781
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1822
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1836
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1858
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1878
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1898
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1921
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1945
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1967
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1987
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2008
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1451
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1513
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1527
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1602
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1628
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1652
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1664
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1678
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1712
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1753
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1797
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1810
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1837
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1864
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1905
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1919
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1941
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1961
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1981
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2004
 #: ../../../admin-guide/plugins/ts_lua.en.rst:2028
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2048
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2069
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2088
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2109
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2164
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2050
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2070
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2091
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2111
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2131
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2152
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2171
 #: ../../../admin-guide/plugins/ts_lua.en.rst:2192
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2253
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2319
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2330
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2393
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2422
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2452
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2467
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2487
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2498
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2509
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2520
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2531
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2633
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2653
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2667
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2686
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2697
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2708
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2719
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2730
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2741
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2761
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2781
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2796
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2816
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2830
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2846
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2878
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2892
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2902
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2912
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2926
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2965
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2976
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2990
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3021
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3028
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2247
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2275
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2336
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2402
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2413
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2476
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2505
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2535
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2550
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2570
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2581
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2592
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2603
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2614
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2716
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2736
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2750
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2769
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2780
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2791
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2802
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2813
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2824
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2844
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2864
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2879
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2899
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2913
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2929
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2961
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2975
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2985
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2995
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3009
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3048
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3059
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3073
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3103
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3110
 msgid "`TOP <#ts-lua-plugin>`_"
 msgstr ""
 
@@ -282,18 +286,18 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:138
 #: ../../../admin-guide/plugins/ts_lua.en.rst:155
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1002
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1718
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1952
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1973
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1993
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2014
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2034
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2054
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2075
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2094
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2932
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2971
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1041
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1801
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2035
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2056
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2076
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2097
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2117
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2137
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2158
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2177
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3015
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3054
 msgid "**context:** global"
 msgstr ""
 
@@ -311,66 +315,68 @@ msgstr ""
 #: ../../../admin-guide/plugins/ts_lua.en.rst:515
 #: ../../../admin-guide/plugins/ts_lua.en.rst:552
 #: ../../../admin-guide/plugins/ts_lua.en.rst:591
-#: ../../../admin-guide/plugins/ts_lua.en.rst:618
-#: ../../../admin-guide/plugins/ts_lua.en.rst:643
-#: ../../../admin-guide/plugins/ts_lua.en.rst:673
-#: ../../../admin-guide/plugins/ts_lua.en.rst:697
-#: ../../../admin-guide/plugins/ts_lua.en.rst:716
-#: ../../../admin-guide/plugins/ts_lua.en.rst:740
-#: ../../../admin-guide/plugins/ts_lua.en.rst:769
-#: ../../../admin-guide/plugins/ts_lua.en.rst:805
-#: ../../../admin-guide/plugins/ts_lua.en.rst:841
-#: ../../../admin-guide/plugins/ts_lua.en.rst:895
-#: ../../../admin-guide/plugins/ts_lua.en.rst:914
-#: ../../../admin-guide/plugins/ts_lua.en.rst:949
-#: ../../../admin-guide/plugins/ts_lua.en.rst:978
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1023
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1065
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1093
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1137
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1179
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1227
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1257
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1294
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1317
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1338
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1359
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1379
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1404
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1458
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1488
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1530
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1555
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1609
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1639
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1683
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1737
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1764
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1792
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1846
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1868
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1910
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1933
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1956
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1977
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1997
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2018
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2038
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2058
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2079
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2098
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2177
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2209
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2266
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2344
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2405
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2434
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2477
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2643
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2677
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2751
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2771
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2806
+#: ../../../admin-guide/plugins/ts_lua.en.rst:630
+#: ../../../admin-guide/plugins/ts_lua.en.rst:657
+#: ../../../admin-guide/plugins/ts_lua.en.rst:682
+#: ../../../admin-guide/plugins/ts_lua.en.rst:712
+#: ../../../admin-guide/plugins/ts_lua.en.rst:736
+#: ../../../admin-guide/plugins/ts_lua.en.rst:755
+#: ../../../admin-guide/plugins/ts_lua.en.rst:779
+#: ../../../admin-guide/plugins/ts_lua.en.rst:808
+#: ../../../admin-guide/plugins/ts_lua.en.rst:844
+#: ../../../admin-guide/plugins/ts_lua.en.rst:880
+#: ../../../admin-guide/plugins/ts_lua.en.rst:934
+#: ../../../admin-guide/plugins/ts_lua.en.rst:953
+#: ../../../admin-guide/plugins/ts_lua.en.rst:988
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1017
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1062
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1104
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1132
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1176
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1218
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1262
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1310
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1340
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1377
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1400
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1421
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1442
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1462
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1487
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1541
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1571
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1613
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1638
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1692
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1722
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1766
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1820
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1847
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1875
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1929
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1951
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1993
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2016
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2039
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2060
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2080
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2101
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2121
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2141
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2162
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2181
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2260
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2292
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2349
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2427
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2488
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2517
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2560
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2726
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2760
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2834
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2854
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2889
 msgid "Here is an example:"
 msgstr ""
 
@@ -557,8 +563,8 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:306
-#: ../../../admin-guide/plugins/ts_lua.en.rst:860
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1888
+#: ../../../admin-guide/plugins/ts_lua.en.rst:899
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1971
 msgid "Here is an example"
 msgstr ""
 
@@ -760,25 +766,26 @@ msgstr ""
 #: ../../../admin-guide/plugins/ts_lua.en.rst:497
 #: ../../../admin-guide/plugins/ts_lua.en.rst:548
 #: ../../../admin-guide/plugins/ts_lua.en.rst:587
-#: ../../../admin-guide/plugins/ts_lua.en.rst:614
-#: ../../../admin-guide/plugins/ts_lua.en.rst:639
-#: ../../../admin-guide/plugins/ts_lua.en.rst:667
-#: ../../../admin-guide/plugins/ts_lua.en.rst:691
-#: ../../../admin-guide/plugins/ts_lua.en.rst:712
-#: ../../../admin-guide/plugins/ts_lua.en.rst:765
-#: ../../../admin-guide/plugins/ts_lua.en.rst:801
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1288
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1311
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1332
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1353
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1733
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1760
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1864
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1884
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2535
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2657
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2820
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2850
+#: ../../../admin-guide/plugins/ts_lua.en.rst:626
+#: ../../../admin-guide/plugins/ts_lua.en.rst:653
+#: ../../../admin-guide/plugins/ts_lua.en.rst:678
+#: ../../../admin-guide/plugins/ts_lua.en.rst:706
+#: ../../../admin-guide/plugins/ts_lua.en.rst:730
+#: ../../../admin-guide/plugins/ts_lua.en.rst:751
+#: ../../../admin-guide/plugins/ts_lua.en.rst:804
+#: ../../../admin-guide/plugins/ts_lua.en.rst:840
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1371
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1394
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1415
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1436
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1816
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1843
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1947
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1967
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2618
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2740
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2903
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2933
 msgid "**context:** do_remap or do_global_* or later"
 msgstr ""
 
@@ -813,13 +820,14 @@ msgstr ""
 #: ../../../admin-guide/plugins/ts_lua.en.rst:477
 #: ../../../admin-guide/plugins/ts_lua.en.rst:535
 #: ../../../admin-guide/plugins/ts_lua.en.rst:572
-#: ../../../admin-guide/plugins/ts_lua.en.rst:735
-#: ../../../admin-guide/plugins/ts_lua.en.rst:789
-#: ../../../admin-guide/plugins/ts_lua.en.rst:825
-#: ../../../admin-guide/plugins/ts_lua.en.rst:837
-#: ../../../admin-guide/plugins/ts_lua.en.rst:910
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2199
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2259
+#: ../../../admin-guide/plugins/ts_lua.en.rst:611
+#: ../../../admin-guide/plugins/ts_lua.en.rst:774
+#: ../../../admin-guide/plugins/ts_lua.en.rst:828
+#: ../../../admin-guide/plugins/ts_lua.en.rst:864
+#: ../../../admin-guide/plugins/ts_lua.en.rst:876
+#: ../../../admin-guide/plugins/ts_lua.en.rst:949
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2282
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2342
 msgid "**context:** do_remap or do_global_*"
 msgstr ""
 
@@ -842,9 +850,9 @@ msgid "**description:** Return the http version string of the client request."
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:489
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1050
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1428
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1579
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1089
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1511
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1662
 msgid "Current possible values are 1.0, 1.1, and 0.9."
 msgstr ""
 
@@ -903,7 +911,7 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:539
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1166
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1205
 msgid "The PATH argument must be a Lua string and starts with ``/``"
 msgstr ""
 
@@ -922,12 +930,12 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:561
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1193
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1232
 msgid "Then ``GET /st?a=1&b=2`` will yield the output:"
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:563
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1195
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1234
 msgid "``a=1&b=2``"
 msgstr ""
 
@@ -946,1317 +954,1385 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:584
-msgid "ts.client_request.get_url"
+msgid "ts.client_request.get_uri_params"
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:585
-msgid "**syntax:** *ts.client_request.get_url()*"
+msgid "**syntax:** *ts.client_request.get_uri_params()*"
 msgstr ""
 
 #: ../../../admin-guide/plugins/ts_lua.en.rst:589
+msgid ""
+"**description:** This function can be used to retrieve the client request's "
+"parameter string."
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:600
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1276
+msgid "Then ``GET /st;a=1`` will yield the output:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:602
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1278
+msgid "``a=1``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:608
+msgid "ts.client_request.set_uri_params"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:609
+msgid "**syntax:** *ts.client_request.set_uri_params(PARAMETER_STRING)*"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:613
+msgid ""
+"**description:** This function can be used to override the client request's "
+"parameter string."
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:623
+msgid "ts.client_request.get_url"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:624
+msgid "**syntax:** *ts.client_request.get_url()*"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:628
 msgid ""
 "**description:** This function can be used to retrieve the whole client "
 "request's url."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:600
+#: ../../../admin-guide/plugins/ts_lua.en.rst:639
 msgid ""
 "Then ``GET /st?a=1&b=2 HTTP/1.1\\r\\nHost: a.tbcdn.cn\\r\\n...`` will yield "
 "the output:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:602
+#: ../../../admin-guide/plugins/ts_lua.en.rst:641
 msgid "``http://a.tbcdn.cn/st?a=1&b=2``"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:607
+#: ../../../admin-guide/plugins/ts_lua.en.rst:646
 msgid "ts.client_request.header.HEADER"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:608
+#: ../../../admin-guide/plugins/ts_lua.en.rst:647
 msgid "**syntax:** *ts.client_request.header.HEADER = VALUE*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:610
+#: ../../../admin-guide/plugins/ts_lua.en.rst:649
 msgid "**syntax:** *ts.client_request.header[HEADER] = VALUE*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:612
+#: ../../../admin-guide/plugins/ts_lua.en.rst:651
 msgid "**syntax:** *VALUE = ts.client_request.header.HEADER*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:616
+#: ../../../admin-guide/plugins/ts_lua.en.rst:655
 msgid ""
 "**description:** Set, add to, clear or get the current client request's "
 "HEADER."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:628
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1242
+#: ../../../admin-guide/plugins/ts_lua.en.rst:667
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1325
 msgid ""
 "Then ``GET /st HTTP/1.1\\r\\nHost: b.tb.cn\\r\\nUser-Agent: Mozilla/5.0\\r"
 "\\n...`` will yield the output:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:630
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1244
+#: ../../../admin-guide/plugins/ts_lua.en.rst:669
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1327
 msgid "``Mozilla/5.0``"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:636
+#: ../../../admin-guide/plugins/ts_lua.en.rst:675
 msgid "ts.client_request.get_headers"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:637
+#: ../../../admin-guide/plugins/ts_lua.en.rst:676
 msgid "**syntax:** *ts.client_request.get_headers()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:641
+#: ../../../admin-guide/plugins/ts_lua.en.rst:680
 msgid ""
 "**description:** Returns a Lua table holding all the headers for the "
 "current client request."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:654
+#: ../../../admin-guide/plugins/ts_lua.en.rst:693
 msgid ""
 "Then ``GET /st HTTP/1.1\\r\\nHost: b.tb.cn\\r\\nUser-Aget: Mozilla/5.0\\r"
 "\\nAccept: */*`` will yield the output ::"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:664
+#: ../../../admin-guide/plugins/ts_lua.en.rst:703
 msgid "ts.client_request.client_addr.get_addr"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:665
+#: ../../../admin-guide/plugins/ts_lua.en.rst:704
 msgid "**syntax:** *ts.client_request.client_addr.get_addr()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:669
+#: ../../../admin-guide/plugins/ts_lua.en.rst:708
 msgid ""
 "**description**: This function can be used to get socket address of the "
 "client."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:671
+#: ../../../admin-guide/plugins/ts_lua.en.rst:710
 msgid ""
 "The ts.client_request.client_addr.get_addr function returns three values, "
 "ip is a string, port and family is number."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:688
+#: ../../../admin-guide/plugins/ts_lua.en.rst:727
 msgid "ts.client_request.client_addr.get_incoming_port"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:689
+#: ../../../admin-guide/plugins/ts_lua.en.rst:728
 msgid "**syntax:** *ts.client_request.client_addr.get_incoming_port()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:693
+#: ../../../admin-guide/plugins/ts_lua.en.rst:732
 msgid ""
 "**description**: This function can be used to get incoming port of the "
 "request."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:695
+#: ../../../admin-guide/plugins/ts_lua.en.rst:734
 msgid ""
 "The ts.client_request.client_addr.get_incoming_port function returns "
 "incoming port as number."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:709
+#: ../../../admin-guide/plugins/ts_lua.en.rst:748
 msgid "ts.client_request.get_url_host"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:710
+#: ../../../admin-guide/plugins/ts_lua.en.rst:749
 msgid "**syntax:** *host = ts.client_request.get_url_host()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:714
+#: ../../../admin-guide/plugins/ts_lua.en.rst:753
 msgid "**description:** Return the ``host`` field of the request url."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:725
-#: ../../../admin-guide/plugins/ts_lua.en.rst:814
+#: ../../../admin-guide/plugins/ts_lua.en.rst:764
+#: ../../../admin-guide/plugins/ts_lua.en.rst:853
 msgid ""
 "Then ``GET /liuyurou.txt HTTP/1.1\\r\\nHost: 192.168.231.129:8080\\r\\n..."
 "`` will yield the output:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:727
+#: ../../../admin-guide/plugins/ts_lua.en.rst:766
 msgid "``192.168.231.129``"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:732
+#: ../../../admin-guide/plugins/ts_lua.en.rst:771
 msgid "ts.client_request.set_url_host"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:733
+#: ../../../admin-guide/plugins/ts_lua.en.rst:772
 msgid "**syntax:** *ts.client_request.set_url_host(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:737
+#: ../../../admin-guide/plugins/ts_lua.en.rst:776
 msgid ""
 "**description:** Set ``host`` field of the request url with ``str``. This "
 "function is used to change the address of the origin server, and we should "
 "return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:751
+#: ../../../admin-guide/plugins/ts_lua.en.rst:790
 msgid "remap.config like this:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:757
+#: ../../../admin-guide/plugins/ts_lua.en.rst:796
 msgid "Then server request will connect to ``192.168.231.130:80``"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:762
+#: ../../../admin-guide/plugins/ts_lua.en.rst:801
 msgid "ts.client_request.get_url_port"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:763
+#: ../../../admin-guide/plugins/ts_lua.en.rst:802
 msgid "**syntax:** *port = ts.client_request.get_url_port()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:767
+#: ../../../admin-guide/plugins/ts_lua.en.rst:806
 msgid ""
 "**description:** Returns the ``port`` field of the request url as a Lua "
 "number."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:778
+#: ../../../admin-guide/plugins/ts_lua.en.rst:817
 msgid ""
 "Then Then ``GET /liuyurou.txt HTTP/1.1\\r\\nHost: 192.168.231.129:8080\\r"
 "\\n...`` will yield the output:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:780
+#: ../../../admin-guide/plugins/ts_lua.en.rst:819
 msgid "``8080``"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:786
+#: ../../../admin-guide/plugins/ts_lua.en.rst:825
 msgid "ts.client_request.set_url_port"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:787
+#: ../../../admin-guide/plugins/ts_lua.en.rst:826
 msgid "**syntax:** *ts.client_request.set_url_port(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:791
+#: ../../../admin-guide/plugins/ts_lua.en.rst:830
 msgid ""
 "**description:** Set ``port`` field of the request url with ``NUMBER``. "
 "This function is used to change the address of the origin server, and we "
 "should return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:798
+#: ../../../admin-guide/plugins/ts_lua.en.rst:837
 msgid "ts.client_request.get_url_scheme"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:799
+#: ../../../admin-guide/plugins/ts_lua.en.rst:838
 msgid "**syntax:** *scheme = ts.client_request.get_url_scheme()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:803
+#: ../../../admin-guide/plugins/ts_lua.en.rst:842
 msgid "**description:** Return the ``scheme`` field of the request url."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:816
+#: ../../../admin-guide/plugins/ts_lua.en.rst:855
 msgid "``http``"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:822
+#: ../../../admin-guide/plugins/ts_lua.en.rst:861
 msgid "ts.client_request.set_url_scheme"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:823
+#: ../../../admin-guide/plugins/ts_lua.en.rst:862
 msgid "**syntax:** *ts.client_request.set_url_scheme(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:827
+#: ../../../admin-guide/plugins/ts_lua.en.rst:866
 msgid ""
 "**description:** Set ``scheme`` field of the request url with ``str``. This "
 "function is used to change the scheme of the server request, and we should "
 "return TS_LUA_REMAP_DID_REMAP(_STOP) in do_remap."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:834
+#: ../../../admin-guide/plugins/ts_lua.en.rst:873
 msgid "ts.http.set_cache_url"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:835
+#: ../../../admin-guide/plugins/ts_lua.en.rst:874
 msgid "**syntax:** *ts.http.set_cache_url(KEY_URL)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:839
+#: ../../../admin-guide/plugins/ts_lua.en.rst:878
 msgid ""
 "**description:** This function can be used to modify the cache key for the "
 "client request."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:853
+#: ../../../admin-guide/plugins/ts_lua.en.rst:892
 msgid "ts.http.get_cache_lookup_url"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:854
+#: ../../../admin-guide/plugins/ts_lua.en.rst:893
 msgid "**syntax:** *ts.http.get_cache_lookup_url()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:856
-#: ../../../admin-guide/plugins/ts_lua.en.rst:881
+#: ../../../admin-guide/plugins/ts_lua.en.rst:895
+#: ../../../admin-guide/plugins/ts_lua.en.rst:920
 msgid "**context:** do_global_cache_lookup_complete"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:858
+#: ../../../admin-guide/plugins/ts_lua.en.rst:897
 msgid ""
 "**description:** This function can be used to get the cache lookup url for "
 "the client request."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:878
+#: ../../../admin-guide/plugins/ts_lua.en.rst:917
 msgid "ts.http.set_cache_lookup_url"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:879
+#: ../../../admin-guide/plugins/ts_lua.en.rst:918
 msgid "**syntax:** *ts.http.set_cache_lookup_url()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:883
+#: ../../../admin-guide/plugins/ts_lua.en.rst:922
 msgid ""
 "**description:** This function can be used to set the cache lookup url for "
 "the client request."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:888
+#: ../../../admin-guide/plugins/ts_lua.en.rst:927
 msgid "ts.http.set_server_resp_no_store"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:889
+#: ../../../admin-guide/plugins/ts_lua.en.rst:928
 msgid "**syntax:** *ts.http.set_server_resp_no_store(status)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:891
+#: ../../../admin-guide/plugins/ts_lua.en.rst:930
 msgid "**context:** do_global_read_response"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:893
+#: ../../../admin-guide/plugins/ts_lua.en.rst:932
 msgid ""
 "**description:** This function can be used to signal ATS to not store the "
 "response in cache"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:907
+#: ../../../admin-guide/plugins/ts_lua.en.rst:946
 msgid "ts.http.set_resp"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:908
+#: ../../../admin-guide/plugins/ts_lua.en.rst:947
 msgid "**syntax:** *ts.http.set_resp(CODE, BODY)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:912
+#: ../../../admin-guide/plugins/ts_lua.en.rst:951
 msgid ""
 "**description:** This function can be used to set response for the client "
 "with the CODE status and BODY string."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:923
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1701
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2372
+#: ../../../admin-guide/plugins/ts_lua.en.rst:962
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1784
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2455
 msgid "We will get the response like this:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:942
+#: ../../../admin-guide/plugins/ts_lua.en.rst:981
 msgid "ts.http.get_cache_lookup_status"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:943
+#: ../../../admin-guide/plugins/ts_lua.en.rst:982
 msgid "**syntax:** *ts.http.get_cache_lookup_status()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:945
+#: ../../../admin-guide/plugins/ts_lua.en.rst:984
 msgid "**context:** function @ TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:947
+#: ../../../admin-guide/plugins/ts_lua.en.rst:986
 msgid "**description:** This function can be used to get cache lookup status."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:971
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1010
 msgid "ts.http.set_cache_lookup_status"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:972
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1011
 msgid "**syntax:** *ts.http.set_cache_lookup_status()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:974
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1013
 msgid ""
 "**context:** function after TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:976
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1015
 msgid "**description:** This function can be used to set cache lookup status."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1001
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1040
 msgid "Http cache lookup status constants"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1015
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1054
 msgid "ts.cached_response.get_status"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1016
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1055
 msgid "**syntax:** *status = ts.cached_response.get_status()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1018
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1046
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1061
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1089
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1057
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1085
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1100
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1128
 msgid ""
 "**context:** function @ TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE hook point or "
 "later"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1020
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1059
 msgid ""
 "**description:** This function can be used to retrieve the status code of "
 "the cached response. A Lua number will be returned."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1043
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1082
 msgid "ts.cached_response.get_version"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1044
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1083
 msgid "**syntax:** *ver = ts.cached_response.get_version()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1048
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1087
 msgid ""
 "**description:** Return the http version string of the cached response."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1056
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1095
 msgid "ts.cached_response.header.HEADER"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1057
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1096
 msgid "**syntax:** *VALUE = ts.cached_response.header.HEADER*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1059
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1098
 msgid "**syntax:** *VALUE = ts.cached_response.header[HEADER]*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1063
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1102
 msgid "**description:** get the current cached response's HEADER."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1086
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1125
 msgid "ts.cached_response.get_headers"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1087
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1126
 msgid "**syntax:** *ts.cached_response.get_headers()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1091
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1130
 msgid ""
 "**description:** Returns a Lua table holding all the headers for the "
 "current cached response."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1112
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1273
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1473
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1504
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1624
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1655
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1151
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1356
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1556
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1587
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1707
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1738
 msgid "We will get the output:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1130
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1169
 msgid "ts.server_request.get_uri"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1131
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1170
 msgid "**syntax:** *ts.server_request.get_uri()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1133
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1175
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1223
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1253
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1172
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1214
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1258
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1306
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1336
 msgid ""
 "**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1135
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1174
 msgid ""
 "**description:** This function can be used to retrieve the server request's "
 "path."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1151
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1190
 msgid "Then ``GET /am.txt?a=1`` will yield the output:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1153
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1192
 msgid "``/am.txt``"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1159
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1198
 msgid "ts.server_request.set_uri"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1160
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1199
 msgid "**syntax:** *ts.server_request.set_uri(PATH)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1162
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1204
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1201
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1243
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1287
 msgid "**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1164
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1203
 msgid ""
 "**description:** This function can be used to override the server request's "
 "path."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1172
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1211
 msgid "ts.server_request.get_uri_args"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1173
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1212
 msgid "**syntax:** *ts.server_request.get_uri_args()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1177
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1216
 msgid ""
 "**description:** This function can be used to retrieve the server request's "
 "query string."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1201
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1240
 msgid "ts.server_request.set_uri_args"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1202
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1241
 msgid "**syntax:** *ts.server_request.set_uri_args(QUERY_STRING)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1206
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1245
 msgid ""
 "**description:** This function can be used to override the server request's "
 "query string."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1216
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1255
+msgid "ts.server_request.get_uri_params"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1256
+msgid "**syntax:** *ts.server_request.get_uri_params()*"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1260
+msgid ""
+"**description:** This function can be used to retrieve the server request's "
+"parameter string."
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1284
+msgid "ts.server_request.set_uri_params"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1285
+msgid "**syntax:** *ts.server_request.set_uri_params(PARAMETER_STRING)*"
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1289
+msgid ""
+"**description:** This function can be used to override the server request's "
+"parameter string."
+msgstr ""
+
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1299
 msgid "ts.server_request.header.HEADER"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1217
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1300
 msgid "**syntax:** *ts.server_request.header.HEADER = VALUE*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1219
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1302
 msgid "**syntax:** *ts.server_request.header[HEADER] = VALUE*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1221
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1304
 msgid "**syntax:** *VALUE = ts.server_request.header.HEADER*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1225
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1308
 msgid ""
 "**description:** Set, add to, clear or get the current server request's "
 "HEADER."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1250
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1333
 msgid "ts.server_request.get_headers"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1251
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1334
 msgid "**syntax:** *ts.server_request.get_headers()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1255
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1338
 msgid ""
 "**description:** Returns a Lua table holding all the headers for the "
 "current server request."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1285
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1368
 msgid "ts.server_request.server_addr.get_addr"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1286
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1369
 msgid "**syntax:** *ts.server_request.server_addr.get_addr()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1290
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1373
 msgid ""
 "**description**: This function can be used to get socket address of the "
 "origin server."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1292
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1375
 msgid ""
 "The ts.server_request.server_addr.get_addr function returns three values, "
 "ip is a string, port and family is number."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1308
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1391
 msgid "ts.server_request.server_addr.get_ip"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1309
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1392
 msgid "**syntax:** *ts.server_request.server_addr.get_ip()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1313
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1396
 msgid ""
 "**description**: This function can be used to get ip address of the origin "
 "server."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1315
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1398
 msgid ""
 "The ts.server_request.server_addr.get_ip function returns ip as a string."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1329
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1412
 msgid "ts.server_request.server_addr.get_port"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1330
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1413
 msgid "**syntax:** *ts.server_request.server_addr.get_port()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1334
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1417
 msgid ""
 "**description**: This function can be used to get port of the origin server."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1336
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1419
 msgid ""
 "The ts.server_request.server_addr.get_port function returns port as number."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1350
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1433
 msgid "ts.server_request.server_addr.get_outgoing_port"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1351
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1434
 msgid "**syntax:** *ts.server_request.server_addr.get_outgoing_port()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1355
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1438
 msgid ""
 "**description**: This function can be used to get outgoing port to the "
 "origin server."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1357
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1440
 msgid ""
 "The ts.server_request.server_addr.get_outgoing_port function returns "
 "outgoing port as number."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1371
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1454
 msgid "ts.server_response.get_status"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1372
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1455
 msgid "**syntax:** *status = ts.server_response.get_status()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1374
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1484
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1457
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1567
 msgid ""
 "**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1376
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1459
 msgid ""
 "**description:** This function can be used to retrieve the status code of "
 "the origin server's response. A Lua number will be returned."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1394
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1418
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1478
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1477
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1501
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1561
 msgid "`TOP <#ts-lua-plugin>`_'"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1397
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1480
 msgid "ts.server_response.set_status"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1398
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1481
 msgid "**syntax:** *ts.server_response.set_status(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1400
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1436
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1483
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1519
 msgid "**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1402
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1485
 msgid ""
 "**description:** This function can be used to set the status code of the "
 "origin server's response."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1421
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1504
 msgid "ts.server_response.get_version"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1422
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1505
 msgid "**syntax:** *ver = ts.server_response.get_version()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1424
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1454
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1507
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1537
 msgid ""
 "**context:** function @ TS_LUA_HOOK_READ_RESPONSE_HDR hook point or later."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1426
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1509
 msgid ""
 "**description:** Return the http version string of the server response."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1433
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1516
 msgid "ts.server_response.set_version"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1434
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1517
 msgid "**syntax:** *ts.server_response.set_version(VERSION_STR)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1438
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1521
 msgid ""
 "**description:** Set the http version of the server response with the "
 "VERSION_STR"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1447
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1530
 msgid "ts.server_response.header.HEADER"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1448
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1531
 msgid "**syntax:** *ts.server_response.header.HEADER = VALUE*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1450
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1533
 msgid "**syntax:** *ts.server_response.header[HEADER] = VALUE*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1452
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1535
 msgid "**syntax:** *VALUE = ts.server_response.header.HEADER*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1456
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1539
 msgid ""
 "**description:** Set, add to, clear or get the current server response's "
 "HEADER."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1475
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1626
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1558
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1709
 msgid "``text/html``"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1481
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1564
 msgid "ts.server_response.get_headers"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1482
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1565
 msgid "**syntax:** *ts.server_response.get_headers()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1486
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1569
 msgid ""
 "**description:** Returns a Lua table holding all the headers for the "
 "current server response."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1522
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1605
 msgid "ts.client_response.get_status"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1523
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1606
 msgid "**syntax:** *status = ts.client_response.get_status()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1525
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1551
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1587
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1608
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1634
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1670
 msgid "**context:** function @ TS_LUA_HOOK_SEND_RESPONSE_HDR hook point"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1527
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1610
 msgid ""
 "**description:** This function can be used to retrieve the status code of "
 "the response to the client. A Lua number will be returned."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1548
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1631
 msgid "ts.client_response.set_status"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1549
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1632
 msgid "**syntax:** *ts.client_response.set_status(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1553
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1636
 msgid ""
 "**description:** This function can be used to set the status code of the "
 "response to the client."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1572
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1655
 msgid "ts.client_response.get_version"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1573
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1656
 msgid "**syntax:** *ver = ts.client_response.get_version()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1575
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1605
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1635
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1676
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1658
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1688
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1718
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1759
 msgid "**context:** function @ TS_LUA_HOOK_SEND_RESPONSE_HDR hook point."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1577
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1660
 msgid ""
 "**description:** Return the http version string of the response to the "
 "client."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1584
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1667
 msgid "ts.client_response.set_version"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1585
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1668
 msgid "**syntax:** *ts.client_response.set_version(VERSION_STR)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1589
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1672
 msgid ""
 "**description:** Set the http version of the response to the client with "
 "the VERSION_STR"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1598
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1681
 msgid "ts.client_response.header.HEADER"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1599
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1682
 msgid "**syntax:** *ts.client_response.header.HEADER = VALUE*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1601
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1684
 msgid "**syntax:** *ts.client_response.header[HEADER] = VALUE*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1603
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1686
 msgid "**syntax:** *VALUE = ts.client_response.header.HEADER*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1607
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1690
 msgid ""
 "**description:** Set, add to, clear or get the current client response's "
 "HEADER."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1632
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1715
 msgid "ts.client_response.get_headers"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1633
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1716
 msgid "**syntax:** *ts.client_response.get_headers()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1637
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1720
 msgid ""
 "**description:** Returns a Lua table holding all the headers for the "
 "current client response."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1673
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1756
 msgid "ts.client_response.set_error_resp"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1674
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1757
 msgid "**syntax:** *ts.client_response.set_error_resp(CODE, BODY)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1678
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1761
 msgid ""
 "**description:** This function can be used to set the error response to the "
 "client."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1680
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1763
 msgid ""
 "With this function we can jump to send error response to the client if "
 "exception exists, meanwhile we should return `-1` from the function where "
 "exception raises."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1717
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1800
 msgid "Number constants"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1725
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1808
 msgid "These constants are usually used in transform handler."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1730
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1813
 msgid "ts.http.resp_cache_transformed"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1731
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1814
 msgid "**syntax:** *ts.http.resp_cache_transformed(BOOL)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1735
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1818
 msgid ""
 "**description**: This function can be used to tell trafficserver whether to "
 "cache the transformed data."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1751
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1778
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1834
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1861
 msgid ""
 "This function is usually called after we hook TS_LUA_RESPONSE_TRANSFORM."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1757
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1840
 msgid "ts.http.resp_cache_untransformed"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1758
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1841
 msgid "**syntax:** *ts.http.resp_cache_untransformed(BOOL)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1762
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1845
 msgid ""
 "**description**: This function can be used to tell trafficserver whether to "
 "cache the untransformed data."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1784
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1867
 msgid "ts.http.resp_transform.get_upstream_bytes"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1785
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1868
 msgid "**syntax:** *ts.http.resp_transform.get_upstream_bytes()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1787
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1828
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1870
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1911
 msgid "**context:** transform handler"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1789
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1872
 msgid ""
 "**description**: This function can be used to retrive the total bytes to be "
 "received from the upstream. If we got chunked response body from origin "
 "server, TS_LUA_INT64_MAX will be returned."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1825
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1908
 msgid "ts.http.resp_transform.set_downstream_bytes"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1826
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1909
 msgid "**syntax:** *ts.http.resp_transform.set_downstream_bytes(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1830
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1913
 msgid ""
 "**description**: This function can be used to set the total bytes to be "
 "sent to the downstream."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1832
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1915
 msgid ""
 "Sometimes we want to set Content-Length header in client_response, and this "
 "function should be called before any real data is returned from the "
 "transform handler."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1839
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1922
 msgid "ts.http.skip_remapping_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1840
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1923
 msgid "**syntax:** *ts.http.skip_remapping_set(BOOL)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1842
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1925
 msgid "**context:** do_global_read_request"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1844
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1927
 msgid ""
 "**description**: This function can be used to tell trafficserver to skip "
 "doing remapping"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1856
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1939
 msgid "This function is usually called in do_global_read_request function"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1861
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1944
 msgid "ts.http.is_internal_request"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1862
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1945
 msgid "**syntax:** *ts.http.is_internal_request()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1866
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1949
 msgid ""
 "**description:** This function can be used to tell is a request is internal "
 "or not"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1881
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1964
 msgid "ts.http.transaction_count"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1882
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1965
 msgid "**syntax:** *ts.http.transaction_count()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1886
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1969
 msgid ""
 "**description:** This function returns the number of transaction in this "
 "connection"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1901
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1984
 msgid "ts.add_package_path"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1902
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1985
 msgid "**syntax:** *ts.add_package_path(lua-style-path-str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1904
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1927
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1987
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2010
 msgid "**context:** init stage of the lua script"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1906
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1989
 msgid "**description:** Adds the Lua module search path used by scripts."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1908
+#: ../../../admin-guide/plugins/ts_lua.en.rst:1991
 msgid "The path string is in standard Lua path form."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1924
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2007
 msgid "ts.add_package_cpath"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1925
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2008
 msgid "**syntax:** *ts.add_package_cpath(lua-style-cpath-str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1929
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2012
 msgid "**description:** Adds the Lua C-module search path used by scripts."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1931
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2014
 msgid "The cpath string is in standard Lua cpath form."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1949
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2032
 msgid "ts.md5"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1950
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2033
 msgid "**syntax:** *digest = ts.md5(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1954
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2037
 msgid ""
 "**description:** Returns the hexadecimal representation of the MD5 digest "
 "of the ``str`` argument."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1970
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2053
 msgid "ts.md5_bin"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1971
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2054
 msgid "**syntax:** *digest = ts.md5_bin(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1975
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2058
 msgid ""
 "**description:** Returns the binary form of the MD5 digest of the ``str`` "
 "argument."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1990
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2073
 msgid "ts.sha1"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1991
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2074
 msgid "**syntax:** *digest = ts.sha1(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:1995
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2078
 msgid ""
 "**description:** Returns the hexadecimal representation of the SHA-1 digest "
 "of the ``str`` argument."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2011
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2094
 msgid "ts.sha1_bin"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2012
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2095
 msgid "**syntax:** *digest = ts.sha1_bin(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2016
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2099
 msgid ""
 "**description:** Returns the binary form of the SHA-1 digest of the ``str`` "
 "argument."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2031
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2114
 msgid "ts.base64_encode"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2032
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2115
 msgid "**syntax:** *value = ts.base64_encode(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2036
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2119
 msgid "**description:** Returns the base64 encoding of the ``str`` argument."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2051
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2134
 msgid "ts.base64_decode"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2052
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2135
 msgid "**syntax:** *value = ts.base64_decode(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2056
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2139
 msgid "**description:** Returns the base64 decoding of the ``str`` argument."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2072
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2155
 msgid "ts.escape_uri"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2073
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2156
 msgid "**syntax:** *value = ts.escape_uri(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2077
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2160
 msgid ""
 "**description:** Returns the uri-escaped value of the ``str`` argument."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2091
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2174
 msgid "ts.unescape_uri"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2092
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2175
 msgid "**syntax:** *value = ts.unescape_uri(str)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2096
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2179
 msgid ""
 "**description:** Returns the uri-unescaped value of the ``str`` argument."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2112
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2195
 msgid "ts.fetch"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2113
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2196
 msgid "**syntax:** *res = ts.fetch(url, table?)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2115
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2170
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2198
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2253
 msgid "**context:** after do_remap"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2117
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2200
 msgid ""
 "**description:** Issues a synchronous but still non-block http request with "
 "the ``url`` and the optional ``table``."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2119
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2202
 msgid ""
 "Returns a Lua table with serveral slots (res.status, res.header, res.body, "
 "and res.truncated)."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2121
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2204
 msgid "``res.status`` holds the response status code."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2123
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2206
 msgid "``res.header`` holds the response header table."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2125
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2208
 msgid ""
 "``res.body`` holds the response body which may be truncated, you need to "
 "check res.truncated to see if the data is truncated."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2128
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2211
 msgid "Here is a basic example:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2150
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2233
 msgid "We can set the optional table with serveral members:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2152
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2235
 msgid "``header`` holds the request header table."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2154
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2237
 msgid "``method`` holds the request method. The default method is 'GET'."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2156
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2239
 msgid ""
 "``cliaddr`` holds the request client address in ip:port form. The default "
 "cliaddr is '127.0.0.1:33333'"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2158
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2241
 msgid "Issuing a post request:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2167
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2250
 msgid "ts.fetch_multi"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2168
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2251
 msgid ""
 "**syntax:** *vec = ts.fetch_multi({{url, table?}, {url, table?}, ...})*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2172
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2255
 msgid ""
 "Just like `ts.fetch`, but supports multiple http requests running in "
 "parallel."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2174
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2257
 msgid ""
 "This function will fetch all the urls specified by the input table and "
 "return a table which contain all the results in the same order."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2196
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2279
 msgid "ts.http.intercept"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2197
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2280
 msgid "**syntax:** *ts.http.intercept(FUNCTION, param1?, param2?, ...)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2201
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2284
 msgid ""
 "**description:** Intercepts the client request and processes it in FUNCTION "
 "with optional params."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2203
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2286
 msgid ""
 "We should construct the response for the client request, and the request "
 "will not be processed by other modules, like hostdb, cache, origin server..."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2206
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2289
 msgid ""
 "Intercept FUNCTION will be executed in a new lua_thread, so we can delivery "
 "optional params from old lua_thread to new lua_thread if needed."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2235
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2318
 msgid "Then we will get the response like this:"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2256
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2339
 msgid "ts.http.server_intercept"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2257
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2340
 msgid ""
 "**syntax:** *ts.http.server_intercept(FUNCTION, param1?, param2?, ...)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2261
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2344
 msgid ""
 "**description:** Intercepts the server request and acts as the origin "
 "server."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2263
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2346
 msgid ""
 "Just like ts.http.intercept, but this function will intercept the server "
 "request, and we can acts as the origin server in `FUNCTION`."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2322
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2405
 msgid "ts.say"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2323
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2406
 msgid "**syntax:** *ts.say(data)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2325
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2336
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2408
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2419
 msgid "**context:** *intercept or server_intercept*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2327
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2410
 msgid ""
 "**description:** Write response to ATS within intercept or server_intercept."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2333
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2416
 msgid "ts.flush"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2334
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2417
 msgid "**syntax:** *ts.flush()*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2338
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2421
 msgid ""
 "**description:** Flushes the output to ATS within intercept or "
 "server_intercept."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2340
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2423
 msgid ""
 "In synchronous mode, the function will not return until all output data has "
 "been written into the system send buffer. Note that using the Lua coroutine "
@@ -2264,317 +2340,317 @@ msgid ""
 "in the synchronous mode."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2396
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2479
 msgid "ts.sleep"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2397
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2480
 msgid "**syntax:** *ts.sleep(sec)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2399
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2428
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2482
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2511
 msgid "**context:** *after do_remap*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2401
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2484
 msgid "**description:** Sleeps for the specified seconds without blocking."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2403
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2432
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2486
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2515
 msgid "Behind the scene, this method makes use of the ATS event model."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2425
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2508
 msgid "ts.schedule"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2426
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2509
 msgid ""
 "**syntax:** *ts.schedule(THREAD_TYPE, sec, FUNCTION, param1?, param2?, ...)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2430
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2513
 msgid ""
 "**description:** Schedule function to be run after specified seconds "
 "without blocking."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2455
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2538
 msgid "ts.http.config_int_get"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2456
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2539
 msgid "**syntax:** *val = ts.http.config_int_get(CONFIG)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2458
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2473
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2493
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2504
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2515
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2526
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2639
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2673
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2692
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2703
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2714
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2725
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2736
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2747
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2767
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2787
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2802
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2836
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2884
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2898
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2908
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2918
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2541
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2556
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2576
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2587
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2598
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2609
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2722
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2756
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2775
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2786
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2797
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2808
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2819
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2830
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2850
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2870
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2885
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2919
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2967
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2981
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2991
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3001
 msgid "**context:** do_remap or do_global_* or later."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2460
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2543
 msgid ""
 "**description:** Configuration option which has a int value can be "
 "retrieved with this function."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2470
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2553
 msgid "ts.http.config_int_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2471
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2554
 msgid "**syntax:** *ts.http.config_int_set(CONFIG, NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2475
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2506
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2528
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2558
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2589
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2611
 msgid ""
 "**description:** This function can be used to overwrite the configuration "
 "options."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2490
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2573
 msgid "ts.http.config_float_get"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2491
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2574
 msgid "**syntax:** *val = ts.http.config_float_get(CONFIG)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2495
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2578
 msgid ""
 "**description:** Configuration option which has a float value can be "
 "retrieved with this function."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2501
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2584
 msgid "ts.http.config_float_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2502
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2585
 msgid "**syntax:** *ts.http.config_float_set(CONFIG, NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2512
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2595
 msgid "ts.http.config_string_get"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2513
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2596
 msgid "**syntax:** *val = ts.http.config_string_get(CONFIG)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2517
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2600
 msgid ""
 "**description:** Configuration option which has a string value can be "
 "retrieved with this function."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2523
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2606
 msgid "ts.http.config_string_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2524
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2607
 msgid "**syntax:** *ts.http.config_string_set(CONFIG, NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2534
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2617
 msgid "Http config constants"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2636
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2719
 msgid "ts.http.timeout_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2637
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2720
 msgid "**syntax:** *ts.http.timeout_set(CONFIG, NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2641
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2724
 msgid ""
 "**description:** This function can be used to overwrite the timeout "
 "settings."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2656
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2739
 msgid "Timeout constants"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2670
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2753
 msgid "ts.http.client_packet_mark_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2671
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2754
 msgid "**syntax:** *ts.http.client_packet_mark_set(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2675
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2758
 msgid ""
 "**description:** This function can be used to set packet mark for client "
 "connection."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2689
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2772
 msgid "ts.http.server_packet_mark_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2690
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2773
 msgid "**syntax:** *ts.http.server_packet_mark_set(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2694
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2777
 msgid ""
 "**description:** This function can be used to set packet mark for server "
 "connection."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2700
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2783
 msgid "ts.http.client_packet_tos_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2701
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2784
 msgid "**syntax:** *ts.http.client_packet_tos_set(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2705
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2788
 msgid ""
 "**description:** This function can be used to set packet tos for client "
 "connection."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2711
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2794
 msgid "ts.http.server_packet_tos_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2712
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2795
 msgid "**syntax:** *ts.http.server_packet_tos_set(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2716
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2799
 msgid ""
 "**description:** This function can be used to set packet tos for server "
 "connection."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2722
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2805
 msgid "ts.http.client_packet_dscp_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2723
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2806
 msgid "**syntax:** *ts.http.client_packet_dscp_set(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2727
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2810
 msgid ""
 "**description:** This function can be used to set packet dscp for client "
 "connection."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2733
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2816
 msgid "ts.http.server_packet_dscp_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2734
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2817
 msgid "**syntax:** *ts.http.server_packet_dscp_set(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2738
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2821
 msgid ""
 "**description:** This function can be used to set packet dscp for server "
 "connection."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2744
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2827
 msgid "ts.http.enable_redirect"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2745
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2828
 msgid "**syntax:** *ts.http.enable_redirect(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2749
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2832
 msgid ""
 "**decription:** This function can be used to make transaction follow "
 "redirect"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2764
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2847
 msgid "ts.http.set_debug"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2765
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2848
 msgid "**syntax:** *ts.http.set_debug(NUMBER)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2769
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2852
 msgid ""
 "**decription:** This function can be used to enable debug log for the "
 "transaction"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2784
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2867
 msgid "ts.http.cntl_get"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2785
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2868
 msgid "**syntax:** *val = ts.http.cntl_get(CNTL_TYPE)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2789
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2872
 msgid ""
 "**description:** This function can be used to retireve the value of control "
 "channel."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2799
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2882
 msgid "ts.http.cntl_set"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2800
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2883
 msgid "**syntax:** *ts.http.cntl_set(CNTL_TYPE, BOOL)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2804
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2887
 msgid ""
 "**description:** This function can be used to set the value of control "
 "channel."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2819
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2902
 msgid "Http control channel constants"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2833
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2916
 msgid "ts.http.milestone_get"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2834
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2917
 msgid "**syntax:** *val = ts.http.milestone_get(MILESTONE_TYPE)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2838
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2921
 msgid ""
 "**description:** This function can be used to retireve the various "
 "milestone times. They are how long the transaction took to traverse "
@@ -2582,77 +2658,77 @@ msgid ""
 "number of seconds since the beginning of the transaction."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2849
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2932
 msgid "Milestone constants"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2881
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2964
 msgid "ts.mgmt.get_counter"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2882
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2965
 msgid "**syntax:** *val = ts.mgmt.get_counter(RECORD_NAME)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2886
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2969
 msgid ""
 "**description:** This function can be used to retrieve the record value "
 "which has a counter type."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2895
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2978
 msgid "ts.mgmt.get_int"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2896
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2979
 msgid "**syntax:** *val = ts.mgmt.get_int(RECORD_NAME)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2900
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2983
 msgid ""
 "**description:** This function can be used to retrieve the record value "
 "which has a int type."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2905
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2988
 msgid "ts.mgmt.get_float"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2906
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2989
 msgid "**syntax:** *val = ts.mgmt.get_float(RECORD_NAME)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2910
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2993
 msgid ""
 "**description:** This function can be used to retrieve the record value "
 "which has a float type."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2915
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2998
 msgid "ts.mgmt.get_string"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2916
+#: ../../../admin-guide/plugins/ts_lua.en.rst:2999
 msgid "**syntax:** *val = ts.mgmt.get_string(RECORD_NAME)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2920
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3003
 msgid ""
 "**description:** This function can be used to retrieve the record value "
 "which has a string type."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2929
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3012
 msgid "ts.stat_create"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2930
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3013
 msgid ""
 "**syntax:** *val = ts.stat_create(STAT_NAME, RECORDDATA_TYPE, PERSISTENT, "
 "SYNC)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2934
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3017
 msgid ""
 "**description:** This function can be used to create a statistics record "
 "given the name, data type, persistent requirement, and sync requirement. A "
@@ -2660,19 +2736,19 @@ msgid ""
 "decrement, get and set the value."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2945
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3028
 msgid "Here is an example."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2968
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3051
 msgid "ts.stat_find"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2969
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3052
 msgid "**syntax:** *val = ts.stat_create(STAT_NAME)*"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2973
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3056
 msgid ""
 "**description:** This function can be used to find a statistics record "
 "given the name. A statistics record table will be returned with 4 functions "
@@ -2680,19 +2756,19 @@ msgid ""
 "stat_create()"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2979
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3062
 msgid "Todo"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2980
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3063
 msgid "ts.cache_xxx"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2981
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3064
 msgid "protocol"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2983
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3066
 msgid ""
 "Currently when we use ts_lua as a global plugin, each global hook is using "
 "a separate lua state for the same transaction. This can be wasteful. Also "
@@ -2705,84 +2781,74 @@ msgid ""
 "lua state in the ATS core."
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2993
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3076
 msgid "Notes on Unit Testing Lua scripts for ATS Lua Plugin"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2994
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3078
 msgid ""
 "Follow the steps below to use busted framework to run some unit tests on "
 "sample scripts and modules"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2996
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3080
 msgid ""
 "Build and install lua 5.1.5 using the source code from here - http://www."
 "lua.org/ftp/lua-5.1.tar.gz"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:2998
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3082
 msgid ""
 "Build and install luarocks 2.2.2 from here - https://github.com/"
 "keplerproject/luarocks/wiki/Download"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3000
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3084
 msgid "Run \"sudo luarocks install busted\""
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3002
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3086
 msgid "Run \"sudo luarocks install luacov\""
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3004
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3088
 msgid "\"cd trafficserver/plugins/experimental/ts_lua/ci\""
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3006
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3090
 msgid ""
 "Run \"busted -c module_test.lua; luacov\". It will produce \"luacov.report."
-"out\" containing the code coverage for"
+"out\" containing the code coverage for \"module.lua\""
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3007
-msgid "\"module.lua\""
-msgstr ""
-
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3009
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3092
 msgid ""
 "Run \"busted -c script_test.lua; luacov\". It will produce \"luacov.report."
-"out\" containing the code coverage for"
+"out\" containing the code coverage for \"script.lua\""
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3010
-msgid "\"script.lua\""
-msgstr ""
-
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3012
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3094
 msgid "Reference for further information"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3014
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3096
 msgid "Busted - http://olivinelabs.com/busted/"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3016
-msgid "Specifications for asserts/mocks/stubs/etc inside busted framework -"
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3098
+msgid ""
+"Specifications for asserts/mocks/stubs/etc inside busted framework: https://"
+"github.com/Olivine-Labs/luassert/tree/master/spec"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3017
-msgid "https://github.com/Olivine-Labs/luassert/tree/master/spec"
-msgstr ""
-
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3019
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3101
 msgid "luacov - https://luarocks.org/modules/hisham/luacov"
 msgstr ""
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3024
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3106
 msgid "More docs"
 msgstr "参考文献"
 
-#: ../../../admin-guide/plugins/ts_lua.en.rst:3026
+#: ../../../admin-guide/plugins/ts_lua.en.rst:3108
 msgid "https://github.com/portl4t/ts-lua"
 msgstr ""

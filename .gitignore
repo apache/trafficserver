@@ -38,6 +38,7 @@ config.nice
 config.h
 
 doc/_build/html/api/
+doc/_build/locale/
 doc/docbuild/
 doc/locale/pot
 doc/xml/

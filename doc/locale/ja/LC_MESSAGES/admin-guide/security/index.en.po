@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,6 +39,7 @@ msgid ""
 msgstr ""
 
 #: ../../../admin-guide/security/index.en.rst:39
+#: ../../../admin-guide/security/index.en.rst:333
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the "
 "configuration changes."
@@ -366,17 +367,17 @@ msgid ""
 "key."
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:261
+#: ../../../admin-guide/security/index.en.rst:263
 msgid "OCSP Stapling"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:263
+#: ../../../admin-guide/security/index.en.rst:265
 msgid ""
 "OCSP Stapling is an alternative approach to checking the revocation status "
 "of an SSL certificate using the Online Certificate Status Protocol."
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:267
+#: ../../../admin-guide/security/index.en.rst:269
 msgid ""
 "Under the original OCSP implementation, clients requested a certificate's "
 "revocation status directly from the Certificate Authority (CA) that issued "
@@ -385,7 +386,7 @@ msgid ""
 "certificate in real time."
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:274
+#: ../../../admin-guide/security/index.en.rst:276
 msgid ""
 "Enabling OCSP Stapling instructs Traffic Server to retrieve and cache the "
 "revocation status of all configured SSL certificates, and present them to "
@@ -397,44 +398,44 @@ msgid ""
 "certificate. For example::"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:286
+#: ../../../admin-guide/security/index.en.rst:288
 msgid ""
 "Support for OCSP Stapling can be tested using the -status option of the "
 "OpenSSL client::"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:297
+#: ../../../admin-guide/security/index.en.rst:299
 msgid ""
 "Details of the OCSP Stapling TLS extension can be found in :rfc:`6961`."
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:299
+#: ../../../admin-guide/security/index.en.rst:301
 msgid ""
 "To configure Traffic Server to use OCSP Stapling, edit the following "
 "variables in :file:`records.config` file:"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:302
+#: ../../../admin-guide/security/index.en.rst:304
 msgid ":ts:cv:`proxy.config.ssl.ocsp.enabled`"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:303
+#: ../../../admin-guide/security/index.en.rst:305
 msgid ":ts:cv:`proxy.config.ssl.ocsp.cache_timeout`"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:304
+#: ../../../admin-guide/security/index.en.rst:306
 msgid ":ts:cv:`proxy.config.ssl.ocsp.request_timeout`"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:305
+#: ../../../admin-guide/security/index.en.rst:307
 msgid ":ts:cv:`proxy.config.ssl.ocsp.update_period`"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:310
+#: ../../../admin-guide/security/index.en.rst:312
 msgid "Split DNS"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:312
+#: ../../../admin-guide/security/index.en.rst:314
 msgid ""
 "The *Split DNS* option enables you to configure Traffic Server to use "
 "multiple DNS servers, as dictated by your security requirements. For "
@@ -445,25 +446,24 @@ msgid ""
 "sites outside your organization."
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:320
+#: ../../../admin-guide/security/index.en.rst:322
 msgid "To configure Split DNS:"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:322
+#: ../../../admin-guide/security/index.en.rst:324
 msgid ""
 "Specify the rules for performing DNS server selection based on the "
 "destination domain, the destination host, or a URL regular expression. "
 "These rules are located in :file:`splitdns.config`."
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:326
+#: ../../../admin-guide/security/index.en.rst:328
 msgid ""
 "Enable the *Split DNS* option by adjusting :ts:cv:`proxy.config.dns."
 "splitDNS.enabled` in :file:`records.config`. ::"
 msgstr ""
 
-#: ../../../admin-guide/security/index.en.rst:331
-msgid ""
-"Run the command :option:`traffic_line -x` to apply the configuration "
-"changes."
-msgstr ":option:`traffic_line -x` を実行して設定の変更を適用してください。"
+#~ msgid ""
+#~ "Run the command :option:`traffic_line -x` to apply the configuration "
+#~ "changes."
+#~ msgstr ":option:`traffic_line -x` を実行して設定の変更を適用してください。"

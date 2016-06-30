@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Generated-By: Babel 2.2.0\n"
 
 #: ../../../admin-guide/plugins/hipes.en.rst:4
-msgid "HIPES plugin"
+msgid "HIPES Plugin"
 msgstr ""
 
 #: ../../../admin-guide/plugins/hipes.en.rst:24

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,7 +39,7 @@ msgid ""
 "directory located in the directory where you installed |TS|. To change this "
 "location, adjust the value of :ts:cv:`proxy.config.log.logfile_dir` in :"
 "file:`records.config`. You will need to either restart |TS| or run the "
-"command :option:`traffic_line -x` for changes to take effect."
+"command :option:`traffic_ctl config reload` for changes to take effect."
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:39
@@ -58,18 +58,18 @@ msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:48
 msgid ""
-"If the autodelete option (discussed in `Rolling Event Log Files`_) is "
-"*enabled*, then |TS| identifies previously-rolled log files (log files with "
-"the ``.old`` extension). It starts deleting files one by one, beginning "
-"with the oldest file, until it emerges from the low state. |TS| logs a "
-"record of all deleted files in the system error log."
+"If the autodelete option (discussed in `Rolling Logs`_) is enabled, then |"
+"TS| identifies previously-rolled log files (log files with the ``.old`` "
+"extension). It starts deleting files one by one, beginning with the oldest "
+"file, until it emerges from the low state. |TS| logs a record of all "
+"deleted files in the system error log."
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:54
 msgid ""
-"If the autodelete option is *disabled* or there are not enough old log "
-"files to delete for the system to emerge from its low space state, then |"
-"TS| issues a warning and continues logging until space is exhausted. When "
+"If the autodelete option is disabled or there are not enough old log files "
+"to delete for the system to emerge from its low space state, then |TS| "
+"issues a warning and continues logging until space is exhausted. When "
 "available space is consumed, event logging stops. |TS| resumes event "
 "logging when enough space becomes available for it to exit the low space "
 "state. To make space available, either explicitly increase the logging "
@@ -108,9 +108,10 @@ msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:79
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:215
+#, fuzzy
 msgid ""
-"Run the command :option:`traffic_line -x` to apply the configuration "
-"changes."
+"Run the command :option:`traffic_ctl config reload` to apply the "
+"configuration changes."
 msgstr ":option:`traffic_line -x` を実行して設定の変更を適用してください。"
 
 #: ../../../admin-guide/monitoring/logging/managing-logs.en.rst:83
@@ -417,3 +418,8 @@ msgstr ""
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the changes."
 msgstr ":option:`traffic_line -x` を実行して設定の変更を適用してください。"
+
+#~ msgid ""
+#~ "Run the command :option:`traffic_line -x` to apply the configuration "
+#~ "changes."
+#~ msgstr ":option:`traffic_line -x` を実行して設定の変更を適用してください。"

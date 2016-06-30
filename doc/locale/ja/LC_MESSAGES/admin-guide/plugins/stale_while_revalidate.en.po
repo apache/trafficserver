@@ -9,19 +9,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.1.1\n"
+"Generated-By: Babel 2.2.0\n"
 
-#: ../../admin-guide/plugins/stale_while_revalidate.en.rst:4
-msgid "Stale While Revalidate Plugin (undocumented)"
+#: ../../../admin-guide/plugins/stale_while_revalidate.en.rst:4
+msgid "Stale While Revalidate Plugin"
 msgstr ""
 
-#: ../../admin-guide/plugins/stale_while_revalidate.en.rst:23
+#: ../../../admin-guide/plugins/stale_while_revalidate.en.rst:23
 msgid "refresh content asynchronously while serving stale data"
 msgstr ""

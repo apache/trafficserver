@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -223,34 +223,135 @@ msgid ""
 "consistent hash of the url."
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:157
-msgid "``round_robin``"
+#: ../../../admin-guide/files/parent.config.en.rst:151
+msgid "``parent_is_proxy``"
 msgstr ""
 
 #: ../../../admin-guide/files/parent.config.en.rst:144
-#: ../../../admin-guide/files/parent.config.en.rst:162
-#: ../../../admin-guide/files/parent.config.en.rst:171
+#: ../../../admin-guide/files/parent.config.en.rst:196
+#: ../../../admin-guide/files/parent.config.en.rst:214
+#: ../../../admin-guide/files/parent.config.en.rst:223
 msgid "One of the following values:"
 msgstr ""
 
 #: ../../../admin-guide/files/parent.config.en.rst:146
 msgid ""
+"``true`` - This is the default.  The list of parents and secondary parents"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:147
+msgid "are proxy cache servers."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:151
+msgid "``false`` - The list of parents and secondary parents are the origin"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:149
+msgid ""
+"servers ``go_direct`` flag is ignored and origins are selected using the "
+"specified ``round_robin`` algorithm.  The FQDN is removed from the http "
+"request line."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:166
+msgid "``parent_retry``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:156
+msgid ""
+"If ``parent_is_proxy`` is false, then you may configure ``parent_retry`` "
+"for one of the following values:"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:159
+msgid ""
+"``simple_retry`` - If the parent origin server returns a 404 response on a "
+"request a new parent is selected and the request is retried.  The number of "
+"retries is controlled by ``max_simple_retries`` which is set to 1 by "
+"default."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:162
+msgid ""
+"``unavailable_server_retry`` - If the parent returns a 503 response or if "
+"the reponse matches a list of http 5xx responses defined in "
+"``unavailable_server_retry_responses``, the currently selected parent is "
+"marked down and a new parent is selected to retry the request.  The number "
+"of retries is controlled by ``max_unavailable_server_retries`` which is set "
+"to 1 by default."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:166
+msgid ""
+"``both`` - This enables both ``simple_retry`` and "
+"``unavailable_server_retry`` as described above."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:174
+msgid "``unavailable_server_retry_responses``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:171
+msgid ""
+"If ``parent_is_proxy`` is false and ``parent_retry`` is set to either "
+"``unavailable_server_retry`` or ``both``, this parameter is a comma "
+"separated list of http 5xx response codes that will invoke the "
+"``unavailable_server_retry`` described in the ``parent_retry`` section.  By "
+"default, ``unavailable_server_retry_responses`` is set to 503."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:182
+msgid "``max_simple_retries``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:179
+msgid ""
+"By default the value for ``max_simple_retries`` is 1.  It may be set to any "
+"value in the range 1 to 5. If ``parent_is_proxy`` is false and "
+"``parent_retry`` is set to ``simple_retry`` or ``both`` a 404 reponse from "
+"a parent origin server will cause the request to be retried using a new "
+"parent at most 1 to 5 times as configured by ``max_simple_retries``."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:191
+msgid "``max_unavailable_server_retries``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:187
+msgid ""
+"By default the value for ``max_unavailable_server_retries`` is 1.  It may "
+"be set to any value in the range 1 to 5. If ``parent_is_proxy`` is false "
+"and ``parent_retry`` is set to ``unavailable_server_retries`` or ``both`` a "
+"503 reponse by default or any http 5xx response listed in the list "
+"``unavailable_server_retry_responses`` from a parent origin server will "
+"cause the request to be retried using a new parent after first marking the "
+"current parent down.  The request will be retried at most 1 to 5 times as "
+"configured by ``max_unavailable_server_retries``."
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:209
+msgid "``round_robin``"
+msgstr ""
+
+#: ../../../admin-guide/files/parent.config.en.rst:198
+msgid ""
 "``true`` - Traffic Server goes through the parent cache list in a round "
 "robin-based on client IP address."
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:148
+#: ../../../admin-guide/files/parent.config.en.rst:200
 msgid ""
 "``strict`` - Traffic Server machines serve requests strictly in turn. For "
 "example: machine ``proxy1`` serves the first request, ``proxy2`` serves the "
 "second request, and so on."
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:151
+#: ../../../admin-guide/files/parent.config.en.rst:203
 msgid "``false`` - Round robin selection does not occur."
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:152
+#: ../../../admin-guide/files/parent.config.en.rst:204
 msgid ""
 "``consistent_hash`` - consistent hash of the url so that one parent is "
 "chosen for a given url. If a parent is down, the traffic that would go to "
@@ -259,37 +360,37 @@ msgid ""
 "traffic distribution returns to the pre-down state."
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:166
+#: ../../../admin-guide/files/parent.config.en.rst:218
 msgid "``go_direct``"
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:164
+#: ../../../admin-guide/files/parent.config.en.rst:216
 msgid ""
 "``true`` - requests bypass parent hierarchies and go directly to the origin "
 "server."
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:166
+#: ../../../admin-guide/files/parent.config.en.rst:218
 msgid "``false`` - requests do not bypass parent hierarchies."
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:174
+#: ../../../admin-guide/files/parent.config.en.rst:226
 msgid "``qstring``"
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:173
+#: ../../../admin-guide/files/parent.config.en.rst:225
 msgid "``consider`` - Use the query string when finding a parent."
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:174
+#: ../../../admin-guide/files/parent.config.en.rst:226
 msgid "``ignore`` - Do not consider the query string when finding a parent."
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:177
+#: ../../../admin-guide/files/parent.config.en.rst:229
 msgid "Examples"
 msgstr "例"
 
-#: ../../../admin-guide/files/parent.config.en.rst:179
+#: ../../../admin-guide/files/parent.config.en.rst:231
 msgid ""
 "The following rule configures a parent cache hierarchy consisting of "
 "Traffic Server (which is the child) and two parents, ``p1.x.com`` and ``p2."
@@ -297,7 +398,7 @@ msgid ""
 "servers ``p1.x.com`` and ``p2.x.com`` in a round-robin fashion::"
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:190
+#: ../../../admin-guide/files/parent.config.en.rst:242
 msgid ""
 "The following rule configures Traffic Server to route all requests "
 "containing the regular expression ``politics`` and the path ``/viewpoint`` "
@@ -305,7 +406,7 @@ msgid ""
 "``url_regex=politics prefix=/viewpoint go_direct=true``"
 msgstr ""
 
-#: ../../../admin-guide/files/parent.config.en.rst:195
+#: ../../../admin-guide/files/parent.config.en.rst:247
 msgid ""
 "Every line in the :file:`parent.config` file must contain either a "
 "``parent=`` or ``go_direct=`` directive."

@@ -1,0 +1,91 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 7.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/plugins/escalate.en.rst:4
+msgid "Escalate Plugin"
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:23
+msgid ""
+"The Escalate plugin allows Traffic Server to try an alternate origin when "
+"the origin server in the remap rule is either unavailable or returns "
+"specific HTTP error codes. Some services call this failover or fail-action."
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:29
+msgid "Plugin Configuration"
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:31
+msgid ""
+"The escalate plugin is a remap plugin (not global) and takes a parameter "
+"with two delimitated fields: ``comma-separated-error-codes:secondary-origin-"
+"server``.  For instance,"
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:34
+msgid "``@pparam=401,404,410,502:second-origin.example.com``"
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:36
+msgid ""
+"would have Traffic Server send a cache miss to ``second-origin.example."
+"com`` when the origin server in the remap rule returns a 401, 404, 410, or "
+"502 error code."
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:42
+msgid "@pparam=--pristine"
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:41
+msgid ""
+"This option sends the \"pristine\" Host: header (eg, the Host: header that "
+"the client sent) to the escalated request."
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:45
+msgid "Installation"
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:47
+msgid "This plugin is only built if the configure option ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:51
+msgid "is given at build time."
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:54
+msgid "Example"
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:56
+msgid "With this line in :file:`remap.config` ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/escalate.en.rst:61
+msgid ""
+"Traffic Server would accept a request for ``cdn.example.com`` and, on a "
+"cache miss, proxy the request to ``origin.example.com``. If the response "
+"code from that server is a 401, 404, 410, or 502, then Traffic Server would "
+"proxy the request to ``second-origin.example.com``, using a Host: header of "
+"``cdn.example.com``."
+msgstr ""

@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -368,42 +368,42 @@ msgstr ""
 
 #: ../../../admin-guide/plugins/url_sig.en.rst:253
 msgid ""
-"Once updated, issue a :option:`traffic_ctl reload` to make the settings "
-"active."
+"Once updated, issue a :option:`traffic_ctl config reload` to make the "
+"settings active."
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:256
+#: ../../../admin-guide/plugins/url_sig.en.rst:257
 msgid "Example"
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:258
+#: ../../../admin-guide/plugins/url_sig.en.rst:259
 msgid "Enable experimental plugins when building |TS|::"
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:262
+#: ../../../admin-guide/plugins/url_sig.en.rst:263
 msgid ""
 "Generate a secrets configuration for |TS| (replacing the output location "
 "with something appropriate to your |TS| installation)::"
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:267
+#: ../../../admin-guide/plugins/url_sig.en.rst:268
 msgid ""
 "Verify that your configuration looks like the following, with actual key "
 "values altered::"
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:288
+#: ../../../admin-guide/plugins/url_sig.en.rst:289
 msgid ""
 "Enable signature verification for a remap rule in |TS| by modifying :file:"
 "`remap.config` (here we will just remap to Google's homepage for "
 "demonstrative purposes)::"
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:295
+#: ../../../admin-guide/plugins/url_sig.en.rst:296
 msgid "Reload your |TS| configuration to ensure the changes are active::"
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:299
+#: ../../../admin-guide/plugins/url_sig.en.rst:300
 msgid ""
 "Attempt to access the now-protected URL without a valid signature. This "
 "will fail, and that is a good thing, as it demonstrates that |TS| now "
@@ -411,10 +411,10 @@ msgid ""
 "valid signature.::"
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:330
+#: ../../../admin-guide/plugins/url_sig.en.rst:331
 msgid "Generate a signed URL using the included ``sign.pl`` script::"
 msgstr ""
 
-#: ../../../admin-guide/plugins/url_sig.en.rst:336
+#: ../../../admin-guide/plugins/url_sig.en.rst:337
 msgid "Now access the protected URL with a valid signature::"
 msgstr ""

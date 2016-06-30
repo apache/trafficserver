@@ -8,152 +8,305 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: 2016-01-03 16:13+0900\n"
-"Language: en\n"
+"Last-Translator: \n"
+"Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.1.1\n"
-"Last-Translator: \n"
-"Language-Team: \n"
-"X-Generator: Poedit 1.8.6\n"
+"Generated-By: Babel 2.2.0\n"
 
-#: ../../admin-guide/plugins/gzip.en.rst:32
-msgid "Add the following line to :file:`plugin.config`::"
-msgstr "次の行を :file:`plugin.config` に追加してください。"
+#: ../../../admin-guide/plugins/gzip.en.rst:23
+#, fuzzy
+msgid "GZip Plugin"
+msgstr "gzip / deflate プラグイン"
 
-#: ../../admin-guide/plugins/gzip.en.rst:48
-msgid "Alternatively, a configuration can also be specified::"
-msgstr "もしくは、設定を指定することも可能です。"
+#: ../../../admin-guide/plugins/gzip.en.rst:25
+msgid ""
+"This plugin adds compression and decompression options to both origin and "
+"cache responses."
+msgstr ""
 
-#: ../../admin-guide/plugins/gzip.en.rst:38
-msgid "Enable caching"
-msgstr "キャッシュの有効化"
+#: ../../../admin-guide/plugins/gzip.en.rst:29
+msgid "Purpose"
+msgstr ""
 
-#: ../../admin-guide/plugins/gzip.en.rst:36
-msgid "In this case, the plugin will use the default behaviour:"
-msgstr "このケースでは、プラグインはデフォルトの振る舞いをします"
+#: ../../../admin-guide/plugins/gzip.en.rst:31
+msgid ""
+"Not all clients can handle compressed content. Not all origin servers are "
+"configured to respond with compressed content when a client says it can "
+"accept it. And it's not always necessary to make two separate requests to "
+"an origin, and track two separate cache objects, for the same content - "
+"once for a compressed version and another time for an uncompressed version."
+msgstr ""
 
-#: ../../admin-guide/plugins/gzip.en.rst:30
+#: ../../../admin-guide/plugins/gzip.en.rst:37
+msgid ""
+"This plugin tidies up these problems by transparently compressing or "
+"deflating origin responses, as necessary, so that both variants of a "
+"response are stored as :term:`alternates <alternate>` and the appropriate "
+"version is used for client responses, depending on the client's indication "
+"(via an ``Accept`` request header) of what it can support."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:43
+msgid ""
+"Additionally, this plugin adds configurability for what types of origin "
+"responses will receive this treatment, which will be proxied and cached "
+"with default behavior, and which may be explicitly disallowed to cache both "
+"compressed and deflated versions (because, for example, the cost of "
+"compression is known ahead of time to outweigh the space and bandwidth "
+"savings and you wish to avoid |TS| even testing for the possibility)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:51
 msgid "Installation"
 msgstr "インストール"
 
-#: ../../admin-guide/plugins/gzip.en.rst:24
+#: ../../../admin-guide/plugins/gzip.en.rst:53
 msgid ""
-"This plugin gzips or deflates responses, whichever is applicable. It can "
-"compress origin respones as well as cached responses. The plugin is built "
-"and installed as part of the normal Apache Traffic Server installation "
-"process."
+"This plugin is considered stable and is included with |TS| by default. "
+"There are no special steps necessary for its installation."
 msgstr ""
-"このプラグインはレスポンスに gzip または deflate の適用可能なほうを行いま"
-"す。オリジンのレスポンスをキャッシュ済みのレスポンスと同様に圧縮します。この"
-"プラグインは通常の Apache Traffic Server のインストール処理でビルドされイン"
-"ストールされます。"
 
-#: ../../admin-guide/plugins/gzip.en.rst:39
-msgid "Compress text/\\* for every origin"
-msgstr "すべてのオリジンで text/\\* を圧縮"
-
-#: ../../admin-guide/plugins/gzip.en.rst:46
+#: ../../../admin-guide/plugins/gzip.en.rst:57
 msgid "Configuration"
 msgstr "設定"
 
-#: ../../admin-guide/plugins/gzip.en.rst:43
-msgid "Disable flush (flush gzipped content to client)"
+#: ../../../admin-guide/plugins/gzip.en.rst:59
+msgid ""
+"This plugin can be used as either global plugin or remap plugin. It can be "
+"enabled globally for |TS| by adding the following to your :file:`plugin."
+"config`::"
 msgstr ""
 
-#: ../../admin-guide/plugins/gzip.en.rst:40
+#: ../../../admin-guide/plugins/gzip.en.rst:65
 msgid ""
-"Don't hide accept encoding from origin servers (for an offloading reverse "
-"proxy)"
+"With no further options, this will enable the following default behavior:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:67
+msgid ""
+"Enable caching of both compressed and uncompressed versions of origin "
+"responses as :term:`alternates <alternate>`."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:70
+#, fuzzy
+msgid "Compress objects with `text/*` content types for every origin."
+msgstr "すべてのオリジンで text/\\* を圧縮"
+
+#: ../../../admin-guide/plugins/gzip.en.rst:72
+#, fuzzy
+msgid ""
+"Don't hide `Accept` encoding headers from origin servers (for an offloading "
+"reverse proxy)."
 msgstr ""
 "( リバースプロキシーの負荷軽減のために ) オリジンサーバーに受け付けるエン"
 "コーディングを隠しません"
 
-#: ../../admin-guide/plugins/gzip.en.rst:42
-msgid "No urls are disallowed from compression"
+#: ../../../admin-guide/plugins/gzip.en.rst:75
+#, fuzzy
+msgid "No URLs are disallowed from compression."
 msgstr "どの URL も圧縮を拒否されません"
 
-#: ../../admin-guide/plugins/gzip.en.rst:4
-msgid "gzip / deflate Plugin"
-msgstr "gzip / deflate プラグイン"
-
-#: ../../admin-guide/plugins/gzip.en.rst:52
-msgid ""
-"After modifying plugin.config, restart traffic server (sudo traffic_ctl "
-"server restart) the configuration is also re-read when a management update "
-"is given (sudo traffic_ctl config reload)"
+#: ../../../admin-guide/plugins/gzip.en.rst:77
+msgid "Disable flush (flush gzipped content to client)."
 msgstr ""
-"plugin.config を修正後、Traffic Server をリスタート (sudo traffic_ctl "
-"server restart) 設定ファイルは管理アップデートが行われた際に再読み込みされま"
-"す。(sudo traffic_ctl config reload)"
 
-#: ../../admin-guide/plugins/gzip.en.rst:59
-msgid "Flags and options are:"
-msgstr "フラグとオプションは次のとおりです。"
-
-#: ../../admin-guide/plugins/gzip.en.rst:68
+#: ../../../admin-guide/plugins/gzip.en.rst:79
 msgid ""
-"For when the proxy parses responses, and the resulting compression/"
+"Alternatively, a configuration may be specified (shown here using the "
+"sample configuration provided with the plugin's source)::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:84
+msgid ""
+"This can be used as remap plugin by pointing to config file in remap rule :"
+"file:`remap.config`::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:89
+msgid ""
+"The following sections detail the options you may specify in the plugin's "
+"configuration file. Options may be used globally, or may be specified on a "
+"per-site basis by preceding them with a `[<site>]` line, where `<site>` is "
+"the client-facing domain for which the options should apply."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:94
+msgid "Per site configuration for remap plugin should be ignored."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:97
+msgid "cache"
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:99
+msgid ""
+"When set to ``true``, causes |TS| to cache both the compressed and "
+"uncompressed versions of the content as :term:`alternates <alternate>`. "
+"When set to ``false``, |TS| will cache only the compressed or decompressed "
+"variant returned by the origin. Enabled by default."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:105
+msgid "compressible-content-type"
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:107
+msgid ""
+"Provides a wildcard to match against content types, determining which are "
+"to be considered compressible. This defaults to ``text/*``. Takes one "
+"Content-Type per line."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:112
+msgid "disallow"
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:114
+msgid ""
+"Provides a wildcard pattern which will be applied to request URLs. Any "
+"which match the pattern will be considered incompressible, and only "
+"deflated versions of the objects will be cached and returned to clients. "
+"This may be useful for objects which already have their own compression "
+"built-in, to avoid the expense of multiple rounds of compression for "
+"trivial gains."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:121
+msgid "enabled"
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:123
+msgid ""
+"When set to ``true`` (the default) permits objects to be compressed, and "
+"when ``false`` effectively disables the plugin in the current context."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:127
+msgid "flush"
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:129
+msgid ""
+"Enables (``true``) or disables (``false``) flushing of compressed objects "
+"to clients."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:133
+msgid "remove-accept-encoding"
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:135
+msgid ""
+"When set to ``true`` this option causes the plugin to strip the request's "
+"``Accept`` encoding header when contacting the origin server. Setting this "
+"option to ``false`` will leave the header intact if the client provided it."
+msgstr ""
+
+#: ../../../admin-guide/plugins/gzip.en.rst:139
+msgid "To ease the load on the origins."
+msgstr "オリジンの負荷を軽くするために。"
+
+#: ../../../admin-guide/plugins/gzip.en.rst:141
+#, fuzzy
+msgid ""
+"For when the proxy parses responses, and the resulting compression and "
 "decompression is wasteful."
 msgstr ""
 "プロキシーがレスポンスをパースする際に、圧縮/展開が無駄になるときのために。"
 
-#: ../../admin-guide/plugins/gzip.en.rst:57
-msgid "Options"
-msgstr "オプション"
-
-#: ../../admin-guide/plugins/gzip.en.rst:81
-msgid "Options can be set globally or on a per-site basis, as such::"
-msgstr "オプションはこのように大域的にもサイト毎にも設定できます。"
-
-#: ../../admin-guide/plugins/gzip.en.rst:67
-msgid "To ease the load on the origins."
-msgstr "オリジンの負荷を軽くするために。"
-
-#: ../../admin-guide/plugins/gzip.en.rst:71
-msgid ""
-"``cache``: (``true`` or ``false``) When set, the plugin stores the "
-"uncompressed and compressed response as alternates."
-msgstr ""
-"``cache``: (``true`` または ``false``) 設定すると、プラグインは圧縮されてい"
-"ないレスポンスと圧縮されたレスポンスを代替として保存します。"
-
-#: ../../admin-guide/plugins/gzip.en.rst:74
-msgid ""
-"``compressible-content-type``: Wildcard pattern for matching compressible "
-"content types."
-msgstr ""
-"``compressible-content-type``: 圧縮できるコンテントタイプのワイルドカードパ"
-"ターン"
-
-#: ../../admin-guide/plugins/gzip.en.rst:77
-msgid "``disallow``: Wildcard pattern for disabling compression on urls."
-msgstr "``disallow``: 圧縮を無効化する URL のワイルドカードパターン。"
-
-#: ../../admin-guide/plugins/gzip.en.rst:61
-msgid ""
-"``enabled``: (``true`` or ``false``) Enable or disable compression for a "
-"host."
-msgstr ""
-"``enabled``: (``true`` または ``false``) ホストに対する圧縮を有効化または無"
-"効化します。"
-
-#: ../../admin-guide/plugins/gzip.en.rst:79
-msgid ""
-"``flush``: (``true`` or ``false``) Enable or disable flushing of gzipped "
-"content."
+#: ../../../admin-guide/plugins/gzip.en.rst:145
+msgid "Examples"
 msgstr ""
 
-#: ../../admin-guide/plugins/gzip.en.rst:64
+#: ../../../admin-guide/plugins/gzip.en.rst:147
 msgid ""
-"``remove-accept-encoding``: (``true`` or ``false``) Sets whether the plugin "
-"should hide the accept encoding from origin servers:"
+"To establish global defaults for all site requests passing through |TS|, "
+"while overriding just a handful for requests to content at ``www.example."
+"com``, you might create a configuration with the following options::"
 msgstr ""
-"``remove-accept-encoding``: (``true`` または ``false``) プラグインが受け付け"
-"るエンコーディングをオリジンサーバーに隠すべきかどうかを設定します。"
 
-#: ../../admin-guide/plugins/gzip.en.rst:97
-msgid "See example.gzip.config for example configurations."
-msgstr "設定例については example.gzip.config を見てください。"
+#: ../../../admin-guide/plugins/gzip.en.rst:169
+msgid ""
+"Assuming the above options are in a file at ``/etc/trafficserver/gzip."
+"config`` the plugin would be enabled for |TS| in :file:`plugin.config` as::"
+msgstr ""
+
+#~ msgid "Add the following line to :file:`plugin.config`::"
+#~ msgstr "次の行を :file:`plugin.config` に追加してください。"
+
+#~ msgid "Alternatively, a configuration can also be specified::"
+#~ msgstr "もしくは、設定を指定することも可能です。"
+
+#~ msgid "Enable caching"
+#~ msgstr "キャッシュの有効化"
+
+#~ msgid "In this case, the plugin will use the default behaviour:"
+#~ msgstr "このケースでは、プラグインはデフォルトの振る舞いをします"
+
+#~ msgid ""
+#~ "This plugin gzips or deflates responses, whichever is applicable. It can "
+#~ "compress origin respones as well as cached responses. The plugin is "
+#~ "built and installed as part of the normal Apache Traffic Server "
+#~ "installation process."
+#~ msgstr ""
+#~ "このプラグインはレスポンスに gzip または deflate の適用可能なほうを行いま"
+#~ "す。オリジンのレスポンスをキャッシュ済みのレスポンスと同様に圧縮します。"
+#~ "このプラグインは通常の Apache Traffic Server のインストール処理でビルドさ"
+#~ "れインストールされます。"
+
+#~ msgid ""
+#~ "After modifying plugin.config, restart traffic server (sudo traffic_ctl "
+#~ "server restart) the configuration is also re-read when a management "
+#~ "update is given (sudo traffic_ctl config reload)"
+#~ msgstr ""
+#~ "plugin.config を修正後、Traffic Server をリスタート (sudo traffic_ctl "
+#~ "server restart) 設定ファイルは管理アップデートが行われた際に再読み込みさ"
+#~ "れます。(sudo traffic_ctl config reload)"
+
+#~ msgid "Flags and options are:"
+#~ msgstr "フラグとオプションは次のとおりです。"
+
+#~ msgid "Options"
+#~ msgstr "オプション"
+
+#~ msgid "Options can be set globally or on a per-site basis, as such::"
+#~ msgstr "オプションはこのように大域的にもサイト毎にも設定できます。"
+
+#~ msgid ""
+#~ "``cache``: (``true`` or ``false``) When set, the plugin stores the "
+#~ "uncompressed and compressed response as alternates."
+#~ msgstr ""
+#~ "``cache``: (``true`` または ``false``) 設定すると、プラグインは圧縮されて"
+#~ "いないレスポンスと圧縮されたレスポンスを代替として保存します。"
+
+#~ msgid ""
+#~ "``compressible-content-type``: Wildcard pattern for matching "
+#~ "compressible content types."
+#~ msgstr ""
+#~ "``compressible-content-type``: 圧縮できるコンテントタイプのワイルドカード"
+#~ "パターン"
+
+#~ msgid "``disallow``: Wildcard pattern for disabling compression on urls."
+#~ msgstr "``disallow``: 圧縮を無効化する URL のワイルドカードパターン。"
+
+#~ msgid ""
+#~ "``enabled``: (``true`` or ``false``) Enable or disable compression for a "
+#~ "host."
+#~ msgstr ""
+#~ "``enabled``: (``true`` または ``false``) ホストに対する圧縮を有効化または"
+#~ "無効化します。"
+
+#~ msgid ""
+#~ "``remove-accept-encoding``: (``true`` or ``false``) Sets whether the "
+#~ "plugin should hide the accept encoding from origin servers:"
+#~ msgstr ""
+#~ "``remove-accept-encoding``: (``true`` または ``false``) プラグインが受け"
+#~ "付けるエンコーディングをオリジンサーバーに隠すべきかどうかを設定します。"
+
+#~ msgid "See example.gzip.config for example configurations."
+#~ msgstr "設定例については example.gzip.config を見てください。"

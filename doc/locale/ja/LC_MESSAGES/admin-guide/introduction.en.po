@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Apache Traffic Server 6.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
 "PO-Revision-Date: 2016-01-03 15:05+0900\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -200,18 +200,19 @@ msgstr ""
 "ていることもあります。"
 
 #: ../../../admin-guide/introduction.en.rst:106
+#, fuzzy
 msgid ""
-"Load Balancing - note that there is an experimental plugin for this: :ref:"
-"`balancer-plugin`."
+"Load Balancing - note that there is an experimental plugin for this, :ref:"
+"`admin-plugins-balancer`."
 msgstr ""
 "ロードバランシング - このための実験的なプラクインがあることに注意してくださ"
 "い。 :ref:`balancer-plugin`"
 
-#: ../../../admin-guide/introduction.en.rst:111
+#: ../../../admin-guide/introduction.en.rst:112
 msgid "Traffic Server Components"
 msgstr "Traffic Server Components"
 
-#: ../../../admin-guide/introduction.en.rst:113
+#: ../../../admin-guide/introduction.en.rst:114
 msgid ""
 "Traffic Server consists of several components that work together to form a "
 "web proxy cache you can easily monitor and configure."
@@ -219,11 +220,11 @@ msgstr ""
 "Traffic Server は簡単に監視や設定が行えるウェブプロキシーキャッシュを構成す"
 "るために協力するいくつかのコンポーネントから成り立っています。"
 
-#: ../../../admin-guide/introduction.en.rst:117
+#: ../../../admin-guide/introduction.en.rst:118
 msgid "The Traffic Server Cache"
 msgstr "The Traffic Server Cache"
 
-#: ../../../admin-guide/introduction.en.rst:119
+#: ../../../admin-guide/introduction.en.rst:120
 msgid ""
 "The Traffic Server cache consists of a high-speed object database called "
 "the *object store*. The object store indexes objects according to URLs and "
@@ -244,7 +245,7 @@ msgstr ""
 "Server は最もリクエストされるオブジェクトがすぐに利用可能で新しい状態である"
 "ことを保証するために、古いデータを削除します。"
 
-#: ../../../admin-guide/introduction.en.rst:128
+#: ../../../admin-guide/introduction.en.rst:129
 msgid ""
 "Traffic Server is designed to tolerate total disk failures on any of the "
 "cache disks. If the disk fails completely, then Traffic Server marks the "
@@ -262,11 +263,11 @@ msgstr ""
 "クスペースを予約するためにキャッシュを分割することができます。キャッシュに関"
 "するより詳しい情報は :ref:`http-proxy-caching` を参照してください。"
 
-#: ../../../admin-guide/introduction.en.rst:137
+#: ../../../admin-guide/introduction.en.rst:138
 msgid "The RAM Cache"
 msgstr "The RAM Cache"
 
-#: ../../../admin-guide/introduction.en.rst:139
+#: ../../../admin-guide/introduction.en.rst:140
 msgid ""
 "Traffic Server maintains a small RAM cache that contains extremely popular "
 "objects. This RAM cache serves the most popular objects as fast as possible "
@@ -281,11 +282,11 @@ msgstr ""
 "できます。より詳しい情報は :ref:`changing-the-size-of-the-ram-cache` を参照"
 "してください。"
 
-#: ../../../admin-guide/introduction.en.rst:146
+#: ../../../admin-guide/introduction.en.rst:147
 msgid "The Host Database"
 msgstr "The Host Database"
 
-#: ../../../admin-guide/introduction.en.rst:148
+#: ../../../admin-guide/introduction.en.rst:149
 msgid ""
 "The Traffic Server host database stores the domain name server (DNS) "
 "entries of origin servers to which Traffic Server connects to fulfill user "
@@ -299,11 +300,11 @@ msgstr ""
 "フォーマンスの最適化のために使われます。加えて、ホストデータベースは次の情報"
 "を保存します。"
 
-#: ../../../admin-guide/introduction.en.rst:154
+#: ../../../admin-guide/introduction.en.rst:155
 msgid "DNS information (for fast conversion of hostnames to IP addresses)."
 msgstr "DNS 情報(ホストネームから IP アドレスを高速に引くため)。"
 
-#: ../../../admin-guide/introduction.en.rst:156
+#: ../../../admin-guide/introduction.en.rst:157
 msgid ""
 "The HTTP version of each host (so advanced protocol features can be used "
 "with hosts running modern servers)."
@@ -311,7 +312,7 @@ msgstr ""
 "各ホストの HTTP バージョン(最新のプロトコルの機能はモダンなサーバーで使われ"
 "ているかもしれないため)。"
 
-#: ../../../admin-guide/introduction.en.rst:159
+#: ../../../admin-guide/introduction.en.rst:160
 msgid ""
 "Host reliability and availability information (so users will not wait for "
 "servers that are not running)."
@@ -319,11 +320,11 @@ msgstr ""
 "信頼性と可用性の情報(ユーザーが起動していないサーバーを待つことがないよう"
 "に)。"
 
-#: ../../../admin-guide/introduction.en.rst:163
+#: ../../../admin-guide/introduction.en.rst:164
 msgid "The DNS Resolver"
 msgstr "The DNS Resolver"
 
-#: ../../../admin-guide/introduction.en.rst:165
+#: ../../../admin-guide/introduction.en.rst:166
 msgid ""
 "Traffic Server includes a fast, asynchronous DNS resolver to streamline "
 "conversion of hostnames to IP addresses. Traffic Server implements the DNS "
@@ -339,11 +340,11 @@ msgstr ""
 "キャッシュがポピュラーなバインディングをメモリに保存することにより、DNS トラ"
 "フィックは減ります。"
 
-#: ../../../admin-guide/introduction.en.rst:173
+#: ../../../admin-guide/introduction.en.rst:174
 msgid "Traffic Server Processes"
 msgstr "Traffic Server Processes"
 
-#: ../../../admin-guide/introduction.en.rst:175
+#: ../../../admin-guide/introduction.en.rst:176
 msgid ""
 "Traffic Server contains three processes that work together to serve "
 "requests and manage, control, and monitor the health of the system."
@@ -351,7 +352,7 @@ msgstr ""
 "Traffic Server は 3 つのプロセスから構成されます。それらはリクエストを返し、"
 "システムの状態を管理、制御、監視するために協調して動きます。"
 
-#: ../../../admin-guide/introduction.en.rst:178
+#: ../../../admin-guide/introduction.en.rst:179
 msgid ""
 "The :program:`traffic_server` process is the transaction processing engine "
 "of Traffic Server. It is responsible for accepting connections, processing "
@@ -362,7 +363,7 @@ msgstr ""
 "を処理したり、キャッシュやオリジンサーバーからドキュメントを提供することに責"
 "任を持ちます。"
 
-#: ../../../admin-guide/introduction.en.rst:183
+#: ../../../admin-guide/introduction.en.rst:184
 msgid ""
 "The :program:`traffic_manager` process is the command and control facility "
 "of the Traffic Server, responsible for launching, monitoring, and "
@@ -377,7 +378,7 @@ msgstr ""
 "ギュレーションポートや統計のインターフェイスやクラスター管理とバーチャル IP "
 "フェイルオーバーについても責任を持ちます。"
 
-#: ../../../admin-guide/introduction.en.rst:190
+#: ../../../admin-guide/introduction.en.rst:191
 msgid ""
 "If the :program:`traffic_manager` process detects a :program:"
 "`traffic_server` process failure, it instantly restarts the process but "
@@ -394,7 +395,7 @@ msgstr ""
 "され、最初に来たものから順に処理されます。このコネクションキューはすべての"
 "サーバーの再起動の際のダウンタイムからユーザーを守ります。"
 
-#: ../../../admin-guide/introduction.en.rst:198
+#: ../../../admin-guide/introduction.en.rst:199
 msgid ""
 "The :program:`traffic_cop` process monitors the health of both the :program:"
 "`traffic_server` and :program:`traffic_manager` processes. The :program:"
@@ -414,23 +415,23 @@ msgstr ""
 "`traffic_cop` は :program:`traffic_manager` と :program:`traffic_server` プ"
 "ロセスを再起動します。"
 
-#: ../../../admin-guide/introduction.en.rst:207
+#: ../../../admin-guide/introduction.en.rst:208
 msgid "The figure below illustrates the three Traffic Server processes."
 msgstr "次の図は Traffic Server の3つのイラストです。"
 
-#: ../../../admin-guide/introduction.en.rst:213
+#: ../../../admin-guide/introduction.en.rst:214
 msgid "Illustration of the three Traffic Server Processes"
 msgstr "Illustration of the three Traffic Server Processes"
 
-#: ../../../admin-guide/introduction.en.rst:216
+#: ../../../admin-guide/introduction.en.rst:217
 msgid "Administration Tools"
 msgstr "Administration Tools"
 
-#: ../../../admin-guide/introduction.en.rst:218
+#: ../../../admin-guide/introduction.en.rst:219
 msgid "Traffic Server offers the following administration options:"
 msgstr "Traffic Server は次の管理オプションを提供しています。"
 
-#: ../../../admin-guide/introduction.en.rst:220
+#: ../../../admin-guide/introduction.en.rst:221
 msgid ""
 "The :program:`traffic_ctl` command-line interface is a text-based interface "
 "from which you can monitor Traffic Server performance and network traffic, "
@@ -443,7 +444,7 @@ msgstr ""
 "ます。Traffic Line によって独立したコマンドや一連のコマンドのスクリプトを"
 "シェルで実行することができます。"
 
-#: ../../../admin-guide/introduction.en.rst:226
+#: ../../../admin-guide/introduction.en.rst:227
 msgid ""
 "Various configuration files enable you to configure Traffic Server through "
 "a simple file-editing and signal-handling interface. Any changes you make "
@@ -451,7 +452,7 @@ msgid ""
 "well."
 msgstr ""
 
-#: ../../../admin-guide/introduction.en.rst:231
+#: ../../../admin-guide/introduction.en.rst:232
 msgid ""
 "Finally, there is a clean C API which can be put to good use from a "
 "multitude of languages. The Traffic Server Admin Client demonstrates this "
@@ -460,11 +461,11 @@ msgstr ""
 "最後に、多くの言語から使うことのできるクリーンな C API があります。 Traffic "
 "Server Admin Client は Perl でこのことを示しています。"
 
-#: ../../../admin-guide/introduction.en.rst:236
+#: ../../../admin-guide/introduction.en.rst:237
 msgid "Traffic Analysis Options"
 msgstr "Traffic Analysis Options"
 
-#: ../../../admin-guide/introduction.en.rst:238
+#: ../../../admin-guide/introduction.en.rst:239
 msgid ""
 "Traffic Server provides several options for network traffic analysis and "
 "monitoring:"
@@ -472,13 +473,13 @@ msgstr ""
 "Traffic Server はネットワークトラフィックの分析と監視のためのいくつかのオプ"
 "ションを提供しています。"
 
-#: ../../../admin-guide/introduction.en.rst:241
+#: ../../../admin-guide/introduction.en.rst:242
 msgid ""
 ":program:`traffic_ctl` enables you to collect and process statistics "
 "obtained from network traffic information."
 msgstr ""
 
-#: ../../../admin-guide/introduction.en.rst:244
+#: ../../../admin-guide/introduction.en.rst:245
 msgid ""
 "Transaction logging enables you to record information (in a log file) about "
 "every request Traffic Server receives and every error it detects. By "
@@ -498,7 +499,7 @@ msgstr ""
 "えば Traffic Server が再起動したときや、クラスターコミュニケーションがタイム"
 "アウトしたときなどです。"
 
-#: ../../../admin-guide/introduction.en.rst:253
+#: ../../../admin-guide/introduction.en.rst:254
 msgid ""
 "Traffic Server supports several standard log file formats, such as Squid "
 "and Netscape, and its own custom format. You can analyze the standard "
@@ -512,17 +513,17 @@ msgstr ""
 "けるために、特定のプロトコルやホストの情報を含むようにログファイルを分割する"
 "ことができます。"
 
-#: ../../../admin-guide/introduction.en.rst:259
+#: ../../../admin-guide/introduction.en.rst:260
 msgid ""
 "|TS| event and error logging, monitoring, and analysis is covered in "
 "greater detail in :ref:`admin-monitoring`."
 msgstr ""
 
-#: ../../../admin-guide/introduction.en.rst:263
+#: ../../../admin-guide/introduction.en.rst:264
 msgid "Traffic Server Security Options"
 msgstr "Traffic Server Security Options"
 
-#: ../../../admin-guide/introduction.en.rst:265
+#: ../../../admin-guide/introduction.en.rst:266
 msgid ""
 "Traffic Server provides numerous options that enable you to establish "
 "secure communication between the Traffic Server system and other computers "
@@ -532,11 +533,11 @@ msgstr ""
 "セキュアな通信を確立することを可能にする多数のオプションを提供しています。セ"
 "キュリティオプションを使うことによって、次のことが可能です。"
 
-#: ../../../admin-guide/introduction.en.rst:270
+#: ../../../admin-guide/introduction.en.rst:271
 msgid "Control client access to the Traffic Server proxy cache."
 msgstr "Traffic Server プロキシーキャッシュにアクセスするクライアントの管理"
 
-#: ../../../admin-guide/introduction.en.rst:272
+#: ../../../admin-guide/introduction.en.rst:273
 msgid ""
 "Configure Traffic Server to use multiple DNS servers to match your site's "
 "security configuration. For example, Traffic Server can use different DNS "
@@ -551,7 +552,7 @@ msgstr ""
 "とができます。これは透過的にインターネット上の外部サイトにアクセスすることを"
 "提供しつつ、インターナルネットワーク設定をセキュアに保つことを可能にします。"
 
-#: ../../../admin-guide/introduction.en.rst:279
+#: ../../../admin-guide/introduction.en.rst:280
 msgid ""
 "Configure Traffic Server to verify that clients are authenticated before "
 "they can access content from the Traffic Server cache."
@@ -559,7 +560,7 @@ msgstr ""
 "クライアントが Traffic Server キャッシュからコンテンツにアクセスできるように"
 "なる前に、クライアントが認証されていることを検証する Traffic Server 設定"
 
-#: ../../../admin-guide/introduction.en.rst:282
+#: ../../../admin-guide/introduction.en.rst:283
 msgid ""
 "Secure connections in reverse proxy mode between a client and Traffic "
 "Server, and Traffic Server and the origin server, using the SSL termination "
@@ -569,11 +570,11 @@ msgstr ""
 "クライアントと Traffic Server 間と Traffic Server とオリジンサーバー間の安全"
 "な接続"
 
-#: ../../../admin-guide/introduction.en.rst:286
+#: ../../../admin-guide/introduction.en.rst:287
 msgid "Control access via SSL (Secure Sockets Layer)."
 msgstr "SSL (Secure Socket Layer) によるアクセスの管理"
 
-#: ../../../admin-guide/introduction.en.rst:288
+#: ../../../admin-guide/introduction.en.rst:289
 msgid ""
 "Traffic Server security options are described in more detail in :ref:`admin-"
 "security`."
@@ -581,11 +582,11 @@ msgstr ""
 "Traffic Server セキュリティオプションは :ref:`admin-security` に詳しく述べら"
 "れています。"
 
-#: ../../../admin-guide/introduction.en.rst:292
+#: ../../../admin-guide/introduction.en.rst:293
 msgid "Tuning Traffic Server"
 msgstr "Traffic Server のチューニング"
 
-#: ../../../admin-guide/introduction.en.rst:294
+#: ../../../admin-guide/introduction.en.rst:295
 msgid ""
 "Finally, this last chapter on :ref:`performance-tuning` discusses the vast "
 "number of options that allow administrators to optimally tune Apache "
@@ -594,17 +595,3 @@ msgstr ""
 "最後に、この最終章 :ref:`performance-tuning` では管理者が Apache Traffic "
 "Server を最大限のパフォーマンスを発揮するように最適なチューニングをするため"
 "の膨大な数のオプションについて論じます。"
-
-#~ msgid ""
-#~ "Traffic Server logging options are described in :ref:`working-with-log-"
-#~ "files`."
-#~ msgstr ""
-#~ "Traffic Server ロギングオプションは :ref:`working-with-log-files` に書か"
-#~ "れています。"
-
-#~ msgid ""
-#~ "Traffic analysis options are described in more detail in :ref:"
-#~ "`monitoring-traffic`."
-#~ msgstr ""
-#~ "トラフィック分析オプションは :ref:`monitoring-traffic` により詳しく書かれ"
-#~ "ています。"
