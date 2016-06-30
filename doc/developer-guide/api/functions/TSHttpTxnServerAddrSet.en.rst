@@ -35,8 +35,32 @@ Set the origin server address for transaction :arg:`txnp`. This includes the por
 The address family is also set by the contents of :arg:`addr`. The address data is copied out of
 :arg:`addr` so there is no dependency on the lifetime of that object.
 
-This hook must be called no later than TS_HTTP_OS_DNS_HOOK. If this is called then DNS resolution
-will not be done as the address of the server is already know.
+This hook must be called no later than TS_HTTP_OS_DNS_HOOK. If this
+is called prior to TS_HTTP_OS_DNS_HOOK, DNS resolution will not be
+done as the address of the server is already known.
 
-An error value is returned if :arg:`addr` does not contain a valid IPv4 or IPv6 address with a valid
-(non-zero) port.
+Return Value
+============
+
+:data:`TS_ERROR` is returned if :arg:`addr` does not contain a valid
+IPv4 or IPv6 address with a valid (non-zero) port.
+
+Notes
+=====
+
+If |TS| is configured to retry connections to origin servers and
+:func:`TSHttpTxnServerAddrGet` has been called, |TS| will return
+to TS_HTTP_OS_DNS_HOOK so to let the plugin set a different server
+address. Plugins should be prepared for TS_HTTP_OS_DNS_HOOK and any
+subsequent hooks to be called multiple times.
+
+Once a plugin calls :func:`TSHttpTxnServerAddrGet` any prior DNS
+resolution results are lost. The plugin should use
+:func:`TSHttpTxnServerAddrGet` to preserve any DNS Results that
+might need.
+
+See Also
+========
+
+:manpage:`TSAPI(3ts)`,
+:manpage:`TSHttpTxnServerAddrGet(3ts)`
