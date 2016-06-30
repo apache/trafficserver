@@ -134,10 +134,12 @@ Bug:
   *) [TS-4527] vc error messages in 6.2.0 release
   *) [TS-4529] HttpSM doesn't assign the right continuation when adjusting threads
   *) [TS-4534] hostdb `showall` endpoint with format=json is invalid json
+  *) [TS-4542] ASAN error with HTTP/2
   *) [TS-4543] Crash due to shutdown race in HttpSM::tunnel_handler_post
   *) [TS-4560] C++ API should not depend on ink_autoconf.h
   *) [TS-4568] Milestones where changed from seconds to milliseconds
   *) [TS-4571] Fix "pointer to local outside scope" (CID 1356978)
+  *) [TS-4608] Memory leak in ProxyAllocator.cc
 
 Improvement:
   *) [TS-1775] Cleanup of ink_hrtime.{cc,h}
