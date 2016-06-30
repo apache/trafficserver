@@ -82,7 +82,7 @@ enum {
   http_transactions_per_client_con,
   http_transactions_per_server_con,
 
-  // Transactional stats (originally in proxy/HttpTransStats.h)
+  // Transactional stats
   http_incoming_requests_stat,
   http_outgoing_requests_stat,
   http_incoming_responses_stat,

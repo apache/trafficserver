@@ -143,7 +143,6 @@ traffic_server_SOURCES = \
   Crash.cc \
   EventName.cc \
   FetchSM.cc \
-  HttpTransStats.h \
   ICP.cc \
   ICP.h \
   ICPConfig.cc \
