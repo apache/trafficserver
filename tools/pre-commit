@@ -1,0 +1,66 @@
+#! /usr/bin/env bash
+#
+#  Simple pre-commit hook script, enforcing clang-format on our tree
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+ROOT=$(git rev-parse --show-toplevel)/.git/fmt
+case $(uname -s) in
+Darwin)
+    FORMAT=${FORMAT:-${ROOT}/clang-format/clang-format.osx}
+    ;;
+Linux)
+    FORMAT=${FORMAT:-${ROOT}/clang-format/clang-format.linux}
+    ;;
+*)
+    echo "Leif needs to build a clang-format for $(uname -s)"
+    exit 2
+esac
+
+# If there is no clang-format in our git repo, then try from git config
+[ ! -x "$FORMAT" ] && FORMAT=$(git config clangFormat.binary)
+
+# Make sure we have some clang-format executable...
+if [ ! -x "$FORMAT" ]; then
+    echo "No clang-format found"
+    exit 1
+fi
+
+# Where to store the patch
+patch_file=$(mktemp -t clang-format.XXXXXXXXXX)
+trap "rm -f $patch_file" 0 1 2 3 5 15
+
+# Loop over all files that are changed, and produce a diff file
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | while read file; do
+    case "$file" in
+	*.cc | *.c | *.h | *.h.in)
+	    ${FORMAT} "$file" | diff -u "$file" - >> "$patch_file"
+	    ;;
+    esac
+done
+
+if [ -s "$patch_file" ] ; then
+    echo "The commit is not accepted, because clang-format does not match current"
+    echo "requirements. Easiest to fix this is to run:"
+    echo
+    echo "    $ make -j clang-format"
+    exit 1
+fi
+
+# Cleanup before exit
+rm -f "$patch_file"
+exit 0
