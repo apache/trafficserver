@@ -195,6 +195,7 @@ public:
   uint32_t inactive_threashold_in;
   uint32_t transaction_no_activity_timeout_in;
   uint32_t keep_alive_no_activity_timeout_in;
+  uint32_t default_inactivity_timeout;
 
   time_t sec;
   int cycles;
@@ -409,7 +410,7 @@ read_disable(NetHandler *nh, UnixNetVConnection *vc)
   }
 #else
   if (!vc->write.enabled) {
-    vc->next_inactivity_timeout_at = 0;
+    vc->set_inactivity_timeout(0);
     Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
   }
 #endif
@@ -430,7 +431,7 @@ write_disable(NetHandler *nh, UnixNetVConnection *vc)
   }
 #else
   if (!vc->read.enabled) {
-    vc->next_inactivity_timeout_at = 0;
+    vc->set_inactivity_timeout(0);
     Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
   }
 #endif

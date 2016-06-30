@@ -460,6 +460,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
 
     ink_assert(vc->nh->mutex->thread_holding == this_ethread());
+    vc->set_inactivity_timeout(0);
     vc->nh->open_list.enqueue(vc);
 
 #ifdef USE_EDGE_TRIGGER

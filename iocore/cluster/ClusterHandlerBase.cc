@@ -1011,6 +1011,7 @@ ClusterHandler::startClusterEvent(int event, Event *e)
       if (lock.is_locked() && lock1.is_locked()) {
         vc->ep.stop();
         vc->nh->open_list.remove(vc);
+        vc->nh->cop_list.remove(vc);
         vc->thread = NULL;
         if (vc->nh->read_ready_list.in(vc))
           vc->nh->read_ready_list.remove(vc);
