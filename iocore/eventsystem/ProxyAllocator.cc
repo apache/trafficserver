@@ -28,16 +28,12 @@ int thread_freelist_low_watermark  = 32;
 void *
 thread_alloc(Allocator &a, ProxyAllocator &l)
 {
-#if TS_USE_FREELIST
   if (l.freelist) {
     void *v    = (void *)l.freelist;
     l.freelist = *(void **)l.freelist;
     --(l.allocated);
     return v;
   }
-#else
-  (void)l;
-#endif
   return a.alloc_void();
 }
 
