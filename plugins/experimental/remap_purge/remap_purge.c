@@ -22,6 +22,7 @@
  */
 
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
@@ -60,15 +61,15 @@ make_state_path(const char *filename)
     struct stat s;
     const char *dir = TSInstallDirGet();
 
-    snprintf(buf, sizeof(buf) - 1, "%s/%s/%s", dir, DEFAULT_DIR, PLUGIN_NAME);
+    snprintf(buf, sizeof(buf), "%s/%s/%s", dir, DEFAULT_DIR, PLUGIN_NAME);
     if (-1 == stat(buf, &s)) {
       if (ENOENT == errno) {
         if (-1 == mkdir(buf, S_IRWXU)) {
-          TSError("[%s] Unable to create directory %s: errno=%d", PLUGIN_NAME, buf, errno);
+          TSError("[%s] Unable to create directory %s: %s (%d)", PLUGIN_NAME, buf, strerror(errno), errno);
           return NULL;
         }
       } else {
-        TSError("[%s] Unable to stat() directory %s: errno=%d", PLUGIN_NAME, buf, errno);
+        TSError("[%s] Unable to stat() directory %s: %s (%d)", PLUGIN_NAME, buf, strerror(errno), errno);
         return NULL;
       }
     } else {
@@ -77,7 +78,7 @@ make_state_path(const char *filename)
         return NULL;
       }
     }
-    snprintf(buf, sizeof(buf) - 1, "%s/%s/%s/%s.genid", dir, DEFAULT_DIR, PLUGIN_NAME, filename);
+    snprintf(buf, sizeof(buf), "%s/%s/%s/%s.genid", dir, DEFAULT_DIR, PLUGIN_NAME, filename);
     return TSstrdup(buf);
   }
 
@@ -93,6 +94,7 @@ init_purge_instance(PurgeInstance *purge, char *id)
   if (file) {
     fscanf(file, "%" PRId64 "", &purge->gen_id);
     TSDebug(PLUGIN_NAME, "Read genID from %s for %s", purge->state_file, purge->id);
+    fclose(file);
   }
 
   /* If not specified, we set the ID tag to the fromURL from the remap rule that triggered */
@@ -143,22 +145,21 @@ on_http_cache_lookup_complete(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge
 }
 
 /* Before we can send the response, we want to modify it to a "200 OK" again,
-   and produce some reasonabel body output. */
+   and produce some reasonable body output. */
 static int
 on_send_response_header(TSHttpTxn txnp, TSCont contp, PurgeInstance *purge)
 {
   TSMBuffer bufp;
   TSMLoc hdr_loc;
 
-  TSDebug(PLUGIN_NAME, "Fixing up the response on the succseful PURGE");
+  TSDebug(PLUGIN_NAME, "Fixing up the response on the successful PURGE");
   if (TS_SUCCESS == TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc)) {
     char response[1024];
-    int len = snprintf(response, sizeof(response) - 1, "PURGED %s\r\n\r\n", purge->id);
-    ;
+    int len = snprintf(response, sizeof(response), "PURGED %s\r\n\r\n", purge->id);
 
     TSHttpHdrStatusSet(bufp, hdr_loc, TS_HTTP_STATUS_OK);
     TSHttpHdrReasonSet(bufp, hdr_loc, "OK", 2);
-    TSHttpTxnErrorBodySet(txnp, TSstrdup(response), len, NULL);
+    TSHttpTxnErrorBodySet(txnp, TSstrdup(response), len >= sizeof(response) ? sizeof(response) - 1 : len, NULL);
 
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -202,34 +203,41 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
   bool should_purge = false;
 
   if (TS_SUCCESS == TSHttpTxnClientReqGet(txnp, &reqp, &hdr_loc)) {
-    /* First see if we require the "secret" to be passed in a header, and then use that */
-    if (purge->header) {
-      TSMLoc field_loc = TSMimeHdrFieldFind(reqp, hdr_loc, purge->header, purge->header_len);
+    int method_len     = 0;
+    const char *method = TSHttpHdrMethodGet(reqp, hdr_loc, &method_len);
 
-      if (field_loc) {
-        const char *header;
-        int header_len;
+    if ((TS_HTTP_METHOD_PURGE == method) || ((TS_HTTP_METHOD_GET == method) && purge->allow_get)) {
+      /* First see if we require the "secret" to be passed in a header, and then use that */
+      if (purge->header) {
+        TSMLoc field_loc = TSMimeHdrFieldFind(reqp, hdr_loc, purge->header, purge->header_len);
 
-        header = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field_loc, -1, &header_len);
-        TSDebug(PLUGIN_NAME, "Checking for %.*s == %s ?", header_len, header, purge->secret);
-        if (header && (header_len == purge->secret_len) && !memcmp(header, purge->secret, header_len)) {
-          should_purge = true;
+        if (field_loc) {
+          const char *header;
+          int header_len;
+
+          header = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, field_loc, -1, &header_len);
+          TSDebug(PLUGIN_NAME, "Checking for %.*s == %s ?", header_len, header, purge->secret);
+          if (header && (header_len == purge->secret_len) && !memcmp(header, purge->secret, header_len)) {
+            should_purge = true;
+          }
+          TSHandleMLocRelease(reqp, hdr_loc, field_loc);
         }
-        TSHandleMLocRelease(reqp, hdr_loc, field_loc);
-      }
-    } else {
-      /* We are matching on the path component instead of a header */
-      if (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc)) {
-        int path_len = 0, method_len = 0;
-        const char *path   = TSUrlPathGet(reqp, url_loc, &path_len);
-        const char *method = TSHttpHdrMethodGet(reqp, hdr_loc, &method_len);
+      } else {
+        /* We are matching on the path component instead of a header */
+        if (TS_SUCCESS == TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc)) {
+          int path_len     = 0;
+          const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
 
-        TSDebug(PLUGIN_NAME, "Checking PATH = %.*s", path_len, path);
-        if (((TS_HTTP_METHOD_PURGE == method) || ((TS_HTTP_METHOD_GET == method) && purge->allow_get)) && path &&
-            (path_len >= purge->secret_len) && !memcmp(path + (path_len - purge->secret_len), purge->secret, purge->secret_len)) {
-          should_purge = true;
+          TSDebug(PLUGIN_NAME, "Checking PATH = %.*s", path_len, path);
+          if (path && (path_len >= purge->secret_len)) {
+            const char *s_path = (const char *)memrchr(path, '/', path_len);
+
+            if (!memcmp(s_path ? s_path + 1 : path, purge->secret, purge->secret_len)) {
+              should_purge = true;
+            }
+          }
+          TSHandleMLocRelease(reqp, hdr_loc, url_loc);
         }
-        TSHandleMLocRelease(reqp, hdr_loc, url_loc);
       }
     }
     TSHandleMLocRelease(reqp, TS_NULL_MLOC, hdr_loc);
@@ -261,8 +269,8 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   PurgeInstance *purge                 = TSmalloc(sizeof(PurgeInstance));
   static const struct option longopt[] = {
     {(char *)"id", required_argument, NULL, 'i'},     {(char *)"secret", required_argument, NULL, 's'},
-    {(char *)"header", required_argument, NULL, 'h'}, {(char *)"state_file", required_argument, NULL, 'f'},
-    {(char *)"allow_get", no_argument, NULL, 'a'},    {NULL, no_argument, NULL, '\0'},
+    {(char *)"header", required_argument, NULL, 'h'}, {(char *)"state-file", required_argument, NULL, 'f'},
+    {(char *)"allow-get", no_argument, NULL, 'a'},    {NULL, no_argument, NULL, '\0'},
   };
 
   memset(purge, 0, sizeof(PurgeInstance));
@@ -272,7 +280,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
   // argv[0], so we increment the argument indexes by 1 rather than by 2.
   argc--;
   argv++;
-  optind = 0;
 
   for (;;) {
     int opt = getopt_long(argc, (char *const *)argv, "", longopt, NULL);
@@ -325,11 +332,6 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   PurgeInstance *purge = (PurgeInstance *)ih;
 
-  if (purge) {
-    handle_purge(txnp, purge);
-  } else {
-    TSReleaseAssert(!"No instance data");
-  }
-
+  handle_purge(txnp, purge);
   return TSREMAP_NO_REMAP; // This plugin never rewrites anything.
 }

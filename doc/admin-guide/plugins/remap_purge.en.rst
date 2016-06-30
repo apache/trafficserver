@@ -69,15 +69,15 @@ There are three configuration options for this plugin::
 
     --secret      The secret the client sends to authorize the purge
     --header      The header the client sends the secret in (optional)
-    --state_file  Name of the state file where we store the GenID
-    --allow_get   This also allows a simple GET to perform the purge
+    --state-file  Name of the state file where we store the GenID
+    --allow-get   This also allows a simple GET to perform the purge
 
 Examples
 --------
 
 
     map https://www.example.com http://origin.example.com \
-       @plugin=purge_remap.so @pparam=--state_file=example \
+       @plugin=purge_remap.so @pparam=--state-file=example \
                               @pparam=--header=ATS-Purger \
 			      @pparam=--secret=8BFE-656DC3564C05
 
@@ -90,7 +90,7 @@ The passing of the secret as a header is option, if not specified, the
 last component of the path is used instead. Example::
 
     map https://www.example.com/docs http://docs.example.com \
-       @plugin=purge_remap.so @pparam=--state_file=example_docs \
+       @plugin=purge_remap.so @pparam=--state-file=example_docs \
 			      @pparam=--secret=8BFE-656DC3564C05
 
 This can now be purged with an even simpler request, but be aware that
