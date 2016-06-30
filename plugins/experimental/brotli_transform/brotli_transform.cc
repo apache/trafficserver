@@ -61,7 +61,7 @@ class BrotliTransformationPlugin : public TransformationPlugin {
 public:
     BrotliTransformationPlugin(Transaction &transaction) : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION), transaction_(transaction) {
         registerHook(HOOK_READ_RESPONSE_HEADERS);
-        serverReturnedContentEncoding();
+        checkContentEncoding();
     }
 
     void handleReadResponseHeaders(Transaction &transaction) {
@@ -112,7 +112,7 @@ public:
     virtual ~BrotliTransformationPlugin() {}
 
 private:
-    void serverReturnedContentEncoding() {
+    void checkContentEncoding() {
         Headers& hdr = transaction_.getServerResponse().getHeaders();
         string contentEncoding = hdr.values("Content-Encoding");
         if (contentEncoding.empty()) {
@@ -188,21 +188,18 @@ public:
     }
 
     void handleReadResponseHeaders(Transaction &transaction) {
-        if (browserSupportBrotli(transaction)) {
-            TS_DEBUG(TAG, "Browser support brotli~");
+        if (isBrotliSupported(transaction)) {
+            TS_DEBUG(TAG, "Brotli is supported.");
             transaction.addPlugin(new BrotliTransformationPlugin(transaction));
-        } else {
-            TS_DEBUG(TAG, "Browser does not support brotli~");
         }
         transaction.resume();
     }
 
 private:
-    bool browserSupportBrotli(Transaction &transaction) {
+    bool isBrotliSupported(Transaction &transaction) {
         Headers &clientRequestHeaders = transaction.getClientRequest().getHeaders();
         string acceptEncoding = clientRequestHeaders.values("Accept-Encoding");
-        TS_DEBUG(TAG, "accept_encoding:[%s]", acceptEncoding.c_str());
-        if (!acceptEncoding.empty() && acceptEncoding.find("br") != string::npos) {
+        if (acceptEncoding.find("br") != string::npos) {
             return true;
         }
         return false;
