@@ -1029,7 +1029,7 @@ Http2SendADataFrameResult
 Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_length)
 {
   const ssize_t window_size         = min(this->client_rwnd, stream->client_rwnd);
-  const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]) - HTTP2_FRAME_HEADER_LEN;
+  const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
   const size_t write_available_size = min(buf_len, static_cast<size_t>(window_size));
   size_t read_available_size        = 0;
 
@@ -1147,14 +1147,14 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   }
 
   // Send a HEADERS frame
-  if (header_blocks_size <= BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]) - HTTP2_FRAME_HEADER_LEN) {
+  if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
     payload_length = header_blocks_size;
     flags |= HTTP2_FLAGS_HEADERS_END_HEADERS;
     if (h2_hdr.presence(MIME_PRESENCE_CONTENT_LENGTH) && h2_hdr.get_content_length() == 0) {
       flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
     }
   } else {
-    payload_length = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]) - HTTP2_FRAME_HEADER_LEN;
+    payload_length = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
   }
   Http2Frame headers(HTTP2_FRAME_TYPE_HEADERS, stream->get_id(), flags);
   headers.alloc(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
@@ -1169,7 +1169,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   flags = 0;
   while (sent < header_blocks_size) {
     DebugHttp2Stream(ua_session, stream->get_id(), "Send CONTINUATION frame");
-    payload_length = MIN(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]) - HTTP2_FRAME_HEADER_LEN,
+    payload_length = MIN(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
                          header_blocks_size - sent);
     if (sent + payload_length == header_blocks_size) {
       flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
