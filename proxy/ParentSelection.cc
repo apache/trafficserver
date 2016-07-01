@@ -208,7 +208,6 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
   }
   Debug("parent_select", "ParentConfigParams::nextParent(): result->result: %d, tablePtr: %p, result->epoch: %p", result->result,
         tablePtr, result->epoch);
-  ink_release_assert(tablePtr == result->epoch);
 
   // Find the next parent in the array
   Debug("parent_select", "Calling selectParent() from nextParent");
@@ -644,13 +643,13 @@ ParentRecord::Init(matcher_line *line_info)
   // parent_retry may only be enabled if the parents are origin servers, parent_is_proxy is false.
   if (parent_is_proxy == true) {
     if (parent_retry > 0) {
+      Warning("%s disabling parent_retry on line %d because parent_is_proxy is true", modulePrefix, line_num);
       parent_retry = PARENT_RETRY_NONE;
       if (unavailable_server_retry_responses != NULL) {
         delete unavailable_server_retry_responses;
         unavailable_server_retry_responses = NULL;
       }
     }
-    Warning("%s disabling parent_retry on line %d because parent_is_proxy is true", modulePrefix, line_num);
   } else {
     // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
     if (unavailable_server_retry_responses != NULL && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
