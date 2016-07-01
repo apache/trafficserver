@@ -217,9 +217,13 @@ handle_purge(TSHttpTxn txnp, PurgeInstance *purge)
 
           TSDebug(PLUGIN_NAME, "Checking PATH = %.*s", path_len, path);
           if (path && (path_len >= purge->secret_len)) {
-            const char *s_path = (const char *)memrchr(path, '/', path_len);
+            int s_path = path_len - 1;
 
-            if (!memcmp(s_path ? s_path + 1 : path, purge->secret, purge->secret_len)) {
+            while ((s_path >= 0) && ('/' != path[s_path])) { /* No memrchr in OSX */
+              --s_path;
+            }
+
+            if (!memcmp(s_path > 0 ? path + s_path + 1 : path, purge->secret, purge->secret_len)) {
               should_purge = true;
             }
           }
