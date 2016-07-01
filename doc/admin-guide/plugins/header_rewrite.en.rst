@@ -264,6 +264,7 @@ consider using the `CLIENT-HEADER`_ condition instead.
 ID
 ~~
 ::
+
    cond %{ID:REQUEST} >100
 
 This condition provides access to three identifier values that ATS uses
