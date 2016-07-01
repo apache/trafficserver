@@ -6143,6 +6143,11 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Fail)(RegressionTest *test,
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
 
+  if (level < REGRESSION_TEST_EXTENDED) {
+    *pstatus = REGRESSION_TEST_NOT_RUN;
+    return;
+  }
+
   TSCont cont = TSContCreate(parent_proxy_handler, TSMutexCreate());
   if (cont == NULL) {
     SDK_RPRINT(test, "TSHttpTxnParentProxySet", "FailCase", TC_FAIL, "Unable to create continuation");
@@ -6169,6 +6174,11 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Fail)(RegressionTest *test,
 EXCLUSIVE_REGRESSION_TEST(SDK_API_HttpParentProxySet_Success)(RegressionTest *test, int level, int *pstatus)
 {
   *pstatus = REGRESSION_TEST_INPROGRESS;
+
+  if (level < REGRESSION_TEST_EXTENDED) {
+    *pstatus = REGRESSION_TEST_NOT_RUN;
+    return;
+  }
 
   TSCont cont = TSContCreate(parent_proxy_handler, TSMutexCreate());
   if (cont == NULL) {
