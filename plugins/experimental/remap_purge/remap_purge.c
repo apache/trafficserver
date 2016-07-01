@@ -58,23 +58,12 @@ make_state_path(const char *filename)
     return TSstrdup(filename);
   } else {
     char buf[8192];
-    struct stat s;
     const char *dir = TSInstallDirGet();
 
     snprintf(buf, sizeof(buf), "%s/%s/%s", dir, DEFAULT_DIR, PLUGIN_NAME);
-    if (-1 == stat(buf, &s)) {
-      if (ENOENT == errno) {
-        if (-1 == mkdir(buf, S_IRWXU)) {
-          TSError("[%s] Unable to create directory %s: %s (%d)", PLUGIN_NAME, buf, strerror(errno), errno);
-          return NULL;
-        }
-      } else {
-        TSError("[%s] Unable to stat() directory %s: %s (%d)", PLUGIN_NAME, buf, strerror(errno), errno);
-        return NULL;
-      }
-    } else {
-      if (!S_ISDIR(s.st_mode)) {
-        TSError("[%s] Can not create directory %s, file exists", PLUGIN_NAME, buf);
+    if (-1 == mkdir(buf, S_IRWXU)) {
+      if (EEXIST != errno) {
+        TSError("[%s] Unable to create directory %s: %s (%d)", PLUGIN_NAME, buf, strerror(errno), errno);
         return NULL;
       }
     }
@@ -87,19 +76,17 @@ make_state_path(const char *filename)
 
 /* Constructor and destructor for the PurgeInstance */
 static void
-init_purge_instance(PurgeInstance *purge, char *id)
+init_purge_instance(PurgeInstance *purge)
 {
   FILE *file = fopen(purge->state_file, "r");
 
   if (file) {
-    fscanf(file, "%" PRId64 "", &purge->gen_id);
-    TSDebug(PLUGIN_NAME, "Read genID from %s for %s", purge->state_file, purge->id);
+    if (fscanf(file, "%" PRId64 "", &purge->gen_id) > 0) {
+      TSDebug(PLUGIN_NAME, "Read genID from %s for %s", purge->state_file, purge->id);
+    }
     fclose(file);
-  }
-
-  /* If not specified, we set the ID tag to the fromURL from the remap rule that triggered */
-  if (!purge->id) {
-    purge->id = TSstrdup(id);
+  } else {
+    TSError("[%s] Can not open file %s: %s (%d)", PLUGIN_NAME, purge->state_file, strerror(errno), errno);
   }
 
   purge->lock = TSMutexCreate();
@@ -311,9 +298,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 
   if ((NULL == purge->secret) || (NULL == purge->state_file) || !purge->secret_len) {
     TSError("[%s] Unable to create remap instance, need at least a secret (--secret) and state (--state_file)", PLUGIN_NAME);
+    delete_purge_instance(purge);
     return TS_ERROR;
   } else {
-    init_purge_instance(purge, id);
+    if (!purge->id) {
+      purge->id = TSstrdup(id);
+    }
+    init_purge_instance(purge);
     *ih = (void *)purge;
     return TS_SUCCESS;
   }
