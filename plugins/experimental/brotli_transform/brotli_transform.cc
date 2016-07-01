@@ -97,8 +97,10 @@ public:
   void
   handleReadResponseHeaders(Transaction &transaction)
   {
-    TS_DEBUG(TAG, "BrotliTransformationPlugin handle Read Response Headers.");
-    transaction.getServerResponse().getHeaders().set("Content-Encoding", "br");
+    if (brotliCompressed_) {
+        TS_DEBUG(TAG, "Set response content-encoding to br.");
+        transaction.getServerResponse().getHeaders().set("Content-Encoding", "br");
+    }
     transaction.resume();
   }
 
@@ -129,6 +131,7 @@ public:
         outputData_ = buffer_;
       } else {
         outputData_ = string(out.begin(), out.end());
+        brotliCompressed_ = true;
       }
     } else {
       outputData_ = buffer_;
@@ -137,7 +140,11 @@ public:
     setOutputComplete();
   }
 
-  virtual ~BrotliTransformationPlugin() {}
+  virtual ~BrotliTransformationPlugin() {
+    if (osContentEncoding_ == GZIP) {
+        delete gzipState_;
+    }
+  }
 private:
   void
   checkContentEncoding()
@@ -210,6 +217,7 @@ private:
   GzipInflateTransformationState *gzipState_;
   enum ContentEncoding { GZIP, PLAINTEXT, OTHER };
   ContentEncoding osContentEncoding_;
+  bool brotliCompressed_;
 };
 
 class GlobalHookPlugin : public GlobalPlugin
