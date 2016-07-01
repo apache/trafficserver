@@ -55,9 +55,10 @@ ServerSessionPool::ServerSessionPool() : Continuation(new_ProxyMutex()), m_ip_po
 void
 ServerSessionPool::purge()
 {
-  for (IPHashTable::iterator last = m_ip_pool.end(), spot = m_ip_pool.begin(); spot != last; ++spot) {
-    spot->do_io_close();
-  }
+  // @c do_io_close can free the instance which clears the intrusive links and breaks the iterator.
+  // Therefore @c do_io_close is called on a post-incremented iterator.
+  for (IPHashTable::iterator last = m_ip_pool.end(), spot = m_ip_pool.begin(); spot != last ; spot++->do_io_close())
+    ; // empty
   m_ip_pool.clear();
   m_host_pool.clear();
 }
