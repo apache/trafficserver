@@ -34,6 +34,7 @@
 #include "ts_lua_coroutine.h"
 
 #define TS_LUA_FUNCTION_REMAP "do_remap"
+#define TS_LUA_FUNCTION_OS_RESPONSE "do_os_response"
 #define TS_LUA_FUNCTION_CACHE_LOOKUP_COMPLETE "do_cache_lookup_complete"
 #define TS_LUA_FUNCTION_SEND_REQUEST "do_send_request"
 #define TS_LUA_FUNCTION_READ_RESPONSE "do_read_response"
@@ -123,7 +124,6 @@ typedef struct {
 
   ts_lua_instance_conf *instance_conf;
 
-  int remap;
   int has_hook;
 
   TSRemapRequestInfo *rri;

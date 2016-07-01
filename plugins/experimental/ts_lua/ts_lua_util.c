@@ -454,7 +454,7 @@ ts_lua_destroy_http_ctx(ts_lua_http_ctx *http_ctx)
 
   ci = &http_ctx->cinfo;
 
-  if (!http_ctx->remap) {
+  if (http_ctx->rri == NULL) {
     if (http_ctx->client_request_bufp) {
       TSHandleMLocRelease(http_ctx->client_request_bufp, TS_NULL_MLOC, http_ctx->client_request_hdrp);
     }
