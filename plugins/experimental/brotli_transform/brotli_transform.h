@@ -26,8 +26,6 @@
 #include <atscppapi/PluginInit.h>
 #include <atscppapi/Logger.h>
 #include <brotli/enc/encode.h>
-
-// class BrotliTransformOut;
 #include "brotli_transform_out.h"
 
 using namespace atscppapi;
