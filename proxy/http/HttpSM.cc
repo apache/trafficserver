@@ -1954,9 +1954,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     t_state.api_next_action       = HttpTransact::SM_ACTION_API_READ_RESPONSE_HDR;
 
     // if exceeded limit deallocate postdata buffers and disable redirection
-    if (enable_redirection && (redirection_tries < t_state.txn_conf->number_of_redirections)) {
-      ++redirection_tries;
-    } else {
+    if (enable_redirection && (redirection_tries >= t_state.txn_conf->number_of_redirections)) {
       tunnel.deallocate_redirect_postdata_buffers();
       enable_redirection = false;
     }
@@ -7710,6 +7708,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
   }
 
   t_state.redirect_info.redirect_in_process = true;
+  redirection_tries++;
 
   // set the passed in location url and parse it
   URL &redirectUrl = t_state.redirect_info.redirect_url;
