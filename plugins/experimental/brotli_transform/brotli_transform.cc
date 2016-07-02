@@ -16,20 +16,8 @@
   limitations under the License.
  */
 
-#include <iostream>
-#include <vector>
-#include <zlib.h>
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/TransformationPlugin.h>
-#include <atscppapi/GzipInflateTransformation.h>
-#include <atscppapi/PluginInit.h>
-#include <atscppapi/Logger.h>
-#include <brotli/enc/encode.h>
-
-using namespace atscppapi;
-using namespace atscppapi::transformations;
-using namespace std;
-
+#include "brotli_transform.h"
+#include "brotli_transform_out.h"
 #define TAG "brotli_transformation"
 
 namespace
@@ -37,126 +25,97 @@ namespace
 unsigned int BROTLI_QUALITY = 9;
 }
 
-class BrotliVecOut : public brotli::BrotliOut
+BrotliTransformationPlugin::BrotliTransformationPlugin(Transaction &transaction)
+  : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION)
 {
-public:
-  BrotliVecOut(vector<char> &out) : outVec(out) {}
-  bool
-  Write(const void *buf, size_t n)
-  {
-    outVec.insert(outVec.end(), (char *)buf, (char *)buf + n);
-    return true;
-  }
+  registerHook(HOOK_SEND_RESPONSE_HEADERS);
+  brotliCompressed_ = false;
+}
 
-private:
-  vector<char> &outVec;
-};
-
-class BrotliTransformationPlugin : public TransformationPlugin
+void
+BrotliTransformationPlugin::handleSendResponseHeaders(Transaction &transaction)
 {
-public:
-  BrotliTransformationPlugin(Transaction &transaction) : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION)
-  {
-    registerHook(HOOK_SEND_RESPONSE_HEADERS);
+  if (brotliCompressed_) {
+    TS_DEBUG(TAG, "Set response content-encoding to br.");
+    transaction.getClientResponse().getHeaders().set("Content-Encoding", "br");
   }
+  transaction.resume();
+}
 
-  void
-  handleSendResponseHeaders(Transaction &transaction)
-  {
-    if (brotliCompressed_) {
-      TS_DEBUG(TAG, "Set response content-encoding to br.");
-      transaction.getClientResponse().getHeaders().set("Content-Encoding", "br");
-    }
-    transaction.resume();
-  }
-
-  void
-  consume(const string &data)
-  {
-    buffer_.append(data);
-  }
-
-  void
-  handleInputComplete()
-  {
-    TS_DEBUG(TAG, "BrotliTransformationPlugin handle Input Complete.");
-    brotli::BrotliParams params;
-    params.quality = BROTLI_QUALITY;
-
-    const char *dataPtr = buffer_.c_str();
-    brotli::BrotliMemIn brotliIn(dataPtr, buffer_.length());
-    vector<char> out;
-    BrotliVecOut brotliOut(out);
-    if (!brotli::BrotliCompress(params, &brotliIn, &brotliOut)) {
-      TS_DEBUG(TAG, "brotli compress failed.");
-      outputData_ = buffer_;
-    } else {
-      outputData_       = string(out.begin(), out.end());
-      brotliCompressed_ = true;
-    }
-
-    produce(outputData_);
-    setOutputComplete();
-  }
-
-  virtual ~BrotliTransformationPlugin() {}
-private:
-  string buffer_;
-  string outputData_;
-  bool brotliCompressed_;
-};
-
-class GlobalHookPlugin : public GlobalPlugin
+void
+BrotliTransformationPlugin::consume(const string &data)
 {
-public:
-  GlobalHookPlugin() { registerHook(HOOK_READ_RESPONSE_HEADERS); }
-  void
-  handleReadResponseHeaders(Transaction &transaction)
-  {
-    if (isBrotliSupported(transaction)) {
-      TS_DEBUG(TAG, "Brotli is supported.");
-      checkContentEncoding(transaction);
+  buffer_.append(data);
+}
+
+void
+BrotliTransformationPlugin::transformProduce(const string &data)
+{
+  produce(data);
+}
+
+void
+BrotliTransformationPlugin::handleInputComplete()
+{
+  brotli::BrotliParams params;
+  params.quality = BROTLI_QUALITY;
+
+  const char *dataPtr = buffer_.c_str();
+  brotli::BrotliMemIn brotliIn(dataPtr, buffer_.length());
+  BrotliTransformOut brotliTransformOut(this);
+
+  if (!brotli::BrotliCompress(params, &brotliIn, &brotliTransformOut)) {
+    TS_DEBUG(TAG, "brotli compress failed.");
+    produce(buffer_);
+  } else {
+    brotliCompressed_ = true;
+  }
+  setOutputComplete();
+}
+
+void
+GlobalHookPlugin::handleReadResponseHeaders(Transaction &transaction)
+{
+  if (isBrotliSupported(transaction)) {
+    TS_DEBUG(TAG, "Brotli is supported.");
+    checkContentEncoding(transaction);
+    if (osContentEncoding_ == GZIP || osContentEncoding_ == PLAINTEXT) {
       if (osContentEncoding_ == GZIP) {
+        TS_DEBUG(TAG, "Origin server return gzip, do gzip inflate.");
         transaction.addPlugin(new GzipInflateTransformation(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
       }
-      if (osContentEncoding_ != NOTSUPPORTED) {
-        transaction.addPlugin(new BrotliTransformationPlugin(transaction));
-      }
+      transaction.addPlugin(new BrotliTransformationPlugin(transaction));
     }
-    transaction.resume();
   }
+  transaction.resume();
+}
 
-private:
-  bool
-  isBrotliSupported(Transaction &transaction)
-  {
-    Headers &clientRequestHeaders = transaction.getClientRequest().getHeaders();
-    string acceptEncoding         = clientRequestHeaders.values("Accept-Encoding");
-    if (acceptEncoding.find("br") != string::npos) {
-      return true;
-    }
-    return false;
+bool
+GlobalHookPlugin::isBrotliSupported(Transaction &transaction)
+{
+  Headers &clientRequestHeaders = transaction.getClientRequest().getHeaders();
+  string acceptEncoding         = clientRequestHeaders.values("Accept-Encoding");
+  if (acceptEncoding.find("br") != string::npos) {
+    return true;
   }
+  return false;
+}
 
-  void
-  checkContentEncoding(Transaction &transaction)
-  {
-    Headers &hdr           = transaction.getServerResponse().getHeaders();
-    string contentEncoding = hdr.values("Content-Encoding");
-    if (contentEncoding.empty()) {
-      osContentEncoding_ = PLAINTEXT;
+void
+GlobalHookPlugin::checkContentEncoding(Transaction &transaction)
+{
+  Headers &hdr           = transaction.getServerResponse().getHeaders();
+  string contentEncoding = hdr.values("Content-Encoding");
+  if (contentEncoding.empty()) {
+    osContentEncoding_ = PLAINTEXT;
+  } else {
+    if (contentEncoding.find("gzip") != string::npos) {
+      osContentEncoding_ = GZIP;
     } else {
-      if (contentEncoding.find("gzip") != string::npos) {
-        osContentEncoding_ = GZIP;
-      } else {
-        osContentEncoding_ = NOTSUPPORTED;
-      }
+      osContentEncoding_ = OTHERENCODE;
     }
   }
-
-  enum ContentEncoding { GZIP, PLAINTEXT, NOTSUPPORTED };
-  ContentEncoding osContentEncoding_;
-};
+}
 
 void
 TSPluginInit(int argc, const char *argv[])
