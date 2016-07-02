@@ -539,7 +539,7 @@ The following list describes |TS| custom logging fields.
     ``0`` on every server restart.
 
 .. cruuid:
-``cruuid`
+``cruuid``
     This is a UUID for the client request, uniquely identifying this
     transaction. This is actually a concatenation of the ``puuid`` and the
     ``crid``.
