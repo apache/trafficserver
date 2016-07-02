@@ -208,7 +208,6 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
   }
   Debug("parent_select", "ParentConfigParams::nextParent(): result->result: %d, tablePtr: %p, result->epoch: %p", result->result,
         tablePtr, result->epoch);
-  ink_release_assert(tablePtr == result->epoch);
 
   // Find the next parent in the array
   Debug("parent_select", "Calling selectParent() from nextParent");
