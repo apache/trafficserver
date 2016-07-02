@@ -532,6 +532,18 @@ The following list describes |TS| custom logging fields.
     The client request unmapped URL host. This field records a URL's
     host before it is remapped (reverse proxy mode).
 
+.. crid:
+
+``crid``
+    This is the sequence number of this client request. This starts over at
+    ``0`` on every server restart.
+
+.. cruuid:
+``cruuid`
+    This is a UUID for the client request, uniquely identifying this
+    transaction. This is actually a concatenation of the ``puuid`` and the
+    ``crid``.
+
 .. _cluc:
 
 ``cluc``
@@ -614,6 +626,12 @@ The following list describes |TS| custom logging fields.
     The proxy finish status code; specifies whether the |TS|
     request to the origin server was successfully completed (``FIN``),
     interrupted (``INTR``) or timed out (``TIMEOUT``).
+
+.. puuid:
+
+``puuid``
+    A UUID unique for the currently running :program:`traffic_server`
+    process. This is generated on every server startup.
 
 .. _phn:
 
