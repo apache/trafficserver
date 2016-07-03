@@ -51,6 +51,10 @@ public:
   void handle_event_count(int event);
   int handle_event(int event, void *edata);
 
+protected:
+  virtual void clear();
+  virtual void free();
+
 public:
   void *mdata;
   TSEventFunc m_event_func;
@@ -68,10 +72,7 @@ public:
   INKVConnInternal();
   INKVConnInternal(TSEventFunc funcp, TSMutex mutexp);
 
-  void init(TSEventFunc funcp, TSMutex mutexp);
   virtual void destroy();
-
-  int handle_event(int event, void *edata);
 
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
 
@@ -89,6 +90,10 @@ public:
 
   bool get_data(int id, void *data);
   bool set_data(int id, void *data);
+
+protected:
+  virtual void clear();
+  virtual void free();
 
 public:
   VIO m_read_vio;
