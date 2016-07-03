@@ -556,13 +556,17 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     if (s->vio.ntodo() <= 0) {
       write_signal_done(VC_EVENT_WRITE_COMPLETE, nh, vc);
       return;
-    } else if (signalled && (wbe_event != vc->write_buffer_empty_event)) {
+    }
+    int e = 0;
+    if (!signalled) {
+      e = VC_EVENT_WRITE_READY;
+    } else if (wbe_event != vc->write_buffer_empty_event) {
       // @a signalled means we won't send an event, and the event values differing means we
       // had a write buffer trap and cleared it, so we need to send it now.
-      if (write_signal_and_update(wbe_event, vc) != EVENT_CONT)
-        return;
-    } else if (!signalled) {
-      if (write_signal_and_update(VC_EVENT_WRITE_READY, vc) != EVENT_CONT) {
+      e = wbe_event;
+    }
+    if (e) {
+      if (write_signal_and_update(e, vc) != EVENT_CONT) {
         return;
       }
 
@@ -573,16 +577,17 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       }
     }
 
-    if (!buf.reader()->read_avail()) {
+    if ((needs & EVENTIO_READ) == EVENTIO_READ) {
+      read_reschedule(nh, vc);
+    }
+
+    if (!(buf.reader()->is_read_avail_more_than(0))) {
       write_disable(nh, vc);
       return;
     }
 
     if ((needs & EVENTIO_WRITE) == EVENTIO_WRITE) {
       write_reschedule(nh, vc);
-    }
-    if ((needs & EVENTIO_READ) == EVENTIO_READ) {
-      read_reschedule(nh, vc);
     }
     return;
   }
