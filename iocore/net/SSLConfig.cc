@@ -357,6 +357,7 @@ SSLCertificateConfig::startup()
   sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
   sslCertUpdate->attach("proxy.config.ssl.server.cert_chain.filename");
+  sslCertUpdate->attach("proxy.config.ssl.server.session_ticket.enable");
 
   // Exit if there are problems on the certificate loading and the
   // proxy.config.ssl.server.multicert.exit_on_load_fail is true

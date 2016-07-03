@@ -92,7 +92,10 @@ typedef SSL_METHOD *ink_ssl_method_t;
 
 // gather user provided settings from ssl_multicert.config in to a single struct
 struct ssl_user_config {
-  ssl_user_config() : session_ticket_enabled(1), opt(SSLCertContext::OPT_NONE) {}
+  ssl_user_config() : opt(SSLCertContext::OPT_NONE)
+  {
+    REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
+  }
   int session_ticket_enabled; // ssl_ticket_enabled - session ticket enabled
   ats_scoped_str addr;        // dest_ip - IPv[64] address to match
   ats_scoped_str cert;        // ssl_cert_name - certificate
