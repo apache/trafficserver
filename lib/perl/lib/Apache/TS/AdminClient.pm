@@ -613,8 +613,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.net.sock_send_buffer_size_out
  proxy.config.net.defer_accept
  proxy.config.output.logfile
- proxy.config.ping.npacks_to_trans
- proxy.config.ping.timeout_sec
  proxy.config.plugin.plugin_dir
  proxy.config.process_manager.enable_mgmt_port
  proxy.config.process_manager.mgmt_port
