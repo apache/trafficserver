@@ -376,6 +376,7 @@ public:
   int write_to_disk(const void *, size_t);
 
   RefCountCacheSerializer(Continuation *acont, C *cc, int frequency, std::string dirname, std::string filename);
+  ~RefCountCacheSerializer();
 
 private:
   Vec<RefCountCacheHashEntry *> partition_items;
@@ -397,24 +398,25 @@ private:
 
 template <class C>
 int
-RefCountCacheSerializer<C>::copy_partition(int event, Event *e)
+RefCountCacheSerializer<C>::copy_partition(int /* event */, Event *e)
 {
-  (void)event;
   if (partition >= cache->partition_count()) {
-    int sync_ret = this->finalize_sync();
-    if (sync_ret != 0) {
-      Warning("Unable to finalize sync of cache to disk %s: %d", this->filename.c_str(), sync_ret);
+    int error = this->finalize_sync();
+    if (error != 0) {
+      Warning("Unable to finalize sync of cache to disk %s: %s", this->filename.c_str(), strerror(-error));
     }
-    cont->handleEvent(REFCOUNT_CACHE_EVENT_SYNC, 0);
+
     Debug("refcountcache", "RefCountCacheSync done");
     delete this;
     return EVENT_DONE;
   }
+
   Debug("refcountcache", "sync partition=%ld/%ld", partition, cache->partition_count());
   // copy the partition into our buffer, then we'll let `pauseEvent` write it out
   this->partition_items.reserve(cache->get_partition(partition).count());
   cache->get_partition(partition).copy(this->partition_items);
   partition++;
+
   SET_HANDLER(&RefCountCacheSerializer::write_partition);
   mutex = e->ethread->mutex;
   e->schedule_imm(ET_TASK);
@@ -424,16 +426,16 @@ RefCountCacheSerializer<C>::copy_partition(int event, Event *e)
 
 template <class C>
 int
-RefCountCacheSerializer<C>::write_partition(int event, Event *e)
+RefCountCacheSerializer<C>::write_partition(int /* event */, Event *e)
 {
-  (void)event; // unused
   int curr_time = Thread::get_hrtime() / HRTIME_SECOND;
+
   // write the partition to disk
   // for item in this->partitionItems
   // write to disk with headers per item
-  RefCountCacheHashEntry *it;
+
   for (unsigned int i = 0; i < this->partition_items.length(); i++) {
-    it = this->partition_items[i];
+    RefCountCacheHashEntry *it = this->partition_items[i];
 
     // check if the item has expired, if so don't persist it to disk
     if (it->meta.expiry_time < curr_time) {
@@ -444,15 +446,14 @@ RefCountCacheSerializer<C>::write_partition(int event, Event *e)
     int ret = this->write_to_disk((char *)&it->meta, sizeof(it->meta));
     if (ret < 0) {
       Warning("Error writing cache item header to %s: %d", this->tmp_filename.c_str(), ret);
-      cont->handleEvent(REFCOUNT_CACHE_EVENT_SYNC, 0);
       delete this;
       return EVENT_DONE;
     }
+
     // write the actual object now
     ret = this->write_to_disk((char *)it->item.get(), it->meta.size);
     if (ret < 0) {
       Warning("Error writing cache item to %s: %d", this->tmp_filename.c_str(), ret);
-      cont->handleEvent(REFCOUNT_CACHE_EVENT_SYNC, 0);
       delete this;
       return EVENT_DONE;
     }
@@ -482,16 +483,15 @@ RefCountCacheSerializer<C>::write_partition(int event, Event *e)
 
 template <class C>
 int
-RefCountCacheSerializer<C>::pause_event(int event, Event *e)
+RefCountCacheSerializer<C>::pause_event(int /* event */, Event *e)
 {
-  (void)event;
-  (void)e;
-
   // Schedule up the next partition
-  if (partition < cache->partition_count())
+  if (partition < cache->partition_count()) {
     mutex = cache->get_partition(partition).lock.get();
-  else
+  } else {
     mutex = cont->mutex;
+  }
+
   SET_HANDLER(&RefCountCacheSerializer::copy_partition);
   e->schedule_imm(ET_TASK);
   return EVENT_CONT;
@@ -500,15 +500,12 @@ RefCountCacheSerializer<C>::pause_event(int event, Event *e)
 // Open the tmp file, etc.
 template <class C>
 int
-RefCountCacheSerializer<C>::initialize_storage(int event, Event *e)
+RefCountCacheSerializer<C>::initialize_storage(int /* event */, Event *e)
 {
-  (void)event;                                                                                 // unused
   this->fd = socketManager.open(this->tmp_filename.c_str(), O_TRUNC | O_RDWR | O_CREAT, 0644); // TODO: configurable perms
-
-  if (this->fd <= 0) {
-    Warning("Unable to create temporary file %s, unable to persist hostdb: %d error:%s\n", this->tmp_filename.c_str(), this->fd,
+  if (this->fd == -1) {
+    Warning("Unable to create temporary file %s, unable to persist hostdb: %d :%s\n", this->tmp_filename.c_str(), this->fd,
             strerror(errno));
-    cont->handleEvent(REFCOUNT_CACHE_EVENT_SYNC, 0);
     delete this;
     return EVENT_DONE;
   }
@@ -517,7 +514,6 @@ RefCountCacheSerializer<C>::initialize_storage(int event, Event *e)
   int ret = this->write_to_disk((char *)&this->cache->get_header(), sizeof(RefCountCacheHeader));
   if (ret < 0) {
     Warning("Error writing cache header to %s: %d", this->tmp_filename.c_str(), ret);
-    cont->handleEvent(REFCOUNT_CACHE_EVENT_SYNC, 0);
     delete this;
     return EVENT_DONE;
   }
@@ -527,50 +523,43 @@ RefCountCacheSerializer<C>::initialize_storage(int event, Event *e)
   return EVENT_CONT;
 }
 
-// do the final mv and close of file handle
+// Do the final mv and close of file handle. Only reset "fd" to -1 if we fully succeed.
+// Returns 0 on success, -errno on failure.
 template <class C>
 int
 RefCountCacheSerializer<C>::finalize_sync()
 {
+  int error; // Socket manager return 0 or -errno.
+  int dirfd = -1;
+
   // fsync the fd we have
-  int fsync_ret = socketManager.fsync(this->fd);
-  if (fsync_ret != 0) {
-    socketManager.close(this->fd);
-    return fsync_ret;
+  if ((error = socketManager.fsync(this->fd))) {
+    return error;
   }
 
-  int dir_fd = socketManager.open(this->dirname.c_str(), O_DIRECTORY); // Correct permissions?
-  if (dir_fd <= 0) {
-    socketManager.close(this->fd);
-    return dir_fd;
-  }
-  // move the file
-  int ret = rename(this->tmp_filename.c_str(), this->filename.c_str());
-
-  if (ret != 0) {
-    socketManager.close(this->fd);
-    socketManager.close(dir_fd);
-    return ret;
+  dirfd = socketManager.open(this->dirname.c_str(), O_DIRECTORY);
+  if (dirfd == -1) {
+    return -errno;
   }
 
-  // fsync the dir
-  int fsync_dir_ret = socketManager.fsync(dir_fd);
-  if (fsync_dir_ret != 0) {
-    socketManager.close(this->fd);
-    socketManager.close(dir_fd);
-    return fsync_dir_ret;
+  // Rename from the temp name to the real name.
+  if (rename(this->tmp_filename.c_str(), this->filename.c_str()) != 0) {
+    error = -errno;
+    socketManager.close(dirfd);
+    return error;
   }
 
-  int dir_close_ret = socketManager.close(dir_fd);
-  if (dir_close_ret != 0) {
-    socketManager.close(this->fd);
-    return dir_close_ret;
+  // Fsync the directory to persist the rename.
+  if ((error = socketManager.fsync(dirfd))) {
+    socketManager.close(dirfd);
+    return error;
   }
 
-  int close_ret = socketManager.close(this->fd);
-  if (close_ret != 0) {
-    return close_ret;
-  }
+  // Don't bother checking for errors on the close since theere's nothing we can do about it at
+  // this point anyway.
+  socketManager.close(dirfd);
+  socketManager.close(this->fd);
+  this->fd = -1;
 
   if (this->rsb) {
     RecSetRawStatCount(this->rsb, refcountcache_last_sync_time, Thread::get_hrtime() / HRTIME_SECOND);
@@ -606,7 +595,7 @@ RefCountCacheSerializer<C>::RefCountCacheSerializer(Continuation *acont, C *cc, 
     partition(0),
     cache(cc),
     cont(acont),
-    fd(0),
+    fd(-1),
     dirname(dirname),
     filename(filename),
     time_per_partition(HRTIME_SECONDS(frequency) / cc->partition_count()),
@@ -614,12 +603,27 @@ RefCountCacheSerializer<C>::RefCountCacheSerializer(Continuation *acont, C *cc, 
     total_items(0),
     total_size(0),
     rsb(cc->get_rsb())
-
 {
   eventProcessor.schedule_imm(this, ET_TASK);
   this->tmp_filename = this->filename + ".syncing"; // TODO tmp file extension configurable?
 
+  Debug("refcountcache", "started serializer %p", this);
   SET_HANDLER(&RefCountCacheSerializer::initialize_storage);
+}
+
+template <class C> RefCountCacheSerializer<C>::~RefCountCacheSerializer()
+{
+  // If we failed before finalizing the on-disk copy, close up and nuke the temporary sync file.
+  if (this->fd != -1) {
+    unlink(this->tmp_filename.c_str());
+    socketManager.close(fd);
+  }
+
+  Debug("refcountcache", "finished serializer %p", this);
+
+  // Note that we have to do the unlink before we send the completion event, otherwise
+  // we could unlink the sync file out from under another serializer.
+  cont->handleEvent(REFCOUNT_CACHE_EVENT_SYNC, 0);
 }
 
 // RefCountCache is a ref-counted key->value map to store classes that inherit from RefCountObj.
