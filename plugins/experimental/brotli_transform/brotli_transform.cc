@@ -29,7 +29,14 @@ BrotliTransformationPlugin::BrotliTransformationPlugin(Transaction &transaction)
   : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION)
 {
   registerHook(HOOK_SEND_RESPONSE_HEADERS);
-  brotliCompressed_ = false;
+  brotliCompressed_     = true;
+  brotliTransformOut_   = new BrotliTransformOut(this);
+  brotliParams_.quality = BROTLI_QUALITY;
+}
+
+BrotliTransformationPlugin::~BrotliTransformationPlugin()
+{
+  delete brotliTransformOut_;
 }
 
 void
@@ -45,7 +52,14 @@ BrotliTransformationPlugin::handleSendResponseHeaders(Transaction &transaction)
 void
 BrotliTransformationPlugin::consume(const string &data)
 {
-  buffer_.append(data);
+  const char *dataPtr = data.c_str();
+  brotli::BrotliMemIn brotliIn(dataPtr, data.length());
+
+  if (!brotli::BrotliCompress(brotliParams_, &brotliIn, brotliTransformOut_)) {
+    TS_DEBUG(TAG, "brotli compress failed.");
+    produce(data);
+    brotliCompressed_ = false;
+  }
 }
 
 void
@@ -57,19 +71,6 @@ BrotliTransformationPlugin::transformProduce(const string &data)
 void
 BrotliTransformationPlugin::handleInputComplete()
 {
-  brotli::BrotliParams params;
-  params.quality = BROTLI_QUALITY;
-
-  const char *dataPtr = buffer_.c_str();
-  brotli::BrotliMemIn brotliIn(dataPtr, buffer_.length());
-  BrotliTransformOut brotliTransformOut(this);
-
-  if (!brotli::BrotliCompress(params, &brotliIn, &brotliTransformOut)) {
-    TS_DEBUG(TAG, "brotli compress failed.");
-    produce(buffer_);
-  } else {
-    brotliCompressed_ = true;
-  }
   setOutputComplete();
 }
 

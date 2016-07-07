@@ -40,10 +40,12 @@ public:
   void consume(const string &);
   void handleInputComplete();
   void transformProduce(const string &);
-  virtual ~BrotliTransformationPlugin() {}
+  virtual ~BrotliTransformationPlugin();
+
 private:
-  string buffer_;
   bool brotliCompressed_;
+  BrotliTransformOut *brotliTransformOut_;
+  brotli::BrotliParams brotliParams_;
 };
 
 class GlobalHookPlugin : public GlobalPlugin
