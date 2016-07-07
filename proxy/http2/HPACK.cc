@@ -236,7 +236,7 @@ HpackIndexingTable::lookup(const char *name, int name_len, const char *value, in
 
     // Check whether name (and value) are matched
     if (ptr_len_casecmp(name, name_len, table_name, table_name_len) == 0) {
-      if (ptr_len_cmp(value, value_len, table_value, table_value_len) == 0) {
+      if ((value_len == table_value_len) && (memcmp(value, table_value, value_len) == 0)) {
         result.index      = index;
         result.match_type = HPACK_EXACT_MATCH;
         break;

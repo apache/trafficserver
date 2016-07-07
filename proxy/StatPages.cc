@@ -83,7 +83,7 @@ StatPagesManager::handle_http(Continuation *cont, HTTPHdr *header)
     host_len       = unescapifyStr(host);
 
     for (i = 0; i < n_stat_pages; i++) {
-      if (ptr_len_cmp(host, host_len, stat_pages[i].module) == 0) {
+      if (strlen(host) == strlen(stat_pages[i].module) && strncmp(host, stat_pages[i].module, host_len) == 0) {
         return stat_pages[i].func(cont, header);
       }
     }
