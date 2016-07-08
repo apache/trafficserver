@@ -74,8 +74,7 @@ Http1ClientSession::Http1ClientSession()
     ka_vio(NULL),
     slave_ka_vio(NULL),
     outbound_port(0),
-    f_outbound_transparent(false),
-    m_active(false)
+    f_outbound_transparent(false)
 {
 }
 
@@ -229,8 +228,8 @@ Http1ClientSession::do_io_close(int alerrno)
 {
   if (read_state == HCS_ACTIVE_READER) {
     HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
-    if (m_active) {
-      m_active = false;
+    if (trans.m_active) {
+      trans.m_active = false;
       HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
     }
   }
@@ -469,8 +468,8 @@ Http1ClientSession::attach_server_session(HttpServerSession *ssession, bool tran
     ink_assert(ssession->get_netvc() != this->get_netvc());
 
     // handling potential keep-alive here
-    if (m_active) {
-      m_active = false;
+    if (trans.m_active) {
+      trans.m_active = false;
       HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
     }
     // Since this our slave, issue an IO to detect a close and

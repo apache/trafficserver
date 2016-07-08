@@ -203,11 +203,6 @@ public:
   /// Transparently pass-through non-HTTP traffic.
   bool f_transparent_passthrough;
 
-  // for DI. An active connection is one that a request has
-  // been successfully parsed (PARSE_DONE) and it remains to
-  // be active until the transaction goes through or the client
-  // aborts.
-  bool m_active;
   Http1ClientTransaction trans;
 };
 
