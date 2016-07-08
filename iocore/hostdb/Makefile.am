@@ -34,11 +34,14 @@ libinkhostdb_a_SOURCES = \
   HostDB.cc \
   I_HostDB.h \
   I_HostDBProcessor.h \
+  I_SplitDNS.h \
+  I_SplitDNSProcessor.h \
   Inline.cc \
-  RefCountCache.cc \
   P_HostDB.h \
   P_HostDBProcessor.h \
-  P_RefCountCache.h
+  P_RefCountCache.h \
+  P_RefCountCacheSerializer.h \
+  RefCountCache.cc
 
 TESTS = $(check_PROGRAMS)
 check_PROGRAMS = test_RefCountCache

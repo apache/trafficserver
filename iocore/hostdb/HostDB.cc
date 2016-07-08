@@ -24,6 +24,7 @@
 #define _HOSTDB_CC_
 
 #include "P_HostDB.h"
+#include "P_RefCountCacheSerializer.h"
 #include "ts/I_Layout.h"
 #include "Show.h"
 #include "ts/Tokenizer.h"
