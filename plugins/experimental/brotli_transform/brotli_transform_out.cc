@@ -22,6 +22,6 @@
 bool
 BrotliTransformOut::Write(const void *buf, size_t n)
 {
-  brotliTransform_->transformProduce(string(reinterpret_cast<const char *>(buf), n));
+  brotliTransform_->transformProduce(string((const char *)buf, n));
   return true;
 }
