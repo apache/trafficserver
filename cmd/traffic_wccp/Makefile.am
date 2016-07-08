@@ -39,3 +39,8 @@ traffic_wccp_LDADD = \
   $(top_builddir)/lib/wccp/libwccp.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   @OPENSSL_LIBS@
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

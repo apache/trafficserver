@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 # Note that hdrs is targeted from ../Makefile.am
 noinst_LIBRARIES = \
   liberror.a \
@@ -50,3 +52,7 @@ libUglyLogStubs_a_SOURCES = \
 libxml_a_SOURCES = \
   InkXml.cc \
   InkXml.h
+
+tidy-local: $(liberror_a_SOURCES) $(libdiagsconfig_a_SOURCES) \
+		$(libUglyLogStubs_a_SOURCES) $(libxml_a_SOURCES)
+	$(CXX_Clang_Tidy)

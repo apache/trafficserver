@@ -64,3 +64,8 @@ endif
 if HAS_KYOTOCABINET
   SUBDIRS += cache_key_genid
 endif
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

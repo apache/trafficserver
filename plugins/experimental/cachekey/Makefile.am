@@ -23,3 +23,8 @@ cachekey_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 VIRTUALENV_DIR = ../../../ci/tsqa/virtualenv
 tsqa: $(VIRTUALENV_DIR)
 	@. $(VIRTUALENV_DIR)/bin/activate && $(VIRTUALENV_DIR)/bin/nosetests --with-xunit -sv --logging-level=INFO
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

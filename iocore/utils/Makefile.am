@@ -30,3 +30,8 @@ libinkutils_a_SOURCES = \
   Machine.cc \
   OneWayMultiTunnel.cc \
   OneWayTunnel.cc
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

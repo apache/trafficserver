@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = \
   $(LUAJIT_CPPFLAGS) \
   -I$(top_srcdir)/lib \
@@ -36,3 +38,5 @@ libbindings_la_SOURCES = \
   repl.cc \
   repl.h
 
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

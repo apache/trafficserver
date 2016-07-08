@@ -20,3 +20,8 @@ pkglib_LTLIBRARIES = escalate.la
 escalate_la_SOURCES = escalate.cc
 escalate_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

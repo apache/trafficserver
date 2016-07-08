@@ -16,6 +16,7 @@
 #  limitations under the License.
 
 include $(top_srcdir)/build/plugins.mk
+include $(top_srcdir)/build/tidy.mk
 
 plugins = \
 	AsyncHttpFetch.la \
@@ -98,3 +99,6 @@ TimeoutExamplePlugin_la_LIBADD = $(libatscppai)
 TransactionHookPlugin_la_LIBADD = $(libatscppai)
 boom_la_LIBADD = $(libatscppai)
 intercept_la_LIBADD = $(libatscppai)
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

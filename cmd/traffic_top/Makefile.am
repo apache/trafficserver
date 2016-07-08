@@ -39,3 +39,8 @@ traffic_top_LDADD = \
   @CURL_LIBS@ @CURSES_LIB@
 
 endif
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

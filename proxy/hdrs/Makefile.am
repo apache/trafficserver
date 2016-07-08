@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
@@ -79,3 +81,6 @@ test_mime_SOURCES = test_mime.cc
 #test_UNUSED_SOURCES = \
 #  test_header.cc \
 #  test_urlhash.cc
+
+tidy-local: $(libhdrs_a_SOURCES)
+	$(CXX_Clang_Tidy)

@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/proxy/api/ts \
@@ -46,3 +48,6 @@ libspdy_a_SOURCES += \
   SpdyCommon.cc \
   SpdyCommon.h
 endif
+
+tidy-local: $(libspdy_a_SOURCES)
+	$(CXX_Clang_Tidy)

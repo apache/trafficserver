@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
@@ -47,3 +49,6 @@ libhttp_remap_a_SOURCES = \
   UrlMappingPathIndex.h \
   UrlRewrite.cc \
   UrlRewrite.h
+
+tidy-local: $(libhttp_remap_a_SOURCES)
+	$(CXX_Clang_Tidy)

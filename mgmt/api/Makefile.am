@@ -17,6 +17,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 SUBDIRS = include
 
 AM_CPPFLAGS = \
@@ -88,3 +90,6 @@ traffic_api_cli_remote_LDADD = \
   libtsmgmt.la \
   $(top_builddir)/lib/ts/libtsutil.la \
   @LIBTCL@ @OPENSSL_LIBS@
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

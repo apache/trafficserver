@@ -23,3 +23,8 @@ healthchecks_la_SOURCES = healthchecks.c
 healthchecks_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
 endif
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CC_Clang_Tidy)

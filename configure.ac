@@ -41,10 +41,15 @@ AC_CONFIG_AUX_DIR([build/_aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
 
-AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
+# NOTE: we turn off portability warnings because the clang-tidy targets use
+# GNU make extensions to filter the sources list.
+AM_INIT_AUTOMAKE([-Wall -Werror -Wno-portability tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
 
 # See discussion at https://autotools.io/automake/maintainer.html.
 AM_MAINTAINER_MODE([enable])
+
+# Enable a recursive "tidy" rule for clang-tidy.
+AM_EXTRA_RECURSIVE_TARGETS([tidy])
 
 AC_CONFIG_HEADERS([lib/ink_autoconf.h])
 
@@ -694,6 +699,11 @@ AC_ARG_VAR(RPATH, [path to be added to rpath])
 AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
 AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
 AC_CHECK_PROG([SPHINXBUILD], [sphinx-build], [sphinx-build], [false])
+
+AC_ARG_VAR([CLANG_TIDY], [clang-tidy command])
+
+# Default CLANG_TIDY to "clang-tidy", or "false" if it is not present.
+AC_PATH_PROG([CLANG_TIDY], [clang-tidy],[false])
 
 AC_SUBST(TS_MAN1_MANPAGES)
 AC_SUBST(TS_MAN3_MANPAGES)

@@ -57,3 +57,8 @@ libinkcluster_a_SOURCES = \
 #test_Cluster_SOURCES = \
 #  test_I_Cluster.cc \
 #  test_P_Cluster.cc
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 SUBDIRS = remap
 
 AM_CPPFLAGS = \
@@ -78,6 +80,9 @@ if BUILD_TESTS
   libhttp_a_SOURCES += HttpUpdateTester.cc \
     RegressionHttpTransact.cc
 endif
+
+tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)
+	$(CXX_Clang_Tidy)
 
 #test_UNUSED_SOURCES = \
 #  TestHttpTransact.cc \

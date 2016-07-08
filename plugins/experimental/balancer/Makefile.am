@@ -20,3 +20,8 @@ pkglib_LTLIBRARIES = balancer.la
 balancer_la_SOURCES = balancer.cc roundrobin.cc hash.cc balancer.h
 balancer_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

@@ -55,33 +55,39 @@ libatscppapi_la_SOURCES = GlobalPlugin.cc \
 library_includedir=$(includedir)/atscppapi
 base_include_folder = $(top_srcdir)/$(subdir)/include/atscppapi
 
-library_include_HEADERS = $(base_include_folder)/GlobalPlugin.h \
-			  $(base_include_folder)/Plugin.h \
-			  $(base_include_folder)/PluginInit.h \
-			  $(base_include_folder)/Transaction.h \
-			  $(base_include_folder)/TransactionPlugin.h \
-			  $(base_include_folder)/HttpMethod.h \
-			  $(base_include_folder)/HttpStatus.h \
-			  $(base_include_folder)/HttpVersion.h \
-			  $(base_include_folder)/Headers.h \
-			  $(base_include_folder)/Request.h \
-			  $(base_include_folder)/CaseInsensitiveStringComparator.h \
-			  $(base_include_folder)/ClientRequest.h \
-	 		  $(base_include_folder)/Url.h \
-		 	  $(base_include_folder)/Response.h \
-			  $(base_include_folder)/utils.h \
-			  $(base_include_folder)/TransformationPlugin.h \
-			  $(base_include_folder)/Logger.h \
-			  $(base_include_folder)/noncopyable.h \
-			  $(base_include_folder)/Stat.h \
-			  $(base_include_folder)/Mutex.h \
-			  $(base_include_folder)/RemapPlugin.h \
-			  $(base_include_folder)/Async.h \
-			  $(base_include_folder)/AsyncHttpFetch.h \
-			  $(base_include_folder)/GzipDeflateTransformation.h \
-			  $(base_include_folder)/GzipInflateTransformation.h \
-			  $(base_include_folder)/AsyncTimer.h \
-			  $(base_include_folder)/InterceptPlugin.h
+library_include_HEADERS = \
+	$(base_include_folder)/GlobalPlugin.h \
+	$(base_include_folder)/Plugin.h \
+	$(base_include_folder)/PluginInit.h \
+	$(base_include_folder)/Transaction.h \
+	$(base_include_folder)/TransactionPlugin.h \
+	$(base_include_folder)/HttpMethod.h \
+	$(base_include_folder)/HttpStatus.h \
+	$(base_include_folder)/HttpVersion.h \
+	$(base_include_folder)/Headers.h \
+	$(base_include_folder)/Request.h \
+	$(base_include_folder)/CaseInsensitiveStringComparator.h \
+	$(base_include_folder)/ClientRequest.h \
+	$(base_include_folder)/Url.h \
+	$(base_include_folder)/Response.h \
+	$(base_include_folder)/utils.h \
+	$(base_include_folder)/TransformationPlugin.h \
+	$(base_include_folder)/Logger.h \
+	$(base_include_folder)/noncopyable.h \
+	$(base_include_folder)/Stat.h \
+	$(base_include_folder)/Mutex.h \
+	$(base_include_folder)/RemapPlugin.h \
+	$(base_include_folder)/Async.h \
+	$(base_include_folder)/AsyncHttpFetch.h \
+	$(base_include_folder)/GzipDeflateTransformation.h \
+	$(base_include_folder)/GzipInflateTransformation.h \
+	$(base_include_folder)/AsyncTimer.h \
+	$(base_include_folder)/InterceptPlugin.h
 
 library_include_HEADERS += \
-			  $(top_builddir)/$(subdir)/include/atscppapi/shared_ptr.h
+	$(top_builddir)/$(subdir)/include/atscppapi/shared_ptr.h
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

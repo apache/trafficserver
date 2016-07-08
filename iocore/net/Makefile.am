@@ -130,3 +130,8 @@ if BUILD_TESTS
      NetVCTest.cc \
      P_NetVCTest.h
 endif
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

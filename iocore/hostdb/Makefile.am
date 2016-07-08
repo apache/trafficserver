@@ -31,8 +31,6 @@ EXTRA_DIST = I_HostDB.h
 noinst_LIBRARIES = libinkhostdb.a
 
 libinkhostdb_a_SOURCES = \
-  I_SplitDNS.h \
-  I_SplitDNSProcessor.h \
   HostDB.cc \
   I_HostDB.h \
   I_HostDBProcessor.h \
@@ -85,3 +83,8 @@ test_RefCountCache_CPPFLAGS = $(test_CPP_FLAGS)
 test_RefCountCache_LDFLAGS = $(test_LD_FLAGS)
 
 test_RefCountCache_LDADD = $(test_LD_ADD)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)
