@@ -35,9 +35,11 @@ header_rewrite_la_SOURCES = \
 header_rewrite_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 header_rewrite_la_LIBADD = $(GEO_LIBS)
 
-bin_PROGRAMS = header_rewrite_test
+check_PROGRAMS = header_rewrite_test
 header_rewrite_test_SOURCES = parser.cc header_rewrite_test.cc
 header_rewrite_test_CXXFLAGS = $(AM_CXXFLAGS)
+
+TESTS = $(check_PROGRAMS)
 
 include $(top_srcdir)/build/tidy.mk
 

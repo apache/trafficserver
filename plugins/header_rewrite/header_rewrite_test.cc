@@ -48,7 +48,7 @@ TSDebug(const char *tag, const char *fmt, ...)
   va_list args;
   va_start(args, fmt);
   if ((bytes = vsnprintf(buf, sizeof(buf), fmt, args)) > 0) {
-    fprintf(stdout, "TSDebug: %s: %.*s", PLUGIN_NAME, bytes, buf);
+    fprintf(stdout, "TSDebug: %s: %.*s\n", PLUGIN_NAME, bytes, buf);
   }
   va_end(args);
 }
