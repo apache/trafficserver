@@ -227,7 +227,6 @@ void
 Http1ClientSession::do_io_close(int alerrno)
 {
   if (read_state == HCS_ACTIVE_READER) {
-    HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
     if (trans.m_active) {
       trans.m_active = false;
       HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);

@@ -200,7 +200,7 @@ HttpVCTable::cleanup_entry(HttpVCTableEntry *e)
     // Update stats
     switch (e->vc_type) {
     case HTTP_UA_VC:
-      //              HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
+      // proxy.process.http.current_client_transactions is decremented in HttpSM::destroy
       break;
     default:
       // This covers:
@@ -354,6 +354,7 @@ HttpSM::cleanup()
 void
 HttpSM::destroy()
 {
+  HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
   cleanup();
   httpSMAllocator.free(this);
 }
@@ -533,6 +534,7 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
 
   ink_release_assert(ua_session->get_half_close_flag() == false);
   mutex = client_vc->mutex;
+  HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
   if (ua_session->debug())
     debug_on = true;
 
@@ -550,8 +552,6 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
   t_state.client_info.is_transparent  = netvc->get_is_transparent();
   t_state.backdoor_request            = !client_vc->hooks_enabled();
   t_state.client_info.port_attribute  = static_cast<HttpProxyPort::TransportType>(netvc->attributes);
-
-  HTTP_INCREMENT_DYN_STAT(http_current_client_transactions_stat);
 
   // Record api hook set state
   hooks_set = client_vc->has_hooks();
