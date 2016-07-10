@@ -37,9 +37,6 @@ Http1ClientTransaction::release(IOBufferReader *r)
     m_active = false;
     HTTP_DECREMENT_DYN_STAT(http_current_active_client_connections_stat);
   }
-
-  HTTP_DECREMENT_DYN_STAT(http_current_client_transactions_stat);
-
   parent->ssn_last_txn_time = Thread::get_hrtime();
 
   // Make sure that the state machine is returning
