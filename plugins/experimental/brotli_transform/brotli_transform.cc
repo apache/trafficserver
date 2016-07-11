@@ -28,17 +28,16 @@ unsigned int BROTLI_QUALITY = 9;
 BrotliTransformationPlugin::BrotliTransformationPlugin(Transaction &transaction)
   : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION)
 {
-  registerHook(HOOK_SEND_RESPONSE_HEADERS);
-  brotliCompressed_ = false;
+  registerHook(HOOK_READ_RESPONSE_HEADERS);
 }
 
 void
-BrotliTransformationPlugin::handleSendResponseHeaders(Transaction &transaction)
+BrotliTransformationPlugin::handleReadResponseHeaders(Transaction &transaction)
 {
-  if (brotliCompressed_) {
-    TS_DEBUG(TAG, "Set response content-encoding to br.");
-    transaction.getClientResponse().getHeaders().set("Content-Encoding", "br");
-  }
+  string contentEncoding = "Content-Encoding";
+  Headers &hdr           = transaction.getServerResponse().getHeaders();
+  TS_DEBUG(TAG, "Set server response content-encoding to br.");
+  hdr.set(contentEncoding, "br");
   transaction.resume();
 }
 
@@ -65,10 +64,8 @@ BrotliTransformationPlugin::handleInputComplete()
   BrotliTransformOut brotliTransformOut(this);
 
   if (!brotli::BrotliCompress(params, &brotliIn, &brotliTransformOut)) {
-    TS_DEBUG(TAG, "brotli compress failed.");
+    TS_ERROR(TAG, "brotli compress failed.");
     produce(buffer_);
-  } else {
-    brotliCompressed_ = true;
   }
   setOutputComplete();
 }

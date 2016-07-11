@@ -36,14 +36,13 @@ class BrotliTransformationPlugin : public TransformationPlugin
 {
 public:
   BrotliTransformationPlugin(Transaction &);
-  void handleSendResponseHeaders(Transaction &);
+  void handleReadResponseHeaders(Transaction &);
   void consume(const string &);
   void handleInputComplete();
   void transformProduce(const string &);
   virtual ~BrotliTransformationPlugin() {}
 private:
   string buffer_;
-  bool brotliCompressed_;
 };
 
 class GlobalHookPlugin : public GlobalPlugin
