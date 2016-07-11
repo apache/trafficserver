@@ -1166,6 +1166,15 @@ ip-resolve
    Enables (``1``) or disables (``0``) Traffic Server to return a 400 Bad Request
    if client's request URI includes character which is not RFC 3986 compliant
 
+.. ts:cv:: CONFIG proxy.config.http.errors.log_error_pages INT 1
+   :reloadable:
+
+   Enables (``1``) or disables (``0``) the logging of responses to bad requests
+   to the error logging destination. Disabling this option prevents error
+   responses (such as ``403``\ s) from appearing in the error logs. Any HTTP
+   response status codes equal to, or higher, than the minimum code defined by
+   :c:data:`TS_HTTP_STATUS_BAD_REQUEST` are affected by this setting.
+
 Parent Proxy Configuration
 ==========================
 
