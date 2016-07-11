@@ -163,7 +163,7 @@ public:
   inkcoreapi virtual ~LogAccess() {}
   inkcoreapi virtual void init();
 
-  virtual LogEntryType entry_type() = 0;
+  virtual LogEntryType entry_type() const = 0;
 
   //
   // client -> proxy fields

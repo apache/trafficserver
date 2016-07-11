@@ -522,7 +522,7 @@ LogBuffer::resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char 
         bool non_aggregate_timestamp = false;
 
         if (field->aggregate() == LogField::NO_AGGREGATE) {
-          char *sym = field->symbol();
+          const char *sym = field->symbol();
 
           if (strcmp(sym, "cqts") == 0) {
             char *ptr = (char *)&timestamp;

@@ -114,15 +114,16 @@ public:
   static void register_stat_callbacks();
   static void register_mgmt_callbacks();
 
-  bool space_to_write(int64_t bytes_to_write);
+  bool space_to_write(int64_t bytes_to_write) const;
 
   bool
   am_collation_host() const
   {
     return collation_mode == Log::COLLATION_HOST;
   }
+
   bool
-  space_is_short()
+  space_is_short() const
   {
     return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE);
   };
@@ -141,7 +142,7 @@ public:
   static void *reconfigure_mgmt_variables(void *token, char *data_raw, int data_len);
 
   int
-  get_max_space_mb()
+  get_max_space_mb() const
   {
     return (use_orphan_log_space_value ? max_space_mb_for_orphan_logs : max_space_mb_for_logs);
   }

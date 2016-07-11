@@ -42,7 +42,7 @@ public:
   virtual ~LogAccessICP();
 
   LogEntryType
-  entry_type()
+  entry_type() const
   {
     return LOG_ENTRY_ICP;
   }
