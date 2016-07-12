@@ -38,7 +38,7 @@ replaceString(String &str, const String &from, const String &to)
   }
 }
 
-Pattern::Pattern() : _re(NULL), _extra(NULL), _pattern(""), _replacement(""), _tokenCount(0), _matchCount(0)
+Pattern::Pattern() : _re(NULL), _extra(NULL), _pattern(""), _replacement(""), _tokenCount(0)
 {
 }
 
@@ -57,7 +57,6 @@ Pattern::init(const String &pattern, const String &replacenemt)
   _replacement.assign(replacenemt);
 
   _tokenCount = 0;
-  _matchCount = 0;
 
   if (!compile()) {
     CacheKeyDebug("failed to initialize pattern:'%s', replacement:'%s'", pattern.c_str(), replacenemt.c_str());
@@ -200,30 +199,6 @@ Pattern::process(const String &subject, StringVector &result)
 }
 
 /**
- * @brief Simple failure handling routine.
- * @param PCRE subject string.
- * @return true - failed, false - no failure.
- */
-bool
-Pattern::failed(const String &subject) const
-{
-  if (_matchCount < 0) {
-    switch (_matchCount) {
-    case PCRE_ERROR_NOMATCH:
-      CacheKeyDebug("%s does not match %s", _pattern.c_str(), subject.c_str());
-      break;
-    default:
-      CacheKeyError("matching error %d", _matchCount);
-      break;
-    }
-
-    return true;
-  }
-
-  return false;
-}
-
-/**
  * @brief PCRE matches a subject string against the the regex pattern.
  * @param subject PCRE subject
  * @return true - matched, false - did not.
@@ -231,14 +206,17 @@ Pattern::failed(const String &subject) const
 bool
 Pattern::match(const String &subject)
 {
+  int matchCount;
   CacheKeyDebug("matching '%s' to '%s'", _pattern.c_str(), subject.c_str());
 
   if (!_re) {
     return false;
   }
 
-  _matchCount = pcre_exec(_re, _extra, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, NULL, 0);
-  if (failed(subject)) {
+  matchCount = pcre_exec(_re, _extra, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, NULL, 0);
+  if (matchCount < 0) {
+    if (matchCount != PCRE_ERROR_NOMATCH)
+      CacheKeyError("matching error %d", matchCount);
     return false;
   }
 
@@ -253,24 +231,29 @@ Pattern::match(const String &subject)
 bool
 Pattern::capture(const String &subject, StringVector &result)
 {
+  int matchCount;
+  int ovector[OVECOUNT];
+
   CacheKeyDebug("matching '%s' to '%s'", _pattern.c_str(), subject.c_str());
 
   if (!_re) {
     return false;
   }
 
-  _matchCount = pcre_exec(_re, NULL, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, _ovector, OVECOUNT);
-  if (failed(subject)) {
+  matchCount = pcre_exec(_re, NULL, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
+  if (matchCount < 0) {
+    if (matchCount != PCRE_ERROR_NOMATCH)
+      CacheKeyError("matching error %d", matchCount);
     return false;
   }
 
-  for (int i = 0; i < _matchCount; i++) {
-    int start  = _ovector[2 * i];
-    int length = _ovector[2 * i + 1] - _ovector[2 * i];
+  for (int i = 0; i < matchCount; i++) {
+    int start  = ovector[2 * i];
+    int length = ovector[2 * i + 1] - ovector[2 * i];
 
     String dst(subject, start, length);
 
-    CacheKeyDebug("capturing '%s' %d[%d,%d]", dst.c_str(), i, _ovector[2 * i], _ovector[2 * i + 1]);
+    CacheKeyDebug("capturing '%s' %d[%d,%d]", dst.c_str(), i, ovector[2 * i], ovector[2 * i + 1]);
     result.push_back(dst);
   }
 
@@ -286,20 +269,25 @@ Pattern::capture(const String &subject, StringVector &result)
 bool
 Pattern::replace(const String &subject, String &result)
 {
+  int matchCount;
+  int ovector[OVECOUNT];
+
   CacheKeyDebug("matching '%s' to '%s'", _pattern.c_str(), subject.c_str());
 
   if (!_re) {
     return false;
   }
 
-  _matchCount = pcre_exec(_re, NULL, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, _ovector, OVECOUNT);
-  if (failed(subject)) {
+  matchCount = pcre_exec(_re, NULL, subject.c_str(), subject.length(), 0, PCRE_NOTEMPTY, ovector, OVECOUNT);
+  if (matchCount < 0) {
+    if (matchCount != PCRE_ERROR_NOMATCH)
+      CacheKeyError("matching error %d", matchCount);
     return false;
   }
 
   /* Verify the replacement has the right number of matching groups */
   for (int i = 0; i < _tokenCount; i++) {
-    if (_tokens[i] >= _matchCount) {
+    if (_tokens[i] >= matchCount) {
       CacheKeyError("invalid reference in replacement string: $%d", _tokens[i]);
       return false;
     }
@@ -308,8 +296,8 @@ Pattern::replace(const String &subject, String &result)
   int previous = 0;
   for (int i = 0; i < _tokenCount; i++) {
     int replIndex = _tokens[i];
-    int start     = _ovector[2 * replIndex];
-    int length    = _ovector[2 * replIndex + 1] - _ovector[2 * replIndex];
+    int start     = ovector[2 * replIndex];
+    int length    = ovector[2 * replIndex + 1] - ovector[2 * replIndex];
 
     String src(_replacement, _tokenOffset[i], 2);
     String dst(subject, start, length);

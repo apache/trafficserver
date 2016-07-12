@@ -68,9 +68,6 @@ private:
   int _tokenCount;              /**< @brief number of replacements $0..$9 found in the replacement string if not empty */
   int _tokens[TOKENCOUNT];      /**< @brief replacement index 0..9, since they can be used in the replacement string in any order */
   int _tokenOffset[TOKENCOUNT]; /**< @brief replacement offset inside the replacement string */
-
-  int _matchCount;        /**< @brief match count */
-  int _ovector[OVECOUNT]; /**< @brief vector used by the pcre_exec() */
 };
 
 /**
