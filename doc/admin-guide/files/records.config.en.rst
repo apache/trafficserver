@@ -1716,10 +1716,27 @@ Cache Control
    origin response also has a ``Content-Length`` header.
 
 .. ts:cv:: CONFIG proxy.config.http.doc_in_cache_skip_dns INT 1
+   :reloadable:
+   :overridable:
 
-   Do not perform origin server DNS resolution if a fresh copy of the requested
-   document is available in the cache. This setting has no effect if HTTP
-   caching is disabled or if there are IP based ACLs configured.
+   When enabled (``1``), do not perform origin server DNS resolution if a fresh
+   copy of the requested document is available in the cache. This setting has
+   no effect if HTTP caching is disabled or if there are IP based ACLs
+   configured.
+
+   Note that plugins, particularly authorization plugins, which use the
+   :c:data:`TS_HTTP_OS_DNS_HOOK` hook may require this configuration variable
+   to be disabled (``0``) in order to function properly. This will ensure that
+   the hook will be evaluated and plugin execution will occur even when there
+   is a fresh copy of the requested object in the cache (which would normally
+   allow the DNS lookup to be skipped, thus eliminating the hook evaluation).
+
+   The downside is that the performance gain by skipping otherwise unnecessary
+   DNS lookups is lost. Because the variable is overridable, you may retain
+   this performance benefit for portions of your cache which do not require the
+   use of :c:data:`TS_HTTP_OS_DNS_HOOK` plugins, by ensuring that the setting
+   is first disabled within only the relevant transactions. Refer to the
+   documentation on :ref:`admin-plugins-conf-remap` for more information.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.ignore_client_no_cache INT 1
    :reloadable:
