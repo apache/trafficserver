@@ -676,7 +676,7 @@ LogConfig::register_mgmt_callbacks()
   -------------------------------------------------------------------------*/
 
 bool
-LogConfig::space_to_write(int64_t bytes_to_write)
+LogConfig::space_to_write(int64_t bytes_to_write) const
 {
   int64_t config_space, partition_headroom;
   int64_t logical_space_used, physical_space_left;

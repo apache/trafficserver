@@ -36,10 +36,39 @@
 #include "LogAccess.h"
 #include "Log.h"
 
-const char *container_names[] = {"not-a-container", "cqh",  "psh",  "pqh",    "ssh", "cssh",  "ecqh", "epsh", "epqh", "essh",
-                                 "ecssh",           "icfg", "scfg", "record", "ms",  "msdms", ""};
+// clang-format off
+//
+static const char *container_names[] = {
+  "not-a-container",
+  "cqh",
+  "psh",
+  "pqh",
+  "ssh",
+  "cssh",
+  "ecqh",
+  "epsh",
+  "epqh",
+  "essh",
+  "ecssh",
+  "icfg",
+  "scfg",
+  "record",
+  "ms",
+  "msdms",
+  "",
+};
 
-const char *aggregate_names[] = {"not-an-agg-op", "COUNT", "SUM", "AVG", "FIRST", "LAST", ""};
+static const char *aggregate_names[] = {
+  "not-an-agg-op",
+  "COUNT",
+  "SUM",
+  "AVG",
+  "FIRST",
+  "LAST",
+  "",
+};
+
+// clang-format on
 
 LogSlice::LogSlice(char *str)
 {
@@ -627,22 +656,24 @@ LogField::update_aggregate(int64_t val)
 LogField::Container
 LogField::valid_container_name(char *name)
 {
-  for (int i = 1; i < LogField::N_CONTAINERS; i++) {
+  for (unsigned i = 1; i < countof(container_names); i++) {
     if (strcmp(name, container_names[i]) == 0) {
       return (LogField::Container)i;
     }
   }
+
   return LogField::NO_CONTAINER;
 }
 
 LogField::Aggregate
 LogField::valid_aggregate_name(char *name)
 {
-  for (int i = 1; i < LogField::N_AGGREGATES; i++) {
+  for (unsigned i = 1; i < countof(aggregate_names); i++) {
     if (strcmp(name, aggregate_names[i]) == 0) {
       return (LogField::Aggregate)i;
     }
   }
+
   return LogField::NO_AGGREGATE;
 }
 
@@ -650,16 +681,17 @@ bool
 LogField::fieldlist_contains_aggregates(char *fieldlist)
 {
   char *match;
-  bool contains_aggregates = false;
-  for (int i = 1; i < LogField::N_AGGREGATES; i++) {
+
+  for (unsigned i = 1; i < countof(aggregate_names); i++) {
     if ((match = strstr(fieldlist, aggregate_names[i])) != NULL) {
       // verify that the aggregate string is not part of a container field name.
       if ((strchr(fieldlist, '{') == NULL) && (strchr(match, '}') == NULL)) {
-        contains_aggregates = true;
+        return true;
       }
     }
   }
-  return contains_aggregates;
+
+  return false;
 }
 
 /*-------------------------------------------------------------------------

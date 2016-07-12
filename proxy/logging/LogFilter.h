@@ -77,11 +77,13 @@ public:
   {
     return m_name;
   }
+
   Type
   type() const
   {
     return m_type;
   }
+
   size_t
   get_num_values() const
   {
@@ -92,12 +94,6 @@ public:
   virtual bool wipe_this_entry(LogAccess *lad) = 0;
   virtual void display(FILE *fd = stdout) = 0;
   virtual void display_as_XML(FILE *fd = stdout) = 0;
-
-  void
-  reverse()
-  {
-    m_action = (m_action == REJECT ? ACCEPT : REJECT);
-  }
 
 protected:
   char *m_name;

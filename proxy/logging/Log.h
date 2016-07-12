@@ -404,6 +404,7 @@ public:
   // main interface
   static void init(int configFlags = 0);
   static void init_fields();
+
   inkcoreapi static bool
   transaction_logging_enabled()
   {
@@ -484,11 +485,16 @@ LogRollingEnabledIsValid(int enabled)
   return (enabled >= Log::NO_ROLLING || enabled < Log::INVALID_ROLLING_VALUE);
 }
 
-#define TraceIn(flag, ...) \
-  if (flag)                \
-  Log::trace_in(__VA_ARGS__)
-#define TraceOut(flag, ...) \
-  if (flag)                 \
-  Log::trace_out(__VA_ARGS__)
+#define TraceIn(flag, ...)        \
+  do {                            \
+    if (unlikely(flag))           \
+      Log::trace_in(__VA_ARGS__); \
+  } while (0)
+
+#define TraceOut(flag, ...)        \
+  do {                             \
+    if (unlikely(flag))            \
+      Log::trace_out(__VA_ARGS__); \
+  } while (0)
 
 #endif

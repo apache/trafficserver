@@ -45,8 +45,9 @@ public:
   virtual ~LogAccessHttp();
 
   void init();
+
   LogEntryType
-  entry_type()
+  entry_type() const
   {
     return LOG_ENTRY_HTTP;
   }
