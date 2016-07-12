@@ -146,11 +146,8 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
     return 0;
   }
 
-  idx = id - 1;
-
-  do {
-    old_info = infos[idx];
-  } while (!ink_atomic_cas(&infos[idx], old_info, info));
+  idx      = id - 1;
+  old_info = ink_atomic_swap(&infos[idx], info);
 
   Debug("config", "Set for slot %d 0x%" PRId64 " was 0x%" PRId64 " with ref count %d", id, (int64_t)info, (int64_t)old_info,
         (old_info) ? old_info->refcount() : 0);
