@@ -281,7 +281,6 @@ LogConfig::LogConfig()
     m_space_used(0),
     m_partition_space_left((int64_t)UINT_MAX),
     m_log_collation_accept(NULL),
-    m_dir_entry(NULL),
     m_pDir(NULL),
     m_disk_full(false),
     m_disk_low(false),
@@ -313,7 +312,6 @@ LogConfig::~LogConfig()
   ats_free(logfile_dir);
   ats_free(collation_host);
   ats_free(collation_secret);
-  ats_free(m_dir_entry);
 }
 
 /*-------------------------------------------------------------------------
@@ -732,6 +730,7 @@ LogConfig::update_space_used()
   int64_t total_space_used, partition_space_left;
   char path[MAXPATHLEN];
   int sret;
+  struct dirent entry;
   struct dirent *result;
   struct stat sbuf;
   DIR *ld;
@@ -769,27 +768,21 @@ LogConfig::update_space_used()
     return;
   }
 
-  if (!m_dir_entry) {
-    size_t name_max = ink_file_namemax(logfile_dir);
-    m_dir_entry     = (struct dirent *)ats_malloc(sizeof(struct dirent) + name_max + 1);
-  }
-
   total_space_used = 0LL;
+  candidate_count  = 0;
 
-  candidate_count = 0;
-
-  while (readdir_r(ld, m_dir_entry, &result) == 0) {
+  while (readdir_r(ld, &entry, &result) == 0) {
     if (!result) {
       break;
     }
 
-    snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, m_dir_entry->d_name);
+    snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, entry.d_name);
 
     sret = ::stat(path, &sbuf);
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
       total_space_used += (int64_t)sbuf.st_size;
 
-      if (auto_delete_rolled_files && LogFile::rolled_logfile(m_dir_entry->d_name) && candidate_count < MAX_CANDIDATES) {
+      if (auto_delete_rolled_files && LogFile::rolled_logfile(entry.d_name) && candidate_count < MAX_CANDIDATES) {
         //
         // then add this entry to the candidate list
         //
