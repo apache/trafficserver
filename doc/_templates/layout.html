@@ -34,18 +34,26 @@
 </div>
 <script>
 $(function() {
+  function update_langlist (json) {
+    for (var lang in json) {
+      $('#lang-list').append('<dd><a href="/' + lang + '/latest/">' + json[lang]['name'] + '</a></dd>');
+    }
+    for (var i in json[curlang]['versions']) {
+      var ver = json[curlang]['versions'][i];
+      $('#version-list').append('<dd><a href="/' + curlang + '/' + ver + '/">' + ver + '</a></dd>');
+    }
+  }
   var curlang = "{{ language }}" == "None" ? "en" : "{{ language }}";
   $.ajax({
-    'url': '/_static/languages.json',
+    'url':      "/en/latest/_static/languages.json",
     'dataType': "json",
-    'success': function (json) {
-      for (var lang in json) {
-        $('#lang-list').append('<dd><a href="/' + lang + '/latest/">' + json[lang]['name'] + '</a></dd>');
-      }
-      for (var i in json[curlang]['versions']) {
-        var ver = json[curlang]['versions'][i];
-        $('#version-list').append('<dd><a href="/' + curlang + '/' + ver + '/">' + ver + '</a></dd>');
-      }
+    'success':  function (json) { update_langlist(json) },
+    'error':    function (xhr,errstr,e) {
+      $.ajax({
+        'url':      "/_static/languages.json",
+        'dataType': "json",
+        'success':  function (json) { update_langlist(json) }
+      })
     }
   });
 });
