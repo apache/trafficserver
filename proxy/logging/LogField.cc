@@ -55,7 +55,6 @@ static const char *container_names[] = {
   "record",
   "ms",
   "msdms",
-  "",
 };
 
 static const char *aggregate_names[] = {
@@ -65,7 +64,6 @@ static const char *aggregate_names[] = {
   "AVG",
   "FIRST",
   "LAST",
-  "",
 };
 
 // clang-format on
