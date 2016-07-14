@@ -922,17 +922,20 @@ Log::init(int flags)
     Debug("log-config", "Log::init(): logging_mode = %d "
                         "init status = %d",
           logging_mode, init_status);
-    init_when_enabled();
     if (config_flags & STANDALONE_COLLATOR) {
       config->collation_mode = Log::COLLATION_HOST;
     }
     config->init();
+    init_when_enabled();
   }
 }
 
 void
 Log::init_when_enabled()
 {
+  // make sure the log config has been initialized
+  ink_release_assert(config->initialized == true);
+
   init_fields();
 
   if (!(init_status & FULLY_INITIALIZED)) {

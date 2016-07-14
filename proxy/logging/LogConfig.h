@@ -217,7 +217,6 @@ private:
 
   LogCollationAccept *m_log_collation_accept;
 
-  struct dirent *m_dir_entry;
   char *m_pDir;
   bool m_disk_full;
   bool m_disk_low;
