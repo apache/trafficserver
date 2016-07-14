@@ -78,45 +78,54 @@ struct SSLCertLookup;
 class SSLNetVConnection : public UnixNetVConnection
 {
   typedef UnixNetVConnection super; ///< Parent type.
+
 public:
   virtual int sslStartHandShake(int event, int &err);
   virtual void free(EThread *t);
+
   virtual void
   enableRead()
   {
     read.enabled  = 1;
     write.enabled = 1;
-  };
+  }
+
   virtual bool
-  getSSLHandShakeComplete()
+  getSSLHandShakeComplete() const
   {
     return sslHandShakeComplete;
-  };
-  void
+  }
+
+  virtual void
   setSSLHandShakeComplete(bool state)
   {
     sslHandShakeComplete = state;
-  };
+  }
+
   virtual bool
-  getSSLClientConnection()
+  getSSLClientConnection() const
   {
     return sslClientConnection;
-  };
+  }
+
   virtual void
   setSSLClientConnection(bool state)
   {
     sslClientConnection = state;
-  };
-  virtual void
+  }
+
+  void
   setSSLSessionCacheHit(bool state)
   {
     sslSessionCacheHit = state;
-  };
-  virtual bool
-  getSSLSessionCacheHit()
+  }
+
+  bool
+  getSSLSessionCacheHit() const
   {
     return sslSessionCacheHit;
-  };
+  }
+
   int sslServerHandShakeEvent(int &err);
   int sslClientHandShakeEvent(int &err);
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
@@ -131,11 +140,6 @@ public:
   ////////////////////////////////////////////////////////////
   SSLNetVConnection();
   virtual ~SSLNetVConnection() {}
-  SSL *ssl;
-  ink_hrtime sslHandshakeBeginTime;
-  ink_hrtime sslLastWriteTime;
-  int64_t sslTotalBytesSent;
-
   static int advertise_next_protocol(SSL *ssl, const unsigned char **out, unsigned *outlen, void *);
   static int select_next_protocol(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in,
                                   unsigned inlen, void *);
@@ -150,51 +154,38 @@ public:
   getSSLClientRenegotiationAbort() const
   {
     return sslClientRenegotiationAbort;
-  };
+  }
 
   void
   setSSLClientRenegotiationAbort(bool state)
   {
     sslClientRenegotiationAbort = state;
-  };
+  }
 
   bool
   getTransparentPassThrough() const
   {
     return transparentPassThrough;
-  };
+  }
 
   void
   setTransparentPassThrough(bool val)
   {
     transparentPassThrough = val;
-  };
-
-  void
-  set_session_accept_pointer(SessionAccept *acceptPtr)
-  {
-    sessionAcceptPtr = acceptPtr;
-  };
-
-  SessionAccept *
-  get_session_accept_pointer(void) const
-  {
-    return sessionAcceptPtr;
-  };
+  }
 
   // Copy up here so we overload but don't override
   using super::reenable;
 
   /// Reenable the VC after a pre-accept or SNI hook is called.
   virtual void reenable(NetHandler *nh);
+
   /// Set the SSL context.
   /// @note This must be called after the SSL endpoint has been created.
   virtual bool sslContextSet(void *ctx);
 
-  /// Set by asynchronous hooks to request a specific operation.
-  TSSslVConnOp hookOpRequested;
-
   int64_t read_raw_data();
+
   void
   initialize_handshake_buffers()
   {
@@ -203,6 +194,7 @@ public:
     this->handShakeHolder    = this->handShakeReader->clone();
     this->handShakeBioStored = 0;
   }
+
   void
   free_handshake_buffers()
   {
@@ -220,40 +212,37 @@ public:
     this->handShakeBuffer    = NULL;
     this->handShakeBioStored = 0;
   }
+
   // Returns true if all the hooks reenabled
   bool callHooks(TSHttpHookID eventId);
 
   // Returns true if we have already called at
   // least some of the hooks
-  bool calledHooks(TSHttpHookID /* eventId */) { return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE); }
+  bool calledHooks(TSHttpHookID /* eventId */) const { return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE); }
   bool
   getSSLTrace() const
   {
     return sslTrace || super::origin_trace;
-  };
+  }
 
   void
   setSSLTrace(bool state)
   {
     sslTrace = state;
-  };
+  }
 
   bool computeSSLTrace();
 
   const char *
   getSSLProtocol(void) const
   {
-    if (ssl == NULL)
-      return NULL;
-    return SSL_get_version(ssl);
-  };
+    return ssl ? SSL_get_version(ssl) : NULL;
+  }
 
   const char *
   getSSLCipherSuite(void) const
   {
-    if (ssl == NULL)
-      return NULL;
-    return SSL_get_cipher_name(ssl);
+    return ssl ? SSL_get_cipher_name(ssl) : NULL;
   }
 
   /**
@@ -262,6 +251,14 @@ public:
    * This is logic is invoked when the NetVC object is created in a new thread context
    */
   virtual int populate(Connection &con, Continuation *c, void *arg);
+
+  SSL *ssl;
+  ink_hrtime sslHandshakeBeginTime;
+  ink_hrtime sslLastWriteTime;
+  int64_t sslTotalBytesSent;
+
+  /// Set by asynchronous hooks to request a specific operation.
+  TSSslVConnOp hookOpRequested;
 
 private:
   SSLNetVConnection(const SSLNetVConnection &);
