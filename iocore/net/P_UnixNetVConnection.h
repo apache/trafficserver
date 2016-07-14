@@ -192,21 +192,25 @@ public:
     (void)err;
     return EVENT_ERROR;
   }
+
   virtual bool
-  getSSLHandShakeComplete()
+  getSSLHandShakeComplete() const
   {
     return (true);
   }
+
   virtual bool
-  getSSLClientConnection()
+  getSSLClientConnection() const
   {
     return (false);
   }
+
   virtual void
   setSSLClientConnection(bool state)
   {
     (void)state;
   }
+
   virtual void net_read_io(NetHandler *nh, EThread *lthread);
   virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
   void readDisable(NetHandler *nh);

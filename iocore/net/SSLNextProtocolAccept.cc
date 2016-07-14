@@ -138,7 +138,6 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
     // and we know which protocol was negotiated.
     netvc->registerNextProtocolSet(&this->protoset);
     netvc->do_io(VIO::READ, new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer, 0);
-    netvc->set_session_accept_pointer(this);
     return EVENT_CONT;
   default:
     netvc->do_io(VIO::CLOSE);

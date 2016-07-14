@@ -805,7 +805,6 @@ SSLNetVConnection::SSLNetVConnection()
     sslHandshakeHookState(HANDSHAKE_HOOKS_PRE),
     npnSet(NULL),
     npnEndpoint(NULL),
-    sessionAcceptPtr(NULL),
     sslTrace(false)
 {
 }
@@ -855,6 +854,7 @@ SSLNetVConnection::free(EThread *t)
   this->ep.stop();
   this->con.close();
   flags = 0;
+
   SET_CONTINUATION_HANDLER(this, (SSLNetVConnHandler)&SSLNetVConnection::startEvent);
 
   if (nh) {
@@ -871,14 +871,18 @@ SSLNetVConnection::free(EThread *t)
   write.vio._cont     = NULL;
   read.vio.vc_server  = NULL;
   write.vio.vc_server = NULL;
-  options.reset();
+
   closed = 0;
+  options.reset();
   con.close();
+
   ink_assert(con.fd == NO_FD);
+
   if (ssl != NULL) {
     SSL_free(ssl);
     ssl = NULL;
   }
+
   sslHandShakeComplete        = false;
   sslClientConnection         = false;
   sslHandshakeBeginTime       = 0;
@@ -886,15 +890,16 @@ SSLNetVConnection::free(EThread *t)
   sslTotalBytesSent           = 0;
   sslClientRenegotiationAbort = false;
   sslSessionCacheHit          = false;
+
   if (SSL_HOOKS_ACTIVE == sslPreAcceptHookState) {
     Error("SSLNetVconnection freed with outstanding hook");
   }
+
   sslPreAcceptHookState = SSL_HOOKS_INIT;
   curHook               = 0;
   hookOpRequested       = TS_SSL_HOOK_OP_DEFAULT;
   npnSet                = NULL;
   npnEndpoint           = NULL;
-  sessionAcceptPtr      = NULL;
   sslHandShakeComplete  = false;
   free_handshake_buffers();
   sslTrace = false;
