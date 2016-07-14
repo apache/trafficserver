@@ -36,7 +36,8 @@ BrotliTransformationPlugin::handleReadResponseHeaders(Transaction &transaction)
 {
   string contentEncoding = "Content-Encoding";
   Headers &hdr           = transaction.getServerResponse().getHeaders();
-  TS_DEBUG(TAG, "Set server response content-encoding to br.");
+  TS_DEBUG(TAG, "Set server response content-encoding to br for url %s.",
+           transaction.getClientRequest().getUrl().getUrlString().c_str());
   hdr.set(contentEncoding, "br");
   transaction.resume();
 }
@@ -75,16 +76,30 @@ GlobalHookPlugin::handleReadResponseHeaders(Transaction &transaction)
 {
   if (isBrotliSupported(transaction)) {
     TS_DEBUG(TAG, "Brotli is supported.");
-    checkContentEncoding(transaction);
-    if (osContentEncoding_ == GZIP || osContentEncoding_ == PLAINTEXT) {
-      if (osContentEncoding_ == GZIP) {
-        TS_DEBUG(TAG, "Origin server return gzip, do gzip inflate.");
-        transaction.addPlugin(new GzipInflateTransformation(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
+    if (isText(transaction)) {
+      checkContentEncoding(transaction);
+      if (osContentEncoding_ == GZIP || osContentEncoding_ == NONENCODE) {
+        if (osContentEncoding_ == GZIP) {
+          TS_DEBUG(TAG, "Origin server return gzip, do gzip inflate.");
+          transaction.addPlugin(new GzipInflateTransformation(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION));
+        }
+        transaction.addPlugin(new BrotliTransformationPlugin(transaction));
       }
-      transaction.addPlugin(new BrotliTransformationPlugin(transaction));
     }
   }
   transaction.resume();
+}
+
+bool
+GlobalHookPlugin::isText(Transaction &transaction)
+{
+  Headers &hdr       = transaction.getServerResponse().getHeaders();
+  string contentType = hdr.values("Content-Type");
+  if ((contentType.find("text") != string::npos) || (contentType.find("javascript") != string::npos) ||
+      (contentType.find("json") != string::npos)) {
+    return true;
+  }
+  return false;
 }
 
 bool
@@ -104,7 +119,7 @@ GlobalHookPlugin::checkContentEncoding(Transaction &transaction)
   Headers &hdr           = transaction.getServerResponse().getHeaders();
   string contentEncoding = hdr.values("Content-Encoding");
   if (contentEncoding.empty()) {
-    osContentEncoding_ = PLAINTEXT;
+    osContentEncoding_ = NONENCODE;
   } else {
     if (contentEncoding.find("gzip") != string::npos) {
       osContentEncoding_ = GZIP;

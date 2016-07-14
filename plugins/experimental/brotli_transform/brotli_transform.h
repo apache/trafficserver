@@ -53,8 +53,9 @@ public:
 
 private:
   bool isBrotliSupported(Transaction &);
+  bool isText(Transaction &);
   void checkContentEncoding(Transaction &);
-  enum ContentEncoding { GZIP, PLAINTEXT, OTHERENCODE };
+  enum ContentEncoding { GZIP, NONENCODE, OTHERENCODE };
   ContentEncoding osContentEncoding_;
 };
 #endif
