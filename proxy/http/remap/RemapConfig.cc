@@ -999,10 +999,12 @@ lFail:
 static bool
 remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 {
-  char errBuf[1024], errStrBuf[1024];
+  char errBuf[1024];
+  char errStrBuf[1024];
+  const char *errStr;
+
   Tokenizer whiteTok(" \t");
   bool alarm_already = false;
-  const char *errStr;
 
   // Vars to parse line in file
   char *tok_state, *cur_line, *cur_line_tmp;
@@ -1084,7 +1086,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     // Initial verification for number of arguments
     if (bti->paramc < 1 || (bti->paramc < 3 && bti->paramv[0][0] != '.') || bti->paramc > BUILD_TABLE_MAX_ARGS) {
-      snprintf(errBuf, sizeof(errBuf), "%s Malformed line %d in file %s", modulePrefix, cln + 1, path);
+      snprintf(errStrBuf, sizeof(errStrBuf), "malformed line %d in file %s", cln + 1, path);
       errStr = errStrBuf;
       goto MAP_ERROR;
     }
@@ -1093,8 +1095,8 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     // Check directive keywords (starting from '.')
     if (bti->paramv[0][0] == '.') {
-      if ((errStr = remap_parse_directive(bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
-        snprintf(errBuf, sizeof(errBuf) - 1, "%s Error on line %d - %s", modulePrefix, cln + 1, errStr);
+      if ((errStr = remap_parse_directive(bti, errBuf, sizeof(errBuf))) != NULL) {
+        snprintf(errStrBuf, sizeof(errStrBuf) - 1, "error on line %d - %s", cln + 1, errStr);
         errStr = errStrBuf;
         goto MAP_ERROR;
       }
@@ -1128,7 +1130,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
       Debug("url_rewrite", "[BuildTable] - FORWARD_MAP_WITH_RECV_PORT");
       maptype = FORWARD_MAP_WITH_RECV_PORT;
     } else {
-      snprintf(errBuf, sizeof(errBuf) - 1, "%s Unknown mapping type at line %d", modulePrefix, cln + 1);
+      snprintf(errStrBuf, sizeof(errStrBuf) - 1, "unknown mapping type at line %d", cln + 1);
       errStr = errStrBuf;
       goto MAP_ERROR;
     }
@@ -1137,6 +1139,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     // apply filter rules if we have to
     if ((errStr = process_filter_opt(new_mapping, bti, errStrBuf, sizeof(errStrBuf))) != NULL) {
+      errStr = errStrBuf;
       goto MAP_ERROR;
     }
 
@@ -1169,7 +1172,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     map_from_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_DONE) {
-      errStr = "Malformed From URL";
+      errStr = "malformed From URL";
       goto MAP_ERROR;
     }
 
@@ -1183,7 +1186,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     map_to_start[origLength] = '\0'; // Unwhack
 
     if (rparse != PARSE_DONE) {
-      errStr = "Malformed To URL";
+      errStr = "malformed To URL";
       goto MAP_ERROR;
     }
 
@@ -1203,7 +1206,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
          fromScheme != URL_SCHEME_TUNNEL && fromScheme != URL_SCHEME_WS && fromScheme != URL_SCHEME_WSS) ||
         (toScheme != URL_SCHEME_HTTP && toScheme != URL_SCHEME_HTTPS && toScheme != URL_SCHEME_TUNNEL &&
          toScheme != URL_SCHEME_WS && toScheme != URL_SCHEME_WSS)) {
-      errStr = "Only http, https, ws, wss, and tunnel remappings are supported";
+      errStr = "only http, https, ws, wss, and tunnel remappings are supported";
       goto MAP_ERROR;
     }
 
@@ -1230,9 +1233,9 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
             ri = new referer_info((char *)bti->paramv[j - 1], &refinfo_error, refinfo_error_buf, sizeof(refinfo_error_buf));
             if (refinfo_error) {
-              snprintf(errBuf, sizeof(errBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s", modulePrefix,
+              snprintf(errStrBuf, sizeof(errStrBuf), "%s Incorrect Referer regular expression \"%s\" at line %d - %s", modulePrefix,
                        bti->paramv[j - 1], cln + 1, refinfo_error_buf);
-              SignalError(errBuf, alarm_already);
+              SignalError(errStrBuf, alarm_already);
               delete ri;
               ri = 0;
             }
@@ -1256,19 +1259,20 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
         new_mapping->tag = ats_strdup(&(bti->paramv[3][0]));
       }
     }
+
     // Check to see the fromHost remapping is a relative one
     fromHost = new_mapping->fromURL.host_get(&fromHostLen);
     if (fromHost == NULL || fromHostLen <= 0) {
       if (maptype == FORWARD_MAP || maptype == FORWARD_MAP_REFERER || maptype == FORWARD_MAP_WITH_RECV_PORT) {
         if (*map_from_start != '/') {
-          errStr = "Relative remappings must begin with a /";
+          errStr = "relative remappings must begin with a /";
           goto MAP_ERROR;
         } else {
           fromHost    = "";
           fromHostLen = 0;
         }
       } else {
-        errStr = "Remap source in reverse mappings requires a hostname";
+        errStr = "remap source in reverse mappings requires a hostname";
         goto MAP_ERROR;
       }
     }
@@ -1304,7 +1308,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     if (is_cur_mapping_regex) {
       reg_map = new UrlRewrite::RegexMapping();
       if (!process_regex_mapping_config(fromHost_lower, new_mapping, reg_map)) {
-        errStr = "Could not process regex mapping config line";
+        errStr = "could not process regex mapping config line";
         goto MAP_ERROR;
       }
       Debug("url_rewrite_regex", "Configured regex rule for host [%s]", fromHost_lower);
@@ -1340,7 +1344,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
             }
 
             if (!bti->rewrite->InsertForwardMapping(maptype, u_mapping, ipb)) {
-              errStr = "Unable to add mapping rule to lookup table";
+              errStr = "unable to add mapping rule to lookup table";
               freeaddrinfo(ai_records);
               goto MAP_ERROR;
             }
@@ -1380,7 +1384,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     // Now add the mapping to appropriate container
     if (!bti->rewrite->InsertMapping(maptype, new_mapping, reg_map, fromHost_lower, is_cur_mapping_regex)) {
-      errStr = "Unable to add mapping rule to lookup table";
+      errStr = "unable to add mapping rule to lookup table";
       goto MAP_ERROR;
     }
 
@@ -1392,8 +1396,10 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
   // Deal with error / warning scenarios
   MAP_ERROR:
+
     snprintf(errBuf, sizeof(errBuf), "%s failed to add remap rule at %s line %d: %s", modulePrefix, path, cln + 1, errStr);
     SignalError(errBuf, alarm_already);
+
     delete reg_map;
     delete new_mapping;
     return false;
