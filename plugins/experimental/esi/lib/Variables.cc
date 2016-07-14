@@ -179,14 +179,14 @@ Variables::_parseCachedHeaders()
 {
   _debugLog(_debug_tag, "[%s] Parsing headers", __FUNCTION__);
   for (int i = 0; i < N_SIMPLE_HEADERS; ++i) {
-    for (HeaderValueList::iterator value_iter = _cached_simple_headers[i].begin(); value_iter != _cached_simple_headers[i].end();
-         ++value_iter) {
+    for (Utils::HeaderValueList::iterator value_iter = _cached_simple_headers[i].begin();
+         value_iter != _cached_simple_headers[i].end(); ++value_iter) {
       _parseSimpleHeader(static_cast<SimpleHeader>(i), *value_iter);
     }
   }
   for (int i = 0; i < N_SPECIAL_HEADERS; ++i) {
-    for (HeaderValueList::iterator value_iter = _cached_special_headers[i].begin(); value_iter != _cached_special_headers[i].end();
-         ++value_iter) {
+    for (Utils::HeaderValueList::iterator value_iter = _cached_special_headers[i].begin();
+         value_iter != _cached_special_headers[i].end(); ++value_iter) {
       _parseSpecialHeader(static_cast<SpecialHeader>(i), value_iter->data(), value_iter->size());
     }
   }
@@ -357,9 +357,25 @@ Variables::_parseCookieString(const char *str, int str_len)
   AttributeList cookies;
   Utils::parseAttributes(str, str_len, cookies, ";,");
   for (AttributeList::iterator iter = cookies.begin(); iter != cookies.end(); ++iter) {
-    _insert(_dict_data[HTTP_COOKIE], string(iter->name, iter->name_len), string(iter->value, iter->value_len));
-    _debugLog(_debug_tag, "[%s] Inserted cookie with name [%.*s] and value [%.*s]", __FUNCTION__, iter->name_len, iter->name,
-              iter->value_len, iter->value);
+    std::string cookie = iter->name;
+    size_t pos         = cookie.find("=");
+
+    if (pos != std::string::npos) {
+      cookie = cookie.substr(0, pos);
+    }
+
+    bool found = false;
+    for (Utils::HeaderValueList::iterator approved = _whitelistCookies.begin(); approved != _whitelistCookies.end(); ++approved) {
+      if ((*approved == "*") || (*approved == cookie)) {
+        found = true;
+      }
+    }
+
+    if (found == true) {
+      _insert(_dict_data[HTTP_COOKIE], string(iter->name, iter->name_len), string(iter->value, iter->value_len));
+      _debugLog(_debug_tag, "[%s] Inserted cookie with name [%.*s] and value [%.*s]", __FUNCTION__, iter->name_len, iter->name,
+                iter->value_len, iter->value);
+    }
   }
 }
 

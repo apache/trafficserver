@@ -31,18 +31,23 @@
 #include "ComponentBase.h"
 #include "StringHash.h"
 #include "HttpHeader.h"
+#include "Utils.h"
 
 namespace EsiLib
 {
 class Variables : private ComponentBase
 {
 public:
-  Variables(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func)
+  Variables(const char *debug_tag, ComponentBase::Debug debug_func, ComponentBase::Error error_func,
+            Utils::HeaderValueList whitelistCookies)
     : ComponentBase(debug_tag, debug_func, error_func),
       _headers_parsed(false),
       _query_string(""),
       _query_string_parsed(false),
-      _cookie_jar_created(false){};
+      _cookie_jar_created(false)
+  {
+    _whitelistCookies.insert(_whitelistCookies.end(), whitelistCookies.begin(), whitelistCookies.end());
+  };
 
   /** currently 'host', 'referer', 'accept-language', 'cookie' and 'user-agent' headers are parsed */
   void populate(const HttpHeader &header);
@@ -142,10 +147,10 @@ private:
 
   inline void _insert(StringHash &hash, const std::string &key, const std::string &value);
 
-  typedef std::list<std::string> HeaderValueList;
-  HeaderValueList _cached_simple_headers[N_SIMPLE_HEADERS];
-  HeaderValueList _cached_special_headers[N_SPECIAL_HEADERS];
+  Utils::HeaderValueList _cached_simple_headers[N_SIMPLE_HEADERS];
+  Utils::HeaderValueList _cached_special_headers[N_SPECIAL_HEADERS];
 
+  Utils::HeaderValueList _whitelistCookies;
   std::string _cookie_str;
   bool _headers_parsed;
   std::string _query_string;

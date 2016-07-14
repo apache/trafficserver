@@ -104,10 +104,12 @@ namespace Utils
   }
 
   typedef std::map<std::string, std::string> KeyValueMap;
+  typedef std::list<std::string> HeaderValueList;
 
   // parses given lines (assumes <key><whitespace><value> format) and
   // stores them in supplied map; Lines beginning with '#' are ignored
-  void parseKeyValueConfig(const std::list<std::string> &lines, KeyValueMap &kvMap);
+  // also if line starts with "whitelistCookie", we store next token in a list
+  void parseKeyValueConfig(const std::list<std::string> &lines, KeyValueMap &kvMap, HeaderValueList &whitelistCookies);
 
   inline std::string
   unescape(const char *str, int len = -1)
