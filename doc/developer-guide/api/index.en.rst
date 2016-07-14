@@ -23,8 +23,8 @@ API Reference
 *************
 
 For an introduction to the |TS| API, how to link it to your plugin, and the
-methods of passing parameters to your plugin at runetime, please refer to
-:func:`TSAPI`.
+methods of passing parameters to your plugin at runtime, please refer to
+:manpage:`TSAPI(3ts)`.
 
 .. toctree::
    :maxdepth: 1
