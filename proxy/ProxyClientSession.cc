@@ -100,7 +100,6 @@ ProxyClientSession::state_api_callout(int event, void * /* data ATS_UNUSED */)
           plugin_mutex = hook->m_cont->mutex;
           plugin_lock  = MUTEX_TAKE_TRY_LOCK(hook->m_cont->mutex, mutex->thread_holding);
           if (!plugin_lock) {
-            SET_HANDLER(&ProxyClientSession::state_api_callout);
             mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
             return 0;
           }
@@ -142,7 +141,9 @@ ProxyClientSession::do_api_callout(TSHttpHookID id)
   this->api_current = NULL;
 
   if (this->hooks_on && this->has_hooks()) {
-    SET_HANDLER(&ProxyClientSession::state_api_callout);
+    if (!this->handler) {
+      SET_HANDLER(&ProxyClientSession::state_api_callout);
+    }
     this->state_api_callout(EVENT_NONE, NULL);
   } else {
     this->handle_api_return(TS_EVENT_HTTP_CONTINUE);
@@ -153,8 +154,6 @@ void
 ProxyClientSession::handle_api_return(int event)
 {
   TSHttpHookID hookid = this->api_hookid;
-
-  SET_HANDLER(&ProxyClientSession::state_api_callout);
 
   this->api_hookid  = TS_HTTP_LAST_HOOK;
   this->api_scope   = API_HOOK_SCOPE_NONE;
