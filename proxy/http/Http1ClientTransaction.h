@@ -55,10 +55,7 @@ public:
 
   // Don't destroy your elements.  Rely on the Http1ClientSession to clean up the
   // Http1ClientTransaction class as necessary
-  virtual void
-  destroy()
-  {
-  }
+  virtual void destroy();
 
   // Clean up the transaction elements when the ClientSession shuts down
   void
@@ -169,6 +166,7 @@ public:
     if (parent)
       parent->cancel_inactivity_timeout();
   }
+  void transaction_done();
 
 protected:
   uint16_t outbound_port;

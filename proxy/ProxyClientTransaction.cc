@@ -72,7 +72,7 @@ ProxyClientTransaction::release(IOBufferReader *r)
   DebugHttpTxn("[%" PRId64 "] session released by sm [%" PRId64 "]", parent ? parent->connection_id() : 0,
                current_reader ? current_reader->sm_id : 0);
 
-  current_reader = NULL; // Clear reference to SM
+  // current_reader = NULL; // Clear reference to SM
 
   // Pass along the release to the session
   if (parent)
@@ -83,6 +83,16 @@ void
 ProxyClientTransaction::attach_server_session(HttpServerSession *ssession, bool transaction_done)
 {
   parent->attach_server_session(ssession, transaction_done);
+}
+
+void
+ProxyClientTransaction::destroy()
+{
+  if (current_reader) {
+    current_reader->ua_session = NULL;
+    current_reader             = NULL;
+  }
+  this->mutex.clear();
 }
 
 Action *
