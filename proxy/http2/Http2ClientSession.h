@@ -159,7 +159,14 @@ public:
   // Implement ProxyClientSession interface.
   void start();
   virtual void destroy();
+  virtual void free();
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
+
+  bool
+  ready_to_free() const
+  {
+    return kill_me;
+  }
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
@@ -175,7 +182,13 @@ public:
   virtual void
   release_netvc()
   {
-    client_vc = NULL;
+    // Make sure the vio's are also released to avoid
+    // later surprises in inactivity timeout
+    if (client_vc) {
+      client_vc->do_io_read(NULL, 0, NULL);
+      client_vc->do_io_write(NULL, 0, NULL);
+      client_vc->set_action(NULL);
+    }
   }
 
   sockaddr const *
@@ -218,6 +231,11 @@ public:
   {
     return dying_event;
   }
+  bool
+  is_recursing() const
+  {
+    return recursion > 0;
+  }
 
   virtual const char *
   get_protocol_string() const
@@ -250,6 +268,8 @@ private:
 
   VIO *write_vio;
   int dying_event;
+  bool kill_me;
+  int recursion;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;

@@ -43,7 +43,8 @@ class ProxyClientSession : public VConnection
 public:
   ProxyClientSession();
 
-  virtual void destroy();
+  virtual void destroy() = 0;
+  virtual void free();
   virtual void start() = 0;
 
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
@@ -188,6 +189,7 @@ protected:
   int64_t con_id;
 
   Event *schedule_event;
+  bool in_destroy;
 
 private:
   APIHookScope api_scope;

@@ -66,14 +66,41 @@ Http2ClientSession::Http2ClientSession()
     sm_reader(NULL),
     write_buffer(NULL),
     sm_writer(NULL),
-    upgrade_context()
+    upgrade_context(),
+    kill_me(false),
+    recursion(0)
 {
 }
 
 void
 Http2ClientSession::destroy()
 {
-  DebugHttp2Ssn("session destroy");
+  if (!in_destroy) {
+    in_destroy = true;
+    DebugHttp2Ssn("session destroy");
+    // Let everyone know we are going down
+    do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
+  }
+}
+
+void
+Http2ClientSession::free()
+{
+  DebugHttp2Ssn("session free");
+
+  if (client_vc) {
+    release_netvc();
+    client_vc->do_io_close();
+    client_vc = NULL;
+  }
+
+  // Make sure the we are at the bottom of the stack
+  if (connection_state.is_recursing() || this->recursion != 0) {
+    // Note that we are ready to be cleaned up
+    // One of the event handlers will catch it
+    kill_me = true;
+    return;
+  }
 
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
 
@@ -105,7 +132,7 @@ Http2ClientSession::destroy()
 
   this->connection_state.destroy();
 
-  super::destroy();
+  super::free();
 
   free_MIOBuffer(this->read_buffer);
   free_MIOBuffer(this->write_buffer);
@@ -150,8 +177,9 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->con_id    = ProxyClientSession::next_connection_id();
   this->client_vc = new_vc;
   client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
-  this->mutex          = new_vc->mutex;
   this->schedule_event = NULL;
+  this->mutex          = new_vc->mutex;
+  this->in_destroy     = false;
 
   this->connection_state.mutex = new_ProxyMutex();
 
@@ -235,7 +263,15 @@ Http2ClientSession::do_io_close(int alerrno)
 
   ink_assert(this->mutex->thread_holding == this_ethread());
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_FINI, this);
-  do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
+
+  // Don't send the SSN_CLOSE_HOOK until we got rid of all the streams
+  // And handled all the TXN_CLOSE_HOOK's
+  if (client_vc) {
+    this->release_netvc();
+    client_vc->do_io_close();
+    client_vc = NULL;
+  }
+  this->connection_state.release_stream(NULL);
 }
 
 void
@@ -248,6 +284,9 @@ int
 Http2ClientSession::main_event_handler(int event, void *edata)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
+  int retval;
+
+  recursion++;
 
   Event *e = static_cast<Event *>(edata);
   if (e == schedule_event) {
@@ -257,7 +296,8 @@ Http2ClientSession::main_event_handler(int event, void *edata)
   switch (event) {
   case VC_EVENT_READ_COMPLETE:
   case VC_EVENT_READ_READY:
-    return (this->*session_handler)(event, edata);
+    retval = (this->*session_handler)(event, edata);
+    break;
 
   case HTTP2_SESSION_EVENT_XMIT: {
     Http2Frame *frame = (Http2Frame *)edata;
@@ -265,7 +305,8 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     write_vio->nbytes = total_write_len;
     frame->xmit(this->write_buffer);
     write_reenable();
-    return 0;
+    retval = 0;
+    break;
   }
 
   case VC_EVENT_ACTIVE_TIMEOUT:
@@ -276,18 +317,25 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     return 0;
 
   case VC_EVENT_WRITE_READY:
-    return 0;
+    retval = 0;
+    break;
+
   case VC_EVENT_WRITE_COMPLETE:
-    if (this->connection_state.is_state_closed()) {
-      this->do_io_close();
-    }
-    return 0;
+    // Seems as this is being closed already
+    retval = 0;
+    break;
 
   default:
     DebugHttp2Ssn("unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
-    return 0;
+    retval = 0;
+    break;
   }
+  recursion--;
+  if (!connection_state.is_recursing() && this->recursion == 0 && kill_me) {
+    this->free();
+  }
+  return retval;
 }
 
 int

@@ -31,15 +31,12 @@
  ****************************************************************************/
 
 #include <ts/ink_resolver.h>
-//#include "ink_config.h"
-//#include "Allocator.h"
 #include "Http1ClientSession.h"
 #include "Http1ClientTransaction.h"
 #include "HttpSM.h"
 #include "HttpDebugNames.h"
 #include "HttpServerSession.h"
 #include "Plugin.h"
-//#include "Http2ClientSession.h"
 
 #define DebugHttpSsn(fmt, ...) DebugSsn(this, "http_cs", fmt, __VA_ARGS__)
 
@@ -84,11 +81,23 @@ Http1ClientSession::Http1ClientSession()
 void
 Http1ClientSession::destroy()
 {
-  DebugHttpSsn("[%" PRId64 "] session destroy", con_id);
+  if (read_state != HCS_CLOSED) {
+    return;
+  }
+  if (!in_destroy) {
+    in_destroy = true;
+    DebugHttpSsn("[%" PRId64 "] session destroy", con_id);
 
-  ink_release_assert(!client_vc);
-  ink_assert(read_buffer);
+    ink_release_assert(!client_vc);
+    ink_assert(read_buffer);
 
+    do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
+  }
+}
+
+void
+Http1ClientSession::free()
+{
   magic = HTTP_CS_MAGIC_DEAD;
   if (read_buffer) {
     free_MIOBuffer(read_buffer);
@@ -112,7 +121,7 @@ Http1ClientSession::destroy()
   // Free the transaction resources
   this->trans.cleanup();
 
-  super::destroy();
+  super::free();
   THREAD_FREE(this, http1ClientSessionAllocator, this_thread());
 }
 
@@ -126,6 +135,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   mutex          = new_vc->mutex;
   trans.mutex    = mutex; // Share this mutex with the transaction
   ssn_start_time = Thread::get_hrtime();
+  in_destroy     = false;
 
   MUTEX_TRY_LOCK(lock, mutex, this_ethread());
   ink_assert(lock.is_locked());
@@ -215,6 +225,8 @@ Http1ClientSession::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 void
 Http1ClientSession::set_tcp_init_cwnd()
 {
+  if (!trans.get_sm())
+    return;
   int desired_tcp_init_cwnd = trans.get_sm()->t_state.txn_conf->server_tcp_init_cwnd;
   DebugHttpSsn("desired TCP congestion window is %d", desired_tcp_init_cwnd);
   if (desired_tcp_init_cwnd == 0) {
@@ -234,6 +246,8 @@ Http1ClientSession::do_io_shutdown(ShutdownHowTo_t howto)
 void
 Http1ClientSession::do_io_close(int alerrno)
 {
+  if (read_state == HCS_CLOSED)
+    return; // Don't double call session close
   if (read_state == HCS_ACTIVE_READER) {
     if (trans.m_active) {
       trans.m_active = false;
@@ -285,7 +299,13 @@ Http1ClientSession::do_io_close(int alerrno)
     HTTP_SUM_DYN_STAT(http_transactions_per_client_con, transact_count);
     HTTP_DECREMENT_DYN_STAT(http_current_client_connections_stat);
     conn_decrease = false;
-    do_api_callout(TS_HTTP_SSN_CLOSE_HOOK);
+    if (client_vc) {
+      client_vc->do_io_close();
+      client_vc = NULL;
+    }
+  }
+  if (trans.get_sm() == NULL) { // Destroying from keep_alive state
+    this->destroy();
   }
 }
 
@@ -314,6 +334,7 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
     // Drain any data read
     sm_reader->consume(sm_reader->read_avail());
     break;
+
   default:
     ink_release_assert(0);
     break;
