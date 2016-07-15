@@ -136,6 +136,8 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   // Unique client session identifier.
   con_id = ProxyClientSession::next_connection_id();
 
+  schedule_event = NULL;
+
   HTTP_INCREMENT_DYN_STAT(http_current_client_connections_stat);
   conn_decrease = true;
   HTTP_INCREMENT_DYN_STAT(http_total_client_connections_stat);
@@ -295,6 +297,11 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
   ink_assert(data == ka_vio);
   ink_assert(read_state == HCS_HALF_CLOSED);
 
+  Event *e = static_cast<Event *>(data);
+  if (e == schedule_event) {
+    schedule_event = NULL;
+  }
+
   switch (event) {
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
@@ -321,6 +328,11 @@ Http1ClientSession::state_slave_keep_alive(int event, void *data)
   STATE_ENTER(&Http1ClientSession::state_slave_keep_alive, event, data);
 
   ink_assert(data == slave_ka_vio);
+
+  Event *e = static_cast<Event *>(data);
+  if (e == schedule_event) {
+    schedule_event = NULL;
+  }
 
   switch (event) {
   default:

@@ -150,7 +150,8 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   this->con_id    = ProxyClientSession::next_connection_id();
   this->client_vc = new_vc;
   client_vc->set_inactivity_timeout(HRTIME_SECONDS(Http2::accept_no_activity_timeout));
-  this->mutex = new_vc->mutex;
+  this->mutex          = new_vc->mutex;
+  this->schedule_event = NULL;
 
   this->connection_state.mutex = new_ProxyMutex();
 
@@ -247,6 +248,11 @@ int
 Http2ClientSession::main_event_handler(int event, void *edata)
 {
   ink_assert(this->mutex->thread_holding == this_ethread());
+
+  Event *e = static_cast<Event *>(edata);
+  if (e == schedule_event) {
+    schedule_event = NULL;
+  }
 
   switch (event) {
   case VC_EVENT_READ_COMPLETE:

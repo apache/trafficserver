@@ -186,6 +186,8 @@ protected:
 
   int64_t con_id;
 
+  Event *schedule_event;
+
 private:
   APIHookScope api_scope;
   TSHttpHookID api_hookid;
