@@ -1241,7 +1241,7 @@ REGRESSION_TEST(HdrHeap_Coalesce)(RegressionTest *t, int /* atype ATS_UNUSED */,
   // Now if we add a url object that contains only non-copied strings it shouldn't affect the size of the rwheap
   // since it doesn't require allocating any storage on this heap.
   char buf3[next_required_overflow_size];
-  for (unsigned int i = 0; i < sizeof(buf); ++i) {
+  for (unsigned int i = 0; i < sizeof(buf3); ++i) {
     buf3[i] = ('a' + (i % 26));
   }
 
