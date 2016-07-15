@@ -56,6 +56,7 @@ public:
 
   // Implement ProxyClientSession interface.
   virtual void destroy();
+  virtual void free();
 
   virtual void
   start()
@@ -92,7 +93,14 @@ public:
   virtual void
   release_netvc()
   {
-    client_vc = NULL;
+    // Make sure the vio's are also released to avoid
+    // later surprises in inactivity timeout
+    if (client_vc) {
+      client_vc->do_io_read(NULL, 0, NULL);
+      client_vc->do_io_write(NULL, 0, NULL);
+      client_vc->set_action(NULL);
+      client_vc = NULL;
+    }
   }
 
   int
@@ -181,7 +189,12 @@ private:
 
   MIOBuffer *read_buffer;
   IOBufferReader *sm_reader;
-  C_Read_State read_state;
+
+  /*
+   * Volatile should not be necessary, but there appears to be a bug in the 4.9 rhel gcc
+   * compiler that was using an old version of read_state to make decisions in really_destroy
+   */
+  volatile C_Read_State read_state;
 
   VIO *ka_vio;
   VIO *slave_ka_vio;

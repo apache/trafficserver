@@ -902,10 +902,7 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
         netvc->do_io_shutdown(IO_SHUTDOWN_READ);
       ua_entry->eos = true;
     } else {
-      if (netvc)
-        netvc->do_io_close();
       ua_session->do_io_close();
-      ua_session       = NULL;
       ua_buffer_reader = NULL;
       vc_table.cleanup_entry(ua_entry);
       ua_entry = NULL;
@@ -2999,12 +2996,6 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
     if (is_http_server_eos_truncation(p)) {
       DebugSM("http", "[%" PRId64 "] [HttpSM::tunnel_handler_server] aborting HTTP tunnel due to server truncation", sm_id);
       tunnel.chain_abort_all(p);
-      // UA session may not be in the tunnel yet, don't NULL out the pointer in that case.
-      // Note: This is a hack. The correct solution is for the UA session to signal back to the SM
-      // when the UA is about to be destroyed and clean up the pointer there. That should be done once
-      // the TS-3612 changes are in place (and similarly for the server session).
-      if (ua_entry->in_tunnel)
-        ua_session = NULL;
 
       t_state.current.server->abort      = HttpTransact::ABORTED;
       t_state.client_info.keep_alive     = HTTP_NO_KEEPALIVE;
@@ -3318,12 +3309,11 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
     }
 
     ua_session->do_io_close();
-    ua_session = NULL;
   } else {
     ink_assert(ua_buffer_reader != NULL);
     ua_session->release(ua_buffer_reader);
     ua_buffer_reader = NULL;
-    ua_session       = NULL;
+    // ua_session       = NULL;
   }
 
   return 0;
@@ -6137,8 +6127,8 @@ HttpSM::setup_error_transfer()
   } else {
     DebugSM("http", "[setup_error_transfer] Now closing connection ...");
     vc_table.cleanup_entry(ua_entry);
-    ua_entry       = NULL;
-    ua_session     = NULL;
+    ua_entry = NULL;
+    // ua_session     = NULL;
     terminate_sm   = true;
     t_state.source = HttpTransact::SOURCE_INTERNAL;
   }
@@ -6747,7 +6737,6 @@ HttpSM::kill_this()
       plugin_tunnel = NULL;
     }
 
-    ua_session     = NULL;
     server_session = NULL;
 
     // So we don't try to nuke the state machine
@@ -6776,6 +6765,10 @@ HttpSM::kill_this()
   //   then the value of kill_this_async_done has changed so
   //   we must check it again
   if (kill_this_async_done == true) {
+    if (ua_session) {
+      ua_session->transaction_done();
+    }
+
     // In the async state, the plugin could have been
     // called resulting in the creation of a plugin_tunnel.
     // So it needs to be deleted now.

@@ -62,3 +62,22 @@ Http1ClientTransaction::set_parent(ProxyClientSession *new_parent)
   }
   super::set_parent(new_parent);
 }
+
+void
+Http1ClientTransaction::transaction_done()
+{
+  current_reader = NULL;
+  // If the parent session is not in the closed state, the destroy will not occur.
+  if (parent) {
+    parent->destroy();
+  }
+}
+
+void
+Http1ClientTransaction::destroy()
+{
+  if (current_reader) {
+    current_reader->ua_session = NULL;
+    current_reader             = NULL;
+  }
+}
