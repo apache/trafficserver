@@ -208,11 +208,12 @@ read_MachineList(const char *filename, int afd)
 {
   char line[256];
   int n = -1, i = 0, ln = 0;
-  MachineList *l = NULL;
+  ats_scoped_obj<MachineList> l;
   ink_assert(filename || (afd != -1));
   ats_scoped_str path(RecConfigReadConfigPath(NULL, filename));
+  ats_scoped_fd sfd;
 
-  int fd = ((afd != -1) ? afd : open(path, O_RDONLY));
+  int fd = ((afd != -1) ? afd : sfd = open(path, O_RDONLY));
   if (fd >= 0) {
     while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
       ln++;
@@ -221,7 +222,7 @@ read_MachineList(const char *filename, int afd)
       if (n == -1 && ParseRules::is_digit(*line)) {
         n = atoi(line);
         if (n > 0) {
-          l    = (MachineList *)ats_malloc(sizeof(MachineList) + (n - 1) * sizeof(MachineListElement));
+          l    = (MachineList *)operator new(sizeof(MachineList) + (n - 1) * sizeof(MachineListElement));
           l->n = 0;
         } else {
           l = NULL;
@@ -261,7 +262,6 @@ read_MachineList(const char *filename, int afd)
         }
       }
     }
-    close(fd);
   } else {
     Warning("read machine list failure, open failed");
     return NULL;
@@ -272,9 +272,12 @@ read_MachineList(const char *filename, int afd)
         Warning("read machine list failure, length mismatch");
         return NULL;
       } else
-        ats_free(l);
-      return (MachineList *)ats_strdup("number of machines does not match length of list\n");
+        return (MachineList *)ats_strdup("number of machines does not match length of list\n");
     }
   }
-  return (afd != -1) ? (MachineList *)NULL : l;
+  if (afd != -1) {
+    return (MachineList *)NULL;
+  }
+  l.release();
+  return l;
 }
