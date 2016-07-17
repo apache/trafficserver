@@ -6745,27 +6745,23 @@ HttpTransact::will_this_request_self_loop(State *s)
     }
 
     // Now check for a loop using the Via string.
-    // Since we insert our ip_address (in hex) into outgoing Via strings,
-    // look for our_ip address in the request's via string.
-    if (ats_is_ip(&Machine::instance()->ip)) {
-      MIMEField *via_field = s->hdr_info.client_request.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
+    const char *uuid     = Machine::instance()->uuid.getString();
+    MIMEField *via_field = s->hdr_info.client_request.field_find(MIME_FIELD_VIA, MIME_LEN_VIA);
 
-      while (via_field) {
-        // No need to waste cycles comma separating the via values since we want to do a match anywhere in the
-        // in the string.  We can just loop over the dup hdr fields
-        int via_len;
-        const char *via_string = via_field->value_get(&via_len);
+    while (via_field) {
+      // No need to waste cycles comma separating the via values since we want to do a match anywhere in the
+      // in the string.  We can just loop over the dup hdr fields
+      int via_len;
+      const char *via_string = via_field->value_get(&via_len);
 
-        if (via_string && ptr_len_str(via_string, via_len, Machine::instance()->ip_hex_string)) {
-          DebugTxn("http_transact", "[will_this_request_self_loop] Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string,
-                   s->http_config_param->proxy_hostname, Machine::instance()->ip_hex_string,
-                   s->http_config_param->proxy_request_via_string);
-          build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected", NULL);
-          return true;
-        }
-
-        via_field = via_field->m_next_dup;
+      if (via_string && ptr_len_str(via_string, via_len, uuid)) {
+        DebugTxn("http_transact", "[will_this_request_self_loop] Incoming via: %.*s has (%s[%s] (%s))", via_len, via_string,
+                 s->http_config_param->proxy_hostname, uuid, s->http_config_param->proxy_request_via_string);
+        build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Multi-Hop Cycle Detected", "request#cycle_detected", NULL);
+        return true;
       }
+
+      via_field = via_field->m_next_dup;
     }
   }
   s->request_will_not_selfloop = true;
