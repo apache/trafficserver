@@ -171,6 +171,7 @@ REGRESSION_TEST(SDK_API_TSTrafficServerVersionGet)(RegressionTest *test, int /* 
 //
 // Unit Test for API: TSPluginDirGet
 //                    TSInstallDirGet
+//                    TSRuntimeDirGet
 ////////////////////////////////////////////////
 REGRESSION_TEST(SDK_API_TSPluginDirGet)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
 {
@@ -178,6 +179,7 @@ REGRESSION_TEST(SDK_API_TSPluginDirGet)(RegressionTest *test, int /* atype ATS_U
 
   const char *plugin_dir  = TSPluginDirGet();
   const char *install_dir = TSInstallDirGet();
+  const char *runtime_dir = TSRuntimeDirGet();
 
   if (!plugin_dir) {
     SDK_RPRINT(test, "TSPluginDirGet", "TestCase1", TC_FAIL, "can't get plugin dir");
@@ -187,6 +189,12 @@ REGRESSION_TEST(SDK_API_TSPluginDirGet)(RegressionTest *test, int /* atype ATS_U
 
   if (!install_dir) {
     SDK_RPRINT(test, "TSInstallDirGet", "TestCase1", TC_FAIL, "can't get installation dir");
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
+  }
+
+  if (!runtime_dir) {
+    SDK_RPRINT(test, "TSRuntimeDirGet", "TestCase1", TC_FAIL, "can't get runtime dir");
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
@@ -204,8 +212,15 @@ REGRESSION_TEST(SDK_API_TSPluginDirGet)(RegressionTest *test, int /* atype ATS_U
     return;
   }
 
+  if (strstr(runtime_dir, TS_BUILD_RUNTIMEDIR) == NULL) {
+    SDK_RPRINT(test, "TSRuntimeDirGet", "TestCase2", TC_FAIL, "runtime dir is incorrect");
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
+  }
+
   SDK_RPRINT(test, "TSPluginDirGet", "TestCase1", TC_PASS, "ok");
   SDK_RPRINT(test, "TSInstallDirGet", "TestCase1", TC_PASS, "ok");
+  SDK_RPRINT(test, "TSRuntimeDirGet", "TestCase1", TC_PASS, "ok");
   *pstatus = REGRESSION_TEST_PASSED;
   return;
 }

@@ -32,14 +32,16 @@ Synopsis
 .. function:: const char * TSInstallDirGet(void)
 .. function:: const char * TSConfigDirGet(void)
 .. function:: const char * TSPluginDirGet(void)
+.. function:: const char * TSRuntimeDirGet(void)
 
 Description
 ===========
 
 :func:`TSInstallDirGet` returns the path to the root of the Traffic
-Server installation. :func:`TSConfigDirGet` and :func:`TSPluginDirGet`
-return the complete, absolute path to the configuration directory
-and the plugin installation directory, respectively.
+Server installation. :func:`TSConfigDirGet`, :func:`TSPluginDirGet`
+and :func:`TSRuntimeDirGet` return the complete, absolute path to
+the configuration directory, the plugin installation directory and
+the runtime directory, respectively.
 
 Return Values
 =============
