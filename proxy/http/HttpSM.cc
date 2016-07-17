@@ -7390,7 +7390,7 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP: {
-    if (server_entry == NULL || server_entry->in_tunnel == false) {
+    if (server_entry != NULL && server_entry->in_tunnel == false) {
       release_server_session();
     }
     // If we're in state SEND_API_RESPONSE_HDR, it means functions
