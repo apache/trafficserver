@@ -33,7 +33,7 @@
 using namespace std;
 
 struct LookupItem {
-  LookupItem(const char *s, const char *n, const int t) : pretty(s), name(n), type(t) {}
+  LookupItem(const char *s, const char *n, const int t) : pretty(s), name(n), numerator(""), denominator(""), type(t) {}
   LookupItem(const char *s, const char *n, const char *d, const int t) : pretty(s), name(n), numerator(n), denominator(d), type(t)
   {
   }
@@ -82,6 +82,10 @@ public:
       _host = hostname;
     }
 
+    _time_diff = 0;
+    _old_time  = 0;
+    _now       = 0;
+    _time      = (struct timeval){0};
     _stats     = NULL;
     _old_stats = NULL;
     _absolute  = false;
