@@ -2398,6 +2398,15 @@ HostDB
 
    See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
 
+.. ts:cv:: CONFIG proxy.config.hostdb.fail.timeout INT 0
+
+   Time to live value for "failed" hostdb lookups.
+
+.. note::
+   HostDB considers any response that does not contain a response to
+   the query a failure. This means "failure" responses (such as SOA) are
+   subject to this timeout
+
 .. ts:cv:: CONFIG proxy.config.hostdb.strict_round_robin INT 0
    :reloadable:
 
