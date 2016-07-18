@@ -750,12 +750,8 @@ HttpTransactHeaders::insert_via_header_in_request(HttpTransact::State *s, HTTPHd
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
 
   *via_string++ = '[';
-  /* I thought we should use the transaction local outgoing IP address but
-     that makes cycle detection (which is the point) unrealiable. We must
-     use the same value every time to be sure.
-  */
-  memcpy(via_string, Machine::instance()->ip_hex_string, Machine::instance()->ip_hex_string_len);
-  via_string += Machine::instance()->ip_hex_string_len;
+  memcpy(via_string, Machine::instance()->uuid.getString(), TS_UUID_STRING_LEN);
+  via_string += TS_UUID_STRING_LEN;
   *via_string++ = ']';
   *via_string++ = ' ';
   *via_string++ = '(';
