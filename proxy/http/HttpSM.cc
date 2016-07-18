@@ -294,7 +294,6 @@ HttpSM::HttpSM()
     second_cache_sm(NULL),
     default_handler(NULL),
     pending_action(NULL),
-    historical_action(NULL),
     last_action(HttpTransact::SM_ACTION_UNDEFINED),
     // TODO:  Now that bodies can be empty, should the body counters be set to -1 ? TS-2213
     client_request_hdr_bytes(0),
@@ -2233,8 +2232,7 @@ HttpSM::state_hostdb_lookup(int event, void *data)
       hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
     if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
-      pending_action    = dns_lookup_action_handle;
-      historical_action = pending_action;
+      pending_action = dns_lookup_action_handle;
     } else {
       call_transact_and_set_next_state(NULL);
     }
@@ -4046,7 +4044,7 @@ HttpSM::do_remap_request(bool run_inline)
   if (remap_action_handle != ACTION_RESULT_DONE) {
     DebugSM("url_rewrite", "Still more remapping needed for [%" PRId64 "]", sm_id);
     ink_assert(!pending_action);
-    historical_action = pending_action = remap_action_handle;
+    pending_action = remap_action_handle;
   }
 
   return;
@@ -4090,8 +4088,7 @@ HttpSM::do_hostdb_lookup()
 
     if (srv_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
-      pending_action    = srv_lookup_action_handle;
-      historical_action = pending_action;
+      pending_action = srv_lookup_action_handle;
     } else {
       char *host_name = t_state.dns_info.srv_lookup_success ? t_state.dns_info.srv_hostname : t_state.dns_info.lookup_name;
       opt.port        = t_state.dns_info.srv_lookup_success ?
@@ -4107,8 +4104,7 @@ HttpSM::do_hostdb_lookup()
         hostDBProcessor.getbyname_imm(this, (process_hostdb_info_pfn)&HttpSM::process_hostdb_info, host_name, 0, opt);
       if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
         ink_assert(!pending_action);
-        pending_action    = dns_lookup_action_handle;
-        historical_action = pending_action;
+        pending_action = dns_lookup_action_handle;
       } else {
         call_transact_and_set_next_state(NULL);
       }
@@ -4140,8 +4136,7 @@ HttpSM::do_hostdb_lookup()
 
     if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
-      pending_action    = dns_lookup_action_handle;
-      historical_action = pending_action;
+      pending_action = dns_lookup_action_handle;
     } else {
       call_transact_and_set_next_state(NULL);
     }
@@ -4165,8 +4160,7 @@ HttpSM::do_hostdb_reverse_lookup()
 
   if (dns_lookup_action_handle != ACTION_RESULT_DONE) {
     ink_assert(!pending_action);
-    pending_action    = dns_lookup_action_handle;
-    historical_action = pending_action;
+    pending_action = dns_lookup_action_handle;
   }
   return;
 }
@@ -4547,8 +4541,7 @@ HttpSM::do_cache_lookup_and_read()
   //
   if (cache_action_handle != ACTION_RESULT_DONE) {
     ink_assert(!pending_action);
-    pending_action    = cache_action_handle;
-    historical_action = pending_action;
+    pending_action = cache_action_handle;
   }
   REMEMBER((long)pending_action, reentrancy_count);
 
@@ -4572,8 +4565,7 @@ HttpSM::do_cache_delete_all_alts(Continuation *cont)
   if (cont != NULL) {
     if (cache_action_handle != ACTION_RESULT_DONE) {
       ink_assert(!pending_action);
-      pending_action    = cache_action_handle;
-      historical_action = pending_action;
+      pending_action = cache_action_handle;
     }
   }
 
@@ -4671,8 +4663,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
 
   if (cache_action_handle != ACTION_RESULT_DONE) {
     ink_assert(!pending_action);
-    pending_action    = cache_action_handle;
-    historical_action = pending_action;
+    pending_action = cache_action_handle;
   }
 }
 
@@ -5004,8 +4995,7 @@ HttpSM::do_http_server_open(bool raw)
 
   if (connect_action_handle != ACTION_RESULT_DONE) {
     ink_assert(!pending_action);
-    pending_action    = connect_action_handle;
-    historical_action = pending_action;
+    pending_action = connect_action_handle;
   }
 
   return;
@@ -5022,8 +5012,7 @@ HttpSM::do_icp_lookup()
 
   if (icp_lookup_action_handle != ACTION_RESULT_DONE) {
     ink_assert(!pending_action);
-    pending_action    = icp_lookup_action_handle;
-    historical_action = pending_action;
+    pending_action = icp_lookup_action_handle;
   }
 
   return;
@@ -7447,8 +7436,7 @@ HttpSM::set_next_state()
     Action *action_handle = statPagesManager.handle_http(this, &t_state.hdr_info.client_request);
 
     if (action_handle != ACTION_RESULT_DONE) {
-      pending_action    = action_handle;
-      historical_action = pending_action;
+      pending_action = action_handle;
     }
 
     break;
@@ -7577,10 +7565,10 @@ HttpSM::do_congestion_control_lookup()
 
   Action *congestion_control_action_handle = get_congest_entry(this, &t_state.request_data, &t_state.pCongestionEntry);
   if (congestion_control_action_handle != ACTION_RESULT_DONE) {
-    pending_action    = congestion_control_action_handle;
-    historical_action = pending_action;
+    pending_action = congestion_control_action_handle;
     return false;
   }
+
   return true;
 }
 
