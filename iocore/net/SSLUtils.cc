@@ -1583,7 +1583,12 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
     SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
   }
 
-  if (sslMultCertSettings.cert) {
+  if (!sslMultCertSettings.cert) {
+    if (sslMultCertSettings.opt != SSLCertContext::OPT_TUNNEL) {
+      Warning("No ssl_cert_name specified and no tunnel action set");
+      goto fail;
+    }
+  } else if (sslMultCertSettings.cert) {
     SimpleTokenizer cert_tok((const char *)sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
     SimpleTokenizer key_tok((sslMultCertSettings.key ? (const char *)sslMultCertSettings.key : ""), SSL_CERT_SEPARATE_DELIM);
 
@@ -1888,7 +1893,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
 
       if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
         Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certname);
-        if (certname != NULL && lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
+        if (lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
           inserted = true;
         }
       } else {
@@ -2009,10 +2014,8 @@ ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultC
       }
     }
   }
-  if (!sslMultCertSettings.cert) {
-    Warning("missing %s tag", SSL_CERT_TAG);
-    return false;
-  } else {
+  // TS-4679:  It is ok to be missing the cert.  At least if the action is set to tunnel
+  if (sslMultCertSettings.cert) {
     SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
     const char *first_cert = cert_tok.getNext();
     if (first_cert) {
