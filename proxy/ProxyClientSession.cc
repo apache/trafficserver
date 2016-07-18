@@ -140,7 +140,7 @@ ProxyClientSession::do_api_callout(TSHttpHookID id)
   this->api_scope   = API_HOOK_SCOPE_GLOBAL;
   this->api_current = NULL;
 
-  if (this->hooks_on && this->has_hooks()) {
+  if (this->hooks_enabled() && this->has_hooks()) {
     if (!this->handler) {
       SET_HANDLER(&ProxyClientSession::state_api_callout);
     }

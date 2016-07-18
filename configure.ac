@@ -49,7 +49,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror -Wno-portability tar-ustar foreign no-installinf
 AM_MAINTAINER_MODE([enable])
 
 # Enable a recursive "tidy" rule for clang-tidy.
-AM_EXTRA_RECURSIVE_TARGETS([tidy])
+#AM_EXTRA_RECURSIVE_TARGETS([tidy])
 
 AC_CONFIG_HEADERS([lib/ink_autoconf.h])
 
