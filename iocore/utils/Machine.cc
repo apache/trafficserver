@@ -60,7 +60,9 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   ink_zero(ip);
   ink_zero(ip4);
   ink_zero(ip6);
+
   uuid.initialize(TS_UUID_V4);
+  ink_release_assert(NULL != uuid.getString()); // The Process UUID must be available on startup
 
   localhost[sizeof(localhost) - 1] = 0; // ensure termination.
 
