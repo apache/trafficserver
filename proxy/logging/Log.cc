@@ -916,12 +916,9 @@ Log::init(int flags)
     RecSetRawStatCount(log_rsb, log_stat_log_files_open_stat, 0);
   }
 
-  if (config_flags & LOGCAT) {
-    init_fields();
-  } else {
-    Debug("log-config", "Log::init(): logging_mode = %d "
-                        "init status = %d",
-          logging_mode, init_status);
+  init_fields();
+  if (!(config_flags & LOGCAT)) {
+    Debug("log-config", "Log::init(): logging_mode = %d init status = %d", logging_mode, init_status);
     if (config_flags & STANDALONE_COLLATOR) {
       config->collation_mode = Log::COLLATION_HOST;
     }
@@ -935,8 +932,6 @@ Log::init_when_enabled()
 {
   // make sure the log config has been initialized
   ink_release_assert(config->initialized == true);
-
-  init_fields();
 
   if (!(init_status & FULLY_INITIALIZED)) {
     if (!(config_flags & STANDALONE_COLLATOR)) {
