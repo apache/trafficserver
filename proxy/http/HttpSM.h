@@ -335,7 +335,6 @@ protected:
 
   HttpSMHandler default_handler;
   Action *pending_action;
-  Action *historical_action;
   Continuation *schedule_cont;
 
   HTTPParser http_parser;
