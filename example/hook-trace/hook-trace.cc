@@ -33,7 +33,7 @@ countof(const T (&)[N])
 }
 
 static int
-HookTracer(TSCont contp, TSEvent event, void *edata)
+HttpHookTracer(TSCont contp, TSEvent event, void *edata)
 {
   union {
     TSHttpTxn txn;
@@ -121,11 +121,47 @@ HookTracer(TSCont contp, TSEvent event, void *edata)
   return TS_EVENT_NONE;
 }
 
+static int
+LifecycleHookTracer(TSCont contp, TSEvent event, void *edata)
+{
+  switch (event) {
+  case TS_EVENT_LIFECYCLE_PORTS_INITIALIZED:
+    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_PORTS_INITIALIZED data %p", edata);
+    break;
+
+  case TS_EVENT_LIFECYCLE_PORTS_READY:
+    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_PORTS_READY data %p", edata);
+    break;
+
+  case TS_EVENT_LIFECYCLE_CACHE_READY:
+    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_CACHE_READY data %p", edata);
+    break;
+
+  case TS_EVENT_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED:
+    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_SERVER_SSL_INITIALIZED data %p", edata);
+    break;
+
+  case TS_EVENT_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED:
+    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED data %p", edata);
+    break;
+
+  case TS_EVENT_LIFECYCLE_MSG:
+    TSDebug(PLUGIN_NAME, "Received LIFECYCLE_MSG data %p", edata);
+    break;
+
+  default:
+    TSDebug(PLUGIN_NAME, "Received unsupported lifecycle event %d data %p", event, edata);
+    break;
+  }
+
+  return TS_EVENT_NONE;
+}
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
   // clang-format off
-  static const TSHttpHookID hooks[] = {
+  static const TSHttpHookID http[] = {
     TS_HTTP_READ_REQUEST_HDR_HOOK,
     TS_HTTP_OS_DNS_HOOK,
     TS_HTTP_SEND_REQUEST_HDR_HOOK,
@@ -141,6 +177,16 @@ TSPluginInit(int argc, const char *argv[])
     TS_HTTP_PRE_REMAP_HOOK,
     TS_HTTP_POST_REMAP_HOOK,
   };
+
+  static const TSLifecycleHookID lifecycle[] = {
+    TS_LIFECYCLE_PORTS_INITIALIZED_HOOK,
+    TS_LIFECYCLE_PORTS_READY_HOOK,
+    TS_LIFECYCLE_CACHE_READY_HOOK,
+    TS_LIFECYCLE_SERVER_SSL_CTX_INITIALIZED_HOOK,
+    TS_LIFECYCLE_CLIENT_SSL_CTX_INITIALIZED_HOOK,
+    TS_LIFECYCLE_MSG_HOOK,
+  };
+
   // clang-format on
 
   (void)argc; // unused
@@ -152,8 +198,12 @@ TSPluginInit(int argc, const char *argv[])
   info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
-  for (unsigned i = 0; i < countof(hooks); ++i) {
-    TSHttpHookAdd(hooks[i], TSContCreate(HookTracer, TSMutexCreate()));
+  for (unsigned i = 0; i < countof(http); ++i) {
+    TSHttpHookAdd(http[i], TSContCreate(HttpHookTracer, TSMutexCreate()));
+  }
+
+  for (unsigned i = 0; i < countof(lifecycle); ++i) {
+    TSLifecycleHookAdd(lifecycle[i], TSContCreate(LifecycleHookTracer, TSMutexCreate()));
   }
 
   TSReleaseAssert(TSPluginRegister(&info) == TS_SUCCESS);
