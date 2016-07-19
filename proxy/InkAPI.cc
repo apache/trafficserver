@@ -1768,6 +1768,18 @@ TSConfigDirGet(void)
 }
 
 const char *
+TSRuntimeDirGet(void)
+{
+  static char *runtimedir = NULL;
+
+  if (runtimedir == NULL) {
+    runtimedir = RecConfigReadRuntimeDir();
+  }
+
+  return runtimedir;
+}
+
+const char *
 TSTrafficServerVersionGet(void)
 {
   return traffic_server_version;

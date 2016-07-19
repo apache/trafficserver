@@ -89,6 +89,14 @@ tsapi const char *TSInstallDirGet(void);
 tsapi const char *TSConfigDirGet(void);
 
 /**
+    Gets the path of the directory of Traffic Server runtime.
+
+    @return pointer to Traffic Server runtime directory.
+
+ */
+tsapi const char *TSRuntimeDirGet(void);
+
+/**
     Gets the path of the plugin directory relative to the Traffic Server
     install directory. For example, to open the file "config_ui.txt" in
     the plugin directory:
