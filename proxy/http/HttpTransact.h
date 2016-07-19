@@ -1159,6 +1159,7 @@ public:
       url_map.clear();
       arena.reset();
       pristine_url.clear();
+      hostdb_entry.clear();
 
       delete[] ranges;
       ranges      = NULL;
