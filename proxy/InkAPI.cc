@@ -1757,25 +1757,14 @@ TSInstallDirGet(void)
 const char *
 TSConfigDirGet(void)
 {
-  static char *sysconfdir = NULL;
-
-  // This is not great, bit it's no worse than TSPluginDirGet :-/
-  if (sysconfdir == NULL) {
-    sysconfdir = RecConfigReadConfigDir();
-  }
-
+  static const char *sysconfdir = RecConfigReadConfigDir();
   return sysconfdir;
 }
 
 const char *
 TSRuntimeDirGet(void)
 {
-  static char *runtimedir = NULL;
-
-  if (runtimedir == NULL) {
-    runtimedir = RecConfigReadRuntimeDir();
-  }
-
+  static const char *runtimedir = RecConfigReadRuntimeDir();
   return runtimedir;
 }
 
@@ -1804,14 +1793,7 @@ TSTrafficServerVersionGetPatch()
 const char *
 TSPluginDirGet(void)
 {
-  static char path[PATH_NAME_MAX] = "";
-
-  if (*path == '\0') {
-    char *plugin_dir = RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir");
-    ink_strlcpy(path, plugin_dir, sizeof(path));
-    ats_free(plugin_dir);
-  }
-
+  static const char *path = RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir");
   return path;
 }
 
