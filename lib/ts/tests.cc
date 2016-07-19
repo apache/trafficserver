@@ -19,7 +19,7 @@
   limitations under the License.
 */
 
-#include "ts/TestBox.h"
+#include "ts/Regression.h"
 
 int
 main(int argc, const char **argv)

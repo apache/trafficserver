@@ -40,7 +40,7 @@ RuleSet::append(RuleSet *rule)
   tmp->next = rule;
 }
 
-void
+bool
 RuleSet::add_condition(Parser &p, const char *filename)
 {
   Condition *c = condition_factory(p.get_op());
@@ -49,9 +49,9 @@ RuleSet::add_condition(Parser &p, const char *filename)
     TSDebug(PLUGIN_NAME, "   Adding condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
     c->initialize(p);
     if (!c->set_hook(_hook)) {
-      TSError("[%s] in %s: can't use this condition in hook=%d: %%{%s} with arg: %s", PLUGIN_NAME, filename, _hook,
-              p.get_op().c_str(), p.get_arg().c_str());
-      return;
+      TSError("[%s] in %s: can't use this condition in hook=%s: %%{%s} with arg: %s", PLUGIN_NAME, filename,
+              TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
+      return false;
     }
     if (NULL == _cond) {
       _cond = c;
@@ -62,10 +62,14 @@ RuleSet::add_condition(Parser &p, const char *filename)
     // Update some ruleset state based on this new condition
     _last |= c->last();
     _ids = static_cast<ResourceIDs>(_ids | _cond->get_resource_ids());
+
+    return true;
   }
+
+  return false;
 }
 
-void
+bool
 RuleSet::add_operator(Parser &p, const char *filename)
 {
   Operator *o = operator_factory(p.get_op());
@@ -75,9 +79,9 @@ RuleSet::add_operator(Parser &p, const char *filename)
     TSDebug(PLUGIN_NAME, "   Adding operator: %s(%s)", p.get_op().c_str(), p.get_arg().c_str());
     o->initialize(p);
     if (!o->set_hook(_hook)) {
-      TSError("[%s] in %s: can't use this operator in hook=%d:  %s(%s)", PLUGIN_NAME, filename, _hook, p.get_op().c_str(),
-              p.get_arg().c_str());
-      return;
+      TSError("[%s] in %s: can't use this operator in hook=%s:  %s(%s)", PLUGIN_NAME, filename, TSHttpHookNameLookup(_hook),
+              p.get_op().c_str(), p.get_arg().c_str());
+      return false;
     }
     if (NULL == _oper) {
       _oper = o;
@@ -88,5 +92,9 @@ RuleSet::add_operator(Parser &p, const char *filename)
     // Update some ruleset state based on this new operator
     _opermods = static_cast<OperModifiers>(_opermods | _oper->get_oper_modifiers());
     _ids      = static_cast<ResourceIDs>(_ids | _oper->get_resource_ids());
+
+    return true;
   }
+
+  return false;
 }
