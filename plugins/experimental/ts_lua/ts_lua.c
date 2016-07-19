@@ -116,8 +116,8 @@ TSRemapDeleteInstance(void *ih)
   return;
 }
 
-TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+static TSRemapStatus
+ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   int ret;
   uint64_t req_id;
@@ -131,6 +131,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   ts_lua_instance_conf *instance_conf;
 
+  int remap     = (rri == NULL ? 0 : 1);
   instance_conf = (ts_lua_instance_conf *)ih;
   req_id        = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
 
@@ -140,13 +141,14 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   http_ctx = ts_lua_create_http_ctx(main_ctx, instance_conf);
 
-  http_ctx->txnp                = rh;
-  http_ctx->client_request_bufp = rri->requestBufp;
-  http_ctx->client_request_hdrp = rri->requestHdrp;
-  http_ctx->client_request_url  = rri->requestUrl;
-  http_ctx->rri                 = rri;
-  http_ctx->remap               = 1;
-  http_ctx->has_hook            = 0;
+  http_ctx->txnp     = rh;
+  http_ctx->has_hook = 0;
+  http_ctx->rri      = rri;
+  if (rri != NULL) {
+    http_ctx->client_request_bufp = rri->requestBufp;
+    http_ctx->client_request_hdrp = rri->requestHdrp;
+    http_ctx->client_request_url  = rri->requestUrl;
+  }
 
   ci = &http_ctx->cinfo;
   L  = ci->routine.lua;
@@ -157,7 +159,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   ci->contp = contp;
   ci->mutex = TSContMutexGet((TSCont)rh);
 
-  lua_getglobal(L, TS_LUA_FUNCTION_REMAP);
+  lua_getglobal(L, (remap ? TS_LUA_FUNCTION_REMAP : TS_LUA_FUNCTION_OS_RESPONSE));
   if (lua_type(L, -1) != LUA_TFUNCTION) {
     TSMutexUnlock(main_ctx->mutexp);
     return TSREMAP_NO_REMAP;
@@ -185,6 +187,20 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   TSMutexUnlock(main_ctx->mutexp);
 
   return ret;
+}
+
+void
+TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
+{
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] os response function and type - %d", __FUNCTION__, os_response_type);
+  ts_lua_remap_plugin_init(ih, rh, NULL);
+}
+
+TSRemapStatus
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+{
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] remap function", __FUNCTION__);
+  return ts_lua_remap_plugin_init(ih, rh, rri);
 }
 
 static int
@@ -218,7 +234,6 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   http_ctx           = ts_lua_create_http_ctx(main_ctx, conf);
   http_ctx->txnp     = txnp;
   http_ctx->rri      = NULL;
-  http_ctx->remap    = 0;
   http_ctx->has_hook = 0;
 
   if (!http_ctx->client_request_bufp) {
