@@ -122,11 +122,12 @@ gzip_content_encoding_header(TSMBuffer bufp, TSMLoc hdr_loc, const int compressi
 
   // Delete Content-Encoding if present???
 
-  if ((ret = TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Content-Encoding", sizeof("Content-Encoding") - 1, &ce_loc)) == TS_SUCCESS) {
+  if ((ret = TSMimeHdrFieldCreateNamed(bufp, hdr_loc, TS_MIME_FIELD_CONTENT_ENCODING, TS_MIME_LEN_CONTENT_ENCODING, &ce_loc)) ==
+      TS_SUCCESS) {
     if (compression_type == COMPRESSION_TYPE_DEFLATE) {
-      ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "deflate", sizeof("deflate") - 1);
+      ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, TS_HTTP_VALUE_DEFLATE, TS_HTTP_LEN_DEFLATE);
     } else if (compression_type == COMPRESSION_TYPE_GZIP) {
-      ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "gzip", sizeof("gzip") - 1);
+      ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, TS_HTTP_VALUE_GZIP, TS_HTTP_LEN_GZIP);
     }
     if (ret == TS_SUCCESS) {
       ret = TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
@@ -147,7 +148,7 @@ gzip_vary_header(TSMBuffer bufp, TSMLoc hdr_loc)
   TSReturnCode ret;
   TSMLoc ce_loc;
 
-  ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, "Vary", sizeof("Vary") - 1);
+  ce_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_VARY, TS_MIME_LEN_VARY);
   if (ce_loc) {
     int idx, count, len;
     const char *value;
@@ -162,12 +163,12 @@ gzip_vary_header(TSMBuffer bufp, TSMLoc hdr_loc)
       }
     }
 
-    ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "Accept-Encoding", sizeof("Accept-Encoding") - 1);
+    ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, TS_MIME_FIELD_ACCEPT_ENCODING, TS_MIME_LEN_ACCEPT_ENCODING);
     TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
   } else {
-    if ((ret = TSMimeHdrFieldCreateNamed(bufp, hdr_loc, "Vary", sizeof("Vary") - 1, &ce_loc)) == TS_SUCCESS) {
-      if ((ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, "Accept-Encoding", sizeof("Accept-Encoding") - 1)) ==
-          TS_SUCCESS) {
+    if ((ret = TSMimeHdrFieldCreateNamed(bufp, hdr_loc, TS_MIME_FIELD_VARY, TS_MIME_LEN_VARY, &ce_loc)) == TS_SUCCESS) {
+      if ((ret = TSMimeHdrFieldValueStringInsert(bufp, hdr_loc, ce_loc, -1, TS_MIME_FIELD_ACCEPT_ENCODING,
+                                                 TS_MIME_LEN_ACCEPT_ENCODING)) == TS_SUCCESS) {
         ret = TSMimeHdrFieldAppend(bufp, hdr_loc, ce_loc);
       }
 
