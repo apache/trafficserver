@@ -53,7 +53,7 @@ ProxyClientTransaction::new_transaction()
                parent->get_transact_count(), current_reader->sm_id);
 
   // This is a temporary hack until we get rid of SPDY and can use virutal methods entirely
-  // to track protocol
+  // to track protocol.
   PluginIdentity *pi = dynamic_cast<PluginIdentity *>(this->get_netvc());
   if (pi) {
     current_reader->plugin_tag = pi->getPluginTag();

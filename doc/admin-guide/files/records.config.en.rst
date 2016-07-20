@@ -3341,39 +3341,6 @@ HTTP/2 Configuration
 
    Enable the experimental HTTP/2 Stream Priority feature.
 
-SPDY Configuration
-==================
-
-
-.. ts:cv:: CONFIG proxy.config.spdy.accept_no_activity_timeout INT 120
-   :reloadable:
-   :deprecated:
-
-   How long a SPDY connection will be kept open after an accept without any streams created.
-
-.. ts:cv:: CONFIG proxy.config.spdy.no_activity_timeout_in INT 115
-   :reloadable:
-   :deprecated:
-
-   How long a stream is kept open without activity.
-
-.. ts:cv:: CONFIG proxy.config.spdy.initial_window_size_in INT 1048576
-   :reloadable:
-   :deprecated:
-
-   The initial window size for inbound connections.
-
-.. ts:cv:: CONFIG proxy.config.spdy.max_concurrent_streams_in INT 100
-   :reloadable:
-   :deprecated:
-
-   The maximum number of concurrent streams per inbound connection.
-
-.. note::
-
-   Reloading this value affects only new SPDY connections, not the
-   ones already established..
-
 Plug-in Configuration
 =====================
 

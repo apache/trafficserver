@@ -44,6 +44,7 @@
 #define _TS_STR(x) #x
 #define TS_STR(x) _TS_STR(x)
 
+/* clang-format off */
 #define BUILD_MACHINE "@build_machine@"
 #define BUILD_PERSON "@build_person@"
 #define BUILD_GROUP "@build_group@"
@@ -67,7 +68,6 @@
 #define TS_USE_POSIX_CAP @use_posix_cap@
 #define TS_USE_TPROXY @use_tproxy@
 #define TS_HAS_SO_MARK @has_so_mark@
-#define TS_HAS_SPDY @has_spdy@
 #define TS_HAS_IP_TOS @has_ip_tos@
 #define TS_USE_HWLOC @use_hwloc@
 #define TS_USE_TLS_NPN @use_tls_npn@
@@ -127,5 +127,6 @@
 #define TS_BUILD_CANONICAL_HOST "@host@"
 
 #define TS_BUILD_DEFAULT_LOOPBACK_IFACE "@default_loopback_iface@"
+/* clang-format on */
 
 #endif /* _ink_config_h */

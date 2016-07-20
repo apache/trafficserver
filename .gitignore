@@ -94,7 +94,6 @@ proxy/http2/hpack-tests/results
 
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/esi/*_test
-plugins/experimental/spdy/zstream_test
 plugins/experimental/sslheaders/test_sslheaders
 
 mgmt/api/traffic_api_cli_remote

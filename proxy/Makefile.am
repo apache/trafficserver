@@ -19,7 +19,7 @@
 include $(top_srcdir)/build/tidy.mk
 
 # Note that hdrs is targeted from ../Makefile.am
-SUBDIRS = congest http http2 spdy logging config
+SUBDIRS = congest http http2 logging config
 noinst_LIBRARIES =
 bin_PROGRAMS = \
   traffic_server \
@@ -39,7 +39,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib/records \
   -I$(srcdir)/http \
   -I$(srcdir)/http2 \
-  -I$(srcdir)/spdy \
   -I$(srcdir)/logging \
   -I$(srcdir)/http/remap  \
   -I$(srcdir)/hdrs \
@@ -202,7 +201,6 @@ endif
 traffic_server_LDADD = \
   http/libhttp.a \
   http2/libhttp2.a \
-  spdy/libspdy.a \
   http/remap/libhttp_remap.a \
   congest/libCongestionControl.a \
   logging/liblogging.a \
@@ -234,7 +232,6 @@ traffic_server_LDADD = \
   @LIBZ@ \
   @LIBLZMA@ \
   @LIBPROFILER@ \
-  @SPDYLAY_LIBS@ \
   @OPENSSL_LIBS@ \
   -lm
 

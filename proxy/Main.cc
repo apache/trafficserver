@@ -1803,11 +1803,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     SplitDNSConfig::startup();
 #endif
 
-#if TS_HAS_SPDY
-    extern int spdy_config_load();
-    spdy_config_load(); // must be before HttpProxyPort init.
-#endif
-
     // Initialize HTTP/2
     Http2::init();
 
