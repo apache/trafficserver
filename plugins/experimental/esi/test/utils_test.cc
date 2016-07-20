@@ -118,6 +118,20 @@ main()
   const char *expected_strs10[] = {"hello", "world", "test", "萌萌", "a", "b", 0};
   checkAttributes("test10", attr_list, expected_strs10);
 
+  cout << "Test 11 " << endl;
+  std::list<string> lines;
+  lines.push_back("whitelistCookie AGE");
+  lines.push_back("whitelistCookie GRADE");
+  lines.push_back("a b");
+  Utils::KeyValueMap kv;
+  Utils::HeaderValueList list;
+  Utils::parseKeyValueConfig(lines, kv, list);
+  assert(kv.find("a")->second == "b");
+  assert(list.back() == "GRADE");
+  list.pop_back();
+  assert(list.back() == "AGE");
+  list.pop_back();
+
   cout << endl << "All tests passed!" << endl;
   return 0;
 }
