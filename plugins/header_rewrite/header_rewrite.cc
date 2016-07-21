@@ -204,36 +204,34 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
     }
 
     if (NULL == rule) {
-      rule = new RuleSet();
-      rule->set_hook(default_hook);
+      TSHttpHookID hook = default_hook;
+      bool is_hook      = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
 
-      // Special case for specifying the HOOK this rule applies to.
-      // These can only be at the beginning of a rule, and have an implicit [AND].
-      if (p.cond_op_is("READ_RESPONSE_HDR_HOOK")) {
-        rule->set_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-        continue;
-      } else if (p.cond_op_is("READ_REQUEST_HDR_HOOK")) {
-        rule->set_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-        continue;
-      } else if (p.cond_op_is("READ_REQUEST_PRE_REMAP_HOOK")) {
-        rule->set_hook(TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK);
-        continue;
-      } else if (p.cond_op_is("SEND_REQUEST_HDR_HOOK")) {
-        rule->set_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-        continue;
-      } else if (p.cond_op_is("SEND_RESPONSE_HDR_HOOK")) {
-        rule->set_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-        continue;
-      } else if (p.cond_op_is("REMAP_PSEUDO_HOOK")) {
-        rule->set_hook(TS_REMAP_PSEUDO_HOOK);
+      rule = new RuleSet();
+      rule->set_hook(hook);
+
+      if (is_hook) {
+        // Check if the hooks are not available for the remap mode
+        if ((default_hook == TS_REMAP_PSEUDO_HOOK) &&
+            ((TS_HTTP_READ_REQUEST_HDR_HOOK == hook) || (TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK == hook))) {
+          TSError("[%s] you can not use cond %%{%s} in a remap rule", PLUGIN_NAME, p.get_op().c_str());
+          delete rule;
+          return false;
+        }
         continue;
       }
     }
 
     if (p.is_cond()) {
-      rule->add_condition(p, filename.c_str());
+      if (!rule->add_condition(p, filename.c_str())) {
+        delete rule;
+        return false;
+      }
     } else {
-      rule->add_operator(p, filename.c_str());
+      if (!rule->add_operator(p, filename.c_str())) {
+        delete rule;
+        return false;
+      }
     }
   }
 

@@ -177,3 +177,40 @@ Parser::preprocess(std::vector<std::string> tokens)
     }
   }
 }
+
+// Check if the operator is a condition, a hook, and if so, which hook. If the cond is not a hook
+// we do not modify the hook itself, and return false.
+bool
+Parser::cond_is_hook(TSHttpHookID &hook) const
+{
+  if (!_cond) {
+    return false;
+  }
+
+  if ("READ_RESPONSE_HDR_HOOK" == _op) {
+    hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
+    return true;
+  }
+  if ("READ_REQUEST_HDR_HOOK" == _op) {
+    hook = TS_HTTP_READ_REQUEST_HDR_HOOK;
+    return true;
+  }
+  if ("READ_REQUEST_PRE_REMAP_HOOK" == _op) {
+    hook = TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK;
+    return true;
+  }
+  if ("SEND_REQUEST_HDR_HOOK" == _op) {
+    hook = TS_HTTP_SEND_REQUEST_HDR_HOOK;
+    return true;
+  }
+  if ("SEND_RESPONSE_HDR_HOOK" == _op) {
+    hook = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
+    return true;
+  }
+  if ("REMAP_PSEUDO_HOOK" == _op) {
+    hook = TS_REMAP_PSEUDO_HOOK;
+    return true;
+  }
+
+  return false;
+}

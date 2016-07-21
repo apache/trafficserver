@@ -28,6 +28,8 @@
 #include "ts/ink_defs.h"
 #include "ts/ink_platform.h"
 
+#define TS_REMAP_PSEUDO_HOOK TS_HTTP_LAST_HOOK // Ugly, but use the "last hook" for remap instances.
+
 std::string getIP(sockaddr const *s_sockaddr);
 char *getIP(sockaddr const *s_sockaddr, char res[INET6_ADDRSTRLEN]);
 uint16_t getPort(sockaddr const *s_sockaddr);
