@@ -28,14 +28,6 @@
 #include "http2/HTTP2.h"
 
 static bool
-proto_is_spdy(IOBufferReader *reader)
-{
-  // SPDY clients have to start by sending a control frame (the high bit is set). Let's assume
-  // that no other protocol could possibly ever set this bit!
-  return ((uint8_t)(*reader)[0]) == 0x80u;
-}
-
-static bool
 proto_is_http2(IOBufferReader *reader)
 {
   char buf[HTTP2_CONNECTION_PREFACE_LEN];
@@ -101,11 +93,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       goto done;
     }
 
-    // SPDY clients have to start by sending a control frame (the high bit is set). Let's assume
-    // that no other protocol could possibly ever set this bit!
-    if (proto_is_spdy(reader)) {
-      key = PROTO_SPDY;
-    } else if (proto_is_http2(reader)) {
+    if (proto_is_http2(reader)) {
       key = PROTO_HTTP2;
     } else {
       key = PROTO_HTTP;

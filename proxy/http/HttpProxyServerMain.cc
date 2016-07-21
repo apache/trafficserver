@@ -38,7 +38,6 @@
 #include "ts/Tokenizer.h"
 #include "P_SSLNextProtocolAccept.h"
 #include "ProtocolProbeSessionAccept.h"
-#include "SpdySessionAccept.h"
 #include "http2/Http2SessionAccept.h"
 
 HttpSessionAccept *plugin_http_accept             = NULL;
@@ -176,12 +175,6 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP, http);
   }
 
-#if TS_HAS_SPDY
-  if (port.m_session_protocol_preference.intersects(SPDY_PROTOCOL_SET)) {
-    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_SPDY, new SpdySessionAccept(spdy::SESSION_VERSION_3_1));
-  }
-#endif
-
   if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
     probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP2, new Http2SessionAccept(accept_opt));
   }
@@ -194,7 +187,7 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     // But since registerEndpoint prepends you want to
     // register them backwards, so you'd want to register
     // the least important protocol first:
-    // http/1.0, http/1.1, spdy/3, spdy/3.1
+    // http/1.0, http/1.1, h2
 
     // HTTP
     if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_1_0)) {
@@ -204,17 +197,6 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_1_1)) {
       ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
     }
-
-// SPDY
-#if TS_HAS_SPDY
-    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3)) {
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3, new SpdySessionAccept(spdy::SESSION_VERSION_3));
-    }
-
-    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_SPDY_3_1)) {
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_SPDY_3_1, new SpdySessionAccept(spdy::SESSION_VERSION_3_1));
-    }
-#endif
 
     // HTTP2
     if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_2_0)) {

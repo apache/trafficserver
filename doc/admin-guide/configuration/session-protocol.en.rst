@@ -24,8 +24,7 @@ Session Protocol
 
 |TS| supports some session level protocols in place of or on top of HTTP. These
 can be provided by a plugin (see :ref:`developer-plugins-new-protocol-plugins`)
-or be one that is supported directly by |TS|. Note that the SPDY protocol is
-deprecated as of v6.2.0, and will be removed in v7.0.0.
+or be one that is supported directly by |TS|.
 
 Session protocols are specified by explicit names:
 
@@ -33,17 +32,12 @@ Session protocols are specified by explicit names:
 *  ``http/1.0``
 *  ``http/1.1``
 *  ``http/2``
-*  ``spdy/1``
-*  ``spdy/2``
-*  ``spdy/3``
-*  ``spdy/3.1``
 
 The session protocols supported on a proxy port are a subset of these values.
 For convenience some pseudo-values are defined in terms of these fundamental
 protocols:
 
 *  ``http`` means ``http/0.9``, ``http/1.0``, and ``http/1.1``
-*  ``spdy`` means ``spdy/3`` and ``spdy/3.1``.
 *  ``http2`` means ``http/2``
 
 Each proxy port can be configured in :ts:cv:`proxy.config.http.server_ports`

@@ -32,7 +32,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/proxy/shared \
   -I$(top_srcdir)/proxy/http/remap \
   -I$(top_srcdir)/proxy/logging \
-  -I$(top_srcdir)/proxy/spdy \
   -I$(top_srcdir)/proxy/http2
 
 noinst_HEADERS = HttpProxyServerMain.h

@@ -50,22 +50,6 @@ msgstr "``http/1.1``"
 msgid "``http/2``"
 msgstr "``http/2``"
 
-#: ../../../admin-guide/configuration/session-protocol.en.rst:36
-msgid "``spdy/1``"
-msgstr "``spdy/1``"
-
-#: ../../../admin-guide/configuration/session-protocol.en.rst:37
-msgid "``spdy/2``"
-msgstr "``spdy/2``"
-
-#: ../../../admin-guide/configuration/session-protocol.en.rst:38
-msgid "``spdy/3``"
-msgstr "``spdy/3``"
-
-#: ../../../admin-guide/configuration/session-protocol.en.rst:39
-msgid "``spdy/3.1``"
-msgstr "``spdy/3.1``"
-
 #: ../../../admin-guide/configuration/session-protocol.en.rst:41
 msgid ""
 "The session protocols supported on a proxy port are a subset of these "
@@ -80,10 +64,6 @@ msgstr ""
 msgid "``http`` means ``http/0.9``, ``http/1.0``, and ``http/1.1``"
 msgstr ""
 "``http`` は ``http/0.9`` 、``http/1.0`` 、 ``http/1.1`` を意味します。"
-
-#: ../../../admin-guide/configuration/session-protocol.en.rst:46
-msgid "``spdy`` means ``spdy/3`` and ``spdy/3.1``."
-msgstr "``spdy`` は ``spdy/3`` と ``spdy/3.1`` を意味します。"
 
 #: ../../../admin-guide/configuration/session-protocol.en.rst:47
 msgid "``http2`` means ``http/2``"

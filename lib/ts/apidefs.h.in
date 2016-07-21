@@ -123,9 +123,9 @@ typedef struct {
  */
 typedef enum {
   TS_PARSE_ERROR = -1,
-  TS_PARSE_DONE = 0,
-  TS_PARSE_OK = 1,
-  TS_PARSE_CONT = 2,
+  TS_PARSE_DONE  = 0,
+  TS_PARSE_OK    = 1,
+  TS_PARSE_CONT  = 2,
 } TSParseResult;
 
 /**
@@ -491,8 +491,8 @@ typedef enum {
 } TSCacheDataType;
 
 typedef enum {
-  TS_CACHE_ERROR_NO_DOC = -20400,
-  TS_CACHE_ERROR_DOC_BUSY = -20401,
+  TS_CACHE_ERROR_NO_DOC    = -20400,
+  TS_CACHE_ERROR_DOC_BUSY  = -20401,
   TS_CACHE_ERROR_NOT_READY = -20407,
 } TSCacheError;
 
@@ -517,7 +517,7 @@ typedef enum {
 } TSHttpTxnInfoKey;
 
 typedef enum {
-  TS_VC_CLOSE_ABORT = -1,
+  TS_VC_CLOSE_ABORT  = -1,
   TS_VC_CLOSE_NORMAL = 1,
 } TSVConnCloseFlags;
 
@@ -540,7 +540,7 @@ typedef enum {
 } TSIOBufferSizeIndex;
 
 typedef enum {
-  TS_ERROR = -1,
+  TS_ERROR   = -1,
   TS_SUCCESS = 0,
 } TSReturnCode;
 
@@ -1145,23 +1145,14 @@ extern tsapi const char *const TS_NPN_PROTOCOL_HTTP_1_0;
 extern tsapi const char *const TS_NPN_PROTOCOL_HTTP_1_1;
 extern tsapi const char *const TS_NPN_PROTOCOL_HTTP_2_0_14;
 extern tsapi const char *const TS_NPN_PROTOCOL_HTTP_2_0;
-extern tsapi const char *const TS_NPN_PROTOCOL_SPDY_1;
-extern tsapi const char *const TS_NPN_PROTOCOL_SPDY_2;
-extern tsapi const char *const TS_NPN_PROTOCOL_SPDY_3;
-extern tsapi const char *const TS_NPN_PROTOCOL_SPDY_3_1;
 
 extern tsapi int TS_NPN_PROTOCOL_INDEX_HTTP_0_9;
 extern tsapi int TS_NPN_PROTOCOL_INDEX_HTTP_1_0;
 extern tsapi int TS_NPN_PROTOCOL_INDEX_HTTP_1_1;
-extern tsapi int TS_NPN_PROTOCOL_INDEX_SPDY_1;
-extern tsapi int TS_NPN_PROTOCOL_INDEX_SPDY_2;
-extern tsapi int TS_NPN_PROTOCOL_INDEX_SPDY_3;
-extern tsapi int TS_NPN_PROTOCOL_INDEX_SPDY_3_1;
 extern tsapi int TS_NPN_PROTOCOL_INDEX_HTTP_2_0;
 
 extern tsapi const char *const TS_NPN_PROTOCOL_GROUP_HTTP;
 extern tsapi const char *const TS_NPN_PROTOCOL_GROUP_HTTP2;
-extern tsapi const char *const TS_NPN_PROTOCOL_GROUP_SPDY;
 
 /* --------------------------------------------------------------------------
    MLoc Constants */
@@ -1177,7 +1168,7 @@ extern tsapi const TSMLoc TS_NULL_MLOC;
    Interface for the UUID APIs. https://www.ietf.org/rfc/rfc4122.txt. */
 typedef enum {
   TS_UUID_UNDEFINED = 0,
-  TS_UUID_V1 = 1,
+  TS_UUID_V1        = 1,
   TS_UUID_V2,
   TS_UUID_V3,
   TS_UUID_V4, /* At this point, this is the only implemented version (or variant) */

@@ -40,7 +40,7 @@ class TestNoOp(helpers.EnvironmentCase):
     # you can set configure/environment options for the source build here
     environment_factory = {
         'configure': {
-            'enable-spdy': None,  # A value of None means that the argument has no value
+            'enable-wccp': None,  # A value of None means that the argument has no value
             'with-max-api-stats': 2048,  # if there is a value it will be converted to --key=value
         },
         'env': None,
@@ -87,10 +87,10 @@ class TestNoOp(helpers.EnvironmentCase):
 
 class TestConfigureFlags(helpers.EnvironmentCase):
     environment_factory = {
-        'configure': {'enable-spdy': None},
+        'configure': {'enable-wccp': None},
     }
 
-    def test_spdy(self):
+    def test_wccp(self):
         self.assertTrue(True)
 
 

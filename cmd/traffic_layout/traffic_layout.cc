@@ -92,7 +92,6 @@ produce_features(bool json)
   print_feature("TS_USE_POSIX_CAP", TS_USE_POSIX_CAP, json);
   print_feature("TS_USE_TPROXY", TS_USE_TPROXY, json);
   print_feature("TS_HAS_SO_MARK", TS_HAS_SO_MARK, json);
-  print_feature("TS_HAS_SPDY", TS_HAS_SPDY, json);
   print_feature("TS_HAS_IP_TOS", TS_HAS_IP_TOS, json);
   print_feature("TS_USE_HWLOC", TS_USE_HWLOC, json);
   print_feature("TS_USE_TLS_NPN", TS_USE_TLS_NPN, json);

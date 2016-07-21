@@ -368,18 +368,6 @@ AC_ARG_ENABLE([tproxy],
 AC_MSG_RESULT([$enable_tproxy])
 
 #
-# Options for SPDY
-#
-AC_MSG_CHECKING([whether to enable spdy])
-AC_ARG_ENABLE([spdy],
-        [AS_HELP_STRING([--enable-spdy], [turn on spdy protocol [DEPRECATED!]])],
-        [],
-        [enable_spdy="no"])
-AC_MSG_RESULT([$enable_spdy])
-TS_ARG_ENABLE_VAR([has], [spdy])
-AM_CONDITIONAL([BUILD_SPDY], [test 0 -ne $has_spdy])
-
-#
 # Configure how many stats to allocate for plugins. Default is 512.
 #
 AC_ARG_WITH([max-api-stats],
@@ -1488,11 +1476,6 @@ AC_SUBST([LUAJIT_LIBS], ['$(top_builddir)/lib/luajit/src/libluajit.a'])
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 
-# Check for spdylay library
-if test "x${enable_spdy}" = "xyes"; then
-  PKG_CHECK_MODULES([SPDYLAY],[libspdylay])
-fi
-
 AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
 AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
 AC_SUBST(has_mysql)
@@ -2035,7 +2018,6 @@ AC_CONFIG_FILES([
   proxy/http2/Makefile
   proxy/logging/Makefile
   proxy/shared/Makefile
-  proxy/spdy/Makefile
   rc/Makefile
   rc/trafficserver
   rc/trafficserver.conf

@@ -68,8 +68,8 @@ FetchSM::httpConnect()
 
   /*
    * TS-2906: We need a way to unset internal request when using FetchSM, the use case for this
-   * is SPDY when it creates outgoing requests it uses FetchSM and the outgoing requests
-   * are spawned via SPDY SYN packets which are definitely not internal requests.
+   * is H2 when it creates outgoing requests it uses FetchSM and the outgoing requests
+   * are spawned via H2 SYN packets which are definitely not internal requests.
    */
   if (!is_internal_request) {
     PluginVC *other_side = reinterpret_cast<PluginVC *>(http_vc)->get_other_side();
@@ -276,7 +276,7 @@ FetchSM::InvokePluginExt(int fetch_event)
   }
 
   // TS-3112: always check 'contp' after handleEvent()
-  // since handleEvent effectively calls the plugin (or SPDY layer)
+  // since handleEvent effectively calls the plugin (or H2 layer)
   // which may call TSFetchDestroy in error conditions.
   // TSFetchDestroy sets contp to NULL, but, doesn't destroy FetchSM yet,
   // since, it¹s in a tight loop protected by 'recursion' counter.

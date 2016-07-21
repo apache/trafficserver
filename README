@@ -51,7 +51,6 @@ plugins to build large scale web applications.
       |-- http/ .......... The actual HTTP protocol implementation
       |---http2/ ......... HTTP/2 implementation
       |-- logging/ ....... Flexible logging
-      |-- spdy/ .......... SPDY implementation
   |-- README ............. intro, links, build info
   |-- README-EC2 ......... info on EC2 support
   |-- REVIEWERS .......... (incomplete) list of areas with committer interest

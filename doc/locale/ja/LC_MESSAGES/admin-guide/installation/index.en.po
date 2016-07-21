@@ -275,10 +275,6 @@ msgid ""
 "v7.0.0."
 msgstr ""
 
-#: ../../../admin-guide/installation/index.en.rst:203
-msgid "Clone the spdylay Git repository from tatsuhiro. ::"
-msgstr ""
-
 #: ../../../admin-guide/installation/index.en.rst:207
 msgid "Generate fresh configure scripts. ::"
 msgstr ""
