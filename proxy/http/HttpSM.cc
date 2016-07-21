@@ -4074,8 +4074,9 @@ HttpSM::do_hostdb_lookup()
   if (use_srv_records) {
     char d[MAXDNAME];
 
-    memcpy(d, "_http._tcp.", 11);                                  // don't copy '\0'
-    ink_strlcpy(d + 11, t_state.server_info.name, sizeof(d) - 11); // all in the name of performance!
+    // Look at the next_hop_scheme to determine what scheme to put in the SRV lookup
+    unsigned int scheme_len = sprintf(d, "_%s._tcp.", hdrtoken_index_to_wks(t_state.next_hop_scheme));
+    ink_strlcpy(d + scheme_len, t_state.server_info.name, sizeof(d) - scheme_len);
 
     DebugSM("dns_srv", "Beginning lookup of SRV records for origin %s", d);
 

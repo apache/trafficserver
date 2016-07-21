@@ -45,7 +45,6 @@
 // TODO: make configurable
 #define HOST_DB_MAX_ROUND_ROBIN_INFO 16
 
-#define HOST_DB_SRV_PREFIX "_http._tcp."
 //
 // Data
 //
