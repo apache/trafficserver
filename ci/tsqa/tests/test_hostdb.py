@@ -414,6 +414,15 @@ class TestHostDBSRV(helpers.EnvironmentCase):
                 - http/https lookups
             - fallback to non SRV
     '''
+    SS_CONFIG = {
+        '_http._tcp.www.foo.com.': lambda: tsqa.endpoint.SocketServerDaemon(EchoServerIpHandler),
+        '_https._tcp.www.foo.com.': lambda: tsqa.endpoint.SSLSocketServerDaemon(
+            EchoServerIpHandler,
+            helpers.tests_file_path('cert.pem'),
+            helpers.tests_file_path('key.pem'),
+        ),
+    }
+
     @classmethod
     def setUpEnv(cls, env):
         cls.dns_sock = socket.socket (socket.AF_INET, socket.SOCK_DGRAM)
@@ -434,6 +443,9 @@ class TestHostDBSRV(helpers.EnvironmentCase):
         )
         cls.dns_server.start_thread()
 
+        cls.ssl_port = tsqa.utils.bind_unused_port()[1]
+        cls.configs['records.config']['CONFIG']['proxy.config.http.server_ports'] += ' {0}:ssl'.format(cls.ssl_port)
+
         cls.configs['records.config']['CONFIG'].update({
             'proxy.config.http.response_server_enabled': 2,  # only add server headers when there weren't any
             'proxy.config.hostdb.lookup_timeout': 1,
@@ -448,28 +460,33 @@ class TestHostDBSRV(helpers.EnvironmentCase):
             'proxy.config.srv_enabled': 1,
         })
 
-        cls.socket_servers = []
-        ss_dns_results = []
+        cls.configs['ssl_multicert.config'].add_line('dest_ip=* ssl_cert_name={0}'.format(
+            helpers.tests_file_path('rsa_keys/www.test.com.pem'),
+        ))
 
-        for x in xrange(0, 3):
-            ss = tsqa.endpoint.SocketServerDaemon(EchoServerIpHandler)
-            ss.start()
-            ss.ready.wait()
-            cls.socket_servers.append(ss)
-            ss_dns_results.append(dnslib.server.RR(
-                '_http._tcp.www.foo.com.',
-                dnslib.dns.QTYPE.SRV,
-                rdata = dnslib.dns.SRV(
-                    priority=10,
-                    weight=10,
-                    port=ss.port,
-                    target='127.0.0.{0}.'.format(x + 1),  # note: NUM_REALS must be < 253
-                ),
-                ttl=1,
-            ))
-        cls.responses['_http._tcp.www.foo.com.'] = ss_dns_results
+        y = -1
+        for name, factory in cls.SS_CONFIG.iteritems():
+            y += 1
+            ss_dns_results = []
+            for x in xrange(0, 3):
+                ss = factory()
+                ss.start()
+                ss.ready.wait()
+                ss_dns_results.append(dnslib.server.RR(
+                    name,
+                    dnslib.dns.QTYPE.SRV,
+                    rdata = dnslib.dns.SRV(
+                        priority=10,
+                        weight=10,
+                        port=ss.port,
+                        target='127.0.{0}.{1}.'.format(y, x + 1),  # note: NUM_REALS must be < 253
+                    ),
+                    ttl=1,
+                ))
+            cls.responses[name] = ss_dns_results
 
         cls.configs['remap.config'].add_line('map http://www.foo.com/ http://www.foo.com/')
+        cls.configs['remap.config'].add_line('map https://www.foo.com/ https://www.foo.com/')
         cls.configs['remap.config'].add_line('map /_hostdb/ http://{hostdb}')
 
     def _hostdb_entries(self):
@@ -485,13 +502,35 @@ class TestHostDBSRV(helpers.EnvironmentCase):
 
         return ret
 
+    def test_https(self):
+        '''Test https SRV lookups
+
+        we expect the SRV lookup to get different hosts, but otherwise act the same
+        '''
+        time.sleep(1)
+        expected_set = set([d.rdata.port for d in self.responses['_https._tcp.www.foo.com.']])
+
+        actual_set = set()
+        for x in xrange(0, 10):
+            # test one that works
+            ret = requests.get(
+                'https://localhost:{0}/'.format(self.ssl_port),
+                headers={'Host': 'www.foo.com'},
+                verify=False,  # self signed certs, don't bother verifying
+            )
+            self.assertEqual(ret.status_code, 200)
+            actual_set.add(int(ret.headers['X-Server-Port']))
+
+        self.assertEqual(expected_set, actual_set)
+
     def test_ports(self):
         '''Test port functionality of SRV responses
 
         SRV responses include ports-- so we want to ensure that we are correctly
         overriding the port based on the response
         '''
-        expected_set = set([s.port for s in self.socket_servers])
+        time.sleep(1)
+        expected_set = set([d.rdata.port for d in self.responses['_http._tcp.www.foo.com.']])
 
         actual_set = set()
         for x in xrange(0, 10):
