@@ -423,6 +423,25 @@ class TestHostDBSRV(helpers.EnvironmentCase):
         ),
     }
 
+    # TODO: clean up and push into trafficserver-qa
+    @property
+    def proxies(self):
+        '''
+        Return a dict of schema -> proxy. This is primarily used for requests
+        '''
+        ret = {}
+        for item in self.configs['records.config']['CONFIG']['proxy.config.http.server_ports'].split():
+            # TODO: better parsing? For now assume first is port
+            parts = item.split(':')
+            dst = 'http://127.0.0.1:{0}'.format(parts[0])
+            if len(parts) > 1:
+                if parts[1] not in ret:
+                    ret[parts[1]] = dst
+            elif 'http' not in ret:
+                ret['http'] = dst
+        return ret
+
+
     @classmethod
     def setUpEnv(cls, env):
         cls.dns_sock = socket.socket (socket.AF_INET, socket.SOCK_DGRAM)
@@ -544,8 +563,6 @@ class TestHostDBSRV(helpers.EnvironmentCase):
 
         self.assertEqual(expected_set, actual_set)
 
-    # TODO: fix, seems broken...
-    @helpers.unittest.expectedFailure
     def test_priority(self):
         '''Test port functionality of SRV responses
 
@@ -572,7 +589,7 @@ class TestHostDBSRV(helpers.EnvironmentCase):
                     request_distribution[port] = 0
                 request_distribution[port] += 1
 
-            # since one has higher priority, we want to ensure that it got all requests
+            # since one has a lower priority, we want to ensure that it got all requests
             self.assertEqual(
                 request_distribution[self.responses['_http._tcp.www.foo.com.'][0].rdata.port],
                 NUM_REQUESTS,
@@ -581,8 +598,6 @@ class TestHostDBSRV(helpers.EnvironmentCase):
         finally:
             self.responses['_http._tcp.www.foo.com.'] = orig_responses
 
-    # TODO: fix, seems broken...
-    @helpers.unittest.expectedFailure
     def test_weight(self):
         '''Test port functionality of SRV responses
 
