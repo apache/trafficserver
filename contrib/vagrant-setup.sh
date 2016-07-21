@@ -38,6 +38,7 @@ trusty*|jessie*)
         libxml2-dev \
         m4 \
         ncurses-dev \
+        git \
         tcl-dev
 ;;
 
@@ -60,6 +61,7 @@ centos*)
         ncurses-devel \
         openssl-devel \
         pcre-devel \
+        git \
         tcl-devel
 ;;
 
@@ -107,6 +109,7 @@ omnios)
         developer/linker \
         developer/object-file \
         developer/parser/bison \
+        developer/versioning/git \
         library/idnkit \
         library/idnkit/header-idnkit \
         omniti/runtime/tcl-8 \
