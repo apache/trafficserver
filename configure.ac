@@ -564,11 +564,10 @@ CXXFLAGS="${_ts_saved_CXXFLAGS}"
 
 # All compilers we support have 'gnu99' as an available C standard
 TS_ADDTO(CFLAGS, [-std=gnu99])
+TS_ADDTO(CXXFLAGS, [-std=c++11])
 
 # These tests requires C++
 AC_LANG_PUSH([C++])
-
-AX_CXX_COMPILE_STDCXX_11([noext],[mandatory])
 
 # And check for std::shared_ptr vs std::tr1::shared_ptr. For the CPPLIB
 AC_MSG_CHECKING([for std::shared_ptr])
