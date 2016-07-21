@@ -20,11 +20,11 @@
  * @file AsyncHttpFetch.cc
  */
 
+#include <memory>
+#include <arpa/inet.h>
 #include "atscppapi/AsyncHttpFetch.h"
-#include "atscppapi/shared_ptr.h"
 #include <ts/ts.h>
 #include <ts/experimental.h>
-#include <arpa/inet.h>
 #include "logging_internal.h"
 #include "utils_internal.h"
 
@@ -38,7 +38,7 @@ using std::string;
  * @private
  */
 struct atscppapi::AsyncHttpFetchState : noncopyable {
-  shared_ptr<Request> request_;
+  std::shared_ptr<Request> request_;
   Response response_;
   string request_body_;
   AsyncHttpFetch::Result result_;
@@ -46,7 +46,7 @@ struct atscppapi::AsyncHttpFetchState : noncopyable {
   size_t body_size_;
   TSMBuffer hdr_buf_;
   TSMLoc hdr_loc_;
-  shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
+  std::shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
   AsyncHttpFetch::StreamingFlag streaming_flag_;
   TSFetchSM fetch_sm_;
   static const size_t BODY_BUFFER_SIZE = 32 * 1024;

@@ -28,7 +28,7 @@ NOCLEAN=${NOCLEAN:-}
 
 # Options
 options="--status-bugs --keep-empty"
-configure="--enable-experimental-plugins --enable-cppapi"
+configure="--enable-experimental-plugins"
 
 # Additional checkers
 # Phil says these are all FP's: -enable-checker alpha.security.ArrayBoundV2

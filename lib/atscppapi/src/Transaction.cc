@@ -20,16 +20,18 @@
  * @file Transaction.cc
  */
 
-#include "atscppapi/Transaction.h"
+#include <memory>
 #include <cstdlib>
 #include <cstring>
 #include <map>
 #include <string>
+
+#include "atscppapi/Transaction.h"
 #include "ts/ink_memory.h"
-#include "atscppapi/shared_ptr.h"
 #include "logging_internal.h"
 #include "utils_internal.h"
 #include "atscppapi/noncopyable.h"
+
 using std::map;
 using std::string;
 using namespace atscppapi;
@@ -59,7 +61,7 @@ struct atscppapi::TransactionState : noncopyable {
   TSMBuffer cached_request_hdr_buf_;
   TSMLoc cached_request_hdr_loc_;
   Request cached_request_;
-  map<string, shared_ptr<Transaction::ContextValue>> context_values_;
+  map<string, std::shared_ptr<Transaction::ContextValue>> context_values_;
 
   TransactionState(TSHttpTxn txn, TSMBuffer client_request_hdr_buf, TSMLoc client_request_hdr_loc)
     : txn_(txn),
@@ -224,11 +226,11 @@ Transaction::addPlugin(TransactionPlugin *plugin)
   state_->plugins_.push_back(plugin);
 }
 
-shared_ptr<Transaction::ContextValue>
+std::shared_ptr<Transaction::ContextValue>
 Transaction::getContextValue(const std::string &key)
 {
-  shared_ptr<Transaction::ContextValue> return_context_value;
-  map<string, shared_ptr<Transaction::ContextValue>>::iterator iter = state_->context_values_.find(key);
+  std::shared_ptr<Transaction::ContextValue> return_context_value;
+  map<string, std::shared_ptr<Transaction::ContextValue>>::iterator iter = state_->context_values_.find(key);
   if (iter != state_->context_values_.end()) {
     return_context_value = iter->second;
   }
@@ -237,7 +239,7 @@ Transaction::getContextValue(const std::string &key)
 }
 
 void
-Transaction::setContextValue(const std::string &key, shared_ptr<Transaction::ContextValue> value)
+Transaction::setContextValue(const std::string &key, std::shared_ptr<Transaction::ContextValue> value)
 {
   state_->context_values_[key] = value;
 }

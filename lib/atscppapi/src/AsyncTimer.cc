@@ -33,7 +33,7 @@ struct atscppapi::AsyncTimerState {
   TSAction initial_timer_action_;
   TSAction periodic_timer_action_;
   AsyncTimer *timer_;
-  shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
+  std::shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
   AsyncTimerState(AsyncTimer::Type type, int period_in_ms, int initial_period_in_ms, AsyncTimer *timer)
     : type_(type),
       period_in_ms_(period_in_ms),

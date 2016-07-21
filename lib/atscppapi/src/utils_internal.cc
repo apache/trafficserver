@@ -79,7 +79,7 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
     resetTransactionHandles(transaction, event);
     const std::list<TransactionPlugin *> &plugins = utils::internal::getTransactionPlugins(transaction);
     for (std::list<TransactionPlugin *>::const_iterator iter = plugins.begin(), end = plugins.end(); iter != end; ++iter) {
-      shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(**iter);
+      std::shared_ptr<Mutex> trans_mutex = utils::internal::getTransactionPluginMutex(**iter);
       LOG_DEBUG("Locking TransacitonPlugin mutex to delete transaction plugin at %p", *iter);
       trans_mutex->lock();
       LOG_DEBUG("Locked Mutex...Deleting transaction plugin at %p", *iter);
@@ -165,7 +165,7 @@ utils::internal::getTransaction(TSHttpTxn ats_txn_handle)
   return *transaction;
 }
 
-shared_ptr<Mutex>
+std::shared_ptr<Mutex>
 utils::internal::getTransactionPluginMutex(TransactionPlugin &transaction_plugin)
 {
   return transaction_plugin.getMutex();

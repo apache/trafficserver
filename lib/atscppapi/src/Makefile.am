@@ -84,9 +84,6 @@ library_include_HEADERS = \
 	$(base_include_folder)/AsyncTimer.h \
 	$(base_include_folder)/InterceptPlugin.h
 
-library_include_HEADERS += \
-	$(top_builddir)/$(subdir)/include/atscppapi/shared_ptr.h
-
 include $(top_srcdir)/build/tidy.mk
 
 tidy-local: $(DIST_SOURCES)

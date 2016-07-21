@@ -28,9 +28,7 @@ mkdir -p "${WORKSPACE}/${BUILD_NUMBER}/install"
             --enable-example-plugins \
             --enable-ccache \
             --enable-debug \
-            --enable-werror \
-            --enable-cppapi
-
+            --enable-werror
 
 # Test clang-format (but only where we have the local copy of clang-format, i.e. linux)
 if [ -d /usr/local/fmt ]; then

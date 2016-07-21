@@ -1,5 +1,5 @@
-# if !defined(TS_INTRUSIVE_PTR_HEADER)
-# define TS_INTRUSIVE_PTR_HEADER
+#if !defined(TS_INTRUSIVE_PTR_HEADER)
+#define TS_INTRUSIVE_PTR_HEADER
 
 /** @file
 
@@ -31,12 +31,12 @@
     limitations under the License.
  */
 
-# include <sys/types.h>
-# include <assert.h>
-# include <functional>
+#include <sys/types.h>
+#include <assert.h>
+#include <functional>
 
-namespace ts {
-
+namespace ts
+{
 class IntrusivePtrCounter;
 
 /** This class exists solely to be declared a friend of @c IntrusivePtrCounter.
@@ -47,14 +47,15 @@ class IntrusivePtrCounter;
     to get access to the protected reference count.
 
  */
-class IntrusivePtrBase {
+class IntrusivePtrBase
+{
 public:
   /// Type used for reference counter.
   typedef long Counter;
+
 protected:
-  Counter* getCounter(
-    IntrusivePtrCounter* c ///< Cast object with reference counter.
-  ) const;
+  Counter *getCounter(IntrusivePtrCounter *c ///< Cast object with reference counter.
+                      ) const;
 };
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
@@ -89,8 +90,10 @@ protected:
     due to missing functions or methods
 
   */
-class IntrusivePtrCounter {
+class IntrusivePtrCounter
+{
   friend class IntrusivePtrBase;
+
 public:
   /** Copy constructor.
 
@@ -100,9 +103,8 @@ public:
       way lies madness.
   */
 
-  IntrusivePtrCounter(
-    IntrusivePtrCounter const& ///< Source object.
-  );
+  IntrusivePtrCounter(IntrusivePtrCounter const & ///< Source object.
+                      );
 
   /** Assignment operator.
 
@@ -110,9 +112,7 @@ public:
       constructor. The reference counter must not participate in
       assignment.
    */
-  IntrusivePtrCounter& operator = (
-    IntrusivePtrCounter const&
-  );
+  IntrusivePtrCounter &operator=(IntrusivePtrCounter const &);
 
 protected:
   IntrusivePtrBase::Counter m_intrusive_pointer_reference_count;
@@ -131,11 +131,11 @@ protected:
     The smart pointer actions can be changed through class specific policy
     by specializing the @c IntrusivePtrPolicy template class.
 */
-template < typename T >
-class IntrusivePtr : private IntrusivePtrBase {
-private:	/* don't pollute client with these typedefs */
+template <typename T> class IntrusivePtr : private IntrusivePtrBase
+{
+private:                          /* don't pollute client with these typedefs */
   typedef IntrusivePtrBase super; ///< Parent type.
-  typedef IntrusivePtr self; ///< Self reference type.
+  typedef IntrusivePtr self;      ///< Self reference type.
 
 public:
   /// Promote type for reference counter.
@@ -145,36 +145,34 @@ public:
   IntrusivePtr();
   /// Construct from instance.
   /// The instance becomes referenced and owned by the pointer.
-  IntrusivePtr(T* obj);
+  IntrusivePtr(T *obj);
   /// Destructor.
   ~IntrusivePtr();
 
   /// Copy constructor.
-  IntrusivePtr(const self& src);
+  IntrusivePtr(const self &src);
   /// Self assignement.
-  self& operator = (const self& src);
+  self &operator=(const self &src);
   /** Assign from instance.
       The instance becomes referenced and owned by the pointer.
       The reference to the current object is dropped.
   */
-  self& operator = (
-    T* obj ///< Target instance.
-  );
+  self &operator=(T *obj ///< Target instance.
+                  );
 
   /** Assign from instance.
       The instance becomes referenced and owned by the pointer.
       The reference to the current object is dropped.
       @note A synonym for @c operator= for compatibility.
   */
-  self& assign (
-    T* obj ///< Target instance.
-  );
+  self &assign(T *obj ///< Target instance.
+               );
 
   /** Assign from instance.
       The instance becomes referenced and owned by the pointer.
       The reference to the current object is dropped.
   */
-  void reset(T* obj);
+  void reset(T *obj);
   /** Clear reference without cleanup.
 
       This unsets this smart pointer and decrements the reference
@@ -192,63 +190,61 @@ public:
   bool isNull() const;
 
   /// Member dereference.
-  T* operator -> () const;
+  T *operator->() const;
   /// Dereference.
-  T& operator *  () const;
+  T &operator*() const;
   /// Access raw pointer.
-  T* get() const;
+  T *get() const;
 
   /** User conversion to raw pointer.
 
       @internal allow implicit conversion to the underlying
       pointer. This allows for the form "if (handle)" and is not
       particularly dangerous (as it would be for a scope_ptr or
-      shared_ptr) because the counter is carried with the object and
+      std::shared_ptr) because the counter is carried with the object and
       so can't get lost or duplicated.
 
   */
-  operator T* () const;
+  operator T *() const;
 
   /** Cross type construction.
       This succeeds if an @a X* can be implicitly converted to a @a T*.
   */
-  template <
-    typename X ///< Foreign pointer type.
-  > IntrusivePtr(
-    IntrusivePtr<X> const& that ///< Foreign pointer.
-  );
+  template <typename X ///< Foreign pointer type.
+            >
+  IntrusivePtr(IntrusivePtr<X> const &that ///< Foreign pointer.
+               );
 
   /** Cross type assignment.
       This succeeds if an @a X* can be implicitily converted to a @a T*.
   */
-  template <
-    typename X ///< Foreign pointer type.
-  > self& operator = (
-    IntrusivePtr<X> const& that ///< Foreign pointer.
-  );
+  template <typename X ///< Foreign pointer type.
+            >
+  self &operator=(IntrusivePtr<X> const &that ///< Foreign pointer.
+                  );
 
   /// Check for multiple references.
   /// @return @c true if more than one smart pointer references the object,
   /// @c false otherwise.
   bool isShared() const;
-  /// Check for a single reference (@c shared_ptr compatibility)
+  /// Check for a single reference (@c std::shared_ptr compatibility)
   /// @return @c true if this object is not shared.
   bool unique() const;
   /// Reference count.
   /// @return Number of references.
   Counter useCount() const;
+
 private:
-  T* m_obj; ///< Pointer to object.
+  T *m_obj; ///< Pointer to object.
 
   /// Reference @a obj.
-  void set(
-    T* obj ///< Target object.
-  );
+  void set(T *obj ///< Target object.
+           );
   /// Drop the current reference.
   void unset();
 
   /// Get a pointer to the reference counter of the target object.
-  Counter* getCounter() const;
+  Counter *getCounter() const;
 };
 
 /** Pointer dynamic cast.
@@ -264,13 +260,14 @@ private:
     the_b = dynamic_ptr_cast<B>(really_b);
     @endcode
 */
-template <
-  typename T, ///< Target type.
-  typename X ///< Source type.
-> IntrusivePtr<T> dynamic_ptr_cast(
-  IntrusivePtr<X> const& src ///< Source pointer.
-) {
-  return IntrusivePtr<T>(dynamic_cast<T*>(src.get()));
+template <typename T, ///< Target type.
+          typename X  ///< Source type.
+          >
+IntrusivePtr<T>
+dynamic_ptr_cast(IntrusivePtr<X> const &src ///< Source pointer.
+                 )
+{
+  return IntrusivePtr<T>(dynamic_cast<T *>(src.get()));
 }
 
 /** Pointer cast.
@@ -287,13 +284,14 @@ template <
     the_b = ptr_cast<B>(really_b);
     @endcode
 */
-template <
-  typename T, ///< Target type.
-  typename X ///< Source type.
-> IntrusivePtr<T> ptr_cast(
-  IntrusivePtr<X> const& src ///< Source pointer.
-) {
-    return IntrusivePtr<T>(static_cast<T*>(src.get()));
+template <typename T, ///< Target type.
+          typename X  ///< Source type.
+          >
+IntrusivePtr<T>
+ptr_cast(IntrusivePtr<X> const &src ///< Source pointer.
+         )
+{
+  return IntrusivePtr<T>(static_cast<T *>(src.get()));
 }
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
@@ -316,14 +314,13 @@ template <
     anyway.
 */
 
-template <typename T>
-class IntrusivePtrPolicy {
+template <typename T> class IntrusivePtrPolicy
+{
 public:
   /// Called when the pointer is dereferenced.
   /// Default is empty (no action).
-  static void dereferenceCheck(
-    T* ///< Target object.
-  );
+  static void dereferenceCheck(T * ///< Target object.
+                               );
 
   /** Perform clean up on a target object that is no longer referenced.
 
@@ -339,141 +336,154 @@ public:
       the called logic keeps a copy of the smart pointer. Use with
       caution.
   */
-  static void finalize(
-    T* t ///< Target object.
-  );
+  static void finalize(T *t ///< Target object.
+                       );
   /// Strict weak order for STL containers.
-  class Order
-    : public std::binary_function< IntrusivePtr<T>, IntrusivePtr<T>, bool> {
+  class Order : public std::binary_function<IntrusivePtr<T>, IntrusivePtr<T>, bool>
+  {
   public:
     /// Default constructor.
-    Order() {
-    }
+    Order() {}
     /// Compare by raw pointer.
-    bool operator() (
-      IntrusivePtr<T> const& lhs, ///< Left hand operand.
-      IntrusivePtr<T> const& rhs ///< Right hand operand.
-    ) const;
+    bool operator()(IntrusivePtr<T> const &lhs, ///< Left hand operand.
+                    IntrusivePtr<T> const &rhs  ///< Right hand operand.
+                    ) const;
   };
 };
 
-struct IntrusivePtrDefaultPolicyTag {};
+struct IntrusivePtrDefaultPolicyTag {
+};
 typedef IntrusivePtrPolicy<IntrusivePtrDefaultPolicyTag> IntrusivePtrDefaultPolicy;
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
 /* Inline Methods */
-inline IntrusivePtrCounter::IntrusivePtrCounter()
-  : m_intrusive_pointer_reference_count(0) {
+inline IntrusivePtrCounter::IntrusivePtrCounter() : m_intrusive_pointer_reference_count(0)
+{
 }
 
-inline IntrusivePtrCounter::IntrusivePtrCounter(IntrusivePtrCounter const&)
-  : m_intrusive_pointer_reference_count(0) {
+inline IntrusivePtrCounter::IntrusivePtrCounter(IntrusivePtrCounter const &) : m_intrusive_pointer_reference_count(0)
+{
 }
 
-inline IntrusivePtrCounter&
-IntrusivePtrCounter::operator = (IntrusivePtrCounter const&) {
+inline IntrusivePtrCounter &
+IntrusivePtrCounter::operator=(IntrusivePtrCounter const &)
+{
   return *this;
 }
 
-inline IntrusivePtrBase::Counter*
-IntrusivePtrBase::getCounter(IntrusivePtrCounter* c) const {
+inline IntrusivePtrBase::Counter *
+IntrusivePtrBase::getCounter(IntrusivePtrCounter *c) const
+{
   return &(c->m_intrusive_pointer_reference_count);
 }
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
-template < typename T > void
-IntrusivePtrPolicy<T>::dereferenceCheck(T*) {
+template <typename T>
+void
+IntrusivePtrPolicy<T>::dereferenceCheck(T *)
+{
 }
 
-template < typename T > void
-IntrusivePtrPolicy<T>::finalize(T* obj) {
+template <typename T>
+void
+IntrusivePtrPolicy<T>::finalize(T *obj)
+{
   delete obj;
 }
 
-template < typename T > bool
-IntrusivePtrPolicy<T>::Order::operator()(
-  IntrusivePtr<T> const& lhs,
-  IntrusivePtr<T> const& rhs
-) const {
+template <typename T>
+bool
+IntrusivePtrPolicy<T>::Order::operator()(IntrusivePtr<T> const &lhs, IntrusivePtr<T> const &rhs) const
+{
   return lhs.get() < rhs.get();
 }
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
-template < typename T >
-IntrusivePtr<T>::IntrusivePtr()
-  : m_obj(0) {
+template <typename T> IntrusivePtr<T>::IntrusivePtr() : m_obj(0)
+{
 }
 
-template < typename T >
-IntrusivePtr<T>::IntrusivePtr(T* obj) {
+template <typename T> IntrusivePtr<T>::IntrusivePtr(T *obj)
+{
   this->set(obj);
 }
 
-template < typename T >
-IntrusivePtr<T>::~IntrusivePtr() {
+template <typename T> IntrusivePtr<T>::~IntrusivePtr()
+{
   this->unset();
 }
 
-template < typename T >
-IntrusivePtr<T>::IntrusivePtr(const self& that) {
+template <typename T> IntrusivePtr<T>::IntrusivePtr(const self &that)
+{
   this->set(that.m_obj);
 }
 
-template < typename T >
-template < typename X >
-IntrusivePtr<T>::IntrusivePtr(
-  IntrusivePtr<X> const& that ///< Foreign pointer.
-) : super(that.get()) {
+template <typename T>
+template <typename X>
+IntrusivePtr<T>::IntrusivePtr(IntrusivePtr<X> const &that ///< Foreign pointer.
+                              )
+  : super(that.get())
+{
 }
 
-template < typename T > IntrusivePtr<T>&
-IntrusivePtr<T>::operator = (const self& that) {
+template <typename T>
+IntrusivePtr<T> &
+IntrusivePtr<T>::operator=(const self &that)
+{
   this->reset(that.m_obj);
   return *this;
 }
 
-template < typename T >
-template < typename X >
-IntrusivePtr<T>&
-IntrusivePtr<T>::operator = (
-  IntrusivePtr<X> const& that ///< Foreign pointer.
-) {
+template <typename T>
+template <typename X>
+IntrusivePtr<T> &
+IntrusivePtr<T>::operator=(IntrusivePtr<X> const &that ///< Foreign pointer.
+                           )
+{
   this->reset(that.get());
   return *this;
 }
 
-template < typename T > IntrusivePtr<T>&
-IntrusivePtr<T>::operator = (T* obj) {
+template <typename T>
+IntrusivePtr<T> &
+IntrusivePtr<T>::operator=(T *obj)
+{
   this->reset(obj);
   return *this;
 }
 
-template < typename T > IntrusivePtr<T>&
-IntrusivePtr<T>::assign (T* obj) {
+template <typename T>
+IntrusivePtr<T> &
+IntrusivePtr<T>::assign(T *obj)
+{
   return *this = obj;
 }
 
-template < typename T > T*
-IntrusivePtr<T>::operator -> () const {
+template <typename T> T *IntrusivePtr<T>::operator->() const
+{
   IntrusivePtrPolicy<T>::dereferenceCheck(m_obj);
   return m_obj;
 }
 
-template < typename T > T&
-IntrusivePtr<T>::operator * () const {
+template <typename T> T &IntrusivePtr<T>::operator*() const
+{
   IntrusivePtrPolicy<T>::dereferenceCheck(m_obj);
   return *m_obj;
 }
 
-template < typename T > T*
-IntrusivePtr<T>::get() const {
+template <typename T>
+T *
+IntrusivePtr<T>::get() const
+{
   IntrusivePtrPolicy<T>::dereferenceCheck(m_obj);
   return m_obj;
 }
 
-template < typename T > typename IntrusivePtr<T>::Counter*
-IntrusivePtr<T>::getCounter() const {
-  return super::getCounter(static_cast<IntrusivePtrCounter*>(m_obj));
+template <typename T>
+typename IntrusivePtr<T>::Counter *
+IntrusivePtr<T>::getCounter() const
+{
+  return super::getCounter(static_cast<IntrusivePtrCounter *>(m_obj));
 }
 
 /* The Set/Unset methods are the basic implementation of our
@@ -486,15 +496,17 @@ IntrusivePtr<T>::getCounter() const {
    It is the callers responsibility to do that.
 */
 
-template < typename T > void
-IntrusivePtr<T>::unset() {
+template <typename T>
+void
+IntrusivePtr<T>::unset()
+{
   if (0 != m_obj) {
     /* magic: our target is required to inherit from IntrusivePtrCounter,
      * which provides a protected counter variable and access via our
      * super class. We call the super class method to get a raw pointer
      * to the counter variable.
      */
-    Counter* cp = this->getCounter();
+    Counter *cp = this->getCounter();
 
     /* If you hit this assert you've got a cycle of objects that
        reference each other. A delete in the cycle will eventually
@@ -510,100 +522,129 @@ IntrusivePtr<T>::unset() {
   }
 }
 
-template < typename T > void
-IntrusivePtr<T>::set(T* obj) {
-  m_obj = obj;	/* update to new object */
+template <typename T>
+void
+IntrusivePtr<T>::set(T *obj)
+{
+  m_obj = obj;    /* update to new object */
   if (0 != m_obj) /* if a real object, bump the ref count */
     ++(*(this->getCounter()));
 }
 
-template < typename T > void
-IntrusivePtr<T>::reset(T* obj) {
+template <typename T>
+void
+IntrusivePtr<T>::reset(T *obj)
+{
   if (obj != m_obj) {
     this->unset();
     this->set(obj);
   }
 }
 
-template < typename T > bool
-IntrusivePtr<T>::release() {
+template <typename T>
+bool
+IntrusivePtr<T>::release()
+{
   bool zret = true;
   if (m_obj) {
-    Counter* cp = this->getCounter();
-    zret = *cp <= 1;
+    Counter *cp = this->getCounter();
+    zret        = *cp <= 1;
     // If the client is using this method, they're doing something funky
     // so be extra careful with the reference count.
-    if (*cp > 0) --*cp;
+    if (*cp > 0)
+      --*cp;
     m_obj = 0;
   }
   return zret;
 }
 
 /* Simple method to check for invalid pointer */
-template < typename T > bool
-IntrusivePtr<T>::isNull() const {
+template <typename T>
+bool
+IntrusivePtr<T>::isNull() const
+{
   return 0 == m_obj;
 }
 
 /* Pointer comparison */
-template < typename T > bool
-operator == (IntrusivePtr<T> const& lhs, IntrusivePtr<T> const& rhs) {
+template <typename T>
+bool
+operator==(IntrusivePtr<T> const &lhs, IntrusivePtr<T> const &rhs)
+{
   return lhs.get() == rhs.get();
 }
 
-template < typename T > bool
-operator != (IntrusivePtr<T> const& lhs, IntrusivePtr<T> const& rhs) {
+template <typename T>
+bool
+operator!=(IntrusivePtr<T> const &lhs, IntrusivePtr<T> const &rhs)
+{
   return lhs.get() != rhs.get();
 }
 
-template < typename T > bool
-operator < (IntrusivePtr<T> const& lhs, IntrusivePtr<T> const& rhs) {
+template <typename T>
+bool
+operator<(IntrusivePtr<T> const &lhs, IntrusivePtr<T> const &rhs)
+{
   return lhs.get() < rhs.get();
 }
 
-template < typename T > bool
-operator == (IntrusivePtr<T> const& lhs, int rhs) {
+template <typename T>
+bool
+operator==(IntrusivePtr<T> const &lhs, int rhs)
+{
   assert(0 == rhs);
   return lhs.get() == 0;
 }
 
-template < typename T > bool
-operator == (int lhs, IntrusivePtr<T> const& rhs) {
+template <typename T>
+bool
+operator==(int lhs, IntrusivePtr<T> const &rhs)
+{
   assert(0 == lhs);
   return rhs.get() == 0;
 }
 
-template < typename T > bool
-operator != (int lhs, IntrusivePtr<T> const& rhs) {
+template <typename T>
+bool
+operator!=(int lhs, IntrusivePtr<T> const &rhs)
+{
   return !(lhs == rhs);
 }
 
-template < typename T > bool
-operator != (IntrusivePtr<T> const& lhs, int rhs) {
+template <typename T>
+bool
+operator!=(IntrusivePtr<T> const &lhs, int rhs)
+{
   return !(lhs == rhs);
 }
 
-template < typename T >
-IntrusivePtr<T>::operator T* () const {
+template <typename T> IntrusivePtr<T>::operator T *() const
+{
   return m_obj;
 }
 
-template < typename T> bool
-IntrusivePtr<T>::isShared() const {
+template <typename T>
+bool
+IntrusivePtr<T>::isShared() const
+{
   return m_obj && *(this->getCounter()) > 1;
 }
 
-template < typename T> bool
-IntrusivePtr<T>::unique() const {
+template <typename T>
+bool
+IntrusivePtr<T>::unique() const
+{
   return 0 == m_obj || *(this->getCounter()) <= 1;
 }
 
-template < typename T> typename IntrusivePtr<T>::Counter
-IntrusivePtr<T>::useCount() const {
+template <typename T>
+typename IntrusivePtr<T>::Counter
+IntrusivePtr<T>::useCount() const
+{
   return m_obj ? *(this->getCounter()) : 0;
 }
 /* ----------------------------------------------------------------------- */
 /* ----------------------------------------------------------------------- */
 } // namespace ats
 /* ----------------------------------------------------------------------- */
-# endif // TS_INTRUSIVE_PTR_HEADER
+#endif // TS_INTRUSIVE_PTR_HEADER

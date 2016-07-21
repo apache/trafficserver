@@ -34,7 +34,7 @@ public:
     : max_instances_(max_instances), instance_count_(0), type_(type), cancel_(cancel)
   {
     timer_ = new AsyncTimer(type, period_in_ms, initial_period_in_ms);
-    Async::execute<AsyncTimer>(this, timer_, shared_ptr<Mutex>()); // letting the system create the mutex
+    Async::execute<AsyncTimer>(this, timer_, std::shared_ptr<Mutex>()); // letting the system create the mutex
   }
 
   void
