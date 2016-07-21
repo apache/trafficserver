@@ -1514,24 +1514,24 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         cp += dn_skipname(cp, eom);
         here     = cp; /* hack */
         SRV *srv = &buf->srv_hosts.hosts[num_srv];
-        int r    = ink_ns_name_ntop(srv_off + SRV_SERVER, srv->host, MAXDNAME);
-        if (r <= 0) {
-          /* FIXME: is this really an error? or just a continue; */
+
+        // expand the name
+        n = ink_dn_expand((u_char *)h, eom, srv_off + SRV_SERVER, (u_char *)srv->host, MAXDNAME);
+        if (n < 0) {
           ++error;
-          goto Lerror;
+          break;
         }
         Debug("dns_srv", "Discovered SRV record [from NS lookup] with cost:%d weight:%d port:%d with host:%s",
               ink_get16(srv_off + SRV_COST), ink_get16(srv_off + SRV_WEIGHT), ink_get16(srv_off + SRV_PORT), srv->host);
 
-        srv->port        = ink_get16(srv_off + SRV_PORT);
-        srv->priority    = ink_get16(srv_off + SRV_COST);
-        srv->weight      = ink_get16(srv_off + SRV_WEIGHT);
-        srv->host_len    = r;
-        srv->host[r - 1] = '\0';
-        srv->key         = makeHostHash(srv->host);
+        srv->port     = ink_get16(srv_off + SRV_PORT);
+        srv->priority = ink_get16(srv_off + SRV_COST);
+        srv->weight   = ink_get16(srv_off + SRV_WEIGHT);
+        srv->host_len = ::strlen(srv->host) + 1;
+        srv->key      = makeHostHash(srv->host);
 
         if (srv->host[0] != '\0')
-          buf->srv_hosts.srv_hosts_length += r;
+          buf->srv_hosts.srv_hosts_length += srv->host_len;
         else
           continue;
         ++num_srv;
