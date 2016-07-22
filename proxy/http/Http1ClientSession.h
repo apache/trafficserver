@@ -153,6 +153,12 @@ public:
       client_vc->cancel_inactivity_timeout();
   }
 
+  virtual const char *
+  get_protocol_string() const
+  {
+    return "http";
+  }
+
 private:
   Http1ClientSession(Http1ClientSession &);
 

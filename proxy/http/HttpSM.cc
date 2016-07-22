@@ -311,6 +311,7 @@ HttpSM::HttpSM()
     client_tcp_reused(false),
     client_ssl_reused(false),
     client_connection_is_ssl(false),
+    client_protocol("-"),
     client_sec_protocol("-"),
     client_cipher_suite("-"),
     server_transact_count(0),
@@ -536,6 +537,8 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
     const char *cipher       = ssl_vc->getSSLCipherSuite();
     client_cipher_suite      = cipher ? cipher : "-";
   }
+  const char *protocol_str = client_vc->get_protocol_string();
+  client_protocol          = protocol_str ? protocol_str : "-";
 
   ink_release_assert(ua_session->get_half_close_flag() == false);
   mutex = client_vc->mutex;

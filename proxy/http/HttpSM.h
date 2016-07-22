@@ -494,6 +494,7 @@ public:
   // Info about client's SSL connection.
   bool client_ssl_reused;
   bool client_connection_is_ssl;
+  const char *client_protocol;
   const char *client_sec_protocol;
   const char *client_cipher_suite;
   int server_transact_count;

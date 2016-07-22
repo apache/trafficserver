@@ -148,7 +148,7 @@ private:
   IOBufferReader *ioreader;
 };
 
-class Http2ClientSession : public ProxyClientSession, public PluginIdentity
+class Http2ClientSession : public ProxyClientSession
 {
 public:
   typedef ProxyClientSession super; ///< Parent type.
@@ -197,9 +197,6 @@ public:
     return upgrade_context;
   }
 
-  virtual char const *getPluginTag() const;
-  virtual int64_t getPluginId() const;
-
   virtual int
   get_transact_count() const
   {
@@ -220,6 +217,12 @@ public:
   get_dying_event() const
   {
     return dying_event;
+  }
+
+  virtual const char *
+  get_protocol_string() const
+  {
+    return "http/2";
   }
 
 private:
