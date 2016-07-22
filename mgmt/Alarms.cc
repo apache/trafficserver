@@ -394,6 +394,7 @@ Alarms::constructAlarmMessage(const AppVersionInfo &version, char *ip, char *mes
     if (max >= 1) {
       message[0] = '\0';
     }
+    ink_mutex_release(&mutex);
     return;
   }
 
