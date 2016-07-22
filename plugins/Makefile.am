@@ -17,15 +17,22 @@
 # Add new plugins in alphabetic order, but keep experimental always at the bottom.
 
 SUBDIRS = \
+  authproxy \
+  background_fetch \
   cacheurl \
   conf_remap \
+  esi \
+  generator \
   gzip \
   header_rewrite \
   healthchecks \
   libloader \
   regex_remap \
+  regex_revalidate \
+  s3_auth \
   stats_over_http \
-  tcpinfo
+  tcpinfo \
+  xdebug
 
 if BUILD_EXPERIMENTAL_PLUGINS
 SUBDIRS += experimental
