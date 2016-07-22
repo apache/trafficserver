@@ -45,14 +45,30 @@ Plugins that are considered stable are installed by default in |TS| releases.
 .. toctree::
    :hidden:
 
+   AuthProxy <authproxy.en>
+   AWS S3 Authentication <s3_auth.en>
+   Background Fetch <background_fetch.en>
    Cache URL <cacheurl.en>
    Configuration Remap <conf_remap.en>
+   ESI <esi.en>
+   Generator <generator.en>
    GZip <gzip.en>
    Header Rewrite <header_rewrite.en>
    Health Checks <healthchecks.en>
    Regex Remap <regex_remap.en>
+   Regex Revalidate <regex_revalidate.en>
    Stats over HTTP <stats_over_http.en>
    TCPInfo <tcpinfo.en>
+   XDebug <xdebug.en>
+
+:doc:`AuthProxy <authproxy.en>`
+   Delegates the authorization decision of a request to an external HTTP service.
+
+:doc:`AWS S3 Authentication <s3_auth.en>`
+   Support for Amazon S3 authentication features.
+
+:doc:`Background Fetch <background_fetch.en>`
+   Proactively fetch content from Origin in a way that it will fill the object into cache.
 
 :doc:`Cache URL <cacheurl.en>`
     Modify the :term:`cache key` used for requests by applying a regular
@@ -60,6 +76,12 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Configuration Remap <conf_remap.en>`
     Override configuration directives on a per-rule basis.
+
+:doc:`ESI <esi.en>`
+   Implements the Edge Side Includes (ESI) specification.
+
+:doc:`Generator <generator.en>`
+   Generate arbitrary response data.
 
 :doc:`GZip <gzip.en>`
     Compress or deflate cache responses.
@@ -74,11 +96,17 @@ Plugins that are considered stable are installed by default in |TS| releases.
 :doc:`Regex Remap <regex_remap.en>`
     Configure remapping rules using regular expressions.
 
+:doc:`Regex Revalidate <regex_revalidate.en>`
+   Configurable rules for forcing cache object revalidations using regular expressions.
+
 :doc:`Stats over HTTP <stats_over_http.en>`
     Provide an HTTP interface to all |TS| statistics.
 
 :doc:`TCPInfo <tcpinfo.en>`
     Log TCP metrics at various points of the HTTP processing pipeline.
+
+:doc:`XDebug <xdebug.en>`
+   Allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header.
 
 Experimental plugins
 ====================
@@ -95,41 +123,25 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 .. toctree::
    :hidden:
 
-   AuthProxy <authproxy.en>
-   AWS S3 Authentication <s3_auth.en>
-   Background Fetch <background_fetch.en>
    Balancer <balancer.en>
    Buffer Upload <buffer_upload.en>
    Cache Key Manipulation <cachekey.en>
    Cache Promote <cache_promote.en>
+   Collapsed-Forwarding <collapsed_forwarding.en>
    Combo Handler <combo_handler.en>
    Epic <epic.en>
    Escalate <escalate.en>
-   ESI <esi.en>
-   Generator <generator.en>
    GeoIP ACL <geoip_acl.en>
    HIPES <hipes.en>
    Memcache <memcache.en>
    Metalink <metalink.en>
    MP4 <mp4.en>
    MySQL Remap <mysql_remap.en>
-   Regex Revalidate <regex_revalidate.en>
    Signed URLs <url_sig.en>
    SSL Headers <sslheaders.en>
    Stale While Revalidate <stale_while_revalidate.en>
    TS Lua <ts_lua.en>
    WebP Transform <webp_transform.en>
-   XDebug <xdebug.en>
-   Collapsed-Forwarding <collapsed_forwarding.en>
-
-:doc:`AuthProxy <authproxy.en>`
-   Delegates the authorization decision of a request to an external HTTP service.
-
-:doc:`AWS S3 Authentication <s3_auth.en>`
-   Support for Amazon S3 authentication features.
-
-:doc:`Background Fetch <background_fetch.en>`
-   Proactively fetch content from Origin in a way that it will fill the object into cache.
 
 :doc:`Balancer <balancer.en>`
    Balances requests across multiple origin servers.
@@ -143,6 +155,10 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`Cache Promote <cache_promote.en>`
    Provides additional control over when an object should be allowed into the cache.
 
+:doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
+   Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
+   all clients in parallel.
+
 :doc:`Combo Handler <combo_handler.en>`
    Provides an intelligent way to combine multiple URLs into a single URL, and have Apache Traffic Server combine the components into one response.
 
@@ -151,12 +167,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`Escalate <escalate.en>`
    Escalate: when the origin returns specific status codes, retry the request at a secondary origin (failover/fail-action)
-
-:doc:`ESI <esi.en>`
-   Implements the Edge Side Includes (ESI) specification.
-
-:doc:`Generator <generator.en>`
-   Generate arbitrary response data.
 
 :doc:`GeoIP ACL <geoip_acl.en>`
    Deny or allow requests based on the source IP geo-location.
@@ -176,9 +186,6 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`MySQL Remap <mysql_remap.en>`
    Allows dynamic remaps from a MySQL database.
 
-:doc:`Regex Revalidate <regex_revalidate.en>`
-   Configurable rules for forcing cache object revalidations using regular expressions.
-
 :doc:`Signed URLs <url_sig.en>`
    Adds support for verifying URL signatures for incoming requests to either deny or redirect access.
 
@@ -193,11 +200,3 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`WebP Transform <webp_transform.en>`
    Converts jpeg and png images to webp format.
-
-:doc:`XDebug <xdebug.en>`
-   Allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header.
-
-:doc:`Collapsed-Forwarding <collapsed_forwarding.en>`
-   Allows to Collapse multiple Concurrent requests by downloading once from the Origin and serving
-   all clients in parallel.
-
