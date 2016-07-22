@@ -33,20 +33,20 @@ SessionProtocolNameRegistry globalSessionProtocolNameRegistry;
    These are also used for NPN setup.
 */
 
-const char *const TS_NPN_PROTOCOL_HTTP_0_9    = "http/0.9";
-const char *const TS_NPN_PROTOCOL_HTTP_1_0    = "http/1.0";
-const char *const TS_NPN_PROTOCOL_HTTP_1_1    = "http/1.1";
-const char *const TS_NPN_PROTOCOL_HTTP_2_0_14 = "h2-14"; // Last H2 interrop draft. TODO: Should be removed later
-const char *const TS_NPN_PROTOCOL_HTTP_2_0    = "h2";    // HTTP/2 over TLS
+const char *const TS_ALPN_PROTOCOL_HTTP_0_9    = "http/0.9";
+const char *const TS_ALPN_PROTOCOL_HTTP_1_0    = "http/1.0";
+const char *const TS_ALPN_PROTOCOL_HTTP_1_1    = "http/1.1";
+const char *const TS_ALPN_PROTOCOL_HTTP_2_0_14 = "h2-14"; // Last H2 interrop draft. TODO: Should be removed later
+const char *const TS_ALPN_PROTOCOL_HTTP_2_0    = "h2";    // HTTP/2 over TLS
 
-const char *const TS_NPN_PROTOCOL_GROUP_HTTP  = "http";
-const char *const TS_NPN_PROTOCOL_GROUP_HTTP2 = "http2";
+const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
+const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
 
 // Precomputed indices for ease of use.
-int TS_NPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
-int TS_NPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
-int TS_NPN_PROTOCOL_INDEX_HTTP_1_1 = SessionProtocolNameRegistry::INVALID;
-int TS_NPN_PROTOCOL_INDEX_HTTP_2_0 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = SessionProtocolNameRegistry::INVALID;
 
 // Predefined protocol sets for ease of use.
 SessionProtocolSet HTTP_PROTOCOL_SET;
@@ -430,9 +430,9 @@ SessionProtocolNameRegistry::markIn(char const *value, SessionProtocolSet &sp_se
     char const *elt = tokens[i];
 
     /// Check special cases
-    if (0 == strcasecmp(elt, TS_NPN_PROTOCOL_GROUP_HTTP)) {
+    if (0 == strcasecmp(elt, TS_ALPN_PROTOCOL_GROUP_HTTP)) {
       sp_set.markIn(HTTP_PROTOCOL_SET);
-    } else if (0 == strcasecmp(elt, TS_NPN_PROTOCOL_GROUP_HTTP2)) {
+    } else if (0 == strcasecmp(elt, TS_ALPN_PROTOCOL_GROUP_HTTP2)) {
       sp_set.markIn(HTTP2_PROTOCOL_SET);
     } else { // user defined - register and mark.
       int idx = globalSessionProtocolNameRegistry.toIndex(elt);
@@ -556,7 +556,7 @@ HttpProxyPort::print(char *out, size_t n)
 
   // pull out groups.
   if (sp_set.contains(HTTP_PROTOCOL_SET)) {
-    zret += snprintf(out + zret, n - zret, ":%s=%s", OPT_PROTO_PREFIX, TS_NPN_PROTOCOL_GROUP_HTTP);
+    zret += snprintf(out + zret, n - zret, ":%s=%s", OPT_PROTO_PREFIX, TS_ALPN_PROTOCOL_GROUP_HTTP);
     sp_set.markOut(HTTP_PROTOCOL_SET);
     need_colon_p = false;
   }
@@ -566,7 +566,7 @@ HttpProxyPort::print(char *out, size_t n)
     } else {
       out[zret++] = ';';
     }
-    zret += snprintf(out + zret, n - zret, "%s", TS_NPN_PROTOCOL_GROUP_HTTP2);
+    zret += snprintf(out + zret, n - zret, "%s", TS_ALPN_PROTOCOL_GROUP_HTTP2);
     sp_set.markOut(HTTP2_PROTOCOL_SET);
     need_colon_p = false;
   }
@@ -605,16 +605,16 @@ void
 ts_session_protocol_well_known_name_indices_init()
 {
   // register all the well known protocols and get the indices set.
-  TS_NPN_PROTOCOL_INDEX_HTTP_0_9 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_0_9);
-  TS_NPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_1_0);
-  TS_NPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_1_1);
-  TS_NPN_PROTOCOL_INDEX_HTTP_2_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_NPN_PROTOCOL_HTTP_2_0);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_0_9 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_0_9);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_0);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_1_1 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_1_1);
+  TS_ALPN_PROTOCOL_INDEX_HTTP_2_0 = globalSessionProtocolNameRegistry.toIndexConst(TS_ALPN_PROTOCOL_HTTP_2_0);
 
   // Now do the predefined protocol sets.
-  HTTP_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_0_9);
-  HTTP_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_1_0);
-  HTTP_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_1_1);
-  HTTP2_PROTOCOL_SET.markIn(TS_NPN_PROTOCOL_INDEX_HTTP_2_0);
+  HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_0_9);
+  HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_1_0);
+  HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_1_1);
+  HTTP2_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
 
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markAllIn();
 
