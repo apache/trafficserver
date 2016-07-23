@@ -76,7 +76,6 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     case VC_EVENT_ACTIVE_TIMEOUT:
     case VC_EVENT_INACTIVITY_TIMEOUT:
       // Error ....
-      netvc->do_io_close();
       goto done;
     case VC_EVENT_READ_READY:
     case VC_EVENT_READ_COMPLETE:
@@ -89,7 +88,6 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
 
     if (!reader->is_read_avail_more_than(minimum_read_size - 1)) {
       // Not enough data read. Well, that sucks.
-      netvc->do_io_close();
       goto done;
     }
 
@@ -103,16 +101,19 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
 
     if (probeParent->endpoint[key] == NULL) {
       Warning("Unregistered protocol type %d", key);
-      netvc->do_io_close();
       goto done;
     }
 
     // Directly invoke the session acceptor, letting it take ownership of the input buffer.
-    probeParent->endpoint[key]->accept(netvc, this->iobuf, reader);
+    if (!probeParent->endpoint[key]->accept(netvc, this->iobuf, reader)) {
+      // IPAllow check fails in XxxSessionAccept::accept() if false returned.
+      goto done;
+    }
     delete this;
     return EVENT_CONT;
 
   done:
+    netvc->do_io_close();
     free_MIOBuffer(this->iobuf);
     this->iobuf = NULL;
     delete this;
@@ -151,10 +152,11 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
   return EVENT_CONT;
 }
 
-void
+bool
 ProtocolProbeSessionAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader *)
 {
   ink_release_assert(0);
+  return false;
 }
 
 void

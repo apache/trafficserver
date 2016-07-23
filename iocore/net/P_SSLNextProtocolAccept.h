@@ -37,7 +37,7 @@ public:
   SSLNextProtocolAccept(Continuation *, bool);
   ~SSLNextProtocolAccept();
 
-  void accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
+  bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
 
   // Register handler as an endpoint for the specified protocol. Neither
   // handler nor protocol are copied, so the caller must guarantee their
