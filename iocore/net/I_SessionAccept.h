@@ -29,12 +29,48 @@
 
 struct AclRecord;
 
+/**
+   The base class SessionAccept can not be used directly. The inherited class of
+   SessionAccept (ex. HttpSessionAccept) is designed to:
+
+     - Check IPAllow policy.
+     - Create ClientSession.
+     - Pass NetVC and MIOBuffer by call ClientSession::new_connection().
+
+   NULL mutex:
+
+     - One specific protocol has ONLY one inherited class of SessionAccept.
+     - The object of this class is shared by all incoming request / NetVC that
+       identified as the protocol by ProtocolSessionProbe.
+     - The inherited class of SessionAccept is non-blocking to allow parallel accepts/
+
+   To implement a inherited class of SessionAccept:
+
+     - No state is recorded by the handler.
+     - Values are required to be set during construction and never changed.
+     - Can not put into EventSystem.
+
+   So a NULL mutex is safe for the continuation.
+*/
+
 class SessionAccept : public Continuation
 {
 public:
   SessionAccept(ProxyMutex *amutex) : Continuation(amutex) { SET_HANDLER(&SessionAccept::mainEvent); }
   ~SessionAccept() {}
-  virtual void accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
+  /**
+    Accept a new connection on this session.
+
+    If the session accepts the connection by returning true, it
+    takes ownership of all the arguments.
+
+    If the session rejects the connection by returning false, the
+    arguments are unmodified and the caller retains ownership.
+    Typically in this case, the caller would simply destroy all the
+    arguments.
+
+   */
+  virtual bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) = 0;
 
   /* Returns NULL if the specified client_ip is not allowed by ip_allow
    * Returns a pointer to the relevant IP policy for later processing otherwise */
