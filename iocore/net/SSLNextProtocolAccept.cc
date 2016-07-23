@@ -145,10 +145,11 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
   }
 }
 
-void
+bool
 SSLNextProtocolAccept::accept(NetVConnection *, MIOBuffer *, IOBufferReader *)
 {
   ink_release_assert(0);
+  return false;
 }
 
 bool
