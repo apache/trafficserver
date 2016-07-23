@@ -307,6 +307,15 @@ Http1ClientSession::state_wait_for_close(int event, void *data)
     // Drain any data read
     sm_reader->consume(sm_reader->read_avail());
     break;
+
+  // If this is hook stuff, call the hook handler
+  case EVENT_NONE:
+  case EVENT_INTERVAL:
+  case TS_EVENT_HTTP_CONTINUE:
+  case TS_EVENT_HTTP_ERROR:
+    return this->state_api_callout(event, data);
+    break;
+
   default:
     ink_release_assert(0);
     break;
@@ -381,6 +390,14 @@ Http1ClientSession::state_keep_alive(int event, void *data)
     //} else {
     this->do_io_close();
     //}
+    break;
+
+  // If this is hook stuff, call the hook handler
+  case EVENT_NONE:
+  case EVENT_INTERVAL:
+  case TS_EVENT_HTTP_CONTINUE:
+  case TS_EVENT_HTTP_ERROR:
+    return this->state_api_callout(event, data);
     break;
 
   case VC_EVENT_READ_COMPLETE:

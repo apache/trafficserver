@@ -277,6 +277,13 @@ Http2ClientSession::main_event_handler(int event, void *edata)
     }
     return 0;
 
+  // If this is hook stuff, call the hook handler
+  case EVENT_NONE:
+  case EVENT_INTERVAL:
+  case TS_EVENT_HTTP_CONTINUE:
+  case TS_EVENT_HTTP_ERROR:
+    return this->state_api_callout(event, edata);
+
   default:
     DebugHttp2Ssn("unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);

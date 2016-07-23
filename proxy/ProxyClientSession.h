@@ -152,8 +152,6 @@ public:
   /// DNS resolution preferences.
   HostResStyle host_res_style;
 
-  virtual int state_api_callout(int event, void *edata);
-
   TSHttpHookID
   get_hookid() const
   {
@@ -177,6 +175,8 @@ public:
   }
 
 protected:
+  int state_api_callout(int event, void *edata);
+
   // XXX Consider using a bitwise flags variable for the following flags, so that we can make the best
   // use of internal alignment padding.
 
