@@ -36,7 +36,7 @@ Http2SessionAccept::~Http2SessionAccept()
 {
 }
 
-void
+bool
 Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   sockaddr const *client_ip           = netvc->get_remote_addr();
@@ -44,8 +44,7 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
   if (!session_acl_record) {
     ip_port_text_buffer ipb;
     Warning("HTTP/2 client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-    netvc->do_io_close();
-    return;
+    return false;
   }
   netvc->attributes = this->options.transport_type;
 
@@ -59,16 +58,22 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
   Http2ClientSession *new_session = THREAD_ALLOC_INIT(http2ClientSessionAllocator, this_ethread());
   new_session->acl_record         = session_acl_record;
   new_session->new_connection(netvc, iobuf, reader, false /* backdoor */);
+
+  return true;
 }
 
 int
 Http2SessionAccept::mainEvent(int event, void *data)
 {
+  NetVConnection *netvc;
   ink_release_assert(event == NET_EVENT_ACCEPT || event == EVENT_ERROR);
   ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != 0) : (1));
 
   if (event == NET_EVENT_ACCEPT) {
-    this->accept(static_cast<NetVConnection *>(data), NULL, NULL);
+    netvc = static_cast<NetVConnection *>(data);
+    if (!this->accept(netvc, NULL, NULL)) {
+      netvc->do_io_close();
+    }
     return EVENT_CONT;
   }
 
