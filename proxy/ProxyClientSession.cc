@@ -69,13 +69,22 @@ is_valid_hook(TSHttpHookID hookid)
 void
 ProxyClientSession::destroy()
 {
+  if (schedule_event) {
+    schedule_event->cancel();
+    schedule_event = NULL;
+  }
   this->api_hooks.clear();
   this->mutex.clear();
 }
 
 int
-ProxyClientSession::state_api_callout(int event, void * /* data ATS_UNUSED */)
+ProxyClientSession::state_api_callout(int event, void *data)
 {
+  Event *e = static_cast<Event *>(data);
+  if (e == schedule_event) {
+    schedule_event = NULL;
+  }
+
   switch (event) {
   case EVENT_NONE:
   case EVENT_INTERVAL:
@@ -101,7 +110,9 @@ ProxyClientSession::state_api_callout(int event, void * /* data ATS_UNUSED */)
           plugin_lock  = MUTEX_TAKE_TRY_LOCK(hook->m_cont->mutex, mutex->thread_holding);
           if (!plugin_lock) {
             SET_HANDLER(&ProxyClientSession::state_api_callout);
-            mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
+            if (!schedule_event) { // Don't bother to schedule is there is already one out.
+              schedule_event = mutex->thread_holding->schedule_in(this, HRTIME_MSECONDS(10));
+            }
             return 0;
           }
         }
