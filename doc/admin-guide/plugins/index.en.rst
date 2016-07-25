@@ -194,6 +194,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 :doc:`WebP Transform <webp_transform.en>`
    Converts jpeg and png images to webp format.
 
+:doc:`Brotli Transform <brotli_transform.en>`
+   Uses Brotli Algorithm to do compression if it is supported by the clients.
+
 :doc:`XDebug <xdebug.en>`
    Allows HTTP clients to debug the operation of the Traffic Server cache using the X-Debug header.
 

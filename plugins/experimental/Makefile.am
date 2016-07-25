@@ -55,6 +55,9 @@ if ENABLE_CPPAPI
 if BUILD_WEBP_TRANSFORM_PLUGIN
  SUBDIRS += webp_transform
 endif
+if BUILD_BROTLI_TRANSFORM_PLUGIN
+  SUBDIRS += brotli_transform
+endif
 endif
 
 if HAS_MYSQL

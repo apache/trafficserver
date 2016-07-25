@@ -1,0 +1,7 @@
+Using Brotli Algorithm to do compression
+https://github.com/google/brotli
+
+If the origin server return gzip content, do gzip inflate first
+
+libbrotli
+https://github.com/bagder/libbrotli

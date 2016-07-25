@@ -440,6 +440,19 @@ PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++], [
 AM_CONDITIONAL([BUILD_WEBP_TRANSFORM_PLUGIN], [test "x${enable_webp_transform_plugin}" = "xyes"])
 
 #
+# Enable experimental/brotli_transform plugin
+#
+PKG_CHECK_MODULES([LIBBROTLIENC], [libbrotlienc], [
+    have_libbrotlienc=yes
+    AS_IF([test "x$enable_experimental_plugins" = "xyes"],
+        [enable_brotli_transformation_plugin=yes])
+], [
+    have_libbrotlienc=no
+]
+)
+AM_CONDITIONAL([BUILD_BROTLI_TRANSFORM_PLUGIN], [test "x${enable_brotli_transformation_plugin}" = "xyes"])
+
+#
 # Example plugins. The example plugins are always built, but not always installed. Installing
 # them is useful for QA, but not useful for most users, so we default this to disabled.
 #
@@ -1996,6 +2009,7 @@ AC_CONFIG_FILES([
   plugins/experimental/ts_lua/Makefile
   plugins/experimental/url_sig/Makefile
   plugins/experimental/webp_transform/Makefile
+  plugins/experimental/brotli_transform/Makefile
   plugins/experimental/xdebug/Makefile
   plugins/gzip/Makefile
   plugins/header_rewrite/Makefile
