@@ -1,13 +1,14 @@
-Traffic Server 6.0 STATUS:                                              -*-text-*-
+Traffic Server 6.2 STATUS:                                              -*-text-*-
 Last modified at [$Date$]
 
 The current version of this file can be found at:
 
-  * http://git-wip-us.apache.org/repos/asf?p=trafficserver.git;a=blob;f=STATUS;hb=master
+  * https://github.com/apache/trafficserver/blob/master/STATUS
 
 
 Release history:
 
+    6.2.0           : Released on Jul 25th, 2016
     6.1.0           : Released on Jan 26th, 2016
     6.0.0           : Released on Sep 21th, 2015
 
