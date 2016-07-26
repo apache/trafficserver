@@ -94,11 +94,6 @@ public:
   {
     return true;
   }
-  virtual const char *
-  get_protocol_string() const
-  {
-    return "http";
-  }
 
   void set_parent(ProxyClientSession *new_parent);
 

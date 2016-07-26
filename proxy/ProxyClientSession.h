@@ -175,6 +175,7 @@ public:
   cancel_inactivity_timeout()
   {
   }
+  virtual const char *get_protocol_string() const = 0;
 
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so that we can make the best

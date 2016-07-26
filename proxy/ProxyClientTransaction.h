@@ -211,7 +211,11 @@ public:
 
   virtual bool allow_half_open() const = 0;
 
-  virtual const char *get_protocol_string() const = 0;
+  virtual const char *
+  get_protocol_string()
+  {
+    return parent ? parent->get_protocol_string() : NULL;
+  }
 
   void
   set_restart_immediate(bool val)

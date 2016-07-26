@@ -619,31 +619,29 @@ LogAccessHttp::marshal_client_req_http_version(char *buf)
 int
 LogAccessHttp::marshal_client_req_protocol_version(char *buf)
 {
-  int len         = INK_MIN_ALIGN;
-  char const *tag = m_http_sm->plugin_tag;
+  const char *protocol_str = m_http_sm->client_protocol;
+  int len                  = LogAccess::strlen(protocol_str);
 
-  if (!tag) {
+  // Set major & minor versions when protocol_str is not "http/2".
+  if (::strlen(protocol_str) == 4 && strncmp("http", protocol_str, 4) == 0) {
     if (m_client_request) {
       HTTPVersion versionObject = m_client_request->version_get();
       int64_t major             = HTTP_MAJOR(versionObject.m_version);
       int64_t minor             = HTTP_MINOR(versionObject.m_version);
       if (major == 1 && minor == 1) {
-        tag = "http/1.1";
+        protocol_str = "http/1.1";
       } else if (major == 1 && minor == 0) {
-        tag = "http/1.0";
-      } else if (major == 0 && minor == 9) {
-        tag = "http/0.9";
+        protocol_str = "http/1.0";
       } // else invalid http version
-      len = LogAccess::strlen(tag);
     } else {
-      tag = "*";
+      protocol_str = "*";
     }
-  } else {
-    len = LogAccess::strlen(tag);
+
+    len = LogAccess::strlen(protocol_str);
   }
 
   if (buf) {
-    marshal_str(buf, tag, len);
+    marshal_str(buf, protocol_str, len);
   }
 
   return len;

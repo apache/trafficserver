@@ -440,15 +440,3 @@ Http2ClientSession::state_complete_frame_read(int event, void *edata)
   vio->reenable();
   return 0;
 }
-
-int64_t
-Http2ClientSession::getPluginId() const
-{
-  return con_id;
-}
-
-char const *
-Http2ClientSession::getPluginTag() const
-{
-  return "http/2";
-}
