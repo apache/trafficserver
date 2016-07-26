@@ -16,8 +16,6 @@
 
 SUBDIRS = \
  acme \
- authproxy \
- background_fetch \
  balancer \
  buffer_upload \
  cache_promote \
@@ -28,8 +26,6 @@ SUBDIRS = \
  custom_redirect \
  epic \
  escalate \
- esi \
- generator \
  geoip_acl \
  header_normalize \
  hipes \
@@ -39,17 +35,14 @@ SUBDIRS = \
  metalink \
  mp4 \
  multiplexer \
- regex_revalidate \
  remap_stats \
  remap_purge \
- s3_auth \
  ssl_cert_loader \
  sslheaders \
  stale_while_revalidate \
  stream_editor \
  ts_lua \
- url_sig \
- xdebug
+ url_sig
 
 if ENABLE_CPPAPI
 if BUILD_WEBP_TRANSFORM_PLUGIN
