@@ -618,13 +618,6 @@ ts_session_protocol_well_known_name_indices_init()
 
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markAllIn();
 
-  // Don't enable HTTP/2 by default until it is stable.
-  int http2_enabled = 0;
-  REC_ReadConfigInteger(http2_enabled, "proxy.config.http2.enabled");
-  if (!http2_enabled) {
-    DEFAULT_TLS_SESSION_PROTOCOL_SET.markOut(HTTP2_PROTOCOL_SET);
-  }
-
   DEFAULT_NON_TLS_SESSION_PROTOCOL_SET = HTTP_PROTOCOL_SET;
 }
 

@@ -24,12 +24,6 @@ CONFIG proxy.config.exec_thread.affinity INT 1
 CONFIG proxy.config.http.server_ports STRING 8080
 
 ##############################################################################
-# Enable HTTP/2 Support. Docs:
-#    https://docs.trafficserver.apache.org/records.config#http-2-configuration
-##############################################################################
-CONFIG proxy.config.http2.enabled INT 0
-
-##############################################################################
 # Via: headers. Docs:
 #     https://docs.trafficserver.apache.org/records.config#proxy-config-http-insert-response-via-str
 ##############################################################################
