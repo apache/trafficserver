@@ -1256,6 +1256,8 @@ tsapi TSReturnCode TSHttpTxnServerRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLo
 tsapi TSReturnCode TSHttpTxnCachedReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
 /* Gets the cached response header for a specified HTTP transaction. */
 tsapi TSReturnCode TSHttpTxnCachedRespGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *offset);
+/* Gets the protocol string for a specified HTTP transaction. */
+tsapi const char *TSHttpTxnClientProtocolGet(TSHttpTxn txnp);
 
 tsapi TSReturnCode TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc);
 

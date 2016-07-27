@@ -4655,6 +4655,15 @@ TSHttpTxnClientReqGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *obj)
   return TS_ERROR;
 }
 
+const char *
+TSHttpTxnClientProtocolGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  return sm->ua_session->get_protocol_string();
+}
+
 // pristine url is the url before remap
 TSReturnCode
 TSHttpTxnPristineUrlGet(TSHttpTxn txnp, TSMBuffer *bufp, TSMLoc *url_loc)
