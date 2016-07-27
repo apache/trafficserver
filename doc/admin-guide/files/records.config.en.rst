@@ -3276,16 +3276,6 @@ HTTP/2 Configuration
 ====================
 
 
-.. ts:cv:: CONFIG proxy.config.http2.enabled INT 0
-
-   Enable the experimental HTTP/2 feature. This implements most of the
-   specifications, with the one big exception being server PUSH.
-
-.. note::
-
-   This configuration will be eliminated for v6.0.0, where HTTP/2 is
-   enabled by default and controlled via the ports configuration.
-
 .. ts:cv:: CONFIG proxy.config.http2.max_concurrent_streams_in INT 100
    :reloadable:
 
