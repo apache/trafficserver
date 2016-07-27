@@ -356,7 +356,7 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
 
   do {
     // if the real isn't alive-- exclude it from selection
-    if (info(i).is_alive(now, fail_window)) {
+    if (!info(i).is_alive(now, fail_window)) {
       continue;
     }
 
