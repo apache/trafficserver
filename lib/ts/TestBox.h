@@ -44,7 +44,20 @@ struct TestBox {
   TestBox(RegressionTest *test, int *status, int rstatus) : _test(test), _status(status) { *this = rstatus; }
 
   /// Check the result and print a message on failure.
-  bool check(bool result, char const *fmt, ...) TS_PRINTFLIKE(3, 4);
+  bool check(bool result, char const *fmt, ...) TS_PRINTFLIKE(3, 4)
+  {
+    if (!result) {
+      static size_t const N = 1 << 16;
+      char buffer[N]; // just stack, go big.
+      va_list ap;
+      va_start(ap, fmt);
+      vsnprintf(buffer, N, fmt, ap);
+      va_end(ap);
+      rprintf(_test, "%s\n", buffer);
+      *_status = REGRESSION_TEST_FAILED;
+    }
+    return result;
+  }
 
   /// Directly assign status.
   self &operator=(int status)
@@ -53,21 +66,5 @@ struct TestBox {
     return *this;
   }
 };
-
-bool
-TestBox::check(bool result, char const *fmt, ...)
-{
-  if (!result) {
-    static size_t const N = 1 << 16;
-    char buffer[N]; // just stack, go big.
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(buffer, N, fmt, ap);
-    va_end(ap);
-    rprintf(_test, "%s\n", buffer);
-    *_status = REGRESSION_TEST_FAILED;
-  }
-  return result;
-}
 }
 #endif // TS_TEST_BOX_HEADER
