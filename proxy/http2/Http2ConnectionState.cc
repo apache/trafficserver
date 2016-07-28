@@ -263,8 +263,9 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     if (node != NULL) {
       stream->priority_node = node;
     } else {
-      DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d", params.priority.stream_dependency,
-                       params.priority.weight, params.priority.exclusive_flag);
+      DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
+                       params.priority.stream_dependency, params.priority.weight, params.priority.exclusive_flag,
+                       cstate.dependency_tree->size());
 
       stream->priority_node = cstate.dependency_tree->add(params.priority.stream_dependency, stream_id, params.priority.weight,
                                                           params.priority.exclusive_flag, stream);
@@ -358,8 +359,8 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
-  DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d", priority.stream_dependency,
-                   priority.weight, priority.exclusive_flag);
+  DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
+                   priority.stream_dependency, priority.weight, priority.exclusive_flag, cstate.dependency_tree->size());
 
   DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
 
@@ -368,11 +369,12 @@ rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     DebugHttp2Stream(cstate.ua_session, stream_id, "Reprioritize");
     cstate.dependency_tree->reprioritize(node, priority.stream_dependency, priority.exclusive_flag);
   } else {
-    cstate.dependency_tree->add(priority.stream_dependency, stream_id, priority.weight, priority.exclusive_flag, NULL);
+    // PRIORITY frame is received before HEADERS frame.
 
-    Http2Stream *stream = cstate.find_stream(stream_id);
-    if (stream != NULL) {
-      stream->priority_node = node;
+    // Restrict number of inactive node in dependency tree smaller than max_concurrent_streams.
+    // Current number of inactive node is size of tree minus active node count.
+    if (Http2::max_concurrent_streams_in > cstate.dependency_tree->size() - cstate.get_client_stream_count() + 1) {
+      cstate.dependency_tree->add(priority.stream_dependency, stream_id, priority.weight, priority.exclusive_flag, NULL);
     }
   }
 
@@ -971,8 +973,11 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 
   if (Http2::stream_priority_enabled) {
     DependencyTree::Node *node = stream->priority_node;
-    if (node != NULL && node->active) {
-      dependency_tree->deactivate(node, 0);
+    if (node != NULL) {
+      if (node->active) {
+        dependency_tree->deactivate(node, 0);
+      }
+      dependency_tree->remove(node);
     }
   }
 

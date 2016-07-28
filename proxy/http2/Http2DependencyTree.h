@@ -34,7 +34,8 @@
 #include "HTTP2.h"
 
 // TODO: K is a constant, 256 is temporal value.
-const static int K = 256;
+const static uint32_t K                               = 256;
+const static uint32_t HTTP2_DEPENDENCY_TREE_MAX_DEPTH = 256;
 
 template <typename T> class Http2DependencyTree
 {
@@ -104,40 +105,47 @@ public:
     T t;
   };
 
-  Http2DependencyTree() { _root = new Node(); }
+  Http2DependencyTree(uint32_t max_concurrent_streams)
+    : _root(new Node()), _max_depth(MIN(max_concurrent_streams, HTTP2_DEPENDENCY_TREE_MAX_DEPTH)), _node_count(0)
+  {
+  }
   ~Http2DependencyTree() { delete _root; }
   Node *find(uint32_t id);
   Node *add(uint32_t parent_id, uint32_t id, uint32_t weight, bool exclusive, T t);
+  void remove(Node *node);
   void reprioritize(uint32_t new_parent_id, uint32_t id, bool exclusive);
   void reprioritize(Node *node, uint32_t id, bool exclusive);
   Node *top();
   void activate(Node *node);
   void deactivate(Node *node, uint32_t sent);
   void update(Node *node, uint32_t sent);
+  uint32_t size() const;
 
 private:
-  Node *_find(Node *node, uint32_t id);
+  Node *_find(Node *node, uint32_t id, uint32_t depth = 1);
   Node *_top(Node *node);
   void _change_parent(Node *new_parent, Node *node, bool exclusive);
 
   Node *_root;
+  uint32_t _max_depth;
+  uint32_t _node_count;
 };
 
 template <typename T>
 typename Http2DependencyTree<T>::Node *
-Http2DependencyTree<T>::_find(Node *node, uint32_t id)
+Http2DependencyTree<T>::_find(Node *node, uint32_t id, uint32_t depth)
 {
   if (node->id == id) {
     return node;
   }
 
-  if (node->children.empty()) {
+  if (node->children.empty() || depth >= _max_depth) {
     return NULL;
   }
 
   Node *result = NULL;
   for (Node *n = node->children.head; n; n = n->link.next) {
-    result = _find(n, id);
+    result = _find(n, id, ++depth);
     if (result != NULL) {
       break;
     }
@@ -174,7 +182,39 @@ Http2DependencyTree<T>::add(uint32_t parent_id, uint32_t id, uint32_t weight, bo
 
   parent->children.push(node);
 
+  ++_node_count;
   return node;
+}
+
+template <typename T>
+void
+Http2DependencyTree<T>::remove(Node *node)
+{
+  if (node == _root || node->active) {
+    return;
+  }
+
+  Node *parent = node->parent;
+  parent->children.remove(node);
+  if (node->queued) {
+    parent->queue->erase(node->entry);
+  }
+
+  // Push queue entries
+  while (!node->queue->empty()) {
+    parent->queue->push(node->queue->top());
+    node->queue->pop();
+  }
+
+  // Push children
+  while (!node->children.empty()) {
+    Node *child = node->children.pop();
+    parent->children.push(child);
+    child->parent = parent;
+  }
+
+  --_node_count;
+  delete node;
 }
 
 template <typename T>
@@ -303,6 +343,13 @@ Http2DependencyTree<T>::update(Node *node, uint32_t sent)
 
     node = node->parent;
   }
+}
+
+template <typename T>
+uint32_t
+Http2DependencyTree<T>::size() const
+{
+  return _node_count;
 }
 
 #endif // __HTTP2_DEP_TREE_H__
