@@ -143,7 +143,7 @@ public:
     continued_buffer.iov_base = NULL;
     continued_buffer.iov_len  = 0;
 
-    dependency_tree = new DependencyTree();
+    dependency_tree = new DependencyTree(Http2::max_concurrent_streams_in);
   }
 
   void
@@ -194,6 +194,12 @@ public:
   clear_continued_stream_id()
   {
     continued_stream_id = 0;
+  }
+
+  uint32_t
+  get_client_stream_count() const
+  {
+    return client_streams_count;
   }
 
   // Connection level window size
