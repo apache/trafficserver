@@ -203,6 +203,7 @@ public:
 
 private:
   void read_xml_log_config();
+  bool evaluate_config();
   char **read_log_hosts_file(size_t *nhosts);
 
   void setup_default_values();

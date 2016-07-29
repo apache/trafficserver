@@ -45,6 +45,7 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogUtils.h"
+#include "LogBindings.h"
 #include "ts/SimpleTokenizer.h"
 
 #include "LogCollationAccept.h"
@@ -493,6 +494,9 @@ void
 LogConfig::setup_log_objects()
 {
   Debug("log", "creating objects...");
+  RecBool enable_lua = false;
+
+  RecGetRecordBool("proxy.config.log.config.enable_lua", &enable_lua);
 
   // ----------------------------------------------------------------------
   // Construct the LogObjects for the custom formats
@@ -500,7 +504,11 @@ LogConfig::setup_log_objects()
   global_filter_list.clear();
 
   // Read xml configuration from logs_xml.config file.
-  read_xml_log_config();
+  if (enable_lua) {
+    evaluate_config();
+  } else {
+    read_xml_log_config();
+  }
 
   // open local pipes so readers can see them
   //
@@ -925,6 +933,23 @@ LogConfig::update_space_used()
       m_partition_low = false;
     }
   }
+}
+
+bool
+LogConfig::evaluate_config()
+{
+  BindingInstance binding;
+  ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", "logging.config"));
+
+  if (!binding.construct()) {
+    Fatal("failed to initialize Lua runtime");
+  }
+
+  if (MakeLogBindings(binding, this)) {
+    return binding.require(path.get());
+  }
+
+  return false;
 }
 
 /*-------------------------------------------------------------------------

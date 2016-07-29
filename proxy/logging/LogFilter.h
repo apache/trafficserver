@@ -26,6 +26,7 @@
 
 #include "ts/ink_platform.h"
 #include "ts/IpMap.h"
+#include "ts/Ptr.h"
 #include "LogAccess.h"
 #include "LogField.h"
 #include "LogFormat.h"
@@ -38,7 +39,7 @@
   function which, given a LogAccess object, returns true if
   the log entry is to be tossed out.
   -------------------------------------------------------------------------*/
-class LogFilter
+class LogFilter : public RefCountObj
 {
 public:
   enum Type {

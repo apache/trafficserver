@@ -34,6 +34,7 @@ dist_sysconf_DATA =	\
   icp.config.default \
   ip_allow.config.default \
   log_hosts.config.default \
+  logging.config.default \
   logs_xml.config.default \
   metrics.config.default \
   parent.config.default \

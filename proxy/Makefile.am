@@ -52,6 +52,7 @@ AM_CPPFLAGS = \
 # NOTE: it is safe to use AM_LDFLAGS here because we are only building executables. If we start
 # building libtool archives, change these to only apply to the executables.
 AM_LDFLAGS = \
+  $(LUAJIT_LDFLAGS) \
   @EXTRA_CXX_LDFLAGS@ \
   @LIBTOOL_LINK_FLAGS@ \
   @OPENSSL_LDFLAGS@
@@ -219,6 +220,8 @@ traffic_server_LDADD = \
   $(top_builddir)/iocore/cache/libinkcache.a \
   $(top_builddir)/iocore/aio/libinkaio.a \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/lib/bindings/libbindings.la \
+  $(top_builddir)/lib/luajit/src/libluajit.a \
   $(top_builddir)/iocore/net/libinknet.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
@@ -237,10 +240,6 @@ traffic_server_LDADD = \
 
 traffic_server_LDADD += $(LUAJIT:%=$(top_builddir)/lib/luajit/src/%)
 
-# On Darwin LuaJIT requires magic link options, otherwise it will
-# crash in luaL_openlibs() at startup. See http://luajit.org/install.html.
-traffic_server_LDFLAGS += $(LUAJIT_LDFLAGS)
-
 traffic_logcat_SOURCES = logcat.cc
 traffic_logcat_LDADD = \
   logging/liblogging.a \
@@ -251,6 +250,8 @@ traffic_logcat_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/lib/bindings/libbindings.la \
+  $(top_builddir)/lib/luajit/src/libluajit.a \
   @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@\
   @LIBEXPAT@ @LIBPROFILER@ -lm
 
@@ -264,6 +265,8 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/lib/bindings/libbindings.la \
+  $(top_builddir)/lib/luajit/src/libluajit.a \
   @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@ \
   @LIBEXPAT@ @LIBPROFILER@ -lm
 
