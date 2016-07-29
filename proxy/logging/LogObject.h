@@ -331,18 +331,6 @@ public:
 };
 
 /*-------------------------------------------------------------------------
-  RefCounter
-  -------------------------------------------------------------------------*/
-class RefCounter
-{
-public:
-  RefCounter(int *count) : m_count(count) { ink_atomic_increment(m_count, 1); }
-  ~RefCounter() { ink_atomic_increment(m_count, -1); }
-private:
-  int *m_count;
-};
-
-/*-------------------------------------------------------------------------
   LogObjectManager
 
   A log object manager keeps track of log objects and is responsible for
