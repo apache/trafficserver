@@ -7749,6 +7749,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
         t_state.hdr_info.client_request.value_set(MIME_FIELD_HOST, MIME_LEN_HOST, host, host_len);
       }
       t_state.hdr_info.client_request.m_target_cached = false;
+      t_state.hdr_info.server_request.m_target_cached = false;
     } else {
       // the client request didn't have a host, so use the current origin host
       if (valid_origHost) {
@@ -7786,6 +7787,7 @@ HttpSM::redirect_request(const char *redirect_url, const int redirect_len)
         url_nuke_proxy_stuff(t_state.hdr_info.client_request.m_url_cached.m_url_impl);
         t_state.hdr_info.client_request.method_set(origMethod, origMethod_len);
         t_state.hdr_info.client_request.m_target_cached = false;
+        t_state.hdr_info.server_request.m_target_cached = false;
         clientUrl.scheme_set(scheme_str, scheme_len);
       } else {
       LhostError:
