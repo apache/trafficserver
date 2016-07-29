@@ -154,10 +154,10 @@ The following list shows the ``LogFilter`` specifications.
     that satisfy the filter condition. WIPE_FIELD_VALUE wipes out
     the values of the query params in the url fields specified in the Condition.
 
-NOTES: 1. WIPE_FIELD_VALUE action is only applied to the parameters in the query part.
-       2. Multiple parameters can be listed in a single WIPE_FIELD_VALUE filter
-       3. If the same parameter appears more than once in the query part , only
-          the value of the first occurance is wiped
+.. note::
+    - WIPE_FIELD_VALUE action is only applied to the parameters in the query part.
+    - Multiple parameters can be listed in a single WIPE_FIELD_VALUE filter
+    - If the same parameter appears more than once in the query part, only the value of the first occurance is wiped
 
 .. _LogObject:
 
