@@ -1065,7 +1065,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
         // Check for a quick response, if the status option is set
         if (re->status_option() > 0) {
-          if (re->status_option() != TS_HTTP_STATUS_MOVED_PERMANENTLY && re->status_option() != TS_HTTP_STATUS_MOVED_TEMPORARILY) {
+          if (re->status_option() != TS_HTTP_STATUS_MOVED_PERMANENTLY && re->status_option() != TS_HTTP_STATUS_MOVED_TEMPORARILY &&
+              re->status_option() != TS_HTTP_STATUS_TEMPORARY_REDIRECT &&
+              re->status_option() != TS_HTTP_STATUS_PERMANENT_REDIRECT) {
             // Don't set the URL / Location for this.
             TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
             break;
