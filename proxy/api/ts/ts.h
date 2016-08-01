@@ -1219,6 +1219,8 @@ tsapi void TSHttpHookAdd(TSHttpHookID id, TSCont contp);
 tsapi void TSHttpSsnHookAdd(TSHttpSsn ssnp, TSHttpHookID id, TSCont contp);
 tsapi void TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event);
 tsapi int TSHttpSsnTransactionCount(TSHttpSsn ssnp);
+/* Gets the protocol string for a specified HTTP session. */
+tsapi const char *TSHttpSsnClientProtocolGet(TSHttpSsn ssnp);
 
 /* --------------------------------------------------------------------------
    SSL connections */

@@ -4584,6 +4584,16 @@ TSHttpSsnReenable(TSHttpSsn ssnp, TSEvent event)
   }
 }
 
+const char *
+TSHttpSsnClientProtocolGet(TSHttpSsn ssnp)
+{
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+
+  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+
+  return cs->get_protocol_string();
+}
+
 /* HTTP transactions */
 void
 TSHttpTxnHookAdd(TSHttpTxn txnp, TSHttpHookID id, TSCont contp)
@@ -4661,7 +4671,7 @@ TSHttpTxnClientProtocolGet(TSHttpTxn txnp)
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
 
   HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
-  return sm->ua_session->get_protocol_string();
+  return sm->client_protocol;
 }
 
 // pristine url is the url before remap
