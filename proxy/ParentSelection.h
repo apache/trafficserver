@@ -126,7 +126,9 @@ public:
       unavailable_server_retry_responses(NULL),
       parent_retry(PARENT_RETRY_NONE),
       max_simple_retries(1),
-      max_unavailable_server_retries(1)
+      max_unavailable_server_retries(1),
+      ignore_fname(false),
+      max_dirs(0)
   {
   }
 
@@ -159,6 +161,8 @@ public:
   ParentRetry_t parent_retry;
   int max_simple_retries;
   int max_unavailable_server_retries;
+  bool ignore_fname;
+  int max_dirs;
 };
 
 // If the parent was set by the external customer api,

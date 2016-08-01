@@ -225,6 +225,60 @@ The following list shows the possible actions and their allowed values.
     -  ``consider`` - Use the query string when finding a parent.
     -  ``ignore`` - Do not consider the query string when finding a parent.
 
+.. _parent-config-format-fname:
+
+``fname``
+    One of the following values:
+
+    - ``consider`` - Use the file name string when finding a parent.
+    - ``ignore`` - Do not consider the file name string when finding a parent.
+
+    NOTE: If set to ``ignore`` then this forces ``qstring=ignore``.
+    EXAMPLE::
+        Original: ``http://server.bogus/index.html`` --> ``http://server.bogus/``
+
+.. _parent-config-format-maxdirs:
+
+``maxdirs``
+    One of the following values:
+
+    - ``0`` - Do not filter the directories when finding a parent.
+    - ``<int>`` - Filter the directories when finding a parent.
+                - Use a positive integer to include that number of slashes from the start of the path.
+                - Use a negative integer to exclude beyond that number of slashes from the end of the path.
+                - Note that (internal to ATS) the path string does NOT contain a leading slash
+                  so the slash at the start of the path is not counted in the above.
+                - If set to non-zero then this also implies ``fname=ignore`` and ``qstring=ignore``.
+
+    HASH COMPUTATION COMPONENTS::
+
+        +--+ /
+        !
+        +--+ PATH from_path_get() and consists of:
+        !  !
+        !  +-- DIRECTORIES
+        !  +-- FILE NAME                    [ not included if maxdirs !=0 or fname = ignore ]
+        !
+        +--+ ?                              [ not included if maxdirs !=0 or qstring = ignore ]
+        !
+        +--+ QUERY from query_get()         [ not included if maxdirs !=0 or qstring = ignore ]
+
+    EXAMPLE::
+
+        Given the request ``http://localhost/a/b/c/d/e/index.html?a=1?b=2`` --
+            MAXDIRS --> HASH COMPUTATION COMPONENTS
+                  6 --> ``/`` + ``a/b/c/d/e/``
+                  5 --> ``/`` + ``a/b/c/d/e/``
+                  4 --> ``/`` + ``a/b/c/d/``
+                  2 --> ``/`` + ``a/b/``
+                  1 --> ``/`` + ``a/``
+                  0 --> ``/`` + ``a/b/c/d/e/index.html`` + ``?`` + ``a=1?b=2``
+                 -1 --> ``/`` + ``a/b/c/d/e/``
+                 -2 --> ``/`` + ``a/b/c/d/``
+                 -4 --> ``/`` + ``a/b/``
+                 -5 --> ``/`` + ``a/``
+                 -6 --> ``/`` + ````
+
 Examples
 ========
 

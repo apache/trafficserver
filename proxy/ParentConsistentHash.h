@@ -46,6 +46,8 @@ class ParentConsistentHash : public ParentSelectionStrategy
   pRecord *parents[2];
   bool foundParents[2][MAX_PARENTS];
   bool ignore_query;
+  bool ignore_fname;
+  int max_dirs;
 
 public:
   static const int PRIMARY   = 0;

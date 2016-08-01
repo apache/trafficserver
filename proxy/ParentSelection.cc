@@ -486,6 +486,8 @@ ParentRecord::DefaultInit(char *val)
 
   this->go_direct       = true;
   this->ignore_query    = false;
+  this->ignore_fname    = false;
+  this->max_dirs        = 0;
   this->scheme          = NULL;
   this->parent_is_proxy = true;
   errPtr                = ProcessParents(val, true);
@@ -570,6 +572,18 @@ ParentRecord::Init(matcher_line *line_info)
         this->ignore_query = false;
       }
       used = true;
+    } else if (strcasecmp(label, "fname") == 0) {
+      // fname=ignore | consider
+      if (strcasecmp(val, "ignore") == 0) {
+        this->ignore_fname = true;
+      } else {
+        this->ignore_fname = false;
+      }
+      used = true;
+    } else if (strcasecmp(label, "maxdirs") == 0) {
+      // maxdirs=<int> maximum number of directories to include in hash
+      this->max_dirs = atoi(val);
+      used           = true;
     } else if (strcasecmp(label, "parent_is_proxy") == 0) {
       if (strcasecmp(val, "false") == 0) {
         parent_is_proxy = false;
