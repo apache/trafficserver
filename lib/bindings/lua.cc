@@ -61,3 +61,38 @@ lua_is_userdata(lua_State *L, int index, const char *metatype)
 
   return result;
 }
+
+template <> lua_Integer
+lua_getfield(lua_State *L, int table, const char *key, lua_Integer default_value)
+{
+  lua_Integer result = default_value;
+
+  lua_pushvalue(L, table); // Table is at -1.
+  lua_pushstring(L, key); // Now key is at -1 and table is at -2.
+  lua_gettable(L, -2); // Now the result is at -1.
+
+  if (!lua_isnil(L, -1)) {
+    result = lua_tointeger(L, -1);
+  }
+
+  lua_pop(L, 2); // Pop the result and the table.
+
+  return result;
+}
+
+template <> const char *
+lua_getfield(lua_State *L, int table, const char *key, const char * default_value)
+{
+  const char * result = default_value;
+
+  lua_pushvalue(L, table); // Table is at -1.
+  lua_pushstring(L, key); // Now key is at -1 and table is at -2.
+  lua_gettable(L, -2); // Now the result is at -1.
+
+  if (!lua_isnil(L, -1)) {
+    result = lua_tostring(L, -1);
+  }
+
+  lua_pop(L, 2); // Pop the result and the table.
+  return result;
+}

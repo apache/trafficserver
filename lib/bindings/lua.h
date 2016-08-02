@@ -65,4 +65,10 @@ lua_newuserobject(lua_State *L)
   return (T *)NULL;
 }
 
+// Index the given key in the table at the specified index. If the
+// key doesn't exist, the default value is returned. This returns
+// values referenced by the table (not copies).
+template <typename T> T
+lua_getfield(lua_State *L, int table, const char *key, T default_value);
+
 #endif /* LUA_H_7A9F5CCE_01C6_45C3_987A_FDCC1F437AA2 */
