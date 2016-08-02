@@ -2317,6 +2317,7 @@ DNS
 
 .. ts:cv:: CONFIG proxy.config.srv_enabled INT 0
    :reloadable:
+   :overridable:
 
    Indicates whether to use SRV records for orgin server lookup.
 
