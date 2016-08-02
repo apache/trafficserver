@@ -1122,120 +1122,14 @@ LogConfig::read_xml_log_config()
         Warning("%s is not a valid filter action value; cannot create filter %s.", action_str, filter_name);
         continue;
       }
+
       // parse condition string and validate its fields
       //
-      char *cond_str = condition.dequeue();
+      char *cond_str    = condition.dequeue();
+      LogFilter *filter = LogFilter::parse(filter_name, act, cond_str);
 
-      SimpleTokenizer tok(cond_str);
-
-      if (tok.getNumTokensRemaining() < 3) {
-        Warning("Invalid condition syntax \"%s\"; cannot create filter %s.", cond_str, filter_name);
-        continue;
-      }
-
-      char *field_str = tok.getNext();
-      char *oper_str  = tok.getNext();
-      char *val_str   = tok.getRest();
-
-      // validate field symbol
-      //
-      if (strlen(field_str) > 2 && field_str[0] == '%' && field_str[1] == '<') {
-        Debug("xml", "Field symbol has <> form: %s", field_str);
-        char *end = field_str;
-        while (*end && *end != '>') {
-          end++;
-        }
-        *end = '\0';
-        field_str += 2;
-        Debug("xml", "... now field symbol is %s", field_str);
-      }
-
-      LogField *logfield = Log::global_field_list.find_by_symbol(field_str);
-      if (!logfield) {
-        // check for container fields
-        if (*field_str == '{') {
-          Note("%s appears to be a container field", field_str);
-          char *fname_end = strchr(field_str, '}');
-          if (NULL != fname_end) {
-            char *fname = field_str + 1;
-            *fname_end  = 0;             // changes '}' to '\0'
-            char *cname = fname_end + 1; // start of container symbol
-            Note("Found Container Field: Name = %s, symbol = %s", fname, cname);
-            LogField::Container container = LogField::valid_container_name(cname);
-            if (container == LogField::NO_CONTAINER) {
-              Warning("%s is not a valid container; cannot create filter %s.", cname, filter_name);
-              continue;
-            } else {
-              logfield = new LogField(fname, container);
-              ink_assert(logfield != NULL);
-            }
-          } else {
-            Warning("Invalid container field specification: no trailing '}' in %s cannot create filter %s.", field_str,
-                    filter_name);
-            continue;
-          }
-        }
-      }
-
-      if (!logfield) {
-        Warning("%s is not a valid field; cannot create filter %s.", field_str, filter_name);
-        continue;
-      }
-      // convert the operator string to an enum value and validate it
-      //
-      LogFilter::Operator oper = LogFilter::MATCH;
-      for (i = 0; i < LogFilter::N_OPERATORS; ++i) {
-        if (strcasecmp(oper_str, LogFilter::OPERATOR_NAME[i]) == 0) {
-          oper = (LogFilter::Operator)i;
-          break;
-        }
-      }
-
-      if (i == LogFilter::N_OPERATORS) {
-        Warning("%s is not a valid operator; cannot create filter %s.", oper_str, filter_name);
-        continue;
-      }
-      // now create the correct LogFilter
-      //
-      LogFilter *filter         = NULL;
-      LogField::Type field_type = logfield->type();
-
-      switch (field_type) {
-      case LogField::sINT:
-
-        filter = new LogFilterInt(filter_name, logfield, act, oper, val_str);
-        break;
-
-      case LogField::dINT:
-
-        Warning("Internal error: invalid field type (double int); cannot create filter %s.", filter_name);
-        continue;
-
-      case LogField::STRING:
-
-        filter = new LogFilterString(filter_name, logfield, act, oper, val_str);
-        break;
-
-      case LogField::IP:
-
-        filter = new LogFilterIP(filter_name, logfield, act, oper, val_str);
-        break;
-
-      default:
-
-        Warning("Internal error: unknown field type %d; cannot create filter %s.", field_type, filter_name);
-        continue;
-      }
-
-      ink_assert(filter);
-
-      if (filter->get_num_values() == 0) {
-        Warning("\"%s\" does not specify any valid values; cannot create filter %s.", val_str, filter_name);
-        delete filter;
-
-      } else {
-        // add filter to global filter list
-        //
+      // add filter to global filter list
+      if (filter) {
         global_filter_list.add(filter, false);
 
         if (is_debug_tag_set("xml")) {

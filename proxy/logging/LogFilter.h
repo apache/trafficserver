@@ -54,6 +54,7 @@ public:
     WIPE_FIELD_VALUE,
     N_ACTIONS,
   };
+
   static const char *ACTION_NAME[];
 
   // all operators "positive" (i.e., there is no NOMATCH operator anymore)
@@ -67,6 +68,7 @@ public:
     CASE_INSENSITIVE_CONTAIN,
     N_OPERATORS,
   };
+
   static const char *OPERATOR_NAME[];
 
   LogFilter(const char *name, LogField *field, Action action, Operator oper);
@@ -88,12 +90,14 @@ public:
   get_num_values() const
   {
     return m_num_values;
-  };
+  }
 
   virtual bool toss_this_entry(LogAccess *lad) = 0;
   virtual bool wipe_this_entry(LogAccess *lad) = 0;
   virtual void display(FILE *fd = stdout) = 0;
   virtual void display_as_XML(FILE *fd = stdout) = 0;
+
+  static LogFilter *parse(const char *name, Action action, const char *condition);
 
 protected:
   char *m_name;
@@ -153,7 +157,7 @@ private:
     // this reverse behavior is to conform to the behavior of strcmp
     // which returns 0 if strings match
     return (strstr(s0, s1) == NULL ? 1 : 0);
-  };
+  }
 
   enum LengthCondition {
     DATA_LENGTH_EQUAL = 0,
@@ -263,13 +267,14 @@ public:
   {
     return m_filter_list.head;
   }
+
   LogFilter *
   next(LogFilter *here) const
   {
     return (here->link).next;
   }
 
-  unsigned count();
+  unsigned count() const;
   void display(FILE *fd = stdout);
   void display_as_XML(FILE *fd = stdout);
 
@@ -277,12 +282,13 @@ public:
   does_conjunction() const
   {
     return m_does_conjunction;
-  };
+  }
+
   void
   set_conjunction(bool c)
   {
     m_does_conjunction = c;
-  };
+  }
 
 private:
   Queue<LogFilter> m_filter_list;
