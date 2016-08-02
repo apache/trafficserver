@@ -39,7 +39,6 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "Log.h"
-//#include "ts/ink_ctype.h"
 #include "ts/SimpleTokenizer.h"
 
 const char *LogFilter::OPERATOR_NAME[] = {"MATCH", "CASE_INSENSITIVE_MATCH", "CONTAIN", "CASE_INSENSITIVE_CONTAIN"};
@@ -66,6 +65,127 @@ LogFilter::~LogFilter()
 {
   ats_free(m_name);
   delete m_field;
+}
+
+LogFilter *
+LogFilter::parse(const char *name, Action action, const char *condition)
+{
+  SimpleTokenizer tok(condition);
+  ats_scoped_obj<LogField> logfield;
+
+  ink_release_assert(action != N_ACTIONS);
+
+  if (tok.getNumTokensRemaining() < 3) {
+    Error("Invalid condition syntax '%s'; cannot create filter '%s'", condition, name);
+    return NULL;
+  }
+
+  char *field_str = tok.getNext();
+  char *oper_str  = tok.getNext();
+  char *val_str   = tok.getRest();
+
+  // validate field symbol
+  if (strlen(field_str) > 2 && field_str[0] == '%' && field_str[1] == '<') {
+    Debug("xml", "Field symbol has <> form: %s", field_str);
+    char *end = field_str;
+    while (*end && *end != '>') {
+      end++;
+    }
+    *end = '\0';
+    field_str += 2;
+    Debug("xml", "... now field symbol is %s", field_str);
+  }
+
+  if (LogField *f = Log::global_field_list.find_by_symbol(field_str)) {
+    logfield = new LogField(*f);
+  }
+
+  if (!logfield) {
+    // check for container fields
+    if (*field_str == '{') {
+      Debug("xml", "%s appears to be a container field", field_str);
+
+      char *fname;
+      char *cname;
+      char *fname_end;
+
+      fname_end = strchr(field_str, '}');
+      if (NULL == fname_end) {
+        Error("Invalid container field specification: no trailing '}' in '%s' cannot create filter '%s'", field_str, name);
+        return NULL;
+      }
+
+      fname      = field_str + 1;
+      *fname_end = 0; // changes '}' to '\0'
+
+      // start of container symbol
+      cname = fname_end + 1;
+
+      Debug("xml", "found container field: Name = %s, symbol = %s", fname, cname);
+
+      LogField::Container container = LogField::valid_container_name(cname);
+      if (container == LogField::NO_CONTAINER) {
+        Error("'%s' is not a valid container; cannot create filter '%s'", cname, name);
+        return NULL;
+      }
+
+      logfield = new LogField(fname, container);
+      ink_assert(logfield != NULL);
+    }
+  }
+
+  if (!logfield) {
+    Error("'%s' is not a valid field; cannot create filter '%s'", field_str, name);
+    return NULL;
+  }
+
+  // convert the operator string to an enum value and validate it
+  LogFilter::Operator oper = LogFilter::N_OPERATORS;
+  for (unsigned i = 0; i < LogFilter::N_OPERATORS; ++i) {
+    if (strcasecmp(oper_str, LogFilter::OPERATOR_NAME[i]) == 0) {
+      oper = (LogFilter::Operator)i;
+      break;
+    }
+  }
+
+  if (oper == LogFilter::N_OPERATORS) {
+    Error("'%s' is not a valid operator; cannot create filter '%s'", oper_str, name);
+    return NULL;
+  }
+
+  // now create the correct LogFilter
+  LogField::Type field_type = logfield->type();
+  LogFilter *filter;
+
+  switch (field_type) {
+  case LogField::sINT:
+    filter = new LogFilterInt(name, logfield, action, oper, val_str);
+    break;
+
+  case LogField::dINT:
+    Error("Invalid field type (double int); cannot create filter '%s'", name);
+    return NULL;
+
+  case LogField::STRING:
+    filter = new LogFilterString(name, logfield, action, oper, val_str);
+    break;
+
+  case LogField::IP:
+    filter = new LogFilterIP(name, logfield, action, oper, val_str);
+    break;
+
+  default:
+    Error("Unknown logging field type %d; cannot create filter '%s'", field_type, name);
+    return NULL;
+  }
+
+  if (filter->get_num_values() == 0) {
+    Error("'%s' does not specify any valid values; cannot create filter '%s'", val_str, name);
+    delete filter;
+    return NULL;
+  }
+
+  return filter;
 }
 
 /*-------------------------------------------------------------------------
@@ -1007,7 +1127,7 @@ LogFilterList::find_by_name(char *name)
   -------------------------------------------------------------------------*/
 
 unsigned
-LogFilterList::count()
+LogFilterList::count() const
 {
   unsigned cnt = 0;
 
@@ -1032,3 +1152,33 @@ LogFilterList::display_as_XML(FILE *fd)
     f->display_as_XML(fd);
   }
 }
+
+#if TS_HAS_TESTS
+#include "ts/TestBox.h"
+
+REGRESSION_TEST(Log_FilterParse)(RegressionTest *t, int /* atype */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+
+#define CHECK_FORMAT_PARSE(fmt)                                   \
+  do {                                                            \
+    LogFilter *f = LogFilter::parse(fmt, LogFilter::ACCEPT, fmt); \
+    box.check(f != NULL, "failed to parse filter '%s'", fmt);     \
+    delete f;                                                     \
+  } while (0)
+
+  *pstatus = REGRESSION_TEST_PASSED;
+
+  box.check(LogFilter::parse("t1", LogFilter::ACCEPT, "tok1 tok2") == NULL, "At least 3 tokens are required");
+  box.check(LogFilter::parse("t2", LogFilter::ACCEPT, "%<sym operator value") == NULL, "Unclosed symbol token");
+  box.check(LogFilter::parse("t3", LogFilter::ACCEPT, "%<{Age ssh> operator value") == NULL, "Unclosed container field");
+  box.check(LogFilter::parse("t4", LogFilter::ACCEPT, "%<james> operator value") == NULL, "Invalid log field");
+  box.check(LogFilter::parse("t5", LogFilter::ACCEPT, "%<chi> invalid value") == NULL, "Invalid operator name");
+
+  CHECK_FORMAT_PARSE("pssc MATCH 200");
+  CHECK_FORMAT_PARSE("shn CASE_INSENSITIVE_CONTAIN unwanted.com");
+
+#undef CHECK_FORMAT_PARSE
+}
+
+#endif
