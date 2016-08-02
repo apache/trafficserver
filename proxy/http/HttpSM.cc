@@ -404,7 +404,6 @@ HttpSM::init()
   t_state.cache_info.config.cache_vary_default_other  = t_state.http_config_param->cache_vary_default_other;
 
   t_state.init();
-  t_state.srv_lookup = hostdb_srv_enabled;
 
   // Added to skip dns if the document is in cache. DNS will be forced if there is a ip based ACL in
   // cache control or parent.config or if the doc_in_cache_skip_dns is disabled or if http caching is disabled
@@ -2082,7 +2081,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
   if (!r || !r->is_srv || !r->round_robin) {
     t_state.dns_info.srv_hostname[0]    = '\0';
     t_state.dns_info.srv_lookup_success = false;
-    t_state.srv_lookup                  = false;
+    t_state.txn_conf->srv_enabled       = false;
     DebugSM("dns_srv", "No SRV records were available, continuing to lookup %s", t_state.dns_info.lookup_name);
   } else {
     HostDBRoundRobin *rr = r->rr();
@@ -2094,7 +2093,7 @@ HttpSM::process_srv_info(HostDBInfo *r)
     if (!srv) {
       t_state.dns_info.srv_lookup_success = false;
       t_state.dns_info.srv_hostname[0]    = '\0';
-      t_state.srv_lookup                  = false;
+      t_state.txn_conf->srv_enabled       = false;
       DebugSM("dns_srv", "SRV records empty for %s", t_state.dns_info.lookup_name);
     } else {
       t_state.dns_info.srv_lookup_success = true;
@@ -4072,9 +4071,8 @@ HttpSM::do_hostdb_lookup()
   ink_assert(pending_action == NULL);
 
   milestones[TS_MILESTONE_DNS_LOOKUP_BEGIN] = Thread::get_hrtime();
-  bool use_srv_records                      = t_state.srv_lookup;
 
-  if (use_srv_records) {
+  if (t_state.txn_conf->srv_enabled) {
     char d[MAXDNAME];
 
     // Look at the next_hop_scheme to determine what scheme to put in the SRV lookup

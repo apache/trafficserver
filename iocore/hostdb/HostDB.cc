@@ -67,7 +67,6 @@ static char hostdb_filename[PATH_NAME_MAX]         = DEFAULT_HOST_DB_FILENAME;
 int hostdb_max_count                               = DEFAULT_HOST_DB_SIZE;
 char hostdb_hostfile_path[PATH_NAME_MAX]           = "";
 int hostdb_sync_frequency                          = 120;
-int hostdb_srv_enabled                             = 0;
 int hostdb_disable_reverse_lookup                  = 0;
 
 ClassAllocator<HostDBContinuation> hostDBContAllocator("hostDBContAllocator");
@@ -297,7 +296,6 @@ HostDBCache::start(int flags)
   // Command line overrides manager configuration.
   //
   REC_ReadConfigInt32(hostdb_enable, "proxy.config.hostdb");
-  REC_ReadConfigInt32(hostdb_srv_enabled, "proxy.config.srv_enabled");
   REC_ReadConfigString(storage_path, "proxy.config.hostdb.storage_path", sizeof(storage_path));
   REC_ReadConfigString(hostdb_filename, "proxy.config.hostdb.filename", sizeof(hostdb_filename));
 
