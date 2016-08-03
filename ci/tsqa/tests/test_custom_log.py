@@ -40,9 +40,6 @@ class TestCustomLogField(helpers.EnvironmentCase):
             'map / http://www.linkedin.com/ @action=deny'
         )
         cls.log_file_name = 'test_log_field'
-        cls.configs['records.config']['CONFIG'].update({
-            'proxy.config.log.custom_logs_enabled': 1,
-        })
 
         cls.log_file_path = os.path.join(cls.environment.layout.prefix, 'var/log/test_log_field.log')
         cls.log_etc_file = os.path.join(cls.environment.layout.prefix, 'etc/trafficserver/logs_xml.config')

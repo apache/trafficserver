@@ -97,8 +97,6 @@ LogConfig::setup_default_values()
   auto_delete_rolled_files = true;
   roll_log_files_now       = false;
 
-  custom_logs_enabled = false;
-
   sampling_frequency   = 1;
   file_stat_frequency  = 16;
   space_used_frequency = 900;
@@ -232,10 +230,6 @@ LogConfig::read_configuration_variables()
 
   val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
-
-  // CUSTOM LOGGING
-  val                 = (int)REC_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
-  custom_logs_enabled = (val > 0);
 
   // PERFORMANCE
   val = (int)REC_ConfigReadInteger("proxy.config.log.sampling_frequency");
@@ -505,10 +499,8 @@ LogConfig::setup_log_objects()
 
   global_filter_list.clear();
 
-  if (custom_logs_enabled) {
-    /* Read xml configuration from logs_xml.config file.             */
-    read_xml_log_config();
-  }
+  // Read xml configuration from logs_xml.config file.
+  read_xml_log_config();
 
   // open local pipes so readers can see them
   //

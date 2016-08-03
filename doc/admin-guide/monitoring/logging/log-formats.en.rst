@@ -94,9 +94,7 @@ variety of off-the-shelf log-analysis packages. You should use one of the
 standard event log formats unless you need information that these formats do
 not provide.
 
-These formats may be used by enabling the :ts:cv:`proxy.config.log.custom_logs_enabled`
-setting in :file:`records.config` and adding appropriate entries to
-:file:`logs_xml.config`.
+These formats may be used by editing the ``LogObject`` entry in :file:`logs_xml.config`.
 
 .. _admin-logging-format-squid:
 
