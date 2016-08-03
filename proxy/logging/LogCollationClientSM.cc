@@ -267,8 +267,8 @@ LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
     return client_send(LOG_COLL_EVENT_SWITCH, NULL);
 
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    Debug("log-coll", "[%d]client::client_auth - Ignoring VC_EVENT_INACTIVITY_TIMEOUT", m_id);
-    return EVENT_CONT;
+    Debug("log-coll", "[%d]client::client_auth - closing on VC_EVENT_INACTIVITY_TIMEOUT", m_id);
+    return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR: {
     Debug("log-coll", "[%d]client::client_auth - EOS|ERROR", m_id);
@@ -453,8 +453,8 @@ LogCollationClientSM::client_idle(int event, void * /* data ATS_UNUSED */)
     return EVENT_CONT;
 
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    Debug("log-coll", "[%d]client::client_idle - Ignoring VC_EVENT_INACTIVITY_TIMEOUT", m_id);
-    return EVENT_CONT;
+    Debug("log-coll", "[%d]client::client_idle - closing on VC_EVENT_INACTIVITY_TIMEOUT", m_id);
+    return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
     Debug("log-coll", "[%d]client::client_idle - EOS|ERROR", m_id);
@@ -552,6 +552,9 @@ LogCollationClientSM::client_open(int event, NetVConnection *net_vc)
 
     ink_assert(net_vc != NULL);
     m_host_vc = net_vc;
+
+    // assign a non-default-inactivity-timeout
+    net_vc->set_inactivity_timeout(HRTIME_SECONDS(86400));
 
     // setup a client reader just for detecting a host disconnnect
     // (iocore should call back this function with and EOS/ERROR)
@@ -670,8 +673,8 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
     return client_send(LOG_COLL_EVENT_SWITCH, NULL);
 
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    Debug("log-coll", "[%d]client::client_send - Ignoring VC_EVENT_INACTIVITY_TIMEOUT", m_id);
-    return EVENT_CONT;
+    Debug("log-coll", "[%d]client::client_send - closing on VC_EVENT_INACTIVITY_TIMEOUT", m_id);
+    return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR: {
     Debug("log-coll", "[%d]client::client_send - EOS|ERROR", m_id);
