@@ -305,6 +305,12 @@ RemapProcessor::perform_remap(Continuation *cont, HttpTransact::State *s)
     return ACTION_RESULT_DONE;
   }
 
+  // Do fast ACL filtering (it is safe to check map here)
+  rewrite_table->PerformACLFiltering(s, map);
+  if (!s->client_connection_enabled) {
+    return ACTION_RESULT_DONE;
+  }
+
   if (_use_separate_remap_thread) {
     RemapPlugins *plugins = pluginAllocator.alloc();
 

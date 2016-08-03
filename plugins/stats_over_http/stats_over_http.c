@@ -34,6 +34,7 @@
 #include <inttypes.h>
 #include <getopt.h>
 
+#include "ts/remap.h"
 #include "ts/ink_defs.h"
 
 #define PLUGIN_NAME "stats_over_http"
@@ -56,6 +57,9 @@ typedef struct stats_state_t {
 
   int output_bytes;
   int body_written;
+
+  bool integer_counters;
+  bool wrap_counters;
 } stats_state;
 
 static void
@@ -123,33 +127,41 @@ stats_process_read(TSCont contp, TSEvent event, stats_state *my_state)
   }
 }
 
-#define APPEND(a) my_state->output_bytes += stats_add_data_to_resp_buffer(a, my_state)
-#define APPEND_STAT(a, fmt, v)                                              \
-  do {                                                                      \
-    char b[256];                                                            \
-    if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) \
-      APPEND(b);                                                            \
-  } while (0)
-#define APPEND_STAT_NUMERIC(a, fmt, v)                                          \
+static void
+append(const char *s, stats_state *my_state)
+{
+  my_state->output_bytes += stats_add_data_to_resp_buffer(s, my_state);
+}
+
+#define APPEND_STAT(s, fmt, v, my_state)                                        \
   do {                                                                          \
     char b[256];                                                                \
-    if (integer_counters) {                                                     \
-      if (snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", a, v) < sizeof(b)) {     \
-        APPEND(b);                                                              \
+    if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", s, v) < sizeof(b)) {   \
+      append(b, my_state);                                                      \
+    }                                                                           \
+  } while (0)                                                                   \
+
+#define APPEND_STAT_NUMERIC(s, fmt, v, my_state)                                \
+  do {                                                                          \
+    char b[256];                                                                \
+    if (my_state->integer_counters) {                                           \
+      if (snprintf(b, sizeof(b), "\"%s\": " fmt ",\n", s, v) < sizeof(b)) {     \
+        append(b, my_state);                                                    \
       }                                                                         \
     } else {                                                                    \
-      if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", a, v) < sizeof(b)) { \
-        APPEND(b);                                                              \
+      if (snprintf(b, sizeof(b), "\"%s\": \"" fmt "\",\n", s, v) < sizeof(b)) { \
+        append(b, my_state);                                                    \
       }                                                                         \
     }                                                                           \
   } while (0)
 
+
 // This wraps uint64_t values to the int64_t range to fit into a Java long. Java 8 has an unsigned long which
 // can interoperate with a full uint64_t, but it's unlikely that much of the ecosystem supports that yet.
 static uint64_t
-wrap_unsigned_counter(uint64_t value)
+wrap_unsigned_counter(uint64_t value, stats_state *my_state)
 {
-  if (wrap_counters) {
+  if (my_state->wrap_counters) {
     return (value > INT64_MAX) ? value % INT64_MAX : value;
   } else {
     return value;
@@ -161,19 +173,22 @@ json_out_stat(TSRecordType rec_type ATS_UNUSED, void *edata, int registered ATS_
               TSRecordDataType data_type, TSRecordData *datum)
 {
   stats_state *my_state = edata;
+  uint64_t value;
 
   switch (data_type) {
   case TS_RECORDDATATYPE_COUNTER:
-    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_counter));
+    value = wrap_unsigned_counter(datum->rec_counter, my_state);
+    APPEND_STAT_NUMERIC(name, "%" PRIu64, value, my_state);
     break;
   case TS_RECORDDATATYPE_INT:
-    APPEND_STAT_NUMERIC(name, "%" PRIu64, wrap_unsigned_counter(datum->rec_int));
+    value = wrap_unsigned_counter(datum->rec_int, my_state);
+    APPEND_STAT_NUMERIC(name, "%" PRIu64, value, my_state);
     break;
   case TS_RECORDDATATYPE_FLOAT:
-    APPEND_STAT_NUMERIC(name, "%f", datum->rec_float);
+    APPEND_STAT_NUMERIC(name, "%f", datum->rec_float, my_state);
     break;
   case TS_RECORDDATATYPE_STRING:
-    APPEND_STAT(name, "%s", datum->rec_string);
+    APPEND_STAT(name, "%s", datum->rec_string, my_state);
     break;
   default:
     TSDebug(PLUGIN_NAME, "unknown type for %s: %d", name, data_type);
@@ -184,14 +199,14 @@ static void
 json_out_stats(stats_state *my_state)
 {
   const char *version;
-  APPEND("{ \"global\": {\n");
+  append("{ \"global\": {\n", my_state);
 
   TSRecordDump((TSRecordType)(TS_RECORDTYPE_PLUGIN | TS_RECORDTYPE_NODE | TS_RECORDTYPE_PROCESS), json_out_stat, my_state);
   version = TSTrafficServerVersionGet();
-  APPEND("\"server\": \"");
-  APPEND(version);
-  APPEND("\"\n");
-  APPEND("  }\n}\n");
+  append("\"server\": \"", my_state);
+  append(version, my_state);
+  append("\"\n", my_state);
+  append("  }\n}\n", my_state);
 }
 
 static void
@@ -262,11 +277,16 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   /* This is us -- register our intercept */
   TSDebug(PLUGIN_NAME, "Intercepting request");
 
-  icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
+  icontp = TSContCreate(stats_dostuff, TSMutexCreate());
+
   my_state = (stats_state *)TSmalloc(sizeof(*my_state));
   memset(my_state, 0, sizeof(*my_state));
+
+  my_state->integer_counters = integer_counters;
+  my_state->wrap_counters = wrap_counters;
+
   TSContDataSet(icontp, my_state);
-  TSHttpTxnIntercept(icontp, txnp);
+  TSHttpTxnServerIntercept(icontp, txnp);
   goto cleanup;
 
 notforme:
@@ -279,6 +299,30 @@ cleanup:
 
   TSHttpTxnReenable(txnp, reenable);
   return 0;
+}
+
+static void
+handle_stats_request(TSHttpTxn txnp, stats_state *my_state)
+{
+  TSCont icontp;
+  TSMBuffer req_buf;
+  TSMLoc req_loc;
+
+  if (TSHttpTxnClientReqGet(txnp, &req_buf, &req_loc) != TS_SUCCESS) {
+    goto cleanup;
+  }
+
+  TSSkipRemappingSet(txnp, 1); // not strictly necessary, but speed is everything these days
+
+  /* This is us -- register our intercept */
+  TSDebug(PLUGIN_NAME, "intercepting request");
+
+  icontp = TSContCreate(stats_dostuff, TSMutexCreate());
+  TSContDataSet(icontp, my_state);
+  TSHttpTxnIntercept(icontp, txnp);
+
+cleanup:
+  TSHandleMLocRelease(req_buf, TS_NULL_MLOC, req_loc);
 }
 
 void
@@ -327,4 +371,56 @@ init:
      containing the headers to add */
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(stats_origin, NULL));
   TSDebug(PLUGIN_NAME, "stats module registered");
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// Initialize the plugin as a remap plugin.
+//
+TSReturnCode
+TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
+{
+  if (!api_info) {
+    strncpy(errbuf, "[tsremap_init] - Invalid TSRemapInterface argument", errbuf_size - 1);
+    return TS_ERROR;
+  }
+
+  if (api_info->tsremap_version < TSREMAP_VERSION) {
+    snprintf(errbuf, errbuf_size - 1, "[TSRemapInit] - Incorrect API version %ld.%ld", api_info->tsremap_version >> 16,
+             (api_info->tsremap_version & 0xffff));
+    return TS_ERROR;
+  }
+
+  TSDebug(PLUGIN_NAME, "INFO: The stats_over_http plugin was successfully initialized");
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
+{
+  stats_state *my_state = (stats_state *)TSmalloc(sizeof(*my_state));
+  memset(my_state, 0, sizeof(*my_state));
+
+  for (int i = 2; i < argc; ++i) {
+    if (strncmp(argv[i], "integer-counters", 16) == 0) {
+      my_state->integer_counters = true;
+    } else if (strncmp(argv[i], "wrap-counters", 13) == 0) {
+      my_state->wrap_counters = true;
+    }
+  }
+
+  *instance = my_state;
+
+  return TS_SUCCESS;
+}
+
+TSRemapStatus
+TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
+{
+  if (NULL == instance) {
+    return TSREMAP_NO_REMAP;
+  }
+
+  stats_state *state = (stats_state *)instance;
+  handle_stats_request(txnp, state);
+  return TSREMAP_DID_REMAP;
 }
