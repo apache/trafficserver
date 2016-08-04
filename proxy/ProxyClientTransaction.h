@@ -174,11 +174,9 @@ public:
     return true;
   }
 
-  virtual void
-  destroy()
-  {
-    this->mutex.clear();
-  }
+  virtual void destroy();
+
+  virtual void transaction_done() = 0;
 
   ProxyClientSession *
   get_parent()

@@ -67,7 +67,7 @@ is_valid_hook(TSHttpHookID hookid)
 }
 
 void
-ProxyClientSession::destroy()
+ProxyClientSession::free()
 {
   if (schedule_event) {
     schedule_event->cancel();
@@ -137,7 +137,7 @@ ProxyClientSession::state_api_callout(int event, void *data)
 
   // coverity[unterminated_default]
   default:
-    ink_assert(false);
+    ink_release_assert(false);
   }
 
   return 0;
@@ -185,7 +185,7 @@ ProxyClientSession::handle_api_return(int event)
       vc->do_io_close();
       this->release_netvc();
     }
-    this->destroy();
+    free(); // You can now clean things up
     break;
   }
   default:

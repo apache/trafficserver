@@ -764,6 +764,7 @@ static const http2_frame_dispatch frame_handlers[HTTP2_FRAME_TYPE_MAX] = {
 int
 Http2ConnectionState::main_event_handler(int event, void *edata)
 {
+  ++recursion;
   switch (event) {
   // Initialize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_INIT: {
@@ -788,16 +789,16 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
       send_window_update_frame(0, server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - HTTP2_INITIAL_WINDOW_SIZE);
     }
 
-    return 0;
+    break;
   }
 
   // Finalize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_FINI: {
-    this->ua_session = NULL;
+    this->fini_received = true;
     cleanup_streams();
     SET_HANDLER(&Http2ConnectionState::state_closed);
-    return 0;
-  }
+    this->release_stream(NULL);
+  } break;
 
   case HTTP2_SESSION_EVENT_XMIT: {
     SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
@@ -817,7 +818,7 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     //   Implementations MUST discard frames that have unknown or unsupported types.
     if (frame->header().type >= HTTP2_FRAME_TYPE_MAX) {
       DebugHttp2Stream(ua_session, stream_id, "Discard a frame which has unknown type, type=%x", frame->header().type);
-      return 0;
+      break;
     }
 
     if (frame_handlers[frame->header().type]) {
@@ -845,13 +846,22 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
       }
     }
 
-    return 0;
+    break;
   }
 
   default:
     DebugHttp2Con(ua_session, "unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
-    return 0;
+    break;
+  }
+
+  --recursion;
+  if (recursion == 0 && ua_session && !ua_session->is_recursing()) {
+    if (this->ua_session->ready_to_free()) {
+      this->ua_session->free();
+      // After the free, the Http2ConnectionState object is also freed.
+      // The Http2ConnectionState object is allocted within the Http2ClientSession object
+    }
   }
 
   return 0;
@@ -887,6 +897,7 @@ Http2ConnectionState::create_stream(Http2StreamId new_id)
 
   ink_assert(client_streams_count < UINT32_MAX);
   ++client_streams_count;
+  ++total_client_streams_count;
   new_stream->set_parent(ua_session);
   new_stream->mutex = ua_session->mutex;
   ua_session->get_netvc()->add_to_active_queue();
@@ -953,6 +964,18 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 
   if (client_streams_count == 0 && ua_session) {
     ua_session->get_netvc()->add_to_keep_alive_queue();
+  }
+}
+
+void
+Http2ConnectionState::release_stream(Http2Stream *stream)
+{
+  if (stream) {
+    --total_client_streams_count;
+  }
+  if (ua_session && fini_received && total_client_streams_count == 0) {
+    // We were shutting down, go ahead and terminate the session
+    ua_session->destroy();
   }
 }
 
