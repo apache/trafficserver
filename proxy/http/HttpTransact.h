@@ -613,6 +613,8 @@ public:
     CacheWriteLock_t write_lock_state;
     int lookup_count;
     SquidHitMissCode hit_miss_code;
+    URL *parent_selection_url;
+    URL parent_selection_url_storage;
 
     _CacheLookupInfo()
       : action(CACHE_DO_UNDEFINED),
@@ -632,7 +634,9 @@ public:
         open_write_retries(0),
         write_lock_state(CACHE_WL_INIT),
         lookup_count(0),
-        hit_miss_code(SQUID_MISS_NONE)
+        hit_miss_code(SQUID_MISS_NONE),
+        parent_selection_url(NULL),
+        parent_selection_url_storage()
     {
     }
   } CacheLookupInfo;
@@ -1142,6 +1146,7 @@ public:
       hdr_info.transform_response.destroy();
       hdr_info.cache_response.destroy();
       cache_info.lookup_url_storage.destroy();
+      cache_info.parent_selection_url_storage.destroy();
       cache_info.original_url.destroy();
       cache_info.object_store.destroy();
       cache_info.transform_store.destroy();

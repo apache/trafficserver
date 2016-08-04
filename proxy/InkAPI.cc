@@ -5730,6 +5730,80 @@ TSHttpTxnParentProxySet(TSHttpTxn txnp, const char *hostname, int port)
   sm->t_state.api_info.parent_proxy_port = port;
 }
 
+TSReturnCode
+TSHttpTxnParentSelectionUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+  URL u, *l_url;
+
+  u.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
+  u.m_url_impl = (URLImpl *)obj;
+  if (!u.valid())
+    return TS_ERROR;
+
+  l_url = sm->t_state.cache_info.parent_selection_url;
+  if (l_url && l_url->valid()) {
+    u.copy(l_url);
+    return TS_SUCCESS;
+  }
+
+  return TS_ERROR;
+}
+
+TSReturnCode
+TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+  URL u, *l_url;
+
+  u.m_heap     = ((HdrHeapSDKHandle *)bufp)->m_heap;
+  u.m_url_impl = (URLImpl *)obj;
+  if (!u.valid()) {
+    return TS_ERROR;
+  }
+
+  l_url = sm->t_state.cache_info.parent_selection_url;
+  if (!l_url) {
+    sm->t_state.cache_info.parent_selection_url_storage.create(NULL);
+    sm->t_state.cache_info.parent_selection_url = &(sm->t_state.cache_info.parent_selection_url_storage);
+    l_url                                       = sm->t_state.cache_info.parent_selection_url;
+  }
+
+  if (!l_url || !l_url->valid()) {
+    return TS_ERROR;
+  } else {
+    l_url->copy(&u);
+  }
+
+  // Put the URL in the MIME header
+  int url_length   = 0;
+  char *url_string = l_url->string_get_ref(&url_length);
+  // Debug("ts_lua", "url_length = %d",url_length);
+  // Debug("ts_lua", "url_srting = %c",url_string[0]);
+  TSHttpTxn rh = txnp;
+  TSMBuffer cbuf;
+  TSMLoc chdr;
+  TSMLoc cloc;
+  TSHttpTxnClientReqGet(rh, &cbuf, &chdr);
+  if (TSMimeHdrFieldCreateNamed(cbuf, chdr, "@ATS_PARENT_SELECTION_URL", sizeof("@ATS_PARENT_SELECTION_URL") - 1, &cloc) ==
+      TS_SUCCESS) {
+    if (TSMimeHdrFieldValueStringInsert(cbuf, chdr, cloc, -1, url_string, url_length) == TS_SUCCESS) {
+      TSMimeHdrFieldAppend(cbuf, chdr, cloc);
+    }
+  }
+  TSHandleMLocRelease(cbuf, chdr, cloc);
+
+  return TS_SUCCESS;
+}
+
 void
 TSHttpTxnUntransformedRespCache(TSHttpTxn txnp, int on)
 {

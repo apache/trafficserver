@@ -70,10 +70,25 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   int slen     = 0;
   int num_dirs = 0;
 
+  // Pull out any over-ride URL from the MIME header
+  int or_url_len     = 0;
+  const char *or_url = hrdata->hdr->value_get("@ATS_PARENT_SELECTION_URL", sizeof("@ATS_PARENT_SELECTION_URL") - 1, &or_url_len);
+  // Use the over-ride, if present
+  if (or_url_len > 0) {
+    // Print the over-ride URL
+    slen = (or_url_len > 1023) ? 1023 : or_url_len;
+    strncpy(buffer, or_url, slen);
+    buffer[slen] = 0;
+    Debug("parent_select", "ParentConsistentHash::%s() Using Over-Ride String='%s'.", __func__, buffer);
+    h->update(or_url, or_url_len);
+    goto done;
+  }
+
   // Always hash on '/' because paths returned by ATS are always stripped of it
   h->update("/", 1);
 
   tmp = url->path_get(&len);
+
   if (tmp && len > 0) {
     // Print Original Path
     slen = (len > 1023) ? 1023 : len;
@@ -154,6 +169,7 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
     }
   }
 
+done:
   h->final();
 
   return h->get();
