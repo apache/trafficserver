@@ -188,7 +188,6 @@ public:
   int rolling_offset_hr;
   int rolling_size_mb;
   bool auto_delete_rolled_files;
-  bool custom_logs_enabled;
 
   int sampling_frequency;
   int file_stat_frequency;

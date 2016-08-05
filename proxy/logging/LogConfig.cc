@@ -561,7 +561,6 @@ LogConfig::register_config_callbacks()
     "proxy.config.log.rolling_offset_hr",
     "proxy.config.log.rolling_size_mb",
     "proxy.config.log.auto_delete_rolled_files",
-    "proxy.config.log.custom_logs_enabled",
     "proxy.config.log.xml_config_file",
     "proxy.config.log.hosts_config_file",
     "proxy.config.log.sampling_frequency",
