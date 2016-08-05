@@ -266,12 +266,11 @@ LogCollationClientSM::client_auth(int event, VIO * /* vio ATS_UNUSED */)
 
     return client_send(LOG_COLL_EVENT_SWITCH, NULL);
 
+  case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    Debug("log-coll", "[%d]client::client_auth - closing on VC_EVENT_INACTIVITY_TIMEOUT", m_id);
-    return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR: {
-    Debug("log-coll", "[%d]client::client_auth - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]client::client_auth - TIMEOUT|EOS|ERROR", m_id);
     int64_t read_avail = m_auth_reader->read_avail();
 
     if (read_avail > 0) {
@@ -452,12 +451,11 @@ LogCollationClientSM::client_idle(int event, void * /* data ATS_UNUSED */)
     m_client_state = LOG_COLL_CLIENT_IDLE;
     return EVENT_CONT;
 
+  case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    Debug("log-coll", "[%d]client::client_idle - closing on VC_EVENT_INACTIVITY_TIMEOUT", m_id);
-    return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
-    Debug("log-coll", "[%d]client::client_idle - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]client::client_idle - TIMEOUT|EOS|ERROR", m_id);
     return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
 
   default:
@@ -672,12 +670,11 @@ LogCollationClientSM::client_send(int event, VIO * /* vio ATS_UNUSED */)
     // switch back to client_send
     return client_send(LOG_COLL_EVENT_SWITCH, NULL);
 
+  case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
-    Debug("log-coll", "[%d]client::client_send - closing on VC_EVENT_INACTIVITY_TIMEOUT", m_id);
-    return client_fail(LOG_COLL_EVENT_SWITCH, NULL);
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR: {
-    Debug("log-coll", "[%d]client::client_send - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]client::client_send - TIMEOUT|EOS|ERROR", m_id);
     int64_t read_avail = m_send_reader->read_avail();
 
     if (read_avail > 0) {
