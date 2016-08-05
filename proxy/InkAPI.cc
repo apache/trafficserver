@@ -8146,6 +8146,10 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
     typ = OVERRIDABLE_TYPE_INT;
     ret = &overridableHttpConfig->transaction_active_timeout_in;
     break;
+  case TS_CONFIG_SRV_ENABLED:
+    typ = OVERRIDABLE_TYPE_INT;
+    ret = &overridableHttpConfig->srv_enabled;
+    break;
   // This helps avoiding compiler warnings, yet detect unhandled enum members.
   case TS_CONFIG_NULL:
   case TS_CONFIG_LAST_ENTRY:
@@ -8356,9 +8360,13 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
   if (length == -1) {
     length = strlen(name);
   }
-
   // Lots of string comparisons here, but we avoid quite a few by checking lengths
   switch (length) {
+  case 24:
+    if (!strncmp(name, "proxy.config.srv_enabled", length)) {
+      cnf = TS_CONFIG_SRV_ENABLED;
+    }
+    break;
   case 28:
     if (!strncmp(name, "proxy.config.http.cache.http", length)) {
       cnf = TS_CONFIG_HTTP_CACHE_HTTP;

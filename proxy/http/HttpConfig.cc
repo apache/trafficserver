@@ -1003,6 +1003,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.cache_guaranteed_max_lifetime, "proxy.config.http.cache.guaranteed_max_lifetime");
 
   HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
+  HttpEstablishStaticConfigLongLong(c.oride.srv_enabled, "proxy.config.srv_enabled");
 
   HttpEstablishStaticConfigLongLong(c.oride.freshness_fuzz_time, "proxy.config.http.cache.fuzz.time");
   HttpEstablishStaticConfigLongLong(c.oride.freshness_fuzz_min_time, "proxy.config.http.cache.fuzz.min_time");
@@ -1285,6 +1286,8 @@ HttpConfig::reconfigure()
   params->cache_vary_default_text   = ats_strdup(m_master.cache_vary_default_text);
   params->cache_vary_default_images = ats_strdup(m_master.cache_vary_default_images);
   params->cache_vary_default_other  = ats_strdup(m_master.cache_vary_default_other);
+
+  params->oride.srv_enabled = m_master.oride.srv_enabled;
 
   // open read failure retries
   params->oride.max_cache_open_read_retries = m_master.oride.max_cache_open_read_retries;

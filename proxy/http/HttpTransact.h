@@ -926,8 +926,6 @@ public:
 
     // for negative caching
     bool negative_caching;
-    // for srv_lookup
-    bool srv_lookup;
     // for authenticated content caching
     CacheAuth_t www_auth_content;
 
@@ -1052,7 +1050,6 @@ public:
         client_connection_enabled(true),
         acl_filtering_performed(false),
         negative_caching(false),
-        srv_lookup(false),
         www_auth_content(CACHE_AUTH_NONE),
         remap_plugin_instance(0),
         fp_tsremap_os_response(NULL),

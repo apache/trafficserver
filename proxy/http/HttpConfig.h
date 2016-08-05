@@ -418,6 +418,7 @@ struct OverridableHttpConfigParams {
       cache_guaranteed_min_lifetime(0),
       cache_guaranteed_max_lifetime(31536000),
       cache_max_stale_age(604800),
+      srv_enabled(0),
       keep_alive_no_activity_timeout_in(115),
       keep_alive_no_activity_timeout_out(120),
       transaction_no_activity_timeout_in(30),
@@ -594,6 +595,11 @@ struct OverridableHttpConfigParams {
   MgmtInt cache_guaranteed_min_lifetime;
   MgmtInt cache_guaranteed_max_lifetime;
   MgmtInt cache_max_stale_age;
+
+  //////////////////////////
+  // hostdb/dns variables //
+  //////////////////////////
+  MgmtInt srv_enabled;
 
   ///////////////////////////////////////////////////
   // connection variables. timeouts are in seconds //

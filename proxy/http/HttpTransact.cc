@@ -1372,13 +1372,13 @@ HttpTransact::HandleRequest(State *s)
   }
 
   // if ip in url or cop test page, not do srv lookup.
-  if (s->srv_lookup) {
+  if (s->txn_conf->srv_enabled) {
     if (s->cop_test_page) {
-      s->srv_lookup = false;
+      s->txn_conf->srv_enabled = false;
     } else {
       IpEndpoint addr;
       ats_ip_pton(s->server_info.name, &addr);
-      s->srv_lookup = !ats_is_ip(&addr);
+      s->txn_conf->srv_enabled = !ats_is_ip(&addr);
     }
   }
 
