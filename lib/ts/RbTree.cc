@@ -256,7 +256,7 @@ namespace detail
       self *n      = this;
       self *parent = n->_parent;
 
-      // If @a direction is set, then we need to start at a leaf psuedo-node.
+      // If @a direction is set, then we need to start at a leaf pseudo-node.
       // This is why we need @a parent, otherwise we could just use @a n.
       if (NONE != d) {
         parent = n;

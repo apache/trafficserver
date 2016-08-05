@@ -1136,7 +1136,7 @@ combined across all stripes, then sorted by the random values. The resulting
 array is sampled for every slot in the stripe assignment table by dividing the
 maximum random value by the size of the assignment table and using the value
 midway between each multiple of the result of the division. The coalesced
-psuedo-random sequence is scanned for each sample in turn and the first number
+pseudo-random sequence is scanned for each sample in turn and the first number
 not greater than the sample is found. The stripe associated with that value is
 used for that assignment table entry.
 

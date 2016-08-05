@@ -646,7 +646,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
   }
 
   if (!is_trailing_header) {
-    // Check psuedo headers
+    // Check pseudo headers
     if (hdr->fields_count() >= 4) {
       if (hdr->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME) == NULL ||
           hdr->field_find(HTTP2_VALUE_METHOD, HTTP2_LEN_METHOD) == NULL ||
@@ -657,7 +657,7 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
         return HTTP2_ERROR_PROTOCOL_ERROR;
       }
     } else {
-      // Psuedo headers is insufficient
+      // Pseudo headers is insufficient
       return HTTP2_ERROR_PROTOCOL_ERROR;
     }
   }
