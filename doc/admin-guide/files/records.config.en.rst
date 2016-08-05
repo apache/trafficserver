@@ -938,7 +938,7 @@ ip-resolve
    ``0`` Never use HTTP/1.1.
    ``1`` Always use HTTP/1.1.
    ``2`` Use HTTP/1.1 with origin connections only if the server has previously
-         eturned HTTP/1.1.
+         returned HTTP/1.1.
    ``3`` If the client request is HTTP/1.1 and the origin server has previously
          returned HTTP/1.1, then use HTTP/1.1 for origin server connections.
    ===== ======================================================================
