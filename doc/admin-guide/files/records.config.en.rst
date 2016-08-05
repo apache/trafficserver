@@ -2625,34 +2625,6 @@ Logging Configuration
    others, even if specified in the configuration file. Permissions for
    existing log files are not changed when the configuration is modified.
 
-.. ts:cv:: CONFIG proxy.config.log.custom_logs_enabled INT 1
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) custom logging.
-
-.. note::
-    The following defaults (with the format``CONFIG proxy.config.log.[format].[default]`` have been removed from ``records.config``.
-    They can be accessed by editing :file:`logs_xml.config`.
-
-    - ``log_enabled`` INT 1
-        Enables (``1``) or disables (``0``) the file format.
-
-    - ``log_is_ascii`` INT 0
-        The log file type:
-           - ``1`` = ASCII
-           - ``0`` = binary
-
-    - ``log_name`` STRING [format]
-        The filename (ex. :ref:`squid log <admin-logging-format-squid>`).
-
-    - ``log_header`` STRING NULL
-        The file header text (ex. :ref:`squid log <admin-logging-format-squid>`).
-
-    The format can be either ``squid`` (:ref:`admin-logging-format-squid`),
-    ``common`` (:ref:`admin-logging-format-common`),
-    ``extended`` (:ref:`admin-logging-format-extended`),
-    or ``extended2`` (:ref:`admin-logging-format-extended2`).
-
 .. ts:cv:: LOCAL proxy.local.log.collation_mode INT 0
    :reloadable:
 

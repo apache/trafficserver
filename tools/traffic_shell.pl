@@ -523,8 +523,6 @@ sub show_logging {
   my $preproc_threads = get_on_off("proxy.config.log.collation_preproc_threads");
   my $orphan_space = get_int("proxy.config.log.max_space_mb_for_orphan_logs");
 
-  my $custom_log = get_on_off("proxy.config.log.custom_logs_enabled");
-
   my $rolling = get_on_off("proxy.config.log.rolling_enabled");
   my $roll_offset_hr = get_int("proxy.config.log.rolling_offset_hr");
   my $roll_interval = get_int("proxy.config.log.rolling_interval_sec");
@@ -544,8 +542,6 @@ Log Collation ---------------------------- $collation_mode
   Host Tagged ---------------------------- $host_tag
   Preproc Threads ------------------------ $preproc_threads
   Space Limit for Orphan Files ----------- $orphan_space MB
-
-Custom Logs ------------------------------ $custom_log
 
 Rolling ---------------------------------- $rolling
   Roll Offset Hour ----------------------- $roll_offset_hr
