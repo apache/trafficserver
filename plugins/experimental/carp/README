@@ -1,0 +1,142 @@
+This is a plugin for Traffic Server, that provides distributed cache support via
+CARP.   The plugin is a global plugin which forwards all requests except those
+where the host in the incoming request is found in the blacklist list of servers.
+It periodically will fetch a healthcheck URL (expects 200 response) from each 
+configured peer to determine if the peer is available to accept requests.  
+
+To use this plugin, add the carp plugin to the plugin.config file:
+
+   carp.so carp.config
+
+  The carp.config file is read by the carp plugin to define the servers which are
+participating in the cluster among other settings.
+
+  The plugin requires two configuration sections (in .ini type format), each 
+formatted differently from each other:
+
+[Servers] Section contains the list of servers where client request will be forwarded
+
+   Each entry (line) in this section must conform to:
+      [http[s]://]host[:port] [weight=#]
+
+   host - name of server (e.g. host1.abc.com)
+   port - server port to receive requests (defaults to 80 if not specified)
+   weight - weight factor to increase/decrease traffic to host.  Defaults to 1.
+   group - server group if replication is enabled
+
+   Note: weight factor is multiplied by calculated hash score for the server.  It
+         only makes sense to adjust these if all of your servers are not of equal
+         performance.
+ 
+[Values] Section contains key-value pair items
+   
+   Settings:
+      healthcheck -  port and path of healthcheck used to determine if server is
+                     available to receive requests.  Default, empty/disabled; 
+                     meaning the plugin will not forward to any peers.  Two 
+                     substitutions are available:
+
+                     * {host} - will be replaced with the peer host name
+                     * {port} - will be replaced with the peer's port
+
+                     Example:
+                        healthcheck=http://{host}:{port}/status.html
+                        
+      healthfreq -   number of seconds between healthcheck requests.  Smaller values 
+                     will allow servers to be taken out of rotation more quickly 
+                     (by disabling the servers healthcheck).  Default 30.
+                     
+      reloadfreq -   number of seconds between config reload checks. Default 30.
+
+      hctimeout  -   number of timeout seconds for health check request. Default 5.
+      
+      blacklist -    comma separated list of host names which the plugin will 
+                     NOT hash/forward.  Note: whitelist takes precedence over 
+                     blacklist.
+      whitelist -    comma separated list of host names which the plugin will 
+                     exclusively hash/forward.  Note: whitelist takes precedence 
+                     over blacklist.
+      mode -         controls which URL plugin will hash (pre or post remap).  Valid 
+                     values:
+                       pre-remap - Default mode (if mode empty or not present).
+                                   Plugin hashes client request, and forwards 
+                                   request to selected peer.
+                       post-remap - Plugin hashes post-remapped request, 'saves'
+                                   origin server destination into header 
+                                   ATS-Carp-Forward, forwards request to selected
+                                   peer.  Peer validates request came in on
+                                   'allowfwdport' port, then forwards the request.
+      allowfwdport - When mode is post-remap, plugin validates request came in on
+                     the specified port.  This feature prevents the plugin from being
+                     used/abused as a forward proxy.  This port should NOT be exposed
+                     to the public.
+      replicationfactor - The number of hosts across which to replicate a given object.
+                          When enabled, as incoming requests for object hit secondary,
+                          tertiary, etc. owners, these hosts will also cache the object
+                          locally.
+ 
+Status
+   The plugin will dump it's configuration/status in response to a request where
+   the ATS-Carp-Routed header's value is 'dump'.  Example:
+
+   curl "http://{proxyserver}/" -H "ATS-Carp-Routed: dump"
+
+Debugging
+   *** WARNING *** You will need to run the carp plugin with traffic_manager for it to detect
+   itself and to forward directly to the origin.  It will not work by running traffic_server directly!
+
+   Note the following tags available for debugging configuration/operation (use with
+   proxy.config.diags.debug.enabled):
+
+   carp.init - plugin initialization related messages
+   carp.hook - plugin messages triggered on every request serviced
+   carp.health - plugin messages related to the periodic healthchecks
+   carp.fetch - plugin messages related to the periodic healthcheck thread's HTTP fetch function
+
+   Example records.config:
+   CONFIG proxy.config.diags.debug.enabled INT 1
+
+   CONFIG proxy.config.diags.debug.tags  STRING carp.*  #enables all carp messages
+   or
+   CONFIG proxy.config.diags.debug.tags  STRING carp.init|carp.health #enables all init and health
+
+Notes
+   The plugin must avoid forwarding loop and inserts its own header 
+   (ATS-Carp-Routed) in each request to accomplish this.
+
+   When running in post-remap mode, the plugin inserts a ATS-Carp-Forward header
+   which contains an encoded version of the destination origin server.  The plugin
+   forwards requests to this destination when the header is present AND the request
+   was received on port 'allowfwdport'.
+
+   If whitelist is enabled/present, the plugin will also hash requests which contain
+   ATS-Carpable header with a value of 1.
+
+Cache Hits/Misses vs Carp Hits/Misses
+   Because of the way in which carp reroutes requests, cache hit/miss values are not directly
+   representative of overall hit/miss rates because of double counting of cache misses.  To address
+   this, carp also counts the number of requests it forwards to another carp peer and the number
+   it does not forward.  Because the cache double counting only happens when a host forwards its 
+   request to another carp peer this allows us to calculate carp hit and miss as follows:
+
+   carp_hit = cache_hit (obtained from ats)
+   carp_miss = cache_miss (obtained from ats) - carp_forwarded
+
+   carp_forwarded and carp_noforwarded are included in dump messages. Global carp hit and miss rates 
+   can be obtained by finding the sum of each of these values over all hosts in the carp pool. Carp
+   also logs whether or not each transaction is forwarded and if so to which peer. This forwarding information
+   can be surfaced in logs by tracking the ATS-Carp-Forward-Status header in logs_xml.config with 
+   %<{ATS-Carp-Forward-Status}pqh> and tracking CARP_FORWARDED vs CARP_NOFORWARDED values.
+
+An Example Config:
+[Servers]
+# port 4080 on host1.yahoo.com with weight factor of 2
+host1.yahoo.com:4080 weight=2      
+# port 80 on host2.yahoo.com with (default) weight factor of 1
+host2.yahoo.com                    
+
+[Values]
+healthcheck=http://healthcheck.cacheservice.com:8080/status.html
+healthfreq=30
+blacklist=healthcheck.cacheservice.com,hc.cacheservice.com
+mode=pre-remap
