@@ -252,7 +252,13 @@ private:
 
   int state_read_connection_preface(int, void *);
   int state_start_frame_read(int, void *);
+  int do_start_frame_read(Http2ErrorCode &ret_error);
   int state_complete_frame_read(int, void *);
+  int do_complete_frame_read();
+  // state_start_frame_read and state_complete_frame_read are set up as
+  // event handler.  Both feed into state_process_frame_read which may iterate
+  // if there are multiple frames ready on the wire
+  int state_process_frame_read(int event, VIO *vio, bool inside_frame);
 
   int64_t con_id;
   int64_t total_write_len;

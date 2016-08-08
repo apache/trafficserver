@@ -86,8 +86,6 @@ Http2ClientSession::destroy()
 void
 Http2ClientSession::free()
 {
-  DebugHttp2Ssn("session free");
-
   if (client_vc) {
     release_netvc();
     client_vc->do_io_close();
@@ -101,6 +99,8 @@ Http2ClientSession::free()
     kill_me = true;
     return;
   }
+
+  DebugHttp2Ssn("session free");
 
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_SESSION_COUNT, this->mutex->thread_holding);
 
@@ -385,71 +385,57 @@ Http2ClientSession::state_start_frame_read(int event, void *edata)
 
   STATE_ENTER(&Http2ClientSession::state_start_frame_read, event);
   ink_assert(event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_READ_READY);
+  return state_process_frame_read(event, vio, false);
+}
 
-  if (this->sm_reader->read_avail() >= (int64_t)HTTP2_FRAME_HEADER_LEN) {
-    uint8_t buf[HTTP2_FRAME_HEADER_LEN];
-    unsigned nbytes;
+int
+Http2ClientSession::do_start_frame_read(Http2ErrorCode &ret_error)
+{
+  ret_error = HTTP2_ERROR_NO_ERROR;
+  ink_release_assert(this->sm_reader->read_avail() >= (int64_t)HTTP2_FRAME_HEADER_LEN);
 
-    DebugHttp2Ssn("receiving frame header");
-    nbytes = copy_from_buffer_reader(buf, this->sm_reader, sizeof(buf));
+  uint8_t buf[HTTP2_FRAME_HEADER_LEN];
+  unsigned nbytes;
 
-    if (!http2_parse_frame_header(make_iovec(buf), this->current_hdr)) {
-      DebugHttp2Ssn("frame header parse failure");
-      this->do_io_close();
-      return 0;
-    }
+  DebugHttp2Ssn("receiving frame header");
+  nbytes = copy_from_buffer_reader(buf, this->sm_reader, sizeof(buf));
 
-    DebugHttp2Ssn("frame header length=%u, type=%u, flags=0x%x, streamid=%u", (unsigned)this->current_hdr.length,
-                  (unsigned)this->current_hdr.type, (unsigned)this->current_hdr.flags, this->current_hdr.streamid);
-
-    this->sm_reader->consume(nbytes);
-
-    if (!http2_frame_header_is_valid(this->current_hdr,
-                                     this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
-      SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-      if (!this->connection_state.is_state_closed()) {
-        this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
-      }
-      return 0;
-    }
-
-    // If we know up front that the payload is too long, nuke this connection.
-    if (this->current_hdr.length > this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
-      SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-      if (!this->connection_state.is_state_closed()) {
-        this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_FRAME_SIZE_ERROR);
-      }
-      return 0;
-    }
-
-    // Allow only stream id = 0 or streams started by client.
-    if (this->current_hdr.streamid != 0 && !http2_is_client_streamid(this->current_hdr.streamid)) {
-      SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-      if (!this->connection_state.is_state_closed()) {
-        this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
-      }
-      return 0;
-    }
-
-    // CONTINUATIONs MUST follow behind HEADERS which doesn't have END_HEADERS
-    Http2StreamId continued_stream_id = this->connection_state.get_continued_stream_id();
-
-    if (continued_stream_id != 0 &&
-        (continued_stream_id != this->current_hdr.streamid || this->current_hdr.type != HTTP2_FRAME_TYPE_CONTINUATION)) {
-      SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
-      if (!this->connection_state.is_state_closed()) {
-        this->connection_state.send_goaway_frame(this->current_hdr.streamid, HTTP2_ERROR_PROTOCOL_ERROR);
-      }
-      return 0;
-    }
-
-    HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_complete_frame_read);
-    if (this->sm_reader->read_avail() >= this->current_hdr.length) {
-      return this->handleEvent(VC_EVENT_READ_READY, vio);
-    }
+  if (!http2_parse_frame_header(make_iovec(buf), this->current_hdr)) {
+    DebugHttp2Ssn("frame header parse failure");
+    this->do_io_close();
+    return -1;
   }
 
-  vio->reenable();
+  DebugHttp2Ssn("frame header length=%u, type=%u, flags=0x%x, streamid=%u", (unsigned)this->current_hdr.length,
+                (unsigned)this->current_hdr.type, (unsigned)this->current_hdr.flags, this->current_hdr.streamid);
+
+  this->sm_reader->consume(nbytes);
+
+  if (!http2_frame_header_is_valid(this->current_hdr, this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE))) {
+    ret_error = HTTP2_ERROR_PROTOCOL_ERROR;
+    return -1;
+  }
+
+  // If we know up front that the payload is too long, nuke this connection.
+  if (this->current_hdr.length > this->connection_state.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE)) {
+    ret_error = HTTP2_ERROR_FRAME_SIZE_ERROR;
+    return -1;
+  }
+
+  // Allow only stream id = 0 or streams started by client.
+  if (this->current_hdr.streamid != 0 && !http2_is_client_streamid(this->current_hdr.streamid)) {
+    ret_error = HTTP2_ERROR_PROTOCOL_ERROR;
+    return -1;
+  }
+
+  // CONTINUATIONs MUST follow behind HEADERS which doesn't have END_HEADERS
+  Http2StreamId continued_stream_id = this->connection_state.get_continued_stream_id();
+
+  if (continued_stream_id != 0 &&
+      (continued_stream_id != this->current_hdr.streamid || this->current_hdr.type != HTTP2_FRAME_TYPE_CONTINUATION)) {
+    ret_error = HTTP2_ERROR_PROTOCOL_ERROR;
+    return -1;
+  }
   return 0;
 }
 
@@ -457,30 +443,66 @@ int
 Http2ClientSession::state_complete_frame_read(int event, void *edata)
 {
   VIO *vio = (VIO *)edata;
-
   STATE_ENTER(&Http2ClientSession::state_complete_frame_read, event);
   ink_assert(event == VC_EVENT_READ_COMPLETE || event == VC_EVENT_READ_READY);
-
   if (this->sm_reader->read_avail() < this->current_hdr.length) {
     vio->reenable();
     return 0;
   }
-
   DebugHttp2Ssn("completed frame read, %" PRId64 " bytes available", this->sm_reader->read_avail());
 
+  return state_process_frame_read(event, vio, true);
+}
+
+int
+Http2ClientSession::do_complete_frame_read()
+{
   // XXX parse the frame and handle it ...
+  ink_release_assert(this->sm_reader->read_avail() >= this->current_hdr.length);
 
   Http2Frame frame(this->current_hdr, this->sm_reader);
-
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_RECV, &frame);
   this->sm_reader->consume(this->current_hdr.length);
 
-  HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
-  if (this->sm_reader->is_read_avail_more_than(0)) {
-    return this->handleEvent(VC_EVENT_READ_READY, vio);
+  return 0;
+}
+
+int
+Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_frame)
+{
+  if (inside_frame) {
+    do_complete_frame_read();
   }
 
-  vio->reenable();
+  while (this->sm_reader->read_avail() >= (int64_t)HTTP2_FRAME_HEADER_LEN) {
+    // Return if there was an error
+    Http2ErrorCode err;
+    if (do_start_frame_read(err) < 0) {
+      // send an error if specified.  Otherwise, just go away
+      if (err > HTTP2_ERROR_NO_ERROR) {
+        SCOPED_MUTEX_LOCK(lock, this->connection_state.mutex, this_ethread());
+        if (!this->connection_state.is_state_closed()) {
+          this->connection_state.send_goaway_frame(this->current_hdr.streamid, err);
+        }
+      }
+      return 0;
+    }
+
+    // If there is no more data to finish the frame, set up the event handler and reenable
+    if (this->sm_reader->read_avail() < this->current_hdr.length) {
+      HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_complete_frame_read);
+      break;
+    }
+    do_complete_frame_read();
+
+    // Set the event handler if there is no more data to process a new frame
+    HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
+  }
+
+  // If the client hasn't shut us down, reenable
+  if (!this->is_client_closed()) {
+    vio->reenable();
+  }
   return 0;
 }
 
