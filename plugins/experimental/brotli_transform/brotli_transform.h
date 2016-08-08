@@ -28,7 +28,6 @@
 #include <atscppapi/PluginInit.h>
 #include <atscppapi/Logger.h>
 #include <brotli/enc/encode.h>
-#include "brotli_transform_out.h"
 
 using namespace atscppapi;
 using namespace atscppapi::transformations;
@@ -41,10 +40,11 @@ public:
   void handleReadResponseHeaders(Transaction &);
   void consume(const string &);
   void handleInputComplete();
-  void transformProduce(const string &);
-  virtual ~BrotliTransformationPlugin() {}
+  virtual ~BrotliTransformationPlugin();
+
 private:
-  string buffer_;
+  brotli::BrotliParams params;
+  brotli::BrotliCompressor *compressor;
 };
 
 class GlobalHookPlugin : public GlobalPlugin

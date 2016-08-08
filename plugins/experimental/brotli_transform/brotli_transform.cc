@@ -17,7 +17,6 @@ limitations under the License.
 */
 
 #include "brotli_transform.h"
-#include "brotli_transform_out.h"
 #define TAG "brotli_transformation"
 
 namespace
@@ -30,6 +29,13 @@ BrotliTransformationPlugin::BrotliTransformationPlugin(Transaction &transaction)
   : TransformationPlugin(transaction, RESPONSE_TRANSFORMATION)
 {
   registerHook(HOOK_READ_RESPONSE_HEADERS);
+  params.quality = BROTLI_QUALITY;
+  compressor     = new brotli::BrotliCompressor(params);
+}
+
+BrotliTransformationPlugin::~BrotliTransformationPlugin()
+{
+  delete compressor;
 }
 
 void
@@ -46,28 +52,39 @@ BrotliTransformationPlugin::handleReadResponseHeaders(Transaction &transaction)
 void
 BrotliTransformationPlugin::consume(const string &data)
 {
-  buffer_.append(data);
-}
+  const size_t blockSize = compressor->input_block_size();
+  size_t end             = data.size();
+  size_t pos             = 0, copySize;
+  const char *buf        = data.c_str();
 
-void
-BrotliTransformationPlugin::transformProduce(const string &data)
-{
-  produce(data);
+  const char *p;
+  const uint8_t *readData;
+  size_t out_bytes = 0;
+  uint8_t *output;
+  while (pos != end) {
+    copySize = min(blockSize, end - pos);
+    p        = buf + pos;
+    readData = reinterpret_cast<const uint8_t *>(p);
+
+    compressor->CopyInputToRingBuffer(copySize, readData);
+    pos += copySize;
+
+    out_bytes = 0;
+    compressor->WriteBrotliData(false, true, &out_bytes, &output);
+    if (out_bytes > 0) {
+      produce(string((const char *)output, out_bytes));
+    }
+  }
 }
 
 void
 BrotliTransformationPlugin::handleInputComplete()
 {
-  brotli::BrotliParams params;
-  params.quality = BROTLI_QUALITY;
-
-  const char *dataPtr = buffer_.c_str();
-  brotli::BrotliMemIn brotliIn(dataPtr, buffer_.length());
-  BrotliTransformOut brotliTransformOut(this);
-
-  if (!brotli::BrotliCompress(params, &brotliIn, &brotliTransformOut)) {
-    TS_ERROR(TAG, "brotli compress failed.");
-    produce(buffer_);
+  size_t out_bytes = 0;
+  uint8_t *output;
+  compressor->WriteBrotliData(true, false, &out_bytes, &output);
+  if (out_bytes > 0) {
+    produce(string((const char *)output, out_bytes));
   }
   setOutputComplete();
 }

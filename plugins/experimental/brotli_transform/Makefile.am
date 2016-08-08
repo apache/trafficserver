@@ -26,7 +26,7 @@ AM_CXXFLAGS += \
 
 pkglib_LTLIBRARIES = brotli_transform.la
 
-brotli_transform_la_SOURCES = brotli_transform_out.cc brotli_transform.cc
+brotli_transform_la_SOURCES = brotli_transform.cc
 brotli_transform_la_LDFLAGS = \
   $(TS_PLUGIN_LDFLAGS) \
   -L$(top_builddir)/lib/atscppapi/src
