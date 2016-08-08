@@ -7,14 +7,14 @@
   "License"); you may not use this file except in compliance
   with the License.  You may obtain a copy of the License at
 
-      http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
- */
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
 #include "brotli_transform.h"
 #include "brotli_transform_out.h"
@@ -22,7 +22,8 @@
 
 namespace
 {
-unsigned int BROTLI_QUALITY = 9;
+unsigned int BROTLI_QUALITY;
+vector<string> BLACKLIST_OF_COMPRESS_FILE_TYPE;
 }
 
 BrotliTransformationPlugin::BrotliTransformationPlugin(Transaction &transaction)
@@ -76,7 +77,7 @@ GlobalHookPlugin::handleReadResponseHeaders(Transaction &transaction)
 {
   if (isBrotliSupported(transaction)) {
     TS_DEBUG(TAG, "Brotli is supported.");
-    if (isText(transaction)) {
+    if (!inCompressBlacklist(transaction)) {
       checkContentEncoding(transaction);
       if (osContentEncoding_ == GZIP || osContentEncoding_ == NONENCODE) {
         if (osContentEncoding_ == GZIP) {
@@ -91,13 +92,15 @@ GlobalHookPlugin::handleReadResponseHeaders(Transaction &transaction)
 }
 
 bool
-GlobalHookPlugin::isText(Transaction &transaction)
+GlobalHookPlugin::inCompressBlacklist(Transaction &transaction)
 {
   Headers &hdr       = transaction.getServerResponse().getHeaders();
   string contentType = hdr.values("Content-Type");
-  if ((contentType.find("text") != string::npos) || (contentType.find("javascript") != string::npos) ||
-      (contentType.find("json") != string::npos)) {
-    return true;
+  for (vector<string>::iterator it = BLACKLIST_OF_COMPRESS_FILE_TYPE.begin(); it != BLACKLIST_OF_COMPRESS_FILE_TYPE.end(); it++) {
+    if (contentType.find(*it) != string::npos) {
+      TS_DEBUG(TAG, "Do not compress for url %s", transaction.getClientRequest().getUrl().getUrlString().c_str());
+      return true;
+    }
   }
   return false;
 }
@@ -129,10 +132,50 @@ GlobalHookPlugin::checkContentEncoding(Transaction &transaction)
   }
 }
 
+static void
+brotliPluginInit(int argc, const char *argv[])
+{
+  if (argc > 1) {
+    int c;
+    static const struct option longopts[] = {
+      {const_cast<char *>("quality"), required_argument, NULL, 'q'},
+      {const_cast<char *>("compress-files-type-blacklist"), required_argument, NULL, 't'},
+      {NULL, 0, NULL, 0},
+    };
+
+    int longindex = 0;
+    while ((c = getopt_long(argc, (char *const *)argv, "qt:", longopts, &longindex)) != -1) {
+      switch (c) {
+      case 'q': {
+        BROTLI_QUALITY = atoi(optarg);
+        TS_DEBUG(TAG, "compress quality is: %d", BROTLI_QUALITY);
+        break;
+      }
+      case 't': {
+        TS_DEBUG(TAG, "blacklist of compress file type is:[%s]", optarg);
+        stringstream ss(optarg);
+        string oneType;
+        while (getline(ss, oneType, ',')) {
+          BLACKLIST_OF_COMPRESS_FILE_TYPE.push_back(oneType);
+        }
+        break;
+      }
+      default:
+        break;
+      }
+    }
+  } else {
+    TS_DEBUG(TAG, "Set default value of compress quality (9) and file type blacklist (image)");
+    BROTLI_QUALITY = 9;
+    BLACKLIST_OF_COMPRESS_FILE_TYPE.push_back("image");
+  }
+}
+
 void
 TSPluginInit(int argc, const char *argv[])
 {
   RegisterGlobalPlugin("CPP_Brotli_Transform", "apache", "dev@trafficserver.apache.org");
   TS_DEBUG(TAG, "TSPluginInit");
+  brotliPluginInit(argc, argv);
   new GlobalHookPlugin();
 }

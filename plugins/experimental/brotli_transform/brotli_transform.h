@@ -18,8 +18,10 @@
 #ifndef _BROTLI_TRANSFORM_PLUGIN_
 #define _BROTLI_TRANSFORM_PLUGIN_
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <zlib.h>
+#include <getopt.h>
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransformationPlugin.h>
 #include <atscppapi/GzipInflateTransformation.h>
@@ -53,7 +55,7 @@ public:
 
 private:
   bool isBrotliSupported(Transaction &);
-  bool isText(Transaction &);
+  bool inCompressBlacklist(Transaction &);
   void checkContentEncoding(Transaction &);
   enum ContentEncoding { GZIP, NONENCODE, OTHERENCODE };
   ContentEncoding osContentEncoding_;
