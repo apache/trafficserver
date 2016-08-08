@@ -801,7 +801,7 @@ UnixNetVConnection::reenable(VIO *vio)
     return;
   EThread *t = vio->mutex->thread_holding;
   ink_assert(t == this_ethread());
-  ink_assert(!closed);
+  ink_release_assert(!closed);
   if (nh->mutex->thread_holding == t) {
     if (vio == &read.vio) {
       ep.modify(EVENTIO_READ);
@@ -915,7 +915,7 @@ void
 UnixNetVConnection::set_enabled(VIO *vio)
 {
   ink_assert(vio->mutex->thread_holding == this_ethread() && thread);
-  ink_assert(!closed);
+  ink_release_assert(!closed);
   STATE_FROM_VIO(vio)->enabled = 1;
 #ifdef INACTIVITY_TIMEOUT
   if (!inactivity_timeout && inactivity_timeout_in) {

@@ -178,6 +178,12 @@ public:
   }
   virtual const char *get_protocol_string() const = 0;
 
+  bool
+  is_client_closed() const
+  {
+    return get_netvc() == NULL;
+  }
+
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so that we can make the best
   // use of internal alignment padding.
