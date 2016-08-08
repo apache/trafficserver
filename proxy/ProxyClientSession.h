@@ -180,6 +180,12 @@ public:
   void set_session_active();
   void clear_session_active();
 
+  bool
+  is_client_closed() const
+  {
+    return get_netvc() == NULL;
+  }
+
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so that we can make the best
   // use of internal alignment padding.
