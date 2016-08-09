@@ -102,6 +102,7 @@ public:
   {
     return body_done;
   }
+
   void
   mark_body_done()
   {
@@ -119,11 +120,13 @@ public:
   {
     return _id;
   }
+
   const Http2StreamState
   get_state() const
   {
     return _state;
   }
+
   bool change_state(uint8_t type, uint8_t flags);
 
   void
@@ -131,6 +134,7 @@ public:
   {
     _id = sid;
   }
+
   void
   update_initial_rwnd(Http2WindowSize new_size)
   {
@@ -156,6 +160,7 @@ public:
   {
     data_length += length;
   }
+
   bool
   payload_length_is_valid() const
   {
@@ -209,6 +214,7 @@ public:
   {
     return chunked;
   }
+
   bool response_initialize_data_handling();
   bool response_process_data();
   bool response_is_data_available() const;

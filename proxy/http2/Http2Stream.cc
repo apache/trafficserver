@@ -58,6 +58,7 @@ Http2Stream::main_event_handler(int event, void *edata)
   } else if (e == write_event) {
     write_event = NULL;
   }
+
   switch (event) {
   case VC_EVENT_ACTIVE_TIMEOUT:
   case VC_EVENT_INACTIVITY_TIMEOUT:
@@ -119,6 +120,7 @@ Http2Stream::main_event_handler(int event, void *edata)
     break;
   }
   }
+
   return 0;
 }
 
@@ -379,18 +381,19 @@ Http2Stream::initiating_close()
 
 /* Replace existing event only if the new event is different than the inprogress event */
 Event *
-Http2Stream::send_tracked_event(Event *in_event, int send_event, VIO *vio)
+Http2Stream::send_tracked_event(Event *event, int send_event, VIO *vio)
 {
-  Event *event = in_event;
   if (event != NULL) {
     if (event->callback_event != send_event) {
       event->cancel();
       event = NULL;
     }
   }
+
   if (event == NULL) {
     event = this_ethread()->schedule_imm(this, send_event, vio);
   }
+
   return event;
 }
 
@@ -486,6 +489,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       total_added += bytes_added;
     }
   }
+
   bool is_done = (this->response_process_data());
   if (total_added > 0 || is_done) {
     write_vio.ndone += total_added;
@@ -556,6 +560,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
 
     Debug("http2_stream", "write update stream_id=%d event=%d", this->get_id(), send_event);
   }
+
   return retval;
 }
 
@@ -626,6 +631,7 @@ check_stream_thread(Continuation *cont)
     return true;
   }
 }
+
 bool
 check_continuation(Continuation *cont)
 {
@@ -724,6 +730,7 @@ Http2Stream::clear_inactive_timer()
     inactive_event = NULL;
   }
 }
+
 void
 Http2Stream::clear_active_timer()
 {
@@ -732,6 +739,7 @@ Http2Stream::clear_active_timer()
     active_event = NULL;
   }
 }
+
 void
 Http2Stream::clear_timers()
 {
