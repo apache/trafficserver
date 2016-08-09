@@ -194,7 +194,7 @@ PollCont::pollEvent(int event, Event *e)
   tv.tv_nsec = 1000000 * (poll_timeout % 1000);
   pollDescriptor->result =
     kevent(pollDescriptor->kqueue_fd, NULL, 0, pollDescriptor->kq_Triggered_Events, POLL_DESCRIPTOR_SIZE, &tv);
-  NetDebug("iocore_net_poll", "[PollCont::pollEvent] kueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
+  NetDebug("iocore_net_poll", "[PollCont::pollEvent] kqueue_fd: %d, timeout: %d, results: %d", pollDescriptor->kqueue_fd,
            poll_timeout, pollDescriptor->result);
 #elif TS_USE_PORT
   int retval;
