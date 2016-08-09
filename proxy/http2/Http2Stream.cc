@@ -594,7 +594,7 @@ Http2Stream::reenable(VIO *vio)
 void
 Http2Stream::destroy()
 {
-  Debug("http2_stream", "Destroy stream %d. Sent %d bytes", this->_id, this->bytes_sent);
+  Debug("http2_stream", "Destroy stream %d, sent %" PRIu64 " bytes", this->_id, this->bytes_sent);
 
   // Clean up the write VIO in case of inactivity timeout
   this->do_io_write(NULL, 0, NULL);

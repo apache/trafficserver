@@ -59,11 +59,11 @@ public:
       _state(HTTP2_STREAM_STATE_IDLE),
       trailing_header(false),
       body_done(false),
-      data_length(0),
       closed(false),
       sent_delete(false),
-      bytes_sent(0),
       chunked(false),
+      data_length(0),
+      bytes_sent(0),
       cross_thread_event(NULL),
       active_timeout(0),
       active_event(NULL),
@@ -110,7 +110,7 @@ public:
   }
 
   void
-  update_sent_count(int num_bytes)
+  update_sent_count(unsigned num_bytes)
   {
     bytes_sent += num_bytes;
   }
@@ -246,14 +246,17 @@ private:
   HTTPHdr _req_header;
   VIO read_vio;
   VIO write_vio;
+
   bool trailing_header;
   bool body_done;
-  uint64_t data_length;
   bool closed;
   bool sent_delete;
-  int bytes_sent;
-  ChunkedHandler chunked_handler;
   bool chunked;
+
+  uint64_t data_length;
+  uint64_t bytes_sent;
+
+  ChunkedHandler chunked_handler;
   Event *cross_thread_event;
 
   // Support stream-specific timeouts
