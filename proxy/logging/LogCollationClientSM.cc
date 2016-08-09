@@ -551,8 +551,8 @@ LogCollationClientSM::client_open(int event, NetVConnection *net_vc)
     ink_assert(net_vc != NULL);
     m_host_vc = net_vc;
 
-    // assign a non-default-inactivity-timeout
-    net_vc->set_inactivity_timeout(HRTIME_SECONDS(86400));
+    // assign an explicit inactivity timeout so that it will not get the default value later
+    m_host_vc->set_inactivity_timeout(HRTIME_SECONDS(86400));
 
     // setup a client reader just for detecting a host disconnnect
     // (iocore should call back this function with and EOS/ERROR)
