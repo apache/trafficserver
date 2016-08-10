@@ -61,21 +61,30 @@ public:
   //
   void orphan_write_and_try_delete(LogBuffer *lb);
 
-  char const *
+  const char *
   name() const
   {
     return m_name ? m_name : "UNKNOWN";
   }
+
+  uint64_t
+  signature() const
+  {
+    return m_object_signature;
+  }
+
   IpAddr const &
   ip_addr() const
   {
     return m_ip;
   }
+
   in_port_t
   port() const
   {
     return m_port;
   }
+
   char const *
   ipstr() const
   {
@@ -99,7 +108,6 @@ public:
 private:
   void clear();
   bool authenticated();
-  void create_orphan_LogFile_object();
 
 private:
   char *m_object_filename;
@@ -143,6 +151,7 @@ public:
   {
     return m_host_list.head;
   }
+
   LogHost *
   next(LogHost *here)
   {
