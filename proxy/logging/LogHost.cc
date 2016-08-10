@@ -46,6 +46,25 @@
 #define PING true
 #define NOPING false
 
+static Ptr<LogFile>
+make_orphan_logfile(LogHost *lh, const char *filename)
+{
+  const char *ext   = "orphan";
+  unsigned name_len = (unsigned)(strlen(filename) + strlen(lh->name()) + strlen(ext) + 16);
+  char *name_buf    = (char *)ats_malloc(name_len);
+
+  // NT: replace ':'s with '-'s.  This change is necessary because
+  // NT doesn't like filenames with ':'s in them.  ^_^
+  snprintf(name_buf, name_len, "%s%s%s-%u.%s", filename, LOGFILE_SEPARATOR_STRING, lh->name(), lh->port(), ext);
+
+  // XXX should check for conflicts with orphan filename
+
+  Ptr<LogFile> orphan(new LogFile(name_buf, NULL, LOG_FILE_ASCII, lh->signature()));
+
+  ats_free(name_buf);
+  return orphan;
+}
+
 /*-------------------------------------------------------------------------
   LogHost
   -------------------------------------------------------------------------*/
@@ -78,7 +97,7 @@ LogHost::LogHost(const LogHost &rhs)
     m_log_collation_client_sm(NULL)
 {
   memcpy(m_ipstr, rhs.m_ipstr, sizeof(m_ipstr));
-  create_orphan_LogFile_object();
+  m_orphan_file = make_orphan_logfile(this, m_object_filename);
 }
 
 LogHost::~LogHost()
@@ -224,28 +243,6 @@ LogHost::disconnect()
     m_log_collation_client_sm = NULL;
   }
   m_connected = false;
-}
-
-void
-LogHost::create_orphan_LogFile_object()
-{
-  // We expect that no-one else is holding any refcounts on the
-  // orphan file so that is will be releases when we replace it
-  // below.
-  ink_assert(m_orphan_file->refcount() == 1);
-
-  const char *orphan_ext = "orphan";
-  unsigned name_len      = (unsigned)(strlen(m_object_filename) + strlen(name()) + strlen(orphan_ext) + 16);
-  char *name_buf         = (char *)ats_malloc(name_len);
-
-  // NT: replace ':'s with '-'s.  This change is necessary because
-  // NT doesn't like filenames with ':'s in them.  ^_^
-  snprintf(name_buf, name_len, "%s%s%s-%u.%s", m_object_filename, LOGFILE_SEPARATOR_STRING, name(), port(), orphan_ext);
-
-  // should check for conflicts with orphan filename
-  //
-  m_orphan_file = new LogFile(name_buf, NULL, LOG_FILE_ASCII, m_object_signature);
-  ats_free(name_buf);
 }
 
 //
