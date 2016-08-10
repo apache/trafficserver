@@ -2564,13 +2564,19 @@ Logging Configuration
    :reloadable:
 
    The amount of space allocated to the logging directory (in MB).
+   The headroom amount specified by
+   :ts:cv:`proxy.config.log.max_space_mb_headroom` is taken from
+   this space allocation.
 
 .. note::
 
-   All files in the logging directory contribute to the space used, even if they are not log files. In collation client
-   mode, if there is no local disk logging, or :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` is set to a higher
-   value than :ts:cv:`proxy.config.log.max_space_mb_for_logs`, TS will take
-   :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` for maximum allowed log space.
+   All files in the logging directory contribute to the space used,
+   even if they are not log files. In collation client mode, if
+   there is no local disk logging, or
+   :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs` is set
+   to a higher value than :ts:cv:`proxy.config.log.max_space_mb_for_logs`,
+   |TS| will take :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`
+   for maximum allowed log space.
 
 .. ts:cv:: CONFIG proxy.config.log.max_space_mb_for_orphan_logs INT 25
    :metric: megabytes

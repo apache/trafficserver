@@ -66,6 +66,18 @@ partition, where you can run a variety of log analysis scripts. Following
 analysis, either compress the logs and move to an archive location, or simply
 delete them.
 
+|TS| periodically checks the amount of log space used against both
+the log space allocation configured by
+:ts:cv:`proxy.config.log.max_space_mb_for_logs` and the actual
+amount of space available on the disk partition. The used log space
+is calculated by summing the size of all files present in the logging
+directory and is published in the
+:ts:stat:`proxy.process.log.log_files_space_used` metric. The
+:ts:cv:`proxy.config.log.max_space_mb_headroom` configuration
+variable specifies an amount of headroom that is subtracted from
+the log space allocation. This can be tuned to reduce the risk of
+completely filling the disk partition.
+
 Setting Log File Management Options
 -----------------------------------
 
