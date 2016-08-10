@@ -491,7 +491,9 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       total_added += bytes_added;
     }
   }
-  bool is_done = (this->response_process_data());
+
+  bool is_done = false;
+  this->response_process_data(is_done);
   if (total_added > 0 || is_done) {
     write_vio.ndone += total_added;
     int send_event = (write_vio.nbytes == write_vio.ndone || is_done) ? VC_EVENT_WRITE_COMPLETE : VC_EVENT_WRITE_READY;
@@ -510,7 +512,10 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         parent->connection_state.send_headers_frame(this);
 
         // See if the response is chunked.  Set up the dechunking logic if it is
-        is_done = this->response_initialize_data_handling();
+        this->response_initialize_data_handling(is_done);
+        if (is_done) {
+          send_event = VC_EVENT_WRITE_COMPLETE;
+        }
 
         // If there is additional data, send it along in a data frame.  Or if this was header only
         // make sure to send the end of stream
@@ -649,10 +654,10 @@ check_continuation(Continuation *cont)
   return stream == NULL;
 }
 
-bool
-Http2Stream::response_initialize_data_handling()
+void
+Http2Stream::response_initialize_data_handling(bool &is_done)
 {
-  bool is_done      = false;
+  is_done           = false;
   const char *name  = "transfer-encoding";
   const char *value = "chunked";
   int chunked_index = response_header.value_get_index(name, strlen(name), value, strlen(value));
@@ -667,16 +672,15 @@ Http2Stream::response_initialize_data_handling()
     this->response_reader = NULL;
     // Get things going if there is already data waiting
     if (this->chunked_handler.chunked_reader->is_read_avail_more_than(0)) {
-      is_done = response_process_data();
+      response_process_data(is_done);
     }
   }
-  return is_done;
 }
 
-bool
-Http2Stream::response_process_data()
+void
+Http2Stream::response_process_data(bool &done)
 {
-  bool done = false;
+  done = false;
   if (chunked) {
     do {
       if (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL) {
@@ -685,7 +689,6 @@ Http2Stream::response_process_data()
       done = this->chunked_handler.process_chunked_content();
     } while (chunked_handler.state == ChunkedHandler::CHUNK_FLOW_CONTROL);
   }
-  return done;
 }
 
 bool
