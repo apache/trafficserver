@@ -787,15 +787,6 @@ them take any operands::
 Because hook conditions must be the first condition in a ruleset, the use of
 one forces the beginning of a new ruleset.
 
-READ_RESPONSE_HDR_HOOK
-~~~~~~~~~~~~~~~~~~~~~~
-
-Rulesets evaluated within this context will process only once the origin server
-response (or cached response) has been read, but prior to |TS| sending that
-response to the client.
-
-This is the default hook condition for all globally-configured rulesets.
-
 READ_REQUEST_HDR_HOOK
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -805,6 +796,8 @@ Conditions and operators which adapt to matching or manipulating request or
 response entities (e.g. headers) depending on their context will all operate on
 the request variants when using this hook, as there is no response data yet.
 
+This hook is not available to remap rules.
+
 READ_REQUEST_PRE_REMAP_HOOK
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -813,25 +806,34 @@ evaluation as soon as the request has been read, but prior to the remapping.
 For all context-adapting conditions and operators, matching will occur against
 the request, as there is no response data available yet.
 
+This hook is not available to remap rules.
+
 REMAP_PSEUDO_HOOK
 ~~~~~~~~~~~~~~~~~
 
-This is the default hook condition for all rulesets configured via remapping
-rules in :file:`remap.config`. Functionally equivalent to
-`READ_RESPONSE_HDR_HOOK`_ in that rulesets will evaluate after responses from
-origin servers have been received (or the object has been retrieved from
-cache), but prior to sending the client response.
+Similar to `READ_REQUEST_HDR_HOOK`_, but only available when used in a remap
+context, evaluates prior to `SEND_REQUEST_HDR_HOOK`_ and allows the rewrite to
+evaluate as part of the remapping.
 
-What sets this hook context apart is that in configuration files shared by both
-the global :file:`plugin.config` and individual remapping entries in
-:file:`remap.config`, this hook condition will force the subsequent ruleset(s)
-to be valid only for remapped transactions.
+Because this hook is valid only within a remapping context, for configuration
+files shared by both the global :file:`plugin.config` and individual remapping
+entries in :file:`remap.config`, this hook condition will force the subsequent
+ruleset(s) to be valid only for remapped transactions.
 
 SEND_REQUEST_HDR_HOOK
 ~~~~~~~~~~~~~~~~~~~~~
 
 Forces evaluation of the ruleset just prior to contacting origin servers (or
 fetching the object from cache), but after any remapping may have occurred.
+
+READ_RESPONSE_HDR_HOOK
+~~~~~~~~~~~~~~~~~~~~~~
+
+Rulesets evaluated within this context will process only once the origin server
+response (or cached response) has been read, but prior to |TS| sending that
+response to the client.
+
+This is the default hook condition for all globally-configured rulesets.
 
 SEND_RESPONSE_HDR_HOOK
 ~~~~~~~~~~~~~~~~~~~~~~
