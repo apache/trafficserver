@@ -664,6 +664,7 @@ struct RemapInstance {
       method(false),
       query_string(true),
       matrix_params(false),
+      host(false),
       hits(0),
       misses(0),
       filename("unknown")
@@ -676,6 +677,7 @@ struct RemapInstance {
   bool method;
   bool query_string;
   bool matrix_params;
+  bool host;
   int hits;
   int misses;
   std::string filename;
@@ -759,15 +761,19 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     } else if (strncmp(argv[i], "method", 6) == 0) {
       ri->method = true;
     } else if (strncmp(argv[i], "no-method", 9) == 0) {
-      ri->method = true;
+      ri->method = false;
     } else if (strncmp(argv[i], "query-string", 12) == 0) {
       ri->query_string = true;
     } else if (strncmp(argv[i], "no-query-string", 15) == 0) {
       ri->query_string = false;
-    } else if (strncmp(argv[i], "matrix-parameters", 15) == 0) {
+    } else if (strncmp(argv[i], "matrix-parameters", 17) == 0) {
       ri->matrix_params = true;
-    } else if (strncmp(argv[i], "no-matrix-parameters", 18) == 0) {
+    } else if (strncmp(argv[i], "no-matrix-parameters", 20) == 0) {
       ri->matrix_params = false;
+    } else if (strncmp(argv[i], "host", 4) == 0) {
+      ri->host = true;
+    } else if (strncmp(argv[i], "no-host", 7) == 0) {
+      ri->host = false;
     } else {
       TSError("[%s] invalid option '%s'", PLUGIN_NAME, argv[i]);
     }
@@ -973,6 +979,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         memcpy(match_buf, method, match_len);
       }
     }
+  }
+
+  if (ri->host && req_url.host && req_url.host_len > 0) {
+    memcpy(match_buf + match_len, "//", 2);
+    memcpy(match_buf + match_len + 2, req_url.host, req_url.host_len);
+    match_len += (req_url.host_len + 2);
   }
 
   *(match_buf + match_len) = '/';
