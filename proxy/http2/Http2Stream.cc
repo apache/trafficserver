@@ -509,7 +509,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         parent->connection_state.send_headers_frame(this);
 
         // See if the response is chunked.  Set up the dechunking logic if it is
-        is_done = this->response_initialize_data_handling();
+        this->response_initialize_data_handling();
 
         // If there is additional data, send it along in a data frame.  Or if this was header only
         // make sure to send the end of stream
