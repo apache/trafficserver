@@ -215,9 +215,6 @@ public:
     return chunked;
   }
 
-  bool response_initialize_data_handling();
-  bool response_process_data();
-  bool response_is_data_available() const;
   void release(IOBufferReader *r);
 
   virtual bool
@@ -235,6 +232,9 @@ public:
   void clear_io_events();
 
 private:
+  void response_initialize_data_handling(bool &is_done);
+  void response_process_data(bool &is_done);
+  bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   HTTPParser http_parser;
   ink_hrtime _start_time;
