@@ -42,9 +42,9 @@ public:
   LogHost(const LogHost &);
   ~LogHost();
 
-  int set_name_or_ipstr(char *name_or_ipstr);
-  int set_ipstr_port(char *ipstr, unsigned int port);
-  int set_name_port(char *hostname, unsigned int port);
+  bool set_name_or_ipstr(const char *name_or_ipstr);
+  bool set_ipstr_port(const char *ipstr, unsigned int port);
+  bool set_name_port(const char *hostname, unsigned int port);
 
   bool connected(bool ping);
   bool connect();

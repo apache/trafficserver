@@ -94,12 +94,12 @@ LogHost::~LogHost()
 // - by specifying a hostname and a port (as separate arguments).
 // - by specifying an ip and a port (as separate arguments).
 //
-int
-LogHost::set_name_port(char *hostname, unsigned int pt)
+bool
+LogHost::set_name_port(const char *hostname, unsigned int pt)
 {
   if (!hostname || hostname[0] == 0) {
     Note("Cannot establish LogHost with NULL hostname");
-    return 1;
+    return false;
   }
 
   clear(); // remove all previous state for this LogHost
@@ -109,16 +109,16 @@ LogHost::set_name_port(char *hostname, unsigned int pt)
 
   Debug("log-host", "LogHost established as %s:%u", this->name(), this->port());
 
-  create_orphan_LogFile_object();
-  return 0;
+  m_orphan_file = make_orphan_logfile(this, m_object_filename);
+  return true;
 }
 
-int
-LogHost::set_ipstr_port(char *ipstr, unsigned int pt)
+bool
+LogHost::set_ipstr_port(const char *ipstr, unsigned int pt)
 {
   if (!ipstr || ipstr[0] == 0) {
     Note("Cannot establish LogHost with NULL ipstr");
-    return 1;
+    return false;
   }
 
   clear(); // remove all previous state for this LogHost
@@ -126,22 +126,21 @@ LogHost::set_ipstr_port(char *ipstr, unsigned int pt)
   if (0 != m_ip.load(ipstr)) {
     Note("Log host failed to parse IP address %s", ipstr);
   }
+
   m_port = pt;
   ink_strlcpy(m_ipstr, ipstr, sizeof(m_ipstr));
   m_name = ats_strdup(ipstr);
 
   Debug("log-host", "LogHost established as %s:%u", name(), pt);
 
-  create_orphan_LogFile_object();
-  return 0;
+  m_orphan_file = make_orphan_logfile(this, m_object_filename);
+  return true;
 }
 
-int
-LogHost::set_name_or_ipstr(char *name_or_ip)
+bool
+LogHost::set_name_or_ipstr(const char *name_or_ip)
 {
-  int retVal = 1;
-
-  if (name_or_ip && name_or_ip[0] != 0) {
+  if (name_or_ip && name_or_ip[0] != '\0') {
     ts::ConstBuffer addr, port;
     if (ats_ip_parse(ts::ConstBuffer(name_or_ip, strlen(name_or_ip)), &addr, &port) == 0) {
       uint16_t p = port ? atoi(port.data()) : Log::config->collation_port;
@@ -150,13 +149,14 @@ LogHost::set_name_or_ipstr(char *name_or_ip)
       // string is followed by either a nul or a colon.
       n[addr.size()] = 0;
       if (AF_UNSPEC == ats_ip_check_characters(addr)) {
-        retVal = set_name_port(n, p);
+        return set_name_port(n, p);
       } else {
-        retVal = set_ipstr_port(n, p);
+        return set_ipstr_port(n, p);
       }
     }
   }
-  return retVal;
+
+  return false;
 }
 
 bool

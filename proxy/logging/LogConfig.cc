@@ -1354,7 +1354,7 @@ LogConfig::read_xml_log_config()
           while (failover_str = failover_tok.getNext(), failover_str != 0) {
             LogHost *lh = new LogHost(obj->get_full_filename(), obj->get_signature());
 
-            if (lh->set_name_or_ipstr(failover_str)) {
+            if (lh->set_name_or_ipstr(failover_str) == false) {
               Warning("Could not set \"%s\" as collation host", host);
               delete lh;
             } else if (!prev) {
