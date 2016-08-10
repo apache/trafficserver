@@ -23,7 +23,7 @@ Configuration Files
 *******************
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    cache.config.en
    congestion.config.en
@@ -32,6 +32,7 @@ Configuration Files
    ip_allow.config.en
    log_hosts.config.en
    logs_xml.config.en
+   metrics.config.en
    parent.config.en
    plugin.config.en
    records.config.en
