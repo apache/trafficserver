@@ -91,7 +91,7 @@ Finally, to match on the host as well, use the option 'host', e.g. ::
 
     ... @pparam=maps.reg @pparam=host
 
-With this enabled, the string that you will need to match will look like
+With this enabled, the string that you will need to match will look like ::
 
     //host/path?query=bar
 
