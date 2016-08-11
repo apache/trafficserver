@@ -7598,6 +7598,23 @@ TSHttpTxnIsInternal(TSHttpTxn txnp)
   return TSHttpSsnIsInternal(TSHttpTxnSsnGet(txnp));
 }
 
+void
+TSHttpTxnServerPush(TSHttpTxn txnp, const char *url, int url_len)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  URL url_obj;
+  url_obj.create(NULL);
+  if (url_obj.parse(url, url_len) == PARSE_RESULT_ERROR) {
+    return;
+  }
+  HttpSM *sm          = reinterpret_cast<HttpSM *>(txnp);
+  Http2Stream *stream = dynamic_cast<Http2Stream *>(sm->ua_session);
+  if (stream) {
+    stream->push_promise(url_obj);
+  }
+}
+
 TSReturnCode
 TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
 {

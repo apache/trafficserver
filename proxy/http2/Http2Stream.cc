@@ -189,7 +189,7 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
         _state = HTTP2_STREAM_STATE_OPEN;
       }
     } else if (type == HTTP2_FRAME_TYPE_PUSH_PROMISE) {
-      // XXX Server Push have been supported yet.
+      _state = HTTP2_STREAM_STATE_RESERVED_LOCAL;
     } else {
       return false;
     }
@@ -213,13 +213,21 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
     break;
 
   case HTTP2_STREAM_STATE_RESERVED_LOCAL:
-    // Currently ATS supports only HTTP/2 server features
-    ink_assert(false);
-    return false;
+    if (type == HTTP2_FRAME_TYPE_HEADERS) {
+      if (flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
+        _state = HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+      }
+    } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) {
+      if (flags & HTTP2_FLAGS_CONTINUATION_END_HEADERS) {
+        _state = HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+      }
+    } else {
+      return false;
+    }
+    break;
 
   case HTTP2_STREAM_STATE_RESERVED_REMOTE:
-    // XXX Server Push have been supported yet.
-    ink_assert(false);
+    // Currently ATS supports only HTTP/2 server features
     return false;
 
   case HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL:
@@ -605,6 +613,13 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
   }
 
   return retval;
+}
+
+void
+Http2Stream::push_promise(URL &url)
+{
+  Http2ClientSession *parent = static_cast<Http2ClientSession *>(this->get_parent());
+  parent->connection_state.send_push_promise_frame(this, url);
 }
 
 void
