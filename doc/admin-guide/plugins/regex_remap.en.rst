@@ -61,6 +61,7 @@ be used to modify the plugin instance behavior ::
     @pparam=[no-]method              [default: off]
     @pparam=[no-]query-string        [default: on]
     @pparam=[no-]matrix-parameters   [default: off]
+    @pparam=[no-]host                [default: off]
 
 If you wish to match on the HTTP method used (e.g. "``GET``\ "),
 you must use the option ``@pparam=method``. e.g. ::
@@ -81,10 +82,19 @@ again, to turn this off use the option 'no-query-string', e.g. ::
 
     ... @pparam=maps.reg @pparam=no-query-string
 
-Finally, you can also include the matrix parameters in the string, using
+You can also include the matrix parameters in the string, using
 the option 'matrix-parameters', e.g. ::
 
     ... @pparam=maps.reg @pparam=matrix-parameters
+
+Finally, to match on the host as well, use the option 'host', e.g. ::
+
+    ... @pparam=maps.reg @pparam=host
+
+With this enabled, the string that you will need to match will look like
+
+    //host/path?query=bar
+
 
 A typical regex would look like ::
 
