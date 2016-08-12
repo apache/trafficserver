@@ -29,11 +29,6 @@
 #define STATE_VIO_OFFSET ((uintptr_t) & ((NetState *)0)->vio)
 #define STATE_FROM_VIO(_x) ((NetState *)(((char *)(_x)) - STATE_VIO_OFFSET))
 
-#define disable_read(_vc) (_vc)->read.enabled   = 0
-#define disable_write(_vc) (_vc)->write.enabled = 0
-#define enable_read(_vc) (_vc)->read.enabled    = 1
-#define enable_write(_vc) (_vc)->write.enabled  = 1
-
 #ifndef UIO_MAXIOV
 #define NET_MAX_IOV 16 // UIO_MAXIOV shall be at least 16 1003.1g (5.4.1.1)
 #else
@@ -622,8 +617,7 @@ UnixNetVConnection::get_data(int id, void *data)
 VIO *
 UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
-  ink_assert(c || 0 == nbytes);
-  if (closed) {
+  if (closed && !(c == NULL && nbytes == 0 && buf == NULL)) {
     Error("do_io_read invoked on closed vc %p, cont %p, nbytes %" PRId64 ", buf %p", this, c, nbytes, buf);
     return NULL;
   }
@@ -639,7 +633,7 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
       read.vio.reenable();
   } else {
     read.vio.buffer.clear();
-    disable_read(this);
+    read.enabled = 0;
   }
   return &read.vio;
 }
@@ -647,7 +641,7 @@ UnixNetVConnection::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 VIO *
 UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *reader, bool owner)
 {
-  if (closed) {
+  if (closed && !(c == NULL && nbytes == 0 && reader == NULL)) {
     Error("do_io_write invoked on closed vc %p, cont %p, nbytes %" PRId64 ", reader %p", this, c, nbytes, reader);
     return NULL;
   }
@@ -663,7 +657,7 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
     if (nbytes && !write.enabled)
       write.vio.reenable();
   } else {
-    disable_write(this);
+    write.enabled = 0;
   }
   return &write.vio;
 }
@@ -671,8 +665,8 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 void
 UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 {
-  disable_read(this);
-  disable_write(this);
+  read.enabled  = 0;
+  write.enabled = 0;
   read.vio.buffer.clear();
   read.vio.nbytes = 0;
   read.vio.op     = VIO::NONE;
@@ -703,22 +697,22 @@ UnixNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
   switch (howto) {
   case IO_SHUTDOWN_READ:
     socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 0);
-    disable_read(this);
+    read.enabled = 0;
     read.vio.buffer.clear();
     read.vio.nbytes = 0;
     f.shutdown      = NET_VC_SHUTDOWN_READ;
     break;
   case IO_SHUTDOWN_WRITE:
     socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 1);
-    disable_write(this);
+    write.enabled = 0;
     write.vio.buffer.clear();
     write.vio.nbytes = 0;
     f.shutdown       = NET_VC_SHUTDOWN_WRITE;
     break;
   case IO_SHUTDOWN_READWRITE:
     socketManager.shutdown(((UnixNetVConnection *)this)->con.fd, 2);
-    disable_read(this);
-    disable_write(this);
+    read.enabled  = 0;
+    write.enabled = 0;
     read.vio.buffer.clear();
     read.vio.nbytes = 0;
     write.vio.buffer.clear();
