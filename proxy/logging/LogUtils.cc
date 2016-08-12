@@ -254,16 +254,23 @@ LogUtils::strip_trailing_newline(char *buf)
 }
 
 /*-------------------------------------------------------------------------
-  LogUtils::escapify_url
+  LogUtils::escapify_url_common
 
   This routine will escapify a URL to remove spaces (and perhaps other ugly
   characters) from a URL and replace them with a hex escape sequence.
   Since the escapes are larger (multi-byte) than the characters being
   replaced, the string returned will be longer than the string passed.
+
+  This is a worker function called by escapify_url and pure_escapify_url.  These
+  functions differ on whether the function tries to detect and avoid
+  double URL encoding (escapify_url) or not (pure_escapify_url)
   -------------------------------------------------------------------------*/
 
+namespace
+{
 char *
-LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
+escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map,
+                    bool pure_escape)
 {
   // codes_to_escape is a bitmap encoding the codes that should be escaped.
   // These are all the codes defined in section 2.4.3 of RFC 2396
@@ -359,6 +366,22 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
   while (from < in_url_end) {
     unsigned char c = *from;
     if (map[c / 8] & (1 << (7 - c % 8))) {
+      /*
+       * If two characters following a '%' don't need to be encoded, then it must
+       * mean that the three character sequence is already encoded.  Just copy it over.
+       */
+      if (!pure_escape && (*from == '%') && ((from + 2) < in_url_end)) {
+        unsigned char c1   = *(from + 1);
+        unsigned char c2   = *(from + 2);
+        bool needsEncoding = ((map[c1 / 8] & (1 << (7 - c1 % 8))) || (map[c2 / 8] & (1 << (7 - c2 % 8))));
+        if (!needsEncoding) {
+          out_len -= 2;
+          Debug("log-utils", "character already encoded..skipping %c, %c, %c", *from, *(from + 1), *(from + 2));
+          *to++ = *from++;
+          continue;
+        }
+      }
+
       *to++ = '%';
       *to++ = hex_digit[c / 16];
       *to++ = hex_digit[c % 16];
@@ -371,6 +394,20 @@ LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, cha
 
   *len_out = out_len;
   return new_url;
+}
+}
+
+char *
+LogUtils::escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
+{
+  return escapify_url_common(arena, url, len_in, len_out, dst, dst_size, map, false);
+}
+
+char *
+LogUtils::pure_escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size,
+                            const unsigned char *map)
+{
+  return escapify_url_common(arena, url, len_in, len_out, dst, dst_size, map, true);
 }
 
 /*-------------------------------------------------------------------------
