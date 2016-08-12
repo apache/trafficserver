@@ -4761,15 +4761,15 @@ HttpTransact::handle_no_cache_operation_on_forward_server_response(State *s)
 void
 HttpTransact::merge_and_update_headers_for_cache_update(State *s)
 {
-  URL *s_url = NULL;
-  // This is not used.
-  // HTTPHdr * f_resp = NULL;
+  URL *s_url          = NULL;
+  HTTPHdr *cached_hdr = NULL;
 
   if (!s->cache_info.object_store.valid()) {
     s->cache_info.object_store.create();
   }
 
   s->cache_info.object_store.request_set(&s->hdr_info.server_request);
+  cached_hdr = s->cache_info.object_store.response_get();
 
   if (s->redirect_info.redirect_in_process) {
     s_url = &s->redirect_info.original_url;
@@ -4785,27 +4785,37 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
   }
 
   if (s->api_modifiable_cached_resp) {
-    ink_assert(s->cache_info.object_store.response_get() != NULL && s->cache_info.object_store.response_get()->valid());
+    ink_assert(cached_hdr != NULL && cached_hdr->valid());
     s->api_modifiable_cached_resp = false;
   } else {
     s->cache_info.object_store.response_set(s->cache_info.object_read->response_get());
   }
 
-  merge_response_header_with_cached_header(s->cache_info.object_store.response_get(), &s->hdr_info.server_response);
+  // Delete caching headers from the cached response. If these are
+  // still being served by the origin we will copy new versions in
+  // from the server response. RFC 2616 says that a 304 response may
+  // omit some headers if they were sent in a 200 response (see section
+  // 10.3.5), but RFC 7232) is clear that the 304 and 200 responses
+  // must be identical (see section 4.1). This code attempts to strike
+  // a balance between the two.
+  cached_hdr->field_delete(MIME_FIELD_AGE, MIME_LEN_AGE);
+  cached_hdr->field_delete(MIME_FIELD_ETAG, MIME_LEN_ETAG);
+  cached_hdr->field_delete(MIME_FIELD_EXPIRES, MIME_LEN_EXPIRES);
+
+  merge_response_header_with_cached_header(cached_hdr, &s->hdr_info.server_response);
 
   // Some special processing for 304
-  //
   if (s->hdr_info.server_response.status_get() == HTTP_STATUS_NOT_MODIFIED) {
     // Hack fix. If the server sends back
     // a 304 without a Date Header, use the current time
     // as the new Date value in the header to be cached.
-    time_t date_value   = s->hdr_info.server_response.get_date();
-    HTTPHdr *cached_hdr = s->cache_info.object_store.response_get();
+    time_t date_value = s->hdr_info.server_response.get_date();
 
     if (date_value <= 0) {
       cached_hdr->set_date(s->request_sent_time);
       date_value = s->request_sent_time;
     }
+
     // If the cached response has an Age: we should update it
     // We could use calculate_document_age but my guess is it's overkill
     // Just use 'now' - 304's Date: + Age: (response's Age: if there)
@@ -4819,6 +4829,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
         cached_hdr->set_age(-1); // Overflow
       }
     }
+
     delete_warning_value(cached_hdr, HTTP_WARNING_CODE_REVALIDATION_FAILED);
   }
 
