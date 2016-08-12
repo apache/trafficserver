@@ -6248,6 +6248,15 @@ TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality)
 extern HttpSessionAccept *plugin_http_accept;
 extern HttpSessionAccept *plugin_http_transparent_accept;
 
+char const *
+TSHttpTxnPluginTagGet(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  return sm->plugin_tag;
+}
+
 TSVConn
 TSHttpConnectWithPluginId(sockaddr const *addr, char const *tag, int64_t id)
 {
