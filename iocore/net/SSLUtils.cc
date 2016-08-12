@@ -170,23 +170,25 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
 }
 #endif
 
-#ifndef SSL_CTX_add0_chain_cert
 static bool
-SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
+SSL_CTX_add_extra_chain_cert_bio(SSL_CTX *ctx, BIO *bio)
 {
   X509 *cert;
-  scoped_BIO bio(BIO_new_file(chainfile, "r"));
 
   for (;;) {
-    cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
+    cert = PEM_read_bio_X509_AUX(bio, NULL, NULL, NULL);
 
     if (!cert) {
       // No more the certificates in this file.
       break;
     }
 
-    // This transfers ownership of the cert (X509) to the SSL context, if successful.
+// This transfers ownership of the cert (X509) to the SSL context, if successful.
+#ifdef SSL_CTX_add0_chain_cert
+    if (!SSL_CTX_add0_chain_cert(ctx, cert)) {
+#else
     if (!SSL_CTX_add_extra_chain_cert(ctx, cert)) {
+#endif
       X509_free(cert);
       return false;
     }
@@ -194,7 +196,13 @@ SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
 
   return true;
 }
-#endif
+
+static bool
+SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
+{
+  scoped_BIO bio(BIO_new_file(chainfile, "r"));
+  return SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
+}
 
 bool
 ssl_session_timed_out(SSL_SESSION *session)
@@ -1626,17 +1634,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         SSLConfigParams::load_ssl_file_cb(completeServerCertPath, CONFIG_FLAG_UNVERSIONED);
       }
       // Load up any additional chain certificates
-      X509 *ca;
-      while ((ca = PEM_read_bio_X509(bio.get(), NULL, 0, NULL))) {
-#ifdef SSL_CTX_add0_chain_cert
-        if (!SSL_CTX_add0_chain_cert(ctx, ca)) {
-#else
-        if (!SSL_CTX_add_extra_chain_cert(ctx, ca)) {
-#endif
-          X509_free(ca);
-          goto fail;
-        }
-      }
+      SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 
       const char *keyPath = key_tok.getNext();
       if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, keyPath)) {
@@ -1651,15 +1649,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
       if (params->serverCertChainFilename) {
         ats_scoped_str completeServerCertChainPath(
           Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
-#ifdef SSL_CTX_add0_chain_cert
-        scoped_BIO bio(BIO_new_file(completeServerCertChainPath, "r"));
-        X509 *intermediate_cert = PEM_read_bio_X509(bio.get(), NULL, 0, NULL);
-        if (!intermediate_cert || !SSL_CTX_add0_chain_cert(ctx, intermediate_cert)) {
-          if (intermediate_cert)
-            X509_free(intermediate_cert);
-#else
         if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-#endif
           SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
           goto fail;
         }
@@ -1672,15 +1662,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
       if (sslMultCertSettings.ca) {
         const char *ca_name = ca_tok.getNext();
         ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_name));
-#ifdef SSL_CTX_add0_chain_cert
-        scoped_BIO bio(BIO_new_file(completeServerCertChainPath, "r"));
-        X509 *intermediate_cert = PEM_read_bio_X509(bio.get(), NULL, 0, NULL);
-        if (!intermediate_cert || !SSL_CTX_add0_chain_cert(ctx, intermediate_cert)) {
-          if (intermediate_cert)
-            X509_free(intermediate_cert);
-#else
         if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-#endif
           SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
           goto fail;
         }
