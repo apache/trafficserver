@@ -1718,7 +1718,6 @@ HttpTransact::OSDNSLookup(State *s)
     case RETRY_EXPANDED_NAME:
       // expansion successful, do a dns lookup on expanded name
       HTTP_RELEASE_ASSERT(s->dns_info.attempts < max_dns_lookups);
-      HTTP_RELEASE_ASSERT(s->http_config_param->enable_url_expandomatic);
       TRANSACT_RETURN(SM_ACTION_DNS_LOOKUP, OSDNSLookup);
       break;
     case EXPANSION_NOT_ALLOWED:
@@ -6698,9 +6697,9 @@ HttpTransact::try_to_expand_host_name(State *s)
           s->dns_info.lookup_name = s->arena.str_alloc(length);
           ink_string_concatenate_strings_n(s->dns_info.lookup_name, length + 1, "www.", s->server_info.name, ".com", NULL);
         }
-        return (RETRY_EXPANDED_NAME);
+        return RETRY_EXPANDED_NAME;
       } else {
-        return (DNS_ATTEMPTS_EXHAUSTED);
+        return DNS_ATTEMPTS_EXHAUSTED;
       }
     } else {
       return EXPANSION_NOT_ALLOWED;
