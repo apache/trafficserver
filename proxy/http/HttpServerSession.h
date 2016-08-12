@@ -86,7 +86,6 @@ public:
       magic(HTTP_SS_MAGIC_DEAD),
       buf_reader(NULL)
   {
-    ink_zero(server_ip);
   }
 
   void destroy();
@@ -131,7 +130,12 @@ public:
   }
 
   // Keys for matching hostnames
-  IpEndpoint server_ip;
+  IpEndpoint const &
+  get_server_ip() const
+  {
+    ink_release_assert(server_vc != NULL);
+    return server_vc->get_remote_endpoint();
+  }
   INK_MD5 hostname_hash;
 
   int64_t con_id;
