@@ -51,6 +51,7 @@ static void ts_lua_inject_server_request_get_body_size_api(lua_State *L);
 static void ts_lua_inject_server_request_uri_api(lua_State *L);
 static void ts_lua_inject_server_request_uri_args_api(lua_State *L);
 static void ts_lua_inject_server_request_uri_params_api(lua_State *L);
+static void ts_lua_inject_server_request_url_api(lua_State *L);
 
 static int ts_lua_server_request_header_get(lua_State *L);
 static int ts_lua_server_request_header_set(lua_State *L);
@@ -63,6 +64,7 @@ static int ts_lua_server_request_set_uri_args(lua_State *L);
 static int ts_lua_server_request_get_uri_args(lua_State *L);
 static int ts_lua_server_request_set_uri_params(lua_State *L);
 static int ts_lua_server_request_get_uri_params(lua_State *L);
+static int ts_lua_server_request_host_name_remove(lua_State *L);
 
 static int ts_lua_server_request_server_addr_get_ip(lua_State *L);
 static int ts_lua_server_request_server_addr_get_port(lua_State *L);
@@ -83,6 +85,8 @@ ts_lua_inject_server_request_api(lua_State *L)
   ts_lua_inject_server_request_uri_api(L);
   ts_lua_inject_server_request_uri_args_api(L);
   ts_lua_inject_server_request_uri_params_api(L);
+
+  ts_lua_inject_server_request_url_api(L);
 
   lua_setfield(L, -2, "server_request");
 }
@@ -478,6 +482,27 @@ ts_lua_server_request_get_uri_params(lua_State *L)
   }
 
   return 1;
+}
+
+static void
+ts_lua_inject_server_request_url_api(lua_State *L)
+{
+  lua_pushcfunction(L, ts_lua_server_request_host_name_remove);
+  lua_setfield(L, -2, "remove_host_name_from_url");
+}
+
+static int
+ts_lua_server_request_host_name_remove(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TS_LUA_CHECK_SERVER_REQUEST_URL(http_ctx);
+
+  TSUrlRemoveHostName(http_ctx->server_request_bufp, http_ctx->server_request_url);
+
+  return 0;
 }
 
 static int
