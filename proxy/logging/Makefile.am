@@ -81,9 +81,18 @@ liblogcollation_a_SOURCES = \
   LogCollationHostSM.cc \
   LogCollationHostSM.h
 
-#test_UNUSED_SOURCES = \
-#  LogAccessTest.cc \
-#  LogAccessTest.h
+check_PROGRAMS = \
+  test_LogUtils
+
+TESTS = \
+  test_LogUtils
+
+test_LogUtils_LDADD = \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a
+
+test_LogUtils_SOURCES = \
+  test_LogUtils.cc
 
 tidy-local: $(liblogging_a_SOURCES) $(liblogcollation_a_SOURCES) $(EXTRA_DIST)
 	$(CXX_Clang_Tidy)
