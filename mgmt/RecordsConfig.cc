@@ -1148,8 +1148,6 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.log.xml_config_file", RECD_STRING, "logs_xml.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.log.config.enable_lua", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
   {RECT_CONFIG, "proxy.config.log.config.filename", RECD_STRING, "logging.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.log.hosts_config_file", RECD_STRING, "log_hosts.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}

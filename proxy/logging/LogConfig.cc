@@ -494,24 +494,14 @@ void
 LogConfig::setup_log_objects()
 {
   Debug("log", "creating objects...");
-  RecBool enable_lua = false;
 
-  RecGetRecordBool("proxy.config.log.config.enable_lua", &enable_lua);
-
-  // ----------------------------------------------------------------------
   // Construct the LogObjects for the custom formats
-
   global_filter_list.clear();
 
-  // Read xml configuration from logs_xml.config file.
-  if (enable_lua) {
-    evaluate_config();
-  } else {
-    read_xml_log_config();
-  }
+  // Evaluate logging.config to construct the custome log objects.
+  evaluate_config();
 
-  // open local pipes so readers can see them
-  //
+  // Open local pipes so readers can see them.
   log_object_manager.open_local_pipes();
 
   if (is_debug_tag_set("log")) {
