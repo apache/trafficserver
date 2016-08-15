@@ -183,7 +183,7 @@ lua_metrics_new(const char *prefix, lua_State *L)
   metrics_binding *m = lua_newuserobject<metrics_binding>(L);
 
   Debug("lua", "new metrics binding for prefix %s", prefix);
-  m->prefix = ats_strdup(prefix);
+  m->prefix    = ats_strdup(prefix);
   m->prefixlen = strlen(prefix);
 
   luaL_getmetatable(L, BINDING);
@@ -208,7 +208,7 @@ install_metrics_object(RecT rec_type, void *edata, int registered, const char *n
 
   if (likely(registered)) {
     const char *end = strrchr(name, '.');
-    ptrdiff_t len = end - name;
+    ptrdiff_t len   = end - name;
     prefixes->insert(std::string(name, len));
   }
 }
@@ -216,8 +216,8 @@ install_metrics_object(RecT rec_type, void *edata, int registered, const char *n
 int
 lua_metrics_install(lua_State *L)
 {
-  int count = 0;
-  int metrics_type = RECT_NODE | RECT_PROCESS | RECT_CLUSTER | RECT_PLUGIN;
+  int count                = 0;
+  int metrics_type         = RECT_NODE | RECT_PROCESS | RECT_CLUSTER | RECT_PLUGIN;
   BindingInstance *binding = BindingInstance::self(L);
   std::set<std::string> prefixes;
 
