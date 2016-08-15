@@ -70,7 +70,7 @@ struct NetTesterSM : public Continuation {
     default:
       ink_release_assert(!"unknown event");
     }
-    delete [] str;
+    delete[] str;
     return EVENT_CONT;
   }
 };
