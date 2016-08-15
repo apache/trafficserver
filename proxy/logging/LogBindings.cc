@@ -169,10 +169,12 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
   }
 
   if (lua_istable(L, value)) {
+    lua_scoped_stack saved(L);
     int count   = luaL_getn(L, value);
     LogHost *lh = NULL;
 
-    lua_pushvalue(L, value); // Push the table to -1.
+    saved.push_value(value); // Push the table to -1.
+
     for (int i = 1; i <= count; ++i) {
       lua_rawgeti(L, -1, i); // Push the i-th element of the array.
 
@@ -190,7 +192,6 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
       } else if (lua_istable(L, value)) {
         if (!log_object_add_hosts(L, log, -1, false /* nested */)) {
           lua_pop(L, 1); // Pop the element.
-          lua_pop(L, 1); // Pop the table.
 
           return false;
         }
@@ -209,7 +210,6 @@ log_object_add_hosts(lua_State *L, LogObject *log, int value, bool top)
     }
 
     log->add_loghost(lh, false /* take ownership */);
-    lua_pop(L, 1); // Pop the table.
   }
 
   return false;
@@ -237,23 +237,27 @@ log_object_add_filters(lua_State *L, LogObject *log, int value)
 
   // An array of filters.
   if (lua_istable(L, value)) {
+    lua_scoped_stack saved(L);
     LogFilter *filter;
     int count = luaL_getn(L, value);
 
-    lua_pushvalue(L, value); // Push the table to -1.
+    saved.push_value(value); // Push the table to -1.
+
     for (int i = 1; i <= count; ++i) {
       lua_rawgeti(L, -1, i); // Push the i-th element of the array.
       filter = refcount_object_get<LogFilter>(L, -1, "log.filter");
-      if (!filter) {
-        lua_pop(L, 2);
-        return false;
+      if (filter) {
+        log->add_filter(filter, true /* copy */);
       }
 
-      log->add_filter(filter, true /* copy */);
       lua_pop(L, 1); // Pop the element.
+
+      if (filter == NULL) {
+        return false;
+      }
     }
 
-    lua_pop(L, 1); // Pop the table.
+    return true;
   }
 
   return false;
