@@ -130,7 +130,7 @@ create_wipe_filter_object(lua_State *L)
 static LogHost *
 make_log_host(LogHost *parent, LogObject *log, const char *spec)
 {
-  LogHost *lh;
+  ats_scoped_obj<LogHost> lh;
 
   lh = new LogHost(log->get_full_filename(), log->get_signature());
   if (!lh->set_name_or_ipstr(spec)) {
@@ -146,12 +146,12 @@ make_log_host(LogHost *parent, LogObject *log, const char *spec)
       last = last->failover_link.next;
     }
 
-    Debug("lua", "added failover host %p to %p for %s", lh, last, spec);
-    last->failover_link.next = lh;
+    Debug("lua", "added failover host %p to %p for %s", lh.get(), last, spec);
+    last->failover_link.next = lh.release();
     return parent;
   }
 
-  return lh;
+  return lh.release();
 }
 
 static bool
