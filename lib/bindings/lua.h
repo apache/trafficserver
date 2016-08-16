@@ -65,4 +65,38 @@ lua_newuserobject(lua_State *L)
   return (T *)NULL;
 }
 
+// Index the given key in the table at the specified index. If the
+// key doesn't exist, the default value is returned. This returns
+// values referenced by the table (not copies).
+template <typename T> T lua_getfield(lua_State *L, int table, const char *key, T default_value);
+
+// Often, you want to push a value to the Lua stack and pop it when
+// you return from the scope. lua_scoped_stack is a simple RAII object
+// that pops the desired number of stack values when the enclosing
+// scope is destroyed. Use with some caution since clearly it has to
+// assume that the values it is popping are on top of the stack, so
+// you need to ensure there are no intermediate stack values.
+struct lua_scoped_stack {
+  explicit lua_scoped_stack(lua_State *L) : L(L), nvals(0) {}
+  ~lua_scoped_stack()
+  {
+    if (nvals) {
+      lua_pop(L, nvals);
+    }
+  }
+
+  void
+  push_value(int value)
+  {
+    lua_pushvalue(L, value);
+  }
+
+private:
+  lua_scoped_stack(const lua_scoped_stack &);            // Disabled.
+  lua_scoped_stack &operator=(const lua_scoped_stack &); // Disabled.
+
+  lua_State *L;
+  unsigned nvals;
+};
+
 #endif /* LUA_H_7A9F5CCE_01C6_45C3_987A_FDCC1F437AA2 */

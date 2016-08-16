@@ -51,7 +51,7 @@ enum LogFileFormat {
   which is defined as a set of fields.
   -------------------------------------------------------------------------*/
 
-class LogFormat
+class LogFormat : public RefCountObj
 {
 public:
   LogFormat(const char *name, const char *format_str, unsigned interval_sec = 0);

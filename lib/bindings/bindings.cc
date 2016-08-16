@@ -97,8 +97,8 @@ bool
 BindingInstance::bind_value(const char *name, int value)
 {
   const char *start = name;
-  const char *end = name;
-  bool bound = false;
+  const char *end   = name;
+  bool bound        = false;
 
   int depth = 0;
 
@@ -269,7 +269,7 @@ void
 BindingInstance::typecheck(lua_State *lua, const char *name, ...)
 {
   int nargs = lua_gettop(lua);
-  int seen = 0;
+  int seen  = 0;
   va_list ap;
 
   va_start(ap, name);

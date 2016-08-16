@@ -306,6 +306,8 @@ LogObject::add_loghost(LogHost *host, bool copy)
   // then clear the intelligent Ptr containing LogFile.
   //
   m_logFile.clear();
+
+  Debug("log", "added log host %p to object %p for target %s:%d", host, this, host->name(), host->port());
 }
 
 // we conpute the object signature from the fieldlist_str and the printf_str
