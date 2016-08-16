@@ -59,7 +59,6 @@ FileManager::FileManager()
     mgmt_fatal(0, "[FileManager::FileManager] snapshot directory %s is not a directory\n", (const char *)snapshotDir);
   }
 
-  this->managedDir  = snapshotDir.release();
   this->dirDescript = "snapshot";
 }
 
@@ -79,7 +78,6 @@ FileManager::~FileManager()
   // Let other operations finish and do not start any new ones
   ink_mutex_acquire(&accessLock);
 
-  ats_free(this->managedDir);
   this->managedDir  = NULL;
   this->dirDescript = NULL;
 
@@ -602,9 +600,8 @@ FileManager::WalkSnaps(ExpandingArray *snapList)
 {
   MFresult r;
 
-  // The original code reset this->managedDir from proxy.config.snapshot_dir at this point. There doesn't appear to be
-  // any need for that, since managedDir is always set in the constructor and should not be changed.
-  ink_release_assert(this->managedDir != NULL);
+  // Make sure managedDir is the latest from proxy.config.snapshot_dir.
+  this->managedDir = RecConfigReadSnapshotDir();
 
   ink_mutex_acquire(&accessLock);
 
@@ -612,6 +609,8 @@ FileManager::WalkSnaps(ExpandingArray *snapList)
   // lmgmt->record_data ->setString("proxy.config.snapshot_dir", managedDir);
 
   ink_mutex_release(&accessLock);
+  ats_free(this->managedDir);
+  this->managedDir = NULL;
   return (SnapResult)r;
 }
 
