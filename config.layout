@@ -36,7 +36,7 @@
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec+
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
+    mandir:        ${prefix}/share/man
     sysconfdir:    ${prefix}/etc+
     datadir:       ${prefix}/share+
     docdir:        ${prefix}/share/doc+
@@ -57,7 +57,7 @@
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/modules
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
+    mandir:        ${prefix}/share/man
     sysconfdir:    ${prefix}/conf
     datadir:       ${prefix}/share
     docdir:        ${prefix}/share/doc+
@@ -79,7 +79,7 @@
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
+    mandir:        ${prefix}/share/man
     sysconfdir:    ${prefix}/etc+
     datadir:       ${prefix}/share+
     docdir:        ${prefix}/share/doc+
@@ -142,7 +142,7 @@
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
+    mandir:        ${prefix}/share/man
     sysconfdir:    /etc${prefix}
     datadir:       ${prefix}/share
     docdir:        ${prefix}/share/doc+
@@ -228,7 +228,7 @@
     libdir:        ${exec_prefix}/lib
     libexecdir:    ${exec_prefix}/libexec+
     infodir:       ${prefix}/info
-    mandir:        ${prefix}/man
+    mandir:        ${prefix}/share/man
     sysconfdir:    /etc+
     datadir:       ${prefix}/share+
     docdir:        ${prefix}/share/doc+

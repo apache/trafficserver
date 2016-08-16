@@ -19,7 +19,7 @@ import sys, os
 man_pages = [
   # Add all files in the reference/api directory to the list of manual
   # pages
-  ('developer-guide/api/' + filename[:-4], filename.split('.', 1)[0], '', None, '3ts') for filename in os.listdir('developer-guide/api') if filename != 'index.en.rst' and filename.endswith('.rst')] + [
+  ('developer-guide/api/functions/' + filename[:-4], filename.split('.', 1)[0], '', None, '3ts') for filename in os.listdir('developer-guide/api/functions/') if filename != 'index.en.rst' and filename.endswith('.rst')] + [
 
   ('appendices/command-line/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
   ('appendices/command-line/traffic_ctl.en', 'traffic_ctl', u'Traffic Server command line tool', None, '8'),
