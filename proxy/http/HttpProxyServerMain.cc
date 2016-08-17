@@ -190,21 +190,21 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     // http/1.0, http/1.1, h2
 
     // HTTP
-    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_1_0)) {
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_0, http);
+    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_1_0)) {
+      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
     }
 
-    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_1_1)) {
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_1_1, http);
+    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_1_1)) {
+      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
     }
 
     // HTTP2
-    if (port.m_session_protocol_preference.contains(TS_NPN_PROTOCOL_INDEX_HTTP_2_0)) {
+    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0)) {
       Http2SessionAccept *acc = new Http2SessionAccept(accept_opt);
 
       // TODO: Should be removed when h2-14 is gone and dead, and h2 is widely supported in UAs
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_2_0_14, acc);
-      ssl->registerEndpoint(TS_NPN_PROTOCOL_HTTP_2_0, acc);
+      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0_14, acc);
+      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, acc);
     }
 
     SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
