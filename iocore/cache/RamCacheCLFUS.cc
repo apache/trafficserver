@@ -211,7 +211,9 @@ RamCacheCLFUS::init(int64_t abytes, Vol *avol)
   if (!max_bytes)
     return;
   resize_hashtable();
-  eventProcessor.schedule_every(new RamCacheCLFUSCompressor(this), HRTIME_SECOND, ET_TASK);
+  if (cache_config_ram_cache_compress) {
+    eventProcessor.schedule_every(new RamCacheCLFUSCompressor(this), HRTIME_SECOND, ET_TASK);
+  }
 }
 
 #ifdef CHECK_ACOUNTING
