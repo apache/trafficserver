@@ -27,8 +27,8 @@ There are currently two methods provided with |TS| to view statistics:
 
 .. _admin-stats-traffic-line:
 
-Traffic Line
-============
+Traffic Control
+===============
 
 The command line utility :program:`traffic_ctl` offers a text based interface
 for viewing |TS| statistics. Invocation is simple and requires knowing the

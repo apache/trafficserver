@@ -48,13 +48,13 @@ alarm is signaled. Traffic Server provides a sample script file named
 ``example_alarm_bin.sh`` in the ``bin`` directory which can serve as the
 basis for your custom alarm scripts.
 
-Viewing Statistics from Traffic Line
-====================================
+Viewing Statistics from Traffic Control
+=======================================
 
-You can use the Traffic Line command-line interface to view statistics
+You can use :program:`traffic_ctl` to view statistics
 about Traffic Server performance and web traffic. In addition to viewing
 statistics, you can also configure, stop, and restart the Traffic Server
-system. For additional information, refer to :ref:`configure-using-traffic-line`
+system. For additional information, refer to :ref:`configure-using-traffic-ctl`
 and :program:`traffic_ctl`. You can view
 specific information about a Traffic Server node or cluster by
 specifying the variable that corresponds to the statistic you want to
@@ -66,15 +66,10 @@ To view a statistic, enter the following command:::
 
 where ``variable`` is the variable representing the information you
 want to view. For a list of variables you can specify, refer to :ref:`Traffic
-Server Metrics <traffic-line-performance-statistics>`.
+Server Metrics <traffic-ctl-performance-statistics>`.
 
 For example, the following command displays the document hit rate for
 the Traffic Server node:::
 
      traffic_ctl metric get proxy.node.cache_hit_ratio
-
-If the Traffic Server ``bin`` directory is not in your path, then
-prepend the Traffic Line command with ``./`` (for example:
-:option:`traffic_ctl metric get` ``VARIABLE``).
-
 
