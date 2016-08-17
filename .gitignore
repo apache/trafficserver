@@ -107,7 +107,6 @@ mgmt/tools/shmem_clean
 mgmt/utils/test_marshall
 proxy/traffic_logcat
 proxy/traffic_logstats
-proxy/traffic_sac
 proxy/traffic_server
 proxy/test_xml_parser
 
