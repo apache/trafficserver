@@ -19,7 +19,6 @@
 SUBDIRS = \
   authproxy \
   background_fetch \
-  cacheurl \
   conf_remap \
   esi \
   generator \

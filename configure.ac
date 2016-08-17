@@ -1956,7 +1956,6 @@ AC_CONFIG_FILES([
   plugins/Makefile
   plugins/authproxy/Makefile
   plugins/background_fetch/Makefile
-  plugins/cacheurl/Makefile
   plugins/conf_remap/Makefile
   plugins/esi/Makefile
   plugins/generator/Makefile

@@ -48,7 +48,6 @@ Plugins that are considered stable are installed by default in |TS| releases.
    AuthProxy <authproxy.en>
    AWS S3 Authentication <s3_auth.en>
    Background Fetch <background_fetch.en>
-   Cache URL <cacheurl.en>
    Configuration Remap <conf_remap.en>
    ESI <esi.en>
    Generator <generator.en>
@@ -69,10 +68,6 @@ Plugins that are considered stable are installed by default in |TS| releases.
 
 :doc:`Background Fetch <background_fetch.en>`
    Proactively fetch content from Origin in a way that it will fill the object into cache.
-
-:doc:`Cache URL <cacheurl.en>`
-    Modify the :term:`cache key` used for requests by applying a regular
-    expression to the URL.
 
 :doc:`Configuration Remap <conf_remap.en>`
     Override configuration directives on a per-rule basis.
