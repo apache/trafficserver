@@ -30,7 +30,6 @@
 
 #define STAT_PROCESSOR
 
-
 //-------------------------------------------------------------------------
 // Error Values
 //-------------------------------------------------------------------------
@@ -38,7 +37,6 @@ enum RecErrT {
   REC_ERR_FAIL = -1,
   REC_ERR_OKAY = 0,
 };
-
 
 //-------------------------------------------------------------------------
 // Types
@@ -54,14 +52,14 @@ typedef int8_t RecByte;
 typedef bool RecBool;
 
 enum RecT {
-  RECT_NULL = 0x00,
-  RECT_CONFIG = 0x01,
+  RECT_NULL    = 0x00,
+  RECT_CONFIG  = 0x01,
   RECT_PROCESS = 0x02,
-  RECT_NODE = 0x04,
+  RECT_NODE    = 0x04,
   RECT_CLUSTER = 0x08,
-  RECT_LOCAL = 0x10,
-  RECT_PLUGIN = 0x20,
-  RECT_ALL = 0x3F
+  RECT_LOCAL   = 0x10,
+  RECT_PLUGIN  = 0x20,
+  RECT_ALL     = 0x3F
 };
 
 enum RecDataT {
@@ -143,7 +141,6 @@ enum RecAccessT {
   RECA_READ_ONLY,
 };
 
-
 //-------------------------------------------------------------------------
 // Data Union
 //-------------------------------------------------------------------------
@@ -153,7 +150,6 @@ union RecData {
   RecString rec_string;
   RecCounter rec_counter;
 };
-
 
 //-------------------------------------------------------------------------
 // RawStat Structures
@@ -169,7 +165,6 @@ struct RecRawStat {
   uint32_t version;
 };
 
-
 // WARNING!  It's advised that developers do not modify the contents of
 // the RecRawStatBlock.  ^_^
 struct RecRawStatBlock {
@@ -179,7 +174,6 @@ struct RecRawStatBlock {
   int max_stats;          // maximum number of stats for this block
   ink_mutex mutex;
 };
-
 
 //-------------------------------------------------------------------------
 // RecCore Callback Types

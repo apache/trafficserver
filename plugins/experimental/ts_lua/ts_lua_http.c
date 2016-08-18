@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 #include "ts_lua_http_intercept.h"
 #include "ts_lua_http_config.h"
@@ -27,11 +26,42 @@ typedef enum {
   TS_LUA_CACHE_LOOKUP_MISS,
   TS_LUA_CACHE_LOOKUP_HIT_STALE,
   TS_LUA_CACHE_LOOKUP_HIT_FRESH,
-  TS_LUA_CACHE_LOOKUP_SKIPPED
+  TS_LUA_CACHE_LOOKUP_SKIPPED,
 } TSLuaCacheLookupResult;
 
-char *ts_lua_cache_lookup_result_string[] = {"TS_LUA_CACHE_LOOKUP_MISS", "TS_LUA_CACHE_LOOKUP_HIT_STALE",
-                                             "TS_LUA_CACHE_LOOKUP_HIT_FRESH", "TS_LUA_CACHE_LOOKUP_SKIPPED"};
+typedef enum {
+  TS_LUA_SRVSTATE_STATE_UNDEFINED,
+  TS_LUA_SRVSTATE_ACTIVE_TIMEOUT,
+  TS_LUA_SRVSTATE_BAD_INCOMING_RESPONSE,
+  TS_LUA_SRVSTATE_CONNECTION_ALIVE,
+  TS_LUA_SRVSTATE_CONNECTION_CLOSED,
+  TS_LUA_SRVSTATE_CONNECTION_ERROR,
+  TS_LUA_SRVSTATE_INACTIVE_TIMEOUT,
+  TS_LUA_SRVSTATE_OPEN_RAW_ERROR,
+  TS_LUA_SRVSTATE_PARSE_ERROR,
+  TS_LUA_SRVSTATE_TRANSACTION_COMPLETE,
+  TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F,
+  TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M,
+} TSLuaServerState;
+
+const char *ts_lua_cache_lookup_result_string[] = {
+  "TS_LUA_CACHE_LOOKUP_MISS", "TS_LUA_CACHE_LOOKUP_HIT_STALE", "TS_LUA_CACHE_LOOKUP_HIT_FRESH", "TS_LUA_CACHE_LOOKUP_SKIPPED",
+};
+
+const char *ts_lua_server_state_string[] = {
+  "TS_LUA_SRVSTATE_STATE_UNDEFINED",
+  "TS_LUA_SRVSTATE_ACTIVE_TIMEOUT",
+  "TS_LUA_SRVSTATE_BAD_INCOMING_RESPONSE",
+  "TS_LUA_SRVSTATE_CONNECTION_ALIVE",
+  "TS_LUA_SRVSTATE_CONNECTION_CLOSED",
+  "TS_LUA_SRVSTATE_CONNECTION_ERROR",
+  "TS_LUA_SRVSTATE_INACTIVE_TIMEOUT",
+  "TS_LUA_SRVSTATE_OPEN_RAW_ERROR",
+  "TS_LUA_SRVSTATE_PARSE_ERROR",
+  "TS_LUA_SRVSTATE_TRANSACTION_COMPLETE",
+  "TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F",
+  "TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M",
+};
 
 static void ts_lua_inject_http_retset_api(lua_State *L);
 static void ts_lua_inject_http_cache_api(lua_State *L);
@@ -57,6 +87,10 @@ static int ts_lua_http_resp_cache_untransformed(lua_State *L);
 static int ts_lua_http_is_internal_request(lua_State *L);
 static int ts_lua_http_skip_remapping_set(lua_State *L);
 static int ts_lua_http_transaction_count(lua_State *L);
+static int ts_lua_http_redirect_url_set(lua_State *L);
+static int ts_lua_http_get_server_state(lua_State *L);
+
+static void ts_lua_inject_server_state_variables(lua_State *L);
 
 static void ts_lua_inject_http_resp_transform_api(lua_State *L);
 static int ts_lua_http_resp_transform_get_upstream_bytes(lua_State *L);
@@ -152,6 +186,14 @@ ts_lua_inject_http_misc_api(lua_State *L)
 
   lua_pushcfunction(L, ts_lua_http_transaction_count);
   lua_setfield(L, -2, "transaction_count");
+
+  lua_pushcfunction(L, ts_lua_http_redirect_url_set);
+  lua_setfield(L, -2, "redirect_url_set");
+
+  lua_pushcfunction(L, ts_lua_http_get_server_state);
+  lua_setfield(L, -2, "get_server_state");
+
+  ts_lua_inject_server_state_variables(L);
 }
 
 static void
@@ -162,6 +204,17 @@ ts_lua_inject_cache_lookup_result_variables(lua_State *L)
   for (i = 0; i < sizeof(ts_lua_cache_lookup_result_string) / sizeof(char *); i++) {
     lua_pushinteger(L, (lua_Integer)i);
     lua_setglobal(L, ts_lua_cache_lookup_result_string[i]);
+  }
+}
+
+static void
+ts_lua_inject_server_state_variables(lua_State *L)
+{
+  size_t i;
+
+  for (i = 0; i < sizeof(ts_lua_server_state_string) / sizeof(char *); i++) {
+    lua_pushinteger(L, (lua_Integer)i);
+    lua_setglobal(L, ts_lua_server_state_string[i]);
   }
 }
 
@@ -255,7 +308,7 @@ ts_lua_http_get_cache_lookup_url(lua_State *L)
   char output[TS_LUA_MAX_URL_LENGTH];
   int output_len;
   TSMLoc url = TS_NULL_MLOC;
-  char *str = NULL;
+  char *str  = NULL;
   int len;
 
   ts_lua_http_ctx *http_ctx;
@@ -307,7 +360,7 @@ ts_lua_http_set_cache_lookup_url(lua_State *L)
 
   if (url && url_len) {
     const char *start = url;
-    const char *end = url + url_len;
+    const char *end   = url + url_len;
     TSMLoc new_url_loc;
     if (TSUrlCreate(http_ctx->client_request_bufp, &new_url_loc) == TS_SUCCESS &&
         TSUrlParse(http_ctx->client_request_bufp, new_url_loc, &start, end) == TS_PARSE_DONE &&
@@ -334,7 +387,9 @@ ts_lua_http_set_cache_url(lua_State *L)
   url = luaL_checklstring(L, 1, &url_len);
 
   if (url && url_len) {
-    TSCacheUrlSet(http_ctx->txnp, url, url_len);
+    if (TSCacheUrlSet(http_ctx->txnp, url, url_len) != TS_SUCCESS) {
+      TSError("[ts_lua] Failed to set cache url");
+    }
   }
 
   return 0;
@@ -435,6 +490,36 @@ ts_lua_http_transaction_count(lua_State *L)
   } else {
     lua_pushnil(L);
   }
+
+  return 1;
+}
+
+static int
+ts_lua_http_redirect_url_set(lua_State *L)
+{
+  const char *url;
+  const char *redirect_url;
+  size_t url_len;
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  url          = luaL_checklstring(L, 1, &url_len);
+  redirect_url = TSstrndup(url, url_len);
+  TSHttpTxnRedirectUrlSet(http_ctx->txnp, redirect_url, url_len);
+
+  return 0;
+}
+
+static int
+ts_lua_http_get_server_state(lua_State *L)
+{
+  ts_lua_http_ctx *http_ctx;
+
+  GET_HTTP_CONTEXT(http_ctx, L);
+
+  TSServerState ss = TSHttpTxnServerStateGet(http_ctx->txnp);
+  lua_pushnumber(L, ss);
 
   return 1;
 }

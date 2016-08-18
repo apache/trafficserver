@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 /***************************************************************************
  * System Specific Items
@@ -144,9 +145,9 @@ typedef enum {
 
 /* used when starting Traffic Server process */
 typedef enum {
-  TS_CACHE_CLEAR_ON,     /* run TS in  "clear entire cache" mode */
-  TS_CACHE_CLEAR_HOSTDB, /* run TS in "only clear the host db cache" mode */
-  TS_CACHE_CLEAR_OFF     /* starts TS in regualr mode w/o any options */
+  TS_CACHE_CLEAR_NONE   = 0,        /* starts TS in regular mode w/o any options */
+  TS_CACHE_CLEAR_CACHE  = (1 << 0), /* run TS in  "clear cache" mode */
+  TS_CACHE_CLEAR_HOSTDB = (1 << 1), /* run TS in "clear the host db cache" mode */
 } TSCacheClearT;
 
 /*--- diagnostic output operations ----------------------------------------*/
@@ -323,7 +324,6 @@ typedef enum {
   TS_FNAME_UNDEFINED
 } TSFileNameT;
 
-
 /* Each rule type within a file has its own enumeration.
  * Need this enumeration because it's possible there are different Ele's used
  * for rule types within the same file
@@ -371,9 +371,9 @@ typedef enum {
 } TSInitOptionT;
 
 typedef enum {
-  TS_RESTART_OPT_NONE = 0x0,
+  TS_RESTART_OPT_NONE    = 0x0,
   TS_RESTART_OPT_CLUSTER = 0x01, /* Restart across the cluster */
-  TS_RESTART_OPT_DRAIN = 0x02,   /* Wait for traffic to drain before restarting. */
+  TS_RESTART_OPT_DRAIN   = 0x02, /* Wait for traffic to drain before restarting. */
 } TSRestartOptionT;
 
 /***************************************************************************
@@ -391,7 +391,7 @@ typedef struct {
 
 /*--- records -------------------------------------------------------------*/
 
-typedef union {/* record value */
+typedef union { /* record value */
   TSInt int_val;
   TSCounter counter_val;
   TSFloat float_val;
@@ -455,7 +455,6 @@ typedef struct {
   /*unsigned long timestamp; */ /* only applies to active events */
 } TSActiveEvent;
 
-
 /*--- abstract file operations --------------------------------------------*/
 
 typedef struct {
@@ -506,7 +505,6 @@ typedef struct {
                            be found in a URL  */
   TSSspec sec_spec;     /* secondary specifier */
 } TSPdSsFormat;         /* PdSs = Primary Destination Secondary Specifier */
-
 
 /* Generic Ele struct which is used as first member in all other Ele structs.
  * The TSCfgContext operations deal with TSCfgEle* type, so must typecast
@@ -894,7 +892,6 @@ tsapi TSMgmtError TSDisconnectCbRegister(TSDisconnectFunc *func, void *data);
 tsapi TSMgmtError TSDisconnectRetrySet(int retries, int retry_sleep_msec);
 tsapi TSMgmtError TSDisconnect();
 
-
 /*--- control operations --------------------------------------------------*/
 /* TSProxyStateGet: get the proxy state (on/off)
  * Input:  <none>
@@ -904,12 +901,13 @@ tsapi TSProxyStateT TSProxyStateGet();
 
 /* TSProxyStateSet: set the proxy state (on/off)
  * Input:  proxy_state - set to on/off
- *         clear - specifies if want to start TS with clear_cache or
- *                 clear_cache_hostdb option, or just run TS with no options;
- *                  only applies when turning proxy on
+ *         clear - a TSCacheClearT bitmask,
+ *            specifies if want to start TS with clear_cache or
+ *            clear_cache_hostdb option, or just run TS with no options;
+ *            only applies when turning proxy on
  * Output: TSMgmtError
  */
-tsapi TSMgmtError TSProxyStateSet(TSProxyStateT proxy_state, TSCacheClearT clear);
+tsapi TSMgmtError TSProxyStateSet(TSProxyStateT proxy_state, unsigned clear);
 
 /* TSProxyBacktraceGet: get a backtrace of the proxy
  * Input:  unsigned options - stack trace options
@@ -948,6 +946,12 @@ tsapi TSMgmtError TSBounce(unsigned options);
  */
 tsapi TSMgmtError TSStorageDeviceCmdOffline(char const *dev);
 
+/* TSLifecycleMessage: Send a lifecycle message to the plugins.
+ * @arg tag Alert tag string (null-terminated)
+ * @return Success
+ */
+tsapi TSMgmtError TSLifecycleMessage(char const *tag, void const *data, size_t data_size);
+
 /*--- diags output operations ---------------------------------------------*/
 /* TSDiags: enables users to manipulate run-time diagnostics, and print
  *           user-formatted notices, warnings and errors
@@ -962,13 +966,6 @@ tsapi void TSDiags(TSDiagsT mode, const char *fmt, ...);
  * Output: corresponding error message (allocated memory)
  */
 char *TSGetErrorMessage(TSMgmtError error_id);
-
-/*--- password operations -------------------------------------------------*/
-/* TSEncryptPassword: encrypts a password
- * Input: passwd - a password string to encrypt (can be NULL)
- * Output: e_passwd - an encrypted passwd (ats_malloc's memory)
- */
-tsapi TSMgmtError TSEncryptPassword(char *passwd, char **e_passwd);
 
 /*--- direct file operations ----------------------------------------------*/
 /* TSConfigFileRead: reads a config file into a buffer
@@ -1053,14 +1050,12 @@ tsapi TSMgmtError TSSnapshotRemove(char *snapshot_name);
  */
 tsapi TSMgmtError TSSnapshotGetMlt(TSStringList snapshots);
 
-
 /*--- statistics operations -----------------------------------------------*/
 /* TSStatsReset: sets all the statistics variables to their default values
  * Input: cluster - Reset the stats clusterwide or not
  * Outpue: TSErrr
  */
 tsapi TSMgmtError TSStatsReset(bool cluster, const char *name);
-
 
 /*--- variable operations -------------------------------------------------*/
 /* TSRecordGet: gets a record
@@ -1142,7 +1137,6 @@ tsapi TSMgmtError TSRecordSetMlt(TSList rec_list, TSActionNeedT *action_need);
  */
 /*tsapi TSMgmtError               TSEventSignal (char *event_name, ...); */
 
-
 /* TSEventResolve: enables the user to resolve an event
  * Input:  event_name - event to resolve
  * Output: TSMgmtError
@@ -1185,7 +1179,6 @@ tsapi TSMgmtError TSEventSignalCbRegister(char *event_name, TSEventSignalFunc fu
  */
 tsapi TSMgmtError TSEventSignalCbUnregister(char *event_name, TSEventSignalFunc func);
 
-
 /*--- abstracted file operations ------------------------------------------*/
 /* TSCfgContextCreate: allocates memory for an empty TSCfgContext for the specified file
  * Input:  file - the file
@@ -1212,7 +1205,6 @@ tsapi TSMgmtError TSCfgContextDestroy(TSCfgContext ctx);
  */
 tsapi TSMgmtError TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT *action_need, TSIntList errRules);
 
-
 /* TSCfgContextGet: retrieves all the Ele's for the file specified in the ctx and
  *                puts them into ctx; note that the ele's in the TSCfgContext don't
  *                all have to be of the same ele type
@@ -1221,7 +1213,6 @@ tsapi TSMgmtError TSCfgContextCommit(TSCfgContext ctx, TSActionNeedT *action_nee
  *
  */
 tsapi TSMgmtError TSCfgContextGet(TSCfgContext ctx);
-
 
 /*--- TSCfgContext Operations --------------------------------------------*/
 /*

@@ -82,7 +82,7 @@ send_and_parse_list(OpType op, LLQ *list)
 
   MgmtMarshallInt optype = op;
   MgmtMarshallInt err;
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply    = {NULL, 0};
   MgmtMarshallString strval = NULL;
 
   if (!list) {
@@ -142,8 +142,8 @@ mgmt_record_set(const char *rec_name, const char *rec_val, TSActionNeedT *action
 {
   TSMgmtError ret;
 
-  MgmtMarshallInt optype = RECORD_SET;
-  MgmtMarshallString name = const_cast<MgmtMarshallString>(rec_name);
+  MgmtMarshallInt optype   = RECORD_SET;
+  MgmtMarshallString name  = const_cast<MgmtMarshallString>(rec_name);
   MgmtMarshallString value = const_cast<MgmtMarshallString>(rec_val);
 
   MgmtMarshallData reply = {NULL, 0};
@@ -208,8 +208,9 @@ Init(const char *socket_path, TSInitOptionT options)
   // EVENT setup - initialize callback queue
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
     remote_event_callbacks = create_callback_table("remote_callbacks");
-    if (!remote_event_callbacks)
+    if (!remote_event_callbacks) {
       return TS_ERR_SYS_CALL;
+    }
   } else {
     remote_event_callbacks = NULL;
   }
@@ -219,8 +220,9 @@ Init(const char *socket_path, TSInitOptionT options)
   // connection fails; this might happen if client is set up and running
   // before TM
   err = ts_connect();
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     goto END;
+  }
 
   // if connected, create event thread that listens for events from TM
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
@@ -248,13 +250,15 @@ Terminate()
 {
   TSMgmtError err;
 
-  if (remote_event_callbacks)
+  if (remote_event_callbacks) {
     delete_callback_table(remote_event_callbacks);
+  }
 
   // be sure to do this before reset socket_fd's
   err = disconnect();
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     return err;
+  }
 
   // cancel the listening socket thread
   // it's important to call this before setting paths to NULL because the
@@ -262,21 +266,25 @@ Terminate()
   // will seg fault if the socket paths are NULL while it is connecting;
   // the thread will be cancelled at a cancellation point in the
   // socket_test_thread, eg. sleep
-  if (ts_test_thread)
+  if (ts_test_thread) {
     ink_thread_cancel(ts_test_thread);
-  if (ts_event_thread)
+  }
+  if (ts_event_thread) {
     ink_thread_cancel(ts_event_thread);
+  }
 
   // Before clear, we should confirm these
   // two threads have finished. Or the clear
   // operation may lead them crash.
-  if (ts_test_thread)
+  if (ts_test_thread) {
     ink_thread_join(ts_test_thread);
-  if (ts_event_thread)
+  }
+  if (ts_event_thread) {
     ink_thread_join(ts_event_thread);
+  }
 
   // Clear operation
-  ts_test_thread = static_cast<ink_thread>(NULL);
+  ts_test_thread  = static_cast<ink_thread>(NULL);
   ts_event_thread = static_cast<ink_thread>(NULL);
   set_socket_paths(NULL); // clear the socket_path
 
@@ -293,7 +301,7 @@ DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
   char diag_msg[MAX_BUF_SIZE];
 
   MgmtMarshallInt optype = DIAGS;
-  MgmtMarshallInt level = mode;
+  MgmtMarshallInt level  = mode;
   MgmtMarshallString msg = diag_msg;
 
   // format the diag message now so it can be sent
@@ -343,7 +351,7 @@ ProxyStateSet(TSProxyStateT state, TSCacheClearT clear)
   MgmtMarshallInt pclear = clear;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, PROXY_STATE_SET, &optype, &pstate, &pclear);
-  return (ret == TS_ERR_OKAY) ? parse_generic_response(PROXY_STATE_GET, main_socket_fd) : ret;
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(PROXY_STATE_SET, main_socket_fd) : ret;
 }
 
 TSMgmtError
@@ -353,8 +361,8 @@ ServerBacktrace(unsigned options, char **trace)
   TSMgmtError ret;
   MgmtMarshallInt optype = SERVER_BACKTRACE;
   MgmtMarshallInt err;
-  MgmtMarshallInt flags = options;
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallInt flags     = options;
+  MgmtMarshallData reply    = {NULL, 0};
   MgmtMarshallString strval = NULL;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, SERVER_BACKTRACE, &optype, &flags);
@@ -411,7 +419,7 @@ Restart(unsigned options)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = RESTART;
-  MgmtMarshallInt oval = options;
+  MgmtMarshallInt oval   = options;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, RESTART, &optype, &oval);
   if (ret != TS_ERR_OKAY) {
@@ -436,7 +444,7 @@ Bounce(unsigned options)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = BOUNCE;
-  MgmtMarshallInt oval = options;
+  MgmtMarshallInt oval   = options;
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, BOUNCE, &optype, &oval);
 
@@ -452,11 +460,28 @@ TSMgmtError
 StorageDeviceCmdOffline(char const *dev)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = STORAGE_DEVICE_CMD_OFFLINE;
+  MgmtMarshallInt optype  = STORAGE_DEVICE_CMD_OFFLINE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(dev);
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, STORAGE_DEVICE_CMD_OFFLINE, &optype, &name);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(STORAGE_DEVICE_CMD_OFFLINE, main_socket_fd) : ret;
+}
+
+/*-------------------------------------------------------------------------
+ * LIfecycle Alert
+ *-------------------------------------------------------------------------
+ * Send alert to plugins
+ */
+TSMgmtError
+LifecycleMessage(char const *tag, void const *data, size_t data_size)
+{
+  TSMgmtError ret;
+  MgmtMarshallInt optype  = LIFECYCLE_MESSAGE;
+  MgmtMarshallString mtag = const_cast<MgmtMarshallString>(tag);
+  MgmtMarshallData mdata  = {const_cast<void *>(data), data_size};
+
+  ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, LIFECYCLE_MESSAGE, &optype, &mtag, &mdata);
+  return (ret == TS_ERR_OKAY) ? parse_generic_response(LIFECYCLE_MESSAGE, main_socket_fd) : ret;
 }
 
 /***************************************************************************
@@ -485,8 +510,7 @@ mgmt_record_convert_value(TSRecordT rec_type, const MgmtMarshallData &data, TSRe
       ink_assert(data.len == strlen((char *)data.ptr) + 1);
       value.string_val = ats_strdup((char *)data.ptr);
       break;
-    default:
-      ; // nothing ... shut up compiler!
+    default:; // nothing ... shut up compiler!
     }
   }
 }
@@ -501,7 +525,7 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
   MgmtMarshallInt rclass;
   MgmtMarshallInt type;
   MgmtMarshallString name = NULL;
-  MgmtMarshallData value = {NULL, 0};
+  MgmtMarshallData value  = {NULL, 0};
 
   ink_zero(*rec_ele);
   rec_ele->rec_type = TS_REC_UNDEFINED;
@@ -524,8 +548,8 @@ mgmt_record_get_reply(OpType op, TSRecordEle *rec_ele)
   }
 
   rec_ele->rec_class = (TSInt)rclass;
-  rec_ele->rec_type = (TSRecordT)type;
-  rec_ele->rec_name = ats_strdup(name);
+  rec_ele->rec_type  = (TSRecordT)type;
+  rec_ele->rec_name  = ats_strdup(name);
   mgmt_record_convert_value(rec_ele->rec_type, value, rec_ele->valueT);
 
 done:
@@ -548,8 +572,8 @@ mgmt_record_describe_reply(TSConfigRecordDescription *val)
   MgmtMarshallInt err;
   MgmtMarshallString name = NULL;
   MgmtMarshallString expr = NULL;
-  MgmtMarshallData value = {NULL, 0};
-  MgmtMarshallData deflt = {NULL, 0};
+  MgmtMarshallData value  = {NULL, 0};
+  MgmtMarshallData deflt  = {NULL, 0};
 
   MgmtMarshallInt rtype;
   MgmtMarshallInt rclass;
@@ -577,17 +601,17 @@ mgmt_record_describe_reply(TSConfigRecordDescription *val)
   }
 
   // Everything is cool, populate the description ...
-  val->rec_name = ats_strdup(name);
-  val->rec_checkexpr = ats_strdup(expr);
-  val->rec_type = (TSRecordT)rtype;
-  val->rec_class = rclass;
-  val->rec_version = version;
-  val->rec_rsb = rsb;
-  val->rec_order = order;
-  val->rec_access = access;
+  val->rec_name       = ats_strdup(name);
+  val->rec_checkexpr  = ats_strdup(expr);
+  val->rec_type       = (TSRecordT)rtype;
+  val->rec_class      = rclass;
+  val->rec_version    = version;
+  val->rec_rsb        = rsb;
+  val->rec_order      = order;
+  val->rec_access     = access;
   val->rec_updatetype = updatetype;
-  val->rec_checktype = checktype;
-  val->rec_source = source;
+  val->rec_checktype  = checktype;
+  val->rec_source     = source;
 
   mgmt_record_convert_value(val->rec_type, value, val->rec_value);
   mgmt_record_convert_value(val->rec_type, deflt, val->rec_default);
@@ -606,7 +630,7 @@ TSMgmtError
 MgmtRecordGet(const char *rec_name, TSRecordEle *rec_ele)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = RECORD_GET;
+  MgmtMarshallInt optype    = RECORD_GET;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   if (!rec_name || !rec_ele) {
@@ -622,8 +646,8 @@ TSMgmtError
 MgmtConfigRecordDescribeMatching(const char *rec_name, unsigned options, TSList rec_vals)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = RECORD_DESCRIBE_CONFIG;
-  MgmtMarshallInt flags = options | RECORD_DESCRIBE_FLAGS_MATCH;
+  MgmtMarshallInt optype    = RECORD_DESCRIBE_CONFIG;
+  MgmtMarshallInt flags     = options | RECORD_DESCRIBE_FLAGS_MATCH;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   // create and send request
@@ -668,8 +692,8 @@ TSMgmtError
 MgmtConfigRecordDescribe(const char *rec_name, unsigned options, TSConfigRecordDescription *val)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = RECORD_DESCRIBE_CONFIG;
-  MgmtMarshallInt flags = options & ~RECORD_DESCRIBE_FLAGS_MATCH;
+  MgmtMarshallInt optype    = RECORD_DESCRIBE_CONFIG;
+  MgmtMarshallInt flags     = options & ~RECORD_DESCRIBE_FLAGS_MATCH;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(rec_name);
 
   // create and send request
@@ -687,7 +711,7 @@ MgmtRecordGetMatching(const char *regex, TSList rec_vals)
   TSMgmtError ret;
   TSRecordEle *rec_ele;
 
-  MgmtMarshallInt optype = RECORD_MATCH_GET;
+  MgmtMarshallInt optype    = RECORD_MATCH_GET;
   MgmtMarshallString record = const_cast<MgmtMarshallString>(regex);
 
   if (!regex || !rec_vals) {
@@ -734,8 +758,9 @@ MgmtRecordSet(const char *rec_name, const char *val, TSActionNeedT *action_need)
 {
   TSMgmtError ret;
 
-  if (!rec_name || !val || !action_need)
+  if (!rec_name || !val || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   ret = mgmt_record_set(rec_name, val, action_need);
   return ret;
@@ -749,8 +774,9 @@ MgmtRecordSetInt(const char *rec_name, MgmtInt int_val, TSActionNeedT *action_ne
   char str_val[MAX_RECORD_SIZE];
   TSMgmtError ret;
 
-  if (!rec_name || !action_need)
+  if (!rec_name || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   bzero(str_val, MAX_RECORD_SIZE);
   snprintf(str_val, sizeof(str_val), "%" PRId64 "", int_val);
@@ -766,8 +792,9 @@ MgmtRecordSetCounter(const char *rec_name, MgmtIntCounter counter_val, TSActionN
   char str_val[MAX_RECORD_SIZE];
   TSMgmtError ret;
 
-  if (!rec_name || !action_need)
+  if (!rec_name || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   bzero(str_val, MAX_RECORD_SIZE);
   snprintf(str_val, sizeof(str_val), "%" PRId64 "", counter_val);
@@ -784,8 +811,9 @@ MgmtRecordSetFloat(const char *rec_name, MgmtFloat float_val, TSActionNeedT *act
   TSMgmtError ret;
 
   bzero(str_val, MAX_RECORD_SIZE);
-  if (snprintf(str_val, sizeof(str_val), "%f", float_val) < 0)
+  if (snprintf(str_val, sizeof(str_val), "%f", float_val) < 0) {
     return TS_ERR_SYS_CALL;
+  }
   ret = mgmt_record_set(rec_name, str_val, action_need);
 
   return ret;
@@ -796,8 +824,9 @@ MgmtRecordSetString(const char *rec_name, const char *string_val, TSActionNeedT 
 {
   TSMgmtError ret;
 
-  if (!rec_name || !action_need)
+  if (!rec_name || !action_need) {
     return TS_ERR_PARAMS;
+  }
 
   ret = mgmt_record_set(rec_name, string_val, action_need);
   return ret;
@@ -824,7 +853,7 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
 {
   TSMgmtError ret;
   MgmtMarshallInt optype = FILE_READ;
-  MgmtMarshallInt fid = file;
+  MgmtMarshallInt fid    = file;
 
   MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallInt err;
@@ -856,8 +885,8 @@ ReadFile(TSFileNameT file, char **text, int *size, int *version)
   }
 
   *version = vers;
-  *text = (char *)data.ptr;
-  *size = (int)data.len;
+  *text    = (char *)data.ptr;
+  *size    = (int)data.len;
   return TS_ERR_OKAY;
 }
 
@@ -881,9 +910,9 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
   TSMgmtError ret;
 
   MgmtMarshallInt optype = FILE_WRITE;
-  MgmtMarshallInt fid = file;
-  MgmtMarshallInt vers = version;
-  MgmtMarshallData data = {(void *)text, (size_t)size};
+  MgmtMarshallInt fid    = file;
+  MgmtMarshallInt vers   = version;
+  MgmtMarshallData data  = {(void *)text, (size_t)size};
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, FILE_WRITE, &optype, &fid, &vers, &data);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(FILE_WRITE, main_socket_fd) : ret;
@@ -914,11 +943,12 @@ TSMgmtError
 EventResolve(const char *event_name)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = EVENT_RESOLVE;
+  MgmtMarshallInt optype  = EVENT_RESOLVE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
-  if (!event_name)
+  if (!event_name) {
     return TS_ERR_PARAMS;
+  }
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, EVENT_RESOLVE, &optype, &name);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(EVENT_RESOLVE, main_socket_fd) : ret;
@@ -933,8 +963,9 @@ EventResolve(const char *event_name)
 TSMgmtError
 ActiveEventGetMlt(LLQ *active_events)
 {
-  if (!active_events)
+  if (!active_events) {
     return TS_ERR_PARAMS;
+  }
 
   return (send_and_parse_list(EVENT_GET_MLT, active_events));
 }
@@ -948,15 +979,16 @@ TSMgmtError
 EventIsActive(const char *event_name, bool *is_current)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = EVENT_ACTIVE;
+  MgmtMarshallInt optype  = EVENT_ACTIVE;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
   MgmtMarshallData reply = {NULL, 0};
   MgmtMarshallInt err;
   MgmtMarshallInt bval;
 
-  if (!event_name || !is_current)
+  if (!event_name || !is_current) {
     return TS_ERR_PARAMS;
+  }
 
   // create and send request
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, EVENT_ACTIVE, &optype, &name);
@@ -995,23 +1027,27 @@ EventSignalCbRegister(const char *event_name, TSEventSignalFunc func, void *data
   bool first_time = false;
   TSMgmtError ret;
 
-  if (func == NULL)
+  if (func == NULL) {
     return TS_ERR_PARAMS;
-  if (!remote_event_callbacks)
+  }
+  if (!remote_event_callbacks) {
     return TS_ERR_FAIL;
+  }
 
   ret = cb_table_register(remote_event_callbacks, event_name, func, data, &first_time);
-  if (ret != TS_ERR_OKAY)
+  if (ret != TS_ERR_OKAY) {
     return ret;
+  }
 
   // if we need to notify traffic manager of the event then send msg
   if (first_time) {
-    MgmtMarshallInt optype = EVENT_REG_CALLBACK;
+    MgmtMarshallInt optype  = EVENT_REG_CALLBACK;
     MgmtMarshallString name = const_cast<MgmtMarshallString>(event_name);
 
     ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, EVENT_REG_CALLBACK, &optype, &name);
-    if (ret != TS_ERR_OKAY)
+    if (ret != TS_ERR_OKAY) {
       return ret;
+    }
   }
 
   return TS_ERR_OKAY;
@@ -1036,19 +1072,22 @@ EventSignalCbUnregister(const char *event_name, TSEventSignalFunc func)
 {
   TSMgmtError err;
 
-  if (!remote_event_callbacks)
+  if (!remote_event_callbacks) {
     return TS_ERR_FAIL;
+  }
 
   // remove the callback function from the table
   err = cb_table_unregister(remote_event_callbacks, event_name, func);
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     return err;
+  }
 
   // check if we need to notify traffic manager of the event (notify TM
   // only if the event has no callbacks)
   err = send_unregister_all_callbacks(event_socket_fd, remote_event_callbacks);
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     return err;
+  }
 
   return TS_ERR_OKAY;
 }
@@ -1060,11 +1099,12 @@ static TSMgmtError
 snapshot_message(OpType op, const char *snapshot_name)
 {
   TSMgmtError ret;
-  MgmtMarshallInt optype = op;
+  MgmtMarshallInt optype  = op;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(snapshot_name);
 
-  if (!snapshot_name)
+  if (!snapshot_name) {
     return TS_ERR_PARAMS;
+  }
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);
   return (ret == TS_ERR_OKAY) ? parse_generic_response(op, main_socket_fd) : ret;
@@ -1091,8 +1131,9 @@ SnapshotRemove(const char *snapshot_name)
 TSMgmtError
 SnapshotGetMlt(LLQ *snapshots)
 {
-  if (!snapshots)
+  if (!snapshots) {
     return TS_ERR_PARAMS;
+  }
 
   return send_and_parse_list(SNAPSHOT_GET_MLT, snapshots);
 }
@@ -1101,8 +1142,8 @@ TSMgmtError
 StatsReset(bool cluster, const char *stat_name)
 {
   TSMgmtError ret;
-  OpType op = cluster ? STATS_RESET_CLUSTER : STATS_RESET_NODE;
-  MgmtMarshallInt optype = op;
+  OpType op               = cluster ? STATS_RESET_CLUSTER : STATS_RESET_NODE;
+  MgmtMarshallInt optype  = op;
   MgmtMarshallString name = const_cast<MgmtMarshallString>(stat_name);
 
   ret = MGMTAPI_SEND_MESSAGE(main_socket_fd, op, &optype, &name);

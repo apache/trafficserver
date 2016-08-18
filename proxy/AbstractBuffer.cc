@@ -28,7 +28,6 @@
 /* #include "CacheAtomic.h" */
 #include "ts/ink_align.h"
 
-
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -186,13 +185,13 @@ AbstractBuffer::initialize()
 
   if (!unaligned_buffer) {
     unaligned_buffer = new char[size + 511];
-    buffer = (char *)align_pointer_forward(unaligned_buffer, 512);
+    buffer           = (char *)align_pointer_forward(unaligned_buffer, 512);
   }
 
   vs_history[AB_STATE_READ_WRITE] = vs;
 
   vs.s.offset = 0;
-  vs.s.state = AB_STATE_READ_WRITE;
+  vs.s.state  = AB_STATE_READ_WRITE;
 }
 
 /*-------------------------------------------------------------------------
@@ -273,7 +272,7 @@ AbstractBuffer::destroy()
   vs_history[AB_STATE_UNUSED] = vs;
 
   vs.s.offset = 0;
-  vs.s.state = AB_STATE_UNUSED;
+  vs.s.state  = AB_STATE_UNUSED;
 }
 
 /*-------------------------------------------------------------------------
@@ -291,6 +290,6 @@ AbstractBuffer::clear()
 
   vs.s.writer_count = 0;
   vs.s.reader_count = 0;
-  vs.s.offset = 0;
-  vs.s.state = AB_STATE_UNUSED;
+  vs.s.offset       = 0;
+  vs.s.state        = AB_STATE_UNUSED;
 }

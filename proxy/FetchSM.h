@@ -41,26 +41,25 @@ class FetchSM : public Continuation
 {
 public:
   FetchSM() {}
-
   void
   init_comm()
   {
-    is_internal_request = true;
-    recursion = 0;
-    req_finished = 0;
-    is_method_head = 0;
-    header_done = 0;
-    user_data = NULL;
-    has_sent_header = false;
-    destroyed = false;
-    req_content_length = 0;
-    resp_is_chunked = -1;
-    resp_content_length = -1;
+    is_internal_request    = true;
+    recursion              = 0;
+    req_finished           = 0;
+    is_method_head         = 0;
+    header_done            = 0;
+    user_data              = NULL;
+    has_sent_header        = false;
+    destroyed              = false;
+    req_content_length     = 0;
+    resp_is_chunked        = -1;
+    resp_content_length    = -1;
     resp_received_body_len = 0;
-    resp_received_close = -1;
+    resp_received_close    = -1;
     cont_mutex.clear();
-    req_buffer = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
-    req_reader = req_buffer->alloc_reader();
+    req_buffer  = new_MIOBuffer(HTTP_HEADER_BUFFER_SIZE_INDEX);
+    req_reader  = req_buffer->alloc_reader();
     resp_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
     resp_reader = resp_buffer->alloc_reader();
     http_parser_init(&http_parser);
@@ -74,8 +73,8 @@ public:
   {
     Debug("FetchSM", "[%s] FetchSM initialized for request with headers\n--\n%.*s\n--", __FUNCTION__, length, headers);
     init_comm();
-    contp = cont;
-    callback_events = events;
+    contp            = cont;
+    callback_events  = events;
     callback_options = options;
     _addr.assign(addr);
     fetch_flags = TS_FETCH_FLAGS_DECHUNK;

@@ -62,14 +62,14 @@ main(int argc, char **argv)
 
   // Reading stdin support.
   size_t in_size = 200;
-  char *in_buff = 0;
+  char *in_buff  = 0;
   ssize_t in_count;
 
   // getopt return values. Selected to avoid collisions with
   // short arguments.
   static int const OPT_ADDRESS = 257; ///< Bind to IP address option.
-  static int const OPT_HELP = 258;    ///< Print help message.
-  static int const OPT_MD5 = 259;     ///< MD5 key.
+  static int const OPT_HELP    = 258; ///< Print help message.
+  static int const OPT_MD5     = 259; ///< MD5 key.
 
   static option OPTIONS[] = {
     {"address", 1, 0, OPT_ADDRESS}, {"md5", 1, 0, OPT_MD5}, {"help", 0, 0, OPT_HELP}, {0, 0, 0, 0} // required terminator.
@@ -87,16 +87,16 @@ main(int argc, char **argv)
     switch (zret) {
     case OPT_HELP:
       FAIL_MSG = "Usage:";
-      fail = true;
+      fail     = true;
       break;
     case '?':
       FAIL_MSG = "Invalid option specified.";
-      fail = true;
+      fail     = true;
       break;
     case OPT_ADDRESS:
       if (0 == inet_aton(optarg, &ip_addr)) {
         FAIL_MSG = "Invalid IP address specified for client.";
-        fail = true;
+        fail     = true;
       }
       break;
     case OPT_MD5:
@@ -122,10 +122,10 @@ main(int argc, char **argv)
   pollfd pfa[POLL_FD_COUNT];
 
   // Poll on STDIN and the socket.
-  pfa[0].fd = STDIN_FILENO;
+  pfa[0].fd     = STDIN_FILENO;
   pfa[0].events = POLLIN;
 
-  pfa[1].fd = wcp.getSocket();
+  pfa[1].fd     = wcp.getSocket();
   pfa[1].events = POLLIN;
 
   while (true) {

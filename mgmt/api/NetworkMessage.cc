@@ -67,6 +67,7 @@ static const struct NetCmdOperation requests[] = {
   /* API_PING                   */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
   /* SERVER_BACKTRACE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
   /* RECORD_DESCRIBE_CONFIG     */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_INT}},
+  /* LIFECYCLE_MESSAGE          */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA}},
 };
 
 // Responses always begin with a TSMgmtError code, followed by additional fields.
@@ -108,6 +109,7 @@ static const struct NetCmdOperation responses[] = {
                                      MGMT_MARSHALL_INT /* order */, MGMT_MARSHALL_INT /* access */, MGMT_MARSHALL_INT /* update */,
                                      MGMT_MARSHALL_INT /* updatetype */, MGMT_MARSHALL_INT /* checktype */,
                                      MGMT_MARSHALL_INT /* source */, MGMT_MARSHALL_STRING /* checkexpr */}},
+  /* LIFECYCLE_MESSAGE          */ {1, {MGMT_MARSHALL_INT}},
 };
 
 #define GETCMD(ops, optype, cmd)                                       \
@@ -157,7 +159,7 @@ send_mgmt_request(int fd, OpType optype, ...)
 {
   va_list ap;
   MgmtMarshallInt msglen;
-  MgmtMarshallData req = {NULL, 0};
+  MgmtMarshallData req            = {NULL, 0};
   const MgmtMarshallType fields[] = {MGMT_MARSHALL_DATA};
   const NetCmdOperation *cmd;
 
@@ -196,9 +198,9 @@ send_mgmt_request(int fd, OpType optype, ...)
 TSMgmtError
 send_mgmt_error(int fd, OpType optype, TSMgmtError error)
 {
-  MgmtMarshallInt ecode = error;
-  MgmtMarshallInt intval = 0;
-  MgmtMarshallData dataval = {NULL, 0};
+  MgmtMarshallInt ecode     = error;
+  MgmtMarshallInt intval    = 0;
+  MgmtMarshallData dataval  = {NULL, 0};
   MgmtMarshallString strval = NULL;
 
   // Switch on operations, grouped by response format.
@@ -231,6 +233,7 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
     return send_mgmt_response(fd, optype, &ecode, &strval);
 
   case FILE_READ:
+  case LIFECYCLE_MESSAGE:
     ink_release_assert(responses[optype].nfields == 3);
     return send_mgmt_response(fd, optype, &ecode, &intval, &dataval);
 
@@ -274,7 +277,7 @@ send_mgmt_response(int fd, OpType optype, ...)
 {
   va_list ap;
   MgmtMarshallInt msglen;
-  MgmtMarshallData reply = {NULL, 0};
+  MgmtMarshallData reply          = {NULL, 0};
   const MgmtMarshallType fields[] = {MGMT_MARSHALL_DATA};
   const NetCmdOperation *cmd;
 
@@ -311,7 +314,7 @@ send_mgmt_response(int fd, OpType optype, ...)
 
 template <unsigned N>
 static TSMgmtError
-recv_x(const struct NetCmdOperation(&ops)[N], void *buf, size_t buflen, OpType optype, va_list ap)
+recv_x(const struct NetCmdOperation (&ops)[N], void *buf, size_t buflen, OpType optype, va_list ap)
 {
   ssize_t msglen;
   const NetCmdOperation *cmd;

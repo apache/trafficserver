@@ -1,0 +1,80 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.rst:23
+msgid "Setting Up a Transaction Hook"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.rst:25
+msgid ""
+"The Blacklist plugin sends \"access forbidden\" messages to clients if "
+"their requests are directed to blacklisted hosts. Therefore, the plugin "
+"needs a transaction hook so it will be called back when Traffic Server's "
+"HTTP state machine reaches the \"send response header\" event. In the "
+"Blacklist plugin's ``handle_dns`` routine, the transaction hook is added as "
+"follows:"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.rst:52
+msgid ""
+"This code fragment shows some interesting features. The plugin is comparing "
+"the requested site to the list of blacklisted sites. While the plugin is "
+"using the blacklist, it must acquire the mutex lock for the blacklist to "
+"prevent configuration changes in the middle of a blacklisting operation. If "
+"the requested site is blacklisted, then the following things happen:"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.rst:59
+msgid ""
+"A transaction hook is added with ``TSHttpTxnHookAdd``; the plugin is called "
+"back at the \"send response header\" event (i.e., the plugin sends an "
+"Access forbidden message to the client). You can see that in order to add a "
+"transaction hook, you need a handle to the transaction being processed."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.rst:65
+msgid ""
+"The transaction is reenabled using ``TSHttpTxnReenable`` with "
+"``TS_EVENT_HTTP_ERROR`` as its event argument. Reenabling with an error "
+"event tells the HTTP state machine to stop the transaction and jump to the "
+"\"send response header\" state. Notice that if the requested site is not "
+"blacklisted, then the transaction is reenabled with the "
+"``TS_EVENT_HTTP_CONTINUE`` event."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.rst:72
+msgid ""
+"The string and ``TSMLoc`` data stored in the marshal buffer ``bufp`` is "
+"released by ``TSHandleMLocRelease`` (see :ref:`developer-plugins-http-"
+"headers-marshal-buffers`). Release these handles before re-enabling the "
+"transaction."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/setting-up-a-transaction-hook.en.rst:77
+msgid ""
+"In general, whenever the plugin is doing something to a transaction, it "
+"must reenable the transaction when it is finished. In other words: every "
+"time your handler function handles a transaction event, it must call "
+"``TSHttpTxnReenable`` when it is finished. Similarly, after your plugin "
+"handles session events (``TS_EVENT_HTTP_SSN_START`` and "
+"``TS_EVENT_HTTP_SSN_CLOSE``), it must reenable the session with "
+"``TSHttpSsnReenable``. Reenabling the transaction twice in the same plugin "
+"routine is a bad error."
+msgstr ""

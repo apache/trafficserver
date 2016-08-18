@@ -1,4 +1,14 @@
-/* override table contents wrapping */
+/* Use the same line-height on <dd> as for <p>, which prevents odd rendering of
+   single vs. mulei paragraph definition bodies. */
+dd {
+    line-height: 24px;
+}
+
+/*
+  Following two styles fix the problem with wide tables introducing a horizontal
+  scrollbar, instead of the much more desired behavior of wrapping cell contents.
+  Source: https://github.com/snide/sphinx_rtd_theme/issues/117#issuecomment-41506687
+*/
 .wy-table-responsive table td, .wy-table-responsive table th {
     white-space: normal;
 }
@@ -7,4 +17,35 @@
     margin-bottom: 24px;
     max-width: 100%;
     overflow: visible;
+}
+
+/* pre inside paragraphs gets weird spacing  */
+span.pre {
+    line-height: initial;
+}
+
+/* Fix for nav bottom padding with flyout */
+nav.wy-nav-side {
+    padding-bottom: 3em;
+}
+
+/* Allow content area to expand so that some elements (e.g. tables) may fill up
+   horizontal space as necessary, while limiting the width of general paragraph
+   and list elements. Eye-tracking with really wide blocks of text is error
+   prone and makes reading more difficult, but having large tables with many
+   columns use all available space can be a big win. */
+div.wy-nav-content {
+    max-width: 100%;
+}
+.rst-content p,
+.rst-content ol,
+.rst-content ul,
+.rst-content dd,
+.rst-content blockquote,
+.rst-content .admonition,
+.rst-content .rst-footer-buttons,
+div.highlight-c, div.highlight-cpp, div.highlight-http, div.highlight-perl,
+div.highlight-python, div.highlight-sh
+{
+    max-width: 800px;
 }

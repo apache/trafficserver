@@ -301,14 +301,16 @@ epic_flush_stats(TSCont /* contp */, TSEvent /* event */, void * /* edata */)
 void
 TSPluginInit(int argc, const char *argv[])
 {
-  static const struct option longopts[] = {{const_cast<char *>("directory"), required_argument, NULL, 'd'},
-                                           {const_cast<char *>("period"), required_argument, NULL, 'p'},
-                                           {NULL, 0, NULL, 0}};
+  static const struct option longopts[] = {
+    {const_cast<char *>("directory"), required_argument, NULL, 'd'},
+    {const_cast<char *>("period"), required_argument, NULL, 'p'},
+    {NULL, 0, NULL, 0},
+  };
 
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = (char *)"epic";
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)"epic";
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -339,5 +341,5 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   debug("initialized plugin with directory %s and period %d sec", epic_prefix, (int)epic_period);
-  TSContScheduleEvery(TSContCreate(epic_flush_stats, NULL), epic_period * 1000ll, TS_THREAD_POOL_TASK);
+  TSContScheduleEvery(TSContCreate(epic_flush_stats, TSMutexCreate()), epic_period * 1000ll, TS_THREAD_POOL_TASK);
 }

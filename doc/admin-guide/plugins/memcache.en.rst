@@ -1,6 +1,6 @@
-.. _memcache-plugin:
+.. _admin-plugins-memcache:
 
-memcache Plugin
+Memcache Plugin
 ***************
 
 .. Licensed to the Apache Software Foundation (ASF) under one

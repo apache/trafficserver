@@ -195,13 +195,13 @@ AtomicLock::Unlock()
 BitMap::BitMap(int bitmap_maxsize)
 {
   if (bitmap_maxsize <= (int)(STATIC_BITMAP_BYTE_SIZE * BITS_PER_BYTE)) {
-    _bitmap = _static_bitmap;
-    _bitmap_size = bitmap_maxsize;
+    _bitmap           = _static_bitmap;
+    _bitmap_size      = bitmap_maxsize;
     _bitmap_byte_size = STATIC_BITMAP_BYTE_SIZE;
   } else {
     _bitmap_byte_size = (bitmap_maxsize + (BITS_PER_BYTE - 1)) / BITS_PER_BYTE;
-    _bitmap = new char[_bitmap_byte_size];
-    _bitmap_size = bitmap_maxsize;
+    _bitmap           = new char[_bitmap_byte_size];
+    _bitmap_size      = bitmap_maxsize;
   }
   memset((void *)_bitmap, 0, _bitmap_byte_size);
 }
@@ -216,8 +216,9 @@ BitMap::~BitMap()
 void
 BitMap::SetBit(int bit)
 {
-  if (bit >= _bitmap_size)
+  if (bit >= _bitmap_size) {
     return;
+  }
 
   char *pbyte = &_bitmap[bit / BITS_PER_BYTE];
   *pbyte |= (1 << (bit % BITS_PER_BYTE));
@@ -226,8 +227,9 @@ BitMap::SetBit(int bit)
 void
 BitMap::ClearBit(int bit)
 {
-  if (bit >= _bitmap_size)
+  if (bit >= _bitmap_size) {
     return;
+  }
 
   char *pbyte = &_bitmap[bit / BITS_PER_BYTE];
   *pbyte &= ~(1 << (bit % BITS_PER_BYTE));
@@ -236,14 +238,16 @@ BitMap::ClearBit(int bit)
 int
 BitMap::IsBitSet(int bit)
 {
-  if (bit >= _bitmap_size)
+  if (bit >= _bitmap_size) {
     return 0;
+  }
 
   char *pbyte = &_bitmap[bit / BITS_PER_BYTE];
-  if (*pbyte & (1 << (bit % BITS_PER_BYTE)))
+  if (*pbyte & (1 << (bit % BITS_PER_BYTE))) {
     return 1;
-  else
+  } else {
     return 0;
+  }
 }
 
 //-----------------------------------------------------------------------
@@ -251,26 +255,36 @@ BitMap::IsBitSet(int bit)
 //      Manage global ICP configuration data from the TS configuration.
 //      Support class for ICPConfiguration.
 //-----------------------------------------------------------------------
-int ICPConfigData::operator==(ICPConfigData &ICPData)
+int
+ICPConfigData::operator==(ICPConfigData &ICPData)
 {
-  if (ICPData._icp_enabled != _icp_enabled)
+  if (ICPData._icp_enabled != _icp_enabled) {
     return 0;
-  if (ICPData._icp_port != _icp_port)
+  }
+  if (ICPData._icp_port != _icp_port) {
     return 0;
-  if (ICPData._icp_interface != _icp_interface)
+  }
+  if (ICPData._icp_interface != _icp_interface) {
     return 0;
-  if (ICPData._multicast_enabled != _multicast_enabled)
+  }
+  if (ICPData._multicast_enabled != _multicast_enabled) {
     return 0;
-  if (ICPData._icp_query_timeout != _icp_query_timeout)
+  }
+  if (ICPData._icp_query_timeout != _icp_query_timeout) {
     return 0;
-  if (ICPData._cache_lookup_local != _cache_lookup_local)
+  }
+  if (ICPData._cache_lookup_local != _cache_lookup_local) {
     return 0;
-  if (ICPData._stale_lookup != _stale_lookup)
+  }
+  if (ICPData._stale_lookup != _stale_lookup) {
     return 0;
-  if (ICPData._reply_to_unknown_peer != _reply_to_unknown_peer)
+  }
+  if (ICPData._reply_to_unknown_peer != _reply_to_unknown_peer) {
     return 0;
-  if (ICPData._default_reply_port != _default_reply_port)
+  }
+  if (ICPData._default_reply_port != _default_reply_port) {
     return 0;
+  }
   return 1;
 }
 
@@ -306,8 +320,9 @@ int
 PeerConfigData::GetHostIPByName(char *hostname, IpAddr &rip)
 {
   // Short circuit NULL hostname case
-  if (0 == hostname || 0 == *hostname)
+  if (0 == hostname || 0 == *hostname) {
     return 1; // Unable to map to IP address
+  }
 
   addrinfo hints;
   addrinfo *ai;
@@ -315,7 +330,7 @@ PeerConfigData::GetHostIPByName(char *hostname, IpAddr &rip)
 
   ink_zero(hints);
   hints.ai_family = AF_UNSPEC;
-  hints.ai_flags = AI_ADDRCONFIG;
+  hints.ai_flags  = AI_ADDRCONFIG;
   if (0 == getaddrinfo(hostname, 0, &hints, &ai)) {
     for (addrinfo *spot = ai; spot; spot = spot->ai_next) {
       // If current address is valid, and either we don't have one yet
@@ -324,31 +339,41 @@ PeerConfigData::GetHostIPByName(char *hostname, IpAddr &rip)
         best = spot->ai_addr;
       }
     }
-    if (best)
+    if (best) {
       rip.assign(best);
+    }
     freeaddrinfo(ai);
   }
   return best ? 0 : 1;
 }
 
-bool PeerConfigData::operator==(PeerConfigData &PeerData)
+bool
+PeerConfigData::operator==(PeerConfigData &PeerData)
 {
-  if (strncmp(PeerData._hostname, _hostname, PeerConfigData::HOSTNAME_SIZE) != 0)
+  if (strncmp(PeerData._hostname, _hostname, PeerConfigData::HOSTNAME_SIZE) != 0) {
     return false;
-  if (PeerData._ctype != _ctype)
+  }
+  if (PeerData._ctype != _ctype) {
     return false;
-  if (PeerData._ip_addr != _ip_addr)
+  }
+  if (PeerData._ip_addr != _ip_addr) {
     return false;
-  if (PeerData._proxy_port != _proxy_port)
+  }
+  if (PeerData._proxy_port != _proxy_port) {
     return false;
-  if (PeerData._icp_port != _icp_port)
+  }
+  if (PeerData._icp_port != _icp_port) {
     return false;
-  if (PeerData._mc_member != _mc_member)
+  }
+  if (PeerData._mc_member != _mc_member) {
     return false;
-  if (PeerData._mc_ip_addr != _mc_ip_addr)
+  }
+  if (PeerData._mc_ip_addr != _mc_ip_addr) {
     return false;
-  if (PeerData._mc_ttl != _mc_ttl)
+  }
+  if (PeerData._mc_ttl != _mc_ttl) {
     return false;
+  }
   return true;
 }
 
@@ -378,7 +403,7 @@ ICPConfiguration::ICPConfiguration() : _icp_config_callouts(0)
   //*********************************************************
   // Allocate working and current ICPConfigData structures
   //*********************************************************
-  _icp_cdata = new ICPConfigData();
+  _icp_cdata         = new ICPConfigData();
   _icp_cdata_current = new ICPConfigData();
 
   //********************************************************************
@@ -401,7 +426,7 @@ ICPConfiguration::ICPConfiguration() : _icp_config_callouts(0)
   // Allocate working and current PeerConfigData structures
   //**********************************************************
   for (int n = 0; n <= MAX_DEFINED_PEERS; ++n) {
-    _peer_cdata[n] = new PeerConfigData;
+    _peer_cdata[n]         = new PeerConfigData;
     _peer_cdata_current[n] = new PeerConfigData;
   }
 
@@ -454,8 +479,9 @@ ICPConfiguration::PeerConfigChange()
 {
   // Note: Entry zero reserved for "localhost"
   for (int i = 1; i <= MAX_DEFINED_PEERS; ++i) {
-    if (!(*_peer_cdata[i] == *_peer_cdata_current[i]))
+    if (!(*_peer_cdata[i] == *_peer_cdata_current[i])) {
       return 1;
+    }
   }
   return 0;
 }
@@ -505,9 +531,11 @@ next_field(char *text, char fs)
 {
   text = strchr(text, fs);
   // Compress contiguous whitespace by leaving zret pointing at the last space.
-  if (text && *text == fs)
-    while (text[1] == fs)
+  if (text && *text == fs) {
+    while (text[1] == fs) {
       ++text;
+    }
+  }
   return text;
 }
 }
@@ -515,13 +543,13 @@ next_field(char *text, char fs)
 void *
 ICPConfiguration::icp_config_change_callback(void *data, void *value, int startup)
 {
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  EThread *thread   = this_ethread();
+  ProxyMutex *mutex = thread->mutex.get();
 
   //
   // Cast passed parameters to correct types
   //
-  char *filename = (char *)value;
+  char *filename              = (char *)value;
   ICPConfiguration *ICPconfig = (ICPConfiguration *)data;
 
   //
@@ -569,7 +597,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   const int colons_per_entry = 8; // expected ':' separators per entry
 
   int error = 0;
-  int ln = 0;
+  int ln    = 0;
   int n_colons;
   char line[512];
   char *cur;
@@ -588,10 +616,12 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   while ((len = ink_file_fd_readline(fd, sizeof(line) - 1, line)) > 0) {
     ln++;
     cur = line;
-    while (isspace(*cur))
+    while (isspace(*cur)) {
       ++cur, --len; // skip leading space.
-    if (!*cur || *cur == '#')
+    }
+    if (!*cur || *cur == '#') {
       continue;
+    }
 
     if (n >= MAX_DEFINED_PEERS) {
       RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, maximum peer entries exceeded");
@@ -607,8 +637,9 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
        consistent. It still must be an acceptable character.
     */
     char *last = cur + len - 1; // last character.
-    if ('\n' == *last)
+    if ('\n' == *last) {
       --last; // back over trailing LF.
+    }
     if (NULL == strchr(" ;:|,", *last)) {
       RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "read icp.config, invalid separator [value %d]", *last);
       error = 1;
@@ -617,7 +648,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     fs = *last;
 
     n_colons = 0;
-    p = cur;
+    p        = cur;
     while (0 != (p = next_field(p, fs))) {
       ++p;
       ++n_colons;
@@ -631,7 +662,7 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     //*******************
     // Extract hostname
     //*******************
-    next = next_field(cur, fs);
+    next    = next_field(cur, fs);
     *next++ = 0;
     if (cur != (next - 1)) {
       ink_strlcpy(P[n]._hostname, cur, PeerConfigData::HOSTNAME_SIZE);
@@ -641,8 +672,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     //*********************
     // Extract host_ip_str
     //*********************
-    cur = next;
-    next = next_field(next, fs);
+    cur     = next;
+    next    = next_field(next, fs);
     *next++ = 0;
     if (cur != (next - 1)) {
       if (0 != P[n]._ip_addr.load(cur)) {
@@ -662,8 +693,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     //******************
     // Extract ctype
     //******************
-    cur = next;
-    next = next_field(next, fs);
+    cur     = next;
+    next    = next_field(next, fs);
     *next++ = 0;
     if (cur != (next - 1)) {
       P[n]._ctype = atoi(cur);
@@ -681,8 +712,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     //*********************
     // Extract proxy_port
     //*********************
-    cur = next;
-    next = next_field(next, fs);
+    cur     = next;
+    next    = next_field(next, fs);
     *next++ = 0;
     if (cur != (next - 1)) {
       if ((P[n]._proxy_port = atoi(cur)) <= 0) {
@@ -698,8 +729,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     //*********************
     // Extract icp_port
     //*********************
-    cur = next;
-    next = next_field(next, fs);
+    cur     = next;
+    next    = next_field(next, fs);
     *next++ = 0;
     if (cur != (next - 1)) {
       if ((P[n]._icp_port = atoi(cur)) <= 0) {
@@ -715,8 +746,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     //****************************
     // Extract multicast_member
     //****************************
-    cur = next;
-    next = next_field(next, fs);
+    cur     = next;
+    next    = next_field(next, fs);
     *next++ = 0;
     if (cur != (next - 1)) {
       if ((P[n]._mc_member = atoi(cur)) < 0) {
@@ -737,8 +768,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     //****************************
     // Extract multicast_ip_str
     //****************************
-    cur = next;
-    next = next_field(next, fs);
+    cur     = next;
+    next    = next_field(next, fs);
     *next++ = 0;
     if (cur != (next - 1)) {
       P[n]._mc_ip_addr.load(cur);
@@ -755,8 +786,8 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
     // Extract multicast_ttl
     //************************
     // Note: last entry is always terminated with a ":"
-    cur = next;
-    next = next_field(next, fs);
+    cur     = next;
+    next    = next_field(next, fs);
     *next++ = 0;
     if (cur != (next - 1)) {
       P[n]._mc_ttl = atoi(cur);
@@ -775,12 +806,14 @@ ICPConfiguration::icp_config_change_callback(void *data, void *value, int startu
   close(fd);
 
   if (!error) {
-    for (int i = 0; i <= MAX_DEFINED_PEERS; i++)
+    for (int i = 0; i <= MAX_DEFINED_PEERS; i++) {
       *ICPconfig->_peer_cdata_current[i] = P[i];
+    }
   }
   delete[] P; // free working buffer
-  if (!startup)
+  if (!startup) {
     ICPconfig->Unlock();
+  }
   return EVENT_DONE;
 }
 
@@ -797,7 +830,7 @@ Peer::Peer(PeerType_t t, ICPProcessor *icpPr, bool dynamic_peer)
   memset((void *)&this->_stats, 0, sizeof(this->_stats));
   ink_zero(fromaddr);
   fromaddrlen = sizeof(fromaddr);
-  _id = 0;
+  _id         = 0;
 }
 
 void
@@ -851,7 +884,6 @@ ParentSiblingPeer::GetICPPort()
   return _pconfig->GetICPPort();
 }
 
-
 sockaddr *
 ParentSiblingPeer::GetIP()
 {
@@ -872,15 +904,15 @@ ParentSiblingPeer::SendMsg_re(Continuation *cont, void *token, struct msghdr *ms
     Peer *p = _ICPpr->FindPeer(IpAddr(to), ntohs(ats_ip_port_cast(to)));
     ink_assert(p);
 
-    msg->msg_name = &p->GetSendChan()->addr;
+    msg->msg_name    = &p->GetSendChan()->addr;
     msg->msg_namelen = ats_ip_size(&p->GetSendChan()->addr);
-    Action *a = udpNet.sendmsg_re(cont, token, lp->GetSendFD(), msg);
+    Action *a        = udpNet.sendmsg_re(cont, token, lp->GetSendFD(), msg);
     return a;
   } else {
     // Send to default host
-    msg->msg_name = &_chan.addr;
+    msg->msg_name    = &_chan.addr;
     msg->msg_namelen = ats_ip_size(&_chan.addr.sa);
-    Action *a = udpNet.sendmsg_re(cont, token, lp->GetSendFD(), msg);
+    Action *a        = udpNet.sendmsg_re(cont, token, lp->GetSendFD(), msg);
     return a;
   }
 }
@@ -891,7 +923,7 @@ ParentSiblingPeer::RecvFrom_re(Continuation *cont, void *token, IOBufferBlock *b
 {
   // Note: All receives are funneled through the local peer UDP socket.
 
-  Peer *lp = _ICPpr->GetLocalPeer();
+  Peer *lp  = _ICPpr->GetLocalPeer();
   Action *a = udpNet.recvfrom_re(cont, token, lp->GetRecvFD(), from, fromlen, bufblock, size, true, 0);
   return a;
 }
@@ -1016,9 +1048,9 @@ MultiCastPeer::SendMsg_re(Continuation *cont, void *token, struct msghdr *msg, s
     a = ((ParentSiblingPeer *)p)->SendMsg_re(cont, token, msg, 0);
   } else {
     // Send to MultiCast group
-    msg->msg_name = (caddr_t)&_send_chan.addr;
+    msg->msg_name    = (caddr_t)&_send_chan.addr;
     msg->msg_namelen = sizeof(_send_chan.addr);
-    a = udpNet.sendmsg_re(cont, token, _send_chan.fd, msg);
+    a                = udpNet.sendmsg_re(cont, token, _send_chan.fd, msg);
   }
   return a;
 }
@@ -1027,7 +1059,7 @@ Action *
 MultiCastPeer::RecvFrom_re(Continuation *cont, void *token, IOBufferBlock * /* bufblock ATS_UNUSED */, int len,
                            struct sockaddr *from, socklen_t *fromlen)
 {
-  Action *a = udpNet.recvfrom_re(cont, token, _recv_chan.fd, from, fromlen, buf, len, true, 0);
+  Action *a = udpNet.recvfrom_re(cont, token, _recv_chan.fd, from, fromlen, buf.get(), len, true, 0);
   return a;
 }
 
@@ -1049,7 +1081,7 @@ MultiCastPeer::ExpectedReplies(BitMap *expected_replies_list)
   // TBD: Expected replies should be calculated as a running average
   //      from replies returned from a periodic inquiry message.
 
-  int replies = 0;
+  int replies          = 0;
   ParentSiblingPeer *p = (ParentSiblingPeer *)this->_next;
   while (p) {
     replies += p->ExpectedReplies(expected_replies_list);
@@ -1085,8 +1117,9 @@ MultiCastPeer::LogSendMsg(ICPMsg_t *m, sockaddr const *sa)
     //
     Peer *p;
     p = FindMultiCastChild(IpAddr(sa), ats_ip_port_host_order(sa));
-    if (p)
+    if (p) {
       ((ParentSiblingPeer *)p)->LogSendMsg(m, sa);
+    }
 
   } else {
     // Note numerous stats on MultiCast peer and each member peer
@@ -1170,18 +1203,19 @@ ICPPeriodicCont::ICPPeriodicCont(ICPProcessor *icpP)
 int
 ICPPeriodicCont::PeriodicEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  int do_reconfig = 0;
+  int do_reconfig     = 0;
   ICPConfiguration *C = _ICPpr->GetConfig();
 
-  if (C->GlobalConfigChange())
+  if (C->GlobalConfigChange()) {
     do_reconfig = 1;
+  }
 
   int configcallouts = C->ICPConfigCallouts();
   if (_last_icp_config_callouts != configcallouts) {
     // We have a "icp.config" change callout which we
     //  have not processed.
     _last_icp_config_callouts = configcallouts;
-    do_reconfig = 1;
+    do_reconfig               = 1;
   }
 
   if (do_reconfig) {
@@ -1238,7 +1272,7 @@ ICPPeriodicCont::DoReconfigAction(int event, Event *e)
           } else {
             // Delay and restart update.
             _global_config_changed = 0;
-            _peer_config_changed = 0;
+            _peer_config_changed   = 0;
             C->Unlock();
             e->schedule_in(HRTIME_MSECONDS(RETRY_INTERVAL_MSECS));
             return EVENT_CONT;
@@ -1292,10 +1326,11 @@ ICPlog::GetClientPort()
 SquidLogCode
 ICPlog::GetAction()
 {
-  if (_s->_queryResult == CACHE_EVENT_LOOKUP)
+  if (_s->_queryResult == CACHE_EVENT_LOOKUP) {
     return SQUID_LOG_UDP_HIT;
-  else
+  } else {
     return SQUID_LOG_UDP_MISS;
+  }
 }
 
 const char *
@@ -1354,16 +1389,42 @@ ICPlog::GetContentType()
 // ICP Debug support.
 //*****************************************************************************
 //
-static const char *ICPstatNames[] = {
-  "icp_stat_def", "config_mgmt_callouts_stat", "reconfig_polls_stat", "reconfig_events_stat", "invalid_poll_data_stat",
-  "no_data_read_stat", "short_read_stat", "invalid_sender_stat", "read_not_v2_icp_stat", "icp_remote_query_requests_stat",
-  "icp_remote_responses_stat", "icp_cache_lookup_success_stat", "icp_cache_lookup_fail_stat", "query_response_write_stat",
-  "query_response_partial_write_stat", "no_icp_request_for_response_stat", "icp_response_request_nolock_stat",
-  "icp_start_icpoff_stat", "send_query_partial_write_stat", "icp_queries_no_expected_replies_stat", "icp_query_hits_stat",
-  "icp_query_misses_stat", "invalid_icp_query_response_stat", "icp_query_requests_stat", "total_icp_response_time_stat",
-  "total_udp_send_queries_stat", "total_icp_request_time_stat", "icp_total_reloads", "icp_pending_reloads",
-  "icp_reload_start_aborts", "icp_reload_connect_aborts", "icp_reload_read_aborts", "icp_reload_write_aborts",
-  "icp_reload_successes", "icp_stat_count", ""};
+static const char *ICPstatNames[] = {"icp_stat_def",
+                                     "config_mgmt_callouts_stat",
+                                     "reconfig_polls_stat",
+                                     "reconfig_events_stat",
+                                     "invalid_poll_data_stat",
+                                     "no_data_read_stat",
+                                     "short_read_stat",
+                                     "invalid_sender_stat",
+                                     "read_not_v2_icp_stat",
+                                     "icp_remote_query_requests_stat",
+                                     "icp_remote_responses_stat",
+                                     "icp_cache_lookup_success_stat",
+                                     "icp_cache_lookup_fail_stat",
+                                     "query_response_write_stat",
+                                     "query_response_partial_write_stat",
+                                     "no_icp_request_for_response_stat",
+                                     "icp_response_request_nolock_stat",
+                                     "icp_start_icpoff_stat",
+                                     "send_query_partial_write_stat",
+                                     "icp_queries_no_expected_replies_stat",
+                                     "icp_query_hits_stat",
+                                     "icp_query_misses_stat",
+                                     "invalid_icp_query_response_stat",
+                                     "icp_query_requests_stat",
+                                     "total_icp_response_time_stat",
+                                     "total_udp_send_queries_stat",
+                                     "total_icp_request_time_stat",
+                                     "icp_total_reloads",
+                                     "icp_pending_reloads",
+                                     "icp_reload_start_aborts",
+                                     "icp_reload_connect_aborts",
+                                     "icp_reload_read_aborts",
+                                     "icp_reload_write_aborts",
+                                     "icp_reload_successes",
+                                     "icp_stat_count",
+                                     ""};
 
 void
 dumpICPstatEntry(int i, const char *name)
@@ -1372,8 +1433,8 @@ dumpICPstatEntry(int i, const char *name)
   int64_t sval, cval;
 
   RecRawStat *p = RecGetGlobalRawStatPtr(icp_rsb, i);
-  sval = p->sum;
-  cval = p->count;
+  sval          = p->sum;
+  cval          = p->count;
 
   printf("%-32s %12" PRId64 " %16" PRId64 " %17.4f\n", &name[l > 31 ? l - 31 : 0], cval, sval,
          cval ? (((double)sval) / ((double)cval)) : 0.0);
@@ -1388,7 +1449,6 @@ dumpICPstats()
     dumpICPstatEntry(i, ICPstatNames[i]);
   }
 }
-
 
 void
 ICPProcessor::DumpICPConfig()
@@ -1405,8 +1465,8 @@ ICPProcessor::DumpICPConfig()
         GetConfig()->globalConfig()->ICPReplyToUnknownPeer(), GetConfig()->globalConfig()->ICPDefaultReplyPort());
 
   for (int i = 0; i < (_nPeerList + 1); i++) {
-    P = _PeerList[i];
-    id = P->GetPeerID();
+    P    = IdToPeer(i);
+    id   = P->GetPeerID();
     type = P->GetType();
     const char *str_type;
 

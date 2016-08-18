@@ -34,12 +34,60 @@ libinkhostdb_a_SOURCES = \
   HostDB.cc \
   I_HostDB.h \
   I_HostDBProcessor.h \
+  I_SplitDNS.h \
+  I_SplitDNSProcessor.h \
   Inline.cc \
-  MultiCache.cc \
   P_HostDB.h \
   P_HostDBProcessor.h \
-  P_MultiCache.h
+  P_RefCountCache.h \
+  P_RefCountCacheSerializer.h \
+  RefCountCache.cc
+
+TESTS = $(check_PROGRAMS)
+check_PROGRAMS = test_RefCountCache
+
+test_RefCountCache_SOURCES = \
+  test_RefCountCache.cc
+
 
 #test_UNUSED_SOURCES = \
 #  test_I_HostDB.cc \
 #  test_P_HostDB.cc
+
+
+test_LD_FLAGS = \
+  @EXTRA_CXX_LDFLAGS@ \
+  @LIBTOOL_LINK_FLAGS@ \
+  @OPENSSL_LDFLAGS@
+
+test_CPP_FLAGS = \
+  $(AM_CPPFLAGS) \
+  $(iocore_include_dirs) \
+  -I$(top_srcdir)/proxy/api/ts \
+  -I$(top_srcdir)/proxy/api \
+  -I$(top_srcdir)/proxy \
+  -I$(top_srcdir)/proxy/hdrs \
+  -I$(top_srcdir)/proxy/http \
+  -I$(top_srcdir)/proxy/logging \
+  -I$(top_srcdir)/mgmt \
+  -I$(top_srcdir)/mgmt/utils \
+  @OPENSSL_INCLUDES@
+
+test_LD_ADD = \
+  $(top_builddir)/lib/records/librecords_p.a \
+  $(top_builddir)/mgmt/libmgmt_p.la \
+  $(top_builddir)/iocore/eventsystem/libinkevent.a \
+  $(top_builddir)/lib/ts/libtsutil.la \
+  $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  @LIBTCL@ @HWLOC_LIBS@
+
+test_RefCountCache_CPPFLAGS = $(test_CPP_FLAGS)
+
+test_RefCountCache_LDFLAGS = $(test_LD_FLAGS)
+
+test_RefCountCache_LDADD = $(test_LD_ADD)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

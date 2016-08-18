@@ -40,12 +40,11 @@
 #define HTTP2_SESSION_EVENT_RECV (HTTP2_SESSION_EVENTS_START + 3)
 #define HTTP2_SESSION_EVENT_XMIT (HTTP2_SESSION_EVENTS_START + 4)
 
-static size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
+size_t const HTTP2_HEADER_BUFFER_SIZE_INDEX = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
 
 // To support Upgrade: h2c
 struct Http2UpgradeContext {
   Http2UpgradeContext() : req_header(NULL) {}
-
   ~Http2UpgradeContext()
   {
     if (req_header) {
@@ -66,14 +65,14 @@ class Http2Frame
 public:
   Http2Frame(const Http2FrameHeader &h, IOBufferReader *r)
   {
-    this->hdr.cooked = h;
+    this->hdr      = h;
     this->ioreader = r;
   }
 
   Http2Frame(Http2FrameType type, Http2StreamId streamid, uint8_t flags)
   {
-    Http2FrameHeader hdr = {0, (uint8_t)type, flags, streamid};
-    http2_write_frame_header(hdr, make_iovec(this->hdr.raw));
+    this->hdr      = {0, (uint8_t)type, flags, streamid};
+    this->ioreader = NULL;
   }
 
   IOBufferReader *
@@ -85,30 +84,25 @@ public:
   const Http2FrameHeader &
   header() const
   {
-    return this->hdr.cooked;
+    return this->hdr;
   }
 
-  // Allocate an IOBufferBlock for this frame. This switches us from using the in-line header
-  // buffer, to an external buffer block.
+  // Allocate an IOBufferBlock for payload of this frame.
   void
   alloc(int index)
   {
     this->ioblock = new_IOBufferBlock();
     this->ioblock->alloc(index);
-    memcpy(this->ioblock->start(), this->hdr.raw, sizeof(this->hdr.raw));
-    this->ioblock->fill(sizeof(this->hdr.raw));
-
-    http2_parse_frame_header(make_iovec(this->ioblock->start(), HTTP2_FRAME_HEADER_LEN), this->hdr.cooked);
   }
 
-  // Return the writeable buffer space.
+  // Return the writeable buffer space for frame payload
   IOVec
   write()
   {
     return make_iovec(this->ioblock->end(), this->ioblock->write_avail());
   }
 
-  // Once the frame has been serialized, update the length.
+  // Once the frame has been serialized, update the payload length of frame header.
   void
   finalize(size_t nbytes)
   {
@@ -116,18 +110,22 @@ public:
       ink_assert((int64_t)nbytes <= this->ioblock->write_avail());
       this->ioblock->fill(nbytes);
 
-      this->hdr.cooked.length = this->ioblock->size() - HTTP2_FRAME_HEADER_LEN;
-      http2_write_frame_header(this->hdr.cooked, make_iovec(this->ioblock->start(), HTTP2_FRAME_HEADER_LEN));
+      this->hdr.length = this->ioblock->size();
     }
   }
 
   void
   xmit(MIOBuffer *iobuffer)
   {
-    if (ioblock) {
-      iobuffer->append_block(this->ioblock);
-    } else {
-      iobuffer->write(this->hdr.raw, sizeof(this->hdr.raw));
+    // Write frame header
+    uint8_t buf[HTTP2_FRAME_HEADER_LEN];
+    http2_write_frame_header(hdr, make_iovec(buf));
+    iobuffer->write(buf, sizeof(buf));
+
+    // Write frame payload
+    // It could be empty (e.g. SETTINGS frame with ACK flag)
+    if (ioblock && ioblock->read_avail() > 0) {
+      iobuffer->append_block(this->ioblock.get());
     }
   }
 
@@ -135,9 +133,9 @@ public:
   size()
   {
     if (ioblock) {
-      return ioblock->size();
+      return HTTP2_FRAME_HEADER_LEN + ioblock->size();
     } else {
-      return sizeof(this->hdr.raw);
+      return HTTP2_FRAME_HEADER_LEN;
     }
   }
 
@@ -145,16 +143,12 @@ private:
   Http2Frame(Http2Frame &);                  // noncopyable
   Http2Frame &operator=(const Http2Frame &); // noncopyable
 
-  Ptr<IOBufferBlock> ioblock;
+  Http2FrameHeader hdr;       // frame header
+  Ptr<IOBufferBlock> ioblock; // frame payload
   IOBufferReader *ioreader;
-
-  union {
-    Http2FrameHeader cooked;
-    uint8_t raw[HTTP2_FRAME_HEADER_LEN];
-  } hdr;
 };
 
-class Http2ClientSession : public ProxyClientSession, public PluginIdentity
+class Http2ClientSession : public ProxyClientSession
 {
 public:
   typedef ProxyClientSession super; ///< Parent type.
@@ -165,7 +159,14 @@ public:
   // Implement ProxyClientSession interface.
   void start();
   virtual void destroy();
+  virtual void free();
   void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor);
+
+  bool
+  ready_to_free() const
+  {
+    return kill_me;
+  }
 
   // Implement VConnection interface.
   VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0);
@@ -181,13 +182,13 @@ public:
   virtual void
   release_netvc()
   {
-    client_vc = NULL;
-  }
-
-  int64_t
-  connection_id() const
-  {
-    return this->con_id;
+    // Make sure the vio's are also released to avoid
+    // later surprises in inactivity timeout
+    if (client_vc) {
+      client_vc->do_io_read(NULL, 0, NULL);
+      client_vc->do_io_write(NULL, 0, NULL);
+      client_vc->set_action(NULL);
+    }
   }
 
   sockaddr const *
@@ -209,8 +210,38 @@ public:
     return upgrade_context;
   }
 
-  virtual char const *getPluginTag() const;
-  virtual int64_t getPluginId() const;
+  virtual int
+  get_transact_count() const
+  {
+    return (int)con_id;
+  }
+  virtual void
+  release(ProxyClientTransaction *trans)
+  {
+  }
+
+  Http2ConnectionState connection_state;
+  void
+  set_dying_event(int event)
+  {
+    dying_event = event;
+  }
+  int
+  get_dying_event() const
+  {
+    return dying_event;
+  }
+  bool
+  is_recursing() const
+  {
+    return recursion > 0;
+  }
+
+  virtual const char *
+  get_protocol_string() const
+  {
+    return "http/2";
+  }
 
 private:
   Http2ClientSession(Http2ClientSession &);                  // noncopyable
@@ -220,7 +251,13 @@ private:
 
   int state_read_connection_preface(int, void *);
   int state_start_frame_read(int, void *);
+  int do_start_frame_read(Http2ErrorCode &ret_error);
   int state_complete_frame_read(int, void *);
+  int do_complete_frame_read();
+  // state_start_frame_read and state_complete_frame_read are set up as
+  // event handler.  Both feed into state_process_frame_read which may iterate
+  // if there are multiple frames ready on the wire
+  int state_process_frame_read(int event, VIO *vio, bool inside_frame);
 
   int64_t con_id;
   int64_t total_write_len;
@@ -231,12 +268,14 @@ private:
   MIOBuffer *write_buffer;
   IOBufferReader *sm_writer;
   Http2FrameHeader current_hdr;
-  Http2ConnectionState connection_state;
 
   // For Upgrade: h2c
   Http2UpgradeContext upgrade_context;
 
   VIO *write_vio;
+  int dying_event;
+  bool kill_me;
+  int recursion;
 };
 
 extern ClassAllocator<Http2ClientSession> http2ClientSessionAllocator;

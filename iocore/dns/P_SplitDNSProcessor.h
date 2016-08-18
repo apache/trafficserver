@@ -62,7 +62,6 @@ enum DNSResultType {
 
 typedef ControlMatcher<SplitDNSRecord, SplitDNSResult> DNS_table;
 
-
 /* --------------------------------------------------------------
    **                struct SplitDNSResult
    -------------------------------------------------------------- */
@@ -86,7 +85,6 @@ struct SplitDNSResult {
   bool m_wrap_around;
 };
 
-
 /* --------------------------------------------------------------
    **                struct SplitDNS
    -------------------------------------------------------------- */
@@ -96,7 +94,6 @@ struct SplitDNS : public ConfigInfo {
 
   void *getDNSRecord(const char *hostname);
   void findServer(RequestData *rdata, SplitDNSResult *result);
-
 
   DNS_table *m_DNSSrvrTable;
 
@@ -111,7 +108,6 @@ struct SplitDNS : public ConfigInfo {
   int m_numEle;
 };
 
-
 /* --------------------------------------------------------------
    SplitDNSConfig::isSplitDNSEnabled()
    -------------------------------------------------------------- */
@@ -121,11 +117,9 @@ SplitDNSConfig::isSplitDNSEnabled()
   return (gsplit_dns_enabled ? true : false);
 }
 
-
 //
 // End API to outside world
 //
-
 
 /* --------------------------------------------------------------
    **                class DNSRequestData
@@ -147,7 +141,6 @@ public:
   const char *m_pHost;
 };
 
-
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
    -------------------------------------------------------------- */
@@ -155,7 +148,6 @@ TS_INLINE
 DNSRequestData::DNSRequestData() : m_pHost(0)
 {
 }
-
 
 /* --------------------------------------------------------------
    DNSRequestData::get_string()
@@ -166,7 +158,6 @@ DNSRequestData::get_string()
   return ats_strdup((char *)m_pHost);
 }
 
-
 /* --------------------------------------------------------------
    DNSRequestData::get_host()
    -------------------------------------------------------------- */
@@ -176,7 +167,6 @@ DNSRequestData::get_host()
   return m_pHost;
 }
 
-
 /* --------------------------------------------------------------
    DNSRequestData::get_ip()
    -------------------------------------------------------------- */
@@ -185,7 +175,6 @@ DNSRequestData::get_ip()
 {
   return NULL;
 }
-
 
 /* --------------------------------------------------------------
    DNSRequestData::get_client_ip()
@@ -221,7 +210,6 @@ public:
   int m_domain_srch_list;
 };
 
-
 /* --------------------------------------------------------------
    SplitDNSRecord::SplitDNSRecord()
    -------------------------------------------------------------- */
@@ -230,14 +218,12 @@ SplitDNSRecord::SplitDNSRecord() : m_dnsSrvr_cnt(0), m_domain_srch_list(0)
 {
 }
 
-
 /* --------------------------------------------------------------
    SplitDNSRecord::~SplitDNSRecord()
    -------------------------------------------------------------- */
 TS_INLINE SplitDNSRecord::~SplitDNSRecord()
 {
 }
-
 
 /* ------------------
    Helper Functions

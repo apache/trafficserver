@@ -59,10 +59,10 @@ struct TestProxy : Continuation {
       return done();
     }
     if (vio->buffer.mbuf->gets(s, 255)) {
-      host = s + 11;
-      url = strchr(host, '/');
+      host    = s + 11;
+      url     = strchr(host, '/');
       url_end = strchr(url, ' ');
-      *url = 0;
+      *url    = 0;
       dnsProcessor.gethostbyname(host, this);
       *url = '/';
       SET_HANDLER(dnsEvent);
@@ -126,7 +126,7 @@ struct TestProxy : Continuation {
       return done();
     }
     remote = 0;
-    vc = 0;
+    vc     = 0;
     printf("sucessful proxy of %s\n", url);
     return done();
   }
@@ -136,7 +136,6 @@ struct TestProxy : Continuation {
     SET_HANDLER(startEvent);
   }
 };
-
 
 struct TestAccept : Continuation {
   int

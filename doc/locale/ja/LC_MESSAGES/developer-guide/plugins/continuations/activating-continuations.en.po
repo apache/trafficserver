@@ -1,0 +1,58 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/continuations/activating-continuations.en.rst:34
+msgid ""
+"A Traffic Server IO processor (such as a cache processor or net processor) "
+"is letting a continuation know there is data (cache or network) available "
+"to read or write. These callbacks are a result of using functions such "
+"``TSVConnRead``/``Write`` or ``TSCacheRead``/``Write``"
+msgstr ""
+"Traffic Server IO プロセッサー（キャッシュプロセッサーやネットプロセッサーな"
+"ど）が継続に読込みや書込みが可能な（キャッシュまたはネットワーク）データがあ"
+"ることを知らせる。これらのコールバックは ``TSVConnRead``/``Write`` や "
+"``TSCacheRead``/``Write`` のような関数を使用した結果です。"
+
+#: ../../developer-guide/plugins/continuations/activating-continuations.en.rst:23
+msgid "Activating Continuations"
+msgstr ""
+
+#: ../../developer-guide/plugins/continuations/activating-continuations.en.rst:25
+msgid ""
+"Continuations are activated when they receive an event or by "
+"``TSContSchedule`` (which schedules a continuation to receive an event). "
+"Continuations might receive an event because:"
+msgstr ""
+"継続は、イベントを受け取った際か ``TSContSchedule`` （イベントを受け取るため"
+"継続をスケジュールする関数）によってアクティベートされます。下記の理由により"
+"継続がイベントを受け取る可能性があります。 :"
+
+#: ../../developer-guide/plugins/continuations/activating-continuations.en.rst:31
+msgid ""
+"The Traffic Server HTTP state machine sends an event corresponding to a "
+"particular HTTP hook"
+msgstr ""
+"Traffic Server HTTP ステートマシンが特定の HTTP フックに関連するイベントを送"
+"信する。"
+
+#: ../../developer-guide/plugins/continuations/activating-continuations.en.rst:29
+msgid "Your plugin calls ``TSContCall``"
+msgstr "プラグインが ``TSContCall`` を呼び出す。"

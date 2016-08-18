@@ -29,7 +29,6 @@
 #include "ts/Regression.h"
 #include "ts/I_Version.h"
 
-
 //
 // Constants
 //

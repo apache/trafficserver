@@ -29,23 +29,8 @@
 #include "ts/Diags.h"
 #include "HTTP.h"
 
-// Constant strings for pseudo headers of HPACK
-extern const char *HPACK_VALUE_SCHEME;
-extern const char *HPACK_VALUE_METHOD;
-extern const char *HPACK_VALUE_AUTHORITY;
-extern const char *HPACK_VALUE_PATH;
-extern const char *HPACK_VALUE_STATUS;
-
-extern const unsigned HPACK_LEN_SCHEME;
-extern const unsigned HPACK_LEN_METHOD;
-extern const unsigned HPACK_LEN_AUTHORITY;
-extern const unsigned HPACK_LEN_PATH;
-extern const unsigned HPACK_LEN_STATUS;
-
 // It means that any header field can be compressed/decompressed by ATS
 const static int HPACK_ERROR_COMPRESSION_ERROR = -1;
-// It means that any header field is invalid in HTTP/2 spec
-const static int HPACK_ERROR_HTTP2_PROTOCOL_ERROR = -2;
 
 enum HpackFieldType {
   HPACK_FIELD_INDEX,              // [RFC 7541] 6.1. Indexed Header Field Representation
@@ -55,11 +40,30 @@ enum HpackFieldType {
   HPACK_FIELD_TABLESIZE_UPDATE,   // [RFC 7541] 6.3. Dynamic Table Size Update
 };
 
+enum HpackIndexType {
+  HPACK_INDEX_TYPE_NONE,
+  HPACK_INDEX_TYPE_STATIC,
+  HPACK_INDEX_TYPE_DYNAMIC,
+};
+
+enum HpackMatchType {
+  HPACK_NO_MATCH,
+  HPACK_NAME_MATCH,
+  HPACK_EXACT_MATCH,
+};
+
+// Result of looking for a header field in IndexingTable
+struct HpackLookupResult {
+  HpackLookupResult() : index(0), index_type(HPACK_INDEX_TYPE_NONE), match_type(HPACK_NO_MATCH) {}
+  int index;
+  HpackIndexType index_type;
+  HpackMatchType match_type;
+};
+
 class MIMEFieldWrapper
 {
 public:
   MIMEFieldWrapper(MIMEField *f, HdrHeap *hh, MIMEHdrImpl *impl) : _field(f), _heap(hh), _mh(impl) {}
-
   void
   name_set(const char *name, int name_len)
   {
@@ -97,16 +101,16 @@ private:
 };
 
 // [RFC 7541] 2.3.2. Dynamic Table
-class Http2DynamicTable
+class HpackDynamicTable
 {
 public:
-  Http2DynamicTable() : _current_size(0), _settings_dynamic_table_size(4096)
+  HpackDynamicTable(uint32_t size) : _current_size(0), _maximum_size(size)
   {
     _mhdr = new MIMEHdr();
     _mhdr->create();
   }
 
-  ~Http2DynamicTable()
+  ~HpackDynamicTable()
   {
     _headers.clear();
     _mhdr->fields_clear();
@@ -114,55 +118,59 @@ public:
     delete _mhdr;
   }
 
+  const MIMEField *get_header_field(uint32_t index) const;
   void add_header_field(const MIMEField *field);
-  int get_header_from_indexing_tables(uint32_t index, MIMEFieldWrapper &header_field) const;
-  bool set_dynamic_table_size(uint32_t new_size);
+
+  uint32_t size() const;
+  bool update_maximum_size(uint32_t new_size);
+
+  uint32_t length() const;
 
 private:
-  const MIMEField *
-  get_header(uint32_t index) const
-  {
-    return _headers.get(index - 1);
-  }
-
-  const uint32_t
-  get_current_entry_num() const
-  {
-    return _headers.length();
-  }
-
   uint32_t _current_size;
-  uint32_t _settings_dynamic_table_size;
+  uint32_t _maximum_size;
 
   MIMEHdr *_mhdr;
   Vec<MIMEField *> _headers;
 };
 
-HpackFieldType hpack_parse_field_type(uint8_t ftype);
-
-static inline bool
-hpack_field_is_literal(HpackFieldType ftype)
+// [RFC 7541] 2.3. Indexing Table
+class HpackIndexingTable
 {
-  return ftype == HPACK_FIELD_INDEXED_LITERAL || ftype == HPACK_FIELD_NOINDEX_LITERAL || ftype == HPACK_FIELD_NEVERINDEX_LITERAL;
-}
+public:
+  HpackIndexingTable(uint32_t size) { _dynamic_table = new HpackDynamicTable(size); }
+  ~HpackIndexingTable() { delete _dynamic_table; }
+  HpackLookupResult lookup(const MIMEFieldWrapper &field) const;
+  HpackLookupResult lookup(const char *name, int name_len, const char *value, int value_len) const;
+  int get_header_field(uint32_t index, MIMEFieldWrapper &header_field) const;
 
+  void add_header_field(const MIMEField *field);
+  uint32_t size() const;
+  bool update_maximum_size(uint32_t new_size);
+
+private:
+  HpackDynamicTable *_dynamic_table;
+};
+
+// Low level interfaces
 int64_t encode_integer(uint8_t *buf_start, const uint8_t *buf_end, uint32_t value, uint8_t n);
 int64_t decode_integer(uint32_t &dst, const uint8_t *buf_start, const uint8_t *buf_end, uint8_t n);
 int64_t encode_string(uint8_t *buf_start, const uint8_t *buf_end, const char *value, size_t value_len);
 int64_t decode_string(Arena &arena, char **str, uint32_t &str_length, const uint8_t *buf_start, const uint8_t *buf_end);
-
 int64_t encode_indexed_header_field(uint8_t *buf_start, const uint8_t *buf_end, uint32_t index);
-int64_t encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header, uint32_t index,
-                                    HpackFieldType type);
-int64_t encode_literal_header_field(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
-                                    HpackFieldType type);
-
-// When these functions returns minus value, any error occurs
-// TODO Separate error code and length of processed buffer
+int64_t encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
+                                                      uint32_t index, HpackIndexingTable &indexing_table, HpackFieldType type);
+int64_t encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf_end, const MIMEFieldWrapper &header,
+                                                  HpackIndexingTable &indexing_table, HpackFieldType type);
 int64_t decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
-                                    Http2DynamicTable &dynamic_table);
+                                    HpackIndexingTable &indexing_table);
 int64_t decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
-                                    Http2DynamicTable &dynamic_table);
-int64_t update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Http2DynamicTable &dynamic_table);
+                                    HpackIndexingTable &indexing_table);
+int64_t update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, HpackIndexingTable &indexing_table);
+
+// High level interfaces
+typedef HpackIndexingTable HpackHandle;
+int64_t hpack_decode_header_block(HpackHandle &handle, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len);
+int64_t hpack_encode_header_block(HpackHandle &handle, uint8_t *out_buf, const size_t out_buf_len, HTTPHdr *hdr);
 
 #endif /* __HPACK_H__ */

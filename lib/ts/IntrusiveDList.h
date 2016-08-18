@@ -123,7 +123,11 @@ public:
     iterator() : _list(0), _elt(0) {}
     /// Equality test.
     /// @return @c true if @c this and @a that refer to the same object.
-    bool operator==(self const &that) const { return _list == that._list && _elt == that._elt; }
+    bool
+    operator==(self const &that) const
+    {
+      return _list == that._list && _elt == that._elt;
+    }
     /// Pre-increment.
     /// Move to the next element in the list.
     /// @return The iterator.
@@ -164,14 +168,17 @@ public:
     }
     /// Inequality test.
     /// @return @c true if @c this and @a do not refer to the same object.
-    bool operator!=(self const &that) const { return !(*this == that); }
+    bool
+    operator!=(self const &that) const
+    {
+      return !(*this == that);
+    }
     /// Dereference.
     /// @return A reference to the referent.
     reference operator*() { return *_elt; }
     /// Dereference.
     /// @return A pointer to the referent.
     pointer operator->() { return _elt; }
-
   protected:
     IntrusiveDList *_list; ///< List for this iterator.
     T *_elt;               ///< Referenced element.
@@ -203,7 +210,7 @@ public:
     elt->*P = 0;
     if (_head)
       _head->*P = elt;
-    _head = elt;
+    _head       = elt;
     if (!_tail)
       _tail = _head; // empty to non-empty transition
     ++_count;
@@ -219,7 +226,7 @@ public:
     elt->*P = _tail;
     if (_tail)
       _tail->*N = elt;
-    _tail = elt;
+    _tail       = elt;
     if (!_head)
       _head = _tail; // empty to non-empty transition
     ++_count;
@@ -232,12 +239,12 @@ public:
   {
     T *zret = 0;
     if (_head) {
-      zret = _head;
+      zret  = _head;
       _head = _head->*N;
       if (_head)
         _head->*P = 0;
       else
-        _tail = 0;  // non-empty to empty transition.
+        _tail  = 0; // non-empty to empty transition.
       zret->*N = 0; // erase traces of list.
       zret->*P = 0;
       --_count;
@@ -251,12 +258,12 @@ public:
   {
     T *zret = 0;
     if (_tail) {
-      zret = _tail;
+      zret  = _tail;
       _tail = _tail->*P = 0;
       if (_tail)
         _tail->*N = 0;
       else
-        _head = 0;  // non-empty to empty transition.
+        _head  = 0; // non-empty to empty transition.
       zret->*N = 0; // erase traces of list.
       zret->*P = 0;
       --_count;
@@ -273,8 +280,8 @@ public:
               )
   {
     // Should assert that !(elt->*N || elt->*P)
-    elt->*N = target->*N;
-    elt->*P = target;
+    elt->*N    = target->*N;
+    elt->*P    = target;
     target->*N = elt;
     if (elt->*N)
       elt->*N->*P = elt;
@@ -293,8 +300,8 @@ public:
                )
   {
     // Should assert that !(elt->*N || elt->*P)
-    elt->*P = target->*P;
-    elt->*N = target;
+    elt->*P    = target->*P;
+    elt->*N    = target;
     target->*P = elt;
     if (elt->*P)
       elt->*P->*N = elt;
@@ -328,7 +335,7 @@ public:
   clear()
   {
     _head = _tail = 0;
-    _count = 0;
+    _count        = 0;
     return *this;
   }
   /// @return Number of elements in the list.

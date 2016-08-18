@@ -1,0 +1,304 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/mutexes.en.rst:23
+msgid "Mutexes"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:28
+msgid ""
+"A *mutex* is the basic synchronization method used within Traffic Server to "
+"protect data from simultaneous access by multiple threads. A mutex acts as "
+"a lock that protects data in one program thread from being accessed by "
+"another thread."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:33
+msgid ""
+"The Traffic Server API provides two functions that attempt to access and "
+"lock the data: :c:func:`TSMutexLockTry` and :c:func:`TSMutexLock`. "
+"``TSMutexLock`` is a blocking call - if you use it, you can slow Traffic "
+"Server performance because transaction processing pauses until the mutex is "
+"unlocked. It should be used only on threads created by the plugin "
+"``TSContThreadCreate``. Never use it on a continuation handler called back "
+"by the Cache, Net, or Event Processor. Even if the critical section is very "
+"small, do not use it. If you need to update a flag, then set a variable and/"
+"or use atomic operations. If :c:func:`TSMutexLock` is used in any case "
+"other than the one recommended above, then the result will be a serious "
+"performance impact."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:45
+msgid ""
+"``TSMutexLockTry``, on the other hand, attempts to lock the mutex only if "
+"it is unlocked (i.e., not being used by another thread). It should be used "
+"in all cases other than the above mentioned ``TSMutexLock`` case. If the "
+"``TSMutexLockTry`` attempt fails, then you can schedule a future attempt "
+"(which must be at least 10 milliseconds later)."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:52
+msgid ""
+"In general, you should use ``TSMutexLockTry`` instead of ``TSMutexLock``."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:55
+msgid ""
+"``TSMutexLockTry`` is required if you are tying to lock Traffic Server "
+"internal or system resources (such as the network, cache, event processor, "
+"HTTP state machines, and IO buffers)."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:59
+msgid ""
+"``TSMutexLockTry`` is required if you are making any blocking calls (such "
+"as network, cache, or file IO calls)."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:62
+msgid ""
+"``TSMutexLock`` might not be necessary if you are not making blocking calls "
+"and if you are only accessing local resources."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:65
+msgid ""
+"The Traffic Server API uses the ``TSMutex`` type for a mutex. There are two "
+"typical uses of mutex. One use is for locking global data or data shared by "
+"various continuations. The other typical usage is for locking data "
+"associated with a continuation (i.e., data that might be accessed by other "
+"continuations)."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:72
+msgid "Locking Global Data"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:74
+msgid ""
+"The :ref:`blacklist-1.c` sample plugin implements a mutex that locks global "
+"data. The blacklist plugin reads its blacklisted sites from a configuration "
+"file; file read operations are protected by a mutex created in :c:func:"
+"`TSPluginInit`. The :ref:`blacklist-1.c` code uses :c:func:`TSMutexLockTry` "
+"instead of :c:func:`TSMutexLock`. For more detailed information, see the :"
+"ref:`blacklist-1.c` code; start by looking at the :c:func:`TSPluginInit` "
+"function."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:82
+msgid "General guidelines for locking shared data are as follows:"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:84
+msgid "Create a mutex for the shared data with :c:func:`TSMutexCreate`."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:87
+msgid ""
+"Whenever you need to read or modify this data, first lock it by calling :c:"
+"func:`TSMutexLockTry`; then read or modify the data."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:92
+msgid ""
+"When you are done with the data, unlock it with :c:func:`TSMutexUnlock`. If "
+"you are unlocking data accessed during the processing of an HTTP "
+"transaction, then you must unlock it before calling :c:func:"
+"`TSHttpTxnReenable`."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:99
+msgid "Protecting a Continuation's Data"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:101
+msgid ""
+"You must create a mutex to protect a continuation's data if it might be "
+"accessed by other continuations or processes. Here's how:"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:0
+msgid "Create a mutex for the continuation using ``TSMutexCreate``."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:0
+msgid "For example:"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:0
+msgid ""
+"When you create the continuation, specify this mutex as the continuation's "
+"mutex."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:121
+msgid ""
+"If any other functions want to access ``contp``'s data, then it is up to "
+"them to get ``contp``'s mutex (using, for example, ``TSContMutexGet``) to "
+"lock it. For usage, ssee the sample Protocol plugin."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:126
+msgid "How to Associate a Continuation With Every HTTP Transaction"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:128
+msgid ""
+"There could be several reasons why you'd want to create a continuation for "
+"each HTTP transaction that calls back your plugin."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:131
+msgid "Some potential scenarios are listed below."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:133
+msgid ""
+"You want to register hooks locally with the new continuation instead of "
+"registering them globally to the continuation plugin."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:136
+msgid ""
+"You want to store data specific to each HTTP transaction that you might "
+"need to reuse across various hooks."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:139
+msgid ""
+"You're using APIs (like ``TSHostLookup``) that will call back the "
+"continuation with a certain event."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:143
+msgid "How to Add the New Continuation"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:145
+msgid ""
+"A typical way of adding the new continuation is by registering the plugin "
+"continuation to be called back by HTTP transactions globally when they "
+"reach ``TS_HTTP_TXN_START_HOOK``. Refer to the example below, which uses a "
+"transaction-specific continuation called ``txn_contp``."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:165
+msgid ""
+"In the plugin continuation handler, create the new continuation "
+"``txn_contp`` and then register it to be called back at "
+"``TS_HTTP_TXN_CLOSE_HOOK``:"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:200
+msgid ""
+"Remember that the ``txn_contp`` handler must destory itself when the HTTP "
+"transaction is closed. If you forget to do this, then your plugin will have "
+"a memory leak."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:229
+msgid "How to Store Data Specific to Each HTTP Transaction"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:231
+msgid ""
+"For the example above, store the data in the ``txn_contp`` data structure - "
+"this means that you'll create your own data structure. Now suppose you want "
+"to store the state of the HTTP transaction:"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:241
+msgid ""
+"You need to allocate the memory and initialize this structure for each HTTP "
+"``txnp``. You can do that in the plugin continuation handler when it is "
+"called back with ``TS_EVENT_HTTP_TXN_START``"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:284
+msgid "For accessing this data from anywhere, use TSContDataGet:"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:297
+msgid "Remember to free this memory before destroying the continuation:"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:330
+msgid "Using Locks"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:332
+msgid ""
+"You do not need to use locks when a continuation has registered itself to "
+"be called back by HTTP hooks and it only uses the HTTP APIs. In the example "
+"above, the continuation ``txn_contp`` has registered itself to be called "
+"back at HTTP hooks and it only uses the HTTP APIs. In this case only, it's "
+"safe to access data shared between ``txnp`` and ``txn_contp`` without "
+"grabbing a lock. In the example above, ``txn_contp`` is created with a "
+"``NULL`` mutex. This works because the HTTP transaction ``txnp`` is the "
+"only one that will call back ``txn_contp``, and you are guaranteed that "
+"``txn_contp`` will be called back only one hook at a time. After processing "
+"is finished, ``txn_contp`` will reenable ``txnp``."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:344
+msgid ""
+"In all other cases, you should create a mutex with the continuation. In "
+"general, a lock is needed when you're using iocore APIs or any other API "
+"where ``txn_contp`` is scheduled to be called back by a processor (such as "
+"the cache processor, the DNS processor, etc.). This ensures that "
+"``txn_contp`` is called back sequentially and not simultaneously. In other "
+"words, you need to ensure that ``txn_contp`` will not be called back by "
+"both ``txnp`` and the cache processor at the same time, since this will "
+"result in a situation wherein you're executing two pieces of code in "
+"conflict."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:355
+msgid "Special Case: Continuations Created for HTTP Transactions"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:357
+msgid ""
+"If your plugin creates a new continuation for each HTTP transaction, then "
+"you probably don't need to create a new mutex for it because each HTTP "
+"transaction (``TSHttpTxn`` object) already has its own mutex."
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:361
+msgid ""
+"In the example below, it's not necessary to specify a mutex for the "
+"continuation created in ``txn_handler``:"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:392
+msgid "The mutex functions are listed below:"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:394
+msgid ":c:func:`TSMutexCreate`"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:395
+msgid ":c:func:`TSMutexLock`"
+msgstr ""
+
+#: ../../developer-guide/plugins/mutexes.en.rst:396
+msgid ":c:func:`TSMutexLockTry`"
+msgstr ""

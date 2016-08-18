@@ -159,8 +159,8 @@ dictionary_new(int size)
     return NULL;
   }
   d->size = size;
-  d->val = (char **)calloc(size, sizeof(char *));
-  d->key = (char **)calloc(size, sizeof(char *));
+  d->val  = (char **)calloc(size, sizeof(char *));
+  d->key  = (char **)calloc(size, sizeof(char *));
   d->hash = (unsigned int *)calloc(size, sizeof(unsigned));
   return d;
 }
@@ -287,8 +287,8 @@ dictionary_set(dictionary *d, char *key, char *val)
   /* See if dictionary needs to grow */
   if (d->n == d->size) {
     /* Reached maximum size: reallocate dictionary */
-    d->val = (char **)mem_double(d->val, d->size * sizeof(char *));
-    d->key = (char **)mem_double(d->key, d->size * sizeof(char *));
+    d->val  = (char **)mem_double(d->val, d->size * sizeof(char *));
+    d->key  = (char **)mem_double(d->key, d->size * sizeof(char *));
     d->hash = (unsigned int *)mem_double(d->hash, d->size * sizeof(unsigned));
     if ((d->val == NULL) || (d->key == NULL) || (d->hash == NULL)) {
       /* Cannot grow dictionary */
@@ -306,8 +306,8 @@ dictionary_set(dictionary *d, char *key, char *val)
     }
   }
   /* Copy key */
-  d->key[i] = xstrdup(key);
-  d->val[i] = val ? xstrdup(val) : NULL;
+  d->key[i]  = xstrdup(key);
+  d->val[i]  = val ? xstrdup(val) : NULL;
   d->hash[i] = hash;
   d->n++;
   return 0;
@@ -392,7 +392,6 @@ dictionary_dump(dictionary *d, FILE *out)
   }
   return;
 }
-
 
 /* Test code */
 #ifdef TESTDIC

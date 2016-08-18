@@ -22,9 +22,10 @@
 
 #include <cstdio>
 #include <cstdarg>
-#include <parser.h>
 
-const char PLUGIN_NAME[] = "TEST_header_rewrite";
+#include "parser.h"
+
+const char PLUGIN_NAME[]     = "TEST_header_rewrite";
 const char PLUGIN_NAME_DBG[] = "TEST_dbg_header_rewrite";
 
 extern "C" void
@@ -65,7 +66,6 @@ class ParserTest : public Parser
 {
 public:
   ParserTest(std::string line) : Parser(line) {}
-
   std::vector<std::string>
   getTokens()
   {

@@ -1,0 +1,118 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:2
+msgid "Inline on a Linux router"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:21
+msgid ""
+"The routed set up presumes the set of clients are on distinct networks "
+"behind a single physical interface. For the purposes of this example will "
+"we presume"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:25
+msgid "The clients are on network 172.28.56.0/24"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:26
+msgid "The router connects the networks 172.28.56.0/24 and 192.168.1.0/24"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:27
+msgid "Interface ``eth0`` is on the network 192.168.1.0/24"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:28
+msgid "Interface ``eth1`` is on the network 172.28.56.0/24"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:29
+msgid ""
+"The router is already configured to route traffic correctly for the clients."
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:32
+msgid ""
+"In this example we will intercept port 80 (HTTP) traffic that traverses the "
+"router. The first step is to use ``iptables`` to handle IP packets "
+"appropriately."
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:47
+msgid ""
+"We mark packets so that we can use policy routing on them. For inbound "
+"packets we use ``TPROXY`` to make it possible to accept packets sent to "
+"foreign IP addresses. For returning outbound packets there will be a socket "
+"open bound to the foreign address, we need only force it to be delivered "
+"locally. The value for ``--on-ip`` is 0 because the target port is "
+"listening and not bound to a specific address. The value for ``--on-port`` "
+"must match the Traffic Server server port. Otherwise its value is "
+"arbitrary. ``--dport`` and ``--sport`` specify the port from the point of "
+"view of the clients and origin servers. The middle two lines exempt local "
+"web traffic from being marked for Traffic Server -- these rules can be "
+"tightened or loosened as needed. They server by matching traffic and "
+"exiting the ``iptables`` processing via ``ACCEPT`` before the last line is "
+"checked."
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:61
+msgid ""
+"Once the flows are marked we can force them to be delivered locally via the "
+"loopback interface via a policy routing table."
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:69
+msgid ""
+"The marking used is arbitrary but it must be consistent between "
+"``iptables`` and the routing rule. The table number must be in the range "
+"1..253."
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:73
+msgid ""
+"To configure Traffic Server set the following values in :file:`records."
+"config`"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:78
+msgid "``proxy.config.http.server_ports``"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:77
+msgid "``STRING`` Default: *value from* ``--on-port``"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:82
+msgid "``proxy.config.reverse_proxy.enabled``"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:81
+msgid "``INT`` Default: ``1``"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:86
+msgid "``proxy.config.url_remap.remap_required``"
+msgstr ""
+
+#: ../../../admin-guide/configuration/transparent-proxy/router-inline.en.rst:85
+msgid "``INT`` Default: ``0``"
+msgstr ""

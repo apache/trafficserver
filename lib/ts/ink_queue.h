@@ -61,8 +61,6 @@
 extern "C" {
 #endif /* __cplusplus */
 
-extern int fastmemtotal;
-
 void ink_queue_load_64(void *dst, void *src);
 
 #ifdef __x86_64__
@@ -72,9 +70,9 @@ void ink_queue_load_64(void *dst, void *src);
 #endif
 
 #if TS_HAS_128BIT_CAS
-#define INK_QUEUE_LD(dst, src)                                                         \
-  do {                                                                                 \
-    *(__int128_t *) & (dst) = __sync_val_compare_and_swap((__int128_t *)&(src), 0, 0); \
+#define INK_QUEUE_LD(dst, src)                                                       \
+  do {                                                                               \
+    *(__int128_t *)&(dst) = __sync_val_compare_and_swap((__int128_t *)&(src), 0, 0); \
   } while (0)
 #else
 #define INK_QUEUE_LD(dst, src) INK_QUEUE_LD64(dst, src)
@@ -151,10 +149,6 @@ struct _InkFreeList {
   uint32_t allocated_base, used_base;
   int advice;
 };
-
-inkcoreapi extern volatile int64_t fastalloc_mem_in_use;
-inkcoreapi extern volatile int64_t fastalloc_mem_total;
-inkcoreapi extern volatile int64_t freelist_allocated_mem;
 
 typedef struct ink_freelist_ops InkFreeListOps;
 typedef struct _InkFreeList InkFreeList;

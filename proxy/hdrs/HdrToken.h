@@ -43,10 +43,10 @@
 #define SIZEOF(x) (sizeof(x) / sizeof(x[0]))
 
 enum HdrTokenType {
-  HDRTOKEN_TYPE_OTHER = 0,
-  HDRTOKEN_TYPE_FIELD = 1,
-  HDRTOKEN_TYPE_METHOD = 2,
-  HDRTOKEN_TYPE_SCHEME = 3,
+  HDRTOKEN_TYPE_OTHER         = 0,
+  HDRTOKEN_TYPE_FIELD         = 1,
+  HDRTOKEN_TYPE_METHOD        = 2,
+  HDRTOKEN_TYPE_SCHEME        = 3,
   HDRTOKEN_TYPE_CACHE_CONTROL = 4
 };
 
@@ -79,10 +79,10 @@ struct HdrTokenHeapPrefix {
 };
 
 enum HdrTokenInfoFlags {
-  HTIF_NONE = 0,
-  HTIF_COMMAS = 1 << 0,
-  HTIF_MULTVALS = 1 << 1,
-  HTIF_HOPBYHOP = 1 << 2,
+  HTIF_NONE      = 0,
+  HTIF_COMMAS    = 1 << 0,
+  HTIF_MULTVALS  = 1 << 1,
+  HTIF_HOPBYHOP  = 1 << 2,
   HTIF_PROXYAUTH = 1 << 3
 };
 

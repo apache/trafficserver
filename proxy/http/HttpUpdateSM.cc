@@ -32,7 +32,6 @@
 
  ****************************************************************************/
 
-
 #include "HttpUpdateSM.h"
 #include "HttpDebugNames.h"
 
@@ -63,7 +62,7 @@ HttpUpdateSM::start_scheduled_update(Continuation *cont, HTTPHdr *request)
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
 
   // Set up the Action
-  cb_cont = cont;
+  cb_cont   = cont;
   cb_action = cont;
 
   start_sub_sm();
@@ -75,7 +74,7 @@ HttpUpdateSM::start_scheduled_update(Continuation *cont, HTTPHdr *request)
   // Fix ME: What should these be set to since there is not a
   //   real client
   ats_ip4_set(&t_state.client_info.src_addr, htonl(INADDR_LOOPBACK), 0);
-  t_state.backdoor_request = 0;
+  t_state.backdoor_request           = 0;
   t_state.client_info.port_attribute = HttpProxyPort::TRANSPORT_DEFAULT;
 
   t_state.req_flavor = HttpTransact::REQ_FLAVOR_SCHEDULED_UPDATE;
@@ -157,9 +156,9 @@ HttpUpdateSM::handle_api_return()
   case HttpTransact::SM_ACTION_INTERNAL_CACHE_NOOP:
   case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP:
   case HttpTransact::SM_ACTION_SERVE_FROM_CACHE: {
-    cb_event = HTTP_SCH_UPDATE_EVENT_NOT_CACHED;
+    cb_event                     = HTTP_SCH_UPDATE_EVENT_NOT_CACHED;
     t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS;
-    terminate_sm = true;
+    terminate_sm                 = true;
     return;
   }
 
@@ -187,7 +186,7 @@ HttpUpdateSM::set_next_state()
 {
   if (t_state.cache_info.action == HttpTransact::CACHE_DO_NO_ACTION || t_state.cache_info.action == HttpTransact::CACHE_DO_SERVE) {
     if (t_state.next_action == HttpTransact::SM_ACTION_SERVE_FROM_CACHE) {
-      cb_event = HTTP_SCH_UPDATE_EVENT_NO_ACTION;
+      cb_event                     = HTTP_SCH_UPDATE_EVENT_NO_ACTION;
       t_state.squid_codes.log_code = SQUID_LOG_TCP_HIT;
     } else {
       t_state.squid_codes.log_code = SQUID_LOG_TCP_MISS;

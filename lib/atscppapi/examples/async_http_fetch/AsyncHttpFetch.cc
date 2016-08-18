@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/TransactionPlugin.h>
 #include <atscppapi/Logger.h>
@@ -33,6 +32,11 @@ using std::string;
 // This is for the -T tag debugging
 // To view the debug messages ./traffic_server -T "async_http_fetch_example.*"
 #define TAG "async_http_fetch_example"
+
+namespace
+{
+GlobalPlugin *plugin;
+}
 
 class AsyncHttpFetch2 : public AsyncHttpFetch
 {
@@ -70,7 +74,6 @@ public:
     return getDispatchController()->isEnabled();
   }
   ~DelayedAsyncHttpFetch() { delete timer_; }
-
 private:
   shared_ptr<Mutex> mutex_;
   AsyncTimer *timer_;
@@ -84,7 +87,7 @@ class TransactionHookPlugin : public TransactionPlugin,
 {
 public:
   TransactionHookPlugin(Transaction &transaction)
-    : TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0)
+    : TransactionPlugin(transaction), transaction_(transaction), num_fetches_pending_(0), post_request_(NULL)
   {
     TS_DEBUG(TAG, "Constructed TransactionHookPlugin, saved a reference to this transaction.");
     registerHook(HOOK_SEND_REQUEST_HEADERS);
@@ -95,16 +98,14 @@ public:
   {
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/"), getMutex());
     ++num_fetches_pending_;
-    AsyncHttpFetch *post_request = new AsyncHttpFetch("http://127.0.0.1/post", "data");
-
-    (void)post_request;
+    post_request_ = new AsyncHttpFetch("http://127.0.0.1/post", "data");
 
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/post", "data"), getMutex());
     ++num_fetches_pending_;
 
     // we'll add some custom headers for this request
     AsyncHttpFetch2 *provider2 = new AsyncHttpFetch2("http://127.0.0.1/");
-    Headers &request_headers = provider2->getRequestHeaders();
+    Headers &request_headers   = provider2->getRequestHeaders();
     request_headers.set("Header1", "Value1");
     request_headers.set("Header2", "Value2");
     Async::execute<AsyncHttpFetch2>(this, provider2, getMutex());
@@ -158,6 +159,7 @@ public:
 private:
   Transaction &transaction_;
   int num_fetches_pending_;
+  AsyncHttpFetch *post_request_;
 
   void
   handleAnyAsyncComplete(AsyncHttpFetch &async_http_fetch)
@@ -215,7 +217,5 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   TS_DEBUG(TAG, "Loaded async_http_fetch_example plugin");
   RegisterGlobalPlugin("CPP_Example_AsyncHttpFetch", "apache", "dev@trafficserver.apache.org");
-  GlobalPlugin *instance = new GlobalHookPlugin();
-
-  (void)instance;
+  plugin = new GlobalHookPlugin();
 }

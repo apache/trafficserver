@@ -36,7 +36,7 @@ square brackets are optional.
 
 If the argument is '-', :program:`traffic_via` will filter standard
 input for Via headers. This modes supports only supports Via headers
-taht are enclosed by square brackets.
+that are enclosed by square brackets.
 
 Options
 =======
@@ -72,7 +72,7 @@ Decode the Via header from command-line arguments::
     Parent proxy connection status                         :no parent proxy or unknown
     Origin server connection status                        :connection open failed
 
-Decode the Via header from a curl request, using the :ref:`X-Debug <_xdebug_plugin>` plugin::
+Decode the Via header from a curl request, using the :ref:`X-Debug <admin-plugins-xdebug>` plugin::
 
     $ curl -H  "X-Debug: Via" -I http://test.example.com | traffic_via -
     Via header is uScMsSf pSeN:t cCMi p sS, Length is 24

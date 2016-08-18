@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 IOBufferBlock *resp_blk;
 int doc_len;
 
@@ -33,7 +32,6 @@ struct NetTesterSM : public Continuation {
   char request[2000];
   int req_len;
 
-
   NetTesterSM(ProxyMutex *_mutex, NetVConnection *_vc) : Continuation(_mutex)
   {
     MUTEX_TRY_LOCK(lock, mutex, _vc->thread);
@@ -41,16 +39,15 @@ struct NetTesterSM : public Continuation {
     vc = _vc;
     Debug("net_test", "Accepted a connection");
     SET_HANDLER(&NetTesterSM::handle_read);
-    req_buf = new_MIOBuffer(1);
-    reader = req_buf->alloc_reader();
+    req_buf  = new_MIOBuffer(1);
+    reader   = req_buf->alloc_reader();
     read_vio = vc->do_io_read(this, INT64_MAX, req_buf);
     // vc->set_inactivity_timeout(HRTIME_SECONDS(60));
     resp_buf = new_empty_MIOBuffer(6);
     resp_buf->append_block(resp_blk->clone());
-    req_len = 0;
+    req_len     = 0;
     resp_reader = resp_buf->alloc_reader();
   }
-
 
   ~NetTesterSM()
   {
@@ -79,11 +76,11 @@ struct NetTesterSM : public Continuation {
       reader->read(&request[req_len], r);
       req_len += r;
       request[req_len] = 0;
-      Debug("net_test", "%s\n", request);
+      Debug("net_test", "%s", request);
       fflush(stdout);
       // vc->set_inactivity_timeout(HRTIME_SECONDS(30));
       if (strcmp(&request[req_len - 4], "\r\n\r\n") == 0) {
-        Debug("net_test", "The request header is :\n%s\n", request);
+        Debug("net_test", "The request header is :\n%s", request);
         // parse and get the doc size
         SET_HANDLER(&NetTesterSM::handle_write);
         ink_assert(doc_len == resp_reader->read_avail());
@@ -94,7 +91,7 @@ struct NetTesterSM : public Continuation {
     case VC_EVENT_READ_COMPLETE:
     /* FALLSTHROUGH */
     case VC_EVENT_EOS:
-      r = reader->read_avail();
+      r   = reader->read_avail();
       str = new char[r + 10];
       reader->read(str, r);
       Debug("net_test", "%s", str);
@@ -110,7 +107,6 @@ struct NetTesterSM : public Continuation {
     }
     return EVENT_CONT;
   }
-
 
   int
   handle_write(int event, Event *e)
@@ -134,14 +130,12 @@ struct NetTesterSM : public Continuation {
   }
 };
 
-
 struct NetTesterAccept : public Continuation {
   NetTesterAccept(ProxyMutex *_mutex) : Continuation(_mutex) { SET_HANDLER(&NetTesterAccept::handle_accept); }
-
   int
   handle_accept(int event, void *data)
   {
-    Debug("net_test", "Accepted a connection\n");
+    Debug("net_test", "Accepted a connection");
     fflush(stdout);
     NetVConnection *vc = (NetVConnection *)data;
     new NetTesterSM(new_ProxyMutex(), vc);
@@ -149,11 +143,9 @@ struct NetTesterAccept : public Continuation {
   }
 };
 
-
 struct Stop : public Continuation {
   Action *a;
   Stop(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&Stop::stop); }
-
   int
   stop(int event, Event *e)
   {
@@ -161,7 +153,6 @@ struct Stop : public Continuation {
     return EVENT_DONE;
   }
 };
-
 
 int
 test_main()

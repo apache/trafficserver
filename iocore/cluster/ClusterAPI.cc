@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ClusterAPI.cc
@@ -126,7 +125,7 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
           Debug("cluster_api", "callout: n %d ([%u.%u.%u.%u], %d)", n, DOT_SEPARATED(_node_handle), _node_status);
         } else {
           _restart = 1;
-          _next_n = n;
+          _next_n  = n;
           return EVENT_CONT;
         }
       }
@@ -162,7 +161,7 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
 
         } else {
           _restart = 1;
-          _next_n = n;
+          _next_n  = n;
           return EVENT_CONT;
         }
       }
@@ -179,7 +178,7 @@ MachineStatusSM::MachineStatusSMEvent(Event * /* e ATS_UNUSED */, void * /* d AT
           Debug("cluster_api", "directed callout: n %d ([%u.%u.%u.%u], %d)", n, DOT_SEPARATED(_node_handle), _node_status);
         } else {
           _restart = 1;
-          _next_n = n;
+          _next_n  = n;
           return EVENT_CONT;
         }
       }
@@ -221,7 +220,7 @@ ClusterAPIPeriodicSM::GetNextSM()
       msmp = (MachineStatusSM *)ink_atomiclist_popall(&status_callout_atomic_q);
       if (msmp) {
         while (msmp) {
-          msmp_next = (MachineStatusSM *)msmp->link.next;
+          msmp_next       = (MachineStatusSM *)msmp->link.next;
           msmp->link.next = 0;
           status_callout_q.push(msmp);
           msmp = msmp_next;
@@ -291,7 +290,7 @@ TSAddClusterStatusFunction(TSClusterStatusFunction Status_Function, TSMutex m, T
   for (n = 0; n < MAX_CLUSTERSTATUS_CALLOUTS; ++n) {
     if (!status_callouts[n].func) {
       status_callouts[n].mutex = (ProxyMutex *)m;
-      status_callouts[n].func = Status_Function;
+      status_callouts[n].func  = Status_Function;
       MUTEX_UNTAKE_LOCK(ClusterAPI_mutex, e);
       *h = INDEX_TO_CLUSTER_STATUS_HANDLE(n);
 
@@ -313,7 +312,7 @@ TSAddClusterStatusFunction(TSClusterStatusFunction Status_Function, TSMutex m, T
 int
 TSDeleteClusterStatusFunction(TSClusterStatusHandle_t *h)
 {
-  int n = CLUSTER_STATUS_HANDLE_TO_INDEX(*h);
+  int n      = CLUSTER_STATUS_HANDLE_TO_INDEX(*h);
   EThread *e = this_ethread();
 
   ink_release_assert((n >= 0) && (n < MAX_CLUSTERSTATUS_CALLOUTS));
@@ -321,7 +320,7 @@ TSDeleteClusterStatusFunction(TSClusterStatusHandle_t *h)
 
   MUTEX_TAKE_LOCK(ClusterAPI_mutex, e);
   status_callouts[n].mutex = 0;
-  status_callouts[n].func = (TSClusterStatusFunction)0;
+  status_callouts[n].func  = (TSClusterStatusFunction)0;
   status_callouts[n].state = NE_STATE_FREE;
   MUTEX_UNTAKE_LOCK(ClusterAPI_mutex, e);
 
@@ -417,7 +416,7 @@ int
 TSAddClusterRPCFunction(TSClusterRPCKey_t k, TSClusterRPCFunction func, TSClusterRPCHandle_t *h)
 {
   RPCHandle_t handle;
-  int n = RPC_FUNCTION_KEY_TO_CLUSTER_NUMBER(k);
+  int n      = RPC_FUNCTION_KEY_TO_CLUSTER_NUMBER(k);
   EThread *e = this_ethread();
 
   ink_release_assert(func);
@@ -425,7 +424,7 @@ TSAddClusterRPCFunction(TSClusterRPCKey_t k, TSClusterRPCFunction func, TSCluste
   Debug("cluster_api", "TSAddClusterRPCFunction: key %d func %p", k, func);
 
   handle.u.internal.cluster_function = n;
-  handle.u.internal.magic = RPC_HANDLE_MAGIC;
+  handle.u.internal.magic            = RPC_HANDLE_MAGIC;
 
   MUTEX_TAKE_LOCK(ClusterAPI_mutex, e);
   if (n < API_END_CLUSTER_FUNCTION)
@@ -446,7 +445,7 @@ int
 TSDeleteClusterRPCFunction(TSClusterRPCHandle_t *rpch)
 {
   RPCHandle_t *h = (RPCHandle_t *)rpch;
-  EThread *e = this_ethread();
+  EThread *e     = this_ethread();
 
   ink_release_assert(((h->u.internal.cluster_function >= API_STARECT_CLUSTER_FUNCTION) &&
                       (h->u.internal.cluster_function <= API_END_CLUSTER_FUNCTION)));
@@ -467,14 +466,14 @@ default_api_ClusterFunction(ClusterHandler *ch, void *data, int len)
   Debug("cluster_api", "default_api_ClusterFunction: [%u.%u.%u.%u] data %p len %d", DOT_SEPARATED(ch->machine->ip), data, len);
 
   TSClusterRPCMsg_t *msg = (TSClusterRPCMsg_t *)data;
-  RPCHandle_t *rpch = (RPCHandle_t *)&msg->m_handle;
-  int cluster_function = rpch->u.internal.cluster_function;
+  RPCHandle_t *rpch      = (RPCHandle_t *)&msg->m_handle;
+  int cluster_function   = rpch->u.internal.cluster_function;
 
   ink_release_assert((size_t)len >= sizeof(TSClusterRPCMsg_t));
   ink_release_assert(((cluster_function >= API_STARECT_CLUSTER_FUNCTION) && (cluster_function <= API_END_CLUSTER_FUNCTION)));
 
   if (cluster_function < API_END_CLUSTER_FUNCTION && RPC_Functions[cluster_function]) {
-    int msg_data_len = len - SIZEOF_RPC_MSG_LESS_DATA;
+    int msg_data_len  = len - SIZEOF_RPC_MSG_LESS_DATA;
     TSNodeHandle_t nh = IP_TO_NODE_HANDLE(ch->machine->ip);
     (*RPC_Functions[cluster_function])(&nh, msg, msg_data_len);
   } else {
@@ -514,7 +513,7 @@ TSAllocClusterRPCMsg(TSClusterRPCHandle_t *h, int data_size)
   c->alloc_data();
   *((OutgoingControl **)c->data) = c;
 
-  rpcm = (TSClusterRPCMsg_t *)(c->data + sizeof(OutgoingControl *));
+  rpcm           = (TSClusterRPCMsg_t *)(c->data + sizeof(OutgoingControl *));
   rpcm->m_handle = *h;
 
   /*
@@ -533,9 +532,9 @@ int
 TSSendClusterRPC(TSNodeHandle_t *nh, TSClusterRPCMsg_t *msg)
 {
   struct in_addr ipaddr = NODE_HANDLE_TO_IP(*nh);
-  RPCHandle_t *rpch = (RPCHandle_t *)&msg->m_handle;
+  RPCHandle_t *rpch     = (RPCHandle_t *)&msg->m_handle;
 
-  OutgoingControl *c = *((OutgoingControl **)((char *)msg - sizeof(OutgoingControl *)));
+  OutgoingControl *c       = *((OutgoingControl **)((char *)msg - sizeof(OutgoingControl *)));
   ClusterConfiguration *cc = this_cluster()->current_configuration();
   ClusterMachine *m;
 

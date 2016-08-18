@@ -101,20 +101,20 @@ Cache
    integer percent.
 
 .. ts:stat:: global proxy.node.cache_total_hits_avg_10s float
-.. ts:stat:: global proxy.node.cache_total_hits integer
+.. ts:stat:: global proxy.node.cache_total_hits counter
 
    Represents the total number of cache lookups which have been satisfied by
    either the in-memory cache or the on-disk cache, since statistics collection
    began.
 
 .. ts:stat:: global proxy.node.cache_total_hits_mem_avg_10s float
-.. ts:stat:: global proxy.node.cache_total_hits_mem integer
+.. ts:stat:: global proxy.node.cache_total_hits_mem counter
 
    Represents the total number of cache lookups which have been satisfied by the
    in-memory cache, since statistics collection began.
 
 .. ts:stat:: global proxy.node.cache_total_misses_avg_10s float
-.. ts:stat:: global proxy.node.cache_total_misses integer
+.. ts:stat:: global proxy.node.cache_total_misses counter
 
    Represents the total number of cache lookups which could not be satisfied by
    either the in-memory cache or the on-disk cache, and which required origin

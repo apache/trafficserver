@@ -1,0 +1,115 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:57
+msgid "Configuration"
+msgstr "設定"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:4
+msgid "MySQL Remap Plugin"
+msgstr "MySQL リマッププラグイン"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:28
+msgid "The generic proxying setup is the following::"
+msgstr "一般的なプロキシーのセットアップは次のとおりです ::"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:24
+msgid ""
+"This is a basic plugin for doing dynamic \"remaps\" from a database. It "
+"essentially rewrites the incoming request's Host header / origin server "
+"connection to one retrieved from a database."
+msgstr ""
+"これはデータベースをもとに動的な\"リマップ\"を行うための基本的なプラグインで"
+"す。本質的には届いたリクエストの Host ヘッダーを書き換えます / オリジンサー"
+"バーの接続をデータベースから取得したものに。"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:85
+msgid "And resolve any errors or warnings displayed."
+msgstr "そして表示されたエラーや警告を解決してください。"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:37
+msgid "Ends up requesting ``http://original.host.com/path/to/something``"
+msgstr ""
+"最終的には ``http://original.host.com/path/to/something`` にリクエストしま"
+"す。"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:48
+msgid "Installation"
+msgstr "インストール"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:42
+msgid ""
+"We have benchmarked the plugin with ab at about 9200 requests/sec (1.7k "
+"object) on a commodity hardware with a local setup of both, MySQL and "
+"Traffic Server local. Real performance is likely to be substantially "
+"higher, up to the MySQL's max queries / second."
+msgstr ""
+"私たちは ab でこのプラグインのベンチマークを行い、汎用のハードウェアに "
+"MySQL と Traffic Server をどちらもローカルにセットアップした環境で 約 9200 "
+"リクエスト / 秒 (1.7k オブジェクト ) となりました。実際のパフォーマンスは十"
+"分に高く、MySQL の最大クエリー / 秒次第です。"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:59
+msgid "Import the default schema to a database you create::"
+msgstr "作成したデータベースへのデフォルトスキーマを取り込みます ::"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:72
+msgid "The INI file should contain the following values::"
+msgstr "INI ファイルは次の値を含むべきです ::"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:50
+msgid "This plugin is only built if the configure option ::"
+msgstr "このプラグインはビルド時の設定オプションに ::"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:81
+msgid "To debug errors, start trafficserver manually using::"
+msgstr ""
+"エラーをデバッグするために、Traffic Server を手動で次のように開始してくださ"
+"い::"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:39
+msgid ""
+"With this plugin enabled, you can easily change that to anywhere you "
+"desire. Imagine the many possibilities...."
+msgstr ""
+"このプラグインを有効化すると、どこでも望んだ場所に簡単に変更できます。多くの"
+"可能性を想像してください...."
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:67
+msgid ""
+"Traffic Server plugin configuration is done inside a global configuration "
+"file: ``/etc/trafficserver/plugin.config``::"
+msgstr ""
+"Traffic Server プラグイン設定はグローバル設定ファイル :file: ``/etc/"
+"trafficserver/plugin.config`` で完了します ::"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:32
+msgid "Without the plugin a request like::"
+msgstr "このプラグインを使わない場合のリクエストはこの様になります ::"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:64
+msgid ""
+"insert some interesting values in mysql_remap.hostname & mysql_remap.map"
+msgstr "mysql_remap.hostname と mysql_remap.map に興味深い値を入れます"
+
+#: ../../admin-guide/plugins/mysql_remap.en.rst:54
+msgid "is given at build time."
+msgstr "が与えられている場合にのみビルドされます。"

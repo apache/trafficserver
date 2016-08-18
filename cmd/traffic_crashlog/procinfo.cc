@@ -167,7 +167,7 @@ bool
 crashlog_write_records(FILE *fp, const crashlog_target &)
 {
   TSMgmtError mgmterr;
-  TSList list = TSListCreate();
+  TSList list  = TSListCreate();
   bool success = false;
 
   if ((mgmterr = TSRecordGetMatchMlt(".", list)) != TS_ERR_OKAY) {

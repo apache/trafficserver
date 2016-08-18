@@ -21,12 +21,12 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_FILTER_H
 #define LOG_FILTER_H
 
 #include "ts/ink_platform.h"
 #include "ts/IpMap.h"
+#include "ts/Ptr.h"
 #include "LogAccess.h"
 #include "LogField.h"
 #include "LogFormat.h"
@@ -39,7 +39,7 @@
   function which, given a LogAccess object, returns true if
   the log entry is to be tossed out.
   -------------------------------------------------------------------------*/
-class LogFilter
+class LogFilter : public RefCountObj
 {
 public:
   enum Type {
@@ -55,6 +55,7 @@ public:
     WIPE_FIELD_VALUE,
     N_ACTIONS,
   };
+
   static const char *ACTION_NAME[];
 
   // all operators "positive" (i.e., there is no NOMATCH operator anymore)
@@ -68,6 +69,7 @@ public:
     CASE_INSENSITIVE_CONTAIN,
     N_OPERATORS,
   };
+
   static const char *OPERATOR_NAME[];
 
   LogFilter(const char *name, LogField *field, Action action, Operator oper);
@@ -78,27 +80,25 @@ public:
   {
     return m_name;
   }
+
   Type
   type() const
   {
     return m_type;
   }
+
   size_t
   get_num_values() const
   {
     return m_num_values;
-  };
+  }
 
   virtual bool toss_this_entry(LogAccess *lad) = 0;
   virtual bool wipe_this_entry(LogAccess *lad) = 0;
   virtual void display(FILE *fd = stdout) = 0;
   virtual void display_as_XML(FILE *fd = stdout) = 0;
 
-  void
-  reverse()
-  {
-    m_action = (m_action == REJECT ? ACCEPT : REJECT);
-  }
+  static LogFilter *parse(const char *name, Action action, const char *condition);
 
 protected:
   char *m_name;
@@ -158,7 +158,7 @@ private:
     // this reverse behavior is to conform to the behavior of strcmp
     // which returns 0 if strings match
     return (strstr(s0, s1) == NULL ? 1 : 0);
-  };
+  }
 
   enum LengthCondition {
     DATA_LENGTH_EQUAL = 0,
@@ -247,7 +247,6 @@ private:
 
 bool filters_are_equal(LogFilter *filt1, LogFilter *filt2);
 
-
 /*-------------------------------------------------------------------------
   LogFilterList
   -------------------------------------------------------------------------*/
@@ -269,13 +268,14 @@ public:
   {
     return m_filter_list.head;
   }
+
   LogFilter *
   next(LogFilter *here) const
   {
     return (here->link).next;
   }
 
-  unsigned count();
+  unsigned count() const;
   void display(FILE *fd = stdout);
   void display_as_XML(FILE *fd = stdout);
 
@@ -283,12 +283,13 @@ public:
   does_conjunction() const
   {
     return m_does_conjunction;
-  };
+  }
+
   void
   set_conjunction(bool c)
   {
     m_does_conjunction = c;
-  };
+  }
 
 private:
   Queue<LogFilter> m_filter_list;
@@ -305,7 +306,6 @@ private:
   LogFilterList(const LogFilterList &rhs);
   LogFilterList &operator=(const LogFilterList &rhs);
 };
-
 
 /*-------------------------------------------------------------------------
   Inline functions
@@ -409,12 +409,12 @@ wipeField(char **dest, char *field)
         temp_text += (p2 - p1);
         char *p3 = strstr(p2, "&");
         if (p3) {
-          for (int i = 0; i < (p3 - p2); i++)
+          for (int i     = 0; i < (p3 - p2); i++)
             temp_text[i] = 'X';
           temp_text += (p3 - p2);
           memcpy(temp_text, p3, ((buf_dest + strlen(buf_dest)) - p3));
         } else {
-          for (int i = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++)
+          for (int i     = 0; i < ((buf_dest + strlen(buf_dest)) - p2); i++)
             temp_text[i] = 'X';
         }
       } else {

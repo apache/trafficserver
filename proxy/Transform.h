@@ -32,7 +32,6 @@
 
 typedef struct _RangeRecord {
   _RangeRecord() : _start(-1), _end(-1), _done_byte(-1) {}
-
   int64_t _start;
   int64_t _end;
   int64_t _done_byte;
@@ -107,6 +106,5 @@ num_chars_for_int(int64_t i)
 }
 
 extern TransformProcessor transformProcessor;
-
 
 #endif /* __TRANSFORM_H__ */

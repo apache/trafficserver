@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #ifndef _TS_LUA_COMMON_H
 #define _TS_LUA_COMMON_H
 
@@ -35,6 +34,7 @@
 #include "ts_lua_coroutine.h"
 
 #define TS_LUA_FUNCTION_REMAP "do_remap"
+#define TS_LUA_FUNCTION_OS_RESPONSE "do_os_response"
 #define TS_LUA_FUNCTION_CACHE_LOOKUP_COMPLETE "do_cache_lookup_complete"
 #define TS_LUA_FUNCTION_SEND_REQUEST "do_send_request"
 #define TS_LUA_FUNCTION_READ_RESPONSE "do_read_response"
@@ -60,7 +60,6 @@
 #define TS_LUA_FUNCTION_G_SELECT_ALT "do_global_select_alt"
 #define TS_LUA_FUNCTION_G_READ_CACHE "do_global_read_cache"
 #define TS_LUA_FUNCTION_G_TXN_CLOSE "do_global_txn_close"
-
 
 #define TS_LUA_DEBUG_TAG "ts_lua"
 
@@ -101,7 +100,6 @@ typedef struct {
   int remap;
 } ts_lua_instance_conf;
 
-
 /* lua state for http request */
 typedef struct {
   ts_lua_cont_info cinfo;
@@ -126,13 +124,11 @@ typedef struct {
 
   ts_lua_instance_conf *instance_conf;
 
-  int remap;
   int has_hook;
 
   TSRemapRequestInfo *rri;
 
 } ts_lua_http_ctx;
-
 
 typedef struct {
   TSVIO vio;

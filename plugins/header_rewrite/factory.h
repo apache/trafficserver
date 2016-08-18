@@ -30,5 +30,4 @@
 Operator *operator_factory(const std::string &op);
 Condition *condition_factory(const std::string &cond);
 
-
 #endif

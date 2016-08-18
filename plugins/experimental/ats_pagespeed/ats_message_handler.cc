@@ -34,7 +34,6 @@
 #include "pagespeed/kernel/base/posix_timer.h"
 #include "pagespeed/kernel/base/time_util.h"
 
-
 namespace
 {
 // This will be prefixed to every logged message.
@@ -48,7 +47,6 @@ AtsMessageHandler::AtsMessageHandler(AbstractMutex *mutex) : mutex_(mutex), buff
 {
   SetPidString(static_cast<int64>(getpid()));
 }
-
 
 bool
 AtsMessageHandler::Dump(Writer *writer)

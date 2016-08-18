@@ -32,7 +32,7 @@
 #define _HOST_LOOKUP_H_
 // HostLookup  constantss
 const int HOST_TABLE_DEPTH = 3; // Controls the max number of levels in the logical tree
-const int HOST_ARRAY_MAX = 8;   // Sets the fixed array size
+const int HOST_ARRAY_MAX   = 8; // Sets the fixed array size
 
 //
 //  Begin Host Lookup Helper types
@@ -84,9 +84,7 @@ typedef void (*HostLookupPrintFunc)(void *opaque_data);
 
 struct HostLookupState {
   HostLookupState() : cur(NULL), table_level(0), array_index(0), hostname(NULL), host_copy(NULL), host_copy_next(NULL) {}
-
   ~HostLookupState() { ats_free(host_copy); }
-
   HostBranch *cur;
   int table_level;
   int array_index;
@@ -127,6 +125,5 @@ private:
   int num_el;               // the numbe of itmems in the tree
   const char *matcher_name; // Used for Debug/Warning/Error messages
 };
-
 
 #endif

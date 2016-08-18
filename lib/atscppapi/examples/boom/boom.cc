@@ -34,7 +34,7 @@
  *   found, then it will try to use default.html, if default.html is not found
  *   the response will be the hard coded html string below.
  *
- *   You will specify a comma seperated list WITH NO SPACES!!!
+ *   You will specify a comma separated list WITH NO SPACES!!!
  *   of error codes to BOOM on, for example you can do:
  *    3xx 4xx 5xx 6xx or you can specify individual error codes such as 501 502 404, etc...
  *   You would put 3xx,4xx,5xx,200 in your config argument REMEMBER NO SPACES!!!!
@@ -93,6 +93,11 @@ const std::string DEFAULT_BOOM_HTTP_STATUS = "OK (BOOM)";
 Stat boom_counter;
 }
 
+namespace
+{
+GlobalPlugin *plugin;
+}
+
 // Functor that decides whether the HTTP error can be rewritten or not.
 // Rewritable codes are: 2xx, 3xx, 4xx, 5xx and 6xx.
 // 1xx is NOT rewritable!
@@ -110,7 +115,8 @@ public:
     current_code_string_ = oss.str();
   }
 
-  bool operator()(const std::string &code) const
+  bool
+  operator()(const std::string &code) const
   {
     TS_DEBUG(TAG, "Checking if %s matches code %s", current_code_string_.c_str(), code.c_str());
     if (code == current_code_string_)
@@ -177,7 +183,6 @@ public:
   // Register error codes
   void register_error_codes(const std::vector<std::string> &error_codes);
 };
-
 
 void
 BoomResponseRegistry::register_error_codes(const std::vector<std::string> &error_codes)
@@ -434,5 +439,5 @@ TSPluginInit(int argc, const char *argv[])
     TS_ERROR(TAG, "Invalid number of command line arguments, using compile time defaults.");
   }
 
-  new BoomGlobalPlugin(pregistry);
+  plugin = new BoomGlobalPlugin(pregistry);
 }

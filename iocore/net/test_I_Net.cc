@@ -32,7 +32,6 @@
 //#include "NetTest-http-server.c"
 #include "NetTest-simple-proxy.c"
 
-
 int
 main()
 {
@@ -42,12 +41,10 @@ main()
 
   RecModeT mode_type = RECM_STAND_ALONE;
 
-
   init_diags("net_test", NULL);
   RecProcessInit(mode_type);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   ink_net_init(NET_SYSTEM_MODULE_VERSION);
-
 
   /*
    * ignore broken pipe
@@ -68,7 +65,7 @@ main()
 #ifdef USE_SOCKS
   net_config_socks_server_host = "209.131.52.54";
   net_config_socks_server_port = 1080;
-  net_config_socks_needed = 1;
+  net_config_socks_needed      = 1;
 #endif
 
   netProcessor.start();

@@ -48,14 +48,14 @@ TSPluginInit(int argc, const char *argv[])
   }
 
   TSPluginRegistrationInfo info;
-  info.plugin_name = "version-plugin";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "version-plugin";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
 // partial compilation
 #if (TS_VERSION_NUMBER < 3000000)
   if (TSPluginRegister(TS_SDK_VERSION_2_0, &info) != TS_SUCCESS) {
-#elif(TS_VERSION_NUMBER < 6000000)
+#elif (TS_VERSION_NUMBER < 6000000)
   if (TSPluginRegister(TS_SDK_VERSION_3_0, &info) != TS_SUCCESS) {
 #else
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -63,6 +63,6 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[version] Plugin registration failed. \n");
   }
 
-  TSDebug("debug-version-plugin", "Running in Apache Traffic Server: v%d.%d.%d\n", major_ts_version, minor_ts_version,
+  TSDebug("debug-version-plugin", "Running in Apache Traffic Server: v%d.%d.%d", major_ts_version, minor_ts_version,
           patch_ts_version);
 }

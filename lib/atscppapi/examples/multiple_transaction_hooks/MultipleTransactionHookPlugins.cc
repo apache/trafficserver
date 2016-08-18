@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 #include <iostream>
 #include <vector>
 #include <atscppapi/GlobalPlugin.h>
@@ -24,6 +23,10 @@
 #include <atscppapi/PluginInit.h>
 
 using namespace atscppapi;
+namespace
+{
+GlobalPlugin *plugin;
+}
 
 class MultipleTransactionHookPluginsOne : public atscppapi::TransactionPlugin
 {
@@ -35,7 +38,6 @@ public:
   }
 
   virtual ~MultipleTransactionHookPluginsOne() { std::cout << "Destroyed MultipleTransactionHookPluginsOne!" << std::endl; }
-
   void
   handleSendResponseHeaders(Transaction &transaction)
   {
@@ -55,7 +57,6 @@ public:
   }
 
   virtual ~MultipleTransactionHookPluginsTwo() { std::cout << "Destroyed MultipleTransactionHookPluginsTwo!" << std::endl; }
-
   void
   handleSendRequestHeaders(Transaction &transaction)
   {
@@ -85,7 +86,6 @@ class GlobalHookPlugin : public atscppapi::GlobalPlugin
 {
 public:
   GlobalHookPlugin() { GlobalPlugin::registerHook(HOOK_READ_REQUEST_HEADERS_PRE_REMAP); }
-
   virtual void
   handleReadRequestHeadersPreRemap(Transaction &transaction)
   {
@@ -106,5 +106,5 @@ void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
 {
   RegisterGlobalPlugin("CPP_Example_MultipleTransactionHook", "apache", "dev@trafficserver.apache.org");
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

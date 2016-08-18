@@ -76,7 +76,6 @@ generate_psibility()
   }
 }
 
-
 void
 TSOptionsProcess(char *option, char *value)
 {
@@ -85,7 +84,6 @@ TSOptionsProcess(char *option, char *value)
     my_plugin.psi_ratio = (double)(atoi(value)) / 100.0;
   }
 }
-
 
 void
 TSPluginInit()
@@ -110,7 +108,7 @@ TSResponsePrepare(char *req_hdr, int req_len, void **response_id)
     len_string += strlen("length");
     resp_id->request_length = atoi(len_string);
     resp_id->bytes_not_sent = resp_id->request_length;
-    resp_id->status_code = 200;
+    resp_id->status_code    = 200;
 
     if (resp_id->psi) {
       sprintf(resp_id->header_response, "%s\r\n%s\r\n%s%ld\r\n%s\r\n\r\n", "HTTP/1.0 200 OK", "Content-type: text/plain",
@@ -121,7 +119,7 @@ TSResponsePrepare(char *req_hdr, int req_len, void **response_id)
     }
   } else {
     resp_id->request_length = -1;
-    resp_id->status_code = 404;
+    resp_id->status_code    = 404;
     resp_id->bytes_not_sent = 0;
     sprintf(resp_id->header_response, "%s\r\n%s\r\n\r\n", "HTTP/1.0 404 Not Found", "Content-type: text/plain");
   }
@@ -134,15 +132,15 @@ void
 TSResponsePut(void **resp_id /* return */, void *resp_buffer /* return */, int *resp_bytes /* return */, int resp_buffer_size,
               int bytes_last_response)
 {
-  int i = 0;
+  int i            = 0;
   RequestInfo *rid = *((RequestInfo **)resp_id);
-  int psi = 0;
+  int psi          = 0;
   int len;
   char psi_tag[PSI_TAG_MAX_SIZE];
 
   /* copy the header into the response buffer */
   if (!rid->done_sent_header) {
-    i = sprintf((char *)resp_buffer, "%s", rid->header_response);
+    i                     = sprintf((char *)resp_buffer, "%s", rid->header_response);
     rid->done_sent_header = TRUE;
   }
 
@@ -176,7 +174,7 @@ TSResponsePut(void **resp_id /* return */, void *resp_buffer /* return */, int *
       }
       memset((void *)((char *)resp_buffer + i), 'X', rid->bytes_not_sent);
       memset((void *)((char *)resp_buffer + i + rid->bytes_not_sent - 1), 'E', 1);
-      *resp_bytes = rid->bytes_not_sent + i;
+      *resp_bytes         = rid->bytes_not_sent + i;
       rid->bytes_not_sent = 0;
     }
   }

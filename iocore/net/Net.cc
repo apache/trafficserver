@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /************************************************************************
 
    Net.cc
@@ -35,10 +34,10 @@ RecRawStatBlock *net_rsb = NULL;
 
 // All in milli-seconds
 int net_config_poll_timeout = -1; // This will get set via either command line or records.config.
-int net_event_period = 10;
-int net_accept_period = 10;
-int net_retry_delay = 10;
-int net_throttle_delay = 50; /* milliseconds */
+int net_event_period        = 10;
+int net_accept_period       = 10;
+int net_retry_delay         = 10;
+int net_throttle_delay      = 50; /* milliseconds */
 
 static inline void
 configure_net(void)
@@ -53,7 +52,6 @@ configure_net(void)
   REC_ReadConfigInteger(net_event_period, "proxy.config.net.event_period");
   REC_ReadConfigInteger(net_accept_period, "proxy.config.net.accept_period");
 }
-
 
 static inline void
 register_net_stats()

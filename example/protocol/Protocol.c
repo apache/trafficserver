@@ -38,7 +38,6 @@ static int server_port;
 static void protocol_init(int accept_port, int server_port);
 static int accept_handler(TSCont contp, TSEvent event, void *edata);
 
-
 /* When the handle is called, the net_vc is returned. */
 static int
 accept_handler(TSCont contp, TSEvent event, void *edata)
@@ -107,8 +106,8 @@ TSPluginInit(int argc, const char *argv[])
   char *end;
   int tmp;
 
-  info.plugin_name = "output-header";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "output-header";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -116,7 +115,6 @@ TSPluginInit(int argc, const char *argv[])
 
     goto error;
   }
-
 
   /* default value */
   accept_port = 4666;

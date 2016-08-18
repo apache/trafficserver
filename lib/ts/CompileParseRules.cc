@@ -26,13 +26,12 @@
 #include "ts/ParseRules.h"
 
 const unsigned int parseRulesCType[256] = {0};
-const char parseRulesCTypeToUpper[256] = {0};
-const char parseRulesCTypeToLower[256] = {0};
+const char parseRulesCTypeToUpper[256]  = {0};
+const char parseRulesCTypeToLower[256]  = {0};
 
 unsigned int tparseRulesCType[256];
 char tparseRulesCTypeToUpper[256];
 char tparseRulesCTypeToLower[256];
-
 
 #include <stdio.h>
 #include <ctype.h>
@@ -55,7 +54,7 @@ main()
 {
   int c;
   for (c = 0; c < 256; c++) {
-    tparseRulesCType[c] = 0;
+    tparseRulesCType[c]        = 0;
     tparseRulesCTypeToLower[c] = ParseRules::ink_tolower(c);
     tparseRulesCTypeToUpper[c] = ParseRules::ink_toupper(c);
 
@@ -106,8 +105,8 @@ main()
       tparseRulesCType[c] |= is_eow_BIT;
     if (ParseRules::is_token(c))
       tparseRulesCType[c] |= is_token_BIT;
-    if (ParseRules::is_wildmat(c))
-      tparseRulesCType[c] |= is_wildmat_BIT;
+    if (ParseRules::is_uri(c))
+      tparseRulesCType[c] |= is_uri_BIT;
     if (ParseRules::is_sep(c))
       tparseRulesCType[c] |= is_sep_BIT;
     if (ParseRules::is_empty(c))

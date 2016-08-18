@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_OBJECT_H
 #define LOG_OBJECT_H
 
@@ -72,7 +71,6 @@ private:
 
 public:
   LogBufferManager() : _num_flush_buffers(0) {}
-
   void
   add_to_flush_queue(LogBuffer *buffer)
   {
@@ -89,9 +87,9 @@ class LogObject : public RefCountObj
 {
 public:
   enum LogObjectFlags {
-    BINARY = 1,
-    REMOTE_DATA = 2,
-    WRITES_TO_PIPE = 4,
+    BINARY                   = 1,
+    REMOTE_DATA              = 2,
+    WRITES_TO_PIPE           = 4,
     LOG_OBJECT_FMT_TIMESTAMP = 8, // always format a timestamp into each log line (for raw text logs)
   };
 
@@ -145,7 +143,7 @@ public:
       idx = m_buffer_manager_idx++ % m_flush_threads;
 
     if (m_logFile) {
-      nfb = m_buffer_manager[idx].preproc_buffers(m_logFile);
+      nfb = m_buffer_manager[idx].preproc_buffers(m_logFile.get());
     } else {
       nfb = m_buffer_manager[idx].preproc_buffers(&m_host_list);
     }
@@ -333,20 +331,6 @@ public:
 };
 
 /*-------------------------------------------------------------------------
-  RefCounter
-  -------------------------------------------------------------------------*/
-class RefCounter
-{
-public:
-  RefCounter(int *count) : m_count(count) { ink_atomic_increment(m_count, 1); }
-
-  ~RefCounter() { ink_atomic_increment(m_count, -1); }
-
-private:
-  int *m_count;
-};
-
-/*-------------------------------------------------------------------------
   LogObjectManager
 
   A log object manager keeps track of log objects and is responsible for
@@ -379,6 +363,7 @@ private:
   static bool _has_internal_filename_conflict(const char *filename, LogObjectList &objects);
   int _solve_filename_conflicts(LogObject *log_obj, int maxConflicts);
   int _solve_internal_filename_conflicts(LogObject *log_obj, int maxConflicts, int fileNum = 0);
+  void _filename_resolution_abort(const char *fname);
 
 public:
   LogObjectManager();
@@ -432,7 +417,8 @@ public:
   unsigned get_num_collation_clients() const;
 };
 
-inline bool LogObject::operator==(LogObject &old)
+inline bool
+LogObject::operator==(LogObject &old)
 {
   if (!receives_remote_data() && !old.receives_remote_data()) {
     return (get_signature() == old.get_signature() &&

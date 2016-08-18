@@ -57,7 +57,12 @@ environments or where the working set is highly variable.
 
 .. option:: -R LEVEL, --regression LEVEL
 
-.. option:: -r TEST, --regression_rest TEST
+.. option:: -r TEST, --regression_test TEST
+
+.. option:: -l, --regression_list
+
+If Traffic Server was built with tests enabled, this option lists
+the available tests.
 
 .. option:: -T TAGS, --debug_tags TAGS
 

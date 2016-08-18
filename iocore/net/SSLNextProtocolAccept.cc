@@ -27,10 +27,8 @@ static void
 send_plugin_event(Continuation *plugin, int event, void *edata)
 {
   if (plugin->mutex) {
-    EThread *thread(this_ethread());
-    MUTEX_TAKE_LOCK(plugin->mutex, thread);
+    SCOPED_MUTEX_LOCK(lock, plugin->mutex, this_ethread());
     plugin->handleEvent(event, edata);
-    MUTEX_UNTAKE_LOCK(plugin->mutex, thread);
   } else {
     plugin->handleEvent(event, edata);
   }
@@ -64,7 +62,7 @@ ssl_netvc_cast(int event, void *edata)
 // lock across the handshake, so we make a trampoline to bounce the event from the SSL acceptor to the ultimate session
 // acceptor.
 struct SSLNextProtocolTrampoline : public Continuation {
-  explicit SSLNextProtocolTrampoline(const SSLNextProtocolAccept *npn, ProxyMutex *mutex) : Continuation(mutex), npnParent(npn)
+  SSLNextProtocolTrampoline(const SSLNextProtocolAccept *npn, Ptr<ProxyMutex> &mutex) : Continuation(mutex), npnParent(npn)
   {
     SET_HANDLER(&SSLNextProtocolTrampoline::ioCompletionEvent);
   }
@@ -76,7 +74,7 @@ struct SSLNextProtocolTrampoline : public Continuation {
     Continuation *plugin;
     SSLNetVConnection *netvc;
 
-    vio = static_cast<VIO *>(edata);
+    vio   = static_cast<VIO *>(edata);
     netvc = dynamic_cast<SSLNetVConnection *>(vio->vc_server);
     ink_assert(netvc != NULL);
 
@@ -95,6 +93,11 @@ struct SSLNextProtocolTrampoline : public Continuation {
     default:
       return EVENT_ERROR;
     }
+
+    // Cancel the action, so later timeouts and errors don't try to
+    // send the event to the Accept object.  After this point, the accept
+    // object does not care.
+    netvc->set_action(NULL);
 
     // Cancel the read before we have a chance to delete the continuation
     netvc->do_io_read(NULL, 0, NULL);
@@ -135,7 +138,6 @@ SSLNextProtocolAccept::mainEvent(int event, void *edata)
     // and we know which protocol was negotiated.
     netvc->registerNextProtocolSet(&this->protoset);
     netvc->do_io(VIO::READ, new SSLNextProtocolTrampoline(this, netvc->mutex), 0, this->buffer, 0);
-    netvc->set_session_accept_pointer(this);
     return EVENT_CONT;
   default:
     netvc->do_io(VIO::CLOSE);

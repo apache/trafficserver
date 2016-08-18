@@ -1,0 +1,104 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic Server package.
+#
+# Translators:
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.x\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-06 11:22+0900\n"
+"PO-Revision-Date: 2016-02-13 12:43+0000\n"
+"Last-Translator: Masaori Koshiba <masaori@apache.org>\n"
+"Language-Team: Japanese (http://www.transifex.com/trafficserver/apache-"
+"traffic-server-6x/language/ja/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../../admin-guide/transparent-proxy/build.en.rst:4
+msgid "Building ATS for transparency"
+msgstr "透過用 ATS のビルド"
+
+#: ../../../admin-guide/transparent-proxy/build.en.rst:24
+msgid ""
+"In most cases, if your environment supports transparency then ``configure`` "
+"will automatically enable it. For other environments you may need to "
+"twiddle the ``configure`` options."
+msgstr ""
+"ほとんどのケースでは、環境が透過性をサポートしていれば ``configure`` が自動"
+"的にそれを有効化します。そうでない環境では ``configure`` のオプションをいじ"
+"る必要があるでしょう。"
+
+#: ../../../admin-guide/transparent-proxy/build.en.rst:34
+msgid "--enable-posix-cap"
+msgstr "--enable-posix-cap"
+
+#: ../../../admin-guide/transparent-proxy/build.en.rst:29
+msgid ""
+"This enables POSIX capabilities, which are required for transparency. These "
+"are compiled in by default. To check your system, look for the header file "
+"``sys/capability.h`` and the system library ``libcap``. These are in the "
+"packages ``libcap`` and ``libcap-devel`` or ``libcap-dev`` (depending on "
+"the Distribution) contra-respectively."
+msgstr ""
+"これは透過性で必要とされる POSIX ケーパビリティを有効化します。これらはデ"
+"フォルトで自動的にコンパイルされます。システムを確認するために、ヘッダーファ"
+"イル ``sys/capability.h`` とシステムライブラリ ``libcap`` を探します。これら"
+"はそれぞれ ``libcap`` と ``libcap-devel`` または ``libcap-dev`` ( ディストリ"
+"ビューションに依ります ) パッケージ内にあります。"
+
+#: ../../../admin-guide/transparent-proxy/build.en.rst:52
+msgid "--enable-tproxy[=value]"
+msgstr "--enable-tproxy[=value]"
+
+#: ../../../admin-guide/transparent-proxy/build.en.rst:37
+msgid ""
+"Enable TPROXY support, which is the Linux kernel feature used for "
+"transparency. This should be present in the base installation, there is no "
+"package associated with it. \\* ``auto`` Do automatic checks for the the "
+"TPROXY header file (``linux/in.h``) and enable TPROXY support if the "
+"``IP_TRANSPARENT`` definition is present. This is the default if this "
+"option is not specified or ``value`` is omitted. \\* ``no`` Do not check "
+"for TPROXY support, disable support for it. \\* ``force`` Do not check for "
+"TPROXY support, enable it using the $ats@ built in value for "
+"``IP_TRANSPARENT``. This is useful for systems that have it in the kernel "
+"for but some reason do not have the appropriate system header file. \\* "
+"*number* Do not check for TPROXY support, use *number* as the "
+"``IP_TRANSPARENT`` value. There are, at present, no known standard "
+"distributions of Linux that support TPROXY but use a value different from "
+"the built in ATS default. However, a custom built kernel may do so and in "
+"that case the specific value can be specified."
+msgstr ""
+"透過で使用される Linux カーネルの機能である TPROXY サポートを有効化します。"
+"これは基本的なインストールに含まれているはずであり、これに紐付くパッケージは"
+"ありません。\\* ``auto`` TPROXY ヘッダーファイル (``linux/in.h``)  を自動的"
+"に確認し、``IP_TRANSPARENT`` の定義が存在する場合は TPROXY サポートを有効化"
+"します。これはこのオプションが指定されていないか ``value`` が省略された場合"
+"のデフォルトです。\\* ``no`` TPROXY サポートを確認せず、そのサポートを無効化"
+"します。\\* ``force`` TPROXY サポートを確認せず、``IP_TRANSPARENT`` のため"
+"の $ats@ 組み込みの値を使用して有効化します。これはカーネルにはあるものの何"
+"らかの理由で適切なシステムヘッダーファイルを持っていないシステムの場合に便利"
+"です。\\* *number* TPROXY サポートを確認せず、 *number* を "
+"``IP_TRANSPARENT`` の値として使用します。いまのところ、TPROXY をサポートして"
+"いて ATS 組み込みのデフォルトと異なる値を使用することが知られている標準的な"
+"ディストリビューションはありません。しかし、カスタムビルドのカーネルはそうし"
+"ているかも知れず、その場合には特定の値が指定できます。"
+
+#: ../../../admin-guide/transparent-proxy/build.en.rst:54
+msgid ""
+"In the default case, ATS configuration will automatically check for TPROXY "
+"support via the presence of the ``linux/in.h`` header file and compile in "
+"TPROXY support if it is available. If that fails, you may be able to "
+"recover by using one of the options above. Note that transparency may be "
+"built in by default but it is not active unless explicitly enabled in the "
+"ATS configuration files."
+msgstr ""
+"デフォルトでは、ATS の設定はヘッダーファイル ``linux/in.h`` の存在により "
+"TPROXY の対応を自動的に確認し、それが有効なら TPROXY 対応でコンパイルしま"
+"す。これが失敗した場合は、たぶん上記のオプションのどれか一つを使うことで回復"
+"可能です。透過性はデフォルトでビルドされることがありますが、ATS の設定ファイ"
+"ルで明示的に有効化しない限り動作しないことに注意してください。"

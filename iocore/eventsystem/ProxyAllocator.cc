@@ -23,32 +23,28 @@
 #include "I_EventSystem.h"
 
 int thread_freelist_high_watermark = 512;
-int thread_freelist_low_watermark = 32;
+int thread_freelist_low_watermark  = 32;
 
 void *
 thread_alloc(Allocator &a, ProxyAllocator &l)
 {
-#if TS_USE_FREELIST
   if (l.freelist) {
-    void *v = (void *)l.freelist;
+    void *v    = (void *)l.freelist;
     l.freelist = *(void **)l.freelist;
     --(l.allocated);
     return v;
   }
-#else
-  (void)l;
-#endif
   return a.alloc_void();
 }
 
 void
 thread_freeup(Allocator &a, ProxyAllocator &l)
 {
-  void *head = (void *)l.freelist;
-  void *tail = (void *)l.freelist;
+  void *head   = (void *)l.freelist;
+  void *tail   = (void *)l.freelist;
   size_t count = 0;
   while (l.freelist && l.allocated > thread_freelist_low_watermark) {
-    tail = l.freelist;
+    tail       = l.freelist;
     l.freelist = *(void **)l.freelist;
     --(l.allocated);
     ++count;

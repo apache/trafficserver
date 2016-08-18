@@ -31,53 +31,62 @@ class UDPIOEvent : public Event
 public:
   UDPIOEvent() : fd(-1), err(0), m(0), handle(0), b(0), bytesTransferred(0){};
   ~UDPIOEvent(){};
+
   void
-  setInfo(int fd_, IOBufferBlock *b_, int bytesTransferred_, int errno_)
+  setInfo(int fd_, const Ptr<IOBufferBlock> &b_, int bytesTransferred_, int errno_)
   {
-    fd = fd_;
-    b = b_;
+    fd               = fd_;
+    b                = b_;
     bytesTransferred = bytesTransferred_;
-    err = errno_;
+    err              = errno_;
   };
+
   void
   setInfo(int fd_, struct msghdr *m_, int bytesTransferred_, int errno_)
   {
-    fd = fd_;
-    m = m_;
+    fd               = fd_;
+    m                = m_;
     bytesTransferred = bytesTransferred_;
-    err = errno_;
+    err              = errno_;
   };
+
   void
   setHandle(void *v)
   {
     handle = v;
   }
+
   void *
   getHandle()
   {
     return handle;
   }
-  void free();
+
   int
-  getBytesTransferred()
+  getBytesTransferred() const
   {
     return bytesTransferred;
   }
+
   IOBufferBlock *
-  getIOBufferBlock()
+  getIOBufferBlock() const
   {
-    return b;
+    return b.get();
   }
+
   int
-  getError()
+  getError() const
   {
     return err;
   }
+
   Continuation *
-  getContinuation()
+  getContinuation() const
   {
     return continuation;
   }
+
+  void free();
   static void free(UDPIOEvent *e);
 
 private:
@@ -94,7 +103,7 @@ extern ClassAllocator<UDPIOEvent> UDPIOEventAllocator;
 TS_INLINE void
 UDPIOEvent::free(UDPIOEvent *e)
 {
-  e->b = NULL;
+  e->b     = NULL;
   e->mutex = NULL;
   UDPIOEventAllocator.free(e);
 }

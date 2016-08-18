@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #if !defined(_HttpTransact_h_)
 #define _HttpTransact_h_
 
@@ -31,12 +30,12 @@
 #include "HttpConfig.h"
 #include "HTTP.h"
 #include "HttpTransactCache.h"
-#include "StatSystem.h"
 #include "ControlMatcher.h"
 #include "CacheControl.h"
 #include "ParentSelection.h"
 #include "ProxyConfig.h"
 #include "Transform.h"
+#include "Milestones.h"
 //#include "HttpAuthParams.h"
 #include "api/ts/remap.h"
 #include "RemapPluginInfo.h"
@@ -66,7 +65,7 @@
       if ((H)->valid()) {                                       \
         do {                                                    \
           used = 0;                                             \
-          tmp = offset;                                         \
+          tmp  = offset;                                        \
           done = (H)->print(b, 4095, &used, &tmp);              \
           offset += used;                                       \
           b[used] = '\0';                                       \
@@ -77,9 +76,8 @@
     }                                                           \
   }
 
-
 #define TRANSACT_SETUP_RETURN(n, r) \
-  s->next_action = n;               \
+  s->next_action           = n;     \
   s->transact_return_point = r;     \
   DebugSpecific((s->state_machine && s->state_machine->debug_on), "http_trans", "Next action %s; %s", #n, #r);
 
@@ -90,7 +88,6 @@
 #define TRANSACT_RETURN_VAL(n, r, v) \
   TRANSACT_SETUP_RETURN(n, r)        \
   return v;
-
 
 #define SET_UNPREPARE_CACHE_ACTION(C)                               \
   {                                                                 \
@@ -106,7 +103,6 @@
 typedef time_t ink_time_t;
 
 struct HttpConfigParams;
-struct MimeTableEntry;
 class HttpSM;
 
 #include "ts/InkErrno.h"
@@ -148,86 +144,87 @@ enum ViaStringIndex_t {
 
 enum ViaString_t {
   // client stuff
-  VIA_CLIENT_STRING = 'u',
-  VIA_CLIENT_ERROR = 'E',
-  VIA_CLIENT_IMS = 'I',
+  VIA_CLIENT_STRING   = 'u',
+  VIA_CLIENT_ERROR    = 'E',
+  VIA_CLIENT_IMS      = 'I',
   VIA_CLIENT_NO_CACHE = 'N',
-  VIA_CLIENT_COOKIE = 'C',
-  VIA_CLIENT_SIMPLE = 'S',
+  VIA_CLIENT_COOKIE   = 'C',
+  VIA_CLIENT_SIMPLE   = 'S',
   // cache lookup stuff
-  VIA_CACHE_STRING = 'c',
-  VIA_CACHE_MISS = 'M',
+  VIA_CACHE_STRING            = 'c',
+  VIA_CACHE_MISS              = 'M',
   VIA_IN_CACHE_NOT_ACCEPTABLE = 'A',
-  VIA_IN_CACHE_STALE = 'S',
-  VIA_IN_CACHE_FRESH = 'H',
-  VIA_IN_RAM_CACHE_FRESH = 'R',
+  VIA_IN_CACHE_STALE          = 'S',
+  VIA_IN_CACHE_FRESH          = 'H',
+  VIA_IN_RAM_CACHE_FRESH      = 'R',
   // server stuff
-  VIA_SERVER_STRING = 's',
-  VIA_SERVER_ERROR = 'E',
+  VIA_SERVER_STRING       = 's',
+  VIA_SERVER_ERROR        = 'E',
   VIA_SERVER_NOT_MODIFIED = 'N',
-  VIA_SERVER_SERVED = 'S',
+  VIA_SERVER_SERVED       = 'S',
   // cache fill stuff
   VIA_CACHE_FILL_STRING = 'f',
-  VIA_CACHE_DELETED = 'D',
-  VIA_CACHE_WRITTEN = 'W',
-  VIA_CACHE_UPDATED = 'U',
+  VIA_CACHE_DELETED     = 'D',
+  VIA_CACHE_WRITTEN     = 'W',
+  VIA_CACHE_UPDATED     = 'U',
   // proxy stuff
-  VIA_PROXY_STRING = 'p',
-  VIA_PROXY_NOT_MODIFIED = 'N',
-  VIA_PROXY_SERVED = 'S',
+  VIA_PROXY_STRING             = 'p',
+  VIA_PROXY_NOT_MODIFIED       = 'N',
+  VIA_PROXY_SERVED             = 'S',
   VIA_PROXY_SERVER_REVALIDATED = 'R',
   // errors
-  VIA_ERROR_STRING = 'e',
-  VIA_ERROR_NO_ERROR = 'N',
-  VIA_ERROR_AUTHORIZATION = 'A',
-  VIA_ERROR_CONNECTION = 'C',
-  VIA_ERROR_DNS_FAILURE = 'D',
-  VIA_ERROR_FORBIDDEN = 'F',
-  VIA_ERROR_HEADER_SYNTAX = 'H',
-  VIA_ERROR_SERVER = 'S',
-  VIA_ERROR_TIMEOUT = 'T',
-  VIA_ERROR_CACHE_READ = 'R',
+  VIA_ERROR_STRING            = 'e',
+  VIA_ERROR_NO_ERROR          = 'N',
+  VIA_ERROR_AUTHORIZATION     = 'A',
+  VIA_ERROR_CONNECTION        = 'C',
+  VIA_ERROR_DNS_FAILURE       = 'D',
+  VIA_ERROR_FORBIDDEN         = 'F',
+  VIA_ERROR_HEADER_SYNTAX     = 'H',
+  VIA_ERROR_SERVER            = 'S',
+  VIA_ERROR_TIMEOUT           = 'T',
+  VIA_ERROR_CACHE_READ        = 'R',
+  VIA_ERROR_MOVED_TEMPORARILY = 'M',
   //
   // Now the detailed stuff
   //
   VIA_DETAIL_SEPARATOR_STRING = ':',
   // tunnelling
   VIA_DETAIL_TUNNEL_DESCRIPTOR_STRING = 't',
-  VIA_DETAIL_TUNNEL_HEADER_FIELD = 'F',
-  VIA_DETAIL_TUNNEL_METHOD = 'M',
-  VIA_DETAIL_TUNNEL_CACHE_OFF = 'O',
-  VIA_DETAIL_TUNNEL_URL = 'U',
-  VIA_DETAIL_TUNNEL_NO_FORWARD = 'N',
-  VIA_DETAIL_TUNNEL_AUTHORIZATION = 'A',
+  VIA_DETAIL_TUNNEL_HEADER_FIELD      = 'F',
+  VIA_DETAIL_TUNNEL_METHOD            = 'M',
+  VIA_DETAIL_TUNNEL_CACHE_OFF         = 'O',
+  VIA_DETAIL_TUNNEL_URL               = 'U',
+  VIA_DETAIL_TUNNEL_NO_FORWARD        = 'N',
+  VIA_DETAIL_TUNNEL_AUTHORIZATION     = 'A',
   // cache type
   VIA_DETAIL_CACHE_DESCRIPTOR_STRING = 'c',
-  VIA_DETAIL_CACHE = 'C',
-  VIA_DETAIL_CLUSTER = 'L',
-  VIA_DETAIL_ICP = 'I',
-  VIA_DETAIL_PARENT = 'P',
-  VIA_DETAIL_SERVER = 'S',
+  VIA_DETAIL_CACHE                   = 'C',
+  VIA_DETAIL_CLUSTER                 = 'L',
+  VIA_DETAIL_ICP                     = 'I',
+  VIA_DETAIL_PARENT                  = 'P',
+  VIA_DETAIL_SERVER                  = 'S',
   // result of cache lookup
-  VIA_DETAIL_HIT_CONDITIONAL = 'N',
-  VIA_DETAIL_HIT_SERVED = 'H',
+  VIA_DETAIL_HIT_CONDITIONAL  = 'N',
+  VIA_DETAIL_HIT_SERVED       = 'H',
   VIA_DETAIL_MISS_CONDITIONAL = 'I',
-  VIA_DETAIL_MISS_NOT_CACHED = 'M',
-  VIA_DETAIL_MISS_EXPIRED = 'S',
-  VIA_DETAIL_MISS_CONFIG = 'C',
-  VIA_DETAIL_MISS_CLIENT = 'U',
-  VIA_DETAIL_MISS_METHOD = 'D',
-  VIA_DETAIL_MISS_COOKIE = 'K',
+  VIA_DETAIL_MISS_NOT_CACHED  = 'M',
+  VIA_DETAIL_MISS_EXPIRED     = 'S',
+  VIA_DETAIL_MISS_CONFIG      = 'C',
+  VIA_DETAIL_MISS_CLIENT      = 'U',
+  VIA_DETAIL_MISS_METHOD      = 'D',
+  VIA_DETAIL_MISS_COOKIE      = 'K',
   // result of icp suggested host lookup
   VIA_DETAIL_ICP_DESCRIPTOR_STRING = 'i',
-  VIA_DETAIL_ICP_SUCCESS = 'S',
-  VIA_DETAIL_ICP_FAILURE = 'F',
+  VIA_DETAIL_ICP_SUCCESS           = 'S',
+  VIA_DETAIL_ICP_FAILURE           = 'F',
   // result of pp suggested host lookup
   VIA_DETAIL_PP_DESCRIPTOR_STRING = 'p',
-  VIA_DETAIL_PP_SUCCESS = 'S',
-  VIA_DETAIL_PP_FAILURE = 'F',
+  VIA_DETAIL_PP_SUCCESS           = 'S',
+  VIA_DETAIL_PP_FAILURE           = 'F',
   // result of server suggested host lookup
   VIA_DETAIL_SERVER_DESCRIPTOR_STRING = 's',
-  VIA_DETAIL_SERVER_SUCCESS = 'S',
-  VIA_DETAIL_SERVER_FAILURE = 'F'
+  VIA_DETAIL_SERVER_SUCCESS           = 'S',
+  VIA_DETAIL_SERVER_FAILURE           = 'F'
 };
 
 struct HttpApiInfo {
@@ -239,7 +236,11 @@ struct HttpApiInfo {
   bool retry_intercept_failures;
 
   HttpApiInfo()
-    : parent_proxy_name(NULL), parent_proxy_port(-1), cache_untransformed(false), cache_transformed(true), logging_enabled(true),
+    : parent_proxy_name(NULL),
+      parent_proxy_port(-1),
+      cache_untransformed(false),
+      cache_transformed(true),
+      logging_enabled(true),
       retry_intercept_failures(false)
   {
   }
@@ -301,11 +302,11 @@ public:
   };
 
   enum CacheOpenWriteFailAction_t {
-    CACHE_WL_FAIL_ACTION_DEFAULT = 0x00,
-    CACHE_WL_FAIL_ACTION_ERROR_ON_MISS = 0x01,
-    CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE = 0x02,
+    CACHE_WL_FAIL_ACTION_DEFAULT                           = 0x00,
+    CACHE_WL_FAIL_ACTION_ERROR_ON_MISS                     = 0x01,
+    CACHE_WL_FAIL_ACTION_STALE_ON_REVALIDATE               = 0x02,
     CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_STALE_ON_REVALIDATE = 0x03,
-    CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE = 0x04,
+    CACHE_WL_FAIL_ACTION_ERROR_ON_MISS_OR_REVALIDATE       = 0x04,
     TOTAL_CACHE_WL_FAIL_ACTION_TYPES
   };
 
@@ -346,9 +347,15 @@ public:
   };
 
   enum HttpTransactMagic_t {
-    HTTP_TRANSACT_MAGIC_ALIVE = 0x00001234,
-    HTTP_TRANSACT_MAGIC_DEAD = 0xDEAD1234,
+    HTTP_TRANSACT_MAGIC_ALIVE     = 0x00001234,
+    HTTP_TRANSACT_MAGIC_DEAD      = 0xDEAD1234,
     HTTP_TRANSACT_MAGIC_SEPARATOR = 0x12345678
+  };
+
+  enum ParentOriginRetry_t {
+    PARENT_ORIGIN_UNDEFINED_RETRY          = 0x0,
+    PARENT_ORIGIN_SIMPLE_RETRY             = 0x1,
+    PARENT_ORIGIN_UNAVAILABLE_SERVER_RETRY = 0x2
   };
 
   enum LookingUp_t {
@@ -408,7 +415,8 @@ public:
     PARSE_ERROR,
     TRANSACTION_COMPLETE,
     CONGEST_CONTROL_CONGESTED_ON_F,
-    CONGEST_CONTROL_CONGESTED_ON_M
+    CONGEST_CONTROL_CONGESTED_ON_M,
+    PARENT_ORIGIN_RETRY
   };
 
   enum CacheWriteStatus_t {
@@ -420,9 +428,9 @@ public:
   };
 
   enum HttpRequestFlavor_t {
-    REQ_FLAVOR_INTERCEPTED = 0,
-    REQ_FLAVOR_REVPROXY = 1,
-    REQ_FLAVOR_FWDPROXY = 2,
+    REQ_FLAVOR_INTERCEPTED      = 0,
+    REQ_FLAVOR_REVPROXY         = 1,
+    REQ_FLAVOR_FWDPROXY         = 2,
     REQ_FLAVOR_SCHEDULED_UPDATE = 3
   };
 
@@ -560,27 +568,6 @@ public:
     CACHE_AUTH_SERVE
   };
 
-#define StatBlockEntries 28
-
-  struct StatBlock {
-    StatBlock()
-    {
-      init();
-      memset(&stats, 0, sizeof(stats));
-    };
-
-    void
-    init()
-    {
-      next = NULL;
-      next_insert = 0;
-    };
-
-    StatRecord_t stats[StatBlockEntries];
-    StatBlock *next;
-    uint16_t next_insert;
-  };
-
   struct State;
   typedef void (*TransactFunc_t)(HttpTransact::State *);
 
@@ -594,8 +581,12 @@ public:
     bool does_server_permit_storing;
 
     _CacheDirectives()
-      : does_client_permit_lookup(true), does_client_permit_storing(true), does_client_permit_dns_storing(true),
-        does_config_permit_lookup(true), does_config_permit_storing(true), does_server_permit_lookup(true),
+      : does_client_permit_lookup(true),
+        does_client_permit_storing(true),
+        does_client_permit_dns_storing(true),
+        does_config_permit_lookup(true),
+        does_config_permit_storing(true),
+        does_server_permit_lookup(true),
         does_server_permit_storing(true)
     {
     }
@@ -624,10 +615,24 @@ public:
     SquidHitMissCode hit_miss_code;
 
     _CacheLookupInfo()
-      : action(CACHE_DO_UNDEFINED), transform_action(CACHE_DO_UNDEFINED), write_status(NO_CACHE_WRITE),
-        transform_write_status(NO_CACHE_WRITE), lookup_url(NULL), lookup_url_storage(), original_url(), object_read(NULL),
-        second_object_read(NULL), object_store(), transform_store(), config(), directives(), open_read_retries(0),
-        open_write_retries(0), write_lock_state(CACHE_WL_INIT), lookup_count(0), hit_miss_code(SQUID_MISS_NONE)
+      : action(CACHE_DO_UNDEFINED),
+        transform_action(CACHE_DO_UNDEFINED),
+        write_status(NO_CACHE_WRITE),
+        transform_write_status(NO_CACHE_WRITE),
+        lookup_url(NULL),
+        lookup_url_storage(),
+        original_url(),
+        object_read(NULL),
+        second_object_read(NULL),
+        object_store(),
+        transform_store(),
+        config(),
+        directives(),
+        open_read_retries(0),
+        open_write_retries(0),
+        write_lock_state(CACHE_WL_INIT),
+        lookup_count(0),
+        hit_miss_code(SQUID_MISS_NONE)
     {
     }
   } CacheLookupInfo;
@@ -688,9 +693,18 @@ public:
     }
 
     ConnectionAttributes()
-      : http_version(), keep_alive(HTTP_KEEPALIVE_UNDEFINED), receive_chunked_response(false), pipeline_possible(false),
-        proxy_connect_hdr(false), connect_result(0), name(NULL), transfer_encoding(NO_TRANSFER_ENCODING), state(STATE_UNDEFINED),
-        abort(ABORT_UNDEFINED), port_attribute(HttpProxyPort::TRANSPORT_DEFAULT), is_transparent(false)
+      : http_version(),
+        keep_alive(HTTP_KEEPALIVE_UNDEFINED),
+        receive_chunked_response(false),
+        pipeline_possible(false),
+        proxy_connect_hdr(false),
+        connect_result(0),
+        name(NULL),
+        transfer_encoding(NO_TRANSFER_ENCODING),
+        state(STATE_UNDEFINED),
+        abort(ABORT_UNDEFINED),
+        port_attribute(HttpProxyPort::TRANSPORT_DEFAULT),
+        is_transparent(false)
     {
       memset(&src_addr, 0, sizeof(src_addr));
       memset(&dst_addr, 0, sizeof(dst_addr));
@@ -703,10 +717,21 @@ public:
     ConnectionAttributes *server;
     ink_time_t now;
     ServerState_t state;
-    int attempts;
+    unsigned attempts;
+    unsigned simple_retry_attempts;
+    unsigned unavailable_server_retry_attempts;
+    ParentOriginRetry_t retry_type;
 
     _CurrentInfo()
-      : mode(UNDEFINED_MODE), request_to(UNDEFINED_LOOKUP), server(NULL), now(0), state(STATE_UNDEFINED), attempts(1){};
+      : mode(UNDEFINED_MODE),
+        request_to(UNDEFINED_LOOKUP),
+        server(NULL),
+        now(0),
+        state(STATE_UNDEFINED),
+        attempts(1),
+        simple_retry_attempts(0),
+        unavailable_server_retry_attempts(0),
+        retry_type(PARENT_ORIGIN_UNDEFINED_RETRY){};
   } CurrentInfo;
 
   typedef struct _DNSLookupInfo {
@@ -743,10 +768,16 @@ public:
     bool lookup_validated;
 
     _DNSLookupInfo()
-      : attempts(0), os_addr_style(OS_ADDR_TRY_DEFAULT), lookup_success(false), lookup_name(NULL), looking_up(UNDEFINED_LOOKUP),
-        srv_lookup_success(false), srv_port(0), lookup_validated(true)
+      : attempts(0),
+        os_addr_style(OS_ADDR_TRY_DEFAULT),
+        lookup_success(false),
+        lookup_name(NULL),
+        looking_up(UNDEFINED_LOOKUP),
+        srv_lookup_success(false),
+        srv_port(0),
+        lookup_validated(true)
     {
-      srv_hostname[0] = '\0';
+      srv_hostname[0]                = '\0';
       srv_app.allotment.application1 = 0;
       srv_app.allotment.application2 = 0;
     }
@@ -767,13 +798,22 @@ public:
     bool trust_response_cl;
     ResponseError_t response_error;
     bool extension_method;
-    bool request_body_start;
 
     _HeaderInfo()
-      : client_request(), client_response(), server_request(), server_response(), transform_response(), cache_response(),
-        request_content_length(HTTP_UNDEFINED_CL), response_content_length(HTTP_UNDEFINED_CL),
-        transform_request_cl(HTTP_UNDEFINED_CL), transform_response_cl(HTTP_UNDEFINED_CL), client_req_is_server_style(false),
-        trust_response_cl(false), response_error(NO_RESPONSE_HEADER_ERROR), extension_method(false), request_body_start(false)
+      : client_request(),
+        client_response(),
+        server_request(),
+        server_response(),
+        transform_response(),
+        cache_response(),
+        request_content_length(HTTP_UNDEFINED_CL),
+        response_content_length(HTTP_UNDEFINED_CL),
+        transform_request_cl(HTTP_UNDEFINED_CL),
+        transform_response_cl(HTTP_UNDEFINED_CL),
+        client_req_is_server_style(false),
+        trust_response_cl(false),
+        response_error(NO_RESPONSE_HEADER_ERROR),
+        extension_method(false)
     {
     }
   } HeaderInfo;
@@ -785,7 +825,6 @@ public:
 
     _SquidLogInfo() : log_code(SQUID_LOG_ERR_UNKNOWN), hier_code(SQUID_HIER_EMPTY), hit_miss_code(SQUID_MISS_NONE) {}
   } SquidLogInfo;
-
 
 #define HTTP_TRANSACT_STATE_MAX_XBUF_SIZE (1024 * 2) /* max size of plugin exchange buffer */
 
@@ -851,6 +890,9 @@ public:
     bool is_websocket;
     bool did_upgrade_succeed;
 
+    // Some queue info
+    bool origin_request_queued;
+
     char *internal_msg_buffer;        // out
     char *internal_msg_buffer_type;   // out
     int64_t internal_msg_buffer_size; // out
@@ -863,8 +905,9 @@ public:
     int next_hop_scheme; // out
     int orig_scheme;     // pre-mapped scheme
     int method;
-    int cause_of_death_errno; // in
-    HostDBInfo host_db_info;  // in
+    int cause_of_death_errno;     // in
+    Ptr<HostDBInfo> hostdb_entry; // Pointer to the entry we are referencing in hostdb-- to keep our ref
+    HostDBInfo host_db_info;      // in
 
     ink_time_t client_request_time;    // internal
     ink_time_t request_sent_time;      // internal
@@ -877,17 +920,12 @@ public:
 
     // HttpAuthParams auth_params;
 
-    StatBlock first_stats;
-    StatBlock *current_stats;
-
     // new ACL filtering result (calculated immediately after remap)
     bool client_connection_enabled;
     bool acl_filtering_performed;
 
     // for negative caching
     bool negative_caching;
-    // for srv_lookup
-    bool srv_lookup;
     // for authenticated content caching
     CacheAuth_t www_auth_content;
 
@@ -961,38 +999,101 @@ public:
     init()
     {
       parent_params = ParentConfig::acquire();
-      current_stats = &first_stats;
     }
 
     // Constructor
     State()
-      : m_magic(HTTP_TRANSACT_MAGIC_ALIVE), state_machine(NULL), http_config_param(NULL), force_dns(false),
-        updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED), cache_open_write_fail_action(0),
-        is_revalidation_necessary(false), request_will_not_selfloop(false), // YTS Team, yamsat
-        source(SOURCE_NONE), pre_transform_source(SOURCE_NONE), req_flavor(REQ_FLAVOR_FWDPROXY), pending_work(NULL),
-        cdn_saved_next_action(SM_ACTION_UNDEFINED), cdn_saved_transact_return_point(NULL), cdn_remap_complete(false),
-        first_dns_lookup(true), backdoor_request(false), cop_test_page(false), parent_params(NULL),
-        cache_lookup_result(CACHE_LOOKUP_NONE), next_action(SM_ACTION_UNDEFINED), api_next_action(SM_ACTION_UNDEFINED),
-        transact_return_point(NULL), post_remap_upgrade_return_point(NULL), upgrade_token_wks(NULL), is_upgrade_request(false),
-        is_websocket(false), did_upgrade_succeed(false), internal_msg_buffer(NULL), internal_msg_buffer_type(NULL),
-        internal_msg_buffer_size(0), internal_msg_buffer_fast_allocator_size(-1), icp_lookup_success(false), scheme(-1),
-        next_hop_scheme(scheme), orig_scheme(scheme), method(0), cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
-        client_request_time(UNDEFINED_TIME), request_sent_time(UNDEFINED_TIME), response_received_time(UNDEFINED_TIME),
-        plugin_set_expire_time(UNDEFINED_TIME), state_machine_id(0), first_stats(), current_stats(NULL),
-        client_connection_enabled(true), acl_filtering_performed(false), negative_caching(false), srv_lookup(false),
-        www_auth_content(CACHE_AUTH_NONE), remap_plugin_instance(0), fp_tsremap_os_response(NULL),
-        http_return_code(HTTP_STATUS_NONE), api_txn_active_timeout_value(-1), api_txn_connect_timeout_value(-1),
-        api_txn_dns_timeout_value(-1), api_txn_no_activity_timeout_value(-1), cache_req_hdr_heap_handle(NULL),
-        cache_resp_hdr_heap_handle(NULL), api_cleanup_cache_read(false), api_server_response_no_store(false),
-        api_server_response_ignore(false), api_http_sm_shutdown(false), api_modifiable_cached_resp(false),
-        api_server_request_body_set(false), api_req_cacheable(false), api_resp_cacheable(false), api_server_addr_set(false),
-        stale_icp_lookup(false), api_update_cached_object(UPDATE_CACHED_OBJECT_NONE), api_lock_url(LOCK_URL_FIRST),
-        saved_update_next_action(SM_ACTION_UNDEFINED), saved_update_cache_action(CACHE_DO_UNDEFINED), url_map(),
-        pCongestionEntry(NULL), congest_saved_next_action(SM_ACTION_UNDEFINED), congestion_control_crat(0),
-        congestion_congested_or_failed(0), congestion_connection_opened(0), filter_mask(0), remap_redirect(NULL),
-        reverse_proxy(false), url_remap_success(false), api_skip_all_remapping(false), already_downgraded(false), pristine_url(),
-        range_setup(RANGE_NONE), num_range_fields(0), range_output_cl(0), ranges(NULL), txn_conf(NULL),
-        transparent_passthrough(false), range_in_cache(false)
+      : m_magic(HTTP_TRANSACT_MAGIC_ALIVE),
+        state_machine(NULL),
+        http_config_param(NULL),
+        force_dns(false),
+        updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED),
+        cache_open_write_fail_action(0),
+        is_revalidation_necessary(false),
+        request_will_not_selfloop(false), // YTS Team, yamsat
+        source(SOURCE_NONE),
+        pre_transform_source(SOURCE_NONE),
+        req_flavor(REQ_FLAVOR_FWDPROXY),
+        pending_work(NULL),
+        cdn_saved_next_action(SM_ACTION_UNDEFINED),
+        cdn_saved_transact_return_point(NULL),
+        cdn_remap_complete(false),
+        first_dns_lookup(true),
+        backdoor_request(false),
+        cop_test_page(false),
+        parent_params(NULL),
+        cache_lookup_result(CACHE_LOOKUP_NONE),
+        next_action(SM_ACTION_UNDEFINED),
+        api_next_action(SM_ACTION_UNDEFINED),
+        transact_return_point(NULL),
+        post_remap_upgrade_return_point(NULL),
+        upgrade_token_wks(NULL),
+        is_upgrade_request(false),
+        is_websocket(false),
+        did_upgrade_succeed(false),
+        origin_request_queued(false),
+        internal_msg_buffer(NULL),
+        internal_msg_buffer_type(NULL),
+        internal_msg_buffer_size(0),
+        internal_msg_buffer_fast_allocator_size(-1),
+        icp_lookup_success(false),
+        scheme(-1),
+        next_hop_scheme(scheme),
+        orig_scheme(scheme),
+        method(0),
+        cause_of_death_errno(-UNKNOWN_INTERNAL_ERROR),
+        client_request_time(UNDEFINED_TIME),
+        request_sent_time(UNDEFINED_TIME),
+        response_received_time(UNDEFINED_TIME),
+        plugin_set_expire_time(UNDEFINED_TIME),
+        state_machine_id(0),
+        client_connection_enabled(true),
+        acl_filtering_performed(false),
+        negative_caching(false),
+        www_auth_content(CACHE_AUTH_NONE),
+        remap_plugin_instance(0),
+        fp_tsremap_os_response(NULL),
+        http_return_code(HTTP_STATUS_NONE),
+        api_txn_active_timeout_value(-1),
+        api_txn_connect_timeout_value(-1),
+        api_txn_dns_timeout_value(-1),
+        api_txn_no_activity_timeout_value(-1),
+        cache_req_hdr_heap_handle(NULL),
+        cache_resp_hdr_heap_handle(NULL),
+        api_cleanup_cache_read(false),
+        api_server_response_no_store(false),
+        api_server_response_ignore(false),
+        api_http_sm_shutdown(false),
+        api_modifiable_cached_resp(false),
+        api_server_request_body_set(false),
+        api_req_cacheable(false),
+        api_resp_cacheable(false),
+        api_server_addr_set(false),
+        stale_icp_lookup(false),
+        api_update_cached_object(UPDATE_CACHED_OBJECT_NONE),
+        api_lock_url(LOCK_URL_FIRST),
+        saved_update_next_action(SM_ACTION_UNDEFINED),
+        saved_update_cache_action(CACHE_DO_UNDEFINED),
+        url_map(),
+        pCongestionEntry(NULL),
+        congest_saved_next_action(SM_ACTION_UNDEFINED),
+        congestion_control_crat(0),
+        congestion_congested_or_failed(0),
+        congestion_connection_opened(0),
+        filter_mask(0),
+        remap_redirect(NULL),
+        reverse_proxy(false),
+        url_remap_success(false),
+        api_skip_all_remapping(false),
+        already_downgraded(false),
+        pristine_url(),
+        range_setup(RANGE_NONE),
+        num_range_fields(0),
+        range_output_cl(0),
+        ranges(NULL),
+        txn_conf(NULL),
+        transparent_passthrough(false),
+        range_in_cache(false)
     {
       int i;
       char *via_ptr = via_string;
@@ -1001,48 +1102,28 @@ public:
         *via_ptr++ = ' ';
       }
 
-      via_string[VIA_CLIENT] = VIA_CLIENT_STRING;
-      via_string[VIA_CACHE] = VIA_CACHE_STRING;
-      via_string[VIA_SERVER] = VIA_SERVER_STRING;
-      via_string[VIA_CACHE_FILL] = VIA_CACHE_FILL_STRING;
-      via_string[VIA_PROXY] = VIA_PROXY_STRING;
-      via_string[VIA_ERROR] = VIA_ERROR_STRING;
-      via_string[VIA_ERROR_TYPE] = VIA_ERROR_NO_ERROR;
-      via_string[VIA_DETAIL_SEPARATOR] = VIA_DETAIL_SEPARATOR_STRING;
+      via_string[VIA_CLIENT]                   = VIA_CLIENT_STRING;
+      via_string[VIA_CACHE]                    = VIA_CACHE_STRING;
+      via_string[VIA_SERVER]                   = VIA_SERVER_STRING;
+      via_string[VIA_CACHE_FILL]               = VIA_CACHE_FILL_STRING;
+      via_string[VIA_PROXY]                    = VIA_PROXY_STRING;
+      via_string[VIA_ERROR]                    = VIA_ERROR_STRING;
+      via_string[VIA_ERROR_TYPE]               = VIA_ERROR_NO_ERROR;
+      via_string[VIA_DETAIL_SEPARATOR]         = VIA_DETAIL_SEPARATOR_STRING;
       via_string[VIA_DETAIL_TUNNEL_DESCRIPTOR] = VIA_DETAIL_TUNNEL_DESCRIPTOR_STRING;
-      via_string[VIA_DETAIL_CACHE_DESCRIPTOR] = VIA_DETAIL_CACHE_DESCRIPTOR_STRING;
-      via_string[VIA_DETAIL_ICP_DESCRIPTOR] = VIA_DETAIL_ICP_DESCRIPTOR_STRING;
-      via_string[VIA_DETAIL_PP_DESCRIPTOR] = VIA_DETAIL_PP_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_CACHE_DESCRIPTOR]  = VIA_DETAIL_CACHE_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_ICP_DESCRIPTOR]    = VIA_DETAIL_ICP_DESCRIPTOR_STRING;
+      via_string[VIA_DETAIL_PP_DESCRIPTOR]     = VIA_DETAIL_PP_DESCRIPTOR_STRING;
       via_string[VIA_DETAIL_SERVER_DESCRIPTOR] = VIA_DETAIL_SERVER_DESCRIPTOR_STRING;
-      via_string[MAX_VIA_INDICES] = '\0';
+      via_string[MAX_VIA_INDICES]              = '\0';
 
       memset(user_args, 0, sizeof(user_args));
-      memset(&host_db_info, 0, sizeof(host_db_info));
-    }
-
-    void
-    record_transaction_stats()
-    {
-      if (http_config_param->enable_http_stats) {
-        // Loop over our transaction stat blocks and record the stats
-        //  in the global arrays
-        STAT_LOCK_ACQUIRE(&(global_http_trans_stat_lock));
-        StatBlock *b = &first_stats;
-
-        while (b != NULL) {
-          for (int i = 0; i < b->next_insert && i < StatBlockEntries; i++) {
-            RecIncrRawStat(http_rsb, this_ethread(), b->stats[i].index, b->stats[i].increment);
-          }
-          b = b->next;
-        }
-        STAT_LOCK_RELEASE(&(global_http_trans_stat_lock));
-      }
+      memset((void *)&host_db_info, 0, sizeof(host_db_info));
     }
 
     void
     destroy()
     {
-      record_transaction_stats();
       m_magic = HTTP_TRANSACT_MAGIC_DEAD;
 
       free_internal_msg_buffer();
@@ -1075,9 +1156,10 @@ public:
       url_map.clear();
       arena.reset();
       pristine_url.clear();
+      hostdb_entry.clear();
 
       delete[] ranges;
-      ranges = NULL;
+      ranges      = NULL;
       range_setup = RANGE_NONE;
       return;
     }
@@ -1150,7 +1232,7 @@ public:
   static void handle_response_from_parent(State *s);
   static void handle_response_from_server(State *s);
   static void delete_server_rr_entry(State *s, int max_retries);
-  static void retry_server_connection_not_open(State *s, ServerState_t conn_state, int max_retries);
+  static void retry_server_connection_not_open(State *s, ServerState_t conn_state, unsigned max_retries);
   static void handle_server_connection_not_open(State *s);
   static void handle_forward_server_connection_open(State *s);
   static void handle_cache_operation_on_forward_server_response(State *s);
@@ -1245,7 +1327,6 @@ public:
   static const char *get_error_string(int erno);
 
   // the stat functions
-  static void update_stat(State *s, int stat, ink_statval_t increment);
   static void update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
                                          ink_hrtime origin_server_read_time, int user_agent_request_header_size,
                                          int64_t user_agent_request_body_size, int user_agent_response_header_size,
@@ -1258,7 +1339,6 @@ public:
   static void user_agent_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes);
   static void origin_server_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes);
   static void client_result_stat(State *s, ink_hrtime total_time, ink_hrtime request_process_time);
-  static void add_new_stat_block(State *s);
   static void delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code);
   static bool is_connection_collapse_checks_success(State *s); // YTS Team, yamsat
 };
@@ -1289,21 +1369,5 @@ is_response_body_precluded(HTTPStatus status_code, int method)
 }
 
 inkcoreapi extern ink_time_t ink_cluster_time(void);
-
-inline void
-HttpTransact::update_stat(State *s, int stat, ink_statval_t increment)
-{
-  if (s->current_stats->next_insert >= StatBlockEntries) {
-    // This a rare operation and we want to avoid the
-    //   code bloat of inlining it everywhere so
-    //   it's a function call
-    add_new_stat_block(s);
-  }
-
-  uint16_t *next_insert = &s->current_stats->next_insert;
-  s->current_stats->stats[*next_insert].index = stat;
-  s->current_stats->stats[*next_insert].increment = increment;
-  (*next_insert)++;
-}
 
 #endif

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   TimeTrace.h
@@ -69,7 +68,7 @@ extern int cluster_send_events;
 #ifdef ENABLE_TIME_TRACE
 #define LOG_EVENT_TIME(_start_time, _time_dist, _time_cnt)           \
   do {                                                               \
-    ink_hrtime now = ink_get_hrtime();                               \
+    ink_hrtime now      = ink_get_hrtime();                          \
     unsigned int bucket = (now - _start_time) / HRTIME_MSECONDS(10); \
     if (bucket > TIME_DIST_BUCKETS)                                  \
       bucket = TIME_DIST_BUCKETS;                                    \

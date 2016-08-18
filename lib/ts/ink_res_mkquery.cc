@@ -64,7 +64,6 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-
 #include "ts/ink_config.h"
 #include "ts/ink_defs.h"
 
@@ -109,17 +108,17 @@ int ink_res_mkquery(ink_res_state statp, int op,               /*!< opcode of qu
   if ((buf == NULL) || (buflen < HFIXEDSZ))
     return (-1);
   memset(buf, 0, HFIXEDSZ);
-  hp = (HEADER *)buf;
-  hp->id = htons(++statp->id);
+  hp         = (HEADER *)buf;
+  hp->id     = htons(++statp->id);
   hp->opcode = op;
-  hp->rd = (statp->options & INK_RES_RECURSE) != 0U;
-  hp->rcode = NOERROR;
-  cp = buf + HFIXEDSZ;
-  ep = buf + buflen;
-  dpp = dnptrs;
-  *dpp++ = buf;
-  *dpp++ = NULL;
-  lastdnptr = dnptrs + sizeof dnptrs / sizeof dnptrs[0];
+  hp->rd     = (statp->options & INK_RES_RECURSE) != 0U;
+  hp->rcode  = NOERROR;
+  cp         = buf + HFIXEDSZ;
+  ep         = buf + buflen;
+  dpp        = dnptrs;
+  *dpp++     = buf;
+  *dpp++     = NULL;
+  lastdnptr  = dnptrs + sizeof dnptrs / sizeof dnptrs[0];
   /*
    * perform opcode specific processing
    */
@@ -219,12 +218,12 @@ static int
 decode_bitstring(const unsigned char **cpp, char *dn, const char *eom)
 {
   const unsigned char *cp = *cpp;
-  char *beg = dn, tc;
+  char *beg               = dn, tc;
   int b, blen, plen, i;
 
   if ((blen = (*cp & 0xff)) == 0)
     blen = 256;
-  plen = (blen + 3) / 4;
+  plen   = (blen + 3) / 4;
   plen += sizeof("\\[x/]") + (blen > 99 ? 3 : (blen > 9) ? 2 : 1);
   if (dn + plen >= eom)
     return (-1);
@@ -242,13 +241,13 @@ decode_bitstring(const unsigned char **cpp, char *dn, const char *eom)
   }
   if (b > 4) {
     tc = *cp++;
-    i = SPRINTF((dn, "%02x", tc & (0xff << (8 - b))));
+    i  = SPRINTF((dn, "%02x", tc & (0xff << (8 - b))));
     if (i < 0)
       return (-1);
     dn += i;
   } else if (b > 0) {
     tc = *cp++;
-    i = SPRINTF((dn, "%1x", ((tc >> 4) & 0x0f) & (0x0f << (4 - b))));
+    i  = SPRINTF((dn, "%1x", ((tc >> 4) & 0x0f) & (0x0f << (4 - b))));
     if (i < 0)
       return (-1);
     dn += i;
@@ -307,8 +306,8 @@ ink_ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
   unsigned n;
   int l;
 
-  cp = src;
-  dn = dst;
+  cp  = src;
+  dn  = dst;
   eom = dst + dstsiz;
 
   while ((n = *cp++) != 0) {
@@ -413,8 +412,8 @@ ns_name_ntop(const u_char *src, char *dst, size_t dstsiz)
   unsigned n;
   int l;
 
-  cp = src;
-  dn = dst;
+  cp  = src;
+  dn  = dst;
   eom = dst + dstsiz;
 
   while ((n = *cp++) != 0) {

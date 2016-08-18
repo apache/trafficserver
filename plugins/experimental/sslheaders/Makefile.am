@@ -37,3 +37,8 @@ test_sslheaders_LDADD = \
   @OPENSSL_LIBS@
 
 TESTS = $(check_PROGRAMS)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

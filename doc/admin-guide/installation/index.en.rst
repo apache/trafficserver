@@ -190,44 +190,6 @@ working copy::
     cd /opt/ats
     sudo bin/traffic_server -R 1
 
-.. _admin-adding-spdy-support:
-
-Adding SPDY Support
--------------------
-
-Traffic Server v5.0.x and above are capable of supporting SPDY, but it is
-optional and must be explicitly configured during the build process.
-
-#. Clone the spdylay Git repository from tatsuhiro. ::
-
-    git clone https://github.com/tatsuhiro-t/spdylay
-
-#. Generate fresh configure scripts. ::
-
-    autoreconf -if
-
-#. Run the generated configuration script, choosing an installation location
-   for the overlay. ::
-
-    ./configure --prefix=/opt/spdylay
-
-#. Build and install the overlay. ::
-
-    make install
-
-#. Set the ``PKG_CONFIG_PATH`` enviroment variable to the appropriate path
-   in your newly-installed overlay directory. ::
-
-    export PKG_CONFIG_PATH=/opt/spdylay/lib/pkgconfig/
-
-#. Finally, you may proceed with the regular building of |TS| from source, with
-   the addition of a single new configuration option to enable SPDY support in
-   the produced binaries. ::
-
-    ./configure --enable-spdy
-
-.. _start-traffic-server:
-
 Start Traffic Server
 ====================
 
@@ -250,10 +212,10 @@ For a list of :program:`traffic_ctl` commands, enter::
 
      bin/traffic_ctl
 
-Please note that :program:`traffic_ctl`, while a fine tool for an
-administrator, is a poor choice for automation, especially that of
-monitoring. See our chapter on :ref:`monitoring-traffic`
-for how to do that more efficiently and effectively.
+Please note that :program:`traffic_ctl`, while a fine tool for administrators,
+is a poor choice for automation, especially that of monitoring. See our chapter
+on :ref:`monitoring <admin-monitoring>` for how to do that more efficiently and
+effectively.
 
 .. _stop-traffic-server:
 

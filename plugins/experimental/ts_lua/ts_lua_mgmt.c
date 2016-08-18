@@ -16,14 +16,12 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 
 static int ts_lua_mgmt_get_int(lua_State *L);
 static int ts_lua_mgmt_get_counter(lua_State *L);
 static int ts_lua_mgmt_get_float(lua_State *L);
 static int ts_lua_mgmt_get_string(lua_State *L);
-
 
 void
 ts_lua_inject_mgmt_api(lua_State *L)

@@ -1,4 +1,3 @@
-.. _cachekey-plugin:
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
    distributed with this work for additional information
@@ -17,59 +16,154 @@
    under the License.
 
 
-Cache Key Manipulation (cachekey)
----------------------------------------
+.. include:: ../../common.defs
+
+.. _admin-plugins-cachekey:
+
+
+Cache Key Manipulation Plugin
+*****************************
 
 Description
 ===========
 
 This plugin allows some common cache key manipulations based on various HTTP request components.  It can
 
-* sort query parameters to prevent query parameters reordereding from being a cache miss
+* sort query parameters to prevent query parameter reordering being a cache miss
 * ignore specific query parameters from the cache key by name or regular expression
 * ignore all query parameters from the cache key
 * only use specific query parameters in the cache key by name or regular expression
 * include headers or cookies by name
 * capture values from the ``User-Agent`` header.
 * classify request using ``User-Agent`` and a list of regular expressions
+* capture and replace strings from the URI and include them in the cache key
+* do more - please find more examples below.
 
-Plugin parameters
-=================
+Cache key structure and related plugin parameters
+=================================================
 
-All parameters are optional, and if not used, their default values are as mentioned below. Boolean values default to ``false`` and the rest default to an empty list. Examples of each parameter's usage can be found below.
+::
 
-* URI query parameters
-    * If no query related plugin parameters are used, the query is included as received from the UA in the cache key.
-    * ``--exclude-params`` (default: empty list) - comma-separated list of query params to be black-listed in the cache key. If the list is empty then no black-list is applied (no query parameters will be excluded from the cache key). The exclude list overrides the include list.
-    * ``--include-params`` (default: empty list) - comma-separated list of query params to be white-listed in the cache key. If the list is empty then no white-list is applied (all query parameters will be included in the cache key).
-    * ``--include-match-params`` (default: empty list) - regular expression matching query parameter names which will be white-listed in the cache key.
-    * ``--exclude-match-params`` (default: empty list) - regular expression matching query parameter names which will be black-listed in the cache key.
-    * ``--remove-all-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, default: ``false``) - if equals ``true`` then all query parameters are removed (the whole query string) and all other URI query parameter related settings (if used) will have no effect.
-    * ``--sort-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, default: ``false``) - if equals ``true`` then all query parameters are sorted in an increasing case-sensitive order
-* HTTP headers
-    * ``--include-headers`` (default: empty list) - comma separated list of headers to be added to the cache key.
-* HTTP cookies
-    * ``--include-cookies`` (default: empty list) - comma separated list of cookies to be added to the cache key.
+                                hierarchical part                               query
+  ┌───────────────────────────────────┴────────────────────────────────────┐┌─────┴──────┐
+  ┌─────────────┬──────────────┬──────────────┬──────────────┬─────────────┬─────────────┐
+  │  Prefix     |  User-Agent  │  Headers     │  Cookies     │  Path       │  Query      │
+  │  section    |  section     │  section     │  section     │  section    │  section    │
+  │  (default)  |  (optional)  │  (optional)  │  (optional)  │  (default)  │  (default)  │
+  └─────────────┴──────────────┴──────────────┴──────────────┴─────────────┴─────────────┘
 
-* Host name, port and custom prefix
-    * Host and port are added to the beginning of the cache key by default unless a custom preffix by using ``--static-prefix`` or ``--capture-prefix`` plugin parameters is specified.
-    * ``--static-prefix`` (default: empty string) - if specified and not an empty string the value will be added to the beginning of the cache key.
-    * ``--capture-prefix=<capture_definition>`` (default: empty string) - if specified and not an empty string will capture strings from ``host:port`` based on the ``<capture_definition>`` (see below) and add them to the beginning of the cache key.
-    * If ``--static-prefix`` and ``--capture-prefix`` are used together then the value of ``--static-prefix`` is added first to the cache key, followed by the ``--capture-prefix`` capturing/replacement results.
+* The cache key set by the cachekey plugin can be considered as devided into several sections.
+* Every section is manipulated separately by the related plugin parameters (more info in each section description below).
+* "User-Agent", "Headers" and "Cookies" sections are optional and will be missing from the cache key if no related plugin parameters are used.
+* "Prefix", "Path" and "Query" sections always have default values even if no related plugin parameters are used.
+* All cachekey plugin parameters are optional and if missing some of the cache key sections will be missing (the optional sections) or their values will be left to their defaults.
+
+"Prefix" section
+^^^^^^^^^^^^^^^^
+
+::
+
+  Optional components      | ┌─────────────────┬──────────────────┬──────────────────────┐
+  (included in this order) | │ --static-prefix | --capture-prefix │ --capture-prefix-uri │
+                           | ├─────────────────┴──────────────────┴──────────────────────┤
+  Default values if no     | │ /host/port                                                |
+  optional components      | └───────────────────────────────────────────────────────────┘
+  configured               |
+
+* ``--static-prefix=<value>`` (default: empty string) - if specified and not an empty string the ``<value>`` will be added to the cache key.
+* ``--capture-prefix=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from ``host:port`` based on the ``<capture_definition>`` and are added to the cache key.
+* ``--capture-prefix-uri=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from the entire URI based on the ``<capture_definition>`` and are added to the cache key.
+* If any of the "Prefix" related plugin parameters are used together in the plugin configuration they are added to the cache key in the order shown in the diagram.
+
+
+"User-Agent" section
+^^^^^^^^^^^^^^^^^^^^
+
+::
+
+  Optional components      | ┌────────────┬──────────────┐
+  (included in this order) | │ --ua-class | --ua-capture │
+                           | ├────────────┴──────────────┤
+  Default values if no     | │ (empty)                   |
+  optional components      | └───────────────────────────┘
+  configured               |
 
 * ``User-Agent`` classification
     * ``--ua-whitelist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if matched ``<classname>`` is added it to the key.
     * ``--ua-blacklist=<classname>:<filename>`` (default: empty string) - loads a regex patterns list from a file ``<filename>``, the patterns are matched against the ``User-Agent`` header and if **not** matched ``<classname>`` is added it to the key.
-
+    * Multiple ``--ua-whitelist`` and ``--ua-blacklist`` can be used and the result will be defined by their order in the plugin configuration.
 * ``User-Agent`` regex capturing and replacement
-    * ``--ua-capture=<capture_definition>`` (default: empty string) - if specified and not an empty string will capture strings from ``User-Agent`` header based on ``<capture_definition>`` (see below) and will add them to the cache key.
+    * ``--ua-capture=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from the ``User-Agent`` header based on ``<capture_definition>`` (see below) and are added to the cache key.
+* If any ``User-Agent`` classification and regex capturing and replacement plugin parameters are used together they are added to the cache key in the order shown in the diagram.
+
+"Headers" section
+^^^^^^^^^^^^^^^^^
+
+::
+
+  Optional components      | ┌───────────────────┐
+                           | │ --include-headers │
+                           | ├───────────────────┤
+  Default values if no     | │ (empty)           |
+  optional components      | └───────────────────┘
+  configured               |
+
+* ``--include-headers`` (default: empty list) - comma separated list of headers to be added to the cache key. The list of headers defined by ``--include-headers`` are always sorted before adding them to the cache  key.
+
+"Cookies" section
+^^^^^^^^^^^^^^^^^
+
+::
+
+  Optional components      | ┌───────────────────┐
+                           | │ --include-cookies │
+                           | ├───────────────────┤
+  Default values if no     | │ (empty)           |
+  optional components      | └───────────────────┘
+  configured               |
+
+* ``--include-cookies`` (default: empty list) - comma separated list of cookies to be added to the cache key. The list of cookies defined by ``--include-cookies`` are always sorted before adding them to the cache key.
+
+"Path" section
+^^^^^^^^^^^^^^
+
+::
+
+  Optional components      | ┌────────────────────┬────────────────┐
+  (included in this order) | │ --path-capture-uri | --path-capture │
+                           | ├────────────────────┴────────────────┤
+  Default values if no     | │ URI path                            |
+  optional components      | └─────────────────────────────────────┘
+  configured               |
+
+* if no path related plugin parameters are used, the URI path string is included in the cache key.
+* ``--capture-path=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from URI path based on the ``<capture_definition>`` and are added to the cache key.
+* ``--capture-path-uri=<capture_definition>`` (default: empty string) - if specified and not empty then strings are captured from the entire URI based on the ``<capture_definition>`` and are added to the cache key.
+
+"Query" section
+^^^^^^^^^^^^^^^
+
+* If no query related plugin parameters are used, the query string is included in the cache key.
+* ``--exclude-params`` (default: empty list) - comma-separated list of query params to be black-listed in the cache key. If the list is empty then no black-list is applied (no query parameters will be excluded from the cache key). The exclude list overrides the include list.
+* ``--include-params`` (default: empty list) - comma-separated list of query params to be white-listed in the cache key. If the list is empty then no white-list is applied (all query parameters will be included in the cache key).
+* ``--include-match-params`` (default: empty list) - regular expression matching query parameter names which will be white-listed in the cache key.
+* ``--exclude-match-params`` (default: empty list) - regular expression matching query parameter names which will be black-listed in the cache key.
+* ``--remove-all-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, default: ``false``) - if equals ``true`` then all query parameters are removed (the whole query string) and all other URI query parameter related settings (if used) will have no effect.
+* ``--sort-params`` (boolean:``true|false``, ``0|1``, ``yes|no``, default: ``false``) - if equals ``true`` then all query parameters are sorted in an increasing case-sensitive order
+
+All parameters are optional, and if not used, their default values are as mentioned below. Boolean values default to ``false`` and the rest default to an empty list. Examples of each parameter's usage can be found below.
+
+
+<capture_definition>
+^^^^^^^^^^^^^^^^^^^^
 
 * ``<capture_definition>`` can be in the following formats
     * ``<regex>`` - ``<regex>`` defines regex capturing groups, up to 10 captured strings based on ``<regex>`` will be added to the cache key.
     * ``/<regex>/<replacement>/`` - ``<regex>`` defines regex capturing groups, ``<replacement>`` defines a pattern where the captured strings referenced with ``$0`` ... ``$9`` will be substituted and the result will be added to the cache key.
 
-Cache Key Structure
-===================
+
+Detailed examples and troubleshooting
+=====================================
 
 ::
 
@@ -82,21 +176,6 @@ Cache Key Structure
                | └────────┬────────┘└───┬──┘└─────┬────┘└────┬─────┘└─────┬────┘└─────┬─────┘└────┬─────┘
   Cache Key    |     host:port or   UA-class UA-captures   headers     cookies       path       query
   components   |     custom prefix           replacement
-
-
-* With the current implementation the following cache key components are always present in the cache key:
-    * ``prefix or host:port`` - included at the beginning of the cache key. If neither ``--static-prefix`` nor ``--capture-prefix`` are specified or are empty strings then ``host:port`` from the request URI are used.
-    * ``path`` - URI path included **as is** (but can be empty)
-* The rest of the cache key components are optional and their presence in the cache key depends on the plugin configuration and the HTTP requests handled by the plugin:
-    * ``UA-class`` - a single class name, result of UA classification defined by ``--ua-whitelist`` and ``--ua-blacklist`` parameters.
-    * ``UA-captures`` - a result of the regex capture (and possibly replacement) from the first ``User-Agent`` header.
-    * ``headers`` - always sorted list of headers defined by ``--include-headers``
-    * ``cookies`` - always sorted list of headers defined by ``--include-cookies``
-    * ``query`` - the request URI query **as is** or a list of query parameters proccessed by this plugin as configured.
-* The following URI components are ignored (not included in the cache key):
-    * ``scheme:``
-    * ``user:password@`` from the ``authority`` URI component
-    * ``#fragment``
 
 The following is an example of how the above sample keys were generated (``Sample 1`` and ``Sample 2``).
 
@@ -277,8 +356,9 @@ The following headers ``CookieA`` and ``CookieB`` will be used when constructing
   @plugin=cachekey.so @pparam=--include-headers=CookieA,CookieB
 
 
-Host name, port and static prefix
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Prefix (host, port, capture and replace from URI)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Replacing host:port with a static cache key prefix
 """""""""""""""""""""""""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameter in the remap rule. ::
@@ -287,21 +367,86 @@ If the plugin is used with the following plugin parameter in the remap rule. ::
 
 the cache key will be prefixed with ``/static_prefix`` instead of ``host:port`` when ``--static-prefix`` is not used.
 
-Capturing from the host:port and adding it to beginning of cache key prefix
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Capturing from the host:port and adding it to the prefix section
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameter in the remap rule. ::
 
-  @plugin=cachekey.so @pparam=--capture-prefix=(test_prefix).*:([^\s\/$]*)
+  @plugin=cachekey.so \
+      @pparam=--capture-prefix=(test_prefix).*:([^\s\/$]*)
 
 the cache key will be prefixed with ``/test_prefix/80`` instead of ``test_prefix_371.example.com:80`` when ``--capture-prefix`` is not used.
 
-Combining --static-prefix and --capture-prefix
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Capturing from the entire URI and adding it to the prefix section
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 If the plugin is used with the following plugin parameter in the remap rule. ::
 
-  @plugin=cachekey.so @pparam=--capture-prefix=(test_prefix).*:([^\s\/$]*) @pparam=--static-prefix=static_prefix
+  @plugin=cachekey.so \
+      @pparam=--capture-prefix-uri=/(test_prefix).*:.*(object).*$/$1_$2/
+
+and if the request URI is the following ::
+
+  http://test_prefix_123.example.com/path/to/object?a=1&b=2&c=3
+
+the the cache key will be prefixed with ``/test_prefix_object`` instead of ``test_prefix_123.example.com:80`` when ``--capture-prefix-uri`` is not used.
+
+Combining prefix plugin parameters, i.e. --static-prefix and --capture-prefix
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+If the plugin is used with the following plugin parameters in the remap rule. ::
+
+  @plugin=cachekey.so \
+      @pparam=--capture-prefix=(test_prefix).*:([^\s\/$]*) \
+      @pparam=--static-prefix=static_prefix
 
 the cache key will be prefixed with ``/static_prefix/test_prefix/80`` instead of ``test_prefix_371.example.com:80`` when neither ``--capture-prefix`` nor ``--static-prefix`` are used.
+
+
+Path, capture and replace from the path or entire URI
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Capture and replace groups from path for the "Path" section
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+If the plugin is used with the following plugin parameter in the remap rule. ::
+
+  @plugin=cachekey.so \
+      @pparam=--capture-path=/.*(object).*/const_path_$1/
+
+and the request URI is the following ::
+
+  http://test_path_123.example.com/path/to/object?a=1&b=2&c=3
+
+then the cache key will have ``/const_path_object`` in the path section of the cache key instead of ``/path/to/object`` when neither ``--capture-path`` nor ``--capture-path-uri`` are used.
+
+
+Capture and replace groups from whole URI for the "Path" section
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+If the plugin is used with the following plugin parameter in the remap rule. ::
+
+  @plugin=cachekey.so \
+      @pparam=--capture-path-uri=/(test_path).*(object).*/$1_$2/
+
+and the request URI is the following ::
+
+  http://test_path_123.example.com/path/to/object?a=1&b=2&c=3
+
+the the cache key will have ``/test_path_object`` in the path section of the cache key instead of ``/path/to/object`` when neither ``--capture-path`` nor ``--capture-path-uri`` are used.
+
+
+Combining path plugin parameters --capture-path and --capture-path-uri
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+If the plugin is used with the following plugin parameters in the remap rule. ::
+
+  @plugin=cachekey.so \
+      @pparam=--capture-path=/.*(object).*/const_path_$1/ \
+      @pparam=--capture-path-uri=/(test_path).*(object).*/$1_$2/
+
+and the request URI is the following ::
+
+  http://test_path_123.example.com/path/to/object?a=1&b=2&c=3
+
+the the cache key will have ``/test_path_object/const_path_object`` in the path section of the cache key instead of ``/path/to/object`` when neither ``--capture-path`` nor ``--capture-path-uri`` are used.
 
 User-Agent capturing, replacement and classification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

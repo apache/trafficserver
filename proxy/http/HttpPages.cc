@@ -44,7 +44,7 @@ HttpPagesHandler::HttpPagesHandler(Continuation *cont, HTTPHdr *header)
   URL *url;
   int length;
 
-  url = header->url_get();
+  url     = header->url_get();
   request = (char *)url->path_get(&length);
   request = arena.str_store(request, length);
 
@@ -100,7 +100,7 @@ HttpPagesHandler::dump_hdr(HTTPHdr *hdr, const char *desc)
     offset = 0;
     do {
       used = 0;
-      tmp = offset;
+      tmp  = offset;
       done = hdr->print(b, 4095, &used, &tmp);
       offset += used;
       b[used] = '\0';
@@ -156,7 +156,6 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
   }
   resp_end_table();
 
-
   resp_add("<p> Consumers </p>");
   resp_begin_table(1, 5, 60);
   for (int j = 0; j < MAX_CONSUMERS; j++) {
@@ -199,7 +198,6 @@ HttpPagesHandler::dump_tunnel_info(HttpSM *sm)
         resp_add("-");
       }
       resp_end_column();
-
 
       resp_end_row();
     }
@@ -269,7 +267,7 @@ int
 HttpPagesHandler::handle_smdetails(int event, void * /* data ATS_UNUSED */)
 {
   EThread *ethread = this_ethread();
-  HttpSM *sm = NULL;
+  HttpSM *sm       = NULL;
 
   switch (event) {
   case EVENT_NONE:
@@ -333,7 +331,6 @@ HttpPagesHandler::handle_smdetails(int event, void * /* data ATS_UNUSED */)
     }
   }
 
-
   // If we got here, we did not find our state machine
   resp_add("<h2>Id %" PRId64 " not found</h2>", sm_id);
   resp_end();
@@ -372,7 +369,7 @@ HttpPagesHandler::handle_smlist(int event, void * /* data ATS_UNUSED */)
     sm = HttpSMList[list_bucket].sm_list.head;
 
     while (sm != NULL) {
-      char *url = NULL;
+      char *url          = NULL;
       const char *method = NULL;
       int method_len;
       const char *sm_state = NULL;
@@ -394,11 +391,11 @@ HttpPagesHandler::handle_smlist(int event, void * /* data ATS_UNUSED */)
           }
 
           if (url == NULL) {
-            url = arena.str_store("-", 1);
+            url      = arena.str_store("-", 1);
             sm_state = "READ_REQUEST";
           }
         } else {
-          url = arena.str_store("-", 1);
+          url      = arena.str_store("-", 1);
           sm_state = "LOCKED";
         }
       }
@@ -433,10 +430,10 @@ HttpPagesHandler::handle_callback(int /* event ATS_UNUSED */, void * /* edata AT
     if (response) {
       StatPageData data;
 
-      data.data = response;
-      data.type = ats_strdup("text/html");
+      data.data   = response;
+      data.type   = ats_strdup("text/html");
       data.length = response_length;
-      response = NULL;
+      response    = NULL;
 
       action.continuation->handleEvent(STAT_PAGE_SUCCESS, &data);
     } else {

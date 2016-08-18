@@ -1,4 +1,4 @@
-.. _s3-auth-plugin:
+.. _admin-plugins-s3-auth:
 
 AWS S3 Authentication plugin
 ****************************

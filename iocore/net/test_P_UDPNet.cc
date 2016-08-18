@@ -80,7 +80,7 @@ EchoServer::handlePacket(int event, void *data)
 
   case NET_EVENT_DATAGRAM_READ_ERROR:
     printf("got Read Error exiting\n");
-    _exit(1);
+    ::exit(1);
 
   case NET_EVENT_DATAGRAM_WRITE_ERROR:
     printf("got write error: %d\n", (int)data);

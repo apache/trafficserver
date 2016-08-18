@@ -1,0 +1,136 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/authproxy.en.rst:4
+msgid "AuthProxy Plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:31
+msgid ""
+"Note that Traffic Server optimizes latency by skipping the DNS lookup state "
+"if a document is found in the cache. This will have the effect of serving "
+"the document without consulting the ``AuthProxy`` plugin. you can disable "
+"this behavior by setting :ts:cv:`proxy.config.http.doc_in_cache_skip_dns` "
+"to ``0`` in :file:`records.config`."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:23
+msgid ""
+"There are many ways of authorizing an HTTP request. Often, this requires "
+"making IPC calls to some internal infrastructure. ``AuthProxy`` is a plugin "
+"that takes care of the Traffic Server end of authorizing a request and "
+"delegates the authorization decision to an external HTTP service."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:29
+msgid "This plugin can be used as either a global plugin or a remap plugin."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:38
+msgid ""
+"Note that the authorization request will need to match a remap rule (which, "
+"as a standalone remap rule, does not need to call the AuthProxy plugin). If "
+"a second remap rule is required, by default, the authorization request will "
+"not have the same Host header as the request from the client. It could be "
+"added using the ``header_rewrite`` plugin (set-header Host \"pristine_host."
+"example.com\")."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:46
+msgid "Plugin Options"
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:49
+msgid ""
+"This option specifies how to route the incoming request to the "
+"authorization service. The transform type may be ``head`` or ``redirect``."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:53
+msgid ""
+"If the transform type is ``head``, then the incoming request is transformed "
+"to a HEAD request and is sent to the same destination. If the response is "
+"``200 OK``, the incoming request is allowed to proceed."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:58
+msgid ""
+"If the transform type is ``range``, then the incoming request is "
+"transformed to a Range request asking for 0 bytes. Other than that, the "
+"behavior is identical to the ``head`` option above. This type of Range "
+"request is useful when the upstream destination is a cache, and it's not "
+"able to cache HEAD requests."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:64
+msgid ""
+"If the transform type is ``redirect`` then the incoming request is sent to "
+"the authorization service designated by the `--auth-host` and `--auth-port` "
+"parameters. If the response is 200 OK, the incoming request is allowed to "
+"proceed."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:80
+msgid ""
+"The TCP port of the authorization host. This is only used by the "
+"``redirect`` transform."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:76
+msgid ""
+"The name or address of the authorization host. This is only used by the "
+"``redirect`` transform."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:69
+msgid ""
+"When the authorization service responds with a status other than 200 OK, "
+"that response is returned to the client as the response to the incoming "
+"request. This allows mechanisms such as HTTP basic authentication to work "
+"correctly. Note that the body of the authorization service response is not "
+"returned to the client."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:91
+msgid "Examples"
+msgstr "例"
+
+#: ../../admin-guide/plugins/authproxy.en.rst:84
+msgid ""
+"If this options is set, the plugin will allow Traffic Server to cache the "
+"result of authorized requests. In the normal case, requests with "
+"authorization headers are nor cacheable, but this flag allows that by "
+"setting the :ts:cv:`proxy.config.http.cache.ignore_authentication` option "
+"on the request."
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:93
+msgid ""
+"In this example, the authentication is performed by converting the incoming "
+"HTTP request to a `HEAD` request and sending that to the origin server "
+"`origin.internal.com`::"
+msgstr ""
+
+#: ../../admin-guide/plugins/authproxy.en.rst:103
+msgid ""
+"In this example, the request is directed to a local authentication server "
+"that authorizes the request based on internal policy rules::"
+msgstr ""

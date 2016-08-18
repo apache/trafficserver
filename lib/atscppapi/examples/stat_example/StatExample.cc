@@ -16,7 +16,6 @@
   limitations under the License.
  */
 
-
 #include <atscppapi/GlobalPlugin.h>
 #include <atscppapi/Logger.h>
 #include <atscppapi/Stat.h>
@@ -33,12 +32,14 @@ namespace
 #define TAG "stat_example"
 
 // This will be the actual stat name
-// You can view it using traffic_line -r stat_example
+// You can view it using traffic_ctl metric get stat_example
 const string STAT_NAME = "stat_example";
 
 // This is the stat we'll be using, you can view it's value
-// using traffic_line -r stat_example
+// using traffic_ctl metric get stat_example
 Stat stat;
+
+GlobalPlugin *plugin;
 }
 
 /*
@@ -74,5 +75,5 @@ TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
   stat.init(STAT_NAME, Stat::SYNC_COUNT, true);
   stat.set(0);
 
-  new GlobalHookPlugin();
+  plugin = new GlobalHookPlugin();
 }

@@ -44,7 +44,7 @@
 #include "ts/ink_thread.h"
 #include "ts/Diags.h"
 
-int diags_on_for_plugins = 0;
+int diags_on_for_plugins          = 0;
 bool DiagsConfigState::enabled[2] = {false, false};
 
 // Global, used for all diagnostics
@@ -54,7 +54,7 @@ static bool setup_diagslog(BaseLogFile *blf);
 
 template <int Size>
 static void
-vprintline(FILE *fp, char(&buffer)[Size], va_list ap)
+vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
 {
   int nbytes = strlen(buffer);
 
@@ -64,40 +64,6 @@ vprintline(FILE *fp, char(&buffer)[Size], va_list ap)
     putc('\n', fp);
   }
 }
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      char *SrcLoc::str(char *buf, int buflen)
-//
-//      This method takes a SrcLoc source location data structure and
-//      converts it to a human-readable representation, in the buffer <buf>
-//      with length <buflen>.  The buffer will always be NUL-terminated, and
-//      must always have a length of at least 1.  The buffer address is
-//      returned on success.  The routine will only fail if the SrcLoc is
-//      not valid, or the buflen is less than 1.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-char *
-SrcLoc::str(char *buf, int buflen) const
-{
-  const char *shortname;
-
-  if (!this->valid() || buflen < 1)
-    return (NULL);
-
-  shortname = strrchr(file, '/');
-  shortname = shortname ? (shortname + 1) : file;
-
-  if (func != NULL) {
-    snprintf(buf, buflen, "%s:%d (%s)", shortname, line, func);
-  } else {
-    snprintf(buf, buflen, "%s:%d", shortname, line);
-  }
-  buf[buflen - 1] = NUL;
-  return (buf);
-}
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -118,7 +84,12 @@ SrcLoc::str(char *buf, int buflen) const
 //////////////////////////////////////////////////////////////////////////////
 
 Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
-  : diags_log(NULL), stdout_log(NULL), stderr_log(NULL), magic(DIAGS_MAGIC), show_location(0), base_debug_tags(NULL),
+  : diags_log(NULL),
+    stdout_log(NULL),
+    stderr_log(NULL),
+    magic(DIAGS_MAGIC),
+    show_location(0),
+    base_debug_tags(NULL),
     base_action_tags(NULL)
 {
   int i;
@@ -137,14 +108,14 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
     base_action_tags = ats_strdup(bat);
   }
 
-  config.enabled[DiagsTagType_Debug] = (base_debug_tags != NULL);
+  config.enabled[DiagsTagType_Debug]  = (base_debug_tags != NULL);
   config.enabled[DiagsTagType_Action] = (base_action_tags != NULL);
-  diags_on_for_plugins = config.enabled[DiagsTagType_Debug];
+  diags_on_for_plugins                = config.enabled[DiagsTagType_Debug];
 
   for (i = 0; i < DiagsLevel_Count; i++) {
-    config.outputs[i].to_stdout = false;
-    config.outputs[i].to_stderr = false;
-    config.outputs[i].to_syslog = false;
+    config.outputs[i].to_stdout   = false;
+    config.outputs[i].to_stderr   = false;
+    config.outputs[i].to_syslog   = false;
     config.outputs[i].to_diagslog = true;
   }
 
@@ -163,19 +134,19 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
   // start off with empty tag tables, will build in reconfigure() //
   //////////////////////////////////////////////////////////////////
 
-  activated_tags[DiagsTagType_Debug] = NULL;
+  activated_tags[DiagsTagType_Debug]  = NULL;
   activated_tags[DiagsTagType_Action] = NULL;
-  prefix_str = "";
+  prefix_str                          = "";
 
-  outputlog_rolling_enabled = RollingEnabledValues::NO_ROLLING;
+  outputlog_rolling_enabled  = RollingEnabledValues::NO_ROLLING;
   outputlog_rolling_interval = -1;
-  outputlog_rolling_size = -1;
-  diagslog_rolling_enabled = RollingEnabledValues::NO_ROLLING;
-  diagslog_rolling_interval = -1;
-  diagslog_rolling_size = -1;
+  outputlog_rolling_size     = -1;
+  diagslog_rolling_enabled   = RollingEnabledValues::NO_ROLLING;
+  diagslog_rolling_interval  = -1;
+  diagslog_rolling_size      = -1;
 
   outputlog_time_last_roll = time(0);
-  diagslog_time_last_roll = time(0);
+  diagslog_time_last_roll  = time(0);
 }
 
 Diags::~Diags()
@@ -201,7 +172,6 @@ Diags::~Diags()
   deactivate_all(DiagsTagType_Debug);
   deactivate_all(DiagsTagType_Action);
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -231,7 +201,8 @@ Diags::~Diags()
 //////////////////////////////////////////////////////////////////////////////
 
 void
-Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc, const char *format_string, va_list ap) const
+Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocation *loc, const char *format_string,
+                va_list ap) const
 {
   struct timeval tp;
   const char *s;
@@ -246,7 +217,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
   // and format_buf_w_ts has the same thing with a prepended timestamp. //
   ////////////////////////////////////////////////////////////////////////
 
-  format_buf[0] = NUL;
+  format_buf[0]      = NUL;
   format_buf_w_ts[0] = NUL;
 
   /////////////////////////////////////////////////////
@@ -254,7 +225,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
   // points to the current available character       //
   /////////////////////////////////////////////////////
 
-  end_of_format = format_buf;
+  end_of_format  = format_buf;
   *end_of_format = NUL;
 
   // add the thread id
@@ -303,22 +274,21 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
     ;
   *end_of_format++ = NUL;
 
-
   //////////////////////////////////////////////////////////////////
   // prepend timestamp into the timestamped version of the buffer //
   //////////////////////////////////////////////////////////////////
 
-  ink_gethrtimeofday(&tp, NULL);
+  tp               = ink_gettimeofday();
   time_t cur_clock = (time_t)tp.tv_sec;
-  buffer = ink_ctime_r(&cur_clock, timestamp_buf);
+  buffer           = ink_ctime_r(&cur_clock, timestamp_buf);
   snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", (int)(tp.tv_usec / 1000));
 
-  d = format_buf_w_ts;
+  d    = format_buf_w_ts;
   *d++ = '[';
   for (int i = 4; buffer[i]; i++)
     *d++ = buffer[i];
-  *d++ = ']';
-  *d++ = ' ';
+  *d++   = ']';
+  *d++   = ' ';
 
   for (int k = 0; prefix_str[k]; k++)
     *d++ = prefix_str[k];
@@ -406,7 +376,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SrcLoc *loc
 #endif
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      bool Diags::tag_activated(char * tag, DiagsTagType mode)
@@ -434,12 +403,11 @@ Diags::tag_activated(const char *tag, DiagsTagType mode) const
   return (activated);
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void Diags::activate_taglist(char * taglist, DiagsTagType mode)
 //
-//      This routine adds all tags in the vertical-bar-seperated taglist
+//      This routine adds all tags in the vertical-bar-separated taglist
 //      to the tag table of type <mode>.  Each addition is done under a lock.
 //      If an individual tag is already set, that tag is ignored.  If
 //      <taglist> is NULL, this routine exits immediately.
@@ -459,7 +427,6 @@ Diags::activate_taglist(const char *taglist, DiagsTagType mode)
     unlock();
   }
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -481,7 +448,6 @@ Diags::deactivate_all(DiagsTagType mode)
   }
   unlock();
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -519,7 +485,6 @@ Diags::level_name(DiagsLevel dl) const
   }
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void Diags::dump(FILE *fp)
@@ -553,7 +518,7 @@ Diags::log(const char *tag, DiagsLevel level, const char *file, const char *func
   va_list ap;
   va_start(ap, format_string);
   if (show_location) {
-    SrcLoc lp(file, func, line);
+    SourceLocation lp(file, func, line);
     print_va(tag, level, &lp, format_string, ap);
   } else {
     print_va(tag, level, NULL, format_string, ap);
@@ -571,7 +536,7 @@ Diags::error_va(DiagsLevel level, const char *file, const char *func, const int 
   }
 
   if (show_location) {
-    SrcLoc lp(file, func, line);
+    SourceLocation lp(file, func, line);
     print_va(NULL, level, &lp, format_string, ap);
   } else {
     print_va(NULL, level, NULL, format_string, ap);
@@ -610,17 +575,17 @@ setup_diagslog(BaseLogFile *blf)
 void
 Diags::config_roll_diagslog(RollingEnabledValues re, int ri, int rs)
 {
-  diagslog_rolling_enabled = re;
+  diagslog_rolling_enabled  = re;
   diagslog_rolling_interval = ri;
-  diagslog_rolling_size = rs;
+  diagslog_rolling_size     = rs;
 }
 
 void
 Diags::config_roll_outputlog(RollingEnabledValues re, int ri, int rs)
 {
-  outputlog_rolling_enabled = re;
+  outputlog_rolling_enabled  = re;
   outputlog_rolling_interval = ri;
-  outputlog_rolling_size = rs;
+  outputlog_rolling_size     = rs;
 }
 
 /*
@@ -676,7 +641,7 @@ Diags::should_roll_diagslog()
         fflush(diags_log->m_fp);
         if (diags_log->roll()) {
           diagslog_time_last_roll = now;
-          char *oldname = ats_strdup(diags_log->get_name());
+          char *oldname           = ats_strdup(diags_log->get_name());
           log_log_trace("in should_roll_logs() for diags.log, oldname=%s\n", oldname);
           BaseLogFile *n = new BaseLogFile(oldname);
           if (setup_diagslog(n)) {
@@ -713,7 +678,7 @@ Diags::should_roll_outputlog()
   ink_assert(stdout_log != NULL);
   ink_assert(stderr_log != NULL);
 
-  bool ret_val = false;
+  bool ret_val              = false;
   bool need_consider_stderr = true;
 
   /*
@@ -768,7 +733,7 @@ Diags::should_roll_outputlog()
 
         if (stdout_log->roll()) {
           outputlog_time_last_roll = now;
-          char *oldname = ats_strdup(stdout_log->get_name());
+          char *oldname            = ats_strdup(stdout_log->get_name());
           log_log_trace("in should_roll_logs(), oldname=%s\n", oldname);
           set_stdout_output(oldname);
 
@@ -821,9 +786,6 @@ Diags::set_stdout_output(const char *_bind_stdout)
     stdout_log = NULL;
   }
 
-  // get root
-  ElevateAccess elevate;
-
   // create backing BaseLogFile for stdout
   stdout_log = new BaseLogFile(_bind_stdout);
 
@@ -860,8 +822,6 @@ Diags::set_stderr_output(const char *_bind_stderr)
     delete stderr_log;
     stderr_log = NULL;
   }
-  // get root
-  ElevateAccess elevate;
 
   // create backing BaseLogFile for stdout
   stderr_log = new BaseLogFile(_bind_stderr);

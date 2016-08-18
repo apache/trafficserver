@@ -187,8 +187,8 @@ TestHttpHeader()
 {
   HttpHeader h;
   h.m_message_type = HTTP_MESSAGE_TYPE_REQUEST;
-  h.m_method = HTTP_METHOD_GET;
-  h.m_version = HttpVersion(1, 0);
+  h.m_method       = HTTP_METHOD_GET;
+  h.m_version      = HttpVersion(1, 0);
 
   test_add_fields(&h);
 
@@ -202,7 +202,6 @@ TestHttpHeader()
   int l;
   cout << "first accept" << endl;
   cout << h.m_header_fields.m_accept.get(0, &l) << endl;
-
 
   char buf[4096];
   int marshal_length = h.marshal(buf, sizeof(buf));

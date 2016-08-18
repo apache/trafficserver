@@ -29,14 +29,26 @@
  *
 **/
 url_mapping::url_mapping(int rank /* = 0 */)
-  : from_path_len(0), fromURL(), toUrl(), homePageRedirect(false), unique(false), default_redirect_url(false),
-    optional_referer(false), negative_referer(false), wildcard_from_scheme(false), tag(NULL), filter_redirect_url(NULL),
-    referer_list(0), redir_chunk_list(0), filter(NULL), _plugin_count(0), _rank(rank)
+  : from_path_len(0),
+    fromURL(),
+    toUrl(),
+    homePageRedirect(false),
+    unique(false),
+    default_redirect_url(false),
+    optional_referer(false),
+    negative_referer(false),
+    wildcard_from_scheme(false),
+    tag(NULL),
+    filter_redirect_url(NULL),
+    referer_list(0),
+    redir_chunk_list(0),
+    filter(NULL),
+    _plugin_count(0),
+    _rank(rank)
 {
   memset(_plugin_list, 0, sizeof(_plugin_list));
   memset(_instance_data, 0, sizeof(_instance_data));
 }
-
 
 /**
  *
@@ -44,16 +56,16 @@ url_mapping::url_mapping(int rank /* = 0 */)
 bool
 url_mapping::add_plugin(remap_plugin_info *i, void *ih)
 {
-  if (_plugin_count >= MAX_REMAP_PLUGIN_CHAIN)
+  if (_plugin_count >= MAX_REMAP_PLUGIN_CHAIN) {
     return false;
+  }
 
-  _plugin_list[_plugin_count] = i;
+  _plugin_list[_plugin_count]   = i;
   _instance_data[_plugin_count] = ih;
   ++_plugin_count;
 
   return true;
 }
-
 
 /**
  *
@@ -62,8 +74,9 @@ remap_plugin_info *
 url_mapping::get_plugin(unsigned int index) const
 {
   Debug("url_rewrite", "get_plugin says we have %d plugins and asking for plugin %d", _plugin_count, index);
-  if ((_plugin_count == 0) || unlikely(index > _plugin_count))
+  if ((_plugin_count == 0) || unlikely(index > _plugin_count)) {
     return NULL;
+  }
 
   return _plugin_list[index];
 }
@@ -74,14 +87,13 @@ url_mapping::get_plugin(unsigned int index) const
 void
 url_mapping::delete_instance(unsigned int index)
 {
-  void *ih = get_instance(index);
+  void *ih             = get_instance(index);
   remap_plugin_info *p = get_plugin(index);
 
   if (ih && p && p->fp_tsremap_delete_instance) {
     p->fp_tsremap_delete_instance(ih);
   }
 }
-
 
 /**
  *
@@ -92,7 +104,7 @@ url_mapping::~url_mapping()
   redirect_tag_str *rc;
   acl_filter_rule *afr;
 
-  tag = (char *)ats_free_null(tag);
+  tag                 = (char *)ats_free_null(tag);
   filter_redirect_url = (char *)ats_free_null(filter_redirect_url);
 
   while ((r = referer_list) != 0) {
@@ -106,8 +118,9 @@ url_mapping::~url_mapping()
   }
 
   // Delete all instance data
-  for (unsigned int i = 0; i < _plugin_count; ++i)
+  for (unsigned int i = 0; i < _plugin_count; ++i) {
     delete_instance(i);
+  }
 
   // Delete filters
   while ((afr = filter) != NULL) {
@@ -140,7 +153,7 @@ redirect_tag_str::parse_format_redirect_url(char *url)
   char *c;
   redirect_tag_str *r, **rr;
   redirect_tag_str *list = 0;
-  char type = 0;
+  char type              = 0;
 
   if (url && *url) {
     for (rr = &list; *(c = url) != 0;) {
@@ -148,8 +161,9 @@ redirect_tag_str::parse_format_redirect_url(char *url)
         if (c[0] == '%') {
           char tmp_type = (char)tolower((int)c[1]);
           if (tmp_type == 'r' || tmp_type == 'f' || tmp_type == 't' || tmp_type == 'o') {
-            if (url == c)
+            if (url == c) {
               type = tmp_type;
+            }
             break;
           }
         }
@@ -157,23 +171,24 @@ redirect_tag_str::parse_format_redirect_url(char *url)
       r = new redirect_tag_str();
       if (likely(r)) {
         if ((r->type = type) == 's') {
-          char svd = *c;
-          *c = 0;
+          char svd     = *c;
+          *c           = 0;
           r->chunk_str = ats_strdup(url);
-          *c = svd;
-          url = c;
-        } else
+          *c           = svd;
+          url          = c;
+        } else {
           url += 2;
+        }
         (*rr = r)->next = 0;
-        rr = &(r->next);
+        rr              = &(r->next);
         // printf("\t***********'%c' - '%s'*******\n",r->type,r->chunk_str ? r->chunk_str : "<NULL>");
-      } else
+      } else {
         break; /* memory allocation error */
+      }
     }
   }
   return list;
 }
-
 
 /**
  *
@@ -184,8 +199,9 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
   const char *error;
   int erroffset;
 
-  if (error_flag)
+  if (error_flag) {
     *error_flag = false;
+  }
   regx = NULL;
 
   if (_ref) {
@@ -195,22 +211,24 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
     }
     if ((referer = ats_strdup(_ref)) != 0) {
       referer_size = strlen(referer);
-      if (!strcmp(referer, "*"))
+      if (!strcmp(referer, "*")) {
         any = true;
-      else {
+      } else {
         regx = pcre_compile(referer, PCRE_CASELESS, &error, &erroffset, NULL);
         if (!regx) {
-          if (errmsgbuf && (errmsgbuf_size - 1) > 0)
+          if (errmsgbuf && (errmsgbuf_size - 1) > 0) {
             ink_strlcpy(errmsgbuf, error, errmsgbuf_size);
-          if (error_flag)
+          }
+          if (error_flag) {
             *error_flag = true;
-        } else
+          }
+        } else {
           regx_valid = true;
+        }
       }
     }
   }
 }
-
 
 /**
  *
@@ -218,12 +236,12 @@ referer_info::referer_info(char *_ref, bool *error_flag, char *errmsgbuf, int er
 referer_info::~referer_info()
 {
   ats_free(referer);
-  referer = 0;
+  referer      = 0;
   referer_size = 0;
 
   if (regx_valid) {
     pcre_free(regx);
-    regx = NULL;
+    regx       = NULL;
     regx_valid = false;
   }
 }

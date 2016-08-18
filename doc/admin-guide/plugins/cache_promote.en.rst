@@ -15,10 +15,10 @@
   specific language governing permissions and limitations
   under the License.
 
-.. _cache-promote-plugin:
+.. _admin-plugins-cache-promote:
 
-cache_promote Plugin
-====================
+Cache Promote Plugin
+********************
 
 The `cache_promote` plugin provides a means to control when an object should
 be allowed to enter the cache. This is orthogonal from normal Cache-Control

@@ -40,7 +40,7 @@ class TestNoOp(helpers.EnvironmentCase):
     # you can set configure/environment options for the source build here
     environment_factory = {
         'configure': {
-            'enable-spdy': None,  # A value of None means that the argument has no value
+            'enable-wccp': None,  # A value of None means that the argument has no value
             'with-max-api-stats': 2048,  # if there is a value it will be converted to --key=value
         },
         'env': None,
@@ -64,7 +64,7 @@ class TestNoOp(helpers.EnvironmentCase):
         is an environment object)
         '''
         # we can modify any/all configs (note: all pre-daemon start)
-        cls.configs['remap.config'].add_line('map / http://http://trafficserver.readthedocs.org/')
+        cls.configs['remap.config'].add_line('map / http://trafficserver.readthedocs.org/')
 
         # Some configs have nicer wrapper objects to give you a more pythonic interface
         cls.configs['records.config']['CONFIG'].update({
@@ -87,10 +87,10 @@ class TestNoOp(helpers.EnvironmentCase):
 
 class TestConfigureFlags(helpers.EnvironmentCase):
     environment_factory = {
-        'configure': {'enable-spdy': None},
+        'configure': {'enable-wccp': None},
     }
 
-    def test_spdy(self):
+    def test_wccp(self):
         self.assertTrue(True)
 
 
@@ -101,13 +101,14 @@ class TestBootstrap(helpers.EnvironmentCase):
         self.assertEqual(ret.status_code, 404)
         self.assertIn('ATS', ret.headers['server'])
 
-    def test_trafficline(self):
+    def test_trafficctl(self):
         '''
-        Test that traffic_line works, and verify that the values for proxy.config
+        Test that traffic_ctl works, and verify that the values for proxy.config
         match what we put in records.config
         '''
-        cmd = [os.path.join(self.environment.layout.bindir, 'traffic_line'),
-               '-m',
+        cmd = [os.path.join(self.environment.layout.bindir, 'traffic_ctl'),
+               'config',
+               'match',
                'proxy.config',
                ]
         stdout, _ = tsqa.utils.run_sync_command(cmd, stdout=subprocess.PIPE)

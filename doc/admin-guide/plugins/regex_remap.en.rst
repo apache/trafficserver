@@ -1,25 +1,26 @@
-.. _regex-remap-plugin:
+.. Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
+
+.. include:: ../../common.defs
+
+.. _admin-plugins-regex-remap:
 
 Regex Remap Plugin
 ******************
-
-.. Licensed to the Apache Software Foundation (ASF) under one
-   or more contributor license agreements.  See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership.  The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied.  See the License for the
-  specific language governing permissions and limitations
-  under the License.
-
 
 This allows you to configure mapping rules based on regular expressions.
 This is similar to what you can accomplish using mod_rewrite in Apache
@@ -60,6 +61,7 @@ be used to modify the plugin instance behavior ::
     @pparam=[no-]method              [default: off]
     @pparam=[no-]query-string        [default: on]
     @pparam=[no-]matrix-parameters   [default: off]
+    @pparam=[no-]host                [default: off]
 
 If you wish to match on the HTTP method used (e.g. "``GET``\ "),
 you must use the option ``@pparam=method``. e.g. ::
@@ -80,10 +82,19 @@ again, to turn this off use the option 'no-query-string', e.g. ::
 
     ... @pparam=maps.reg @pparam=no-query-string
 
-Finally, you can also include the matrix parameters in the string, using
+You can also include the matrix parameters in the string, using
 the option 'matrix-parameters', e.g. ::
 
     ... @pparam=maps.reg @pparam=matrix-parameters
+
+Finally, to match on the host as well, use the option 'host', e.g. ::
+
+    ... @pparam=maps.reg @pparam=host
+
+With this enabled, the string that you will need to match will look like ::
+
+    //host/path?query=bar
+
 
 A typical regex would look like ::
 
@@ -124,7 +135,7 @@ remap.config. The following options are available ::
     @connect_timeout=<nnn>      - Connect timeouts (in ms)
     @dns_timeout=<nnn>          - Connect timeouts (in ms)
 
-    @overridable-config=<value> - see :ref:`ts-overridable-config`
+    @overridable-config=<value> - see :ref:`Overridable Configurations <ts-overridable-config>`
 
     @caseless                   - Make regular expressions case insensitive
     @lowercase_substitutions    - Turn on (enable) lower case substitutions

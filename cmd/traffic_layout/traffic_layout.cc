@@ -45,7 +45,6 @@ const ArgumentDescription argument_descriptions[] = {
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
 
-
 // Produce output about compile time features, useful for checking how things were built, as well
 // as for our TSQA test harness.
 static void
@@ -93,7 +92,6 @@ produce_features(bool json)
   print_feature("TS_USE_POSIX_CAP", TS_USE_POSIX_CAP, json);
   print_feature("TS_USE_TPROXY", TS_USE_TPROXY, json);
   print_feature("TS_HAS_SO_MARK", TS_HAS_SO_MARK, json);
-  print_feature("TS_HAS_SPDY", TS_HAS_SPDY, json);
   print_feature("TS_HAS_IP_TOS", TS_HAS_IP_TOS, json);
   print_feature("TS_USE_HWLOC", TS_USE_HWLOC, json);
   print_feature("TS_USE_TLS_NPN", TS_USE_TLS_NPN, json);
@@ -124,40 +122,52 @@ produce_features(bool json)
   }
 }
 
-
 static void
-print_var(const char *name, char *val)
+print_var(const char *name, char *value, bool json, bool free = true, bool last = false)
 {
-  printf("%s: %s\n", name, val);
-  ats_free(val);
+  if (json) {
+    printf("    \"%s\": \"%s\"%s", name, value, last ? "\n" : ",\n");
+  } else {
+    printf("%s: %s\n", name, value);
+  }
+
+  if (free) {
+    ats_free(value);
+  }
 }
 
 static void
-produce_layout()
+produce_layout(bool json)
 {
   Layout::create();
 
   RecProcessInit(RECM_STAND_ALONE, NULL /* diags */);
   LibRecordsConfigInit();
 
-  printf("%s: %s\n", "PREFIX", Layout::get()->prefix);
-  print_var("BINDIR", RecConfigReadBinDir());
-  print_var("SYSCONFDIR", RecConfigReadConfigDir());
-  print_var("LIBDIR", Layout::get()->libdir);
-  print_var("LOGDIR", RecConfigReadLogDir());
-  print_var("RUNTIMEDIR", RecConfigReadRuntimeDir());
-  print_var("PLUGINDIR", RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir"));
-  print_var("INCLUDEDIR", Layout::get()->includedir);
-  print_var("SNAPSHOTDIR", RecConfigReadSnapshotDir());
+  if (json) {
+    printf("{\n");
+  }
+  print_var("PREFIX", Layout::get()->prefix, json, false); // Don't free this
+  print_var("BINDIR", RecConfigReadBinDir(), json);
+  print_var("SYSCONFDIR", RecConfigReadConfigDir(), json);
+  print_var("LIBDIR", Layout::get()->libdir, json, false); // Don't free this
+  print_var("LOGDIR", RecConfigReadLogDir(), json);
+  print_var("RUNTIMEDIR", RecConfigReadRuntimeDir(), json);
+  print_var("PLUGINDIR", RecConfigReadPrefixPath("proxy.config.plugin.plugin_dir"), json);
+  print_var("INCLUDEDIR", Layout::get()->includedir, json, false); // Dont' free this
+  print_var("SNAPSHOTDIR", RecConfigReadSnapshotDir(), json);
 
-  print_var("records.config", RecConfigReadConfigPath(NULL, REC_CONFIG_FILE));
-  print_var("remap.config", RecConfigReadConfigPath("proxy.config.url_remap.filename"));
-  print_var("plugin.config", RecConfigReadConfigPath(NULL, "plugin.config"));
-  print_var("ssl_multicert.config", RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
-  print_var("storage.config", RecConfigReadConfigPath("proxy.config.cache.storage_filename"));
-  print_var("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"));
-  print_var("volume.config", RecConfigReadConfigPath("proxy.config.cache.volume_filename"));
-  print_var("ip_allow.config", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"));
+  print_var("records.config", RecConfigReadConfigPath(NULL, REC_CONFIG_FILE), json);
+  print_var("remap.config", RecConfigReadConfigPath("proxy.config.url_remap.filename"), json);
+  print_var("plugin.config", RecConfigReadConfigPath(NULL, "plugin.config"), json);
+  print_var("ssl_multicert.config", RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"), json);
+  print_var("storage.config", RecConfigReadConfigPath("proxy.config.cache.storage_filename"), json);
+  print_var("hosting.config", RecConfigReadConfigPath("proxy.config.cache.hosting_filename"), json);
+  print_var("volume.config", RecConfigReadConfigPath("proxy.config.cache.volume_filename"), json);
+  print_var("ip_allow.config", RecConfigReadConfigPath("proxy.config.cache.ip_allow.filename"), json, true, true);
+  if (json) {
+    printf("}\n");
+  }
 }
 
 int
@@ -173,7 +183,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (cl.features) {
     produce_features(0 != cl.json);
   } else {
-    produce_layout();
+    produce_layout(0 != cl.json);
   }
   exit(0);
 }

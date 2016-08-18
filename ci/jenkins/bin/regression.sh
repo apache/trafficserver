@@ -21,4 +21,4 @@ cd "${WORKSPACE}/${BUILD_NUMBER}/build"
 
 ${ATS_MAKE} check VERBOSE=Y && ${ATS_MAKE} install
 
-"${WORKSPACE}/${BUILD_NUMBER}/install/bin/traffic_server" -R 1
+"${WORKSPACE}/${BUILD_NUMBER}/install/bin/traffic_server" -k -K -R 1

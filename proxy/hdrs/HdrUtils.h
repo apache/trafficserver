@@ -44,8 +44,16 @@ public:
   // MIME standard separator ',' is used as the default value
   // Set-cookie/Cookie uses ';'
   HdrCsvIter(const char s = ',')
-    : m_value_start(NULL), m_value_len(0), m_bytes_consumed(0), m_follow_dups(false), m_csv_start(NULL), m_csv_len(0),
-      m_csv_end(NULL), m_csv_index(0), m_cur_field(NULL), m_separator(s)
+    : m_value_start(NULL),
+      m_value_len(0),
+      m_bytes_consumed(0),
+      m_follow_dups(false),
+      m_csv_start(NULL),
+      m_csv_len(0),
+      m_csv_end(NULL),
+      m_csv_index(0),
+      m_cur_field(NULL),
+      m_separator(s)
   {
   }
   const char *get_first(const MIMEField *m, int *len, bool follow_dups = true);
@@ -95,10 +103,10 @@ private:
 inline void
 HdrCsvIter::field_init(const MIMEField *m)
 {
-  m_cur_field = m;
+  m_cur_field   = m;
   m_value_start = m->m_ptr_value;
-  m_value_len = m->m_len_value;
-  m_csv_start = m_value_start;
+  m_value_len   = m->m_len_value;
+  m_csv_start   = m_value_start;
 }
 
 inline const char *
@@ -109,7 +117,7 @@ HdrCsvIter::get_first(const MIMEField *m, int *len, bool follow_dups)
   m_follow_dups = follow_dups;
 
   m_bytes_consumed = 0;
-  m_csv_index = -1;
+  m_csv_index      = -1;
 
   if (m_csv_start) {
     find_csv();
@@ -120,7 +128,6 @@ HdrCsvIter::get_first(const MIMEField *m, int *len, bool follow_dups)
   *len = m_csv_len;
   return m_csv_start;
 }
-
 
 inline const char *
 HdrCsvIter::get_next(int *len)
@@ -175,6 +182,5 @@ HdrCsvIter::get_next_int(int *valid)
     return 0;
   }
 }
-
 
 #endif

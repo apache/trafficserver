@@ -39,6 +39,7 @@ using namespace atscppapi;
  */
 struct atscppapi::TransactionState : noncopyable {
   TSHttpTxn txn_;
+  TSEvent event_; ///< Current event being dispatched.
   std::list<TransactionPlugin *> plugins_;
   TSMBuffer client_request_hdr_buf_;
   TSMLoc client_request_hdr_loc_;
@@ -58,13 +59,23 @@ struct atscppapi::TransactionState : noncopyable {
   TSMBuffer cached_request_hdr_buf_;
   TSMLoc cached_request_hdr_loc_;
   Request cached_request_;
-  map<string, shared_ptr<Transaction::ContextValue> > context_values_;
+  map<string, shared_ptr<Transaction::ContextValue>> context_values_;
 
   TransactionState(TSHttpTxn txn, TSMBuffer client_request_hdr_buf, TSMLoc client_request_hdr_loc)
-    : txn_(txn), client_request_hdr_buf_(client_request_hdr_buf), client_request_hdr_loc_(client_request_hdr_loc),
-      client_request_(txn, client_request_hdr_buf, client_request_hdr_loc), server_request_hdr_buf_(NULL),
-      server_request_hdr_loc_(NULL), server_response_hdr_buf_(NULL), server_response_hdr_loc_(NULL), client_response_hdr_buf_(NULL),
-      client_response_hdr_loc_(NULL), cached_response_hdr_buf_(NULL), cached_response_hdr_loc_(NULL), cached_request_hdr_buf_(NULL),
+    : txn_(txn),
+      event_(TS_EVENT_NONE),
+      client_request_hdr_buf_(client_request_hdr_buf),
+      client_request_hdr_loc_(client_request_hdr_loc),
+      client_request_(txn, client_request_hdr_buf, client_request_hdr_loc),
+      server_request_hdr_buf_(NULL),
+      server_request_hdr_loc_(NULL),
+      server_response_hdr_buf_(NULL),
+      server_response_hdr_loc_(NULL),
+      client_response_hdr_buf_(NULL),
+      client_response_hdr_loc_(NULL),
+      cached_response_hdr_buf_(NULL),
+      cached_response_hdr_loc_(NULL),
+      cached_request_hdr_buf_(NULL),
       cached_request_hdr_loc_(NULL){};
 };
 
@@ -86,29 +97,13 @@ Transaction::Transaction(void *raw_txn)
 Transaction::~Transaction()
 {
   LOG_DEBUG("Transaction tshttptxn=%p destroying Transaction object %p", state_->txn_, this);
-  static const TSMLoc NULL_PARENT_LOC = NULL;
-  TSHandleMLocRelease(state_->client_request_hdr_buf_, NULL_PARENT_LOC, state_->client_request_hdr_loc_);
-  if (state_->server_request_hdr_buf_ && state_->server_request_hdr_loc_) {
-    LOG_DEBUG("Releasing server request");
-    TSHandleMLocRelease(state_->server_request_hdr_buf_, NULL_PARENT_LOC, state_->server_request_hdr_loc_);
-  }
-  if (state_->server_response_hdr_buf_ && state_->server_response_hdr_loc_) {
-    LOG_DEBUG("Releasing server response");
-    TSHandleMLocRelease(state_->server_response_hdr_buf_, NULL_PARENT_LOC, state_->server_response_hdr_loc_);
-  }
-  if (state_->client_response_hdr_buf_ && state_->client_response_hdr_loc_) {
-    LOG_DEBUG("Releasing client response");
-    TSHandleMLocRelease(state_->client_response_hdr_buf_, NULL_PARENT_LOC, state_->client_response_hdr_loc_);
-  }
-  if (state_->cached_request_hdr_buf_ && state_->cached_request_hdr_loc_) {
-    LOG_DEBUG("Releasing cached request");
-    TSHandleMLocRelease(state_->cached_request_hdr_buf_, NULL_PARENT_LOC, state_->cached_request_hdr_loc_);
-  }
-  if (state_->cached_response_hdr_buf_ && state_->cached_response_hdr_loc_) {
-    LOG_DEBUG("Releasing cached response");
-    TSHandleMLocRelease(state_->cached_response_hdr_buf_, NULL_PARENT_LOC, state_->cached_response_hdr_loc_);
-  }
   delete state_;
+}
+
+void
+Transaction::setEvent(TSEvent event)
+{
+  state_->event_ = event;
 }
 
 bool
@@ -182,8 +177,26 @@ Transaction::error(const std::string &page)
 void
 Transaction::setErrorBody(const std::string &page)
 {
-  LOG_DEBUG("Transaction tshttptxn=%p setting error body page: %s", state_->txn_, page.c_str());
-  TSHttpTxnErrorBodySet(state_->txn_, TSstrdup(page.c_str()), page.length(), NULL); // Default to text/html
+  LOG_DEBUG("Transaction tshttptxn=%p setting error body page length: %lu", state_->txn_, page.length());
+  char *body = (char *)TSmalloc(page.length());
+  memcpy(body, page.data(), page.length());
+  TSHttpTxnErrorBodySet(state_->txn_, body, page.length(), NULL); // Default to text/html
+}
+
+void
+Transaction::setErrorBody(const std::string &page, const std::string &mimetype)
+{
+  LOG_DEBUG("Transaction tshttptxn=%p setting error body page length: %lu", state_->txn_, page.length());
+  char *body = (char *)TSmalloc(page.length());
+  memcpy(body, page.data(), page.length());
+  TSHttpTxnErrorBodySet(state_->txn_, body, page.length(), TSstrdup(mimetype.c_str()));
+}
+
+void
+Transaction::setStatusCode(HttpStatus code)
+{
+  LOG_DEBUG("Transaction tshttptxn=%p setting status code: %d", state_->txn_, code);
+  TSHttpTxnSetHttpRetStatus(state_->txn_, static_cast<TSHttpStatus>(code));
 }
 
 bool
@@ -215,7 +228,7 @@ shared_ptr<Transaction::ContextValue>
 Transaction::getContextValue(const std::string &key)
 {
   shared_ptr<Transaction::ContextValue> return_context_value;
-  map<string, shared_ptr<Transaction::ContextValue> >::iterator iter = state_->context_values_.find(key);
+  map<string, shared_ptr<Transaction::ContextValue>>::iterator iter = state_->context_values_.find(key);
   if (iter != state_->context_values_.end()) {
     return_context_value = iter->second;
   }
@@ -233,36 +246,7 @@ ClientRequest &
 Transaction::getClientRequest()
 {
   return state_->client_request_;
-}
-
-Request &
-Transaction::getServerRequest()
-{
-  return state_->server_request_;
-}
-
-Response &
-Transaction::getServerResponse()
-{
-  return state_->server_response_;
-}
-
-Response &
-Transaction::getClientResponse()
-{
-  return state_->client_response_;
-}
-
-Request &
-Transaction::getCachedRequest()
-{
-  return state_->cached_request_;
-}
-
-Response &
-Transaction::getCachedResponse()
-{
-  return state_->cached_response_;
+  ;
 }
 
 string
@@ -270,7 +254,7 @@ Transaction::getEffectiveUrl()
 {
   string ret_val;
   int length = 0;
-  char *buf = TSHttpTxnEffectiveUrlStringGet(state_->txn_, &length);
+  char *buf  = TSHttpTxnEffectiveUrlStringGet(state_->txn_, &length);
   if (buf && length) {
     ret_val.assign(buf, length);
   }
@@ -382,7 +366,6 @@ Transaction::setTimeout(Transaction::TimeoutType type, int time_ms)
   }
 }
 
-
 Transaction::CacheStatus
 Transaction::getCacheStatus()
 {
@@ -431,16 +414,15 @@ class initializeHandles
 public:
   typedef TSReturnCode (*GetterFunction)(TSHttpTxn, TSMBuffer *, TSMLoc *);
   initializeHandles(GetterFunction getter) : getter_(getter) {}
-  bool operator()(TSHttpTxn txn, TSMBuffer &hdr_buf, TSMLoc &hdr_loc, const char *handles_name)
+  bool
+  operator()(TSHttpTxn txn, TSMBuffer &hdr_buf, TSMLoc &hdr_loc, const char *handles_name)
   {
-    if (!hdr_buf && !hdr_loc) {
-      if (getter_(txn, &hdr_buf, &hdr_loc) == TS_SUCCESS) {
-        return true;
-      } else {
-        LOG_ERROR("Could not get %s", handles_name);
-      }
+    hdr_buf = NULL;
+    hdr_loc = NULL;
+    if (getter_(txn, &hdr_buf, &hdr_loc) == TS_SUCCESS) {
+      return true;
     } else {
-      LOG_ERROR("%s already initialized", handles_name);
+      LOG_ERROR("Could not get %s", handles_name);
     }
     return false;
   }
@@ -451,57 +433,91 @@ private:
 
 } // anonymous namespace
 
-void
-Transaction::initServerRequest()
+Request &
+Transaction::getServerRequest()
 {
   static initializeHandles initializeServerRequestHandles(TSHttpTxnServerReqGet);
-  if (initializeServerRequestHandles(state_->txn_, state_->server_request_hdr_buf_, state_->server_request_hdr_loc_,
-                                     "server request")) {
-    LOG_DEBUG("Initializing server request");
+  if (NULL == state_->server_request_hdr_buf_) {
+    initializeServerRequestHandles(state_->txn_, state_->server_request_hdr_buf_, state_->server_request_hdr_loc_,
+                                   "server request");
+    LOG_DEBUG("Initializing server request, event %d", state_->event_);
     state_->server_request_.init(state_->server_request_hdr_buf_, state_->server_request_hdr_loc_);
   }
+  return state_->server_request_;
 }
 
-void
-Transaction::initServerResponse()
+Response &
+Transaction::getServerResponse()
 {
   static initializeHandles initializeServerResponseHandles(TSHttpTxnServerRespGet);
-  if (initializeServerResponseHandles(state_->txn_, state_->server_response_hdr_buf_, state_->server_response_hdr_loc_,
-                                      "server response")) {
-    LOG_DEBUG("Initializing server response");
+  if (NULL == state_->server_response_hdr_buf_) {
+    initializeServerResponseHandles(state_->txn_, state_->server_response_hdr_buf_, state_->server_response_hdr_loc_,
+                                    "server response");
+    LOG_DEBUG("Initializing server response, event %d", state_->event_);
     state_->server_response_.init(state_->server_response_hdr_buf_, state_->server_response_hdr_loc_);
   }
+  return state_->server_response_;
 }
 
-void
-Transaction::initClientResponse()
+Response &
+Transaction::getClientResponse()
 {
   static initializeHandles initializeClientResponseHandles(TSHttpTxnClientRespGet);
-  if (initializeClientResponseHandles(state_->txn_, state_->client_response_hdr_buf_, state_->client_response_hdr_loc_,
-                                      "client response")) {
-    LOG_DEBUG("Initializing client response");
+  if (NULL == state_->client_response_hdr_buf_) {
+    initializeClientResponseHandles(state_->txn_, state_->client_response_hdr_buf_, state_->client_response_hdr_loc_,
+                                    "client response");
+    LOG_DEBUG("Initializing client response, event %d", state_->event_);
     state_->client_response_.init(state_->client_response_hdr_buf_, state_->client_response_hdr_loc_);
   }
+  return state_->client_response_;
 }
 
-void
-Transaction::initCachedRequest()
+Request &
+Transaction::getCachedRequest()
 {
   static initializeHandles initializeCachedRequestHandles(TSHttpTxnCachedReqGet);
-  if (initializeCachedRequestHandles(state_->txn_, state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_,
-                                     "cached request")) {
-    LOG_DEBUG("Initializing cached request");
-    state_->cached_request_.init(state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_);
+
+  if (state_->event_ == TS_EVENT_HTTP_TXN_CLOSE) {
+    // CachedRequest is destroyed in tunnel_handler_cache_read
+    state_->cached_request_.reset();
+    LOG_DEBUG("Reset cached request, event %d", state_->event_);
+  } else {
+    if (NULL == state_->cached_request_hdr_buf_) {
+      initializeCachedRequestHandles(state_->txn_, state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_,
+                                     "cached request");
+      LOG_DEBUG("Initializing cached request, event %d", state_->event_);
+      state_->cached_request_.init(state_->cached_request_hdr_buf_, state_->cached_request_hdr_loc_);
+    }
   }
+  return state_->cached_request_;
+}
+
+Response &
+Transaction::getCachedResponse()
+{
+  static initializeHandles initializeCachedResponseHandles(TSHttpTxnCachedRespGet);
+  if (NULL == state_->cached_response_hdr_buf_) {
+    initializeCachedResponseHandles(state_->txn_, state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_,
+                                    "cached response");
+    LOG_DEBUG("Initializing cached response, event %d", state_->event_);
+    state_->cached_response_.init(state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_);
+  }
+  return state_->cached_response_;
 }
 
 void
-Transaction::initCachedResponse()
+Transaction::resetHandles()
 {
-  static initializeHandles initializeCachedResponseHandles(TSHttpTxnCachedRespGet);
-  if (initializeCachedResponseHandles(state_->txn_, state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_,
-                                      "cached response")) {
-    LOG_DEBUG("Initializing cached response");
-    state_->cached_response_.init(state_->cached_response_hdr_buf_, state_->cached_response_hdr_loc_);
-  }
+  state_->cached_request_hdr_buf_  = NULL;
+  state_->cached_request_hdr_loc_  = NULL;
+  state_->cached_response_hdr_buf_ = NULL;
+  state_->cached_response_hdr_loc_ = NULL;
+
+  state_->client_response_hdr_buf_ = NULL;
+  state_->client_response_hdr_loc_ = NULL;
+
+  state_->server_request_hdr_buf_  = NULL;
+  state_->server_request_hdr_loc_  = NULL;
+  state_->server_response_hdr_buf_ = NULL;
+  state_->server_response_hdr_loc_ = NULL;
 }

@@ -1,0 +1,56 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:23
+msgid "Sample Source Code"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:28
+msgid "blacklist-1.c"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:30
+msgid ""
+"The sample blacklisting plugin included in the Traffic Server SDK is "
+"``blacklist-1.c``. This plugin checks every incoming HTTP client request "
+"against a list of blacklisted web sites. If the client requests a "
+"blacklisted site, then the plugin returns an ``Access forbidden`` message "
+"to the client."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:36
+msgid "This plugin illustrates:"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:38
+msgid "An HTTP transaction extension"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:40
+msgid "How to examine HTTP request headers"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:42
+msgid "How to use the logging interface"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/source-code.en.rst:44
+msgid "How to use the plugin configuration management interface"
+msgstr ""

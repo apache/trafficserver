@@ -22,7 +22,6 @@
 
  */
 
-
 #ifndef BASE_LOG_FILE_H
 #define BASE_LOG_FILE_H
 
@@ -82,7 +81,7 @@ public:
     DATA_FROM_METAFILE = 1, // metadata was read (or attempted to)
     // from metafile
     VALID_CREATION_TIME = 2, // creation time is valid
-    VALID_SIGNATURE = 4,     // signature is valid
+    VALID_SIGNATURE     = 4, // signature is valid
     // (i.e., creation time only)
     FILE_OPEN_SUCCESSFUL = 8 // metafile was opened successfully
   };
@@ -157,7 +156,6 @@ public:
     return (_flags & FILE_OPEN_SUCCESSFUL ? true : false);
   }
 };
-
 
 /*
  *

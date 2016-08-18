@@ -31,9 +31,9 @@
 Parser::Parser(const std::string &line) : _cond(false), _empty(false)
 {
   TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Parser");
-  bool inquote = false;
-  bool extracting_token = false;
-  off_t cur_token_start = 0;
+  bool inquote            = false;
+  bool extracting_token   = false;
+  off_t cur_token_start   = 0;
   size_t cur_token_length = 0;
   for (size_t i = 0; i < line.size(); ++i) {
     if (!inquote && (std::isspace(line[i]) || (line[i] == '=' || line[i] == '>' || line[i] == '<'))) {
@@ -52,14 +52,14 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
       continue; /* always eat whitespace */
     } else if (line[i] == '"') {
       if (!inquote && !extracting_token) {
-        inquote = true;
+        inquote          = true;
         extracting_token = true;
-        cur_token_start = i + 1; /* eat the leading quote */
+        cur_token_start  = i + 1; /* eat the leading quote */
         continue;
       } else if (inquote && extracting_token) {
         cur_token_length = i - cur_token_start;
         _tokens.push_back(line.substr(cur_token_start, cur_token_length));
-        inquote = false;
+        inquote          = false;
         extracting_token = false;
       } else {
         /* malformed */
@@ -82,7 +82,7 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
       }
 
       extracting_token = true;
-      cur_token_start = i;
+      cur_token_start  = i;
     }
   }
 
@@ -128,8 +128,11 @@ Parser::preprocess(std::vector<std::string> tokens)
         _arg = tokens[1] + tokens[2];
       } else if (tokens.size() > 1) {
         _arg = tokens[1];
-      } else
-        _arg = "";
+      } else {
+        {
+          _arg = "";
+        }
+      }
     } else {
       TSError("[%s] conditions must be embraced in %%{}", PLUGIN_NAME);
       return;
@@ -139,10 +142,11 @@ Parser::preprocess(std::vector<std::string> tokens)
     _op = tokens[0];
     if (tokens.size() > 1) {
       _arg = tokens[1];
-      if (tokens.size() > 2)
+      if (tokens.size() > 2) {
         _val = tokens[2];
-      else
+      } else {
         _val = "";
+      }
     } else {
       _arg = "";
       _val = "";
@@ -172,4 +176,41 @@ Parser::preprocess(std::vector<std::string> tokens)
       }
     }
   }
+}
+
+// Check if the operator is a condition, a hook, and if so, which hook. If the cond is not a hook
+// we do not modify the hook itself, and return false.
+bool
+Parser::cond_is_hook(TSHttpHookID &hook) const
+{
+  if (!_cond) {
+    return false;
+  }
+
+  if ("READ_RESPONSE_HDR_HOOK" == _op) {
+    hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
+    return true;
+  }
+  if ("READ_REQUEST_HDR_HOOK" == _op) {
+    hook = TS_HTTP_READ_REQUEST_HDR_HOOK;
+    return true;
+  }
+  if ("READ_REQUEST_PRE_REMAP_HOOK" == _op) {
+    hook = TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK;
+    return true;
+  }
+  if ("SEND_REQUEST_HDR_HOOK" == _op) {
+    hook = TS_HTTP_SEND_REQUEST_HDR_HOOK;
+    return true;
+  }
+  if ("SEND_RESPONSE_HDR_HOOK" == _op) {
+    hook = TS_HTTP_SEND_RESPONSE_HDR_HOOK;
+    return true;
+  }
+  if ("REMAP_PSEUDO_HOOK" == _op) {
+    hook = TS_REMAP_PSEUDO_HOOK;
+    return true;
+  }
+
+  return false;
 }

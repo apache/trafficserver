@@ -158,7 +158,6 @@ static HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {{"file", HDRTOK
 
                                                                  {(char *)NULL, (HdrTokenType)0}};
 
-
 static HdrTokenFieldInfo _hdrtoken_strs_field_initializers[] = {
   {"Accept", MIME_SLOTID_ACCEPT, MIME_PRESENCE_ACCEPT, (HTIF_COMMAS | HTIF_MULTVALS)},
   {"Accept-Charset", MIME_SLOTID_ACCEPT_CHARSET, MIME_PRESENCE_ACCEPT_CHARSET, (HTIF_COMMAS | HTIF_MULTVALS)},
@@ -378,14 +377,14 @@ hdrtoken_hash_init()
              hdrtoken_hash_table[slot].wks);
       ++num_collisions;
     }
-    hdrtoken_hash_table[slot].wks = (const char *)wks;
+    hdrtoken_hash_table[slot].wks  = (const char *)wks;
     hdrtoken_hash_table[slot].hash = hash;
   }
 
-  if (num_collisions > 0)
+  if (num_collisions > 0) {
     abort();
+  }
 }
-
 
 /***********************************************************************
  *                                                                     *
@@ -427,8 +426,8 @@ hdrtoken_init()
 
     int heap_size = 0;
     for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
-      hdrtoken_str_lengths[i] = (int)strlen(_hdrtoken_strs[i]);
-      int sstr_len = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
+      hdrtoken_str_lengths[i]   = (int)strlen(_hdrtoken_strs[i]);
+      int sstr_len              = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
       int packed_prefix_str_len = sizeof(HdrTokenHeapPrefix) + sstr_len;
       heap_size += packed_prefix_str_len;
     }
@@ -443,13 +442,13 @@ hdrtoken_init()
 
       memset(&prefix, 0, sizeof(HdrTokenHeapPrefix));
 
-      prefix.wks_idx = i;
-      prefix.wks_length = hdrtoken_str_lengths[i];
-      prefix.wks_token_type = HDRTOKEN_TYPE_OTHER; // default, can override later
-      prefix.wks_info.name = NULL;                 // default, can override later
-      prefix.wks_info.slotid = MIME_SLOTID_NONE;   // default, can override later
-      prefix.wks_info.mask = TOK_64_CONST(0);      // default, can override later
-      prefix.wks_info.flags = MIME_FLAGS_MULTVALS; // default, can override later
+      prefix.wks_idx         = i;
+      prefix.wks_length      = hdrtoken_str_lengths[i];
+      prefix.wks_token_type  = HDRTOKEN_TYPE_OTHER; // default, can override later
+      prefix.wks_info.name   = NULL;                // default, can override later
+      prefix.wks_info.slotid = MIME_SLOTID_NONE;    // default, can override later
+      prefix.wks_info.mask   = TOK_64_CONST(0);     // default, can override later
+      prefix.wks_info.flags  = MIME_FLAGS_MULTVALS; // default, can override later
 
       int sstr_len = snap_up_to_multiple(hdrtoken_str_lengths[i] + 1, sizeof(HdrTokenHeapPrefix));
 
@@ -472,7 +471,7 @@ hdrtoken_init()
 
       ink_assert((wks_idx >= 0) && (wks_idx < (int)SIZEOF(hdrtoken_strs)));
       // coverity[negative_returns]
-      prefix = hdrtoken_index_to_prefix(wks_idx);
+      prefix                 = hdrtoken_index_to_prefix(wks_idx);
       prefix->wks_token_type = _hdrtoken_strs_type_initializers[i].type;
     }
 
@@ -485,19 +484,19 @@ hdrtoken_init()
         hdrtoken_tokenize_dfa(_hdrtoken_strs_field_initializers[i].name, (int)strlen(_hdrtoken_strs_field_initializers[i].name));
 
       ink_assert((wks_idx >= 0) && (wks_idx < (int)SIZEOF(hdrtoken_strs)));
-      prefix = hdrtoken_index_to_prefix(wks_idx);
+      prefix                  = hdrtoken_index_to_prefix(wks_idx);
       prefix->wks_info.slotid = _hdrtoken_strs_field_initializers[i].slotid;
-      prefix->wks_info.flags = _hdrtoken_strs_field_initializers[i].flags;
-      prefix->wks_info.mask = _hdrtoken_strs_field_initializers[i].mask;
+      prefix->wks_info.flags  = _hdrtoken_strs_field_initializers[i].flags;
+      prefix->wks_info.mask   = _hdrtoken_strs_field_initializers[i].mask;
     }
 
     for (i = 0; i < (int)SIZEOF(_hdrtoken_strs); i++) {
-      HdrTokenHeapPrefix *prefix = hdrtoken_index_to_prefix(i);
-      prefix->wks_info.name = hdrtoken_strs[i];
-      hdrtoken_str_token_types[i] = prefix->wks_token_type; // parallel array for speed
-      hdrtoken_str_slotids[i] = prefix->wks_info.slotid;    // parallel array for speed
-      hdrtoken_str_masks[i] = prefix->wks_info.mask;        // parallel array for speed
-      hdrtoken_str_flags[i] = prefix->wks_info.flags;       // parallel array for speed
+      HdrTokenHeapPrefix *prefix  = hdrtoken_index_to_prefix(i);
+      prefix->wks_info.name       = hdrtoken_strs[i];
+      hdrtoken_str_token_types[i] = prefix->wks_token_type;  // parallel array for speed
+      hdrtoken_str_slotids[i]     = prefix->wks_info.slotid; // parallel array for speed
+      hdrtoken_str_masks[i]       = prefix->wks_info.mask;   // parallel array for speed
+      hdrtoken_str_flags[i]       = prefix->wks_info.flags;  // parallel array for speed
     }
 
     hdrtoken_hash_init();
@@ -514,13 +513,15 @@ hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_strin
 
   wks_idx = hdrtoken_strs_dfa->match(string, string_len);
 
-  if (wks_idx < 0)
+  if (wks_idx < 0) {
     wks_idx = -1;
+  }
   if (wks_string_out) {
-    if (wks_idx >= 0)
+    if (wks_idx >= 0) {
       *wks_string_out = hdrtoken_index_to_wks(wks_idx);
-    else
+    } else {
       *wks_string_out = NULL;
+    }
   }
   // printf("hdrtoken_tokenize_dfa(%d,*s) - return %d\n",string_len,string,wks_idx);
 
@@ -540,8 +541,9 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
 
   if (hdrtoken_is_wks(string)) {
     wks_idx = hdrtoken_wks_to_index(string);
-    if (wks_string_out)
+    if (wks_string_out) {
       *wks_string_out = string;
+    }
     return wks_idx;
   }
 
@@ -551,8 +553,9 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
   bucket = &(hdrtoken_hash_table[slot]);
   if ((bucket->wks != NULL) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
     wks_idx = hdrtoken_wks_to_index(bucket->wks);
-    if (wks_string_out)
+    if (wks_string_out) {
       *wks_string_out = bucket->wks;
+    }
     return wks_idx;
   }
 

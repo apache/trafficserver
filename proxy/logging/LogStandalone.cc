@@ -51,20 +51,19 @@ class HttpBodyFactory;
 extern int fds_limit;
 extern int cluster_port_number;
 
-int command_flag = 0;
-int http_accept_port_number = 0;
+int command_flag                = 0;
+int http_accept_port_number     = 0;
 int http_accept_file_descriptor = 0;
-int remote_management_flag = 0;
-int auto_clear_hostdb_flag = 0;
-char proxy_name[MAXDNAME + 1] = "unknown";
+int remote_management_flag      = 0;
+int auto_clear_hostdb_flag      = 0;
+char proxy_name[MAXDNAME + 1]   = "unknown";
 
-char error_tags[1024] = "";
-char action_tags[1024] = "";
+char error_tags[1024]    = "";
+char action_tags[1024]   = "";
 char command_string[512] = "";
 
-
 // Diags *diags = NULL;
-DiagsConfig *diagsConfig = NULL;
+DiagsConfig *diagsConfig      = NULL;
 HttpBodyFactory *body_factory = NULL;
 AppVersionInfo appVersionInfo;
 
@@ -139,7 +138,6 @@ initialize_process_manager()
   //                         RECP_NON_PERSISTENT);
 }
 
-
 /*-------------------------------------------------------------------------
   check_lockfile
   -------------------------------------------------------------------------*/
@@ -154,7 +152,7 @@ check_lockfile()
   if (access(Layout::get()->runtimedir, R_OK | W_OK) == -1) {
     fprintf(stderr, "unable to access() dir'%s': %d, %s\n", Layout::get()->runtimedir, errno, strerror(errno));
     fprintf(stderr, " please set correct path in env variable TS_ROOT \n");
-    _exit(1);
+    ::exit(1);
   }
   lockfile = Layout::relative_to(Layout::get()->runtimedir, SERVER_LOCK);
 
@@ -178,7 +176,7 @@ check_lockfile()
     } else {
       fprintf(stderr, "\n");
     }
-    _exit(1);
+    ::exit(1);
   }
   ats_free(lockfile);
 }
@@ -213,7 +211,7 @@ init_log_standalone(const char *pgm_name, bool one_copy)
   init_system(true);
   initialize_process_manager();
   diagsConfig = new DiagsConfig(logfile, error_tags, action_tags);
-  diags = diagsConfig->diags;
+  diags       = diagsConfig->diags;
 }
 
 /*-------------------------------------------------------------------------
@@ -240,8 +238,8 @@ init_log_standalone_basic(const char *pgm_name)
 
   init_system(false);
   const bool use_records = false;
-  diagsConfig = new DiagsConfig(logfile, error_tags, action_tags, use_records);
-  diags = diagsConfig->diags;
+  diagsConfig            = new DiagsConfig(logfile, error_tags, action_tags, use_records);
+  diags                  = diagsConfig->diags;
   // set stdin/stdout to be unbuffered
   //
   setbuf(stdin, NULL);

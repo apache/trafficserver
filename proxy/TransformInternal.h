@@ -24,15 +24,12 @@
 #ifndef __TRANSFORM_INTERNAL_H__
 #define __TRANSFORM_INTERNAL_H__
 
-
 #include "HttpSM.h"
 #include "MIME.h"
 #include "Transform.h"
 #include "P_EventSystem.h"
 
-
 class TransformVConnection;
-
 
 class TransformTerminus : public VConnection
 {
@@ -57,7 +54,6 @@ public:
   volatile int m_closed;
   int m_called_user;
 };
-
 
 class TransformVConnection : public TransformVCChain
 {
@@ -86,7 +82,6 @@ public:
   volatile int m_closed;
 };
 
-
 class TransformControl : public Continuation
 {
 public:
@@ -101,7 +96,6 @@ public:
   MIOBuffer *m_write_buf;
 };
 
-
 class NullTransform : public INKVConnInternal
 {
 public:
@@ -115,7 +109,6 @@ public:
   IOBufferReader *m_output_reader;
   VIO *m_output_vio;
 };
-
 
 class RangeTransform : public INKVConnInternal
 {
@@ -136,7 +129,6 @@ public:
 public:
   MIOBuffer *m_output_buf;
   IOBufferReader *m_output_reader;
-
 
   // MIMEField *m_range_field;
   HTTPHdr *m_transform_resp;

@@ -16,7 +16,7 @@
 
 .. include:: ../../../common.defs
 
-.. defualt-domain:: c
+.. default-domain:: c
 
 TSConfigGet
 ***********

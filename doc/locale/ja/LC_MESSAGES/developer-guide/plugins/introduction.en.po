@@ -1,0 +1,515 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-03 16:30+0900\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../developer-guide/plugins/introduction.en.rst:272
+msgid "**Blacklist Plugin**"
+msgstr "**ブラックリストプラグイン**"
+
+#: ../../developer-guide/plugins/introduction.en.rst:55
+msgid "**HTTP header manipulation functions**"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:60
+msgid "**HTTP transaction functions**"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:66
+msgid "**IO functions**"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:71
+msgid "**Network connection functions**"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:229
+msgid "**Simplified HTTP Transaction**"
+msgstr "**簡略化された HTTP トランザクション**"
+
+#: ../../developer-guide/plugins/introduction.en.rst:75
+msgid "**Statistics functions**"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:151
+msgid "**Traffic Server Internals**"
+msgstr "**Traffic Server の内部構造**"
+
+#: ../../developer-guide/plugins/introduction.en.rst:79
+msgid "**Traffic Server management functions**"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:165
+msgid "**Traffic Server with Plugins**"
+msgstr "**プラグインと Traffic Server**"
+
+#: ../../developer-guide/plugins/introduction.en.rst:301
+msgid ""
+"*Header manipulation plugins*, such as filtering, basic authorization, or "
+"redirects, usually have a global hook to the DNS lookup or the read request "
+"header states. If specific actions need to be done to the transaction "
+"further on, then the plugin adds itself to a transaction hook. "
+"*Transformation plugins* require a global hook to check all transactions "
+"for transformability followed by a *transform hook*, which is a type of "
+"transaction hook used specifically for transforms."
+msgstr ""
+"フィルタリング、ベーシック認証、リダイレクトを行うような *ヘッダー操作プラグ"
+"イン* は通常 DNS ルックアップやリクエストヘッダの読込みの状態へのグローバル"
+"フックを持ちます。この先トランザクションに対して特定のアクションが実行される"
+"必要がある場合、プラグインは自身をトランザクションフックに追加します。 *トラ"
+"ンスフォームプラグイン* は全トランザクションが、変換のために特別に使用される"
+"トランザクションフックのタイプである *トランスフォームフック* により変換可能"
+"か確認するために、グローバルフックを必要とします。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:42
+msgid ""
+"A :ref:`developer-plugins-roadmap` with an overview of the functionality "
+"provided by the Traffic Server API."
+msgstr ""
+"Traffic Server API により提供される機能の概要を伴う :ref:`developer-plugins-"
+"roadmap`"
+
+#: ../../developer-guide/plugins/introduction.en.rst:174
+msgid ""
+"A plugin may consist of just one static continuation that is called "
+"whenever certain events happen. Examples of such plugins include "
+"``blacklist-1.c``, ``basic-auth.c``, and ``redirect-1.c``. Alternatively, a "
+"plugin might dynamically create other continuations as needed. Transform "
+"plugins are built in this manner: a static parent continuation checks all "
+"transactions to see if any are transformable; when a transaction is "
+"transformable, the static continuation creates a type of continuation "
+"called a **vconnection**. The vconnection lives as long as it takes to "
+"complete the transform and then destroys itself. This design can be seen in "
+"all of the sample transform plugins. Plugins that support new protocols "
+"also have this architecture: a static continuation listens for incoming "
+"client connections and then creates transaction state machines to handle "
+"each protocol transaction."
+msgstr ""
+"プラグインは特定のイベントが発生する度に毎回呼び出される、たった一つの静的な"
+"継続から成立する可能性があります。このようなプラグインの例として "
+"``blacklist-1.c``、 ``basic-auth.c`` そして ``redirect-1.c`` があります。あ"
+"るいは、プラグインは必要に応じ他の継続を動的に作成する可能性があります。トラ"
+"ンスフォームプラグインはこの方法で作られています。静的な親継続は全トランザク"
+"ションが変換可能でないか確認するためにチェックを行い、トランザクションが変換"
+"可能な際は静的な継続は **vconnection** と呼ばれる継続の型を作成します。 "
+"vconnection は変換が完了するまで生存し続け、その後破棄されます。この設計は全"
+"てのサンプルのトランスフォームプラグインに見られます。新しいプロトコルのサ"
+"ポートを行うプラグインも、このアーキテクチャを持ちます。静的な継続はやって来"
+"るクライアントコネクションを listen し、その後各プロトコルのトランザクション"
+"を処理するため、トランザクションステートマシンを作成します。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:112
+msgid "Asynchronous Event Model"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:84
+msgid "Below are some guidelines for creating a plugin:"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:255
+msgid "**API Hooks Corresponding to States**"
+msgstr "**API フックと状態の関係**"
+
+#: ../../developer-guide/plugins/introduction.en.rst:86
+msgid ""
+"Decide what you want your plugin to do, based on the capabilities of the "
+"API and |TS|. The two kinds of example plugins provided with this SDK are "
+"HTTP-based (includes header-based and response transform plugins), and non-"
+"HTTP-based (a protocol plugin). These examples are discussed in the "
+"following chapters."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:77
+msgid "Define and compute statistics for your plugin's activity."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:100
+msgid ""
+"Figure out what parts of the Traffic Server API you need to use and then "
+"read about the details of those APIs in this manual's reference chapters."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:62
+msgid ""
+"Get information about and modify HTTP transactions (for example: get the "
+"client IP associated to the transaction; get the server IP; get parent "
+"proxy information)"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:39
+msgid ""
+"How plugins can hook onto and modify/extend Traffic Server's HTTP "
+"processing."
+msgstr ""
+"プラグインがフックを入れて、 Traffic Server の HTTP 処理を変更 / 拡張する方"
+"法"
+
+#: ../../developer-guide/plugins/introduction.en.rst:68
+msgid ""
+"Manipulate vconnections (virtual connections, used for network and disk I/O)"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:57
+msgid ""
+"Obtain information about and manipulate HTTP headers, URLs, & MIME headers."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:262
+msgid "API Hooks Corresponding to States Listed in"
+msgstr "リストの状態に対応した API フック"
+
+#: ../../developer-guide/plugins/introduction.en.rst:221
+msgid ""
+"An HTTP transaction consists of a client request for a web document and "
+"Traffic Server's response. The response could be the requested web server "
+"content or it could be an error message. The content could come from the "
+"Traffic Server cache or Traffic Server might fetch it from the origin "
+"server. The following diagram shows some states in a typical transaction - "
+"specifically, the scenario wherein content is served from cache."
+msgstr ""
+"HTTP トランザクションはウェブドキュメントに対するクライアントリクエストと "
+"Traffic Server のレスポンスから成立します。レスポンスは要求されたウェブサー"
+"バーのコンテンツになるかも知れないし、エラーメッセージになるかも知れません。"
+"コンテンツは Traffic Server のキャッシュから配信されるかも知れませんし "
+"Traffic Server がオリジンサーバーから取得するであろうものから配信されるかも"
+"知れません。以下の図は典型的なトランザクション、特にコンテンツがキャッシュか"
+"ら配信される際のシナリオにおける幾つかの状態を示したものです。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:104
+msgid ""
+"Compile and load your plugin (see :ref:`developer-plugins-getting-started`."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:139
+msgid ""
+"Continuation objects are used throughout Traffic Server. Some might live "
+"for the duration of the Traffic Server process, while others are created "
+"(perhaps by other continuations) for specific needs and then destroyed. :"
+"ref:`TSInternals` (below) shows how the major components of Traffic Server "
+"interact. Traffic Server has several **processors**, such as *cache "
+"processor* and *net processor*, that consolidate cache or network I/O "
+"tasks. Processors talk to the event system and schedule work on threads. An "
+"executing thread calls back a continuation by sending it an event. When a "
+"continuation receives an event, it wakes up, does some work, and either "
+"destroys itself or goes back to sleep & waits for the next event."
+msgstr ""
+"継続オブジェクトは Traffic Server 全体で使用されます。その幾つかは Traffic "
+"Server プロセスが実行中ずっと生存する可能性がありますが、他のものは特定の要"
+"求に合わせて（おそらくは他の継続によって）生成され、その後破棄されます。 :"
+"ref:`TSInternals` （下記）は Traffic Server の主要なコンポーネントがどのよう"
+"に影響し合うのかを示しています。 Traffic Server は、キャッシュやネットワー"
+"ク I/O タスクを統合する *キャッシュプロセッサー* と *ネットプロセッサー* の"
+"ような幾つかの **プロセッサー** を持ちます。プロセッサーはイベントシステムと"
+"対話し、スレッド上の作業をスケジュールします。実行スレッドは継続にイベントを"
+"送信することで継続をコールバックします。継続がイベントを受信した際、起動し、"
+"幾つかの処理を行い、自身を破棄するか再び眠り次のイベントを待ちます。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:106
+msgid ""
+"Depending on your plugin's functionality, you might start testing it by "
+"issuing requests by hand and checking for the desired behavior in Traffic "
+"Server log files. See the ***Traffic Server Administrator's Guide*** for "
+"information about Traffic Server logs."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:31
+msgid ""
+"The asynchronous event mode. This is the design paradigm used throughout "
+"Traffic Server; plugins must also follow this design. It includes the "
+"callback mechanism for Traffic Server to \"wake up\" your plugin and put it "
+"to work."
+msgstr ""
+"非同期イベントモード。 Traffic Server 全体で用いられる設計パラダイムです。プ"
+"ラグインもこの設計に従っていなければなりません。これは Traffic Server がプラ"
+"グインを \"起こして\" 処理を実行するコールバックメカニズムを含みます。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:28
+msgid ""
+"This chapter provides a foundation for designing and writing plugins. "
+"Reading this chapter will help you to understand:"
+msgstr ""
+"この章ではプラグインの設計と書き方の基礎について説明します。この章を読むこと"
+"は下記の理解の手助けになるでしょう。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:279
+msgid "Blacklist Plugin"
+msgstr "ブラックリストプラグイン"
+
+#: ../../developer-guide/plugins/introduction.en.rst:92
+msgid ""
+"Determine where your plugin needs to hook on to Traffic Server's HTTP "
+"processing (view the :ref:`http-txn-state-diagram`."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:219
+msgid "HTTP Transaction"
+msgstr "HTTP トランザクション"
+
+#: ../../developer-guide/plugins/introduction.en.rst:245
+msgid ""
+"If the content is fresh, then Traffic Server sends a reply header to the "
+"client. If the content is stale, then Traffic Server opens a connection to "
+"the origin server and requests the content. The figure above, :ref:"
+"`SimplifiedHTTPTransaction`, does not show behavior in the event of an "
+"error. If there is an error at a any stage, then the HTTP state machine "
+"jumps to the \"send reply header\" state and sends a reply. If the reply is "
+"an error, then the transaction closes. If the reply is not an error, then "
+"Traffic Server first sends the response content before it closes the "
+"transaction."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:130
+msgid ""
+"Instead, Traffic Server provides special event-driven mechanisms for "
+"efficiently scheduling work: the event system and continuations. The "
+"**event system** is used to schedule work to be done on threads. A "
+"**continuation** is a passive, event-driven state machine that can do some "
+"work until it reaches a waiting point; it then sleeps until it receives "
+"notification that conditions are right for doing more work. For example, "
+"HTTP state machines (which handle HTTP transactions) are implemented as "
+"continuations."
+msgstr ""
+"代わりに、効率的な処理のスケジューリングのために Traffic Server は特殊なイベ"
+"ント駆動メカニズム、イベントシステムと継続を提供します。 **イベントシステム"
+"** はスレッド上で行われる処理のスケジューリングに使用されます。 **継続** は"
+"待機点に到達するまで幾つかの処理を実行可能な、受動的なイベント駆動ステートマ"
+"シンです。これは更なる処理を行うのに適した状態の通知を受け取るまでスリープし"
+"ます。例として、 HTTP ステートマシン（ HTTP トランザクションを処理するもの）"
+"は継続として実装されます。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:197
+msgid "Naming Conventions"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:81
+msgid ""
+"Obtain values for Traffic Server configuration and statistics variables."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:73
+msgid "Open connections to remote servers."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:238
+msgid ""
+"In the diagram above, Traffic Server accepts the client connection, reads "
+"the request headers, looks up the origin server's IP address, and looks for "
+"the requested content in the cache. If the content is not in the cache (a "
+"\"miss\"), then Traffic Server opens a connection to the origin server and "
+"issues a request for the content. If the content is in the cache (a \"hit"
+"\"), then Traffic Server checks it for freshness."
+msgstr ""
+"上の図において、 Traffic Server はクライアントコネクションを accept し、リク"
+"エストヘッダーを読込み、オリジンサーバの IP アドレスをルックアップし、キャッ"
+"シュ上でリクエストされたコンテンツを検索します。キャッシュにコンテンツがない"
+"場合（ \"ミス\" ）、 Traffic Server はオリジンサーバへのコネクションを open "
+"し、コンテンツのリクエストを発行します。キャッシュにコンテンツがある場合"
+"（ \"ヒット\" ）、 Traffic Server はフレッシュネスをチェックします。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:23
+msgid "Plugin Development Introduction"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:160
+msgid ""
+"Plugins are typically implemented as continuations. All of the sample code "
+"plugins (except ``hello-world``) are continuations that are created when "
+"Traffic Server starts up; they then wait for events that trigger them into "
+"activity."
+msgstr ""
+"プラグインは一般的に継続として実装されます。（ ``hello-world`` を除く）プラ"
+"グインのサンプルコードの全ては Traffic Server 起動時に作成される継続です。そ"
+"れらはその後、活動するきっかけとなるイベントを待ちます。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:95
+msgid ""
+"Read :ref:`developer-plugins-header-based-examples` to learn the basics of "
+"writing plugins: creating continuations and setting up hooks. If you want "
+"to write a plugin that transforms data, then read :ref:`developer-plugins-"
+"http-transformations`."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:292
+msgid ""
+"The Blacklist plugin's hook to the origin server DNS lookup state is a "
+"*global hook*, meaning that the plugin is called every time there's an HTTP "
+"transaction with a DNS lookup event. The plugin's hook to the send reply "
+"header state is a *transaction hook*, meaning that this hook is only "
+"invoked for specified transactions (in the :ref:`developer-plugins-examples-"
+"blacklist` example, it's only used for requests to blacklisted servers). "
+"Several examples of setting up hooks are provided in :ref:`developer-"
+"plugins-header-based-examples` and :ref:`developer-plugins-http-"
+"transformations`."
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:50
+msgid ""
+"This chapter has provided an overview of Traffic Server's HTTP processing, "
+"API hooks, and the asynchronous event model. Next, you must understand the "
+"capabilities of Traffic Server API functions. These are quite broad:"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:120
+msgid ""
+"To manage concurrency from having many simultaneous client connections. For "
+"example, a server could create one thread for each connection, allowing the "
+"operating system (OS) to control switching between threads."
+msgstr ""
+"同時に大量のクライアントコネクションを持つことによる平行性を管理するため。例"
+"として、OS にスレッドの切り替えを制御させることでコネクション毎に一つのス"
+"レッドを作成できます。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:48
+msgid "Roadmap"
+msgstr ""
+
+#: ../../developer-guide/plugins/introduction.en.rst:236
+msgid "Simplified HTTP Transaction"
+msgstr "簡略化された HTTP トランザクション"
+
+#: ../../developer-guide/plugins/introduction.en.rst:213
+msgid ""
+"The example in this section (below) explains how a plugin typically "
+"intervenes and extends Traffic Server's processing of an HTTP transaction. "
+"Complete details about hooking on to Traffic Server processes are provided "
+"in :ref:`developer-plugins-hooks-and-transactions`."
+msgstr ""
+"この節（の下）の例ではプラグインの典型的な介入と Traffic Server の HTTP トラ"
+"ンザクション処理の拡張方法について説明します。 Traffic Server の処理へのフッ"
+"クに関する完全な詳細は :ref:`developer-plugins-hooks-and-transactions` にあ"
+"ります。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:117
+msgid ""
+"To take advantage of the concurrency available with multiple CPUs and "
+"multiple I/O devices."
+msgstr "複数 CPU と複数 I/O デバイスが使用可能な平行性の利点を得るため"
+
+#: ../../developer-guide/plugins/introduction.en.rst:200
+msgid "Traffic Server HTTP State Machine"
+msgstr "Traffic Server HTTP ステートマシン"
+
+#: ../../developer-guide/plugins/introduction.en.rst:158
+msgid "Traffic Server Internals"
+msgstr "Traffic Server 内部構造"
+
+#: ../../developer-guide/plugins/introduction.en.rst:114
+msgid ""
+"Traffic Server is a multi-threaded process. There are two main reasons why "
+"a server might use multiple threads:"
+msgstr ""
+"Traffic Server はマルチスレッドで動作するプロセスです。サーバがマルチスレッ"
+"ドを使用する主な理由は二つあります。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:281
+msgid ""
+"Traffic Server calls the Blacklist plugin right after the origin server DNS "
+"lookup. The plugin checks the requested host against a list of blacklisted "
+"servers; if the request is allowed, then the transaction proceeds. If the "
+"host is forbidden, then the Blacklist plugin sends the transaction into an "
+"error state. When the HTTP state machine gets to the \"send reply header\" "
+"state, it then calls the Blacklist plugin to provide the error message "
+"that's sent to the client."
+msgstr ""
+"Traffic Server はオリジンサーバの DNS ルックアップの直後にブラックリストプラ"
+"グインを呼び出します。このプラグインはリクエストされたホストをブラックリスト"
+"に載ったサーバのリストと照合します。リクエストが許可される場合、トランザク"
+"ションは進みます。ホストが許可されない場合、ブラックリストプラグインはトラン"
+"ザクションをエラー状態に送ります。 HTTP ステートマシンが \"send reply header"
+"\" 状態を取得した際、ブラックリストプラグインはクライアントへ送信するエラー"
+"メッセージを提供する為に呼び出します。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:202
+msgid ""
+"Traffic Server performs sophisticated HTTP caching and proxying. Important "
+"features include checking for alternates and document freshness, filtering, "
+"supporting cache hierarchies, and hosting. Traffic Server handles thousands "
+"of client requests at a time and each request is handled by an HTTP state "
+"machine. These machines follow a complex state diagram that includes all of "
+"the states required to support Traffic Server's features. The Traffic "
+"Server API provides hooks to a subset of these states, chosen for their "
+"relevance to plugins. You can view the API hooks and corresponding HTTP "
+"states in the :ref:`http-txn-state-diagram`."
+msgstr ""
+"Traffic Server は高度な HTTP キャッシュとプロキシを行います。重要な特徴とし"
+"てオルタネイトとドキュメントのフレッシュネスのチェック、フィルタリング、階層"
+"的キャッシュのサポート、そしてホスティングを含みます。 Traffic Server は同時"
+"に数千のクライアントリクエストを処理し、各リクエストは HTTP ステートマシンに"
+"より処理されます。これらのマシンは Traffic Server の機能をサポートするために"
+"要求される状態の全てを含む、複雑な状態遷移図に従います。 Traffic Server API "
+"は、プラグインとの関連を選択されたこれらの状態のサブセットへのフックを提供し"
+"ます。 :ref:`http-txn-state-diagram` でAPI フックと関係する HTTP 状態が見ら"
+"れます。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:125
+msgid ""
+"Traffic Server uses multiple threads for the first reason. However, Traffic "
+"Server does not use a separate OS thread per transaction because it would "
+"not be efficient when handling thousands of simultaneous connections."
+msgstr ""
+"Traffic Server は最初の理由の為に複数スレッドを使用します。しかしながら数千"
+"の同時コネクションを処理する際に効率が悪くなるため、 Traffic Server はトラン"
+"ザクション処理毎の OS スレッドの分離を行いません。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:172
+msgid "Traffic Server with Plugins"
+msgstr "プラグインと Traffic Server"
+
+#: ../../developer-guide/plugins/introduction.en.rst:36
+msgid ""
+"Traffic Server's HTTP processing, with an overview of the HTTP state "
+"machine."
+msgstr "HTTP ステートマシンの概要を伴う Traffic Server の HTTP 処理"
+
+#: ../../developer-guide/plugins/introduction.en.rst:290
+msgid "Types of Hooks"
+msgstr "フックのタイプ"
+
+#: ../../developer-guide/plugins/introduction.en.rst:188
+msgid ""
+"When you write plugins, there are several ways to send events to "
+"continuations. For HTTP plugins, there is a \"hook\" mechanism that enables "
+"the Traffic Server HTTP state machine to send your plugin wakeup calls when "
+"needed. Additionally, several Traffic Server API functions trigger Traffic "
+"Server sub-processes to send events to plugins: ``TSContCall``, "
+"``TSVConnRead``, ``TSCacheWrite``, and ``TSMgmtUpdateRegister``, to name a "
+"few."
+msgstr ""
+"プラグインを書く際、継続にイベントを送信する方法は幾つか存在します。 HTTP プ"
+"ラグインについては、 HTTP ステートマシンが必要に応じてプラグインを起こす呼び"
+"出しを送信することを可能にする \"フック\" のメカニズムが存在します。加えて、"
+"幾つかの Traffic Server API 関数、 ``TSContCall``、 ``TSVConnRead``、 "
+"``TSCacheWrite`` そして ``TSMgmtUpdateRegister`` は Traffic Server サブプロ"
+"セスがプラグインにイベントを送信するきっかけとなります。"
+
+#: ../../developer-guide/plugins/introduction.en.rst:264
+msgid ""
+"You use hooks as triggers to start your plugin. The name of a hook reflects "
+"the Traffic Server state that was *just completed*. For example, the \"OS "
+"DNS lookup\" hook wakes up a plugin right *after* the origin server DNS "
+"lookup. For a plugin that requires the IP address of the requested origin "
+"server, this hook is the right one to use. The Blacklist plugin works in "
+"this manner, as shown in the :ref:`BlackListPlugin` diagram below."
+msgstr ""
+"プラグインを開始するトリガーとしてフックを使用できます。フックの名前はちょう"
+"ど完了した Traffic Server 状態を示します。例えば、 \"OS DNS lookup\" フック"
+"はオリジンサーバの DNS ルックアップの直 *後* にプラグインが動作します。 リク"
+"エストされたオリジンサーバの IP アドレスを要求するプラグインのため、このフッ"
+"クは使用するのが正しいです。ブラックリストプラグインは下図の :ref:"
+"`BlackListPlugin` で示す通り、この方法で動作します。"

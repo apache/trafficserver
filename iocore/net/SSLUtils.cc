@@ -92,8 +92,10 @@ typedef SSL_METHOD *ink_ssl_method_t;
 
 // gather user provided settings from ssl_multicert.config in to a single struct
 struct ssl_user_config {
-  ssl_user_config() : session_ticket_enabled(1), opt(SSLCertContext::OPT_NONE) {}
-
+  ssl_user_config() : opt(SSLCertContext::OPT_NONE)
+  {
+    REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
+  }
   int session_ticket_enabled; // ssl_ticket_enabled - session ticket enabled
   ats_scoped_str addr;        // dest_ip - IPv[64] address to match
   ats_scoped_str cert;        // ssl_cert_name - certificate
@@ -121,11 +123,10 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 static int ssl_session_ticket_index = -1;
 #endif
 
-
-static ink_mutex *mutex_buf = NULL;
+static ink_mutex *mutex_buf      = NULL;
 static bool open_ssl_initialized = false;
 
-RecRawStatBlock *ssl_rsb = NULL;
+RecRawStatBlock *ssl_rsb                   = NULL;
 static InkHashTable *ssl_cipher_name_table = NULL;
 
 /* Using pthread thread ID and mutex functions directly, instead of
@@ -133,12 +134,18 @@ static InkHashTable *ssl_cipher_name_table = NULL;
  * may use pthreads and openssl without confusing us here. (TS-2271).
  */
 
+// Only define this function if the version of openssl really has a
+// CRYPTO_THREADID_set_callback function.  openssl 1.1.0 defines it to 0
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void
 SSL_pthreads_thread_id(CRYPTO_THREADID *id)
 {
   CRYPTO_THREADID_set_numeric(id, (unsigned long)pthread_self());
 }
+#endif
 
+// The locking callback goes away with openssl 1.1 and CRYPTO_LOCK is on longer defined
+#ifdef CRYPTO_LOCK
 static void
 SSL_locking_callback(int mode, int type, const char *file, int line)
 {
@@ -161,30 +168,40 @@ SSL_locking_callback(int mode, int type, const char *file, int line)
     ink_assert(0);
   }
 }
-
+#endif
 
 static bool
-SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
+SSL_CTX_add_extra_chain_cert_bio(SSL_CTX *ctx, BIO *bio)
 {
   X509 *cert;
-  scoped_BIO bio(BIO_new_file(chainfile, "r"));
 
   for (;;) {
-    cert = PEM_read_bio_X509_AUX(bio.get(), NULL, NULL, NULL);
+    cert = PEM_read_bio_X509_AUX(bio, NULL, NULL, NULL);
 
     if (!cert) {
       // No more the certificates in this file.
       break;
     }
 
-    // This transfers ownership of the cert (X509) to the SSL context, if successful.
+// This transfers ownership of the cert (X509) to the SSL context, if successful.
+#ifdef SSL_CTX_add0_chain_cert
+    if (!SSL_CTX_add0_chain_cert(ctx, cert)) {
+#else
     if (!SSL_CTX_add_extra_chain_cert(ctx, cert)) {
+#endif
       X509_free(cert);
       return false;
     }
   }
 
   return true;
+}
+
+static bool
+SSL_CTX_add_extra_chain_cert_file(SSL_CTX *ctx, const char *chainfile)
+{
+  scoped_BIO bio(BIO_new_file(chainfile, "r"));
+  return SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 }
 
 bool
@@ -196,7 +213,11 @@ ssl_session_timed_out(SSL_SESSION *session)
 static void ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess);
 
 static SSL_SESSION *
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+ssl_get_cached_session(SSL *ssl, const unsigned char *id, int len, int *copy)
+#else
 ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
+#endif
 {
   SSLSessionID sid(id, len);
 
@@ -235,7 +256,7 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
 static int
 ssl_new_cached_session(SSL *ssl, SSL_SESSION *sess)
 {
-  unsigned int len = 0;
+  unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
 
@@ -257,7 +278,7 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 {
   SSL_CTX_remove_session(ctx, sess);
 
-  unsigned int len = 0;
+  unsigned int len        = 0;
   const unsigned char *id = SSL_SESSION_get_id(sess, &len);
   SSLSessionID sid(id, len);
 
@@ -274,13 +295,13 @@ ssl_rm_cached_session(SSL_CTX *ctx, SSL_SESSION *sess)
 int
 set_context_cert(SSL *ssl)
 {
-  SSL_CTX *ctx = NULL;
+  SSL_CTX *ctx       = NULL;
   SSLCertContext *cc = NULL;
   SSLCertificateConfig::scoped_config lookup;
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
-  bool found = true;
-  int retval = 1;
+  bool found               = true;
+  int retval               = 1;
 
   Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername, netvc->getSSLHandShakeComplete());
   // set SSL trace (we do this a little later in the USE_TLS_SNI case so we can get the servername
@@ -429,9 +450,10 @@ done:
 #endif
 #endif /* TS_USE_TLS_SNI */
 
+#if TS_USE_GET_DH_2048_256 == 0
 /* Build 2048-bit MODP Group with 256-bit Prime Order Subgroup from RFC 5114 */
 static DH *
-get_dh2048()
+DH_get_2048_256()
 {
   static const unsigned char dh2048_p[] = {
     0x87, 0xA8, 0xE6, 0x1D, 0xB4, 0xB6, 0x66, 0x3C, 0xFF, 0xBB, 0xD1, 0x9C, 0x65, 0x19, 0x59, 0x99, 0x8C, 0xEE, 0xF6, 0x08,
@@ -473,6 +495,7 @@ get_dh2048()
   }
   return (dh);
 }
+#endif
 
 static SSL_CTX *
 ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
@@ -483,7 +506,7 @@ ssl_context_enable_dhe(const char *dhparams_file, SSL_CTX *ctx)
     scoped_BIO bio(BIO_new_file(dhparams_file, "r"));
     server_dh = PEM_read_bio_DHparams(bio.get(), NULL, NULL, NULL);
   } else {
-    server_dh = get_dh2048();
+    server_dh = DH_get_2048_256();
   }
 
   if (!server_dh) {
@@ -539,9 +562,9 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
     }
   } else {
     // Generate a random ticket key
-    ticket_key_len = 48;
+    ticket_key_len  = 48;
     ticket_key_data = (char *)ats_malloc(ticket_key_len);
-    char *tmp_ptr = ticket_key_data;
+    char *tmp_ptr   = ticket_key_data;
     RAND_bytes(reinterpret_cast<unsigned char *>(tmp_ptr), ticket_key_len);
   }
 
@@ -653,7 +676,7 @@ ssl_getpassword(const char *prompt, char *buffer, int size)
     return -1;
   }
 
-  int i = 0;
+  int i  = 0;
   int ch = 0;
 
   *buffer = 0;
@@ -663,7 +686,7 @@ ssl_getpassword(const char *prompt, char *buffer, int size)
       return -1;
     }
 
-    buffer[i] = ch;
+    buffer[i]   = ch;
     buffer[++i] = 0;
   }
 
@@ -677,7 +700,7 @@ ssl_private_key_passphrase_callback_exec(char *buf, int size, int rwflag, void *
     return 0;
   }
 
-  *buf = 0;
+  *buf                       = 0;
   passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
 
   Debug("ssl", "ssl_private_key_passphrase_callback_exec rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
@@ -711,7 +734,7 @@ ssl_private_key_passphrase_callback_builtin(char *buf, int size, int rwflag, voi
     return 0;
   }
 
-  *buf = 0;
+  *buf                       = 0;
   passphrase_cb_userdata *ud = static_cast<passphrase_cb_userdata *>(userdata);
 
   Debug("ssl", "ssl_private_key_passphrase_callback rwflag=%d serverDialog=%s", rwflag, ud->_serverDialog);
@@ -744,9 +767,9 @@ ssl_private_key_validate_exec(const char *cmdLine)
     return false;
   }
 
-  bool bReturn = false;
+  bool bReturn      = false;
   char *cmdLineCopy = ats_strdup(cmdLine);
-  char *ptr = cmdLineCopy;
+  char *ptr         = cmdLineCopy;
 
   while (*ptr && !isspace(*ptr))
     ++ptr;
@@ -766,8 +789,8 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   SSLCertificateConfig::scoped_config certLookup;
 
   int64_t sessions = 0;
-  int64_t hits = 0;
-  int64_t misses = 0;
+  int64_t hits     = 0;
+  int64_t misses   = 0;
   int64_t timeouts = 0;
 
   if (certLookup) {
@@ -789,12 +812,84 @@ SSLRecRawStatSyncCount(const char *name, RecDataT data_type, RecData *data, RecR
   SSL_SET_COUNT_DYN_STAT(ssl_user_agent_session_timeout_stat, timeouts);
   return RecRawStatSyncCount(name, data_type, data, rsb, id);
 }
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void *
+ssl_malloc(size_t size, const char * /*filename */, int /*lineno*/)
+#else
+void *
+ssl_malloc(size_t size)
+#endif
+{
+  return ats_malloc(size);
+}
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void *
+ssl_realloc(void *ptr, size_t size, const char * /*filename*/, int /*lineno*/)
+#else
+void *
+ssl_realloc(void *ptr, size_t size)
+#endif
+{
+  return ats_realloc(ptr, size);
+}
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void
+ssl_free(void *ptr, const char * /*filename*/, int /*lineno*/)
+#else
+void
+ssl_free(void *ptr)
+#endif
+{
+  ats_free(ptr);
+}
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void *
+ssl_track_malloc(size_t size, const char * /*filename*/, int /*lineno*/)
+#else
+void *
+ssl_track_malloc(size_t size)
+#endif
+{
+  return ats_track_malloc(size, &ssl_memory_allocated);
+}
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void *
+ssl_track_realloc(void *ptr, size_t size, const char * /*filename*/, int /*lineno*/)
+#else
+void *
+ssl_track_realloc(void *ptr, size_t size)
+#endif
+{
+  return ats_track_realloc(ptr, size, &ssl_memory_allocated, &ssl_memory_freed);
+}
+
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+void
+ssl_track_free(void *ptr, const char * /*filename*/, int /*lineno*/)
+#else
+void
+ssl_track_free(void *ptr)
+#endif
+{
+  ats_track_free(ptr, &ssl_memory_freed);
+}
 
 void
 SSLInitializeLibrary()
 {
   if (!open_ssl_initialized) {
-    CRYPTO_set_mem_functions(ats_malloc, ats_realloc, ats_free);
+// BoringSSL does not have the memory functions
+#ifndef OPENSSL_IS_BORINGSSL
+    if (res_track_memory >= 2) {
+      CRYPTO_set_mem_functions(ssl_track_malloc, ssl_track_realloc, ssl_track_free);
+    } else {
+      CRYPTO_set_mem_functions(ssl_malloc, ssl_realloc, ssl_free);
+    }
+#endif
 
     SSL_load_error_strings();
     SSL_library_init();
@@ -846,118 +941,118 @@ SSLInitializeStatistics()
   ink_assert(ssl_rsb != NULL);
 
   // SSL client errors.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_other_errors", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_other_errors", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_other_errors_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_expired_cert", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_expired_cert", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_expired_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_revoked_cert", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_revoked_cert", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_revoked_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_cert", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_cert", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_unknown_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_cert_verify_failed", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_cert_verify_failed", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_cert_verify_failed_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_bad_cert", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_bad_cert", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_bad_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_decryption_failed", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_decryption_failed", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_decryption_failed_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_wrong_version", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_wrong_version", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_wrong_version_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_ca", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_unknown_ca", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_unknown_ca_stat, RecRawStatSyncSum);
 
   // Polled SSL context statistics.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_sessions", RECD_INT, RECP_NON_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_sessions", RECD_COUNTER, RECP_NON_PERSISTENT,
                      (int)ssl_user_agent_sessions_stat,
                      SSLRecRawStatSyncCount); //<- only use this fn once
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_hit", RECD_INT, RECP_NON_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_hit", RECD_COUNTER, RECP_NON_PERSISTENT,
                      (int)ssl_user_agent_session_hit_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_miss", RECD_INT, RECP_NON_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_miss", RECD_COUNTER, RECP_NON_PERSISTENT,
                      (int)ssl_user_agent_session_miss_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_timeout", RECD_INT, RECP_NON_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_session_timeout", RECD_COUNTER, RECP_NON_PERSISTENT,
                      (int)ssl_user_agent_session_timeout_stat, RecRawStatSyncCount);
 
   // SSL server errors.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_other_errors", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_other_errors", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_origin_server_other_errors_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_expired_cert", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_expired_cert", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_origin_server_expired_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_revoked_cert", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_revoked_cert", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_origin_server_revoked_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_cert", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_cert", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_origin_server_unknown_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_cert_verify_failed", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_cert_verify_failed", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_origin_server_cert_verify_failed_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_bad_cert", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_bad_cert", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_origin_server_bad_cert_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_decryption_failed", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_decryption_failed", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_origin_server_decryption_failed_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_wrong_version", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_wrong_version", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_origin_server_wrong_version_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_ca", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.origin_server_unknown_ca", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_origin_server_unknown_ca_stat, RecRawStatSyncSum);
 
   // SSL handshake time
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_handshake_time", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_handshake_time", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_handshake_time_stat, RecRawStatSyncSum);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_in", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_success_handshake_count_in_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_out", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_success_handshake_count_out", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_success_handshake_count_out_stat, RecRawStatSyncCount);
 
   // TLS tickets
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_created", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_created", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_tickets_created_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_verified", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_verified", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_tickets_verified_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_not_found", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_not_found", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_tickets_not_found_stat, RecRawStatSyncCount);
   // TODO: ticket renewal is not used right now.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_renewed", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_renewed", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_tickets_renewed_stat, RecRawStatSyncCount);
   // The number of session tickets verified with an "old" key.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_verified_old_key", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_tickets_verified_old_key", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_tickets_verified_old_key_stat, RecRawStatSyncCount);
   // The number of ticket keys renewed.
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_ticket_keys_renewed", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.total_ticket_keys_renewed", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_total_ticket_keys_renewed_stat, RecRawStatSyncCount);
 
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_hit", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_hit", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_hit, RecRawStatSyncCount);
 
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_new_session", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_new_session", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_new_session, RecRawStatSyncCount);
 
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_miss", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_miss", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_miss, RecRawStatSyncCount);
 
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_eviction", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_eviction", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_eviction, RecRawStatSyncCount);
 
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_lock_contention", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_session_cache_lock_contention", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_session_cache_lock_contention, RecRawStatSyncCount);
 
   /* error stats */
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_write", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_write", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_error_want_write, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_read", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_read", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_error_want_read, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_x509_lookup", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_want_x509_lookup", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_error_want_x509_lookup, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_syscall", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_syscall", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_error_syscall, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_read_eos", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_read_eos", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_error_read_eos, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_zero_return", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_zero_return", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_error_zero_return, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_ssl", RECD_INT, RECP_PERSISTENT, (int)ssl_error_ssl,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_error_ssl", RECD_COUNTER, RECP_PERSISTENT, (int)ssl_error_ssl,
                      RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_sni_name_set_failure", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_sni_name_set_failure", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_sni_name_set_failure, RecRawStatSyncCount);
 
   /* ocsp stapling stats */
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_revoked_cert_stat", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_revoked_cert_stat", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_ocsp_revoked_cert_stat, RecRawStatSyncCount);
-  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_unknown_cert_stat", RECD_INT, RECP_PERSISTENT,
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_unknown_cert_stat", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_ocsp_unknown_cert_stat, RecRawStatSyncCount);
 
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
@@ -968,14 +1063,15 @@ SSLInitializeStatistics()
   // initialize stat name->index hash table
   ssl_cipher_name_table = ink_hash_table_create(InkHashTableKeyType_Word);
 
-  ctx = SSLDefaultServerContext();
-  ssl = SSL_new(ctx);
+  ctx     = SSLDefaultServerContext();
+  ssl     = SSL_new(ctx);
   ciphers = SSL_get_ciphers(ssl);
 
-  for (int index = 0; index < sk_SSL_CIPHER_num(ciphers); index++) {
-    SSL_CIPHER *cipher = sk_SSL_CIPHER_value(ciphers, index);
+  // BoringSSL has sk_SSL_CIPHER_num() return a size_t (well, sk_num() is)
+  for (int index = 0; index < static_cast<int>(sk_SSL_CIPHER_num(ciphers)); index++) {
+    SSL_CIPHER *cipher     = const_cast<SSL_CIPHER *>(sk_SSL_CIPHER_value(ciphers, index));
     const char *cipherName = SSL_CIPHER_get_name(cipher);
-    std::string statName = "proxy.process.ssl.cipher.user_agent." + std::string(cipherName);
+    std::string statName   = "proxy.process.ssl.cipher.user_agent." + std::string(cipherName);
 
     // If room in allocated space ...
     if ((ssl_cipher_stats_start + index) > ssl_cipher_stats_end) {
@@ -996,7 +1092,7 @@ SSLInitializeStatistics()
   }
 
   SSL_free(ssl);
-  SSL_CTX_free(ctx);
+  SSLReleaseContext(ctx);
 }
 
 // return true if we have a stat for the error
@@ -1013,30 +1109,42 @@ increment_ssl_client_error(unsigned long err)
   // (we ignore FUNCTION with the prejudice that we don't care what function
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_expired_cert_stat);
     break;
+#endif
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_revoked_cert_stat);
     break;
+#endif
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_cert_stat);
     break;
+#endif
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_cert_verify_failed_stat);
     break;
+#ifdef SSL_R_SSLV3_ALERT_BAD_CERTIFICATE
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_bad_cert_stat);
     break;
+#endif
+#ifdef SSL_R_TLSV1_ALERT_DECRYPTION_FAILED
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_decryption_failed_stat);
     break;
+#endif
   case SSL_R_WRONG_VERSION_NUMBER:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_wrong_version_stat);
     break;
+#ifdef SSL_R_TLSV1_ALERT_UNKNOWN_CA
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_unknown_ca_stat);
     break;
+#endif
   default:
     SSL_INCREMENT_DYN_STAT(ssl_user_agent_other_errors_stat);
     return false;
@@ -1060,30 +1168,42 @@ increment_ssl_server_error(unsigned long err)
   // (we ignore FUNCTION with the prejudice that we don't care what function
   // the error came from, hope that's ok?)
   switch (ERR_GET_REASON(err)) {
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_EXPIRED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_expired_cert_stat);
     break;
+#endif
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED
   case SSL_R_SSLV3_ALERT_CERTIFICATE_REVOKED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_revoked_cert_stat);
     break;
+#endif
+#ifdef SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN
   case SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_cert_stat);
     break;
+#endif
   case SSL_R_CERTIFICATE_VERIFY_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_cert_verify_failed_stat);
     break;
+#ifdef SSL_R_SSLV3_ALERT_BAD_CERTIFICATE
   case SSL_R_SSLV3_ALERT_BAD_CERTIFICATE:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_bad_cert_stat);
     break;
+#endif
+#ifdef SSL_R_TLSV1_ALERT_DECRYPTION_FAILED
   case SSL_R_TLSV1_ALERT_DECRYPTION_FAILED:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_decryption_failed_stat);
     break;
+#endif
   case SSL_R_WRONG_VERSION_NUMBER:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_wrong_version_stat);
     break;
+#ifdef SSL_R_TLSV1_ALERT_UNKNOWN_CA
   case SSL_R_TLSV1_ALERT_UNKNOWN_CA:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_unknown_ca_stat);
     break;
+#endif
   default:
     SSL_INCREMENT_DYN_STAT(ssl_origin_server_other_errors_stat);
     return false;
@@ -1093,7 +1213,7 @@ increment_ssl_server_error(unsigned long err)
 }
 
 void
-SSLDiagnostic(const SrcLoc &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...)
+SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...)
 {
   unsigned long l;
   char buf[256];
@@ -1145,9 +1265,9 @@ SSLDiagnostic(const SrcLoc &loc, bool debug, SSLNetVConnection *vc, const char *
 const char *
 SSLErrorName(int ssl_error)
 {
-  static const char *names[] = {"SSL_ERROR_NONE", "SSL_ERROR_SSL", "SSL_ERROR_WANT_READ", "SSL_ERROR_WANT_WRITE",
-                                "SSL_ERROR_WANT_X509_LOOKUP", "SSL_ERROR_SYSCALL", "SSL_ERROR_ZERO_RETURN",
-                                "SSL_ERROR_WANT_CONNECT", "SSL_ERROR_WANT_ACCEPT"};
+  static const char *names[] = {
+    "SSL_ERROR_NONE",    "SSL_ERROR_SSL",         "SSL_ERROR_WANT_READ",    "SSL_ERROR_WANT_WRITE", "SSL_ERROR_WANT_X509_LOOKUP",
+    "SSL_ERROR_SYSCALL", "SSL_ERROR_ZERO_RETURN", "SSL_ERROR_WANT_CONNECT", "SSL_ERROR_WANT_ACCEPT"};
 
   if (ssl_error < 0 || ssl_error >= (int)countof(names)) {
     return "unknown SSL error";
@@ -1194,7 +1314,9 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const SSLConfigParams *params, const ats_scop
       SSLError("failed to load server private key from %s", (const char *)completeServerKeyPath);
       return false;
     }
-    SSLConfigParams::load_ssl_file_cb(completeServerKeyPath, CONFIG_FLAG_UNVERSIONED);
+    if (SSLConfigParams::load_ssl_file_cb) {
+      SSLConfigParams::load_ssl_file_cb(completeServerKeyPath, CONFIG_FLAG_UNVERSIONED);
+    }
   } else {
     SSLError("empty SSL private key path in records.config");
     return false;
@@ -1256,17 +1378,143 @@ SSLCheckServerCertNow(X509 *cert, const char *certname)
 
 } /* CheckServerCertNow() */
 
+static char *
+asn1_strdup(ASN1_STRING *s)
+{
+  // Make sure we have an 8-bit encoding.
+  ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
+             ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING || ASN1_STRING_type(s) == V_ASN1_T61STRING);
+
+  return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
+}
+
+// Given a certificate and it's corresponding SSL_CTX context, insert hash
+// table aliases for subject CN and subjectAltNames DNS without wildcard,
+// insert trie aliases for those with wildcard.
+static bool
+ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname)
+{
+  X509_NAME *subject = NULL;
+  bool inserted      = false;
+
+  if (NULL == cert) {
+    Error("Failed to load certificate %s", certname);
+    lookup->is_valid = false;
+    return false;
+  }
+
+  // Insert a key for the subject CN.
+  subject = X509_get_subject_name(cert);
+  ats_scoped_str subj_name;
+  if (subject) {
+    int pos = -1;
+    for (;;) {
+      pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
+      if (pos == -1) {
+        break;
+      }
+
+      X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
+      ASN1_STRING *cn    = X509_NAME_ENTRY_get_data(e);
+      subj_name          = asn1_strdup(cn);
+
+      Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
+      if (lookup->insert(subj_name, cc) >= 0)
+        inserted = true;
+    }
+  }
+
+#if HAVE_OPENSSL_TS_H
+  // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
+  GENERAL_NAMES *names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
+  if (names) {
+    unsigned count = sk_GENERAL_NAME_num(names);
+    for (unsigned i = 0; i < count; ++i) {
+      GENERAL_NAME *name;
+
+      name = sk_GENERAL_NAME_value(names, i);
+      if (name->type == GEN_DNS) {
+        ats_scoped_str dns(asn1_strdup(name->d.dNSName));
+        // only try to insert if the alternate name is not the main name
+        if (strcmp(dns, subj_name) != 0) {
+          Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
+          if (lookup->insert(dns, cc) >= 0)
+            inserted = true;
+        }
+      }
+    }
+
+    GENERAL_NAMES_free(names);
+  }
+#endif // HAVE_OPENSSL_TS_H
+  return inserted;
+}
+
+// This callback function is executed while OpenSSL processes the SSL
+// handshake and does SSL record layer stuff.  It's used to trap
+// client-initiated renegotiations and update cipher stats
+static void
+ssl_callback_info(const SSL *ssl, int where, int ret)
+{
+  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
+  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
+
+  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
+      SSLConfigParams::ssl_allow_client_renegotiation == false) {
+    int state = SSL_get_state(ssl);
+
+// TODO: ifdef can be removed in the future
+// Support for SSL23 only if we have it
+#ifdef SSL23_ST_SR_CLNT_HELLO_A
+    if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
+#else
+#ifdef SSL3_ST_SR_CLNT_HELLO_A
+    if (state == SSL3_ST_SR_CLNT_HELLO_A) {
+#else
+    if (state == TLS_ST_SR_CLNT_HELLO) {
+#endif
+#endif
+      netvc->setSSLClientRenegotiationAbort(true);
+      Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
+    }
+  }
+  if (where & SSL_CB_HANDSHAKE_DONE) {
+    // handshake is complete
+    const SSL_CIPHER *cipher = SSL_get_current_cipher(ssl);
+    if (cipher) {
+      const char *cipherName = SSL_CIPHER_get_name(cipher);
+      // lookup index of stat by name and incr count
+      InkHashTableValue data;
+      if (ink_hash_table_lookup(ssl_cipher_name_table, cipherName, &data)) {
+        SSL_INCREMENT_DYN_STAT((intptr_t)data);
+      }
+    }
+  }
+}
+
+static void
+ssl_set_handshake_callbacks(SSL_CTX *ctx)
+{
+#if TS_USE_TLS_SNI
+// Make sure the callbacks are set
+#if TS_USE_CERT_CB
+  SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, NULL);
+#else
+  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
+#endif
+#endif
+}
 
 SSL_CTX *
 SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMultCertSettings, Vec<X509 *> &certList)
 {
   int server_verify_client;
   ats_scoped_str completeServerCertPath;
-  SSL_CTX *ctx = SSLDefaultServerContext();
-  EVP_MD_CTX digest;
+  SSL_CTX *ctx                 = SSLDefaultServerContext();
+  EVP_MD_CTX *digest           = EVP_MD_CTX_create();
   STACK_OF(X509_NAME) *ca_list = NULL;
   unsigned char hash_buf[EVP_MAX_MD_SIZE];
-  unsigned int hash_len = 0;
+  unsigned int hash_len    = 0;
   char const *setting_cert = sslMultCertSettings.cert.get();
 
   // disable selected protocols
@@ -1343,7 +1591,12 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
     SSL_CTX_set_default_passwd_cb_userdata(ctx, &ud);
   }
 
-  if (sslMultCertSettings.cert) {
+  if (!sslMultCertSettings.cert) {
+    if (sslMultCertSettings.opt != SSLCertContext::OPT_TUNNEL) {
+      Warning("No ssl_cert_name specified and no tunnel action set");
+      goto fail;
+    }
+  } else if (sslMultCertSettings.cert) {
     SimpleTokenizer cert_tok((const char *)sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
     SimpleTokenizer key_tok((sslMultCertSettings.key ? (const char *)sslMultCertSettings.key : ""), SSL_CERT_SEPARATE_DELIM);
 
@@ -1377,40 +1630,46 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
         goto fail;
       }
       certList.push_back(cert);
-      SSLConfigParams::load_ssl_file_cb(completeServerCertPath, CONFIG_FLAG_UNVERSIONED);
-      // Load up any additional chain certificates
-      X509 *ca;
-      while ((ca = PEM_read_bio_X509(bio.get(), NULL, 0, NULL))) {
-        if (!SSL_CTX_add_extra_chain_cert(ctx, ca)) {
-          X509_free(ca);
-          goto fail;
-        }
+      if (SSLConfigParams::load_ssl_file_cb) {
+        SSLConfigParams::load_ssl_file_cb(completeServerCertPath, CONFIG_FLAG_UNVERSIONED);
       }
+      // Load up any additional chain certificates
+      SSL_CTX_add_extra_chain_cert_bio(ctx, bio);
 
       const char *keyPath = key_tok.getNext();
       if (!SSLPrivateKeyHandler(ctx, params, completeServerCertPath, keyPath)) {
         goto fail;
       }
-    }
 
-    // First, load any CA chains from the global chain file.
-    if (params->serverCertChainFilename) {
-      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
-      if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-        SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
-        goto fail;
-      }
-      SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
-    }
+      // Must load all the intermediate certificates before starting the next chain
 
-    // Now, load any additional certificate chains specified in this entry.
-    if (sslMultCertSettings.ca) {
-      ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_tok.getNext()));
-      if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
-        SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
-        goto fail;
+      // First, load any CA chains from the global chain file.  This should probably
+      // eventually be a comma separated list too.  For now we will load it in all chains even
+      // though it only makes sense in one chain
+      if (params->serverCertChainFilename) {
+        ats_scoped_str completeServerCertChainPath(
+          Layout::relative_to(params->serverCertPathOnly, params->serverCertChainFilename));
+        if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+          SSLError("failed to load global certificate chain from %s", (const char *)completeServerCertChainPath);
+          goto fail;
+        }
+        if (SSLConfigParams::load_ssl_file_cb) {
+          SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+        }
       }
-      SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+
+      // Now, load any additional certificate chains specified in this entry.
+      if (sslMultCertSettings.ca) {
+        const char *ca_name = ca_tok.getNext();
+        ats_scoped_str completeServerCertChainPath(Layout::relative_to(params->serverCertPathOnly, ca_name));
+        if (!SSL_CTX_add_extra_chain_cert_file(ctx, completeServerCertChainPath)) {
+          SSLError("failed to load certificate chain from %s", (const char *)completeServerCertChainPath);
+          goto fail;
+        }
+        if (SSLConfigParams::load_ssl_file_cb) {
+          SSLConfigParams::load_ssl_file_cb(completeServerCertChainPath, CONFIG_FLAG_UNVERSIONED);
+        }
+      }
     }
   }
 
@@ -1464,9 +1723,9 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
       SSL_CTX_set_client_CA_list(ctx, ca_list);
     }
   }
-  EVP_MD_CTX_init(&digest);
+  EVP_MD_CTX_init(digest);
 
-  if (EVP_DigestInit_ex(&digest, evp_md_func, NULL) == 0) {
+  if (EVP_DigestInit_ex(digest, evp_md_func, NULL) == 0) {
     SSLError("EVP_DigestInit_ex failed");
     goto fail;
   }
@@ -1474,7 +1733,7 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
   Debug("ssl", "Using '%s' in hash for session id context", sslMultCertSettings.cert.get());
 
   if (NULL != setting_cert) {
-    if (EVP_DigestUpdate(&digest, sslMultCertSettings.cert, strlen(setting_cert)) == 0) {
+    if (EVP_DigestUpdate(digest, sslMultCertSettings.cert, strlen(setting_cert)) == 0) {
       SSLError("EVP_DigestUpdate failed");
       goto fail;
     }
@@ -1486,19 +1745,18 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
     for (size_t i = 0; i < num_certs; i++) {
       X509_NAME *name = sk_X509_NAME_value(ca_list, i);
       if (X509_NAME_digest(name, evp_md_func, hash_buf /* borrow our final hash buffer. */, &hash_len) == 0 ||
-          EVP_DigestUpdate(&digest, hash_buf, hash_len) == 0) {
+          EVP_DigestUpdate(digest, hash_buf, hash_len) == 0) {
         SSLError("Adding X509 name to digest failed");
         goto fail;
       }
     }
   }
 
-  if (EVP_DigestFinal_ex(&digest, hash_buf, &hash_len) == 0) {
+  if (EVP_DigestFinal_ex(digest, hash_buf, &hash_len) == 0) {
     SSLError("EVP_DigestFinal_ex failed");
     goto fail;
   }
 
-  EVP_MD_CTX_cleanup(&digest);
   if (SSL_CTX_set_session_id_context(ctx, hash_buf, hash_len) == 0) {
     SSLError("SSL_CTX_set_session_id_context failed");
     goto fail;
@@ -1520,150 +1778,8 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config &sslMu
   if (!ssl_context_enable_dhe(params->dhparamsFile, ctx)) {
     goto fail;
   }
-  return ssl_context_enable_ecdh(ctx);
 
-fail:
-  SSL_CLEAR_PW_REFERENCES(ud, ctx)
-  SSL_CTX_free(ctx);
-  for (unsigned int i = 0; i < certList.length(); i++) {
-    X509_free(certList[i]);
-  }
-
-  return NULL;
-}
-
-static char *
-asn1_strdup(ASN1_STRING *s)
-{
-  // Make sure we have an 8-bit encoding.
-  ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
-             ASN1_STRING_type(s) == V_ASN1_PRINTABLESTRING || ASN1_STRING_type(s) == V_ASN1_T61STRING);
-
-  return ats_strndup((const char *)ASN1_STRING_data(s), ASN1_STRING_length(s));
-}
-
-// Given a certificate and it's corresponding SSL_CTX context, insert hash
-// table aliases for subject CN and subjectAltNames DNS without wildcard,
-// insert trie aliases for those with wildcard.
-static bool
-ssl_index_certificate(SSLCertLookup *lookup, SSLCertContext const &cc, X509 *cert, const char *certname)
-{
-  X509_NAME *subject = NULL;
-  bool inserted = false;
-
-  if (NULL == cert) {
-    Error("Failed to load certificate %s", certname);
-    lookup->is_valid = false;
-    return false;
-  }
-
-  // Insert a key for the subject CN.
-  subject = X509_get_subject_name(cert);
-  ats_scoped_str subj_name;
-  if (subject) {
-    int pos = -1;
-    for (;;) {
-      pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
-      if (pos == -1) {
-        break;
-      }
-
-      X509_NAME_ENTRY *e = X509_NAME_get_entry(subject, pos);
-      ASN1_STRING *cn = X509_NAME_ENTRY_get_data(e);
-      subj_name = asn1_strdup(cn);
-
-      Debug("ssl", "mapping '%s' to certificate %s", (const char *)subj_name, certname);
-      if (lookup->insert(subj_name, cc) >= 0)
-        inserted = true;
-    }
-  }
-
-#if HAVE_OPENSSL_TS_H
-  // Traverse the subjectAltNames (if any) and insert additional keys for the SSL context.
-  GENERAL_NAMES *names = (GENERAL_NAMES *)X509_get_ext_d2i(cert, NID_subject_alt_name, NULL, NULL);
-  if (names) {
-    unsigned count = sk_GENERAL_NAME_num(names);
-    for (unsigned i = 0; i < count; ++i) {
-      GENERAL_NAME *name;
-
-      name = sk_GENERAL_NAME_value(names, i);
-      if (name->type == GEN_DNS) {
-        ats_scoped_str dns(asn1_strdup(name->d.dNSName));
-        // only try to insert if the alternate name is not the main name
-        if (strcmp(dns, subj_name) != 0) {
-          Debug("ssl", "mapping '%s' to certificates %s", (const char *)dns, certname);
-          if (lookup->insert(dns, cc) >= 0)
-            inserted = true;
-        }
-      }
-    }
-
-    GENERAL_NAMES_free(names);
-  }
-#endif // HAVE_OPENSSL_TS_H
-  return inserted;
-}
-
-// This callback function is executed while OpenSSL processes the SSL
-// handshake and does SSL record layer stuff.  It's used to trap
-// client-initiated renegotiations and update cipher stats
-static void
-ssl_callback_info(const SSL *ssl, int where, int ret)
-{
-  Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
-  SSLNetVConnection *netvc = (SSLNetVConnection *)SSL_get_app_data(ssl);
-
-  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
-      SSLConfigParams::ssl_allow_client_renegotiation == false) {
-    int state = SSL_get_state(ssl);
-
-    if (state == SSL3_ST_SR_CLNT_HELLO_A || state == SSL23_ST_SR_CLNT_HELLO_A) {
-      netvc->setSSLClientRenegotiationAbort(true);
-      Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
-    }
-  }
-  if (where & SSL_CB_HANDSHAKE_DONE) {
-    // handshake is complete
-    const SSL_CIPHER *cipher = SSL_get_current_cipher(ssl);
-    if (cipher) {
-      const char *cipherName = SSL_CIPHER_get_name(cipher);
-      // lookup index of stat by name and incr count
-      InkHashTableValue data;
-      if (ink_hash_table_lookup(ssl_cipher_name_table, cipherName, &data)) {
-        SSL_INCREMENT_DYN_STAT((intptr_t)data);
-      }
-    }
-  }
-}
-
-static void
-ssl_set_handshake_callbacks(SSL_CTX *ctx)
-{
-#if TS_USE_TLS_SNI
-// Make sure the callbacks are set
-#if TS_USE_CERT_CB
-  SSL_CTX_set_cert_cb(ctx, ssl_cert_callback, NULL);
-#else
-  SSL_CTX_set_tlsext_servername_callback(ctx, ssl_servername_callback);
-#endif
-#endif
-}
-
-static SSL_CTX *
-ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, const ssl_user_config &sslMultCertSettings)
-{
-  Vec<X509 *> cert_list;
-  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
-  ssl_ticket_key_block *keyblock = NULL;
-  bool inserted = false;
-
-  if (!ctx) {
-    lookup->is_valid = false;
-    return ctx;
-  }
-
-  // The certificate callbacks are set by the caller only
-  // for the default certificate
+  ssl_context_enable_ecdh(ctx);
 
   SSL_CTX_set_info_callback(ctx, ssl_callback_info);
 
@@ -1674,6 +1790,59 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
 #if TS_USE_TLS_ALPN
   SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
 #endif /* TS_USE_TLS_ALPN */
+
+#ifdef HAVE_OPENSSL_OCSP_STAPLING
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Debug("ssl", "ssl ocsp stapling is enabled");
+    SSL_CTX_set_tlsext_status_cb(ctx, ssl_callback_ocsp_stapling);
+  } else {
+    Debug("ssl", "ssl ocsp stapling is disabled");
+  }
+#else
+  if (SSLConfigParams::ssl_ocsp_enabled) {
+    Warning("fail to enable ssl ocsp stapling, this openssl version does not support it");
+  }
+#endif /* HAVE_OPENSSL_OCSP_STAPLING */
+
+  if (SSLConfigParams::init_ssl_ctx_cb) {
+    SSLConfigParams::init_ssl_ctx_cb(ctx, true);
+  }
+  return ctx;
+
+fail:
+  // EVP_MD_CTX_destroy calls EVP_MD_CTX_cleanup too
+  EVP_MD_CTX_destroy(digest);
+  SSL_CLEAR_PW_REFERENCES(ud, ctx)
+  SSLReleaseContext(ctx);
+  for (unsigned int i = 0; i < certList.length(); i++) {
+    X509_free(certList[i]);
+  }
+
+  return NULL;
+}
+
+SSL_CTX *
+SSLCreateServerContext(const SSLConfigParams *params)
+{
+  const ssl_user_config sslMultCertSettings;
+  Vec<X509 *> cert_list;
+  SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
+  ink_assert(cert_list.length() == 0);
+  return ctx;
+}
+
+static SSL_CTX *
+ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, const ssl_user_config &sslMultCertSettings)
+{
+  Vec<X509 *> cert_list;
+  SSL_CTX *ctx                   = SSLInitServerContext(params, sslMultCertSettings, cert_list);
+  ssl_ticket_key_block *keyblock = NULL;
+  bool inserted                  = false;
+
+  if (!ctx) {
+    lookup->is_valid = false;
+    return ctx;
+  }
 
   const char *certname = sslMultCertSettings.cert.get();
   for (unsigned i = 0; i < cert_list.length(); ++i) {
@@ -1693,12 +1862,11 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     keyblock = ssl_context_enable_tickets(ctx, NULL);
   }
 
-
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings.addr) {
     if (strcmp(sslMultCertSettings.addr, "*") == 0) {
       if (lookup->insert(sslMultCertSettings.addr, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
-        inserted = true;
+        inserted            = true;
         lookup->ssl_default = ctx;
         ssl_set_handshake_callbacks(ctx);
       }
@@ -1707,7 +1875,7 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
 
       if (ats_ip_pton(sslMultCertSettings.addr, &ep) == 0) {
         Debug("ssl", "mapping '%s' to certificate %s", (const char *)sslMultCertSettings.addr, (const char *)certname);
-        if (certname != NULL && lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
+        if (lookup->insert(ep, SSLCertContext(ctx, sslMultCertSettings.opt, keyblock)) >= 0) {
           inserted = true;
         }
       } else {
@@ -1723,7 +1891,6 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
     }
 #endif
   }
-
 
 #if defined(SSL_OP_NO_TICKET)
   // Session tickets are enabled by default. Disable if explicitly requested.
@@ -1766,15 +1933,16 @@ ssl_store_ssl_context(const SSLConfigParams *params, SSLCertLookup *lookup, cons
       SSLConfigParams::init_ssl_ctx_cb(ctx, true);
     }
   }
+
   if (!inserted) {
-    if (ctx != NULL) {
-      SSL_CTX_free(ctx);
-      ctx = NULL;
-    }
+    SSLReleaseContext(ctx);
+    ctx = NULL;
   }
+
   for (unsigned int i = 0; i < cert_list.length(); i++) {
     X509_free(cert_list[i]);
   }
+
   return ctx;
 }
 
@@ -1828,10 +1996,8 @@ ssl_extract_certificate(const matcher_line *line_info, ssl_user_config &sslMultC
       }
     }
   }
-  if (!sslMultCertSettings.cert) {
-    Warning("missing %s tag", SSL_CERT_TAG);
-    return false;
-  } else {
+  // TS-4679:  It is ok to be missing the cert.  At least if the action is set to tunnel
+  if (sslMultCertSettings.cert) {
     SimpleTokenizer cert_tok(sslMultCertSettings.cert, SSL_CERT_SEPARATE_DELIM);
     const char *first_cert = cert_tok.getNext();
     if (first_cert) {
@@ -1846,7 +2012,7 @@ bool
 SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup)
 {
   char *tok_state = NULL;
-  char *line = NULL;
+  char *line      = NULL;
   ats_scoped_str file_buf;
   unsigned line_num = 0;
   matcher_line line_info;
@@ -1864,12 +2030,10 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
     return false;
   }
 
-#if TS_USE_POSIX_CAP
   // elevate/allow file access to root read only files/certs
   uint32_t elevate_setting = 0;
   REC_ReadConfigInteger(elevate_setting, "proxy.config.ssl.cert.load_elevated");
-  ElevateAccess elevate_access(elevate_setting != 0); // destructor will demote for us
-#endif                                                /* TS_USE_POSIX_CAP */
+  ElevateAccess elevate_access(elevate_setting ? ElevateAccess::FILE_PRIVILEGE : 0); // destructor will demote for us
 
   line = tokLine(file_buf, &tok_state);
   while (line != NULL) {
@@ -1961,7 +2125,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 
     Debug("ssl", "create ticket for a new session.");
     SSL_INCREMENT_DYN_STAT(ssl_total_tickets_created_stat);
-    return 0;
+    return 1;
   } else if (enc == 0) {
     for (unsigned i = 0; i < keyblock->num_keys; ++i) {
       if (memcmp(keyname, keyblock->keys[i].key_name, sizeof(keyblock->keys[i].key_name)) == 0) {
@@ -1994,6 +2158,7 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
 void
 SSLReleaseContext(SSL_CTX *ctx)
 {
+  // SSL_CTX_free() does nothing if ctx in NULL, so there's no need to check.
   SSL_CTX_free(ctx);
 }
 

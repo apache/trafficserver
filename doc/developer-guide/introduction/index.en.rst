@@ -22,16 +22,16 @@
 Introduction
 ************
 
-This book has the following basic components:
+This guide has the following basic components:
 
--  Introduction and overview
+-  Introduction and overview.
 
 -  Tutorials about writing specific kinds of plugins: HTTP header-based
-   plugins, content transformation plugins, and protocol plugins
+   plugins, content transformation plugins, and protocol plugins.
 
--  Guides about specific interfaces
+-  Guides about specific interfaces.
 
--  Reference material
+-  Reference material.
 
 If you're new to writing |TS| plugins, :ref:`developer-plugins-getting-started`
 should be your starting point. :ref:`developer-plugins-header-based-examples`

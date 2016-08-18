@@ -25,7 +25,6 @@
 #include "HttpCompat.h"
 #include "HdrUtils.h" /* MAGIC_EDITING_TAG */
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      HttpCompat::parse_tok_list
@@ -44,8 +43,9 @@
 void
 HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, char sep)
 {
-  if (string == NULL)
+  if (string == NULL) {
     return;
+  }
   HttpCompat::parse_tok_list(list, trim_quotes, string, (int)strlen(string), sep);
 }
 
@@ -57,14 +57,15 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
   const char *s, *e, *l, *s_before_skipping_ws;
   int index, byte_length, hit_sep;
 
-  if ((string == NULL) || (list == NULL) || (sep == NUL))
+  if ((string == NULL) || (list == NULL) || (sep == NUL)) {
     return;
+  }
 
-  s = string;
-  l = s + len - 1;
+  s     = string;
+  l     = s + len - 1;
   index = 0;
 
-  hit_sep = 0;
+  hit_sep              = 0;
   s_before_skipping_ws = s;
 
   while (s <= l) {
@@ -74,8 +75,9 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
     // a NUL, a character, or a double quote.               //
     //////////////////////////////////////////////////////////
 
-    while ((s <= l) && ParseRules::is_ws(*s))
+    while ((s <= l) && ParseRules::is_ws(*s)) {
       ++s; // skip whitespace
+    }
 
     //////////////////////////////////////////////////////////
     // if we are pointing at a separator, this was an empty //
@@ -86,8 +88,8 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
       list->append_string(s_before_skipping_ws, 0);
       ++index;
       s_before_skipping_ws = s + 1;
-      s = s_before_skipping_ws;
-      hit_sep = 1;
+      s                    = s_before_skipping_ws;
+      hit_sep              = 1;
       continue;
     }
     //////////////////////////////////////////////////////////////////
@@ -97,8 +99,9 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
     // or just exit.                                                //
     //////////////////////////////////////////////////////////////////
 
-    if (s > l)
+    if (s > l) {
       break;
+    }
 
 ///////////////////////////////////////////////////////////////////
 // we are pointing to the first character of a token now, either //
@@ -111,12 +114,13 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
 
     if (*s == quot) {
       in_quote = 1;
-      e = s + 1; // start after quote
-      if (trim_quotes)
+      e        = s + 1; // start after quote
+      if (trim_quotes) {
         ++s; // trim starting quote
+      }
     } else {
       in_quote = 0;
-      e = s;
+      e        = s;
     }
 
     while ((e <= l) && !is_unquoted_separator(*e)) {
@@ -135,10 +139,12 @@ HttpCompat::parse_tok_list(StrList *list, int trim_quotes, const char *string, i
     hit_sep = (e <= l); // must have hit a separator if still inside string
 
     s_before_skipping_ws = e + 1; // where to start next time
-    while ((e > s) && ParseRules::is_ws(*(e - 1)))
+    while ((e > s) && ParseRules::is_ws(*(e - 1))) {
       --e; // eat trailing ws
-    if ((e > s) && (*(e - 1) == quot) && trim_quotes)
+    }
+    if ((e > s) && (*(e - 1) == quot) && trim_quotes) {
       --e; // eat trailing quote
+    }
 
     /////////////////////////////////////////////////////////////////////
     // now <e> points to the character AFTER the last character of the //
@@ -226,17 +232,21 @@ HttpCompat::lookup_param_in_strlist(StrList *param_list, const char *param_name,
     if (is_match) {
       param_val[0] = '\0';
 
-      while (*s && ParseRules::is_ws(*s))
+      while (*s && ParseRules::is_ws(*s)) {
         s++; // skip white
+      }
       if (*s == '=') {
         ++s; // skip '='
-        while (*s && ParseRules::is_ws(*s))
+        while (*s && ParseRules::is_ws(*s)) {
           s++; // skip white
+        }
 
-        for (cnt = 0; *s && (cnt < param_val_length - 1); s++, cnt++)
+        for (cnt = 0; *s && (cnt < param_val_length - 1); s++, cnt++) {
           param_val[cnt] = *s;
-        if (cnt < param_val_length)
+        }
+        if (cnt < param_val_length) {
           param_val[cnt++] = '\0';
+        }
       }
       return (true);
     }
@@ -244,7 +254,6 @@ HttpCompat::lookup_param_in_strlist(StrList *param_list, const char *param_name,
 
   return (false);
 }
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -274,7 +283,6 @@ HttpCompat::lookup_param_in_semicolon_string(const char *semicolon_string, int s
   return (result);
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      void HttpCompat::parse_mime_type(
@@ -301,8 +309,9 @@ HttpCompat::parse_mime_type(const char *mime_string, char *type, char *subtype, 
   // skip whitespace //
   /////////////////////
 
-  for (s = mime_string; *s && ParseRules::is_ws(*s); s++)
+  for (s = mime_string; *s && ParseRules::is_ws(*s); s++) {
     ;
+  }
 
   ///////////////////////////////////////////////////////////////////////
   // scan type (until NUL, out of room, comma/semicolon, space, slash) //
@@ -319,12 +328,15 @@ HttpCompat::parse_mime_type(const char *mime_string, char *type, char *subtype, 
   // skip remainder of text and space, then slash, then space //
   //////////////////////////////////////////////////////////////
 
-  while (*s && (*s != ';') && (*s != ',') && (*s != '/'))
+  while (*s && (*s != ';') && (*s != ',') && (*s != '/')) {
     ++s;
-  if (*s == '/')
+  }
+  if (*s == '/') {
     ++s;
-  while (*s && ParseRules::is_ws(*s))
+  }
+  while (*s && ParseRules::is_ws(*s)) {
     ++s;
+  }
 
   //////////////////////////////////////////////////////////////////////////
   // scan subtype (until NUL, out of room, comma/semicolon, space, slash) //
@@ -346,14 +358,15 @@ HttpCompat::parse_mime_type_with_len(const char *mime_string, int mime_string_le
   char *d;
 
   *type = *subtype = '\0';
-  s_toofar = mime_string + mime_string_len;
+  s_toofar         = mime_string + mime_string_len;
 
   /////////////////////
   // skip whitespace //
   /////////////////////
 
-  for (s = mime_string; (s < s_toofar) && ParseRules::is_ws(*s); s++)
+  for (s = mime_string; (s < s_toofar) && ParseRules::is_ws(*s); s++) {
     ;
+  }
 
   ///////////////////////////////////////////////////////////////////////
   // scan type (until NUL, out of room, comma/semicolon, space, slash) //
@@ -370,12 +383,15 @@ HttpCompat::parse_mime_type_with_len(const char *mime_string, int mime_string_le
   // skip remainder of text and space, then slash, then space //
   //////////////////////////////////////////////////////////////
 
-  while ((s < s_toofar) && (*s != ';') && (*s != ',') && (*s != '/'))
+  while ((s < s_toofar) && (*s != ';') && (*s != ',') && (*s != '/')) {
     ++s;
-  if ((s < s_toofar) && (*s == '/'))
+  }
+  if ((s < s_toofar) && (*s == '/')) {
     ++s;
-  while ((s < s_toofar) && ParseRules::is_ws(*s))
+  }
+  while ((s < s_toofar) && ParseRules::is_ws(*s)) {
     ++s;
+  }
 
   //////////////////////////////////////////////////////////////////////////
   // scan subtype (until NUL, out of room, comma/semicolon, space, slash) //
@@ -417,26 +433,30 @@ bool
 HttpCompat::do_header_values_rfc2068_14_43_match(MIMEField *hdr1, MIMEField *hdr2)
 {
   // If both headers are missing, the headers match.
-  if (!hdr1 && !hdr2)
+  if (!hdr1 && !hdr2) {
     return true;
+  }
 
   // If one header is missing, the headers do not match.
-  if (!hdr1 || !hdr2)
+  if (!hdr1 || !hdr2) {
     return false;
+  }
 
   // Make sure both headers have the same number of comma-
   // separated elements.
   HdrCsvIter iter1, iter2;
-  if (iter1.count_values(hdr1) != iter2.count_values(hdr2))
+  if (iter1.count_values(hdr1) != iter2.count_values(hdr2)) {
     return false;
+  }
 
   int hdr1_val_len, hdr2_val_len;
   const char *hdr1_val = iter1.get_first(hdr1, &hdr1_val_len);
   const char *hdr2_val = iter2.get_first(hdr2, &hdr2_val_len);
 
   while (hdr1_val || hdr2_val) {
-    if (hdr1_val_len != hdr2_val_len || ParseRules::strncasecmp_eow(hdr1_val, hdr2_val, hdr1_val_len) == false)
+    if (hdr1_val_len != hdr2_val_len || ParseRules::strncasecmp_eow(hdr1_val, hdr2_val, hdr1_val_len) == false) {
       return false;
+    }
 
     hdr1_val = iter1.get_next(&hdr1_val_len);
     hdr2_val = iter2.get_next(&hdr2_val_len);
@@ -463,8 +483,9 @@ HttpCompat::find_Q_param_in_strlist(StrList *strlist)
   this_q = 1.0;
   if (HttpCompat::lookup_param_in_strlist(strlist, (char *)"q", q_string, sizeof(q_string))) {
     // coverity[secure_coding]
-    if (sscanf(q_string, "%f", &f) == 1) // parse q
+    if (sscanf(q_string, "%f", &f) == 1) { // parse q
       this_q = (f < 0 ? 0 : (f > 1 ? 1 : f));
+    }
   }
 
   return (this_q);
@@ -501,10 +522,11 @@ does_language_range_match(const char *pattern, int pattern_len, const char *tag,
   }
 
   // matches if range equals tag, or if range is a lang prefix of tag
-  if ((((pattern_len == 0) && (tag_len == 0)) || ((pattern_len == 0) && (*tag == '-'))))
+  if ((((pattern_len == 0) && (tag_len == 0)) || ((pattern_len == 0) && (*tag == '-')))) {
     match = true;
-  else
+  } else {
     match = false;
+  }
 
   return (match);
 }
@@ -516,24 +538,25 @@ HttpCompat::match_accept_language(const char *lang_str, int lang_len, StrList *a
   float Q, Q_wild;
   Str *a_value;
 
-  Q = -1;      // will never be returned as -1
-  Q_wild = -1; // will never be returned as -1
-  int match_count = 0;
-  int wild_match_count = 0;
+  Q                     = -1; // will never be returned as -1
+  Q_wild                = -1; // will never be returned as -1
+  int match_count       = 0;
+  int wild_match_count  = 0;
   int longest_match_len = 0;
 
-  int index = 0;
-  int Q_index = 0;
+  int index        = 0;
+  int Q_index      = 0;
   int Q_wild_index = 0;
 
-  *matching_index = 0;
+  *matching_index  = 0;
   *matching_length = 0;
 
   ///////////////////////////////////////////////////////
   // rip the accept string into comma-separated values //
   ///////////////////////////////////////////////////////
-  if (acpt_lang_list->count == 0)
+  if (acpt_lang_list->count == 0) {
     return (0.0);
+  }
 
   ////////////////////////////////////////
   // loop over each Accept-Language tag //
@@ -541,16 +564,18 @@ HttpCompat::match_accept_language(const char *lang_str, int lang_len, StrList *a
   for (a_value = acpt_lang_list->head; a_value; a_value = a_value->next) {
     ++index;
 
-    if (a_value->len == 0)
+    if (a_value->len == 0) {
       continue; // blank tag
+    }
 
     ///////////////////////////////////////////////////////////
     // now rip the Accept-Language tag into head and Q parts //
     ///////////////////////////////////////////////////////////
     StrList a_param_list(false);
     HttpCompat::parse_semicolon_list(&a_param_list, a_value->str, (int)a_value->len);
-    if (!a_param_list.head)
+    if (!a_param_list.head) {
       continue;
+    }
 
     /////////////////////////////////////////////////////////////////////
     // This algorithm is a bit wierd --- the resulting Q factor is     //
@@ -560,7 +585,7 @@ HttpCompat::match_accept_language(const char *lang_str, int lang_len, StrList *a
     // was specified, this document matches all accept headers.        //
     /////////////////////////////////////////////////////////////////////
     const char *atag_str = a_param_list.head->str;
-    int atag_len = (int)a_param_list.head->len;
+    int atag_len         = (int)a_param_list.head->len;
 
     float tq = HttpCompat::find_Q_param_in_strlist(&a_param_list);
 
@@ -568,19 +593,19 @@ HttpCompat::match_accept_language(const char *lang_str, int lang_len, StrList *a
     {
       ++wild_match_count;
       if (tq > Q_wild) {
-        Q_wild = tq;
+        Q_wild       = tq;
         Q_wild_index = index;
       }
     } else if (does_language_range_match(atag_str, atag_len, lang_str, lang_len)) {
       ++match_count;
       if (atag_len > longest_match_len) {
         longest_match_len = atag_len;
-        Q = tq;
-        Q_index = index;
+        Q                 = tq;
+        Q_index           = index;
       } else if (atag_len == longest_match_len) // if tie, pick higher Q
       {
         if (tq > Q) {
-          Q = tq;
+          Q       = tq;
           Q_index = index;
         }
       }
@@ -588,17 +613,17 @@ HttpCompat::match_accept_language(const char *lang_str, int lang_len, StrList *a
   }
 
   if ((ignore_wildcards == false) && wild_match_count && !match_count) {
-    *matching_index = Q_wild_index;
+    *matching_index  = Q_wild_index;
     *matching_length = 1;
     return (Q_wild);
   } else if (match_count > 0) // real match
   {
-    *matching_index = Q_index;
+    *matching_index  = Q_index;
     *matching_length = longest_match_len;
     return (Q);
   } else // no match
   {
-    *matching_index = 0;
+    *matching_index  = 0;
     *matching_length = 0;
     return (0.0);
   }
@@ -631,13 +656,13 @@ HttpCompat::match_accept_charset(const char *charset_str, int charset_len, StrLi
   float Q, Q_wild;
   Str *a_value;
 
-  Q = -1;      // will never be returned as -1
-  Q_wild = -1; // will never be returned as -1
-  int match_count = 0;
+  Q                    = -1; // will never be returned as -1
+  Q_wild               = -1; // will never be returned as -1
+  int match_count      = 0;
   int wild_match_count = 0;
 
-  int index = 0;
-  int Q_index = 0;
+  int index        = 0;
+  int Q_index      = 0;
   int Q_wild_index = 0;
 
   *matching_index = 0;
@@ -645,43 +670,46 @@ HttpCompat::match_accept_charset(const char *charset_str, int charset_len, StrLi
   ///////////////////////////////////////////////////////
   // rip the accept string into comma-separated values //
   ///////////////////////////////////////////////////////
-  if (acpt_charset_list->count == 0)
+  if (acpt_charset_list->count == 0) {
     return (0.0);
+  }
 
   ///////////////////////////////////////
   // loop over each Accept-Charset tag //
   ///////////////////////////////////////
   for (a_value = acpt_charset_list->head; a_value; a_value = a_value->next) {
     ++index;
-    if (a_value->len == 0)
+    if (a_value->len == 0) {
       continue; // blank tag
+    }
 
     //////////////////////////////////////////////////////////
     // now rip the Accept-Charset tag into head and Q parts //
     //////////////////////////////////////////////////////////
     StrList a_param_list(false);
     HttpCompat::parse_semicolon_list(&a_param_list, a_value->str, (int)a_value->len);
-    if (!a_param_list.head)
+    if (!a_param_list.head) {
       continue;
+    }
 
     ///////////////////////////////////////////////////////////////
     // see if the Accept-Charset tag matches the current charset //
     ///////////////////////////////////////////////////////////////
     const char *atag_str = a_param_list.head->str;
-    int atag_len = (int)a_param_list.head->len;
-    float tq = HttpCompat::find_Q_param_in_strlist(&a_param_list);
+    int atag_len         = (int)a_param_list.head->len;
+    float tq             = HttpCompat::find_Q_param_in_strlist(&a_param_list);
 
     if ((atag_len == 1) && (atag_str[0] == '*')) // wildcard
     {
       ++wild_match_count;
       if (tq > Q_wild) {
-        Q_wild = tq;
+        Q_wild       = tq;
         Q_wild_index = index;
       }
     } else if ((atag_len == charset_len) && (strncasecmp(atag_str, charset_str, charset_len) == 0)) {
       ++match_count;
       if (tq > Q) {
-        Q = tq;
+        Q       = tq;
         Q_index = index;
       }
     }
@@ -719,10 +747,10 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
   HttpBodySetRawData *body_set;
 
   set_best = "default";
-  Q_best = 0.00001;
-  La_best = 0;
-  Lc_best = INT_MAX;
-  I_best = INT_MAX;
+  Q_best   = 0.00001;
+  La_best  = 0;
+  Lc_best  = INT_MAX;
+  I_best   = INT_MAX;
 
   Debug("body_factory_determine_set", "  INITIAL: [ set_best='%s', Q=%g, La=%d, Lc=%d, I=%d ]", set_best, Q_best, La_best, Lc_best,
         I_best);
@@ -743,15 +771,16 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
     ///////////////////////////////////////////
 
     for (b1 = table_of_sets->firstBinding(&i1); b1 != NULL; b1 = table_of_sets->nextBinding(&i1)) {
-      k1 = table_of_sets->getKeyFromBinding(b1);
-      v1 = table_of_sets->getValueFromBinding(b1);
+      k1                   = table_of_sets->getKeyFromBinding(b1);
+      v1                   = table_of_sets->getValueFromBinding(b1);
       const char *set_name = (const char *)k1;
 
-      body_set = (HttpBodySetRawData *)v1;
+      body_set       = (HttpBodySetRawData *)v1;
       table_of_pages = body_set->table_of_pages;
 
-      if ((set_name == NULL) || (table_of_pages == NULL))
+      if ((set_name == NULL) || (table_of_pages == NULL)) {
         continue;
+      }
 
       //////////////////////////////////////////////////////////////////////
       // Take this error page language and match it against the           //
@@ -778,7 +807,7 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
         Ql = (is_the_default_set ? 1.0001 : 1.000);
         La = 0;
         Lc = INT_MAX;
-        I = 1;
+        I  = 1;
         Debug("body_factory_determine_set", "      SET: [%-8s] A-L not present => [ Ql=%g, La=%d, Lc=%d, I=%d ]", set_name, Ql, La,
               Lc, I);
       } else {
@@ -805,7 +834,7 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
       // if no Accept-Charset hdr at all, treat as a wildcard that
       // slightly prefers "default".
       if (acpt_charset_list->count == 0) {
-        Qc = (is_the_default_set ? 1.0001 : 1.000);
+        Qc     = (is_the_default_set ? 1.0001 : 1.000);
         Idummy = 1;
         Debug("body_factory_determine_set", "      SET: [%-8s] A-C not present => [ Qc=%g ]", set_name, Qc);
       } else {
@@ -813,7 +842,6 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
                                               &Idummy, true);
         Debug("body_factory_determine_set", "      SET: [%-8s] A-C match value => [ Qc=%g ]", set_name, Qc);
       }
-
 
       /////////////////////////////////////////////////////////////////
       // We get back the Q value, the matching field length, and the //
@@ -834,8 +862,9 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
 
       if (is_the_default_set) {
         Q = Q + -0.00005;
-        if (Q < 0.00001)
+        if (Q < 0.00001) {
           Q = 0.00001;
+        }
       }
 
       Debug("body_factory_determine_set", "      NEW: [ set='%s', Q=%g, La=%d, Lc=%d, I=%d ]", set_name, Q, La, Lc, I);
@@ -844,10 +873,10 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
 
       if (((Q > Q_best)) || ((Q == Q_best) && (La > La_best)) || ((Q == Q_best) && (La == La_best) && (Lc < Lc_best)) ||
           ((Q == Q_best) && (La == La_best) && (Lc == Lc_best) && (I < I_best))) {
-        Q_best = Q;
-        La_best = La;
-        Lc_best = Lc;
-        I_best = I;
+        Q_best   = Q;
+        La_best  = La;
+        Lc_best  = Lc;
+        I_best   = I;
         set_best = set_name;
 
         Debug("body_factory_determine_set", "   WINNER: [ set_best='%s', Q=%g, La=%d, Lc=%d, I=%d ]", set_best, Q_best, La_best,
@@ -861,9 +890,9 @@ HttpCompat::determine_set_by_language(RawHashTable *table_of_sets, StrList *acpt
 
 done:
 
-  *Q_best_ptr = Q_best;
+  *Q_best_ptr  = Q_best;
   *La_best_ptr = La_best;
   *Lc_best_ptr = Lc_best;
-  *I_best_ptr = I_best;
+  *I_best_ptr  = I_best;
   return (set_best);
 }

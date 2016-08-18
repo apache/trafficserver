@@ -128,7 +128,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
       TSError("[url_sig] Error parsing line %d of file %s (%s).", line_no, config_file, line);
       continue;
     }
-    *pos = '\0';
+    *pos        = '\0';
     char *value = pos + 1;
     while (isspace(*value)) // remove whitespace
       value++;
@@ -245,37 +245,88 @@ err_log(char *url, char *msg)
   }
 }
 
+// See the README.  All Signing parameters must be concatenated to the end
+// of the url and any application query parameters.
+static char *
+getAppQueryString(char *query_string, int query_length)
+{
+  int done = 0;
+  char *p;
+  char buf[MAX_QUERY_LEN];
+
+  if (query_length > MAX_QUERY_LEN) {
+    TSDebug(PLUGIN_NAME, "Cannot process the query string as the length exceeds %d bytes.", MAX_QUERY_LEN);
+    return NULL;
+  }
+  memset(buf, 0, MAX_QUERY_LEN);
+  strncpy(buf, query_string, query_length);
+  p = buf;
+
+  TSDebug(PLUGIN_NAME, "query_string: %s, query_length: %d", query_string, query_length);
+
+  do {
+    switch (*p) {
+    case 'A':
+    case 'C':
+    case 'E':
+    case 'K':
+    case 'P':
+    case 'S':
+      done = 1;
+      if (*(p - 1) == '&') {
+        *(p - 1) = '\0';
+      } else
+        (*p = '\0');
+      break;
+    default:
+      p = strchr(p, '&');
+      if (p == NULL)
+        done = 1;
+      else
+        p++;
+      break;
+    }
+  } while (!done);
+
+  if (strlen(buf) > 0) {
+    p = TSstrdup(buf);
+    return p;
+  } else {
+    return NULL;
+  }
+}
+
 TSRemapStatus
 TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 {
   struct config *cfg;
   cfg = (struct config *)ih;
 
-  int url_len = 0;
+  int url_len       = 0;
   time_t expiration = 0;
-  int algorithm = -1;
-  int keyindex = -1;
+  int algorithm     = -1;
+  int keyindex      = -1;
   int cmp_res;
   int rval;
-  int i = 0;
-  int j = 0;
+  int i                = 0;
+  int j                = 0;
   unsigned int sig_len = 0;
 
   /* all strings are locally allocated except url... about 25k per instance */
   char *url;
-  char signed_part[8192] = {'\0'}; // this initializes the whole array and is needed
-  char urltokstr[8192] = {'\0'};
+  char signed_part[8192]     = {'\0'}; // this initializes the whole array and is needed
+  char urltokstr[8192]       = {'\0'};
   char client_ip[CIP_STRLEN] = {'\0'};
-  char ipstr[CIP_STRLEN] = {'\0'};
+  char ipstr[CIP_STRLEN]     = {'\0'};
   unsigned char sig[MAX_SIG_SIZE + 1];
   char sig_string[2 * MAX_SIG_SIZE + 1];
 
   /* these are just pointers into other allocations */
   char *signature = NULL;
-  char *parts = NULL;
-  char *part = NULL;
+  char *parts     = NULL;
+  char *part      = NULL;
   char *p = NULL, *pp = NULL;
-  char *query = NULL;
+  char *query = NULL, *app_qry = NULL;
 
   int retval, sockfd;
   socklen_t peer_len;
@@ -295,7 +346,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (cfg->regex) {
     int offset = 0, options = 0;
     int ovector[30];
-    int len = url_len;
+    int len      = url_len;
     char *anchor = strstr(url, "#");
     if (query && !anchor) {
       len -= (query - url);
@@ -396,7 +447,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   if (p != NULL) {
     p += strlen(PAR_QSTRING) + 1;
     parts = p; // NOTE parts is not NULL terminated it is terminated by "&" of next param
-    p = strstr(parts, "&");
+    p     = strstr(parts, "&");
     TSDebug(PLUGIN_NAME, "Parts: %.*s", (int)(p - parts), parts);
   } else {
     err_log(url, "PartsSigned query string not found.");
@@ -437,7 +488,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   }
 
   signed_part[strlen(signed_part) - 1] = '?'; // chop off the last /, replace with '?'
-  p = strstr(query, SIG_QSTRING "=");
+  p                                    = strstr(query, SIG_QSTRING "=");
   strncat(signed_part, query, (p - query) + strlen(SIG_QSTRING) + 1);
 
   TSDebug(PLUGIN_NAME, "Signed string=\"%s\"", signed_part);
@@ -493,7 +544,7 @@ deny:
     TSDebug(PLUGIN_NAME, "Redirecting to %s", cfg->err_url);
     char *start, *end;
     start = cfg->err_url;
-    end = start + strlen(cfg->err_url);
+    end   = start + strlen(cfg->err_url);
     if (TSUrlParse(rri->requestBufp, rri->requestUrl, (const char **)&start, end) != TS_PARSE_DONE) {
       err_log("url", "Error inn TSUrlParse!");
     }
@@ -510,11 +561,18 @@ deny:
 
 /* ********* Allow ********* */
 allow:
+  app_qry = getAppQueryString(query, strlen(query));
+
   TSfree(url);
   /* drop the query string so we can cache-hit */
-  rval = TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, NULL, 0);
+  if (app_qry != NULL) {
+    rval = TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, app_qry, strlen(app_qry));
+    TSfree(app_qry);
+  } else {
+    rval = TSUrlHttpQuerySet(rri->requestBufp, rri->requestUrl, NULL, 0);
+  }
   if (rval != TS_SUCCESS) {
-    TSError("[url_sig] Error stripping query string: %d.", rval);
+    TSError("[url_sig] Error setting the query string: %d.", rval);
   }
   return TSREMAP_NO_REMAP;
 }

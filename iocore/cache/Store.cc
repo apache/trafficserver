@@ -36,7 +36,7 @@
 // Store
 //
 
-char const Store::VOLUME_KEY[] = "volume";
+char const Store::VOLUME_KEY[]           = "volume";
 char const Store::HASH_BASE_STRING_KEY[] = "id";
 
 static span_error_t
@@ -93,7 +93,6 @@ Store::add(Store &s)
   s.delete_all();
 }
 
-
 // should be changed to handle offset in more general
 // case (where this is not a free of a "just" allocated
 // store
@@ -111,8 +110,7 @@ Store::free(Store &s)
             goto Lfound;
           }
       ink_release_assert(!"Store::free failed");
-    Lfound:
-      ;
+    Lfound:;
     }
   }
 }
@@ -123,7 +121,7 @@ Store::sort()
   Span **vec = (Span **)alloca(sizeof(Span *) * n_disks);
   memset(vec, 0, sizeof(Span *) * n_disks);
   for (unsigned i = 0; i < n_disks; i++) {
-    vec[i] = disk[i];
+    vec[i]  = disk[i];
     disk[i] = NULL;
   }
 
@@ -136,13 +134,12 @@ Store::sort()
       for (unsigned d = 0; d < n; d++) {
         if (sd->disk_id == disk[d]->disk_id) {
           sd->link.next = disk[d];
-          disk[d] = sd;
+          disk[d]       = sd;
           goto Ldone;
         }
       }
       disk[n++] = sd;
-    Ldone:
-      ;
+    Ldone:;
     }
   }
   n_disks = n;
@@ -157,18 +154,18 @@ Store::sort()
       if (next &&
           ((strcmp(sd->pathname, next->pathname) < 0) || (!strcmp(sd->pathname, next->pathname) && sd->offset > next->offset))) {
         if (!prev) {
-          disk[i] = next;
-          sd->link.next = next->link.next;
+          disk[i]         = next;
+          sd->link.next   = next->link.next;
           next->link.next = sd;
         } else {
           prev->link.next = next;
-          sd->link.next = next->link.next;
+          sd->link.next   = next->link.next;
           next->link.next = sd;
         }
         goto Lagain;
       }
       prev = sd;
-      sd = next;
+      sd   = next;
     }
   }
 
@@ -298,7 +295,7 @@ Lagain:
         if (p)
           p->link.next = sd->link.next;
         else
-          disk[i] = sd->link.next;
+          disk[i]     = sd->link.next;
         sd->link.next = NULL;
         delete sd;
         goto Lagain;
@@ -312,9 +309,9 @@ Lagain:
 const char *
 Store::read_config()
 {
-  int n_dsstore = 0;
-  int ln = 0;
-  int i = 0;
+  int n_dsstore   = 0;
+  int ln          = 0;
+  int i           = 0;
   const char *err = NULL;
   Span *sd = NULL, *cur = NULL;
   Span *ns;
@@ -355,7 +352,7 @@ Store::read_config()
     Debug("cache_init", "Store::read_config: \"%s\"", path);
     ++n_disks_in_config;
 
-    int64_t size = -1;
+    int64_t size   = -1;
     int volume_num = -1;
     char const *e;
     while (0 != (e = tokens.getNext())) {
@@ -405,7 +402,7 @@ Store::read_config()
     // new Span
     {
       Span *prev = cur;
-      cur = ns;
+      cur        = ns;
       if (!sd)
         sd = cur;
       else
@@ -417,10 +414,10 @@ Store::read_config()
   extend(n_dsstore);
   cur = sd;
   while (cur) {
-    Span *next = cur->link.next;
+    Span *next     = cur->link.next;
     cur->link.next = NULL;
-    disk[i++] = cur;
-    cur = next;
+    disk[i++]      = cur;
+    cur            = next;
   }
   sd = 0; // these are all used.
   sort();
@@ -433,7 +430,6 @@ Lfail:
 
   return err;
 }
-
 
 int
 Store::write_config_data(int fd) const
@@ -514,12 +510,12 @@ Span::init(const char *path, int64_t size)
       goto fail;
     }
 
-    this->disk_id[0] = 0;
-    this->disk_id[1] = sbuf.st_rdev;
-    this->file_pathname = true;
+    this->disk_id[0]     = 0;
+    this->disk_id[1]     = sbuf.st_rdev;
+    this->file_pathname  = true;
     this->hw_sector_size = geometry.blocksz;
-    this->alignment = geometry.alignsz;
-    this->blocks = geometry.totalsz / STORE_BLOCK_SIZE;
+    this->alignment      = geometry.alignsz;
+    this->blocks         = geometry.totalsz / STORE_BLOCK_SIZE;
 
     break;
 
@@ -533,11 +529,11 @@ Span::init(const char *path, int64_t size)
     // it the right size based on the "file_pathname" flag. That's something that we should clean up in the future.
     this->file_pathname = false;
 
-    this->disk_id[0] = sbuf.st_dev;
-    this->disk_id[1] = sbuf.st_ino;
+    this->disk_id[0]     = sbuf.st_dev;
+    this->disk_id[1]     = sbuf.st_ino;
     this->hw_sector_size = vbuf.f_bsize;
-    this->alignment = 0;
-    this->blocks = size / STORE_BLOCK_SIZE;
+    this->alignment      = 0;
+    this->blocks         = size / STORE_BLOCK_SIZE;
     break;
 
   case S_IFREG:
@@ -549,12 +545,12 @@ Span::init(const char *path, int64_t size)
       }
     }
 
-    this->disk_id[0] = sbuf.st_dev;
-    this->disk_id[1] = sbuf.st_ino;
-    this->file_pathname = true;
+    this->disk_id[0]     = sbuf.st_dev;
+    this->disk_id[1]     = sbuf.st_ino;
+    this->file_pathname  = true;
     this->hw_sector_size = vbuf.f_bsize;
-    this->alignment = 0;
-    this->blocks = sbuf.st_size / STORE_BLOCK_SIZE;
+    this->alignment      = 0;
+    this->blocks         = sbuf.st_size / STORE_BLOCK_SIZE;
 
     break;
 
@@ -587,7 +583,6 @@ fail:
   return Span::errorstr(serr);
 }
 
-
 void
 Store::normalize()
 {
@@ -603,17 +598,17 @@ static unsigned int
 try_alloc(Store &target, Span *source, unsigned int start_blocks, bool one_only = false)
 {
   unsigned int blocks = start_blocks;
-  Span *ds = NULL;
+  Span *ds            = NULL;
   while (source && blocks) {
     if (source->blocks) {
       unsigned int a; // allocated
       if (blocks > source->blocks)
         a = source->blocks;
       else
-        a = blocks;
+        a     = blocks;
       Span *d = new Span(*source);
 
-      d->blocks = a;
+      d->blocks    = a;
       d->link.next = ds;
 
       if (d->file_pathname)
@@ -686,7 +681,7 @@ Store::try_realloc(Store &s, Store &diff)
               } else {
                 Span *x = new Span(*d);
                 // d will be the first vol
-                d->blocks = sd->offset - d->offset;
+                d->blocks    = sd->offset - d->offset;
                 d->link.next = x;
                 // x will be the last vol
                 x->offset = sd->offset + sd->blocks;
@@ -702,14 +697,13 @@ Store::try_realloc(Store &s, Store &diff)
           prev->link.next = sd->link.next;
         diff.extend(i + 1);
         sd->link.next = diff.disk[i];
-        diff.disk[i] = sd;
-        sd = prev ? prev->link.next : s.disk[i];
+        diff.disk[i]  = sd;
+        sd            = prev ? prev->link.next : s.disk[i];
         continue;
       }
-    Lfound:
-      ;
+    Lfound:;
       prev = sd;
-      sd = sd->link.next;
+      sd   = sd->link.next;
     }
   }
   normalize();
@@ -777,7 +771,7 @@ Store::write(int fd, const char *name) const
     return (-1);
 
   for (unsigned i = 0; i < n_disks; i++) {
-    int n = 0;
+    int n    = 0;
     Span *sd = NULL;
     for (sd = disk[i]; sd; sd = sd->link.next) {
       n++;
@@ -883,7 +877,7 @@ Store::read(int fd, char *aname)
     Span *sd = NULL;
     while (n--) {
       Span *last = sd;
-      sd = new Span;
+      sd         = new Span;
 
       if (!last)
         disk[i] = sd;
@@ -915,7 +909,7 @@ void
 Store::dup(Store &s)
 {
   s.n_disks = n_disks;
-  s.disk = (Span **)ats_malloc(sizeof(Span *) * n_disks);
+  s.disk    = (Span **)ats_malloc(sizeof(Span *) * n_disks);
   for (unsigned i = 0; i < n_disks; i++) {
     s.disk[i] = disk[i]->dup();
   }

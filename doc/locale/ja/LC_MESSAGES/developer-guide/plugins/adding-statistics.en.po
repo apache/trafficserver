@@ -1,0 +1,201 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:23
+msgid "Adding Statistics"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:25
+msgid ""
+"This chapter describes how to add statistics to your plugins. Statistics "
+"can be coupled or uncoupled. *Coupled* statistics are quantities that are "
+"related and must therefore be updated together. The Traffic Server API "
+"statistics functions add your plugin's statistics to the Traffic Server "
+"statistics system. You can view your plugin statistics as you would any "
+"other Traffic Server statistic, using Traffic Line (Traffic Server's "
+"command line interface). This chapter contains the following topics:"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:42
+msgid "Uncoupled Statistics"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:44
+msgid ""
+"A statistic is an object of type ``TSStat``. The value of the statistic is "
+"of type ``TSStatType``. The possible ``TSStatTypes`` are:"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:47
+msgid "``TSSTAT_TYPE_INT64``"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:49
+msgid "``TSSTAT_TYPE_FLOAT``"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:51
+msgid "There is *no* ``TSSTAT_TYPE_INT32``."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:53
+msgid "To add uncoupled statistics, follow the steps below:"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:55
+msgid ""
+"Declare your statistic as a global variable in your plugin. For example:"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:62
+msgid ""
+"In ``TSPluginInit``, create new statistics using ``TSStatCreate``. When you "
+"create a new statistic, you need to give it an \"external\" name that the "
+"Traffic Server command line interface (Traffic Line) uses to access the "
+"statistic. For example:"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:71
+msgid ""
+"Modify (increment, decrement, or other modification) your statistic in "
+"plugin functions."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:75
+msgid "Coupled Statistics"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:77
+msgid ""
+"Use coupled statistics for quantities that are related and therefore must "
+"be updated jointly."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:80
+msgid ""
+"As a very simple example, suppose you have three statistics: ``sum``, "
+"``part_1``, and ``part_2``. They must always preserve the relationship that "
+"``sum = part_1  + part_2``. If you update ``part_1`` without updating "
+"``sum`` at the same time, then the equation becomes untrue. Therefore, the "
+"statistics are said to be *coupled*."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:86
+msgid ""
+"The mechanism for updating coupled statistics jointly is to create local "
+"copies of global coupled statistics in the routines that modifiy them. When "
+"each local copy is updated appropriately, do a global update using "
+"``TSStatsCoupledUpdate``. To specify which statistics are related to one "
+"another, establish a coupled statistic category and make sure that each "
+"coupled statistic belongs to the appropriate category. When it is time to "
+"do the global update, specify the category to be updated."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:96
+msgid ""
+"The local statistic copy must have a duplicate set of statistics as that of "
+"the master copy. Local statistics must also be added to the local statistic "
+"category in the same order as their master copy counterparts were "
+"originally added."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:101
+msgid ""
+"Below are the steps you need to follow, along with a code example taken "
+"from the ``redirect-1.c`` sample plugin."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:105
+msgid "To add coupled statistics"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:107
+msgid ""
+"Declare the global category for your coupled statistics as a global "
+"``TSCoupledStat`` variable in your plugin."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:110
+msgid ""
+"Declare your coupled statistics as global ``TSStat`` variables in your "
+"plugin."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:113
+msgid ""
+"In ``TSPluginInit``, create a new global coupled category using "
+"``TSStatCoupledGlobalCategoryCreate``."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:116
+msgid ""
+"In ``TSPluginInit``, create new global coupled statistics using "
+"``TSStatCoupledGlobalAdd``. When you create a new statistic, you need to "
+"give it an \"external\" name that the Traffic Server command line interface "
+"(Traffic Line) uses to access the statistic."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:121
+msgid ""
+"In any routine wherein you want to modify (increment, decrement, or other "
+"modification) your coupled statistics, declare local copies of the coupled "
+"category and coupled statistics."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:125
+msgid ""
+"Create local copies using ``TSStatCoupledLocalCopyCreate`` and "
+"``TSStatCoupledLocalAdd``."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:128
+msgid ""
+"Modify the local copies of your statistics. Then call "
+"``TSStatsCoupledUpdate`` to update the global copies jointly."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:131
+msgid ""
+"When you are finished, you must destroy all of the local copies in the "
+"category via ``TSStatCoupledLocalCopyDestroy``."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:135
+msgid "Example Using the redirect-1.c Sample Plugin"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:175
+msgid "Viewing Statistics Using Traffic Line"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:179
+msgid "To view statistics for your plugin, follow the steps below:"
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:181
+msgid ""
+"Make sure you know the name of your statistic (i.e., the name used in the "
+"``TSStatCoupledGlobalAdd``, ``TSStatCreate``, or "
+"``TSStatCoupledGlobalCategoryCreate`` call)."
+msgstr ""
+
+#: ../../developer-guide/plugins/adding-statistics.en.rst:185
+msgid "In your ``<Traffic Server>/bin`` directory, enter the following:"
+msgstr ""

@@ -24,6 +24,7 @@
 #define __STATEMENT_H__ 1
 
 #include <string>
+#include <time.h>
 #include <vector>
 
 #include "ts/ts.h"
@@ -31,7 +32,6 @@
 #include "resources.h"
 #include "parser.h"
 #include "lulu.h"
-
 
 // URL data (both client and server)
 enum UrlQualifiers {
@@ -45,6 +45,32 @@ enum UrlQualifiers {
   URL_QUAL_URL
 };
 
+// NOW data
+enum NowQualifiers {
+  NOW_QUAL_EPOCH,
+  NOW_QUAL_YEAR,
+  NOW_QUAL_MONTH,
+  NOW_QUAL_DAY,
+  NOW_QUAL_HOUR,
+  NOW_QUAL_MINUTE,
+  NOW_QUAL_WEEKDAY,
+  NOW_QUAL_YEARDAY
+};
+
+// GEO data
+enum GeoQualifiers {
+  GEO_QUAL_COUNTRY,
+  GEO_QUAL_COUNTRY_ISO,
+  GEO_QUAL_ASN,
+  GEO_QUAL_ASN_NAME,
+};
+
+// ID data
+enum IdQualifiers {
+  ID_QUAL_REQUEST,
+  ID_QUAL_PROCESS,
+  ID_QUAL_UNIQUE,
+};
 
 class Statement
 {
@@ -66,11 +92,13 @@ public:
   {
     _pdata = pdata;
   }
+
   void *
   get_pdata() const
   {
     return (_pdata);
   }
+
   virtual void
   free_pdata()
   {
@@ -100,11 +128,12 @@ public:
 
   virtual void
   initialize(Parser &)
-  { // Parser &p
+  {
     TSReleaseAssert(_initialized == false);
     initialize_hooks();
     _initialized = true;
   }
+
   bool
   initialized() const
   {
@@ -114,7 +143,8 @@ public:
 protected:
   virtual void initialize_hooks();
 
-  UrlQualifiers parse_url_qualifier(const std::string &q);
+  UrlQualifiers parse_url_qualifier(const std::string &q) const;
+
   void
   require_resources(const ResourceIDs ids)
   {
@@ -132,6 +162,5 @@ private:
   std::vector<TSHttpHookID> _allowed_hooks;
   TSHttpHookID _hook;
 };
-
 
 #endif // __STATEMENT_H

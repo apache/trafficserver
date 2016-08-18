@@ -31,23 +31,21 @@
 #include "HTTP.h"
 #include "HttpTransact.h"
 
-#define PARENT_RegisterConfigUpdateFunc REC_RegisterConfigUpdateFunc
-#define PARENT_ReadConfigInteger REC_ReadConfigInteger
-#define PARENT_ReadConfigStringAlloc REC_ReadConfigStringAlloc
+#define MAX_SIMPLE_RETRIES 5
+#define MAX_UNAVAILABLE_SERVER_RETRIES 5
 
 typedef ControlMatcher<ParentRecord, ParentResult> P_table;
 
 // Global Vars for Parent Selection
-static const char modulePrefix[] = "[ParentSelection]";
+static const char modulePrefix[]                             = "[ParentSelection]";
 static ConfigUpdateHandler<ParentConfig> *parentConfigUpdate = NULL;
 
 // Config var names
-static const char *file_var = "proxy.config.http.parent_proxy.file";
-static const char *default_var = "proxy.config.http.parent_proxies";
-static const char *retry_var = "proxy.config.http.parent_proxy.retry_time";
-static const char *enable_var = "proxy.config.http.parent_proxy_routing_enable";
+static const char *file_var      = "proxy.config.http.parent_proxy.file";
+static const char *default_var   = "proxy.config.http.parent_proxies";
+static const char *retry_var     = "proxy.config.http.parent_proxy.retry_time";
+static const char *enable_var    = "proxy.config.http.parent_proxy_routing_enable";
 static const char *threshold_var = "proxy.config.http.parent_proxy.fail_threshold";
-static const char *dns_parent_only_var = "proxy.config.http.no_dns_just_forward_to_parent";
 
 static const char *ParentResultStr[] = {"PARENT_UNDEFINED", "PARENT_DIRECT", "PARENT_SPECIFIED", "PARENT_AGENT", "PARENT_FAIL"};
 
@@ -65,37 +63,29 @@ enum ParentCB_t {
 
 ParentSelectionPolicy::ParentSelectionPolicy()
 {
-  bool enable = false;
-  int32_t retry_time = 0;
+  bool enable            = false;
+  int32_t retry_time     = 0;
   int32_t fail_threshold = 0;
-  int32_t dns_parent_only = 0;
 
   // Handle parent timeout
-  PARENT_ReadConfigInteger(retry_time, retry_var);
+  REC_ReadConfigInteger(retry_time, retry_var);
   ParentRetryTime = retry_time;
 
   // Handle parent enable
-  PARENT_ReadConfigInteger(enable, enable_var);
+  REC_ReadConfigInteger(enable, enable_var);
   ParentEnable = enable;
 
   // Handle the fail threshold
-  PARENT_ReadConfigInteger(fail_threshold, threshold_var);
+  REC_ReadConfigInteger(fail_threshold, threshold_var);
   FailThreshold = fail_threshold;
-
-  // Handle dns parent only
-  PARENT_ReadConfigInteger(dns_parent_only, dns_parent_only_var);
-  DNS_ParentOnly = dns_parent_only;
 }
 
-ParentConfigParams::ParentConfigParams(P_table *_parent_table)
+ParentConfigParams::ParentConfigParams(P_table *_parent_table) : parent_table(_parent_table), DefaultParent(NULL), policy()
 {
   char *default_val = NULL;
-  parent_table = _parent_table;
-
-  policy = new ParentSelectionPolicy();
 
   // Handle default parent
-  PARENT_ReadConfigStringAlloc(default_val, default_var);
+  REC_ReadConfigStringAlloc(default_val, default_var);
   DefaultParent = createDefaultParent(default_val);
   ats_free(default_val);
 }
@@ -109,37 +99,31 @@ ParentConfigParams::apiParentExists(HttpRequestData *rdata)
 void
 ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
 {
-  P_table *tablePtr = parent_table;
+  P_table *tablePtr        = parent_table;
   ParentRecord *defaultPtr = DefaultParent;
   ParentRecord *rec;
 
   Debug("parent_select", "In ParentConfigParams::findParent(): parent_table: %p.", parent_table);
-  ink_assert(result->r == PARENT_UNDEFINED);
+  ink_assert(result->result == PARENT_UNDEFINED);
 
   // Check to see if we are enabled
-  Debug("parent_select", "policy->ParentEnable: %d", policy->ParentEnable);
-  if (policy->ParentEnable == 0) {
-    result->r = PARENT_DIRECT;
+  Debug("parent_select", "policy.ParentEnable: %d", policy.ParentEnable);
+  if (policy.ParentEnable == 0) {
+    result->result = PARENT_DIRECT;
     return;
   }
   // Initialize the result structure
-  result->rec = NULL;
-  result->epoch = tablePtr;
-  result->line_number = 0xffffffff;
-  result->wrap_around = false;
-  result->start_parent = 0;
-  result->last_parent = 0;
+  result->reset();
 
   // Check to see if the parent was set through the
   //   api
   if (apiParentExists(rdata)) {
-    result->r = PARENT_SPECIFIED;
-    result->hostname = rdata->api_info->parent_proxy_name;
-    result->port = rdata->api_info->parent_proxy_port;
-    result->rec = extApiRecord;
-    result->epoch = NULL;
+    result->result       = PARENT_SPECIFIED;
+    result->hostname     = rdata->api_info->parent_proxy_name;
+    result->port         = rdata->api_info->parent_proxy_port;
+    result->rec          = extApiRecord;
     result->start_parent = 0;
-    result->last_parent = 0;
+    result->last_parent  = 0;
 
     Debug("parent_select", "Result for %s was API set parent %s:%d", rdata->get_host(), result->hostname, result->port);
   }
@@ -154,7 +138,7 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
     if (defaultPtr != NULL) {
       rec = result->rec = defaultPtr;
     } else {
-      result->r = PARENT_DIRECT;
+      result->result = PARENT_DIRECT;
       Debug("parent_select", "Returning PARENT_DIRECT (no parents were found)");
       return;
     }
@@ -166,17 +150,17 @@ ParentConfigParams::findParent(HttpRequestData *rdata, ParentResult *result)
 
   const char *host = rdata->get_host();
 
-  switch (result->r) {
+  switch (result->result) {
   case PARENT_UNDEFINED:
     Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_FAIL:
     Debug("parent_select", "PARENT_FAIL");
     break;
   case PARENT_DIRECT:
     Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_SPECIFIED:
     Debug("parent_select", "PARENT_SPECIFIED");
@@ -194,26 +178,23 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
 {
   P_table *tablePtr = parent_table;
 
-  Debug("parent_select", "ParentConfigParams::nextParent(): parent_table: %p, result->rec: %p, result->epoch: %p", parent_table,
-        result->rec, result->epoch);
+  Debug("parent_select", "ParentConfigParams::nextParent(): parent_table: %p, result->rec: %p", parent_table, result->rec);
 
   //  Make sure that we are being called back with a
   //   result structure with a parent
-  ink_assert(result->r == PARENT_SPECIFIED);
-  if (result->r != PARENT_SPECIFIED) {
-    result->r = PARENT_FAIL;
+  ink_assert(result->result == PARENT_SPECIFIED);
+  if (result->result != PARENT_SPECIFIED) {
+    result->result = PARENT_FAIL;
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
-    Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->r]);
-    result->r = PARENT_FAIL;
+  if (result->is_api_result()) {
+    Debug("parent_select", "Retry result for %s was %s", rdata->get_host(), ParentResultStr[result->result]);
+    result->result = PARENT_FAIL;
     return;
   }
-  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p, result->epoch: %p", result->r, tablePtr,
-        result->epoch);
-  ink_release_assert(tablePtr == result->epoch);
+  Debug("parent_select", "ParentConfigParams::nextParent(): result->r: %d, tablePtr: %p", result->result, tablePtr);
 
   // Find the next parent in the array
   Debug("parent_select", "Calling selectParent() from nextParent");
@@ -221,18 +202,18 @@ ParentConfigParams::nextParent(HttpRequestData *rdata, ParentResult *result)
 
   const char *host = rdata->get_host();
 
-  switch (result->r) {
+  switch (result->result) {
   case PARENT_UNDEFINED:
     Debug("parent_select", "PARENT_UNDEFINED");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_FAIL:
     Debug("parent_select", "PARENT_FAIL");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_DIRECT:
     Debug("parent_select", "PARENT_DIRECT");
-    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->r]);
+    Debug("parent_select", "Retry result for %s was %s", host, ParentResultStr[result->result]);
     break;
   case PARENT_SPECIFIED:
     Debug("parent_select", "Retry result for %s was parent %s:%d", host, result->hostname, result->port);
@@ -251,7 +232,7 @@ ParentConfigParams::parentExists(HttpRequestData *rdata)
 
   findParent(rdata, &result);
 
-  if (result.r == PARENT_SPECIFIED) {
+  if (result.result == PARENT_SPECIFIED) {
     return true;
   } else {
     return false;
@@ -280,9 +261,6 @@ ParentConfig::startup()
 
   //   Fail Threshold
   parentConfigUpdate->attach(threshold_var);
-
-  //   DNS Parent Only
-  parentConfigUpdate->attach(dns_parent_only_var);
 }
 
 void
@@ -313,8 +291,7 @@ ParentConfig::print()
   ParentConfigParams *params = ParentConfig::acquire();
 
   printf("Parent Selection Config\n");
-  printf("\tEnabled %d\tRetryTime %d\tParent DNS Only %d\n", params->policy->ParentEnable, params->policy->ParentRetryTime,
-         params->policy->DNS_ParentOnly);
+  printf("\tEnabled %d\tRetryTime %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime);
   if (params->DefaultParent == NULL) {
     printf("\tNo Default Parent\n");
   } else {
@@ -325,6 +302,33 @@ ParentConfig::print()
   params->parent_table->Print();
 
   ParentConfig::release(params);
+}
+
+UnavailableServerResponseCodes::UnavailableServerResponseCodes(char *val)
+{
+  Tokenizer pTok(", \t\r");
+  int numTok = 0, c;
+
+  if (val == NULL) {
+    Warning("UnavailableServerResponseCodes - unavailable_server_retry_responses is null loading default 503 code.");
+    codes.push_back(HTTP_STATUS_SERVICE_UNAVAILABLE);
+    return;
+  }
+  numTok = pTok.Initialize(val, SHARE_TOKS);
+  if (numTok == 0) {
+    c = atoi(val);
+    if (c > 500 && c < 600) {
+      codes.push_back(HTTP_STATUS_SERVICE_UNAVAILABLE);
+    }
+  }
+  for (int i = 0; i < numTok; i++) {
+    c = atoi(pTok[i]);
+    if (c > 500 && c < 600) {
+      TSDebug("parent_select", "loading response code: %d", c);
+      codes.push_back(c);
+    }
+  }
+  std::sort(codes.begin(), codes.end());
 }
 
 // const char* ParentRecord::ProcessParents(char* val, bool isPrimary)
@@ -342,12 +346,12 @@ const char *
 ParentRecord::ProcessParents(char *val, bool isPrimary)
 {
   Tokenizer pTok(",; \t\r");
-  int numTok = 0;
+  int numTok          = 0;
   const char *current = NULL;
-  int port = 0;
+  int port            = 0;
   char *tmp = NULL, *tmp2 = NULL;
   const char *errPtr = NULL;
-  float weight = 1.0;
+  float weight       = 1.0;
 
   if (parents != NULL && isPrimary == true) {
     return "Can not specify more than one set of parents";
@@ -405,10 +409,12 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     } else {
       scan = tmp + 1;
     }
-    for (; *scan != '\0' && (ParseRules::is_digit(*scan) || *scan == '.'); scan++)
+    for (; *scan != '\0' && (ParseRules::is_digit(*scan) || *scan == '.'); scan++) {
       ;
-    for (; *scan != '\0' && ParseRules::is_wslfcr(*scan); scan++)
+    }
+    for (; *scan != '\0' && ParseRules::is_wslfcr(*scan); scan++) {
       ;
+    }
     if (*scan != '\0') {
       errPtr = "Garbage trailing entry or invalid separator";
       goto MERROR;
@@ -426,23 +432,23 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
     if (isPrimary) {
       memcpy(this->parents[i].hostname, current, tmp - current);
       this->parents[i].hostname[tmp - current] = '\0';
-      this->parents[i].port = port;
-      this->parents[i].failedAt = 0;
-      this->parents[i].scheme = scheme;
-      this->parents[i].idx = i;
-      this->parents[i].name = this->parents[i].hostname;
-      this->parents[i].available = true;
-      this->parents[i].weight = weight;
+      this->parents[i].port                    = port;
+      this->parents[i].failedAt                = 0;
+      this->parents[i].scheme                  = scheme;
+      this->parents[i].idx                     = i;
+      this->parents[i].name                    = this->parents[i].hostname;
+      this->parents[i].available               = true;
+      this->parents[i].weight                  = weight;
     } else {
       memcpy(this->secondary_parents[i].hostname, current, tmp - current);
       this->secondary_parents[i].hostname[tmp - current] = '\0';
-      this->secondary_parents[i].port = port;
-      this->secondary_parents[i].failedAt = 0;
-      this->secondary_parents[i].scheme = scheme;
-      this->secondary_parents[i].idx = i;
-      this->secondary_parents[i].name = this->secondary_parents[i].hostname;
-      this->secondary_parents[i].available = true;
-      this->secondary_parents[i].weight = weight;
+      this->secondary_parents[i].port                    = port;
+      this->secondary_parents[i].failedAt                = 0;
+      this->secondary_parents[i].scheme                  = scheme;
+      this->secondary_parents[i].idx                     = i;
+      this->secondary_parents[i].name                    = this->secondary_parents[i].hostname;
+      this->secondary_parents[i].available               = true;
+      this->secondary_parents[i].weight                  = weight;
     }
   }
 
@@ -478,10 +484,11 @@ ParentRecord::DefaultInit(char *val)
   char *errBuf;
   bool alarmAlready = false;
 
-  this->go_direct = true;
-  this->ignore_query = false;
-  this->scheme = NULL;
-  errPtr = ProcessParents(val, true);
+  this->go_direct       = true;
+  this->ignore_query    = false;
+  this->scheme          = NULL;
+  this->parent_is_proxy = true;
+  errPtr                = ProcessParents(val, true);
 
   if (errPtr != NULL) {
     errBuf = (char *)ats_malloc(1024);
@@ -510,17 +517,17 @@ ParentRecord::Init(matcher_line *line_info)
   const char *tmp;
   char *label;
   char *val;
-  bool used = false;
+  bool used              = false;
   ParentRR_t round_robin = P_NO_ROUND_ROBIN;
-
+  char buf[128];
 
   this->line_num = line_info->line_num;
-  this->scheme = NULL;
+  this->scheme   = NULL;
 
   for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
-    used = false;
+    used  = false;
     label = line_info->line[0][i];
-    val = line_info->line[1][i];
+    val   = line_info->line[1][i];
 
     if (label == NULL) {
       continue;
@@ -537,15 +544,15 @@ ParentRecord::Init(matcher_line *line_info)
         round_robin = P_CONSISTENT_HASH;
       } else {
         round_robin = P_NO_ROUND_ROBIN;
-        errPtr = "invalid argument to round_robin directive";
+        errPtr      = "invalid argument to round_robin directive";
       }
       used = true;
     } else if (strcasecmp(label, "parent") == 0 || strcasecmp(label, "primary_parent") == 0) {
       errPtr = ProcessParents(val, true);
-      used = true;
+      used   = true;
     } else if (strcasecmp(label, "secondary_parent") == 0) {
       errPtr = ProcessParents(val, false);
-      used = true;
+      used   = true;
     } else if (strcasecmp(label, "go_direct") == 0) {
       if (strcasecmp(val, "false") == 0) {
         go_direct = false;
@@ -563,6 +570,49 @@ ParentRecord::Init(matcher_line *line_info)
         this->ignore_query = false;
       }
       used = true;
+    } else if (strcasecmp(label, "parent_is_proxy") == 0) {
+      if (strcasecmp(val, "false") == 0) {
+        parent_is_proxy = false;
+      } else if (strcasecmp(val, "true") != 0) {
+        errPtr = "invalid argument to parent_is_proxy directive";
+      } else {
+        parent_is_proxy = true;
+      }
+      used = true;
+    } else if (strcasecmp(label, "parent_retry") == 0) {
+      if (strcasecmp(val, "simple_retry") == 0) {
+        parent_retry = PARENT_RETRY_SIMPLE;
+      } else if (strcasecmp(val, "unavailable_server_retry") == 0) {
+        parent_retry = PARENT_RETRY_UNAVAILABLE_SERVER;
+      } else if (strcasecmp(val, "both") == 0) {
+        parent_retry = PARENT_RETRY_BOTH;
+      } else {
+        errPtr = "invalid argument to parent_retry directive.";
+      }
+      used = true;
+    } else if (strcasecmp(label, "unavailable_server_retry_responses") == 0 && unavailable_server_retry_responses == NULL) {
+      unavailable_server_retry_responses = new UnavailableServerResponseCodes(val);
+      used                               = true;
+    } else if (strcasecmp(label, "max_simple_retries") == 0) {
+      int v = atoi(val);
+      if (v >= 1 && v < MAX_SIMPLE_RETRIES) {
+        max_simple_retries = v;
+        used               = true;
+      } else {
+        snprintf(buf, sizeof(buf), "invalid argument to max_simple_retries.  Argument must be between 1 and %d.",
+                 MAX_SIMPLE_RETRIES);
+        errPtr = buf;
+      }
+    } else if (strcasecmp(label, "max_unavailable_server_retries") == 0) {
+      int v = atoi(val);
+      if (v >= 1 && v < MAX_UNAVAILABLE_SERVER_RETRIES) {
+        max_unavailable_server_retries = v;
+        used                           = true;
+      } else {
+        snprintf(buf, sizeof(buf), "invalid argument to max_unavailable_server_retries.  Argument must be between 1 and %d.",
+                 MAX_UNAVAILABLE_SERVER_RETRIES);
+        errPtr = buf;
+      }
     }
     // Report errors generated by ProcessParents();
     if (errPtr != NULL) {
@@ -573,6 +623,30 @@ ParentRecord::Init(matcher_line *line_info)
       // Consume the label/value pair we used
       line_info->line[0][i] = NULL;
       line_info->num_el--;
+    }
+  }
+
+  // parent_retry may only be enabled if the parents are origin servers, parent_is_proxy is false.
+  if (parent_is_proxy == true) {
+    if (parent_retry > 0) {
+      Warning("%s disabling parent_retry on line %d because parent_is_proxy is true", modulePrefix, line_num);
+      parent_retry = PARENT_RETRY_NONE;
+      if (unavailable_server_retry_responses != NULL) {
+        delete unavailable_server_retry_responses;
+        unavailable_server_retry_responses = NULL;
+      }
+    }
+  } else {
+    // delete unavailable_server_retry_responses if unavailable_server_retry is not enabled.
+    if (unavailable_server_retry_responses != NULL && !(parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+      Warning("%s ignoring unavailable_server_retry_responses directive on line %d, as unavailable_server_retry is not enabled.",
+              modulePrefix, line_num);
+      delete unavailable_server_retry_responses;
+      unavailable_server_retry_responses = NULL;
+    } else if (unavailable_server_retry_responses == NULL && (parent_retry & PARENT_RETRY_UNAVAILABLE_SERVER)) {
+      // initialize UnavailableServerResponseCodes to the default value if unavailable_server_retry is enabled.
+      Warning("%s initializing UnavailableServerResponseCodes on line %d to 503 default.", modulePrefix, line_num);
+      unavailable_server_retry_responses = new UnavailableServerResponseCodes(NULL);
     }
   }
 
@@ -629,7 +703,7 @@ void
 ParentRecord::UpdateMatch(ParentResult *result, RequestData *rdata)
 {
   if (this->CheckForMatch((HttpRequestData *)rdata, result->line_number) == true) {
-    result->rec = this;
+    result->rec         = this;
     result->line_number = this->line_num;
 
     Debug("parent_select", "Matched with %p parent node from line %d", this, this->line_num);
@@ -640,6 +714,7 @@ ParentRecord::~ParentRecord()
 {
   ats_free(parents);
   delete selection_strategy;
+  delete unavailable_server_retry_responses;
 }
 
 void
@@ -650,6 +725,7 @@ ParentRecord::Print()
     printf(" %s:%d ", parents[i].hostname, parents[i].port);
   }
   printf(" direct=%s\n", (go_direct == true) ? "true" : "false");
+  printf(" parent_is_proxy=%s\n", (parent_is_proxy == true) ? "true" : "false");
 }
 
 // ParentRecord* createDefaultParent(char* val)
@@ -702,7 +778,7 @@ setup_socks_servers(ParentRecord *rec_arr, int len)
   for (int j = 0; j < len; j++) {
     rec_arr[j].go_direct = false;
 
-    pRecord *pr = rec_arr[j].parents;
+    pRecord *pr   = rec_arr[j].parents;
     int n_parents = rec_arr[j].num_parents;
 
     for (int i = 0; i < n_parents; i++) {
@@ -726,7 +802,7 @@ void
 SocksServerConfig::reconfigure()
 {
   char *default_val = NULL;
-  int retry_time = 30;
+  int retry_time    = 30;
   int fail_threshold;
 
   ParentConfigParams *params = NULL;
@@ -738,30 +814,28 @@ SocksServerConfig::reconfigure()
   ink_assert(params != NULL);
 
   // Handle default parent
-  PARENT_ReadConfigStringAlloc(default_val, "proxy.config.socks.default_servers");
+  REC_ReadConfigStringAlloc(default_val, "proxy.config.socks.default_servers");
   params->DefaultParent = createDefaultParent(default_val);
   ats_free(default_val);
 
-  if (params->DefaultParent)
+  if (params->DefaultParent) {
     setup_socks_servers(params->DefaultParent, 1);
-  if (params->parent_table->ipMatch)
+  }
+  if (params->parent_table->ipMatch) {
     setup_socks_servers(params->parent_table->ipMatch->data_array, params->parent_table->ipMatch->array_len);
+  }
 
   // Handle parent timeout
-  PARENT_ReadConfigInteger(retry_time, "proxy.config.socks.server_retry_time");
-  params->policy->ParentRetryTime = retry_time;
+  REC_ReadConfigInteger(retry_time, "proxy.config.socks.server_retry_time");
+  params->policy.ParentRetryTime = retry_time;
 
   // Handle parent enable
   // enable is always true for use. We will come here only if socks is enabled
-  params->policy->ParentEnable = 1;
+  params->policy.ParentEnable = 1;
 
   // Handle the fail threshold
-  PARENT_ReadConfigInteger(fail_threshold, "proxy.config.socks.server_fail_threshold");
-  params->policy->FailThreshold = fail_threshold;
-
-  // Handle dns parent only
-  // PARENT_ReadConfigInteger(dns_parent_only, dns_parent_only_var);
-  params->policy->DNS_ParentOnly = 0;
+  REC_ReadConfigInteger(fail_threshold, "proxy.config.socks.server_fail_threshold");
+  params->policy.FailThreshold = fail_threshold;
 
   m_id = configProcessor.set(m_id, params);
 
@@ -776,8 +850,7 @@ SocksServerConfig::print()
   ParentConfigParams *params = SocksServerConfig::acquire();
 
   printf("Parent Selection Config for Socks Server\n");
-  printf("\tEnabled %d\tRetryTime %d\tParent DNS Only %d\n", params->policy->ParentEnable, params->policy->ParentRetryTime,
-         params->policy->DNS_ParentOnly);
+  printf("\tEnabled %d\tRetryTime %d\n", params->policy.ParentEnable, params->policy.ParentRetryTime);
   if (params->DefaultParent == NULL) {
     printf("\tNo Default Parent\n");
   } else {
@@ -815,7 +888,6 @@ request_to_data(HttpRequestData *req, sockaddr const *srcip, sockaddr const *dst
   http_parser_clear(&parser);
 }
 
-
 static int passes;
 static int fails;
 
@@ -825,223 +897,333 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   // first, set everything up
   *pstatus = REGRESSION_TEST_INPROGRESS;
   ParentConfig config;
-  P_table *ParentTable;
-  ParentConfigParams *params;
+  P_table *ParentTable       = NULL;
+  ParentConfigParams *params = NULL;
   passes = fails = 0;
   config.startup();
   char tbl[2048];
-#define T(x) ink_strlcat(tbl, x, sizeof(tbl));
-#define REBUILD                                                                                                          \
-  ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags,                                      \
-                            ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); \
-  ParentTable->BuildTableFromString(tbl);                                                                                \
-  params = new ParentConfigParams(ParentTable);                                                                          \
-  params->policy->FailThreshold = 1;                                                                                     \
-  params->policy->ParentEnable = true;                                                                                   \
-  params->policy->ParentRetryTime = 5;
   HttpRequestData *request = NULL;
-  ParentResult *result = NULL;
-#define REINIT                            \
-  delete request;                         \
-  delete result;                          \
-  request = new HttpRequestData();        \
-  result = new ParentResult();            \
-  if (!result || !request) {              \
-    (void) printf("Allocation failed\n"); \
-    return;                               \
-  }
-#define ST(x) printf("*** TEST %d *** STARTING ***\n", x);
-#define RE(x, y)                                                     \
-  if (x) {                                                           \
-    printf("*** TEST %d *** PASSED ***\n", y);                       \
-    passes++;                                                        \
-  } else {                                                           \
-    printf("*** TEST %d *** FAILED *** FAILED *** FAILED ***\n", y); \
-    fails++;                                                         \
-  }
-#define FP params->findParent(request, result);
+  ParentResult *result     = NULL;
+
+#define T(x)                          \
+  do {                                \
+    ink_strlcat(tbl, x, sizeof(tbl)); \
+  } while (0)
+
+#define REBUILD                                                                                                            \
+  do {                                                                                                                     \
+    delete ParentTable;                                                                                                    \
+    delete params;                                                                                                         \
+    ParentTable = new P_table("", "ParentSelection Unit Test Table", &http_dest_tags,                                      \
+                              ALLOW_HOST_TABLE | ALLOW_REGEX_TABLE | ALLOW_URL_TABLE | ALLOW_IP_TABLE | DONT_BUILD_TABLE); \
+    ParentTable->BuildTableFromString(tbl);                                                                                \
+    params                         = new ParentConfigParams(ParentTable);                                                  \
+    params->policy.FailThreshold   = 1;                                                                                    \
+    params->policy.ParentEnable    = true;                                                                                 \
+    params->policy.ParentRetryTime = 5;                                                                                    \
+  } while (0)
+
+#define REINIT                             \
+  do {                                     \
+    if (request != NULL) {                 \
+      delete request->hdr;                 \
+      ats_free(request->hostname_str);     \
+      delete request->api_info;            \
+    }                                      \
+    delete request;                        \
+    delete result;                         \
+    request = new HttpRequestData();       \
+    result  = new ParentResult();          \
+    if (!result || !request) {             \
+      (void)printf("Allocation failed\n"); \
+      return;                              \
+    }                                      \
+  } while (0)
+
+#define ST(x)                                    \
+  do {                                           \
+    printf("*** TEST %d *** STARTING ***\n", x); \
+  } while (0)
+
+#define RE(x, y)                                                       \
+  do {                                                                 \
+    if (x) {                                                           \
+      printf("*** TEST %d *** PASSED ***\n", y);                       \
+      passes++;                                                        \
+    } else {                                                           \
+      printf("*** TEST %d *** FAILED *** FAILED *** FAILED ***\n", y); \
+      fails++;                                                         \
+    }                                                                  \
+  } while (0)
+
+#define FP                               \
+  do {                                   \
+    params->findParent(request, result); \
+  } while (0)
 
   // Test 1
   tbl[0] = '\0';
-  ST(1)
-  T("dest_domain=. parent=red:37412,orange:37412,yellow:37412 round_robin=strict\n")
-  REBUILD int c, red = 0, orange = 0, yellow = 0;
+  ST(1);
+  T("dest_domain=. parent=red:37412,orange:37412,yellow:37412 round_robin=strict\n");
+  REBUILD;
+  int c, red = 0, orange = 0, yellow = 0;
   for (c = 0; c < 21; c++) {
-    REINIT br(request, "fruit_basket.net");
-    FP red += verify(result, PARENT_SPECIFIED, "red", 37412);
+    REINIT;
+    br(request, "fruit_basket.net");
+    FP;
+    red += verify(result, PARENT_SPECIFIED, "red", 37412);
     orange += verify(result, PARENT_SPECIFIED, "orange", 37412);
     yellow += verify(result, PARENT_SPECIFIED, "yellow", 37412);
   }
-  RE(((red == 7) && (orange == 7) && (yellow == 7)), 1)
+  RE(((red == 7) && (orange == 7) && (yellow == 7)), 1);
   // Test 2
-  ST(2)
+  ST(2);
   tbl[0] = '\0';
-  T("dest_domain=. parent=green:4325,blue:4325,indigo:4325,violet:4325 round_robin=false\n")
-  REBUILD int g = 0, b = 0, i = 0, v = 0;
+  T("dest_domain=. parent=green:4325,blue:4325,indigo:4325,violet:4325 round_robin=false\n");
+  REBUILD;
+  int g = 0, b = 0, i = 0, v = 0;
   for (c = 0; c < 17; c++) {
-    REINIT br(request, "fruit_basket.net");
-    FP g += verify(result, PARENT_SPECIFIED, "green", 4325);
+    REINIT;
+    br(request, "fruit_basket.net");
+    FP;
+    g += verify(result, PARENT_SPECIFIED, "green", 4325);
     b += verify(result, PARENT_SPECIFIED, "blue", 4325);
     i += verify(result, PARENT_SPECIFIED, "indigo", 4325);
     v += verify(result, PARENT_SPECIFIED, "violet", 4325);
   }
   RE((((g == 17) && !b && !i && !v) || (!g && (b == 17) && !i && !v) || (!g && !b && (i == 17) && !v) ||
       (!g && !b && !i && (v == 17))),
-     2)
+     2);
   // Test 3 - 6 Parenting Table
   tbl[0] = '\0';
 #define TEST_IP4_ADDR "209.131.62.14"
 #define TEST_IP6_ADDR "BEEF:DEAD:ABBA:CAFE:1337:1E1F:5EED:C0FF"
-  T("dest_ip=" TEST_IP4_ADDR " parent=cat:37,dog:24 round_robin=strict\n")             /* L1 */
-  T("dest_ip=" TEST_IP6_ADDR " parent=zwoop:37,jMCg:24 round_robin=strict\n")          /* L1 */
-  T("dest_host=www.pilot.net parent=pilot_net:80\n")                                   /* L2 */
-  T("url_regex=snoopy parent=odie:80,garfield:80 round_robin=true\n")                  /* L3 */
-  T("dest_domain=i.am parent=amy:80,katie:80,carissa:771 round_robin=false\n")         /* L4 */
-  T("dest_domain=microsoft.net time=03:00-22:10 parent=zoo.net:341\n")                 /* L5 */
-  T("dest_domain=microsoft.net time=0:00-02:59 parent=zoo.net:347\n")                  /* L6 */
-  T("dest_domain=microsoft.net time=22:11-23:59 parent=zoo.edu:111\n")                 /* L7 */
-  T("dest_domain=imac.net port=819 parent=genie:80 round_robin=strict\n")              /* L8 */
-  T("dest_ip=172.34.61.211 port=3142 parent=orangina:80 go_direct=false\n")            /* L9 */
-  T("url_regex=miffy prefix=furry/rabbit parent=nintje:80 go_direct=false\n")          /* L10 */
-  T("url_regex=kitty suffix=tif parent=hello:80 round_robin=strict go_direct=false\n") /* L11 */
-  T("url_regex=cyclops method=get parent=turkey:80\n")                                 /* L12 */
-  T("url_regex=cyclops method=post parent=club:80\n")                                  /* L13 */
-  T("url_regex=cyclops method=put parent=sandwich:80\n")                               /* L14 */
-  T("url_regex=cyclops method=trace parent=mayo:80\n")                                 /* L15 */
-  T("dest_host=pluto scheme=HTTP parent=strategy:80\n")                                /* L16 */
-  REBUILD
+  T("dest_ip=" TEST_IP4_ADDR " parent=cat:37,dog:24 round_robin=strict\n");             /* L1 */
+  T("dest_ip=" TEST_IP6_ADDR " parent=zwoop:37,jMCg:24 round_robin=strict\n");          /* L1 */
+  T("dest_host=www.pilot.net parent=pilot_net:80\n");                                   /* L2 */
+  T("url_regex=snoopy parent=odie:80,garfield:80 round_robin=true\n");                  /* L3 */
+  T("dest_domain=i.am parent=amy:80,katie:80,carissa:771 round_robin=false\n");         /* L4 */
+  T("dest_domain=microsoft.net time=03:00-22:10 parent=zoo.net:341\n");                 /* L5 */
+  T("dest_domain=microsoft.net time=0:00-02:59 parent=zoo.net:347\n");                  /* L6 */
+  T("dest_domain=microsoft.net time=22:11-23:59 parent=zoo.edu:111\n");                 /* L7 */
+  T("dest_domain=imac.net port=819 parent=genie:80 round_robin=strict\n");              /* L8 */
+  T("dest_ip=172.34.61.211 port=3142 parent=orangina:80 go_direct=false\n");            /* L9 */
+  T("url_regex=miffy prefix=furry/rabbit parent=nintje:80 go_direct=false\n");          /* L10 */
+  T("url_regex=kitty suffix=tif parent=hello:80 round_robin=strict go_direct=false\n"); /* L11 */
+  T("url_regex=cyclops method=get parent=turkey:80\n");                                 /* L12 */
+  T("url_regex=cyclops method=post parent=club:80\n");                                  /* L13 */
+  T("url_regex=cyclops method=put parent=sandwich:80\n");                               /* L14 */
+  T("url_regex=cyclops method=trace parent=mayo:80\n");                                 /* L15 */
+  T("dest_host=pluto scheme=HTTP parent=strategy:80\n");                                /* L16 */
+  REBUILD;
   // Test 3
   IpEndpoint ip;
   ats_ip_pton(TEST_IP4_ADDR, &ip.sa);
-  ST(3) REINIT br(request, "numeric_host", &ip.sa);
-  FP RE(verify(result, PARENT_SPECIFIED, "cat", 37) + verify(result, PARENT_SPECIFIED, "dog", 24), 3)
-    ats_ip_pton(TEST_IP6_ADDR, &ip.sa);
-  ST(4) REINIT br(request, "numeric_host", &ip.sa);
-  FP RE(verify(result, PARENT_SPECIFIED, "zwoop", 37) + verify(result, PARENT_SPECIFIED, "jMCg", 24), 4)
-    // Test 5
-    ST(5) REINIT br(request, "www.pilot.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "pilot_net", 80), 5)
-    // Test 6
-    ST(6) REINIT br(request, "www.snoopy.net");
+  ST(3);
+  REINIT;
+  br(request, "numeric_host", &ip.sa);
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "cat", 37) + verify(result, PARENT_SPECIFIED, "dog", 24), 3);
+  ats_ip_pton(TEST_IP6_ADDR, &ip.sa);
+  ST(4);
+  REINIT;
+  br(request, "numeric_host", &ip.sa);
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "zwoop", 37) + verify(result, PARENT_SPECIFIED, "jMCg", 24), 4);
+  // Test 5
+  ST(5);
+  REINIT;
+  br(request, "www.pilot.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "pilot_net", 80), 5);
+  // Test 6
+  ST(6);
+  REINIT;
+  br(request, "www.snoopy.net");
   const char *snoopy_dog = "http://www.snoopy.com/";
   request->hdr->url_set(snoopy_dog, strlen(snoopy_dog));
-  FP RE(verify(result, PARENT_SPECIFIED, "odie", 80) + verify(result, PARENT_SPECIFIED, "garfield", 80), 5)
-    // Test 7
-    ST(7) REINIT br(request, "a.rabbit.i.am");
-  FP RE(verify(result, PARENT_SPECIFIED, "amy", 80) + verify(result, PARENT_SPECIFIED, "katie", 80) +
-          verify(result, PARENT_SPECIFIED, "carissa", 771),
-        6)
-    // Test 6+ BUGBUG needs to be fixed
-    //   ST(7) REINIT
-    //   br(request, "www.microsoft.net");
-    //   FP RE( verify(result,PARENT_SPECIFIED,"zoo.net",341) +
-    //       verify(result,PARENT_SPECIFIED,"zoo.net",347) +
-    //       verify(result,PARENT_SPECIFIED,"zoo.edu",111) ,7)
-    // Test 6++ BUGBUG needs to be fixed
-    //   ST(7) REINIT
-    //   br(request, "snow.imac.net:2020");
-    //   FP RE(verify(result,PARENT_DIRECT,0,0),7)
-    // Test 6+++ BUGBUG needs to be fixed
-    //   ST(8) REINIT
-    //   br(request, "snow.imac.net:819");
-    //   URL* u = new URL();
-    //   char* r = "http://snow.imac.net:819/";
-    //   u->create(0);
-    //   u->parse(r,strlen(r));
-    //   u->port_set(819);
-    //   request->hdr->url_set(u);
-    //   ink_assert(request->hdr->url_get()->port_get() == 819);
-    //   printf("url: %s\n",request->hdr->url_get()->string_get(0));
-    //   FP RE(verify(result,PARENT_SPECIFIED,"genie",80),8)
-    // Test 7 - N Parent Table
-    tbl[0] = '\0';
-  T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=strict go_direct=true\n")
-  REBUILD
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "odie", 80) + verify(result, PARENT_SPECIFIED, "garfield", 80), 5);
+  // Test 7
+  ST(7);
+  REINIT;
+  br(request, "a.rabbit.i.am");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "amy", 80) + verify(result, PARENT_SPECIFIED, "katie", 80) +
+       verify(result, PARENT_SPECIFIED, "carissa", 771),
+     6);
+  // Test 6+ BUGBUG needs to be fixed
+  //   ST(7); REINIT;
+  //   br(request, "www.microsoft.net");
+  //   FP; RE( verify(result,PARENT_SPECIFIED,"zoo.net",341) +
+  //       verify(result,PARENT_SPECIFIED,"zoo.net",347) +
+  //       verify(result,PARENT_SPECIFIED,"zoo.edu",111) ,7);
+  // Test 6++ BUGBUG needs to be fixed
+  //   ST(7); REINIT;
+  //   br(request, "snow.imac.net:2020");
+  //   FP; RE(verify(result,PARENT_DIRECT,0,0),7);
+  // Test 6+++ BUGBUG needs to be fixed
+  //   ST(8); REINIT;
+  //   br(request, "snow.imac.net:819");
+  //   URL* u = new URL();
+  //   char* r = "http://snow.imac.net:819/";
+  //   u->create(0);
+  //   u->parse(r,strlen(r));
+  //   u->port_set(819);
+  //   request->hdr->url_set(u);
+  //   ink_assert(request->hdr->url_get()->port_get() == 819);
+  //   printf("url: %s\n",request->hdr->url_get()->string_get(0));
+  //   FP; RE(verify(result,PARENT_SPECIFIED,"genie",80),8);
+  // Test 7 - N Parent Table
+  tbl[0] = '\0';
+  T("dest_domain=rabbit.net parent=fuzzy:80,fluffy:80,furry:80,frisky:80 round_robin=strict go_direct=true\n");
+  REBUILD;
   // Test 8
-  ST(8) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 7) params->markParentDown(result);
+  ST(8);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 7);
+  params->markParentDown(result);
 
   // Test 9
-  ST(9) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 8)
-    // Test 10
-    ST(10) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 9)
-    // Test 11
-    ST(11) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 10)
-    // restart the loop
-    // Test 12
-    ST(12) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 11)
-    // Test 13
-    ST(13) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 12)
-    // Test 14
-    ST(14) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 13)
-    // Test 15
-    ST(15) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 14) params->markParentDown(result);
+  ST(9);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 8);
+  // Test 10
+  ST(10);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 9);
+  // Test 11
+  ST(11);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 10);
+  // restart the loop
+  // Test 12
+  ST(12);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 11);
+  // Test 13
+  ST(13);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 12);
+  // Test 14
+  ST(14);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 13);
+  // Test 15
+  ST(15);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 14);
+  params->markParentDown(result);
 
   // restart the loop
 
   // Test 16
-  ST(16) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 15)
-    // Test 17
-    ST(17) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 16)
-    // Test 18
-    ST(18) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 17)
-    // Test 19
-    ST(19) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 18)
-    // restart the loop
-    // Test 20
-    ST(20) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 19)
-    // Test 21
-    ST(21) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 20)
-    // Test 22
-    ST(22) REINIT br(request, "i.am.rabbit.net");
-  FP RE(verify(result, PARENT_SPECIFIED, "furry", 80), 21) params->markParentDown(result);
+  ST(16);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 15);
+  // Test 17
+  ST(17);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 16);
+  // Test 18
+  ST(18);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 17);
+  // Test 19
+  ST(19);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 18);
+  // restart the loop
+  // Test 20
+  ST(20);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 19);
+  // Test 21
+  ST(21);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 20);
+  // Test 22
+  ST(22);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 21);
+  params->markParentDown(result);
 
   // Test 23 - 32
   for (i = 23; i < 33; i++) {
-    ST(i) REINIT br(request, "i.am.rabbit.net");
-    FP RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i)
+    ST(i);
+    REINIT;
+    br(request, "i.am.rabbit.net");
+    FP;
+    RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i);
   }
 
   params->markParentDown(result); // now they're all down
 
   // Test 33 - 132
   for (i = 33; i < 133; i++) {
-    ST(i) REINIT br(request, "i.am.rabbit.net");
-    FP RE(verify(result, PARENT_DIRECT, 0, 0), i)
+    ST(i);
+    REINIT;
+    br(request, "i.am.rabbit.net");
+    FP;
+    RE(verify(result, PARENT_DIRECT, 0, 0), i);
   }
 
   // sleep(5); // parents should come back up; they don't
-  sleep(params->policy->ParentRetryTime + 1);
+  sleep(params->policy.ParentRetryTime + 1);
 
   // Fix: The following tests failed because
   // br() should set xact_start correctly instead of 0.
 
   // Test 133 - 172
   for (i = 133; i < 173; i++) {
-    ST(i) REINIT br(request, "i.am.rabbit.net");
-    FP sleep(1);
+    ST(i);
+    REINIT;
+    br(request, "i.am.rabbit.net");
+    FP;
+    sleep(1);
     switch (i % 4) {
     case 0:
-      RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), i) break;
+      RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), i);
+      break;
     case 1:
-      RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i) break;
+      RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), i);
+      break;
     case 2:
-      RE(verify(result, PARENT_SPECIFIED, "furry", 80), i) break;
+      RE(verify(result, PARENT_SPECIFIED, "furry", 80), i);
+      break;
     case 3:
-      RE(verify(result, PARENT_SPECIFIED, "frisky", 80), i) break;
+      RE(verify(result, PARENT_SPECIFIED, "frisky", 80), i);
+      break;
     default:
       ink_assert(0);
     }
@@ -1049,44 +1231,54 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 
   // Test 173
   tbl[0] = '\0';
-  ST(173)
+  ST(173);
   T("dest_domain=rabbit.net parent=fuzzy:80|1.0;fluffy:80|1.0 secondary_parent=furry:80|1.0;frisky:80|1.0 "
-    "round_robin=consistent_hash go_direct=false\n")
-  REBUILD
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 173)
+    "round_robin=consistent_hash go_direct=false\n");
+  REBUILD;
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fuzzy", 80), 173);
   params->markParentDown(result); // fuzzy is down.
 
   // Test 174
-  ST(174)
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 174)
+  ST(174);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "frisky", 80), 174);
 
   params->markParentDown(result); // frisky is down.
 
   // Test 175
-  ST(175)
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 175)
+  ST(175);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "furry", 80), 175);
 
   params->markParentDown(result); // frisky is down.
 
   // Test 176
-  ST(176)
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 176)
+  ST(176);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_SPECIFIED, "fluffy", 80), 176);
 
   params->markParentDown(result); // all are down now.
 
   // Test 177
-  ST(177)
-  REINIT br(request, "i.am.rabbit.net");
-  FP sleep(1);
-  RE(verify(result, PARENT_FAIL, NULL, 80), 177)
+  ST(177);
+  REINIT;
+  br(request, "i.am.rabbit.net");
+  FP;
+  sleep(1);
+  RE(verify(result, PARENT_FAIL, NULL, 80), 177);
 
   delete request;
   delete result;
@@ -1100,9 +1292,10 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
 int
 verify(ParentResult *r, ParentResultType e, const char *h, int p)
 {
-  if (is_debug_tag_set("parent_select"))
+  if (is_debug_tag_set("parent_select")) {
     show_result(r);
-  return (r->r != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));
+  }
+  return (r->result != e) ? 0 : ((e != PARENT_SPECIFIED) ? 1 : (strcmp(r->hostname, h) ? 0 : ((r->port == p) ? 1 : 0)));
 }
 
 // br creates an HttpRequestData object
@@ -1112,19 +1305,19 @@ br(HttpRequestData *h, const char *os_hostname, sockaddr const *dest_ip)
   h->hdr = new HTTPHdr();
   h->hdr->create(HTTP_TYPE_REQUEST);
   h->hostname_str = (char *)ats_strdup(os_hostname);
-  h->xact_start = time(NULL);
+  h->xact_start   = time(NULL);
   ink_zero(h->src_ip);
   ink_zero(h->dest_ip);
   ats_ip_copy(&h->dest_ip.sa, dest_ip);
   h->incoming_port = 80;
-  h->api_info = new HttpApiInfo();
+  h->api_info      = new HttpApiInfo();
 }
 
 // show_result prints out the ParentResult information
 void
 show_result(ParentResult *p)
 {
-  switch (p->r) {
+  switch (p->result) {
   case PARENT_UNDEFINED:
     printf("result is PARENT_UNDEFINED\n");
     break;

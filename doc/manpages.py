@@ -24,7 +24,6 @@ man_pages = [
   ('appendices/command-line/traffic_cop.en', 'traffic_cop', u'Traffic Server watchdog', None, '8'),
   ('appendices/command-line/traffic_ctl.en', 'traffic_ctl', u'Traffic Server command line tool', None, '8'),
   ('appendices/command-line/traffic_crashlog.en', 'traffic_crashlog', u'Traffic Server crash log helper', None, '8'),
-  ('appendices/command-line/traffic_line.en', 'traffic_line', u'Traffic Server command line', None, '8'),
   ('appendices/command-line/traffic_logcat.en', 'traffic_logcat', u'Traffic Server log spooler', None, '8'),
   ('appendices/command-line/traffic_logstats.en', 'traffic_logstats', u'Traffic Server analyzer', None, '8'),
   ('appendices/command-line/traffic_manager.en', 'traffic_manager', u'Traffic Server process manager', None, '8'),

@@ -43,7 +43,7 @@ bool
 mgmt_transient_error()
 {
   bool transient = false;
-  transient = (errno == EINTR);
+  transient      = (errno == EINTR);
 #ifdef ENOMEM
   transient = transient || (errno == ENOMEM);
 #endif
@@ -68,10 +68,12 @@ mgmt_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
   ink_assert(*addrlen != 0);
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
     r = ::accept(s, addr, (socklen_t *)addrlen);
-    if (r >= 0)
+    if (r >= 0) {
       return r;
-    if (!mgmt_transient_error())
+    }
+    if (!mgmt_transient_error()) {
       break;
+    }
   }
   return r;
 }
@@ -89,10 +91,12 @@ mgmt_fopen(const char *filename, const char *mode)
     // no leak here as f will be returned if it is > 0
     // coverity[overwrite_var]
     f = ::fopen(filename, mode);
-    if (f > 0)
+    if (f > 0) {
       return f;
-    if (!mgmt_transient_error())
+    }
+    if (!mgmt_transient_error()) {
       break;
+    }
   }
   return f;
 }
@@ -107,10 +111,12 @@ mgmt_open(const char *path, int oflag)
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
     r = ::open(path, oflag);
-    if (r >= 0)
+    if (r >= 0) {
       return r;
-    if (!mgmt_transient_error())
+    }
+    if (!mgmt_transient_error()) {
       break;
+    }
   }
   return r;
 }
@@ -125,10 +131,12 @@ mgmt_open_mode(const char *path, int oflag, mode_t mode)
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
     r = ::open(path, oflag, mode);
-    if (r >= 0)
+    if (r >= 0) {
       return r;
-    if (!mgmt_transient_error())
+    }
+    if (!mgmt_transient_error()) {
       break;
+    }
   }
   return r;
 }
@@ -174,10 +182,12 @@ mgmt_sendto(int fd, void *buf, int len, int flags, struct sockaddr *to, int tole
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
     r = ::sendto(fd, (char *)buf, len, flags, to, tolen);
-    if (r >= 0)
+    if (r >= 0) {
       return r;
-    if (!mgmt_transient_error())
+    }
+    if (!mgmt_transient_error()) {
       break;
+    }
   }
   return r;
 }
@@ -192,10 +202,12 @@ mgmt_socket(int domain, int type, int protocol)
   int r, retries;
   for (retries = 0; retries < MGMT_MAX_TRANSIENT_ERRORS; retries++) {
     r = ::socket(domain, type, protocol);
-    if (r >= 0)
+    if (r >= 0) {
       return r;
-    if (!mgmt_transient_error())
+    }
+    if (!mgmt_transient_error()) {
       break;
+    }
   }
   return r;
 }
@@ -217,7 +229,7 @@ mgmt_write_timeout(int fd, int sec, int usec)
 {
   struct timeval timeout;
   fd_set writeSet;
-  timeout.tv_sec = sec;
+  timeout.tv_sec  = sec;
   timeout.tv_usec = usec;
 
   if (fd < 0 || fd >= FD_SETSIZE) {
@@ -228,11 +240,12 @@ mgmt_write_timeout(int fd, int sec, int usec)
   FD_ZERO(&writeSet);
   FD_SET(fd, &writeSet);
 
-  if (sec < 0 && usec < 0)
+  if (sec < 0 && usec < 0) {
     // blocking select; only returns when fd is ready to write
     return (mgmt_select(fd + 1, NULL, &writeSet, NULL, NULL));
-  else
+  } else {
     return (mgmt_select(fd + 1, NULL, &writeSet, NULL, &timeout));
+  }
 }
 
 /***************************************************************************
@@ -255,7 +268,7 @@ mgmt_read_timeout(int fd, int sec, int usec)
 {
   struct timeval timeout;
   fd_set readSet;
-  timeout.tv_sec = sec;
+  timeout.tv_sec  = sec;
   timeout.tv_usec = usec;
 
   if (fd < 0 || fd >= FD_SETSIZE) {

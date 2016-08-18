@@ -59,8 +59,9 @@ HttpRequestData::get_string()
 {
   char *str = hdr->url_string_get(NULL);
 
-  if (str)
+  if (str) {
     unescapifyStr(str);
+  }
   return str;
 }
 
@@ -143,7 +144,7 @@ HostMatcher<Data, Result>::AllocateSpace(int num_entries)
   data_array = new Data[num_entries];
 
   array_len = num_entries;
-  num_el = 0;
+  num_el    = 0;
 }
 
 // void HostMatcher<Data,Result>::Match(RequestData* rdata, Result* result)
@@ -237,7 +238,13 @@ HostMatcher<Data, Result>::NewEntry(matcher_line *line_info)
 //
 template <class Data, class Result>
 UrlMatcher<Data, Result>::UrlMatcher(const char *name, const char *filename)
-  : url_ht(NULL), url_str(NULL), url_value(NULL), data_array(NULL), array_len(0), num_el(-1), matcher_name(name),
+  : url_ht(NULL),
+    url_str(NULL),
+    url_value(NULL),
+    data_array(NULL),
+    array_len(0),
+    num_el(-1),
+    matcher_name(name),
     file_name(filename)
 {
   url_ht = ink_hash_table_create(InkHashTableKeyType_String);
@@ -284,11 +291,11 @@ UrlMatcher<Data, Result>::AllocateSpace(int num_entries)
   ink_assert(array_len == -1);
 
   data_array = new Data[num_entries];
-  url_value = new int[num_entries];
-  url_str = new char *[num_entries];
+  url_value  = new int[num_entries];
+  url_str    = new char *[num_entries];
   memset(url_str, 0, sizeof(char *) * num_entries);
   array_len = num_entries;
-  num_el = 0;
+  num_el    = 0;
 }
 
 //
@@ -327,7 +334,7 @@ UrlMatcher<Data, Result>::NewEntry(matcher_line *line_info)
   cur_d = data_array + num_el;
   error = cur_d->Init(line_info);
   if (error) {
-    url_str[num_el] = ats_strdup(pattern);
+    url_str[num_el]   = ats_strdup(pattern);
     url_value[num_el] = num_el;
     ink_hash_table_insert(url_ht, url_str[num_el], (void *)&url_value[num_el]);
     num_el++;
@@ -429,7 +436,7 @@ RegexMatcher<Data, Result>::AllocateSpace(int num_entries)
   memset(re_str, 0, sizeof(char *) * num_entries);
 
   array_len = num_entries;
-  num_el = 0;
+  num_el    = 0;
 }
 
 //
@@ -608,7 +615,7 @@ IpMatcher<Data, Result>::AllocateSpace(int num_entries)
   data_array = new Data[num_entries];
 
   array_len = num_entries;
-  num_el = 0;
+  num_el    = 0;
 }
 
 //
@@ -680,7 +687,6 @@ IpMatcher<Data, Result>::Match(sockaddr const *addr, RequestData *rdata, Result 
   }
 }
 
-
 template <class Data, class Result>
 void
 IpMatcher<Data, Result>::Print()
@@ -702,7 +708,7 @@ ControlMatcher<Data, Result>::ControlMatcher(const char *file_var, const char *n
   config_tags = tags;
   ink_assert(config_tags != NULL);
 
-  matcher_name = name;
+  matcher_name        = name;
   config_file_path[0] = '\0';
 
   if (!(flags & DONT_BUILD_TABLE)) {
@@ -712,11 +718,11 @@ ControlMatcher<Data, Result>::ControlMatcher(const char *file_var, const char *n
     ink_strlcpy(config_file_path, config_path, sizeof(config_file_path));
   }
 
-  reMatch = NULL;
-  urlMatch = NULL;
+  reMatch   = NULL;
+  urlMatch  = NULL;
   hostMatch = NULL;
-  ipMatch = NULL;
-  hrMatch = NULL;
+  ipMatch   = NULL;
+  hrMatch   = NULL;
 
   if (!(flags & DONT_BUILD_TABLE)) {
     m_numEntries = this->BuildTable();
@@ -760,7 +766,6 @@ ControlMatcher<Data, Result>::Print()
   }
 }
 
-
 // void ControlMatcher<Data, Result>::Match(RequestData* rdata
 //                                          Result* result)
 //
@@ -803,17 +808,17 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
   matcher_line *first = NULL;
   matcher_line *current;
   matcher_line *last = NULL;
-  int line_num = 0;
-  int second_pass = 0;
-  int numEntries = 0;
-  bool alarmAlready = false;
+  int line_num       = 0;
+  int second_pass    = 0;
+  int numEntries     = 0;
+  bool alarmAlready  = false;
 
   // type counts
   int hostDomain = 0;
-  int regex = 0;
-  int url = 0;
-  int ip = 0;
-  int hostregex = 0;
+  int regex      = 0;
+  int url        = 0;
+  int ip         = 0;
+  int hostregex  = 0;
 
   if (bufTok.Initialize(file_buf, SHARE_TOKS | ALLOW_EMPTY_TOKS) == 0) {
     // We have an empty file
@@ -833,7 +838,7 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
       const char *errptr;
 
       current = (matcher_line *)ats_malloc(sizeof(matcher_line));
-      errptr = parseConfigLine((char *)tmp, current, config_tags);
+      errptr  = parseConfigLine((char *)tmp, current, config_tags);
 
       if (errptr != NULL) {
         if (config_tags != &socks_server_tags) {
@@ -874,7 +879,7 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
           first = last = current;
         } else {
           last->next = current;
-          last = current;
+          last       = current;
         }
       }
     }
@@ -941,7 +946,7 @@ ControlMatcher<Data, Result>::BuildTableFromString(char *file_buf)
     }
 
     // Deallocate the parsing structure
-    last = current;
+    last    = current;
     current = current->next;
     ats_free(last);
   }
@@ -972,7 +977,6 @@ ControlMatcher<Data, Result>::BuildTable()
   ats_free(file_buf);
   return ret;
 }
-
 
 /****************************************************************
  *    TEMPLATE INSTANTIATIONS GO HERE

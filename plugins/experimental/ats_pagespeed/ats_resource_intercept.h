@@ -28,7 +28,6 @@
 
 #include <ts/ts.h>
 
-
 #include "net/instaweb/http/public/async_fetch.h"
 #include "net/instaweb/http/public/headers.h"
 #include "net/instaweb/util/public/string_util.h"
@@ -49,8 +48,14 @@ struct InterceptCtx {
   RequestHeaders *request_headers;
 
   InterceptCtx()
-    : vconn(NULL), req_buffer(NULL), req_reader(NULL), resp_buffer(NULL), resp_reader(NULL), response(new GoogleString()),
-      request_ctx(NULL), request_headers(NULL){};
+    : vconn(NULL),
+      req_buffer(NULL),
+      req_reader(NULL),
+      resp_buffer(NULL),
+      resp_reader(NULL),
+      response(new GoogleString()),
+      request_ctx(NULL),
+      request_headers(NULL){};
 };
 
 void setup_resource_intercept();

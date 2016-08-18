@@ -63,3 +63,8 @@ test_marshall_SOURCES = test_marshall.cc
 test_marshall_LDADD = \
   libutils_p.la \
   $(top_builddir)/lib/ts/libtsutil.la
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

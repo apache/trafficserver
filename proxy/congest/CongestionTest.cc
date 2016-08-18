@@ -49,16 +49,18 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
   rprintf(t, "adding data into the hash table .", count);
   for (i = 1; i <= count; i++) {
     htable->insert_entry(i, i);
-    if (i % (count / 50) == 0)
+    if (i % (count / 50) == 0) {
       fprintf(stderr, ".");
+    }
   }
   fprintf(stderr, "done\n");
   rprintf(t, "%d data added into the hash table\n", count);
   rprintf(t, "verifying the content");
   for (i = 1; i <= count; i++) {
     long data = htable->lookup_entry(i);
-    if (i % (count / 50) == 0)
+    if (i % (count / 50) == 0) {
       fprintf(stderr, ".");
+    }
     if (data != i) {
       rprintf(t, "verify content failed: key(%d) data(%d)\n", i, data);
       *pstatus = REGRESSION_TEST_FAILED;
@@ -71,8 +73,9 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
   rprintf(t, "removing data.");
   for (i = 1; i < count / 2; i++) {
     htable->remove_entry(i * 2);
-    if (i % (count / 50) == 0)
+    if (i % (count / 50) == 0) {
       fprintf(stderr, ".");
+    }
     removed_count++;
   }
   fprintf(stderr, "done\n");
@@ -93,8 +96,9 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
       delete htable;
       return;
     }
-    if (i % (count / 50) == 0)
+    if (i % (count / 50) == 0) {
       fprintf(stderr, ".");
+    }
   }
   fprintf(stderr, "done\n");
 
@@ -105,15 +109,17 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
     int data = htable->first_entry(j, &it);
     while (data > 0) {
       new_count++;
-      if (new_count % (count / 25) == 0)
+      if (new_count % (count / 25) == 0) {
         fprintf(stderr, ".");
+      }
 
       if (new_count % 2 == 0) {
         htable->remove_entry(j, &it);
         data = htable->cur_entry(j, &it);
         removed_count++;
-      } else
+      } else {
         data = htable->next_entry(j, &it);
+      }
     }
   }
   fprintf(stderr, "done\n");
@@ -124,8 +130,9 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
     int data = htable->first_entry(j, &it);
     while (data > 0) {
       new_count--;
-      if (new_count % (count / 25) == 0)
+      if (new_count % (count / 25) == 0) {
         fprintf(stderr, ".");
+      }
       data = htable->next_entry(j, &it);
       if (data != htable->lookup_entry(data)) {
         rprintf(t, "verify content failed: key(%d) data(%d)\n", data, htable->lookup_entry(data));
@@ -150,8 +157,9 @@ EXCLUSIVE_REGRESSION_TEST(Congestion_HashTable)(RegressionTest *t, int /* atype 
     int data = htable->first_entry(j, &it);
     while (data > 0) {
       new_count--;
-      if (new_count % (count / 25) == 0)
+      if (new_count % (count / 25) == 0) {
         fprintf(stderr, ".");
+      }
       htable->remove_entry(j, &it);
       data = htable->cur_entry(j, &it);
     }
@@ -195,15 +203,20 @@ struct CCFailHistoryTestCont : public Continuation {
   }
 
   CCFailHistoryTestCont(Ptr<ProxyMutex> _mutex, RegressionTest *_test)
-    : Continuation(_mutex), test_mode(SIMPLE_TEST), final_status(REGRESSION_TEST_PASSED), complete(false), test(_test),
-      failEvents(NULL), pending_action(NULL)
+    : Continuation(_mutex),
+      test_mode(SIMPLE_TEST),
+      final_status(REGRESSION_TEST_PASSED),
+      complete(false),
+      test(_test),
+      failEvents(NULL),
+      pending_action(NULL)
   {
     SET_HANDLER(&CCFailHistoryTestCont::mainEvent);
-    rule = new CongestionControlRecord;
-    rule->fail_window = FAIL_WINDOW;
+    rule                          = new CongestionControlRecord;
+    rule->fail_window             = FAIL_WINDOW;
     rule->max_connection_failures = 10;
-    rule->pRecord = new CongestionControlRecord(*rule);
-    entry = new CongestionEntry("dummy_host", 0, rule->pRecord, 0);
+    rule->pRecord                 = new CongestionControlRecord(*rule);
+    entry                         = new CongestionEntry("dummy_host", 0, rule->pRecord, 0);
   }
 
   ~CCFailHistoryTestCont()
@@ -282,8 +295,9 @@ CCFailHistoryTestCont::init_events()
 int
 CCFailHistoryTestCont::schedule_event(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
 {
-  if (failEvents == NULL)
+  if (failEvents == NULL) {
     return EVENT_DONE;
+  }
   CCFailHistoryTestCont::FailEvents *f = (CCFailHistoryTestCont::FailEvents *)ink_atomiclist_pop(failEvents);
   if (f != NULL) {
     entry->failed_at(f->time);
@@ -311,8 +325,9 @@ CCFailHistoryTestCont::check_history(bool print)
     entry->sprint(buf, 1024, 10);
     rprintf(test, "%s", buf);
   }
-  if (test_mode == CCFailHistoryTestCont::SIMPLE_TEST && entry->m_history.events == 65536)
+  if (test_mode == CCFailHistoryTestCont::SIMPLE_TEST && entry->m_history.events == 65536) {
     return 0;
+  }
   return 0;
 }
 
@@ -322,8 +337,9 @@ CCFailHistoryTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UN
   test_mode = CCFailHistoryTestCont::SIMPLE_TEST;
   init_events();
   entry->init(rule->pRecord);
-  while (schedule_event(0, NULL) == EVENT_CONT)
+  while (schedule_event(0, NULL) == EVENT_CONT) {
     ;
+  }
   if (check_history(true) == 0) {
     final_status = REGRESSION_TEST_PASSED;
   } else {
@@ -334,8 +350,9 @@ CCFailHistoryTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UN
   test_mode = CCFailHistoryTestCont::ROTATING_TEST;
   init_events();
   entry->init(rule->pRecord);
-  while (schedule_event(0, NULL) == EVENT_CONT)
+  while (schedule_event(0, NULL) == EVENT_CONT) {
     ;
+  }
   if (check_history(true) == 0) {
     final_status = REGRESSION_TEST_PASSED;
   } else {
@@ -381,7 +398,6 @@ struct CCCongestionDBTestCont : public Continuation {
   int dbsize;
   CongestionEntry *gen_CongestionEntry(sockaddr const *ip, int congested = 0);
 
-
   CCCongestionDBTestCont(Ptr<ProxyMutex> _mutex, RegressionTest *_test)
     : Continuation(_mutex), final_status(REGRESSION_TEST_PASSED), complete(false), test(_test), rule(NULL), db(NULL), dbsize(1024)
   {
@@ -393,8 +409,9 @@ struct CCCongestionDBTestCont : public Continuation {
       db->removeAllRecords();
       delete db;
     }
-    if (rule)
+    if (rule) {
       delete rule;
+    }
   }
 };
 
@@ -404,10 +421,10 @@ CCCongestionDBTestCont::gen_CongestionEntry(sockaddr const *ip, int congested)
   char hostname[INET6_ADDRSTRLEN];
   uint64_t key;
   ats_ip_ntop(ip, hostname, sizeof(hostname));
-  key = make_key(hostname, strlen(hostname), ip, rule->pRecord);
+  key                  = make_key(hostname, strlen(hostname), ip, rule->pRecord);
   CongestionEntry *ret = new CongestionEntry(hostname, ip, rule->pRecord, key);
-  ret->m_congested = congested;
-  ret->m_ref_count = 0;
+  ret->m_congested     = congested;
+  ret->m_ref_count     = 0;
   return ret;
 }
 
@@ -415,15 +432,16 @@ void
 CCCongestionDBTestCont::init()
 {
   // create/clear db
-  if (!db)
+  if (!db) {
     db = new CongestionDB(dbsize / MT_HASHTABLE_PARTITIONS);
-  else
+  } else {
     db->removeAllRecords();
+  }
   if (!rule) {
-    rule = new CongestionControlRecord;
-    rule->fail_window = 300;
+    rule                          = new CongestionControlRecord;
+    rule->fail_window             = 300;
     rule->max_connection_failures = 10;
-    rule->pRecord = new CongestionControlRecord(*rule);
+    rule->pRecord                 = new CongestionControlRecord(*rule);
   }
 }
 
@@ -431,8 +449,9 @@ int
 CCCongestionDBTestCont::get_congest_list()
 {
   int cnt = 0;
-  if (db == NULL)
+  if (db == NULL) {
     return 0;
+  }
   for (int i = 0; i < db->getSize(); i++) {
     db->RunTodoList(i);
     char buf[1024];
@@ -461,8 +480,9 @@ CCCongestionDBTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_U
   rprintf(test, "Add %d records into the db", dbsize);
 
   for (i = 0; i < dbsize; i++) {
-    if (i % (dbsize / 25) == 0)
+    if (i % (dbsize / 25) == 0) {
       fprintf(stderr, ".");
+    }
 
     IpEndpoint ip;
     ats_ip4_set(&ip, i + 255);
@@ -478,11 +498,11 @@ CCCongestionDBTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_U
 
   rprintf(test, "There are %d records in the db\n", items[0]);
 
-
   rprintf(test, "Add %d records into the db", to_add);
   for (i = 0; i < to_add; i++) {
-    if (i % (to_add / 25) == 0)
+    if (i % (to_add / 25) == 0) {
       fprintf(stderr, ".");
+    }
 
     IpEndpoint ip;
     ats_ip4_set(&ip, i + 255);
@@ -499,8 +519,9 @@ CCCongestionDBTestCont::mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_U
   rprintf(test, "Add %d congested records into the db", to_add);
 
   for (i = 0; i < to_add; i++) {
-    if (i % (to_add / 25) == 0)
+    if (i % (to_add / 25) == 0) {
       fprintf(stderr, ".");
+    }
 
     IpEndpoint ip;
     ats_ip4_set(&ip, i + 255);

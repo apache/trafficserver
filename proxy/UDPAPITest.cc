@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 char ACK[] = "I got it.";
 
 FILE *fp;
@@ -39,13 +38,12 @@ UDPTestInit()
   TSMutex readMutexp;
   unsigned long ip;
 
-  ip = inet_addr("209.131.48.79");
+  ip         = inet_addr("209.131.48.79");
   readMutexp = TSMutexCreate();
-  cont = TSContCreate(&handle_callbacks, readMutexp);
+  cont       = TSContCreate(&handle_callbacks, readMutexp);
   //      INKUDPBind(cont, INADDR_ANY,1813);
   INKUDPBind(cont, ip, 1813);
 }
-
 
 void
 printN(const char *start, int length)
@@ -74,7 +72,6 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
   int avail, total_len;
   char recv_buffer[4096];
 
-
   fp = fopen("UDPServer.log", "a+");
 
   switch (event) {
@@ -84,15 +81,14 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
     INKUDPRecvFrom(cont, UDPConn);
     break;
 
-
   case TS_NET_EVENT_DATAGRAM_READ_READY:
     fprintf(fp, "read ready event called\n");
     packetQueue = (INKUDPacketQueue)e;
-    total_len = 0;
+    total_len   = 0;
     while ((packet = INKUDPPacketGet(packetQueue)) != NULL) {
       recvBuffBlock = INKUDPPacketBufferBlockGet(packet);
-      iobuffer = TSIOBufferCreate();
-      reader = TSIOBufferReaderAlloc(iobuffer);
+      iobuffer      = TSIOBufferCreate();
+      reader        = TSIOBufferReaderAlloc(iobuffer);
       TSIOBufferAppend(iobuffer, recvBuffBlock);
       buf = TSIOBufferBlockReadStart(recvBuffBlock, reader, &avail);
 
@@ -105,8 +101,7 @@ handle_callbacks(TSCont cont, TSEvent event, void *e)
         total_len += avail;
       }
 
-
-      ip = INKUDPPacketFromAddressGet(packet);
+      ip   = INKUDPPacketFromAddressGet(packet);
       port = INKUDPPacketFromPortGet(packet);
       fprintf(fp, "port = %d\n", port);
 

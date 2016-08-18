@@ -38,7 +38,7 @@
 
 InkXmlAttr::InkXmlAttr(const char *tag, const char *value)
 {
-  m_tag = ats_strdup(tag);
+  m_tag   = ats_strdup(tag);
   m_value = ats_strdup(value);
 }
 
@@ -60,7 +60,7 @@ InkXmlAttr::display(FILE *fd)
 
 InkXmlObject::InkXmlObject(const char *object_name, bool dup_attrs_allowed)
 {
-  m_object_name = ats_strdup(object_name);
+  m_object_name       = ats_strdup(object_name);
   m_dup_attrs_allowed = dup_attrs_allowed;
 }
 
@@ -160,7 +160,7 @@ InkXmlConfigFile::parse(int fd)
   Debug("log", "Parsing XML config info from memory..");
 
   m_line = 1;
-  m_col = 0;
+  m_col  = 0;
 
   InkXmlObject *obj;
   while ((obj = get_next_xml_object(fd)) != NULL) {
@@ -186,7 +186,7 @@ InkXmlConfigFile::parse()
   }
 
   m_line = 1;
-  m_col = 0;
+  m_col  = 0;
 
   InkXmlObject *obj;
   while ((obj = get_next_xml_object(fd)) != NULL) {
@@ -215,11 +215,13 @@ InkXmlConfigFile::display(FILE *fd)
   size_t i;
 
   fprintf(fd, "\n");
-  for (i = 0; i < strlen(m_config_file) + 13; i++)
+  for (i = 0; i < strlen(m_config_file) + 13; i++) {
     fputc('-', fd);
+  }
   fprintf(fd, "\nConfig File: %s\n", m_config_file);
-  for (i = 0; i < strlen(m_config_file) + 13; i++)
+  for (i = 0; i < strlen(m_config_file) + 13; i++) {
     fputc('-', fd);
+  }
   fprintf(fd, "\n");
   for (InkXmlObject *obj = first(); obj; obj = next(obj)) {
     obj->display(fd);
@@ -256,8 +258,9 @@ InkXmlConfigFile::get_next_xml_object(int fd)
       break;
 
     case '!':
-      if (!start_object)
+      if (!start_object) {
         return parse_error();
+      }
       if ((token = scan_comment(fd)) == EOF) {
         return NULL;
       }
@@ -266,8 +269,9 @@ InkXmlConfigFile::get_next_xml_object(int fd)
       break;
 
     default:
-      if (!start_object)
+      if (!start_object) {
         return parse_error();
+      }
       return scan_object(fd, token);
     }
   }
@@ -295,15 +299,16 @@ InkXmlConfigFile::scan_object(int fd, char token)
 
   while (token != '>' && ident_len < max_ident_len) {
     ident[ident_len++] = token;
-    token = next_token(fd);
-    if (token == EOF)
+    token              = next_token(fd);
+    if (token == EOF) {
       return parse_error();
+    }
   }
   if (!ident_len || ident_len >= max_ident_len) {
     return parse_error();
   }
 
-  ident[ident_len] = 0;
+  ident[ident_len]  = 0;
   InkXmlObject *obj = new InkXmlObject(ident);
   ink_assert(obj != NULL);
 
@@ -333,10 +338,10 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
   char name[buf_size];
   char value[buf_size];
   char ident[buf_size];
-  char *write_to = NULL;
-  int write_len = 0;
-  bool start_attr = false;
-  bool in_quotes = false;
+  char *write_to   = NULL;
+  int write_len    = 0;
+  bool start_attr  = false;
+  bool in_quotes   = false;
   InkXmlAttr *attr = NULL;
 
   prev = next = 0;
@@ -344,28 +349,31 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
     switch (token) {
     case '<':
       if (in_quotes && write_to) {
-        if (write_len >= buf_size)
+        if (write_len >= buf_size) {
           return BAD_ATTR;
+        }
         write_to[write_len++] = token;
         break;
       }
       start_attr = true;
-      write_to = name;
-      write_len = 0;
+      write_to   = name;
+      write_len  = 0;
       break;
 
     case '=':
       if (in_quotes && write_to) {
-        if (write_len >= buf_size)
+        if (write_len >= buf_size) {
           return BAD_ATTR;
+        }
         write_to[write_len++] = token;
         break;
       }
-      if (!start_attr)
+      if (!start_attr) {
         return BAD_ATTR;
+      }
       write_to[write_len] = 0;
-      write_to = value;
-      write_len = 0;
+      write_to            = value;
+      write_len           = 0;
       break;
 
     case '"':
@@ -382,43 +390,49 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
 
     case '/':
       if (in_quotes && write_to) {
-        if (write_len >= buf_size)
+        if (write_len >= buf_size) {
           return BAD_ATTR;
+        }
         write_to[write_len++] = token;
         break;
       }
-      if (!start_attr)
+      if (!start_attr) {
         return BAD_ATTR;
+      }
       if (prev == '<') {
         write_len = 0;
-        token = next_token(fd, !in_quotes);
+        token     = next_token(fd, !in_quotes);
         while (token != '>' && write_len < buf_size) {
           ident[write_len++] = token;
-          token = next_token(fd, !in_quotes);
-          if (token == EOF)
+          token              = next_token(fd, !in_quotes);
+          if (token == EOF) {
             return BAD_ATTR;
+          }
         }
         if (!write_len || write_len >= buf_size) {
           return BAD_ATTR;
         }
         ident[write_len] = 0;
-        if (strcmp(ident, id) != 0)
+        if (strcmp(ident, id) != 0) {
           return BAD_ATTR;
+        }
         return NULL;
       }
 
       next = next_token(fd, !in_quotes);
-      if (next != '>')
+      if (next != '>') {
         return BAD_ATTR;
+      }
       write_to[write_len] = 0;
-      attr = new InkXmlAttr(name, value);
+      attr                = new InkXmlAttr(name, value);
       ink_assert(attr != NULL);
       return attr;
 
     case '>':
       if (in_quotes && write_to) {
-        if (write_len >= buf_size)
+        if (write_len >= buf_size) {
           return BAD_ATTR;
+        }
         write_to[write_len++] = token;
         break;
       }
@@ -427,10 +441,12 @@ InkXmlConfigFile::scan_attr(int fd, const char *id)
       return BAD_ATTR;
 
     default:
-      if (!start_attr)
+      if (!start_attr) {
         return BAD_ATTR;
-      if (write_len >= buf_size)
+      }
+      if (write_len >= buf_size) {
         return BAD_ATTR;
+      }
       write_to[write_len++] = token;
       break;
     }
@@ -450,8 +466,9 @@ InkXmlConfigFile::next_token(int fd, bool eat_whitespace)
       continue;
     }
     m_col++;
-    if (eat_whitespace && ParseRules::is_space(ch))
+    if (eat_whitespace && ParseRules::is_space(ch)) {
       continue;
+    }
     return ch;
   }
   return EOF;

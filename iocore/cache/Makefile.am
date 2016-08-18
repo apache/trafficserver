@@ -65,3 +65,8 @@ libinkcache_a_SOURCES = \
   RamCacheLRU.cc \
   Store.cc \
   $(ADD_SRC)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

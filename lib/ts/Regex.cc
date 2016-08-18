@@ -29,7 +29,6 @@
 #ifdef PCRE_CONFIG_JIT
 struct RegexThreadKey {
   RegexThreadKey() { ink_thread_key_create(&this->key, (void (*)(void *)) & pcre_jit_stack_free); }
-
   ink_thread_key key;
 };
 
@@ -54,7 +53,7 @@ Regex::compile(const char *pattern, const unsigned flags)
 {
   const char *error;
   int erroffset;
-  int options = 0;
+  int options    = 0;
   int study_opts = 0;
 
   if (regex)
@@ -159,19 +158,19 @@ DFA::build(const char *pattern, unsigned flags)
     flags |= RE_ANCHORED;
   }
 
-  ret = (dfa_pattern *)ats_malloc(sizeof(dfa_pattern));
+  ret     = (dfa_pattern *)ats_malloc(sizeof(dfa_pattern));
   ret->_p = NULL;
 
   ret->_re = new Regex();
-  rv = ret->_re->compile(pattern, flags);
+  rv       = ret->_re->compile(pattern, flags);
   if (rv == -1) {
     delete ret->_re;
     ats_free(ret);
     return NULL;
   }
 
-  ret->_idx = 0;
-  ret->_p = ats_strndup(pattern, strlen(pattern));
+  ret->_idx  = 0;
+  ret->_p    = ats_strndup(pattern, strlen(pattern));
   ret->_next = NULL;
   return ret;
 }
@@ -197,22 +196,22 @@ DFA::compile(const char **patterns, int npatterns, unsigned flags)
 
   for (i = 0; i < npatterns; i++) {
     pattern = patterns[i];
-    ret = build(pattern, flags);
+    ret     = build(pattern, flags);
     if (!ret) {
       continue;
     }
 
     if (!_my_patterns) {
-      _my_patterns = ret;
+      _my_patterns        = ret;
       _my_patterns->_next = NULL;
-      _my_patterns->_idx = i;
+      _my_patterns->_idx  = i;
     } else {
       end = _my_patterns;
       while (end->_next) {
         end = end->_next;
       }
       end->_next = ret; // add to end
-      ret->_idx = i;
+      ret->_idx  = i;
     }
   }
 

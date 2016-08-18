@@ -32,7 +32,6 @@ public:
   {
   public:
     DomainNameNode() : order(-1), payload(NULL), parent(NULL), is_wild(false) {}
-
     DomainNameNode(std::string key, void *payload, int order, bool is_wild)
       : key(key), order(order), payload(payload), parent(NULL), is_wild(is_wild)
     {
@@ -64,15 +63,14 @@ public:
 
   DomainNameTree()
   {
-    root = new DomainNameNode();
-    root->key = "";
-    root->order = 0x7FFFFFFF;
+    root          = new DomainNameNode();
+    root->key     = "";
+    root->order   = 0x7FFFFFFF;
     root->is_wild = true;
-    tree_mutex = TSMutexCreate();
+    tree_mutex    = TSMutexCreate();
   }
 
   ~DomainNameTree() { delete root; }
-
   DomainNameNode *
   findBestMatch(std::string key)
   {

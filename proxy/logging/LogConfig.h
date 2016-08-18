@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_CONFIG_H
 #define LOG_CONFIG_H
 
@@ -115,15 +114,16 @@ public:
   static void register_stat_callbacks();
   static void register_mgmt_callbacks();
 
-  bool space_to_write(int64_t bytes_to_write);
+  bool space_to_write(int64_t bytes_to_write) const;
 
   bool
   am_collation_host() const
   {
     return collation_mode == Log::COLLATION_HOST;
   }
+
   bool
-  space_is_short()
+  space_is_short() const
   {
     return !space_to_write(max_space_mb_headroom * LOG_MEGABYTE);
   };
@@ -142,7 +142,7 @@ public:
   static void *reconfigure_mgmt_variables(void *token, char *data_raw, int data_len);
 
   int
-  get_max_space_mb()
+  get_max_space_mb() const
   {
     return (use_orphan_log_space_value ? max_space_mb_for_orphan_logs : max_space_mb_for_logs);
   }
@@ -188,7 +188,6 @@ public:
   int rolling_offset_hr;
   int rolling_size_mb;
   bool auto_delete_rolled_files;
-  bool custom_logs_enabled;
 
   int sampling_frequency;
   int file_stat_frequency;
@@ -204,6 +203,7 @@ public:
 
 private:
   void read_xml_log_config();
+  bool evaluate_config();
   char **read_log_hosts_file(size_t *nhosts);
 
   void setup_default_values();
@@ -217,7 +217,6 @@ private:
 
   LogCollationAccept *m_log_collation_accept;
 
-  struct dirent *m_dir_entry;
   char *m_pDir;
   bool m_disk_full;
   bool m_disk_low;

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ClusterHandler.h
@@ -29,7 +28,6 @@
 
 #ifndef _P_ClusterHandler_h
 #define _P_ClusterHandler_h
-
 
 class ClusterLoadMonitor;
 
@@ -54,17 +52,19 @@ struct ClusterControl : public Continuation {
   Ptr<IOBufferBlock> iob_block;
 
   IOBufferBlock *
-  get_block()
+  get_block() const
   {
-    return iob_block;
+    return iob_block.get();
   }
+
   bool
-  fast_data()
+  fast_data() const
   {
     return (len <= MAX_FAST_CONTROL_MESSAGE);
   }
+
   bool
-  valid_alloc_data()
+  valid_alloc_data() const
   {
     return iob_block && real_data && data;
   }
@@ -97,11 +97,11 @@ struct OutgoingControl : public ClusterControl {
   void
   set_data(char *adata, int alen)
   {
-    data = adata;
-    len = alen;
-    free_proc = 0;
+    data          = adata;
+    len           = alen;
+    free_proc     = 0;
     free_proc_arg = 0;
-    real_data = 0;
+    real_data     = 0;
 
     // Create IOBufferBlock wrapper around passed data.
 
@@ -113,12 +113,12 @@ struct OutgoingControl : public ClusterControl {
   void
   set_data(IOBufferBlock *buf, void (*free_data_proc)(void *), void *free_data_arg)
   {
-    data = buf->data->data();
-    len = bytes_IOBufferBlockList(buf, 1); // read avail bytes
-    free_proc = free_data_proc;
+    data          = buf->data->data();
+    len           = bytes_IOBufferBlockList(buf, 1); // read avail bytes
+    free_proc     = free_data_proc;
     free_proc_arg = free_data_arg;
-    real_data = 0;
-    iob_block = buf;
+    real_data     = 0;
+    iob_block     = buf;
   }
   int startEvent(int event, Event *e);
   virtual void freeall();
@@ -193,12 +193,12 @@ struct ClusterMsgHeader { // Note: Over the Wire structure
   void
   clear()
   {
-    count = 0;
-    descriptor_cksum = 0;
+    count               = 0;
+    descriptor_cksum    = 0;
     control_bytes_cksum = 0;
-    unused = 0;
-    control_bytes = 0;
-    count_check = 0;
+    unused              = 0;
+    control_bytes       = 0;
+    count_check         = 0;
   }
   ClusterMsgHeader() : count(0), descriptor_cksum(0), control_bytes_cksum(0), unused(0), control_bytes(0), count_check(0) {}
   inline void
@@ -242,9 +242,9 @@ struct ClusterMsg {
   }
 
   IOBufferBlock *
-  get_block()
+  get_block() const
   {
-    return iob_descriptor_block;
+    return iob_descriptor_block.get();
   }
 
   IOBufferBlock *
@@ -257,7 +257,7 @@ struct ClusterMsg {
     iob_descriptor_block->next = 0;
     iob_descriptor_block->fill(start_offset);
     iob_descriptor_block->consume(start_offset);
-    return iob_descriptor_block;
+    return iob_descriptor_block.get();
   }
 
   IOBufferBlock *
@@ -270,34 +270,34 @@ struct ClusterMsg {
     iob_descriptor_block->next = 0;
     iob_descriptor_block->fill(start_offset);
     iob_descriptor_block->consume(start_offset);
-    return iob_descriptor_block;
+    return iob_descriptor_block.get();
   }
 
   void
   clear()
   {
     hdr()->clear();
-    count = 0;
-    control_bytes = 0;
-    descriptor_cksum = 0;
+    count               = 0;
+    control_bytes       = 0;
+    descriptor_cksum    = 0;
     control_bytes_cksum = 0;
-    unused = 0;
-    state = 0;
+    unused              = 0;
+    state               = 0;
     outgoing_control.clear();
     outgoing_small_control.clear();
-    control_data_offset = 0;
+    control_data_offset        = 0;
     did_small_control_set_data = 0;
     did_large_control_set_data = 0;
-    did_small_control_msgs = 0;
-    did_large_control_msgs = 0;
-    did_freespace_msgs = 0;
+    did_small_control_msgs     = 0;
+    did_large_control_msgs     = 0;
+    did_freespace_msgs         = 0;
   }
   uint16_t
   calc_control_bytes_cksum()
   {
     uint16_t cksum = 0;
-    char *p = (char *)&descriptor[count];
-    char *endp = p + control_bytes;
+    char *p        = (char *)&descriptor[count];
+    char *endp     = p + control_bytes;
     while (p < endp) {
       cksum += *p;
       ++p;
@@ -308,8 +308,8 @@ struct ClusterMsg {
   calc_descriptor_cksum()
   {
     uint16_t cksum = 0;
-    char *p = (char *)&descriptor[0];
-    char *endp = (char *)&descriptor[count];
+    char *p        = (char *)&descriptor[0];
+    char *endp     = (char *)&descriptor[count];
     while (p < endp) {
       cksum += *p;
       ++p;
@@ -317,9 +317,20 @@ struct ClusterMsg {
     return cksum;
   }
   ClusterMsg()
-    : descriptor(NULL), iob_descriptor_block(NULL), count(0), control_bytes(0), descriptor_cksum(0), control_bytes_cksum(0),
-      unused(0), state(0), control_data_offset(0), did_small_control_set_data(0), did_large_control_set_data(0),
-      did_small_control_msgs(0), did_large_control_msgs(0), did_freespace_msgs(0)
+    : descriptor(NULL),
+      iob_descriptor_block(NULL),
+      count(0),
+      control_bytes(0),
+      descriptor_cksum(0),
+      control_bytes_cksum(0),
+      unused(0),
+      state(0),
+      control_data_offset(0),
+      did_small_control_set_data(0),
+      did_large_control_set_data(0),
+      did_small_control_msgs(0),
+      did_large_control_msgs(0),
+      did_freespace_msgs(0)
   {
   }
 };
@@ -360,7 +371,6 @@ struct ClusterState : public Continuation {
   Ptr<IOBufferBlock> block[MAX_TCOUNT];
   class MIOBuffer *mbuf;
   int state; // See enum defs below
-
 
   enum {
     READ_START = 1,
@@ -536,40 +546,40 @@ struct ClusterHandler : public ClusterHandlerBase {
   void
   clear_cluster_stats()
   {
-    _vc_writes = 0;
-    _vc_write_bytes = 0;
-    _control_write_bytes = 0;
-    _dw_missed_lock = 0;
-    _dw_not_enabled = 0;
-    _dw_wait_remote_fill = 0;
-    _dw_no_active_vio = 0;
+    _vc_writes                  = 0;
+    _vc_write_bytes             = 0;
+    _control_write_bytes        = 0;
+    _dw_missed_lock             = 0;
+    _dw_not_enabled             = 0;
+    _dw_wait_remote_fill        = 0;
+    _dw_no_active_vio           = 0;
     _dw_not_enabled_or_no_write = 0;
-    _dw_set_data_pending = 0;
-    _dw_no_free_space = 0;
-    _fw_missed_lock = 0;
-    _fw_not_enabled = 0;
-    _fw_wait_remote_fill = 0;
-    _fw_no_active_vio = 0;
-    _fw_not_enabled_or_no_read = 0;
-    _process_read_calls = 0;
-    _n_read_start = 0;
-    _n_read_header = 0;
-    _n_read_await_header = 0;
-    _n_read_setup_descriptor = 0;
-    _n_read_descriptor = 0;
-    _n_read_await_descriptor = 0;
-    _n_read_setup_data = 0;
-    _n_read_data = 0;
-    _n_read_await_data = 0;
-    _n_read_post_complete = 0;
-    _n_read_complete = 0;
-    _process_write_calls = 0;
-    _n_write_start = 0;
-    _n_write_setup = 0;
-    _n_write_initiate = 0;
-    _n_write_await_completion = 0;
-    _n_write_post_complete = 0;
-    _n_write_complete = 0;
+    _dw_set_data_pending        = 0;
+    _dw_no_free_space           = 0;
+    _fw_missed_lock             = 0;
+    _fw_not_enabled             = 0;
+    _fw_wait_remote_fill        = 0;
+    _fw_no_active_vio           = 0;
+    _fw_not_enabled_or_no_read  = 0;
+    _process_read_calls         = 0;
+    _n_read_start               = 0;
+    _n_read_header              = 0;
+    _n_read_await_header        = 0;
+    _n_read_setup_descriptor    = 0;
+    _n_read_descriptor          = 0;
+    _n_read_await_descriptor    = 0;
+    _n_read_setup_data          = 0;
+    _n_read_data                = 0;
+    _n_read_await_data          = 0;
+    _n_read_post_complete       = 0;
+    _n_read_complete            = 0;
+    _process_write_calls        = 0;
+    _n_write_start              = 0;
+    _n_write_setup              = 0;
+    _n_write_initiate           = 0;
+    _n_write_await_completion   = 0;
+    _n_write_post_complete      = 0;
+    _n_write_complete           = 0;
   }
 #endif // CLUSTER_STATS
 

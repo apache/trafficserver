@@ -72,11 +72,11 @@ UnixUDPConnection::UnixUDPConnection(int the_fd) : onCallbackQueue(0), callbackA
 TS_INLINE void
 UnixUDPConnection::init(int the_fd)
 {
-  fd = the_fd;
+  fd              = the_fd;
   onCallbackQueue = 0;
-  callbackAction = NULL;
-  ethread = NULL;
-  m_errno = 0;
+  callbackAction  = NULL;
+  ethread         = NULL;
+  m_errno         = 0;
 
   UDPPacketInternal p;
   ink_atomiclist_init(&inQueue, "Incoming UDP Packet queue", (char *)&p.alink.next - (char *)&p);
@@ -102,11 +102,10 @@ UDPConnection::recv(Continuation *c)
   // register callback interest.
   p->continuation = c;
   ink_assert(c != NULL);
-  mutex = c->mutex;
+  mutex         = c->mutex;
   p->recvActive = 1;
   return ACTION_RESULT_NONE;
 }
-
 
 TS_INLINE UDPConnection *
 new_UDPConnection(int fd)

@@ -108,7 +108,6 @@ modify_header(TSHttpTxn txnp)
     /*********** Unclear why this is needed **************/
     TSMimeHdrFieldAppend(resp_bufp, resp_loc, new_field_loc);
 
-
     /* Cache-Control: Public */
     TSMimeHdrFieldCreate(resp_bufp, resp_loc, &new_field_loc); /* Probably should check for errors */
     TSDebug("resphdr", "Created new resp field with loc %p", new_field_loc);
@@ -162,7 +161,6 @@ modify_header(TSHttpTxn txnp)
     }
     TSDebug("resphdr", "Header field value is %s, with length %d", chkptr, chklength);
 
-
     /* Get the cached MIME value for this name in this HTTP header */
     /*
        TSMimeHdrFieldValueUintGet(cached_bufp, cached_loc, cached_field_loc, 0, &num_refreshes);
@@ -208,7 +206,6 @@ modify_header(TSHttpTxn txnp)
   /* Caller reneables */
 }
 
-
 static int
 modify_response_header_plugin(TSCont contp ATS_UNUSED, TSEvent event, void *edata)
 {
@@ -234,8 +231,8 @@ TSPluginInit(int argc, const char *argv[])
 
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "response-header-1";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "response-header-1";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -256,11 +253,10 @@ TSPluginInit(int argc, const char *argv[])
    *  basis.
    */
 
-
   hdr_bufp = TSMBufferCreate();
   TSMimeHdrCreate(hdr_bufp, &hdr_loc);
 
-  mimehdr1_name = TSstrdup("x-num-served-from-cache");
+  mimehdr1_name  = TSstrdup("x-num-served-from-cache");
   mimehdr1_value = TSstrdup("0");
 
   /* Create name here and set DateTime value when o.s.
@@ -276,7 +272,6 @@ TSPluginInit(int argc, const char *argv[])
   TSMimeHdrFieldValueStringInsert(hdr_bufp, hdr_loc, field_loc, -1, mimehdr1_value, strlen(mimehdr1_value));
   TSDebug("resphdr", "init buffer hdr, field and value locs are %p, %p and %p", hdr_loc, field_loc, value_loc);
   init_buffer_status = 1;
-
 
   TSHttpHookAdd(TS_HTTP_READ_RESPONSE_HDR_HOOK, TSContCreate(modify_response_header_plugin, NULL));
 

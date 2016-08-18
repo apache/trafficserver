@@ -80,13 +80,35 @@ NVC_test_def netvc_tests_def[] = {
 };
 const unsigned num_netvc_tests = countof(netvc_tests_def);
 
-
 NetVCTest::NetVCTest()
-  : Continuation(NULL), test_cont_type(NET_VC_TEST_ACTIVE), test_vc(NULL), regress(NULL), driver(NULL), read_vio(NULL),
-    write_vio(NULL), read_buffer(NULL), write_buffer(NULL), reader_for_rbuf(NULL), reader_for_wbuf(NULL), write_bytes_to_add_per(0),
-    timeout(0), actual_bytes_read(0), actual_bytes_sent(0), write_done(false), read_done(false), read_seed(0), write_seed(0),
-    bytes_to_send(0), bytes_to_read(0), nbytes_read(0), nbytes_write(0), expected_read_term(0), expected_write_term(0),
-    test_name(NULL), module_name(NULL), debug_tag(NULL)
+  : Continuation(NULL),
+    test_cont_type(NET_VC_TEST_ACTIVE),
+    test_vc(NULL),
+    regress(NULL),
+    driver(NULL),
+    read_vio(NULL),
+    write_vio(NULL),
+    read_buffer(NULL),
+    write_buffer(NULL),
+    reader_for_rbuf(NULL),
+    reader_for_wbuf(NULL),
+    write_bytes_to_add_per(0),
+    timeout(0),
+    actual_bytes_read(0),
+    actual_bytes_sent(0),
+    write_done(false),
+    read_done(false),
+    read_seed(0),
+    write_seed(0),
+    bytes_to_send(0),
+    bytes_to_read(0),
+    nbytes_read(0),
+    nbytes_write(0),
+    expected_read_term(0),
+    expected_write_term(0),
+    test_name(NULL),
+    module_name(NULL),
+    debug_tag(NULL)
 {
 }
 
@@ -114,23 +136,23 @@ NetVCTest::init_test(NetVcTestType_t c_type, NetTestDriver *driver_arg, NetVConn
                      NVC_test_def *my_def, const char *module_name_arg, const char *debug_tag_arg)
 {
   test_cont_type = c_type;
-  driver = driver_arg;
-  test_vc = nvc;
-  regress = robj;
-  module_name = module_name_arg;
-  debug_tag = debug_tag_arg;
+  driver         = driver_arg;
+  test_vc        = nvc;
+  regress        = robj;
+  module_name    = module_name_arg;
+  debug_tag      = debug_tag_arg;
 
   bytes_to_send = my_def->bytes_to_send;
   bytes_to_read = my_def->bytes_to_read;
 
-  nbytes_read = my_def->nbytes_read;
+  nbytes_read  = my_def->nbytes_read;
   nbytes_write = my_def->nbytes_write;
 
   write_bytes_to_add_per = my_def->write_bytes_per;
-  timeout = my_def->timeout;
-  expected_read_term = my_def->expected_read_term;
-  expected_write_term = my_def->expected_write_term;
-  test_name = my_def->test_name;
+  timeout                = my_def->timeout;
+  expected_read_term     = my_def->expected_read_term;
+  expected_write_term    = my_def->expected_write_term;
+  test_name              = my_def->test_name;
 
   mutex = new_ProxyMutex();
   SET_HANDLER(&NetVCTest::main_handler);
@@ -146,7 +168,7 @@ NetVCTest::start_test()
   test_vc->set_inactivity_timeout(HRTIME_SECONDS(timeout));
   test_vc->set_active_timeout(HRTIME_SECONDS(timeout + 5));
 
-  read_buffer = new_MIOBuffer();
+  read_buffer  = new_MIOBuffer();
   write_buffer = new_MIOBuffer();
 
   reader_for_rbuf = read_buffer->alloc_reader();
@@ -165,13 +187,12 @@ NetVCTest::start_test()
   }
 }
 
-
 int
 NetVCTest::fill_buffer(MIOBuffer *buf, uint8_t *seed, int bytes)
 {
   char *space = (char *)ats_malloc(bytes);
-  char *tmp = space;
-  int to_add = bytes;
+  char *tmp   = space;
+  int to_add  = bytes;
 
   while (bytes > 0) {
     *tmp = *seed;
@@ -199,8 +220,8 @@ NetVCTest::consume_and_check_bytes(IOBufferReader *r, uint8_t *seed)
   while (r->read_avail() > 0) {
     int64_t b_avail = r->block_read_avail();
 
-    tmp = (uint8_t *)r->start();
-    end = tmp + b_avail;
+    tmp        = (uint8_t *)r->start();
+    end        = tmp + b_avail;
     b_consumed = 0;
 
     while (tmp < end && actual_bytes_read < bytes_to_read) {
@@ -373,7 +394,6 @@ NetVCTest::main_handler(int event, void *data)
 
   return 0;
 }
-
 
 NetTestDriver::NetTestDriver() : Continuation(NULL), errors(0), r(NULL), pstatus(NULL)
 {

@@ -1,0 +1,39 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/working-with-http-header-functions.en.rst:23
+msgid "Working with HTTP Header Functions"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/working-with-http-header-functions.en.rst:25
+msgid ""
+"The Blacklist plugin examines the host header in every client transaction. "
+"This is done in the ``handle_dns`` routine, using "
+"``TSHttpTxnClientReqGet``, ``TSHttpHdrUrlGet``, and ``TSUrlHostGet``."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/working-with-http-header-functions.en.rst:60
+msgid ""
+"To access the host header, the plugin must first get the client request, "
+"retrieve the URL portion, and then obtain the host header. See :ref:"
+"`developer-plugins-http-headers` for more information about these calls. "
+"See :ref:`developer-plugins-http-headers-marshal-buffers` for guidelines on "
+"using ``TSHandleMLocRelease``."
+msgstr ""

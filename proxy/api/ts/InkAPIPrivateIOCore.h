@@ -36,7 +36,7 @@
 
 enum INKContInternalMagic_t {
   INKCONT_INTERN_MAGIC_ALIVE = 0x00009631,
-  INKCONT_INTERN_MAGIC_DEAD = 0xDEAD9631,
+  INKCONT_INTERN_MAGIC_DEAD  = 0xDEAD9631,
 };
 
 class INKContInternal : public DummyVConnection
@@ -50,6 +50,10 @@ public:
 
   void handle_event_count(int event);
   int handle_event(int event, void *edata);
+
+protected:
+  virtual void clear();
+  virtual void free();
 
 public:
   void *mdata;
@@ -68,10 +72,7 @@ public:
   INKVConnInternal();
   INKVConnInternal(TSEventFunc funcp, TSMutex mutexp);
 
-  void init(TSEventFunc funcp, TSMutex mutexp);
   virtual void destroy();
-
-  int handle_event(int event, void *edata);
 
   VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
 
@@ -89,6 +90,10 @@ public:
 
   bool get_data(int id, void *data);
   bool set_data(int id, void *data);
+
+protected:
+  virtual void clear();
+  virtual void free();
 
 public:
   VIO m_read_vio;
@@ -127,7 +132,6 @@ TSReturnCode sdk_sanity_check_iocore_structure(void *);
 
 tsapi TSMutex TSMutexCreateInternal(void);
 tsapi int TSMutexCheck(TSMutex mutex);
-
 
 /* IOBuffer */
 tsapi void TSIOBufferReaderCopy(TSIOBufferReader readerp, const void *buf, int64_t length);

@@ -1,0 +1,85 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:23
+msgid "Logging"
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:173
+msgid ""
+"Indicates the number of times |TS| has encountered a failure while "
+"attempting to log an event to the access logs facility."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:179
+msgid ""
+"Indicates the number of times |TS| has been unable to log an event to the "
+"access logs facility due to insufficient space."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:185
+msgid ""
+"Indicates the number of times |TS| has successfully logged an event to the "
+"access logs facility."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:191
+msgid ""
+"Indicates the number of times |TS| has skipped logging an event to the "
+"access logs facility."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:200
+msgid ""
+"Indicates the number of times |TS| has encountered a failure while "
+"attempting to log an event to the error logs facility."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:206
+msgid ""
+"Indicates the number of times |TS| has been unable to log an event to the "
+"error logs facility due to insufficient space."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:212
+msgid ""
+"Indicates the number of times |TS| has successfully logged an event to the "
+"error logs facility."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:218
+msgid ""
+"Indicates the number of times |TS| has skipped logging an event to the "
+"error logs facility."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:224
+msgid "Indicates the number of log files currently open by |TS|."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:230
+msgid "Indicates the number of bytes currently in use by |TS| log files."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/log.en.rst:235
+msgid ""
+"The number of events |TS| has flushed to log files on disk, since "
+"statistics collection began."
+msgstr ""

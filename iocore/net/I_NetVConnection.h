@@ -175,9 +175,7 @@ struct NetVCOptions {
                       unsigned long _packet_tos = 0);
 
   NetVCOptions() { reset(); }
-
   ~NetVCOptions() {}
-
   /** Set the SNI server name.
       A local copy is made of @a name.
   */
@@ -195,7 +193,8 @@ struct NetVCOptions {
     return *this;
   }
 
-  self &operator=(self const &that)
+  self &
+  operator=(self const &that)
   {
     if (&that != this) {
       sni_servername = NULL; // release any current name.
@@ -327,7 +326,6 @@ public:
   */
   virtual void do_io_shutdown(ShutdownHowTo_t howto) = 0;
 
-
   /**
     Sends out of band messages over the connection. This function
     is used to send out of band messages (is this still useful?).
@@ -432,6 +430,21 @@ public:
   */
   virtual void cancel_inactivity_timeout() = 0;
 
+  /** Set the action to use a continuation.
+      The action continuation will be called with an event if there is no pending I/O operation
+      to receive the event.
+
+      Pass @c NULL to disable.
+
+      @internal Subclasses should implement this if they support actions. This abstract class does
+      not. If the subclass doesn't have an action this method is silently ignored.
+  */
+  virtual void
+  set_action(Continuation *)
+  {
+    return;
+  }
+
   virtual void add_to_keep_alive_queue() = 0;
 
   virtual void remove_from_keep_alive_queue() = 0;
@@ -503,7 +516,6 @@ public:
 
   /// PRIVATE
   virtual ~NetVConnection() {}
-
   /**
     PRIVATE: instances of NetVConnection cannot be created directly
     by the state machines. The objects are created by NetProcessor
@@ -517,6 +529,9 @@ public:
 
   /** Set the TCP initial congestion window */
   virtual int set_tcp_init_cwnd(int init_cwnd) = 0;
+
+  /** Set the TCP congestion control algorithm */
+  virtual int set_tcp_congestion_control(const char *name, int len) = 0;
 
   /** Set local sock addr struct. */
   virtual void set_local_addr() = 0;
@@ -569,8 +584,14 @@ protected:
 };
 
 inline NetVConnection::NetVConnection()
-  : VConnection(NULL), attributes(0), thread(NULL), got_local_addr(0), got_remote_addr(0), is_internal_request(false),
-    is_transparent(false), write_buffer_empty_event(0)
+  : VConnection(NULL),
+    attributes(0),
+    thread(NULL),
+    got_local_addr(0),
+    got_remote_addr(0),
+    is_internal_request(false),
+    is_transparent(false),
+    write_buffer_empty_event(0)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);

@@ -96,7 +96,7 @@ RamCacheLRU::resize_hashtable()
     }
     ats_free(bucket);
   }
-  bucket = new_bucket;
+  bucket   = new_bucket;
   nbuckets = anbuckets;
   ats_free(seen);
   int size = bucket_sizes[ibuckets] * sizeof(uint16_t);
@@ -109,7 +109,7 @@ RamCacheLRU::resize_hashtable()
 void
 RamCacheLRU::init(int64_t abytes, Vol *avol)
 {
-  vol = avol;
+  vol       = avol;
   max_bytes = abytes;
   DDebug("ram_cache", "initializing ram_cache %" PRId64 " bytes", abytes);
   if (!max_bytes)
@@ -122,7 +122,7 @@ RamCacheLRU::get(INK_MD5 *key, Ptr<IOBufferData> *ret_data, uint32_t auxkey1, ui
 {
   if (!max_bytes)
     return 0;
-  uint32_t i = key->slice32(3) % nbuckets;
+  uint32_t i          = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey1 == auxkey1 && e->auxkey2 == auxkey2) {
@@ -144,7 +144,7 @@ RamCacheLRUEntry *
 RamCacheLRU::remove(RamCacheLRUEntry *e)
 {
   RamCacheLRUEntry *ret = e->hash_link.next;
-  uint32_t b = e->key.slice32(3) % nbuckets;
+  uint32_t b            = e->key.slice32(3) % nbuckets;
   bucket[b].remove(e);
   lru.remove(e);
   bytes -= ENTRY_OVERHEAD + e->data->block_size();
@@ -164,9 +164,9 @@ RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t 
     return 0;
   uint32_t i = key->slice32(3) % nbuckets;
   if (cache_config_ram_cache_use_seen_filter) {
-    uint16_t k = key->slice32(3) >> 16;
+    uint16_t k  = key->slice32(3) >> 16;
     uint16_t kk = seen[i];
-    seen[i] = k;
+    seen[i]     = k;
     if ((kk != (uint16_t)k)) {
       DDebug("ram_cache", "put %X %d %d len %d UNSEEN", key->slice32(3), auxkey1, auxkey2, len);
       return 0;
@@ -186,11 +186,11 @@ RamCacheLRU::put(INK_MD5 *key, IOBufferData *data, uint32_t len, bool, uint32_t 
     }
     e = e->hash_link.next;
   }
-  e = THREAD_ALLOC(ramCacheLRUEntryAllocator, this_ethread());
-  e->key = *key;
+  e          = THREAD_ALLOC(ramCacheLRUEntryAllocator, this_ethread());
+  e->key     = *key;
   e->auxkey1 = auxkey1;
   e->auxkey2 = auxkey2;
-  e->data = data;
+  e->data    = data;
   bucket[i].push(e);
   lru.enqueue(e);
   bytes += ENTRY_OVERHEAD + data->block_size();
@@ -216,7 +216,7 @@ RamCacheLRU::fixup(const INK_MD5 *key, uint32_t old_auxkey1, uint32_t old_auxkey
 {
   if (!max_bytes)
     return 0;
-  uint32_t i = key->slice32(3) % nbuckets;
+  uint32_t i          = key->slice32(3) % nbuckets;
   RamCacheLRUEntry *e = bucket[i].head;
   while (e) {
     if (e->key == *key && e->auxkey1 == old_auxkey1 && e->auxkey2 == old_auxkey2) {

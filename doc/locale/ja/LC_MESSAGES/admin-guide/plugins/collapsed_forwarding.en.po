@@ -1,0 +1,223 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 7.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:23
+msgid "Collapsed Forwarding Plugin"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:25
+msgid ""
+"This is a plugin for Apache Traffic Server that allows to achieve effective "
+"connection collapse by blocking all but one of the multiple concurrent "
+"requests for the same object from going to the Origin."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:30
+msgid "Installation"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:32
+msgid ""
+"To make this plugin available, you must either enable experimental plugins "
+"when building |TS|::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:37
+msgid ""
+"Or use :program:`tsxs` to compile the plugin against your current |TS| "
+"build. To do this, you must ensure that:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:40
+msgid "Development packages for |TS| are installed."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:42
+msgid "The :program:`tsxs` binary is in your path."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:44
+msgid ""
+"The version of this plugin you are building, and the version of |TS| "
+"against which you are building it are compatible."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:47
+msgid ""
+"Once those conditions are satisfied, enter the source directory for the "
+"plugin and perform the following::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:54
+msgid "Using the plugin"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:56
+msgid ""
+"This plugin functions as a per remap plugin, and it takes two optional "
+"arguments for specifying the delay between successive retries and a max "
+"number of retries."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:60
+msgid ""
+"To activate the plugin in per remap mode, in :file:`remap.config`, simply "
+"append the below to the specific remap line::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:66
+msgid "Functionality"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:68
+msgid ""
+"Traffic Server plugin to allow collapsed forwarding of concurrent requests "
+"for the same object. This plugin is based on open_write_fail_action "
+"feature, which detects cache open write failure on a cache miss and returns "
+"a 502 error along with a special @-header indicating the reason for 502 "
+"error. The plugin acts on the error by using an internal redirect follow "
+"back to itself, essentially blocking the request until a response arrives, "
+"at which point, relies on read-while-writer feature to start downloading "
+"the object to all waiting clients. The following config parameters are "
+"assumed to be set for this plugin to work::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:86
+msgid ""
+"Additionally, given that collapsed forwarding works based on cache write "
+"lock failure detection, the plugin requires cache to be enabled and ready. "
+"On a restart, Traffic Server typically takes a few seconds to initialize "
+"the cache depending on the cache size and number of dirents. While the "
+"cache is not ready yet, collapsed forwarding can not detect the write lock "
+"contention and so can not work. The setting :ts:cv:`proxy.config.http."
+"wait_for_cache` may be enabled which allows blocking incoming connections "
+"from being accepted until cache is ready."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:96
+msgid "Description"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:97
+msgid ""
+"Traffic Server has been affected severely by the Thundering Herd problem "
+"caused by its inability to do effective connection collapse of multiple "
+"concurrent requests for the same segment. This is especially critical when "
+"Traffic Server is used as a solution to use cases such as delivering a "
+"large scale video live streaming. This problem results in a specific "
+"behavior where multiple number of requests for the same file are leaked "
+"upstream to the Origin layer choking the upstream bandwidth due to the "
+"duplicated large file downloads or process intensive file at the Origin "
+"layer. This ultimately can cause stability problems on the origin layer "
+"disrupting the overall network performance."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:108
+msgid ""
+"Traffic Server supports several kind of connection collapse mechanisms "
+"including Read-While-Writer (RWW), Stale-While-Revalidate (SWR) etc each "
+"very effective dealing with a majority of the use cases that can result in "
+"the Thundering herd problem."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:113
+msgid ""
+"For a large scale Video Streaming scenario, there’s a combination of a "
+"large number of revalidations (e.g. media playlists) and cache misses (e.g. "
+"media segments) that occur for the same file. Traffic Server’s RWW works "
+"great in collapsing the concurrent requests in such a scenario, however, as "
+"described in ``_admin-configuration-reducing-origin-requests``, Traffic "
+"Server’s implementation of RWW has a significant limitation, which "
+"restricts its ability to invoke RWW only when the response headers are "
+"already received. This means that any number of concurrent requests for the "
+"same file that are received before the response headers arrive are leaked "
+"upstream, which can result in a severe Thundering herd problem, depending "
+"on the network latencies (which impact the TTFB for the response headers) "
+"at a given instant of time."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:126
+msgid ""
+"To address this limitation, Traffic Server supports a few Cache tuning "
+"solutions, such as Open Read Retry, and a new feature called Open Write "
+"Fail action from 6.0. To understand how these approaches work, it is "
+"important to understand the high level flow of how Traffic Server handles a "
+"GET request."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:132
+msgid ""
+"On receiving a HTTP GET request, Traffic Server generates the cache key "
+"(basically, a hash of the request URL) and looks up for the directory entry "
+"(dirent) using the generated index. On a cache miss, the lookup fails and "
+"Traffic Server then tries to just get a write lock for the cache object and "
+"proceeds to the origin to download the object. On the Other hand, if the "
+"lookup is successful, meaning, the dirent exists for the generated cache "
+"key, Traffic Server tries to obtain a read lock on the cache object to be "
+"able to serve it from the cache. If the read lock is not successful "
+"(possibly, due to the fact that the object’s being written to at that same "
+"instant and the response headers are not in the cache yet), Traffic Server "
+"then moves to the next step of trying to obtain an exclusive write lock. If "
+"the write lock is already held exclusively by another request "
+"(transaction), the attempt fails and at this point Traffic Server simply "
+"disables the cache on that transaction and downloads the object in a proxy-"
+"only mode::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:160
+msgid ""
+"As can be seen above, if a majority of concurrent requests arrive before "
+"response headers are received, they hit (2.2) and (3.2) above. Open Read "
+"Retry can help to repeat (2) after a configured delay on 2.2, thereby "
+"increasing the chances for obtaining a read lock and being able to serve "
+"from the cache."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:166
+msgid ""
+"However, the Open Read Retry can not help with the concurrent requests that "
+"hit (1.1) above, jumping to (3) directly. Only one such request will be "
+"able to obtain the exclusive write lock and all other requests are leaked "
+"upstream. This is where, the recently developed Traffic Server feature Open "
+"Write Fail Action will help. The feature detects the write lock failure and "
+"can return a stale copy for a Cache Revalidation or a 5xx status code for a "
+"Cache Miss with a special internal header <@Ats-Internal> that allows a TS "
+"plugin to take other special actions depending on the use-case."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:176
+msgid ""
+"``collapsed_forwarding`` plugin catches that error in "
+"SEND_RESPONSE_HDR_HOOK and performs an internal 3xx Redirect back to the "
+"same host, the configured number of times with the configured amount of "
+"delay between consecutive retries, allowing to be able to initiate RWW, "
+"whenever the response headers are received for the request that was allowed "
+"to go to the Origin."
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:183
+msgid "More details are available at"
+msgstr ""
+
+#: ../../../admin-guide/plugins/collapsed_forwarding.en.rst:185
+msgid ""
+"https://docs.trafficserver.apache.org/en/6.0.x/admin/http-proxy-caching.en."
+"html#reducing-origin-server-requests-avoiding-the-thundering-herd"
+msgstr ""

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _P_CACHE_DIR_H__
 #define _P_CACHE_DIR_H__
 
@@ -341,7 +340,7 @@ dir_to_offset(const Dir *d, const Dir *seg)
   return (((char *)d) - ((char *)seg)) / SIZEOF_DIR;
 #else
   int64_t i = (int64_t)((((char *)d) - ((char *)seg)) / SIZEOF_DIR);
-  i = i - (i / DIR_DEPTH);
+  i         = i - (i / DIR_DEPTH);
   return i;
 #endif
 }

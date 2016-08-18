@@ -50,11 +50,10 @@ newrec(LLQ *Q)
   }
 
   Q->free = (LLQrec *)ats_malloc(RECORD_CHUNK * sizeof(LLQrec));
-  for (i = 0; i < RECORD_CHUNK; i++)
+  for (i            = 0; i < RECORD_CHUNK; i++)
     Q->free[i].next = &Q->free[i + 1];
 
   Q->free[RECORD_CHUNK - 1].next = NULL;
-
 
   new_val = Q->free;
   Q->free = Q->free->next;
@@ -67,7 +66,7 @@ static void
 freerec(LLQ *Q, LLQrec *rec)
 {
   rec->next = Q->free;
-  Q->free = rec;
+  Q->free   = rec;
 }
 #endif
 
@@ -105,13 +104,13 @@ enqueue(LLQ *Q, void *data)
   LLQrec *new_val;
 
   ink_mutex_acquire(&(Q->mux));
-  new_val = (LLQrec *)ats_malloc(sizeof(LLQrec));
+  new_val       = (LLQrec *)ats_malloc(sizeof(LLQrec));
   new_val->data = data;
   new_val->next = NULL;
 
   if (Q->tail)
     Q->tail->next = new_val;
-  Q->tail = new_val;
+  Q->tail         = new_val;
 
   if (Q->head == NULL)
     Q->head = Q->tail;
@@ -147,7 +146,6 @@ queue_highwater(LLQ *Q)
   /* ink_mutex_release(&(Q->mux)); */
   return highwater;
 }
-
 
 /*
  *---------------------------------------------------------------------------
@@ -186,7 +184,6 @@ dequeue(LLQ *Q)
   ink_sem_wait(&(Q->sema));
   ink_mutex_acquire(&(Q->mux));
 
-
   if (Q->head == NULL) {
     ink_mutex_release(&(Q->mux));
 
@@ -208,7 +205,6 @@ dequeue(LLQ *Q)
 
   return d;
 }
-
 
 #ifdef LLQUEUE_MAIN
 

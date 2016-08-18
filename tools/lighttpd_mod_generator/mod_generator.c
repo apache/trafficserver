@@ -136,7 +136,7 @@ FREE_FUNC(mod_generator_free)
 SETDEFAULTS_FUNC(mod_generator_set_defaults)
 {
   plugin_data *p = p_d;
-  size_t i = 0;
+  size_t i       = 0;
 
   config_values_t cv[] = {{"generator.array", NULL, T_CONFIG_ARRAY, T_CONFIG_SCOPE_CONNECTION}, /* 0 */
                           {NULL, NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET}};
@@ -149,7 +149,7 @@ SETDEFAULTS_FUNC(mod_generator_set_defaults)
   for (i = 0; i < srv->config_context->used; i++) {
     plugin_config *s;
 
-    s = calloc(1, sizeof(plugin_config));
+    s        = calloc(1, sizeof(plugin_config));
     s->match = array_init();
 
     cv[0].destination = s->match;
@@ -176,7 +176,7 @@ mod_generator_patch_connection(server *srv, connection *con, plugin_data *p)
   /* skip the first, the global context */
   for (i = 1; i < srv->config_context->used; i++) {
     data_config *dc = (data_config *)srv->config_context->data[i];
-    s = p->config_storage[i];
+    s               = p->config_storage[i];
 
     /* condition didn't match */
     if (!config_check_cond(srv, con, dc))
@@ -216,7 +216,7 @@ URIHANDLER_FUNC(mod_generator_uri_handler)
 
   for (k = 0; k < p->conf.match->used; k++) {
     data_string *ds = (data_string *)p->conf.match->data[k];
-    int ct_len = ds->value->used - 1;
+    int ct_len      = ds->value->used - 1;
 
     if (ct_len > s_len)
       continue;
@@ -234,14 +234,12 @@ URIHANDLER_FUNC(mod_generator_uri_handler)
   return HANDLER_GO_ON;
 }
 
-
 URIHANDLER_FUNC(mod_generator_subrequest_handler)
 {
   (void)p_d;
   // plugin_data *p = p_d;
   buffer *b;
   b = chunkqueue_get_append_buffer(con->write_queue);
-
 
   // get the url information
   // int length = strlen(con->uri.path->ptr);
@@ -342,7 +340,7 @@ URIHANDLER_FUNC(mod_generator_subrequest_handler)
     response_header_insert(srv, con, CONST_STR_LEN("Cache-Control"), CONST_STR_LEN("max-age=86400, public"));
   }
 
-  con->http_status = 200;
+  con->http_status   = 200;
   con->file_finished = 1;
   return HANDLER_FINISHED;
 }
@@ -353,13 +351,13 @@ int
 mod_generator_plugin_init(plugin *p)
 {
   p->version = LIGHTTPD_VERSION_ID;
-  p->name = buffer_init_string("generator");
+  p->name    = buffer_init_string("generator");
 
-  p->init = mod_generator_init;
+  p->init             = mod_generator_init;
   p->handle_uri_clean = mod_generator_uri_handler;
-  p->handle_physical = mod_generator_subrequest_handler;
-  p->set_defaults = mod_generator_set_defaults;
-  p->cleanup = mod_generator_free;
+  p->handle_physical  = mod_generator_subrequest_handler;
+  p->set_defaults     = mod_generator_set_defaults;
+  p->cleanup          = mod_generator_free;
 
   p->data = NULL;
 

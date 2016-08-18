@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include <stdio.h>
 #include <string.h>
 
@@ -30,9 +29,7 @@
 #include "ts/ts.h"
 #include "ts/ink_defs.h"
 
-
 static char base64_codes[256];
-
 
 static char *
 base64_decode(const char *input)
@@ -129,7 +126,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp)
     ptr += 1;
   }
 
-  user = base64_decode(ptr);
+  user     = base64_decode(ptr);
   password = strchr(user, ':');
   if (!password) {
     TSError("[basic_auth] No password in authorization information");
@@ -167,7 +164,7 @@ handle_response(TSHttpTxn txnp)
   TSMLoc hdr_loc;
   TSMLoc field_loc;
   const char *insert = "Basic realm=\"proxy\"";
-  int len = strlen(insert);
+  int len            = strlen(insert);
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     TSError("[basic_auth] Couldn't retrieve client response header");
@@ -215,8 +212,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   int i, cc;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "basic-authorization";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "basic-authorization";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

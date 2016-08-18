@@ -39,13 +39,13 @@ Synopsis
 .. function:: const char* TSHttpServerStateNameLookup(TSServerState state)
 .. function:: const char* TSHttpHookNameLookup(TSHttpHookID hook)
 .. function:: const char* TSHttpEventNameLookup(TSEvent event)
-.. macro:: void TSAssert(expression)
-.. macro:: void TSReleaseAssert(expression)
+.. macro:: void TSAssert( ... )
+.. macro:: void TSReleaseAssert( ... )
 
 Description
 ===========
 
-:func:`TSError` is similar to :func:`printf` except that instead
+:func:`TSError` is similar to ``printf`` except that instead
 of writing the output to the C standard output, it writes output
 to the Traffic Server error log.
 

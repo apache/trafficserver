@@ -27,7 +27,6 @@
 #include "ts/ink_platform.h"
 #include "I_Event.h"
 
-
 // <5ms, 10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120
 #define N_PQ_LIST 10
 #define PQ_BUCKET_TIME(_i) (HRTIME_MSECONDS(5) << (_i))
@@ -43,7 +42,7 @@ struct PriorityEventQueue {
   enqueue(Event *e, ink_hrtime now)
   {
     ink_hrtime t = e->timeout_at - now;
-    int i = 0;
+    int i        = 0;
     // equivalent but faster
     if (t <= PQ_BUCKET_TIME(3)) {
       if (t <= PQ_BUCKET_TIME(1)) {
@@ -83,7 +82,7 @@ struct PriorityEventQueue {
       }
     }
     e->in_the_priority_queue = 1;
-    e->in_heap = i;
+    e->in_heap               = i;
     after[i].enqueue(e);
   }
 

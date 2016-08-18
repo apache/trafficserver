@@ -217,5 +217,5 @@ SSL/TLS
    :type: counter
 
    Incoming client SSL connections terminated due to an unsupported or disabled
-   version of SSL/TLS, since staistics collection began.
+   version of SSL/TLS, since statistics collection began.
 

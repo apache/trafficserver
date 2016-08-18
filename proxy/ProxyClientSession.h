@@ -25,20 +25,26 @@
 #define __PROXY_CLIENT_SESSION_H__
 
 #include "ts/ink_platform.h"
+#include "ts/ink_resolver.h"
 #include "P_Net.h"
 #include "InkAPIInternal.h"
+#include "http/HttpServerSession.h"
 
 // Emit a debug message conditional on whether this particular client session
 // has debugging enabled. This should only be called from within a client session
 // member function.
 #define DebugSsn(ssn, tag, ...) DebugSpecific((ssn)->debug(), tag, __VA_ARGS__)
 
+class ProxyClientTransaction;
+struct AclRecord;
+
 class ProxyClientSession : public VConnection
 {
 public:
   ProxyClientSession();
 
-  virtual void destroy();
+  virtual void destroy() = 0;
+  virtual void free();
   virtual void start() = 0;
 
   virtual void new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOBufferReader *reader, bool backdoor) = 0;
@@ -46,7 +52,7 @@ public:
   virtual void
   ssn_hook_append(TSHttpHookID id, INKContInternal *cont)
   {
-    this->api_hooks.prepend(id, cont);
+    this->api_hooks.append(id, cont);
   }
 
   virtual void
@@ -56,7 +62,7 @@ public:
   }
 
   virtual NetVConnection *get_netvc() const = 0;
-  virtual void release_netvc() = 0;
+  virtual void release_netvc()              = 0;
 
   APIHook *
   ssn_hook_get(TSHttpHookID id) const
@@ -101,6 +107,82 @@ public:
   void do_api_callout(TSHttpHookID id);
 
   static int64_t next_connection_id();
+  virtual int get_transact_count() const = 0;
+
+  // Override if your session protocol allows this
+  virtual bool
+  is_transparent_passthrough_allowed()
+  {
+    return false;
+  }
+
+  // Override if your session protocol cares
+  virtual void
+  set_half_close_flag(bool flag)
+  {
+  }
+  virtual bool
+  get_half_close_flag() const
+  {
+    return false;
+  }
+
+  // Indicate we are done with a transaction
+  virtual void release(ProxyClientTransaction *trans) = 0;
+
+  /// acl record - cache IpAllow::match() call
+  const AclRecord *acl_record;
+
+  int64_t
+  connection_id() const
+  {
+    return con_id;
+  }
+
+  virtual void
+  attach_server_session(HttpServerSession *ssession, bool transaction_done = true)
+  {
+  }
+
+  virtual HttpServerSession *
+  get_server_session() const
+  {
+    return NULL;
+  }
+
+  /// DNS resolution preferences.
+  HostResStyle host_res_style;
+
+  virtual int state_api_callout(int event, void *edata);
+
+  TSHttpHookID
+  get_hookid() const
+  {
+    return api_hookid;
+  }
+
+  ink_hrtime ssn_start_time;
+  ink_hrtime ssn_last_txn_time;
+
+  virtual void
+  set_active_timeout(ink_hrtime timeout_in)
+  {
+  }
+  virtual void
+  set_inactivity_timeout(ink_hrtime timeout_in)
+  {
+  }
+  virtual void
+  cancel_inactivity_timeout()
+  {
+  }
+  virtual const char *get_protocol_string() const = 0;
+
+  bool
+  is_client_closed() const
+  {
+    return get_netvc() == NULL;
+  }
 
 protected:
   // XXX Consider using a bitwise flags variable for the following flags, so that we can make the best
@@ -109,6 +191,11 @@ protected:
   // Session specific debug flag.
   bool debug_on;
   bool hooks_on;
+
+  int64_t con_id;
+
+  Event *schedule_event;
+  bool in_destroy;
 
 private:
   APIHookScope api_scope;
@@ -120,7 +207,6 @@ private:
   ProxyClientSession(ProxyClientSession &);                  // noncopyable
   ProxyClientSession &operator=(const ProxyClientSession &); // noncopyable
 
-  int state_api_callout(int event, void *edata);
   void handle_api_return(int event);
 
   friend void TSHttpSsnDebugSet(TSHttpSsn, int);

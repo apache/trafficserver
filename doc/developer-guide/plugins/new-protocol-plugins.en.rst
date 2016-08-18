@@ -76,7 +76,7 @@ In more specific terms, Traffic Server and the Protocol plugin must:
 
 .. _SampleProtocolStDiag:
 
-.. figure:: ../static/images/sdk/Protocol_state_diagram.jpg
+.. figure:: ../../static/images/sdk/Protocol_state_diagram.jpg
    :alt: Sample Protocol State Diagram
 
    Sample Protocol State Diagram
@@ -112,7 +112,7 @@ Overview <ProtocolPluginOverview>` diagram below.
 
 .. _ProtocolPluginOverview:
 
-.. figure:: ../static/images/sdk/protocol_sm_big.jpg
+.. figure:: ../../static/images/sdk/protocol_sm_big.jpg
    :alt: Protocol Plugin Overview
 
    Protocol Plugin Overview
@@ -167,7 +167,7 @@ Processor.
 
 .. _ProtocolPluginFlow:
 
-.. figure:: ../static/images/sdk/protocol_evt.jpg
+.. figure:: ../../static/images/sdk/protocol_evt.jpg
    :alt: Protocol Plugin Flow of Events
 
    Protocol Plugin Flow of Events
@@ -257,7 +257,7 @@ Plugin**
 
 .. _ImplementTransStMachine:
 
-.. figure:: ../static/images/sdk/txn_sm.jpg
+.. figure:: ../../static/images/sdk/txn_sm.jpg
    :alt: How Transaction State Machines are Implemented in the Protocol Plugin
 
    How Transaction State Machines are Implemented in the Protocol Plugin

@@ -1,6 +1,8 @@
 #
 # splitdns.config
 #
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/splitdns.config.en.html
 #
 # The purpose of this file is to specify the dns server for
 #   specific objects or sets of objects.

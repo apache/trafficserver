@@ -1,4 +1,4 @@
-.. _esi-plugin:
+.. _admin-plugins-esi:
 
 ESI Plugin
 **********
@@ -88,14 +88,33 @@ Enabling ESI
   ESI document is received and parsed without all ESI includes fetched (the flushing will stop at the ESI include markup
   till that include is fetched). 
 
-3. We need a mapping for origin server response that contains the ESI markup. Assume that the ATS server is abc.com. And your origin server is xyz.com and the response containing ESI markup is http://xyz.com/esi.php. We will need
+3. HTTP_COOKIE variable supported is turned off by default. You can turn it on with '-f' or '-handler option'
+
+::
+
+    esi.so -f handler.conf
+
+And inside handler.conf you can provide the list of cookie name that is allowed.
+
+::
+
+    whitelistCookie A
+    whitelistCookie LOGIN 
+
+We can also allow all cookie for HTTP_COOKIE variable by using a wildcard character. e.g. 
+
+::
+
+    whitelistCookie *
+
+4. We need a mapping for origin server response that contains the ESI markup. Assume that the ATS server is abc.com. And your origin server is xyz.com and the response containing ESI markup is http://xyz.com/esi.php. We will need
    the following line in /usr/local/etc/trafficserver/remap.config
 
 ::
 
     map http://abc.com/esi.php http://xyz.com/esi.php
 
-4. Your response should contain ESI markup and a response header of 'X-Esi: 1'. e.g. using PHP,
+5. Your response should contain ESI markup and a response header of 'X-Esi: 1'. e.g. using PHP,
 
 ::
 
@@ -106,7 +125,7 @@ Enabling ESI
     </body>
     </html>
 
-5. You will need a mapping for the src of the ESI include in remap.config if it is not already present.
+6. You will need a mapping for the src of the ESI include in remap.config if it is not already present.
 
 ::
 
@@ -119,7 +138,7 @@ remap.config instead to replace separate map rules for date.php and esi.php
 
     map http://abc.com/ http://xyz.com/
 
-6. Here is a sample PHP for date.php
+7. Here is a sample PHP for date.php
 
 ::
 
@@ -136,7 +155,7 @@ Useful Note
    ESI include include, each for different module. The page layour ESI response can be cached and each individual ESI
    include can also be cached with different duration. 
 
-2. You might want to compile the code without using ESI_PACKED_NODE_SUPPORT because it may not work in some corner cases
+2. You should run the plugin without using "packed node support" because it is not fully tested.
 
 Differences from Spec - http://www.w3.org/TR/esi-lang
 =====================================================

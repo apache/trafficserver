@@ -28,11 +28,19 @@ namespace detail
   /// Equality.
   /// @note If @a n is @c NULL it is treated as having the color @c BLACK.
   /// @return @c true if @a c and the color of @a n are the same.
-  inline bool operator==(RBNode *n, RBNode::Color c) { return c == (n ? n->getColor() : RBNode::BLACK); }
+  inline bool
+  operator==(RBNode *n, RBNode::Color c)
+  {
+    return c == (n ? n->getColor() : RBNode::BLACK);
+  }
   /// Equality.
   /// @note If @a n is @c NULL it is treated as having the color @c BLACK.
   /// @return @c true if @a c and the color of @a n are the same.
-  inline bool operator==(RBNode::Color c, RBNode *n) { return n == c; }
+  inline bool
+  operator==(RBNode::Color c, RBNode *n)
+  {
+    return n == c;
+  }
 
   RBNode *
   RBNode::getChild(Direction d) const
@@ -43,10 +51,10 @@ namespace detail
   RBNode *
   RBNode::rotate(Direction d)
   {
-    self *parent = _parent; // Cache because it can change before we use it.
+    self *parent        = _parent; // Cache because it can change before we use it.
     Direction child_dir = _parent ? _parent->getChildDirection(this) : NONE;
     Direction other_dir = this->flip(d);
-    self *child = this;
+    self *child         = this;
 
     if (d != NONE && this->getChild(other_dir)) {
       child = this->getChild(other_dir);
@@ -83,11 +91,11 @@ namespace detail
   RBNode::rippleStructureFixup()
   {
     self *root = this; // last node seen, root node at the end
-    self *p = this;
+    self *p    = this;
     while (p) {
       p->structureFixup();
       root = p;
-      p = root->_parent;
+      p    = root->_parent;
     }
     return root;
   }
@@ -130,16 +138,16 @@ namespace detail
       self *y = x->_parent->_parent->getChild(other_dir);
       if (y == RED) {
         x->_parent->_color = BLACK;
-        y->_color = BLACK;
-        x = x->_parent->_parent;
-        x->_color = RED;
+        y->_color          = BLACK;
+        x                  = x->_parent->_parent;
+        x->_color          = RED;
       } else {
         if (x->_parent->getChild(other_dir) == x) {
           x = x->_parent;
           x->rotate(child_dir);
         }
         // Note setting the parent color to BLACK causes the loop to exit.
-        x->_parent->_color = BLACK;
+        x->_parent->_color          = BLACK;
         x->_parent->_parent->_color = RED;
         x->_parent->_parent->rotate(other_dir);
       }
@@ -148,12 +156,11 @@ namespace detail
     // every node above this one has a subtree structure change,
     // so notify it. serendipitously, this makes it easy to return
     // the new root node.
-    self *root = this->rippleStructureFixup();
+    self *root   = this->rippleStructureFixup();
     root->_color = BLACK;
 
     return root;
   }
-
 
   // Returns new root node
   RBNode *
@@ -168,12 +175,12 @@ namespace detail
     if (!_parent && !(_left && _right)) {
       if (_left) {
         _left->_parent = 0;
-        root = _left;
-        root->_color = BLACK;
+        root           = _left;
+        root->_color   = BLACK;
       } else if (_right) {
         _right->_parent = 0;
-        root = _right;
-        root->_color = BLACK;
+        root            = _right;
+        root->_color    = BLACK;
       } // else that was the only node, so leave @a root @c NULL.
       return root;
     }
@@ -228,7 +235,7 @@ namespace detail
       this->replaceWith(remove_node);
     }
 
-    root = splice_node->rebalanceAfterRemove(remove_color, d);
+    root         = splice_node->rebalanceAfterRemove(remove_color, d);
     root->_color = BLACK;
     return root;
   }
@@ -246,14 +253,14 @@ namespace detail
     self *root;
 
     if (BLACK == c) { // only rebalance if too much black
-      self *n = this;
+      self *n      = this;
       self *parent = n->_parent;
 
-      // If @a direction is set, then we need to start at a leaf psuedo-node.
+      // If @a direction is set, then we need to start at a leaf pseudo-node.
       // This is why we need @a parent, otherwise we could just use @a n.
       if (NONE != d) {
         parent = n;
-        n = 0;
+        n      = 0;
       }
 
       while (parent) { // @a n is not the root
@@ -268,13 +275,13 @@ namespace detail
           Direction near(LEFT), far(RIGHT);
           if ((NONE == d && parent->getChildDirection(n) == RIGHT) || RIGHT == d) {
             near = RIGHT;
-            far = LEFT;
+            far  = LEFT;
           }
 
           self *w = parent->getChild(far); // sibling(n)
 
           if (w->_color == RED) {
-            w->_color = BLACK;
+            w->_color      = BLACK;
             parent->_color = RED;
             parent->rotate(near);
             w = parent->getChild(far);
@@ -283,20 +290,20 @@ namespace detail
           self *wfc = w->getChild(far);
           if (w->getChild(near) == BLACK && wfc == BLACK) {
             w->_color = RED;
-            n = parent;
-            parent = n->_parent;
-            d = NONE; // Cancel any leaf node logic
+            n         = parent;
+            parent    = n->_parent;
+            d         = NONE; // Cancel any leaf node logic
           } else {
             if (wfc->_color == BLACK) {
               w->getChild(near)->_color = BLACK;
-              w->_color = RED;
+              w->_color                 = RED;
               w->rotate(far);
-              w = parent->getChild(far);
+              w   = parent->getChild(far);
               wfc = w->getChild(far); // w changed, update far child cache.
             }
-            w->_color = parent->_color;
+            w->_color      = parent->_color;
             parent->_color = BLACK;
-            wfc->_color = BLACK;
+            wfc->_color    = BLACK;
             parent->rotate(near);
             break;
           }

@@ -48,9 +48,17 @@ BaseLogFile::BaseLogFile(const char *name, uint64_t sig) : m_signature(sig), m_h
  * This copy constructor creates a BaseLogFile based on a given copy.
  */
 BaseLogFile::BaseLogFile(const BaseLogFile &copy)
-  : m_fp(NULL), m_start_time(copy.m_start_time), m_end_time(0L), m_bytes_written(0), m_signature(copy.m_signature),
-    m_has_signature(copy.m_has_signature), m_name(ats_strdup(copy.m_name)), m_hostname(ats_strdup(copy.m_hostname)),
-    m_is_regfile(false), m_is_init(copy.m_is_init), m_meta_info(NULL)
+  : m_fp(NULL),
+    m_start_time(copy.m_start_time),
+    m_end_time(0L),
+    m_bytes_written(0),
+    m_signature(copy.m_signature),
+    m_has_signature(copy.m_has_signature),
+    m_name(ats_strdup(copy.m_name)),
+    m_hostname(ats_strdup(copy.m_hostname)),
+    m_is_regfile(false),
+    m_is_init(copy.m_is_init),
+    m_meta_info(NULL)
 {
   log_log_trace("exiting BaseLogFile copy constructor, m_name=%s, this=%p\n", m_name.get(), this);
 }
@@ -76,15 +84,15 @@ BaseLogFile::~BaseLogFile()
 void
 BaseLogFile::init(const char *name)
 {
-  m_fp = NULL;
-  m_start_time = time(0);
-  m_end_time = 0L;
+  m_fp            = NULL;
+  m_start_time    = time(0);
+  m_end_time      = 0L;
   m_bytes_written = 0;
-  m_name = ats_strdup(name);
-  m_hostname = NULL;
-  m_is_regfile = false;
-  m_is_init = false;
-  m_meta_info = NULL;
+  m_name          = ats_strdup(name);
+  m_hostname      = NULL;
+  m_is_regfile    = false;
+  m_is_init       = false;
+  m_meta_info     = NULL;
 }
 
 /*
@@ -149,7 +157,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
   // Start with conservative values for the start and end bounds, then
   // try to refine.
   start = 0L;
-  end = (interval_end >= m_end_time) ? interval_end : m_end_time;
+  end   = (interval_end >= m_end_time) ? interval_end : m_end_time;
 
   if (m_meta_info->data_from_metafile()) {
     // If the metadata came from the metafile, this means that
@@ -209,7 +217,7 @@ BaseLogFile::roll(long interval_start, long interval_end)
   }
 
   // reset m_start_time
-  m_start_time = 0;
+  m_start_time    = 0;
   m_bytes_written = 0;
 
   log_log_trace("The logfile %s was rolled to %s.\n", m_name.get(), roll_name);
@@ -242,7 +250,6 @@ BaseLogFile::roll()
   return roll(start, now);
 }
 
-
 /*
  * This function will return true if the given filename corresponds to a
  * rolled logfile.  We make this determination based on the file extension.
@@ -251,7 +258,7 @@ bool
 BaseLogFile::rolled_logfile(char *path)
 {
   const int target_len = (int)strlen(LOGFILE_ROLLED_EXTENSION);
-  int len = (int)strlen(path);
+  int len              = (int)strlen(path);
   if (len > target_len) {
     char *str = &path[len - target_len];
     if (!strcmp(str, LOGFILE_ROLLED_EXTENSION)) {
@@ -288,12 +295,12 @@ BaseLogFile::open_file(int perm)
     return LOG_FILE_COULD_NOT_OPEN_FILE;
   } else if (!strcmp(m_name.get(), "stdout")) {
     log_log_trace("BaseLogFile: stdout opened\n");
-    m_fp = stdout;
+    m_fp      = stdout;
     m_is_init = true;
     return LOG_FILE_NO_ERROR;
   } else if (!strcmp(m_name.get(), "stderr")) {
     log_log_trace("BaseLogFile: stderr opened\n");
-    m_fp = stderr;
+    m_fp      = stderr;
     m_is_init = true;
     return LOG_FILE_NO_ERROR;
   }
@@ -323,7 +330,8 @@ BaseLogFile::open_file(int perm)
 
   // open actual log file (not metainfo)
   log_log_trace("BaseLogFile: attempting to open %s\n", m_name.get());
-  m_fp = fopen(m_name.get(), "a+");
+
+  m_fp = elevating_fopen(m_name.get(), "a+");
 
   // error check
   if (m_fp) {
@@ -358,7 +366,7 @@ BaseLogFile::close_file()
   if (is_open()) {
     fclose(m_fp);
     log_log_trace("BaseLogFile %s is closed\n", m_name.get());
-    m_fp = NULL;
+    m_fp      = NULL;
     m_is_init = false;
   }
 }
@@ -397,7 +405,7 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
   va_list args;
 
   const char *priority_name = NULL;
-  FILE *output = stdout;
+  FILE *output              = stdout;
   switch (priority) {
   case LL_Debug:
     priority_name = "DEBUG";
@@ -407,15 +415,15 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
     break;
   case LL_Warning:
     priority_name = "WARNING";
-    output = stderr;
+    output        = stderr;
     break;
   case LL_Error:
     priority_name = "ERROR";
-    output = stderr;
+    output        = stderr;
     break;
   case LL_Fatal:
     priority_name = "FATAL";
-    output = stderr;
+    output        = stderr;
     break;
   default:
     priority_name = "unknown priority";
@@ -434,7 +442,6 @@ BaseLogFile::log_log(LogLogPriorityLevel priority, const char *format, ...)
 
   va_end(args);
 }
-
 
 /****************************************************************************
 
@@ -478,7 +485,7 @@ void
 BaseMetaInfo::_read_from_file()
 {
   _flags |= DATA_FROM_METAFILE; // mark attempt
-  int fd = open(_filename, O_RDONLY);
+  int fd = elevating_open(_filename, O_RDONLY);
   if (fd < 0) {
     log_log_error("Could not open metafile %s for reading: %s\n", _filename, strerror(errno));
   } else {
@@ -522,7 +529,7 @@ BaseMetaInfo::_read_from_file()
 void
 BaseMetaInfo::_write_to_file()
 {
-  int fd = open(_filename, O_WRONLY | O_CREAT | O_TRUNC, LOGFILE_DEFAULT_PERMS);
+  int fd = elevating_open(_filename, O_WRONLY | O_CREAT | O_TRUNC, LOGFILE_DEFAULT_PERMS);
   if (fd < 0) {
     log_log_error("Could not open metafile %s for writing: %s\n", _filename, strerror(errno));
     return;

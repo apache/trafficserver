@@ -62,7 +62,7 @@
 #define DNS_EVENT_EVENTS_START 600
 #define CONFIG_EVENT_EVENTS_START 800
 #define LOG_EVENT_EVENTS_START 900
-#define MULTI_CACHE_EVENT_EVENTS_START 1000
+#define REFCOUNT_CACHE_EVENT_EVENTS_START 1000
 #define CACHE_EVENT_EVENTS_START 1100
 #define CACHE_DIRECTORY_EVENT_EVENTS_START 1200
 #define CACHE_DB_EVENT_EVENTS_START 1300
@@ -95,7 +95,7 @@
 #define PREFETCH_EVENT_SEND_URL (SIMPLE_EVENT_EVENTS_START + 2)
 
 typedef int EventType;
-const int ET_CALL = 0;
+const int ET_CALL         = 0;
 const int MAX_EVENT_TYPES = 8; // conservative, these are dynamically allocated
 
 class EThread;
@@ -228,7 +228,6 @@ public:
   // Private
 
   Event();
-
 
   Event *init(Continuation *c, ink_hrtime atimeout_at = 0, ink_hrtime aperiod = 0);
 

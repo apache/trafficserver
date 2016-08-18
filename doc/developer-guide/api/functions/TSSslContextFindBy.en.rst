@@ -21,38 +21,36 @@
 TSSslContextFindByName
 **********************
 
+Traffic Server TLS server context lookup.
+
 Synopsis
 ========
 
 `#include <ts/ts.h>`
 
 .. function:: TSSslContext TSSslContextFindByName(const char * name)
+.. function:: TSSslContext TSSslContextFindByAddr(const struct sockaddr * address)
 
 Description
 ===========
 
-Look for a SSL context created from :file:`ssl_multicert.config`. Use the
-server :arg:`name` to search.
+:func:`TSSslContextFindByName` searches for a SSL server context
+created from :file:`ssl_multicert.config`, matching against the
+server :arg:`name`.
 
-TSSslContextFindByAddr
-**********************
-
-Synopsis
-========
-
-`#include <ts/ts.h>`
-
-.. function:: TSSslContext TSSslContextFindByAddr(struct sockaddr const*)
-
-Description
-===========
-
-Look for a SSL context created from :file:`ssl_multicert.config`.  Use the
-server address to search.
+:func:`TSSslContextFindByAddr` searches for a SSL server context
+created from :file:`ssl_multicert.config` matchin against the server
+:arg:`address`.
 
 Type
 ====
 
 .. type:: TSSslContext
 
-Corresponds to the SSL_CTX * value in openssl.
+The SSL context object. This is an opaque type that can be cast to
+the underlying SSL library type (SSL_CTX * for the OpenSSL library).
+
+See also
+========
+
+:manpage:`TSAPI(3ts)`

@@ -25,6 +25,11 @@
 #include "ts/ink_defs.h"
 #include "ts/ink_stack_trace.h"
 #include "ts/Diags.h"
+#include "ts/ink_atomic.h"
+
+#if defined(freebsd)
+#include <malloc_np.h> // for malloc_usable_size
+#endif
 
 #include <assert.h>
 #if defined(linux)
@@ -52,8 +57,7 @@ ats_malloc(size_t size)
   // ink_stack_trace_dump();
   if (likely(size > 0)) {
     if (unlikely((ptr = malloc(size)) == NULL)) {
-      ink_stack_trace_dump();
-      ink_fatal("ats_malloc: couldn't allocate %zu bytes", size);
+      ink_abort("couldn't allocate %zu bytes", size);
     }
   }
   return ptr;
@@ -64,8 +68,7 @@ ats_calloc(size_t nelem, size_t elsize)
 {
   void *ptr = calloc(nelem, elsize);
   if (unlikely(ptr == NULL)) {
-    ink_stack_trace_dump();
-    ink_fatal("ats_calloc: couldn't allocate %zu %zu byte elements", nelem, elsize);
+    ink_abort("couldn't allocate %zu %zu byte elements", nelem, elsize);
   }
   return ptr;
 } /* End ats_calloc */
@@ -75,8 +78,7 @@ ats_realloc(void *ptr, size_t size)
 {
   void *newptr = realloc(ptr, size);
   if (unlikely(newptr == NULL)) {
-    ink_stack_trace_dump();
-    ink_fatal("ats_realloc: couldn't reallocate %zu bytes", size);
+    ink_abort("couldn't reallocate %zu bytes", size);
   }
   return newptr;
 } /* End ats_realloc */
@@ -101,17 +103,17 @@ ats_memalign(size_t alignment, size_t size)
 
   if (unlikely(retcode)) {
     if (retcode == EINVAL) {
-      ink_fatal("ats_memalign: couldn't allocate %zu bytes at alignment %zu - invalid alignment parameter", size, alignment);
+      ink_abort("couldn't allocate %zu bytes at alignment %zu - invalid alignment parameter", size, alignment);
     } else if (retcode == ENOMEM) {
-      ink_fatal("ats_memalign: couldn't allocate %zu bytes at alignment %zu - insufficient memory", size, alignment);
+      ink_abort("couldn't allocate %zu bytes at alignment %zu - insufficient memory", size, alignment);
     } else {
-      ink_fatal("ats_memalign: couldn't allocate %zu bytes at alignment %zu - unknown error %d", size, alignment, retcode);
+      ink_abort("couldn't allocate %zu bytes at alignment %zu - unknown error %d", size, alignment, retcode);
     }
   }
 #else
   ptr = memalign(alignment, size);
   if (unlikely(ptr == NULL)) {
-    ink_fatal("ats_memalign: couldn't allocate %zu bytes at alignment %zu", size, alignment);
+    ink_abort("couldn't allocate %zu bytes at alignment %zu", size, alignment);
   }
 #endif
   return ptr;
@@ -204,11 +206,52 @@ ats_mlock(caddr_t addr, size_t len)
   size_t pagesize = ats_pagesize();
 
   caddr_t a = (caddr_t)(((uintptr_t)addr) & ~(pagesize - 1));
-  size_t l = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
-  int res = mlock(a, l);
+  size_t l  = (len + (addr - a) + pagesize - 1) & ~(pagesize - 1);
+  int res   = mlock(a, l);
   return res;
 }
 
+void *
+ats_track_malloc(size_t size, uint64_t *stat)
+{
+  void *ptr = ats_malloc(size);
+#ifdef HAVE_MALLOC_USABLE_SIZE
+  ink_atomic_increment(stat, malloc_usable_size(ptr));
+#endif
+  return ptr;
+}
+
+void *
+ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat)
+{
+#ifdef HAVE_MALLOC_USABLE_SIZE
+  const size_t old_size = malloc_usable_size(ptr);
+  ptr                   = ats_realloc(ptr, size);
+  const size_t new_size = malloc_usable_size(ptr);
+  if (old_size < new_size) {
+    // allocating something bigger
+    ink_atomic_increment(alloc_stat, new_size - old_size);
+  } else if (old_size > new_size) {
+    ink_atomic_increment(free_stat, old_size - new_size);
+  }
+  return ptr;
+#else
+  return ats_realloc(ptr, size);
+#endif
+}
+
+void
+ats_track_free(void *ptr, uint64_t *stat)
+{
+  if (ptr == NULL) {
+    return;
+  }
+
+#ifdef HAVE_MALLOC_USABLE_SIZE
+  ink_atomic_increment(stat, malloc_usable_size(ptr));
+#endif
+  ats_free(ptr);
+}
 
 /*-------------------------------------------------------------------------
   Moved from old ink_resource.h

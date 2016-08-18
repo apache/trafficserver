@@ -192,7 +192,7 @@ format_record(const CtrlMgmtRecord &record, bool recfmt)
 static int
 config_get(unsigned argc, const char **argv)
 {
-  int recfmt = 0;
+  int recfmt                       = 0;
   const ArgumentDescription opts[] = {
     {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
   };
@@ -301,7 +301,7 @@ config_set(unsigned argc, const char **argv)
 static int
 config_match(unsigned argc, const char **argv)
 {
-  int recfmt = 0;
+  int recfmt                       = 0;
   const ArgumentDescription opts[] = {
     {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
   };
@@ -393,7 +393,7 @@ config_status(unsigned argc, const char **argv)
 static int
 config_defaults(unsigned argc, const char **argv)
 {
-  int recfmt = 0;
+  int recfmt                       = 0;
   const ArgumentDescription opts[] = {
     {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
   };
@@ -430,7 +430,7 @@ config_defaults(unsigned argc, const char **argv)
 static int
 config_diff(unsigned argc, const char **argv)
 {
-  int recfmt = 0;
+  int recfmt                       = 0;
   const ArgumentDescription opts[] = {
     {"records", '-', "Emit output in records.config format", "F", &recfmt, NULL, NULL},
   };

@@ -39,9 +39,9 @@ Event::schedule_imm(int acallback_event)
   if (in_the_priority_queue)
     ethread->EventQueue.remove(this);
   timeout_at = 0;
-  period = 0;
-  immediate = true;
-  mutex = continuation->mutex;
+  period     = 0;
+  immediate  = true;
+  mutex      = continuation->mutex;
   if (!in_the_prot_queue)
     ethread->EventQueueExternal.enqueue_local(this);
 }
@@ -55,9 +55,9 @@ Event::schedule_at(ink_hrtime atimeout_at, int acallback_event)
   if (in_the_priority_queue)
     ethread->EventQueue.remove(this);
   timeout_at = atimeout_at;
-  period = 0;
-  immediate = false;
-  mutex = continuation->mutex;
+  period     = 0;
+  immediate  = false;
+  mutex      = continuation->mutex;
   if (!in_the_prot_queue)
     ethread->EventQueueExternal.enqueue_local(this);
 }
@@ -70,9 +70,9 @@ Event::schedule_in(ink_hrtime atimeout_in, int acallback_event)
   if (in_the_priority_queue)
     ethread->EventQueue.remove(this);
   timeout_at = Thread::get_hrtime() + atimeout_in;
-  period = 0;
-  immediate = false;
-  mutex = continuation->mutex;
+  period     = 0;
+  immediate  = false;
+  mutex      = continuation->mutex;
   if (!in_the_prot_queue)
     ethread->EventQueueExternal.enqueue_local(this);
 }
@@ -90,9 +90,9 @@ Event::schedule_every(ink_hrtime aperiod, int acallback_event)
   } else {
     timeout_at = Thread::get_hrtime() + aperiod;
   }
-  period = aperiod;
+  period    = aperiod;
   immediate = false;
-  mutex = continuation->mutex;
+  mutex     = continuation->mutex;
   if (!in_the_prot_queue)
     ethread->EventQueueExternal.enqueue_local(this);
 }

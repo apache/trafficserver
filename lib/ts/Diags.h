@@ -39,7 +39,10 @@
 #include "ink_mutex.h"
 #include "Regex.h"
 #include "ink_apidefs.h"
+#include "ContFlags.h"
+#include "ink_inet.h"
 #include "BaseLogFile.h"
+#include "SourceLocation.h"
 
 #define DIAGS_MAGIC 0x12345678
 #define BYTES_IN_MB 1000000
@@ -48,7 +51,7 @@ class Diags;
 
 // extern int diags_on_for_plugins;
 typedef enum {
-  DiagsTagType_Debug = 0, // do not renumber --- used as array index
+  DiagsTagType_Debug  = 0, // do not renumber --- used as array index
   DiagsTagType_Action = 1
 } DiagsTagType;
 
@@ -88,46 +91,6 @@ struct DiagsConfigState {
   DiagsModeOutput outputs[DiagsLevel_Count]; // where each level prints
 };
 
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      class SrcLoc
-//
-//      The SrcLoc class wraps up a source code location, including file
-//      name, function name, and line number, and contains a method to
-//      format the result into a string buffer.
-//
-//////////////////////////////////////////////////////////////////////////////
-
-#define DiagsMakeLocation() SrcLoc(__FILE__, __FUNCTION__, __LINE__)
-
-class SrcLoc
-{
-public:
-  const char *file;
-  const char *func;
-  int line;
-
-  bool
-  valid() const
-  {
-    return file && line;
-  }
-
-  SrcLoc(const SrcLoc &rhs) : file(rhs.file), func(rhs.func), line(rhs.line) {}
-  SrcLoc(const char *_file, const char *_func, int _line) : file(_file), func(_func), line(_line) {}
-  SrcLoc &operator=(const SrcLoc &rhs)
-  {
-    this->file = rhs.file;
-    this->func = rhs.func;
-    this->line = rhs.line;
-    return *this;
-  }
-
-  char *str(char *buf, int buflen) const;
-};
-
-
 //////////////////////////////////////////////////////////////////////////////
 //
 //      class Diags
@@ -164,6 +127,12 @@ public:
   ///////////////////////////
 
   bool
+  get_override() const
+  {
+    return get_cont_flag(ContFlags::DEBUG_OVERRIDE);
+  }
+
+  bool
   on(DiagsTagType mode = DiagsTagType_Debug) const
   {
     return (config.enabled[mode]);
@@ -187,8 +156,7 @@ public:
 
   const char *level_name(DiagsLevel dl) const;
 
-  inkcoreapi void print_va(const char *tag, DiagsLevel dl, const SrcLoc *loc, const char *format_string, va_list ap) const;
-
+  inkcoreapi void print_va(const char *tag, DiagsLevel dl, const SourceLocation *loc, const char *format_string, va_list ap) const;
 
   //////////////////////////////
   // user printing interfaces //
@@ -201,7 +169,7 @@ public:
     va_list ap;
     va_start(ap, format_string);
     if (show_location) {
-      SrcLoc lp(file, func, line);
+      SourceLocation lp(file, func, line);
       print_va(tag, dl, &lp, format_string, ap);
     } else {
       print_va(tag, dl, NULL, format_string, ap);
@@ -215,7 +183,7 @@ public:
   ///////////////////////////////////////////////////////////////////////
 
   void
-  log_va(const char *tag, DiagsLevel dl, const SrcLoc *loc, const char *format_string, va_list ap)
+  log_va(const char *tag, DiagsLevel dl, const SourceLocation *loc, const char *format_string, va_list ap)
   {
     if (!on(tag))
       return;
@@ -257,7 +225,6 @@ public:
 private:
   mutable ink_mutex tag_table_lock; // prevents reconfig/read races
   DFA *activated_tags[2];           // 1 table for debug, 1 for action
-
 
   // log rotation variables
   RollingEnabledValues outputlog_rolling_enabled;
@@ -363,7 +330,6 @@ dummy_debug(const char *tag, const char *fmt, ...)
 #define DebugSpecific(flag, tag, ...) \
   if (0 && tag)                       \
     dummy_debug(tag, __VA_ARGS__);
-
 
 #define is_debug_tag_set(_t) 0
 #define is_action_tag_set(_t) 0

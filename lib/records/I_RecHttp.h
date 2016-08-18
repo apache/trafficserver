@@ -53,7 +53,6 @@ public:
   /// Default constructor.
   /// Constructs and empty set.
   SessionProtocolSet() : m_bits(0) {}
-
   uint32_t
   indexToMask(int idx) const
   {
@@ -124,13 +123,16 @@ public:
   }
 
   /// Equality (identical sets).
-  bool operator==(self const &that) const { return m_bits == that.m_bits; }
+  bool
+  operator==(self const &that) const
+  {
+    return m_bits == that.m_bits;
+  }
 };
 
 // Predefined sets of protocols, useful for configuration.
 extern SessionProtocolSet HTTP_PROTOCOL_SET;
 extern SessionProtocolSet HTTP2_PROTOCOL_SET;
-extern SessionProtocolSet SPDY_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_NON_TLS_SESSION_PROTOCOL_SET;
 extern SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
 
@@ -150,8 +152,8 @@ extern SessionProtocolSet DEFAULT_TLS_SESSION_PROTOCOL_SET;
 class SessionProtocolNameRegistry
 {
 public:
-  static int const MAX = SessionProtocolSet::MAX; ///< Maximum # of registered names.
-  static int const INVALID = -1;                  ///< Normalized invalid index value.
+  static int const MAX     = SessionProtocolSet::MAX; ///< Maximum # of registered names.
+  static int const INVALID = -1;                      ///< Normalized invalid index value.
 
   /// Default constructor.
   /// Creates empty registry with no names.

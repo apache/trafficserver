@@ -38,17 +38,17 @@ extern "C" {
 
 typedef enum {
   TS_FETCH_EVENT_EXT_HEAD_READY = -1,
-  TS_FETCH_EVENT_EXT_HEAD_DONE = -2,
+  TS_FETCH_EVENT_EXT_HEAD_DONE  = -2,
   TS_FETCH_EVENT_EXT_BODY_READY = -3,
-  TS_FETCH_EVENT_EXT_BODY_DONE = -4,
+  TS_FETCH_EVENT_EXT_BODY_DONE  = -4
 } TSFetchEventExt;
 
 typedef enum {
-  TS_FETCH_FLAGS_NONE = 0,                     // do nothing
-  TS_FETCH_FLAGS_STREAM = 1 << 1,              // enable stream IO
-  TS_FETCH_FLAGS_DECHUNK = 1 << 2,             // dechunk body content
-  TS_FETCH_FLAGS_NEWLOCK = 1 << 3,             // allocate new lock for fetch sm
-  TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4 // Allow this fetch to be created as a non-internal request.
+  TS_FETCH_FLAGS_NONE                 = 0,      // do nothing
+  TS_FETCH_FLAGS_STREAM               = 1 << 1, // enable stream IO
+  TS_FETCH_FLAGS_DECHUNK              = 1 << 2, // dechunk body content
+  TS_FETCH_FLAGS_NEWLOCK              = 1 << 3, // allocate new lock for fetch sm
+  TS_FETCH_FLAGS_NOT_INTERNAL_REQUEST = 1 << 4  // Allow this fetch to be created as a non-internal request.
 } TSFetchFlags;
 
 typedef struct tsapi_fetchsm *TSFetchSM;
@@ -93,7 +93,6 @@ typedef enum {
 */
 tsapi TSReturnCode TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data);
 
-
 /* Protocols APIs */
 tsapi void TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop);
 
@@ -103,7 +102,6 @@ tsapi void TSICPFreshnessFuncSet(TSPluginFreshnessCalcFunc funcp);
 
 tsapi TSReturnCode TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj);
 tsapi TSReturnCode TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj);
-
 
 /* The rest is from the old "froze" private API include, we should consider
    moving some of these over to ts/ts.h as well. TODO */
@@ -162,7 +160,6 @@ tsapi TSReturnCode TSHttpTxnCachedRespTimeGet(TSHttpTxn txnp, time_t *resp_time)
 /* ===== Cache ===== */
 tsapi TSReturnCode TSCacheKeyDataTypeSet(TSCacheKey key, TSCacheDataType type);
 
-
 /* ===== Utility ===== */
 /****************************************************************************
  *  Create a random number
@@ -200,7 +197,6 @@ tsapi void TSCacheHttpInfoDestroy(TSCacheHttpInfo infop);
 
 */
 tsapi TSReturnCode TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value);
-
 
 /* =====  ICP =====  */
 tsapi void TSHttpIcpDynamicSet(int value);
@@ -259,7 +255,6 @@ tsapi int TSHttpTxnLookingUpTypeGet(TSHttpTxn txnp);
  */
 tsapi TSReturnCode TSPluginDescriptorAccept(TSCont contp);
 
-
 /**
     Opens a network connection to the host specified by the 'to' sockaddr
     spoofing the client addr to equal the 'from' sockaddr.
@@ -287,7 +282,6 @@ tsapi TSAction TSNetConnectTransparent(
   struct sockaddr const *from, /**< Address to spoof as connection origin */
   struct sockaddr const *to    /**< Address to which to connect. */
   );
-
 
 /* =====  Matcher Utils =====  */
 #define TS_MATCHER_LINE_INVALID 0
@@ -500,7 +494,6 @@ tsapi TSClusterRPCMsg_t *TSAllocClusterRPCMsg(TSClusterRPCHandle_t *h, int data_
  *  contact: OXY, DY
  ****************************************************************************/
 tsapi int TSSendClusterRPC(TSNodeHandle_t *nh, TSClusterRPCMsg_t *msg);
-
 
 /**
  * Extended FetchSM's AIPs

@@ -34,8 +34,8 @@ using std::vector;
 
 namespace
 {
-const int GZIP_MEM_LEVEL = 8;
-const int WINDOW_BITS = 31; // Always use 31 for gzip.
+const int GZIP_MEM_LEVEL  = 8;
+const int WINDOW_BITS     = 31; // Always use 31 for gzip.
 const unsigned int ONE_KB = 1024;
 }
 
@@ -69,7 +69,6 @@ struct atscppapi::transformations::GzipDeflateTransformationState : noncopyable 
   };
 };
 
-
 GzipDeflateTransformation::GzipDeflateTransformation(Transaction &transaction, TransformationPlugin::Type type)
   : TransformationPlugin(transaction, type)
 {
@@ -93,10 +92,10 @@ GzipDeflateTransformation::consume(const string &data)
     return;
   }
 
-  int iteration = 0;
+  int iteration               = 0;
   state_->z_stream_.data_type = Z_ASCII;
-  state_->z_stream_.next_in = reinterpret_cast<unsigned char *>(const_cast<char *>(data.c_str()));
-  state_->z_stream_.avail_in = data.length();
+  state_->z_stream_.next_in   = reinterpret_cast<unsigned char *>(const_cast<char *>(data.c_str()));
+  state_->z_stream_.avail_in  = data.length();
 
   // For small payloads the size can actually be greater than the original input
   // so we'll use twice the original size to avoid needless repeated calls to deflate.
@@ -106,7 +105,7 @@ GzipDeflateTransformation::consume(const string &data)
   do {
     LOG_DEBUG("Iteration %d: Deflate will compress %ld bytes", ++iteration, data.size());
     state_->z_stream_.avail_out = buffer_size;
-    state_->z_stream_.next_out = &buffer[0];
+    state_->z_stream_.next_out  = &buffer[0];
 
     int err = deflate(&state_->z_stream_, Z_SYNC_FLUSH);
     if (Z_OK != err) {
@@ -134,8 +133,8 @@ void
 GzipDeflateTransformation::handleInputComplete()
 {
   // We will flush out anything that's remaining in the gzip buffer
-  int status = Z_OK;
-  int iteration = 0;
+  int status            = Z_OK;
+  int iteration         = 0;
   const int buffer_size = 1024; // 1024 bytes is usually more than enough for the epilouge
   unsigned char buffer[buffer_size];
 
@@ -144,7 +143,7 @@ GzipDeflateTransformation::handleInputComplete()
     LOG_DEBUG("Iteration %d: Gzip deflate finalizing.", ++iteration);
     state_->z_stream_.data_type = Z_ASCII;
     state_->z_stream_.avail_out = buffer_size;
-    state_->z_stream_.next_out = buffer;
+    state_->z_stream_.next_out  = buffer;
 
     status = deflate(&state_->z_stream_, Z_FINISH);
 

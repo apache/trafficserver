@@ -52,7 +52,7 @@ in the Traffic Server source distribution. It demonstrates how to
 use :func:`TSVConnFdCreate` to construct a :type:`TSVConn` from a
 connected socket.
 
-.. literalinclude:: ../../../example/intercept/intercept.cc
+.. literalinclude:: ../../../../example/intercept/intercept.cc
   :language: c
   :lines: 288-336
 

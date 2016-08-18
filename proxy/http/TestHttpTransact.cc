@@ -37,7 +37,6 @@ HttpNetProcessor httpNetProcessor;
 HttpConfigParams httpConfigParams;
 DebugStream debug_out("debug.txt", 1, 1, "DebugStreamLevels.txt", "http.stops");
 
-
 typedef struct {
   char *accept;
   char *field;

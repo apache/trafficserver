@@ -54,11 +54,11 @@ Options
 
 .. option:: --daemon Run as daemon.
 
-You need to run at least with the --service arguments.
-An example service definition file, service-nogre-example.config, is included
-in the cmd/traffic_wccp directory.  In this file you define your MD5 security password
-(highly recommended), and you define your service groups.  The details
-of the service file are defined at :ref:`WCCP Service Configuration <wccp-service-configuration>`.
+You need to run at least with the ``--service`` arguments. An example service
+definition file, ``service-nogre-example.config``, is included in the
+``cmd/traffic_wccp`` directory. In this file you define your MD5 security
+password (highly recommended), and you define your service groups. The details
+of the service file are defined at :ref:`admin-wccp-service-config`.
 
 Limitations
 ===========

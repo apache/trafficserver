@@ -1,0 +1,175 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:23
+msgid "URLs"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:25
+msgid ""
+"API URL functions provide access to URL data stored in marshal buffers. The "
+"URL functions can create, copy, retrieve or delete entire URLs; they can "
+"also retrieve or modify parts of URLs, such as port or scheme information."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:30
+msgid "The general form of an Internet URL is:"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:36
+msgid ""
+"The URL data structure includes support for two specific types of internet "
+"URLs. HTTP URLs have the form:"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:43
+msgid ""
+"The URL port is stored as integer. All remaining parts of the URL (scheme, "
+"user, etc.) are stored as strings. Traffic Server URL functions are named "
+"according to the portion of the URL on which they operate. For instance, "
+"the function that retrieves the host portion of a URL is named "
+"``TSUrlHostGet``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:49
+msgid ""
+"To facilitate fast comparisons and reduce storage size, Traffic Server "
+"defines several preallocated scheme names."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:54
+msgid "``TS_URL_SCHEME_FILE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:53
+msgid "\"file\" ``TS_URL_LEN_FILE``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:58
+msgid "``TS_URL_SCHEME_FTP``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:57
+msgid "\"ftp\" ``TS_URL_LEN_FTP``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:62
+msgid "``TS_URL_SCHEME_GOPHER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:61
+msgid "\"gopher\" ``TS_URL_LEN_GOPHER``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:66
+msgid "``TS_URL_SCHEME_HTTP``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:65
+msgid "\"http\" ``TS_URL_LEN_HTTP``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:70
+msgid "``TS_URL_SCHEME_HTTPS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:69
+msgid "\"https\" ``TS_URL_LEN_HTTPS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:74
+msgid "``TS_URL_SCHEME_MAILTO``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:73
+msgid "\"mailto\" ``TS_URL_LEN_MAILTO``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:78
+msgid "``TS_URL_SCHEME_NEWS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:77
+msgid "\"news\" ``TS_URL_LEN_NEWS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:82
+msgid "``TS_URL_SCHEME_NNTP``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:81
+msgid "\"nntp\" ``TS_URL_LEN_NNTP``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:86
+msgid "``TS_URL_SCHEME_PROSPERO``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:85
+msgid "\"prospero\" ``TS_URL_LEN_PROSPERO``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:90
+msgid "``TS_URL_SCHEME_TELNET``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:89
+msgid "\"telnet\" ``TS_URL_LEN_TELNET``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:94
+msgid "``TS_URL_SCHEME_WAIS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:93
+msgid "\"wais\" ``TS_URL_LEN_WAIS``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:96
+msgid ""
+"The scheme names above are defined in ``ts.h`` as ``const`` ``char*`` "
+"strings. When Traffic Server sets the scheme portion of the URL (or any "
+"portion for that matter), it quickly checks to see if the new value is one "
+"of the known values. If it is, then it stores a pointer into a global table "
+"(instead of storing the known value in the marshal buffer). The scheme "
+"values listed above are also pointers into this table. This allows simple "
+"pointer comparison of the value returned from ``TSUrlSchemeGet`` with one "
+"of the values listed above. You should use the Traffic Server-defined "
+"values when referring to one of the known schemes, since doing so can "
+"prevent the possibility of spelling errors."
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:107
+msgid "Traffic Server **URL functions** are listed below:"
+msgstr ""
+
+#: ../../../developer-guide/plugins/http-headers/urls.en.rst:109
+msgid ""
+":c:func:`TSUrlClone` :c:func:`TSUrlCopy` :c:func:`TSUrlCreate` :c:func:"
+"`TSUrlDestroy` :c:func:`TSUrlPrint` :c:func:`TSUrlFtpTypeGet` :c:func:"
+"`TSUrlFtpTypeSet` :c:func:`TSUrlHostGet` :c:func:`TSUrlHostSet` :c:func:"
+"`TSUrlHttpFragmentGet` :c:func:`TSUrlHttpFragmentSet` :c:func:"
+"`TSUrlHttpParamsGet` :c:func:`TSUrlHttpParamsSet` :c:func:"
+"`TSUrlHttpQueryGet` :c:func:`TSUrlHttpQuerySet` :c:func:`TSUrlLengthGet` :c:"
+"func:`TSUrlParse` :c:func:`TSUrlPasswordGet` :c:func:`TSUrlPasswordSet` :c:"
+"func:`TSUrlPathGet` :c:func:`TSUrlPathSet` :c:func:`TSUrlPortGet` :c:func:"
+"`TSUrlPortSet` :c:func:`TSUrlSchemeGet` :c:func:`TSUrlSchemeSet` :c:func:"
+"`TSUrlStringGet` :c:func:`TSUrlUserGet` :c:func:`TSUrlUserSet`"
+msgstr ""

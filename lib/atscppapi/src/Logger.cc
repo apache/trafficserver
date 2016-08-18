@@ -51,8 +51,13 @@ struct atscppapi::LoggerState : noncopyable {
   bool initialized_;
 
   LoggerState()
-    : add_timestamp_(false), rename_file_(false), level_(Logger::LOG_LEVEL_NO_LOG), rolling_enabled_(false),
-      rolling_interval_seconds_(-1), text_log_obj_(NULL), initialized_(false){};
+    : add_timestamp_(false),
+      rename_file_(false),
+      level_(Logger::LOG_LEVEL_NO_LOG),
+      rolling_enabled_(false),
+      rolling_interval_seconds_(-1),
+      text_log_obj_(NULL),
+      initialized_(false){};
   ~LoggerState(){};
 };
 
@@ -62,7 +67,6 @@ namespace
 // we will use the roll size specified by default in records.config.
 const int ROLL_ON_TIME = 1; // See RollingEnabledValues in LogConfig.h
 }
-
 
 /*
  * These have default values specified for add_timestamp and rename_file in Logger.h
@@ -93,13 +97,13 @@ Logger::init(const string &file, bool add_timestamp, bool rename_file, LogLevel 
               state_->filename_.c_str());
     return false;
   }
-  state_->filename_ = file;
-  state_->add_timestamp_ = add_timestamp;
-  state_->rename_file_ = rename_file;
-  state_->level_ = level;
-  state_->rolling_enabled_ = rolling_enabled;
+  state_->filename_                 = file;
+  state_->add_timestamp_            = add_timestamp;
+  state_->rename_file_              = rename_file;
+  state_->level_                    = level;
+  state_->rolling_enabled_          = rolling_enabled;
   state_->rolling_interval_seconds_ = rolling_interval_seconds;
-  state_->initialized_ = true; // set this to true always - we are not providing re-init() after a failed init()
+  state_->initialized_              = true; // set this to true always - we are not providing re-init() after a failed init()
 
   int mode = 0;
   if (state_->add_timestamp_) {

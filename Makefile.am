@@ -81,10 +81,10 @@ asf-dist-sign-rc: asf-dist-rc
 	sha1sum -b $(distdir)-rc$(RC).tar.bz2 >$(distdir)-rc$(RC).tar.bz2.sha1
 	gpg --armor --output $(distdir)-rc$(RC).tar.bz2.asc  --detach-sig $(distdir)-rc$(RC).tar.bz2
 
-release: changelog asf-dist-sign
+release: asf-dist-sign
 	git tag -fs -m "Release $(VERSION)" $(VERSION)
 
-rel-candidate: changelog asf-dist-sign-rc
+rel-candidate: asf-dist-sign-rc
 	git tag -fs -m "Release Candidate $(VERSION)-rc$(RC)" $(VERSION)-rc$(RC)
 
 examples: all
@@ -122,6 +122,7 @@ clang-format-iocore:
 
 clang-format-lib:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/atscppapi
+	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/bindings
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/raft
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/records
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/lib/ts
@@ -140,21 +141,22 @@ clang-format-tools:
 	@$(top_srcdir)/tools/clang-format.sh $(top_srcdir)/tools
 
 help:
-	@echo 'all             default target for building the package' && \
-	echo 'check            run the test suite, if any' && \
-	echo 'clean            remove whatever make created' && \
-	echo 'distclean        remove whatever configure created' && \
-	echo 'dist             DEPRECATED: recreate source package' && \
-	echo 'examples         make examples' && \
-	echo 'asf-dist         recreate source package' && \
-	echo 'asf-dist-sign    recreate source package, with checksums and signature' && \
-	echo 'release          recreate a signed release source package and a signed git tag' && \
-	echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag' && \
-	echo 'distcheck        verify dist by performing VPATH build and then distclean' && \
-	echo 'rat              produce a RAT licence compliance report of the source' && \
-	echo 'doxygen          generate doxygen docs in doc/html dir' && \
-	echo 'clang-format     run clang-format over most C and C++ files (not git subtrees)' && \
-	echo 'help             display this list of make targets' && \
-	echo 'install          install by copying the built files to system-wide dirs' && \
-	echo 'install-strip    same as install but then strips debugging symbols' && \
-	echo 'install-examples install examples by copying the built files to system-wide dirs'
+	@echo 'all              default target for building the package'
+	@echo 'asf-dist         recreate source package'
+	@echo 'asf-dist-sign    recreate source package, with checksums and signature'
+	@echo 'check            run the test suite, if any'
+	@echo 'clang-format     run clang-format over most C and C++ files (not git subtrees)'
+	@echo 'clean            remove whatever make created'
+	@echo 'dist             DEPRECATED: recreate source package'
+	@echo 'distcheck        verify dist by performing VPATH build and then distclean'
+	@echo 'distclean        remove whatever configure created'
+	@echo 'doxygen          generate doxygen docs in doc/html dir'
+	@echo 'examples         make examples'
+	@echo 'help             display this list of make targets'
+	@echo 'install          install by copying the built files to system-wide dirs'
+	@echo 'install-examples install examples by copying the built files to system-wide dirs'
+	@echo 'install-strip    same as install but then strips debugging symbols'
+	@echo 'rat              produce a RAT licence compliance report of the source'
+	@echo 'rel-candidate    recreate a signed relelease candidate source package and a signed git tag'
+	@echo 'release          recreate a signed release source package and a signed git tag'
+	@echo 'tidy             run clang-tidy in fix-it mode'

@@ -44,19 +44,19 @@ static const matcher_tags congest_dest_tags = {"dest_host", "dest_domain", "dest
 
 /* default congestion control values */
 
-char *DEFAULT_error_page = NULL;
+char *DEFAULT_error_page            = NULL;
 int DEFAULT_max_connection_failures = 5;
-int DEFAULT_fail_window = 120;
-int DEFAULT_proxy_retry_interval = 10;
-int DEFAULT_client_wait_interval = 300;
-int DEFAULT_wait_interval_alpha = 30;
-int DEFAULT_live_os_conn_timeout = 60;
-int DEFAULT_live_os_conn_retries = 2;
-int DEFAULT_dead_os_conn_timeout = 15;
-int DEFAULT_dead_os_conn_retries = 1;
-int DEFAULT_max_connection = -1;
+int DEFAULT_fail_window             = 120;
+int DEFAULT_proxy_retry_interval    = 10;
+int DEFAULT_client_wait_interval    = 300;
+int DEFAULT_wait_interval_alpha     = 30;
+int DEFAULT_live_os_conn_timeout    = 60;
+int DEFAULT_live_os_conn_retries    = 2;
+int DEFAULT_dead_os_conn_timeout    = 15;
+int DEFAULT_dead_os_conn_retries    = 1;
+int DEFAULT_max_connection          = -1;
 char *DEFAULT_congestion_scheme_str = NULL;
-int DEFAULT_congestion_scheme = PER_IP;
+int DEFAULT_congestion_scheme       = PER_IP;
 
 /* congestion control limits */
 #define CONG_RULE_MAX_max_connection_failures (1 << (sizeof(cong_hist_t) * 8))
@@ -79,50 +79,50 @@ int CongestionMatcherTable::configid = 0;
 
 static CongestionMatcherTable *CongestionMatcher = NULL;
 static ConfigUpdateHandler<CongestionMatcherTable> *CongestionControlUpdate;
-int congestionControlEnabled = 0;
+int congestionControlEnabled   = 0;
 int congestionControlLocalTime = 0;
 
 CongestionControlRecord::CongestionControlRecord(const CongestionControlRecord &rec)
 {
-  prefix = ats_strdup(rec.prefix);
-  prefix_len = rec.prefix_len;
-  port = rec.port;
-  congestion_scheme = rec.congestion_scheme;
-  error_page = ats_strdup(rec.error_page);
+  prefix                  = ats_strdup(rec.prefix);
+  prefix_len              = rec.prefix_len;
+  port                    = rec.port;
+  congestion_scheme       = rec.congestion_scheme;
+  error_page              = ats_strdup(rec.error_page);
   max_connection_failures = rec.max_connection_failures;
-  fail_window = rec.fail_window;
-  proxy_retry_interval = rec.proxy_retry_interval;
-  client_wait_interval = rec.client_wait_interval;
-  wait_interval_alpha = rec.wait_interval_alpha;
-  live_os_conn_timeout = rec.live_os_conn_timeout;
-  live_os_conn_retries = rec.live_os_conn_retries;
-  dead_os_conn_timeout = rec.dead_os_conn_timeout;
-  dead_os_conn_retries = rec.dead_os_conn_retries;
-  max_connection = rec.max_connection;
-  pRecord = NULL;
-  ref_count = 1;
-  line_num = rec.line_num;
-  rank = 0;
+  fail_window             = rec.fail_window;
+  proxy_retry_interval    = rec.proxy_retry_interval;
+  client_wait_interval    = rec.client_wait_interval;
+  wait_interval_alpha     = rec.wait_interval_alpha;
+  live_os_conn_timeout    = rec.live_os_conn_timeout;
+  live_os_conn_retries    = rec.live_os_conn_retries;
+  dead_os_conn_timeout    = rec.dead_os_conn_timeout;
+  dead_os_conn_retries    = rec.dead_os_conn_retries;
+  max_connection          = rec.max_connection;
+  pRecord                 = NULL;
+  ref_count               = 1;
+  line_num                = rec.line_num;
+  rank                    = 0;
 }
 
 void
 CongestionControlRecord::setdefault()
 {
   cleanup();
-  congestion_scheme = DEFAULT_congestion_scheme;
-  port = 0;
-  prefix_len = 0;
-  rank = 0;
+  congestion_scheme       = DEFAULT_congestion_scheme;
+  port                    = 0;
+  prefix_len              = 0;
+  rank                    = 0;
   max_connection_failures = DEFAULT_max_connection_failures;
-  fail_window = DEFAULT_fail_window;
-  proxy_retry_interval = DEFAULT_proxy_retry_interval;
-  client_wait_interval = DEFAULT_client_wait_interval;
-  wait_interval_alpha = DEFAULT_wait_interval_alpha;
-  live_os_conn_timeout = DEFAULT_live_os_conn_timeout;
-  live_os_conn_retries = DEFAULT_live_os_conn_retries;
-  dead_os_conn_timeout = DEFAULT_dead_os_conn_timeout;
-  dead_os_conn_retries = DEFAULT_dead_os_conn_retries;
-  max_connection = DEFAULT_max_connection;
+  fail_window             = DEFAULT_fail_window;
+  proxy_retry_interval    = DEFAULT_proxy_retry_interval;
+  client_wait_interval    = DEFAULT_client_wait_interval;
+  wait_interval_alpha     = DEFAULT_wait_interval_alpha;
+  live_os_conn_timeout    = DEFAULT_live_os_conn_timeout;
+  live_os_conn_retries    = DEFAULT_live_os_conn_retries;
+  dead_os_conn_timeout    = DEFAULT_dead_os_conn_timeout;
+  dead_os_conn_retries    = DEFAULT_dead_os_conn_retries;
+  max_connection          = DEFAULT_max_connection;
 }
 
 config_parse_error
@@ -135,8 +135,9 @@ CongestionControlRecord::validate()
     return error;                                                                                 \
   }
 
-  if (error_page == NULL)
+  if (error_page == NULL) {
     error_page = ats_strdup(DEFAULT_error_page);
+  }
   if (max_connection_failures >= CONG_RULE_MAX_max_connection_failures ||
       (max_connection_failures <= 0 && max_connection_failures != CONG_RULE_ULIMITED_max_connection_failures)) {
     config_parse_error error("line %d: invalid %s = %d not in [1, %d) range", line_num, "max_connection_failures",
@@ -175,7 +176,7 @@ CongestionControlRecord::Init(matcher_line *line_info)
 
   for (int i = 0; i < MATCHER_MAX_TOKENS; i++) {
     label = line_info->line[0][i];
-    val = line_info->line[1][i];
+    val   = line_info->line[1][i];
 
     if (label == NULL) {
       continue;
@@ -211,7 +212,7 @@ CongestionControlRecord::Init(matcher_line *line_info)
     } else if (strcasecmp(label, "error_page") == 0) {
       error_page = ats_strdup(val);
     } else if (strcasecmp(label, "prefix") == 0) {
-      prefix = ats_strdup(val);
+      prefix     = ats_strdup(val);
       prefix_len = strlen(prefix);
       rank += 1;
       // prefix will be used in the ControlBase
@@ -221,8 +222,9 @@ CongestionControlRecord::Init(matcher_line *line_info)
       rank += 2;
       // port will be used in the ControlBase;
       continue;
-    } else
+    } else {
       continue;
+    }
     // Consume the label/value pair we used
     line_info->line[0][i] = NULL;
     line_info->num_el--;
@@ -256,16 +258,23 @@ CongestionControlRecord::UpdateMatch(CongestionControlRule *pRule, RequestData *
    */
   if (pRule->record == 0 || pRule->record->rank < rank || (pRule->record->line_num > line_num && pRule->record->rank == rank)) {
     if (rank > 0) {
-      if (rdata->data_type() == RequestData::RD_CONGEST_ENTRY) {
+      CongestionEntry *entry = dynamic_cast<CongestionEntry *>(rdata);
+      if (entry) {
         // Enforce the same port and prefix
-        if (port != 0 && port != ((CongestionEntry *)rdata)->pRecord->port)
+        if (port != 0 && port != entry->pRecord->port) {
           return;
-        if (prefix != NULL && ((CongestionEntry *)rdata)->pRecord->prefix == NULL)
+        }
+        if (prefix != NULL && entry->pRecord->prefix == NULL) {
           return;
-        if (prefix != NULL && strncmp(prefix, ((CongestionEntry *)rdata)->pRecord->prefix, prefix_len))
+        }
+        if (prefix != NULL && strncmp(prefix, entry->pRecord->prefix, prefix_len)) {
           return;
-      } else if (!this->CheckModifiers((HttpRequestData *)rdata)) {
-        return;
+        }
+      } else {
+        HttpRequestData *h = dynamic_cast<HttpRequestData *>(rdata);
+        if (h && !this->CheckModifiers(h)) {
+          return;
+        }
       }
     }
     pRule->record = this;
@@ -425,13 +434,14 @@ make_key(char *hostname, int len, sockaddr const *ip, CongestionControlRecord *r
   INK_MD5 md5;
   INK_DIGEST_CTX ctx;
   ink_code_incr_md5_init(&ctx);
-  if (record->congestion_scheme == PER_HOST && len > 0)
+  if (record->congestion_scheme == PER_HOST && len > 0) {
     ink_code_incr_md5_update(&ctx, hostname, len);
-  else
+  } else {
     ink_code_incr_md5_update(&ctx, reinterpret_cast<char const *>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
+  }
   if (record->port != 0) {
     unsigned short p = record->port;
-    p = htons(p);
+    p                = htons(p);
     ink_code_incr_md5_update(&ctx, (char *)&p, 2);
   }
   if (record->prefix != NULL) {
@@ -449,13 +459,14 @@ make_key(char *hostname, int len, sockaddr const *ip, char *prefix, int prelen, 
   INK_MD5 md5;
   INK_DIGEST_CTX ctx;
   ink_code_incr_md5_init(&ctx);
-  if (hostname && len > 0)
+  if (hostname && len > 0) {
     ink_code_incr_md5_update(&ctx, hostname, len);
-  else
+  } else {
     ink_code_incr_md5_update(&ctx, reinterpret_cast<char const *>(ats_ip_addr8_cast(ip)), ats_ip_addr_size(ip));
+  }
   if (port != 0) {
     unsigned short p = port;
-    p = htons(p);
+    p                = htons(p);
     ink_code_incr_md5_update(&ctx, (char *)&p, 2);
   }
   if (prefix != NULL) {
@@ -473,25 +484,26 @@ void
 FailHistory::init(int window)
 {
   bin_len = (window + CONG_HIST_ENTRIES) / CONG_HIST_ENTRIES;
-  if (bin_len <= 0)
+  if (bin_len <= 0) {
     bin_len = 1;
+  }
   length = bin_len * CONG_HIST_ENTRIES;
   for (int i = 0; i < CONG_HIST_ENTRIES; i++) {
     bins[i] = 0;
   }
   last_event = 0;
-  cur_index = 0;
-  events = 0;
-  start = 0;
+  cur_index  = 0;
+  events     = 0;
+  start      = 0;
 }
 
 void
 FailHistory::init_event(long t, int n)
 {
   last_event = t;
-  cur_index = 0;
-  events = n;
-  bins[0] = n;
+  cur_index  = 0;
+  events     = n;
+  bins[0]    = n;
   for (int i = 1; i < CONG_HIST_ENTRIES; i++) {
     bins[i] = 0;
   }
@@ -501,8 +513,9 @@ FailHistory::init_event(long t, int n)
 int
 FailHistory::regist_event(long t, int n)
 {
-  if (t < start)
+  if (t < start) {
     return events;
+  }
   if (t > last_event + length) {
     init_event(t, n);
     return events;
@@ -513,16 +526,18 @@ FailHistory::regist_event(long t, int n)
     do {
       start += bin_len;
       cur_index++;
-      if (cur_index == CONG_HIST_ENTRIES)
+      if (cur_index == CONG_HIST_ENTRIES) {
         cur_index = 0;
+      }
       events -= bins[cur_index];
       bins[cur_index] = 0;
     } while (start + length < t);
     bins[cur_index] = n;
   }
   events += n;
-  if (last_event < t)
+  if (last_event < t) {
     last_event = t;
+  }
   return events;
 }
 
@@ -530,8 +545,15 @@ FailHistory::regist_event(long t, int n)
 // CongestionEntry Implementation
 //----------------------------------------------------------
 CongestionEntry::CongestionEntry(const char *hostname, sockaddr const *ip, CongestionControlRecord *rule, uint64_t key)
-  : m_key(key), m_last_congested(0), m_congested(0), m_stat_congested_conn_failures(0), m_M_congested(0), m_last_M_congested(0),
-    m_num_connections(0), m_stat_congested_max_conn(0), m_ref_count(1)
+  : m_key(key),
+    m_last_congested(0),
+    m_congested(0),
+    m_stat_congested_conn_failures(0),
+    m_M_congested(0),
+    m_last_M_congested(0),
+    m_num_connections(0),
+    m_stat_congested_max_conn(0),
+    m_ref_count(1)
 {
   memset(&m_ip, 0, sizeof(m_ip));
   if (ip != NULL) {
@@ -547,8 +569,9 @@ CongestionEntry::CongestionEntry(const char *hostname, sockaddr const *ip, Conge
 void
 CongestionEntry::init(CongestionControlRecord *rule)
 {
-  if (pRecord)
+  if (pRecord) {
     pRecord->put();
+  }
   rule->get();
   pRecord = rule;
   clearFailHistory();
@@ -614,15 +637,15 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
 {
   char str_time[100] = " ";
   char addrbuf[INET6_ADDRSTRLEN];
-  int len = 0;
+  int len              = 0;
   ink_hrtime timestamp = 0;
   char state;
   if (pRecord->max_connection >= 0 && m_num_connections >= pRecord->max_connection) {
     timestamp = ink_hrtime_to_sec(Thread::get_hrtime());
-    state = 'M';
+    state     = 'M';
   } else {
     timestamp = m_last_congested;
-    state = (m_congested ? 'F' : ' ');
+    state     = (m_congested ? 'F' : ' ');
   }
   len += snprintf(buf + len, buflen - len, "%" PRId64 "|%d|%s|%s", timestamp, pRecord->line_num, (m_hostname ? m_hostname : " "),
                   (ats_is_ip(&m_ip) ? ats_ip_ntop(&m_ip.sa, addrbuf, sizeof(addrbuf)) : " "));
@@ -670,8 +693,9 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
 void
 CongestionEntry::failed_at(ink_hrtime t)
 {
-  if (pRecord->max_connection_failures == -1)
+  if (pRecord->max_connection_failures == -1) {
     return;
+  }
   // long time = ink_hrtime_to_sec(t);
   long time = t;
   Debug("congestion_control", "failed_at: %ld", time);

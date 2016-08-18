@@ -2,6 +2,9 @@
 #
 # ICP Configuration -- Defines ICP parent/sibling configuration
 #
+#  Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/icp.config.en.html
+#
 #  Each line is formatted with a separator between fields. This can be
 #  a space, ':', ';', ',', or '|' but must be consistent for the
 #  entire line. There must be a terminating separator as the last

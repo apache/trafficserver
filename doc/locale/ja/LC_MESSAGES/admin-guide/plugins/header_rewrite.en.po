@@ -1,0 +1,1440 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:23
+msgid "Header Rewrite Plugin"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:25
+msgid ""
+"This plugin allows you to modify arbitrary headers based on defined rules, "
+"for both requests and responses."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:29
+msgid "Purpose"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:31
+msgid ""
+"Remapping an incoming client request to an origin server is at the heart of "
+"what we use |TS| for, but often we need to do more to requests than just "
+"change their destination according to simple rewriting rules against the "
+"URL."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:35
+msgid ""
+"We may need to direct requests to different origins based on a client "
+"cookie."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:37
+msgid ""
+"Our origins might return error response codes which are a little too "
+"customized and we want to condense the possible values to just the official "
+"codes."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:40
+msgid ""
+"We might want to strip a set of internal-use or debugging related HTTP "
+"headers from responses before sending them to clients, unless the original "
+"request had its own special header indicating that they should be retained."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:44
+msgid ""
+"Or perhaps we want to redirect certain requests differently when they come "
+"from a known group of IP addresses (say, our developers' office network) "
+"and we have a file on our proxy caching servers called ``/var/"
+"developertesting``. (Stranger QA methods exist.)"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:49
+msgid ""
+"Maybe we want to deny access to a resource with an HTTP 403 if the client "
+"connected to |TS| over a particular port, used ``HEAD`` instead of ``GET``, "
+"doesn't list Spanish (Paraguay dialect) in their ``Accept-Language`` "
+"header, and either the origin server replied with 304 or we randomly "
+"generate an integer between 0 and 500 and get back anything greater than "
+"290."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:55
+msgid ""
+"These more complicated transformations of requests and responses (even that "
+"last one) are made possible by this plugin."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:59
+msgid "Installation"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:61
+msgid ""
+"This plugin is considered stable and is included with |TS| by default. "
+"There are no special steps necessary for its installation."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:65
+msgid "Configuration"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:67
+msgid ""
+"Header rewrite configurations, the actual conditions and operations that "
+"make up the activity performed by the plugin, are specified in external "
+"files and not in-line with the various mapping (and remapping) rules you "
+"may have configured for your proxy. The location of this file is arbitrary, "
+"as long as the |TS| processes have permissions to read it, though you may "
+"find it useful to keep it in the same location as your other proxy "
+"configuration files."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:74
+msgid ""
+"The paths given to the configuration file(s) may be absolute (leading with "
+"a ``/`` character), or they may be relative to the |TS| configuration "
+"directory."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:77
+msgid ""
+"There are two methods for enabling this plugin, based on whether you wish "
+"it to operate globally on every request that passes through your proxy, or "
+"only on some subset of the requests by enabling it only for specific "
+"mapping rules."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:82
+msgid "Enabling Globally"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:84
+msgid ""
+"This plugin may be enabled globally, so that the conditions and header "
+"rewriting rules are evaluated for every request made to your |TS| instance. "
+"This is done by adding the following line to your :file:`plugin.config`::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:90
+msgid ""
+"You may specify multiple configuration files. Their rules will be evaluated "
+"in the order the files are listed."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:94
+msgid "Enabling Per-Mapping"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:96
+msgid ""
+"Alternatively, the plugin can be enabled for specific mapping rules, by "
+"modifying the relevant entries in your :file:`remap.config`::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:101
+msgid ""
+"As with the global method above, multiple configuration files may be "
+"listed, each with its own ``@pparam=<file>`` and their contents will be "
+"evaluated in the order the files were specified."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:106
+msgid "Rewriting Rules"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:108
+msgid ""
+"Header rewriting rules consist of zero or more `Conditions`_ followed by "
+"one or more `Operators`_. Conditions are used to limit the requests which "
+"will be affected by the operator(s). Additionally, both conditions and "
+"operators may have flags which modify their behavior."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:113
+msgid ""
+"A complete rule, consisting of two conditions and a single operator might "
+"look like the following::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:120
+msgid ""
+"Which converts any 4xx HTTP status code from the origin server to a 404. A "
+"response from the origin with a status of 200 would be unaffected by this "
+"rule."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:124
+msgid "Conditions"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:126
+msgid ""
+"Conditions are used as qualifiers, causing the associated operators to only "
+"be evaluated if the condition(s) are met. Conditions all take the following "
+"form::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:131
+msgid ""
+"Every condition begins with the literal string ``cond`` to indicate that "
+"this line is a condition, not an operator. This is followed by the "
+"condition name, inside curly braces and preceded by a percent sign (e.g. ``"
+"%{TRUE}`` for the condition named ``TRUE``). Some condition names take an "
+"argument. Header conditions, for example, take the name of the header in "
+"question, and cookie conditions take the name of the cookie. For these, the "
+"condition name is followed by a colon and the argument value (e.g. ``"
+"%{HEADER:User-Agent}`` for a header condition against the ``User-Agent`` "
+"header)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:140
+msgid ""
+"The operand of a condition provides a value, pattern, or range against "
+"which to match. The format is described in `Condition Operands`_ below."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:143
+msgid ""
+"Finally, a condition may optionally have various flags associated with it. "
+"These are described in `Condition Flags`_ below."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:146
+msgid ""
+"The following sections list all of the condition types currently supported. "
+"For increased clarity in their usage, the optional ``[<flags>]`` portion of "
+"the condition is omitted from all of the examples."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:151
+msgid "ACCESS"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:156
+msgid ""
+"Returns true if |TS| was able to successfully update the access time on the "
+"file at ``<path>``. This condition will return false if the file does not "
+"exist or |TS| cannot access it for any other reason."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:161
+msgid "CLIENT-HEADER"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:166
+msgid ""
+"Value of the header ``<name>`` from the original client request (regardless "
+"of the hook context in which the rule is being evaluated). Note that some "
+"headers may appear in an HTTP message more than once. In these cases, the "
+"value of the header operated on by this condition will be a comma separated "
+"string of the values from every occurrence of the header. More details are "
+"provided in `Repeated Headers`_ below."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:174
+msgid "CLIENT-IP"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:179
+msgid ""
+"Remote IP address, as a string, of the client connection for the current "
+"transaction."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:183
+msgid "CLIENT-URL"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:188
+msgid ""
+"The URL of the original request. Regardless of the hook context in which "
+"the rule is evaluated, this condition will always operate on the original, "
+"unmapped URL supplied by the client. The ``<part>`` may be specified "
+"according to the options documented in `URL Parts`_."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:194
+msgid "COOKIE"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:199
+msgid ""
+"Value of of the cookie ``<name>``. This does not expose or match against a "
+"cookie's expiration, the domain(s) on which it is valid, whether it is "
+"protocol restricted, or any of the other metadata; simply the current value "
+"of the cookie as presented by the client."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:205
+msgid "FROM-URL"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:210
+msgid ""
+"In a remapping context, this condition matches against the source URL from "
+"which the remapping was generated. This condition is valid only within "
+"configurations provided through :file:`remap.config` as described in "
+"`Enabling Per-Mapping`_ above."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:215
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:384
+msgid ""
+"The ``<part>`` allows the operand to match against just a component of the "
+"URL, as documented in `URL Parts`_ below."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:219
+msgid "GEO"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:224
+msgid ""
+"Perform a GeoIP lookup of the client-IP, using a 3rd party library and DB. "
+"Currently only the MaxMind GeoIP API is supported. The default is to do a "
+"Country lookup, but the following qualifiers are supported::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:233
+msgid ""
+"These operators can be used both as conditionals, as well as values for "
+"setting headers. For example::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:245
+msgid "HEADER"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:250
+msgid ""
+"Value of the header ``<name>`` from either the original client request or "
+"the origin server's response, depending upon the hook context in which the "
+"rule is being evaluated. Consult `Requests vs. Responses`_ for more "
+"information on how to distinguish the two, as well as enforce that a rule "
+"is always evaluated in the desired context."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:256
+msgid ""
+"Note that some headers may appear in an HTTP message more than once. In "
+"these cases, the value of the header operated on by this condition will be "
+"a comma separated string of the values from every occurrence of the header. "
+"Refer to `Repeated Headers`_ for more information."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:261
+msgid ""
+"If you wish to use a client request header, regardless of hook context, you "
+"may consider using the `CLIENT-HEADER`_ condition instead."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:265
+msgid "ID"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:267
+msgid "::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:267
+msgid "cond %{ID:REQUEST} >100"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:269
+msgid ""
+"This condition provides access to three identifier values that ATS uses "
+"internally for things like logging and debugging. Since these are IDs, they "
+"are mostly useful as a value (operand) to other operators. The three types "
+"of IDs are"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:274
+msgid ""
+"%{ID:REQUEST}    A unique, sequence number for the transaction %{ID:"
+"PROCESS}    A UUID string, generated every time ATS restarts %{ID:"
+"UNIQUE}     The combination of the previous two IDs"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:278
+msgid ""
+"Now, even though these are conditionals, their primary use are as value "
+"arguments to another operator. For example::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:285
+msgid "INCOMING-PORT"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:290
+msgid ""
+"TCP port, as a decimal integer, on which the incoming client connection was "
+"made."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:294
+msgid "INTERNAL-TRANSACTION"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:299
+msgid ""
+"Returns true if the current transaction was internally-generated by |TS| "
+"(using :c:func:`TSHttpTxnIsInternal`). These transactions are not initiated "
+"by external client requests, but are triggered (often by plugins) entirely "
+"within the |TS| process."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:305
+msgid "METHOD"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:310
+msgid ""
+"The HTTP method (e.g. ``GET``, ``HEAD``, ``POST``, and so on) used by the "
+"client for this transaction."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:314
+msgid "NOW"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:319
+msgid ""
+"This is the current time, in the local timezone as set on the machine, "
+"typically GMC. Without any further qualifiers, this is the time in seconds "
+"since EPOCH aka Unix time. Qualifiers can be used to give various other "
+"values, such as year, month etc. ::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:334
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:744
+msgid "PATH"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:339
+msgid ""
+"The path component of the transaction. This does NOT include the leading ``/"
+"`` that immediately follows the hostname and terminates prior to the ``?`` "
+"signifying the beginning of query parameters (or the end of the URL, "
+"whichever occurs first)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:344
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:421
+msgid ""
+"Refer to `Requests vs. Responses`_ for more information on determining the "
+"context in which the transaction's URL is evaluated."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:348
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:747
+msgid "QUERY"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:353
+msgid ""
+"The query parameters, if any, of the transaction.  Refer to `Requests vs. "
+"Responses`_ for more information on determining the context in which the "
+"transaction's URL is evaluated."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:358
+msgid "RANDOM"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:363
+msgid "Generates a random integer between ``0`` and ``<n>``, inclusive."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:366
+msgid "STATUS"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:371
+msgid "Numeric HTTP status code of the response."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:374
+msgid "TO-URL"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:379
+msgid ""
+"In a remapping context, this condition matches against the target URL to "
+"which the remapping is directed. This condition is valid only within "
+"configurations provided through :file:`remap.config` as described in "
+"`Enabling Per-Mapping`_ above."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:388
+msgid "TRUE / FALSE"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:394
+msgid ""
+"These conditions always return a true value and a false value, "
+"respectively. The true condition is implicit in any rules which specify no "
+"conditions (only operators)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:399
+msgid "TXN-COUNT"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:404
+msgid ""
+"Returns the current HTTP client session, which permits detection of "
+"requests which are sharing a client session. Shared client sessions occur "
+"when multiple simultaneous requests are received for the same cache object. "
+"Instead of contacting the origin server separately for each of those client "
+"requests, one origin connection is used to fulfill all of the requests "
+"assigned to the shared client session."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:412
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:751
+msgid "URL"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:417
+msgid ""
+"The complete URL of the current transaction. This will automatically choose "
+"the most relevant URL depending upon the hook context in which the "
+"condition is being evaluated."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:425
+msgid "Condition Operands"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:427
+msgid ""
+"Operands provide the means to restrict the values, provided by a condition, "
+"which will lead to that condition evaluating as true. There are currently "
+"four types supported:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:432
+msgid "Operand"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:432
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:456
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:687
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:700
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:741
+msgid "Description"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:434
+msgid "/regex/"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:434
+msgid "Matches the condition's provided value against the regular expression."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:436
+msgid "<string"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:436
+msgid ""
+"Matches if the value from the condition is lexically less than *string*."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:438
+msgid ">string"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:438
+msgid ""
+"Matches if the value from the condition is lexically greater than *string*."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:440
+msgid "=string"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:440
+msgid ""
+"Matches if the value from the condition is lexically equal to *string*."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:444
+msgid ""
+"The absence of an operand for conditions which accept them simply requires "
+"that a value exists (e.g. the content of the header is not an empty string) "
+"for the condition to be considered true."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:449
+msgid "Condition Flags"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:451
+msgid ""
+"The condition flags are optional, and you can combine more than one into a "
+"comma-separated list of flags. Note that whitespaces are not allowed inside "
+"the brackets:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:456
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:687
+msgid "Flag"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:458
+msgid "AND"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:458
+msgid ""
+"Indicates that both the current condition and the next must be true. This "
+"is the default behavior for all conditions when no flags are provided."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:461
+msgid "NOT"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:461
+msgid "Inverts the condition."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:462
+msgid "OR"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:462
+msgid ""
+"Indicates that either the current condition or the next one must be true, "
+"as contrasted with the default behavior from ``[AND]``."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:467
+msgid "Operators"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:469
+msgid ""
+"Operators are the part of your header rewriting rules which actually modify "
+"the header content of your requests and responses. They are always the "
+"final part of a rule, following any of the conditions which whittled down "
+"the requests and responses to which they will be applied."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:474
+msgid ""
+"Multiple operators may be specified for a single rule, and they will be "
+"executed in the order listed. The end of the rule is marked either by the "
+"end of the configuration file or the next appearance of a condition "
+"(whichever occurs first)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:479
+msgid "The following operators are available:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:482
+msgid "add-cookie"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:487
+msgid ""
+"Adds a new ``<name>`` cookie line with the contents ``<value>``. Note that "
+"this operator will do nothing if a cookie pair with ``<name>`` already "
+"exists."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:491
+msgid "add-header"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:496
+msgid ""
+"Adds a new ``<name>`` header line with the contents ``<value>``. Note that "
+"this operator can produce duplicate headers if one of ``<name>`` already "
+"exists, or your configuration supplies multiple instances of this operator "
+"in different rules which are all invoked. This is not an issue for headers "
+"which may safely be specified multiple times, such as ``Set-Cookie``, but "
+"for headers which may only be specified once you may prefer to use `set-"
+"header`_ instead."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:503
+msgid ""
+"The header's ``<value>`` may be specified as a literal string, or it may "
+"take advantage of `Variable Expansion`_ to calculate a dynamic value for "
+"the header. In contrast, `set-header`_ does not support variable expansion "
+"for the header value. If you wish to use variable expansion and avoid "
+"duplicate headers, you may consider using an `rm-header`_ operator followed "
+"by `add-header`_."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:510
+msgid "counter"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:515
+msgid ""
+"Increments an integer counter called ``<name>`` every time the rule is "
+"invoked. The counter is initialized at ``0`` if it does not already exist. "
+"The name you give your counter is arbitrary, though it is strongly "
+"advisable to avoid conflicts with existing |TS| statistics."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:520
+msgid ""
+"This counter can be viewed at any time through the standard statistics "
+"APIs, including the :ref:`Stats Over HTTP plugin <admin-plugins-stats-over-"
+"http>`."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:523
+msgid ""
+"Counters can only increment by 1 each time this operator is invoked. There "
+"is no facility to increment by other amounts, nor is it possible to "
+"initialize the counter with any value other than ``0``. Additionally, the "
+"counter will reset whenever |TS| is restarted."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:529
+msgid "no-op"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:534
+msgid ""
+"This operator does nothing, takes no arguments, and has no side effects."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:537
+msgid "rm-header"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:542
+msgid "Removes the header ``<name>``."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:545
+msgid "rm-cookie"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:550
+msgid "Removes the cookie ``<name>``."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:553
+msgid "set-config"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:558
+msgid ""
+"Allows you to override the value of a |TS| configuration variable for the "
+"current connection. The variables specified by ``<name>`` must be "
+"overridable. For details on available |TS| configuration variables, consult "
+"the documentation for :file:`records.config`. You can read more about "
+"overridable configuration variables in the developer's documentation for :"
+"ref:`ts-overridable-config`."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:566
+msgid "set-conn-dscp"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:571
+msgid ""
+"When invoked, sets the client side `DSCP <https://en.wikipedia.org/wiki/"
+"Differentiated_services>`_ value for the current transaction.  The "
+"``<value>`` should be specified as a decimal integer."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:576
+msgid "set-debug"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:581
+msgid ""
+"When invoked, this operator enables the internal transaction debugging flag "
+"(via :c:func:`TSHttpTxnDebugSet`), which causes debug messages to be "
+"printed to the appropriate logs even when the debug tag has not been "
+"enabled. For additional information on |TS| debugging statements, refer to :"
+"ref:`developer-debug-tags` in the developer's documentation."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:588
+msgid "set-destination"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:593
+msgid ""
+"Modifies individual components of the remapped destination's address. When "
+"changing the remapped destination, ``<part>`` should be used to indicate "
+"the component that is being modified (see `URL Parts`_), and ``<value>`` "
+"will be used as its replacement. You must supply a non-zero length value, "
+"otherwise this operator will be an effective no-op (though a warning will "
+"be emitted to the logs if debugging is enabled)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:601
+msgid "set-header"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:606
+msgid ""
+"Replaces the value of header ``<name>`` with ``<value>``, creating the "
+"header if necessary."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:609
+msgid ""
+"Note that, unlike `add-header`_, this operator does not currently support "
+"variable expansion. Values may only be specified according to `Header "
+"Values`_."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:613
+msgid "set-redirect"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:618
+msgid ""
+"When invoked, sends a redirect response to the client, with HTTP status "
+"``<code>``, and a new location of ``<destination>``. If the ``QSA`` flag is "
+"enabled, the original query string will be preserved and added to the new "
+"location automatically. This operator supports `Variable Expansion`_ for "
+"``<destination>``."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:625
+msgid "set-status"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:630
+msgid ""
+"Modifies the :ref:`HTTP status code <appendix-http-status-codes>` used for "
+"the response. ``<code>`` must be a valid status code. This operator will "
+"also update the reason in the HTTP response, based on the code you have "
+"chosen. If you wish to override that with your own text, you will need to "
+"invoke the `set-status-reason`_ operator after this one."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:637
+msgid "set-status-reason"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:642
+msgid ""
+"Modifies the HTTP response to use ``<reason>`` as the HTTP status reason, "
+"instead of the standard string (which depends on the :ref:`HTTP status code "
+"<appendix-http-status-codes>` used)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:647
+msgid "set-timeout-out"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:652
+msgid ""
+"Modifies the timeout values for the current transaction to ``<value>`` "
+"(specified in milliseconds). The ``<type>`` must be one of the following: "
+"``active``, ``inactive``, ``connect``, or ``dns``."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:657
+msgid "skip-remap"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:662
+msgid ""
+"When invoked, and when ``<value>`` is any of ``1``, ``true``, or ``TRUE``, "
+"this operator causes |TS| to abort further request remapping. Any other "
+"value and the operator will effectively be a no-op."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:667
+msgid "set-cookie"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:672
+msgid ""
+"Replaces the value of cookie ``<name>`` with ``<value>``, creating the "
+"cookie if necessary."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:676
+msgid "Operator Flags"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:678
+msgid ""
+"Operator flags are optional, are separated by commas when using more than "
+"one for a single operator, and must not contain whitespace inside the "
+"brackets. For example, an operator with the ``L`` flag would be written in "
+"this manner::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:684
+msgid "The flags currently supported are:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:689
+msgid "L"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:689
+msgid "Last rule, do not continue."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:690
+msgid "QSA"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:690
+msgid "Append the results of the rule to the query string."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:694
+msgid "Variable Expansion"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:696
+msgid ""
+"Only limited variable expansion is supported in `add-header`_. Supported "
+"substitutions are currently:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:700
+msgid "Variable"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:702
+msgid "%<proto>"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:702
+msgid "Protocol"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:703
+msgid "%<port>"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:703
+msgid "Port"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:704
+msgid "%<chi>"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:704
+msgid "Client IP"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:705
+msgid "%<cqhl>"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:705
+msgid "Client request length"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:706
+msgid "%<cqhm>"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:706
+msgid "Client HTTP method"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:707
+msgid "%<cquup>"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:707
+msgid "Client unmapped URI"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:711
+msgid "Header Values"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:713
+msgid "Setting a header with a value can take the following formats:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:715
+msgid "Any `condition <Conditions>`_ which extracts a value from the request."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:717
+msgid ""
+"``$N``, where 0 <= N <= 9, from matching groups in a regular expression."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:719
+msgid ""
+"A string (which can contain the numbered matches from a regular expression "
+"as described above)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:722
+msgid "Null."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:724
+msgid ""
+"Supplying no value for a header for certain operators can lead to an "
+"effective no-op. In particular, `add-header`_ and `set-header`_ will simply "
+"short-circuit if no value has been supplied for the named header."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:729
+msgid "URL Parts"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:731
+msgid ""
+"Some of the conditions and operators which use a request or response URL as "
+"their target allow for matching against specific components of the URL. For "
+"example, the `CLIENT-URL`_ condition can be used to test just against the "
+"query parameters by writing it as::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:738
+msgid ""
+"The URL part names which may be used for these conditions and actions are:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:741
+msgid "Part"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:743
+msgid "HOST"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:743
+msgid "Full hostname."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:744
+msgid ""
+"URL substring beginning with the first ``/`` after the hostname up to, but "
+"not including, the query string."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:746
+msgid "PORT"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:746
+msgid "Port number."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:747
+msgid ""
+"URL substring from the ``?``, signifying the beginning of the query "
+"parameters, until the end of the URL. Empty string if there were no quuery "
+"parameters."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:750
+msgid "SCHEME"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:750
+msgid "URL scheme in use (e.g. ``http`` and ``https``)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:751
+msgid "The complete URL."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:754
+msgid ""
+"As another example, a remap rule might use the `set-destination`_ operator "
+"to change just the hostname via::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:761
+msgid "Requests vs. Responses"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:763
+msgid ""
+"Both HTTP requests and responses have headers, a good number of them with "
+"the same names. When writing a rule against, for example, the "
+"``Connection`` or ``Via`` headers which are both valid in a request and a "
+"response, how can you tell which is which, and how do you indicate to |TS| "
+"that the condition is specifically and exclusively for a request header or "
+"just for a response header? And how do you ensure that a header rewrite "
+"occurs against a request before it is proxied?"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:772
+msgid "Hook Conditions"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:774
+msgid ""
+"In addition to the conditions already described above, there are a set of "
+"special hook conditions. Only one of these conditions may be specified per "
+"ruleset, and they must be the first condition listed. Which hook condition "
+"is used determines the context in which the ruleset is evaluated, and "
+"whether the other conditions will default to operating on the client "
+"request headers or the origin response (or cache response) headers."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:781
+msgid ""
+"Hook conditions are written just like the other conditions, except that "
+"none of them take any operands::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:786
+msgid ""
+"Because hook conditions must be the first condition in a ruleset, the use "
+"of one forces the beginning of a new ruleset."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:790
+msgid "READ_RESPONSE_HDR_HOOK"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:792
+msgid ""
+"Rulesets evaluated within this context will process only once the origin "
+"server response (or cached response) has been read, but prior to |TS| "
+"sending that response to the client."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:796
+msgid ""
+"This is the default hook condition for all globally-configured rulesets."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:799
+msgid "READ_REQUEST_HDR_HOOK"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:801
+msgid ""
+"Evaluates as soon as the client request has been read, but prior to any "
+"further processing (including contacting origin servers or fetching objects "
+"from cache). Conditions and operators which adapt to matching or "
+"manipulating request or response entities (e.g. headers) depending on their "
+"context will all operate on the request variants when using this hook, as "
+"there is no response data yet."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:808
+msgid "READ_REQUEST_PRE_REMAP_HOOK"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:810
+msgid ""
+"For ruleset configurations provided via :file:`remap.config`, this forces "
+"their evaluation as soon as the request has been read, but prior to the "
+"remapping. For all context-adapting conditions and operators, matching will "
+"occur against the request, as there is no response data available yet."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:816
+msgid "REMAP_PSEUDO_HOOK"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:818
+msgid ""
+"This is the default hook condition for all rulesets configured via "
+"remapping rules in :file:`remap.config`. Functionally equivalent to "
+"`READ_RESPONSE_HDR_HOOK`_ in that rulesets will evaluate after responses "
+"from origin servers have been received (or the object has been retrieved "
+"from cache), but prior to sending the client response."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:824
+msgid ""
+"What sets this hook context apart is that in configuration files shared by "
+"both the global :file:`plugin.config` and individual remapping entries in :"
+"file:`remap.config`, this hook condition will force the subsequent "
+"ruleset(s) to be valid only for remapped transactions."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:830
+msgid "SEND_REQUEST_HDR_HOOK"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:832
+msgid ""
+"Forces evaluation of the ruleset just prior to contacting origin servers "
+"(or fetching the object from cache), but after any remapping may have "
+"occurred."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:836
+msgid "SEND_RESPONSE_HDR_HOOK"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:838
+msgid ""
+"Evaluates rulesets just prior to sending the client response, but after any "
+"cache updates may have been performed. This hook context provides a means "
+"to modify aspects of the response sent to a client, while still caching the "
+"original versions of those attributes delivered by the origin server."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:844
+msgid "Affected Conditions"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:846
+msgid ""
+"The following conditions are affected by the hook context in which they are "
+"evaluated and will adjust using request or response entities automatically:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:849
+msgid "`HEADER`_"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:851
+msgid "`METHOD`_"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:853
+msgid "`PATH`_"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:855
+msgid "`QUERY`_"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:857
+msgid "`URL`_"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:860
+msgid "Affected Operators"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:862
+msgid ""
+"The following operators are affected by the hook context in which they are "
+"evaluated and will adjust modifying request or response entities "
+"automatically:"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:865
+msgid "`add-header`_"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:867
+msgid "`rm-header`_"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:869
+msgid "`set-header`_"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:872
+msgid "Caveats"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:875
+msgid "Repeated Headers"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:877
+msgid ""
+"Some headers may appear more than once in a request or a response. When "
+"this occurs, all values will be collapsed into a single comma-delimited "
+"string before the conditions see them. This avoids the problem of "
+"determining which header instance out of several a condition's rule will be "
+"applied to, but it may introduce unexpected behavior in your operands."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:883
+msgid ""
+"For example, let us assume an origin response includes a header named ``X-"
+"Foo`` which specifies a keyword of some sort. This header may appear zero "
+"or more times and we wish to construct a `HEADER`_ condition that can "
+"handle this."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:888
+msgid "Condition A"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:890
+msgid "This condition will match using a direct equality operand::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:895
+msgid "Condition B"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:897
+msgid "This condition will match using an unanchored regular expression::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:902
+msgid "Sample Headers"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:904
+msgid "Both conditions A and B will match this response::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:912
+msgid "Only condition B will match this response::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:921
+msgid ""
+"That is because the `HEADER`_ condition will see the value of ``X-Foo`` as "
+"``bar,baz``. Condition B will still match this because the regular "
+"expression, being unanchored, finds the substring ``bar``. But condition A "
+"fails, as it is expecting the value to be the exact string ``bar``, nothing "
+"more and nothing less."
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:928
+msgid "Examples"
+msgstr "例"
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:931
+msgid "Remove Origin Authentication Headers"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:933
+msgid ""
+"The following ruleset removes any authentication headers from the origin "
+"response before caching it or returning it to the client. This is "
+"accomplished by setting the hook context and then removing the cookie and "
+"basic authentication headers.::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:943
+msgid "Count Teapots"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:945
+msgid ""
+"Maintains a counter statistic, which is incremented every time an origin "
+"server has decided to be funny by returning HTTP 418::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:952
+msgid "Normalize Statuses"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:954
+msgid ""
+"For client-facing purposes only (because we set the hook context to just "
+"prior to delivering the response back to the client, but after all "
+"processing and possible cache updates have occurred), replaces all 4xx HTTP "
+"status codes from the origin server with ``404``::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:965
+msgid "Remove Cache Control to Origins"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:967
+msgid ""
+"Removes cache control related headers from requests before sending them to "
+"an origin server::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:975
+msgid "Enable Debugging Per-Request"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:977
+msgid ""
+"Turns on |TS| debugging statements for a transaction, but only when a "
+"special header is present in the client request::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:985
+msgid "Remove Internal Headers"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:987
+msgid ""
+"Removes special internal/development headers from origin responses, unless "
+"the client request included a special debug header::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:995
+msgid "Return Original Method in Response Header"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:997
+msgid ""
+"This rule copies the original HTTP method that was used by the client into "
+"a custom response header::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:1004
+msgid "Useless Example From Purpose"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:1006
+msgid ""
+"Even that useless example from `Purpose`_ in the beginning of this document "
+"is possible to accomplish::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:1017
+msgid "Add Cache Control Headers Based on Origin Path"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:1019
+msgid ""
+"This rule adds cache control headers to CDN responses based matching the "
+"origin path.  One provides a max age and the other provides a “no-cache” "
+"statement to two different file paths.::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:1031
+msgid "Redirect when the Origin Server Times Out"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:1033
+msgid ""
+"This rule sends a 302 redirect to the client with the requested URI's Path "
+"and Query string when the Origin server times out or the connection is "
+"refused::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:1042
+msgid "Check for existence of a header"
+msgstr ""
+
+#: ../../../admin-guide/plugins/header_rewrite.en.rst:1044
+msgid ""
+"This rule will modify the ``Cache-Control`` header, but only if it is not "
+"already set to some value, and the status code is a 2xx::"
+msgstr ""

@@ -35,16 +35,21 @@ extern Statistics statistics;
 
 extern size_t timeout;
 
-Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l)
-  : host(h), length(TSHttpHdrLengthGet(b, l)), io(new ats::io::IO())
+Request::Request(const std::string &h, const TSMBuffer b, const TSMLoc l) : host(h), length(0), io(new ats::io::IO())
 {
   assert(!host.empty());
   assert(b != NULL);
   assert(l != NULL);
-  assert(length > 0);
   assert(io.get() != NULL);
   TSHttpHdrPrint(b, l, io->buffer);
-  assert(length == TSIOBufferReaderAvail(io->reader));
+  length = TSIOBufferReaderAvail(io->reader);
+  assert(length > 0);
+  /*
+   * TSHttpHdrLengthGet returns the size with possible "internal" headers
+   * which are not printed by TSHttpHdrPrint.
+   * Therefore the greater than or equal comparisson
+  */
+  assert(TSHttpHdrLengthGet(b, l) >= length);
 }
 
 Request::Request(const Request &r) : host(r.host), length(r.length), io(const_cast<Request &>(r).io.release())
@@ -55,9 +60,10 @@ Request::Request(const Request &r) : host(r.host), length(r.length), io(const_ca
   assert(r.io.get() != NULL);
 }
 
-Request &Request::operator=(const Request &r)
+Request &
+Request::operator=(const Request &r)
 {
-  host = r.host;
+  host   = r.host;
   length = r.length;
   io.reset(const_cast<Request &>(r).io.release());
   assert(!host.empty());
@@ -77,7 +83,7 @@ copy(const TSIOBufferReader &r, const TSIOBuffer b)
   uint64_t length = 0;
 
   for (; block; block = TSIOBufferBlockNext(block)) {
-    int64_t size = 0;
+    int64_t size              = 0;
     const void *const pointer = TSIOBufferBlockReadStart(block, r, &size);
 
     if (pointer != NULL && size > 0) {
@@ -105,7 +111,7 @@ read(const TSIOBufferReader &r, std::string &o, int64_t l = 0)
   uint64_t length = 0;
 
   for (; block && l > 0; block = TSIOBufferBlockNext(block)) {
-    int64_t size = 0;
+    int64_t size              = 0;
     const char *const pointer = TSIOBufferBlockReadStart(block, r, &size);
     if (pointer != NULL && size > 0) {
       size = std::min(size, l);
@@ -122,7 +128,7 @@ uint64_t
 read(const TSIOBuffer &b, std::string &o, const int64_t l = 0)
 {
   TSIOBufferReader reader = TSIOBufferReaderAlloc(b);
-  const uint64_t length = read(reader, o);
+  const uint64_t length   = read(reader, o);
   TSIOBufferReaderFree(reader);
   return length;
 }
@@ -208,7 +214,7 @@ generateRequests(const Origins &o, const TSMBuffer buffer, const TSMLoc location
   assert(buffer != NULL);
   assert(location != NULL);
 
-  Origins::const_iterator iterator = o.begin();
+  Origins::const_iterator iterator  = o.begin();
   const Origins::const_iterator end = o.end();
 
   OriginalRequest request(buffer, location);
@@ -228,9 +234,9 @@ void
 addBody(Requests &r, const TSIOBufferReader re)
 {
   assert(re != NULL);
-  Requests::iterator iterator = r.begin();
+  Requests::iterator iterator  = r.begin();
   const Requests::iterator end = r.end();
-  const int64_t length = TSIOBufferReaderAvail(re);
+  const int64_t length         = TSIOBufferReaderAvail(re);
   if (length == 0) {
     return;
   }
@@ -246,7 +252,7 @@ addBody(Requests &r, const TSIOBufferReader re)
 void
 dispatch(Requests &r, const int t)
 {
-  Requests::iterator iterator = r.begin();
+  Requests::iterator iterator  = r.begin();
   const Requests::iterator end = r.end();
   for (; iterator != end; ++iterator) {
     assert(iterator->io.get() != NULL);

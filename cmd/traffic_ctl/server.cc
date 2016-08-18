@@ -23,19 +23,19 @@
 
 #include "traffic_ctl.h"
 
-static int drain = 0;
+static int drain   = 0;
 static int manager = 0;
-
-const ArgumentDescription opts[] = {
-  {"drain", '-', "Wait for client connections to drain before restarting", "F", &drain, NULL, NULL},
-  {"manager", '-', "Restart traffic_manager as well as traffic_server", "F", &manager, NULL, NULL},
-};
 
 static int
 restart(unsigned argc, const char **argv, unsigned flags)
 {
   TSMgmtError error;
   const char *usage = (flags & TS_RESTART_OPT_CLUSTER) ? "cluster restart [OPTIONS]" : "server restart [OPTIONS]";
+
+  const ArgumentDescription opts[] = {
+    {"drain", '-', "Wait for client connections to drain before restarting", "F", &drain, NULL, NULL},
+    {"manager", '-', "Restart traffic_manager as well as traffic_server", "F", &manager, NULL, NULL},
+  };
 
   if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
     return CtrlCommandUsage(usage, opts, countof(opts));
@@ -116,6 +116,57 @@ server_status(unsigned argc, const char **argv)
   return CTRL_EX_OK;
 }
 
+static int
+server_stop(unsigned argc, const char **argv)
+{
+  TSMgmtError error;
+
+  // I am not sure whether it really makes sense to add the --drain option here.
+  // TSProxyStateSet() is a synchronous API, returning only after the proxy has
+  // been shut down. However, draining can take a long time and we don't want
+  // to wait for it. Maybe the right approach is to make the stop async.
+  if (!CtrlProcessArguments(argc, argv, NULL, 0) || n_file_arguments != 0) {
+    return CtrlCommandUsage("server stop");
+  }
+
+  error = TSProxyStateSet(TS_PROXY_OFF, TS_CACHE_CLEAR_NONE);
+  if (error != TS_ERR_OKAY) {
+    CtrlMgmtError(error, "server stop failed");
+    return CTRL_EX_ERROR;
+  }
+
+  return CTRL_EX_OK;
+}
+
+static int
+server_start(unsigned argc, const char **argv)
+{
+  TSMgmtError error;
+  int cache      = 0;
+  int hostdb     = 0;
+  unsigned clear = TS_CACHE_CLEAR_NONE;
+
+  const ArgumentDescription opts[] = {
+    {"clear-cache", '-', "Clear the disk cache on startup", "F", &cache, NULL, NULL},
+    {"clear-hostdb", '-', "Clear the DNS cache on startup", "F", &hostdb, NULL, NULL},
+  };
+
+  if (!CtrlProcessArguments(argc, argv, opts, countof(opts)) || n_file_arguments != 0) {
+    return CtrlCommandUsage("server start [OPTIONS]", opts, countof(opts));
+  }
+
+  clear |= cache ? TS_CACHE_CLEAR_CACHE : TS_CACHE_CLEAR_NONE;
+  clear |= hostdb ? TS_CACHE_CLEAR_HOSTDB : TS_CACHE_CLEAR_NONE;
+
+  error = TSProxyStateSet(TS_PROXY_ON, clear);
+  if (error != TS_ERR_OKAY) {
+    CtrlMgmtError(error, "server start failed");
+    return CTRL_EX_ERROR;
+  }
+
+  return CTRL_EX_OK;
+}
+
 int
 subcommand_cluster(unsigned argc, const char **argv)
 {
@@ -131,11 +182,11 @@ int
 subcommand_server(unsigned argc, const char **argv)
 {
   const subcommand commands[] = {
-    {server_restart, "restart", "Restart Traffic Server"},
     {server_backtrace, "backtrace", "Show a full stack trace of the traffic_server process"},
+    {server_restart, "restart", "Restart Traffic Server"},
+    {server_start, "start", "Start the proxy"},
     {server_status, "status", "Show the proxy status"},
-
-    /* XXX do the 'shutdown' and 'startup' commands make sense? */
+    {server_stop, "stop", "Stop the proxy"},
   };
 
   return CtrlGenericSubcommand("server", commands, countof(commands), argc, argv);

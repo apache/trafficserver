@@ -544,6 +544,7 @@ dnl
 dnl Note: As with AC_ARG_ENABLE, non-alphanumeric characters are
 dnl transformed to underscores.
 dnl
+dnl This macro also AC_SUBST's the constructed variable name.
 AC_DEFUN([TS_ARG_ENABLE_VAR],[
   tsl_prefix="AS_TR_SH($1)"
   tsl_stem="AS_TR_SH($2)"
@@ -552,30 +553,7 @@ AC_DEFUN([TS_ARG_ENABLE_VAR],[
      [eval "${tsl_prefix}_${tsl_stem}=1"],
      [eval "${tsl_prefix}_${tsl_stem}=0"]
   )
-])
-
-dnl
-dnl TS_SEARCH_LIBRARY(function, search-libs, [action-if-found], [action-if-not-found])
-dnl This macro works like AC_SEARCH_LIBS, except that $LIBS is not modified. If the library
-dnl is found, it is cached in the ts_cv_lib_${function} variable.
-dnl
-AC_DEFUN([TS_SEARCH_LIBRARY], [
-  __saved_LIBS="$LIBS"
-
-  AC_SEARCH_LIBS($1, $2, [
-    dnl action-if-found
-    case $ac_cv_search_$1 in
-    "none required"|"no") ts_cv_search_$1="" ;;
-    *) ts_cv_search_$1=$ac_cv_search_$1 ;;
-    esac
-    m4_default([$3], [true])
-  ], [
-    dnl action-if-not-found
-    m4_default([$4], [true])
-  ])
-
-  LIBS="$__saved_LIBS"
-  unset __saved_LIBS
+  AC_SUBST(m4_join([_], $1, AS_TR_SH($2)))
 ])
 
 dnl TS_CHECK_SOCKOPT(socket-option, [action-if-found], [action-if-not-found]

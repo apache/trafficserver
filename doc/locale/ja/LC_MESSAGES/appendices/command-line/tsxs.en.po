@@ -1,0 +1,36 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../appendices/command-line/tsxs.en.rst:26
+msgid "Description"
+msgstr "解説"
+
+#: ../../appendices/command-line/tsxs.en.rst:29
+msgid "Options"
+msgstr "オプション"
+
+#: ../../appendices/command-line/tsxs.en.rst:53
+msgid "Print usage information and exit."
+msgstr "使い方の情報を表示して終了します。"
+
+#: ../../appendices/command-line/tsxs.en.rst:23
+msgid "tsxs"
+msgstr ""

@@ -42,9 +42,9 @@ public:
   LogHost(const LogHost &);
   ~LogHost();
 
-  int set_name_or_ipstr(char *name_or_ipstr);
-  int set_ipstr_port(char *ipstr, unsigned int port);
-  int set_name_port(char *hostname, unsigned int port);
+  bool set_name_or_ipstr(const char *name_or_ipstr);
+  bool set_ipstr_port(const char *ipstr, unsigned int port);
+  bool set_name_port(const char *hostname, unsigned int port);
 
   bool connected(bool ping);
   bool connect();
@@ -56,26 +56,35 @@ public:
   int preproc_and_try_delete(LogBuffer *lb);
 
   //
-  // write the given buffer data to orhpan file and
+  // write the given buffer data to orphan file and
   // try to delete it when its reference become zero.
   //
   void orphan_write_and_try_delete(LogBuffer *lb);
 
-  char const *
+  const char *
   name() const
   {
     return m_name ? m_name : "UNKNOWN";
   }
+
+  uint64_t
+  signature() const
+  {
+    return m_object_signature;
+  }
+
   IpAddr const &
   ip_addr() const
   {
     return m_ip;
   }
+
   in_port_t
   port() const
   {
     return m_port;
   }
+
   char const *
   ipstr() const
   {
@@ -87,8 +96,9 @@ public:
   LogFile *
   get_orphan_logfile() const
   {
-    return m_orphan_file;
+    return m_orphan_file.get();
   }
+
   // check if we will be able to write orphan file
   int
   do_filesystem_checks()
@@ -99,7 +109,6 @@ public:
 private:
   void clear();
   bool authenticated();
-  void create_orphan_LogFile_object();
 
 private:
   char *m_object_filename;
@@ -143,6 +152,7 @@ public:
   {
     return m_host_list.head;
   }
+
   LogHost *
   next(LogHost *here)
   {

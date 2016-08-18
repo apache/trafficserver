@@ -1,0 +1,143 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:23
+msgid "Logging API"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:25
+msgid ""
+"The logging API enables your plugin to log entries in a custom text log "
+"file that you create with the call :c:func:`TSTextLogObjectCreate`. This "
+"log file is part of Traffic Server's logging system; by default, it is "
+"stored in the logging directory. Once you have created the log object, you "
+"can set log properties."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:31
+msgid "The logging API enables you to:"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:33
+msgid ""
+"Establish a custom text log for your plugin: see :c:func:"
+"`TSTextLogObjectCreate`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:36
+msgid ""
+"Set the log header for your custom text log: see :c:func:"
+"`TSTextLogObjectHeaderSet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:39
+msgid ""
+"Enable or disable rolling your custom text log: see :c:func:"
+"`TSTextLogObjectRollingEnabledSet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:42
+msgid ""
+"Set the rolling interval (in seconds) for your custom text log: see :c:func:"
+"`TSTextLogObjectRollingIntervalSecSet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:45
+msgid ""
+"Set the rolling offset for your custom text log: see :c:func:"
+"`TSTextLogObjectRollingOffsetHrSet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:48
+msgid ""
+"Set the rolling size for your custom text log: see :c:func:"
+"`TSTextLogObjectRollingSizeMbSet`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:51
+msgid ""
+"Write text entries to the custom text log: see :c:func:"
+"`TSTextLogObjectWrite`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:54
+msgid ""
+"Flush the contents of the custom text log's write buffer to disk: see :c:"
+"func:`TSTextLogObjectFlush`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:57
+msgid ""
+"Destroy custom text logs when you are done with them: see :c:func:"
+"`TSTextLogObjectDestroy`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:60
+msgid ""
+"The steps below show how the logging API is used in the ``blacklist-1.c`` "
+"sample plugin. For the complete source code, see the :ref:`developer-"
+"plugins-examples-blacklist-code` section."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:64
+msgid "A new log file is defined as a global variable."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:70
+msgid "In ``TSPluginInit``, a new log object is allocated:"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:77
+msgid ""
+"The new log is named ``blacklist.log``. Each entry written to the log will "
+"have a timestamp. The ``NULL`` argument specifies that the new log does not "
+"have a log header. The error argument stores the result of the log "
+"creation; if the log is created successfully, then an error will be equal "
+"to ``TS_LOG_ERROR_NO_ERROR``."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:83
+msgid ""
+"After creating the log, the plugin makes sure that the log was created "
+"successfully:"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:92
+msgid ""
+"The :ref:`developer-plugins-examples-blacklist` matches the host portion of "
+"the URL (in each client request) with a list of blacklisted sites (stored "
+"in the array ``sites[]``):"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:101
+msgid ""
+"If the host matches one of the blacklisted sites (such as ``sites[i]``), "
+"then the plugin writes a blacklist entry to ``blacklist.log``:"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:110
+msgid "The format of the log entry is as follows:"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-management/logging-api.en.rst:116
+msgid ""
+"The log is not flushed or destroyed in the ``blacklist-1`` plugin - it "
+"lives for the life of the plugin."
+msgstr ""

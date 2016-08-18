@@ -1,0 +1,59 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/epic.en.rst:4
+msgid "Epic Plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/epic.en.rst:23
+msgid ""
+"The `Epic` plugin emits Traffic Server metrics in a format that is consumed "
+"by the `Epic Network Monitoring System <https://code.google.com/p/epicnms/"
+">`_.  It is a global plugin that is installed by adding it to the :file:"
+"`plugin.config` file."
+msgstr ""
+
+#: ../../admin-guide/plugins/epic.en.rst:29
+msgid "Plugin Options"
+msgstr ""
+
+#: ../../admin-guide/plugins/epic.en.rst:32
+msgid ""
+"Specify the directory the plugin will write sample files to. The default is "
+"``/usr/local/epic/cache/eapi``."
+msgstr ""
+
+#: ../../admin-guide/plugins/epic.en.rst:36
+msgid ""
+"Specify the sample period in seconds. The default is to write samples every "
+"30 seconds."
+msgstr ""
+
+#: ../../admin-guide/plugins/epic.en.rst:40
+msgid "Caveats"
+msgstr ""
+
+#: ../../admin-guide/plugins/epic.en.rst:42
+msgid ""
+"The Traffic Server metrics system does not store the semantics of metrics, "
+"so it is not possible to programmatically determine whether a metrics can "
+"be rate converted. The plugin contains a static list of metrics that should "
+"not be rate converted (gauges in Epic terminilogy)."
+msgstr ""

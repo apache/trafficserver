@@ -38,12 +38,6 @@
 
 typedef fileEntry snapshot;
 
-const char *SnapshotStrings[] = {"Request Successful\n", "No Snapshot Directory", "Snapshot was not found\n",
-                                 "Creation of snapshot directory failed\n", "Creation of snapshot file failed\n",
-                                 "Access to snapshot file Failed\n", "Unable to write to snapshot file\n",
-                                 "Remove of Snapshot failed\n", "Internal Error: Form Submission was invalid\n",
-                                 "No Snapshot Name Was Given\n", "Invalid Snapshot name\n"};
-
 FileManager::FileManager()
 {
   bindings = ink_hash_table_create(InkHashTableKeyType_String);
@@ -65,7 +59,7 @@ FileManager::FileManager()
     mgmt_fatal(stderr, 0, "[FileManager::FileManager] snapshot directory %s is not a directory\n", (const char *)snapshotDir);
   }
 
-  this->managedDir = snapshotDir.release();
+  this->managedDir  = snapshotDir.release();
   this->dirDescript = "snapshot";
 }
 
@@ -86,7 +80,7 @@ FileManager::~FileManager()
   ink_mutex_acquire(&accessLock);
 
   ats_free(this->managedDir);
-  this->managedDir = NULL;
+  this->managedDir  = NULL;
   this->dirDescript = NULL;
 
   for (cb = cblist.pop(); cb != NULL; cb = cblist.pop()) {
@@ -150,7 +144,7 @@ FileManager::addFileHelper(const char *fileName, bool root_access_needed, Rollba
 {
   ink_assert(fileName != NULL);
 
-  Rollback *rb = new Rollback(fileName, root_access_needed, parentRollback, flags);
+  Rollback *rb    = new Rollback(fileName, root_access_needed, parentRollback, flags);
   rb->configFiles = this;
 
   ink_hash_table_insert(bindings, fileName, rb);
@@ -223,7 +217,7 @@ FileManager::filesManaged()
   //   do not change from under us
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb          = (Rollback *)ink_hash_table_entry_value(bindings, entry);
     currentName = rb->getBaseName();
     ink_assert(currentName);
 
@@ -345,7 +339,7 @@ FileManager::restoreSnap(const char *snapName, const char *snapDir)
   //
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb       = (Rollback *)ink_hash_table_entry_value(bindings, entry);
     filePath = newPathString(snapPath, rb->getBaseName());
     if (readFile(filePath, &storage) != SNAP_OK) {
       abortRestore(rb->getBaseName());
@@ -387,7 +381,7 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
   char *snapFilePath;
   bool unlinkFailed = false;
   SnapResult result = SNAP_OK;
-  snapPath = newPathString(snapDir, snapName);
+  snapPath          = newPathString(snapDir, snapName);
 
   dir = opendir(snapPath);
 
@@ -400,8 +394,9 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
   dirEntrySpace = (struct dirent *)ats_malloc(sizeof(struct dirent) + ink_file_namemax(".") + 1);
 
   while (readdir_r(dir, dirEntrySpace, &entryPtr) == 0) {
-    if (!entryPtr)
+    if (!entryPtr) {
       break;
+    }
 
     if (strcmp(".", entryPtr->d_name) == 0 || strcmp("..", entryPtr->d_name) == 0) {
       continue;
@@ -412,7 +407,7 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
     if (unlink(snapFilePath) < 0) {
       mgmt_log(stderr, "[FileManager::removeSnap] Unlink failed for %s: %s\n", snapFilePath, strerror(errno));
       unlinkFailed = true;
-      result = SNAP_REMOVE_FAILED;
+      result       = SNAP_REMOVE_FAILED;
     }
     delete[] snapFilePath;
   }
@@ -488,7 +483,7 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
   // For each file, make a copy in the snap shot directory
   for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
        entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
-    rb = (Rollback *)ink_hash_table_entry_value(bindings, entry);
+    rb         = (Rollback *)ink_hash_table_entry_value(bindings, entry);
     callResult = this->copyFile(rb, snapPath);
     if (callResult != SNAP_OK) {
       // Remove the failed snapshot so that we do not have a partial
@@ -532,8 +527,9 @@ FileManager::readFile(const char *filePath, textBuffer *contents)
 
   fcntl(diskFD, F_SETFD, 1);
 
-  while ((readResult = contents->readFromFD(diskFD)) > 0)
+  while ((readResult = contents->readFromFD(diskFD)) > 0) {
     ;
+  }
   close(diskFD);
 
   if (readResult < 0) {
@@ -569,7 +565,7 @@ FileManager::copyFile(Rollback *rb, const char *snapPath)
   }
   // Create the new file
   filePath = newPathString(snapPath, fileName);
-  diskFD = mgmt_open_mode(filePath, O_RDWR | O_CREAT, FILE_MODE);
+  diskFD   = mgmt_open_mode(filePath, O_RDWR | O_CREAT, FILE_MODE);
 
   if (diskFD < 0) {
     mgmt_log(stderr, "[FileManager::copyFile] Unable to create snapshot file %s: %s\n", fileName, strerror(errno));
@@ -650,8 +646,9 @@ FileManager::rereadConfig()
 
   Vec<Rollback *> childFileNeedDelete;
   for (size_t i = 0; i < changedFiles.n; i++) {
-    if (changedFiles[i]->isChildRollback())
+    if (changedFiles[i]->isChildRollback()) {
       continue;
+    }
     // for each parent file, if it is changed, then delete all its children
     for (entry = ink_hash_table_iterator_first(bindings, &iterator_state); entry != NULL;
          entry = ink_hash_table_iterator_next(bindings, &iterator_state)) {
@@ -733,10 +730,10 @@ FileManager::displaySnapOption(textBuffer *output)
 void
 FileManager::createSelect(char *action, textBuffer *output, ExpandingArray *options)
 {
-  const char formOpen[] = "<form method=POST action=\"/configure/snap_action.html\">\n<select name=snap>\n";
-  const char formEnd[] = "</form>";
+  const char formOpen[]     = "<form method=POST action=\"/configure/snap_action.html\">\n<select name=snap>\n";
+  const char formEnd[]      = "</form>";
   const char submitButton[] = "<input type=submit value=\"";
-  const char hiddenInput[] = "<input type=hidden name=action value=";
+  const char hiddenInput[]  = "<input type=hidden name=action value=";
 
   int numOptions;
 
@@ -785,10 +782,12 @@ FileManager::checkValidName(const char *name)
   int length = strlen(name);
 
   for (int i = 0; i < length; i++) {
-    if (!isprint(name[i]))
+    if (!isprint(name[i])) {
       return false; // invalid - unprintable char
-    if (!isspace(name[i]))
+    }
+    if (!isspace(name[i])) {
       return true; // has non-white space that is printable
+    }
   }
 
   return false; // all white spaces

@@ -82,5 +82,4 @@ extern "C" {
     (cp) += 8;             \
   }
 
-
 #endif /* #ifndef _INOUT_H */

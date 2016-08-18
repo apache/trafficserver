@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_ACCESS_HTTP_H
 #define LOG_ACCESS_HTTP_H
 
@@ -46,8 +45,9 @@ public:
   virtual ~LogAccessHttp();
 
   void init();
+
   LogEntryType
-  entry_type()
+  entry_type() const
   {
     return LOG_ENTRY_HTTP;
   }
@@ -75,9 +75,11 @@ public:
   virtual int marshal_client_req_tcp_reused(char *);         // INT
   virtual int marshal_client_req_is_ssl(char *);             // INT
   virtual int marshal_client_req_ssl_reused(char *);         // INT
-  virtual int marshal_client_finish_status_code(char *);     // INT
   virtual int marshal_client_security_protocol(char *);      // STR
   virtual int marshal_client_security_cipher_suite(char *);  // STR
+  virtual int marshal_client_finish_status_code(char *);     // INT
+  virtual int marshal_client_req_id(char *);                 // INT
+  virtual int marshal_client_req_uuid(char *);               // STR
 
   //
   // proxy -> client fields
@@ -115,6 +117,7 @@ public:
   virtual int marshal_server_resp_time_ms(char *);      // INT
   virtual int marshal_server_resp_time_s(char *);       // INT
   virtual int marshal_server_transact_count(char *);    // INT
+  virtual int marshal_server_connect_attempts(char *);  // INT
 
   //
   // cache -> client fields

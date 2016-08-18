@@ -75,7 +75,6 @@ struct FatalClass : public ErrorClass {
   FatalClass(const char *afile, int aline, const char *afunction) : ErrorClass(afile, aline, afunction) {}
 };
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // RequestFatal Messages
@@ -127,7 +126,6 @@ struct ProcessFatalClass : public FatalClass {
 };
 
 #define ProcessFatal (*(new ProcessFatalClass(__FILE__, __LINE__, __FUNCTION__)))
-
 
 //////////////////////////////////////////////////////////////////////////////
 //

@@ -1,4 +1,4 @@
-.. _background-fetch-plugin:
+.. _admin-plugins-background-fetch:
 
 Background Fetch Plugin
 ***********************

@@ -110,7 +110,6 @@ enum AllocType {
 #define MIN_IOBUFFER_SIZE BUFFER_SIZE_INDEX_128
 #define MAX_IOBUFFER_SIZE (DEFAULT_BUFFER_SIZES - 1)
 
-
 #define BUFFER_SIZE_ALLOCATED(_i) (BUFFER_SIZE_INDEX_IS_FAST_ALLOCATED(_i) || BUFFER_SIZE_INDEX_IS_XMALLOCED(_i))
 
 #define BUFFER_SIZE_NOT_ALLOCATED DEFAULT_BUFFER_SIZES
@@ -223,7 +222,6 @@ public:
 
   */
   operator char *() { return _data; }
-
   /**
     Frees the IOBufferData object and its underlying memory. Deallocates
     the memory managed by this IOBufferData and then frees itself. You
@@ -261,7 +259,9 @@ public:
 
   */
   IOBufferData()
-    : _size_index(BUFFER_SIZE_NOT_ALLOCATED), _mem_type(NO_ALLOC), _data(NULL)
+    : _size_index(BUFFER_SIZE_NOT_ALLOCATED),
+      _mem_type(NO_ALLOC),
+      _data(NULL)
 #ifdef TRACK_BUFFER_USER
       ,
       _location(NULL)
@@ -577,7 +577,6 @@ public:
       @return @c true if more than @a size byte are available.
   */
   bool is_read_avail_more_than(int64_t size);
-
 
   /**
     Number of IOBufferBlocks with data in the block list. Returns the
@@ -918,20 +917,20 @@ public:
     Returns a pointer to the first writable block on the block chain.
     Returns NULL if there are not currently any writable blocks on the
     block list.
-
   */
   IOBufferBlock *
   first_write_block()
   {
     if (_writer) {
-      if (_writer->next && !_writer->write_avail())
-        return _writer->next;
+      if (_writer->next && !_writer->write_avail()) {
+        return _writer->next.get();
+      }
       ink_assert(!_writer->next || !_writer->next->read_avail());
-      return _writer;
-    } else
-      return NULL;
-  }
+      return _writer.get();
+    }
 
+    return NULL;
+  }
 
   char *
   buf()
@@ -939,16 +938,19 @@ public:
     IOBufferBlock *b = first_write_block();
     return b ? b->buf() : 0;
   }
+
   char *
   buf_end()
   {
     return first_write_block()->buf_end();
   }
+
   char *
   start()
   {
     return first_write_block()->start();
   }
+
   char *
   end()
   {
@@ -1210,7 +1212,7 @@ struct MIOBufferAccessor {
   void
   clear()
   {
-    mbuf = NULL;
+    mbuf  = NULL;
     entry = NULL;
   }
 
@@ -1219,7 +1221,8 @@ struct MIOBufferAccessor {
 #ifdef DEBUG
       name(NULL),
 #endif
-      mbuf(NULL), entry(NULL)
+      mbuf(NULL),
+      entry(NULL)
   {
   }
 
@@ -1250,7 +1253,11 @@ class MIOBuffer_tracker
 
 public:
   MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
-  MIOBuffer *operator()(int64_t size_index = default_large_iobuffer_size) { return new_MIOBuffer_internal(loc, size_index); }
+  MIOBuffer *
+  operator()(int64_t size_index = default_large_iobuffer_size)
+  {
+    return new_MIOBuffer_internal(loc, size_index);
+  }
 };
 #endif
 
@@ -1267,7 +1274,11 @@ class Empty_MIOBuffer_tracker
 
 public:
   Empty_MIOBuffer_tracker(const char *_loc) : loc(_loc) {}
-  MIOBuffer *operator()(int64_t size_index = default_large_iobuffer_size) { return new_empty_MIOBuffer_internal(loc, size_index); }
+  MIOBuffer *
+  operator()(int64_t size_index = default_large_iobuffer_size)
+  {
+    return new_empty_MIOBuffer_internal(loc, size_index);
+  }
 };
 #endif
 
@@ -1301,10 +1312,15 @@ class IOBufferBlock_tracker
 
 public:
   IOBufferBlock_tracker(const char *_loc) : loc(_loc) {}
-  IOBufferBlock *operator()() { return new_IOBufferBlock_internal(loc); }
-  IOBufferBlock *operator()(IOBufferData *d, int64_t len = 0, int64_t offset = 0)
+  IOBufferBlock *
+  operator()()
   {
-    return new_IOBufferBlock_internal(loc, d, len, offset);
+    return new_IOBufferBlock_internal(loc);
+  }
+  IOBufferBlock *
+  operator()(Ptr<IOBufferData> &d, int64_t len = 0, int64_t offset = 0)
+  {
+    return new_IOBufferBlock_internal(loc, d.get(), len, offset);
   }
 };
 #endif
@@ -1342,7 +1358,8 @@ class IOBufferData_tracker
 
 public:
   IOBufferData_tracker(const char *_loc) : loc(_loc) {}
-  IOBufferData *operator()(int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC)
+  IOBufferData *
+  operator()(int64_t size_index = default_large_iobuffer_size, AllocType type = DEFAULT_ALLOC)
   {
     return new_IOBufferData_internal(loc, size_index, type);
   }

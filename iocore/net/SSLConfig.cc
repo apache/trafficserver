@@ -40,26 +40,26 @@
 #include "SSLSessionCache.h"
 #include <records/I_RecHttp.h>
 
-int SSLConfig::configid = 0;
-int SSLCertificateConfig::configid = 0;
-int SSLConfigParams::ssl_maxrecord = 0;
-bool SSLConfigParams::ssl_allow_client_renegotiation = false;
-bool SSLConfigParams::ssl_ocsp_enabled = false;
-int SSLConfigParams::ssl_ocsp_cache_timeout = 3600;
-int SSLConfigParams::ssl_ocsp_request_timeout = 10;
-int SSLConfigParams::ssl_ocsp_update_period = 60;
-int SSLConfigParams::ssl_handshake_timeout_in = 0;
-size_t SSLConfigParams::session_cache_number_buckets = 1024;
+int SSLConfig::configid                                     = 0;
+int SSLCertificateConfig::configid                          = 0;
+int SSLConfigParams::ssl_maxrecord                          = 0;
+bool SSLConfigParams::ssl_allow_client_renegotiation        = false;
+bool SSLConfigParams::ssl_ocsp_enabled                      = false;
+int SSLConfigParams::ssl_ocsp_cache_timeout                 = 3600;
+int SSLConfigParams::ssl_ocsp_request_timeout               = 10;
+int SSLConfigParams::ssl_ocsp_update_period                 = 60;
+int SSLConfigParams::ssl_handshake_timeout_in               = 0;
+size_t SSLConfigParams::session_cache_number_buckets        = 1024;
 bool SSLConfigParams::session_cache_skip_on_lock_contention = false;
-size_t SSLConfigParams::session_cache_max_bucket_size = 100;
-init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb = NULL;
-load_ssl_file_func SSLConfigParams::load_ssl_file_cb = NULL;
+size_t SSLConfigParams::session_cache_max_bucket_size       = 100;
+init_ssl_ctx_func SSLConfigParams::init_ssl_ctx_cb          = NULL;
+load_ssl_file_func SSLConfigParams::load_ssl_file_cb        = NULL;
 
 // TS-3534 Wiretracing for SSL Connections
-int SSLConfigParams::ssl_wire_trace_enabled = 0;
-char *SSLConfigParams::ssl_wire_trace_addr = NULL;
-IpAddr *SSLConfigParams::ssl_wire_trace_ip = NULL;
-int SSLConfigParams::ssl_wire_trace_percentage = 0;
+int SSLConfigParams::ssl_wire_trace_enabled       = 0;
+char *SSLConfigParams::ssl_wire_trace_addr        = NULL;
+IpAddr *SSLConfigParams::ssl_wire_trace_ip        = NULL;
+int SSLConfigParams::ssl_wire_trace_percentage    = 0;
 char *SSLConfigParams::ssl_wire_trace_server_name = NULL;
 
 static ConfigUpdateHandler<SSLCertificateConfig> *sslCertUpdate;
@@ -72,15 +72,15 @@ SSLConfigParams::SSLConfigParams()
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 
-  ssl_ctx_options = 0;
-  ssl_client_ctx_protocols = 0;
-  ssl_session_cache = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
-  ssl_session_cache_size = 1024 * 100;
+  ssl_ctx_options               = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_client_ctx_protocols      = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+  ssl_session_cache             = SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL;
+  ssl_session_cache_size        = 1024 * 100;
   ssl_session_cache_num_buckets = 1024; // Sessions per bucket is ceil(ssl_session_cache_size / ssl_session_cache_num_buckets)
   ssl_session_cache_skip_on_contention = 0;
-  ssl_session_cache_timeout = 0;
-  ssl_session_cache_auto_clear = 1;
-  configExitOnLoadError = 0;
+  ssl_session_cache_timeout            = 0;
+  ssl_session_cache_auto_clear         = 1;
+  configExitOnLoadError                = 0;
 }
 
 SSLConfigParams::~SSLConfigParams()
@@ -138,16 +138,16 @@ set_paths_helper(const char *path, const char *filename, char **final_path, char
 void
 SSLConfigParams::initialize()
 {
-  char *serverCertRelativePath = NULL;
-  char *ssl_server_private_key_path = NULL;
-  char *CACertRelativePath = NULL;
-  char *ssl_client_cert_filename = NULL;
-  char *ssl_client_cert_path = NULL;
+  char *serverCertRelativePath          = NULL;
+  char *ssl_server_private_key_path     = NULL;
+  char *CACertRelativePath              = NULL;
+  char *ssl_client_cert_filename        = NULL;
+  char *ssl_client_cert_path            = NULL;
   char *ssl_client_private_key_filename = NULL;
-  char *ssl_client_private_key_path = NULL;
-  char *clientCACertRelativePath = NULL;
-  char *ssl_server_ca_cert_filename = NULL;
-  char *ssl_client_ca_cert_filename = NULL;
+  char *ssl_client_private_key_path     = NULL;
+  char *clientCACertRelativePath        = NULL;
+  char *ssl_server_ca_cert_filename     = NULL;
+  char *ssl_client_ca_cert_filename     = NULL;
 
   cleanup();
 
@@ -161,22 +161,15 @@ SSLConfigParams::initialize()
 
   int options;
   int client_ssl_options;
-  REC_ReadConfigInteger(options, "proxy.config.ssl.SSLv2");
-  if (!options)
-    ssl_ctx_options |= SSL_OP_NO_SSLv2;
-  REC_ReadConfigInteger(options, "proxy.config.ssl.SSLv3");
-  if (!options)
-    ssl_ctx_options |= SSL_OP_NO_SSLv3;
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1");
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
 
-  REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.SSLv2");
-  if (!client_ssl_options)
-    ssl_client_ctx_protocols |= SSL_OP_NO_SSLv2;
+#if TS_USE_SSLV3_CLIENT
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.SSLv3");
-  if (!client_ssl_options)
-    ssl_client_ctx_protocols |= SSL_OP_NO_SSLv3;
+  if (client_ssl_options)
+    ssl_client_ctx_protocols &= ~SSL_OP_NO_SSLv3;
+#endif
   REC_ReadConfigInteger(client_ssl_options, "proxy.config.ssl.client.TLSv1");
   if (!client_ssl_options)
     ssl_client_ctx_protocols |= SSL_OP_NO_TLSv1;
@@ -263,7 +256,7 @@ SSLConfigParams::initialize()
 
   SSLConfigParams::session_cache_max_bucket_size = (size_t)ceil((double)ssl_session_cache_size / ssl_session_cache_num_buckets);
   SSLConfigParams::session_cache_skip_on_lock_contention = ssl_session_cache_skip_on_contention;
-  SSLConfigParams::session_cache_number_buckets = ssl_session_cache_num_buckets;
+  SSLConfigParams::session_cache_number_buckets          = ssl_session_cache_num_buckets;
 
   if (ssl_session_cache == SSL_SESSION_CACHE_MODE_SERVER_ATS_IMPL) {
     session_cache = new SSLSessionCache();
@@ -285,7 +278,7 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(clientVerify, "proxy.config.ssl.client.verify.server");
 
   ssl_client_cert_filename = NULL;
-  ssl_client_cert_path = NULL;
+  ssl_client_cert_path     = NULL;
   REC_ReadConfigStringAlloc(ssl_client_cert_filename, "proxy.config.ssl.client.cert.filename");
   REC_ReadConfigStringAlloc(ssl_client_cert_path, "proxy.config.ssl.client.cert.path");
   set_paths_helper(ssl_client_cert_path, ssl_client_cert_filename, NULL, &clientCertPath);
@@ -307,10 +300,10 @@ SSLConfigParams::initialize()
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
 
   // SSL Wire Trace configurations
-  REC_ReadConfigInteger(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");
+  REC_EstablishStaticConfigInt32(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");
   if (ssl_wire_trace_enabled) {
     // wire trace specific source ip
-    REC_ReadConfigStringAlloc(ssl_wire_trace_addr, "proxy.config.ssl.wire_trace_addr");
+    REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_addr, "proxy.config.ssl.wire_trace_addr");
     if (ssl_wire_trace_addr) {
       ssl_wire_trace_ip = new IpAddr();
       ssl_wire_trace_ip->load(ssl_wire_trace_addr);
@@ -318,12 +311,12 @@ SSLConfigParams::initialize()
       ssl_wire_trace_ip = NULL;
     }
     // wire trace percentage of requests
-    REC_ReadConfigInteger(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
-    REC_ReadConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
+    REC_EstablishStaticConfigInt32(ssl_wire_trace_percentage, "proxy.config.ssl.wire_trace_percentage");
+    REC_EstablishStaticConfigStringAlloc(ssl_wire_trace_server_name, "proxy.config.ssl.wire_trace_server_name");
   } else {
-    ssl_wire_trace_addr = NULL;
-    ssl_wire_trace_ip = NULL;
-    ssl_wire_trace_percentage = 0;
+    ssl_wire_trace_addr        = NULL;
+    ssl_wire_trace_ip          = NULL;
+    ssl_wire_trace_percentage  = 0;
     ssl_wire_trace_server_name = NULL;
   }
 }
@@ -364,14 +357,15 @@ SSLCertificateConfig::startup()
   sslCertUpdate->attach("proxy.config.ssl.server.cert.path");
   sslCertUpdate->attach("proxy.config.ssl.server.private_key.path");
   sslCertUpdate->attach("proxy.config.ssl.server.cert_chain.filename");
+  sslCertUpdate->attach("proxy.config.ssl.server.session_ticket.enable");
 
   // Exit if there are problems on the certificate loading and the
   // proxy.config.ssl.server.multicert.exit_on_load_fail is true
   SSLConfig::scoped_config params;
   if (!reconfigure() && params->configExitOnLoadError) {
-    Error("Problems loading ssl certificate file, %s.  Exiting.", params->configFilePath);
-    _exit(1);
+    Fatal("failed to load SSL certificate file, %s", params->configFilePath);
   }
+
   return true;
 }
 

@@ -21,183 +21,10 @@
   limitations under the License.
  */
 
-/*************************** -*- Mod: C++ -*- ******************************
-
-   Atmic and non-atomic smart pointers.
-
-   Note: it would have been nice to have one 'Ptr' class, but the
-   templating system on some compilers is so broken that it cannot
-   correctly compile Ptr without downcasting the m_ptr object to
-   a RefCountObj.
-
-
- ****************************************************************************/
-#if !defined(_Ptr_h_)
-#define _Ptr_h_
+#ifndef PTR_H_FBBD7DC3_CA5D_4715_9162_5E4DDA93353F
+#define PTR_H_FBBD7DC3_CA5D_4715_9162_5E4DDA93353F
 
 #include "ts/ink_atomic.h"
-
-////////////////////////////////////////////////////////////////////////
-//
-// class NonAtomicRefCountObj
-// prototypical class for reference counting
-//
-////////////////////////////////////////////////////////////////////////
-class NonAtomicRefCountObj
-{
-public:
-  NonAtomicRefCountObj() : m_refcount(0) { return; }
-  NonAtomicRefCountObj(const NonAtomicRefCountObj &s) : m_refcount(0)
-  {
-    (void)s;
-    return;
-  }
-  virtual ~NonAtomicRefCountObj() { return; }
-  NonAtomicRefCountObj &operator=(const NonAtomicRefCountObj &s)
-  {
-    (void)s;
-    return (*this);
-  }
-
-  int refcount_inc();
-  int refcount_dec();
-  int refcount() const;
-
-  virtual void
-  free()
-  {
-    delete this;
-  }
-
-  volatile int m_refcount;
-};
-
-inline int
-NonAtomicRefCountObj::refcount_inc()
-{
-  return ++m_refcount;
-}
-
-#define NONATOMIC_REF_COUNT_OBJ_REFCOUNT_INC(_x) (_x)->refcount_inc()
-
-inline int
-NonAtomicRefCountObj::refcount_dec()
-{
-  return --m_refcount;
-}
-
-#define NONATOMIC_REF_COUNT_OBJ_REFCOUNT_DEC(_x) (_x)->refcount_dec()
-
-inline int
-NonAtomicRefCountObj::refcount() const
-{
-  return m_refcount;
-}
-
-
-////////////////////////////////////////////////////////////////////////
-//
-// class NonAtomicPtr
-//
-////////////////////////////////////////////////////////////////////////
-template <class T> class NonAtomicPtr
-{
-public:
-  explicit NonAtomicPtr(T *ptr = 0);
-  NonAtomicPtr(const NonAtomicPtr<T> &);
-  ~NonAtomicPtr();
-
-  NonAtomicPtr<T> &operator=(const NonAtomicPtr<T> &);
-  NonAtomicPtr<T> &operator=(T *);
-
-  void clear();
-
-  operator T *() const { return (m_ptr); }
-  T *operator->() const { return (m_ptr); }
-  T &operator*() const { return (*m_ptr); }
-
-  int operator==(const T *p) { return (m_ptr == p); }
-  int operator==(const NonAtomicPtr<T> &p) { return (m_ptr == p.m_ptr); }
-  int operator!=(const T *p) { return (m_ptr != p); }
-  int operator!=(const NonAtomicPtr<T> &p) { return (m_ptr != p.m_ptr); }
-
-  NonAtomicRefCountObj *
-  _ptr()
-  {
-    return (NonAtomicRefCountObj *)m_ptr;
-  }
-
-  T *m_ptr;
-};
-
-template <typename T>
-NonAtomicPtr<T>
-make_nonatomic_ptr(T *p)
-{
-  return NonAtomicPtr<T>(p);
-}
-
-////////////////////////////////////////////////////////////////////////
-//
-// inline functions definitions
-//
-////////////////////////////////////////////////////////////////////////
-template <class T> inline NonAtomicPtr<T>::NonAtomicPtr(T *ptr /* = 0 */) : m_ptr(ptr)
-{
-  if (m_ptr)
-    _ptr()->refcount_inc();
-  return;
-}
-
-template <class T> inline NonAtomicPtr<T>::NonAtomicPtr(const NonAtomicPtr<T> &src) : m_ptr(src.m_ptr)
-{
-  if (m_ptr)
-    _ptr()->refcount_inc();
-  return;
-}
-
-template <class T> inline NonAtomicPtr<T>::~NonAtomicPtr()
-{
-  if ((m_ptr) && _ptr()->refcount_dec() == 0) {
-    _ptr()->free();
-  }
-  return;
-}
-
-template <class T> inline NonAtomicPtr<T> &NonAtomicPtr<T>::operator=(T *p)
-{
-  T *temp_ptr = m_ptr;
-
-  if (m_ptr == p)
-    return (*this);
-
-  m_ptr = p;
-
-  if (m_ptr != 0) {
-    _ptr()->refcount_inc();
-  }
-
-  if ((temp_ptr) && ((NonAtomicRefCountObj *)temp_ptr)->refcount_dec() == 0) {
-    ((NonAtomicRefCountObj *)temp_ptr)->free();
-  }
-
-  return (*this);
-}
-template <class T>
-inline void
-NonAtomicPtr<T>::clear()
-{
-  if (m_ptr) {
-    if (!((NonAtomicRefCountObj *)m_ptr)->refcount_dec())
-      ((NonAtomicRefCountObj *)m_ptr)->free();
-    m_ptr = NULL;
-  }
-}
-template <class T> inline NonAtomicPtr<T> &NonAtomicPtr<T>::operator=(const NonAtomicPtr<T> &src)
-{
-  return (operator=(src.m_ptr));
-}
-
 
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
@@ -208,7 +35,6 @@ template <class T> inline NonAtomicPtr<T> &NonAtomicPtr<T>::operator=(const NonA
 struct ForceVFPTToTop {
   virtual ~ForceVFPTToTop() {}
 };
-
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -225,16 +51,34 @@ public:
     (void)s;
     return;
   }
+
   virtual ~RefCountObj() {}
-  RefCountObj &operator=(const RefCountObj &s)
+  RefCountObj &
+  operator=(const RefCountObj &s)
   {
     (void)s;
     return (*this);
   }
 
-  int refcount_inc();
-  int refcount_dec();
-  int refcount() const;
+  // Increment the reference count, returning the new count.
+  int
+  refcount_inc()
+  {
+    return ink_atomic_increment((int *)&m_refcount, 1) + 1;
+  }
+
+  // Decrement the reference count, returning the new count.
+  int
+  refcount_dec()
+  {
+    return ink_atomic_increment((int *)&m_refcount, -1) - 1;
+  }
+
+  int
+  refcount() const
+  {
+    return m_refcount;
+  }
 
   virtual void
   free()
@@ -242,33 +86,12 @@ public:
     delete this;
   }
 
+private:
   volatile int m_refcount;
 };
 
-// Increment the reference count, returning the new count.
-inline int
-RefCountObj::refcount_inc()
-{
-  return ink_atomic_increment((int *)&m_refcount, 1) + 1;
-}
-
 #define REF_COUNT_OBJ_REFCOUNT_INC(_x) (_x)->refcount_inc()
-
-// Decrement the reference count, returning the new count.
-inline int
-RefCountObj::refcount_dec()
-{
-  return ink_atomic_increment((int *)&m_refcount, -1) - 1;
-}
-
 #define REF_COUNT_OBJ_REFCOUNT_DEC(_x) (_x)->refcount_dec()
-
-inline int
-RefCountObj::refcount() const
-{
-  return m_refcount;
-}
-
 
 ////////////////////////////////////////////////////////////////////////
 //
@@ -277,6 +100,13 @@ RefCountObj::refcount() const
 ////////////////////////////////////////////////////////////////////////
 template <class T> class Ptr
 {
+  // https://en.wikibooks.org/wiki/More_C%2B%2B_Idioms/Safe_bool.
+  typedef void (Ptr::*bool_type)() const;
+  void
+  this_type_does_not_support_comparisons() const
+  {
+  }
+
 public:
   explicit Ptr(T *p = 0);
   Ptr(const Ptr<T> &);
@@ -286,33 +116,71 @@ public:
   Ptr<T> &operator=(const Ptr<T> &);
   Ptr<T> &operator=(T *);
 
-  T *
-  to_ptr()
-  {
-    if (m_ptr && m_ptr->m_refcount == 1) {
-      T *ptr = m_ptr;
-      m_ptr = 0;
-      ptr->m_refcount = 0;
-      return ptr;
-    }
-    return 0;
-  }
-  operator T *() const { return (m_ptr); }
   T *operator->() const { return (m_ptr); }
   T &operator*() const { return (*m_ptr); }
-
-  int operator==(const T *p) { return (m_ptr == p); }
-  int operator==(const Ptr<T> &p) { return (m_ptr == p.m_ptr); }
-  int operator!=(const T *p) { return (m_ptr != p); }
-  int operator!=(const Ptr<T> &p) { return (m_ptr != p.m_ptr); }
-
-  RefCountObj *
-  _ptr()
+  operator bool_type() const { return m_ptr ? &Ptr::this_type_does_not_support_comparisons : 0; }
+  int
+  operator==(const T *p)
   {
-    return (RefCountObj *)m_ptr;
+    return (m_ptr == p);
   }
 
+  int
+  operator==(const Ptr<T> &p)
+  {
+    return (m_ptr == p.m_ptr);
+  }
+
+  int
+  operator!=(const T *p)
+  {
+    return (m_ptr != p);
+  }
+
+  int
+  operator!=(const Ptr<T> &p)
+  {
+    return (m_ptr != p.m_ptr);
+  }
+
+  // Return the raw pointer.
+  T *
+  get() const
+  {
+    return m_ptr;
+  }
+
+  // Return the raw pointer as a RefCount object. Typically
+  // this is for keeping a collection of heterogenous objects.
+  RefCountObj *
+  object() const
+  {
+    return static_cast<RefCountObj *>(m_ptr);
+  }
+
+  // Return the stored pointer, storing NULL instead. Do not increment
+  // the refcount; the caller is now responsible for owning the RefCountObj.
+  T *
+  detach()
+  {
+    T *tmp = m_ptr;
+    m_ptr  = NULL;
+    return tmp;
+  }
+
+  // XXX Clearly this is not safe. This is used in HdrHeap::unmarshal() to swizzle
+  // the refcount of the managed heap pointers. That code needs to be cleaned up
+  // so that this can be removed. Do not use this in new code.
+  void
+  swizzle(RefCountObj *ptr)
+  {
+    m_ptr = ptr;
+  }
+
+private:
   T *m_ptr;
+
+  friend class CoreUtils;
 };
 
 template <typename T>
@@ -329,58 +197,64 @@ make_ptr(T *p)
 ////////////////////////////////////////////////////////////////////////
 template <class T> inline Ptr<T>::Ptr(T *ptr /* = 0 */) : m_ptr(ptr)
 {
-  if (m_ptr)
-    _ptr()->refcount_inc();
-  return;
+  if (m_ptr) {
+    m_ptr->refcount_inc();
+  }
 }
 
 template <class T> inline Ptr<T>::Ptr(const Ptr<T> &src) : m_ptr(src.m_ptr)
 {
-  if (m_ptr)
-    _ptr()->refcount_inc();
-  return;
+  if (m_ptr) {
+    m_ptr->refcount_inc();
+  }
 }
 
 template <class T> inline Ptr<T>::~Ptr()
 {
-  if ((m_ptr) && _ptr()->refcount_dec() == 0) {
-    _ptr()->free();
+  if (m_ptr && m_ptr->refcount_dec() == 0) {
+    m_ptr->free();
   }
-  return;
 }
 
-template <class T> inline Ptr<T> &Ptr<T>::operator=(T *p)
+template <class T>
+inline Ptr<T> &
+Ptr<T>::operator=(T *p)
 {
   T *temp_ptr = m_ptr;
 
-  if (m_ptr == p)
+  if (m_ptr == p) {
     return (*this);
+  }
 
   m_ptr = p;
 
-  if (m_ptr != 0) {
-    _ptr()->refcount_inc();
+  if (m_ptr) {
+    m_ptr->refcount_inc();
   }
 
-  if ((temp_ptr) && ((RefCountObj *)temp_ptr)->refcount_dec() == 0) {
-    ((RefCountObj *)temp_ptr)->free();
+  if (temp_ptr && temp_ptr->refcount_dec() == 0) {
+    temp_ptr->free();
   }
 
   return (*this);
 }
+
 template <class T>
 inline void
 Ptr<T>::clear()
 {
   if (m_ptr) {
-    if (!((RefCountObj *)m_ptr)->refcount_dec())
-      ((RefCountObj *)m_ptr)->free();
+    if (!m_ptr->refcount_dec())
+      m_ptr->free();
     m_ptr = NULL;
   }
 }
-template <class T> inline Ptr<T> &Ptr<T>::operator=(const Ptr<T> &src)
+
+template <class T>
+inline Ptr<T> &
+Ptr<T>::operator=(const Ptr<T> &src)
 {
   return (operator=(src.m_ptr));
 }
 
-#endif
+#endif /* PTR_H_FBBD7DC3_CA5D_4715_9162_5E4DDA93353F */

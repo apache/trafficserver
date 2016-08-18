@@ -32,7 +32,6 @@
 #include "Main.h"
 #include "Error.h"
 #include "P_EventSystem.h"
-#include "StatSystem.h"
 #include "P_Cache.h"
 #include "ProxyConfig.h"
 #include "ReverseProxy.h"
@@ -72,13 +71,10 @@ init_reverse_proxy()
 {
   ink_assert(rewrite_table == NULL);
   reconfig_mutex = new_ProxyMutex();
-  rewrite_table = new UrlRewrite();
+  rewrite_table  = new UrlRewrite();
 
   if (!rewrite_table->is_valid()) {
-    Warning("Can not load the remap table, exiting out!");
-    // TODO: For now, I _exit() out of here, because otherwise we'll keep generating
-    // core files (if enabled) when starting up with a bad remap.config file.
-    _exit(-1);
+    Fatal("unable to load remap.config");
   }
 
   REC_RegisterConfigUpdateFunc("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
@@ -117,7 +113,6 @@ response_url_remap(HTTPHdr *response_header)
   return rewrite_table ? rewrite_table->ReverseMap(response_header) : false;
 }
 
-
 //
 //
 //  End API Functions
@@ -134,7 +129,7 @@ struct UR_UpdateContinuation : public Continuation {
     delete this;
     return EVENT_DONE;
   }
-  UR_UpdateContinuation(ProxyMutex *m) : Continuation(m)
+  UR_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m)
   {
     SET_HANDLER((UR_UpdContHandler)&UR_UpdateContinuation::file_update_handler);
   }

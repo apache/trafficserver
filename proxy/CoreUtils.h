@@ -92,6 +92,7 @@ class HdrHeap;
 
 class EThread;
 class UnixNetVConnection;
+struct NetState;
 
 class CoreUtils
 {
@@ -185,6 +186,7 @@ public:
   * outputs: none
   **********************************************************************/
   static void print_http_hdr(HTTPHdr *h, const char *name);
+  static void print_netstate(NetState *n);
 
   /**********************************************************************
   * purpose: loads a null terminated string from the core file
@@ -195,7 +197,6 @@ public:
 
   static void test_HdrHeap(void *arg);
 };
-
 
 // parses the core file
 void process_core(char *fname);

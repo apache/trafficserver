@@ -96,7 +96,6 @@ add_header(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
     field_loc = next_field_loc;
   }
 
-
 error:
   TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
 
@@ -127,8 +126,8 @@ TSPluginInit(int argc, const char *argv[])
   int i, retval;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "add-header";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "add-header";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

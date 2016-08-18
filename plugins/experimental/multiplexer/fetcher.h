@@ -109,7 +109,14 @@ template <class T> struct HttpTransaction {
   }
 
   HttpTransaction(TSVConn v, TSCont c, io::IO *const i, const uint64_t l, const T &t)
-    : parsingHeaders_(false), abort_(false), timeout_(false), in_(NULL), out_(i), vconnection_(v), continuation_(c), t_(t),
+    : parsingHeaders_(false),
+      abort_(false),
+      timeout_(false),
+      in_(NULL),
+      out_(i),
+      vconnection_(v),
+      continuation_(c),
+      t_(t),
       chunkDecoder_(NULL)
   {
     assert(vconnection_ != NULL);
@@ -152,7 +159,7 @@ template <class T> struct HttpTransaction {
   {
     assert(b != NULL);
     assert(l != NULL);
-    bool result = false;
+    bool result        = false;
     const TSMLoc field = TSMimeHdrFieldFind(b, l, TS_MIME_FIELD_TRANSFER_ENCODING, TS_MIME_LEN_TRANSFER_ENCODING);
     if (field != NULL) {
       int length;
@@ -275,7 +282,7 @@ get(const std::string &a, io::IO *const i, const int64_t l, const T &t, const in
   typedef HttpTransaction<T> Transaction;
   struct sockaddr_in socket;
   socket.sin_family = AF_INET;
-  socket.sin_port = 80;
+  socket.sin_port   = 80;
   if (!inet_pton(AF_INET, a.c_str(), &socket.sin_addr)) {
     TSDebug(PLUGIN_TAG, "ats::get Invalid address provided \"%s\".", a.c_str());
     return false;

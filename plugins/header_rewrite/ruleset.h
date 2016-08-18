@@ -29,7 +29,6 @@
 #include "resources.h"
 #include "parser.h"
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Class holding one ruleset. A ruleset is one (or more) pre-conditions, and
 // one (or more) operators.
@@ -38,19 +37,25 @@ class RuleSet
 {
 public:
   RuleSet()
-    : next(NULL), _cond(NULL), _oper(NULL), _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK), _ids(RSRC_NONE), _opermods(OPER_NONE),
+    : next(NULL),
+      _cond(NULL),
+      _oper(NULL),
+      _hook(TS_HTTP_READ_RESPONSE_HDR_HOOK),
+      _ids(RSRC_NONE),
+      _opermods(OPER_NONE),
       _last(false){};
 
   // No reason to inline these
   void append(RuleSet *rule);
+  bool add_condition(Parser &p, const char *filename);
+  bool add_operator(Parser &p, const char *filename);
 
-  void add_condition(Parser &p);
-  void add_operator(Parser &p);
   bool
   has_operator() const
   {
     return NULL != _oper;
   }
+
   bool
   has_condition() const
   {
@@ -62,13 +67,13 @@ public:
   {
     _hook = hook;
   }
+
   const TSHttpHookID
   get_hook() const
   {
     return _hook;
   }
 
-  // Inline
   const ResourceIDs
   get_all_resource_ids() const
   {
@@ -112,6 +117,5 @@ private:
   OperModifiers _opermods;
   bool _last;
 };
-
 
 #endif // __RULESET_H

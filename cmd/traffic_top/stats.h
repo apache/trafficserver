@@ -49,12 +49,11 @@ extern string response;
 
 namespace constant
 {
-const char global[] = "\"global\": {\n";
-const char start[] = "\"proxy.process.";
+const char global[]    = "\"global\": {\n";
+const char start[]     = "\"proxy.process.";
 const char seperator[] = "\": \"";
-const char end[] = "\",\n";
+const char end[]       = "\",\n";
 };
-
 
 //----------------------------------------------------------------------------
 class Stats
@@ -70,9 +69,9 @@ public:
 
       // set the host
       size_t start = _url.find(":");
-      size_t end = _url.find("/", start + 3);
-      _host = _url.substr(start + 3, end - start - 3);
-      end = _host.find(":");
+      size_t end   = _url.find("/", start + 3);
+      _host        = _url.substr(start + 3, end - start - 3);
+      end          = _host.find(":");
       if (end != string::npos) {
         _host = _host.substr(0, end);
       }
@@ -83,9 +82,9 @@ public:
       _host = hostname;
     }
 
-    _stats = NULL;
+    _stats     = NULL;
     _old_stats = NULL;
-    _absolute = false;
+    _absolute  = false;
     lookup_table.insert(make_pair("version", LookupItem("Version", "proxy.process.version.server.short", 1)));
     lookup_table.insert(make_pair("disk_used", LookupItem("Disk Used", "proxy.process.cache.bytes_used", 1)));
     lookup_table.insert(make_pair("disk_total", LookupItem("Disk Total", "proxy.process.cache.bytes_total", 1)));
@@ -101,7 +100,7 @@ public:
     lookup_table.insert(make_pair("entries", LookupItem("Entries", "proxy.process.cache.direntries.used", 1)));
     lookup_table.insert(make_pair("avg_size", LookupItem("Avg Size", "disk_used", "entries", 3)));
 
-    lookup_table.insert(make_pair("dns_entry", LookupItem("DNS Entry", "proxy.process.hostdb.total_entries", 1)));
+    lookup_table.insert(make_pair("dns_entry", LookupItem("DNS Entry", "proxy.process.hostdb.cache.current_items", 1)));
     lookup_table.insert(make_pair("dns_hits", LookupItem("DNS Hits", "proxy.process.hostdb.total_hits", 2)));
     lookup_table.insert(make_pair("dns_lookups", LookupItem("DNS Lookups", "proxy.process.hostdb.total_lookups", 2)));
     lookup_table.insert(make_pair("client_req", LookupItem("Requests", "proxy.process.http.incoming_requests", 2)));
@@ -115,7 +114,6 @@ public:
     lookup_table.insert(make_pair("server_conn", LookupItem("New Conn", "proxy.process.http.total_server_connections", 2)));
     lookup_table.insert(make_pair("server_req_conn", LookupItem("Req/Conn", "server_req", "server_conn", 3)));
     lookup_table.insert(make_pair("server_curr_conn", LookupItem("Curr Conn", "proxy.process.http.current_server_connections", 1)));
-
 
     lookup_table.insert(
       make_pair("client_head", LookupItem("Head Bytes", "proxy.process.http.user_agent_response_header_total_size", 2)));
@@ -131,7 +129,6 @@ public:
     lookup_table.insert(make_pair("ram_miss", LookupItem("Ram Misses", "proxy.process.cache.ram_cache.misses", 2)));
     lookup_table.insert(make_pair("ka_total", LookupItem("KA Total", "proxy.process.net.dynamic_keep_alive_timeout_in_total", 2)));
     lookup_table.insert(make_pair("ka_count", LookupItem("KA Count", "proxy.process.net.dynamic_keep_alive_timeout_in_count", 2)));
-
 
     lookup_table.insert(make_pair("client_abort", LookupItem("Clnt Abort", "proxy.process.http.err_client_abort_count_stat", 2)));
     lookup_table.insert(make_pair("conn_fail", LookupItem("Conn Fail", "proxy.process.http.err_connect_fail_count_stat", 2)));
@@ -222,7 +219,6 @@ public:
     lookup_table.insert(make_pair("s_1m", LookupItem("1 MB", "proxy.process.http.response_document_size_1M", 5)));
     lookup_table.insert(make_pair("s_>1m", LookupItem("> 1 MB", "proxy.process.http.response_document_size_inf", 5)));
 
-
     // sum together
     lookup_table.insert(make_pair("ram_hit_miss", LookupItem("Ram Hit+Miss", "ram_hit", "ram_miss", 6)));
     lookup_table.insert(make_pair("client_net", LookupItem("Net (bits)", "client_head", "client_body", 7)));
@@ -232,7 +228,6 @@ public:
     lookup_table.insert(make_pair("server_net", LookupItem("Net (bits)", "server_head", "server_body", 7)));
     lookup_table.insert(make_pair("server_size", LookupItem("Total Size", "server_head", "server_body", 6)));
     lookup_table.insert(make_pair("server_avg_size", LookupItem("Avg Size", "server_size", "server_req", 3)));
-
 
     lookup_table.insert(make_pair("total_time", LookupItem("Total Time", "proxy.process.http.total_transactions_time", 2)));
 
@@ -251,7 +246,7 @@ public:
         _old_stats = NULL;
       }
       _old_stats = _stats;
-      _stats = new map<string, string>;
+      _stats     = new map<string, string>;
 
       gettimeofday(&_time, NULL);
       double now = _time.tv_sec + (double)_time.tv_usec / 1000000;
@@ -263,9 +258,15 @@ public:
           if (strcmp(item.pretty, "Version") == 0) {
             // special case for Version information
             TSString strValue = NULL;
-            assert(TSRecordGetString(item.name, &strValue) == TS_ERR_OKAY);
-            string key = item.name;
-            (*_stats)[key] = strValue;
+            if (TSRecordGetString(item.name, &strValue) == TS_ERR_OKAY) {
+              string key     = item.name;
+              (*_stats)[key] = strValue;
+              TSfree(strValue);
+            } else {
+              fprintf(stderr, "Error getting stat: %s when calling TSRecordGetString() failed: file \"%s\", line %d\n\n", item.name,
+                      __FILE__, __LINE__);
+              abort();
+            }
           } else {
             if (TSRecordGetInt(item.name, &value) != TS_ERR_OKAY) {
               fprintf(stderr, "Error getting stat: %s when calling TSRecordGetInt() failed: file \"%s\", line %d\n\n", item.name,
@@ -275,13 +276,13 @@ public:
             string key = item.name;
             char buffer[32];
             sprintf(buffer, "%" PRId64, value);
-            string foo = buffer;
+            string foo     = buffer;
             (*_stats)[key] = foo;
           }
         }
       }
-      _old_time = _now;
-      _now = now;
+      _old_time  = _now;
+      _now       = now;
       _time_diff = _now - _old_time;
     } else {
       CURL *curl;
@@ -308,12 +309,12 @@ public:
             _old_stats = NULL;
           }
           _old_stats = _stats;
-          _stats = new map<string, string>;
+          _stats     = new map<string, string>;
 
           // parse
           parseResponse(response);
-          _old_time = _now;
-          _now = now;
+          _old_time  = _now;
+          _now       = now;
           _time_diff = _now - _old_time;
         } else {
           fprintf(stderr, "Can't fetch url %s", _url.c_str());
@@ -344,7 +345,6 @@ public:
     getStat(key, value, strtmp, typetmp, overrideType);
   }
 
-
   void
   getStat(const string &key, string &value)
   {
@@ -365,7 +365,7 @@ public:
     map<string, LookupItem>::const_iterator lookup_it = lookup_table.find(key);
     assert(lookup_it != lookup_table.end());
     const LookupItem &item = lookup_it->second;
-    prettyName = item.pretty;
+    prettyName             = item.pretty;
     if (overrideType != 0)
       type = overrideType;
     else
@@ -385,7 +385,7 @@ public:
         value = (value - old) / _time_diff;
       }
     } else if (type == 3 || type == 4) {
-      double numerator = 0;
+      double numerator   = 0;
       double denominator = 0;
       getStat(item.numerator, numerator);
       getStat(item.denominator, denominator);
@@ -445,9 +445,9 @@ public:
 
     // find parts of the line
     while (1) {
-      size_t start = response.find(constant::start, pos);
+      size_t start     = response.find(constant::start, pos);
       size_t seperator = response.find(constant::seperator, pos);
-      size_t end = response.find(constant::end, pos);
+      size_t end       = response.find(constant::end, pos);
 
       if (start == string::npos || seperator == string::npos || end == string::npos)
         return;

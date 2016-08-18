@@ -37,7 +37,6 @@
 static int64_t next_ss_id = (int64_t)0;
 ClassAllocator<HttpServerSession> httpServerSessionAllocator("httpServerSessionAllocator");
 
-
 void
 HttpServerSession::destroy()
 {
@@ -51,10 +50,11 @@ HttpServerSession::destroy()
   }
 
   mutex.clear();
-  if (TS_SERVER_SESSION_SHARING_POOL_THREAD == sharing_pool)
+  if (TS_SERVER_SESSION_SHARING_POOL_THREAD == sharing_pool) {
     THREAD_FREE(this, httpServerSessionAllocator, this_thread());
-  else
+  } else {
     httpServerSessionAllocator.free(this);
+  }
 }
 
 void
@@ -75,12 +75,14 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
   // Check to see if we are limiting the number of connections
   // per host
   if (enable_origin_connection_limiting == true) {
-    if (connection_count == NULL)
+    if (connection_count == NULL) {
       connection_count = ConnectionCount::getInstance();
-    connection_count->incrementCount(server_ip);
-    char addrbuf[INET6_ADDRSTRLEN];
+    }
+    connection_count->incrementCount(server_ip, hostname_hash, sharing_match);
+    ip_port_text_buffer addrbuf;
     Debug("http_ss", "[%" PRId64 "] new connection, ip: %s, count: %u", con_id,
-          ats_ip_ntop(&server_ip.sa, addrbuf, sizeof(addrbuf)), connection_count->getCount(server_ip));
+          ats_ip_nptop(&server_ip.sa, addrbuf, sizeof(addrbuf)),
+          connection_count->getCount(server_ip, hostname_hash, sharing_match));
   }
 #ifdef LAZY_BUF_ALLOC
   read_buffer = new_empty_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -90,6 +92,14 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
   buf_reader = read_buffer->alloc_reader();
   Debug("http_ss", "[%" PRId64 "] session born, netvc %p", con_id, new_vc);
   state = HSS_INIT;
+  RecString congestion_control_out;
+  if (REC_ReadConfigStringAlloc(congestion_control_out, "proxy.config.net.tcp_congestion_control_out") == REC_ERR_OKAY) {
+    int len = strlen(congestion_control_out);
+    if (len > 0) {
+      new_vc->set_tcp_congestion_control(congestion_control_out, len);
+    }
+    ats_free(congestion_control_out);
+  }
 }
 
 VIO *
@@ -131,13 +141,15 @@ HttpServerSession::do_io_close(int alerrno)
   // Check to see if we are limiting the number of connections
   // per host
   if (enable_origin_connection_limiting == true) {
-    if (connection_count->getCount(server_ip) > 0) {
-      connection_count->incrementCount(server_ip, -1);
-      char addrbuf[INET6_ADDRSTRLEN];
+    if (connection_count->getCount(server_ip, hostname_hash, sharing_match) >= 0) {
+      connection_count->incrementCount(server_ip, hostname_hash, sharing_match, -1);
+      ip_port_text_buffer addrbuf;
       Debug("http_ss", "[%" PRId64 "] connection closed, ip: %s, count: %u", con_id,
-            ats_ip_ntop(&server_ip.sa, addrbuf, sizeof(addrbuf)), connection_count->getCount(server_ip));
+            ats_ip_nptop(&server_ip.sa, addrbuf, sizeof(addrbuf)),
+            connection_count->getCount(server_ip, hostname_hash, sharing_match));
     } else {
-      Error("[%" PRId64 "] number of connections should be greater than zero: %u", con_id, connection_count->getCount(server_ip));
+      Error("[%" PRId64 "] number of connections should be greater than or equal to zero: %u", con_id,
+            connection_count->getCount(server_ip, hostname_hash, sharing_match));
     }
   }
 
@@ -169,6 +181,10 @@ HttpServerSession::release()
     this->do_io_close();
     return;
   }
+
+  // Make sure the vios for the current SM are cleared
+  server_vc->do_io_read(NULL, 0, NULL);
+  server_vc->do_io_write(NULL, 0, NULL);
 
   HSMresult_t r = httpSessionManager.release_session(this);
 

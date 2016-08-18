@@ -57,7 +57,6 @@ extern "C" int plock(int);
 #include "Main.h"
 #include "ts/signals.h"
 #include "Error.h"
-#include "StatSystem.h"
 #include "P_EventSystem.h"
 #include "P_Net.h"
 #include "P_UDPNet.h"
@@ -123,27 +122,30 @@ static const long MAX_LOGIN = ink_login_name_max();
 
 static void *mgmt_restart_shutdown_callback(void *, char *, int data_len);
 static void *mgmt_storage_device_cmd_callback(void *x, char *data, int len);
+static void *mgmt_lifecycle_msg_callback(void *x, char *data, int len);
 static void init_ssl_ctx_callback(void *ctx, bool server);
 static void load_ssl_file_callback(const char *ssl_file, unsigned int options);
 
 static int num_of_net_threads = ink_number_of_processors();
 static int num_of_udp_threads = 0;
 static int num_accept_threads = 0;
-static int num_task_threads = 0;
+static int num_task_threads   = 0;
 
 extern int num_of_cluster_threads;
 
 static char *http_accept_port_descriptor;
 int http_accept_file_descriptor = NO_FD;
-static char core_file[255] = "";
-static bool enable_core_file_p = false; // Enable core file dump?
-int command_flag = DEFAULT_COMMAND_FLAG;
-int command_index = -1;
-bool command_valid = false;
+static char core_file[255]      = "";
+static bool enable_core_file_p  = false; // Enable core file dump?
+int command_flag                = DEFAULT_COMMAND_FLAG;
+int command_index               = -1;
+bool command_valid              = false;
 // Commands that have special processing / requirements.
 static char const *CMD_VERIFY_CONFIG = "verify_config";
 #if TS_HAS_TESTS
 static char regression_test[1024] = "";
+static int regression_list        = 0;
+static int regression_level       = REGRESSION_TEST_NONE;
 #endif
 int auto_clear_hostdb_flag = 0;
 extern int fds_limit;
@@ -153,21 +155,21 @@ char cluster_host[MAXDNAME + 1] = DEFAULT_CLUSTER_HOST;
 
 //         = DEFAULT_CLUSTER_PORT_NUMBER;
 static char command_string[512] = "";
-static char conf_dir[512] = "";
-int remote_management_flag = DEFAULT_REMOTE_MANAGEMENT_FLAG;
-static char bind_stdout[512] = DEFAULT_BIND_STDOUT;
-static char bind_stderr[512] = DEFAULT_BIND_STDERR;
+static char conf_dir[512]       = "";
+int remote_management_flag      = DEFAULT_REMOTE_MANAGEMENT_FLAG;
+static char bind_stdout[512]    = DEFAULT_BIND_STDOUT;
+static char bind_stderr[512]    = DEFAULT_BIND_STDERR;
 
-static char error_tags[1024] = "";
-static char action_tags[1024] = "";
-static int show_statistics = 0;
+static char error_tags[1024]               = "";
+static char action_tags[1024]              = "";
+static int show_statistics                 = 0;
 static inkcoreapi DiagsConfig *diagsConfig = NULL;
-HttpBodyFactory *body_factory = NULL;
+HttpBodyFactory *body_factory              = NULL;
 
-static int accept_mss = 0;
-static int cmd_line_dprintf_level = 0; // default debug output level from ink_dprintf function
-static int poll_timeout = -1;          // No value set.
-static int cmd_disable_freelist = 0;
+static int accept_mss             = 0;
+static int cmd_line_dprintf_level = 0;  // default debug output level from ink_dprintf function
+static int poll_timeout           = -1; // No value set.
+static int cmd_disable_freelist   = 0;
 
 static volatile bool sigusr1_received = false;
 static volatile bool sigusr2_received = false;
@@ -193,6 +195,7 @@ static const ArgumentDescription argument_descriptions[] = {
 #if TS_HAS_TESTS
   {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
   {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
+  {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", NULL},
 #endif // TS_HAS_TESTS
 
 #if TS_USE_DIAGS
@@ -212,7 +215,7 @@ static const ArgumentDescription argument_descriptions[] = {
   {"read_core", 'c', "Read Core file", "S255", &core_file, NULL, NULL},
 #endif
 
-  {"accept_mss", ' ', "MSS for client connections", "I", &accept_mss, NULL, NULL},
+  {"accept_mss", '-', "MSS for client connections", "I", &accept_mss, NULL, NULL},
   {"poll_timeout", 't', "poll timeout in milliseconds", "I", &poll_timeout, NULL, NULL},
   HELP_ARGUMENT_DESCRIPTION(),
   VERSION_ARGUMENT_DESCRIPTION()};
@@ -238,10 +241,12 @@ public:
       // TODO: TS-567 Integrate with debugging allocators "dump" features?
       ink_freelists_dump(stderr);
       ResourceTracker::dump(stderr);
-      if (!end)
+      if (!end) {
         end = (char *)sbrk(0);
-      if (!snap)
+      }
+      if (!snap) {
         snap = (char *)sbrk(0);
+      }
       char *now = (char *)sbrk(0);
       // TODO: Use logging instead directly writing to stderr
       //       This is not error condition at the first place
@@ -284,7 +289,6 @@ public:
   }
 
   ~TrackerContinuation() { mutex = NULL; }
-
   int
   periodic(int event, Event * /* e ATS_UNUSED */)
   {
@@ -329,8 +333,8 @@ public:
     // to send a notification from TS to TM, informing TM that outputlog has
     // been rolled. It is much easier sending a notification (in the form
     // of SIGUSR2) from TM -> TS.
-    int diags_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
-    int diags_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
+    int diags_log_roll_int    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
+    int diags_log_roll_size   = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
     int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
     diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
 
@@ -357,7 +361,7 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
     dump_mem_info_frequency = REC_ConfigReadInteger("proxy.config.dump_mem_info_frequency");
   }
 
-  Debug("tracker", "init_memory_tracker called [%d]\n", dump_mem_info_frequency);
+  Debug("tracker", "init_memory_tracker called [%d]", dump_mem_info_frequency);
 
   if (preE) {
     eventProcessor.schedule_imm(preE->continuation, ET_CALL);
@@ -372,7 +376,7 @@ init_memory_tracker(const char *config_var, RecDataT /* type ATS_UNUSED */, RecD
 }
 
 static void
-proxy_signal_handler(int signo, siginfo_t *info, void *)
+proxy_signal_handler(int signo, siginfo_t *info, void *ctx)
 {
   switch (signo) {
   case SIGUSR1:
@@ -393,18 +397,16 @@ proxy_signal_handler(int signo, siginfo_t *info, void *)
   ProfilerStop();
 #endif
 
+  // We don't expect any crashing signals here because, but
+  // forward to the default handler just to be robust.
   if (signal_is_crash(signo)) {
-    // The only call to abort(2) should be from ink_fatal, which has already logged a stack trace.
-    if (signo != SIGABRT) {
-      ink_stack_trace_dump();
-    }
-
-    // Make sure to drop a core for signals that normally would do so.
-    signal(signo, SIG_DFL);
-    return;
+    signal_crash_handler(signo, info, ctx);
   }
 
-  _exit(signo);
+  shutdown_event_system = true;
+  sleep(1);
+
+  ::exit(signo);
 }
 
 //
@@ -414,7 +416,7 @@ static void
 init_system()
 {
   signal_register_default_handler(proxy_signal_handler);
-  signal_register_crash_handler(proxy_signal_handler);
+  signal_register_crash_handler(signal_crash_handler);
 
   syslog(LOG_NOTICE, "NOTE: --- %s Starting ---", appVersionInfo.AppStr);
   syslog(LOG_NOTICE, "NOTE: %s Version: %s", appVersionInfo.AppStr, appVersionInfo.FullVersionInfoStr);
@@ -451,7 +453,7 @@ check_lockfile()
     } else {
       fprintf(stderr, "\n");
     }
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -464,13 +466,13 @@ check_config_directories(void)
   if (access(sysconfdir, R_OK) == -1) {
     fprintf(stderr, "unable to access() config dir '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
     fprintf(stderr, "please set the 'TS_ROOT' environment variable\n");
-    _exit(1);
+    ::exit(1);
   }
 
   if (access(rundir, R_OK | W_OK) == -1) {
     fprintf(stderr, "unable to access() local state dir '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
     fprintf(stderr, "please set 'proxy.config.local_state_dir'\n");
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -553,8 +555,9 @@ skip(char *cmd, int null_ok = 0)
   cmd += strspn(cmd, " \t");
   cmd = strpbrk(cmd, " \t");
   if (!cmd) {
-    if (!null_ok)
+    if (!null_ok) {
       printf("Error: argument missing\n");
+    }
     return cmd;
   }
   cmd += strspn(cmd, " \t");
@@ -601,10 +604,10 @@ CB_cmd_cache_clear()
 {
   if (cacheProcessor.IsCacheEnabled() == CACHE_INITIALIZED) {
     Note("CLEAR, succeeded");
-    _exit(0);
+    ::exit(0);
   } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
     Note("unable to open Cache, CLEAR failed");
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -619,14 +622,14 @@ CB_cmd_cache_check()
 
     if (res) {
       printf("\n%s failed", n);
-      _exit(1);
+      ::exit(1);
     } else {
       printf("\n%s succeeded\n", n);
-      _exit(0);
+      ::exit(0);
     }
   } else if (cacheProcessor.IsCacheEnabled() == CACHE_INIT_FAILED) {
     Note("unable to open Cache, Check failed");
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -636,8 +639,6 @@ cmd_check_internal(char * /* cmd ATS_UNUSED */, bool fix = false)
   const char *n = fix ? "REPAIR" : "CHECK";
 
   printf("%s\n\n", n);
-
-  hostdb_current_interval = (Thread::get_hrtime() / HRTIME_MINUTE);
 
 #if 0
   printf("Host Database\n");
@@ -687,8 +688,9 @@ cmd_clear(char *cmd)
     ats_scoped_str config(Layout::relative_to(rundir, "hostdb.config"));
 
     Note("Clearing HostDB Configuration");
-    if (unlink(config) < 0)
+    if (unlink(config) < 0) {
       Note("unable to unlink %s", (const char *)config);
+    }
   }
 
   if (c_hdb || c_all) {
@@ -697,9 +699,10 @@ cmd_clear(char *cmd)
       Note("unable to open Host Database, CLEAR failed");
       return CMD_FAILED;
     }
-    hostDBProcessor.cache()->reset();
-    if (c_hdb)
+    hostDBProcessor.cache()->refcountcache->clear();
+    if (c_hdb) {
       return CMD_OK;
+    }
   }
 
   //#ifndef INK_NO_ACC
@@ -783,11 +786,10 @@ cmd_verify(char * /* cmd ATS_UNUSED */)
 
   // TODO: Add more config validation..
 
-  _exit(exitStatus);
+  ::exit(exitStatus);
 
   return 0;
 }
-
 
 static int cmd_help(char *cmd);
 
@@ -863,10 +865,11 @@ find_cmd_index(char const *p)
     while (l) {
       char const *s = strchr(l, '/');
       char const *e = strpbrk(p, " \t\n");
-      int len = s ? s - l : strlen(l);
-      int lenp = e ? e - p : strlen(p);
-      if ((len == lenp) && !strncasecmp(p, l, len))
+      int len       = s ? s - l : strlen(l);
+      int lenp      = e ? e - p : strlen(p);
+      if ((len == lenp) && !strncasecmp(p, l, len)) {
         return c;
+      }
       l = s ? s + 1 : 0;
     }
   }
@@ -902,8 +905,9 @@ check_fd_limit()
   REC_ReadConfigInteger(fds_throttle, "proxy.config.net.connections_throttle");
   if (fds_throttle > fds_limit + THROTTLE_FD_HEADROOM) {
     int new_fds_throttle = fds_limit - THROTTLE_FD_HEADROOM;
-    if (new_fds_throttle < 1)
+    if (new_fds_throttle < 1) {
       MachineFatal("too few file descritors (%d) available", fds_limit);
+    }
     char msg[256];
     snprintf(msg, sizeof(msg), "connection throttle too high, "
                                "%d (throttle) + %d (internal use) > %d (file descriptor limit), "
@@ -1067,9 +1071,10 @@ struct ShowStats : public Continuation {
   {
     (void)event;
     (void)e;
-    if (!(cycle++ % 24))
+    if (!(cycle++ % 24)) {
       printf("r:rr w:ww r:rbs w:wbs open polls\n");
-    ink_statval_t sval, cval;
+    }
+    int64_t sval, cval;
 
     NET_READ_DYN_SUM(net_calls_to_readfromnet_stat, sval);
     int64_t d_rb = sval - last_rb;
@@ -1168,8 +1173,19 @@ struct ShowStats : public Continuation {
     return EVENT_CONT;
   }
   ShowStats()
-    : Continuation(NULL), cycle(0), last_cc(0), last_rb(0), last_w(0), last_r(0), last_wb(0), last_nrb(0), last_nw(0), last_nr(0),
-      last_nwb(0), last_p(0), last_o(0)
+    : Continuation(NULL),
+      cycle(0),
+      last_cc(0),
+      last_rb(0),
+      last_w(0),
+      last_r(0),
+      last_wb(0),
+      last_nrb(0),
+      last_nw(0),
+      last_nr(0),
+      last_nwb(0),
+      last_p(0),
+      last_o(0)
   {
     SET_HANDLER(&ShowStats::mainEvent);
 #ifdef ENABLE_TIME_TRACE
@@ -1177,7 +1193,6 @@ struct ShowStats : public Continuation {
 #endif
   }
 };
-
 
 // static void syslog_log_configure()
 //
@@ -1189,8 +1204,8 @@ struct ShowStats : public Continuation {
 static void
 syslog_log_configure()
 {
-  bool found = false;
-  char sys_var[] = "proxy.config.syslog_facility";
+  bool found         = false;
+  char sys_var[]     = "proxy.config.syslog_facility";
   char *facility_str = REC_readString(sys_var, &found);
 
   if (found) {
@@ -1200,7 +1215,7 @@ syslog_log_configure()
     if (facility < 0) {
       syslog(LOG_WARNING, "Bad syslog facility in records.config. Keeping syslog at LOG_DAEMON");
     } else {
-      Debug("server", "Setting syslog facility to %d\n", facility);
+      Debug("server", "Setting syslog facility to %d", facility);
       closelog();
       openlog("traffic_server", LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility);
     }
@@ -1229,7 +1244,7 @@ struct AutoStopCont : public Continuation {
   {
     (void)event;
     (void)e;
-    _exit(0);
+    ::exit(0);
     return 0;
   }
   AutoStopCont() : Continuation(new_ProxyMutex()) { SET_HANDLER(&AutoStopCont::mainEvent); }
@@ -1238,8 +1253,9 @@ struct AutoStopCont : public Continuation {
 static void
 run_AutoStop()
 {
-  if (getenv("PROXY_AUTO_EXIT"))
+  if (getenv("PROXY_AUTO_EXIT")) {
     eventProcessor.schedule_in(new AutoStopCont(), HRTIME_SECONDS(atoi(getenv("PROXY_AUTO_EXIT"))));
+  }
 }
 
 #if TS_HAS_TESTS
@@ -1247,6 +1263,7 @@ struct RegressionCont : public Continuation {
   int initialized;
   int waits;
   int started;
+
   int
   mainEvent(int event, Event *e)
   {
@@ -1257,17 +1274,22 @@ struct RegressionCont : public Continuation {
       printf("Regression waiting for the cache to be ready... %d\n", ++waits);
       return EVENT_CONT;
     }
+
     char *rt = (char *)(regression_test[0] == 0 ? "" : regression_test);
-    if (!initialized && RegressionTest::run(rt) == REGRESSION_TEST_INPROGRESS) {
+    if (!initialized && RegressionTest::run(rt, regression_level) == REGRESSION_TEST_INPROGRESS) {
       initialized = 1;
       return EVENT_CONT;
     }
-    if ((res = RegressionTest::check_status()) == REGRESSION_TEST_INPROGRESS)
+
+    if ((res = RegressionTest::check_status(regression_level)) == REGRESSION_TEST_INPROGRESS) {
       return EVENT_CONT;
+    }
+
     fprintf(stderr, "REGRESSION_TEST DONE: %s\n", regression_status_string(res));
-    _exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
+    ::exit(res == REGRESSION_TEST_PASSED ? 0 : 1);
     return EVENT_CONT;
   }
+
   RegressionCont() : Continuation(new_ProxyMutex()), initialized(0), waits(0), started(0)
   {
     SET_HANDLER(&RegressionCont::mainEvent);
@@ -1277,11 +1299,11 @@ struct RegressionCont : public Continuation {
 static void
 run_RegressionTest()
 {
-  if (regression_level)
+  if (regression_level) {
     eventProcessor.schedule_every(new RegressionCont(), HRTIME_SECONDS(1));
+  }
 }
 #endif // TS_HAS_TESTS
-
 
 static void
 chdir_root()
@@ -1292,12 +1314,11 @@ chdir_root()
     fprintf(stderr, "%s: unable to change to root directory \"%s\" [%d '%s']\n", appVersionInfo.AppStr, prefix, errno,
             strerror(errno));
     fprintf(stderr, "%s: please correct the path or set the TS_ROOT environment variable\n", appVersionInfo.AppStr);
-    _exit(1);
+    ::exit(1);
   } else {
     printf("%s: using root directory '%s'\n", appVersionInfo.AppStr, prefix);
   }
 }
-
 
 static int
 getNumSSLThreads(void)
@@ -1324,8 +1345,9 @@ getNumSSLThreads(void)
       num_of_ssl_threads = (int)((float)ink_number_of_processors() * autoconfig_scale);
 
       // Last resort
-      if (num_of_ssl_threads <= 0)
+      if (num_of_ssl_threads <= 0) {
         num_of_ssl_threads = config_num_ssl_threads * 2;
+      }
     }
   }
 
@@ -1336,7 +1358,7 @@ static int
 adjust_num_of_net_threads(int nthreads)
 {
   float autoconfig_scale = 1.0;
-  int nth_auto_config = 1;
+  int nth_auto_config    = 1;
   int num_of_threads_tmp = 1;
 
   REC_ReadConfigInteger(nth_auto_config, "proxy.config.exec_thread.autoconfig");
@@ -1422,24 +1444,6 @@ change_uid_gid(const char *user)
 #endif
 }
 
-/** Open a file, elevating privilege only if needed.
-
-    @internal This is necessary because the CI machines run the regression tests
-    as a normal user, not as root, so attempts to get privilege fail even though
-    the @c open would succeed without elevation. So, try that first and ask for
-    elevation only on an explicit permission failure.
-*/
-static int
-elevating_open(char const *path, unsigned int flags, unsigned int fperms)
-{
-  int fd = open(path, flags, fperms);
-  if (fd < 0 && (EPERM == errno || EACCES == errno)) {
-    ElevateAccess access;
-    fd = open(path, flags, fperms);
-  }
-  return fd;
-}
-
 /*
  * Binds stdout and stderr to files specified by the parameters
  *
@@ -1496,7 +1500,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #endif
 
   pcre_malloc = ats_malloc;
-  pcre_free = ats_free;
+  pcre_free   = ats_free;
 
   // Verify system dependent 'constants'
   check_system_constants();
@@ -1509,17 +1513,25 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   chdir_root(); // change directory to the install root of traffic server.
 
   process_args(&appVersionInfo, argument_descriptions, countof(argument_descriptions), argv);
-  command_flag = command_flag || *command_string;
+  command_flag  = command_flag || *command_string;
   command_index = find_cmd_index(command_string);
   command_valid = command_flag && command_index >= 0;
 
   if (cmd_disable_freelist) {
     ink_freelist_init_ops(ink_freelist_malloc_ops());
   }
+
+#if TS_HAS_TESTS
+  if (regression_list) {
+    RegressionTest::list();
+    ::exit(0);
+  }
+#endif
+
   // Specific validity checks.
   if (*conf_dir && command_index != find_cmd_index(CMD_VERIFY_CONFIG)) {
     fprintf(stderr, "-D option can only be used with the %s command\n", CMD_VERIFY_CONFIG);
-    _exit(1);
+    ::exit(1);
   }
 
   // Bootstrap syslog.  Since we haven't read records.config
@@ -1537,13 +1549,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // re-start it again, TS will crash.
   // This is also needed for log rotation - setting up the file can cause privilege
   // related errors and if diagsConfig isn't get up yet that will crash on a NULL pointer.
-  diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
-  diags = diagsConfig->diags;
+  diagsConfig       = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, false);
+  diags             = diagsConfig->diags;
   diags->prefix_str = "Server ";
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
-  if (is_debug_tag_set("diags"))
+  if (is_debug_tag_set("diags")) {
     diags->dump();
+  }
 
   // Bind stdout and stderr to specified switches
   // Still needed despite the set_std{err,out}_output() calls later since there are
@@ -1555,8 +1568,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   // Ensure only one copy of traffic server is running, unless it's a command
   // that doesn't require a lock.
-  if (!(command_valid && commands[command_index].no_process_lock))
+  if (!(command_valid && commands[command_index].no_process_lock)) {
     check_lockfile();
+  }
 
   // Set the core limit for the process
   init_core_size();
@@ -1575,11 +1589,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   Debug("hugepages", "ats_pagesize reporting %zu", ats_pagesize());
   Debug("hugepages", "ats_hugepage_size reporting %zu", ats_hugepage_size());
 
-  if (!num_accept_threads)
+  if (!num_accept_threads) {
     REC_ReadConfigInteger(num_accept_threads, "proxy.config.accept_threads");
+  }
 
-  if (!num_task_threads)
+  if (!num_task_threads) {
     REC_ReadConfigInteger(num_task_threads, "proxy.config.task_threads");
+  }
 
   // Set up crash logging. We need to do this while we are still privileged so that the crash
   // logging helper runs as root. Don't bother setting up a crash logger if we are going into
@@ -1591,7 +1607,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   ats_scoped_str user(MAX_LOGIN + 1);
 
-  *user = '\0';
+  *user        = '\0';
   admin_user_p = ((REC_ERR_OKAY == REC_ReadConfigString(user, "proxy.config.admin.user_id", MAX_LOGIN)) && (*user != '\0') &&
                   (0 != strcmp(user, "#-1")));
 
@@ -1624,13 +1640,14 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     delete (diagsConfig);
   }
   diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, error_tags, action_tags, true);
-  diags = diagsConfig->diags;
+  diags       = diagsConfig->diags;
   RecSetDiags(diags);
   diags->prefix_str = "Server ";
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
-  if (is_debug_tag_set("diags"))
+  if (is_debug_tag_set("diags")) {
     diags->dump();
+  }
 
   DebugCapabilities("privileges"); // Can do this now, logging is up.
 
@@ -1640,9 +1657,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   REC_ReadConfigInteger(mlock_flags, "proxy.config.mlock_enabled");
 
   if (mlock_flags == 2) {
-    if (0 != mlockall(MCL_CURRENT | MCL_FUTURE))
+    if (0 != mlockall(MCL_CURRENT | MCL_FUTURE)) {
       Warning("Unable to mlockall() on startup");
-    else
+    } else
       Debug("server", "Successfully called mlockall()");
   }
 #endif
@@ -1650,7 +1667,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Check for core file
   if (core_file[0] != '\0') {
     process_core(core_file);
-    _exit(0);
+    ::exit(0);
   }
 
   // We need to do this early so we can initialize the Machine
@@ -1663,15 +1680,19 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   */
   IpEndpoint machine_addr;
   ink_zero(machine_addr);
-  if (HttpConfig::m_master.outbound_ip4.isValid())
+  if (HttpConfig::m_master.outbound_ip4.isValid()) {
     machine_addr.assign(HttpConfig::m_master.outbound_ip4);
-  else if (HttpConfig::m_master.outbound_ip6.isValid())
+  } else if (HttpConfig::m_master.outbound_ip6.isValid()) {
     machine_addr.assign(HttpConfig::m_master.outbound_ip6);
-  else if (HttpConfig::m_master.inbound_ip4.isValid())
+  } else if (HttpConfig::m_master.inbound_ip4.isValid()) {
     machine_addr.assign(HttpConfig::m_master.inbound_ip4);
-  else if (HttpConfig::m_master.inbound_ip6.isValid())
+  } else if (HttpConfig::m_master.inbound_ip6.isValid()) {
     machine_addr.assign(HttpConfig::m_master.inbound_ip6);
+  }
   Machine::init(0, &machine_addr.sa);
+
+  RecRegisterStatString(RECT_PROCESS, "proxy.process.version.server.uuid", (char *)Machine::instance()->uuid.getString(),
+                        RECP_NON_PERSISTENT);
 
   // pmgmt->start() must occur after initialization of Diags but
   // before calling RecProcessInit()
@@ -1688,9 +1709,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #define SET_INTERVAL(scope, name, var)                    \
   do {                                                    \
     RecInt tmpint;                                        \
-    Debug("statsproc", "Looking for %s\n", name);         \
+    Debug("statsproc", "Looking for %s", name);           \
     if (RecGetRecordInt(name, &tmpint) == REC_ERR_OKAY) { \
-      Debug("statsproc", "Found %s\n", name);             \
+      Debug("statsproc", "Found %s", name);               \
       scope##_set_##var(tmpint);                          \
     }                                                     \
   } while (0)
@@ -1710,13 +1731,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   cache_clustering_enabled = 0;
 
   if (RecGetRecordInt("proxy.local.cluster.type", &cluster_type) == REC_ERR_OKAY) {
-    if (cluster_type == 1)
+    if (cluster_type == 1) {
       cache_clustering_enabled = 1;
+    }
   }
   Note("cache clustering %s", cache_clustering_enabled ? "enabled" : "disabled");
-
-  // Initialize New Stat system
-  initialize_all_global_stats();
 
   num_of_net_threads = adjust_num_of_net_threads(num_of_net_threads);
 
@@ -1747,8 +1766,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
   int num_remap_threads = 0;
   REC_ReadConfigInteger(num_remap_threads, "proxy.config.remap.num_remap_threads");
-  if (num_remap_threads < 1)
+  if (num_remap_threads < 1) {
     num_remap_threads = 0;
+  }
 
   if (num_remap_threads > 0) {
     Note("using the new remap processor system with %d threads", num_remap_threads);
@@ -1766,10 +1786,11 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     int cmd_ret = cmd_mode();
 
     if (cmd_ret != CMD_IN_PROGRESS) {
-      if (cmd_ret >= 0)
-        _exit(0); // everything is OK
-      else
-        _exit(1); // in error
+      if (cmd_ret >= 0) {
+        ::exit(0); // everything is OK
+      } else {
+        ::exit(1); // in error
+      }
     }
   } else {
     remapProcessor.start(num_remap_threads, stacksize);
@@ -1782,25 +1803,21 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     SplitDNSConfig::startup();
 #endif
 
-#if TS_HAS_SPDY
-    extern int spdy_config_load();
-    spdy_config_load(); // must be before HttpProxyPort init.
-#endif
-
     // Initialize HTTP/2
     Http2::init();
 
     // Load HTTP port data. getNumSSLThreads depends on this.
-    if (!HttpProxyPort::loadValue(http_accept_port_descriptor))
+    if (!HttpProxyPort::loadValue(http_accept_port_descriptor)) {
       HttpProxyPort::loadConfig();
+    }
     HttpProxyPort::loadDefaultIfEmpty();
 
-    if (!accept_mss)
+    if (!accept_mss) {
       REC_ReadConfigInteger(accept_mss, "proxy.config.net.sock_mss_in");
+    }
 
     NetProcessor::accept_mss = accept_mss;
     netProcessor.start(0, stacksize);
-
 
     dnsProcessor.start(0, stacksize);
     if (hostDBProcessor.start() < 0)
@@ -1813,7 +1830,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Init plugins as soon as logging is ready.
     (void)plugin_init(); // plugin.config
 
-    SSLConfigParams::init_ssl_ctx_cb = init_ssl_ctx_callback;
+    SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(getNumSSLThreads(), stacksize);
 
@@ -1823,10 +1840,12 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     cacheProcessor.start();
 
     // UDP net-threads are turned off by default.
-    if (!num_of_udp_threads)
+    if (!num_of_udp_threads) {
       REC_ReadConfigInteger(num_of_udp_threads, "proxy.config.udp.threads");
-    if (num_of_udp_threads)
+    }
+    if (num_of_udp_threads) {
       udpNet.start(num_of_udp_threads, stacksize);
+    }
 
     // acc.init();
     // if (auto_clear_authdb_flag)
@@ -1834,7 +1853,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // acc.start();
     // pmgmt initialization moved up, needed by RecProcessInit
     // pmgmt->start();
-    start_stats_snap();
 
     // Initialize Response Body Factory
     body_factory = new HttpBodyFactory;
@@ -1851,9 +1869,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     //   Raft::init();
 
     // Continuation Statistics Dump
-    if (show_statistics)
+    if (show_statistics) {
       eventProcessor.schedule_every(new ShowStats(), HRTIME_SECONDS(show_statistics), ET_CALL);
-
+    }
 
     //////////////////////////////////////
     // main server logic initiated here //
@@ -1887,8 +1905,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
       } else {
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
       }
-      if (icp_enabled)
+      if (icp_enabled) {
         icpProcessor.start();
+      }
     }
 
     // "Task" processor, possibly with its own set of task threads
@@ -1896,8 +1915,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     int back_door_port = NO_FD;
     REC_ReadConfigInteger(back_door_port, "proxy.config.process_manager.mgmt_port");
-    if (back_door_port != NO_FD)
+    if (back_door_port != NO_FD) {
       start_HttpProxyServerBackDoor(back_door_port, num_accept_threads > 0 ? 1 : 0); // One accept thread is enough
+    }
 
     if (netProcessor.socks_conf_stuff->accept_enabled) {
       start_SocksProxy(netProcessor.socks_conf_stuff->accept_port);
@@ -1911,6 +1931,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // just to be safe because the value is a #define, not a typed value.
     pmgmt->registerMgmtCallback(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE, mgmt_storage_device_cmd_callback,
                                 reinterpret_cast<void *>(static_cast<int>(MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE)));
+    pmgmt->registerMgmtCallback(MGMT_EVENT_LIFECYCLE_MESSAGE, mgmt_lifecycle_msg_callback, NULL);
 
     // The main thread also becomes a net thread.
     ink_set_thread_name("[ET_NET 0]");
@@ -1919,7 +1940,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
 #if TS_HAS_TESTS
     TransformTest::run();
-    run_HostDBTest();
     //  run_SimpleHttp();
     run_RegressionTest();
 #endif
@@ -1934,8 +1954,8 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 #endif
 
   this_thread()->execute();
+  delete main_thread;
 }
-
 
 #if TS_HAS_TESTS
 //////////////////////////////
@@ -1973,6 +1993,31 @@ mgmt_storage_device_cmd_callback(void *data, char *arg, int len)
       Debug("server", "Marking %.*s offline", len, arg);
       cacheProcessor.mark_storage_offline(d);
       break;
+    }
+  }
+  return NULL;
+}
+
+static void *
+mgmt_lifecycle_msg_callback(void *, char *data, int len)
+{
+  APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_MSG_HOOK);
+  TSPluginMsg msg;
+  MgmtInt op;
+  MgmtMarshallString tag;
+  MgmtMarshallData payload;
+  static const MgmtMarshallType fields[] = {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING, MGMT_MARSHALL_DATA};
+
+  if (mgmt_message_parse(data, len, fields, countof(fields), &op, &tag, &payload) == -1) {
+    Error("Plugin message - RPC parsing error - message discarded.");
+  } else {
+    msg.tag       = tag;
+    msg.data      = payload.ptr;
+    msg.data_size = payload.len;
+    while (hook) {
+      TSPluginMsg tmp(msg); // Just to make sure plugins don't mess this up for others.
+      hook->invoke(TS_EVENT_LIFECYCLE_MSG, &tmp);
+      hook = hook->next();
     }
   }
   return NULL;

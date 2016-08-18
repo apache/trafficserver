@@ -100,7 +100,6 @@ AtsRewriteOptions::ParseAndSetOptions0(StringPiece directive, GoogleString *msg,
   return RewriteOptions::kOptionOk;
 }
 
-
 RewriteOptions::OptionSettingResult
 AtsRewriteOptions::ParseAndSetOptionFromName1(StringPiece name, StringPiece arg, GoogleString *msg, MessageHandler *handler)
 {
@@ -150,7 +149,7 @@ AtsRewriteOptions::ParseAndSetOptions(vector<string> args, MessageHandler *handl
     StringPiece arg = args[1];
     if (IsDirective(directive, "UsePerVHostStatistics")) {
       if (!SetBoolFlag(&global_config.use_per_vhost_statistics, arg)) {
-        msg = "Failed to set UsePerVHostStatistics value";
+        msg    = "Failed to set UsePerVHostStatistics value";
         result = RewriteOptions::kOptionValueInvalid;
       } else {
         result = RewriteOptions::kOptionOk;
@@ -162,14 +161,14 @@ AtsRewriteOptions::ParseAndSetOptions(vector<string> args, MessageHandler *handl
       bool ok = StringToInt(arg.as_string(), &message_buffer_size);
       if (ok && message_buffer_size >= 0) {
         global_config.message_buffer_size = message_buffer_size;
-        result = RewriteOptions::kOptionOk;
+        result                            = RewriteOptions::kOptionOk;
       } else {
-        msg = "Failed to set MessageBufferSize value";
+        msg    = "Failed to set MessageBufferSize value";
         result = RewriteOptions::kOptionValueInvalid;
       }
     } else if (IsDirective(directive, "UseNativeFetcher")) {
       if (!SetBoolFlag(&global_config.info_urls_local_only, arg)) {
-        msg = "Failed to set UseNativeFetcher value";
+        msg    = "Failed to set UseNativeFetcher value";
         result = RewriteOptions::kOptionValueInvalid;
       } else {
         msg = "Native fetcher is not available in this release";
@@ -178,7 +177,7 @@ AtsRewriteOptions::ParseAndSetOptions(vector<string> args, MessageHandler *handl
       }
     } else if (IsDirective(directive, "InfoUrlsLocalOnly")) {
       if (!SetBoolFlag(&global_config.info_urls_local_only, arg)) {
-        msg = "Failed to set InfoUrlsLocalOnly value";
+        msg    = "Failed to set InfoUrlsLocalOnly value";
         result = RewriteOptions::kOptionValueInvalid;
       } else {
         result = RewriteOptions::kOptionOk;
@@ -219,10 +218,10 @@ AtsRewriteOptions::ParseAndSetOptions(vector<string> args, MessageHandler *handl
       int64 kb = 0;
       if (!StringToInt64(args[2], &kb) || kb < 0) {
         result = RewriteOptions::kOptionValueInvalid;
-        msg = "size_kb must be a positive 64-bit integer";
+        msg    = "size_kb must be a positive 64-bit integer";
       } else {
         global_config.shm_cache_size_kb = kb;
-        result = kOptionOk;
+        result                          = kOptionOk;
         // bool ok = driver_factory->caches()->CreateShmMetadataCache(
         //    args[1].as_string(), kb, &msg);
         // result = ok ? kOptionOk : kOptionValueInvalid;
@@ -263,6 +262,5 @@ AtsRewriteOptions::Clone() const
   options->Merge(*this);
   return options;
 }
-
 
 } // namespace net_instaweb

@@ -55,7 +55,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
 #endif
@@ -66,29 +65,28 @@ using namespace std;
 #define PROGRAM_NAME "traffic_logstats"
 
 const int MAX_LOGBUFFER_SIZE = 65536;
-const int DEFAULT_LINE_LEN = 78;
-const double LOG10_1024 = 3.0102999566398116;
-const int MAX_ORIG_STRING = 4096;
-
+const int DEFAULT_LINE_LEN   = 78;
+const double LOG10_1024      = 3.0102999566398116;
+const int MAX_ORIG_STRING    = 4096;
 
 // Optimizations for "strcmp()", treat some fixed length (3 or 4 bytes) strings
 // as integers.
-const int GET_AS_INT = 5522759;
-const int PUT_AS_INT = 5526864;
+const int GET_AS_INT  = 5522759;
+const int PUT_AS_INT  = 5526864;
 const int HEAD_AS_INT = 1145128264;
 const int POST_AS_INT = 1414745936;
 
 const int TEXT_AS_INT = 1954047348;
 
 const int JPEG_AS_INT = 1734701162;
-const int JPG_AS_INT = 6778986;
-const int GIF_AS_INT = 6711655;
-const int PNG_AS_INT = 6778480;
-const int BMP_AS_INT = 7368034;
-const int CSS_AS_INT = 7566179;
-const int XML_AS_INT = 7105912;
+const int JPG_AS_INT  = 6778986;
+const int GIF_AS_INT  = 6711655;
+const int PNG_AS_INT  = 6778480;
+const int BMP_AS_INT  = 7368034;
+const int CSS_AS_INT  = 7566179;
+const int XML_AS_INT  = 7105912;
 const int HTML_AS_INT = 1819112552;
-const int ZIP_AS_INT = 7367034;
+const int ZIP_AS_INT  = 7367034;
 
 const int JAVA_AS_INT = 1635148138; // For "javascript"
 const int X_JA_AS_INT = 1634348408; // For "x-javascript"
@@ -103,7 +101,6 @@ struct LastState {
   ino_t st_ino;
 };
 static LastState last_state;
-
 
 // Store the collected counters and stats, per Origin Server, URL or total
 struct StatsCounter {
@@ -125,6 +122,7 @@ struct OriginStats {
   struct {
     struct {
       ElapsedStats hit;
+      ElapsedStats hit_ram;
       ElapsedStats ims;
       ElapsedStats refresh;
       ElapsedStats other;
@@ -142,6 +140,7 @@ struct OriginStats {
   struct {
     struct {
       StatsCounter hit;
+      StatsCounter hit_ram;
       StatsCounter ims;
       StatsCounter refresh;
       StatsCounter other;
@@ -284,7 +283,11 @@ struct OriginStats {
 };
 
 struct UrlStats {
-  bool operator<(const UrlStats &rhs) const { return req.count > rhs.req.count; } // Reverse order
+  bool
+  operator<(const UrlStats &rhs) const
+  {
+    return req.count > rhs.req.count;
+  } // Reverse order
 
   const char *url;
   StatsCounter req;
@@ -302,11 +305,16 @@ struct UrlStats {
 ///////////////////////////////////////////////////////////////////////////////
 // Equal operator for char* (for the hash_map)
 struct eqstr {
-  inline bool operator()(const char *s1, const char *s2) const { return 0 == strcmp(s1, s2); }
+  inline bool
+  operator()(const char *s1, const char *s2) const
+  {
+    return 0 == strcmp(s1, s2);
+  }
 };
 
 struct hash_fnv32 {
-  inline uint32_t operator()(const char *s) const
+  inline uint32_t
+  operator()(const char *s) const
   {
     ATSHash32FNV1a fnv;
 
@@ -332,7 +340,6 @@ rehash(T &container, N size)
   container.rehash(size);
 }
 
-
 // LRU class for the URL data
 void update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counter);
 
@@ -350,8 +357,9 @@ public:
   void
   resize(int size = 0)
   {
-    if (0 != size)
+    if (0 != size) {
       _size = size;
+    }
 
     _init();
     _reset(true);
@@ -363,16 +371,19 @@ public:
   {
     int show = _stack.size();
 
-    if (_show_urls > 0 && _show_urls < show)
+    if (_show_urls > 0 && _show_urls < show) {
       show = _show_urls;
+    }
 
     _stack.sort();
-    for (LruStack::iterator u = _stack.begin(); NULL != u->url && --show >= 0; ++u)
+    for (LruStack::iterator u = _stack.begin(); NULL != u->url && --show >= 0; ++u) {
       _dump_url(u, as_object);
-    if (as_object)
+    }
+    if (as_object) {
       std::cout << "  \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\"" << std::endl;
-    else
+    } else {
       std::cout << "  { \"_timestamp\" : \"" << static_cast<int>(ink_time_wall_seconds()) << "\" }" << std::endl;
+    }
   }
 
   void
@@ -386,16 +397,17 @@ public:
       ++(l->req.count);
       l->req.bytes += bytes;
 
-      if ((http_code >= 600) || (http_code < 200))
+      if ((http_code >= 600) || (http_code < 200)) {
         ++(l->c_000);
-      else if (http_code >= 500)
+      } else if (http_code >= 500) {
         ++(l->c_5xx);
-      else if (http_code >= 400)
+      } else if (http_code >= 400) {
         ++(l->c_4xx);
-      else if (http_code >= 300)
+      } else if (http_code >= 300) {
         ++(l->c_3xx);
-      else // http_code >= 200
+      } else { // http_code >= 200
         ++(l->c_2xx);
+      }
 
       switch (result) {
       case SQUID_LOG_TCP_HIT:
@@ -428,20 +440,23 @@ public:
 
       update_elapsed(l->time, time, l->req);
       // Move this entry to the top of the stack (hence, LRU)
-      if (_size > 0)
+      if (_size > 0) {
         _stack.splice(_stack.begin(), _stack, l);
-    } else {                           // "new" URL
-      const char *u = ats_strdup(url); // We own it.
+      }
+    } else {                                  // "new" URL
+      const char *u        = ats_strdup(url); // We own it.
       LruStack::iterator l = _stack.end();
 
       if (_size > 0) {
         if (_cur == l) { // LRU is full, take the last one
           --l;
           h = _hash.find(l->url);
-          if (h != _hash.end())
+          if (h != _hash.end()) {
             _hash.erase(h);
-          if (0 == _show_urls)
+          }
+          if (0 == _show_urls) {
             _dump_url(l, as_object);
+          }
         } else {
           l = _cur++;
         }
@@ -451,20 +466,21 @@ public:
       }
 
       // Setup this URL stat
-      l->url = u;
+      l->url       = u;
       l->req.bytes = bytes;
       l->req.count = 1;
 
-      if ((http_code >= 600) || (http_code < 200))
+      if ((http_code >= 600) || (http_code < 200)) {
         l->c_000 = 1;
-      else if (http_code >= 500)
+      } else if (http_code >= 500) {
         l->c_5xx = 1;
-      else if (http_code >= 400)
+      } else if (http_code >= 400) {
         l->c_4xx = 1;
-      else if (http_code >= 300)
+      } else if (http_code >= 300) {
         l->c_3xx = 1;
-      else // http_code >= 200
+      } else { // http_code >= 200
         l->c_2xx = 1;
+      }
 
       switch (result) {
       case SQUID_LOG_TCP_HIT:
@@ -501,8 +517,9 @@ public:
       _hash[u] = l;
 
       // We running a real LRU or not?
-      if (_size > 0)
+      if (_size > 0) {
         _stack.splice(_stack.begin(), _stack, l); // Move this to the top of the stack
+      }
     }
   }
 
@@ -520,8 +537,9 @@ private:
   _reset(bool free = false)
   {
     for (LruStack::iterator l = _stack.begin(); l != _stack.end(); ++l) {
-      if (free && l->url)
+      if (free && l->url) {
         ats_free(const_cast<char *>(l->url));
+      }
       memset(&(*l), 0, sizeof(UrlStats));
     }
   }
@@ -529,11 +547,12 @@ private:
   void
   _dump_url(LruStack::iterator &u, int as_object)
   {
-    if (as_object)
+    if (as_object) {
       std::cout << "  \"" << u->url << "\" : { ";
-    else
+    } else {
       std::cout << "  { \"" << u->url << "\" : { ";
-    // Requests
+      // Requests
+    }
     std::cout << "\"req\" : { \"total\" : \"" << u->req.count << "\", \"hits\" : \"" << u->hits << "\", \"misses\" : \""
               << u->misses << "\", \"errors\" : \"" << u->errors << "\", \"000\" : \"" << u->c_000 << "\", \"2xx\" : \"" << u->c_2xx
               << "\", \"3xx\" : \"" << u->c_3xx << "\", \"4xx\" : \"" << u->c_4xx << "\", \"5xx\" : \"" << u->c_5xx << "\" }, ";
@@ -543,10 +562,11 @@ private:
               << std::setiosflags(ios::fixed) << std::setprecision(2) << u->time.avg << "\", \"dev\" : \""
               << std::setiosflags(ios::fixed) << std::setprecision(2) << u->time.stddev;
 
-    if (as_object)
+    if (as_object) {
       std::cout << "\" } }," << std::endl;
-    else
+    } else {
       std::cout << "\" } } }," << std::endl;
+    }
   }
 
   LruHash _hash;
@@ -554,7 +574,6 @@ private:
   int _size, _show_urls;
   LruStack::iterator _cur;
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Globals, holding the accumulated stats (ok, I'm lazy ...)
@@ -584,13 +603,23 @@ struct CommandLineArgs {
   int as_object;   // Show the URL stats as a single JSON object (not array)
 
   CommandLineArgs()
-    : max_origins(0), min_hits(0), max_age(0), line_len(DEFAULT_LINE_LEN), incremental(0), tail(0), summary(0), json(0), cgi(0),
-      urls(0), show_urls(0), as_object(0)
+    : max_origins(0),
+      min_hits(0),
+      max_age(0),
+      line_len(DEFAULT_LINE_LEN),
+      incremental(0),
+      tail(0),
+      summary(0),
+      json(0),
+      cgi(0),
+      urls(0),
+      show_urls(0),
+      as_object(0)
   {
-    log_file[0] = '\0';
+    log_file[0]    = '\0';
     origin_file[0] = '\0';
     origin_list[0] = '\0';
-    state_tag[0] = '\0';
+    state_tag[0]   = '\0';
   }
 
   void parse_arguments(const char **argv);
@@ -632,7 +661,7 @@ CommandLineArgs::parse_arguments(const char **argv)
     char *query;
 
     json = 1;
-    cgi = 1;
+    cgi  = 1;
 
     if (NULL != (query = getenv("QUERY_STRING"))) {
       char buffer[MAX_ORIG_STRING];
@@ -672,13 +701,12 @@ CommandLineArgs::parse_arguments(const char **argv)
   }
 }
 
-
 // Enum for return code levels.
 enum ExitLevel {
-  EXIT_OK = 0,
-  EXIT_WARNING = 1,
+  EXIT_OK       = 0,
+  EXIT_WARNING  = 1,
   EXIT_CRITICAL = 2,
-  EXIT_UNKNOWN = 3,
+  EXIT_UNKNOWN  = 3,
 };
 
 struct ExitStatus {
@@ -686,14 +714,15 @@ struct ExitStatus {
   char notice[1024];
 
   ExitStatus() : level(EXIT_OK) { memset(notice, 0, sizeof(notice)); }
-
   void
   set(ExitLevel l, const char *n = NULL)
   {
-    if (l > level)
+    if (l > level) {
       level = l;
-    if (n)
+    }
+    if (n) {
       ink_strlcat(notice, n, sizeof(notice));
+    }
   }
 
   void
@@ -708,7 +737,6 @@ struct ExitStatus {
     ink_strlcat(notice, s.c_str(), sizeof(notice));
   }
 };
-
 
 // Enum for parsing a log line
 enum ParseStates {
@@ -749,22 +777,22 @@ enum URLScheme {
   SCHEME_OTHER,
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the elapsed field
 inline void
 init_elapsed(OriginStats *stats)
 {
-  stats->elapsed.hits.hit.min = -1;
-  stats->elapsed.hits.ims.min = -1;
-  stats->elapsed.hits.refresh.min = -1;
-  stats->elapsed.hits.other.min = -1;
-  stats->elapsed.hits.total.min = -1;
-  stats->elapsed.misses.miss.min = -1;
-  stats->elapsed.misses.ims.min = -1;
+  stats->elapsed.hits.hit.min       = -1;
+  stats->elapsed.hits.hit_ram.min   = -1;
+  stats->elapsed.hits.ims.min       = -1;
+  stats->elapsed.hits.refresh.min   = -1;
+  stats->elapsed.hits.other.min     = -1;
+  stats->elapsed.hits.total.min     = -1;
+  stats->elapsed.misses.miss.min    = -1;
+  stats->elapsed.misses.ims.min     = -1;
   stats->elapsed.misses.refresh.min = -1;
-  stats->elapsed.misses.other.min = -1;
-  stats->elapsed.misses.total.min = -1;
+  stats->elapsed.misses.other.min   = -1;
+  stats->elapsed.misses.total.min   = -1;
 }
 
 // Update the counters for one StatsCounter
@@ -782,15 +810,18 @@ update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counte
   float oldavg, newavg, sum_of_squares;
 
   // Skip all the "0" values.
-  if (0 == elapsed)
+  if (0 == elapsed) {
     return;
-  if (-1 == stat.min)
+  }
+  if (-1 == stat.min) {
     stat.min = elapsed;
-  else if (stat.min > elapsed)
+  } else if (stat.min > elapsed) {
     stat.min = elapsed;
+  }
 
-  if (stat.max < elapsed)
+  if (stat.max < elapsed) {
     stat.max = elapsed;
+  }
 
   // update_counter should have been called on counter.count before calling
   // update_elapsed.
@@ -798,14 +829,15 @@ update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counte
   // New count should never be zero, else there was a programming error.
   ink_release_assert(newcount);
   oldcount = counter.count - 1;
-  oldavg = stat.avg;
-  newavg = (oldavg * oldcount + elapsed) / newcount;
+  oldavg   = stat.avg;
+  newavg   = (oldavg * oldcount + elapsed) / newcount;
   // Now find the new standard deviation from the old one
 
-  if (oldcount != 0)
+  if (oldcount != 0) {
     sum_of_squares = (stat.stddev * stat.stddev * oldcount);
-  else
+  } else {
     sum_of_squares = 0;
+  }
 
   // Find the old sum of squares.
   sum_of_squares = sum_of_squares + 2 * oldavg * oldcount * (oldavg - newavg) + oldcount * (newavg * newavg - oldavg * oldavg);
@@ -814,7 +846,7 @@ update_elapsed(ElapsedStats &stat, const int elapsed, const StatsCounter &counte
   sum_of_squares = sum_of_squares + (elapsed - newavg) * (elapsed - newavg);
 
   stat.stddev = sqrt(sum_of_squares / newcount);
-  stat.avg = newavg;
+  stat.avg    = newavg;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -827,6 +859,12 @@ update_results_elapsed(OriginStats *stat, int result, int elapsed, int size)
     update_counter(stat->results.hits.hit, size);
     update_counter(stat->results.hits.total, size);
     update_elapsed(stat->elapsed.hits.hit, elapsed, stat->results.hits.hit);
+    update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
+    break;
+  case SQUID_LOG_TCP_MEM_HIT:
+    update_counter(stat->results.hits.hit_ram, size);
+    update_counter(stat->results.hits.total, size);
+    update_elapsed(stat->elapsed.hits.hit_ram, elapsed, stat->results.hits.hit_ram);
     update_elapsed(stat->elapsed.hits.total, elapsed, stat->results.hits.total);
     break;
   case SQUID_LOG_TCP_MISS:
@@ -876,7 +914,6 @@ update_results_elapsed(OriginStats *stat, int result, int elapsed, int size)
     update_counter(stat->results.errors.total, size);
     break;
   case SQUID_LOG_TCP_DISK_HIT:
-  case SQUID_LOG_TCP_MEM_HIT:
   case SQUID_LOG_TCP_REF_FAIL_HIT:
   case SQUID_LOG_UDP_HIT:
   case SQUID_LOG_UDP_WEAK_HIT:
@@ -898,12 +935,12 @@ update_results_elapsed(OriginStats *stat, int result, int elapsed, int size)
     if ((result >= SQUID_LOG_ERR_READ_TIMEOUT) && (result <= SQUID_LOG_ERR_UNKNOWN)) {
       update_counter(stat->results.errors.other, size);
       update_counter(stat->results.errors.total, size);
-    } else
+    } else {
       update_counter(stat->results.other, size);
+    }
     break;
   }
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "codes" stats for a particular record
@@ -1040,18 +1077,18 @@ update_codes(OriginStats *stat, int code, int size)
     break;
   }
 
-  if ((code >= 600) || (code < 200))
+  if ((code >= 600) || (code < 200)) {
     update_counter(stat->codes.c_000, size);
-  else if (code >= 500)
+  } else if (code >= 500) {
     update_counter(stat->codes.c_5xx, size);
-  else if (code >= 400)
+  } else if (code >= 400) {
     update_counter(stat->codes.c_4xx, size);
-  else if (code >= 300)
+  } else if (code >= 300) {
     update_counter(stat->codes.c_3xx, size);
-  else if (code >= 200)
+  } else if (code >= 200) {
     update_counter(stat->codes.c_2xx, size);
+  }
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "methods" stats for a particular record
@@ -1106,22 +1143,21 @@ update_methods(OriginStats *stat, int method, int size)
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Update the "schemes" stats for a particular record
 inline void
 update_schemes(OriginStats *stat, int scheme, int size)
 {
-  if (SCHEME_HTTP == scheme)
+  if (SCHEME_HTTP == scheme) {
     update_counter(stat->schemes.http, size);
-  else if (SCHEME_HTTPS == scheme)
+  } else if (SCHEME_HTTPS == scheme) {
     update_counter(stat->schemes.https, size);
-  else if (SCHEME_NONE == scheme)
+  } else if (SCHEME_NONE == scheme) {
     update_counter(stat->schemes.none, size);
-  else
+  } else {
     update_counter(stat->schemes.other, size);
+  }
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Parse a log buffer
@@ -1159,21 +1195,22 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
   while ((entry = buf_iter.next())) {
     read_from = (char *)entry + sizeof(LogEntryHeader);
     // We read and skip over the first field, which is the timestamp.
-    if ((field = fieldlist->first()))
+    if ((field = fieldlist->first())) {
       read_from += INK_MIN_ALIGN;
-    else // This shouldn't happen, buffer must be messed up.
+    } else { // This shouldn't happen, buffer must be messed up.
       break;
+    }
 
-    state = P_STATE_ELAPSED;
-    o_stats = NULL;
+    state    = P_STATE_ELAPSED;
+    o_stats  = NULL;
     o_server = NULL;
-    method = METHOD_OTHER;
-    scheme = SCHEME_OTHER;
+    method   = METHOD_OTHER;
+    scheme   = SCHEME_OTHER;
 
     while ((field = fieldlist->next(field))) {
       switch (state) {
       case P_STATE_ELAPSED:
-        state = P_STATE_IP;
+        state   = P_STATE_IP;
         elapsed = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
@@ -1183,31 +1220,32 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
         // Just skip the IP, we no longer assume it's always the same.
         {
           LogFieldIp *ip = reinterpret_cast<LogFieldIp *>(read_from);
-          int len = sizeof(LogFieldIp);
-          if (AF_INET == ip->_family)
+          int len        = sizeof(LogFieldIp);
+          if (AF_INET == ip->_family) {
             len = sizeof(LogFieldIp4);
-          else if (AF_INET6 == ip->_family)
+          } else if (AF_INET6 == ip->_family) {
             len = sizeof(LogFieldIp6);
+          }
           read_from += INK_ALIGN_DEFAULT(len);
         }
         break;
 
       case P_STATE_RESULT:
-        state = P_STATE_CODE;
+        state  = P_STATE_CODE;
         result = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         if ((result < 32) || (result > 255)) {
-          flag = 1;
+          flag  = 1;
           state = P_STATE_END;
         }
         break;
 
       case P_STATE_CODE:
-        state = P_STATE_SIZE;
+        state     = P_STATE_SIZE;
         http_code = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         if ((http_code < 0) || (http_code > 999)) {
-          flag = 1;
+          flag  = 1;
           state = P_STATE_END;
         }
         break;
@@ -1216,13 +1254,13 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
         // Warning: This is not 64-bit safe, when converting the log format,
         // this needs to be fixed as well.
         state = P_STATE_METHOD;
-        size = *((int64_t *)(read_from));
+        size  = *((int64_t *)(read_from));
         read_from += INK_MIN_ALIGN;
         break;
 
       case P_STATE_METHOD:
         state = P_STATE_URL;
-        flag = 0;
+        flag  = 0;
 
         // Small optimization for common (3-4 char) cases
         switch (*reinterpret_cast<int *>(read_from)) {
@@ -1244,22 +1282,24 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
           break;
         default:
           tok_len = strlen(read_from);
-          if ((5 == tok_len) && (0 == strncmp(read_from, "PURGE", 5)))
+          if ((5 == tok_len) && (0 == strncmp(read_from, "PURGE", 5))) {
             method = METHOD_PURGE;
-          else if ((6 == tok_len) && (0 == strncmp(read_from, "DELETE", 6)))
+          } else if ((6 == tok_len) && (0 == strncmp(read_from, "DELETE", 6))) {
             method = METHOD_DELETE;
-          else if ((7 == tok_len) && (0 == strncmp(read_from, "OPTIONS", 7)))
+          } else if ((7 == tok_len) && (0 == strncmp(read_from, "OPTIONS", 7))) {
             method = METHOD_OPTIONS;
-          else if ((1 == tok_len) && ('-' == *read_from)) {
+          } else if ((1 == tok_len) && ('-' == *read_from)) {
             method = METHOD_NONE;
-            flag = 1; // No method, so no need to parse the URL
+            flag   = 1; // No method, so no need to parse the URL
           } else {
             ptr = read_from;
-            while (*ptr && isupper(*ptr))
+            while (*ptr && isupper(*ptr)) {
               ++ptr;
+            }
             // Skip URL if it doesn't look like an HTTP method
-            if (*ptr != '\0')
+            if (*ptr != '\0') {
               flag = 1;
+            }
           }
           read_from += LogAccess::round_strlen(tok_len + 1);
           break;
@@ -1268,8 +1308,9 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
 
       case P_STATE_URL:
         state = P_STATE_RFC931;
-        if (urls)
+        if (urls) {
           urls->add_stat(read_from, size, elapsed, result, http_code, cl.as_object);
+        }
 
         // TODO check for read_from being empty string
         if (0 == flag) {
@@ -1284,15 +1325,18 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
               scheme = SCHEME_HTTPS;
               tok += 4;
               tok_len = strlen(tok) + 8;
-            } else
+            } else {
               tok_len = strlen(tok) + 4;
+            }
           } else {
-            if ('/' == *tok)
+            if ('/' == *tok) {
               scheme = SCHEME_NONE;
+            }
             tok_len = strlen(tok);
           }
-          if ('/' == *tok) // This is to handle crazy stuff like http:///origin.com
+          if ('/' == *tok) { // This is to handle crazy stuff like http:///origin.com
             tok++;
+          }
           ptr = strchr(tok, '/');
           if (ptr && !summary) { // Find the origin
             *ptr = '\0';
@@ -1307,17 +1351,19 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
                 init_elapsed(o_stats);
                 o_server = ats_strdup(tok);
                 if (o_stats && o_server) {
-                  o_stats->server = o_server;
+                  o_stats->server   = o_server;
                   origins[o_server] = o_stats;
                 }
-              } else
+              } else {
                 o_stats = o_iter->second;
+              }
             }
           }
         } else {
           // No method given
-          if ('/' == *read_from)
+          if ('/' == *read_from) {
             scheme = SCHEME_NONE;
+          }
           tok_len = strlen(read_from);
         }
         read_from += LogAccess::round_strlen(tok_len + 1);
@@ -1339,50 +1385,58 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
 
       case P_STATE_RFC931:
         state = P_STATE_HIERARCHY;
-        if ('-' == *read_from)
+        if ('-' == *read_from) {
           read_from += LogAccess::round_strlen(1 + 1);
-        else
+        } else {
           read_from += LogAccess::strlen(read_from);
+        }
         break;
 
       case P_STATE_HIERARCHY:
         state = P_STATE_PEER;
-        hier = *((int64_t *)(read_from));
+        hier  = *((int64_t *)(read_from));
         switch (hier) {
         case SQUID_HIER_NONE:
           update_counter(totals.hierarchies.none, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->hierarchies.none, size);
+          }
           break;
         case SQUID_HIER_DIRECT:
           update_counter(totals.hierarchies.direct, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->hierarchies.direct, size);
+          }
           break;
         case SQUID_HIER_SIBLING_HIT:
           update_counter(totals.hierarchies.sibling, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->hierarchies.sibling, size);
+          }
           break;
         case SQUID_HIER_PARENT_HIT:
           update_counter(totals.hierarchies.parent, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->hierarchies.direct, size);
+          }
           break;
         case SQUID_HIER_EMPTY:
           update_counter(totals.hierarchies.empty, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->hierarchies.empty, size);
+          }
           break;
         default:
           if ((hier >= SQUID_HIER_EMPTY) && (hier < SQUID_HIER_INVALID_ASSIGNED_CODE)) {
             update_counter(totals.hierarchies.other, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->hierarchies.other, size);
+            }
           } else {
             update_counter(totals.hierarchies.invalid, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->hierarchies.invalid, size);
+            }
           }
           break;
         }
@@ -1391,189 +1445,220 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
 
       case P_STATE_PEER:
         state = P_STATE_TYPE;
-        if ('-' == *read_from)
+        if ('-' == *read_from) {
           read_from += LogAccess::round_strlen(1 + 1);
-        else
+        } else {
           read_from += LogAccess::strlen(read_from);
+        }
         break;
 
       case P_STATE_TYPE:
         state = P_STATE_END;
         if (IMAG_AS_INT == *reinterpret_cast<int *>(read_from)) {
           update_counter(totals.content.image.total, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->content.image.total, size);
+          }
           tok = read_from + 6;
           switch (*reinterpret_cast<int *>(tok)) {
           case JPEG_AS_INT:
             tok_len = 10;
             update_counter(totals.content.image.jpeg, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.image.jpeg, size);
+            }
             break;
           case JPG_AS_INT:
             tok_len = 9;
             update_counter(totals.content.image.jpeg, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.image.jpeg, size);
+            }
             break;
           case GIF_AS_INT:
             tok_len = 9;
             update_counter(totals.content.image.gif, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.image.gif, size);
+            }
             break;
           case PNG_AS_INT:
             tok_len = 9;
             update_counter(totals.content.image.png, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.image.png, size);
+            }
             break;
           case BMP_AS_INT:
             tok_len = 9;
             update_counter(totals.content.image.bmp, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.image.bmp, size);
+            }
             break;
           default:
             tok_len = 6 + strlen(tok);
             update_counter(totals.content.image.other, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.image.other, size);
+            }
             break;
           }
         } else if (TEXT_AS_INT == *reinterpret_cast<int *>(read_from)) {
           tok = read_from + 5;
           update_counter(totals.content.text.total, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->content.text.total, size);
+          }
           switch (*reinterpret_cast<int *>(tok)) {
           case JAVA_AS_INT:
             // TODO verify if really "javascript"
             tok_len = 15;
             update_counter(totals.content.text.javascript, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.text.javascript, size);
+            }
             break;
           case CSS_AS_INT:
             tok_len = 8;
             update_counter(totals.content.text.css, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.text.css, size);
+            }
             break;
           case XML_AS_INT:
             tok_len = 8;
             update_counter(totals.content.text.xml, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.text.xml, size);
+            }
             break;
           case HTML_AS_INT:
             tok_len = 9;
             update_counter(totals.content.text.html, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.text.html, size);
+            }
             break;
           case PLAI_AS_INT:
             tok_len = 10;
             update_counter(totals.content.text.plain, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.text.plain, size);
+            }
             break;
           default:
             tok_len = 5 + strlen(tok);
             ;
             update_counter(totals.content.text.other, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.text.other, size);
+            }
             break;
           }
         } else if (0 == strncmp(read_from, "application", 11)) {
           tok = read_from + 12;
           update_counter(totals.content.application.total, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->content.application.total, size);
+          }
           switch (*reinterpret_cast<int *>(tok)) {
           case ZIP_AS_INT:
             tok_len = 15;
             update_counter(totals.content.application.zip, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.application.zip, size);
+            }
             break;
           case JAVA_AS_INT:
             update_counter(totals.content.application.javascript, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.application.javascript, size);
+            }
           case X_JA_AS_INT:
             tok_len = 24;
             update_counter(totals.content.application.javascript, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.application.javascript, size);
+            }
             break;
           case RSSp_AS_INT:
             if (0 == strcmp(tok + 4, "xml")) {
               tok_len = 19;
               update_counter(totals.content.application.rss_xml, size);
-              if (o_stats != NULL)
+              if (o_stats != NULL) {
                 update_counter(o_stats->content.application.rss_xml, size);
+              }
             } else if (0 == strcmp(tok + 4, "atom")) {
               tok_len = 20;
               update_counter(totals.content.application.rss_atom, size);
-              if (o_stats != NULL)
+              if (o_stats != NULL) {
                 update_counter(o_stats->content.application.rss_atom, size);
+              }
             } else {
               tok_len = 12 + strlen(tok);
               update_counter(totals.content.application.rss_other, size);
-              if (o_stats != NULL)
+              if (o_stats != NULL) {
                 update_counter(o_stats->content.application.rss_other, size);
+              }
             }
             break;
           default:
             if (0 == strcmp(tok, "x-shockwave-flash")) {
               tok_len = 29;
               update_counter(totals.content.application.shockwave_flash, size);
-              if (o_stats != NULL)
+              if (o_stats != NULL) {
                 update_counter(o_stats->content.application.shockwave_flash, size);
+              }
             } else if (0 == strcmp(tok, "x-quicktimeplayer")) {
               tok_len = 29;
               update_counter(totals.content.application.quicktime, size);
-              if (o_stats != NULL)
+              if (o_stats != NULL) {
                 update_counter(o_stats->content.application.quicktime, size);
+              }
             } else {
               tok_len = 12 + strlen(tok);
               update_counter(totals.content.application.other, size);
-              if (o_stats != NULL)
+              if (o_stats != NULL) {
                 update_counter(o_stats->content.application.other, size);
+              }
             }
           }
         } else if (0 == strncmp(read_from, "audio", 5)) {
-          tok = read_from + 6;
+          tok     = read_from + 6;
           tok_len = 6 + strlen(tok);
           update_counter(totals.content.audio.total, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->content.audio.total, size);
+          }
           if ((0 == strcmp(tok, "x-wav")) || (0 == strcmp(tok, "wav"))) {
             update_counter(totals.content.audio.wav, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.audio.wav, size);
+            }
           } else if ((0 == strcmp(tok, "x-mpeg")) || (0 == strcmp(tok, "mpeg"))) {
             update_counter(totals.content.audio.mpeg, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.audio.mpeg, size);
+            }
           } else {
             update_counter(totals.content.audio.other, size);
-            if (o_stats != NULL)
+            if (o_stats != NULL) {
               update_counter(o_stats->content.audio.other, size);
+            }
           }
         } else if ('-' == *read_from) {
           tok_len = 1;
           update_counter(totals.content.none, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->content.none, size);
+          }
         } else {
           tok_len = strlen(read_from);
           update_counter(totals.content.other, size);
-          if (o_stats != NULL)
+          if (o_stats != NULL) {
             update_counter(o_stats->content.other, size);
+          }
         }
         read_from += LogAccess::round_strlen(tok_len + 1);
         flag = 0; // We exited this state without errors
@@ -1592,7 +1677,6 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false)
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Process a file (FD)
 int
@@ -1607,7 +1691,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     buffer[0] = '\0';
 
     unsigned first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
-    LogBufferHeader *header = (LogBufferHeader *)&buffer[0];
+    LogBufferHeader *header  = (LogBufferHeader *)&buffer[0];
 
     // Find the next log header, aligning us properly. This is not
     // particularly optimal, but we should only have to do this
@@ -1638,8 +1722,9 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       }
     } else {
       nread = read(in_fd, buffer, first_read_size);
-      if (!nread || EOF == nread || !header->cookie)
+      if (!nread || EOF == nread || !header->cookie) {
         return 0;
+      }
 
       // ensure that this is a valid logbuffer header
       if (header->cookie != LOG_SEGMENT_COOKIE) {
@@ -1649,12 +1734,13 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     }
 
     Debug("logstats", "LogBuffer version %d, current = %d", header->version, LOG_SEGMENT_VERSION);
-    if (header->version != LOG_SEGMENT_VERSION)
+    if (header->version != LOG_SEGMENT_VERSION) {
       return 1;
+    }
 
     // read the rest of the header
     unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
-    nread = read(in_fd, &buffer[first_read_size], second_read_size);
+    nread                     = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || EOF == nread) {
       Debug("logstats", "Second read of header failed (attemped %d bytes at offset %d, got nothing), errno=%d.", second_read_size,
             first_read_size, errno);
@@ -1674,7 +1760,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     }
 
     const int MAX_READ_TRIES = 5;
-    int total_read = 0;
+    int total_read           = 0;
     int read_tries_remaining = MAX_READ_TRIES; // since the data will be old anyway, let's only try a few times.
     do {
       nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
@@ -1714,7 +1800,6 @@ process_file(int in_fd, off_t offset, unsigned max_age)
   return 0;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Determine if this "stat" (Origin Server) is worthwhile to produce a
 // report for.
@@ -1723,7 +1808,6 @@ use_origin(const OriginStats *stat)
 {
   return ((stat->total.count > cl.min_hits) && (NULL != strchr(stat->server, '.')) && (NULL == strchr(stat->server, '%')));
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Produce a nicely formatted output for a stats collection on a stream
@@ -1746,12 +1830,14 @@ format_int(int64_t num)
       div = num / mult;
       ss << div << std::setw(3);
       num -= (div * mult);
-      if (mult /= 1000)
+      if (mult /= 1000) {
         ss << std::setw(0) << ',' << std::setw(3);
+      }
     }
     std::cout << ss.str();
-  } else
+  } else {
     std::cout << '0';
+  }
 }
 
 void
@@ -1786,7 +1872,6 @@ format_elapsed_line(const char *desc, const ElapsedStats &stat, bool json = fals
     std::cout << std::endl;
   }
 }
-
 
 void
 format_detail_header(const char *desc)
@@ -1830,10 +1915,10 @@ format_line(const char *desc, const StatsCounter &stat, const StatsCounter &tota
   }
 }
 
-
 // Little "helpers" for the vector we use to sort the Origins.
 typedef pair<const char *, OriginStats *> OriginPair;
-inline bool operator<(const OriginPair &a, const OriginPair &b)
+inline bool
+operator<(const OriginPair &a, const OriginPair &b)
 {
   return a.second->total.count > b.second->total.count;
 }
@@ -1842,17 +1927,20 @@ void
 print_detail_stats(const OriginStats *stat, bool json = false)
 {
   // Cache hit/misses etc.
-  if (!json)
+  if (!json) {
     format_detail_header("Request Result");
+  }
 
   format_line(json ? "hit.direct" : "Cache hit", stat->results.hits.hit, stat->total, json);
+  format_line(json ? "hit.ram" : "Cache hit RAM", stat->results.hits.hit_ram, stat->total, json);
   format_line(json ? "hit.ims" : "Cache hit IMS", stat->results.hits.ims, stat->total, json);
   format_line(json ? "hit.refresh" : "Cache hit refresh", stat->results.hits.refresh, stat->total, json);
   format_line(json ? "hit.other" : "Cache hit other", stat->results.hits.other, stat->total, json);
   format_line(json ? "hit.total" : "Cache hit total", stat->results.hits.total, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "miss.direct" : "Cache miss", stat->results.misses.miss, stat->total, json);
   format_line(json ? "miss.ims" : "Cache miss IMS", stat->results.misses.ims, stat->total, json);
@@ -1860,8 +1948,9 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   format_line(json ? "miss.other" : "Cache miss other", stat->results.misses.other, stat->total, json);
   format_line(json ? "miss.total" : "Cache miss total", stat->results.misses.total, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "error.client_abort" : "Client aborted", stat->results.errors.client_abort, stat->total, json);
   format_line(json ? "error.connect_failed" : "Connect failed", stat->results.errors.connect_fail, stat->total, json);
@@ -1890,8 +1979,9 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   format_line(json ? "status.206" : "206 Partial content", stat->codes.c_206, stat->total, json);
   format_line(json ? "status.2xx" : "2xx Total", stat->codes.c_2xx, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "status.300" : "300 Multiple Choices", stat->codes.c_300, stat->total, json);
   format_line(json ? "status.301" : "301 Moved permanently", stat->codes.c_301, stat->total, json);
@@ -1902,8 +1992,9 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   format_line(json ? "status.307" : "307 Temporary Redirect", stat->codes.c_307, stat->total, json);
   format_line(json ? "status.3xx" : "3xx Total", stat->codes.c_3xx, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "status.400" : "400 Bad request", stat->codes.c_400, stat->total, json);
   format_line(json ? "status.401" : "401 Unauthorized", stat->codes.c_401, stat->total, json);
@@ -1925,8 +2016,9 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   format_line(json ? "status.417" : "417 Expectation Failed", stat->codes.c_417, stat->total, json);
   format_line(json ? "status.4xx" : "4xx Total", stat->codes.c_4xx, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "status.500" : "500 Internal Server Error", stat->codes.c_500, stat->total, json);
   format_line(json ? "status.501" : "501 Not implemented", stat->codes.c_501, stat->total, json);
@@ -1936,8 +2028,9 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   format_line(json ? "status.505" : "505 HTTP Ver. Not Supported", stat->codes.c_505, stat->total, json);
   format_line(json ? "status.5xx" : "5xx Total", stat->codes.c_5xx, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "status.000" : "000 Unknown", stat->codes.c_000, stat->total, json);
 
@@ -2002,8 +2095,9 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   format_line(json ? "content.text.other" : "text/ other", stat->content.text.other, stat->total, json);
   format_line(json ? "content.text.total" : "text/ total", stat->content.text.total, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "content.image.jpeg" : "image/jpeg", stat->content.image.jpeg, stat->total, json);
   format_line(json ? "content.image.gif" : "image/gif", stat->content.image.gif, stat->total, json);
@@ -2012,16 +2106,18 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   format_line(json ? "content.image.other" : "image/ other", stat->content.image.other, stat->total, json);
   format_line(json ? "content.image.total" : "image/ total", stat->content.image.total, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "content.audio.x-wav" : "audio/x-wav", stat->content.audio.wav, stat->total, json);
   format_line(json ? "content.audio.x-mpeg" : "audio/x-mpeg", stat->content.audio.mpeg, stat->total, json);
   format_line(json ? "content.audio.other" : "audio/ other", stat->content.audio.other, stat->total, json);
   format_line(json ? "content.audio.total" : "audio/ total", stat->content.audio.total, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "content.application.shockwave" : "application/x-shockwave", stat->content.application.shockwave_flash,
               stat->total, json);
@@ -2036,8 +2132,9 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   format_line(json ? "content.application.other" : "application/ other", stat->content.application.other, stat->total, json);
   format_line(json ? "content.application.total" : "application/ total", stat->content.application.total, stat->total, json);
 
-  if (!json)
+  if (!json) {
     std::cout << std::endl;
+  }
 
   format_line(json ? "content.none" : "none", stat->content.none, stat->total, json);
   format_line(json ? "content.other" : "other", stat->content.other, stat->total, json);
@@ -2050,6 +2147,7 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   }
 
   format_elapsed_line(json ? "hit.direct.latency" : "Cache hit", stat->elapsed.hits.hit, json);
+  format_elapsed_line(json ? "hit.ram.latency" : "Cache hit RAM", stat->elapsed.hits.hit_ram, json);
   format_elapsed_line(json ? "hit.ims.latency" : "Cache hit IMS", stat->elapsed.hits.ims, json);
   format_elapsed_line(json ? "hit.refresh.latency" : "Cache hit refresh", stat->elapsed.hits.refresh, json);
   format_elapsed_line(json ? "hit.other.latency" : "Cache hit other", stat->elapsed.hits.other, json);
@@ -2069,7 +2167,6 @@ print_detail_stats(const OriginStats *stat, bool json = false)
   }
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Little wrapper around exit, to allow us to exit gracefully
 void
@@ -2082,11 +2179,12 @@ my_exit(const ExitStatus &status)
   // Special case for URLs output.
   if (urls) {
     urls->dump(cl.as_object);
-    if (cl.as_object)
+    if (cl.as_object) {
       std::cout << "}" << std::endl;
-    else
+    } else {
       std::cout << "]" << std::endl;
-    _exit(status.level);
+    }
+    ::exit(status.level);
   }
 
   if (cl.json) {
@@ -2100,20 +2198,22 @@ my_exit(const ExitStatus &status)
       break;
     case EXIT_CRITICAL:
       std::cout << "critical: " << status.notice << std::endl;
-      _exit(status.level);
+      ::exit(status.level);
       break;
     case EXIT_UNKNOWN:
       std::cout << "unknown: " << status.notice << std::endl;
-      _exit(status.level);
+      ::exit(status.level);
       break;
     }
   }
 
   if (!origins.empty()) {
     // Sort the Origins by 'traffic'
-    for (OriginStorage::iterator i = origins.begin(); i != origins.end(); i++)
-      if (use_origin(i->second))
+    for (OriginStorage::iterator i = origins.begin(); i != origins.end(); i++) {
+      if (use_origin(i->second)) {
         vec.push_back(*i);
+      }
+    }
     sort(vec.begin(), vec.end());
 
     if (!cl.json) {
@@ -2179,7 +2279,7 @@ my_exit(const ExitStatus &status)
     std::cout << std::endl << "}" << std::endl;
   }
 
-  _exit(status.level);
+  ::exit(status.level);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2214,7 +2314,6 @@ open_main_log(ExitStatus &status)
   return main_fd;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // main
 int
@@ -2235,7 +2334,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   memset(&totals, 0, sizeof(totals));
   init_elapsed(&totals);
 
-  origin_set = new OriginSet;
+  origin_set   = new OriginSet;
   parse_errors = 0;
 
   // Command line parsing
@@ -2273,7 +2372,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     if (!fs.is_open()) {
       std::cerr << "can't read " << cl.origin_file << std::endl;
       usage(argument_descriptions, countof(argument_descriptions), USAGE_LINE);
-      _exit(0);
+      ::exit(0);
     }
 
     while (!fs.eof()) {
@@ -2284,8 +2383,9 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
       start = line.find_first_not_of(" \t");
       if (start != std::string::npos) {
         end = line.find_first_of(" \t#/");
-        if (std::string::npos == end)
+        if (std::string::npos == end) {
           end = line.length();
+        }
 
         if (end > start) {
           char *buf;
@@ -2308,10 +2408,11 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   // Should we calculate per URL data;
   if (cl.urls != 0) {
     urls = new UrlLru(cl.urls, cl.show_urls);
-    if (cl.as_object)
+    if (cl.as_object) {
       std::cout << "{" << std::endl;
-    else
+    } else {
       std::cout << "[" << std::endl;
+    }
   }
 
   // Do the incremental parse of the default squid log.
@@ -2351,11 +2452,11 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     }
     // Get an exclusive lock, if possible. Try for up to 20 seconds.
     // Use more portable & standard fcntl() over flock()
-    lck.l_type = F_WRLCK;
+    lck.l_type   = F_WRLCK;
     lck.l_whence = 0; /* offset l_start from beginning of file*/
-    lck.l_start = (off_t)0;
-    lck.l_len = (off_t)0; /* till end of file*/
-    cnt = 10;
+    lck.l_start  = (off_t)0;
+    lck.l_len    = (off_t)0; /* till end of file*/
+    cnt          = 10;
     while (((res = fcntl(state_fd, F_SETLK, &lck)) < 0) && --cnt) {
       switch (errno) {
       case EWOULDBLOCK:
@@ -2405,15 +2506,16 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
       my_exit(exit_status);
     }
     // Make sure the last_state.st_ino is sane.
-    if (last_state.st_ino <= 0)
+    if (last_state.st_ino <= 0) {
       last_state.st_ino = stat_buf.st_ino;
+    }
 
     // Check if the main log file was rotated, and if so, locate
     // the old file first, and parse the remaining log data.
     if (stat_buf.st_ino != last_state.st_ino) {
-      DIR *dirp = NULL;
+      DIR *dirp         = NULL;
       struct dirent *dp = NULL;
-      ino_t old_inode = last_state.st_ino;
+      ino_t old_inode   = last_state.st_ino;
 
       // Save the current log-file's I-Node number.
       last_state.st_ino = stat_buf.st_ino;
@@ -2449,8 +2551,9 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
       last_state.offset = 0;
     } else {
       // Make sure the last_state.offset is sane, stat_buf is for the main_fd.
-      if (last_state.offset > stat_buf.st_size)
+      if (last_state.offset > stat_buf.st_size) {
         last_state.offset = stat_buf.st_size;
+      }
     }
 
     // Process the main file (always)
@@ -2506,7 +2609,8 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   }
 
   // All done.
-  if (EXIT_OK == exit_status.level)
+  if (EXIT_OK == exit_status.level) {
     exit_status.append(" OK");
+  }
   my_exit(exit_status);
 }

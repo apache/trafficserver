@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _LIB_BULK_IO_H
 #define _LIB_BULK_IO_H
 
@@ -61,16 +60,16 @@ struct InkBulkIOSplit {
 struct InkBulkIOAggregator {
   InkBulkIOAggregator()
   {
-    metaReqCount = 0;
+    metaReqCount      = 0;
     metablockInfo.ptr = NULL;
-    metablockInfo.id = 0xffffffff;
-    metablockReqPtr = NULL;
+    metablockInfo.id  = 0xffffffff;
+    metablockReqPtr   = NULL;
 
     lastReqFragCount = 0;
-    lastReq = NULL;
+    lastReq          = NULL;
     reqblockInfo.ptr = NULL;
-    reqblockInfo.id = 0xffffffff;
-    reqblockPktPtr = NULL;
+    reqblockInfo.id  = 0xffffffff;
+    reqblockPktPtr   = NULL;
   };
   struct InkBulkIOBlock metablockInfo;
   // Location where the next req. block id should be stuffed in the meta block.
@@ -86,18 +85,18 @@ struct InkBulkIOAggregator {
   ResetLastRequestInfo()
   {
     lastReqFragCount = 0;
-    lastReq = NULL;
+    lastReq          = NULL;
     reqblockInfo.ptr = NULL;
-    reqblockInfo.id = 0xffffffff;
-    reqblockPktPtr = NULL;
+    reqblockInfo.id  = 0xffffffff;
+    reqblockPktPtr   = NULL;
   };
   void
   ResetMetaBlockInfo()
   {
-    metaReqCount = 0;
+    metaReqCount      = 0;
     metablockInfo.ptr = NULL;
-    metablockInfo.id = 0xffffffff;
-    metablockReqPtr = NULL;
+    metablockInfo.id  = 0xffffffff;
+    metablockReqPtr   = NULL;
   };
   bool
   AppendLastRequest()
@@ -118,35 +117,35 @@ struct InkBulkIOAggregator {
   void
   TerminateLastRequest()
   {
-    reqblockPktPtr->blockID = 0xffffffff;
-    reqblockPktPtr->pktsize = 0xffff;
-    reqblockPktPtr->inChain = 0;
+    reqblockPktPtr->blockID  = 0xffffffff;
+    reqblockPktPtr->pktsize  = 0xffff;
+    reqblockPktPtr->inChain  = 0;
     reqblockPktPtr->reserved = 0;
   };
   void
   InitMetaBlock()
   {
     metablockReqPtr = (uint32_t *)metablockInfo.ptr;
-    metaReqCount = 0;
+    metaReqCount    = 0;
   };
   void
   InitSendtoReqBlock()
   {
-    reqblockPktPtr = (struct InkBulkIOPkt *)((caddr_t)reqblockInfo.ptr + sizeof(InkBulkIORequest));
-    lastReq = (struct InkBulkIORequest *)reqblockInfo.ptr;
-    lastReq->reqType = INKBIO_SENDTO_REQUEST;
+    reqblockPktPtr                   = (struct InkBulkIOPkt *)((caddr_t)reqblockInfo.ptr + sizeof(InkBulkIORequest));
+    lastReq                          = (struct InkBulkIORequest *)reqblockInfo.ptr;
+    lastReq->reqType                 = INKBIO_SENDTO_REQUEST;
     lastReq->request.sendto.pktCount = 0;
-    lastReqFragCount = 0;
+    lastReqFragCount                 = 0;
   };
   void
   InitSplitReqBlock()
   {
-    reqblockPktPtr = (struct InkBulkIOPkt *)((caddr_t)reqblockInfo.ptr + sizeof(InkBulkIORequest));
-    lastReq = (struct InkBulkIORequest *)reqblockInfo.ptr;
-    lastReq->reqType = INKBIO_SPLIT_REQUEST;
-    lastReq->request.split.recvCount = 0;
+    reqblockPktPtr                       = (struct InkBulkIOPkt *)((caddr_t)reqblockInfo.ptr + sizeof(InkBulkIORequest));
+    lastReq                              = (struct InkBulkIORequest *)reqblockInfo.ptr;
+    lastReq->reqType                     = INKBIO_SPLIT_REQUEST;
+    lastReq->request.split.recvCount     = 0;
     lastReq->request.split.perDestHeader = 0;
-    lastReqFragCount = 0;
+    lastReqFragCount                     = 0;
   };
 };
 

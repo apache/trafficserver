@@ -29,7 +29,6 @@
 
 const int LOAD_BALANCE_INTERVAL = 1;
 
-
 TS_INLINE
 EventProcessor::EventProcessor() : n_ethreads(0), n_thread_groups(0), n_dthreads(0), thread_data_used(0)
 {
@@ -43,8 +42,8 @@ TS_INLINE off_t
 EventProcessor::allocate(int size)
 {
   static off_t start = INK_ALIGN(offsetof(EThread, thread_private), 16);
-  static off_t loss = start - offsetof(EThread, thread_private);
-  size = INK_ALIGN(size, 16); // 16 byte alignment
+  static off_t loss  = start - offsetof(EThread, thread_private);
+  size               = INK_ALIGN(size, 16); // 16 byte alignment
 
   int old;
   do {
@@ -82,7 +81,6 @@ EventProcessor::schedule(Event *e, EventType etype, bool fast_signal)
   return e;
 }
 
-
 TS_INLINE Event *
 EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callback_event, void *cookie)
 {
@@ -90,10 +88,10 @@ EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callba
 
   ink_assert(et < MAX_EVENT_TYPES);
 #ifdef ENABLE_TIME_TRACE
-  e->start_time = ink_get_hrtime();
+  e->start_time = Thread::get_hrtime();
 #endif
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   return schedule(e->init(cont, 0, 0), et, true);
 }
 
@@ -104,10 +102,10 @@ EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_even
 
   ink_assert(et < MAX_EVENT_TYPES);
 #ifdef ENABLE_TIME_TRACE
-  e->start_time = ink_get_hrtime();
+  e->start_time = Thread::get_hrtime();
 #endif
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   return schedule(e->init(cont, 0, 0), et);
 }
 
@@ -119,7 +117,7 @@ EventProcessor::schedule_at(Continuation *cont, ink_hrtime t, EventType et, int 
   ink_assert(t > 0);
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   return schedule(e->init(cont, t, 0), et);
 }
 
@@ -130,7 +128,7 @@ EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int 
 
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   return schedule(e->init(cont, Thread::get_hrtime() + t, 0), et);
 }
 
@@ -142,12 +140,11 @@ EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, i
   ink_assert(t != 0);
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
-  e->cookie = cookie;
+  e->cookie         = cookie;
   if (t < 0)
     return schedule(e->init(cont, t, t), et);
   else
     return schedule(e->init(cont, Thread::get_hrtime() + t, t), et);
 }
-
 
 #endif

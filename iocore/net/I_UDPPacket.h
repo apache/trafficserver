@@ -44,13 +44,12 @@ class UDPPacket
 {
 public:
   virtual ~UDPPacket() {}
-
   virtual void free(); // fast deallocate
   void setContinuation(Continuation *c);
   void setConnection(UDPConnection *c);
   UDPConnection *getConnection();
   IOBufferBlock *getIOBlockChain();
-  int64_t getPktLength();
+  int64_t getPktLength() const;
 
   /**
      Add IOBufferBlock (chain) to end of packet.

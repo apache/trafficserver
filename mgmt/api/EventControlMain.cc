@@ -61,8 +61,9 @@ new_event_client()
   EventClientT *ele = (EventClientT *)ats_malloc(sizeof(EventClientT));
 
   // now set the alarms registered section
-  for (int i = 0; i < NUM_EVENTS; i++)
+  for (int i = 0; i < NUM_EVENTS; i++) {
     ele->events_registered[i] = 0;
+  }
 
   ele->adr = (struct sockaddr *)ats_malloc(sizeof(struct sockaddr));
   return ele;
@@ -125,8 +126,9 @@ init_mgmt_events()
 
   ret = ink_mutex_init(&mgmt_events_lock, "mgmt_event_notice");
 
-  if (ret)
+  if (ret) {
     return TS_ERR_SYS_CALL;
+  }
 
   // initialize queue
   mgmt_events = create_queue();
@@ -177,8 +179,9 @@ delete_mgmt_events()
 void
 delete_event_queue(LLQ *q)
 {
-  if (!q)
+  if (!q) {
     return;
+  }
 
   // now for every element, dequeue and free
   TSMgmtEvent *ele;
@@ -209,14 +212,15 @@ apiEventCallback(alarm_t newAlarm, const char * /* ip ATS_UNUSED */, const char 
   // addEvent(new_alarm, ip, desc) // adds event to mgmt_events
   TSMgmtEvent *newEvent;
 
-  newEvent = TSEventCreate();
-  newEvent->id = newAlarm;
+  newEvent       = TSEventCreate();
+  newEvent->id   = newAlarm;
   newEvent->name = get_event_name(newEvent->id);
   // newEvent->ip   = ats_strdup(ip);
-  if (desc)
+  if (desc) {
     newEvent->description = ats_strdup(desc);
-  else
+  } else {
     newEvent->description = ats_strdup("None");
+  }
 
   // add it to the mgmt_events list
   ink_mutex_acquire(&mgmt_events_lock);
@@ -242,10 +246,10 @@ event_callback_main(void *arg)
   int *socket_fd;
   int con_socket_fd; // main socket for listening to new connections
 
-  socket_fd = (int *)arg;
+  socket_fd     = (int *)arg;
   con_socket_fd = *socket_fd; // the socket for event callbacks
 
-  Debug("event", "[event_callback_main] listen on socket = %d\n", con_socket_fd);
+  Debug("event", "[event_callback_main] listen on socket = %d", con_socket_fd);
 
   // initialize queue for accepted con
   accepted_clients = ink_hash_table_create(InkHashTableKeyType_Word);
@@ -272,14 +276,14 @@ event_callback_main(void *arg)
 
   while (1) {
     // LINUX fix: to prevent hard-spin reset timeout on each loop
-    timeout.tv_sec = 1;
+    timeout.tv_sec  = 1;
     timeout.tv_usec = 0;
 
     FD_ZERO(&selectFDs);
 
     if (con_socket_fd >= 0) {
       FD_SET(con_socket_fd, &selectFDs);
-      Debug("event", "[event_callback_main] add fd %d to select set\n", con_socket_fd);
+      Debug("event", "[event_callback_main] add fd %d to select set", con_socket_fd);
     }
     // see if there are more fd to set
     con_entry = ink_hash_table_iterator_first(accepted_clients, &con_state);
@@ -308,14 +312,14 @@ event_callback_main(void *arg)
         EventClientT *new_client_con = new_event_client();
 
         if (!new_client_con) {
-          // Debug ("TS_Control_Main", "can't create new EventClientT for new connection\n");
+          // Debug ("TS_Control_Main", "can't create new EventClientT for new connection");
         } else {
           // accept connection
           socklen_t addr_len = (sizeof(struct sockaddr));
-          new_con_fd = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
+          new_con_fd         = mgmt_accept(con_socket_fd, new_client_con->adr, &addr_len);
           new_client_con->fd = new_con_fd;
           ink_hash_table_insert(accepted_clients, (char *)&new_client_con->fd, new_client_con);
-          Debug("event", "[event_callback_main] Accept new connection: fd=%d\n", new_con_fd);
+          Debug("event", "[event_callback_main] Accept new connection: fd=%d", new_con_fd);
         }
       } // end if (new_con_fd >= 0 && FD_ISSET(new_con_fd, &selectFDs))
 
@@ -334,7 +338,7 @@ event_callback_main(void *arg)
 
             ret = preprocess_msg(client_entry->fd, &req, &reqlen);
             if (ret == TS_ERR_NET_READ || ret == TS_ERR_NET_EOF) { // preprocess_msg FAILED!
-              Debug("event", "[event_callback_main] preprocess_msg FAILED; skip! \n");
+              Debug("event", "[event_callback_main] preprocess_msg FAILED; skip!");
               remove_event_client(client_entry, accepted_clients);
               con_entry = ink_hash_table_iterator_next(accepted_clients, &con_state);
               continue;
@@ -344,7 +348,7 @@ event_callback_main(void *arg)
             ats_free(req);
 
             if (ret == TS_ERR_NET_WRITE || ret == TS_ERR_NET_EOF) {
-              Debug("event", "[event_callback_main] ERROR: handle_control_message\n");
+              Debug("event", "[event_callback_main] ERROR: handle_control_message");
               remove_event_client(client_entry, accepted_clients);
               con_entry = ink_hash_table_iterator_next(accepted_clients, &con_state);
               continue;
@@ -367,7 +371,7 @@ event_callback_main(void *arg)
 
     if (!mgmt_events || queue_is_empty(mgmt_events)) { // no events to process
       // fprintf(stderr, "[event_callback_main] NO EVENTS TO PROCESS\n");
-      Debug("event", "[event_callback_main] NO EVENTS TO PROCESS\n");
+      Debug("event", "[event_callback_main] NO EVENTS TO PROCESS");
       continue;
     }
     // iterate through each event in mgmt_events
@@ -376,8 +380,9 @@ event_callback_main(void *arg)
       event = (TSMgmtEvent *)dequeue(mgmt_events); // get what we want
       ink_mutex_release(&mgmt_events_lock);        // release lock
 
-      if (!event)
+      if (!event) {
         continue;
+      }
 
       // fprintf(stderr, "[event_callback_main] have an EVENT TO PROCESS\n");
 
@@ -386,13 +391,13 @@ event_callback_main(void *arg)
       while (con_entry) {
         client_entry = (EventClientT *)ink_hash_table_entry_value(accepted_clients, con_entry);
         if (client_entry->events_registered[event->id]) {
-          MgmtMarshallInt optype = EVENT_NOTIFY;
+          MgmtMarshallInt optype  = EVENT_NOTIFY;
           MgmtMarshallString name = event->name;
           MgmtMarshallString desc = event->description;
 
           ret = send_mgmt_request(client_entry->fd, EVENT_NOTIFY, &optype, &name, &desc);
           if (ret != TS_ERR_OKAY) {
-            Debug("event", "sending even notification to fd [%d] failed.\n", client_entry->fd);
+            Debug("event", "sending even notification to fd [%d] failed.", client_entry->fd);
           }
         }
         // get next client connection, if any
@@ -544,6 +549,7 @@ static const event_message_handler handlers[] = {
   NULL,                        // STATS_RESET_CLUSTER
   NULL,                        // STORAGE_DEVICE_CMD_OFFLINE
   NULL,                        // RECORD_MATCH_GET
+  NULL,                        // LIFECYCLE_MESSAGE
 };
 
 static TSMgmtError

@@ -12,6 +12,7 @@
          A    in cache, not acceptable
          S    in cache, stale
          H    in cache, fresh
+         R    in cache, fresh RAM hit
      
       server stuff
          E    error in response
@@ -35,6 +36,8 @@
          D    dns failure
          F    request forbidden
          H    header syntax unacceptable
+         M    moved temporarily
+         R    cache read error
          S    server related error
          T    connection timed out
      

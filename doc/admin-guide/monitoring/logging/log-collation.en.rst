@@ -30,7 +30,7 @@ all remaining nodes as log collation clients. When a |TS| node generates a
 buffer of event log entries, it first determines if it is the collation server
 or a collation client. The collation server node writes all log buffers to its
 local disk, just as it would if log collation was not enabled.  Log collation
-servers can be standalone or they can be part of a node running |TS|.
+servers can be part of a node running |TS|.
 
 The collation client nodes prepare their log buffers for transfer across the
 network and send the buffers to the log collation server. When the log
@@ -81,7 +81,7 @@ configuration adjustments in :file:`records.config`:
 
         CONFIG proxy.config.log.collation_secret STRING "seekrit"
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 .. note::
@@ -89,59 +89,6 @@ configuration adjustments in :file:`records.config`:
     If you modify the ``collation_port`` or ``secret`` after connections
     between the collation server and collation clients have been established,
     then you must restart Traffic Server on all nodes.
-
-.. _admin-using-a-standalone-collator:
-
-Standalone Collator
--------------------
-
-If you do not want the log collation server to be a |TS| node,
-then you can install and configure a standalone collator (*SAC*) that will
-dedicate more of its power to collecting, processing, and writing log
-files.
-
-To install and configure a standalone collator:
-
-#. Configure your |TS| nodes as log collation clients based on the instructions
-   in :ref:`admin-monitoring-logging-collation-client`.
-
-#. Copy the :program:`traffic_sac` binary from the |TS| ``bin`` directory, and
-   place in a suitable location on the system that will act as the standalone
-   collator.
-
-#. Copy the ``libtsutil.so`` libraries from the |TS| ``lib`` directory to the
-   machine serving as the standalone collator.
-
-#. Create a directory called ``config`` in the directory that contains
-   the :program:`traffic_sac` binary.
-
-#. Create a directory called ``internal`` in the ``config`` directory
-   you created above. This directory is used internally by the standalone
-   collator to store lock files.
-
-#. Copy the :file:`records.config` file from a |TS| node configured to be a log
-   collation client to the ``config`` directory you created on the standalone
-   collator.
-
-   The :file:`records.config` file contains the log collation secret and the
-   port you specified when configuring |TS| nodes to be collation clients. The
-   collation port and secret must be the same for all collation clients and
-   servers.
-
-#. Edit :ts:cv:`proxy.config.log.logfile_dir` in :file:`records.config` to
-   specify a location on your standalone collator where the collected log files
-   should be stored. ::
-
-        CONFIG proxy.config.log.logfile_dir STRING "/var/log/trafficserver/"
-
-#. Enter the following command to start the standalone collator process::
-
-      traffic_sac -c config
-
-You will likely want to configure this program to run at server startup, as
-well as configure a service monitor in the event the process terminates
-abnormally. Please consult your operating system's documentation for how to
-achieve this.
 
 .. _admin-monitoring-logging-collation-client:
 
@@ -165,7 +112,7 @@ restart |TS|.
    -  :ts:cv:`proxy.config.log.collation_host_tagged`
    -  :ts:cv:`proxy.config.log.max_space_mb_for_orphan_logs`
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 Collating Custom Logs
@@ -178,9 +125,7 @@ To collate custom event log files:
 
 #. On each collation client, edit :file:`logs_xml.config` and add the
    :ref:`CollationHosts <logs-xml-logobject-collationhost>` attribute to the
-   :ref:`LogObject` specification:
-
-   .. code-block:: xml
+   :ref:`LogObject` specification::
 
        <LogObject>
          <Format = "squid"/>
@@ -193,7 +138,7 @@ To collate custom event log files:
    ``port`` is the port number for communication between the collation
    server and collation clients.
 
-#. Run the command :option:`traffic_line -L` to restart Traffic Server on the
-   local node or :option:`traffic_line -M` to restart Traffic Server on all
+#. Run the command :option:`traffic_ctl config reload` to restart Traffic Server on the
+   local node or :option:`traffic_ctl config reload` to restart Traffic Server on all
    the nodes in a cluster.
 

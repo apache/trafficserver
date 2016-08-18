@@ -49,8 +49,8 @@ my_data_alloc()
 {
   MyData *data;
 
-  data = (MyData *)TSmalloc(sizeof(MyData));
-  data->output_vio = NULL;
+  data                = (MyData *)TSmalloc(sizeof(MyData));
+  data->output_vio    = NULL;
   data->output_buffer = NULL;
   data->output_reader = NULL;
 
@@ -97,7 +97,7 @@ handle_transform(TSCont contp)
    */
   data = TSContDataGet(contp);
   if (!data) {
-    data = my_data_alloc();
+    data                = my_data_alloc();
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
     TSDebug("null-transform", "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
@@ -255,17 +255,14 @@ transformable(TSHttpTxn txnp)
   TSMBuffer bufp;
   TSMLoc hdr_loc;
   TSHttpStatus resp_status;
-  int retv;
+  int retv = 0;
 
   TSDebug("null-transform", "Entering transformable()");
 
-  TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
-  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
-  retv = (resp_status == TS_HTTP_STATUS_OK);
-
-  if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
-    TSError("[null-transform] Error releasing MLOC while checking "
-            "header status");
+  if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+    resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+    retv        = (resp_status == TS_HTTP_STATUS_OK);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   }
 
   TSDebug("null-transform", "Exiting transformable with return %d", retv);
@@ -309,8 +306,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "null-transform";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "null-transform";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

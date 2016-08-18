@@ -55,7 +55,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   in = (struct sockaddr_in *)TSHttpTxnClientAddrGet(rh);
   ip = inet_ntoa(in->sin_addr);
-  s = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &len);
+  s  = TSUrlStringGet(rri->requestBufp, rri->requestUrl, &len);
   TSDebug(PLUGIN_NAME, "request [%.*s] from [%s]", len, s, ip);
   TSfree(s);
 
@@ -79,7 +79,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
     } else {
       TSError("[secure_link] strtok didn't find a & in the query string");
       /* this is just example, so set fake params to prevent plugin crash */
-      token = TSstrdup("d41d8cd98f00b204e9800998ecf8427e");
+      token  = TSstrdup("d41d8cd98f00b204e9800998ecf8427e");
       expire = TSstrdup("00000000");
     }
     TSfree(s);
@@ -154,7 +154,7 @@ TSRemapNewInstance(int argc, char **argv, void **ih, char *errbuf, int errbuf_si
   (void)errbuf;
   (void)errbuf_size;
 
-  sli = (secure_link_info *)TSmalloc(sizeof(secure_link_info));
+  sli         = (secure_link_info *)TSmalloc(sizeof(secure_link_info));
   sli->secret = NULL;
   sli->strict = 0;
 

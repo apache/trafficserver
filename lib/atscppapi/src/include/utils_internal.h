@@ -66,39 +66,21 @@ namespace utils
     }
 
     static void
+    setTransactionEvent(Transaction &transaction, TSEvent event)
+    {
+      transaction.setEvent(event);
+    }
+
+    static void
+    resetTransactionHandles(Transaction &transaction)
+    {
+      transaction.resetHandles();
+    }
+
+    static void
     initResponse(Response &response, TSMBuffer hdr_buf, TSMLoc hdr_loc)
     {
       response.init(hdr_buf, hdr_loc);
-    }
-
-    static void
-    initTransactionServerRequest(Transaction &transaction)
-    {
-      transaction.initServerRequest();
-    }
-
-    static void
-    initTransactionServerResponse(Transaction &transaction)
-    {
-      transaction.initServerResponse();
-    }
-
-    static void
-    initTransactionClientResponse(Transaction &transaction)
-    {
-      transaction.initClientResponse();
-    }
-
-    static void
-    initTransactionCachedRequest(Transaction &transaction)
-    {
-      transaction.initCachedRequest();
-    }
-
-    static void
-    initTransactionCachedResponse(Transaction &transaction)
-    {
-      transaction.initCachedResponse();
     }
 
     static const std::list<TransactionPlugin *> &

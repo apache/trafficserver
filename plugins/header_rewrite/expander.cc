@@ -40,15 +40,17 @@ VariableExpander::expand(const Resources &res)
 
   while (true) {
     std::string::size_type start = result.find("%<");
-    if (start == std::string::npos)
+    if (start == std::string::npos) {
       break;
+    }
 
     std::string::size_type end = result.find(">", start);
-    if (end == std::string::npos)
+    if (end == std::string::npos) {
       break;
+    }
 
     std::string first_part = result.substr(0, start);
-    std::string last_part = result.substr(end + 1);
+    std::string last_part  = result.substr(end + 1);
 
     // Now evaluate the variable
     std::string variable = result.substr(start, end - start + 1);
@@ -66,6 +68,7 @@ VariableExpander::expand(const Resources &res)
       if (TSHttpTxnPristineUrlGet(res.txnp, &bufp, &url_loc) == TS_SUCCESS) {
         int len;
         resolved_variable = TSUrlSchemeGet(bufp, url_loc, &len);
+        TSHandleMLocRelease(bufp, TS_NULL_MLOC, url_loc);
       }
     } else if (variable == "%<port>") {
       // Original port of the incoming request

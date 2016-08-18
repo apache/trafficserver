@@ -29,26 +29,24 @@ URL *
 create_url(const char *url_string)
 {
   char buf[4096];
-  int len = 0;
+  int len    = 0;
   URL *url_p = new URL(url_string);
-  URL &url = *url_p;
+  URL &url   = *url_p;
 
   cout << "scheme        : " << url.getScheme() << endl;
-  len = url.getUserName(buf, sizeof(buf));
+  len      = url.getUserName(buf, sizeof(buf));
   buf[len] = '\0';
   cout << "user name     : " << buf << endl;
   cout << "UserNameExists: " << url.userNameExists() << endl;
   cout << "UserNameEmpty : " << url.userNameEmpty() << endl;
 
-
-  len = url.getPassword(buf, sizeof(buf));
+  len      = url.getPassword(buf, sizeof(buf));
   buf[len] = '\0';
   cout << "password      : " << buf << endl;
   cout << "PasswordExists: " << url.passwordExists() << endl;
   cout << "PasswordEmpty : " << url.passwordEmpty() << endl;
 
-
-  len = url.getHost(buf, sizeof(buf));
+  len      = url.getHost(buf, sizeof(buf));
   buf[len] = '\0';
   cout << "host          : " << buf << endl;
   cout << "HostEmpty     : " << url.hostEmpty() << endl;
@@ -62,16 +60,16 @@ create_url(const char *url_string)
   case URL_SCHEME_NONE:
   case URL_SCHEME_HTTP:
   case URL_SCHEME_HTTPS:
-    len = url.getHttpPath(buf, sizeof(buf));
+    len      = url.getHttpPath(buf, sizeof(buf));
     buf[len] = '\0';
     cout << "http path     : " << buf << endl;
-    len = url.getParams(buf, sizeof(buf));
+    len      = url.getParams(buf, sizeof(buf));
     buf[len] = '\0';
     cout << "http params   : " << buf << endl;
-    len = url.getQuery(buf, sizeof(buf));
+    len      = url.getQuery(buf, sizeof(buf));
     buf[len] = '\0';
     cout << "http query    : " << buf << endl;
-    len = url.getFragment(buf, sizeof(buf));
+    len      = url.getFragment(buf, sizeof(buf));
     buf[len] = '\0';
     cout << "http fragment : " << buf << endl;
     break;
@@ -109,7 +107,6 @@ test_marshal(URL *url)
 
   return;
 }
-
 
 main()
 {

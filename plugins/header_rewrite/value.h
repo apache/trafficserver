@@ -32,7 +32,6 @@
 #include "factory.h"
 #include "parser.h"
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Values (this is also the interface).
 //
@@ -63,7 +62,7 @@ public:
       // TODO: This is still not optimal, we should pre-parse the _value string here,
       // and perhaps populate a per-Value VariableExpander that holds state.
     } else {
-      _int_value = strtol(_value.c_str(), NULL, 10);
+      _int_value   = strtol(_value.c_str(), NULL, 10);
       _float_value = strtod(_value.c_str(), NULL);
     }
   }
@@ -83,16 +82,19 @@ public:
   {
     return _value;
   }
+
   size_t
   size() const
   {
     return _value.size();
   }
+
   int
   get_int_value() const
   {
     return _int_value;
   }
+
   double
   get_float_value() const
   {
@@ -104,6 +106,7 @@ public:
   {
     return _value.empty();
   }
+
   bool
   need_expansion() const
   {
@@ -119,6 +122,5 @@ private:
   double _float_value;
   Condition *_cond_val;
 };
-
 
 #endif // __VALUE_H

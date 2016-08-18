@@ -23,20 +23,19 @@
 
 #include "P_Cache.h"
 
-
 int
 CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fildes, bool clear)
 {
-  path = ats_strdup(s);
+  path           = ats_strdup(s);
   hw_sector_size = ahw_sector_size;
-  fd = fildes;
-  skip = askip;
-  start = skip;
+  fd             = fildes;
+  skip           = askip;
+  start          = skip;
   /* we can't use fractions of store blocks. */
-  len = blocks;
-  io.aiocb.aio_fildes = fd;
+  len                  = blocks;
+  io.aiocb.aio_fildes  = fd;
   io.aiocb.aio_reqprio = 0;
-  io.action = this;
+  io.action            = this;
   // determine header size and hence start point by successive approximation
   uint64_t l;
   for (int i = 0; i < 3; i++) {
@@ -49,9 +48,9 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
     start = skip + header_len;
   }
 
-  disk_vols = (DiskVol **)ats_calloc((l / MIN_VOL_SIZE + 1), sizeof(DiskVol *));
-  header_len = ROUND_TO_STORE_BLOCK(header_len);
-  start = skip + header_len;
+  disk_vols         = (DiskVol **)ats_calloc((l / MIN_VOL_SIZE + 1), sizeof(DiskVol *));
+  header_len        = ROUND_TO_STORE_BLOCK(header_len);
+  start             = skip + header_len;
   num_usable_blocks = (off_t(len * STORE_BLOCK_SIZE) - (start - askip)) >> STORE_BLOCK_SHIFT;
 
   header = (DiskHeader *)ats_memalign(ats_pagesize(), header_len);
@@ -70,9 +69,9 @@ CacheDisk::open(char *s, off_t blocks, off_t askip, int ahw_sector_size, int fil
 
   SET_HANDLER(&CacheDisk::openStart);
   io.aiocb.aio_offset = skip;
-  io.aiocb.aio_buf = (char *)header;
+  io.aiocb.aio_buf    = (char *)header;
   io.aiocb.aio_nbytes = header_len;
-  io.thread = AIO_CALLBACK_THREAD_ANY;
+  io.thread           = AIO_CALLBACK_THREAD_ANY;
   ink_aio_read(&io);
   return 0;
 }
@@ -105,9 +104,9 @@ CacheDisk::clearDisk()
   delete_all_volumes();
 
   io.aiocb.aio_offset = skip;
-  io.aiocb.aio_buf = header;
+  io.aiocb.aio_buf    = header;
   io.aiocb.aio_nbytes = header_len;
-  io.thread = AIO_CALLBACK_THREAD_ANY;
+  io.thread           = AIO_CALLBACK_THREAD_ANY;
   ink_aio_write(&io);
   return 0;
 }
@@ -189,9 +188,9 @@ int
 CacheDisk::sync()
 {
   io.aiocb.aio_offset = skip;
-  io.aiocb.aio_buf = header;
+  io.aiocb.aio_buf    = header;
   io.aiocb.aio_nbytes = header_len;
-  io.thread = AIO_CALLBACK_THREAD_ANY;
+  io.thread           = AIO_CALLBACK_THREAD_ANY;
   ink_aio_write(&io);
   return 0;
 }
@@ -217,21 +216,21 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   if (size_in_blocks == 0)
     return NULL;
 
-  DiskVolBlockQueue *q = free_blocks->dpb_queue.head;
+  DiskVolBlockQueue *q             = free_blocks->dpb_queue.head;
   DiskVolBlockQueue *closest_match = q;
 
   if (!q)
     return NULL;
 
   off_t max_blocks = MAX_VOL_SIZE >> STORE_BLOCK_SHIFT;
-  size_in_blocks = (size_in_blocks <= max_blocks) ? size_in_blocks : max_blocks;
+  size_in_blocks   = (size_in_blocks <= max_blocks) ? size_in_blocks : max_blocks;
 
   int blocks_per_vol = VOL_BLOCK_SIZE / STORE_BLOCK_SIZE;
   //  ink_assert(!(size_in_blocks % blocks_per_vol));
   DiskVolBlock *p = 0;
   for (; q; q = q->link.next) {
     if ((off_t)q->b->len >= size_in_blocks) {
-      p = q->b;
+      p            = q->b;
       q->new_block = 1;
       break;
     } else {
@@ -245,8 +244,8 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
 
   if (!p && closest_match) {
     /* allocate from the closest match */
-    q = closest_match;
-    p = q->b;
+    q            = closest_match;
+    p            = q->b;
     q->new_block = 1;
     ink_assert(size_in_blocks > (off_t)p->len);
     /* allocate in 128 megabyte chunks. The Remaining space should
@@ -263,12 +262,12 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   if (new_size >= (size_t)blocks_per_vol) {
     /* create a new volume */
     DiskVolBlock *dpb = &header->vol_info[header->num_diskvol_blks];
-    *dpb = *p;
+    *dpb              = *p;
     dpb->len -= size_in_blocks;
     dpb->offset += ((off_t)size_in_blocks * STORE_BLOCK_SIZE);
 
     DiskVolBlockQueue *new_q = new DiskVolBlockQueue();
-    new_q->b = dpb;
+    new_q->b                 = dpb;
     free_blocks->dpb_queue.enqueue(new_q);
     free_blocks->size += dpb->len;
     free_space += dpb->len;
@@ -276,10 +275,10 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
   } else
     header->num_free--;
 
-  p->len = size_in_blocks;
-  p->free = 0;
+  p->len    = size_in_blocks;
+  p->free   = 0;
   p->number = number;
-  p->type = scheme;
+  p->type   = scheme;
   header->num_used++;
 
   unsigned int i;
@@ -293,17 +292,16 @@ CacheDisk::create_volume(int number, off_t size_in_blocks, int scheme)
     }
   }
   if (i == header->num_volumes) {
-    disk_vols[i] = new DiskVol();
+    disk_vols[i]                = new DiskVol();
     disk_vols[i]->num_volblocks = 1;
-    disk_vols[i]->vol_number = number;
-    disk_vols[i]->disk = this;
+    disk_vols[i]->vol_number    = number;
+    disk_vols[i]->disk          = this;
     disk_vols[i]->dpb_queue.enqueue(q);
     disk_vols[i]->size = q->b->len;
     header->num_volumes++;
   }
   return p;
 }
-
 
 int
 CacheDisk::delete_volume(int number)
@@ -314,8 +312,8 @@ CacheDisk::delete_volume(int number)
       DiskVolBlockQueue *q;
       for (q = disk_vols[i]->dpb_queue.head; q;) {
         DiskVolBlock *p = q->b;
-        p->type = CACHE_NONE_TYPE;
-        p->free = 1;
+        p->type         = CACHE_NONE_TYPE;
+        p->free         = 1;
         free_space += p->len;
         header->num_free++;
         header->num_used--;
@@ -352,17 +350,17 @@ CacheDisk::update_header()
     }
     delete free_blocks;
   }
-  free_blocks = new DiskVol();
-  free_blocks->vol_number = -1;
-  free_blocks->disk = this;
+  free_blocks                = new DiskVol();
+  free_blocks->vol_number    = -1;
+  free_blocks->disk          = this;
   free_blocks->num_volblocks = 0;
-  free_blocks->size = 0;
-  free_space = 0;
+  free_blocks->size          = 0;
+  free_space                 = 0;
 
   for (i = 0; i < header->num_diskvol_blks; i++) {
     DiskVolBlockQueue *dpbq = new DiskVolBlockQueue();
-    bool dpbq_referenced = false;
-    dpbq->b = &header->vol_info[i];
+    bool dpbq_referenced    = false;
+    dpbq->b                 = &header->vol_info[i];
     if (header->vol_info[i].free) {
       free_blocks->num_volblocks++;
       free_blocks->size += dpbq->b->len;
@@ -383,11 +381,11 @@ CacheDisk::update_header()
     if (j == n) {
       // did not find a matching volume number. create a new
       // one
-      disk_vols[j] = new DiskVol();
-      disk_vols[j]->vol_number = vol_number;
-      disk_vols[j]->disk = this;
+      disk_vols[j]                = new DiskVol();
+      disk_vols[j]->vol_number    = vol_number;
+      disk_vols[j]->disk          = this;
       disk_vols[j]->num_volblocks = 1;
-      disk_vols[j]->size = dpbq->b->len;
+      disk_vols[j]->size          = dpbq->b->len;
       disk_vols[j]->dpb_queue.enqueue(dpbq);
       dpbq_referenced = true;
       n++;
@@ -417,17 +415,17 @@ int
 CacheDisk::delete_all_volumes()
 {
   header->vol_info[0].offset = start;
-  header->vol_info[0].len = num_usable_blocks;
-  header->vol_info[0].type = CACHE_NONE_TYPE;
-  header->vol_info[0].free = 1;
+  header->vol_info[0].len    = num_usable_blocks;
+  header->vol_info[0].type   = CACHE_NONE_TYPE;
+  header->vol_info[0].free   = 1;
 
-  header->magic = DISK_HEADER_MAGIC;
-  header->num_used = 0;
-  header->num_volumes = 0;
-  header->num_free = 1;
+  header->magic            = DISK_HEADER_MAGIC;
+  header->num_used         = 0;
+  header->num_volumes      = 0;
+  header->num_free         = 1;
   header->num_diskvol_blks = 1;
-  header->num_blocks = len;
-  cleared = 1;
+  header->num_blocks       = len;
+  cleared                  = 1;
   update_header();
 
   return 0;

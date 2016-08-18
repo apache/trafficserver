@@ -1,0 +1,90 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/index.en.rst:23
+msgid "Blacklist Plugin"
+msgstr "ブラックリストプラグイン"
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/index.en.rst:40
+msgid "Creating the Parent Continuation"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/index.en.rst:54
+msgid ""
+"Here is how the static parent continuation is created in ``blacklist-1.c``:"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/index.en.rst:31
+msgid ""
+"The flow of HTTP processing with the blacklist plugin is illustrated in the "
+"figure titled :ref:`BlackListPlugin`. This example also contains a simple "
+"configuration management interface. It can read a list of blacklisted sites "
+"from a file (``blacklist.txt``) that can be updated by a Traffic Server "
+"administrator. When the configuration file is updated, Traffic Server sends "
+"an event to the plugin that wakes it up to do some work."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/index.en.rst:25
+msgid ""
+"The sample blacklisting plugin included in the Traffic Server SDK is "
+"``blacklist-1.c``. This plugin checks every incoming HTTP client request "
+"against a list of blacklisted web sites. If the client requests a "
+"blacklisted site, then the plugin returns an ``Access forbidden`` message "
+"to the client."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/index.en.rst:49
+msgid ""
+"You can specify an optional mutex lock when you create continuations. The "
+"mutex lock protects data shared by asynchronous processes. Because Traffic "
+"Server has a multi-threaded design, race conditions can occur if several "
+"threads try to access the same continuation's data."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/index.en.rst:42
+msgid ""
+"You create the static parent continuation in the mandatory ``TSPluginInit`` "
+"function. This parent continuation effectively **is** the plugin: the "
+"plugin executes only when this continuation receives an event from Traffic "
+"Server. Traffic Server passes the event as an argument to the "
+"continuation's handler function. When you create continuations, you must "
+"create and specify their handler functions."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/index.en.rst:69
+msgid ""
+"The handler function for the plugin is ``blacklist_plugin``, and the mutex "
+"is null. The continuation handler function's job is to handle the events "
+"that are sent to it; accordingly, the ``blacklist_plugin`` routine consists "
+"of a switch statement that covers each of the events that might be sent to "
+"it:"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/blacklist/index.en.rst:95
+msgid ""
+"When you write handler functions, you have to anticipate any events that "
+"might be sent to the handler by hooks or by other functions. In the "
+"Blacklist plugin, ``TS_EVENT_OS_DNS`` is sent because of the global hook "
+"established in ``TSPluginInit``, ``TS_EVENT_HTTP_SEND_RESPONSE_HDR`` is "
+"sent because the plugin contains a transaction hook (see :ref:`developer-"
+"plugins-examples-blacklist-txn-hook`). It is good practice to have a "
+"default case in your switch statements."
+msgstr ""

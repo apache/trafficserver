@@ -29,6 +29,8 @@
 #include "ts/ink_syslog.h"
 
 #include "WebMgmtUtils.h"
+#include "WebOverview.h"
+#include "MgmtUtils.h"
 #include "NetworkUtilsRemote.h"
 #include "ClusterCom.h"
 #include "VMap.h"
@@ -48,8 +50,12 @@
 // Needs LibRecordsConfigInit()
 #include "RecordsConfig.h"
 
-#include "StatProcessor.h"
 #include "P_RecLocal.h"
+
+#include "bindings/bindings.h"
+#include "bindings/metrics.h"
+
+#include "metrics.h"
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -70,15 +76,14 @@ static void runAsUser(const char *userName);
 extern "C" int getpwnam_r(const char *name, struct passwd *result, char *buffer, size_t buflen, struct passwd **resptr);
 #endif
 
-static StatProcessor *statProcessor;  // Statistics Processors
 static AppVersionInfo appVersionInfo; // Build info for this application
 
 static inkcoreapi DiagsConfig *diagsConfig;
-static char debug_tags[1024] = "";
+static char debug_tags[1024]  = "";
 static char action_tags[1024] = "";
-static bool proxy_off = false;
-static char bind_stdout[512] = "";
-static char bind_stderr[512] = "";
+static bool proxy_off         = false;
+static char bind_stdout[512]  = "";
+static char bind_stderr[512]  = "";
 
 static const char *mgmt_path = NULL;
 
@@ -87,8 +92,10 @@ static const char *recs_conf = "records.config";
 
 static int fds_limit;
 
+static int metrics_version;
+
 // TODO: Use positive instead negative selection
-//       Thsis should just be #if defined(solaris)
+//       This should just be #if defined(solaris)
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
 static void SignalHandler(int sig, siginfo_t *t, void *f);
 static void SignalAlrmHandler(int sig, siginfo_t *t, void *f);
@@ -110,12 +117,12 @@ rotateLogs()
   // The reason being is that it is difficult to send a notification from TS to
   // TM, informing TM that outputlog has been rolled. It is much easier sending
   // a notification (in the form of SIGUSR2) from TM -> TS.
-  int output_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec");
-  int output_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
+  int output_log_roll_int    = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_interval_sec");
+  int output_log_roll_size   = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_size_mb");
   int output_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.output.logfile.rolling_enabled");
-  int diags_log_roll_int = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
-  int diags_log_roll_size = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
-  int diags_log_roll_enable = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
+  int diags_log_roll_int     = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_interval_sec");
+  int diags_log_roll_size    = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_size_mb");
+  int diags_log_roll_enable  = (int)REC_ConfigReadInteger("proxy.config.diags.logfile.rolling_enabled");
   diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
   diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
 
@@ -129,19 +136,21 @@ rotateLogs()
     // synced across processes
     mgmt_log("Sending SIGUSR2 to TS");
     pid_t tspid = lmgmt->watched_process_pid;
-    if (tspid <= 0)
+    if (tspid <= 0) {
       return;
-    if (kill(tspid, SIGUSR2) != 0)
+    }
+    if (kill(tspid, SIGUSR2) != 0) {
       mgmt_log("Could not send SIGUSR2 to TS: %s", strerror(errno));
-    else
+    } else {
       mgmt_log("Succesfully sent SIGUSR2 to TS!");
+    }
   }
 }
 
 static bool
 is_server_idle()
 {
-  RecInt active = 0;
+  RecInt active    = 0;
   RecInt threshold = 0;
 
   if (RecGetRecordInt("proxy.config.restart.active_client_threshold", &threshold) != REC_ERR_OKAY) {
@@ -227,10 +236,10 @@ initSignalHandlers()
 
 // Set up the signal handler
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
-  sigHandler.sa_handler = NULL;
+  sigHandler.sa_handler   = NULL;
   sigHandler.sa_sigaction = SignalHandler;
 #else
-  sigHandler.sa_handler = SignalHandler;
+  sigHandler.sa_handler     = SignalHandler;
 #endif
   sigemptyset(&sigHandler.sa_mask);
 
@@ -249,7 +258,7 @@ initSignalHandlers()
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigHandler.sa_flags = SA_RESETHAND | SA_SIGINFO;
 #else
-  sigHandler.sa_flags = SA_RESETHAND;
+  sigHandler.sa_flags       = SA_RESETHAND;
 #endif
   sigaction(SIGINT, &sigHandler, NULL);
   sigaction(SIGQUIT, &sigHandler, NULL);
@@ -259,7 +268,7 @@ initSignalHandlers()
   sigaction(SIGTERM, &sigHandler, NULL);
 
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
-  sigAlrmHandler.sa_handler = NULL;
+  sigAlrmHandler.sa_handler   = NULL;
   sigAlrmHandler.sa_sigaction = SignalAlrmHandler;
 #else
   sigAlrmHandler.sa_handler = SignalAlrmHandler;
@@ -269,7 +278,7 @@ initSignalHandlers()
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   sigAlrmHandler.sa_flags = SA_SIGINFO;
 #else
-  sigAlrmHandler.sa_flags = 0;
+  sigAlrmHandler.sa_flags   = 0;
 #endif
   sigaction(SIGALRM, &sigAlrmHandler, NULL);
 
@@ -296,7 +305,7 @@ initSignalHandlers()
   //   a problem with Solaris 2.6 and strange waitpid()
   //   behavior
   sigChldHandler.sa_handler = SigChldHandler;
-  sigChldHandler.sa_flags = SA_RESTART;
+  sigChldHandler.sa_flags   = SA_RESTART;
   sigemptyset(&sigChldHandler.sa_mask);
   sigaction(SIGCHLD, &sigChldHandler, NULL);
 }
@@ -310,13 +319,13 @@ init_dirs()
   if (access(sysconfdir, R_OK) == -1) {
     mgmt_elog(0, "unable to access() config directory '%s': %d, %s\n", (const char *)sysconfdir, errno, strerror(errno));
     mgmt_elog(0, "please set the 'TS_ROOT' environment variable\n");
-    _exit(1);
+    ::exit(1);
   }
 
   if (access(rundir, R_OK) == -1) {
     mgmt_elog(0, "unable to access() local state directory '%s': %d, %s\n", (const char *)rundir, errno, strerror(errno));
     mgmt_elog(0, "please set 'proxy.config.local_state_dir'\n");
-    _exit(1);
+    ::exit(1);
   }
 }
 
@@ -385,7 +394,7 @@ Errata_Logger(ts::Errata const &err)
   char buff[SIZE];
   if (err.size()) {
     ts::Errata::Code code = err.top().getCode();
-    n = err.write(buff, SIZE, 1, 0, 2, "> ");
+    n                     = err.write(buff, SIZE, 1, 0, 2, "> ");
     // strip trailing newlines.
     while (n && (buff[n - 1] == '\n' || buff[n - 1] == '\r'))
       buff[--n] = 0;
@@ -411,7 +420,7 @@ millisleep(int ms)
 {
   struct timespec ts;
 
-  ts.tv_sec = ms / 1000;
+  ts.tv_sec  = ms / 1000;
   ts.tv_nsec = (ms - ts.tv_sec * 1000) * 1000 * 1000;
   nanosleep(&ts, NULL); // we use nanosleep instead of sleep because it does not interact with signals
 }
@@ -428,12 +437,12 @@ main(int argc, const char **argv)
   // Set up the application version info
   appVersionInfo.setup(PACKAGE_NAME, "traffic_manager", PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
 
-  bool found = false;
-  int just_started = 0;
+  bool found         = false;
+  int just_started   = 0;
   int cluster_mcport = -1, cluster_rsport = -1;
   // TODO: This seems completely incomplete, disabled for now
   //  int dump_config = 0, dump_process = 0, dump_node = 0, dump_cluster = 0, dump_local = 0;
-  char *proxy_port = 0;
+  char *proxy_port   = 0;
   int proxy_backdoor = -1;
   char *group_addr = NULL, *tsArgs = NULL;
   bool disable_syslog = false;
@@ -441,6 +450,9 @@ main(int argc, const char **argv)
   RecInt fds_throttle = -1;
   time_t ticker;
   ink_thread synthThrId;
+
+  int binding_version      = 0;
+  BindingInstance *binding = NULL;
 
   ArgumentDescription argument_descriptions[] = {
     {"proxyOff", '-', "Disable proxy", "F", &proxy_off, NULL, NULL},
@@ -473,11 +485,13 @@ main(int argc, const char **argv)
   // Line buffer standard output & standard error
   int status;
   status = setvbuf(stdout, NULL, _IOLBF, 0);
-  if (status != 0)
+  if (status != 0) {
     perror("WARNING: can't line buffer stdout");
+  }
   status = setvbuf(stderr, NULL, _IOLBF, 0);
-  if (status != 0)
+  if (status != 0) {
     perror("WARNING: can't line buffer stderr");
+  }
 
   initSignalHandlers();
 
@@ -492,7 +506,7 @@ main(int argc, const char **argv)
   // Bootstrap the Diags facility so that we can use it while starting
   //  up the manager
   diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, false);
-  diags = diagsConfig->diags;
+  diags       = diagsConfig->diags;
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
   diags->prefix_str = "Manager ";
@@ -538,14 +552,15 @@ main(int argc, const char **argv)
   // INKqa11968: need to set up callbacks and diags data structures
   // using configuration in records.config
   diagsConfig = new DiagsConfig(DIAGS_LOG_FILENAME, debug_tags, action_tags, true);
-  diags = diagsConfig->diags;
+  diags       = diagsConfig->diags;
   RecSetDiags(diags);
   diags->prefix_str = "Manager ";
   diags->set_stdout_output(bind_stdout);
   diags->set_stderr_output(bind_stderr);
 
-  if (is_debug_tag_set("diags"))
+  if (is_debug_tag_set("diags")) {
     diags->dump();
+  }
   diags->cleanup_func = mgmt_cleanup;
 
   // Setup the exported manager version records.
@@ -558,7 +573,7 @@ main(int argc, const char **argv)
   RecSetRecordString("proxy.node.version.manager.build_person", appVersionInfo.BldPersonStr, REC_SOURCE_DEFAULT);
 
   if (!disable_syslog) {
-    char sys_var[] = "proxy.config.syslog_facility";
+    char sys_var[]     = "proxy.config.syslog_facility";
     char *facility_str = NULL;
     int facility_int;
 
@@ -657,8 +672,8 @@ main(int argc, const char **argv)
     ink_assert(found);
   }
 
-  in_addr_t min_ip = inet_network("224.0.0.255");
-  in_addr_t max_ip = inet_network("239.255.255.255");
+  in_addr_t min_ip        = inet_network("224.0.0.255");
+  in_addr_t max_ip        = inet_network("239.255.255.255");
   in_addr_t group_addr_ip = inet_network(group_addr);
 
   if (!(min_ip < group_addr_ip && group_addr_ip < max_ip)) {
@@ -693,8 +708,8 @@ main(int argc, const char **argv)
   mode_t oldmask = umask(0);
   mode_t newmode = api_socket_is_restricted() ? 00700 : 00777;
 
-  int mgmtapiFD = -1;  // FD for the api interface to issue commands
-  int eventapiFD = -1; // FD for the api and clients to handle event callbacks
+  int mgmtapiFD         = -1; // FD for the api interface to issue commands
+  int eventapiFD        = -1; // FD for the api and clients to handle event callbacks
   char mgmtapiFailMsg[] = "Traffic server management API service Interface Failed to Initialize.";
 
   mgmtapiFD = bind_unix_domain_socket(apisock, newmode);
@@ -714,11 +729,8 @@ main(int argc, const char **argv)
   ink_thread_create(ts_ctrl_main, &mgmtapiFD);
   ink_thread_create(event_callback_main, &eventapiFD);
 
-
   ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
-
-  statProcessor = new StatProcessor(configFiles);
 
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(NULL), RECP_NON_PERSISTENT);
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_required", 0, RECP_NON_PERSISTENT);
@@ -727,11 +739,23 @@ main(int argc, const char **argv)
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.manager", 0, RECP_NON_PERSISTENT);
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.restart_required.cop", 0, RECP_NON_PERSISTENT);
 
+  binding = new BindingInstance;
+  metrics_binding_initialize(*binding);
+
   int sleep_time = 0; // sleep_time given in sec
 
   for (;;) {
     lmgmt->processEventQueue();
     lmgmt->pollMgmtProcessServer();
+
+    if (binding_version != metrics_version) {
+      metrics_binding_destroy(*binding);
+      delete binding;
+
+      binding = new BindingInstance;
+      metrics_binding_initialize(*binding);
+      binding_version = metrics_version;
+    }
 
     // Handle rotation of output log (aka traffic.out) as well as DIAGS_LOG_FILENAME (aka manager.log)
     rotateLogs();
@@ -762,9 +786,7 @@ main(int argc, const char **argv)
     lmgmt->ccom->checkPeers(&ticker);
     overviewGenerator->checkForUpdates();
 
-    if (statProcessor) {
-      statProcessor->processStat();
-    }
+    metrics_binding_evaluate(*binding);
 
     if (lmgmt->mgmt_shutdown_outstanding != MGMT_PENDING_NONE) {
       Debug("lm", "pending shutdown %d", lmgmt->mgmt_shutdown_outstanding);
@@ -772,12 +794,12 @@ main(int argc, const char **argv)
     switch (lmgmt->mgmt_shutdown_outstanding) {
     case MGMT_PENDING_RESTART:
       lmgmt->mgmtShutdown();
-      _exit(0);
+      ::exit(0);
       break;
     case MGMT_PENDING_IDLE_RESTART:
       if (is_server_idle()) {
         lmgmt->mgmtShutdown();
-        _exit(0);
+        ::exit(0);
       }
       break;
     case MGMT_PENDING_BOUNCE:
@@ -804,7 +826,7 @@ main(int argc, const char **argv)
       }
       if (lmgmt->startProxy()) {
         just_started = 0;
-        sleep_time = 0;
+        sleep_time   = 0;
       } else {
         just_started++;
       }
@@ -814,7 +836,7 @@ main(int argc, const char **argv)
 
     /* This will catch the case were the proxy dies before it can connect to manager */
     if (lmgmt->proxy_launch_outstanding && !lmgmt->processRunning() && just_started >= 120) {
-      just_started = 0;
+      just_started                    = 0;
       lmgmt->proxy_launch_outstanding = false;
       if (lmgmt->proxy_launch_pid != -1) {
         int res;
@@ -834,8 +856,9 @@ main(int argc, const char **argv)
     }
   }
 
-  if (statProcessor) {
-    delete (statProcessor);
+  if (binding) {
+    metrics_binding_destroy(*binding);
+    delete binding;
   }
 
 #ifndef MGMT_SERVICE
@@ -938,11 +961,11 @@ SignalHandler(int sig)
   default:
     fprintf(stderr, "[TrafficManager] ==> signal #%d\n", sig);
     mgmt_elog(stderr, 0, "[TrafficManager] ==> signal #%d\n", sig);
-    _exit(sig);
+    ::exit(sig);
   }
   fprintf(stderr, "[TrafficManager] ==> signal2 #%d\n", sig);
   mgmt_elog(stderr, 0, "[TrafficManager] ==> signal2 #%d\n", sig);
-  _exit(sig);
+  ::exit(sig);
 } /* End SignalHandler */
 
 // void SigChldHandler(int sig)
@@ -1003,6 +1026,9 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "logs_xml.config") == 0) {
     lmgmt->signalFileChange("proxy.config.log.xml_config_file");
 
+  } else if (strcmp(fname, "logging.config") == 0) {
+    lmgmt->signalFileChange("proxy.config.log.config.filename");
+
   } else if (strcmp(fname, "splitdns.config") == 0) {
     lmgmt->signalFileChange("proxy.config.dns.splitdns.filename");
 
@@ -1015,11 +1041,9 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "proxy.config.body_factory.template_sets_dir") == 0) {
     lmgmt->signalFileChange("proxy.config.body_factory.template_sets_dir");
 
-  } else if (strcmp(fname, "stats.config.xml") == 0) {
-    if (statProcessor) {
-      statProcessor->rereadConfig(configFiles);
-    }
-    mgmt_log(stderr, "[fileUpdated] stats.config.xml file has been modified\n");
+  } else if (strcmp(fname, "metrics.config") == 0) {
+    ink_atomic_increment(&metrics_version, 1);
+    mgmt_log(stderr, "[fileUpdated] metrics.config file has been modified\n");
   } else if (strcmp(fname, "congestion.config") == 0) {
     lmgmt->signalFileChange("proxy.config.http.congestion_control.filename");
   } else {
@@ -1050,7 +1074,7 @@ fileUpdated(char *fname, bool incVersion)
 int
 restoreCapabilities()
 {
-  int zret = 0;                   // return value.
+  int zret      = 0;              // return value.
   cap_t cap_set = cap_get_proc(); // current capabilities
   // Make a list of the capabilities we want turned on.
   cap_value_t cap_list[] = {

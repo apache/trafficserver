@@ -16,7 +16,6 @@
   limitations under the License.
 */
 
-
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
@@ -25,12 +24,11 @@
 
 #define TS_LUA_MAX_STATE_COUNT 256
 
-static uint64_t ts_lua_http_next_id = 0;
+static uint64_t ts_lua_http_next_id   = 0;
 static uint64_t ts_lua_g_http_next_id = 0;
 
 static ts_lua_main_ctx *ts_lua_main_ctx_array;
 static ts_lua_main_ctx *ts_lua_g_main_ctx_array;
-
 
 TSReturnCode
 TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
@@ -118,8 +116,8 @@ TSRemapDeleteInstance(void *ih)
   return;
 }
 
-TSRemapStatus
-TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+static TSRemapStatus
+ts_lua_remap_plugin_init(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 {
   int ret;
   uint64_t req_id;
@@ -133,8 +131,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   ts_lua_instance_conf *instance_conf;
 
+  int remap     = (rri == NULL ? 0 : 1);
   instance_conf = (ts_lua_instance_conf *)ih;
-  req_id = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
+  req_id        = __sync_fetch_and_add(&ts_lua_http_next_id, 1);
 
   main_ctx = &ts_lua_main_ctx_array[req_id % TS_LUA_MAX_STATE_COUNT];
 
@@ -142,16 +141,17 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
 
   http_ctx = ts_lua_create_http_ctx(main_ctx, instance_conf);
 
-  http_ctx->txnp = rh;
-  http_ctx->client_request_bufp = rri->requestBufp;
-  http_ctx->client_request_hdrp = rri->requestHdrp;
-  http_ctx->client_request_url = rri->requestUrl;
-  http_ctx->rri = rri;
-  http_ctx->remap = 1;
+  http_ctx->txnp     = rh;
   http_ctx->has_hook = 0;
+  http_ctx->rri      = rri;
+  if (rri != NULL) {
+    http_ctx->client_request_bufp = rri->requestBufp;
+    http_ctx->client_request_hdrp = rri->requestHdrp;
+    http_ctx->client_request_url  = rri->requestUrl;
+  }
 
   ci = &http_ctx->cinfo;
-  L = ci->routine.lua;
+  L  = ci->routine.lua;
 
   contp = TSContCreate(ts_lua_http_cont_handler, NULL);
   TSContDataSet(contp, http_ctx);
@@ -159,7 +159,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   ci->contp = contp;
   ci->mutex = TSContMutexGet((TSCont)rh);
 
-  lua_getglobal(L, TS_LUA_FUNCTION_REMAP);
+  lua_getglobal(L, (remap ? TS_LUA_FUNCTION_REMAP : TS_LUA_FUNCTION_OS_RESPONSE));
   if (lua_type(L, -1) != LUA_TFUNCTION) {
     TSMutexUnlock(main_ctx->mutexp);
     return TSREMAP_NO_REMAP;
@@ -187,6 +187,20 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   TSMutexUnlock(main_ctx->mutexp);
 
   return ret;
+}
+
+void
+TSRemapOSResponse(void *ih, TSHttpTxn rh, int os_response_type)
+{
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] os response function and type - %d", __FUNCTION__, os_response_type);
+  ts_lua_remap_plugin_init(ih, rh, NULL);
+}
+
+TSRemapStatus
+TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
+{
+  TSDebug(TS_LUA_DEBUG_TAG, "[%s] remap function", __FUNCTION__);
+  return ts_lua_remap_plugin_init(ih, rh, rri);
 }
 
 static int
@@ -217,10 +231,9 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   TSDebug(TS_LUA_DEBUG_TAG, "[%s] req_id: %" PRId64, __FUNCTION__, req_id);
   TSMutexLock(main_ctx->mutexp);
 
-  http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
-  http_ctx->txnp = txnp;
-  http_ctx->rri = NULL;
-  http_ctx->remap = 0;
+  http_ctx           = ts_lua_create_http_ctx(main_ctx, conf);
+  http_ctx->txnp     = txnp;
+  http_ctx->rri      = NULL;
   http_ctx->has_hook = 0;
 
   if (!http_ctx->client_request_bufp) {
@@ -245,7 +258,7 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   txn_contp = TSContCreate(ts_lua_http_cont_handler, NULL);
   TSContDataSet(txn_contp, http_ctx);
 
-  ci = &http_ctx->cinfo;
+  ci        = &http_ctx->cinfo;
   ci->contp = txn_contp;
   ci->mutex = TSContMutexGet((TSCont)txnp);
 
@@ -350,15 +363,15 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "ts_lua";
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = "ts_lua";
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[ts_lua] Plugin registration failed.");
   }
 
-  int ret = 0;
+  int ret                 = 0;
   ts_lua_g_main_ctx_array = TSmalloc(sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
   memset(ts_lua_g_main_ctx_array, 0, sizeof(ts_lua_main_ctx) * TS_LUA_MAX_STATE_COUNT);
 
@@ -392,7 +405,6 @@ TSPluginInit(int argc, const char *argv[])
 
   ts_lua_init_instance(conf);
 
-
   char errbuf[TS_LUA_MAX_STR_LENGTH];
   int errbuf_len = sizeof(errbuf);
   ret = ts_lua_add_module(conf, ts_lua_g_main_ctx_array, TS_LUA_MAX_STATE_COUNT, argc - 1, (char **)&argv[1], errbuf, errbuf_len);
@@ -413,7 +425,7 @@ TSPluginInit(int argc, const char *argv[])
   // adding hook based on whether the lua global function exists.
   ts_lua_main_ctx *main_ctx = &ts_lua_g_main_ctx_array[0];
   ts_lua_http_ctx *http_ctx = ts_lua_create_http_ctx(main_ctx, conf);
-  lua_State *l = http_ctx->cinfo.routine.lua;
+  lua_State *l              = http_ctx->cinfo.routine.lua;
 
   lua_getglobal(l, TS_LUA_FUNCTION_G_SEND_REQUEST);
   if (lua_type(l, -1) == LUA_TFUNCTION) {

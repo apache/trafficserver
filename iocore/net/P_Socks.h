@@ -64,8 +64,16 @@ struct socks_conf_struct {
 #endif
 
   socks_conf_struct()
-    : socks_needed(0), server_connect_timeout(0), socks_timeout(100), default_version(5), user_name_n_passwd(NULL),
-      user_name_n_passwd_len(0), per_server_connection_attempts(1), connection_attempts(0), accept_enabled(0), accept_port(0),
+    : socks_needed(0),
+      server_connect_timeout(0),
+      socks_timeout(100),
+      default_version(5),
+      user_name_n_passwd(NULL),
+      user_name_n_passwd_len(0),
+      per_server_connection_attempts(1),
+      connection_attempts(0),
+      accept_enabled(0),
+      accept_port(0),
       http_port(1080)
   {
 #if !defined(SOCKS_WITH_TS)
@@ -132,11 +140,18 @@ struct SocksEntry : public Continuation {
   int startEvent(int event, void *data);
   int mainEvent(int event, void *data);
   void findServer();
-  void init(ProxyMutex *m, SocksNetVC *netvc, unsigned char socks_support, unsigned char ver);
+  void init(Ptr<ProxyMutex> &m, SocksNetVC *netvc, unsigned char socks_support, unsigned char ver);
   void free();
 
   SocksEntry()
-    : Continuation(NULL), netVConnection(0), nattempts(0), lerrno(0), timeout(0), version(5), write_done(false), auth_handler(NULL),
+    : Continuation(NULL),
+      netVConnection(0),
+      nattempts(0),
+      lerrno(0),
+      timeout(0),
+      version(5),
+      write_done(false),
+      auth_handler(NULL),
       socks_cmd(NORMAL_SOCKS)
   {
     memset(&target_addr, 0, sizeof(target_addr));
@@ -156,7 +171,7 @@ SocksAddrType::reset()
   }
 
   addr.buf = 0;
-  type = SOCKS_ATYPE_NONE;
+  type     = SOCKS_ATYPE_NONE;
 }
 
 #endif

@@ -46,12 +46,12 @@
 #include "Log.h"
 
 // logcat-specific command-line flags
-static int squid_flag = 0;
-static int follow_flag = 0;
-static int clf_flag = 0;
-static int elf_flag = 0;
-static int elf2_flag = 0;
-static int auto_filenames = 0;
+static int squid_flag              = 0;
+static int follow_flag             = 0;
+static int clf_flag                = 0;
+static int elf_flag                = 0;
+static int elf2_flag               = 0;
+static int auto_filenames          = 0;
 static int overwrite_existing_file = 0;
 static char output_file[1024];
 int auto_clear_cache_flag = 0;
@@ -87,12 +87,13 @@ process_file(int in_fd, int out_fd)
     // cookie and the version number.
     //
     unsigned first_read_size = sizeof(uint32_t) + sizeof(uint32_t);
-    unsigned header_size = sizeof(LogBufferHeader);
-    LogBufferHeader *header = (LogBufferHeader *)&buffer[0];
+    unsigned header_size     = sizeof(LogBufferHeader);
+    LogBufferHeader *header  = (LogBufferHeader *)&buffer[0];
 
     nread = read(in_fd, buffer, first_read_size);
-    if (!nread || nread == EOF)
+    if (!nread || nread == EOF) {
       return 0;
+    }
 
     // ensure that this is a valid logbuffer header
     //
@@ -106,8 +107,9 @@ process_file(int in_fd, int out_fd)
 
     nread = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || nread == EOF) {
-      if (follow_flag)
+      if (follow_flag) {
         return 0;
+      }
 
       fprintf(stderr, "Bad LogBufferHeader read!\n");
       return 1;
@@ -121,8 +123,9 @@ process_file(int in_fd, int out_fd)
       return 1;
     }
     buffer_bytes = byte_count - header_size;
-    if (buffer_bytes == 0)
+    if (buffer_bytes == 0) {
       return 0;
+    }
     if (buffer_bytes < 0) {
       fprintf(stderr, "No buffer body!\n");
       return 1;
@@ -137,8 +140,9 @@ process_file(int in_fd, int out_fd)
         return 1;
       }
 
-      if (rc > 0)
+      if (rc > 0) {
         nread += rc;
+      }
     }
 
     if (nread > buffer_bytes) {
@@ -191,7 +195,6 @@ open_output_file(char *output_file)
   return file_desc;
 }
 
-
 /*-------------------------------------------------------------------------
   main
   -------------------------------------------------------------------------*/
@@ -200,7 +203,7 @@ int
 main(int /* argc ATS_UNUSED */, const char *argv[])
 {
   enum {
-    NO_ERROR = 0,
+    NO_ERROR              = 0,
     CMD_LINE_OPTION_ERROR = 1,
     DATA_PROCESSING_ERROR = 2,
   };
@@ -220,7 +223,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   //
   if (output_file[0] != 0 && auto_filenames) {
     fprintf(stderr, "Error: specify only one of -o <file> and -a\n");
-    _exit(CMD_LINE_OPTION_ERROR);
+    ::exit(CMD_LINE_OPTION_ERROR);
   }
   // initialize this application for standalone logging operation
   //
@@ -235,7 +238,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     out_fd = open_output_file(output_file);
 
     if (out_fd < 0) {
-      _exit(DATA_PROCESSING_ERROR);
+      ::exit(DATA_PROCESSING_ERROR);
     }
   } else if (!auto_filenames) {
     out_fd = STDOUT_FILENO;
@@ -245,7 +248,7 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
   int error = NO_ERROR;
 
   if (n_file_arguments) {
-    int bin_ext_len = strlen(LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION);
+    int bin_ext_len   = strlen(LOG_FILE_BINARY_OBJECT_FILENAME_EXTENSION);
     int ascii_ext_len = strlen(LOG_FILE_ASCII_OBJECT_FILENAME_EXTENSION);
 
     for (unsigned i = 0; i < n_file_arguments; ++i) {
@@ -281,18 +284,20 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
             continue;
           }
         }
-        if (follow_flag)
+        if (follow_flag) {
           lseek(in_fd, 0, SEEK_END);
+        }
 
         while (true) {
           if (process_file(in_fd, out_fd) != 0) {
             error = DATA_PROCESSING_ERROR;
             break;
           }
-          if (!follow_flag)
+          if (!follow_flag) {
             break;
-          else
+          } else {
             usleep(10000); // This avoids burning CPU, using poll() would have been nice, but doesn't work I think.
+          }
         }
       }
     }
@@ -301,10 +306,11 @@ main(int /* argc ATS_UNUSED */, const char *argv[])
     //
     int tries = 3;
     while (--tries >= 0) {
-      if (process_file(STDIN_FILENO, out_fd) != 0)
+      if (process_file(STDIN_FILENO, out_fd) != 0) {
         tries = -1;
+      }
     }
   }
 
-  _exit(error);
+  ::exit(error);
 }

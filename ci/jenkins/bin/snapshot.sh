@@ -21,6 +21,7 @@ cd "${WORKSPACE}/src"
 autoreconf -fi
 
 ./configure \
+    --with-user=jenkins \
     --enable-ccache \
     --enable-debug \
     --enable-werror \

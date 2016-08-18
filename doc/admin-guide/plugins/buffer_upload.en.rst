@@ -1,4 +1,4 @@
-.. _buffer-upload-plugin:
+.. _admin-plugins-buffer-upload:
 
 Buffer Upload Plugin
 ********************

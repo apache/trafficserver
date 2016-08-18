@@ -30,7 +30,6 @@
 #define USE_EDGE_TRIGGER_KQUEUE 1
 #define USE_EDGE_TRIGGER_PORT 1
 
-
 #define EVENTIO_NETACCEPT 1
 #define EVENTIO_READWRITE_VC 2
 #define EVENTIO_DNS_CONNECTION 3
@@ -104,7 +103,7 @@ struct EventIO {
   int close();
   EventIO()
   {
-    type = 0;
+    type   = 0;
     data.c = 0;
   }
 };
@@ -129,7 +128,6 @@ extern int fds_throttle;
 extern int fds_limit;
 extern ink_hrtime last_transient_accept_error;
 extern int http_accept_port_number;
-
 
 //#define INACTIVITY_TIMEOUT
 //
@@ -162,12 +160,11 @@ struct PollCont : public Continuation {
   PollDescriptor *nextPollDescriptor;
   int poll_timeout;
 
-  PollCont(ProxyMutex *m, int pt = net_config_poll_timeout);
-  PollCont(ProxyMutex *m, NetHandler *nh, int pt = net_config_poll_timeout);
+  PollCont(Ptr<ProxyMutex> &m, int pt = net_config_poll_timeout);
+  PollCont(Ptr<ProxyMutex> &m, NetHandler *nh, int pt = net_config_poll_timeout);
   ~PollCont();
   int pollEvent(int event, Event *e);
 };
-
 
 //
 // NetHandler
@@ -207,7 +204,7 @@ public:
   int mainNetEventExt(int event, Event *data);
   void process_enabled_list(NetHandler *);
   void manage_keep_alive_queue();
-  bool manage_active_queue();
+  bool manage_active_queue(bool ignore_queue_size);
   void add_to_keep_alive_queue(UnixNetVConnection *vc);
   void remove_from_keep_alive_queue(UnixNetVConnection *vc);
   bool add_to_active_queue(UnixNetVConnection *vc);
@@ -238,7 +235,6 @@ get_PollDescriptor(EThread *t)
   return p->pollDescriptor;
 }
 
-
 enum ThrottleType {
   ACCEPT,
   CONNECT,
@@ -248,7 +244,7 @@ TS_INLINE int
 net_connections_to_throttle(ThrottleType t)
 {
   double headroom = t == ACCEPT ? NET_THROTTLE_ACCEPT_HEADROOM : NET_THROTTLE_CONNECT_HEADROOM;
-  int64_t sval = 0;
+  int64_t sval    = 0;
 
   NET_READ_GLOBAL_DYN_SUM(net_connections_currently_open_stat, sval);
   int currently_open = (int)sval;
@@ -312,10 +308,10 @@ check_throttle_warning()
 TS_INLINE int
 check_emergency_throttle(Connection &con)
 {
-  int fd = con.fd;
+  int fd        = con.fd;
   int emergency = fds_limit - EMERGENCY_THROTTLE;
   if (fd > emergency) {
-    int over = fd - emergency;
+    int over                = fd - emergency;
     emergency_throttle_time = Thread::get_hrtime() + (over * over) * HRTIME_SECOND;
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many open file descriptors, emergency throttling");
     int hyper_emergency = fds_limit - HYPER_EMERGENCY_THROTTLE;
@@ -325,7 +321,6 @@ check_emergency_throttle(Connection &con)
   }
   return false;
 }
-
 
 TS_INLINE int
 change_net_connections_throttle(const char *token, RecDataT data_type, RecData value, void *data)
@@ -344,7 +339,6 @@ change_net_connections_throttle(const char *token, RecDataT data_type, RecData v
   }
   return 0;
 }
-
 
 // 1  - transient
 // 0  - report as warning
@@ -492,13 +486,13 @@ EventIO::close()
 TS_INLINE int
 EventIO::start(EventLoop l, int afd, Continuation *c, int e)
 {
-  data.c = c;
-  fd = afd;
+  data.c     = c;
+  fd         = afd;
   event_loop = l;
 #if TS_USE_EPOLL
   struct epoll_event ev;
   memset(&ev, 0, sizeof(ev));
-  ev.events = e;
+  ev.events   = e;
   ev.data.ptr = this;
 #ifndef USE_EDGE_TRIGGER
   events = e;
@@ -516,7 +510,7 @@ EventIO::start(EventLoop l, int afd, Continuation *c, int e)
   return kevent(l->kqueue_fd, &ev[0], n, NULL, 0, NULL);
 #endif
 #if TS_USE_PORT
-  events = e;
+  events     = e;
   int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
   Debug("iocore_eventio", "[EventIO::start] e(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, events, retval,
         retval < 0 ? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
@@ -536,8 +530,8 @@ EventIO::modify(int e)
     new_events &= ~(-e);
   else
     new_events |= e;
-  events = new_events;
-  ev.events = new_events;
+  events      = new_events;
+  ev.events   = new_events;
   ev.data.ptr = this;
   if (!new_events)
     return epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
@@ -570,7 +564,7 @@ EventIO::modify(int e)
     return 0;
 #endif
 #if TS_USE_PORT
-  int n = 0;
+  int n  = 0;
   int ne = e;
   if (e < 0) {
     if (((-e) & events)) {
@@ -590,7 +584,7 @@ EventIO::modify(int e)
     }
   }
   if (n && ne && event_loop) {
-    events = ne;
+    events     = ne;
     int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
     Debug("iocore_eventio", "[EventIO::modify] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events,
           retval, retval < 0 ? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
@@ -621,7 +615,7 @@ EventIO::refresh(int e)
     return 0;
 #endif
 #if TS_USE_PORT
-  int n = 0;
+  int n  = 0;
   int ne = e;
   if ((e & events)) {
     ne = events | e;
@@ -630,7 +624,7 @@ EventIO::refresh(int e)
     if (e & EVENTIO_WRITE)
       n++;
     if (n && ne && event_loop) {
-      events = ne;
+      events     = ne;
       int retval = port_associate(event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
       Debug("iocore_eventio", "[EventIO::refresh] e(%d), ne(%d), events(%d), %d[%s]=port_associate(%d,%d,%d,%d,%p)", e, ne, events,
             retval, retval < 0 ? strerror(errno) : "ok", event_loop->port_fd, PORT_SOURCE_FD, fd, events, this);
@@ -644,7 +638,6 @@ EventIO::refresh(int e)
 #endif
 }
 
-
 TS_INLINE int
 EventIO::stop()
 {
@@ -654,7 +647,7 @@ EventIO::stop()
     struct epoll_event ev;
     memset(&ev, 0, sizeof(struct epoll_event));
     ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-    retval = epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
+    retval    = epoll_ctl(event_loop->epoll_fd, EPOLL_CTL_DEL, fd, &ev);
 #endif
 #if TS_USE_PORT
     retval = port_dissociate(event_loop->port_fd, PORT_SOURCE_FD, fd);

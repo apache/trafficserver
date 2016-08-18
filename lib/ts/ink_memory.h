@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <strings.h>
+#include <inttypes.h>
 
 #include "ts/ink_config.h"
 
@@ -92,6 +93,10 @@ int ats_msync(caddr_t addr, size_t len, caddr_t end, int flags);
 int ats_madvise(caddr_t addr, size_t len, int flags);
 int ats_mlock(caddr_t addr, size_t len);
 
+void *ats_track_malloc(size_t size, uint64_t *stat);
+void *ats_track_realloc(void *ptr, size_t size, uint64_t *alloc_stat, uint64_t *free_stat);
+void ats_track_free(void *ptr, uint64_t *stat);
+
 static inline size_t __attribute__((const)) ats_pagesize(void)
 {
   static size_t page_size;
@@ -100,7 +105,7 @@ static inline size_t __attribute__((const)) ats_pagesize(void)
     return page_size;
 
 #if defined(HAVE_SYSCONF) && defined(_SC_PAGESIZE)
-  long ret = sysconf(_SC_PAGESIZE);
+  long ret  = sysconf(_SC_PAGESIZE);
   page_size = (size_t)((ret > -1) ? ret : 8192);
 #elif defined(HAVE_GETPAGESIZE)
   page_size = (size_t)getpagesize()
@@ -131,7 +136,7 @@ make_iovec(PtrType ptr, SizeType sz)
   return iov;
 }
 
-template <typename PtrType, unsigned N> static inline IOVec make_iovec(PtrType(&array)[N])
+template <typename PtrType, unsigned N> static inline IOVec make_iovec(PtrType (&array)[N])
 {
   IOVec iov = {&array[0], static_cast<size_t>(sizeof(array))};
   return iov;
@@ -244,10 +249,8 @@ public:
 public:
   /// Default constructor - an empty container.
   ats_scoped_resource() : _r(Traits::initValue()) {}
-
   /// Construct with contained resource.
   explicit ats_scoped_resource(value_type rt) : _r(rt) {}
-
   /// Destructor.
   ~ats_scoped_resource()
   {
@@ -282,7 +285,7 @@ public:
   release()
   {
     value_type zret = _r;
-    _r = Traits::initValue();
+    _r              = Traits::initValue();
     return zret;
   }
 
@@ -292,7 +295,8 @@ public:
 
       @internal This is usually overridden in subclasses to get the return type adjusted.
   */
-  self &operator=(value_type rt)
+  self &
+  operator=(value_type rt)
   {
     if (Traits::isValid(_r))
       Traits::destroy(_r);
@@ -301,10 +305,18 @@ public:
   }
 
   /// Equality.
-  bool operator==(value_type rt) const { return _r == rt; }
+  bool
+  operator==(value_type rt) const
+  {
+    return _r == rt;
+  }
 
   /// Inequality.
-  bool operator!=(value_type rt) const { return _r != rt; }
+  bool
+  operator!=(value_type rt) const
+  {
+    return _r != rt;
+  }
 
   /// Test if the contained resource is valid.
   bool
@@ -353,15 +365,14 @@ public:
 
   /// Default constructor - an empty container.
   ats_scoped_fd() : super() {}
-
   /// Construct with contained resource.
   explicit ats_scoped_fd(value_type rt) : super(rt) {}
-
   /** Place a new resource @a rt in the container.
       Any resource currently contained is destroyed.
       This object becomes the owner of @a rt.
   */
-  self &operator=(value_type rt)
+  self &
+  operator=(value_type rt)
   {
     super::operator=(rt);
     return *this;
@@ -419,11 +430,11 @@ struct SCOPED_OBJECT_TRAITS {
 /** Specialization of @c ats_scoped_resource for strings.
     This contains an allocated string that is cleaned up if not explicitly released.
 */
-class ats_scoped_str : public ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<char> >
+class ats_scoped_str : public ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<char>>
 {
 public:
-  typedef ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<char> > super; ///< Super type.
-  typedef ats_scoped_str self;                                            ///< Self reference type.
+  typedef ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<char>> super; ///< Super type.
+  typedef ats_scoped_str self;                                           ///< Self reference type.
 
   /// Default constructor (no string).
   ats_scoped_str() {}
@@ -432,7 +443,8 @@ public:
   /// Put string @a s in this container for cleanup.
   explicit ats_scoped_str(char *s) : super(s) {}
   /// Assign a string @a s to this container.
-  self &operator=(char *s)
+  self &
+  operator=(char *s)
   {
     super::operator=(s);
     return *this;
@@ -443,13 +455,14 @@ public:
  */
 template <typename T ///< Underlying (not pointer) type.
           >
-class ats_scoped_mem : public ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<T> >
+class ats_scoped_mem : public ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<T>>
 {
 public:
-  typedef ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<T> > super; ///< Super type.
-  typedef ats_scoped_mem self;                                         ///< Self reference.
+  typedef ats_scoped_resource<detail::SCOPED_MALLOC_TRAITS<T>> super; ///< Super type.
+  typedef ats_scoped_mem self;                                        ///< Self reference.
 
-  self &operator=(T *ptr)
+  self &
+  operator=(T *ptr)
   {
     super::operator=(ptr);
     return *this;
@@ -462,19 +475,18 @@ public:
 
 template <typename T /// Underlying (not pointer) type.
           >
-class ats_scoped_obj : public ats_scoped_resource<detail::SCOPED_OBJECT_TRAITS<T> >
+class ats_scoped_obj : public ats_scoped_resource<detail::SCOPED_OBJECT_TRAITS<T>>
 {
 public:
-  typedef ats_scoped_resource<detail::SCOPED_OBJECT_TRAITS<T> > super; ///< Super type.
-  typedef ats_scoped_obj self;                                         ///< Self reference.
+  typedef ats_scoped_resource<detail::SCOPED_OBJECT_TRAITS<T>> super; ///< Super type.
+  typedef ats_scoped_obj self;                                        ///< Self reference.
 
   /// Default constructor - an empty container.
   ats_scoped_obj() : super() {}
-
   /// Construct with contained resource.
   explicit ats_scoped_obj(T *obj) : super(obj) {}
-
-  self &operator=(T *obj)
+  self &
+  operator=(T *obj)
   {
     super::operator=(obj);
     return *this;
@@ -491,8 +503,8 @@ public:
 inline char *
 path_join(ats_scoped_str const &lhs, ats_scoped_str const &rhs)
 {
-  size_t ln = strlen(lhs);
-  size_t rn = strlen(rhs);
+  size_t ln        = strlen(lhs);
+  size_t rn        = strlen(rhs);
   char const *rptr = rhs; // May need to be modified.
 
   if (ln && lhs[ln - 1] == '/')

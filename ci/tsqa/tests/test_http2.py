@@ -40,7 +40,6 @@ class TestHTTP2(helpers.EnvironmentCase, tsqa.test_cases.HTTPBinCase):
         cls.http2_port = tsqa.utils.bind_unused_port()[1]
 
         # HTTP2 configs
-        cls.configs['records.config']['CONFIG']['proxy.config.http2.enabled'] = 1
         cls.configs['records.config']['CONFIG']['proxy.config.http.server_ports'] += ' {0}:ssl'.format(cls.http2_port)
         cls.configs['records.config']['CONFIG']['proxy.config.ssl.server.cert.path'] = helpers.tests_file_path('rsa_keys')
         cls.configs['records.config']['CONFIG']['proxy.config.diags.debug.enabled'] = 1

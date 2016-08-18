@@ -210,7 +210,6 @@ main(int /* argc ATS_UNUSED */, char ** /*argv ATS_UNUSED */)
   ssh.get_keys(chars);
   ink_assert(chars.n == 8);
 
-
   test_TSHashTable();
 
   printf("test_Map PASSED\n");

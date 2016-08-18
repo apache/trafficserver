@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ClusterConfig.cc
@@ -32,8 +31,13 @@
 int cluster_port = DEFAULT_CLUSTER_PORT_NUMBER;
 
 ClusterAccept::ClusterAccept(int *port, int send_bufsize, int recv_bufsize)
-  : Continuation(0), p_cluster_port(port), socket_send_bufsize(send_bufsize), socket_recv_bufsize(recv_bufsize),
-    current_cluster_port(-1), accept_action(0), periodic_event(0)
+  : Continuation(0),
+    p_cluster_port(port),
+    socket_send_bufsize(send_bufsize),
+    socket_recv_bufsize(recv_bufsize),
+    current_cluster_port(-1),
+    accept_action(0),
+    periodic_event(0)
 {
   mutex = new_ProxyMutex();
   SET_HANDLER(&ClusterAccept::ClusterAcceptEvent);
@@ -96,11 +100,11 @@ ClusterAccept::ClusterAcceptEvent(int event, void *data)
       }
 
       NetProcessor::AcceptOptions opt;
-      opt.recv_bufsize = socket_recv_bufsize;
-      opt.send_bufsize = socket_send_bufsize;
-      opt.etype = ET_CLUSTER;
-      opt.local_port = cluster_port;
-      opt.ip_family = AF_INET;
+      opt.recv_bufsize   = socket_recv_bufsize;
+      opt.send_bufsize   = socket_send_bufsize;
+      opt.etype          = ET_CLUSTER;
+      opt.local_port     = cluster_port;
+      opt.ip_family      = AF_INET;
       opt.localhost_only = false;
 
       accept_action = netProcessor.main_accept(this, NO_FD, opt);
@@ -128,7 +132,7 @@ ClusterAccept::ClusterAcceptMachine(NetVConnection *NetVC)
 {
   // Validate remote IP address.
   unsigned int remote_ip = NetVC->get_remote_ip();
-  MachineList *mc = the_cluster_machines_config();
+  MachineList *mc        = the_cluster_machines_config();
 
   if (mc && !mc->find(remote_ip)) {
     Note("Illegal cluster connection from %u.%u.%u.%u", DOT_SEPARATED(remote_ip));
@@ -138,9 +142,9 @@ ClusterAccept::ClusterAcceptMachine(NetVConnection *NetVC)
 
   Debug(CL_NOTE, "Accepting machine %u.%u.%u.%u", DOT_SEPARATED(remote_ip));
   ClusterHandler *ch = new ClusterHandler;
-  ch->machine = new ClusterMachine(NULL, remote_ip);
-  ch->ip = remote_ip;
-  ch->net_vc = NetVC;
+  ch->machine        = new ClusterMachine(NULL, remote_ip);
+  ch->ip             = remote_ip;
+  ch->net_vc         = NetVC;
   eventProcessor.schedule_imm_signal(ch, ET_CLUSTER);
   return 1;
 }
@@ -151,7 +155,7 @@ make_cluster_connections(MachineList *l)
   //
   // Connect to all new machines.
   //
-  uint32_t ip = this_cluster_machine()->ip;
+  uint32_t ip         = this_cluster_machine()->ip;
   int num_connections = this_cluster_machine()->num_connections;
 
   if (l) {
@@ -179,26 +183,26 @@ machine_config_change(const char * /* name ATS_UNUSED */, RecDataT /* data_type 
   // This may include front-end load redirectors, machines going
   // up or coming down etc.
   //
-  char *filename = (char *)data.rec_string;
-  MachineList *l = read_MachineList(filename);
+  char *filename   = (char *)data.rec_string;
+  MachineList *l   = read_MachineList(filename);
   MachineList *old = NULL;
 #ifdef USE_SEPARATE_MACHINE_CONFIG
   switch ((int)cookie) {
   case MACHINE_CONFIG:
-    old = machines_config;
+    old             = machines_config;
     machines_config = l;
     break;
   case CLUSTER_CONFIG:
-    old = cluster_config;
+    old            = cluster_config;
     cluster_config = l;
     make_cluster_connections(l);
     break;
   }
 #else
   (void)cookie;
-  old = cluster_config;
+  old             = cluster_config;
   machines_config = l;
-  cluster_config = l;
+  cluster_config  = l;
   make_cluster_connections(l);
 #endif
   if (old)
@@ -280,9 +284,9 @@ configuration_add_machine(ClusterConfiguration *c, ClusterMachine *m)
   // Build a new cluster configuration with the new machine.
   // Machines are stored in ip sorted order.
   //
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
-  int i = 0;
+  EThread *thread          = this_ethread();
+  ProxyMutex *mutex        = thread->mutex.get();
+  int i                    = 0;
   ClusterConfiguration *cc = new ClusterConfiguration(*c);
 
   // Find the place to insert this new machine
@@ -294,7 +298,7 @@ configuration_add_machine(ClusterConfiguration *c, ClusterMachine *m)
 
   // Move the other machines out of the way
   //
-  for (int j = cc->n_machines - 1; j >= i; j--)
+  for (int j            = cc->n_machines - 1; j >= i; j--)
     cc->machines[j + 1] = cc->machines[j];
 
   // Insert it
@@ -303,7 +307,7 @@ configuration_add_machine(ClusterConfiguration *c, ClusterMachine *m)
   cc->n_machines++;
 
   cc->link.next = c;
-  cc->changed = Thread::get_hrtime();
+  cc->changed   = Thread::get_hrtime();
   ink_assert(cc->n_machines < CLUSTER_MAX_MACHINES);
 
   build_cluster_hash_table(cc);
@@ -317,8 +321,7 @@ configuration_add_machine(ClusterConfiguration *c, ClusterMachine *m)
 ClusterConfiguration *
 configuration_remove_machine(ClusterConfiguration *c, ClusterMachine *m)
 {
-  EThread *thread = this_ethread();
-  ProxyMutex *mutex = thread->mutex;
+  ProxyMutex *mutex = this_thread()->mutex.get();
 
   //
   // Build a new cluster configuration without a machine
@@ -335,7 +338,7 @@ configuration_remove_machine(ClusterConfiguration *c, ClusterMachine *m)
   ink_assert(cc->n_machines > 0);
 
   cc->link.next = c;
-  cc->changed = Thread::get_hrtime();
+  cc->changed   = Thread::get_hrtime();
 
   build_cluster_hash_table(cc);
   INK_MEMORY_BARRIER; // commit writes before freeing old hash table
@@ -360,12 +363,12 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
   if (!cache_clustering_enabled)
     return NULL;
 #endif
-  ClusterConfiguration *cc = this_cluster()->current_configuration();
+  ClusterConfiguration *cc      = this_cluster()->current_configuration();
   ClusterConfiguration *next_cc = cc;
-  ink_hrtime now = Thread::get_hrtime();
-  int fake_probe_depth = 0;
-  int &probe_depth = pprobe_depth ? (*pprobe_depth) : fake_probe_depth;
-  int tprobe_depth = probe_depth;
+  ink_hrtime now                = Thread::get_hrtime();
+  int fake_probe_depth          = 0;
+  int &probe_depth              = pprobe_depth ? (*pprobe_depth) : fake_probe_depth;
+  int tprobe_depth              = probe_depth;
 
 #ifdef CLUSTER_TEST
   if (cc->n_machines > 1) {
@@ -388,7 +391,7 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
     if (!cc || !next_cc)
       break;
 
-    cc = next_cc;
+    cc      = next_cc;
     next_cc = next_cc->link.next;
 
     // Find the correct configuration

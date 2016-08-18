@@ -59,6 +59,8 @@ HttpDebugNames::get_server_state_name(HttpTransact::ServerState_t state)
     return "CONGEST_CONTROL_CONGESTED_ON_F";
   case HttpTransact::CONGEST_CONTROL_CONGESTED_ON_M:
     return "CONGEST_CONTROL_CONGESTED_ON_M";
+  case HttpTransact::PARENT_ORIGIN_RETRY:
+    return "PARENT_ORIGIN_RETRY";
   }
 
   return ("unknown state name");
@@ -130,7 +132,6 @@ HttpDebugNames::get_event_name(int event)
   case EVENT_INTERVAL:
     return ("VC_EVENT_INTERVAL");
 
-
   /////////////////
   // NET  EVENTS //
   /////////////////
@@ -161,7 +162,6 @@ HttpDebugNames::get_event_name(int event)
 
   case EVENT_SRV_GET_RESPONSE:
     return ("EVENT_SRV_GET_RESPONSE");
-
 
   ////////////////////
   // DNS     EVENTS //
@@ -432,7 +432,6 @@ HttpDebugNames::get_cache_action_name(HttpTransact::CacheAction_t t)
 
   return ("unknown cache action");
 }
-
 
 //////////////////////////////////////////////////////////////////
 //

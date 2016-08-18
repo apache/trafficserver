@@ -34,8 +34,8 @@
 
 enum REFlags {
   RE_CASE_INSENSITIVE = 0x0001, // default is case sensitive
-  RE_UNANCHORED = 0x0002,       // default (for DFA) is to anchor at the first matching position
-  RE_ANCHORED = 0x0004,         // default (for Regex) is unanchored
+  RE_UNANCHORED       = 0x0002, // default (for DFA) is to anchor at the first matching position
+  RE_ANCHORED         = 0x0004, // default (for Regex) is unanchored
 };
 
 class Regex
@@ -66,7 +66,6 @@ class DFA
 {
 public:
   DFA() : _my_patterns(0) {}
-
   ~DFA();
 
   int compile(const char *pattern, unsigned flags = 0);

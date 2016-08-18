@@ -1,0 +1,78 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:23
+msgid "DNS"
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:30
+msgid "Average number of milliseconds spent performing DNS lookups per host."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:36
+msgid "The average number of DNS lookups performance per second."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:42
+msgid ""
+"Total number of DNS lookups performance since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:49
+msgid ""
+"The average time per DNS lookup, in milliseconds, which ultimately failed."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:55
+msgid "The number of DNS lookups currently in progress."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:62
+msgid "The average time spent performaning DNS lookups per host."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:68
+msgid ""
+"The total number of DNS lookups which have failed since statistics "
+"collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:75
+msgid ""
+"The total number of DNS lookups which have succeeded since statistics "
+"collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:82
+msgid ""
+"The number of DNS lookups which have been failed due to the maximum number "
+"of retries being exceeded."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:94
+msgid ""
+"The average time per DNS lookup, in milliseconds, which have succeeded."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/dns.en.rst:100
+msgid ""
+"The total number of DNS lookups which have been performed since statistics "
+"collection began."
+msgstr ""

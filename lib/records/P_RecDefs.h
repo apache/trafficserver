@@ -29,7 +29,6 @@
 #define REC_CONFIG_FILE "records.config"
 #define REC_SHADOW_EXT ".shadow"
 #define REC_RAW_STATS_FILE "records.snap"
-#define REC_PIPE_NAME "librecords_pipe"
 
 #define REC_MESSAGE_ELE_MAGIC 0xF00DF00D
 
@@ -162,6 +161,6 @@ typedef RecMessageHdr RecMessage;
 
 typedef void (*RecDumpEntryCb)(RecT rec_type, void *edata, int registered, const char *name, int data_type, RecData *datum);
 
-typedef int (*RecMessageRecvCb)(RecMessage *msg, RecMessageT msg_type, void *cookie);
+typedef RecErrT (*RecMessageRecvCb)(RecMessage *msg, RecMessageT msg_type, void *cookie);
 
 #endif

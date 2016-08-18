@@ -39,16 +39,30 @@ struct AIOCallback;
 #define THREAD_MAX_HEARTBEAT_MSECONDS 60
 #define NO_ETHREAD_ID -1
 
+bool shutdown_event_system = false;
+
 EThread::EThread()
-  : generator((uint64_t)ink_get_hrtime_internal() ^ (uint64_t)(uintptr_t) this), ethreads_to_be_signalled(NULL),
-    n_ethreads_to_be_signalled(0), main_accept_index(-1), id(NO_ETHREAD_ID), event_types(0), signal_hook(0), tt(REGULAR)
+  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this),
+    ethreads_to_be_signalled(NULL),
+    n_ethreads_to_be_signalled(0),
+    main_accept_index(-1),
+    id(NO_ETHREAD_ID),
+    event_types(0),
+    signal_hook(0),
+    tt(REGULAR)
 {
   memset(thread_private, 0, PER_THREAD_DATA);
 }
 
 EThread::EThread(ThreadType att, int anid)
-  : generator((uint64_t)ink_get_hrtime_internal() ^ (uint64_t)(uintptr_t) this), ethreads_to_be_signalled(NULL),
-    n_ethreads_to_be_signalled(0), main_accept_index(-1), id(anid), event_types(0), signal_hook(0), tt(att),
+  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this),
+    ethreads_to_be_signalled(NULL),
+    n_ethreads_to_be_signalled(0),
+    main_accept_index(-1),
+    id(anid),
+    event_types(0),
+    signal_hook(0),
+    tt(att),
     server_session_pool(NULL)
 {
   ethreads_to_be_signalled = (EThread **)ats_malloc(MAX_EVENT_THREADS * sizeof(EThread *));
@@ -80,13 +94,19 @@ EThread::EThread(ThreadType att, int anid)
 }
 
 EThread::EThread(ThreadType att, Event *e)
-  : generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t) this)), ethreads_to_be_signalled(NULL), n_ethreads_to_be_signalled(0),
-    main_accept_index(-1), id(NO_ETHREAD_ID), event_types(0), signal_hook(0), tt(att), oneevent(e)
+  : generator((uint32_t)((uintptr_t)time(NULL) ^ (uintptr_t)this)),
+    ethreads_to_be_signalled(NULL),
+    n_ethreads_to_be_signalled(0),
+    main_accept_index(-1),
+    id(NO_ETHREAD_ID),
+    event_types(0),
+    signal_hook(0),
+    tt(att),
+    oneevent(e)
 {
   ink_assert(att == DEDICATED);
   memset(thread_private, 0, PER_THREAD_DATA);
 }
-
 
 // Provide a destructor so that SDK functions which create and destroy
 // threads won't have to deal with EThread memory deallocation.
@@ -115,7 +135,7 @@ void
 EThread::process_event(Event *e, int calling_code)
 {
   ink_assert((!e->in_the_prot_queue && !e->in_the_priority_queue));
-  MUTEX_TRY_LOCK_FOR(lock, e->mutex.m_ptr, this, e->continuation);
+  MUTEX_TRY_LOCK_FOR(lock, e->mutex, this, e->continuation);
   if (!lock.is_locked()) {
     e->timeout_at = cur_time + DELAY_FOR_RETRY;
     EventQueueExternal.enqueue_local(e);
@@ -134,7 +154,7 @@ EThread::process_event(Event *e, int calling_code)
         if (e->period < 0)
           e->timeout_at = e->period;
         else {
-          cur_time = get_hrtime();
+          this->get_hrtime_updated();
           e->timeout_at = cur_time + e->period;
           if (e->timeout_at < cur_time)
             e->timeout_at = cur_time;
@@ -168,9 +188,12 @@ EThread::execute()
 
     // give priority to immediate events
     for (;;) {
+      if (unlikely(shutdown_event_system == true)) {
+        return;
+      }
       // execute all the available external events that have
       // already been dequeued
-      cur_time = ink_get_based_hrtime_internal();
+      cur_time = Thread::get_hrtime_updated();
       while ((e = EventQueueExternal.dequeue_local())) {
         if (e->cancelled)
           free_event(e);
@@ -253,7 +276,7 @@ EThread::execute()
         if (!INK_ATOMICLIST_EMPTY(EventQueueExternal.al))
           EventQueueExternal.dequeue_timed(cur_time, next_time, false);
       } else { // Means there are no negative events
-        next_time = EventQueue.earliest_timeout();
+        next_time             = EventQueue.earliest_timeout();
         ink_hrtime sleep_time = next_time - cur_time;
 
         if (sleep_time > THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND) {

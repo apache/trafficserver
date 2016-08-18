@@ -54,7 +54,6 @@
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove spaces)
 */
 
-
 #include "ts/ink_platform.h"
 #include "ts/ink_rand.h"
 
@@ -75,7 +74,7 @@ void
 InkRand::seed(uint64_t seed)
 {
   mt[0] = seed;
-  for (mti = 1; mti < NN; mti++)
+  for (mti  = 1; mti < NN; mti++)
     mt[mti] = (6364136223846793005ULL * (mt[mti - 1] ^ (mt[mti - 1] >> 62)) + mti);
 }
 
@@ -87,14 +86,14 @@ InkRand::random()
 
   if (mti >= NN) { /* generate NN words at one time */
     for (i = 0; i < NN - MM; i++) {
-      x = (mt[i] & UM) | (mt[i + 1] & LM);
+      x     = (mt[i] & UM) | (mt[i + 1] & LM);
       mt[i] = mt[i + MM] ^ (x >> 1) ^ mag01[(int)(x & 1ULL)];
     }
     for (; i < NN - 1; i++) {
-      x = (mt[i] & UM) | (mt[i + 1] & LM);
+      x     = (mt[i] & UM) | (mt[i + 1] & LM);
       mt[i] = mt[i + (MM - NN)] ^ (x >> 1) ^ mag01[(int)(x & 1ULL)];
     }
-    x = (mt[NN - 1] & UM) | (mt[0] & LM);
+    x          = (mt[NN - 1] & UM) | (mt[0] & LM);
     mt[NN - 1] = mt[MM - 1] ^ (x >> 1) ^ mag01[(int)(x & 1ULL)];
 
     mti = 0;

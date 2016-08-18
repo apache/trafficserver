@@ -26,7 +26,6 @@
 
 #include "P_EventSystem.h"
 #include "URL.h"
-#include "StatSystem.h"
 #include "P_Net.h"
 #include "ts.h"
 #include "experimental.h"
@@ -55,7 +54,7 @@ typedef int8_t TSMgmtByte; // Not for external use
 // For memory corruption detection
 enum CacheInfoMagic {
   CACHE_INFO_MAGIC_ALIVE = 0xfeedbabe,
-  CACHE_INFO_MAGIC_DEAD = 0xdeadbeef,
+  CACHE_INFO_MAGIC_DEAD  = 0xdeadbeef,
 };
 
 struct CacheInfo {
@@ -68,11 +67,11 @@ struct CacheInfo {
 
   CacheInfo()
   {
-    frag_type = CACHE_FRAG_TYPE_NONE;
-    hostname = NULL;
-    len = 0;
+    frag_type    = CACHE_FRAG_TYPE_NONE;
+    hostname     = NULL;
+    len          = 0;
     pin_in_cache = 0;
-    magic = CACHE_INFO_MAGIC_ALIVE;
+    magic        = CACHE_INFO_MAGIC_ALIVE;
   }
 };
 
@@ -80,8 +79,8 @@ class FileImpl
 {
   enum {
     CLOSED = 0,
-    READ = 1,
-    WRITE = 2,
+    READ   = 1,
+    WRITE  = 2,
   };
 
 public:
@@ -102,7 +101,6 @@ public:
   int m_bufsize;
   int m_bufpos;
 };
-
 
 struct INKConfigImpl : public ConfigInfo {
   void *mdata;
@@ -298,11 +296,10 @@ class LifecycleAPIHooks : public FeatureAPIHooks<TSLifecycleHookID, TS_LIFECYCLE
 {
 };
 
-
 class ConfigUpdateCallback : public Continuation
 {
 public:
-  ConfigUpdateCallback(INKContInternal *contp) : Continuation(contp->mutex), m_cont(contp)
+  ConfigUpdateCallback(INKContInternal *contp) : Continuation(contp->mutex.get()), m_cont(contp)
   {
     SET_HANDLER(&ConfigUpdateCallback::event_handler);
   }
@@ -310,7 +307,7 @@ public:
   int
   event_handler(int, void *)
   {
-    if (m_cont->mutex != NULL) {
+    if (m_cont->mutex) {
       MUTEX_TRY_LOCK(trylock, m_cont->mutex, this_ethread());
       if (!trylock.is_locked()) {
         eventProcessor.schedule_in(this, HRTIME_MSECONDS(10), ET_TASK);

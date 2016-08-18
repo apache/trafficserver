@@ -40,6 +40,7 @@
 #include "ts/ink_platform.h"
 #include "ts/ink_atomic.h"
 #include "ts/ink_time.h"
+#include "ts/ink_inet.h"
 
 #ifdef HAVE_PCRE_PCRE_H
 #include <pcre/pcre.h>
@@ -51,22 +52,21 @@ static const char *PLUGIN_NAME = "regex_remap";
 
 // Constants
 static const int OVECCOUNT = 30; // We support $0 - $9 x2 ints, and this needs to be 1.5x that
-static const int MAX_SUBS = 32;  // No more than 32 substitution variables in the subst string
+static const int MAX_SUBS  = 32; // No more than 32 substitution variables in the subst string
 
 // Substitutions other than regex matches
 enum ExtraSubstitutions {
-  SUB_HOST = 11,
-  SUB_FROM_HOST = 12,
-  SUB_TO_HOST = 13,
-  SUB_PORT = 14,
-  SUB_SCHEME = 15,
-  SUB_PATH = 16,
-  SUB_QUERY = 17,
-  SUB_MATRIX = 18,
-  SUB_CLIENT_IP = 19,
+  SUB_HOST       = 11,
+  SUB_FROM_HOST  = 12,
+  SUB_TO_HOST    = 13,
+  SUB_PORT       = 14,
+  SUB_SCHEME     = 15,
+  SUB_PATH       = 16,
+  SUB_QUERY      = 17,
+  SUB_MATRIX     = 18,
+  SUB_CLIENT_IP  = 19,
   SUB_LOWER_PATH = 20,
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Class holding one request URL's component, to simplify the code and
@@ -74,8 +74,18 @@ enum ExtraSubstitutions {
 //
 struct UrlComponents {
   UrlComponents()
-    : scheme(NULL), host(NULL), path(NULL), query(NULL), matrix(NULL), port(0), scheme_len(0), host_len(0), path_len(0),
-      query_len(0), matrix_len(0), url_len(0)
+    : scheme(NULL),
+      host(NULL),
+      path(NULL),
+      query(NULL),
+      matrix(NULL),
+      port(0),
+      scheme_len(0),
+      host_len(0),
+      path_len(0),
+      query_len(0),
+      matrix_len(0),
+      url_len(0)
   {
   }
 
@@ -83,11 +93,11 @@ struct UrlComponents {
   populate(TSRemapRequestInfo *rri)
   {
     scheme = TSUrlSchemeGet(rri->requestBufp, rri->requestUrl, &scheme_len);
-    host = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &host_len);
-    path = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
-    query = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &query_len);
+    host   = TSUrlHostGet(rri->requestBufp, rri->requestUrl, &host_len);
+    path   = TSUrlPathGet(rri->requestBufp, rri->requestUrl, &path_len);
+    query  = TSUrlHttpQueryGet(rri->requestBufp, rri->requestUrl, &query_len);
     matrix = TSUrlHttpParamsGet(rri->requestBufp, rri->requestUrl, &matrix_len);
-    port = TSUrlPortGet(rri->requestBufp, rri->requestUrl);
+    port   = TSUrlPortGet(rri->requestBufp, rri->requestUrl);
 
     url_len = scheme_len + host_len + path_len + query_len + matrix_len + 32;
   }
@@ -108,7 +118,6 @@ struct UrlComponents {
   int url_len; // Full length, of all components
 };
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Class encapsulating one regular expression (and the linked list).
 //
@@ -116,8 +125,17 @@ class RemapRegex
 {
 public:
   RemapRegex()
-    : _num_subs(-1), _rex(NULL), _extra(NULL), _options(0), _order(-1), _lowercase_substitutions(false), _active_timeout(-1),
-      _no_activity_timeout(-1), _connect_timeout(-1), _dns_timeout(-1), _first_override(NULL)
+    : _num_subs(-1),
+      _rex(NULL),
+      _extra(NULL),
+      _options(0),
+      _order(-1),
+      _lowercase_substitutions(false),
+      _active_timeout(-1),
+      _no_activity_timeout(-1),
+      _connect_timeout(-1),
+      _dns_timeout(-1),
+      _first_override(NULL)
   {
     TSDebug(PLUGIN_NAME, "Calling constructor");
   }
@@ -168,7 +186,7 @@ public:
 
   // Substitutions
   int get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url);
-  int substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSRemapRequestInfo *rri,
+  int substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSHttpTxn txnp, TSRemapRequestInfo *rri,
                  UrlComponents *req_url, bool lowercase_substitutions);
 
   // setter / getters for members the linked list.
@@ -289,14 +307,15 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
 
   if (!reg.empty()) {
     _rex_string = TSstrdup(reg.c_str());
-  } else
+  } else {
     _rex_string = NULL;
+  }
 
   if (!sub.empty()) {
-    _subst = TSstrdup(sub.c_str());
+    _subst     = TSstrdup(sub.c_str());
     _subst_len = sub.length();
   } else {
-    _subst = NULL;
+    _subst     = NULL;
     _subst_len = 0;
   }
 
@@ -364,7 +383,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
           break;
         case TS_RECORDDATATYPE_STRING:
           cur->data.rec_string = TSstrdup(opt_val.c_str());
-          cur->data_len = opt_val.size();
+          cur->data_len        = opt_val.size();
           break;
         default:
           TSError("[%s] configuration variable '%s' is of an unsupported type", PLUGIN_NAME, opt_name.c_str());
@@ -373,7 +392,7 @@ RemapRegex::initialize(const std::string &reg, const std::string &sub, const std
         }
         if (cur) {
           TSDebug(PLUGIN_NAME, "Overridable config %s=%s", opt_name.c_str(), opt_val.c_str());
-          cur->key = key;
+          cur->key  = key;
           cur->type = type;
           cur->next = NULL;
           if (NULL == last_override) {
@@ -420,7 +439,7 @@ RemapRegex::compile(const char **error, int *erroffset)
   }
 
   // Get some info for the string substitutions
-  str = _subst;
+  str       = _subst;
   _num_subs = 0;
 
   while (str && *str) {
@@ -472,7 +491,7 @@ RemapRegex::compile(const char **error, int *erroffset)
           return -1; // No substitutions available other than $0
         }
 
-        _sub_ix[_num_subs] = ix;
+        _sub_ix[_num_subs]  = ix;
         _sub_pos[_num_subs] = (str - _subst);
         str += 2;
         ++_num_subs;
@@ -532,7 +551,7 @@ RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *
         len += req_url->matrix_len;
         break;
       case SUB_CLIENT_IP:
-        len += 15; // Allow for 255.255.255.255
+        len += INET6_ADDRSTRLEN;
         break;
       default:
         break;
@@ -547,8 +566,8 @@ RemapRegex::get_lengths(const int ovector[], int lengths[], TSRemapRequestInfo *
 // regex that was matches, while $1 - $9 are the corresponding groups. Return the final
 // length of the string as written to dest (not including the trailing '0').
 int
-RemapRegex::substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSRemapRequestInfo *rri,
-                       UrlComponents *req_url, bool lowercase_substitutions)
+RemapRegex::substitute(char dest[], const char *src, const int ovector[], const int lengths[], TSHttpTxn txnp,
+                       TSRemapRequestInfo *rri, UrlComponents *req_url, bool lowercase_substitutions)
 {
   if (_num_subs > 0) {
     char *p1 = dest;
@@ -557,7 +576,7 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
 
     for (int i = 0; i < _num_subs; i++) {
       char *start = p1;
-      int ix = _sub_ix[i];
+      int ix      = _sub_ix[i];
 
       memcpy(p1, p2, _sub_pos[i] - prev);
       p1 += (_sub_pos[i] - prev);
@@ -565,8 +584,9 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
         memcpy(p1, src + ovector[2 * ix], lengths[ix]);
         p1 += lengths[ix];
       } else {
+        char buff[INET6_ADDRSTRLEN];
         const char *str = NULL;
-        int len = 0;
+        int len         = 0;
 
         switch (ix) {
         case SUB_HOST:
@@ -599,10 +619,10 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
           str = req_url->matrix;
           len = req_url->matrix_len;
           break;
-        case SUB_CLIENT_IP: {
-          // TODO: Finish implementing with the addr from above
-          // p1 += snprintf(p1, 15, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
-        } break;
+        case SUB_CLIENT_IP:
+          str = ats_ip_ntop(TSHttpTxnClientAddrGet(txnp), buff, INET6_ADDRSTRLEN);
+          len = strlen(str);
+          break;
         default:
           break;
         }
@@ -635,11 +655,18 @@ RemapRegex::substitute(char dest[], const char *src, const int ovector[], const 
   return 0; // Shouldn't happen.
 }
 
-
 // Hold one remap instance
 struct RemapInstance {
   RemapInstance()
-    : first(NULL), last(NULL), profile(false), method(false), query_string(true), matrix_params(false), hits(0), misses(0),
+    : first(NULL),
+      last(NULL),
+      profile(false),
+      method(false),
+      query_string(true),
+      matrix_params(false),
+      host(false),
+      hits(0),
+      misses(0),
       filename("unknown")
   {
   }
@@ -650,6 +677,7 @@ struct RemapInstance {
   bool method;
   bool query_string;
   bool matrix_params;
+  bool host;
   int hits;
   int misses;
   std::string filename;
@@ -674,9 +702,8 @@ void
 setup_memory_allocation()
 {
   pcre_malloc = &ts_malloc;
-  pcre_free = &ts_free;
+  pcre_free   = &ts_free;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin.
@@ -700,7 +727,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   return TS_SUCCESS;
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // We don't have any specific "instances" here, at least not yet.
 //
@@ -713,7 +739,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   std::ifstream f;
   int lineno = 0;
-  int count = 0;
+  int count  = 0;
 
   *ih = (void *)ri;
   if (ri == NULL) {
@@ -735,15 +761,19 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     } else if (strncmp(argv[i], "method", 6) == 0) {
       ri->method = true;
     } else if (strncmp(argv[i], "no-method", 9) == 0) {
-      ri->method = true;
+      ri->method = false;
     } else if (strncmp(argv[i], "query-string", 12) == 0) {
       ri->query_string = true;
     } else if (strncmp(argv[i], "no-query-string", 15) == 0) {
       ri->query_string = false;
-    } else if (strncmp(argv[i], "matrix-parameters", 15) == 0) {
+    } else if (strncmp(argv[i], "matrix-parameters", 17) == 0) {
       ri->matrix_params = true;
-    } else if (strncmp(argv[i], "no-matrix-parameters", 18) == 0) {
+    } else if (strncmp(argv[i], "no-matrix-parameters", 20) == 0) {
       ri->matrix_params = false;
+    } else if (strncmp(argv[i], "host", 4) == 0) {
+      ri->host = true;
+    } else if (strncmp(argv[i], "no-host", 7) == 0) {
+      ri->host = false;
     } else {
       TSError("[%s] invalid option '%s'", PLUGIN_NAME, argv[i]);
     }
@@ -790,17 +820,19 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       pos2 = line.find_first_of(" \t\n", pos1);
       if (pos2 != std::string::npos) {
         regex = line.substr(pos1, pos2 - pos1);
-        pos1 = line.find_first_not_of(" \t\n#", pos2);
+        pos1  = line.find_first_not_of(" \t\n#", pos2);
         if (pos1 != std::string::npos) {
           pos2 = line.find_first_of(" \t\n", pos1);
-          if (pos2 == std::string::npos)
+          if (pos2 == std::string::npos) {
             pos2 = line.length();
+          }
           subst = line.substr(pos1, pos2 - pos1);
-          pos1 = line.find_first_not_of(" \t\n#", pos2);
+          pos1  = line.find_first_not_of(" \t\n#", pos2);
           if (pos1 != std::string::npos) {
             pos2 = line.find_first_of("\n#", pos1);
-            if (pos2 == std::string::npos)
+            if (pos2 == std::string::npos) {
               pos2 = line.length();
+            }
             options = line.substr(pos1, pos2 - pos1);
           }
         }
@@ -851,7 +883,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   return TS_SUCCESS;
 }
 
-
 void
 TSRemapDeleteInstance(void *ih)
 {
@@ -888,7 +919,7 @@ TSRemapDeleteInstance(void *ih)
 
   re = ri->first;
   while (re) {
-    RemapRegex::Override *override = re->get_overrides();
+    RemapRegex::Override * override = re->get_overrides();
 
     while (override) {
       RemapRegex::Override *tmp = override;
@@ -900,13 +931,12 @@ TSRemapDeleteInstance(void *ih)
       delete tmp;
     }
     tmp = re;
-    re = re->next();
+    re  = re->next();
     delete tmp;
   }
 
   delete ri;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // This is the main "entry" point for the plugin, called for every request.
@@ -928,8 +958,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   int lengths[OVECCOUNT / 2 + 1];
   int dest_len;
   TSRemapStatus retval = TSREMAP_DID_REMAP;
-  RemapRegex *re = ri->first;
-  int match_len = 0;
+  RemapRegex *re       = ri->first;
+  int match_len        = 0;
   char *match_buf;
 
   match_buf = (char *)alloca(req_url.url_len + 32);
@@ -949,6 +979,12 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         memcpy(match_buf, method, match_len);
       }
     }
+  }
+
+  if (ri->host && req_url.host && req_url.host_len > 0) {
+    memcpy(match_buf + match_len, "//", 2);
+    memcpy(match_buf + match_len + 2, req_url.host, req_url.host_len);
+    match_len += (req_url.host_len + 2);
   }
 
   *(match_buf + match_len) = '/';
@@ -1001,7 +1037,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         lowercase_substitutions = true;
       }
 
-      RemapRegex::Override *override = re->get_overrides();
+      RemapRegex::Override * override = re->get_overrides();
 
       while (override) {
         switch (override->type) {
@@ -1032,8 +1068,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       if (new_len > 0) {
         char *dest;
 
-        dest = (char *)alloca(new_len + 8);
-        dest_len = re->substitute(dest, match_buf, ovector, lengths, rri, &req_url, lowercase_substitutions);
+        dest     = (char *)alloca(new_len + 8);
+        dest_len = re->substitute(dest, match_buf, ovector, lengths, txnp, rri, &req_url, lowercase_substitutions);
 
         TSDebug(PLUGIN_NAME, "New URL is estimated to be %d bytes long, or less", new_len);
         TSDebug(PLUGIN_NAME, "New URL is %s (length %d)", dest, dest_len);
@@ -1041,7 +1077,9 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
         // Check for a quick response, if the status option is set
         if (re->status_option() > 0) {
-          if (re->status_option() != TS_HTTP_STATUS_MOVED_PERMANENTLY && re->status_option() != TS_HTTP_STATUS_MOVED_TEMPORARILY) {
+          if (re->status_option() != TS_HTTP_STATUS_MOVED_PERMANENTLY && re->status_option() != TS_HTTP_STATUS_MOVED_TEMPORARILY &&
+              re->status_option() != TS_HTTP_STATUS_TEMPORARY_REDIRECT &&
+              re->status_option() != TS_HTTP_STATUS_PERMANENT_REDIRECT) {
             // Don't set the URL / Location for this.
             TSHttpTxnSetHttpRetStatus(txnp, re->status_option());
             break;

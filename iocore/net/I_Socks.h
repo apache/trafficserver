@@ -30,7 +30,6 @@
 */
 #define SOCKS_WITH_TS
 
-
 #define SOCKS_DEFAULT_VERSION 0 // defined the configuration variable
 #define SOCKS4_VERSION 4
 #define SOCKS5_VERSION 5
@@ -47,7 +46,7 @@ enum {
   // For these two, we need to pick two values which are not used for any of the
   //"commands" (eg: CONNECT, BIND) in SOCKS protocols.
   NORMAL_SOCKS = 0,
-  NO_SOCKS = 48
+  NO_SOCKS     = 48
 };
 
 enum {

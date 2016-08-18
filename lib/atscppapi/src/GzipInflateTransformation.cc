@@ -35,7 +35,7 @@ using std::vector;
 
 namespace
 {
-const int WINDOW_BITS = 31; // Always use 31 for gzip.
+const int WINDOW_BITS             = 31; // Always use 31 for gzip.
 unsigned int INFLATE_SCALE_FACTOR = 6;
 }
 
@@ -72,7 +72,6 @@ struct atscppapi::transformations::GzipInflateTransformationState : noncopyable 
   };
 };
 
-
 GzipInflateTransformation::GzipInflateTransformation(Transaction &transaction, TransformationPlugin::Type type)
   : TransformationPlugin(transaction, type)
 {
@@ -96,13 +95,13 @@ GzipInflateTransformation::consume(const string &data)
     return;
   }
 
-  int err = Z_OK;
-  int iteration = 0;
+  int err                = Z_OK;
+  int iteration          = 0;
   int inflate_block_size = INFLATE_SCALE_FACTOR * data.size();
   vector<char> buffer(inflate_block_size);
 
   // Setup the compressed input
-  state_->z_stream_.next_in = reinterpret_cast<unsigned char *>(const_cast<char *>(data.c_str()));
+  state_->z_stream_.next_in  = reinterpret_cast<unsigned char *>(const_cast<char *>(data.c_str()));
   state_->z_stream_.avail_in = data.length();
 
   // Loop while we have more data to inflate
@@ -110,7 +109,7 @@ GzipInflateTransformation::consume(const string &data)
     LOG_DEBUG("Iteration %d: Gzip has %d bytes to inflate", ++iteration, state_->z_stream_.avail_in);
 
     // Setup where the decompressed output will go.
-    state_->z_stream_.next_out = reinterpret_cast<unsigned char *>(&buffer[0]);
+    state_->z_stream_.next_out  = reinterpret_cast<unsigned char *>(&buffer[0]);
     state_->z_stream_.avail_out = inflate_block_size;
 
     /* Uncompress */

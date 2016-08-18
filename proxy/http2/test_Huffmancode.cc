@@ -64,20 +64,19 @@ uint32_t test_values[] = {
   0x7ffffeb,  27, 0xffffffe, 28, 0x7ffffec,  27, 0x7ffffed, 27, 0x7ffffee, 27, 0x7ffffef,  27, 0x7fffff0,  27, 0x3ffffee, 26,
   0x3fffffff, 30};
 
-
 void
 random_test()
 {
-  const int size = 1024;
+  const int size  = 1024;
   char *dst_start = (char *)malloc(size * 2);
   char string[size];
   for (int i = 0; i < size; i++) {
     // coverity[dont_call]
-    long num = lrand48();
+    long num  = lrand48();
     string[i] = (char)num;
   }
   const uint8_t *src = (const uint8_t *)string;
-  uint32_t src_len = sizeof(string);
+  uint32_t src_len   = sizeof(string);
 
   int bytes = huffman_decode(dst_start, src, src_len);
 
@@ -101,12 +100,12 @@ values_test()
   int size = sizeof(test_values) / 4;
   for (int i = 0; i < size; i += 2) {
     const uint32_t value = test_values[i];
-    const uint32_t bits = test_values[i + 1];
+    const uint32_t bits  = test_values[i + 1];
 
     // copy the bits and set remaining bits to 1
     union Value encoded;
     union Value encoded_mapped;
-    encoded.x = 0;
+    encoded.x             = 0;
     uint32_t bits_counter = bits;
     for (uint32_t pos = 32; pos > 0; pos--) {
       if (bits_counter > 0) {
@@ -135,7 +134,7 @@ values_test()
     encoded_mapped.y[2] = encoded.y[1];
     encoded_mapped.y[3] = encoded.y[0];
 
-    int bytes = huffman_decode(dst_start, encoded_mapped.y, encoded_size);
+    int bytes        = huffman_decode(dst_start, encoded_mapped.y, encoded_size);
     char ascii_value = i / 2;
     assert(dst_start[0] == ascii_value);
     assert(bytes == 1);
@@ -149,20 +148,20 @@ const static struct {
   uint8_t *expect;
   int64_t expect_len;
 } huffman_encode_test_data[] = {
-  {(uint8_t *)"", 0, (uint8_t *) "", 0},
-  {(uint8_t *)"0", 1, (uint8_t *) "\x07", 1},
-  {(uint8_t *)"302", 3, (uint8_t *) "\x64\x02", 2},
-  {(uint8_t *)"private", 7, (uint8_t *) "\xae\xc3\x77\x1a\x4b", 5},
+  {(uint8_t *)"", 0, (uint8_t *)"", 0},
+  {(uint8_t *)"0", 1, (uint8_t *)"\x07", 1},
+  {(uint8_t *)"302", 3, (uint8_t *)"\x64\x02", 2},
+  {(uint8_t *)"private", 7, (uint8_t *)"\xae\xc3\x77\x1a\x4b", 5},
   {(uint8_t *)"Mon, 21 Oct 2013 20:13:21 GMT", 29,
-   (uint8_t *) "\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66\xe0\x82\xa6\x2d\x1b\xff", 22},
-  {(uint8_t *)"https://www.example.com", 23, (uint8_t *) "\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3",
+   (uint8_t *)"\xd0\x7a\xbe\x94\x10\x54\xd4\x44\xa8\x20\x05\x95\x04\x0b\x81\x66\xe0\x82\xa6\x2d\x1b\xff", 22},
+  {(uint8_t *)"https://www.example.com", 23, (uint8_t *)"\x9d\x29\xad\x17\x18\x63\xc7\x8f\x0b\x97\xc8\xe9\xae\x82\xae\x43\xd3",
    17}};
 
 void
 encode_test()
 {
   for (uint64_t i = 0; i < sizeof(huffman_encode_test_data) / sizeof(huffman_encode_test_data[0]); ++i) {
-    uint8_t *dst = static_cast<uint8_t *>(malloc(huffman_encode_test_data[i].expect_len));
+    uint8_t *dst        = static_cast<uint8_t *>(malloc(huffman_encode_test_data[i].expect_len));
     int64_t encoded_len = huffman_encode(dst, huffman_encode_test_data[i].src, huffman_encode_test_data[i].src_len);
 
     assert(encoded_len == huffman_encode_test_data[i].expect_len);

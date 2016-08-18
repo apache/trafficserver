@@ -55,7 +55,6 @@ struct UDPNetProcessorInternal : public UDPNetProcessor {
 
 extern UDPNetProcessorInternal udpNetInternal;
 
-
 // 20 ms slots; 2048 slots  => 40 sec. into the future
 #define SLOT_TIME_MSEC 20
 #define SLOT_TIME HRTIME_MSECONDS(SLOT_TIME_MSEC)
@@ -71,7 +70,6 @@ public:
   }
 
   virtual ~PacketQueue() {}
-
   int nPackets;
   ink_hrtime lastPullLongTermQ;
   Queue<UDPPacketInternal> longTermQ;
@@ -82,13 +80,13 @@ public:
   void
   init(void)
   {
-    now_slot = 0;
+    now_slot       = 0;
     ink_hrtime now = ink_get_hrtime_internal();
-    int i = now_slot;
-    int j = 0;
+    int i          = now_slot;
+    int j          = 0;
     while (j < N_SLOTS) {
       delivery_time[i] = now + j * SLOT_TIME;
-      i = (i + 1) % N_SLOTS;
+      i                = (i + 1) % N_SLOTS;
       j++;
     }
   }
@@ -115,7 +113,7 @@ public:
 
     if (s < 0) {
       before = 1;
-      s = 0;
+      s      = 0;
     }
     s = s / SLOT_TIME;
     // if s >= N_SLOTS, either we are *REALLY* behind or someone is trying
@@ -124,7 +122,7 @@ public:
     // from long-term slot whenever you advance.
     if (s >= N_SLOTS - 1) {
       longTermQ.enqueue(e);
-      e->in_heap = 0;
+      e->in_heap               = 0;
       e->in_the_priority_queue = 1;
       return;
     }
@@ -133,7 +131,7 @@ public:
     // so that slot+1 is still "in future".
     ink_assert((before || delivery_time[slot] <= e->delivery_time) && (delivery_time[(slot + 1) % N_SLOTS] >= e->delivery_time));
     e->in_the_priority_queue = 1;
-    e->in_heap = slot;
+    e->in_heap               = slot;
     bucket[slot].enqueue(e);
   }
 
@@ -212,10 +210,10 @@ public:
     }
 
     while (!bucket[s].head && (t > delivery_time[s] + SLOT_TIME)) {
-      prev = (s + N_SLOTS - 1) % N_SLOTS;
+      prev             = (s + N_SLOTS - 1) % N_SLOTS;
       delivery_time[s] = delivery_time[prev] + SLOT_TIME;
-      s = (s + 1) % N_SLOTS;
-      prev = (s + N_SLOTS - 1) % N_SLOTS;
+      s                = (s + 1) % N_SLOTS;
+      prev             = (s + N_SLOTS - 1) % N_SLOTS;
       ink_assert(delivery_time[prev] > delivery_time[s]);
 
       if (s == now_slot) {
@@ -281,7 +279,6 @@ private:
   }
 };
 
-
 class UDPQueue
 {
   PacketQueue pipeInfo;
@@ -289,7 +286,6 @@ class UDPQueue
   ink_hrtime last_service;
   int packets;
   int added;
-
 
 public:
   InkAtomicList atomicQueue;
@@ -305,7 +301,6 @@ public:
   UDPQueue();
   ~UDPQueue();
 };
-
 
 void initialize_thread_for_udp_net(EThread *thread);
 

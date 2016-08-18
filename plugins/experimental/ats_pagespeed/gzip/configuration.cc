@@ -153,7 +153,7 @@ HostConfiguration::ContentTypeIsCompressible(const char *content_type, int conte
 
   for (size_t i = 0; i < compressible_content_types_.size(); i++) {
     const char *match_string = compressible_content_types_[i].c_str();
-    bool exclude = match_string[0] == '!';
+    bool exclude             = match_string[0] == '!';
     if (exclude) {
       match_string++; // skip '!'
     }
@@ -182,14 +182,13 @@ Configuration::Parse(const char *path)
 
   trim_if(pathstring, isspace);
 
-  Configuration *c = new Configuration();
+  Configuration *c                              = new Configuration();
   HostConfiguration *current_host_configuration = new HostConfiguration("");
   c->AddHostConfiguration(current_host_configuration);
   current_host_configuration->add_compressible_content_type("text/*");
   current_host_configuration->add_compressible_content_type("application/xml*");
   current_host_configuration->add_compressible_content_type("*javascript*");
   current_host_configuration->add_compressible_content_type("image/svg+xml");
-
 
   if (pathstring.empty()) {
     return c;
@@ -237,7 +236,7 @@ Configuration::Parse(const char *path)
       switch (state) {
       case kParseStart:
         if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
-          std::string current_host = token.substr(1, token.size() - 2);
+          std::string current_host   = token.substr(1, token.size() - 2);
           current_host_configuration = new HostConfiguration(current_host);
           c->AddHostConfiguration(current_host_configuration);
         } else if (token == "compressible-content-type") {

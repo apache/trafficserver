@@ -296,7 +296,7 @@ inline Buffer::Buffer(char *ptr, size_t n) : _ptr(ptr), _size(n)
 inline Buffer &
 Buffer::set(char *ptr, size_t n)
 {
-  _ptr = ptr;
+  _ptr  = ptr;
   _size = n;
   return *this;
 }
@@ -306,23 +306,27 @@ inline Buffer::Buffer(char *start, char *end) : _ptr(start), _size(end - start)
 inline Buffer &
 Buffer::reset()
 {
-  _ptr = 0;
+  _ptr  = 0;
   _size = 0;
   return *this;
 }
-inline bool Buffer::operator!=(self const &that) const
+inline bool
+Buffer::operator!=(self const &that) const
 {
   return !(*this == that);
 }
-inline bool Buffer::operator!=(ConstBuffer const &that) const
+inline bool
+Buffer::operator!=(ConstBuffer const &that) const
 {
   return !(*this == that);
 }
-inline bool Buffer::operator==(self const &that) const
+inline bool
+Buffer::operator==(self const &that) const
 {
   return _size == that._size && _ptr == that._ptr;
 }
-inline bool Buffer::operator==(ConstBuffer const &that) const
+inline bool
+Buffer::operator==(ConstBuffer const &that) const
 {
   return _size == that._size && _ptr == that._ptr;
 }
@@ -370,7 +374,7 @@ inline ConstBuffer::ConstBuffer(Buffer const &that) : _ptr(that._ptr), _size(tha
 inline ConstBuffer &
 ConstBuffer::set(char const *ptr, size_t n)
 {
-  _ptr = ptr;
+  _ptr  = ptr;
   _size = n;
   return *this;
 }
@@ -378,7 +382,7 @@ ConstBuffer::set(char const *ptr, size_t n)
 inline ConstBuffer &
 ConstBuffer::set(char const *start, char const *end)
 {
-  _ptr = start;
+  _ptr  = start;
   _size = end - start;
   return *this;
 }
@@ -386,29 +390,34 @@ ConstBuffer::set(char const *start, char const *end)
 inline ConstBuffer &
 ConstBuffer::reset()
 {
-  _ptr = 0;
+  _ptr  = 0;
   _size = 0;
   return *this;
 }
-inline bool ConstBuffer::operator!=(self const &that) const
+inline bool
+ConstBuffer::operator!=(self const &that) const
 {
   return !(*this == that);
 }
-inline bool ConstBuffer::operator!=(Buffer const &that) const
+inline bool
+ConstBuffer::operator!=(Buffer const &that) const
 {
   return !(*this == that);
 }
-inline bool ConstBuffer::operator==(self const &that) const
+inline bool
+ConstBuffer::operator==(self const &that) const
 {
   return _size == that._size && 0 == memcmp(_ptr, that._ptr, _size);
 }
-inline ConstBuffer &ConstBuffer::operator=(Buffer const &that)
+inline ConstBuffer &
+ConstBuffer::operator=(Buffer const &that)
 {
-  _ptr = that._ptr;
+  _ptr  = that._ptr;
   _size = that._size;
   return *this;
 }
-inline bool ConstBuffer::operator==(Buffer const &that) const
+inline bool
+ConstBuffer::operator==(Buffer const &that) const
 {
   return _size == that._size && 0 == memcmp(_ptr, that._ptr, _size);
 }
@@ -430,7 +439,8 @@ inline ConstBuffer &ConstBuffer::operator++()
   --_size;
   return *this;
 }
-inline ConstBuffer &ConstBuffer::operator+=(size_t n)
+inline ConstBuffer &
+ConstBuffer::operator+=(size_t n)
 {
   _ptr += n;
   _size -= n;

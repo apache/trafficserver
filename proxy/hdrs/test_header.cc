@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -67,7 +66,6 @@ main(int argc, char *argv[])
   test_http();
   return (0);
 }
-
 
 static void
 test_parse_date()
@@ -115,7 +113,6 @@ test_parse_date()
   printf("*** %s ***\n", (failures ? "FAILED" : "PASSED"));
 }
 
-
 static void
 test_format_date()
 {
@@ -130,7 +127,7 @@ test_format_date()
   time_t t, t2;
   char buffer[128], buffer2[128];
   static char *envstr = "TZ=GMT";
-  int failures = 0;
+  int failures        = 0;
 
   // shift into GMT timezone for cftime conversions
   putenv(envstr);
@@ -181,7 +178,6 @@ test_format_date()
   printf("*** %s ***\n", (failures ? "FAILED" : "PASSED"));
 }
 
-
 static void
 test_url()
 {
@@ -221,8 +217,8 @@ test_url()
   failed = 0;
   for (i = 0; i < nstrs; i++) {
     old_length = strlen(strs[i]);
-    start = strs[i];
-    end = start + old_length;
+    start      = strs[i];
+    end        = start + old_length;
 
     url.create(NULL);
     err = url.parse(&start, end);
@@ -265,7 +261,6 @@ test_url()
   printf("*** %s ***\n", (failed ? "FAILED" : "PASSED"));
 }
 
-
 static void
 test_mime()
 {
@@ -301,7 +296,7 @@ test_mime()
   printf("   <<< MUST BE HAND-VERIFIED >>>\n\n");
 
   start = mime;
-  end = start + strlen(start);
+  end   = start + strlen(start);
 
   mime_parser_init(&parser);
 
@@ -346,15 +341,13 @@ test_mime()
     printf("FAILED: set_date(%ld) ... get_date = %ld\n\n", t1, t2);
   }
 
-
   hdr.value_append("Cache-Control", 13, "no-cache", 8, 1);
 
   MIMEField *cc_field;
   StrList slist;
   int slist_count;
-  cc_field = hdr.field_find("Cache-Control", 13);
+  cc_field    = hdr.field_find("Cache-Control", 13);
   slist_count = cc_field->value_get_comma_list(&slist); // FIX: correct usage?
-
 
   mime_parser_clear(&parser);
 
@@ -367,7 +360,6 @@ test_mime()
 
   hdr.destroy();
 }
-
 
 static void
 test_http_parser_eos_boundary_cases()
@@ -414,15 +406,15 @@ test_http_parser_eos_boundary_cases()
     HTTPHdr req_hdr;
 
     start = tests[i].msg;
-    end = start + strlen(start); // 1 character past end of string
+    end   = start + strlen(start); // 1 character past end of string
 
     req_hdr.create(HTTP_TYPE_REQUEST);
 
     http_parser_clear(&parser);
     //      http_parser_init (&parser);
 
-    orig_start = start;
-    ret = req_hdr.parse_req(&parser, &start, end, true);
+    orig_start     = start;
+    ret            = req_hdr.parse_req(&parser, &start, end, true);
     bytes_consumed = start - orig_start;
 
     printf("======== test %d (length=%d, consumed=%d)\n", i, strlen(tests[i].msg), bytes_consumed);
@@ -447,7 +439,6 @@ test_http_parser_eos_boundary_cases()
     printf("*** %s ***\n", (failures ? "FAILED" : "PASSED"));
 }
 
-
 static void
 test_http_aux(const char *request, const char *response)
 {
@@ -464,7 +455,7 @@ test_http_aux(const char *request, const char *response)
   /*** (1) parse the request string into req_hdr ***/
 
   start = request;
-  end = start + strlen(start); // 1 character past end of string
+  end   = start + strlen(start); // 1 character past end of string
 
   http_parser_init(&parser);
 
@@ -505,7 +496,7 @@ test_http_aux(const char *request, const char *response)
   /*** (3) parse the response string into rsp_hdr ***/
 
   start = response;
-  end = start + strlen(start);
+  end   = start + strlen(start);
 
   http_parser_clear(&parser);
   http_parser_init(&parser);
@@ -544,9 +535,9 @@ test_http_aux(const char *request, const char *response)
 
     do {
       last_bufindex = bufindex;
-      tmp = bufindex;
-      buf[0] = '#'; // make it obvious if hdr.print doesn't print anything
-      err = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
+      tmp           = bufindex;
+      buf[0]        = '#'; // make it obvious if hdr.print doesn't print anything
+      err           = rsp_hdr.print(buf, NNN, &bufindex, &tmp);
 
       // printf("test_header: tmp = %d  err = %d  bufindex = %d\n", tmp, err, bufindex);
       putchar('{');
@@ -565,7 +556,6 @@ test_http_aux(const char *request, const char *response)
   req_hdr.destroy();
   rsp_hdr.destroy();
 }
-
 
 static void
 test_http()
@@ -718,7 +708,6 @@ test_http()
   static const char response_blank3[] = {"     "
                                          "\r\n"};
 
-
   test_http_aux(request0, response0);
   test_http_aux(request09, response09);
   test_http_aux(request1, response1);
@@ -752,7 +741,7 @@ test_http_mutation()
   /*** (1) parse the response string into req_hdr ***/
 
   start = base_resp;
-  end = start + strlen(start);
+  end   = start + strlen(start);
 
   http_parser_init(&parser);
 
@@ -808,7 +797,6 @@ test_http_mutation()
     resp_hdr.field_delete(field_name, strlen(field_name));
   }
 
-
   printf("\n======== mutated response ==========\n\n");
   printf("\n[");
   resp_hdr.print(NULL, 0, NULL, NULL);
@@ -820,7 +808,7 @@ test_http_mutation()
 static int
 test_arena_aux(Arena *arena, int len)
 {
-  char *str = arena->str_alloc(len);
+  char *str      = arena->str_alloc(len);
   int verify_len = arena->str_length(str);
 
   if (len != verify_len) {
@@ -830,7 +818,6 @@ test_arena_aux(Arena *arena, int len)
     return (0); // no errors
   }
 }
-
 
 static void
 test_arena()
@@ -863,7 +850,6 @@ test_arena()
   printf("*** %s ***\n", (failures ? "FAILED" : "PASSED"));
 }
 
-
 static void
 test_regex()
 {
@@ -877,7 +863,6 @@ test_regex()
   printf("match www.example.com [%d]\n", dfa.match("www.example.com"));
   printf("match www.apache.org [%d]\n", dfa.match("www.apache.org"));
 }
-
 
 static void
 test_accept_language_match()

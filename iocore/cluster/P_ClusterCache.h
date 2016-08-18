@@ -69,7 +69,6 @@
 #define MIN_CLUSTER_MAJOR_VERSION CLUSTER_MAJOR_VERSION
 #define MIN_CLUSTER_MINOR_VERSION CLUSTER_MINOR_VERSION
 
-
 #define DEFAULT_CLUSTER_PORT_NUMBER 0
 #define DEFAULT_NUMBER_OF_CLUSTER_THREADS 1
 #define DEFAULT_CLUSTER_HOST ""
@@ -85,13 +84,11 @@
 // after zombie the configuration is deleted
 #define CLUSTER_CONFIGURATION_ZOMBIE (HRTIME_DAY * 2)
 
-
 // the number of configurations into the past we probe for data
 // one allows a new machine to come into or fall out of the
 // cluster without loss of data.  If the data is redistributed within
 // one day, no data will be lost.
 #define CONFIGURATION_HISTORY_PROBE_DEPTH 1
-
 
 // move these to a central event definition file (Event.h)
 #define CLUSTER_EVENT_CHANGE (CLUSTER_EVENT_EVENTS_START)
@@ -110,7 +107,7 @@ inline void
 ats_swap16(uint16_t *d)
 {
   unsigned char *p = (unsigned char *)d;
-  *d = ((p[1] << 8) | p[0]);
+  *d               = ((p[1] << 8) | p[0]);
 }
 
 inline uint16_t
@@ -124,7 +121,7 @@ inline void
 ats_swap32(uint32_t *d)
 {
   unsigned char *p = (unsigned char *)d;
-  *d = ((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
+  *d               = ((p[3] << 24) | (p[2] << 16) | (p[1] << 8) | p[0]);
 }
 
 inline uint32_t
@@ -288,7 +285,7 @@ struct ClusterVCToken {
   void
   clear()
   {
-    ip_created = 0;
+    ip_created      = 0;
     sequence_number = 0;
   }
 
@@ -436,7 +433,7 @@ ClusterVConnectionBase::cancel_active_timeout()
 {
   if (active_timeout) {
     active_timeout->cancel(this);
-    active_timeout = NULL;
+    active_timeout    = NULL;
     active_timeout_in = 0;
   }
 }
@@ -446,7 +443,7 @@ ClusterVConnectionBase::cancel_inactivity_timeout()
 {
   if (inactivity_timeout) {
     inactivity_timeout->cancel(this);
-    inactivity_timeout = NULL;
+    inactivity_timeout    = NULL;
     inactivity_timeout_in = 0;
   }
 }
@@ -457,12 +454,12 @@ class ByteBankDescriptor
 public:
   ByteBankDescriptor() {}
   IOBufferBlock *
-  get_block()
+  get_block() const
   {
-    return block;
+    return block.get();
   }
 
-  static ByteBankDescriptor *ByteBankDescriptor_alloc(IOBufferBlock *);
+  static ByteBankDescriptor *ByteBankDescriptor_alloc(Ptr<IOBufferBlock> &);
   static void ByteBankDescriptor_free(ByteBankDescriptor *);
 
 public:
@@ -1012,8 +1009,8 @@ struct ClusterHelloMessage {
 
   ClusterHelloMessage() : _NativeByteOrder(1)
   {
-    _major = CLUSTER_MAJOR_VERSION;
-    _minor = CLUSTER_MINOR_VERSION;
+    _major     = CLUSTER_MAJOR_VERSION;
+    _minor     = CLUSTER_MINOR_VERSION;
     _min_major = MIN_CLUSTER_MAJOR_VERSION;
     _min_minor = MIN_CLUSTER_MINOR_VERSION;
     memset(_pad, '\0', sizeof(_pad));
@@ -1046,7 +1043,7 @@ struct ClusterMessageHeader {
   _init(uint16_t msg_version)
   {
     _InNativeByteOrder = 1;
-    _MsgVersion = msg_version;
+    _MsgVersion        = msg_version;
   }
   ClusterMessageHeader() : _InNativeByteOrder(0), _MsgVersion(0) {}
   ClusterMessageHeader(uint16_t msg_version) { _init(msg_version); }
@@ -1083,8 +1080,8 @@ struct PingMessage : public ClusterMessageHeader {
   char data[1];          // start of data
 
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION          = 1,
+    MAX_VERSION          = 1,
     PING_MESSAGE_VERSION = MAX_VERSION,
   };
 
@@ -1174,6 +1171,5 @@ ClusterVC_remove_write(ClusterVConnectionBase *vc)
   ((Queue<ClusterVConnectionBase, ClusterVConnectionBase::Link_write_link> *)cs->queue)->remove(vc);
   cs->queue = NULL;
 }
-
 
 #endif /* _Cluster_h */

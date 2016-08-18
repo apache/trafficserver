@@ -29,10 +29,34 @@
 
 using namespace std;
 
-CacheTestSM::CacheTestSM(RegressionTest *t)
-  : RegressionSM(t), timeout(0), cache_action(0), start_time(0), cache_vc(0), cvio(0), buffer(0), buffer_reader(0), nbytes(-1),
-    repeat_count(0), expect_event(EVENT_NONE), expect_initial_event(EVENT_NONE), initial_event(EVENT_NONE), content_salt(0)
+CacheTestSM::CacheTestSM(RegressionTest *t, const char *name)
+  : RegressionSM(t),
+    start_memcpy_on_clone(0),
+    cache_test_name(name),
+    timeout(0),
+    cache_action(0),
+    start_time(0),
+    cache_vc(0),
+    cvio(0),
+    buffer(0),
+    buffer_reader(0),
+    total_size(0),
+    nbytes(-1),
+    repeat_count(0),
+    expect_event(EVENT_NONE),
+    expect_initial_event(EVENT_NONE),
+    initial_event(EVENT_NONE),
+    content_salt(0),
+    end_memcpy_on_clone(0)
 {
+  SET_HANDLER(&CacheTestSM::event_handler);
+}
+
+CacheTestSM::CacheTestSM(const CacheTestSM &ao) : RegressionSM(ao)
+{
+  int o = (int)(((char *)&start_memcpy_on_clone) - ((char *)this));
+  int s = (int)(((char *)&end_memcpy_on_clone) - ((char *)&start_memcpy_on_clone));
+  memcpy(((char *)this) + o, ((char *)&ao) + o, s);
   SET_HANDLER(&CacheTestSM::event_handler);
 }
 
@@ -86,9 +110,9 @@ CacheTestSM::event_handler(int event, void *data)
   case CACHE_EVENT_OPEN_READ:
     initial_event = event;
     cancel_timeout();
-    cache_action = 0;
-    cache_vc = (CacheVConnection *)data;
-    buffer = new_empty_MIOBuffer();
+    cache_action  = 0;
+    cache_vc      = (CacheVConnection *)data;
+    buffer        = new_empty_MIOBuffer();
     buffer_reader = buffer->alloc_reader();
     if (open_read_callout() < 0)
       goto Lclose_error_next;
@@ -117,9 +141,9 @@ CacheTestSM::event_handler(int event, void *data)
   case CACHE_EVENT_OPEN_WRITE:
     initial_event = event;
     cancel_timeout();
-    cache_action = 0;
-    cache_vc = (CacheVConnection *)data;
-    buffer = new_empty_MIOBuffer();
+    cache_action  = 0;
+    cache_vc      = (CacheVConnection *)data;
+    buffer        = new_empty_MIOBuffer();
     buffer_reader = buffer->alloc_reader();
     if (open_write_callout() < 0)
       goto Lclose_error_next;
@@ -145,7 +169,7 @@ CacheTestSM::event_handler(int event, void *data)
 
   case CACHE_EVENT_SCAN:
     initial_event = event;
-    cache_vc = (CacheVConnection *)data;
+    cache_vc      = (CacheVConnection *)data;
     return EVENT_CONT;
 
   case CACHE_EVENT_SCAN_OBJECT:
@@ -204,7 +228,7 @@ void
 CacheTestSM::fill_buffer()
 {
   int64_t avail = buffer->write_avail();
-  CacheKey k = key;
+  CacheKey k    = key;
   k.b[1] += content_salt;
   int64_t sk = (int64_t)sizeof(key);
   while (avail > 0) {
@@ -213,11 +237,11 @@ CacheTestSM::fill_buffer()
       l = sk;
 
     int64_t pos = cvio->ndone + buffer_reader->read_avail();
-    int64_t o = pos % sk;
+    int64_t o   = pos % sk;
 
     if (l > sk - o)
-      l = sk - o;
-    k.b[0] = pos / sk;
+      l     = sk - o;
+    k.b[0]  = pos / sk;
     char *x = ((char *)&k) + o;
     buffer->write(x, l);
     buffer->fill(l);
@@ -229,19 +253,19 @@ int
 CacheTestSM::check_buffer()
 {
   int64_t avail = buffer_reader->read_avail();
-  CacheKey k = key;
+  CacheKey k    = key;
   k.b[1] += content_salt;
   char b[sizeof(key)];
-  int64_t sk = (int64_t)sizeof(key);
+  int64_t sk  = (int64_t)sizeof(key);
   int64_t pos = cvio->ndone - buffer_reader->read_avail();
   while (avail > 0) {
     int64_t l = avail;
     if (l > sk)
-      l = sk;
+      l       = sk;
     int64_t o = pos % sk;
     if (l > sk - o)
-      l = sk - o;
-    k.b[0] = pos / sk;
+      l     = sk - o;
+    k.b[0]  = pos / sk;
     char *x = ((char *)&k) + o;
     buffer_reader->read(&b[0], l);
     if (::memcmp(b, x, l))
@@ -270,14 +294,6 @@ CacheTestSM::complete(int event)
   return EVENT_DONE;
 }
 
-CacheTestSM::CacheTestSM(const CacheTestSM &ao) : RegressionSM(ao)
-{
-  int o = (int)(((char *)&start_memcpy_on_clone) - ((char *)this));
-  int s = (int)(((char *)&end_memcpy_on_clone) - ((char *)&start_memcpy_on_clone));
-  memcpy(((char *)this) + o, ((char *)&ao) + o, s);
-  SET_HANDLER(&CacheTestSM::event_handler);
-}
-
 EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
 {
   if (cacheProcessor.IsCacheEnabled() != CACHE_INITIALIZED) {
@@ -290,31 +306,31 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   CACHE_SM(t, write_test, { cacheProcessor.open_write(this, &key, false, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_SYNC); });
   write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
-  write_test.expect_event = VC_EVENT_WRITE_COMPLETE;
-  write_test.nbytes = 100;
+  write_test.expect_event         = VC_EVENT_WRITE_COMPLETE;
+  write_test.nbytes               = 100;
   rand_CacheKey(&write_test.key, thread->mutex);
 
   CACHE_SM(t, lookup_test, { cacheProcessor.lookup(this, &key, false); });
   lookup_test.expect_event = CACHE_EVENT_LOOKUP;
-  lookup_test.key = write_test.key;
+  lookup_test.key          = write_test.key;
 
   CACHE_SM(t, read_test, { cacheProcessor.open_read(this, &key, false); });
   read_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
-  read_test.expect_event = VC_EVENT_READ_COMPLETE;
-  read_test.nbytes = 100;
-  read_test.key = write_test.key;
+  read_test.expect_event         = VC_EVENT_READ_COMPLETE;
+  read_test.nbytes               = 100;
+  read_test.key                  = write_test.key;
 
   CACHE_SM(t, remove_test, { cacheProcessor.remove(this, &key, false); });
   remove_test.expect_event = CACHE_EVENT_REMOVE;
-  remove_test.key = write_test.key;
+  remove_test.key          = write_test.key;
 
   CACHE_SM(t, lookup_fail_test, { cacheProcessor.lookup(this, &key, false); });
   lookup_fail_test.expect_event = CACHE_EVENT_LOOKUP_FAILED;
-  lookup_fail_test.key = write_test.key;
+  lookup_fail_test.key          = write_test.key;
 
   CACHE_SM(t, read_fail_test, { cacheProcessor.open_read(this, &key, false); });
   read_fail_test.expect_event = CACHE_EVENT_OPEN_READ_FAILED;
-  read_fail_test.key = write_test.key;
+  read_fail_test.key          = write_test.key;
 
   CACHE_SM(t, remove_fail_test, { cacheProcessor.remove(this, &key, false); });
   remove_fail_test.expect_event = CACHE_EVENT_REMOVE_FAILED;
@@ -329,8 +345,8 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
       return 1;
     });
   replace_write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
-  replace_write_test.expect_event = VC_EVENT_WRITE_COMPLETE;
-  replace_write_test.nbytes = 100;
+  replace_write_test.expect_event         = VC_EVENT_WRITE_COMPLETE;
+  replace_write_test.nbytes               = 100;
   rand_CacheKey(&replace_write_test.key, thread->mutex);
 
   CACHE_SM(t, replace_test,
@@ -338,7 +354,7 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
              cacheProcessor.open_write(this, &key, false, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_OVERWRITE_SYNC);
            } int open_write_callout() {
              CacheTestHeader *h = 0;
-             int hlen = 0;
+             int hlen           = 0;
              if (cache_vc->get_header((void **)&h, &hlen) < 0)
                return -1;
              if (h->serial != 10)
@@ -349,14 +365,14 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
              return 1;
            });
   replace_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
-  replace_test.expect_event = VC_EVENT_WRITE_COMPLETE;
-  replace_test.nbytes = 100;
-  replace_test.key = replace_write_test.key;
-  replace_test.content_salt = 1;
+  replace_test.expect_event         = VC_EVENT_WRITE_COMPLETE;
+  replace_test.nbytes               = 100;
+  replace_test.key                  = replace_write_test.key;
+  replace_test.content_salt         = 1;
 
   CACHE_SM(t, replace_read_test, { cacheProcessor.open_read(this, &key, false); } int open_read_callout() {
     CacheTestHeader *h = 0;
-    int hlen = 0;
+    int hlen           = 0;
     if (cache_vc->get_header((void **)&h, &hlen) < 0)
       return -1;
     if (h->serial != 11)
@@ -365,15 +381,15 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
     return 1;
   });
   replace_read_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
-  replace_read_test.expect_event = VC_EVENT_READ_COMPLETE;
-  replace_read_test.nbytes = 100;
-  replace_read_test.key = replace_test.key;
-  replace_read_test.content_salt = 1;
+  replace_read_test.expect_event         = VC_EVENT_READ_COMPLETE;
+  replace_read_test.nbytes               = 100;
+  replace_read_test.key                  = replace_test.key;
+  replace_read_test.content_salt         = 1;
 
   CACHE_SM(t, large_write_test, { cacheProcessor.open_write(this, &key, false, CACHE_FRAG_TYPE_NONE, 100, CACHE_WRITE_OPT_SYNC); });
   large_write_test.expect_initial_event = CACHE_EVENT_OPEN_WRITE;
-  large_write_test.expect_event = VC_EVENT_WRITE_COMPLETE;
-  large_write_test.nbytes = 10000000;
+  large_write_test.expect_event         = VC_EVENT_WRITE_COMPLETE;
+  large_write_test.nbytes               = 10000000;
   rand_CacheKey(&large_write_test.key, thread->mutex);
 
   CACHE_SM(t, pread_test, { cacheProcessor.open_read(this, &key, false); } int open_read_callout() {
@@ -381,14 +397,28 @@ EXCLUSIVE_REGRESSION_TEST(cache)(RegressionTest *t, int /* atype ATS_UNUSED */, 
     return 1;
   });
   pread_test.expect_initial_event = CACHE_EVENT_OPEN_READ;
-  pread_test.expect_event = VC_EVENT_READ_COMPLETE;
-  pread_test.nbytes = 100;
-  pread_test.key = large_write_test.key;
+  pread_test.expect_event         = VC_EVENT_READ_COMPLETE;
+  pread_test.nbytes               = 100;
+  pread_test.key                  = large_write_test.key;
 
-  r_sequential(t, write_test.clone(), lookup_test.clone(), r_sequential(t, 10, read_test.clone()), remove_test.clone(),
-               lookup_fail_test.clone(), read_fail_test.clone(), remove_fail_test.clone(), replace_write_test.clone(),
-               replace_test.clone(), replace_read_test.clone(), large_write_test.clone(), pread_test.clone(), NULL_PTR)
-    ->run(pstatus);
+  // clang-format off
+  r_sequential(t,
+      write_test.clone(),
+      lookup_test.clone(),
+      r_sequential(t, 10, read_test.clone()) /* run read_test 10 times */,
+      remove_test.clone(),
+      lookup_fail_test.clone(),
+      read_fail_test.clone(),
+      remove_fail_test.clone(),
+      replace_write_test.clone(),
+      replace_test.clone(),
+      replace_read_test.clone(),
+      large_write_test.clone(),
+      pread_test.clone(),
+      NULL_PTR)
+  ->run(pstatus);
+  // clang-format on
+
   return;
 }
 
@@ -401,8 +431,8 @@ force_link_CacheTest()
 
 REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, int *pstatus)
 {
-  static int const MAX_VOLS = 26; // maximum values used in any test.
-  static uint64_t DEFAULT_SKIP = 8192;
+  static int const MAX_VOLS           = 26; // maximum values used in any test.
+  static uint64_t DEFAULT_SKIP        = 8192;
   static uint64_t DEFAULT_STRIPE_SIZE = 1024ULL * 1024 * 1024 * 911; // 911G
   CacheDisk disk;                                                    // Only need one because it's just checked for failure.
   CacheHostRecord hr1, hr2;
@@ -423,23 +453,23 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   disk.num_errors = 0;
 
   for (int i = 0; i < MAX_VOLS; ++i) {
-    vol_ptrs[i] = vols + i;
+    vol_ptrs[i]  = vols + i;
     vols[i].disk = &disk;
-    vols[i].len = DEFAULT_STRIPE_SIZE;
+    vols[i].len  = DEFAULT_STRIPE_SIZE;
     snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64, 'a' + i, DEFAULT_SKIP, vols[i].len);
     MD5Context().hash_immediate(vols[i].hash_id, buff, strlen(buff));
   }
 
   hr1.vol_hash_table = 0;
-  hr1.vols = vol_ptrs;
-  hr1.num_vols = MAX_VOLS;
+  hr1.vols           = vol_ptrs;
+  hr1.num_vols       = MAX_VOLS;
   build_vol_hash_table(&hr1);
 
   hr2.vol_hash_table = 0;
-  hr2.vols = vol_ptrs;
-  hr2.num_vols = MAX_VOLS;
+  hr2.vols           = vol_ptrs;
+  hr2.num_vols       = MAX_VOLS;
 
-  sample = vols + sample_idx;
+  sample      = vols + sample_idx;
   sample->len = 1024ULL * 1024 * 1024 * (1024 + 128); // 1.1 TB
   snprintf(buff, sizeof(buff), "/dev/sd%c %" PRIu64 ":%" PRIu64, 'a' + sample_idx, DEFAULT_SKIP, sample->len);
   MD5Context().hash_immediate(sample->hash_id, buff, strlen(buff));
@@ -469,7 +499,7 @@ REGRESSION_TEST(cache_disk_replacement_stability)(RegressionTest *t, int level, 
   hr2.vols = 0;
 }
 
-static double zipf_alpha = 1.2;
+static double zipf_alpha        = 1.2;
 static int64_t zipf_bucket_size = 1;
 
 #define ZIPF_SIZE (1 << 20)
@@ -482,12 +512,12 @@ build_zipf()
   if (zipf_table)
     return;
   zipf_table = (double *)ats_malloc(ZIPF_SIZE * sizeof(double));
-  for (int i = 0; i < ZIPF_SIZE; i++)
+  for (int i      = 0; i < ZIPF_SIZE; i++)
     zipf_table[i] = 1.0 / pow(i + 2, zipf_alpha);
-  for (int i = 1; i < ZIPF_SIZE; i++)
+  for (int i      = 1; i < ZIPF_SIZE; i++)
     zipf_table[i] = zipf_table[i - 1] + zipf_table[i];
-  double x = zipf_table[ZIPF_SIZE - 1];
-  for (int i = 0; i < ZIPF_SIZE; i++)
+  double x        = zipf_table[ZIPF_SIZE - 1];
+  for (int i      = 0; i < ZIPF_SIZE; i++)
     zipf_table[i] = zipf_table[i] / x;
 }
 
@@ -515,7 +545,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
   bool pass = true;
   CacheKey key;
   Vol *vol = theCache->key_to_vol(&key, "example.com", sizeof("example.com") - 1);
-  vector<Ptr<IOBufferData> > data;
+  vector<Ptr<IOBufferData>> data;
 
   cache->init(cache_size, vol);
 
@@ -528,7 +558,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       data.push_back(make_ptr(d));
       md5.u64[0] = ((uint64_t)i << 32) + i;
       md5.u64[1] = ((uint64_t)i << 32) + i;
-      cache->put(&md5, data[i], 1 << 15);
+      cache->put(&md5, data[i].get(), 1 << 15);
       // More hits for the first 10.
       for (int j = 0; j <= i && j < 10; j++) {
         Ptr<IOBufferData> data;
@@ -570,7 +600,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
       d->alloc(BUFFER_SIZE_INDEX_16K);
       data.push_back(make_ptr(d));
-      cache->put(&md5, data.back(), 1 << 15);
+      cache->put(&md5, data.back().get(), 1 << 15);
       if (i >= sample_size / 2)
         misses++; // Sample last half of the gets.
     }
@@ -589,7 +619,7 @@ test_RamCache(RegressionTest *t, RamCache *cache, const char *name, int64_t cach
       IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
       d->alloc(BUFFER_SIZE_INDEX_8K + (r[i] % 3));
       data.push_back(make_ptr(d));
-      cache->put(&md5, data.back(), d->block_size());
+      cache->put(&md5, data.back().get(), d->block_size());
       if (i >= sample_size / 2)
         misses++; // Sample last half of the gets.
     }
@@ -626,7 +656,7 @@ REGRESSION_TEST(ram_cache)(RegressionTest *t, int level, int *pstatus)
   }
   for (int s = 20; s <= 28; s += 4) {
     int64_t cache_size = 1LL << s;
-    *pstatus = REGRESSION_TEST_PASSED;
+    *pstatus           = REGRESSION_TEST_PASSED;
     if (!test_RamCache(t, new_RamCacheLRU(), "LRU", cache_size) || !test_RamCache(t, new_RamCacheCLFUS(), "CLFUS", cache_size))
       *pstatus = REGRESSION_TEST_FAILED;
   }

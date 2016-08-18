@@ -45,13 +45,13 @@ TS_INLINE void
 completionUtil::setThread(Event *e, EThread *t)
 {
   UDPIOEvent *u = (UDPIOEvent *)e;
-  u->ethread = t;
+  u->ethread    = t;
 }
 TS_INLINE void
 completionUtil::setContinuation(Event *e, Continuation *c)
 {
   UDPIOEvent *u = (UDPIOEvent *)e;
-  *(Action *)u = c;
+  *(Action *)u  = c;
 }
 TS_INLINE void *
 completionUtil::getHandle(Event *e)
@@ -66,7 +66,7 @@ completionUtil::setHandle(Event *e, void *handle)
   u->setHandle(handle);
 }
 TS_INLINE void
-completionUtil::setInfo(Event *e, int fd, IOBufferBlock *buf, int actual, int errno_)
+completionUtil::setInfo(Event *e, int fd, const Ptr<IOBufferBlock> &buf, int actual, int errno_)
 {
   UDPIOEvent *u = (UDPIOEvent *)e;
   u->setInfo(fd, buf, actual, errno_);

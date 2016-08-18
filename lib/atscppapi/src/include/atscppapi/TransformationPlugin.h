@@ -127,5 +127,4 @@ private:
 
 } /* atscppapi */
 
-
 #endif /* ATSCPPAPI_TRANSFORMATIONPLUGIN_H_ */

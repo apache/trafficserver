@@ -24,7 +24,6 @@
 #ifndef _ink_defs_h
 #define _ink_defs_h
 
-
 #include "ts/ink_config.h"
 #include <stddef.h>
 #include <sys/mman.h>
@@ -79,7 +78,7 @@
 #ifdef __cplusplus
 template <typename T, unsigned N>
 static inline unsigned
-countof(const T(&)[N])
+countof(const T (&)[N])
 {
   return N;
 }
@@ -133,7 +132,6 @@ max(const T a, const T b)
 #ifndef unlikely
 #define unlikely(x) __builtin_expect(!!(x), 0)
 #endif
-
 
 #if TS_USE_HWLOC
 #include <hwloc.h>

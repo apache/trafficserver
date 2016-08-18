@@ -41,7 +41,6 @@
 #include "ts/ParseRules.h"
 #include "ts/ink_apidefs.h"
 
-
 /*===========================================================================*
 
                             Function Prototypes
@@ -89,24 +88,7 @@ void ink_utf8_to_latin1(const char *in, int inlen, char *out, int *outlen);
 
  *===========================================================================*/
 
-
-// inline int ptr_len_cmp(const char* p1, int l1, const char* p2, int l2)
-//
-//     strcmp() functionality for two ptr length pairs
-//
-inline int
-ptr_len_cmp(const char *p1, int l1, const char *p2, int l2)
-{
-  if (l1 == l2) {
-    return memcmp(p1, p2, l1);
-  } else if (l1 < l2) {
-    return -1;
-  } else {
-    return 1;
-  }
-}
-
-// inline int ptr_len_cmp(const char* p1, int l1, const char* p2, int l2)
+// inline int ptr_len_casecmp(const char* p1, int l1, const char* p2, int l2)
 //
 //     strcasecmp() functionality for two ptr length pairs
 //
@@ -147,7 +129,7 @@ inline const char *
 ptr_len_str(const char *p1, int l1, const char *str)
 {
   if (str && str[0]) {
-    int str_index = 0;
+    int str_index           = 0;
     const char *match_start = NULL;
 
     while (l1 > 0) {
@@ -164,7 +146,7 @@ ptr_len_str(const char *p1, int l1, const char *str)
         }
       } else if (str_index > 0) {
         l1 += (p1 - match_start);
-        p1 = match_start;
+        p1        = match_start;
         str_index = 0;
       }
 
@@ -188,7 +170,7 @@ ptr_len_ncmp(const char *p1, int l1, const char *str, int n)
       return 1;
     }
 
-    char p1c = *p1;
+    char p1c  = *p1;
     char strc = *str;
 
     if (p1c != strc) {
@@ -216,7 +198,6 @@ ptr_len_ncmp(const char *p1, int l1, const char *str, int n)
   }
 }
 
-
 // int ptr_len_ncasecmp(const char* p1, int l1, const char* str, int n) {
 //
 //    strncasecmp like functionality for comparing a ptr,len pair with
@@ -230,7 +211,7 @@ ptr_len_ncasecmp(const char *p1, int l1, const char *str, int n)
       return 1;
     }
 
-    char p1c = ParseRules::ink_tolower(*p1);
+    char p1c  = ParseRules::ink_tolower(*p1);
     char strc = ParseRules::ink_tolower(*str);
 
     if (p1c != strc) {
@@ -271,48 +252,8 @@ ptr_len_casecmp(const char *p1, int l1, const char *str)
       return 1;
     }
 
-    char p1c = ParseRules::ink_tolower(*p1);
+    char p1c  = ParseRules::ink_tolower(*p1);
     char strc = ParseRules::ink_tolower(*str);
-
-    if (p1c != strc) {
-      if (p1c > strc) {
-        return 1;
-      } else if (p1c < strc) {
-        return -1;
-      }
-    }
-
-    p1++;
-    l1--;
-    str++;
-  }
-
-  // Since we're out of characters in p1
-  //   str needs to be finished for the strings
-  //   to get equal
-  if (*str == '\0') {
-    return 0;
-  } else {
-    return -1;
-  }
-}
-
-
-// int ptr_len_cmp(const char* p1, int l1, const char* str) {
-//
-//    strcmp like functionality for comparing a ptr,len pair with
-//       a null terminated string
-//
-inline int
-ptr_len_cmp(const char *p1, int l1, const char *str)
-{
-  while (l1 > 0) {
-    if (*str == '\0') {
-      return 1;
-    }
-
-    char p1c = *p1;
-    char strc = *str;
 
     if (p1c != strc) {
       if (p1c > strc) {

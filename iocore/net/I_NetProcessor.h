@@ -248,7 +248,6 @@ private:
   NetProcessor &operator=(const NetProcessor &);
 };
 
-
 /**
   Global NetProcessor singleton object for making net calls. All
   net processor calls like connect, accept, etc are made using this

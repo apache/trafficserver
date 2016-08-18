@@ -86,7 +86,7 @@ CacheHostMatcher::AllocateSpace(int num_entries)
   data_array = new CacheHostRecord[num_entries];
 
   array_len = num_entries;
-  num_el = 0;
+  num_el    = 0;
 }
 
 // void CacheHostMatcher::Match(RequestData* rdata, Result* result)
@@ -186,8 +186,8 @@ CacheHostTable::CacheHostTable(Cache *c, CacheType typ)
   config_tags = &CacheHosting_tags;
   ink_assert(config_tags != NULL);
 
-  type = typ;
-  cache = c;
+  type         = typ;
+  cache        = c;
   matcher_name = "[CacheHosting]";
   ;
   hostMatch = NULL;
@@ -217,7 +217,6 @@ CacheHostTable::Print()
     hostMatch->Print();
   }
 }
-
 
 // void ControlMatcher<Data, Result>::Match(RequestData* rdata
 //                                          Result* result)
@@ -256,9 +255,9 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   matcher_line *first = NULL;
   matcher_line *current;
   matcher_line *last = NULL;
-  int line_num = 0;
-  int second_pass = 0;
-  int numEntries = 0;
+  int line_num       = 0;
+  int second_pass    = 0;
+  int numEntries     = 0;
   const char *errPtr = NULL;
 
   // type counts
@@ -284,7 +283,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
 
     if (*tmp != '#' && *tmp != '\0') {
       current = (matcher_line *)ats_malloc(sizeof(matcher_line));
-      errPtr = parseConfigLine((char *)tmp, current, config_tags);
+      errPtr  = parseConfigLine((char *)tmp, current, config_tags);
 
       if (errPtr != NULL) {
         RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s", matcher_name, config_file_path,
@@ -311,7 +310,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
           first = last = current;
         } else {
           last->next = current;
-          last = current;
+          last       = current;
         }
       }
     }
@@ -339,7 +338,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
   }
   // Traverse the list and build the records table
   int generic_rec_initd = 0;
-  current = first;
+  current               = first;
   while (current != NULL) {
     second_pass++;
     if ((current->type == MATCH_DOMAIN) || (current->type == MATCH_HOST)) {
@@ -372,7 +371,7 @@ CacheHostTable::BuildTableFromString(const char *config_file_path, char *file_bu
     }
 
     // Deallocate the parsing structure
-    last = current;
+    last    = current;
     current = current->next;
     ats_free(last);
   }
@@ -419,10 +418,10 @@ CacheHostRecord::Init(CacheType typ)
   extern int cp_list_len;
 
   num_vols = 0;
-  type = typ;
-  cp = (CacheVol **)ats_malloc(cp_list_len * sizeof(CacheVol *));
+  type     = typ;
+  cp       = (CacheVol **)ats_malloc(cp_list_len * sizeof(CacheVol *));
   memset(cp, 0, cp_list_len * sizeof(CacheVol *));
-  num_cachevols = 0;
+  num_cachevols    = 0;
   CacheVol *cachep = cp_list.head;
   for (; cachep; cachep = cachep->link.next) {
     if (cachep->scheme == type) {
@@ -436,7 +435,7 @@ CacheHostRecord::Init(CacheType typ)
     RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "error: No volumes found for Cache Type %d", type);
     return -1;
   }
-  vols = (Vol **)ats_malloc(num_vols * sizeof(Vol *));
+  vols        = (Vol **)ats_malloc(num_vols * sizeof(Vol *));
   int counter = 0;
   for (i = 0; i < num_cachevols; i++) {
     CacheVol *cachep1 = cp[i];
@@ -468,9 +467,9 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
 
     if (!strcasecmp(label, "volume")) {
       /* parse the list of volumes */
-      val = ats_strdup(line_info->line[1][i]);
+      val          = ats_strdup(line_info->line[1][i]);
       char *vol_no = val;
-      char *s = val;
+      char *s      = val;
       int volume_number;
       CacheVol *cachep;
 
@@ -507,7 +506,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
       while (1) {
         char c = *s;
         if ((c == ',') || (c == '\0')) {
-          *s = '\0';
+          *s            = '\0';
           volume_number = atoi(vol_no);
 
           cachep = cp_list.head;
@@ -558,7 +557,7 @@ CacheHostRecord::Init(matcher_line *line_info, CacheType typ)
   if (!num_vols) {
     return -1;
   }
-  vols = (Vol **)ats_malloc(num_vols * sizeof(Vol *));
+  vols        = (Vol **)ats_malloc(num_vols * sizeof(Vol *));
   int counter = 0;
   for (i = 0; i < num_cachevols; i++) {
     CacheVol *cachep = cp[i];
@@ -583,7 +582,6 @@ CacheHostRecord::Print()
 {
 }
 
-
 void
 ConfigVolumes::read_config_file()
 {
@@ -607,85 +605,51 @@ ConfigVolumes::read_config_file()
 void
 ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
 {
-#define PAIR_ZERO 0
-#define PAIR_ONE 1
-#define PAIR_TWO 2
-#define DONE 3
-#define INK_ERROR -1
-
-#define INK_ERROR_VOLUME -2 // added by YTS Team, yamsat for bug id 59632
   // Table build locals
   Tokenizer bufTok("\n");
   tok_iter_state i_state;
   const char *tmp;
-  char *end;
-  char *line_end = NULL;
   int line_num = 0;
-  int total = 0; // added by YTS Team, yamsat for bug id 59632
+  int total    = 0; // added by YTS Team, yamsat for bug id 59632
 
   char volume_seen[256];
-  int state = 0; // changed by YTS Team, yamsat for bug id 59632
-  int volume_number = 0;
-  CacheType scheme = CACHE_NONE_TYPE;
-  int size = 0;
-  int in_percent = 0;
   const char *matcher_name = "[CacheVolition]";
 
   memset(volume_seen, 0, sizeof(volume_seen));
-  num_volumes = 0;
+  num_volumes        = 0;
   num_stream_volumes = 0;
-  num_http_volumes = 0;
+  num_http_volumes   = 0;
 
   if (bufTok.Initialize(file_buf, SHARE_TOKS | ALLOW_EMPTY_TOKS) == 0) {
     // We have an empty file
     /* no volumes */
     return;
   }
+
   // First get the number of entries
   tmp = bufTok.iterFirst(&i_state);
   while (tmp != NULL) {
-    state = PAIR_ZERO;
     line_num++;
 
-    // skip all blank spaces at beginning of line
+    char *end;
+    char *line_end    = NULL;
+    const char *err   = NULL;
+    int volume_number = 0;
+    CacheType scheme  = CACHE_NONE_TYPE;
+    int size          = 0;
+    int in_percent    = 0;
+
     while (1) {
+      // skip all blank spaces at beginning of line
       while (*tmp && isspace(*tmp)) {
         tmp++;
       }
 
-      if (!(*tmp) && state == DONE) {
-        /* add the config */
-
-        ConfigVol *configp = new ConfigVol();
-        configp->number = volume_number;
-        if (in_percent) {
-          configp->percent = size;
-          configp->in_percent = 1;
-        } else {
-          configp->in_percent = 0;
-        }
-        configp->scheme = scheme;
-        configp->size = size;
-        configp->cachep = NULL;
-        cp_queue.enqueue(configp);
-        num_volumes++;
-        if (scheme == CACHE_HTTP_TYPE)
-          num_http_volumes++;
-        else
-          num_stream_volumes++;
-        Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d\n", volume_number, scheme, size, in_percent);
+      if (*tmp == '\0' || *tmp == '#') {
         break;
-      }
-
-      if (state == PAIR_ZERO) {
-        if (*tmp == '\0' || *tmp == '#')
-          break;
-      } else {
-        if (!(*tmp)) {
-          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : Unexpected end of line", matcher_name,
-                           config_file_path, line_num);
-          break;
-        }
+      } else if (!(*tmp)) {
+        err = "Unexpected end of line";
+        break;
       }
 
       end = (char *)tmp;
@@ -696,52 +660,38 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
         line_end = end;
       else {
         line_end = end + 1;
-        *end = '\0';
+        *end     = '\0';
       }
       char *eq_sign;
 
       eq_sign = (char *)strchr(tmp, '=');
       if (!eq_sign) {
-        state = INK_ERROR;
-      } else
+        err = "Unexpected end of line";
+        break;
+      } else {
         *eq_sign = '\0';
+      }
 
-      switch (state) {
-      case PAIR_ZERO:
-        if (strcasecmp(tmp, "volume")) {
-          state = INK_ERROR;
-          break;
-        }
-        tmp += 7; // size of string volume including null
+      if (strcasecmp(tmp, "volume") == 0) { // match volume
+        tmp += 7;                           // size of string volume including null
         volume_number = atoi(tmp);
 
-        if (volume_number < 1 || volume_number > 255 || volume_seen[volume_number]) {
-          const char *err;
+        if (volume_seen[volume_number]) {
+          err = "Volume Already Specified";
+          break;
+        }
 
-          if (volume_number < 1 || volume_number > 255) {
-            err = "Bad Volume Number";
-          } else {
-            err = "Volume Already Specified";
-          }
-
-          RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s [%d]", matcher_name, config_file_path,
-                           line_num, err, volume_number);
-          state = INK_ERROR;
+        if (volume_number < 1 || volume_number > 255) {
+          err = "Bad Volume Number";
           break;
         }
 
         volume_seen[volume_number] = 1;
-        while (ParseRules::is_digit(*tmp))
+        while (ParseRules::is_digit(*tmp)) {
           tmp++;
-        state = PAIR_ONE;
-        break;
-
-      case PAIR_ONE:
-        if (strcasecmp(tmp, "scheme")) {
-          state = INK_ERROR;
-          break;
         }
-        tmp += 7; // size of string scheme including null
+      } else if (strcasecmp(tmp, "scheme") == 0) { // match scheme
+        tmp += 7;                                  // size of string scheme including null
 
         if (!strcasecmp(tmp, "http")) {
           tmp += 4;
@@ -750,19 +700,10 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           tmp += 4;
           scheme = CACHE_RTSP_TYPE;
         } else {
-          state = INK_ERROR;
+          err = "Unexpected end of line";
           break;
         }
-
-        state = PAIR_TWO;
-        break;
-
-      case PAIR_TWO:
-
-        if (strcasecmp(tmp, "size")) {
-          state = INK_ERROR;
-          break;
-        }
+      } else if (strcasecmp(tmp, "size") == 0) { // match size
         tmp += 5;
         size = atoi(tmp);
 
@@ -773,39 +714,54 @@ ConfigVolumes::BuildListFromString(char *config_file_path, char *file_buf)
           // added by YTS Team, yamsat for bug id 59632
           total += size;
           if (size > 100 || total > 100) {
-            state = INK_ERROR_VOLUME;
-            RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "Total volume size added upto more than 100 percent, No volumes created");
+            err = "Total volume size added upto more than 100 percent, No volumes created";
             break;
           }
           // ends here
           in_percent = 1;
           tmp++;
-        } else
+        } else {
           in_percent = 0;
-        state = DONE;
-        break;
+        }
       }
 
-      if (state == INK_ERROR || *tmp) {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : Invalid token [%s]", matcher_name,
-                         config_file_path, line_num, tmp);
-        break;
-      }
-      // added by YTS Team, yamsat for bug id 59632
-      if (state == INK_ERROR_VOLUME || *tmp) {
-        RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "Total volume size added upto more than 100 percent,No volumes created");
-        break;
-      }
       // ends here
       if (end < line_end)
         tmp++;
     }
+
+    if (err) {
+      RecSignalWarning(REC_SIGNAL_CONFIG_ERROR, "%s discarding %s entry at line %d : %s", matcher_name, config_file_path, line_num,
+                       err);
+    } else if (volume_number && size && scheme) {
+      /* add the config */
+
+      ConfigVol *configp = new ConfigVol();
+      configp->number    = volume_number;
+      if (in_percent) {
+        configp->percent    = size;
+        configp->in_percent = 1;
+      } else {
+        configp->in_percent = 0;
+      }
+      configp->scheme = scheme;
+      configp->size   = size;
+      configp->cachep = NULL;
+      cp_queue.enqueue(configp);
+      num_volumes++;
+      if (scheme == CACHE_HTTP_TYPE) {
+        num_http_volumes++;
+      } else {
+        num_stream_volumes++;
+      }
+      Debug("cache_hosting", "added volume=%d, scheme=%d, size=%d percent=%d", volume_number, scheme, size, in_percent);
+    }
+
     tmp = bufTok.iterNext(&i_state);
   }
 
   return;
 }
-
 
 /* Test the cache volumeing with different configurations */
 #define MEGS_128 (128 * 1024 * 1024)
@@ -851,7 +807,7 @@ EXCLUSIVE_REGRESSION_TEST(Cache_vol)(RegressionTest *t, int /* atype ATS_UNUSED 
 int
 create_config(RegressionTest *t, int num)
 {
-  int i = 0;
+  int i       = 0;
   int vol_num = 1;
   // clear all old configurations before adding new test cases
   config_volumes.clear_all();
@@ -859,7 +815,7 @@ create_config(RegressionTest *t, int num)
   case 0:
     for (i = 0; i < gndisks; i++) {
       CacheDisk *d = gdisks[i];
-      int blocks = d->num_usable_blocks;
+      int blocks   = d->num_usable_blocks;
       if (blocks < STORE_BLOCKS_PER_VOL) {
         rprintf(t, "Cannot run Cache_vol regression: not enough disk space\n");
         return 0;
@@ -868,12 +824,12 @@ create_config(RegressionTest *t, int num)
       for (; blocks >= STORE_BLOCKS_PER_VOL; blocks -= STORE_BLOCKS_PER_VOL) {
         if (vol_num > 255)
           break;
-        ConfigVol *cp = new ConfigVol();
-        cp->number = vol_num++;
-        cp->scheme = CACHE_HTTP_TYPE;
-        cp->size = 128;
+        ConfigVol *cp  = new ConfigVol();
+        cp->number     = vol_num++;
+        cp->scheme     = CACHE_HTTP_TYPE;
+        cp->size       = 128;
         cp->in_percent = 0;
-        cp->cachep = 0;
+        cp->cachep     = 0;
         config_volumes.cp_queue.enqueue(cp);
         config_volumes.num_volumes++;
         config_volumes.num_http_volumes++;
@@ -906,13 +862,13 @@ create_config(RegressionTest *t, int num)
     vol_num = 1;
     rprintf(t, "Cleared  disk\n");
     for (i = 0; i < 10; i++) {
-      ConfigVol *cp = new ConfigVol();
-      cp->number = vol_num++;
-      cp->scheme = CACHE_HTTP_TYPE;
-      cp->size = 10;
-      cp->percent = 10;
+      ConfigVol *cp  = new ConfigVol();
+      cp->number     = vol_num++;
+      cp->scheme     = CACHE_HTTP_TYPE;
+      cp->size       = 10;
+      cp->percent    = 10;
       cp->in_percent = 1;
-      cp->cachep = 0;
+      cp->cachep     = 0;
       config_volumes.cp_queue.enqueue(cp);
       config_volumes.num_volumes++;
       config_volumes.num_http_volumes++;
@@ -925,9 +881,9 @@ create_config(RegressionTest *t, int num)
 
   {
     /* calculate the total disk space */
-    InkRand *gen = &this_ethread()->generator;
+    InkRand *gen      = &this_ethread()->generator;
     off_t total_space = 0;
-    vol_num = 1;
+    vol_num           = 1;
     if (num == 2) {
       rprintf(t, "Random Volumes after clearing the disks\n");
     } else {
@@ -958,19 +914,19 @@ create_config(RegressionTest *t, int num)
       off_t random_size = (gen->random() % modu) + 1;
       /* convert to 128 megs multiple */
       CacheType scheme = (random_size % 2) ? CACHE_HTTP_TYPE : CACHE_RTSP_TYPE;
-      random_size = ROUND_TO_VOL_SIZE(random_size);
-      off_t blocks = random_size / STORE_BLOCK_SIZE;
+      random_size      = ROUND_TO_VOL_SIZE(random_size);
+      off_t blocks     = random_size / STORE_BLOCK_SIZE;
       ink_assert(blocks <= (int)total_space);
       total_space -= blocks;
 
       ConfigVol *cp = new ConfigVol();
 
-      cp->number = vol_num++;
-      cp->scheme = scheme;
-      cp->size = random_size >> 20;
-      cp->percent = 0;
+      cp->number     = vol_num++;
+      cp->scheme     = scheme;
+      cp->size       = random_size >> 20;
+      cp->percent    = 0;
       cp->in_percent = 0;
-      cp->cachep = 0;
+      cp->cachep     = 0;
       config_volumes.cp_queue.enqueue(cp);
       config_volumes.num_volumes++;
       if (cp->scheme == CACHE_HTTP_TYPE) {
@@ -1001,7 +957,7 @@ execute_and_verify(RegressionTest *t)
 
   /* check that the volumes and sizes
      match the configuration */
-  int matched = 0;
+  int matched   = 0;
   ConfigVol *cp = config_volumes.cp_queue.head;
   CacheVol *cachep;
 
@@ -1078,7 +1034,7 @@ execute_and_verify(RegressionTest *t)
 int
 ClearConfigVol(ConfigVolumes *configp)
 {
-  int i = 0;
+  int i         = 0;
   ConfigVol *cp = NULL;
   while ((cp = configp->cp_queue.dequeue())) {
     delete cp;
@@ -1088,8 +1044,8 @@ ClearConfigVol(ConfigVolumes *configp)
     Warning("failed");
     return 0;
   }
-  configp->num_volumes = 0;
-  configp->num_http_volumes = 0;
+  configp->num_volumes        = 0;
+  configp->num_http_volumes   = 0;
   configp->num_stream_volumes = 0;
   return 1;
 }
@@ -1097,7 +1053,7 @@ ClearConfigVol(ConfigVolumes *configp)
 int
 ClearCacheVolList(Queue<CacheVol> *cpl, int len)
 {
-  int i = 0;
+  int i        = 0;
   CacheVol *cp = NULL;
   while ((cp = cpl->dequeue())) {
     ats_free(cp->disk_vols);
@@ -1113,11 +1069,10 @@ ClearCacheVolList(Queue<CacheVol> *cpl, int len)
   return 1;
 }
 
-
 void
 save_state()
 {
-  saved_cp_list = cp_list;
+  saved_cp_list     = cp_list;
   saved_cp_list_len = cp_list_len;
   memcpy(&saved_config_volumes, &config_volumes, sizeof(ConfigVolumes));
   saved_gnvol = gnvol;
@@ -1129,7 +1084,7 @@ save_state()
 void
 restore_state()
 {
-  cp_list = saved_cp_list;
+  cp_list     = saved_cp_list;
   cp_list_len = saved_cp_list_len;
   memcpy(&config_volumes, &saved_config_volumes, sizeof(ConfigVolumes));
   gnvol = saved_gnvol;

@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ClusterLoadMonitor.cc
@@ -40,8 +39,14 @@ int ClusterLoadMonitor::cf_cluster_load_clear_duration;
 int ClusterLoadMonitor::cf_cluster_load_exceed_duration;
 
 ClusterLoadMonitor::ClusterLoadMonitor(ClusterHandler *ch)
-  : Continuation(0), ch(ch), ping_history_buf_head(0), periodic_action(0), cluster_overloaded(0), cancel_periodic(0),
-    cluster_load_msg_sequence_number(0), cluster_load_msg_start_sequence_number(0)
+  : Continuation(0),
+    ch(ch),
+    ping_history_buf_head(0),
+    periodic_action(0),
+    cluster_overloaded(0),
+    cancel_periodic(0),
+    cluster_load_msg_sequence_number(0),
+    cluster_load_msg_start_sequence_number(0)
 {
   mutex = this->ch->mutex;
   SET_HANDLER(&ClusterLoadMonitor::cluster_load_periodic);
@@ -73,15 +78,15 @@ ClusterLoadMonitor::ClusterLoadMonitor(ClusterHandler *ch)
   cluster_load_exceed_duration = cf_cluster_load_exceed_duration ? cf_cluster_load_exceed_duration : 4;
   Debug("cluster_monitor", "cluster_load_exceed_duration=%d", cluster_load_exceed_duration);
 
-  int nbytes = sizeof(int) * num_ping_response_buckets;
+  int nbytes            = sizeof(int) * num_ping_response_buckets;
   ping_response_buckets = (int *)ats_malloc(nbytes);
   memset((char *)ping_response_buckets, 0, nbytes);
 
-  nbytes = sizeof(ink_hrtime) * ping_history_buf_length;
+  nbytes                    = sizeof(ink_hrtime) * ping_history_buf_length;
   ping_response_history_buf = (ink_hrtime *)ats_malloc(nbytes);
   memset((char *)ping_response_history_buf, 0, nbytes);
 
-  last_ping_message_sent = HRTIME_SECONDS(0);
+  last_ping_message_sent    = HRTIME_SECONDS(0);
   last_cluster_load_compute = HRTIME_SECONDS(0);
 }
 
@@ -132,8 +137,8 @@ ClusterLoadMonitor::compute_cluster_load()
   // buckets and averaging the results.
 
   int n;
-  int sum = 0;
-  int entries = 0;
+  int sum      = 0;
+  int entries  = 0;
   int n_bucket = 0;
 
   for (n = 0; n < num_ping_response_buckets; ++n) {
@@ -156,7 +161,7 @@ ClusterLoadMonitor::compute_cluster_load()
   // Log ping latency in history buffer.
 
   ping_response_history_buf[ping_history_buf_head++] = current_ping_latency;
-  ping_history_buf_head = ping_history_buf_head % ping_history_buf_length;
+  ping_history_buf_head                              = ping_history_buf_head % ping_history_buf_length;
 
   // Determine the current state of the cluster interconnect using
   // the configured limits.  We determine the state as follows.
@@ -187,7 +192,7 @@ ClusterLoadMonitor::compute_cluster_load()
   if (end < 0)
     end += ping_history_buf_length;
 
-  int threshold_clear = 0;
+  int threshold_clear    = 0;
   int threshold_exceeded = 0;
   do {
     if (ping_response_history_buf[start] >= ping_latency_threshold)
@@ -213,7 +218,7 @@ void
 ClusterLoadMonitor::note_ping_response_time(ink_hrtime response_time, int sequence_number)
 {
 #ifdef CLUSTER_TOMCAT
-  ProxyMutex *mutex = this->ch->mutex; // hack for stats
+  ProxyMutex *mutex = this->ch->mutex.get(); // hack for stats
 #endif
 
   CLUSTER_SUM_DYN_STAT(CLUSTER_PING_TIME_STAT, response_time);
@@ -265,7 +270,7 @@ ClusterLoadMonitor::send_cluster_load_msg(ink_hrtime current_time)
   struct cluster_load_ping_msg m(this);
 
   m.sequence_number = cluster_load_msg_sequence_number++;
-  m.send_time = current_time;
+  m.send_time       = current_time;
   cluster_ping(ch, cluster_load_ping_rethandler, (void *)&m, sizeof(m));
 }
 

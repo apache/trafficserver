@@ -60,6 +60,7 @@ libinknet_a_SOURCES = \
   I_UDPPacket.h \
   Inline.cc \
   I_SessionAccept.h \
+  SessionAccept.cc \
   Net.cc \
   NetVConnection.cc \
   P_CompletionUtil.h \
@@ -129,3 +130,8 @@ if BUILD_TESTS
      NetVCTest.cc \
      P_NetVCTest.h
 endif
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

@@ -37,7 +37,6 @@ static int ts_lua_fetch_multi_handler(TSCont contp, TSEvent event, void *edata);
 static int ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetch_info *fi);
 static inline void ts_lua_destroy_fetch_multi_info(ts_lua_fetch_multi_info *fmi);
 
-
 void
 ts_lua_inject_fetch_api(lua_State *L)
 {
@@ -89,15 +88,15 @@ ts_lua_fetch(lua_State *L)
 
   contp = TSContCreate(ts_lua_fetch_multi_handler, ci->mutex);
 
-  sz = sizeof(ts_lua_fetch_multi_info) + 1 * sizeof(ts_lua_fetch_info);
+  sz  = sizeof(ts_lua_fetch_multi_info) + 1 * sizeof(ts_lua_fetch_info);
   fmi = (ts_lua_fetch_multi_info *)TSmalloc(sz);
 
   memset(fmi, 0, sz);
   fmi->total = 1;
   fmi->contp = contp;
 
-  fi = &fmi->fiv[0];
-  fi->fmi = fmi;
+  fi         = &fmi->fiv[0];
+  fi->fmi    = fmi;
   fi->buffer = TSIOBufferCreate();
   fi->reader = TSIOBufferReaderAlloc(fi->buffer);
 
@@ -145,7 +144,7 @@ ts_lua_fetch_multi(lua_State *L)
   // Iterate the table
   n = lua_objlen(L, 1);
 
-  sz = sizeof(ts_lua_fetch_multi_info) + n * sizeof(ts_lua_fetch_info);
+  sz  = sizeof(ts_lua_fetch_multi_info) + n * sizeof(ts_lua_fetch_info);
   fmi = (ts_lua_fetch_multi_info *)TSmalloc(sz);
 
   memset(fmi, 0, sz);
@@ -182,8 +181,8 @@ ts_lua_fetch_multi(lua_State *L)
     lua_pushinteger(L, 2);
     lua_gettable(L, -3);
 
-    fi = &fmi->fiv[i];
-    fi->fmi = fmi;
+    fi         = &fmi->fiv[i];
+    fi->fmi    = fmi;
     fi->buffer = TSIOBufferCreate();
     fi->reader = TSIOBufferReaderAlloc(fi->buffer);
 
@@ -223,19 +222,19 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
       method = luaL_checklstring(L, -1, &method_len);
 
     } else {
-      method = "GET";
+      method     = "GET";
       method_len = sizeof("GET") - 1;
     }
 
     lua_pop(L, 1);
 
   } else {
-    method = "GET";
+    method     = "GET";
     method_len = sizeof("GET") - 1;
   }
 
   /* body */
-  body = NULL;
+  body     = NULL;
   body_len = 0;
 
   if (tb) {
@@ -252,7 +251,7 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
   /* cliaddr */
   memset(&clientaddr, 0, sizeof(clientaddr));
   clientaddr.sin_family = AF_INET;
-  rc = 0;
+  rc                    = 0;
 
   if (tb) {
     lua_pushlstring(L, "cliaddr", sizeof("cliaddr") - 1);
@@ -260,7 +259,7 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
 
     if (lua_isstring(L, -1)) {
       addr = luaL_checklstring(L, -1, &addr_len);
-      rc = sscanf(addr, "%15s:%d", ipstr, &port);
+      rc   = sscanf(addr, "%15s:%d", ipstr, &port);
       if (rc == 2) {
         clientaddr.sin_port = htons(port);
         inet_aton(ipstr, (struct in_addr *)&clientaddr.sin_addr.s_addr);
@@ -306,7 +305,7 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
   TSContDataSet(contp, fi);
 
   fi->contp = contp;
-  fi->fch = TSFetchCreate(contp, method, url, "HTTP/1.1", (struct sockaddr *)&clientaddr, flags);
+  fi->fch   = TSFetchCreate(contp, method, url, "HTTP/1.1", (struct sockaddr *)&clientaddr, flags);
 
   /* header */
   cl = ht = ua = 0;
@@ -322,7 +321,7 @@ ts_lua_fetch_one_item(lua_State *L, const char *url, size_t url_len, ts_lua_fetc
       while (lua_next(L, -2)) {
         lua_pushvalue(L, -2);
 
-        key = luaL_checklstring(L, -1, &key_len);
+        key   = luaL_checklstring(L, -1, &key_len);
         value = luaL_checklstring(L, -2, &value_len);
 
         if (key_len == TS_MIME_LEN_CONTENT_LENGTH && !strncasecmp(TS_MIME_FIELD_CONTENT_LENGTH, key, key_len)) { // Content-Length
@@ -397,8 +396,8 @@ ts_lua_fetch_handler(TSCont contp, TSEvent ev, void *edata ATS_UNUSED)
   ts_lua_fetch_multi_info *fmi;
 
   event = (int)ev;
-  fi = TSContDataGet(contp);
-  fmi = fi->fmi;
+  fi    = TSContDataGet(contp);
+  fmi   = fi->fmi;
 
   switch (event) {
   case TS_FETCH_EVENT_EXT_HEAD_READY:
@@ -409,9 +408,9 @@ ts_lua_fetch_handler(TSCont contp, TSEvent ev, void *edata ATS_UNUSED)
   case TS_FETCH_EVENT_EXT_BODY_DONE:
 
     do {
-      blk = TSIOBufferStart(fi->buffer);
+      blk  = TSIOBufferStart(fi->buffer);
       from = TSIOBufferBlockWriteStart(blk, &wavail);
-      n = TSFetchReadData(fi->fch, from, wavail);
+      n    = TSFetchReadData(fi->fch, from, wavail);
       TSIOBufferProduce(fi->buffer, n);
     } while (n == wavail);
 
@@ -463,7 +462,7 @@ ts_lua_fill_one_result(lua_State *L, ts_lua_fetch_info *fi)
 
   field_loc = TSMimeHdrFieldGet(bufp, hdrp, 0);
   while (field_loc) {
-    name = TSMimeHdrFieldNameGet(bufp, hdrp, field_loc, &name_len);
+    name  = TSMimeHdrFieldNameGet(bufp, hdrp, field_loc, &name_len);
     value = TSMimeHdrFieldValueStringGet(bufp, hdrp, field_loc, -1, &value_len);
 
     lua_pushlstring(L, name, name_len);
@@ -519,9 +518,9 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   ci = ai->cinfo;
 
   fmi = (ts_lua_fetch_multi_info *)ai->data;
-  fi = (ts_lua_fetch_info *)edata;
+  fi  = (ts_lua_fetch_info *)edata;
 
-  L = ai->cinfo->routine.lua;
+  L      = ai->cinfo->routine.lua;
   lmutex = ai->cinfo->routine.mctx->mutexp;
 
   fmi->done++;
@@ -547,10 +546,11 @@ ts_lua_fetch_multi_handler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
     TSContCall(ci->contp, TS_LUA_EVENT_COROUTINE_CONT, (void *)1);
   }
 
+  ts_lua_fetch_multi_cleanup(ai);
+
   TSMutexUnlock(lmutex);
   return 0;
 }
-
 
 static inline void
 ts_lua_destroy_fetch_multi_info(ts_lua_fetch_multi_info *fmi)
@@ -588,6 +588,9 @@ static int
 ts_lua_fetch_multi_cleanup(ts_lua_async_item *ai)
 {
   ts_lua_fetch_multi_info *fmi;
+
+  if (ai->deleted)
+    return 0;
 
   if (ai->data) {
     fmi = (ts_lua_fetch_multi_info *)ai->data;

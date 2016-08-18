@@ -100,5 +100,4 @@ private:
 
 } /* atscppapi */
 
-
 #endif /* ATSCPPAPI_INTERCEPT_PLUGIN_H_ */

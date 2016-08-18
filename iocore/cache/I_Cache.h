@@ -67,7 +67,9 @@ typedef HTTPInfo CacheHTTPInfo;
 struct CacheProcessor : public Processor {
   CacheProcessor()
     : min_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
-      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION), cb_after_init(0), wait_for_cache(0)
+      max_stripe_version(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION),
+      cb_after_init(0),
+      wait_for_cache(0)
   {
   }
 
@@ -182,8 +184,8 @@ struct CacheVConnection : public VConnection {
   virtual VIO *do_io_pread(Continuation *c, int64_t nbytes, MIOBuffer *buf, int64_t offset) = 0;
   VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner = false) = 0;
   void do_io_close(int lerrno = -1) = 0;
-  void reenable(VIO *avio) = 0;
-  void reenable_re(VIO *avio) = 0;
+  void reenable(VIO *avio)          = 0;
+  void reenable_re(VIO *avio)       = 0;
   void
   do_io_shutdown(ShutdownHowTo_t howto)
   {
@@ -191,21 +193,21 @@ struct CacheVConnection : public VConnection {
     ink_assert(!"CacheVConnection::do_io_shutdown unsupported");
   }
 
-  virtual int get_header(void **ptr, int *len) = 0;
-  virtual int set_header(void *ptr, int len) = 0;
+  virtual int get_header(void **ptr, int *len)      = 0;
+  virtual int set_header(void *ptr, int len)        = 0;
   virtual int get_single_data(void **ptr, int *len) = 0;
 
 #ifdef HTTP_CACHE
-  virtual void set_http_info(CacheHTTPInfo *info) = 0;
+  virtual void set_http_info(CacheHTTPInfo *info)  = 0;
   virtual void get_http_info(CacheHTTPInfo **info) = 0;
 #endif
 
-  virtual bool is_ram_cache_hit() const = 0;
+  virtual bool is_ram_cache_hit() const           = 0;
   virtual bool set_disk_io_priority(int priority) = 0;
-  virtual int get_disk_io_priority() = 0;
-  virtual bool set_pin_in_cache(time_t t) = 0;
-  virtual time_t get_pin_in_cache() = 0;
-  virtual int64_t get_object_size() = 0;
+  virtual int get_disk_io_priority()              = 0;
+  virtual bool set_pin_in_cache(time_t t)         = 0;
+  virtual time_t get_pin_in_cache()               = 0;
+  virtual int64_t get_object_size()               = 0;
   virtual bool
   is_compressed_in_ram() const
   {

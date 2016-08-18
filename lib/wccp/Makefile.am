@@ -17,6 +17,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/proxy/api/ts
@@ -41,3 +43,6 @@ libwccp_a_SOURCES = \
 #   wccp-test-cache.cc
 
 # test_cache_LDADD = $(LDADD) -L$(top_builddir)/lib/tsconfig -ltsconfig -L$(top_builddir)/lib/wccp -lwccp -L$(top_builddir)/lib/ts -ltsutil
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

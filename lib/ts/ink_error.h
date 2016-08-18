@@ -38,7 +38,7 @@
 
 void ink_fatal_va(const char *message_format, va_list ap) TS_NORETURN;
 void ink_fatal(const char *message_format, ...) TS_PRINTFLIKE(1, 2) TS_NORETURN;
-void ink_pfatal(const char *message_format, ...) TS_PRINTFLIKE(1, 2) TS_NORETURN;
+void ink_abort(const char *message_format, ...) TS_PRINTFLIKE(1, 2) TS_NORETURN;
 void ink_warning(const char *message_format, ...) TS_PRINTFLIKE(1, 2);
 void ink_pwarning(const char *message_format, ...) TS_PRINTFLIKE(1, 2);
 void ink_notice(const char *message_format, ...) TS_PRINTFLIKE(1, 2);

@@ -100,10 +100,21 @@ public:
 };
 
 inline CacheControlResult::CacheControlResult()
-  : revalidate_after(CC_UNSET_TIME), pin_in_cache_for(CC_UNSET_TIME), ttl_in_cache(CC_UNSET_TIME), never_cache(false),
-    cluster_cache_local(false), ignore_client_no_cache(false), ignore_server_no_cache(false), ignore_client_cc_max_age(true),
+  : revalidate_after(CC_UNSET_TIME),
+    pin_in_cache_for(CC_UNSET_TIME),
+    ttl_in_cache(CC_UNSET_TIME),
+    never_cache(false),
+    cluster_cache_local(false),
+    ignore_client_no_cache(false),
+    ignore_server_no_cache(false),
+    ignore_client_cc_max_age(true),
     cache_responses_to_cookies(-1), // do not change value
-    reval_line(-1), never_line(-1), pin_line(-1), ttl_line(-1), cluster_cache_local_line(-1), ignore_client_line(-1),
+    reval_line(-1),
+    never_line(-1),
+    pin_line(-1),
+    ttl_line(-1),
+    cluster_cache_local_line(-1),
+    ignore_client_line(-1),
     ignore_server_line(-1)
 {
 }

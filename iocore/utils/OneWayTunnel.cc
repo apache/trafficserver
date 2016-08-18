@@ -63,8 +63,19 @@ transfer_data(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 }
 
 OneWayTunnel::OneWayTunnel()
-  : Continuation(0), vioSource(0), vioTarget(0), cont(0), manipulate_fn(0), n_connections(0), lerrno(0), single_buffer(0),
-    close_source(0), close_target(0), tunnel_till_done(0), tunnel_peer(0), free_vcs(true)
+  : Continuation(0),
+    vioSource(0),
+    vioTarget(0),
+    cont(0),
+    manipulate_fn(0),
+    n_connections(0),
+    lerrno(0),
+    single_buffer(0),
+    close_source(0),
+    close_target(0),
+    tunnel_till_done(0),
+    tunnel_peer(0),
+    free_vcs(true)
 {
 }
 
@@ -96,9 +107,16 @@ OneWayTunnel::~OneWayTunnel()
 }
 
 OneWayTunnel::OneWayTunnel(Continuation *aCont, Transform_fn aManipulate_fn, bool aclose_source, bool aclose_target)
-  : Continuation(aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex()), cont(aCont), manipulate_fn(aManipulate_fn),
-    n_connections(2), lerrno(0), single_buffer(true), close_source(aclose_source), close_target(aclose_target),
-    tunnel_till_done(false), free_vcs(false)
+  : Continuation(aCont ? aCont->mutex.get() : new_ProxyMutex()),
+    cont(aCont),
+    manipulate_fn(aManipulate_fn),
+    n_connections(2),
+    lerrno(0),
+    single_buffer(true),
+    close_source(aclose_source),
+    close_target(aclose_target),
+    tunnel_till_done(false),
+    free_vcs(false)
 {
   ink_assert(!"This form of OneWayTunnel() constructor not supported");
 }
@@ -108,14 +126,14 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
                    int64_t nbytes, bool asingle_buffer, bool aclose_source, bool aclose_target, Transform_fn aManipulate_fn,
                    int water_mark)
 {
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : (aMutex ? aMutex : new_ProxyMutex());
-  cont = aMutex ? NULL : aCont;
-  single_buffer = asingle_buffer;
-  manipulate_fn = aManipulate_fn;
-  n_connections = 2;
-  close_source = aclose_source;
-  close_target = aclose_target;
-  lerrno = 0;
+  mutex            = aCont ? aCont->mutex.get() : (aMutex ? aMutex : new_ProxyMutex());
+  cont             = aMutex ? NULL : aCont;
+  single_buffer    = asingle_buffer;
+  manipulate_fn    = aManipulate_fn;
+  n_connections    = 2;
+  close_source     = aclose_source;
+  close_target     = aclose_target;
+  lerrno           = 0;
   tunnel_till_done = (nbytes == TUNNEL_TILL_DONE);
 
   SET_HANDLER(&OneWayTunnel::startEvent);
@@ -127,7 +145,7 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
   else
     size_index = default_large_iobuffer_size;
 
-  Debug("one_way_tunnel", "buffer size index [%" PRId64 "] [%d]\n", size_index, size_estimate);
+  Debug("one_way_tunnel", "buffer size index [%" PRId64 "] [%d]", size_index, size_estimate);
 
   // enqueue read request on vcSource.
   MIOBuffer *buf1 = new_MIOBuffer(size_index);
@@ -152,13 +170,13 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
                    bool aclose_source, bool aclose_target)
 {
   (void)vcSource;
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
-  cont = aCont;
-  single_buffer = true;
-  manipulate_fn = 0;
-  n_connections = 2;
-  close_source = aclose_source;
-  close_target = aclose_target;
+  mutex            = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
+  cont             = aCont;
+  single_buffer    = true;
+  manipulate_fn    = 0;
+  n_connections    = 2;
+  close_source     = aclose_source;
+  close_target     = aclose_target;
   tunnel_till_done = true;
 
   // Prior to constructing the OneWayTunnel, we initiated a do_io(VIO::READ)
@@ -178,13 +196,13 @@ OneWayTunnel::init(VConnection *vcSource, VConnection *vcTarget, Continuation *a
 void
 OneWayTunnel::init(Continuation *aCont, VIO *SourceVio, VIO *TargetVio, bool aclose_source, bool aclose_target)
 {
-  mutex = aCont ? (ProxyMutex *)aCont->mutex : new_ProxyMutex();
-  cont = aCont;
-  single_buffer = true;
-  manipulate_fn = 0;
-  n_connections = 2;
-  close_source = aclose_source;
-  close_target = aclose_target;
+  mutex            = aCont ? aCont->mutex : make_ptr(new_ProxyMutex());
+  cont             = aCont;
+  single_buffer    = true;
+  manipulate_fn    = 0;
+  n_connections    = 2;
+  close_source     = aclose_source;
+  close_target     = aclose_target;
   tunnel_till_done = true;
 
   // do_io_read() read already posted on vcSource.
@@ -198,7 +216,6 @@ OneWayTunnel::init(Continuation *aCont, VIO *SourceVio, VIO *TargetVio, bool acl
   vioSource = SourceVio;
   vioTarget = TargetVio;
 }
-
 
 void
 OneWayTunnel::transform(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
@@ -221,8 +238,8 @@ OneWayTunnel::transform(MIOBufferAccessor &in_buf, MIOBufferAccessor &out_buf)
 int
 OneWayTunnel::startEvent(int event, void *data)
 {
-  VIO *vio = (VIO *)data;
-  int ret = VC_EVENT_DONE;
+  VIO *vio   = (VIO *)data;
+  int ret    = VC_EVENT_DONE;
   int result = 0;
 
 #ifdef TEST
@@ -240,7 +257,7 @@ OneWayTunnel::startEvent(int event, void *data)
     /* This event is sent out by our peer */
     ink_assert(tunnel_peer);
     tunnel_peer = NULL;
-    free_vcs = false;
+    free_vcs    = false;
     goto Ldone;
 
   case VC_EVENT_READ_READY:
@@ -350,7 +367,7 @@ OneWayTunnel::connection_closed(int result)
 #ifdef TEST
     cout << "OneWayTunnel::connection_closed() ... calling cont" << endl;
 #endif
-    cont->handleEvent(result ? VC_EVENT_ERROR : VC_EVENT_EOS, cont);
+    cont->handleEvent(result ? VC_EVENT_ERROR : VC_EVENT_EOS, this);
   } else {
     OneWayTunnel_free(this);
   }

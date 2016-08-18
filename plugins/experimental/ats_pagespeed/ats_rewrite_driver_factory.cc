@@ -56,7 +56,6 @@
 #include "net/instaweb/util/public/string_util.h"
 #include "net/instaweb/util/public/thread_system.h"
 
-
 namespace net_instaweb
 {
 AtsRewriteDriverFactory::AtsRewriteDriverFactory(const ProcessContext &process_context, AtsThreadSystem *thread_system,
@@ -64,7 +63,8 @@ AtsRewriteDriverFactory::AtsRewriteDriverFactory(const ProcessContext &process_c
   : SystemRewriteDriverFactory(process_context, thread_system, NULL /*default shared mem runtime*/, "" /*hostname, not used*/,
                                -1 /*port, not used*/),
     ats_message_handler_(new AtsMessageHandler(thread_system->NewMutex())),
-    ats_html_parse_message_handler_(new AtsMessageHandler(thread_system->NewMutex())), use_per_vhost_statistics_(false),
+    ats_html_parse_message_handler_(new AtsMessageHandler(thread_system->NewMutex())),
+    use_per_vhost_statistics_(false),
     threads_started_(false)
 {
   InitializeDefaultOptions();
@@ -175,7 +175,6 @@ AtsRewriteDriverFactory::InitStats(Statistics *statistics)
   AtsServerContext::InitStats(statistics);
 }
 
-
 AtsServerContext *
 AtsRewriteDriverFactory::MakeAtsServerContext()
 {
@@ -207,7 +206,7 @@ AtsRewriteDriverFactory::StartThreads()
     CHECK(false) << "threads already started";
   }
   SchedulerThread *thread = new SchedulerThread(thread_system(), scheduler());
-  bool ok = thread->Start();
+  bool ok                 = thread->Start();
   CHECK(ok) << "Unable to start scheduler thread";
   defer_cleanup(thread->MakeDeleter());
   threads_started_ = true;

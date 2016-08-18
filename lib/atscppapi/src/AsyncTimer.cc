@@ -35,8 +35,12 @@ struct atscppapi::AsyncTimerState {
   AsyncTimer *timer_;
   shared_ptr<AsyncDispatchControllerBase> dispatch_controller_;
   AsyncTimerState(AsyncTimer::Type type, int period_in_ms, int initial_period_in_ms, AsyncTimer *timer)
-    : type_(type), period_in_ms_(period_in_ms), initial_period_in_ms_(initial_period_in_ms), initial_timer_action_(NULL),
-      periodic_timer_action_(NULL), timer_(timer)
+    : type_(type),
+      period_in_ms_(period_in_ms),
+      initial_period_in_ms_(initial_period_in_ms),
+      initial_timer_action_(NULL),
+      periodic_timer_action_(NULL),
+      timer_(timer)
   {
   }
 };
@@ -65,7 +69,7 @@ handleTimerEvent(TSCont cont, TSEvent event, void *edata)
 
 AsyncTimer::AsyncTimer(Type type, int period_in_ms, int initial_period_in_ms)
 {
-  state_ = new AsyncTimerState(type, period_in_ms, initial_period_in_ms, this);
+  state_        = new AsyncTimerState(type, period_in_ms, initial_period_in_ms, this);
   state_->cont_ = TSContCreate(handleTimerEvent, TSMutexCreate());
   TSContDataSet(state_->cont_, static_cast<void *>(state_));
 }
@@ -74,8 +78,8 @@ void
 AsyncTimer::run()
 {
   state_->dispatch_controller_ = getDispatchController(); // keep a copy in state so that cont handler can use it
-  int one_off_timeout_in_ms = 0;
-  int regular_timeout_in_ms = 0;
+  int one_off_timeout_in_ms    = 0;
+  int regular_timeout_in_ms    = 0;
   if (state_->type_ == AsyncTimer::TYPE_ONE_OFF) {
     one_off_timeout_in_ms = state_->period_in_ms_;
   } else {

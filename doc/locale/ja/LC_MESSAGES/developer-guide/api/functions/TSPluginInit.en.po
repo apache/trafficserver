@@ -1,0 +1,90 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-03 15:41+0900\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:37
+msgid ""
+":func:`TSPluginInit` must be defined by all plugins. Traffic Server calls "
+"this initialization routine when it loads the plugin and sets :arg:`argc` "
+"and :arg:`argv` appropriately based on the values in :file:`plugin.config`."
+msgstr ""
+":func:`TSPluginInit` はすべてのプラグインで定義されなければなりません。 "
+"Traffic Server はプラグインを読み込み :arg:`argc` と :arg:`argv` を  :file:"
+"`plugin.config` の値をもとに適切に設定する際にこの初期化ルーチンを呼びます。"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:35
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:27
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:22
+msgid "TSPluginInit"
+msgstr "TSPluginInit"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:24
+msgid "Traffic Server plugin loading and registration."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:29
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:42
+msgid ""
+":arg:`argc` is a count of the number of arguments in the argument vector, :"
+"arg:`argv`. The count is at least one because the first argument in the "
+"argument vector is the plugins name, which must exist in order for the "
+"plugin to be loaded."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:47
+msgid ""
+":func:`TSPluginRegister` registers the appropriate SDK version specific in :"
+"arg:`sdk_version` for your plugin. Use this function to make sure that the "
+"version of Traffic Server on which your plugin is running supports the "
+"plugin."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:54
+msgid ""
+":func:`TSPluginRegister` returns :const:`TS_ERROR` if the plugin "
+"registration failed."
+msgstr ""
+":func:`TSPluginRegister` はプラグインの登録に失敗すると :const:`TS_ERROR` を"
+"返します。"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:80
+msgid ":manpage:`TSAPI(3ts)`, :manpage:`TSInstallDirGet(3ts)`"
+msgstr ":manpage:`TSAPI(3ts)`, :manpage:`TSInstallDirGet(3ts)`"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:58
+msgid "Examples"
+msgstr "例"
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:52
+msgid "Return Values"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSPluginInit.en.rst:78
+msgid "See Also"
+msgstr "参照"

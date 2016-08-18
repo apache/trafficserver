@@ -24,7 +24,7 @@ Makefile.in
 /configure
 /tags
 
-build/aux/
+build/_aux/
 build/libtool.m4
 build/ltoptions.m4
 build/ltsugar.m4
@@ -38,6 +38,7 @@ config.nice
 config.h
 
 doc/_build/html/api/
+doc/_build/locale/
 doc/docbuild/
 doc/locale/pot
 doc/xml/
@@ -45,8 +46,6 @@ doc/xml/
 MYMETA.*
 pm_to_blib
 
-cmd/traffic_line/traffic_line
-cmd/traffic_shell/traffic_shell
 cmd/traffic_cop/traffic_cop
 cmd/traffic_ctl/traffic_ctl
 cmd/traffic_crashlog/traffic_crashlog
@@ -77,6 +76,7 @@ lib/ts/test_Map
 lib/ts/test_Vec
 lib/ts/test_geometry
 lib/ts/test_Regex
+lib/ts/test_PriorityQueue
 lib/ts/test_X509HostnameValidator
 lib/perl/lib/Apache/TS.pm
 
@@ -86,11 +86,14 @@ iocore/eventsystem/test_Buffer
 iocore/eventsystem/test_Event
 proxy/config/records.config.default
 proxy/config/storage.config.default
+proxy/hdrs/test_mime
 proxy/http2/test_Huffmancode
+proxy/http2/test_Http2DependencyTree
+proxy/http2/test_HPACK
+proxy/http2/hpack-tests/results
 
 plugins/header_rewrite/header_rewrite_test
 plugins/experimental/esi/*_test
-plugins/experimental/spdy/zstream_test
 plugins/experimental/sslheaders/test_sslheaders
 
 mgmt/api/traffic_api_cli_remote
@@ -137,9 +140,10 @@ GTAGS
 ETAGS
 CTAGS
 
+lib/atscppapi/src/include/atscppapi/shared_ptr.h
 lib/tsconfig/TsConfigGrammar.hpp
-lib/tsconfig/test-tsconfig
 lib/tsconfig/TsConfigSyntax.c
+lib/tsconfig/test-tsconfig
 
 tools/http_load/http_load
 tools/jtest/jtest

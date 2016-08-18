@@ -126,9 +126,24 @@ inline CongestionControlRule::~CongestionControlRule()
 }
 
 inline CongestionControlRecord::CongestionControlRecord()
-  : rank(0), prefix(NULL), prefix_len(0), port(0), congestion_scheme(PER_IP), error_page(NULL), max_connection_failures(5),
-    fail_window(120), proxy_retry_interval(10), client_wait_interval(300), wait_interval_alpha(30), live_os_conn_timeout(60),
-    live_os_conn_retries(2), dead_os_conn_timeout(15), dead_os_conn_retries(1), max_connection(-1), pRecord(NULL), ref_count(0)
+  : rank(0),
+    prefix(NULL),
+    prefix_len(0),
+    port(0),
+    congestion_scheme(PER_IP),
+    error_page(NULL),
+    max_connection_failures(5),
+    fail_window(120),
+    proxy_retry_interval(10),
+    client_wait_interval(300),
+    wait_interval_alpha(30),
+    live_os_conn_timeout(60),
+    live_os_conn_retries(2),
+    dead_os_conn_timeout(15),
+    dead_os_conn_retries(1),
+    max_connection(-1),
+    pRecord(NULL),
+    ref_count(0)
 {
 }
 
@@ -143,7 +158,7 @@ CongestionControlRecord::cleanup()
     pRecord->put();
     pRecord = NULL;
   }
-  ats_free(prefix), prefix = NULL;
+  ats_free(prefix), prefix         = NULL;
   ats_free(error_page), error_page = NULL;
 }
 
@@ -170,7 +185,6 @@ struct FailHistory {
     return bins[(index + 1 + cur_index) % CONG_HIST_ENTRIES];
   }
 };
-
 
 struct CongestionEntry : public RequestData {
   // key in the hash table;
@@ -224,11 +238,6 @@ struct CongestionEntry : public RequestData {
   get_client_ip()
   {
     return NULL;
-  }
-  virtual RD_Type
-  data_type(void)
-  {
-    return RD_CONGEST_ENTRY;
   }
 
   /* print the entry into the congested list output buffer */
@@ -346,7 +355,6 @@ CongestionEntry::connect_timeout()
   }
 }
 
-
 inline void
 CongestionEntry::stat_inc_F()
 {
@@ -394,13 +402,21 @@ CongestionEntry::clearFailHistory()
 }
 
 inline CongestionEntry::CongestionEntry()
-  : m_key(0), m_hostname(NULL), pRecord(NULL), m_last_congested(0), m_congested(0), m_stat_congested_conn_failures(0),
-    m_M_congested(0), m_last_M_congested(0), m_num_connections(0), m_stat_congested_max_conn(0), m_ref_count(1)
+  : m_key(0),
+    m_hostname(NULL),
+    pRecord(NULL),
+    m_last_congested(0),
+    m_congested(0),
+    m_stat_congested_conn_failures(0),
+    m_M_congested(0),
+    m_last_M_congested(0),
+    m_num_connections(0),
+    m_stat_congested_max_conn(0),
+    m_ref_count(1)
 {
   memset(&m_ip, 0, sizeof(m_ip));
   m_hist_lock = new_ProxyMutex();
 }
-
 
 inline CongestionEntry::~CongestionEntry()
 {

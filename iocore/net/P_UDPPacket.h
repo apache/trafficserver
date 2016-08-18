@@ -28,7 +28,6 @@
 
  ****************************************************************************/
 
-
 #ifndef __P_UDPPPACKET_H_
 #define __P_UDPPPACKET_H_
 
@@ -92,9 +91,9 @@ UDPPacket::append_block(IOBufferBlock *block)
 
   if (block) {
     if (p->chain) { // append to end
-      IOBufferBlock *last = p->chain;
-      while (last->next != NULL) {
-        last = last->next;
+      IOBufferBlock *last = p->chain.get();
+      while (last->next) {
+        last = last->next.get();
       }
       last->next = block;
     } else {
@@ -104,16 +103,16 @@ UDPPacket::append_block(IOBufferBlock *block)
 }
 
 TS_INLINE int64_t
-UDPPacket::getPktLength()
+UDPPacket::getPktLength() const
 {
   UDPPacketInternal *p = (UDPPacketInternal *)this;
   IOBufferBlock *b;
 
   p->pktLength = 0;
-  b = p->chain;
+  b            = p->chain.get();
   while (b) {
     p->pktLength += b->read_avail();
-    b = b->next;
+    b = b->next.get();
   }
   return p->pktLength;
 }
@@ -155,7 +154,8 @@ UDPPacket::setConnection(UDPConnection *c)
 TS_INLINE IOBufferBlock *
 UDPPacket::getIOBlockChain(void)
 {
-  return ((UDPPacketInternal *)this)->chain;
+  ink_assert(dynamic_cast<UDPPacketInternal *>(this) != NULL);
+  return ((UDPPacketInternal *)this)->chain.get();
 }
 
 TS_INLINE UDPConnection *
@@ -170,8 +170,8 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, char *buf, int len)
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 
   p->in_the_priority_queue = 0;
-  p->in_heap = 0;
-  p->delivery_time = when;
+  p->in_heap               = 0;
+  p->delivery_time         = when;
   ats_ip_copy(&p->to, to);
 
   if (buf) {
@@ -193,15 +193,16 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, IOBufferBlock *buf, in
   IOBufferBlock *body;
 
   p->in_the_priority_queue = 0;
-  p->in_heap = 0;
-  p->delivery_time = when;
+  p->in_heap               = 0;
+  p->delivery_time         = when;
   ats_ip_copy(&p->to, to);
 
   while (buf) {
     body = buf->clone();
     p->append_block(body);
-    buf = buf->next;
+    buf = buf->next.get();
   }
+
   return p;
 }
 
@@ -211,8 +212,8 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> buf
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 
   p->in_the_priority_queue = 0;
-  p->in_heap = 0;
-  p->delivery_time = when;
+  p->in_heap               = 0;
+  p->delivery_time         = when;
   if (to)
     ats_ip_copy(&p->to, to);
   p->chain = buf;
@@ -231,8 +232,8 @@ new_incoming_UDPPacket(struct sockaddr *from, char *buf, int len)
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 
   p->in_the_priority_queue = 0;
-  p->in_heap = 0;
-  p->delivery_time = 0;
+  p->in_heap               = 0;
+  p->delivery_time         = 0;
   ats_ip_copy(&p->from, from);
 
   IOBufferBlock *body = new_IOBufferBlock();

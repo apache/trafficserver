@@ -32,7 +32,7 @@
 #define _I_Machine_h
 
 #include "ts/ink_inet.h"
-
+#include "ts/ink_uuid.h"
 
 /**
   The Machine is a simple place holder for the hostname and the ip
@@ -54,7 +54,7 @@ struct Machine {
   char *hostname;   // name of the internet host
   int hostname_len; // size of the string pointed to by hostname
 
-  IpEndpoint ip;  ///< Prefered IP address of the host (network order)
+  IpEndpoint ip;  ///< Preferred IP address of the host (network order)
   IpEndpoint ip4; ///< IPv4 address if present.
   IpEndpoint ip6; ///< IPv6 address if present.
 
@@ -64,6 +64,8 @@ struct Machine {
   char ip_hex_string[TS_IP6_SIZE * 2 + 1]; ///< IP address as hex string
   int ip_hex_string_len;
 
+  ATSUuid uuid;
+
   ~Machine();
 
   /** Initialize the singleton.
@@ -72,8 +74,8 @@ struct Machine {
       @note This must be called before called @c instance so that the
       singleton is not @em inadvertently default initialized.
   */
-  static self *init(char const *name = 0,    ///< Host name of the machine.
-                    sockaddr const *addr = 0 ///< Primary IP adddress of the machine.
+  static self *init(char const *name     = 0, ///< Host name of the machine.
+                    sockaddr const *addr = 0  ///< Primary IP address of the machine.
                     );
   /// @return The global instance of this class.
   static self *instance();

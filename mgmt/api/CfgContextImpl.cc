@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "ts/ink_platform.h"
 #include "ts/ink_string.h"
 
@@ -40,7 +39,7 @@
 //--------------------------------------------------------------------------
 CommentObj::CommentObj(char *comment)
 {
-  m_ele = comment_ele_create(comment);
+  m_ele   = comment_ele_create(comment);
   m_valid = (comment ? true : false);
 }
 
@@ -67,13 +66,12 @@ CommentObj::getCfgEleCopy()
   return (TSCfgEle *)copy_comment_ele(m_ele);
 }
 
-
 //--------------------------------------------------------------------------
 // CacheObj
 //--------------------------------------------------------------------------
 CacheObj::CacheObj(TSCacheEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -82,9 +80,9 @@ CacheObj::CacheObj(TSCacheEle *ele)
 CacheObj::CacheObj(TokenList *tokens)
 {
   Token *tok;
-  m_ele = TSCacheEleCreate(TS_TYPE_UNDEFINED);
+  m_ele                = TSCacheEleCreate(TS_TYPE_UNDEFINED);
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens) {
     goto FORMAT_ERR;
@@ -117,7 +115,7 @@ CacheObj::CacheObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 CacheObj::~CacheObj()
@@ -235,8 +233,9 @@ CacheObj::isValid()
     break;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -247,13 +246,12 @@ CacheObj::getCfgEleCopy()
   return (TSCfgEle *)copy_cache_ele(m_ele);
 }
 
-
 //--------------------------------------------------------------------------
 // CongestionObj
 //--------------------------------------------------------------------------
 CongestionObj::CongestionObj(TSCongestionEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -261,9 +259,9 @@ CongestionObj::CongestionObj(TSCongestionEle *ele)
 CongestionObj::CongestionObj(TokenList *tokens)
 {
   Token *tok;
-  m_ele = TSCongestionEleCreate();
+  m_ele                = TSCongestionEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens) {
     goto FORMAT_ERR;
@@ -340,7 +338,7 @@ CongestionObj::CongestionObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 CongestionObj::~CongestionObj()
@@ -385,50 +383,64 @@ CongestionObj::formatEleToRule()
       // TS_PD_UNDEFINED
       break;
     }
-    if (psize > 0)
+    if (psize > 0) {
       pos += psize;
+    }
   }
   // secondary specifiers
   if (m_ele->prefix) {
-    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "prefix=%s ", m_ele->prefix)) > 0)
+    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "prefix=%s ", m_ele->prefix)) > 0) {
       pos += psize;
+    }
   }
   if (m_ele->port > 0) {
-    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "port=%d ", m_ele->port)) > 0)
+    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "port=%d ", m_ele->port)) > 0) {
       pos += psize;
+    }
   }
 
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection_failures=%d ", m_ele->max_connection_failures)) > 0) {
     pos += psize;
-  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "fail_window=%d ", m_ele->fail_window)) > 0)
+  }
+  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "fail_window=%d ", m_ele->fail_window)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "proxy_retry_interval=%d ", m_ele->proxy_retry_interval)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "proxy_retry_interval=%d ", m_ele->proxy_retry_interval)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "client_wait_interval=%d ", m_ele->client_wait_interval)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "client_wait_interval=%d ", m_ele->client_wait_interval)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "wait_interval_alpha=%d ", m_ele->wait_interval_alpha)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "wait_interval_alpha=%d ", m_ele->wait_interval_alpha)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_timeout=%d ", m_ele->live_os_conn_timeout)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_timeout=%d ", m_ele->live_os_conn_timeout)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_retries=%d ", m_ele->live_os_conn_retries)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "live_os_conn_retries=%d ", m_ele->live_os_conn_retries)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_timeout=%d ", m_ele->dead_os_conn_timeout)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_timeout=%d ", m_ele->dead_os_conn_timeout)) > 0) {
     pos += psize;
+  }
   if (pos < sizeof(buf) &&
-      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_retries=%d ", m_ele->dead_os_conn_retries)) > 0)
+      (psize = snprintf(buf + pos, sizeof(buf) - pos, "dead_os_conn_retries=%d ", m_ele->dead_os_conn_retries)) > 0) {
     pos += psize;
-  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection=%d ", m_ele->max_connection)) > 0)
+  }
+  if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "max_connection=%d ", m_ele->max_connection)) > 0) {
     pos += psize;
+  }
   if (m_ele->error_page_uri) {
-    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "error_page=%s ", m_ele->error_page_uri)) > 0)
+    if (pos < sizeof(buf) && (psize = snprintf(buf + pos, sizeof(buf) - pos, "error_page=%s ", m_ele->error_page_uri)) > 0) {
       pos += psize;
+    }
   }
   switch (m_ele->scheme) {
   case TS_HTTP_CONGEST_PER_IP:
@@ -451,11 +463,13 @@ CongestionObj::isValid()
     m_valid = false;
   }
   // all Congestion Ele's should have a prim dest, sec specs are optional
-  if (!m_ele->pd_val)
+  if (!m_ele->pd_val) {
     m_valid = false;
+  }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
   return m_valid;
 }
 
@@ -465,13 +479,12 @@ CongestionObj::getCfgEleCopy()
   return (TSCfgEle *)copy_congestion_ele(m_ele);
 }
 
-
 //--------------------------------------------------------------------------
 // HostingObj
 //--------------------------------------------------------------------------
 HostingObj::HostingObj(TSHostingEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -480,9 +493,9 @@ HostingObj::HostingObj(TokenList *tokens)
 {
   Token *token;
 
-  m_ele = TSHostingEleCreate();
+  m_ele                = TSHostingEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length != 2) {
     goto FORMAT_ERR;
@@ -519,7 +532,7 @@ HostingObj::HostingObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 HostingObj::~HostingObj()
@@ -611,7 +624,7 @@ HostingObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 IcpObj::IcpObj(TSIcpEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -621,9 +634,9 @@ IcpObj::IcpObj(TokenList *tokens)
   Token *token;
   int i;
 
-  m_ele = TSIcpEleCreate();
+  m_ele                = TSIcpEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length < 8) {
     goto FORMAT_ERR;
@@ -648,14 +661,16 @@ IcpObj::IcpObj(TokenList *tokens)
 
     switch (i) {
     case 0:
-      if (strlen(alias) > 0)
+      if (strlen(alias) > 0) {
         m_ele->peer_hostname = ats_strdup(alias);
+      }
       break;
     case 1:
       if (strlen(alias) > 0) {
         m_ele->peer_host_ip_addr = string_to_ip_addr(alias);
-        if (!m_ele->peer_host_ip_addr)
+        if (!m_ele->peer_host_ip_addr) {
           goto FORMAT_ERR;
+        }
       }
       break;
     case 2:
@@ -693,8 +708,9 @@ IcpObj::IcpObj(TokenList *tokens)
       break;
     case 6:
       m_ele->mc_ip_addr = string_to_ip_addr(alias);
-      if (!m_ele->mc_ip_addr)
+      if (!m_ele->mc_ip_addr) {
         goto FORMAT_ERR;
+      }
       break;
     case 7:
       mc_ttl = ink_atoi(alias);
@@ -719,7 +735,7 @@ IcpObj::IcpObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 IcpObj::~IcpObj()
@@ -755,16 +771,18 @@ IcpObj::formatEleToRule()
   }
 
   // optional field
-  if (m_ele->peer_host_ip_addr)
+  if (m_ele->peer_host_ip_addr) {
     ip_str1 = ip_addr_to_string(m_ele->peer_host_ip_addr);
-  else
+  } else {
     ip_str1 = ats_strdup("");
+  }
 
   // optional field
-  if (m_ele->mc_ip_addr)
+  if (m_ele->mc_ip_addr) {
     ip_str2 = ip_addr_to_string(m_ele->mc_ip_addr);
-  else
+  } else {
     ip_str2 = ats_strdup("0.0.0.0");
+  }
 
   if (m_ele->peer_hostname) {
     snprintf(buf, sizeof(buf), "%s:%s:%d:%d:%d:%d:%s:", m_ele->peer_hostname, ip_str1, peer_type, m_ele->peer_proxy_port,
@@ -821,11 +839,13 @@ IcpObj::isValid()
   // check valid multicast values: mc_ttl, mc_ip, if enabled
   if (m_ele->is_multicast) {
     // a valid multicast address must be between 224.0.0.0-239.255.255.255
-    if (!ccu_checkIpAddr(m_ele->mc_ip_addr, "224.0.0.0", "239.255.255.255") || m_ele->mc_ttl == TS_MC_TTL_UNDEFINED)
+    if (!ccu_checkIpAddr(m_ele->mc_ip_addr, "224.0.0.0", "239.255.255.255") || m_ele->mc_ttl == TS_MC_TTL_UNDEFINED) {
       m_valid = false;
+    }
   } else { // multicast disabled; only valid mc ip is "0.0.0.0"
-    if (m_ele->mc_ip_addr && strcmp(m_ele->mc_ip_addr, "0.0.0.0") != 0)
+    if (m_ele->mc_ip_addr && strcmp(m_ele->mc_ip_addr, "0.0.0.0") != 0) {
       m_valid = false;
+    }
   }
 
   if (!m_valid) {
@@ -846,7 +866,7 @@ IcpObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 IpAllowObj::IpAllowObj(TSIpAllowEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -855,9 +875,9 @@ IpAllowObj::IpAllowObj(TokenList *tokens)
 {
   Token *token;
 
-  m_ele = TSIpAllowEleCreate();
+  m_ele                = TSIpAllowEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || (tokens->length != 2)) {
     goto FORMAT_ERR;
@@ -897,7 +917,7 @@ IpAllowObj::IpAllowObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 IpAllowObj::~IpAllowObj()
@@ -976,13 +996,12 @@ IpAllowObj::getCfgEleCopy()
   return (TSCfgEle *)copy_ip_allow_ele(m_ele);
 }
 
-
 //--------------------------------------------------------------------------
 // ParentProxyObj
 //--------------------------------------------------------------------------
 ParentProxyObj::ParentProxyObj(TSParentProxyEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -990,9 +1009,9 @@ ParentProxyObj::ParentProxyObj(TSParentProxyEle *ele)
 ParentProxyObj::ParentProxyObj(TokenList *tokens)
 {
   Token *tok;
-  m_ele = TSParentProxyEleCreate(TS_TYPE_UNDEFINED);
+  m_ele                = TSParentProxyEleCreate(TS_TYPE_UNDEFINED);
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length < 1) {
     goto FORMAT_ERR;
@@ -1089,8 +1108,9 @@ ParentProxyObj::formatEleToRule()
   memset(buf, 0, MAX_RULE_SIZE);
 
   pd_str = pdest_sspec_to_string(m_ele->parent_info.pd_type, m_ele->parent_info.pd_val, &(m_ele->parent_info.sec_spec));
-  if (!pd_str)
+  if (!pd_str) {
     return NULL;
+  }
   ink_strlcat(buf, pd_str, sizeof(buf));
   ats_free(pd_str);
 
@@ -1162,8 +1182,9 @@ ParentProxyObj::isValid()
     m_valid = false;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -1179,7 +1200,7 @@ ParentProxyObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 VolumeObj::VolumeObj(TSVolumeEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1188,9 +1209,9 @@ VolumeObj::VolumeObj(TokenList *tokens)
 {
   Token *token;
 
-  m_ele = TSVolumeEleCreate();
+  m_ele                = TSVolumeEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length != 3) {
     goto FORMAT_ERR;
@@ -1207,33 +1228,51 @@ VolumeObj::VolumeObj(TokenList *tokens)
   }
   m_ele->volume_num = ink_atoi(token->value);
 
+  // arguments
   token = tokens->next(token);
-  if (strcmp(token->name, "scheme") || !token->value) {
-    goto FORMAT_ERR;
-  }
-  if (!strcmp(token->value, "http")) {
-    m_ele->scheme = TS_VOLUME_HTTP;
-  } else {
-    m_ele->scheme = TS_VOLUME_UNDEFINED;
-  }
+  while (token) {
+    if (strcmp(token->name, "scheme")) {
+      if (!token->value || m_ele->scheme) {
+        // return a format error if the token doesn't have a
+        // value or the scheme was already set with a previous
+        // duplicated option.
+        goto FORMAT_ERR;
+      }
+      if (!strcmp(token->value, "http")) {
+        m_ele->scheme = TS_VOLUME_HTTP;
+      } else {
+        m_ele->scheme = TS_VOLUME_UNDEFINED;
+      }
+    }
 
-  token = tokens->next(token);
-  if (strcmp(token->name, "size") || !token->value) {
-    goto FORMAT_ERR;
+    if (strcmp(token->name, "size")) {
+      if (!token->value || m_ele->volume_size) {
+        // return a format error if the token doesn't have a
+        // value or the size was already set with a previous
+        // duplicated option.
+        goto FORMAT_ERR;
+      }
+      // CAUTION: we may need a tigher error check
+      if (strstr(token->value, "%")) {
+        m_ele->size_format = TS_SIZE_FMT_PERCENT;
+      } else {
+        m_ele->size_format = TS_SIZE_FMT_ABSOLUTE;
+      }
+      m_ele->volume_size = ink_atoi(token->value);
+    }
+
+    if (m_ele->scheme && m_ele->volume_size) {
+      break; // Ignore duplicated options.
+    }
+
+    token = tokens->next(token);
   }
-  // CAUTION: we may need a tigher error check
-  if (strstr(token->value, "%")) {
-    m_ele->size_format = TS_SIZE_FMT_PERCENT;
-  } else {
-    m_ele->size_format = TS_SIZE_FMT_ABSOLUTE;
-  }
-  m_ele->volume_size = ink_atoi(token->value);
 
   return;
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 VolumeObj::~VolumeObj()
@@ -1308,8 +1347,9 @@ VolumeObj::isValid()
     }
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -1325,7 +1365,7 @@ VolumeObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 PluginObj::PluginObj(TSPluginEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1334,9 +1374,9 @@ PluginObj::PluginObj(TokenList *tokens)
 {
   Token *token;
 
-  m_ele = TSPluginEleCreate();
+  m_ele                = TSPluginEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || tokens->length < 1) {
     goto FORMAT_ERR;
@@ -1356,10 +1396,12 @@ PluginObj::PluginObj(TokenList *tokens)
   // arguments
   token = tokens->next(token);
   while (token) {
-    if (m_ele->args == TS_INVALID_LIST)
+    if (m_ele->args == TS_INVALID_LIST) {
       m_ele->args = TSStringListCreate();
-    if (token->name)
+    }
+    if (token->name) {
       TSStringListEnqueue(m_ele->args, ats_strdup(token->name));
+    }
     token = tokens->next(token);
   }
 
@@ -1367,7 +1409,7 @@ PluginObj::PluginObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 PluginObj::~PluginObj()
@@ -1418,13 +1460,12 @@ PluginObj::getCfgEleCopy()
   return (TSCfgEle *)copy_plugin_ele(m_ele);
 }
 
-
 //--------------------------------------------------------------------------
 // RemapObj
 //--------------------------------------------------------------------------
 RemapObj::RemapObj(TSRemapEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1437,9 +1478,9 @@ RemapObj::RemapObj(TokenList *tokens)
   Tokenizer toTok(":/");
   char buf[MAX_RULE_SIZE];
 
-  m_ele = TSRemapEleCreate(TS_TYPE_UNDEFINED);
+  m_ele                = TSRemapEleCreate(TS_TYPE_UNDEFINED);
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || ((tokens->length != 2) && (tokens->length != 3))) {
     goto FORMAT_ERR;
@@ -1567,7 +1608,7 @@ RemapObj::RemapObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 RemapObj::~RemapObj()
@@ -1718,8 +1759,9 @@ RemapObj::isValid()
     m_valid = false;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -1735,7 +1777,7 @@ RemapObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 SocksObj::SocksObj(TSSocksEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1744,9 +1786,9 @@ SocksObj::SocksObj(TokenList *tokens)
 {
   Token *tok;
 
-  m_ele = TSSocksEleCreate(TS_TYPE_UNDEFINED);
+  m_ele                = TSSocksEleCreate(TS_TYPE_UNDEFINED);
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens) {
     goto FORMAT_ERR;
@@ -1773,7 +1815,7 @@ SocksObj::SocksObj(TokenList *tokens)
         goto FORMAT_ERR;
       }
       if (tok && tok->name) {
-        tok = tokens->next(tok);
+        tok             = tokens->next(tok);
         m_ele->password = ats_strdup(tok->name);
       } else {
         goto FORMAT_ERR;
@@ -1822,7 +1864,7 @@ SocksObj::SocksObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 SocksObj::~SocksObj()
@@ -1942,8 +1984,9 @@ SocksObj::isValid()
     break;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -1959,7 +2002,7 @@ SocksObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 SplitDnsObj::SplitDnsObj(TSSplitDnsEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -1968,9 +2011,9 @@ SplitDnsObj::SplitDnsObj(TokenList *tokens)
 {
   Token *tok;
 
-  m_ele = TSSplitDnsEleCreate();
+  m_ele                = TSSplitDnsEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || (tokens->length > 6)) {
     goto FORMAT_ERR;
@@ -1989,28 +2032,28 @@ SplitDnsObj::SplitDnsObj(TokenList *tokens)
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_DOMAIN;
-      m_ele->pd_val = ats_strdup(tok->value);
+      m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "dest_host") == 0) {
       if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_HOST;
-      m_ele->pd_val = ats_strdup(tok->value);
+      m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "url_regex") == 0) {
       if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_URL_REGEX;
-      m_ele->pd_val = ats_strdup(tok->value);
+      m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "url") == 0) {
       if ((m_ele->pd_type != TS_PD_UNDEFINED) || (m_ele->pd_val != NULL) || (!tok->value)) {
         // fields are already defined!!
         goto FORMAT_ERR;
       }
       m_ele->pd_type = TS_PD_URL;
-      m_ele->pd_val = ats_strdup(tok->value);
+      m_ele->pd_val  = ats_strdup(tok->value);
     } else if (strcmp(tok->name, "named") == 0) {
       if ((m_ele->dns_servers_addrs != NULL) || (!tok->value)) {
         // fields are already defined!!
@@ -2040,7 +2083,7 @@ SplitDnsObj::SplitDnsObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 SplitDnsObj::~SplitDnsObj()
@@ -2174,8 +2217,9 @@ SplitDnsObj::isValid()
     m_valid = false;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -2191,7 +2235,7 @@ SplitDnsObj::getCfgEleCopy()
 //--------------------------------------------------------------------------
 StorageObj::StorageObj(TSStorageEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid(); // now validate
 }
@@ -2201,9 +2245,9 @@ StorageObj::StorageObj(TokenList *tokens)
 {
   Token *tok;
 
-  m_ele = TSStorageEleCreate();
+  m_ele                = TSStorageEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || (tokens->length > 6)) {
     goto FORMAT_ERR;
@@ -2222,14 +2266,15 @@ StorageObj::StorageObj(TokenList *tokens)
   }
 
   // check if size is specified
-  if (tok->value) // size is specified in second token
+  if (tok->value) { // size is specified in second token
     m_ele->size = ink_atoi(tok->value);
+  }
 
   return;
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 StorageObj::~StorageObj()
@@ -2264,11 +2309,13 @@ StorageObj::isValid()
     m_valid = false;
   }
 
-  if (!(m_ele->pathname))
+  if (!(m_ele->pathname)) {
     m_valid = false;
+  }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -2279,13 +2326,12 @@ StorageObj::getCfgEleCopy()
   return (TSCfgEle *)copy_storage_ele(m_ele);
 }
 
-
 //--------------------------------------------------------------------------
 // VirtIpAddrObj
 //--------------------------------------------------------------------------
 VirtIpAddrObj::VirtIpAddrObj(TSVirtIpAddrEle *ele)
 {
-  m_ele = ele;
+  m_ele   = ele;
   m_valid = true;
   m_valid = isValid();
 }
@@ -2294,9 +2340,9 @@ VirtIpAddrObj::VirtIpAddrObj(TokenList *tokens)
 {
   Token *tok;
 
-  m_ele = TSVirtIpAddrEleCreate();
+  m_ele                = TSVirtIpAddrEleCreate();
   m_ele->cfg_ele.error = TS_ERR_OKAY;
-  m_valid = true;
+  m_valid              = true;
 
   if (!tokens || (tokens->length != 3)) {
     goto FORMAT_ERR;
@@ -2331,7 +2377,7 @@ VirtIpAddrObj::VirtIpAddrObj(TokenList *tokens)
 
 FORMAT_ERR:
   m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
-  m_valid = false;
+  m_valid              = false;
 }
 
 VirtIpAddrObj::~VirtIpAddrObj()
@@ -2377,8 +2423,9 @@ VirtIpAddrObj::isValid()
     m_valid = false;
   }
 
-  if (!m_valid)
+  if (!m_valid) {
     m_ele->cfg_ele.error = TS_ERR_INVALID_CONFIG_RULE;
+  }
 
   return m_valid;
 }
@@ -2389,14 +2436,13 @@ VirtIpAddrObj::getCfgEleCopy()
   return (TSCfgEle *)copy_virt_ip_addr_ele(m_ele);
 }
 
-
 /*****************************************************************
  * CfgContext
  *****************************************************************/
 CfgContext::CfgContext(TSFileNameT filename)
 {
   m_file = filename;
-  m_ver = -1;
+  m_ver  = -1;
 }
 
 CfgContext::~CfgContext()

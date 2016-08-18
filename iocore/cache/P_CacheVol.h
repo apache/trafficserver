@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _P_CACHE_VOL_H__
 #define _P_CACHE_VOL_H__
 
@@ -56,7 +55,6 @@
 #define AUTO_SIZE_RAM_CACHE -1                             // 1-1 with directory size
 #define DEFAULT_TARGET_FRAGMENT_SIZE (1048576 - sizeofDoc) // 1MB
 
-
 #define dir_offset_evac_bucket(_o) (_o / (EVACUATION_BUCKET_SIZE / CACHE_BLOCK_SIZE))
 #define dir_evac_bucket(_e) dir_offset_evac_bucket(dir_offset(_e))
 #define offset_evac_bucket(_d, _o) \
@@ -69,7 +67,6 @@
 #define DOC_NO_CHECKSUM ((uint32_t)0xA0B0C0D0)
 
 #define sizeofDoc (((uint32_t)(uintptr_t) & ((Doc *)0)->checksum) + (uint32_t)sizeof(uint32_t))
-
 
 struct Cache;
 struct Vol;
@@ -122,7 +119,6 @@ struct EvacuationBlock {
   CacheVC *earliest_evacuator;
   LINK(EvacuationBlock, link);
 };
-
 
 struct Vol : public Continuation {
   char *path;
@@ -179,7 +175,6 @@ struct Vol : public Continuation {
   int64_t first_fragment_offset;
   Ptr<IOBufferData> first_fragment_data;
 
-
   void cancel_trigger();
 
   int recover_data();
@@ -206,7 +201,6 @@ struct Vol : public Continuation {
   int handle_recover_from_data(int event, void *data);
   int handle_recover_write_dir(int event, void *data);
   int handle_header_read(int event, void *data);
-
 
   int dir_init_done(int event, void *data);
 
@@ -252,13 +246,33 @@ struct Vol : public Continuation {
   uint32_t round_to_approx_size(uint32_t l);
 
   Vol()
-    : Continuation(new_ProxyMutex()), path(NULL), fd(-1), dir(0), buckets(0), recover_pos(0), prev_recover_pos(0), scan_pos(0),
-      skip(0), start(0), len(0), data_blocks(0), hit_evacuate_window(0), agg_todo_size(0), agg_buf_pos(0), trigger(0),
-      evacuate_size(0), disk(NULL), last_sync_serial(0), last_write_serial(0), recover_wrapped(false), dir_sync_waiting(0),
-      dir_sync_in_progress(0), writing_end_marker(0)
+    : Continuation(new_ProxyMutex()),
+      path(NULL),
+      fd(-1),
+      dir(0),
+      buckets(0),
+      recover_pos(0),
+      prev_recover_pos(0),
+      scan_pos(0),
+      skip(0),
+      start(0),
+      len(0),
+      data_blocks(0),
+      hit_evacuate_window(0),
+      agg_todo_size(0),
+      agg_buf_pos(0),
+      trigger(0),
+      evacuate_size(0),
+      disk(NULL),
+      last_sync_serial(0),
+      last_write_serial(0),
+      recover_wrapped(false),
+      dir_sync_waiting(0),
+      dir_sync_in_progress(0),
+      writing_end_marker(0)
   {
     open_dir.mutex = mutex;
-    agg_buffer = (char *)ats_memalign(ats_pagesize(), AGG_SIZE);
+    agg_buffer     = (char *)ats_memalign(ats_pagesize(), AGG_SIZE);
     memset(agg_buffer, 0, AGG_SIZE);
     SET_HANDLER(&Vol::aggWrite);
   }
@@ -459,10 +473,10 @@ Vol::cancel_trigger()
 TS_INLINE EvacuationBlock *
 new_EvacuationBlock(EThread *t)
 {
-  EvacuationBlock *b = THREAD_ALLOC(evacuationBlockAllocator, t);
-  b->init = 0;
-  b->readers = 0;
-  b->earliest_evacuator = 0;
+  EvacuationBlock *b      = THREAD_ALLOC(evacuationBlockAllocator, t);
+  b->init                 = 0;
+  b->readers              = 0;
+  b->earliest_evacuator   = 0;
   b->evac_frags.link.next = 0;
   return b;
 }
@@ -488,9 +502,9 @@ Vol::open_read(const CryptoHash *key)
 TS_INLINE int
 Vol::within_hit_evacuate_window(Dir *xdir)
 {
-  off_t oft = dir_offset(xdir) - 1;
+  off_t oft       = dir_offset(xdir) - 1;
   off_t write_off = (header->write_pos + AGG_SIZE - start) / CACHE_BLOCK_SIZE;
-  off_t delta = oft - write_off;
+  off_t delta     = oft - write_off;
   if (delta >= 0)
     return delta < hit_evacuate_window;
   else

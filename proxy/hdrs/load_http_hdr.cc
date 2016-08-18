@@ -42,7 +42,6 @@
  *    state and is therefore not useful for must purposes.
  ***************************************************************************/
 
-
 #include "HdrHeap.h"
 #include "MIME.h"
 #include "HTTP.h"
@@ -55,10 +54,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-void *low_load_addr = NULL;
+void *low_load_addr  = NULL;
 void *high_load_addr = NULL;
-int heap_load_size = 0;
-int marshalled = 0;
+int heap_load_size   = 0;
+int marshalled       = 0;
 
 // Diags *diags;
 
@@ -80,14 +79,13 @@ load_string(const char *s, int len, int offset)
     copy_from = s + offset;
   } else {
     copy_from = "<BAD>";
-    len = strlen(copy_from);
+    len       = strlen(copy_from);
   }
   char *r = (char *)ats_malloc(len + 1);
   memcpy(r, copy_from, len);
   r[len] = '\0';
   return r;
 }
-
 
 void
 process_http_hdr_impl(HdrHeapObjImpl *obj, int offset)
@@ -143,7 +141,6 @@ process_mime_hdr_impl(HdrHeapObjImpl *obj, int offset)
   process_mime_block_impl(&mhdr->m_first_fblock, offset);
 }
 
-
 void
 loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
 {
@@ -195,7 +192,6 @@ loop_over_heap_objs(HdrHeap *hdr_heap, int offset)
   }
 }
 
-
 void
 load_buffer(int fd, hdr_type h_type)
 {
@@ -206,9 +202,8 @@ load_buffer(int fd, hdr_type h_type)
     exit(1);
   }
 
-  char *file_buf = (char *)ats_malloc(sizeof(char) * (s_info.st_size + 1));
+  char *file_buf           = (char *)ats_malloc(sizeof(char) * (s_info.st_size + 1));
   file_buf[s_info.st_size] = '\0';
-
 
   // Read in the entire file
   int bytes_to_read = s_info.st_size;
@@ -229,9 +224,8 @@ load_buffer(int fd, hdr_type h_type)
   Tokenizer line_tok("\n");
   Tokenizer el_tok(" \t");
 
-
   int num_lines = line_tok.Initialize(file_buf);
-  int num_el = el_tok.Initialize(line_tok[0]);
+  int num_el    = el_tok.Initialize(line_tok[0]);
 
   if (num_el < 3) {
     fprintf(stderr, "Corrupted data file\n");
@@ -250,12 +244,12 @@ load_buffer(int fd, hdr_type h_type)
     fprintf(stderr, "Corrupted data file\n");
     exit(1);
   }
-  hdr_size = (num_lines * 16);
+  hdr_size       = (num_lines * 16);
   heap_load_size = hdr_size;
 
   char *hdr_heap = (char *)ats_malloc(hdr_size);
   int bytes_read = 0;
-  int cur_line = 0;
+  int cur_line   = 0;
 
   while (cur_line < num_lines && bytes_read < hdr_size) {
     int *cur_ptr;
@@ -273,7 +267,7 @@ load_buffer(int fd, hdr_type h_type)
         fprintf(stderr, "Corrupted data file\n");
         exit(1);
       }
-      cur_ptr = (int *)(hdr_heap + bytes_read);
+      cur_ptr  = (int *)(hdr_heap + bytes_read);
       *cur_ptr = el;
       bytes_read += 4;
     }
@@ -281,17 +275,17 @@ load_buffer(int fd, hdr_type h_type)
   }
 
   HdrHeap *my_heap = (HdrHeap *)hdr_heap;
-  int offset = hdr_heap - (char *)old_addr;
+  int offset       = hdr_heap - (char *)old_addr;
 
   // Patch up some values
   if (my_heap->m_magic == HDR_BUF_MAGIC_MARSHALED) {
     //      HdrHeapObjImpl* obj;
     //      my_heap->unmarshal(hdr_size, HDR_HEAP_OBJ_HTTP_HEADER, &obj, NULL);
     marshalled = 1;
-    offset = (int)hdr_heap;
+    offset     = (int)hdr_heap;
   } else {
-    my_heap->m_free_start = my_heap->m_free_start + offset;
-    my_heap->m_data_start = my_heap->m_data_start + offset;
+    my_heap->m_free_start                 = my_heap->m_free_start + offset;
+    my_heap->m_data_start                 = my_heap->m_data_start + offset;
     my_heap->m_ronly_heap[0].m_heap_start = my_heap->m_ronly_heap[0].m_heap_start + offset;
   }
   loop_over_heap_objs(my_heap, offset);

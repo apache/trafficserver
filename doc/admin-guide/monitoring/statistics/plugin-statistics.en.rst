@@ -17,7 +17,7 @@
 
 .. include:: ../../../common.defs
 
-.. _admin-stats:
+.. _admin-plugin-specific-stats:
 
 Plugin Specific Statistics
 **************************

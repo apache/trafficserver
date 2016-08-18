@@ -90,14 +90,13 @@ public:
   typedef typename Server::LogEntry LogEntry;
 
   virtual ~Raft() {}
-
   virtual void SetElectionTimeout(double seconds) = 0; // 1 sec.
 
   virtual void Recover(const LogEntry &entry) = 0;
   virtual void Start(double now, int64_t random_seed) = 0;
-  virtual void Tick(double now) = 0; // Call every ~election_timeout/10.
+  virtual void Tick(double now)               = 0; // Call every ~election_timeout/10.
   virtual void Propose(const LogEntry &entry) = 0;
-  virtual void Run(double now, const Message &message) = 0;
+  virtual void Run(double now, const Message &message)                      = 0;
   virtual void Snapshot(bool uncommitted, ::std::vector<LogEntry> *entries) = 0;
   virtual void Stop() = 0; // Clean shutdown for faster failover.
 };

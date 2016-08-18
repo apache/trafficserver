@@ -36,7 +36,6 @@ namespace net_instaweb
 {
 using namespace std;
 
-
 void
 ltrim_if(string &s, int (*fp)(int))
 {
@@ -170,7 +169,6 @@ AtsConfig::Parse(const char *path)
     return false;
   }
 
-
   while (!f.eof()) {
     std::string line;
     getline(f, line);
@@ -192,7 +190,7 @@ AtsConfig::Parse(const char *path)
     if (v.size() == 1) {
       string token = v[0];
       if ((token[0] == '[') && (token[token.size() - 1] == ']')) {
-        GoogleString current_host = token.substr(1, token.size() - 2);
+        GoogleString current_host  = token.substr(1, token.size() - 2);
         current_host_configuration = new AtsHostConfig(current_host, new AtsRewriteOptions(thread_system_));
         AddHostConfig(current_host_configuration);
       } else if (StringCaseEqual(token, "override_expiry")) {
@@ -215,6 +213,5 @@ AtsConfig::Parse(const char *path)
 
   return true;
 }
-
 
 } //  namespace net_instaweb

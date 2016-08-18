@@ -1,6 +1,8 @@
 <!------------------------------------------------------------------------
 logs.config, v2.0
 
+Documentation:
+    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/logs_xml.config.en.html
 
 This is the configuration file for Traffic Server logging.  This file
 defines log files, their formats, filters, and processing options.  The

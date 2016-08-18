@@ -78,11 +78,9 @@ public:
   template <typename ClassType, typename ConfigType> struct scoped_config {
     scoped_config() : ptr(ClassType::acquire()) {}
     ~scoped_config() { ClassType::release(ptr); }
-
     operator bool() const { return ptr != 0; }
     operator const ConfigType *() const { return ptr; }
     const ConfigType *operator->() const { return ptr; }
-
   private:
     ConfigType *ptr;
   };
@@ -106,12 +104,12 @@ template <typename UpdateClass> struct ConfigUpdateContinuation : public Continu
     return EVENT_DONE;
   }
 
-  ConfigUpdateContinuation(ProxyMutex *m) : Continuation(m) { SET_HANDLER(&ConfigUpdateContinuation::update); }
+  ConfigUpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m.get()) { SET_HANDLER(&ConfigUpdateContinuation::update); }
 };
 
 template <typename UpdateClass>
 int
-ConfigScheduleUpdate(ProxyMutex *mutex)
+ConfigScheduleUpdate(Ptr<ProxyMutex> &mutex)
 {
   eventProcessor.schedule_imm(new ConfigUpdateContinuation<UpdateClass>(mutex), ET_CALL);
   return 0;
@@ -119,9 +117,7 @@ ConfigScheduleUpdate(ProxyMutex *mutex)
 
 template <typename UpdateClass> struct ConfigUpdateHandler {
   ConfigUpdateHandler() : mutex(new_ProxyMutex()) {}
-
   ~ConfigUpdateHandler() { mutex->free(); }
-
   int
   attach(const char *name)
   {

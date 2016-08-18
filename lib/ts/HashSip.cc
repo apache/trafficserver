@@ -117,7 +117,7 @@ ATSHash64Sip24::final(void)
     SIPCOMPRESS(v0, v1, v2, v3);
     SIPCOMPRESS(v0, v1, v2, v3);
     SIPCOMPRESS(v0, v1, v2, v3);
-    hfinal = v0 ^ v1 ^ v2 ^ v3;
+    hfinal    = v0 ^ v1 ^ v2 ^ v3;
     finalized = true;
   }
 }
@@ -135,11 +135,11 @@ ATSHash64Sip24::get(void) const
 void
 ATSHash64Sip24::clear(void)
 {
-  v0 = k0 ^ 0x736f6d6570736575ull;
-  v1 = k1 ^ 0x646f72616e646f6dull;
-  v2 = k0 ^ 0x6c7967656e657261ull;
-  v3 = k1 ^ 0x7465646279746573ull;
-  finalized = false;
-  total_len = 0;
+  v0               = k0 ^ 0x736f6d6570736575ull;
+  v1               = k1 ^ 0x646f72616e646f6dull;
+  v2               = k0 ^ 0x6c7967656e657261ull;
+  v3               = k1 ^ 0x7465646279746573ull;
+  finalized        = false;
+  total_len        = 0;
   block_buffer_len = 0;
 }

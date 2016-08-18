@@ -70,6 +70,7 @@
 // so it's easier to do this than to try to encode an opcode and yet another
 // case statement.
 #define MGMT_EVENT_STORAGE_DEVICE_CMD_OFFLINE 10011
+#define MGMT_EVENT_LIFECYCLE_MESSAGE 10012
 
 /***********************************************************************
  *
@@ -109,13 +110,11 @@ typedef struct _mgmt_message_hdr_type {
   int data_len;
 } MgmtMessageHdr;
 
-
 typedef struct _mgmt_event_callback_list {
   MgmtCallback func;
   void *opaque_data;
   struct _mgmt_event_callback_list *next;
 } MgmtCallbackList;
-
 
 class BaseManager
 {
@@ -136,6 +135,5 @@ protected:
 
 private:
 }; /* End class BaseManager */
-
 
 #endif /* _BASE_MANAGER_H */

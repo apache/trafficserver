@@ -42,6 +42,7 @@
 #define MAGIC_DEAD 0xdeadbeef
 
 #define SYNSERVER_LISTEN_PORT 3300
+#define SYNSERVER_DUMMY_PORT -1
 
 #define PROXY_CONFIG_NAME_HTTP_PORT "proxy.config.http.server_port"
 #define PROXY_HTTP_DEFAULT_PORT 8080
@@ -125,7 +126,6 @@ typedef struct {
   unsigned int magic;
 } ClientTxn;
 
-
 //////////////////////////////////////////////////////////////////////////////
 // DECLARATIONS
 //////////////////////////////////////////////////////////////////////////////
@@ -136,11 +136,10 @@ static char *generate_request(int test_case);
 static char *generate_response(const char *request);
 static int get_request_id(TSHttpTxn txnp);
 
-
 /* client side */
 static ClientTxn *synclient_txn_create(void);
 static int synclient_txn_delete(ClientTxn *txn);
-static int synclient_txn_close(TSCont contp);
+static void synclient_txn_close(ClientTxn *txn);
 static int synclient_txn_send_request(ClientTxn *txn, char *request);
 static int synclient_txn_send_request_to_vc(ClientTxn *txn, char *request, TSVConn vc);
 static int synclient_txn_read_response(TSCont contp);
@@ -155,7 +154,8 @@ SocketServer *synserver_create(int port);
 static int synserver_start(SocketServer *s);
 static int synserver_stop(SocketServer *s);
 static int synserver_delete(SocketServer *s);
-static int synserver_accept_handler(TSCont contp, TSEvent event, void *data);
+static int synserver_vc_accept(TSCont contp, TSEvent event, void *data);
+static int synserver_vc_refuse(TSCont contp, TSEvent event, void *data);
 static int synserver_txn_close(TSCont contp);
 static int synserver_txn_write_response(TSCont contp);
 static int synserver_txn_write_response_handler(TSCont contp, TSEvent event, void *data);
@@ -173,7 +173,6 @@ get_body_ptr(const char *request)
   char *ptr = (char *)strstr((const char *)request, (const char *)"\r\n\r\n");
   return (ptr != NULL) ? (ptr + 4) : NULL;
 }
-
 
 /* Caller must free returned request */
 static char *
@@ -234,7 +233,10 @@ generate_request(int test_case)
   "GET http://trafficserver.apache.org/format10.html HTTP/1.0\r\n" \
   "X-Request-ID: %d\r\n"                                           \
   "\r\n"
-
+#define HTTP_REQUEST_FORMAT11                                      \
+  "GET http://trafficserver.apache.org/format11.html HTTP/1.0\r\n" \
+  "X-Request-ID: %d\r\n"                                           \
+  "\r\n"
   char *request = (char *)TSmalloc(REQUEST_MAX_SIZE + 1);
 
   switch (test_case) {
@@ -268,6 +270,9 @@ generate_request(int test_case)
   case 10:
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_FORMAT10, test_case);
     break;
+  case 11:
+    snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_FORMAT11, test_case);
+    break;
   default:
     snprintf(request, REQUEST_MAX_SIZE + 1, HTTP_REQUEST_DEFAULT_FORMAT, SYNSERVER_LISTEN_PORT, test_case);
     break;
@@ -275,7 +280,6 @@ generate_request(int test_case)
 
   return request;
 }
-
 
 /* Caller must free returned response */
 static char *
@@ -360,6 +364,12 @@ generate_response(const char *request)
   "\r\n"                             \
   "Body for response 10"
 
+#define HTTP_RESPONSE_FORMAT11          \
+  "HTTP/1.0 200 OK\r\n"                 \
+  "Cache-Control: private,no-store\r\n" \
+  "X-Response-ID: %d\r\n"               \
+  "\r\n"                                \
+  "Body for response 11"
 
   int test_case, match, http_version;
 
@@ -397,6 +407,9 @@ generate_response(const char *request)
     case 10:
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_FORMAT10, test_case);
       break;
+    case 11:
+      snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_FORMAT11, test_case);
+      break;
     default:
       snprintf(response, RESPONSE_MAX_SIZE + 1, HTTP_RESPONSE_DEFAULT_FORMAT, test_case);
       break;
@@ -409,6 +422,20 @@ generate_response(const char *request)
   return response;
 }
 
+static int
+get_request_id_value(const char *name, TSMBuffer buf, TSMLoc hdr)
+{
+  int id = -1;
+  TSMLoc field;
+
+  field = TSMimeHdrFieldFind(buf, hdr, name, -1);
+  if (field != TS_NULL_MLOC) {
+    id = TSMimeHdrFieldValueIntGet(buf, hdr, field, 0);
+  }
+
+  TSHandleMLocRelease(buf, hdr, field);
+  return id;
+}
 
 // This routine can be called by tests, from the READ_REQUEST_HDR_HOOK
 // to figure out the id of a test message
@@ -417,26 +444,36 @@ static int
 get_request_id(TSHttpTxn txnp)
 {
   TSMBuffer bufp;
-  TSMLoc hdr_loc, id_loc;
+  TSMLoc hdr_loc;
   int id = -1;
 
   if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
     return -1;
   }
 
-  id_loc = TSMimeHdrFieldFind(bufp, hdr_loc, X_REQUEST_ID, -1);
-  if (id_loc == TS_NULL_MLOC) {
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    return -1;
-  }
-
-  id = TSMimeHdrFieldValueIntGet(bufp, hdr_loc, id_loc, 0);
-
-  TSHandleMLocRelease(bufp, hdr_loc, id_loc);
+  id = get_request_id_value(X_REQUEST_ID, bufp, hdr_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   return id;
 }
 
+// This routine can be called by tests, from the READ_RESPONSE_HDR_HOOK
+// to figure out the id of a test message
+// Returns id/-1 in case of error
+static int
+get_response_id(TSHttpTxn txnp)
+{
+  TSMBuffer bufp;
+  TSMLoc hdr_loc;
+  int id = -1;
+
+  if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+    return -1;
+  }
+
+  id = get_request_id_value(X_RESPONSE_ID, bufp, hdr_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
+  return id;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // SOCKET CLIENT
@@ -448,22 +485,17 @@ synclient_txn_create(void)
   HttpProxyPort *proxy_port;
 
   ClientTxn *txn = (ClientTxn *)TSmalloc(sizeof(ClientTxn));
+
+  ink_zero(*txn);
+
   if (0 == (proxy_port = HttpProxyPort::findHttp(AF_INET)))
     txn->connect_port = PROXY_HTTP_DEFAULT_PORT;
   else
     txn->connect_port = proxy_port->m_port;
 
-  txn->local_port = (int)0;
   txn->connect_ip = IP(127, 0, 0, 1);
-  txn->status = REQUEST_INPROGRESS;
-  txn->request = NULL;
-  txn->vconn = NULL;
-  txn->req_buffer = NULL;
-  txn->req_reader = NULL;
-  txn->resp_buffer = NULL;
-  txn->resp_reader = NULL;
-  txn->magic = MAGIC_ALIVE;
-  txn->connect_action = NULL;
+  txn->status     = REQUEST_INPROGRESS;
+  txn->magic      = MAGIC_ALIVE;
 
   TSDebug(CDBG_TAG, "Connecting to proxy 127.0.0.1 on port %d", txn->connect_port);
   return txn;
@@ -484,26 +516,27 @@ synclient_txn_delete(ClientTxn *txn)
   return 1;
 }
 
-static int
-synclient_txn_close(TSCont contp)
+static void
+synclient_txn_close(ClientTxn *txn)
 {
-  ClientTxn *txn = (ClientTxn *)TSContDataGet(contp);
-  TSAssert(txn->magic == MAGIC_ALIVE);
+  if (txn) {
+    if (txn->vconn != NULL) {
+      TSVConnClose(txn->vconn);
+      txn->vconn = NULL;
+    }
 
-  if (txn->vconn != NULL) {
-    TSVConnClose(txn->vconn);
-  }
-  if (txn->req_buffer != NULL) {
-    TSIOBufferDestroy(txn->req_buffer);
-  }
-  if (txn->resp_buffer != NULL) {
-    TSIOBufferDestroy(txn->resp_buffer);
-  }
+    if (txn->req_buffer != NULL) {
+      TSIOBufferDestroy(txn->req_buffer);
+      txn->req_buffer = NULL;
+    }
 
-  TSContDestroy(contp);
+    if (txn->resp_buffer != NULL) {
+      TSIOBufferDestroy(txn->resp_buffer);
+      txn->resp_buffer = NULL;
+    }
 
-  TSDebug(CDBG_TAG, "Client Txn destroyed");
-  return TS_EVENT_IMMEDIATE;
+    TSDebug(CDBG_TAG, "Client Txn destroyed");
+  }
 }
 
 static int
@@ -540,7 +573,6 @@ synclient_txn_send_request_to_vc(ClientTxn *txn, char *request, TSVConn vc)
   return 1;
 }
 
-
 static int
 synclient_txn_read_response(TSCont contp)
 {
@@ -562,7 +594,7 @@ synclient_txn_read_response(TSCont contp)
     block = TSIOBufferBlockNext(block);
   }
 
-  txn->response[txn->response_len + 1] = '\0';
+  txn->response[txn->response_len] = '\0';
   TSDebug(CDBG_TAG, "Response = |%s|, req len = %d", txn->response, txn->response_len);
 
   return 1;
@@ -600,14 +632,16 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data 
     TSDebug(CDBG_TAG, "READ_EOS");
     // Connection closed. In HTTP/1.0 it means we're done for this request.
     txn->status = REQUEST_SUCCESS;
-    return synclient_txn_close(contp);
-    break;
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
+    return 1;
 
   case TS_EVENT_ERROR:
     TSDebug(CDBG_TAG, "READ_ERROR");
     txn->status = REQUEST_FAILURE;
-    return synclient_txn_close(contp);
-    break;
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
+    return 1;
 
   default:
     TSAssert(!"Invalid event");
@@ -615,7 +649,6 @@ synclient_txn_read_response_handler(TSCont contp, TSEvent event, void * /* data 
   }
   return 1;
 }
-
 
 static int
 synclient_txn_write_request(TSCont contp)
@@ -632,9 +665,9 @@ synclient_txn_write_request(TSCont contp)
   ndone = 0;
   ntodo = len;
   while (ntodo > 0) {
-    block = TSIOBufferStart(txn->req_buffer);
+    block     = TSIOBufferStart(txn->req_buffer);
     ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-    towrite = MIN(ntodo, avail);
+    towrite   = MIN(ntodo, avail);
     memcpy(ptr_block, txn->request + ndone, towrite);
     TSIOBufferProduce(txn->req_buffer, towrite);
     ntodo -= towrite;
@@ -673,13 +706,15 @@ synclient_txn_write_request_handler(TSCont contp, TSEvent event, void * /* data 
   case TS_EVENT_VCONN_EOS:
     TSDebug(CDBG_TAG, "WRITE_EOS");
     txn->status = REQUEST_FAILURE;
-    return synclient_txn_close(contp);
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
     break;
 
   case TS_EVENT_ERROR:
     TSDebug(CDBG_TAG, "WRITE_ERROR");
     txn->status = REQUEST_FAILURE;
-    return synclient_txn_close(contp);
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
     break;
 
   default:
@@ -688,7 +723,6 @@ synclient_txn_write_request_handler(TSCont contp, TSEvent event, void * /* data 
   }
   return TS_EVENT_IMMEDIATE;
 }
-
 
 static int
 synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
@@ -701,19 +735,19 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
   if (event == TS_EVENT_NET_CONNECT) {
     TSDebug(CDBG_TAG, "NET_CONNECT");
 
-    txn->req_buffer = TSIOBufferCreate();
-    txn->req_reader = TSIOBufferReaderAlloc(txn->req_buffer);
+    txn->req_buffer  = TSIOBufferCreate();
+    txn->req_reader  = TSIOBufferReaderAlloc(txn->req_buffer);
     txn->resp_buffer = TSIOBufferCreate();
     txn->resp_reader = TSIOBufferReaderAlloc(txn->resp_buffer);
 
-    txn->response[0] = '\0';
+    txn->response[0]  = '\0';
     txn->response_len = 0;
 
-    txn->vconn = (TSVConn)data;
+    txn->vconn      = (TSVConn)data;
     txn->local_port = (int)((NetVConnection *)data)->get_local_port();
 
     txn->write_vio = NULL;
-    txn->read_vio = NULL;
+    txn->read_vio  = NULL;
 
     /* start writing */
     SET_TEST_HANDLER(txn->current_handler, synclient_txn_write_request_handler);
@@ -723,12 +757,12 @@ synclient_txn_connect_handler(TSCont contp, TSEvent event, void *data)
   } else {
     TSDebug(CDBG_TAG, "NET_CONNECT_FAILED");
     txn->status = REQUEST_FAILURE;
-    synclient_txn_close(contp);
+    synclient_txn_close((ClientTxn *)TSContDataGet(contp));
+    TSContDestroy(contp);
   }
 
   return TS_EVENT_IMMEDIATE;
 }
-
 
 static int
 synclient_txn_main_handler(TSCont contp, TSEvent event, void *data)
@@ -740,28 +774,46 @@ synclient_txn_main_handler(TSCont contp, TSEvent event, void *data)
   return (*handler)(contp, event, data);
 }
 
-
 //////////////////////////////////////////////////////////////////////////////
 // SOCKET SERVER
 //////////////////////////////////////////////////////////////////////////////
 
 SocketServer *
-synserver_create(int port)
+synserver_create(int port, TSCont cont)
 {
-  SocketServer *s = (SocketServer *)TSmalloc(sizeof(SocketServer));
-  s->magic = MAGIC_ALIVE;
-  s->accept_port = port;
+  if (port != SYNSERVER_DUMMY_PORT) {
+    TSAssert(port > 0);
+    TSAssert(port < INT16_MAX);
+  }
+
+  SocketServer *s  = (SocketServer *)TSmalloc(sizeof(SocketServer));
+  s->magic         = MAGIC_ALIVE;
+  s->accept_port   = port;
   s->accept_action = NULL;
-  s->accept_cont = TSContCreate(synserver_accept_handler, TSMutexCreate());
+  s->accept_cont   = cont;
   TSContDataSet(s->accept_cont, s);
   return s;
+}
+
+SocketServer *
+synserver_create(int port)
+{
+  return synserver_create(port, TSContCreate(synserver_vc_accept, TSMutexCreate()));
 }
 
 static int
 synserver_start(SocketServer *s)
 {
   TSAssert(s->magic == MAGIC_ALIVE);
-  s->accept_action = TSNetAccept(s->accept_cont, s->accept_port, -1, 0);
+  TSAssert(s->accept_action == NULL);
+
+  if (s->accept_port != SYNSERVER_DUMMY_PORT) {
+    TSAssert(s->accept_port > 0);
+    TSAssert(s->accept_port < INT16_MAX);
+
+    s->accept_action = TSNetAccept(s->accept_cont, s->accept_port, AF_INET, 0);
+  }
+
   return 1;
 }
 
@@ -781,22 +833,47 @@ synserver_stop(SocketServer *s)
 static int
 synserver_delete(SocketServer *s)
 {
-  TSAssert(s->magic == MAGIC_ALIVE);
-  synserver_stop(s);
+  if (s != NULL) {
+    TSAssert(s->magic == MAGIC_ALIVE);
+    synserver_stop(s);
 
-  if (s->accept_cont) {
-    TSContDestroy(s->accept_cont);
-    s->accept_cont = NULL;
-    TSDebug(SDBG_TAG, "destroyed accept cont");
+    if (s->accept_cont) {
+      TSContDestroy(s->accept_cont);
+      s->accept_cont = NULL;
+      TSDebug(SDBG_TAG, "destroyed accept cont");
+    }
+
+    s->magic = MAGIC_DEAD;
+    TSfree(s);
+    TSDebug(SDBG_TAG, "deleted server");
   }
-  s->magic = MAGIC_DEAD;
-  TSfree(s);
-  TSDebug(SDBG_TAG, "deleted server");
+
   return 1;
 }
 
 static int
-synserver_accept_handler(TSCont contp, TSEvent event, void *data)
+synserver_vc_refuse(TSCont contp, TSEvent event, void *data)
+{
+  TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
+
+  SocketServer *s = (SocketServer *)TSContDataGet(contp);
+  TSAssert(s->magic == MAGIC_ALIVE);
+
+  TSDebug(SDBG_TAG, "%s: NET_ACCEPT", __func__);
+
+  if (event == TS_EVENT_NET_ACCEPT_FAILED) {
+    Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
+    ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
+    TSDebug(SDBG_TAG, "%s: NET_ACCEPT_FAILED", __func__);
+    return TS_EVENT_IMMEDIATE;
+  }
+
+  TSVConnClose((TSVConn)data);
+  return TS_EVENT_IMMEDIATE;
+}
+
+static int
+synserver_vc_accept(TSCont contp, TSEvent event, void *data)
 {
   TSAssert((event == TS_EVENT_NET_ACCEPT) || (event == TS_EVENT_NET_ACCEPT_FAILED));
 
@@ -806,15 +883,15 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
     Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
     ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
-    TSDebug(SDBG_TAG, "NET_ACCEPT_FAILED");
+    TSDebug(SDBG_TAG, "%s: NET_ACCEPT_FAILED", __func__);
     return TS_EVENT_IMMEDIATE;
   }
 
-  TSDebug(SDBG_TAG, "NET_ACCEPT");
+  TSDebug(SDBG_TAG, "%s: NET_ACCEPT", __func__);
 
   /* Create a new transaction */
   ServerTxn *txn = (ServerTxn *)TSmalloc(sizeof(ServerTxn));
-  txn->magic = MAGIC_ALIVE;
+  txn->magic     = MAGIC_ALIVE;
 
   SET_TEST_HANDLER(txn->current_handler, synserver_txn_read_request_handler);
 
@@ -827,7 +904,7 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
   txn->resp_buffer = TSIOBufferCreate();
   txn->resp_reader = TSIOBufferReaderAlloc(txn->resp_buffer);
 
-  txn->request[0] = '\0';
+  txn->request[0]  = '\0';
   txn->request_len = 0;
 
   txn->vconn = (TSVConn)data;
@@ -839,7 +916,6 @@ synserver_accept_handler(TSCont contp, TSEvent event, void *data)
 
   return TS_EVENT_IMMEDIATE;
 }
-
 
 static int
 synserver_txn_close(TSCont contp)
@@ -865,7 +941,6 @@ synserver_txn_close(TSCont contp)
   return TS_EVENT_IMMEDIATE;
 }
 
-
 static int
 synserver_txn_write_response(TSCont contp)
 {
@@ -880,14 +955,14 @@ synserver_txn_write_response(TSCont contp)
   char *response;
 
   response = generate_response(txn->request);
-  len = strlen(response);
+  len      = strlen(response);
 
   ndone = 0;
   ntodo = len;
   while (ntodo > 0) {
-    block = TSIOBufferStart(txn->resp_buffer);
+    block     = TSIOBufferStart(txn->resp_buffer);
     ptr_block = TSIOBufferBlockWriteStart(block, &avail);
-    towrite = MIN(ntodo, avail);
+    towrite   = MIN(ntodo, avail);
     memcpy(ptr_block, response + ndone, towrite);
     TSIOBufferProduce(txn->resp_buffer, towrite);
     ntodo -= towrite;
@@ -903,7 +978,6 @@ synserver_txn_write_response(TSCont contp)
 
   return TS_EVENT_IMMEDIATE;
 }
-
 
 static int
 synserver_txn_write_response_handler(TSCont contp, TSEvent event, void * /* data ATS_UNUSED */)
@@ -939,7 +1013,6 @@ synserver_txn_write_response_handler(TSCont contp, TSEvent event, void * /* data
   }
   return TS_EVENT_IMMEDIATE;
 }
-
 
 static int
 synserver_txn_read_request(TSCont contp)
@@ -1018,7 +1091,6 @@ synserver_txn_read_request_handler(TSCont contp, TSEvent event, void * /* data A
   }
   return TS_EVENT_IMMEDIATE;
 }
-
 
 static int
 synserver_txn_main_handler(TSCont contp, TSEvent event, void *data)

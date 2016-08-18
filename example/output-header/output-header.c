@@ -64,7 +64,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   }
 
   output_buffer = TSIOBufferCreate();
-  reader = TSIOBufferReaderAlloc(output_buffer);
+  reader        = TSIOBufferReaderAlloc(output_buffer);
 
   /* This will print  just MIMEFields and not
      the http request line */
@@ -85,7 +85,7 @@ handle_dns(TSHttpTxn txnp, TSCont contp ATS_UNUSED)
   /* Allocate the string with an extra byte for the string
      terminator */
   output_string = (char *)TSmalloc(total_avail + 1);
-  output_len = 0;
+  output_len    = 0;
 
   /* We need to loop over all the buffer blocks to make
      sure we get the complete header since the header can
@@ -153,8 +153,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
 {
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "output-header";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "output-header";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

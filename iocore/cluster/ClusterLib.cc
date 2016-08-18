@@ -96,21 +96,21 @@ clone_IOBufferBlockList(IOBufferBlock *b, int start_off, int n, IOBufferBlock **
   ////////////////////////////////////////////////////////////////
   int64_t nbytes = n;
   int64_t block_read_avail;
-  int64_t bytes_to_skip = start_off;
-  IOBufferBlock *bsrc = b;
-  IOBufferBlock *bclone = 0;
+  int64_t bytes_to_skip      = start_off;
+  IOBufferBlock *bsrc        = b;
+  IOBufferBlock *bclone      = 0;
   IOBufferBlock *bclone_head = 0;
 
   while (bsrc && nbytes) {
     // Skip zero length blocks
     if (!bsrc->read_avail()) {
-      bsrc = bsrc->next;
+      bsrc = bsrc->next.get();
       continue;
     }
 
     if (bclone_head) {
       bclone->next = bsrc->clone();
-      bclone = bclone->next;
+      bclone       = bclone->next.get();
     } else {
       // Skip bytes already processed
       if (bytes_to_skip) {
@@ -120,17 +120,17 @@ clone_IOBufferBlockList(IOBufferBlock *b, int start_off, int n, IOBufferBlock **
           // Skip bytes in current block
           bclone_head = bsrc->clone();
           bclone_head->consume(bsrc->read_avail() + bytes_to_skip);
-          bclone = bclone_head;
+          bclone        = bclone_head;
           bytes_to_skip = 0;
 
         } else {
           // Skip entire block
-          bsrc = bsrc->next;
+          bsrc = bsrc->next.get();
           continue;
         }
       } else {
         bclone_head = bsrc->clone();
-        bclone = bclone_head;
+        bclone      = bclone_head;
       }
     }
     block_read_avail = bclone->read_avail();
@@ -140,7 +140,7 @@ clone_IOBufferBlockList(IOBufferBlock *b, int start_off, int n, IOBufferBlock **
       bclone->fill(nbytes);
       nbytes = 0;
     }
-    bsrc = bsrc->next;
+    bsrc = bsrc->next.get();
   }
   ink_release_assert(!nbytes);
   *b_tail = bclone;
@@ -151,7 +151,7 @@ IOBufferBlock *
 consume_IOBufferBlockList(IOBufferBlock *b, int64_t n)
 {
   IOBufferBlock *b_remainder = 0;
-  int64_t nbytes = n;
+  int64_t nbytes             = n;
 
   while (b) {
     nbytes -= b->read_avail();
@@ -162,19 +162,20 @@ consume_IOBufferBlockList(IOBufferBlock *b, int64_t n)
         b->fill(nbytes);                       // make read_avail match nbytes
         b_remainder->consume(b->read_avail()); // clone for remaining bytes
         b_remainder->next = b->next;
-        b->next = 0;
-        nbytes = 0;
+        b->next           = 0;
+        nbytes            = 0;
 
       } else {
         // Consumed entire block
-        b_remainder = b->next;
+        b_remainder = b->next.get();
       }
       break;
 
     } else {
-      b = b->next;
+      b = b->next.get();
     }
   }
+
   ink_release_assert(nbytes == 0);
   return b_remainder; // return remaining blocks
 }
@@ -191,11 +192,11 @@ bytes_IOBufferBlockList(IOBufferBlock *b, int64_t read_avail_bytes)
     } else {
       n += b->write_avail();
     }
-    b = b->next;
+    b = b->next.get();
   }
+
   return n;
 }
-
 
 //////////////////////////////////////////////////////
 // Miscellaneous test code
@@ -208,17 +209,17 @@ int
 partial_readv(int fd, IOVec *iov, int n_iov, int seq)
 {
   IOVec tiov[16];
-  for (int i = 0; i < n_iov; i++)
-    tiov[i] = iov[i];
-  int tn_iov = n_iov;
-  int rnd = seq;
+  for (int i  = 0; i < n_iov; i++)
+    tiov[i]   = iov[i];
+  int tn_iov  = n_iov;
+  int rnd     = seq;
   int element = rand_r((unsigned int *)&rnd);
-  element = element % n_iov;
-  int byte = rand_r((unsigned int *)&rnd);
-  byte = byte % iov[element].iov_len;
-  int stop = rand_r((unsigned int *)&rnd);
+  element     = element % n_iov;
+  int byte    = rand_r((unsigned int *)&rnd);
+  byte        = byte % iov[element].iov_len;
+  int stop    = rand_r((unsigned int *)&rnd);
   if (!(stop % 3)) { // 33% chance
-    tn_iov = element + 1;
+    tn_iov                = element + 1;
     tiov[element].iov_len = byte;
     if (!byte)
       tn_iov--;
@@ -241,7 +242,7 @@ partial_writev(int fd, IOVec *iov, int n_iov, int seq)
 {
   int rnd = seq;
   int sum = 0;
-  int i = 0;
+  int i   = 0;
   for (i = 0; i < n_iov; i++) {
     int l = iov[i].iov_len;
     int r = rand_r((unsigned int *)&rnd);

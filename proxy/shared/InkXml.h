@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef INK_XML_H
 #define INK_XML_H
 
@@ -191,7 +190,6 @@ private:
 public:
   NameList() : m_count(0) {}
   ~NameList() { clear(); }
-
   void
   enqueue(char *name)
   {
@@ -204,7 +202,7 @@ public:
   char *
   dequeue()
   {
-    char *ret = NULL;
+    char *ret   = NULL;
     ListElem *e = m_list.dequeue();
 
     if (e) {

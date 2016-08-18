@@ -1,12 +1,15 @@
 #
 # cache.config
 #
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache.config.en.html
+#
 # The purpose of this file is to alter caching parameters of
 #   specific objects or sets of objects
 #
 # Each line consists of a set of tag value pairs.  The pairs
 #   are in the format  <tag>=<value>
-# 
+#
 # Each line must include exactly one primary specifier
 #
 #   Primary destination specifiers are

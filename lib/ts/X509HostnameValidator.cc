@@ -23,6 +23,7 @@
 
 #include <memory.h>
 #include <strings.h>
+#include <openssl/crypto.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
@@ -95,7 +96,6 @@ find_wildcard_in_hostname(const unsigned char *p, size_t len, bool idna_subject)
   return NULL;
 }
 
-
 /*
  * Comparison functions
  * @param pattern is the value from the certificate
@@ -137,7 +137,7 @@ wildcard_match(const unsigned char *prefix, size_t prefix_len, const unsigned ch
   if (!equal_nocase(prefix, prefix_len, subject, prefix_len))
     return false;
   wildcard_start = subject + prefix_len;
-  wildcard_end = subject + (subject_len - suffix_len);
+  wildcard_end   = subject + (subject_len - suffix_len);
   if (!equal_nocase(wildcard_end, suffix_len, suffix, suffix_len))
     return false;
   /*
@@ -161,7 +161,6 @@ wildcard_match(const unsigned char *prefix, size_t prefix_len, const unsigned ch
   return true;
 }
 
-
 /* Compare using wildcards. */
 static bool
 equal_wildcard(const unsigned char *pattern, size_t pattern_len, const unsigned char *subject, size_t subject_len)
@@ -180,7 +179,6 @@ equal_wildcard(const unsigned char *pattern, size_t pattern_len, const unsigned 
     return equal_nocase(pattern, pattern_len, subject, subject_len);
   return wildcard_match(pattern, wildcard - pattern, wildcard + 1, (pattern + pattern_len) - wildcard - 1, subject, subject_len);
 }
-
 
 /*
  * Compare an ASN1_STRING to a supplied string. only compare if string matches the specified type
@@ -201,12 +199,11 @@ do_check_string(ASN1_STRING *a, int cmp_type, equal_fn equal, const unsigned cha
   return retval;
 }
 
-
 bool
 validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **peername)
 {
   GENERAL_NAMES *gens = NULL;
-  X509_NAME *name = NULL;
+  X509_NAME *name     = NULL;
   int i;
   int alt_type;
   bool retval = false;
@@ -216,16 +213,17 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
 
   if (!is_ip) {
     alt_type = V_ASN1_IA5STRING;
-    equal = equal_wildcard;
+    equal    = equal_wildcard;
   } else {
     alt_type = V_ASN1_OCTET_STRING;
-    equal = equal_case;
+    equal    = equal_case;
   }
 
   // Check SANs for a match.
   gens = (GENERAL_NAMES *)X509_get_ext_d2i(x, NID_subject_alt_name, NULL, NULL);
   if (gens) {
-    for (i = 0; i < sk_GENERAL_NAME_num(gens); i++) {
+    // BoringSSL has sk_GENERAL_NAME_num() return size_t.
+    for (i = 0; i < static_cast<int>(sk_GENERAL_NAME_num(gens)); i++) {
       GENERAL_NAME *gen;
       ASN1_STRING *cstr;
       gen = sk_GENERAL_NAME_value(gens, i);
@@ -247,7 +245,7 @@ validate_hostname(X509 *x, const unsigned char *hostname, bool is_ip, char **pee
       return retval;
   }
   // No SAN match -- check the subject
-  i = -1;
+  i    = -1;
   name = X509_get_subject_name(x);
 
   while ((i = X509_NAME_get_index_by_NID(name, NID_commonName, i)) >= 0) {

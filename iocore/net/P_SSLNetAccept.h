@@ -43,17 +43,12 @@
 #include "P_Connection.h"
 #include "P_NetAccept.h"
 
-class Event;
-class UnixNetVConnection;
-
 //
 // NetAccept
 // Handles accepting connections.
 //
 struct SSLNetAccept : public NetAccept {
   virtual NetProcessor *getNetProcessor() const;
-  virtual EventType getEtype() const;
-  virtual void init_accept_per_thread(bool isTransparent);
   virtual NetAccept *clone() const;
 
   SSLNetAccept(){};

@@ -1,0 +1,265 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-02-14 12:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:23
+msgid "Adding Hooks"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:25
+msgid "There are several ways to add hooks to your plugin."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:27
+msgid ""
+"**Global HTTP hooks** HTTP transaction hooks are set on a global basis "
+"using the function ``TSHttpHookAdd``. This means that the continuation "
+"specified as the parameter to ``TSHttpHookAdd`` is called for every "
+"transaction. ``TSHttpHookAdd`` must be used in ``TSPluginInit``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:33
+msgid ""
+"**Transaction hooks** Transaction hooks can be used to call plugins back "
+"for a specific HTTP transaction. You cannot add transaction hooks in "
+"``TSPluginInit``; you first need a handle to a transaction. See :ref:"
+"`developer-plugins-blacklist-access-process-txn`."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:38
+msgid ""
+"**Transformation hooks** Transformation hooks are a special case of "
+"transaction hooks. See :c:func:`TSVConnCacheObjectSizeGet` for more "
+"information about transformation hooks. You add a transformation hook using "
+"``TSHttpTxnHookAdd``, as described in :ref:`developer-plugins-hooks-http-"
+"transactions`."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:45
+msgid ""
+"**Session hooks** An HTTP session starts when a client opens a connection "
+"to Traffic Server and ends when the connection closes. A session can "
+"consist of several transactions. Session hooks enable you to hook your "
+"plugin to a particular point in every transaction within a specified "
+"session (see :doc:`HTTP Sessions <http-sessions.en>`). Session hooks are "
+"added in a manner similar to transaction hooks (ie, you first need a handle "
+"to an HTTP session)."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:53
+msgid ""
+"**HTTP select alternate hook** Alternate selection hooks enable you to hook "
+"on to the alternate selection state. These hooks must be added globally, "
+"since Traffic Server does not have a handle to a transaction or session "
+"when alternate selection is taking place. See :doc:`HTTP Alternate "
+"Selection <http-alternate-selection.en>` for information on the alternate "
+"selection mechanism."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:60
+msgid ""
+"All of the hook addition functions (:c:func:`TSHttpHookAdd`, :c:func:"
+"`TSHttpSsnHookAdd`, :c:func:`TSHttpSsnReenable`) take ``TSHttpHookID`` "
+"(identifies the hook to add on to) and ``TSCont`` (the basic callback "
+"mechanism in Traffic Server). A single ``TSCont`` can be added to any "
+"number of hooks at a time."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:68
+msgid ""
+"An HTTP hook is identified by the enumerated type ``TSHttpHookID``. The "
+"values for ``TSHttpHookID`` are:"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:71
+msgid "**Values for TSHttpHookID**"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:77
+msgid "``TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:74
+msgid ""
+"Called after the HTTP state machine has completed the cache lookup for the "
+"document requested in the ongoing transaction. Register this hook via "
+"``TSHttpTxnHookAdd`` or ``TSHttpHookAdd``. Corresponds to the event "
+"``TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:84
+msgid "``TS_HTTP_OS_DNS_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:80
+msgid ""
+"Called immediately after the HTTP state machine has completed a DNS lookup "
+"of the origin server. The HTTP state machine will know the origin server's "
+"IP address at this point, which is useful for performing both "
+"authentication and blacklisting. Corresponds to the event "
+"``TS_EVENT_HTTP_OS_DNS``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:88
+msgid "``TS_HTTP_POST_REMAP_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:87
+msgid ""
+"Called immediately after remapping occurs, before cache lookup. Corresponds "
+"to the event ``TS_EVENT_HTTP_POST_REMAP``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:93
+msgid "``TS_HTTP_PRE_REMAP_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:91
+msgid ""
+"Called after the request header is read from the client, before any "
+"remapping of the headers occurs. Corresponds to the event "
+"``TS_EVENT_HTTP_PRE_REMAP``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:99
+msgid "``TS_HTTP_READ_CACHE_HDR_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:96
+msgid ""
+"Called immediately after the request and response header of a previously-"
+"cached object is read from cache. This hook is only called if the document "
+"is being served from cache. Corresponds to the event "
+"``TS_EVENT_HTTP_READ_CACHE_HDR``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:104
+msgid "``TS_HTTP_READ_RESPONSE_HDR_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:102
+msgid ""
+"Called immediately after the response header is read from the origin server "
+"or parent proxy. Corresponds to the event "
+"``TS_EVENT_HTTP_READ_RESPONSE_HDR``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:108
+msgid "``TS_HTTP_RESPONSE_TRANSFORM_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:107
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:115
+msgid ""
+"See :ref:`\"Transformations\" <transformations>` for information about "
+"transformation hooks."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:112
+msgid "``TS_HTTP_READ_REQUEST_HDR_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:111
+msgid ""
+"Called immediately after the request header is read from the client. "
+"Corresponds to the event ``TS_EVENT_HTTP_READ_REQUEST_HDR``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:116
+msgid "``TS_HTTP_REQUEST_TRANSFORM_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:120
+msgid "``TS_HTTP_SELECT_ALT_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:119
+msgid ""
+"See :doc:`\"HTTP Alternate Selection\" <http-alternate-selection.en>` for "
+"information about the alternate selection mechanism."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:126
+msgid "``TS_HTTP_SEND_RESPONSE_HDR_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:123
+msgid ""
+"Called immediately before the proxy's response header is written to the "
+"client; this hook is usually used for modifying the response header. "
+"Corresponds to the event ``TS_EVENT_HTTP_SEND_RESPONSE_HDR``."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:133
+msgid "``TS_HTTP_SEND_REQUEST_HDR_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:129
+msgid ""
+"Called immediately before the proxy's request header is sent to the origin "
+"server or the parent proxy. This hook is not called if the document is "
+"being served from cache. This hook is usually used for modifying the "
+"proxy's request header before it is sent to the origin server or parent "
+"proxy."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:137
+msgid "``TS_HTTP_SSN_CLOSE_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:136
+msgid ""
+"Called when an HTTP session ends. A session ends when the client connection "
+"is closed. You can only add this hook as a global hook"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:142
+msgid "``TS_HTTP_SSN_START_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:140
+msgid ""
+"Called when an HTTP session is started. A session starts when a client "
+"connects to Traffic Server. You can only add this hook as a global hook."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:145
+msgid "``TS_HTTP_TXN_CLOSE_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:145
+msgid "Called when an HTTP transaction ends."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:151
+msgid "``TS_HTTP_TXN_START_HOOK``"
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:148
+msgid ""
+"Called when an HTTP transaction is started. A transaction starts when "
+"either a client connects to Traffic Server and data is available on the "
+"connection, or a previous client connection that was left open for keep "
+"alive has new data available."
+msgstr ""
+
+#: ../../../developer-guide/plugins/hooks-and-transactions/adding-hooks.en.rst:153
+msgid ""
+"The function you use to add a global HTTP hook is :c:func:`TSHttpHookAdd`."
+msgstr ""

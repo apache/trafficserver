@@ -16,18 +16,15 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 
 #define TS_LUA_MAX_PACKAGE_PATH_LEN 256
 #define TS_LUA_MAX_PACKAGE_NUM 64
 
-
 typedef struct {
   size_t len;
   char *name;
 } ts_lua_package_path;
-
 
 static int path_cnt = 0;
 static ts_lua_package_path path[TS_LUA_MAX_PACKAGE_NUM];
@@ -41,12 +38,10 @@ static ts_lua_package_path g_path[TS_LUA_MAX_PACKAGE_NUM];
 static int g_cpath_cnt = 0;
 static ts_lua_package_path g_cpath[TS_LUA_MAX_PACKAGE_NUM];
 
-
 static int ts_lua_add_package_path(lua_State *L);
 static int ts_lua_add_package_cpath(lua_State *L);
 static int ts_lua_add_package_path_items(lua_State *L, ts_lua_package_path *pp, int n);
 static int ts_lua_add_package_cpath_items(lua_State *L, ts_lua_package_path *pp, int n);
-
 
 void
 ts_lua_inject_package_api(lua_State *L)
@@ -78,10 +73,10 @@ ts_lua_add_package_path(lua_State *L)
   }
 
   data = luaL_checklstring(L, 1, &dlen);
-  end = data + dlen;
+  end  = data + dlen;
 
   ptr = data;
-  n = 0;
+  n   = 0;
 
   while (ptr < end) {
     hit = memchr(ptr, ';', end - ptr);
@@ -107,7 +102,7 @@ ts_lua_add_package_path(lua_State *L)
             return luaL_error(L, "extended package path number exceeds %d.", TS_LUA_MAX_PACKAGE_NUM);
 
           pp[n].name = (char *)ptr;
-          pp[n].len = item_len;
+          pp[n].len  = item_len;
           n++;
         }
       } else {
@@ -123,7 +118,7 @@ ts_lua_add_package_path(lua_State *L)
             return luaL_error(L, "extended package path number exceeds %d.", TS_LUA_MAX_PACKAGE_NUM);
 
           pp[n].name = (char *)ptr;
-          pp[n].len = item_len;
+          pp[n].len  = item_len;
           n++;
         }
       }
@@ -143,7 +138,7 @@ ts_lua_add_package_path(lua_State *L)
       }
 
       for (i = 0; i < n; i++) {
-        elt->len = pp[i].len;
+        elt->len  = pp[i].len;
         elt->name = (char *)TSmalloc(pp[i].len);
         memcpy(elt->name, pp[i].name, pp[i].len);
         elt++;
@@ -205,7 +200,6 @@ ts_lua_add_package_path_items(lua_State *L, ts_lua_package_path *pp, int n)
   return 0;
 }
 
-
 static int
 ts_lua_add_package_cpath(lua_State *L)
 {
@@ -224,10 +218,10 @@ ts_lua_add_package_cpath(lua_State *L)
   }
 
   data = luaL_checklstring(L, 1, &dlen);
-  end = data + dlen;
+  end  = data + dlen;
 
   ptr = data;
-  n = 0;
+  n   = 0;
 
   while (ptr < end) {
     hit = memchr(ptr, ';', end - ptr);
@@ -253,7 +247,7 @@ ts_lua_add_package_cpath(lua_State *L)
             return luaL_error(L, "extended package cpath number exceeds %d.", TS_LUA_MAX_PACKAGE_NUM);
 
           pp[n].name = (char *)ptr;
-          pp[n].len = item_len;
+          pp[n].len  = item_len;
           n++;
         }
       } else {
@@ -269,7 +263,7 @@ ts_lua_add_package_cpath(lua_State *L)
             return luaL_error(L, "extended package cpath number exceeds %d.", TS_LUA_MAX_PACKAGE_NUM);
 
           pp[n].name = (char *)ptr;
-          pp[n].len = item_len;
+          pp[n].len  = item_len;
           n++;
         }
       }
@@ -289,7 +283,7 @@ ts_lua_add_package_cpath(lua_State *L)
       }
 
       for (i = 0; i < n; i++) {
-        elt->len = pp[i].len;
+        elt->len  = pp[i].len;
         elt->name = (char *)TSmalloc(pp[i].len);
         memcpy(elt->name, pp[i].name, pp[i].len);
         elt++;

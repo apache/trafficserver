@@ -1,0 +1,69 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-03 15:45+0900\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:37
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:24
+msgid "Return Traffic Server version information."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:27
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:22
+msgid "TSTrafficServerVersionGet"
+msgstr "TSTrafficServerVersionGet"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:29
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:39
+msgid ""
+":func:`TSTrafficServerVersionGet` returns a pointer to a string of "
+"characters that indicates the Traffic Server release version. This string "
+"must not be modified."
+msgstr ""
+":func:`TSTrafficServerVersionGet` は Traffic Server のリリースバージョンを示"
+"す文字列へのポインターを返します。この文字列は変更してはいけません。"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:102
+msgid ":manpage:`TSAPI(3ts)`"
+msgstr ":manpage:`TSAPI(3ts)`"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:47
+msgid "Example"
+msgstr "例"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:100
+msgid "See Also"
+msgstr "参照"
+
+#: ../../developer-guide/api/functions/TSTrafficServerVersionGet.en.rst:43
+msgid ""
+"The other APIs return an integer from the relevant component of the version "
+"number string."
+msgstr ""
+"その他の API は関連のあるコンポーネントのバージョン番号文字列から整数のバー"
+"ジョン番号を返します。"

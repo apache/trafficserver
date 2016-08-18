@@ -29,29 +29,13 @@
 #include <syslog.h>
 #include <signal.h> /* MAGIC_EDITING_TAG */
 
-static void ink_die_die_die() TS_NORETURN;
-
-/**
-  This routine causes process death. Some signal handler problems got
-  in the way of abort before, so this is an overzealous and somewhat
-  amusing implementation.
-
-*/
-static void
-ink_die_die_die()
-{
-  abort();
-  _exit(70); // 70 corresponds to EX_SOFTWARE in BSD's sysexits. As good a status as any.
-  exit(70);
-}
-
 /**
   This routine prints/logs an error message given the printf format
   string in message_format, and the optional arguments.
 
 */
-void
-ink_fatal_va(const char *fmt, va_list ap)
+static void
+fatal_va(const char *fmt, va_list ap)
 {
   char msg[1024];
   const size_t len = sizeof("FATAL: ") - 1;
@@ -62,44 +46,37 @@ ink_fatal_va(const char *fmt, va_list ap)
 
   fprintf(stderr, "%s\n", msg);
   syslog(LOG_CRIT, "%s", msg);
-  ink_die_die_die();
+}
+
+void
+ink_fatal_va(const char *fmt, va_list ap)
+{
+  fatal_va(fmt, ap);
+  ::exit(70); // 70 corresponds to EX_SOFTWARE in BSD's sysexits. As good a status as any.
 }
 
 void
 ink_fatal(const char *message_format, ...)
 {
   va_list ap;
+
   va_start(ap, message_format);
-  ink_fatal_va(message_format, ap);
+  fatal_va(message_format, ap);
   va_end(ap);
+
+  ::exit(70); // 70 corresponds to EX_SOFTWARE in BSD's sysexits. As good a status as any.
 }
 
-/**
-  This routine prints/logs an error message given the printf format
-  string in message_format, and the optional arguments.  The current
-  errno is also printed.
-
-*/
 void
-ink_pfatal(const char *message_format, ...)
+ink_abort(const char *message_format, ...)
 {
   va_list ap;
-  char extended_format[4096], message[4096];
-
-  int errsav = errno;
-  const char *errno_string = strerror(errsav);
 
   va_start(ap, message_format);
-  snprintf(extended_format, sizeof(extended_format) - 1, "FATAL: %s <last errno = %d (%s)>", message_format, errsav,
-           (errno_string == NULL ? "unknown" : errno_string));
-  extended_format[sizeof(extended_format) - 1] = 0;
-  vsnprintf(message, sizeof(message) - 1, extended_format, ap);
-  message[sizeof(message) - 1] = 0;
-  fprintf(stderr, "%s\n", message);
-  syslog(LOG_CRIT, "%s", message);
+  fatal_va(message_format, ap);
   va_end(ap);
 
-  ink_die_die_die();
+  abort();
 }
 
 /**

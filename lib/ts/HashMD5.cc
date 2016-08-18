@@ -23,8 +23,9 @@
 
 ATSHashMD5::ATSHashMD5(void)
 {
-  EVP_DigestInit(&ctx, EVP_md5());
-  md_len = 0;
+  ctx = EVP_MD_CTX_create();
+  EVP_DigestInit(ctx, EVP_md5());
+  md_len    = 0;
   finalized = false;
 }
 
@@ -32,7 +33,7 @@ void
 ATSHashMD5::update(const void *data, size_t len)
 {
   if (!finalized) {
-    EVP_DigestUpdate(&ctx, data, len);
+    EVP_DigestUpdate(ctx, data, len);
   }
 }
 
@@ -40,7 +41,7 @@ void
 ATSHashMD5::final(void)
 {
   if (!finalized) {
-    EVP_DigestFinal_ex(&ctx, md_value, &md_len);
+    EVP_DigestFinal_ex(ctx, md_value, &md_len);
     finalized = true;
   }
 }
@@ -58,19 +59,20 @@ ATSHashMD5::get(void) const
 size_t
 ATSHashMD5::size(void) const
 {
-  return EVP_MD_CTX_size(&ctx);
+  return EVP_MD_CTX_size(ctx);
 }
 
 void
 ATSHashMD5::clear(void)
 {
-  EVP_MD_CTX_cleanup(&ctx);
-  EVP_DigestInit(&ctx, EVP_md5());
-  md_len = 0;
+  EVP_MD_CTX_destroy(ctx);
+  ctx = EVP_MD_CTX_create();
+  EVP_DigestInit(ctx, EVP_md5());
+  md_len    = 0;
   finalized = false;
 }
 
 ATSHashMD5::~ATSHashMD5()
 {
-  EVP_MD_CTX_cleanup(&ctx);
+  EVP_MD_CTX_destroy(ctx);
 }

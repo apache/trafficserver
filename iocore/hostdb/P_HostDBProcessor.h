@@ -49,15 +49,9 @@ enum {
   TTL_MIN,
   TTL_MAX,
 };
-extern int hostdb_ttl_mode;
 
-extern unsigned int hostdb_current_interval;
-extern unsigned int hostdb_ip_stale_interval;
-extern unsigned int hostdb_ip_timeout_interval;
-extern unsigned int hostdb_ip_fail_timeout_interval;
-extern int hostdb_size;
+extern int hostdb_ttl_mode;
 extern int hostdb_srv_enabled;
-extern char hostdb_filename[PATH_NAME_MAX];
 
 // extern int hostdb_timestamp;
 extern int hostdb_sync_frequency;
@@ -91,7 +85,7 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
     if (ats_is_ip4(lhs)) {
       in_addr_t ip1 = ats_ip4_addr_cast(lhs);
       in_addr_t ip2 = ats_ip4_addr_cast(rhs);
-      zret = (ip1 >> 16) ^ ip1 ^ ip2 ^ (ip2 >> 16);
+      zret          = (ip1 >> 16) ^ ip1 ^ ip2 ^ (ip2 >> 16);
     } else if (ats_is_ip6(lhs)) {
       uint32_t const *ip1 = ats_ip_addr32_cast(lhs);
       uint32_t const *ip2 = ats_ip_addr32_cast(rhs);
@@ -119,8 +113,6 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
 
 #define DEFAULT_HOST_DB_FILENAME "host.db"
 #define DEFAULT_HOST_DB_SIZE (1 << 14)
-// Resolution of timeouts
-#define HOST_DB_TIMEOUT_INTERVAL HRTIME_SECOND
 // Timeout DNS every 24 hours by default if ttl_mode is enabled
 #define HOST_DB_IP_TIMEOUT (24 * 60 * 60)
 // DNS entries should be revalidated every 12 hours
@@ -143,27 +135,19 @@ HOSTDB_CLIENT_IP_HASH(sockaddr const *lhs, sockaddr const *rhs)
 //#define TEST(_x) _x
 #define TEST(_x)
 
-
-#ifdef _HOSTDB_CC_
-template struct MultiCache<HostDBInfo>;
-#endif /* _HOSTDB_CC_ */
-
 struct ClusterMachine;
 struct HostEnt;
 struct ClusterConfiguration;
 
 // Stats
 enum HostDB_Stats {
-  hostdb_total_entries_stat,
   hostdb_total_lookups_stat,
   hostdb_total_hits_stat,  // D == total hits
   hostdb_ttl_stat,         // D average TTL
   hostdb_ttl_expires_stat, // D == TTL Expires
   hostdb_re_dns_on_reload_stat,
-  hostdb_bytes_stat,
   HostDB_Stat_Count
 };
-
 
 struct RecRawStatBlock;
 extern RecRawStatBlock *hostdb_rsb;
@@ -190,46 +174,37 @@ extern RecRawStatBlock *hostdb_rsb;
 
 #define HOSTDB_DECREMENT_THREAD_DYN_STAT(_s, _t) RecIncrRawStatSum(hostdb_rsb, _t, (int)_s, -1);
 
-
 struct CmpConstBuffferCaseInsensitive {
-  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) const { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0; }
+  bool
+  operator()(ts::ConstBuffer a, ts::ConstBuffer b) const
+  {
+    return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;
+  }
 };
 
 // Our own typedef for the host file mapping
-typedef std::map<ts::ConstBuffer, HostDBInfo, CmpConstBuffferCaseInsensitive> HostsFileMap;
+typedef std::map<ts::ConstBuffer, IpAddr, CmpConstBuffferCaseInsensitive> HostsFileMap;
 // A to hold a ref-counted map
 struct RefCountedHostsFileMap : public RefCountObj {
   HostsFileMap hosts_file_map;
   ats_scoped_str HostFileText;
+  ink_time_t next_sync_time; // time of the next sync
 };
 
 //
 // HostDBCache (Private)
 //
-struct HostDBCache : public MultiCache<HostDBInfo> {
-  int rebuild_callout(HostDBInfo *e, RebuildMC &r);
+struct HostDBCache {
   int start(int flags = 0);
-  MultiCacheBase *
-  dup()
-  {
-    return new HostDBCache;
-  }
-
-  // This accounts for an average of 2 HostDBInfo per DNS cache (for round-robin etc.)
-  // In addition, we can do a padding for additional SRV records storage.
-  virtual size_t
-  estimated_heap_bytes_per_entry() const
-  {
-    return sizeof(HostDBInfo) * 2 + 512 * hostdb_srv_enabled;
-  }
-
   // Map to contain all of the host file overrides, initialize it to empty
   Ptr<RefCountedHostsFileMap> hosts_file_ptr;
-  // Double buffer the hosts file becase it's small and it solves dangling reference problems.
-  Ptr<RefCountedHostsFileMap> prev_hosts_file_ptr;
+  // TODO: make ATS call a close() method or something on shutdown (it does nothing of the sort today)
+  RefCountCache<HostDBInfo> *refcountcache;
 
-  Queue<HostDBContinuation, Continuation::Link_link> pending_dns[MULTI_CACHE_PARTITIONS];
+  // TODO configurable number of items in the cache
+  Queue<HostDBContinuation, Continuation::Link_link> *pending_dns;
   Queue<HostDBContinuation, Continuation::Link_link> &pending_dns_for_hash(INK_MD5 &md5);
+  Queue<HostDBContinuation, Continuation::Link_link> *remoteHostDBQueue;
   HostDBCache();
 };
 
@@ -243,7 +218,7 @@ HostDBRoundRobin::index_of(sockaddr const *ip)
   }
 
   for (int i = 0; i < good; i++) {
-    if (ats_ip_addr_eq(ip, info[i].ip())) {
+    if (ats_ip_addr_eq(ip, info(i).ip())) {
       return i;
     }
   }
@@ -255,7 +230,7 @@ inline HostDBInfo *
 HostDBRoundRobin::find_ip(sockaddr const *ip)
 {
   int idx = this->index_of(ip);
-  return idx < 0 ? NULL : &info[idx];
+  return idx < 0 ? NULL : &info(idx);
 }
 
 inline HostDBInfo *
@@ -265,8 +240,8 @@ HostDBRoundRobin::select_next(sockaddr const *ip)
   if (good > 1) {
     int idx = this->index_of(ip);
     if (idx >= 0) {
-      idx = (idx + 1) % good;
-      zret = &info[idx];
+      idx  = (idx + 1) % good;
+      zret = &info(idx);
     }
   }
   return zret;
@@ -283,8 +258,8 @@ HostDBRoundRobin::find_target(const char *target)
 
   uint32_t key = makeHostHash(target);
   for (int i = 0; i < good; i++) {
-    if (info[i].data.srv.key == key && !strcmp(target, info[i].srvname(this)))
-      return &info[i];
+    if (info(i).data.srv.key == key && !strcmp(target, info(i).srvname(this)))
+      return &info(i);
   }
   return NULL;
 }
@@ -300,7 +275,7 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
   }
 
   int best_any = 0;
-  int best_up = -1;
+  int best_up  = -1;
 
   // Basic round robin, increment current and mod with how many we have
   if (HostDBProcessor::hostdb_strict_round_robin) {
@@ -308,7 +283,7 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
     // Check that the host we selected is alive
     for (int i = 0; i < good; i++) {
       best_any = current++ % good;
-      if (info[best_any].alive(now, fail_window)) {
+      if (info(best_any).is_alive(now, fail_window)) {
         best_up = best_any;
         break;
       }
@@ -322,7 +297,7 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
     }
     for (int i = 0; i < good; i++) {
       best_any = current++ % good;
-      if (info[best_any].alive(now, fail_window)) {
+      if (info(best_any).is_alive(now, fail_window)) {
         best_up = best_any;
         break;
       }
@@ -331,18 +306,18 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
   } else {
     Debug("hostdb", "Using default round robin");
     unsigned int best_hash_any = 0;
-    unsigned int best_hash_up = 0;
+    unsigned int best_hash_up  = 0;
     sockaddr const *ip;
     for (int i = 0; i < good; i++) {
-      ip = info[i].ip();
+      ip             = info(i).ip();
       unsigned int h = HOSTDB_CLIENT_IP_HASH(client_ip, ip);
       if (best_hash_any <= h) {
-        best_any = i;
+        best_any      = i;
         best_hash_any = h;
       }
-      if (info[i].alive(now, fail_window)) {
+      if (info(i).is_alive(now, fail_window)) {
         if (best_hash_up <= h) {
-          best_up = i;
+          best_up      = i;
           best_hash_up = h;
         }
       }
@@ -351,10 +326,10 @@ HostDBRoundRobin::select_best_http(sockaddr const *client_ip, ink_time_t now, in
 
   if (best_up != -1) {
     ink_assert(best_up >= 0 && best_up < good);
-    return &info[best_up];
+    return &info(best_up);
   } else {
     ink_assert(best_any >= 0 && best_any < good);
-    return &info[best_any];
+    return &info(best_any);
   }
 }
 
@@ -370,7 +345,7 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
 
 #ifdef DEBUG
   for (int i = 1; i < good; ++i) {
-    ink_assert(info[i].data.srv.srv_priority >= info[i - 1].data.srv.srv_priority);
+    ink_assert(info(i).data.srv.srv_priority >= info(i - 1).data.srv.srv_priority);
   }
 #endif
 
@@ -380,25 +355,23 @@ HostDBRoundRobin::select_best_srv(char *target, InkRand *rand, ink_time_t now, i
   HostDBInfo *infos[HOST_DB_MAX_ROUND_ROBIN_INFO];
 
   do {
-    if (info[i].app.http_data.last_failure != 0 && (uint32_t)(now - fail_window) < info[i].app.http_data.last_failure) {
+    // if the real isn't alive-- exclude it from selection
+    if (!info(i).is_alive(now, fail_window)) {
       continue;
     }
 
-    if (info[i].app.http_data.last_failure)
-      info[i].app.http_data.last_failure = 0;
-
-    if (info[i].data.srv.srv_priority <= p) {
-      p = info[i].data.srv.srv_priority;
-      weight += info[i].data.srv.srv_weight;
-      infos[len++] = &info[i];
+    if (info(i).data.srv.srv_priority <= p) {
+      p = info(i).data.srv.srv_priority;
+      weight += info(i).data.srv.srv_weight;
+      infos[len++] = &info(i);
     } else
       break;
   } while (++i < good);
 
   if (len == 0) { // all failed
-    result = &info[current++ % good];
+    result = &info(current++ % good);
   } else if (weight == 0) { // srv weight is 0
-    result = &info[current++ % len];
+    result = &info(current++ % len);
   } else {
     uint32_t xx = rand->random() % weight;
     for (i = 0; i < len && xx >= infos[i]->data.srv.srv_weight; ++i)
@@ -472,7 +445,7 @@ struct HostDBContinuation : public Continuation {
   Continuation *from_cont;
   HostDBApplicationInfo app;
   int probe_depth;
-  int current_iterate_pos;
+  size_t current_iterate_pos;
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH];
   //  char name[MAXDNAME];
   //  int namelen;
@@ -509,7 +482,8 @@ struct HostDBContinuation : public Continuation {
   {
     return md5.db_mark == HOSTDB_MARK_SRV;
   }
-  HostDBInfo *lookup_done(IpAddr const &ip, char const *aname, bool round_robin, unsigned int attl, SRVHosts *s = NULL);
+  HostDBInfo *lookup_done(IpAddr const &ip, char const *aname, bool round_robin, unsigned int attl, SRVHosts *s = NULL,
+                          HostDBInfo *r = NULL);
   bool do_get_response(Event *e);
   void do_put_response(ClusterMachine *m, HostDBInfo *r, Continuation *cont);
   int failed_cluster_request(Event *e);
@@ -539,17 +513,24 @@ struct HostDBContinuation : public Continuation {
   int make_put_message(HostDBInfo *r, Continuation *c, char *buf, int len);
 
   HostDBContinuation()
-    : Continuation(NULL), ttl(0), host_res_style(DEFAULT_OPTIONS.host_res_style), dns_lookup_timeout(DEFAULT_OPTIONS.timeout),
-      timeout(0), from(0), from_cont(0), probe_depth(0), current_iterate_pos(0), missing(false),
-      force_dns(DEFAULT_OPTIONS.force_dns), round_robin(false)
+    : Continuation(NULL),
+      ttl(0),
+      host_res_style(DEFAULT_OPTIONS.host_res_style),
+      dns_lookup_timeout(DEFAULT_OPTIONS.timeout),
+      timeout(0),
+      from(0),
+      from_cont(0),
+      probe_depth(0),
+      current_iterate_pos(0),
+      missing(false),
+      force_dns(DEFAULT_OPTIONS.force_dns),
+      round_robin(false)
   {
     ink_zero(md5_host_name_store);
     ink_zero(md5.hash);
     SET_HANDLER((HostDBContHandler)&HostDBContinuation::probeEvent);
   }
 };
-
-// extern Queue<HostDBContinuation>  remoteHostDBQueue[MULTI_CACHE_PARTITIONS];
 
 inline unsigned int
 master_hash(INK_MD5 const &md5)
@@ -566,13 +547,13 @@ is_dotted_form_hostname(const char *c)
 inline Queue<HostDBContinuation> &
 HostDBCache::pending_dns_for_hash(INK_MD5 &md5)
 {
-  return pending_dns[partition_of_bucket((int)(fold_md5(md5) % hostDB.buckets))];
+  return pending_dns[this->refcountcache->partition_for_key(md5.fold())];
 }
 
 inline int
 HostDBContinuation::key_partition()
 {
-  return hostDB.partition_of_bucket(fold_md5(md5.hash) % hostDB.buckets);
+  return hostDB.refcountcache->partition_for_key(md5.hash.fold());
 }
 
 #endif /* _P_HostDBProcessor_h_ */

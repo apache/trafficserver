@@ -19,7 +19,7 @@
 
 .. _admin-plugins-ts-lua:
 
-ts-lua Plugin
+TS Lua Plugin
 *************
 
 This module embeds Lua, via the standard Lua 5.1 interpreter, into |ATS|. With
@@ -79,8 +79,8 @@ is given at build time.
 Configuration
 =============
 
-This module acts as remap plugin of Traffic Server, so we should realize 'do_remap' function in each lua script. We can
-write this in remap.config:
+This module acts as remap plugin of Traffic Server, so we should realize 'do_remap' or 'do_os_response' function in each
+lua script. We can write this in remap.config:
 
 ::
 
@@ -137,13 +137,14 @@ ts.now
 
 **context:** global
 
-**description:** This function returns the time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds.
+**description:** This function returns the time since the Epoch (00:00:00 UTC, January 1, 1970), measured in seconds. It
+includes milliseconds as the decimal part.
 
 Here is an example:
 
 ::
 
-    local nt = ts.now()  -- 1395221053
+    local nt = ts.now()  -- 1395221053.123
 
 `TOP <#ts-lua-plugin>`_
 
@@ -297,7 +298,7 @@ ts.hook
 -------
 **syntax:** *ts.hook(HOOK_POINT, FUNCTION)*
 
-**context:** global or do_remap or do_global_* or later
+**context:** global or do_remap/do_os_response or do_global_* or later
 
 **description**: Hooks are points in http transaction processing where we can step in and do some work. FUNCTION will be
 called when the http transaction steps in to HOOK_POINT.
@@ -355,7 +356,6 @@ instead.
 
 Hook point constants
 --------------------
-**context:** do_remap or later
 
 ::
 
@@ -375,6 +375,58 @@ Hook point constants
 
 These constants are usually used in ts.hook method call.
 
+Additional Information:
+
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+|   Hook Point          | Lua Hook Point constant   |   Hook function be   | Hook function be   |   Hook function be   |
+|                       |                           |   registered  within | registered within  |   registered within  |
+|                       |                           |   do_remap() via     | do_os_response()   |   global context via |
+|                       |                           |   ts.hook()?         | via ts.hook()?     |   ts.hook()?         |
++=======================+===========================+======================+====================+======================+
+| TS_HTTP_TXN           | TS_LUA_HOOK               |     NO               |    NO              |    YES               |
+| _START_HOOK           | _TXN_START                |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_READ          | TS_LUA_HOOK               |     NO               |    NO              |    YES               |
+| _REQUEST_HDR_HOOK     | _READ_REQUEST_HDR         |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_PRE           | TS_LUA_HOOK               |     NO               |    NO              |    YES               |
+| _REMAP_HOOK           | _PRE_REMAP                |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_POST          | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
+| _REMAP_HOOK           | _POST_REMAP               |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_SELECT        | TS_LUA_HOOK               |     NO               |    NO              |    NO                |
+| _ALT_HOOK             | _SELECT_ALT               |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_READ          | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
+| _CACHE_HDR_HOOK       | _READ_CACHE_HDR           |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_OS            | TS_LUA_HOOK_              |     YES              |    NO              |    YES               |
+| _DNS_HOOK             | _OS_DNS                   |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_CACHE         | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
+| _LOOKUP_COMPLETE_HOOK | _CACHE_LOOKUP_COMPLETE    |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_SEND          | TS_LUA_HOOK               |     YES              |    NO              |    YES               |
+| _REQUEST_HDR_HOOK     | _SEND_REQUEST_HDR         |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_READ          | TS_LUA_HOOK               |     YES              |    YES             |    YES               |
+| _RESPONSE_HDR_HOOK    | _READ_RESPONSE_HDR        |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_SEND          | TS_LUA_HOOK               |     YES              |    YES             |    YES               |
+| _RESPONSE_HDR_HOOK    | _SEND_RESPONSE_HDR        |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_REQUEST       | TS_LUA_REQUEST_TRANSFORM  |     YES              |    NO              |    YES               |
+| _TRANSFORM_HOOK       |                           |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_RESPONSE      | TS_LUA_RESPONSE_TRANSFORM |     YES              |    YES             |    YES               |
+| _TRANSFORM_HOOK       |                           |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+| TS_HTTP_TXN           | TS_LUA_HOOK_TXN_CLOSE     |     YES              |    YES             |    YES               |
+| _CLOSE_HOOK           |                           |                      |                    |                      |
++-----------------------+---------------------------+----------------------+--------------------+----------------------+
+
+
 `TOP <#ts-lua-plugin>`_
 
 ts.ctx
@@ -383,7 +435,7 @@ ts.ctx
 
 **syntax:** *VALUE = ts.ctx[KEY]*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** This table can be used to store per-request Lua context data and has a life time identical to the
 current request.
@@ -420,7 +472,7 @@ ts.client_request.get_method
 ----------------------------
 **syntax:** *ts.client_request.get_method()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** This function can be used to retrieve the current client request's method name. String like "GET" or
 "POST" is returned.
@@ -439,7 +491,7 @@ ts.client_request.get_version
 -----------------------------
 **syntax:** *ver = ts.client_request.get_version()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** Return the http version string of the client request.
 
@@ -465,7 +517,7 @@ ts.client_request.get_uri
 -------------------------
 **syntax:** *ts.client_request.get_uri()*
 
-**context:** do_remap or later
+**context:** do_remap/do_os_response or later
 
 **description:** This function can be used to retrieve the client request's path.
 
@@ -502,7 +554,7 @@ ts.client_request.get_uri_args
 ------------------------------
 **syntax:** *ts.client_request.get_uri_args()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** This function can be used to retrieve the client request's query string.
 
@@ -537,11 +589,50 @@ ts.client_request.set_uri_args
 
 `TOP <#ts-lua-plugin>`_
 
+ts.client_request.get_uri_params
+--------------------------------
+**syntax:** *ts.client_request.get_uri_params()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function can be used to retrieve the client request's parameter string.
+
+Here is an example:
+
+::
+
+    function do_remap()
+        local query = ts.client_request.get_uri_params()
+        print(query)
+    end
+
+Then ``GET /st;a=1`` will yield the output:
+
+``a=1``
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.client_request.set_uri_params
+--------------------------------
+**syntax:** *ts.client_request.set_uri_params(PARAMETER_STRING)*
+
+**context:** do_remap or do_global_*
+
+**description:** This function can be used to override the client request's parameter string.
+
+::
+
+    ts.client_request.set_uri_params('n=6')
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.client_request.get_url
 -------------------------
 **syntax:** *ts.client_request.get_url()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** This function can be used to retrieve the whole client request's url.
 
@@ -568,7 +659,7 @@ ts.client_request.header.HEADER
 
 **syntax:** *VALUE = ts.client_request.header.HEADER*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** Set, add to, clear or get the current client request's HEADER.
 
@@ -593,7 +684,7 @@ ts.client_request.get_headers
 -----------------------------
 **syntax:** *ts.client_request.get_headers()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** Returns a Lua table holding all the headers for the current client request.
 
@@ -621,7 +712,7 @@ ts.client_request.client_addr.get_addr
 --------------------------------------
 **syntax:** *ts.client_request.client_addr.get_addr()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description**: This function can be used to get socket address of the client.
 
@@ -645,7 +736,7 @@ ts.client_request.client_addr.get_incoming_port
 -----------------------------------------------
 **syntax:** *ts.client_request.client_addr.get_incoming_port()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description**: This function can be used to get incoming port of the request.
 
@@ -666,7 +757,7 @@ ts.client_request.get_url_host
 ------------------------------
 **syntax:** *host = ts.client_request.get_url_host()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** Return the ``host`` field of the request url.
 
@@ -719,7 +810,7 @@ ts.client_request.get_url_port
 ------------------------------
 **syntax:** *port = ts.client_request.get_url_port()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** Returns the ``port`` field of the request url as a Lua number.
 
@@ -755,7 +846,7 @@ ts.client_request.get_url_scheme
 --------------------------------
 **syntax:** *scheme = ts.client_request.get_url_scheme()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** Return the ``scheme`` field of the request url.
 
@@ -1169,6 +1260,50 @@ ts.server_request.set_uri_args
 
 `TOP <#ts-lua-plugin>`_
 
+ts.server_request.get_uri_params
+--------------------------------
+**syntax:** *ts.server_request.get_uri_params()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
+
+**description:** This function can be used to retrieve the server request's parameter string.
+
+Here is an example:
+
+::
+
+    function send_request()
+        local query = ts.server_request.get_uri_params()
+        print(query)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+Then ``GET /st;a=1`` will yield the output:
+
+``a=1``
+
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.set_uri_params
+--------------------------------
+**syntax:** *ts.server_request.set_uri_params(PARAMETER_STRING)*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
+
+**description:** This function can be used to override the server request's parameter string.
+
+::
+
+    ts.server_request.set_uri_params('n=6')
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.server_request.header.HEADER
 -------------------------------
 **syntax:** *ts.server_request.header.HEADER = VALUE*
@@ -1242,7 +1377,7 @@ ts.server_request.server_addr.get_addr
 --------------------------------------
 **syntax:** *ts.server_request.server_addr.get_addr()*
 
-**context:** do_remap or do_global_* or later
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
 
 **description**: This function can be used to get socket address of the origin server.
 
@@ -1265,7 +1400,7 @@ ts.server_request.server_addr.get_ip
 ------------------------------------
 **syntax:** *ts.server_request.server_addr.get_ip()*
 
-**context:** do_remap or do_global_* or later
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
 
 **description**: This function can be used to get ip address of the origin server.
 
@@ -1286,7 +1421,7 @@ ts.server_request.server_addr.get_port
 --------------------------------------
 **syntax:** *ts.server_request.server_addr.get_port()*
 
-**context:** do_remap or do_global_* or later
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
 
 **description**: This function can be used to get port of the origin server.
 
@@ -1307,7 +1442,7 @@ ts.server_request.server_addr.get_outgoing_port
 -----------------------------------------------
 **syntax:** *ts.server_request.server_addr.get_outgoing_port()*
 
-**context:** do_remap or do_global_* or later
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point or later
 
 **description**: This function can be used to get outgoing port to the origin server.
 
@@ -1687,7 +1822,7 @@ ts.http.resp_cache_transformed
 ------------------------------
 **syntax:** *ts.http.resp_cache_transformed(BOOL)*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description**: This function can be used to tell trafficserver whether to cache the transformed data.
 
@@ -1714,7 +1849,7 @@ ts.http.resp_cache_untransformed
 --------------------------------
 **syntax:** *ts.http.resp_cache_untransformed(BOOL)*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description**: This function can be used to tell trafficserver whether to cache the untransformed data.
 
@@ -1818,7 +1953,7 @@ ts.http.is_internal_request
 ---------------------------
 **syntax:** *ts.http.is_internal_request()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** This function can be used to tell is a request is internal or not
 
@@ -1838,7 +1973,7 @@ ts.http.transaction_count
 -------------------------
 **syntax:** *ts.http.transaction_count()*
 
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** This function returns the number of transaction in this connection
 
@@ -1853,6 +1988,68 @@ Here is an example
     end
 
 `TOP <#ts-lua-plugin>`_
+
+ts.http.redirect_url_set
+------------------------
+**syntax:** *ts.http.redirect_url_set()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function sets the redirect url and instructs the transaction to follow the redirection as response
+
+Here is an example
+
+::
+
+    function do_global_read_response()
+        ts.http.redirect_url_set('http://foo.com')
+        return 0
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+ts.http.get_server_state
+------------------------
+**syntax:** *ts.http.get_server_state()*
+
+**context:** do_remap/do_os_response or do_global_* or later
+
+**description:** This function returns the current server state
+
+Here is an example
+
+::
+
+    function do_os_response()
+        local result = ts.http.get_server_state()
+        if result == TS_LUA_SRVSTATE_CONNECTION_ALIVE then
+          ts.debug('Alive')
+        end
+    end
+
+`TOP <#ts-lua-plugin>`_
+
+Server state constants
+----------------------
+**context:** global
+
+::
+
+    TS_LUA_SRVSTATE_STATE_UNDEFINED (0)
+    TS_LUA_SRVSTATE_ACTIVE_TIMEOUT (1)
+    TS_LUA_SRVSTATE_BAD_INCOMING_RESPONSE (2)
+    TS_LUA_SRVSTATE_CONNECTION_ALIVE (3)
+    TS_LUA_SRVSTATE_CONNECTION_CLOSED (4)
+    TS_LUA_SRVSTATE_CONNECTION_ERROR (5)
+    TS_LUA_SRVSTATE_INACTIVE_TIMEOUT(6)
+    TS_LUA_SRVSTATE_OPEN_RAW_ERROR (7)
+    TS_LUA_SRVSTATE_PARSE_ERROR (8)
+    TS_LUA_SRVSTATE_TRANSACTION_COMPLETE (9)
+    TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_F (10)
+    TS_LUA_SRVSTATE_CONGEST_CONTROL_CONGESTED_ON_M (11)
+
+`TOP <#ts-lua-plugin>`_
+
 
 ts.add_package_path
 -------------------
@@ -2069,7 +2266,7 @@ ts.fetch
 -----------
 **syntax:** *res = ts.fetch(url, table?)*
 
-**context:** after do_remap
+**context:** hook point functions added after do_remap
 
 **description:** Issues a synchronous but still non-block http request with the ``url`` and the optional ``table``.
 
@@ -2124,7 +2321,7 @@ ts.fetch_multi
 --------------
 **syntax:** *vec = ts.fetch_multi({{url, table?}, {url, table?}, ...})*
 
-**context:** after do_remap
+**context:** hook point functions added after do_remap
 
 Just like `ts.fetch`, but supports multiple http requests running in parallel.
 
@@ -2353,7 +2550,7 @@ ts.sleep
 --------
 **syntax:** *ts.sleep(sec)*
 
-**context:** *after do_remap*
+**context:** *hook point functions added after do_remap*
 
 **description:** Sleeps for the specified seconds without blocking.
 
@@ -2378,11 +2575,41 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.schedule
+-----------
+**syntax:** *ts.schedule(THREAD_TYPE, sec, FUNCTION, param1?, param2?, ...)*
+
+**context:** *hook point functions added after do_remap*
+
+**description:** Schedule function to be run after specified seconds without blocking.
+
+Behind the scene, this method makes use of the ATS event model.
+
+Here is an example:
+
+::
+
+    function schedule()
+        ts.debug('test schedule starts')
+    end
+
+    function cache_lookup()
+        ts.debug('cache-lookup')
+        ts.schedule(TS_LUA_THREAD_POOL_NET, 0, schedule)
+        return 0
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE, cache_lookup)
+    end
+
+`TOP <#ts-lua-plugin>`_
+
 ts.http.config_int_get
 ----------------------
 **syntax:** *val = ts.http.config_int_get(CONFIG)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** Configuration option which has a int value can be retrieved with this function.
 
@@ -2397,7 +2624,7 @@ ts.http.config_int_set
 ----------------------
 **syntax:** *ts.http.config_int_set(CONFIG, NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** This function can be used to overwrite the configuration options.
 
@@ -2417,7 +2644,7 @@ ts.http.config_float_get
 ------------------------
 **syntax:** *val = ts.http.config_float_get(CONFIG)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** Configuration option which has a float value can be retrieved with this function.
 
@@ -2428,7 +2655,7 @@ ts.http.config_float_set
 ------------------------
 **syntax:** *ts.http.config_float_set(CONFIG, NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** This function can be used to overwrite the configuration options.
 
@@ -2439,7 +2666,7 @@ ts.http.config_string_get
 -------------------------
 **syntax:** *val = ts.http.config_string_get(CONFIG)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** Configuration option which has a string value can be retrieved with this function.
 
@@ -2450,7 +2677,7 @@ ts.http.config_string_set
 -------------------------
 **syntax:** *ts.http.config_string_set(CONFIG, NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later
 
 **description:** This function can be used to overwrite the configuration options.
 
@@ -2459,7 +2686,7 @@ ts.http.config_string_set
 
 Http config constants
 ---------------------
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 ::
 
@@ -2563,7 +2790,7 @@ ts.http.timeout_set
 -------------------
 **syntax:** *ts.http.timeout_set(CONFIG, NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to overwrite the timeout settings.
 
@@ -2581,7 +2808,7 @@ Here is an example:
 
 Timeout constants
 -----------------
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 ::
 
@@ -2597,7 +2824,7 @@ ts.http.client_packet_mark_set
 ------------------------------
 **syntax:** *ts.http.client_packet_mark_set(NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to set packet mark for client connection.
 
@@ -2616,7 +2843,7 @@ ts.http.server_packet_mark_set
 ------------------------------
 **syntax:** *ts.http.server_packet_mark_set(NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to set packet mark for server connection.
 
@@ -2627,7 +2854,7 @@ ts.http.client_packet_tos_set
 -----------------------------
 **syntax:** *ts.http.client_packet_tos_set(NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to set packet tos for client connection.
 
@@ -2638,7 +2865,7 @@ ts.http.server_packet_tos_set
 -----------------------------
 **syntax:** *ts.http.server_packet_tos_set(NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to set packet tos for server connection.
 
@@ -2649,7 +2876,7 @@ ts.http.client_packet_dscp_set
 ------------------------------
 **syntax:** *ts.http.client_packet_dscp_set(NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to set packet dscp for client connection.
 
@@ -2660,7 +2887,7 @@ ts.http.server_packet_dscp_set
 ------------------------------
 **syntax:** *ts.http.server_packet_dscp_set(NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to set packet dscp for server connection.
 
@@ -2671,7 +2898,7 @@ ts.http.enable_redirect
 -----------------------
 **syntax:** *ts.http.enable_redirect(NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **decription:** This function can be used to make transaction follow redirect
 
@@ -2691,7 +2918,7 @@ ts.http.set_debug
 -----------------
 **syntax:** *ts.http.set_debug(NUMBER)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **decription:** This function can be used to enable debug log for the transaction
 
@@ -2711,7 +2938,7 @@ ts.http.cntl_get
 ----------------
 **syntax:** *val = ts.http.cntl_get(CNTL_TYPE)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to retireve the value of control channel.
 
@@ -2726,7 +2953,7 @@ ts.http.cntl_set
 ----------------
 **syntax:** *ts.http.cntl_set(CNTL_TYPE, BOOL)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to set the value of control channel.
 
@@ -2744,7 +2971,7 @@ Here is an example:
 
 Http control channel constants
 ------------------------------
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 ::
 
@@ -2760,7 +2987,7 @@ ts.http.milestone_get
 ---------------------
 **syntax:** *val = ts.http.milestone_get(MILESTONE_TYPE)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to retireve the various milestone times. They are how long the 
 transaction took to traverse portions of the HTTP state machine. Each milestone value is a fractional number 
@@ -2774,7 +3001,7 @@ of seconds since the beginning of the transaction.
 
 Milestone constants
 ------------------------------
-**context:** do_remap or do_global_* or later
+**context:** do_remap/do_os_response or do_global_* or later
 
 ::
 
@@ -2808,7 +3035,7 @@ ts.mgmt.get_counter
 -------------------
 **syntax:** *val = ts.mgmt.get_counter(RECORD_NAME)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to retrieve the record value which has a counter type.
 
@@ -2822,7 +3049,7 @@ ts.mgmt.get_int
 ---------------
 **syntax:** *val = ts.mgmt.get_int(RECORD_NAME)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to retrieve the record value which has a int type.
 
@@ -2832,7 +3059,7 @@ ts.mgmt.get_float
 -----------------
 **syntax:** *val = ts.mgmt.get_float(RECORD_NAME)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to retrieve the record value which has a float type.
 
@@ -2842,7 +3069,7 @@ ts.mgmt.get_string
 ------------------
 **syntax:** *val = ts.mgmt.get_string(RECORD_NAME)*
 
-**context:** do_remap or do_global_* or later.
+**context:** do_remap/do_os_response or do_global_* or later.
 
 **description:** This function can be used to retrieve the record value which has a string type.
 
@@ -2897,7 +3124,7 @@ ts.stat_find
 
 **context:** global
 
-**description:** This function can be used to find a statistics record given the name. A statistics record table will 
+**description:** This function can be used to find a statistics record given the name. A statistics record table will
 be returned with 4 functions to increment, decrement, get and set the value. That is similar to ts.stat_create()
 
 `TOP <#ts-lua-plugin>`_
@@ -2912,12 +3139,13 @@ transaction. This can be wasteful. Also the state cannot be reused for the same 
 alternative will be to use a TXN_START hook to create a lua state first and then add each global hook in the lua script
 as transaction hook instead. But this will have problem down the road when we need to have multiple plugins to work
 together in some proper orderings. In the future, we should consider different approach, such as creating and
-maintaining the lua state in the ATS core. 
+maintaining the lua state in the ATS core.
 
 `TOP <#ts-lua-plugin>`_
 
 Notes on Unit Testing Lua scripts for ATS Lua Plugin
 ====================================================
+
 Follow the steps below to use busted framework to run some unit tests on sample scripts and modules
 
 * Build and install lua 5.1.5 using the source code from here - http://www.lua.org/ftp/lua-5.1.tar.gz
@@ -2930,18 +3158,16 @@ Follow the steps below to use busted framework to run some unit tests on sample 
 
 * "cd trafficserver/plugins/experimental/ts_lua/ci"
 
-* Run "busted -c module_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for
-* "module.lua"
+* Run "busted -c module_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for "module.lua"
 
-* Run "busted -c script_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for
-* "script.lua"
+* Run "busted -c script_test.lua; luacov". It will produce "luacov.report.out" containing the code coverage for "script.lua"
 
 Reference for further information
 
 * Busted - http://olivinelabs.com/busted/
 
-* Specifications for asserts/mocks/stubs/etc inside busted framework - 
-https://github.com/Olivine-Labs/luassert/tree/master/spec 
+* Specifications for asserts/mocks/stubs/etc inside busted framework:
+  https://github.com/Olivine-Labs/luassert/tree/master/spec
 
 * luacov - https://luarocks.org/modules/hisham/luacov
 

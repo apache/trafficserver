@@ -52,7 +52,6 @@
 #define ALIGN_DOUBLE(_p) ((((uintptr_t)(_p)) + 7) & ~7)
 #define ALLOCA_DOUBLE(_sz) ALIGN_DOUBLE(alloca((_sz) + 8))
 
-
 //
 // Testing
 //
@@ -193,14 +192,13 @@ struct CacheContinuation : public Continuation {
   int tunnelClosedEvent(int event, void *);
   int remove_and_delete(int, Event *);
 
-
   inline void
   setMsgBufferLen(int l, IOBufferData *b = 0)
   {
-    ink_assert(rw_buf_msg == 0);
+    ink_assert(!rw_buf_msg);
     ink_assert(rw_buf_msg_len == 0);
 
-    rw_buf_msg = b;
+    rw_buf_msg     = b;
     rw_buf_msg_len = l;
   }
 
@@ -213,7 +211,7 @@ struct CacheContinuation : public Continuation {
   inline void
   allocMsgBuffer()
   {
-    ink_assert(rw_buf_msg == 0);
+    ink_assert(!rw_buf_msg);
     ink_assert(rw_buf_msg_len);
     if (rw_buf_msg_len <= DEFAULT_MAX_BUFFER_SIZE) {
       rw_buf_msg = new_IOBufferData(buffer_size_to_index(rw_buf_msg_len, MAX_BUFFER_SIZE_INDEX));
@@ -230,16 +228,16 @@ struct CacheContinuation : public Continuation {
   }
 
   inline IOBufferData *
-  getMsgBufferIOBData()
+  getMsgBufferIOBData() const
   {
-    return rw_buf_msg;
+    return rw_buf_msg.get();
   }
 
   inline void
   freeMsgBuffer()
   {
     if (rw_buf_msg) {
-      rw_buf_msg = 0;
+      rw_buf_msg     = 0;
       rw_buf_msg_len = 0;
     }
   }
@@ -272,20 +270,57 @@ struct CacheContinuation : public Continuation {
     ic_arena.reset();
     freeMsgBuffer();
 
-    tunnel_mutex = 0;
+    tunnel_mutex   = 0;
     readahead_data = 0;
-    ic_hostname = 0;
+    ic_hostname    = 0;
   }
 
   CacheContinuation()
-    : Continuation(NULL), magicno(MagicNo), callback_data(0), callback_data_2(0), timeout(0), target_machine(0), probe_depth(0),
-      start_time(0), cache_read(false), result(0), result_error(0), seq_number(0), cfl_flags(0), frag_type(CACHE_FRAG_TYPE_NONE),
-      nbytes(0), target_ip(0), request_opcode(0), request_purge(false), local_lookup_only(0), no_reply_message(0),
-      request_timeout(0), expect_cache_callback(true), use_deferred_callback(0), pin_in_cache(0), rw_buf_msg_len(0),
-      read_cluster_vc(0), write_cluster_vc(0), cluster_vc_channel(0), caller_buf_freebytes(0), readahead_vio(0),
-      readahead_reader(0), have_all_data(false), cache_vc_info(), tunnel(0), tunnel_cont(0), tunnel_closed(0),
-      lookup_open_write_vc_event(0), ic_arena(), ic_request(), ic_response(), ic_params(0), ic_old_info(), ic_new_info(),
-      ic_hostname_len(0), cache_op_ClusterFunction(0)
+    : Continuation(NULL),
+      magicno(MagicNo),
+      callback_data(0),
+      callback_data_2(0),
+      timeout(0),
+      target_machine(0),
+      probe_depth(0),
+      start_time(0),
+      cache_read(false),
+      result(0),
+      result_error(0),
+      seq_number(0),
+      cfl_flags(0),
+      frag_type(CACHE_FRAG_TYPE_NONE),
+      nbytes(0),
+      target_ip(0),
+      request_opcode(0),
+      request_purge(false),
+      local_lookup_only(0),
+      no_reply_message(0),
+      request_timeout(0),
+      expect_cache_callback(true),
+      use_deferred_callback(0),
+      pin_in_cache(0),
+      rw_buf_msg_len(0),
+      read_cluster_vc(0),
+      write_cluster_vc(0),
+      cluster_vc_channel(0),
+      caller_buf_freebytes(0),
+      readahead_vio(0),
+      readahead_reader(0),
+      have_all_data(false),
+      cache_vc_info(),
+      tunnel(0),
+      tunnel_cont(0),
+      tunnel_closed(0),
+      lookup_open_write_vc_event(0),
+      ic_arena(),
+      ic_request(),
+      ic_response(),
+      ic_params(0),
+      ic_old_info(),
+      ic_new_info(),
+      ic_hostname_len(0),
+      cache_op_ClusterFunction(0)
   {
     token.clear();
     SET_HANDLER((CacheContHandler)&CacheContinuation::remoteOpEvent);
@@ -365,8 +400,8 @@ struct CacheLookupMsg : public ClusterMessageHeader {
   uint32_t frag_type;
   Alias32 moi;
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                  = 1,
+    MAX_VERSION                  = 1,
     CACHE_LOOKUP_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheLookupMsg(uint16_t vers = CACHE_LOOKUP_MESSAGE_VERSION) : ClusterMessageHeader(vers), seq_number(0), frag_type(0)
@@ -416,12 +451,19 @@ struct CacheOpMsg_long : public ClusterMessageHeader {
   int32_t buffer_size; // used by open read interface
   Alias32 moi;
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                   = 1,
+    MAX_VERSION                   = 1,
     CACHE_OP_LONG_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpMsg_long(uint16_t vers = CACHE_OP_LONG_MESSAGE_VERSION)
-    : ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0),
+    : ClusterMessageHeader(vers),
+      opcode(0),
+      frag_type(0),
+      cfl_flags(0),
+      seq_number(0),
+      nbytes(0),
+      data(0),
+      channel(0),
       buffer_size(0)
   {
     moi.u32 = 0;
@@ -477,12 +519,19 @@ struct CacheOpMsg_short : public ClusterMessageHeader {
   // Variable portion of message
   Alias32 moi;
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                    = 1,
+    MAX_VERSION                    = 1,
     CACHE_OP_SHORT_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpMsg_short(uint16_t vers = CACHE_OP_SHORT_MESSAGE_VERSION)
-    : ClusterMessageHeader(vers), opcode(0), frag_type(0), cfl_flags(0), seq_number(0), nbytes(0), data(0), channel(0),
+    : ClusterMessageHeader(vers),
+      opcode(0),
+      frag_type(0),
+      cfl_flags(0),
+      seq_number(0),
+      nbytes(0),
+      data(0),
+      channel(0),
       buffer_size(0)
   {
     moi.u32 = 0;
@@ -533,8 +582,8 @@ struct CacheOpMsg_short_2 : public ClusterMessageHeader {
   uint32_t seq_number;
   Alias32 moi;
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                      = 1,
+    MAX_VERSION                      = 1,
     CACHE_OP_SHORT_2_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpMsg_short_2(uint16_t vers = CACHE_OP_SHORT_2_MESSAGE_VERSION)
@@ -579,8 +628,8 @@ struct CacheOpReplyMsg : public ClusterMessageHeader {
   bool is_ram_cache_hit; // Entire object was from ram cache
   Alias32 moi;           // Used by CACHE_OPEN_READ & CACHE_LINK reply
   enum {
-    MIN_VERSION = 1,
-    MAX_VERSION = 1,
+    MIN_VERSION                    = 1,
+    MAX_VERSION                    = 1,
     CACHE_OP_REPLY_MESSAGE_VERSION = MAX_VERSION,
   };
   CacheOpReplyMsg(uint16_t vers = CACHE_OP_REPLY_MESSAGE_VERSION)

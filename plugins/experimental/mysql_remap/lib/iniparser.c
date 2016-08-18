@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /*-------------------------------------------------------------------------*/
 /**
    @file    iniparser.c
@@ -268,7 +267,7 @@ iniparser_dump_ini(dictionary *d, FILE *f)
   }
   for (i = 0; i < nsec; i++) {
     secname = iniparser_getsecname(d, i);
-    seclen = (int)strlen(secname);
+    seclen  = (int)strlen(secname);
     fprintf(f, "\n[%s]\n", secname);
     sprintf(keym, "%s:", secname);
     for (j = 0; j < d->size; j++) {
@@ -308,7 +307,7 @@ iniparser_getstring(dictionary *d, const char *key, char *def)
     return def;
 
   lc_key = strlwc(key);
-  sval = dictionary_get(d, lc_key, def);
+  sval   = dictionary_get(d, lc_key, def);
   return sval;
 }
 
@@ -539,7 +538,7 @@ iniparser_line(char *input_line, char *section, char *key, char *value)
     strcpy(key, strstrip(key));
     strcpy(key, strlwc(key));
     value[0] = 0;
-    sta = LINE_VALUE;
+    sta      = LINE_VALUE;
   } else {
     /* Generate syntax error */
     sta = LINE_ERROR;
@@ -575,7 +574,7 @@ iniparser_load(const char *ininame)
   int last = 0;
   int len;
   int lineno = 0;
-  int errs = 0;
+  int errs   = 0;
 
   dictionary *dict;
 

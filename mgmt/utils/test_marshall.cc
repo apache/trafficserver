@@ -62,7 +62,7 @@ const MgmtMarshallType afields[] = {
   MGMT_MARSHALL_DATA, MGMT_MARSHALL_INT, MGMT_MARSHALL_LONG, MGMT_MARSHALL_STRING, MGMT_MARSHALL_LONG, MGMT_MARSHALL_LONG,
 };
 
-const char alpha[] = "abcdefghijklmnopqrstuvwxyz0123456789";
+const char alpha[]       = "abcdefghijklmnopqrstuvwxyz0123456789";
 const char *stringvals[] = {NULL, "", "randomstring"};
 
 static bool
@@ -76,14 +76,14 @@ message_connect_channel(RegressionTest *t, int listenfd, int clientfd, int serve
 {
   //  bool need_connect = true;
   bool need_accept = true;
-  int serverfd = -1;
+  int serverfd     = -1;
 
   struct sockaddr_in in;
 
   ink_zero(in);
-  in.sin_family = AF_INET;
+  in.sin_family      = AF_INET;
   in.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-  in.sin_port = htons(serverport);
+  in.sin_port        = htons(serverport);
 
   fcntl(clientfd, F_SETFL, O_NONBLOCK);
   fcntl(listenfd, F_SETFL, O_NONBLOCK);
@@ -142,15 +142,15 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
 {
   TestBox box(t, pstatus, REGRESSION_TEST_PASSED);
 
-  int listenfd = -1;
-  int serverfd = -1;
-  int clientfd = -1;
+  int listenfd   = -1;
+  int serverfd   = -1;
+  int clientfd   = -1;
   int serverport = 0;
 
-  MgmtMarshallInt mint = 0;
-  MgmtMarshallLong mlong = 0;
+  MgmtMarshallInt mint       = 0;
+  MgmtMarshallLong mlong     = 0;
   MgmtMarshallString mstring = NULL;
-  MgmtMarshallData mdata = {NULL, 0};
+  MgmtMarshallData mdata     = {NULL, 0};
 
   clientfd = mgmt_socket(AF_INET, SOCK_STREAM, 0);
   listenfd = message_listen(serverport);
@@ -160,7 +160,7 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
   fcntl(clientfd, F_SETFL, O_NDELAY);
   fcntl(serverfd, F_SETFL, O_NDELAY);
 
-  mint = 99;
+  mint  = 99;
   mlong = (MgmtMarshallLong)(&listenfd);
 
   // Check invalid Fd write. ToDo: Commented out, see TS-3052.
@@ -168,7 +168,7 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
 
   CHECK_EQ(mgmt_message_write(clientfd, ifields, countof(ifields), &mint, &mlong), 12);
 
-  mint = 0;
+  mint  = 0;
   mlong = 0;
   CHECK_EQ(mgmt_message_read(serverfd, ifields, countof(ifields), &mint, &mlong), 12);
   CHECK_VALUE(mint, 99, "%" PRId32);
@@ -177,7 +177,7 @@ REGRESSION_TEST(MessageReadWriteA)(RegressionTest *t, int /* atype ATS_UNUSED */
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {
     const char *s = stringvals[i];
-    size_t len = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
+    size_t len    = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
 
     mstring = s ? ats_strdup(s) : NULL;
     CHECK_EQ(mgmt_message_write(clientfd, sfields, countof(sfields), &mstring), len);
@@ -214,10 +214,10 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest *t, int /* atype ATS_UNUSED */, 
 
   char msgbuf[4096];
 
-  MgmtMarshallInt mint = 0;
-  MgmtMarshallLong mlong = 0;
+  MgmtMarshallInt mint       = 0;
+  MgmtMarshallLong mlong     = 0;
   MgmtMarshallString mstring = NULL;
-  MgmtMarshallData mdata = {NULL, 0};
+  MgmtMarshallData mdata     = {NULL, 0};
 
   // Parse empty message.
   CHECK_EQ(mgmt_message_parse(NULL, 0, NULL, 0), 0);
@@ -226,7 +226,7 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   CHECK_EQ(mgmt_message_marshall(NULL, 0, NULL, 0), 0);
 
   // Marshall some integral types.
-  mint = -156;
+  mint  = -156;
   mlong = UINT32_MAX;
   CHECK_EQ(mgmt_message_marshall(msgbuf, 1, ifields, countof(ifields), &mint, &mlong), -1);
   CHECK_EQ(mgmt_message_marshall(msgbuf, sizeof(msgbuf), ifields, countof(ifields), &mint, &mlong), 12);
@@ -238,7 +238,7 @@ REGRESSION_TEST(MessageMarshall)(RegressionTest *t, int /* atype ATS_UNUSED */, 
   // Marshall a string.
   for (unsigned i = 0; i < countof(stringvals); ++i) {
     const char *s = stringvals[i];
-    size_t len = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
+    size_t len    = 4 /* length */ + (s ? strlen(s) : 0) /* bytes */ + 1 /* NULL */;
 
     mstring = s ? ats_strdup(s) : NULL;
     CHECK_EQ(mgmt_message_marshall(msgbuf, 1, sfields, countof(sfields), &mstring), -1);
@@ -282,10 +282,10 @@ REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, in
 {
   TestBox box(t, pstatus, REGRESSION_TEST_PASSED);
 
-  MgmtMarshallInt mint = 0;
-  MgmtMarshallLong mlong = 0;
+  MgmtMarshallInt mint       = 0;
+  MgmtMarshallLong mlong     = 0;
   MgmtMarshallString mstring = NULL;
-  MgmtMarshallData mdata = {NULL, 0};
+  MgmtMarshallData mdata     = {NULL, 0};
 
   // Check invalid marshall type.
   CHECK_EQ(mgmt_message_length(inval, countof(inval), NULL), -1);
@@ -310,7 +310,7 @@ REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, in
   mdata.ptr = NULL;
   CHECK_EQ(mgmt_message_length(dfields, countof(dfields), &mdata), 99 + 4);
 
-  mstring = (char *)"all fields";
+  mstring   = (char *)"all fields";
   mdata.len = 31;
   CHECK_EQ(mgmt_message_length(afields, countof(afields), &mdata, &mint, &mlong, &mstring, &mlong, &mlong),
            31 + 4 + 4 + 8 + sizeof("all fields") + 4 + 8 + 8);
@@ -321,8 +321,7 @@ REGRESSION_TEST(MessageLength)(RegressionTest *t, int /* atype ATS_UNUSED */, in
 }
 
 int
-main(void)
+main(int argc, const char **argv)
 {
-  RegressionTest::run();
-  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
+  return RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
 }

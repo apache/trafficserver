@@ -1,0 +1,67 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/setting-a-transaction-hook.en.rst:21
+msgid "Setting a Transaction Hook"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/setting-a-transaction-hook.en.rst:23
+msgid ""
+"If the request does not have the ``Proxy-Authorization`` field set to Basic "
+"authorization or a valid username/password, then the plugin sends the 407 "
+"Proxy authorization ``required`` status code back to the client. The client "
+"will then prompt the user for a username and password, and then resend the "
+"request."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/setting-a-transaction-hook.en.rst:29
+msgid ""
+"In the ``handle_dns`` routine, the following lines handle the authorization "
+"error case:"
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/setting-a-transaction-hook.en.rst:38
+msgid ""
+"If ``handle_dns`` does not find the ``Proxy-Authorization`` field set to "
+"Basic authorization or a valid username/password, then it adds a "
+"``SEND_RESPONSE_HDR_HOOK`` to the transaction being processed. This means "
+"that Traffic Server will call the plugin back when sending the client "
+"response. ``handle_dns`` reenables the transaction with "
+"``TS_EVENT_HTTP_ERROR``, which means that the plugin wants Traffic Server "
+"to terminate the transaction."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/setting-a-transaction-hook.en.rst:46
+msgid ""
+"When Traffic Server terminates the transaction, it sends the client an "
+"error message. Because of the ``SEND_RESPONSE_HDR_HOOK``, Traffic Server "
+"calls the plugin back. The ``auth-plugin`` routine calls "
+"``handle_response`` to send the client a ``407`` status code. When the "
+"client resends the request with the ``Proxy-Authorization`` field, a new "
+"transaction begins."
+msgstr ""
+
+#: ../../developer-guide/plugins/example-plugins/basic-authorization/setting-a-transaction-hook.en.rst:53
+msgid ""
+"``handle_dns`` calls ``base64_decode`` to decode the username and password; "
+"``handle_dns`` also calls ``authorized`` to validate the username and "
+"password. In this plugin, sample NT code is provided for password "
+"validation. UNIX programmers can supply their own validation mechanism."
+msgstr ""

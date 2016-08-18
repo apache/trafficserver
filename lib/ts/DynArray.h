@@ -52,10 +52,8 @@ private:
   int pos;
 };
 
-
 template <class T>
-inline DynArray<T>::DynArray(const T *val, intptr_t initial_size)
-  : data(NULL), default_val(val), size(0), pos(-1)
+inline DynArray<T>::DynArray(const T *val, intptr_t initial_size) : data(NULL), default_val(val), size(0), pos(-1)
 {
   if (initial_size > 0) {
     int i = 1;
@@ -91,7 +89,9 @@ template <class T> inline T &DynArray<T>::operator[](intptr_t idx)
   return data[idx];
 }
 
-template <class T> inline T &DynArray<T>::operator()(intptr_t idx)
+template <class T>
+inline T &
+DynArray<T>::operator()(intptr_t idx)
 {
   if (idx >= size) {
     intptr_t new_size;
@@ -122,7 +122,7 @@ DynArray<T>::detach()
 {
   T *d;
 
-  d = data;
+  d    = data;
   data = NULL;
 
   return d;
@@ -152,7 +152,7 @@ DynArray<T>::clear()
   }
 
   size = 0;
-  pos = -1;
+  pos  = -1;
 }
 
 template <class T>
@@ -188,6 +188,5 @@ DynArray<T>::resize(intptr_t new_size)
     size = new_size;
   }
 }
-
 
 #endif /* __DYN_ARRAY_H__ */

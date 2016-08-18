@@ -1,8 +1,3 @@
-.. _healthcheck-plugin:
-
-Health Check Plugin
-**************
-
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
    distributed with this work for additional information
@@ -20,12 +15,20 @@ Health Check Plugin
    specific language governing permissions and limitations
    under the License.
 
+.. include:: ../../common.defs
+
+.. _admin-plugins-healthchecks:
+
+Health Checks Plugin
+********************
+
 This is a simple plugin, to provide basic (but configurable) health checks.
 This is a server intercept plugin, and it takes one single configuration
 option in plugin.config, the configuration file name.
 
 Configuration
 =============
+
 To enable the healthchecks plugin, insert the following line in
 :file:`plugin.config`::
 
@@ -57,6 +60,7 @@ http://www.example.com/__hc that would check if the file
 a response is built with the contents of the ``ts-alive`` file, a mime
 type of ``text/plain`` and a status code of ``200``.  If the file does not
 exist, a ``403`` response is sent::
+
    /__hc  /var/run/ts-alive  text/plain 200  403
 
 

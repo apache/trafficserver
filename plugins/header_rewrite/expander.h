@@ -31,12 +31,10 @@ class VariableExpander
 {
 public:
   VariableExpander(const std::string &source) : _source(source) {}
-
   std::string expand(const Resources &res);
 
 private:
   std::string _source;
 };
-
 
 #endif // __EXPANDER_H

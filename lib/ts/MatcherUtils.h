@@ -130,7 +130,8 @@ struct config_parse_error {
 
   explicit config_parse_error(const char *fmt, ...) TS_NONNULL(2) TS_PRINTFLIKE(2, 3);
 
-  config_parse_error &operator=(const config_parse_error &rhs)
+  config_parse_error &
+  operator=(const config_parse_error &rhs)
   {
     if (rhs.msg.get()) {
       this->msg = ats_strdup(rhs.msg.get());
@@ -149,10 +150,8 @@ struct config_parse_error {
 
   // A config error object evaluates to true if there is an error message.
   operator bool() const { return msg.get() != NULL; }
-
 private:
   config_parse_error() {}
-
   ats_scoped_str msg;
 };
 

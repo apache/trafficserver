@@ -85,11 +85,20 @@ struct InterceptPlugin::State {
   bool plugin_io_done_;
 
   State(TSCont cont, InterceptPlugin *plugin)
-    : cont_(cont), net_vc_(NULL), expected_body_size_(0), num_body_bytes_read_(0), hdr_parsed_(false), hdr_buf_(NULL),
-      hdr_loc_(NULL), num_bytes_written_(0), plugin_(plugin), timeout_action_(NULL), plugin_io_done_(false)
+    : cont_(cont),
+      net_vc_(NULL),
+      expected_body_size_(0),
+      num_body_bytes_read_(0),
+      hdr_parsed_(false),
+      hdr_buf_(NULL),
+      hdr_loc_(NULL),
+      num_bytes_written_(0),
+      plugin_(plugin),
+      timeout_action_(NULL),
+      plugin_io_done_(false)
   {
     plugin_mutex_ = plugin->getMutex();
-    http_parser_ = TSHttpParserCreate();
+    http_parser_  = TSHttpParserCreate();
   }
 
   ~State()
@@ -113,7 +122,7 @@ void destroyCont(InterceptPlugin::State *state);
 InterceptPlugin::InterceptPlugin(Transaction &transaction, InterceptPlugin::Type type) : TransactionPlugin(transaction)
 {
   TSCont cont = TSContCreate(handleEvents, TSMutexCreate());
-  state_ = new State(cont, this);
+  state_      = new State(cont, this);
   TSContDataSet(cont, state_);
   TSHttpTxn txn = static_cast<TSHttpTxn>(transaction.getAtsHandle());
   if (type == SERVER_INTERCEPT) {
@@ -137,6 +146,7 @@ InterceptPlugin::~InterceptPlugin()
 bool
 InterceptPlugin::produce(const void *data, int data_size)
 {
+  ScopedSharedMutexLock lock(getMutex());
   if (!state_->net_vc_) {
     LOG_ERROR("Intercept not operational");
     return false;
@@ -144,7 +154,7 @@ InterceptPlugin::produce(const void *data, int data_size)
   if (!state_->output_.buffer_) {
     state_->output_.buffer_ = TSIOBufferCreate();
     state_->output_.reader_ = TSIOBufferReaderAlloc(state_->output_.buffer_);
-    state_->output_.vio_ = TSVConnWrite(state_->net_vc_, state_->cont_, state_->output_.reader_, INT64_MAX);
+    state_->output_.vio_    = TSVConnWrite(state_->net_vc_, state_->cont_, state_->output_.reader_, INT64_MAX);
   }
   int num_bytes_written = TSIOBufferWrite(state_->output_.buffer_, data, data_size);
   if (num_bytes_written != data_size) {
@@ -198,7 +208,7 @@ InterceptPlugin::doRead()
     const char *data, *startptr;
     TSIOBufferBlock block = TSIOBufferReaderStart(state_->input_.reader_);
     while (block != NULL) {
-      startptr = data = TSIOBufferBlockReadStart(block, state_->input_.reader_, &data_len);
+      startptr = data         = TSIOBufferBlockReadStart(block, state_->input_.reader_, &data_len);
       num_body_bytes_in_block = 0;
       if (!state_->hdr_parsed_) {
         const char *endptr = data + data_len;
@@ -267,10 +277,10 @@ InterceptPlugin::handleEvent(int abstract_event, void *edata)
   switch (event) {
   case TS_EVENT_NET_ACCEPT:
     LOG_DEBUG("Handling net accept");
-    state_->net_vc_ = static_cast<TSVConn>(edata);
+    state_->net_vc_        = static_cast<TSVConn>(edata);
     state_->input_.buffer_ = TSIOBufferCreate();
     state_->input_.reader_ = TSIOBufferReaderAlloc(state_->input_.buffer_);
-    state_->input_.vio_ = TSVConnRead(state_->net_vc_, state_->cont_, state_->input_.buffer_,
+    state_->input_.vio_    = TSVConnRead(state_->net_vc_, state_->cont_, state_->input_.buffer_,
                                       INT64_MAX /* number of bytes to read - high value initially */);
 
     state_->hdr_buf_ = TSMBufferCreate();
@@ -316,7 +326,7 @@ handleEvents(TSCont cont, TSEvent pristine_event, void *pristine_edata)
 {
   // Separating pristine and mutable data helps debugging
   TSEvent event = pristine_event;
-  void *edata = pristine_edata;
+  void *edata   = pristine_edata;
 
   InterceptPlugin::State *state = static_cast<InterceptPlugin::State *>(TSContDataGet(cont));
   if (!state) { // plugin is done, return.

@@ -49,15 +49,14 @@ class TestDnsStateMachine;
 //
 //////////////////////////////////////////////////////////////////////////////
 
-unsigned g_host_ip = 0;
-char *in_file_name = "test_dns.in";
-char *out_file_name = "test_dns.out";
-char *rate_file_name = "rates.out";
+unsigned g_host_ip        = 0;
+char *in_file_name        = "test_dns.in";
+char *out_file_name       = "test_dns.out";
+char *rate_file_name      = "rates.out";
 char *rate_misc_file_name = "rates.misc.out";
 ofstream fout;
 ofstream fout_rate, fout_rate_misc;
 FILE *fin;
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -96,7 +95,6 @@ TestDnsStateMachine::TestDnsStateMachine(char *ahost, size_t size) : Continuatio
   SET_HANDLER(processEvent);
   return;
 }
-
 
 inline const char *
 TestDnsStateMachine::currentStateName()
@@ -147,7 +145,7 @@ TestDnsStateMachine::processEvent(int event, void *data)
       ink_assert(!"Error - host has no value\n");
     if (data) {
       HostEnt *ent = (HostEnt *)data;
-      g_host_ip = ((struct in_addr *)ent->h_addr_list[0])->s_addr;
+      g_host_ip    = ((struct in_addr *)ent->h_addr_list[0])->s_addr;
       //        cout << "  dns lookup is done <" << g_host_ip << ">" << endl;
       //          cout << "<" << host << "> <" << g_host_ip << ">\n";
       fout << "<" << host << "> <" << g_host_ip << ">\n";
@@ -157,7 +155,7 @@ TestDnsStateMachine::processEvent(int event, void *data)
       fout << "<" << host << "> <>\n";
     }
     fout.flush();
-    rvalue = VC_EVENT_DONE;
+    rvalue  = VC_EVENT_DONE;
     m_state = 99; // Some Undefined state value
     complete();
     delete this;
@@ -181,9 +179,9 @@ complete()
   ink_hrtime now;
   state_machines_finished++;
   if (!(state_machines_finished % measurement_interval)) {
-    now = ink_get_hrtime();
-    cumul_throughput = state_machines_finished * 1.0 * HRTIME_SECOND / (now - start_time);
-    throughput = measurement_interval * 1.0 * HRTIME_SECOND / (now - last_measurement_time);
+    now                   = Thread::get_hrtime();
+    cumul_throughput      = state_machines_finished * 1.0 * HRTIME_SECOND / (now - start_time);
+    throughput            = measurement_interval * 1.0 * HRTIME_SECOND / (now - last_measurement_time);
     last_measurement_time = now;
     //    cout << state_machines_finished << ": " <<
     //    "Cumul. Thrput " << cumul_throughput <<
@@ -199,7 +197,7 @@ complete()
     fout_rate.flush();
   }
   if (state_machines_finished == state_machines_created) {
-    now = ink_get_hrtime();
+    now = Thread::get_hrtime();
     fout_rate_misc << (now - start_time) * 1.0 / HRTIME_SECOND << "\n";
     fout_rate_misc.flush();
     fout.close();
@@ -236,18 +234,18 @@ test()
   fout.open(out_file_name);
   fout_rate.open(rate_file_name);
   fout_rate_misc.open(rate_misc_file_name);
-  i = 0;
-  state_machines_created = N_STATE_MACHINES;
+  i                       = 0;
+  state_machines_created  = N_STATE_MACHINES;
   state_machines_finished = 0;
-  measurement_interval = MEASUREMENT_INTERVAL;
-  start_time = ink_get_hrtime();
-  last_measurement_time = ink_get_hrtime();
+  measurement_interval    = MEASUREMENT_INTERVAL;
+  start_time              = Thread::get_hrtime();
+  last_measurement_time   = Thread::get_hrtime();
   while ((fscanf(fin, "%s", host) != EOF) && (i < state_machines_created)) {
     test_dns_state_machine = new TestDnsStateMachine(host, sizeof(host));
     test_dns_state_machine->handleEvent();
     i++;
   }
-  now = ink_get_hrtime();
+  now = Thread::get_hrtime();
   cout << "Finished creating all Continuations at " << (now - start_time) / HRTIME_SECOND << " sec and "
        << (now - start_time) % HRTIME_SECOND << "nanosec\n";
   fout_rate_misc << (now - start_time) * 1.0 / HRTIME_SECOND << "\n";

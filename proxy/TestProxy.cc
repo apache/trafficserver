@@ -30,7 +30,6 @@
 #include "OneWayMultiTunnel.h"
 #include "Cache.h"
 
-
 struct TestProxy : Continuation {
   VConnection *vc;
   VConnection *vconnection_vector[2];
@@ -113,9 +112,9 @@ struct TestProxy : Continuation {
       printf("TestProxy startEvent error %d %X\n", event, (unsigned int)vio->vc_server);
       return done();
     }
-    inVIO = vio;
-    vc = (NetVConnection *)vio->vc_server;
-    int res = 0;
+    inVIO       = vio;
+    vc          = (NetVConnection *)vio->vc_server;
+    int res     = 0;
     char *thost = NULL;
     if ((res = gets(vio))) {
       if (res < 0) {
@@ -128,28 +127,28 @@ struct TestProxy : Continuation {
         s[res - 1] = 0;
       // printf("got [%s]\n",s);
       if (s[4] == '/') {
-        url = s + 5;
-        url_end = strchr(url, ' ');
+        url      = s + 5;
+        url_end  = strchr(url, ' ');
         *url_end = 0;
         SET_HANDLER(fileEvent);
         diskProcessor.open_vc(this, url, O_RDONLY);
         return EVENT_DONE;
       } else
-        thost = s + 11;         // GET http
-      url = strchr(thost, '/'); // done before portStr stompage */
-      temp = strchr(thost, ' ');
+        thost = s + 11;             // GET http
+      url     = strchr(thost, '/'); // done before portStr stompage */
+      temp    = strchr(thost, ' ');
       ink_assert(temp - thost < 1024);
       ink_strlcpy(url_str, thost, sizeof(url_str));
       if (!url)
         return done();
       char *portStr = strchr(thost, ':');
-      *url = 0;
+      *url          = 0;
       if (portStr == NULL) {
         port = 80;
         ink_strlcpy(host, thost, sizeof(host));
       } else {
         *portStr = '\0'; /* close off the hostname */
-        port = atoi(portStr + 1);
+        port     = atoi(portStr + 1);
         ink_strlcpy(host, thost, sizeof(host));
         *portStr = ':';
       }
@@ -170,7 +169,7 @@ struct TestProxy : Continuation {
     if (event == CLUSTER_EVENT_OPEN) {
       if (!data)
         return done();
-      remote = (VConnection *)data;
+      remote        = (VConnection *)data;
       clusterOutVIO = remote->do_io(VIO::WRITE, this, INT64_MAX, inbuf);
       ink_assert(clusterOutVIO);
       SET_HANDLER(tunnelEvent);
@@ -239,10 +238,10 @@ struct TestProxy : Continuation {
     } else if (event == CACHE_EVENT_LOOKUP_FAILED) {
       cout << "Getting the object from origin server\n";
       SET_HANDLER(cacheCreateCacheFileEvent);
-      objinfo = new CacheObjInfo;
-      request_header = new HttpHeader;
+      objinfo               = new CacheObjInfo;
+      request_header        = new HttpHeader;
       request_header->m_url = *url_struct;
-      objinfo->request = *request_header;
+      objinfo->request      = *request_header;
       cacheProcessor.open_write(this, objinfo, false, CACHE_UNKNOWN_SIZE);
       return EVENT_DONE;
     } else {
@@ -307,7 +306,7 @@ struct TestProxy : Continuation {
     vconnection_vector[0] = vc;
     vconnection_vector[1] = cachefile;
     {
-      int n = cachefile ? 2 : 1;
+      int n     = cachefile ? 2 : 1;
       cachefile = 0;
       new OneWayMultiTunnel(remote, vconnection_vector, n, this, TUNNEL_TILL_DONE, true, true, true);
     }
@@ -364,7 +363,7 @@ struct TestProxy : Continuation {
       return EVENT_CONT;
     }
     remote = 0;
-    vc = 0;
+    vc     = 0;
     if (event != VC_EVENT_EOS) {
       printf("TestProxy sendEvent error %d\n", event);
       return done();
@@ -374,8 +373,18 @@ struct TestProxy : Continuation {
   }
 
   TestProxy(MIOBuffer *abuf)
-    : Continuation(new_ProxyMutex()), vc(0), remote(0), inbuf(abuf), outbuf(0), clusterOutVIO(0), inVIO(0), url(0), url_end(0),
-      amode(0), tunnel(0), cachefile(0)
+    : Continuation(new_ProxyMutex()),
+      vc(0),
+      remote(0),
+      inbuf(abuf),
+      outbuf(0),
+      clusterOutVIO(0),
+      inVIO(0),
+      url(0),
+      url_end(0),
+      amode(0),
+      tunnel(0),
+      cachefile(0)
   {
     SET_HANDLER(startEvent);
   }
@@ -403,7 +412,7 @@ redirect_test(Machine *m, void *data, int len)
   (void)m;
   (void)len;
   MIOBuffer *buf = new_MIOBuffer();
-  TestProxy *c = new TestProxy(buf);
+  TestProxy *c   = new TestProxy(buf);
   SET_CONTINUATION_HANDLER(c, clusterEvent);
   clusterProcessor.connect(c, *(ClusterVCToken *)data);
 }

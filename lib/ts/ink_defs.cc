@@ -40,7 +40,7 @@
 #endif /* MAGIC_EDITING_TAG */
 
 int off = 0;
-int on = 1;
+int on  = 1;
 
 #if TS_USE_HWLOC
 
@@ -71,18 +71,18 @@ ink_get_topology()
 int
 ink_sys_name_release(char *name, int namelen, char *release, int releaselen)
 {
-  *name = 0;
+  *name    = 0;
   *release = 0;
 #if defined(freebsd) || defined(darwin)
   int mib[2];
   size_t len = namelen;
-  mib[0] = CTL_KERN;
-  mib[1] = KERN_OSTYPE;
+  mib[0]     = CTL_KERN;
+  mib[1]     = KERN_OSTYPE;
 
   if (sysctl(mib, 2, name, &len, NULL, 0) == -1)
     return -1;
 
-  len = releaselen;
+  len    = releaselen;
   mib[0] = CTL_KERN;
   mib[1] = KERN_OSRELEASE;
 
@@ -126,8 +126,8 @@ ink_number_of_processors()
 #endif
 #elif defined(freebsd)
   int mib[2], n;
-  mib[0] = CTL_HW;
-  mib[1] = HW_NCPU;
+  mib[0]     = CTL_HW;
+  mib[1]     = HW_NCPU;
   size_t len = sizeof(n);
   if (sysctl(mib, 2, &n, &len, NULL, 0) == -1)
     return 1;

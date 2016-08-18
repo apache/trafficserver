@@ -1,0 +1,35 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic Server package.
+#
+# Translators:
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016
+# Masaori Koshiba <masaori@apache.org>, 2016
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.x\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-15 00:13+0900\n"
+"PO-Revision-Date: 2016-02-13 12:45+0000\n"
+"Last-Translator: Masaori Koshiba <masaori@apache.org>\n"
+"Language-Team: Japanese (http://www.transifex.com/trafficserver/apache-"
+"traffic-server-6x/language/ja/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../../developer-guide/api/index.en.rst:23
+msgid "API Reference"
+msgstr "API リファレンス"
+
+#: ../../../developer-guide/api/index.en.rst:25
+msgid ""
+"For an introduction to the |TS| API, how to link it to your plugin, and the "
+"methods of passing parameters to your plugin at runetime, please refer to :"
+"func:`TSAPI`."
+msgstr ""
+"|TS| API を一つ紹介すると、プラグインをリンクして、プラグインに変数を渡すメ"
+"ソッド\n"
+":func:`TSAPI` を参照してください。"

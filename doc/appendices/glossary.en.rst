@@ -146,4 +146,15 @@ Glossary
       by Traffic Server.
 
    cache partition
+      A subdivision of the cache storage in |TS| which is dedicated to objects
+      for specific protocols, origins, or other rules. Defining and managing
+      cache partitions is discussed in :ref:`partitioning-the-cache`.
 
+   global plugin
+      A plugin which operates on all transactions. Contrast with
+      :term:`remap plugin`.
+
+   remap plugin
+      A plugin which operates only on transactions matching specific remap
+      rules as defined in :file:`remap.config`. Contrast with
+      :term:`global plugin`.

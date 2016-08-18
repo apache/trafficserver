@@ -58,7 +58,8 @@ struct RegressionSM : public Continuation {
   int nchildren;
   DynArray<RegressionSM *> children;
   intptr_t n, ichild;
-  bool par, rep;
+  bool parallel;
+  bool repeat;
   Action *pending_action;
 
   int regression_sm_start(int event, void *data);
@@ -68,8 +69,17 @@ struct RegressionSM : public Continuation {
   void xrun(RegressionSM *parent);
 
   RegressionSM(RegressionTest *at = NULL)
-    : t(at), status(REGRESSION_TEST_INPROGRESS), pstatus(0), parent(0), nwaiting(0), nchildren(0), children(0), ichild(0),
-      par(false), rep(false), pending_action(0)
+    : t(at),
+      status(REGRESSION_TEST_INPROGRESS),
+      pstatus(0),
+      parent(0),
+      nwaiting(0),
+      nchildren(0),
+      children(0),
+      ichild(0),
+      parallel(false),
+      repeat(false),
+      pending_action(0)
   {
     mutex = new_ProxyMutex();
   }

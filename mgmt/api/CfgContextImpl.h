@@ -36,7 +36,6 @@
 
 #include "ts/List.h"
 
-
 /**********************************************************************
  * CfgEleObj
  *
@@ -49,12 +48,11 @@ public:
      using INK<file>Ele or a TokenList */
 
   virtual ~CfgEleObj() {} // virtual destructor
-
   virtual char *formatEleToRule() = 0;
-  virtual bool isValid() = 0;
+  virtual bool isValid()          = 0;
 
   /* these are implemented as inline functons by subclasses */
-  virtual TSCfgEle *getCfgEle() = 0;     /* returns actual ele */
+  virtual TSCfgEle *getCfgEle()     = 0; /* returns actual ele */
   virtual TSCfgEle *getCfgEleCopy() = 0; /* returns copy of ele */
   virtual TSRuleTypeT getRuleType() = 0;
 
@@ -308,7 +306,6 @@ private:
   TSLogObjectEle *m_ele;
 };
 
-
 /* parent.config       *******************************************/
 class ParentProxyObj : public CfgEleObj
 {
@@ -439,7 +436,6 @@ private:
   TSSocksEle *m_ele;
 };
 
-
 /* splitdns.config     *******************************************/
 class SplitDnsObj : public CfgEleObj
 {
@@ -492,7 +488,6 @@ private:
   TSStorageEle *m_ele;
 };
 
-
 /* vaddrs.config       *******************************************/
 class VirtIpAddrObj : public CfgEleObj
 {
@@ -518,7 +513,6 @@ public:
 private:
   TSVirtIpAddrEle *m_ele;
 };
-
 
 /*****************************************************************
  * CfgContext
@@ -566,6 +560,5 @@ private:
   int m_ver; /* version of the file read */
   Queue<CfgEleObj> m_eles;
 };
-
 
 #endif

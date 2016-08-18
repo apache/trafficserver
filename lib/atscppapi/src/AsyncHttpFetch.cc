@@ -54,8 +54,14 @@ struct atscppapi::AsyncHttpFetchState : noncopyable {
 
   AsyncHttpFetchState(const string &url_str, HttpMethod http_method, string request_body,
                       AsyncHttpFetch::StreamingFlag streaming_flag)
-    : request_body_(request_body), result_(AsyncHttpFetch::RESULT_FAILURE), body_(NULL), body_size_(0), hdr_buf_(NULL),
-      hdr_loc_(NULL), streaming_flag_(streaming_flag), fetch_sm_(NULL)
+    : request_body_(request_body),
+      result_(AsyncHttpFetch::RESULT_FAILURE),
+      body_(NULL),
+      body_size_(0),
+      hdr_buf_(NULL),
+      hdr_loc_(NULL),
+      streaming_flag_(streaming_flag),
+      fetch_sm_(NULL)
   {
     request_.reset(new Request(url_str, http_method,
                                (streaming_flag_ == AsyncHttpFetch::STREAMING_DISABLED) ? HTTP_VERSION_1_0 : HTTP_VERSION_1_1));
@@ -82,14 +88,14 @@ struct atscppapi::AsyncHttpFetchState : noncopyable {
 namespace
 {
 const unsigned int LOCAL_IP_ADDRESS = 0x0100007f;
-const int LOCAL_PORT = 8080;
+const int LOCAL_PORT                = 8080;
 
 static int
 handleFetchEvents(TSCont cont, TSEvent event, void *edata)
 {
   LOG_DEBUG("Received fetch event = %d, edata = %p", event, edata);
   AsyncHttpFetch *fetch_provider = static_cast<AsyncHttpFetch *>(TSContDataGet(cont));
-  AsyncHttpFetchState *state = utils::internal::getAsyncHttpFetchState(*fetch_provider);
+  AsyncHttpFetchState *state     = utils::internal::getAsyncHttpFetchState(*fetch_provider);
 
   if (state->streaming_flag_ == AsyncHttpFetch::STREAMING_DISABLED) {
     if (event == static_cast<int>(AsyncHttpFetch::RESULT_SUCCESS)) {
@@ -98,14 +104,14 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
       const char *data_start = TSFetchRespGet(txn, &data_len);
       if (data_start && (data_len > 0)) {
         const char *data_end = data_start + data_len;
-        TSHttpParser parser = TSHttpParserCreate();
-        state->hdr_buf_ = TSMBufferCreate();
-        state->hdr_loc_ = TSHttpHdrCreate(state->hdr_buf_);
+        TSHttpParser parser  = TSHttpParserCreate();
+        state->hdr_buf_      = TSMBufferCreate();
+        state->hdr_loc_      = TSHttpHdrCreate(state->hdr_buf_);
         TSHttpHdrTypeSet(state->hdr_buf_, state->hdr_loc_, TS_HTTP_TYPE_RESPONSE);
         if (TSHttpHdrParseResp(parser, state->hdr_buf_, state->hdr_loc_, &data_start, data_end) == TS_PARSE_DONE) {
           TSHttpStatus status = TSHttpHdrStatusGet(state->hdr_buf_, state->hdr_loc_);
-          state->body_ = data_start; // data_start will now be pointing to body
-          state->body_size_ = data_end - data_start;
+          state->body_        = data_start; // data_start will now be pointing to body
+          state->body_size_   = data_end - data_start;
           utils::internal::initResponse(state->response_, state->hdr_buf_, state->hdr_loc_);
           LOG_DEBUG("Fetch result had a status code of %d with a body length of %ld", status, state->body_size_);
         } else {
@@ -183,9 +189,9 @@ AsyncHttpFetch::run()
   TSContDataSet(fetchCont, static_cast<void *>(this)); // Providers have to clean themselves up when they are done.
 
   struct sockaddr_in addr;
-  addr.sin_family = AF_INET;
+  addr.sin_family      = AF_INET;
   addr.sin_addr.s_addr = LOCAL_IP_ADDRESS;
-  addr.sin_port = LOCAL_PORT;
+  addr.sin_port        = LOCAL_PORT;
 
   Headers &headers = state_->request_->getHeaders();
   if (headers.size()) {
@@ -226,7 +232,7 @@ AsyncHttpFetch::run()
     string header_value;
     for (Headers::iterator iter = headers.begin(), end = headers.end(); iter != end; ++iter) {
       HeaderFieldName header_name = (*iter).name();
-      header_value = (*iter).values();
+      header_value                = (*iter).values();
       TSFetchHeaderAdd(state_->fetch_sm_, header_name.c_str(), header_name.length(), header_value.data(), header_value.size());
     }
     LOG_DEBUG("Launching streaming fetch");
@@ -271,7 +277,7 @@ AsyncHttpFetch::getResponse() const
 void
 AsyncHttpFetch::getResponseBody(const void *&body, size_t &body_size) const
 {
-  body = state_->body_;
+  body      = state_->body_;
   body_size = state_->body_size_;
 }
 

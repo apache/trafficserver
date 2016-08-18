@@ -25,7 +25,7 @@
 
 PriorityEventQueue::PriorityEventQueue()
 {
-  last_check_time = ink_get_based_hrtime_internal();
+  last_check_time    = Thread::get_hrtime_updated();
   last_check_buckets = last_check_time / PQ_BUCKET_TIME(0);
 }
 
@@ -34,9 +34,9 @@ PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
 {
   int i, j, k = 0;
   uint32_t check_buckets = (uint32_t)(now / PQ_BUCKET_TIME(0));
-  uint32_t todo_buckets = check_buckets ^ last_check_buckets;
-  last_check_time = now;
-  last_check_buckets = check_buckets;
+  uint32_t todo_buckets  = check_buckets ^ last_check_buckets;
+  last_check_time        = now;
+  last_check_buckets     = check_buckets;
   todo_buckets &= ((1 << (N_PQ_LIST - 1)) - 1);
   while (todo_buckets) {
     k++;
@@ -49,7 +49,7 @@ PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
     while ((e = q.dequeue()) != NULL) {
       if (e->cancelled) {
         e->in_the_priority_queue = 0;
-        e->cancelled = 0;
+        e->cancelled             = 0;
         EVENT_FREE(e, eventAllocator, t);
       } else {
         ink_hrtime tt = e->timeout_at - now;

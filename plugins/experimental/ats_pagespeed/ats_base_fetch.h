@@ -34,7 +34,6 @@
 #include "net/instaweb/http/public/headers.h"
 #include "net/instaweb/util/public/string.h"
 
-
 namespace net_instaweb
 {
 class AtsServerContext;
@@ -107,6 +106,5 @@ private:
 };
 
 } /* ats_pagespeed */
-
 
 #endif /* ATS_BASE_FETCH_H_ */

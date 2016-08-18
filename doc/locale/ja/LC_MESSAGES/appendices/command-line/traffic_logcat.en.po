@@ -1,0 +1,140 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:108
+msgid ":manpage:`tail(1)`"
+msgstr ":manpage:`tail(1)`"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:28
+msgid ""
+":program:`traffic_logcat` [-o output-file | -a] [-CEhSVw2] [input-file ...]"
+msgstr ""
+":program:`traffic_logcat` [-o output-file | -a] [-CEhSVw2] [input-file ...]"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:47
+msgid ""
+"Automatically generates the output filename based on the input filename. If "
+"the input is from stdin, then this option is ignored. For example::"
+msgstr ""
+"入力ファイル名に基づいて自動的に出力ファイル名を生成します。入力が標準入力で"
+"ある場合、このオプションは無視されます。例えば::"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:31
+msgid "Description"
+msgstr "解説"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:59
+msgid "Follows the file, like :manpage:`tail(1)` ``-f``"
+msgstr ":manpage:`tail(1)` ``-f`` のようにファイルを追跡します。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:63
+msgid ""
+"Attempts to transform the input to Netscape Common format, if possible."
+msgstr "可能な場合、入力を Netscape Common フォーマットに変換しようとします。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:37
+msgid "Options"
+msgstr "オプション"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:43
+msgid "Specifies where the command output is directed."
+msgstr "コマンドの出力先を記述します。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:26
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:33
+msgid ""
+"To analyse a binary log file using standard tools, you must first convert "
+"it to ASCII. :program:`traffic_logcat` does exactly that."
+msgstr ""
+"標準的なツールを使用してバイナリログファイルを分析するためには、まず ASCII "
+"に変換する必要があります。 :program:`traffic_logcat` はまさにそれを行いま"
+"す。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:53
+msgid "generates::"
+msgstr "次のファイルを生成します。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:75
+msgid ""
+"Attempt to transform the input to Netscape Extended-2 format, if possible."
+msgstr ""
+"可能な場合、入力を Netscape Extended-2 フォーマットに変換しようとします。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:67
+msgid ""
+"Attempts to transform the input to Netscape Extended format, if possible."
+msgstr ""
+"可能な場合、入力を Netscape Extended フォーマットに変換しようとします。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:71
+msgid "Attempts to transform the input to Squid format, if possible."
+msgstr "可能な場合、入力を Squid フォーマットに変換しようとします。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:96
+msgid ""
+"For example, to convert a binary log file to an ASCII file, you can use "
+"the :program:`traffic_logcat` command with either of the following options "
+"below::"
+msgstr ""
+"例えば、バイナリログファイルを ASCII に変換するために :program:"
+"`traffic_logcat` コマンドと共に次のオプションのいずれかを使用することができ"
+"ます。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:92
+msgid ""
+"If no input files are specified, then :program:`traffic_logcat` reads from "
+"the standard input (``stdin``). If you do not specify an output file, then :"
+"program:`traffic_logcat` writes to the standard output (``stdout``)."
+msgstr ""
+"入力ファイルが指定されなかった場合、:program:`traffic_logcat` は標準入力 "
+"( ``stdin`` ) から読み込みます。出力ファイルを指定しなかった場合、 :program:"
+"`traffic_logcat` は標準出力 ( ``stdout`` ) に書き込みます。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:83
+msgid "Print usage information and exit."
+msgstr "使い方の情報を表示して終了します。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:87
+msgid "Print version information and exit."
+msgstr "バージョン情報を表示して終了します。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:106
+msgid "See Also"
+msgstr "参照"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:103
+msgid "The binary log file is not modified by this command."
+msgstr "バイナリログファイルはこのコマンドによって変更されません。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:90
+msgid ""
+"Use only one of the following options at any given time: ``-S``, ``-C``, ``-"
+"E``, or ``-2``."
+msgstr ""
+"``-S`` と ``-C``、 ``-E``、 ``-2`` はいかなるときでもいずれか 1 つしか使用で"
+"きません。"
+
+#: ../../appendices/command-line/traffic_logcat.en.rst:23
+msgid "traffic_logcat"
+msgstr "traffic_logcat"

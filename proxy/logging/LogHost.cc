@@ -46,25 +46,58 @@
 #define PING true
 #define NOPING false
 
+static Ptr<LogFile>
+make_orphan_logfile(LogHost *lh, const char *filename)
+{
+  const char *ext   = "orphan";
+  unsigned name_len = (unsigned)(strlen(filename) + strlen(lh->name()) + strlen(ext) + 16);
+  char *name_buf    = (char *)ats_malloc(name_len);
+
+  // NT: replace ':'s with '-'s.  This change is necessary because
+  // NT doesn't like filenames with ':'s in them.  ^_^
+  snprintf(name_buf, name_len, "%s%s%s-%u.%s", filename, LOGFILE_SEPARATOR_STRING, lh->name(), lh->port(), ext);
+
+  // XXX should check for conflicts with orphan filename
+
+  Ptr<LogFile> orphan(new LogFile(name_buf, NULL, LOG_FILE_ASCII, lh->signature()));
+
+  ats_free(name_buf);
+  return orphan;
+}
+
 /*-------------------------------------------------------------------------
   LogHost
   -------------------------------------------------------------------------*/
 
 LogHost::LogHost(const char *object_filename, uint64_t object_signature)
-  : m_object_filename(ats_strdup(object_filename)), m_object_signature(object_signature), m_port(0), m_name(NULL), m_sock(NULL),
-    m_sock_fd(-1), m_connected(false), m_orphan_file(NULL), m_log_collation_client_sm(NULL)
+  : m_object_filename(ats_strdup(object_filename)),
+    m_object_signature(object_signature),
+    m_port(0),
+    m_name(NULL),
+    m_sock(NULL),
+    m_sock_fd(-1),
+    m_connected(false),
+    m_orphan_file(NULL),
+    m_log_collation_client_sm(NULL)
 {
   ink_zero(m_ip);
   ink_zero(m_ipstr);
 }
 
 LogHost::LogHost(const LogHost &rhs)
-  : m_object_filename(ats_strdup(rhs.m_object_filename)), m_object_signature(rhs.m_object_signature), m_ip(rhs.m_ip), m_port(0),
-    m_name(ats_strdup(rhs.m_name)), m_sock(NULL), m_sock_fd(-1), m_connected(false), m_orphan_file(NULL),
+  : m_object_filename(ats_strdup(rhs.m_object_filename)),
+    m_object_signature(rhs.m_object_signature),
+    m_ip(rhs.m_ip),
+    m_port(0),
+    m_name(ats_strdup(rhs.m_name)),
+    m_sock(NULL),
+    m_sock_fd(-1),
+    m_connected(false),
+    m_orphan_file(NULL),
     m_log_collation_client_sm(NULL)
 {
   memcpy(m_ipstr, rhs.m_ipstr, sizeof(m_ipstr));
-  create_orphan_LogFile_object();
+  m_orphan_file = make_orphan_logfile(this, m_object_filename);
 }
 
 LogHost::~LogHost()
@@ -80,12 +113,12 @@ LogHost::~LogHost()
 // - by specifying a hostname and a port (as separate arguments).
 // - by specifying an ip and a port (as separate arguments).
 //
-int
-LogHost::set_name_port(char *hostname, unsigned int pt)
+bool
+LogHost::set_name_port(const char *hostname, unsigned int pt)
 {
   if (!hostname || hostname[0] == 0) {
     Note("Cannot establish LogHost with NULL hostname");
-    return 1;
+    return false;
   }
 
   clear(); // remove all previous state for this LogHost
@@ -95,53 +128,54 @@ LogHost::set_name_port(char *hostname, unsigned int pt)
 
   Debug("log-host", "LogHost established as %s:%u", this->name(), this->port());
 
-  create_orphan_LogFile_object();
-  return 0;
+  m_orphan_file = make_orphan_logfile(this, m_object_filename);
+  return true;
 }
 
-int
-LogHost::set_ipstr_port(char *ipstr, unsigned int pt)
+bool
+LogHost::set_ipstr_port(const char *ipstr, unsigned int pt)
 {
   if (!ipstr || ipstr[0] == 0) {
     Note("Cannot establish LogHost with NULL ipstr");
-    return 1;
+    return false;
   }
 
   clear(); // remove all previous state for this LogHost
 
-  if (0 != m_ip.load(ipstr))
+  if (0 != m_ip.load(ipstr)) {
     Note("Log host failed to parse IP address %s", ipstr);
+  }
+
   m_port = pt;
   ink_strlcpy(m_ipstr, ipstr, sizeof(m_ipstr));
   m_name = ats_strdup(ipstr);
 
   Debug("log-host", "LogHost established as %s:%u", name(), pt);
 
-  create_orphan_LogFile_object();
-  return 0;
+  m_orphan_file = make_orphan_logfile(this, m_object_filename);
+  return true;
 }
 
-int
-LogHost::set_name_or_ipstr(char *name_or_ip)
+bool
+LogHost::set_name_or_ipstr(const char *name_or_ip)
 {
-  int retVal = 1;
-
-  if (name_or_ip && name_or_ip[0] != 0) {
+  if (name_or_ip && name_or_ip[0] != '\0') {
     ts::ConstBuffer addr, port;
     if (ats_ip_parse(ts::ConstBuffer(name_or_ip, strlen(name_or_ip)), &addr, &port) == 0) {
       uint16_t p = port ? atoi(port.data()) : Log::config->collation_port;
-      char *n = const_cast<char *>(addr.data());
+      char *n    = const_cast<char *>(addr.data());
       // Force termination. We know we can do this because the address
       // string is followed by either a nul or a colon.
       n[addr.size()] = 0;
       if (AF_UNSPEC == ats_ip_check_characters(addr)) {
-        retVal = set_name_port(n, p);
+        return set_name_port(n, p);
       } else {
-        retVal = set_ipstr_port(n, p);
+        return set_ipstr_port(n, p);
       }
     }
   }
-  return retVal;
+
+  return false;
 }
 
 bool
@@ -211,27 +245,6 @@ LogHost::disconnect()
   m_connected = false;
 }
 
-
-void
-LogHost::create_orphan_LogFile_object()
-{
-  delete m_orphan_file;
-
-  const char *orphan_ext = "orphan";
-  unsigned name_len = (unsigned)(strlen(m_object_filename) + strlen(name()) + strlen(orphan_ext) + 16);
-  char *name_buf = (char *)ats_malloc(name_len);
-
-  // NT: replace ':'s with '-'s.  This change is necessary because
-  // NT doesn't like filenames with ':'s in them.  ^_^
-  snprintf(name_buf, name_len, "%s%s%s-%u.%s", m_object_filename, LOGFILE_SEPARATOR_STRING, name(), port(), orphan_ext);
-
-  // should check for conflicts with orphan filename
-  //
-  m_orphan_file = new LogFile(name_buf, NULL, LOG_FILE_ASCII, m_object_signature);
-  ink_assert(m_orphan_file != NULL);
-  ats_free(name_buf);
-}
-
 //
 // preprocess the given buffer data before sent to target host
 // and try to delete it when its reference become zero.
@@ -262,8 +275,9 @@ LogHost::preproc_and_try_delete(LogBuffer *lb)
   }
 
   // send log_buffer;
-  if (m_log_collation_client_sm->send(lb) <= 0)
+  if (m_log_collation_client_sm->send(lb) <= 0) {
     goto done;
+  }
 
   return 0;
 
@@ -273,7 +287,7 @@ done:
 }
 
 //
-// write the given buffer data to orhpan file and
+// write the given buffer data to orphan file and
 // try to delete it when its reference become zero.
 //
 void
@@ -314,9 +328,9 @@ LogHost::clear()
   ink_zero(m_ip);
   m_port = 0;
   ink_zero(m_ipstr);
-  m_name = NULL;
-  m_sock = NULL;
-  m_sock_fd = -1;
+  m_name      = NULL;
+  m_sock      = NULL;
+  m_sock_fd   = -1;
   m_connected = false;
 }
 
@@ -329,9 +343,9 @@ LogHost::authenticated()
   }
 
   Debug("log-host", "Authenticating LogHost %s ...", name());
-  char *auth_key = Log::config->collation_secret;
+  char *auth_key        = Log::config->collation_secret;
   unsigned auth_key_len = (unsigned)::strlen(auth_key) + 1; // incl null
-  int bytes = m_sock->write(m_sock_fd, auth_key, auth_key_len);
+  int bytes             = m_sock->write(m_sock_fd, auth_key, auth_key_len);
   if ((unsigned)bytes != auth_key_len) {
     Debug("log-host", "... bad write on authenticate");
     return false;
@@ -389,7 +403,7 @@ LogHostList::preproc_and_try_delete(LogBuffer *lb)
 {
   int ret;
   unsigned nr_host, nr;
-  bool need_orphan = true;
+  bool need_orphan        = true;
   LogHost *available_host = NULL;
 
   ink_release_assert(lb->m_references == 0);
@@ -398,12 +412,12 @@ LogHostList::preproc_and_try_delete(LogBuffer *lb)
   ink_atomic_increment(&lb->m_references, nr_host);
 
   for (LogHost *host = first(); host && nr; host = next(host)) {
-    LogHost *lh = host;
+    LogHost *lh    = host;
     available_host = lh;
 
     do {
       ink_atomic_increment(&lb->m_references, 1);
-      ret = lh->preproc_and_try_delete(lb);
+      ret         = lh->preproc_and_try_delete(lb);
       need_orphan = need_orphan && (ret < 0);
     } while (ret < 0 && (lh = lh->failover_link.next));
 
@@ -427,7 +441,8 @@ LogHostList::display(FILE *fd)
   }
 }
 
-bool LogHostList::operator==(LogHostList &rhs)
+bool
+LogHostList::operator==(LogHostList &rhs)
 {
   LogHost *host;
   for (host = first(); host; host = next(host)) {

@@ -45,6 +45,7 @@
 #include "LogObject.h"
 #include "LogConfig.h"
 #include "LogUtils.h"
+#include "LogBindings.h"
 #include "ts/SimpleTokenizer.h"
 
 #include "LogCollationAccept.h"
@@ -73,40 +74,38 @@ LogConfig::setup_default_values()
   }
   hostname = ats_strdup(name);
 
-  log_buffer_size = (int)(10 * LOG_KILOBYTE);
-  max_secs_per_buffer = 5;
-  max_space_mb_for_logs = 100;
+  log_buffer_size              = (int)(10 * LOG_KILOBYTE);
+  max_secs_per_buffer          = 5;
+  max_space_mb_for_logs        = 100;
   max_space_mb_for_orphan_logs = 25;
-  max_space_mb_headroom = 10;
-  logfile_perm = 0644;
-  logfile_dir = ats_strdup(".");
+  max_space_mb_headroom        = 10;
+  logfile_perm                 = 0644;
+  logfile_dir                  = ats_strdup(".");
 
-  collation_mode = Log::NO_COLLATION;
-  collation_host = ats_strdup("none");
-  collation_port = 0;
-  collation_host_tagged = false;
-  collation_preproc_threads = 1;
-  collation_secret = ats_strdup("foobar");
-  collation_retry_sec = 0;
+  collation_mode             = Log::NO_COLLATION;
+  collation_host             = ats_strdup("none");
+  collation_port             = 0;
+  collation_host_tagged      = false;
+  collation_preproc_threads  = 1;
+  collation_secret           = ats_strdup("foobar");
+  collation_retry_sec        = 0;
   collation_max_send_buffers = 0;
 
-  rolling_enabled = Log::NO_ROLLING;
-  rolling_interval_sec = 86400; // 24 hours
-  rolling_offset_hr = 0;
-  rolling_size_mb = 10;
+  rolling_enabled          = Log::NO_ROLLING;
+  rolling_interval_sec     = 86400; // 24 hours
+  rolling_offset_hr        = 0;
+  rolling_size_mb          = 10;
   auto_delete_rolled_files = true;
-  roll_log_files_now = false;
+  roll_log_files_now       = false;
 
-  custom_logs_enabled = false;
-
-  sampling_frequency = 1;
-  file_stat_frequency = 16;
+  sampling_frequency   = 1;
+  file_stat_frequency  = 16;
   space_used_frequency = 900;
 
   use_orphan_log_space_value = false;
 
   ascii_buffer_size = 4 * 9216;
-  max_line_size = 9216; // size of pipe buffer for SunOS 5.6
+  max_line_size     = 9216; // size of pipe buffer for SunOS 5.6
 }
 
 void *
@@ -149,10 +148,11 @@ LogConfig::read_configuration_variables()
     max_space_mb_headroom = val;
   }
 
-  ptr = REC_ConfigReadString("proxy.config.log.logfile_perm");
+  ptr                     = REC_ConfigReadString("proxy.config.log.logfile_perm");
   int logfile_perm_parsed = ink_fileperm_parse(ptr);
-  if (logfile_perm_parsed != -1)
+  if (logfile_perm_parsed != -1) {
     logfile_perm = logfile_perm_parsed;
+  }
   ats_free(ptr);
 
   ptr = REC_ConfigReadString("proxy.config.log.hostname");
@@ -168,7 +168,7 @@ LogConfig::read_configuration_variables()
     // Try 'system_root_dir/var/log/trafficserver' directory
     fprintf(stderr, "unable to access log directory '%s': %d, %s\n", logfile_dir, errno, strerror(errno));
     fprintf(stderr, "please set 'proxy.config.log.logfile_dir'\n");
-    _exit(1);
+    ::exit(1);
   }
 
   // COLLATION
@@ -188,7 +188,7 @@ LogConfig::read_configuration_variables()
     collation_port = val;
   }
 
-  val = (int)REC_ConfigReadInteger("proxy.config.log.collation_host_tagged");
+  val                   = (int)REC_ConfigReadInteger("proxy.config.log.collation_host_tagged");
   collation_host_tagged = (val > 0);
 
   val = (int)REC_ConfigReadInteger("proxy.config.log.collation_preproc_threads");
@@ -212,15 +212,14 @@ LogConfig::read_configuration_variables()
     collation_max_send_buffers = val;
   }
 
-
   // ROLLING
 
   // we don't check for valid values of rolling_enabled, rolling_interval_sec,
   // rolling_offset_hr, or rolling_size_mb because the LogObject takes care of this
   //
   rolling_interval_sec = (int)REC_ConfigReadInteger("proxy.config.log.rolling_interval_sec");
-  rolling_offset_hr = (int)REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
-  rolling_size_mb = (int)REC_ConfigReadInteger("proxy.config.log.rolling_size_mb");
+  rolling_offset_hr    = (int)REC_ConfigReadInteger("proxy.config.log.rolling_offset_hr");
+  rolling_size_mb      = (int)REC_ConfigReadInteger("proxy.config.log.rolling_size_mb");
 
   val = (int)REC_ConfigReadInteger("proxy.config.log.rolling_enabled");
   if (LogRollingEnabledIsValid(val)) {
@@ -230,12 +229,8 @@ LogConfig::read_configuration_variables()
     rolling_enabled = Log::NO_ROLLING;
   }
 
-  val = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
+  val                      = (int)REC_ConfigReadInteger("proxy.config.log.auto_delete_rolled_files");
   auto_delete_rolled_files = (val > 0);
-
-  // CUSTOM LOGGING
-  val = (int)REC_ConfigReadInteger("proxy.config.log.custom_logs_enabled");
-  custom_logs_enabled = (val > 0);
 
   // PERFORMANCE
   val = (int)REC_ConfigReadInteger("proxy.config.log.sampling_frequency");
@@ -275,9 +270,18 @@ LogConfig::read_configuration_variables()
 
 // TODO: Is UINT_MAX here really correct?
 LogConfig::LogConfig()
-  : initialized(false), reconfiguration_needed(false), logging_space_exhausted(false), m_space_used(0),
-    m_partition_space_left((int64_t)UINT_MAX), m_log_collation_accept(NULL), m_dir_entry(NULL), m_pDir(NULL), m_disk_full(false),
-    m_disk_low(false), m_partition_full(false), m_partition_low(false), m_log_directory_inaccessible(false)
+  : initialized(false),
+    reconfiguration_needed(false),
+    logging_space_exhausted(false),
+    m_space_used(0),
+    m_partition_space_left((int64_t)UINT_MAX),
+    m_log_collation_accept(NULL),
+    m_pDir(NULL),
+    m_disk_full(false),
+    m_disk_low(false),
+    m_partition_full(false),
+    m_partition_low(false),
+    m_log_directory_inaccessible(false)
 {
   // Setup the default values for all LogConfig public variables so that
   // a LogConfig object is valid upon return from the constructor even
@@ -303,9 +307,7 @@ LogConfig::~LogConfig()
   ats_free(logfile_dir);
   ats_free(collation_host);
   ats_free(collation_secret);
-  ats_free(m_dir_entry);
 }
-
 
 /*-------------------------------------------------------------------------
   LogConfig::setup_collation
@@ -347,7 +349,7 @@ LogConfig::setup_collation(LogConfig *prev_config)
         }
 
         if (!m_log_collation_accept) {
-          Log::collation_port = collation_port;
+          Log::collation_port    = collation_port;
           m_log_collation_accept = new LogCollationAccept(collation_port);
         }
         Debug("log", "I am a collation host listening on port %d.", collation_port);
@@ -493,18 +495,13 @@ LogConfig::setup_log_objects()
 {
   Debug("log", "creating objects...");
 
-  // ----------------------------------------------------------------------
   // Construct the LogObjects for the custom formats
-
   global_filter_list.clear();
 
-  if (custom_logs_enabled) {
-    /* Read xml configuration from logs_xml.config file.             */
-    read_xml_log_config();
-  }
+  // Evaluate logging.config to construct the custome log objects.
+  evaluate_config();
 
-  // open local pipes so readers can see them
-  //
+  // Open local pipes so readers can see them.
   log_object_manager.open_local_pipes();
 
   if (is_debug_tag_set("log")) {
@@ -542,17 +539,32 @@ void
 LogConfig::register_config_callbacks()
 {
   static const char *names[] = {
-    "proxy.config.log.log_buffer_size", "proxy.config.log.max_secs_per_buffer", "proxy.config.log.max_space_mb_for_logs",
-    "proxy.config.log.max_space_mb_for_orphan_logs", "proxy.config.log.max_space_mb_headroom", "proxy.config.log.logfile_perm",
-    "proxy.config.log.hostname", "proxy.config.log.logfile_dir", "proxy.local.log.collation_mode",
-    "proxy.config.log.collation_host", "proxy.config.log.collation_port", "proxy.config.log.collation_host_tagged",
-    "proxy.config.log.collation_secret", "proxy.config.log.collation_retry_sec", "proxy.config.log.collation_max_send_buffers",
-    "proxy.config.log.rolling_enabled", "proxy.config.log.rolling_interval_sec", "proxy.config.log.rolling_offset_hr",
-    "proxy.config.log.rolling_size_mb", "proxy.config.log.auto_delete_rolled_files", "proxy.config.log.custom_logs_enabled",
-    "proxy.config.log.xml_config_file", "proxy.config.log.hosts_config_file", "proxy.config.log.sampling_frequency",
-    "proxy.config.log.file_stat_frequency", "proxy.config.log.space_used_frequency",
+    "proxy.config.log.log_buffer_size",
+    "proxy.config.log.max_secs_per_buffer",
+    "proxy.config.log.max_space_mb_for_logs",
+    "proxy.config.log.max_space_mb_for_orphan_logs",
+    "proxy.config.log.max_space_mb_headroom",
+    "proxy.config.log.logfile_perm",
+    "proxy.config.log.hostname",
+    "proxy.config.log.logfile_dir",
+    "proxy.local.log.collation_mode",
+    "proxy.config.log.collation_host",
+    "proxy.config.log.collation_port",
+    "proxy.config.log.collation_host_tagged",
+    "proxy.config.log.collation_secret",
+    "proxy.config.log.collation_retry_sec",
+    "proxy.config.log.collation_max_send_buffers",
+    "proxy.config.log.rolling_enabled",
+    "proxy.config.log.rolling_interval_sec",
+    "proxy.config.log.rolling_offset_hr",
+    "proxy.config.log.rolling_size_mb",
+    "proxy.config.log.auto_delete_rolled_files",
+    "proxy.config.log.xml_config_file",
+    "proxy.config.log.hosts_config_file",
+    "proxy.config.log.sampling_frequency",
+    "proxy.config.log.file_stat_frequency",
+    "proxy.config.log.space_used_frequency",
   };
-
 
   for (unsigned i = 0; i < countof(names); ++i) {
     REC_RegisterConfigUpdateFunc(names[i], &LogConfig::reconfigure, NULL);
@@ -643,7 +655,6 @@ LogConfig::register_mgmt_callbacks()
   RecRegisterManagerCb(REC_EVENT_ROLL_LOG_FILES, &LogConfig::reconfigure_mgmt_variables, NULL);
 }
 
-
 /*-------------------------------------------------------------------------
   LogConfig::space_to_write
 
@@ -652,16 +663,16 @@ LogConfig::register_mgmt_callbacks()
   -------------------------------------------------------------------------*/
 
 bool
-LogConfig::space_to_write(int64_t bytes_to_write)
+LogConfig::space_to_write(int64_t bytes_to_write) const
 {
   int64_t config_space, partition_headroom;
   int64_t logical_space_used, physical_space_left;
   bool space;
 
-  config_space = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
+  config_space       = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
   partition_headroom = (int64_t)PARTITION_HEADROOM_MB * LOG_MEGABYTE;
 
-  logical_space_used = m_space_used + bytes_to_write;
+  logical_space_used  = m_space_used + bytes_to_write;
   physical_space_left = m_partition_space_left - (int64_t)bytes_to_write;
 
   space = ((logical_space_used < config_space) && (physical_space_left > partition_headroom));
@@ -698,8 +709,9 @@ LogConfig::update_space_used()
 {
   // no need to update space used if log directory is inaccessible
   //
-  if (m_log_directory_inaccessible)
+  if (m_log_directory_inaccessible) {
     return;
+  }
 
   static const int MAX_CANDIDATES = 128;
   LogDeleteCandidate candidates[MAX_CANDIDATES];
@@ -707,6 +719,7 @@ LogConfig::update_space_used()
   int64_t total_space_used, partition_space_left;
   char path[MAXPATHLEN];
   int sret;
+  struct dirent entry;
   struct dirent *result;
   struct stat sbuf;
   DIR *ld;
@@ -744,32 +757,26 @@ LogConfig::update_space_used()
     return;
   }
 
-  if (!m_dir_entry) {
-    size_t name_max = ink_file_namemax(logfile_dir);
-    m_dir_entry = (struct dirent *)ats_malloc(sizeof(struct dirent) + name_max + 1);
-  }
-
   total_space_used = 0LL;
+  candidate_count  = 0;
 
-  candidate_count = 0;
-
-  while (readdir_r(ld, m_dir_entry, &result) == 0) {
+  while (readdir_r(ld, &entry, &result) == 0) {
     if (!result) {
       break;
     }
 
-    snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, m_dir_entry->d_name);
+    snprintf(path, MAXPATHLEN, "%s/%s", logfile_dir, entry.d_name);
 
     sret = ::stat(path, &sbuf);
     if (sret != -1 && S_ISREG(sbuf.st_mode)) {
       total_space_used += (int64_t)sbuf.st_size;
 
-      if (auto_delete_rolled_files && LogFile::rolled_logfile(m_dir_entry->d_name) && candidate_count < MAX_CANDIDATES) {
+      if (auto_delete_rolled_files && LogFile::rolled_logfile(entry.d_name) && candidate_count < MAX_CANDIDATES) {
         //
         // then add this entry to the candidate list
         //
-        candidates[candidate_count].name = ats_strdup(path);
-        candidates[candidate_count].size = (int64_t)sbuf.st_size;
+        candidates[candidate_count].name  = ats_strdup(path);
+        candidates[candidate_count].size  = (int64_t)sbuf.st_size;
         candidates[candidate_count].mtime = sbuf.st_mtime;
         candidate_count++;
       }
@@ -791,7 +798,7 @@ LogConfig::update_space_used()
   //
   // Update the config variables for space used/left
   //
-  m_space_used = total_space_used;
+  m_space_used           = total_space_used;
   m_partition_space_left = partition_space_left;
   RecSetRawStatSum(log_rsb, log_stat_log_files_space_used_stat, m_space_used);
   RecSetRawStatCount(log_rsb, log_stat_log_files_space_used_stat, 1);
@@ -811,7 +818,7 @@ LogConfig::update_space_used()
   //
 
   int64_t max_space = (int64_t)get_max_space_mb() * LOG_MEGABYTE;
-  int64_t headroom = (int64_t)max_space_mb_headroom * LOG_MEGABYTE;
+  int64_t headroom  = (int64_t)max_space_mb_headroom * LOG_MEGABYTE;
 
   if (candidate_count > 0 && !space_to_write(headroom)) {
     Debug("logspace", "headroom reached, trying to clear space ...");
@@ -851,10 +858,10 @@ LogConfig::update_space_used()
   // issue any alarms or warnings about space
   //
 
-
   if (!space_to_write(headroom)) {
-    if (!logging_space_exhausted)
+    if (!logging_space_exhausted) {
       Note("Logging space exhausted, any logs writing to local disk will be dropped!");
+    }
 
     logging_space_exhausted = true;
     //
@@ -900,23 +907,40 @@ LogConfig::update_space_used()
     //
     // We have enough space to log again; clear any previous messages
     //
-    if (logging_space_exhausted)
+    if (logging_space_exhausted) {
       Note("Logging space is no longer exhausted.");
+    }
 
     logging_space_exhausted = false;
     if (m_disk_full || m_partition_full) {
       Note("Logging disk is no longer full; access logging to local log directory resumed.");
-      m_disk_full = false;
+      m_disk_full      = false;
       m_partition_full = false;
     }
     if (m_disk_low || m_partition_low) {
       Note("Logging disk is no longer low; access logging to local log directory resumed.");
-      m_disk_low = false;
+      m_disk_low      = false;
       m_partition_low = false;
     }
   }
 }
 
+bool
+LogConfig::evaluate_config()
+{
+  BindingInstance binding;
+  ats_scoped_str path(RecConfigReadConfigPath("proxy.config.log.config.filename", "logging.config"));
+
+  if (!binding.construct()) {
+    Fatal("failed to initialize Lua runtime");
+  }
+
+  if (MakeLogBindings(binding, this)) {
+    return binding.require(path.get());
+  }
+
+  return false;
+}
 
 /*-------------------------------------------------------------------------
   LogConfig::read_xml_log_config
@@ -999,8 +1023,8 @@ LogConfig::read_xml_log_config()
         Note("Multiple values for 'Format' attribute in %s; using the first one", xobj->object_name());
       }
 
-      char *format_str = format.dequeue();
-      char *name_str = name.dequeue();
+      char *format_str      = format.dequeue();
+      char *name_str        = name.dequeue();
       unsigned interval_num = 0;
 
       // if the format_str contains any of the aggregate operators,
@@ -1091,7 +1115,7 @@ LogConfig::read_xml_log_config()
 
       // convert the action string to an enum value and validate it
       //
-      char *action_str = action.dequeue();
+      char *action_str      = action.dequeue();
       LogFilter::Action act = LogFilter::REJECT; /* lv: make gcc happy */
       for (i = 0; i < LogFilter::N_ACTIONS; i++) {
         if (strcasecmp(action_str, LogFilter::ACTION_NAME[i]) == 0) {
@@ -1104,119 +1128,14 @@ LogConfig::read_xml_log_config()
         Warning("%s is not a valid filter action value; cannot create filter %s.", action_str, filter_name);
         continue;
       }
+
       // parse condition string and validate its fields
       //
-      char *cond_str = condition.dequeue();
+      char *cond_str    = condition.dequeue();
+      LogFilter *filter = LogFilter::parse(filter_name, act, cond_str);
 
-      SimpleTokenizer tok(cond_str);
-
-      if (tok.getNumTokensRemaining() < 3) {
-        Warning("Invalid condition syntax \"%s\"; cannot create filter %s.", cond_str, filter_name);
-        continue;
-      }
-
-      char *field_str = tok.getNext();
-      char *oper_str = tok.getNext();
-      char *val_str = tok.getRest();
-
-      // validate field symbol
-      //
-      if (strlen(field_str) > 2 && field_str[0] == '%' && field_str[1] == '<') {
-        Debug("xml", "Field symbol has <> form: %s", field_str);
-        char *end = field_str;
-        while (*end && *end != '>')
-          end++;
-        *end = '\0';
-        field_str += 2;
-        Debug("xml", "... now field symbol is %s", field_str);
-      }
-
-      LogField *logfield = Log::global_field_list.find_by_symbol(field_str);
-      if (!logfield) {
-        // check for container fields
-        if (*field_str == '{') {
-          Note("%s appears to be a container field", field_str);
-          char *fname_end = strchr(field_str, '}');
-          if (NULL != fname_end) {
-            char *fname = field_str + 1;
-            *fname_end = 0;              // changes '}' to '\0'
-            char *cname = fname_end + 1; // start of container symbol
-            Note("Found Container Field: Name = %s, symbol = %s", fname, cname);
-            LogField::Container container = LogField::valid_container_name(cname);
-            if (container == LogField::NO_CONTAINER) {
-              Warning("%s is not a valid container; cannot create filter %s.", cname, filter_name);
-              continue;
-            } else {
-              logfield = new LogField(fname, container);
-              ink_assert(logfield != NULL);
-            }
-          } else {
-            Warning("Invalid container field specification: no trailing '}' in %s cannot create filter %s.", field_str,
-                    filter_name);
-            continue;
-          }
-        }
-      }
-
-      if (!logfield) {
-        Warning("%s is not a valid field; cannot create filter %s.", field_str, filter_name);
-        continue;
-      }
-      // convert the operator string to an enum value and validate it
-      //
-      LogFilter::Operator oper = LogFilter::MATCH;
-      for (i = 0; i < LogFilter::N_OPERATORS; ++i) {
-        if (strcasecmp(oper_str, LogFilter::OPERATOR_NAME[i]) == 0) {
-          oper = (LogFilter::Operator)i;
-          break;
-        }
-      }
-
-      if (i == LogFilter::N_OPERATORS) {
-        Warning("%s is not a valid operator; cannot create filter %s.", oper_str, filter_name);
-        continue;
-      }
-      // now create the correct LogFilter
-      //
-      LogFilter *filter = NULL;
-      LogField::Type field_type = logfield->type();
-
-      switch (field_type) {
-      case LogField::sINT:
-
-        filter = new LogFilterInt(filter_name, logfield, act, oper, val_str);
-        break;
-
-      case LogField::dINT:
-
-        Warning("Internal error: invalid field type (double int); cannot create filter %s.", filter_name);
-        continue;
-
-      case LogField::STRING:
-
-        filter = new LogFilterString(filter_name, logfield, act, oper, val_str);
-        break;
-
-      case LogField::IP:
-
-        filter = new LogFilterIP(filter_name, logfield, act, oper, val_str);
-        break;
-
-      default:
-
-        Warning("Internal error: unknown field type %d; cannot create filter %s.", field_type, filter_name);
-        continue;
-      }
-
-      ink_assert(filter);
-
-      if (filter->get_num_values() == 0) {
-        Warning("\"%s\" does not specify any valid values; cannot create filter %s.", val_str, filter_name);
-        delete filter;
-
-      } else {
-        // add filter to global filter list
-        //
+      // add filter to global filter list
+      if (filter) {
         global_filter_list.add(filter, false);
 
         if (is_debug_tag_set("xml")) {
@@ -1332,14 +1251,14 @@ LogConfig::read_xml_log_config()
       LogFileFormat file_type = LOG_FILE_ASCII; // default value
       if (mode.count()) {
         char *mode_str = mode.dequeue();
-        file_type = (strncasecmp(mode_str, "bin", 3) == 0 || (mode_str[0] == 'b' && mode_str[1] == 0) ?
+        file_type      = (strncasecmp(mode_str, "bin", 3) == 0 || (mode_str[0] == 'b' && mode_str[1] == 0) ?
                        LOG_FILE_BINARY :
                        (strcasecmp(mode_str, "ascii_pipe") == 0 ? LOG_FILE_PIPE : LOG_FILE_ASCII));
       }
       // rolling
       //
       char *rollingEnabled_str = rollingEnabled.dequeue();
-      int obj_rolling_enabled = rollingEnabled_str ? ink_atoui(rollingEnabled_str) : rolling_enabled;
+      int obj_rolling_enabled  = rollingEnabled_str ? ink_atoui(rollingEnabled_str) : rolling_enabled;
 
       char *rollingIntervalSec_str = rollingIntervalSec.dequeue();
       int obj_rolling_interval_sec = rollingIntervalSec_str ? ink_atoui(rollingIntervalSec_str) : rolling_interval_sec;
@@ -1388,7 +1307,7 @@ LogConfig::read_xml_log_config()
 
         if (n) {
           int64_t *val_array = new int64_t[n];
-          size_t numValid = 0;
+          size_t numValid    = 0;
           char *t;
           while (t = tok.getNext(), t != NULL) {
             if (strcasecmp(t, "icp") == 0) {
@@ -1450,7 +1369,7 @@ LogConfig::read_xml_log_config()
           while (failover_str = failover_tok.getNext(), failover_str != 0) {
             LogHost *lh = new LogHost(obj->get_full_filename(), obj->get_signature());
 
-            if (lh->set_name_or_ipstr(failover_str)) {
+            if (lh->set_name_or_ipstr(failover_str) == false) {
               Warning("Could not set \"%s\" as collation host", host);
               delete lh;
             } else if (!prev) {
@@ -1458,7 +1377,7 @@ LogConfig::read_xml_log_config()
               prev = lh;
             } else {
               prev->failover_link.next = lh;
-              prev = lh;
+              prev                     = lh;
             }
           }
         }
@@ -1492,7 +1411,7 @@ LogConfig::read_log_hosts_file(size_t *num_hosts)
   Debug("log-config", "Reading log hosts from %s", (const char *)config_path);
 
   size_t nhosts = 0;
-  int fd = open(config_path, O_RDONLY);
+  int fd        = open(config_path, O_RDONLY);
   if (fd < 0) {
     Warning("Traffic Server can't open %s for reading log hosts for splitting: %s.", (const char *)config_path, strerror(errno));
   } else {

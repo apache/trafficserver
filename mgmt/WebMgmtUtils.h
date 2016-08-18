@@ -98,8 +98,6 @@ char *substituteForHTMLChars(const char *buffer);
 InkHashTable *processFormSubmission(char *submission);
 InkHashTable *processFormSubmission_noSubstitute(char *submission);
 
-// Shutdown the proxy
-bool ProxyShutdown();
 int setHostnameVar();
 void appendDefaultDomain(char *hostname, int bufLength);
 
@@ -114,8 +112,6 @@ bool recordRegexCheck(const char *pattern, const char *value);
 bool recordRangeCheck(const char *pattern, const char *value);
 bool recordIPCheck(const char *pattern, const char *value);
 bool recordRestartCheck(const char *varName);
-
-void fileCheckSum(char *buffer, int size, char *checksum, const size_t checksumSize);
 
 // file management
 int getFilesInDirectory(char *managedDir, ExpandingArray *fileList);

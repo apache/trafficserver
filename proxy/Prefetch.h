@@ -64,9 +64,21 @@ struct PrefetchConfiguration {
   TSPrefetchHook embedded_obj_hook;
 
   PrefetchConfiguration()
-    : prefetch_enabled(0), html_tags_table(0), html_attrs_table(0), local_http_server_port(0), stuffer_port(0), url_buffer_size(0),
-      url_buffer_timeout(0), keepalive_timeout(0), push_cached_objects(0), max_object_size(0), max_recursion(0), redirection(0),
-      pre_parse_hook(0), embedded_url_hook(0), embedded_obj_hook(0)
+    : prefetch_enabled(0),
+      html_tags_table(0),
+      html_attrs_table(0),
+      local_http_server_port(0),
+      stuffer_port(0),
+      url_buffer_size(0),
+      url_buffer_timeout(0),
+      keepalive_timeout(0),
+      push_cached_objects(0),
+      max_object_size(0),
+      max_recursion(0),
+      redirection(0),
+      pre_parse_hook(0),
+      embedded_url_hook(0),
+      embedded_obj_hook(0)
   {
   }
   int readConfiguration();
@@ -203,15 +215,14 @@ class BlasterUrlList : public Continuation
 
 public:
   BlasterUrlList() : Continuation(), timeout(0), action(0), mtu(0), list_head(0), cur_len(0) {}
-
   void
   init(TSPrefetchBlastData const &bdata = UDP_BLAST_DATA, int tout = 0, int xmtu = INT_MAX)
   {
     SET_HANDLER((int (BlasterUrlList::*)(int, void *))(&BlasterUrlList::handleEvent));
-    mutex = new_ProxyMutex();
-    blast = bdata;
+    mutex   = new_ProxyMutex();
+    blast   = bdata;
     timeout = tout;
-    mtu = xmtu;
+    mtu     = xmtu;
   }
 
   void free();
@@ -235,7 +246,6 @@ public:
   typedef int (PrefetchUrlBlaster::*EventHandler)(int, void *);
 
   PrefetchUrlBlaster() : url_head(0), action(0) { ink_zero(blast); }
-
   void init(PrefetchUrlEntry *list_head, TSPrefetchBlastData const &u_bd = UDP_BLAST_DATA);
 
   void free();
@@ -260,7 +270,7 @@ PrefetchUrlBlaster::init(PrefetchUrlEntry *list_head, TSPrefetchBlastData const 
   mutex = new_ProxyMutex();
 
   url_head = list_head;
-  blast = u_bd;
+  blast    = u_bd;
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
 
@@ -273,7 +283,7 @@ BlasterUrlList::invokeUrlBlaster()
   PrefetchUrlBlaster *u_blaster = prefetchUrlBlasterAllocator.alloc();
   u_blaster->init(list_head, blast);
   list_head = NULL;
-  cur_len = 0;
+  cur_len   = 0;
 }
 
 class PrefetchBlaster : public Continuation
@@ -282,8 +292,18 @@ public:
   typedef int (PrefetchBlaster::*EventHandler)(int event, void *data);
 
   PrefetchBlaster()
-    : Continuation(), url_ent(0), transform(0), url_list(0), request(0), cache_http_info(0), buf(0), reader(0), serverVC(0),
-      n_pkts_sent(0), seq_no(0), io_block(0){};
+    : Continuation(),
+      url_ent(0),
+      transform(0),
+      url_list(0),
+      request(0),
+      cache_http_info(0),
+      buf(0),
+      reader(0),
+      serverVC(0),
+      n_pkts_sent(0),
+      seq_no(0),
+      io_block(0){};
   ~PrefetchBlaster(){};
 
   int init(PrefetchUrlEntry *entry, HTTPHdr *request, PrefetchTransform *p_trans);
@@ -339,7 +359,6 @@ class KeepAliveConn : public Continuation
 {
 public:
   KeepAliveConn() : Continuation(), nbytes_added(0) { ink_zero(ip); }
-
   int init(IpEndpoint const &ip, MIOBuffer *buf, IOBufferReader *reader);
   void free();
 
@@ -386,14 +405,13 @@ class KeepAliveLockHandler : public Continuation
 
 public:
   KeepAliveLockHandler() : Continuation() { ink_zero(ip); };
-
   void
   init(IpEndpoint const &xip, MIOBuffer *xbuf, IOBufferReader *xreader)
   {
     mutex = g_conn_table->arr[KeepAliveConnTable::ip_hash(xip)].mutex;
 
     ats_ip_copy(&ip, &xip);
-    buf = xbuf;
+    buf    = xbuf;
     reader = xreader;
 
     SET_HANDLER(&KeepAliveLockHandler::handleEvent);
@@ -401,14 +419,12 @@ public:
   }
 
   ~KeepAliveLockHandler() { mutex = NULL; }
-
   int handleEvent(int event, void *data);
 
   IpEndpoint ip;
   MIOBuffer *buf;
   IOBufferReader *reader;
 };
-
 
 #define PREFETCH_CONFIG_UPDATE_TIMEOUT (HRTIME_SECOND * 60)
 

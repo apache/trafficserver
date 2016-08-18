@@ -16,9 +16,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+include $(top_srcdir)/build/tidy.mk
+
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/lib \
+  -I$(top_srcdir)/lib/luajit/src \
   -I$(top_srcdir)/lib/records \
   -I$(top_srcdir)/proxy/api/ts \
   -I$(top_srcdir)/proxy \
@@ -42,6 +45,8 @@ liblogging_a_SOURCES = \
   LogAccessHttp.h \
   LogAccessICP.cc \
   LogAccessICP.h \
+  LogBindings.cc \
+  LogBindings.h \
   LogBuffer.cc \
   LogBuffer.h \
   LogBufferSink.h \
@@ -79,3 +84,6 @@ liblogcollation_a_SOURCES = \
 #test_UNUSED_SOURCES = \
 #  LogAccessTest.cc \
 #  LogAccessTest.h
+
+tidy-local: $(liblogging_a_SOURCES) $(liblogcollation_a_SOURCES) $(EXTRA_DIST)
+	$(CXX_Clang_Tidy)

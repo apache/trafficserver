@@ -65,9 +65,9 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
   }
 
   if (format_str) {
-    const char *tag = " %<phn>";
+    const char *tag                = " %<phn>";
     const size_t m_format_str_size = strlen(format_str) + (m_tagging_on ? strlen(tag) : 0) + 1;
-    m_format_str = (char *)ats_malloc(m_format_str_size);
+    m_format_str                   = (char *)ats_malloc(m_format_str_size);
     ink_strlcpy(m_format_str, format_str, m_format_str_size);
     if (m_tagging_on) {
       Note("Log tagging enabled, adding %%<phn> field at the end of "
@@ -76,9 +76,9 @@ LogFormat::setup(const char *name, const char *format_str, unsigned interval_sec
       ink_strlcat(m_format_str, tag, m_format_str_size);
     };
 
-    char *printf_str = NULL;
+    char *printf_str    = NULL;
     char *fieldlist_str = NULL;
-    int nfields = parse_format_string(m_format_str, &printf_str, &fieldlist_str);
+    int nfields         = parse_format_string(m_format_str, &printf_str, &fieldlist_str);
     if (nfields > (m_tagging_on ? 1 : 0)) {
       init_variables(name, fieldlist_str, printf_str, interval_sec);
     } else {
@@ -148,25 +148,25 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
     if (m_name_str) {
       ats_free(m_name_str);
       m_name_str = NULL;
-      m_name_id = 0;
+      m_name_id  = 0;
     }
     if (name) {
       m_name_str = ats_strdup(name);
-      m_name_id = id_from_name(m_name_str);
+      m_name_id  = id_from_name(m_name_str);
     }
 
     if (m_fieldlist_str) {
       ats_free(m_fieldlist_str);
       m_fieldlist_str = NULL;
-      m_fieldlist_id = 0;
+      m_fieldlist_id  = 0;
     }
     if (fieldlist_str) {
       m_fieldlist_str = ats_strdup(fieldlist_str);
-      m_fieldlist_id = id_from_name(m_fieldlist_str);
+      m_fieldlist_id  = id_from_name(m_fieldlist_str);
     }
 
-    m_printf_str = ats_strdup(printf_str);
-    m_interval_sec = interval_sec;
+    m_printf_str    = ats_strdup(printf_str);
+    m_interval_sec  = interval_sec;
     m_interval_next = LogUtils::timestamp();
 
     m_valid = true;
@@ -183,8 +183,18 @@ LogFormat::init_variables(const char *name, const char *fieldlist_str, const cha
   -------------------------------------------------------------------------*/
 
 LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval_sec)
-  : m_interval_sec(0), m_interval_next(0), m_agg_marshal_space(NULL), m_valid(false), m_name_str(NULL), m_name_id(0),
-    m_fieldlist_str(NULL), m_fieldlist_id(0), m_field_count(0), m_printf_str(NULL), m_aggregate(false), m_format_str(NULL)
+  : m_interval_sec(0),
+    m_interval_next(0),
+    m_agg_marshal_space(NULL),
+    m_valid(false),
+    m_name_str(NULL),
+    m_name_id(0),
+    m_fieldlist_str(NULL),
+    m_fieldlist_id(0),
+    m_field_count(0),
+    m_printf_str(NULL),
+    m_aggregate(false),
+    m_format_str(NULL)
 {
   setup(name, format_str, interval_sec);
 
@@ -202,8 +212,18 @@ LogFormat::LogFormat(const char *name, const char *format_str, unsigned interval
 // delete this.
 //
 LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *printf_str, unsigned interval_sec)
-  : m_interval_sec(0), m_interval_next(0), m_agg_marshal_space(NULL), m_valid(false), m_name_str(NULL), m_name_id(0),
-    m_fieldlist_str(NULL), m_fieldlist_id(0), m_field_count(0), m_printf_str(NULL), m_aggregate(false), m_format_str(NULL)
+  : m_interval_sec(0),
+    m_interval_next(0),
+    m_agg_marshal_space(NULL),
+    m_valid(false),
+    m_name_str(NULL),
+    m_name_id(0),
+    m_fieldlist_str(NULL),
+    m_fieldlist_id(0),
+    m_field_count(0),
+    m_printf_str(NULL),
+    m_aggregate(false),
+    m_format_str(NULL)
 {
   init_variables(name, fieldlist_str, printf_str, interval_sec);
   m_format_type = LOG_FORMAT_CUSTOM;
@@ -216,8 +236,18 @@ LogFormat::LogFormat(const char *name, const char *fieldlist_str, const char *pr
   -------------------------------------------------------------------------*/
 
 LogFormat::LogFormat(const LogFormat &rhs)
-  : m_interval_sec(0), m_interval_next(0), m_agg_marshal_space(NULL), m_valid(rhs.m_valid), m_name_str(NULL), m_name_id(0),
-    m_fieldlist_str(NULL), m_fieldlist_id(0), m_field_count(0), m_printf_str(NULL), m_aggregate(false), m_format_str(NULL),
+  : m_interval_sec(0),
+    m_interval_next(0),
+    m_agg_marshal_space(NULL),
+    m_valid(rhs.m_valid),
+    m_name_str(NULL),
+    m_name_id(0),
+    m_fieldlist_str(NULL),
+    m_fieldlist_id(0),
+    m_field_count(0),
+    m_printf_str(NULL),
+    m_aggregate(false),
+    m_format_str(NULL),
     m_format_type(rhs.m_format_type)
 {
   if (m_valid) {
@@ -410,8 +440,9 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   LogField::Container container;
   LogField::Aggregate aggregate;
 
-  if (symbol_string == NULL)
+  if (symbol_string == NULL) {
     return 0;
+  }
   ink_assert(field_list != NULL);
   ink_assert(contains_aggregates != NULL);
 
@@ -421,7 +452,7 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
   // strtok_r will mangle the input string; we'll make a copy for that.
   //
   sym_str = ats_strdup(symbol_string);
-  symbol = strtok_r(sym_str, ",", &saveptr);
+  symbol  = strtok_r(sym_str, ",", &saveptr);
 
   while (symbol != NULL) {
     //
@@ -433,9 +464,9 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
       if (end_paren) {
         Debug("log-agg", "Aggregate symbol: %s", symbol);
         *begin_paren = '\0';
-        *end_paren = '\0';
-        name = begin_paren + 1;
-        sym = symbol;
+        *end_paren   = '\0';
+        name         = begin_paren + 1;
+        sym          = symbol;
         Debug("log-agg", "Aggregate = %s, field = %s", sym, name);
         aggregate = LogField::valid_aggregate_name(sym);
         if (aggregate == LogField::NO_AGGREGATE) {
@@ -472,12 +503,12 @@ LogFormat::parse_symbol_string(const char *symbol_string, LogFieldList *field_li
     //
     else if (*symbol == '{') {
       Debug("log-format", "Container symbol: %s", symbol);
-      f = NULL;
+      f              = NULL;
       char *name_end = strchr(symbol, '}');
       if (name_end != NULL) {
-        name = symbol + 1;
-        *name_end = 0;      // changes '}' to '\0'
-        sym = name_end + 1; // start of container symbol
+        name      = symbol + 1;
+        *name_end = 0;            // changes '}' to '\0'
+        sym       = name_end + 1; // start of container symbol
         LogSlice slice(sym);
         Debug("log-format", "Name = %s, symbol = %s", name, sym);
         container = LogField::valid_container_name(sym);
@@ -557,14 +588,16 @@ LogFormat::parse_escape_string(const char *str, int len)
   int sum, start = 0;
   unsigned char a, b, c;
 
-  if (str[start] != '\\' || len < 2)
+  if (str[start] != '\\' || len < 2) {
     return -1;
+  }
 
-  if (str[start + 1] == '\\')
+  if (str[start + 1] == '\\') {
     return '\\';
-
-  if (len < 4)
+  }
+  if (len < 4) {
     return -1;
+  }
 
   a = (unsigned char)str[start + 1];
   b = (unsigned char)str[start + 2];
@@ -576,28 +609,32 @@ LogFormat::parse_escape_string(const char *str, int len)
     if (sum == 0 || sum >= 255) {
       Warning("Octal escape sequence out of range: \\%c%c%c, treat it as normal string\n", a, b, c);
       return -1;
-    } else
+    } else {
       return sum;
+    }
 
   } else if (tolower(a) == 'x' && isxdigit(b) && isxdigit(c)) {
     int i, j;
-    if (isdigit(b))
+    if (isdigit(b)) {
       i = b - '0';
-    else
+    } else {
       i = toupper(b) - 'A' + 10;
+    }
 
-    if (isdigit(c))
+    if (isdigit(c)) {
       j = c - '0';
-    else
+    } else {
       j = toupper(c) - 'A' + 10;
+    }
 
     sum = i * 16 + j;
 
     if (sum == 0 || sum >= 255) {
       Warning("Hex escape sequence out of range: \\%c%c%c, treat it as normal string\n", a, b, c);
       return -1;
-    } else
+    } else {
       return sum;
+    }
   }
 
   return -1;
@@ -634,11 +671,11 @@ LogFormat::parse_format_string(const char *format_str, char **printf_str, char *
   // string.
   //
   unsigned len = (unsigned)::strlen(format_str);
-  *printf_str = (char *)ats_malloc(len + 1);
-  *fields_str = (char *)ats_malloc(len + 1);
+  *printf_str  = (char *)ats_malloc(len + 1);
+  *fields_str  = (char *)ats_malloc(len + 1);
 
-  unsigned printf_pos = 0;
-  unsigned fields_pos = 0;
+  unsigned printf_pos  = 0;
+  unsigned fields_pos  = 0;
   unsigned field_count = 0;
   unsigned field_len;
   unsigned start, stop;

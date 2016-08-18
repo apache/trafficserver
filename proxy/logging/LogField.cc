@@ -36,45 +36,79 @@
 #include "LogAccess.h"
 #include "Log.h"
 
-const char *container_names[] = {"not-a-container", "cqh", "psh", "pqh", "ssh", "cssh", "ecqh", "epsh", "epqh", "essh", "ecssh",
-                                 "icfg", "scfg", "record", "ms", "msdms", ""};
+// clang-format off
+//
+static const char *container_names[] = {
+  "not-a-container",
+  "cqh",
+  "psh",
+  "pqh",
+  "ssh",
+  "cssh",
+  "ecqh",
+  "epsh",
+  "epqh",
+  "essh",
+  "ecssh",
+  "icfg",
+  "scfg",
+  "record",
+  "ms",
+  "msdms",
+};
 
-const char *aggregate_names[] = {"not-an-agg-op", "COUNT", "SUM", "AVG", "FIRST", "LAST", ""};
+static const char *aggregate_names[] = {
+  "not-an-agg-op",
+  "COUNT",
+  "SUM",
+  "AVG",
+  "FIRST",
+  "LAST",
+};
+
+// clang-format on
 
 LogSlice::LogSlice(char *str)
 {
   char *a, *b, *c;
 
   m_enable = false;
-  m_start = 0;
-  m_end = INT_MAX;
+  m_start  = 0;
+  m_end    = INT_MAX;
 
-  if ((a = strchr(str, '[')) == NULL)
+  if ((a = strchr(str, '[')) == NULL) {
     return;
+  }
 
   *a++ = '\0';
-  if ((b = strchr(a, ':')) == NULL)
+  if ((b = strchr(a, ':')) == NULL) {
     return;
+  }
 
   *b++ = '\0';
-  if ((c = strchr(b, ']')) == NULL)
+  if ((c = strchr(b, ']')) == NULL) {
     return;
+  }
 
   m_enable = true;
 
   // eat space
-  while (a != b && *a == ' ')
+  while (a != b && *a == ' ') {
     a++;
+  }
 
-  if (a != b)
+  if (a != b) {
     m_start = atoi(a);
+  }
 
   // eat space
-  while (b != c && *b == ' ')
+  while (b != c && *b == ' ') {
     b++;
+  }
 
-  if (b != c)
+  if (b != c) {
     m_end = atoi(b);
+  }
 }
 
 int
@@ -83,34 +117,41 @@ LogSlice::toStrOffset(int strlen, int *offset)
   int i, j, len;
 
   // letf index
-  if (m_start >= 0)
+  if (m_start >= 0) {
     i = m_start;
-  else
+  } else {
     i = m_start + strlen;
+  }
 
-  if (i >= strlen)
+  if (i >= strlen) {
     return 0;
+  }
 
-  if (i < 0)
+  if (i < 0) {
     i = 0;
+  }
 
   // right index
-  if (m_end >= 0)
+  if (m_end >= 0) {
     j = m_end;
-  else
+  } else {
     j = m_end + strlen;
+  }
 
-  if (j <= 0)
+  if (j <= 0) {
     return 0;
+  }
 
-  if (j > strlen)
+  if (j > strlen) {
     j = strlen;
+  }
 
   // available length
   len = j - i;
 
-  if (len > 0)
+  if (len > 0) {
     *offset = i;
+  }
 
   return len;
 }
@@ -122,7 +163,11 @@ LogSlice::toStrOffset(int strlen, int *offset)
 namespace
 {
 struct cmp_str {
-  bool operator()(ts::ConstBuffer a, ts::ConstBuffer b) const { return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0; }
+  bool
+  operator()(ts::ConstBuffer a, ts::ConstBuffer b) const
+  {
+    return ptr_len_casecmp(a._ptr, a._size, b._ptr, b._size) < 0;
+  }
 };
 }
 
@@ -172,9 +217,20 @@ LogField::init_milestone_container(void)
 
 // Generic field ctor
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFunc unmarshal, SetFunc _setfunc)
-  : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
-    m_unmarshal_func(unmarshal), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_milestone1(TS_MILESTONE_LAST_ENTRY), m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(false), m_alias_map(0),
+  : m_name(ats_strdup(name)),
+    m_symbol(ats_strdup(symbol)),
+    m_type(type),
+    m_container(NO_CONTAINER),
+    m_marshal_func(marshal),
+    m_unmarshal_func(unmarshal),
+    m_unmarshal_func_map(NULL),
+    m_agg_op(NO_AGGREGATE),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(false),
+    m_alias_map(0),
     m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
@@ -188,16 +244,27 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 
 LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, UnmarshalFuncWithMap unmarshal,
                    Ptr<LogFieldAliasMap> map, SetFunc _setfunc)
-  : m_name(ats_strdup(name)), m_symbol(ats_strdup(symbol)), m_type(type), m_container(NO_CONTAINER), m_marshal_func(marshal),
-    m_unmarshal_func(NULL), m_unmarshal_func_map(unmarshal), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_milestone1(TS_MILESTONE_LAST_ENTRY), m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(false), m_alias_map(map),
+  : m_name(ats_strdup(name)),
+    m_symbol(ats_strdup(symbol)),
+    m_type(type),
+    m_container(NO_CONTAINER),
+    m_marshal_func(marshal),
+    m_unmarshal_func(NULL),
+    m_unmarshal_func_map(unmarshal),
+    m_agg_op(NO_AGGREGATE),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(false),
+    m_alias_map(map),
     m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
   ink_assert(m_type >= 0 && m_type < N_TYPES);
   ink_assert(m_marshal_func != (MarshalFunc)NULL);
-  ink_assert(m_alias_map != NULL);
+  ink_assert(m_alias_map);
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
@@ -210,8 +277,9 @@ LogField::milestone_from_m_name()
   TSMilestonesType result = TS_MILESTONE_LAST_ENTRY;
 
   it = m_milestone_map.find(ts::ConstBuffer(m_name, strlen(m_name)));
-  if (it != m_milestone_map.end())
+  if (it != m_milestone_map.end()) {
     result = it->second;
+  }
 
   return result;
 }
@@ -243,9 +311,20 @@ LogField::milestones_from_m_name(TSMilestonesType *ms1, TSMilestonesType *ms2)
 
 // Container field ctor
 LogField::LogField(const char *field, Container container, SetFunc _setfunc)
-  : m_name(ats_strdup(field)), m_symbol(ats_strdup(container_names[container])), m_type(LogField::STRING), m_container(container),
-    m_marshal_func(NULL), m_unmarshal_func(NULL), m_unmarshal_func_map(NULL), m_agg_op(NO_AGGREGATE), m_agg_cnt(0), m_agg_val(0),
-    m_milestone1(TS_MILESTONE_LAST_ENTRY), m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(false), m_alias_map(0),
+  : m_name(ats_strdup(field)),
+    m_symbol(ats_strdup(container_names[container])),
+    m_type(LogField::STRING),
+    m_container(container),
+    m_marshal_func(NULL),
+    m_unmarshal_func(NULL),
+    m_unmarshal_func_map(NULL),
+    m_agg_op(NO_AGGREGATE),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(false),
+    m_alias_map(0),
     m_set_func(_setfunc)
 {
   ink_assert(m_name != NULL);
@@ -280,15 +359,17 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
 
   case MS:
     m_milestone1 = milestone_from_m_name();
-    if (TS_MILESTONE_LAST_ENTRY == m_milestone1)
+    if (TS_MILESTONE_LAST_ENTRY == m_milestone1) {
       Note("Invalid milestone name in LogField ctor: %s", m_name);
+    }
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
     break;
 
   case MSDMS: {
     int rv = milestones_from_m_name(&m_milestone1, &m_milestone2);
-    if (0 != rv)
+    if (0 != rv) {
       Note("Invalid milestone range in LogField ctor: %s", m_name);
+    }
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
     break;
   }
@@ -300,10 +381,21 @@ LogField::LogField(const char *field, Container container, SetFunc _setfunc)
 
 // Copy ctor
 LogField::LogField(const LogField &rhs)
-  : m_name(ats_strdup(rhs.m_name)), m_symbol(ats_strdup(rhs.m_symbol)), m_type(rhs.m_type), m_container(rhs.m_container),
-    m_marshal_func(rhs.m_marshal_func), m_unmarshal_func(rhs.m_unmarshal_func), m_unmarshal_func_map(rhs.m_unmarshal_func_map),
-    m_agg_op(rhs.m_agg_op), m_agg_cnt(0), m_agg_val(0), m_milestone1(TS_MILESTONE_LAST_ENTRY),
-    m_milestone2(TS_MILESTONE_LAST_ENTRY), m_time_field(rhs.m_time_field), m_alias_map(rhs.m_alias_map), m_set_func(rhs.m_set_func)
+  : m_name(ats_strdup(rhs.m_name)),
+    m_symbol(ats_strdup(rhs.m_symbol)),
+    m_type(rhs.m_type),
+    m_container(rhs.m_container),
+    m_marshal_func(rhs.m_marshal_func),
+    m_unmarshal_func(rhs.m_unmarshal_func),
+    m_unmarshal_func_map(rhs.m_unmarshal_func_map),
+    m_agg_op(rhs.m_agg_op),
+    m_agg_cnt(0),
+    m_agg_val(0),
+    m_milestone1(TS_MILESTONE_LAST_ENTRY),
+    m_milestone2(TS_MILESTONE_LAST_ENTRY),
+    m_time_field(rhs.m_time_field),
+    m_alias_map(rhs.m_alias_map),
+    m_set_func(rhs.m_set_func)
 {
   ink_assert(m_name != NULL);
   ink_assert(m_symbol != NULL);
@@ -330,8 +422,9 @@ LogField::~LogField()
 unsigned
 LogField::marshal_len(LogAccess *lad)
 {
-  if (m_container == NO_CONTAINER)
+  if (m_container == NO_CONTAINER) {
     return (lad->*m_marshal_func)(NULL);
+  }
 
   switch (m_container) {
   case CQH:
@@ -473,7 +566,7 @@ LogField::marshal_agg(char *buf)
 unsigned
 LogField::unmarshal(char **buf, char *dest, int len)
 {
-  if (m_alias_map == NULL) {
+  if (!m_alias_map) {
     if (m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_str ||
         m_unmarshal_func == (UnmarshalFunc)LogAccess::unmarshal_http_text) {
       UnmarshalFuncWithSlice func = (UnmarshalFuncWithSlice)m_unmarshal_func;
@@ -502,7 +595,8 @@ LogField::display(FILE *fd)
   This operator does only care of the name and m_symbol, may need
   do check on others layter.
   -------------------------------------------------------------------------*/
-bool LogField::operator==(LogField &rhs)
+bool
+LogField::operator==(LogField &rhs)
 {
   if (strcmp(name(), rhs.name()) || strcmp(symbol(), rhs.symbol())) {
     return false;
@@ -523,7 +617,6 @@ LogField::set_aggregate_op(LogField::Aggregate agg_op)
     m_agg_op = NO_AGGREGATE;
   }
 }
-
 
 void
 LogField::update_aggregate(int64_t val)
@@ -561,42 +654,43 @@ LogField::update_aggregate(int64_t val)
 LogField::Container
 LogField::valid_container_name(char *name)
 {
-  for (int i = 1; i < LogField::N_CONTAINERS; i++) {
+  for (unsigned i = 1; i < countof(container_names); i++) {
     if (strcmp(name, container_names[i]) == 0) {
       return (LogField::Container)i;
     }
   }
+
   return LogField::NO_CONTAINER;
 }
-
 
 LogField::Aggregate
 LogField::valid_aggregate_name(char *name)
 {
-  for (int i = 1; i < LogField::N_AGGREGATES; i++) {
+  for (unsigned i = 1; i < countof(aggregate_names); i++) {
     if (strcmp(name, aggregate_names[i]) == 0) {
       return (LogField::Aggregate)i;
     }
   }
+
   return LogField::NO_AGGREGATE;
 }
-
 
 bool
 LogField::fieldlist_contains_aggregates(char *fieldlist)
 {
   char *match;
-  bool contains_aggregates = false;
-  for (int i = 1; i < LogField::N_AGGREGATES; i++) {
+
+  for (unsigned i = 1; i < countof(aggregate_names); i++) {
     if ((match = strstr(fieldlist, aggregate_names[i])) != NULL) {
       // verify that the aggregate string is not part of a container field name.
-      if ((strchr(fieldlist, '{') == NULL) && (strchr(match, '}') == NULL))
-        contains_aggregates = true;
+      if ((strchr(fieldlist, '{') == NULL) && (strchr(match, '}') == NULL)) {
+        return true;
+      }
     }
   }
-  return contains_aggregates;
-}
 
+  return false;
+}
 
 /*-------------------------------------------------------------------------
   LogFieldList

@@ -16,11 +16,10 @@
   limitations under the License.
 */
 
-
 #include "ts_lua_util.h"
 
 typedef enum {
-  TS_LUA_STAT_PERSISTENT = TS_STAT_PERSISTENT,
+  TS_LUA_STAT_PERSISTENT     = TS_STAT_PERSISTENT,
   TS_LUA_STAT_NON_PERSISTENT = TS_STAT_NON_PERSISTENT
 } TSLuaStatPersistentType;
 
@@ -28,9 +27,9 @@ ts_lua_var_item ts_lua_stat_persistent_vars[] = {TS_LUA_MAKE_VAR_ITEM(TS_LUA_STA
                                                  TS_LUA_MAKE_VAR_ITEM(TS_LUA_STAT_NON_PERSISTENT)};
 
 typedef enum {
-  TS_LUA_STAT_SYNC_SUM = TS_STAT_SYNC_SUM,
-  TS_LUA_STAT_SYNC_COUNT = TS_STAT_SYNC_COUNT,
-  TS_LUA_STAT_SYNC_AVG = TS_STAT_SYNC_AVG,
+  TS_LUA_STAT_SYNC_SUM     = TS_STAT_SYNC_SUM,
+  TS_LUA_STAT_SYNC_COUNT   = TS_STAT_SYNC_COUNT,
+  TS_LUA_STAT_SYNC_AVG     = TS_STAT_SYNC_AVG,
   TS_LUA_STAT_SYNC_TIMEAVG = TS_STAT_SYNC_TIMEAVG
 } TSLuaStatSyncType;
 

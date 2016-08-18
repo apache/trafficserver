@@ -55,7 +55,13 @@ struct CacheHostRecord {
   int num_cachevols;
 
   CacheHostRecord()
-    : type(CACHE_NONE_TYPE), vols(NULL), good_num_vols(0), num_vols(0), num_initialized(0), vol_hash_table(0), cp(NULL),
+    : type(CACHE_NONE_TYPE),
+      vols(NULL),
+      good_num_vols(0),
+      num_vols(0),
+      num_initialized(0),
+      vol_hash_table(0),
+      cp(NULL),
       num_cachevols(0)
   {
   }
@@ -68,7 +74,6 @@ struct CacheHostResult {
 
   CacheHostResult() : record(NULL) {}
 };
-
 
 class CacheHostMatcher
 {
@@ -162,13 +167,12 @@ struct CacheHostTableConfig : public Continuation {
   {
     (void)e;
     (void)event;
-    CacheHostTable *t = new CacheHostTable((*ppt)->cache, (*ppt)->type);
+    CacheHostTable *t   = new CacheHostTable((*ppt)->cache, (*ppt)->type);
     CacheHostTable *old = (CacheHostTable *)ink_atomic_swap(&t, *ppt);
     new_Deleter(old, CACHE_MEM_FREE_TIMEOUT);
     return EVENT_DONE;
   }
 };
-
 
 /* list of volumes in the volume.config file */
 struct ConfigVol {
@@ -197,8 +201,8 @@ struct ConfigVolumes {
       cp_queue.pop();
     }
     // reset count variables
-    num_volumes = 0;
-    num_http_volumes = 0;
+    num_volumes        = 0;
+    num_http_volumes   = 0;
     num_stream_volumes = 0;
   }
 };

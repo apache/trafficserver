@@ -63,7 +63,10 @@
 
 LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uint64_t signature, size_t ascii_buffer_size,
                  size_t max_line_size)
-  : m_file_format(format), m_name(ats_strdup(name)), m_header(ats_strdup(header)), m_signature(signature),
+  : m_file_format(format),
+    m_name(ats_strdup(name)),
+    m_header(ats_strdup(header)),
+    m_signature(signature),
     m_max_line_size(max_line_size)
 {
   if (m_file_format != LOG_FILE_PIPE) {
@@ -73,7 +76,7 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
     m_log = NULL;
   }
 
-  m_fd = -1;
+  m_fd                = -1;
   m_ascii_buffer_size = (ascii_buffer_size < max_line_size ? max_line_size : ascii_buffer_size);
 
   Debug("log-file", "exiting LogFile constructor, m_name=%s, this=%p", m_name, this);
@@ -86,8 +89,12 @@ LogFile::LogFile(const char *name, const char *header, LogFileFormat format, uin
   -------------------------------------------------------------------------*/
 
 LogFile::LogFile(const LogFile &copy)
-  : m_file_format(copy.m_file_format), m_name(ats_strdup(copy.m_name)), m_header(ats_strdup(copy.m_header)),
-    m_signature(copy.m_signature), m_ascii_buffer_size(copy.m_ascii_buffer_size), m_max_line_size(copy.m_max_line_size),
+  : m_file_format(copy.m_file_format),
+    m_name(ats_strdup(copy.m_name)),
+    m_header(ats_strdup(copy.m_header)),
+    m_signature(copy.m_signature),
+    m_ascii_buffer_size(copy.m_ascii_buffer_size),
+    m_max_line_size(copy.m_max_line_size),
     m_fd(copy.m_fd)
 {
   ink_release_assert(m_ascii_buffer_size >= m_max_line_size);
@@ -121,8 +128,9 @@ void
 LogFile::change_name(const char *new_name)
 {
   ats_free(m_name);
-  if (m_log)
+  if (m_log) {
     m_log->change_name(new_name);
+  }
   m_name = ats_strdup(new_name);
 }
 
@@ -159,7 +167,7 @@ LogFile::open_file()
 
   if (m_file_format == LOG_FILE_PIPE) {
     // setup pipe
-    if (mkfifo(m_name, S_IRUSR | S_IWUSR) < 0) {
+    if (mkfifo(m_name, S_IRUSR | S_IWUSR | S_IRGRP) < 0) {
       if (errno != EEXIST) {
         Error("Could not create named pipe %s for logging: %s", m_name, strerror(errno));
         return LOG_FILE_COULD_NOT_CREATE_PIPE;
@@ -178,8 +186,9 @@ LogFile::open_file()
   } else {
     if (m_log) {
       int status = m_log->open_file(Log::config->logfile_perm);
-      if (status == BaseLogFile::LOG_FILE_COULD_NOT_OPEN_FILE)
+      if (status == BaseLogFile::LOG_FILE_COULD_NOT_OPEN_FILE) {
         return LOG_FILE_COULD_NOT_OPEN_FILE;
+      }
     } else {
       return LOG_FILE_COULD_NOT_OPEN_FILE;
     }
@@ -289,9 +298,12 @@ LogFile::preproc_and_try_delete(LogBuffer *lb)
   // the low_timestamp from the given LogBuffer.  Then, we always set the
   // end time to the high_timestamp, so it's always up to date.
   //
-  if (!m_log->m_start_time)
-    m_log->m_start_time = buffer_header->low_timestamp;
-  m_log->m_end_time = buffer_header->high_timestamp;
+  if (m_log) {
+    if (!m_log->m_start_time) {
+      m_log->m_start_time = buffer_header->low_timestamp;
+    }
+    m_log->m_end_time = buffer_header->high_timestamp;
+  }
 
   if (m_file_format == LOG_FILE_BINARY) {
     //
@@ -304,7 +316,7 @@ LogFile::preproc_and_try_delete(LogBuffer *lb)
     //
     LogFlushData *flush_data = new LogFlushData(this, lb);
 
-    ProxyMutex *mutex = this_thread()->mutex;
+    ProxyMutex *mutex = this_thread()->mutex.get();
 
     RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_flush_to_disk_stat, lb->header()->entry_count);
 
@@ -350,9 +362,9 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
   char fmt_line[LOG_MAX_FORMATTED_LINE];
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
-  int fmt_buf_bytes = 0;
+  int fmt_buf_bytes  = 0;
   int fmt_line_bytes = 0;
-  int bytes = 0;
+  int bytes          = 0;
 
   LogFormatType format_type;
   char *fieldlist_str;
@@ -363,7 +375,7 @@ LogFile::write_ascii_logbuffer(LogBufferHeader *buffer_header, int fd, const cha
     format_type = (LogFormatType)buffer_header->format_type;
 
     fieldlist_str = buffer_header->fmt_fieldlist();
-    printf_str = buffer_header->fmt_printf();
+    printf_str    = buffer_header->fmt_printf();
     break;
 
   default:
@@ -412,12 +424,12 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
         m_name, this);
   ink_assert(buffer_header != NULL);
 
-  ProxyMutex *mutex = this_thread()->mutex;
+  ProxyMutex *mutex = this_thread()->mutex.get();
   LogBufferIterator iter(buffer_header);
   LogEntryHeader *entry_header;
   int fmt_entry_count = 0;
-  int fmt_buf_bytes = 0;
-  int total_bytes = 0;
+  int fmt_buf_bytes   = 0;
+  int total_bytes     = 0;
 
   LogFormatType format_type;
   char *fieldlist_str;
@@ -426,9 +438,9 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
   switch (buffer_header->version) {
   case LOG_SEGMENT_VERSION:
-    format_type = (LogFormatType)buffer_header->format_type;
+    format_type   = (LogFormatType)buffer_header->format_type;
     fieldlist_str = buffer_header->fmt_fieldlist();
-    printf_str = buffer_header->fmt_printf();
+    printf_str    = buffer_header->fmt_printf();
     break;
 
   default:
@@ -440,12 +452,13 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
 
   while ((entry_header = iter.next())) {
     fmt_entry_count = 0;
-    fmt_buf_bytes = 0;
+    fmt_buf_bytes   = 0;
 
-    if (m_file_format == LOG_FILE_PIPE)
+    if (m_file_format == LOG_FILE_PIPE) {
       ascii_buffer = (char *)malloc(m_max_line_size);
-    else
+    } else {
       ascii_buffer = (char *)malloc(m_ascii_buffer_size);
+    }
 
     // fill the buffer with as many records as possible
     //
@@ -463,7 +476,7 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
         ++fmt_buf_bytes;
         ++fmt_entry_count;
       } else {
-        Error("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.", entry_header->entry_len);
+        Note("Failed to convert LogBuffer to ascii, have dropped (%" PRIu32 ") bytes.", entry_header->entry_len);
 
         RecIncrRawStat(log_rsb, mutex->thread_holding, log_stat_num_lost_before_flush_to_disk_stat, fmt_entry_count);
 
@@ -473,11 +486,13 @@ LogFile::write_ascii_logbuffer3(LogBufferHeader *buffer_header, const char *alt_
       // record to avoid as much as possible overflowing the
       // pipe buffer
       //
-      if (m_file_format == LOG_FILE_PIPE)
+      if (m_file_format == LOG_FILE_PIPE) {
         break;
+      }
 
-      if (m_ascii_buffer_size - fmt_buf_bytes < m_max_line_size)
+      if (m_ascii_buffer_size - fmt_buf_bytes < m_max_line_size) {
         break;
+      }
     } while ((entry_header = iter.next()));
 
     // send the buffer to flush thread
@@ -547,8 +562,9 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 
     if ((bytes_this_write = (int)::writev(fd, (const struct iovec *)wvec, vcnt)) < 0) {
       Warning("An error was encountered in writing to %s: %s.", ((path) ? path : "logfile"), strerror(errno));
-    } else
+    } else {
       total_bytes = bytes_this_write;
+    }
   }
   return total_bytes;
 }
@@ -566,7 +582,7 @@ LogFile::writeln(char *data, int len, int fd, const char *path)
 void
 LogFile::check_fd()
 {
-  static bool failure_last_call = false;
+  static bool failure_last_call    = false;
   static unsigned stat_check_count = 1;
 
   if ((stat_check_count % Log::config->file_stat_frequency) == 0) {
@@ -606,10 +622,11 @@ LogFile::display(FILE *fd)
 bool
 LogFile::is_open()
 {
-  if (m_file_format == LOG_FILE_PIPE)
+  if (m_file_format == LOG_FILE_PIPE) {
     return m_fd >= 0;
-  else
+  } else {
     return m_log && m_log->is_open();
+  }
 }
 
 /*

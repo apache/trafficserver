@@ -28,18 +28,26 @@
 
  ****************************************************************************/
 
+#include "ts/Regression.h"
+#include "ts/I_Version.h"
 #include "ts/ink_platform.h"
 #include "ts/ink_assert.h"
-#include "ts/Regression.h"
+#include "ts/ink_args.h"
 
-static RegressionTest *test = NULL;
+static RegressionTest *test           = NULL;
 static RegressionTest *exclusive_test = NULL;
 
 RegressionTest *RegressionTest::current = 0;
-int RegressionTest::ran_tests = 0;
+int RegressionTest::ran_tests           = 0;
 DFA RegressionTest::dfa;
-int regression_level = 0;
 int RegressionTest::final_status = REGRESSION_TEST_PASSED;
+
+static const char *
+progname(const char *path)
+{
+  const char *slash = strrchr(path, '/');
+  return slash ? slash + 1 : path;
+}
 
 char *
 regression_status_string(int status)
@@ -50,27 +58,22 @@ regression_status_string(int status)
               (status == REGRESSION_TEST_PASSED ? "PASSED" : (status == REGRESSION_TEST_INPROGRESS ? "INPROGRESS" : "FAILED")));
 }
 
-RegressionTest::RegressionTest(const char *name_arg, TestFunction *function_arg, int aopt)
+RegressionTest::RegressionTest(const char *_n, const SourceLocation &_l, TestFunction *_f, int _o)
+  : name(_n), location(_l), function(_f), next(0), status(REGRESSION_TEST_NOT_RUN), printed(false), opt(_o)
 {
-  name = name_arg;
-  function = function_arg;
-  status = REGRESSION_TEST_NOT_RUN;
-  printed = 0;
-  opt = aopt;
-
   if (opt == REGRESSION_OPT_EXCLUSIVE) {
     if (exclusive_test)
-      this->next = exclusive_test;
+      this->next   = exclusive_test;
     exclusive_test = this;
   } else {
     if (test)
       this->next = test;
-    test = this;
+    test         = this;
   }
 }
 
 static inline int
-start_test(RegressionTest *t)
+start_test(RegressionTest *t, int regression_level)
 {
   ink_assert(t->status == REGRESSION_TEST_NOT_RUN);
   t->status = REGRESSION_TEST_INPROGRESS;
@@ -80,38 +83,62 @@ start_test(RegressionTest *t)
   if (tresult != REGRESSION_TEST_INPROGRESS) {
     fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", t->name, 40 - (int)strlen(t->name), " ",
             regression_status_string(tresult));
-    t->printed = 1;
+    t->printed = true;
   }
   return tresult;
 }
 
 int
-RegressionTest::run(char *atest)
+RegressionTest::run(const char *atest, int regression_level)
 {
   if (atest)
     dfa.compile(atest);
   else
     dfa.compile(".*");
+
   fprintf(stderr, "REGRESSION_TEST initialization begun\n");
   // start the non exclusive tests
   for (RegressionTest *t = test; t; t = t->next) {
     if ((dfa.match(t->name) >= 0)) {
-      int res = start_test(t);
+      int res = start_test(t, regression_level);
       if (res == REGRESSION_TEST_FAILED)
         final_status = REGRESSION_TEST_FAILED;
     }
   }
+
   current = exclusive_test;
-  return run_some();
+  return run_some(regression_level);
+}
+
+void
+RegressionTest::list()
+{
+  char buf[128];
+  const char *bold   = "\x1b[1m";
+  const char *unbold = "\x1b[0m";
+
+  if (!isatty(fileno(stdout))) {
+    bold = unbold = "";
+  }
+
+  for (RegressionTest *t = test; t; t = t->next) {
+    fprintf(stdout, "%s%s%s %s\n", bold, t->name, unbold, t->location.str(buf, sizeof(buf)));
+  }
+
+  for (RegressionTest *t = exclusive_test; t; t = t->next) {
+    fprintf(stdout, "%s%s%s %s\n", bold, t->name, unbold, t->location.str(buf, sizeof(buf)));
+  }
 }
 
 int
-RegressionTest::run_some()
+RegressionTest::run_some(int regression_level)
 {
   if (current) {
-    if (current->status == REGRESSION_TEST_INPROGRESS)
+    if (current->status == REGRESSION_TEST_INPROGRESS) {
       return REGRESSION_TEST_INPROGRESS;
-    else if (current->status != REGRESSION_TEST_NOT_RUN) {
+    }
+
+    if (current->status != REGRESSION_TEST_NOT_RUN) {
       if (!current->printed) {
         current->printed = true;
         fprintf(stderr, "    REGRESSION_RESULT %s:%*s %s\n", current->name, 40 - (int)strlen(current->name), " ",
@@ -123,7 +150,7 @@ RegressionTest::run_some()
 
   for (; current; current = current->next) {
     if ((dfa.match(current->name) >= 0)) {
-      int res = start_test(current);
+      int res = start_test(current, regression_level);
       if (res == REGRESSION_TEST_INPROGRESS)
         return res;
       if (res == REGRESSION_TEST_FAILED)
@@ -134,16 +161,17 @@ RegressionTest::run_some()
 }
 
 int
-RegressionTest::check_status()
+RegressionTest::check_status(int regression_level)
 {
   int status = REGRESSION_TEST_PASSED;
   if (current) {
-    status = run_some();
+    status = run_some(regression_level);
     if (!current)
       return status;
   }
+
   RegressionTest *t = test;
-  int exclusive = 0;
+  int exclusive     = 0;
 
 check_test_list:
   while (t) {
@@ -168,11 +196,39 @@ check_test_list:
   }
   if (!exclusive) {
     exclusive = 1;
-    t = exclusive_test;
+    t         = exclusive_test;
     goto check_test_list;
   }
 
   return (status == REGRESSION_TEST_INPROGRESS) ? REGRESSION_TEST_INPROGRESS : final_status;
+}
+
+int
+RegressionTest::main(int /* argc */, const char **argv, int level)
+{
+  char regression_test[1024] = "";
+  int regression_list        = 0;
+  int regression_level       = level;
+
+  const ArgumentDescription argument_descriptions[] = {
+    {"regression", 'R', "Regression Level (quick:1..long:3)", "I", &regression_level, "PROXY_REGRESSION", NULL},
+    {"regression_test", 'r', "Run Specific Regression Test", "S512", regression_test, "PROXY_REGRESSION_TEST", NULL},
+    {"regression_list", 'l', "List Regression Tests", "T", &regression_list, "PROXY_REGRESSION_LIST", NULL},
+  };
+
+  AppVersionInfo version;
+
+  version.setup(PACKAGE_NAME, progname(argv[0]), PACKAGE_VERSION, __DATE__, __TIME__, BUILD_MACHINE, BUILD_PERSON, "");
+
+  process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
+
+  if (regression_list) {
+    RegressionTest::list();
+  } else {
+    RegressionTest::run(*regression_test == '\0' ? NULL : regression_test, regression_level);
+  }
+
+  return RegressionTest::final_status == REGRESSION_TEST_PASSED ? 0 : 1;
 }
 
 int

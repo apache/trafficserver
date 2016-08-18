@@ -38,13 +38,12 @@
 
 // #define CHECK_PLAUSIBILITY_OF_SOCKADDR
 
-
 #ifdef CHECK_PLAUSIBILITY_OF_SOCKADDR
 #define CHECK_PLAUSIBLE_SOCKADDR(_n, _f, _l) check_plausible_sockaddr(_n, _f, _n)
 inline void
 check_valid_sockaddr(sockaddr *sa, char *file, int line)
 {
-  sockaddr_in *si = (sockaddr_in *)sa;
+  sockaddr_in *si     = (sockaddr_in *)sa;
   unsigned short port = ntohs(si->sin_port);
   unsigned short addr = ntohl(si->sin_addr.s_addr);
 
@@ -123,12 +122,12 @@ safe_blocking(int fd)
 }
 
 int
-write_ready(int fd)
+write_ready(int fd, int timeout_msec)
 {
   struct pollfd p;
   p.events = POLLOUT;
-  p.fd = fd;
-  int r = poll(&p, 1, 0);
+  p.fd     = fd;
+  int r    = poll(&p, 1, timeout_msec);
   if (r <= 0)
     return r;
   if (p.revents & (POLLERR | POLLNVAL))
@@ -139,12 +138,12 @@ write_ready(int fd)
 }
 
 int
-read_ready(int fd)
+read_ready(int fd, int timeout_msec)
 {
   struct pollfd p;
   p.events = POLLIN;
-  p.fd = fd;
-  int r = poll(&p, 1, 0);
+  p.fd     = fd;
+  int r    = poll(&p, 1, timeout_msec);
   if (r <= 0)
     return r;
   if (p.revents & (POLLERR | POLLNVAL))
@@ -246,7 +245,6 @@ fd_read_line(int fd, char *s, int len)
   s[numread] = 0;
   return numread;
 }
-
 
 int
 close_socket(int s)

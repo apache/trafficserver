@@ -1,0 +1,102 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: 2016-01-03 15:57+0900\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: ../../admin-guide/files/plugin.config.en.rst:47
+msgid ""
+"An option list of whitespace-separated arguments may follow the plugin "
+"name. These are passed as an argument vector to the plugin's initialization "
+"function, :c:func:`TSPluginInit`. Arguments that begin with the ``$`` "
+"character designate |TS| configuration variables. These arguments will be "
+"replaced with the value of the corresponding configuration variable before "
+"the plugin is loaded.  When using configuration variable expansion, note "
+"that most |TS| configuration can be changed. If a plugin requires the "
+"current value, it must obtain that using the management API."
+msgstr ""
+"スペース区切りの引数によるオプション一覧がプラグインの後ろに続くことがありま"
+"す。これらはプラグインの初期化関数 :c:func:`TSPluginInit` に引数ベクターとし"
+"て渡されます。``$`` の文字で始まる引数は |TS| 設定変数を示します。これらの引"
+"数はプラグインが読み込まれる前に対応する設定変数の値に置き換えられます。設定"
+"変数の展開を使用する際には、ほとんどの |TS|  設定が変更されうることに注意し"
+"てください。プラグインが現在の値を要求する場合は管理 API を使用してそれを取"
+"得しなければなりません。"
+
+#: ../../admin-guide/files/plugin.config.en.rst:26
+msgid "Description"
+msgstr "解説"
+
+#: ../../admin-guide/files/plugin.config.en.rst:34
+msgid ""
+"Each configuration line consists of a path to an ``.so`` file. This path "
+"can either be absolute, or relative to the plugin directory (usually ``/usr/"
+"local/libexec/trafficserver``).  Failure to load a plugin is fatal, and "
+"will cause |TS| to abort. In general, it is not possible to know whether it "
+"is safe for the service to run without a particular plugin, since plugins "
+"can have arbitrary effects on caching and authorization policies."
+msgstr ""
+"設定の各行は ``.so`` ファイルへのパスで構成されます。このパスは絶対パスにも"
+"プラグインディレクトリ ( 通常は ``/usr/local/libexec/trafficserver``) に対す"
+"る相対パスにもできます。プラグインの読み込み失敗は致命的で、 |TS| の中断を引"
+"き起こします。一般に、プラグインはキャッシュと認証ポリシーについて恣意的な効"
+"果を持っているので、特定のプラグイン無しで動作することがサービスの提供におい"
+"て安全かどうか知ることはできません。"
+
+#: ../../admin-guide/files/plugin.config.en.rst:57
+msgid "Examples"
+msgstr "例"
+
+#: ../../admin-guide/files/plugin.config.en.rst:73
+msgid ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSPluginInit(3ts)`, :manpage:`remap."
+"config(5)`"
+msgstr ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSPluginInit(3ts)`, :manpage:`remap."
+"config(5)`"
+
+#: ../../admin-guide/files/plugin.config.en.rst:43
+msgid ""
+"Plugins should only be listed once. The order in which the plugins are "
+"listed is also the order in which they are chained for request processing."
+msgstr ""
+"プラグインは一度のみ記載されるべきです。プラグインが記載される順番はリクエス"
+"ト処理のためにプラグインがチェーンされる順番となります。"
+
+#: ../../admin-guide/files/plugin.config.en.rst:71
+msgid "See Also"
+msgstr "参照"
+
+#: ../../admin-guide/files/plugin.config.en.rst:28
+msgid ""
+"The :file:`plugin.config` file controls run-time loadable plugins available "
+"to |TS|, as well as their configuration.  Plugins listed in this file are "
+"referred to as *global plugins* because they are always loaded and have "
+"global effect. This is in contrast to plugins specified in :file:`remap."
+"config`, whose effects are limited to the specific mapping rules to which "
+"they are applied."
+msgstr ""
+":file:`plugin.config` ファイルは |TS| で利用可能な実行時に読み込み可能なプラ"
+"グインの制御をその設定と同様に行います。このファイルに記載されたプラグインの"
+"一覧は、常に読み込まれ大域的に影響を持っているので *グローバルプラグイン* と"
+"して参照されます。これはその影響が適用された特定のマッピングルールに制限され"
+"ている :file:`remap.config` に指定されたプラグインとは対照的です。"
+
+#: ../../admin-guide/files/plugin.config.en.rst:21
+msgid "plugin.config"
+msgstr "plugin.config"

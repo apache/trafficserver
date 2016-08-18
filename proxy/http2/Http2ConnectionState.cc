@@ -25,13 +25,18 @@
 #include "Http2ConnectionState.h"
 #include "Http2ClientSession.h"
 #include "Http2Stream.h"
+#include "Http2DebugNames.h"
 
-#define DebugHttp2Ssn(fmt, ...) DebugSsn("http2_cs", "[%" PRId64 "] " fmt, this->con_id, __VA_ARGS__)
+#define DebugHttp2Con(ua_session, fmt, ...) \
+  DebugSsn(ua_session, "http2_con", "[%" PRId64 "] " fmt, ua_session->connection_id(), ##__VA_ARGS__);
 
-typedef Http2Error (*http2_frame_dispatch)(Http2ClientSession &, Http2ConnectionState &, const Http2Frame &);
+#define DebugHttp2Stream(ua_session, stream_id, fmt, ...) \
+  DebugSsn(ua_session, "http2_con", "[%" PRId64 "] [%u] " fmt, ua_session->connection_id(), stream_id, ##__VA_ARGS__);
+
+typedef Http2Error (*http2_frame_dispatch)(Http2ConnectionState &, const Http2Frame &);
 
 static const int buffer_size_index[HTTP2_FRAME_TYPE_MAX] = {
-  BUFFER_SIZE_INDEX_8K,  // HTTP2_FRAME_TYPE_DATA
+  BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_DATA
   BUFFER_SIZE_INDEX_16K, // HTTP2_FRAME_TYPE_HEADERS
   -1,                    // HTTP2_FRAME_TYPE_PRIORITY
   BUFFER_SIZE_INDEX_128, // HTTP2_FRAME_TYPE_RST_STREAM
@@ -59,15 +64,15 @@ read_rcv_buffer(char *buf, size_t bufsize, unsigned &nbytes, const Http2Frame &f
 }
 
 static Http2Error
-rcv_data_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   char buf[BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA])];
-  unsigned nbytes = 0;
-  Http2StreamId id = frame.header().streamid;
-  uint8_t pad_length = 0;
+  unsigned nbytes               = 0;
+  Http2StreamId id              = frame.header().streamid;
+  uint8_t pad_length            = 0;
   const uint32_t payload_length = frame.header().length;
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received DATA frame.", cs.connection_id());
+  DebugHttp2Stream(cstate.ua_session, id, "Received DATA frame");
 
   // If a DATA frame is received whose stream identifier field is 0x0, the
   // recipient MUST
@@ -132,16 +137,24 @@ rcv_data_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2
   stream->server_rwnd -= payload_length;
 
   const uint32_t unpadded_length = payload_length - pad_length;
+  // If we call write() multiple times, we must keep the same reader, so we can
+  // update its offset via consume.  Otherwise, we will read the same data on the
+  // second time through
+  IOBufferReader *myreader = frame.reader()->clone();
   while (nbytes < payload_length - pad_length) {
     size_t read_len = sizeof(buf);
-    if (nbytes + read_len > unpadded_length)
+    if (nbytes + read_len > unpadded_length) {
       read_len -= nbytes + read_len - unpadded_length;
-    unsigned read_bytes = read_rcv_buffer(buf, read_len, nbytes, frame);
-    stream->set_body_to_fetcher(buf, read_bytes);
+    }
+    nbytes += stream->request_buffer.write(myreader, read_len);
+    myreader->consume(nbytes);
+    // If there is an outstanding read, update the buffer
+    stream->update_read_request(INT64_MAX, true);
   }
+  myreader->writer()->dealloc_reader(myreader);
 
   uint32_t initial_rwnd = cstate.server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE);
-  uint32_t min_rwnd = min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
+  uint32_t min_rwnd     = min(initial_rwnd, cstate.server_settings.get(HTTP2_SETTINGS_MAX_FRAME_SIZE));
   // Connection level WINDOW UPDATE
   if (cstate.server_rwnd <= min_rwnd) {
     Http2WindowSize diff_size = initial_rwnd - cstate.server_rwnd;
@@ -168,25 +181,32 @@ rcv_data_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2
  *      CONTINUATION frame
  */
 static Http2Error
-rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   const Http2StreamId stream_id = frame.header().streamid;
   const uint32_t payload_length = frame.header().length;
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received HEADERS frame.", cs.connection_id());
+  DebugHttp2Stream(cstate.ua_session, stream_id, "Received HEADERS frame");
 
   if (!http2_is_client_streamid(stream_id)) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
-  if (stream_id <= cstate.get_latest_stream_id()) {
-    return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_STREAM_CLOSED);
-  }
+  Http2Stream *stream = NULL;
+  bool new_stream     = false;
 
-  // Create new stream
-  Http2Stream *stream = cstate.create_stream(stream_id);
-  if (!stream) {
-    return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
+  if (stream_id <= cstate.get_latest_stream_id()) {
+    stream = cstate.find_stream(stream_id);
+    if (stream == NULL || !stream->has_trailing_header()) {
+      return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_STREAM_CLOSED);
+    }
+  } else {
+    // Create new stream
+    new_stream = true;
+    stream     = cstate.create_stream(stream_id);
+    if (!stream) {
+      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
+    }
   }
 
   // keep track of how many bytes we get in the frame
@@ -223,7 +243,6 @@ rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Ht
   }
 
   // NOTE: Parse priority parameters if exists
-  // TODO: Currently priority is NOT supported. TS-3535 will fix this.
   if (frame.header().flags & HTTP2_FLAGS_HEADERS_PRIORITY) {
     uint8_t buf[HTTP2_PRIORITY_LEN] = {0};
 
@@ -240,6 +259,20 @@ rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Ht
     header_block_fragment_length -= HTTP2_PRIORITY_LEN;
   }
 
+  if (new_stream && Http2::stream_priority_enabled) {
+    DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
+    if (node != NULL) {
+      stream->priority_node = node;
+    } else {
+      DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
+                       params.priority.stream_dependency, params.priority.weight, params.priority.exclusive_flag,
+                       cstate.dependency_tree->size());
+
+      stream->priority_node = cstate.dependency_tree->add(params.priority.stream_dependency, stream_id, params.priority.weight,
+                                                          params.priority.exclusive_flag, stream);
+    }
+  }
+
   stream->header_blocks = static_cast<uint8_t *>(ats_malloc(header_block_fragment_length));
   frame.reader()->memcpy(stream->header_blocks, header_block_fragment_length, header_block_fragment_offset);
 
@@ -247,70 +280,120 @@ rcv_headers_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Ht
 
   if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
     // NOTE: If there are END_HEADERS flag, decode stored Header Blocks.
-    if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, frame.header().flags)) {
+    if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, frame.header().flags) && stream->has_trailing_header() == false) {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
 
-    const int64_t decoded_bytes = stream->decode_header_blocks(*cstate.local_dynamic_table);
-
-    if (decoded_bytes == 0 || decoded_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
-    } else if (decoded_bytes == HPACK_ERROR_HTTP2_PROTOCOL_ERROR) {
-      return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
+    bool empty_request = false;
+    if (stream->has_trailing_header()) {
+      if (!(frame.header().flags & HTTP2_FLAGS_HEADERS_END_STREAM)) {
+        return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
+      }
+      // If the flag has already been set before decoding header blocks, this is the trailing header.
+      // Set a flag to avoid initializing fetcher for now.
+      // Decoding header blocks is stil needed to maintain a HPACK dynamic table.
+      // TODO: TS-3812
+      empty_request = true;
     }
 
-    if (!stream->init_fetcher(cstate)) {
-      return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
+    Http2ErrorCode result = stream->decode_header_blocks(*cstate.local_hpack_handle);
+
+    if (result != HTTP2_ERROR_NO_ERROR) {
+      if (result == HTTP2_ERROR_COMPRESSION_ERROR) {
+        return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
+      } else {
+        return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
+      }
+    }
+
+    // Set up the State Machine
+    if (!empty_request) {
+      stream->new_transaction();
+      // Send request header to SM
+      stream->send_request(cstate);
     }
   } else {
     // NOTE: Expect CONTINUATION Frame. Do NOT change state of stream or decode
     // Header Blocks.
-    DebugSsn(&cs, "http2_cs", "[%" PRId64 "] No END_HEADERS flag, expecting CONTINUATION frame.", cs.connection_id());
-
+    DebugHttp2Stream(cstate.ua_session, stream_id, "No END_HEADERS flag, expecting CONTINUATION frame");
     cstate.set_continued_stream_id(stream_id);
   }
 
   return Http2Error(HTTP2_ERROR_CLASS_NONE);
 }
 
+/*
+ * [RFC 7540] 6.3 PRIORITY
+ *
+ */
 static Http2Error
-rcv_priority_frame(Http2ClientSession &cs, Http2ConnectionState & /*cstate*/, const Http2Frame &frame)
+rcv_priority_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] received PRIORITY frame", cs.connection_id());
+  const Http2StreamId stream_id = frame.header().streamid;
+  const uint32_t payload_length = frame.header().length;
+
+  DebugHttp2Stream(cstate.ua_session, stream_id, "Received PRIORITY frame");
 
   // If a PRIORITY frame is received with a stream identifier of 0x0, the
   // recipient MUST respond with a connection error of type PROTOCOL_ERROR.
-  if (frame.header().streamid == 0) {
+  if (stream_id == 0) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
   // A PRIORITY frame with a length other than 5 octets MUST be treated as
   // a stream error (Section 5.4.2) of type FRAME_SIZE_ERROR.
-  if (frame.header().length != HTTP2_PRIORITY_LEN) {
+  if (payload_length != HTTP2_PRIORITY_LEN) {
     return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_FRAME_SIZE_ERROR);
   }
 
-  // TODO Pick stream dependencies and weight
-  // Supporting PRIORITY is not essential so its temporarily ignored.
+  if (!Http2::stream_priority_enabled) {
+    return Http2Error(HTTP2_ERROR_CLASS_NONE);
+  }
+
+  uint8_t buf[HTTP2_PRIORITY_LEN] = {0};
+  frame.reader()->memcpy(buf, HTTP2_PRIORITY_LEN, 0);
+
+  Http2Priority priority;
+  if (!http2_parse_priority_parameter(make_iovec(buf, HTTP2_PRIORITY_LEN), priority)) {
+    return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
+  }
+
+  DebugHttp2Stream(cstate.ua_session, stream_id, "PRIORITY - dep: %d, weight: %d, excl: %d, tree size: %d",
+                   priority.stream_dependency, priority.weight, priority.exclusive_flag, cstate.dependency_tree->size());
+
+  DependencyTree::Node *node = cstate.dependency_tree->find(stream_id);
+
+  if (node != NULL) {
+    // [RFC 7540] 5.3.3 Reprioritization
+    DebugHttp2Stream(cstate.ua_session, stream_id, "Reprioritize");
+    cstate.dependency_tree->reprioritize(node, priority.stream_dependency, priority.exclusive_flag);
+  } else {
+    // PRIORITY frame is received before HEADERS frame.
+
+    // Restrict number of inactive node in dependency tree smaller than max_concurrent_streams.
+    // Current number of inactive node is size of tree minus active node count.
+    if (Http2::max_concurrent_streams_in > cstate.dependency_tree->size() - cstate.get_client_stream_count() + 1) {
+      cstate.dependency_tree->add(priority.stream_dependency, stream_id, priority.weight, priority.exclusive_flag, NULL);
+    }
+  }
 
   return Http2Error(HTTP2_ERROR_CLASS_NONE);
 }
 
 static Http2Error
-rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_rst_stream_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   Http2RstStream rst_stream;
   char buf[HTTP2_RST_STREAM_LEN];
   char *end;
+  const Http2StreamId stream_id = frame.header().streamid;
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received RST_STREAM frame.", cs.connection_id());
+  DebugHttp2Stream(cstate.ua_session, frame.header().streamid, "Received RST_STREAM frame");
 
   // RST_STREAM frames MUST be associated with a stream.  If a RST_STREAM
   // frame is received with a stream identifier of 0x0, the recipient MUST
   // treat this as a connection error (Section 5.4.1) of type
   // PROTOCOL_ERROR.
-  Http2StreamId stream_id = frame.header().streamid;
-
   if (!http2_is_client_streamid(stream_id)) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
@@ -343,8 +426,8 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
   }
 
   if (stream != NULL) {
-    DebugSsn(&cs, "http2_cs", "[%" PRId64 "] RST_STREAM: Stream ID: %u, Error Code: %u)", cs.connection_id(), stream->get_id(),
-             rst_stream.error_code);
+    DebugHttp2Stream(cstate.ua_session, stream_id, "RST_STREAM: Error Code: %u", rst_stream.error_code);
+
     cstate.delete_stream(stream);
   }
 
@@ -352,19 +435,20 @@ rcv_rst_stream_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const
 }
 
 static Http2Error
-rcv_settings_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_settings_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   Http2SettingsParameter param;
   char buf[HTTP2_SETTINGS_PARAMETER_LEN];
-  unsigned nbytes = 0;
+  unsigned nbytes               = 0;
+  const Http2StreamId stream_id = frame.header().streamid;
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received SETTINGS frame.", cs.connection_id());
+  DebugHttp2Stream(cstate.ua_session, stream_id, "Received SETTINGS frame");
 
   // [RFC 7540] 6.5. The stream identifier for a SETTINGS frame MUST be zero.
   // If an endpoint receives a SETTINGS frame whose stream identifier field is
   // anything other than 0x0, the endpoint MUST respond with a connection
   // error (Section 5.4.1) of type PROTOCOL_ERROR.
-  if (frame.header().streamid != 0) {
+  if (stream_id != 0) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
@@ -401,7 +485,7 @@ rcv_settings_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const H
       }
     }
 
-    DebugSsn(&cs, "http2_cs", "[%" PRId64 "] setting param=%d value=%u", cs.connection_id(), param.id, param.value);
+    DebugHttp2Stream(cstate.ua_session, stream_id, "   %s : %u", Http2DebugNames::get_settings_param_name(param.id), param.value);
 
     // [RFC 7540] 6.9.2. When the value of SETTINGS_INITIAL_WINDOW_SIZE
     // changes, a receiver MUST adjust the size of all stream flow control
@@ -423,9 +507,9 @@ rcv_settings_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const H
 }
 
 static Http2Error
-rcv_push_promise_frame(Http2ClientSession &cs, Http2ConnectionState & /*cstate*/, const Http2Frame & /*frame*/)
+rcv_push_promise_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] received PUSH_PROMISE frame", cs.connection_id());
+  DebugHttp2Stream(cstate.ua_session, frame.header().streamid, "Received PUSH_PROMISE frame");
 
   // [RFC 7540] 8.2. A client cannot push. Thus, servers MUST treat the receipt of a
   // PUSH_PROMISE frame as a connection error of type PROTOCOL_ERROR.
@@ -433,16 +517,17 @@ rcv_push_promise_frame(Http2ClientSession &cs, Http2ConnectionState & /*cstate*/
 }
 
 static Http2Error
-rcv_ping_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_ping_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   uint8_t opaque_data[HTTP2_PING_LEN];
+  const Http2StreamId stream_id = frame.header().streamid;
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received PING frame.", cs.connection_id());
+  DebugHttp2Stream(cstate.ua_session, stream_id, "Received PING frame");
 
   //  If a PING frame is received with a stream identifier field value other
   //  than 0x0, the recipient MUST respond with a connection error of type
   //  PROTOCOL_ERROR.
-  if (frame.header().streamid != 0x0) {
+  if (stream_id != 0x0) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
@@ -460,23 +545,24 @@ rcv_ping_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2
   frame.reader()->memcpy(opaque_data, HTTP2_PING_LEN, 0);
 
   // ACK (0x1): An endpoint MUST set this flag in PING responses.
-  cstate.send_ping_frame(frame.header().streamid, HTTP2_FLAGS_PING_ACK, opaque_data);
+  cstate.send_ping_frame(stream_id, HTTP2_FLAGS_PING_ACK, opaque_data);
 
   return Http2Error(HTTP2_ERROR_CLASS_NONE);
 }
 
 static Http2Error
-rcv_goaway_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_goaway_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   Http2Goaway goaway;
   char buf[HTTP2_GOAWAY_LEN];
-  unsigned nbytes = 0;
+  unsigned nbytes               = 0;
+  const Http2StreamId stream_id = frame.header().streamid;
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] received GOAWAY frame", cs.connection_id());
+  DebugHttp2Stream(cstate.ua_session, stream_id, "Received GOAWAY frame");
 
   // An endpoint MUST treat a GOAWAY frame with a stream identifier other
   // than 0x0 as a connection error of type PROTOCOL_ERROR.
-  if (frame.header().streamid != 0x0) {
+  if (stream_id != 0x0) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
   }
 
@@ -488,8 +574,8 @@ rcv_goaway_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Htt
     }
   }
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] GOAWAY: last stream id=%d, error code=%d.", cs.connection_id(), goaway.last_streamid,
-           goaway.error_code);
+  DebugHttp2Stream(cstate.ua_session, stream_id, "GOAWAY: last stream id=%d, error code=%d", goaway.last_streamid,
+                   goaway.error_code);
 
   cstate.handleEvent(HTTP2_SESSION_EVENT_FINI, NULL);
   // eventProcessor.schedule_imm(&cs, ET_NET, VC_EVENT_ERROR);
@@ -498,32 +584,36 @@ rcv_goaway_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Htt
 }
 
 static Http2Error
-rcv_window_update_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_window_update_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   char buf[HTTP2_WINDOW_UPDATE_LEN];
   uint32_t size;
-  Http2StreamId sid = frame.header().streamid;
-
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received WINDOW_UPDATE frame.", cs.connection_id());
+  const Http2StreamId stream_id = frame.header().streamid;
 
   //  A WINDOW_UPDATE frame with a length other than 4 octets MUST be
   //  treated as a connection error of type FRAME_SIZE_ERROR.
   if (frame.header().length != HTTP2_WINDOW_UPDATE_LEN) {
+    DebugHttp2Stream(cstate.ua_session, stream_id, "Received WINDOW_UPDATE frame - length incorrect");
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_FRAME_SIZE_ERROR);
   }
 
-  if (sid == 0) {
-    // Connection level window update
-    frame.reader()->memcpy(buf, sizeof(buf), 0);
-    http2_parse_window_update(make_iovec(buf, sizeof(buf)), size);
+  frame.reader()->memcpy(buf, sizeof(buf), 0);
+  http2_parse_window_update(make_iovec(buf, sizeof(buf)), size);
 
-    // A receiver MUST treat the receipt of a WINDOW_UPDATE frame with a
-    // connection
-    // flow control window increment of 0 as a connection error of type
-    // PROTOCOL_ERROR;
-    if (size == 0) {
+  // A receiver MUST treat the receipt of a WINDOW_UPDATE frame with a flow
+  // control window increment of 0 as a connection error of type PROTOCOL_ERROR;
+  if (size == 0) {
+    if (stream_id == 0) {
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
+    } else {
+      return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
     }
+  }
+
+  if (stream_id == 0) {
+    // Connection level window update
+    DebugHttp2Stream(cstate.ua_session, stream_id, "Received WINDOW_UPDATE frame - updated to: %zd delta: %u",
+                     (cstate.client_rwnd + size), size);
 
     // A sender MUST NOT allow a flow-control window to exceed 2^31-1
     // octets.  If a sender receives a WINDOW_UPDATE that causes a flow-
@@ -540,25 +630,18 @@ rcv_window_update_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, co
     cstate.restart_streams();
   } else {
     // Stream level window update
-    Http2Stream *stream = cstate.find_stream(sid);
+    Http2Stream *stream = cstate.find_stream(stream_id);
 
     if (stream == NULL) {
-      if (sid <= cstate.get_latest_stream_id()) {
+      if (stream_id <= cstate.get_latest_stream_id()) {
         return Http2Error(HTTP2_ERROR_CLASS_NONE);
       } else {
         return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
       }
     }
 
-    frame.reader()->memcpy(buf, sizeof(buf), 0);
-    http2_parse_window_update(make_iovec(buf, sizeof(buf)), size);
-
-    // A receiver MUST treat the receipt of a WINDOW_UPDATE frame with an
-    // flow control window increment of 0 as a stream error of type
-    // PROTOCOL_ERROR;
-    if (size == 0) {
-      return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
-    }
+    DebugHttp2Stream(cstate.ua_session, stream_id, "Received WINDOW_UPDATE frame - updated to: %zd delta: %u",
+                     (stream->client_rwnd + size), size);
 
     // A sender MUST NOT allow a flow-control window to exceed 2^31-1
     // octets.  If a sender receives a WINDOW_UPDATE that causes a flow-
@@ -573,8 +656,9 @@ rcv_window_update_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, co
 
     stream->client_rwnd += size;
     ssize_t wnd = min(cstate.client_rwnd, stream->client_rwnd);
-    if (wnd > 0) {
-      cstate.send_data_frame(stream->get_fetcher());
+
+    if (stream->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && wnd > 0) {
+      stream->send_response_body();
     }
   }
 
@@ -589,12 +673,12 @@ rcv_window_update_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, co
  *
  */
 static Http2Error
-rcv_continuation_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, const Http2Frame &frame)
+rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 {
   const Http2StreamId stream_id = frame.header().streamid;
   const uint32_t payload_length = frame.header().length;
 
-  DebugSsn(&cs, "http2_cs", "[%" PRId64 "] Received CONTINUATION frame.", cs.connection_id());
+  DebugHttp2Stream(cstate.ua_session, stream_id, "Received CONTINUATION frame");
 
   if (!http2_is_client_streamid(stream_id)) {
     return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
@@ -644,18 +728,23 @@ rcv_continuation_frame(Http2ClientSession &cs, Http2ConnectionState &cstate, con
       return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
     }
 
-    const int64_t decoded_bytes = stream->decode_header_blocks(*cstate.local_dynamic_table);
+    Http2ErrorCode result = stream->decode_header_blocks(*cstate.local_hpack_handle);
 
-    if (decoded_bytes == 0 || decoded_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
-      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
-    } else if (decoded_bytes == HPACK_ERROR_HTTP2_PROTOCOL_ERROR) {
-      return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_PROTOCOL_ERROR);
+    if (result != HTTP2_ERROR_NO_ERROR) {
+      if (result == HTTP2_ERROR_COMPRESSION_ERROR) {
+        return Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_COMPRESSION_ERROR);
+      } else {
+        return Http2Error(HTTP2_ERROR_CLASS_STREAM, HTTP2_ERROR_PROTOCOL_ERROR);
+      }
     }
 
-    stream->init_fetcher(cstate);
+    // Set up the State Machine
+    stream->new_transaction();
+    // Send request header to SM
+    stream->send_request(cstate);
   } else {
     // NOTE: Expect another CONTINUATION Frame. Do nothing.
-    DebugSsn(&cs, "http2_cs", "[%" PRId64 "] No END_HEADERS flag, expecting CONTINUATION frame.", cs.connection_id());
+    DebugHttp2Stream(cstate.ua_session, stream_id, "No END_HEADERS flag, expecting CONTINUATION frame");
   }
 
   return Http2Error(HTTP2_ERROR_CLASS_NONE);
@@ -677,6 +766,7 @@ static const http2_frame_dispatch frame_handlers[HTTP2_FRAME_TYPE_MAX] = {
 int
 Http2ConnectionState::main_event_handler(int event, void *edata)
 {
+  ++recursion;
   switch (event) {
   // Initialize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_INIT: {
@@ -693,47 +783,58 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
     // settings.
     Http2ConnectionSettings configured_settings;
     configured_settings.settings_from_configs();
+    configured_settings.set(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, _adjust_concurrent_stream());
+
     send_settings_frame(configured_settings);
 
     if (server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) > HTTP2_INITIAL_WINDOW_SIZE) {
       send_window_update_frame(0, server_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE) - HTTP2_INITIAL_WINDOW_SIZE);
     }
 
-    return 0;
+    break;
   }
 
   // Finalize HTTP/2 Connection
   case HTTP2_SESSION_EVENT_FINI: {
-    this->ua_session = NULL;
+    this->fini_received = true;
     cleanup_streams();
     SET_HANDLER(&Http2ConnectionState::state_closed);
+    this->release_stream(NULL);
+  } break;
+
+  case HTTP2_SESSION_EVENT_XMIT: {
+    SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+    send_data_frames_depends_on_priority();
+    _scheduled = false;
+
     return 0;
   }
 
   // Parse received HTTP/2 frames
   case HTTP2_SESSION_EVENT_RECV: {
-    Http2Frame *frame = (Http2Frame *)edata;
-    Http2StreamId last_streamid = frame->header().streamid;
+    const Http2Frame *frame       = (Http2Frame *)edata;
+    const Http2StreamId stream_id = frame->header().streamid;
     Http2Error error;
 
     // [RFC 7540] 5.5. Extending HTTP/2
     //   Implementations MUST discard frames that have unknown or unsupported types.
     if (frame->header().type >= HTTP2_FRAME_TYPE_MAX) {
-      DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Discard a frame which has unknown type, type=%x",
-               this->ua_session->connection_id(), frame->header().type);
-      return 0;
+      DebugHttp2Stream(ua_session, stream_id, "Discard a frame which has unknown type, type=%x", frame->header().type);
+      break;
     }
 
     if (frame_handlers[frame->header().type]) {
-      error = frame_handlers[frame->header().type](*this->ua_session, *this, *frame);
+      error = frame_handlers[frame->header().type](*this, *frame);
     } else {
       error = Http2Error(HTTP2_ERROR_CLASS_CONNECTION, HTTP2_ERROR_INTERNAL_ERROR);
     }
 
     if (error.cls != HTTP2_ERROR_CLASS_NONE) {
       if (error.cls == HTTP2_ERROR_CLASS_CONNECTION) {
-        this->send_goaway_frame(last_streamid, error.code);
-        cleanup_streams();
+        this->send_goaway_frame(stream_id, error.code);
+        // The streams will be cleaned up by the HTTP2_SESSION_EVENT_FINI event
+        // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
+
         // XXX We need to think a bit harder about how to coordinate the client
         // session and the
         // protocol connection. At this point, the protocol is shutting down,
@@ -743,40 +844,26 @@ Http2ConnectionState::main_event_handler(int event, void *edata)
         // half-closed state ...
         SET_HANDLER(&Http2ConnectionState::state_closed);
       } else if (error.cls == HTTP2_ERROR_CLASS_STREAM) {
-        this->send_rst_stream_frame(last_streamid, error.code);
+        this->send_rst_stream_frame(stream_id, error.code);
       }
     }
 
-    return 0;
-  }
-
-  // Process response headers from origin server
-  case TS_FETCH_EVENT_EXT_HEAD_DONE: {
-    FetchSM *fetch_sm = reinterpret_cast<FetchSM *>(edata);
-    this->send_headers_frame(fetch_sm);
-    return 0;
-  }
-
-  // Process a part of response body from origin server
-  case TS_FETCH_EVENT_EXT_BODY_READY: {
-    FetchSM *fetch_sm = reinterpret_cast<FetchSM *>(edata);
-    this->send_data_frame(fetch_sm);
-    return 0;
-  }
-
-  // Process final part of response body from origin server
-  case TS_FETCH_EVENT_EXT_BODY_DONE: {
-    FetchSM *fetch_sm = reinterpret_cast<FetchSM *>(edata);
-    Http2Stream *stream = static_cast<Http2Stream *>(fetch_sm->ext_get_user_data());
-    stream->mark_body_done();
-    this->send_data_frame(fetch_sm);
-    return 0;
+    break;
   }
 
   default:
-    DebugSsn(this->ua_session, "http2_cs", "unexpected event=%d edata=%p", event, edata);
+    DebugHttp2Con(ua_session, "unexpected event=%d edata=%p", event, edata);
     ink_release_assert(0);
-    return 0;
+    break;
+  }
+
+  --recursion;
+  if (recursion == 0 && ua_session && !ua_session->is_recursing()) {
+    if (this->ua_session->ready_to_free()) {
+      this->ua_session->free();
+      // After the free, the Http2ConnectionState object is also freed.
+      // The Http2ConnectionState object is allocted within the Http2ClientSession object
+    }
   }
 
   return 0;
@@ -801,16 +888,20 @@ Http2ConnectionState::create_stream(Http2StreamId new_id)
   // Endpoints MUST NOT exceed the limit set by their peer.  An endpoint
   // that receives a HEADERS frame that causes their advertised concurrent
   // stream limit to be exceeded MUST treat this as a stream error.
-  if (client_streams_count >= client_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
+  if (client_streams_count >= server_settings.get(HTTP2_SETTINGS_MAX_CONCURRENT_STREAMS)) {
     return NULL;
   }
 
-  Http2Stream *new_stream = new Http2Stream(new_id, client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
+  Http2Stream *new_stream = THREAD_ALLOC_INIT(http2StreamAllocator, this_ethread());
+  new_stream->init(new_id, client_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
   stream_list.push(new_stream);
   latest_streamid = new_id;
 
   ink_assert(client_streams_count < UINT32_MAX);
   ++client_streams_count;
+  ++total_client_streams_count;
+  new_stream->set_parent(ua_session);
+  new_stream->mutex = ua_session->mutex;
   ua_session->get_netvc()->add_to_active_queue();
 
   return new_stream;
@@ -820,8 +911,9 @@ Http2Stream *
 Http2ConnectionState::find_stream(Http2StreamId id) const
 {
   for (Http2Stream *s = stream_list.head; s; s = s->link.next) {
-    if (s->get_id() == id)
+    if (s->get_id() == id) {
       return s;
+    }
   }
   return NULL;
 }
@@ -829,13 +921,12 @@ Http2ConnectionState::find_stream(Http2StreamId id) const
 void
 Http2ConnectionState::restart_streams()
 {
-  // Currently lookup retryable streams sequentially.
-  // TODO considering to stream weight and dependencies.
   Http2Stream *s = stream_list.head;
+
   while (s) {
     Http2Stream *next = s->link.next;
-    if (min(this->client_rwnd, s->client_rwnd) > 0) {
-      this->send_data_frame(s->get_fetcher());
+    if (s->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE && min(this->client_rwnd, s->client_rwnd) > 0) {
+      s->send_response_body();
     }
     s = next;
   }
@@ -847,10 +938,10 @@ Http2ConnectionState::cleanup_streams()
   Http2Stream *s = stream_list.head;
   while (s) {
     Http2Stream *next = s->link.next;
-    stream_list.remove(s);
-    delete s;
+    this->delete_stream(s);
     s = next;
   }
+
   client_streams_count = 0;
   if (!is_state_closed()) {
     ua_session->get_netvc()->add_to_keep_alive_queue();
@@ -860,14 +951,38 @@ Http2ConnectionState::cleanup_streams()
 void
 Http2ConnectionState::delete_stream(Http2Stream *stream)
 {
+  DebugHttp2Stream(ua_session, stream->get_id(), "Delete stream");
+
+  if (Http2::stream_priority_enabled) {
+    DependencyTree::Node *node = stream->priority_node;
+    if (node != NULL) {
+      if (node->active) {
+        dependency_tree->deactivate(node, 0);
+      }
+      dependency_tree->remove(node);
+    }
+  }
+
   stream_list.remove(stream);
-  delete stream;
+  stream->initiating_close();
 
   ink_assert(client_streams_count > 0);
   --client_streams_count;
 
-  if (client_streams_count == 0) {
+  if (client_streams_count == 0 && ua_session) {
     ua_session->get_netvc()->add_to_keep_alive_queue();
+  }
+}
+
+void
+Http2ConnectionState::release_stream(Http2Stream *stream)
+{
+  if (stream) {
+    --total_client_streams_count;
+  }
+  if (ua_session && fini_received && total_client_streams_count == 0) {
+    // We were shutting down, go ahead and terminate the session
+    ua_session->destroy();
   }
 }
 
@@ -881,67 +996,150 @@ Http2ConnectionState::update_initial_rwnd(Http2WindowSize new_size)
 }
 
 void
-Http2ConnectionState::send_data_frame(FetchSM *fetch_sm)
+Http2ConnectionState::schedule_stream(Http2Stream *stream)
 {
-  DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send DATA frame", this->ua_session->connection_id());
+  DebugHttp2Stream(ua_session, stream->get_id(), "Scheduled");
 
-  if (fetch_sm == NULL) {
+  DependencyTree::Node *node = stream->priority_node;
+  ink_release_assert(node != NULL);
+
+  SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  dependency_tree->activate(node);
+
+  if (!_scheduled) {
+    _scheduled = true;
+
+    SET_HANDLER(&Http2ConnectionState::main_event_handler);
+    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+  }
+}
+
+void
+Http2ConnectionState::send_data_frames_depends_on_priority()
+{
+  DependencyTree::Node *node = dependency_tree->top();
+
+  // No node to send or no connection level window left
+  if (node == NULL || client_rwnd <= 0) {
     return;
   }
 
-  size_t buf_len = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]) - HTTP2_FRAME_HEADER_LEN;
+  Http2Stream *stream = node->t;
+  ink_release_assert(stream != NULL);
+  DebugHttp2Stream(ua_session, stream->get_id(), "top node, point=%d", node->point);
+
+  size_t len                       = 0;
+  Http2SendADataFrameResult result = send_a_data_frame(stream, len);
+
+  if (result != HTTP2_SEND_A_DATA_FRAME_NO_ERROR) {
+    // When no stream level window left, deactivate node once and wait window_update frame
+    dependency_tree->deactivate(node, len);
+    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+    return;
+  }
+
+  // No response body to send
+  if (len == 0 && !stream->is_body_done()) {
+    dependency_tree->deactivate(node, len);
+    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+    return;
+  }
+
+  if (stream->get_state() == HTTP2_STREAM_STATE_CLOSED) {
+    dependency_tree->deactivate(node, len);
+    delete_stream(stream);
+  } else {
+    dependency_tree->update(node, len);
+  }
+
+  this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+}
+
+Http2SendADataFrameResult
+Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_length)
+{
+  const ssize_t window_size         = min(this->client_rwnd, stream->client_rwnd);
+  const size_t buf_len              = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
+  const size_t write_available_size = min(buf_len, static_cast<size_t>(window_size));
+  size_t read_available_size        = 0;
+
+  uint8_t flags = 0x00;
   uint8_t payload_buffer[buf_len];
+  IOBufferReader *current_reader = stream->response_get_data_reader();
 
-  Http2Stream *stream = static_cast<Http2Stream *>(fetch_sm->ext_get_user_data());
+  SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
 
-  for (;;) {
-    uint8_t flags = 0x00;
+  if (current_reader) {
+    read_available_size = static_cast<size_t>(current_reader->read_avail());
+  }
 
-    // Select appropriate payload size
-    if (this->client_rwnd <= 0 || stream->client_rwnd <= 0)
-      break;
-    size_t window_size = min(this->client_rwnd, stream->client_rwnd);
-    size_t send_size = min(buf_len, window_size);
-
-    size_t payload_length = fetch_sm->ext_read_data(reinterpret_cast<char *>(payload_buffer), send_size);
-
-    // If we break here, we never send the END_STREAM in the case of a
-    // early terminating OS.  Ok if there is no body yet.  Otherwise
-    // continue on to delete the stream
-    if (payload_length == 0 && !stream->is_body_done()) {
-      break;
+  // Select appropriate payload length
+  if (read_available_size > 0) {
+    // We only need to check for window size when there is a payload
+    if (window_size <= 0) {
+      return HTTP2_SEND_A_DATA_FRAME_NO_WINDOW;
     }
+    // Copy into the payload buffer. Seems like we should be able to skip this copy step
+    payload_length = current_reader->read(payload_buffer, write_available_size);
+  } else {
+    payload_length = 0;
+  }
 
-    // Update window size
-    this->client_rwnd -= payload_length;
-    stream->client_rwnd -= payload_length;
+  // Are we at the end?
+  // If we return here, we never send the END_STREAM in the case of a early terminating OS.
+  // OK if there is no body yet. Otherwise continue on to send a DATA frame and delete the stream
+  if (!stream->is_body_done() && payload_length == 0) {
+    return HTTP2_SEND_A_DATA_FRAME_NO_PAYLOAD;
+  }
 
-    if (stream->is_body_done() && payload_length < send_size) {
-      flags |= HTTP2_FLAGS_DATA_END_STREAM;
-    }
+  if (stream->is_body_done() && read_available_size <= write_available_size) {
+    flags |= HTTP2_FLAGS_DATA_END_STREAM;
+  }
 
-    // Create frame
-    Http2Frame data(HTTP2_FRAME_TYPE_DATA, stream->get_id(), flags);
-    data.alloc(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
-    http2_write_data(payload_buffer, payload_length, data.write());
-    data.finalize(payload_length);
+  // Update window size
+  this->client_rwnd -= payload_length;
+  stream->client_rwnd -= payload_length;
 
-    // Change state to 'closed' if its end of DATAs.
-    if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
-      if (!stream->change_state(data.header().type, data.header().flags)) {
-        this->send_goaway_frame(stream->get_id(), HTTP2_ERROR_PROTOCOL_ERROR);
-      }
-    }
+  // Create frame
+  DebugHttp2Stream(ua_session, stream->get_id(), "Send a DATA frame - client window con: %zd stream: %zd payload: %zd", client_rwnd,
+                   stream->client_rwnd, payload_length);
 
-    // xmit event
-    SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
-    this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &data);
+  Http2Frame data(HTTP2_FRAME_TYPE_DATA, stream->get_id(), flags);
+  data.alloc(buffer_size_index[HTTP2_FRAME_TYPE_DATA]);
+  http2_write_data(payload_buffer, payload_length, data.write());
+  data.finalize(payload_length);
 
-    if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
+  stream->update_sent_count(payload_length);
+
+  // Change state to 'closed' if its end of DATAs.
+  if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
+    DebugHttp2Stream(ua_session, stream->get_id(), "End of DATA frame");
+    // Setting to the same state shouldn't be erroneous
+    stream->change_state(data.header().type, data.header().flags);
+  }
+
+  // xmit event
+  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &data);
+
+  return HTTP2_SEND_A_DATA_FRAME_NO_ERROR;
+}
+
+void
+Http2ConnectionState::send_data_frames(Http2Stream *stream)
+{
+  if (stream->get_state() == HTTP2_STREAM_STATE_CLOSED) {
+    return;
+  }
+
+  size_t len = 0;
+  while (send_a_data_frame(stream, len) == HTTP2_SEND_A_DATA_FRAME_NO_ERROR) {
+    if (stream->get_state() == HTTP2_STREAM_STATE_CLOSED) {
       // Delete a stream immediately
       // TODO its should not be deleted for a several time to handling
       // RST_STREAM and WINDOW_UPDATE.
       // See 'closed' state written at [RFC 7540] 5.1.
+      DebugSsn(this->ua_session, "http2_cs", "Shutdown stream %d", stream->get_id());
       this->delete_stream(stream);
       break;
     }
@@ -949,61 +1147,81 @@ Http2ConnectionState::send_data_frame(FetchSM *fetch_sm)
 }
 
 void
-Http2ConnectionState::send_headers_frame(FetchSM *fetch_sm)
+Http2ConnectionState::send_headers_frame(Http2Stream *stream)
 {
-  DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send HEADERS frame.", this->ua_session->connection_id());
+  uint8_t *buf                = NULL;
+  uint32_t buf_len            = 0;
+  uint32_t header_blocks_size = 0;
+  int payload_length          = 0;
+  uint64_t sent               = 0;
+  uint8_t flags               = 0x00;
 
-  const size_t buf_len = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]) - HTTP2_FRAME_HEADER_LEN;
-  uint8_t payload_buffer[buf_len];
-  size_t payload_length = 0;
-  uint8_t flags = 0x00;
+  HTTPHdr *resp_header = &stream->response_header;
 
-  Http2Stream *stream = static_cast<Http2Stream *>(fetch_sm->ext_get_user_data());
-  HTTPHdr *resp_header = reinterpret_cast<HTTPHdr *>(fetch_sm->resp_hdr_bufp());
+  DebugHttp2Stream(ua_session, stream->get_id(), "Send HEADERS frame");
 
-  // Write pseudo headers
-  payload_length += http2_write_psuedo_headers(resp_header, payload_buffer, buf_len, *(this->remote_dynamic_table));
+  HTTPHdr h2_hdr;
+  http2_generate_h2_header_from_1_1(resp_header, &h2_hdr);
 
-  // If response body is empty, set END_STREAM flag to HEADERS frame
-  // Must check to ensure content-length is there.  Otherwise the value defaults
-  // to 0
-  if (resp_header->presence(MIME_PRESENCE_CONTENT_LENGTH) && resp_header->get_content_length() == 0) {
-    flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
+  buf_len = resp_header->length_get() * 2; // Make it double just in case
+  buf     = (uint8_t *)ats_malloc(buf_len);
+  if (buf == NULL) {
+    h2_hdr.destroy();
+    return;
+  }
+  Http2ErrorCode result = http2_encode_header_blocks(&h2_hdr, buf, buf_len, &header_blocks_size, *(this->remote_hpack_handle));
+  if (result != HTTP2_ERROR_NO_ERROR) {
+    h2_hdr.destroy();
+    ats_free(buf);
+    return;
   }
 
-  MIMEFieldIter field_iter;
-  bool cont = false;
-  do {
-    // Handle first sending frame is as HEADERS
-    Http2FrameType type = cont ? HTTP2_FRAME_TYPE_CONTINUATION : HTTP2_FRAME_TYPE_HEADERS;
-
-    // Encode by HPACK naive
-    payload_length += http2_write_header_fragment(resp_header, field_iter, payload_buffer + payload_length,
-                                                  buf_len - payload_length, *(this->remote_dynamic_table), cont);
-
-    // If buffer size is enough to send rest of headers, set END_HEADERS flag
-    if (buf_len >= payload_length && !cont) {
-      flags |= HTTP2_FLAGS_HEADERS_END_HEADERS;
+  // Send a HEADERS frame
+  if (header_blocks_size <= static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]))) {
+    payload_length = header_blocks_size;
+    flags |= HTTP2_FLAGS_HEADERS_END_HEADERS;
+    if (h2_hdr.presence(MIME_PRESENCE_CONTENT_LENGTH) && h2_hdr.get_content_length() == 0) {
+      flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
     }
+  } else {
+    payload_length = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
+  }
+  Http2Frame headers(HTTP2_FRAME_TYPE_HEADERS, stream->get_id(), flags);
+  headers.alloc(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
+  http2_write_headers(buf, payload_length, headers.write());
+  headers.finalize(payload_length);
+  // xmit event
+  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
+  this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &headers);
+  sent += payload_length;
 
-    // Create HEADERS or CONTINUATION frame
-    Http2Frame headers(type, stream->get_id(), flags);
-    headers.alloc(buffer_size_index[type]);
-    http2_write_headers(payload_buffer, payload_length, headers.write());
+  // Send CONTINUATION frames
+  flags = 0;
+  while (sent < header_blocks_size) {
+    DebugHttp2Stream(ua_session, stream->get_id(), "Send CONTINUATION frame");
+    payload_length = MIN(static_cast<uint32_t>(BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION])),
+                         header_blocks_size - sent);
+    if (sent + payload_length == header_blocks_size) {
+      flags |= HTTP2_FLAGS_CONTINUATION_END_HEADERS;
+    }
+    Http2Frame headers(HTTP2_FRAME_TYPE_CONTINUATION, stream->get_id(), flags);
+    headers.alloc(buffer_size_index[HTTP2_FRAME_TYPE_CONTINUATION]);
+    http2_write_headers(buf + sent, payload_length, headers.write());
     headers.finalize(payload_length);
-
     // xmit event
     SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
     this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &headers);
+    sent += payload_length;
+  }
 
-    payload_length = 0; // we will reuse the same buffer for more headers
-  } while (cont);
+  h2_hdr.destroy();
+  ats_free(buf);
 }
 
 void
 Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
 {
-  DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send RST_STREAM frame.", this->ua_session->connection_id());
+  DebugHttp2Stream(ua_session, id, "Send RST_STREAM frame");
 
   if (ec != HTTP2_ERROR_NO_ERROR) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_STREAM_ERRORS_COUNT, this_ethread());
@@ -1015,6 +1233,15 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
   http2_write_rst_stream(static_cast<uint32_t>(ec), rst_stream.write());
   rst_stream.finalize(HTTP2_RST_STREAM_LEN);
 
+  // change state to closed
+  Http2Stream *stream = find_stream(id);
+  if (stream != NULL) {
+    if (!stream->change_state(HTTP2_FRAME_TYPE_RST_STREAM, 0)) {
+      this->send_goaway_frame(stream->get_id(), HTTP2_ERROR_PROTOCOL_ERROR);
+      return;
+    }
+  }
+
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &rst_stream);
@@ -1023,15 +1250,19 @@ Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
 void
 Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_settings)
 {
-  Http2Frame settings(HTTP2_FRAME_TYPE_SETTINGS, 0, 0);
+  const Http2StreamId stream_id = 0;
+
+  DebugHttp2Stream(ua_session, stream_id, "Send SETTINGS frame");
+
+  Http2Frame settings(HTTP2_FRAME_TYPE_SETTINGS, stream_id, 0);
   settings.alloc(buffer_size_index[HTTP2_FRAME_TYPE_SETTINGS]);
 
-  IOVec iov = settings.write();
+  IOVec iov                = settings.write();
   uint32_t settings_length = 0;
 
   for (int i = HTTP2_SETTINGS_HEADER_TABLE_SIZE; i < HTTP2_SETTINGS_MAX; ++i) {
     Http2SettingsIdentifier id = static_cast<Http2SettingsIdentifier>(i);
-    unsigned settings_value = new_settings.get(id);
+    unsigned settings_value    = new_settings.get(id);
 
     // Send only difference
     if (settings_value != server_settings.get(id)) {
@@ -1048,17 +1279,20 @@ Http2ConnectionState::send_settings_frame(const Http2ConnectionSettings &new_set
 
       // Update current settings
       server_settings.set(id, new_settings.get(id));
+
+      DebugHttp2Stream(ua_session, stream_id, "  %s : %u", Http2DebugNames::get_settings_param_name(param.id), param.value);
     }
   }
 
   settings.finalize(settings_length);
+  SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &settings);
 }
 
 void
 Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint8_t *opaque_data)
 {
-  DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send PING frame.", this->ua_session->connection_id());
+  DebugHttp2Stream(ua_session, id, "Send PING frame");
 
   Http2Frame ping(HTTP2_FRAME_TYPE_PING, id, flag);
 
@@ -1074,7 +1308,7 @@ Http2ConnectionState::send_ping_frame(Http2StreamId id, uint8_t flag, const uint
 void
 Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 {
-  DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send GOAWAY frame.", this->ua_session->connection_id());
+  DebugHttp2Stream(ua_session, id, "Send GOAWAY frame");
 
   if (ec != HTTP2_ERROR_NO_ERROR) {
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CONNECTION_ERRORS_COUNT, this_ethread());
@@ -1086,7 +1320,7 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
   ink_assert(this->ua_session != NULL);
 
   goaway.last_streamid = id;
-  goaway.error_code = ec;
+  goaway.error_code    = ec;
 
   frame.alloc(buffer_size_index[HTTP2_FRAME_TYPE_GOAWAY]);
   http2_write_goaway(goaway, frame.write());
@@ -1102,7 +1336,7 @@ Http2ConnectionState::send_goaway_frame(Http2StreamId id, Http2ErrorCode ec)
 void
 Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
 {
-  DebugSsn(this->ua_session, "http2_cs", "[%" PRId64 "] Send WINDOW_UPDATE frame.", this->ua_session->connection_id());
+  DebugHttp2Stream(ua_session, id, "Send WINDOW_UPDATE frame");
 
   // Create WINDOW_UPDATE frame
   Http2Frame window_update(HTTP2_FRAME_TYPE_WINDOW_UPDATE, id, 0x0);
@@ -1113,4 +1347,37 @@ Http2ConnectionState::send_window_update_frame(Http2StreamId id, uint32_t size)
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &window_update);
+}
+
+// Return min_concurrent_streams_in when current client streams number is larger than max_active_streams_in.
+// Main purpose of this is preventing DDoS Attacks.
+unsigned
+Http2ConnectionState::_adjust_concurrent_stream()
+{
+  if (Http2::max_active_streams_in == 0) {
+    // Throttling down is disabled.
+    return Http2::max_concurrent_streams_in;
+  }
+
+  int64_t current_client_streams = 0;
+  RecGetRawStatSum(http2_rsb, HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, &current_client_streams);
+
+  DebugHttp2Con(ua_session, "current client streams: %" PRId64, current_client_streams);
+
+  if (current_client_streams >= Http2::max_active_streams_in) {
+    if (!Http2::throttling) {
+      Warning("too many streams: %" PRId64 ", reduce SETTINGS_MAX_CONCURRENT_STREAMS to %d", current_client_streams,
+              Http2::min_concurrent_streams_in);
+      Http2::throttling = true;
+    }
+
+    return Http2::min_concurrent_streams_in;
+  } else {
+    if (Http2::throttling) {
+      Note("revert SETTINGS_MAX_CONCURRENT_STREAMS to %d", Http2::max_concurrent_streams_in);
+      Http2::throttling = false;
+    }
+  }
+
+  return Http2::max_concurrent_streams_in;
 }

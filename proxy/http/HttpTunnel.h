@@ -50,7 +50,7 @@
 #define HTTP_TUNNEL_EVENT_PRECOMPLETE (HTTP_TUNNEL_EVENTS_START + 2)
 #define HTTP_TUNNEL_EVENT_CONSUMER_DETACH (HTTP_TUNNEL_EVENTS_START + 3)
 
-#define HTTP_TUNNEL_STATIC_PRODUCER (VConnection *) !0
+#define HTTP_TUNNEL_STATIC_PRODUCER (VConnection *)!0
 
 // YTS Team, yamsat Plugin
 #define ALLOCATE_AND_WRITE_TO_BUF 1
@@ -100,11 +100,7 @@ struct ChunkedHandler {
 
   static int const DEFAULT_MAX_CHUNK_SIZE = 4096;
 
-  enum Action {
-    ACTION_DOCHUNK = 0,
-    ACTION_DECHUNK,
-    ACTION_PASSTHRU,
-  };
+  enum Action { ACTION_DOCHUNK = 0, ACTION_DECHUNK, ACTION_PASSTHRU, ACTION_UNSET };
 
   Action action;
 
@@ -261,7 +257,10 @@ class PostDataBuffers
 {
 public:
   PostDataBuffers()
-    : postdata_producer_buffer(NULL), postdata_copy_buffer(NULL), postdata_producer_reader(NULL), postdata_copy_buffer_start(NULL),
+    : postdata_producer_buffer(NULL),
+      postdata_copy_buffer(NULL),
+      postdata_producer_reader(NULL),
+      postdata_copy_buffer_start(NULL),
       ua_buffer_reader(NULL)
   {
     Debug("http_redirect", "[PostDataBuffers::PostDataBuffers]");
@@ -301,7 +300,7 @@ class HttpTunnel : public Continuation
 public:
   HttpTunnel();
 
-  void init(HttpSM *sm_arg, ProxyMutex *amutex);
+  void init(HttpSM *sm_arg, Ptr<ProxyMutex> &amutex);
   void reset();
   void kill_tunnel();
   bool
@@ -332,6 +331,7 @@ public:
   DLL<HttpTunnelConsumer> *get_consumers(VConnection *vc);
   HttpTunnelProducer *get_producer(VConnection *vc);
   HttpTunnelConsumer *get_consumer(VConnection *vc);
+  HttpTunnelProducer *get_producer(HttpTunnelType_t type);
   void tunnel_run(HttpTunnelProducer *p = NULL);
 
   int main_handler(int event, void *data);
@@ -386,6 +386,10 @@ private:
 
 public:
   PostDataBuffers *postbuf;
+
+private:
+  int reentrancy_count;
+  bool call_sm;
 };
 
 // void HttpTunnel::abort_cache_write_finish_others
@@ -457,6 +461,17 @@ HttpTunnel::get_producer(VConnection *vc)
   return NULL;
 }
 
+inline HttpTunnelProducer *
+HttpTunnel::get_producer(HttpTunnelType_t type)
+{
+  for (int i = 0; i < MAX_PRODUCERS; i++) {
+    if (producers[i].vc_type == type) {
+      return producers + i;
+    }
+  }
+  return NULL;
+}
+
 inline HttpTunnelConsumer *
 HttpTunnel::get_consumer(VConnection *vc)
 {
@@ -482,9 +497,11 @@ HttpTunnel::get_producer(VIO *vio)
 inline HttpTunnelConsumer *
 HttpTunnel::get_consumer(VIO *vio)
 {
-  for (int i = 0; i < MAX_CONSUMERS; i++) {
-    if (consumers[i].write_vio == vio) {
-      return consumers + i;
+  if (vio) {
+    for (int i = 0; i < MAX_CONSUMERS; i++) {
+      if (consumers[i].write_vio == vio || consumers[i].vc == vio->vc_server) {
+        return consumers + i;
+      }
     }
   }
   return NULL;

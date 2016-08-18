@@ -1,0 +1,102 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:4
+msgid "AWS S3 Authentication plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:24
+msgid ""
+"This is a plugin for Apache Traffic Server that provides support for the "
+"``Amazon S3`` authentication features. This is useful if you for example "
+"want to use ``S3`` as your origin server, yet want to avoid direct user "
+"access to the content."
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:30
+msgid "Using the plugin"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:32
+msgid "There are three configuration options for this plugin::"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:40
+msgid "Using the first two in a remap rule would be e.g.::"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:47
+msgid ""
+"Alternatively, you can store the access key and secret in an external "
+"configuration file, and point the remap rule(s) to it:"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:50
+msgid "...  @plugin=s3_auth @pparam=--config @pparam=s3.config"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:53
+msgid "Where s3.config would look like::"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:61
+msgid "For more details on the S3 auth, see::"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:67
+msgid "ToDo"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:69
+msgid ""
+"This is a pretty barebone start for the S3 services, it is missing a number "
+"of features:"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:71
+msgid "It does not do UTF8 encoding (as required)"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:73
+msgid ""
+"It only implements the v2 authentication mechanism. For details on v4, see"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:75
+msgid ""
+"http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-"
+"requests.html"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:77
+msgid "It does not deal with canonicalization of AMZ headers."
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:79
+msgid "It does not handle POST requests (but do we need to ?)"
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:81
+msgid "It does not incorporate query parameters."
+msgstr ""
+
+#: ../../admin-guide/plugins/s3_auth.en.rst:84
+msgid "Contributions to any of these would be appreciated."
+msgstr ""

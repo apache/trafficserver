@@ -66,9 +66,7 @@ int CtrlGenericSubcommand(const char *, const subcommand *cmds, unsigned ncmds, 
 
 struct CtrlMgmtRecord {
   explicit CtrlMgmtRecord(TSRecordEle *e) : ele(e) {}
-
   CtrlMgmtRecord() : ele(TSRecordEleCreate()) {}
-
   ~CtrlMgmtRecord()
   {
     if (this->ele) {
@@ -129,7 +127,6 @@ struct RecordListPolicy {
 
 template <typename T> struct CtrlMgmtList {
   CtrlMgmtList() : list(TSListCreate()) {}
-
   ~CtrlMgmtList()
   {
     this->clear();
@@ -170,7 +167,6 @@ struct CtrlMgmtRecordList : CtrlMgmtList<RecordListPolicy> {
 
 struct CtrlCommandLine {
   CtrlCommandLine() { this->args.push_back(NULL); }
-
   void
   init(unsigned argc, const char **argv)
   {
@@ -205,6 +201,7 @@ int subcommand_config(unsigned argc, const char **argv);
 int subcommand_metric(unsigned argc, const char **argv);
 int subcommand_server(unsigned argc, const char **argv);
 int subcommand_storage(unsigned argc, const char **argv);
+int subcommand_plugin(unsigned argc, const char **argv);
 
 // Exit status codes, following BSD's sysexits(3)
 #define CTRL_EX_OK 0

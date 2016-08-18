@@ -44,7 +44,7 @@
 class HttpSM;
 
 const int HTTP_LIST_BUCKETS = 63;
-const int HTTP_LIST_RETRY = HRTIME_MSECONDS(10);
+const int HTTP_LIST_RETRY   = HRTIME_MSECONDS(10);
 
 struct HttpSMListBucket {
   Ptr<ProxyMutex> mutex;
@@ -70,7 +70,6 @@ private:
   void dump_tunnel_info(HttpSM *sm);
   void dump_history(HttpSM *sm);
   int dump_sm(HttpSM *sm);
-
 
   Arena arena;
   char *request;

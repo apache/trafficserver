@@ -36,7 +36,7 @@ void dumpMessage(const HttpMessage &msg);
 void testPreProc();
 
 /* some global requests */
-char *request1 = "GET http://trafficserver.apache.org HTTP/1.1\r\n\
+char *request1  = "GET http://trafficserver.apache.org HTTP/1.1\r\n\
 Accept: text/*, text/html, text/html; level=1\r\n\
 Accept-Charset: iso-8859-5, unicode-1-1;q=0.8\r\n\r\n";
 char *response1 = "HTTP/1.1 200\r\n\r\n";
@@ -46,7 +46,7 @@ char *response1 = "HTTP/1.1 200\r\n\r\n";
 RequestInput::RequestInput(const char *str, IOBuffer *cb) : m_sp(0), m_len(0), m_cb(cb)
 {
   m_len = strlen(str);
-  m_sp = request1;
+  m_sp  = request1;
 
   return;
 }
@@ -67,9 +67,8 @@ RequestInput::run()
 {
   unsigned maxBytes = 0;
 
-  char *buff = m_cb->getWrite(&maxBytes);
+  char *buff          = m_cb->getWrite(&maxBytes);
   unsigned writeBytes = (m_len < maxBytes) ? m_len : maxBytes;
-
 
   writeBytes = ink_strlcpy(buff, m_sp, maxBytes);
   m_cb->wrote(writeBytes);
@@ -176,7 +175,6 @@ main()
     double elapsedTime = testPreProc(lc);
     cout << "Elapsed time for " << lc << "loops is " << elapsedTime << endl;
   }
-
 
   return (0);
 }

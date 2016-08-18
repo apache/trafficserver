@@ -35,8 +35,8 @@
 // ACL like filtering defs (per one remap rule)
 
 static int const ACL_FILTER_MAX_SRC_IP = 128;
-static int const ACL_FILTER_MAX_IN_IP = 8;
-static int const ACL_FILTER_MAX_ARGV = 512;
+static int const ACL_FILTER_MAX_IN_IP  = 8;
+static int const ACL_FILTER_MAX_ARGV   = 512;
 
 struct src_ip_info_t {
   IpEndpoint start; ///< Minimum value in range.

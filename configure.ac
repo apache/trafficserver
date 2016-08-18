@@ -32,19 +32,24 @@
 # Version number is calculated as MAJOR * 1000000 + MINOR * 1000 + MICRO
 # Version string is in the form of MAJOR.MINOR.MICRO[sufix]
 #
-m4_define([TS_VERSION_S],[6.1.0])
-m4_define([TS_VERSION_N],[6001000])
+m4_define([TS_VERSION_S],[7.0.0])
+m4_define([TS_VERSION_N],[7000000])
 
 AC_INIT([Apache Traffic Server], TS_VERSION_S(), [dev@trafficserver.apache.org], [trafficserver],[http://trafficserver.apache.org])
 AC_PREREQ([2.59])
-AC_CONFIG_AUX_DIR([build/aux])
+AC_CONFIG_AUX_DIR([build/_aux])
 AC_CONFIG_SRCDIR([proxy/Main.cc])
 AC_CONFIG_MACRO_DIR([build])
 
-AM_INIT_AUTOMAKE([-Wall -Werror tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
+# NOTE: we turn off portability warnings because the clang-tidy targets use
+# GNU make extensions to filter the sources list.
+AM_INIT_AUTOMAKE([-Wall -Werror -Wno-portability tar-ustar foreign no-installinfo no-installman subdir-objects 1.9.2])
 
 # See discussion at https://autotools.io/automake/maintainer.html.
 AM_MAINTAINER_MODE([enable])
+
+# Enable a recursive "tidy" rule for clang-tidy.
+AM_EXTRA_RECURSIVE_TARGETS([tidy])
 
 AC_CONFIG_HEADERS([lib/ink_autoconf.h])
 
@@ -139,9 +144,9 @@ AC_ARG_WITH([build-number],
 #
 # Build environment
 #
-build_person="`id -nu`"
-build_group="`id -ng`"
-build_machine="`uname -n`"
+build_person="`id -nu | sed -e 's/\\\\/\\\\\\\\/g'`"
+build_group="`id -ng | sed -e 's/\\\\/\\\\\\\\/g'`"
+build_machine="`uname -n | sed -e 's/\\\\/\\\\\\\\/g'`"
 AC_SUBST([build_machine])
 AC_SUBST([build_person])
 AC_SUBST([build_group])
@@ -164,7 +169,7 @@ AC_MSG_RESULT([$enable_debug])
 
 # Enable code coverage instrumentation only if requested by the user.
 AC_MSG_CHECKING([whether to code coverage])
-AC_ARG_ENABLE([debug],
+AC_ARG_ENABLE([coverage],
   [AS_HELP_STRING([--enable-coverage],[generate code coverage instrumentation])],
   [],
   [enable_coverage=no]
@@ -197,7 +202,6 @@ AC_ARG_ENABLE([fast-sdk],
 )
 AC_MSG_RESULT([$enable_fast_sdk])
 TS_ARG_ENABLE_VAR([use], [fast-sdk])
-AC_SUBST(use_fast_sdk)
 
 #
 # Diags
@@ -211,7 +215,6 @@ AC_ARG_ENABLE([diags],
 )
 AC_MSG_RESULT([$enable_diags])
 TS_ARG_ENABLE_VAR([use], [diags])
-AC_SUBST(use_diags)
 
 #
 # Build regression tests?
@@ -225,7 +228,6 @@ AC_ARG_ENABLE([tests],
 )
 AC_MSG_RESULT([$enable_tests])
 TS_ARG_ENABLE_VAR([has], [tests])
-AC_SUBST(has_tests)
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
@@ -266,7 +268,6 @@ AC_ARG_ENABLE([wccp],
 )
 AC_MSG_RESULT([$enable_wccp])
 TS_ARG_ENABLE_VAR([has],[wccp])
-AC_SUBST(has_wccp)
 AM_CONDITIONAL([BUILD_WCCP], [test 0 -ne $has_wccp])
 
 # Google profiler
@@ -325,6 +326,29 @@ AC_ARG_ENABLE([ccache],
 AC_MSG_RESULT([$enable_ccache])
 
 #
+# Enble hardening of the executables
+#
+AC_MSG_CHECKING([whether to enable hardening of the executables])
+AC_ARG_ENABLE([hardening],
+  [AS_HELP_STRING([--enable-hardening],[Enable hardening of executables])],
+  [],
+  [enable_hardening="no"]
+)
+AC_MSG_RESULT([$enable_hardening])
+
+#
+# Enable SSLv3 to origin
+#
+AC_MSG_CHECKING([whether to enable SSLv3 config for origin connections])
+AC_ARG_ENABLE([sslv3-client],
+  [AS_HELP_STRING([--enable-sslv3-client],[Enable SSLv3 config for origin connections (Only do this if you understand the risks)])],
+  [],
+  [enable_sslv3_client="no"]
+)
+AC_MSG_RESULT([$enable_sslv3_client])
+TS_ARG_ENABLE_VAR([use], [sslv3-client])
+
+#
 # Use TPROXY for connection transparency.
 #
 AC_MSG_CHECKING([whether to enable TPROXY based transparency])
@@ -342,19 +366,6 @@ AC_ARG_ENABLE([tproxy],
   [enable_tproxy="auto"]
 )
 AC_MSG_RESULT([$enable_tproxy])
-
-#
-# Options for SPDY
-#
-AC_MSG_CHECKING([whether to enable spdy])
-AC_ARG_ENABLE([spdy],
-        [AS_HELP_STRING([--enable-spdy], [turn on spdy protocol])],
-        [],
-        [enable_spdy="no"])
-AC_MSG_RESULT([$enable_spdy])
-TS_ARG_ENABLE_VAR([has], [spdy])
-AC_SUBST(has_spdy)
-AM_CONDITIONAL([BUILD_SPDY], [test 0 -ne $has_spdy])
 
 #
 # Configure how many stats to allocate for plugins. Default is 512.
@@ -414,6 +425,21 @@ PKG_CHECK_MODULES([LIBMEMCACHED], [libmemcached >= 1.0], [have_libmemcached=yes]
 AM_CONDITIONAL([BUILD_MEMCACHED_REMAP_PLUGIN], [test "x${have_libmemcached}" = "xyes"])
 
 #
+# Check Magick++ is available. Enable experimental/webp_transform plugin
+#
+PKG_CHECK_MODULES([LIBMAGICKCPP],[Magick++], [
+  have_libmagickcpp=yes
+  AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
+    enable_webp_transform_plugin=yes
+  ])
+],
+[
+  have_libmagickcpp=no
+])
+
+AM_CONDITIONAL([BUILD_WEBP_TRANSFORM_PLUGIN], [test "x${enable_webp_transform_plugin}" = "xyes"])
+
+#
 # Example plugins. The example plugins are always built, but not always installed. Installing
 # them is useful for QA, but not useful for most users, so we default this to disabled.
 #
@@ -453,20 +479,6 @@ AC_ARG_ENABLE([cppapi],
 )
 AC_MSG_RESULT([$enable_cppapi])
 AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
-
-#
-# Disable LuaJIT? This is a interim option, when Lua becomes part of the core
-# requirements, we will remove this option.
-#
-AC_MSG_CHECKING([whether to disable LuaJIT])
-AC_ARG_ENABLE([luajit],
-  [AS_HELP_STRING([--disable-luajit],[turn off LuaJIT])],
-  [],
-  [enable_luajit="yes"]
-)
-AC_MSG_RESULT([$enable_luajit])
-AM_CONDITIONAL([BUILD_LUAJIT], [ test "x${enable_luajit}" = "xyes" ])
-
 
 #
 # Check if we should allow builds on 32-bit platforms
@@ -571,9 +583,13 @@ AC_COMPILE_IFELSE([
 )
 
 AC_MSG_RESULT([$have_std_shared_ptr])
-if test "x${have_std_shared_ptr}" = "xyes" ; then
-  AC_DEFINE(HAVE_STD_SHARED_PTR, 1, [whether std::shared_ptr is available])
-fi
+AS_IF([test "x${have_std_shared_ptr}" = "xyes"], [
+    AC_DEFINE(HAVE_STD_SHARED_PTR, 1, [whether std::shared_ptr is available])
+    AC_SUBST(have_std_shared_ptr, 1)
+  ], [
+    AC_SUBST(have_std_shared_ptr, 0)
+  ]
+)
 
 AC_LANG_POP()
 
@@ -671,6 +687,11 @@ AC_ARG_VAR(RPATH, [path to be added to rpath])
 AC_ARG_VAR(SPHINXBUILD, [the sphinx-build documentation generator])
 AC_ARG_VAR(SPHINXOPTS, [additional sphinx-build options])
 AC_CHECK_PROG([SPHINXBUILD], [sphinx-build], [sphinx-build], [false])
+
+AC_ARG_VAR([CLANG_TIDY], [clang-tidy command])
+
+# Default CLANG_TIDY to "clang-tidy", or "false" if it is not present.
+AC_PATH_PROG([CLANG_TIDY], [clang-tidy],[false])
 
 AC_SUBST(TS_MAN1_MANPAGES)
 AC_SUBST(TS_MAN3_MANPAGES)
@@ -798,7 +819,7 @@ case $host_os_def in
       debug_opt="-ggdb3 $common_opt -Qunused-arguments"
       release_opt="-g $common_opt $optimizing_flags -fno-strict-aliasing -Qunused-arguments"
       cxx_opt="-Wno-invalid-offsetof"
-      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare"
+      lua_cflags="-Wno-parentheses-equality -Wno-tautological-compare -analyzer-disable-all-checks"
     ])
 
     AS_IF([test "x$ax_cv_c_compiler_vendor" = "xgnu"], [
@@ -884,8 +905,10 @@ AS_IF([test x"$enable_coverage" = "xyes"], [
   # supported compiler to test coverage.
   AS_CASE("$ax_cv_c_compiler_vendor",
     [clang], [
-      TS_ADDTO(CXXFLAGS, "-fprofile-instr-generate -fcoverage-mapping")
-      TS_ADDTO(CFLAGS, "-fprofile-instr-generate -fcoverage-mapping")
+      TS_ADDTO(CXXFLAGS, "-fprofile-instr-generate")
+      TS_ADDTO(CXXFLAGS, "-fcoverage-mapping")
+      TS_ADDTO(CFLAGS, "-fprofile-instr-generate")
+      TS_ADDTO(CFLAGS, "-fcoverage-mapping")
     ], [gnu], [
       TS_ADDTO(CXXFLAGS, "--coverage")
       TS_ADDTO(CFLAGS, "--coverage")
@@ -912,10 +935,6 @@ AC_SUBST(AM_CXXFLAGS)
 
 # Special compiler flag hacks for various pieces of the code
 AC_SUBST([FLEX_CFLAGS], $flex_cflags)
-
-# Flags for buildit LuaJIT itself.
-AC_SUBST(LUA_LDFLAGS)
-AC_SUBST([LUA_CFLAGS], $lua_cflags)
 
 SHARED_CFLAGS=-fPIC
 SHARED_LDFLAGS=-shared
@@ -1017,6 +1036,16 @@ TS_ADDTO(CPPFLAGS, [-D__STDC_FORMAT_MACROS=1])
 
 AC_MSG_NOTICE([Build for host OS: $host_os, arch: $host_cpu, optimization: $host_os_def])
 
+# Add hardening options to flags
+AS_IF([test "x${enable_hardening}" = "xyes"], [
+  TS_ADDTO(CPPFLAGS, [-D_FORTIFY_SOURCE=2])
+  TS_ADDTO(CXXFLAGS, [-fPIE -fstack-protector])
+  TS_ADDTO(CFLAGS, [-fPIE -fstack-protector])
+  AS_CASE("$host_os_def",
+    [linux], [TS_ADDTO(LDFLAGS, [-pie -Wl,-z,relro -Wl,-z,now])]
+  )
+])
+
 #
 # Note:  These are site-specific macro's that do various tests
 #         on the selected compilers.  There was some tunning
@@ -1108,13 +1137,16 @@ TS_CHECK_CRYPTO_EC_KEYS
 # Check for ServerNameIndication TLS extension support.
 TS_CHECK_CRYPTO_SNI
 
-# 
+#
 # Check for the presense of the certificate callback in the ssl library
 TS_CHECK_CRYPTO_CERT_CB
 
 #
 # Check for SSL_set_rbio call
 TS_CHECK_CRYPTO_SET_RBIO
+
+# Check for DH_get_2048_256
+TS_CHECK_CRYPTO_DH_GET_2048_256
 
 #
 # Check for zlib presence and usability
@@ -1145,12 +1177,9 @@ if test "x${TCL_INCLUDE_SPEC}" != "x-I/usr/include"; then
 fi
 
 #
-# Check for XML parser
+# Check for XML parser. Required.
 #
 TS_CHECK_XML
-if test "x${enable_xml}" != "xyes"; then
-  AC_MSG_ERROR([Need at least one XML library, --with-expat is supported])
-fi
 
 AC_CHECK_FUNCS([clock_gettime kqueue epoll_ctl posix_memalign posix_fadvise posix_madvise posix_fallocate inotify_init])
 AC_CHECK_FUNCS([lrand48_r srand48_r port_create strlcpy strlcat sysconf sysctlbyname getpagesize])
@@ -1171,6 +1200,11 @@ AC_CHECK_FUNCS(eventfd)
 #
 AC_CHECK_HEADERS(mcheck.h)
 AC_CHECK_FUNCS(mcheck_pedantic)
+
+#
+# Check for malloc_usable_size()
+#
+AC_CHECK_FUNCS(malloc_usable_size)
 
 #
 # Check for pcre library
@@ -1202,30 +1236,63 @@ AS_IF([test "$host_os_def" = "linux"], [
   ])
 ])
 TS_ARG_ENABLE_VAR([use], [remote_unwinding])
-AC_SUBST(use_remote_unwinding)
+
+# Find the appropriate event handling interface. This can be forced on
+# platforms that support 2 or more of our supported interfaces. It
+# could also (in the future?) be used to enable other event systems
+# such as libev.
+AC_ARG_WITH([event-interface],
+  [AS_HELP_STRING([--with-event-interface=epoll|kqueue|port],[event interface to use [default=auto]])],
+  [event_interface=$withval],
+  [event_interface="auto"]
+)
 
 use_epoll=0
 use_kqueue=0
 use_port=0
-if test "$ac_cv_func_epoll_ctl" = "yes"; then
-  use_epoll=1
-  have_good_poller=1
-  AC_MSG_NOTICE([Using epoll event interface])
-elif test "$ac_cv_func_kqueue" = "yes"; then
-  use_kqueue=1
-  have_good_poller=1
-  AC_MSG_NOTICE([Using kqueue event interface])
-elif test "$ac_cv_func_port_create" = "yes"; then
-  use_port=1
-  have_good_poller=1
-  AC_MSG_NOTICE([Using port event interface])
-else
-  AC_MSG_FAILURE([No suitable polling interface found])
-fi
+
+AS_IF([test "x$event_interface" = "xauto"], [
+  if test "$ac_cv_func_port_create" = "yes"; then
+    use_port=1
+    have_good_poller=1
+    AC_MSG_NOTICE([Using port event interface])
+  elif test "$ac_cv_func_epoll_ctl" = "yes"; then
+    use_epoll=1
+    have_good_poller=1
+    AC_MSG_NOTICE([Using epoll event interface])
+  elif test "$ac_cv_func_kqueue" = "yes"; then
+    use_kqueue=1
+    have_good_poller=1
+    AC_MSG_NOTICE([Using kqueue event interface])
+  else
+    AC_MSG_FAILURE([No suitable polling interface found])
+  fi
+],[
+  case "x$event_interface" in
+    xepoll)
+      use_epoll=1
+      AC_MSG_RESULT([forced to epoll])
+      ;;
+    xport)
+      use_port=1
+      AC_MSG_RESULT([forced to port])
+      ;;
+    xkqueue)
+      use_kqueue=1
+      AC_MSG_RESULT([forced to port])
+      ;;
+    *)
+      AC_MSG_RESULT([failed])
+      AC_MSG_FAILURE([unknown event system])
+  esac
+])
+
 AC_SUBST(use_epoll)
 AC_SUBST(use_kqueue)
 AC_SUBST(use_port)
 
+
+# Profiler support
 has_profiler=0
 if test "x${with_profiler}" = "xyes"; then
   AC_SEARCH_LIBS([ProfilerStart], [profiler],
@@ -1327,7 +1394,6 @@ AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
 
 AC_MSG_RESULT([$enable_linux_native_aio])
 TS_ARG_ENABLE_VAR([use], [linux_native_aio])
-AC_SUBST(use_linux_native_aio)
 
 # Check for hwloc library.
 # If we don't find it, disable checking for header.
@@ -1372,14 +1438,14 @@ AC_SUBST(use_hwloc)
 # GeoIP as a "helper" plugin, which other plugins can then use. Such a plugin could
 # then manage which libraries to use via explicit dlopen()'s.
 #
-enable_maxmind_geoip=no
-TS_SEARCH_LIBRARY([GeoIP_id_by_code], [GeoIP], [
-  GEOIP_LIBS=$ts_cv_search_GeoIP_id_by_code
-  AC_CHECK_HEADERS([GeoIP.h], [ enable_maxmind_geoip=yes ])
+AC_CHECK_HEADERS([GeoIP.h], [
+  AC_CHECK_LIB([GeoIP], [GeoIP_new], [
+    AC_SUBST([GEO_LIBS], ["-lGeoIP"])
+  ], [
+    AC_SUBST([GEO_LIBS], [""])
+  ])
 ])
 
-AC_SUBST(GEOIP_LIBS)
-AM_CONDITIONAL([BUILD_GEOIP_PLUGIN], [ test "x${enable_maxmind_geoip}" = x"yes" ])
 
 # Right now, the healthcheck plugins requires inotify_init (and friends)
 AM_CONDITIONAL([BUILD_HEALTHCHECK_PLUGIN], [ test "$ac_cv_func_inotify_init" = "yes" ])
@@ -1410,10 +1476,23 @@ AC_SUBST([LUAJIT_LIBS], ['$(top_builddir)/lib/luajit/src/libluajit.a'])
 # We should be able to build http_load if epoll(2) is available.
 AM_CONDITIONAL([BUILD_HTTP_LOAD], [test x"$ac_cv_func_epoll_ctl" = x"yes"])
 
-# Check for spdylay library
-if test "x${enable_spdy}" = "xyes"; then
-  PKG_CHECK_MODULES([SPDYLAY],[libspdylay])
-fi
+AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
+AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
+AC_SUBST(has_mysql)
+AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
+
+AC_CHECK_HEADERS([kclangc.h], [
+  AC_CHECK_LIB([kyotocabinet], [kcdbopen], [
+    AC_SUBST([LIB_KYOTOCABINET], ["-lkyotocabinet"])
+    has_kyotocabinet=1
+  ], [
+    has_kyotocabinet=0
+  ])
+],
+[has_kyotocabinet=0]
+)
+AC_SUBST(has_kyotocabinet)
+AM_CONDITIONAL([HAS_KYOTOCABINET], [ test "x${has_kyotocabinet}" = "x1" ])
 
 # -----------------------------------------------------------------------------
 # 5. CHECK FOR HEADER FILES
@@ -1785,13 +1864,11 @@ AS_IF([test "x$enable_experimental_plugins" = "xyes"],
 AM_CONDITIONAL([BUILD_REMAP_STATS_PLUGIN],
   [ test "x$enable_experimental_plugins" = "xyes" -a "x$ac_cv_header_search_h" = "xyes" -a "x$ac_cv_type_struct_hsearch_data" = "xyes" -a "x$ac_cv_func_hcreate_r" = "xyes" -a "x$ac_cv_func_hsearch_r" = "xyes" ])
 
-AM_CONDITIONAL([BUILD_COLLAPSED_CONNECTION_PLUGIN],
-  [ test "x$enable_experimental_plugins" = "xyes" -a "x${enable_collapsed_connection_plugin}" != "xno" ])
-
 #
 # use modular IOCORE
 #
-iocore_include_dirs="-I\$(top_srcdir)/iocore/eventsystem \
+iocore_include_dirs="\
+-I\$(top_srcdir)/iocore/eventsystem \
 -I\$(top_srcdir)/iocore/net \
 -I\$(top_srcdir)/iocore/aio \
 -I\$(top_srcdir)/iocore/hostdb \
@@ -1799,6 +1876,20 @@ iocore_include_dirs="-I\$(top_srcdir)/iocore/eventsystem \
 -I\$(top_srcdir)/iocore/cluster \
 -I\$(top_srcdir)/iocore/utils \
 -I\$(top_srcdir)/iocore/dns"
+
+# Flags for buildit LuaJIT itself. We take the latest version
+# of the generic flags, plus any Lua-specific flags so that we
+# can strip the coverage flags from Lua while keeping them by
+# default everywhere else.
+TS_ADDTO(LUA_CFLAGS, [$CFLAGS $lua_cflags])
+AC_SUBST([LUA_CFLAGS])
+
+TS_REMOVEFROM(LUA_CFLAGS, "-fsanitize=address")
+TS_REMOVEFROM(LUA_CFLAGS, "-fsanitize=thread")
+TS_REMOVEFROM(LUA_CFLAGS, "-fsanitize=memory")
+TS_REMOVEFROM(LUA_CFLAGS, "-fprofile-instr-generate")
+TS_REMOVEFROM(LUA_CFLAGS, "-fcoverage-mapping")
+TS_REMOVEFROM(LUA_CFLAGS, "--coverage")
 
 AC_SUBST([CC])
 AC_SUBST([CFLAGS])
@@ -1829,7 +1920,6 @@ AC_CONFIG_FILES([
   cmd/traffic_crashlog/Makefile
   cmd/traffic_ctl/Makefile
   cmd/traffic_layout/Makefile
-  cmd/traffic_line/Makefile
   cmd/traffic_manager/Makefile
   cmd/traffic_top/Makefile
   cmd/traffic_via/Makefile
@@ -1846,6 +1936,12 @@ AC_CONFIG_FILES([
   iocore/net/Makefile
   iocore/utils/Makefile
   lib/Makefile
+  lib/atscppapi/Makefile
+  lib/atscppapi/examples/Makefile
+  lib/atscppapi/src/Makefile
+  lib/atscppapi/mocks/Makefile
+  lib/atscppapi/src/include/atscppapi/shared_ptr.h
+  lib/bindings/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm
   lib/records/Makefile
@@ -1860,15 +1956,55 @@ AC_CONFIG_FILES([
   mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
+  plugins/authproxy/Makefile
+  plugins/background_fetch/Makefile
   plugins/cacheurl/Makefile
   plugins/conf_remap/Makefile
+  plugins/esi/Makefile
+  plugins/generator/Makefile
   plugins/gzip/Makefile
   plugins/header_rewrite/Makefile
   plugins/healthchecks/Makefile
   plugins/libloader/Makefile
   plugins/regex_remap/Makefile
+  plugins/regex_revalidate/Makefile
+  plugins/s3_auth/Makefile
   plugins/stats_over_http/Makefile
   plugins/tcpinfo/Makefile
+  plugins/xdebug/Makefile
+  plugins/experimental/Makefile
+  plugins/experimental/acme/Makefile
+  plugins/experimental/balancer/Makefile
+  plugins/experimental/buffer_upload/Makefile
+  plugins/experimental/cache_key_genid/Makefile
+  plugins/experimental/cache_promote/Makefile
+  plugins/experimental/cache_range_requests/Makefile
+  plugins/experimental/cachekey/Makefile
+  plugins/experimental/channel_stats/Makefile
+  plugins/experimental/collapsed_connection/Makefile
+  plugins/experimental/collapsed_forwarding/Makefile
+  plugins/experimental/custom_redirect/Makefile
+  plugins/experimental/epic/Makefile
+  plugins/experimental/escalate/Makefile
+  plugins/experimental/geoip_acl/Makefile
+  plugins/experimental/header_normalize/Makefile
+  plugins/experimental/hipes/Makefile
+  plugins/experimental/inliner/Makefile
+  plugins/experimental/memcache/Makefile
+  plugins/experimental/memcached_remap/Makefile
+  plugins/experimental/metalink/Makefile
+  plugins/experimental/mp4/Makefile
+  plugins/experimental/multiplexer/Makefile
+  plugins/experimental/mysql_remap/Makefile
+  plugins/experimental/remap_purge/Makefile
+  plugins/experimental/remap_stats/Makefile
+  plugins/experimental/ssl_cert_loader/Makefile
+  plugins/experimental/sslheaders/Makefile
+  plugins/experimental/stale_while_revalidate/Makefile
+  plugins/experimental/stream_editor/Makefile
+  plugins/experimental/ts_lua/Makefile
+  plugins/experimental/url_sig/Makefile
+  plugins/experimental/webp_transform/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
   proxy/config/Makefile
@@ -1883,7 +2019,6 @@ AC_CONFIG_FILES([
   proxy/http2/Makefile
   proxy/logging/Makefile
   proxy/shared/Makefile
-  proxy/spdy/Makefile
   rc/Makefile
   rc/trafficserver
   rc/trafficserver.conf
@@ -1894,82 +2029,10 @@ AC_CONFIG_FILES([
   tools/tsxs
 ])
 
-AC_CHECK_HEADERS([mysql/mysql.h], [has_mysql=1],[has_mysql=0])
-AC_CHECK_LIB([mysqlclient],[mysql_info],[AC_SUBST([LIB_MYSQLCLIENT],["-lmysqlclient"])],[has_mysql=0])
-AC_SUBST(has_mysql)
-AM_CONDITIONAL([HAS_MYSQL], [ test "x${has_mysql}" = "x1" ])
-
-AS_IF([test "x$enable_experimental_plugins" = "xyes"], [
-  AC_CONFIG_FILES([
-    plugins/experimental/Makefile
-    plugins/experimental/authproxy/Makefile
-    plugins/experimental/background_fetch/Makefile
-    plugins/experimental/balancer/Makefile
-    plugins/experimental/buffer_upload/Makefile
-    plugins/experimental/cache_range_requests/Makefile
-    plugins/experimental/channel_stats/Makefile
-    plugins/experimental/cachekey/Makefile
-    plugins/experimental/cache_promote/Makefile
-    plugins/experimental/collapsed_connection/Makefile
-    plugins/experimental/custom_redirect/Makefile
-    plugins/experimental/epic/Makefile
-    plugins/experimental/escalate/Makefile
-    plugins/experimental/esi/Makefile
-    plugins/experimental/generator/Makefile
-    plugins/experimental/geoip_acl/Makefile
-    plugins/experimental/header_normalize/Makefile
-    plugins/experimental/hipes/Makefile
-    plugins/experimental/memcache/Makefile
-    plugins/experimental/memcached_remap/Makefile
-    plugins/experimental/metalink/Makefile
-    plugins/experimental/multiplexer/Makefile
-    plugins/experimental/mysql_remap/Makefile
-    plugins/experimental/regex_revalidate/Makefile
-    plugins/experimental/remap_stats/Makefile
-    plugins/experimental/s3_auth/Makefile
-    plugins/experimental/ssl_cert_loader/Makefile
-    plugins/experimental/sslheaders/Makefile
-    plugins/experimental/stale_while_revalidate/Makefile
-    plugins/experimental/ts_lua/Makefile
-    plugins/experimental/url_sig/Makefile
-    plugins/experimental/xdebug/Makefile
-    plugins/experimental/mp4/Makefile
-    plugins/experimental/stream_editor/Makefile
-])])
-
 AC_CHECK_HEADERS([gmock/gmock.h], [has_gmock=1],[has_gmock=0])
 AC_CHECK_LIB([gmock],[InitGoogleMock],[AC_SUBST([LIB_GMOCK],["-lgmock -lgtest"])],[has_gmock=0])
 AC_SUBST(has_gmock)
 AM_CONDITIONAL([HAS_GMOCK], [ test "x${has_gmock}" = "x1" ])
-
-AS_IF([test "x$enable_cppapi" = "xyes"], [
-  AC_CONFIG_FILES([
-  lib/atscppapi/Makefile
-  lib/atscppapi/examples/Makefile
-  lib/atscppapi/examples/async_http_fetch/Makefile
-  lib/atscppapi/examples/async_timer/Makefile
-  lib/atscppapi/examples/clientredirect/Makefile
-  lib/atscppapi/examples/clientrequest/Makefile
-  lib/atscppapi/examples/customresponse/Makefile
-  lib/atscppapi/examples/boom/Makefile
-  lib/atscppapi/examples/globalhook/Makefile
-  lib/atscppapi/examples/gzip_transformation/Makefile
-  lib/atscppapi/examples/helloworld/Makefile
-  lib/atscppapi/examples/intercept/Makefile
-  lib/atscppapi/examples/internal_transaction_handling/Makefile
-  lib/atscppapi/examples/logger_example/Makefile
-  lib/atscppapi/examples/multiple_transaction_hooks/Makefile
-  lib/atscppapi/examples/null_transformation_plugin/Makefile
-  lib/atscppapi/examples/post_buffer/Makefile
-  lib/atscppapi/examples/remap_plugin/Makefile
-  lib/atscppapi/examples/serverresponse/Makefile
-  lib/atscppapi/examples/stat_example/Makefile
-  lib/atscppapi/examples/timeout_example/Makefile
-  lib/atscppapi/examples/transactionhook/Makefile
-  lib/atscppapi/examples/async_http_fetch_streaming/Makefile
-  lib/atscppapi/src/Makefile
-  lib/atscppapi/mocks/Makefile
-])])
 
 # -----------------------------------------------------------------------------
 # 7. autoheader TEMPLATES

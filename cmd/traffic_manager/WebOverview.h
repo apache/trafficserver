@@ -109,7 +109,7 @@ public:
   MgmtString readString(const char *nodeName, const char *name, bool *found = NULL);
   void addSelfRecord();
 
-  int varClusterDataFromName(RecDataT varType, char *nodeVar, RecData *sum);
+  int varClusterDataFromName(RecDataT varType, const char *nodeVar, RecData *sum);
 
 private:
   ink_mutex accessLock;

@@ -31,7 +31,7 @@
 // Return the length of a string literal.
 template <int N>
 unsigned
-lengthof(const char(&)[N])
+lengthof(const char (&)[N])
 {
   return N - 1;
 }

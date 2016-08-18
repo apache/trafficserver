@@ -1,0 +1,110 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:46
+msgid ""
+":func:`TSUrlCreate` creates a new URL within the marshal buffer :arg:"
+"`bufp`. Release the resulting handle with a call to :func:"
+"`TSHandleMLocRelease`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:38
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:28
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:23
+msgid "TSUrlCreate"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:40
+msgid ""
+"The URL data structure is a parsed version of a standard internet URL. The "
+"Traffic Server URL API provides access to URL data stored in marshal "
+"buffers. The URL functions can create, copy, retrieve or delete entire "
+"URLs, and retrieve or modify parts of URLs, such as their host, port or "
+"scheme information."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:25
+msgid "Traffic Server URL object construction API."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:30
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:50
+msgid ""
+":func:`TSUrlClone` copies the contents of the URL at location :arg:"
+"`src_url` within the marshal buffer :arg:`src_bufp` to a location within "
+"the marshal buffer :arg:`dest_bufp`. Release the returned handle with a "
+"call to :func:`TSHandleMLocRelease`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:55
+msgid ""
+":func:`TSUrlCopy` copies the contents of the URL at location :arg:`src_url` "
+"within the marshal buffer :arg:`src_bufp` to the location :arg:`dest_url` "
+"within the marshal buffer dest_bufp. :func:`TSUrlCopy` works correctly even "
+"if :arg:`src_bufp` and :arg:`dest_bufp` point to different marshal buffers. "
+"It is important for the destination URL (its marshal buffer and :type:"
+"`TSMLoc`) to have been created before copying into it."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:62
+msgid ""
+":func:`TSUrlParse` parses a URL. The :arg:`start` pointer is both an input "
+"and an output parameter and marks the start of the URL to be parsed. After "
+"a successful parse, the :arg:`start` pointer equals the :arg:`end` pointer. "
+"The :arg:`end` pointer must be one byte after the last character you want "
+"to parse. The URL parsing routine assumes that everything between :arg:"
+"`start` and :arg:`end` is part of the URL. It is up to higher level parsing "
+"routines, such as :func:`TSHttpHdrParseReq`, to determine the actual end of "
+"the URL."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:83
+msgid ""
+":manpage:`TSAPI(3ts)`, :manpage:`TSMBufferCreate(3ts)`, :manpage:"
+"`TSUrlHostGet(3ts)`, :manpage:`TSUrlHostSet(3ts)`, :manpage:"
+"`TSUrlStringGet(3ts)`, :manpage:`TSUrlPercentEncode(3ts)`"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:72
+msgid "Return Values"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:81
+msgid "See Also"
+msgstr "参照"
+
+#: ../../developer-guide/api/functions/TSUrlCreate.en.rst:74
+msgid ""
+"The :func:`TSUrlParse` function returns a :type:`TSParseResult`, where :"
+"data:`TS_PARSE_ERROR` indicates an error. Success is indicated by one of :"
+"data:`TS_PARSE_DONE`, :data:`TS_PARSE_OK` or :data:`TS_PARSE_CONT`. The "
+"other APIs all return a :type:`TSReturnCode`, indicating success (:data:"
+"`TS_SUCCESS`) or failure (:data:`TS_ERROR`) of the operation."
+msgstr ""

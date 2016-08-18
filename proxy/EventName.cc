@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include "ts/ink_config.h"
 #include <stdio.h>
 #include <string.h>
@@ -33,7 +32,7 @@
 //#include "P_Cluster.h"
 #include "I_HostDB.h"
 #include "BaseManager.h"
-#include "P_MultiCache.h"
+#include "P_RefCountCache.h"
 
 /*-------------------------------------------------------------------------
   event_int_to_string
@@ -76,7 +75,6 @@ event_int_to_string(int event, int blen, char *buffer)
   case NET_EVENT_ACCEPT_FAILED:
     return "NET_EVENT_ACCEPT_FAILED";
 
-
 #ifdef CLUSTER_CACHE
   case CLUSTER_EVENT_CHANGE:
     return "CLUSTER_EVENT_CHANGE";
@@ -97,9 +95,8 @@ event_int_to_string(int event, int blen, char *buffer)
   case DNS_EVENT_EVENTS_START:
     return "DNS_EVENT_EVENTS_START";
 
-
-  case MULTI_CACHE_EVENT_SYNC:
-    return "MULTI_CACHE_EVENT_SYNC";
+  case REFCOUNT_CACHE_EVENT_SYNC:
+    return "REFCOUNT_CACHE_EVENT_SYNC";
 
   case CACHE_EVENT_LOOKUP:
     return "CACHE_EVENT_LOOKUP";
@@ -133,7 +130,6 @@ event_int_to_string(int event, int blen, char *buffer)
     return "CACHE_EVENT_RESPONSE";
   case CACHE_EVENT_RESPONSE_MSG:
     return "CACHE_EVENT_RESPONSE_MSG";
-
 
   case MGMT_EVENT_SHUTDOWN:
     return "MGMT_EVENT_SHUTDOWN";

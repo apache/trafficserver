@@ -50,9 +50,17 @@ enum span_error_t {
 struct span_diskid_t {
   int64_t id[2];
 
-  bool operator<(const span_diskid_t &rhs) const { return id[0] < rhs.id[0] && id[1] < rhs.id[1]; }
+  bool
+  operator<(const span_diskid_t &rhs) const
+  {
+    return id[0] < rhs.id[0] && id[1] < rhs.id[1];
+  }
 
-  bool operator==(const span_diskid_t &rhs) const { return id[0] == rhs.id[0] && id[1] == rhs.id[1]; }
+  bool
+  operator==(const span_diskid_t &rhs) const
+  {
+    return id[0] == rhs.id[0] && id[1] == rhs.id[1];
+  }
 
   int64_t &operator[](unsigned i) { return id[i]; }
 };
@@ -147,8 +155,13 @@ public:
   void volume_number_set(int n);
 
   Span()
-    : blocks(0), offset(0), hw_sector_size(DEFAULT_HW_SECTOR_SIZE), alignment(0), forced_volume_num(-1),
-      is_mmapable_internal(false), file_pathname(false)
+    : blocks(0),
+      offset(0),
+      hw_sector_size(DEFAULT_HW_SECTOR_SIZE),
+      alignment(0),
+      forced_volume_num(-1),
+      is_mmapable_internal(false),
+      file_pathname(false)
   {
     disk_id[0] = disk_id[1] = 0;
   }
@@ -163,7 +176,7 @@ public:
       pathname = ats_strdup(that.pathname);
     if (that.hash_base_string)
       hash_base_string = ats_strdup(that.hash_base_string);
-    link.next = NULL;
+    link.next          = NULL;
   }
 
   ~Span();
@@ -187,7 +200,7 @@ struct Store {
     Store s;
     alloc(s, blocks, true, mmapable);
     if (s.n_disks) {
-      Span *t = s.disk[0];
+      Span *t   = s.disk[0];
       s.disk[0] = NULL;
       return t;
     }

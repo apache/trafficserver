@@ -1,0 +1,201 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:39
+msgid "**Example:**"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:23
+msgid "Cache API"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:34
+msgid ""
+"Note that the cache APIs differentiate between HTTP data and plugin data. "
+"The cache APIs do not allow you to write HTTP docs in the cache; you can "
+"only write plugin-specific data (a specific type of data that differs from "
+"the HTTP type)."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:28
+msgid ""
+"The cache API enables plugins to read, write, and remove objects in the "
+"Traffic Server cache. All cache APIs are keyed by an object called an "
+"``TSCacheKey``; cache keys are created via ``TSCacheKeyCreate``; keys are "
+"destroyed via ``TSCacheKeyDestroy``. Use ``TSCacheKeyDigestSet`` to set the "
+"hash of the cache key."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:51
+msgid "Cache Reads"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:85
+msgid "Cache Removes"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:68
+msgid "Cache Writes"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:53
+msgid ""
+"``TSCacheRead`` does not really read - it is used for lookups (see the "
+"sample Protocol plugin). Possible callback events include:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:60
+msgid ""
+"``TS_EVENT_CACHE_OPEN_READ_FAILED`` - indicates the lookup was "
+"unsuccessful. Reasons for this event could be that another continuation is "
+"writing to that cache location, or the cache key doesn't refer to a cached "
+"resource. Data payload for this event indicates the possible reason the "
+"read failed (``TSCacheError``)."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:87
+msgid ""
+"Use ``TSCacheRemove`` to remove items from the cache. Possible callback "
+"events include:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:70
+msgid ""
+"Use ``TSCacheWrite`` to write to a cache (see the :ref:`sample Protocol "
+"plugin <about-the-sample-protocol>`). Possible callback events include:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:56
+msgid ""
+"``TS_EVENT_CACHE_OPEN_READ`` - indicates the lookup was successful. The "
+"data passed back along with this event is a cache vconnection that can be "
+"used to initiate a read on this keyed data."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:78
+msgid ""
+"``TS_EVENT_CACHE_OPEN_WRITE_FAILED`` - event returned when another "
+"continuation is currently writing to this location in the cache. Data "
+"payload for this event indicates the possible reason for the write failing "
+"(``TSCacheError``)."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:93
+msgid ""
+"``TS_EVENT_CACHE_REMOVE_FAILED`` - indicates the cache was unable to remove "
+"the item identified by the cache key. ``TSCacheError`` data indicates why "
+"the remove failed."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:90
+msgid ""
+"``TS_EVENT_CACHE_REMOVE`` - the item was removed. There is no data payload "
+"for this event."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:74
+msgid ""
+"``TS_EVENT_CACHE_WRITE_READ`` - indicates the lookup was successful. The "
+"data passed back along with this event is a cache vconnection that can be "
+"used to initiate a cache write."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:99
+msgid "Errors"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:101
+msgid ""
+"Errors pertaining to the failure of various cache operations are indicated "
+"by ``TSCacheError`` (enumeration). They are as follows:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:113
+msgid "Example"
+msgstr "例"
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:131
+msgid "In the ``TS_CACHE_OPEN_READ`` handler:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:115
+msgid ""
+"In the example below, suppose there is a cache hit and the cache returns a "
+"vconnection that enables you to read the document from cache. To do this, "
+"you need to prepare a buffer (``cache_bufp``) to hold the document; "
+"meanwhile, use ``TSVConnCachedObjectSizeGet`` to find out the actual size "
+"of the document (``content_length``). Then, issue ``TSVConnRead`` to read "
+"the document with the total data length required as ``content_length``. "
+"Assume the following data:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:106
+msgid ""
+"``TS_CACHE_ERROR_DOC_BUSY`` - e.g, another continuation could be writing to "
+"the cache location"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:109
+msgid "``TS_CACHE_ERROR_NOT_READY`` - the cache is not ready"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:104
+msgid "``TS_CACHE_ERROR_NO_DOC`` - the key does not match a cached resource"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:161
+msgid ""
+"APIs such as ``TSVConnRead``, ``TSVConnWrite``, ``TSVConnClose``, "
+"``TSVConnAbort``, and ``TSVConnShutdown`` can be used on any kind of "
+"vconnections."
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:150
+msgid ""
+"Do not try to get continuations or VIOs from ``TSVConn`` objects for cache "
+"vconnections. Also note that the following APIs can only be used on "
+"transformation vconnections and must not be used on cache vconnections or "
+"net vconnections:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:139
+msgid "In the ``TS_EVENT_VCONN_READ_READY`` handler:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:165
+msgid "When you are finished:"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:167
+msgid "``TSCacheKeyDestroy (key);``"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:159
+msgid "``TSVConnClosedGet``"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:157
+msgid "``TSVConnReadVIOGet``"
+msgstr ""
+
+#: ../../developer-guide/plugins/io/cache-api.en.rst:155
+msgid "``TSVConnWriteVIOGet``"
+msgstr ""

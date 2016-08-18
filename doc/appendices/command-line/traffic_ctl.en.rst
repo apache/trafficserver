@@ -15,9 +15,12 @@
   specific language governing permissions and limitations
   under the License.
 
-===========
+.. include:: ../../common.defs
+
+.. _traffic_ctl:
+
 traffic_ctl
-===========
+***********
 
 Synopsis
 ========
@@ -45,6 +48,8 @@ of subcommands that control different aspects of Traffic Server:
     Stop, restart and examine the server
 :program:`traffic_ctl storage`
     Manipulate cache storage
+:program:`traffic_ctl plugin`
+    Interact with plugins.
 
 Options
 =======
@@ -138,9 +143,10 @@ traffic_ctl config
 .. program:: traffic_ctl config
 .. option:: reload
 
-    Initiate a Traffic Server configuration reload. Use this
-    command to update the running configuration after any configuration
-    file modification.
+    Initiate a Traffic Server configuration reload. Use this command
+    to update the running configuration after any configuration
+    file modification. If no configuration files have been modified
+    since the previous configuration load, this command is a no-op.
 
     The timestamp of the last reconfiguration event (in seconds
     since epoch) is published in the `proxy.node.config.reconfigure_time`
@@ -210,9 +216,28 @@ traffic_ctl server
     :program:`traffic_manager` is also restarted.
 
 .. program:: traffic_ctl server
+.. option:: start
+
+   Start :program:`traffic_server` if it is already running.
+
+.. program:: traffic_ctl server start
+.. option:: --clear-cache
+
+   Clear the disk cache upon startup.
+
+.. option:: --clear-hostdb
+
+   Clear the DNS resolver cache upon startup.
+
+.. program:: traffic_ctl server
 .. option:: status
 
    Show the current proxy server status, indicating if we're running or not.
+
+.. program:: traffic_ctl server
+.. option:: stop
+
+   Stop the running :program:`traffic_server` process.
 
 .. program:: traffic_ctl server
 .. option:: backtrace
@@ -232,6 +257,15 @@ traffic_ctl storage
    that storage. This does not persist across restarts of the
    :program:`traffic_server` process.
 
+traffic_ctl plugin
+-------------------
+.. program:: traffic_ctl plugin
+.. option:: msg TAG DATA
+
+    Send a message to plugins. All plugins that have hooked the :c:member:`TS_LIFECYCLE_MSG_HOOK`
+    will receive a callback for that hook. The :arg:`TAG` and :arg:`DATA` will be available to the
+    plugin hook processing.
+    
 Examples
 ========
 

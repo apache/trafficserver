@@ -96,7 +96,7 @@ LogSock::listen(int accept_port, int family)
     return -1;
   }
   bind_addr.port() = htons(accept_port);
-  size = ats_ip_size(&bind_addr.sa);
+  size             = ats_ip_size(&bind_addr.sa);
 
   //
   // create the socket for accepting new connections
@@ -116,7 +116,7 @@ LogSock::listen(int accept_port, int family)
   }
   // NO_LINGER
   struct linger l;
-  l.l_onoff = 0;
+  l.l_onoff  = 0;
   l.l_linger = 0;
   if ((ret = safe_setsockopt(accept_sd, SOL_SOCKET, SO_LINGER, (char *)&l, sizeof(l))) < 0) {
     Warning("Could not set option NO_LINGER on socket (%d): %s", ret, strerror(errno));
@@ -306,11 +306,11 @@ LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
   if (*cid >= 0) { // look for data on this specific socket
 
     ink_assert(*cid < m_max_connections);
-    fds[0].fd = ct[*cid].sd;
-    fds[0].events = POLLIN;
+    fds[0].fd      = ct[*cid].sd;
+    fds[0].events  = POLLIN;
     fds[0].revents = 0;
-    fd_to_cid[0] = *cid;
-    n_poll_fds = 1;
+    fd_to_cid[0]   = *cid;
+    n_poll_fds     = 1;
 
   } else { // look for data on any INCOMING socket
 
@@ -322,10 +322,10 @@ LogSock::pending_data(int *cid, int timeout_msec, bool include_connects)
     n_poll_fds = 0;
     for (i = start_index; i < m_max_connections; i++) {
       if (ct[i].state == LogSock::LS_STATE_INCOMING) {
-        fds[n_poll_fds].fd = ct[i].sd;
-        fds[n_poll_fds].events = POLLIN;
+        fds[n_poll_fds].fd      = ct[i].sd;
+        fds[n_poll_fds].events  = POLLIN;
         fds[n_poll_fds].revents = 0;
-        fd_to_cid[n_poll_fds] = i;
+        fd_to_cid[n_poll_fds]   = i;
         n_poll_fds++;
       }
     }
@@ -459,7 +459,7 @@ int
 LogSock::write(int cid, void *buf, int bytes)
 {
   LogSock::MsgHeader header = {0};
-  header.msg_bytes = 0;
+  header.msg_bytes          = 0;
   int ret;
 
   ink_assert(cid >= 0 && cid < m_max_connections);
@@ -479,7 +479,7 @@ LogSock::write(int cid, void *buf, int bytes)
   //
   Debug("log-sock", "   sending header (%zu bytes)", sizeof(LogSock::MsgHeader));
   header.msg_bytes = bytes;
-  ret = ::send(ct[cid].sd, (char *)&header, sizeof(LogSock::MsgHeader), 0);
+  ret              = ::send(ct[cid].sd, (char *)&header, sizeof(LogSock::MsgHeader), 0);
   if (ret != sizeof(LogSock::MsgHeader)) {
     return LogSock::LS_ERROR_WRITE;
   }
@@ -683,14 +683,14 @@ LogSock::init_cid(int cid, char *host, int port, int sd, LogSock::State state)
 
   if (host != NULL) {
     const size_t host_size = strlen(host) + 1;
-    ct[cid].host = new char[host_size];
+    ct[cid].host           = new char[host_size];
     ink_strlcpy(ct[cid].host, host, host_size);
   } else {
     ct[cid].host = NULL;
   }
 
-  ct[cid].port = port;
-  ct[cid].sd = sd;
+  ct[cid].port  = port;
+  ct[cid].sd    = sd;
   ct[cid].state = state;
 }
 

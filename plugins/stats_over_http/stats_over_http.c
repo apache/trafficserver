@@ -43,7 +43,7 @@ static const char *url_path = "_stats";
 static int url_path_len;
 
 static bool integer_counters = false;
-static bool wrap_counters = false;
+static bool wrap_counters    = false;
 
 typedef struct stats_state_t {
   TSVConn net_vc;
@@ -78,10 +78,10 @@ stats_cleanup(TSCont contp, stats_state *my_state)
 static void
 stats_process_accept(TSCont contp, stats_state *my_state)
 {
-  my_state->req_buffer = TSIOBufferCreate();
+  my_state->req_buffer  = TSIOBufferCreate();
   my_state->resp_buffer = TSIOBufferCreate();
   my_state->resp_reader = TSIOBufferReaderAlloc(my_state->resp_buffer);
-  my_state->read_vio = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
+  my_state->read_vio    = TSVConnRead(my_state->net_vc, contp, my_state->req_buffer, INT64_MAX);
 }
 
 static int
@@ -249,7 +249,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   if (TSHttpHdrUrlGet(reqp, hdr_loc, &url_loc) != TS_SUCCESS)
     goto cleanup;
 
-  int path_len = 0;
+  int path_len     = 0;
   const char *path = TSUrlPathGet(reqp, url_loc, &path_len);
   TSDebug(PLUGIN_NAME, "Path: %.*s", path_len, path);
 
@@ -262,7 +262,7 @@ stats_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *edata)
   /* This is us -- register our intercept */
   TSDebug(PLUGIN_NAME, "Intercepting request");
 
-  icontp = TSContCreate(stats_dostuff, TSMutexCreate());
+  icontp   = TSContCreate(stats_dostuff, TSMutexCreate());
   my_state = (stats_state *)TSmalloc(sizeof(*my_state));
   memset(my_state, 0, sizeof(*my_state));
   TSContDataSet(icontp, my_state);
@@ -286,20 +286,19 @@ TSPluginInit(int argc, const char *argv[])
 {
   TSPluginRegistrationInfo info;
 
-  static const char usage[] = PLUGIN_NAME ".so [--integer-counters] [PATH]";
-  static const struct option longopts[] = {{(char *)("integer-counters"), required_argument, NULL, 'i'},
-                                           {(char *)("wrap-counters"), required_argument, NULL, 'w'},
+  static const char usage[]             = PLUGIN_NAME ".so [--integer-counters] [PATH]";
+  static const struct option longopts[] = {{(char *)("integer-counters"), no_argument, NULL, 'i'},
+                                           {(char *)("wrap-counters"), no_argument, NULL, 'w'},
                                            {NULL, 0, NULL, 0}};
 
-  info.plugin_name = PLUGIN_NAME;
-  info.vendor_name = "Apache Software Foundation";
+  info.plugin_name   = PLUGIN_NAME;
+  info.vendor_name   = "Apache Software Foundation";
   info.support_email = "dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
     TSError("[%s] registration failed", PLUGIN_NAME);
   }
 
-  optind = 0;
   for (;;) {
     switch (getopt_long(argc, (char *const *)argv, "iw", longopts, NULL)) {
     case 'i':

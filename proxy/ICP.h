@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 /****************************************************************************
 
   ICP.h
@@ -40,12 +39,10 @@
 #include "ICPProcessor.h"
 #include "ts/DynArray.h"
 
-
 //*********************************************************************
 // ICP Configurables
 //*********************************************************************
 #define ICP_DEBUG 1
-
 
 //*********************************************************************
 // ICP.h -- Internet Cache Protocol (ICP) related data structures.
@@ -188,10 +185,10 @@ class ICPPeerReadCont;
 class ICPRequestCont;
 
 typedef enum {
-  PEER_NONE = 0,
-  PEER_PARENT = 1,
-  PEER_SIBLING = 2,
-  PEER_LOCAL = 3,
+  PEER_NONE      = 0,
+  PEER_PARENT    = 1,
+  PEER_SIBLING   = 2,
+  PEER_LOCAL     = 3,
   PEER_MULTICAST = 4,
 } PeerType_t;
 
@@ -222,7 +219,7 @@ public:
 private:
   enum {
     UNLOCKED = 0,
-    LOCKED = 1,
+    LOCKED   = 1,
   };
   int32_t _lock_word;
 };
@@ -237,8 +234,16 @@ class ICPConfigData
 
 public:
   ICPConfigData()
-    : _icp_enabled(0), _icp_port(0), _icp_interface(0), _multicast_enabled(0), _icp_query_timeout(0), _cache_lookup_local(0),
-      _stale_lookup(0), _reply_to_unknown_peer(0), _default_reply_port(0), _cache_generation(-1)
+    : _icp_enabled(0),
+      _icp_port(0),
+      _icp_interface(0),
+      _multicast_enabled(0),
+      _icp_query_timeout(0),
+      _cache_lookup_local(0),
+      _stale_lookup(0),
+      _reply_to_unknown_peer(0),
+      _default_reply_port(0),
+      _cache_generation(-1)
   {
   }
   ~ICPConfigData() {} // Note: _icp_interface freed prior to delete
@@ -321,7 +326,12 @@ class PeerConfigData
 public:
   PeerConfigData();
   PeerConfigData(int ctype, IpAddr const &ip_addr, int proxy_port, int icp_port)
-    : _ctype(ctype), _ip_addr(ip_addr), _proxy_port(proxy_port), _icp_port(icp_port), _mc_member(0), _mc_ttl(0),
+    : _ctype(ctype),
+      _ip_addr(ip_addr),
+      _proxy_port(proxy_port),
+      _icp_port(icp_port),
+      _mc_member(0),
+      _mc_ttl(0),
       _my_ip_addr(ip_addr)
   {
     _hostname[0] = 0;
@@ -377,10 +387,10 @@ public:
     HOSTNAME_SIZE = 256,
   };
   enum {
-    CTYPE_NONE = 0,
-    CTYPE_PARENT = 1,
+    CTYPE_NONE    = 0,
+    CTYPE_PARENT  = 1,
     CTYPE_SIBLING = 2,
-    CTYPE_LOCAL = 3,
+    CTYPE_LOCAL   = 3,
   };
 
 private:
@@ -523,12 +533,12 @@ public:
   virtual sockaddr *GetIP() = 0;
   virtual Action *SendMsg_re(Continuation *, void *, struct msghdr *, struct sockaddr const *to) = 0;
   virtual Action *RecvFrom_re(Continuation *, void *, IOBufferBlock *, int, struct sockaddr *, socklen_t *) = 0;
-  virtual int GetRecvFD() = 0;
-  virtual int GetSendFD() = 0;
+  virtual int GetRecvFD()               = 0;
+  virtual int GetSendFD()               = 0;
   virtual int ExpectedReplies(BitMap *) = 0;
-  virtual int ValidSender(sockaddr *) = 0;
+  virtual int ValidSender(sockaddr *)   = 0;
   virtual void LogSendMsg(ICPMsg_t *, sockaddr const *) = 0;
-  virtual int IsOnline() = 0;
+  virtual int IsOnline()            = 0;
   virtual Connection *GetSendChan() = 0;
   virtual Connection *GetRecvChan() = 0;
   virtual int ExtToIntRecvSockAddr(sockaddr const *, sockaddr *) = 0;
@@ -760,7 +770,7 @@ public:
 private:
   enum {
     STATIC_BITMAP_BYTE_SIZE = 16,
-    BITS_PER_BYTE = 8,
+    BITS_PER_BYTE           = 8,
   };
   char _static_bitmap[STATIC_BITMAP_BYTE_SIZE];
   char *_bitmap;
@@ -808,12 +818,12 @@ public:
   inline Peer *
   GetLocalPeer()
   {
-    return _LocalPeer;
+    return _LocalPeer.get();
   }
   inline Peer *
   IdToPeer(int id)
   {
-    return _PeerList[id];
+    return _PeerList[id].get();
   }
   inline ICPConfiguration *
   GetConfig()
@@ -908,7 +918,7 @@ private:
   inline Peer *
   GetNthSendPeer(int n, int bias)
   {
-    return _SendPeerList[(bias + n) % (_nSendPeerList + 1)];
+    return _SendPeerList[(bias + n) % (_nSendPeerList + 1)].get();
   }
 
   inline int
@@ -919,7 +929,7 @@ private:
   inline Peer *
   GetNthRecvPeer(int n, int bias)
   {
-    return _RecvPeerList[(bias + n) % (_nRecvPeerList + 1)];
+    return _RecvPeerList[(bias + n) % (_nRecvPeerList + 1)].get();
   }
 
   inline int
@@ -941,7 +951,7 @@ private:
   inline Peer *
   GetNthParentPeer(int n, int bias)
   {
-    return _ParentPeerList[(bias + n) % (_nParentPeerList + 1)];
+    return _ParentPeerList[(bias + n) % (_nParentPeerList + 1)].get();
   }
   inline int
   GetStartingParentPeerBias()
@@ -976,10 +986,10 @@ private:
   Event *_ICPHandlerEvent;
 
   enum {
-    PEER_LIST_SIZE = 2 * MAX_DEFINED_PEERS,
-    SEND_PEER_LIST_SIZE = 2 * MAX_DEFINED_PEERS,
-    RECV_PEER_LIST_SIZE = 2 * MAX_DEFINED_PEERS,
-    PARENT_PEER_LIST_SIZE = 2 * MAX_DEFINED_PEERS,
+    PEER_LIST_SIZE          = 2 * MAX_DEFINED_PEERS,
+    SEND_PEER_LIST_SIZE     = 2 * MAX_DEFINED_PEERS,
+    RECV_PEER_LIST_SIZE     = 2 * MAX_DEFINED_PEERS,
+    PARENT_PEER_LIST_SIZE   = 2 * MAX_DEFINED_PEERS,
     PEER_ID_POLL_INDEX_SIZE = 2 * MAX_DEFINED_PEERS
   };
 
@@ -1076,11 +1086,11 @@ public:
   int _nhistory;
 
 #define RECORD_ICP_STATE_CHANGE(peerreaddata, event_, newstate_)        \
-  peerreaddata->_history[peerreaddata->_nhistory].event = event_;       \
+  peerreaddata->_history[peerreaddata->_nhistory].event    = event_;    \
   peerreaddata->_history[peerreaddata->_nhistory].newstate = newstate_; \
-  peerreaddata->_history[peerreaddata->_nhistory].file = __FILE__;      \
-  peerreaddata->_history[peerreaddata->_nhistory].line = __LINE__;      \
-  peerreaddata->_nhistory = (peerreaddata->_nhistory + 1) % MAX_ICP_HISTORY;
+  peerreaddata->_history[peerreaddata->_nhistory].file     = __FILE__;  \
+  peerreaddata->_history[peerreaddata->_nhistory].line     = __LINE__;  \
+  peerreaddata->_nhistory                                  = (peerreaddata->_nhistory + 1) % MAX_ICP_HISTORY;
 
 #else
 #define RECORD_ICP_STATE_CHANGE(x, y, z)
@@ -1276,18 +1286,19 @@ private:
   ICPstate_t _next_state;
 };
 
-
 extern ClassAllocator<ICPRequestCont> ICPRequestCont_allocator;
 
 typedef int (*PluginFreshnessCalcFunc)(void *contp);
 extern PluginFreshnessCalcFunc pluginFreshnessCalcFunc;
 
-inline void *ICPRequestCont::operator new(size_t /* size ATS_UNUSED */, void *mem)
+inline void *
+ICPRequestCont::operator new(size_t /* size ATS_UNUSED */, void *mem)
 {
   return mem;
 }
 
-inline void ICPRequestCont::operator delete(void *mem)
+inline void
+ICPRequestCont::operator delete(void *mem)
 {
   ICPRequestCont_allocator.free((ICPRequestCont *)mem);
 }
@@ -1345,7 +1356,6 @@ enum {
 
 #define ICP_ReadConfigString REC_ReadConfigString
 #define ICP_RegisterConfigUpdateFunc REC_RegisterConfigUpdateFunc
-
 
 // End of ICP.h
 

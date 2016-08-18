@@ -1,0 +1,157 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 7.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:23
+msgid "Circonus"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:25
+msgid ""
+"`Circonus <http://www.circonus.com/>`_ is a commercial systems monitoring "
+"and analytics product, available in hosted (SaaS) and on-site "
+"configurations."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:28
+msgid ""
+"While it does not currently offer a module specific to |ATS| statistics, it "
+"is very easy to add monitoring by combining the |TS| plugin :ref:`Stats "
+"Over HTTP <admin-plugins-stats-over-http>` with Circonus's JSON metrics "
+"collector."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:33
+msgid "Setup"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:35
+msgid ""
+"The following steps assume that you already have an active Circonus account "
+"on their hosted service, or that you already have an on-site installation. "
+"If you do not, that must be set up first. Trial accounts are available and "
+"will suffice for this guide."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:41
+msgid "Enable Stats Over HTTP"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:43
+msgid ""
+"Follow the directions in the :ref:`admin-plugins-stats-over-http` chapter "
+"to configure the plugin. At a bare minimum, you will need to add the plugin "
+"to :file:`plugin.config`. For this guide, we will assume the following "
+"entry::"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:49
+msgid ""
+"This enables the plugin and makes |TS| statistics available at the path ``/"
+"_statistics``. For production environments, you are strongly encouraged to "
+"use a different (and obfuscated) path for your statistics since they reveal "
+"many internal details of your caching proxy. The plugin documentation "
+"provides more details."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:56
+msgid "Create Circonus Check"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:58
+msgid ""
+"For these steps, we will assume that |TS| is listening on port ``80`` at "
+"the domain ``trafficserver.example.com``. You should adjust these to match "
+"your environment."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:62
+msgid ""
+"Begin the new check creation process from within your Circonus account by "
+"clicking the *New Check* button near the top-right of the checks screen."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:69
+msgid ""
+"For the check type, you should select *JSON* under the *Custom* list, and "
+"then choose the *Pull* type. The broker you choose to use is entirely up to "
+"you and will depend largely on whether you are using on-site Circonus or "
+"the hosted service, as well as the geographic location of your |TS| "
+"instance(s)."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:78
+msgid "Click on *Configure Check* to proceed."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:80
+msgid ""
+"Click on the *Show Advanced Configuration* link to expand the check "
+"options. Enter your |TS| instance's externally-accessible domain for *Host* "
+"and make sure to set *URI* to the path at which the statistics are "
+"available. Adjust any of the other options to match your environment if "
+"necessary (for this guide, only *Host* and *URI* will need to be entered)."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:90
+msgid "Click on *Test Check* to proceed."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:92
+msgid ""
+"If all is well, you should see a long list (several hundred entries) of |"
+"TS| statistics, with their associated values. If you do not, verify that |"
+"TS| is running and use ``curl`` to manually fetch the statistics data from "
+"your server."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:101
+msgid ""
+"You may want to limit the metrics you actually track from |TS|, since so "
+"many are made available. If so, simply uncheck those you aren't interested "
+"in from the list. If you only want to track a few metrics, click *Select "
+"None* and then check the ones you want. You can filter the results to "
+"easily find metrics in the list."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:107
+msgid "Save your new check."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:109
+msgid ""
+"Verify the collected metrics in Circonus by opening your new check and "
+"clicking on *Metrics Grid* for an overview visualization of all the data "
+"being collected."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:117
+msgid ""
+"Congratulations! You're now ready to begin setting up alerts, "
+"visualizations, and dashboards for your |TS| statistics. You can repeat the "
+"above steps for any additional |TS| instances you have running."
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:122
+msgid "Further Reading"
+msgstr ""
+
+#: ../../../admin-guide/monitoring/monitoring/third-party/circonus.en.rst:124
+msgid "`Official Circonus Website <http://www.circonus.com/>`_"
+msgstr ""

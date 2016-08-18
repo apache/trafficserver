@@ -31,11 +31,11 @@
 #include "RecordsConfig.h"
 #include "ts/BaseLogFile.h"
 
-static int syslog_mode = false;
-static int debug_mode = false;
-static int wait_mode = false;
+static int syslog_mode    = false;
+static int debug_mode     = false;
+static int wait_mode      = false;
 static char *host_triplet = NULL;
-static int target_pid = getppid();
+static int target_pid     = getppid();
 
 // If pid_t is not sizeof(int), we will have to jiggle argument parsing.
 extern char __pid_size_static_assert[sizeof(pid_t) == sizeof(int) ? 0 : -1];
@@ -135,13 +135,13 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     }
 
     openlog(appVersionInfo.AppStr, LOG_PID | LOG_NDELAY | LOG_NOWAIT, facility);
-    diags->config.outputs[DL_Debug].to_syslog = true;
-    diags->config.outputs[DL_Status].to_syslog = true;
-    diags->config.outputs[DL_Note].to_syslog = true;
-    diags->config.outputs[DL_Warning].to_syslog = true;
-    diags->config.outputs[DL_Error].to_syslog = true;
-    diags->config.outputs[DL_Fatal].to_syslog = true;
-    diags->config.outputs[DL_Alert].to_syslog = true;
+    diags->config.outputs[DL_Debug].to_syslog     = true;
+    diags->config.outputs[DL_Status].to_syslog    = true;
+    diags->config.outputs[DL_Note].to_syslog      = true;
+    diags->config.outputs[DL_Warning].to_syslog   = true;
+    diags->config.outputs[DL_Error].to_syslog     = true;
+    diags->config.outputs[DL_Fatal].to_syslog     = true;
+    diags->config.outputs[DL_Alert].to_syslog     = true;
     diags->config.outputs[DL_Emergency].to_syslog = true;
   }
 
@@ -156,7 +156,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   }
 
   ink_zero(target);
-  target.pid = (pid_t)target_pid;
+  target.pid       = (pid_t)target_pid;
   target.timestamp = timestamp();
 
   if (host_triplet && strncmp(host_triplet, "x86_64-unknown-linux", sizeof("x86_64-unknown-linux") - 1) == 0) {

@@ -66,16 +66,23 @@ struct ShowCache : public ShowCont {
   int handleCacheScanCallback(int event, Event *e);
 
   ShowCache(Continuation *c, HTTPHdr *h)
-    : ShowCont(c, h), vol_index(0), seg_index(0), scan_flag(scan_type_lookup), cache_vc(0), buffer(0), buffer_reader(0),
-      content_length(0), cvio(0)
+    : ShowCont(c, h),
+      vol_index(0),
+      seg_index(0),
+      scan_flag(scan_type_lookup),
+      cache_vc(0),
+      buffer(0),
+      buffer_reader(0),
+      content_length(0),
+      cvio(0)
   {
     urlstrs_index = 0;
-    linecount = 0;
+    linecount     = 0;
     int query_len;
     char query[4096];
     char unescapedQuery[sizeof(query)];
     show_cache_urlstrs = NULL;
-    URL *u = h->url_get();
+    URL *u             = h->url_get();
 
     // process the query string
     if (u->query_get(&query_len) && query_len < (int)sizeof(query)) {
@@ -99,7 +106,7 @@ struct ShowCache : public ShowCont {
       query[m] = '\0';
 
       unsigned nstrings = 1;
-      char *p = strstr(query, "url=");
+      char *p           = strstr(query, "url=");
       // count the no of urls
       if (p) {
         while ((p = strstr(p, "\n"))) {
@@ -123,10 +130,10 @@ struct ShowCache : public ShowCont {
           t = (char *)unescapedQuery + strlen(unescapedQuery);
         for (int s = 0; p < t; s++) {
           show_cache_urlstrs[s][0] = '\0';
-          q = strstr(p, "%0D%0A" /* \r\n */); // we used this in the JS to separate urls
+          q                        = strstr(p, "%0D%0A" /* \r\n */); // we used this in the JS to separate urls
           if (!q)
             q = t;
-          ink_strlcpy(show_cache_urlstrs[s], p, sizeof(show_cache_urlstrs[s]));
+          ink_strlcpy(show_cache_urlstrs[s], p, q - p + 1);
           p = q + 6; // +6 ==> strlen(%0D%0A)
         }
       }
@@ -157,12 +164,11 @@ struct ShowCache : public ShowCont {
 #define STREQ_PREFIX(_x, _s) (!strncasecmp(_x, _s, sizeof(_s) - 1))
 #define STREQ_LEN_PREFIX(_x, _l, _s) (path_len < sizeof(_s) && !strncasecmp(_x, _s, sizeof(_s) - 1))
 
-
 Action *
 register_ShowCache(Continuation *c, HTTPHdr *h)
 {
   ShowCache *theshowcache = new ShowCache(c, h);
-  URL *u = h->url_get();
+  URL *u                  = h->url_get();
   int path_len;
   const char *path = u->path_get(&path_len);
 
@@ -288,7 +294,6 @@ ShowCache::invalidate_regex_form(int event, Event *e)
   return complete(event, e);
 }
 
-
 int
 ShowCache::handleCacheEvent(int event, Event *e)
 {
@@ -325,9 +330,9 @@ ShowCache::handleCacheEvent(int event, Event *e)
   }
   case CACHE_EVENT_OPEN_READ: {
     // get the vector
-    cache_vc = (CacheVC *)e;
+    cache_vc                 = (CacheVC *)e;
     CacheHTTPInfoVector *vec = &(cache_vc->vector);
-    int alt_count = vec->count();
+    int alt_count            = vec->count();
     if (alt_count) {
       Doc *d = (Doc *)(cache_vc->first_buf->data());
       time_t t;
@@ -358,11 +363,11 @@ ShowCache::handleCacheEvent(int event, Event *e)
         // unmarshal the alternate??
         CHECK_SHOW(show("<p><table border=1>\n"));
         CHECK_SHOW(show("<tr><th bgcolor=\"#FFF0E0\" colspan=2>Alternate %d</th></tr>\n", i + 1));
-        CacheHTTPInfo *obj = vec->get(i);
-        CacheKey obj_key = obj->object_key_get();
-        HTTPHdr *cached_request = obj->request_get();
+        CacheHTTPInfo *obj       = vec->get(i);
+        CacheKey obj_key         = obj->object_key_get();
+        HTTPHdr *cached_request  = obj->request_get();
         HTTPHdr *cached_response = obj->response_get();
-        int64_t obj_size = obj->object_size_get();
+        int64_t obj_size         = obj->object_size_get();
         int offset, tmp, used, done;
         char b[4096];
 
@@ -371,7 +376,7 @@ ShowCache::handleCacheEvent(int event, Event *e)
         offset = 0;
         do {
           used = 0;
-          tmp = offset;
+          tmp  = offset;
           done = cached_request->print(b, 4095, &used, &tmp);
           offset += used;
           b[used] = '\0';
@@ -384,7 +389,7 @@ ShowCache::handleCacheEvent(int event, Event *e)
         offset = 0;
         do {
           used = 0;
-          tmp = offset;
+          tmp  = offset;
           done = cached_response->print(b, 4095, &used, &tmp);
           offset += used;
           b[used] = '\0';
@@ -410,10 +415,10 @@ ShowCache::handleCacheEvent(int event, Event *e)
   }
   case VC_EVENT_READ_READY:
     if (!cvio) {
-      buffer = new_empty_MIOBuffer();
-      buffer_reader = buffer->alloc_reader();
+      buffer         = new_empty_MIOBuffer();
+      buffer_reader  = buffer->alloc_reader();
       content_length = cache_vc->get_object_size();
-      cvio = cache_vc->do_io_read(this, content_length, buffer);
+      cvio           = cache_vc->do_io_read(this, content_length, buffer);
     } else
       buffer_reader->consume(buffer_reader->read_avail());
     return EVENT_DONE;
@@ -458,7 +463,6 @@ ShowCache::lookup_url(int event, Event *e)
     return EVENT_CONT; // callback pending, will be a cluster read.
 }
 
-
 int
 ShowCache::delete_url(int event, Event *e)
 {
@@ -467,7 +471,6 @@ ShowCache::delete_url(int event, Event *e)
     CHECK_SHOW(begin("Delete URL"));
     CHECK_SHOW(show("<B><TABLE border=1>\n"));
   }
-
 
   if (strcmp(show_cache_urlstrs[urlstrs_index], "") == 0) {
     // close the page when you reach the end of the
@@ -502,7 +505,6 @@ ShowCache::handleCacheDeleteComplete(int event, Event *e)
   }
   return delete_url(event, e);
 }
-
 
 int
 ShowCache::lookup_regex(int event, Event *e)
@@ -562,7 +564,6 @@ ShowCache::delete_regex(int event, Event *e)
   return EVENT_DONE;
 }
 
-
 int
 ShowCache::invalidate_regex(int event, Event *e)
 {
@@ -573,7 +574,6 @@ ShowCache::invalidate_regex(int event, Event *e)
   cacheProcessor.scan(this);
   return EVENT_DONE;
 }
-
 
 int
 ShowCache::handleCacheScanCallback(int event, Event *e)
@@ -603,7 +603,7 @@ ShowCache::handleCacheScanCallback(int event, Event *e)
       int erroffset;
       pcre *preq = pcre_compile(show_cache_urlstrs[s], 0, &error, &erroffset, NULL);
 
-      Debug("cache_inspector", "matching url '%s' '%s' with regex '%s'\n", m, xx, show_cache_urlstrs[s]);
+      Debug("cache_inspector", "matching url '%s' '%s' with regex '%s'", m, xx, show_cache_urlstrs[s]);
 
       if (preq) {
         int r = pcre_exec(preq, NULL, xx, ib, 0, 0, NULL, 0);

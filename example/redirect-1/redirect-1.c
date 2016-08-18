@@ -58,7 +58,6 @@ static INKStat method_count_redirected_put;
 static INKStat method_count_redirected_trace;
 static INKStat method_count_redirected_unknown;
 
-
 /*
  *	coupled statistics variables:
  *		coupled stat category for the following stats
@@ -70,13 +69,11 @@ static INKStat requests_all;
 static INKStat requests_redirects;
 static INKStat requests_unchanged;
 
-
 void update_redirected_method_stats(TSMBuffer bufp, TSMLoc hdr_loc);
 
 static char *url_redirect;
 static char *uri_redirect;
 static char *block_ip;
-
 
 static void
 handle_client_lookup(TSHttpTxn txnp, TSCont contp)
@@ -102,14 +99,12 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
    */
   local_request_outcomes = INKStatCoupledLocalCopyCreate("local_request_outcomes", request_outcomes);
 
-
   /*
    * Create the local copies of the global coupled stats:
    */
-  local_requests_all = INKStatCoupledLocalAdd(local_request_outcomes, "requests.all.local", INKSTAT_TYPE_FLOAT);
+  local_requests_all       = INKStatCoupledLocalAdd(local_request_outcomes, "requests.all.local", INKSTAT_TYPE_FLOAT);
   local_requests_redirects = INKStatCoupledLocalAdd(local_request_outcomes, "requests.redirects.local", INKSTAT_TYPE_INT64);
   local_requests_unchanged = INKStatCoupledLocalAdd(local_request_outcomes, "requests.unchanged.local", INKSTAT_TYPE_INT64);
-
 
   /*
    *   Increment the count of total requests:
@@ -197,7 +192,6 @@ done:
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
 
-
 static void
 handle_response(TSHttpTxn txnp)
 {
@@ -229,11 +223,9 @@ handle_response(TSHttpTxn txnp)
   TSHandleMLocRelease(bufp, hdr_loc, newfield_loc);
   TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
-
 done:
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
 }
-
 
 static int
 redirect_plugin(TSCont contp, TSEvent event, void *edata)
@@ -258,7 +250,6 @@ redirect_plugin(TSCont contp, TSEvent event, void *edata)
   return 0;
 }
 
-
 /*
  *  Global statistics functions:
  */
@@ -267,21 +258,21 @@ void
 init_stats(void)
 {
   /* noncoupled: */
-  method_count_redirected_connect = INKStatCreate("method.count.redirected.connect", INKSTAT_TYPE_INT64);
-  method_count_redirected_delete = INKStatCreate("method.count.redirected.delete", INKSTAT_TYPE_INT64);
-  method_count_redirected_get = INKStatCreate("method.count.redirected.get", INKSTAT_TYPE_INT64);
-  method_count_redirected_head = INKStatCreate("method.count.redirected.head", INKSTAT_TYPE_FLOAT);
+  method_count_redirected_connect   = INKStatCreate("method.count.redirected.connect", INKSTAT_TYPE_INT64);
+  method_count_redirected_delete    = INKStatCreate("method.count.redirected.delete", INKSTAT_TYPE_INT64);
+  method_count_redirected_get       = INKStatCreate("method.count.redirected.get", INKSTAT_TYPE_INT64);
+  method_count_redirected_head      = INKStatCreate("method.count.redirected.head", INKSTAT_TYPE_FLOAT);
   method_count_redirected_icp_query = INKStatCreate("method.count.redirected.icp_query", INKSTAT_TYPE_FLOAT);
-  method_count_redirected_options = INKStatCreate("method.count.redirected.options", INKSTAT_TYPE_INT64);
-  method_count_redirected_post = INKStatCreate("method.count.redirected.post", INKSTAT_TYPE_INT64);
-  method_count_redirected_purge = INKStatCreate("method.count.redirected.purge", INKSTAT_TYPE_INT64);
-  method_count_redirected_put = INKStatCreate("method.count.redirected.put", INKSTAT_TYPE_INT64);
-  method_count_redirected_trace = INKStatCreate("method.count.redirected.trace", INKSTAT_TYPE_INT64);
-  method_count_redirected_unknown = INKStatCreate("method.count.redirected.unknown", INKSTAT_TYPE_INT64);
+  method_count_redirected_options   = INKStatCreate("method.count.redirected.options", INKSTAT_TYPE_INT64);
+  method_count_redirected_post      = INKStatCreate("method.count.redirected.post", INKSTAT_TYPE_INT64);
+  method_count_redirected_purge     = INKStatCreate("method.count.redirected.purge", INKSTAT_TYPE_INT64);
+  method_count_redirected_put       = INKStatCreate("method.count.redirected.put", INKSTAT_TYPE_INT64);
+  method_count_redirected_trace     = INKStatCreate("method.count.redirected.trace", INKSTAT_TYPE_INT64);
+  method_count_redirected_unknown   = INKStatCreate("method.count.redirected.unknown", INKSTAT_TYPE_INT64);
 
   /* coupled: */
-  request_outcomes = INKStatCoupledGlobalCategoryCreate("request_outcomes");
-  requests_all = INKStatCoupledGlobalAdd(request_outcomes, "requests.all", INKSTAT_TYPE_FLOAT);
+  request_outcomes   = INKStatCoupledGlobalCategoryCreate("request_outcomes");
+  requests_all       = INKStatCoupledGlobalAdd(request_outcomes, "requests.all", INKSTAT_TYPE_FLOAT);
   requests_redirects = INKStatCoupledGlobalAdd(request_outcomes, "requests.redirects", INKSTAT_TYPE_INT64);
   requests_unchanged = INKStatCoupledGlobalAdd(request_outcomes, "requests.unchanged", INKSTAT_TYPE_INT64);
 }
@@ -341,8 +332,8 @@ TSPluginInit(int argc, const char *argv[])
   int uri_len;
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = "redirect-1";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "redirect-1";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -357,7 +348,7 @@ TSPluginInit(int argc, const char *argv[])
      */
 
     url_redirect = TSstrdup(argv[2]);
-    uri_len = strlen(prefix) + strlen(url_redirect) + 1;
+    uri_len      = strlen(prefix) + strlen(url_redirect) + 1;
     uri_redirect = TSmalloc(uri_len);
     TSstrlcpy(uri_redirect, prefix, uri_len);
     TSstrlcat(uri_redirect, url_redirect, uri_len);
@@ -376,7 +367,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSDebug("redirect_init", "block_ip is %s, url_redirect is %s, and uri_redirect is %s", block_ip, url_redirect, uri_redirect);
   // ToDo: Should figure out how to print IPs which are IPv4 / v6.
-  // TSDebug("redirect_init", "ip_deny is %ld\n", ip_deny);
+  // TSDebug("redirect_init", "ip_deny is %ld", ip_deny);
 
   /*
    *  Demonstrate another tracing function.  This can be used to

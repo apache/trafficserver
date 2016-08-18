@@ -167,7 +167,7 @@ write_buffer_to_disk(TSIOBufferReader reader, pvc_state *my_state, TSCont contp)
   // LOG_SET_FUNCTION_NAME("write_buffer_to_disk");
   block = TSIOBufferReaderStart(reader);
   while (block != NULL) {
-    ptr = TSIOBufferBlockReadStart(block, reader, &size);
+    ptr  = TSIOBufferBlockReadStart(block, reader, &size);
     pBuf = (char *)TSmalloc(sizeof(char) * size);
     if (pBuf == NULL) {
       LOG_ERROR_AND_RETURN("TSAIOWrite");
@@ -526,7 +526,7 @@ pvc_process_p_write(TSCont contp, TSEvent event, pvc_state *my_state)
 static int
 pvc_plugin(TSCont contp, TSEvent event, void *edata)
 {
-  pvc_state *my_state = static_cast<pvc_state *>(TSContDataGet(contp));
+  pvc_state *my_state    = static_cast<pvc_state *>(TSContDataGet(contp));
   TSAIOCallback callback = static_cast<TSAIOCallback>(edata);
 
   if (my_state == NULL) {
@@ -546,7 +546,7 @@ pvc_plugin(TSCont contp, TSEvent event, void *edata)
     pvc_process_n_write(contp, event, my_state);
   } else if (event == TS_AIO_EVENT_DONE && uconfig->use_disk_buffer) {
     TSMutexLock(my_state->disk_io_mutex);
-    int size = TSAIONBytesGet(callback);
+    int size  = TSAIONBytesGet(callback);
     char *buf = TSAIOBufGet(callback);
     if (buf != my_state->chunk_buffer) {
       // this TS_AIO_EVENT_DONE event is from TSAIOWrite()
@@ -594,8 +594,9 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
   const char *str;
   int len, port;
 
-  if (TSHttpHdrUrlGet(req_bufp, req_loc, &url_loc) == TS_ERROR)
+  if (TSHttpHdrUrlGet(req_bufp, req_loc, &url_loc) == TS_ERROR) {
     return;
+  }
 
   char *hostname = (char *)getenv("HOSTNAME");
 
@@ -611,7 +612,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
     const char *colon;
     // if (VALID_PTR(str))
     //  TSHandleStringRelease(req_bufp, url_loc, str);
-    str = TSUrlPathGet(req_bufp, url_loc, &len);
+    str   = TSUrlPathGet(req_bufp, url_loc, &len);
     slash = strstr(str, "/");
     if (slash == NULL) {
       // if (VALID_PTR(str))
@@ -631,7 +632,7 @@ convert_url_func(TSMBuffer req_bufp, TSMLoc req_loc)
       TSUrlPortSet(req_bufp, url_loc, atoi(port_str));
       TSfree(port_str);
     } else {
-      int length = 0;
+      int length         = 0;
       const char *scheme = TSUrlSchemeGet(req_bufp, url_loc, &length);
 
       if ((length == TS_URL_LEN_HTTP && strncmp(TS_URL_SCHEME_HTTP, scheme, length) == 0 && port != 80) ||
@@ -753,9 +754,9 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 
         const char *colon = strchr(replacement_host_str, ':');
         if (colon != NULL && colon[1] != '\0') {
-          int length = 0;
+          int length         = 0;
           const char *scheme = TSUrlSchemeGet(req_bufp, url_loc, &length);
-          int port_str_val = atoi(colon + 1);
+          int port_str_val   = atoi(colon + 1);
 
           if ((length == TS_URL_LEN_HTTP && strncmp(TS_URL_SCHEME_HTTP, scheme, length) == 0 && port_str_val != 80) ||
               (length == TS_URL_LEN_HTTPS && strncmp(TS_URL_SCHEME_HTTPS, scheme, length) == 0 && port_str_val != 443)) {
@@ -772,7 +773,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       }
 
       int i = uconfig->url_num;
-      url = TSUrlStringGet(req_bufp, url_loc, &url_len);
+      url   = TSUrlStringGet(req_bufp, url_loc, &url_len);
       if (VALID_PTR(url)) {
         char urlStr[url_len + 1];
         memcpy(urlStr, url, url_len);
@@ -834,34 +835,34 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       break;
     }
 
-    my_state = (pvc_state *)TSmalloc(sizeof(pvc_state));
-    my_state->req_size = content_length;
-    my_state->p_vc = NULL;
-    my_state->p_read_vio = NULL;
+    my_state              = (pvc_state *)TSmalloc(sizeof(pvc_state));
+    my_state->req_size    = content_length;
+    my_state->p_vc        = NULL;
+    my_state->p_read_vio  = NULL;
     my_state->p_write_vio = NULL;
 
-    my_state->net_vc = NULL;
-    my_state->n_read_vio = NULL;
+    my_state->net_vc      = NULL;
+    my_state->n_read_vio  = NULL;
     my_state->n_write_vio = NULL;
 
-    my_state->req_buffer = NULL;
-    my_state->req_reader = NULL;
-    my_state->resp_buffer = NULL;
-    my_state->resp_reader = NULL;
-    my_state->fd = -1;
+    my_state->req_buffer    = NULL;
+    my_state->req_reader    = NULL;
+    my_state->resp_buffer   = NULL;
+    my_state->resp_reader   = NULL;
+    my_state->fd            = -1;
     my_state->disk_io_mutex = NULL;
 
     my_state->http_txnp = txnp; // not in use now, may need in the future
 
-    my_state->req_finished = 0;
+    my_state->req_finished  = 0;
     my_state->resp_finished = 0;
     my_state->nbytes_to_consume =
       -1; // the length of server request header to remove from incoming stream (will replace with client request header)
 
-    my_state->size_written = 0;
-    my_state->size_read = 0;
-    my_state->write_offset = 0;
-    my_state->read_offset = 0;
+    my_state->size_written         = 0;
+    my_state->size_read            = 0;
+    my_state->write_offset         = 0;
+    my_state->read_offset          = 0;
     my_state->is_reading_from_disk = 0;
 
     my_state->chunk_buffer = (char *)TSmalloc(sizeof(char) * uconfig->chunk_size);
@@ -906,12 +907,11 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
       if (my_state->fd < 0) {
         LOG_ERROR("open");
         uconfig->use_disk_buffer = 0;
-        my_state->fd = -1;
+        my_state->fd             = -1;
       } else {
         TSDebug(DEBUG_TAG, "temp filename: %s", path);
       }
     }
-
 
     TSDebug(DEBUG_TAG, "calling TSHttpTxnIntercept() ...");
     TSHttpTxnIntercept(new_cont, txnp);
@@ -963,18 +963,21 @@ create_directory()
       }
     }
     dir = opendir(".");
-    if (dir == NULL)
+    if (dir == NULL) {
       goto error_out;
+    }
     while ((d = readdir(dir))) {
       remove(d->d_name);
     }
     closedir(dir);
-    if (chdir("..") == -1)
+    if (chdir("..") == -1) {
       return 0;
+    }
   }
 
-  if (chdir(cwd) == -1)
+  if (chdir(cwd) == -1) {
     return 0;
+  }
 
   return 1;
 
@@ -983,8 +986,9 @@ error_out:
       value of chdir() and cannot be silenced
       The reason is the combination of -D_FORTIFY_SOURCE=2 -O
    */
-  if (chdir(cwd) == -1)
+  if (chdir(cwd) == -1) {
     return 0;
+  }
 
   return 0;
 }
@@ -997,7 +1001,7 @@ load_urls(char *filename)
   char *eol;
   int i;
 
-  url_buf = (char *)TSmalloc(sizeof(char) * (uconfig->max_url_length + 1));
+  url_buf                          = (char *)TSmalloc(sizeof(char) * (uconfig->max_url_length + 1));
   url_buf[uconfig->max_url_length] = '\0';
 
   for (i = 0; i < 2; i++) {
@@ -1034,13 +1038,12 @@ load_urls(char *filename)
   TSfree(url_buf);
 }
 
-
 void
 parse_config_line(char *line, const struct config_val_ul *cv)
 {
   const char *delim = "\t\r\n ";
-  char *save = NULL;
-  char *tok = strtok_r(line, delim, &save);
+  char *save        = NULL;
+  char *tok         = strtok_r(line, delim, &save);
 
   while (tok && cv->str) {
     if (!strcmp(tok, cv->str)) {
@@ -1049,7 +1052,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
         switch (cv->type) {
         case TYPE_INT: {
           char *end = tok;
-          int iv = strtol(tok, &end, 10);
+          int iv    = strtol(tok, &end, 10);
           if (end && *end == '\0') {
             *((int *)cv->val) = iv;
             TSError("[buffer_upload] Parsed int config value %s : %d", cv->str, iv);
@@ -1058,7 +1061,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           break;
         }
         case TYPE_UINT: {
-          char *end = tok;
+          char *end        = tok;
           unsigned int uiv = strtoul(tok, &end, 10);
           if (end && *end == '\0') {
             *((unsigned int *)cv->val) = uiv;
@@ -1069,7 +1072,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
         }
         case TYPE_LONG: {
           char *end = tok;
-          long lv = strtol(tok, &end, 10);
+          long lv   = strtol(tok, &end, 10);
           if (end && *end == '\0') {
             *((long *)cv->val) = lv;
             TSError("[buffer_upload] Parsed long config value %s : %ld", cv->str, lv);
@@ -1078,7 +1081,7 @@ parse_config_line(char *line, const struct config_val_ul *cv)
           break;
         }
         case TYPE_ULONG: {
-          char *end = tok;
+          char *end         = tok;
           unsigned long ulv = strtoul(tok, &end, 10);
           if (end && *end == '\0') {
             *((unsigned long *)cv->val) = ulv;
@@ -1100,10 +1103,11 @@ parse_config_line(char *line, const struct config_val_ul *cv)
         case TYPE_BOOL: {
           size_t len = strlen(tok);
           if (len > 0) {
-            if (*tok == '1' || *tok == 't')
+            if (*tok == '1' || *tok == 't') {
               *((bool *)cv->val) = true;
-            else
+            } else {
               *((bool *)cv->val) = false;
+            }
             TSError("[buffer_upload] Parsed bool config value %s : %d", cv->str, *((bool *)cv->val));
             TSDebug(DEBUG_TAG, "Parsed bool config value %s : %d", cv->str, *((bool *)cv->val));
           }
@@ -1122,18 +1126,18 @@ bool
 read_upload_config(const char *file_name)
 {
   TSDebug(DEBUG_TAG, "read_upload_config: %s", file_name);
-  uconfig = (upload_config *)TSmalloc(sizeof(upload_config));
+  uconfig                  = (upload_config *)TSmalloc(sizeof(upload_config));
   uconfig->use_disk_buffer = true;
-  uconfig->convert_url = false;
-  uconfig->chunk_size = 16 * 1024;
+  uconfig->convert_url     = false;
+  uconfig->chunk_size      = 16 * 1024;
   uconfig->mem_buffer_size = 32 * 1024;
-  uconfig->url_list_file = NULL;
-  uconfig->max_url_length = 4096;
-  uconfig->url_num = 0;
-  uconfig->urls = NULL;
-  uconfig->base_dir = NULL;
-  uconfig->subdir_num = 64;
-  uconfig->thread_num = 4;
+  uconfig->url_list_file   = NULL;
+  uconfig->max_url_length  = 4096;
+  uconfig->url_num         = 0;
+  uconfig->urls            = NULL;
+  uconfig->base_dir        = NULL;
+  uconfig->subdir_num      = 64;
+  uconfig->thread_num      = 4;
 
   struct config_val_ul config_vals[] = {{"use_disk_buffer", TYPE_BOOL, &(uconfig->use_disk_buffer)},
                                         {"convert_url", TYPE_BOOL, &(uconfig->convert_url)},
@@ -1218,8 +1222,8 @@ TSPluginInit(int argc, const char *argv[])
     TSDebug(DEBUG_TAG, "loaded uconfig->url_list_file, num urls: %d", uconfig->url_num);
   }
 
-  info.plugin_name = const_cast<char *>("buffer_upload");
-  info.vendor_name = const_cast<char *>("Apache Software Foundation");
+  info.plugin_name   = const_cast<char *>("buffer_upload");
+  info.vendor_name   = const_cast<char *>("Apache Software Foundation");
   info.support_email = const_cast<char *>("dev@trafficserver.apache.org");
 
   if (uconfig->use_disk_buffer && !create_directory()) {

@@ -40,7 +40,6 @@
  *
  ****************************************************************************/
 
-
 // bool varSetFromStr(const char*, const char* )
 //
 // Sets the named local manager variable from the value string
@@ -55,8 +54,8 @@ bool
 varSetFromStr(const char *varName, const char *value)
 {
   RecDataT varDataType = RECD_NULL;
-  bool found = true;
-  int err = REC_ERR_FAIL;
+  bool found           = true;
+  int err              = REC_ERR_FAIL;
   RecData data;
 
   memset(&data, 0, sizeof(RecData));
@@ -124,8 +123,8 @@ bool
 varSetFloat(const char *varName, RecFloat value, bool convert)
 {
   RecDataT varDataType = RECD_NULL;
-  bool found = true;
-  int err = REC_ERR_FAIL;
+  bool found           = true;
+  int err              = REC_ERR_FAIL;
 
   err = RecGetRecordDataType((char *)varName, &varDataType);
   if (err != REC_ERR_OKAY) {
@@ -170,8 +169,8 @@ bool
 varSetCounter(const char *varName, RecCounter value, bool convert)
 {
   RecDataT varDataType = RECD_NULL;
-  bool found = true;
-  int err = REC_ERR_FAIL;
+  bool found           = true;
+  int err              = REC_ERR_FAIL;
 
   err = RecGetRecordDataType((char *)varName, &varDataType);
   if (err != REC_ERR_OKAY) {
@@ -215,8 +214,8 @@ bool
 varSetInt(const char *varName, RecInt value, bool convert)
 {
   RecDataT varDataType = RECD_NULL;
-  bool found = true;
-  int err = REC_ERR_FAIL;
+  bool found           = true;
+  int err              = REC_ERR_FAIL;
 
   err = RecGetRecordDataType((char *)varName, &varDataType);
   if (err != REC_ERR_OKAY) {
@@ -255,7 +254,7 @@ varSetInt(const char *varName, RecInt value, bool convert)
 bool
 varSetData(RecDataT varType, const char *varName, RecData value)
 {
-  int err = REC_ERR_FAIL;
+  RecErrT err = REC_ERR_FAIL;
 
   switch (varType) {
   case RECD_INT:
@@ -290,7 +289,6 @@ varDataFromName(RecDataT varType, const char *varName, RecData *value)
   return (err == REC_ERR_OKAY);
 }
 
-
 // bool varCounterFromName (const char*, RecFloat* )
 //
 //   Sets the *value to value of the varName.
@@ -302,8 +300,8 @@ bool
 varCounterFromName(const char *varName, RecCounter *value)
 {
   RecDataT varDataType = RECD_NULL;
-  bool found = true;
-  int err = REC_ERR_FAIL;
+  bool found           = true;
+  int err              = REC_ERR_FAIL;
 
   err = RecGetRecordDataType((char *)varName, &varDataType);
 
@@ -333,7 +331,7 @@ varCounterFromName(const char *varName, RecCounter *value)
   case RECD_NULL:
   default:
     *value = -1;
-    found = false;
+    found  = false;
     break;
   }
 
@@ -351,7 +349,7 @@ bool
 varFloatFromName(const char *varName, RecFloat *value)
 {
   RecDataT varDataType = RECD_NULL;
-  bool found = true;
+  bool found           = true;
 
   int err = REC_ERR_FAIL;
 
@@ -383,7 +381,7 @@ varFloatFromName(const char *varName, RecFloat *value)
   case RECD_NULL:
   default:
     *value = -1.0;
-    found = false;
+    found  = false;
     break;
   }
 
@@ -401,8 +399,8 @@ bool
 varIntFromName(const char *varName, RecInt *value)
 {
   RecDataT varDataType = RECD_NULL;
-  bool found = true;
-  int err = REC_ERR_FAIL;
+  bool found           = true;
+  int err              = REC_ERR_FAIL;
 
   err = RecGetRecordDataType((char *)varName, &varDataType);
 
@@ -432,13 +430,12 @@ varIntFromName(const char *varName, RecInt *value)
   case RECD_NULL:
   default:
     *value = -1;
-    found = false;
+    found  = false;
     break;
   }
 
   return found;
 }
-
 
 // void percentStrFromFloat(MgmtFloat, char* bufVal)
 //
@@ -476,8 +473,8 @@ commaStrFromInt(RecInt bytes, char *bufVal)
   }
 
   numCommas = (len - 1) / 3;
-  curPtr = bufVal + (len + numCommas);
-  *curPtr = '\0';
+  curPtr    = bufVal + (len + numCommas);
+  *curPtr   = '\0';
   curPtr--;
 
   for (int i = 0; i < len; i++) {
@@ -516,7 +513,7 @@ MbytesFromInt(RecInt bytes, char *bufVal)
 void
 bytesFromInt(RecInt bytes, char *bufVal)
 {
-  const int64_t gb = 1073741824;
+  const int64_t gb  = 1073741824;
   const long int mb = 1048576;
   const long int kb = 1024;
   int bytesP;
@@ -561,11 +558,11 @@ bytesFromInt(RecInt bytes, char *bufVal)
 bool
 varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
 {
-  char *varName = NULL;
+  char *varName        = NULL;
   RecDataT varDataType = RECD_NULL;
-  bool found = true;
-  int varNameLen = 0;
-  char formatOption = '\0';
+  bool found           = true;
+  int varNameLen       = 0;
+  char formatOption    = '\0';
   RecData data;
   int err = REC_ERR_FAIL;
 
@@ -578,7 +575,7 @@ varStrFromName(const char *varNameConst, char *bufVal, int bufLen)
   ///  b - bytes.  Ints and Counts only.  Amounts are
   //       transformed into one of GB, MB, KB, or B
   //
-  varName = ats_strdup(varNameConst);
+  varName    = ats_strdup(varNameConst);
   varNameLen = strlen(varName);
   if (varNameLen > 3 && varName[varNameLen - 2] == '\\') {
     formatOption = varName[varNameLen - 1];
@@ -704,8 +701,9 @@ MgmtData::MgmtData()
 
 MgmtData::~MgmtData()
 {
-  if (type == RECD_STRING)
+  if (type == RECD_STRING) {
     ats_free(data.rec_string);
+  }
 }
 
 // MgmtData::compareFromString(const char* str, strLen)
@@ -785,10 +783,9 @@ varType(const char *varName)
     return RECD_NULL;
   }
 
-  Debug("RecOp", "[varType] %s is of type %d\n", varName, data_type);
+  Debug("RecOp", "[varType] %s is of type %d", varName, data_type);
   return data_type;
 }
-
 
 // InkHashTable* processFormSubmission(char* submission)
 //
@@ -817,7 +814,7 @@ processFormSubmission(char *submission)
   }
 
   submission_copy = ats_strdup(submission);
-  numUpdates = updates.Initialize(submission_copy, SHARE_TOKS);
+  numUpdates      = updates.Initialize(submission_copy, SHARE_TOKS);
 
   for (int i = 0; i < numUpdates; i++) {
     pairNum = pair.Initialize(updates[i]);
@@ -875,7 +872,7 @@ processFormSubmission_noSubstitute(char *submission)
   }
 
   submission_copy = ats_strdup(submission);
-  numUpdates = updates.Initialize(submission_copy, SHARE_TOKS);
+  numUpdates      = updates.Initialize(submission_copy, SHARE_TOKS);
 
   for (int i = 0; i < numUpdates; i++) {
     pairNum = pair.Initialize(updates[i]);
@@ -910,9 +907,9 @@ processFormSubmission_noSubstitute(char *submission)
 int
 convertHtmlToUnix(char *buffer)
 {
-  char *read = buffer;
+  char *read  = buffer;
   char *write = buffer;
-  int numSub = 0;
+  int numSub  = 0;
 
   while (*read != '\0') {
     if (*read == '\015') {
@@ -937,7 +934,7 @@ convertHtmlToUnix(char *buffer)
 int
 substituteUnsafeChars(char *buffer)
 {
-  char *read = buffer;
+  char *read  = buffer;
   char *write = buffer;
   char subStr[3];
   long charVal;
@@ -948,8 +945,8 @@ substituteUnsafeChars(char *buffer)
     if (*read == '%') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      charVal = strtol(subStr, (char **)NULL, 16);
-      *write = (char)charVal;
+      charVal   = strtol(subStr, (char **)NULL, 16);
+      *write    = (char)charVal;
       read++;
       write++;
       numSub++;
@@ -975,15 +972,15 @@ substituteUnsafeChars(char *buffer)
 char *
 substituteForHTMLChars(const char *buffer)
 {
-  char *safeBuf;                  // the return "safe" character buffer
-  char *safeCurrent;              // where we are in the return buffer
-  const char *inCurrent = buffer; // where we are in the original buffer
-  int inLength = strlen(buffer);  // how long the orig buffer in
+  char *safeBuf;                          // the return "safe" character buffer
+  char *safeCurrent;                      // where we are in the return buffer
+  const char *inCurrent = buffer;         // where we are in the original buffer
+  int inLength          = strlen(buffer); // how long the orig buffer in
 
   // Maximum character expansion is one to three
   unsigned int bufferToAllocate = (inLength * 5) + 1;
-  safeBuf = new char[bufferToAllocate];
-  safeCurrent = safeBuf;
+  safeBuf                       = new char[bufferToAllocate];
+  safeCurrent                   = safeBuf;
 
   while (*inCurrent != '\0') {
     switch (*inCurrent) {
@@ -1013,39 +1010,6 @@ substituteForHTMLChars(const char *buffer)
   }
   *safeCurrent = '\0';
   return safeBuf;
-}
-
-
-// bool ProxyShutdown()
-//
-//  Attempts to turn the proxy off.  Returns
-//    true if the proxy is off when the call returns
-//    and false if it is still on
-//
-bool
-ProxyShutdown()
-{
-  int i = 0;
-
-  // Check to make sure that we are not already down
-  if (!lmgmt->processRunning()) {
-    return true;
-  }
-  // Send the shutdown event
-  lmgmt->signalEvent(MGMT_EVENT_SHUTDOWN, "shutdown");
-
-  // Wait for awhile for shtudown to happen
-  do {
-    mgmt_sleep_sec(1);
-    i++;
-  } while (i < 10 && lmgmt->processRunning());
-
-  // See if we succeeded
-  if (lmgmt->processRunning()) {
-    return false;
-  } else {
-    return true;
-  }
 }
 
 //
@@ -1095,8 +1059,8 @@ setHostnameVar()
 void
 appendDefaultDomain(char *hostname, int bufLength)
 {
-  int len = strlen(hostname);
-  const char msg[] = "Nodes will be know by their unqualified host name";
+  int len                 = strlen(hostname);
+  const char msg[]        = "Nodes will be know by their unqualified host name";
   static int error_before = 0; // Race ok since effect is multple error msg
 
   ink_assert(len < bufLength);
@@ -1201,7 +1165,7 @@ recordRangeCheck(const char *pattern, const char *value)
     if (dashTok.Initialize(++p, COPY_TOKS) == 2) {
       l_limit = atoi(dashTok[0]);
       u_limit = atoi(dashTok[1]);
-      val = atoi(value);
+      val     = atoi(value);
       if (val >= l_limit && val <= u_limit) {
         return true;
       }
@@ -1258,18 +1222,6 @@ recordRestartCheck(const char *varName)
   return false;
 }
 
-void
-fileCheckSum(char *buffer, int size, char *checksum, const size_t checksumSize)
-{
-  INK_DIGEST_CTX md5_context;
-  char checksum_md5[16];
-
-  ink_code_incr_md5_init(&md5_context);
-  ink_code_incr_md5_update(&md5_context, buffer, size);
-  ink_code_incr_md5_final(checksum_md5, &md5_context);
-  ink_code_md5_stringify(checksum, checksumSize, checksum_md5);
-}
-
 //-------------------------------------------------------------------------
 // getFilesInDirectory
 //
@@ -1300,8 +1252,9 @@ getFilesInDirectory(char *managedDir, ExpandingArray *fileList)
 
   struct dirent *result;
   while (readdir_r(dir, dirEntry, &result) == 0) {
-    if (!result)
+    if (!result) {
       break;
+    }
     fileName = dirEntry->d_name;
     if (!fileName || !*fileName) {
       continue;
@@ -1312,7 +1265,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray *fileList)
     } else {
       // Ignore ., .., and any dot files
       if (fileName && *fileName != '.') {
-        fileListEntry = (fileEntry *)ats_malloc(sizeof(fileEntry));
+        fileListEntry         = (fileEntry *)ats_malloc(sizeof(fileEntry));
         fileListEntry->c_time = fileInfo.st_ctime;
         ink_strlcpy(fileListEntry->name, fileName, sizeof(fileListEntry->name));
         fileList->addEntry(fileListEntry);
@@ -1341,8 +1294,9 @@ newPathString(const char *s1, const char *s2)
   int addLen; // maximum total path length
 
   // Treat null as an empty path.
-  if (!s2)
+  if (!s2) {
     s2 = "";
+  }
   addLen = strlen(s2) + 1;
   if (*s2 == '/') {
     // If addpath is rooted, then rootpath is unused.
@@ -1361,8 +1315,9 @@ newPathString(const char *s1, const char *s2)
   ink_assert(newStr != NULL);
 
   ink_strlcpy(newStr, s1, srcLen + addLen + 1);
-  if (newStr[srcLen - 1] != '/')
+  if (newStr[srcLen - 1] != '/') {
     newStr[srcLen++] = '/';
+  }
   ink_strlcpy(&newStr[srcLen], s2, srcLen + addLen + 1);
 
   return newStr;

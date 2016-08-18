@@ -31,7 +31,7 @@ static void
 test_append()
 {
   static const char value[] = "this is a string";
-  unsigned int len = (int)sizeof(value) - 1;
+  unsigned int len          = (int)sizeof(value) - 1;
 
   Vec<char> str;
 
@@ -138,7 +138,6 @@ test_sort()
   v.qsort(&compare);
   for (int i = 0; i < 1000; ++i)
     ink_assert(reinterpret_cast<void *>(static_cast<intptr_t>(i + 1)) == v[i]);
-
 
   v.clear();
   for (long i = 1; i <= 1000000; ++i) {

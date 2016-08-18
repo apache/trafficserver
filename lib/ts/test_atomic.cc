@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
@@ -31,7 +30,6 @@
 #include "ts/ink_atomic.h"
 #include "ts/ink_queue.h"
 #include "ts/ink_thread.h"
-
 
 #ifndef LONG_ATOMICLIST_TEST
 
@@ -87,11 +85,11 @@ init_data()
 
   for (ali = 0; ali < MAX_ATOMIC_LISTS; ali++) {
     for (j = 0; j < MAX_ITEMS_PER_LIST; j++) {
-      plistItem = (struct listItem *)malloc(sizeof(struct listItem));
-      items[ali + j] = plistItem;
+      plistItem        = (struct listItem *)malloc(sizeof(struct listItem));
+      items[ali + j]   = plistItem;
       plistItem->data1 = ali + j;
       plistItem->data2 = ali + rand();
-      plistItem->link = 0;
+      plistItem->link  = 0;
       plistItem->data3 = j + rand();
       plistItem->data4 = ali + j + rand();
       plistItem->check = (plistItem->data1 ^ plistItem->data2 ^ plistItem->data3 ^ plistItem->data4);
@@ -109,7 +107,7 @@ cycle_data(void *d)
   int iterations;
   int me;
 
-  me = (int)d;
+  me         = (int)d;
   iterations = 0;
 
   while (1) {
@@ -122,7 +120,7 @@ cycle_data(void *d)
     // Place listItems into random queues
     while (pli) {
       ink_assert((pli->data1 ^ pli->data2 ^ pli->data3 ^ pli->data4) == pli->check);
-      pli_next = (struct listItem *)pli->link;
+      pli_next  = (struct listItem *)pli->link;
       pli->link = 0;
       ink_atomiclist_push(&alists[(me + rand()) % MAX_ATOMIC_LISTS], (void *)pli);
       pli = pli_next;
@@ -148,7 +146,6 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
 
   printf("sizeof(int32_t)==%d   sizeof(void *)==%d\n", (int)sizeof(int32_t), (int)sizeof(void *));
 
-
   printf("CAS: %d == 1  then  2\n", m);
   n = ink_atomic_cas(&m, 1, 2);
   printf("changed to: %d,  result=%s\n", m, n ? "true" : "false");
@@ -169,7 +166,6 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   printf("Atomic Inc of %d\n", n);
   m = ink_atomic_increment((int *)&n, 1);
   printf("changed to: %d,  result=%d\n", n, m);
-
 
   printf("Atomic Fetch-and-Add 2 to pointer to '%s'\n", m2);
   n2 = (char *)ink_atomic_increment((pvvoidp)&m2, (void *)2);

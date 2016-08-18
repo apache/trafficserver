@@ -53,7 +53,6 @@ config_parse_error::config_parse_error(const char *fmt, ...)
   va_end(ap);
 }
 
-
 // char* readIntoBuffer(const char* file_path, const char* module_name,
 //                          int* read_size_ptr)
 //
@@ -130,7 +129,7 @@ readIntoBuffer(const char *file_path, const char *module_name, int *read_size_pt
 int
 unescapifyStr(char *buffer)
 {
-  char *read = buffer;
+  char *read  = buffer;
   char *write = buffer;
   char subStr[3];
 
@@ -139,7 +138,7 @@ unescapifyStr(char *buffer)
     if (*read == '%' && *(read + 1) != '\0' && *(read + 2) != '\0') {
       subStr[0] = *(++read);
       subStr[1] = *(++read);
-      *write = (char)strtol(subStr, (char **)NULL, 16);
+      *write    = (char)strtol(subStr, (char **)NULL, 16);
       read++;
       write++;
     } else if (*read == '+') {
@@ -269,7 +268,7 @@ tokLine(char *buf, char **last, char cont)
 
   if (buf != NULL) {
     start = cur = buf;
-    *last = buf;
+    *last       = buf;
   } else {
     start = cur = (*last) + 1;
   }
@@ -278,9 +277,9 @@ tokLine(char *buf, char **last, char cont)
     if (*cur == '\n') {
       if (cont != '\0' && prev != NULL && *prev == cont) {
         *prev = ' ';
-        *cur = ' ';
+        *cur  = ' ';
       } else {
-        *cur = '\0';
+        *cur  = '\0';
         *last = cur;
         return start;
       }
@@ -319,7 +318,7 @@ const char *matcher_type_str[] = {"invalid", "host", "domain", "ip", "url_regex"
 const char *
 processDurationString(char *str, int *seconds)
 {
-  char *s = str;
+  char *s       = str;
   char *current = str;
   char unit;
   int tmp;
@@ -426,14 +425,14 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
     CONSUME,
   };
 
-  pState state = FIND_LABEL;
-  bool inQuote = false;
+  pState state      = FIND_LABEL;
+  bool inQuote      = false;
   char *copyForward = NULL;
-  char *copyFrom = NULL;
-  char *s = line;
-  char *label = NULL;
-  char *val = NULL;
-  int num_el = 0;
+  char *copyFrom    = NULL;
+  char *s           = line;
+  char *label       = NULL;
+  char *val         = NULL;
+  int num_el        = 0;
   matcher_type type = MATCH_NONE;
 
   // Zero out the parsed line structure
@@ -454,7 +453,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
       break;
     case PARSE_LABEL:
       if (*s == '=') {
-        *s = '\0';
+        *s    = '\0';
         state = START_PARSE_VAL;
       }
       s++;
@@ -462,17 +461,17 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
     case START_PARSE_VAL:
       // Init state needed for parsing values
       copyForward = NULL;
-      copyFrom = NULL;
+      copyFrom    = NULL;
 
       if (*s == '"') {
         inQuote = true;
-        val = s + 1;
+        val     = s + 1;
       } else if (*s == '\\') {
         inQuote = false;
-        val = s + 1;
+        val     = s + 1;
       } else {
         inQuote = false;
-        val = s;
+        val     = s;
       }
 
       if (inQuote == false && (isspace(*s) || *(s + 1) == '\0')) {
@@ -505,7 +504,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
             copyFrom = s + 1;
           } else {
             copyForward = s;
-            copyFrom = s + 1;
+            copyFrom    = s + 1;
           }
 
           // Scroll past the escape character
@@ -518,7 +517,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
           }
         } else if (*s == '"') {
           state = CONSUME;
-          *s = '\0';
+          *s    = '\0';
         }
       } else if ((*s == '\\' && ParseRules::is_digit(*(s + 1))) || !ParseRules::is_char(*s)) {
         // INKqa10511
@@ -527,7 +526,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
         return "Unrecognized encoding scheme";
       } else if (isspace(*s)) {
         state = CONSUME;
-        *s = '\0';
+        *s    = '\0';
       }
 
       s++;
@@ -553,7 +552,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
 
       p_line->line[0][num_el] = label;
       p_line->line[1][num_el] = val;
-      type = MATCH_NONE;
+      type                    = MATCH_NONE;
 
       // Check to see if this the primary specifier we are looking for
       if (tags->match_ip && strcasecmp(tags->match_ip, label) == 0) {
@@ -580,7 +579,7 @@ parseConfigLine(char *line, matcher_line *p_line, const matcher_tags *tags)
           }
         } else {
           p_line->dest_entry = num_el;
-          p_line->type = type;
+          p_line->type       = type;
         }
       }
       num_el++;

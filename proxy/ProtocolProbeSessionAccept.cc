@@ -28,21 +28,13 @@
 #include "http2/HTTP2.h"
 
 static bool
-proto_is_spdy(IOBufferReader *reader)
-{
-  // SPDY clients have to start by sending a control frame (the high bit is set). Let's assume
-  // that no other protocol could possibly ever set this bit!
-  return ((uint8_t)(*reader)[0]) == 0x80u;
-}
-
-static bool
 proto_is_http2(IOBufferReader *reader)
 {
   char buf[HTTP2_CONNECTION_PREFACE_LEN];
   char *end;
   ptrdiff_t nbytes;
 
-  end = reader->memcpy(buf, sizeof(buf), 0 /* offset */);
+  end    = reader->memcpy(buf, sizeof(buf), 0 /* offset */);
   nbytes = end - buf;
 
   // Client must send at least 4 bytes to get a reasonable match.
@@ -55,15 +47,15 @@ proto_is_http2(IOBufferReader *reader)
 }
 
 struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessionAcceptEnums {
-  static const size_t minimum_read_size = 1;
+  static const size_t minimum_read_size   = 1;
   static const unsigned buffer_size_index = CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX;
   IOBufferReader *reader;
 
-  explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, ProxyMutex *mutex, MIOBuffer *buffer,
+  explicit ProtocolProbeTrampoline(const ProtocolProbeSessionAccept *probe, Ptr<ProxyMutex> &mutex, MIOBuffer *buffer,
                                    IOBufferReader *reader)
     : Continuation(mutex), probeParent(probe)
   {
-    this->iobuf = buffer ? buffer : new_MIOBuffer(buffer_size_index);
+    this->iobuf  = buffer ? buffer : new_MIOBuffer(buffer_size_index);
     this->reader = reader ? reader : iobuf->alloc_reader(); // reader must be allocated only on a new MIOBuffer.
     SET_HANDLER(&ProtocolProbeTrampoline::ioCompletionEvent);
   }
@@ -75,7 +67,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     NetVConnection *netvc;
     ProtoGroupKey key = N_PROTO_GROUPS; // use this as an invalid value.
 
-    vio = static_cast<VIO *>(edata);
+    vio   = static_cast<VIO *>(edata);
     netvc = static_cast<NetVConnection *>(vio->vc_server);
 
     switch (event) {
@@ -101,11 +93,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
       goto done;
     }
 
-    // SPDY clients have to start by sending a control frame (the high bit is set). Let's assume
-    // that no other protocol could possibly ever set this bit!
-    if (proto_is_spdy(reader)) {
-      key = PROTO_SPDY;
-    } else if (proto_is_http2(reader)) {
+    if (proto_is_http2(reader)) {
       key = PROTO_HTTP2;
     } else {
       key = PROTO_HTTP;
@@ -125,10 +113,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
     return EVENT_CONT;
 
   done:
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-    if (!ssl_vc || (this->iobuf != ssl_vc->get_ssl_iobuf())) {
-      free_MIOBuffer(this->iobuf);
-    }
+    free_MIOBuffer(this->iobuf);
     this->iobuf = NULL;
     delete this;
     return EVENT_CONT;
@@ -145,15 +130,8 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     ink_assert(data);
 
     VIO *vio;
-    NetVConnection *netvc = static_cast<NetVConnection *>(data);
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-    MIOBuffer *buf = NULL;
-    IOBufferReader *reader = NULL;
-    if (ssl_vc) {
-      buf = ssl_vc->get_ssl_iobuf();
-      reader = ssl_vc->get_ssl_reader();
-    }
-    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, buf, reader);
+    NetVConnection *netvc          = (NetVConnection *)data;
+    ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, NULL, NULL);
 
     // XXX we need to apply accept inactivity timeout here ...
 

@@ -1,0 +1,173 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 7.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:23
+msgid "Regex Revalidate Plugin"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:25
+msgid ""
+"This plugin allows for the creation of rules which match regular "
+"expressions against mapped URLs to determine if and when a cache object "
+"revalidation should be forced."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:30
+msgid "Purpose"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:32
+msgid ""
+"This plugin's intended use is the selective forcing of revalidations on "
+"cache objects which are not yet marked as stale in |TS| but which may have "
+"been updated at the origin - without needing to alter cache control "
+"headers, pre-emptively purge the object from the cache manually, or adjust "
+"the global cache revalidation settings (such as fuzz times) used by other "
+"plugins."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:38
+msgid ""
+"Forced cache revalidations may be as specifically or loosely targeted as a "
+"regular expression against your origin URLs permits. Thus, individual cache "
+"objects may have rules created for them, or entire path prefixes, or even "
+"any cache objects with a particular file extension."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:44
+msgid "Installation"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:46
+msgid ""
+"To make this plugin available, you must enable experimental plugins when "
+"building |TS|::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:52
+msgid "Configuration"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:54
+msgid ""
+"This plugin is enabled via the :file:`plugin.config` configuration file, "
+"with two required arguments: the path to a rules file, and the path to a "
+"log file::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:59
+msgid ""
+"The rule configuration file format is described below in `Revalidation "
+"Rules`_."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:61
+msgid ""
+"The plugin regularly (every 60 seconds) checks its rules configuration file "
+"for changes. If the file has been modified since its last scan, the "
+"contents are read and the in-memory rules list is updated. Thus, new rules "
+"may be added and existing ones modified without requiring a service restart "
+"every time (as long as the delay of up to 60 seconds is acceptable)."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:68
+msgid "Revalidation Rules"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:70
+msgid ""
+"Inside your revalidation rules configuration, each rule line is defined as "
+"a regular expression followed by an integer which expresses the epoch time "
+"at which the rule will expire::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:76
+msgid "Blank lines and lines beginning with a ``#`` character are ignored."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:79
+msgid "Matching Expression"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:81
+msgid ""
+"PCRE style regular expressions are supported and should be used to match "
+"against the complete remapped URL of cache objects (not the original client-"
+"side URL), including protocol scheme and origin server domain."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:86
+msgid "Rule Expiration"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:88
+msgid ""
+"Every rule must have an expiration associated with it. The rule expiration "
+"is expressed as an integer of seconds since epoch (equivalent to the return "
+"value of :manpage:`time(2)`), after which the forced revalidation will no "
+"longer occur."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:94
+msgid "Caveats"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:97
+msgid "Matches Only Post-Remapping"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:99
+msgid ""
+"The regular expressions in revalidation rules see only the final, remapped "
+"URL in a transaction. As such, they cannot be used to distinguish between "
+"two client-facing URLs which are mapped to the same origin object. This is "
+"due to the fact that the plugin uses :c:data:"
+"`TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK`."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:105
+msgid "Removing Rules"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:107
+msgid ""
+"While new rules are added dynamically (the configuration file is checked "
+"every 60 seconds for changes), rule lines removed from the configuration "
+"file do not currently lead to that rule being removed from the running "
+"plugin. In these cases, if the rule must be taken out of service, a service "
+"restart may be necessary."
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:114
+msgid "Examples"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:116
+msgid ""
+"The following rule would cause the cache object whose origin server is "
+"``origin.tld`` and whose path is ``/images/foo.jpg`` to be revalidated by "
+"force in |TS| until 6:47:27 AM on Saturday, November 14th, 2015 (UTC)::"
+msgstr ""
+
+#: ../../../admin-guide/plugins/regex_revalidate.en.rst:122
+msgid ""
+"Note the escaping of the ``.`` metacharacter in the rule's regular "
+"expression."
+msgstr ""

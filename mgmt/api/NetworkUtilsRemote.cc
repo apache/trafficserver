@@ -35,11 +35,11 @@
 
 CallbackTable *remote_event_callbacks;
 
-int main_socket_fd = -1;
+int main_socket_fd  = -1;
 int event_socket_fd = -1;
 
 // need to store for reconnecting scenario
-char *main_socket_path = NULL;  // "<path>/mgmtapi.sock"
+char *main_socket_path  = NULL; // "<path>/mgmtapi.sock"
 char *event_socket_path = NULL; // "<path>/eventapi.sock"
 
 static void *event_callback_thread(void *arg);
@@ -57,10 +57,10 @@ set_socket_paths(const char *path)
   // construct paths based on user input
   // form by replacing "mgmtapi.sock" with "eventapi.sock"
   if (path) {
-    main_socket_path = Layout::relative_to(path, MGMTAPI_MGMT_SOCKET_NAME);
+    main_socket_path  = Layout::relative_to(path, MGMTAPI_MGMT_SOCKET_NAME);
     event_socket_path = Layout::relative_to(path, MGMTAPI_EVENT_SOCKET_NAME);
   } else {
-    main_socket_path = NULL;
+    main_socket_path  = NULL;
     event_socket_path = NULL;
   }
 
@@ -80,7 +80,7 @@ static bool
 socket_test(int fd)
 {
   MgmtMarshallInt optype = API_PING;
-  MgmtMarshallInt now = time(NULL);
+  MgmtMarshallInt now    = time(NULL);
 
   if (MGMTAPI_SEND_MESSAGE(fd, API_PING, &optype, &now) == TS_ERR_OKAY) {
     return true; // write was successful; connection still open
@@ -111,8 +111,9 @@ ts_connect()
   int sockaddr_len;
 
   // make sure a socket path is set up
-  if (!main_socket_path || !event_socket_path)
+  if (!main_socket_path || !event_socket_path) {
     goto ERROR;
+  }
 
   // create a socket
   main_socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -156,7 +157,7 @@ ts_connect()
     close(event_socket_fd);
     close(main_socket_fd);
     event_socket_fd = -1;
-    main_socket_fd = -1;
+    main_socket_fd  = -1;
     goto ERROR; // connection is down
   }
 
@@ -180,17 +181,19 @@ disconnect()
   int ret;
 
   if (main_socket_fd > 0) {
-    ret = close(main_socket_fd);
+    ret            = close(main_socket_fd);
     main_socket_fd = -1;
-    if (ret < 0)
+    if (ret < 0) {
       return TS_ERR_FAIL;
+    }
   }
 
   if (event_socket_fd > 0) {
-    ret = close(event_socket_fd);
+    ret             = close(event_socket_fd);
     event_socket_fd = -1;
-    if (ret < 0)
+    if (ret < 0) {
       return TS_ERR_FAIL;
+    }
   }
 
   return TS_ERR_OKAY;
@@ -214,15 +217,17 @@ reconnect()
   TSMgmtError err;
 
   err = disconnect();
-  if (err != TS_ERR_OKAY) // problem disconnecting
+  if (err != TS_ERR_OKAY) { // problem disconnecting
     return err;
+  }
 
   // use the socket_path that was called by remote client on first init
   // use connect instead of TSInit() b/c if TM restarted, client-side tables
   // would be recreated; just want to reconnect to same socket_path
   err = ts_connect();
-  if (err != TS_ERR_OKAY) // problem establishing connection
+  if (err != TS_ERR_OKAY) { // problem establishing connection
     return err;
+  }
 
   // relaunch a new event thread since socket_fd changed
   if (0 == (ts_init_options & TS_MGMT_OPT_NO_EVENTS)) {
@@ -230,8 +235,9 @@ reconnect()
     // reregister the callbacks on the TM side for this new client connection
     if (remote_event_callbacks) {
       err = send_register_all_callbacks(event_socket_fd, remote_event_callbacks);
-      if (err != TS_ERR_OKAY) // problem establishing connection
+      if (err != TS_ERR_OKAY) { // problem establishing connection
         return err;
+      }
     }
   } else {
     ts_event_thread = static_cast<ink_thread>(NULL);
@@ -253,7 +259,7 @@ reconnect()
 TSMgmtError
 reconnect_loop(int num_attempts)
 {
-  int numTries = 0;
+  int numTries    = 0;
   TSMgmtError err = TS_ERR_FAIL;
 
   while (numTries < num_attempts) {
@@ -299,8 +305,9 @@ main_socket_reconnect()
 
   // connects to TM and does all necessary event updates required
   err = reconnect();
-  if (err != TS_ERR_OKAY)
+  if (err != TS_ERR_OKAY) {
     return err;
+  }
 
   // makes sure the descriptor is writable
   if (mgmt_write_timeout(main_socket_fd, MAX_TIME_WAIT, 0) <= 0) {
@@ -358,7 +365,7 @@ mgmtapi_sender::send(void *msg, size_t msglen) const
     // clean-up sockets
     close(main_socket_fd);
     close(event_socket_fd);
-    main_socket_fd = -1;
+    main_socket_fd  = -1;
     event_socket_fd = -1;
 
     err = main_socket_reconnect();
@@ -443,25 +450,26 @@ send_register_all_callbacks(int fd, CallbackTable *cb_table)
   events_with_cb = get_events_with_callbacks(cb_table);
   // need to check that the list has all the events registered
   if (!events_with_cb) { // all events have registered callback
-    MgmtMarshallInt optype = EVENT_REG_CALLBACK;
+    MgmtMarshallInt optype        = EVENT_REG_CALLBACK;
     MgmtMarshallString event_name = NULL;
 
     err = MGMTAPI_SEND_MESSAGE(fd, EVENT_REG_CALLBACK, &optype, &event_name);
-    if (err != TS_ERR_OKAY)
+    if (err != TS_ERR_OKAY) {
       return err;
+    }
   } else {
     int num_events = queue_len(events_with_cb);
     // iterate through the LLQ and send request for each event
     for (int i = 0; i < num_events; i++) {
-      MgmtMarshallInt optype = EVENT_REG_CALLBACK;
-      MgmtMarshallInt event_id = *(int *)dequeue(events_with_cb);
+      MgmtMarshallInt optype        = EVENT_REG_CALLBACK;
+      MgmtMarshallInt event_id      = *(int *)dequeue(events_with_cb);
       MgmtMarshallString event_name = (char *)get_event_name(event_id);
 
       if (event_name) {
         err = MGMTAPI_SEND_MESSAGE(fd, EVENT_REG_CALLBACK, &optype, &event_name);
         ats_free(event_name); // free memory
         if (err != TS_ERR_OKAY) {
-          send_err = err; // save the type of send error
+          send_err  = err; // save the type of send error
           no_errors = false;
         }
       }
@@ -469,13 +477,15 @@ send_register_all_callbacks(int fd, CallbackTable *cb_table)
     }
   }
 
-  if (events_with_cb)
+  if (events_with_cb) {
     delete_queue(events_with_cb);
+  }
 
-  if (no_errors)
+  if (no_errors) {
     return TS_ERR_OKAY;
-  else
+  } else {
     return send_err;
+  }
 }
 
 /**********************************************************************
@@ -508,7 +518,7 @@ send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
     int num_events = queue_len(events_with_cb);
     // iterate through the LLQ and mark events that have a callback
     for (int i = 0; i < num_events; i++) {
-      event_id = *(int *)dequeue(events_with_cb);
+      event_id               = *(int *)dequeue(events_with_cb);
       reg_callback[event_id] = 1; // mark the event as having a callback
     }
     delete_queue(events_with_cb);
@@ -517,13 +527,13 @@ send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
   // send message to TM to mark unregister
   for (int k = 0; k < NUM_EVENTS; k++) {
     if (reg_callback[k] == 0) { // event has no registered callbacks
-      MgmtMarshallInt optype = EVENT_UNREG_CALLBACK;
+      MgmtMarshallInt optype        = EVENT_UNREG_CALLBACK;
       MgmtMarshallString event_name = get_event_name(k);
 
       err = MGMTAPI_SEND_MESSAGE(fd, EVENT_UNREG_CALLBACK, &optype, &event_name);
       ats_free(event_name);
       if (err != TS_ERR_OKAY) {
-        send_err = err; // save the type of the sending error
+        send_err  = err; // save the type of the sending error
         no_errors = false;
       }
       // REMEMBER: WON"T GET A REPLY!
@@ -532,10 +542,11 @@ send_unregister_all_callbacks(int fd, CallbackTable *cb_table)
     }
   }
 
-  if (no_errors)
+  if (no_errors) {
     return TS_ERR_OKAY;
-  else
+  } else {
     return send_err;
+  }
 }
 
 /**********************************************************************
@@ -628,9 +639,9 @@ event_poll_thread_main(void *arg)
     ink_assert(optype == EVENT_NOTIFY);
 
     // The new event takes ownership of the message strings.
-    event = TSEventCreate();
-    event->name = name;
-    event->id = get_event_id(name);
+    event              = TSEventCreate();
+    event->name        = name;
+    event->id          = get_event_id(name);
     event->description = desc;
 
     // got event notice; spawn new thread to handle the event's callback functions
@@ -658,13 +669,12 @@ event_callback_thread(void *arg)
   int index;
 
   event_notice = (TSMgmtEvent *)arg;
-  index = (int)event_notice->id;
+  index        = (int)event_notice->id;
   LLQ *func_q; // list of callback functions need to call
 
   func_q = create_queue();
   if (!func_q) {
-    if (event_notice)
-      TSEventDestroy(event_notice);
+    TSEventDestroy(event_notice);
     return NULL;
   }
 
@@ -679,7 +689,7 @@ event_callback_thread(void *arg)
 
     for (int i = 0; i < queue_depth; i++) {
       event_cb = (EventCallbackT *)dequeue(remote_event_callbacks->event_callback_l[index]);
-      cb = event_cb->func;
+      cb       = event_cb->func;
       enqueue(remote_event_callbacks->event_callback_l[index], event_cb);
       enqueue(func_q, (void *)cb); // add callback function only to list
     }

@@ -1,0 +1,43 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 7.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../developer-guide/plugins/example-plugins/hook-trace/index.en.rst:23
+msgid "Hook Trace Plugin"
+msgstr ""
+
+#: ../../../developer-guide/plugins/example-plugins/hook-trace/index.en.rst:25
+msgid ""
+"The HookTrace plugins shows the fundamental set of hooks that are commonly "
+"used by plugins. It is also useful for tracing the sequence of hook calls a "
+"plugin can receive under different circumstances."
+msgstr ""
+
+#: ../../../developer-guide/plugins/example-plugins/hook-trace/index.en.rst:29
+msgid ""
+"The plugin begins by adding a global hook on each of the hooks it is "
+"interested in. Next, in the event handler, we simply cast the event data "
+"pointer to the expected type."
+msgstr ""
+
+#: ../../../developer-guide/plugins/example-plugins/hook-trace/index.en.rst:33
+msgid ""
+"Hook events can be shown in the |TS| diagnosic log by using the ``hook-"
+"trace`` diagnostic tag::"
+msgstr ""

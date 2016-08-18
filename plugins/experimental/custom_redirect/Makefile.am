@@ -20,3 +20,8 @@ pkglib_LTLIBRARIES = custom_redirect.la
 custom_redirect_la_SOURCES = custom_redirect.cc
 custom_redirect_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

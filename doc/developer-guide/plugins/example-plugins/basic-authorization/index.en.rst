@@ -39,6 +39,15 @@ The parent continuation and global hook are created as follows:
 
 ``TSHttpHookAdd (TS_HTTP_OS_DNS_HOOK, TSContCreate (auth_plugin, NULL));``
 
+.. important::
+
+   Authorization plugins which attach to :c:data:`TS_HTTP_OS_DNS_HOOK` (as shown in
+   the example above) will not operate as expected unless
+   :ts:cv:`proxy.config.http.doc_in_cache_skip_dns` is set to ``0``. Disabling
+   this feature ensures that DNS hooks will still be executed even when a
+   matching document has been located in the cache. The downside is that the
+   performance gain by skipping otherwise unnecessary DNS lookups is lost.
+
 .. toctree::
    :maxdepth: 2
 

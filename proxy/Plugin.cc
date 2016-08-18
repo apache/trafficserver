@@ -66,8 +66,9 @@ PluginRegInfo::~PluginRegInfo()
   ats_free(this->plugin_name);
   ats_free(this->vendor_name);
   ats_free(this->support_email);
-  if (dlh)
+  if (dlh) {
     dlclose(dlh);
+  }
 }
 
 static bool
@@ -84,7 +85,7 @@ plugin_load(int argc, char *argv[], bool validateOnly)
   Note("loading plugin '%s'", path);
 
   for (PluginRegInfo *plugin_reg_temp = plugin_reg_list.head; plugin_reg_temp != NULL;
-       plugin_reg_temp = (plugin_reg_temp->link).next) {
+       plugin_reg_temp                = (plugin_reg_temp->link).next) {
     if (strcmp(plugin_reg_temp->plugin_path, path) == 0) {
       Warning("multiple loading of plugin %s", path);
       break;
@@ -94,11 +95,9 @@ plugin_load(int argc, char *argv[], bool validateOnly)
   // elevate the access to read files as root if compiled with capabilities, if not
   // change the effective user to root
   {
-#if TS_USE_POSIX_CAP
     uint32_t elevate_access = 0;
     REC_ReadConfigInteger(elevate_access, "proxy.config.plugin.load_elevated");
-    ElevateAccess access(elevate_access != 0);
-#endif /* TS_USE_POSIX_CAP */
+    ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
     void *handle = dlopen(path, RTLD_NOW);
     if (!handle) {
@@ -111,9 +110,9 @@ plugin_load(int argc, char *argv[], bool validateOnly)
     // Allocate a new registration structure for the
     //    plugin we're starting up
     ink_assert(plugin_reg_current == NULL);
-    plugin_reg_current = new PluginRegInfo;
+    plugin_reg_current              = new PluginRegInfo;
     plugin_reg_current->plugin_path = ats_strdup(path);
-    plugin_reg_current->dlh = handle;
+    plugin_reg_current->dlh         = handle;
 
     init = (init_func_t)dlsym(plugin_reg_current->dlh, "TSPluginInit");
     if (!init) {
@@ -125,6 +124,16 @@ plugin_load(int argc, char *argv[], bool validateOnly)
       return false; // this line won't get called since Fatal brings down ATS
     }
 
+#if defined(freebsd) || defined(darwin)
+    optreset = 1;
+#endif
+#if defined(__GLIBC__)
+    optind = 0;
+#else
+    optind = 1;
+#endif
+    opterr = 0;
+    optarg = NULL;
     init(argc, argv);
   } // done elevating access
 
@@ -200,7 +209,6 @@ plugin_expand(char *arg)
     break;
   }
 
-
 not_found:
   Warning("plugin.config: unable to find parameter %s", arg);
   return NULL;
@@ -216,18 +224,18 @@ plugin_init(bool validateOnly)
   int argc;
   int fd;
   int i;
-  bool retVal = true;
+  bool retVal           = true;
   static bool INIT_ONCE = true;
 
   if (INIT_ONCE) {
     api_init();
     TSConfigDirGet();
     plugin_dir = TSPluginDirGet();
-    INIT_ONCE = false;
+    INIT_ONCE  = false;
   }
 
   path = RecConfigReadConfigPath(NULL, "plugin.config");
-  fd = open(path, O_RDONLY);
+  fd   = open(path, O_RDONLY);
   if (fd < 0) {
     Warning("unable to open plugin config file '%s': %d, %s", (const char *)path, errno, strerror(errno));
     return false;
@@ -235,20 +243,24 @@ plugin_init(bool validateOnly)
 
   while (ink_file_fd_readline(fd, sizeof(line) - 1, line) > 0) {
     argc = 0;
-    p = line;
+    p    = line;
 
     // strip leading white space and test for comment or blank line
-    while (*p && ParseRules::is_wslfcr(*p))
+    while (*p && ParseRules::is_wslfcr(*p)) {
       ++p;
-    if ((*p == '\0') || (*p == '#'))
+    }
+    if ((*p == '\0') || (*p == '#')) {
       continue;
+    }
 
     // not comment or blank, so rip line into tokens
     while (1) {
-      while (*p && ParseRules::is_wslfcr(*p))
+      while (*p && ParseRules::is_wslfcr(*p)) {
         ++p;
-      if ((*p == '\0') || (*p == '#'))
+      }
+      if ((*p == '\0') || (*p == '#')) {
         break; // EOL
+      }
 
       if (*p == '\"') {
         p += 1;
@@ -284,8 +296,9 @@ plugin_init(bool validateOnly)
 
     retVal = plugin_load(argc, argv, validateOnly);
 
-    for (i = 0; i < argc; i++)
+    for (i = 0; i < argc; i++) {
       ats_free(vars[i]);
+    }
   }
 
   close(fd);

@@ -1,0 +1,214 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:137
+msgid ":c:func:`TSAssert` enables the use of assertion in a plugin."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:125
+msgid ""
+":c:func:`TSDebug` prints out a formatted statement if you are running "
+"Traffic Server in debug mode."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:134
+msgid ":c:func:`TSError` prints error messages to Traffic Server's error log"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:140
+msgid ":c:func:`TSReleaseAssert` enables the use of assertion in a plugin."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:64
+msgid ":c:func:`TSfclose`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:23
+msgid "Plugin Interfaces"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:41
+msgid "TSfopen Family"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:117
+msgid ":c:func:`TSThreadCreate`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:119
+msgid ":c:func:`TSThreadInit`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:66
+msgid ":c:func:`TSfflush`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:129
+msgid ""
+":c:func:`TSIsDebugTagSet` checks to see if a debug tag is set. If the debug "
+"tag is set, then Traffic Server prints out all debug statements associated "
+"with the tag."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:68
+msgid ":c:func:`TSfgets`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:70
+msgid ":c:func:`TSfopen`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:118
+msgid ":c:func:`TSThreadDestroy`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:72
+msgid ":c:func:`TSfread`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:95
+msgid ":c:func:`TSfree`"
+msgstr ":c:func:`TSfree`"
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:74
+msgid ":c:func:`TSfwrite`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:97
+msgid ":c:func:`TSmalloc`"
+msgstr ":c:func:`TSmalloc`"
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:99
+msgid ":c:func:`TSrealloc`"
+msgstr ":c:func:`TSrealloc`"
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:77
+msgid "Memory Allocation"
+msgstr "メモリー割り当て"
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:25
+msgid ""
+"Most of the functions in the Traffic Server API provide an interface to "
+"specific code modules within Traffic Server. The miscellaneous functions "
+"described in this chapter provide some useful general capabilities. They "
+"are categorized as follows:"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:33
+msgid ""
+"The C library already provides functions such as ``printf``, ``malloc``, "
+"and ``fopen`` to perform these tasks. The Traffic Server API versions, "
+"however, overcome various C library limitations (such as portability to all "
+"Traffic Server-support platforms)."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:120
+msgid ":c:func:`TSThreadSelf`"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:101
+msgid ":c:func:`TSstrdup`"
+msgstr ":c:func:`TSstrdup`"
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:103
+msgid ":c:func:`TSstrndup`"
+msgstr ":c:func:`TSstrndup`"
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:108
+msgid ""
+"The Traffic Server API thread functions enable you to create, destroy, and "
+"identify threads within Traffic Server. Multithreading enables a single "
+"program to have more than one stream of execution and to process more than "
+"one transaction at a time. Threads serialize their access to shared "
+"resources and data using the ``TSMutex`` type, as described in :ref:"
+"`developer-plugins-mutexes`."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:54
+msgid ""
+"The ``TSfopen`` family of routines is not intended for high speed IO or "
+"flexibility - they are blocking APIs (not asynchronous). For performance "
+"reasons, you should not directly use these APIs on a Traffic Server thread "
+"(when being called back on an HTTP hook); it is better to use a separate "
+"thread for doing the blocking IO. The ``TSfopen`` family is intended for "
+"reading and writing configuration information when corresponding usage of "
+"the ``fopen`` family of functions is inappropriate due to file descriptor "
+"and portability limitations. The ``TSfopen`` family of functions consists "
+"of the following:"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:123
+msgid "Debugging Functions"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:43
+msgid ""
+"The ``fopen`` family of functions in C is normally used for reading "
+"configuration files, since ``fgets`` is an easy way to parse files on a "
+"line-by-line basis. The ``TSfopen`` family of functions aims at solving the "
+"same problem of buffered IO and line at a time IO in a platform-independent "
+"manner. The ``fopen`` family of C library functions can only open a file if "
+"a file descriptor less than 256 is available. Since Traffic Server often "
+"has more than 2000 file descriptors open at once, however, the likelihood "
+"of an available file descriptor less than 256 very small. To solve this "
+"problem, the ``TSfopen`` family can open files with descriptors greater "
+"than 256."
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:93
+msgid "The memory allocation functions are:"
+msgstr "メモリー割り当て関数には以下のものがあります。"
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:115
+msgid "The thread functions are listed below:"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:84
+msgid ""
+"There are two main reasons for using the routines provided by Traffic "
+"Server. The first is portability: the Traffic Server API routines behave "
+"the same on all of Traffic Server's supported platforms. For example, "
+"``realloc`` does not accept an argument of ``NULL`` on some platforms. The "
+"second reason is that the Traffic Server routines actually track the memory "
+"allocations by file and line number. This tracking is very efficient, "
+"always turned on, and quite useful when tracking down memory leaks."
+msgstr ""
+"Traffic Server が提供するルーチンを使用する主な理由は二つあります。一つ目は"
+"移植性です。Traffic Server API ルーチンは Traffic Server がサポートするプ"
+"ラットフォームすべてにおいて同じ振る舞いをします。例えば、いくつかのプラット"
+"フォームでは ``realloc`` が ``NULL`` の引数を受け付けません。二つ目の理由は "
+"Traffic Server ルーチンが実はメモリー割り当てをファイルと行番号で追跡してい"
+"ることです。この追跡はとても効率的で、常に有効化されており、メモリーリークを"
+"探し出すときになかなか便利です。"
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:106
+msgid "Thread Functions"
+msgstr ""
+
+#: ../../developer-guide/plugins/plugin-interfaces.en.rst:80
+msgid ""
+"Traffic Server provides five routines for allocating and freeing memory. "
+"These routines correspond to similar routines in the C library. For "
+"example, ``TSrealloc`` behaves like the C library routine ``realloc``."
+msgstr ""
+"Traffic Server はメモリーの割り当てと解放のための5つのルーチンを提供していま"
+"す。これらのルーチンは C ライブラリの同様のルーチンと一致します。例えば、"
+"``TSrealloc`` は C ライブラリルーチンの ``realloc`` のように振る舞います。"

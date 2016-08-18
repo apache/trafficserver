@@ -98,6 +98,28 @@ int URL_LEN_MMST;
 // url_MD5_get_fast() does NOT produce the same result as url_MD5_get_general().
 static int url_hash_method = 0;
 
+// test to see if a character is a valid character for a host in a URI according to
+// RFC 3986 and RFC 1034
+inline static int
+is_host_char(char c)
+{
+  return (ParseRules::is_alnum(c) || (c == '-') || (c == '.') || (c == '[') || (c == ']') || (c == '_') || (c == ':') ||
+          (c == '~') || (c == '%'));
+}
+
+// Checks if `addr` is a valid FQDN string
+bool
+validate_host_name(ts::ConstBuffer addr)
+{
+  while (addr) {
+    if (!(is_host_char(*addr))) {
+      return false;
+    }
+    ++addr;
+  }
+  return true;
+}
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 URLHashContext::HashType URLHashContext::Setting = URLHashContext::MD5;
@@ -127,73 +149,73 @@ url_init()
 
     hdrtoken_init();
 
-    URL_SCHEME_FILE = hdrtoken_string_to_wks("file");
-    URL_SCHEME_FTP = hdrtoken_string_to_wks("ftp");
-    URL_SCHEME_GOPHER = hdrtoken_string_to_wks("gopher");
-    URL_SCHEME_HTTP = hdrtoken_string_to_wks("http");
-    URL_SCHEME_HTTPS = hdrtoken_string_to_wks("https");
-    URL_SCHEME_WSS = hdrtoken_string_to_wks("wss");
-    URL_SCHEME_WS = hdrtoken_string_to_wks("ws");
-    URL_SCHEME_MAILTO = hdrtoken_string_to_wks("mailto");
-    URL_SCHEME_NEWS = hdrtoken_string_to_wks("news");
-    URL_SCHEME_NNTP = hdrtoken_string_to_wks("nntp");
+    URL_SCHEME_FILE     = hdrtoken_string_to_wks("file");
+    URL_SCHEME_FTP      = hdrtoken_string_to_wks("ftp");
+    URL_SCHEME_GOPHER   = hdrtoken_string_to_wks("gopher");
+    URL_SCHEME_HTTP     = hdrtoken_string_to_wks("http");
+    URL_SCHEME_HTTPS    = hdrtoken_string_to_wks("https");
+    URL_SCHEME_WSS      = hdrtoken_string_to_wks("wss");
+    URL_SCHEME_WS       = hdrtoken_string_to_wks("ws");
+    URL_SCHEME_MAILTO   = hdrtoken_string_to_wks("mailto");
+    URL_SCHEME_NEWS     = hdrtoken_string_to_wks("news");
+    URL_SCHEME_NNTP     = hdrtoken_string_to_wks("nntp");
     URL_SCHEME_PROSPERO = hdrtoken_string_to_wks("prospero");
-    URL_SCHEME_TELNET = hdrtoken_string_to_wks("telnet");
-    URL_SCHEME_TUNNEL = hdrtoken_string_to_wks("tunnel");
-    URL_SCHEME_WAIS = hdrtoken_string_to_wks("wais");
-    URL_SCHEME_PNM = hdrtoken_string_to_wks("pnm");
-    URL_SCHEME_RTSP = hdrtoken_string_to_wks("rtsp");
-    URL_SCHEME_RTSPU = hdrtoken_string_to_wks("rtspu");
-    URL_SCHEME_MMS = hdrtoken_string_to_wks("mms");
-    URL_SCHEME_MMSU = hdrtoken_string_to_wks("mmsu");
-    URL_SCHEME_MMST = hdrtoken_string_to_wks("mmst");
+    URL_SCHEME_TELNET   = hdrtoken_string_to_wks("telnet");
+    URL_SCHEME_TUNNEL   = hdrtoken_string_to_wks("tunnel");
+    URL_SCHEME_WAIS     = hdrtoken_string_to_wks("wais");
+    URL_SCHEME_PNM      = hdrtoken_string_to_wks("pnm");
+    URL_SCHEME_RTSP     = hdrtoken_string_to_wks("rtsp");
+    URL_SCHEME_RTSPU    = hdrtoken_string_to_wks("rtspu");
+    URL_SCHEME_MMS      = hdrtoken_string_to_wks("mms");
+    URL_SCHEME_MMSU     = hdrtoken_string_to_wks("mmsu");
+    URL_SCHEME_MMST     = hdrtoken_string_to_wks("mmst");
 
     ink_assert(URL_SCHEME_FILE && URL_SCHEME_FTP && URL_SCHEME_GOPHER && URL_SCHEME_HTTP && URL_SCHEME_HTTPS && URL_SCHEME_WS &&
                URL_SCHEME_WSS && URL_SCHEME_MAILTO && URL_SCHEME_NEWS && URL_SCHEME_NNTP && URL_SCHEME_PROSPERO &&
                URL_SCHEME_TELNET && URL_SCHEME_TUNNEL && URL_SCHEME_WAIS && URL_SCHEME_PNM && URL_SCHEME_RTSP && URL_SCHEME_RTSPU &&
                URL_SCHEME_MMS && URL_SCHEME_MMSU && URL_SCHEME_MMST);
 
-    URL_WKSIDX_FILE = hdrtoken_wks_to_index(URL_SCHEME_FILE);
-    URL_WKSIDX_FTP = hdrtoken_wks_to_index(URL_SCHEME_FTP);
-    URL_WKSIDX_GOPHER = hdrtoken_wks_to_index(URL_SCHEME_GOPHER);
-    URL_WKSIDX_HTTP = hdrtoken_wks_to_index(URL_SCHEME_HTTP);
-    URL_WKSIDX_HTTPS = hdrtoken_wks_to_index(URL_SCHEME_HTTPS);
-    URL_WKSIDX_WS = hdrtoken_wks_to_index(URL_SCHEME_WS);
-    URL_WKSIDX_WSS = hdrtoken_wks_to_index(URL_SCHEME_WSS);
-    URL_WKSIDX_MAILTO = hdrtoken_wks_to_index(URL_SCHEME_MAILTO);
-    URL_WKSIDX_NEWS = hdrtoken_wks_to_index(URL_SCHEME_NEWS);
-    URL_WKSIDX_NNTP = hdrtoken_wks_to_index(URL_SCHEME_NNTP);
+    URL_WKSIDX_FILE     = hdrtoken_wks_to_index(URL_SCHEME_FILE);
+    URL_WKSIDX_FTP      = hdrtoken_wks_to_index(URL_SCHEME_FTP);
+    URL_WKSIDX_GOPHER   = hdrtoken_wks_to_index(URL_SCHEME_GOPHER);
+    URL_WKSIDX_HTTP     = hdrtoken_wks_to_index(URL_SCHEME_HTTP);
+    URL_WKSIDX_HTTPS    = hdrtoken_wks_to_index(URL_SCHEME_HTTPS);
+    URL_WKSIDX_WS       = hdrtoken_wks_to_index(URL_SCHEME_WS);
+    URL_WKSIDX_WSS      = hdrtoken_wks_to_index(URL_SCHEME_WSS);
+    URL_WKSIDX_MAILTO   = hdrtoken_wks_to_index(URL_SCHEME_MAILTO);
+    URL_WKSIDX_NEWS     = hdrtoken_wks_to_index(URL_SCHEME_NEWS);
+    URL_WKSIDX_NNTP     = hdrtoken_wks_to_index(URL_SCHEME_NNTP);
     URL_WKSIDX_PROSPERO = hdrtoken_wks_to_index(URL_SCHEME_PROSPERO);
-    URL_WKSIDX_TELNET = hdrtoken_wks_to_index(URL_SCHEME_TELNET);
-    URL_WKSIDX_TUNNEL = hdrtoken_wks_to_index(URL_SCHEME_TUNNEL);
-    URL_WKSIDX_WAIS = hdrtoken_wks_to_index(URL_SCHEME_WAIS);
-    URL_WKSIDX_PNM = hdrtoken_wks_to_index(URL_SCHEME_PNM);
-    URL_WKSIDX_RTSP = hdrtoken_wks_to_index(URL_SCHEME_RTSP);
-    URL_WKSIDX_RTSPU = hdrtoken_wks_to_index(URL_SCHEME_RTSPU);
-    URL_WKSIDX_MMS = hdrtoken_wks_to_index(URL_SCHEME_MMS);
-    URL_WKSIDX_MMSU = hdrtoken_wks_to_index(URL_SCHEME_MMSU);
-    URL_WKSIDX_MMST = hdrtoken_wks_to_index(URL_SCHEME_MMST);
+    URL_WKSIDX_TELNET   = hdrtoken_wks_to_index(URL_SCHEME_TELNET);
+    URL_WKSIDX_TUNNEL   = hdrtoken_wks_to_index(URL_SCHEME_TUNNEL);
+    URL_WKSIDX_WAIS     = hdrtoken_wks_to_index(URL_SCHEME_WAIS);
+    URL_WKSIDX_PNM      = hdrtoken_wks_to_index(URL_SCHEME_PNM);
+    URL_WKSIDX_RTSP     = hdrtoken_wks_to_index(URL_SCHEME_RTSP);
+    URL_WKSIDX_RTSPU    = hdrtoken_wks_to_index(URL_SCHEME_RTSPU);
+    URL_WKSIDX_MMS      = hdrtoken_wks_to_index(URL_SCHEME_MMS);
+    URL_WKSIDX_MMSU     = hdrtoken_wks_to_index(URL_SCHEME_MMSU);
+    URL_WKSIDX_MMST     = hdrtoken_wks_to_index(URL_SCHEME_MMST);
 
-    URL_LEN_FILE = hdrtoken_wks_to_length(URL_SCHEME_FILE);
-    URL_LEN_FTP = hdrtoken_wks_to_length(URL_SCHEME_FTP);
-    URL_LEN_GOPHER = hdrtoken_wks_to_length(URL_SCHEME_GOPHER);
-    URL_LEN_HTTP = hdrtoken_wks_to_length(URL_SCHEME_HTTP);
-    URL_LEN_HTTPS = hdrtoken_wks_to_length(URL_SCHEME_HTTPS);
-    URL_LEN_WS = hdrtoken_wks_to_length(URL_SCHEME_WS);
-    URL_LEN_WSS = hdrtoken_wks_to_length(URL_SCHEME_WSS);
-    URL_LEN_MAILTO = hdrtoken_wks_to_length(URL_SCHEME_MAILTO);
-    URL_LEN_NEWS = hdrtoken_wks_to_length(URL_SCHEME_NEWS);
-    URL_LEN_NNTP = hdrtoken_wks_to_length(URL_SCHEME_NNTP);
+    URL_LEN_FILE     = hdrtoken_wks_to_length(URL_SCHEME_FILE);
+    URL_LEN_FTP      = hdrtoken_wks_to_length(URL_SCHEME_FTP);
+    URL_LEN_GOPHER   = hdrtoken_wks_to_length(URL_SCHEME_GOPHER);
+    URL_LEN_HTTP     = hdrtoken_wks_to_length(URL_SCHEME_HTTP);
+    URL_LEN_HTTPS    = hdrtoken_wks_to_length(URL_SCHEME_HTTPS);
+    URL_LEN_WS       = hdrtoken_wks_to_length(URL_SCHEME_WS);
+    URL_LEN_WSS      = hdrtoken_wks_to_length(URL_SCHEME_WSS);
+    URL_LEN_MAILTO   = hdrtoken_wks_to_length(URL_SCHEME_MAILTO);
+    URL_LEN_NEWS     = hdrtoken_wks_to_length(URL_SCHEME_NEWS);
+    URL_LEN_NNTP     = hdrtoken_wks_to_length(URL_SCHEME_NNTP);
     URL_LEN_PROSPERO = hdrtoken_wks_to_length(URL_SCHEME_PROSPERO);
-    URL_LEN_TELNET = hdrtoken_wks_to_length(URL_SCHEME_TELNET);
-    URL_LEN_TUNNEL = hdrtoken_wks_to_length(URL_SCHEME_TUNNEL);
-    URL_LEN_WAIS = hdrtoken_wks_to_length(URL_SCHEME_WAIS);
-    URL_LEN_PNM = hdrtoken_wks_to_length(URL_SCHEME_PNM);
-    URL_LEN_RTSP = hdrtoken_wks_to_length(URL_SCHEME_RTSP);
-    URL_LEN_RTSPU = hdrtoken_wks_to_length(URL_SCHEME_RTSPU);
-    URL_LEN_MMS = hdrtoken_wks_to_length(URL_SCHEME_MMS);
-    URL_LEN_MMSU = hdrtoken_wks_to_length(URL_SCHEME_MMSU);
-    URL_LEN_MMST = hdrtoken_wks_to_length(URL_SCHEME_MMST);
+    URL_LEN_TELNET   = hdrtoken_wks_to_length(URL_SCHEME_TELNET);
+    URL_LEN_TUNNEL   = hdrtoken_wks_to_length(URL_SCHEME_TUNNEL);
+    URL_LEN_WAIS     = hdrtoken_wks_to_length(URL_SCHEME_WAIS);
+    URL_LEN_PNM      = hdrtoken_wks_to_length(URL_SCHEME_PNM);
+    URL_LEN_RTSP     = hdrtoken_wks_to_length(URL_SCHEME_RTSP);
+    URL_LEN_RTSPU    = hdrtoken_wks_to_length(URL_SCHEME_RTSPU);
+    URL_LEN_MMS      = hdrtoken_wks_to_length(URL_SCHEME_MMS);
+    URL_LEN_MMSU     = hdrtoken_wks_to_length(URL_SCHEME_MMSU);
+    URL_LEN_MMST     = hdrtoken_wks_to_length(URL_SCHEME_MMST);
 
     ink_assert(URLHashContext::OBJ_SIZE >= sizeof(MD5Context));
     ink_assert(URLHashContext::OBJ_SIZE >= sizeof(MMHContext));
@@ -216,7 +238,7 @@ url_create(HdrHeap *heap)
 
   url = (URLImpl *)heap->allocate_obj(sizeof(URLImpl), HDR_HEAP_OBJ_URL);
   obj_clear_data((HdrHeapObjImpl *)url);
-  url->m_url_type = URL_TYPE_NONE;
+  url->m_url_type       = URL_TYPE_NONE;
   url->m_scheme_wks_idx = -1;
   url_clear_string_ref(url);
   return url;
@@ -229,7 +251,7 @@ void
 url_clear(URLImpl *url_impl)
 {
   obj_clear_data((HdrHeapObjImpl *)url_impl);
-  url_impl->m_url_type = URL_TYPE_NONE;
+  url_impl->m_url_type       = URL_TYPE_NONE;
   url_impl->m_scheme_wks_idx = -1;
 }
 
@@ -252,8 +274,9 @@ url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, 
 {
   if (s_url != d_url) {
     obj_copy_data((HdrHeapObjImpl *)s_url, (HdrHeapObjImpl *)d_url);
-    if (inherit_strs && (s_heap != d_heap))
+    if (inherit_strs && (s_heap != d_heap)) {
       d_heap->inherit_string_heaps(s_heap);
+    }
   }
 }
 
@@ -263,20 +286,20 @@ url_copy_onto(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, HdrHeap *d_heap, 
 void
 url_nuke_proxy_stuff(URLImpl *d_url)
 {
-  d_url->m_len_scheme = 0;
-  d_url->m_len_user = 0;
+  d_url->m_len_scheme   = 0;
+  d_url->m_len_user     = 0;
   d_url->m_len_password = 0;
-  d_url->m_len_host = 0;
-  d_url->m_len_port = 0;
+  d_url->m_len_host     = 0;
+  d_url->m_len_port     = 0;
 
-  d_url->m_ptr_scheme = NULL;
-  d_url->m_ptr_user = NULL;
+  d_url->m_ptr_scheme   = NULL;
+  d_url->m_ptr_user     = NULL;
   d_url->m_ptr_password = NULL;
-  d_url->m_ptr_host = NULL;
-  d_url->m_ptr_port = NULL;
+  d_url->m_ptr_host     = NULL;
+  d_url->m_ptr_port     = NULL;
 
   d_url->m_scheme_wks_idx = -1;
-  d_url->m_port = 0;
+  d_url->m_port           = 0;
 }
 
 /*-------------------------------------------------------------------------
@@ -292,22 +315,23 @@ url_copy_onto_as_server_url(URLImpl *s_url, HdrHeap *s_heap, URLImpl *d_url, Hdr
 {
   url_nuke_proxy_stuff(d_url);
 
-  d_url->m_ptr_path = s_url->m_ptr_path;
-  d_url->m_ptr_params = s_url->m_ptr_params;
-  d_url->m_ptr_query = s_url->m_ptr_query;
+  d_url->m_ptr_path     = s_url->m_ptr_path;
+  d_url->m_ptr_params   = s_url->m_ptr_params;
+  d_url->m_ptr_query    = s_url->m_ptr_query;
   d_url->m_ptr_fragment = s_url->m_ptr_fragment;
   url_clear_string_ref(d_url);
 
-  d_url->m_len_path = s_url->m_len_path;
-  d_url->m_len_params = s_url->m_len_params;
-  d_url->m_len_query = s_url->m_len_query;
+  d_url->m_len_path     = s_url->m_len_path;
+  d_url->m_len_params   = s_url->m_len_params;
+  d_url->m_len_query    = s_url->m_len_query;
   d_url->m_len_fragment = s_url->m_len_fragment;
 
-  d_url->m_url_type = s_url->m_url_type;
+  d_url->m_url_type  = s_url->m_url_type;
   d_url->m_type_code = s_url->m_type_code;
 
-  if (inherit_strs && (s_heap != d_heap))
+  if (inherit_strs && (s_heap != d_heap)) {
     d_heap->inherit_string_heaps(s_heap);
+  }
 }
 
 /*-------------------------------------------------------------------------
@@ -408,23 +432,26 @@ url_scheme_set(HdrHeap *heap, URLImpl *url, const char *scheme_str, int scheme_w
 {
   const char *scheme_wks;
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     scheme_str = NULL;
+  }
 
   mime_str_u16_set(heap, scheme_str, length, &(url->m_ptr_scheme), &(url->m_len_scheme), copy_string);
 
   url->m_scheme_wks_idx = scheme_wks_idx;
-  if (scheme_wks_idx >= 0)
+  if (scheme_wks_idx >= 0) {
     scheme_wks = hdrtoken_index_to_wks(scheme_wks_idx);
-  else
+  } else {
     scheme_wks = NULL;
+  }
 
-  if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS)
+  if (scheme_wks == URL_SCHEME_HTTP || scheme_wks == URL_SCHEME_WS) {
     url->m_url_type = URL_TYPE_HTTP;
-  else if (scheme_wks == URL_SCHEME_HTTPS || scheme_wks == URL_SCHEME_WSS)
+  } else if (scheme_wks == URL_SCHEME_HTTPS || scheme_wks == URL_SCHEME_WSS) {
     url->m_url_type = URL_TYPE_HTTPS;
-  else
+  } else {
     url->m_url_type = URL_TYPE_HTTP;
+  }
 
   return scheme_wks; // tokenized string or NULL if not well known
 }
@@ -436,8 +463,9 @@ void
 url_user_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_user), &(url->m_len_user), copy_string);
 }
 
@@ -448,8 +476,9 @@ void
 url_password_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_password), &(url->m_len_password), copy_string);
 }
 
@@ -460,8 +489,9 @@ void
 url_host_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_host), &(url->m_len_host), copy_string);
 }
 
@@ -472,14 +502,16 @@ void
 url_port_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_port), &(url->m_len_port), copy_string);
 
   url->m_port = 0;
   for (int i = 0; i < length; i++) {
-    if (!ParseRules::is_digit(value[i]))
+    if (!ParseRules::is_digit(value[i])) {
       break;
+    }
     url->m_port = url->m_port * 10 + (value[i] - '0');
   }
 }
@@ -510,8 +542,9 @@ void
 url_path_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string)
 {
   url_called_set(url);
-  if (length == 0)
+  if (length == 0) {
     value = NULL;
+  }
   mime_str_u16_set(heap, value, length, &(url->m_ptr_path), &(url->m_len_path), copy_string);
 }
 
@@ -582,7 +615,7 @@ url_clear_string_ref(URLImpl *url)
   if (url->m_ptr_printed_string) {
     url->m_len_printed_string = 0;
     url->m_ptr_printed_string = NULL;
-    url->m_clean = true;
+    url->m_clean              = true;
   }
   return;
 }
@@ -590,17 +623,19 @@ url_clear_string_ref(URLImpl *url)
 char *
 url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
 {
-  if (!url)
+  if (!url) {
     return NULL;
+  }
 
   if (url->m_ptr_printed_string && url->m_clean) {
-    if (length)
+    if (length) {
       *length = url->m_len_printed_string;
+    }
     return (char *)url->m_ptr_printed_string;
   } else { // either not clean or never printed
     int len = url_length_get(url);
     char *buf;
-    int index = 0;
+    int index  = 0;
     int offset = 0;
 
     /* stuff alloc'd here gets gc'd on HdrHeap::destroy() */
@@ -611,7 +646,7 @@ url_string_get_ref(HdrHeap *heap, URLImpl *url, int *length)
     if (length) {
       *length = len;
     }
-    url->m_clean = true; // reset since we have url_print()'ed again
+    url->m_clean              = true; // reset since we have url_print()'ed again
     url->m_len_printed_string = len;
     url->m_ptr_printed_string = buf;
     return buf;
@@ -624,7 +659,7 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
   int len = url_length_get(url);
   char *buf;
   char *buf2;
-  int index = 0;
+  int index  = 0;
   int offset = 0;
 
   buf = arena ? arena->str_alloc(len) : (char *)ats_malloc(len + 1);
@@ -636,8 +671,8 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
   if (heap) {
     buf2 = heap->allocate_str(len + 1);
     memcpy(buf2, buf, len);
-    buf2[len] = '\0';
-    url->m_clean = true; // reset since we have url_print()'ed again
+    buf2[len]                 = '\0';
+    url->m_clean              = true; // reset since we have url_print()'ed again
     url->m_len_printed_string = len;
     url->m_ptr_printed_string = buf2;
   }
@@ -654,20 +689,22 @@ url_string_get(URLImpl *url, Arena *arena, int *length, HdrHeap *heap)
 char *
 url_string_get_buf(URLImpl *url, char *dstbuf, int dstbuf_size, int *length)
 {
-  int len = url_length_get(url);
-  int index = 0;
+  int len    = url_length_get(url);
+  int index  = 0;
   int offset = 0;
-  char *buf = 0;
+  char *buf  = 0;
 
   if (dstbuf && dstbuf_size > 0) {
     buf = dstbuf;
-    if (len >= dstbuf_size)
+    if (len >= dstbuf_size) {
       len = dstbuf_size - 1;
+    }
     url_print(url, dstbuf, len, &index, &offset);
     buf[len] = 0;
 
-    if (length)
+    if (length) {
       *length = len;
+    }
   }
   return buf;
 }
@@ -681,10 +718,10 @@ url_scheme_get(URLImpl *url, int *length)
   const char *str;
 
   if (url->m_scheme_wks_idx >= 0) {
-    str = hdrtoken_index_to_wks(url->m_scheme_wks_idx);
+    str     = hdrtoken_index_to_wks(url->m_scheme_wks_idx);
     *length = hdrtoken_index_to_length(url->m_scheme_wks_idx);
   } else {
-    str = url->m_ptr_scheme;
+    str     = url->m_ptr_scheme;
     *length = url->m_len_scheme;
   }
   return str;
@@ -796,22 +833,25 @@ url_length_get(URLImpl *url)
   int length = 0;
 
   if (url->m_ptr_scheme) {
-    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE))
+    if ((url->m_scheme_wks_idx >= 0) && (hdrtoken_index_to_wks(url->m_scheme_wks_idx) == URL_SCHEME_FILE)) {
       length += url->m_len_scheme + 1; // +1 for ":"
-    else
+    } else {
       length += url->m_len_scheme + 3; // +3 for "://"
+    }
   }
 
   if (url->m_ptr_user) {
     length += url->m_len_user + 1; // +1 for "@"
-    if (url->m_ptr_password)
+    if (url->m_ptr_password) {
       length += url->m_len_password + 1; // +1 for ":"
+    }
   }
 
   if (url->m_ptr_host) {
     length += url->m_len_host;
-    if (url->m_ptr_port && url->m_port)
+    if (url->m_ptr_port && url->m_port) {
       length += url->m_len_port + 1; // +1 for ":"
+    }
   }
 
   if (url->m_ptr_path) {
@@ -847,13 +887,15 @@ url_to_string(URLImpl *url, Arena *arena, int *length)
 
   len = url_length_get(url) + 1;
 
-  if (length)
+  if (length) {
     *length = len;
+  }
 
-  if (arena)
+  if (arena) {
     str = arena->str_alloc(len);
-  else
+  } else {
     str = (char *)ats_malloc(len + 1);
+  }
 
   idx = 0;
 
@@ -937,11 +979,12 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
   int min_len = (int)(str_len < buf_len ? str_len : buf_len);
 
   first_pct = ink_memcpy_until_char(buf, (char *)str, min_len, '%');
-  copy_len = (int)(first_pct - str);
+  copy_len  = (int)(first_pct - str);
   str += copy_len;
   buf += copy_len;
-  if (copy_len == min_len)
+  if (copy_len == min_len) {
     return;
+  }
 
   while (str < str_e && (buf != buf_e)) {
     switch (state) {
@@ -960,7 +1003,7 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
         state = 2;
       } else {
         *buf++ = str[-1];
-        state = 0;
+        state  = 0;
       }
       break;
     case 2:
@@ -983,12 +1026,12 @@ unescape_str(char *&buf, char *buf_e, const char *&str, const char *str_e, int &
         state = 0;
       } else {
         *buf++ = str[-2];
-        state = 3;
+        state  = 3;
       }
       break;
     case 3:
       *buf++ = str[-1];
-      state = 0;
+      state  = 0;
       break;
     }
   }
@@ -1017,7 +1060,7 @@ unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e,
         state = 2;
       } else {
         *buf++ = ParseRules::ink_tolower(str[-1]);
-        state = 0;
+        state  = 0;
       }
       break;
     case 2:
@@ -1040,12 +1083,12 @@ unescape_str_tolower(char *&buf, char *end, const char *&str, const char *str_e,
         state = 0;
       } else {
         *buf++ = ParseRules::ink_tolower(str[-2]);
-        state = 3;
+        state  = 3;
       }
       break;
     case 3:
       *buf++ = ParseRules::ink_tolower(str[-1]);
-      state = 0;
+      state  = 0;
       break;
     }
   }
@@ -1061,13 +1104,14 @@ url_unescapify(Arena *arena, const char *str, int length)
   char *t, *e;
   int s;
 
-  if (length == -1)
+  if (length == -1) {
     length = (int)strlen(str);
+  }
 
   buffer = arena->str_alloc(length);
-  t = buffer;
-  e = buffer + length;
-  s = 0;
+  t      = buffer;
+  e      = buffer + length;
+  s      = 0;
 
   unescape_str(t, e, str, str + length, s);
   *t = '\0';
@@ -1098,11 +1142,12 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
   const char *cur = *start;
   const char *scheme_wks;
   const char *scheme_start = NULL;
-  const char *scheme_end = NULL;
+  const char *scheme_end   = NULL;
   int scheme_wks_idx;
 
-  while (' ' == *cur && ++cur < end)
+  while (' ' == *cur && ++cur < end) {
     ;
+  }
   if (cur < end) {
     scheme_start = scheme_end = cur;
     // special case 'http:' for performance
@@ -1113,8 +1158,9 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
       // For forward transparent mode, the URL for the method can just be a path,
       // so don't scan that for a scheme, as we could find a false positive if there
       // is a URL in the parameters (which is legal).
-      while (':' != *cur && ++cur < end)
+      while (':' != *cur && ++cur < end) {
         ;
+      }
       if (cur < end) { // found a colon
         scheme_wks_idx = hdrtoken_tokenize(scheme_start, cur - scheme_start, &scheme_wks);
 
@@ -1135,9 +1181,29 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
   return PARSE_ERROR; // no non-whitespace found
 }
 
-MIMEParseResult
-url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p)
+/**
+ *  This method will return TRUE if the uri is strictly compliant with
+ *  RFC 3986 and it will return FALSE if not.
+ */
+static bool
+url_is_strictly_compliant(const char *start, const char *end)
 {
+  for (const char *i = start; i < end; ++i) {
+    if (!ParseRules::is_uri(*i)) {
+      Debug("http", "Non-RFC compliant character [0x%.2X] found in URL", (unsigned char)*i);
+      return false;
+    }
+  }
+  return true;
+}
+
+MIMEParseResult
+url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, bool strict_uri_parsing)
+{
+  if (strict_uri_parsing && !url_is_strictly_compliant(*start, end)) {
+    return PARSE_ERROR;
+  }
+
   MIMEParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
   return PARSE_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p) : zret;
 }
@@ -1173,8 +1239,8 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
   char const *bracket = 0; // marker for open bracket, if any.
   ts::ConstBuffer user, passw, host, port;
   static size_t const MAX_COLON = 8; // max # of valid colons.
-  size_t n_colon = 0;
-  char const *last_colon = 0; // pointer to last colon seen.
+  size_t n_colon                = 0;
+  char const *last_colon        = 0; // pointer to last colon seen.
 
   // Do a quick check for "://"
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
@@ -1189,8 +1255,9 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
     // appropriate!
     switch (*cur) {
     case ']': // address close
-      if (0 == bracket || n_colon >= MAX_COLON)
+      if (0 == bracket || n_colon >= MAX_COLON) {
         return PARSE_ERROR;
+      }
       ++cur;
       /* We keep the brackets because there are too many other places
          that depend on them and it's too painful to keep track if
@@ -1213,18 +1280,20 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       n_colon = MAX_COLON - 1;
     // FALL THROUGH
     case ':': // track colons, fail if too many.
-      if (++n_colon > MAX_COLON)
+      if (++n_colon > MAX_COLON) {
         return PARSE_ERROR;
+      }
       last_colon = cur;
       ++cur;
       break;
     case '@': // user/password marker.
-      if (user || n_colon > 1)
+      if (user || n_colon > 1) {
         return PARSE_ERROR; // we already got one, or too many colons.
+      }
       if (n_colon) {
         user.set(base, last_colon);
         passw.set(last_colon + 1, cur);
-        n_colon = 0;
+        n_colon    = 0;
         last_colon = 0;
       } else {
         user.set(base, cur);
@@ -1232,9 +1301,10 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       ++cur;
       base = cur;
       break;
-    case '[':                     // address open
-      if (bracket || base != cur) // must be first char in field
+    case '[':                       // address open
+      if (bracket || base != cur) { // must be first char in field
         return PARSE_ERROR;
+      }
       bracket = cur; // location and flag.
       ++cur;
       break;
@@ -1251,8 +1321,9 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
 
   if (user) {
     url_user_set(heap, url, user._ptr, user._size, copy_strings_p);
-    if (passw)
+    if (passw) {
       url_password_set(heap, url, passw._ptr, passw._size, copy_strings_p);
+    }
   }
 
   // @a host not set means no brackets to mark explicit host.
@@ -1264,21 +1335,29 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       last_colon = 0; // prevent port setting.
     }
   }
-  if (host._size)
-    url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
+  if (host._size) {
+    if (validate_host_name(host)) {
+      url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
+    } else {
+      return PARSE_ERROR;
+    }
+  }
 
   if (last_colon) {
     ink_assert(n_colon);
     port.set(last_colon + 1, cur);
-    if (!port._size)
+    if (!port._size) {
       return PARSE_ERROR; // colon w/o port value.
+    }
     url_port_set(heap, url, port._ptr, port._size, copy_strings_p);
   }
-  if ('/' == *cur)
+  if ('/' == *cur) {
     ++cur; // must do this after filling in host/port.
+  }
   *start = cur;
   return PARSE_DONE;
 }
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
@@ -1289,26 +1368,28 @@ url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
 {
   MIMEParseResult err;
   const char *cur;
-  const char *path_start = NULL;
-  const char *path_end = NULL;
-  const char *params_start = NULL;
-  const char *params_end = NULL;
-  const char *query_start = NULL;
-  const char *query_end = NULL;
+  const char *path_start     = NULL;
+  const char *path_end       = NULL;
+  const char *params_start   = NULL;
+  const char *params_end     = NULL;
+  const char *query_start    = NULL;
+  const char *query_end      = NULL;
   const char *fragment_start = NULL;
-  const char *fragment_end = NULL;
+  const char *fragment_end   = NULL;
   char mask;
 
   err = url_parse_internet(heap, url, start, end, copy_strings);
-  if (err < 0)
+  if (err < 0) {
     return err;
+  }
 
   cur = *start;
-  if (*start == end)
+  if (*start == end) {
     goto done;
+  }
 
   path_start = cur;
-  mask = ';' & '?' & '#';
+  mask       = ';' & '?' & '#';
 parse_path2:
   if ((*cur & mask) == mask) {
     if (*cur == ';') {
@@ -1362,23 +1443,27 @@ parse_fragment1:
 
 done:
   if (path_start) {
-    if (!path_end)
+    if (!path_end) {
       path_end = cur;
+    }
     url_path_set(heap, url, path_start, path_end - path_start, copy_strings);
   }
   if (params_start) {
-    if (!params_end)
+    if (!params_end) {
       params_end = cur;
+    }
     url_params_set(heap, url, params_start, params_end - params_start, copy_strings);
   }
   if (query_start) {
-    if (!query_end)
+    if (!query_end) {
       query_end = cur;
+    }
     url_query_set(heap, url, query_start, query_end - query_start, copy_strings);
   }
   if (fragment_start) {
-    if (!fragment_end)
+    if (!fragment_end) {
       fragment_end = cur;
+    }
     url_fragment_set(heap, url, fragment_start, fragment_end - fragment_start, copy_strings);
   }
 
@@ -1401,7 +1486,7 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
 
   // Grab everything until EOS or slash.
   char const *base = cur;
-  cur = static_cast<char const *>(memchr(cur, '/', end - cur));
+  cur              = static_cast<char const *>(memchr(cur, '/', end - cur));
   if (cur) {
     host_end = cur;
     ++cur;
@@ -1412,16 +1497,18 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
   // Did we find something for the host?
   if (base != host_end) {
     char const *port = 0;
-    int port_len = 0;
+    int port_len     = 0;
 
     // Check for port. Search from the end stopping on the first non-digit
     // or more than 5 digits and a delimiter.
-    port = host_end - 1;
+    port                   = host_end - 1;
     char const *port_limit = host_end - 6;
-    if (port_limit < base)
+    if (port_limit < base) {
       port_limit = base; // don't go past start.
-    while (port >= port_limit && isdigit(*port))
+    }
+    while (port >= port_limit && isdigit(*port)) {
       --port;
+    }
     // A port if we're still in the host area and we found a ':' as
     // the immediately preceeding character.
     if (port >= base && ':' == *port) {
@@ -1482,13 +1569,15 @@ url_print(URLImpl *url, char *buf_start, int buf_length, int *buf_index_inout, i
   if (url->m_ptr_host) {
     // Force brackets for IPv6. Note colon must occur in first 5 characters.
     // But it can be less (e.g. "::1").
-    int n = url->m_len_host;
+    int n          = url->m_len_host;
     bool bracket_p = '[' != *url->m_ptr_host && (0 != memchr(url->m_ptr_host, ':', n > 5 ? 5 : n));
-    if (bracket_p)
+    if (bracket_p) {
       TRY(mime_mem_print("[", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    }
     TRY(mime_mem_print(url->m_ptr_host, url->m_len_host, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
-    if (bracket_p)
+    if (bracket_p) {
       TRY(mime_mem_print("]", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
+    }
     if (url->m_ptr_port && url->m_port) {
       TRY(mime_mem_print(":", 1, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
       TRY(mime_mem_print(url->m_ptr_port, url->m_len_port, buf_start, buf_length, buf_index_inout, buf_chars_to_skip_inout));
@@ -1526,27 +1615,23 @@ url_describe(HdrHeapObjImpl *raw, bool /* recurse ATS_UNUSED */)
 {
   URLImpl *obj = (URLImpl *)raw;
 
-  Debug("http", "[URLTYPE: %d, SWKSIDX: %d,\n", obj->m_url_type, obj->m_scheme_wks_idx);
-  Debug("http", "\tSCHEME: \"%.*s\", SCHEME_LEN: %d,\n", obj->m_len_scheme, (obj->m_ptr_scheme ? obj->m_ptr_scheme : "NULL"),
+  Debug("http", "[URLTYPE: %d, SWKSIDX: %d,", obj->m_url_type, obj->m_scheme_wks_idx);
+  Debug("http", "\tSCHEME: \"%.*s\", SCHEME_LEN: %d,", obj->m_len_scheme, (obj->m_ptr_scheme ? obj->m_ptr_scheme : "NULL"),
         obj->m_len_scheme);
-  Debug("http", "\tUSER: \"%.*s\", USER_LEN: %d,\n", obj->m_len_user, (obj->m_ptr_user ? obj->m_ptr_user : "NULL"),
-        obj->m_len_user);
-  Debug("http", "\tPASSWORD: \"%.*s\", PASSWORD_LEN: %d,\n", obj->m_len_password,
+  Debug("http", "\tUSER: \"%.*s\", USER_LEN: %d,", obj->m_len_user, (obj->m_ptr_user ? obj->m_ptr_user : "NULL"), obj->m_len_user);
+  Debug("http", "\tPASSWORD: \"%.*s\", PASSWORD_LEN: %d,", obj->m_len_password,
         (obj->m_ptr_password ? obj->m_ptr_password : "NULL"), obj->m_len_password);
-  Debug("http", "\tHOST: \"%.*s\", HOST_LEN: %d,\n", obj->m_len_host, (obj->m_ptr_host ? obj->m_ptr_host : "NULL"),
-        obj->m_len_host);
-  Debug("http", "\tPORT: \"%.*s\", PORT_LEN: %d, PORT_NUM: %d\n", obj->m_len_port, (obj->m_ptr_port ? obj->m_ptr_port : "NULL"),
+  Debug("http", "\tHOST: \"%.*s\", HOST_LEN: %d,", obj->m_len_host, (obj->m_ptr_host ? obj->m_ptr_host : "NULL"), obj->m_len_host);
+  Debug("http", "\tPORT: \"%.*s\", PORT_LEN: %d, PORT_NUM: %d", obj->m_len_port, (obj->m_ptr_port ? obj->m_ptr_port : "NULL"),
         obj->m_len_port, obj->m_port);
-  Debug("http", "\tPATH: \"%.*s\", PATH_LEN: %d,\n", obj->m_len_path, (obj->m_ptr_path ? obj->m_ptr_path : "NULL"),
-        obj->m_len_path);
-  Debug("http", "\tPARAMS: \"%.*s\", PARAMS_LEN: %d,\n", obj->m_len_params, (obj->m_ptr_params ? obj->m_ptr_params : "NULL"),
+  Debug("http", "\tPATH: \"%.*s\", PATH_LEN: %d,", obj->m_len_path, (obj->m_ptr_path ? obj->m_ptr_path : "NULL"), obj->m_len_path);
+  Debug("http", "\tPARAMS: \"%.*s\", PARAMS_LEN: %d,", obj->m_len_params, (obj->m_ptr_params ? obj->m_ptr_params : "NULL"),
         obj->m_len_params);
-  Debug("http", "\tQUERY: \"%.*s\", QUERY_LEN: %d,\n", obj->m_len_query, (obj->m_ptr_query ? obj->m_ptr_query : "NULL"),
+  Debug("http", "\tQUERY: \"%.*s\", QUERY_LEN: %d,", obj->m_len_query, (obj->m_ptr_query ? obj->m_ptr_query : "NULL"),
         obj->m_len_query);
-  Debug("http", "\tFRAGMENT: \"%.*s\", FRAGMENT_LEN: %d]\n", obj->m_len_fragment,
+  Debug("http", "\tFRAGMENT: \"%.*s\", FRAGMENT_LEN: %d]", obj->m_len_fragment,
         (obj->m_ptr_fragment ? obj->m_ptr_fragment : "NULL"), obj->m_len_fragment);
 }
-
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -1566,7 +1651,6 @@ memcpy_tolower(char *d, const char *s, int n)
     d++;
   }
 }
-
 
 #define BUFSIZE 512
 
@@ -1601,8 +1685,8 @@ url_MD5_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash, cache
 
   ink_assert(sizeof(url->m_port) == 2);
   uint16_t port = (uint16_t)url_canonicalize_port(url->m_url_type, url->m_port);
-  *p++ = ((char *)&port)[0];
-  *p++ = ((char *)&port)[1];
+  *p++          = ((char *)&port)[0];
+  *p++          = ((char *)&port)[1];
 
   ctx.update(buffer, p - buffer);
   if (generation != -1) {
@@ -1611,7 +1695,6 @@ url_MD5_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash, cache
 
   ctx.finalize(hash);
 }
-
 
 static inline void
 url_MD5_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, cache_generation_t generation)
@@ -1643,11 +1726,11 @@ url_MD5_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, ca
   ends[7] = strs[7] + 1;
   ends[8] = strs[8] + url->m_len_path;
 
-  strs[9] = ";";
+  strs[9]  = ";";
   strs[10] = url->m_ptr_params;
   strs[11] = "?";
   strs[12] = url->m_ptr_query;
-  ends[9] = strs[9] + 1;
+  ends[9]  = strs[9] + 1;
   ends[10] = strs[10] + url->m_len_params;
   ends[11] = strs[11] + 1;
   ends[12] = strs[12] + url->m_len_query;
@@ -1675,8 +1758,9 @@ url_MD5_get_general(const URLImpl *url, CryptoContext &ctx, CryptoHash &hash, ca
     }
   }
 
-  if (p != buffer)
+  if (p != buffer) {
     ctx.update(buffer, p - buffer);
+  }
 
   port = url_canonicalize_port(url->m_url_type, url->m_port);
 
@@ -1735,3 +1819,81 @@ url_host_MD5_get(URLImpl *url, INK_MD5 *md5)
   ctx.update(&port, sizeof(port));
   ctx.finalize(*md5);
 }
+
+/*-------------------------------------------------------------------------
+ * Regression tests
+  -------------------------------------------------------------------------*/
+#if TS_HAS_TESTS
+#include "ts/TestBox.h"
+
+const static struct {
+  const char *const text;
+  bool valid;
+} http_validate_hdr_field_test_case[] = {{"yahoo", true},
+                                         {"yahoo.com", true},
+                                         {"yahoo.wow.com", true},
+                                         {"yahoo.wow.much.amaze.com", true},
+                                         {"209.131.52.50", true},
+                                         {"192.168.0.1", true},
+                                         {"localhost", true},
+                                         {"3ffe:1900:4545:3:200:f8ff:fe21:67cf", true},
+                                         {"fe80:0:0:0:200:f8ff:fe21:67cf", true},
+                                         {"fe80::200:f8ff:fe21:67cf", true},
+                                         {"<svg onload=alert(1)>", false}, // Sample host header XSS attack
+                                         {"jlads;f8-9349*(D&F*D(234jD*(FSD*(VKLJ#(*$@()#$)))))", false},
+                                         {"\"\t\n", false},
+                                         {"!@#$%^ &*(*&^%$#@#$%^&*(*&^%$#))", false},
+                                         {":):(:O!!!!!!", false}};
+
+REGRESSION_TEST(VALIDATE_HDR_FIELD)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
+{
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  for (unsigned int i = 0; i < sizeof(http_validate_hdr_field_test_case) / sizeof(http_validate_hdr_field_test_case[0]); ++i) {
+    const char *const txt = http_validate_hdr_field_test_case[i].text;
+    ts::ConstBuffer tmp   = ts::ConstBuffer(txt, strlen(txt));
+    box.check(validate_host_name(tmp) == http_validate_hdr_field_test_case[i].valid,
+              "Validation of FQDN (host) header: \"%s\", expected %s, but not", txt,
+              (http_validate_hdr_field_test_case[i].valid ? "true" : "false"));
+  }
+}
+
+REGRESSION_TEST(ParseRules_strict_URI)(RegressionTest *t, int /* level ATS_UNUSED */, int *pstatus)
+{
+  const struct {
+    const char *const uri;
+    bool valid;
+  } http_strict_uri_parsing_test_case[] = {{"/home", true},
+                                           {"/path/data?key=value#id", true},
+                                           {"/ABCDEFGHIJKLMNOPQRSTUVWXYZ", true},
+                                           {"/abcdefghijklmnopqrstuvwxyz", true},
+                                           {"/0123456789", true},
+                                           {":/?#[]@", true},
+                                           {"!$&'()*+,;=", true},
+                                           {"-._~", true},
+                                           {"%", true},
+                                           {"\n", false},
+                                           {"\"", false},
+                                           {"<", false},
+                                           {">", false},
+                                           {"\\", false},
+                                           {"^", false},
+                                           {"`", false},
+                                           {"{", false},
+                                           {"|", false},
+                                           {"}", false},
+                                           {"é", false}};
+
+  TestBox box(t, pstatus);
+  box = REGRESSION_TEST_PASSED;
+
+  for (unsigned int i = 0; i < sizeof(http_strict_uri_parsing_test_case) / sizeof(http_strict_uri_parsing_test_case[0]); ++i) {
+    const char *const uri = http_strict_uri_parsing_test_case[i].uri;
+    box.check(url_is_strictly_compliant(uri, uri + strlen(uri)) == http_strict_uri_parsing_test_case[i].valid,
+              "Strictly parse URI: \"%s\", expected %s, but not", uri,
+              (http_strict_uri_parsing_test_case[i].valid ? "true" : "false"));
+  }
+}
+
+#endif // TS_HAS_TESTS

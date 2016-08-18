@@ -62,7 +62,7 @@ Parse_Addr_String(ts::ConstBuffer const &text, IpRange &range)
     range.second.load(ts::ConstBuffer(addr2.c_str(), addr2.length()));
   } else { // Assume it is a single address
     newAddr.load(text);
-    range.first = newAddr;
+    range.first  = newAddr;
     range.second = newAddr;
   }
 }
@@ -86,7 +86,6 @@ Load_Config_Value(Value const &parent, char const *name, IpRangeQueue &addrs)
     }
   }
 }
-
 
 int
 Load_Config_File()
@@ -159,12 +158,13 @@ TSPluginInit(int argc, const char *argv[])
 {
   bool success = false;
   TSPluginRegistrationInfo info;
-  TSCont cb_pa = 0; // pre-accept callback continuation
-  static const struct option longopt[] = {{const_cast<char *>("config"), required_argument, NULL, 'c'},
-                                          {NULL, no_argument, NULL, '\0'}};
+  TSCont cb_pa                         = 0; // pre-accept callback continuation
+  static const struct option longopt[] = {
+    {const_cast<char *>("config"), required_argument, NULL, 'c'}, {NULL, no_argument, NULL, '\0'},
+  };
 
-  info.plugin_name = const_cast<char *>("SSL Preaccept test");
-  info.vendor_name = const_cast<char *>("Network Geographics");
+  info.plugin_name   = const_cast<char *>("SSL Preaccept test");
+  info.vendor_name   = const_cast<char *>("Network Geographics");
   info.support_email = const_cast<char *>("shinrich@network-geographics.com");
 
   int opt = 0;
@@ -179,7 +179,7 @@ TSPluginInit(int argc, const char *argv[])
   }
   if (ConfigPath.length() == 0) {
     static char const *const DEFAULT_CONFIG_PATH = "ssl_preaccept.config";
-    ConfigPath = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
+    ConfigPath                                   = std::string(TSConfigDirGet()) + '/' + std::string(DEFAULT_CONFIG_PATH);
     TSDebug(PN, "No config path set in arguments, using default: %s", DEFAULT_CONFIG_PATH);
   }
 

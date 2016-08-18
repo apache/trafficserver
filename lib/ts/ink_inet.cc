@@ -46,17 +46,17 @@ ink_gethostbyname_r(char *hostname, ink_gethostbyname_r_data *data)
 #ifdef RENTRENT_GETHOSTBYNAME
   struct hostent *r = gethostbyname(hostname);
   if (r)
-    data->ent = *r;
+    data->ent  = *r;
   data->herrno = errno;
 
 #else // RENTRENT_GETHOSTBYNAME
 #if GETHOSTBYNAME_R_GLIBC2
 
   struct hostent *addrp = NULL;
-  int res = gethostbyname_r(hostname, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp, &data->herrno);
-  struct hostent *r = NULL;
+  int res               = gethostbyname_r(hostname, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp, &data->herrno);
+  struct hostent *r     = NULL;
   if (!res && addrp)
-    r = addrp;
+    r               = addrp;
 
 #else
   struct hostent *r = gethostbyname_r(hostname, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &data->herrno);
@@ -69,7 +69,7 @@ struct hostent *
 ink_gethostbyaddr_r(char *ip, int len, int type, ink_gethostbyaddr_r_data *data)
 {
 #if GETHOSTBYNAME_R_GLIBC2
-  struct hostent *r = NULL;
+  struct hostent *r     = NULL;
   struct hostent *addrp = NULL;
   int res = gethostbyaddr_r((char *)ip, len, type, &data->ent, data->buf, INK_GETHOSTBYNAME_R_DATA_SIZE, &addrp, &data->herrno);
   if (!res && addrp)
@@ -89,8 +89,8 @@ uint32_t
 ink_inet_addr(const char *s)
 {
   uint32_t u[4];
-  uint8_t *pc = (uint8_t *)s;
-  int n = 0;
+  uint8_t *pc   = (uint8_t *)s;
+  int n         = 0;
   uint32_t base = 10;
 
   if (NULL == s) {
@@ -230,7 +230,7 @@ ats_ip_parse(ts::ConstBuffer src, ts::ConstBuffer *addr, ts::ConstBuffer *port, 
     } else {
       ts::ConstBuffer post = src.after(':');
       if (post.data() && !post.find(':')) {
-        *addr = src.splitOn(post.data() - 1);
+        *addr   = src.splitOn(post.data() - 1);
         colon_p = true;
       } else { // presume no port, use everything.
         *addr = src;
@@ -307,6 +307,26 @@ ats_ip_hash(sockaddr const *addr)
   return zret.i;
 }
 
+uint64_t
+ats_ip_port_hash(sockaddr const *addr)
+{
+  union md5sum {
+    uint64_t i;
+    uint16_t b[4];
+    unsigned char c[16];
+  } zret;
+
+  zret.i = 0;
+  if (ats_is_ip4(addr)) {
+    zret.i = (static_cast<uint64_t>(ats_ip4_addr_cast(addr)) << 16) | (ats_ip_port_cast(addr));
+  } else if (ats_is_ip6(addr)) {
+    ink_code_md5(const_cast<uint8_t *>(ats_ip_addr8_cast(addr)), TS_IP6_SIZE, zret.c);
+    // now replace the bottom 16bits so we can account for the port.
+    zret.b[3] = ats_ip_port_cast(addr);
+  }
+  return zret.i;
+}
+
 int
 ats_ip_to_hex(sockaddr const *src, char *dst, size_t len)
 {
@@ -344,7 +364,7 @@ IpAddr::load(char const *text)
 {
   IpEndpoint ip;
   int zret = ats_ip_pton(text, &ip);
-  *this = ip;
+  *this    = ip;
   return zret;
 }
 
@@ -372,7 +392,8 @@ IpAddr::isMulticast() const
   return (AF_INET == _family && 0xe == (_addr._byte[0] >> 4)) || (AF_INET6 == _family && IN6_IS_ADDR_MULTICAST(&_addr._ip6));
 }
 
-bool operator==(IpAddr const &lhs, sockaddr const *rhs)
+bool
+operator==(IpAddr const &lhs, sockaddr const *rhs)
 {
   bool zret = false;
   if (lhs._family == rhs->sa_family) {
@@ -405,7 +426,7 @@ bool operator==(IpAddr const &lhs, sockaddr const *rhs)
 int
 IpAddr::cmp(self const &that) const
 {
-  int zret = 0;
+  int zret       = 0;
   uint16_t rtype = that._family;
   uint16_t ltype = _family;
 
@@ -467,8 +488,8 @@ ats_ip_getbestaddrinfo(char const *host, IpEndpoint *ip4, IpEndpoint *ip6)
     }
     ink_zero(ai_hints);
     ai_hints.ai_family = AF_UNSPEC;
-    ai_hints.ai_flags = AI_ADDRCONFIG;
-    zret = getaddrinfo(addr_text.data(), 0, &ai_hints, &ai_result);
+    ai_hints.ai_flags  = AI_ADDRCONFIG;
+    zret               = getaddrinfo(addr_text.data(), 0, &ai_hints, &ai_result);
 
     if (0 == zret) {
       // Walk the returned addresses and pick the "best".
@@ -504,12 +525,12 @@ ats_ip_getbestaddrinfo(char const *host, IpEndpoint *ip4, IpEndpoint *ip6)
 
         if (ats_is_ip4(ai_ip)) {
           if (spot_type > ip4_type) {
-            ip4_src = ai_ip;
+            ip4_src  = ai_ip;
             ip4_type = spot_type;
           }
         } else if (ats_is_ip6(ai_ip)) {
           if (spot_type > ip6_type) {
-            ip6_src = ai_ip;
+            ip6_src  = ai_ip;
             ip6_type = spot_type;
           }
         }
@@ -542,7 +563,7 @@ int
 ats_ip_check_characters(ts::ConstBuffer text)
 {
   bool found_colon = false;
-  bool found_hex = false;
+  bool found_hex   = false;
   for (char const *p = text.data(), *limit = p + text.size(); p < limit; ++p)
     if (':' == *p)
       found_colon = true;
@@ -630,8 +651,7 @@ REGRESSION_TEST(Ink_Inet)(RegressionTest *t, int /* atype */, int *pstatus)
     case AF_INET6:
       box.check(memcmp(&ep.sin6.sin6_addr, &addr._addr._ip6, sizeof(in6_addr)) == 0, "IPv6 address mismatch");
       break;
-    default:
-      ;
+    default:;
     }
   }
 }

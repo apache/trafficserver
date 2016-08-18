@@ -1,0 +1,123 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:39
+msgid "Configuring Browsers Manually"
+msgstr "ブラウザーを手動で設定する"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:4
+msgid "Explicit Proxy Caching"
+msgstr "明示的なプロキシーキャッシュ"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:30
+msgid ""
+"If you do not configure Traffic Server to use the transparency option (with "
+"which client requests are intercepted en route to origin servers by a "
+"switch/router and rerouted to the Traffic Server machine), then clients "
+"must configure their web browsers to send HTTP requests to the Traffic "
+"Server proxy cache by configuring their browsers to download proxy "
+"configuration instructions from a :ref:`PAC file <using-a-pack-file>` "
+"(Proxy Auto-Configuration file)."
+msgstr ""
+"Traffic Server を透過オプションを使うように ( クライアントのリクエストがス"
+"イッチ/ルーターによってオリジンサーバーへの経路の途中で横取りされ、Traffic "
+"Server マシンに向かうよう方向付けし直されるように ) 設定しない場合、クライア"
+"ントは Web ブラウザーがプロキシー設定手順を :ref:`PAC ファイル <using-a-"
+"pack-file>` (Proxy Auto-Configuration file) からダウンロードするようにして "
+"HTTTP リクエストを Traffic Server プロキシーキャッシュに送るように設定しなけ"
+"ればなりません。"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:26
+msgid ""
+"If you want to use Traffic Server as an explicit proxy cache, you must "
+"configure client software (i.e., browsers) to send requests directly to "
+"Traffic Server."
+msgstr ""
+"Traffic Server を明示的なプロキシーキャッシュとして使用したい場合は、クライ"
+"アントソフトウェア ( すなわちブラウザー ) がリクエストを直接 Traffic Server "
+"に送るように設定しなければなりません。"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:44
+msgid "The fully-qualified hostname or IP address of the Traffic Server node"
+msgstr "Traffic Server ノードの完全修飾ホスト名もしくは IP アドレス"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:41
+msgid ""
+"To manually configure a browser to send HTTP requests to Traffic Server, "
+"clients must provide the following information:"
+msgstr ""
+"ブラウザーが HTTP リクエストを Traffic Server に送るように手動で設定するに"
+"は、クライアントは次の情報を提供しなければなりません。"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:60
+msgid ""
+"A *PAC file* is a specialized JavaScript function definition that a browser "
+"calls to determine how requests are handled. Clients must specify (in their "
+"browser settings) the URL from which the PAC file is loaded. You can store "
+"a PAC file on Traffic Server (or on any server in your network) and then "
+"provide the URL for this file to your clients."
+msgstr ""
+"*PAC ファイル*\\ はリクエストがどう扱われるかを決定するためにブラウザーが呼"
+"び出す特別な JavaScript の関数定義です。クライアントは ( ブラウザーの設定"
+"に ) PAC ファイルが読み込まれる URL を指定しなければなりません。Traffic "
+"Server 上に ( もしくはネットワーク内のいずれかのサーバー上に) PAC ファイルを"
+"格納しクライアントに対してこのファイルのための URL を提供することができま"
+"す。"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:47
+msgid ""
+"In addition, clients can specify not to use Traffic Server for certain "
+"sites - in such cases, requests to the listed sites go directly to the "
+"origin server. The procedures for manual configuration vary among browser "
+"versions; refer to specific browser documentation for complete proxy "
+"configuration instructions. You do not need to set any special "
+"configuration options on Traffic Server if you want to accept requests from "
+"manually-configured browsers."
+msgstr ""
+"これに加え、クライアントはあるサイトでは Traffic Server を使用しないように指"
+"定することができます。このようなケースでは、一覧にあるサイトへのリクエストは"
+"オリジンサーバーへ直接向かいます。手動設定の手続きはブラウザーのバージョンに"
+"よって異なります。完全なプロキシー設定手順は各ブラウザーのドキュメントを参照"
+"してください。手動で設定されたブラウザーからのリクエストを受け付けたい場合"
+"は、Traffic Server 上で特別な設定を行う必要はありません。"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:67
+msgid "Sample PAC File"
+msgstr "サンプル PAC ファイル"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:45
+msgid "The Traffic Server proxy server port (by default, 8080)"
+msgstr "Traffic Server プロキシーサーバーポート ( デフォルトではポート 8080)"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:69
+msgid ""
+"The following sample PAC file instructs browsers to connect directly to all "
+"hosts without a fully-qualified domain name and to all hosts in the local "
+"domain. All other requests go to the Traffic Server named ``myproxy.company."
+"com``.::"
+msgstr ""
+"次のサンプル PAC ファイルは、完全修飾ドメインのないすべてのホストとローカル"
+"ドメインのホストには直接接続するように指示します。その他のすべてのリクエスト"
+"は ``myproxy.company.com`` と名付けられた Traffic Server に向かいます。"
+
+#: ../../admin-guide/configuration/explicit-forward-proxying.en.rst:58
+msgid "Using a PAC File"
+msgstr "PAC ファイルの使用"

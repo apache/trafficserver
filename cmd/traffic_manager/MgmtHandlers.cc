@@ -36,6 +36,7 @@
 #include "MgmtSocket.h"
 #include "NetworkUtilsRemote.h"
 #include "MIME.h"
+#include "Cop.h"
 
 // INKqa09866
 #include "TSControlMain.h"
@@ -68,8 +69,8 @@ newTcpSocket(int port)
   }
   // Specify our port number is network order
   memset(&socketInfo, 0, sizeof(socketInfo));
-  socketInfo.sin_family = AF_INET;
-  socketInfo.sin_port = htons(port);
+  socketInfo.sin_family      = AF_INET;
+  socketInfo.sin_port        = htons(port);
   socketInfo.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
   // Allow for immediate re-binding to port
@@ -157,14 +158,20 @@ synthetic_thread(void *info)
   // Read the request
   bufp = buffer;
   while (len < strlen(RequestStr)) {
+    if (read_ready(clientFD, cop_server_timeout * 1000) <= 0) {
+      mgmt_log(stderr, "[SyntheticHealthServer] poll() failed, no request to read()");
+      goto error;
+    }
     bytes = read(clientFD, buffer, sizeof(buffer));
-    if (bytes < 0) {
+    if (0 == bytes) {
+      mgmt_log(stderr, "[SyntheticHealthServer] EOF on the socket, likely prematurely closed");
+      goto error;
+    } else if (bytes < 0) {
       if (errno == EINTR || errno == EAGAIN) {
         continue;
       } else {
         mgmt_log(stderr, "[SyntheticHealthServer] Failed to read the request");
         goto error;
-        break;
       }
     } else {
       len += bytes;
@@ -186,6 +193,10 @@ synthetic_thread(void *info)
   // Write it
   bufp = buffer;
   while (len) {
+    if (write_ready(clientFD, cop_server_timeout * 1000) <= 0) {
+      mgmt_log(stderr, "[SyntheticHealthServer] poll() failed, no response to write()");
+      goto error;
+    }
     bytes = write(clientFD, buffer, len);
     if (bytes < 0) {
       if (errno == EINTR || errno == EAGAIN) {
@@ -193,7 +204,6 @@ synthetic_thread(void *info)
       } else {
         mgmt_log(stderr, "[SyntheticHealthServer] Failed to write the response");
         goto error;
-        break;
       }
     } else {
       len -= bytes;
@@ -212,7 +222,7 @@ void *
 mgmt_synthetic_main(void *)
 {
   int autoconfFD = -1; // FD for incoming autoconf connections
-  int clientFD = -1;   // FD for accepted connections
+  int clientFD   = -1; // FD for accepted connections
   int publicPort = -1; // Port for incoming autoconf connections
 
 #if !defined(linux)

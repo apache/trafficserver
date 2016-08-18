@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef _P_CACHE_BC_H__
 #define _P_CACHE_BC_H__
 
@@ -136,7 +135,6 @@ Doc_v23::hdr()
 {
   return reinterpret_cast<char *>(this) + sizeofDoc_v23;
 }
-
 
 } // namespace cache_bc
 

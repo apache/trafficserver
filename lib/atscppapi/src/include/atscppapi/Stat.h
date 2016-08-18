@@ -32,9 +32,9 @@ namespace atscppapi
 /**
  * @brief A Stat is an atomic variable that can be used to store counters, averages, time averages, or summations.
  *
- * All stats are exposed through the traffic_line program included with Apache Traffic Server. Additionally,
+ * All stats are exposed through the traffic_ctl program included with Apache Traffic Server. Additionally,
  * if you've enabled HttpStats all Stats you define will be displayed there. Stats can be read via
- * traffic_line -r stat_name.
+ * traffic_ctl metric get stat_name.
  *
  * Stats are very easy to use, here is a simple example of how you can create a counter and increment its
  * value:
@@ -65,7 +65,7 @@ public:
   /**
    * You must initialize your Stat with a call to this init() method.
    *
-   * @param name The string name of the stat, this will be visbible via traffic_line -r, or through http stats.
+   * @param name The string name of the stat, this will be visbible via traffic_ctl, or through http stats.
    * @param type The SyncType of the Stat, this decides how TrafficServer will treat your inputs. The default
    *   value is SYNC_COUNT.
    * @param persistent This determines if your Stats will persist, the default value is false.
@@ -103,6 +103,5 @@ private:
 };
 
 } /* atscppapi */
-
 
 #endif /* ATSCPPAPI_STAT_H_ */

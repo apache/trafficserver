@@ -9,10 +9,14 @@ plugins to build large scale web applications.
   traffic/ ............... top src dir
   |-- ci/ ................ quality assurance and other CI tools and configs
   |-- cmd/ ............... various command applications
-      |-- traffic_cop/ ... traffic_cop application
-      |-- traffic_line/ .. Command line utilities and API
-      |-- traffic_shell/ . traffic_shell application
+      |-- traffic_cop/ ..
+      |-- traffic_crashlog/
+      |-- traffic_ctl/ ... traffic_ctl command line management application
+      |-- traffic_layout/
+      |-- traffic_manager/
       |-- traffic_top/ ... traffic_top application
+      |-- traffic_via/ ...
+      |-- traffic_wccp/ ..
   |-- contrib ............ various contributed auxiliary pieces
   |-- doc/ ...............
       |-- admin/ ......... Admin guide documentations
@@ -30,7 +34,7 @@ plugins to build large scale web applications.
       |-- hostdb/ ........ Internal DNS cache
       |-- net/ ........... Network
   |-- lib/ ...............
-      |-- cpp11api ....... C++ '11 wrapper for plugin developers
+      |-- atscppapi/ ....... C++ api wrapper for plugin developers
       |-- records/ ....... library for config files
       |-- perl/ .......... Perl libraries for e.g. mgmt access and configurations
       |-- ts/ ............ Base / core library
@@ -38,7 +42,8 @@ plugins to build large scale web applications.
       |-- wccp/ .......... WCCP implementation
   |-- m4/ ................ custom macros for configure.ac
   |-- mgmt/ .............. Management server and tools (including traffic_manager)
-  |-- plugins/ ........... Core plugins (stable and experiemental)
+  |-- plugins/ ........... Stable core plugins
+      |-- experimental/ .. Experimental core plugins
   |-- proxy/ ............. HTTP proxy logic
       |-- api/ ........... Plugin API includes
       |-- config/ ........ Configurations
@@ -47,7 +52,6 @@ plugins to build large scale web applications.
       |-- http/ .......... The actual HTTP protocol implementation
       |---http2/ ......... HTTP/2 implementation
       |-- logging/ ....... Flexible logging
-      |-- spdy/ .......... SPDY implementation
   |-- README ............. intro, links, build info
   |-- README-EC2 ......... info on EC2 support
   |-- REVIEWERS .......... (incomplete) list of areas with committer interest
@@ -62,91 +66,54 @@ plugins to build large scale web applications.
 
   <https://cwiki.apache.org/confluence/display/TS/Building>.
 
-  Fedora 12-19 / CentOS / RHEL:
+  As of ATS v7.0.0 and later, gcc 4.8.1 or later is required, since we now use
+  and require the C++11 standard.
+
+  Fedora / CentOS / RHEL:
     autoconf
     automake
-    pkgconfig
     libtool
+    pkgconfig
     perl-ExtUtils-MakeMaker
-    gcc-c++
-    glibc-devel
+    gcc/g++ or clang/clang++
     openssl-devel
     tcl-devel
     expat-devel
-    pcre
     pcre-devel
+    ncurses-devel and libcurl-devl(optional, needed for traffic_top)
     libcap-devel (optional, highly recommended)
-    flex (optional, needed for e.g. WCCP)
     hwloc-devel (optional, highly recommended)
-    lua-devel (optional)
+    flex (optional, needed for e.g. WCCP)
 
-  Fedora 8 EC2 (Kernel: 2.6.21.7-2.ec2.v1.2.fc8xen):
-    FC8 on EC2 requires unique configure declarations, please see that section
-    below.
-
-    NOTE: Alternately you may use the install scripts in 'contrib' which
-          automate this or use the pre-built public Fedora Core 8 EC2 AMI
-          with ATS installed. Both of which are HIGHLY RECOMMENDED.
-          See 'README-EC2' for further details.
-
+  Ubuntu / Debian
     autoconf
     automake
-    pkgconfig
     libtool
-    perl-ExtUtils-MakeMaker
-    gcc-c++
-    glibc-devel
-    openssl-devel
-    tcl-devel
-    expat-devel
-    pcre
-
-  Ubuntu 8.* - 13.*:
-    autoconf
-    automake
     pkg-config
-    libtool
     libmodule-install-perl
-    g++
+    gcc/g++ or clang/clang++
     libssl-dev
     tcl-dev
     expat
     libexpat-dev
     libpcre3-dev
     libcap-dev (optional, highly recommended)
-    flex (optional, required for e.g. WCCP)
     libhwloc-dev (optional, highly recommended)
-    liblua5.1-dev or libluajit-5.1-dev (optional)
     libncurses5-dev (optional, required for e.g.: traffic_top)
     libcurl4-openssl-dev (optional, required for e.g.: traffic_top)
+    flex (optional, required for e.g. WCCP)
 
-  Ubuntu EC2 9.10:
-    NOTE: Alternately you may use the install scripts in 'contrib' which
-          automate this or use the pre-built public Ubuntu EC2 AMI with
-          ATS installed. Both of which are HIGHLY RECOMMENDED.
-          See 'README-EC2' for further details.
-
-    Install these packages:
+  OSX (we recommend HomeBrew):
     autoconf
     automake
-    pkg-config
+    pkgconfig
     libtool
-    libmodule-install-perl
-    g++
-    libssl-dev
-    tcl-dev
+    tcl
     expat
-    libexpat-dev
-    libpcre3-dev
-    flex (optional)
-    libhwloc-dev (optional, highly recommended)
-    liblua-dev (optional)
-    libncurses5-dev (optional, required for e.g.: traffic_top)
-    libcurl3-openssl-dev (optional, required for e.g.: traffic_top)
+    openssl
+    pcre
 
-  FreeBSD 7.2,8.0,9.0,9.1
-    GCC 4.2.1 compiler suite or clang. You can install the following
-	packages either from ports or via pkg_add or pkgng:
+  FreeBSD
     devel/gmake
     devel/autoconf
     devel/automake
@@ -158,7 +125,6 @@ plugins to build large scale web applications.
     devel/pcre
     textproc/flex (optional, install newer version from ports, fix PATH)
     devel/hwloc (optional, highly recommended)
-    lang/lua (optional, on x64 don't use LuaJIT!)
 
   OmniOS:
     developer/gcc46
@@ -170,17 +136,6 @@ plugins to build large scale web applications.
     library/expat
     library/security/openssl
     library/pcre
-
-  OSX 10.5:
-    GCC 4.2.4 compiler suite (ports collection)
-    autoconf
-    automake
-    pkgconfig
-    libtool
-    tcl
-    expat
-    openssl
-    pcre
 
 3. Building from distribution
 

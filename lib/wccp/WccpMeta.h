@@ -51,7 +51,7 @@ template <> struct TEST_BOOL<false> {
 };
 
 // Fail to compile if VALUE is not true.
-template <bool VALUE> struct TEST_IF_TRUE : public TEST_RESULT<TEST_BOOL<VALUE> > {
+template <bool VALUE> struct TEST_IF_TRUE : public TEST_RESULT<TEST_BOOL<VALUE>> {
 };
 
 // Helper for assigning a value to all instances in a container.
@@ -59,7 +59,11 @@ template <typename T, typename R, typename A1> struct TsAssignMember : public st
   R T::*_m;
   A1 _arg1;
   TsAssignMember(R T::*m, A1 const &arg1) : _m(m), _arg1(arg1) {}
-  R operator()(T &t) const { return t.*_m = _arg1; }
+  R
+  operator()(T &t) const
+  {
+    return t.*_m = _arg1;
+  }
 };
 
 // Helper function to compute types for TsAssignMember.
@@ -132,7 +136,11 @@ struct MemberPredicate {
   Value const &m_value; ///< Value to test against.
   Value Elt::*m_mptr;   ///< Pointer to member to test.
   MemberPredicate(Value Elt::*mptr, Value const &v) : m_value(v), m_mptr(mptr) {}
-  bool operator()(Elt const &elt) const { return elt.*m_mptr == m_value; }
+  bool
+  operator()(Elt const &elt) const
+  {
+    return elt.*m_mptr == m_value;
+  }
 };
 
 template <typename T, typename V>
@@ -150,7 +158,11 @@ struct MethodPredicate {
   Value const &m_value; ///< Value to test against.
   MethodPtr m_mptr;     ///< Pointer to method returning value.
   MethodPredicate(MethodPtr mptr, Value const &v) : m_value(v), m_mptr(mptr) {}
-  bool operator()(Elt const &elt) const { return (elt.*m_mptr)() == m_value; }
+  bool
+  operator()(Elt const &elt) const
+  {
+    return (elt.*m_mptr)() == m_value;
+  }
 };
 
 template <typename T, typename V>

@@ -99,7 +99,6 @@ public:
   */
   Continuation *continuation;
 
-
   /**
     Reference to the Continuation's lock.
 
@@ -171,7 +170,8 @@ public:
 #endif
   }
 
-  Continuation *operator=(Continuation *acont)
+  Continuation *
+  operator=(Continuation *acont)
   {
     continuation = acont;
     if (acont)
@@ -188,7 +188,6 @@ public:
 
   */
   Action() : continuation(NULL), cancelled(false) {}
-
 #if defined(__GNUC__)
   virtual ~Action() {}
 #endif
@@ -204,10 +203,5 @@ public:
 //   MAKE_ACTION_RESULT(ACTION_RESULT_HOST_DB_BASE + 0)
 
 #define MAKE_ACTION_RESULT(_x) (Action *)(((uintptr_t)((_x << 1) + 1)))
-
-#define ACTION_RESULT(_x) \
-  (int)((((uintptr_t)_x)&1)!=0?(((uintptr_t)>>1):(uintptr_t)0))
-
-#define IS_ACTION_RESULT(_x) ((((uintptr_t)_x) & 1) != 0)
 
 #endif /*_Action_h_*/

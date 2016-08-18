@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #ifndef LOG_ACCESS_ICP_H
 #define LOG_ACCESS_ICP_H
 
@@ -43,7 +42,7 @@ public:
   virtual ~LogAccessICP();
 
   LogEntryType
-  entry_type()
+  entry_type() const
   {
     return LOG_ENTRY_ICP;
   }

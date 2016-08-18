@@ -16,7 +16,7 @@
 
 include $(top_srcdir)/build/plugins.mk
 
-AM_CPPFLAGS += -DPLUGIN_TAG=\"multiplexer\" -I $(top_srcdir)/lib/atscppapi/src/include
+AM_CPPFLAGS += -DPLUGIN_TAG=\"multiplexer\"
 
 pkglib_LTLIBRARIES = multiplexer.la
 
@@ -30,3 +30,8 @@ multiplexer_la_SOURCES = \
   ts.cc
 
 multiplexer_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

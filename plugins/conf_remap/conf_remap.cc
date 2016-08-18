@@ -32,7 +32,6 @@ static const char PLUGIN_NAME[] = "conf_remap";
 // OK, since this plugin is distributed only with the "core" (it's a core piece).
 #define MAX_OVERRIDABLE_CONFIGS TS_CONFIG_LAST_ENTRY
 
-
 // Class to hold a set of configurations (one for each remap rule instance)
 struct RemapConfigs {
   struct Item {
@@ -43,7 +42,6 @@ struct RemapConfigs {
   };
 
   RemapConfigs() : _current(0) { memset(_items, 0, sizeof(_items)); };
-
   bool parse_file(const char *filename);
   bool parse_inline(const char *arg);
 
@@ -57,8 +55,9 @@ str_to_datatype(const char *str)
 {
   TSRecordDataType type = TS_RECORDDATATYPE_NULL;
 
-  if (!str || !*str)
+  if (!str || !*str) {
     return TS_RECORDDATATYPE_NULL;
+  }
 
   if (!strcmp(str, "INT")) {
     type = TS_RECORDDATATYPE_INT;
@@ -86,7 +85,7 @@ RemapConfigs::parse_inline(const char *arg)
     return false;
   }
 
-  key = std::string(arg, std::distance(arg, sep));
+  key   = std::string(arg, std::distance(arg, sep));
   value = std::string(sep + 1, std::distance(sep + 1, arg + strlen(arg)));
 
   if (TSHttpTxnConfigFind(key.c_str(), -1 /* len */, &name, &type) != TS_SUCCESS) {
@@ -101,10 +100,10 @@ RemapConfigs::parse_inline(const char *arg)
   case TS_RECORDDATATYPE_STRING:
     if (strcmp(value.c_str(), "NULL") == 0) {
       _items[_current]._data.rec_string = NULL;
-      _items[_current]._data_len = 0;
+      _items[_current]._data_len        = 0;
     } else {
       _items[_current]._data.rec_string = TSstrdup(value.c_str());
-      _items[_current]._data_len = value.size();
+      _items[_current]._data_len        = value.size();
     }
     break;
   default:
@@ -130,8 +129,9 @@ RemapConfigs::parse_file(const char *filename)
 
   std::string path;
 
-  if (!filename || ('\0' == *filename))
+  if (!filename || ('\0' == *filename)) {
     return false;
+  }
 
   if (*filename == '/') {
     // Absolute path, just use it.
@@ -155,13 +155,15 @@ RemapConfigs::parse_file(const char *filename)
     char *s = buf;
 
     ++line_num; // First line is #1 ...
-    while (isspace(*s))
+    while (isspace(*s)) {
       ++s;
+    }
     tok = strtok_r(s, " \t", &ln);
 
     // check for blank lines and comments
-    if ((!tok) || (tok && ('#' == *tok)))
+    if ((!tok) || (tok && ('#' == *tok))) {
       continue;
+    }
 
     if (strncmp(tok, "CONFIG", 6)) {
       TSError("[%s] File %s, line %d: non-CONFIG line encountered", PLUGIN_NAME, path.c_str(), line_num);
@@ -189,17 +191,20 @@ RemapConfigs::parse_file(const char *filename)
 
     // Find the value (which depends on the type above)
     if (ln) {
-      while (isspace(*ln))
+      while (isspace(*ln)) {
         ++ln;
+      }
       if ('\0' == *ln) {
         tok = NULL;
       } else {
         tok = ln;
-        while (*ln != '\0')
+        while (*ln != '\0') {
           ++ln;
+        }
         --ln;
-        while (isspace(*ln) && (ln > tok))
+        while (isspace(*ln) && (ln > tok)) {
           --ln;
+        }
         ++ln;
         *ln = '\0';
       }
@@ -219,10 +224,10 @@ RemapConfigs::parse_file(const char *filename)
     case TS_RECORDDATATYPE_STRING:
       if (strcmp(tok, "NULL") == 0) {
         _items[_current]._data.rec_string = NULL;
-        _items[_current]._data_len = 0;
+        _items[_current]._data_len        = 0;
       } else {
         _items[_current]._data.rec_string = TSstrdup(tok);
-        _items[_current]._data_len = strlen(tok);
+        _items[_current]._data_len        = strlen(tok);
       }
       break;
     default:
@@ -238,7 +243,6 @@ RemapConfigs::parse_file(const char *filename)
   TSfclose(file);
   return (_current > 0);
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Initialize the plugin as a remap plugin.
@@ -259,7 +263,6 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
   return TS_SUCCESS; /* success */
 }
-
 
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
@@ -298,13 +301,13 @@ TSRemapDeleteInstance(void *ih)
   RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
 
   for (int ix = 0; ix < conf->_current; ++ix) {
-    if (TS_RECORDDATATYPE_STRING == conf->_items[ix]._type)
+    if (TS_RECORDDATATYPE_STRING == conf->_items[ix]._type) {
       TSfree(conf->_items[ix]._data.rec_string);
+    }
   }
 
   delete conf;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Main entry point when used as a remap plugin.
@@ -314,7 +317,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo * /* rri ATS_UNUSED */
 {
   if (NULL != ih) {
     RemapConfigs *conf = static_cast<RemapConfigs *>(ih);
-    TSHttpTxn txnp = static_cast<TSHttpTxn>(rh);
+    TSHttpTxn txnp     = static_cast<TSHttpTxn>(rh);
 
     for (int ix = 0; ix < conf->_current; ++ix) {
       switch (conf->_items[ix]._type) {

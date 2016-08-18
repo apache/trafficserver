@@ -1,7 +1,7 @@
-.. _combo-handler-plugin:
+.. _admin-plugins-combo-handler:
 
-Combohandler Plugin
-*******************
+Combo Handler Plugin
+********************
 
 .. Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file

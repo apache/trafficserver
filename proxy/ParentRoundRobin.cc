@@ -53,10 +53,9 @@ void
 ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_call, ParentResult *result, RequestData *rdata)
 {
   Debug("parent_select", "In ParentRoundRobin::selectParent(): Using a round robin parent selection strategy.");
-  int cur_index = 0;
-  bool parentUp = false;
+  int cur_index    = 0;
+  bool parentUp    = false;
   bool parentRetry = false;
-  bool bypass_ok = (result->rec->go_direct == true && policy->DNS_ParentOnly == 0);
 
   HttpRequestData *request_info = static_cast<HttpRequestData *>(rdata);
 
@@ -68,14 +67,14 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
       //   if we are supposed to go direct
       ink_assert(result->rec->go_direct == true);
       // Could not find a parent
-      if (result->rec->go_direct == true) {
-        result->r = PARENT_DIRECT;
+      if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
+        result->result = PARENT_DIRECT;
       } else {
-        result->r = PARENT_FAIL;
+        result->result = PARENT_FAIL;
       }
 
       result->hostname = NULL;
-      result->port = 0;
+      result->port     = 0;
       return;
     } else {
       switch (round_robin_type) {
@@ -109,20 +108,16 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     // Check to see if we have wrapped around
     if ((unsigned int)cur_index == result->start_parent) {
       // We've wrapped around so bypass if we can
-      if (bypass_ok == true) {
+      if (result->rec->go_direct == true) {
         // Could not find a parent
-        if (result->rec->go_direct == true) {
-          result->r = PARENT_DIRECT;
+        if (result->rec->parent_is_proxy == true) {
+          result->result = PARENT_DIRECT;
         } else {
-          result->r = PARENT_FAIL;
+          result->result = PARENT_FAIL;
         }
         result->hostname = NULL;
-        result->port = 0;
+        result->port     = 0;
         return;
-      } else {
-        // Bypass disabled so keep trying, ignoring whether we think
-        //   a parent is down or not
-        result->wrap_around = true;
       }
     }
   }
@@ -143,7 +138,7 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
               (unsigned)result->rec->parents[cur_index].failedAt, policy->ParentRetryTime, (int64_t)request_info->xact_start,
               result->wrap_around);
         // Reuse the parent
-        parentUp = true;
+        parentUp    = true;
         parentRetry = true;
         Debug("parent_select", "Parent marked for retry %s:%d", result->rec->parents[cur_index].hostname,
               result->rec->parents[cur_index].port);
@@ -153,11 +148,11 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     }
 
     if (parentUp == true) {
-      result->r = PARENT_SPECIFIED;
-      result->hostname = result->rec->parents[cur_index].hostname;
-      result->port = result->rec->parents[cur_index].port;
+      result->result      = PARENT_SPECIFIED;
+      result->hostname    = result->rec->parents[cur_index].hostname;
+      result->port        = result->rec->parents[cur_index].port;
       result->last_parent = cur_index;
-      result->retry = parentRetry;
+      result->retry       = parentRetry;
       ink_assert(result->hostname != NULL);
       ink_assert(result->port != 0);
       Debug("parent_select", "Chosen parent = %s.%d", result->hostname, result->port);
@@ -166,14 +161,14 @@ ParentRoundRobin::selectParent(const ParentSelectionPolicy *policy, bool first_c
     cur_index = (cur_index + 1) % result->rec->num_parents;
   } while ((unsigned int)cur_index != result->start_parent);
 
-  if (result->rec->go_direct == true) {
-    result->r = PARENT_DIRECT;
+  if (result->rec->go_direct == true && result->rec->parent_is_proxy == true) {
+    result->result = PARENT_DIRECT;
   } else {
-    result->r = PARENT_FAIL;
+    result->result = PARENT_FAIL;
   }
 
   result->hostname = NULL;
-  result->port = 0;
+  result->port     = 0;
 }
 
 uint32_t
@@ -192,13 +187,13 @@ ParentRoundRobin::markParentDown(const ParentSelectionPolicy *policy, ParentResu
   Debug("parent_select", "Starting ParentRoundRobin::markParentDown()");
   //  Make sure that we are being called back with with a
   //   result structure with a parent
-  ink_assert(result->r == PARENT_SPECIFIED);
-  if (result->r != PARENT_SPECIFIED) {
+  ink_assert(result->result == PARENT_SPECIFIED);
+  if (result->result != PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     return;
   }
 
@@ -236,9 +231,9 @@ ParentRoundRobin::markParentDown(const ParentSelectionPolicy *policy, ParentResu
     new_fail_count = old_count + 1;
   }
 
-  if (new_fail_count > 0 && new_fail_count == policy->FailThreshold) {
+  if (new_fail_count > 0 && new_fail_count >= policy->FailThreshold) {
     Note("Failure threshold met, http parent proxy %s:%d marked down", pRec->hostname, pRec->port);
-    pRec->available = false;
+    ink_atomic_swap(&pRec->available, false);
     Debug("parent_select", "Parent marked unavailable, pRec->available=%d", pRec->available);
   }
 }
@@ -251,20 +246,20 @@ ParentRoundRobin::markParentUp(ParentResult *result)
   //  Make sure that we are being called back with with a
   //   result structure with a parent that is being retried
   ink_release_assert(result->retry == true);
-  ink_assert(result->r == PARENT_SPECIFIED);
-  if (result->r != PARENT_SPECIFIED) {
+  ink_assert(result->result == PARENT_SPECIFIED);
+  if (result->result != PARENT_SPECIFIED) {
     return;
   }
   // If we were set through the API we currently have not failover
   //   so just return fail
-  if (result->rec == extApiRecord) {
+  if (result->is_api_result()) {
     ink_assert(0);
     return;
   }
 
   ink_assert((int)(result->last_parent) < result->rec->num_parents);
   pRec = result->rec->parents + result->last_parent;
-  pRec->available = true;
+  ink_atomic_swap(&pRec->available, true);
 
   ink_atomic_swap(&pRec->failedAt, (time_t)0);
   int old_count = ink_atomic_swap(&pRec->failCount, 0);

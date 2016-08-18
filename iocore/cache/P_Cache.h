@@ -32,7 +32,6 @@
 #ifdef HTTP_CACHE
 #include "HTTP.h"
 #include "MIME.h"
-#include "ts/MimeTable.h"
 #include "HttpTransactCache.h"
 #endif
 

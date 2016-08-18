@@ -25,6 +25,7 @@
 #include "Http2ClientSession.h"
 #include "I_Machine.h"
 #include "Error.h"
+#include "../IPAllow.h"
 
 Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(NULL), options(_o)
 {
@@ -38,23 +39,25 @@ Http2SessionAccept::~Http2SessionAccept()
 void
 Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  // XXX we need to refactor the ACL checks from HttpSessionAccept so that we can invoke them here, and also in
-  // the SPDY protocol layer ...
-  // Warning("skipping access control checks for HTTP/2 connection");
-
+  sockaddr const *client_ip           = netvc->get_remote_addr();
+  const AclRecord *session_acl_record = testIpAllowPolicy(client_ip);
+  if (!session_acl_record) {
+    ip_port_text_buffer ipb;
+    Warning("HTTP/2 client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+    netvc->do_io_close();
+    return;
+  }
   netvc->attributes = this->options.transport_type;
 
   if (is_debug_tag_set("http2_seq")) {
-    const sockaddr *client_ip = netvc->get_remote_addr();
     ip_port_text_buffer ipb;
 
     Debug("http2_seq", "[HttpSessionAccept2:mainEvent %p] accepted connection from %s transport type = %d", netvc,
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
-  // XXX Allocate a Http2ClientSession
-  Http2ClientSession *new_session = http2ClientSessionAllocator.alloc();
-
+  Http2ClientSession *new_session = THREAD_ALLOC_INIT(http2ClientSessionAllocator, this_ethread());
+  new_session->acl_record         = session_acl_record;
   new_session->new_connection(netvc, iobuf, reader, false /* backdoor */);
 }
 
@@ -65,15 +68,7 @@ Http2SessionAccept::mainEvent(int event, void *data)
   ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != 0) : (1));
 
   if (event == NET_EVENT_ACCEPT) {
-    NetVConnection *netvc = static_cast<NetVConnection *>(data);
-    SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-    MIOBuffer *iobuf = NULL;
-    IOBufferReader *reader = NULL;
-    if (ssl_vc) {
-      iobuf = ssl_vc->get_ssl_iobuf();
-      reader = ssl_vc->get_ssl_reader();
-    }
-    this->accept(static_cast<NetVConnection *>(data), iobuf, reader);
+    this->accept(static_cast<NetVConnection *>(data), NULL, NULL);
     return EVENT_CONT;
   }
 

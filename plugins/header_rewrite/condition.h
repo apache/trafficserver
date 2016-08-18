@@ -31,18 +31,16 @@
 #include "matcher.h"
 #include "parser.h"
 
-
 // Condition modifiers
 enum CondModifiers {
-  COND_NONE = 0,
-  COND_OR = 1,
-  COND_AND = 2,
-  COND_NOT = 4,
+  COND_NONE   = 0,
+  COND_OR     = 1,
+  COND_AND    = 2,
+  COND_NOT    = 4,
   COND_NOCASE = 8, // Not implemented
-  COND_LAST = 16,
-  COND_CHAIN = 32 // Not implemented
+  COND_LAST   = 16,
+  COND_CHAIN  = 32 // Not implemented
 };
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Base class for all Conditions (this is also the interface)
@@ -61,18 +59,20 @@ public:
   {
     bool rt = eval(res);
 
-    if (_mods & COND_NOT)
+    if (_mods & COND_NOT) {
       rt = !rt;
+    }
 
     if (_next) {
       if (_mods & COND_OR) {
         return rt || (static_cast<Condition *>(_next)->do_eval(res));
       } else { // AND is the default
         // Short circuit if we're an AND and the first condition is FALSE.
-        if (rt)
+        if (rt) {
           return static_cast<Condition *>(_next)->do_eval(res);
-        else
+        } else {
           return false;
+        }
       }
     } else {
       return rt;
@@ -100,11 +100,13 @@ public:
   {
     return _matcher;
   }
+
   const MatcherOps
   get_cond_op() const
   {
     return _cond_op;
   }
+
   const std::string
   get_qualifier() const
   {
@@ -128,6 +130,5 @@ private:
 
   CondModifiers _mods;
 };
-
 
 #endif // __CONDITION_H

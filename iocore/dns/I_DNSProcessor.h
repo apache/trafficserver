@@ -33,7 +33,6 @@
 #define DOMAIN_SERVICE_PORT 53
 #define DEFAULT_DOMAIN_NAME_SERVER 0 // use the default server
 
-
 /**
   All buffering required to handle a DNS receipt. For asynchronous DNS,
   only one HostEntBuf will exist in the system. For synchronous DNS,
@@ -113,7 +112,6 @@ struct DNSProcessor : public Processor {
   Action *gethostbyname(Continuation *cont, const char *name, int len, Options const &opt);
   Action *gethostbyaddr(Continuation *cont, IpAddr const *ip, Options const &opt);
 
-
   // Processor API
   //
   /* currently dns system uses event threads
@@ -145,7 +143,6 @@ struct DNSProcessor : public Processor {
 
   void dns_init();
 };
-
 
 //
 // Global data

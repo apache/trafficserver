@@ -1,0 +1,41 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../admin-guide/monitoring/statistics/core/socks.en.rst:23
+msgid "SOCKS"
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/socks.en.rst:29
+msgid ""
+"Provides the number of SOCKS proxy connections currently opened with the "
+"running instance of |TS|."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/socks.en.rst:36
+msgid ""
+"Indicates the number of SOCKS connections to |TS| which have succeeded "
+"since statistics collection began."
+msgstr ""
+
+#: ../../admin-guide/monitoring/statistics/core/socks.en.rst:43
+msgid ""
+"Indicates the number of attempted SOCKS connections to |TS| which have "
+"failed since statistics collection began."
+msgstr ""

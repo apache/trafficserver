@@ -43,7 +43,7 @@ override_record(const RecordElement *record, void *)
         // "interesting" results if you are trying to override configuration values
         // early in startup (before we have synced with the local manager).
         RecSetRecord(record->type, record->name, record->value_type, &data, NULL, REC_SOURCE_ENV, false);
-        RecDataClear(record->value_type, &data);
+        RecDataZero(record->value_type, &data);
       }
     }
   }
@@ -65,8 +65,8 @@ RecordsConfigOverrideFromEnvironment()
 static void
 initialize_record(const RecordElement *record, void *)
 {
-  RecInt tempInt = 0;
-  RecFloat tempFloat = 0.0;
+  RecInt tempInt         = 0;
+  RecFloat tempFloat     = 0.0;
   RecCounter tempCounter = 0;
 
   RecUpdateT update;
@@ -75,14 +75,14 @@ initialize_record(const RecordElement *record, void *)
   RecT type;
 
   // Less typing ...
-  type = record->type;
+  type   = record->type;
   update = record->update;
-  check = record->check;
+  check  = record->check;
   access = record->access;
 
   if (REC_TYPE_IS_CONFIG(type)) {
     const char *value = RecConfigOverrideFromEnvironment(record->name, record->value);
-    RecData data = {0};
+    RecData data      = {0};
     RecSourceT source = value == record->value ? REC_SOURCE_DEFAULT : REC_SOURCE_ENV;
 
     // If you specify a consistency check, you have to specify a regex expression. We abort here
@@ -115,7 +115,7 @@ initialize_record(const RecordElement *record, void *)
       break;
     } // switch
 
-    RecDataClear(record->value_type, &data);
+    RecDataZero(record->value_type, &data);
   } else { // Everything else, except PROCESS, are stats. TODO: Should modularize this too like PROCESS was done.
     ink_assert(REC_TYPE_IS_STAT(type));
 

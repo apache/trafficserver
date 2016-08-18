@@ -86,6 +86,7 @@ class TSConfVar(std.Target):
         # highlighted background when the link is selected.
         title = sphinx.addnodes.desc_signature(cv_name, '')
         title['ids'].append(nodes.make_id(cv_name))
+        title['ids'].append(cv_name)
         title['names'].append(cv_name)
         title['first'] = False
         title['objtype'] = 'cv'
@@ -154,7 +155,7 @@ class TSStat(std.Target):
     Description of a traffic server statistic.
 
     Argument is the JSON stat group ("global", etc.) in which the statistic is
-    returned, then the statistic name as used by traffic_line/stats_over_http,
+    returned, then the statistic name as used by traffic_ctl/stats_over_http,
     followed by the value type of the statistic ('string', 'integer'), and
     finally an example value.
 

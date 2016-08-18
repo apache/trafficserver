@@ -1,0 +1,67 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSVConnReenable.en.rst:45
+msgid ""
+"Additional processing could reenable the virtual connection causing the "
+"``SSL_accept`` to be called again to complete the handshake exchange.  In "
+"the case of a blind tunnel conversion, the SSL handshake will never be "
+"completed by Traffic Server."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSVConnReenable.en.rst:32
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSVConnReenable.en.rst:38
+msgid ""
+"If the server is running OpenSSL 1.0.1 with the appropraite patch installed "
+"or it is running OpenSSL 1.0.2, the plugin writer can pause SSL handshake "
+"processing by not reenabling the connection. Without the OpenSSL patch or "
+"running an OpenSSL versions older than 1.0.2, the handshake processing in "
+"``SSL_accept`` will not be stopped even if the SNI callback does not "
+"reenable the connection."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSVConnReenable.en.rst:22
+msgid "TSVConnReenable"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSVConnReenable.en.rst:34
+msgid ""
+"Reenable the SSL connection :arg:`svc`. If a plugin hook is called, ATS "
+"processing on that connnection will not resume until this is invoked for "
+"that connection."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSVConnReenable.en.rst:25
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSVConnReenable.en.rst:50
+msgid ""
+"This call does appropriate locking and scheduling, so it is safe to call "
+"from another thread."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSVConnReenable.en.rst:27
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"

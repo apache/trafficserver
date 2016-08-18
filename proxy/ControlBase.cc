@@ -141,9 +141,9 @@ TimeMod::make(char *value, char const **error)
 const char *
 TimeMod::timeOfDayToSeconds(const char *time_str, time_t *seconds)
 {
-  int hour = 0;
-  int min = 0;
-  int sec = 0;
+  int hour   = 0;
+  int min    = 0;
+  int sec    = 0;
   time_t tmp = 0;
 
   // coverity[secure_coding]
@@ -154,19 +154,19 @@ TimeMod::timeOfDayToSeconds(const char *time_str, time_t *seconds)
     }
   }
 
-  if (!(hour >= 0 && hour <= 23))
+  if (!(hour >= 0 && hour <= 23)) {
     return "Illegal hour specification";
-
+  }
   tmp = hour * 60;
 
-  if (!(min >= 0 && min <= 59))
+  if (!(min >= 0 && min <= 59)) {
     return "Illegal minute specification";
-
+  }
   tmp = (tmp + min) * 60;
 
-  if (!(sec >= 0 && sec <= 59))
+  if (!(sec >= 0 && sec <= 59)) {
     return "Illegal second specification";
-
+  }
   tmp += sec;
 
   *seconds = tmp;
@@ -222,10 +222,11 @@ PortMod::make(char *value, char const **error)
     *error = "Invalid start port";
   } else if (num_tok == 2) {
     // coverity[secure_coding]
-    if (sscanf(rangeTok[1], "%d", &tmp.end_port) != 1)
+    if (sscanf(rangeTok[1], "%d", &tmp.end_port) != 1) {
       *error = "Invalid end port";
-    else if (tmp.end_port < tmp.start_port)
+    } else if (tmp.end_port < tmp.start_port) {
       *error = "Malformed Range: end port < start port";
+    }
   } else {
     tmp.end_port = tmp.start_port;
   }
@@ -327,10 +328,11 @@ SrcIPMod::make(char *value, char const **error)
 {
   SrcIPMod tmp;
   SrcIPMod *zret = 0;
-  *error = ExtractIpRange(value, &tmp.start_addr.sa, &tmp.end_addr.sa);
+  *error         = ExtractIpRange(value, &tmp.start_addr.sa, &tmp.end_addr.sa);
 
-  if (!*error)
+  if (!*error) {
     zret = new SrcIPMod(tmp);
+  }
   return zret;
 }
 // ----------
@@ -387,7 +389,7 @@ SchemeMod *
 SchemeMod::make(char *value, char const **error)
 {
   SchemeMod *zret = 0;
-  int scheme = hdrtoken_tokenize(value, strlen(value));
+  int scheme      = hdrtoken_tokenize(value, strlen(value));
   if (scheme < 0) {
     *error = "Unknown scheme";
   } else {
@@ -534,7 +536,7 @@ PrefixMod::check(HttpRequestData *req) const
 {
   int path_len;
   char const *path = req->hdr->url_get()->path_get(&path_len);
-  bool zret = path_len >= static_cast<int>(text.size()) && 0 == memcmp(path, text.data(), text.size());
+  bool zret        = path_len >= static_cast<int>(text.size()) && 0 == memcmp(path, text.data(), text.size());
   /*
     Debug("cache_control", "Prefix check: URL=%0.*s Mod=%0.*s Z=%s",
       path_len, path, text.size(), text.data(),
@@ -549,8 +551,9 @@ PrefixMod::make(char *value, char const ** /* error ATS_UNUSED */)
   PrefixMod *mod = new PrefixMod();
   // strip leading slashes because get_path which is used later
   // doesn't include them from the URL.
-  while ('/' == *value)
+  while ('/' == *value) {
     ++value;
+  }
   mod->set(value);
   return mod;
 }
@@ -581,13 +584,15 @@ SuffixMod::check(HttpRequestData *req) const
   int path_len;
   char const *path = req->hdr->url_get()->path_get(&path_len);
   if (1 == static_cast<int>(this->text_vec.count()) && 1 == static_cast<int>(this->text_vec[0].size()) &&
-      0 == strcmp(this->text_vec[0].data(), "*"))
+      0 == strcmp(this->text_vec[0].data(), "*")) {
     return true;
+  }
   for_Vec(ts::Buffer, text_iter, this->text_vec)
   {
     if (path_len >= static_cast<int>(text_iter.size()) &&
-        0 == strncasecmp(path + path_len - text_iter.size(), text_iter.data(), text_iter.size()))
+        0 == strncasecmp(path + path_len - text_iter.size(), text_iter.data(), text_iter.size())) {
       return true;
+    }
   }
   return false;
 }
@@ -703,16 +708,18 @@ ControlBase::Print()
 {
   int n = _mods.length();
 
-  if (0 >= n)
+  if (0 >= n) {
     return;
+  }
 
   printf("\t\t\t");
   for (intptr_t i = 0; i < n; ++i) {
     Modifier *cur_mod = _mods[i];
-    if (!cur_mod)
+    if (!cur_mod) {
       printf("INVALID  ");
-    else
+    } else {
       cur_mod->print(stdout);
+    }
   }
   printf("\n");
 }
@@ -721,9 +728,10 @@ char const *
 ControlBase::getSchemeModText() const
 {
   char const *zret = 0;
-  Modifier *mod = this->findModOfType(Modifier::MOD_SCHEME);
-  if (mod)
+  Modifier *mod    = this->findModOfType(Modifier::MOD_SCHEME);
+  if (mod) {
     zret = static_cast<SchemeMod *>(mod)->getWksText();
+  }
   return zret;
 }
 
@@ -738,11 +746,11 @@ ControlBase::CheckModifiers(HttpRequestData *request_data)
 
   // If the incoming request has no tag but the entry does, or both
   // have tags that do not match, then we do NOT have a match.
-  if (!request_data->tag && findModOfType(Modifier::MOD_TAG))
+  if (!request_data->tag && findModOfType(Modifier::MOD_TAG)) {
     return false;
+  }
 
-  forv_Vec(Modifier, cur_mod, _mods) if (cur_mod && !cur_mod->check(request_data)) return false;
-
+  forv_Vec(Modifier, cur_mod, _mods) if (cur_mod && !cur_mod->check(request_data)) { return false; }
   return true;
 }
 
@@ -760,7 +768,7 @@ static const char *errorFormats[] = {
 ControlBase::Modifier *
 ControlBase::findModOfType(Modifier::Type t) const
 {
-  forv_Vec(Modifier, m, _mods) if (m && t == m->type()) return m;
+  forv_Vec(Modifier, m, _mods) if (m && t == m->type()) { return m; }
   return 0;
 }
 
@@ -769,13 +777,14 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
 {
   // Variables for error processing
   const char *errBuf = NULL;
-  mod_errors err = ME_UNKNOWN;
+  mod_errors err     = ME_UNKNOWN;
 
   int n_elts = line_info->num_el; // Element count for line.
 
   // No elements -> no modifiers.
-  if (0 >= n_elts)
+  if (0 >= n_elts) {
     return 0;
+  }
   // Can't have more modifiers than elements, so reasonable upper bound.
   _mods.clear();
   _mods.reserve(n_elts);
@@ -790,8 +799,9 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
     char *label = line_info->line[0][i];
     char *value = line_info->line[1][i];
 
-    if (!label)
+    if (!label) {
       continue; // Already use.
+    }
     if (!value) {
       err = ME_PARSE_FAILED;
       break;
@@ -821,8 +831,9 @@ ControlBase::ProcessModifiers(matcher_line *line_info)
       err = ME_BAD_MOD;
     }
 
-    if (errBuf)
+    if (errBuf) {
       err = ME_CALLEE_GENERATED; // Mod make failed.
+    }
 
     // If nothing went wrong, add the mod and bump the element count.
     if (ME_UNKNOWN == err) {

@@ -53,5 +53,4 @@ uint64_t queue_highwater(LLQ *Q);
 void delete_queue(LLQ *Q); /* only deletes an empty queue but
                               provides symmetry. */
 
-
 #endif

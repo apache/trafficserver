@@ -62,7 +62,6 @@ ink_bsprintf(char *buffer, const char *format, ...)
   return (l);
 }
 
-
 int
 ink_bvsprintf(char *buffer, const char *format, va_list ap)
 {
@@ -108,7 +107,7 @@ ink_bvsprintf(char *buffer, const char *format, va_list ap)
     case 's':                           // %s pattern
       ++s;                              // consume 's'
       s_val = va_arg(ap_local, char *); // grab string argument
-      p = s_val;                        // temporary pointer
+      p     = s_val;                    // temporary pointer
       if (buffer)                       // if have output buffer
         while (*p) {
           *d++ = *p++;

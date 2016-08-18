@@ -31,12 +31,12 @@ bool
 DomainNameTree::DomainNameNode::compare(std::string key, int &relative)
 {
   size_t star_loc = key.find("*");
-  bool is_wild = false;
+  bool is_wild    = false;
 
   if (star_loc != std::string::npos) {
     star_loc++;
     is_wild = true;
-    key = key.substr(star_loc);
+    key     = key.substr(star_loc);
   }
 
   return this->prunedCompare(key, relative, is_wild);
@@ -88,16 +88,16 @@ DomainNameTree::DomainNameNode *
 DomainNameTree::find(std::string key, bool best_match)
 {
   DomainNameNode *retval = NULL;
-  DomainNameNode *first = NULL;
-  size_t star_loc = key.find("*");
-  bool is_wild = false;
+  DomainNameNode *first  = NULL;
+  size_t star_loc        = key.find("*");
+  bool is_wild           = false;
 
   if (star_loc != std::string::npos) {
-    key = key.substr(star_loc + 1);
+    key     = key.substr(star_loc + 1);
     is_wild = true;
   }
 
-  bool set_iter = false;
+  bool set_iter                = false;
   DomainNameNode *current_node = root;
   std::deque<DomainNameNode *>::iterator sibPtr, endPtr;
 
@@ -114,7 +114,7 @@ DomainNameTree::find(std::string key, bool best_match)
         current_node = NULL;
         break;
       } else if (relative < 0) {
-        retval = current_node;
+        retval        = current_node;
         partial_match = true;
         if (NULL == first || retval->order < first->order) {
           first = retval;
@@ -123,8 +123,8 @@ DomainNameTree::find(std::string key, bool best_match)
     }
     if (partial_match) {
       // Check out the children, maybe there is something better there
-      sibPtr = current_node->children.begin();
-      endPtr = current_node->children.end();
+      sibPtr   = current_node->children.begin();
+      endPtr   = current_node->children.end();
       set_iter = true;
       if (sibPtr == endPtr) {
         break; // We are done
@@ -148,16 +148,16 @@ DomainNameTree::insert(std::string key, void *payload, int order)
 {
   TSMutexLock(this->tree_mutex);
   DomainNameNode *retval = NULL;
-  DomainNameNode *node = this->findBestMatch(key);
+  DomainNameNode *node   = this->findBestMatch(key);
   int relative;
 
   if (node->compare(key, relative)) {
     size_t star_loc = key.find("*");
-    bool is_wild = false;
+    bool is_wild    = false;
 
     if (star_loc != std::string::npos) {
       star_loc++;
-      key = key.substr(star_loc);
+      key     = key.substr(star_loc);
       is_wild = true;
     }
     if (relative < 0) {
@@ -186,10 +186,10 @@ DomainNameTree::insert(std::string key, void *payload, int order)
       // Will not replace in the equal case
       // Unless this is the root node
       if (node->key == "" && node->order == 0x7fffffff) {
-        node->key = key;
+        node->key     = key;
         node->payload = payload;
-        node->order = order;
-        retval = node;
+        node->order   = order;
+        retval        = node;
       }
     }
   }

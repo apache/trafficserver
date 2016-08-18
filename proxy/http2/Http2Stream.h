@@ -1,6 +1,6 @@
 /** @file
 
-  Http2Stream
+  Http2Stream.h
 
   @section license License
 
@@ -25,58 +25,94 @@
 #define __HTTP2_STREAM_H__
 
 #include "HTTP2.h"
-#include "FetchSM.h"
+#include "../ProxyClientTransaction.h"
+#include "Http2DebugNames.h"
+#include "../http/HttpTunnel.h" // To get ChunkedHandler
+#include "Http2DependencyTree.h"
 
+class Http2Stream;
 class Http2ConnectionState;
 
-class Http2Stream
+typedef Http2DependencyTree<Http2Stream *> DependencyTree;
+
+class Http2Stream : public ProxyClientTransaction
 {
 public:
+  typedef ProxyClientTransaction super; ///< Parent type.
   Http2Stream(Http2StreamId sid = 0, ssize_t initial_rwnd = Http2::initial_window_size)
-    : client_rwnd(initial_rwnd), server_rwnd(Http2::initial_window_size), header_blocks(NULL), header_blocks_length(0),
-      request_header_length(0), end_stream(false), _id(sid), _state(HTTP2_STREAM_STATE_IDLE), _fetch_sm(NULL), body_done(false),
-      data_length(0)
+    : client_rwnd(initial_rwnd),
+      server_rwnd(Http2::initial_window_size),
+      header_blocks(NULL),
+      header_blocks_length(0),
+      request_header_length(0),
+      end_stream(false),
+      sent_request_header(false),
+      response_header_done(false),
+      request_sent(false),
+      response_reader(NULL),
+      request_reader(NULL),
+      request_buffer(CLIENT_CONNECTION_FIRST_READ_BUFFER_SIZE_INDEX),
+      priority_node(NULL),
+      _start_time(0),
+      _thread(NULL),
+      _id(sid),
+      _state(HTTP2_STREAM_STATE_IDLE),
+      trailing_header(false),
+      body_done(false),
+      closed(false),
+      sent_delete(false),
+      chunked(false),
+      data_length(0),
+      bytes_sent(0),
+      cross_thread_event(NULL),
+      active_timeout(0),
+      active_event(NULL),
+      inactive_timeout(0),
+      inactive_timeout_at(0),
+      inactive_event(NULL),
+      read_event(NULL),
+      write_event(NULL)
   {
-    _thread = this_ethread();
+    SET_HANDLER(&Http2Stream::main_event_handler);
+  }
+
+  void
+  init(Http2StreamId sid, ssize_t initial_rwnd)
+  {
+    _id               = sid;
+    _start_time       = Thread::get_hrtime();
+    _thread           = this_ethread();
+    this->client_rwnd = initial_rwnd;
     HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
-    _start_time = Thread::get_hrtime();
-    // FIXME: Are you sure? every "stream" needs _req_header?
+    HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_CLIENT_STREAM_COUNT, _thread);
+    sm_reader = request_reader = request_buffer.alloc_reader();
+    http_parser_init(&http_parser);
+    // FIXME: Are you sure? every "stream" needs request_header?
     _req_header.create(HTTP_TYPE_REQUEST);
+    response_header.create(HTTP_TYPE_RESPONSE);
   }
 
-  ~Http2Stream()
-  {
-    HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
-    ink_hrtime end_time = Thread::get_hrtime();
-    HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);
-    _req_header.destroy();
+  ~Http2Stream() { this->destroy(); }
+  int main_event_handler(int event, void *edata);
 
-    if (_fetch_sm) {
-      _fetch_sm->ext_destroy();
-      _fetch_sm = NULL;
-    }
-    if (header_blocks) {
-      ats_free(header_blocks);
-    }
-  }
+  void destroy();
 
-  // Operate FetchSM
-  bool init_fetcher(Http2ConnectionState &cstate);
-  void set_body_to_fetcher(const void *data, size_t len);
-  FetchSM *
-  get_fetcher()
-  {
-    return _fetch_sm;
-  }
   bool
   is_body_done() const
   {
     return body_done;
   }
+
   void
   mark_body_done()
   {
     body_done = true;
+  }
+
+  void
+  update_sent_count(unsigned num_bytes)
+  {
+    bytes_sent += num_bytes;
   }
 
   const Http2StreamId
@@ -84,18 +120,38 @@ public:
   {
     return _id;
   }
+
   const Http2StreamState
   get_state() const
   {
     return _state;
   }
+
   bool change_state(uint8_t type, uint8_t flags);
 
-  int64_t
-  decode_header_blocks(Http2DynamicTable &dynamic_table)
+  void
+  set_id(Http2StreamId sid)
   {
-    return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks,
-                                      (const uint8_t *)header_blocks + header_blocks_length, dynamic_table);
+    _id = sid;
+  }
+
+  void
+  update_initial_rwnd(Http2WindowSize new_size)
+  {
+    client_rwnd = new_size;
+  }
+
+  bool
+  has_trailing_header() const
+  {
+    return trailing_header;
+  }
+
+  Http2ErrorCode
+  decode_header_blocks(HpackHandle &hpack_handle)
+  {
+    return http2_decode_header_blocks(&_req_header, (const uint8_t *)header_blocks, header_blocks_length, NULL, hpack_handle,
+                                      trailing_header);
   }
 
   // Check entire DATA payload length if content-length: header is exist
@@ -104,12 +160,25 @@ public:
   {
     data_length += length;
   }
+
   bool
   payload_length_is_valid() const
   {
     uint32_t content_length = _req_header.get_content_length();
     return content_length == 0 || content_length == data_length;
   }
+
+  void send_request(Http2ConnectionState &cstate);
+  VIO *do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf);
+  VIO *do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffer, bool owner = false);
+  void do_io_close(int lerrno = -1);
+  void initiating_close();
+  void do_io_shutdown(ShutdownHowTo_t) {}
+  void update_read_request(int64_t read_len, bool send_update);
+  bool update_write_request(IOBufferReader *buf_reader, int64_t write_len, bool send_update);
+  void reenable(VIO *vio);
+  virtual void transaction_done();
+  void send_response_body();
 
   // Stream level window size
   ssize_t client_rwnd, server_rwnd;
@@ -123,16 +192,88 @@ public:
                                   // and other fields)
   bool end_stream;
 
+  bool sent_request_header;
+  bool response_header_done;
+  bool request_sent;
+
+  HTTPHdr response_header;
+  IOBufferReader *response_reader;
+  IOBufferReader *request_reader;
+  MIOBuffer request_buffer;
+  DependencyTree::Node *priority_node;
+
+  EThread *
+  get_thread()
+  {
+    return _thread;
+  }
+
+  IOBufferReader *response_get_data_reader() const;
+  bool
+  response_is_chunked() const
+  {
+    return chunked;
+  }
+
+  bool response_initialize_data_handling();
+  bool response_process_data();
+  bool response_is_data_available() const;
+  void release(IOBufferReader *r);
+
+  virtual bool
+  allow_half_open() const
+  {
+    return false;
+  }
+
+  virtual void set_active_timeout(ink_hrtime timeout_in);
+  virtual void set_inactivity_timeout(ink_hrtime timeout_in);
+  virtual void cancel_inactivity_timeout();
+  void clear_inactive_timer();
+  void clear_active_timer();
+  void clear_timers();
+  void clear_io_events();
+
 private:
+  Event *send_tracked_event(Event *event, int send_event, VIO *vio);
+  HTTPParser http_parser;
   ink_hrtime _start_time;
   EThread *_thread;
   Http2StreamId _id;
   Http2StreamState _state;
 
+  MIOBuffer response_buffer;
   HTTPHdr _req_header;
-  FetchSM *_fetch_sm;
+  VIO read_vio;
+  VIO write_vio;
+
+  bool trailing_header;
   bool body_done;
+  bool closed;
+  bool sent_delete;
+  bool chunked;
+
   uint64_t data_length;
+  uint64_t bytes_sent;
+
+  ChunkedHandler chunked_handler;
+  Event *cross_thread_event;
+
+  // Support stream-specific timeouts
+  ink_hrtime active_timeout;
+  Event *active_event;
+
+  ink_hrtime inactive_timeout;
+  ink_hrtime inactive_timeout_at;
+  Event *inactive_event;
+
+  Event *read_event;
+  Event *write_event;
 };
 
-#endif // __HTTP2_STREAM_H__
+extern ClassAllocator<Http2Stream> http2StreamAllocator;
+
+extern bool check_continuation(Continuation *cont);
+extern bool check_stream_thread(Continuation *cont);
+
+#endif

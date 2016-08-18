@@ -23,30 +23,31 @@
 
 #include "HttpSessionAccept.h"
 #include "IPAllow.h"
-#include "HttpClientSession.h"
+#include "Http1ClientSession.h"
 #include "I_Machine.h"
 #include "Error.h"
 
 void
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
-  sockaddr const *client_ip = netvc->get_remote_addr();
+  sockaddr const *client_ip   = netvc->get_remote_addr();
   const AclRecord *acl_record = NULL;
   ip_port_text_buffer ipb;
-  IpAllow::scoped_config ipallow;
 
   // The backdoor port is now only bound to "localhost", so no
   // reason to check for if it's incoming from "localhost" or not.
   if (backdoor) {
     acl_record = IpAllow::AllMethodAcl();
-  } else if (ipallow && (((acl_record = ipallow->match(client_ip)) == NULL) || (acl_record->isEmpty()))) {
-    ////////////////////////////////////////////////////
-    // if client address forbidden, close immediately //
-    ////////////////////////////////////////////////////
-    Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-    netvc->do_io_close();
-
-    return;
+  } else {
+    acl_record = testIpAllowPolicy(client_ip);
+    if (!acl_record) {
+      ////////////////////////////////////////////////////
+      // if client address forbidden, close immediately //
+      ////////////////////////////////////////////////////
+      Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
+      netvc->do_io_close();
+      return;
+    }
   }
 
   // Set the transport type if not already set
@@ -54,22 +55,21 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
     netvc->attributes = transport_type;
   }
 
-
   if (is_debug_tag_set("http_seq")) {
     Debug("http_seq", "[HttpSessionAccept:mainEvent %p] accepted connection from %s transport type = %d", netvc,
           ats_ip_nptop(client_ip, ipb, sizeof(ipb)), netvc->attributes);
   }
 
-  HttpClientSession *new_session = THREAD_ALLOC_INIT(httpClientSessionAllocator, this_ethread());
+  Http1ClientSession *new_session = THREAD_ALLOC_INIT(http1ClientSessionAllocator, this_ethread());
 
   // copy over session related data.
-  new_session->f_outbound_transparent = f_outbound_transparent;
+  new_session->f_outbound_transparent    = f_outbound_transparent;
   new_session->f_transparent_passthrough = f_transparent_passthrough;
-  new_session->outbound_ip4 = outbound_ip4;
-  new_session->outbound_ip6 = outbound_ip6;
-  new_session->outbound_port = outbound_port;
-  new_session->host_res_style = ats_host_res_from(client_ip->sa_family, host_res_preference);
-  new_session->acl_record = acl_record;
+  new_session->outbound_ip4              = outbound_ip4;
+  new_session->outbound_ip6              = outbound_ip6;
+  new_session->outbound_port             = outbound_port;
+  new_session->host_res_style            = ats_host_res_from(client_ip->sa_family, host_res_preference);
+  new_session->acl_record                = acl_record;
 
   new_session->new_connection(netvc, iobuf, reader, backdoor);
 

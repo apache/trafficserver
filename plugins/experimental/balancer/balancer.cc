@@ -37,7 +37,7 @@ static BalancerInstance *
 MakeBalancerInstance(const char *opt)
 {
   const char *end = strchr(opt, ',');
-  size_t len = end ? std::distance(opt, end) : strlen(opt);
+  size_t len      = end ? std::distance(opt, end) : strlen(opt);
 
   if (len == lengthof("hash") && strncmp(opt, "hash", len) == 0) {
     return MakeHashBalancer(end ? end + 1 : NULL);
@@ -81,7 +81,7 @@ MakeBalancerTarget(const char *strval)
     }
   }
 
-  if (target.port > INT16_MAX) {
+  if (target.port > UINT16_MAX) {
     TSError("[balancer] Ignoring invalid port number for target '%s'", strval);
     target.port = 0;
   }
@@ -101,7 +101,9 @@ TSRemapInit(TSRemapInterface * /* api */, char * /* errbuf */, int /* bufsz */)
 TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int errbuf_size)
 {
-  static const struct option longopt[] = {{const_cast<char *>("policy"), required_argument, 0, 'p'}, {0, 0, 0, 0}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("policy"), required_argument, 0, 'p'}, {0, 0, 0, 0},
+  };
 
   BalancerInstance *balancer = NULL;
 
@@ -111,7 +113,6 @@ TSRemapNewInstance(int argc, char *argv[], void **instance, char *errbuf, int er
   argc--;
   argv++;
 
-  optind = 0;
   for (;;) {
     int opt;
 
@@ -163,7 +164,7 @@ TSRemapDeleteInstance(void *instance)
 TSRemapStatus
 TSRemapDoRemap(void *instance, TSHttpTxn txn, TSRemapRequestInfo *rri)
 {
-  BalancerInstance *balancer = (BalancerInstance *)instance;
+  BalancerInstance *balancer   = (BalancerInstance *)instance;
   const BalancerTarget &target = balancer->balance(txn, rri);
 
   if (TSIsDebugTagSet("balancer")) {

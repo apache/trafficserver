@@ -21,7 +21,6 @@
   limitations under the License.
  */
 
-
 #include <stdio.h>
 #include <pthread.h>
 #include "ts/ts.h"
@@ -39,14 +38,13 @@ Queue job_queue;
 static pthread_cond_t cond;
 static pthread_mutex_t cond_mutex;
 
-
 void
 init_queue(Queue *q)
 {
-  q->head = NULL; /* Pointer on head cell */
-  q->tail = NULL; /* Pointer on tail cell */
-  q->nb_elem = 0; /* Nb elem in the queue */
-  q->mutex = TSMutexCreate();
+  q->head    = NULL; /* Pointer on head cell */
+  q->tail    = NULL; /* Pointer on tail cell */
+  q->nb_elem = 0;    /* Nb elem in the queue */
+  q->mutex   = TSMutexCreate();
 }
 
 void
@@ -58,8 +56,8 @@ add_to_queue(Queue *q, void *data)
   if (data != NULL) {
     TSMutexLock(q->mutex);
     /* Init the new cell */
-    new_cell = TSmalloc(sizeof(Cell));
-    new_cell->magic = MAGIC_ALIVE;
+    new_cell           = TSmalloc(sizeof(Cell));
+    new_cell->magic    = MAGIC_ALIVE;
     new_cell->ptr_data = data;
     new_cell->ptr_next = q->tail;
     new_cell->ptr_prev = NULL;
@@ -73,7 +71,7 @@ add_to_queue(Queue *q, void *data)
     } else {
       TSAssert(q->tail->magic == MAGIC_ALIVE);
       q->tail->ptr_prev = new_cell;
-      q->tail = new_cell;
+      q->tail           = new_cell;
     }
     n = q->nb_elem++;
     TSMutexUnlock(q->mutex);
@@ -95,7 +93,7 @@ remove_from_queue(Queue *q)
     remove_cell = q->head;
     TSAssert(remove_cell->magic == MAGIC_ALIVE);
 
-    data = remove_cell->ptr_data;
+    data    = remove_cell->ptr_data;
     q->head = remove_cell->ptr_prev;
     if (q->head == NULL) {
       TSAssert(q->nb_elem == 1);
@@ -129,11 +127,11 @@ job_create(TSCont contp, ExecFunc func, void *data)
 {
   Job *new_job;
 
-  new_job = TSmalloc(sizeof(Job));
+  new_job        = TSmalloc(sizeof(Job));
   new_job->magic = MAGIC_ALIVE;
-  new_job->cont = contp;
-  new_job->func = func;
-  new_job->data = data;
+  new_job->cont  = contp;
+  new_job->func  = func;
+  new_job->data  = data;
   return new_job;
 }
 

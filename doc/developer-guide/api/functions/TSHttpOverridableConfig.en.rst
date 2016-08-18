@@ -19,6 +19,8 @@
 
 .. default-domain:: c
 
+.. _ts-overridable-config:
+
 TSHttpOverridableConfig
 ***********************
 
@@ -105,6 +107,8 @@ The following configurations (from ``records.config``) are overridable.
 |   :ts:cv:`proxy.config.http.transaction_no_activity_timeout_in`
 |   :ts:cv:`proxy.config.http.transaction_no_activity_timeout_out`
 |   :ts:cv:`proxy.config.http.transaction_active_timeout_out`
+|   :ts:cv:`proxy.config.websocket.no_activity_timeout`
+|   :ts:cv:`proxy.config.websocket.active_timeout`
 |   :ts:cv:`proxy.config.http.origin_max_connections`
 |   :ts:cv:`proxy.config.http.connect_attempts_max_retries`
 |   :ts:cv:`proxy.config.http.connect_attempts_max_retries_dead_server`
@@ -140,6 +144,13 @@ The following configurations (from ``records.config``) are overridable.
 |   :ts:cv:`proxy.config.http.cache.range.write`
 |   :ts:cv:`proxy.config.http.global_user_agent_header`
 |   :ts:cv:`proxy.config.http.slow.log.threshold`
+|   :ts:cv:`proxy.config.http.cache.generation`
+|   :ts:cv:`proxy.config.body_factory.template_base`
+|   :ts:cv:`proxy.config.http.cache.open_write_fail_action`
+|   :ts:cv:`proxy.config.http.redirection_enabled`
+|   :ts:cv:`proxy.config.http.number_of_redirections`
+|   :ts:cv:`proxy.config.http.cache.max_open_write_retries`
+|   :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`
 
 Examples
 ========

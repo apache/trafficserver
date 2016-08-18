@@ -58,7 +58,6 @@ struct pr_list {
   std::vector<regex_info *> pr;
 
   pr_list() {}
-
   ~pr_list()
   {
     for (std::vector<regex_info *>::iterator info = this->pr.begin(); info != this->pr.end(); ++info) {
@@ -113,7 +112,7 @@ regex_substitute(char **buf, char *str, regex_info *info)
 
   /* perform string replacement */
   offset = 0; /* Where we are adding new data in the string */
-  prev = 0;
+  prev   = 0;
   for (i = 0; i < info->tokcount; i++) {
     memcpy(*buf + offset, info->replacement + prev, info->tokenoffset[i] - prev);
     offset += (info->tokenoffset[i] - prev);
@@ -135,10 +134,10 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
   int reerroffset;     /* Offset where any pcre error occured */
 
   int tokcount;
-  int *tokens = NULL;
+  int *tokens      = NULL;
   int *tokenoffset = NULL;
 
-  int status = 1; /* Status (return value) of the function */
+  int status       = 1; /* Status (return value) of the function */
   regex_info *info = (regex_info *)TSmalloc(sizeof(regex_info));
 
   /* Precompile the regular expression */
@@ -151,7 +150,7 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
   /* Precalculate the location of $X tokens in the replacement */
   tokcount = 0;
   if (status) {
-    tokens = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
+    tokens      = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
     tokenoffset = (int *)TSmalloc(sizeof(int) * TOKENCOUNT);
     for (unsigned i = 0; i < strlen(replacement); i++) {
       if (replacement[i] == '$') {
@@ -169,7 +168,7 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
         } else {
           /* Store the location of the replacement */
           /* Convert '0' to 0 */
-          tokens[tokcount] = replacement[i + 1] - '0';
+          tokens[tokcount]      = replacement[i + 1] - '0';
           tokenoffset[tokcount] = i;
           tokcount++;
           /* Skip the next char */
@@ -181,11 +180,11 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
 
   if (status) {
     /* Everything went OK */
-    info->tokcount = tokcount;
-    info->tokens = tokens;
+    info->tokcount    = tokcount;
+    info->tokens      = tokens;
     info->tokenoffset = tokenoffset;
 
-    info->pattern = TSstrdup(pattern);
+    info->pattern     = TSstrdup(pattern);
     info->replacement = TSstrdup(replacement);
 
     *buf = info;
@@ -193,8 +192,9 @@ regex_compile(regex_info **buf, char *pattern, char *replacement)
     /* Something went wrong, clean up */
     TSfree(tokens);
     TSfree(tokenoffset);
-    if (info->re)
+    if (info->re) {
       pcre_free(info->re);
+    }
     TSfree(info);
   }
   return status;
@@ -305,7 +305,7 @@ load_config_file(const char *config_file)
 static int
 rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp)
 {
-  int ok = 1;
+  int ok       = 1;
   char *newurl = 0;
   int retval;
   char *url;
@@ -337,10 +337,12 @@ rewrite_cacheurl(pr_list *prl, TSHttpTxn txnp)
   }
 
   /* Clean up */
-  if (url)
+  if (url) {
     TSfree(url);
-  if (newurl)
+  }
+  if (newurl) {
     TSfree(newurl);
+  }
 
   return ok;
 }
@@ -396,6 +398,9 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
   }
 
   TSDebug(PLUGIN_NAME, "remap plugin is successfully initialized");
+
+  TSError("[%s] is deprecated and will be removed as of v7.0.0", PLUGIN_NAME);
+
   return TS_SUCCESS;
 }
 
@@ -405,7 +410,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf ATS_UNUSED, i
   *ih = load_config_file(argc > 2 ? argv[2] : NULL);
   return (NULL == *ih) ? TS_ERROR : TS_SUCCESS;
 }
-
 
 void
 TSRemapDeleteInstance(void *ih)
@@ -437,8 +441,8 @@ TSPluginInit(int argc, const char *argv[])
   TSCont contp;
   pr_list *prl;
 
-  info.plugin_name = (char *)PLUGIN_NAME;
-  info.vendor_name = (char *)"Apache Software Foundation";
+  info.plugin_name   = (char *)PLUGIN_NAME;
+  info.vendor_name   = (char *)"Apache Software Foundation";
   info.support_email = (char *)"dev@trafficserver.apache.org";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
@@ -458,4 +462,6 @@ TSPluginInit(int argc, const char *argv[])
     initialization_error("Plugin config load failed.");
     return;
   }
+
+  TSError("[%s] is deprecated and will be removed as of v7.0.0", PLUGIN_NAME);
 }

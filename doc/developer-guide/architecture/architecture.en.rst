@@ -38,8 +38,8 @@ discussed only to the extent needed to understand the internal mechanisms. This
 document will be useful primarily to |TS| developers working on the |TS|
 codebase or plugins for |TS|. It is assumed the reader is already familiar with
 the :ref:`admin-guide` and specifically with :ref:`http-proxy-caching` and
-:ref:`configuring-the-cache` along with the associated configuration files and
-values.
+:ref:`admin-configuration` along with the associated :ref:`configuration files
+<admin-configuration-files>`.
 
 Unfortunately, the internal terminology is not particularly consistent, so this
 document will frequently use terms in different ways than they are used in the
@@ -821,7 +821,7 @@ available data is calculated by ``HttpTransact::calculate_document_freshness_lim
 
 How this age is used is determined by the :file:`records.config` setting for
 :ts:cv:`proxy.config.http.cache.when_to_revalidate`. If this is ``0`` then the
-built caclulations are used which compare the freshness limits with document
+built calculations are used which compare the freshness limits with document
 age, modified by any of the client supplied cache control values (``max-age``,
 ``min-fresh``, ``max-stale``) unless explicitly overridden in
 :file:`cache.config`.
@@ -1136,7 +1136,7 @@ combined across all stripes, then sorted by the random values. The resulting
 array is sampled for every slot in the stripe assignment table by dividing the
 maximum random value by the size of the assignment table and using the value
 midway between each multiple of the result of the division. The coalesced
-psuedo-random sequence is scanned for each sample in turn and the first number
+pseudo-random sequence is scanned for each sample in turn and the first number
 not greater than the sample is found. The stripe associated with that value is
 used for that assignment table entry.
 

@@ -26,7 +26,6 @@
 
 #define FAST_DATA_SIZE 4
 
-
 template <class T> struct CacheArray {
   CacheArray(const T *val, int initial_size = 0);
   ~CacheArray();
@@ -52,7 +51,6 @@ template <class T> struct CacheArray {
   int size;
   int pos;
 };
-
 
 template <class T>
 TS_INLINE
@@ -93,7 +91,9 @@ template <class T> TS_INLINE T &CacheArray<T>::operator[](int idx)
   return data[idx];
 }
 
-template <class T> TS_INLINE T &CacheArray<T>::operator()(int idx)
+template <class T>
+TS_INLINE T &
+CacheArray<T>::operator()(int idx)
 {
   if (idx >= size) {
     int new_size;
@@ -124,7 +124,7 @@ CacheArray<T>::detach()
 {
   T *d;
 
-  d = data;
+  d    = data;
   data = NULL;
 
   return d;
@@ -149,7 +149,7 @@ CacheArray<T>::clear()
   }
 
   size = 0;
-  pos = -1;
+  pos  = -1;
 }
 
 template <class T>
@@ -183,6 +183,5 @@ CacheArray<T>::resize(int new_size)
     size = new_size;
   }
 }
-
 
 #endif /* __CACHE_ARRAY_H__ */

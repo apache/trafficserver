@@ -26,21 +26,21 @@
 
 #include <zlib.h>
 #include <ts/ts.h>
-#include <stdlib.h> //exit()
+#include <stdlib.h>
 #include <stdio.h>
 
+#include "configuration.h"
+
+using namespace Gzip;
+
 // zlib stuff, see [deflateInit2] at http://www.zlib.net/manual.html
-static const int ZLIB_MEMLEVEL = 9; // min=1 (optimize for memory),max=9 (optimized for speed)
+static const int ZLIB_MEMLEVEL       = 9; // min=1 (optimize for memory),max=9 (optimized for speed)
 static const int WINDOW_BITS_DEFLATE = -15;
-static const int WINDOW_BITS_GZIP = 31;
+static const int WINDOW_BITS_GZIP    = 31;
 
 // misc
 static const int COMPRESSION_TYPE_DEFLATE = 1;
-static const int COMPRESSION_TYPE_GZIP = 2;
-// this one is just for txnargset/get to point to
-static const int GZIP_ONE = 1;
-static const int DICT_PATH_MAX = 512;
-static const int DICT_ENTRY_MAX = 2048;
+static const int COMPRESSION_TYPE_GZIP    = 2;
 
 // this one is used to rename the accept encoding header
 // it will be restored later on
@@ -55,6 +55,7 @@ enum transform_state {
 
 typedef struct {
   TSHttpTxn txn;
+  HostConfiguration *hc;
   TSVIO downstream_vio;
   TSIOBuffer downstream_buffer;
   TSIOBufferReader downstream_reader;
@@ -63,7 +64,6 @@ typedef struct {
   enum transform_state state;
   int compression_type;
 } GzipData;
-
 
 voidpf gzip_alloc(voidpf opaque, uInt items, uInt size);
 void gzip_free(voidpf opaque, voidpf address);

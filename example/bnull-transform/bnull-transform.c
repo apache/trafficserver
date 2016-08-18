@@ -55,9 +55,9 @@ my_data_alloc()
 {
   MyData *data;
 
-  data = (MyData *)TSmalloc(sizeof(MyData));
-  data->state = STATE_BUFFER_DATA;
-  data->output_vio = NULL;
+  data                = (MyData *)TSmalloc(sizeof(MyData));
+  data->state         = STATE_BUFFER_DATA;
+  data->output_vio    = NULL;
   data->output_buffer = NULL;
   data->output_reader = NULL;
 
@@ -260,17 +260,14 @@ transformable(TSHttpTxn txnp)
   TSMBuffer bufp;
   TSMLoc hdr_loc;
   TSHttpStatus resp_status;
-  int retv;
+  int retv = 0;
 
   /* We are only interested in transforming "200 OK" responses. */
 
-  TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc);
-  resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
-  retv = (resp_status == TS_HTTP_STATUS_OK);
-
-  if (TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc) == TS_ERROR) {
-    TSError("[bnull-transform] Error releasing MLOC while checking "
-            "header status");
+  if (TS_SUCCESS == TSHttpTxnServerRespGet(txnp, &bufp, &hdr_loc)) {
+    resp_status = TSHttpHdrStatusGet(bufp, hdr_loc);
+    retv        = (resp_status == TS_HTTP_STATUS_OK);
+    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
   }
 
   return retv;
@@ -311,8 +308,8 @@ TSPluginInit(int argc ATS_UNUSED, const char *argv[] ATS_UNUSED)
   TSPluginRegistrationInfo info;
   TSMutex mutex = TS_NULL_MUTEX;
 
-  info.plugin_name = "buffered-null-transform";
-  info.vendor_name = "MyCompany";
+  info.plugin_name   = "buffered-null-transform";
+  info.vendor_name   = "MyCompany";
   info.support_email = "ts-api-support@MyCompany.com";
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {

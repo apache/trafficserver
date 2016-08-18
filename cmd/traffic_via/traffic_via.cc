@@ -44,9 +44,7 @@ static AppVersionInfo appVersionInfo;
 
 struct VIA {
   VIA(const char *t) : title(t), next(NULL) { memset(viaData, 0, sizeof(viaData)); }
-
   ~VIA() { delete next; }
-
   const char *title;
   const char *viaData[128];
   VIA *next;
@@ -61,7 +59,7 @@ detailViaLookup(char flag)
   // Detailed via codes after ":"
   switch (flag) {
   case 't':
-    viaTable = new VIA("Tunnel info");
+    viaTable                              = new VIA("Tunnel info");
     viaTable->viaData[(unsigned char)' '] = "no tunneling";
     viaTable->viaData[(unsigned char)'U'] = "tunneling because of url (url suggests dynamic content)";
     viaTable->viaData[(unsigned char)'M'] = "tunneling due to a method (e.g. CONNECT)";
@@ -72,7 +70,7 @@ detailViaLookup(char flag)
     break;
   case 'c':
     // Cache type
-    viaTable = new VIA("Cache Type");
+    viaTable                              = new VIA("Cache Type");
     viaTable->viaData[(unsigned char)'C'] = "cache";
     viaTable->viaData[(unsigned char)'L'] = "cluster, (not used)";
     viaTable->viaData[(unsigned char)'I'] = "icp";
@@ -81,7 +79,7 @@ detailViaLookup(char flag)
     viaTable->viaData[(unsigned char)' '] = "unknown";
 
     // Cache Lookup Result
-    viaTable->next = new VIA("Cache Lookup Result");
+    viaTable->next                              = new VIA("Cache Lookup Result");
     viaTable->next->viaData[(unsigned char)'C'] = "cache hit but config forces revalidate";
     viaTable->next->viaData[(unsigned char)'I'] = "conditional miss (client sent conditional, fresh in cache, returned 412)";
     viaTable->next->viaData[(unsigned char)' '] = "cache miss or no cache lookup";
@@ -94,19 +92,19 @@ detailViaLookup(char flag)
     viaTable->next->viaData[(unsigned char)'K'] = "cookie miss";
     break;
   case 'i':
-    viaTable = new VIA("ICP status");
+    viaTable                              = new VIA("ICP status");
     viaTable->viaData[(unsigned char)' '] = "no icp";
     viaTable->viaData[(unsigned char)'S'] = "connection opened successfully";
     viaTable->viaData[(unsigned char)'F'] = "connection open failed";
     break;
   case 'p':
-    viaTable = new VIA("Parent proxy connection status");
+    viaTable                              = new VIA("Parent proxy connection status");
     viaTable->viaData[(unsigned char)' '] = "no parent proxy or unknown";
     viaTable->viaData[(unsigned char)'S'] = "connection opened successfully";
     viaTable->viaData[(unsigned char)'F'] = "connection open failed";
     break;
   case 's':
-    viaTable = new VIA("Origin server connection status");
+    viaTable                              = new VIA("Origin server connection status");
     viaTable->viaData[(unsigned char)' '] = "no server connection needed";
     viaTable->viaData[(unsigned char)'S'] = "connection opened successfully";
     viaTable->viaData[(unsigned char)'F'] = "connection open failed";
@@ -129,7 +127,7 @@ standardViaLookup(char flag)
   // Via codes before ":"
   switch (flag) {
   case 'u':
-    viaTable = new VIA("Request headers received from client");
+    viaTable                              = new VIA("Request headers received from client");
     viaTable->viaData[(unsigned char)'C'] = "cookie";
     viaTable->viaData[(unsigned char)'E'] = "error in request";
     viaTable->viaData[(unsigned char)'S'] = "simple request (not conditional)";
@@ -138,7 +136,7 @@ standardViaLookup(char flag)
     viaTable->viaData[(unsigned char)' '] = "unknown";
     break;
   case 'c':
-    viaTable = new VIA("Result of Traffic Server cache lookup for URL");
+    viaTable                              = new VIA("Result of Traffic Server cache lookup for URL");
     viaTable->viaData[(unsigned char)'A'] = "in cache, not acceptable (a cache \"MISS\")";
     viaTable->viaData[(unsigned char)'H'] = "in cache, fresh (a cache \"HIT\")";
     viaTable->viaData[(unsigned char)'S'] = "in cache, stale (a cache \"MISS\")";
@@ -147,28 +145,28 @@ standardViaLookup(char flag)
     viaTable->viaData[(unsigned char)' '] = "no cache lookup";
     break;
   case 's':
-    viaTable = new VIA("Response information received from origin server");
+    viaTable                              = new VIA("Response information received from origin server");
     viaTable->viaData[(unsigned char)'E'] = "error in response";
     viaTable->viaData[(unsigned char)'S'] = "connection opened successfully";
     viaTable->viaData[(unsigned char)'N'] = "not-modified";
     viaTable->viaData[(unsigned char)' '] = "no server connection needed";
     break;
   case 'f':
-    viaTable = new VIA("Result of document write-to-cache:");
+    viaTable                              = new VIA("Result of document write-to-cache:");
     viaTable->viaData[(unsigned char)'U'] = "updated old cache copy";
     viaTable->viaData[(unsigned char)'D'] = "cached copy deleted";
     viaTable->viaData[(unsigned char)'W'] = "written into cache (new copy)";
     viaTable->viaData[(unsigned char)' '] = "no cache write performed";
     break;
   case 'p':
-    viaTable = new VIA("Proxy operation result");
+    viaTable                              = new VIA("Proxy operation result");
     viaTable->viaData[(unsigned char)'R'] = "origin server revalidated";
     viaTable->viaData[(unsigned char)' '] = "unknown";
     viaTable->viaData[(unsigned char)'S'] = "served or connection opened successfully";
     viaTable->viaData[(unsigned char)'N'] = "not-modified";
     break;
   case 'e':
-    viaTable = new VIA("Error codes (if any)");
+    viaTable                              = new VIA("Error codes (if any)");
     viaTable->viaData[(unsigned char)'A'] = "authorization failure";
     viaTable->viaData[(unsigned char)'H'] = "header syntax unacceptable";
     viaTable->viaData[(unsigned char)'C'] = "connection to server failed";
@@ -178,6 +176,7 @@ standardViaLookup(char flag)
     viaTable->viaData[(unsigned char)'N'] = "no error";
     viaTable->viaData[(unsigned char)'F'] = "request forbidden";
     viaTable->viaData[(unsigned char)'R'] = "cache read error";
+    viaTable->viaData[(unsigned char)'M'] = "moved temporarily";
     viaTable->viaData[(unsigned char)' '] = "unknown";
     break;
   default:
@@ -201,7 +200,7 @@ printViaHeader(const char *header)
 
   // Loop through input via header flags
   for (const char *c = header; *c; ++c) {
-    if (*c == ':') {
+    if ((*c == ':') || (*c == ';')) {
       isDetail = true;
       continue;
     }
@@ -294,8 +293,9 @@ filterViaHeader()
       pcre_exec(compiledReg, extraReg, viaHeader, (int)sizeof(viaHeader), 0, 0, subStringVector, SUBSTRING_VECTOR_COUNT);
 
     // Match failed, don't worry. Continue to next line.
-    if (pcreExecCode < 0)
+    if (pcreExecCode < 0) {
       continue;
+    }
 
     // Match successful, but too many substrings
     if (pcreExecCode == 0) {
@@ -309,7 +309,7 @@ filterViaHeader()
       char *subStringBegin = viaHeader + subStringVector[2 * i];
       // Get length of matched substring
       int subStringLen = subStringVector[2 * i + 1] - subStringVector[2 * i];
-      viaHeaderString = subStringBegin;
+      viaHeaderString  = subStringBegin;
       sprintf(viaHeaderString, "%.*s", subStringLen, subStringBegin);
       // Decode matched substring
       decodeViaHeader(viaHeaderString);

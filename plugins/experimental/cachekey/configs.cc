@@ -324,23 +324,27 @@ Configs::loadClassifiers(const String &args, bool blacklist)
 bool
 Configs::init(int argc, char *argv[])
 {
-  static const struct option longopt[] = {{"exclude-params", optional_argument, 0, 'a'},
-                                          {"include-params", optional_argument, 0, 'b'},
-                                          {"include-match-params", optional_argument, 0, 'c'},
-                                          {"exclude-match-params", optional_argument, 0, 'd'},
-                                          {"sort-params", optional_argument, 0, 'e'},
-                                          {"remove-all-params", optional_argument, 0, 'f'},
-                                          {"include-headers", optional_argument, 0, 'g'},
-                                          {"include-cookies", optional_argument, 0, 'h'},
-                                          {"ua-capture", optional_argument, 0, 'i'},
-                                          {"static-prefix", optional_argument, 0, 'j'},
-                                          {"capture-prefix", optional_argument, 0, 'k'},
-                                          {"ua-whitelist", optional_argument, 0, 'l'},
-                                          {"ua-blacklist", optional_argument, 0, 'm'},
-                                          {0, 0, 0, 0}};
+  static const struct option longopt[] = {
+    {const_cast<char *>("exclude-params"), optional_argument, 0, 'a'},
+    {const_cast<char *>("include-params"), optional_argument, 0, 'b'},
+    {const_cast<char *>("include-match-params"), optional_argument, 0, 'c'},
+    {const_cast<char *>("exclude-match-params"), optional_argument, 0, 'd'},
+    {const_cast<char *>("sort-params"), optional_argument, 0, 'e'},
+    {const_cast<char *>("remove-all-params"), optional_argument, 0, 'f'},
+    {const_cast<char *>("include-headers"), optional_argument, 0, 'g'},
+    {const_cast<char *>("include-cookies"), optional_argument, 0, 'h'},
+    {const_cast<char *>("ua-capture"), optional_argument, 0, 'i'},
+    {const_cast<char *>("ua-whitelist"), optional_argument, 0, 'j'},
+    {const_cast<char *>("ua-blacklist"), optional_argument, 0, 'k'},
+    {const_cast<char *>("static-prefix"), optional_argument, 0, 'l'},
+    {const_cast<char *>("capture-prefix"), optional_argument, 0, 'm'},
+    {const_cast<char *>("capture-prefix-uri"), optional_argument, 0, 'n'},
+    {const_cast<char *>("capture-path"), optional_argument, 0, 'o'},
+    {const_cast<char *>("capture-path-uri"), optional_argument, 0, 'p'},
+    {0, 0, 0, 0},
+  };
 
   bool status = true;
-  optind = 0;
 
   /* argv contains the "to" and "from" URLs. Skip the first so that the second one poses as the program name. */
   argc--;
@@ -386,25 +390,43 @@ Configs::init(int argc, char *argv[])
         status = false;
       }
       break;
-    case 'j': /* static-prefix */
-      _prefix.assign(optarg);
-      CacheKeyDebug("prefix='%s'", _prefix.c_str());
-      break;
-    case 'k': /* capture-prefix */
-      if (!_hostCapture.init(optarg)) {
-        CacheKeyError("failed to initialize URI host:port capture pattern '%s'", optarg);
-        status = false;
-      }
-      break;
-    case 'l': /* ua-whitelist */
+    case 'j': /* ua-whitelist */
       if (!loadClassifiers(optarg, /* blacklist = */ false)) {
         CacheKeyError("failed to load User-Agent pattern white-list '%s'", optarg);
         status = false;
       }
       break;
-    case 'm': /* ua-blacklist */
+    case 'k': /* ua-blacklist */
       if (!loadClassifiers(optarg, /* blacklist = */ true)) {
         CacheKeyError("failed to load User-Agent pattern black-list '%s'", optarg);
+        status = false;
+      }
+      break;
+    case 'l': /* static-prefix */
+      _prefix.assign(optarg);
+      CacheKeyDebug("prefix='%s'", _prefix.c_str());
+      break;
+    case 'm': /* capture-prefix */
+      if (!_prefixCapture.init(optarg)) {
+        CacheKeyError("failed to initialize prefix URI host:port capture pattern '%s'", optarg);
+        status = false;
+      }
+      break;
+    case 'n': /* capture-prefix-uri */
+      if (!_prefixCaptureUri.init(optarg)) {
+        CacheKeyError("failed to initialize prefix URI capture pattern '%s'", optarg);
+        status = false;
+      }
+      break;
+    case 'o': /* capture-path */
+      if (!_pathCapture.init(optarg)) {
+        CacheKeyError("failed to initialize path capture pattern '%s'", optarg);
+        status = false;
+      }
+      break;
+    case 'p': /* capture-path-uri */
+      if (!_pathCaptureUri.init(optarg)) {
+        CacheKeyError("failed to initialize path URI capture pattern '%s'", optarg);
         status = false;
       }
       break;

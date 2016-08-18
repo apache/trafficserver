@@ -1,0 +1,377 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-06-30 14:07+0900\n"
+"PO-Revision-Date: 2016-01-14 01:52+0900\n"
+"Last-Translator: Hiroaki Nakamura <hnakamur@gmail.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.2.0\n"
+
+#: ../../../admin-guide/plugins/index.en.rst:23
+msgid "Plugins"
+msgstr "プラグイン"
+
+#: ../../../admin-guide/plugins/index.en.rst:29
+msgid "Overview"
+msgstr "概要"
+
+#: ../../../admin-guide/plugins/index.en.rst:31
+msgid ""
+"One of the key features of |ATS| is its modularity. Features that aren't "
+"needed in the core simply aren't there. This helps to provide an additional "
+"guarantee that our core can remain fast by concentrating on the things that "
+"we always provide: caching and proxying."
+msgstr ""
+"|ATS| の重要な機能の一つはモジュール性です。コアに不要な機能はコアの中には存"
+"在しません。これは良いことです。なぜならば、それはコアが常に提供するキャッ"
+"シュとプロキシーに集中することにより、速い状態を保つことができるからです。"
+
+#: ../../../admin-guide/plugins/index.en.rst:36
+msgid ""
+"All other functionality can be moved into plugins and by offering a "
+"consistent C API, everyone can implement their own functionality, without "
+"having to touch the core."
+msgstr ""
+"他の全ての機能はプラグインに移すことができます。安定した C API を使うことに"
+"より、コアに触ること無く、誰でも独自の機能を実装することができます。"
+
+#: ../../../admin-guide/plugins/index.en.rst:41
+msgid "Stable plugins"
+msgstr "安定したプラグイン"
+
+#: ../../../admin-guide/plugins/index.en.rst:43
+msgid ""
+"Plugins that are considered stable are installed by default in |TS| "
+"releases."
+msgstr ""
+"安定的なプラグインです。これらは |TS| のリリースにデフォルトでインストールさ"
+"れれています。"
+
+#: ../../../admin-guide/plugins/index.en.rst:59
+msgid ":doc:`Cache URL <cacheurl.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:58
+msgid ""
+"Modify the :term:`cache key` used for requests by applying a regular "
+"expression to the URL."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:62
+msgid ":doc:`Configuration Remap <conf_remap.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:62
+msgid "Override configuration directives on a per-rule basis."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:65
+msgid ":doc:`GZip <gzip.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:65
+msgid "Compress or deflate cache responses."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:69
+msgid ":doc:`Header Rewrite <header_rewrite.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:68
+msgid ""
+"Modify requests and responses based on incoming and outgoing headers and "
+"other transaction attributes."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:72
+msgid ":doc:`Health Checks <healthchecks.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:72
+msgid "Define service health check links."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:75
+msgid ":doc:`Regex Remap <regex_remap.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:75
+msgid "Configure remapping rules using regular expressions."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:78
+msgid ":doc:`Stats over HTTP <stats_over_http.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:78
+msgid "Provide an HTTP interface to all |TS| statistics."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:81
+msgid ":doc:`TCPInfo <tcpinfo.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:81
+msgid "Log TCP metrics at various points of the HTTP processing pipeline."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:84
+msgid "Experimental plugins"
+msgstr "実験的なプラグイン"
+
+#: ../../../admin-guide/plugins/index.en.rst:86
+#, fuzzy
+msgid ""
+"Plugins that are considered experimental are located in the `plugins/"
+"experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"
+"a=tree;f=plugins/experimental;hb=HEAD>`_ directory of the |TS| source tree. "
+"Experimental plugins can be compiled by passing the `--enable-experimental-"
+"plugins` option to `configure`::"
+msgstr ""
+"実験的なプラグインです。 Apache Traffic Server ソースツリーの `plugins/"
+"experimental <https://git-wip-us.apache.org/repos/asf?p=trafficserver.git;"
+"a=tree;f=plugins/experimental;hb=HEAD>`_ ディレクトリにあります。実験的プラ"
+"グインは `configure` を実行する際に `--enable-experimental-plugins` オプショ"
+"ンをつけることでコンパイルされます。"
+
+#: ../../../admin-guide/plugins/index.en.rst:126
+msgid ":doc:`AuthProxy <authproxy.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:126
+msgid ""
+"Delegates the authorization decision of a request to an external HTTP "
+"service."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:129
+msgid ":doc:`AWS S3 Authentication <s3_auth.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:129
+msgid "Support for Amazon S3 authentication features."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:132
+msgid ":doc:`Background Fetch <background_fetch.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:132
+msgid ""
+"Proactively fetch content from Origin in a way that it will fill the object "
+"into cache."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:135
+msgid ":doc:`Balancer <balancer.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:135
+msgid "Balances requests across multiple origin servers."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:138
+msgid ":doc:`Buffer Upload <buffer_upload.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:138
+msgid "Buffers POST data before connecting to the Origin server."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:141
+msgid ":doc:`Cache Key Manipulation <cachekey.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:141
+msgid ""
+"Allows some common cache key manipulations based on various HTTP request "
+"elements."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:144
+msgid ":doc:`Cache Promote <cache_promote.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:144
+msgid ""
+"Provides additional control over when an object should be allowed into the "
+"cache."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:147
+msgid ":doc:`Combo Handler <combo_handler.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:147
+msgid ""
+"Provides an intelligent way to combine multiple URLs into a single URL, and "
+"have Apache Traffic Server combine the components into one response."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:150
+msgid ":doc:`Epic <epic.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:150
+msgid ""
+"Emits Traffic Server metrics in a format that is consumed by the Epic "
+"Network Monitoring System."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:153
+msgid ":doc:`Escalate <escalate.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:153
+msgid ""
+"Escalate: when the origin returns specific status codes, retry the request "
+"at a secondary origin (failover/fail-action)"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:156
+msgid ":doc:`ESI <esi.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:156
+msgid "Implements the Edge Side Includes (ESI) specification."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:159
+msgid ":doc:`Generator <generator.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:159
+msgid "Generate arbitrary response data."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:162
+msgid ":doc:`GeoIP ACL <geoip_acl.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:162
+msgid "Deny or allow requests based on the source IP geo-location."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:165
+msgid ":doc:`HIPES <hipes.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:165
+msgid "Adds support for HTTP Pipes."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:168
+msgid ":doc:`Memcache <memcache.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:168
+msgid "Implements the memcache protocol for cache contents."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:171
+msgid ":doc:`Metalink <metalink.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:171
+msgid ""
+"Implements the Metalink download description format in order to try not to "
+"download the same file twice."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:174
+msgid ":doc:`MP4 <mp4.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:174
+msgid "MP4 streaming media."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:177
+msgid ":doc:`MySQL Remap <mysql_remap.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:177
+msgid "Allows dynamic remaps from a MySQL database."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:180
+msgid ":doc:`Regex Revalidate <regex_revalidate.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:180
+msgid ""
+"Configurable rules for forcing cache object revalidations using regular "
+"expressions."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:183
+msgid ":doc:`Signed URLs <url_sig.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:183
+msgid ""
+"Adds support for verifying URL signatures for incoming requests to either "
+"deny or redirect access."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:186
+msgid ":doc:`SSL Headers <sslheaders.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:186
+msgid "Populate request headers with SSL session information."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:189
+msgid ":doc:`Stale While Revalidate <stale_while_revalidate.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:189
+msgid "Refresh content asynchronously while serving stale data."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:192
+msgid ":doc:`TS Lua <ts_lua.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:192
+msgid "Allows plugins to be written in Lua instead of C code."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:195
+msgid ":doc:`WebP Transform <webp_transform.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:195
+msgid "Converts jpeg and png images to webp format."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:198
+msgid ":doc:`XDebug <xdebug.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:198
+msgid ""
+"Allows HTTP clients to debug the operation of the Traffic Server cache "
+"using the X-Debug header."
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:202
+msgid ":doc:`Collapsed-Forwarding <collapsed_forwarding.en>`"
+msgstr ""
+
+#: ../../../admin-guide/plugins/index.en.rst:201
+msgid ""
+"Allows to Collapse multiple Concurrent requests by downloading once from "
+"the Origin and serving all clients in parallel."
+msgstr ""

@@ -174,10 +174,10 @@ fastlz_compress_level(int level, const void *input, int length, void *output)
 static FASTLZ_INLINE int
 FASTLZ_COMPRESSOR(const void *input, int length, void *output)
 {
-  const flzuint8 *ip = (const flzuint8 *)input;
+  const flzuint8 *ip       = (const flzuint8 *)input;
   const flzuint8 *ip_bound = ip + length - 2;
   const flzuint8 *ip_limit = ip + length - 12;
-  flzuint8 *op = (flzuint8 *)output;
+  flzuint8 *op             = (flzuint8 *)output;
 
   const flzuint8 *htab[HASH_SIZE];
   const flzuint8 **hslot;
@@ -203,7 +203,7 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
     *hslot = ip;
 
   /* we start with literal copy */
-  copy = 2;
+  copy  = 2;
   *op++ = MAX_COPY - 1;
   *op++ = *ip++;
   *op++ = *ip++;
@@ -223,7 +223,7 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
 #if FASTLZ_LEVEL == 2
     if (ip[0] == ip[-1] && FASTLZ_READU16(ip - 1) == FASTLZ_READU16(ip + 1)) {
       distance = 1;
-      ref = anchor - 1 + 3;
+      ref      = anchor - 1 + 3;
       goto match;
     }
 #endif
@@ -231,7 +231,7 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
     /* find potential match */
     HASH_FUNCTION(hval, ip);
     hslot = htab + hval;
-    ref = htab[hval];
+    ref   = htab[hval];
 
     /* calculate distance to the match */
     distance = anchor - ref;
@@ -324,8 +324,8 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
         *op++ = (7 << 5) + (distance >> 8);
         for (len -= 7; len >= 255; len -= 255)
           *op++ = 255;
-        *op++ = len;
-        *op++ = (distance & 255);
+        *op++   = len;
+        *op++   = (distance & 255);
       }
     } else {
       /* far away, but not yet in the another galaxy... */
@@ -340,10 +340,10 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
         *op++ = (7 << 5) + 31;
         for (len -= 7; len >= 255; len -= 255)
           *op++ = 255;
-        *op++ = len;
-        *op++ = 255;
-        *op++ = distance >> 8;
-        *op++ = distance & 255;
+        *op++   = len;
+        *op++   = 255;
+        *op++   = distance >> 8;
+        *op++   = distance & 255;
       }
     }
 #else
@@ -379,10 +379,10 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
 
   literal:
     *op++ = *anchor++;
-    ip = anchor;
+    ip    = anchor;
     copy++;
     if (FASTLZ_UNEXPECT_CONDITIONAL(copy == MAX_COPY)) {
-      copy = 0;
+      copy  = 0;
       *op++ = MAX_COPY - 1;
     }
   }
@@ -393,7 +393,7 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
     *op++ = *ip++;
     copy++;
     if (copy == MAX_COPY) {
-      copy = 0;
+      copy  = 0;
       *op++ = MAX_COPY - 1;
     }
   }
@@ -415,17 +415,17 @@ FASTLZ_COMPRESSOR(const void *input, int length, void *output)
 static FASTLZ_INLINE int
 FASTLZ_DECOMPRESSOR(const void *input, int length, void *output, int maxout)
 {
-  const flzuint8 *ip = (const flzuint8 *)input;
+  const flzuint8 *ip       = (const flzuint8 *)input;
   const flzuint8 *ip_limit = ip + length;
-  flzuint8 *op = (flzuint8 *)output;
-  flzuint8 *op_limit = op + maxout;
-  flzuint32 ctrl = (*ip++) & 31;
-  int loop = 1;
+  flzuint8 *op             = (flzuint8 *)output;
+  flzuint8 *op_limit       = op + maxout;
+  flzuint32 ctrl           = (*ip++) & 31;
+  int loop                 = 1;
 
   do {
     const flzuint8 *ref = op;
-    flzuint32 len = ctrl >> 5;
-    flzuint32 ofs = (ctrl & 31) << 8;
+    flzuint32 len       = ctrl >> 5;
+    flzuint32 ofs       = (ctrl & 31) << 8;
 
     if (ctrl >= 32) {
 #if FASTLZ_LEVEL == 2
@@ -470,9 +470,9 @@ FASTLZ_DECOMPRESSOR(const void *input, int length, void *output, int maxout)
       if (ref == op) {
         /* optimize copy for a run */
         flzuint8 b = ref[-1];
-        *op++ = b;
-        *op++ = b;
-        *op++ = b;
+        *op++      = b;
+        *op++      = b;
+        *op++      = b;
         for (; len; --len)
           *op++ = b;
       } else {

@@ -55,11 +55,14 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   char localhost[1024];
   int status; // return for system calls.
 
-  ip_string[0] = 0;
+  ip_string[0]     = 0;
   ip_hex_string[0] = 0;
   ink_zero(ip);
   ink_zero(ip4);
   ink_zero(ip6);
+
+  uuid.initialize(TS_UUID_V4);
+  ink_release_assert(NULL != uuid.getString()); // The Process UUID must be available on startup
 
   localhost[sizeof(localhost) - 1] = 0; // ensure termination.
 
@@ -72,7 +75,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 
 #if HAVE_IFADDRS_H
     ifaddrs *ifa_addrs = 0;
-    status = getifaddrs(&ifa_addrs);
+    status             = getifaddrs(&ifa_addrs);
 #else
     int s = socket(AF_INET, SOCK_DGRAM, 0);
     // This number is hard to determine, but needs to be much larger than
@@ -85,7 +88,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
     if (0 <= s) {
       conf.ifc_len = sizeof(req);
       conf.ifc_req = req;
-      status = ioctl(s, SIOCGIFCONF, &conf);
+      status       = ioctl(s, SIOCGIFCONF, &conf);
     } else {
       status = -1;
     }
@@ -114,7 +117,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 #endif
         ) {
 #if HAVE_IFADDRS_H
-        ifip = spot->ifa_addr;
+        ifip    = spot->ifa_addr;
         ifflags = spot->ifa_flags;
 #else
         ifip = &spot->ifr_addr;
@@ -122,25 +125,28 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
         // get the interface's flags
         struct ifreq ifr;
         ink_strlcpy(ifr.ifr_name, spot->ifr_name, IFNAMSIZ);
-        if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0)
+        if (ioctl(s, SIOCGIFFLAGS, &ifr) == 0) {
           ifflags = ifr.ifr_flags;
-        else
+        } else {
           ifflags = 0; // flags not available, default to just looking at IP
+        }
 #endif
-        if (!ats_is_ip(ifip))
+        if (!ats_is_ip(ifip)) {
           spot_type = NA;
-        else if (ats_is_ip_loopback(ifip) || (IFF_LOOPBACK & ifflags))
+        } else if (ats_is_ip_loopback(ifip) || (IFF_LOOPBACK & ifflags)) {
           spot_type = LO;
-        else if (ats_is_ip_linklocal(ifip))
+        } else if (ats_is_ip_linklocal(ifip)) {
           spot_type = LL;
-        else if (ats_is_ip_private(ifip))
+        } else if (ats_is_ip_private(ifip)) {
           spot_type = PR;
-        else if (ats_is_ip_multicast(ifip))
+        } else if (ats_is_ip_multicast(ifip)) {
           spot_type = MC;
-        else
+        } else {
           spot_type = GL;
-        if (spot_type == NA)
+        }
+        if (spot_type == NA) {
           continue; // Next!
+        }
 
         if (ats_is_ip4(ifip)) {
           if (spot_type > ip4_type) {
@@ -160,24 +166,24 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
 #endif
 
       // What about the general address? Prefer IPv4?
-      if (ip4_type >= ip6_type)
+      if (ip4_type >= ip6_type) {
         ats_ip_copy(&ip.sa, &ip4.sa);
-      else
+      } else {
         ats_ip_copy(&ip.sa, &ip6.sa);
+      }
     }
 #if !HAVE_IFADDRS_H
     close(s);
 #endif
   } else { // address provided.
     ats_ip_copy(&ip, addr);
-    if (ats_is_ip4(addr))
+    if (ats_is_ip4(addr)) {
       ats_ip_copy(&ip4, addr);
-    else if (ats_is_ip6(addr))
+    } else if (ats_is_ip6(addr)) {
       ats_ip_copy(&ip6, addr);
+    }
 
-    status = getnameinfo(addr, ats_ip_size(addr), localhost, sizeof(localhost) - 1, 0, 0, // do not request service info
-                         0                                                                // no flags.
-                         );
+    status = getnameinfo(addr, ats_ip_size(addr), localhost, sizeof(localhost) - 1, 0, 0, 0); // no flags
 
     if (0 != status) {
       ip_text_buffer ipbuff;
@@ -189,7 +195,7 @@ Machine::Machine(char const *the_hostname, sockaddr const *addr)
   hostname_len = hostname ? strlen(hostname) : 0;
 
   ats_ip_ntop(&ip.sa, ip_string, sizeof(ip_string));
-  ip_string_len = strlen(ip_string);
+  ip_string_len     = strlen(ip_string);
   ip_hex_string_len = ats_ip_to_hex(&ip.sa, ip_hex_string, sizeof(ip_hex_string));
 }
 

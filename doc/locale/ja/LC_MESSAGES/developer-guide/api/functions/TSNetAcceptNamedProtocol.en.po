@@ -1,0 +1,76 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2015, dev@trafficserver.apache.org
+# This file is distributed under the same license as the Apache Traffic
+# Server package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2016.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache Traffic Server 6.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-01-02 21:32+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.1.1\n"
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:36
+msgid ""
+":type:`TSNetAcceptNamedProtocol` registers the specified :arg:`protocol` "
+"for all statically configured TLS ports.  When a client using the TLS Next "
+"Protocol Negotiation extension negotiates the requested protocol, :type:"
+"`TrafficServer` will route the request to the given handler :arg:`contp`."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:43
+msgid ""
+"Be aware that the protocol is not registered on ports opened by other "
+"plugins."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:24
+msgid ""
+"Listen on all SSL ports for connections for the specified protocol name."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:27
+msgid "Synopsis"
+msgstr "概要"
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:22
+msgid "TSNetAcceptNamedProtocol"
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:56
+msgid ""
+":type:`TSNetAcceptNamedProtocol` fails if the requested protocol cannot be "
+"registered on all of the configured TLS ports. If it fails, the protocol "
+"will not be registered on any ports. There is no partial failure."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:34
+msgid "Description"
+msgstr "解説"
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:53
+msgid ""
+"Neither :arg:`contp` nor :arg:`protocol` are copied. They must remain valid "
+"for the lifetime of the plugin."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:46
+msgid ""
+"The event and data provided to the handler are the same as for :func:"
+"`TSNetAccept`.  If a connection is successfully accepted, the event code "
+"will be :data:`TS_EVENT_NET_ACCEPT` and the event data will be a valid :"
+"type:`TSVConn` bound to the accepted connection."
+msgstr ""
+
+#: ../../developer-guide/api/functions/TSNetAcceptNamedProtocol.en.rst:29
+msgid "`#include <ts/ts.h>`"
+msgstr "`#include <ts/ts.h>`"

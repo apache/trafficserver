@@ -33,7 +33,6 @@
 
 #include "I_UDPNet.h"
 
-
 class UDPConnectionInternal : public UDPConnection
 {
 public:
@@ -65,10 +64,10 @@ TS_INLINE
 UDPConnectionInternal::UDPConnectionInternal()
   : continuation(NULL), recvActive(0), refcount(0), fd(-1), binding_valid(0), tobedestroyed(0)
 {
-  sendGenerationNum = 0;
-  lastSentPktTSSeqNum = -1;
+  sendGenerationNum    = 0;
+  lastSentPktTSSeqNum  = -1;
   lastSentPktStartTime = 0;
-  lastPktStartTime = 0;
+  lastPktStartTime     = 0;
   memset(&binding, 0, sizeof binding);
 }
 
@@ -76,9 +75,8 @@ TS_INLINE
 UDPConnectionInternal::~UDPConnectionInternal()
 {
   continuation = NULL;
-  mutex = NULL;
+  mutex        = NULL;
 }
-
 
 TS_INLINE SOCKET
 UDPConnection::getFd()
@@ -158,8 +156,8 @@ TS_INLINE void
 UDPConnection::setContinuation(Continuation *c)
 {
   // it is not safe to switch among continuations that don't share locks
-  ink_assert(mutex == NULL || c->mutex == mutex);
-  mutex = c->mutex;
+  ink_assert(mutex.get() == NULL || c->mutex == mutex);
+  mutex                                         = c->mutex;
   ((UDPConnectionInternal *)this)->continuation = c;
 }
 

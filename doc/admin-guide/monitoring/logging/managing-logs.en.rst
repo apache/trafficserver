@@ -33,7 +33,7 @@ By default, Traffic Server writes all event log files in the ``logs``
 directory located in the directory where you installed |TS|. To change this
 location, adjust the value of :ts:cv:`proxy.config.log.logfile_dir` in
 :file:`records.config`. You will need to either restart |TS| or run the
-command :option:`traffic_line -x` for changes to take effect.
+command :option:`traffic_ctl config reload` for changes to take effect.
 
 Controlling Logging Space
 =========================
@@ -45,13 +45,13 @@ space window for a long period of time.  After you establish a space limit,
 space dwindles to the headroom limit, it enters a low space state and takes the
 following actions:
 
--  If the autodelete option (discussed in `Rolling Event Log Files`_)
-   is *enabled*, then |TS| identifies previously-rolled log files (log files
-   with the ``.old`` extension). It starts deleting files one by one, beginning
-   with the oldest file, until it emerges from the low state. |TS| logs a
-   record of all deleted files in the system error log.
+-  If the autodelete option (discussed in `Rolling Logs`_) is enabled, then
+   |TS| identifies previously-rolled log files (log files with the ``.old``
+   extension). It starts deleting files one by one, beginning with the oldest
+   file, until it emerges from the low state. |TS| logs a record of all deleted
+   files in the system error log.
 
--  If the autodelete option is *disabled* or there are not enough old log files
+-  If the autodelete option is disabled or there are not enough old log files
    to delete for the system to emerge from its low space state, then |TS|
    issues a warning and continues logging until space is exhausted. When
    available space is consumed, event logging stops. |TS| resumes event logging
@@ -66,6 +66,18 @@ partition, where you can run a variety of log analysis scripts. Following
 analysis, either compress the logs and move to an archive location, or simply
 delete them.
 
+|TS| periodically checks the amount of log space used against both
+the log space allocation configured by
+:ts:cv:`proxy.config.log.max_space_mb_for_logs` and the actual
+amount of space available on the disk partition. The used log space
+is calculated by summing the size of all files present in the logging
+directory and is published in the
+:ts:stat:`proxy.process.log.log_files_space_used` metric. The
+:ts:cv:`proxy.config.log.max_space_mb_headroom` configuration
+variable specifies an amount of headroom that is subtracted from
+the log space allocation. This can be tuned to reduce the risk of
+completely filling the disk partition.
+
 Setting Log File Management Options
 -----------------------------------
 
@@ -76,7 +88,7 @@ To set log management options, follow the steps below:
    -  :ts:cv:`proxy.config.log.max_space_mb_for_logs`
    -  :ts:cv:`proxy.config.log.max_space_mb_headroom`
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 Rolling Logs
@@ -212,7 +224,7 @@ they reach a certain size, adjust the following settings in
 
     CONFIG proxy.config.log.rolling_interval_sec INT 21600
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
+#. Run the command :option:`traffic_ctl config reload` to apply the configuration
    changes.
 
 You can fine-tune log file rolling settings for a custom log file in the
@@ -226,56 +238,6 @@ above.
 Separating Logs by Origin
 =========================
 
-HTTP host log splitting enables you to record HTTP transactions for different
-origin servers in separate log files. When HTTP host log splitting is enabled,
-|TS| creates a separate log file for each origin server that's listed in
-:file:`log_hosts.config`.
-
-To enable host log splitting, perform the following steps:
-
--  Adjust the setting :ts:cv:`proxy.config.log.separate_host_logs` in
-   :file:`records.config`::
-
-    CONFIG proxy.config.log.separate_host_logs INT 1
-
--  Run the command :option:`traffic_line -x` to apply the changes, or restart
-   |TS|.
-
-When both ICP (covered in :ref:`admin-monitoring-logging-icp-split`) and HTTP
-host log splitting are enabled, |TS| generates separate log files for HTTP
-transactions (based on the origin server) and places all ICP transactions in
-their own respective log files. For example, if :file:`log_hosts.config`
-contains the two origin servers ``uni.edu`` and ``company.com`` and Squid
-format is enabled, then |TS| generates the following log files:
-
-=========================== ============================================
-Log File                    Contents
-=========================== ============================================
-``squid-uni.edu.log``       All HTTP transactions for ``uni.edu``.
-``squid-company.com.log``   All HTTP transactions for ``company.com``.
-``squid-icp.log``           All ICP transactions for all hosts.
-``squid.log``               All HTTP transactions for other hosts.
-=========================== ============================================
-
-If you disable ICP log splitting, then ICP transactions are placed in the same
-log file as HTTP transactions. Using the hosts and log format from the previous
-example, |TS| generates the log files below:
-
-=========================== ============================================
-Log File                    Contents
-=========================== ============================================
-``squid-uni.edu.log``       All entries for ``uni.edu``.
-``squid-company.com.log``   All entries for ``company.com``.
-``squid.log``               All other entries.
-=========================== ============================================
-
-|TS| also enables you to create XML-based
-:ref:`admin-monitoring-logging-custom-formats` that offer even greater control
-over log file generation.
-
-Defining Hosts in log_hosts.config
-----------------------------------
-
 The default :file:`log_hosts.config` file is located in the |TS| ``config``
 directory. To record HTTP transactions for different origin servers in separate
 log files, you must specify the hostname of each origin server on a separate
@@ -286,7 +248,7 @@ line in :file:`log_hosts.config`. For example, if you specify the keyword
 
 .. important::
 
-   If Traffic Server is clustered and you enable log file collation, then you
+   If |TS| is clustered and you enable log file collation, then you
    should use the same :file:`log_hosts.config` file on every |TS| node in the
    cluster.
 
@@ -299,32 +261,5 @@ To edit the log hosts list:
        webserver2
        webserver3
 
-#. Run the command :option:`traffic_line -x` to apply the configuration
-   changes.
-
-.. _admin-monitoring-logging-icp-split:
-
-ICP Log Splitting
-=================
-
-By default, |TS| uses standard log formats and generates log
-files that contain HTTP and ICP transactions in the same file. However,
-you can enable log splitting if you prefer to log transactions for
-different protocols in separate log files.
-
-When ICP log splitting is enabled, |TS| records ICP transactions in a
-separate log file with a name that contains ``icp``. For example, if you enable
-the Squid format, then all ICP transactions are recorded in the
-``squid-icp.log`` file. When you disable ICP log splitting, |TS|
-records all ICP transactions in the same log file as HTTP transactions.
-
-To enable ICP log splitting, perform the following steps:
-
--  Adjust the setting :ts:cv:`proxy.config.log.separate_icp_logs` in
-   :file:`records.config`::
-
-    CONFIG proxy.config.log.separate_icp_logs INT 1
-
--  Run the command :option:`traffic_line -x` to apply the changes, or restart
-   |TS|.
+#. Run the command :option:`traffic_ctl config reload` to apply the changes.
 

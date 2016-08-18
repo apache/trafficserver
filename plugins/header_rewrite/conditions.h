@@ -34,7 +34,6 @@
 #include "lulu.h"
 //#include <mdbm.h>
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Condition declarations.
 //
@@ -44,7 +43,6 @@ class ConditionTrue : public Condition
 {
 public:
   ConditionTrue() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTrue"); }
-
   void
   append_value(std::string &s, const Resources & /* res ATS_UNUSED */)
   {
@@ -62,7 +60,6 @@ protected:
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionTrue);
 };
-
 
 // Always false
 class ConditionFalse : public Condition
@@ -87,10 +84,11 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionFalse);
 };
 
-
 // Check the HTTP return status
 class ConditionStatus : public Condition
 {
+  typedef Matchers<TSHttpStatus> MatcherType;
+
 public:
   ConditionStatus() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionStatus"); }
   void initialize(Parser &p);
@@ -104,10 +102,11 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionStatus);
 };
 
-
 // Check the HTTP method
 class ConditionMethod : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   ConditionMethod() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionMethod"); }
   void initialize(Parser &p);
@@ -120,10 +119,11 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionMethod);
 };
 
-
 // Random 0 to (N-1)
 class ConditionRandom : public Condition
 {
+  typedef Matchers<unsigned int> MatcherType;
+
 public:
   ConditionRandom() : _seed(0), _max(0) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionRandom"); }
   void initialize(Parser &p);
@@ -138,7 +138,6 @@ private:
   unsigned int _seed;
   unsigned int _max;
 };
-
 
 // access(file)
 class ConditionAccess : public Condition
@@ -158,10 +157,11 @@ private:
   bool _last;
 };
 
-
 // cookie(name)
 class ConditionCookie : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   ConditionCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionCookie"); }
   void initialize(Parser &p);
@@ -181,53 +181,60 @@ private:
     const char *start, *last, *end;
 
     // Sanity
-    if (buf == NULL || name == NULL || value == NULL || value_len == NULL)
+    if (buf == NULL || name == NULL || value == NULL || value_len == NULL) {
       return TS_ERROR;
+    }
 
     start = buf;
-    end = buf + buf_len;
+    end   = buf + buf_len;
 
     while (start < end) {
-      if (strncasecmp(start, name, name_len) != 0)
+      if (strncasecmp(start, name, name_len) != 0) {
         goto skip;
+      }
 
-      for (start += name_len; start < end && *start == ' '; start++)
-        ;
+      for (start += name_len; start < end && *start == ' '; start++) {
+      }
 
-      if (start == end || *start++ != '=')
+      if (start == end || *start++ != '=') {
         goto skip;
+      }
 
       while (start < end && *start == ' ') {
         start++;
       }
-      for (last = start; last < end && *last != ';'; last++)
-        ;
+
+      for (last = start; last < end && *last != ';'; last++) {
+      }
 
       *value_len = last - start;
-      *value = start;
+      *value     = start;
       return TS_SUCCESS;
     skip:
       while (start < end) {
         char ch = *start++;
-        if (ch == ';' || ch == ',')
+        if (ch == ';' || ch == ',') {
           break;
+        }
       }
       while (start < end && *start == ' ') {
         start++;
       }
     }
     return TS_ERROR;
-  };
+  }
 };
 
 // header
 class ConditionHeader : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   explicit ConditionHeader(bool client = false) : _client(client)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionHeader, client %d", client);
-  };
+  }
 
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
@@ -244,9 +251,10 @@ private:
 // path
 class ConditionPath : public Condition
 {
-public:
-  explicit ConditionPath() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionPath"); };
+  typedef Matchers<std::string> MatcherType;
 
+public:
+  explicit ConditionPath() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionPath"); }
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
 
@@ -257,13 +265,13 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionPath);
 };
 
-
 // query
 class ConditionQuery : public Condition
 {
-public:
-  explicit ConditionQuery() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionQuery"); };
+  typedef Matchers<std::string> MatcherType;
 
+public:
+  explicit ConditionQuery() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionQuery"); }
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
 
@@ -274,18 +282,18 @@ private:
   DISALLOW_COPY_AND_ASSIGN(ConditionQuery);
 };
 
-
 // url
 class ConditionUrl : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   enum UrlType { CLIENT, URL, FROM, TO };
-
 
   explicit ConditionUrl(const UrlType type) : _url_qual(URL_QUAL_NONE), _type(type)
   {
     TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionUrl");
-  };
+  }
 
   void initialize(Parser &p);
   void set_qualifier(const std::string &q);
@@ -301,10 +309,11 @@ private:
   UrlType _type;
 };
 
-
 // DBM lookups
 class ConditionDBM : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   ConditionDBM()
     : //_dbm(NULL),
@@ -330,7 +339,6 @@ protected:
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionDBM);
-
   // MDBM* _dbm;
   std::string _file;
   Value _key;
@@ -339,6 +347,8 @@ private:
 
 class ConditionInternalTxn : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   void
   append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */)
@@ -351,6 +361,8 @@ protected:
 
 class ConditionClientIp : public Condition
 {
+  typedef Matchers<std::string> MatcherType;
+
 public:
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
@@ -361,9 +373,10 @@ protected:
 
 class ConditionIncomingPort : public Condition
 {
+  typedef Matchers<uint16_t> MatcherType;
+
 public:
   ConditionIncomingPort() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionIncomingPort"); }
-
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
 
@@ -381,7 +394,6 @@ class ConditionTransactCount : public Condition
 
 public:
   ConditionTransactCount() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionTransactCount"); }
-
   void initialize(Parser &p);
   void append_value(std::string &s, const Resources &res);
 
@@ -390,6 +402,82 @@ protected:
 
 private:
   DISALLOW_COPY_AND_ASSIGN(ConditionTransactCount);
+};
+
+// now: Keeping track of current time / day / hour etc.
+class ConditionNow : public Condition
+{
+  typedef Matchers<int64_t> MatcherType;
+
+public:
+  explicit ConditionNow() : _now_qual(NOW_QUAL_EPOCH) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionNow"); }
+  void initialize(Parser &p);
+  void set_qualifier(const std::string &q);
+  void append_value(std::string &s, const Resources &res);
+
+protected:
+  bool eval(const Resources &res);
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionNow);
+
+  int64_t get_now_qualified(NowQualifiers qual) const;
+  NowQualifiers _now_qual;
+};
+
+// GeoIP class for the "integer" based Geo information pieces
+class ConditionGeo : public Condition
+{
+public:
+  explicit ConditionGeo() : _geo_qual(GEO_QUAL_COUNTRY), _int_type(false)
+  {
+    TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionGeo");
+  }
+
+  void initialize(Parser &p);
+  void set_qualifier(const std::string &q);
+  void append_value(std::string &s, const Resources &res);
+
+  // Make sure we know if the type is an int-type or a string.
+  bool
+  is_int_type() const
+  {
+    return _int_type;
+  }
+
+  void
+  is_int_type(bool flag)
+  {
+    _int_type = flag;
+  }
+
+protected:
+  bool eval(const Resources &res);
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionGeo);
+
+  int64_t get_geo_int(const sockaddr *addr) const;
+  const char *get_geo_string(const sockaddr *addr) const;
+  GeoQualifiers _geo_qual;
+  bool _int_type;
+};
+
+// id: Various identifiers for the requests, server process etc.
+class ConditionId : public Condition
+{
+public:
+  explicit ConditionId() : _id_qual(ID_QUAL_UNIQUE) { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for ConditionId"); };
+  void initialize(Parser &p);
+  void set_qualifier(const std::string &q);
+  void append_value(std::string &s, const Resources &res);
+
+protected:
+  bool eval(const Resources &res);
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(ConditionId);
+  IdQualifiers _id_qual;
 };
 
 #endif // __CONDITIONS_H

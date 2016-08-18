@@ -57,7 +57,7 @@ Impl::GroupData &
 Impl::GroupData::setSecurity(SecurityOption style)
 {
   m_use_security_opt = true;
-  m_security_opt = style;
+  m_security_opt     = style;
   return *this;
 }
 
@@ -90,10 +90,10 @@ Impl::open(uint addr)
   if (INADDR_ANY != addr)
     m_addr = addr; // overridden.
   memset(&saddr, 0, sizeof(saddr));
-  in_addr.sin_family = AF_INET;
-  in_addr.sin_port = htons(DEFAULT_PORT);
+  in_addr.sin_family      = AF_INET;
+  in_addr.sin_port        = htons(DEFAULT_PORT);
   in_addr.sin_addr.s_addr = m_addr;
-  int zret = bind(fd, &saddr, sizeof(saddr));
+  int zret                = bind(fd, &saddr, sizeof(saddr));
   if (-1 == zret) {
     log_errno(LVL_FATAL, "Failed to bind socket to port");
     this->close();
@@ -146,7 +146,7 @@ void
 Impl::useMD5Security(ts::ConstBuffer const &key)
 {
   m_use_security_opt = true;
-  m_security_opt = SECURITY_MD5;
+  m_security_opt     = SECURITY_MD5;
   m_use_security_key = true;
   memset(m_security_key, 0, SecurityComp::KEY_SIZE);
   // Great. Have to cast or we get a link error.
@@ -207,13 +207,13 @@ Impl::handleMessage()
     return -ENOTCONN;
 
   recv_buffer.iov_base = buffer;
-  recv_buffer.iov_len = BUFFER_SIZE;
+  recv_buffer.iov_len  = BUFFER_SIZE;
 
-  recv_hdr.msg_name = &src_addr;
-  recv_hdr.msg_namelen = sizeof(src_addr);
-  recv_hdr.msg_iov = &recv_buffer;
-  recv_hdr.msg_iovlen = 1;
-  recv_hdr.msg_control = anc_buffer;
+  recv_hdr.msg_name       = &src_addr;
+  recv_hdr.msg_namelen    = sizeof(src_addr);
+  recv_hdr.msg_iov        = &recv_buffer;
+  recv_hdr.msg_iovlen     = 1;
+  recv_hdr.msg_control    = anc_buffer;
   recv_hdr.msg_controllen = ANC_BUFFER_SIZE;
 
   n = recvmsg(m_fd, &recv_hdr, MSG_TRUNC);
@@ -298,10 +298,10 @@ CacheImpl::GroupData::seedRouter(uint32_t addr)
 time_t
 CacheImpl::GroupData::removeSeedRouter(uint32_t addr)
 {
-  time_t zret = 0;
+  time_t zret                             = 0;
   std::vector<SeedRouter>::iterator begin = m_seed_routers.begin();
-  std::vector<SeedRouter>::iterator end = m_seed_routers.end();
-  std::vector<SeedRouter>::iterator spot = std::find_if(begin, end, ts::predicate(&SeedRouter::m_addr, addr));
+  std::vector<SeedRouter>::iterator end   = m_seed_routers.end();
+  std::vector<SeedRouter>::iterator spot  = std::find_if(begin, end, ts::predicate(&SeedRouter::m_addr, addr));
 
   if (end != spot) {
     zret = spot->m_xmit;
@@ -375,19 +375,19 @@ detail::cache::CacheData::idAddr() const
 CacheImpl::GroupData &
 CacheImpl::defineServiceGroup(ServiceGroup const &svc, ServiceGroup::Result *result)
 {
-  uint8_t svc_id = svc.getSvcId();
+  uint8_t svc_id          = svc.getSvcId();
   GroupMap::iterator spot = m_groups.find(svc_id);
   GroupData *group; // service with target ID.
   ServiceGroup::Result zret;
   if (spot == m_groups.end()) { // not defined
-    group = &(m_groups[svc_id]);
+    group        = &(m_groups[svc_id]);
     group->m_svc = svc;
     memset(&group->m_id, 0, sizeof(group->m_id));
     group->m_id.initDefaultHash(m_addr);
     zret = ServiceGroup::DEFINED;
   } else {
     group = &spot->second;
-    zret = group->m_svc == svc ? ServiceGroup::EXISTS : ServiceGroup::CONFLICT;
+    zret  = group->m_svc == svc ? ServiceGroup::EXISTS : ServiceGroup::CONFLICT;
   }
   if (result)
     *result = zret;
@@ -427,7 +427,7 @@ CacheImpl::GroupData::waitTime(time_t now) const
 bool
 CacheImpl::GroupData::processUp()
 {
-  bool zret = false;
+  bool zret                 = false;
   const char *proc_pid_path = this->getProcName();
   if (proc_pid_path == NULL || proc_pid_path[0] == '\0') {
     zret = true; // No process to track, always chatter
@@ -440,7 +440,7 @@ CacheImpl::GroupData::processUp()
       close(fd);
       if (read_count > 0) {
         buffer[read_count] = '\0';
-        int pid = atoi(buffer);
+        int pid            = atoi(buffer);
         if (pid > 0) {
           // If the process is still running, it has an entry in the proc file system, (Linux only)
           sprintf(buffer, "/proc/%d/status", pid);
@@ -459,7 +459,7 @@ CacheImpl::GroupData::processUp()
 bool
 CacheImpl::GroupData::cullRouters(time_t now)
 {
-  bool zret = false;
+  bool zret  = false;
   size_t idx = 0, n = m_routers.size();
   while (idx < n) {
     RouterData &router = m_routers[idx];
@@ -611,8 +611,8 @@ CacheImpl::housekeeping()
 {
   int zret = 0;
   sockaddr_in dst_addr;
-  sockaddr *addr_ptr = reinterpret_cast<sockaddr *>(&dst_addr);
-  time_t now = time(0);
+  sockaddr *addr_ptr              = reinterpret_cast<sockaddr *>(&dst_addr);
+  time_t now                      = time(0);
   static size_t const BUFFER_SIZE = 4096;
   MsgBuffer msg_buffer;
   char msg_data[BUFFER_SIZE];
@@ -621,7 +621,7 @@ CacheImpl::housekeeping()
   // Set up everything except the IP address.
   memset(&dst_addr, 0, sizeof(dst_addr));
   dst_addr.sin_family = AF_INET;
-  dst_addr.sin_port = htons(DEFAULT_PORT);
+  dst_addr.sin_port   = htons(DEFAULT_PORT);
 
   // Walk the service groups and do their housekeeping.
   for (GroupMap::iterator svc_spot = m_groups.begin(), svc_limit = m_groups.end(); svc_spot != svc_limit; ++svc_spot) {
@@ -686,7 +686,7 @@ CacheImpl::housekeeping()
         this->generateHereIAm(here_i_am, group);
 
         dst_addr.sin_addr.s_addr = sspot->m_addr;
-        zret = sendto(m_fd, msg_data, here_i_am.getCount(), 0, addr_ptr, sizeof(dst_addr));
+        zret                     = sendto(m_fd, msg_data, here_i_am.getCount(), 0, addr_ptr, sizeof(dst_addr));
         if (0 <= zret) {
           logf(LVL_DEBUG, "Sent HERE_I_AM for SG %d to seed router %s [gen=#%d,t=%lu,n=%lu].", group.m_svc.getSvcId(),
                ip_addr_to_str(sspot->m_addr), group.m_generation, now, here_i_am.getCount());
@@ -709,8 +709,8 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
   // Set if our view of the group changes enough to bump the
   // generation number.
   bool view_changed = false;
-  time_t now = time(0); // don't call this over and over.
-  int parse = msg.parse(chunk);
+  time_t now        = time(0); // don't call this over and over.
+  int parse         = msg.parse(chunk);
 
   if (PARSE_SUCCESS != parse)
     return logf(LVL_INFO, "Ignored malformed [%d] WCCP2_I_SEE_YOU message.", parse);
@@ -794,7 +794,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
     }
 
     group.m_routers.push_back(r);
-    ar_spot = group.m_routers.end() - 1;
+    ar_spot      = group.m_routers.end() - 1;
     view_changed = true;
     logf(LVL_INFO, "Added source router %s to view %d", ip_addr_to_str(router_addr), group.m_svc.getSvcId());
   } else {
@@ -812,7 +812,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
   time_t then = ar_spot->m_recv.m_time; // used for comparisons later.
   ar_spot->m_recv.set(now, recv_id);
   ar_spot->m_generation = msg.m_router_view.getChangeNumber();
-  router_idx = ar_spot - group.m_routers.begin();
+  router_idx            = ar_spot - group.m_routers.begin();
   // Reply with our own capability options iff the router sent one to us.
   // This is a violation of the spec but it's what we have to do in practice
   // for mask assignment.
@@ -833,7 +833,7 @@ CacheImpl::handleISeeYou(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buffer co
   group.resizeCacheSources();
   uint32_t nc = msg.m_router_view.getCacheCount();
   for (uint32_t idx = 0; idx < nc; ++idx) {
-    CacheIdBox &cache = msg.m_router_view.cacheId(idx);
+    CacheIdBox &cache          = msg.m_router_view.cacheId(idx);
     CacheBag::iterator ac_spot = group.findCache(cache.getAddr());
     if (group.m_caches.end() == ac_spot) {
       group.m_caches.push_back(CacheData());
@@ -867,7 +867,7 @@ CacheImpl::handleRemovalQuery(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buff
   ts::Errata zret;
   RemovalQueryMsg msg;
   time_t now = time(0);
-  int parse = msg.parse(chunk);
+  int parse  = msg.parse(chunk);
 
   if (PARSE_SUCCESS != parse)
     return log(LVL_INFO, "Ignored malformed WCCP2_REMOVAL_QUERY message.");
@@ -887,7 +887,7 @@ CacheImpl::handleRemovalQuery(IpHeader const & /* ip_hdr ATS_UNUSED */, ts::Buff
 
   uint32_t target_addr = msg.m_query.getCacheAddr(); // intended cache
   if (m_addr == target_addr) {
-    uint32_t raddr = msg.m_query.getRouterAddr();
+    uint32_t raddr             = msg.m_query.getRouterAddr();
     RouterBag::iterator router = group.findRouter(raddr);
     if (group.m_routers.end() != router) {
       router->m_rapid = true; // do rapid responses.
@@ -927,17 +927,17 @@ RouterImpl::GroupData::findCache(uint32_t addr)
 RouterImpl::GroupData &
 RouterImpl::defineServiceGroup(ServiceGroup const &svc, ServiceGroup::Result *result)
 {
-  uint8_t svc_id = svc.getSvcId();
+  uint8_t svc_id          = svc.getSvcId();
   GroupMap::iterator spot = m_groups.find(svc_id);
   GroupData *group; // service with target ID.
   ServiceGroup::Result zret;
   if (spot == m_groups.end()) { // not defined
-    group = &(m_groups[svc_id]);
+    group        = &(m_groups[svc_id]);
     group->m_svc = svc;
-    zret = ServiceGroup::DEFINED;
+    zret         = ServiceGroup::DEFINED;
   } else {
     group = &spot->second;
-    zret = group->m_svc == svc ? ServiceGroup::EXISTS : ServiceGroup::CONFLICT;
+    zret  = group->m_svc == svc ? ServiceGroup::EXISTS : ServiceGroup::CONFLICT;
   }
   if (result)
     *result = zret;
@@ -961,7 +961,7 @@ RouterImpl::handleHereIAm(IpHeader const &ip_hdr, ts::Buffer const &chunk)
   bool view_changed = false;
   int i;                // scratch index var.
   time_t now = time(0); // don't call this over and over.
-  int parse = msg.parse(chunk);
+  int parse  = msg.parse(chunk);
 
   if (PARSE_SUCCESS != parse)
     return log(LVL_INFO, "Ignored malformed WCCP2_HERE_I_AM message.\n");
@@ -985,7 +985,7 @@ RouterImpl::handleHereIAm(IpHeader const &ip_hdr, ts::Buffer const &chunk)
   if (cache == group.m_caches.end()) { // not known
     group.m_caches.push_back(CacheData());
     // Vector modified, need clean end value.
-    cache = group.m_caches.end() - 1;
+    cache               = group.m_caches.end() - 1;
     cache->m_recv_count = 0;
     group.resizeRouterSources();
     view_changed = true;
@@ -1008,12 +1008,12 @@ RouterImpl::handleHereIAm(IpHeader const &ip_hdr, ts::Buffer const &chunk)
   // Add any new routers
   i = msg.m_cache_view.getRouterCount();
   while (i-- > 0) {
-    uint32_t addr = msg.m_cache_view.routerElt(i).getAddr();
+    uint32_t addr            = msg.m_cache_view.routerElt(i).getAddr();
     RouterBag::iterator spot = find_by_member(group.m_routers, &RouterData::m_addr, addr);
     if (spot == group.m_routers.end()) {
       group.m_routers.push_back(RouterData());
       // Can't count on previous end value, modified container.
-      spot = group.m_routers.end() - 1;
+      spot         = group.m_routers.end() - 1;
       spot->m_addr = addr;
       spot->m_src.resize(group.m_caches.size());
       view_changed = true;
@@ -1031,7 +1031,7 @@ RouterImpl::generateISeeYou(ISeeYouMsg &msg, GroupData &group, CacheData &cache)
 {
   int i;
   size_t n_routers = group.m_routers.size();
-  size_t n_caches = group.m_caches.size();
+  size_t n_caches  = group.m_caches.size();
 
   // Not handling multi-cast so target caches is hardwired to 1.
   msg.fill(group, this->setSecurity(msg, group), group.m_assign_info, 1, n_routers, n_caches);
@@ -1065,13 +1065,13 @@ RouterImpl::xmitISeeYou()
   ISeeYouMsg msg;
   MsgBuffer buffer;
   sockaddr_in dst_addr;
-  time_t now = time(0);
+  time_t now                      = time(0);
   static size_t const BUFFER_SIZE = 4096;
-  char *data = static_cast<char *>(alloca(BUFFER_SIZE));
+  char *data                      = static_cast<char *>(alloca(BUFFER_SIZE));
 
   memset(&dst_addr, 0, sizeof(dst_addr));
   dst_addr.sin_family = AF_INET;
-  dst_addr.sin_port = htons(DEFAULT_PORT);
+  dst_addr.sin_port   = htons(DEFAULT_PORT);
   buffer.set(data, BUFFER_SIZE);
 
   // Send out messages for each service group.
@@ -1086,10 +1086,10 @@ RouterImpl::xmitISeeYou()
       msg.setBuffer(buffer);
       this->generateISeeYou(msg, group, *cache);
       dst_addr.sin_addr.s_addr = cache->m_id.getAddr();
-      zret = sendto(m_fd, data, msg.getCount(), 0, reinterpret_cast<sockaddr *>(&dst_addr), sizeof(dst_addr));
+      zret                     = sendto(m_fd, data, msg.getCount(), 0, reinterpret_cast<sockaddr *>(&dst_addr), sizeof(dst_addr));
       if (0 <= zret) {
         cache->m_xmit.set(now, group.m_generation);
-        cache->m_pending = false;
+        cache->m_pending    = false;
         cache->m_recv_count = msg.m_router_id.getRecvId();
         logf(LVL_DEBUG, "I_SEE_YOU -> %s\n", ip_addr_to_str(cache->m_id.getAddr()));
       } else {

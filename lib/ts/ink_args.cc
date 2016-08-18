@@ -39,16 +39,16 @@ Process arguments
 //
 
 const char *file_arguments[MAX_FILE_ARGUMENTS] = {0};
-const char *program_name = (char *)"Traffic Server";
-unsigned n_file_arguments = 0;
+const char *program_name                       = (char *)"Traffic Server";
+unsigned n_file_arguments                      = 0;
 
 //
 //  Local variables
 //
 
-static const char *argument_types_keys = (char *)"ISDfFTL";
-static const char *argument_types_descriptions[] = {(char *)"int  ",  (char *) "str  ", (char *) "dbl  ", (char *) "off  ",
-                                                    (char *) "on   ", (char *) "tog  ", (char *) "i64  ", (char *) "     "};
+static const char *argument_types_keys           = (char *)"ISDfFTL";
+static const char *argument_types_descriptions[] = {(char *)"int  ", (char *)"str  ", (char *)"dbl  ", (char *)"off  ",
+                                                    (char *)"on   ", (char *)"tog  ", (char *)"i64  ", (char *)"     "};
 
 //
 // Functions
@@ -105,7 +105,7 @@ process_arg(const AppVersionInfo *appinfo, const ArgumentDescription *argument_d
       case 'S':
         if (argument_descriptions[i].type[1] == '*') {
           char **out = (char **)argument_descriptions[i].location;
-          *out = ats_strdup(arg);
+          *out       = ats_strdup(arg);
         } else {
           ink_strlcpy((char *)argument_descriptions[i].location, arg, atoi(argument_descriptions[i].type + 1));
         }
@@ -124,7 +124,6 @@ process_arg(const AppVersionInfo *appinfo, const ArgumentDescription *argument_d
 
   return true;
 }
-
 
 void
 show_argument_configuration(const ArgumentDescription *argument_descriptions, unsigned n_argument_descriptions)
@@ -329,5 +328,5 @@ usage(const ArgumentDescription *argument_descriptions, unsigned n_argument_desc
     }
     fprintf(stderr, " %s\n", argument_descriptions[i].description);
   }
-  _exit(EX_USAGE);
+  ::exit(EX_USAGE);
 }

@@ -117,10 +117,10 @@ public:
   // and right, and input string is copied (not overwritten)
   //
   enum {
-    CONSIDER_NULL_FIELDS = 1,
-    KEEP_WHITESPACE_LEFT = 2,
-    KEEP_WHITESPACE_RIGHT = 4,
-    KEEP_WHITESPACE = KEEP_WHITESPACE_LEFT + KEEP_WHITESPACE_RIGHT,
+    CONSIDER_NULL_FIELDS   = 1,
+    KEEP_WHITESPACE_LEFT   = 2,
+    KEEP_WHITESPACE_RIGHT  = 4,
+    KEEP_WHITESPACE        = KEEP_WHITESPACE_LEFT + KEEP_WHITESPACE_RIGHT,
     OVERWRITE_INPUT_STRING = 8
   };
 
@@ -137,15 +137,14 @@ public:
   }
 
   ~SimpleTokenizer() { _clearData(); }
-
   void
   setString(const char *s)
   {
     _clearData();
 
-    _start = 0;
+    _start  = 0;
     _length = strlen(s);
-    _data = (_mode & OVERWRITE_INPUT_STRING ? const_cast<char *>(s) : ats_strdup(s));
+    _data   = (_mode & OVERWRITE_INPUT_STRING ? const_cast<char *>(s) : ats_strdup(s));
 
     // to handle the case where there is a null field at the end of the
     // input string, we replace the null character at the end of the
@@ -235,7 +234,7 @@ private:
 
         // set end
         //
-        size_t end = _start;
+        size_t end     = _start;
         int delimCount = 0;
         while (end < _length && (_data[end] != delimiter || (end && (_data[end - 1] == _escape ? (hasEsc = true) : 0)) ||
                                  ((++delimCount < numTokens) && (end < _length - 1)))) {
@@ -288,7 +287,7 @@ private:
   _getNumTokensRemaining(char delimiter)
   {
     size_t startSave = _start; // save current position
-    size_t count = 0;
+    size_t count     = 0;
     while (_getNext(delimiter, true)) {
       ++count;
     };

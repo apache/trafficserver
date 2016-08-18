@@ -30,7 +30,6 @@
 #include "resources.h"
 #include "value.h"
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Operator declarations.
 //
@@ -56,7 +55,6 @@ private:
   Value _value;
 };
 
-
 class OperatorSetStatus : public Operator
 {
 public:
@@ -75,7 +73,6 @@ private:
   int _reason_len;
 };
 
-
 class OperatorSetStatusReason : public Operator
 {
 public:
@@ -91,7 +88,6 @@ private:
 
   Value _reason;
 };
-
 
 class OperatorSetDestination : public Operator
 {
@@ -109,7 +105,6 @@ private:
   Value _value;
 };
 
-
 class OperatorSetRedirect : public Operator
 {
 public:
@@ -126,19 +121,16 @@ private:
   Value _location;
 };
 
-
 class OperatorNoOp : public Operator
 {
 public:
   OperatorNoOp() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorNoOp"); }
-
 protected:
   void exec(const Resources & /* res ATS_UNUSED */) const {};
 
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorNoOp);
 };
-
 
 class OperatorSetTimeoutOut : public Operator
 {
@@ -179,20 +171,17 @@ private:
   bool _skip_remap;
 };
 
-
 // All the header operators share a base class
 class OperatorRMHeader : public OperatorHeaders
 {
 public:
   OperatorRMHeader() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMHeader"); }
-
 protected:
   void exec(const Resources &res) const;
 
 private:
   DISALLOW_COPY_AND_ASSIGN(OperatorRMHeader);
 };
-
 
 class OperatorAddHeader : public OperatorHeaders
 {
@@ -208,7 +197,6 @@ private:
 
   Value _value;
 };
-
 
 class OperatorSetHeader : public OperatorHeaders
 {
@@ -240,6 +228,59 @@ private:
   std::string _counter_name;
   int _counter;
 };
+
+class OperatorRMCookie : public OperatorCookies
+{
+public:
+  OperatorRMCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorRMCookie"); }
+protected:
+  void exec(const Resources &res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorRMCookie);
+};
+
+class OperatorAddCookie : public OperatorCookies
+{
+public:
+  OperatorAddCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorAddCookie"); }
+  void initialize(Parser &p);
+
+protected:
+  void exec(const Resources &res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorAddCookie);
+
+  Value _value;
+};
+
+class OperatorSetCookie : public OperatorCookies
+{
+public:
+  OperatorSetCookie() { TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for OperatorSetCookie"); }
+  void initialize(Parser &p);
+
+protected:
+  void exec(const Resources &res) const;
+
+private:
+  DISALLOW_COPY_AND_ASSIGN(OperatorSetCookie);
+
+  Value _value;
+};
+
+namespace CookieHelper
+{
+enum CookieOp { COOKIE_OP_DEL, COOKIE_OP_ADD, COOKIE_OP_SET };
+
+/*
+ * This function returns if cookies need to be changed or not.
+ * If the return value is true, updated_cookies would be cookies after the change.
+ */
+bool cookieModifyHelper(const char *cookies, const size_t cookies_len, std::string &updated_cookies, const CookieOp cookie_op,
+                        const std::string &cookie_key, const std::string &cookie_value = std::string());
+}
 
 class OperatorSetConnDSCP : public Operator
 {

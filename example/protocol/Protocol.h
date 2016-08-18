@@ -46,5 +46,4 @@
     _d = _s;                \
   }
 
-
 #endif /* PROTOCOL_H */

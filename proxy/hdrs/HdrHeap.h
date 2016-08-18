@@ -60,13 +60,16 @@
 #define HDR_HEAP_HDR_SIZE ROUND(sizeof(HdrHeap), HDR_PTR_SIZE)
 #define STR_HEAP_HDR_SIZE sizeof(HdrStrHeap)
 
+class CoreUtils;
+class IOBufferBlock;
+
 enum {
-  HDR_HEAP_OBJ_EMPTY = 0,
-  HDR_HEAP_OBJ_RAW = 1,
-  HDR_HEAP_OBJ_URL = 2,
-  HDR_HEAP_OBJ_HTTP_HEADER = 3,
-  HDR_HEAP_OBJ_MIME_HEADER = 4,
-  HDR_HEAP_OBJ_FIELD_BLOCK = 5,
+  HDR_HEAP_OBJ_EMPTY            = 0,
+  HDR_HEAP_OBJ_RAW              = 1,
+  HDR_HEAP_OBJ_URL              = 2,
+  HDR_HEAP_OBJ_HTTP_HEADER      = 3,
+  HDR_HEAP_OBJ_MIME_HEADER      = 4,
+  HDR_HEAP_OBJ_FIELD_BLOCK      = 5,
   HDR_HEAP_OBJ_FIELD_STANDALONE = 6, // not a type that lives in HdrHeaps
   HDR_HEAP_OBJ_FIELD_SDK_HANDLE = 7, // not a type that lives in HdrHeaps
 
@@ -93,7 +96,7 @@ obj_is_aligned(HdrHeapObjImpl *obj)
 inline void
 obj_clear_data(HdrHeapObjImpl *obj)
 {
-  char *ptr = (char *)obj;
+  char *ptr      = (char *)obj;
   int hdr_length = sizeof(HdrHeapObjImpl);
   memset(ptr + hdr_length, '\0', obj->m_length - hdr_length);
 }
@@ -106,8 +109,8 @@ obj_copy_data(HdrHeapObjImpl *s_obj, HdrHeapObjImpl *d_obj)
   ink_assert((s_obj->m_length == d_obj->m_length) && (s_obj->m_type == d_obj->m_type));
 
   int hdr_length = sizeof(HdrHeapObjImpl);
-  src = (char *)s_obj + hdr_length;
-  dst = (char *)d_obj + hdr_length;
+  src            = (char *)s_obj + hdr_length;
+  dst            = (char *)d_obj + hdr_length;
   memcpy(dst, src, d_obj->m_length - hdr_length);
 }
 
@@ -120,8 +123,8 @@ obj_copy(HdrHeapObjImpl *s_obj, char *d_addr)
 inline void
 obj_init_header(HdrHeapObjImpl *obj, uint32_t type, uint32_t nbytes, uint32_t obj_flags)
 {
-  obj->m_type = type;
-  obj->m_length = nbytes;
+  obj->m_type      = type;
+  obj->m_length    = nbytes;
   obj->m_obj_flags = obj_flags;
 }
 
@@ -129,28 +132,11 @@ obj_init_header(HdrHeapObjImpl *obj, uint32_t type, uint32_t nbytes, uint32_t ob
   -------------------------------------------------------------------------*/
 
 enum {
-  HDR_BUF_MAGIC_ALIVE = 0xabcdfeed,
+  HDR_BUF_MAGIC_ALIVE     = 0xabcdfeed,
   HDR_BUF_MAGIC_MARSHALED = 0xdcbafeed,
-  HDR_BUF_MAGIC_DEAD = 0xabcddead,
-  HDR_BUF_MAGIC_CORRUPT = 0xbadbadcc
+  HDR_BUF_MAGIC_DEAD      = 0xabcddead,
+  HDR_BUF_MAGIC_CORRUPT   = 0xbadbadcc
 };
-
-struct StrHeapDesc {
-  StrHeapDesc();
-  Ptr<RefCountObj> m_ref_count_ptr;
-  char *m_heap_start;
-  int32_t m_heap_len;
-  bool m_locked;
-
-  bool
-  contains(const char *str) const
-  {
-    return (str >= m_heap_start && str < (m_heap_start + m_heap_len));
-  }
-};
-
-
-class IOBufferBlock;
 
 class HdrStrHeap : public RefCountObj
 {
@@ -172,7 +158,19 @@ public:
   }
 };
 
-class CoreUtils;
+struct StrHeapDesc {
+  StrHeapDesc();
+  Ptr<RefCountObj> m_ref_count_ptr;
+  char *m_heap_start;
+  int32_t m_heap_len;
+  bool m_locked;
+
+  bool
+  contains(const char *str) const
+  {
+    return (str >= m_heap_start && str < (m_heap_start + m_heap_len));
+  }
+};
 
 class HdrHeap
 {
@@ -212,7 +210,8 @@ public:
   lock_ronly_str_heap(int i)
   {
     m_ronly_heap[i].m_locked = true;
-  };
+  }
+
   void
   unlock_ronly_str_heap(int i)
   {
@@ -225,16 +224,16 @@ public:
       if (m_ronly_heap[j].m_heap_start == NULL) {
         // move slot i to slot j
         m_ronly_heap[j].m_ref_count_ptr = m_ronly_heap[i].m_ref_count_ptr;
-        m_ronly_heap[j].m_heap_start = m_ronly_heap[i].m_heap_start;
-        m_ronly_heap[j].m_heap_len = m_ronly_heap[i].m_heap_len;
-        m_ronly_heap[j].m_locked = m_ronly_heap[i].m_locked;
+        m_ronly_heap[j].m_heap_start    = m_ronly_heap[i].m_heap_start;
+        m_ronly_heap[j].m_heap_len      = m_ronly_heap[i].m_heap_len;
+        m_ronly_heap[j].m_locked        = m_ronly_heap[i].m_locked;
         m_ronly_heap[i].m_ref_count_ptr = NULL;
-        m_ronly_heap[i].m_heap_start = NULL;
-        m_ronly_heap[i].m_heap_len = 0;
-        m_ronly_heap[i].m_locked = false;
+        m_ronly_heap[i].m_heap_start    = NULL;
+        m_ronly_heap[i].m_heap_len      = 0;
+        m_ronly_heap[i].m_locked        = false;
       }
     }
-  };
+  }
 
   // Sanity Check Functions
   void sanity_check_strs();
@@ -266,7 +265,7 @@ public:
   void coalesce_str_heaps(int incoming_size = 0);
   void evacuate_from_str_heaps(HdrStrHeap *new_heap);
   size_t required_space_for_evacuation();
-  int attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
+  bool attach_str_heap(char *h_start, int h_len, RefCountObj *h_ref_obj, int *index);
 
   /** Struct to prevent garbage collection on heaps.
       This bumps the reference count to the heap containing the pointer
@@ -279,7 +278,7 @@ public:
     HeapGuard(HdrHeap *heap, const char *str)
     {
       if (heap->m_read_write_heap && heap->m_read_write_heap->contains(str)) {
-        m_ptr = heap->m_read_write_heap;
+        m_ptr = heap->m_read_write_heap.get();
       } else {
         for (int i = 0; i < HDR_BUF_RONLY_HEAPS; ++i) {
           if (heap->m_ronly_heap[i].contains(str)) {
@@ -291,7 +290,7 @@ public:
     }
 
     // There's no need to have a destructor here, the default dtor will take care of
-    // releaseing the (potentially) locked heap.
+    // releasing the (potentially) locked heap.
 
     /// The heap we protect (if any)
     Ptr<RefCountObj> m_ptr;
@@ -317,7 +316,6 @@ HdrHeap::unmarshal_size() const
   return m_size + m_ronly_heap[0].m_heap_len;
 }
 
-
 //
 struct MarshalXlate {
   char *start;
@@ -330,17 +328,30 @@ struct HeapCheck {
   char *end;
 };
 
+// Nasty macro to do string marshalling
+#define HDR_MARSHAL_STR(ptr, table, nentries)                 \
+  if (ptr) {                                                  \
+    int found = 0;                                            \
+    for (int i = 0; i < nentries; i++) {                      \
+      if (ptr >= table[i].start && ptr <= table[i].end) {     \
+        ptr   = (((char *)ptr) - (uintptr_t)table[i].offset); \
+        found = 1;                                            \
+        break;                                                \
+      }                                                       \
+    }                                                         \
+    ink_assert(found);                                        \
+    if (found == 0) {                                         \
+      return -1;                                              \
+    }                                                         \
+  }
 
 // Nasty macro to do string marshalling
-#define HDR_MARSHAL_STR(ptr, table, nentries)               \
+#define HDR_MARSHAL_STR_1(ptr, table)                       \
   if (ptr) {                                                \
     int found = 0;                                          \
-    for (int i = 0; i < nentries; i++) {                    \
-      if (ptr >= table[i].start && ptr <= table[i].end) {   \
-        ptr = (((char *)ptr) - (uintptr_t)table[i].offset); \
-        found = 1;                                          \
-        break;                                              \
-      }                                                     \
+    if (ptr >= table[0].start && ptr <= table[0].end) {     \
+      ptr   = (((char *)ptr) - (uintptr_t)table[0].offset); \
+      found = 1;                                            \
     }                                                       \
     ink_assert(found);                                      \
     if (found == 0) {                                       \
@@ -348,27 +359,12 @@ struct HeapCheck {
     }                                                       \
   }
 
-// Nasty macro to do string marshalling
-#define HDR_MARSHAL_STR_1(ptr, table)                     \
-  if (ptr) {                                              \
-    int found = 0;                                        \
-    if (ptr >= table[0].start && ptr <= table[0].end) {   \
-      ptr = (((char *)ptr) - (uintptr_t)table[0].offset); \
-      found = 1;                                          \
-    }                                                     \
-    ink_assert(found);                                    \
-    if (found == 0) {                                     \
-      return -1;                                          \
-    }                                                     \
-  }
-
-
 #define HDR_MARSHAL_PTR(ptr, type, table, nentries)                       \
   if (ptr) {                                                              \
     int found = 0;                                                        \
     for (int i = 0; i < nentries; i++) {                                  \
       if ((char *)ptr >= table[i].start && (char *)ptr <= table[i].end) { \
-        ptr = (type *)(((char *)ptr) - (uintptr_t)table[i].offset);       \
+        ptr   = (type *)(((char *)ptr) - (uintptr_t)table[i].offset);     \
         found = 1;                                                        \
         break;                                                            \
       }                                                                   \
@@ -383,7 +379,7 @@ struct HeapCheck {
   if (ptr) {                                                            \
     int found = 0;                                                      \
     if ((char *)ptr >= table[0].start && (char *)ptr <= table[0].end) { \
-      ptr = (type *)(((char *)ptr) - (uintptr_t)table[0].offset);       \
+      ptr   = (type *)(((char *)ptr) - (uintptr_t)table[0].offset);     \
       found = 1;                                                        \
     }                                                                   \
     ink_assert(found);                                                  \
@@ -391,7 +387,6 @@ struct HeapCheck {
       return -1;                                                        \
     }                                                                   \
   }
-
 
 #define HDR_UNMARSHAL_STR(ptr, offset) \
   if (ptr) {                           \
@@ -440,9 +435,7 @@ struct HeapCheck {
 struct HdrHeapSDKHandle {
 public:
   HdrHeapSDKHandle() : m_heap(NULL) {}
-
   ~HdrHeapSDKHandle() { clear(); }
-
   // clear() only deallocates chained SDK return values
   //   The underlying MBuffer is left untouched
   void clear();
