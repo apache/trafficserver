@@ -667,7 +667,7 @@ LogAccessHttp::marshal_client_req_header_len(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccessHttp::marshal_client_req_body_len(char *buf)
+LogAccessHttp::marshal_client_req_content_len(char *buf)
 {
   if (buf) {
     int64_t len = 0;
@@ -978,7 +978,7 @@ LogAccessHttp::marshal_proxy_req_header_len(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccessHttp::marshal_proxy_req_body_len(char *buf)
+LogAccessHttp::marshal_proxy_req_content_len(char *buf)
 {
   if (buf) {
     int64_t val = 0;

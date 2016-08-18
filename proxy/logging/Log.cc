@@ -481,7 +481,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "puuid", field);
 
-  field = new LogField("client_req_body_len", "cqbl", LogField::sINT, &LogAccess::marshal_client_req_body_len,
+  field = new LogField("client_req_body_len", "cqbl", LogField::sINT, &LogAccess::marshal_client_req_content_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqbl", field);
@@ -617,7 +617,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqhl", field);
 
-  field = new LogField("proxy_req_body_len", "pqbl", LogField::sINT, &LogAccess::marshal_proxy_req_body_len,
+  field = new LogField("proxy_req_body_len", "pqbl", LogField::sINT, &LogAccess::marshal_proxy_req_content_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqbl", field);

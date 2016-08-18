@@ -71,7 +71,7 @@ public:
   virtual int marshal_client_req_http_version(char *);       // INT
   virtual int marshal_client_req_protocol_version(char *);   // STR
   virtual int marshal_client_req_header_len(char *);         // INT
-  virtual int marshal_client_req_body_len(char *);           // INT
+  virtual int marshal_client_req_content_len(char *);        // INT
   virtual int marshal_client_req_tcp_reused(char *);         // INT
   virtual int marshal_client_req_is_ssl(char *);             // INT
   virtual int marshal_client_req_ssl_reused(char *);         // INT
@@ -97,7 +97,7 @@ public:
   // proxy -> server fields
   //
   virtual int marshal_proxy_req_header_len(char *);  // INT
-  virtual int marshal_proxy_req_body_len(char *);    // INT
+  virtual int marshal_proxy_req_content_len(char *); // INT
   virtual int marshal_proxy_req_server_name(char *); // STR
   virtual int marshal_proxy_req_server_ip(char *);   // INT
   virtual int marshal_proxy_req_server_port(char *); // INT

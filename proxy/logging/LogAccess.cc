@@ -241,7 +241,7 @@ LogAccess::marshal_client_req_header_len(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::marshal_client_req_body_len(char *buf)
+LogAccess::marshal_client_req_content_len(char *buf)
 {
   DEFAULT_INT_FIELD;
 }
@@ -399,7 +399,7 @@ LogAccess::marshal_proxy_req_header_len(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccess::marshal_proxy_req_body_len(char *buf)
+LogAccess::marshal_proxy_req_content_len(char *buf)
 {
   DEFAULT_INT_FIELD;
 }

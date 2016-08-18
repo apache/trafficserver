@@ -156,7 +156,7 @@ LogAccessTest::marshal_client_req_header_len(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccessTest::marshal_client_req_body_len(char *buf)
+LogAccessTest::marshal_client_req_content_len(char *buf)
 {
   if (buf) {
     int64_t val = 4;
@@ -300,7 +300,7 @@ LogAccessTest::marshal_proxy_req_header_len(char *buf)
   -------------------------------------------------------------------------*/
 
 int
-LogAccessTest::marshal_proxy_req_body_len(char *buf)
+LogAccessTest::marshal_proxy_req_content_len(char *buf)
 {
   if (buf) {
     int64_t val = 12;
