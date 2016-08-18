@@ -5817,7 +5817,7 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     while (enc_value) {
       const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
 
-      if (wks_value == HTTP_VALUE_CHUNKED) {
+      if (wks_value == HTTP_VALUE_CHUNKED && !is_response_body_precluded(status_code, s->method)) {
         if (!s->cop_test_page) {
           DebugTxn("http_hdrs", "[init_state_vars_from_resp] transfer encoding: chunked!");
         }
@@ -7990,12 +7990,8 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // If the response is prohibited from containing a body,
   //  we know the content length is trustable for keep-alive
-  if (is_response_body_precluded(status_code, s->method)) {
-    s->hdr_info.trust_response_cl       = true;
-    s->hdr_info.response_content_length = 0;
-    s->client_info.transfer_encoding    = HttpTransact::NO_TRANSFER_ENCODING;
-    s->server_info.transfer_encoding    = HttpTransact::NO_TRANSFER_ENCODING;
-  }
+  if (is_response_body_precluded(status_code, s->method))
+    s->hdr_info.trust_response_cl = true;
 
   handle_response_keep_alive_headers(s, outgoing_version, outgoing_response);
 
