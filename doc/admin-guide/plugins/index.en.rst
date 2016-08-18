@@ -127,6 +127,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Epic <epic.en>
    Escalate <escalate.en>
    GeoIP ACL <geoip_acl.en>
+   Header Frequency <header_freq.en>
    HIPES <hipes.en>
    Hook Trace <hook-trace.en>
    Memcache <memcache.en>
@@ -166,6 +167,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`GeoIP ACL <geoip_acl.en>`
    Deny or allow requests based on the source IP geo-location.
+
+:doc:`Header Frequency <header_freq.en>`
+   Count the frequency of headers.
 
 :doc:`HIPES <hipes.en>`
    Adds support for HTTP Pipes.
