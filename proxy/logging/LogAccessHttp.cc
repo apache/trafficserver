@@ -769,8 +769,11 @@ LogAccessHttp::marshal_client_req_uuid(char *buf)
     const char *uuid = (char *)Machine::instance()->uuid.getString();
     int len;
 
-    len = snprintf(str, _MAX_CRUUID_LEN, "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
-    marshal_str(buf, str, round_strlen(len + 1));
+    len = snprintf(str, sizeof(str), "%s-%" PRId64 "", uuid, m_http_sm->sm_id);
+    ink_assert(len < (int)sizeof(str));
+
+    len = round_strlen(len + 1);
+    marshal_str(buf, str, len);
     return len;
   }
 
