@@ -389,6 +389,12 @@ The following list describes |TS| custom logging fields.
     The client request header length; the header length in the client
     request to |TS|.
 
+.. _cqql:
+
+``cqql``
+    The total client request length; the header length and content length of
+    the client request to |TS|.
+
 .. _cqhm:
 
 ``cqhm``
@@ -577,8 +583,13 @@ The following list describes |TS| custom logging fields.
 .. _csshl:
 
 ``csshl``
-    The cached header length in the origin server response to Traffic
-    Server (in bytes).
+    The cached header length in the origin server response to |TS| (in bytes).
+
+.. _cssql:
+
+``cssql``
+    The total cached response length; the header length and content
+    length of a cached origin server response.
 
 .. _csshv:
 
@@ -677,6 +688,12 @@ The following list describes |TS| custom logging fields.
     The proxy request header length; the header length in Traffic
     Server's request to the origin server.
 
+.. _pqql:
+
+``pqql``
+    The total proxy request length; the header length and content length
+    of Traffic Server's request to the origin server.
+
 .. _pqsi:
 
 ``pqsi``
@@ -755,6 +772,12 @@ The following list describes |TS| custom logging fields.
 
 ``sshl``
     The header length (in bytes) in the origin server response to |TS|.
+
+.. _ssql:
+
+``ssql``
+    The total server response length; the header length and content length
+    of the origin server response to |TS|.
 
 .. _sshv:
 

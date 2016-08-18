@@ -185,6 +185,7 @@ public:
   inkcoreapi virtual int marshal_client_req_url_scheme(char *);         // STR
   inkcoreapi virtual int marshal_client_req_http_version(char *);       // INT
   inkcoreapi virtual int marshal_client_req_protocol_version(char *);   // STR
+  inkcoreapi virtual int marshal_client_req_squid_len(char *);          // INT
   inkcoreapi virtual int marshal_client_req_header_len(char *);         // INT
   inkcoreapi virtual int marshal_client_req_content_len(char *);        // INT
   inkcoreapi virtual int marshal_client_req_tcp_reused(char *);         // INT
@@ -213,6 +214,7 @@ public:
   // proxy -> server fields
   //
   inkcoreapi virtual int marshal_proxy_req_header_len(char *);  // INT
+  inkcoreapi virtual int marshal_proxy_req_squid_len(char *);   // INT
   inkcoreapi virtual int marshal_proxy_req_content_len(char *); // INT
   inkcoreapi virtual int marshal_proxy_req_server_name(char *); // STR
   inkcoreapi virtual int marshal_proxy_req_server_ip(char *);   // INT
@@ -228,6 +230,7 @@ public:
   inkcoreapi virtual int marshal_server_host_ip(char *);           // INT
   inkcoreapi virtual int marshal_server_host_name(char *);         // STR
   inkcoreapi virtual int marshal_server_resp_status_code(char *);  // INT
+  inkcoreapi virtual int marshal_server_resp_squid_len(char *);    // INT
   inkcoreapi virtual int marshal_server_resp_content_len(char *);  // INT
   inkcoreapi virtual int marshal_server_resp_header_len(char *);   // INT
   inkcoreapi virtual int marshal_server_resp_http_version(char *); // INT
@@ -240,6 +243,7 @@ public:
   // cache -> client fields
   //
   inkcoreapi virtual int marshal_cache_resp_status_code(char *);  // INT
+  inkcoreapi virtual int marshal_cache_resp_squid_len(char *);    // INT
   inkcoreapi virtual int marshal_cache_resp_content_len(char *);  // INT
   inkcoreapi virtual int marshal_cache_resp_header_len(char *);   // INT
   inkcoreapi virtual int marshal_cache_resp_http_version(char *); // INT

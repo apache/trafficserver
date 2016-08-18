@@ -49,6 +49,8 @@
 #include "LogBuffer.h"
 #include "Log.h"
 
+#define LOG_ACCESS_DEFAULT_FIELD(name, impl) \
+  int LogAccess::name(char *buf) { impl; }
 /*-------------------------------------------------------------------------
   LogAccess::init
   -------------------------------------------------------------------------*/
@@ -326,11 +328,11 @@ LogAccess::marshal_proxy_resp_content_type(char *buf)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_resp_squid_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_resp_squid_len, DEFAULT_INT_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_squid_len, DEFAULT_INT_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_squid_len, DEFAULT_INT_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_resp_squid_len, DEFAULT_INT_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_resp_squid_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
