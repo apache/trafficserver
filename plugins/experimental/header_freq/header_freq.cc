@@ -50,12 +50,30 @@ static std::map<std::string, unsigned int> origin_freq;
 static const char *ctl_tag = plugin_name;
 static const char *ctl_log = "log"; // log all data
 
+static TSMutex freq_mutex;          // lock on global data
+static const int retry_time = 10;   // spin after TSMutexLockTry failures
+
+static const char *log_name = plugin_name;
+static TSTextLogObject log;
+
+static bool
+freq_lock_try(TSCont contp)
+{
+  if (TSMutexLockTry(freq_mutex) != TS_SUCCESS) {
+    TSDebug(DEBUG_TAG_HOOK, "Unable to acquire lock. Retrying in %d "
+                            "milliseconds", retry_time);
+    TSContSchedule(contp, retry_time, TS_THREAD_POOL_DEFAULT);
+    return false;
+  }
+  return true;
+}
+
 /**
  * Logs the data collected, first the client, and then
  * the origin headers.
  */
-void
-log()
+static void
+log_frequencies()
 {
   std::stringstream ss("");
 
@@ -74,14 +92,14 @@ log()
   }
 
   ss << std::string(100, '+') << std::endl;
-  std::cout << ss.str() << std::endl; 
+  TSTextLogObjectWrite(log, "%s", ss.str().c_str());
 }
 
 /**
  * Records all headers found in the buffer in the map provided. Comparison
  * against existing entries is case-insensitive.
  */
-void
+static void
 count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, std::map<std::string, unsigned int> &map)
 {
   TSMLoc hdr, next_hdr;
@@ -131,6 +149,14 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
   TSMBuffer bufp;
   TSMLoc hdr_loc;
   int ret_val = 0;
+
+  // Treats the handler as a critical section because all events touch global
+  // data
+  if (!freq_lock_try(contp)) {
+    ret_val = -1;
+    return ret_val;
+  }
+
   switch(event){
   case TS_EVENT_HTTP_READ_REQUEST_HDR: // count client headers
     {
@@ -140,7 +166,7 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
       if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
         TSError("(%s) could not get request headers", plugin_name);
         TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
-        ret_val = -1;
+        ret_val = -2;
         break;
       }
       count_all_headers(bufp, hdr_loc, client_freq);
@@ -155,7 +181,7 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
       if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
         TSError("(%s) could not get response headers", plugin_name);
         TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
-        ret_val = -2;
+        ret_val = -3;
         break;
       }
       count_all_headers(bufp, hdr_loc, origin_freq);
@@ -170,13 +196,13 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
       if (strcmp(ctl_tag, msgp->tag))
         {
           TSDebug(DEBUG_TAG_HOOK, "tag %s does not concern us", msgp->tag);
-          return 0;
+          break;
         }
 
       // identify the command
       if (strncmp(ctl_log, reinterpret_cast<const char*>(msgp->data),
           strlen(ctl_log)) == 0) {
-        log();
+        log_frequencies();
       }
 
     }
@@ -185,6 +211,8 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
   default:
     break;
   }
+
+  TSMutexUnlock(freq_mutex);
   return ret_val;
 }
 
@@ -206,7 +234,17 @@ TSPluginInit(int argc, const char *argv[])
     TSError("[%s](%s) Plugin registration failed. \n", plugin_name,
     __FUNCTION__);
   }
+  
+  TSDebug(DEBUG_TAG_INIT, "initializing log with name %s", log_name);
+  if (TSTextLogObjectCreate(log_name, TS_LOG_MODE_ADD_TIMESTAMP, &log) !=
+      TS_SUCCESS) {
+    // Log initialization failed. Unrecoverable, report and exit.
+    TSError("(%s)[%s] could not initialize log with name %s", plugin_name,
+            __FUNCTION__, log_name);
+    abort();
+  }
 
+  freq_mutex = TSMutexCreate();
   TSCont contp = TSContCreate(handle_hook, NULL);
   if (contp == NULL) {
     // Continuation initialization failed. Unrecoverable, report and exit.
