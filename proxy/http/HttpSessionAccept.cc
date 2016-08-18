@@ -27,7 +27,7 @@
 #include "I_Machine.h"
 #include "Error.h"
 
-void
+bool
 HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReader *reader)
 {
   sockaddr const *client_ip   = netvc->get_remote_addr();
@@ -45,8 +45,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
       // if client address forbidden, close immediately //
       ////////////////////////////////////////////////////
       Warning("client '%s' prohibited by ip-allow policy", ats_ip_ntop(client_ip, ipb, sizeof(ipb)));
-      netvc->do_io_close();
-      return;
+      return false;
     }
   }
 
@@ -73,17 +72,21 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
 
   new_session->new_connection(netvc, iobuf, reader, backdoor);
 
-  return;
+  return true;
 }
 
 int
 HttpSessionAccept::mainEvent(int event, void *data)
 {
+  NetVConnection *netvc;
   ink_release_assert(event == NET_EVENT_ACCEPT || event == EVENT_ERROR);
   ink_release_assert((event == NET_EVENT_ACCEPT) ? (data != 0) : (1));
 
   if (event == NET_EVENT_ACCEPT) {
-    this->accept(static_cast<NetVConnection *>(data), NULL, NULL);
+    netvc = static_cast<NetVConnection *>(data);
+    if (!this->accept(netvc, NULL, NULL)) {
+      netvc->do_io_close();
+    }
     return EVENT_CONT;
   }
 
