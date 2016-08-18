@@ -25,7 +25,7 @@ Traffic Server provides several options for configuring the system.
 .. toctree::
    :maxdepth: 2
 
-.. _configure-using-traffic-line:
+.. _configure-using-traffic-ctl:
 
 Configure Traffic Server
 ========================
