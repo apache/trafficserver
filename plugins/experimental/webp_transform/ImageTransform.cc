@@ -16,87 +16,56 @@
   limitations under the License.
  */
 
-#include <sstream>
-#include <iostream>
-#include <atscppapi/PluginInit.h>
-#include <atscppapi/GlobalPlugin.h>
-#include <atscppapi/TransformationPlugin.h>
-#include <atscppapi/Logger.h>
-
-#include <Magick++.h>
-
-using std::string;
-using namespace Magick;
-using namespace atscppapi;
+#include "ImageTransform.h"
 
 namespace
 {
 #define TAG "webp_transform"
 }
 
-class ImageTransform : public TransformationPlugin
+void
+ImageTransform::handleReadResponseHeaders(Transaction &transaction)
 {
-public:
-  ImageTransform(Transaction &transaction) : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION)
-  {
-    TransformationPlugin::registerHook(HOOK_READ_RESPONSE_HEADERS);
-  }
+  transaction.getServerResponse().getHeaders()["Content-Type"] = "image/webp";
+  transaction.getServerResponse().getHeaders()["Vary"]         = "Content-Type"; // to have a separate cache entry.
 
-  void
-  handleReadResponseHeaders(Transaction &transaction)
-  {
-    transaction.getServerResponse().getHeaders()["Content-Type"] = "image/webp";
-    transaction.getServerResponse().getHeaders()["Vary"]         = "Content-Type"; // to have a separate cache entry.
+  TS_DEBUG(TAG, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
+  transaction.resume();
+}
 
-    TS_DEBUG(TAG, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
-    transaction.resume();
-  }
-
-  void
-  consume(const string &data)
-  {
-    _img.write(data.data(), data.size());
-  }
-
-  void
-  handleInputComplete()
-  {
-    string input_data = _img.str();
-    Blob input_blob(input_data.data(), input_data.length());
-    Image image;
-    image.read(input_blob);
-
-    Blob output_blob;
-    image.magick("WEBP");
-    image.write(&output_blob);
-    string output_data(reinterpret_cast<const char *>(output_blob.data()), output_blob.length());
-    produce(output_data);
-
-    setOutputComplete();
-  }
-
-  virtual ~ImageTransform() {}
-private:
-  std::stringstream _img;
-};
-
-class GlobalHookPlugin : public GlobalPlugin
+void
+ImageTransform::consume(const string &data)
 {
-public:
-  GlobalHookPlugin() { registerHook(HOOK_READ_RESPONSE_HEADERS); }
-  virtual void
-  handleReadResponseHeaders(Transaction &transaction)
-  {
-    string ctype      = transaction.getServerResponse().getHeaders().values("Content-Type");
-    string user_agent = transaction.getServerRequest().getHeaders().values("User-Agent");
-    if (user_agent.find("Chrome") != string::npos && (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos)) {
-      TS_DEBUG(TAG, "Content type is either jpeg or png. Converting to webp");
-      transaction.addPlugin(new ImageTransform(transaction));
-    }
+  _img.write(data.data(), data.size());
+}
 
-    transaction.resume();
+void
+ImageTransform::handleInputComplete()
+{
+  string input_data = _img.str();
+  input_blob_.update(input_data.data(), input_data.length());
+  image_.read(input_blob_);
+
+  image_.magick("WEBP");
+  image_.write(&output_blob_);
+  string output_data(reinterpret_cast<const char *>(output_blob_.data()), output_blob_.length());
+  produce(output_data);
+
+  setOutputComplete();
+}
+
+void
+GlobalHookPlugin::handleReadResponseHeaders(Transaction &transaction)
+{
+  string ctype      = transaction.getServerResponse().getHeaders().values("Content-Type");
+  string user_agent = transaction.getServerRequest().getHeaders().values("User-Agent");
+  if (user_agent.find("Chrome") != string::npos && (ctype.find("jpeg") != string::npos || ctype.find("png") != string::npos)) {
+    TS_DEBUG(TAG, "Content type is either jpeg or png. Converting to webp");
+    transaction.addPlugin(new ImageTransform(transaction));
   }
-};
+
+  transaction.resume();
+}
 
 void
 TSPluginInit(int argc ATSCPPAPI_UNUSED, const char *argv[] ATSCPPAPI_UNUSED)
