@@ -594,7 +594,7 @@ The following list describes |TS| custom logging fields.
 .. _cwr:
 
 ``cwr``
-    The cache write result (``-``, ``WL_MISS``, ``INTR```, ``ERR`` or ``FIN``)
+    The cache write result (``-``, ``WL_MISS``, ``INTR``, ``ERR`` or ``FIN``)
 
 .. _cwtr:
 
