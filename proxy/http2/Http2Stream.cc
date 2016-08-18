@@ -333,10 +333,10 @@ Http2Stream::initiating_close()
     closed = true;
     _state = HTTP2_STREAM_STATE_CLOSED;
 
-    // leaving the reference to the SM, so we can detatch from the SM when we actually destroy
+    // leaving the reference to the SM, so we can detach from the SM when we actually destroy
     // current_reader = NULL;
     // Leaving reference to client session as well, so we can signal once the
-    // TXN_CLOSE has beent sent
+    // TXN_CLOSE has been sent
     // parent = NULL;
 
     clear_timers();
