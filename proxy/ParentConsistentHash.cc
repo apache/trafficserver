@@ -144,7 +144,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
           pRec = (parents[last_lookup] + prtmp->idx);
         }
         else  
->         pRec = NULL; 
+          pRec = NULL; 
       } while (prtmp && strcmp(prtmp->hostname, result->hostname) == 0);
     }
   }
@@ -188,7 +188,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
           Debug("parent_select", "Selected a new parent: %s.", pRec->hostname);
         }
         else
->         pRec = NULL;
+          pRec = NULL;
       }
       if (wrap_around[PRIMARY] && chash[SECONDARY] == NULL) {
         Debug("parent_select", "No available parents.");
