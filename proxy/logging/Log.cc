@@ -481,10 +481,16 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "puuid", field);
 
+  // TS-4765: This alias is deprecated to be removed in 8.0.
   field = new LogField("client_req_body_len", "cqbl", LogField::sINT, &LogAccess::marshal_client_req_content_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "cqbl", field);
+
+  field = new LogField("client_req_content_len", "cqcl", LogField::sINT, &LogAccess::marshal_client_req_content_len,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "cqcl", field);
 
   field = new LogField("client_req_tcp_reused", "cqtr", LogField::dINT, &LogAccess::marshal_client_req_tcp_reused,
                        &LogAccess::unmarshal_int_to_str);
@@ -617,10 +623,16 @@ Log::init_fields()
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqhl", field);
 
+  // TS-4765: This alias is deprecated to be removed in 8.0.
   field = new LogField("proxy_req_body_len", "pqbl", LogField::sINT, &LogAccess::marshal_proxy_req_content_len,
                        &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   ink_hash_table_insert(field_symbol_hash, "pqbl", field);
+
+  field = new LogField("proxy_req_content_len", "pqcl", LogField::sINT, &LogAccess::marshal_proxy_req_content_len,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  ink_hash_table_insert(field_symbol_hash, "pqcl", field);
 
   field = new LogField("proxy_req_server_name", "pqsn", LogField::STRING, &LogAccess::marshal_proxy_req_server_name,
                        (LogField::UnmarshalFunc)&LogAccess::unmarshal_str);

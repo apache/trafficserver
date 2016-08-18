@@ -143,12 +143,12 @@ common = format {
 
 -- Extended Log Format.
 extended = format {
-  Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>'
+  Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>'
 }
 
 -- Extended2 Log Formats
 extended2 = format {
-  Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>'
+  Format = '%<chi> - %<caun> [%<cqtn>] "%<cqtx>" %<pssc> %<pscl> %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>'
 }
 
 log.binary {

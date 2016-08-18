@@ -189,9 +189,9 @@ Field  Symbol    Description
 8      sssc      The origin server response status code.
 9      sshl      The server response transfer length; the body length in the
                  origin server response to |TS|, in bytes.
-10     cqbl      The client request transfer length; the body length in the
+10     cqcl      The client request transfer length; the body length in the
                  client request to |TS|, in bytes.
-11     pqbl      The proxy request transfer length; the body length in the |TS|
+11     pqcl      The proxy request transfer length; the body length in the |TS|
                  request to the origin server.
 12     cqhl      The client request header length; the header length in the
                  client request to |TS|.
@@ -377,10 +377,10 @@ The following list describes |TS| custom logging fields.
 ``chp``
     The port number of the client's host machine.
 
-.. _cqbl:
+.. _cqcl:
 
-``cqbl``
-    The client request transfer length; the body length in the client
+``cqcl``
+    The client request content length; the body length in the client
     request to |TS| (in bytes).
 
 .. _cqhl:
@@ -665,10 +665,10 @@ The following list describes |TS| custom logging fields.
    The plugin tag for the transaction. This is set for plugin driven
    transactions via :c:func:`TSHttpConnectWithPluginId`.
 
-.. _pqbl:
+.. _pqcl:
 
-``pqbl``
-    The proxy request transfer length; the body length in Traffic
+``pqcl``
+    The proxy request content length; the body length in Traffic
     Server's request to the origin server.
 
 .. _pqhl:
@@ -917,8 +917,8 @@ s1                `pssc`_
 c1                `pscl`_
 s2                `sssc`_
 c2                `sscl`_
-b1                `cqbl`_
-b2                `pqbl`_
+b1                `cqcl`_
+b2                `pqcl`_
 h1                `cqhl`_
 h2                `pshl`_
 h3                `pqhl`_
@@ -931,7 +931,7 @@ This is the equivalent XML configuration for the log above::
     <LogFormat>
       <Name = "extended"/>
       <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>
-         %<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>"/>
+         %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts>"/>
     </LogFormat>
 
 .. _admin-log-formats-netscape-extended2:
@@ -953,8 +953,8 @@ Netscape Extended-2 Field Symbols
 ``c1``              ``pscl``
 ``s2``              ``sssc``
 ``c2``              ``sscl``
-``b1``              ``cqbl``
-``b2``              ``pqbl``
+``b1``              ``cqcl``
+``b2``              ``pqcl``
 ``h1``              ``cqhl``
 ``h2``              ``pshl``
 ``h3``              ``pqhl``
@@ -971,7 +971,7 @@ This is the equivalent XML configuration for the log above::
     <LogFormat>
       <Name = "extended2"/>
       <Format = "%<chi> - %<caun> [%<cqtn>] \"%<cqtx>\" %<pssc> %<pscl>
-                 %<sssc> %<sscl> %<cqbl> %<pqbl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>"/>
+                 %<sssc> %<sscl> %<cqcl> %<pqcl> %<cqhl> %<pshl> %<pqhl> %<sshl> %<tts> %<phr> %<cfsc> %<pfsc> %<crc>"/>
     </LogFormat>
 
 .. _log-field-slicing:
