@@ -717,8 +717,8 @@ ParentRecord::~ParentRecord()
   if(parents != NULL) {
     ats_free(parents);
   }
-  if(second_parents != NULL) {
-    ats_free(second_parents);
+  if(secondary_parents != NULL) {
+    ats_free(secondary_parents);
   }
   delete selection_strategy;
   delete unavailable_server_retry_responses;
