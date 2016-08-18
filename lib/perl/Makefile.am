@@ -16,11 +16,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# Default INSTALLDIRS to "perl" so that INSTALLMAN3DIR works.
+INSTALLDIRS=perl
+
 all-local: Makefile-pl
 	$(MAKE) -f Makefile-pl INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix) DESTDIR=$(DESTDIR)
 
 install-exec-local: Makefile-pl
-	$(MAKE) -f Makefile-pl INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix) DESTDIR=$(DESTDIR) install
+	$(MAKE) -f Makefile-pl INSTALLMAN3DIR=$(mandir)/man3 INSTALLDIRS=$(INSTALLDIRS) PREFIX=$(prefix) DESTDIR=$(DESTDIR) install
 
 # The perl build needs to have the source files in the current working directory, so we need to
 # copy them to the build directory if we are building out of tree.
