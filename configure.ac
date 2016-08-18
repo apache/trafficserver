@@ -2004,6 +2004,7 @@ AC_CONFIG_FILES([
   plugins/experimental/ts_lua/Makefile
   plugins/experimental/url_sig/Makefile
   plugins/experimental/webp_transform/Makefile
+  plugins/experimental/webp_transform/test/Makefile
   proxy/Makefile
   proxy/api/ts/Makefile
   proxy/config/Makefile
