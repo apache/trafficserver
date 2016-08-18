@@ -64,6 +64,7 @@ refcount_object_get(lua_State *L, int index, const char *type_name)
   ptr = (RefCountObj **)luaL_checkudata(L, index, type_name);
   if (!ptr) {
     luaL_typerror(L, index, type_name);
+    return NULL; // Not reached, since luaL_typerror throws.
   }
 
   return dynamic_cast<T *>(*ptr);
@@ -103,7 +104,8 @@ create_filter_object(lua_State *L, const char *name, LogFilter::Action action)
 
   filter = LogFilter::parse("lua", action, condition);
   if (filter == NULL) {
-    luaL_error(L, "invalid filter condition '%s'", condition);
+    // NOTE: Not really a return since luaL_error throws.
+    return (luaL_error(L, "invalid filter condition '%s'", condition));
   }
 
   return refcount_object_new(L, "log.filter", filter);
