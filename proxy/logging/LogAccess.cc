@@ -49,6 +49,8 @@
 #include "LogBuffer.h"
 #include "Log.h"
 
+#define LOG_ACCESS_DEFAULT_FIELD(name, impl) \
+  int LogAccess::name(char *buf) { impl; }
 /*-------------------------------------------------------------------------
   LogAccess::init
   -------------------------------------------------------------------------*/
@@ -73,135 +75,73 @@ LogAccess::init()
   implementation.
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_plugin_identity_id(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_plugin_identity_id, DEFAULT_INT_FIELD)
 
-int
-LogAccess::marshal_plugin_identity_tag(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_plugin_identity_tag, DEFAULT_STR_FIELD)
 
-int
-LogAccess::marshal_client_host_ip(char *buf)
-{
-  DEFAULT_IP_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_host_ip, DEFAULT_IP_FIELD)
 
-int
-LogAccess::marshal_host_interface_ip(char *buf)
-{
-  DEFAULT_IP_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_cache_lookup_url_canon(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_host_port(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_host_interface_ip, DEFAULT_IP_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_auth_user_name(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_lookup_url_canon, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_text(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_host_port, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_http_method(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_auth_user_name, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_url(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_text, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_url_canon(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_http_method, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_unmapped_url_canon(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_url, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_unmapped_url_path(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_url_canon, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_unmapped_url_host(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_unmapped_url_canon, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_url_path(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_unmapped_url_path, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_url_scheme(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_unmapped_url_host, DEFAULT_STR_FIELD)
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_url_path, DEFAULT_STR_FIELD)
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_url_scheme, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   This case is special because it really stores 2 ints.
@@ -222,234 +162,130 @@ LogAccess::marshal_client_req_http_version(char *buf)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_protocol_version(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_protocol_version, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_header_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_header_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_body_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_content_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_tcp_reused(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_tcp_reused, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_is_ssl(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_is_ssl, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_ssl_reused(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_ssl_reused, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_client_security_protocol(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
 
-int
-LogAccess::marshal_client_security_cipher_suite(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_security_protocol, DEFAULT_STR_FIELD)
+
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_security_cipher_suite, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_finish_status_code(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_finish_status_code, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_id(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_id, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_uuid(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_uuid, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_resp_content_type(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_resp_content_type, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_resp_squid_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_resp_squid_len, DEFAULT_INT_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_squid_len, DEFAULT_INT_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_squid_len, DEFAULT_INT_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_resp_squid_len, DEFAULT_INT_FIELD)
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_resp_squid_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_resp_content_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_resp_content_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_resp_status_code(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_resp_status_code, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_resp_header_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_resp_header_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_finish_status_code(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_finish_status_code, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_cache_result_code(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_result_code, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_cache_hit_miss(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_hit_miss, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_req_header_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_header_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_req_body_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_content_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_req_server_name(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_server_name, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_req_server_ip(char *buf)
-{
-  DEFAULT_IP_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_server_ip, DEFAULT_IP_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_req_server_port(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_server_port, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_hierarchy_route(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_hierarchy_route, DEFAULT_INT_FIELD)
 
-#ifndef INK_NO_CONGESTION_CONTROL
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-int
-LogAccess::marshal_client_retry_after_time(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
-#endif
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_retry_after_time, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -486,56 +322,32 @@ LogAccess::marshal_proxy_host_ip(char *buf)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_proxy_req_is_ssl(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_req_is_ssl, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_server_host_ip(char *buf)
-{
-  DEFAULT_IP_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_host_ip, DEFAULT_IP_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_server_host_name(char *buf)
-{
-  DEFAULT_STR_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_host_name, DEFAULT_STR_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_server_resp_status_code(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_resp_status_code, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_server_resp_content_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_resp_content_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_server_resp_header_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_resp_header_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   This case is special because it really stores 2 ints.
@@ -555,60 +367,35 @@ LogAccess::marshal_server_resp_http_version(char *buf)
 
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_server_resp_time_ms(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
 
-int
-LogAccess::marshal_server_resp_time_s(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_resp_time_ms, DEFAULT_INT_FIELD)
+
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_resp_time_s, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_server_transact_count(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_transact_count, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
 -------------------------------------------------------------------------*/
-int
-LogAccess::marshal_server_connect_attempts(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+
+LOG_ACCESS_DEFAULT_FIELD(marshal_server_connect_attempts, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_cache_resp_status_code(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_resp_status_code, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_cache_resp_content_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_resp_content_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_cache_resp_header_len(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_resp_header_len, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   This case is special because it really stores 2 ints.
@@ -626,41 +413,21 @@ LogAccess::marshal_cache_resp_http_version(char *buf)
   return (2 * INK_MIN_ALIGN);
 }
 
-int
-LogAccess::marshal_cache_write_code(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_write_code, DEFAULT_INT_FIELD)
 
-int
-LogAccess::marshal_cache_write_transform_code(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_cache_write_transform_code, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_transfer_time_ms(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_transfer_time_ms, DEFAULT_INT_FIELD)
 
-int
-LogAccess::marshal_transfer_time_s(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_transfer_time_s, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_file_size(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_file_size, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -680,11 +447,7 @@ LogAccess::marshal_http_header_field_escapify(LogField::Container /* container A
   DEFAULT_STR_FIELD;
 }
 
-int
-LogAccess::marshal_proxy_host_port(char *buf)
-{
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_proxy_host_port, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
 
@@ -697,13 +460,7 @@ LogAccess::marshal_proxy_host_port(char *buf)
   This does nothing because the timestamp is already in the LogEntryHeader.
   -------------------------------------------------------------------------*/
 
-int
-LogAccess::marshal_client_req_timestamp_sec(char *buf)
-{
-  // in the case of aggregate fields, we need the space, so we'll always
-  // reserve it.  For a non-aggregate timestamp, this space is not used.
-  DEFAULT_INT_FIELD;
-}
+LOG_ACCESS_DEFAULT_FIELD(marshal_client_req_timestamp_sec, DEFAULT_INT_FIELD)
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
