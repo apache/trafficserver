@@ -838,10 +838,10 @@ public:
     HttpConfigParams *http_config_param;
     CacheLookupInfo cache_info;
     DNSLookupInfo dns_info;
-    bool force_dns;
     RedirectInfo redirect_info;
     unsigned int updated_server_version;
-    unsigned int cache_open_write_fail_action;
+    bool force_dns;
+    MgmtByte cache_open_write_fail_action;
     bool is_revalidation_necessary; // Added to check if revalidation is necessary - YTS Team, yamsat
     bool request_will_not_selfloop; // To determine if process done - YTS Team, yamsat
     ConnectionAttributes client_info;
@@ -1006,8 +1006,8 @@ public:
       : m_magic(HTTP_TRANSACT_MAGIC_ALIVE),
         state_machine(NULL),
         http_config_param(NULL),
-        force_dns(false),
         updated_server_version(HostDBApplicationInfo::HTTP_VERSION_UNDEFINED),
+        force_dns(false),
         cache_open_write_fail_action(0),
         is_revalidation_necessary(false),
         request_will_not_selfloop(false), // YTS Team, yamsat
