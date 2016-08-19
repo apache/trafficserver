@@ -15,15 +15,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-AM_CPPFLAGS = \
-  -I$(top_srcdir)/$(subdir)/ \
-  -I$(top_builddir)/proxy/api \
-  -I$(top_srcdir)/proxy/api \
-  -I$(top_srcdir)/lib \
-  -I/home/y/include
-
-CXXFLAGS = \
-  -g -pipe -Wall -O3 -feliminate-unused-debug-symbols -fno-strict-aliasing -Wno-invalid-offsetof -mcx16
 
 # build the library
 lib_LTLIBRARIES = libatscppapi_mock.la
@@ -63,3 +54,8 @@ library_include_HEADERS = $(base_include_folder)/GlobalPlugin.h \
 			  $(base_include_folder)/GzipInflateTransformation.h \
 			  $(base_include_folder)/AsyncTimer.h \
 			  $(base_include_folder)/InterceptPlugin.h
+
+include $(top_srcdir)/build/tidy.mk
+
+tidy-local: $(DIST_SOURCES)
+	$(CXX_Clang_Tidy)

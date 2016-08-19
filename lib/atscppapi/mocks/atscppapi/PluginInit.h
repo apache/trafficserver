@@ -34,8 +34,7 @@ extern "C" {
  * @param argc Count of arguments
  * @param argv Array of pointers pointing to arguments
  */
-// void TSPluginInit(int argc, const char *argv[]);
-MOCK_METHOD2(TSPluginInit, void(int, const char **));
+ void TSPluginInit(int argc, const char *argv[]); 
 
 /**
  * Invoked for remap plugins - listed in remap.config. The arguments provided as @pparam
@@ -47,8 +46,7 @@ MOCK_METHOD2(TSPluginInit, void(int, const char **));
  * @param errbuf Not used
  * @param errbuf_size Not used
  */
-// TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **instance_handle, char *errbuf, int errbuf_size);
-MOCK_METHOD5(TSRemapNewInstance, TSReturnCode(int, char **, void **, char *, int));
+ TSReturnCode TSRemapNewInstance(int argc, char *argv[], void **instance_handle, char *errbuf, int errbuf_size); 
 }
 
 

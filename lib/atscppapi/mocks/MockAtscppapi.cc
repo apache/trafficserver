@@ -28,6 +28,11 @@ extern "C" void TSError(const char* tag, const char* format_str, ...) {
   va_end(ap);
 }
 
+void
+atscppapi::RegisterGlobalPlugin(std::string name, std::string vendor, std::string email)
+{
+ std::cout << "RegisterGlobalPlugin is initialized" << std::endl;
+}
 
 MockAtscppapi::MockAtscppapi()
 {

@@ -636,17 +636,9 @@ public:
     * @warning This will create a header field with the given name, thus it should not be
     * used to check for the existance of a header, use count() or find() instead.
     */
-  HeaderField operator[](const std::string &key);
-  /*
-  {
-	  header_field_iterator it = find(key);
-	  if (it != end()) {
-	    return *it;
-	  } else {
-	    return *append(key, "");
-	  }
-  }
-*/
+  MOCK_METHOD1(assign_at, HeaderField (const std::string &));
+  HeaderField operator[](const std::string &key) { return assign_at(key); }
+  
   /**
     * Get a human-readable/log-friendly string representing all the header fields.
     * @return a string representation of all the header fields

@@ -28,9 +28,9 @@
 
 
 #if HAVE_STD_SHARED_PTR
-#  include <memory>
+//#  include <memory>
 #else
-#  include <tr1/memory>
+//#  include <tr1/memory>
 #endif
 
 namespace atscppapi {
@@ -41,9 +41,9 @@ namespace atscppapi {
  * and if so change it to std::shared_ptr and #include <memory>s
  */
 #if HAVE_STD_SHARED_PTR
-  using std::shared_ptr;
+//  using std::shared_ptr;
 #else
-  using std::tr1::shared_ptr;
+//  using std::tr1::shared_ptr;
 #endif
 
 } /* atscppapi */

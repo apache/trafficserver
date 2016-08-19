@@ -191,6 +191,7 @@ public:
        bool rolling_enabled = true, int rolling_interval_seconds = 3600)
   {
     // do nothing.
+    return true;
   }
 
 

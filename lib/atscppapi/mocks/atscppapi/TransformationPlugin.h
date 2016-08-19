@@ -124,7 +124,6 @@ protected:
 	  : TransactionPlugin(transaction)
   { }
 private:
-  TransformationPluginState *state_; /** Internal state for a TransformationPlugin */
   //size_t doProduce(const std::string &);
   MOCK_METHOD1(doProduce, size_t(const std::string &));
 };

@@ -58,7 +58,7 @@ public:
 
   /** @param New reason phrase to set */
   //void setReasonPhrase(const std::string &);
-  MOCK_METHOD1(setResonPhrase, void (const std::string&));
+  MOCK_METHOD1(setReasonPhrase, void (const std::string&));
 
   /** @return Headers of the response */
   //Headers &getHeaders() const;
