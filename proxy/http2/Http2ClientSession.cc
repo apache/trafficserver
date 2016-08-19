@@ -469,6 +469,9 @@ Http2ClientSession::do_complete_frame_read()
   send_connection_event(&this->connection_state, HTTP2_SESSION_EVENT_RECV, &frame);
   this->sm_reader->consume(this->current_hdr.length);
 
+  // Set the event handler if there is no more data to process a new frame
+  HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
+
   return 0;
 }
 
@@ -499,9 +502,6 @@ Http2ClientSession::state_process_frame_read(int event, VIO *vio, bool inside_fr
       break;
     }
     do_complete_frame_read();
-
-    // Set the event handler if there is no more data to process a new frame
-    HTTP2_SET_SESSION_HANDLER(&Http2ClientSession::state_start_frame_read);
   }
 
   // If the client hasn't shut us down, reenable
