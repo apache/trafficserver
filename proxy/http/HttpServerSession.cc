@@ -78,11 +78,11 @@ HttpServerSession::new_connection(NetVConnection *new_vc)
     if (connection_count == NULL) {
       connection_count = ConnectionCount::getInstance();
     }
-    connection_count->incrementCount(server_ip, hostname_hash, sharing_match);
+    connection_count->incrementCount(get_server_ip(), hostname_hash, sharing_match);
     ip_port_text_buffer addrbuf;
     Debug("http_ss", "[%" PRId64 "] new connection, ip: %s, count: %u", con_id,
-          ats_ip_nptop(&server_ip.sa, addrbuf, sizeof(addrbuf)),
-          connection_count->getCount(server_ip, hostname_hash, sharing_match));
+          ats_ip_nptop(&get_server_ip().sa, addrbuf, sizeof(addrbuf)),
+          connection_count->getCount(get_server_ip(), hostname_hash, sharing_match));
   }
 #ifdef LAZY_BUF_ALLOC
   read_buffer = new_empty_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
@@ -130,28 +130,28 @@ HttpServerSession::do_io_close(int alerrno)
 
   Debug("http_ss", "[%" PRId64 "] session closing, netvc %p", con_id, server_vc);
 
-  if (server_vc) {
-    server_vc->do_io_close(alerrno);
-  }
-  server_vc = NULL;
-
   HTTP_SUM_GLOBAL_DYN_STAT(http_current_server_connections_stat, -1); // Make sure to work on the global stat
   HTTP_SUM_DYN_STAT(http_transactions_per_server_con, transact_count);
 
   // Check to see if we are limiting the number of connections
   // per host
   if (enable_origin_connection_limiting == true) {
-    if (connection_count->getCount(server_ip, hostname_hash, sharing_match) >= 0) {
-      connection_count->incrementCount(server_ip, hostname_hash, sharing_match, -1);
+    if (connection_count->getCount(get_server_ip(), hostname_hash, sharing_match) >= 0) {
+      connection_count->incrementCount(get_server_ip(), hostname_hash, sharing_match, -1);
       ip_port_text_buffer addrbuf;
       Debug("http_ss", "[%" PRId64 "] connection closed, ip: %s, count: %u", con_id,
-            ats_ip_nptop(&server_ip.sa, addrbuf, sizeof(addrbuf)),
-            connection_count->getCount(server_ip, hostname_hash, sharing_match));
+            ats_ip_nptop(&get_server_ip().sa, addrbuf, sizeof(addrbuf)),
+            connection_count->getCount(get_server_ip(), hostname_hash, sharing_match));
     } else {
       Error("[%" PRId64 "] number of connections should be greater than or equal to zero: %u", con_id,
-            connection_count->getCount(server_ip, hostname_hash, sharing_match));
+            connection_count->getCount(get_server_ip(), hostname_hash, sharing_match));
     }
   }
+
+  if (server_vc) {
+    server_vc->do_io_close(alerrno);
+  }
+  server_vc = NULL;
 
   if (to_parent_proxy) {
     HTTP_DECREMENT_DYN_STAT(http_current_parent_proxy_connections_stat);

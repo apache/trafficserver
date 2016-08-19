@@ -33,6 +33,13 @@ NetVConnection::get_remote_addr()
   return &remote_addr.sa;
 }
 
+TS_INLINE IpEndpoint const &
+NetVConnection::get_remote_endpoint()
+{
+  get_remote_addr(); // Make sure the vallue is filled in
+  return remote_addr;
+}
+
 TS_INLINE in_addr_t
 NetVConnection::get_remote_ip()
 {

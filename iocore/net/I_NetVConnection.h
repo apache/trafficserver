@@ -482,6 +482,7 @@ public:
 
   /** Returns remote sockaddr storage. */
   sockaddr const *get_remote_addr();
+  IpEndpoint const &get_remote_endpoint();
 
   /** Returns remote ip.
       @deprecated get_remote_addr() should be used instead for AF_INET6 compatibility.
