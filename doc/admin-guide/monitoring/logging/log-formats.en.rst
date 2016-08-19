@@ -700,6 +700,12 @@ The following list describes |TS| custom logging fields.
     The proxy request server IP address (0 on cache hits and parent-ip
     for requests to parent proxies).
 
+.. _pqsp:
+
+``pqsp``
+    The proxy request server port (0 on cache hits and parent port
+    for requests to parent proxies).
+
 .. _pqsn:
 
 ``pqsn``
