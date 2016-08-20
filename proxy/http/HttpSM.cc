@@ -4662,6 +4662,15 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   }
 }
 
+void
+HttpSM::send_origin_throttled_response()
+{
+  t_state.current.attempts = t_state.txn_conf->connect_attempts_max_retries;
+  // t_state.current.state = HttpTransact::CONNECTION_ERROR;
+  t_state.current.state = HttpTransact::CONGEST_CONTROL_CONGESTED_ON_F;
+  call_transact_and_set_next_state(HttpTransact::HandleResponse);
+}
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  HttpSM::do_http_server_open()
@@ -4889,12 +4898,12 @@ HttpSM::do_http_server_open(bool raw)
                                               (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match, 1);
           pending_action = eventProcessor.schedule_in(this, HRTIME_MSECONDS(100));
         } else { // the queue is full
-          t_state.current.state = HttpTransact::CONNECTION_ERROR;
-          call_transact_and_set_next_state(HttpTransact::HandleResponse);
+          HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+          send_origin_throttled_response();
         }
       } else { // the queue is set to 0
-        t_state.current.state = HttpTransact::CONNECTION_ERROR;
-        call_transact_and_set_next_state(HttpTransact::HandleResponse);
+        HTTP_INCREMENT_DYN_STAT(http_origin_connections_throttled_stat);
+        send_origin_throttled_response();
       }
       return;
     }

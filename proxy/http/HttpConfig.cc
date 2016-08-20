@@ -810,6 +810,8 @@ register_stat_callbacks()
                      (int)https_incoming_requests_stat, RecRawStatSyncCount);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.https.total_client_connections", RECD_COUNTER, RECP_PERSISTENT,
                      (int)https_total_client_connections_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.origin_connections_throttled_out", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)http_origin_connections_throttled_stat, RecRawStatSyncCount);
   RecRegisterRawStat(http_rsb, RECT_PROCESS, "proxy.process.http.post_body_too_large", RECD_COUNTER, RECP_PERSISTENT,
                      (int)http_post_body_too_large, RecRawStatSyncCount);
   // milestones

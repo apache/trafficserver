@@ -408,6 +408,7 @@ protected:
   void do_hostdb_reverse_lookup();
   void do_cache_lookup_and_read();
   void do_http_server_open(bool raw = false);
+  void send_origin_throttled_response();
   void do_setup_post_tunnel(HttpVC_t to_vc_type);
   void do_cache_prepare_write();
   void do_cache_prepare_write_transform();

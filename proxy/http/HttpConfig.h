@@ -312,6 +312,8 @@ enum {
   http_sm_start_time_stat,
   http_sm_finish_time_stat,
 
+  http_origin_connections_throttled_stat,
+
   http_stat_count
 };
 
