@@ -4982,6 +4982,15 @@ TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value)
   return TS_SUCCESS;
 }
 
+int
+TSHttpTxnIsWebsocket(TSHttpTxn txnp)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  HttpSM *sm = (HttpSM *)txnp;
+  return sm->t_state.is_websocket;
+}
+
 TSReturnCode
 TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
 {
