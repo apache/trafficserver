@@ -14,8 +14,13 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-SUBDIRS = src examples
 
-if HAS_GMOCK
-  SUBDIRS += mocks
-endif
+
+AM_CPPFLAGS = -I$(top_builddir)/lib/atscppapi/mocks/ -I../ -I.
+bin_PROGRAMS = webp_test
+
+webp_test_SOURCES = Magick++.cc ImageTransform.cc unit_test.cc
+webp_test_LDADD = -L$(top_builddir)/lib/atscppapi/mocks/ -latscppapi_mock -lgtest -lgmock -lpthread
+
+test::
+	./$(bin_PROGRAMS)

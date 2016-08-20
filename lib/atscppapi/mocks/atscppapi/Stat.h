@@ -1,0 +1,117 @@
+/**
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+/**
+ * @file Stat.h
+ */
+
+#pragma once
+#ifndef ATSCPPAPI_STAT_H_
+#define ATSCPPAPI_STAT_H_
+
+#include <atscppapi/noncopyable.h>
+#include <stdint.h>
+#include <string>
+
+namespace atscppapi
+{
+/**
+ * @brief A Stat is an atomic variable that can be used to store counters, averages, time averages, or summations.
+ *
+ * All stats are exposed through the traffic_line program included with Apache Traffic Server. Additionally,
+ * if you've enabled HttpStats all Stats you define will be displayed there. Stats can be read via
+ * traffic_line -r stat_name.
+ *
+ * Stats are very easy to use, here is a simple example of how you can create a counter and increment its
+ * value:
+ * \code
+ *  Stat stat;
+ *  stat.init("stat_name");
+    stat.inc();
+ * \endcode
+ *
+ * A full example is available in examples/stat_example/.
+ */
+class Stat : noncopyable
+{
+public:
+  /**
+   * The available Stat types.
+   */
+  enum SyncType {
+    SYNC_SUM = 0, /**< The stat will sum all values from a stat.inc(VAL) */
+    SYNC_COUNT,   /**< The stat will count all calls to stat.inc(VAL) */
+    SYNC_AVG,     /**< The stat will keep an average after call calls to stat.inc(VAL) */
+    SYNC_TIMEAVG  /**< The stat will keep a time average of all calls to stat.inc(VAL) */
+  };
+
+  Stat() {}
+  ~Stat() {}
+
+  /**
+   * You must initialize your Stat with a call to this init() method.
+   *
+   * @param name The string name of the stat, this will be visbible via traffic_line -r, or through http stats.
+   * @param type The SyncType of the Stat, this decides how TrafficServer will treat your inputs. The default
+   *   value is SYNC_COUNT.
+   * @param persistent This determines if your Stats will persist, the default value is false.
+   * @return True if the stat was successfully created and false otherwise.
+   *
+   * @see SyncType
+   */
+  // bool init(std::string name, Stat::SyncType type = SYNC_COUNT, bool persistent = false);
+  MOCK_METHOD3(init, bool(std::string, Stat::SyncType, bool));
+  MOCK_METHOD2(init, bool(std::string, Stat::SyncType));
+  MOCK_METHOD1(init, bool(std::string));
+
+  /**
+   * This method allows you to increment a stat by a certain amount.
+   * @param amount the amount to increment the stat by the default value is 1.
+   */
+  // void increment(int64_t amount = 1);
+  MOCK_METHOD1(increment, void(int64_t));
+  MOCK_METHOD0(increment, void());
+
+  /**
+   * This method allows you to decrement a stat by a certain amount.
+   * @param amount the amount to decrement the stat by the default value is 1.
+   */
+  // void decrement(int64_t amount = 1);
+  MOCK_METHOD1(decrement, void(int64_t));
+  MOCK_METHOD0(decrement, void());
+
+  /**
+   * This method returns the current value of the stat.
+   * @return The value of the stat.
+   */
+  // int64_t get() const;
+  MOCK_CONST_METHOD(get, int64_t());
+
+  /** This method sets the value of the stat.
+   * @param value the value to set the stat to.
+   */
+  // void set(int64_t value);
+  MOCK_METHOD(set, void(int64_t));
+
+private:
+  int stat_id_; /**< The internal stat ID */
+};
+
+} /* atscppapi */
+
+
+#endif /* ATSCPPAPI_STAT_H_ */
