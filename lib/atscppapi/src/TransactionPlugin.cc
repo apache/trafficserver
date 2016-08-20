@@ -72,6 +72,12 @@ TransactionPlugin::getMutex()
   return state_->mutex_;
 }
 
+bool
+TransactionPlugin::isWebsocket() const
+{
+  return TSHttpTxnIsWebsocket(state_->ats_txn_handle_);
+}
+
 TransactionPlugin::~TransactionPlugin()
 {
   LOG_DEBUG("Destroying TransactionPlugin=%p", this);
