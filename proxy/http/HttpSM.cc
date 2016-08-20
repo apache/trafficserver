@@ -4873,12 +4873,13 @@ HttpSM::do_http_server_open(bool raw)
     md5_ctx.hash_immediate(hostname_hash, static_cast<const void *>(t_state.current.server->name),
                            strlen(t_state.current.server->name));
 
-    ip_port_text_buffer addrbuf;
     if (connections->getCount(t_state.current.server->dst_addr, hostname_hash,
                               (TSServerSessionSharingMatchType)t_state.txn_conf->server_session_sharing_match) >=
         t_state.txn_conf->origin_max_connections) {
-      DebugSM("http", "[%" PRId64 "] over the number of connection for this host: %s", sm_id,
-              ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
+      ip_port_text_buffer addrbuf;
+      ats_ip_nptop(&t_state.current.server->dst_addr.sa, addrbuf, sizeof(addrbuf));
+      DebugSM("http", "[%" PRId64 "] over the number of connection for this host: %s", sm_id, addrbuf);
+      Warning("[%" PRId64 "] over the max number of connections for this host: %s", sm_id, addrbuf);
       ink_assert(pending_action == NULL);
 
       // if we were previously queued, or the queue is disabled-- just reschedule
