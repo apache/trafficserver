@@ -94,6 +94,8 @@ public:
   void registerHook(Plugin::HookType hook_type);
   virtual ~TransactionPlugin();
 
+  bool isWebsocket() const;
+
 protected:
   TransactionPlugin(Transaction &transaction);
 
