@@ -19,15 +19,16 @@
 /**
  * @file Headers.cc
  */
-#include "atscppapi/Headers.h"
-#include "atscppapi/shared_ptr.h"
-#include "logging_internal.h"
+#include <memory>
 #include <string>
 #include <cstring>
 #include <sstream>
-#include <ts/ts.h>
-#include "atscppapi/noncopyable.h"
 #include <cctype>
+
+#include <ts/ts.h>
+#include "atscppapi/Headers.h"
+#include "logging_internal.h"
+#include "atscppapi/noncopyable.h"
 
 using atscppapi::Headers;
 using atscppapi::HeaderField;
@@ -190,7 +191,7 @@ struct MLocContainer {
  * @private
  */
 struct HeaderFieldIteratorState {
-  shared_ptr<MLocContainer> mloc_container_;
+  std::shared_ptr<MLocContainer> mloc_container_;
   HeaderFieldIteratorState(TSMBuffer bufp, TSMLoc hdr_loc, TSMLoc field_loc)
     : mloc_container_(new MLocContainer(bufp, hdr_loc, field_loc))
   {

@@ -54,12 +54,3 @@ class TestBuildOptionEnableStaticProxy(TestBuildOption):
     @classmethod
     def setUpClass(cls):
         raise helpers.unittest.SkipTest('Skip until TS-3577 is resolved')
-
-
-class TestBuildOptionEnableCxxApi(TestBuildOption):
-    '''Build with --enable-cppapi'''
-    environment_factory = {'configure': {'enable-cppapi': None}}
-
-    @classmethod
-    def setUpClass(cls):
-        raise helpers.unittest.SkipTest('Skip until atscppapi supports out of tree builds')

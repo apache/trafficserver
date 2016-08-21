@@ -25,7 +25,7 @@ COV_TARBALL=/tmp/trafficserver-${TODAY}.tgz
 COV_VERSION=$(git rev-parse --short HEAD)
 
 autoreconf -fi
-./configure --enable-experimental-plugins --enable-cppapi --enable-wccp
+./configure --enable-experimental-plugins --enable-wccp
 
 cov-build --dir cov-int ${ATS_MAKE} -j4
 tar czvf ${COV_TARBALL} cov-int

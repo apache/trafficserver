@@ -469,18 +469,6 @@ AC_MSG_RESULT([$enable_test_tools])
 AM_CONDITIONAL([BUILD_TEST_TOOLS], [ test "x${enable_test_tools}" = "xyes" ])
 
 #
-# build c++ api
-#
-AC_MSG_CHECKING([whether to build c++ api])
-AC_ARG_ENABLE([cppapi],
-  [AS_HELP_STRING([--enable-cppapi],[Build the c++ api])],
-  [],
-  [enable_cppapi="no"]
-)
-AC_MSG_RESULT([$enable_cppapi])
-AM_CONDITIONAL([ENABLE_CPPAPI], [ test "x${enable_cppapi}" = "xyes" ])
-
-#
 # Check if we should allow builds on 32-bit platforms
 #
 AC_MSG_CHECKING([whether to allow 32-bit builds])
@@ -565,32 +553,6 @@ CXXFLAGS="${_ts_saved_CXXFLAGS}"
 # All compilers we support have 'gnu99' as an available C standard
 TS_ADDTO(CFLAGS, [-std=gnu99])
 TS_ADDTO(CXXFLAGS, [-std=c++11])
-
-# These tests requires C++
-AC_LANG_PUSH([C++])
-
-# And check for std::shared_ptr vs std::tr1::shared_ptr. For the CPPLIB
-AC_MSG_CHECKING([for std::shared_ptr])
-AC_COMPILE_IFELSE([
-  AC_LANG_PROGRAM([
-    #include <memory>
-    using std::shared_ptr;
-    ], [
-  ])],
-  [ have_std_shared_ptr=yes ],
-  [ have_std_shared_ptr=no ]
-)
-
-AC_MSG_RESULT([$have_std_shared_ptr])
-AS_IF([test "x${have_std_shared_ptr}" = "xyes"], [
-    AC_DEFINE(HAVE_STD_SHARED_PTR, 1, [whether std::shared_ptr is available])
-    AC_SUBST(have_std_shared_ptr, 1)
-  ], [
-    AC_SUBST(have_std_shared_ptr, 0)
-  ]
-)
-
-AC_LANG_POP()
 
 dnl AC_PROG_SED is only available from version 2.6 (released in 2003). CentosOS
 dnl 5.9 still has an ancient version, but we have macros that require
@@ -1051,20 +1013,6 @@ AS_IF([test "x${enable_hardening}" = "xyes"], [
 #         associated with our not wanting to use GNU for _everything_.
 # Note:  This macro may set certain parameters when run.
 #
-
-#
-# CPP 11 API
-# TODO: briang, this needs to be translated to a define
-# that can be used in the c++ api to enable c++11 api features.
-#
-#AC_MSG_CHECKING([whether to enable c++11 api])
-#AC_ARG_WITH([cpp11api],
-#  [AS_HELP_STRING([--with-cpp11api],[enable support for cpp11api [default=auto]])],
-#  [cpp11api=$withval],
-#  [cpp11api=$enable_cxx_11_support]
-#)
-#AC_MSG_RESULT([$cpp11api])
-#AM_CONDITIONAL([BUILD_CPP11API], [test "$cpp11api" = yes])
 
 # Check for ccache (if explicitly enabled)
 if test "x$enable_ccache" = "xyes"; then
@@ -1938,7 +1886,6 @@ AC_CONFIG_FILES([
   lib/atscppapi/Makefile
   lib/atscppapi/examples/Makefile
   lib/atscppapi/src/Makefile
-  lib/atscppapi/src/include/atscppapi/shared_ptr.h
   lib/bindings/Makefile
   lib/perl/Makefile
   lib/perl/lib/Apache/TS.pm

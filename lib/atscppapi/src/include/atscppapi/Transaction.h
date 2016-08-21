@@ -26,8 +26,8 @@
 #include <sys/socket.h>
 #include <stdint.h>
 #include <list>
+#include <memory>
 #include "atscppapi/Request.h"
-#include "atscppapi/shared_ptr.h"
 #include "atscppapi/ClientRequest.h"
 #include "atscppapi/Response.h"
 #include "atscppapi/HttpStatus.h"
@@ -65,16 +65,16 @@ public:
    *       mydata(int id, string foo) : id_(id), foo_(foo) { }
    *     }
    *
-   *     Transaction.setContextValue("some-key", shared_ptr(new mydata(12, "hello")));
+   *     Transaction.setContextValue("some-key", std::shared_ptr(new mydata(12, "hello")));
    *
    *     // From another plugin you'll have access to this contextual data:
-   *     shared_ptr<Transaction.getContextValue("some-key")
+   *     std::shared_ptr<Transaction.getContextValue("some-key")
    *
    * \endcode
    *
    * Because getContextValue() and setContextValue()
    * take shared pointers you dont have to worry about the cleanup as that will happen automatically so long
-   * as you dont have shared_ptrs that cannot go out of scope.
+   * as you dont have std::shared_ptrs that cannot go out of scope.
    */
   class ContextValue
   {
@@ -91,20 +91,20 @@ public:
 
   /**
    * Context Values are a way to share data between plugins, the key is always a string
-   * and the value can be a shared_ptr to any type that extends ContextValue.
+   * and the value can be a std::shared_ptr to any type that extends ContextValue.
    * @param key the key to search for.
    * @return Shared pointer that is correctly initialized if the
    *         value existed. It should be checked with .get() != NULL before use.
    */
-  shared_ptr<ContextValue> getContextValue(const std::string &key);
+  std::shared_ptr<ContextValue> getContextValue(const std::string &key);
 
   /**
    * Context Values are a way to share data between plugins, the key is always a string
-   * and the value can be a shared_ptr to any type that extends ContextValue.
+   * and the value can be a std::shared_ptr to any type that extends ContextValue.
    * @param key the key to insert.
    * @param value a shared pointer to a class that extends ContextValue.
    */
-  void setContextValue(const std::string &key, shared_ptr<ContextValue> value);
+  void setContextValue(const std::string &key, std::shared_ptr<ContextValue> value);
 
   /**
    * Causes the Transaction to continue on to other states in the HTTP state machine

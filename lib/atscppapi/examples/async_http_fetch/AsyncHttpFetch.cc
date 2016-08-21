@@ -53,7 +53,7 @@ public:
 class DelayedAsyncHttpFetch : public AsyncHttpFetch, public AsyncReceiver<AsyncTimer>
 {
 public:
-  DelayedAsyncHttpFetch(string request, HttpMethod method, shared_ptr<Mutex> mutex)
+  DelayedAsyncHttpFetch(string request, HttpMethod method, std::shared_ptr<Mutex> mutex)
     : AsyncHttpFetch(request, method), mutex_(mutex), timer_(NULL){};
   void
   run()
@@ -75,7 +75,7 @@ public:
   }
   ~DelayedAsyncHttpFetch() { delete timer_; }
 private:
-  shared_ptr<Mutex> mutex_;
+  std::shared_ptr<Mutex> mutex_;
   AsyncTimer *timer_;
 };
 

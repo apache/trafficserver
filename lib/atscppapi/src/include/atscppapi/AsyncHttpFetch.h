@@ -25,7 +25,7 @@
 #define ATSCPPAPI_ASYNCHTTPFETCH_H_
 
 #include <string>
-#include <atscppapi/shared_ptr.h>
+#include <memory>
 #include <atscppapi/Async.h>
 #include <atscppapi/Request.h>
 #include <atscppapi/Response.h>

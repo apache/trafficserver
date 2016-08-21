@@ -44,10 +44,8 @@ SUBDIRS = \
  ts_lua \
  url_sig
 
-if ENABLE_CPPAPI
 if BUILD_WEBP_TRANSFORM_PLUGIN
  SUBDIRS += webp_transform
-endif
 endif
 
 if HAS_MYSQL

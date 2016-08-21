@@ -416,7 +416,7 @@ public:
 
   /**
     * Context Values are a way to share data between plugins, the key is always a string
-    * and the value can be a shared_ptr to any type that extends ContextValue.
+    * and the value can be a std::shared_ptr to any type that extends ContextValue.
     * @param bufp the TSMBuffer associated with the headers
     * @param mloc the TSMLoc associated with the headers.
     * @warning This should only be used if you're mixing the C++ and C apis.

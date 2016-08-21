@@ -62,7 +62,7 @@ public:
   handleReadRequestHeadersPostRemap(Transaction &transaction)
   {
     TS_DEBUG(TAG, "Received a request in handleReadRequestHeadersPostRemap.");
-    shared_ptr<Mutex> mutex(new Mutex());                                                 // required for async operation
+    std::shared_ptr<Mutex> mutex(new Mutex());                                            // required for async operation
     Async::execute<AsyncHttpFetch>(this, new AsyncHttpFetch("http://127.0.0.1/"), mutex); // internal transaction
     transaction.resume();
   }

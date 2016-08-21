@@ -24,9 +24,9 @@
 #ifndef ATSCPPAPI_TRANSACTIONPLUGIN_H_
 #define ATSCPPAPI_TRANSACTIONPLUGIN_H_
 
+#include <memory>
 #include <atscppapi/Plugin.h>
 #include <atscppapi/Transaction.h>
-#include <atscppapi/shared_ptr.h>
 #include <atscppapi/Mutex.h>
 
 namespace atscppapi
@@ -98,13 +98,13 @@ protected:
   TransactionPlugin(Transaction &transaction);
 
   /**
-   * This method will return a shared_ptr to a Mutex that can be used for AsyncProvider and AsyncReceiver operations.
+   * This method will return a std::shared_ptr to a Mutex that can be used for AsyncProvider and AsyncReceiver operations.
    *
    * If another thread wanted to stop this transaction from dispatching an event it could be passed
    * this mutex and it would be able to lock it and prevent another thread from dispatching back into this
    * TransactionPlugin.
    */
-  shared_ptr<Mutex> getMutex();
+  std::shared_ptr<Mutex> getMutex();
 
 private:
   TransactionPluginState *state_; /**< The internal state for a TransactionPlugin */

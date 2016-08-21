@@ -73,7 +73,7 @@ struct InterceptPlugin::State {
   TSMBuffer hdr_buf_;
   TSMLoc hdr_loc_;
   int num_bytes_written_;
-  shared_ptr<Mutex> plugin_mutex_;
+  std::shared_ptr<Mutex> plugin_mutex_;
   InterceptPlugin *plugin_;
   Headers request_headers_;
 
