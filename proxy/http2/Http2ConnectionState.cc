@@ -1214,6 +1214,15 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
   headers.alloc(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
   http2_write_headers(buf, payload_length, headers.write());
   headers.finalize(payload_length);
+
+  // Change stream state
+  if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, flags)) {
+    this->send_goaway_frame(stream->get_id(), HTTP2_ERROR_PROTOCOL_ERROR);
+    h2_hdr.destroy();
+    ats_free(buf);
+    return;
+  }
+
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &headers);
