@@ -212,6 +212,9 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
     if (type == HTTP2_FRAME_TYPE_RST_STREAM || (type == HTTP2_FRAME_TYPE_HEADERS && flags & HTTP2_FLAGS_HEADERS_END_STREAM) ||
         (type == HTTP2_FRAME_TYPE_DATA && flags & HTTP2_FLAGS_DATA_END_STREAM)) {
       _state = HTTP2_STREAM_STATE_CLOSED;
+    } else if (type == HTTP2_FRAME_TYPE_HEADERS) { // w/o END_STREAM flag
+      // No state change here. Expect a following DATA frame with END_STREAM flag.
+      return true;
     } else {
       return false;
     }
