@@ -42,9 +42,8 @@ class TestCustomLogField(helpers.EnvironmentCase):
         cls.log_file_name = 'test_log_field'
 
         cls.log_file_path = os.path.join(cls.environment.layout.prefix, 'var/log/test_log_field.log')
-        cls.log_etc_file = os.path.join(cls.environment.layout.prefix, 'etc/trafficserver/logs_xml.config')
-        cls.configs['logs_xml.config'].add_line('<LogFormat><Name = "testlogfield"/><Format = "%<hii> %<hiih>"/></LogFormat>')
-        cls.configs['logs_xml.config'].add_line('<LogObject><Format = "testlogfield"/><Filename = "test_log_field"/><Mode = "ascii"/></LogObject>')
+        cls.log_etc_file = os.path.join(cls.environment.layout.prefix, 'etc/trafficserver/logging.config')
+        cls.configs['logging.config'].add_line('log.ascii(Format = "%<hii> %<hiih>", Filename = "test_log_field"')
 
     def ip_to_hex(self, ipstr):
       num_list = ipstr.split('.')

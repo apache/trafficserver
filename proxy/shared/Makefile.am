@@ -22,8 +22,7 @@ include $(top_srcdir)/build/tidy.mk
 noinst_LIBRARIES = \
   liberror.a \
   libdiagsconfig.a \
-  libUglyLogStubs.a \
-  libxml.a
+  libUglyLogStubs.a
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -49,10 +48,5 @@ libdiagsconfig_a_SOURCES = \
 libUglyLogStubs_a_SOURCES = \
   UglyLogStubs.cc
 
-libxml_a_SOURCES = \
-  InkXml.cc \
-  InkXml.h
-
-tidy-local: $(liberror_a_SOURCES) $(libdiagsconfig_a_SOURCES) \
-		$(libUglyLogStubs_a_SOURCES) $(libxml_a_SOURCES)
+tidy-local: $(liberror_a_SOURCES) $(libdiagsconfig_a_SOURCES) $(libUglyLogStubs_a_SOURCES)
 	$(CXX_Clang_Tidy)

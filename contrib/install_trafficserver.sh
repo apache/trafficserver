@@ -78,7 +78,6 @@ function updateInstall() {
         libtool \
         libssl-dev \
         tcl-dev \
-        libexpat1-dev \
         libpcre3-dev \
         curl
         apt-get install -y subversion git git-svn
@@ -97,7 +96,6 @@ function updateInstall() {
                 glibc-devel \
                 openssl-devel \
                 tcl-devel \
-                expat-devel \
                 db4-devel \
                 pcre \
                 pcre-devel
@@ -111,7 +109,6 @@ function updateInstall() {
                 glibc-devel \
                 openssl-devel \
                 tcl-devel \
-                expat-devel \
                 pcre \
                 pcre-devel
         fi

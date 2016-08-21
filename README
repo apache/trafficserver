@@ -78,7 +78,6 @@ plugins to build large scale web applications.
     gcc/g++ or clang/clang++
     openssl-devel
     tcl-devel
-    expat-devel
     pcre-devel
     ncurses-devel and libcurl-devl(optional, needed for traffic_top)
     libcap-devel (optional, highly recommended)
@@ -94,8 +93,6 @@ plugins to build large scale web applications.
     gcc/g++ or clang/clang++
     libssl-dev
     tcl-dev
-    expat
-    libexpat-dev
     libpcre3-dev
     libcap-dev (optional, highly recommended)
     libhwloc-dev (optional, highly recommended)
@@ -109,7 +106,6 @@ plugins to build large scale web applications.
     pkgconfig
     libtool
     tcl
-    expat
     openssl
     pcre
 
@@ -120,7 +116,6 @@ plugins to build large scale web applications.
     devel/pkgconf
     devel/libtool
     lang/tcl85
-    textproc/expat (or expat2)
     security/openssl
     devel/pcre
     textproc/flex (optional, install newer version from ports, fix PATH)
@@ -133,7 +128,6 @@ plugins to build large scale web applications.
     developer/build/automake-111
     developer/build/libtool
     omniti/runtime/tcl-8
-    library/expat
     library/security/openssl
     library/pcre
 

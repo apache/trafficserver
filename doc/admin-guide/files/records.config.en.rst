@@ -2651,7 +2651,7 @@ Logging Configuration
    ===== ======================================================================
 
    For information on sending XML-based custom formats to the collation server,
-   refer to :ref:`admin-monitoring-logging-formats` and :file:`logs_xml.config`.
+   refer to :ref:`admin-monitoring-logging-formats` and :file:`logging.config`.
 
 .. note::
 

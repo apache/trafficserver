@@ -168,8 +168,6 @@ public:
   bool roll_log_files_now; // signal that files must be rolled
 
   LogObjectManager log_object_manager;
-  LogFilterList global_filter_list;
-  LogFormatList global_format_list;
 
   int log_buffer_size;
   int max_secs_per_buffer;
@@ -202,7 +200,6 @@ public:
   char *collation_secret;
 
 private:
-  void read_xml_log_config();
   bool evaluate_config();
   char **read_log_hosts_file(size_t *nhosts);
 

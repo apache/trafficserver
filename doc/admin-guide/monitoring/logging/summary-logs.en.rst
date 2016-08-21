@@ -29,7 +29,7 @@ files that summarize a set of log entries over a specified period of time. This
 can significantly reduce the size of the log files generated.
 
 To generate a summary log file, create a :ref:`LogFormat` object in the
-XML-based logging configuration :file:`logs_xml.config` using the SQL-like
+XML-based logging configuration :file:`logging.config` using the SQL-like
 aggregate operators below. You can apply each of these operators to specific
 fields, over a specified interval.
 
@@ -41,7 +41,7 @@ fields, over a specified interval.
 
 To create a summary log file format:
 
-#. Define the format of the log file in :file:`logs_xml.config` as follows::
+#. Define the format of the log file in :file:`logging.config` as follows::
 
        <LogFormat>
          <Name = "summary"/>
@@ -55,7 +55,7 @@ To create a summary log file format:
    summary log entries.
 
    You can specify more than one ``operator`` in the format line. For more
-   information, refer to :file:`logs_xml.config`.
+   information, refer to :file:`logging.config`.
 
 #. Run the command :option:`traffic_ctl config reload` to apply configuration changes .
 

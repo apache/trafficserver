@@ -811,8 +811,6 @@ print_ele_list(TSFileNameT file, TSCfgContext ctx)
     case TS_FNAME_IP_ALLOW:
       print_ip_allow_ele((TSIpAllowEle *)ele);
       break;
-    case TS_FNAME_LOGS_XML:
-      break; /*NOT DONE */
     case TS_FNAME_PARENT_PROXY:
       print_parent_ele((TSParentProxyEle *)ele);
       break;
@@ -1547,8 +1545,6 @@ test_cfg_context_get(char *args)
     file = TS_FNAME_ICP_PEER;
   } else if (strcmp(name, "ip_allow.config") == 0) {
     file = TS_FNAME_IP_ALLOW;
-  } else if (strcmp(name, "logs_xml.config") == 0) {
-    file = TS_FNAME_LOGS_XML;
   } else if (strcmp(name, "parent.config") == 0) {
     file = TS_FNAME_PARENT_PROXY;
   } else if (strcmp(name, "volume.config") == 0) {
@@ -1617,8 +1613,6 @@ test_cfg_context_move(char *args)
     file = TS_FNAME_ICP_PEER;
   } else if (strcmp(name, "ip_allow.config") == 0) {
     file = TS_FNAME_IP_ALLOW;
-  } else if (strcmp(name, "logs_xml.config") == 0) {
-    file = TS_FNAME_LOGS_XML;
   } else if (strcmp(name, "parent.config") == 0) {
     file = TS_FNAME_PARENT_PROXY;
   } else if (strcmp(name, "volume.config") == 0) {

@@ -215,7 +215,6 @@ private:
   TokenList *arm_securityParse(char *rule);
   TokenList *hostingParse(char *rule);
   TokenList *ip_allowParse(char *rule);
-  TokenList *logs_xmlParse(char *rule);
   TokenList *volumeParse(char *rule);
   TokenList *logsParse(char *rule);
   TokenList *pluginParse(char *rule);

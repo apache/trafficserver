@@ -175,7 +175,7 @@ msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/log-collation.en.rst:126
 msgid ""
-"On each collation client, edit :file:`logs_xml.config` and add the :ref:"
+"On each collation client, edit :file:`logging.config` and add the :ref:"
 "`CollationHosts <logs-xml-logobject-collationhost>` attribute to the :ref:"
 "`LogObject` specification::"
 msgstr ""

@@ -4059,7 +4059,7 @@ msgstr ""
 msgid ""
 "The following defaults (with the format``CONFIG proxy.config.log.[format]."
 "[default]`` have been removed from ``records.config``. They can be accessed "
-"by editing :file:`logs_xml.config`."
+"by editing :file:`logging.config`."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2603
@@ -4145,7 +4145,7 @@ msgstr ""
 msgid ""
 "For information on sending XML-based custom formats to the collation "
 "server, refer to :ref:`admin-monitoring-logging-formats` and :file:"
-"`logs_xml.config`."
+"`logging.config`."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:2644

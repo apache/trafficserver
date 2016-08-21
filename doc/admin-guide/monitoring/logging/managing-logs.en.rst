@@ -228,7 +228,7 @@ they reach a certain size, adjust the following settings in
    changes.
 
 You can fine-tune log file rolling settings for a custom log file in the
-:ref:`LogObject` specification in :file:`logs_xml.config`. The custom log file
+:ref:`LogObject` specification in :file:`logging.config`. The custom log file
 uses the rolling settings in its :ref:`LogObject`, which override the default
 settings you specify in Traffic Manager or :file:`records.config` described
 above.
