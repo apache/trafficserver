@@ -2355,7 +2355,7 @@ HostDB
 
    If not set then stale records are not served.
 
-.. ts:cv:: CONFIG proxy.config.hostdb.storage_size INT 1073741824
+.. ts:cv:: CONFIG proxy.config.hostdb.max_size INT 10737418240
    :metric: bytes
 
    The maximum amount of space (in bytes) allocated to ``hostdb``.
@@ -2368,7 +2368,8 @@ HostDB
 
 .. note::
 
-   For values above ``200000``, you must increase :ts:cv:`proxy.config.hostdb.storage_size` by at least 44 bytes per entry.
+   For values above ``200000``, you must increase :ts:cv:`proxy.config.hostdb.max_size`
+   by at least 44 bytes per entry.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.ttl_mode INT 0
    :reloadable:
