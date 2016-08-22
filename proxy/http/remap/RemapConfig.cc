@@ -817,9 +817,19 @@ remap_load_plugin(const char **argv, int argc, url_mapping *mp, char *errbuf, in
       if (!pi->fp_tsremap_init) {
         snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_INIT, c);
         retcode = -10;
+      } else if (!pi->fp_tsremap_new_instance && pi->fp_tsremap_delete_instance) {
+        snprintf(errbuf, errbufsize,
+                 "Can't find \"%s\" function in remap plugin \"%s\" which is required if \"%s\" function exists",
+                 TSREMAP_FUNCNAME_NEW_INSTANCE, c, TSREMAP_FUNCNAME_DELETE_INSTANCE);
+        retcode = -11;
       } else if (!pi->fp_tsremap_do_remap) {
         snprintf(errbuf, errbufsize, "Can't find \"%s\" function in remap plugin \"%s\"", TSREMAP_FUNCNAME_DO_REMAP, c);
         retcode = -12;
+      } else if (pi->fp_tsremap_new_instance && !pi->fp_tsremap_delete_instance) {
+        snprintf(errbuf, errbufsize,
+                 "Can't find \"%s\" function in remap plugin \"%s\" which is required if \"%s\" function exists",
+                 TSREMAP_FUNCNAME_DELETE_INSTANCE, c, TSREMAP_FUNCNAME_NEW_INSTANCE);
+        retcode = -13;
       }
       if (retcode) {
         if (errbuf && errbufsize > 0)
