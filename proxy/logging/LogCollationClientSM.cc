@@ -520,6 +520,8 @@ LogCollationClientSM::client_init(int event, void * /* data ATS_UNUSED */)
 int
 LogCollationClientSM::client_open(int event, NetVConnection *net_vc)
 {
+  RecInt rec_timeout;
+  int timeout = 86400;
   ip_port_text_buffer ipb;
   Debug("log-coll", "[%d]client::client_open", m_id);
 
@@ -552,7 +554,10 @@ LogCollationClientSM::client_open(int event, NetVConnection *net_vc)
     m_host_vc = net_vc;
 
     // assign an explicit inactivity timeout so that it will not get the default value later
-    m_host_vc->set_inactivity_timeout(HRTIME_SECONDS(86400));
+    if (RecGetRecordInt("proxy.config.log.collation_client_timeout", &rec_timeout) == REC_ERR_OKAY) {
+      timeout = rec_timeout;
+    }
+    m_host_vc->set_inactivity_timeout(HRTIME_SECONDS(timeout));
 
     // setup a client reader just for detecting a host disconnnect
     // (iocore should call back this function with and EOS/ERROR)
