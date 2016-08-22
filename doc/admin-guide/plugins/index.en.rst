@@ -193,6 +193,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Populate request headers with SSL session information.
 
 :doc:`Stale While Revalidate <stale_while_revalidate.en>`
+   :deprecated:
    Refresh content asynchronously while serving stale data.
 
 :doc:`TS Lua <ts_lua.en>`
