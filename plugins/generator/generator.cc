@@ -23,13 +23,14 @@
 
 #include <ts/ts.h>
 #include <ts/remap.h>
-#include <stdlib.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <string.h>
-#include <unistd.h>
-#include <time.h>
 #include <iterator>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 // Generator plugin
 //
@@ -95,7 +96,15 @@ union argument_type {
   argument_type(void *_p) : ptr(_p) {}
 };
 
-// This structure represents the state of a streaming I/O request. Is
+// Return the length of a string literal (without the trailing NUL).
+template <unsigned N>
+unsigned
+lengthof(const char (&)[N])
+{
+  return N - 1;
+}
+
+// This structure represents the state of a streaming I/O request. It
 // is directional (ie. either a read or a write). We need two of these
 // for each TSVConn; one to push data into the TSVConn and one to pull
 // data out.
@@ -154,8 +163,10 @@ struct GeneratorHttpHeader {
 };
 
 struct GeneratorRequest {
-  off_t nbytes; // number of bytes to generate
+  off_t nbytes; // Number of bytes to generate.
   unsigned flags;
+  unsigned delay;  // Milliseconds to delay before sending a response.
+  unsigned maxage; // Max age for cache responses.
   IOChannel readio;
   IOChannel writeio;
   GeneratorHttpHeader rqheader;
@@ -165,7 +176,7 @@ struct GeneratorRequest {
     ISHEAD    = 0x0002,
   };
 
-  GeneratorRequest() : nbytes(0), flags(0) {}
+  GeneratorRequest() : nbytes(0), flags(0), delay(0), maxage(60 * 60 * 24) {}
   ~GeneratorRequest() {}
 };
 
@@ -227,19 +238,58 @@ GeneratorParseByteCount(const char *ptr, const char *end)
 }
 
 static void
-GeneratorTimestamp(char *buf, size_t bufsz)
-{
-  time_t now = time(NULL);
-  struct tm clock;
-
-  strftime(buf, bufsz, "%a, %d %b %Y %H:%M:%S GMT", gmtime_r(&now, &clock));
-}
-
-static bool
-GeneratorWriteResponseHeader(GeneratorRequest *grq, TSVConn vc, TSCont contp)
+HeaderFieldDateSet(GeneratorHttpHeader &http, const char *field_name, int64_t field_len, time_t value)
 {
   TSMLoc field;
+
+  TSMimeHdrFieldCreateNamed(http.buffer, http.header, field_name, field_len, &field);
+  TSMimeHdrFieldValueDateSet(http.buffer, http.header, field, value);
+  TSMimeHdrFieldAppend(http.buffer, http.header, field);
+  TSHandleMLocRelease(http.buffer, http.header, field);
+}
+
+static void
+HeaderFieldIntSet(GeneratorHttpHeader &http, const char *field_name, int64_t field_len, int64_t value)
+{
+  TSMLoc field;
+
+  TSMimeHdrFieldCreateNamed(http.buffer, http.header, field_name, field_len, &field);
+  TSMimeHdrFieldValueInt64Set(http.buffer, http.header, field, -1, value);
+  TSMimeHdrFieldAppend(http.buffer, http.header, field);
+  TSHandleMLocRelease(http.buffer, http.header, field);
+}
+
+static void
+HeaderFieldStringSet(GeneratorHttpHeader &http, const char *field_name, int64_t field_len, const char *value)
+{
+  TSMLoc field;
+
+  TSMimeHdrFieldCreateNamed(http.buffer, http.header, field_name, field_len, &field);
+  TSMimeHdrFieldValueStringSet(http.buffer, http.header, field, -1, value, -1);
+  TSMimeHdrFieldAppend(http.buffer, http.header, field);
+  TSHandleMLocRelease(http.buffer, http.header, field);
+}
+
+static int64_t
+GeneratorGetRequestHeader(GeneratorHttpHeader &request, const char *field_name, int64_t field_len, int64_t default_value)
+{
+  TSMLoc field;
+
+  field = TSMimeHdrFieldFind(request.buffer, request.header, field_name, field_len);
+  if (field != TS_NULL_MLOC) {
+    default_value = TSMimeHdrFieldValueInt64Get(request.buffer, request.header, field, -1);
+  }
+
+  TSHandleMLocRelease(request.buffer, request.header, field);
+  return default_value;
+}
+
+static void
+GeneratorWriteResponseHeader(GeneratorRequest *grq, TSCont contp)
+{
   GeneratorHttpHeader response;
+
+  VDEBUG("writing response header");
 
   TSReleaseAssert(TSHttpHdrTypeSet(response.buffer, response.header, TS_HTTP_TYPE_RESPONSE) == TS_SUCCESS);
   TSReleaseAssert(TSHttpHdrVersionSet(response.buffer, response.header, TS_HTTP_VERSION(1, 1)) == TS_SUCCESS);
@@ -248,34 +298,18 @@ GeneratorWriteResponseHeader(GeneratorRequest *grq, TSVConn vc, TSCont contp)
   TSHttpHdrReasonSet(response.buffer, response.header, TSHttpHdrReasonLookup(TS_HTTP_STATUS_OK), -1);
 
   // Set the Content-Length header.
-  TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, &field);
-  TSMimeHdrFieldValueInt64Set(response.buffer, response.header, field, -1 /* idx */, grq->nbytes);
-  TSMimeHdrFieldAppend(response.buffer, response.header, field);
-  TSHandleMLocRelease(response.buffer, response.header, field);
+  HeaderFieldIntSet(response, TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, grq->nbytes);
 
   // Set the Cache-Control header.
   if (grq->flags & GeneratorRequest::CACHEABLE) {
-    char datebuf[64];
+    char buf[64];
 
-    GeneratorTimestamp(datebuf, sizeof(datebuf));
-    TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, &field);
-    TSMimeHdrFieldValueStringSet(response.buffer, response.header, field, -1 /* idx */, "max-age=86400, public", -1);
-    TSMimeHdrFieldAppend(response.buffer, response.header, field);
-    TSHandleMLocRelease(response.buffer, response.header, field);
-
-    TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, &field);
-    TSMimeHdrFieldValueStringSet(response.buffer, response.header, field, -1 /* idx */, datebuf, -1);
-    TSMimeHdrFieldAppend(response.buffer, response.header, field);
-    TSHandleMLocRelease(response.buffer, response.header, field);
+    snprintf(buf, sizeof(buf), "max-age=%u, public", grq->maxage);
+    HeaderFieldStringSet(response, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, buf);
+    HeaderFieldDateSet(response, TS_MIME_FIELD_LAST_MODIFIED, TS_MIME_LEN_LAST_MODIFIED, time(NULL));
   } else {
-    TSMimeHdrFieldCreateNamed(response.buffer, response.header, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, &field);
-    TSMimeHdrFieldValueStringSet(response.buffer, response.header, field, -1 /* idx */, "private", -1);
-    TSMimeHdrFieldAppend(response.buffer, response.header, field);
-    TSHandleMLocRelease(response.buffer, response.header, field);
+    HeaderFieldStringSet(response, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL, "private");
   }
-
-  // Start the vconn write.
-  grq->writeio.write(vc, contp);
 
   // Write the header to the IO buffer. Set the VIO bytes so that we can get a WRITE_COMPLETE
   // event when this is done.
@@ -283,9 +317,9 @@ GeneratorWriteResponseHeader(GeneratorRequest *grq, TSVConn vc, TSCont contp)
 
   TSHttpHdrPrint(response.buffer, response.header, grq->writeio.iobuf);
   TSVIONBytesSet(grq->writeio.vio, hdrlen);
-  TSStatIntIncrement(StatCountBytes, hdrlen);
+  TSVIOReenable(grq->writeio.vio);
 
-  return true;
+  TSStatIntIncrement(StatCountBytes, hdrlen);
 }
 
 static bool
@@ -307,6 +341,9 @@ GeneratorParseRequest(GeneratorRequest *grq)
   if (path == TS_HTTP_METHOD_HEAD) {
     grq->flags |= GeneratorRequest::ISHEAD;
   }
+
+  grq->delay  = GeneratorGetRequestHeader(grq->rqheader, "Generator-Delay", lengthof("Generator-Delay"), grq->delay);
+  grq->maxage = GeneratorGetRequestHeader(grq->rqheader, "Generator-MaxAge", lengthof("Generator-MaxAge"), grq->maxage);
 
   // Next, parse our parameters out of the URL.
   TSReleaseAssert(TSHttpHdrUrlGet(grq->rqheader.buffer, grq->rqheader.header, &url) == TS_SUCCESS);
@@ -445,19 +482,31 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
       case TS_PARSE_OK:
         // Check the response.
         VDEBUG("parsed request on grq=%p, sending a response ", cdata.grq);
-        if (GeneratorParseRequest(cdata.grq) && GeneratorWriteResponseHeader(cdata.grq, TSVIOVConnGet(arg.vio), contp)) {
-          // If this is a HEAD request, we don't need to send any bytes.
-          if (cdata.grq->flags & GeneratorRequest::ISHEAD) {
-            cdata.grq->nbytes = 0;
-          }
+        if (!GeneratorParseRequest(cdata.grq)) {
+          // We got a syntactically bad URL. It would be graceful to send
+          // a 400 response, but we are graceless and just fail the
+          // transaction.
+          GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
+          return TS_EVENT_ERROR;
+        }
+
+        // If this is a HEAD request, we don't need to send any bytes.
+        if (cdata.grq->flags & GeneratorRequest::ISHEAD) {
+          cdata.grq->nbytes = 0;
+        }
+
+        // Start the vconn write.
+        cdata.grq->writeio.write(TSVIOVConnGet(arg.vio), contp);
+        TSVIONBytesSet(cdata.grq->writeio.vio, 0);
+
+        if (cdata.grq->delay > 0) {
+          VDEBUG("delaying response by %ums", cdata.grq->delay);
+          TSContSchedule(contp, cdata.grq->delay, TS_THREAD_POOL_NET);
           return TS_EVENT_NONE;
         }
 
-        // We got a syntactically bad URL. It would be graceful to send
-        // a 400 response, but we are graceless and just fail the
-        // transaction.
-        GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
-        return TS_EVENT_ERROR;
+        GeneratorWriteResponseHeader(cdata.grq, contp);
+        return TS_EVENT_NONE;
 
       case TS_PARSE_CONT:
         // We consumed the buffer we got minus the remainder.
@@ -525,6 +574,14 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
       GeneratorRequestDestroy(cdata.grq, arg.vio, contp);
     }
 
+    return TS_EVENT_NONE;
+  }
+
+  case TS_EVENT_TIMEOUT: {
+    // Our response delay expired, so write the headers now, which
+    // will also trigger the read+write event flow.
+    argument_type cdata = TSContDataGet(contp);
+    GeneratorWriteResponseHeader(cdata.grq, contp);
     return TS_EVENT_NONE;
   }
 
