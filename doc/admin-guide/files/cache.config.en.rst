@@ -251,9 +251,9 @@ The following example configures |TS| to revalidate ``gif`` and ``jpeg``
 objects in the domain ``mydomain.com`` every 6 hours, and all other objects in
 ``mydomain.com`` every hour. The rules are applied in the order listed. ::
 
+   dest_domain=mydomain.com revalidate=1h
    dest_domain=mydomain.com suffix=gif revalidate=6h
    dest_domain=mydomain.com suffix=jpeg revalidate=6h
-   dest_domain=mydomain.com revalidate=1h
 
 Force a specific regex to be in cache between 7-11pm of the server's time for
 26 hours. ::
