@@ -677,7 +677,7 @@ uint32_t Http2::header_table_size          = 4096;
 uint32_t Http2::max_header_list_size       = 4294967295;
 uint32_t Http2::max_request_header_size    = 131072;
 uint32_t Http2::accept_no_activity_timeout = 120;
-uint32_t Http2::no_activity_timeout_in     = 115;
+uint32_t Http2::no_activity_timeout_in     = 120;
 uint32_t Http2::active_timeout_in          = 0;
 
 void
