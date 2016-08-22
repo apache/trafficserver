@@ -60,7 +60,6 @@ public:
   ~LogFormat();
 
   void display(FILE *fd = stdout);
-  void displayAsXML(FILE *fd = stdout);
 
   bool
   valid() const

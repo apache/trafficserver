@@ -96,7 +96,6 @@ public:
   virtual bool toss_this_entry(LogAccess *lad) = 0;
   virtual bool wipe_this_entry(LogAccess *lad) = 0;
   virtual void display(FILE *fd = stdout) = 0;
-  virtual void display_as_XML(FILE *fd = stdout) = 0;
 
   static LogFilter *parse(const char *name, Action action, const char *condition);
 
@@ -135,7 +134,6 @@ public:
   bool toss_this_entry(LogAccess *lad);
   bool wipe_this_entry(LogAccess *lad);
   void display(FILE *fd = stdout);
-  void display_as_XML(FILE *fd = stdout);
 
 private:
   char **m_value; // the array of values
@@ -194,7 +192,6 @@ public:
   bool toss_this_entry(LogAccess *lad);
   bool wipe_this_entry(LogAccess *lad);
   void display(FILE *fd = stdout);
-  void display_as_XML(FILE *fd = stdout);
 
 private:
   int64_t *m_value; // the array of values
@@ -226,7 +223,6 @@ public:
   virtual bool toss_this_entry(LogAccess *lad);
   virtual bool wipe_this_entry(LogAccess *lad);
   void display(FILE *fd = stdout);
-  void display_as_XML(FILE *fd = stdout);
 
 private:
   IpMap m_map;
@@ -277,7 +273,6 @@ public:
 
   unsigned count() const;
   void display(FILE *fd = stdout);
-  void display_as_XML(FILE *fd = stdout);
 
   bool
   does_conjunction() const
