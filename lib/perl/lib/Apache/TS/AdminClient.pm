@@ -669,7 +669,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.stat_collector.interval
  proxy.config.stat_collector.port
  proxy.config.syslog_facility
- proxy.config.system.mmap_max
  proxy.config.system.file_max_pct
  proxy.config.thread.default.stacksize
  proxy.config.udp.free_cancelled_pkts_sec

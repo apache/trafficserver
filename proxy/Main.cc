@@ -1004,15 +1004,6 @@ adjust_sys_settings(void)
   int fds_throttle = -1;
   rlim_t maxfiles;
 
-// TODO: I think we might be able to get rid of this?
-#if defined(M_MMAP_MAX)
-  int mmap_max = -1;
-
-  REC_ReadConfigInteger(mmap_max, "proxy.config.system.mmap_max");
-  if (mmap_max >= 0)
-    ats_mallopt(M_MMAP_MAX, mmap_max);
-#endif
-
   maxfiles = ink_get_max_files();
   if (maxfiles != RLIM_INFINITY) {
     float file_max_pct = 0.9;
