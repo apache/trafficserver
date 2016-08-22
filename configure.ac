@@ -1925,7 +1925,6 @@ AC_CONFIG_FILES([
   plugins/experimental/cache_promote/Makefile
   plugins/experimental/cache_range_requests/Makefile
   plugins/experimental/cachekey/Makefile
-  plugins/experimental/channel_stats/Makefile
   plugins/experimental/collapsed_connection/Makefile
   plugins/experimental/collapsed_forwarding/Makefile
   plugins/experimental/custom_redirect/Makefile
