@@ -223,6 +223,11 @@ public:
   void clear_active_timer();
   void clear_timers();
   void clear_io_events();
+  bool
+  is_client_state_writeable()
+  {
+    return _state == HTTP2_STREAM_STATE_OPEN || _state == HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+  }
 
 private:
   void response_initialize_data_handling(bool &is_done);
