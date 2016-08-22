@@ -51,7 +51,7 @@ namespace constant
 {
 const char global[]    = "\"global\": {\n";
 const char start[]     = "\"proxy.process.";
-const char seperator[] = "\": \"";
+const char separator[] = "\": \"";
 const char end[]       = "\",\n";
 };
 
@@ -450,19 +450,19 @@ public:
     // find parts of the line
     while (1) {
       size_t start     = response.find(constant::start, pos);
-      size_t seperator = response.find(constant::seperator, pos);
+      size_t separator = response.find(constant::separator, pos);
       size_t end       = response.find(constant::end, pos);
 
-      if (start == string::npos || seperator == string::npos || end == string::npos)
+      if (start == string::npos || separator == string::npos || end == string::npos)
         return;
 
       // cout << constant::start << " " << start << endl;
-      // cout << constant::seperator << " " << seperator << endl;
+      // cout << constant::separator << " " << separator << endl;
       // cout << constant::end << " " << end << endl;
 
-      string key = response.substr(start + 1, seperator - start - 1);
+      string key = response.substr(start + 1, separator - start - 1);
       string value =
-        response.substr(seperator + sizeof(constant::seperator) - 1, end - seperator - sizeof(constant::seperator) + 1);
+        response.substr(separator + sizeof(constant::separator) - 1, end - separator - sizeof(constant::separator) + 1);
 
       (*_stats)[key] = value;
       // cout << "key " << key << " " << "value " << value << endl;
