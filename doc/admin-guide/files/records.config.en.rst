@@ -2703,6 +2703,14 @@ Logging Configuration
 
    The number of seconds between collation server connection retries.
 
+.. ts:cv:: CONFIG proxy.config.log.collation_host_timeout INT 86390
+
+   The number of seconds before active or inactivity time-out events for the server side.
+
+.. ts:cv:: CONFIG proxy.config.log.collation_client_timeout INT 86400
+
+   The number of seconds before active or inactivity time-out events for the client side.
+
 .. ts:cv:: CONFIG proxy.config.log.rolling_enabled INT 1
    :reloadable:
 

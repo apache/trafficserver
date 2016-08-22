@@ -74,9 +74,17 @@ LogCollationHostSM::LogCollationHostSM(NetVConnection *client_vc)
     m_client_port(0),
     m_id(ID++)
 {
+  RecInt rec_timeout;
+  int timeout = 86390;
   Debug("log-coll", "[%d]host::constructor", m_id);
 
   ink_assert(m_client_vc != NULL);
+
+  // assign an explicit inactivity timeout so that it will not get the default value later
+  if (RecGetRecordInt("proxy.config.log.collation_host_timeout", &rec_timeout) == REC_ERR_OKAY) {
+    timeout = rec_timeout;
+  }
+  m_client_vc->set_inactivity_timeout(HRTIME_SECONDS(timeout));
 
   // get client info
   m_client_ip   = m_client_vc->get_remote_ip();
@@ -412,9 +420,11 @@ LogCollationHostSM::read_hdr(int event, VIO *vio)
     ink_assert(m_read_bytes_wanted == m_read_bytes_received);
     return read_body(LOG_COLL_EVENT_SWITCH, NULL);
 
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
-    Debug("log-coll", "[%d]host::read_hdr - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]host::read_hdr - TIMEOUT|EOS|ERROR", m_id);
     return read_done(LOG_COLL_EVENT_ERROR, NULL);
 
   default:
@@ -470,9 +480,11 @@ LogCollationHostSM::read_body(int event, VIO *vio)
     ink_assert(m_read_bytes_wanted == m_read_bytes_received);
     return read_done(LOG_COLL_EVENT_READ_COMPLETE, NULL);
 
+  case VC_EVENT_ACTIVE_TIMEOUT:
+  case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
-    Debug("log-coll", "[%d]host::read_body - EOS|ERROR", m_id);
+    Debug("log-coll", "[%d]host::read_body - TIMEOUT|EOS|ERROR", m_id);
     return read_done(LOG_COLL_EVENT_ERROR, NULL);
 
   default:
