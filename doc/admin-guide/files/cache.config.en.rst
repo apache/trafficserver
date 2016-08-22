@@ -22,9 +22,8 @@
 cache.config
 ************
 
-The :file:`cache.config` file (by default, located in
-``/usr/local/etc/trafficserver/``) defines how |TS| caches web objects. You can
-add caching rules to specify the following:
+The :file:`cache.config` file  defines how |TS| caches web objects. You can add
+caching rules to specify the following:
 
 - Not to cache objects from specific IP addresses.
 - How long to pin particular objects in the cache.
@@ -203,6 +202,47 @@ specifiers of the rule in question.
    cookies. The value is the amount of time object(s) are to be kept in the
    cache, regardless of ``Cache-Control`` response headers from the origin
    server. Use the same time formats as ``pin-in-cache``.
+
+Matching Multiple Rules
+=======================
+
+When multiple rules are specified in :file:`cache.config`, |TS| will check all
+of them in order for each request. Thus, two rules which match the same request
+but have conflicting actions will result in their actions being compounded. In
+other words, |TS| does not stop on the first match.
+
+In some cases, this may lead to confusing behavior. For example, consider the
+following two rules::
+
+    dest_domain=example.com prefix=foo suffix=js revalidate=7d
+    dest_domain=example.com suffix=js action=never-cache
+
+Reading that under the assumption that |TS| stops on the first match might lead
+one to assume that all Javascript files will be excluded from the |TS| cache,
+except for those whose paths begin with ``foo``. This, however, is not correct.
+Instead, the first rule establishes that all Javascript files with the path
+prefix ``foo`` will be forced to revalidate every seven days, and then the
+second rule also sets an action on all Javascript files, regardless of their
+path prefix, to never be cached at all. Because none of the Javascript files
+will be cached at all, the first rule is effectively voided.
+
+A similar example, but at least one with a correct solution, might be an
+attempt to set differing values for the same action, as so::
+
+    # Incorrect!
+    dest_domain=example.com prefix=foo suffix=js revalidate=7d
+    dest_domain=example.com suffix=js revalidate=1d
+
+    # Correct!
+    dest_domain=example.com suffix=js revalidate=1d
+    dest_domain=example.com prefix=foo suffix=js revalidate=7d
+
+The latter accomplishes the implied goal of having a default, or global, timer
+for cache object revalidations on Javascript files, as well as a more targeted
+(and longer) revalidation time on just those Javascript files with a particular
+prefix. The former fails at this goal, because the second rule will match all
+Javascript files and will override any previous ``revalidate`` values that may
+have been set by prior rules.
 
 Examples
 ========
