@@ -328,8 +328,14 @@ prepare()
     cerr << "Cannot open " << input_dir << endl;
     return 1;
   }
+  struct stat st;
+  char name[PATH_MAX + 1] = "";
+  strcat(name, input_dir.c_str());
   while ((d = readdir(dir)) != NULL) {
-    if (d->d_type == DT_REG) {
+    name[input_dir.length()] = '\0';
+    ink_strlcat(name, d->d_name, sizeof(name));
+    stat(name, &st);
+    if (!S_ISDIR(st.st_mode)) {
       ++last;
     }
   }
