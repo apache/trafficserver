@@ -25,7 +25,6 @@ Example Plugins
 .. toctree::
    :maxdepth: 2
 
-   hook-trace/index.en
    basic-authorization/index.en
    blacklist/index.en
    query-remap/index.en

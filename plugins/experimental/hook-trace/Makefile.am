@@ -14,47 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = \
- acme \
- balancer \
- buffer_upload \
- cache_promote \
- cache_range_requests \
- cachekey \
- collapsed_connection \
- collapsed_forwarding \
- custom_redirect \
- epic \
- escalate \
- geoip_acl \
- header_normalize \
- hipes \
- hook-trace \
- inliner \
- memcache \
- memcached_remap \
- metalink \
- mp4 \
- multiplexer \
- remap_stats \
- remap_purge \
- ssl_cert_loader \
- sslheaders \
- stream_editor \
- ts_lua \
- url_sig
+include $(top_srcdir)/build/plugins.mk
 
-if BUILD_WEBP_TRANSFORM_PLUGIN
- SUBDIRS += webp_transform
-endif
-
-if HAS_MYSQL
-  SUBDIRS += mysql_remap
-endif
-
-if HAS_KYOTOCABINET
-  SUBDIRS += cache_key_genid
-endif
+pkglib_LTLIBRARIES = hook-trace.la
+hook_trace_la_SOURCES = hook-trace.cc
+hook_trace_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 
 include $(top_srcdir)/build/tidy.mk
 

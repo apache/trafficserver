@@ -128,6 +128,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Escalate <escalate.en>
    GeoIP ACL <geoip_acl.en>
    HIPES <hipes.en>
+   Hook Trace <hook-trace.en>
    Memcache <memcache.en>
    Metalink <metalink.en>
    MP4 <mp4.en>
