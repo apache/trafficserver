@@ -166,7 +166,7 @@ ParentConsistentHash::selectParent(const ParentSelectionPolicy *policy, bool fir
       }
       Debug("parent_select", "wrap_around[PRIMARY]: %d, wrap_around[SECONDARY]: %d", wrap_around[PRIMARY], wrap_around[SECONDARY]);
       if (!wrap_around[PRIMARY] || (chash[SECONDARY] != NULL)) {
-        Debug("parent_select", "Selected parent %s is not available, looking up another parent.", pRec ? pRec->hostname:"[NULL]");
+        Debug("parent_select", "Selected parent %s is not available, looking up another parent.", pRec->hostname);
         if (chash[SECONDARY] != NULL && !wrap_around[SECONDARY]) {
           fhash       = chash[SECONDARY];
           last_lookup = SECONDARY;
