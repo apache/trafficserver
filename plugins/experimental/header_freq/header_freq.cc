@@ -30,7 +30,6 @@
 #include <string>
 #include <ts/ts.h>
 
-
 // plugin registration info
 static char plugin_name[]   = "header_freq";
 static char vendor_name[]   = "Apache Software Foundation";
@@ -62,14 +61,14 @@ log_frequencies()
   ss << std::endl << std::string(100, '+') << std::endl;
 
   ss << "CLIENT HEADERS" << std::endl;
-  for (auto &elem: client_freq) {
+  for (auto &elem : client_freq) {
     ss << elem.first << ": " << elem.second << std::endl;
   }
 
   ss << std::endl;
 
   ss << "ORIGIN HEADERS" << std::endl;
-  for (auto &elem: origin_freq) {
+  for (auto &elem : origin_freq) {
     ss << elem.first << ": " << elem.second << std::endl;
   }
 
@@ -85,7 +84,7 @@ static void
 count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, std::map<std::string, unsigned int> &map)
 {
   TSMLoc hdr, next_hdr;
-  hdr = TSMimeHdrFieldGet(bufp, hdr_loc, 0);
+  hdr           = TSMimeHdrFieldGet(bufp, hdr_loc, 0);
   int n_headers = TSMimeHdrFieldsCount(bufp, hdr_loc);
   TSDebug(DEBUG_TAG_HOOK, "%d headers found", n_headers);
 
@@ -100,7 +99,7 @@ count_all_headers(TSMBuffer &bufp, TSMLoc &hdr_loc, std::map<std::string, unsign
     std::string str = std::string(hdr_name, hdr_len);
 
     // make case-insensitive by converting to lowercase
-    for (auto &c: str) {
+    for (auto &c : str) {
       c = tolower(c);
     }
 
@@ -125,56 +124,50 @@ handle_hook(TSCont contp, TSEvent event, void *edata)
   TSMLoc hdr_loc;
   int ret_val = 0;
 
-  switch(event){
+  switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR: // count client headers
-    {
-      TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_HTTP_READ_REQUEST_HDR");
-      txnp = reinterpret_cast<TSHttpTxn>(edata);
-      // get the client request so we can loop through the headers
-      if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-        TSError("(%s) could not get request headers", plugin_name);
-        TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
-        ret_val = -1;
-        break;
-      }
-      count_all_headers(bufp, hdr_loc, client_freq);
-      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  {
+    TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_HTTP_READ_REQUEST_HDR");
+    txnp = reinterpret_cast<TSHttpTxn>(edata);
+    // get the client request so we can loop through the headers
+    if (TSHttpTxnClientReqGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+      TSError("(%s) could not get request headers", plugin_name);
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+      ret_val = -1;
+      break;
     }
-    break;
+    count_all_headers(bufp, hdr_loc, client_freq);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  } break;
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR: // count origin headers
-    {
-      TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_HTTP_SEND_RESPONSE_HDR");
-      // get the response so we can loop through the headers
-      txnp = reinterpret_cast<TSHttpTxn>(edata);
-      if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-        TSError("(%s) could not get response headers", plugin_name);
-        TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
-        ret_val = -2;
-        break;
-      }
-      count_all_headers(bufp, hdr_loc, origin_freq);
-      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  {
+    TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_HTTP_SEND_RESPONSE_HDR");
+    // get the response so we can loop through the headers
+    txnp = reinterpret_cast<TSHttpTxn>(edata);
+    if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+      TSError("(%s) could not get response headers", plugin_name);
+      TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
+      ret_val = -2;
+      break;
     }
-    break;
-  case TS_EVENT_LIFECYCLE_MSG:
-    {
-      TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_LIFECYCLE_MSG");
-      TSPluginMsg* msgp = reinterpret_cast<TSPluginMsg*>(edata);
+    count_all_headers(bufp, hdr_loc, origin_freq);
+    TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
+  } break;
+  case TS_EVENT_LIFECYCLE_MSG: {
+    TSDebug(DEBUG_TAG_HOOK, "event TS_EVENT_LIFECYCLE_MSG");
+    TSPluginMsg *msgp = reinterpret_cast<TSPluginMsg *>(edata);
 
-      if (strcmp(ctl_tag, msgp->tag))
-        {
-          TSDebug(DEBUG_TAG_HOOK, "tag %s does not concern us", msgp->tag);
-          break;
-        }
-
-      // identify the command
-      if (strncmp(ctl_log, reinterpret_cast<const char*>(msgp->data),
-          strlen(ctl_log)) == 0) {
-        log_frequencies();
-      }
-
+    if (strcmp(ctl_tag, msgp->tag)) {
+      TSDebug(DEBUG_TAG_HOOK, "tag %s does not concern us", msgp->tag);
+      break;
     }
-    break;
+
+    // identify the command
+    if (strncmp(ctl_log, reinterpret_cast<const char *>(msgp->data), strlen(ctl_log)) == 0) {
+      log_frequencies();
+    }
+
+  } break;
   // do nothing in any of the other states
   default:
     break;
@@ -193,20 +186,18 @@ TSPluginInit(int argc, const char *argv[])
 
   TSPluginRegistrationInfo info;
 
-  info.plugin_name = plugin_name;
-  info.vendor_name = vendor_name;
+  info.plugin_name   = plugin_name;
+  info.vendor_name   = vendor_name;
   info.support_email = support_email;
 
   if (TSPluginRegister(&info) != TS_SUCCESS) {
-    TSError("[%s](%s) Plugin registration failed. \n", plugin_name,
-    __FUNCTION__);
+    TSError("[%s](%s) Plugin registration failed. \n", plugin_name, __FUNCTION__);
   }
-  
+
   TSCont contp = TSContCreate(handle_hook, TSMutexCreate());
   if (contp == NULL) {
     // Continuation initialization failed. Unrecoverable, report and exit.
-    TSError("(%s)[%s] could not create continuation", plugin_name,
-            __FUNCTION__);
+    TSError("(%s)[%s] could not create continuation", plugin_name, __FUNCTION__);
     abort();
   } else {
     // Continuation initialization succeeded
