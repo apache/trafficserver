@@ -434,7 +434,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->parents[i].hostname[tmp - current] = '\0';
       this->parents[i].port                    = port;
       this->parents[i].failedAt                = 0;
-      this->parents[i].failCount               = 0;
       this->parents[i].scheme                  = scheme;
       this->parents[i].idx                     = i;
       this->parents[i].name                    = this->parents[i].hostname;
@@ -445,7 +444,6 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       this->secondary_parents[i].hostname[tmp - current] = '\0';
       this->secondary_parents[i].port                    = port;
       this->secondary_parents[i].failedAt                = 0;
-      this->secondary_parents[i].failCount               = 0;
       this->secondary_parents[i].scheme                  = scheme;
       this->secondary_parents[i].idx                     = i;
       this->secondary_parents[i].name                    = this->secondary_parents[i].hostname;
@@ -714,7 +712,12 @@ ParentRecord::UpdateMatch(ParentResult *result, RequestData *rdata)
 
 ParentRecord::~ParentRecord()
 {
-  ats_free(parents);
+  if(parents != NULL) {
+    ats_free(parents);
+  }
+  if(secondary_parents != NULL) {
+    ats_free(secondary_parents);
+  }
   delete selection_strategy;
   delete unavailable_server_retry_responses;
 }
