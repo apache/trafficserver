@@ -38,6 +38,7 @@
 #include <memory.h> 
 #include <ts/ts.h>
 #include <sys/time.h>
+#include <errno.h>
 
 #include <sstream>
 
@@ -54,6 +55,11 @@ using namespace std;
 #define DEFAULT_WEIGHT 1  // default weight
 #define DEFAULT_SCHEME "http"
 #define DEFAULT_REPLICATION_FACTOR 1
+
+#define HTTPS_PORT 443
+#define SPECIAL_PORT "{port}"
+#define HTTP_SCHEME "http://"
+#define HTTPS_SCHEME "https://"
 
 // config section headers
 static const char *const SECTION_SERVERS_STR = "[Servers]";
@@ -82,22 +88,16 @@ bool
 getInt(char** pptr, int *val)
 {
   bool bReturn = false;
-  int v=0;
-  
-  char* ptr = *pptr;
-  // skip white space if any
-  while (*ptr && isspace(*ptr)) ++ptr; 
-  // get digits
-  if (*ptr) {
-    while (*ptr && isdigit(*ptr)) {
-      v *= 10;
-      v += (*ptr)-'0';
-      ++ptr;
-      bReturn = true;
-    }
-  }
-  if (bReturn) {
-    *pptr = ptr;
+  errno = 0;
+
+  char *ptr = *pptr;
+  char *endptr;
+
+  int v = strtol(ptr, &endptr, 0);	
+
+  if (errno == 0 && endptr != ptr) {
+    bReturn = true;
+    *pptr = endptr;
     *val = v;
   }
 
@@ -111,22 +111,18 @@ getHostAndPort(char** pptr,string* sHost,int* iPort, string* sScheme)
 {
   bool bReturn = false;
   char* ptr = *pptr;
+  char *endptr;
 
-  *iPort = 80;
-  *sScheme = DEFAULT_SCHEME;
-  if(strncmp(*pptr,"https",5) == 0) {
-    *iPort = 443;
-    *sScheme = "https";
-  }
-    
   //skip leading white space
   while (*ptr && isspace(*ptr)) ++ptr;
 
   if (*ptr) { // validate not end of string
-    if(strncmp(ptr,"http://",7) == 0) {
-      ptr += 7;
-    } else if(strncmp(ptr,"https://",8) == 0) {
-      ptr += 8;
+    if(strncmp(ptr, HTTP_SCHEME, strlen(HTTP_SCHEME)) == 0) {
+      ptr += strlen(HTTP_SCHEME);
+    } else if(strncmp(ptr, HTTPS_SCHEME, strlen(HTTPS_SCHEME)) == 0) {
+      *iPort = HTTPS_PORT;
+      *sScheme = TS_URL_SCHEME_HTTPS;
+      ptr += strlen(HTTPS_SCHEME);
     }
     
     char* ptemp = ptr; // start of host
@@ -144,7 +140,7 @@ getHostAndPort(char** pptr,string* sHost,int* iPort, string* sScheme)
         ++ptr;
         if (!getInt(&ptr, iPort)) {
           // could be our special 'PORT' value, check for that
-          if(!strncmp(ptr,"{port}",6)) { // yes, is '{port}'
+          if(!strncmp(ptr, SPECIAL_PORT, strlen(SPECIAL_PORT))) { // yes, is '{port}'
             *iPort = -1;
             bReturn = true;
           } else { // really was an error
@@ -153,8 +149,8 @@ getHostAndPort(char** pptr,string* sHost,int* iPort, string* sScheme)
           }
         } else {
           // if port number is 443, treat the scheme as https
-          if (*iPort == 443) {
-            *sScheme = "https";
+          if (*iPort == HTTPS_PORT) {
+            *sScheme = TS_URL_SCHEME_HTTPS;
           }
         }
       }
@@ -200,12 +196,18 @@ CarpConfig::loadConfig(string filename)
   GroupCountList group_counts;
   GroupCountListIter group_counts_it;
 
-  // attempt to open config file assuming full path provided
+  // attempt to open config file assuming path provided
   TSDebug(DEBUG_TAG_INIT, "Trying to open config file in this path: %s", filename.c_str());
   file = TSfopen(filename.c_str(), "r");
   if (file == NULL) {
-    TSError("Failed to open carp config file %s", filename.c_str());
-    return false;
+    TSError("Failed to open carp config file %s. Trying relative path.", filename.c_str());
+    std::string path = TSConfigDirGet();
+    path += '/';
+    path += filename;
+    if (NULL == (file = TSfopen(path.c_str(), "r"))) {
+	TSError("Failed to open carp config file %s with relative path.", path.c_str());
+    	return false;
+    }
   }
 
   TSDebug(DEBUG_TAG_INIT, "Successfully opened config file");
@@ -224,7 +226,7 @@ CarpConfig::loadConfig(string filename)
 
     char *eol = 0;
     // make sure line was not bigger than buffer
-    if ((eol = strchr(buffer, '\n')) == NULL && (eol = strstr(buffer, "\r\n")) == NULL) {
+    if ((eol = strchr(buffer, '\n')) == NULL) {
       TSError("carp config line was too long, did not get a good line in cfg, skipping, line: %s", buffer);
       memset(buffer, 0, sizeof(buffer));
       continue;
@@ -442,6 +444,7 @@ CarpConfig::loadConfig(string filename)
   } //while
 
   if (_healthCheckTimeout > _healthCheckFreq - 1 ) {
+    TSDebug(DEBUG_TAG_INIT, "Healthcheck timeout too large, setting to %d.", _healthCheckFreq - 1);
     _healthCheckTimeout = _healthCheckFreq - 1;
   }
 
@@ -501,7 +504,6 @@ CarpConfigHealthCheckThreadStart(void* data)
 bool 
 CarpConfig::isBlackListed(const string& sHost)
 {
-  if(!_blackList.size()) return false;
   return (_blackList.find(sHost) !=  _blackList.end());
 }
 
@@ -509,7 +511,6 @@ CarpConfig::isBlackListed(const string& sHost)
 bool 
 CarpConfig::isWhiteListed(const string& sHost)
 {
-  if(!_whiteList.size()) return false;
   return (_whiteList.find(sHost) !=  _whiteList.end());
 }
 
@@ -576,6 +577,3 @@ void CarpConfig::dump(string &s) {
     _servers[i]->dump(s);
 
 }
-
-
-
