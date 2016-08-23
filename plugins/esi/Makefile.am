@@ -100,9 +100,6 @@ gzip_test_LDADD = libtest.la -lz
 
 TESTS = $(check_PROGRAMS)
 
-test:: $(TESTS)
-	for f in $(TESTS) ; do ./$$f; if [ $$? -ne 0 ]; then break; fi done
-
 include $(top_srcdir)/build/tidy.mk
 
 tidy-local: $(DIST_SOURCES)
