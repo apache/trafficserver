@@ -712,12 +712,7 @@ ParentRecord::UpdateMatch(ParentResult *result, RequestData *rdata)
 
 ParentRecord::~ParentRecord()
 {
-  if(parents != NULL) {
-    ats_free(parents);
-  }
-  if(secondary_parents != NULL) {
-    ats_free(secondary_parents);
-  }
+  ats_free(parents);
   delete selection_strategy;
   delete unavailable_server_retry_responses;
 }

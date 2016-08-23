@@ -3607,6 +3607,7 @@ HttpTransact::handle_response_from_parent(State *s)
   default: {
     LookingUp_t next_lookup = UNDEFINED_LOOKUP;
     DebugTxn("http_trans", "[hrfp] connection not alive");
+    s->state_machine->do_hostdb_update_if_necessary();
     SET_VIA_STRING(VIA_DETAIL_PP_CONNECT, VIA_DETAIL_PP_FAILURE);
 
     ink_assert(s->hdr_info.server_request.valid());
