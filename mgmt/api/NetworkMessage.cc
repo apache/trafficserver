@@ -205,17 +205,18 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
 
   // Switch on operations, grouped by response format.
   switch (optype) {
+  case BOUNCE:
+  case EVENT_RESOLVE:
   case FILE_WRITE:
+  case LIFECYCLE_MESSAGE:
   case PROXY_STATE_SET:
   case RECONFIGURE:
   case RESTART:
-  case BOUNCE:
-  case EVENT_RESOLVE:
-  case SNAPSHOT_TAKE:
-  case SNAPSHOT_RESTORE:
   case SNAPSHOT_REMOVE:
-  case STATS_RESET_NODE:
+  case SNAPSHOT_RESTORE:
+  case SNAPSHOT_TAKE:
   case STATS_RESET_CLUSTER:
+  case STATS_RESET_NODE:
   case STORAGE_DEVICE_CMD_OFFLINE:
     ink_release_assert(responses[optype].nfields == 1);
     return send_mgmt_response(fd, optype, &ecode);
@@ -233,7 +234,6 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
     return send_mgmt_response(fd, optype, &ecode, &strval);
 
   case FILE_READ:
-  case LIFECYCLE_MESSAGE:
     ink_release_assert(responses[optype].nfields == 3);
     return send_mgmt_response(fd, optype, &ecode, &intval, &dataval);
 
