@@ -2599,13 +2599,13 @@ HttpSM::state_cache_open_read(int event, void *data)
   case CACHE_EVENT_OPEN_READ_FAILED:
     pending_action = NULL;
 
-    DebugSM("http", "[%" PRId64 "] cache_open_read - "
-                    "CACHE_EVENT_OPEN_READ_FAILED",
-            sm_id);
+    DebugSM("http", "[%" PRId64 "] cache_open_read - CACHE_EVENT_OPEN_READ_FAILED with %s (%d)", sm_id,
+            InkStrerror(-(intptr_t)data), (int)(intptr_t)data);
+
     DebugSM("http", "[state_cache_open_read] open read failed.");
     // Inform HttpTransact somebody else is updating the document
     // HttpCacheSM already waited so transact should go ahead.
-    if (data == (void *)-ECACHE_DOC_BUSY) {
+    if ((intptr_t)data == -ECACHE_DOC_BUSY) {
       t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_DOC_BUSY;
     } else {
       t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;

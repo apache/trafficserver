@@ -133,7 +133,7 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
     break;
 
   case CACHE_EVENT_OPEN_READ_FAILED:
-    if (data == (void *)-ECACHE_DOC_BUSY) {
+    if ((intptr_t)data == -ECACHE_DOC_BUSY) {
       // Somebody else is writing the object
       if (open_read_tries <= master_sm->t_state.txn_conf->max_cache_open_read_retries) {
         // Retry to read; maybe the update finishes in time
