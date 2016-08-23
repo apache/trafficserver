@@ -37,6 +37,8 @@
 #include <sys/capability.h>
 #endif
 
+#define MGMT_OPT "-M"
+
 void
 LocalManager::mgmtCleanup()
 {
@@ -900,6 +902,11 @@ LocalManager::startProxy()
 
     real_proxy_options.append(proxy_options, strlen(proxy_options));
 
+    if (!strstr(proxy_options, MGMT_OPT)) { // Make sure we're starting the proxy in mgmt mode
+      real_proxy_options.append(" ", strlen(" "));
+      real_proxy_options.append(MGMT_OPT, sizeof(MGMT_OPT) - 1);
+    }
+
     // Check if we need to pass down port/fd information to
     // traffic_server by seeing if there are any open ports.
     for (int i = 0, limit = m_proxy_ports.length(); !open_ports_p && i < limit; ++i) {
@@ -938,10 +945,6 @@ LocalManager::startProxy()
     while (i < 32 && (tok = strtok_r(NULL, " ", &last))) {
       Debug("lm", "opt %d = '%s'", i, tok);
       options[i++] = tok;
-    }
-
-    if (!strstr(proxy_options, "-M")) { // Make sure we're starting the proxy in mgmt mode
-      mgmt_fatal(stderr, 0, "[LocalManager::startProxy] ts options must contain -M");
     }
 
     EnableDeathSignal(SIGTERM);
