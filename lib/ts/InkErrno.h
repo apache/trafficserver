@@ -69,4 +69,6 @@
 
 #define EHTTP_ERROR (HTTP_ERRNO + 0)
 
+const char *InkStrerror(int ink_errno);
+
 #endif
