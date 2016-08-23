@@ -1450,6 +1450,122 @@ Here is an example:
 
 `TOP <#ts-lua-plugin>`_
 
+ts.server_request.get_url_host
+------------------------------
+**syntax:** *host = ts.server_request.get_url_host()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
+
+**description:** Return the ``host`` field of the request url.
+
+Here is an example:
+
+::
+
+    function send_request()
+        local url_host = ts.server_request.get_url_host()
+        print(url_host)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request) 
+        return 0 
+    end
+
+Then ``GET http://abc.com/p2/a.txt HTTP/1.1`` will yield the output:
+
+``abc.com``
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.set_url_host
+------------------------------
+**syntax:** *ts.server_request.set_url_host(str)*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
+
+**description:** Set ``host`` field of the request url with ``str``. This function is used to change the host name in the GET request to next tier
+
+Here is an example:
+
+::
+
+    function send_request()
+        ts.server_request.set_url_host("")
+        ts.server_request.set_url_scheme("")
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+The GET request like this:
+
+::
+
+    +++++++++ Proxy's Request +++++++++
+    – State Machine Id: 5593
+    GET http://origin.com/dir1/a.txt HTTP/1.1
+    User-Agent: curl/7.29.0
+    Host: abc.com
+    Accept: /
+    Client-ip: 135.xx.xx.xx
+    X-Forwarded-For: 135.xx.xx.xx
+
+Will be changed to:
+
+::
+
+    +++++++++ Proxy's Request +++++++++
+    – State Machine Id: 5593
+    GET /dir1/a.txt HTTP/1.1
+    User-Agent: curl/7.29.0
+    Host: abc.com
+    Accept: /
+    Client-ip: 135.xx.xx.xx
+    X-Forwarded-For: 135.xx.xx.xx
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.get_url_scheme
+--------------------------------
+**syntax:** *scheme = ts.server_request.get_url_scheme()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point 
+
+**description:** Return the ``scheme`` field of the request url.
+
+Here is an example:
+
+::
+
+    function send_request()
+        local url_scheme = ts.server_request.get_url_scheme()
+        print(url_host)
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+Then ``GET /liuyurou.txt HTTP/1.1\r\nHost: 192.168.231.129:8080\r\n...`` will yield the output:
+
+``http``
+
+`TOP <#ts-lua-plugin>`_
+
+ts.server_request.set_url_scheme
+--------------------------------
+**syntax:** *ts.server_request.set_url_scheme(str)*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point 
+
+**description:** Set ``scheme`` field of the request url with ``str``. This function is used to change the scheme of the server request.
+
+`TOP <#ts-lua-plugin>`_
+
 ts.server_response.get_status
 -----------------------------
 **syntax:** *status = ts.server_response.get_status()*
