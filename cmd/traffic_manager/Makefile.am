@@ -37,7 +37,6 @@ AM_CXXFLAGS += \
 AM_LDFLAGS = \
   @EXTRA_CXX_LDFLAGS@ \
   @LIBTOOL_LINK_FLAGS@ \
-  @EXPAT_LDFLAGS@ \
   @OPENSSL_LDFLAGS@
 
 traffic_manager_SOURCES = \
@@ -71,7 +70,7 @@ traffic_manager_LDADD += \
 
 traffic_manager_LDADD +=\
   $(LIBUNWIND_LIBS) \
-  @LIBRESOLV@ @LIBEXPAT@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
+  @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @LIBCAP@ @HWLOC_LIBS@ \
   -lm
 
 # Must do it this way or the dependencies aren't detected.

@@ -26,13 +26,9 @@ bin_PROGRAMS = \
   traffic_logcat \
   traffic_logstats
 
-noinst_PROGRAMS = \
-  test_xml_parser
-
 TESTS = \
   tests/test_logstats_json \
-  tests/test_logstats_summary \
-  test_xml_parser
+  tests/test_logstats_summary
 
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
@@ -209,7 +205,6 @@ traffic_server_LDADD = \
   hdrs/libhdrs.a  \
   shared/liberror.a  \
   shared/libdiagsconfig.a  \
-  shared/libxml.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \
   $(top_builddir)/iocore/cluster/libinkcluster.a \
@@ -229,7 +224,6 @@ traffic_server_LDADD = \
   @HWLOC_LIBS@ \
   @LIBPCRE@ \
   @LIBTCL@ \
-  @LIBEXPAT@ \
   @LIBCAP@ \
   @LIBRESOLV@ \
   @LIBZ@ \
@@ -245,7 +239,6 @@ traffic_logcat_LDADD = \
   logging/liblogging.a \
   shared/libdiagsconfig.a \
   shared/libUglyLogStubs.a \
-  shared/libxml.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
@@ -253,14 +246,13 @@ traffic_logcat_LDADD = \
   $(top_builddir)/lib/bindings/libbindings.la \
   $(top_builddir)/lib/luajit/src/libluajit.a \
   @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@\
-  @LIBEXPAT@ @LIBPROFILER@ -lm
+  @LIBPROFILER@ -lm
 
 traffic_logstats_SOURCES = logstats.cc
 traffic_logstats_LDADD = \
   logging/liblogging.a \
   shared/libdiagsconfig.a \
   shared/libUglyLogStubs.a \
-  shared/libxml.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
@@ -268,16 +260,7 @@ traffic_logstats_LDADD = \
   $(top_builddir)/lib/bindings/libbindings.la \
   $(top_builddir)/lib/luajit/src/libluajit.a \
   @LIBRESOLV@ @LIBPCRE@ @LIBTCL@ @HWLOC_LIBS@ \
-  @LIBEXPAT@ @LIBPROFILER@ -lm
-
-test_xml_parser_SOURCES = test_xml_parser.cc
-test_xml_parser_LDADD = \
-  $(top_builddir)/mgmt/libmgmt_p.la \
-  $(top_builddir)/lib/records/librecords_p.a \
-  $(top_builddir)/iocore/eventsystem/libinkevent.a \
-  $(top_builddir)/lib/ts/libtsutil.la \
-  shared/libxml.a \
-  @LIBTCL@
+  @LIBPROFILER@ -lm
 
 versiondir = $(pkgsysconfdir)
 

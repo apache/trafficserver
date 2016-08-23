@@ -31,7 +31,7 @@ Configuration Files
    icp.config.en
    ip_allow.config.en
    log_hosts.config.en
-   logs_xml.config.en
+   logging.config.en
    metrics.config.en
    parent.config.en
    plugin.config.en
@@ -64,7 +64,7 @@ Configuration Files
 :doc:`log_hosts.config.en`
     Defines origin servers for which separate logs should be maintained.
 
-:doc:`logs_xml.config.en`
+:doc:`logging.config.en`
     Defines custom log file formats, filters, and processing options.
 
 :doc:`metrics.config.en`

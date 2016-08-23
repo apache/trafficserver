@@ -2651,7 +2651,7 @@ Logging Configuration
    ===== ======================================================================
 
    For information on sending XML-based custom formats to the collation server,
-   refer to :ref:`admin-monitoring-logging-formats` and :file:`logs_xml.config`.
+   refer to :ref:`admin-monitoring-logging-formats` and :file:`logging.config`.
 
 .. note::
 
@@ -2754,6 +2754,13 @@ Logging Configuration
    If set to a non-zero value :arg:`N` then any connection that takes longer than :arg:`N` milliseconds from accept to
    completion will cause its timing stats to be written to the :ts:cv:`debugging log file
    <proxy.config.output.logfile>`. This is identifying data about the transaction and all of the :c:type:`transaction milestones <TSMilestonesType>`.
+
+.. ts:cv:: CONFIG proxy.config.log.config.filename STRING logging.config
+   :reloadable:
+
+   This configuration value specifies the path to the
+   :file:`logging.config` configuration file. If this is a relative
+   path, |TS| loads it relative to the ``SYSCONFDIR`` directory.
 
 Diagnostic Logging Configuration
 ================================

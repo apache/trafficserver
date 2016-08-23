@@ -201,8 +201,6 @@ Rule::parse(const char *const_rule, TSFileNameT filetype)
     return icpParse(rule, 8, 8);
   case TS_FNAME_IP_ALLOW: /* ip_allow.config */
     return ip_allowParse(rule);
-  case TS_FNAME_LOGS_XML: /* logs_xml.config */
-    return logs_xmlParse(rule);
   case TS_FNAME_PARENT_PROXY: /* parent.config */
     return parentParse(rule);
   case TS_FNAME_VOLUME: /* volume.config */
@@ -459,15 +457,6 @@ Rule::log_hostsParse(char *rule)
   m_tokenList->enqueue(token);
 
   return m_tokenList;
-}
-
-/**
- * logs_xmlParse
- **/
-TokenList *
-Rule::logs_xmlParse(char * /* rule ATS_UNUSED */)
-{
-  return NULL;
 }
 
 /**
@@ -917,8 +906,6 @@ RuleList::parse(char *fileBuf, const char *filename)
     m_filetype = TS_FNAME_ICP_PEER; /* icp.config */
   } else if (strstr(filename, "ip_allow.config")) {
     m_filetype = TS_FNAME_IP_ALLOW; /* ip_allow.config */
-  } else if (strstr(filename, "logs_xml.config")) {
-    m_filetype = TS_FNAME_LOGS_XML; /* logs_xml.config */
   } else if (strstr(filename, "parent.config")) {
     m_filetype = TS_FNAME_PARENT_PROXY; /* parent.config */
   } else if (strstr(filename, "volume.config")) {
@@ -960,12 +947,6 @@ RuleList::parse(char *fileBuf, TSFileNameT filetype)
   Tokenizer lineTok("\n");
   tok_iter_state lineTok_state;
   const char *line;
-
-  if (filetype == TS_FNAME_LOGS_XML) {
-    printf("Yes Yes! XML!\n");
-    //      InkXmlConfigFile(NULL);
-    return;
-  }
 
   lineTok.Initialize(fileBuf);
   line = lineTok.iterFirst(&lineTok_state);

@@ -463,28 +463,6 @@ LogFilterString::display(FILE *fd)
   }
 }
 
-void
-LogFilterString::display_as_XML(FILE *fd)
-{
-  ink_assert(fd != NULL);
-  fprintf(fd, "<LogFilter>\n"
-              "  <Name      = \"%s\"/>\n"
-              "  <Action    = \"%s\"/>\n"
-              "  <Condition = \"%s %s ",
-          m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
-
-  if (m_num_values == 0) {
-    fprintf(fd, "<no values>\"\n");
-  } else {
-    fprintf(fd, "%s", m_value[0]);
-    for (size_t i = 1; i < m_num_values; ++i) {
-      fprintf(fd, ", %s", m_value[i]);
-    }
-    fprintf(fd, "\"/>\n");
-  }
-  fprintf(fd, "</LogFilter>\n");
-}
-
 /*-------------------------------------------------------------------------
   LogFilterInt::LogFilterInt
   -------------------------------------------------------------------------*/
@@ -715,28 +693,6 @@ LogFilterInt::display(FILE *fd)
   }
 }
 
-void
-LogFilterInt::display_as_XML(FILE *fd)
-{
-  ink_assert(fd != NULL);
-  fprintf(fd, "<LogFilter>\n"
-              "  <Name      = \"%s\"/>\n"
-              "  <Action    = \"%s\"/>\n"
-              "  <Condition = \"%s %s ",
-          m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
-
-  if (m_num_values == 0) {
-    fprintf(fd, "<no values>\"\n");
-  } else {
-    fprintf(fd, "%" PRId64 "", m_value[0]);
-    for (size_t i = 1; i < m_num_values; ++i) {
-      fprintf(fd, ", %" PRId64 "", m_value[i]);
-    }
-    fprintf(fd, "\"/>\n");
-  }
-  fprintf(fd, "</LogFilter>\n");
-}
-
 /*-------------------------------------------------------------------------
   LogFilterIP::LogFilterIP
   -------------------------------------------------------------------------*/
@@ -942,25 +898,6 @@ LogFilterIP::display(FILE *fd)
   }
 }
 
-void
-LogFilterIP::display_as_XML(FILE *fd)
-{
-  ink_assert(fd != NULL);
-  fprintf(fd, "<LogFilter>\n"
-              "  <Name      = \"%s\"/>\n"
-              "  <Action    = \"%s\"/>\n"
-              "  <Condition = \"%s %s ",
-          m_name, ACTION_NAME[m_action], m_field->symbol(), OPERATOR_NAME[m_operator]);
-
-  if (m_map.getCount() == 0) {
-    fprintf(fd, "<no values>");
-  } else {
-    this->displayRanges(fd);
-  }
-  fprintf(fd, "\"/>\n");
-  fprintf(fd, "</LogFilter>\n");
-}
-
 bool
 filters_are_equal(LogFilter *filt1, LogFilter *filt2)
 {
@@ -1142,14 +1079,6 @@ LogFilterList::display(FILE *fd)
 {
   for (LogFilter *f = first(); f; f = next(f)) {
     f->display(fd);
-  }
-}
-
-void
-LogFilterList::display_as_XML(FILE *fd)
-{
-  for (LogFilter *f = first(); f; f = next(f)) {
-    f->display_as_XML(fd);
   }
 }
 

@@ -354,34 +354,6 @@ LogObject::display(FILE *fd)
   fprintf(fd, "++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 }
 
-void
-LogObject::displayAsXML(FILE *fd, bool extended)
-{
-  if (extended) {
-    // display format and filter objects
-    m_format->displayAsXML(fd);
-    m_filter_list.display_as_XML(fd);
-  }
-
-  fprintf(fd, "<LogObject>\n"
-              "  <Mode        = \"%s\"/>\n"
-              "  <Format      = \"%s\"/>\n"
-              "  <Filename    = \"%s\"/>\n",
-          (m_flags & BINARY ? "binary" : "ascii"), m_format->name(), m_filename);
-
-  LogFilter *filter;
-  for (filter = m_filter_list.first(); filter != NULL; filter = m_filter_list.next(filter)) {
-    fprintf(fd, "  <Filter      = \"%s\"/>\n", filter->name());
-  }
-
-  LogHost *host;
-  for (host = m_host_list.first(); host != NULL; host = m_host_list.next(host)) {
-    fprintf(fd, "  <LogHostName = \"%s\"/>\n", host->name());
-  }
-
-  fprintf(fd, "</LogObject>\n");
-}
-
 LogBuffer *
 LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
 {

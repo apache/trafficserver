@@ -781,21 +781,6 @@ LogFormat::display(FILE *fd)
   fprintf(fd, "--------------------------------------------------------\n");
 }
 
-void
-LogFormat::displayAsXML(FILE *fd)
-{
-  if (valid()) {
-    fprintf(fd, "<LogFormat>\n"
-                "  <Name     = \"%s\"/>\n"
-                "  <Format   = \"%s\"/>\n"
-                "  <Interval = \"%ld\"/>\n"
-                "</LogFormat>\n",
-            m_name_str, m_format_str, m_interval_sec);
-  } else {
-    fprintf(fd, "INVALID FORMAT\n");
-  }
-}
-
 /*-------------------------------------------------------------------------
   LogFormatList
   -------------------------------------------------------------------------*/

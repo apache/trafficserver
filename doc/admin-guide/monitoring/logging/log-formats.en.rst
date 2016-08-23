@@ -68,7 +68,7 @@ Defining Log Objects
 ====================
 
 To perform any logging at all on your |TS| nodes, you must have at least one
-:ref:`LogObject` defined in :file:`logs_xml.config`. These definitions configure
+:ref:`LogObject` defined in :file:`logging.config`. These definitions configure
 what logs will be created, the format they will use (covered in the sections
 :ref:`admin-monitoring-logging-format-standard` and
 :ref:`admin-monitoring-logging-format-custom`), any filters which may be
@@ -77,7 +77,7 @@ applied to events before logging them, and when or how the logs will be rolled.
 Log Filters
 ===========
 
-:ref:`LogFilter` objects, configured in :file:`logs_xml.config` allow you to
+:ref:`LogFilter` objects, configured in :file:`logging.config` allow you to
 create filters, which may be applied to :ref:`LogObject` definitions, limiting
 the types of entries which will be included in the log output. This may be
 useful if your |TS| nodes receive many events which you have no need to log or
@@ -94,7 +94,7 @@ variety of off-the-shelf log-analysis packages. You should use one of the
 standard event log formats unless you need information that these formats do
 not provide.
 
-These formats may be used by editing the ``LogObject`` entry in :file:`logs_xml.config`.
+These formats may be used by editing the ``LogObject`` entry in :file:`logging.config`.
 
 .. _admin-logging-format-squid:
 
@@ -247,7 +247,7 @@ Custom Formats
 Defining a Format
 -----------------
 
-Custom logging formats in |TS| are defined by editing :file:`logs_xml.config`
+Custom logging formats in |TS| are defined by editing :file:`logging.config`
 and adding new :ref:`LogFormat` entries for each format you wish to define. The
 syntax is fairly simple: every :ref:`LogFormat` element should contain at least
 two child elements (additional elements are used for features such as log
@@ -279,7 +279,7 @@ just adding the desired characters to the format string::
 
 You may define as many custom formats as you wish. To apply changes to custom
 formats, you will need to run the command :option:`traffic_ctl config reload` after
-saving your changes to :file:`logs_xml.config`.
+saving your changes to :file:`logging.config`.
 
 .. _custom-logging-fields:
 

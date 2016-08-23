@@ -234,24 +234,6 @@ typedef enum               /* multicast time to live options */
   TS_MC_TTL_MULT_SUBNET,   /* deliver multicast to more than one subnet */
   TS_MC_TTL_UNDEFINED } TSMcTtlT;
 
-typedef enum /* tells Traffic Server to accept or reject records satisfying filter condition */
-{ TS_LOG_FILT_ACCEPT,
-  TS_LOG_FILT_REJECT,
-  TS_LOG_FILT_UNDEFINED } TSLogFilterActionT;
-
-typedef enum         /* possible conditional operators used in filters */
-{ TS_LOG_COND_MATCH, /* true if filter's field and value are idential; case-sensitive */
-  TS_LOG_COND_CASE_INSENSITIVE_MATCH,
-  TS_LOG_COND_CONTAIN, /* true if field contains the value; case-sensitive */
-  TS_LOG_COND_CASE_INSENSITIVE_CONTAIN,
-  TS_LOG_COND_UNDEFINED } TSLogConditionOpT;
-
-typedef enum /* valid logging modes for LogObject's */
-{ TS_LOG_MODE_ASCII,
-  TS_LOG_MODE_BINARY,
-  TS_LOG_ASCII_PIPE,
-  TS_LOG_MODE_UNDEFINED } TSLogModeT;
-
 typedef enum              /* methods of specifying groups of clients */
 { TS_CLIENT_GRP_IP,       /* ip range */
   TS_CLIENT_GRP_DOMAIN,   /* domain */
@@ -309,7 +291,6 @@ typedef enum {
   TS_FNAME_HOSTING,         /* hosting.config */
   TS_FNAME_ICP_PEER,        /* icp.config */
   TS_FNAME_IP_ALLOW,        /* ip_allow.config */
-  TS_FNAME_LOGS_XML,        /* logs_xml.config */
   TS_FNAME_PARENT_PROXY,    /* parent.config */
   TS_FNAME_VOLUME,          /* volume.config */
   TS_FNAME_PLUGIN,          /* plugin.config */
@@ -342,10 +323,7 @@ typedef enum {
   TS_HOSTING,    /* hosting.config */
   TS_ICP,        /* icp.config */
   TS_IP_ALLOW,   /* ip_allow.config */
-  TS_LOG_FILTER, /* logs_xml.config */
-  TS_LOG_OBJECT,
-  TS_LOG_FORMAT,
-  TS_PP_PARENT, /* parent.config */
+  TS_PP_PARENT,  /* parent.config */
   TS_PP_GO_DIRECT,
   TS_VOLUME,    /* volume.config */
   TS_PLUGIN,    /* plugin.config */
@@ -574,35 +552,6 @@ typedef struct {
   TSIpAllowT action;
 } TSIpAllowEle;
 
-/* logs_xml.config */
-typedef struct {
-  TSCfgEle cfg_ele;
-  TSLogFilterActionT action; /* accept or reject records satisfying filter condition */
-  char *filter_name;
-  char *log_field; /* possible choices listed on p.250 */
-  TSLogConditionOpT compare_op;
-  char *compare_str; /* the comparison value can be any string or integer */
-  int compare_int;   /* if int, then all the TSLogConditionOpT operations mean "equal" */
-} TSLogFilterEle;
-
-typedef struct {
-  TSCfgEle cfg_ele;
-  char *name; /* must be unique; can't be a pre-defined format */
-  char *format;
-  int aggregate_interval_secs; /* (optional) use if format contains aggregate ops */
-} TSLogFormatEle;
-
-typedef struct {
-  TSCfgEle cfg_ele;
-  char *format_name;
-  char *file_name;
-  TSLogModeT log_mode;
-  TSDomainList collation_hosts; /* list of hosts (by name or IP addr) */
-  TSStringList filters;         /* list of filter names that already exist */
-  TSStringList protocols;       /* list of protocols, eg. http, nttp, icp */
-  TSStringList server_hosts;    /* list of host names */
-} TSLogObjectEle;
-
 /* parent.config */
 typedef struct {
   TSCfgEle cfg_ele;
@@ -824,12 +773,6 @@ tsapi TSIcpEle *TSIcpEleCreate();
 tsapi void TSIcpEleDestroy(TSIcpEle *ele);
 tsapi TSIpAllowEle *TSIpAllowEleCreate();
 tsapi void TSIpAllowEleDestroy(TSIpAllowEle *ele);
-tsapi TSLogFilterEle *TSLogFilterEleCreate();
-tsapi void TSLogFilterEleDestroy(TSLogFilterEle *ele);
-tsapi TSLogFormatEle *TSLogFormatEleCreate();
-tsapi void TSLogFormatEleDestroy(TSLogFormatEle *ele);
-tsapi TSLogObjectEle *TSLogObjectEleCreate();
-tsapi void TSLogObjectEleDestroy(TSLogObjectEle *ele);
 tsapi TSParentProxyEle *TSParentProxyEleCreate(TSRuleTypeT type);
 tsapi void TSParentProxyEleDestroy(TSParentProxyEle *ele);
 tsapi TSVolumeEle *TSVolumeEleCreate();

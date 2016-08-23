@@ -153,7 +153,6 @@ public:
   void check_buffer_expiration(long time_now);
 
   void display(FILE *fd = stdout);
-  void displayAsXML(FILE *fd = stdout, bool extended = false);
   static uint64_t compute_signature(LogFormat *format, char *filename, unsigned int flags);
 
   const char *

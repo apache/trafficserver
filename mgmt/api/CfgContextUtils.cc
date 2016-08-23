@@ -1467,8 +1467,6 @@ filename_to_string(TSFileNameT file)
     return "icp.config";
   case TS_FNAME_IP_ALLOW:
     return "ip_allow.config";
-  case TS_FNAME_LOGS_XML:
-    return "logs_xml.config";
   case TS_FNAME_PARENT_PROXY:
     return "parent.config";
   case TS_FNAME_VOLUME:
@@ -1974,11 +1972,6 @@ create_ele_obj_from_rule_node(Rule *rule)
     ele = (CfgEleObj *)new IpAllowObj(token_list);
     break;
 
-  case TS_LOG_FILTER: /* logs_xml.config */
-  case TS_LOG_OBJECT:
-  case TS_LOG_FORMAT:
-    // ele = (CfgEleObj *) new LogFilterObj(token_list);
-    break;
   case TS_PP_PARENT: /* parent.config */
   case TS_PP_GO_DIRECT:
     ele = (CfgEleObj *)new ParentProxyObj(token_list);
@@ -2062,12 +2055,6 @@ create_ele_obj_from_ele(TSCfgEle *ele)
 
   case TS_IP_ALLOW: /* ip_allow.config */
     ele_obj = (CfgEleObj *)new IpAllowObj((TSIpAllowEle *)ele);
-    break;
-
-  case TS_LOG_FILTER: /* logs_xml.config */
-  case TS_LOG_OBJECT: // fall-through
-  case TS_LOG_FORMAT: // fall-through
-    // ele_obj = (CfgEleObj*) new LogFilterObj((TSLogFilterEle*)ele);
     break;
 
   case TS_PP_PARENT:    /* parent.config */
@@ -2177,13 +2164,6 @@ get_rule_type(TokenList *token_list, TSFileNameT file)
 
   case TS_FNAME_IP_ALLOW: /* ip_allow.config */
     return TS_IP_ALLOW;
-
-  case TS_FNAME_LOGS_XML: /* logs_xml.config */
-    printf(" *** CfgContextUtils.cc: NOT DONE YET! **\n");
-    //  TS_LOG_FILTER,             /* logs_xml.config */
-    //  TS_LOG_OBJECT,
-    //  TS_LOG_FORMAT,
-    return TS_LOG_FILTER;
 
   case TS_FNAME_PARENT_PROXY: /* parent.config */
     // search fro go_direct action name and recongize the value-> ture or false
@@ -2615,87 +2595,6 @@ copy_ip_allow_ele(TSIpAllowEle *ele)
     nele->src_ip_addr = copy_ip_addr_ele(ele->src_ip_addr);
   }
   nele->action = ele->action;
-  return nele;
-}
-
-TSLogFilterEle *
-copy_log_filter_ele(TSLogFilterEle *ele)
-{
-  if (!ele) {
-    return NULL;
-  }
-
-  TSLogFilterEle *nele = TSLogFilterEleCreate();
-  if (!nele) {
-    return NULL;
-  }
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  nele->action = ele->action;
-  if (ele->filter_name) {
-    ele->filter_name = ats_strdup(nele->filter_name);
-  }
-  if (ele->log_field) {
-    nele->log_field = ats_strdup(ele->log_field);
-  }
-  nele->compare_op = ele->compare_op;
-  if (ele->compare_str) {
-    nele->compare_str = ats_strdup(ele->compare_str);
-  }
-  nele->compare_int = ele->compare_int;
-
-  return nele;
-}
-
-TSLogFormatEle *
-copy_log_format_ele(TSLogFormatEle *ele)
-{
-  if (!ele) {
-    return NULL;
-  }
-
-  TSLogFormatEle *nele = TSLogFormatEleCreate();
-  if (!nele) {
-    return NULL;
-  }
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->name) {
-    nele->name = ats_strdup(ele->name);
-  }
-  if (ele->format) {
-    nele->format = ats_strdup(ele->format);
-  }
-  nele->aggregate_interval_secs = ele->aggregate_interval_secs;
-
-  return nele;
-}
-
-TSLogObjectEle *
-copy_log_object_ele(TSLogObjectEle *ele)
-{
-  if (!ele) {
-    return NULL;
-  }
-
-  TSLogObjectEle *nele = TSLogObjectEleCreate();
-  if (!nele) {
-    return NULL;
-  }
-
-  copy_cfg_ele(&(ele->cfg_ele), &(nele->cfg_ele));
-  if (ele->format_name) {
-    nele->format_name = ats_strdup(ele->format_name);
-  }
-  if (ele->file_name) {
-    nele->file_name = ats_strdup(ele->file_name);
-  }
-  nele->log_mode        = ele->log_mode;
-  nele->collation_hosts = copy_domain_list(ele->collation_hosts);
-  nele->filters         = copy_string_list(ele->filters);
-  nele->protocols       = copy_string_list(ele->protocols);
-  nele->server_hosts    = copy_string_list(ele->server_hosts);
-
   return nele;
 }
 

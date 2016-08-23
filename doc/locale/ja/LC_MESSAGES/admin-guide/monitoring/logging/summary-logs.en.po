@@ -35,7 +35,7 @@ msgstr ""
 #: ../../../admin-guide/monitoring/logging/summary-logs.en.rst:31
 msgid ""
 "To generate a summary log file, create a :ref:`LogFormat` object in the XML-"
-"based logging configuration :file:`logs_xml.config` using the SQL-like "
+"based logging configuration :file:`logging.config` using the SQL-like "
 "aggregate operators below. You can apply each of these operators to "
 "specific fields, over a specified interval."
 msgstr ""
@@ -66,7 +66,7 @@ msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/summary-logs.en.rst:44
 msgid ""
-"Define the format of the log file in :file:`logs_xml.config` as follows::"
+"Define the format of the log file in :file:`logging.config` as follows::"
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/summary-logs.en.rst:52
@@ -80,7 +80,7 @@ msgstr ""
 #: ../../../admin-guide/monitoring/logging/summary-logs.en.rst:57
 msgid ""
 "You can specify more than one ``operator`` in the format line. For more "
-"information, refer to :file:`logs_xml.config`."
+"information, refer to :file:`logging.config`."
 msgstr ""
 
 #: ../../../admin-guide/monitoring/logging/summary-logs.en.rst:60

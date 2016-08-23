@@ -105,7 +105,7 @@ restart |TS|.
    -  :ts:cv:`proxy.local.log.collation_mode`: ``2`` to configure this node as
       log collation client and sen standard formatted log entries to the
       collation server. For XML-based formatted log entries, see
-      :file:`logs_xml.config` file.
+      :file:`logging.config` file.
    -  :ts:cv:`proxy.config.log.collation_host`
    -  :ts:cv:`proxy.config.log.collation_port`
    -  :ts:cv:`proxy.config.log.collation_secret`
@@ -118,12 +118,12 @@ restart |TS|.
 Collating Custom Logs
 =====================
 
-If you use custom event log files, then you must edit :file:`logs_xml.config`,
+If you use custom event log files, then you must edit :file:`logging.config`,
 in addition to configuring a collation server and collation clients.
 
 To collate custom event log files:
 
-#. On each collation client, edit :file:`logs_xml.config` and add the
+#. On each collation client, edit :file:`logging.config` and add the
    :ref:`CollationHosts <logs-xml-logobject-collationhost>` attribute to the
    :ref:`LogObject` specification::
 

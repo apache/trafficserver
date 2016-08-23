@@ -30,12 +30,10 @@ trusty*|jessie*)
         clang \
         libcap-dev \
         libcurl4-openssl-dev \
-        libexpat-dev \
         libhwloc-dev \
         liblua5.2-dev \
         libpcre3-dev \
         libssl-dev \
-        libxml2-dev \
         m4 \
         ncurses-dev \
         git \
@@ -47,7 +45,6 @@ centos*)
         autoconf \
         automake \
         clang \
-        expat-devel \
         flex \
         gcc \
         gcc-c++ \
@@ -55,7 +52,6 @@ centos*)
         libcap-devel \
         libcurl-devel d\
         libtool \
-        libxml2-devel \
         lua-devel \
         m4 \
         ncurses-devel \
@@ -70,7 +66,6 @@ fedora*)
         autoconf \
         automake \
         clang \
-        expat-devel \
         flex \
         gcc \
         gcc-c++ \
@@ -78,7 +73,6 @@ fedora*)
         libcap-devel \
         libcurl-devel \
         libtool \
-        libxml2-devel \
         lua-devel \
         m4 \
         ncurses-devel \

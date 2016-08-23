@@ -106,7 +106,6 @@ development tools and libraries installed:
 -  GNU make
 -  openssl
 -  tcl
--  expat
 -  pcre
 -  libcap
 -  flex (for TPROXY)

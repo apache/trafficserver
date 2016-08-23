@@ -1023,9 +1023,6 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "log_hosts.config") == 0) {
     lmgmt->signalFileChange("proxy.config.log.hosts_config_file");
 
-  } else if (strcmp(fname, "logs_xml.config") == 0) {
-    lmgmt->signalFileChange("proxy.config.log.xml_config_file");
-
   } else if (strcmp(fname, "logging.config") == 0) {
     lmgmt->signalFileChange("proxy.config.log.config.filename");
 
