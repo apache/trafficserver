@@ -6359,12 +6359,6 @@ HttpSM::setup_server_transfer_to_transform()
   IOBufferReader *buf_start = buf->alloc_reader();
   nbytes                    = server_transfer_init(buf, 0);
 
-  if (t_state.negative_caching && t_state.hdr_info.server_response.status_get() == HTTP_STATUS_NO_CONTENT) {
-    int s = sizeof("No Content") - 1;
-    buf->write("No Content", s);
-    nbytes += s;
-  }
-
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_response_wait_for_transform_read);
 
   HttpTunnelProducer *p =
