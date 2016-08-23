@@ -1705,7 +1705,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // Sanity checks
   check_fd_limit();
 
-// Alter the frequecies at which the update threads will trigger
+// Alter the frequencies at which the update threads will trigger
 #define SET_INTERVAL(scope, name, var)                    \
   do {                                                    \
     RecInt tmpint;                                        \
@@ -1725,7 +1725,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   //////////////////////////////////////////////////////////////////////
   // Determine if Cache Clustering is enabled, since the transaction
   // on a thread changes require special consideration to allow
-  // minimial Cache Clustering functionality.
+  // minimal Cache Clustering functionality.
   //////////////////////////////////////////////////////////////////////
   RecInt cluster_type;
   cache_clustering_enabled = 0;
@@ -1959,7 +1959,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
 #if TS_HAS_TESTS
 //////////////////////////////
-// Unit Regresion Test Hook //
+// Unit Regression Test Hook //
 //////////////////////////////
 
 #include "HdrTest.h"
