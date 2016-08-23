@@ -160,7 +160,7 @@ SSLConfigParams::initialize()
   dhparamsFile = RecConfigReadConfigPath("proxy.config.ssl.server.dhparams_file");
 
   int options;
-  int client_ssl_options;
+  int client_ssl_options = 0;
   REC_ReadConfigInteger(options, "proxy.config.ssl.TLSv1");
   if (!options)
     ssl_ctx_options |= SSL_OP_NO_TLSv1;
@@ -200,15 +200,12 @@ SSLConfigParams::initialize()
     ssl_ctx_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
 #endif
 
-  REC_ReadConfigInteger(options, "proxy.config.ssl.compression");
-  if (!options) {
 #ifdef SSL_OP_NO_COMPRESSION
-    /* OpenSSL >= 1.0 only */
-    ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
+  /* OpenSSL >= 1.0 only */
+  ssl_ctx_options |= SSL_OP_NO_COMPRESSION;
 #elif OPENSSL_VERSION_NUMBER >= 0x00908000L
-    sk_SSL_COMP_zero(SSL_COMP_get_compression_methods());
+  sk_SSL_COMP_zero(SSL_COMP_get_compression_methods());
 #endif
-  }
 
 // Enable ephemeral DH parameters for the case where we use a cipher with DH forward security.
 #ifdef SSL_OP_SINGLE_DH_USE
