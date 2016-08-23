@@ -77,7 +77,13 @@ Server::accept(Connection *c)
   int res      = 0;
   socklen_t sz = sizeof(c->addr);
 
-  res = socketManager.accept(fd, &c->addr.sa, &sz);
+  int flags = SOCK_NONBLOCK;
+
+#ifdef SET_CLOSE_ON_EXEC
+  flags |= SOCK_CLOEXEC;
+#endif
+
+  res = socketManager.accept4(fd, &c->addr.sa, &sz, flags);
   if (res < 0)
     return res;
   c->fd = res;
@@ -87,21 +93,11 @@ Server::accept(Connection *c)
           ats_ip_nptop(&addr, ipb1, sizeof(ipb1)));
   }
 
-#ifdef SET_CLOSE_ON_EXEC
-  if ((res = safe_fcntl(fd, F_SETFD, FD_CLOEXEC)) < 0)
-    goto Lerror;
-#endif
-  if ((res = safe_nonblocking(c->fd)) < 0)
-    goto Lerror;
 #ifdef SEND_BUF_SIZE
   socketManager.set_sndbuf_size(c->fd, SEND_BUF_SIZE);
 #endif
 
   return 0;
-
-Lerror:
-  c->close();
-  return res;
 }
 
 int
