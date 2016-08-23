@@ -28,8 +28,8 @@ SQL-like aggregate operators, you can configure |TS| to create summary log
 files that summarize a set of log entries over a specified period of time. This
 can significantly reduce the size of the log files generated.
 
-To generate a summary log file, create a :ref:`LogFormat` object in the
-XML-based logging configuration :file:`logging.config` using the SQL-like
+To generate a summary log file, create a ``format`` object in the
+custom logging configuration :file:`logging.config` using the SQL-like
 aggregate operators below. You can apply each of these operators to specific
 fields, over a specified interval.
 
@@ -39,42 +39,63 @@ fields, over a specified interval.
 -  ``FIRST``
 -  ``LAST``
 
+Creating Summary Log Formats
+============================
+
 To create a summary log file format:
 
-#. Define the format of the log file in :file:`logging.config` as follows::
+#. Define the format of the log file in :file:`logging.config` as follows:
 
-       <LogFormat>
-         <Name = "summary"/>
-         <Format = "%<operator(field)> : %<operator(field)>"/>
-         <Interval = "n"/>
-       </LogFormat>
+   .. code:: lua
 
-   Where ``operator`` is one of the five aggregate operators (``COUNT``,
-   ``SUM``, ``AVERAGE``, ``FIRST``, ``LAST``); ``field`` is the logging field
-   you want to aggregate; and ``n`` is the interval (in seconds) between
-   summary log entries.
+      mysummary = format {
+        Format = "%<operator(field)> : %<operator(field)>",
+        Interval = "n"
+      }
+
+   Where ``operator`` is one of the five aggregate operators detailed earlier
+   and ``field`` is the logging field you want to aggregate. For the interval,
+   ``n`` is the interval (in seconds) between summary log entries.
 
    You can specify more than one ``operator`` in the format line. For more
    information, refer to :file:`logging.config`.
 
-#. Run the command :option:`traffic_ctl config reload` to apply configuration changes .
+#. Run the command :option:`traffic_ctl config reload` to apply the changes.
+
+Mixing Normal Fields and Aggregates
+===================================
+
+It is important to note that you cannot create custom formats for summary logs
+which mix both normal, unadorned fields and aggregate functions. Your custom
+format must be all of one, or all of the other. In other words, the following
+attempt would not work:
+
+.. code:: lua
+
+   wontwork = format {
+     Format = "%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)> : %<cqu>",
+     Interval = "10"
+   }
+
+Because it attempts to use the last, count, and sum aggregate functions at the
+same time it also includes the bare, unaggregated ``cqu`` field. As each line
+of the summary log may be summarized across many individual events, |TS| would
+have no way of knowing which individual event's ``cqu`` should be emitted to
+the log.
+
+Examples
+========
 
 The following example format generates one entry every 10 seconds. Each entry
 contains the timestamp of the last entry of the interval, a count of the number
 of entries seen within that 10-second interval, and the sum of all bytes sent
-to the client::
+to the client:
 
-    <LogFormat>
-      <Name = "summary"/>
-      <Format = "%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>"/>
-      <Interval = "10"/>
-    </LogFormat>
 
-.. important::
+.. code:: lua
 
-    You cannot create a format specification that contains
-    both aggregate operators and regular fields. For example, the following
-    specification would be invalid: ::
-
-        <Format = "%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)> : %<cqu>"/>
+   mysummary = format {
+      Format = "%<LAST(cqts)> : %<COUNT(*)> : %<SUM(psql)>",
+      Interval = "10"
+   }
 

@@ -68,7 +68,7 @@ Defining Log Objects
 ====================
 
 To perform any logging at all on your |TS| nodes, you must have at least one
-:ref:`LogObject` defined in :file:`logging.config`. These definitions configure
+log defined in :file:`logging.config`. These definitions configure
 what logs will be created, the format they will use (covered in the sections
 :ref:`admin-monitoring-logging-format-standard` and
 :ref:`admin-monitoring-logging-format-custom`), any filters which may be
@@ -77,11 +77,10 @@ applied to events before logging them, and when or how the logs will be rolled.
 Log Filters
 ===========
 
-:ref:`LogFilter` objects, configured in :file:`logging.config` allow you to
-create filters, which may be applied to :ref:`LogObject` definitions, limiting
-the types of entries which will be included in the log output. This may be
-useful if your |TS| nodes receive many events which you have no need to log or
-analyze.
+Filters, configured in :file:`logging.config` allow you to create filters,
+which may be applied to log definitions, limiting the types of entries which
+will be included in the log output. This may be useful if your |TS| nodes
+receive many events which you have no need to log or analyze.
 
 .. _admin-monitoring-logging-format-standard:
 
@@ -94,7 +93,7 @@ variety of off-the-shelf log-analysis packages. You should use one of the
 standard event log formats unless you need information that these formats do
 not provide.
 
-These formats may be used by editing the ``LogObject`` entry in :file:`logging.config`.
+These formats may be used by editing :file:`logging.config`.
 
 .. _admin-logging-format-squid:
 
@@ -248,38 +247,42 @@ Defining a Format
 -----------------
 
 Custom logging formats in |TS| are defined by editing :file:`logging.config`
-and adding new :ref:`LogFormat` entries for each format you wish to define. The
-syntax is fairly simple: every :ref:`LogFormat` element should contain at least
-two child elements (additional elements are used for features such as log
-summarization and are covered elsewhere):
+and adding new format entries for each format you wish to define. The syntax is
+fairly simple: every format must contain a ``Format`` attribute, which is the
+string defining the format of each line in the log, and may also contain an
+optional ``Interval`` attribute defining the log aggregation interval for
+any logs which use the format (see :ref:`admin-monitoring-logging-summary-logs`
+for more information).
 
--  A ``<Name>`` which contains an arbitrary string (using only the allowed
-   characters: ``[a-z0-9]``) naming your custom format.
+The return value from the ``format`` function is the log format object which
+may then be supplied to the appropriate ``log.*`` functions that define your
+logging destinations.
 
--  A ``<Format>`` which defines the fields that will populate each entry in the
-   custom logs, as well as the order in which they appear.
+A very simple exampe, which contains only the timestamp of when the event began
+and the canonical URL of the request, would look like:
 
-A very simple example format, which contains only the timestamp of when the
-event began and the canonical URL of the request, and named *myformat* would
-be written as follows::
+.. code:: lua
 
-   <LogFormat>
-     <Name = "myformat"/>
-     <Format = "%<cqtq> %<cauc>"/>
-   </LogFormat>
+   myformat = format {
+     Format = "%<cqtq> %<cauc>"
+   }
 
 You may include as many custom field codes as you wish. The full list of codes
 available can be found in :ref:`custom-logging-fields`. You may also include
 any literal characters in your format. For example, if we wished to separate
 the timestamp and canonical URL in our customer format above with a slash
 instead of a space, or even a slash surrounded by spaces, we could do so by
-just adding the desired characters to the format string::
+just adding the desired characters to the format string:
 
-    %<cqtq> / %<cauc>
+.. code:: lua
+
+   myformat = format {
+     Format = "%<cqtq> / %<cauc>"
+   }
 
 You may define as many custom formats as you wish. To apply changes to custom
-formats, you will need to run the command :option:`traffic_ctl config reload` after
-saving your changes to :file:`logging.config`.
+formats, you will need to run the command :option:`traffic_ctl config reload`
+after saving your changes to :file:`logging.config`.
 
 .. _custom-logging-fields:
 

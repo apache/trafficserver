@@ -17,6 +17,8 @@
 
 .. include:: ../../../common.defs
 
+.. _admin-monitoring-logging-log-collation:
+
 Log Collation
 *************
 
@@ -103,9 +105,8 @@ restart |TS|.
 #. In the :file:`records.config` file, edit the following variables:
 
    -  :ts:cv:`proxy.local.log.collation_mode`: ``2`` to configure this node as
-      log collation client and sen standard formatted log entries to the
-      collation server. For XML-based formatted log entries, see
-      :file:`logging.config` file.
+      log collation client and send standard formatted log entries to the
+      collation server. For custom log entries, see :file:`logging.config`.
    -  :ts:cv:`proxy.config.log.collation_host`
    -  :ts:cv:`proxy.config.log.collation_port`
    -  :ts:cv:`proxy.config.log.collation_secret`
@@ -124,19 +125,16 @@ in addition to configuring a collation server and collation clients.
 To collate custom event log files:
 
 #. On each collation client, edit :file:`logging.config` and add the
-   :ref:`CollationHosts <logs-xml-logobject-collationhost>` attribute to the
-   :ref:`LogObject` specification::
+   ``CollationHosts`` attribute to the relevant logs. For example, adding two
+   collation hosts to an ASCII log that uses the Squid format would look like:
 
-       <LogObject>
-         <Format = "squid"/>
-         <Filename = "squid"/>
-         <CollationHosts="ipaddress:port"/>
-       </LogObject>
+   .. code:: lua
 
-   Where ``ipaddress`` is the hostname or IP address of the collation
-   server to which all log entries (for this object) are forwarded, and
-   ``port`` is the port number for communication between the collation
-   server and collation clients.
+      log.ascii {
+        Format = squid,
+        Filename = 'squid',
+        CollationHosts = { '192.168.1.100:4567', '192.168.1.101:4567' }
+      }
 
 #. Run the command :option:`traffic_ctl config reload` to restart Traffic Server on the
    local node or :option:`traffic_ctl config reload` to restart Traffic Server on all
