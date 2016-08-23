@@ -37,6 +37,14 @@
 #include "I_EventSystem.h"
 #include "I_Thread.h"
 
+#ifndef SOCK_NONBLOCK
+#define SOCK_NONBLOCK O_NONBLOCK
+#endif
+
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC O_CLOEXEC
+#endif
+
 #define DEFAULT_OPEN_MODE 0644
 
 class Thread;
@@ -102,7 +110,7 @@ struct SocketManager {
   int dup(int s);
 
   // result is the fd or -errno
-  int accept(int s, struct sockaddr *addr, socklen_t *addrlen);
+  int accept4(int s, struct sockaddr *addr, socklen_t *addrlen, int flags);
 
   // manipulate socket buffers
   int get_sndbuf_size(int s);
