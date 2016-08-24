@@ -73,9 +73,9 @@ Return Values
 
 The :func:`TSUrlParse` function returns a :type:`TSParseResult`, where
 :data:`TS_PARSE_ERROR` indicates an error. Success is indicated by one of
-:data:`TS_PARSE_DONE`, :data:`TS_PARSE_OK` or :data:`TS_PARSE_CONT`. The other
-APIs all return a :type:`TSReturnCode`, indicating success
-(:data:`TS_SUCCESS`) or failure (:data:`TS_ERROR`) of the operation.
+:data:`TS_PARSE_DONE` or :data:`TS_PARSE_CONT`. The other APIs all return
+a :type:`TSReturnCode`, indicating success (:data:`TS_SUCCESS`) or failure
+(:data:`TS_ERROR`) of the operation.
 
 See Also
 ========

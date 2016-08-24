@@ -75,15 +75,8 @@ Return Salues
 a :type:`TSParseResult` value. :data:`TS_PARSE_ERROR` is returned
 on error, :data:`TS_PARSE_CONT` is returned if parsing of the header
 stopped because the end of the buffer was reached, and
-:data:`TS_PARSE_DONE` or :data:`TS_PARSE_OK` when a \\r\\n\\r\\n
-pattern is encountered, indicating the end of the header.
-
-Known Bugs
-==========
-
-The distinction between the :data:`TS_PARSE_DONE` and :data:`TS_PARSE_OK`
-results is not well-defined. Plugins should expect both status codes and
-treat them equivalently.
+:data:`TS_PARSE_DONE` when a \\r\\n\\r\\n pattern is encountered,
+indicating the end of the header.
 
 See Also
 ========

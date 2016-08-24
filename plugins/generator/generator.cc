@@ -442,7 +442,6 @@ GeneratorInterceptionHook(TSCont contp, TSEvent event, void *edata)
         return TS_EVENT_ERROR;
 
       case TS_PARSE_DONE:
-      case TS_PARSE_OK:
         // Check the response.
         VDEBUG("parsed request on grq=%p, sending a response ", cdata.grq);
         if (GeneratorParseRequest(cdata.grq) && GeneratorWriteResponseHeader(cdata.grq, TSVIOVConnGet(arg.vio), contp)) {
