@@ -470,6 +470,14 @@ tsapi const char *TSUrlUserGet(TSMBuffer bufp, TSMLoc offset, int *length);
 tsapi TSReturnCode TSUrlUserSet(TSMBuffer bufp, TSMLoc offset, const char *value, int length);
 
 /**
+    Removes host name from the URL located at url_loc within bufp.
+
+    @param bufp marshal buffer containing the URL.
+    @param offset location of the URL.
+*/
+tsapi void TSUrlRemoveHostName(TSMBuffer bufp, TSMLoc obj);
+
+/**
     Retrieves the password portion of the URL located at url_loc
     within bufp. TSUrlPasswordGet() places the length of the returned
     string in the length argument. Note: the returned string is

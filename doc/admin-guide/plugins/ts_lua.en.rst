@@ -1304,6 +1304,34 @@ ts.server_request.set_uri_params
 
 `TOP <#ts-lua-plugin>`_
 
+ts.server_request.remove_host_name_from_url
+-------------------------------------------
+**syntax:** *ts.server_request.remove_host_name_from_url()*
+
+**context:** function @ TS_LUA_HOOK_SEND_REQUEST_HDR hook point
+
+**description:** This function can be used to remove host name from GET request send to next-tier.
+
+Here is an example:
+
+::
+
+    function send_request()
+        ts.server_request.remove_host_name_from_url()
+    end
+
+    function do_remap()
+        ts.hook(TS_LUA_HOOK_SEND_REQUEST_HDR, send_request)
+        return 0
+    end
+
+Then ``GET http://origin.com/dir1/a.txt`` will yield the output:
+
+``GET /dir1/a.txt``
+
+
+`TOP <#ts-lua-plugin>`_
+
 ts.server_request.header.HEADER
 -------------------------------
 **syntax:** *ts.server_request.header.HEADER = VALUE*

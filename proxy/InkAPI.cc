@@ -2251,6 +2251,20 @@ TSUrlPathSet(TSMBuffer bufp, TSMLoc obj, const char *value, int length)
   return URLPartSet(bufp, obj, value, length, &URL::path_set);
 }
 
+void
+TSUrlRemoveHostName(TSMBuffer bufp, TSMLoc obj)
+{
+  sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_url_handle(obj) == TS_SUCCESS);
+  URL u;
+  Debug("cache_url", "[TSUrlRemoveHostName] Removing host name from url");
+
+  u.m_heap = ((HdrHeapSDKHandle *)bufp)->m_heap;
+  u.m_url_impl = (URLImpl *)obj;
+
+  u.nuke_proxy_stuff();
+}
+
 /* FTP specific URLs */
 
 int
