@@ -57,10 +57,6 @@ msgstr ""
 "安定的なプラグインです。これらは |TS| のリリースにデフォルトでインストールさ"
 "れれています。"
 
-#: ../../../admin-guide/plugins/index.en.rst:59
-msgid ":doc:`Cache URL <cacheurl.en>`"
-msgstr ""
-
 #: ../../../admin-guide/plugins/index.en.rst:58
 msgid ""
 "Modify the :term:`cache key` used for requests by applying a regular "

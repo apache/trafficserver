@@ -397,11 +397,6 @@ file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/cachekey.en.po
 source_file = _build/locale/pot/admin-guide/plugins/cachekey.en.pot
 source_lang = en
 
-[apache-traffic-server-6x.admin-guide--plugins--cacheurl_en]
-file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/cacheurl.en.po
-source_file = _build/locale/pot/admin-guide/plugins/cacheurl.en.pot
-source_lang = en
-
 [apache-traffic-server-6x.admin-guide--plugins--combo_handler_en]
 file_filter = locale/<lang>/LC_MESSAGES/admin-guide/plugins/combo_handler.en.po
 source_file = _build/locale/pot/admin-guide/plugins/combo_handler.en.pot
