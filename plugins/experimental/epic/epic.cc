@@ -50,107 +50,90 @@
 static TSHRTime epic_period;
 static char *epic_prefix;
 
-#define GAUGE_METRIC_NAMES                                                                                                         \
-  "proxy.node.bandwidth_hit_ratio_avg_10s", "proxy.node.bandwidth_hit_ratio_avg_10s",                                              \
-    "proxy.node.bandwidth_hit_ratio_avg_10s_int_pct", "proxy.node.bandwidth_hit_ratio_int_pct", "proxy.node.cache.bytes_free",     \
-    "proxy.node.cache.bytes_free_mb", "proxy.node.cache.bytes_total", "proxy.node.cache.bytes_total_mb",                           \
-    "proxy.node.cache.bytes_used", "proxy.node.cache.bytes_used_mb", "proxy.node.cache.percent_free",                              \
-    "proxy.node.cache.percent_free_int_pct", "proxy.node.cache_hit_mem_ratio", "proxy.node.cache_hit_mem_ratio_avg_10s",           \
-    "proxy.node.cache_hit_mem_ratio_avg_10s_int_pct", "proxy.node.cache_hit_mem_ratio_int_pct", "proxy.node.cache_hit_ratio",      \
-    "proxy.node.cache_hit_ratio_avg_10s", "proxy.node.cache_hit_ratio_avg_10s_int_pct", "proxy.node.cache_hit_ratio_int_pct",      \
-    "proxy.node.cache_total_hits_avg_10s", "proxy.node.cache_total_hits_mem_avg_10s", "proxy.node.cache_total_misses_avg_10s",     \
-    "proxy.node.client_throughput_out", "proxy.node.client_throughput_out_kbit", "proxy.node.cluster.nodes",                       \
-    "proxy.node.config.reconfigure_required", "proxy.node.config.reconfigure_time", "proxy.node.config.restart_required.cop",      \
-    "proxy.node.config.restart_required.manager", "proxy.node.config.restart_required.proxy",                                      \
-    "proxy.node.current_cache_connections", "proxy.node.current_client_connections", "proxy.node.current_server_connections",      \
-    "proxy.node.dns.lookup_avg_time_ms", "proxy.node.dns.lookups_per_second", "proxy.node.hostdb.hit_ratio",                       \
-    "proxy.node.hostdb.hit_ratio_avg_10s", "proxy.node.hostdb.hit_ratio_int_pct", "proxy.node.hostdb.total_hits_avg_10s",          \
-    "proxy.node.hostdb.total_lookups_avg_10s", "proxy.node.http.cache_current_connections_count",                                  \
-    "proxy.node.http.cache_hit_fresh_avg_10s", "proxy.node.http.cache_hit_ims_avg_10s",                                            \
-    "proxy.node.http.cache_hit_mem_fresh_avg_10s", "proxy.node.http.cache_hit_revalidated_avg_10s",                                \
-    "proxy.node.http.cache_hit_stale_served_avg_10s", "proxy.node.http.cache_miss_changed_avg_10s",                                \
-    "proxy.node.http.cache_miss_client_no_cache_avg_10s", "proxy.node.http.cache_miss_cold_avg_10s",                               \
-    "proxy.node.http.cache_miss_ims_avg_10s", "proxy.node.http.cache_miss_not_cacheable_avg_10s",                                  \
-    "proxy.node.http.cache_read_error_avg_10s", "proxy.node.http.current_parent_proxy_connections",                                \
-    "proxy.node.http.origin_server_current_connections_count", "proxy.node.http.transaction_counts_avg_10s.errors.aborts",         \
-    "proxy.node.http.transaction_counts_avg_10s.errors.connect_failed",                                                            \
-    "proxy.node.http.transaction_counts_avg_10s.errors.early_hangups",                                                             \
-    "proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups", "proxy.node.http.transaction_counts_avg_10s.errors.other",  \
-    "proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts",                                                           \
-    "proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups",                                                        \
-    "proxy.node.http.transaction_counts_avg_10s.hit_fresh", "proxy.node.http.transaction_counts_avg_10s.hit_revalidated",          \
-    "proxy.node.http.transaction_counts_avg_10s.miss_changed", "proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache",  \
-    "proxy.node.http.transaction_counts_avg_10s.miss_cold", "proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable",       \
-    "proxy.node.http.transaction_counts_avg_10s.other.unclassified", "proxy.node.http.transaction_frac_avg_10s.errors.aborts",     \
-    "proxy.node.http.transaction_frac_avg_10s.errors.aborts_int_pct",                                                              \
-    "proxy.node.http.transaction_frac_avg_10s.errors.connect_failed",                                                              \
-    "proxy.node.http.transaction_frac_avg_10s.errors.connect_failed_int_pct",                                                      \
-    "proxy.node.http.transaction_frac_avg_10s.errors.early_hangups",                                                               \
-    "proxy.node.http.transaction_frac_avg_10s.errors.early_hangups_int_pct",                                                       \
-    "proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups",                                                               \
-    "proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups_int_pct",                                                       \
-    "proxy.node.http.transaction_frac_avg_10s.errors.other", "proxy.node.http.transaction_frac_avg_10s.errors.other_int_pct",      \
-    "proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts",                                                             \
-    "proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts_int_pct",                                                     \
-    "proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups",                                                          \
-    "proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups_int_pct",                                                  \
-    "proxy.node.http.transaction_frac_avg_10s.hit_fresh", "proxy.node.http.transaction_frac_avg_10s.hit_fresh_int_pct",            \
-    "proxy.node.http.transaction_frac_avg_10s.hit_revalidated",                                                                    \
-    "proxy.node.http.transaction_frac_avg_10s.hit_revalidated_int_pct", "proxy.node.http.transaction_frac_avg_10s.miss_changed",   \
-    "proxy.node.http.transaction_frac_avg_10s.miss_changed_int_pct",                                                               \
-    "proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache",                                                               \
-    "proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache_int_pct", "proxy.node.http.transaction_frac_avg_10s.miss_cold", \
-    "proxy.node.http.transaction_frac_avg_10s.miss_cold_int_pct", "proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable",   \
-    "proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable_int_pct",                                                         \
-    "proxy.node.http.transaction_frac_avg_10s.other.unclassified",                                                                 \
-    "proxy.node.http.transaction_frac_avg_10s.other.unclassified_int_pct",                                                         \
-    "proxy.node.http.transaction_msec_avg_10s.errors.aborts", "proxy.node.http.transaction_msec_avg_10s.errors.connect_failed",    \
-    "proxy.node.http.transaction_msec_avg_10s.errors.early_hangups",                                                               \
-    "proxy.node.http.transaction_msec_avg_10s.errors.empty_hangups", "proxy.node.http.transaction_msec_avg_10s.errors.other",      \
-    "proxy.node.http.transaction_msec_avg_10s.errors.possible_aborts",                                                             \
-    "proxy.node.http.transaction_msec_avg_10s.errors.pre_accept_hangups", "proxy.node.http.transaction_msec_avg_10s.hit_fresh",    \
-    "proxy.node.http.transaction_msec_avg_10s.hit_revalidated", "proxy.node.http.transaction_msec_avg_10s.miss_changed",           \
-    "proxy.node.http.transaction_msec_avg_10s.miss_client_no_cache", "proxy.node.http.transaction_msec_avg_10s.miss_cold",         \
-    "proxy.node.http.transaction_msec_avg_10s.miss_not_cacheable", "proxy.node.http.transaction_msec_avg_10s.other.unclassified",  \
-    "proxy.node.http.user_agent_current_connections_count", "proxy.node.http.user_agent_xacts_per_second",                         \
-    "proxy.node.log.bytes_received_from_network_avg_10s", "proxy.node.log.bytes_sent_to_network_avg_10s",                          \
-    "proxy.node.num_processes", "proxy.node.origin_server_total_bytes_avg_10s", "proxy.node.proxy_running",                        \
-    "proxy.node.restarts.manager.start_time", "proxy.node.restarts.proxy.cache_ready_time",                                        \
-    "proxy.node.restarts.proxy.start_time", "proxy.node.restarts.proxy.stop_time", "proxy.node.user_agent_total_bytes_avg_10s",    \
-    "proxy.node.user_agent_xacts_per_second", "proxy.node.version.manager.build_time", "proxy.process.cache.KB_read_per_sec",      \
-    "proxy.process.cache.KB_write_per_sec", "proxy.process.cache.bytes_total", "proxy.process.cache.bytes_used",                   \
-    "proxy.process.cache.direntries.total", "proxy.process.cache.direntries.used", "proxy.process.cache.evacuate.active",          \
-    "proxy.process.cache.lookup.active", "proxy.process.cache.percent_full", "proxy.process.cache.ram_cache.bytes_total",          \
-    "proxy.process.cache.ram_cache.bytes_used", "proxy.process.cache.ram_cache.total_bytes", "proxy.process.cache.read.active",    \
-    "proxy.process.cache.read_per_sec", "proxy.process.cache.remove.active", "proxy.process.cache.scan.active",                    \
-    "proxy.process.cache.update.active", "proxy.process.cache.write.active", "proxy.process.cache.write_per_sec",                  \
-    "proxy.process.cluster.cache_callback_time", "proxy.process.cluster.cache_outstanding",                                        \
-    "proxy.process.cluster.cluster_ping_time", "proxy.process.cluster.connections_avg_time",                                       \
-    "proxy.process.cluster.connections_open", "proxy.process.cluster.control_messages_avg_receive_time",                           \
-    "proxy.process.cluster.control_messages_avg_send_time", "proxy.process.cluster.lkrmt_cache_callback_time",                     \
-    "proxy.process.cluster.local_connection_time", "proxy.process.cluster.open_delay_time",                                        \
-    "proxy.process.cluster.rdmsg_assemble_time", "proxy.process.cluster.remote_connection_time",                                   \
-    "proxy.process.cluster.remote_op_reply_timeouts", "proxy.process.cluster.remote_op_timeouts",                                  \
-    "proxy.process.cluster.rmt_cache_callback_time", "proxy.process.dns.fail_avg_time", "proxy.process.dns.in_flight",             \
-    "proxy.process.dns.lookup_avg_time", "proxy.process.dns.success_avg_time", "proxy.process.hostdb.total_entries",               \
-    "proxy.process.http.avg_transactions_per_client_connection", "proxy.process.http.avg_transactions_per_parent_connection",      \
-    "proxy.process.http.avg_transactions_per_server_connection", "proxy.process.http.background_fill_current_count",               \
-    "proxy.process.http.current_active_client_connections", "proxy.process.http.current_cache_connections",                        \
-    "proxy.process.http.current_client_connections", "proxy.process.http.current_client_transactions",                             \
-    "proxy.process.http.current_icp_raw_transactions", "proxy.process.http.current_icp_transactions",                              \
-    "proxy.process.http.current_parent_proxy_connections", "proxy.process.http.current_parent_proxy_raw_transactions",             \
-    "proxy.process.http.current_parent_proxy_transactions", "proxy.process.http.current_server_connections",                       \
-    "proxy.process.http.current_server_raw_transactions", "proxy.process.http.current_server_transactions",                        \
-    "proxy.process.http.origin_server_speed_bytes_per_sec_100", "proxy.process.http.origin_server_speed_bytes_per_sec_100K",       \
-    "proxy.process.http.origin_server_speed_bytes_per_sec_100M", "proxy.process.http.origin_server_speed_bytes_per_sec_10K",       \
-    "proxy.process.http.origin_server_speed_bytes_per_sec_10M", "proxy.process.http.origin_server_speed_bytes_per_sec_1K",         \
-    "proxy.process.http.origin_server_speed_bytes_per_sec_1M", "proxy.process.http.user_agent_speed_bytes_per_sec_100",            \
-    "proxy.process.http.user_agent_speed_bytes_per_sec_100K", "proxy.process.http.user_agent_speed_bytes_per_sec_100M",            \
-    "proxy.process.http.user_agent_speed_bytes_per_sec_10K", "proxy.process.http.user_agent_speed_bytes_per_sec_10M",              \
-    "proxy.process.http.user_agent_speed_bytes_per_sec_1K", "proxy.process.http.user_agent_speed_bytes_per_sec_1M",                \
-    "proxy.process.log.log_files_open", "proxy.process.log.log_files_space_used", "proxy.process.net.accepts_currently_open",      \
-    "proxy.process.net.connections_currently_open", "proxy.process.socks.connections_currently_open",                              \
-    "proxy.process.update.state_machines", "proxy.process.version.server.build_time",                                              \
+#define GAUGE_METRIC_NAMES                                                                                                        \
+  "proxy.node.bandwidth_hit_ratio_avg_10s", "proxy.node.bandwidth_hit_ratio_avg_10s", "proxy.node.cache.bytes_free",              \
+    "proxy.node.cache.bytes_free_mb", "proxy.node.cache.bytes_total", "proxy.node.cache.bytes_total_mb",                          \
+    "proxy.node.cache.bytes_used", "proxy.node.cache.bytes_used_mb", "proxy.node.cache.percent_free",                             \
+    "proxy.node.cache_hit_mem_ratio", "proxy.node.cache_hit_mem_ratio_avg_10s", "proxy.node.cache_hit_ratio",                     \
+    "proxy.node.cache_hit_ratio_avg_10s", "proxy.node.cache_total_hits_avg_10s", "proxy.node.cache_total_hits_mem_avg_10s",       \
+    "proxy.node.cache_total_misses_avg_10s", "proxy.node.client_throughput_out", "proxy.node.client_throughput_out_kbit",         \
+    "proxy.node.cluster.nodes", "proxy.node.config.reconfigure_required", "proxy.node.config.reconfigure_time",                   \
+    "proxy.node.config.restart_required.cop", "proxy.node.config.restart_required.manager",                                       \
+    "proxy.node.config.restart_required.proxy", "proxy.node.current_cache_connections", "proxy.node.current_client_connections",  \
+    "proxy.node.current_server_connections", "proxy.node.dns.lookup_avg_time_ms", "proxy.node.dns.lookups_per_second",            \
+    "proxy.node.hostdb.hit_ratio", "proxy.node.hostdb.hit_ratio_avg_10s", "proxy.node.hostdb.total_hits_avg_10s",                 \
+    "proxy.node.hostdb.total_lookups_avg_10s", "proxy.node.http.cache_current_connections_count",                                 \
+    "proxy.node.http.cache_hit_fresh_avg_10s", "proxy.node.http.cache_hit_ims_avg_10s",                                           \
+    "proxy.node.http.cache_hit_mem_fresh_avg_10s", "proxy.node.http.cache_hit_revalidated_avg_10s",                               \
+    "proxy.node.http.cache_hit_stale_served_avg_10s", "proxy.node.http.cache_miss_changed_avg_10s",                               \
+    "proxy.node.http.cache_miss_client_no_cache_avg_10s", "proxy.node.http.cache_miss_cold_avg_10s",                              \
+    "proxy.node.http.cache_miss_ims_avg_10s", "proxy.node.http.cache_miss_not_cacheable_avg_10s",                                 \
+    "proxy.node.http.cache_read_error_avg_10s", "proxy.node.http.current_parent_proxy_connections",                               \
+    "proxy.node.http.origin_server_current_connections_count", "proxy.node.http.transaction_counts_avg_10s.errors.aborts",        \
+    "proxy.node.http.transaction_counts_avg_10s.errors.connect_failed",                                                           \
+    "proxy.node.http.transaction_counts_avg_10s.errors.early_hangups",                                                            \
+    "proxy.node.http.transaction_counts_avg_10s.errors.empty_hangups", "proxy.node.http.transaction_counts_avg_10s.errors.other", \
+    "proxy.node.http.transaction_counts_avg_10s.errors.possible_aborts",                                                          \
+    "proxy.node.http.transaction_counts_avg_10s.errors.pre_accept_hangups",                                                       \
+    "proxy.node.http.transaction_counts_avg_10s.hit_fresh", "proxy.node.http.transaction_counts_avg_10s.hit_revalidated",         \
+    "proxy.node.http.transaction_counts_avg_10s.miss_changed", "proxy.node.http.transaction_counts_avg_10s.miss_client_no_cache", \
+    "proxy.node.http.transaction_counts_avg_10s.miss_cold", "proxy.node.http.transaction_counts_avg_10s.miss_not_cacheable",      \
+    "proxy.node.http.transaction_counts_avg_10s.other.unclassified", "proxy.node.http.transaction_frac_avg_10s.errors.aborts",    \
+    "proxy.node.http.transaction_frac_avg_10s.errors.connect_failed",                                                             \
+    "proxy.node.http.transaction_frac_avg_10s.errors.early_hangups",                                                              \
+    "proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups", "proxy.node.http.transaction_frac_avg_10s.errors.other",     \
+    "proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts",                                                            \
+    "proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups", "proxy.node.http.transaction_frac_avg_10s.hit_fresh",   \
+    "proxy.node.http.transaction_frac_avg_10s.hit_revalidated", "proxy.node.http.transaction_frac_avg_10s.miss_changed",          \
+    "proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache", "proxy.node.http.transaction_frac_avg_10s.miss_cold",        \
+    "proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable", "proxy.node.http.transaction_frac_avg_10s.other.unclassified", \
+    "proxy.node.http.transaction_msec_avg_10s.errors.aborts", "proxy.node.http.transaction_msec_avg_10s.errors.connect_failed",   \
+    "proxy.node.http.transaction_msec_avg_10s.errors.early_hangups",                                                              \
+    "proxy.node.http.transaction_msec_avg_10s.errors.empty_hangups", "proxy.node.http.transaction_msec_avg_10s.errors.other",     \
+    "proxy.node.http.transaction_msec_avg_10s.errors.possible_aborts",                                                            \
+    "proxy.node.http.transaction_msec_avg_10s.errors.pre_accept_hangups", "proxy.node.http.transaction_msec_avg_10s.hit_fresh",   \
+    "proxy.node.http.transaction_msec_avg_10s.hit_revalidated", "proxy.node.http.transaction_msec_avg_10s.miss_changed",          \
+    "proxy.node.http.transaction_msec_avg_10s.miss_client_no_cache", "proxy.node.http.transaction_msec_avg_10s.miss_cold",        \
+    "proxy.node.http.transaction_msec_avg_10s.miss_not_cacheable", "proxy.node.http.transaction_msec_avg_10s.other.unclassified", \
+    "proxy.node.http.user_agent_current_connections_count", "proxy.node.http.user_agent_xacts_per_second",                        \
+    "proxy.node.log.bytes_received_from_network_avg_10s", "proxy.node.log.bytes_sent_to_network_avg_10s",                         \
+    "proxy.node.num_processes", "proxy.node.origin_server_total_bytes_avg_10s", "proxy.node.proxy_running",                       \
+    "proxy.node.restarts.manager.start_time", "proxy.node.restarts.proxy.cache_ready_time",                                       \
+    "proxy.node.restarts.proxy.start_time", "proxy.node.restarts.proxy.stop_time", "proxy.node.user_agent_total_bytes_avg_10s",   \
+    "proxy.node.user_agent_xacts_per_second", "proxy.node.version.manager.build_time", "proxy.process.cache.KB_read_per_sec",     \
+    "proxy.process.cache.KB_write_per_sec", "proxy.process.cache.bytes_total", "proxy.process.cache.bytes_used",                  \
+    "proxy.process.cache.direntries.total", "proxy.process.cache.direntries.used", "proxy.process.cache.evacuate.active",         \
+    "proxy.process.cache.lookup.active", "proxy.process.cache.percent_full", "proxy.process.cache.ram_cache.bytes_total",         \
+    "proxy.process.cache.ram_cache.bytes_used", "proxy.process.cache.ram_cache.total_bytes", "proxy.process.cache.read.active",   \
+    "proxy.process.cache.read_per_sec", "proxy.process.cache.remove.active", "proxy.process.cache.scan.active",                   \
+    "proxy.process.cache.update.active", "proxy.process.cache.write.active", "proxy.process.cache.write_per_sec",                 \
+    "proxy.process.cluster.cache_callback_time", "proxy.process.cluster.cache_outstanding",                                       \
+    "proxy.process.cluster.cluster_ping_time", "proxy.process.cluster.connections_avg_time",                                      \
+    "proxy.process.cluster.connections_open", "proxy.process.cluster.control_messages_avg_receive_time",                          \
+    "proxy.process.cluster.control_messages_avg_send_time", "proxy.process.cluster.lkrmt_cache_callback_time",                    \
+    "proxy.process.cluster.local_connection_time", "proxy.process.cluster.open_delay_time",                                       \
+    "proxy.process.cluster.rdmsg_assemble_time", "proxy.process.cluster.remote_connection_time",                                  \
+    "proxy.process.cluster.remote_op_reply_timeouts", "proxy.process.cluster.remote_op_timeouts",                                 \
+    "proxy.process.cluster.rmt_cache_callback_time", "proxy.process.dns.fail_avg_time", "proxy.process.dns.in_flight",            \
+    "proxy.process.dns.lookup_avg_time", "proxy.process.dns.success_avg_time", "proxy.process.hostdb.total_entries",              \
+    "proxy.process.http.avg_transactions_per_client_connection", "proxy.process.http.avg_transactions_per_parent_connection",     \
+    "proxy.process.http.avg_transactions_per_server_connection", "proxy.process.http.background_fill_current_count",              \
+    "proxy.process.http.current_active_client_connections", "proxy.process.http.current_cache_connections",                       \
+    "proxy.process.http.current_client_connections", "proxy.process.http.current_client_transactions",                            \
+    "proxy.process.http.current_icp_raw_transactions", "proxy.process.http.current_icp_transactions",                             \
+    "proxy.process.http.current_parent_proxy_connections", "proxy.process.http.current_parent_proxy_raw_transactions",            \
+    "proxy.process.http.current_parent_proxy_transactions", "proxy.process.http.current_server_connections",                      \
+    "proxy.process.http.current_server_raw_transactions", "proxy.process.http.current_server_transactions",                       \
+    "proxy.process.http.origin_server_speed_bytes_per_sec_100", "proxy.process.http.origin_server_speed_bytes_per_sec_100K",      \
+    "proxy.process.http.origin_server_speed_bytes_per_sec_100M", "proxy.process.http.origin_server_speed_bytes_per_sec_10K",      \
+    "proxy.process.http.origin_server_speed_bytes_per_sec_10M", "proxy.process.http.origin_server_speed_bytes_per_sec_1K",        \
+    "proxy.process.http.origin_server_speed_bytes_per_sec_1M", "proxy.process.http.user_agent_speed_bytes_per_sec_100",           \
+    "proxy.process.http.user_agent_speed_bytes_per_sec_100K", "proxy.process.http.user_agent_speed_bytes_per_sec_100M",           \
+    "proxy.process.http.user_agent_speed_bytes_per_sec_10K", "proxy.process.http.user_agent_speed_bytes_per_sec_10M",             \
+    "proxy.process.http.user_agent_speed_bytes_per_sec_1K", "proxy.process.http.user_agent_speed_bytes_per_sec_1M",               \
+    "proxy.process.log.log_files_open", "proxy.process.log.log_files_space_used", "proxy.process.net.accepts_currently_open",     \
+    "proxy.process.net.connections_currently_open", "proxy.process.socks.connections_currently_open",                             \
+    "proxy.process.update.state_machines", "proxy.process.version.server.build_time",                                             \
     "proxy.process.websocket.current_active_client_connections"
 
 // XXX SSL stats (TS-2169) are going to land soon; we will need to update this list ...

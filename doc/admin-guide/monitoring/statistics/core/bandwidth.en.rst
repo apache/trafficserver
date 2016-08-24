@@ -33,20 +33,6 @@ Bandwidth and Transfer
    Represents the ratio of bytes served to user agents which were satisfied by
    cache hits, over the previous 10 seconds,
 
-.. ts:stat:: global proxy.node.bandwidth_hit_ratio_avg_10s_int_pct integer
-   :type: derivative
-   :unit: percent
-
-   The percentage value of :ts:stat:`proxy.node.bandwidth_hit_ratio_avg_10s`
-   converted to an integer.
-
-.. ts:stat:: global proxy.node.bandwidth_hit_ratio_int_pct integer
-   :type: derivative
-   :unit: percent
-
-   The percentage vaue of :ts:stat:`proxy.node.bandwidth_hit_ratio` converted
-   to an integer.
-
 .. ts:stat:: global proxy.node.bandwidth_hit_ratio float
    :type: derivative
    :unit: ratio

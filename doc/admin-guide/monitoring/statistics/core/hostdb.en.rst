@@ -41,13 +41,6 @@ origin servers' hostnames prior to object revalidation or retrieval.
    Represents the ratio of origin server name resolutions which were satisfied
    by the HostDB lookup cache since statistics collection began.
 
-.. ts:stat:: global proxy.node.hostdb.hit_ratio_int_pct integer
-   :type: derivative
-   :unit: ratio
-
-   The value of :ts:stat:`proxy.node.hostdb.hit_ratio` converted to an integer
-   percent.
-
 .. ts:stat:: global proxy.node.hostdb.total_hits_avg_10s float
    :type: derivative
 
