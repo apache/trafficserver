@@ -22,6 +22,7 @@
 */
 
 #include "InkErrno.h"
+#include "ink_assert.h"
 #include <string.h>
 
 const char *
@@ -98,9 +99,9 @@ InkStrerror(int ink_errno)
     return "ENET (unknown)";
   }
 
-  if (ink_errno > SOCK_ERRNO) {
-    return "ESOCK (unknown)";
-  }
+  // Verify there are no holes in the error ranges.
+  ink_assert(INK_START_ERRNO == SOCK_ERRNO);
+  ink_assert(ink_errno > SOCK_ERRNO);
 
-  return "(unknown)";
+  return "ESOCK (unknown)";
 }
