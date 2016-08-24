@@ -31,13 +31,27 @@ methods.
 +===============+================================================================+
 |1              | ``cache`` or ``nocache``. If ``cache`` is specifed, the        |
 |               | `Generator` plugin will respond with ``Cache-Control`` headers |
-|               | marking the response as cacheable for 24 hours.                |
+|               | marking the response as cacheable.                             |
++---------------+----------------------------------------------------------------+
 |2              | Integral number of bytes to return in the response.            |
 +---------------+----------------------------------------------------------------+
 
 Path components after the first 2 are ignored. This means that the
 trailing path components can be manipulated to create unique URLs
 following any covenient convention.
+
+The `Generator` plugin inspects the following HTTP client request headers:
+
++-----------------------+--------------------------------------------------------+
+|Header                 | Description                                            |
++=======================+========================================================+
+| ``Generator-Delay``   | The number of milliseconds to wait before sending a    |
+|                       | response. The default is to not wait.                  |
++-----------------------+--------------------------------------------------------+
+| ``Generator-MaxAge``  | The number of seconds that a response should be cached |
+|                       | for. This is used in the ``max-age`` field of the      |
+|                       | response's ``Cache-Control`` header.                   |
++--------------------------------------------------------------------------------+
 
 The `Generator` plugin publishes the following metrics:
 
