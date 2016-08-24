@@ -54,6 +54,7 @@ static int initCarpConfigAndHash(CarpConfigAndHash * cch, string sFilename) {
   TSAssert(cch->_config);
 
   if (!cch->_config->loadConfig(sFilename)) {
+    delete cch->_config;
     return -1;
   }
 
@@ -124,6 +125,8 @@ static int initCarpConfigAndHash(CarpConfigAndHash * cch, string sFilename) {
     } else {
       //Config error or dns error. Should not continue
       TSError("carp: error get peer address of host '%s'", (*i)->getName().c_str());
+      delete cch->_config;
+      delete cch->_hashAlgo;
       return -1;
     }
 
@@ -186,7 +189,7 @@ CarpConfigPool::processConfigFile(string sFilename,bool isGlobal)
      size_t index;
      vector<CarpHost*> *list = newCCH->_config->getHostList();
      for (unsigned int i = 0; i < list->size(); i++) {
-        string name = (*list)[i]->getName();
+        string const& name = (*list)[i]->getName();
         unsigned int port = (unsigned int)(*list)[i]->getPort();
          HashNode * node = oldCCH->_hashAlgo->findStatusByNameAndPort(name,port, &index);
          if (node != NULL) {
