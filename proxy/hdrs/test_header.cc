@@ -368,27 +368,29 @@ test_http_parser_eos_boundary_cases()
     char *msg;
     int expected_result;
     int expected_bytes_consumed;
-  } tests[] = {{"GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26},
-               {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_DONE, 28},
-               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_DONE, 48},
-               {"GET", PARSE_ERROR, 3},
-               {"GET /index.html", PARSE_ERROR, 15},
-               {"GET /index.html\r\n", PARSE_DONE, 17},
-               {"GET /index.html HTTP/1.0", PARSE_ERROR, 24},
-               {"GET /index.html HTTP/1.0\r", PARSE_ERROR, 25},
-               {"GET /index.html HTTP/1.0\n", PARSE_DONE, 25},
-               {"GET /index.html HTTP/1.0\n\n", PARSE_DONE, 26},
-               {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_DONE, 28},
-               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_ERROR, 44},
-               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_DONE, 45},
-               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46},
-               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_DONE, 48},
-               {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_DONE, 44},
-               {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_DONE, 53},
-               {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_DONE, 46},
-               {"GET /index.html HTTP/1.0\r\n", PARSE_DONE, 26},
-               {"", PARSE_DONE, 0},
-               {NULL, 0, 0}};
+  } tests[] = {
+    {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
+    {"GET /index.html HTTP/1.0\r\n\r\n***BODY****", PARSE_RESULT_DONE, 28},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", PARSE_RESULT_DONE, 48},
+    {"GET", PARSE_RESULT_ERROR, 3},
+    {"GET /index.html", PARSE_RESULT_ERROR, 15},
+    {"GET /index.html\r\n", PARSE_RESULT_DONE, 17},
+    {"GET /index.html HTTP/1.0", PARSE_RESULT_ERROR, 24},
+    {"GET /index.html HTTP/1.0\r", PARSE_RESULT_ERROR, 25},
+    {"GET /index.html HTTP/1.0\n", PARSE_RESULT_DONE, 25},
+    {"GET /index.html HTTP/1.0\n\n", PARSE_RESULT_DONE, 26},
+    {"GET /index.html HTTP/1.0\r\n\r\n", PARSE_RESULT_DONE, 28},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar", PARSE_RESULT_ERROR, 44},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 45},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n", PARSE_RESULT_DONE, 48},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n", PARSE_RESULT_DONE, 44},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n", PARSE_RESULT_DONE, 53},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n", PARSE_RESULT_DONE, 46},
+    {"GET /index.html HTTP/1.0\r\n", PARSE_RESULT_DONE, 26},
+    {"", PARSE_RESULT_DONE, 0},
+    {NULL, 0, 0},
+  };
 
   int i, ret, bytes_consumed;
   const char *orig_start;
@@ -465,11 +467,11 @@ test_http_aux(const char *request, const char *response)
   printf("======== parsing\n\n");
   while (start < end) {
     err = req_hdr.parse_req(&parser, &start, end, false);
-    if (err != PARSE_CONT)
+    if (err != PARSE_RESULT_CONT)
       break;
     end = start + strlen(start);
   }
-  if (err == PARSE_ERROR)
+  if (err == PARSE_RESULT_ERROR)
     printf("  *** PARSE_ERROR ***\n");
 
   /*** useless copy to exercise copy function ***/
@@ -503,10 +505,10 @@ test_http_aux(const char *request, const char *response)
 
   while (start < end) {
     err = rsp_hdr.parse_resp(&parser, &start, start + 1, false);
-    if (err != PARSE_CONT)
+    if (err != PARSE_RESULT_CONT)
       break;
   }
-  if (err == PARSE_ERROR)
+  if (err == PARSE_RESULT_ERROR)
     printf("  *** PARSE_ERROR ***\n");
 
   http_parser_clear(&parser);
@@ -562,151 +564,197 @@ test_http()
 {
   printf("   <<< MUST BE HAND-VERIFIED >>>\n\n");
 
-  static const char request0[] = {"GET http://www.news.com:80/ HTTP/1.0\r\n"
-                                  "Proxy-Connection: Keep-Alive\r\n"
-                                  "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
-                                  "Pragma: no-cache\r\n"
-                                  "Host: www.news.com\r\n"
-                                  "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
-                                  "Accept-Language: en\r\n"
-                                  "Accept-Charset: iso-8859-1, *, utf-8\r\n"
-                                  "Cookie: u_vid_0_0=00031ba3; "
-                                  "s_cur_0_0=0101sisi091314775496e7d3Jx4+POyJakrMybmNOsq6XOn5bVn5Z6a4Ln5crU5M7Rxq2lm5aWpqupo20=; "
-                                  "SC_Cnet001=Sampled; SC_Cnet002=Sampled\r\n"
-                                  "Client-ip: D1012148\r\n"
-                                  "Foo: abcdefghijklmnopqrtu\r\n"
-                                  "\r\n"};
+  static const char request0[] = {
+    "GET http://www.news.com:80/ HTTP/1.0\r\n"
+    "Proxy-Connection: Keep-Alive\r\n"
+    "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
+    "Pragma: no-cache\r\n"
+    "Host: www.news.com\r\n"
+    "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, image/png, */*\r\n"
+    "Accept-Language: en\r\n"
+    "Accept-Charset: iso-8859-1, *, utf-8\r\n"
+    "Cookie: u_vid_0_0=00031ba3; "
+    "s_cur_0_0=0101sisi091314775496e7d3Jx4+POyJakrMybmNOsq6XOn5bVn5Z6a4Ln5crU5M7Rxq2lm5aWpqupo20=; "
+    "SC_Cnet001=Sampled; SC_Cnet002=Sampled\r\n"
+    "Client-ip: D1012148\r\n"
+    "Foo: abcdefghijklmnopqrtu\r\n"
+    "\r\n",
+  };
 
-  static const char request09[] = {"GET /index.html\r\n"
-                                   "\r\n"};
+  static const char request09[] = {
+    "GET /index.html\r\n"
+    "\r\n",
+  };
 
-  static const char request1[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-                                  "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-                                  "Referer: http://people.netscape.com/jwz/index.html\r\n"
-                                  "Proxy-Connection: Keep-Alive\r\n"
-                                  "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-                                  "Pragma: no-cache\r\n"
-                                  "Host: people.netscape.com\r\n"
-                                  "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
-                                  "\r\n"};
+  static const char request1[] = {
+    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+    "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+    "Referer: http://people.netscape.com/jwz/index.html\r\n"
+    "Proxy-Connection: Keep-Alive\r\n"
+    "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+    "Pragma: no-cache\r\n"
+    "Host: people.netscape.com\r\n"
+    "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+    "\r\n",
+  };
 
-  static const char request_no_colon[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-                                          "If-Modified-Since Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-                                          "Referer http://people.netscape.com/jwz/index.html\r\n"
-                                          "Proxy-Connection Keep-Alive\r\n"
-                                          "User-Agent  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-                                          "Pragma no-cache\r\n"
-                                          "Host people.netscape.com\r\n"
-                                          "Accept image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
-                                          "\r\n"};
+  static const char request_no_colon[] = {
+    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+    "If-Modified-Since Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+    "Referer http://people.netscape.com/jwz/index.html\r\n"
+    "Proxy-Connection Keep-Alive\r\n"
+    "User-Agent  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+    "Pragma no-cache\r\n"
+    "Host people.netscape.com\r\n"
+    "Accept image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+    "\r\n",
+  };
 
-  static const char request_no_val[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-                                        "If-Modified-Since:\r\n"
-                                        "Referer:     "
-                                        "Proxy-Connection:\r\n"
-                                        "User-Agent:     \r\n"
-                                        "Host:::\r\n"
-                                        "\r\n"};
+  static const char request_no_val[] = {
+    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+    "If-Modified-Since:\r\n"
+    "Referer:     "
+    "Proxy-Connection:\r\n"
+    "User-Agent:     \r\n"
+    "Host:::\r\n"
+    "\r\n",
+  };
 
-  static const char request_multi_fblock[] = {"GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
-                                              "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
-                                              "Referer: http://people.netscape.com/jwz/index.html\r\n"
-                                              "Proxy-Connection: Keep-Alive\r\n"
-                                              "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
-                                              "Pragma: no-cache\r\n"
-                                              "Host: people.netscape.com\r\n"
-                                              "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
-                                              "X-1: blah\r\n"
-                                              "X-2: blah\r\n"
-                                              "X-3: blah\r\n"
-                                              "X-4: blah\r\n"
-                                              "X-5: blah\r\n"
-                                              "X-6: blah\r\n"
-                                              "X-7: blah\r\n"
-                                              "X-8: blah\r\n"
-                                              "X-9: blah\r\n"
-                                              "Pragma: no-cache\r\n"
-                                              "X-X-1: blah\r\n"
-                                              "X-X-2: blah\r\n"
-                                              "X-X-3: blah\r\n"
-                                              "X-X-4: blah\r\n"
-                                              "X-X-5: blah\r\n"
-                                              "X-X-6: blah\r\n"
-                                              "X-X-7: blah\r\n"
-                                              "X-X-8: blah\r\n"
-                                              "X-X-9: blah\r\n"
-                                              "\r\n"};
+  static const char request_multi_fblock[] = {
+    "GET http://people.netscape.com/jwz/hacks-1.gif HTTP/1.0\r\n"
+    "If-Modified-Since: Wednesday, 26-Feb-97 06:58:17 GMT; length=842\r\n"
+    "Referer: http://people.netscape.com/jwz/index.html\r\n"
+    "Proxy-Connection: Keep-Alive\r\n"
+    "User-Agent:  Mozilla/3.01 (X11; I; Linux 2.0.28 i586)\r\n"
+    "Pragma: no-cache\r\n"
+    "Host: people.netscape.com\r\n"
+    "Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, */*\r\n"
+    "X-1: blah\r\n"
+    "X-2: blah\r\n"
+    "X-3: blah\r\n"
+    "X-4: blah\r\n"
+    "X-5: blah\r\n"
+    "X-6: blah\r\n"
+    "X-7: blah\r\n"
+    "X-8: blah\r\n"
+    "X-9: blah\r\n"
+    "Pragma: no-cache\r\n"
+    "X-X-1: blah\r\n"
+    "X-X-2: blah\r\n"
+    "X-X-3: blah\r\n"
+    "X-X-4: blah\r\n"
+    "X-X-5: blah\r\n"
+    "X-X-6: blah\r\n"
+    "X-X-7: blah\r\n"
+    "X-X-8: blah\r\n"
+    "X-X-9: blah\r\n"
+    "\r\n",
+  };
 
-  static const char request_leading_space[] = {" GET http://www.news.com:80/ HTTP/1.0\r\n"
-                                               "Proxy-Connection: Keep-Alive\r\n"
-                                               "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
-                                               "\r\n"};
+  static const char request_leading_space[] = {
+    " GET http://www.news.com:80/ HTTP/1.0\r\n"
+    "Proxy-Connection: Keep-Alive\r\n"
+    "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
+    "\r\n",
+  };
 
-  static const char request_padding[] = {"GET http://www.padding.com:80/ HTTP/1.0\r\n"
-                                         "X-1: blah1\r\n"
-                                         //       "X-2:  blah2\r\n"
-                                         "X-3:   blah3\r\n"
-                                         //       "X-4:    blah4\r\n"
-                                         "X-5:     blah5\r\n"
-                                         //       "X-6:      blah6\r\n"
-                                         "X-7:       blah7\r\n"
-                                         //       "X-8:        blah8\r\n"
-                                         "X-9:         blah9\r\n"
-                                         "\r\n"};
+  static const char request_padding[] = {
+    "GET http://www.padding.com:80/ HTTP/1.0\r\n"
+    "X-1: blah1\r\n"
+    //       "X-2:  blah2\r\n"
+    "X-3:   blah3\r\n"
+    //       "X-4:    blah4\r\n"
+    "X-5:     blah5\r\n"
+    //       "X-6:      blah6\r\n"
+    "X-7:       blah7\r\n"
+    //       "X-8:        blah8\r\n"
+    "X-9:         blah9\r\n"
+    "\r\n",
+  };
 
-  static const char request_09p[] = {"GET http://www.news09.com/\r\n"
-                                     "\r\n"};
+  static const char request_09p[] = {
+    "GET http://www.news09.com/\r\n"
+    "\r\n",
+  };
 
-  static const char request_09ht[] = {"GET http://www.news09.com/ HT\r\n"
-                                      "\r\n"};
+  static const char request_09ht[] = {
+    "GET http://www.news09.com/ HT\r\n"
+    "\r\n",
+  };
 
-  static const char request_11[] = {"GET http://www.news.com/ HTTP/1.1\r\n"
-                                    "Connection: close\r\n"
-                                    "\r\n"};
+  static const char request_11[] = {
+    "GET http://www.news.com/ HTTP/1.1\r\n"
+    "Connection: close\r\n"
+    "\r\n",
+  };
 
-  static const char request_unterminated[] = {"GET http://www.unterminated.com/ HTTP/1.1"};
+  static const char request_unterminated[] = {
+    "GET http://www.unterminated.com/ HTTP/1.1",
+  };
 
-  static const char request_blank[] = {"\r\n"};
+  static const char request_blank[] = {
+    "\r\n",
+  };
 
-  static const char request_blank2[] = {"\r\n"
-                                        "\r\n"};
+  static const char request_blank2[] = {
+    "\r\n"
+    "\r\n",
+  };
 
-  static const char request_blank3[] = {"     "
-                                        "\r\n"};
+  static const char request_blank3[] = {
+    "     "
+    "\r\n",
+  };
 
   ////////////////////////////////////////////////////
 
-  static const char response0[] = {"HTTP/1.0 200 OK\r\n"
-                                   "MIME-Version: 1.0\r\n"
-                                   "Server: WebSTAR/2.1 ID/30013\r\n"
-                                   "Content-Type: text/html\r\n"
-                                   "Content-Length: 939\r\n"
-                                   "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
-                                   "\r\n"};
+  static const char response0[] = {
+    "HTTP/1.0 200 OK\r\n"
+    "MIME-Version: 1.0\r\n"
+    "Server: WebSTAR/2.1 ID/30013\r\n"
+    "Content-Type: text/html\r\n"
+    "Content-Length: 939\r\n"
+    "Last-Modified: Thursday, 01-Jan-04 05:00:00 GMT\r\n"
+    "\r\n",
+  };
 
-  static const char response1[] = {"HTTP/1.0 200 OK\r\n"
-                                   "Server: Netscape-Communications/1.12\r\n"
-                                   "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
-                                   "Content-Type: text/html\r\n"
-                                   "\r\n"};
+  static const char response1[] = {
+    "HTTP/1.0 200 OK\r\n"
+    "Server: Netscape-Communications/1.12\r\n"
+    "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
+    "Content-Type: text/html\r\n"
+    "\r\n",
+  };
 
-  static const char response_no_colon[] = {"HTTP/1.0 200 OK\r\n"
-                                           "Server Netscape-Communications/1.12\r\n"
-                                           "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
-                                           "Content-Type: text/html\r\n"
-                                           "\r\n"};
+  static const char response_no_colon[] = {
+    "HTTP/1.0 200 OK\r\n"
+    "Server Netscape-Communications/1.12\r\n"
+    "Date: Tuesday, 08-Dec-98 20:32:17 GMT\r\n"
+    "Content-Type: text/html\r\n"
+    "\r\n",
+  };
 
-  static const char response_unterminated[] = {"HTTP/1.0 200 OK"};
+  static const char response_unterminated[] = {
+    "HTTP/1.0 200 OK",
+  };
 
-  static const char response09[] = {""};
+  static const char response09[] = {
+    "",
+  };
 
-  static const char response_blank[] = {"\r\n"};
+  static const char response_blank[] = {
+    "\r\n",
+  };
 
-  static const char response_blank2[] = {"\r\n"
-                                         "\r\n"};
+  static const char response_blank2[] = {
+    "\r\n"
+    "\r\n",
+  };
 
-  static const char response_blank3[] = {"     "
-                                         "\r\n"};
+  static const char response_blank3[] = {
+    "     "
+    "\r\n",
+  };
 
   test_http_aux(request0, response0);
   test_http_aux(request09, response09);
@@ -749,7 +797,7 @@ test_http_mutation()
 
   while (start < end) {
     err = resp_hdr.parse_resp(&parser, &start, end, false);
-    if (err != PARSE_CONT)
+    if (err != PARSE_RESULT_CONT)
       break;
     end = start + strlen(start);
   }
@@ -875,29 +923,31 @@ test_accept_language_match()
     float Q;
     int L;
     int I;
-  } test_cases[] = {{"en", "*", 1.0, 1, 1},
-                    {"en", "fr", 0.0, 0, 0},
-                    {"en", "de, fr, en;q=0.7", 0.7, 2, 3},
-                    {"en-cockney", "de, fr, en;q=0.7", 0.7, 3, 3},
-                    {"en-cockney", "de, fr, en-foobar;q=0.8, en;q=0.7", 0.7, 2, 4},
-                    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
-                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.7", 0.8, 2, 3},
-                    {"en-cockney", "de, fr, en;q=0.7, en;q=0.8", 0.8, 2, 4},
-                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8", 0.8, 2, 3},
-                    {"en-cockney", "de, fr, en-cockney;q=0.7, en;q=0.8", 0.7, 10, 3},
-                    {"en-cockney", "de, fr, en;q=0.8, en-cockney;q=0.7", 0.7, 10, 4},
-                    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.8", 0.8, 10, 3},
-                    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
-                    {"en-cockney", "de, fr, en-american", 0.0, 0, 0},
-                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *", 0.8, 2, 3},
-                    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
-                    {"en-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
-                    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.9, 1, 5},
-                    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9, *", 1.0, 1, 6},
-                    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1, 5},
-                    {"fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en", 0.9, 2, 2},
-                    {"fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en", 0.9, 2, 3},
-                    {NULL, NULL, 0.0}};
+  } test_cases[] = {
+    {"en", "*", 1.0, 1, 1},
+    {"en", "fr", 0.0, 0, 0},
+    {"en", "de, fr, en;q=0.7", 0.7, 2, 3},
+    {"en-cockney", "de, fr, en;q=0.7", 0.7, 3, 3},
+    {"en-cockney", "de, fr, en-foobar;q=0.8, en;q=0.7", 0.7, 2, 4},
+    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
+    {"en-cockney", "de, fr, en;q=0.8, en;q=0.7", 0.8, 2, 3},
+    {"en-cockney", "de, fr, en;q=0.7, en;q=0.8", 0.8, 2, 4},
+    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8", 0.8, 2, 3},
+    {"en-cockney", "de, fr, en-cockney;q=0.7, en;q=0.8", 0.7, 10, 3},
+    {"en-cockney", "de, fr, en;q=0.8, en-cockney;q=0.7", 0.7, 10, 4},
+    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.8", 0.8, 10, 3},
+    {"en-cockney", "de, fr, en-cockney;q=0.8, en;q=0.7", 0.8, 10, 3},
+    {"en-cockney", "de, fr, en-american", 0.0, 0, 0},
+    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *", 0.8, 2, 3},
+    {"en-cockney", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
+    {"en-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.8, 2, 3},
+    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9", 0.9, 1, 5},
+    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *;q=0.9, *", 1.0, 1, 6},
+    {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1, 5},
+    {"fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en", 0.9, 2, 2},
+    {"fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en", 0.9, 2, 3},
+    {NULL, NULL, 0.0},
+  };
 
   int i, I, L;
   float Q;

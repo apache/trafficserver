@@ -413,7 +413,7 @@ http2_parse_window_update(IOVec iov, uint32_t &size)
   return true;
 }
 
-MIMEParseResult
+ParseResult
 http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
 {
   MIMEField *field;
@@ -428,19 +428,19 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
     if ((field = headers->field_find(HTTP2_VALUE_SCHEME, HTTP2_LEN_SCHEME)) != NULL && field->value_is_valid()) {
       scheme = field->value_get(&scheme_len);
     } else {
-      return PARSE_ERROR;
+      return PARSE_RESULT_ERROR;
     }
 
     if ((field = headers->field_find(HTTP2_VALUE_AUTHORITY, HTTP2_LEN_AUTHORITY)) != NULL && field->value_is_valid()) {
       authority = field->value_get(&authority_len);
     } else {
-      return PARSE_ERROR;
+      return PARSE_RESULT_ERROR;
     }
 
     if ((field = headers->field_find(HTTP2_VALUE_PATH, HTTP2_LEN_PATH)) != NULL && field->value_is_valid()) {
       path = field->value_get(&path_len);
     } else {
-      return PARSE_ERROR;
+      return PARSE_RESULT_ERROR;
     }
 
     // Parse URL
@@ -463,7 +463,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
       int method_wks_idx = hdrtoken_tokenize(method, method_len);
       http_hdr_method_set(headers->m_heap, headers->m_http, method, method_wks_idx, method_len, 0);
     } else {
-      return PARSE_ERROR;
+      return PARSE_RESULT_ERROR;
     }
 
     // Combine Cookie headers ([RFC 7540] 8.1.2.5.)
@@ -489,7 +489,7 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
       status = field->value_get(&status_len);
       headers->status_set(http_parse_status(status, status + status_len));
     } else {
-      return PARSE_ERROR;
+      return PARSE_RESULT_ERROR;
     }
 
     // Remove HTTP/2 style headers
@@ -500,11 +500,11 @@ http2_convert_header_from_2_to_1_1(HTTPHdr *headers)
   MIMEFieldIter iter;
   for (const MIMEField *field = headers->iter_get_first(&iter); field != NULL; field = headers->iter_get_next(&iter)) {
     if (!field->name_is_valid() || !field->value_is_valid()) {
-      return PARSE_ERROR;
+      return PARSE_RESULT_ERROR;
     }
   }
 
-  return PARSE_DONE;
+  return PARSE_RESULT_DONE;
 }
 
 void

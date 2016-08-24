@@ -39,11 +39,11 @@
  *                                                                     *
  ***********************************************************************/
 
-enum MIMEParseResult {
-  PARSE_ERROR = -1,
-  PARSE_DONE  = 0,
-  PARSE_CONT  = 1,
-  PARSE_OK    = 3, // This is only used internally in mime_parser_parse and not returned to the user
+enum ParseResult {
+  PARSE_RESULT_ERROR = -1,
+  PARSE_RESULT_DONE  = 0,
+  PARSE_RESULT_CONT  = 1,
+  PARSE_RESULT_OK    = 3, // This is only used internally in mime_parser_parse and not returned to the user
 };
 
 enum {
@@ -692,13 +692,13 @@ void mime_field_value_append(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, c
 void mime_scanner_init(MIMEScanner *scanner);
 void mime_scanner_clear(MIMEScanner *scanner);
 void mime_scanner_append(MIMEScanner *scanner, const char *data, int data_size);
-MIMEParseResult mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input_e, const char **output_s,
-                                 const char **output_e, bool *output_shares_raw_input, bool raw_input_eof, int raw_input_scan_type);
+ParseResult mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input_e, const char **output_s,
+                             const char **output_e, bool *output_shares_raw_input, bool raw_input_eof, int raw_input_scan_type);
 
 void mime_parser_init(MIMEParser *parser);
 void mime_parser_clear(MIMEParser *parser);
-MIMEParseResult mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char **real_s, const char *real_e,
-                                  bool must_copy_strings, bool eof);
+ParseResult mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char **real_s, const char *real_e,
+                              bool must_copy_strings, bool eof);
 
 void mime_hdr_describe(HdrHeapObjImpl *raw, bool recurse);
 void mime_field_block_describe(HdrHeapObjImpl *raw, bool recurse);

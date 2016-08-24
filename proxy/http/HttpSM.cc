@@ -674,15 +674,15 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // tokenize header //
   /////////////////////
 
-  MIMEParseResult state = t_state.hdr_info.client_request.parse_req(&http_parser, ua_buffer_reader, &bytes_used, ua_entry->eos,
-                                                                    t_state.http_config_param->strict_uri_parsing);
+  ParseResult state = t_state.hdr_info.client_request.parse_req(&http_parser, ua_buffer_reader, &bytes_used, ua_entry->eos,
+                                                                t_state.http_config_param->strict_uri_parsing);
 
   client_request_hdr_bytes += bytes_used;
 
   // Check to see if we are over the hdr size limit
   if (client_request_hdr_bytes > t_state.txn_conf->request_hdr_max_size) {
     DebugSM("http", "client header bytes were over max header size; treating as a bad request");
-    state = PARSE_ERROR;
+    state = PARSE_RESULT_ERROR;
   }
 
   // We need to handle EOS as well as READ_READY because the client
@@ -692,12 +692,12 @@ HttpSM::state_read_client_request_header(int event, void *data)
     bool do_blind_tunnel = false;
     // If we had a parse error and we're done reading data
     // blind tunnel
-    if ((event == VC_EVENT_READ_READY || event == VC_EVENT_EOS) && state == PARSE_ERROR) {
+    if ((event == VC_EVENT_READ_READY || event == VC_EVENT_EOS) && state == PARSE_RESULT_ERROR) {
       do_blind_tunnel = true;
 
       // If we had a GET request that has data after the
       // get request, do blind tunnel
-    } else if (state == PARSE_DONE && t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET &&
+    } else if (state == PARSE_RESULT_DONE && t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET &&
                ua_raw_buffer_reader->read_avail() > 0 && !t_state.hdr_info.client_request.is_keep_alive_set()) {
       do_blind_tunnel = true;
     }
@@ -726,7 +726,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   }
 
   // Check to see if we are done parsing the header
-  if (state != PARSE_CONT || ua_entry->eos || (state == PARSE_CONT && event == VC_EVENT_READ_COMPLETE)) {
+  if (state != PARSE_RESULT_CONT || ua_entry->eos || (state == PARSE_RESULT_CONT && event == VC_EVENT_READ_COMPLETE)) {
     if (ua_raw_buffer_reader != NULL) {
       ua_raw_buffer_reader->dealloc();
       ua_raw_buffer_reader = NULL;
@@ -737,7 +737,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   }
 
   switch (state) {
-  case PARSE_ERROR:
+  case PARSE_RESULT_ERROR:
     DebugSM("http", "[%" PRId64 "] error parsing client request header", sm_id);
 
     // Disable further I/O on the client
@@ -746,7 +746,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
     call_transact_and_set_next_state(HttpTransact::BadRequest);
     break;
 
-  case PARSE_CONT:
+  case PARSE_RESULT_CONT:
     if (ua_entry->eos) {
       DebugSM("http_seq", "[%" PRId64 "] EOS before client request parsing finished", sm_id);
       set_ua_abort(HttpTransact::ABORTED, event);
@@ -770,7 +770,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
       ua_entry->read_vio->reenable();
       return VC_EVENT_CONT;
     }
-  case PARSE_DONE:
+  case PARSE_RESULT_DONE:
     DebugSM("http", "[%" PRId64 "] done parsing client request header", sm_id);
 
     if (ua_session->m_active == false) {
@@ -1043,8 +1043,8 @@ HttpSM::state_read_push_response_header(int event, void *data)
     return 0;
   }
 
-  int state = PARSE_CONT;
-  while (ua_buffer_reader->read_avail() && state == PARSE_CONT) {
+  int state = PARSE_RESULT_CONT;
+  while (ua_buffer_reader->read_avail() && state == PARSE_RESULT_CONT) {
     const char *start = ua_buffer_reader->start();
     const char *tmp   = start;
     data_size         = ua_buffer_reader->block_read_avail();
@@ -1072,15 +1072,15 @@ HttpSM::state_read_push_response_header(int event, void *data)
     const char *end = ua_buffer_reader->start();
     state = t_state.hdr_info.server_response.parse_resp(&http_parser, &end, end, true // We are out of data after server eos
                                                         );
-    ink_release_assert(state == PARSE_DONE || state == PARSE_ERROR);
+    ink_release_assert(state == PARSE_RESULT_DONE || state == PARSE_RESULT_ERROR);
   }
   // Don't allow 0.9 (unparsable headers) since TS doesn't
   //   cache 0.9 responses
-  if (state == PARSE_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
-    state = PARSE_ERROR;
+  if (state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9)) {
+    state = PARSE_RESULT_ERROR;
   }
 
-  if (state != PARSE_CONT) {
+  if (state != PARSE_RESULT_CONT) {
     // Disable further IO
     ua_entry->read_vio->nbytes = ua_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
@@ -1088,16 +1088,16 @@ HttpSM::state_read_push_response_header(int event, void *data)
   }
 
   switch (state) {
-  case PARSE_ERROR:
+  case PARSE_RESULT_ERROR:
     DebugSM("http", "[%" PRId64 "] error parsing push response header", sm_id);
     call_transact_and_set_next_state(HttpTransact::HandleBadPushRespHdr);
     break;
 
-  case PARSE_CONT:
+  case PARSE_RESULT_CONT:
     ua_entry->read_vio->reenable();
     return VC_EVENT_CONT;
 
-  case PARSE_DONE:
+  case PARSE_RESULT_DONE:
     DebugSM("http", "[%" PRId64 "] done parsing push response header", sm_id);
     call_transact_and_set_next_state(HttpTransact::HandlePushResponseHdr);
     break;
@@ -1861,7 +1861,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   /////////////////////
   // tokenize header //
   /////////////////////
-  MIMEParseResult state =
+  ParseResult state =
     t_state.hdr_info.server_response.parse_resp(&http_parser, server_buffer_reader, &bytes_used, server_entry->eos);
 
   server_response_hdr_bytes += bytes_used;
@@ -1870,16 +1870,16 @@ HttpSM::state_read_server_response_header(int event, void *data)
   //  the connection has already served a transaction as what we are likely
   //  looking at is garbage on a keep-alive channel corrupted by the origin
   //  server
-  if (state == PARSE_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9) &&
+  if (state == PARSE_RESULT_DONE && t_state.hdr_info.server_response.version_get() == HTTPVersion(0, 9) &&
       server_session->transact_count > 1) {
-    state = PARSE_ERROR;
+    state = PARSE_RESULT_ERROR;
   }
   // Check to see if we are over the hdr size limit
   if (server_response_hdr_bytes > t_state.txn_conf->response_hdr_max_size) {
-    state = PARSE_ERROR;
+    state = PARSE_RESULT_ERROR;
   }
 
-  if (state != PARSE_CONT) {
+  if (state != PARSE_RESULT_CONT) {
     // Disable further IO
     server_entry->read_vio->nbytes = server_entry->read_vio->ndone;
     http_parser_clear(&http_parser);
@@ -1887,7 +1887,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
   }
 
   switch (state) {
-  case PARSE_ERROR: {
+  case PARSE_RESULT_ERROR: {
     // Many broken servers send really badly formed 302 redirects.
     //  Even if the parser doesn't like the redirect forward
     //  if it's got a Location header.  We check the type of the
@@ -1917,7 +1917,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
     }
     // FALLTHROUGH (since we are allowing the parse error)
   }
-  case PARSE_DONE:
+  case PARSE_RESULT_DONE:
     DebugSM("http_seq", "Done parsing server response header");
 
     // Now that we know that we have all of the origin server
@@ -1959,7 +1959,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     do_api_callout();
     break;
-  case PARSE_CONT:
+  case PARSE_RESULT_CONT:
     ink_assert(server_entry->eos == false);
     server_entry->read_vio->reenable();
     return VC_EVENT_CONT;
