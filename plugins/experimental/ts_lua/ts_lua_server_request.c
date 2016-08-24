@@ -546,7 +546,6 @@ ts_lua_inject_server_request_url_api(lua_State *L)
   lua_setfield(L, -2, "get_url_scheme");
   lua_pushcfunction(L, ts_lua_server_request_set_url_scheme);
   lua_setfield(L, -2, "set_url_scheme");
-
 }
 
 static int
