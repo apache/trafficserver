@@ -124,8 +124,7 @@ typedef struct {
 typedef enum {
   TS_PARSE_ERROR = -1,
   TS_PARSE_DONE  = 0,
-  TS_PARSE_OK    = 1,
-  TS_PARSE_CONT  = 2,
+  TS_PARSE_CONT  = 1,
 } TSParseResult;
 
 /**

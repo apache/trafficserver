@@ -42,8 +42,8 @@
 enum MIMEParseResult {
   PARSE_ERROR = -1,
   PARSE_DONE  = 0,
-  PARSE_OK    = 1,
-  PARSE_CONT  = 2,
+  PARSE_CONT  = 1,
+  PARSE_OK    = 3, // This is only used internally in mime_parser_parse and not returned to the user
 };
 
 enum {

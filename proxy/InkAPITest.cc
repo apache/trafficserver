@@ -5405,8 +5405,7 @@ REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED
 typedef enum {
   ORIG_TS_PARSE_ERROR = -1,
   ORIG_TS_PARSE_DONE  = 0,
-  ORIG_TS_PARSE_OK    = 1,
-  ORIG_TS_PARSE_CONT  = 2,
+  ORIG_TS_PARSE_CONT  = 1,
 } ORIG_TSParseResult;
 
 typedef enum {
@@ -5583,7 +5582,6 @@ REGRESSION_TEST(SDK_API_TSConstant)(RegressionTest *test, int /* atype ATS_UNUSE
 
   PRINT_DIFF(TS_PARSE_ERROR);
   PRINT_DIFF(TS_PARSE_DONE);
-  PRINT_DIFF(TS_PARSE_OK);
   PRINT_DIFF(TS_PARSE_CONT);
 
   PRINT_DIFF(TS_HTTP_STATUS_NONE);
