@@ -147,7 +147,7 @@ msgid ":ts:cv:`proxy.config.http.anonymize_remove_client_ip`"
 msgstr ""
 
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:83
-msgid ":ts:cv:`proxy.config.http.anonymize_insert_client_ip`"
+msgid ":ts:cv:`proxy.config.http.insert_client_ip`"
 msgstr ""
 
 #: ../../../developer-guide/api/functions/TSHttpOverridableConfig.en.rst:84

@@ -1570,7 +1570,7 @@ Proxy User Variables
 
    When enabled (``1``), Traffic Server removes ``Client-IP`` headers for more privacy.
 
-.. ts:cv:: CONFIG proxy.config.http.anonymize_insert_client_ip INT 1
+.. ts:cv:: CONFIG proxy.config.http.insert_client_ip INT 1
    :reloadable:
    :overridable:
 
