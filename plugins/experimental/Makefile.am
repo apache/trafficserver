@@ -39,7 +39,6 @@ SUBDIRS = \
  remap_purge \
  ssl_cert_loader \
  sslheaders \
- stale_while_revalidate \
  stream_editor \
  ts_lua \
  url_sig
