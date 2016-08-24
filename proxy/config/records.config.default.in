@@ -77,7 +77,7 @@ CONFIG proxy.config.http.negative_caching_lifetime INT 1800
 # Proxy users variables. Docs:
 #    https://docs.trafficserver.apache.org/records.config#proxy-user-variables
 ##############################################################################
-CONFIG proxy.config.http.anonymize_insert_client_ip INT 1
+CONFIG proxy.config.http.insert_client_ip INT 1
 CONFIG proxy.config.http.insert_squid_x_forwarded_for INT 1
 
 ##############################################################################

@@ -430,7 +430,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.hostdb.verify_after
  proxy.config.http.accept_encoding_filter.filename
  proxy.config.http.accept_no_activity_timeout
- proxy.config.http.anonymize_insert_client_ip
+ proxy.config.http.insert_client_ip
  proxy.config.http.anonymize_other_header_list
  proxy.config.http.anonymize_remove_client_ip
  proxy.config.http.anonymize_remove_cookie

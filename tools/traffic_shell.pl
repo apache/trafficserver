@@ -310,7 +310,7 @@ sub show_http {
   my $remove_user_agent = get_int("proxy.config.http.anonymize_remove_user_agent");
   my $remove_cookie = get_int("proxy.config.http.anonymize_remove_cookie");
   my $other_header_list = get_string("proxy.config.http.anonymize_other_header_list");
-  my $insert_client_ip = get_int("proxy.config.http.anonymize_insert_client_ip");
+  my $insert_client_ip = get_int("proxy.config.http.insert_client_ip");
   my $remove_client_ip = get_int("proxy.config.http.anonymize_remove_client_ip");
   my $global_user_agent = get_string("proxy.config.http.global_user_agent_header");
 

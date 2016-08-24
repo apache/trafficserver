@@ -7468,7 +7468,7 @@ const char *SDK_Overridable_Configs[TS_CONFIG_LAST_ENTRY] = {
   "proxy.config.http.anonymize_remove_user_agent",
   "proxy.config.http.anonymize_remove_cookie",
   "proxy.config.http.anonymize_remove_client_ip",
-  "proxy.config.http.anonymize_insert_client_ip",
+  "proxy.config.http.insert_client_ip",
   "proxy.config.http.response_server_enabled",
   "proxy.config.http.insert_squid_x_forwarded_for",
   "proxy.config.http.server_tcp_init_cwnd",

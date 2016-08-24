@@ -8630,7 +8630,7 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'p':
       if (!strncmp(name, "proxy.config.http.anonymize_remove_client_ip", length)) {
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP;
-      } else if (!strncmp(name, "proxy.config.http.anonymize_insert_client_ip", length)) {
+      } else if (!strncmp(name, "proxy.config.http.insert_client_ip", length)) {
         cnf = TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP;
       }
       break;
