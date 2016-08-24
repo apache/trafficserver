@@ -8378,6 +8378,8 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
       cnf = TS_CONFIG_HTTP_CHUNKING_ENABLED;
     } else if (!strncmp(name, "proxy.config.http.cache.generation", length)) {
       cnf = TS_CONFIG_HTTP_CACHE_GENERATION;
+    } else if (!strncmp(name, "proxy.config.http.insert_client_ip", length)) {
+      cnf = TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP;
     }
     break;
 
@@ -8630,8 +8632,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'p':
       if (!strncmp(name, "proxy.config.http.anonymize_remove_client_ip", length)) {
         cnf = TS_CONFIG_HTTP_ANONYMIZE_REMOVE_CLIENT_IP;
-      } else if (!strncmp(name, "proxy.config.http.insert_client_ip", length)) {
-        cnf = TS_CONFIG_HTTP_ANONYMIZE_INSERT_CLIENT_IP;
       }
       break;
     case 'e':
