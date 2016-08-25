@@ -715,6 +715,7 @@ ParentRecord::UpdateMatch(ParentResult *result, RequestData *rdata)
 ParentRecord::~ParentRecord()
 {
   ats_free(parents);
+  ats_free(secondary_parents);
   delete selection_strategy;
   delete unavailable_server_retry_responses;
 }
