@@ -726,7 +726,6 @@ public:
 
   MgmtByte disable_ssl_parenting;
 
-  MgmtByte enable_url_expandomatic;
   MgmtByte no_dns_forward_to_parent;
   MgmtByte no_origin_server_dns;
   MgmtByte use_client_target_addr;
@@ -939,7 +938,6 @@ inline HttpConfigParams::HttpConfigParams()
     origin_min_keep_alive_connections(0),
     max_websocket_connections(-1),
     disable_ssl_parenting(0),
-    enable_url_expandomatic(0),
     no_dns_forward_to_parent(0),
     no_origin_server_dns(0),
     use_client_target_addr(0),

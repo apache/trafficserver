@@ -902,8 +902,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigByte(c.use_client_source_port, "proxy.config.http.use_client_source_port");
   HttpEstablishStaticConfigByte(c.oride.maintain_pristine_host_hdr, "proxy.config.url_remap.pristine_host_hdr");
 
-  HttpEstablishStaticConfigByte(c.enable_url_expandomatic, "proxy.config.http.enable_url_expandomatic");
-
   HttpEstablishStaticConfigByte(c.oride.insert_request_via_string, "proxy.config.http.insert_request_via_str");
   HttpEstablishStaticConfigByte(c.oride.insert_response_via_string, "proxy.config.http.insert_response_via_str");
   HttpEstablishStaticConfigLongLong(c.oride.proxy_response_hsts_max_age, "proxy.config.ssl.hsts_max_age");
@@ -1174,8 +1172,6 @@ HttpConfig::reconfigure()
     Warning("origin_max_connections < origin_min_keep_alive_connections, setting min=max , please correct your records.config");
     params->origin_min_keep_alive_connections = params->oride.origin_max_connections;
   }
-
-  params->enable_url_expandomatic = INT_TO_BOOL(m_master.enable_url_expandomatic);
 
   params->oride.insert_request_via_string   = m_master.oride.insert_request_via_string;
   params->oride.insert_response_via_string  = m_master.oride.insert_response_via_string;

@@ -3610,14 +3610,6 @@ msgid ""
 "variable (Traffic Server automatically adds the dot (.))."
 msgstr ""
 
-#: ../../../admin-guide/files/records.config.en.rst:2272
-msgid ""
-"If the variable :ts:cv:`proxy.config.http.enable_url_expandomatic` is set "
-"to ``1`` (the default value), then you do not have to add ``www.`` and ``."
-"com`` to this list because Traffic Server automatically tries www. and .com "
-"after trying the values you've specified."
-msgstr ""
-
 #: ../../../admin-guide/files/records.config.en.rst:2278
 msgid ""
 "Allows to specify which ``resolv.conf`` file to use for finding resolvers. "

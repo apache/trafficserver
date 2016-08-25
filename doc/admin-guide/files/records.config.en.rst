@@ -882,13 +882,6 @@ ip-resolve
    ``1`` ``Age`` header is added.
    ===== ======================================================================
 
-.. ts:cv:: CONFIG proxy.config.http.enable_url_expandomatic INT 0
-   :reloadable:
-
-   Enables (``1``) or disables (``0``) ``.com`` domain expansion. This configures the Traffic Server to resolve unqualified hostnames by
-   prepending with ``www.`` and appending with ``.com`` before redirecting to the expanded address. For example: if a client makes
-   a request to ``host``, then Traffic Server redirects the request to ``www.host.com``.
-
 .. ts:cv:: CONFIG proxy.config.http.chunking_enabled INT 1
    :reloadable:
    :overridable:
@@ -2292,12 +2285,6 @@ DNS
    Specifies a list of hostname extensions that are automatically added to the hostname after a failed lookup. For example: if you want
    Traffic Server to add the hostname extension .org, then specify ``org`` as the value for this variable (Traffic Server automatically
    adds the dot (.)).
-
-.. note::
-
-   If the variable :ts:cv:`proxy.config.http.enable_url_expandomatic` is set to ``1`` (the default value), then you do not have to
-   add ``www.`` and ``.com`` to this list because Traffic Server automatically tries www. and .com after trying the values
-   you've specified.
 
 .. ts:cv:: CONFIG proxy.config.dns.resolv_conf STRING /etc/resolv.conf
 
