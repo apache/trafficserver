@@ -18,25 +18,25 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.2.0\n"
 
-#: ../../../developer-guide/plugins/example-plugins/hook-trace/index.en.rst:23
+#: ../../../admin-guide/plugins/hook-trace.en.rst:23
 msgid "Hook Trace Plugin"
 msgstr ""
 
-#: ../../../developer-guide/plugins/example-plugins/hook-trace/index.en.rst:25
+#: ../../../admin-guide/plugins/hook-trace.en.rst:25
 msgid ""
 "The HookTrace plugins shows the fundamental set of hooks that are commonly "
 "used by plugins. It is also useful for tracing the sequence of hook calls a "
 "plugin can receive under different circumstances."
 msgstr ""
 
-#: ../../../developer-guide/plugins/example-plugins/hook-trace/index.en.rst:29
+#: ../../../admin-guide/plugins/hook-trace.en.rst:29
 msgid ""
 "The plugin begins by adding a global hook on each of the hooks it is "
 "interested in. Next, in the event handler, we simply cast the event data "
 "pointer to the expected type."
 msgstr ""
 
-#: ../../../developer-guide/plugins/example-plugins/hook-trace/index.en.rst:33
+#: ../../../admin-guide/plugins/hook-trace.en.rst:33
 msgid ""
 "Hook events can be shown in the |TS| diagnosic log by using the ``hook-"
 "trace`` diagnostic tag::"

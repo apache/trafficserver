@@ -1926,6 +1926,7 @@ AC_CONFIG_FILES([
   plugins/experimental/geoip_acl/Makefile
   plugins/experimental/header_normalize/Makefile
   plugins/experimental/hipes/Makefile
+  plugins/experimental/hook-trace/Makefile
   plugins/experimental/inliner/Makefile
   plugins/experimental/memcache/Makefile
   plugins/experimental/memcached_remap/Makefile

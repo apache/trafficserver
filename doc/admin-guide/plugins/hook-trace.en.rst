@@ -15,9 +15,9 @@
    specific language governing permissions and limitations
    under the License.
 
-.. include:: ../../../../common.defs
+.. include:: ../../common.defs
 
-.. _developer-plugins-examples-hook-trace:
+.. _admin-plugins-hook-trace:
 
 Hook Trace Plugin
 *****************
@@ -35,6 +35,6 @@ Hook events can be shown in the |TS| diagnosic log by using the
 
     $ traffic_server -T hook-trace
 
-.. literalinclude:: ../../../../../example/hook-trace/hook-trace.cc
+.. literalinclude:: ../../../plugins/experimental/hook-trace/hook-trace.cc
    :language: c
    :lines: 24-
