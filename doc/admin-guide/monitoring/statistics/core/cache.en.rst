@@ -52,22 +52,10 @@ Cache
    Represents the ratio of cache lookups over the previous 10 seconds which
    have been satisfied by the in-memory cache, thus avoiding disk cache I/O.
 
-.. ts:stat:: global proxy.node.cache_hit_mem_ratio_avg_10s_int_pct integer
-   :ungathered:
-
-   The value of :ts:stat:`proxy.node.cache_hit_mem_ratio_avg_10s` converted to
-   an integer percent.
-
 .. ts:stat:: global proxy.node.cache_hit_mem_ratio float
 
    Represents the ratio of cache lookups which have been satisfied by the
    in-memory cache since statistics collection began.
-
-.. ts:stat:: global proxy.node.cache_hit_mem_ratio_int_pct integer
-   :ungathered:
-
-   The value of :ts:stat:`proxy.node.cache_hit_mem_ratio` converted to an
-   integer percent.
 
 .. ts:stat:: global proxy.node.cache_hit_ratio_avg_10s float
 
@@ -75,30 +63,15 @@ Cache
    have been satisfied by either the in-memory cache or the disk cache, thus
    avoiding revalidation or object retrieval from origin servers.
 
-.. ts:stat:: global proxy.node.cache_hit_ratio_avg_10s_int_pct integer
-
-   The value of :ts:stat:`proxy.node.cache_hit_ratio_avg_10s` converted to an
-   integer percent.
-
 .. ts:stat:: global proxy.node.cache_hit_ratio float
 
    Represents the ratio of cache lookups which have been satisfied by either the
    in-memory cache or the on-disk cache since statistics collection began.
 
-.. ts:stat:: global proxy.node.cache_hit_ratio_int_pct integer
-
-   The value of :ts:stat:`proxy.node.cache_hit_ratio` converted to an integer
-   percent.
-
 .. ts:stat:: global proxy.node.cache.percent_free float
 
    Represents the percentage of allocated cache space which is not occupied by
    cache objects.
-
-.. ts:stat:: global proxy.node.cache.percent_free_int_pct integer
-
-   The value of :ts:stat:`proxy.node.cache.percent_free` converted to an
-   integer percent.
 
 .. ts:stat:: global proxy.node.cache_total_hits_avg_10s float
 .. ts:stat:: global proxy.node.cache_total_hits counter

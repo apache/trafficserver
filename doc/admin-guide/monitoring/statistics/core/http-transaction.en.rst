@@ -67,100 +67,44 @@ HTTP Transaction
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.aborts float
    :type: derivative
 
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.aborts_int_pct integer
-   :type: derivative
-   :ungathered:
-
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.connect_failed float
    :type: derivative
-
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.connect_failed_int_pct integer
-   :type: derivative
-   :ungathered:
 
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.early_hangups float
    :type: derivative
 
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.early_hangups_int_pct integer
-   :type: derivative
-   :ungathered:
-
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups float
    :type: derivative
-
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.empty_hangups_int_pct integer
-   :type: derivative
-   :ungathered:
 
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.other float
    :type: derivative
 
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.other_int_pct integer
-   :type: derivative
-   :ungathered:
-
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts float
    :type: derivative
-
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.possible_aborts_int_pct integer
-   :type: derivative
-   :ungathered:
 
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups float
    :type: derivative
 
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.errors.pre_accept_hangups_int_pct integer
-   :type: derivative
-   :ungathered:
-
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.hit_fresh float
    :type: derivative
-
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.hit_fresh_int_pct integer
-   :type: derivative
-   :ungathered:
 
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.hit_revalidated float
    :type: derivative
 
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.hit_revalidated_int_pct integer
-   :type: derivative
-   :ungathered:
-
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.miss_changed float
    :type: derivative
-
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.miss_changed_int_pct integer
-   :type: derivative
-   :ungathered:
 
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache float
    :type: derivative
 
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.miss_client_no_cache_int_pct integer
-   :type: derivative
-   :ungathered:
-
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.miss_cold float
    :type: derivative
-
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.miss_cold_int_pct integer
-   :type: derivative
-   :ungathered:
 
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable float
    :type: derivative
 
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.miss_not_cacheable_int_pct integer
-   :type: derivative
-   :ungathered:
-
 .. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.other.unclassified float
    :type: derivative
-
-.. ts:stat:: global proxy.node.http.transaction_frac_avg_10s.other.unclassified_int_pct integer
-   :type: derivative
-   :ungathered:
 
 .. ts:stat:: global proxy.node.http.transaction_msec_avg_10s.errors.aborts integer
    :type: derivative
