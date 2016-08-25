@@ -240,7 +240,7 @@ main(int argc, const char **argv)
   if (debug) {
     diags->activate_taglist("traffic_ctl", DiagsTagType_Debug);
     diags->config.enabled[DiagsTagType_Debug] = true;
-    diags->show_location                      = true;
+    diags->show_location                      = SHOW_LOCATION_DEBUG;
   }
 
   CtrlDebug("debug logging active");
