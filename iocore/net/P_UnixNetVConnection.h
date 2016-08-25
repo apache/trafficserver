@@ -349,10 +349,10 @@ UnixNetVConnection::get_inactivity_timeout()
 }
 
 TS_INLINE void
-UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
+UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
 {
-  Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout, this);
-  inactivity_timeout_in = timeout;
+  Debug("socket", "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
+  inactivity_timeout_in = timeout_in;
 #ifdef INACTIVITY_TIMEOUT
 
   if (inactivity_timeout)
@@ -375,8 +375,8 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
   } else
     inactivity_timeout = 0;
 #else
-  if (timeout) {
-    next_inactivity_timeout_at = Thread::get_hrtime() + timeout;
+  if (timeout_in) {
+    next_inactivity_timeout_at = Thread::get_hrtime() + timeout_in;
   } else {
     next_inactivity_timeout_at = 0;
   }
@@ -384,10 +384,10 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout)
 }
 
 TS_INLINE void
-UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
+UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
 {
-  Debug("socket", "Set active timeout=%" PRId64 ", NetVC=%p", timeout, this);
-  active_timeout_in = timeout;
+  Debug("socket", "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
+  active_timeout_in = timeout_in;
 #ifdef INACTIVITY_TIMEOUT
   if (active_timeout)
     active_timeout->cancel_action(this);
@@ -409,7 +409,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout)
   } else
     active_timeout = 0;
 #else
-  next_activity_timeout_at   = Thread::get_hrtime() + timeout;
+  next_activity_timeout_at   = Thread::get_hrtime() + timeout_in;
 #endif
 }
 
