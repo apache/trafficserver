@@ -2796,9 +2796,10 @@ Diagnostic Logging Configuration
 
         CONFIG proxy.config.diags.output.debug STRING SL
 
-.. ts:cv:: CONFIG proxy.config.diags.show_location INT 0
+.. ts:cv:: CONFIG proxy.config.diags.show_location INT 1
 
-   Annotates diagnostic messages with the source code location.
+   Annotates diagnostic messages with the source code location. Set to 1 to enable
+   for Debug() messages only. Set to 2 to enable for all messages.
 
 .. ts:cv:: CONFIG proxy.config.diags.debug.enabled INT 0
 

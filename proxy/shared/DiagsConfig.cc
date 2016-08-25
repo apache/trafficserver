@@ -82,7 +82,7 @@ DiagsConfig::reconfigure_diags()
   all_found = all_found && found;
 
   e                    = (int)REC_readInteger("proxy.config.diags.show_location", &found);
-  diags->show_location = ((e && found) ? 1 : 0);
+  diags->show_location = ((e == 1 && found) ? SHOW_LOCATION_DIAGS : ((e == 2 && found) ? SHOW_LOCATION_ALL : SHOW_LOCATION_NONE));
   all_found            = all_found && found;
 
   // read output routing values
@@ -246,7 +246,7 @@ DiagsConfig::RegisterDiagConfig()
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.debug.tags", "", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
   RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.action.enabled", 0, RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.action.tags", "", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
-  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.show_location", 0, RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
+  RecRegisterConfigInt(RECT_CONFIG, "proxy.config.diags.show_location", 1, RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.diag", "L", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.debug", "L", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);
   RecRegisterConfigString(RECT_CONFIG, "proxy.config.diags.output.status", "L", RECU_NULL, RECC_NULL, NULL, REC_SOURCE_DEFAULT);

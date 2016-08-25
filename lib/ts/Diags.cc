@@ -517,7 +517,7 @@ Diags::log(const char *tag, DiagsLevel level, const char *file, const char *func
 
   va_list ap;
   va_start(ap, format_string);
-  if (show_location) {
+  if (show_location == SHOW_LOCATION_ALL || (show_location == SHOW_LOCATION_DEBUG && level == DL_Debug)) {
     SourceLocation lp(file, func, line);
     print_va(tag, level, &lp, format_string, ap);
   } else {
@@ -535,7 +535,7 @@ Diags::error_va(DiagsLevel level, const char *file, const char *func, const int 
     va_copy(ap2, ap);
   }
 
-  if (show_location) {
+  if (show_location == SHOW_LOCATION_ALL || (show_location == SHOW_LOCATION_DEBUG && level == DL_Debug)) {
     SourceLocation lp(file, func, line);
     print_va(NULL, level, &lp, format_string, ap);
   } else {
