@@ -391,39 +391,39 @@ struct ClusterVConnectionBase : public CacheVConnection {
 };
 
 inline void
-ClusterVConnectionBase::set_active_timeout(ink_hrtime timeout)
+ClusterVConnectionBase::set_active_timeout(ink_hrtime timeout_in)
 {
-  active_timeout_in = timeout;
+  active_timeout_in = timeout_in;
   if (active_timeout) {
     ink_assert(!active_timeout->cancelled);
     if (active_timeout->ethread == this_ethread())
-      active_timeout->schedule_in(timeout);
+      active_timeout->schedule_in(timeout_in);
     else {
       active_timeout->cancel(this);
-      active_timeout = thread->schedule_in(this, timeout);
+      active_timeout = thread->schedule_in(this, timeout_in);
     }
   } else {
     if (thread) {
-      active_timeout = thread->schedule_in(this, timeout);
+      active_timeout = thread->schedule_in(this, timeout_in);
     }
   }
 }
 
 inline void
-ClusterVConnectionBase::set_inactivity_timeout(ink_hrtime timeout)
+ClusterVConnectionBase::set_inactivity_timeout(ink_hrtime timeout_in)
 {
-  inactivity_timeout_in = timeout;
+  inactivity_timeout_in = timeout_in;
   if (inactivity_timeout) {
     ink_assert(!inactivity_timeout->cancelled);
     if (inactivity_timeout->ethread == this_ethread())
-      inactivity_timeout->schedule_in(timeout);
+      inactivity_timeout->schedule_in(timeout_in);
     else {
       inactivity_timeout->cancel(this);
-      inactivity_timeout = thread->schedule_in(this, timeout);
+      inactivity_timeout = thread->schedule_in(this, timeout_in);
     }
   } else {
     if (thread) {
-      inactivity_timeout = thread->schedule_in(this, timeout);
+      inactivity_timeout = thread->schedule_in(this, timeout_in);
     }
   }
 }
