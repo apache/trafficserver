@@ -1054,6 +1054,10 @@ SSLInitializeStatistics()
                      (int)ssl_ocsp_revoked_cert_stat, RecRawStatSyncCount);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_unknown_cert_stat", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_ocsp_unknown_cert_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_refreshed_cert", RECD_INT, RECP_PERSISTENT,
+                     (int)ssl_ocsp_refreshed_cert_stat, RecRawStatSyncCount);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.ssl_ocsp_refresh_cert_failure", RECD_INT, RECP_PERSISTENT,
+                     (int)ssl_ocsp_refresh_cert_failure_stat, RecRawStatSyncCount);
 
   // Get and register the SSL cipher stats. Note that we are using the default SSL context to obtain
   // the cipher list. This means that the set of ciphers is fixed by the build configuration and not

@@ -382,9 +382,11 @@ ocsp_update()
         if (cinf->resp_derlen == 0 || cinf->is_expire || cinf->expire_time < current_time) {
           ink_mutex_release(&cinf->stapling_mutex);
           if (stapling_refresh_response(cinf, &resp)) {
-            Note("Success to refresh OCSP response for 1 certificate.");
+            Debug("ssl_ocsp", "Successful OCSP refresh response for 1 certificate");
+            SSL_INCREMENT_DYN_STAT(ssl_ocsp_refreshed_cert_stat);
           } else {
-            Note("Fail to refresh OCSP response for 1 certificate.");
+            Debug("ssl_ocsp", "Failed to refresh OCSP for 1 certificate");
+            SSL_INCREMENT_DYN_STAT(ssl_ocsp_refresh_cert_failure_stat);
           }
         } else {
           ink_mutex_release(&cinf->stapling_mutex);

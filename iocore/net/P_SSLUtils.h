@@ -94,6 +94,8 @@ enum SSL_Stats {
   /* ocsp stapling stats */
   ssl_ocsp_revoked_cert_stat,
   ssl_ocsp_unknown_cert_stat,
+  ssl_ocsp_refreshed_cert_stat,
+  ssl_ocsp_refresh_cert_failure_stat,
 
   ssl_cipher_stats_start = 100,
   ssl_cipher_stats_end   = 300,
