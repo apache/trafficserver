@@ -903,6 +903,8 @@ Http2ConnectionState::create_stream(Http2StreamId new_id)
   new_stream->set_parent(ua_session);
   new_stream->mutex = ua_session->mutex;
   ua_session->get_netvc()->add_to_active_queue();
+  // reset the activity timeout everytime a new stream is created
+  ua_session->get_netvc()->set_active_timeout(HRTIME_SECONDS(Http2::active_timeout_in));
 
   return new_stream;
 }
@@ -945,6 +947,7 @@ Http2ConnectionState::cleanup_streams()
   client_streams_count = 0;
   if (!is_state_closed()) {
     ua_session->get_netvc()->add_to_keep_alive_queue();
+    ua_session->get_netvc()->cancel_active_timeout();
   }
 }
 
@@ -971,6 +974,7 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
 
   if (client_streams_count == 0 && ua_session) {
     ua_session->get_netvc()->add_to_keep_alive_queue();
+    ua_session->get_netvc()->cancel_active_timeout();
   }
 }
 
