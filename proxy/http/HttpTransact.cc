@@ -59,7 +59,8 @@ static char range_type[] = "multipart/byteranges; boundary=RANGE_SEPARATOR";
     sm->history_pos += 1;                                                    \
   }
 
-#define DebugTxn(tag, ...) DebugSpecific((s->state_machine->debug_on), tag, __VA_ARGS__)
+#define DebugTxn(tag, fmt, ...) \
+  DebugSpecific((s->state_machine->debug_on), tag, "[%" PRId64 "] " fmt, s->state_machine->sm_id, ##__VA_ARGS__)
 
 extern HttpBodyFactory *body_factory;
 
@@ -738,7 +739,7 @@ void
 HttpTransact::StartRemapRequest(State *s)
 {
   if (s->api_skip_all_remapping) {
-    Debug("http_trans", "API request to skip remapping");
+    DebugTxn("http_trans", "API request to skip remapping");
 
     s->hdr_info.client_request.set_url_target_from_host_field();
 
@@ -3030,10 +3031,10 @@ HttpTransact::handle_cache_write_lock(State *s)
       }
       if (likely(ats_field)) {
         int value = (s->cache_info.object_read) ? 1 : 0;
-        Debug("http_error", "Adding Ats-Internal-Messages: %d", value);
+        DebugTxn("http_error", "Adding Ats-Internal-Messages: %d", value);
         header->field_value_set_int(ats_field, value);
       } else {
-        Debug("http_error", "failed to add Ats-Internal-Messages");
+        DebugTxn("http_error", "failed to add Ats-Internal-Messages");
       }
 
       TRANSACT_RETURN(SM_ACTION_SEND_ERROR_CACHE_NOOP, NULL);
@@ -6664,8 +6665,9 @@ HttpTransact::process_quick_http_filter(State *s, int method)
     if (deny_request) {
       if (is_debug_tag_set("ip-allow")) {
         ip_text_buffer ipb;
-        Debug("ip-allow", "Quick filter denial on %s:%s with mask %x", ats_ip_ntop(&s->client_info.src_addr.sa, ipb, sizeof(ipb)),
-              hdrtoken_index_to_wks(method), acl_record ? acl_record->_method_mask : 0x0);
+        DebugTxn("ip-allow", "Quick filter denial on %s:%s with mask %x",
+                 ats_ip_ntop(&s->client_info.src_addr.sa, ipb, sizeof(ipb)), hdrtoken_index_to_wks(method),
+                 acl_record ? acl_record->_method_mask : 0x0);
       }
       s->client_connection_enabled = false;
     }
@@ -6848,7 +6850,7 @@ HttpTransact::handle_content_length_header(State *s, HTTPHdr *header, HTTPHdr *b
       header->field_delete(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
       s->hdr_info.trust_response_cl = false;
     }
-    Debug("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %" PRId64, header->get_content_length());
+    DebugTxn("http_trans", "[handle_content_length_header] RESPONSE cont len in hdr is %" PRId64, header->get_content_length());
   } else {
     // No content length header
     if (s->source == SOURCE_CACHE) {
@@ -8084,7 +8086,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // Add HSTS header (Strict-Transport-Security) if max-age is set and the request was https
   if (s->orig_scheme == URL_WKSIDX_HTTPS && s->txn_conf->proxy_response_hsts_max_age >= 0) {
-    Debug("http_hdrs", "hsts max-age=%" PRId64, s->txn_conf->proxy_response_hsts_max_age);
+    DebugTxn("http_hdrs", "hsts max-age=%" PRId64, s->txn_conf->proxy_response_hsts_max_age);
     HttpTransactHeaders::insert_hsts_header_in_response(s, outgoing_response);
   }
 
@@ -9149,7 +9151,7 @@ HttpTransact::change_response_header_because_of_range_request(State *s, HTTPHdr 
   MIMEField *field;
   char *reason_phrase;
 
-  Debug("http_trans", "Partial content requested, re-calculating content-length");
+  DebugTxn("http_trans", "Partial content requested, re-calculating content-length");
 
   header->status_set(HTTP_STATUS_PARTIAL_CONTENT);
   reason_phrase = (char *)(http_hdr_reason_lookup(HTTP_STATUS_PARTIAL_CONTENT));
