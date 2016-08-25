@@ -440,11 +440,11 @@ const char *http_hdr_reason_lookup(unsigned status);
 
 void http_parser_init(HTTPParser *parser);
 void http_parser_clear(HTTPParser *parser);
-MIMEParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                                      bool must_copy_strings, bool eof, bool strict_uri_parsing);
-MIMEParseResult validate_hdr_host(HTTPHdrImpl *hh);
-MIMEParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
-                                       bool must_copy_strings, bool eof);
+ParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
+                                  bool must_copy_strings, bool eof, bool strict_uri_parsing);
+ParseResult validate_hdr_host(HTTPHdrImpl *hh);
+ParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
+                                   bool must_copy_strings, bool eof);
 
 HTTPStatus http_parse_status(const char *start, const char *end);
 int32_t http_parse_version(const char *start, const char *end);
@@ -618,11 +618,11 @@ public:
   const char *reason_get(int *length);
   void reason_set(const char *value, int length);
 
-  MIMEParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing = false);
-  MIMEParseResult parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof);
+  ParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing = false);
+  ParseResult parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof);
 
-  MIMEParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing = false);
-  MIMEParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
+  ParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing = false);
+  ParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
 
 public:
   // Utility routines
@@ -1230,7 +1230,7 @@ HTTPHdr::reason_set(const char *value, int length)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline MIMEParseResult
+inline ParseResult
 HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, bool strict_uri_parsing)
 {
   ink_assert(valid());
@@ -1242,7 +1242,7 @@ HTTPHdr::parse_req(HTTPParser *parser, const char **start, const char *end, bool
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline MIMEParseResult
+inline ParseResult
 HTTPHdr::parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof)
 {
   ink_assert(valid());

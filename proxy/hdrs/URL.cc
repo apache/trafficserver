@@ -1136,7 +1136,7 @@ url_unescapify(Arena *arena, const char *str, int length)
     }                  \
   }
 
-MIMEParseResult
+ParseResult
 url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p)
 {
   const char *cur = *start;
@@ -1176,9 +1176,9 @@ url_parse_scheme(HdrHeap *heap, URLImpl *url, const char **start, const char *en
       }
     }
     *start = scheme_end;
-    return PARSE_CONT;
+    return PARSE_RESULT_CONT;
   }
-  return PARSE_ERROR; // no non-whitespace found
+  return PARSE_RESULT_ERROR; // no non-whitespace found
 }
 
 /**
@@ -1197,22 +1197,22 @@ url_is_strictly_compliant(const char *start, const char *end)
   return true;
 }
 
-MIMEParseResult
+ParseResult
 url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, bool strict_uri_parsing)
 {
   if (strict_uri_parsing && !url_is_strictly_compliant(*start, end)) {
-    return PARSE_ERROR;
+    return PARSE_RESULT_ERROR;
   }
 
-  MIMEParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
-  return PARSE_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p) : zret;
+  ParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
+  return PARSE_RESULT_CONT == zret ? url_parse_http(heap, url, start, end, copy_strings_p) : zret;
 }
 
-MIMEParseResult
+ParseResult
 url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p)
 {
-  MIMEParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
-  return PARSE_CONT == zret ? url_parse_http_no_path_component_breakdown(heap, url, start, end, copy_strings_p) : zret;
+  ParseResult zret = url_parse_scheme(heap, url, start, end, copy_strings_p);
+  return PARSE_RESULT_CONT == zret ? url_parse_http_no_path_component_breakdown(heap, url, start, end, copy_strings_p) : zret;
 }
 
 /**
@@ -1231,7 +1231,7 @@ url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **
 
 */
 
-MIMEParseResult
+ParseResult
 url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *end, bool copy_strings_p)
 {
   char const *cur = *start;
@@ -1246,7 +1246,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
     cur += 3;
   } else if (':' == *cur && (++cur >= end || ('/' == *cur && (++cur >= end || ('/' == *cur && ++cur >= end))))) {
-    return PARSE_ERROR;
+    return PARSE_RESULT_ERROR;
   }
   base = cur;
   // skipped leading stuff, start real parsing.
@@ -1256,7 +1256,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
     switch (*cur) {
     case ']': // address close
       if (0 == bracket || n_colon >= MAX_COLON) {
-        return PARSE_ERROR;
+        return PARSE_RESULT_ERROR;
       }
       ++cur;
       /* We keep the brackets because there are too many other places
@@ -1272,7 +1272,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
         last_colon = 0;
         break;
       } else if (':' != *cur) { // otherwise it must be a colon
-        return PARSE_ERROR;
+        return PARSE_RESULT_ERROR;
       }
       /* We want to prevent more than 1 colon following so we set @a
          n_colon appropriately.
@@ -1281,14 +1281,14 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
     // FALL THROUGH
     case ':': // track colons, fail if too many.
       if (++n_colon > MAX_COLON) {
-        return PARSE_ERROR;
+        return PARSE_RESULT_ERROR;
       }
       last_colon = cur;
       ++cur;
       break;
     case '@': // user/password marker.
       if (user || n_colon > 1) {
-        return PARSE_ERROR; // we already got one, or too many colons.
+        return PARSE_RESULT_ERROR; // we already got one, or too many colons.
       }
       if (n_colon) {
         user.set(base, last_colon);
@@ -1303,7 +1303,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
       break;
     case '[':                       // address open
       if (bracket || base != cur) { // must be first char in field
-        return PARSE_ERROR;
+        return PARSE_RESULT_ERROR;
       }
       bracket = cur; // location and flag.
       ++cur;
@@ -1339,7 +1339,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
     if (validate_host_name(host)) {
       url_host_set(heap, url, host._ptr, host._size, copy_strings_p);
     } else {
-      return PARSE_ERROR;
+      return PARSE_RESULT_ERROR;
     }
   }
 
@@ -1347,7 +1347,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
     ink_assert(n_colon);
     port.set(last_colon + 1, cur);
     if (!port._size) {
-      return PARSE_ERROR; // colon w/o port value.
+      return PARSE_RESULT_ERROR; // colon w/o port value.
     }
     url_port_set(heap, url, port._ptr, port._size, copy_strings_p);
   }
@@ -1355,7 +1355,7 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
     ++cur; // must do this after filling in host/port.
   }
   *start = cur;
-  return PARSE_DONE;
+  return PARSE_RESULT_DONE;
 }
 
 /*-------------------------------------------------------------------------
@@ -1363,10 +1363,10 @@ url_parse_internet(HdrHeap *heap, URLImpl *url, char const **start, char const *
 
 // empties params/query/fragment component
 
-MIMEParseResult
+ParseResult
 url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings)
 {
-  MIMEParseResult err;
+  ParseResult err;
   const char *cur;
   const char *path_start     = NULL;
   const char *path_end       = NULL;
@@ -1468,10 +1468,10 @@ done:
   }
 
   *start = cur;
-  return PARSE_DONE;
+  return PARSE_RESULT_DONE;
 }
 
-MIMEParseResult
+ParseResult
 url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings)
 {
   const char *cur = *start;
@@ -1481,7 +1481,7 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
   if (end - cur > 3 && (((':' ^ *cur) | ('/' ^ cur[1]) | ('/' ^ cur[2])) == 0)) {
     cur += 3;
   } else if (':' == *cur && (++cur >= end || ('/' == *cur && (++cur >= end || ('/' == *cur && ++cur >= end))))) {
-    return PARSE_ERROR;
+    return PARSE_RESULT_ERROR;
   }
 
   // Grab everything until EOS or slash.
@@ -1527,7 +1527,7 @@ url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const ch
     cur = end;
   }
   *start = cur;
-  return PARSE_DONE;
+  return PARSE_RESULT_DONE;
 }
 
 /*-------------------------------------------------------------------------

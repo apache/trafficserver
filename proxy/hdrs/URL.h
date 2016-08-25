@@ -236,14 +236,14 @@ void url_params_set(HdrHeap *heap, URLImpl *url, const char *value, int length, 
 void url_query_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 void url_fragment_set(HdrHeap *heap, URLImpl *url, const char *value, int length, bool copy_string);
 
-MIMEParseResult url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings,
-                          bool strict_uri_parsing = false);
-MIMEParseResult url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
-                                                      bool copy_strings);
-MIMEParseResult url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
-MIMEParseResult url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
-                                                           bool copy_strings);
+ParseResult url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings,
+                      bool strict_uri_parsing = false);
+ParseResult url_parse_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
+                                                  bool copy_strings);
+ParseResult url_parse_internet(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
+ParseResult url_parse_http(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings);
+ParseResult url_parse_http_no_path_component_breakdown(HdrHeap *heap, URLImpl *url, const char **start, const char *end,
+                                                       bool copy_strings);
 
 char *url_unescapify(Arena *arena, const char *str, int length);
 
@@ -317,9 +317,9 @@ public:
   const char *fragment_get(int *length);
   void fragment_set(const char *value, int length);
 
-  MIMEParseResult parse(const char **start, const char *end);
-  MIMEParseResult parse(const char *str, int length);
-  MIMEParseResult parse_no_path_component_breakdown(const char *str, int length);
+  ParseResult parse(const char **start, const char *end);
+  ParseResult parse(const char *str, int length);
+  ParseResult parse_no_path_component_breakdown(const char *str, int length);
 
 public:
   static char *unescapify(Arena *arena, const char *str, int length);
@@ -719,7 +719,7 @@ URL::fragment_set(const char *value, int length)
   the resulting URL may contain some of the previous data.
 
  */
-inline MIMEParseResult
+inline ParseResult
 URL::parse(const char **start, const char *end)
 {
   ink_assert(valid());
@@ -731,7 +731,7 @@ URL::parse(const char **start, const char *end)
   the resulting URL may contain some of the previous data.
 
  */
-inline MIMEParseResult
+inline ParseResult
 URL::parse(const char *str, int length)
 {
   ink_assert(valid());
@@ -745,7 +745,7 @@ URL::parse(const char *str, int length)
   the resulting URL may contain some of the previous data.
 
  */
-inline MIMEParseResult
+inline ParseResult
 URL::parse_no_path_component_breakdown(const char *str, int length)
 {
   ink_assert(valid());

@@ -2366,14 +2366,14 @@ mime_scanner_append(MIMEScanner *scanner, const char *data, int data_size)
   scanner->m_line_length += data_size;
 }
 
-MIMEParseResult
+ParseResult
 mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input_e, const char **output_s, const char **output_e,
                  bool *output_shares_raw_input,
                  bool raw_input_eof, ///< All data has been received for this header.
                  int raw_input_scan_type)
 {
   const char *raw_input_c, *lf_ptr;
-  MIMEParseResult zret = PARSE_CONT;
+  ParseResult zret = PARSE_RESULT_CONT;
   // Need this for handling dangling CR.
   static char const RAW_CR = ParseRules::CHAR_CR;
 
@@ -2382,7 +2382,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
 
   raw_input_c = *raw_input_s;
 
-  while (PARSE_CONT == zret && raw_input_c < raw_input_e) {
+  while (PARSE_RESULT_CONT == zret && raw_input_c < raw_input_e) {
     ptrdiff_t runway = raw_input_e - raw_input_c; // remaining input.
     switch (S->m_state) {
     case MIME_PARSE_BEFORE: // waiting to find a field.
@@ -2391,13 +2391,13 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
         if (runway >= 2 && ParseRules::is_lf(*raw_input_c)) {
           // optimize a bit - this happens >99% of the time after a CR.
           ++raw_input_c;
-          zret = PARSE_DONE;
+          zret = PARSE_RESULT_DONE;
         } else {
           S->m_state = MIME_PARSE_FOUND_CR;
         }
       } else if (ParseRules::is_lf(*raw_input_c)) {
         ++raw_input_c;
-        zret = PARSE_DONE; // Required by regression test.
+        zret = PARSE_RESULT_DONE; // Required by regression test.
       } else {
         // consume this character in the next state.
         S->m_state = MIME_PARSE_INSIDE;
@@ -2410,7 +2410,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
       if (ParseRules::is_lf(*raw_input_c)) {
         // Header terminated.
         ++raw_input_c;
-        zret = PARSE_DONE;
+        zret = PARSE_RESULT_DONE;
       } else {
         // This really should be an error (spec doesn't permit lone CR)
         // but the regression tests require it.
@@ -2423,7 +2423,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
       if (lf_ptr) {
         raw_input_c = lf_ptr + 1;
         if (MIME_SCANNER_TYPE_LINE == raw_input_scan_type) {
-          zret       = PARSE_OK;
+          zret       = PARSE_RESULT_OK;
           S->m_state = MIME_PARSE_BEFORE;
         } else {
           S->m_state = MIME_PARSE_AFTER;
@@ -2438,7 +2438,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
         S->m_state = MIME_PARSE_INSIDE; // back inside the field.
       } else {
         S->m_state = MIME_PARSE_BEFORE; // field terminated.
-        zret       = PARSE_OK;
+        zret       = PARSE_RESULT_OK;
       }
       break;
     }
@@ -2446,7 +2446,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
 
   ptrdiff_t data_size = raw_input_c - *raw_input_s;
 
-  if (PARSE_CONT == zret) {
+  if (PARSE_RESULT_CONT == zret) {
     // data ran out before we got a clear final result.
     // There a number of things we need to check and possibly adjust
     // that result. It's less complex to do this cleanup than handle
@@ -2457,9 +2457,9 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
         // all input previously consumed. If we're between fields, that's cool.
         if (MIME_PARSE_INSIDE != S->m_state) {
           S->m_state = MIME_PARSE_BEFORE; // probably not needed...
-          zret       = PARSE_DONE;
+          zret       = PARSE_RESULT_DONE;
         } else {
-          zret = PARSE_ERROR; // unterminated field.
+          zret = PARSE_RESULT_ERROR; // unterminated field.
         }
       } else if (MIME_PARSE_AFTER == S->m_state) {
         // Special case it seems - need to accept the final field
@@ -2467,10 +2467,10 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
         // absolute end of input because otherwise this might be
         // a multiline field where we haven't seen the next leading space.
         S->m_state = MIME_PARSE_BEFORE;
-        zret       = PARSE_OK;
+        zret       = PARSE_RESULT_OK;
       } else {
         // Partial input, no field / line CR LF
-        zret = PARSE_ERROR; // Unterminated field.
+        zret = PARSE_RESULT_ERROR; // Unterminated field.
       }
     } else if (data_size) {
       // Inside a field but more data is expected. Save what we've got.
@@ -2487,7 +2487,7 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
   *output_shares_raw_input = 0 == S->m_line_length;
 
   // adjust out arguments.
-  if (PARSE_CONT != zret) {
+  if (PARSE_RESULT_CONT != zret) {
     if (0 != S->m_line_length) {
       *output_s        = S->m_line;
       *output_e        = *output_s + S->m_line_length;
@@ -2499,8 +2499,8 @@ mime_scanner_get(MIMEScanner *S, const char **raw_input_s, const char *raw_input
   }
 
   // Make sure there are no '\0' in the input scanned so far
-  if (zret != PARSE_ERROR && memchr(*raw_input_s, '\0', raw_input_c - *raw_input_s) != NULL) {
-    zret = PARSE_ERROR;
+  if (zret != PARSE_RESULT_ERROR && memchr(*raw_input_s, '\0', raw_input_c - *raw_input_s) != NULL) {
+    zret = PARSE_RESULT_ERROR;
   }
 
   *raw_input_s = raw_input_c; // mark input consumed.
@@ -2532,11 +2532,11 @@ mime_parser_clear(MIMEParser *parser)
   _mime_parser_init(parser);
 }
 
-MIMEParseResult
+ParseResult
 mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char **real_s, const char *real_e,
                   bool must_copy_strings, bool eof)
 {
-  MIMEParseResult err;
+  ParseResult err;
   bool line_is_real;
   const char *colon;
   const char *line_c;
@@ -2558,7 +2558,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     ////////////////////////////////////////////////////////////////////////////
 
     err = mime_scanner_get(scanner, real_s, real_e, &line_s, &line_e, &line_is_real, eof, MIME_SCANNER_TYPE_FIELD);
-    if (err != PARSE_OK) {
+    if (err != PARSE_RESULT_OK) {
       return err;
     }
 
@@ -2569,11 +2569,11 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     //////////////////////////////////////////////////
 
     if ((line_e - line_c >= 2) && (line_c[0] == ParseRules::CHAR_CR) && (line_c[1] == ParseRules::CHAR_LF)) {
-      return PARSE_DONE;
+      return PARSE_RESULT_DONE;
     }
 
     if ((line_e - line_c >= 1) && (line_c[0] == ParseRules::CHAR_LF)) {
-      return PARSE_DONE;
+      return PARSE_RESULT_DONE;
     }
 
     /////////////////////////////////////////////
@@ -2622,7 +2622,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     // Make sure the name or value is not longer than 64K
     if (field_name_length >= UINT16_MAX || field_value_length >= UINT16_MAX) {
-      return PARSE_ERROR;
+      return PARSE_RESULT_ERROR;
     }
 
     int total_line_length = (int)(field_line_last - field_line_first + 1);

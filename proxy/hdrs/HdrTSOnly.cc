@@ -44,7 +44,7 @@
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-MIMEParseResult
+ParseResult
 HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, bool strict_uri_parsing)
 {
   const char *start;
@@ -55,8 +55,8 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_REQUEST);
 
-  MIMEParseResult state = PARSE_CONT;
-  *bytes_used           = 0;
+  ParseResult state = PARSE_RESULT_CONT;
+  *bytes_used       = 0;
 
   do {
     int64_t b_avail = r->block_read_avail();
@@ -79,12 +79,12 @@ HTTPHdr::parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool 
     r->consume(used);
     *bytes_used += used;
 
-  } while (state == PARSE_CONT);
+  } while (state == PARSE_RESULT_CONT);
 
   return state;
 }
 
-MIMEParseResult
+ParseResult
 HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof)
 {
   const char *start;
@@ -95,8 +95,8 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
   ink_assert(valid());
   ink_assert(m_http->m_polarity == HTTP_TYPE_RESPONSE);
 
-  MIMEParseResult state = PARSE_CONT;
-  *bytes_used           = 0;
+  ParseResult state = PARSE_RESULT_CONT;
+  *bytes_used       = 0;
 
   do {
     int64_t b_avail = r->block_read_avail();
@@ -119,7 +119,7 @@ HTTPHdr::parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool
     r->consume(used);
     *bytes_used += used;
 
-  } while (state == PARSE_CONT);
+  } while (state == PARSE_RESULT_CONT);
 
   return state;
 }

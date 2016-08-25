@@ -467,7 +467,7 @@ FetchSM::process_fetch_read(int event)
     }
 
     if (header_done == 0 && ((fetch_flags & TS_FETCH_FLAGS_STREAM) || callback_options == AFTER_HEADER)) {
-      if (client_response_hdr.parse_resp(&http_parser, resp_reader, &bytes_used, 0) == PARSE_DONE) {
+      if (client_response_hdr.parse_resp(&http_parser, resp_reader, &bytes_used, 0) == PARSE_RESULT_DONE) {
         header_done = 1;
         if (fetch_flags & TS_FETCH_FLAGS_STREAM) {
           return InvokePluginExt();

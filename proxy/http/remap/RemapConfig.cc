@@ -1181,7 +1181,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
 
     map_from_start[origLength] = '\0'; // Unwhack
 
-    if (rparse != PARSE_DONE) {
+    if (rparse != PARSE_RESULT_DONE) {
       errStr = "malformed From URL";
       goto MAP_ERROR;
     }
@@ -1195,7 +1195,7 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti)
     rparse                   = new_mapping->toUrl.parse_no_path_component_breakdown(tmp, length);
     map_to_start[origLength] = '\0'; // Unwhack
 
-    if (rparse != PARSE_DONE) {
+    if (rparse != PARSE_RESULT_DONE) {
       errStr = "malformed To URL";
       goto MAP_ERROR;
     }

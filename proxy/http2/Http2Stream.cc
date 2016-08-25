@@ -506,7 +506,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
       int state      = this->response_header.parse_resp(&http_parser, this->response_reader, &bytes_used, false);
       // this->response_reader->consume(bytes_used);
       switch (state) {
-      case PARSE_DONE: {
+      case PARSE_RESULT_DONE: {
         this->response_header_done = true;
 
         // Send the response header back
@@ -540,7 +540,7 @@ Http2Stream::update_write_request(IOBufferReader *buf_reader, int64_t write_len,
         }
         break;
       }
-      case PARSE_CONT:
+      case PARSE_RESULT_CONT:
         // Let it ride for next time
         break;
       default:
