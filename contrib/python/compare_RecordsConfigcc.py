@@ -71,7 +71,7 @@ with open("%s/proxy/config/records.config.default.in" % src_dir) as fh:
 
 # Process records.comfig documentation.
 # eg. .. ts:cv:: CONFIG proxy.config.proxy_binary STRING traffic_server
-with open("%s/doc/reference/configuration/records.config.en.rst" % src_dir) as fh:
+with open("%s/doc/admin-guide/files/records.config.en.rst" % src_dir) as fh:
   doc_re = re.compile(r'ts:cv:: CONFIG (\S+)\s+(\S+)\s+(\S+)')
   for line in fh:
       m = doc_re.search(line)
