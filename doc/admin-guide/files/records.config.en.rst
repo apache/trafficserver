@@ -3616,5 +3616,10 @@ Sockets
          down.
    ===== ======================================================================
 
+.. ts:cv:: CONFIG proxy.config.cache.select_alternate INT 1
+
+   Enable (1) the separate caches are generated per user agent.
+   Disable (0) the same cache is used for all user agents.
+
 .. _Traffic Shaping:
                  https://cwiki.apache.org/confluence/display/TS/Traffic+Shaping
