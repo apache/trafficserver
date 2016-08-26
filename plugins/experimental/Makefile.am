@@ -36,10 +36,11 @@ SUBDIRS = \
  metalink \
  mp4 \
  multiplexer \
- remap_stats \
  remap_purge \
+ remap_stats \
  ssl_cert_loader \
  sslheaders \
+ stale_while_revalidate \
  stream_editor \
  ts_lua \
  url_sig
