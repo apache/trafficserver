@@ -90,21 +90,33 @@ typedef const SSL_METHOD *ink_ssl_method_t;
 typedef SSL_METHOD *ink_ssl_method_t;
 #endif
 
-// gather user provided settings from ssl_multicert.config in to a single struct
+/*
+ * struct ssl_user_config: gather user provided settings from ssl_multicert.config in to this single struct
+   * ssl_ticket_enabled - session ticket enabled
+   * ssl_cert_name - certificate
+   * dest_ip - IPv[64] address to match
+   * ssl_cert_name - certificate
+   * first_cert - the first certificate name when multiple cert files are in 'ssl_cert_name'
+   * ssl_ca_name - CA public certificate
+   * ssl_key_name - Private key
+   * ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
+   * ssl_key_dialog - Private key dialog
+   */
 struct ssl_user_config {
   ssl_user_config() : opt(SSLCertContext::OPT_NONE)
   {
     REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
+    REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
+    Debug("ssl", "ticket  key filename %s", (const char *)ticket_key_filename);
   }
-  int session_ticket_enabled; // ssl_ticket_enabled - session ticket enabled
-  ats_scoped_str addr;        // dest_ip - IPv[64] address to match
-  ats_scoped_str cert;        // ssl_cert_name - certificate
-  ats_scoped_str first_cert;  // the first certificate name when multiple cert files are in 'ssl_cert_name'
-  ats_scoped_str ca;          // ssl_ca_name - CA public certificate
-  ats_scoped_str key;         // ssl_key_name - Private key
-  ats_scoped_str
-    ticket_key_filename; // ticket_key_name - session key file. [key_name (16Byte) + HMAC_secret (16Byte) + AES_key (16Byte)]
-  ats_scoped_str dialog; // ssl_key_dialog - Private key dialog
+  int session_ticket_enabled;
+  ats_scoped_str addr;
+  ats_scoped_str cert;
+  ats_scoped_str first_cert;
+  ats_scoped_str ca;
+  ats_scoped_str key;
+  ats_scoped_str ticket_key_filename;
+  ats_scoped_str dialog;
   SSLCertContext::Option opt;
 };
 
@@ -120,7 +132,8 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 #endif /* SSL_CTX_set_tlsext_ticket_key_cb */
 
 #if HAVE_OPENSSL_SESSION_TICKETS
-static int ssl_session_ticket_index = -1;
+static int ssl_session_ticket_index                  = -1;
+static ssl_ticket_key_block *global_default_keyblock = NULL;
 #endif
 
 static ink_mutex *mutex_buf      = NULL;
@@ -544,9 +557,8 @@ ssl_context_enable_ecdh(SSL_CTX *ctx)
 
   return ctx;
 }
-
 static ssl_ticket_key_block *
-ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
+ssl_create_ticket_keyblock(const char *ticket_key_path)
 {
 #if HAVE_OPENSSL_SESSION_TICKETS
   ats_scoped_str ticket_key_data;
@@ -592,6 +604,23 @@ ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
            sizeof(keyblock->keys[i].aes_key));
   }
 
+  return keyblock;
+
+fail:
+  ticket_block_free(keyblock);
+  return NULL;
+
+#else  /* !HAVE_OPENSSL_SESSION_TICKETS */
+  (void)ticket_key_path;
+  return NULL;
+#endif /* HAVE_OPENSSL_SESSION_TICKETS */
+}
+static ssl_ticket_key_block *
+ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
+{
+#if HAVE_OPENSSL_SESSION_TICKETS
+  ssl_ticket_key_block *keyblock = NULL;
+  keyblock                       = ssl_create_ticket_keyblock(ticket_key_path);
   // Setting the callback can only fail if OpenSSL does not recognize the
   // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
   // so that we don't leave a ticket_key pointer attached if it fails.
@@ -2018,10 +2047,16 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
   char *tok_state = NULL;
   char *line      = NULL;
   ats_scoped_str file_buf;
+  ats_scoped_str ticket_key_filename;
   unsigned line_num = 0;
   matcher_line line_info;
 
   const matcher_tags sslCertTags = {NULL, NULL, NULL, NULL, NULL, NULL, false};
+
+  // load the global ticket key for later use
+  REC_ReadConfigStringAlloc(ticket_key_filename, "proxy.config.ssl.server.ticket_key.filename");
+  ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
+  global_default_keyblock = ssl_create_ticket_keyblock(ticket_key_path); // this function just returns a keyblock
 
   Note("loading SSL certificate configuration from %s", params->configFilePath);
 
@@ -2105,19 +2140,14 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   IpEndpoint ip;
   int namelen = sizeof(ip);
   safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
-  SSLCertContext *cc = lookup->find(ip);
+  SSLCertContext *cc             = lookup->find(ip);
+  ssl_ticket_key_block *keyblock = NULL;
   if (cc == NULL || cc->keyblock == NULL) {
     // Try the default
-    cc = lookup->find("*");
+    keyblock = global_default_keyblock;
+  } else {
+    keyblock = cc->keyblock;
   }
-  if (cc == NULL || cc->keyblock == NULL) {
-    // No, key specified.  Must fail out at this point.
-    // Alternatively we could generate a random key
-
-    return -1;
-  }
-  ssl_ticket_key_block *keyblock = cc->keyblock;
-
   ink_release_assert(keyblock != NULL && keyblock->num_keys > 0);
 
   if (enc == 1) {

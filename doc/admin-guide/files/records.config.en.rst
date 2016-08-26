@@ -2990,7 +2990,7 @@ SSL Termination
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.ticket_key.filename STRING ssl_ticket.key
 
-   The location of the :file:`ssl_ticket.key` file, relative to the
+   The filename of the default and global ticket key for SSL sessions. The location of the :file:`ssl_ticket.key` file, relative to the
    :ts:cv:`proxy.config.ssl.server.cert.path` directory.
 
 .. ts:cv:: CONFIG proxy.config.ssl.max_record_size INT 0
