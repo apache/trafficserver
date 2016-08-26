@@ -295,7 +295,7 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
     }
     mgmt_log(stderr, "[Rollback::openFile] Open of %s failed: %s\n", fileName, strerror(errno));
   } else {
-    fcntl(fd, F_SETFD, 1);
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
   }
 
   return fd;

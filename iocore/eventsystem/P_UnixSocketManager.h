@@ -478,15 +478,9 @@ SocketManager::getsockname(int s, struct sockaddr *sa, socklen_t *sz)
 }
 
 TS_INLINE int
-SocketManager::socket(int domain, int type, int protocol, bool /* bNonBlocking ATS_UNUSED */)
+SocketManager::socket(int domain, int type, int protocol)
 {
   return ::socket(domain, type, protocol);
-}
-
-TS_INLINE int
-SocketManager::mc_socket(int domain, int type, int protocol, bool bNonBlocking)
-{
-  return SocketManager::socket(domain, type, protocol, bNonBlocking);
 }
 
 TS_INLINE int

@@ -91,7 +91,7 @@ newTcpSocket(int port)
   }
   // Set the close on exec flag so our children do not
   //  have this socket open
-  if (fcntl(socketFD, F_SETFD, 1) < 0) {
+  if (fcntl(socketFD, F_SETFD, FD_CLOEXEC) < 0) {
     mgmt_elog(stderr, errno, "[newTcpSocket] Unable to set close on exec flag\n");
   }
 

@@ -39,10 +39,6 @@
 
 #define ROUNDUP(x, y) ((((x) + ((y)-1)) / (y)) * (y))
 
-#ifndef FD_CLOEXEC
-#define FD_CLOEXEC 1
-#endif
-
 int
 get_listen_backlog(void)
 {
@@ -77,13 +73,7 @@ Server::accept(Connection *c)
   int res      = 0;
   socklen_t sz = sizeof(c->addr);
 
-  int flags = SOCK_NONBLOCK;
-
-#ifdef SET_CLOSE_ON_EXEC
-  flags |= SOCK_CLOEXEC;
-#endif
-
-  res = socketManager.accept4(fd, &c->addr.sa, &sz, flags);
+  res = socketManager.accept4(fd, &c->addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
   if (res < 0)
     return res;
   c->fd = res;
@@ -206,11 +196,9 @@ Server::setup_fd_for_listen(bool non_blocking, int recv_bufsize, int send_bufsiz
     }
   }
 
-#ifdef SET_CLOSE_ON_EXEC
   if ((res = safe_fcntl(fd, F_SETFD, FD_CLOEXEC)) < 0) {
     goto Lerror;
   }
-#endif
 
   {
     struct linger l;

@@ -110,7 +110,7 @@ LogSock::listen(int accept_port, int family)
   // Set socket options (NO_LINGER, TCP_NODELAY, SO_REUSEADDR)
   //
   // CLOSE ON EXEC
-  if ((ret = safe_fcntl(accept_sd, F_SETFD, 1)) < 0) {
+  if ((ret = safe_fcntl(accept_sd, F_SETFD, FD_CLOEXEC)) < 0) {
     Warning("Could not set option CLOSE ON EXEC on socket (%d): %s", ret, strerror(errno));
     return -1;
   }

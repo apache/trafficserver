@@ -289,7 +289,7 @@ bind_unix_domain_socket(const char *path, mode_t mode)
 #endif
 
   safe_setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int));
-  fcntl(sockfd, F_SETFD, 1);
+  safe_fcntl(sockfd, F_SETFD, FD_CLOEXEC);
 
   if (bind(sockfd, (struct sockaddr *)&sockaddr, socklen) < 0) {
     goto fail;

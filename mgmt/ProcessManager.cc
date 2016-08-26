@@ -196,7 +196,7 @@ ProcessManager::initLMConnection()
     mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] Unable to create socket\n");
   }
 
-  if (fcntl(local_manager_sockfd, F_SETFD, 1) < 0) {
+  if (fcntl(local_manager_sockfd, F_SETFD, FD_CLOEXEC) < 0) {
     mgmt_fatal(stderr, errno, "[ProcessManager::initLMConnection] Unable to set close-on-exec\n");
   }
 
