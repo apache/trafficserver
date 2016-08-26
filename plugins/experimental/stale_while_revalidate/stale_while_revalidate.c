@@ -29,6 +29,7 @@
 #include <search.h>
 #include <getopt.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 #include "ts/ink_defs.h"
 #include "ts/ts.h"
@@ -485,7 +486,7 @@ fetch_resource(TSCont cont, TSEvent event ATS_UNUSED, void *edata ATS_UNUSED)
     TSHttpHdrPrint(state->req_info->buf, state->req_info->http_hdr_loc, state->req_io_buf);
     TSIOBufferWrite(state->req_io_buf, "\r\n", 2);
 
-    state->vconn = TSHttpConnect(&state->req_info->client_addr.sa);
+    state->vconn = TSHttpConnectWithPluginId(&state->req_info->client_addr.sa, PLUGIN_NAME, 0);
 
     state->r_vio = TSVConnRead(state->vconn, consume_cont, state->resp_io_buf, INT64_MAX);
     state->w_vio =
@@ -587,7 +588,7 @@ main_plugin(TSCont cont, TSEvent event, void *edata)
           // TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
           fetch_cont = TSContCreate(fetch_resource, TSMutexCreate());
           TSContDataSet(fetch_cont, (void *)state);
-          TSContSchedule(fetch_cont, 0, TS_THREAD_POOL_TASK);
+          TSContSchedule(fetch_cont, 0, TS_THREAD_POOL_NET);
           TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
         } else if ((state->txn_start - chi->date) < (chi->max_age + chi->stale_on_error)) {
           TSDebug(PLUGIN_NAME, "Looks like we can return fresh data on 500 error");
