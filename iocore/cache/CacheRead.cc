@@ -27,7 +27,6 @@
 #include "HttpCacheSM.h" //Added to get the scope of HttpCacheSM object.
 #endif
 
-#define READ_WHILE_WRITER 1
 extern int cache_config_compatibility_4_2_0_fixup;
 
 Action *
@@ -306,9 +305,6 @@ CacheVC::openReadFromWriter(int event, Event *e)
   cancel_trigger();
   intptr_t err = ECACHE_DOC_BUSY;
   DDebug("cache_read_agg", "%p: key: %X In openReadFromWriter", this, first_key.slice32(1));
-#ifndef READ_WHILE_WRITER
-  return openReadFromWriterFailure(CACHE_EVENT_OPEN_READ_FAILED, (Event *)-err);
-#else
   if (_action.cancelled) {
     od = NULL; // only open for read so no need to close
     return free_CacheVC(this);
@@ -356,7 +352,7 @@ CacheVC::openReadFromWriter(int event, Event *e)
 #ifdef HTTP_CACHE
   OpenDirEntry *cod = od;
 #endif
-  od                = NULL;
+  od = NULL;
   // someone is currently writing the document
   if (write_vc->closed < 0) {
     MUTEX_RELEASE(lock);
@@ -468,7 +464,6 @@ CacheVC::openReadFromWriter(int event, Event *e)
   SET_HANDLER(&CacheVC::openReadFromWriterMain);
   CACHE_INCREMENT_DYN_STAT(cache_read_busy_success_stat);
   return callcont(CACHE_EVENT_OPEN_READ);
-#endif // READ_WHILE_WRITER
 }
 
 int
