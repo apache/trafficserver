@@ -361,7 +361,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
   Event *e = (Event *)ep;
   (void)event;
   (void)e;
-  int bufsz, res;
+  int bufsz, res = 0;
   Connection con;
 
   PollDescriptor *pd     = get_PollDescriptor(e->ethread);
@@ -375,7 +375,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
 
     socklen_t sz = sizeof(con.addr);
-    int fd       = socketManager.accept(server.fd, &con.addr.sa, &sz);
+    int fd       = socketManager.accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK);
     con.fd       = fd;
 
     if (likely(fd >= 0)) {
@@ -408,9 +408,6 @@ NetAccept::acceptFastEvent(int event, void *ep)
         safe_setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, SOCKOPT_ON, sizeof(int));
         Debug("socket", "::acceptFastEvent: setsockopt() SO_KEEPALIVE on socket");
       }
-      do {
-        res = safe_nonblocking(fd);
-      } while (res < 0 && (errno == EAGAIN || errno == EINTR));
 
       vc = (UnixNetVConnection *)this->getNetProcessor()->allocate_vc(e->ethread);
       if (!vc) {
