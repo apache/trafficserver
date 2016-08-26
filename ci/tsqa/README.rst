@@ -19,9 +19,10 @@
 How do I run TSQA?
 ==================
 TSQA is mostly self contained (using python's virutalenv). There are currently only
-two external depencies (below package names are for RHEL/Centos):
+three external depencies (below package names are for RHEL/Centos):
+    - python-pip
     - python-virtualenv
-    - libcffi-devel
+    - python-cffi
 
 Run ``sudo make bootstrap`` to install the TSQA dependencies.
 
