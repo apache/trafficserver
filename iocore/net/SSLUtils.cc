@@ -95,6 +95,8 @@ struct ssl_user_config {
   ssl_user_config() : opt(SSLCertContext::OPT_NONE)
   {
     REC_ReadConfigInt32(session_ticket_enabled, "proxy.config.ssl.server.session_ticket.enable");
+    REC_ReadConfigStringAlloc(ticket_key_filename,"proxy.config.ssl.server.ticket_key.filename");
+    Debug("ssl","ticket  key filename %s",(const char*)ticket_key_filename);
   }
   int session_ticket_enabled; // ssl_ticket_enabled - session ticket enabled
   ats_scoped_str addr;        // dest_ip - IPv[64] address to match
@@ -121,6 +123,7 @@ static int ssl_callback_session_ticket(SSL *, unsigned char *, unsigned char *, 
 
 #if HAVE_OPENSSL_SESSION_TICKETS
 static int ssl_session_ticket_index = -1;
+static ssl_ticket_key_block* global_default_keyblock=NULL;
 #endif
 
 static ink_mutex *mutex_buf      = NULL;
@@ -544,7 +547,63 @@ ssl_context_enable_ecdh(SSL_CTX *ctx)
 
   return ctx;
 }
+static ssl_ticket_key_block * ssl_create_ticket_keyblock(const char *ticket_key_path)
+{
+    #if HAVE_OPENSSL_SESSION_TICKETS
+  ats_scoped_str ticket_key_data;
+  int ticket_key_len;
+  unsigned num_ticket_keys;
+  ssl_ticket_key_block *keyblock = NULL;
 
+  if (ticket_key_path != NULL) {
+    ticket_key_data = readIntoBuffer(ticket_key_path, __func__, &ticket_key_len);
+    if (!ticket_key_data) {
+      Error("failed to read SSL session ticket key from %s", (const char *)ticket_key_path);
+      goto fail;
+    }
+  } else {
+    // Generate a random ticket key
+    ticket_key_len  = 48;
+    ticket_key_data = (char *)ats_malloc(ticket_key_len);
+    char *tmp_ptr   = ticket_key_data;
+    RAND_bytes(reinterpret_cast<unsigned char *>(tmp_ptr), ticket_key_len);
+  }
+
+  num_ticket_keys = ticket_key_len / sizeof(ssl_ticket_key_t);
+  if (num_ticket_keys == 0) {
+    Error("SSL session ticket key from %s is too short (>= 48 bytes are required)", (const char *)ticket_key_path);
+    goto fail;
+  }
+
+  // Increase the stats.
+  if (ssl_rsb != NULL) { // ssl_rsb is not initialized during the first run.
+    SSL_INCREMENT_DYN_STAT(ssl_total_ticket_keys_renewed_stat);
+  }
+
+  keyblock = ticket_block_alloc(num_ticket_keys);
+
+  // Slurp all the keys in the ticket key file. We will encrypt with the first key, and decrypt
+  // with any key (for rotation purposes).
+  for (unsigned i = 0; i < num_ticket_keys; ++i) {
+    const char *data = (const char *)ticket_key_data + (i * sizeof(ssl_ticket_key_t));
+
+    memcpy(keyblock->keys[i].key_name, data, sizeof(keyblock->keys[i].key_name));
+    memcpy(keyblock->keys[i].hmac_secret, data + sizeof(keyblock->keys[i].key_name), sizeof(keyblock->keys[i].hmac_secret));
+    memcpy(keyblock->keys[i].aes_key, data + sizeof(keyblock->keys[i].key_name) + sizeof(keyblock->keys[i].hmac_secret),
+           sizeof(keyblock->keys[i].aes_key));
+  }
+
+  return keyblock;
+
+fail:
+  ticket_block_free(keyblock);
+  return NULL;
+
+#else  /* !HAVE_OPENSSL_SESSION_TICKETS */
+  (void)ticket_key_path;
+  return NULL;
+#endif /* HAVE_OPENSSL_SESSION_TICKETS */
+}
 static ssl_ticket_key_block *
 ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
 {
@@ -2018,10 +2077,16 @@ SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *l
   char *tok_state = NULL;
   char *line      = NULL;
   ats_scoped_str file_buf;
+  ats_scoped_str ticket_key_filename;
   unsigned line_num = 0;
   matcher_line line_info;
 
   const matcher_tags sslCertTags = {NULL, NULL, NULL, NULL, NULL, NULL, false};
+
+  //load the global ticket key for later use
+  REC_ReadConfigStringAlloc(ticket_key_filename,"proxy.config.ssl.server.ticket_key.filename");
+  ats_scoped_str ticket_key_path(Layout::relative_to(params->serverCertPathOnly, ticket_key_filename));
+  global_default_keyblock = ssl_create_ticket_keyblock(ticket_key_path); // this function just returns a keyblock
 
   Note("loading SSL certificate configuration from %s", params->configFilePath);
 
@@ -2106,18 +2171,13 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   int namelen = sizeof(ip);
   safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
   SSLCertContext *cc = lookup->find(ip);
+  ssl_ticket_key_block *keyblock = NULL;
   if (cc == NULL || cc->keyblock == NULL) {
     // Try the default
-    cc = lookup->find("*");
+    keyblock = global_default_keyblock;
+  } else {
+    keyblock = cc->keyblock;
   }
-  if (cc == NULL || cc->keyblock == NULL) {
-    // No, key specified.  Must fail out at this point.
-    // Alternatively we could generate a random key
-
-    return -1;
-  }
-  ssl_ticket_key_block *keyblock = cc->keyblock;
-
   ink_release_assert(keyblock != NULL && keyblock->num_keys > 0);
 
   if (enc == 1) {
