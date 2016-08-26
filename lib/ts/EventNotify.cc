@@ -44,13 +44,6 @@ EventNotify::EventNotify()
   struct epoll_event ev;
 
   m_event_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-  if (m_event_fd < 0) {
-    // EFD_NONBLOCK/EFD_CLOEXEC invalid in <= Linux 2.6.27
-    m_event_fd = eventfd(0, 0);
-
-    fcntl(m_event_fd, F_SETFD, FD_CLOEXEC);
-    fcntl(m_event_fd, F_SETFL, O_NONBLOCK);
-  }
   ink_release_assert(m_event_fd != -1);
 
   ev.events  = EPOLLIN;

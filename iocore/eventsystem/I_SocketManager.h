@@ -58,7 +58,7 @@ struct SocketManager {
   SocketManager();
 
   // result is the socket or -errno
-  SOCKET socket(int domain = AF_INET, int type = SOCK_STREAM, int protocol = 0, bool bNonBlocking = true);
+  SOCKET socket(int domain = AF_INET, int type = SOCK_STREAM, int protocol = 0);
   SOCKET mc_socket(int domain = AF_INET, int type = SOCK_DGRAM, int protocol = 0, bool bNonBlocking = true);
 
   // result is the fd or -errno

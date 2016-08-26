@@ -50,7 +50,7 @@ RecFileOpenW(const char *file)
   if ((h_file = ::open(file, O_WRONLY | O_TRUNC | O_CREAT, 0600)) < 0) {
     return REC_HANDLE_INVALID;
   }
-  fcntl(h_file, F_SETFD, 1);
+  fcntl(h_file, F_SETFD, FD_CLOEXEC);
   return h_file;
 }
 
@@ -166,7 +166,7 @@ RecPipeCreate(const char *base_path, const char *name)
     return REC_HANDLE_INVALID;
   }
   // set so that child process doesn't inherit our fd
-  if (fcntl(listenfd, F_SETFD, 1) < 0) {
+  if (fcntl(listenfd, F_SETFD, FD_CLOEXEC) < 0) {
     RecLog(DL_Warning, "[RecPipeCreate] fcntl error\n");
     close(listenfd);
     return REC_HANDLE_INVALID;
@@ -236,7 +236,7 @@ RecPipeConnect(const char *base_path, const char *name)
     return REC_HANDLE_INVALID;
   }
   // set so that child process doesn't inherit our fd
-  if (fcntl(sockfd, F_SETFD, 1) < 0) {
+  if (fcntl(sockfd, F_SETFD, FD_CLOEXEC) < 0) {
     RecLog(DL_Warning, "[RecPipeConnect] fcntl error\n");
     close(sockfd);
     return REC_HANDLE_INVALID;

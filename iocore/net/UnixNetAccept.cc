@@ -375,7 +375,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
     }
 
     socklen_t sz = sizeof(con.addr);
-    int fd       = socketManager.accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK);
+    int fd       = socketManager.accept4(server.fd, &con.addr.sa, &sz, SOCK_NONBLOCK | SOCK_CLOEXEC);
     con.fd       = fd;
 
     if (likely(fd >= 0)) {

@@ -525,7 +525,7 @@ FileManager::readFile(const char *filePath, textBuffer *contents)
     return SNAP_FILE_ACCESS_FAILED;
   }
 
-  fcntl(diskFD, F_SETFD, 1);
+  fcntl(diskFD, F_SETFD, FD_CLOEXEC);
 
   while ((readResult = contents->readFromFD(diskFD)) > 0) {
     ;
@@ -574,7 +574,7 @@ FileManager::copyFile(Rollback *rb, const char *snapPath)
     return SNAP_FILE_CREATE_FAILED;
   }
 
-  fcntl(diskFD, F_SETFD, 1);
+  fcntl(diskFD, F_SETFD, FD_CLOEXEC);
 
   // Write the file contents to the copy
   if (write(diskFD, copyBuf->bufPtr(), copyBuf->spaceUsed()) < 0) {
