@@ -42,6 +42,11 @@ Stat::~Stat()
 bool
 Stat::init(string name, Stat::SyncType type, bool persistent)
 {
+  if (TSStatFindName(name.c_str(), &stat_id_) == TS_SUCCESS) {
+    LOG_DEBUG("Attached to stat '%s' with stat_id = %d", name.c_str(), stat_id_);
+    return true;
+  }
+
   // TS_RECORDDATATYPE_INT is the only type currently supported
   // so that's why this api doesn't expose other types, TSStatSync is equivalent to StatSyncType
   stat_id_ = TSStatCreate(name.c_str(), TS_RECORDDATATYPE_INT, persistent ? TS_STAT_PERSISTENT : TS_STAT_NON_PERSISTENT,
