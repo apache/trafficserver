@@ -288,8 +288,13 @@ bind_unix_domain_socket(const char *path, mode_t mode)
   socklen = strlen(sockaddr.sun_path) + sizeof(sockaddr.sun_family);
 #endif
 
-  safe_setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int));
-  safe_fcntl(sockfd, F_SETFD, FD_CLOEXEC);
+  if (safe_setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, SOCKOPT_ON, sizeof(int)) < 0) {
+    goto fail;
+  }
+
+  if (safe_fcntl(sockfd, F_SETFD, FD_CLOEXEC) < 0) {
+    goto fail;
+  }
 
   if (bind(sockfd, (struct sockaddr *)&sockaddr, socklen) < 0) {
     goto fail;
