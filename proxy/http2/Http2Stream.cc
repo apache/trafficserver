@@ -173,14 +173,18 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
   switch (_state) {
   case HTTP2_STREAM_STATE_IDLE:
     if (type == HTTP2_FRAME_TYPE_HEADERS) {
-      if (end_stream && flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
+      if (recv_end_stream) {
         _state = HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+      } else if (send_end_stream) {
+        _state = HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
       } else {
         _state = HTTP2_STREAM_STATE_OPEN;
       }
     } else if (type == HTTP2_FRAME_TYPE_CONTINUATION) {
-      if (end_stream && flags & HTTP2_FLAGS_CONTINUATION_END_HEADERS) {
+      if (recv_end_stream) {
         _state = HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+      } else if (send_end_stream) {
+        _state = HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
       } else {
         _state = HTTP2_STREAM_STATE_OPEN;
       }
@@ -194,45 +198,62 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
   case HTTP2_STREAM_STATE_OPEN:
     if (type == HTTP2_FRAME_TYPE_RST_STREAM) {
       _state = HTTP2_STREAM_STATE_CLOSED;
-    } else if (type == HTTP2_FRAME_TYPE_DATA && flags & HTTP2_FLAGS_DATA_END_STREAM) {
-      _state = HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+    } else if (type == HTTP2_FRAME_TYPE_DATA) {
+      if (recv_end_stream) {
+        _state = HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE;
+      } else if (send_end_stream) {
+        _state = HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL;
+      } else {
+        // Do not change state
+      }
     } else {
-      // Currently ATS supports only HTTP/2 server features
-      return false;
+      // A stream in the "open" state may be used by both peers to send frames of any type.
+      return true;
     }
     break;
 
   case HTTP2_STREAM_STATE_RESERVED_LOCAL:
     // Currently ATS supports only HTTP/2 server features
+    ink_assert(false);
     return false;
 
   case HTTP2_STREAM_STATE_RESERVED_REMOTE:
     // XXX Server Push have been supported yet.
+    ink_assert(false);
     return false;
 
   case HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL:
-    // Currently ATS supports only HTTP/2 server features
-    return false;
+    if (type == HTTP2_FRAME_TYPE_RST_STREAM || recv_end_stream) {
+      _state = HTTP2_STREAM_STATE_CLOSED;
+    } else {
+      // Error, set state closed
+      _state = HTTP2_STREAM_STATE_CLOSED;
+      return false;
+    }
+    break;
 
   case HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE:
-    if (type == HTTP2_FRAME_TYPE_RST_STREAM || (type == HTTP2_FRAME_TYPE_HEADERS && flags & HTTP2_FLAGS_HEADERS_END_STREAM) ||
-        (type == HTTP2_FRAME_TYPE_DATA && flags & HTTP2_FLAGS_DATA_END_STREAM)) {
+    if (type == HTTP2_FRAME_TYPE_RST_STREAM || send_end_stream) {
       _state = HTTP2_STREAM_STATE_CLOSED;
     } else if (type == HTTP2_FRAME_TYPE_HEADERS) { // w/o END_STREAM flag
       // No state change here. Expect a following DATA frame with END_STREAM flag.
       return true;
     } else {
+      // Error, set state closed
+      _state = HTTP2_STREAM_STATE_CLOSED;
       return false;
     }
     break;
 
   case HTTP2_STREAM_STATE_CLOSED:
     // No state changing
-    return false;
+    return true;
 
   default:
     return false;
   }
+
+  Debug("http2_stream", "%s", Http2DebugNames::get_state_name(_state));
 
   return true;
 }
@@ -740,7 +761,6 @@ Http2Stream::cancel_inactivity_timeout()
 {
   set_inactivity_timeout(0);
 }
-
 void
 Http2Stream::clear_inactive_timer()
 {

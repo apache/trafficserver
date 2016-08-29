@@ -110,6 +110,7 @@ rcv_data_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
   stream->increment_data_length(payload_length - pad_length - nbytes);
   if (frame.header().flags & HTTP2_FLAGS_DATA_END_STREAM) {
+    stream->recv_end_stream = true;
     if (!stream->change_state(frame.header().type, frame.header().flags)) {
       cstate.send_rst_stream_frame(id, HTTP2_ERROR_STREAM_CLOSED);
       return Http2Error(HTTP2_ERROR_CLASS_NONE);
@@ -222,7 +223,7 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
   uint32_t header_block_fragment_length = payload_length;
 
   if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_STREAM) {
-    stream->end_stream = true;
+    stream->recv_end_stream = true;
   }
 
   // NOTE: Strip padding if exists
@@ -966,6 +967,10 @@ Http2ConnectionState::delete_stream(Http2Stream *stream)
     }
   }
 
+  if (stream->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+    send_rst_stream_frame(stream->get_id(), HTTP2_ERROR_NO_ERROR);
+  }
+
   stream_list.remove(stream);
   stream->initiating_close();
 
@@ -1035,28 +1040,29 @@ Http2ConnectionState::send_data_frames_depends_on_priority()
   size_t len                       = 0;
   Http2SendADataFrameResult result = send_a_data_frame(stream, len);
 
-  if (result != HTTP2_SEND_A_DATA_FRAME_NO_ERROR) {
-    // When no stream level window left, deactivate node once and wait window_update frame
-    dependency_tree->deactivate(node, len);
-    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
-    return;
+  switch (result) {
+  case HTTP2_SEND_A_DATA_FRAME_NO_ERROR: {
+    // No response body to send
+    if (len == 0 && !stream->is_body_done()) {
+      dependency_tree->deactivate(node, len);
+    } else {
+      dependency_tree->update(node, len);
+    }
+    break;
   }
-
-  // No response body to send
-  if (len == 0 && !stream->is_body_done()) {
-    dependency_tree->deactivate(node, len);
-    this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
-    return;
-  }
-
-  if (stream->get_state() == HTTP2_STREAM_STATE_CLOSED) {
+  case HTTP2_SEND_A_DATA_FRAME_DONE: {
     dependency_tree->deactivate(node, len);
     delete_stream(stream);
-  } else {
-    dependency_tree->update(node, len);
+    break;
+  }
+  default:
+    // When no stream level window left, deactivate node once and wait window_update frame
+    dependency_tree->deactivate(node, len);
+    break;
   }
 
   this_ethread()->schedule_imm_local((Continuation *)this, HTTP2_SESSION_EVENT_XMIT);
+  return;
 }
 
 Http2SendADataFrameResult
@@ -1115,16 +1121,18 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   stream->update_sent_count(payload_length);
 
-  // Change state to 'closed' if its end of DATAs.
-  if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
-    DebugHttp2Stream(ua_session, stream->get_id(), "End of DATA frame");
-    // Setting to the same state shouldn't be erroneous
-    stream->change_state(data.header().type, data.header().flags);
-  }
-
   // xmit event
   SCOPED_MUTEX_LOCK(lock, this->ua_session->mutex, this_ethread());
   this->ua_session->handleEvent(HTTP2_SESSION_EVENT_XMIT, &data);
+
+  if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
+    DebugHttp2Stream(ua_session, stream->get_id(), "End of DATA frame");
+    stream->send_end_stream = true;
+    // Setting to the same state shouldn't be erroneous
+    stream->change_state(data.header().type, data.header().flags);
+
+    return HTTP2_SEND_A_DATA_FRAME_DONE;
+  }
 
   return HTTP2_SEND_A_DATA_FRAME_NO_ERROR;
 }
@@ -1132,19 +1140,25 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 void
 Http2ConnectionState::send_data_frames(Http2Stream *stream)
 {
-  if (stream->get_state() == HTTP2_STREAM_STATE_CLOSED) {
+  if (stream->get_state() == HTTP2_STREAM_STATE_CLOSED || stream->get_state() == HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
     return;
   }
 
   size_t len = 0;
-  while (send_a_data_frame(stream, len) == HTTP2_SEND_A_DATA_FRAME_NO_ERROR) {
-    if (stream->get_state() == HTTP2_STREAM_STATE_CLOSED) {
+  while (true) {
+    Http2SendADataFrameResult result = send_a_data_frame(stream, len);
+
+    if (result == HTTP2_SEND_A_DATA_FRAME_DONE) {
       // Delete a stream immediately
       // TODO its should not be deleted for a several time to handling
       // RST_STREAM and WINDOW_UPDATE.
       // See 'closed' state written at [RFC 7540] 5.1.
       DebugSsn(this->ua_session, "http2_cs", "Shutdown stream %d", stream->get_id());
       this->delete_stream(stream);
+      break;
+    } else if (result == HTTP2_SEND_A_DATA_FRAME_NO_ERROR) {
+      continue;
+    } else {
       break;
     }
   }
@@ -1186,6 +1200,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     flags |= HTTP2_FLAGS_HEADERS_END_HEADERS;
     if (h2_hdr.presence(MIME_PRESENCE_CONTENT_LENGTH) && h2_hdr.get_content_length() == 0) {
       flags |= HTTP2_FLAGS_HEADERS_END_STREAM;
+      stream->send_end_stream = true;
     }
   } else {
     payload_length = BUFFER_SIZE_FOR_INDEX(buffer_size_index[HTTP2_FRAME_TYPE_HEADERS]);
