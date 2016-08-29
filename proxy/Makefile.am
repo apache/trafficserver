@@ -191,10 +191,6 @@ endif
 
 traffic_server_LDFLAGS = $(AM_LDFLAGS)
 
-if BUILD_STATIC_PROXY
-traffic_server_LDFLAGS += -all-static
-endif
-
 traffic_server_LDADD = \
   http/libhttp.a \
   http2/libhttp2.a \

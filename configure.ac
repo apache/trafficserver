@@ -231,21 +231,6 @@ TS_ARG_ENABLE_VAR([has], [tests])
 AM_CONDITIONAL([BUILD_TESTS], [test 0 -ne $has_tests])
 
 #
-# Force some static linkage (for testing / development only)
-#
-AC_MSG_CHECKING([whether to build a static traffic_server binary])
-AC_ARG_ENABLE([static-proxy], [AS_HELP_STRING([--enable-static-proxy],[build a static traffic_server binary])], [
-    AC_ENABLE_STATIC
-  ], [
-    AC_DISABLE_STATIC
-    enable_static_proxy=no
-  ]
-)
-AC_MSG_RESULT([$enable_static_proxy])
-TS_ARG_ENABLE_VAR([has],[static-proxy])
-AM_CONDITIONAL([BUILD_STATIC_PROXY], [test 0 -ne $has_static_proxy])
-
-#
 # Remote Coverity Prevent commit
 #
 AC_MSG_CHECKING([whether to commit cov defects to remote host])

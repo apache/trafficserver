@@ -45,12 +45,3 @@ class TestBuildOptionDisableDiags(TestBuildOption):
 class TestBuildOptionDisableTests(TestBuildOption):
     '''Build with --disable-tests'''
     environment_factory = {'configure': {'disable-tests': None}}
-
-
-class TestBuildOptionEnableStaticProxy(TestBuildOption):
-    '''Build with --enable-static-proxy'''
-    environment_factory = {'configure': {'enable-static-proxy': None}}
-
-    @classmethod
-    def setUpClass(cls):
-        raise helpers.unittest.SkipTest('Skip until TS-3577 is resolved')
