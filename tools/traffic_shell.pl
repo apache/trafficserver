@@ -237,10 +237,9 @@ __EOF
 #
 sub show_dns_resolver {
   my $dns_search_default_domains = get_on_off("proxy.config.dns.search_default_domains");
-  my $http_enable_url_expandomatic = get_on_off("proxy.config.http.enable_url_expandomatic");
+
   print <<__EOF
 Local Domain Expansion -- $dns_search_default_domains
-.com Domain Expansion --- $http_enable_url_expandomatic
 __EOF
 }
 

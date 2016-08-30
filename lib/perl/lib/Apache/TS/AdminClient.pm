@@ -501,7 +501,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.http.enabled
  proxy.config.http.enable_http_info
  proxy.config.http.enable_http_stats
- proxy.config.http.enable_url_expandomatic
  proxy.config.http.errors.log_error_pages
  proxy.config.http.forward.proxy_auth_to_parent
  proxy.config.http.global_user_agent_header

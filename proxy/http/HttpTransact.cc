@@ -1735,7 +1735,6 @@ HttpTransact::OSDNSLookup(State *s)
       } else {
         if (host_name_expansion == EXPANSION_NOT_ALLOWED) {
           // config file doesn't allow automatic expansion of host names
-          HTTP_RELEASE_ASSERT(!(s->http_config_param->enable_url_expandomatic));
           DebugTxn("http_seq", "[HttpTransact::OSDNSLookup] DNS Lookup unsuccessful");
         } else if (host_name_expansion == EXPANSION_FAILED) {
           // not able to expand the hostname. dns lookup failed
@@ -6677,46 +6676,10 @@ HttpTransact::process_quick_http_filter(State *s, int method)
 HttpTransact::HostNameExpansionError_t
 HttpTransact::try_to_expand_host_name(State *s)
 {
-  static int max_dns_lookups = 2 + s->http_config_param->num_url_expansions;
-  static int last_expansion  = max_dns_lookups - 2;
-
   HTTP_RELEASE_ASSERT(!s->dns_info.lookup_success);
 
   if (s->dns_info.looking_up == ORIGIN_SERVER) {
-    ///////////////////////////////////////////////////
-    // if resolving dns of the origin server failed, //
-    // we try to expand hostname.                    //
-    ///////////////////////////////////////////////////
-    if (s->http_config_param->enable_url_expandomatic) {
-      int attempts = s->dns_info.attempts;
-      ink_assert(attempts >= 1 && attempts <= max_dns_lookups);
-
-      if (attempts < max_dns_lookups) {
-        // Try a URL expansion
-        if (attempts <= last_expansion) {
-          char *expansion = s->http_config_param->url_expansions[attempts - 1];
-          int length      = strlen(s->server_info.name) + strlen(expansion) + 1;
-
-          s->dns_info.lookup_name = s->arena.str_alloc(length);
-          ink_string_concatenate_strings_n(s->dns_info.lookup_name, length + 1, s->server_info.name, ".", expansion, NULL);
-        } else {
-          if (ParseRules::strchr(s->server_info.name, '.')) {
-            // don't expand if contains '.'
-            return (EXPANSION_FAILED);
-          }
-          // Try www.<server_name>.com
-          int length = strlen(s->server_info.name) + 8;
-
-          s->dns_info.lookup_name = s->arena.str_alloc(length);
-          ink_string_concatenate_strings_n(s->dns_info.lookup_name, length + 1, "www.", s->server_info.name, ".com", NULL);
-        }
-        return RETRY_EXPANDED_NAME;
-      } else {
-        return DNS_ATTEMPTS_EXHAUSTED;
-      }
-    } else {
-      return EXPANSION_NOT_ALLOWED;
-    }
+    return EXPANSION_NOT_ALLOWED;
   } else {
     //////////////////////////////////////////////////////
     // we looked up dns of parent proxy, but it failed, //
