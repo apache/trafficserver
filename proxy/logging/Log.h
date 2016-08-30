@@ -397,7 +397,7 @@ public:
   };
 
   enum {
-    MIN_ROLLING_INTERVAL_SEC = 60,   // 5 minute minimum rolling interval
+    MIN_ROLLING_INTERVAL_SEC = 30,   // 30 second minimum rolling interval
     MAX_ROLLING_INTERVAL_SEC = 86400 // 24 hrs rolling interval max
   };
 
