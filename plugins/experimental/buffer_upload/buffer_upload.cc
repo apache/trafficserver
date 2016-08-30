@@ -1239,5 +1239,5 @@ TSPluginInit(int argc, const char *argv[])
   upload_vc_count = TSStatCreate("upload_vc.count", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
 
   contp = TSContCreate(attach_pvc_plugin, NULL);
-  TSHttpHookAdd(TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK, contp);
+  TSHttpHookAdd(TS_HTTP_PRE_REMAP_HOOK, contp);
 }

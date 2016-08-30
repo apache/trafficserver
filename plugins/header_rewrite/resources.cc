@@ -67,7 +67,7 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     break;
 
   case TS_HTTP_READ_REQUEST_HDR_HOOK:
-  case TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK:
+  case TS_HTTP_PRE_REMAP_HOOK:
     // Read request from client
     if (ids & RSRC_CLIENT_REQUEST_HEADERS) {
       bufp    = client_bufp;

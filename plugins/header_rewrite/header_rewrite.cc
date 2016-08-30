@@ -213,7 +213,7 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
       if (is_hook) {
         // Check if the hooks are not available for the remap mode
         if ((default_hook == TS_REMAP_PSEUDO_HOOK) &&
-            ((TS_HTTP_READ_REQUEST_HDR_HOOK == hook) || (TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK == hook))) {
+            ((TS_HTTP_READ_REQUEST_HDR_HOOK == hook) || (TS_HTTP_PRE_REMAP_HOOK == hook))) {
           TSError("[%s] you can not use cond %%{%s} in a remap rule", PLUGIN_NAME, p.get_op().c_str());
           delete rule;
           return false;
@@ -266,7 +266,7 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
     hook = TS_HTTP_READ_REQUEST_HDR_HOOK;
     break;
   case TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP:
-    hook = TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK;
+    hook = TS_HTTP_PRE_REMAP_HOOK;
     break;
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
     hook = TS_HTTP_SEND_REQUEST_HDR_HOOK;
