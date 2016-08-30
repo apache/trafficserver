@@ -127,7 +127,7 @@ ink_thread_key_delete(ink_thread_key key)
 }
 
 static inline ink_thread
-ink_thread_create(void *(*f)(void *), void *a, int detached = 0, size_t stacksize = 0)
+ink_thread_create(void *(*f)(void *), void *a, int detached = 0, size_t stacksize = 0, void *stack = NULL)
 {
   ink_thread t;
   int ret;
@@ -137,7 +137,11 @@ ink_thread_create(void *(*f)(void *), void *a, int detached = 0, size_t stacksiz
   pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
 
   if (stacksize) {
-    pthread_attr_setstacksize(&attr, stacksize);
+    if (stack) {
+      pthread_attr_setstack(&attr, stack, stacksize);
+    } else {
+      pthread_attr_setstacksize(&attr, stacksize);
+    }
   }
 
   if (detached) {
