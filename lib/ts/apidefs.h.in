@@ -291,7 +291,6 @@ typedef enum {
   TS_SSL_LAST_HOOK = TS_SSL_CERT_HOOK,
   TS_HTTP_LAST_HOOK
 } TSHttpHookID;
-#define TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK TS_HTTP_PRE_REMAP_HOOK /* backwards compat */
 
 /** Plugin lifecycle hooks.
 

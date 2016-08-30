@@ -196,7 +196,7 @@ Parser::cond_is_hook(TSHttpHookID &hook) const
     return true;
   }
   if ("READ_REQUEST_PRE_REMAP_HOOK" == _op) {
-    hook = TS_HTTP_READ_REQUEST_PRE_REMAP_HOOK;
+    hook = TS_HTTP_PRE_REMAP_HOOK;
     return true;
   }
   if ("SEND_REQUEST_HDR_HOOK" == _op) {
