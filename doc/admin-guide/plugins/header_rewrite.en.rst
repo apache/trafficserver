@@ -503,9 +503,6 @@ only be specified once you may prefer to use `set-header`_ instead.
 
 The header's ``<value>`` may be specified as a literal string, or it may take
 advantage of `Variable Expansion`_ to calculate a dynamic value for the header.
-In contrast, `set-header`_ does not support variable expansion for the header
-value. If you wish to use variable expansion and avoid duplicate headers, you
-may consider using an `rm-header`_ operator followed by `add-header`_.
 
 counter
 ~~~~~~~
@@ -607,8 +604,8 @@ set-header
 Replaces the value of header ``<name>`` with ``<value>``, creating the header
 if necessary.
 
-Note that, unlike `add-header`_, this operator does not currently support
-variable expansion. Values may only be specified according to `Header Values`_.
+The header's ``<value>`` may be specified according to `Header Value`_ or take
+advantage of `Variable Expansion`_ to calculate a dynamic value for the header.
 
 set-redirect
 ~~~~~~~~~~~~
@@ -694,8 +691,8 @@ QSA    Append the results of the rule to the query string.
 Variable Expansion
 ------------------
 
-Only limited variable expansion is supported in `add-header`_. Supported
-substitutions are currently:
+Only limited variable expansion is supported in `add-header`_ and `set-header`_
+. Supported substitutions are currently:
 
 ============ ==================================================================
 Variable     Description

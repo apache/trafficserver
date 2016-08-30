@@ -540,6 +540,12 @@ OperatorSetHeader::exec(const Resources &res) const
 
   _value.append_value(value, res);
 
+  if (_value.need_expansion()) {
+    VariableExpander ve(value);
+
+    value = ve.expand(res);
+  }
+
   // Never set an empty header (I don't think that ever makes sense?)
   if (value.empty()) {
     TSDebug(PLUGIN_NAME, "Would set header %s to an empty value, skipping", _header.c_str());
