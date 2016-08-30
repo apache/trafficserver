@@ -1293,13 +1293,13 @@ AS_IF([test "x$enable_posix_cap" != "xno"],
 AC_SUBST(use_posix_cap)
 
 #
-# If the OS is linux, we can use the '--enable-linux-native-aio' option to
+# If the OS is linux, we can use the '--enable-experimental-linux-native-aio' option to
 # replace the aio thread mode. Effective only on the linux system.
 #
 
 AC_MSG_CHECKING([whether to enable Linux native AIO])
-AC_ARG_ENABLE([linux-native-aio],
-  [AS_HELP_STRING([--enable-linux-native-aio], [enable native Linux AIO support @<:@default=no@:>@])],
+AC_ARG_ENABLE([experimental-linux-native-aio],
+  [AS_HELP_STRING([--enable-experimental-linux-native-aio], [WARNING this is experimental and has known issues enable native Linux AIO support @<:@default=no@:>@])],
   [enable_linux_native_aio="${enableval}"],
   [enable_linux_native_aio=no]
 )
@@ -1316,7 +1316,6 @@ AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
   AC_SEARCH_LIBS([io_submit], [aio], [],
     [AC_MSG_ERROR([Linux native AIO requires libaio])]
   )
-
 ])
 
 AC_MSG_RESULT([$enable_linux_native_aio])
