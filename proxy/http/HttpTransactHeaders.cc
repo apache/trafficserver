@@ -27,6 +27,7 @@
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "HttpCompat.h"
+#include "HttpSM.h"
 
 #include "I_Machine.h"
 
@@ -798,6 +799,21 @@ HttpTransactHeaders::insert_hsts_header_in_response(HttpTransact::State *s, HTTP
   }
 
   header->value_set(MIME_FIELD_STRICT_TRANSPORT_SECURITY, MIME_LEN_STRICT_TRANSPORT_SECURITY, new_hsts_string, length);
+}
+
+void
+HttpTransactHeaders::insert_hpkp_header_in_response(HttpTransact::State *s, HTTPHdr *header)
+{
+  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(s->state_machine->ua_session->get_netvc());
+  if (ssl_vc == NULL || ssl_vc->hpkp == NULL) {
+    return;
+  }
+
+  if (ssl_vc->hpkp->report_only) {
+    header->value_set(MIME_FIELD_PKP_RO, MIME_LEN_PKP_RO, ssl_vc->hpkp->header_value, ssl_vc->hpkp->header_value_len);
+  } else {
+    header->value_set(MIME_FIELD_PKP, MIME_LEN_PKP, ssl_vc->hpkp->header_value, ssl_vc->hpkp->header_value_len);
+  }
 }
 
 void

@@ -72,6 +72,7 @@ public:
   static void insert_via_header_in_request(HttpTransact::State *s, HTTPHdr *header);
   static void insert_via_header_in_response(HttpTransact::State *s, HTTPHdr *header);
   static void insert_hsts_header_in_response(HttpTransact::State *s, HTTPHdr *header);
+  static void insert_hpkp_header_in_response(HttpTransact::State *s, HTTPHdr *header);
 
   static bool is_request_proxy_authorized(HTTPHdr *incoming_hdr);
 

@@ -8053,6 +8053,11 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
     HttpTransactHeaders::insert_hsts_header_in_response(s, outgoing_response);
   }
 
+  // Add Public-Key-Pins header if HPKP is enabled and the request was https
+  if (s->orig_scheme == URL_WKSIDX_HTTPS) {
+    HttpTransactHeaders::insert_hpkp_header_in_response(s, outgoing_response);
+  }
+
   if (s->txn_conf->insert_response_via_string) {
     HttpTransactHeaders::insert_via_header_in_response(s, outgoing_response);
   }

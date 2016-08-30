@@ -1302,6 +1302,24 @@ static const RecordElement RecordsConfig[] =
 
   //##############################################################################
   //#
+  //# HPKP (Public Key Pinning Extension for HTTP) Configuration
+  //#
+  //##############################################################################
+  {RECT_CONFIG, "proxy.config.ssl.hpkp.enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.hpkp.report_only", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.hpkp.include_subdomains", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.hpkp.max_age", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.hpkp.pins", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.ssl.hpkp.report_uri", RECD_STRING, NULL, RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
+  ,
+
+  //##############################################################################
+  //#
   //# OCSP (Online Certificate Status Protocol) Stapling Configuration
   //#
   //##############################################################################

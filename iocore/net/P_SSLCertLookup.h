@@ -27,6 +27,8 @@
 #include "ProxyConfig.h"
 #include "P_SSLUtils.h"
 
+#define HPKP_MAX_HEADER_VALUE_LEN 1024
+
 struct SSLConfigParams;
 struct SSLContextStorage;
 
@@ -39,6 +41,12 @@ struct ssl_ticket_key_t {
 struct ssl_ticket_key_block {
   unsigned num_keys;
   ssl_ticket_key_t keys[];
+};
+
+struct HPKP {
+  bool report_only;
+  char header_value[HPKP_MAX_HEADER_VALUE_LEN];
+  int32_t header_value_len;
 };
 
 /** A certificate context.
@@ -62,15 +70,17 @@ struct SSLCertContext {
     OPT_TUNNEL ///< Just tunnel, don't terminate.
   };
 
-  SSLCertContext() : ctx(0), opt(OPT_NONE), keyblock(NULL) {}
-  explicit SSLCertContext(SSL_CTX *c) : ctx(c), opt(OPT_NONE), keyblock(NULL) {}
-  SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o), keyblock(NULL) {}
-  SSLCertContext(SSL_CTX *c, Option o, ssl_ticket_key_block *kb) : ctx(c), opt(o), keyblock(kb) {}
+  SSLCertContext() : ctx(0), opt(OPT_NONE), keyblock(NULL), hpkp(0) {}
+  explicit SSLCertContext(SSL_CTX *c) : ctx(c), opt(OPT_NONE), keyblock(NULL), hpkp(0) {}
+  SSLCertContext(SSL_CTX *c, Option o) : ctx(c), opt(o), keyblock(NULL), hpkp(0) {}
+  SSLCertContext(SSL_CTX *c, Option o, ssl_ticket_key_block *kb) : ctx(c), opt(o), keyblock(kb), hpkp(0) {}
+  SSLCertContext(SSL_CTX *c, Option o, ssl_ticket_key_block *kb, HPKP *h) : ctx(c), opt(o), keyblock(kb), hpkp(h) {}
   void release();
 
   SSL_CTX *ctx;                   ///< openSSL context.
   Option opt;                     ///< Special handling option.
   ssl_ticket_key_block *keyblock; ///< session keys associated with this address
+  HPKP *hpkp;
 };
 
 struct SSLCertLookup : public ConfigInfo {

@@ -81,6 +81,13 @@ SSLConfigParams::SSLConfigParams()
   ssl_session_cache_timeout            = 0;
   ssl_session_cache_auto_clear         = 1;
   configExitOnLoadError                = 0;
+
+  hpkp_enabled            = 0;
+  hpkp_report_only        = 0;
+  hpkp_include_subdomains = 0;
+  hpkp_max_age            = 0;
+  hpkp_pins               = NULL;
+  hpkp_report_uri         = NULL;
 }
 
 SSLConfigParams::~SSLConfigParams()
@@ -105,6 +112,8 @@ SSLConfigParams::cleanup()
   ats_free_null(client_cipherSuite);
   ats_free_null(dhparamsFile);
   ats_free_null(ssl_wire_trace_ip);
+  ats_free_null(hpkp_pins);
+  ats_free_null(hpkp_report_uri);
 
   clientCertLevel = client_verify_depth = verify_depth = clientVerify = 0;
 }
@@ -295,6 +304,14 @@ SSLConfigParams::initialize()
   ats_free(ssl_client_ca_cert_filename);
 
   REC_ReadConfigInt32(ssl_allow_client_renegotiation, "proxy.config.ssl.allow_client_renegotiation");
+
+  // HPKP configurations
+  REC_ReadConfigInteger(hpkp_enabled, "proxy.config.ssl.hpkp.enabled");
+  REC_ReadConfigInteger(hpkp_report_only, "proxy.config.ssl.hpkp.report_only");
+  REC_ReadConfigInteger(hpkp_include_subdomains, "proxy.config.ssl.hpkp.include_subdomains");
+  REC_ReadConfigInt32(hpkp_max_age, "proxy.config.ssl.hpkp.max_age");
+  REC_ReadConfigStringAlloc(hpkp_pins, "proxy.config.ssl.hpkp.pins");
+  REC_ReadConfigStringAlloc(hpkp_report_uri, "proxy.config.ssl.hpkp.report_uri");
 
   // SSL Wire Trace configurations
   REC_EstablishStaticConfigInt32(ssl_wire_trace_enabled, "proxy.config.ssl.wire_trace_enabled");

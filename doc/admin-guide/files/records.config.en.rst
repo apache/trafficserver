@@ -3096,6 +3096,37 @@ SSL Termination
    to the Strict-Transport-Security header.  proxy.config.ssl.hsts_max_age
    needs to be set to a non ``-1`` value for this configuration to take effect.
 
+.. ts:cv:: CONFIG proxy.config.ssl.hpkp.enabled INT 0
+
+   Enables (``1``) or disables (``0``) adding Public-Key-Pins or
+   Public-Key-Pins-Report-Only header.
+
+.. ts:cv:: CONFIG proxy.config.ssl.hpkp.report_only INT 0
+
+   Enables (``1``) or disables (``0``) to change Public-Key-Pins header to
+   Public-Key-Pins-Report-Only header.
+
+.. ts:cv:: CONFIG proxy.config.ssl.hpkp.include_subdomains INT 0
+
+   Enables (``1``) or disables (``0``) adding the includeSubdomain value
+   to the Public-Key-Pins or Public-Key-Pins-Report-Only header.
+
+.. ts:cv:: CONFIG proxy.config.ssl.hpkp.max_age INT 0
+
+   This configuration specifies the max-age value that will be used
+   when adding the Public-Key-Pins or Public-Key-Pins-Report-Only header.
+   The value is in seconds.
+
+.. ts:cv:: CONFIG proxy.config.ssl.hpkp.pins STRING NULL
+
+   This value is a comma separated list of pins that will be used
+   when adding the Public-Key-Pins or Public-Key-Pins-Report-Only header.
+
+.. ts:cv:: CONFIG proxy.config.ssl.hpkp.report_uri STRING NULL
+
+   This configuration specifies the report-uri value that will be used
+   when adding the Public-Key-Pins or Public-Key-Pins-Report-Only header.
+
 .. ts:cv:: CONFIG proxy.config.ssl.allow_client_renegotiation INT 0
 
    This configuration specifies whether the client is able to initiate
