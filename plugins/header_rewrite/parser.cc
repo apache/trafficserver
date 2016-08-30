@@ -28,13 +28,15 @@
 
 #include "parser.h"
 
-Parser::Parser(const std::string &line) : _cond(false), _empty(false)
+Parser::Parser(const std::string &original_line) : _cond(false), _empty(false)
 {
   TSDebug(PLUGIN_NAME_DBG, "Calling CTOR for Parser");
+  std::string line        = original_line;
   bool inquote            = false;
   bool extracting_token   = false;
   off_t cur_token_start   = 0;
   size_t cur_token_length = 0;
+
   for (size_t i = 0; i < line.size(); ++i) {
     if (!inquote && (std::isspace(line[i]) || (line[i] == '=' || line[i] == '>' || line[i] == '<'))) {
       if (extracting_token) {
@@ -50,6 +52,13 @@ Parser::Parser(const std::string &line) : _cond(false), _empty(false)
         _tokens.push_back(std::string(1, line[i]));
       }
       continue; /* always eat whitespace */
+    } else if (line[i] == '\\') {
+      if (!extracting_token) {
+        extracting_token = true;
+        cur_token_start  = i;
+      }
+      line.erase(i, 1);
+      continue;
     } else if (line[i] == '"') {
       if (!inquote && !extracting_token) {
         inquote          = true;
