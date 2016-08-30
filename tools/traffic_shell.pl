@@ -442,66 +442,6 @@ __EOF
 }
 
 
-# Command: show:icp
-#
-sub show_icp {
-  my $param = shift || "";
-
-  if ($param eq "") {
-    my $icp_enabled = get_on_off("proxy.config.icp.enabled");
-    my $icp_port = get_int("proxy.config.icp.icp_port");
-    my $multicast_enabled = get_on_off("proxy.config.icp.multicast_enabled");
-    my $query_timeout = get_int("proxy.config.icp.query_timeout");
-    print <<__EOF
-ICP Mode Enabled ------- $icp_enabled
-ICP Port --------------- $icp_port
-ICP Multicast Enabled -- $multicast_enabled
-ICP Query Timeout ------ $query_timeout s
-__EOF
-  } elsif ($param eq "peers") {
-    print "icp.config Rules\n";
-    print "----------------\n";
-    print_config("icp.config");
-  } else {
-    param_die($param, "show:icp");
-  }
-}
-
-
-# Command: show:icp-stats
-#
-sub show_icp_stats {
-  my $icp_query_requests = get_int("proxy.process.icp.icp_query_requests");
-  my $total_udp_send_queries = get_int("proxy.process.icp.total_udp_send_queries");
-  my $icp_query_hits = get_int("proxy.process.icp.icp_query_hits");
-  my $icp_query_misses = get_int("proxy.process.icp.icp_query_misses");
-  my $icp_remote_responses = get_int("proxy.process.icp.icp_remote_responses");
-  my $total_icp_response_time = get_float("proxy.process.icp.total_icp_response_time");
-  my $total_icp_request_time = get_float("proxy.process.icp.total_icp_request_time");
-  my $icp_remote_query_requests = get_int("proxy.process.icp.icp_remote_query_requests");
-  my $cache_lookup_success = get_int("proxy.process.icp.cache_lookup_success");
-  my $cache_lookup_fail = get_int("proxy.process.icp.cache_lookup_fail");
-  my $query_response_write = get_int("proxy.process.icp.query_response_write");
-  
-  print <<__EOF
---Queries Originating From This Node--
-Query Requests ----------------------------- $icp_query_requests
-Query Messages Sent ------------------------ $total_udp_send_queries
-Peer Hit Messages Received ----------------- $icp_query_hits
-Peer Miss Messages Received ---------------- $icp_query_misses
-Total Responses Received ------------------- $icp_remote_responses
-Average ICP Message Response Time ---------- $total_icp_response_time ms
-Average ICP Request Time ------------------- $total_icp_request_time ms
-
---Queries Originating from ICP Peers--
-Query Messages Received -------------------- $icp_remote_query_requests
-Remote Query Hits -------------------------- $cache_lookup_success
-Remote Query Misses ------------------------ $cache_lookup_fail
-Successful Response Message Sent to Peers -- $query_response_write
-__EOF
-}
-
-
 # Command: show:logging
 #
 sub show_logging {
@@ -730,8 +670,6 @@ Usage: traffic_shell <command> [argument]
    show:http
    show:http-stats
    show:http-trans-stats
-   show:icp [peers]
-   show:icp-stats
    show:logging
    show:logging-stats
    show:parent [rules]
@@ -764,8 +702,6 @@ my %COMMANDS = ( "show:alarms", \&show_alarms,
                 "show:http", \&show_http,
                 "show:http-stats", \&show_http_stats,
                 "show:http-trans-stats", \&show_http_trans_stats,
-                "show:icp", \&show_icp,
-                "show:icp-stats", \&show_icp_stats,
                 "show:logging", \&show_logging,
                 "show:logging-stats", \&show_logging_stats,
                 "show:parent", \&show_parent,

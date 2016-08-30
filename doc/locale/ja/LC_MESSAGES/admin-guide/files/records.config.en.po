@@ -4917,61 +4917,11 @@ msgstr ""
 msgid "Update period (in seconds) for stapling caches."
 msgstr ""
 
-#: ../../../admin-guide/files/records.config.en.rst:3192
-msgid "ICP Configuration"
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3196
-msgid "Sets ICP mode for hierarchical caching:"
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3201
-msgid "Disables ICP."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3202
-msgid "Allows |TS| to receive ICP queries only, but not send them."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3203
-msgid "Allows |TS| to both send and receive ICP queries."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3206
-msgid "Refer to :ref:`admin-icp-peering` for a fuller discussion.."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3210
-msgid ""
-"By enabling ICP multicasting, you permit |TS| to send a single ICP message "
-"over a multicast channel, instead of having to send individual ICP messages "
-"to each of its peers. This requires functioning multicast support on your "
-"network."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3215
-msgid ""
-"ICP multicasting does not have any impact on the volume of ICP reply "
-"messages, only on queries."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3220
-msgid "Specifies the network interface used for ICP traffic."
-msgstr ""
-
 #: ../../../admin-guide/files/records.config.en.rst:3224
 msgid ""
 "The |TS| installation script detects your network interface and sets this "
 "variable appropriately. If your system has multiple network interfaces, "
 "check that this variable specifies the correct interface."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3231
-msgid "Specifies the UDP port that you want to use for ICP messages."
-msgstr ""
-
-#: ../../../admin-guide/files/records.config.en.rst:3236
-msgid "Specifies the timeout used for ICP queries."
 msgstr ""
 
 #: ../../../admin-guide/files/records.config.en.rst:3241

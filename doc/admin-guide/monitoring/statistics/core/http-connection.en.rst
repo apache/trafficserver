@@ -109,9 +109,6 @@ HTTP Connection
    :type: counter
    :unit: bytes
 
-.. ts:stat:: global proxy.process.http.icp_suggested_lookups integer
-   :type: counter
-
 .. ts:stat:: global proxy.process.http.incoming_requests integer
    :type: counter
 

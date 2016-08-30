@@ -262,7 +262,6 @@ cache-type character value is one of
 Value             Meaning
 ===== ==========================
 C     cache
-I     icp
 L     cluster, (not used)
 P     parent
 S     server
@@ -284,19 +283,6 @@ N     conditional hit (client sent conditional, doc fresh in cache, returned 304
 S     cache hit, but expired
 U     cache hit, but client forces revalidate (e.g. Pragma: no-cache)
 blank no cache lookup
-===== ==========================
-
-i icp-conn-info
-^^^^^^^^^^^^^^^^^^^^^
-
-ICP status
-
-===== ==========================
-Value             Meaning
-===== ==========================
-F     connection open failed
-S     connection opened successfully
-blank no icp
 ===== ==========================
 
 p parent-proxy

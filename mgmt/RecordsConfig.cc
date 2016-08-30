@@ -1299,6 +1299,9 @@ static const RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.wire_trace_server_name", RECD_STRING, NULL , RECU_DYNAMIC, RR_NULL, RECC_STR, ".*", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.ssl.cert.load_elevated", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_READ_ONLY}
+  ,
+
   //##############################################################################
   //#
   //# OCSP (Online Certificate Status Protocol) Stapling Configuration
@@ -1315,35 +1318,6 @@ static const RecordElement RecordsConfig[] =
   ,
   //        # Update period for stapling caches. 60s (1 min) by default.
   {RECT_CONFIG, "proxy.config.ssl.ocsp.update_period", RECD_INT, "60", RECU_DYNAMIC, RR_NULL, RECC_NULL, "^[0-9]+$", RECA_NULL}
-  ,
-  //##############################################################################
-  //# ICP Configuration
-  //##############################################################################
-  //#       enabled=0 ICP disabled
-  //#       enabled=1 Allow receive of ICP queries
-  //#       enabled=2 Allow send/receive of ICP queries
-  //##############################################################################
-  {RECT_CONFIG, "proxy.config.icp.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-2]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.icp.stale_icp_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.icp.icp_interface", RECD_STRING, NULL, RECU_RESTART_TS, RR_REQUIRED, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.icp.icp_port", RECD_INT, "3130", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-65535]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.icp.multicast_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.icp.query_timeout", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.icp.icp_configuration", RECD_STRING, "icp.config", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.icp.lookup_local", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.icp.reply_to_unknown_peer", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.icp.default_reply_port", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_NULL, NULL, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.ssl.cert.load_elevated", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_READ_ONLY}
   ,
 
   //############################################################################

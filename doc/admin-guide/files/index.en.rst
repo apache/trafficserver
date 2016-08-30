@@ -29,7 +29,6 @@ Configuration Files
    cluster.config.en
    congestion.config.en
    hosting.config.en
-   icp.config.en
    ip_allow.config.en
    log_hosts.config.en
    logging.config.en
@@ -57,9 +56,6 @@ Configuration Files
 :doc:`hosting.config.en`
     Allows |TS| administrators to assign cache volumes to specific origin
     servers or domains.
-
-:doc:`icp.config.en`
-    Defines ICP peers.
 
 :doc:`ip_allow.config.en`
     Controls access to the |TS| cache based on source IP addresses and networks

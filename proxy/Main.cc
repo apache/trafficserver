@@ -1876,9 +1876,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     REC_ReadConfigInteger(http_enabled, "proxy.config.http.enabled");
 
     if (http_enabled) {
-      int icp_enabled = 0;
-      REC_ReadConfigInteger(icp_enabled, "proxy.config.icp.enabled");
-
       // call the ready hooks before we start accepting connections.
       APIHook *hook = lifecycle_hooks->get(TS_LIFECYCLE_PORTS_INITIALIZED_HOOK);
       while (hook) {
@@ -1895,9 +1892,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
         Debug("http_listen", "Delaying listen, waiting for cache initialization");
       } else {
         start_HttpProxyServer(); // PORTS_READY_HOOK called from in here
-      }
-      if (icp_enabled) {
-        icpProcessor.start();
       }
     }
 

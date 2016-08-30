@@ -84,14 +84,6 @@ msgstr ""
 msgid "\"HEAD\""
 msgstr ""
 
-#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:56
-msgid "``TS_HTTP_METHOD_ICP_QUERY``"
-msgstr ""
-
-#: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:56
-msgid "\"ICP\\_QUERY\""
-msgstr ""
-
 #: ../../../developer-guide/plugins/http-headers/header-functions.en.rst:59
 msgid "``TS_HTTP_METHOD_OPTIONS``"
 msgstr ""

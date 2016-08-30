@@ -3210,55 +3210,6 @@ OCSP Stapling Configuration
 
    Update period (in seconds) for stapling caches.
 
-ICP Configuration
-=================
-
-.. ts:cv:: CONFIG proxy.config.icp.enabled INT 0
-
-   Sets ICP mode for hierarchical caching:
-
-   ===== ======================================================================
-   Value Description
-   ===== ======================================================================
-   ``0`` Disables ICP.
-   ``1`` Allows |TS| to receive ICP queries only, but not send them.
-   ``2`` Allows |TS| to both send and receive ICP queries.
-   ===== ======================================================================
-
-   Refer to :ref:`admin-icp-peering` for a fuller discussion..
-
-.. ts:cv:: CONFIG proxy.config.icp.multicast_enabled INT 0
-
-   By enabling ICP multicasting, you permit |TS| to send a single ICP message
-   over a multicast channel, instead of having to send individual ICP messages
-   to each of its peers. This requires functioning multicast support on your
-   network.
-
-   ICP multicasting does not have any impact on the volume of ICP reply
-   messages, only on queries.
-
-.. ts:cv:: CONFIG proxy.config.icp.icp_interface STRING NULL
-
-   Specifies the network interface used for ICP traffic.
-
-.. note::
-
-   The |TS| installation script detects your network interface and sets this
-   variable appropriately. If your system has multiple network interfaces,
-   check that this variable specifies the correct interface.
-
-.. ts:cv:: CONFIG proxy.config.icp.icp_port INT 3130
-   :reloadable:
-
-   Specifies the UDP port that you want to use for ICP messages.
-
-.. ts:cv:: CONFIG proxy.config.icp.query_timeout INT 2
-   :reloadable:
-
-   Specifies the timeout used for ICP queries.
-
-   See :ref:`admin-performance-timeouts` for more discussion on |TS| timeouts.
-
 HTTP/2 Configuration
 ====================
 
