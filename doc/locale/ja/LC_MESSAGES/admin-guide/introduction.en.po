@@ -174,15 +174,6 @@ msgstr ""
 "Traffic Server システムや似たキャッシングプロダクトの親や子として振る舞いま"
 "す。"
 
-#: ../../../admin-guide/introduction.en.rst:95
-msgid ""
-"Traffic Server supports ICP (Internet Cache Protocol) peering. Hierarchical "
-"caching is described in more detail in :ref:`admin-hierarchical-caching`."
-msgstr ""
-"Traffic Server は ICP(Internet Cache Protocol) のピアイングをサポートしてい"
-"ます。階層的キャッシュは :ref:`admin-hierarchical-caching` で詳しく述べられ"
-"ています。"
-
 #: ../../../admin-guide/introduction.en.rst:99
 msgid "Deployment Limitations"
 msgstr "Deployment Limitations"

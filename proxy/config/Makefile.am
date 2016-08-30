@@ -31,7 +31,6 @@ dist_sysconf_DATA =	\
   cluster.config.default \
   congestion.config.default \
   hosting.config.default \
-  icp.config.default \
   ip_allow.config.default \
   log_hosts.config.default \
   logging.config.default \

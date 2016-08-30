@@ -38,7 +38,6 @@ man_pages = [
   ('admin-guide/files/cluster.config.en', 'cluster.config', u'Traffic Server cluster configuration file', None, '5'),
   ('admin-guide/files/congestion.config.en', 'congestion.config', u'Traffic Server congestion control configuration file', None, '5'),
   ('admin-guide/files/hosting.config.en', 'hosting.config', u'Traffic Server domain hosting configuration file', None, '5'),
-  ('admin-guide/files/icp.config.en', 'icp.config', u'Traffic Server ICP configuration file', None, '5'),
   ('admin-guide/files/ip_allow.config.en', 'ip_allow.config', u'Traffic Server IP access control configuration file', None, '5'),
   ('admin-guide/files/log_hosts.config.en', 'log_hosts.config', u'Traffic Server log host configuration file', None, '5'),
   ('admin-guide/files/logging.config.en', 'logging.config', u'Traffic Server logging configuration file', None, '5'),

@@ -370,17 +370,6 @@ msgid ""
 "for more information on when this TTL value will actually be used)."
 msgstr ""
 
-#: ../../../admin-guide/performance/index.en.rst:307
-msgid "ICP Timeout"
-msgstr ""
-
-#: ../../../admin-guide/performance/index.en.rst:309
-msgid ""
-"When using :ref:`admin-icp-peering` for hierarchical caching "
-"configurations, a global timeout on all inter-cache queries may be set, in "
-"seconds, using :ts:cv:`proxy.config.icp.query_timeout`."
-msgstr ""
-
 #: ../../../admin-guide/performance/index.en.rst:318
 msgid "Keepalive Timeouts"
 msgstr ""

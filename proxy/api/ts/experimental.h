@@ -96,13 +96,6 @@ tsapi TSReturnCode TSHttpTxnCntl(TSHttpTxn txnp, TSHttpCntlType cntl, void *data
 /* Protocols APIs */
 tsapi void TSVConnCacheHttpInfoSet(TSVConn connp, TSCacheHttpInfo infop);
 
-/* ICP freshness functions */
-typedef int (*TSPluginFreshnessCalcFunc)(TSCont contp);
-tsapi void TSICPFreshnessFuncSet(TSPluginFreshnessCalcFunc funcp);
-
-tsapi TSReturnCode TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj);
-tsapi TSReturnCode TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj);
-
 /* The rest is from the old "froze" private API include, we should consider
    moving some of these over to ts/ts.h as well. TODO */
 
@@ -197,9 +190,6 @@ tsapi void TSCacheHttpInfoDestroy(TSCacheHttpInfo infop);
 
 */
 tsapi TSReturnCode TSHttpTxnInfoIntGet(TSHttpTxn txnp, TSHttpTxnInfoKey key, TSMgmtInt *value);
-
-/* =====  ICP =====  */
-tsapi void TSHttpIcpDynamicSet(int value);
 
 /****************************************************************************
  *  TSHttpTxnCacheLookupCountGet

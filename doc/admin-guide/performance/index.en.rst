@@ -303,17 +303,6 @@ information on when this TTL value will actually be used).
     CONFIG proxy.config.hostdb.timeout INT 1440
     CONFIG proxy.config.hostdb.lookup_timeout INT 30
 
-ICP Timeout
-~~~~~~~~~~~
-
-When using :ref:`admin-icp-peering` for hierarchical caching configurations, a
-global timeout on all inter-cache queries may be set, in seconds, using
-:ts:cv:`proxy.config.icp.query_timeout`.
-
-::
-
-    CONFIG proxy.config.icp.query_timeout INT 2
-
 Keepalive Timeouts
 ~~~~~~~~~~~~~~~~~~
 

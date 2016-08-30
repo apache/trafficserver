@@ -68,7 +68,6 @@ Decode the Via header from command-line arguments::
     Tunnel info                                            :no tunneling
     Cache Type                                             :cache
     Cache Lookup Result                                    :cache miss (url not in cache)
-    ICP status                                             :no icp
     Parent proxy connection status                         :no parent proxy or unknown
     Origin server connection status                        :connection open failed
 
@@ -86,6 +85,5 @@ Decode the Via header from a curl request, using the :ref:`X-Debug <admin-plugin
     Tunnel info                                            :no tunneling
     Cache Type                                             :cache
     Cache Lookup Result                                    :cache miss (url not in cache)
-    ICP status                                             :no icp
     Parent proxy connection status                         :no parent proxy or unknown
     Origin server connection status                        :connection opened successfully

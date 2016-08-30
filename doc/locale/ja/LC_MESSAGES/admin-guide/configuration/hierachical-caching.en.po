@@ -86,13 +86,6 @@ msgstr ""
 msgid "Configuring Traffic Server to Use a Parent Cache"
 msgstr ""
 
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:218
-msgid ""
-"Edit :file:`icp.config` file located in the Traffic Server `config` "
-"directory: For each ICP peer you want to identify, enter a separate rule in "
-"the :file:`icp.config` file."
-msgstr ""
-
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:92
 msgid "Example"
 msgstr "例"
@@ -121,18 +114,10 @@ msgid ""
 "proxy."
 msgstr ""
 
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:214
-msgid ":ts:cv:`proxy.config.icp.icp_port`"
-msgstr ""
-
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:143
 msgid ""
 "Enable the parent caching option by adjusting :ts:cv:`proxy.config.http."
 "parent_proxy_routing_enable` in :file:`records.config`. ::"
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:215
-msgid ":ts:cv:`proxy.config.icp.multicast_enabled`"
 msgstr ""
 
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:57
@@ -163,27 +148,12 @@ msgid ""
 "parent cache to which you want missed requests to be forwarded."
 msgstr ""
 
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:178
-msgid "ICP Peering"
-msgstr ""
-
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:149
 msgid ""
 "Identify the parent cache you want to use to service missed requests. To "
 "use parent failover, you must identify more than one parent cache so that "
 "when a parent cache is unavailable, requests are sent to another parent "
 "cache."
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:195
-msgid ""
-"If Traffic Server receives a hit message from an ICP peer, then Traffic "
-"Server sends the HTTP request to that peer. However, it might turn out to "
-"be a cache miss because the original HTTP request contains header "
-"information that is not communicated by the ICP query. For example, the hit "
-"might not be the requested alternate. If an ICP hit turns out to be a miss, "
-"then Traffic Server forwards the request to either its HTTP parent caches "
-"or to the origin server."
 msgstr ""
 
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:157
@@ -231,16 +201,6 @@ msgid ""
 "com:80`` )"
 msgstr ""
 
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:188
-msgid ""
-"If Traffic Server has ICP caching enabled, then it sends ICP queries to its "
-"ICP peers when the HTTP request is a cache miss. If there are no hits but "
-"parents exist, then a parent is selected using a round-robin policy. If no "
-"ICP parents exist, then Traffic Server forwards the request to its HTTP "
-"parents. If there are no HTTP parent caches established, then Traffic "
-"Server forwards the request to the origin server."
-msgstr ""
-
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:110
 msgid ""
 "With this example, if parent1.example.com is down, the child node would "
@@ -257,68 +217,11 @@ msgid ""
 "config` line similar to"
 msgstr ""
 
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:213
-msgid ":ts:cv:`proxy.config.icp.enabled`"
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:216
-msgid ":ts:cv:`proxy.config.icp.query_timeout`"
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:206
-msgid ""
-"Determine if Traffic Server can send messages directly to each ICP peer or "
-"send a single message on a specified multicast channel."
-msgstr ""
-
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:173
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:221
 msgid ""
 "Run the command :option:`traffic_ctl config reload` to apply the "
 "configuration changes."
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:180
-msgid ""
-"The Internet Cache Protocol (ICP) is used by proxy caches to exchange "
-"information about their content. ICP query messages ask other caches if "
-"they are storing a particular URL; ICP response messages reply with a hit "
-"or miss answer. A cache exchanges ICP messages only with specific ICP "
-"peers, which are neighboring caches that can receive ICP messages. An ICP "
-"peer can be a sibling cache (which is at the same level in the hierarchy) "
-"or a parent cache (which is one level up in the hierarchy)."
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:205
-msgid ""
-"Determine if the Traffic Server can receive ICP messages only, or if it can "
-"send *and* receive ICP messages."
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:209
-msgid ""
-"Identify the ICP peers (siblings and parents) with which Traffic Server can "
-"communicate."
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:208
-msgid "Set the ICP query timeout."
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:207
-msgid "Specify the port used for ICP messages."
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:211
-msgid ""
-"To configure Traffic Server to use an ICP cache hierarchy edit the "
-"following variables in :file:`records.config` file:"
-msgstr ""
-
-#: ../../admin-guide/configuration/hierachical-caching.en.rst:202
-msgid ""
-"To configure a Traffic Server node to be part of an ICP cache hierarchy, "
-"you must perform the following tasks:"
 msgstr ""
 
 #: ../../admin-guide/configuration/hierachical-caching.en.rst:139
