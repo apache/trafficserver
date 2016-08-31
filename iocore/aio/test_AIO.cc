@@ -400,6 +400,10 @@ main(int /* argc ATS_UNUSED */, char *argv[])
   RecProcessInit(RECM_STAND_ALONE);
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(ink_number_of_processors());
+
+  Thread *main_thread = new EThread;
+  main_thread->set_specific();
+
 #if AIO_MODE == AIO_MODE_NATIVE
   int etype            = ET_NET;
   int n_netthreads     = eventProcessor.n_threads_for_type[etype];
@@ -446,5 +450,8 @@ main(int /* argc ATS_UNUSED */, char *argv[])
     }
   }
 
-  this_thread()->execute();
+  while (!shutdown_event_system) {
+    sleep(1);
+  }
+  delete main_thread;
 }
