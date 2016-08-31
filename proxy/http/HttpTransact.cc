@@ -1692,16 +1692,15 @@ HttpTransact::ReDNSRoundRobin(State *s)
 void
 HttpTransact::OSDNSLookup(State *s)
 {
-  static int max_dns_lookups = 3 + s->http_config_param->num_url_expansions;
-  ++s->dns_info.attempts;
-
-  DebugTxn("http_trans", "[HttpTransact::OSDNSLookup] This was attempt %d", s->dns_info.attempts);
+  static const int max_dns_lookups = 3;
 
   ink_assert(s->dns_info.looking_up == ORIGIN_SERVER);
 
+  DebugTxn("http_trans", "[HttpTransact::OSDNSLookup] This was attempt %d", s->dns_info.attempts);
+  ++s->dns_info.attempts;
+
   // detect whether we are about to self loop. the client may have
   // specified the proxy as the origin server (badness).
-
   // Check if this procedure is already done - YTS Team, yamsat
   if (!s->request_will_not_selfloop) {
     if (will_this_request_self_loop(s)) {

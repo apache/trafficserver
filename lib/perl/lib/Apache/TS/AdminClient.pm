@@ -405,7 +405,6 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.dns.search_default_domains
  proxy.config.dns.splitDNS.enabled
  proxy.config.dns.splitdns.filename
- proxy.config.dns.url_expansions
  proxy.config.dump_mem_info_frequency
  proxy.config.env_prep
  proxy.config.exec_thread.autoconfig
