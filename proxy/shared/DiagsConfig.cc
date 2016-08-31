@@ -84,7 +84,7 @@ DiagsConfig::reconfigure_diags()
   all_found = all_found && found;
 
   e                    = (int)REC_readInteger("proxy.config.diags.show_location", &found);
-  diags->show_location = ((e == 1 && found) ? SHOW_LOCATION_DIAGS : ((e == 2 && found) ? SHOW_LOCATION_ALL : SHOW_LOCATION_NONE));
+  diags->show_location = ((e == 1 && found) ? SHOW_LOCATION_DEBUG : ((e == 2 && found) ? SHOW_LOCATION_ALL : SHOW_LOCATION_NONE));
   all_found            = all_found && found;
 
   // read output routing values
