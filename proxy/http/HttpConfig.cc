@@ -912,7 +912,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigStringAlloc(c.proxy_response_via_string, "proxy.config.http.response_via_str");
   c.proxy_response_via_string_len = -1;
 
-  HttpEstablishStaticConfigStringAlloc(c.url_expansions_string, "proxy.config.dns.url_expansions");
   HttpEstablishStaticConfigByte(c.oride.keep_alive_enabled_in, "proxy.config.http.keep_alive_enabled_in");
   HttpEstablishStaticConfigByte(c.oride.keep_alive_enabled_out, "proxy.config.http.keep_alive_enabled_out");
   HttpEstablishStaticConfigByte(c.oride.chunking_enabled, "proxy.config.http.chunking_enabled");
@@ -1181,9 +1180,6 @@ HttpConfig::reconfigure()
   params->proxy_response_via_string_len     = (params->proxy_response_via_string) ? strlen(params->proxy_response_via_string) : 0;
   params->oride.proxy_response_hsts_max_age = m_master.oride.proxy_response_hsts_max_age;
   params->oride.proxy_response_hsts_include_subdomains = m_master.oride.proxy_response_hsts_include_subdomains;
-
-  params->url_expansions_string = ats_strdup(m_master.url_expansions_string);
-  params->url_expansions        = parse_url_expansions(params->url_expansions_string, &params->num_url_expansions);
 
   params->oride.keep_alive_enabled_in       = INT_TO_BOOL(m_master.oride.keep_alive_enabled_in);
   params->oride.keep_alive_enabled_out      = INT_TO_BOOL(m_master.oride.keep_alive_enabled_out);
@@ -1499,68 +1495,6 @@ HttpConfig::parse_ports_list(char *ports_string)
     }
   }
   return (ports_list);
-}
-
-////////////////////////////////////////////////////////////////
-//
-//  HttpConfig::parse_url_expansions()
-//
-////////////////////////////////////////////////////////////////
-char **
-HttpConfig::parse_url_expansions(char *url_expansions_str, int *num_expansions)
-{
-  char **expansions = NULL;
-  int count         = 0, i;
-
-  if (!url_expansions_str) {
-    *num_expansions = count;
-    return expansions;
-  }
-  // First count the number of URL expansions in the string
-  char *start = url_expansions_str, *end;
-  while (1) {
-    // Skip whitespace
-    while (isspace(*start)) {
-      start++;
-    }
-    if (*start == '\0') {
-      break;
-    }
-    count++;
-    end = start + 1;
-
-    // Find end of expansion
-    while (!isspace(*end) && *end != '\0') {
-      end++;
-    }
-    start = end;
-  }
-
-  // Now extract the URL expansions
-  if (count) {
-    expansions = (char **)ats_malloc(count * sizeof(char *));
-    start      = url_expansions_str;
-    for (i = 0; i < count; i++) {
-      // Skip whitespace
-      while (isspace(*start)) {
-        start++;
-      }
-      expansions[i] = start;
-      end           = start + 1;
-
-      // Find end of expansion
-      while (!isspace(*end) && *end != '\0') {
-        end++;
-      }
-      *end = '\0';
-      if (i < (count - 1)) {
-        start = end + 1;
-      }
-    }
-  }
-
-  *num_expansions = count;
-  return expansions;
 }
 
 ////////////////////////////////////////////////////////////////
