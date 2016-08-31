@@ -49,6 +49,7 @@
 #endif
 
 #define INK_MUTEX_INIT PTHREAD_MUTEX_INITIALIZER
+#define INK_THREAD_STACK_MIN PTHREAD_STACK_MIN
 
 typedef pthread_t ink_thread;
 typedef pthread_cond_t ink_cond;

@@ -30,6 +30,7 @@
 #include <hwloc.h>
 #endif
 #include "ts/ink_defs.h"
+#include "ts/hugepages.h"
 
 EventType
 EventProcessor::spawn_event_threads(int n_threads, const char *et_name, size_t stacksize)
@@ -80,6 +81,16 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 
   n_ethreads      = n_event_threads;
   n_thread_groups = 1;
+
+  // Make sure that our thread stack size is at least the minimum size
+  stacksize = MAX(stacksize, INK_THREAD_STACK_MIN);
+
+  // Make sure it is a multiple of our page size
+  if (ats_hugepage_enabled()) {
+    stacksize = INK_ALIGN(stacksize, ats_hugepage_size());
+  } else {
+    stacksize = INK_ALIGN(stacksize, ats_pagesize());
+  }
 
   for (i = 0; i < n_event_threads; i++) {
     EThread *t = new EThread(REGULAR, i);
