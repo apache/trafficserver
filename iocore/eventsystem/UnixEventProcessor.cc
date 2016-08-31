@@ -72,6 +72,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 {
   char thr_name[MAX_THREAD_NAME_LENGTH];
   int i;
+  void *stack = NULL;
 
   // do some sanity checking.
   static int started = 0;
@@ -146,12 +147,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 #endif
   for (i = 0; i < n_ethreads; i++) {
     ink_thread tid;
-    if (i > 0) {
-      snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_NET %d]", i);
-      tid = all_ethreads[i]->start(thr_name, stacksize);
-    } else {
-      tid = ink_thread_self();
-    }
+
 #if TS_USE_HWLOC
     if (obj_count > 0) {
       obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, i % obj_count);
@@ -163,6 +159,37 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 #else
       Debug("iocore_thread", "EThread: %d %s: %d", i, obj_name, obj->logical_index);
 #endif // HWLOC_API_VERSION
+    }
+#endif // TS_USE_HWLOC
+
+    if (i > 0) {
+      snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_NET %d]", i);
+#if TS_USE_HWLOC
+      if (obj_count > 0) {
+        hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+
+        hwloc_cpuset_to_nodeset(ink_get_topology(), obj->cpuset, nodeset);
+
+        if (hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), obj->cpuset, HWLOC_OBJ_NODE) == 1) {
+          stack = hwloc_alloc_membind_nodeset(ink_get_topology(), stacksize, nodeset, HWLOC_MEMBIND_BIND, 0);
+        } else if (hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), obj->cpuset, HWLOC_OBJ_NODE) > 1) {
+          stack = hwloc_alloc_membind_nodeset(ink_get_topology(), stacksize, nodeset, HWLOC_MEMBIND_INTERLEAVE, 0);
+        } else {
+          stack = NULL;
+        }
+
+        hwloc_bitmap_free(nodeset);
+      }
+#endif // TS_USE_HWLOC
+      tid = all_ethreads[i]->start(thr_name, stacksize, NULL, stack);
+    } else {
+      // We should stop using this thread like this and create a new one and have the master thread just join all these and block
+      // indefinitely.
+      tid = ink_thread_self();
+    }
+
+#if TS_USE_HWLOC
+    if (obj_count > 0) {
       hwloc_set_thread_cpubind(ink_get_topology(), tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
     } else {
       Warning("hwloc returned an unexpected value -- CPU affinity disabled");
