@@ -27,6 +27,7 @@
 #include "HTTP.h"
 #include "HdrUtils.h"
 #include "HttpCompat.h"
+#include "HttpSM.h"
 
 #include "I_Machine.h"
 
@@ -815,23 +816,30 @@ HttpTransactHeaders::insert_via_header_in_response(HttpTransact::State *s, HTTPH
   int scheme         = s->next_hop_scheme;
 
   ink_assert(scheme >= 0);
-  int scheme_len   = hdrtoken_index_to_length(scheme);
-  int32_t hversion = header->version_get().m_version;
 
-  memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
-  via_string += scheme_len;
+  if (s->state_machine->ua_session && (!strncmp(s->state_machine->ua_session->get_protocol_string(), "http/2", 6))) { //if http/2
+    memcpy(via_string, "http/2 ", 7);
+    via_string += 7;
+  } else { //if http/1.1 or older
+    int scheme_len   = hdrtoken_index_to_length(scheme);
+    int32_t hversion = header->version_get().m_version;
 
-  // Common case (I hope?)
-  if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
-    memcpy(via_string, "/1.1 ", 5);
-    via_string += 5;
-  } else {
-    *via_string++ = '/';
-    *via_string++ = '0' + HTTP_MAJOR(hversion);
-    *via_string++ = '.';
-    *via_string++ = '0' + HTTP_MINOR(hversion);
-    *via_string++ = ' ';
+    memcpy(via_string, hdrtoken_index_to_wks(scheme), scheme_len);
+    via_string += scheme_len;
+
+    // Common case (I hope?)
+    if ((HTTP_MAJOR(hversion) == 1) && HTTP_MINOR(hversion) == 1) {
+      memcpy(via_string, "/1.1 ", 5);
+      via_string += 5;
+    } else {
+      *via_string++ = '/';
+      *via_string++ = '0' + HTTP_MAJOR(hversion);
+      *via_string++ = '.';
+      *via_string++ = '0' + HTTP_MINOR(hversion);
+      *via_string++ = ' ';
+    }
   }
+
   via_string += nstrcpy(via_string, s->http_config_param->proxy_hostname);
   *via_string++ = ' ';
   *via_string++ = '(';
