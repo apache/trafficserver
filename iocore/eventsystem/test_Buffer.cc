@@ -42,6 +42,9 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   ink_event_system_init(EVENT_SYSTEM_MODULE_VERSION);
   eventProcessor.start(TEST_THREADS);
 
+  Thread *main_thread = new EThread;
+  main_thread->set_specific();
+
   for (unsigned i = 0; i < 100; ++i) {
     MIOBuffer *b1                       = new_MIOBuffer(default_large_iobuffer_size);
     IOBufferReader *b1reader ATS_UNUSED = b1->alloc_reader();
@@ -58,6 +61,4 @@ main(int /* argc ATS_UNUSED */, const char * /* argv ATS_UNUSED */ [])
   }
 
   exit(0);
-  this_thread()->execute();
-  return 0;
 }

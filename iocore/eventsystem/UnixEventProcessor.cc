@@ -94,11 +94,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   }
 
   for (i = 0; i < n_event_threads; i++) {
-    EThread *t = new EThread(REGULAR, i);
-    if (i == 0) {
-      ink_thread_setspecific(Thread::thread_data_key, t);
-      Thread::get_hrtime_updated();
-    }
+    EThread *t      = new EThread(REGULAR, i);
     all_ethreads[i] = t;
 
     eventthread[ET_CALL][i] = t;
@@ -162,31 +158,25 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     }
 #endif // TS_USE_HWLOC
 
-    if (i > 0) {
-      snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_NET %d]", i);
+    snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_NET %d]", i);
 #if TS_USE_HWLOC
-      if (obj_count > 0) {
-        hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
+    if (obj_count > 0) {
+      hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
 
-        hwloc_cpuset_to_nodeset(ink_get_topology(), obj->cpuset, nodeset);
+      hwloc_cpuset_to_nodeset(ink_get_topology(), obj->cpuset, nodeset);
 
-        if (hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), obj->cpuset, HWLOC_OBJ_NODE) == 1) {
-          stack = hwloc_alloc_membind_nodeset(ink_get_topology(), stacksize, nodeset, HWLOC_MEMBIND_BIND, 0);
-        } else if (hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), obj->cpuset, HWLOC_OBJ_NODE) > 1) {
-          stack = hwloc_alloc_membind_nodeset(ink_get_topology(), stacksize, nodeset, HWLOC_MEMBIND_INTERLEAVE, 0);
-        } else {
-          stack = NULL;
-        }
-
-        hwloc_bitmap_free(nodeset);
+      if (hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), obj->cpuset, HWLOC_OBJ_NODE) == 1) {
+        stack = hwloc_alloc_membind_nodeset(ink_get_topology(), stacksize, nodeset, HWLOC_MEMBIND_BIND, 0);
+      } else if (hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), obj->cpuset, HWLOC_OBJ_NODE) > 1) {
+        stack = hwloc_alloc_membind_nodeset(ink_get_topology(), stacksize, nodeset, HWLOC_MEMBIND_INTERLEAVE, 0);
+      } else {
+        stack = NULL;
       }
-#endif // TS_USE_HWLOC
-      tid = all_ethreads[i]->start(thr_name, stacksize, NULL, stack);
-    } else {
-      // We should stop using this thread like this and create a new one and have the master thread just join all these and block
-      // indefinitely.
-      tid = ink_thread_self();
+
+      hwloc_bitmap_free(nodeset);
     }
+#endif // TS_USE_HWLOC
+    tid = all_ethreads[i]->start(thr_name, stacksize, NULL, stack);
 
 #if TS_USE_HWLOC
     if (obj_count > 0) {
