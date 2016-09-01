@@ -289,7 +289,20 @@ initialize_thread_for_net(EThread *thread)
 
 // NetHandler method definitions
 
-NetHandler::NetHandler() : Continuation(NULL), trigger_event(0), keep_alive_queue_size(0), active_queue_size(0)
+NetHandler::NetHandler()
+  : Continuation(NULL),
+    trigger_event(0),
+    keep_alive_queue_size(0),
+    active_queue_size(0),
+    max_connections_per_thread_in(0),
+    max_connections_active_per_thread_in(0),
+    max_connections_in(0),
+    max_connections_active_in(0),
+    inactive_threashold_in(0),
+    transaction_no_activity_timeout_in(0),
+    keep_alive_no_activity_timeout_in(0),
+    sec(0),
+    cycles(0)
 {
   SET_HANDLER((NetContHandler)&NetHandler::startNetEvent);
 }
