@@ -70,18 +70,23 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   int slen     = 0;
   int num_dirs = 0;
 
-  // Pull out any over-ride URL from the MIME header
-  int or_url_len     = 0;
-  const char *or_url = hrdata->hdr->value_get("@ATS_PARENT_SELECTION_URL", sizeof("@ATS_PARENT_SELECTION_URL") - 1, &or_url_len);
-  // Use the over-ride, if present
-  if (or_url_len > 0) {
-    // Print the over-ride URL
-    slen = (or_url_len > 1023) ? 1023 : or_url_len;
-    strncpy(buffer, or_url, slen);
-    buffer[slen] = 0;
-    Debug("parent_select", "ParentConsistentHash::%s() Using Over-Ride String='%s'.", __func__, buffer);
-    h->update(or_url, or_url_len);
-    goto done;
+  // Use over-ride URL from HttpTransact::State's cache_info.parent_selection_url, if present.
+  URL *ps_url = NULL;
+  Debug("parent_select", "ParentConsistentHash::%s() hrdata->cache_info_parent_selection_url = 0x%lx", __func__,
+        (unsigned long int)hrdata->cache_info_parent_selection_url);
+  ps_url = *(hrdata->cache_info_parent_selection_url);
+  Debug("parent_select", "ParentConsistentHash::%s() ps_url = 0x%lx", __func__, (unsigned long int)ps_url);
+  if (ps_url) {
+    tmp = ps_url->string_get_ref(&len);
+    if (tmp && len > 0) {
+      // Print the over-ride URL
+      slen = (len > 1023) ? 1023 : len;
+      strncpy(buffer, tmp, slen);
+      buffer[slen] = 0;
+      Debug("parent_select", "ParentConsistentHash::%s() Using Over-Ride String='%s'.", __func__, buffer);
+      h->update(tmp, len);
+      goto done;
+    }
   }
 
   // Always hash on '/' because paths returned by ATS are always stripped of it

@@ -5783,23 +5783,9 @@ TSHttpTxnParentSelectionUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
     l_url->copy(&u);
   }
 
-  // Put the URL in the MIME header
-  int url_length   = 0;
-  char *url_string = l_url->string_get_ref(&url_length);
-  // Debug("ts_lua", "url_length = %d",url_length);
-  // Debug("ts_lua", "url_srting = %c",url_string[0]);
-  TSHttpTxn rh = txnp;
-  TSMBuffer cbuf;
-  TSMLoc chdr;
-  TSMLoc cloc;
-  TSHttpTxnClientReqGet(rh, &cbuf, &chdr);
-  if (TSMimeHdrFieldCreateNamed(cbuf, chdr, "@ATS_PARENT_SELECTION_URL", sizeof("@ATS_PARENT_SELECTION_URL") - 1, &cloc) ==
-      TS_SUCCESS) {
-    if (TSMimeHdrFieldValueStringInsert(cbuf, chdr, cloc, -1, url_string, url_length) == TS_SUCCESS) {
-      TSMimeHdrFieldAppend(cbuf, chdr, cloc);
-    }
-  }
-  TSHandleMLocRelease(cbuf, chdr, cloc);
+  Debug("parent_select", "TSHttpTxnParentSelectionUrlSet() parent_selection_url : addr = 0x%lx val = 0x%lx",
+        (long unsigned int)&(sm->t_state.cache_info.parent_selection_url),
+        (long unsigned int)sm->t_state.cache_info.parent_selection_url);
 
   return TS_SUCCESS;
 }

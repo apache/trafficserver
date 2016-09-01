@@ -5790,8 +5790,10 @@ HttpTransact::initialize_state_variables_from_request(State *s, HTTPHdr *obsolet
       s->request_data.incoming_port = netvc->get_local_port();
     }
   }
-  s->request_data.xact_start = s->client_request_time;
-  s->request_data.api_info   = &s->api_info;
+  s->request_data.xact_start                      = s->client_request_time;
+  s->request_data.api_info                        = &s->api_info;
+  s->request_data.cache_info_lookup_url           = &s->cache_info.lookup_url;
+  s->request_data.cache_info_parent_selection_url = &s->cache_info.parent_selection_url;
 
   /////////////////////////////////////////////
   // Do dns lookup for the host. We need     //
