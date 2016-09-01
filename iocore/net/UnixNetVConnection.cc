@@ -998,8 +998,8 @@ UnixNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &bu
     }
     if (r > 0) {
       buf.reader()->consume(r);
+      total_written += r;
     }
-    total_written += r;
 
     ProxyMutex *mutex = thread->mutex.get();
     NET_INCREMENT_DYN_STAT(net_calls_to_write_stat);
