@@ -519,11 +519,11 @@ NetHandler::mainNetEvent(int event, Event *e)
   while ((vc = read_ready_list.dequeue())) {
     // Initialize the thread-local continuation flags
     set_cont_flags(vc->control_flags);
-    if (vc->closed)
+    if (vc->closed) {
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->read.enabled && vc->read.triggered)
-      vc->net_read_io(this, trigger_event->ethread);
-    else if (!vc->read.enabled) {
+    } else if (vc->read.enabled && vc->read.triggered) {
+      vc->profile_sm->handleEvent(IOCORE_EVENTS_READ, this);
+    } else if (!vc->read.enabled) {
       read_ready_list.remove(vc);
 #if defined(solaris)
       if (vc->read.triggered && vc->write.enabled) {
@@ -536,11 +536,11 @@ NetHandler::mainNetEvent(int event, Event *e)
   }
   while ((vc = write_ready_list.dequeue())) {
     set_cont_flags(vc->control_flags);
-    if (vc->closed)
+    if (vc->closed) {
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->write.enabled && vc->write.triggered)
-      write_to_net(this, vc, trigger_event->ethread);
-    else if (!vc->write.enabled) {
+    } else if (vc->write.enabled && vc->write.triggered) {
+      vc->profile_sm->handleEvent(IOCORE_EVENTS_WRITE, this);
+    } else if (!vc->write.enabled) {
       write_ready_list.remove(vc);
 #if defined(solaris)
       if (vc->write.triggered && vc->read.enabled) {
@@ -554,21 +554,23 @@ NetHandler::mainNetEvent(int event, Event *e)
 #else  /* !USE_EDGE_TRIGGER */
   while ((vc = read_ready_list.dequeue())) {
     diags->set_override(vc->control.debug_override);
-    if (vc->closed)
+    if (vc->closed) {
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->read.enabled && vc->read.triggered)
-      vc->net_read_io(this, trigger_event->ethread);
-    else if (!vc->read.enabled)
+    } else if (vc->read.enabled && vc->read.triggered) {
+      vc->profile_sm->handleEvent(IOCORE_EVENTS_READ, this);
+    } else if (!vc->read.enabled) {
       vc->ep.modify(-EVENTIO_READ);
+    }
   }
   while ((vc = write_ready_list.dequeue())) {
     diags->set_override(vc->control.debug_override);
-    if (vc->closed)
+    if (vc->closed) {
       close_UnixNetVConnection(vc, trigger_event->ethread);
-    else if (vc->write.enabled && vc->write.triggered)
-      write_to_net(this, vc, trigger_event->ethread);
-    else if (!vc->write.enabled)
+    } else if (vc->write.enabled && vc->write.triggered) {
+      vc->profile_sm->handleEvent(IOCORE_EVENTS_WRITE, this);
+    } else if (!vc->write.enabled) {
       vc->ep.modify(-EVENTIO_WRITE);
+    }
   }
 #endif /* !USE_EDGE_TRIGGER */
 

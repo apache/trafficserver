@@ -42,7 +42,8 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
   int depth;
   int err;
   SSL *ssl;
-  SSLNetVConnection *netvc;
+  SSLProfileSM *ssl_profile_sm;
+  NetVConnection *netvc = NULL;
 
   SSLDebug("Entered verify cb");
   depth = X509_STORE_CTX_get_error_depth(ctx);
@@ -59,12 +60,16 @@ verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
     // Not server cert....
     return preverify_ok;
   }
+  /*
+   * Retrieve the pointer to the SSL of the connection currently treated
+   * and the application specific data stored into the SSL object.
+   */
+  ssl            = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  ssl_profile_sm = SSLProfileSMAccess(ssl);
 
-  // Retrieve the pointer to the SSL of the connection currently treated
-  // and the application specific data stored into the SSL object.
-  ssl   = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-  netvc = SSLNetVCAccess(ssl);
-
+  if (ssl_profile_sm != NULL) {
+    netvc = ssl_profile_sm->vc;
+  }
   if (netvc != NULL) {
     // Match SNI if present
     if (netvc->options.sni_servername) {

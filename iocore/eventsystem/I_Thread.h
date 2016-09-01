@@ -138,6 +138,8 @@ public:
   ProxyAllocator ioDataAllocator;
   ProxyAllocator ioAllocator;
   ProxyAllocator ioBlockAllocator;
+  ProxyAllocator tcpProfileSMAllocator;
+  ProxyAllocator sslProfileSMAllocator;
 
 private:
   // prevent unauthorized copies (Not implemented)

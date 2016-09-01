@@ -95,6 +95,8 @@ public:
     */
     bool f_inbound_transparent;
 
+    bool isSSL;
+
     /// Default constructor.
     /// Instance is constructed with default values.
     AcceptOptions() { this->reset(); }

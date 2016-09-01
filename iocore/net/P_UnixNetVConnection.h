@@ -44,6 +44,7 @@ struct PollDescriptor;
 TS_INLINE void
 NetVCOptions::reset()
 {
+  isSSL     = false;
   ip_proto  = USE_TCP;
   ip_family = AF_INET;
   local_ip.invalidate();
@@ -108,28 +109,6 @@ public:
   virtual Action *send_OOB(Continuation *cont, char *buf, int len);
   virtual void cancel_OOB();
 
-  virtual void
-  setSSLHandshakeWantsRead(bool /* flag */)
-  {
-    return;
-  }
-  virtual bool
-  getSSLHandshakeWantsRead()
-  {
-    return false;
-  }
-  virtual void
-  setSSLHandshakeWantsWrite(bool /* flag */)
-  {
-    return;
-  }
-
-  virtual bool
-  getSSLHandshakeWantsWrite()
-  {
-    return false;
-  }
-
   virtual void do_io_close(int lerrno = -1);
   virtual void do_io_shutdown(ShutdownHowTo_t howto);
 
@@ -173,12 +152,16 @@ public:
   int
   populate_protocol(char const **results, int n) const
   {
-    int retval = 0;
+    int retval        = 0;
+    NetProfileSM *pSM = this->profile_sm;
+
+    while (pSM && n > 0) {
+      results[retval++] = pSM->get_protocol_tag();
+      n--;
+      pSM = pSM->low_profileSM;
+    }
     if (n > 0) {
-      results[retval++] = options.get_proto_string();
-      if (n > 1) {
-        results[retval++] = options.get_family_string();
-      }
+      results[retval++] = options.get_family_string();
     }
     return retval;
   }
@@ -187,11 +170,18 @@ public:
   protocol_contains(const char *tag) const
   {
     const char *retval   = NULL;
+    const char *test_tag = NULL;
     unsigned int tag_len = strlen(tag);
-    const char *test_tag = options.get_proto_string();
-    if (strncmp(tag, test_tag, tag_len) == 0) {
-      retval = test_tag;
-    } else {
+    NetProfileSM *pSM    = this->profile_sm;
+
+    while (pSM && retval == NULL) {
+      test_tag = pSM->get_protocol_tag();
+      if (strncmp(tag, test_tag, tag_len) == 0) {
+        retval = test_tag;
+      }
+      pSM = pSM->low_profileSM;
+    }
+    if (retval == NULL) {
       test_tag = options.get_family_string();
       if (strncmp(tag, test_tag, tag_len) == 0) {
         retval = test_tag;
@@ -212,31 +202,16 @@ public:
 
   void get_local_sa();
 
-  // these are not part of the pure virtual interface.  They were
-  // added to reduce the amount of duplicate code in classes inherited
-  // from NetVConnection (SSL).
-  virtual int
-  sslStartHandShake(int event, int &err)
-  {
-    (void)event;
-    (void)err;
-    return EVENT_ERROR;
-  }
-
-  virtual bool
-  getSSLHandShakeComplete() const
-  {
-    return (true);
-  }
-
-  virtual void net_read_io(NetHandler *nh, EThread *lthread);
-  virtual int64_t load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf, int64_t &total_written, int &needs);
-  void readDisable(NetHandler *nh);
-  void readSignalError(NetHandler *nh, int err);
-  int readSignalDone(int event, NetHandler *nh);
+  void readDisable();
+  void writeDisable();
+  void readSignalError(int err);
+  void writeSignalError(int err);
+  int readSignalDone(int event);
+  int writeSignalDone(int event);
   int readSignalAndUpdate(int event);
-  void readReschedule(NetHandler *nh);
-  void writeReschedule(NetHandler *nh);
+  int writeSignalAndUpdate(int event);
+  void readReschedule();
+  void writeReschedule();
   void netActivity(EThread *lthread);
   /**
    * If the current object's thread does not match the t argument, create a new
@@ -288,11 +263,6 @@ public:
   OOB_callback *oob_ptr;
   bool from_accept_thread;
 
-  // es - origin_trace associated connections
-  bool origin_trace;
-  const sockaddr *origin_trace_addr;
-  int origin_trace_port;
-
   int startEvent(int event, Event *e);
   int acceptEvent(int event, Event *e);
   int mainEvent(int event, Event *e);
@@ -313,26 +283,6 @@ public:
   virtual int set_tcp_init_cwnd(int init_cwnd);
   virtual int set_tcp_congestion_control(const char *name, int len);
   virtual void apply_options();
-
-  friend void write_to_net_io(NetHandler *, UnixNetVConnection *, EThread *);
-
-  void
-  setOriginTrace(bool t)
-  {
-    origin_trace = t;
-  }
-
-  void
-  setOriginTraceAddr(const sockaddr *addr)
-  {
-    origin_trace_addr = addr;
-  }
-
-  void
-  setOriginTracePort(int port)
-  {
-    origin_trace_port = port;
-  }
 };
 
 extern ClassAllocator<UnixNetVConnection> netVCAllocator;

@@ -121,6 +121,10 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     vc->action_     = *na->action_;
     vc->set_is_transparent(na->server.f_inbound_transparent);
     vc->set_context(NET_VCONNECTION_IN);
+    vc->add_profile_sm(PROFILE_SM_TCP, e->ethread);
+    if (na->isSSL) {
+      vc->add_profile_sm(PROFILE_SM_SSL, e->ethread);
+    }
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
 
     if (e->ethread->is_event_type(na->etype))
@@ -305,6 +309,10 @@ NetAccept::do_blocking_accept(EThread *t)
     vc->options.packet_tos  = packet_tos;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
+    vc->add_profile_sm(PROFILE_SM_TCP, NULL);
+    if (isSSL) {
+      vc->add_profile_sm(PROFILE_SM_SSL, NULL);
+    }
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::acceptEvent);
     // eventProcessor.schedule_imm(vc, getEtype());
     eventProcessor.schedule_imm_signal(vc, etype);
@@ -446,6 +454,10 @@ NetAccept::acceptFastEvent(int event, void *ep)
     vc->options.packet_tos  = packet_tos;
     vc->apply_options();
     vc->set_context(NET_VCONNECTION_IN);
+    vc->add_profile_sm(PROFILE_SM_TCP, e->ethread);
+    if (isSSL) {
+      vc->add_profile_sm(PROFILE_SM_SSL, e->ethread);
+    }
     SET_CONTINUATION_HANDLER(vc, (NetVConnHandler)&UnixNetVConnection::mainEvent);
 
     // set thread and nh as acceptEvent does
@@ -522,7 +534,8 @@ NetAccept::NetAccept()
     sockopt_flags(0),
     packet_mark(0),
     packet_tos(0),
-    etype(0)
+    etype(-1),
+    isSSL(false)
 {
 }
 

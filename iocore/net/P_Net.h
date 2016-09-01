@@ -92,6 +92,7 @@ extern RecRawStatBlock *net_rsb;
 #include "I_Net.h"
 #include "P_NetVConnection.h"
 #include "P_UnixNet.h"
+#include "P_UnixNetProfileSM.h"
 #include "P_UnixNetProcessor.h"
 #include "P_NetAccept.h"
 #include "P_UnixNetVConnection.h"
@@ -101,9 +102,8 @@ extern RecRawStatBlock *net_rsb;
 #include "P_NetVCTest.h"
 #include "P_LibBulkIO.h"
 
-#include "P_SSLNetVConnection.h"
+#include "P_SSLProfileSM.h"
 #include "P_SSLNetProcessor.h"
-#include "P_SSLNetAccept.h"
 #include "P_SSLCertLookup.h"
 
 #undef NET_SYSTEM_MODULE_VERSION

@@ -24,6 +24,7 @@
 #include "P_Net.h"
 #include "I_Machine.h"
 #include "ProtocolProbeSessionAccept.h"
+#include "I_RecHttp.h"
 #include "http2/HTTP2.h"
 
 static bool
@@ -64,6 +65,7 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
   {
     VIO *vio;
     NetVConnection *netvc;
+    Continuation *plugin;
     ProtoGroupKey key = N_PROTO_GROUPS; // use this as an invalid value.
 
     vio   = static_cast<VIO *>(edata);
@@ -85,12 +87,24 @@ struct ProtocolProbeTrampoline : public Continuation, public ProtocolProbeSessio
 
     ink_assert(netvc != NULL);
 
-    if (!reader->is_read_avail_more_than(minimum_read_size - 1)) {
-      // Not enough data read. Well, that sucks.
-      goto done;
+    if (netvc->profile_sm->get_type() == PROFILE_SM_SSL) {
+      SSLM *sslm = dynamic_cast<SSLM *>(netvc->profile_sm);
+      plugin     = sslm->endpoint(); // NPN or ALPN
+      if (plugin) {
+        netvc->do_io_read(NULL, 0, NULL); // Disable the read IO that we started.
+        netvc->attributes = HttpProxyPort::TRANSPORT_SSL;
+        ((SessionAccept *)plugin)->accept(netvc, this->iobuf, reader);
+        delete this;
+        return EVENT_CONT;
+      }
     }
 
-    if (proto_is_http2(reader)) {
+    if (HttpProxyPort::TRANSPORT_BLIND_TUNNEL == netvc->attributes) {
+      key = PROTO_HTTP;
+    } else if (!reader->is_read_avail_more_than(minimum_read_size - 1)) {
+      // Not enough data read. Well, that sucks.
+      goto done;
+    } else if (proto_is_http2(reader)) {
       key = PROTO_HTTP2;
     } else {
       key = PROTO_HTTP;
@@ -130,7 +144,15 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     ink_assert(data);
 
     VIO *vio;
-    NetVConnection *netvc          = (NetVConnection *)data;
+    NetVConnection *netvc = (NetVConnection *)data;
+
+    if (netvc->profile_sm->get_type() == PROFILE_SM_SSL) {
+      Debug("ssl", "[ProtocolProbeSessionAccept::mainEvent] event %d netvc %p", event, netvc);
+      SSLM *sslm = dynamic_cast<SSLM *>(netvc->profile_sm);
+      sslm->registerNextProtocolSet(&protoset);
+      sslm->setTransparentPassThrough(transparent_passthrough);
+    }
+
     ProtocolProbeTrampoline *probe = new ProtocolProbeTrampoline(this, netvc->mutex, NULL, NULL);
 
     // XXX we need to apply accept inactivity timeout here ...
@@ -163,4 +185,16 @@ ProtocolProbeSessionAccept::registerEndpoint(ProtoGroupKey key, SessionAccept *a
 {
   ink_release_assert(endpoint[key] == NULL);
   this->endpoint[key] = ap;
+}
+
+bool
+ProtocolProbeSessionAccept::registerEndpoint(const char *protocol, Continuation *handler)
+{
+  return this->protoset.registerEndpoint(protocol, handler);
+}
+
+void
+ProtocolProbeSessionAccept::setTransparentPassthrough(bool transparent_passthrough)
+{
+  this->transparent_passthrough = transparent_passthrough;
 }

@@ -60,6 +60,8 @@ libinknet_a_SOURCES = \
   I_UDPPacket.h \
   Inline.cc \
   I_SessionAccept.h \
+  I_NetProfileSM.h \
+  I_SSLM.h \
   SessionAccept.cc \
   Net.cc \
   NetVConnection.cc \
@@ -73,13 +75,11 @@ libinknet_a_SOURCES = \
   P_Socks.h \
   P_SSLCertLookup.h \
   P_SSLConfig.h \
-  P_SSLNetAccept.h \
   P_SSLNetProcessor.h \
-  P_SSLNetVConnection.h \
-  P_SSLNextProtocolAccept.h \
-  P_SSLNextProtocolSet.h \
+  I_SSLNextProtocolSet.h \
   P_SSLUtils.h \
   P_SSLClientUtils.h \
+  P_SSLProfileSM.h \
   P_OCSPStapling.h \
   P_Socks.h \
   P_UDPConnection.h \
@@ -91,6 +91,7 @@ libinknet_a_SOURCES = \
   P_UnixNetProcessor.h \
   P_UnixNetState.h \
   P_UnixNetVConnection.h \
+  P_UnixNetProfileSM.h \
   P_UnixPollDescriptor.h \
   P_UnixUDPConnection.h \
   Socks.cc \
@@ -98,13 +99,12 @@ libinknet_a_SOURCES = \
   SSLSessionCache.cc \
   SSLConfig.cc \
   SSLInternal.cc \
-  SSLNetAccept.cc \
   SSLNetProcessor.cc \
-  SSLNetVConnection.cc \
-  SSLNextProtocolAccept.cc \
   SSLNextProtocolSet.cc \
   SSLUtils.cc \
   SSLClientUtils.cc \
+  SSLProfileSM.cc \
+  SSLM.cc \
   OCSPStapling.cc \
   Socks.cc \
   UDPIOEvent.cc \
@@ -114,6 +114,8 @@ libinknet_a_SOURCES = \
   UnixNetPages.cc \
   UnixNetProcessor.cc \
   UnixNetVConnection.cc \
+  NetProfileSM.cc \
+  UnixNetProfileSM.cc \
   UnixUDPConnection.cc \
   UnixUDPNet.cc \
   SSLDynlock.cc

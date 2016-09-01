@@ -32,7 +32,7 @@
 
 #include <openssl/ssl.h>
 #include "P_Net.h"
-#include "P_SSLNetVConnection.h"
+#include "P_SSLProfileSM.h"
 
 void
 SSL_set_rbio(SSL *ssl, BIO *rbio)

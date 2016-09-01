@@ -193,6 +193,12 @@ UnixNetProcessor::allocate_vc(EThread *)
   return NULL;
 }
 
+void
+UnixNetProcessor::attach_profile_sm(EThread *, NetVConnection *)
+{
+  ink_release_assert(false);
+}
+
 // For Intel ICC
 int cache_config_mutex_retry_delay = 2;
 

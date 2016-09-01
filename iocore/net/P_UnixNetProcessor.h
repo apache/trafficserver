@@ -42,6 +42,7 @@ public:
 
   virtual NetAccept *createNetAccept();
   virtual NetVConnection *allocate_vc(EThread *t);
+  virtual void attach_profile_sm(EThread *t, NetVConnection *vc);
 
   virtual int start(int number_of_net_threads, size_t stacksize);
 

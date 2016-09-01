@@ -35,19 +35,25 @@
 #include "HttpPages.h"
 #include "HttpTunnel.h"
 #include "ts/Tokenizer.h"
-#include "P_SSLNextProtocolAccept.h"
 #include "ProtocolProbeSessionAccept.h"
 #include "http2/Http2SessionAccept.h"
 
 HttpSessionAccept *plugin_http_accept             = NULL;
 HttpSessionAccept *plugin_http_transparent_accept = 0;
 
+/*
+ * break TSNetAcceptNamedProtocol
+ *
 static SLL<SSLNextProtocolAccept> ssl_plugin_acceptors;
 static Ptr<ProxyMutex> ssl_plugin_mutex;
+ */
 
 bool
 ssl_register_protocol(const char *protocol, Continuation *contp)
 {
+  /*
+   * break TSNetAcceptNamedProtocol
+   *
   SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
 
   for (SSLNextProtocolAccept *ssl = ssl_plugin_acceptors.head; ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
@@ -55,6 +61,7 @@ ssl_register_protocol(const char *protocol, Continuation *contp)
       return false;
     }
   }
+   */
 
   return true;
 }
@@ -62,6 +69,9 @@ ssl_register_protocol(const char *protocol, Continuation *contp)
 bool
 ssl_unregister_protocol(const char *protocol, Continuation *contp)
 {
+  /*
+   * break TSNetAcceptNamedProtocol
+   *
   SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
 
   for (SSLNextProtocolAccept *ssl = ssl_plugin_acceptors.head; ssl; ssl = ssl_plugin_acceptors.next(ssl)) {
@@ -69,6 +79,7 @@ ssl_unregister_protocol(const char *protocol, Continuation *contp)
     // from all SSL ports.
     ssl->unregisterEndpoint(protocol, contp);
   }
+   */
 
   return true;
 }
@@ -126,6 +137,8 @@ make_net_accept_options(const HttpProxyPort &port, unsigned nthreads)
     net.local_ip = HttpConfig::m_master.inbound_ip4;
   }
 
+  net.isSSL = port.isSSL();
+
   return net;
 }
 
@@ -167,50 +180,45 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
   // XXX the protocol probe should be a configuration option.
 
   ProtocolProbeSessionAccept *probe = new ProtocolProbeSessionAccept();
-  HttpSessionAccept *http           = 0; // don't allocate this unless it will be used.
 
+  // ALPN selects the first server-offered protocol,
+  // so make sure that we offer the newest protocol first.
+  // But since registerEndpoint prepends you want to
+  // register them backwards, so you'd want to register
+  // the least important protocol first:
+  // http/1.0, http/1.1, h2
+  //
+  // Pre registed ALPN Endpoints for dynamtic SSL/TLS probe on any port.
+
+  // HTTP
+  HttpSessionAccept *http = NULL; // don't allocate this unless it will be used.
   if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
     http = new HttpSessionAccept(accept_opt);
     probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP, http);
-  }
-
-  if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
-    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP2, new Http2SessionAccept(accept_opt));
-  }
-
-  if (port.isSSL()) {
-    SSLNextProtocolAccept *ssl = new SSLNextProtocolAccept(probe, port.m_transparent_passthrough);
-
-    // ALPN selects the first server-offered protocol,
-    // so make sure that we offer the newest protocol first.
-    // But since registerEndpoint prepends you want to
-    // register them backwards, so you'd want to register
-    // the least important protocol first:
-    // http/1.0, http/1.1, h2
-
-    // HTTP
     if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_1_0)) {
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
+      probe->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
     }
-
     if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_1_1)) {
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
+      probe->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
     }
-
-    // HTTP2
-    if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0)) {
-      Http2SessionAccept *acc = new Http2SessionAccept(accept_opt);
-
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, acc);
-    }
-
-    SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
-    ssl_plugin_acceptors.push(ssl);
-
-    acceptor._accept = ssl;
-  } else {
-    acceptor._accept = probe;
   }
+
+  Http2SessionAccept *http2 = NULL;
+  if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
+    http2 = new Http2SessionAccept(accept_opt);
+    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP2, http2);
+  }
+  if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0)) {
+    // TODO: Should be removed when h2-14 is gone and dead, and h2 is widely supported in UAs
+    if (http2 == NULL) {
+      http2 = new Http2SessionAccept(accept_opt);
+    }
+    probe->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, http2);
+  }
+
+  probe->setTransparentPassthrough(port.m_transparent_passthrough);
+
+  acceptor._accept = probe;
 }
 
 /** Set up all the accepts and sockets.
@@ -245,9 +253,6 @@ init_HttpProxyServer(int n_accept_threads)
     plugin_http_transparent_accept        = new HttpSessionAccept(ha_opt);
     plugin_http_transparent_accept->mutex = new_ProxyMutex();
   }
-  if (!ssl_plugin_mutex) {
-    ssl_plugin_mutex = new_ProxyMutex();
-  }
 
   // Do the configuration defined ports.
   for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
@@ -271,11 +276,7 @@ start_HttpProxyServer()
   for (int i = 0, n = proxy_ports.length(); i < n; ++i) {
     HttpProxyAcceptor &acceptor = HttpProxyAcceptors[i];
     HttpProxyPort &port         = proxy_ports[i];
-    if (port.isSSL()) {
-      if (NULL == sslNetProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
-        return;
-      }
-    } else if (!port.isPlugin()) {
+    if (!port.isPlugin()) {
       if (NULL == netProcessor.main_accept(acceptor._accept, port.m_fd, acceptor._net_opt)) {
         return;
       }

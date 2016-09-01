@@ -288,7 +288,9 @@ typedef enum {
   TS_VCONN_PRE_ACCEPT_HOOK = TS_SSL_FIRST_HOOK,
   TS_SSL_SNI_HOOK,
   TS_SSL_CERT_HOOK = TS_SSL_SNI_HOOK,
-  TS_SSL_LAST_HOOK = TS_SSL_CERT_HOOK,
+  TS_SSL_CLIENT_HANDSHAKE_HOOK, // Client Side SSL Handshake Done
+  TS_SSL_SERVER_HANDSHAKE_HOOK, // Server Side SSL Handshake Done
+  TS_SSL_LAST_HOOK = TS_SSL_SERVER_HANDSHAKE_HOOK,
   TS_HTTP_LAST_HOOK
 } TSHttpHookID;
 
@@ -448,7 +450,9 @@ typedef enum {
   TS_EVENT_INTERNAL_60200                       = 60200,
   TS_EVENT_INTERNAL_60201                       = 60201,
   TS_EVENT_INTERNAL_60202                       = 60202,
-  TS_EVENT_SSL_CERT                             = 60203
+  TS_EVENT_SSL_CERT                             = 60203,
+  TS_EVENT_SSL_CLIENT_HANDSHAKE                 = 60204,
+  TS_EVENT_SSL_SERVER_HANDSHAKE                 = 60205,
 } TSEvent;
 #define TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP TS_EVENT_HTTP_PRE_REMAP /* backwards compat */
 
@@ -1153,7 +1157,6 @@ extern tsapi const char *const TS_PROTO_TAG_TCP;
 extern tsapi const char *const TS_PROTO_TAG_UDP;
 extern tsapi const char *const TS_PROTO_TAG_IPV4;
 extern tsapi const char *const TS_PROTO_TAG_IPV6;
-
 
 /* --------------------------------------------------------------------------
    MLoc Constants */

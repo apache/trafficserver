@@ -72,9 +72,6 @@ public:
   // Private
   //
 
-  virtual NetAccept *createNetAccept();
-  virtual NetVConnection *allocate_vc(EThread *t);
-
 private:
   SSLNetProcessor(const SSLNetProcessor &);
   SSLNetProcessor &operator=(const SSLNetProcessor &);

@@ -25,6 +25,7 @@
 #define ProtocolProbeSessionAccept_H_
 
 #include "I_SessionAccept.h"
+#include "I_SSLNextProtocolSet.h"
 
 struct ProtocolProbeSessionAcceptEnums {
   /// Enumeration for related groups of protocols.
@@ -40,13 +41,16 @@ struct ProtocolProbeSessionAcceptEnums {
 class ProtocolProbeSessionAccept : public SessionAccept, public ProtocolProbeSessionAcceptEnums
 {
 public:
-  ProtocolProbeSessionAccept() : SessionAccept(NULL)
+  ProtocolProbeSessionAccept() : SessionAccept(NULL), transparent_passthrough(false)
   {
     memset(endpoint, 0, sizeof(endpoint));
     SET_HANDLER(&ProtocolProbeSessionAccept::mainEvent);
   }
   ~ProtocolProbeSessionAccept() {}
   void registerEndpoint(ProtoGroupKey key, SessionAccept *ap);
+  bool registerEndpoint(const char *protocol, Continuation *handler);
+
+  void setTransparentPassthrough(bool transparent_passthrough);
 
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *);
 
@@ -62,6 +66,8 @@ private:
       do range checks on the enum value.
    */
   SessionAccept *endpoint[N_PROTO_GROUPS + 1];
+  SSLNextProtocolSet protoset;
+  bool transparent_passthrough;
 
   friend struct ProtocolProbeTrampoline;
 };

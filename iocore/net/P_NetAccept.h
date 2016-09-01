@@ -96,6 +96,8 @@ struct NetAccept : public Continuation {
   UnixNetVConnection *epoll_vc; // only storage for epoll events
   EventIO ep;
 
+  bool isSSL;
+
   virtual NetProcessor *getNetProcessor() const;
 
   void init_accept_loop(const char *);

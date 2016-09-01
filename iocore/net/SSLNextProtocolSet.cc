@@ -24,7 +24,7 @@
 #include "ts/ink_config.h"
 #include "ts/apidefs.h"
 #include "ts/ink_platform.h"
-#include "P_SSLNextProtocolSet.h"
+#include "I_SSLNextProtocolSet.h"
 
 // For currently defined protocol strings, see
 // http://technotes.googlecode.com/git/nextprotoneg.html. The OpenSSL

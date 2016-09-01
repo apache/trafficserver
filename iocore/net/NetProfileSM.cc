@@ -1,5 +1,7 @@
 /** @file
 
+  A brief file description
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -19,20 +21,26 @@
   limitations under the License.
  */
 
-#include "ts/ink_config.h"
 #include "P_Net.h"
+#include "I_NetProfileSM.h"
 
-NetProcessor *
-SSLNetAccept::getNetProcessor() const
+bool
+NetProfileSM::getTrace() const
 {
-  return &sslNetProcessor;
-}
+  bool isTrace = false;
 
-NetAccept *
-SSLNetAccept::clone() const
-{
-  NetAccept *na;
-  na  = new SSLNetAccept;
-  *na = *this;
-  return na;
+  switch (type) {
+  case PROFILE_SM_TCP:
+    isTrace = netTrace || vc->getOriginTrace();
+    break;
+  case PROFILE_SM_SSL:
+    ink_assert(low_profileSM);
+    isTrace = netTrace || low_profileSM->getTrace();
+    break;
+  case PROFILE_SM_UDP:
+  // TODO:
+  default:
+    ink_assert(!"not reached!");
+  }
+  return isTrace;
 }

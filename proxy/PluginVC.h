@@ -98,6 +98,56 @@ public:
   virtual bool add_to_active_queue();
   virtual ink_hrtime get_active_timeout();
   virtual ink_hrtime get_inactivity_timeout();
+  // The following function are not used in this class.
+  // Just to make GCC happy.
+  virtual void
+  readDisable()
+  {
+  }
+  virtual void
+  writeDisable()
+  {
+  }
+  virtual void
+  readSignalError(int err)
+  {
+  }
+  virtual void
+  writeSignalError(int err)
+  {
+  }
+  virtual int
+  readSignalDone(int event)
+  {
+    return 0;
+  }
+  virtual int
+  writeSignalDone(int event)
+  {
+    return 0;
+  }
+  virtual int
+  readSignalAndUpdate(int event)
+  {
+    return 0;
+  }
+  virtual int
+  writeSignalAndUpdate(int event)
+  {
+    return 0;
+  }
+  virtual void
+  readReschedule()
+  {
+  }
+  virtual void
+  writeReschedule()
+  {
+  }
+  virtual void
+  netActivity(EThread *lthread)
+  {
+  }
 
   // Pure virutal functions we need to compile
   virtual SOCKET get_socket();

@@ -91,28 +91,6 @@ SSLNetProcessor::start(int, size_t stacksize)
   return 0;
 }
 
-NetAccept *
-SSLNetProcessor::createNetAccept()
-{
-  return (NetAccept *)new SSLNetAccept;
-}
-
-NetVConnection *
-SSLNetProcessor::allocate_vc(EThread *t)
-{
-  SSLNetVConnection *vc;
-
-  if (t) {
-    vc = THREAD_ALLOC_INIT(sslNetVCAllocator, t);
-  } else {
-    if (likely(vc = sslNetVCAllocator.alloc())) {
-      vc->from_accept_thread = true;
-    }
-  }
-
-  return vc;
-}
-
 SSLNetProcessor::SSLNetProcessor() : client_ctx(NULL)
 {
 }

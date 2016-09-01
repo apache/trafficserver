@@ -33,6 +33,7 @@
 #include "I_IOBuffer.h"
 #include "I_Socks.h"
 #include <ts/apidefs.h>
+#include "I_NetProfileSM.h"
 
 #define CONNECT_SUCCESS 1
 #define CONNECT_FAILURE 0
@@ -70,6 +71,8 @@ struct NetVCOptions {
     USE_TCP, ///< TCP protocol.
     USE_UDP  ///< UDP protocol.
   };
+
+  bool isSSL;
 
   /// IP (TCP or UDP) protocol to use on socket.
   ip_protocol_t ip_proto;
@@ -468,6 +471,7 @@ public:
   /** @return current inactivity_timeout value in nanosecs */
   virtual ink_hrtime get_inactivity_timeout() = 0;
 
+  virtual int getWriteBufferEmpty();
   /** Force an @a event if a write operation empties the write buffer.
 
       This event will be sent to the VIO, the same place as other IO events.
@@ -541,6 +545,31 @@ public:
   unsigned int attributes;
   EThread *thread;
 
+  // es - origin_trace associated connections
+  bool
+  getOriginTrace() const
+  {
+    return origin_trace;
+  }
+
+  void
+  setOriginTraceAddr(const sockaddr *addr = NULL)
+  {
+    if (addr) {
+      origin_trace = true;
+      origin_trace_addr.assign(addr);
+    } else {
+      origin_trace = false;
+      ink_zero(origin_trace_addr);
+    }
+  }
+
+  IpEndpoint const *
+  getOriginTraceAddr() const
+  {
+    return &origin_trace_addr;
+  }
+
   /// PRIVATE: The public interface is VIO::reenable()
   virtual void reenable(VIO *vio) = 0;
 
@@ -610,6 +639,29 @@ public:
     return NULL;
   }
 
+  /// Add/Del/Free ProfileSM for NetVConnection.
+  virtual void add_profile_sm(NetProfileSMType_t sm_type, EThread *t = NULL);
+  virtual void del_profile_sm(EThread *t);
+  virtual void free_profile_sm(EThread *t);
+
+  /**
+   * The following functions are transfered from class UnixNetVConection.
+   * Here, These functions are declared as pure virtual function for
+   *   - Implement them in UnixNetVConnection or other delivered class of NetVConnection
+   *   - Calling them by NetVConnection interface.
+   */
+  virtual void readDisable()                  = 0;
+  virtual void writeDisable()                 = 0;
+  virtual void readSignalError(int err)       = 0;
+  virtual void writeSignalError(int err)      = 0;
+  virtual int readSignalDone(int event)       = 0;
+  virtual int writeSignalDone(int event)      = 0;
+  virtual int readSignalAndUpdate(int event)  = 0;
+  virtual int writeSignalAndUpdate(int event) = 0;
+  virtual void readReschedule()               = 0;
+  virtual void writeReschedule()              = 0;
+  virtual void netActivity(EThread *lthread)  = 0;
+
 private:
   NetVConnection(const NetVConnection &);
   NetVConnection &operator=(const NetVConnection &);
@@ -617,9 +669,11 @@ private:
 protected:
   IpEndpoint local_addr;
   IpEndpoint remote_addr;
+  IpEndpoint origin_trace_addr;
 
   bool got_local_addr;
   bool got_remote_addr;
+  bool origin_trace;
 
   bool is_internal_request;
   /// Set if this connection is transparent.
@@ -628,6 +682,10 @@ protected:
   int write_buffer_empty_event;
   /// NetVConnection Context.
   NetVConnectionContext_t netvc_context;
+
+public:
+  /// Net ProfileSM
+  NetProfileSM *profile_sm;
 };
 
 inline NetVConnection::NetVConnection()
@@ -636,13 +694,22 @@ inline NetVConnection::NetVConnection()
     thread(NULL),
     got_local_addr(0),
     got_remote_addr(0),
+    origin_trace(false),
     is_internal_request(false),
     is_transparent(false),
     write_buffer_empty_event(0),
-    netvc_context(NET_VCONNECTION_UNSET)
+    netvc_context(NET_VCONNECTION_UNSET),
+    profile_sm(NULL)
 {
   ink_zero(local_addr);
   ink_zero(remote_addr);
+  ink_zero(origin_trace_addr);
+}
+
+inline int
+NetVConnection::getWriteBufferEmpty()
+{
+  return write_buffer_empty_event;
 }
 
 inline void

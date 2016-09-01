@@ -136,7 +136,7 @@ static int ssl_session_ticket_index                  = -1;
 static ssl_ticket_key_block *global_default_keyblock = NULL;
 #endif
 
-static int ssl_vc_index = -1;
+static int ssl_profilesm_index = -1;
 
 static ink_mutex *mutex_buf      = NULL;
 static bool open_ssl_initialized = false;
@@ -258,9 +258,9 @@ ssl_get_cached_session(SSL *ssl, unsigned char *id, int len, int *copy)
       session = NULL;
 #endif
     } else {
-      SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+      SSLProfileSM *ssl_profile_sm = (SSLProfileSM *)SSLProfileSMAccess(ssl);
       SSL_INCREMENT_DYN_STAT(ssl_session_cache_hit);
-      netvc->setSSLSessionCacheHit(true);
+      ssl_profile_sm->setSSLSessionCacheHit(true);
     }
   } else {
     SSL_INCREMENT_DYN_STAT(ssl_session_cache_miss);
@@ -313,21 +313,23 @@ set_context_cert(SSL *ssl)
   SSL_CTX *ctx       = NULL;
   SSLCertContext *cc = NULL;
   SSLCertificateConfig::scoped_config lookup;
-  const char *servername   = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  bool found               = true;
-  int retval               = 1;
+  const char *servername       = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  SSLProfileSM *ssl_profile_sm = (SSLProfileSM *)SSLProfileSMAccess(ssl);
+  NetVConnection *netvc        = ssl_profile_sm->vc;
+  bool found                   = true;
+  int retval                   = 1;
 
-  Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername, netvc->getSSLHandShakeComplete());
+  Debug("ssl", "set_context_cert ssl=%p server=%s handshake_complete=%d", ssl, servername,
+        ssl_profile_sm->getSSLHandShakeComplete());
   // set SSL trace (we do this a little later in the USE_TLS_SNI case so we can get the servername
   if (SSLConfigParams::ssl_wire_trace_enabled) {
-    bool trace = netvc->computeSSLTrace();
-    Debug("ssl", "sslnetvc. setting trace to=%s", trace ? "true" : "false");
-    netvc->setSSLTrace(trace);
+    bool trace = ssl_profile_sm->computeSSLTrace();
+    Debug("ssl", "netvc with SSLProfileSM. setting trace to=%s", trace ? "true" : "false");
+    ssl_profile_sm->setTrace(trace);
   }
 
   // catch the client renegotiation early on
-  if (SSLConfigParams::ssl_allow_client_renegotiation == false && netvc->getSSLHandShakeComplete()) {
+  if (SSLConfigParams::ssl_allow_client_renegotiation == false && ssl_profile_sm->getSSLHandShakeComplete()) {
     Debug("ssl", "set_context_cert trying to renegotiate from the client");
     retval = 0; // Error
     goto done;
@@ -342,7 +344,7 @@ set_context_cert(SSL *ssl)
       ctx = cc->ctx;
     if (cc && SSLCertContext::OPT_TUNNEL == cc->opt && netvc->get_is_transparent()) {
       netvc->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
-      netvc->setSSLHandShakeComplete(true);
+      ssl_profile_sm->setSSLHandShakeComplete(true);
       retval = -1;
       goto done;
     }
@@ -390,13 +392,13 @@ done:
 static int
 ssl_cert_callback(SSL *ssl, void * /*arg*/)
 {
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  SSLProfileSM *ssl_profile_sm = (SSLProfileSM *)SSLProfileSMAccess(ssl);
   bool reenabled;
   int retval = 1;
 
   // Do the common certificate lookup only once.  If we pause
   // and restart processing, do not execute the common logic again
-  if (!netvc->calledHooks(TS_EVENT_SSL_CERT)) {
+  if (!ssl_profile_sm->calledHooks(TS_EVENT_SSL_CERT)) {
     retval = set_context_cert(ssl);
     if (retval != 1) {
       return retval;
@@ -404,7 +406,7 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
   }
 
   // Call the plugin cert code
-  reenabled = netvc->callHooks(TS_EVENT_SSL_CERT);
+  reenabled = ssl_profile_sm->callHooks(TS_EVENT_SSL_CERT);
   // If it did not re-enable, return the code to
   // stop the accept processing
   if (!reenabled) {
@@ -418,13 +420,13 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
 static int
 ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 {
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  SSLProfileSM *ssl_profile_sm = (SSLProfileSM *)SSLProfileSMAccess(ssl);
   bool reenabled;
   int retval = 1;
 
   // Do the common certificate lookup only once.  If we pause
   // and restart processing, do not execute the common logic again
-  if (!netvc->calledHooks(TS_EVENT_SSL_CERT)) {
+  if (!ssl_profile_sm->calledHooks(TS_EVENT_SSL_CERT)) {
     retval = set_context_cert(ssl);
     if (retval != 1) {
       goto done;
@@ -432,7 +434,7 @@ ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   }
 
   // Call the plugin SNI code
-  reenabled = netvc->callHooks(TS_EVENT_SSL_CERT);
+  reenabled = ssl_profile_sm->callHooks(TS_EVENT_SSL_CERT);
   // If it did not re-enable, return the code to
   // stop the accept processing
   if (!reenabled) {
@@ -959,7 +961,7 @@ SSLInitializeLibrary()
 
   // Reserve an application data index so that we can attach
   // the SSLNetVConnection to the SSL session.
-  ssl_vc_index = SSL_get_ex_new_index(0, (void *)"NetVC index", NULL, NULL, NULL);
+  ssl_profilesm_index = SSL_get_ex_new_index(0, (void *)"NetVC index", NULL, NULL, NULL);
 
   open_ssl_initialized = true;
 }
@@ -1252,7 +1254,7 @@ increment_ssl_server_error(unsigned long err)
 }
 
 void
-SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...)
+SSLDiagnostic(const SourceLocation &loc, bool debug, NetVConnection *vc, const char *fmt, ...)
 {
   unsigned long l;
   char buf[256];
@@ -1496,9 +1498,10 @@ static void
 ssl_callback_info(const SSL *ssl, int where, int ret)
 {
   Debug("ssl", "ssl_callback_info ssl: %p where: %d ret: %d", ssl, where, ret);
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  SSLProfileSM *ssl_profile_sm = (SSLProfileSM *)SSLProfileSMAccess(ssl);
+  Debug("ssl", "SSLProfileSM ssl_profile_sm = %p", ssl_profile_sm);
 
-  if ((where & SSL_CB_ACCEPT_LOOP) && netvc->getSSLHandShakeComplete() == true &&
+  if ((where & SSL_CB_ACCEPT_LOOP) && ssl_profile_sm->getSSLHandShakeComplete() == true &&
       SSLConfigParams::ssl_allow_client_renegotiation == false) {
     int state = SSL_get_state(ssl);
 
@@ -1513,7 +1516,7 @@ ssl_callback_info(const SSL *ssl, int where, int ret)
     if (state == TLS_ST_SR_CLNT_HELLO) {
 #endif
 #endif
-      netvc->setSSLClientRenegotiationAbort(true);
+      ssl_profile_sm->setSSLClientRenegotiationAbort(true);
       Debug("ssl", "ssl_callback_info trying to renegotiate from the client");
     }
   }
@@ -1821,11 +1824,11 @@ SSLInitServerContext(const SSLConfigParams *params, const ssl_user_config *sslMu
   SSL_CTX_set_info_callback(ctx, ssl_callback_info);
 
 #if TS_USE_TLS_NPN
-  SSL_CTX_set_next_protos_advertised_cb(ctx, SSLNetVConnection::advertise_next_protocol, NULL);
+  SSL_CTX_set_next_protos_advertised_cb(ctx, SSLProfileSM::advertise_next_protocol, NULL);
 #endif /* TS_USE_TLS_NPN */
 
 #if TS_USE_TLS_ALPN
-  SSL_CTX_set_alpn_select_cb(ctx, SSLNetVConnection::select_next_protocol, NULL);
+  SSL_CTX_set_alpn_select_cb(ctx, SSLProfileSM::select_next_protocol, NULL);
 #endif /* TS_USE_TLS_ALPN */
 
 #ifdef HAVE_OPENSSL_OCSP_STAPLING
@@ -2149,12 +2152,12 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
                             int enc)
 {
   SSLCertificateConfig::scoped_config lookup;
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  SSLProfileSM *ssl_profile_sm = (SSLProfileSM *)SSLProfileSMAccess(ssl);
 
   // Get the IP address to look up the keyblock
   IpEndpoint ip;
   int namelen = sizeof(ip);
-  safe_getsockname(netvc->get_socket(), &ip.sa, &namelen);
+  safe_getsockname(ssl_profile_sm->vc->get_socket(), &ip.sa, &namelen);
   SSLCertContext *cc             = lookup->find(ip);
   ssl_ticket_key_block *keyblock = NULL;
   if (cc == NULL || cc->keyblock == NULL) {
@@ -2188,8 +2191,8 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
         if (i != 0) // The number of tickets decrypted with "older" keys.
           SSL_INCREMENT_DYN_STAT(ssl_total_tickets_verified_old_key_stat);
 
-        SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-        netvc->setSSLSessionCacheHit(true);
+        SSLProfileSM *ssl_profile_sm = (SSLProfileSM *)SSLProfileSMAccess(ssl);
+        ssl_profile_sm->setSSLSessionCacheHit(true);
         // When we decrypt with an "older" key, encrypt the ticket again with the most recent key.
         return (i == 0) ? 1 : 2;
       }
@@ -2212,26 +2215,26 @@ SSLReleaseContext(SSL_CTX *ctx)
 }
 
 void
-SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc)
+SSLProfileSMAttach(SSL *ssl, SSLProfileSM *pSM)
 {
-  SSL_set_ex_data(ssl, ssl_vc_index, vc);
+  SSL_set_ex_data(ssl, ssl_profilesm_index, pSM);
 }
 
 void
-SSLNetVCDetach(SSL *ssl)
+SSLProfileSMDetach(SSL *ssl)
 {
-  SSL_set_ex_data(ssl, ssl_vc_index, NULL);
+  SSL_set_ex_data(ssl, ssl_profilesm_index, NULL);
 }
 
-SSLNetVConnection *
-SSLNetVCAccess(const SSL *ssl)
+SSLProfileSM *
+SSLProfileSMAccess(const SSL *ssl)
 {
-  SSLNetVConnection *netvc;
-  netvc = static_cast<SSLNetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index));
+  SSLProfileSM *ssl_profile_sm;
+  ssl_profile_sm = static_cast<SSLProfileSM *>(SSL_get_ex_data(ssl, ssl_profilesm_index));
 
-  ink_assert(dynamic_cast<SSLNetVConnection *>(static_cast<NetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index))));
+  ink_assert(dynamic_cast<SSLM *>(ssl_profile_sm));
 
-  return netvc;
+  return ssl_profile_sm;
 }
 
 ssl_error_t

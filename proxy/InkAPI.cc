@@ -5391,12 +5391,13 @@ TSHttpSsnSSLConnectionGet(TSHttpSsn ssnp)
     return NULL;
   }
 
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(cs->get_netvc());
-  if (ssl_vc == NULL) {
-    return NULL;
+  NetVConnection *vc = cs->get_netvc();
+  if (vc->profile_sm->get_type() == PROFILE_SM_SSL) {
+    SSLM *sslm = dynamic_cast<SSLM *>(vc->profile_sm);
+    return sslm->ssl;
   }
 
-  return (void *)ssl_vc->ssl;
+  return NULL;
 }
 
 sockaddr const *
@@ -9045,32 +9046,37 @@ TSHttpEventNameLookup(TSEvent event)
   return HttpDebugNames::get_event_name(static_cast<int>(event));
 }
 
-/// Re-enable SSL VC.
-class TSSslCallback : public Continuation
+/// Re-enable NetVC with NetProfileSM.
+class TSNetProfileSMCallback : public Continuation
 {
 public:
-  TSSslCallback(SSLNetVConnection *vc) : Continuation(vc->mutex), m_vc(vc) { SET_HANDLER(&TSSslCallback::event_handler); }
+  TSNetProfileSMCallback(NetProfileSM *profile_sm) : Continuation(profile_sm->mutex), sm(profile_sm)
+  {
+    SET_HANDLER(&TSNetProfileSMCallback::event_handler);
+  }
+
   int
   event_handler(int, void *)
   {
-    m_vc->reenable(m_vc->nh);
+    sm->reenable();
     delete this;
     return 0;
   }
 
 private:
-  SSLNetVConnection *m_vc;
+  NetProfileSM *sm;
 };
 
 /// SSL Hooks
 TSReturnCode
 TSVConnTunnel(TSVConn sslp)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
-  TSReturnCode zret         = TS_SUCCESS;
-  if (0 != ssl_vc) {
-    ssl_vc->hookOpRequested = SSL_HOOK_OP_TUNNEL;
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(sslp);
+  TSReturnCode zret  = TS_SUCCESS;
+
+  if (vc->profile_sm->get_type() == PROFILE_SM_SSL) {
+    SSLM *sslm            = dynamic_cast<SSLM *>(vc->profile_sm);
+    sslm->hookOpRequested = SSL_HOOK_OP_TUNNEL;
   } else {
     zret = TS_ERROR;
   }
@@ -9080,13 +9086,13 @@ TSVConnTunnel(TSVConn sslp)
 TSSslConnection
 TSVConnSSLConnectionGet(TSVConn sslp)
 {
-  TSSslConnection ssl       = NULL;
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
-  if (ssl_vc != NULL) {
-    ssl = reinterpret_cast<TSSslConnection>(ssl_vc->ssl);
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(sslp);
+
+  if (vc->profile_sm->get_type() == PROFILE_SM_SSL) {
+    SSLM *sslm = dynamic_cast<SSLM *>(vc->profile_sm);
+    return reinterpret_cast<TSSslConnection>(sslm->ssl);
   }
-  return ssl;
+  return NULL;
 }
 
 tsapi TSSslContext
@@ -9141,35 +9147,37 @@ TSSslContextDestroy(TSSslContext ctx)
 tsapi int
 TSVConnIsSsl(TSVConn sslp)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(sslp);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
-  return ssl_vc != NULL;
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(sslp);
+  if (vc->profile_sm->get_type() == PROFILE_SM_SSL) {
+    return true;
+  }
+
+  return false;
 }
 
 void
 TSVConnReenable(TSVConn vconn)
 {
-  NetVConnection *vc        = reinterpret_cast<NetVConnection *>(vconn);
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
-  // We really only deal with a SSLNetVConnection at the moment
-  if (ssl_vc != NULL) {
+  NetVConnection *vc = reinterpret_cast<NetVConnection *>(vconn);
+  // We really only deal with a NetVConnection with SSLProfileSM at the moment
+  if (vc->profile_sm->get_type() == PROFILE_SM_SSL) {
     EThread *eth    = this_ethread();
-    bool reschedule = eth != ssl_vc->thread;
+    bool reschedule = eth != vc->thread;
 
     if (!reschedule) {
       // We use the VC mutex so we don't need to reschedule again if we
       // can't get the lock. For this reason we need to execute the
       // callback on the VC thread or it doesn't work (not sure why -
       // deadlock or it ends up interacting with the wrong NetHandler).
-      MUTEX_TRY_LOCK(trylock, ssl_vc->mutex, eth);
+      MUTEX_TRY_LOCK(trylock, vc->mutex, eth);
       if (trylock.is_locked()) {
-        ssl_vc->reenable(ssl_vc->nh);
+        vc->profile_sm->reenable();
       } else {
         reschedule = true;
       }
     }
     if (reschedule) {
-      ssl_vc->thread->schedule_imm(new TSSslCallback(ssl_vc));
+      vc->thread->schedule_imm(new TSNetProfileSMCallback(vc->profile_sm));
     }
   }
 }

@@ -526,18 +526,23 @@ HttpSM::attach_client_session(ProxyClientTransaction *client_vc, IOBufferReader 
   ua_session = client_vc;
 
   // Collect log & stats information
-  client_tcp_reused         = (1 < ua_session->get_transact_count());
-  SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(netvc);
-  if (ssl_vc != NULL) {
-    client_connection_is_ssl = true;
-    client_ssl_reused        = ssl_vc->getSSLSessionCacheHit();
-    const char *protocol     = ssl_vc->getSSLProtocol();
-    client_sec_protocol      = protocol ? protocol : "-";
-    const char *cipher       = ssl_vc->getSSLCipherSuite();
-    client_cipher_suite      = cipher ? cipher : "-";
+  client_tcp_reused    = (1 < ua_session->get_transact_count());
+  const char *protocol = NULL;
+  const char *cipher   = NULL;
+  if (netvc->profile_sm->get_type() == PROFILE_SM_SSL) {
+    SSLM *sslm                     = dynamic_cast<SSLM *>(netvc->profile_sm);
+    this->client_connection_is_ssl = true;
+    this->client_ssl_reused        = sslm->getSSLSessionCacheHit();
+    protocol                       = sslm->getSSLProtocol();
+    cipher                         = sslm->getSSLCipherSuite();
+  } else {
+    this->client_connection_is_ssl = false;
+    this->client_ssl_reused        = false;
   }
-  const char *protocol_str = client_vc->get_protocol_string();
-  client_protocol          = protocol_str ? protocol_str : "-";
+  this->client_sec_protocol = protocol ? protocol : "-";
+  this->client_cipher_suite = cipher ? cipher : "-";
+  const char *protocol_str  = client_vc->get_protocol_string();
+  this->client_protocol     = protocol_str ? protocol_str : "-";
 
   ink_release_assert(ua_session->get_half_close_flag() == false);
   mutex = client_vc->mutex;
@@ -5832,31 +5837,24 @@ HttpSM::attach_server_session(HttpServerSession *s)
   // Get server and client connections
   UnixNetVConnection *server_vc = dynamic_cast<UnixNetVConnection *>(server_session->get_netvc());
   UnixNetVConnection *client_vc = (UnixNetVConnection *)(ua_session->get_netvc());
-  SSLNetVConnection *ssl_vc     = dynamic_cast<SSLNetVConnection *>(client_vc);
   bool associated_connection    = false;
-  if (server_vc) { // if server_vc isn't a PluginVC
-    if (ssl_vc) {  // if incoming connection is SSL
-      bool client_trace = ssl_vc->getSSLTrace();
+  if (server_vc) {                                             // if server_vc isn't a PluginVC
+    if (client_vc->profile_sm->get_type() == PROFILE_SM_SSL) { // if incoming connection is SSL
+      bool client_trace = client_vc->profile_sm->getTrace();
       if (client_trace) {
         // get remote address and port to mark corresponding traces
-        const sockaddr *remote_addr = ssl_vc->get_remote_addr();
-        uint16_t remote_port        = ssl_vc->get_remote_port();
-        server_vc->setOriginTrace(true);
+        const sockaddr *remote_addr = client_vc->get_remote_addr();
         server_vc->setOriginTraceAddr(remote_addr);
-        server_vc->setOriginTracePort(remote_port);
         associated_connection = true;
       }
     }
   }
   if (!associated_connection && server_vc) {
-    server_vc->setOriginTrace(false);
     server_vc->setOriginTraceAddr(NULL);
-    server_vc->setOriginTracePort(0);
   }
 
   // set flag for server session is SSL
-  SSLNetVConnection *server_ssl_vc = dynamic_cast<SSLNetVConnection *>(server_vc);
-  if (server_ssl_vc) {
+  if (server_vc->profile_sm->get_type() == PROFILE_SM_SSL) {
     server_connection_is_ssl = true;
   }
 

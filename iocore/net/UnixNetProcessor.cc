@@ -48,6 +48,7 @@ NetProcessor::AcceptOptions::reset()
   packet_mark           = 0;
   packet_tos            = 0;
   f_inbound_transparent = false;
+  isSSL                 = false;
   return *this;
 }
 
@@ -138,6 +139,7 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
   na->backdoor         = opt.backdoor;
   if (na->callback_on_open)
     na->mutex = cont->mutex;
+  na->isSSL   = opt.isSSL;
   if (opt.frequent_accept) { // true
     if (accept_threads > 0) {
       if (0 == na->do_listen(BLOCKING, opt.f_inbound_transparent)) {
@@ -221,6 +223,7 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
   vc->submit_time = Thread::get_hrtime();
   vc->mutex       = cont->mutex;
   Action *result  = &vc->action_;
+  attach_profile_sm(t, vc);
 
   if (using_socks) {
     char buff[INET6_ADDRPORTSTRLEN];
@@ -457,6 +460,15 @@ UnixNetProcessor::allocate_vc(EThread *t)
   }
 
   return vc;
+}
+
+void
+UnixNetProcessor::attach_profile_sm(EThread *t, NetVConnection *vc)
+{
+  vc->add_profile_sm(PROFILE_SM_TCP, t);
+  if (vc->options.isSSL) {
+    vc->add_profile_sm(PROFILE_SM_SSL, t);
+  }
 }
 
 struct socks_conf_struct *NetProcessor::socks_conf_stuff = NULL;

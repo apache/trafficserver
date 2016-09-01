@@ -36,7 +36,8 @@
 
 struct SSLConfigParams;
 struct SSLCertLookup;
-class SSLNetVConnection;
+class NetVConnection;
+class SSLProfileSM;
 struct RecRawStatBlock;
 
 typedef int ssl_error_t;
@@ -151,7 +152,7 @@ ssl_error_t SSLConnect(SSL *ssl);
     RecIncrRawStat(ssl_rsb, NULL, (int)x, 1);      \
   } while (0)
 
-void SSLDiagnostic(const SourceLocation &loc, bool debug, SSLNetVConnection *vc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
+void SSLDiagnostic(const SourceLocation &loc, bool debug, NetVConnection *vc, const char *fmt, ...) TS_PRINTFLIKE(4, 5);
 
 // Return a static string name for a SSL_ERROR constant.
 const char *SSLErrorName(int ssl_error);
@@ -162,14 +163,14 @@ void SSLDebugBufferPrint(const char *tag, const char *buffer, unsigned buflen, c
 // Load the SSL certificate configuration.
 bool SSLParseCertificateConfiguration(const SSLConfigParams *params, SSLCertLookup *lookup);
 
-// Attach a SSL NetVC back pointer to a SSL session.
-void SSLNetVCAttach(SSL *ssl, SSLNetVConnection *vc);
+// Attach a SSLProfileSM back pointer to a SSL session.
+void SSLProfileSMAttach(SSL *ssl, SSLProfileSM *pSM);
 
-// Detach from SSL NetVC back pointer to a SSL session.
-void SSLNetVCDetach(SSL *ssl);
+// Detach from SSLProfileSM pointer to a SSL session.
+void SSLProfileSMDetach(SSL *ssl);
 
-// Return the SSLNetVConnection (if any) attached to this SSL session.
-SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
+// Return the SSLProfileSM (if any) attached to this SSL session.
+SSLProfileSM *SSLProfileSMAccess(const SSL *ssl);
 
 namespace ssl
 {
