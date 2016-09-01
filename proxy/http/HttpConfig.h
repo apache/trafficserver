@@ -714,9 +714,6 @@ public:
   };
 
 public:
-  char *proxy_hostname;
-  int proxy_hostname_len;
-
   IpAddr inbound_ip4, inbound_ip6;
   IpAddr outbound_ip4, outbound_ip6;
 
@@ -724,16 +721,9 @@ public:
   MgmtInt origin_min_keep_alive_connections; // TODO: This one really ought to be overridable, but difficult right now.
   MgmtInt max_websocket_connections;
 
-  MgmtByte disable_ssl_parenting;
-
-  MgmtByte no_dns_forward_to_parent;
-  MgmtByte no_origin_server_dns;
-  MgmtByte use_client_target_addr;
-  MgmtByte use_client_source_port;
-
   char *proxy_request_via_string;
-  int proxy_request_via_string_len;
   char *proxy_response_via_string;
+  int proxy_request_via_string_len;
   int proxy_response_via_string_len;
 
   ///////////////////////////////////
@@ -743,10 +733,10 @@ public:
   char **url_expansions;
   int num_url_expansions;
 
-  ///////////////////////////////////////////////////
-  // connection variables. timeouts are in seconds //
-  ///////////////////////////////////////////////////
-  MgmtByte session_auth_cache_keep_alive_enabled;
+  // Cluster time delta is not a config variable,
+  //  rather it is the time skew which the manager observes
+  int32_t cluster_time_delta;
+
   MgmtInt accept_no_activity_timeout;
 
   ////////////////////////////////////
@@ -760,23 +750,9 @@ public:
   ///////////////////////////////////////////////////////////////////
   char *anonymize_other_header_list;
 
-  MgmtByte enable_http_stats; // Can be "slow"
-
-  ///////////////////
-  // ICP variables //
-  ///////////////////
-  MgmtByte icp_enabled;
-  MgmtByte stale_icp_enabled;
-
   char *cache_vary_default_text;
   char *cache_vary_default_images;
   char *cache_vary_default_other;
-
-  ///////////////////
-  // cache control //
-  ///////////////////
-  MgmtByte cache_enable_default_vary_headers;
-  MgmtByte cache_post_method;
 
   ////////////////////////////////////////////
   // CONNECT ports (used to be == ssl_ports //
@@ -784,49 +760,55 @@ public:
   char *connect_ports_string;
   HttpConfigPortRange *connect_ports;
 
-  //////////
-  // Push //
-  //////////
+  char *reverse_proxy_no_host_redirect;
+  char *proxy_hostname;
+  int reverse_proxy_no_host_redirect_len;
+  int proxy_hostname_len;
+
+  MgmtInt post_copy_size;
+  MgmtInt max_post_size;
+
+  ////////////////////
+  // Local Manager  //
+  ////////////////////
+  MgmtInt synthetic_port;
+
+  ///////////////////////////////////////////////////////////////////
+  // Put all MgmtByte members down here, avoids additional padding //
+  ///////////////////////////////////////////////////////////////////
+  MgmtByte session_auth_cache_keep_alive_enabled;
+  MgmtByte disable_ssl_parenting;
+
+  MgmtByte no_dns_forward_to_parent;
+  MgmtByte no_origin_server_dns;
+  MgmtByte use_client_target_addr;
+  MgmtByte use_client_source_port;
+
+  MgmtByte enable_http_stats; // Can be "slow"
+
+  MgmtByte icp_enabled;
+  MgmtByte stale_icp_enabled;
+
+  MgmtByte cache_enable_default_vary_headers;
+  MgmtByte cache_post_method;
+
   MgmtByte push_method_enabled;
 
-  ////////////////////////////
-  // HTTP Referer filtering //
-  ////////////////////////////
   MgmtByte referer_filter_enabled;
   MgmtByte referer_format_redirect;
 
   MgmtByte strict_uri_parsing;
 
-  ///////////////////
-  // reverse proxy //
-  ///////////////////
   MgmtByte reverse_proxy_enabled;
   MgmtByte url_remap_required;
-  char *reverse_proxy_no_host_redirect;
-  int reverse_proxy_no_host_redirect_len;
 
-  ///////////////////
-  // cop access    //
-  ///////////////////
   MgmtByte record_cop_page;
 
-  /////////////////////
-  // Error Reporting //
-  /////////////////////
   MgmtByte errors_log_error_pages;
   MgmtByte enable_http_info;
 
-  // Cluster time delta is not a config variable,
-  //  rather it is the time skew which the manager observes
-  int32_t cluster_time_delta;
-
   MgmtByte redirection_host_no_port;
-  MgmtInt post_copy_size;
 
-  //////////////////////////////////////////////////////////////////
-  // Allow special handling of Accept* headers to be disabled to  //
-  // avoid unnecessary creation of alternates                     //
-  //////////////////////////////////////////////////////////////////
   MgmtByte ignore_accept_mismatch;
   MgmtByte ignore_accept_language_mismatch;
   MgmtByte ignore_accept_encoding_mismatch;
@@ -835,16 +817,12 @@ public:
   MgmtByte send_100_continue_response;
   MgmtByte disallow_post_100_continue;
   MgmtByte parser_allow_non_http;
-  MgmtInt max_post_size;
 
   MgmtByte server_session_sharing_pool;
 
+  // All the overridable configurations goes into this class member, but they
+  // are not copied over until needed ("lazy").
   OverridableHttpConfigParams oride;
-
-  ////////////////////
-  // Local Manager  //
-  ////////////////////
-  MgmtInt synthetic_port;
 
 private:
   /////////////////////////////////////
@@ -932,38 +910,44 @@ extern volatile int32_t icp_dynamic_enabled;
 /////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////
 inline HttpConfigParams::HttpConfigParams()
-  : proxy_hostname(NULL),
-    proxy_hostname_len(0),
-    server_max_connections(0),
+  : server_max_connections(0),
     origin_min_keep_alive_connections(0),
     max_websocket_connections(-1),
+    proxy_request_via_string(NULL),
+    proxy_response_via_string(NULL),
+    proxy_request_via_string_len(0),
+    proxy_response_via_string_len(0),
+    url_expansions_string(NULL),
+    url_expansions(NULL),
+    num_url_expansions(0),
+    cluster_time_delta(0),
+    accept_no_activity_timeout(120),
+    per_parent_connect_attempts(2),
+    parent_connect_timeout(30),
+    anonymize_other_header_list(NULL),
+    cache_vary_default_text(NULL),
+    cache_vary_default_images(NULL),
+    cache_vary_default_other(NULL),
+    connect_ports_string(NULL),
+    connect_ports(NULL),
+    proxy_hostname(NULL),
+    proxy_hostname_len(0),
+    post_copy_size(2048),
+    max_post_size(0),
+    synthetic_port(0),
+
+    // MgmtByte's here
+    session_auth_cache_keep_alive_enabled(1),
     disable_ssl_parenting(0),
     no_dns_forward_to_parent(0),
     no_origin_server_dns(0),
     use_client_target_addr(0),
     use_client_source_port(0),
-    proxy_request_via_string(NULL),
-    proxy_request_via_string_len(0),
-    proxy_response_via_string(NULL),
-    proxy_response_via_string_len(0),
-    url_expansions_string(NULL),
-    url_expansions(NULL),
-    num_url_expansions(0),
-    session_auth_cache_keep_alive_enabled(1),
-    accept_no_activity_timeout(120),
-    per_parent_connect_attempts(2),
-    parent_connect_timeout(30),
-    anonymize_other_header_list(NULL),
     enable_http_stats(1),
     icp_enabled(0),
     stale_icp_enabled(0),
-    cache_vary_default_text(NULL),
-    cache_vary_default_images(NULL),
-    cache_vary_default_other(NULL),
     cache_enable_default_vary_headers(0),
     cache_post_method(0),
-    connect_ports_string(NULL),
-    connect_ports(NULL),
     push_method_enabled(0),
     referer_filter_enabled(0),
     referer_format_redirect(0),
@@ -973,9 +957,7 @@ inline HttpConfigParams::HttpConfigParams()
     record_cop_page(0),
     errors_log_error_pages(1),
     enable_http_info(0),
-    cluster_time_delta(0),
     redirection_host_no_port(1),
-    post_copy_size(2048),
     ignore_accept_mismatch(0),
     ignore_accept_language_mismatch(0),
     ignore_accept_encoding_mismatch(0),
@@ -983,9 +965,7 @@ inline HttpConfigParams::HttpConfigParams()
     send_100_continue_response(0),
     disallow_post_100_continue(0),
     parser_allow_non_http(1),
-    max_post_size(0),
-    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD),
-    synthetic_port(0)
+    server_session_sharing_pool(TS_SERVER_SESSION_SHARING_POOL_THREAD)
 {
 }
 
