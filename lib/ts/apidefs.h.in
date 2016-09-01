@@ -1142,7 +1142,6 @@ extern tsapi int TS_HTTP_LEN_PUSH;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_0_9;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_0;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_1_1;
-extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_2_0_14;
 extern tsapi const char *const TS_ALPN_PROTOCOL_HTTP_2_0;
 
 extern tsapi int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9;

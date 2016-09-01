@@ -202,8 +202,6 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     if (port.m_session_protocol_preference.contains(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0)) {
       Http2SessionAccept *acc = new Http2SessionAccept(accept_opt);
 
-      // TODO: Should be removed when h2-14 is gone and dead, and h2 is widely supported in UAs
-      ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0_14, acc);
       ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, acc);
     }
 
