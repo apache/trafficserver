@@ -74,18 +74,20 @@ ParentConsistentHash::getPathHash(HttpRequestData *hrdata, ATSHash64 *h)
   URL *ps_url = NULL;
   Debug("parent_select", "ParentConsistentHash::%s() hrdata->cache_info_parent_selection_url = 0x%lx", __func__,
         (unsigned long int)hrdata->cache_info_parent_selection_url);
-  ps_url = *(hrdata->cache_info_parent_selection_url);
-  Debug("parent_select", "ParentConsistentHash::%s() ps_url = 0x%lx", __func__, (unsigned long int)ps_url);
-  if (ps_url) {
-    tmp = ps_url->string_get_ref(&len);
-    if (tmp && len > 0) {
-      // Print the over-ride URL
-      slen = (len > 1023) ? 1023 : len;
-      strncpy(buffer, tmp, slen);
-      buffer[slen] = 0;
-      Debug("parent_select", "ParentConsistentHash::%s() Using Over-Ride String='%s'.", __func__, buffer);
-      h->update(tmp, len);
-      goto done;
+  if (hrdata->cache_info_parent_selection_url) {
+    ps_url = *(hrdata->cache_info_parent_selection_url);
+    Debug("parent_select", "ParentConsistentHash::%s() ps_url = 0x%lx", __func__, (unsigned long int)ps_url);
+    if (ps_url) {
+      tmp = ps_url->string_get_ref(&len);
+      if (tmp && len > 0) {
+        // Print the over-ride URL
+        slen = (len > 1023) ? 1023 : len;
+        strncpy(buffer, tmp, slen);
+        buffer[slen] = 0;
+        Debug("parent_select", "ParentConsistentHash::%s() Using Over-Ride String='%s'.", __func__, buffer);
+        h->update(tmp, len);
+        goto done;
+      }
     }
   }
 
