@@ -65,6 +65,64 @@ EventProcessor::spawn_event_threads(int n_threads, const char *et_name, size_t s
   return new_thread_group_id;
 }
 
+static void *
+alloc_stack(size_t stacksize)
+{
+  void *stack = NULL;
+
+  if (ats_hugepage_enabled()) {
+    stack = ats_alloc_hugepage(stacksize);
+  }
+
+  if (stack == NULL) {
+    stack = ats_memalign(ats_pagesize(), stacksize);
+  }
+
+  return stack;
+}
+
+#if TS_USE_HWLOC
+static void *
+alloc_numa_stack(hwloc_cpuset_t cpuset, size_t stacksize)
+{
+  hwloc_membind_policy_t mem_policy = HWLOC_MEMBIND_DEFAULT;
+  hwloc_nodeset_t nodeset           = hwloc_bitmap_alloc();
+  int num_nodes                     = 0;
+  void *stack                       = NULL;
+
+  // Find the NUMA node set that correlates to our next thread CPU set
+  hwloc_cpuset_to_nodeset(ink_get_topology(), cpuset, nodeset);
+  // How many NUMA nodes will we be needing to allocate across?
+  num_nodes = hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), cpuset, HWLOC_OBJ_NODE);
+
+  if (num_nodes == 1) {
+    // The preferred memory policy. The thread lives in one NUMA node.
+    mem_policy = HWLOC_MEMBIND_BIND;
+  } else if (num_nodes > 1) {
+    // If we have mode than one NUMA node we should interleave over them.
+    mem_policy = HWLOC_MEMBIND_INTERLEAVE;
+  }
+
+  if (mem_policy != HWLOC_MEMBIND_DEFAULT) {
+    // Let's temporarily set the memory binding to our destination NUMA node
+    hwloc_set_membind_nodeset(ink_get_topology(), nodeset, mem_policy, HWLOC_MEMBIND_THREAD);
+  }
+
+  // Alloc our stack
+  stack = alloc_stack(stacksize);
+
+  if (mem_policy != HWLOC_MEMBIND_DEFAULT) {
+    // Now let's set it back to default for this thread.
+    hwloc_set_membind_nodeset(ink_get_topology(), hwloc_topology_get_topology_nodeset(ink_get_topology()), HWLOC_MEMBIND_DEFAULT,
+                              HWLOC_MEMBIND_THREAD);
+  }
+
+  hwloc_bitmap_free(nodeset);
+
+  return stack;
+}
+#endif // TS_USE_HWLOC
+
 class EventProcessor eventProcessor;
 
 int
@@ -92,6 +150,8 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   } else {
     stacksize = INK_ALIGN(stacksize, ats_pagesize());
   }
+
+  Debug("iocore_thread", "Thread stack size set to %zu", stacksize);
 
   for (i = 0; i < n_event_threads; i++) {
     EThread *t      = new EThread(REGULAR, i);
@@ -137,6 +197,7 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     obj_name = (char *)"Machine";
   }
 
+  // How many of the above `obj_type` do we have in our topology?
   obj_count = hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type);
   Debug("iocore_thread", "Affinity: %d %ss: %d PU: %d", affinity, obj_name, obj_count, ink_number_of_processors());
 
@@ -146,8 +207,10 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
 
 #if TS_USE_HWLOC
     if (obj_count > 0) {
+      // Get our `obj` instance with index based on the thread number we are on.
       obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, i % obj_count);
 #if HWLOC_API_VERSION >= 0x00010100
+      // Pretty print our CPU set
       int cpu_mask_len = hwloc_bitmap_snprintf(NULL, 0, obj->cpuset) + 1;
       char *cpu_mask   = (char *)alloca(cpu_mask_len);
       hwloc_bitmap_snprintf(cpu_mask, cpu_mask_len, obj->cpuset);
@@ -158,33 +221,34 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     }
 #endif // TS_USE_HWLOC
 
+    // Name our thread
     snprintf(thr_name, MAX_THREAD_NAME_LENGTH, "[ET_NET %d]", i);
 #if TS_USE_HWLOC
+    // Lets create a NUMA local stack if we can
     if (obj_count > 0) {
-      hwloc_nodeset_t nodeset = hwloc_bitmap_alloc();
-
-      hwloc_cpuset_to_nodeset(ink_get_topology(), obj->cpuset, nodeset);
-
-      if (hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), obj->cpuset, HWLOC_OBJ_NODE) == 1) {
-        stack = hwloc_alloc_membind_nodeset(ink_get_topology(), stacksize, nodeset, HWLOC_MEMBIND_BIND, 0);
-      } else if (hwloc_get_nbobjs_inside_cpuset_by_type(ink_get_topology(), obj->cpuset, HWLOC_OBJ_NODE) > 1) {
-        stack = hwloc_alloc_membind_nodeset(ink_get_topology(), stacksize, nodeset, HWLOC_MEMBIND_INTERLEAVE, 0);
-      } else {
-        stack = NULL;
-      }
-
-      hwloc_bitmap_free(nodeset);
+      stack = alloc_numa_stack(obj->cpuset, stacksize);
+    } else {
+      // Lets just alloc a stack even with no NUMA knowledge
+      stack = alloc_stack(stacksize);
     }
+#else
+    // Lets just alloc a stack even with no NUMA knowledge
+    stack = alloc_stack(stacksize);
 #endif // TS_USE_HWLOC
-    tid = all_ethreads[i]->start(thr_name, stacksize, NULL, stack);
+
+    // Start our new thread with our new stack.
+    tid   = all_ethreads[i]->start(thr_name, stacksize, NULL, stack);
+    stack = NULL;
 
 #if TS_USE_HWLOC
     if (obj_count > 0) {
+      // Lets bind our new thread to it's CPU set
       hwloc_set_thread_cpubind(ink_get_topology(), tid, obj->cpuset, HWLOC_CPUBIND_STRICT);
     } else {
       Warning("hwloc returned an unexpected value -- CPU affinity disabled");
     }
 #else
+    // Lets ignore tid if we don't link with HWLOC
     (void)tid;
 #endif // TS_USE_HWLOC
   }
