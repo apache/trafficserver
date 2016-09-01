@@ -374,6 +374,7 @@ struct OverridableHttpConfigParams {
       auth_server_session_private(1),
       fwd_proxy_auth_to_parent(0),
       uncacheable_requests_bypass_parent(1),
+      attach_server_session_to_client(0),
       insert_age_in_response(1),
       anonymize_remove_from(0),
       anonymize_remove_referer(0),
@@ -382,7 +383,6 @@ struct OverridableHttpConfigParams {
       anonymize_remove_client_ip(0),
       anonymize_insert_client_ip(1),
       proxy_response_server_enabled(1),
-      proxy_response_hsts_max_age(-1),
       proxy_response_hsts_include_subdomains(0),
       insert_squid_x_forwarded_for(1),
       send_http11_requests(1),
@@ -404,6 +404,13 @@ struct OverridableHttpConfigParams {
       flow_control_enabled(0),
       accept_encoding_filter_enabled(0),
       normalize_ae_gzip(0),
+      srv_enabled(0),
+      cache_open_write_fail_action(0),
+      post_check_content_length_enabled(1),
+      redirection_enabled(0),
+      redirect_use_orig_cache_key(0),
+      number_of_redirections(1),
+      proxy_response_hsts_max_age(-1),
       negative_caching_lifetime(1800),
       negative_revalidating_lifetime(1800),
       sock_recv_buffer_size_out(0),
@@ -414,13 +421,11 @@ struct OverridableHttpConfigParams {
       server_tcp_init_cwnd(0),
       request_hdr_max_size(131072),
       response_hdr_max_size(131072),
-      post_check_content_length_enabled(1),
       cache_heuristic_min_lifetime(3600),
       cache_heuristic_max_lifetime(86400),
       cache_guaranteed_min_lifetime(0),
       cache_guaranteed_max_lifetime(31536000),
       cache_max_stale_age(604800),
-      srv_enabled(0),
       keep_alive_no_activity_timeout_in(115),
       keep_alive_no_activity_timeout_out(120),
       transaction_no_activity_timeout_in(30),
@@ -431,7 +436,6 @@ struct OverridableHttpConfigParams {
       websocket_inactive_timeout(600),
       origin_max_connections(0),
       origin_max_connections_queue(0),
-      attach_server_session_to_client(0),
       connect_attempts_max_retries(0),
       connect_attempts_max_retries_dead_server(3),
       connect_attempts_rr_retries(3),
@@ -453,8 +457,6 @@ struct OverridableHttpConfigParams {
       default_buffer_size_index(8),
       default_buffer_water_mark(32768),
       slow_log_threshold(0),
-
-      // Strings / floats must come last
       body_factory_template_base(NULL),
       body_factory_template_base_len(0),
       proxy_response_server_string(NULL),
@@ -463,19 +465,12 @@ struct OverridableHttpConfigParams {
       global_user_agent_header_size(0),
       cache_heuristic_lm_factor(0.10),
       freshness_fuzz_prob(0.005),
-      background_fill_threshold(0.5),
-      cache_open_write_fail_action(0),
-      redirection_enabled(0),
-      redirect_use_orig_cache_key(0),
-      number_of_redirections(1)
+      background_fill_threshold(0.5)
   {
   }
 
-  // A few rules here:
-  //   1. Place all MgmtByte configs before all other configs
-  //   1. all MgmtInt/Byte configs should come before string / float configs.
-
-  // The first three configs used to be @-parameters in remap.config
+  // A simple rules here:
+  //   * Place all MgmtByte configs before all other configs
   MgmtByte maintain_pristine_host_hdr;
   MgmtByte chunking_enabled;
 
@@ -496,6 +491,7 @@ struct OverridableHttpConfigParams {
   MgmtByte auth_server_session_private;
   MgmtByte fwd_proxy_auth_to_parent;
   MgmtByte uncacheable_requests_bypass_parent;
+  MgmtByte attach_server_session_to_client;
 
   MgmtByte insert_age_in_response;
 
@@ -510,7 +506,6 @@ struct OverridableHttpConfigParams {
   MgmtByte anonymize_insert_client_ip;
 
   MgmtByte proxy_response_server_enabled;
-  MgmtInt proxy_response_hsts_max_age;
   MgmtByte proxy_response_hsts_include_subdomains;
 
   /////////////////////
@@ -558,6 +553,33 @@ struct OverridableHttpConfigParams {
   ////////////////////////////////
   MgmtByte normalize_ae_gzip;
 
+  //////////////////////////
+  // hostdb/dns variables //
+  //////////////////////////
+  MgmtByte srv_enabled;
+
+  MgmtByte cache_open_write_fail_action;
+
+  ////////////////////////
+  // Check Post request //
+  ////////////////////////
+  MgmtByte post_check_content_length_enabled;
+
+  //##############################################################################
+  //#
+  //# Redirection
+  //#
+  //# 1. redirection_enabled: if set to 1, redirection is enabled.
+  //# 2. number_of_redirectionse: The maximum number of redirections YTS permits
+  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
+  //#
+  //##############################################################################
+  MgmtByte redirection_enabled;
+  MgmtByte redirect_use_orig_cache_key;
+  MgmtInt number_of_redirections;
+
+  MgmtInt proxy_response_hsts_max_age;
+
   ////////////////////////////////
   //  Negative cache lifetimes  //
   ////////////////////////////////
@@ -584,11 +606,6 @@ struct OverridableHttpConfigParams {
   MgmtInt request_hdr_max_size;
   MgmtInt response_hdr_max_size;
 
-  ////////////////////////
-  // Check Post request //
-  ////////////////////////
-  MgmtByte post_check_content_length_enabled;
-
   /////////////////////
   // cache variables //
   /////////////////////
@@ -597,11 +614,6 @@ struct OverridableHttpConfigParams {
   MgmtInt cache_guaranteed_min_lifetime;
   MgmtInt cache_guaranteed_max_lifetime;
   MgmtInt cache_max_stale_age;
-
-  //////////////////////////
-  // hostdb/dns variables //
-  //////////////////////////
-  MgmtInt srv_enabled;
 
   ///////////////////////////////////////////////////
   // connection variables. timeouts are in seconds //
@@ -616,8 +628,6 @@ struct OverridableHttpConfigParams {
   MgmtInt websocket_inactive_timeout;
   MgmtInt origin_max_connections;
   MgmtInt origin_max_connections_queue;
-
-  MgmtInt attach_server_session_to_client;
 
   ////////////////////////////////////
   // origin server connect attempts //
@@ -652,7 +662,6 @@ struct OverridableHttpConfigParams {
   MgmtInt default_buffer_size_index;
   MgmtInt default_buffer_water_mark;
   MgmtInt slow_log_threshold;
-  // IMPORTANT: Here comes all strings / floats configs.
 
   ///////////////////////////////////////////////////////////////////
   // Server header                                                 //
@@ -671,21 +680,6 @@ struct OverridableHttpConfigParams {
   MgmtFloat cache_heuristic_lm_factor;
   MgmtFloat freshness_fuzz_prob;
   MgmtFloat background_fill_threshold;
-  MgmtByte cache_open_write_fail_action;
-
-  //##############################################################################
-  //#
-  //# Redirection
-  //#
-  //# 1. redirection_enabled: if set to 1, redirection is enabled.
-  //# 2. number_of_redirectionse: The maximum number of redirections YTS permits
-  //# 3. post_copy_size: The maximum POST data size YTS permits to copy
-  //#
-  //##############################################################################
-
-  MgmtByte redirection_enabled;
-  MgmtByte redirect_use_orig_cache_key;
-  MgmtInt number_of_redirections;
 };
 
 /////////////////////////////////////////////////////////////

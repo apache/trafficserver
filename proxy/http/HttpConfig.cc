@@ -889,7 +889,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections, "proxy.config.http.origin_max_connections");
   HttpEstablishStaticConfigLongLong(c.oride.origin_max_connections_queue, "proxy.config.http.origin_max_connections_queue");
   HttpEstablishStaticConfigLongLong(c.origin_min_keep_alive_connections, "proxy.config.http.origin_min_keep_alive_connections");
-  HttpEstablishStaticConfigLongLong(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
+  HttpEstablishStaticConfigByte(c.oride.attach_server_session_to_client, "proxy.config.http.attach_server_session_to_client");
 
   // Wank me.
   HttpEstablishStaticConfigByte(c.disable_ssl_parenting, "proxy.local.http.parent_proxy.disable_connect_tunneling");
@@ -1003,7 +1003,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.cache_guaranteed_max_lifetime, "proxy.config.http.cache.guaranteed_max_lifetime");
 
   HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
-  HttpEstablishStaticConfigLongLong(c.oride.srv_enabled, "proxy.config.srv_enabled");
+  HttpEstablishStaticConfigByte(c.oride.srv_enabled, "proxy.config.srv_enabled");
 
   HttpEstablishStaticConfigLongLong(c.oride.freshness_fuzz_time, "proxy.config.http.cache.fuzz.time");
   HttpEstablishStaticConfigLongLong(c.oride.freshness_fuzz_min_time, "proxy.config.http.cache.fuzz.min_time");
