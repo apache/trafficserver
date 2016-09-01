@@ -3675,7 +3675,9 @@ HttpTransact::handle_response_from_parent(State *s)
       // Done trying parents... fail over to origin server if that is
       //   appropriate
       DebugTxn("http_trans", "[handle_response_from_parent] Error. No more retries.");
-      s->parent_params->markParentDown(&s->parent_result);
+      if (s->current.state == CONNECTION_ERROR) {
+        s->parent_params->markParentDown(&s->parent_result);
+      }
       s->parent_result.result = PARENT_FAIL;
       next_lookup             = find_server_and_update_current_info(s);
     }
