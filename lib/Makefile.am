@@ -31,7 +31,7 @@ endif
 #  - Copy the luajit source tree if we're doing out-of-source builds
 #  - Upon clean, remove the luajit tree from the out-of-source build tree
 #
-# Note: The LUA_LDFLAGS is a bit of a hack, since LuaJIT on OmniOS needs
+# Note: The LUAJIT_LDFLAGS is a bit of a hack, since LuaJIT on OmniOS needs
 #       the -m64 flag. See configure.ac.
 #
 all-local:
@@ -41,9 +41,9 @@ all-local:
 		BUILDMODE="static" \
 		PREFIX="$(prefix)" \
 		CC="$(CC)" \
-		CFLAGS="$(LUA_CFLAGS)" \
+		CFLAGS="$(LUAJIT_CFLAGS)" \
 		XCFLAGS="" \
-		LDFLAGS="$(LUA_LDFLAGS)"
+		LDFLAGS="$(LUAJIT_LDFLAGS)"
 
 clean-local:
 	test "$(top_srcdir)" != "$(top_builddir)" || (cd "$(top_builddir)/$(subdir)/luajit" && $(MAKE) clean)
