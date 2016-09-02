@@ -47,8 +47,8 @@ public:
 
   // No reason to inline these
   void append(RuleSet *rule);
-  bool add_condition(Parser &p, const char *filename);
-  bool add_operator(Parser &p, const char *filename);
+  bool add_condition(Parser &p, const char *filename, int lineno);
+  bool add_operator(Parser &p, const char *filename, int lineno);
 
   bool
   has_operator() const
