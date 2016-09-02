@@ -68,8 +68,15 @@ RecData RecDataDiv(RecDataT type, RecData left, RecData right);
 // Logging
 //-------------------------------------------------------------------------
 
-void RecLog(DiagsLevel dl, const char *format_string, ...);
-void RecDebug(DiagsLevel dl, const char *format_string, ...);
+// XXX Rec has it's own copy of the global diags pointer, so it's own
+// debug macros the use that. I'm not convinced that Rec actually does
+// need a separate pointer.
+void _RecLog(DiagsLevel dl, const SourceLocation &loc, const char *fmt, ...);
+void _RecDebug(DiagsLevel dl, const SourceLocation &loc, const char *fmt, ...);
+
 void RecDebugOff();
+
+#define RecLog(level, fmt, ...) _RecLog(level, MakeSourceLocation(), fmt, ##__VA_ARGS__)
+#define RecDebug(level, fmt, ...) _RecDebug(level, MakeSourceLocation(), fmt, ##__VA_ARGS__)
 
 #endif

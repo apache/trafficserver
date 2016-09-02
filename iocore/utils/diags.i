@@ -47,7 +47,7 @@ reconfigure_diags()
 
   c.enabled[DiagsTagType_Debug] = 1;
   c.enabled[DiagsTagType_Action] = 1;
-  diags->show_location = 1;
+  diags->show_location = SHOW_LOCATION_ALL;
 
 
   // read output routing values

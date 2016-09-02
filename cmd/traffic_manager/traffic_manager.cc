@@ -184,16 +184,11 @@ check_lockfile()
   } else {
     char *reason = strerror(-err);
     if (err == 0) {
-// TODO: Add PID_FMT_T instead duplicating code just for printing
-#if defined(solaris)
-      fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, (int)holding_pid);
-#else
-      fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, holding_pid);
-#endif
-      mgmt_elog(stderr, 0, "FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, holding_pid);
+      fprintf(stderr, "FATAL: Lockfile '%s' says server already running as PID %ld\n", lockfile, (long)holding_pid);
+      mgmt_log("FATAL: Lockfile '%s' says server already running as PID %d\n", lockfile, holding_pid);
     } else {
       fprintf(stderr, "FATAL: Can't open server lockfile '%s' (%s)\n", lockfile, (reason ? reason : "Unknown Reason"));
-      mgmt_elog(stderr, 0, "FATAL: Can't open server lockfile '%s' (%s)\n", lockfile, (reason ? reason : "Unknown Reason"));
+      mgmt_log("FATAL: Can't open server lockfile '%s' (%s)\n", lockfile, (reason ? reason : "Unknown Reason"));
     }
     exit(1);
   }
@@ -207,17 +202,13 @@ check_lockfile()
   if (err != 1) {
     char *reason = strerror(-err);
     fprintf(stderr, "FATAL: Can't acquire manager lockfile '%s'", lockfile);
-    mgmt_elog(stderr, 0, "FATAL: Can't acquire manager lockfile '%s'", lockfile);
+    mgmt_log("FATAL: Can't acquire manager lockfile '%s'", lockfile);
     if (err == 0) {
-#if defined(solaris)
-      fprintf(stderr, " (Lock file held by process ID %d)\n", (int)holding_pid);
-#else
-      fprintf(stderr, " (Lock file held by process ID %d)\n", holding_pid);
-#endif
-      mgmt_elog(stderr, 0, " (Lock file held by process ID %d)\n", holding_pid);
+      fprintf(stderr, " (Lock file held by process ID %ld)\n", (long)holding_pid);
+      mgmt_log(" (Lock file held by process ID %d)\n", holding_pid);
     } else if (reason) {
       fprintf(stderr, " (%s)\n", reason);
-      mgmt_elog(stderr, 0, " (%s)\n", reason);
+      mgmt_log(" (%s)\n", reason);
     } else {
       fprintf(stderr, "\n");
     }
@@ -518,7 +509,7 @@ main(int argc, const char **argv)
 
   if (RecGetRecordString("proxy.config.admin.user_id", userToRunAs, sizeof(userToRunAs)) != TS_ERR_OKAY ||
       strlen(userToRunAs) == 0) {
-    mgmt_fatal(stderr, 0, "proxy.config.admin.user_id is not set\n");
+    mgmt_fatal(0, "proxy.config.admin.user_id is not set\n");
   }
 
   RecGetRecordInt("proxy.config.net.connections_throttle", &fds_throttle);
@@ -624,7 +615,7 @@ main(int argc, const char **argv)
   if (tsArgs) { /* Passed command line args for proxy */
     ats_free(lmgmt->proxy_options);
     lmgmt->proxy_options = tsArgs;
-    mgmt_log(stderr, "[main] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
+    mgmt_log("[main] Traffic Server Args: '%s'\n", lmgmt->proxy_options);
   }
 
   // we must pass in bind_stdout and bind_stderr values to TS
@@ -714,14 +705,14 @@ main(int argc, const char **argv)
 
   mgmtapiFD = bind_unix_domain_socket(apisock, newmode);
   if (mgmtapiFD == -1) {
-    mgmt_log(stderr, "[WebIntrMain] Unable to set up socket for handling management API calls. API socket path = %s\n",
+    mgmt_log("[WebIntrMain] Unable to set up socket for handling management API calls. API socket path = %s\n",
              (const char *)apisock);
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, mgmtapiFailMsg);
   }
 
   eventapiFD = bind_unix_domain_socket(eventsock, newmode);
   if (eventapiFD == -1) {
-    mgmt_log(stderr, "[WebIntrMain] Unable to set up so for handling management API event calls. Event Socket path: %s\n",
+    mgmt_log("[WebIntrMain] Unable to set up so for handling management API event calls. Event Socket path: %s\n",
              (const char *)eventsock);
   }
 
@@ -762,10 +753,10 @@ main(int argc, const char **argv)
 
     // Check for a SIGHUP
     if (sigHupNotifier != 0) {
-      mgmt_log(stderr, "[main] Reading Configuration Files due to SIGHUP\n");
+      mgmt_log("[main] Reading Configuration Files due to SIGHUP\n");
       Reconfigure();
       sigHupNotifier = 0;
-      mgmt_log(stderr, "[main] Reading Configuration Files Reread\n");
+      mgmt_log("[main] Reading Configuration Files Reread\n");
     }
 
     lmgmt->ccom->generateClusterDelta();
@@ -818,7 +809,7 @@ main(int argc, const char **argv)
 
     if (lmgmt->run_proxy && !lmgmt->processRunning()) { /* Make sure we still have a proxy up */
       if (sleep_time) {
-        mgmt_log(stderr, "Relaunching proxy after %d sec...", sleep_time);
+        mgmt_log("Relaunching proxy after %d sec...", sleep_time);
         millisleep(1000 * sleep_time); // we use millisleep instead of sleep because it doesnt interfere with signals
         sleep_time = (sleep_time > 30) ? 60 : sleep_time * 2;
       } else {
@@ -845,14 +836,13 @@ main(int argc, const char **argv)
         if (WIFSIGNALED(res)) {
           int sig = WTERMSIG(res);
 #ifdef NEED_PSIGNAL
-          mgmt_log(stderr, "[main] Proxy terminated due to Sig %d. Relaunching after %d sec...\n", sig, sleep_time);
+          mgmt_log("[main] Proxy terminated due to Sig %d. Relaunching after %d sec...\n", sig, sleep_time);
 #else
-          mgmt_log(stderr, "[main] Proxy terminated due to Sig %d: %s. Relaunching after %d sec...\n", sig, strsignal(sig),
-                   sleep_time);
+          mgmt_log("[main] Proxy terminated due to Sig %d: %s. Relaunching after %d sec...\n", sig, strsignal(sig), sleep_time);
 #endif /* NEED_PSIGNAL */
         }
       }
-      mgmt_log(stderr, "[main] Proxy launch failed, retrying after %d sec...\n", sleep_time);
+      mgmt_log("[main] Proxy launch failed, retrying after %d sec...\n", sleep_time);
     }
   }
 
@@ -876,21 +866,17 @@ SignalAlrmHandler(int /* sig ATS_UNUSED */)
 #endif
 {
 /*
-   fprintf(stderr, "[TrafficManager] ==> SIGALRM received\n");
-   mgmt_elog(stderr, 0, "[TrafficManager] ==> SIGALRM received\n");
+   fprintf("[TrafficManager] ==> SIGALRM received\n");
+   mgmt_elog(0, "[TrafficManager] ==> SIGALRM received\n");
  */
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   if (t) {
     if (t->si_code <= 0) {
-#if defined(solaris)
-      fprintf(stderr, "[TrafficManager] ==> User Alarm from pid: %d uid: %d\n", (int)t->si_pid, t->si_uid);
-#else
-      fprintf(stderr, "[TrafficManager] ==> User Alarm from pid: %d uid: %d\n", t->si_pid, t->si_uid);
-#endif
-      mgmt_elog(stderr, 0, "[TrafficManager] ==> User Alarm from pid: %d uid: %d\n", t->si_pid, t->si_uid);
+      fprintf(stderr, "[TrafficManager] ==> User Alarm from pid: %ld uid: %d\n", (long)t->si_pid, t->si_uid);
+      mgmt_log("[TrafficManager] ==> User Alarm from pid: %d uid: %d\n", t->si_pid, t->si_uid);
     } else {
       fprintf(stderr, "[TrafficManager] ==> Kernel Alarm Reason: %d\n", t->si_code);
-      mgmt_elog(stderr, 0, "[TrafficManager] ==> Kernel Alarm Reason: %d\n", t->si_code);
+      mgmt_log("[TrafficManager] ==> Kernel Alarm Reason: %d\n", t->si_code);
     }
   }
 #endif
@@ -912,15 +898,11 @@ SignalHandler(int sig)
 #if !defined(linux) && !defined(freebsd) && !defined(darwin)
   if (t) {
     if (t->si_code <= 0) {
-#if defined(solaris)
-      fprintf(stderr, "[TrafficManager] ==> User Sig %d from pid: %d uid: %d\n", sig, (int)t->si_pid, t->si_uid);
-#else
-      fprintf(stderr, "[TrafficManager] ==> User Sig %d from pid: %d uid: %d\n", sig, t->si_pid, t->si_uid);
-#endif
-      mgmt_elog(stderr, 0, "[TrafficManager] ==> User Sig %d from pid: %d uid: %d\n", sig, t->si_pid, t->si_uid);
+      fprintf(stderr, "[TrafficManager] ==> User Sig %d from pid: %ld uid: %d\n", sig, (long)t->si_pid, t->si_uid);
+      mgmt_log("[TrafficManager] ==> User Sig %d from pid: %ld uid: %d\n", sig, (long)t->si_pid, t->si_uid);
     } else {
       fprintf(stderr, "[TrafficManager] ==> Kernel Sig %d; Reason: %d\n", sig, t->si_code);
-      mgmt_elog(stderr, 0, "[TrafficManager] ==> Kernel Sig %d; Reason: %d\n", sig, t->si_code);
+      mgmt_log("[TrafficManager] ==> Kernel Sig %d; Reason: %d\n", sig, t->si_code);
     }
   }
 #endif
@@ -931,7 +913,7 @@ SignalHandler(int sig)
   }
 
   fprintf(stderr, "[TrafficManager] ==> Cleaning up and reissuing signal #%d\n", sig);
-  mgmt_elog(stderr, 0, "[TrafficManager] ==> Cleaning up and reissuing signal #%d\n", sig);
+  mgmt_log("[TrafficManager] ==> Cleaning up and reissuing signal #%d\n", sig);
 
   if (lmgmt && !clean) {
     clean = 1;
@@ -960,11 +942,11 @@ SignalHandler(int sig)
     abort();
   default:
     fprintf(stderr, "[TrafficManager] ==> signal #%d\n", sig);
-    mgmt_elog(stderr, 0, "[TrafficManager] ==> signal #%d\n", sig);
+    mgmt_log("[TrafficManager] ==> signal #%d\n", sig);
     ::exit(sig);
   }
   fprintf(stderr, "[TrafficManager] ==> signal2 #%d\n", sig);
-  mgmt_elog(stderr, 0, "[TrafficManager] ==> signal2 #%d\n", sig);
+  mgmt_log("[TrafficManager] ==> signal2 #%d\n", sig);
   ::exit(sig);
 } /* End SignalHandler */
 
@@ -1005,17 +987,17 @@ fileUpdated(char *fname, bool incVersion)
   } else if (strcmp(fname, "ip_allow.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.ip_allow.filename");
   } else if (strcmp(fname, "vaddrs.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] vaddrs.config updated\n");
+    mgmt_log("[fileUpdated] vaddrs.config updated\n");
     lmgmt->virt_map->lt_readAListFile(fname);
 
   } else if (strcmp(fname, "storage.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] storage.config changed, need restart auto-rebuild mode\n");
+    mgmt_log("[fileUpdated] storage.config changed, need restart auto-rebuild mode\n");
 
   } else if (strcmp(fname, "icp.config") == 0) {
     lmgmt->signalFileChange("proxy.config.icp.icp_configuration");
 
   } else if (strcmp(fname, "volume.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] volume.config changed, need restart\n");
+    mgmt_log("[fileUpdated] volume.config changed, need restart\n");
 
   } else if (strcmp(fname, "hosting.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.hosting_filename");
@@ -1030,7 +1012,7 @@ fileUpdated(char *fname, bool incVersion)
     lmgmt->signalFileChange("proxy.config.dns.splitdns.filename");
 
   } else if (strcmp(fname, "plugin.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] plugin.config file has been modified\n");
+    mgmt_log("[fileUpdated] plugin.config file has been modified\n");
 
   } else if (strcmp(fname, "ssl_multicert.config") == 0) {
     lmgmt->signalFileChange("proxy.config.ssl.server.multicert.filename");
@@ -1040,11 +1022,11 @@ fileUpdated(char *fname, bool incVersion)
 
   } else if (strcmp(fname, "metrics.config") == 0) {
     ink_atomic_increment(&metrics_version, 1);
-    mgmt_log(stderr, "[fileUpdated] metrics.config file has been modified\n");
+    mgmt_log("[fileUpdated] metrics.config file has been modified\n");
   } else if (strcmp(fname, "congestion.config") == 0) {
     lmgmt->signalFileChange("proxy.config.http.congestion_control.filename");
   } else {
-    mgmt_elog(stderr, 0, "[fileUpdated] Unknown config file updated '%s'\n", fname);
+    mgmt_log("[fileUpdated] Unknown config file updated '%s'\n", fname);
   }
   return;
 } /* End fileUpdate */
@@ -1103,7 +1085,7 @@ runAsUser(const char *userName)
 
 #if TS_USE_POSIX_CAP
     if (0 != restoreCapabilities()) {
-      mgmt_elog(stderr, 0, "[runAsUser] Error: Failed to restore capabilities after switch to user %s.\n", userName);
+      mgmt_log("[runAsUser] Error: Failed to restore capabilities after switch to user %s.\n", userName);
     }
 #endif
   }

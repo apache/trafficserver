@@ -64,7 +64,7 @@ newTcpSocket(int port)
 
   // Create the new TCP Socket
   if ((socketFD = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-    mgmt_fatal(stderr, errno, "[newTcpSocket]: %s", "Unable to Create Socket\n");
+    mgmt_fatal(errno, "[newTcpSocket]: %s", "Unable to Create Socket\n");
     return -1;
   }
   // Specify our port number is network order
@@ -75,24 +75,24 @@ newTcpSocket(int port)
 
   // Allow for immediate re-binding to port
   if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, (char *)&one, sizeof(int)) < 0) {
-    mgmt_fatal(stderr, errno, "[newTcpSocket] Unable to set socket options.\n");
+    mgmt_fatal(errno, "[newTcpSocket] Unable to set socket options.\n");
   }
   // Bind the port to the socket
   if (bind(socketFD, (sockaddr *)&socketInfo, sizeof(socketInfo)) < 0) {
-    mgmt_elog(stderr, 0, "[newTcpSocket] Unable to bind port %d to socket: %s\n", port, strerror(errno));
+    mgmt_log("[newTcpSocket] Unable to bind port %d to socket: %s\n", port, strerror(errno));
     close_socket(socketFD);
     return -1;
   }
   // Listen on the new socket
   if (listen(socketFD, 5) < 0) {
-    mgmt_elog(stderr, errno, "[newTcpSocket] %s\n", "Unable to listen on the socket");
+    mgmt_elog(errno, "[newTcpSocket] %s\n", "Unable to listen on the socket");
     close_socket(socketFD);
     return -1;
   }
   // Set the close on exec flag so our children do not
   //  have this socket open
   if (fcntl(socketFD, F_SETFD, FD_CLOEXEC) < 0) {
-    mgmt_elog(stderr, errno, "[newTcpSocket] Unable to set close on exec flag\n");
+    mgmt_elog(errno, "[newTcpSocket] Unable to set close on exec flag\n");
   }
 
   return socketFD;
@@ -159,18 +159,18 @@ synthetic_thread(void *info)
   bufp = buffer;
   while (len < strlen(RequestStr)) {
     if (read_ready(clientFD, cop_server_timeout * 1000) <= 0) {
-      mgmt_log(stderr, "[SyntheticHealthServer] poll() failed, no request to read()");
+      mgmt_log("[SyntheticHealthServer] poll() failed, no request to read()");
       goto error;
     }
     bytes = read(clientFD, buffer, sizeof(buffer));
     if (0 == bytes) {
-      mgmt_log(stderr, "[SyntheticHealthServer] EOF on the socket, likely prematurely closed");
+      mgmt_log("[SyntheticHealthServer] EOF on the socket, likely prematurely closed");
       goto error;
     } else if (bytes < 0) {
       if (errno == EINTR || errno == EAGAIN) {
         continue;
       } else {
-        mgmt_log(stderr, "[SyntheticHealthServer] Failed to read the request");
+        mgmt_log("[SyntheticHealthServer] Failed to read the request");
         goto error;
       }
     } else {
@@ -181,7 +181,7 @@ synthetic_thread(void *info)
 
   // Bare minimum check if the request looks reasonable (i.e. from traffic_cop)
   if (len < strlen(RequestStr) || 0 != strncasecmp(buffer, RequestStr, strlen(RequestStr))) {
-    mgmt_log(stderr, "[SyntheticHealthServer] Unsupported request provided");
+    mgmt_log("[SyntheticHealthServer] Unsupported request provided");
     goto error;
   }
 
@@ -194,7 +194,7 @@ synthetic_thread(void *info)
   bufp = buffer;
   while (len) {
     if (write_ready(clientFD, cop_server_timeout * 1000) <= 0) {
-      mgmt_log(stderr, "[SyntheticHealthServer] poll() failed, no response to write()");
+      mgmt_log("[SyntheticHealthServer] poll() failed, no response to write()");
       goto error;
     }
     bytes = write(clientFD, buffer, len);
@@ -202,7 +202,7 @@ synthetic_thread(void *info)
       if (errno == EINTR || errno == EAGAIN) {
         continue;
       } else {
-        mgmt_log(stderr, "[SyntheticHealthServer] Failed to write the response");
+        mgmt_log("[SyntheticHealthServer] Failed to write the response");
         goto error;
       }
     } else {
@@ -248,7 +248,7 @@ mgmt_synthetic_main(void *)
   Debug("ui", "[WebIntrMain] Starting Client AutoConfig Server on Port %d", publicPort);
 
   if ((autoconfFD = newTcpSocket(publicPort)) < 0) {
-    mgmt_elog(stderr, errno, "[WebIntrMain] Unable to start client autoconf server\n");
+    mgmt_elog(errno, "[WebIntrMain] Unable to start client autoconf server\n");
     lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_WEB_ERROR, "Healthcheck service failed to initialize");
   }
 
@@ -258,18 +258,18 @@ mgmt_synthetic_main(void *)
 
     ink_zero(clientInfo);
     if ((clientFD = mgmt_accept(autoconfFD, (sockaddr *)&clientInfo, &addrLen)) < 0) {
-      mgmt_log(stderr, "[SyntheticHealthServer] accept() on incoming port failed: %s\n", strerror(errno));
+      mgmt_log("[SyntheticHealthServer] accept() on incoming port failed: %s\n", strerror(errno));
     } else if (safe_setsockopt(clientFD, IPPROTO_TCP, TCP_NODELAY, SOCKOPT_ON, sizeof(int)) < 0) {
-      mgmt_log(stderr, "[SyntheticHealthServer] Failed to set sock options: %s\n", strerror(errno));
+      mgmt_log("[SyntheticHealthServer] Failed to set sock options: %s\n", strerror(errno));
       close_socket(clientFD);
     } else if (clientInfo.sin_addr.s_addr != htonl(INADDR_LOOPBACK)) {
-      mgmt_log(stderr, "[SyntheticHealthServer] Connect by disallowed client %s, closing\n", inet_ntoa(clientInfo.sin_addr));
+      mgmt_log("[SyntheticHealthServer] Connect by disallowed client %s, closing\n", inet_ntoa(clientInfo.sin_addr));
       close_socket(clientFD);
     } else {
       ink_thread thrId = ink_thread_create(synthetic_thread, (void *)&clientFD, 1);
 
       if (thrId <= 0) {
-        mgmt_log(stderr, "[SyntheticHealthServer] Failed to create worker thread");
+        mgmt_log("[SyntheticHealthServer] Failed to create worker thread");
       }
     }
   }

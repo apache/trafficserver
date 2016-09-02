@@ -68,7 +68,7 @@ public:
   void
   stop()
   {
-    mgmt_log(stderr, "[ProcessManager::stop] Bringing down connection\n");
+    mgmt_log("[ProcessManager::stop] Bringing down connection\n");
     close_socket(local_manager_sockfd);
   }
 

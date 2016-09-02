@@ -183,7 +183,7 @@ main(int argc, char **argv)
   }
   diags = new Diags("rec", NULL, log_fp);
   diags->activate_taglist(diags->base_debug_tags, DiagsTagType_Debug);
-  diags->print(NULL, DTA(DL_Note), "Starting '%s'", argv[0]);
+  diags->log(NULL, DTA(DL_Note), "Starting '%s'", argv[0]);
 
   // system initialization
   RecLocalInit(diags);

@@ -112,11 +112,9 @@ extern RecRawStatBlock *net_rsb;
 
 // For very verbose iocore debugging.
 #ifndef DEBUG
-#define NetDebug \
-  if (0)         \
-  dummy_debug
+#define NetDebug(tag, fmt, ...)
 #else
-#define NetDebug Debug
+#define NetDebug(tag, fmt, ...) Debug(tag, fmt, ##__VA_ARGS__)
 #endif
 
 /// Default amount of buffer space to use for the initial read on an incoming connection.
