@@ -76,6 +76,7 @@ public:
   {
     return m_file_format;
   }
+
   const char *
   get_format_name() const
   {
@@ -99,12 +100,14 @@ public:
       return m_log->get_size_bytes();
     else
       return 0;
-  };
+  }
+
+  // TODO: this need to be tidy up when to redo the file checking
   int
   do_filesystem_checks()
   {
     return 0;
-  }; // TODO: this need to be tidy up when to redo the file checking
+  }
 
 public:
   bool is_open();
@@ -122,12 +125,11 @@ private:
 public:
   BaseLogFile *m_log; // BaseLogFile backs the actual file on disk
   char *m_header;
-  uint64_t m_signature; // signature of log object stored
-
+  uint64_t m_signature;       // signature of log object stored
   size_t m_ascii_buffer_size; // size of ascii buffer
   size_t m_max_line_size;     // size of longest log line (record)
+  int m_fd;                   // this could back m_log or a pipe, depending on the situation
 
-  int m_fd; // this could back m_log or a pipe, depending on the situation
 public:
   Link<LogFile> link;
 
