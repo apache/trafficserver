@@ -82,13 +82,14 @@ test_Http2DependencyTree_SOURCES = \
   test_Http2DependencyTree.cc \
   Http2DependencyTree.h
 
-test_HPACK_LDADD = @LIBTCL@ \
+test_HPACK_LDADD = \
   $(top_builddir)/proxy/hdrs/libhdrs.a \
   $(top_builddir)/lib/ts/libtsutil.la \
   $(top_builddir)/iocore/eventsystem/libinkevent.a \
   $(top_builddir)/lib/records/librecords_p.a \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/proxy/shared/libUglyLogStubs.a \
+  @LIBTCL@ \
   @HWLOC_LIBS@
 
 test_HPACK_SOURCES = \
