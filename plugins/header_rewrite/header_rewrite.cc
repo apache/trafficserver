@@ -203,10 +203,10 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
       rule = NULL;
     }
 
-    if (NULL == rule) {
-      TSHttpHookID hook = default_hook;
-      bool is_hook      = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
+    TSHttpHookID hook = default_hook;
+    bool is_hook      = p.cond_is_hook(hook); // This updates the hook if explicitly set, if not leaves at default
 
+    if (NULL == rule) {
       rule = new RuleSet();
       rule->set_hook(hook);
 
@@ -220,15 +220,22 @@ RulesConfig::parse_config(const std::string fname, TSHttpHookID default_hook)
         }
         continue;
       }
+    } else {
+      if (is_hook) {
+        TSError("[%s] cond %%{%s} at %s:%d should be the first hook condition in the rule set and each rule set should contain "
+                "only one hook condition",
+                PLUGIN_NAME, p.get_op().c_str(), fname.c_str(), lineno);
+        return false;
+      }
     }
 
     if (p.is_cond()) {
-      if (!rule->add_condition(p, filename.c_str())) {
+      if (!rule->add_condition(p, filename.c_str(), lineno)) {
         delete rule;
         return false;
       }
     } else {
-      if (!rule->add_operator(p, filename.c_str())) {
+      if (!rule->add_operator(p, filename.c_str(), lineno)) {
         delete rule;
         return false;
       }
