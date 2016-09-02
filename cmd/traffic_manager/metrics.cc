@@ -322,7 +322,7 @@ metrics_binding_initialize(BindingInstance &binding)
   ats_scoped_str config(Layout::get()->relative_to(sysconfdir, "metrics.config"));
 
   if (!binding.construct()) {
-    mgmt_fatal(stderr, 0, "failed to initialize Lua runtime\n");
+    mgmt_fatal(0, "failed to initialize Lua runtime\n");
   }
 
   // Register the metrics userdata type.

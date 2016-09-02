@@ -150,21 +150,6 @@ typedef enum {
   TS_CACHE_CLEAR_HOSTDB = (1 << 1), /* run TS in "clear the host db cache" mode */
 } TSCacheClearT;
 
-/*--- diagnostic output operations ----------------------------------------*/
-
-typedef enum {
-  TS_DIAG_DIAG,
-  TS_DIAG_DEBUG,
-  TS_DIAG_STATUS,
-  TS_DIAG_NOTE,
-  TS_DIAG_WARNING,
-  TS_DIAG_ERROR,
-  TS_DIAG_FATAL, /* >= FATAL severity causes process termination */
-  TS_DIAG_ALERT,
-  TS_DIAG_EMERGENCY,
-  TS_DIAG_UNDEFINED
-} TSDiagsT;
-
 /*--- event operations ----------------------------------------------------*/
 typedef enum {
   TS_EVENT_PRIORITY_WARNING,
@@ -894,15 +879,6 @@ tsapi TSMgmtError TSStorageDeviceCmdOffline(char const *dev);
  * @return Success
  */
 tsapi TSMgmtError TSLifecycleMessage(char const *tag, void const *data, size_t data_size);
-
-/*--- diags output operations ---------------------------------------------*/
-/* TSDiags: enables users to manipulate run-time diagnostics, and print
- *           user-formatted notices, warnings and errors
- * Input:  mode - diags mode
- *         fmt  - printf style format
- * Output: <none>
- */
-tsapi void TSDiags(TSDiagsT mode, const char *fmt, ...);
 
 /* TSGetErrorMessage: convert error id to error message
  * Input:  error id (defined in TSMgmtError)

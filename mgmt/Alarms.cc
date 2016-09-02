@@ -195,7 +195,7 @@ Alarms::signalAlarm(alarm_t a, const char *desc, const char *ip)
     priority = 1;
     break;
   case MGMT_ALARM_PROXY_PROCESS_BORN:
-    mgmt_log(stderr, "[Alarms::signalAlarm] Server Process born\n");
+    mgmt_log("[Alarms::signalAlarm] Server Process born\n");
     return;
   case MGMT_ALARM_ADD_ALARM:
     priority = 2;
@@ -474,7 +474,7 @@ Alarms::execAlarmBin(const char *desc)
   if ((pid = fork1()) < 0)
 #endif
   {
-    mgmt_elog(stderr, errno, "[Alarms::execAlarmBin] Unable to fork1 process\n");
+    mgmt_elog(errno, "[Alarms::execAlarmBin] Unable to fork1 process\n");
   } else if (pid > 0) { /* Parent */
     int status;
     bool script_done = false;

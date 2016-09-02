@@ -214,38 +214,6 @@ mgmt_blockAllSigs()
 #endif
 }
 
-/*
- * mgmt_log(...)
- *   Really just a print wrapper, function takes a string and outputs the
- * result to log. Written so that we could turn off all output or at least
- * better control it.
- */
-void
-mgmt_log(FILE *log, const char *message_format, ...)
-{
-  va_list ap;
-  char extended_format[4096], message[4096];
-
-  va_start(ap, message_format);
-
-  if (diags) {
-    diags->print_va(NULL, DL_Note, NULL, message_format, ap);
-  } else {
-    if (use_syslog) {
-      snprintf(extended_format, sizeof(extended_format), "log ==> %s", message_format);
-      vsprintf(message, extended_format, ap);
-      syslog(LOG_WARNING, "%s", message);
-    } else {
-      snprintf(extended_format, sizeof(extended_format), "[E. Mgmt] log ==> %s", message_format);
-      vsprintf(message, extended_format, ap);
-      ink_assert(fwrite(message, strlen(message), 1, log) == 1);
-    }
-  }
-
-  va_end(ap);
-  return;
-} /* End mgmt_log */
-
 void
 mgmt_log(const char *message_format, ...)
 {
@@ -254,7 +222,7 @@ mgmt_log(const char *message_format, ...)
 
   va_start(ap, message_format);
   if (diags) {
-    diags->print_va(NULL, DL_Note, NULL, message_format, ap);
+    NoteV(message_format, ap);
   } else {
     if (use_syslog) {
       snprintf(extended_format, sizeof(extended_format), "log ==> %s", message_format);
@@ -271,46 +239,6 @@ mgmt_log(const char *message_format, ...)
   return;
 } /* End mgmt_log */
 
-/*
- * mgmt_log(...)
- *   Same as above, but intended for errors.
- */
-void
-mgmt_elog(FILE *log, const int lerrno, const char *message_format, ...)
-{
-  va_list ap;
-  char extended_format[4096], message[4096];
-
-  va_start(ap, message_format);
-
-  if (diags) {
-    diags->print_va(NULL, DL_Error, NULL, message_format, ap);
-    if (lerrno != 0) {
-      diags->print(NULL, DTA(DL_Error), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    }
-  } else {
-    if (use_syslog) {
-      snprintf(extended_format, sizeof(extended_format), "ERROR ==> %s", message_format);
-      vsprintf(message, extended_format, ap);
-      syslog(LOG_ERR, "%s", message);
-      if (lerrno != 0) {
-        syslog(LOG_ERR, " (last system error %d: %s)", lerrno, strerror(lerrno));
-      }
-    } else {
-      snprintf(extended_format, sizeof(extended_format), "[E. Mgmt] ERROR ==> %s", message_format);
-      vsprintf(message, extended_format, ap);
-      ink_assert(fwrite(message, strlen(message), 1, log) == 1);
-      if (lerrno != 0) {
-        snprintf(message, sizeof(message), "(last system error %d: %s)", lerrno, strerror(lerrno));
-        ink_assert(fwrite(message, strlen(message), 1, log) == 1);
-      }
-    }
-  }
-  va_end(ap);
-
-  return;
-} /* End mgmt_elog */
-
 void
 mgmt_elog(const int lerrno, const char *message_format, ...)
 {
@@ -320,9 +248,9 @@ mgmt_elog(const int lerrno, const char *message_format, ...)
   va_start(ap, message_format);
 
   if (diags) {
-    diags->print_va(NULL, DL_Error, NULL, message_format, ap);
+    ErrorV(message_format, ap);
     if (lerrno != 0) {
-      diags->print(NULL, DTA(DL_Error), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+      Error("last system error %d: %s", lerrno, strerror(lerrno));
     }
   } else {
     if (use_syslog) {
@@ -346,48 +274,6 @@ mgmt_elog(const int lerrno, const char *message_format, ...)
   return;
 } /* End mgmt_elog */
 
-/*
- * mgmt_fatal(...)
- *   Same as above, but for fatal errors. Logs error, calls perror, and
- * asserts false.
- */
-void
-mgmt_fatal(FILE *log, const int lerrno, const char *message_format, ...)
-{
-  va_list ap;
-  char extended_format[4096], message[4096];
-
-  va_start(ap, message_format);
-
-  if (diags) {
-    diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
-    if (lerrno != 0) {
-      diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
-    }
-  } else {
-    snprintf(extended_format, sizeof(extended_format), "FATAL ==> %s", message_format);
-    vsprintf(message, extended_format, ap);
-
-    ink_assert(fwrite(message, strlen(message), 1, log) == 1);
-
-    if (use_syslog) {
-      syslog(LOG_ERR, "%s", message);
-    }
-
-    if (lerrno != 0) {
-      fprintf(stderr, "[E. Mgmt] last system error %d: %s", lerrno, strerror(lerrno));
-      if (use_syslog) {
-        syslog(LOG_ERR, " (last system error %d: %s)", lerrno, strerror(lerrno));
-      }
-    }
-  }
-
-  va_end(ap);
-
-  mgmt_cleanup();
-  ::exit(1);
-} /* End mgmt_fatal */
-
 void
 mgmt_fatal(const int lerrno, const char *message_format, ...)
 {
@@ -397,10 +283,11 @@ mgmt_fatal(const int lerrno, const char *message_format, ...)
   va_start(ap, message_format);
 
   if (diags) {
-    diags->print_va(NULL, DL_Fatal, NULL, message_format, ap);
     if (lerrno != 0) {
-      diags->print(NULL, DTA(DL_Fatal), " (last system error %d: %s)\n", lerrno, strerror(lerrno));
+      Error("last system error %d: %s", lerrno, strerror(lerrno));
     }
+
+    FatalV(message_format, ap);
   } else {
     snprintf(extended_format, sizeof(extended_format), "FATAL ==> %s", message_format);
     vsprintf(message, extended_format, ap);
@@ -430,8 +317,8 @@ static inline int
 get_interface_mtu(int sock_fd, struct ifreq *ifr)
 {
   if (ioctl(sock_fd, SIOCGIFMTU, ifr) < 0) {
-    mgmt_log(stderr, "[getAddrForIntr] Unable to obtain MTU for "
-                     "interface '%s'",
+    mgmt_log("[getAddrForIntr] Unable to obtain MTU for "
+             "interface '%s'",
              ifr->ifr_name);
     return 0;
   } else {
@@ -463,7 +350,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
   memset(addr, 0, sizeof(struct in_addr));
 
   if ((fakeSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    mgmt_fatal(stderr, errno, "[getAddrForIntr] Unable to create socket\n");
+    mgmt_fatal(errno, "[getAddrForIntr] Unable to create socket\n");
   }
   // INKqa06739
   // Fetch the list of network interfaces
@@ -478,7 +365,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
     ifc.ifc_buf = ifbuf;
     if (ioctl(fakeSocket, SIOCGIFCONF, &ifc) < 0) {
       if (errno != EINVAL || lastlen != 0) {
-        mgmt_fatal(stderr, errno, "[getAddrForIntr] Unable to read network interface configuration\n");
+        mgmt_fatal(errno, "[getAddrForIntr] Unable to read network interface configuration\n");
       }
     } else {
       if (ifc.ifc_len == lastlen) {
@@ -497,7 +384,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
     if (ifr->ifr_addr.sa_family == AF_INET && strcmp(ifr->ifr_name, intrName) == 0) {
       // Get the address of the interface
       if (ioctl(fakeSocket, SIOCGIFADDR, (char *)ifr) < 0) {
-        mgmt_log(stderr, "[getAddrForIntr] Unable obtain address for network interface %s\n", intrName);
+        mgmt_log("[getAddrForIntr] Unable obtain address for network interface %s\n", intrName);
       } else {
         // Only look at the address if it an internet address
         if (ifr->ifr_ifru.ifru_addr.sa_family == AF_INET) {
@@ -510,7 +397,7 @@ mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu)
 
           break;
         } else {
-          mgmt_log(stderr, "[getAddrForIntr] Interface %s is not configured for IP.\n", intrName);
+          mgmt_log("[getAddrForIntr] Interface %s is not configured for IP.\n", intrName);
         }
       }
     }

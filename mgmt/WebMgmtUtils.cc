@@ -1026,7 +1026,7 @@ setHostnameVar()
 
   // Get Our HostName
   if (gethostname(ourHostName, MAXDNAME) < 0) {
-    mgmt_fatal(stderr, errno, "[setHostnameVar] Can not determine our hostname");
+    mgmt_fatal(errno, "[setHostnameVar] Can not determine our hostname");
   }
 
   res_init();
@@ -1076,13 +1076,13 @@ appendDefaultDomain(char *hostname, int bufLength)
         ink_strlcat(hostname, _res.defdname, bufLength);
       } else {
         if (error_before == 0) {
-          mgmt_log(stderr, "%s %s\n", "[appendDefaultDomain] Domain name is too long.", msg);
+          mgmt_log("%s %s\n", "[appendDefaultDomain] Domain name is too long.", msg);
           error_before++;
         }
       }
     } else {
       if (error_before == 0) {
-        mgmt_log(stderr, "%s %s\n", "[appendDefaultDomain] Unable to determine default domain name.", msg);
+        mgmt_log("%s %s\n", "[appendDefaultDomain] Unable to determine default domain name.", msg);
         error_before++;
       }
     }
@@ -1123,7 +1123,7 @@ recordValidityCheck(const char *varName, const char *value)
     return true;
   default:
     // unknown RecordCheckType...
-    mgmt_log(stderr, "[WebMgmtUtil] error, unknown RecordCheckType for record %s\n", varName);
+    mgmt_log("[WebMgmtUtil] error, unknown RecordCheckType for record %s\n", varName);
   }
 
   return false;
@@ -1242,7 +1242,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray *fileList)
   fileEntry *fileListEntry;
 
   if ((dir = opendir(managedDir)) == NULL) {
-    mgmt_log(stderr, "[getFilesInDirectory] Unable to open %s directory: %s\n", managedDir, strerror(errno));
+    mgmt_log("[getFilesInDirectory] Unable to open %s directory: %s\n", managedDir, strerror(errno));
     return -1;
   }
   // The fun of Solaris - readdir_r requires a buffer passed into it
@@ -1261,7 +1261,7 @@ getFilesInDirectory(char *managedDir, ExpandingArray *fileList)
     }
     filePath = newPathString(managedDir, fileName);
     if (stat(filePath, &fileInfo) < 0) {
-      mgmt_log(stderr, "[getFilesInDirectory] Stat of a %s failed : %s\n", fileName, strerror(errno));
+      mgmt_log("[getFilesInDirectory] Stat of a %s failed : %s\n", fileName, strerror(errno));
     } else {
       // Ignore ., .., and any dot files
       if (fileName && *fileName != '.') {

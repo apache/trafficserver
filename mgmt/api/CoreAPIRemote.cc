@@ -291,25 +291,6 @@ Terminate()
   return TS_ERR_OKAY;
 }
 
-// ONLY have very basic diag functionality for remote cliets.
-// When a remote client tries to use diags (wants to output runtime
-// diagnostics, the diagnostics will be outputted to the machine
-// the remote client is logged into (the one TM is running on)
-void
-DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
-{
-  char diag_msg[MAX_BUF_SIZE];
-
-  MgmtMarshallInt optype = DIAGS;
-  MgmtMarshallInt level  = mode;
-  MgmtMarshallString msg = diag_msg;
-
-  // format the diag message now so it can be sent
-  // vsnprintf does not compile on DEC
-  vsnprintf(diag_msg, MAX_BUF_SIZE - 1, fmt, ap);
-  (void)MGMTAPI_SEND_MESSAGE(main_socket_fd, DIAGS, &optype, &level, &msg);
-}
-
 /***************************************************************************
  * Control Operations
  ***************************************************************************/

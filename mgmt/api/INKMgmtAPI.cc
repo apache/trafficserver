@@ -1747,20 +1747,6 @@ TSLifecycleMessage(char const *tag, void const *data, size_t data_size)
   return LifecycleMessage(tag, data, data_size);
 }
 
-/*--- diags output operations ---------------------------------------------*/
-tsapi void
-TSDiags(TSDiagsT mode, const char *fmt, ...)
-{
-  // need to find way to pass arguments to the function
-  va_list ap;
-
-  va_start(ap, fmt); // initialize the argument pointer ap
-  DiagnosticMessage(mode, fmt, ap);
-  va_end(ap);
-
-  return;
-}
-
 /* NOTE: user must deallocate the memory for the string returned */
 char *
 TSGetErrorMessage(TSMgmtError err_id)

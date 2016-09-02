@@ -163,7 +163,7 @@ overviewRecord::readInteger(const char *name, bool *found)
   if (found) {
     *found = (rec_status == REC_ERR_OKAY);
   } else {
-    mgmt_log(stderr, "node variables '%s' not found!\n");
+    mgmt_log("node variables '%s' not found!\n");
   }
   return rec;
 }
@@ -189,7 +189,7 @@ overviewRecord::readFloat(const char *name, bool *found)
   if (found) {
     *found = (rec_status == REC_ERR_OKAY);
   } else {
-    mgmt_log(stderr, "node variables '%s' not found!\n");
+    mgmt_log("node variables '%s' not found!\n");
   }
   return rec;
 }
@@ -215,7 +215,7 @@ overviewRecord::readString(const char *name, bool *found)
   if (found) {
     *found = (rec_status == REC_ERR_OKAY);
   } else {
-    mgmt_log(stderr, "node variables '%s' not found!\n");
+    mgmt_log("node variables '%s' not found!\n");
   }
   return rec;
 }
@@ -256,7 +256,7 @@ overviewRecord::readData(RecDataT varType, const char *name, bool *found)
   if (found) {
     *found = (rec_status == REC_ERR_OKAY);
   } else {
-    mgmt_log(stderr, "node variables '%s' not found!\n");
+    mgmt_log("node variables '%s' not found!\n");
   }
   return rec;
 }

@@ -2131,31 +2131,6 @@ restore_snapshot(char *args)
 }
 
 /***************************************************************************
- * Diags Testing
- ***************************************************************************/
-
-void
-test_diags()
-{
-  // status
-  for (int i = 0; i < 5; i++) {
-    TSDiags(TS_DIAG_STATUS, "[remote]status diag %d", i);
-  }
-
-  // warning
-  TSDiags(TS_DIAG_WARNING, "[remote]warning msg %s %s", "I am", "a fiue");
-
-  // fatal
-  TSDiags(TS_DIAG_FATAL, "[remote]FATAL, FATAL: Nuclear meltdown in %d seconds", 10);
-
-  // error
-  TSDiags(TS_DIAG_ERROR, "[remote]error msg shouldn't have printed this %s", "argument");
-
-  // debug
-  TSDiags(TS_DIAG_DEBUG, "[remote]debug ... wish I was good at it");
-}
-
-/***************************************************************************
  * Statistics
  ***************************************************************************/
 
@@ -2383,8 +2358,6 @@ runInteractive()
       remove_snapshot(buf);
     } else if (strstr(buf, "restore_snap")) {
       restore_snapshot(buf);
-    } else if (strstr(buf, "diags")) {
-      test_diags();
     } else if (strstr(buf, "read_url")) {
       test_read_url(true);
     } else if (strstr(buf, "test_url")) {

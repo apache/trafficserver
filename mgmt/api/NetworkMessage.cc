@@ -59,7 +59,6 @@ static const struct NetCmdOperation requests[] = {
   /* SNAPSHOT_RESTORE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* SNAPSHOT_REMOVE            */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* SNAPSHOT_GET_MLT           */ {1, {MGMT_MARSHALL_INT}},
-  /* DIAGS                      */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* STATS_RESET_NODE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* STATS_RESET_CLUSTER        */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
@@ -93,7 +92,6 @@ static const struct NetCmdOperation responses[] = {
   /* SNAPSHOT_RESTORE           */ {1, {MGMT_MARSHALL_INT}},
   /* SNAPSHOT_REMOVE            */ {1, {MGMT_MARSHALL_INT}},
   /* SNAPSHOT_GET_MLT           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* DIAGS                      */ {0, {}}, // no reply
   /* STATS_RESET_NODE           */ {1, {MGMT_MARSHALL_INT}},
   /* STATS_RESET_CLUSTER        */ {1, {MGMT_MARSHALL_INT}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {1, {MGMT_MARSHALL_INT}},
@@ -252,7 +250,6 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
   case EVENT_REG_CALLBACK:
   case EVENT_UNREG_CALLBACK:
   case EVENT_NOTIFY:
-  case DIAGS:
   case API_PING:
     /* no response for these */
     ink_release_assert(responses[optype].nfields == 0);

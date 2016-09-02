@@ -123,18 +123,17 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
     // If it does not, create a zero length file to prevent total havoc
     //
     if (errno == ENOENT) {
-      mgmt_log(stderr, "[RollBack::Rollback] Missing Configuration File: %s\n", fileName);
+      mgmt_log("[RollBack::Rollback] Missing Configuration File: %s\n", fileName);
 
       if (highestSeen > 0) {
         highestSeenStr = createPathStr(highestSeen);
         activeVerStr   = createPathStr(ACTIVE_VERSION);
 
         if (rename(highestSeenStr, activeVerStr) < 0) {
-          mgmt_log(stderr, "[RollBack::Rollback] Automatic Rollback to prior version failed for %s : %s\n", fileName,
-                   strerror(errno));
+          mgmt_log("[RollBack::Rollback] Automatic Rollback to prior version failed for %s : %s\n", fileName, strerror(errno));
           needZeroLength = true;
         } else {
-          mgmt_log(stderr, "[RollBack::Rollback] Automatic Rollback to version succeded for %s\n", fileName, strerror(errno));
+          mgmt_log("[RollBack::Rollback] Automatic Rollback to version succeded for %s\n", fileName, strerror(errno));
           needZeroLength = false;
           highestSeen--;
           // Since we've made the highestVersion active
@@ -152,13 +151,12 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
         if (fd >= 0) {
           alarmMsg = (char *)ats_malloc(2048);
           snprintf(alarmMsg, 2048, "Created zero length place holder for config file %s", fileName);
-          mgmt_log(stderr, "[RollBack::Rollback] %s\n", alarmMsg);
+          mgmt_log("[RollBack::Rollback] %s\n", alarmMsg);
           lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
           ats_free(alarmMsg);
           closeFile(fd, true);
         } else {
-          mgmt_fatal(stderr, 0,
-                     "[RollBack::Rollback] Unable to find configuration file %s.\n\tCreation of a placeholder failed : %s\n",
+          mgmt_fatal(0, "[RollBack::Rollback] Unable to find configuration file %s.\n\tCreation of a placeholder failed : %s\n",
                      fileName, strerror(errno));
         }
       }
@@ -168,8 +166,7 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
     } else {
       // If is there but we can not stat it, it is unusable to manager
       //   probably due to permissions problems.  Bail!
-      mgmt_fatal(stderr, 0, "[RollBack::Rollback] Unable to find configuration file %s.\n\tStat failed : %s\n", fileName,
-                 strerror(errno));
+      mgmt_fatal(0, "[RollBack::Rollback] Unable to find configuration file %s.\n\tStat failed : %s\n", fileName, strerror(errno));
     }
   } else {
     fileLastModified = TS_ARCHIVE_STAT_MTIME(fileInfo);
@@ -180,10 +177,10 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
       textBuffer *version0 = NULL;
       char failStr[]       = "[Rollback::Rollback] Automatic Roll of Version 1 failed: %s";
       if (getVersion_ml(ACTIVE_VERSION, &version0) != OK_ROLLBACK) {
-        mgmt_log(stderr, failStr, fileName);
+        mgmt_log(failStr, fileName);
       } else {
         if (forceUpdate_ml(version0) != OK_ROLLBACK) {
-          mgmt_log(stderr, failStr, fileName);
+          mgmt_log(failStr, fileName);
         }
       }
       if (version0 != NULL) {
@@ -206,13 +203,13 @@ Rollback::Rollback(const char *fileName_, bool root_access_needed_, Rollback *pa
     if (testFD < 0) {
       // We are unable to either read or write the file
       snprintf(alarmMsg, 2048, "Unable to read or write config file");
-      mgmt_log(stderr, "[Rollback::Rollback] %s %s: %s\n", alarmMsg, fileName, strerror(errno));
+      mgmt_log("[Rollback::Rollback] %s %s: %s\n", alarmMsg, fileName, strerror(errno));
       lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
 
     } else {
       // Read is OK and write fails
       snprintf(alarmMsg, 2048, "Config file is read-only");
-      mgmt_log(stderr, "[Rollback::Rollback] %s : %s\n", alarmMsg, fileName);
+      mgmt_log("[Rollback::Rollback] %s : %s\n", alarmMsg, fileName);
       lmgmt->alarm_keeper->signalAlarm(MGMT_ALARM_CONFIG_UPDATE_FAILED, alarmMsg);
       closeFile(testFD, false);
     }
@@ -293,7 +290,7 @@ Rollback::openFile(version_t version, int oflags, int *errnoPtr)
     if (errnoPtr != NULL) {
       *errnoPtr = errno;
     }
-    mgmt_log(stderr, "[Rollback::openFile] Open of %s failed: %s\n", fileName, strerror(errno));
+    mgmt_log("[Rollback::openFile] Open of %s failed: %s\n", fileName, strerror(errno));
   } else {
     fcntl(fd, F_SETFD, FD_CLOEXEC);
   }
@@ -307,7 +304,7 @@ Rollback::closeFile(int fd, bool callSync)
   int result = 0;
   if (callSync && fsync(fd) < 0) {
     result = -1;
-    mgmt_log(stderr, "[Rollback::closeFile] fsync failed for file '%s' (%d: %s)\n", fileName, errno, strerror(errno));
+    mgmt_log("[Rollback::closeFile] fsync failed for file '%s' (%d: %s)\n", fileName, errno, strerror(errno));
   }
 
   if (result == 0) {
@@ -410,7 +407,7 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
 
   if (diskFD < 0) {
     // Could not create the new file.  The operation is aborted
-    mgmt_log(stderr, "[Rollback::internalUpdate] Unable to create new version of %s : %s\n", fileName, strerror(errno));
+    mgmt_log("[Rollback::internalUpdate] Unable to create new version of %s : %s\n", fileName, strerror(errno));
     returnCode = SYS_CALL_ERROR_ROLLBACK;
     goto UPDATE_CLEANUP;
   }
@@ -418,21 +415,20 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   writeBytes = write(diskFD, buf->bufPtr(), buf->spaceUsed());
   ret        = closeFile(diskFD, true);
   if ((ret < 0) || ((size_t)writeBytes != buf->spaceUsed())) {
-    mgmt_log(stderr, "[Rollback::internalUpdate] Unable to write new version of %s : %s\n", fileName, strerror(errno));
+    mgmt_log("[Rollback::internalUpdate] Unable to write new version of %s : %s\n", fileName, strerror(errno));
     returnCode = SYS_CALL_ERROR_ROLLBACK;
     goto UPDATE_CLEANUP;
   }
 
   // Now that we got a the new version on the disk lets do some renaming
   if (link(activeVersion, currentVersion_local) < 0) {
-    mgmt_log(stderr, "[Rollback::internalUpdate] Link failed : %s\n", strerror(errno));
+    mgmt_log("[Rollback::internalUpdate] Link failed : %s\n", strerror(errno));
 
     // If the file was lost, it is lost and log the error and
     //    install a new file so that we do not go around in
     //    an endless loop
     if (errno == ENOENT) {
-      mgmt_log(stderr, "[Rollback::internalUpdate] The active version of %s was lost.\n\tThe updated copy was installed.\n",
-               fileName);
+      mgmt_log("[Rollback::internalUpdate] The active version of %s was lost.\n\tThe updated copy was installed.\n", fileName);
       failedLink = true;
     } else {
       returnCode = SYS_CALL_ERROR_ROLLBACK;
@@ -441,8 +437,8 @@ Rollback::internalUpdate(textBuffer *buf, version_t newVersion, bool notifyChang
   }
 
   if (rename(nextVersion, activeVersion) < 0) {
-    mgmt_log(stderr, "[Rollback::internalUpdate] Rename failed : %s\n", strerror(errno));
-    mgmt_log(stderr, "[Rollback::internalUpdate] Unable to create new version of %s.  Using prior version\n", fileName);
+    mgmt_log("[Rollback::internalUpdate] Rename failed : %s\n", strerror(errno));
+    mgmt_log("[Rollback::internalUpdate] Unable to create new version of %s.  Using prior version\n", fileName);
 
     returnCode = SYS_CALL_ERROR_ROLLBACK;
     goto UPDATE_CLEANUP;
@@ -543,7 +539,7 @@ Rollback::getVersion_ml(version_t version, textBuffer **buffer)
   }
   // fstat the file so that we know what size is supposed to be
   if (fstat(diskFD, &fileInfo) < 0) {
-    mgmt_log(stderr, "[Rollback::getVersion] fstat on %s version %d failed: %s\n", fileName, version, strerror(errno));
+    mgmt_log("[Rollback::getVersion] fstat on %s version %d failed: %s\n", fileName, version, strerror(errno));
     returnCode = FILE_NOT_FOUND_ROLLBACK;
     goto GET_CLEANUP;
   }
@@ -554,7 +550,7 @@ Rollback::getVersion_ml(version_t version, textBuffer **buffer)
     readResult = newBuffer->readFromFD(diskFD);
 
     if (readResult < 0) {
-      mgmt_log(stderr, "[Rollback::getVersion] read failed on %s version %d: %s\n", fileName, version, strerror(errno));
+      mgmt_log("[Rollback::getVersion] read failed on %s version %d: %s\n", fileName, version, strerror(errno));
       returnCode = SYS_CALL_ERROR_ROLLBACK;
       delete newBuffer;
       goto GET_CLEANUP;
@@ -562,8 +558,8 @@ Rollback::getVersion_ml(version_t version, textBuffer **buffer)
   } while (readResult > 0);
 
   if ((off_t)newBuffer->spaceUsed() != fileInfo.st_size) {
-    mgmt_log(stderr, "[Rollback::getVersion] Incorrect amount of data retrieved from %s version %d.  Expected: %d   Got: %d\n",
-             fileName, version, fileInfo.st_size, newBuffer->spaceUsed());
+    mgmt_log("[Rollback::getVersion] Incorrect amount of data retrieved from %s version %d.  Expected: %d   Got: %d\n", fileName,
+             version, fileInfo.st_size, newBuffer->spaceUsed());
     returnCode = SYS_CALL_ERROR_ROLLBACK;
     delete newBuffer;
     goto GET_CLEANUP;
@@ -610,13 +606,13 @@ Rollback::revertToVersion_ml(version_t version)
 
   returnCode = this->getVersion_ml(version, &revertTo);
   if (returnCode != OK_ROLLBACK) {
-    mgmt_log(stderr, "[Rollback::revertToVersion] Unable to open version %d of %s\n", version, fileName);
+    mgmt_log("[Rollback::revertToVersion] Unable to open version %d of %s\n", version, fileName);
     return returnCode;
   }
 
   returnCode = forceUpdate_ml(revertTo);
   if (returnCode != OK_ROLLBACK) {
-    mgmt_log(stderr, "[Rollback::revertToVersion] Unable to revert to version %d of %s\n", version, fileName);
+    mgmt_log("[Rollback::revertToVersion] Unable to revert to version %d of %s\n", version, fileName);
   }
 
   delete revertTo;
@@ -655,7 +651,7 @@ Rollback::findVersions_ml(ExpandingArray *listNames)
   dir = opendir(sysconfdir);
 
   if (dir == NULL) {
-    mgmt_log(stderr, "[Rollback::findVersions] Unable to open configuration directory: %s: %s\n", (const char *)sysconfdir,
+    mgmt_log("[Rollback::findVersions] Unable to open configuration directory: %s: %s\n", (const char *)sysconfdir,
              strerror(errno));
     return INVALID_VERSION;
   }
@@ -796,14 +792,14 @@ Rollback::removeVersion_ml(version_t version)
   bool infoFound          = false;
 
   if (this->statFile(version, &statInfo) < 0) {
-    mgmt_log(stderr, "[Rollback::removeVersion] Stat failed on %s version %d\n", fileName, version);
+    mgmt_log("[Rollback::removeVersion] Stat failed on %s version %d\n", fileName, version);
     return FILE_NOT_FOUND_ROLLBACK;
   }
 
   versionPath = createPathStr(version);
   if (unlink(versionPath) < 0) {
     ats_free(versionPath);
-    mgmt_log(stderr, "[Rollback::removeVersion] Unlink failed on %s version %d: %s\n", fileName, version, strerror(errno));
+    mgmt_log("[Rollback::removeVersion] Unlink failed on %s version %d: %s\n", fileName, version, strerror(errno));
     return SYS_CALL_ERROR_ROLLBACK;
   }
   // Take the version we just removed off of the backup queue
@@ -820,7 +816,7 @@ Rollback::removeVersion_ml(version_t version)
     versionQ.remove(removeInfo);
     delete removeInfo;
   } else {
-    mgmt_log(stderr, "[Rollback::removeVersion] Unable to find info about %s version %d\n", fileName, version);
+    mgmt_log("[Rollback::removeVersion] Unable to find info about %s version %d\n", fileName, version);
   }
 
   numVersions--;
@@ -925,10 +921,10 @@ Rollback::checkForUserUpdate(RollBackCheckType how)
         delete buf;
       }
       if (r != OK_ROLLBACK) {
-        mgmt_log(stderr, "[Rollback::checkForUserUpdate] Failed to roll changed user file %s: %s", fileName, RollbackStrings[r]);
+        mgmt_log("[Rollback::checkForUserUpdate] Failed to roll changed user file %s: %s", fileName, RollbackStrings[r]);
       }
 
-      mgmt_log(stderr, "User has changed config file %s\n", fileName);
+      mgmt_log("User has changed config file %s\n", fileName);
     }
 
     result = true;
