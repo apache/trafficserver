@@ -23,9 +23,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/records
 
-AM_CXXFLAGS = \
-  $(LUAJIT_CFLAGS)
-
 noinst_LTLIBRARIES = libbindings.la
 
 libbindings_la_SOURCES = \

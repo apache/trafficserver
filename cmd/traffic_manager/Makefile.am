@@ -31,9 +31,6 @@ AM_CPPFLAGS = \
   -I$(top_srcdir)/lib \
   -I$(top_srcdir)/lib/luajit/src
 
-AM_CXXFLAGS += \
-  $(LUAJIT_CFLAGS)
-
 AM_LDFLAGS = \
   @EXTRA_CXX_LDFLAGS@ \
   @LIBTOOL_LINK_FLAGS@ \
