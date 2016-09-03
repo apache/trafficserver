@@ -2280,12 +2280,6 @@ DNS
    Enables (``1``) or disables (``0``) DNS server selection. When enabled, Traffic Server refers to the :file:`splitdns.config` file for
    the selection specification. Refer to :ref:`Configuring DNS Server Selection <admin-split-dns>`.
 
-.. ts:cv:: CONFIG proxy.config.dns.url_expansions STRING NULL
-
-   Specifies a list of hostname extensions that are automatically added to the hostname after a failed lookup. For example: if you want
-   Traffic Server to add the hostname extension .org, then specify ``org`` as the value for this variable (Traffic Server automatically
-   adds the dot (.)).
-
 .. ts:cv:: CONFIG proxy.config.dns.resolv_conf STRING /etc/resolv.conf
 
    Allows to specify which ``resolv.conf`` file to use for finding resolvers. While the format of this file must be the same as the

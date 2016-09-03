@@ -720,13 +720,6 @@ public:
   int proxy_request_via_string_len;
   int proxy_response_via_string_len;
 
-  ///////////////////////////////////
-  // URL expansions for DNS lookup //
-  ///////////////////////////////////
-  char *url_expansions_string;
-  char **url_expansions;
-  int num_url_expansions;
-
   // Cluster time delta is not a config variable,
   //  rather it is the time skew which the manager observes
   int32_t cluster_time_delta;
@@ -881,10 +874,6 @@ public:
 
   // parse ssl ports configuration string
   static HttpConfigPortRange *parse_ports_list(char *ports_str);
-
-  // parse DNS URL expansions string
-  static char **parse_url_expansions(char *url_expansions_str, int *num_expansions);
-
   static void *cluster_delta_cb(void *opaque_token, char *data_raw, int data_len);
 
 public:
@@ -911,9 +900,6 @@ inline HttpConfigParams::HttpConfigParams()
     proxy_response_via_string(NULL),
     proxy_request_via_string_len(0),
     proxy_response_via_string_len(0),
-    url_expansions_string(NULL),
-    url_expansions(NULL),
-    num_url_expansions(0),
     cluster_time_delta(0),
     accept_no_activity_timeout(120),
     per_parent_connect_attempts(2),
@@ -968,7 +954,6 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(proxy_hostname);
   ats_free(proxy_request_via_string);
   ats_free(proxy_response_via_string);
-  ats_free(url_expansions_string);
   ats_free(anonymize_other_header_list);
   ats_free(oride.body_factory_template_base);
   ats_free(oride.proxy_response_server_string);
@@ -978,7 +963,6 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(cache_vary_default_other);
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
-  ats_free(url_expansions);
 
   if (connect_ports) {
     delete connect_ports;
