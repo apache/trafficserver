@@ -48,13 +48,14 @@ class UnixNetVConnection;
 
 struct NetState {
   volatile int enabled;
+  volatile int error;
   VIO vio;
   Link<UnixNetVConnection> ready_link;
   SLink<UnixNetVConnection> enable_link;
   int in_enabled_list;
   int triggered;
 
-  NetState() : enabled(0), vio(VIO::NONE), in_enabled_list(0), triggered(0) {}
+  NetState() : enabled(0), error(0), vio(VIO::NONE), in_enabled_list(0), triggered(0) {}
 };
 
 #endif

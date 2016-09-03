@@ -260,6 +260,20 @@ read_from_net(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
     close_UnixNetVConnection(vc, thread);
     return;
   }
+
+  if (!s->enabled && vc->read.error) {
+    int err = 0, errlen = sizeof(int);
+    if (getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, &err, (socklen_t *)&errlen) == -1) {
+      err = errno;
+    }
+
+    // if it is a non-temporary error, we should die appropriately
+    if (err && err != EAGAIN && err != EINTR) {
+      read_signal_error(nh, vc, err);
+      return;
+    }
+  }
+
   // if it is not enabled.
   if (!s->enabled || s->vio.op != VIO::READ) {
     read_disable(nh, vc);
@@ -425,6 +439,18 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
   if (!lock.is_locked() || lock.get_mutex() != s->vio.mutex.get()) {
     write_reschedule(nh, vc);
     return;
+  }
+
+  if (!s->enabled && vc->write.error) {
+    int err = 0, errlen = sizeof(int);
+    if (getsockopt(vc->con.fd, SOL_SOCKET, SO_ERROR, &err, (socklen_t *)&errlen) == -1) {
+      err = errno;
+    }
+
+    if (err && err != EAGAIN && err != EINTR) {
+      write_signal_error(nh, vc, err);
+      return;
+    }
   }
 
   // This function will always return true unless
@@ -1077,6 +1103,12 @@ void
 UnixNetVConnection::readSignalError(NetHandler *nh, int err)
 {
   read_signal_error(nh, this, err);
+}
+
+void
+UnixNetVConnection::writeSignalError(NetHandler *nh, int err)
+{
+  write_signal_error(nh, this, err);
 }
 
 int
