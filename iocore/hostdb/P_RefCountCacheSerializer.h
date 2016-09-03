@@ -255,7 +255,16 @@ RefCountCacheSerializer<C>::finalize_sync()
     return error;
   }
 
+#ifdef O_DIRECTORY
   dirfd = socketManager.open(this->dirname.c_str(), O_DIRECTORY);
+#else
+  struct stat st;
+  stat(this->dirname.c_str(), &st);
+  if (!S_ISDIR(st.st_mode)) {
+    return -ENOTDIR;
+  }
+  dirfd = socketManager.open(this->dirname.c_str(), 0);
+#endif
   if (dirfd == -1) {
     return -errno;
   }
