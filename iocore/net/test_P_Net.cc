@@ -45,7 +45,7 @@ struct NetTesterSM : public Continuation {
   handle_read(int event, void *data)
   {
     int r;
-    char *str;
+    char *str = NULL;
     switch (event) {
     case VC_EVENT_READ_READY:
       r   = reader->read_avail();
