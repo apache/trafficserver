@@ -163,9 +163,6 @@ CfgContextGet(CfgContext *ctx)
   CfgEleObj *ele      = NULL;
 
   ink_assert(ctx);
-  if (!ctx) {
-    return TS_ERR_PARAMS;
-  }
 
   // get copy of the file
   ret = ReadFile(ctx->getFilename(), &old_text, &size, &ver);
