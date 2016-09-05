@@ -152,7 +152,7 @@ EThread::process_event(Event *e, int calling_code)
     if (e->period.count()) {
       if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
         if (e->period.count() < 0)
-          e->timeout_at = ts_hrtick::min() + e->period;
+          e->timeout_at = TS_HRTICK_ZERO + e->period;
         else {
           this->get_hrtime_updated();
           e->timeout_at = cur_time + e->period;

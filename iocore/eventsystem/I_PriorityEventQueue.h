@@ -30,7 +30,7 @@
 // <5ms, 10, 20, 40, 80, 160, 320, 640, 1280, 2560, 5120
 // Subtle - return type is in ns while the computation is ms. This works because conversion to
 // faster clock is automatic and compile time available.
-constexpr ts_nanoseconds PQ_BUCKET_TIME(int i) { return ts_microseconds(5 << i); }
+constexpr ts_nanoseconds PQ_BUCKET_TIME(int i) { return ts_milliseconds(5 << i); }
 static const int N_PQ_LIST = 10;
 //#define N_PQ_LIST 10
 //#define PQ_BUCKET_TIME(_i) (HRTIME_MSECONDS(5) << (_i))
