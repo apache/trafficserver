@@ -182,7 +182,7 @@ Thread::get_hrtime()
 TS_INLINE ts_hrtick
 Thread::get_hrtime_updated()
 {
-  return cur_time = std::chrono::high_resolution_clock::now();
+  return cur_time = ts_hrtick::clock::now();
 }
 
 #endif /*_I_Thread_h*/

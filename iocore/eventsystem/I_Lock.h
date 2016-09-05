@@ -28,7 +28,7 @@
 #include "ts/Diags.h"
 #include "I_Thread.h"
 
-static const ts_microseconds MAX_LOCK_TIME(200);
+static const ts_nanoseconds MAX_LOCK_TIME(ts_microseconds(200));
 #define THREAD_MUTEX_THREAD_HOLDING (-1024 * 1024)
 
 /*------------------------------------------------------*\
