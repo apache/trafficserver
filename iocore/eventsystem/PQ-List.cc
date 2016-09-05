@@ -22,18 +22,31 @@
  */
 
 #include "P_EventSystem.h"
+typedef std::chrono::duration<uint32_t, std::ratio<1,PQ_BUCKET_TIME(0).count()> > bucket_time;
+
+namespace {
+  uint32_t Get_Bucket_Tick(ts_hrtick tick)
+  {
+    // @a bucket_time ticks at the rate of the smallest event bucket time. Converting the current time to
+    // that time metric yields a value that is the # of those tickets since the epoch. That is then extracted
+    // as a raw number for bit manipulation later.
+    return std::chrono::duration_cast<bucket_time>(tick.time_since_epoch()).count();
+  }
+}
 
 PriorityEventQueue::PriorityEventQueue()
 {
   last_check_time    = Thread::get_hrtime_updated();
-  last_check_buckets = last_check_time / PQ_BUCKET_TIME(0);
+  last_check_buckets = Get_Bucket_Tick(last_check_time);
+  //  last_check_buckets = last_check_time / PQ_BUCKET_TIME(0);
 }
 
 void
-PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
+PriorityEventQueue::check_ready(ts_hrtick now, EThread *t)
 {
   int i, j, k = 0;
-  uint32_t check_buckets = (uint32_t)(now / PQ_BUCKET_TIME(0));
+  //  uint32_t check_buckets = (uint32_t)(now / PQ_BUCKET_TIME(0));
+  uint32_t check_buckets = Get_Bucket_Tick(now);
   uint32_t todo_buckets  = check_buckets ^ last_check_buckets;
   last_check_time        = now;
   last_check_buckets     = check_buckets;
@@ -52,7 +65,7 @@ PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
         e->cancelled             = 0;
         EVENT_FREE(e, eventAllocator, t);
       } else {
-        ink_hrtime tt = e->timeout_at - now;
+        ts_nanoseconds tt = e->timeout_at - now;
         for (j = i; j > 0 && tt <= PQ_BUCKET_TIME(j - 1);)
           j--;
         e->in_heap = j;

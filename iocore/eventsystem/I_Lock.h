@@ -28,7 +28,7 @@
 #include "ts/Diags.h"
 #include "I_Thread.h"
 
-#define MAX_LOCK_TIME HRTIME_MSECONDS(200)
+static const ts_microseconds MAX_LOCK_TIME(200);
 #define THREAD_MUTEX_THREAD_HOLDING (-1024 * 1024)
 
 /*------------------------------------------------------*\
@@ -208,7 +208,7 @@ public:
   int nthread_holding;
 
 #ifdef DEBUG
-  ink_hrtime hold_time;
+  ts_hrtick hold_time;
   SourceLocation srcloc;
   const char *handler;
 
@@ -241,7 +241,7 @@ public:
     thread_holding  = NULL;
     nthread_holding = 0;
 #ifdef DEBUG
-    hold_time = 0;
+    hold_time = hold_time.min();
     handler   = NULL;
 #ifdef MAX_LOCK_TAKEN
     taken = 0;

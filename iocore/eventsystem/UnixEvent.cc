@@ -38,8 +38,8 @@ Event::schedule_imm(int acallback_event)
   ink_assert(ethread == this_ethread());
   if (in_the_priority_queue)
     ethread->EventQueue.remove(this);
-  timeout_at = 0;
-  period     = 0;
+  timeout_at = TS_HRTICK_ZERO;
+  period     = ts_nanoseconds(0);
   immediate  = true;
   mutex      = continuation->mutex;
   if (!in_the_prot_queue)
@@ -47,15 +47,15 @@ Event::schedule_imm(int acallback_event)
 }
 
 void
-Event::schedule_at(ink_hrtime atimeout_at, int acallback_event)
+Event::schedule_at(ts_hrtick atimeout_at, int acallback_event)
 {
   callback_event = acallback_event;
   ink_assert(ethread == this_ethread());
-  ink_assert(atimeout_at > 0);
+  ink_assert(atimeout_at > TS_HRTICK_ZERO);
   if (in_the_priority_queue)
     ethread->EventQueue.remove(this);
   timeout_at = atimeout_at;
-  period     = 0;
+  period     = ts_nanoseconds(0);
   immediate  = false;
   mutex      = continuation->mutex;
   if (!in_the_prot_queue)
@@ -63,14 +63,14 @@ Event::schedule_at(ink_hrtime atimeout_at, int acallback_event)
 }
 
 void
-Event::schedule_in(ink_hrtime atimeout_in, int acallback_event)
+Event::schedule_in(ts_nanoseconds atimeout_in, int acallback_event)
 {
   callback_event = acallback_event;
   ink_assert(ethread == this_ethread());
   if (in_the_priority_queue)
     ethread->EventQueue.remove(this);
   timeout_at = Thread::get_hrtime() + atimeout_in;
-  period     = 0;
+  period     = ts_nanoseconds(0);
   immediate  = false;
   mutex      = continuation->mutex;
   if (!in_the_prot_queue)
@@ -78,15 +78,15 @@ Event::schedule_in(ink_hrtime atimeout_in, int acallback_event)
 }
 
 void
-Event::schedule_every(ink_hrtime aperiod, int acallback_event)
+Event::schedule_every(ts_nanoseconds aperiod, int acallback_event)
 {
   callback_event = acallback_event;
   ink_assert(ethread == this_ethread());
-  ink_assert(aperiod != 0);
+  ink_assert(aperiod != ts_nanoseconds(0));
   if (in_the_priority_queue)
     ethread->EventQueue.remove(this);
-  if (aperiod < 0) {
-    timeout_at = aperiod;
+  if (aperiod < ts_nanoseconds(0)) {
+    timeout_at = TS_HRTICK_ZERO + aperiod;
   } else {
     timeout_at = Thread::get_hrtime() + aperiod;
   }

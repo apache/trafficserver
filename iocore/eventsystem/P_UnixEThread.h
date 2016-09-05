@@ -34,13 +34,14 @@
 #include "I_EThread.h"
 #include "I_EventProcessor.h"
 
-const int DELAY_FOR_RETRY = HRTIME_MSECONDS(10);
+static const ts_microseconds DELAY_FOR_RETRY(10);
+//const int DELAY_FOR_RETRY = HRTIME_MSECONDS(10);
 
 TS_INLINE Event *
 EThread::schedule_spawn(Continuation *cont)
 {
   Event *e = EVENT_ALLOC(eventAllocator, this);
-  return schedule(e->init(cont, 0, 0));
+  return schedule(e->init(cont));
 }
 
 TS_INLINE Event *
@@ -49,7 +50,7 @@ EThread::schedule_imm(Continuation *cont, int callback_event, void *cookie)
   Event *e          = ::eventAllocator.alloc();
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, 0, 0));
+  return schedule(e->init(cont));
 }
 
 TS_INLINE Event *
@@ -58,29 +59,29 @@ EThread::schedule_imm_signal(Continuation *cont, int callback_event, void *cooki
   Event *e          = ::eventAllocator.alloc();
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, 0, 0), true);
+  return schedule(e->init(cont), true);
 }
 
 TS_INLINE Event *
-EThread::schedule_at(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+EThread::schedule_at(Continuation *cont, ts_hrtick t, int callback_event, void *cookie)
 {
   Event *e          = ::eventAllocator.alloc();
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, t, 0));
+  return schedule(e->init(cont, t));
 }
 
 TS_INLINE Event *
-EThread::schedule_in(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+EThread::schedule_in(Continuation *cont, ts_nanoseconds t, int callback_event, void *cookie)
 {
   Event *e          = ::eventAllocator.alloc();
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, get_hrtime() + t, 0));
+  return schedule(e->init(cont, get_hrtime() + t));
 }
 
 TS_INLINE Event *
-EThread::schedule_every(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+EThread::schedule_every(Continuation *cont, ts_nanoseconds t, int callback_event, void *cookie)
 {
   Event *e          = ::eventAllocator.alloc();
   e->callback_event = callback_event;
@@ -108,29 +109,29 @@ EThread::schedule_imm_local(Continuation *cont, int callback_event, void *cookie
   Event *e          = EVENT_ALLOC(eventAllocator, this);
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule_local(e->init(cont, 0, 0));
+  return schedule_local(e->init(cont));
 }
 
 TS_INLINE Event *
-EThread::schedule_at_local(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+EThread::schedule_at_local(Continuation *cont, ts_hrtick t, int callback_event, void *cookie)
 {
   Event *e          = EVENT_ALLOC(eventAllocator, this);
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule_local(e->init(cont, t, 0));
+  return schedule_local(e->init(cont, t));
 }
 
 TS_INLINE Event *
-EThread::schedule_in_local(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+EThread::schedule_in_local(Continuation *cont, ts_nanoseconds t, int callback_event, void *cookie)
 {
   Event *e          = EVENT_ALLOC(eventAllocator, this);
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule_local(e->init(cont, get_hrtime() + t, 0));
+  return schedule_local(e->init(cont, get_hrtime() + t));
 }
 
 TS_INLINE Event *
-EThread::schedule_every_local(Continuation *cont, ink_hrtime t, int callback_event, void *cookie)
+EThread::schedule_every_local(Continuation *cont, ts_nanoseconds t, int callback_event, void *cookie)
 {
   Event *e          = EVENT_ALLOC(eventAllocator, this);
   e->callback_event = callback_event;

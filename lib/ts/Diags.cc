@@ -278,8 +278,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // prepend timestamp into the timestamped version of the buffer //
   //////////////////////////////////////////////////////////////////
 
-  tp               = ink_gettimeofday();
-  time_t cur_clock = (time_t)tp.tv_sec;
+  //  tp               = ink_gettimeofday();
+  time_t cur_clock = ts_get_current_time_t();
+    //  time_t cur_clock = (time_t)tp.tv_sec;
   buffer           = ink_ctime_r(&cur_clock, timestamp_buf);
   snprintf(&(timestamp_buf[19]), (sizeof(timestamp_buf) - 20), ".%03d", (int)(tp.tv_usec / 1000));
 

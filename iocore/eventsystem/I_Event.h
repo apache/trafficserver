@@ -176,7 +176,7 @@ public:
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
-  void schedule_at(ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL);
+  void schedule_at(ts_hrtick atimeout_at, int callback_event = EVENT_INTERVAL);
 
   /**
      Reschedules this event to callback at time 'atimeout_at'.
@@ -187,7 +187,7 @@ public:
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
-  void schedule_in(ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL);
+  void schedule_in(ts_nanoseconds atimeout_in, int callback_event = EVENT_INTERVAL);
 
   /**
      Reschedules this event to callback every 'aperiod'. Instructs
@@ -198,7 +198,7 @@ public:
      @param callback_event Event code to return at the completion of this event. See the Remarks section.
 
   */
-  void schedule_every(ink_hrtime aperiod, int callback_event = EVENT_INTERVAL);
+  void schedule_every(ts_nanoseconds aperiod, int callback_event = EVENT_INTERVAL);
 
   // inherited from Action::cancel
   // virtual void cancel(Continuation * c = NULL);
@@ -214,8 +214,8 @@ public:
   unsigned int in_heap : 4;
   int callback_event;
 
-  ink_hrtime timeout_at;
-  ink_hrtime period;
+  ts_hrtick timeout_at;
+  ts_nanoseconds period;
 
   /**
     This field can be set when an event is created. It is returned
@@ -229,10 +229,10 @@ public:
 
   Event();
 
-  Event *init(Continuation *c, ink_hrtime atimeout_at = 0, ink_hrtime aperiod = 0);
+  Event *init(Continuation *c, ts_hrtick atimeout_at = ts_hrtick::min(), ts_nanoseconds aperiod = ts_nanoseconds::zero());
 
 #ifdef ENABLE_TIME_TRACE
-  ink_hrtime start_time;
+  ts_hrtick start_time;
 #endif
 
 private:

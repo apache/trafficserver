@@ -133,7 +133,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_at(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_at(Continuation *c, ts_hrtick atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -153,7 +153,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_in(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_in(Continuation *c, ts_nanoseconds atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -174,7 +174,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_every(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_every(Continuation *c, ts_nanoseconds aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -213,7 +213,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_at_local(Continuation *c, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_at_local(Continuation *c, ts_hrtick atimeout_at, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -234,7 +234,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_in_local(Continuation *c, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_in_local(Continuation *c, ts_nanoseconds atimeout_in, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /**
     Schedules the continuation on this EThread to receive an event
@@ -254,7 +254,7 @@ public:
       of this callback.
 
   */
-  Event *schedule_every_local(Continuation *c, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
+  Event *schedule_every_local(Continuation *c, ts_nanoseconds aperiod, int callback_event = EVENT_INTERVAL, void *cookie = NULL);
 
   /* private */
 

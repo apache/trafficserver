@@ -137,14 +137,14 @@ flush_signals(EThread *thr)
 }
 
 void
-ProtectedQueue::dequeue_timed(ink_hrtime cur_time, ink_hrtime timeout, bool sleep)
+ProtectedQueue::dequeue_timed(ts_hrtick cur_time, ts_hrtick timeout, bool sleep)
 {
   (void)cur_time;
   Event *e;
   if (sleep) {
     ink_mutex_acquire(&lock);
     if (INK_ATOMICLIST_EMPTY(al)) {
-      timespec ts = ink_hrtime_to_timespec(timeout);
+      timespec ts = ts_hrtick_to_timespec(timeout);
       ink_cond_timedwait(&might_have_data, &lock, &ts);
     }
     ink_mutex_release(&lock);
