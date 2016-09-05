@@ -1824,8 +1824,9 @@ fail:
 SSL_CTX *
 SSLCreateServerContext(const SSLConfigParams *params)
 {
-  const ssl_user_config sslMultCertSettings;
+  ssl_user_config sslMultCertSettings;
   Vec<X509 *> cert_list;
+  sslMultCertSettings.opt = SSLCertContext::OPT_TUNNEL;
   SSL_CTX *ctx = SSLInitServerContext(params, sslMultCertSettings, cert_list);
   ink_assert(cert_list.length() == 0);
   return ctx;
