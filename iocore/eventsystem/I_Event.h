@@ -229,7 +229,7 @@ public:
 
   Event();
 
-  Event *init(Continuation *c, ts_hrtick atimeout_at = ts_hrtick::min(), ts_nanoseconds aperiod = ts_nanoseconds::zero());
+  Event *init(Continuation *c, ts_hrtick atimeout_at = TS_HRTICK_ZERO, ts_nanoseconds aperiod = ts_nanoseconds::zero());
 
 #ifdef ENABLE_TIME_TRACE
   ts_hrtick start_time;
