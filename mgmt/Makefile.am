@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-SUBDIRS = cluster utils api
+SUBDIRS = utils api
 
 # Decoder ring:
 # 	libmgmt_c.la 	Configuration records (defaults).
@@ -28,7 +28,6 @@ noinst_LTLIBRARIES = libmgmt_c.la libmgmt_p.la libmgmt_lm.la
 AM_CPPFLAGS = \
   $(iocore_include_dirs) \
   -I$(top_srcdir)/mgmt/api/include \
-  -I$(top_srcdir)/mgmt/cluster \
   -I$(top_srcdir)/mgmt/utils \
   -I$(top_srcdir)/proxy/api/ts \
   -I$(top_srcdir)/proxy \
@@ -70,7 +69,6 @@ libmgmt_lm_la_SOURCES = \
 
 libmgmt_lm_la_LIBADD = \
   libmgmt_c.la \
-  $(top_builddir)/mgmt/cluster/libcluster.la \
   $(top_builddir)/mgmt/utils/libutils_lm.la
 
 libmgmt_p_la_LIBADD = \

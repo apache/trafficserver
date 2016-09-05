@@ -2274,7 +2274,7 @@ print_stats()
 void
 reset_stats()
 {
-  TSMgmtError err = TSStatsReset(false, NULL);
+  TSMgmtError err = TSStatsReset(NULL);
   print_err("TSStatsReset", err);
   return;
 }

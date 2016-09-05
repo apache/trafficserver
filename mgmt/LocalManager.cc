@@ -30,8 +30,6 @@
 #include "MgmtSocket.h"
 #include "ts/ink_cap.h"
 #include "FileManager.h"
-#include "ClusterCom.h"
-#include "VMap.h"
 
 #if TS_USE_POSIX_CAP
 #include <sys/capability.h>
@@ -46,9 +44,6 @@ LocalManager::mgmtCleanup()
 
   // fix me for librecords
 
-  if (virt_map) {
-    virt_map->rl_downAddrs(); // We are bailing done need to worry about table
-  }
   closelog();
   return;
 }
@@ -140,29 +135,6 @@ LocalManager::clearStats(const char *name)
   }
 }
 
-// bool LocalManager::clusterOk()
-//
-//   Returns false if the proxy has been up for more than
-//     30 seconds but is not reporting that it has clustered
-//     with all the nodes in cluster.config
-//
-//   Otherwise returns true
-//
-bool
-LocalManager::clusterOk()
-{
-  bool found  = true;
-  bool result = true;
-
-  if (processRunning() == true && time(NULL) > (this->proxy_started_at + 30) &&
-      this->ccom->alive_peers_count + 1 != REC_readInteger("proxy.process.cluster.nodes", &found)) {
-    result = false;
-  }
-
-  ink_assert(found);
-  return result;
-}
-
 bool
 LocalManager::processRunning()
 {
@@ -182,7 +154,6 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
 
   syslog_facility = 0;
 
-  ccom                      = NULL;
   proxy_started_at          = -1;
   proxy_launch_count        = 0;
   manager_started_at        = time(NULL);
@@ -190,8 +161,6 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
   mgmt_shutdown_outstanding = MGMT_PENDING_NONE;
   proxy_running             = 0;
   RecSetRecordInt("proxy.node.proxy_running", 0, REC_SOURCE_DEFAULT);
-
-  virt_map = NULL;
 
   RecInt http_enabled = REC_readInteger("proxy.config.http.enabled", &found);
   ink_assert(found);
@@ -262,8 +231,6 @@ LocalManager::LocalManager(bool proxy_on) : BaseManager(), run_proxy(proxy_on), 
 LocalManager::~LocalManager()
 {
   delete alarm_keeper;
-  delete virt_map;
-  delete ccom;
   ats_free(absolute_proxy_binary);
   ats_free(proxy_name);
   ats_free(proxy_binary);
@@ -275,74 +242,6 @@ void
 LocalManager::initAlarm()
 {
   alarm_keeper = new Alarms();
-}
-
-/*
- * initCCom(...)
- *   Function initializes cluster communication structure held by local manager.
- */
-void
-LocalManager::initCCom(const AppVersionInfo &version, FileManager *configFiles, int mcport, char *addr, int rsport)
-{
-  ats_scoped_str rundir(RecConfigReadRuntimeDir());
-  bool found;
-  IpEndpoint cluster_ip;         // ip addr of the cluster interface
-  ip_text_buffer clusterAddrStr; // cluster ip addr as a String
-  char *intrName;                // Name of the interface we are to use
-  char hostname[1024];           // hostname of this machine
-  const char envVar[] = "PROXY_CLUSTER_ADDR=";
-  char *envBuf;
-
-  if (gethostname(hostname, 1024) < 0) {
-    mgmt_fatal(stderr, errno, "[LocalManager::initCCom] gethostname failed\n");
-  }
-  // Fetch which interface we are using for clustering
-  intrName = REC_readString("proxy.config.cluster.ethernet_interface", &found);
-  ink_assert(intrName != NULL);
-
-  found = mgmt_getAddrForIntr(intrName, &cluster_ip.sa);
-  if (found == false) {
-    mgmt_fatal(stderr, 0, "[LocalManager::initCCom] Unable to find network interface %s.  Exiting...\n", intrName);
-  } else if (!ats_is_ip4(&cluster_ip)) {
-    mgmt_fatal(stderr, 0, "[LocalManager::initCCom] Unable to find IPv4 network interface %s.  Exiting...\n", intrName);
-  }
-
-  ats_ip_ntop(&cluster_ip, clusterAddrStr, sizeof(clusterAddrStr));
-  Debug("ccom", "Cluster Interconnect is %s : %s", intrName, clusterAddrStr);
-
-  // This an awful hack but I could not come up with a better way to
-  //  pass the cluster address to the proxy
-  //    Set an environment variable so the proxy can find out
-  //    what the cluster address is.  The reason we need this awful
-  //    hack is that the proxy needs this info immediately at startup
-  //    and it is different for every machine in the cluster so using
-  //    a config variable will not work.
-  // The other options are to pass it on the command line to the proxy
-  //    which would require a fair bit of code modification since
-  //    what is passed right now is assumed to be static.  The other
-  //    is to write it to a separate file but that seems like a
-  //    lot of trouble for a 16 character string
-  // Set the cluster ip addr variable so that proxy can read it
-  //    and flush it to disk
-  const size_t envBuf_size = strlen(envVar) + strlen(clusterAddrStr) + 1;
-  envBuf                   = (char *)ats_malloc(envBuf_size);
-  ink_strlcpy(envBuf, envVar, envBuf_size);
-  ink_strlcat(envBuf, clusterAddrStr, envBuf_size);
-  ink_release_assert(putenv(envBuf) == 0);
-
-  ccom     = new ClusterCom(ats_ip4_addr_cast(&cluster_ip), hostname, mcport, addr, rsport, rundir);
-  virt_map = new VMap(intrName, ats_ip4_addr_cast(&cluster_ip), &lmgmt->ccom->mutex);
-
-  ccom->appVersionInfo = version;
-  ccom->configFiles    = configFiles;
-
-  virt_map->appVersionInfo = version;
-
-  virt_map->downAddrs(); // Just to be safe
-  ccom->establishChannels();
-  ats_free(intrName);
-
-  return;
 }
 
 /*
@@ -649,9 +548,6 @@ LocalManager::sendMgmtMsgToProcesses(MgmtMessageHdr *mh)
   switch (mh->msg_id) {
   case MGMT_EVENT_SHUTDOWN: {
     run_proxy = false;
-    if (lmgmt->virt_map) {
-      lmgmt->virt_map->downAddrs(); /* Down all known addrs to be safe */
-    }
     this->closeProxyPorts();
     break;
   }

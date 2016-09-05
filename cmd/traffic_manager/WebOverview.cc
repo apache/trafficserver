@@ -35,7 +35,6 @@
 #include "WebMgmtUtils.h"
 
 #include "LocalManager.h"
-#include "ClusterCom.h"
 #include "MgmtUtils.h"
 #include "MgmtDefs.h"
 #include "ts/Diags.h"
@@ -293,45 +292,6 @@ overviewPage::~overviewPage()
   // ink_hash_table_destroy(nodeRecords);
 }
 
-// overviewPage::checkForUpdates - updates node records as to whether peers
-//    are up or down
-void
-overviewPage::checkForUpdates()
-{
-  ClusterPeerInfo *tmp;
-  InkHashTableEntry *entry;
-  InkHashTableIteratorState iterator_state;
-  overviewRecord *current;
-  time_t currentTime;
-  bool newHostAdded = false;
-
-  // grok through the cluster communication stuff and update information
-  //  about hosts in the cluster
-  //
-  ink_mutex_acquire(&accessLock);
-  ink_mutex_acquire(&(lmgmt->ccom->mutex));
-  currentTime = time(NULL);
-  for (entry = ink_hash_table_iterator_first(lmgmt->ccom->peers, &iterator_state); entry != NULL;
-       entry = ink_hash_table_iterator_next(lmgmt->ccom->peers, &iterator_state)) {
-    tmp = (ClusterPeerInfo *)ink_hash_table_entry_value(lmgmt->ccom->peers, entry);
-
-    if (ink_hash_table_lookup(nodeRecords, (InkHashTableKey)tmp->inet_address, (InkHashTableValue *)&current) == 0) {
-      this->addRecord(tmp);
-      newHostAdded = true;
-    } else {
-      current->updateStatus(currentTime, tmp);
-    }
-  }
-  ink_mutex_release(&lmgmt->ccom->mutex);
-
-  // If we added a new host we must resort sortRecords
-  if (newHostAdded) {
-    this->sortHosts();
-  }
-
-  ink_mutex_release(&accessLock);
-}
-
 // overrviewPage::sortHosts()
 //
 // resorts sortRecords, but always leaves the local node
@@ -364,35 +324,6 @@ overviewPage::addRecord(ClusterPeerInfo *cpi)
 
   sortRecords.addEntry(newRec);
   numHosts++;
-}
-
-// adds a record to nodeRecords for the local machine.
-//   gets IP addr from lmgmt->ccom so cluster communtication
-//   must be intialized before calling this function
-//
-//
-void
-overviewPage::addSelfRecord()
-{
-  overviewRecord *newRec;
-
-  ink_mutex_acquire(&accessLock);
-
-  // We should not have been called before
-  ink_assert(ourAddr == 0);
-
-  // Find out what our cluster addr is from
-  //   from cluster com
-  this->ourAddr = lmgmt->ccom->getIP();
-
-  newRec     = new overviewRecord(ourAddr, true);
-  newRec->up = true;
-
-  ink_hash_table_insert(nodeRecords, (InkHashTableKey)this->ourAddr, (InkHashTableEntry *)newRec);
-
-  sortRecords.addEntry(newRec);
-  numHosts++;
-  ink_mutex_release(&accessLock);
 }
 
 // overviewRecord* overviewPage::findNodeByName(const char* nodeName)

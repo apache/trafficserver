@@ -42,8 +42,6 @@
 #endif
 
 class FileManager;
-class ClusterCom;
-class VMap;
 
 enum ManagementPendingOperation {
   MGMT_PENDING_NONE,         // Do nothing
@@ -116,10 +114,7 @@ public:
   volatile pid_t proxy_launch_pid;
 
   Alarms *alarm_keeper;
-  VMap *virt_map;
   FileManager *configFiles;
-
-  ClusterCom *ccom;
 
   volatile pid_t watched_process_pid;
 

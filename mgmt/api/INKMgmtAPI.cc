@@ -902,9 +902,9 @@ TSCacheEleCreate(TSRuleTypeT type)
 {
   TSCacheEle *ele;
 
-  if (type != TS_CACHE_NEVER && type != TS_CACHE_IGNORE_NO_CACHE && type != TS_CACHE_CLUSTER_CACHE_LOCAL &&
-      type != TS_CACHE_IGNORE_CLIENT_NO_CACHE && type != TS_CACHE_IGNORE_SERVER_NO_CACHE && type != TS_CACHE_PIN_IN_CACHE &&
-      type != TS_CACHE_REVALIDATE && type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED) {
+  if (type != TS_CACHE_NEVER && type != TS_CACHE_IGNORE_NO_CACHE && type != TS_CACHE_IGNORE_CLIENT_NO_CACHE &&
+      type != TS_CACHE_IGNORE_SERVER_NO_CACHE && type != TS_CACHE_PIN_IN_CACHE && type != TS_CACHE_REVALIDATE &&
+      type != TS_CACHE_TTL_IN_CACHE && type != TS_CACHE_AUTH_CONTENT && type != TS_TYPE_UNDEFINED) {
     return NULL; // invalid type
   }
 
@@ -1339,9 +1339,9 @@ TSVirtIpAddrEleDestroy(TSVirtIpAddrEle *ele)
 
 /*--- statistics operations ----------------------------------------------- */
 tsapi TSMgmtError
-TSStatsReset(bool cluster, const char *name)
+TSStatsReset(const char *name)
 {
-  return StatsReset(cluster, name);
+  return StatsReset(name);
 }
 
 /*--- variable operations ------------------------------------------------- */
@@ -1709,7 +1709,7 @@ TSActionDo(TSActionNeedT action)
 
   switch (action) {
   case TS_ACTION_RESTART:
-    ret = Restart(true); // cluster wide by default?
+    ret = Restart(true);
     break;
   case TS_ACTION_RECONFIGURE:
     ret = Reconfigure();
