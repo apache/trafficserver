@@ -34,8 +34,7 @@
 #include "I_EThread.h"
 #include "I_EventProcessor.h"
 
-static const ts_microseconds DELAY_FOR_RETRY(10);
-//const int DELAY_FOR_RETRY = HRTIME_MSECONDS(10);
+static const ts_nanoseconds DELAY_FOR_RETRY(ts_milliseconds(10));
 
 TS_INLINE Event *
 EThread::schedule_spawn(Continuation *cont)
