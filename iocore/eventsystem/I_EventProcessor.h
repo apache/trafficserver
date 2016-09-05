@@ -167,7 +167,7 @@ public:
       this callback.
 
   */
-  Event *schedule_at(Continuation *c, ink_hrtime atimeout_at, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
+  Event *schedule_at(Continuation *c, ts_hrtick atimeout_at, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
                      void *cookie = NULL);
 
   /**
@@ -189,7 +189,7 @@ public:
       this callback.
 
   */
-  Event *schedule_in(Continuation *c, ink_hrtime atimeout_in, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
+  Event *schedule_in(Continuation *c, ts_nanoseconds atimeout_in, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
                      void *cookie = NULL);
 
   /**
@@ -211,7 +211,7 @@ public:
       this callback.
 
   */
-  Event *schedule_every(Continuation *c, ink_hrtime aperiod, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
+  Event *schedule_every(Continuation *c, ts_nanoseconds aperiod, EventType event_type = ET_CALL, int callback_event = EVENT_INTERVAL,
                         void *cookie = NULL);
 
   ////////////////////////////////////////////
@@ -223,9 +223,9 @@ public:
   ////////////////////////////////////////////
 
   Event *reschedule_imm(Event *e, int callback_event = EVENT_IMMEDIATE);
-  Event *reschedule_at(Event *e, ink_hrtime atimeout_at, int callback_event = EVENT_INTERVAL);
-  Event *reschedule_in(Event *e, ink_hrtime atimeout_in, int callback_event = EVENT_INTERVAL);
-  Event *reschedule_every(Event *e, ink_hrtime aperiod, int callback_event = EVENT_INTERVAL);
+  Event *reschedule_at(Event *e, ts_hrtick atimeout_at, int callback_event = EVENT_INTERVAL);
+  Event *reschedule_in(Event *e, ts_hrtick atimeout_in, int callback_event = EVENT_INTERVAL);
+  Event *reschedule_every(Event *e, ts_hrtick aperiod, int callback_event = EVENT_INTERVAL);
 
   EventProcessor();
 

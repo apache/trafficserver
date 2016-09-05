@@ -36,13 +36,13 @@ struct AIOCallback;
 
 #define MAX_HEARTBEATS_MISSED 10
 #define NO_HEARTBEAT -1
-#define THREAD_MAX_HEARTBEAT_MSECONDS 60
+static const ts_nanoseconds THREAD_MAX_HEARTBEAT(ts_milliseconds(60));
 #define NO_ETHREAD_ID -1
 
 bool shutdown_event_system = false;
 
 EThread::EThread()
-  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this),
+  : generator(static_cast<uint64_t>(Thread::get_hrtime_updated().time_since_epoch().count()) ^ reinterpret_cast<uint64_t>(this)),
     ethreads_to_be_signalled(NULL),
     n_ethreads_to_be_signalled(0),
     main_accept_index(-1),
@@ -55,7 +55,7 @@ EThread::EThread()
 }
 
 EThread::EThread(ThreadType att, int anid)
-  : generator((uint64_t)Thread::get_hrtime_updated() ^ (uint64_t)(uintptr_t)this),
+  : generator(static_cast<uint64_t>(Thread::get_hrtime_updated().time_since_epoch().count()) ^ reinterpret_cast<uint64_t>(this)),
     ethreads_to_be_signalled(NULL),
     n_ethreads_to_be_signalled(0),
     main_accept_index(-1),
@@ -147,10 +147,10 @@ EThread::process_event(Event *e, int calling_code)
     ink_assert(!e->in_the_priority_queue);
     ink_assert(c_temp == e->continuation);
     MUTEX_RELEASE(lock);
-    if (e->period) {
+    if (e->period.count()) {
       if (!e->in_the_prot_queue && !e->in_the_priority_queue) {
-        if (e->period < 0)
-          e->timeout_at = e->period;
+        if (e->period.count() < 0)
+          e->timeout_at = TS_HRTICK_ZERO + e->period;
         else {
           this->get_hrtime_updated();
           e->timeout_at = cur_time + e->period;
@@ -182,7 +182,7 @@ EThread::execute()
   case REGULAR: {
     Event *e;
     Que(Event, link) NegativeQueue;
-    ink_hrtime next_time = 0;
+    ts_hrtick next_time;
 
     // give priority to immediate events
     for (;;) {
@@ -195,10 +195,10 @@ EThread::execute()
       while ((e = EventQueueExternal.dequeue_local())) {
         if (e->cancelled)
           free_event(e);
-        else if (!e->timeout_at) { // IMMEDIATE
-          ink_assert(e->period == 0);
+        else if (e->timeout_at == TS_HRTICK_ZERO) { // IMMEDIATE
+          ink_assert(e->period.count() == 0);
           process_event(e, e->callback_event);
-        } else if (e->timeout_at > 0) // INTERVAL
+        } else if (e->timeout_at > TS_HRTICK_ZERO) // INTERVAL
           EventQueue.enqueue(e, cur_time);
         else { // NEGATIVE
           Event *p = NULL;
@@ -220,7 +220,7 @@ EThread::execute()
         EventQueue.check_ready(cur_time, this);
         while ((e = EventQueue.dequeue_ready(cur_time))) {
           ink_assert(e);
-          ink_assert(e->timeout_at > 0);
+          ink_assert(e->timeout_at > TS_HRTICK_ZERO);
           if (e->cancelled)
             free_event(e);
           else {
@@ -239,7 +239,7 @@ EThread::execute()
         if (!INK_ATOMICLIST_EMPTY(EventQueueExternal.al))
           EventQueueExternal.dequeue_timed(cur_time, next_time, false);
         while ((e = EventQueueExternal.dequeue_local())) {
-          if (!e->timeout_at)
+          if (e->timeout_at == TS_HRTICK_ZERO)
             process_event(e, e->callback_event);
           else {
             if (e->cancelled)
@@ -252,7 +252,7 @@ EThread::execute()
               // be executed in this round (because you can't have
               // more than one poll between two executions of a
               // negative event)
-              if (e->timeout_at < 0) {
+              if (e->timeout_at < TS_HRTICK_ZERO) {
                 Event *p = NULL;
                 Event *a = NegativeQueue.head;
                 while (a && a->timeout_at > e->timeout_at) {
@@ -275,10 +275,10 @@ EThread::execute()
           EventQueueExternal.dequeue_timed(cur_time, next_time, false);
       } else { // Means there are no negative events
         next_time             = EventQueue.earliest_timeout();
-        ink_hrtime sleep_time = next_time - cur_time;
+        ts_nanoseconds sleep_time = next_time - cur_time;
 
-        if (sleep_time > THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND) {
-          next_time = cur_time + THREAD_MAX_HEARTBEAT_MSECONDS * HRTIME_MSECOND;
+        if (sleep_time > THREAD_MAX_HEARTBEAT) {
+          next_time = cur_time + THREAD_MAX_HEARTBEAT;
         }
         // dequeue all the external events and put them in a local
         // queue. If there are no external events available, do a

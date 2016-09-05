@@ -92,7 +92,7 @@ EventProcessor::schedule_imm_signal(Continuation *cont, EventType et, int callba
 #endif
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, 0, 0), et, true);
+  return schedule(e->init(cont), et, true);
 }
 
 TS_INLINE Event *
@@ -106,43 +106,43 @@ EventProcessor::schedule_imm(Continuation *cont, EventType et, int callback_even
 #endif
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, 0, 0), et);
+  return schedule(e->init(cont), et);
 }
 
 TS_INLINE Event *
-EventProcessor::schedule_at(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
+EventProcessor::schedule_at(Continuation *cont, ts_hrtick t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
 
-  ink_assert(t > 0);
+  ink_assert(t > TS_HRTICK_ZERO);
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, t, 0), et);
+  return schedule(e->init(cont, t), et);
 }
 
 TS_INLINE Event *
-EventProcessor::schedule_in(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
+EventProcessor::schedule_in(Continuation *cont, ts_nanoseconds t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
 
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  return schedule(e->init(cont, Thread::get_hrtime() + t, 0), et);
+  return schedule(e->init(cont, Thread::get_hrtime() + t), et);
 }
 
 TS_INLINE Event *
-EventProcessor::schedule_every(Continuation *cont, ink_hrtime t, EventType et, int callback_event, void *cookie)
+EventProcessor::schedule_every(Continuation *cont, ts_nanoseconds t, EventType et, int callback_event, void *cookie)
 {
   Event *e = eventAllocator.alloc();
 
-  ink_assert(t != 0);
+  ink_assert(t != t.zero());
   ink_assert(et < MAX_EVENT_TYPES);
   e->callback_event = callback_event;
   e->cookie         = cookie;
-  if (t < 0)
-    return schedule(e->init(cont, t, t), et);
+  if (t < t.zero())
+    return schedule(e->init(cont, TS_HRTICK_ZERO - t, t), et);
   else
     return schedule(e->init(cont, Thread::get_hrtime() + t, t), et);
 }

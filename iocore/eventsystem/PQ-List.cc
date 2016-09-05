@@ -22,18 +22,29 @@
  */
 
 #include "P_EventSystem.h"
+// This makes a duration type with ticks the size of PQ_BUCKET_TIME(0).
+// When a duration is assigned to an instance of this, @c count is the number of PQ_BUCKET_TIME(0) periods.
+typedef std::chrono::duration<uint32_t, std::ratio_multiply<std::ratio<PQ_BUCKET_TIME(0).count()>,  decltype(PQ_BUCKET_TIME(0))::period>> bucket_time;
+
+namespace {
+  // Get the number of PQ_BUCKET_TIME(0) periods since the epoch for time @a tick
+  inline uint32_t Get_Bucket_Tick(ts_hrtick tick)
+  {
+    return std::chrono::duration_cast<bucket_time>(tick.time_since_epoch()).count();
+  }
+}
 
 PriorityEventQueue::PriorityEventQueue()
 {
   last_check_time    = Thread::get_hrtime_updated();
-  last_check_buckets = last_check_time / PQ_BUCKET_TIME(0);
+  last_check_buckets = Get_Bucket_Tick(last_check_time);
 }
 
 void
-PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
+PriorityEventQueue::check_ready(ts_hrtick now, EThread *t)
 {
   int i, j, k = 0;
-  uint32_t check_buckets = (uint32_t)(now / PQ_BUCKET_TIME(0));
+  uint32_t check_buckets = Get_Bucket_Tick(now);
   uint32_t todo_buckets  = check_buckets ^ last_check_buckets;
   last_check_time        = now;
   last_check_buckets     = check_buckets;
@@ -52,7 +63,7 @@ PriorityEventQueue::check_ready(ink_hrtime now, EThread *t)
         e->cancelled             = 0;
         EVENT_FREE(e, eventAllocator, t);
       } else {
-        ink_hrtime tt = e->timeout_at - now;
+        ts_nanoseconds tt = e->timeout_at - now;
         for (j = i; j > 0 && tt <= PQ_BUCKET_TIME(j - 1);)
           j--;
         e->in_heap = j;

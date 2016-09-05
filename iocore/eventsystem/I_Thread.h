@@ -117,7 +117,7 @@ public:
   Thread();
   virtual ~Thread();
 
-  static ink_hrtime cur_time;
+  static ts_hrtick cur_time;
   inkcoreapi static ink_thread_key thread_data_key;
 
   // For THREAD_ALLOC
@@ -159,7 +159,7 @@ public:
       @note The cached copy shared among threads which means the cached copy is udpated
       for all threads if any thread updates it.
   */
-  static ink_hrtime get_hrtime();
+  static ts_hrtick get_hrtime();
 
   /** Get the operating system high resolution time.
 
@@ -168,21 +168,21 @@ public:
 
       @note This also updates the cached time.
   */
-  static ink_hrtime get_hrtime_updated();
+  static ts_hrtick get_hrtime_updated();
 };
 
 extern Thread *this_thread();
 
-TS_INLINE ink_hrtime
+TS_INLINE ts_hrtick
 Thread::get_hrtime()
 {
   return cur_time;
 }
 
-TS_INLINE ink_hrtime
+TS_INLINE ts_hrtick
 Thread::get_hrtime_updated()
 {
-  return cur_time = ink_get_hrtime_internal();
+  return cur_time = ts_hrtick::clock::now();
 }
 
 #endif /*_I_Thread_h*/

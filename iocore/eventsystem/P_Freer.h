@@ -49,7 +49,7 @@ public: // Needed by WinNT compiler (compiler bug)
 
 template <class C>
 TS_INLINE void
-new_Deleter(C *ap, ink_hrtime t)
+new_Deleter(C *ap, ts_hrtick t)
 {
   eventProcessor.schedule_in(new DeleterContinuation<C>(ap), t, ET_TASK);
 }
@@ -71,7 +71,7 @@ public: // Needed by WinNT compiler (compiler bug)
 
 template <class C>
 TS_INLINE void
-new_FreeCaller(C *ap, ink_hrtime t)
+new_FreeCaller(C *ap, ts_nanoseconds t)
 {
   eventProcessor.schedule_in(new FreeCallContinuation<C>(ap), t, ET_TASK);
 }
@@ -96,7 +96,7 @@ struct FreerContinuation : public Continuation {
 };
 
 TS_INLINE void
-new_Freer(void *ap, ink_hrtime t)
+new_Freer(void *ap, ts_nanoseconds t)
 {
   eventProcessor.schedule_in(new FreerContinuation(ap), t, ET_TASK);
 }
@@ -121,7 +121,7 @@ template <class C> struct DereferContinuation : public Continuation {
 
 template <class C>
 TS_INLINE void
-new_Derefer(C *ap, ink_hrtime t)
+new_Derefer(C *ap, ts_hrtick t)
 {
   eventProcessor.schedule_in(new DereferContinuation<C>(ap), t, ET_TASK);
 }

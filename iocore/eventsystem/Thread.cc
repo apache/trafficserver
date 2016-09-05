@@ -37,7 +37,7 @@
 
 static ink_thread_key init_thread_key();
 
-ink_hrtime Thread::cur_time                       = 0;
+ts_hrtick Thread::cur_time;
 inkcoreapi ink_thread_key Thread::thread_data_key = init_thread_key();
 
 Thread::Thread()
