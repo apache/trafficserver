@@ -200,7 +200,7 @@ EThread::execute()
         else if (e->timeout_at == TS_HRTICK_ZERO) { // IMMEDIATE
           ink_assert(e->period.count() == 0);
           process_event(e, e->callback_event);
-        } else if (e->timeout_at.time_since_epoch().count() > 0) // INTERVAL
+        } else if (e->timeout_at > TS_HRTICK_ZERO) // INTERVAL
           EventQueue.enqueue(e, cur_time);
         else { // NEGATIVE
           Event *p = NULL;
@@ -222,7 +222,7 @@ EThread::execute()
         EventQueue.check_ready(cur_time, this);
         while ((e = EventQueue.dequeue_ready(cur_time))) {
           ink_assert(e);
-          ink_assert(e->timeout_at.time_since_epoch().count() > 0);
+          ink_assert(e->timeout_at > TS_HRTICK_ZERO);
           if (e->cancelled)
             free_event(e);
           else {
@@ -254,7 +254,7 @@ EThread::execute()
               // be executed in this round (because you can't have
               // more than one poll between two executions of a
               // negative event)
-              if (e->timeout_at.time_since_epoch().count() < 0) {
+              if (e->timeout_at < TS_HRTICK_ZERO) {
                 Event *p = NULL;
                 Event *a = NegativeQueue.head;
                 while (a && a->timeout_at > e->timeout_at) {
