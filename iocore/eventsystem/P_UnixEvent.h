@@ -30,7 +30,7 @@ Event::init(Continuation *c, ts_hrtick atimeout_at, ts_nanoseconds aperiod)
   continuation = c;
   timeout_at   = atimeout_at;
   period       = aperiod;
-  immediate    = period != period.min() && atimeout_at != atimeout_at.min();
+  immediate    = period != period.zero() && atimeout_at != TS_HRTICK_ZERO;
   cancelled    = false;
   return this;
 }
@@ -50,9 +50,6 @@ Event::Event()
     immediate(false),
     globally_allocated(true),
     in_heap(false)
-  //  ,
-  //    timeout_at(0),
-    //    period(0)
 {
 }
 
