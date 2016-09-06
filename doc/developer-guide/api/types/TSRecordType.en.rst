@@ -35,6 +35,8 @@ Enumeration Members
 
 .. c:member:: TSRecordType TS_RECORDTYPE_CONFIG
 
+   A configuration record.
+
 .. c:member:: TSRecordType TS_RECORDTYPE_PROCESS
 
 .. c:member:: TSRecordType TS_RECORDTYPE_NODE
@@ -50,3 +52,4 @@ Enumeration Members
 Description
 ===========
 
+The management role for a management value. In practice only :c:member:`TS_RECORDTYPE_CONFIG` is usable.

@@ -1249,3 +1249,18 @@ RecSignalWarning(int sig, const char *fmt, ...)
   RecSignalManager(sig, msg);
   va_end(args);
 }
+
+//-------------------------------------------------------------------------
+// RecConfigWarnIfUnregistered
+//-------------------------------------------------------------------------
+/// Generate a warning if the record is a configuration name/value but is not registered.
+void
+RecConfigWarnIfUnregistered()
+{
+  RecDumpRecords(RECT_CONFIG,
+                 [](RecT, void *, int registered_p, char const *name, int, RecData *) -> void {
+                   if (!registered_p)
+                     Warning("Unrecognized configuration value '%s'", name);
+                 },
+                 NULL);
+}
