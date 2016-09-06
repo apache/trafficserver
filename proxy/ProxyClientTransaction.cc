@@ -52,6 +52,12 @@ ProxyClientTransaction::new_transaction()
   DebugHttpTxn("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", parent->connection_id(),
                parent->get_transact_count(), current_reader->sm_id);
 
+  PluginIdentity *pi = dynamic_cast<PluginIdentity *>(this->get_netvc());
+  if (pi) {
+    current_reader->plugin_tag = pi->getPluginTag();
+    current_reader->plugin_id  = pi->getPluginId();
+  }
+
   current_reader->attach_client_session(this, sm_reader);
 }
 
