@@ -38,10 +38,8 @@ using namespace atscppapi;
 
 namespace
 {
-// This is the highest txn arg that can be used, we choose this
-// value to minimize the likelihood of it causing any problems.
-const int MAX_TXN_ARG               = 15;
-const int TRANSACTION_STORAGE_INDEX = MAX_TXN_ARG;
+/// The index used to store required transaction based data.
+int TRANSACTION_STORAGE_INDEX = -1;
 
 void
 resetTransactionHandles(Transaction &transaction, TSEvent event)
@@ -99,6 +97,8 @@ handleTransactionEvents(TSCont cont, TSEvent event, void *edata)
 void
 setupTransactionManagement()
 {
+  // Reserve a transaction slot
+  TSAssert(TS_SUCCESS == TSHttpArgIndexReserve("atscppapi", "ATS CPP API", &TRANSACTION_STORAGE_INDEX));
   // We must always have a cleanup handler available
   TSMutex mutex = NULL;
   TSCont cont   = TSContCreate(handleTransactionEvents, mutex);
