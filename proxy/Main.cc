@@ -1312,40 +1312,6 @@ chdir_root()
 }
 
 static int
-getNumSSLThreads(void)
-{
-  int num_of_ssl_threads = -1;
-
-  // Set number of ssl threads equal to num of processors if
-  // SSL is enabled so it will scale properly. If SSL is not
-  // enabled, leave num of ssl threads one, incase a remap rule
-  // requires traffic server to act as an ssl client.
-  if (HttpProxyPort::hasSSL()) {
-    int config_num_ssl_threads = 0;
-
-    REC_ReadConfigInteger(config_num_ssl_threads, "proxy.config.ssl.number.threads");
-
-    if (config_num_ssl_threads > 0) {
-      num_of_ssl_threads = config_num_ssl_threads;
-    } else if (config_num_ssl_threads == -1) {
-      return -1; // This will disable ET_SSL threads entirely
-    } else {
-      float autoconfig_scale = 1.5;
-
-      REC_ReadConfigFloat(autoconfig_scale, "proxy.config.exec_thread.autoconfig.scale");
-      num_of_ssl_threads = (int)((float)ink_number_of_processors() * autoconfig_scale);
-
-      // Last resort
-      if (num_of_ssl_threads <= 0) {
-        num_of_ssl_threads = config_num_ssl_threads * 2;
-      }
-    }
-  }
-
-  return num_of_ssl_threads;
-}
-
-static int
 adjust_num_of_net_threads(int nthreads)
 {
   float autoconfig_scale = 1.0;
@@ -1797,7 +1763,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Initialize HTTP/2
     Http2::init();
 
-    // Load HTTP port data. getNumSSLThreads depends on this.
     if (!HttpProxyPort::loadValue(http_accept_port_descriptor)) {
       HttpProxyPort::loadConfig();
     }
@@ -1823,7 +1788,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     SSLConfigParams::init_ssl_ctx_cb  = init_ssl_ctx_callback;
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
-    sslNetProcessor.start(getNumSSLThreads(), stacksize);
+    sslNetProcessor.start(-1, stacksize);
 
     pmgmt->registerPluginCallbacks(global_config_cbs);
 
