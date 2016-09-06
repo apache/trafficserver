@@ -597,7 +597,7 @@ The Apache Traffic Server Administration Manual will explain what these strings 
  proxy.config.log.rolling_size_mb
  proxy.config.log.sampling_frequency
  proxy.config.log.space_used_frequency
- proxy.config.log.xml_config_file
+ proxy.config.log.config.filename
  proxy.config.manager_binary
  proxy.config.net.connections_throttle
  proxy.config.net.listen_backlog
