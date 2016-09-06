@@ -7985,7 +7985,7 @@ cleanup:
   return;
 }
 
-REGRESSION_TEST(SDK_API_TSSslServerContextCreate)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
+REGRESSION_TEST(SDK_API_TSSslServerContextCreate)(RegressionTest *test, int level, int *pstatus)
 {
   TSSslContext ctx;
 
