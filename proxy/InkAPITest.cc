@@ -7984,3 +7984,19 @@ cleanup:
 
   return;
 }
+
+REGRESSION_TEST(SDK_API_TSSslServerContextCreate)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
+{
+  TSSslContext ctx;
+
+  // See TS-4769: TSSslServerContextCreate always returns null.
+  if (level < REGRESSION_TEST_EXTENDED) {
+    *pstatus = REGRESSION_TEST_NOT_RUN;
+    return;
+  }
+
+  ctx = TSSslServerContextCreate();
+
+  *pstatus = ctx ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED;
+  TSSslContextDestroy(ctx);
+}
