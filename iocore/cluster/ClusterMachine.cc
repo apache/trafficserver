@@ -266,6 +266,7 @@ read_MachineList(const char *filename, int afd)
     Warning("read machine list failure, open failed");
     return NULL;
   }
+
   if (n >= 0) {
     if (i != n) {
       if (afd == -1) {
@@ -275,9 +276,10 @@ read_MachineList(const char *filename, int afd)
         return (MachineList *)ats_strdup("number of machines does not match length of list\n");
     }
   }
+
   if (afd != -1) {
     return (MachineList *)NULL;
   }
-  l.release();
-  return l;
+
+  return l.release();
 }
