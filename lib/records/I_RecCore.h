@@ -30,6 +30,7 @@
 #include "I_RecAlarms.h"
 #include "I_RecSignals.h"
 #include "I_RecEvents.h"
+#include <functional>
 
 struct RecRecord;
 
@@ -168,11 +169,15 @@ int RecGetRecordBool(const char *name, RecBool *rec_byte, bool lock = true);
 //------------------------------------------------------------------------
 // Record Attributes Reading
 //------------------------------------------------------------------------
+// Values with names that have this prefix are exempted from being considered "unrecognized".
+const char REC_PLUGIN_CONFIG_NAME_PREFIX[] = "proxy.config.plugin.";
+static const size_t REC_PLUGIN_CONFIG_NAME_PREFIX_LEN = sizeof(REC_PLUGIN_CONFIG_NAME_PREFIX)-1;
 
 typedef void (*RecLookupCallback)(const RecRecord *, void *);
 
 int RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);
 int RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookupCallback callback, void *data, bool lock = true);
+void RecLookupIterateRecords(std::function<void (RecRecord const*)> callback);
 
 int RecGetRecordType(const char *name, RecT *rec_type, bool lock = true);
 int RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock = true);
@@ -203,6 +208,9 @@ RecSignalManager(int id, const char *str)
 
 // Format a message, and send it to the manager and to the Warning diagnostic.
 void RecSignalWarning(int sig, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
+
+/// Generate a warning if the record is a configuration name/value but is not registered.
+void RecConfigWarnIfUnregistered(RecRecord const* r);
 
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)

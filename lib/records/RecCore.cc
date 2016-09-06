@@ -514,6 +514,18 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
   return REC_ERR_OKAY;
 }
 
+void
+RecLookupIterateRecords(std::function<void (RecRecord const*)> f)
+{
+  int num_records = g_num_records; // cache
+  for (int i = 0; i < num_records; i++) {
+    RecRecord *r = &(g_records[i]);
+    rec_mutex_acquire(&(r->lock));
+    f(r);
+    rec_mutex_release(&(r->lock));
+  }
+}
+
 int
 RecGetRecordType(const char *name, RecT *rec_type, bool lock)
 {
@@ -1248,4 +1260,16 @@ RecSignalWarning(int sig, const char *fmt, ...)
   vsnprintf(msg, sizeof(msg), fmt, args);
   RecSignalManager(sig, msg);
   va_end(args);
+}
+
+//-------------------------------------------------------------------------
+// RecConfigWarnIfUnregistered
+//-------------------------------------------------------------------------
+/// Generate a warning if the record is a configuration name/value but is not registered.
+void RecConfigWarnIfUnregistered(RecRecord const* r)
+{
+  if (REC_TYPE_IS_CONFIG(r->rec_type) && ! r->registered
+      && 0 != strncasecmp(r->name, REC_PLUGIN_CONFIG_NAME_PREFIX, REC_PLUGIN_CONFIG_NAME_PREFIX_LEN)) {
+    Warning("Unrecognized configuration value '%s'", r->name);
+  }
 }

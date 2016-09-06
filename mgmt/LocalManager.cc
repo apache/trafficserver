@@ -805,6 +805,8 @@ LocalManager::processEventQueue()
         bool incVersion = mh->msg_id == MGMT_EVENT_CONFIG_FILE_UPDATE;
         if (RecReadConfigFile(incVersion) != REC_ERR_OKAY) {
           mgmt_elog(errno, "[fileUpdated] Config update failed for records.config\n");
+        } else {
+          RecLookupIterateRecords(&RecConfigWarnIfUnregistered);
         }
         handled_by_mgmt = true;
       }
