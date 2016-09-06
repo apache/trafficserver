@@ -92,9 +92,6 @@ UnixNetProcessor::accept_internal(Continuation *cont, int fd, AcceptOptions cons
 
   NetAccept *na = createNetAccept();
 
-  // Potentially upgrade to SSL.
-  upgradeEtype(upgraded_etype);
-
   // Fill in accept thread from configuration if necessary.
   if (opt.accept_threads < 0) {
     REC_ReadConfigInteger(accept_threads, "proxy.config.accept_threads");
@@ -205,9 +202,6 @@ UnixNetProcessor::connect_re_internal(Continuation *cont, sockaddr const *target
     vc->options = *opt;
   else
     opt = &vc->options;
-
-  // virtual function used to upgrade etype to ET_SSL for SSLNetProcessor.
-  upgradeEtype(opt->etype);
 
   bool using_socks = (socks_conf_stuff->socks_needed && opt->socks_support != NO_SOCKS
 #ifdef SOCKS_WITH_TS
@@ -397,10 +391,6 @@ UnixNetProcessor::start(int, size_t)
 
   netHandler_offset = eventProcessor.allocate(sizeof(NetHandler));
   pollCont_offset   = eventProcessor.allocate(sizeof(PollCont));
-
-  // etype is ET_NET for netProcessor
-  // and      ET_SSL for sslNetProcessor
-  upgradeEtype(etype);
 
   n_netthreads = eventProcessor.n_threads_for_type[etype];
   netthreads   = eventProcessor.eventthread[etype];

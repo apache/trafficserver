@@ -547,15 +547,6 @@ NetAccept::clone() const
   return na;
 }
 
-// Virtual function allows the correct
-// etype to be used in NetAccept functions (ET_SSL
-// or ET_NET).
-EventType
-NetAccept::getEtype() const
-{
-  return etype;
-}
-
 NetProcessor *
 NetAccept::getNetProcessor() const
 {

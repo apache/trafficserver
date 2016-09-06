@@ -95,7 +95,7 @@ ProxyClientTransaction::adjust_thread(Continuation *cont, int event, void *data)
   NetVConnection *vc   = this->get_netvc();
   EThread *this_thread = this_ethread();
   if (vc && vc->thread != this_thread) {
-    if (vc->thread->is_event_type(ET_NET) || vc->thread->is_event_type(SSLNetProcessor::ET_SSL)) {
+    if (vc->thread->is_event_type(ET_NET)) {
       return vc->thread->schedule_imm(cont, event, data);
     } else { // Not a net thread, take over this thread
       vc->thread = this_thread;
