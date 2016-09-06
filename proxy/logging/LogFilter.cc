@@ -86,14 +86,14 @@ LogFilter::parse(const char *name, Action action, const char *condition)
 
   // validate field symbol
   if (strlen(field_str) > 2 && field_str[0] == '%' && field_str[1] == '<') {
-    Debug("xml", "Field symbol has <> form: %s", field_str);
+    Debug("log", "Field symbol has <> form: %s", field_str);
     char *end = field_str;
     while (*end && *end != '>') {
       end++;
     }
     *end = '\0';
     field_str += 2;
-    Debug("xml", "... now field symbol is %s", field_str);
+    Debug("log", "... now field symbol is %s", field_str);
   }
 
   if (LogField *f = Log::global_field_list.find_by_symbol(field_str)) {
@@ -103,7 +103,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
   if (!logfield) {
     // check for container fields
     if (*field_str == '{') {
-      Debug("xml", "%s appears to be a container field", field_str);
+      Debug("log", "%s appears to be a container field", field_str);
 
       char *fname;
       char *cname;
@@ -121,7 +121,7 @@ LogFilter::parse(const char *name, Action action, const char *condition)
       // start of container symbol
       cname = fname_end + 1;
 
-      Debug("xml", "found container field: Name = %s, symbol = %s", fname, cname);
+      Debug("log", "found container field: Name = %s, symbol = %s", fname, cname);
 
       LogField::Container container = LogField::valid_container_name(cname);
       if (container == LogField::NO_CONTAINER) {
