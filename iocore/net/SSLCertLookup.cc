@@ -250,6 +250,20 @@ private:
   DFA regex;
 };
 
+static void
+make_to_lower_case(const char *name, char *lower_case_name, int buf_len)
+{
+  int name_len = strlen(name);
+  int i;
+  if (name_len > (buf_len - 1)) {
+    name_len = buf_len - 1;
+  }
+  for (i = 0; i < name_len; i++) {
+    lower_case_name[i] = ParseRules::ink_tolower(name[i]);
+  }
+  lower_case_name[i] = '\0';
+}
+
 static char *
 reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1])
 {
@@ -277,6 +291,7 @@ reverse_dns_name(const char *hostname, char (&reversed)[TS_MAX_HOST_NAME_LEN + 1
       *(--ptr) = '.';
     }
   }
+  make_to_lower_case(ptr, ptr, strlen(ptr) + 1);
 
   return ptr;
 }
@@ -370,13 +385,15 @@ SSLContextStorage::insert(const char *name, int idx)
           reversed, this->ctx_store[ref_idx].ctx, ref_idx);
   } else {
     InkHashTableValue value;
+    char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
+    make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
 
-    if (ink_hash_table_lookup(this->hostnames, name, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
-      Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", name, value, idx);
+    if (ink_hash_table_lookup(this->hostnames, lower_case_name, &value) && reinterpret_cast<InkHashTableValue>(idx) != value) {
+      Warning("previously indexed '%s' with SSL_CTX %p, cannot index it with SSL_CTX #%d now", lower_case_name, value, idx);
       idx = -1;
     } else {
-      ink_hash_table_insert(this->hostnames, name, reinterpret_cast<void *>(static_cast<intptr_t>(idx)));
-      Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", name, this->ctx_store[idx].ctx, idx);
+      ink_hash_table_insert(this->hostnames, lower_case_name, reinterpret_cast<void *>(static_cast<intptr_t>(idx)));
+      Debug("ssl", "indexed '%s' with SSL_CTX %p [%d]", lower_case_name, this->ctx_store[idx].ctx, idx);
     }
   }
   return idx;
@@ -388,6 +405,12 @@ SSLContextStorage::lookup(const char *name) const
   InkHashTableValue value;
 
   if (ink_hash_table_lookup(const_cast<InkHashTable *>(this->hostnames), name, &value)) {
+    return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
+  }
+  // Try lower casing it
+  char lower_case_name[TS_MAX_HOST_NAME_LEN + 1];
+  make_to_lower_case(name, lower_case_name, sizeof(lower_case_name));
+  if (ink_hash_table_lookup(const_cast<InkHashTable *>(this->hostnames), lower_case_name, &value)) {
     return &(this->ctx_store[reinterpret_cast<intptr_t>(value)]);
   }
 
@@ -422,7 +445,7 @@ REGRESSION_TEST(SSLWildcardMatch)(RegressionTest *t, int /* atype ATS_UNUSED */,
   box = REGRESSION_TEST_PASSED;
 
   box.check(wildcard.match("foo.com") == false, "foo.com is not a wildcard");
-  box.check(wildcard.match("*.foo.com") == true, "*.foo.com not a wildcard");
+  box.check(wildcard.match("*.foo.com") == true, "*.foo.com is a wildcard");
   box.check(wildcard.match("bar*.foo.com") == false, "bar*.foo.com not a wildcard");
   box.check(wildcard.match("*") == false, "* is not a wildcard");
   box.check(wildcard.match("") == false, "'' is not a wildcard");
@@ -441,6 +464,8 @@ REGRESSION_TEST(SSLReverseHostname)(RegressionTest *t, int /* atype ATS_UNUSED *
   box.check(strcmp(_R("foo.com"), "com.foo") == 0, "reversed foo.com");
   box.check(strcmp(_R("bar.foo.com"), "com.foo.bar") == 0, "reversed bar.foo.com");
   box.check(strcmp(_R("foo"), "foo") == 0, "reversed foo");
+  box.check(strcmp(_R("foo.Com"), "Com.foo") != 0, "mixed case reversed foo.com mismatch");
+  box.check(strcmp(_R("foo.Com"), "com.foo") == 0, "mixed case reversed foo.com match");
 
 #undef _R
 }

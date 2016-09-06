@@ -90,6 +90,13 @@ REGRESSION_TEST(SSLCertificateLookup)(RegressionTest *t, int /* atype ATS_UNUSED
   box.check(lookup.find("www.foo.com")->ctx == foo, "host lookup for www.foo.com");
   box.check(lookup.find("www.bar.com")->ctx == all_com, "host lookup for www.bar.com");
   box.check(lookup.find("www.bar.net") == NULL, "host lookup for www.bar.net");
+
+  // Make sure cases are lowered
+  box.check(lookup.find("WWW.foo.com")->ctx == foo, "mixed case lookup for www.foo.com");
+  box.check(lookup.insert("Mixed.Case.Com", foo_cc) >= 0, "mixed case insert for Mixed.Case.Com");
+  box.check(lookup.find("Mixed.CASE.Com")->ctx == foo, "mixed case lookup 1 for Mixed.Case.Com");
+  box.check(lookup.find("Mixed.Case.Com")->ctx == foo, "mixed case lookup 2 for Mixed.Case.Com");
+  box.check(lookup.find("mixed.case.com")->ctx == foo, "lower case lookup for Mixed.Case.Com");
 }
 
 REGRESSION_TEST(SSLAddressLookup)(RegressionTest *t, int /* atype ATS_UNUSED */, int *pstatus)
