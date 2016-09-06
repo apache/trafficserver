@@ -153,7 +153,7 @@ struct MC : Continuation {
   uint64_t delta;
 
   static volatile int32_t verbosity;
-  static volatile ink_hrtime last_flush;
+  static volatile ts_hrtick last_flush;
   static volatile int64_t next_cas;
 
   int write_to_client(int64_t ntowrite = -1);

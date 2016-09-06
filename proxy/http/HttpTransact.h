@@ -1321,8 +1321,8 @@ public:
   static const char *get_error_string(int erno);
 
   // the stat functions
-  static void update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
-                                         ink_hrtime origin_server_read_time, int user_agent_request_header_size,
+  static void update_size_and_time_stats(State *s, ts_hrtick total_time, ts_hrtick user_agent_write_time,
+                                         ts_hrtick origin_server_read_time, int user_agent_request_header_size,
                                          int64_t user_agent_request_body_size, int user_agent_response_header_size,
                                          int64_t user_agent_response_body_size, int origin_server_request_header_size,
                                          int64_t origin_server_request_body_size, int origin_server_response_header_size,
@@ -1330,9 +1330,9 @@ public:
                                          int64_t pushed_response_body_size, const TransactionMilestones &milestones);
   static void histogram_request_document_size(State *s, int64_t size);
   static void histogram_response_document_size(State *s, int64_t size);
-  static void user_agent_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes);
-  static void origin_server_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes);
-  static void client_result_stat(State *s, ink_hrtime total_time, ink_hrtime request_process_time);
+  static void user_agent_connection_speed(State *s, ts_hrtick transfer_time, int64_t nbytes);
+  static void origin_server_connection_speed(State *s, ts_hrtick transfer_time, int64_t nbytes);
+  static void client_result_stat(State *s, ts_hrtick total_time, ts_hrtick request_process_time);
   static void delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_code);
   static bool is_connection_collapse_checks_success(State *s); // YTS Team, yamsat
 };

@@ -80,7 +80,7 @@ struct NetAcceptAction : public Action, public RefCountObj {
 // Handles accepting connections.
 //
 struct NetAccept : public Continuation {
-  ink_hrtime period;
+  ts_hrtick period;
   Server server;
   AcceptFunctionPtr accept_fn;
   int ifd;

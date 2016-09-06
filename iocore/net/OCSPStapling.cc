@@ -251,13 +251,13 @@ stapling_check_response(certinfo *cinf, OCSP_RESPONSE *rsp)
 static OCSP_RESPONSE *
 query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeout)
 {
-  ink_hrtime start, end;
+  ts_hrtick start, end;
   OCSP_RESPONSE *resp = NULL;
   OCSP_REQ_CTX *ctx;
   int rv;
 
   start = Thread::get_hrtime();
-  end   = ink_hrtime_add(start, ink_hrtime_from_sec(req_timeout));
+  end   = ts_hrtick_add(start, ts_hrtick_from_sec(req_timeout));
 
   ctx = OCSP_sendreq_new(b, path, NULL, -1);
   OCSP_REQ_CTX_add1_header(ctx, "Host", host);
@@ -265,7 +265,7 @@ query_responder(BIO *b, char *host, char *path, OCSP_REQUEST *req, int req_timeo
 
   do {
     rv = OCSP_sendreq_nbio(&resp, ctx);
-    ink_hrtime_sleep(HRTIME_MSECONDS(1));
+    ts_hrtick_sleep(HRTIME_MSECONDS(1));
   } while ((rv == -1) && BIO_should_retry(b) && (Thread::get_hrtime() < end));
 
   OCSP_REQ_CTX_free(ctx);

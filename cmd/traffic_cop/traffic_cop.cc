@@ -121,8 +121,8 @@ static int init_sleep_time  = cop_sleep_time; // 10 sec
 #define MANAGER_FLAP_RETRY_MSEC 60000                       // if flapping, don't try to restart until after this retry duration
 static bool manager_flapping                       = false; // is the manager flapping?
 static int manager_flap_count                      = 0;     // how many times has the manager flapped?
-static ink_hrtime manager_flap_interval_start_time = 0;     // first time we attempted to start the manager in past little while)
-static ink_hrtime manager_flap_retry_start_time    = 0;     // first time we attempted to start the manager in past little while)
+static ts_hrtick manager_flap_interval_start_time = 0;     // first time we attempted to start the manager in past little while)
+static ts_hrtick manager_flap_retry_start_time    = 0;     // first time we attempted to start the manager in past little while)
 #endif
 
 // transient syscall error timeout
@@ -406,22 +406,22 @@ safe_kill(const char *lockfile_name, const char *pname, bool group)
   cop_log_trace("Leaving safe_kill(%s, %s, %d)\n", lockfile_name, pname, group);
 }
 
-// ink_hrtime milliseconds()
+// ts_hrtick milliseconds()
 //
 // Returns the result of gettimeofday converted to
 // one 64bit int
 //
-static ink_hrtime
+static ts_hrtick
 milliseconds(void)
 {
   struct timeval now;
 
   cop_log_trace("Entering milliseconds()\n");
   now = ink_gettimeofday();
-  // Make liberal use of casting to ink_hrtime to ensure the
+  // Make liberal use of casting to ts_hrtick to ensure the
   //  compiler does not truncate our result
   cop_log_trace("Leaving milliseconds()\n");
-  return ((ink_hrtime)now.tv_sec * 1000) + ((ink_hrtime)now.tv_usec / 1000);
+  return ((ts_hrtick)now.tv_sec * 1000) + ((ts_hrtick)now.tv_usec / 1000);
 }
 
 static void
@@ -1392,7 +1392,7 @@ check_programs()
       safe_kill(server_lockfile, server_binary, false);
     }
     // Spawn the manager (check for flapping manager too)
-    ink_hrtime now = milliseconds();
+    ts_hrtick now = milliseconds();
     if (!manager_flapping) {
       if ((manager_flap_interval_start_time == 0) || (now - manager_flap_interval_start_time > MANAGER_FLAP_INTERVAL_MSEC)) {
         // either:

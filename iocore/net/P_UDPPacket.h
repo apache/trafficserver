@@ -48,7 +48,7 @@ public:
   uint64_t pktLength;
 
   int reqGenerationNum;
-  ink_hrtime delivery_time; // when to deliver packet
+  ts_hrtick delivery_time; // when to deliver packet
 
   Ptr<IOBufferBlock> chain;
   Continuation *cont;          // callback on error
@@ -62,7 +62,7 @@ inkcoreapi extern ClassAllocator<UDPPacketInternal> udpPacketAllocator;
 
 TS_INLINE
 UDPPacketInternal::UDPPacketInternal()
-  : pktLength(0), reqGenerationNum(0), delivery_time(0), cont(NULL), conn(NULL), in_the_priority_queue(0), in_heap(0)
+  : pktLength(0), reqGenerationNum(0), cont(NULL), conn(NULL), in_the_priority_queue(0), in_heap(0)
 {
   memset(&from, '\0', sizeof(from));
   memset(&to, '\0', sizeof(to));
@@ -165,7 +165,7 @@ UDPPacket::getConnection(void)
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const *to, ink_hrtime when, char *buf, int len)
+new_UDPPacket(struct sockaddr const *to, ts_hrtick when, char *buf, int len)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 
@@ -186,7 +186,7 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, char *buf, int len)
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const *to, ink_hrtime when, IOBufferBlock *buf, int len)
+new_UDPPacket(struct sockaddr const *to, ts_hrtick when, IOBufferBlock *buf, int len)
 {
   (void)len;
   UDPPacketInternal *p = udpPacketAllocator.alloc();
@@ -207,7 +207,7 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, IOBufferBlock *buf, in
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> buf)
+new_UDPPacket(struct sockaddr const *to, ts_hrtick when, Ptr<IOBufferBlock> buf)
 {
   UDPPacketInternal *p = udpPacketAllocator.alloc();
 
@@ -221,7 +221,7 @@ new_UDPPacket(struct sockaddr const *to, ink_hrtime when, Ptr<IOBufferBlock> buf
 }
 
 TS_INLINE UDPPacket *
-new_UDPPacket(ink_hrtime when, Ptr<IOBufferBlock> buf)
+new_UDPPacket(ts_hrtick when, Ptr<IOBufferBlock> buf)
 {
   return new_UDPPacket(NULL, when, buf);
 }
@@ -233,7 +233,7 @@ new_incoming_UDPPacket(struct sockaddr *from, char *buf, int len)
 
   p->in_the_priority_queue = 0;
   p->in_heap               = 0;
-  p->delivery_time         = 0;
+  p->delivery_time         = TS_HRTICK_ZERO;
   ats_ip_copy(&p->from, from);
 
   IOBufferBlock *body = new_IOBufferBlock();

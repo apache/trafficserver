@@ -8524,7 +8524,7 @@ HttpTransact::histogram_request_document_size(State *s, int64_t doc_size)
 }
 
 void
-HttpTransact::user_agent_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes)
+HttpTransact::user_agent_connection_speed(State *s, ts_hrtick transfer_time, int64_t nbytes)
 {
   float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float)nbytes / (float)(int64_t)transfer_time);
   int bytes_per_sec      = (int)(bytes_per_hrtime * HRTIME_SECOND);
@@ -8552,7 +8552,7 @@ HttpTransact::user_agent_connection_speed(State *s, ink_hrtime transfer_time, in
  * added request_process_time stat for loadshedding foo
  */
 void
-HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime request_process_time)
+HttpTransact::client_result_stat(State *s, ts_hrtick total_time, ts_hrtick request_process_time)
 {
   ClientTransactionResult_t client_transaction_result = CLIENT_TRANSACTION_RESULT_UNDEFINED;
 
@@ -8800,8 +8800,8 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
   HTTP_INCREMENT_DYN_STAT(http_completed_requests_stat);
 
   // Set the stat now that we know what happend
-  ink_hrtime total_msec   = ink_hrtime_to_msec(total_time);
-  ink_hrtime process_msec = ink_hrtime_to_msec(request_process_time);
+  ts_hrtick total_msec   = ts_hrtick_to_msec(total_time);
+  ts_hrtick process_msec = ts_hrtick_to_msec(request_process_time);
   switch (client_transaction_result) {
   case CLIENT_TRANSACTION_RESULT_HIT_FRESH:
     HTTP_SUM_DYN_STAT(http_ua_msecs_counts_hit_fresh_stat, total_msec);
@@ -8843,7 +8843,7 @@ HttpTransact::client_result_stat(State *s, ink_hrtime total_time, ink_hrtime req
 }
 
 void
-HttpTransact::origin_server_connection_speed(State *s, ink_hrtime transfer_time, int64_t nbytes)
+HttpTransact::origin_server_connection_speed(State *s, ts_hrtick transfer_time, int64_t nbytes)
 {
   float bytes_per_hrtime = (transfer_time == 0) ? (nbytes) : ((float)nbytes / (float)(int64_t)transfer_time);
   int bytes_per_sec      = (int)(bytes_per_hrtime * HRTIME_SECOND);
@@ -8868,8 +8868,8 @@ HttpTransact::origin_server_connection_speed(State *s, ink_hrtime transfer_time,
 }
 
 void
-HttpTransact::update_size_and_time_stats(State *s, ink_hrtime total_time, ink_hrtime user_agent_write_time,
-                                         ink_hrtime origin_server_read_time, int user_agent_request_header_size,
+HttpTransact::update_size_and_time_stats(State *s, ts_hrtick total_time, ts_hrtick user_agent_write_time,
+                                         ts_hrtick origin_server_read_time, int user_agent_request_header_size,
                                          int64_t user_agent_request_body_size, int user_agent_response_header_size,
                                          int64_t user_agent_response_body_size, int origin_server_request_header_size,
                                          int64_t origin_server_request_body_size, int origin_server_response_header_size,

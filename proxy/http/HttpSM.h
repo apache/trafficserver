@@ -502,7 +502,7 @@ public:
   bool server_connection_is_ssl;
 
   TransactionMilestones milestones;
-  ink_hrtime api_timer;
+  ts_hrtick api_timer;
   // The next two enable plugins to tag the state machine for
   // the purposes of logging so the instances can be correlated
   // with the source plugin.

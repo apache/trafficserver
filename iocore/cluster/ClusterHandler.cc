@@ -340,7 +340,7 @@ ClusterHandler::close_ClusterVConnection(ClusterVConnection *vc)
     }
     clusterProcessor.invoke_remote(vc->ch, CLOSE_CHANNEL_CLUSTER_FUNCTION, data, len);
   }
-  ink_hrtime now = Thread::get_hrtime();
+  ts_hrtick now = Thread::get_hrtime();
   CLUSTER_DECREMENT_DYN_STAT(CLUSTER_CONNECTIONS_OPEN_STAT);
   CLUSTER_SUM_DYN_STAT(CLUSTER_CON_TOTAL_TIME_STAT, now - vc->start_time);
   if (!local_channel(channel)) {
@@ -450,7 +450,7 @@ ClusterHandler::build_initial_vector(bool read_flag)
   // This isn't used.
   // MIOBuffer      *w;
 
-  ink_hrtime now      = Thread::get_hrtime();
+  ts_hrtick now      = Thread::get_hrtime();
   ClusterState &s     = (read_flag ? read : write);
   OutgoingControl *oc = s.msg.outgoing_control.head;
   IncomingControl *ic = incoming_control.head;
@@ -935,7 +935,7 @@ ClusterHandler::process_small_control_msgs()
     read.msg.did_small_control_msgs = 1;
   }
 
-  ink_hrtime now = Thread::get_hrtime();
+  ts_hrtick now = Thread::get_hrtime();
   char *p        = (char *)&read.msg.descriptor[read.msg.count] + read.msg.control_data_offset;
   char *endp     = (char *)&read.msg.descriptor[read.msg.count] + read.msg.control_bytes;
 
@@ -1149,7 +1149,7 @@ ClusterHandler::update_channels_read()
 int
 ClusterHandler::process_incoming_callouts(ProxyMutex *mutex)
 {
-  ink_hrtime now;
+  ts_hrtick now;
   //
   // Atomically dequeue all active requests from the external queue and
   // move them to the local working queue.  Insertion queue order is
@@ -1429,7 +1429,7 @@ ClusterHandler::update_channels_written()
   // Lower the priority of those with too little data and raise that of
   // those with too much data.
   //
-  ink_hrtime now;
+  ts_hrtick now;
   for (int i = 0; i < write.msg.count; i++) {
     if (write.msg.descriptor[i].type == CLUSTER_SEND_DATA) {
       if (write.msg.descriptor[i].channel != CLUSTER_CONTROL_CHANNEL) {
@@ -1857,7 +1857,7 @@ ClusterHandler::add_small_controlmsg_descriptors()
     c->free_data();
     c->mutex = NULL;
     p += c->len;
-    ink_hrtime now = Thread::get_hrtime();
+    ts_hrtick now = Thread::get_hrtime();
     CLUSTER_SUM_DYN_STAT(CLUSTER_CTRL_MSGS_SEND_TIME_STAT, now - c->submit_time);
     LOG_EVENT_TIME(c->submit_time, cluster_send_time_dist, cluster_send_events);
     c->freeall();
@@ -2488,7 +2488,7 @@ ClusterHandler::mainClusterEvent(int event, Event *e)
   return EVENT_CONT;
 }
 
-int ClusterHandler::process_read(ink_hrtime /* now ATS_UNUSED */)
+int ClusterHandler::process_read(ts_hrtick /* now ATS_UNUSED */)
 {
 #ifdef CLUSTER_STATS
   _process_read_calls++;
@@ -2762,7 +2762,7 @@ int ClusterHandler::process_read(ink_hrtime /* now ATS_UNUSED */)
 #ifdef CLUSTER_STATS
         _n_read_complete++;
 #endif
-        ink_hrtime rdmsg_end_time = Thread::get_hrtime();
+        ts_hrtick rdmsg_end_time = Thread::get_hrtime();
         CLUSTER_SUM_DYN_STAT(CLUSTER_RDMSG_ASSEMBLE_TIME_STAT, rdmsg_end_time - read.start_time);
         read.start_time = HRTIME_MSECONDS(0);
         if (dump_msgs)
@@ -2786,7 +2786,7 @@ int ClusterHandler::process_read(ink_hrtime /* now ATS_UNUSED */)
 }
 
 int
-ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
+ClusterHandler::process_write(ts_hrtick now, bool only_write_control_msgs)
 {
 #ifdef CLUSTER_STATS
   _process_write_calls++;
@@ -2952,7 +2952,7 @@ ClusterHandler::process_write(ink_hrtime now, bool only_write_control_msgs)
         _n_write_complete++;
 #endif
         write.state        = ClusterState::WRITE_START;
-        ink_hrtime curtime = Thread::get_hrtime();
+        ts_hrtick curtime = Thread::get_hrtime();
 
         if (!on_stolen_thread) {
           //

@@ -239,7 +239,7 @@ HostDBProcessor::cache()
 
 struct HostDBBackgroundTask : public Continuation {
   int frequency;
-  ink_hrtime start_time;
+  ts_hrtick start_time;
 
   virtual int sync_event(int event, void *edata) = 0;
   int wait_event(int event, void *edata);
@@ -255,7 +255,7 @@ HostDBBackgroundTask::HostDBBackgroundTask(int frequency) : Continuation(new_Pro
 int
 HostDBBackgroundTask::wait_event(int, void *)
 {
-  ink_hrtime next_sync = HRTIME_SECONDS(this->frequency) - (Thread::get_hrtime() - start_time);
+  ts_hrtick next_sync = HRTIME_SECONDS(this->frequency) - (Thread::get_hrtime() - start_time);
 
   SET_HANDLER(&HostDBBackgroundTask::sync_event);
   if (next_sync > HRTIME_MSECONDS(100))

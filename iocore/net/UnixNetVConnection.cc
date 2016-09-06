@@ -70,7 +70,7 @@ write_reschedule(NetHandler *nh, UnixNetVConnection *vc)
 void
 net_activity(UnixNetVConnection *vc, EThread *thread)
 {
-  Debug("socket", "net_activity updating inactivity %" PRId64 ", NetVC=%p", vc->inactivity_timeout_in, vc);
+  Debug("socket", "net_activity updating inactivity %" PRId64 ", NetVC=%p", vc->inactivity_timeout_in.count(), vc);
   (void)thread;
 #ifdef INACTIVITY_TIMEOUT
   if (vc->inactivity_timeout && vc->inactivity_timeout_in && vc->inactivity_timeout->ethread == thread)
@@ -84,10 +84,10 @@ net_activity(UnixNetVConnection *vc, EThread *thread)
       vc->inactivity_timeout = 0;
   }
 #else
-  if (vc->inactivity_timeout_in)
+  if (vc->inactivity_timeout_in.count())
     vc->next_inactivity_timeout_at = Thread::get_hrtime() + vc->inactivity_timeout_in;
   else
-    vc->next_inactivity_timeout_at = 0;
+    vc->next_inactivity_timeout_at = TS_HRTICK_ZERO;
 #endif
 }
 
@@ -117,12 +117,12 @@ close_UnixNetVConnection(UnixNetVConnection *vc, EThread *t)
     vc->active_timeout = NULL;
   }
 #else
-  vc->next_inactivity_timeout_at   = 0;
-  vc->next_activity_timeout_at     = 0;
+  vc->next_inactivity_timeout_at   = TS_HRTICK_ZERO;
+  vc->next_activity_timeout_at     = TS_HRTICK_ZERO;
 #endif
-  vc->inactivity_timeout_in = 0;
+  vc->inactivity_timeout_in = ts_nanoseconds::zero();
 
-  vc->active_timeout_in = 0;
+  vc->active_timeout_in = ts_nanoseconds::zero();
   if (nh) {
     nh->open_list.remove(vc);
     nh->cop_list.remove(vc);
@@ -774,7 +774,7 @@ UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
   }
   if (written > 0 && written < len) {
     u->oob_ptr          = new OOB_callback(mutex, this, cont, buf + written, len - written);
-    u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, HRTIME_MSECONDS(10));
+    u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, ts_milliseconds(10));
     return u->oob_ptr->trigger;
   } else {
     // should be a rare case : taking a new continuation should not be
@@ -782,7 +782,7 @@ UnixNetVConnection::send_OOB(Continuation *cont, char *buf, int len)
     written = -errno;
     ink_assert(written == -EAGAIN || written == -ENOTCONN);
     u->oob_ptr          = new OOB_callback(mutex, this, cont, buf, len);
-    u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, HRTIME_MSECONDS(10));
+    u->oob_ptr->trigger = mutex->thread_holding->schedule_in_local(u->oob_ptr, ts_milliseconds(10));
     return u->oob_ptr->trigger;
   }
 }
@@ -884,20 +884,14 @@ UnixNetVConnection::reenable_re(VIO *vio)
 
 UnixNetVConnection::UnixNetVConnection()
   : closed(0),
-    inactivity_timeout_in(0),
-    active_timeout_in(0),
 #ifdef INACTIVITY_TIMEOUT
     inactivity_timeout(NULL),
     active_timeout(NULL),
-#else
-    next_inactivity_timeout_at(0),
-    next_activity_timeout_at(0),
 #endif
     nh(NULL),
     id(0),
     flags(0),
     recursion(0),
-    submit_time(0),
     oob_ptr(0),
     from_accept_thread(false),
     origin_trace(false),
@@ -925,7 +919,7 @@ UnixNetVConnection::set_enabled(VIO *vio)
       inactivity_timeout = thread->schedule_in(this, inactivity_timeout_in);
   }
 #else
-  if (!next_inactivity_timeout_at && inactivity_timeout_in)
+  if (next_inactivity_timeout_at != TS_HRTICK_ZERO && inactivity_timeout_in.count())
     next_inactivity_timeout_at = Thread::get_hrtime() + inactivity_timeout_in;
 #endif
 }
@@ -1062,7 +1056,7 @@ UnixNetVConnection::startEvent(int /* event ATS_UNUSED */, Event *e)
 {
   MUTEX_TRY_LOCK(lock, get_NetHandler(e->ethread)->mutex, e->ethread);
   if (!lock.is_locked()) {
-    e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
+    e->schedule_in(ts_milliseconds(net_retry_delay));
     return EVENT_CONT;
   }
   if (!action_.cancelled)
@@ -1080,10 +1074,10 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   MUTEX_TRY_LOCK(lock, get_NetHandler(thread)->mutex, e->ethread);
   if (!lock.is_locked()) {
     if (event == EVENT_NONE) {
-      thread->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
+      thread->schedule_in(this, ts_milliseconds(net_retry_delay));
       return EVENT_DONE;
     } else {
-      e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
+      e->schedule_in(ts_milliseconds(net_retry_delay));
       return EVENT_CONT;
     }
   }
@@ -1112,11 +1106,11 @@ UnixNetVConnection::acceptEvent(int event, Event *e)
   nh->read_ready_list.enqueue(this);
 #endif
 
-  if (inactivity_timeout_in) {
+  if (inactivity_timeout_in.count()) {
     UnixNetVConnection::set_inactivity_timeout(inactivity_timeout_in);
   }
 
-  if (active_timeout_in) {
+  if (active_timeout_in.count()) {
     UnixNetVConnection::set_active_timeout(active_timeout_in);
   }
 
@@ -1144,7 +1138,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
       (write.vio.mutex && wlock.get_mutex() != write.vio.mutex.get())) {
 #ifdef INACTIVITY_TIMEOUT
     if (e == active_timeout)
-      e->schedule_in(HRTIME_MSECONDS(net_retry_delay));
+      e->schedule_in(ts_milliseconds(net_retry_delay));
 #endif
     return EVENT_CONT;
   }
@@ -1157,7 +1151,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
   Event **signal_timeout;
   Continuation *reader_cont     = NULL;
   Continuation *writer_cont     = NULL;
-  ink_hrtime *signal_timeout_at = NULL;
+  ts_hrtick *signal_timeout_at = NULL;
   Event *t                      = NULL;
   signal_timeout                = &t;
 
@@ -1175,7 +1169,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
     /* BZ 49408 */
     // ink_assert(inactivity_timeout_in);
     // ink_assert(next_inactivity_timeout_at < Thread::get_hrtime());
-    if (!inactivity_timeout_in || next_inactivity_timeout_at > Thread::get_hrtime())
+    if (!inactivity_timeout_in.count() || next_inactivity_timeout_at > Thread::get_hrtime())
       return EVENT_CONT;
     signal_event      = VC_EVENT_INACTIVITY_TIMEOUT;
     signal_timeout_at = &next_inactivity_timeout_at;
@@ -1186,7 +1180,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
 #endif
 
   *signal_timeout    = 0;
-  *signal_timeout_at = 0;
+  *signal_timeout_at = TS_HRTICK_ZERO;
   writer_cont        = write.vio._cont;
 
   if (closed) {
@@ -1200,7 +1194,7 @@ UnixNetVConnection::mainEvent(int event, Event *e)
       return EVENT_DONE;
   }
 
-  if (!*signal_timeout && !*signal_timeout_at && !closed && write.vio.op == VIO::WRITE && !(f.shutdown & NET_VC_SHUTDOWN_WRITE) &&
+  if (!*signal_timeout && TS_HRTICK_ZERO != *signal_timeout_at && !closed && write.vio.op == VIO::WRITE && !(f.shutdown & NET_VC_SHUTDOWN_WRITE) &&
       reader_cont != write.vio._cont && writer_cont == write.vio._cont)
     if (write_signal_and_update(signal_event, this) == EVENT_DONE)
       return EVENT_DONE;
@@ -1311,8 +1305,8 @@ UnixNetVConnection::connectUp(EThread *t, int fd)
   nh = get_NetHandler(t);
   nh->open_list.enqueue(this);
 
-  ink_assert(!inactivity_timeout_in);
-  ink_assert(!active_timeout_in);
+  ink_assert(!inactivity_timeout_in.count());
+  ink_assert(!active_timeout_in.count());
   this->set_local_addr();
   action_.continuation->handleEvent(NET_EVENT_OPEN, this);
   return CONNECT_SUCCESS;

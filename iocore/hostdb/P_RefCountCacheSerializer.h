@@ -67,8 +67,8 @@ private:
   std::string filename;
   std::string tmp_filename;
 
-  ink_hrtime time_per_partition;
-  ink_hrtime start;
+  ts_hrtick time_per_partition;
+  ts_hrtick start;
 
   int total_items;
   int64_t total_size;
@@ -187,8 +187,8 @@ RefCountCacheSerializer<C>::write_partition(int /* event */, Event *e)
   SET_HANDLER(&RefCountCacheSerializer::pause_event);
 
   // Figure out how much time we spent
-  ink_hrtime elapsed          = Thread::get_hrtime() - this->start;
-  ink_hrtime expected_elapsed = (this->partition * this->time_per_partition);
+  ts_hrtick elapsed          = Thread::get_hrtime() - this->start;
+  ts_hrtick expected_elapsed = (this->partition * this->time_per_partition);
 
   // If we were quicker than our pace-- lets reschedule in the future
   if (elapsed < expected_elapsed) {

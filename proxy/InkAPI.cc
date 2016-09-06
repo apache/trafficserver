@@ -1736,7 +1736,7 @@ TSdrandom()
   return this_ethread()->generator.drandom();
 }
 
-ink_hrtime
+ts_hrtick
 TShrtime()
 {
   return Thread::get_hrtime();
@@ -4341,7 +4341,7 @@ TSContDataGet(TSCont contp)
 }
 
 TSAction
-TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
+TSContSchedule(TSCont contp, ts_hrtick timeout, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4396,7 +4396,7 @@ TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
 }
 
 TSAction
-TSContScheduleEvery(TSCont contp, ink_hrtime every, TSThreadPool tp)
+TSContScheduleEvery(TSCont contp, ts_hrtick every, TSThreadPool tp)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -4432,7 +4432,7 @@ TSContScheduleEvery(TSCont contp, ink_hrtime every, TSThreadPool tp)
 }
 
 TSAction
-TSHttpSchedule(TSCont contp, TSHttpTxn txnp, ink_hrtime timeout)
+TSHttpSchedule(TSCont contp, TSHttpTxn txnp, ts_hrtick timeout)
 {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
@@ -6099,7 +6099,7 @@ TSHttpTxnPushedRespBodyBytesGet(TSHttpTxn txnp)
 // Get a particular milestone hrtime'r. Note that this can return 0, which means it has not
 // been set yet.
 TSReturnCode
-TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ink_hrtime *time)
+TSHttpTxnMilestoneGet(TSHttpTxn txnp, TSMilestonesType milestone, ts_hrtick *time)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr(time) == TS_SUCCESS);

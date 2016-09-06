@@ -43,8 +43,8 @@ public:
     return (parent) ? parent->get_netvc() : NULL;
   }
 
-  virtual void set_active_timeout(ink_hrtime timeout_in)     = 0;
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual void set_active_timeout(ts_hrtick timeout_in)     = 0;
+  virtual void set_inactivity_timeout(ts_hrtick timeout_in) = 0;
   virtual void cancel_inactivity_timeout()                   = 0;
 
   virtual void attach_server_session(HttpServerSession *ssession, bool transaction_done = true);

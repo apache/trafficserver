@@ -66,9 +66,9 @@ static Ptr<ProxyMutex> remoteCacheContQueueMutex[REMOTE_CONNECT_HASH];
 static int cluster_sequence_number = 1;
 
 #ifdef CLUSTER_TEST_DEBUG
-static ink_hrtime cache_cluster_timeout = HRTIME_SECONDS(65536);
+static ts_hrtick cache_cluster_timeout = HRTIME_SECONDS(65536);
 #else
-static ink_hrtime cache_cluster_timeout = CACHE_CLUSTER_TIMEOUT;
+static ts_hrtick cache_cluster_timeout = CACHE_CLUSTER_TIMEOUT;
 #endif
 
 ///////////////////
@@ -831,7 +831,7 @@ CacheContinuation::localVCsetupEvent(int event, ClusterVConnection *vc)
 
   } else if (((event == CLUSTER_EVENT_OPEN) || (event == CLUSTER_EVENT_OPEN_EXISTS)) &&
              (((ptrdiff_t)timeout & (ptrdiff_t)1) == 0)) {
-    ink_hrtime now;
+    ts_hrtick now;
     now = Thread::get_hrtime();
     CLUSTER_SUM_DYN_STAT(CLUSTER_OPEN_DELAY_TIME_STAT, now - start_time);
     LOG_EVENT_TIME(start_time, open_delay_time_dist, open_delay_events);
@@ -1554,7 +1554,7 @@ CacheContinuation::replyOpEvent(int event, VConnection *cvc)
 {
   ink_assert(magicno == (int)MagicNo);
   Debug("cache_proto", "replyOpEvent(this=%p,event=%d,VC=%p)", this, event, cvc);
-  ink_hrtime now;
+  ts_hrtick now;
   now = Thread::get_hrtime();
   CLUSTER_SUM_DYN_STAT(CLUSTER_CACHE_CALLBACK_TIME_STAT, now - start_time);
   LOG_EVENT_TIME(start_time, callback_time_dist, cache_callbacks);
@@ -2080,7 +2080,7 @@ CacheContinuation::remoteOpEvent(int event_code, Event *e)
 {
   ink_assert(magicno == (int)MagicNo);
   int event = event_code;
-  ink_hrtime now;
+  ts_hrtick now;
   if (start_time) {
     int res;
     if (event != EVENT_INTERVAL) {
@@ -2556,7 +2556,7 @@ cache_lookup_ClusterFunction(ClusterHandler *ch, void *data, int len)
 int
 CacheContinuation::replyLookupEvent(int event, void * /* d ATS_UNUSED */)
 {
-  ink_hrtime now;
+  ts_hrtick now;
   now = Thread::get_hrtime();
   CLUSTER_SUM_DYN_STAT(CLUSTER_CACHE_CALLBACK_TIME_STAT, now - start_time);
   LOG_EVENT_TIME(start_time, callback_time_dist, cache_callbacks);

@@ -223,8 +223,8 @@ public:
     return false;
   }
 
-  virtual void set_active_timeout(ink_hrtime timeout_in);
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in);
+  virtual void set_active_timeout(ts_hrtick timeout_in);
+  virtual void set_inactivity_timeout(ts_hrtick timeout_in);
   virtual void cancel_inactivity_timeout();
   void clear_inactive_timer();
   void clear_active_timer();
@@ -237,7 +237,7 @@ private:
   bool response_is_data_available() const;
   Event *send_tracked_event(Event *event, int send_event, VIO *vio);
   HTTPParser http_parser;
-  ink_hrtime _start_time;
+  ts_hrtick _start_time;
   EThread *_thread;
   Http2StreamId _id;
   Http2StreamState _state;
@@ -260,11 +260,11 @@ private:
   Event *cross_thread_event;
 
   // Support stream-specific timeouts
-  ink_hrtime active_timeout;
+  ts_hrtick active_timeout;
   Event *active_event;
 
-  ink_hrtime inactive_timeout;
-  ink_hrtime inactive_timeout_at;
+  ts_hrtick inactive_timeout;
+  ts_hrtick inactive_timeout_at;
   Event *inactive_event;
 
   Event *read_event;

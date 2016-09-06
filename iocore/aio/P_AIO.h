@@ -98,7 +98,7 @@ struct AIO_Reqs;
 struct AIOCallbackInternal : public AIOCallback {
   AIOCallback *first;
   AIO_Reqs *aio_req;
-  ink_hrtime sleep_time;
+  ts_hrtick sleep_time;
   int io_complete(int event, void *data);
   AIOCallbackInternal()
   {
@@ -141,7 +141,7 @@ public:
   int num_req;
   int num_temp;
   int num_queue;
-  ink_hrtime start;
+  ts_hrtick start;
 
   int ink_aio_stats(int event, void *data);
 

@@ -267,7 +267,7 @@ struct CacheSync : public Continuation {
   off_t writepos;
   AIOCallbackInternal io;
   Event *trigger;
-  ink_hrtime start_time;
+  ts_hrtick start_time;
   int mainEvent(int event, Event *e);
   void aio_write(int fd, char *b, int n, off_t o);
 

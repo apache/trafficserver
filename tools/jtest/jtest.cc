@@ -216,7 +216,7 @@ static uint64_t total_server_response_body_bytes   = 0;
 static uint64_t total_server_response_header_bytes = 0;
 static uint64_t total_proxy_response_body_bytes    = 0;
 static uint64_t total_proxy_response_header_bytes  = 0;
-static ink_hrtime now = 0, start_time = 0;
+static ts_hrtick now = 0, start_time = 0;
 static int extra_headers       = 0;
 static int alternates          = 0;
 static int abort_retry_speed   = 0;
@@ -305,9 +305,9 @@ struct FD {
   int fd;
   poll_cb read_cb;
   poll_cb write_cb;
-  ink_hrtime start;
-  ink_hrtime active;
-  ink_hrtime ready;
+  ts_hrtick start;
+  ts_hrtick active;
+  ts_hrtick ready;
 
   double doc;
   int doc_length;
@@ -605,11 +605,11 @@ fast(int sock, int speed, int d)
 }
 
 // Return the number of milliseconds elapsed since the start of the request.
-static ink_hrtime
+static ts_hrtick
 elapsed_from_start(int sock)
 {
-  ink_hrtime now = ink_get_hrtime_internal();
-  return ink_hrtime_diff_msec(now, fd[sock].start);
+  ts_hrtick now = ink_get_hrtime_internal();
+  return ts_hrtick_diff_msec(now, fd[sock].start);
 }
 
 static int

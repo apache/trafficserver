@@ -381,7 +381,7 @@ SSLCertificateConfig::reconfigure()
   if (is_action_tag_set("test.multicert.delay")) {
     const int secs = 60;
     Debug("ssl", "delaying certificate reload by %dsecs", secs);
-    ink_hrtime_sleep(HRTIME_SECONDS(secs));
+    ts_hrtick_sleep(HRTIME_SECONDS(secs));
   }
 
   SSLParseCertificateConfiguration(params, lookup);

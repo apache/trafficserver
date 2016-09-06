@@ -99,7 +99,7 @@ struct CacheContinuation : public Continuation {
   ClusterMachine *target_machine;
   int probe_depth;
   ClusterMachine *past_probes[CONFIGURATION_HISTORY_PROBE_DEPTH];
-  ink_hrtime start_time;
+  ts_hrtick start_time;
   ClusterMachine *from;
   ClusterHandler *ch;
   VConnection *cache_vc;

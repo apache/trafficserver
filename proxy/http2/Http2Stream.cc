@@ -604,7 +604,7 @@ Http2Stream::destroy()
   this->do_io_write(NULL, 0, NULL);
 
   HTTP2_DECREMENT_THREAD_DYN_STAT(HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, _thread);
-  ink_hrtime end_time = Thread::get_hrtime();
+  ts_hrtick end_time = Thread::get_hrtime();
   HTTP2_SUM_THREAD_DYN_STAT(HTTP2_STAT_TOTAL_TRANSACTIONS_TIME, _thread, end_time - _start_time);
   _req_header.destroy();
   response_header.destroy();
@@ -694,7 +694,7 @@ Http2Stream::response_get_data_reader() const
 }
 
 void
-Http2Stream::set_active_timeout(ink_hrtime timeout_in)
+Http2Stream::set_active_timeout(ts_hrtick timeout_in)
 {
   active_timeout = timeout_in;
   clear_active_timer();
@@ -704,7 +704,7 @@ Http2Stream::set_active_timeout(ink_hrtime timeout_in)
 }
 
 void
-Http2Stream::set_inactivity_timeout(ink_hrtime timeout_in)
+Http2Stream::set_inactivity_timeout(ts_hrtick timeout_in)
 {
   inactive_timeout = timeout_in;
   if (inactive_timeout > 0) {

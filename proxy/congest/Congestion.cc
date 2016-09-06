@@ -638,10 +638,10 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
   char str_time[100] = " ";
   char addrbuf[INET6_ADDRSTRLEN];
   int len              = 0;
-  ink_hrtime timestamp = 0;
+  ts_hrtick timestamp = 0;
   char state;
   if (pRecord->max_connection >= 0 && m_num_connections >= pRecord->max_connection) {
-    timestamp = ink_hrtime_to_sec(Thread::get_hrtime());
+    timestamp = ts_hrtick_to_sec(Thread::get_hrtime());
     state     = 'M';
   } else {
     timestamp = m_last_congested;
@@ -691,12 +691,12 @@ CongestionEntry::sprint(char *buf, int buflen, int format)
 //  the lock, discard the event
 //-------------------------------------------------------------
 void
-CongestionEntry::failed_at(ink_hrtime t)
+CongestionEntry::failed_at(ts_hrtick t)
 {
   if (pRecord->max_connection_failures == -1) {
     return;
   }
-  // long time = ink_hrtime_to_sec(t);
+  // long time = ts_hrtick_to_sec(t);
   long time = t;
   Debug("congestion_control", "failed_at: %ld", time);
   MUTEX_TRY_LOCK(lock, m_hist_lock, this_ethread());

@@ -272,7 +272,7 @@ int
 LogAccessICP::marshal_transfer_time_ms(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_icp_log->GetElapsedTime();
+    ts_hrtick elapsed = m_icp_log->GetElapsedTime();
     elapsed /= HRTIME_MSECOND;
     int64_t val = (int64_t)elapsed;
     marshal_int(buf, val);
@@ -284,7 +284,7 @@ int
 LogAccessICP::marshal_transfer_time_s(char *buf)
 {
   if (buf) {
-    ink_hrtime elapsed = m_icp_log->GetElapsedTime();
+    ts_hrtick elapsed = m_icp_log->GetElapsedTime();
     elapsed /= HRTIME_SECOND;
     int64_t val = (int64_t)elapsed;
     marshal_int(buf, val);

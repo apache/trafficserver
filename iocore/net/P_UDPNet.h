@@ -71,17 +71,17 @@ public:
 
   virtual ~PacketQueue() {}
   int nPackets;
-  ink_hrtime lastPullLongTermQ;
+  ts_hrtick lastPullLongTermQ;
   Queue<UDPPacketInternal> longTermQ;
   Queue<UDPPacketInternal> bucket[N_SLOTS];
-  ink_hrtime delivery_time[N_SLOTS];
+  ts_hrtick delivery_time[N_SLOTS];
   int now_slot;
 
   void
   init(void)
   {
     now_slot       = 0;
-    ink_hrtime now = ink_get_hrtime_internal();
+    ts_hrtick now = ink_get_hrtime_internal();
     int i          = now_slot;
     int j          = 0;
     while (j < N_SLOTS) {
@@ -92,7 +92,7 @@ public:
   }
 
   void
-  addPacket(UDPPacketInternal *e, ink_hrtime now = 0)
+  addPacket(UDPPacketInternal *e, ts_hrtick now = 0)
   {
     int before = 0;
     int slot;
@@ -109,7 +109,7 @@ public:
     if (e->delivery_time < now)
       e->delivery_time = now;
 
-    ink_hrtime s = e->delivery_time - delivery_time[now_slot];
+    ts_hrtick s = e->delivery_time - delivery_time[now_slot];
 
     if (s < 0) {
       before = 1;
@@ -136,7 +136,7 @@ public:
   }
 
   UDPPacketInternal *
-  firstPacket(ink_hrtime t)
+  firstPacket(ts_hrtick t)
   {
     if (t > delivery_time[now_slot]) {
       return bucket[now_slot].head;
@@ -190,12 +190,12 @@ public:
   }
 
   void
-  advanceNow(ink_hrtime t)
+  advanceNow(ts_hrtick t)
   {
     int s = now_slot;
     int prev;
 
-    if (ink_hrtime_to_msec(t - lastPullLongTermQ) >= SLOT_TIME_MSEC * ((N_SLOTS - 1) / 2)) {
+    if (ts_hrtick_to_msec(t - lastPullLongTermQ) >= SLOT_TIME_MSEC * ((N_SLOTS - 1) / 2)) {
       Queue<UDPPacketInternal> tempQ;
       UDPPacketInternal *p;
       // pull in all the stuff from long-term slot
@@ -225,7 +225,7 @@ public:
 
     if (s != now_slot)
       Debug("udpnet-service", "Advancing by (%d slots): behind by %" PRId64 " ms", s - now_slot,
-            ink_hrtime_to_msec(t - delivery_time[now_slot]));
+            ts_hrtick_to_msec(t - delivery_time[now_slot]));
     now_slot = s;
   }
 
@@ -241,7 +241,7 @@ private:
 
 public:
   UDPPacketInternal *
-  dequeue_ready(ink_hrtime t)
+  dequeue_ready(ts_hrtick t)
   {
     (void)t;
     UDPPacketInternal *e = bucket[now_slot].dequeue();
@@ -254,12 +254,12 @@ public:
   }
 
   void
-  check_ready(ink_hrtime now)
+  check_ready(ts_hrtick now)
   {
     (void)now;
   }
 
-  ink_hrtime
+  ts_hrtick
   earliest_timeout()
   {
     int s = now_slot;
@@ -282,8 +282,8 @@ private:
 class UDPQueue
 {
   PacketQueue pipeInfo;
-  ink_hrtime last_report;
-  ink_hrtime last_service;
+  ts_hrtick last_report;
+  ts_hrtick last_service;
   int packets;
   int added;
 
@@ -319,8 +319,8 @@ public:
   // UDPBind
   InkAtomicList udpNewConnections;
   Event *trigger_event;
-  ink_hrtime nextCheck;
-  ink_hrtime lastCheck;
+  ts_hrtick nextCheck;
+  ts_hrtick lastCheck;
 
   int startNetEvent(int event, Event *data);
   int mainNetEvent(int event, Event *data);

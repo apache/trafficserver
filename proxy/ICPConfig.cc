@@ -1305,7 +1305,7 @@ ICPPeriodicCont::DoReconfigAction(int event, Event *e)
 //  Basic accessor object used by the new logging subsystem
 //  for squid access log data for ICP queries.
 //----------------------------------------------------------------
-ink_hrtime
+ts_hrtick
 ICPlog::GetElapsedTime()
 {
   return (Thread::get_hrtime() - _s->_start_time);

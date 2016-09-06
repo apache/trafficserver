@@ -43,7 +43,7 @@ class ICPlog
 public:
   inline ICPlog(ICPPeerReadCont::PeerReadData *s) { _s = s; }
   ~ICPlog() {}
-  ink_hrtime GetElapsedTime();
+  ts_hrtick GetElapsedTime();
   sockaddr const *GetClientIP();
   in_port_t GetClientPort();
   SquidLogCode GetAction();

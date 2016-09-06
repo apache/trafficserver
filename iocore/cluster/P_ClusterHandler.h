@@ -83,7 +83,7 @@ struct ClusterControl : public Continuation {
 
 struct OutgoingControl : public ClusterControl {
   ClusterHandler *ch;
-  ink_hrtime submit_time;
+  ts_hrtick submit_time;
 
   static OutgoingControl *alloc();
 
@@ -128,7 +128,7 @@ struct OutgoingControl : public ClusterControl {
 // incoming control messsage are received by this machine
 //
 struct IncomingControl : public ClusterControl {
-  ink_hrtime recognized_time;
+  ts_hrtick recognized_time;
 
   static IncomingControl *alloc();
 
@@ -365,8 +365,8 @@ struct ClusterState : public Continuation {
 
   int missed;
   bool missed_msg;
-  ink_hrtime last_time;
-  ink_hrtime start_time;
+  ts_hrtick last_time;
+  ts_hrtick start_time;
 
   Ptr<IOBufferBlock> block[MAX_TCOUNT];
   class MIOBuffer *mbuf;
@@ -486,12 +486,12 @@ struct ClusterHandler : public ClusterHandlerBase {
   ClusterState read;
   ClusterState write;
 
-  ink_hrtime current_time;
-  ink_hrtime last;
-  ink_hrtime last_report;
+  ts_hrtick current_time;
+  ts_hrtick last;
+  ts_hrtick last_report;
   int n_since_last_report;
-  ink_hrtime last_cluster_op_enable;
-  ink_hrtime last_trace_dump;
+  ts_hrtick last_cluster_op_enable;
+  ts_hrtick last_trace_dump;
 
   DLL<ClusterVConnectionBase> delayed_reads;
   ClusterLoadMonitor *clm;
@@ -653,8 +653,8 @@ struct ClusterHandler : public ClusterHandlerBase {
   bool vc_ok_write(ClusterVConnection *);
   int do_open_local_requests();
   void swap_descriptor_bytes();
-  int process_read(ink_hrtime);
-  int process_write(ink_hrtime, bool);
+  int process_read(ts_hrtick);
+  int process_write(ts_hrtick, bool);
 
   void dump_write_msg(int);
   void dump_read_msg();

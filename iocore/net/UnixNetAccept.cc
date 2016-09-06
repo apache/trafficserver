@@ -250,7 +250,7 @@ NetAccept::do_blocking_accept(EThread *t)
   // do-while for accepting all the connections
   // added by YTS Team, yamsat
   do {
-    ink_hrtime now = Thread::get_hrtime();
+    ts_hrtick now = Thread::get_hrtime();
 
     // Throttle accepts
 

@@ -85,13 +85,13 @@ namespace
 {
 /// Update the milestone state given the milestones and timer.
 inline void
-milestone_update_api_time(TransactionMilestones &milestones, ink_hrtime &api_timer)
+milestone_update_api_time(TransactionMilestones &milestones, ts_hrtick &api_timer)
 {
   // Bit of funkiness - we set @a api_timer to be the negative value when we're tracking
   // non-active API time. In that case we need to make a note of it and flip the value back
   // to positive.
   if (api_timer) {
-    ink_hrtime delta;
+    ts_hrtick delta;
     bool active = api_timer >= 0;
     if (!active) {
       api_timer = -api_timer;
@@ -4734,7 +4734,7 @@ HttpSM::do_http_server_open(bool raw)
       CONGEST_INCREMENT_DYN_STAT(congested_on_F_stat);
       handleEvent(CONGESTION_EVENT_CONGESTED_ON_F, NULL);
       return;
-    } else if (t_state.pCongestionEntry->M_congested(ink_hrtime_to_sec(milestones[TS_MILESTONE_SERVER_CONNECT]))) {
+    } else if (t_state.pCongestionEntry->M_congested(ts_hrtick_to_sec(milestones[TS_MILESTONE_SERVER_CONNECT]))) {
       t_state.pCongestionEntry->stat_inc_M();
       t_state.congestion_congested_or_failed = 1;
       CONGEST_INCREMENT_DYN_STAT(congested_on_M_stat);
@@ -5202,11 +5202,11 @@ HttpSM::mark_server_down_on_client_abort()
     if (milestones[TS_MILESTONE_SERVER_FIRST_CONNECT] != 0 && milestones[TS_MILESTONE_SERVER_FIRST_READ] == 0) {
       // Check to see if client waited for the threshold
       //  to declare the origin server as down
-      ink_hrtime wait = Thread::get_hrtime() - milestones[TS_MILESTONE_SERVER_FIRST_CONNECT];
+      ts_hrtick wait = Thread::get_hrtime() - milestones[TS_MILESTONE_SERVER_FIRST_CONNECT];
       if (wait < 0) {
         wait = 0;
       }
-      if (ink_hrtime_to_sec(wait) > t_state.txn_conf->client_abort_threshold) {
+      if (ts_hrtick_to_sec(wait) > t_state.txn_conf->client_abort_threshold) {
         t_state.current.server->set_connect_fail(ETIMEDOUT);
         do_hostdb_update_if_necessary();
       }
@@ -6901,7 +6901,7 @@ HttpSM::update_stats()
     }
   }
 
-  ink_hrtime total_time = milestones.elapsed(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH);
+  ts_hrtick total_time = milestones.elapsed(TS_MILESTONE_SM_START, TS_MILESTONE_SM_FINISH);
 
   // ua_close will not be assigned properly in some exceptional situation.
   // TODO: Assign ua_close with suitable value when HttpTunnel terminates abnormally.
@@ -6910,18 +6910,18 @@ HttpSM::update_stats()
   }
 
   // request_process_time  = The time after the header is parsed to the completion of the transaction
-  ink_hrtime request_process_time = milestones[TS_MILESTONE_UA_CLOSE] - milestones[TS_MILESTONE_UA_READ_HEADER_DONE];
+  ts_hrtick request_process_time = milestones[TS_MILESTONE_UA_CLOSE] - milestones[TS_MILESTONE_UA_READ_HEADER_DONE];
 
   HttpTransact::client_result_stat(&t_state, total_time, request_process_time);
 
-  ink_hrtime ua_write_time;
+  ts_hrtick ua_write_time;
   if (milestones[TS_MILESTONE_UA_BEGIN_WRITE] != 0 && milestones[TS_MILESTONE_UA_CLOSE] != 0) {
     ua_write_time = milestones.elapsed(TS_MILESTONE_UA_BEGIN_WRITE, TS_MILESTONE_UA_CLOSE);
   } else {
     ua_write_time = -1;
   }
 
-  ink_hrtime os_read_time;
+  ts_hrtick os_read_time;
   if (milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] != 0 && milestones[TS_MILESTONE_SERVER_CLOSE] != 0) {
     os_read_time = milestones.elapsed(TS_MILESTONE_SERVER_READ_HEADER_DONE, TS_MILESTONE_SERVER_CLOSE);
   } else {
@@ -6939,7 +6939,7 @@ HttpSM::update_stats()
       */
 
   // print slow requests if the threshold is set (> 0) and if we are over the time threshold
-  if (t_state.txn_conf->slow_log_threshold != 0 && ink_hrtime_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
+  if (t_state.txn_conf->slow_log_threshold != 0 && ts_hrtick_from_msec(t_state.txn_conf->slow_log_threshold) < total_time) {
     URL *url             = t_state.hdr_info.client_request.url_get();
     char url_string[256] = "";
     int offset           = 0;

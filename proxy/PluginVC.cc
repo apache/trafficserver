@@ -783,14 +783,14 @@ PluginVC::update_inactive_time()
   }
 }
 
-// void PluginVC::setup_event_cb(ink_hrtime in)
+// void PluginVC::setup_event_cb(ts_hrtick in)
 //
 //    Setup up the event processor to call us back.
 //      We've got two different event pointers to handle
 //      locking issues
 //
 void
-PluginVC::setup_event_cb(ink_hrtime in, Event **e_ptr)
+PluginVC::setup_event_cb(ts_hrtick in, Event **e_ptr)
 {
   ink_assert(magic == PLUGIN_VC_MAGIC_ALIVE);
 
@@ -814,7 +814,7 @@ PluginVC::setup_event_cb(ink_hrtime in, Event **e_ptr)
 }
 
 void
-PluginVC::set_active_timeout(ink_hrtime timeout_in)
+PluginVC::set_active_timeout(ts_hrtick timeout_in)
 {
   active_timeout = timeout_in;
 
@@ -832,7 +832,7 @@ PluginVC::set_active_timeout(ink_hrtime timeout_in)
 }
 
 void
-PluginVC::set_inactivity_timeout(ink_hrtime timeout_in)
+PluginVC::set_inactivity_timeout(ts_hrtick timeout_in)
 {
   inactive_timeout = timeout_in;
   if (inactive_timeout != 0) {
@@ -861,13 +861,13 @@ PluginVC::cancel_inactivity_timeout()
   set_inactivity_timeout(0);
 }
 
-ink_hrtime
+ts_hrtick
 PluginVC::get_active_timeout()
 {
   return active_timeout;
 }
 
-ink_hrtime
+ts_hrtick
 PluginVC::get_inactivity_timeout()
 {
   return inactive_timeout;

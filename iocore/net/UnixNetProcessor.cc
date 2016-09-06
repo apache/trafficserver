@@ -283,7 +283,7 @@ struct CheckConnect : public Continuation {
   IOBufferReader *reader;
   int connect_status;
   int recursion;
-  ink_hrtime timeout;
+  ts_hrtick timeout;
 
   int
   handle_connect(int event, Event *e)

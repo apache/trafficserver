@@ -141,7 +141,7 @@ int EventNotify::timedwait(int timeout) // milliseconds
 #else
   ink_timestruc abstime;
 
-  abstime = ink_hrtime_to_timespec(ink_get_hrtime_internal() + HRTIME_SECONDS(timeout));
+  abstime = ts_hrtick_to_timespec(ink_get_hrtime_internal() + HRTIME_SECONDS(timeout));
   return ink_cond_timedwait(&m_cond, &m_mutex, &abstime);
 #endif
 }

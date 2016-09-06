@@ -89,7 +89,7 @@ struct AIO_Device : public Continuation {
   int fd;
   int id;
   char *buf;
-  ink_hrtime time_start, time_end;
+  ts_hrtick time_start, time_end;
   int seq_reads;
   int seq_writes;
   int rand_reads;

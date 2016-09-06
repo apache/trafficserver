@@ -40,7 +40,7 @@ test()
   int i;
   Machine *m;
   int j;
-  ink_hrtime t, t2;
+  ts_hrtick t, t2;
   int total;
   int high, low, share;
   int version = 7;

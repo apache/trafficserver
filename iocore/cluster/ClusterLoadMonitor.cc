@@ -82,8 +82,8 @@ ClusterLoadMonitor::ClusterLoadMonitor(ClusterHandler *ch)
   ping_response_buckets = (int *)ats_malloc(nbytes);
   memset((char *)ping_response_buckets, 0, nbytes);
 
-  nbytes                    = sizeof(ink_hrtime) * ping_history_buf_length;
-  ping_response_history_buf = (ink_hrtime *)ats_malloc(nbytes);
+  nbytes                    = sizeof(ts_hrtick) * ping_history_buf_length;
+  ping_response_history_buf = (ts_hrtick *)ats_malloc(nbytes);
   memset((char *)ping_response_history_buf, 0, nbytes);
 
   last_ping_message_sent    = HRTIME_SECONDS(0);
@@ -153,7 +153,7 @@ ClusterLoadMonitor::compute_cluster_load()
   } else {
     n_bucket = 1;
   }
-  ink_hrtime current_ping_latency = HRTIME_MSECONDS(n_bucket * msecs_per_ping_response_bucket);
+  ts_hrtick current_ping_latency = HRTIME_MSECONDS(n_bucket * msecs_per_ping_response_bucket);
 
   // Invalidate messages associated with this sample interval
   cluster_load_msg_start_sequence_number = cluster_load_msg_sequence_number;
@@ -177,7 +177,7 @@ ClusterLoadMonitor::compute_cluster_load()
   //     exceed the threshold.
 
   int start, end;
-  ink_hrtime ping_latency_threshold = HRTIME_MSECONDS(ping_latency_threshold_msecs);
+  ts_hrtick ping_latency_threshold = HRTIME_MSECONDS(ping_latency_threshold_msecs);
 
   start = ping_history_buf_head - 1;
   if (start < 0)
@@ -215,7 +215,7 @@ ClusterLoadMonitor::compute_cluster_load()
 }
 
 void
-ClusterLoadMonitor::note_ping_response_time(ink_hrtime response_time, int sequence_number)
+ClusterLoadMonitor::note_ping_response_time(ts_hrtick response_time, int sequence_number)
 {
 #ifdef CLUSTER_TOMCAT
   ProxyMutex *mutex = this->ch->mutex.get(); // hack for stats
@@ -234,7 +234,7 @@ void
 ClusterLoadMonitor::recv_cluster_load_msg(cluster_load_ping_msg *m)
 {
   // We have received back our ping message.
-  ink_hrtime now = Thread::get_hrtime();
+  ts_hrtick now = Thread::get_hrtime();
 
   if ((now >= m->send_time) &&
       ((m->sequence_number >= cluster_load_msg_start_sequence_number) && (m->sequence_number < cluster_load_msg_sequence_number))) {
@@ -263,7 +263,7 @@ ClusterLoadMonitor::cluster_load_ping_rethandler(ClusterHandler *ch, void *data,
 }
 
 void
-ClusterLoadMonitor::send_cluster_load_msg(ink_hrtime current_time)
+ClusterLoadMonitor::send_cluster_load_msg(ts_hrtick current_time)
 {
   // Build and send cluster load ping message.
 
@@ -290,7 +290,7 @@ ClusterLoadMonitor::cluster_load_periodic(int /* event ATS_UNUSED */, Event * /*
   }
   // Generate periodic ping messages.
 
-  ink_hrtime current_time = Thread::get_hrtime();
+  ts_hrtick current_time = Thread::get_hrtime();
   if ((current_time - last_ping_message_sent) > HRTIME_MSECONDS(ping_message_send_msec_interval)) {
     send_cluster_load_msg(current_time);
     last_ping_message_sent = current_time;

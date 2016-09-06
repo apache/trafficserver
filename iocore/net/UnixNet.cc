@@ -23,13 +23,13 @@
 
 #include "P_Net.h"
 
-ink_hrtime last_throttle_warning;
-ink_hrtime last_shedding_warning;
-ink_hrtime emergency_throttle_time;
+ts_hrtick last_throttle_warning;
+ts_hrtick last_shedding_warning;
+ts_hrtick emergency_throttle_time;
 int net_connections_throttle;
 int fds_throttle;
 int fds_limit = 8000;
-ink_hrtime last_transient_accept_error;
+ts_hrtick last_transient_accept_error;
 
 extern "C" void fd_reify(struct ev_loop *);
 
@@ -42,11 +42,13 @@ int update_cop_config(const char *name, RecDataT data_type, RecData data, void *
 class InactivityCop : public Continuation
 {
 public:
-  explicit InactivityCop(Ptr<ProxyMutex> &m) : Continuation(m.get()), default_inactivity_timeout(0)
+  explicit InactivityCop(Ptr<ProxyMutex> &m) : Continuation(m.get())
   {
+    int config_value;
     SET_HANDLER(&InactivityCop::check_inactivity);
-    REC_ReadConfigInteger(default_inactivity_timeout, "proxy.config.net.default_inactivity_timeout");
-    Debug("inactivity_cop", "default inactivity timeout is set to: %d", default_inactivity_timeout);
+    REC_ReadConfigInteger(config_value, "proxy.config.net.default_inactivity_timeout");
+    default_inactivity_timeout = ts_seconds(config_value);
+    Debug("inactivity_cop", "default inactivity timeout is set to: %" PRId64, std::chrono::duration_cast<ts_seconds>(default_inactivity_timeout).count());
 
     RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_cop_config, (void *)this);
   }
@@ -55,7 +57,7 @@ public:
   check_inactivity(int event, Event *e)
   {
     (void)event;
-    ink_hrtime now = Thread::get_hrtime();
+    ts_hrtick now = Thread::get_hrtime();
     NetHandler &nh = *get_NetHandler(this_ethread());
 
     Debug("inactivity_cop_check", "Checking inactivity on Thread-ID #%d", this_ethread()->id);
@@ -80,25 +82,31 @@ public:
       }
 
       // set a default inactivity timeout if one is not set
-      if (vc->next_inactivity_timeout_at == 0 && default_inactivity_timeout > 0) {
-        Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %d", vc, default_inactivity_timeout);
-        vc->set_inactivity_timeout(HRTIME_SECONDS(default_inactivity_timeout));
+      if (vc->next_inactivity_timeout_at == TS_HRTICK_ZERO && default_inactivity_timeout.count() > 0) {
+        Debug("inactivity_cop", "vc: %p inactivity timeout not set, setting a default of %" PRId64, vc,
+              std::chrono::duration_cast<ts_seconds>(default_inactivity_timeout).count());
+        vc->set_inactivity_timeout(default_inactivity_timeout);
         NET_INCREMENT_DYN_STAT(default_inactivity_timeout_stat);
       } else {
         Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
-              ink_hrtime_to_sec(now), ink_hrtime_to_sec(vc->next_inactivity_timeout_at),
-              ink_hrtime_to_sec(vc->inactivity_timeout_in));
+              std::chrono::duration_cast<ts_seconds>(now.time_since_epoch()).count(),
+              std::chrono::duration_cast<ts_seconds>(vc->next_inactivity_timeout_at.time_since_epoch()).count(),
+              std::chrono::duration_cast<ts_seconds>(vc->inactivity_timeout_in).count()
+              );
       }
 
-      if (vc->next_inactivity_timeout_at && vc->next_inactivity_timeout_at < now) {
+      if (vc->next_inactivity_timeout_at != TS_HRTICK_ZERO && vc->next_inactivity_timeout_at < now) {
         if (nh.keep_alive_queue.in(vc)) {
           // only stat if the connection is in keep-alive, there can be other inactivity timeouts
-          ink_hrtime diff = (now - (vc->next_inactivity_timeout_at - vc->inactivity_timeout_in)) / HRTIME_SECOND;
-          NET_SUM_DYN_STAT(keep_alive_queue_timeout_total_stat, diff);
+          auto diff = std::chrono::duration_cast<ts_seconds>(now - (vc->next_inactivity_timeout_at - vc->inactivity_timeout_in));
+          NET_SUM_DYN_STAT(keep_alive_queue_timeout_total_stat, diff.count());
           NET_INCREMENT_DYN_STAT(keep_alive_queue_timeout_count_stat);
         }
         Debug("inactivity_cop_verbose", "vc: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, vc,
-              ink_hrtime_to_sec(now), vc->next_inactivity_timeout_at, vc->inactivity_timeout_in);
+              std::chrono::duration_cast<ts_seconds>(now.time_since_epoch()).count(),
+              std::chrono::duration_cast<ts_seconds>(vc->next_inactivity_timeout_at.time_since_epoch()).count(),
+              std::chrono::duration_cast<ts_seconds>(vc->inactivity_timeout_in).count()
+              );
         vc->handleEvent(EVENT_IMMEDIATE, e);
       }
     }
@@ -111,13 +119,13 @@ public:
   }
 
   void
-  set_default_timeout(const int x)
+  set_default_timeout(ts_nanoseconds x)
   {
     default_inactivity_timeout = x;
   }
 
 private:
-  int default_inactivity_timeout; // only used when one is not set for some bad reason
+  ts_nanoseconds default_inactivity_timeout; // only used when one is not set for some bad reason
 };
 
 int
@@ -129,7 +137,7 @@ update_cop_config(const char *name, RecDataT data_type ATS_UNUSED, RecData data,
   if (cop != NULL) {
     if (strcmp(name, "proxy.config.net.default_inactivity_timeout") == 0) {
       Debug("inactivity_cop_dynamic", "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
-      cop->set_default_timeout(data.rec_int);
+      cop->set_default_timeout(ts_seconds(data.rec_int));
     }
   }
 
@@ -274,7 +282,7 @@ initialize_thread_for_net(EThread *thread)
   int cop_freq                 = 1;
 
   REC_ReadConfigInteger(cop_freq, "proxy.config.net.inactivity_check_frequency");
-  thread->schedule_every(inactivityCop, HRTIME_SECONDS(cop_freq));
+  thread->schedule_every(inactivityCop, ts_seconds(cop_freq));
 #endif
 
   thread->signal_hook = net_signal_hook_function;
@@ -363,7 +371,7 @@ NetHandler::startNetEvent(int event, Event *e)
 
   (void)event;
   SET_HANDLER((NetContHandler)&NetHandler::mainNetEvent);
-  e->schedule_every(-HRTIME_MSECONDS(net_event_period));
+  e->schedule_every(ts_milliseconds(-net_event_period));
   trigger_event = e;
   return EVENT_CONT;
 }
@@ -577,7 +585,7 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
     return true;
   }
 
-  ink_hrtime now = Thread::get_hrtime();
+  ts_hrtick now = Thread::get_hrtime();
 
   // loop over the non-active connections and try to close them
   UnixNetVConnection *vc      = active_queue.head;
@@ -588,8 +596,8 @@ NetHandler::manage_active_queue(bool ignore_queue_size = false)
   int total_idle_count        = 0;
   for (; vc != NULL; vc = vc_next) {
     vc_next = vc->active_queue_link.next;
-    if ((vc->inactivity_timeout_in && vc->next_inactivity_timeout_at <= now) ||
-        (vc->active_timeout_in && vc->next_activity_timeout_at <= now)) {
+    if ((vc->inactivity_timeout_in.count() && vc->next_inactivity_timeout_at <= now) ||
+        (vc->active_timeout_in.count() && vc->next_activity_timeout_at <= now)) {
       _close_vc(vc, now, handle_event, closed, total_idle_time, total_idle_count);
     }
     if (ignore_queue_size == false && max_connections_active_per_thread_in > active_queue_size) {
@@ -621,7 +629,7 @@ void
 NetHandler::manage_keep_alive_queue()
 {
   uint32_t total_connections_in = active_queue_size + keep_alive_queue_size;
-  ink_hrtime now                = Thread::get_hrtime();
+  ts_hrtick now                = Thread::get_hrtime();
 
   Debug("net_queue", "max_connections_per_thread_in: %d total_connections_in: %d active_queue_size: %d keep_alive_queue_size: %d",
         max_connections_per_thread_in, total_connections_in, active_queue_size, keep_alive_queue_size);
@@ -654,7 +662,7 @@ NetHandler::manage_keep_alive_queue()
 }
 
 void
-NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time,
+NetHandler::_close_vc(UnixNetVConnection *vc, ts_hrtick now, int &handle_event, int &closed, int &total_idle_time,
                       int &total_idle_count)
 {
   if (vc->thread != this_ethread()) {
@@ -664,7 +672,7 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
   if (!lock.is_locked()) {
     return;
   }
-  ink_hrtime diff = (now - (vc->next_inactivity_timeout_at - vc->inactivity_timeout_in)) / HRTIME_SECOND;
+  auto diff = std::chrono::duration_cast<ts_seconds>(now - (vc->next_inactivity_timeout_at - vc->inactivity_timeout_in)).count();
   if (diff > 0) {
     total_idle_time += diff;
     ++total_idle_count;
@@ -672,8 +680,11 @@ NetHandler::_close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event,
     NET_INCREMENT_DYN_STAT(keep_alive_queue_timeout_count_stat);
   }
   Debug("net_queue", "closing connection NetVC=%p idle: %u now: %" PRId64 " at: %" PRId64 " in: %" PRId64 " diff: %" PRId64, vc,
-        keep_alive_queue_size, ink_hrtime_to_sec(now), ink_hrtime_to_sec(vc->next_inactivity_timeout_at),
-        ink_hrtime_to_sec(vc->inactivity_timeout_in), diff);
+        keep_alive_queue_size,
+        std::chrono::duration_cast<ts_seconds>(now.time_since_epoch()).count(),
+        std::chrono::duration_cast<ts_seconds>(vc->next_inactivity_timeout_at.time_since_epoch()).count(),
+        std::chrono::duration_cast<ts_seconds>(vc->inactivity_timeout_in).count(),
+        diff);
   if (vc->closed) {
     close_UnixNetVConnection(vc, this_ethread());
     ++closed;

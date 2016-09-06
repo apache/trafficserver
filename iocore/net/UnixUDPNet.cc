@@ -207,9 +207,9 @@ private:
   socklen_t *fromaddrlen;
   int fd;            // fd we are reading from
   int ifd;           // poll fd index
-  ink_hrtime period; // polling period
-  ink_hrtime elapsed_time;
-  ink_hrtime timeout_interval;
+  ts_hrtick period; // polling period
+  ts_hrtick elapsed_time;
+  ts_hrtick timeout_interval;
 };
 
 ClassAllocator<UDPReadContinuation> udpReadContAllocator("udpReadContAllocator");
@@ -642,11 +642,11 @@ void
 UDPQueue::service(UDPNetHandler *nh)
 {
   (void)nh;
-  ink_hrtime now     = Thread::get_hrtime_updated();
+  ts_hrtick now     = Thread::get_hrtime_updated();
   uint64_t timeSpent = 0;
   uint64_t pktSendStartTime;
   UDPPacketInternal *p;
-  ink_hrtime pktSendTime;
+  ts_hrtick pktSendTime;
 
   p = (UDPPacketInternal *)ink_atomiclist_popall(&atomicQueue);
   if (p) {
@@ -683,7 +683,7 @@ UDPQueue::service(UDPNetHandler *nh)
   pipeInfo.advanceNow(now);
   SendPackets();
 
-  timeSpent = ink_hrtime_to_msec(now - last_report);
+  timeSpent = ts_hrtick_to_msec(now - last_report);
   if (timeSpent > 10000) {
     last_report = now;
     added       = 0;
@@ -696,9 +696,9 @@ void
 UDPQueue::SendPackets()
 {
   UDPPacketInternal *p;
-  static ink_hrtime lastCleanupTime = Thread::get_hrtime_updated();
-  ink_hrtime now                    = Thread::get_hrtime_updated();
-  ink_hrtime send_threshold_time    = now + SLOT_TIME;
+  static ts_hrtick lastCleanupTime = Thread::get_hrtime_updated();
+  ts_hrtick now                    = Thread::get_hrtime_updated();
+  ts_hrtick send_threshold_time    = now + SLOT_TIME;
   int32_t bytesThisSlot = INT_MAX, bytesUsed = 0;
   int32_t bytesThisPipe, sentOne;
   int64_t pktLen;
@@ -740,7 +740,7 @@ sendPackets:
     goto sendPackets;
   }
 
-  if ((g_udp_periodicFreeCancelledPkts) && (now - lastCleanupTime > ink_hrtime_from_sec(g_udp_periodicFreeCancelledPkts))) {
+  if ((g_udp_periodicFreeCancelledPkts) && (now - lastCleanupTime > ts_hrtick_from_sec(g_udp_periodicFreeCancelledPkts))) {
     pipeInfo.FreeCancelledPackets(g_udp_periodicCleanupSlots);
     lastCleanupTime = now;
   }
@@ -857,7 +857,7 @@ UDPNetHandler::mainNetEvent(int event, Event *e)
   }   // end for
 
   // remove dead UDP connections
-  ink_hrtime now = Thread::get_hrtime_updated();
+  ts_hrtick now = Thread::get_hrtime_updated();
   if (now >= nextCheck) {
     for (uc = udp_polling.head; uc; uc = next) {
       ink_assert(uc->mutex && uc->continuation);

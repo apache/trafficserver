@@ -55,7 +55,7 @@ public:
     int magicno;
     int version;
     int sequence_number;
-    ink_hrtime send_time;
+    ts_hrtick send_time;
     ClusterLoadMonitor *monitor;
 
     enum {
@@ -79,9 +79,9 @@ public:
 
 private:
   void compute_cluster_load();
-  void note_ping_response_time(ink_hrtime, int);
+  void note_ping_response_time(ts_hrtick, int);
   void recv_cluster_load_msg(cluster_load_ping_msg *);
-  void send_cluster_load_msg(ink_hrtime);
+  void send_cluster_load_msg(ts_hrtick);
   int cluster_load_periodic(int, Event *);
 
 private:
@@ -101,14 +101,14 @@ private:
   // Class specific data
   ClusterHandler *ch;
   int *ping_response_buckets;
-  ink_hrtime *ping_response_history_buf;
+  ts_hrtick *ping_response_history_buf;
   int ping_history_buf_head;
   Action *periodic_action;
 
   int cluster_overloaded;
   int cancel_periodic;
-  ink_hrtime last_ping_message_sent;
-  ink_hrtime last_cluster_load_compute;
+  ts_hrtick last_ping_message_sent;
+  ts_hrtick last_cluster_load_compute;
   int cluster_load_msg_sequence_number;
   int cluster_load_msg_start_sequence_number;
 };

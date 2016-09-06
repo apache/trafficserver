@@ -1357,7 +1357,7 @@ dir_corrupt_bucket(Dir *b, int s, Vol *d)
 
 EXCLUSIVE_REGRESSION_TEST(Cache_dir)(RegressionTest *t, int /* atype ATS_UNUSED */, int *status)
 {
-  ink_hrtime ttime;
+  ts_hrtick ttime;
   int ret = REGRESSION_TEST_PASSED;
 
   if ((CacheProcessor::IsCacheEnabled() != CACHE_INITIALIZED) || gnvol < 1) {

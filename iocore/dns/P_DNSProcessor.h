@@ -141,8 +141,8 @@ struct DNSEntry : public Continuation {
   HostResStyle host_res_style; ///< Preferred IP address family.
   int retries;
   int which_ns;
-  ink_hrtime submit_time;
-  ink_hrtime send_time;
+  ts_hrtick submit_time;
+  ts_hrtick send_time;
   char qname[MAXDNAME];
   int qname_len;
   int orig_qname_len;
@@ -215,9 +215,9 @@ struct DNSHandler : public Continuation {
   int ns_down[MAX_NAMED];
   int failover_number[MAX_NAMED];
   int failover_soon_number[MAX_NAMED];
-  ink_hrtime crossed_failover_number[MAX_NAMED];
-  ink_hrtime last_primary_retry;
-  ink_hrtime last_primary_reopen;
+  ts_hrtick crossed_failover_number[MAX_NAMED];
+  ts_hrtick last_primary_retry;
+  ts_hrtick last_primary_reopen;
 
   ink_res_state m_res;
   int txn_lookup_timeout;
@@ -246,7 +246,7 @@ struct DNSHandler : public Continuation {
   {
     if (is_debug_tag_set("dns")) {
       Debug("dns", "failover_now: Considering immediate failover, target time is %" PRId64 "",
-            (ink_hrtime)HRTIME_SECONDS(dns_failover_period));
+            (ts_hrtick)HRTIME_SECONDS(dns_failover_period));
       Debug("dns", "\tdelta time is %" PRId64 "", (Thread::get_hrtime() - crossed_failover_number[i]));
     }
     return (crossed_failover_number[i] &&
@@ -270,7 +270,7 @@ struct DNSHandler : public Continuation {
   void failover();
   void rr_failure(int ndx);
   void recover();
-  void retry_named(int ndx, ink_hrtime t, bool reopen = true);
+  void retry_named(int ndx, ts_hrtick t, bool reopen = true);
   void try_primary_named(bool reopen = true);
   void switch_named(int ndx);
   uint16_t get_query_id();

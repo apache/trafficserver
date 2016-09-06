@@ -69,7 +69,7 @@ struct CacheTestSM : public RegressionSM {
 
   Action *timeout;
   Action *cache_action;
-  ink_hrtime start_time;
+  ts_hrtick start_time;
   CacheVConnection *cache_vc;
   VIO *cvio;
   MIOBuffer *buffer;

@@ -170,13 +170,13 @@ TestDnsStateMachine::processEvent(int event, void *data)
 }
 
 int state_machines_created, state_machines_finished, measurement_interval;
-ink_hrtime start_time, last_measurement_time;
+ts_hrtick start_time, last_measurement_time;
 // Following function is called to measure the throughput
 void
 complete()
 {
   float throughput, cumul_throughput;
-  ink_hrtime now;
+  ts_hrtick now;
   state_machines_finished++;
   if (!(state_machines_finished % measurement_interval)) {
     now                   = Thread::get_hrtime();
@@ -221,7 +221,7 @@ void
 test()
 {
   char host[100];
-  ink_hrtime now;
+  ts_hrtick now;
   int i;
   TestDnsStateMachine *test_dns_state_machine;
   printf("removing file '%s'\n", out_file_name);

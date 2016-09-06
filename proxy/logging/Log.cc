@@ -1239,7 +1239,7 @@ Log::flush_thread_main(void * /* args ATS_UNUSED */)
 {
   LogBuffer *logbuffer;
   LogFlushData *fdata;
-  ink_hrtime now, last_time = 0;
+  ts_hrtick now, last_time = 0;
   int len, total_bytes;
   SLL<LogFlushData, LogFlushData::Link_link> link, invert_link;
   ProxyMutex *mutex = this_thread()->mutex.get();

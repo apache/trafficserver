@@ -647,10 +647,10 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
   ssl_error_t err                  = SSL_ERROR_NONE;
 
   // Dynamic TLS record sizing
-  ink_hrtime now = 0;
+  ts_hrtick now = 0;
   if (SSLConfigParams::ssl_maxrecord == -1) {
     now                       = Thread::get_hrtime_updated();
-    int msec_since_last_write = ink_hrtime_diff_msec(now, sslLastWriteTime);
+    int msec_since_last_write = ts_hrtick_diff_msec(now, sslLastWriteTime);
 
     if (msec_since_last_write > SSL_DEF_TLS_RECORD_MSEC_THRESHOLD) {
       // reset sslTotalBytesSent upon inactivity for SSL_DEF_TLS_RECORD_MSEC_THRESHOLD
@@ -1096,7 +1096,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // do we want to include cert info in trace?
 
     if (sslHandshakeBeginTime) {
-      const ink_hrtime ssl_handshake_time = Thread::get_hrtime() - sslHandshakeBeginTime;
+      const ts_hrtick ssl_handshake_time = Thread::get_hrtime() - sslHandshakeBeginTime;
       Debug("ssl", "ssl handshake time:%" PRId64, ssl_handshake_time);
       sslHandshakeBeginTime = 0;
       SSL_INCREMENT_DYN_STAT_EX(ssl_total_handshake_time_stat, ssl_handshake_time);

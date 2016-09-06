@@ -141,12 +141,12 @@ struct EvaluatorList {
   void
   evaluate(lua_State *L) const
   {
-    ink_hrtime start = ink_get_hrtime_internal();
-    ink_hrtime elapsed;
+    ts_hrtick start = ink_get_hrtime_internal();
+    ts_hrtick elapsed;
 
     forv_Vec(Evaluator, e, this->evaluators) { e->eval(L); }
-    elapsed = ink_hrtime_diff(ink_get_hrtime_internal(), start);
-    Debug("lua", "evaluated %u metrics in %fmsec", evaluators.length(), ink_hrtime_to_usec(elapsed) / 1000.0);
+    elapsed = ts_hrtick_diff(ink_get_hrtime_internal(), start);
+    Debug("lua", "evaluated %u metrics in %fmsec", evaluators.length(), ts_hrtick_to_usec(elapsed) / 1000.0);
   }
 
   bool update;
@@ -169,8 +169,8 @@ update_metrics_namespace(lua_State *L)
 static int64_t
 timestamp_now_msec()
 {
-  ink_hrtime now = ink_get_hrtime_internal();
-  return ink_hrtime_to_msec(now);
+  ts_hrtick now = ink_get_hrtime_internal();
+  return ts_hrtick_to_msec(now);
 }
 
 static int

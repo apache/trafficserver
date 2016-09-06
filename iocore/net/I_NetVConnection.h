@@ -399,7 +399,7 @@ public:
     interfaces.
 
   */
-  virtual void set_active_timeout(ink_hrtime timeout_in) = 0;
+  virtual void set_active_timeout(ts_nanoseconds timeout_in) = 0;
 
   /**
     Sets time after which SM should be notified if the requested
@@ -413,7 +413,7 @@ public:
     is currently active. See section on timeout semantics above.
 
    */
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in) = 0;
+  virtual void set_inactivity_timeout(ts_nanoseconds timeout_in) = 0;
 
   /**
     Clears the active timeout. No active timeouts will be sent until
@@ -452,10 +452,10 @@ public:
   virtual bool add_to_active_queue() = 0;
 
   /** @return the current active_timeout value in nanosecs */
-  virtual ink_hrtime get_active_timeout() = 0;
+  virtual ts_nanoseconds get_active_timeout() = 0;
 
   /** @return current inactivity_timeout value in nanosecs */
-  virtual ink_hrtime get_inactivity_timeout() = 0;
+  virtual ts_nanoseconds get_inactivity_timeout() = 0;
 
   /** Force an @a event if a write operation empties the write buffer.
 

@@ -143,13 +143,13 @@ public:
   }
 
   void
-  set_active_timeout(ink_hrtime timeout_in)
+  set_active_timeout(ts_hrtick timeout_in)
   {
     if (client_vc)
       client_vc->set_active_timeout(timeout_in);
   }
   void
-  set_inactivity_timeout(ink_hrtime timeout_in)
+  set_inactivity_timeout(ts_hrtick timeout_in)
   {
     if (client_vc)
       client_vc->set_inactivity_timeout(timeout_in);

@@ -365,7 +365,7 @@ cluster_machine_at_depth(unsigned int hash, int *pprobe_depth, ClusterMachine **
 #endif
   ClusterConfiguration *cc      = this_cluster()->current_configuration();
   ClusterConfiguration *next_cc = cc;
-  ink_hrtime now                = Thread::get_hrtime();
+  ts_hrtick now                = Thread::get_hrtime();
   int fake_probe_depth          = 0;
   int &probe_depth              = pprobe_depth ? (*pprobe_depth) : fake_probe_depth;
   int tprobe_depth              = probe_depth;

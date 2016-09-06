@@ -38,21 +38,21 @@ class TransactionMilestones
 {
 public:
   TransactionMilestones() { ink_zero(milestones); }
-  ink_hrtime &operator[](TSMilestonesType ms) { return milestones[ms]; }
-  ink_hrtime operator[](TSMilestonesType ms) const { return milestones[ms]; }
+  ts_hrtick &operator[](TSMilestonesType ms) { return milestones[ms]; }
+  ts_hrtick operator[](TSMilestonesType ms) const { return milestones[ms]; }
   /**
    * Takes two milestones and returns the difference.
    * @param start The start time
    * @param end The end time
    * @return The difference time in milliseconds
    */
-  int64_t
+  ts_milliseconds::rep
   difference_msec(TSMilestonesType ms_start, TSMilestonesType ms_end) const
   {
-    if (milestones[ms_end] == 0) {
+    if (milestones[ms_end] == TS_HRTICK_ZERO) {
       return -1;
     }
-    return ink_hrtime_to_msec(milestones[ms_end] - milestones[ms_start]);
+    return std::chrono::duration_cast<ts_milliseconds>(milestones[ms_end] - milestones[ms_start]).count();
   }
 
   /**
@@ -64,17 +64,17 @@ public:
   double
   difference_sec(TSMilestonesType ms_start, TSMilestonesType ms_end) const
   {
-    return (double)difference_msec(ms_start, ms_end) / 1000.0;
+    return milestones[ms_end] == TS_HRTICK_ZERO ? -1 : std::chrono::duration<double, std::ratio<1>>(milestones[ms_end] - milestones[ms_start]).count();
   }
 
-  ink_hrtime
+  ts_nanoseconds
   elapsed(TSMilestonesType ms_start, TSMilestonesType ms_end) const
   {
     return milestones[ms_end] - milestones[ms_start];
   }
 
 private:
-  ink_hrtime milestones[TS_MILESTONE_LAST_ENTRY];
+  ts_hrtick milestones[TS_MILESTONE_LAST_ENTRY];
 };
 
 #endif /* _Milestones_h_ */

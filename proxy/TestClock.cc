@@ -27,13 +27,13 @@
 void
 test()
 {
-  ink_hrtime t = ink_get_hrtime();
+  ts_hrtick t = ink_get_hrtime();
   int i        = 1000000;
   timespec ts;
   while (i--) {
     clock_gettime(CLOCK_REALTIME, &ts);
   }
-  ink_hrtime t2 = ink_get_hrtime();
+  ts_hrtick t2 = ink_get_hrtime();
   printf("time for clock_gettime %" PRId64 " nsecs\n", (t2 - t) / 1000);
 
   t = ink_get_hrtime();

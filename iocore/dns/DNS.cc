@@ -553,7 +553,7 @@ DNSHandler::recover()
 }
 
 void
-DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
+DNSHandler::retry_named(int ndx, ts_hrtick t, bool reopen)
 {
   if (reopen && ((t - last_primary_reopen) > DNS_PRIMARY_REOPEN_PERIOD)) {
     Debug("dns", "retry_named: reopening DNS connection for index %d", ndx);
@@ -576,7 +576,7 @@ DNSHandler::retry_named(int ndx, ink_hrtime t, bool reopen)
 void
 DNSHandler::try_primary_named(bool reopen)
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ts_hrtick t = Thread::get_hrtime();
   if (reopen && ((t - last_primary_reopen) > DNS_PRIMARY_REOPEN_PERIOD)) {
     Debug("dns", "try_primary_named: reopening primary DNS connection");
     last_primary_reopen = t;
@@ -793,7 +793,7 @@ DNSHandler::mainEvent(int event, Event *e)
 {
   recv_dns(event, e);
   if (dns_ns_rr) {
-    ink_hrtime t = Thread::get_hrtime();
+    ts_hrtick t = Thread::get_hrtime();
     if (t - last_primary_retry > DNS_PRIMARY_RETRY_PERIOD) {
       for (int i = 0; i < n_con; i++) {
         if (ns_down[i]) {

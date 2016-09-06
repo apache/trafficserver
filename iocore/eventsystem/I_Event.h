@@ -138,7 +138,7 @@ class EThread;
 
   Time values:
 
-  The schedulling functions use a time parameter typed as ink_hrtime
+  The schedulling functions use a time parameter typed as ts_hrtick
   for specifying the timeouts or periods. This is a nanosecond value
   supported by libts and you should use the time functions and
   macros defined in ink_hrtime.h.

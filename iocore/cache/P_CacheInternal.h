@@ -93,7 +93,7 @@ struct EvacuationBlock;
   do {                                                                    \
     ink_assert(!trigger);                                                 \
     writer_lock_retry++;                                                  \
-    ink_hrtime _t = HRTIME_MSECONDS(cache_read_while_writer_retry_delay); \
+    ts_hrtick _t = HRTIME_MSECONDS(cache_read_while_writer_retry_delay); \
     if (writer_lock_retry > 2)                                            \
       _t    = HRTIME_MSECONDS(cache_read_while_writer_retry_delay) * 2;   \
     trigger = mutex->thread_holding->schedule_in_local(this, _t);         \
@@ -452,7 +452,7 @@ struct CacheVC : public CacheVConnection {
   CacheKey *read_key;
   ContinuationHandler save_handler;
   uint32_t pin_in_cache;
-  ink_hrtime start_time;
+  ts_hrtick start_time;
   int base_stat;
   int recursive;
   int closed;

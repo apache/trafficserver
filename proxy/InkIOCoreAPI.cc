@@ -351,7 +351,7 @@ TSVIOMutexGet(TSVIO viop)
 
 /* High Resolution Time */
 
-ink_hrtime
+ts_hrtick
 INKBasedTimeGet()
 {
   return Thread::get_hrtime();

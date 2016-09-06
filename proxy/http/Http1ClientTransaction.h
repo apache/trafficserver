@@ -144,13 +144,13 @@ public:
 
   // Pass on the timeouts to the netvc
   virtual void
-  set_active_timeout(ink_hrtime timeout_in)
+  set_active_timeout(ts_hrtick timeout_in)
   {
     if (parent)
       parent->set_active_timeout(timeout_in);
   }
   virtual void
-  set_inactivity_timeout(ink_hrtime timeout_in)
+  set_inactivity_timeout(ts_hrtick timeout_in)
   {
     if (parent)
       parent->set_inactivity_timeout(timeout_in);

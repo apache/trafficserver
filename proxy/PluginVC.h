@@ -89,15 +89,15 @@ public:
   virtual void reenable_re(VIO *vio);
 
   // Timeouts
-  virtual void set_active_timeout(ink_hrtime timeout_in);
-  virtual void set_inactivity_timeout(ink_hrtime timeout_in);
+  virtual void set_active_timeout(ts_hrtick timeout_in);
+  virtual void set_inactivity_timeout(ts_hrtick timeout_in);
   virtual void cancel_active_timeout();
   virtual void cancel_inactivity_timeout();
   virtual void add_to_keep_alive_queue();
   virtual void remove_from_keep_alive_queue();
   virtual bool add_to_active_queue();
-  virtual ink_hrtime get_active_timeout();
-  virtual ink_hrtime get_inactivity_timeout();
+  virtual ts_hrtick get_active_timeout();
+  virtual ts_hrtick get_inactivity_timeout();
 
   // Pure virutal functions we need to compile
   virtual SOCKET get_socket();
@@ -153,7 +153,7 @@ private:
   void process_close();
   void process_timeout(Event **e, int event_to_send);
 
-  void setup_event_cb(ink_hrtime in, Event **e_ptr);
+  void setup_event_cb(ts_hrtick in, Event **e_ptr);
 
   void update_inactive_time();
   int64_t transfer_bytes(MIOBuffer *transfer_to, IOBufferReader *transfer_from, int64_t act_on);
@@ -177,11 +177,11 @@ private:
   bool deletable;
   int reentrancy_count;
 
-  ink_hrtime active_timeout;
+  ts_hrtick active_timeout;
   Event *active_event;
 
-  ink_hrtime inactive_timeout;
-  ink_hrtime inactive_timeout_at;
+  ts_hrtick inactive_timeout;
+  ts_hrtick inactive_timeout_at;
   Event *inactive_event;
 
   char const *plugin_tag;

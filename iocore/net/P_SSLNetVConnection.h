@@ -253,8 +253,8 @@ public:
   virtual int populate(Connection &con, Continuation *c, void *arg);
 
   SSL *ssl;
-  ink_hrtime sslHandshakeBeginTime;
-  ink_hrtime sslLastWriteTime;
+  ts_hrtick sslHandshakeBeginTime;
+  ts_hrtick sslLastWriteTime;
   int64_t sslTotalBytesSent;
 
   /// Set by asynchronous hooks to request a specific operation.

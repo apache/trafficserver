@@ -172,7 +172,7 @@ struct ClusterConfiguration {
   //
   ClusterConfiguration();
   unsigned char hash_table[CLUSTER_HASH_TABLE_SIZE];
-  ink_hrtime changed;
+  ts_hrtick changed;
   SLINK(ClusterConfiguration, link);
 };
 
@@ -363,8 +363,8 @@ struct ClusterVConnectionBase : public CacheVConnection {
   //                    ClusterVConnectionBase, or the ClusterVConnectionBase
   //                    creation callback.
   //
-  void set_active_timeout(ink_hrtime timeout_in);
-  void set_inactivity_timeout(ink_hrtime timeout_in);
+  void set_active_timeout(ts_hrtick timeout_in);
+  void set_inactivity_timeout(ts_hrtick timeout_in);
   void cancel_active_timeout();
   void cancel_inactivity_timeout();
 
@@ -381,8 +381,8 @@ struct ClusterVConnectionBase : public CacheVConnection {
   ClusterVConnState write;
   LINKM(ClusterVConnectionBase, read, link)
   LINKM(ClusterVConnectionBase, write, link)
-  ink_hrtime inactivity_timeout_in;
-  ink_hrtime active_timeout_in;
+  ts_hrtick inactivity_timeout_in;
+  ts_hrtick active_timeout_in;
   Event *inactivity_timeout;
   Event *active_timeout;
 
@@ -391,7 +391,7 @@ struct ClusterVConnectionBase : public CacheVConnection {
 };
 
 inline void
-ClusterVConnectionBase::set_active_timeout(ink_hrtime timeout)
+ClusterVConnectionBase::set_active_timeout(ts_hrtick timeout)
 {
   active_timeout_in = timeout;
   if (active_timeout) {
@@ -410,7 +410,7 @@ ClusterVConnectionBase::set_active_timeout(ink_hrtime timeout)
 }
 
 inline void
-ClusterVConnectionBase::set_inactivity_timeout(ink_hrtime timeout)
+ClusterVConnectionBase::set_inactivity_timeout(ts_hrtick timeout)
 {
   inactivity_timeout_in = timeout;
   if (inactivity_timeout) {
@@ -495,8 +495,8 @@ struct ClusterVConnection : public ClusterVConnectionBase {
   //
   // NOT Thread-safe (see Net.h for details)
   //
-  // void set_active_timeout(ink_hrtime timeout_in);
-  // void set_inactivity_timeout(ink_hrtime timeout_in);
+  // void set_active_timeout(ts_hrtick timeout_in);
+  // void set_inactivity_timeout(ts_hrtick timeout_in);
 
   //
   // Private
@@ -546,8 +546,8 @@ struct ClusterVConnection : public ClusterVConnectionBase {
   void allow_remote_close();
   bool schedule_write();
   void set_type(int);
-  ink_hrtime start_time;
-  ink_hrtime last_activity_time;
+  ts_hrtick start_time;
+  ts_hrtick last_activity_time;
   Queue<ByteBankDescriptor> byte_bank_q; // done awaiting completion
   int n_set_data_msgs;                   // # pending set_data() msgs on VC
   int n_recv_set_data_msgs;              // # set_data() msgs received on VC

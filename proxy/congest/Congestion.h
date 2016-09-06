@@ -200,12 +200,12 @@ struct CongestionEntry : public RequestData {
   // State -- connection failures
   FailHistory m_history;
   Ptr<ProxyMutex> m_hist_lock;
-  ink_hrtime m_last_congested;
+  ts_hrtick m_last_congested;
   volatile int m_congested; // 0 | 1
   int m_stat_congested_conn_failures;
 
   volatile int m_M_congested;
-  ink_hrtime m_last_M_congested;
+  ts_hrtick m_last_M_congested;
 
   // State -- concorrent connections
   int m_num_connections;
@@ -250,17 +250,17 @@ struct CongestionEntry : public RequestData {
   /* congestion control functions */
   // Is the server congested?
   bool F_congested();
-  bool M_congested(ink_hrtime t);
+  bool M_congested(ts_hrtick t);
   bool congested();
 
   // Update state info
   void go_alive();
-  void failed_at(ink_hrtime t);
+  void failed_at(ts_hrtick t);
   void connection_opened();
   void connection_closed();
 
   // Connection controls
-  bool proxy_retry(ink_hrtime t);
+  bool proxy_retry(ts_hrtick t);
   int client_retry_after();
   int connect_retries();
   int connect_timeout();
@@ -279,14 +279,14 @@ struct CongestionEntry : public RequestData {
   bool compCongested();
 
   // CongestionEntry and CongestionControl rules interaction helper functions
-  bool usefulInfo(ink_hrtime t);
+  bool usefulInfo(ts_hrtick t);
   bool validate();
   void applyNewRule(CongestionControlRecord *rule);
   void init(CongestionControlRecord *rule);
 };
 
 inline bool
-CongestionEntry::usefulInfo(ink_hrtime t)
+CongestionEntry::usefulInfo(ts_hrtick t)
 {
   return (m_ref_count > 1 || m_congested != 0 || m_num_connections > 0 ||
           (m_history.last_event + pRecord->fail_window > t && m_history.events > 0));
@@ -297,7 +297,7 @@ CongestionEntry::client_retry_after()
 {
   int prat = 0;
   if (F_congested()) {
-    prat = pRecord->proxy_retry_interval + m_history.last_event - ink_hrtime_to_sec(Thread::get_hrtime());
+    prat = pRecord->proxy_retry_interval + m_history.last_event - ts_hrtick_to_sec(Thread::get_hrtime());
     if (prat < 0)
       prat = 0;
   }
@@ -305,9 +305,9 @@ CongestionEntry::client_retry_after()
 }
 
 inline bool
-CongestionEntry::proxy_retry(ink_hrtime t)
+CongestionEntry::proxy_retry(ts_hrtick t)
 {
-  return ((ink_hrtime_to_sec(t) - m_history.last_event) >= pRecord->proxy_retry_interval);
+  return ((ts_hrtick_to_sec(t) - m_history.last_event) >= pRecord->proxy_retry_interval);
 }
 
 inline bool
@@ -317,7 +317,7 @@ CongestionEntry::F_congested()
 }
 
 inline bool
-CongestionEntry::M_congested(ink_hrtime t)
+CongestionEntry::M_congested(ts_hrtick t)
 {
   if (pRecord->max_connection >= 0 && m_num_connections >= pRecord->max_connection) {
     if (ink_atomic_swap(&m_M_congested, 1) == 0) {

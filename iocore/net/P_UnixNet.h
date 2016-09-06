@@ -120,13 +120,13 @@ class NetHandler;
 typedef int (NetHandler::*NetContHandler)(int, void *);
 typedef unsigned int uint32;
 
-extern ink_hrtime last_throttle_warning;
-extern ink_hrtime last_shedding_warning;
-extern ink_hrtime emergency_throttle_time;
+extern ts_hrtick last_throttle_warning;
+extern ts_hrtick last_shedding_warning;
+extern ts_hrtick emergency_throttle_time;
 extern int net_connections_throttle;
 extern int fds_throttle;
 extern int fds_limit;
-extern ink_hrtime last_transient_accept_error;
+extern ts_hrtick last_transient_accept_error;
 extern int http_accept_port_number;
 
 //#define INACTIVITY_TIMEOUT
@@ -138,7 +138,7 @@ extern int http_accept_port_number;
 
 #define THROTTLE_FD_HEADROOM (128 + 64) // CACHE_DB_FDS + 64
 
-#define TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY HRTIME_HOURS(24)
+static const ts_nanoseconds TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY(ts_hours(24));
 
 // also the 'throttle connect headroom'
 #define THROTTLE_AT_ONCE 5
@@ -147,7 +147,7 @@ extern int http_accept_port_number;
 
 #define NET_THROTTLE_ACCEPT_HEADROOM 1.1  // 10%
 #define NET_THROTTLE_CONNECT_HEADROOM 1.0 // 0%
-#define NET_THROTTLE_MESSAGE_EVERY HRTIME_MINUTES(10)
+static const ts_nanoseconds NET_THROTTLE_MESSAGE_EVERY(ts_minutes(10));
 
 #define PRINT_IP(x) ((uint8_t *)&(x))[0], ((uint8_t *)&(x))[1], ((uint8_t *)&(x))[2], ((uint8_t *)&(x))[3]
 
@@ -214,7 +214,7 @@ public:
   NetHandler();
 
 private:
-  void _close_vc(UnixNetVConnection *vc, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time,
+  void _close_vc(UnixNetVConnection *vc, ts_hrtick now, int &handle_event, int &closed, int &total_idle_time,
                  int &total_idle_count);
 };
 
@@ -257,7 +257,7 @@ net_connections_to_throttle(ThrottleType t)
 TS_INLINE void
 check_shedding_warning()
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ts_hrtick t = Thread::get_hrtime();
   if (t - last_shedding_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_shedding_warning = t;
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "number of connections reaching shedding limit");
@@ -265,13 +265,13 @@ check_shedding_warning()
 }
 
 TS_INLINE int
-emergency_throttle(ink_hrtime now)
+emergency_throttle(ts_hrtick now)
 {
   return emergency_throttle_time > now;
 }
 
 TS_INLINE int
-check_net_throttle(ThrottleType t, ink_hrtime now)
+check_net_throttle(ThrottleType t, ts_hrtick now)
 {
   int connections = net_connections_to_throttle(t);
 
@@ -287,7 +287,7 @@ check_net_throttle(ThrottleType t, ink_hrtime now)
 TS_INLINE void
 check_throttle_warning()
 {
-  ink_hrtime t = Thread::get_hrtime();
+  ts_hrtick t = Thread::get_hrtime();
   if (t - last_throttle_warning > NET_THROTTLE_MESSAGE_EVERY) {
     last_throttle_warning = t;
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many connections, throttling");
@@ -312,7 +312,7 @@ check_emergency_throttle(Connection &con)
   int emergency = fds_limit - EMERGENCY_THROTTLE;
   if (fd > emergency) {
     int over                = fd - emergency;
-    emergency_throttle_time = Thread::get_hrtime() + (over * over) * HRTIME_SECOND;
+    emergency_throttle_time = Thread::get_hrtime() + ts_seconds(over * over);
     RecSignalWarning(REC_SIGNAL_SYSTEM_ERROR, "too many open file descriptors, emergency throttling");
     int hyper_emergency = fds_limit - HYPER_EMERGENCY_THROTTLE;
     if (fd > hyper_emergency)
@@ -383,8 +383,8 @@ accept_error_seriousness(int res)
 TS_INLINE void
 check_transient_accept_error(int res)
 {
-  ink_hrtime t = Thread::get_hrtime();
-  if (!last_transient_accept_error || t - last_transient_accept_error > TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY) {
+  ts_hrtick t = Thread::get_hrtime();
+  if (TS_HRTICK_ZERO != last_transient_accept_error || t - last_transient_accept_error > TRANSIENT_ACCEPT_ERROR_MESSAGE_EVERY) {
     last_transient_accept_error = t;
     Warning("accept thread received transient error: errno = %d", -res);
 #if defined(linux)
@@ -409,8 +409,8 @@ read_disable(NetHandler *nh, UnixNetVConnection *vc)
   }
 #else
   if (!vc->write.enabled) {
-    vc->next_inactivity_timeout_at = 0;
-    Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
+    vc->next_inactivity_timeout_at = TS_HRTICK_ZERO;
+    Debug("socket", "read_disable updating inactivity_at %" PRId64 ", NetVC=%p", raw_ticks(vc->next_inactivity_timeout_at), vc);
   }
 #endif
   vc->read.enabled = 0;
@@ -430,8 +430,8 @@ write_disable(NetHandler *nh, UnixNetVConnection *vc)
   }
 #else
   if (!vc->read.enabled) {
-    vc->next_inactivity_timeout_at = 0;
-    Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetVC=%p", vc->next_inactivity_timeout_at, vc);
+    vc->next_inactivity_timeout_at = TS_HRTICK_ZERO;
+    Debug("socket", "write_disable updating inactivity_at %" PRId64 ", NetVC=%p", raw_ticks(vc->next_inactivity_timeout_at), vc);
   }
 #endif
   vc->write.enabled = 0;

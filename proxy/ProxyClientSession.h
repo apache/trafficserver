@@ -161,15 +161,15 @@ public:
     return api_hookid;
   }
 
-  ink_hrtime ssn_start_time;
-  ink_hrtime ssn_last_txn_time;
+  ts_hrtick ssn_start_time;
+  ts_hrtick ssn_last_txn_time;
 
   virtual void
-  set_active_timeout(ink_hrtime timeout_in)
+  set_active_timeout(ts_hrtick timeout_in)
   {
   }
   virtual void
-  set_inactivity_timeout(ink_hrtime timeout_in)
+  set_inactivity_timeout(ts_hrtick timeout_in)
   {
   }
   virtual void

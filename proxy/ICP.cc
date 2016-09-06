@@ -881,7 +881,7 @@ ICPPeerReadCont::PeerReadStateMachine(PeerReadData *s, Event *e)
       ink_assert(s->_ICPReqCont);
       Ptr<ProxyMutex> ICPReqContMutex(s->_ICPReqCont->mutex);
       EThread *ethread = this_ethread();
-      ink_hrtime request_start_time;
+      ts_hrtick request_start_time;
 
       if (!MUTEX_TAKE_TRY_LOCK(ICPReqContMutex, ethread)) {
         ICP_INCREMENT_DYN_STAT(icp_response_request_nolock_stat);

@@ -60,7 +60,7 @@ struct ShowNet : public ShowCont {
       return EVENT_DONE;
     }
 
-    ink_hrtime now = Thread::get_hrtime();
+    ts_hrtick now = Thread::get_hrtime();
     forl_LL(UnixNetVConnection, vc, nh->open_list)
     {
       //      uint16_t port = ats_ip_port_host_order(&addr.sa);

@@ -622,8 +622,8 @@ protected:
   // Peer Statistics
   //-------------------
   struct PeerStats {
-    ink_hrtime last_send;
-    ink_hrtime last_receive;
+    ts_hrtick last_send;
+    ts_hrtick last_receive;
     int sent[ICP_OP_LAST + 1];
     int recv[ICP_OP_LAST + 1];
     int total_sent;
@@ -1129,7 +1129,7 @@ public:
     ~PeerReadData();
     void reset(int full_reset = 0);
 
-    ink_hrtime _start_time;
+    ts_hrtick _start_time;
     ICPPeerReadCont *_mycont;
     Ptr<Peer> _peer;
     PeerReadState_t _next_state;
@@ -1171,7 +1171,7 @@ private:
   // Class data
   ICPProcessor *_ICPpr;
   PeerReadData *_state;
-  ink_hrtime _start_time;
+  ts_hrtick _start_time;
   int _recursion_depth;
 };
 
@@ -1192,7 +1192,7 @@ public:
   {
     _start_time = Thread::get_hrtime();
   }
-  inline ink_hrtime
+  inline ts_hrtick
   GetRequestStartTime()
   {
     return _start_time;
@@ -1267,7 +1267,7 @@ private:
   class Action _act;
 
   // Internal working data
-  ink_hrtime _start_time;
+  ts_hrtick _start_time;
   ICPProcessor *_ICPpr;
   Event *_timeout;
 

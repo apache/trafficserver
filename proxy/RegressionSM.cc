@@ -75,7 +75,7 @@ RegressionSM::xrun(RegressionSM *aparent)
 }
 
 void
-RegressionSM::run_in(int *apstatus, ink_hrtime t)
+RegressionSM::run_in(int *apstatus, ts_hrtick t)
 {
   pstatus = apstatus;
   SET_HANDLER(&RegressionSM::regression_sm_start);
