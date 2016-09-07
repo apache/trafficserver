@@ -2339,7 +2339,12 @@ TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, 
   sdk_assert(str_len < static_cast<int>(dst_size));
 
   // TODO: Perhaps we should make escapify_url() deal with const properly...
-  if (NULL == LogUtils::escapify_url(NULL, const_cast<char *>(str), str_len, &new_len, dst, dst_size, map)) {
+  // You would think making escapify_url const correct for the source argument would be easy, but in the case where
+  // No escaping is needed, the source argument is returned.  If there is a destination argument, the source is copied over
+  // However, if there is no destination argument, none is allocated.  I don't understand the full possibility of calling cases.
+  // It seems like we might want to review how this is being called and perhaps create a number of smaller accessor methods that
+  // can be set up correctly.
+  if (NULL == LogUtils::pure_escapify_url(NULL, const_cast<char *>(str), str_len, &new_len, dst, dst_size, map)) {
     if (length) {
       *length = 0;
     }
