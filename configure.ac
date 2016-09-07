@@ -1043,6 +1043,13 @@ TS_REMOVEFROM(CFLAGS, -Werror)
 AX_WITH_CURSES
 CFLAGS="$__saved_CFLAGS"
 
+# work around to bug in AX_WITH_CURSES when using dts tools on RHEL/CENTOS systems
+# the bug is that it failed to find curses (as it should), but did not set ax_cv_header correctly
+if test "x$ax_cv_header_ncursesw_curses_h" = xno && test "x$ax_cv_header_ncursesw_h" = xno && test "x$ax_cv_header_ncurses_h_with_ncursesw" = xno; then
+    ax_cv_curses=no
+fi
+
+
 AX_LIB_CURL([7.19], [
     AM_CONDITIONAL([BUILD_TRAFFIC_TOP], [test "x$ax_cv_curses" = "xyes"])
   ], [
