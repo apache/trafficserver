@@ -85,7 +85,7 @@ public:
     _time_diff = 0;
     _old_time  = 0;
     _now       = 0;
-    _time      = (struct timeval){0};
+    _time      = (struct timeval){0, 0};
     _stats     = NULL;
     _old_stats = NULL;
     _absolute  = false;

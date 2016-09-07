@@ -602,9 +602,9 @@ REGRESSION_TEST(Ink_Inet)(RegressionTest *t, int /* atype */, int *pstatus)
                                     {"127.0.0.1:", "127.0.0.1", NULL, ":"},
                                     {"foo.example.com", "foo.example.com", NULL, NULL},
                                     {"foo.example.com:99", "foo.example.com", "99", NULL},
-                                    {"ffee::24c3:3349:3cee:0143", "ffee::24c3:3349:3cee:0143", NULL},
+                                    {"ffee::24c3:3349:3cee:0143", "ffee::24c3:3349:3cee:0143", NULL, NULL},
                                     {"fe80:88b5:4a:20c:29ff:feae:1c33:8080", "fe80:88b5:4a:20c:29ff:feae:1c33:8080", NULL, NULL},
-                                    {"[ffee::24c3:3349:3cee:0143]", "ffee::24c3:3349:3cee:0143", NULL},
+                                    {"[ffee::24c3:3349:3cee:0143]", "ffee::24c3:3349:3cee:0143", NULL, NULL},
                                     {"[ffee::24c3:3349:3cee:0143]:80", "ffee::24c3:3349:3cee:0143", "80", NULL},
                                     {"[ffee::24c3:3349:3cee:0143]:8080x", "ffee::24c3:3349:3cee:0143", "8080", "x"}};
 

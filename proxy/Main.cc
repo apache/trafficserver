@@ -808,7 +808,7 @@ static const struct CMD {
                                        "\n"
                                        "List the sizes of the Host Database and Cache Index,\n"
                                        "and the storage available to the cache.\n",
-   cmd_list},
+   cmd_list, false},
   {"check", "Check the cache (do not make any changes)", "CHECK\n"
                                                          "\n"
                                                          "FORMAT: check\n"
@@ -825,7 +825,7 @@ static const struct CMD {
                                       "Clear the entire cache.  All data in the cache is\n"
                                       "lost and the cache is reconfigured based on the current\n"
                                       "description of database sizes and available storage.\n",
-   cmd_clear},
+   cmd_clear, false},
   {"clear_cache", "Clear the document cache", "CLEAR_CACHE\n"
                                               "\n"
                                               "FORMAT: clear_cache\n"
@@ -833,14 +833,14 @@ static const struct CMD {
                                               "Clear the document cache.  All documents in the cache are\n"
                                               "lost and the cache is reconfigured based on the current\n"
                                               "description of database sizes and available storage.\n",
-   cmd_clear},
+   cmd_clear, false},
   {"clear_hostdb", "Clear the hostdb cache", "CLEAR_HOSTDB\n"
                                              "\n"
                                              "FORMAT: clear_hostdb\n"
                                              "\n"
                                              "Clear the entire hostdb cache.  All host name resolution\n"
                                              "information is lost.\n",
-   cmd_clear},
+   cmd_clear, false},
   {CMD_VERIFY_CONFIG, "Verify the config", "\n"
                                            "\n"
                                            "FORMAT: verify_config\n"
@@ -855,7 +855,7 @@ static const struct CMD {
                                                                           "          help commit\n"
                                                                           "\n"
                                                                           "Provide a short description of a command (like this).\n",
-   cmd_help},
+   cmd_help, false},
 };
 
 static int
