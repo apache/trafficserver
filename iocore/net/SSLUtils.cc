@@ -381,7 +381,7 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
 
   // Do the common certificate lookup only once.  If we pause
   // and restart processing, do not execute the common logic again
-  if (!netvc->calledHooks(TS_SSL_CERT_HOOK)) {
+  if (!netvc->calledHooks(TS_EVENT_SSL_CERT)) {
     retval = set_context_cert(ssl);
     if (retval != 1) {
       return retval;
@@ -389,7 +389,7 @@ ssl_cert_callback(SSL *ssl, void * /*arg*/)
   }
 
   // Call the plugin cert code
-  reenabled = netvc->callHooks(TS_SSL_CERT_HOOK);
+  reenabled = netvc->callHooks(TS_EVENT_SSL_CERT);
   // If it did not re-enable, return the code to
   // stop the accept processing
   if (!reenabled) {
@@ -409,7 +409,7 @@ ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
 
   // Do the common certificate lookup only once.  If we pause
   // and restart processing, do not execute the common logic again
-  if (!netvc->calledHooks(TS_SSL_CERT_HOOK)) {
+  if (!netvc->calledHooks(TS_EVENT_SSL_CERT)) {
     retval = set_context_cert(ssl);
     if (retval != 1) {
       goto done;
@@ -417,7 +417,7 @@ ssl_servername_callback(SSL *ssl, int * /* ad */, void * /*arg*/)
   }
 
   // Call the plugin SNI code
-  reenabled = netvc->callHooks(TS_SSL_SNI_HOOK);
+  reenabled = netvc->callHooks(TS_EVENT_SSL_CERT);
   // If it did not re-enable, return the code to
   // stop the accept processing
   if (!reenabled) {

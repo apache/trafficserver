@@ -447,7 +447,8 @@ typedef enum {
   TS_EVENT_MGMT_UPDATE                          = 60100,
   TS_EVENT_INTERNAL_60200                       = 60200,
   TS_EVENT_INTERNAL_60201                       = 60201,
-  TS_EVENT_INTERNAL_60202                       = 60202
+  TS_EVENT_INTERNAL_60202                       = 60202,
+  TS_EVENT_SSL_CERT                             = 60203
 } TSEvent;
 #define TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP TS_EVENT_HTTP_PRE_REMAP /* backwards compat */
 

@@ -1387,7 +1387,7 @@ SSLNetVConnection::reenable(NetHandler *nh)
     }
     if (curHook != NULL) {
       // Invoke the hook and return, wait for next reenable
-      curHook->invoke(TS_SSL_CERT_HOOK, this);
+      curHook->invoke(TS_EVENT_SSL_CERT, this);
       return;
     } else { // curHook == NULL
       // empty, set state to HOOKS_DONE
@@ -1413,11 +1413,10 @@ SSLNetVConnection::sslContextSet(void *ctx)
 }
 
 bool
-SSLNetVConnection::callHooks(TSHttpHookID eventId)
+SSLNetVConnection::callHooks(TSEvent eventId)
 {
   // Only dealing with the SNI/CERT hook so far.
-  // TS_SSL_SNI_HOOK and TS_SSL_CERT_HOOK are the same value
-  ink_assert(eventId == TS_SSL_CERT_HOOK);
+  ink_assert(eventId == TS_EVENT_SSL_CERT);
   Debug("ssl", "callHooks sslHandshakeHookState=%d", this->sslHandshakeHookState);
 
   // First time through, set the type of the hook that is currently being invoked
