@@ -24,7 +24,6 @@
 #include "ts/ink_inet.h"
 #include "ts/ink_string.h"
 #include "P_EventSystem.h"
-#include "Error.h"
 
 #include "LogSock.h"
 #include "LogUtils.h"

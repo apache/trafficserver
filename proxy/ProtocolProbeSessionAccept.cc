@@ -24,7 +24,6 @@
 #include "P_Net.h"
 #include "I_Machine.h"
 #include "ProtocolProbeSessionAccept.h"
-#include "Error.h"
 #include "http2/HTTP2.h"
 
 static bool
@@ -148,7 +147,7 @@ ProtocolProbeSessionAccept::mainEvent(int event, void *data)
     return EVENT_CONT;
   }
 
-  MachineFatal("Protocol probe received a fatal error: errno = %d", -((int)(intptr_t)data));
+  ink_abort("Protocol probe received a fatal error: errno = %d", -((int)(intptr_t)data));
   return EVENT_CONT;
 }
 

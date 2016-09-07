@@ -24,7 +24,6 @@
 #include "Http2SessionAccept.h"
 #include "Http2ClientSession.h"
 #include "I_Machine.h"
-#include "Error.h"
 #include "../IPAllow.h"
 
 Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(NULL), options(_o)
@@ -83,6 +82,6 @@ Http2SessionAccept::mainEvent(int event, void *data)
     HTTP_SUM_DYN_STAT(http_ua_msecs_counts_errors_pre_accept_hangups_stat, 0);
   }
 
-  MachineFatal("HTTP/2 accept received fatal error: errno = %d", -((int)(intptr_t)data));
+  ink_abort("HTTP/2 accept received fatal error: errno = %d", -((int)(intptr_t)data));
   return EVENT_CONT;
 }

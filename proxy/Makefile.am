@@ -199,7 +199,6 @@ traffic_server_LDADD = \
   logging/liblogging.a \
   logging/liblogcollation.a \
   hdrs/libhdrs.a  \
-  shared/liberror.a  \
   shared/libdiagsconfig.a  \
   $(top_builddir)/mgmt/libmgmt_p.la \
   $(top_builddir)/iocore/utils/libinkutils.a \

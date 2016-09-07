@@ -33,7 +33,6 @@
  */
 #include "ts/ink_platform.h"
 
-#include "Error.h"
 #include "HTTP.h"
 
 #include "P_Net.h"
