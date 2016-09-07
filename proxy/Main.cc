@@ -205,7 +205,9 @@ static const ArgumentDescription argument_descriptions[] = {
 
   {"interval", 'i', "Statistics Interval", "I", &show_statistics, "PROXY_STATS_INTERVAL", NULL},
   {"remote_management", 'M', "Remote Management", "T", &remote_management_flag, "PROXY_REMOTE_MANAGEMENT", NULL},
-  {"command", 'C', "Maintenance Command to Execute", "S511", &command_string, "PROXY_COMMAND_STRING", NULL},
+  {"command", 'C', "Maintenance Command to Execute\n"
+                   "      Commands: list, check, clear, clear_cache, clear_hostdb, verify_config, help",
+   "S511", &command_string, "PROXY_COMMAND_STRING", NULL},
   {"conf_dir", 'D', "config dir to verify", "S511", &conf_dir, "PROXY_SYS_CONFIG_DIR", NULL},
   {"clear_hostdb", 'k', "Clear HostDB on Startup", "F", &auto_clear_hostdb_flag, "PROXY_CLEAR_HOSTDB", NULL},
   {"clear_cache", 'K', "Clear Cache on Startup", "F", &cacheProcessor.auto_clear_flag, "PROXY_CLEAR_CACHE", NULL},
