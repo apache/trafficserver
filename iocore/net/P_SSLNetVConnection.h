@@ -221,11 +221,11 @@ public:
   }
 
   // Returns true if all the hooks reenabled
-  bool callHooks(TSHttpHookID eventId);
+  bool callHooks(TSEvent eventId);
 
   // Returns true if we have already called at
   // least some of the hooks
-  bool calledHooks(TSHttpHookID /* eventId */) const { return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE); }
+  bool calledHooks(TSEvent /* eventId */) const { return (this->sslHandshakeHookState != HANDSHAKE_HOOKS_PRE); }
   bool
   getSSLTrace() const
   {
