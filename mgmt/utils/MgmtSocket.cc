@@ -89,7 +89,7 @@ mgmt_fopen(const char *filename, const char *mode)
     // no leak here as f will be returned if it is > 0
     // coverity[overwrite_var]
     f = ::fopen(filename, mode);
-    if (f > 0)
+    if (f != NULL)
       return f;
     if (!mgmt_transient_error())
       break;
