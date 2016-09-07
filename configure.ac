@@ -322,17 +322,6 @@ AC_ARG_ENABLE([posix-cap],
 AC_MSG_RESULT([$enable_posix_cap])
 
 #
-# use hwloc library when possible (can be disabled)
-#
-AC_MSG_CHECKING([whether to use hwloc library])
-AC_ARG_ENABLE([hwloc],
-  [AS_HELP_STRING([--disable-hwloc],[Don't use the hwloc library])],
-  [],
-  [enable_hwloc="yes"]
-)
-AC_MSG_RESULT([$enable_hwloc])
-
-#
 # Enble ccache explicitly (it's disabled by default, because of build problems in some cases)
 #
 AC_MSG_CHECKING([whether to enable ccache])
@@ -1370,42 +1359,31 @@ AC_MSG_RESULT([$enable_linux_native_aio])
 TS_ARG_ENABLE_VAR([use], [linux_native_aio])
 
 # Check for hwloc library.
-# If we don't find it, disable checking for header.
-use_hwloc=0
-AS_IF([test "x$enable_hwloc" = "xyes"], [
-  # Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
-  PKG_CHECK_MODULES([HWLOC], [hwloc], [
-    SAVE_LIBS="$LIBS"
-    LIBS="-lhwloc"
-    AC_LANG_PUSH([C++])
-    AC_MSG_CHECKING([for hwloc C++ linking])
-    AC_LINK_IFELSE([
-      AC_LANG_PROGRAM([#include <hwloc.h>],[hwloc_topology_t t; hwloc_topology_init(&t); hwloc_get_type_depth(t, HWLOC_OBJ_SOCKET);])],[
-      use_hwloc=1
-      AC_SUBST([HWLOC_CFLAGS])
-      AC_SUBST([HWLOC_LIBS])
-      AC_MSG_RESULT([yes])
-      # Old versions of libhwloc don't have HWLOC_OBJ_PU.
-      AC_CHECK_DECL(HWLOC_OBJ_PU,
-        [AC_DEFINE(HAVE_HWLOC_OBJ_PU, 1, [Whether HWLOC_OBJ_PU is available])], [],
-        [#include <hwloc.h>]
-      )
-    ], [
-      AC_MSG_RESULT([no])
-      AC_MSG_WARN([hwloc not linkable, try --disable-hwloc])
-      AC_SUBST([HWLOC_CFLAGS],[""])
-      AC_SUBST([HWLOC_LIBS],[""])
-    ])
-    AC_LANG_POP()
-    LIBS="$SAVE_LIBS"
+# Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
+PKG_CHECK_MODULES([HWLOC], [hwloc], [
+  SAVE_LIBS="$LIBS"
+  LIBS="-lhwloc"
+  AC_LANG_PUSH([C++])
+  AC_MSG_CHECKING([for hwloc C++ linking])
+  AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([#include <hwloc.h>],[hwloc_topology_t t; hwloc_topology_init(&t); hwloc_get_type_depth(t, HWLOC_OBJ_SOCKET);])],[
+    AC_SUBST([HWLOC_CFLAGS])
+    AC_SUBST([HWLOC_LIBS])
+    AC_MSG_RESULT([yes])
+    # Old versions of libhwloc don't have HWLOC_OBJ_PU.
+    AC_CHECK_DECL(HWLOC_OBJ_PU,
+      [AC_DEFINE(HAVE_HWLOC_OBJ_PU, 1, [Whether HWLOC_OBJ_PU is available])], [],
+      [#include <hwloc.h>]
+    )
   ], [
-    AC_MSG_WARN([hwloc not found, try --disable-hwloc])
-    AC_SUBST([HWLOC_CFLAGS],[""])
-    AC_SUBST([HWLOC_LIBS],[""])
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([hwloc not linkable])
   ])
+  AC_LANG_POP()
+  LIBS="$SAVE_LIBS"
+], [
+  AC_MSG_ERROR([hwloc not found])
 ])
-
-AC_SUBST(use_hwloc)
 
 #
 # Check for Maxmind APIs / includes. TODO: Long term, it might make sense to support

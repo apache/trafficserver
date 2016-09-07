@@ -23,12 +23,10 @@
 
 #include "P_EventSystem.h" /* MAGIC_EDITING_TAG */
 #include <sched.h>
-#if TS_USE_HWLOC
 #if HAVE_ALLOCA_H
 #include <alloca.h>
 #endif
 #include <hwloc.h>
-#endif
 #include "ts/ink_defs.h"
 #include "ts/hugepages.h"
 
@@ -162,7 +160,6 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   }
   n_threads_for_type[ET_CALL] = n_event_threads;
 
-#if TS_USE_HWLOC
   int affinity = 1;
   REC_ReadConfigInteger(affinity, "proxy.config.exec_thread.affinity");
   hwloc_obj_t obj;
@@ -201,11 +198,8 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
   obj_count = hwloc_get_nbobjs_by_type(ink_get_topology(), obj_type);
   Debug("iocore_thread", "Affinity: %d %ss: %d PU: %d", affinity, obj_name, obj_count, ink_number_of_processors());
 
-#endif
   for (i = 0; i < n_ethreads; i++) {
     ink_thread tid;
-
-#if TS_USE_HWLOC
     if (obj_count > 0) {
       // Get our `obj` instance with index based on the thread number we are on.
       obj = hwloc_get_obj_by_type(ink_get_topology(), obj_type, i % obj_count);
@@ -247,10 +241,6 @@ EventProcessor::start(int n_event_threads, size_t stacksize)
     } else {
       Warning("hwloc returned an unexpected value -- CPU affinity disabled");
     }
-#else
-    // Lets ignore tid if we don't link with HWLOC
-    (void)tid;
-#endif // TS_USE_HWLOC
   }
 
   Debug("iocore_thread", "Created event thread group id %d with %d threads", ET_CALL, n_event_threads);
