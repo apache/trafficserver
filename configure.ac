@@ -167,6 +167,17 @@ AC_ARG_ENABLE([debug],
 )
 AC_MSG_RESULT([$enable_debug])
 
+# Clustering
+
+AC_MSG_CHECKING([whether to enable clustering])
+AC_ARG_ENABLE([clustering],
+  [AS_HELP_STRING([--enable-clustering],[enable clustering (deprecated)])],
+  [],
+  [enable_clustering=no]
+)
+AC_MSG_RESULT([$enable_clustering])
+TS_ARG_ENABLE_VAR([use], [clustering])
+
 # Enable code coverage instrumentation only if requested by the user.
 AC_MSG_CHECKING([whether to code coverage])
 AC_ARG_ENABLE([coverage],
