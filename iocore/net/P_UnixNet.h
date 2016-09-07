@@ -196,9 +196,6 @@ public:
   uint32_t transaction_no_activity_timeout_in;
   uint32_t keep_alive_no_activity_timeout_in;
 
-  time_t sec;
-  int cycles;
-
   int startNetEvent(int event, Event *data);
   int mainNetEvent(int event, Event *data);
   int mainNetEventExt(int event, Event *data);
