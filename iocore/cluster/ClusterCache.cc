@@ -437,7 +437,7 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
   }
   case CACHE_OPEN_WRITE:
   case CACHE_OPEN_READ: {
-    ink_release_assert(c > 0);
+    ink_release_assert(c != NULL);
     //////////////////////
     // Use short format //
     //////////////////////
@@ -500,7 +500,7 @@ CacheContinuation::do_op(Continuation *c, ClusterMachine *mp, void *args, int us
 
   case CACHE_OPEN_READ_LONG:
   case CACHE_OPEN_WRITE_LONG: {
-    ink_release_assert(c > 0);
+    ink_release_assert(c != NULL);
     //////////////////////
     // Use long format  //
     //////////////////////

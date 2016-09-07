@@ -39,7 +39,7 @@ remap_plugin_info::remap_plugin_info(char *_path)
 {
   // coverity did not see ats_free
   // coverity[ctor_dtor_leak]
-  if (_path && likely((path = ats_strdup(_path)) > 0))
+  if (_path && likely((path = ats_strdup(_path)) != NULL))
     path_size = strlen(path);
 }
 
