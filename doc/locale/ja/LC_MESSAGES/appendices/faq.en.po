@@ -693,10 +693,6 @@ msgstr "キャッシュタイプの文字は以下のいずれかです"
 msgid "cache"
 msgstr "cache"
 
-#: ../../../appendices/faq.en.rst:265
-msgid "icp"
-msgstr "icp"
-
 #: ../../../appendices/faq.en.rst:266
 msgid "L"
 msgstr "L"
@@ -779,14 +775,6 @@ msgstr ""
 msgid "no cache lookup"
 msgstr "キャッシュルックアップ無し"
 
-#: ../../../appendices/faq.en.rst:290
-msgid "i icp-conn-info"
-msgstr "i icp-conn-info"
-
-#: ../../../appendices/faq.en.rst:292
-msgid "ICP status"
-msgstr "ICP の状態"
-
 #: ../../../appendices/faq.en.rst:297 ../../../appendices/faq.en.rst:309
 #: ../../../appendices/faq.en.rst:321
 msgid "connection open failed"
@@ -796,10 +784,6 @@ msgstr "接続オープンに失敗した"
 #: ../../../appendices/faq.en.rst:322
 msgid "connection opened successfully"
 msgstr "接続オープンに成功した"
-
-#: ../../../appendices/faq.en.rst:299
-msgid "no icp"
-msgstr "ICP 無し"
 
 #: ../../../appendices/faq.en.rst:303
 msgid "p parent-proxy"

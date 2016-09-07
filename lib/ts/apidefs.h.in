@@ -468,7 +468,6 @@ typedef enum {
 
 typedef enum {
   TS_LOOKUP_UNDEFINED_LOOKUP,
-  TS_LOOKUP_ICP_SUGGESTED_HOST,
   TS_LOOKUP_PARENT_PROXY,
   TS_LOOKUP_ORIGIN_SERVER,
   TS_LOOKUP_INCOMING_ROUTER,
@@ -1106,7 +1105,6 @@ extern tsapi const char *TS_HTTP_METHOD_CONNECT;
 extern tsapi const char *TS_HTTP_METHOD_DELETE;
 extern tsapi const char *TS_HTTP_METHOD_GET;
 extern tsapi const char *TS_HTTP_METHOD_HEAD;
-extern tsapi const char *TS_HTTP_METHOD_ICP_QUERY;
 extern tsapi const char *TS_HTTP_METHOD_OPTIONS;
 extern tsapi const char *TS_HTTP_METHOD_POST;
 extern tsapi const char *TS_HTTP_METHOD_PURGE;
@@ -1120,7 +1118,6 @@ extern tsapi int TS_HTTP_LEN_CONNECT;
 extern tsapi int TS_HTTP_LEN_DELETE;
 extern tsapi int TS_HTTP_LEN_GET;
 extern tsapi int TS_HTTP_LEN_HEAD;
-extern tsapi int TS_HTTP_LEN_ICP_QUERY;
 extern tsapi int TS_HTTP_LEN_OPTIONS;
 extern tsapi int TS_HTTP_LEN_POST;
 extern tsapi int TS_HTTP_LEN_PURGE;

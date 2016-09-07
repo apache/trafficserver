@@ -92,9 +92,6 @@ caches. In a hierarchy of proxy servers, Traffic Server can act either
 as a parent or a child cache to other Traffic Server systems or to
 similar caching products.
 
-Traffic Server supports ICP (Internet Cache Protocol) peering.
-Hierarchical caching is described in more detail in :ref:`admin-hierarchical-caching`.
-
 Deployment Limitations
 ----------------------
 

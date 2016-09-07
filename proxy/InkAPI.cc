@@ -49,7 +49,6 @@
 #include "LogConfig.h"
 #include "PluginVC.h"
 #include "api/ts/experimental.h"
-#include "ICP.h"
 #include "HttpSessionAccept.h"
 #include "PluginVC.h"
 #include "FetchSM.h"
@@ -332,7 +331,6 @@ tsapi const char *TS_HTTP_METHOD_CONNECT;
 tsapi const char *TS_HTTP_METHOD_DELETE;
 tsapi const char *TS_HTTP_METHOD_GET;
 tsapi const char *TS_HTTP_METHOD_HEAD;
-tsapi const char *TS_HTTP_METHOD_ICP_QUERY;
 tsapi const char *TS_HTTP_METHOD_OPTIONS;
 tsapi const char *TS_HTTP_METHOD_POST;
 tsapi const char *TS_HTTP_METHOD_PURGE;
@@ -345,7 +343,6 @@ tsapi int TS_HTTP_LEN_CONNECT;
 tsapi int TS_HTTP_LEN_DELETE;
 tsapi int TS_HTTP_LEN_GET;
 tsapi int TS_HTTP_LEN_HEAD;
-tsapi int TS_HTTP_LEN_ICP_QUERY;
 tsapi int TS_HTTP_LEN_OPTIONS;
 tsapi int TS_HTTP_LEN_POST;
 tsapi int TS_HTTP_LEN_PURGE;
@@ -1556,29 +1553,27 @@ api_init()
     TS_MIME_LEN_X_FORWARDED_FOR           = MIME_LEN_X_FORWARDED_FOR;
 
     /* HTTP methods */
-    TS_HTTP_METHOD_CONNECT   = HTTP_METHOD_CONNECT;
-    TS_HTTP_METHOD_DELETE    = HTTP_METHOD_DELETE;
-    TS_HTTP_METHOD_GET       = HTTP_METHOD_GET;
-    TS_HTTP_METHOD_HEAD      = HTTP_METHOD_HEAD;
-    TS_HTTP_METHOD_ICP_QUERY = HTTP_METHOD_ICP_QUERY;
-    TS_HTTP_METHOD_OPTIONS   = HTTP_METHOD_OPTIONS;
-    TS_HTTP_METHOD_POST      = HTTP_METHOD_POST;
-    TS_HTTP_METHOD_PURGE     = HTTP_METHOD_PURGE;
-    TS_HTTP_METHOD_PUT       = HTTP_METHOD_PUT;
-    TS_HTTP_METHOD_TRACE     = HTTP_METHOD_TRACE;
-    TS_HTTP_METHOD_PUSH      = HTTP_METHOD_PUSH;
+    TS_HTTP_METHOD_CONNECT = HTTP_METHOD_CONNECT;
+    TS_HTTP_METHOD_DELETE  = HTTP_METHOD_DELETE;
+    TS_HTTP_METHOD_GET     = HTTP_METHOD_GET;
+    TS_HTTP_METHOD_HEAD    = HTTP_METHOD_HEAD;
+    TS_HTTP_METHOD_OPTIONS = HTTP_METHOD_OPTIONS;
+    TS_HTTP_METHOD_POST    = HTTP_METHOD_POST;
+    TS_HTTP_METHOD_PURGE   = HTTP_METHOD_PURGE;
+    TS_HTTP_METHOD_PUT     = HTTP_METHOD_PUT;
+    TS_HTTP_METHOD_TRACE   = HTTP_METHOD_TRACE;
+    TS_HTTP_METHOD_PUSH    = HTTP_METHOD_PUSH;
 
-    TS_HTTP_LEN_CONNECT   = HTTP_LEN_CONNECT;
-    TS_HTTP_LEN_DELETE    = HTTP_LEN_DELETE;
-    TS_HTTP_LEN_GET       = HTTP_LEN_GET;
-    TS_HTTP_LEN_HEAD      = HTTP_LEN_HEAD;
-    TS_HTTP_LEN_ICP_QUERY = HTTP_LEN_ICP_QUERY;
-    TS_HTTP_LEN_OPTIONS   = HTTP_LEN_OPTIONS;
-    TS_HTTP_LEN_POST      = HTTP_LEN_POST;
-    TS_HTTP_LEN_PURGE     = HTTP_LEN_PURGE;
-    TS_HTTP_LEN_PUT       = HTTP_LEN_PUT;
-    TS_HTTP_LEN_TRACE     = HTTP_LEN_TRACE;
-    TS_HTTP_LEN_PUSH      = HTTP_LEN_PUSH;
+    TS_HTTP_LEN_CONNECT = HTTP_LEN_CONNECT;
+    TS_HTTP_LEN_DELETE  = HTTP_LEN_DELETE;
+    TS_HTTP_LEN_GET     = HTTP_LEN_GET;
+    TS_HTTP_LEN_HEAD    = HTTP_LEN_HEAD;
+    TS_HTTP_LEN_OPTIONS = HTTP_LEN_OPTIONS;
+    TS_HTTP_LEN_POST    = HTTP_LEN_POST;
+    TS_HTTP_LEN_PURGE   = HTTP_LEN_PURGE;
+    TS_HTTP_LEN_PUT     = HTTP_LEN_PUT;
+    TS_HTTP_LEN_TRACE   = HTTP_LEN_TRACE;
+    TS_HTTP_LEN_PUSH    = HTTP_LEN_PUSH;
 
     /* HTTP miscellaneous values */
     TS_HTTP_VALUE_BYTES            = HTTP_VALUE_BYTES;
@@ -7269,82 +7264,6 @@ TSMgmtConfigIntSet(const char *var_name, TSMgmtInt value)
   RecSignalManager(MGMT_SIGNAL_PLUGIN_SET_CONFIG, buffer);
 
   return TS_SUCCESS;
-}
-
-void
-TSICPFreshnessFuncSet(TSPluginFreshnessCalcFunc funcp)
-{
-  pluginFreshnessCalcFunc = (PluginFreshnessCalcFunc)funcp;
-}
-
-TSReturnCode
-TSICPCachedReqGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
-{
-  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)obj) == TS_SUCCESS);
-
-  ICPPeerReadCont *sm = (ICPPeerReadCont *)contp;
-  HTTPInfo *cached_obj;
-
-  cached_obj = sm->_object_read;
-  if (cached_obj == NULL || !cached_obj->valid()) {
-    return TS_ERROR;
-  }
-
-  HTTPHdr *cached_hdr = cached_obj->request_get();
-  if (!cached_hdr->valid()) {
-    return TS_ERROR;
-  };
-
-  // We can't use the HdrHeapSDKHandle structure in the RamCache since multiple
-  //  threads can access.  We need to create our own for the transaction and return that.
-  HdrHeapSDKHandle **handle = &(sm->_cache_req_hdr_heap_handle);
-
-  if (*handle == NULL) {
-    *handle           = (HdrHeapSDKHandle *)ats_malloc(sizeof(HdrHeapSDKHandle));
-    (*handle)->m_heap = cached_hdr->m_heap;
-  }
-
-  *(reinterpret_cast<HdrHeapSDKHandle **>(bufp)) = *handle;
-  *obj                                           = reinterpret_cast<TSMLoc>(cached_hdr->m_http);
-
-  return sdk_sanity_check_mbuffer(*bufp);
-}
-
-TSReturnCode
-TSICPCachedRespGet(TSCont contp, TSMBuffer *bufp, TSMLoc *obj)
-{
-  sdk_assert(sdk_sanity_check_continuation(contp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)bufp) == TS_SUCCESS);
-  sdk_assert(sdk_sanity_check_null_ptr((void *)obj) == TS_SUCCESS);
-
-  ICPPeerReadCont *sm = (ICPPeerReadCont *)contp;
-  HTTPInfo *cached_obj;
-
-  cached_obj = sm->_object_read;
-  if (cached_obj == NULL || !cached_obj->valid()) {
-    return TS_ERROR;
-  }
-
-  HTTPHdr *cached_hdr = cached_obj->response_get();
-  if (!cached_hdr->valid()) {
-    return TS_ERROR;
-  }
-
-  // We can't use the HdrHeapSDKHandle structure in the RamCache since multiple
-  //  threads can access.  We need to create our own for the transaction and return that.
-  HdrHeapSDKHandle **handle = &(sm->_cache_resp_hdr_heap_handle);
-
-  if (*handle == NULL) {
-    *handle           = (HdrHeapSDKHandle *)ats_malloc(sizeof(HdrHeapSDKHandle));
-    (*handle)->m_heap = cached_hdr->m_heap;
-  }
-
-  *(reinterpret_cast<HdrHeapSDKHandle **>(bufp)) = *handle;
-  *obj                                           = reinterpret_cast<TSMLoc>(cached_hdr->m_http);
-
-  return sdk_sanity_check_mbuffer(*bufp);
 }
 
 TSReturnCode

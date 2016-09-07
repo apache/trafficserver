@@ -132,8 +132,6 @@ Request::getMethod() const
         state_->method_ = HTTP_METHOD_CONNECT;
       } else if (method_str == TS_HTTP_METHOD_DELETE) {
         state_->method_ = HTTP_METHOD_DELETE;
-      } else if (method_str == TS_HTTP_METHOD_ICP_QUERY) {
-        state_->method_ = HTTP_METHOD_ICP_QUERY;
       } else if (method_str == TS_HTTP_METHOD_OPTIONS) {
         state_->method_ = HTTP_METHOD_OPTIONS;
       } else if (method_str == TS_HTTP_METHOD_PURGE) {
