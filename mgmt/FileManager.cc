@@ -51,12 +51,12 @@ FileManager::FileManager()
   // Check to see if the directory already exists, if not create it.
   if (mkdir(snapshotDir, DIR_MODE) < 0 && errno != EEXIST) {
     // Failed to create the snapshot directory
-    mgmt_fatal(stderr, 0, "[FileManager::FileManager] Failed to create the snapshot directory %s: %s\n", (const char *)snapshotDir,
+    mgmt_fatal(0, "[FileManager::FileManager] Failed to create the snapshot directory %s: %s\n", (const char *)snapshotDir,
                strerror(errno));
   }
 
   if (!ink_file_is_directory(snapshotDir)) {
-    mgmt_fatal(stderr, 0, "[FileManager::FileManager] snapshot directory %s is not a directory\n", (const char *)snapshotDir);
+    mgmt_fatal(0, "[FileManager::FileManager] snapshot directory %s is not a directory\n", (const char *)snapshotDir);
   }
 
   this->managedDir  = snapshotDir.release();
@@ -295,8 +295,8 @@ FileManager::abortRestore(const char *abortTo)
 
     currentVersion = rb->getCurrentVersion();
     if (rb->revertToVersion_ml(currentVersion - 1) != OK_ROLLBACK) {
-      mgmt_fatal(stderr, 0, "[FileManager::abortRestore] Unable to abort a failed snapshot restore.  Configuration files have been "
-                            "left in a inconsistent state\n");
+      mgmt_fatal(0, "[FileManager::abortRestore] Unable to abort a failed snapshot restore.  Configuration files have been "
+                    "left in a inconsistent state\n");
     }
   }
 }
@@ -386,7 +386,7 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
   dir = opendir(snapPath);
 
   if (dir == NULL) {
-    mgmt_log(stderr, "[FileManager::removeSnap] Unable to open snapshot %s: %s\n", snapName, strerror(errno));
+    mgmt_log("[FileManager::removeSnap] Unable to open snapshot %s: %s\n", snapName, strerror(errno));
     delete[] snapPath;
     return SNAP_NOT_FOUND;
   }
@@ -405,7 +405,7 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
     snapFilePath = newPathString(snapPath, entryPtr->d_name);
 
     if (unlink(snapFilePath) < 0) {
-      mgmt_log(stderr, "[FileManager::removeSnap] Unlink failed for %s: %s\n", snapFilePath, strerror(errno));
+      mgmt_log("[FileManager::removeSnap] Unlink failed for %s: %s\n", snapFilePath, strerror(errno));
       unlinkFailed = true;
       result       = SNAP_REMOVE_FAILED;
     }
@@ -420,7 +420,7 @@ FileManager::removeSnap(const char *snapName, const char *snapDir)
   if (unlinkFailed == false) {
     if (rmdir(snapPath) < 0) {
       // strerror() isn't reentrant/thread-safe ... Problem? /leif
-      mgmt_log(stderr, "[FileManager::removeSnap] Unable to remove snapshot directory %s: %s\n", snapPath, strerror(errno));
+      mgmt_log("[FileManager::removeSnap] Unable to remove snapshot directory %s: %s\n", snapPath, strerror(errno));
       result = SNAP_REMOVE_FAILED;
     } else {
       result = SNAP_OK;
@@ -462,13 +462,13 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
   snapPath = newPathString(snapDir, snapName);
 
   if (mkdir(snapPath, DIR_MODE) < 0 && errno != EEXIST) {
-    mgmt_log(stderr, "[FileManager::takeSnap] Failed to create directory for snapshot %s: %s\n", snapName, strerror(errno));
+    mgmt_log("[FileManager::takeSnap] Failed to create directory for snapshot %s: %s\n", snapName, strerror(errno));
     delete[] snapPath;
     return SNAP_DIR_CREATE_FAILED;
   }
 
   if (!ink_file_is_directory(snapPath)) {
-    mgmt_log(stderr, "[FileManager::takeSnap] snapshot directory %s is not a directory\n", snapPath);
+    mgmt_log("[FileManager::takeSnap] snapshot directory %s is not a directory\n", snapPath);
     delete[] snapPath;
     return SNAP_DIR_CREATE_FAILED;
   }
@@ -489,7 +489,7 @@ FileManager::takeSnap(const char *snapName, const char *snapDir)
       // Remove the failed snapshot so that we do not have a partial
       //   one hanging around
       if (removeSnap(snapName, snapDir) != SNAP_OK) {
-        mgmt_log(stderr, "[FileManager::takeSnap] Unable to remove failed snapshot %s.  This snapshot should be removed by hand\n",
+        mgmt_log("[FileManager::takeSnap] Unable to remove failed snapshot %s.  This snapshot should be removed by hand\n",
                  snapName);
       }
       break;
@@ -521,7 +521,7 @@ FileManager::readFile(const char *filePath, textBuffer *contents)
   diskFD = mgmt_open(filePath, O_RDONLY);
 
   if (diskFD < 0) {
-    mgmt_log(stderr, "[FileManager::readFile] Open of snapshot file failed %s: %s\n", filePath, strerror(errno));
+    mgmt_log("[FileManager::readFile] Open of snapshot file failed %s: %s\n", filePath, strerror(errno));
     return SNAP_FILE_ACCESS_FAILED;
   }
 
@@ -533,7 +533,7 @@ FileManager::readFile(const char *filePath, textBuffer *contents)
   close(diskFD);
 
   if (readResult < 0) {
-    mgmt_log(stderr, "[FileManager::readFile] Read of snapshot file failed %s: %s\n", filePath, strerror(errno));
+    mgmt_log("[FileManager::readFile] Read of snapshot file failed %s: %s\n", filePath, strerror(errno));
     return SNAP_FILE_ACCESS_FAILED;
   }
 
@@ -560,7 +560,7 @@ FileManager::copyFile(Rollback *rb, const char *snapPath)
   //
   // The Rollback lock is held by CALLEE
   if (rb->getVersion_ml(rb->getCurrentVersion(), &copyBuf) != OK_ROLLBACK) {
-    mgmt_log(stderr, "[FileManager::copyFile] Unable to retrieve current version of %s\n", fileName);
+    mgmt_log("[FileManager::copyFile] Unable to retrieve current version of %s\n", fileName);
     return SNAP_FILE_ACCESS_FAILED;
   }
   // Create the new file
@@ -568,7 +568,7 @@ FileManager::copyFile(Rollback *rb, const char *snapPath)
   diskFD   = mgmt_open_mode(filePath, O_RDWR | O_CREAT, FILE_MODE);
 
   if (diskFD < 0) {
-    mgmt_log(stderr, "[FileManager::copyFile] Unable to create snapshot file %s: %s\n", fileName, strerror(errno));
+    mgmt_log("[FileManager::copyFile] Unable to create snapshot file %s: %s\n", fileName, strerror(errno));
     delete[] filePath;
     delete copyBuf;
     return SNAP_FILE_CREATE_FAILED;
@@ -578,7 +578,7 @@ FileManager::copyFile(Rollback *rb, const char *snapPath)
 
   // Write the file contents to the copy
   if (write(diskFD, copyBuf->bufPtr(), copyBuf->spaceUsed()) < 0) {
-    mgmt_log(stderr, "[FileManager::copyFile] Unable to write snapshot file %s: %s\n", fileName, strerror(errno));
+    mgmt_log("[FileManager::copyFile] Unable to write snapshot file %s: %s\n", fileName, strerror(errno));
     result = SNAP_WRITE_FAILED;
   } else {
     result = SNAP_OK;

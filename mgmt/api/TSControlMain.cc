@@ -902,68 +902,6 @@ done:
 }
 
 /**************************************************************************
- * handle_diags
- *
- * purpose: handles diags request
- * output: TS_ERR_xx
- *************************************************************************/
-static TSMgmtError
-handle_diags(int /* fd */, void *req, size_t reqlen)
-{
-  TSMgmtError ret;
-  DiagsLevel level;
-
-  MgmtMarshallInt optype;
-  MgmtMarshallInt mode;
-  MgmtMarshallString msg = NULL;
-
-  ret = recv_mgmt_request(req, reqlen, DIAGS, &optype, &mode, &msg);
-  if (ret != TS_ERR_OKAY) {
-    ats_free(msg);
-    return ret;
-  }
-
-  switch ((TSDiagsT)mode) {
-  case TS_DIAG_DIAG:
-    level = DL_Diag;
-    break;
-  case TS_DIAG_DEBUG:
-    level = DL_Debug;
-    break;
-  case TS_DIAG_STATUS:
-    level = DL_Status;
-    break;
-  case TS_DIAG_NOTE:
-    level = DL_Note;
-    break;
-  case TS_DIAG_WARNING:
-    level = DL_Warning;
-    break;
-  case TS_DIAG_ERROR:
-    level = DL_Error;
-    break;
-  case TS_DIAG_FATAL:
-    level = DL_Fatal;
-    break;
-  case TS_DIAG_ALERT:
-    level = DL_Alert;
-    break;
-  case TS_DIAG_EMERGENCY:
-    level = DL_Emergency;
-    break;
-  default:
-    level = DL_Diag; // default value should be Diag not UNDEFINED
-  }
-
-  if (diags) {
-    diags->print("TSMgmtAPI", DTA(level), "%s", msg);
-  }
-
-  ats_free(msg);
-  return TS_ERR_OKAY;
-}
-
-/**************************************************************************
  * handle_stats_reset
  *
  * purpose: handles request to reset statistics to default values
@@ -1199,7 +1137,6 @@ static const control_message_handler handlers[] = {
   /* SNAPSHOT_RESTORE           */ {MGMT_API_PRIVILEGED, handle_snapshot},
   /* SNAPSHOT_REMOVE            */ {MGMT_API_PRIVILEGED, handle_snapshot},
   /* SNAPSHOT_GET_MLT           */ {0, handle_snapshot_get_mlt},
-  /* DIAGS                      */ {MGMT_API_PRIVILEGED, handle_diags},
   /* STATS_RESET_NODE           */ {MGMT_API_PRIVILEGED, handle_stats_reset},
   /* STATS_RESET_CLUSTER        */ {MGMT_API_PRIVILEGED, handle_stats_reset},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {MGMT_API_PRIVILEGED, handle_storage_device_cmd_offline},

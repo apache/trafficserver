@@ -95,13 +95,15 @@ DiagsConfig::reconfigure_diags()
     if (!record_name) {
       break;
     }
+
     p         = REC_readString(record_name, &found);
     all_found = all_found && found;
+
     if (found) {
       parse_output_string(p, &(c.outputs[l]));
       ats_free(p);
     } else {
-      diags->print(NULL, DTA(DL_Error), "can't find config variable '%s'\n", record_name);
+      Error("can't find config variable '%s'", record_name);
     }
   }
 
@@ -119,7 +121,7 @@ DiagsConfig::reconfigure_diags()
   ///////////////////////////////////////////////////////////////////
 
   if (!all_found) {
-    diags->print(NULL, DTA(DL_Error), "couldn't fetch all proxy.config.diags values");
+    Error("couldn't fetch all proxy.config.diags values");
   } else {
     //////////////////////////////
     // clear out old tag tables //
@@ -143,7 +145,7 @@ DiagsConfig::reconfigure_diags()
 #else
     memcpy(((void *)&diags->config), ((void *)&c), sizeof(DiagsConfigState));
 #endif
-    diags->print(NULL, DTA(DL_Note), "updated diags config");
+    Note("updated diags config");
   }
 
   ////////////////////////////////////
@@ -307,7 +309,7 @@ DiagsConfig::DiagsConfig(const char *filename, const char *tags, const char *act
   diags->config_roll_diagslog((RollingEnabledValues)diags_log_roll_enable, diags_log_roll_int, diags_log_roll_size);
   diags->config_roll_outputlog((RollingEnabledValues)output_log_roll_enable, output_log_roll_int, output_log_roll_size);
 
-  diags->print(NULL, DTA(DL_Status), "opened %s", diags_logpath);
+  Status("opened %s", diags_logpath);
 
   register_diags_callbacks();
 
@@ -333,7 +335,8 @@ DiagsConfig::register_diags_callbacks()
     "proxy.config.diags.action.tags",    "proxy.config.diags.show_location",    "proxy.config.diags.output.diag",
     "proxy.config.diags.output.debug",   "proxy.config.diags.output.status",    "proxy.config.diags.output.note",
     "proxy.config.diags.output.warning", "proxy.config.diags.output.error",     "proxy.config.diags.output.fatal",
-    "proxy.config.diags.output.alert",   "proxy.config.diags.output.emergency", NULL};
+    "proxy.config.diags.output.alert",   "proxy.config.diags.output.emergency", NULL,
+  };
 
   bool total_status = true;
   bool status;
@@ -344,13 +347,13 @@ DiagsConfig::register_diags_callbacks()
   for (i = 0; config_record_names[i] != NULL; i++) {
     status = (REC_RegisterConfigUpdateFunc(config_record_names[i], diags_config_callback, o) == REC_ERR_OKAY);
     if (!status) {
-      diags->print(NULL, DTA(DL_Warning), "couldn't register variable '%s', is records.config up to date?", config_record_names[i]);
+      Warning("couldn't register variable '%s', is records.config up to date?", config_record_names[i]);
     }
     total_status = total_status && status;
   }
 
   if (total_status == false) {
-    diags->print(NULL, DTA(DL_Error), "couldn't setup all diags callbacks, diagnostics may misbehave");
+    Error("couldn't setup all diags callbacks, diagnostics may misbehave");
     callbacks_established = false;
   } else {
     callbacks_established = true;

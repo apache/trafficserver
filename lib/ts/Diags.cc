@@ -52,6 +52,23 @@ inkcoreapi Diags *diags = NULL;
 
 static bool setup_diagslog(BaseLogFile *blf);
 
+static bool
+location(const SourceLocation *loc, DiagsShowLocation show, DiagsLevel level)
+{
+  if (loc && loc->valid()) {
+    switch (show) {
+    case SHOW_LOCATION_ALL:
+      return true;
+    case SHOW_LOCATION_DEBUG:
+      return level <= DL_Debug;
+    default:
+      return false;
+    }
+  }
+
+  return false;
+}
+
 template <int Size>
 static void
 vprintline(FILE *fp, char (&buffer)[Size], va_list ap)
@@ -88,7 +105,7 @@ Diags::Diags(const char *bdt, const char *bat, BaseLogFile *_diags_log)
     stdout_log(NULL),
     stderr_log(NULL),
     magic(DIAGS_MAGIC),
-    show_location(0),
+    show_location(SHOW_LOCATION_NONE),
     base_debug_tags(NULL),
     base_action_tags(NULL)
 {
@@ -244,7 +261,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // append location, if any //
   /////////////////////////////
 
-  if (loc && loc->valid()) {
+  if (location(loc, show_location, diags_level)) {
     char *lp, buf[256];
     lp = loc->str(buf, sizeof(buf));
     if (lp) {
@@ -509,25 +526,7 @@ Diags::dump(FILE *fp) const
 }
 
 void
-Diags::log(const char *tag, DiagsLevel level, const char *file, const char *func, const int line,
-           const char *format_string...) const
-{
-  if (!on(tag))
-    return;
-
-  va_list ap;
-  va_start(ap, format_string);
-  if (show_location == SHOW_LOCATION_ALL || (show_location == SHOW_LOCATION_DEBUG && level == DL_Debug)) {
-    SourceLocation lp(file, func, line);
-    print_va(tag, level, &lp, format_string, ap);
-  } else {
-    print_va(tag, level, NULL, format_string, ap);
-  }
-  va_end(ap);
-}
-
-void
-Diags::error_va(DiagsLevel level, const char *file, const char *func, const int line, const char *format_string, va_list ap) const
+Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_string, va_list ap) const
 {
   va_list ap2;
 
@@ -535,12 +534,7 @@ Diags::error_va(DiagsLevel level, const char *file, const char *func, const int 
     va_copy(ap2, ap);
   }
 
-  if (show_location == SHOW_LOCATION_ALL || (show_location == SHOW_LOCATION_DEBUG && level == DL_Debug)) {
-    SourceLocation lp(file, func, line);
-    print_va(NULL, level, &lp, format_string, ap);
-  } else {
-    print_va(NULL, level, NULL, format_string, ap);
-  }
+  print_va(NULL, level, loc, format_string, ap);
 
   if (DiagsLevel_IsTerminal(level)) {
     if (cleanup_func) {

@@ -29,7 +29,6 @@
   warnings and errors at runtime.  Action tags and debugging tags are
   supported, allowing run-time conditionals affecting diagnostics.
 
-
  ****************************************************************************/
 
 #ifndef __DIAGS_H___
@@ -120,7 +119,7 @@ public:
 
   const unsigned int magic;
   volatile DiagsConfigState config;
-  int show_location;
+  DiagsShowLocation show_location;
   DiagsCleanupFunc cleanup_func;
   const char *prefix_str;
 
@@ -150,34 +149,13 @@ public:
   // low-level tag inquiry functions //
   /////////////////////////////////////
 
-  inkcoreapi bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
+  bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
 
   /////////////////////////////
   // raw printing interfaces //
   /////////////////////////////
 
-  const char *level_name(DiagsLevel dl) const;
-
-  inkcoreapi void print_va(const char *tag, DiagsLevel dl, const SourceLocation *loc, const char *format_string, va_list ap) const;
-
-  //////////////////////////////
-  // user printing interfaces //
-  //////////////////////////////
-
-  void
-  print(const char *tag, DiagsLevel dl, const char *file, const char *func, const int line, const char *format_string, ...) const
-    TS_PRINTFLIKE(7, 8)
-  {
-    va_list ap;
-    va_start(ap, format_string);
-    if (show_location == SHOW_LOCATION_ALL || (show_location == SHOW_LOCATION_DEBUG && dl == DL_Debug)) {
-      SourceLocation lp(file, func, line);
-      print_va(tag, dl, &lp, format_string, ap);
-    } else {
-      print_va(tag, dl, NULL, format_string, ap);
-    }
-    va_end(ap);
-  }
+  const char *level_name(DiagsLevel level) const;
 
   ///////////////////////////////////////////////////////////////////////
   // user diagnostic output interfaces --- enabled on or off based     //
@@ -185,27 +163,45 @@ public:
   ///////////////////////////////////////////////////////////////////////
 
   void
-  log_va(const char *tag, DiagsLevel dl, const SourceLocation *loc, const char *format_string, va_list ap)
-  {
-    if (!on(tag))
-      return;
-    print_va(tag, dl, loc, format_string, ap);
-  }
-
-  void log(const char *tag, DiagsLevel dl, const char *file, const char *func, const int line, const char *format_string, ...) const
-    TS_PRINTFLIKE(7, 8);
-
-  void error_va(DiagsLevel dl, const char *file, const char *func, const int line, const char *format_string, va_list ap) const;
-
-  void
-  error(DiagsLevel level, const char *file, const char *func, const int line, const char *format_string, ...) const
-    TS_PRINTFLIKE(6, 7)
+  print(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(5, 6)
   {
     va_list ap;
-    va_start(ap, format_string);
-    error_va(level, file, func, line, format_string, ap);
+    va_start(ap, fmt);
+    print_va(NULL, level, loc, fmt, ap);
     va_end(ap);
   }
+
+  void print_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
+
+  void
+  log(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(5, 6)
+  {
+    if (on(tag)) {
+      va_list ap;
+      va_start(ap, fmt);
+      print_va(NULL, level, loc, fmt, ap);
+      va_end(ap);
+    }
+  }
+
+  void
+  log_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap)
+  {
+    if (on(tag)) {
+      print_va(NULL, level, loc, fmt, ap);
+    }
+  }
+
+  void
+  error(DiagsLevel level, const SourceLocation *loc, const char *fmt, ...) const TS_PRINTFLIKE(4, 5)
+  {
+    va_list ap;
+    va_start(ap, fmt);
+    error_va(level, loc, fmt, ap);
+    va_end(ap);
+  }
+
+  void error_va(DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
 
   void dump(FILE *fp = stdout) const;
 
@@ -240,11 +236,13 @@ private:
 
   bool rebind_stdout(int new_fd);
   bool rebind_stderr(int new_fd);
+
   void
   lock() const
   {
     ink_mutex_acquire(&tag_table_lock);
   }
+
   void
   unlock() const
   {
@@ -273,44 +271,67 @@ private:
 
 extern inkcoreapi Diags *diags;
 
-#define DTA(l) l, __FILE__, __FUNCTION__, __LINE__
-void dummy_debug(const char *tag, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
-inline void
-dummy_debug(const char *tag, const char *fmt, ...)
-{
-  (void)tag;
-  (void)fmt;
-}
+#define DiagsError(level, fmt, ...)                \
+  do {                                             \
+    SourceLocation loc = MakeSourceLocation();     \
+    diags->error(level, &loc, fmt, ##__VA_ARGS__); \
+  } while (0)
 
-#define Status(...) diags->error(DTA(DL_Status), __VA_ARGS__)
-#define Note(...) diags->error(DTA(DL_Note), __VA_ARGS__)
-#define Warning(...) diags->error(DTA(DL_Warning), __VA_ARGS__)
-#define Error(...) diags->error(DTA(DL_Error), __VA_ARGS__)
-#define Fatal(...) diags->error(DTA(DL_Fatal), __VA_ARGS__)
-#define Alert(...) diags->error(DTA(DL_Alert), __VA_ARGS__)
-#define Emergency(...) diags->error(DTA(DL_Emergency), __VA_ARGS__)
+#define Status(...) DiagsError(DL_Status, __VA_ARGS__)
+#define Note(...) DiagsError(DL_Note, __VA_ARGS__)
+#define Warning(...) DiagsError(DL_Warning, __VA_ARGS__)
+#define Error(...) DiagsError(DL_Error, __VA_ARGS__)
+#define Fatal(...) DiagsError(DL_Fatal, __VA_ARGS__)
+#define Alert(...) DiagsError(DL_Alert, __VA_ARGS__)
+#define Emergency(...) DiagsError(DL_Emergency, __VA_ARGS__)
 
-#define StatusV(fmt, ap) diags->error_va(DTA(DL_Status), fmt, ap)
-#define NoteV(fmt, ap) diags->error_va(DTA(DL_Note), fmt, ap)
-#define WarningV(fmt, ap) diags->error_va(DTA(DL_Warning), fmt, ap)
-#define ErrorV(fmt, ap) diags->error_va(DTA(DL_Error), fmt, ap)
-#define FatalV(fmt, ap) diags->error_va(DTA(DL_Fatal), fmt, ap)
-#define AlertV(fmt, ap) diags->error_va(DTA(DL_Alert), fmt, ap)
-#define EmergencyV(fmt, ap) diags->error_va(DTA(DL_Emergency), fmt, ap)
+#define DiagsErrorV(level, fmt, ap)                  \
+  do {                                               \
+    const SourceLocation loc = MakeSourceLocation(); \
+    diags->error_va(level, &loc, fmt, ap);           \
+  } while (0)
+
+#define StatusV(fmt, ap) DiagsErrorV(DL_Status, fmt, ap)
+#define NoteV(fmt, ap) DiagsErrorV(DL_Note, fmt, ap)
+#define WarningV(fmt, ap) DiagsErrorV(DL_Warning, fmt, ap)
+#define ErrorV(fmt, ap) DiagsErrorV(DL_Error, fmt, ap)
+#define FatalV(fmt, ap) DiagsErrorV(DL_Fatal, fmt, ap)
+#define AlertV(fmt, ap) DiagsErrorV(DL_Alert, fmt, ap)
+#define EmergencyV(fmt, ap) DiagsErrorV(DL_Emergency, fmt, ap)
 
 #ifdef TS_USE_DIAGS
-#define Diag(tag, ...)       \
-  if (unlikely(diags->on())) \
-  diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
-#define Debug(tag, ...)      \
-  if (unlikely(diags->on())) \
-    diags->log(tag, DTA(DL_Debug), __VA_ARGS__);
-#define DiagSpecific(flag, tag, ...) \
-  if (unlikely(diags->on()))         \
-  flag ? diags->print(tag, DTA(DL_Diag), __VA_ARGS__) : diags->log(tag, DTA(DL_Diag), __VA_ARGS__)
-#define DebugSpecific(flag, tag, ...) \
-  if (unlikely(diags->on()))          \
-  flag ? diags->print(tag, DTA(DL_Debug), __VA_ARGS__) : diags->log(tag, DTA(DL_Debug), __VA_ARGS__)
+
+#define Diag(tag, ...)                                 \
+  do {                                                 \
+    if (unlikely(diags->on())) {                       \
+      const SourceLocation loc = MakeSourceLocation(); \
+      diags->log(tag, DL_Diag, &loc, __VA_ARGS__);     \
+    }                                                  \
+  } while (0)
+
+#define Debug(tag, ...)                                \
+  do {                                                 \
+    if (unlikely(diags->on())) {                       \
+      const SourceLocation loc = MakeSourceLocation(); \
+      diags->log(tag, DL_Debug, &loc, __VA_ARGS__);    \
+    }                                                  \
+  } while (0)
+
+#define DiagSpecific(flag, tag, ...)                                                                      \
+  do {                                                                                                    \
+    if (unlikely(diags->on())) {                                                                          \
+      const SourceLocation loc = MakeSourceLocation();                                                    \
+      flag ? diags->print(tag, DL_Diag, &loc, __VA_ARGS__) : diags->log(tag, DL_Diag, &loc, __VA_ARGS__); \
+    }                                                                                                     \
+  } while (0)
+
+#define DebugSpecific(flag, tag, ...)                                                                       \
+  do {                                                                                                      \
+    if (unlikely(diags->on())) {                                                                            \
+      const SourceLocation loc = MakeSourceLocation();                                                      \
+      flag ? diags->print(tag, DL_Debug, &loc, __VA_ARGS__) : diags->log(tag, DL_Debug, &loc, __VA_ARGS__); \
+    }                                                                                                       \
+  } while (0)
 
 #define is_debug_tag_set(_t) unlikely(diags->on(_t, DiagsTagType_Debug))
 #define is_action_tag_set(_t) unlikely(diags->on(_t, DiagsTagType_Action))
@@ -320,18 +341,10 @@ dummy_debug(const char *tag, const char *fmt, ...)
 
 #else // TS_USE_DIAGS
 
-#define Diag(tag, fmt, ...) \
-  if (0)                    \
-  dummy_debug(tag, __VA_ARGS__)
-#define Debug(tag, fmt, ...) \
-  if (0)                     \
-  dummy_debug(tag, __VA_ARGS__)
-#define DiagSpecific(flag, tag, ...) \
-  if (0 && tag)                      \
-    dummy_debug(tag, __VA_ARGS__);
-#define DebugSpecific(flag, tag, ...) \
-  if (0 && tag)                       \
-    dummy_debug(tag, __VA_ARGS__);
+#define Diag(tag, fmt, ...)
+#define Debug(tag, fmt, ...)
+#define DiagSpecific(flag, tag, ...)
+#define DebugSpecific(flag, tag, ...)
 
 #define is_debug_tag_set(_t) 0
 #define is_action_tag_set(_t) 0

@@ -55,14 +55,9 @@ bool mgmt_getAddrForIntr(char *intrName, sockaddr *addr, int *mtu = 0);
 
 /* the following functions are all DEPRECATED.  The Diags
    interface should be used exclusively in the future */
-void mgmt_log(FILE *log, const char *message_format, ...);
-void mgmt_elog(FILE *log, const int lerrno, const char *message_format, ...);
-void mgmt_fatal(FILE *log, const int lerrno, const char *message_format, ...) TS_NORETURN;
 void mgmt_log(const char *message_format, ...);
 void mgmt_elog(const int lerrno, const char *message_format, ...);
 void mgmt_fatal(const int lerrno, const char *message_format, ...) TS_NORETURN;
-void mgmt_log_output(FILE *stdio_or_null, DiagsLevel type, const char *format, ...);
-void mgmt_log_output_va(FILE *stdio_or_null, DiagsLevel type, const char *format, va_list ap);
 
 void mgmt_sleep_sec(int);
 void mgmt_sleep_msec(int);

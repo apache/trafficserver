@@ -51,11 +51,9 @@ struct EvacuationBlock;
 #endif
 
 #ifdef DEBUG
-#define DDebug Debug
+#define DDebug(tag, fmt, ...) Debug(tag, fmt, ##__VA_ARGS__)
 #else
-#define DDebug \
-  if (0)       \
-  dummy_debug
+#define DDebug(tag, fmt, ...)
 #endif
 
 #define AIO_SOFT_FAILURE -100000

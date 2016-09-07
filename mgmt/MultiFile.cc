@@ -105,7 +105,7 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
   fileEntry *fileListEntry;
 
   if ((dir = opendir(managedDir)) == NULL) {
-    mgmt_log(stderr, "[MultiFile::WalkFiles] Unable to open %s directory: %s: %s\n", dirDescript, managedDir, strerror(errno));
+    mgmt_log("[MultiFile::WalkFiles] Unable to open %s directory: %s: %s\n", dirDescript, managedDir, strerror(errno));
     return MF_NO_DIR;
   }
   // The fun of Solaris - readdir_r requires a buffer passed into it
@@ -122,7 +122,7 @@ MultiFile::WalkFiles(ExpandingArray *fileList)
     filePath                = newPathString(managedDir, fileName);
     records_config_filePath = newPathString(filePath, "records.config");
     if (stat(filePath, &fileInfo) < 0) {
-      mgmt_log(stderr, "[MultiFile::WalkFiles] Stat of a %s failed %s: %s\n", dirDescript, fileName, strerror(errno));
+      mgmt_log("[MultiFile::WalkFiles] Stat of a %s failed %s: %s\n", dirDescript, fileName, strerror(errno));
     } else {
       if (stat(records_config_filePath, &records_config_fileInfo) < 0) {
         delete[] filePath;

@@ -170,13 +170,13 @@ drainIncomingChannel(void *arg)
       socklen_t clilen = sizeof(cli_addr);
       int req_fd       = mgmt_accept(ccom->reliable_server_fd, (struct sockaddr *)&cli_addr, &clilen);
       if (req_fd < 0) {
-        mgmt_elog(stderr, errno, "[drainIncomingChannel] error accepting "
-                                 "reliable connection\n");
+        mgmt_elog(errno, "[drainIncomingChannel] error accepting "
+                         "reliable connection\n");
         continue;
       }
       if (fcntl(req_fd, F_SETFD, 1) < 0) {
-        mgmt_elog(stderr, errno, "[drainIncomingChannel] Unable to set close "
-                                 "on exec flag\n");
+        mgmt_elog(errno, "[drainIncomingChannel] Unable to set close "
+                         "on exec flag\n");
         close(req_fd);
         continue;
       }
@@ -275,7 +275,7 @@ drainIncomingChannel(void *arg)
             bytes_written        = write_socket(req_fd, buff->bufPtr(), strlen(buff->bufPtr()));
             if (bytes_written != strlen(buff->bufPtr())) {
               stat = false;
-              mgmt_log(stderr, "[drainIncomingChannel] Failed file req: %s v: %d\n", fname, ver);
+              mgmt_log("[drainIncomingChannel] Failed file req: %s v: %d\n", fname, ver);
             } else {
               Debug("ccom", "[drainIncomingChannel] file req: %s v: %d bytes: %d", fname, ver, (int)strlen(buff->bufPtr()));
             }
@@ -353,7 +353,7 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
 
   init = false;
   if (strlen(host) >= 1024) {
-    mgmt_fatal(stderr, 0, "[ClusterCom::ClusterCom] Hostname too large: %s\n", host);
+    mgmt_fatal(0, "[ClusterCom::ClusterCom] Hostname too large: %s\n", host);
   }
   // the constructor does a memset() on broadcast_addr and receive_addr, initializing them
   // coverity[uninit_member]
@@ -379,8 +379,8 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
     break;
   case CLUSTER_INVALID:
   default:
-    mgmt_log(stderr, "[ClusterCom::ClusterCom] Invalid cluster type.  "
-                     "Defaulting to full clustering\n");
+    mgmt_log("[ClusterCom::ClusterCom] Invalid cluster type.  "
+             "Defaulting to full clustering\n");
     cluster_type = FULL_CLUSTER;
     break;
   }
@@ -391,11 +391,11 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   found   = (rec_err == REC_ERR_OKAY);
 
   if (!found) {
-    mgmt_fatal(stderr, 0, "[ClusterCom::ClusterCom] no cluster_configuration filename configured\n");
+    mgmt_fatal(0, "[ClusterCom::ClusterCom] no cluster_configuration filename configured\n");
   }
 
   if (strlen(p) + strlen(cluster_file) >= 1024) {
-    mgmt_fatal(stderr, 0, "[ClusterCom::ClusterCom] path + filename too large\n");
+    mgmt_fatal(0, "[ClusterCom::ClusterCom] path + filename too large\n");
   }
   // XXX: This allows to have absolute config cluster_configuration directive.
   //      If that file must be inside config directory (p) use
@@ -421,7 +421,7 @@ ClusterCom::ClusterCom(unsigned long oip, char *host, int mcport, char *group, i
   RecRegisterConfigUpdateCb("proxy.config.cluster.cluster_port", cluster_com_port_watcher, NULL);
 
   if (!(strlen(group) < (MAX_MC_GROUP_LEN - 1))) {
-    mgmt_fatal(stderr, 0, "[ClusterCom::ClusterCom] mc group length too large!\n");
+    mgmt_fatal(0, "[ClusterCom::ClusterCom] mc group length too large!\n");
   }
 
   ink_strlcpy(mc_group, group, sizeof(mc_group));
@@ -1223,8 +1223,8 @@ ClusterCom::handleMultiCastFilePacket(char *last, char *ip)
         if (file_update_failure) {
           mgmt_elog(0, "[ClusterCom::handleMultiCastFilePacket] Update failed\n");
         } else {
-          mgmt_log(stderr, "[ClusterCom::handleMultiCastFilePacket] "
-                           "Updated '%s' o: %d n: %d\n",
+          mgmt_log("[ClusterCom::handleMultiCastFilePacket] "
+                   "Updated '%s' o: %d n: %d\n",
                    file, our_ver, ver);
         }
 
@@ -1459,7 +1459,7 @@ ClusterCom::constructSharedGenericPacket(char *message, int max, RecT packet_typ
     ink_strlcpy(&message[running_sum], tmp, (max - running_sum));
     running_sum += strlen(tmp);
   } else {
-    mgmt_elog(stderr, errno, "[ClusterCom::constructSharedPacket] time failed\n");
+    mgmt_elog(errno, "[ClusterCom::constructSharedPacket] time failed\n");
   }
   ink_release_assert(running_sum < max);
 
@@ -1803,7 +1803,7 @@ ClusterCom::sendClusterMessage(int msg_type, const char *args)
     }
     break;
   default:
-    mgmt_log(stderr, "[ClusterCom::sendClusterMessage] Invalid message type '%d'\n", msg_type);
+    mgmt_log("[ClusterCom::sendClusterMessage] Invalid message type '%d'\n", msg_type);
     return false;
   }
 
@@ -1894,7 +1894,7 @@ ClusterCom::rl_sendReliableMessage(unsigned long addr, const char *buf, int len)
   }
 
   if (mgmt_writeline(fd, buf, len) != 0) {
-    mgmt_elog(stderr, errno, "[ClusterCom::rl_sendReliableMessage] Write failed\n");
+    mgmt_elog(errno, "[ClusterCom::rl_sendReliableMessage] Write failed\n");
     close_socket(fd);
     return false;
   }
@@ -1968,7 +1968,7 @@ ClusterCom::sendReliableMessage(unsigned long addr, char *buf, int len, char *re
   }
 
   if (mgmt_readline(fd, reply, len2) == -1) {
-    mgmt_elog(stderr, errno, "[ClusterCom::sendReliableMessage] Read failed\n");
+    mgmt_elog(errno, "[ClusterCom::sendReliableMessage] Read failed\n");
     perror("ClusterCom::sendReliableMessage");
     reply[0] = '\0';
     if (take_lock) {
@@ -2073,7 +2073,7 @@ ClusterCom::receiveIncomingMessage(char *buf, int max)
   int nbytes = 0, addr_len = sizeof(receive_addr);
 
   if ((nbytes = recvfrom(receive_fd, buf, max, 0, (struct sockaddr *)&receive_addr, (socklen_t *)&addr_len)) < 0) {
-    mgmt_elog(stderr, errno, "[ClusterCom::receiveIncomingMessage] Receive failed\n");
+    mgmt_elog(errno, "[ClusterCom::receiveIncomingMessage] Receive failed\n");
   }
   return nbytes;
 } /* End ClusterCom::processIncomingMessages */
@@ -2168,13 +2168,13 @@ ClusterCom::logClusterMismatch(const char *ip, ClusterMismatch type, char *data)
   //   our hash table
   switch (type) {
   case TS_NAME_MISMATCH:
-    mgmt_log(stderr, "[ClusterCom::logClusterMismatch] Found node with ip %s.  Ignoring"
-                     " since it is part of cluster %s\n",
+    mgmt_log("[ClusterCom::logClusterMismatch] Found node with ip %s.  Ignoring"
+             " since it is part of cluster %s\n",
              ip, data);
     break;
   case TS_VER_MISMATCH:
-    mgmt_log(stderr, "[ClusterCom::logClusterMismatch] Found node with ip %s.  Ignoring"
-                     " since it is version %s (our version: %s)\n",
+    mgmt_log("[ClusterCom::logClusterMismatch] Found node with ip %s.  Ignoring"
+             " since it is version %s (our version: %s)\n",
              ip, data, appVersionInfo.VersionStr);
     break;
   default:

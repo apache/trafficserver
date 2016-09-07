@@ -91,55 +91,6 @@ Terminate()
   return TS_ERR_OKAY;
 }
 
-/*-------------------------------------------------------------------------
- * Diags
- *-------------------------------------------------------------------------
- * Uses the Traffic Manager diags object to display the diags output.
- */
-void
-DiagnosticMessage(TSDiagsT mode, const char *fmt, va_list ap)
-{
-  // Mapping TSDiagsT to Diags.h:DiagsLevel
-  // Simple casting would work, but not inflexible
-  DiagsLevel level = DL_Undefined;
-  switch (mode) {
-  case TS_DIAG_DIAG:
-    level = DL_Diag;
-    break;
-  case TS_DIAG_DEBUG:
-    level = DL_Debug;
-    break;
-  case TS_DIAG_STATUS:
-    level = DL_Status;
-    break;
-  case TS_DIAG_NOTE:
-    level = DL_Note;
-    break;
-  case TS_DIAG_WARNING:
-    level = DL_Warning;
-    break;
-  case TS_DIAG_ERROR:
-    level = DL_Error;
-    break;
-  case TS_DIAG_FATAL:
-    level = DL_Fatal;
-    break;
-  case TS_DIAG_ALERT:
-    level = DL_Alert;
-    break;
-  case TS_DIAG_EMERGENCY:
-    level = DL_Emergency;
-    break;
-  default:
-    level = DL_Diag;
-  }
-
-  if (diags) { // check that diags is initialized
-    diags->print_va("TSMgmtAPI", level, NULL, fmt, ap);
-    va_end(ap);
-  }
-}
-
 /***************************************************************************
  * Control Operations
  ***************************************************************************/
@@ -840,9 +791,9 @@ WriteFile(TSFileNameT file, const char *text, int size, int version)
   }
 
   // get rollback object for config file
-  mgmt_log(stderr, "[CfgFileIO::WriteFile] %s\n", fname);
+  mgmt_log("[CfgFileIO::WriteFile] %s\n", fname);
   if (!(configFiles->getRollbackObj(fname, &file_rb))) {
-    mgmt_log(stderr, "[CfgFileIO::WriteFile] ERROR getting rollback object\n");
+    mgmt_log("[CfgFileIO::WriteFile] ERROR getting rollback object\n");
     // goto generate_error_msg;
   }
 
