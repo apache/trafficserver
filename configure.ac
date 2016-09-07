@@ -1125,6 +1125,9 @@ TS_CHECK_ZLIB
 # Check for lzma presence and usability
 TS_CHECK_LZMA
 
+# Check for hwloc presence and usability
+TS_CHECK_HWLOC
+
 #
 # Tcl macros provided by build/tcl.m4
 #
@@ -1357,33 +1360,6 @@ AS_IF([test "x$enable_linux_native_aio" = "xyes"], [
 
 AC_MSG_RESULT([$enable_linux_native_aio])
 TS_ARG_ENABLE_VAR([use], [linux_native_aio])
-
-# Check for hwloc library.
-# Use pkg-config, because some distros (*cough* Ubuntu) put hwloc in unusual places.
-PKG_CHECK_MODULES([HWLOC], [hwloc], [
-  SAVE_LIBS="$LIBS"
-  LIBS="-lhwloc"
-  AC_LANG_PUSH([C++])
-  AC_MSG_CHECKING([for hwloc C++ linking])
-  AC_LINK_IFELSE([
-    AC_LANG_PROGRAM([#include <hwloc.h>],[hwloc_topology_t t; hwloc_topology_init(&t); hwloc_get_type_depth(t, HWLOC_OBJ_SOCKET);])],[
-    AC_SUBST([HWLOC_CFLAGS])
-    AC_SUBST([HWLOC_LIBS])
-    AC_MSG_RESULT([yes])
-    # Old versions of libhwloc don't have HWLOC_OBJ_PU.
-    AC_CHECK_DECL(HWLOC_OBJ_PU,
-      [AC_DEFINE(HAVE_HWLOC_OBJ_PU, 1, [Whether HWLOC_OBJ_PU is available])], [],
-      [#include <hwloc.h>]
-    )
-  ], [
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([hwloc not linkable])
-  ])
-  AC_LANG_POP()
-  LIBS="$SAVE_LIBS"
-], [
-  AC_MSG_ERROR([hwloc not found])
-])
 
 #
 # Check for Maxmind APIs / includes. TODO: Long term, it might make sense to support
