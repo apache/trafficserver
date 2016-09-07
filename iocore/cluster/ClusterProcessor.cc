@@ -620,9 +620,6 @@ ClusterProcessor::init()
   REC_ReadConfigInteger(cluster_packet_tos, "proxy.config.cluster.sock_packet_tos");
   REC_EstablishStaticConfigInt32(RPC_only_CacheCluster, "proxy.config.cluster.rpc_cache_cluster");
 
-  int cluster_type = 0;
-  REC_ReadConfigInteger(cluster_type, "proxy.local.cluster.type");
-
   create_this_cluster_machine();
   // Cluster API Initializations
   clusterAPI_init();
@@ -640,14 +637,9 @@ ClusterProcessor::init()
 
   memset(channel_dummy_output, 0, sizeof(channel_dummy_output));
 
-  if (cluster_type == 1) {
-    cache_clustering_enabled = 1;
-    Note("cache clustering enabled");
-    compute_cluster_mode();
-  } else {
-    cache_clustering_enabled = 0;
-    Note("cache clustering disabled");
-  }
+  cache_clustering_enabled = 0;
+  Note("cache clustering disabled");
+
   return 0;
 }
 
