@@ -620,7 +620,7 @@ cacheNodeList(ContData *cont_data)
   // TSError("[%s] DO caching node list size=%d", __FUNCTION__, (int)body.size());
   // TSDebug(cont_data->debug_tag, "[%s] caching node list size=%d", __FUNCTION__, (int)body.size());
 
-  TSFetchEvent event_ids = {0};
+  TSFetchEvent event_ids = {0, 0, 0};
   TSFetchUrl(post_request.data(), post_request.size(), cont_data->client_addr, cont_data->contp, NO_CALLBACK, event_ids);
 }
 

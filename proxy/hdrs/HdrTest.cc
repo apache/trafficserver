@@ -1824,7 +1824,7 @@ HdrTest::test_accept_language_match()
     {"oo-foobar", "de, fr, en;q=0.8, en;q=0.8, *, *;q=0.9", 1.0, 1, 5},
     {"fr-belgian", "de, fr;hi-there;q=0.9, fr;q=0.8, en", 0.9, 2, 2},
     {"fr-belgian", "de, fr;q=0.8, fr;hi-there;q=0.9, en", 0.9, 2, 3},
-    {NULL, NULL, 0.0},
+    {NULL, NULL, 0.0, 0, 0},
   };
 
   int i, I, L;
