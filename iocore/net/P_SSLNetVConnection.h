@@ -68,6 +68,13 @@
 class SSLNextProtocolSet;
 struct SSLCertLookup;
 
+typedef enum {
+  SSL_HOOK_OP_DEFAULT,                     ///< Null / initialization value. Do normal processing.
+  SSL_HOOK_OP_TUNNEL,                      ///< Switch to blind tunnel
+  SSL_HOOK_OP_TERMINATE,                   ///< Termination connection / transaction.
+  SSL_HOOK_OP_LAST = SSL_HOOK_OP_TERMINATE ///< End marker value.
+} SslVConnOp;
+
 //////////////////////////////////////////////////////////////////
 //
 //  class NetVConnection
@@ -258,7 +265,7 @@ public:
   int64_t sslTotalBytesSent;
 
   /// Set by asynchronous hooks to request a specific operation.
-  TSSslVConnOp hookOpRequested;
+  SslVConnOp hookOpRequested;
 
 private:
   SSLNetVConnection(const SSLNetVConnection &);

@@ -9062,7 +9062,7 @@ TSVConnTunnel(TSVConn sslp)
   SSLNetVConnection *ssl_vc = dynamic_cast<SSLNetVConnection *>(vc);
   TSReturnCode zret         = TS_SUCCESS;
   if (0 != ssl_vc) {
-    ssl_vc->hookOpRequested = TS_SSL_HOOK_OP_TUNNEL;
+    ssl_vc->hookOpRequested = SSL_HOOK_OP_TUNNEL;
   } else {
     zret = TS_ERROR;
   }

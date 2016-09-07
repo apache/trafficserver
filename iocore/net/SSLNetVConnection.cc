@@ -792,7 +792,7 @@ SSLNetVConnection::SSLNetVConnection()
     sslHandshakeBeginTime(0),
     sslLastWriteTime(0),
     sslTotalBytesSent(0),
-    hookOpRequested(TS_SSL_HOOK_OP_DEFAULT),
+    hookOpRequested(SSL_HOOK_OP_DEFAULT),
     sslHandShakeComplete(false),
     sslClientConnection(false),
     sslClientRenegotiationAbort(false),
@@ -897,7 +897,7 @@ SSLNetVConnection::free(EThread *t)
 
   sslPreAcceptHookState = SSL_HOOKS_INIT;
   curHook               = 0;
-  hookOpRequested       = TS_SSL_HOOK_OP_DEFAULT;
+  hookOpRequested       = SSL_HOOK_OP_DEFAULT;
   npnSet                = NULL;
   npnEndpoint           = NULL;
   sslHandShakeComplete  = false;
@@ -1031,7 +1031,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   // Again no data has been exchanged, so we can go directly
   // without data replay.
   // Note we can't arrive here if a hook is active.
-  if (TS_SSL_HOOK_OP_TUNNEL == hookOpRequested) {
+  if (SSL_HOOK_OP_TUNNEL == hookOpRequested) {
     this->attributes = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
     SSL_free(this->ssl);
     this->ssl = NULL;
@@ -1040,7 +1040,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // we get out of this callback, and then will shuffle
     // over the buffered handshake packets to the O.S.
     return EVENT_DONE;
-  } else if (TS_SSL_HOOK_OP_TERMINATE == hookOpRequested) {
+  } else if (SSL_HOOK_OP_TERMINATE == hookOpRequested) {
     sslHandShakeComplete = 1;
     return EVENT_DONE;
   }
@@ -1178,7 +1178,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     TraceIn(trace, get_remote_addr(), get_remote_port(), "SSL server handshake ERROR_WANT_X509_LOOKUP");
 #endif
 #if defined(SSL_ERROR_WANT_SNI_RESOLVE) || defined(SSL_ERROR_WANT_X509_LOOKUP)
-    if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || TS_SSL_HOOK_OP_TUNNEL == hookOpRequested) {
+    if (this->attributes == HttpProxyPort::TRANSPORT_BLIND_TUNNEL || SSL_HOOK_OP_TUNNEL == hookOpRequested) {
       this->attributes     = HttpProxyPort::TRANSPORT_BLIND_TUNNEL;
       sslHandShakeComplete = 0;
       return EVENT_CONT;
