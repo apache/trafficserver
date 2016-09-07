@@ -158,7 +158,6 @@ public:
 
   static char ink_toupper(char c);
   static char ink_tolower(char c);
-  static void ink_tolower_buffer(char *ptr, unsigned int n);
   static const char *memchr(const char *s, char c, int max_length);
   static const char *strchr(const char *s, char c);
 
