@@ -29,7 +29,6 @@
 #include "ts/ink_platform.h"
 #include "ts/CryptoHash.h"
 #include "ts/INK_MD5.h"
-#include "Error.h"
 #include "P_EventSystem.h"
 #include "LogUtils.h"
 #include "LogField.h"

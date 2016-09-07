@@ -34,7 +34,6 @@
 #include "CacheControl.h"
 #include "ControlMatcher.h"
 #include "Main.h"
-#include "Error.h"
 #include "P_EventSystem.h"
 #include "ProxyConfig.h"
 #include "HTTP.h"

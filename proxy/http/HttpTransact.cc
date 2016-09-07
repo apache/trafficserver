@@ -37,7 +37,6 @@
 #include "HdrUtils.h"
 #include "logging/Log.h"
 #include "logging/LogUtils.h"
-#include "Error.h"
 #include "CacheControl.h"
 #include "ControlMatcher.h"
 #include "ReverseProxy.h"

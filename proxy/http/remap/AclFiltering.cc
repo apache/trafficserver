@@ -23,7 +23,6 @@
 
 #include "AclFiltering.h"
 #include "Main.h"
-#include "Error.h"
 #include "HTTP.h"
 
 // ===============================================================================

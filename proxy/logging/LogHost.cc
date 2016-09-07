@@ -28,8 +28,6 @@
  ***************************************************************************/
 #include "ts/ink_platform.h"
 
-#include "Error.h"
-
 #include "LogUtils.h"
 #include "LogSock.h"
 #include "LogField.h"

@@ -34,7 +34,6 @@
 
 #include "ts/INK_MD5.h"
 
-#include "Error.h"
 #include "ts/SimpleTokenizer.h"
 
 #include "LogUtils.h"
