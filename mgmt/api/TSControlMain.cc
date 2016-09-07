@@ -978,7 +978,7 @@ handle_stats_reset(int fd, void *req, size_t reqlen)
 
   err = recv_mgmt_request(req, reqlen, STATS_RESET_NODE, &optype, &name);
   if (err == TS_ERR_OKAY) {
-    err = StatsReset(optype == STATS_RESET_CLUSTER, name);
+    err = StatsReset(name);
   }
 
   ats_free(name);
@@ -1201,7 +1201,6 @@ static const control_message_handler handlers[] = {
   /* SNAPSHOT_GET_MLT           */ {0, handle_snapshot_get_mlt},
   /* DIAGS                      */ {MGMT_API_PRIVILEGED, handle_diags},
   /* STATS_RESET_NODE           */ {MGMT_API_PRIVILEGED, handle_stats_reset},
-  /* STATS_RESET_CLUSTER        */ {MGMT_API_PRIVILEGED, handle_stats_reset},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {MGMT_API_PRIVILEGED, handle_storage_device_cmd_offline},
   /* RECORD_MATCH_GET           */ {0, handle_record_match},
   /* API_PING                   */ {0, handle_api_ping},

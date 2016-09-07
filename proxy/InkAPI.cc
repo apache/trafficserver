@@ -4378,9 +4378,6 @@ TSContSchedule(TSCont contp, ink_hrtime timeout, TSThreadPool tp)
   case TS_THREAD_POOL_REMAP:
     etype = ET_TASK; // Should be ET_REMAP
     break;
-  case TS_THREAD_POOL_CLUSTER:
-    etype = ET_CLUSTER;
-    break;
   case TS_THREAD_POOL_UDP:
     etype = ET_UDP;
     break;
@@ -7854,9 +7851,6 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
   case TS_CONFIG_HTTP_CACHE_HTTP:
     ret = &overridableHttpConfig->cache_http;
     break;
-  case TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL:
-    ret = &overridableHttpConfig->cache_cluster_cache_local;
-    break;
   case TS_CONFIG_HTTP_CACHE_IGNORE_CLIENT_NO_CACHE:
     ret = &overridableHttpConfig->cache_ignore_client_no_cache;
     break;
@@ -8616,11 +8610,6 @@ TSHttpTxnConfigFind(const char *name, int length, TSOverridableConfigKey *conf, 
     case 'k':
       if (!strncmp(name, "proxy.config.http.default_buffer_water_mark", length)) {
         cnf = TS_CONFIG_HTTP_DEFAULT_BUFFER_WATER_MARK;
-      }
-      break;
-    case 'l':
-      if (!strncmp(name, "proxy.config.http.cache.cluster_cache_local", length)) {
-        cnf = TS_CONFIG_HTTP_CACHE_CLUSTER_CACHE_LOCAL;
       }
       break;
     case 'r':

@@ -461,13 +461,7 @@ Reconfigure()
 TSMgmtError
 Restart(unsigned options)
 {
-  if (options & TS_RESTART_OPT_CLUSTER) {
-    // Enqueue an event to restart the proxies across the cluster
-    // this will kill TM completely;traffic_cop will restart TM/TS
-    lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_SHUTDOWN_MANAGER);
-  } else {
-    lmgmt->mgmt_shutdown_outstanding = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_RESTART : MGMT_PENDING_RESTART;
-  }
+  lmgmt->mgmt_shutdown_outstanding = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_RESTART : MGMT_PENDING_RESTART;
 
   return TS_ERR_OKAY;
 }
@@ -480,11 +474,7 @@ Restart(unsigned options)
 TSMgmtError
 Bounce(unsigned options)
 {
-  if (options & TS_RESTART_OPT_CLUSTER) {
-    lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_BOUNCE_PROCESS);
-  } else {
-    lmgmt->mgmt_shutdown_outstanding = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_BOUNCE : MGMT_PENDING_BOUNCE;
-  }
+  lmgmt->mgmt_shutdown_outstanding = (options & TS_RESTART_OPT_DRAIN) ? MGMT_PENDING_IDLE_BOUNCE : MGMT_PENDING_BOUNCE;
 
   return TS_ERR_OKAY;
 }
@@ -899,12 +889,12 @@ EventSignal(const char * /* event_name ATS_UNUSED */, va_list /* ap ATS_UNUSED *
 }
 
 /*-------------------------------------------------------------------------
- * EventResolve
- *-------------------------------------------------------------------------
- * Resolves the event of the given event_name. If the event is already
- * unresolved, just return TS_ERR_OKAY.
+* EventResolve
+*-------------------------------------------------------------------------
+* Resolves the event of the given event_name. If the event is already
+* unresolved, just return TS_ERR_OKAY.
 
- */
+*/
 TSMgmtError
 EventResolve(const char *event_name)
 {
@@ -1115,13 +1105,10 @@ SnapshotGetMlt(LLQ *snapshots)
  * stats are set back to defaults successfully.
  */
 TSMgmtError
-StatsReset(bool cluster, const char *name)
+StatsReset(const char *name)
 {
-  if (cluster) {
-    lmgmt->ccom->sendClusterMessage(CLUSTER_MSG_CLEAR_STATS, name);
-  } else {
-    lmgmt->clearStats(name);
-  }
+  lmgmt->clearStats(name);
+
   return TS_ERR_OKAY;
 }
 

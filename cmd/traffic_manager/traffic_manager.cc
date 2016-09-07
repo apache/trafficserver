@@ -448,7 +448,6 @@ main(int argc, const char **argv)
   bool disable_syslog = false;
   char userToRunAs[MAX_LOGIN + 1];
   RecInt fds_throttle = -1;
-  time_t ticker;
   ink_thread synthThrId;
 
   int binding_version      = 0;
@@ -681,14 +680,10 @@ main(int argc, const char **argv)
                "224.0.1.0 - 239.255.255.255");
   }
 
-  /* TODO: Do we really need to init cluster communication? */
-  lmgmt->initCCom(appVersionInfo, configFiles, cluster_mcport, group_addr, cluster_rsport); /* Setup cluster communication */
-
   lmgmt->initMgmtProcessServer(); /* Setup p-to-p process server */
 
   // Now that we know our cluster ip address, add the
   //   UI record for this machine
-  overviewGenerator->addSelfRecord();
   lmgmt->listenForProxy();
 
   //
@@ -729,7 +724,6 @@ main(int argc, const char **argv)
   ink_thread_create(ts_ctrl_main, &mgmtapiFD);
   ink_thread_create(event_callback_main, &eventapiFD);
 
-  ticker = time(NULL);
   mgmt_log("[TrafficManager] Setup complete\n");
 
   RecRegisterStatInt(RECT_NODE, "proxy.node.config.reconfigure_time", time(NULL), RECP_NON_PERSISTENT);
@@ -767,24 +761,6 @@ main(int argc, const char **argv)
       sigHupNotifier = 0;
       mgmt_log(stderr, "[main] Reading Configuration Files Reread\n");
     }
-
-    lmgmt->ccom->generateClusterDelta();
-
-    if (lmgmt->run_proxy && lmgmt->processRunning()) {
-      lmgmt->ccom->sendSharedData();
-      lmgmt->virt_map->lt_runGambit();
-    } else {
-      if (!lmgmt->run_proxy) { /* Down if we are not going to start another immed. */
-        /* Proxy is not up, so no addrs should be */
-        lmgmt->virt_map->downOurAddrs();
-      }
-
-      /* Proxy is not up, but we should still exchange config and alarm info */
-      lmgmt->ccom->sendSharedData(false);
-    }
-
-    lmgmt->ccom->checkPeers(&ticker);
-    overviewGenerator->checkForUpdates();
 
     metrics_binding_evaluate(*binding);
 
@@ -1004,9 +980,6 @@ fileUpdated(char *fname, bool incVersion)
 
   } else if (strcmp(fname, "ip_allow.config") == 0) {
     lmgmt->signalFileChange("proxy.config.cache.ip_allow.filename");
-  } else if (strcmp(fname, "vaddrs.config") == 0) {
-    mgmt_log(stderr, "[fileUpdated] vaddrs.config updated\n");
-    lmgmt->virt_map->lt_readAListFile(fname);
 
   } else if (strcmp(fname, "storage.config") == 0) {
     mgmt_log(stderr, "[fileUpdated] storage.config changed, need restart auto-rebuild mode\n");

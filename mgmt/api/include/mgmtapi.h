@@ -995,10 +995,9 @@ tsapi TSMgmtError TSSnapshotGetMlt(TSStringList snapshots);
 
 /*--- statistics operations -----------------------------------------------*/
 /* TSStatsReset: sets all the statistics variables to their default values
- * Input: cluster - Reset the stats clusterwide or not
  * Outpue: TSErrr
  */
-tsapi TSMgmtError TSStatsReset(bool cluster, const char *name);
+tsapi TSMgmtError TSStatsReset(const char *name);
 
 /*--- variable operations -------------------------------------------------*/
 /* TSRecordGet: gets a record

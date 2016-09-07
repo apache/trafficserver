@@ -61,7 +61,6 @@ static const struct NetCmdOperation requests[] = {
   /* SNAPSHOT_GET_MLT           */ {1, {MGMT_MARSHALL_INT}},
   /* DIAGS                      */ {3, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* STATS_RESET_NODE           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
-  /* STATS_RESET_CLUSTER        */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* RECORD_MATCH_GET           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* API_PING                   */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT}},
@@ -95,7 +94,6 @@ static const struct NetCmdOperation responses[] = {
   /* SNAPSHOT_GET_MLT           */ {2, {MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING}},
   /* DIAGS                      */ {0, {}}, // no reply
   /* STATS_RESET_NODE           */ {1, {MGMT_MARSHALL_INT}},
-  /* STATS_RESET_CLUSTER        */ {1, {MGMT_MARSHALL_INT}},
   /* STORAGE_DEVICE_CMD_OFFLINE */ {1, {MGMT_MARSHALL_INT}},
   /* RECORD_MATCH_GET           */ {5,
                                     {MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_INT, MGMT_MARSHALL_STRING,
@@ -215,7 +213,6 @@ send_mgmt_error(int fd, OpType optype, TSMgmtError error)
   case SNAPSHOT_REMOVE:
   case SNAPSHOT_RESTORE:
   case SNAPSHOT_TAKE:
-  case STATS_RESET_CLUSTER:
   case STATS_RESET_NODE:
   case STORAGE_DEVICE_CMD_OFFLINE:
     ink_release_assert(responses[optype].nfields == 1);

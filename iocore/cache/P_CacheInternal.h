@@ -202,7 +202,6 @@ extern int cache_config_agg_write_backlog;
 extern int cache_config_enable_checksum;
 extern int cache_config_alt_rewrite_max_size;
 extern int cache_config_read_while_writer;
-extern int cache_clustering_enabled;
 extern int cache_config_agg_write_backlog;
 extern int cache_config_ram_cache_compress;
 extern int cache_config_ram_cache_compress_percent;
@@ -1040,18 +1039,6 @@ cache_hash(const INK_MD5 &md5)
   unsigned int mhash = (unsigned int)(f >> 32);
   return mhash;
 }
-
-#ifdef HTTP_CACHE
-#define CLUSTER_CACHE
-#endif
-
-#ifdef CLUSTER_CACHE
-#include "P_Net.h"
-#include "P_ClusterInternal.h"
-// Note: This include must occur here in order to avoid numerous forward
-//       reference problems.
-#include "P_ClusterInline.h"
-#endif
 
 LINK_DEFINITION(CacheVC, opendir_link)
 

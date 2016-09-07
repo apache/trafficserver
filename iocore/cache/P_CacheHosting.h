@@ -24,6 +24,8 @@
 #ifndef __P_CACHE_HOSTING_H__
 #define __P_CACHE_HOSTING_H__
 #include "P_Cache.h"
+#include "ts/MatcherUtils.h"
+#include "ts/HostLookup.h"
 
 #define CACHE_MEM_FREE_TIMEOUT HRTIME_SECONDS(1)
 

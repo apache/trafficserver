@@ -46,8 +46,6 @@ HostDBProcessor::Options const HostDBProcessor::DEFAULT_OPTIONS;
 HostDBContinuation::Options const HostDBContinuation::DEFAULT_OPTIONS;
 int hostdb_enable                              = true;
 int hostdb_migrate_on_demand                   = true;
-int hostdb_cluster                             = false;
-int hostdb_cluster_round_robin                 = false;
 int hostdb_lookup_timeout                      = 30;
 int hostdb_insert_timeout                      = 160;
 int hostdb_re_dns_on_reload                    = false;
@@ -378,8 +376,6 @@ HostDBProcessor::start(int, size_t)
   REC_EstablishStaticConfigInt32(hostdb_migrate_on_demand, "proxy.config.hostdb.migrate_on_demand");
   REC_EstablishStaticConfigInt32(hostdb_strict_round_robin, "proxy.config.hostdb.strict_round_robin");
   REC_EstablishStaticConfigInt32(hostdb_timed_round_robin, "proxy.config.hostdb.timed_round_robin");
-  REC_EstablishStaticConfigInt32(hostdb_cluster, "proxy.config.hostdb.cluster");
-  REC_EstablishStaticConfigInt32(hostdb_cluster_round_robin, "proxy.config.hostdb.cluster.round_robin");
   REC_EstablishStaticConfigInt32(hostdb_lookup_timeout, "proxy.config.hostdb.lookup_timeout");
   REC_EstablishStaticConfigInt32U(hostdb_ip_timeout_interval, "proxy.config.hostdb.timeout");
   REC_EstablishStaticConfigInt32U(hostdb_ip_stale_interval, "proxy.config.hostdb.verify_after");
@@ -540,8 +536,7 @@ probe(ProxyMutex *mutex, HostDBMD5 const &md5, bool ignore_timeout)
   }
 
   // If the record is stale, but we want to revalidate-- lets start that up
-  if ((!ignore_timeout && r->is_ip_stale() && !cluster_machine_at_depth(master_hash(md5.hash)) && !r->reverse_dns) ||
-      (r->is_ip_timeout() && r->serve_stale_but_revalidate())) {
+  if ((!ignore_timeout && r->is_ip_stale() && !r->reverse_dns) || (r->is_ip_timeout() && r->serve_stale_but_revalidate())) {
     Debug("hostdb", "stale %u %u %u, using it and refreshing it", r->ip_interval(), r->ip_timestamp, r->ip_timeout_interval);
     HostDBContinuation *c = hostDBContAllocator.alloc();
     HostDBContinuation::Options copt;
@@ -1049,7 +1044,7 @@ HostDBContinuation::removeEvent(int /* event ATS_UNUSED */, Event *e)
 }
 
 // Lookup done, insert into the local table, return data to the
-// calling continuation or to the calling cluster node.
+// calling continuation.
 // NOTE: if "i" exists it means we already allocated the space etc, just return
 //
 HostDBInfo *
@@ -1145,8 +1140,6 @@ HostDBContinuation::lookup_done(IpAddr const &ip, char const *aname, bool around
   // set the "lookup_done" interval
   r->ip_timestamp = hostdb_current_interval;
 
-  if (from_cont)
-    do_put_response(from, r, from_cont);
   ink_assert(!r->round_robin || !r->reverse_dns);
   return r;
 }
@@ -1419,13 +1412,6 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
 
     hostDB.refcountcache->put(md5.hash.fold(), r, allocSize, r->expiry_time());
 
-    // if we are not the owner, put on the owner
-    //
-    ClusterMachine *m = cluster_machine_at_depth(master_hash(md5.hash));
-
-    if (m)
-      do_put_response(m, r, NULL);
-
     // try to callback the user
     //
     if (action.continuation) {
@@ -1455,136 +1441,6 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     hostdb_cont_free(this);
     return EVENT_DONE;
   }
-}
-
-//
-// HostDB Get Message
-// Used to lookup host information on a remote node in the cluster
-//
-struct HostDB_get_message {
-  INK_MD5 md5;
-  IpEndpoint ip;
-  Continuation *cont;
-  int namelen;
-  char name[MAXDNAME];
-};
-
-//
-// Make a get message
-//
-int
-HostDBContinuation::make_get_message(char *buf, int size)
-{
-  ink_assert(size >= (int)sizeof(HostDB_get_message));
-
-  HostDB_get_message *msg = reinterpret_cast<HostDB_get_message *>(buf);
-  msg->md5                = md5.hash;
-  ats_ip_set(&msg->ip.sa, md5.ip, htons(md5.port));
-  msg->cont = this;
-
-  // name
-  ink_strlcpy(msg->name, md5.host_name, sizeof(msg->name));
-
-  // length
-  int len = sizeof(HostDB_get_message) - MAXDNAME + md5.host_len + 1;
-
-  return len;
-}
-
-//
-// Make and send a get message
-//
-bool
-HostDBContinuation::do_get_response(Event * /* e ATS_UNUSED */)
-{
-  if (!hostdb_cluster)
-    return false;
-
-  // find an appropriate Machine
-  //
-  ClusterMachine *m = NULL;
-
-  if (hostdb_migrate_on_demand) {
-    m = cluster_machine_at_depth(master_hash(md5.hash), &probe_depth, past_probes);
-  } else {
-    if (probe_depth)
-      return false;
-    m           = cluster_machine_at_depth(master_hash(md5.hash));
-    probe_depth = 1;
-  }
-
-  if (!m)
-    return false;
-
-  // Make message
-  //
-  HostDB_get_message msg;
-
-  memset(&msg, 0, sizeof(msg));
-  int len = make_get_message((char *)&msg, sizeof(HostDB_get_message));
-
-  // Setup this continuation, with a timeout
-  //
-  hostDB.remoteHostDBQueue[key_partition()].enqueue(this);
-  SET_HANDLER((HostDBContHandler)&HostDBContinuation::clusterEvent);
-  timeout = mutex->thread_holding->schedule_in(this, HOST_DB_CLUSTER_TIMEOUT);
-
-  // Send the message
-  //
-  clusterProcessor.invoke_remote(m->pop_ClusterHandler(), GET_HOSTINFO_CLUSTER_FUNCTION, (char *)&msg, len);
-
-  return true;
-}
-
-//
-// HostDB Put Message
-// This message is used in a response to a cluster node for
-// Host inforamation.
-//
-struct HostDB_put_message {
-  INK_MD5 md5;
-  IpEndpoint ip;
-  unsigned int ttl;
-  unsigned int missing : 1;
-  unsigned int round_robin : 1;
-  Continuation *cont;
-  unsigned int application1;
-  unsigned int application2;
-  int namelen;
-  char name[MAXDNAME];
-};
-
-//
-// Build the put message
-//
-int
-HostDBContinuation::make_put_message(HostDBInfo *r, Continuation *c, char *buf, int size)
-{
-  ink_assert(size >= (int)sizeof(HostDB_put_message));
-
-  HostDB_put_message *msg = reinterpret_cast<HostDB_put_message *>(buf);
-  memset(msg, 0, sizeof(HostDB_put_message));
-
-  msg->md5  = md5.hash;
-  msg->cont = c;
-  if (r) {
-    ats_ip_copy(&msg->ip.sa, r->ip());
-    msg->application1 = r->app.allotment.application1;
-    msg->application2 = r->app.allotment.application2;
-    msg->missing      = false;
-    msg->round_robin  = r->round_robin;
-    msg->ttl          = r->ip_time_remaining();
-  } else {
-    msg->missing = true;
-  }
-
-  // name
-  ink_strlcpy(msg->name, md5.host_name, sizeof(msg->name));
-
-  // length
-  int len = sizeof(HostDB_put_message) - MAXDNAME + md5.host_len + 1;
-
-  return len;
 }
 
 int
@@ -1643,23 +1499,6 @@ HostDBContinuation::iterateEvent(int event, Event *e)
 }
 
 //
-// Build the put message and send it
-//
-void
-HostDBContinuation::do_put_response(ClusterMachine *m, HostDBInfo *r, Continuation *c)
-{
-  // don't remote fill round-robin DNS entries
-  // if configured not to cluster them
-  if (!hostdb_cluster || (!c && r->round_robin && !hostdb_cluster_round_robin))
-    return;
-
-  HostDB_put_message msg;
-  int len = make_put_message(r, c, (char *)&msg, sizeof(HostDB_put_message));
-
-  clusterProcessor.invoke_remote(m->pop_ClusterHandler(), PUT_HOSTINFO_CLUSTER_FUNCTION, (char *)&msg, len);
-}
-
-//
 // Probe state
 //
 int
@@ -1682,8 +1521,6 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
   if (!hostdb_enable || (!*md5.host_name && !md5.ip.isValid())) {
     if (action.continuation)
       action.continuation->handleEvent(EVENT_HOST_DB_LOOKUP, NULL);
-    if (from)
-      do_put_response(from, 0, from_cont);
     hostdb_cont_free(this);
     return EVENT_DONE;
   }
@@ -1699,21 +1536,12 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
     if (action.continuation && r)
       reply_to_cont(action.continuation, r.get());
 
-    // Respond to any remote node
-    //
-    if (from)
-      do_put_response(from, r.get(), from_cont);
-
     // If it suceeds or it was a remote probe, we are done
     //
     if (r || from) {
       hostdb_cont_free(this);
       return EVENT_DONE;
     }
-    // If it failed, do a remote probe
-    //
-    if (do_get_response(e))
-      return EVENT_CONT;
   }
   // If there are no remote nodes to probe, do a DNS lookup
   //
@@ -1819,192 +1647,6 @@ HostDBContinuation::do_dns()
 }
 
 //
-// Handle the response (put message)
-//
-int
-HostDBContinuation::clusterResponseEvent(int /*  event ATS_UNUSED */, Event *e)
-{
-  if (from_cont) {
-    HostDBContinuation *c;
-    for (c = (HostDBContinuation *)hostDB.remoteHostDBQueue[key_partition()].head; c; c = (HostDBContinuation *)c->link.next)
-      if (c == from_cont)
-        break;
-
-    // Check to see that we have not already timed out
-    //
-    if (c) {
-      action    = c;
-      from_cont = 0;
-      MUTEX_TRY_LOCK(lock, c->mutex, e->ethread);
-      MUTEX_TRY_LOCK(lock2, c->action.mutex, e->ethread);
-      if (!lock.is_locked() || !lock2.is_locked()) {
-        e->schedule_in(HOST_DB_RETRY_PERIOD);
-        return EVENT_CONT;
-      }
-      bool failed = missing || (round_robin && !hostdb_cluster_round_robin);
-      action.continuation->handleEvent(EVENT_HOST_DB_GET_RESPONSE, failed ? 0 : this);
-    }
-  } else {
-    action = 0;
-    // just a remote fill
-    ink_assert(!missing);
-    lookup_done(md5.ip, md5.host_name, false, ttl, NULL);
-  }
-  hostdb_cont_free(this);
-  return EVENT_DONE;
-}
-
-//
-// Wait for the response (put message)
-//
-int
-HostDBContinuation::clusterEvent(int event, Event *e)
-{
-  // remove ourselves from the queue
-  //
-  hostDB.remoteHostDBQueue[key_partition()].remove(this);
-
-  switch (event) {
-  default:
-    ink_assert(!"bad case");
-    hostdb_cont_free(this);
-    return EVENT_DONE;
-
-  // handle the put response, e is really a HostDBContinuation *
-  //
-  case EVENT_HOST_DB_GET_RESPONSE:
-    if (timeout) {
-      timeout->cancel(this);
-      timeout = NULL;
-    }
-    if (e) {
-      HostDBContinuation *c         = (HostDBContinuation *)e;
-      HostDBInfo *r                 = lookup_done(md5.ip, c->md5.host_name, false, c->ttl, NULL);
-      r->app.allotment.application1 = c->app.allotment.application1;
-      r->app.allotment.application2 = c->app.allotment.application2;
-
-      HOSTDB_INCREMENT_DYN_STAT(hostdb_total_hits_stat);
-
-      if (!action.cancelled) {
-        if (reply_to_cont(action.continuation, r)) {
-          // if we are not the owner and neither was the sender,
-          // fill the owner
-          //
-          if (hostdb_migrate_on_demand) {
-            ClusterMachine *m = cluster_machine_at_depth(master_hash(md5.hash));
-            if (m && m != c->from)
-              do_put_response(m, r, NULL);
-          }
-        }
-      }
-      hostdb_cont_free(this);
-      return EVENT_DONE;
-    }
-    return failed_cluster_request(e);
-
-  // did not get the put message in time
-  //
-  case EVENT_INTERVAL: {
-    MUTEX_TRY_LOCK_FOR(lock, action.mutex, e->ethread, action.continuation);
-    if (!lock.is_locked()) {
-      e->schedule_in(HOST_DB_RETRY_PERIOD);
-      return EVENT_CONT;
-    }
-    return failed_cluster_request(e);
-  }
-  }
-}
-
-int
-HostDBContinuation::failed_cluster_request(Event *e)
-{
-  if (action.cancelled) {
-    hostdb_cont_free(this);
-    return EVENT_DONE;
-  }
-  // Attempt another remote probe
-  //
-  if (do_get_response(e))
-    return EVENT_CONT;
-
-  // Otherwise, do a DNS lookup
-  //
-  do_dns();
-  return EVENT_DONE;
-}
-
-void
-get_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
-{
-  HostDBMD5 md5;
-  HostDB_get_message *msg = (HostDB_get_message *)data;
-
-  md5.host_name = msg->name;
-  md5.host_len  = msg->namelen;
-  md5.ip.assign(&msg->ip.sa);
-  md5.port    = ats_ip_port_host_order(&msg->ip.sa);
-  md5.hash    = msg->md5;
-  md5.db_mark = db_mark_for(&msg->ip.sa);
-#ifdef SPLIT_DNS
-  SplitDNS *pSD  = 0;
-  char *hostname = msg->name;
-  if (hostname && SplitDNSConfig::isSplitDNSEnabled()) {
-    pSD = SplitDNSConfig::acquire();
-
-    if (0 != pSD) {
-      md5.dns_server = static_cast<DNSServer *>(pSD->getDNSRecord(hostname));
-    }
-    SplitDNSConfig::release(pSD);
-  }
-#endif // SPLIT_DNS
-
-  HostDBContinuation *c = hostDBContAllocator.alloc();
-  HostDBContinuation::Options copt;
-  SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::probeEvent);
-  c->from      = ch->machine;
-  c->from_cont = msg->cont;
-
-  /* -----------------------------------------
-     we make a big assumption here! we presume
-     that all the machines in the cluster are
-     set to use the same configuration for
-     DNS servers
-     ----------------------------------------- */
-
-  copt.host_res_style = host_res_style_for(&msg->ip.sa);
-  c->init(md5, copt);
-  c->mutex        = hostDB.refcountcache->lock_for_key(msg->md5.fold());
-  c->action.mutex = c->mutex;
-  dnsProcessor.thread->schedule_imm(c);
-}
-
-void
-put_hostinfo_ClusterFunction(ClusterHandler *ch, void *data, int /* len ATS_UNUSED */)
-{
-  HostDB_put_message *msg = (HostDB_put_message *)data;
-  HostDBContinuation *c   = hostDBContAllocator.alloc();
-  HostDBContinuation::Options copt;
-  HostDBMD5 md5;
-
-  SET_CONTINUATION_HANDLER(c, (HostDBContHandler)&HostDBContinuation::clusterResponseEvent);
-  md5.host_name = msg->name;
-  md5.host_len  = msg->namelen;
-  md5.ip.assign(&msg->ip.sa);
-  md5.port            = ats_ip_port_host_order(&msg->ip.sa);
-  md5.hash            = msg->md5;
-  md5.db_mark         = db_mark_for(&msg->ip.sa);
-  copt.host_res_style = host_res_style_for(&msg->ip.sa);
-  c->init(md5, copt);
-  c->mutex       = hostDB.refcountcache->lock_for_key(msg->md5.fold());
-  c->from_cont   = msg->cont; // cannot use action if cont freed due to timeout
-  c->missing     = msg->missing;
-  c->round_robin = msg->round_robin;
-  c->ttl         = msg->ttl;
-  c->from        = ch->machine;
-  dnsProcessor.thread->schedule_imm(c);
-}
-
-//
 // Background event
 // Just increment the current_interval.  Might do other stuff
 // here, like move records to the current position in the cluster.
@@ -2085,12 +1727,6 @@ HostDBInfo::rr()
     return NULL;
 
   return (HostDBRoundRobin *)((char *)this + this->app.rr.offset);
-}
-
-ClusterMachine *
-HostDBContinuation::master_machine(ClusterConfiguration *cc)
-{
-  return cc->machine_hash((int)(md5.hash[1] >> 32));
 }
 
 struct ShowHostDB;

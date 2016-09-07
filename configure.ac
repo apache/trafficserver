@@ -1798,7 +1798,6 @@ iocore_include_dirs="\
 -I\$(top_srcdir)/iocore/aio \
 -I\$(top_srcdir)/iocore/hostdb \
 -I\$(top_srcdir)/iocore/cache \
--I\$(top_srcdir)/iocore/cluster \
 -I\$(top_srcdir)/iocore/utils \
 -I\$(top_srcdir)/iocore/dns"
 
@@ -1853,7 +1852,6 @@ AC_CONFIG_FILES([
   iocore/Makefile
   iocore/aio/Makefile
   iocore/cache/Makefile
-  iocore/cluster/Makefile
   iocore/dns/Makefile
   iocore/eventsystem/Makefile
   iocore/hostdb/Makefile
@@ -1875,7 +1873,6 @@ AC_CONFIG_FILES([
   mgmt/Makefile
   mgmt/api/Makefile
   mgmt/api/include/Makefile
-  mgmt/cluster/Makefile
   mgmt/utils/Makefile
   plugins/Makefile
   plugins/authproxy/Makefile
