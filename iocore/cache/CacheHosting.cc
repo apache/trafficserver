@@ -28,7 +28,7 @@
 
 extern int gndisks;
 
-matcher_tags CacheHosting_tags = {"hostname", "domain"};
+matcher_tags CacheHosting_tags = {"hostname", "domain", NULL, NULL, NULL, NULL, 0};
 
 /*************************************************************
  *   Begin class HostMatcher
