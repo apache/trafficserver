@@ -54,13 +54,20 @@ public:
   IpMap ipmap;
 } Lookup;
 
+typedef enum {
+  SSL_HOOK_OP_DEFAULT,                     ///< Null / initialization value. Do normal processing.
+  SSL_HOOK_OP_TUNNEL,                      ///< Switch to blind tunnel
+  SSL_HOOK_OP_TERMINATE,                   ///< Termination connection / transaction.
+  SSL_HOOK_OP_LAST = SSL_HOOK_OP_TERMINATE ///< End marker value.
+} SslVConnOp;
+
 class SslEntry
 {
 public:
-  SslEntry() : ctx(NULL), op(TS_SSL_HOOK_OP_DEFAULT) { this->mutex = TSMutexCreate(); }
+  SslEntry() : ctx(NULL), op(SSL_HOOK_OP_DEFAULT) { this->mutex = TSMutexCreate(); }
   ~SslEntry() {}
   SSL_CTX *ctx;
-  TSSslVConnOp op;
+  SslVConnOp op;
   // If the CTX is not already created, use these
   // files to load things up
   std::string certFileName;
@@ -238,9 +245,9 @@ Load_Certificate_Entry(ParsedSslValues const &values, std::deque<std::string> &n
   }
   if (values.action.length() > 0) {
     if (values.action == "tunnel") {
-      retval->op = TS_SSL_HOOK_OP_TUNNEL;
+      retval->op = SSL_HOOK_OP_TUNNEL;
     } else if (values.action == "teriminate") {
-      retval->op = TS_SSL_HOOK_OP_TERMINATE;
+      retval->op = SSL_HOOK_OP_TERMINATE;
     }
   }
 
@@ -385,9 +392,9 @@ CB_Pre_Accept(TSCont /*contp*/, TSEvent event, void *edata)
     SSL *ssl               = reinterpret_cast<SSL *>(sslobj);
     SslEntry *entry        = reinterpret_cast<SslEntry *>(payload);
     TSMutexLock(entry->mutex);
-    if (entry->op == TS_SSL_HOOK_OP_TUNNEL || entry->op == TS_SSL_HOOK_OP_TERMINATE) {
+    if (entry->op == SSL_HOOK_OP_TUNNEL || entry->op == SSL_HOOK_OP_TERMINATE) {
       // Push everything to blind tunnel, or terminate
-      if (entry->op == TS_SSL_HOOK_OP_TUNNEL) {
+      if (entry->op == SSL_HOOK_OP_TUNNEL) {
         TSVConnTunnel(ssl_vc);
       }
       TSMutexUnlock(entry->mutex);
@@ -432,9 +439,9 @@ CB_servername(TSCont /*contp*/, TSEvent /*event*/, void *edata)
     DomainNameTree::DomainNameNode *node = Lookup.tree.findFirstMatch(servername);
     if (node != NULL && node->payload != NULL) {
       SslEntry *entry = reinterpret_cast<SslEntry *>(node->payload);
-      if (entry->op == TS_SSL_HOOK_OP_TUNNEL || entry->op == TS_SSL_HOOK_OP_TERMINATE) {
+      if (entry->op == SSL_HOOK_OP_TUNNEL || entry->op == SSL_HOOK_OP_TERMINATE) {
         // Push everything to blind tunnel
-        if (entry->op == TS_SSL_HOOK_OP_TUNNEL) {
+        if (entry->op == SSL_HOOK_OP_TUNNEL) {
           TSVConnTunnel(ssl_vc);
         }
         // Make sure we stop out of the SNI callback

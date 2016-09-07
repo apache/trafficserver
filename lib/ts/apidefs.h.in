@@ -790,14 +790,6 @@ typedef enum {
   TS_MILESTONE_LAST_ENTRY
 } TSMilestonesType;
 
-/// Operation requested by asynchronous hooks during SSL processing
-typedef enum {
-  TS_SSL_HOOK_OP_DEFAULT,                        ///< Null / initialization value. Do normal processing.
-  TS_SSL_HOOK_OP_TUNNEL,                         ///< Switch to blind tunnel
-  TS_SSL_HOOK_OP_TERMINATE,                      ///< Termination connection / transaction.
-  TS_SSL_HOOK_OP_LAST = TS_SSL_HOOK_OP_TERMINATE ///< End marker value.
-} TSSslVConnOp;
-
 /* These typedefs are used with the corresponding TSMgmt*Get functions
    for storing the values retrieved by those functions. For example,
    TSMgmtCounterGet() retrieves an TSMgmtCounter. */
