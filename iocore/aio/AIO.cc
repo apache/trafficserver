@@ -161,6 +161,9 @@ ink_aio_init(ModuleVersion v)
   ink_mutex_init(&insert_mutex, NULL);
 #endif
   REC_ReadConfigInteger(cache_config_threads_per_disk, "proxy.config.cache.threads_per_disk");
+#ifdef TS_USE_LINUX_NATIVE_AIO
+  Warning("Running with Linux AIO, there are known issues with this feature");
+#endif
 }
 
 int
