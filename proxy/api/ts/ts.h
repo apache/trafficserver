@@ -1702,6 +1702,12 @@ tsapi void TSVConnClose(TSVConn connp);
 tsapi void TSVConnAbort(TSVConn connp, int error);
 tsapi void TSVConnShutdown(TSVConn connp, int read, int write);
 
+/**
+  Mark a TSVConn as internal or external. Typically used by protocol
+  plugins to mark TSHttpConnect() VCs as external.
+ */
+tsapi void TSVConnInternalSet(TSVConn connp, int internal);
+
 /* --------------------------------------------------------------------------
    Cache VConnections */
 tsapi int64_t TSVConnCacheObjectSizeGet(TSVConn connp);
