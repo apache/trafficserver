@@ -2414,6 +2414,11 @@ tsapi TSReturnCode TSUuidStringParse(TSUuid uuid, const char *uuid_str);
 /* Get the process global UUID, resets on every startup */
 tsapi const TSUuid TSProcessUuidGet(void);
 
+/**
+   Returns the plugin_tag.
+*/
+tsapi const char *TSHttpTxnPluginTagGet(TSHttpTxn txnp);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
