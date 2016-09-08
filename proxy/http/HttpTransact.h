@@ -246,9 +246,7 @@ struct HttpApiInfo {
   }
 };
 
-enum {
-  HTTP_UNDEFINED_CL = -1,
-};
+const int32_t HTTP_UNDEFINED_CL = -1;
 
 //////////////////////////////////////////////////////////////////////////////
 //
