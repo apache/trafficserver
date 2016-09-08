@@ -806,7 +806,7 @@ LocalManager::processEventQueue()
         if (RecReadConfigFile(incVersion) != REC_ERR_OKAY) {
           mgmt_elog(errno, "[fileUpdated] Config update failed for records.config\n");
         } else {
-          RecLookupIterateRecords(&RecConfigWarnIfUnregistered);
+          RecConfigWarnIfUnregistered();
         }
         handled_by_mgmt = true;
       }

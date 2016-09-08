@@ -177,7 +177,6 @@ typedef void (*RecLookupCallback)(const RecRecord *, void *);
 
 int RecLookupRecord(const char *name, RecLookupCallback callback, void *data, bool lock = true);
 int RecLookupMatchingRecords(unsigned rec_type, const char *match, RecLookupCallback callback, void *data, bool lock = true);
-void RecLookupIterateRecords(std::function<void (RecRecord const*)> callback);
 
 int RecGetRecordType(const char *name, RecT *rec_type, bool lock = true);
 int RecGetRecordDataType(const char *name, RecDataT *data_type, bool lock = true);
@@ -209,8 +208,8 @@ RecSignalManager(int id, const char *str)
 // Format a message, and send it to the manager and to the Warning diagnostic.
 void RecSignalWarning(int sig, const char *fmt, ...) TS_PRINTFLIKE(2, 3);
 
-/// Generate a warning if the record is a configuration name/value but is not registered.
-void RecConfigWarnIfUnregistered(RecRecord const* r);
+/// Generate a warning if any configuration name/value is not registered.
+void RecConfigWarnIfUnregistered();
 
 //-------------------------------------------------------------------------
 // Backwards Compatibility Items (REC_ prefix)

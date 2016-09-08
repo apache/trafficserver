@@ -1900,7 +1900,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     // Plugins can register their own configuration names so now after they've done that
     // check for unexpected names. This is very late because remap plugins must be allowed to
     // fire up as well.
-    RecLookupIterateRecords(&RecConfigWarnIfUnregistered);
+    RecConfigWarnIfUnregistered();
 
     // "Task" processor, possibly with its own set of task threads
     tasksProcessor.start(num_task_threads, stacksize);

@@ -515,7 +515,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
 }
 
 void
-RecLookupIterateRecords(std::function<void (RecRecord const*)> f)
+RecLookupIterateRecords(std::function<void(RecRecord const *)> f)
 {
   int num_records = g_num_records; // cache
   for (int i = 0; i < num_records; i++) {
@@ -1266,10 +1266,13 @@ RecSignalWarning(int sig, const char *fmt, ...)
 // RecConfigWarnIfUnregistered
 //-------------------------------------------------------------------------
 /// Generate a warning if the record is a configuration name/value but is not registered.
-void RecConfigWarnIfUnregistered(RecRecord const* r)
+void
+RecConfigWarnIfUnregistered()
 {
-  if (REC_TYPE_IS_CONFIG(r->rec_type) && ! r->registered
-      && 0 != strncasecmp(r->name, REC_PLUGIN_CONFIG_NAME_PREFIX, REC_PLUGIN_CONFIG_NAME_PREFIX_LEN)) {
-    Warning("Unrecognized configuration value '%s'", r->name);
-  }
+  RecDumpRecords(RECT_CONFIG, [](RecT, void *, int registered_p, char const *name, int, RecData *)->void
+  {
+    if (!registered_p)
+      Warning("Unrecognized configuration value '%s'", name);
+  }, NULL
+  );
 }
