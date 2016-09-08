@@ -249,7 +249,7 @@ settings have been configured as shown below::
     CONFIG proxy.config.reverse_proxy.enabled INT 1
     CONFIG proxy.config.url_remap.remap_required INT 1
     CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
-    CONFIG proxy.config.http.server_ports STRING 8080
+    CONFIG proxy.config.http.server_ports STRING 8080 8080:ipv6
 
 :ts:cv:`proxy.config.http.cache.http`
     Enables caching of proxied HTTP requests.
@@ -270,7 +270,8 @@ settings have been configured as shown below::
     contents of that header.
 
 :ts:cv:`proxy.config.http.server_ports`
-    This configures |TS| to bind itself to the port ``8080`` for HTTP traffic.
+    This configures |TS| to bind itself to the port ``8080`` for HTTP traffic,
+    for both IPv4 and IPv6.
 
 Configure Origin Location
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -341,7 +342,7 @@ entries:
     CONFIG proxy.config.reverse_proxy.enabled INT 1
     CONFIG proxy.config.url_remap.remap_required INT 1
     CONFIG proxy.config.url_remap.pristine_host_hdr INT 1
-    CONFIG proxy.config.http.server_ports STRING 80
+    CONFIG proxy.config.http.server_ports STRING 80 80:ipv6
 
 :file:`remap.config`::
 

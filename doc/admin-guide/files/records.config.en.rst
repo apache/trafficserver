@@ -642,7 +642,7 @@ Alarm Configuration
 HTTP Engine
 ===========
 
-.. ts:cv:: CONFIG proxy.config.http.server_ports STRING 8080
+.. ts:cv:: CONFIG proxy.config.http.server_ports STRING 8080 8080:ipv6
 
    Ports used for proxying HTTP traffic.
 
