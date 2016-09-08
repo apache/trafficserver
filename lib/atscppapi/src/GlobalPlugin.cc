@@ -50,7 +50,7 @@ handleGlobalPluginEvents(TSCont cont, TSEvent event, void *edata)
 {
   TSHttpTxn txn            = static_cast<TSHttpTxn>(edata);
   GlobalPluginState *state = static_cast<GlobalPluginState *>(TSContDataGet(cont));
-  if (state->ignore_internal_transactions_ && (TSHttpTxnIsInternal(txn) == TS_SUCCESS)) {
+  if (state->ignore_internal_transactions_ && TSHttpTxnIsInternal(txn)) {
     LOG_DEBUG("Ignoring event %d on internal transaction %p for global plugin %p", event, txn, state->global_plugin_);
     TSHttpTxnReenable(txn, TS_EVENT_HTTP_CONTINUE);
   } else {

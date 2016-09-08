@@ -426,7 +426,7 @@ cont_handle_policy(TSCont contp, TSEvent event, void *edata)
   switch (event) {
   // Main HOOK
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
-    if (TS_SUCCESS != TSHttpTxnIsInternal(txnp)) {
+    if (!TSHttpTxnIsInternal(txnp)) {
       int obj_status;
 
       if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status)) {

@@ -156,7 +156,7 @@ bool
 BgFetchRule::bgFetchAllowed(TSHttpTxn txnp) const
 {
   TSDebug(PLUGIN_NAME, "Testing: request is internal?");
-  if (TSHttpTxnIsInternal(txnp) == TS_SUCCESS) {
+  if (TSHttpTxnIsInternal(txnp)) {
     return false;
   }
 

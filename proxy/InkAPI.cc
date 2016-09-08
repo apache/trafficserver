@@ -7550,48 +7550,24 @@ TSFetchRespHdrMLocGet(TSFetchSM fetch_sm)
   return ((FetchSM *)fetch_sm)->resp_hdr_mloc();
 }
 
-// Deprecated, remove for v7.0.0
-TSReturnCode
-TSHttpIsInternalSession(TSHttpSsn ssnp)
-{
-  ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
-  if (!cs) {
-    return TS_ERROR;
-  }
-
-  NetVConnection *vc = cs->get_netvc();
-  if (!vc) {
-    return TS_ERROR;
-  }
-
-  return vc->get_is_internal_request() ? TS_SUCCESS : TS_ERROR;
-}
-
-TSReturnCode
+int
 TSHttpSsnIsInternal(TSHttpSsn ssnp)
 {
   ProxyClientSession *cs = reinterpret_cast<ProxyClientSession *>(ssnp);
+
   if (!cs) {
-    return TS_ERROR;
+    return 0;
   }
 
   NetVConnection *vc = cs->get_netvc();
   if (!vc) {
-    return TS_ERROR;
+    return 0;
   }
 
-  return vc->get_is_internal_request() ? TS_SUCCESS : TS_ERROR;
+  return vc->get_is_internal_request() ? 1 : 0;
 }
 
-// Deprecated, remove for v7.0.0
-TSReturnCode
-TSHttpIsInternalRequest(TSHttpTxn txnp)
-{
-  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
-  return TSHttpSsnIsInternal(TSHttpTxnSsnGet(txnp));
-}
-
-TSReturnCode
+int
 TSHttpTxnIsInternal(TSHttpTxn txnp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);

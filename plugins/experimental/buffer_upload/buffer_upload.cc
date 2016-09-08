@@ -683,7 +683,7 @@ attach_pvc_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
   case TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP:
 
     // if the request is issued by the TSHttpConnect() in this plugin, don't get in the endless cycle.
-    if (TSHttpTxnIsInternal(txnp) == TS_SUCCESS) {
+    if (TSHttpTxnIsInternal(txnp)) {
       TSDebug(DEBUG_TAG, "internal request");
       break;
     }
