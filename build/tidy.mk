@@ -20,7 +20,8 @@ Clang_Tidy_Options = -fix -fix-errors
 # just the C and C++ sources so we don't pick up lex and yacc files
 # for example.
 
-Clang_Tidy_Files = $(filter %.cc %.c %.h %.hpp,$(sort $(1)))
+Clang_Tidy_CC_Files = $(filter %.c, $(sort $(1)))
+Clang_Tidy_CXX_Files = $(filter %.cc, $(sort $(1)))
 
 #clang-tidy rules. We expect these to be actions with something like
 #$(DIST_SOURCES) as the dependencies.rules. Note that $DIST_SOURCES
@@ -29,5 +30,5 @@ Clang_Tidy_Files = $(filter %.cc %.c %.h %.hpp,$(sort $(1)))
 #
 #All this clearly requires GNU make.
 
-CXX_Clang_Tidy = $(CLANG_TIDY) $(Clang_Tidy_Options) $(call Clang_Tidy_Files,$^) -- $(CXXCOMPILE) -x c++
-CC_Clang_Tidy = $(CLANG_TIDY) $(Clang_Tidy_Options) $(call Clang_Tidy_Files,$^) -- $(COMPILE) -x c
+CXX_Clang_Tidy = $(CLANG_TIDY) $(Clang_Tidy_Options) $(call Clang_Tidy_CXX_Files,$^) -- $(CXXCOMPILE) -x c++
+CC_Clang_Tidy = $(CLANG_TIDY) $(Clang_Tidy_Options) $(call Clang_Tidy_CC_Files,$^) -- $(COMPILE) -x c

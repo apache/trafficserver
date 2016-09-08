@@ -24,4 +24,4 @@ hipes_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
 include $(top_srcdir)/build/tidy.mk
 
 tidy-local: $(DIST_SOURCES)
-	$(CC_Clang_Tidy)
+	$(CXX_Clang_Tidy)

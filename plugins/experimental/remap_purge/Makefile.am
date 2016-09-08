@@ -19,3 +19,6 @@ include $(top_srcdir)/build/plugins.mk
 pkglib_LTLIBRARIES = remap_purge.la
 remap_purge_la_SOURCES = remap_purge.c
 remap_purge_la_LDFLAGS = $(TS_PLUGIN_LDFLAGS)
+
+tidy-local: $(DIST_SOURCES)
+	$(CC_Clang_Tidy)

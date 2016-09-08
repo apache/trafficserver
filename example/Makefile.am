@@ -92,3 +92,4 @@ include $(top_srcdir)/build/tidy.mk
 
 tidy-local: $(DIST_SOURCES)
 	$(CXX_Clang_Tidy)
+	$(CC_Clang_Tidy)
